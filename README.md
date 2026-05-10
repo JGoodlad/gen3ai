@@ -53,6 +53,12 @@ npm run showdown
 npm run battle
 ```
 
+### 3. Sync Sample Teams (Smogon)
+Automatically downloads and indexes the latest ADV OU sample teams.
+```bash
+npm run sync-teams
+```
+
 ## 🧪 Testing Suite
 
 We maintain two distinct test suites to ensure both logic and infrastructure integrity:
