@@ -1,0 +1,55 @@
+Smeargle @ Salac Berry  
+Ability: Own Tempo  
+EVs: 16 HP / 16 Def / 224 SpD / 252 Spe  
+Timid Nature  
+IVs: 0 Atk  
+- Spore  
+- Destiny Bond  
+- Encore  
+- Spikes  
+
+Regice @ Leftovers  
+Ability: Clear Body  
+EVs: 80 HP / 176 Atk / 252 SpA  
+Quiet Nature  
+- Ice Beam  
+- Thunderbolt  
+- Rain Dance  
+- Explosion  
+
+Metagross @ Leftovers  
+Ability: Clear Body  
+EVs: 68 HP / 252 SpA / 188 Spe  
+Naive Nature  
+- Meteor Mash  
+- Hidden Power [Fire]  
+- Explosion  
+- Psychic  
+
+Gengar @ Leftovers  
+Ability: Levitate  
+EVs: 96 Atk / 160 SpA / 252 Spe  
+Hasty Nature  
+- Hypnosis  
+- Thunderbolt  
+- Hidden Power [Grass]  
+- Explosion  
+
+Salamence @ Leftovers  
+Ability: Intimidate  
+EVs: 252 HP / 120 Atk / 136 Spe  
+Adamant Nature  
+- Dragon Dance  
+- Hidden Power [Flying]  
+- Brick Break  
+- Rock Slide  
+
+Suicune @ Leftovers  
+Ability: Pressure  
+EVs: 252 HP / 172 SpA / 56 SpD / 28 Spe  
+Calm Nature  
+IVs: 0 Atk  
+- Surf  
+- Rest  
+- Calm Mind  
+- Ice Beam

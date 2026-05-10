@@ -1,0 +1,54 @@
+Gengar @ Choice Band  
+Ability: Levitate  
+EVs: 40 HP / 252 Atk / 216 Spe  
+Adamant Nature  
+- Brick Break  
+- Explosion  
+- Hypnosis  
+- Destiny Bond  
+
+Celebi @ Leftovers  
+Ability: Natural Cure  
+EVs: 176 HP / 4 Def / 252 SpA / 76 Spe  
+Modest Nature  
+IVs: 2 Atk / 30 SpA / 30 Spe  
+- Giga Drain  
+- Psychic  
+- Hidden Power [Fire]  
+- Leech Seed  
+
+Tyranitar @ Silk Scarf  
+Ability: Sand Stream  
+EVs: 88 HP / 252 Atk / 168 Spe  
+Adamant Nature  
+- Dragon Dance  
+- Rock Slide  
+- Earthquake  
+- Hyper Beam  
+
+Swampert @ Leftovers  
+Ability: Torrent  
+EVs: 248 HP / 88 Def / 96 SpA / 32 SpD / 44 Spe  
+Quiet Nature  
+- Hydro Pump  
+- Earthquake  
+- Ice Beam  
+- Refresh  
+
+Aerodactyl @ Choice Band  
+Ability: Rock Head  
+EVs: 252 Atk / 4 SpD / 252 Spe  
+Jolly Nature  
+- Rock Slide  
+- Earthquake  
+- Double-Edge  
+- Hidden Power [Bug]  
+
+Skarmory @ Leftovers  
+Ability: Keen Eye  
+EVs: 248 HP / 248 SpD / 12 Spe  
+Careful Nature  
+- Spikes  
+- Drill Peck  
+- Toxic  
+- Roar

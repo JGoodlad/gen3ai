@@ -1,0 +1,57 @@
+Registeel @ Leftovers  
+Ability: Clear Body  
+EVs: 248 HP / 136 Def / 96 SpD / 28 Spe  
+Impish Nature  
+- Thunder Wave  
+- Counter  
+- Seismic Toss  
+- Explosion  
+
+Forretress @ Leftovers  
+Ability: Sturdy  
+EVs: 252 HP / 4 Atk / 252 SpD  
+Careful Nature  
+- Spikes  
+- Earthquake  
+- Explosion  
+- Rapid Spin  
+
+Tyranitar @ Leftovers  
+Ability: Sand Stream  
+EVs: 248 HP / 4 Def / 216 SpA / 40 Spe  
+Modest Nature  
+IVs: 0 Atk  
+- Crunch  
+- Pursuit  
+- Flamethrower  
+- Roar  
+
+Milotic @ Leftovers  
+Ability: Marvel Scale  
+EVs: 248 HP / 252 Def / 8 Spe  
+Bold Nature  
+IVs: 0 Atk  
+- Surf  
+- Ice Beam  
+- Refresh  
+- Recover  
+
+Celebi @ Leftovers  
+Ability: Natural Cure  
+EVs: 248 HP / 172 Def / 56 SpD / 32 Spe  
+Calm Nature  
+IVs: 2 Atk / 30 SpA  
+- Leech Seed  
+- Hidden Power [Grass]  
+- Recover  
+- Perish Song  
+
+Gengar @ Leftovers  
+Ability: Levitate  
+EVs: 248 HP / 8 Def / 60 SpD / 192 Spe  
+Timid Nature  
+IVs: 0 Atk  
+- Thunderbolt  
+- Ice Punch  
+- Will-O-Wisp  
+- Taunt

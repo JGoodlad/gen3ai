@@ -1,0 +1,54 @@
+Tyranitar @ Leftovers  
+Ability: Sand Stream  
+EVs: 252 HP / 20 Def / 188 SpA / 48 Spe  
+Modest Nature  
+- Flamethrower  
+- Crunch  
+- Pursuit  
+- Brick Break  
+
+Skarmory @ Leftovers  
+Ability: Keen Eye  
+EVs: 248 HP / 240 SpD / 20 Spe  
+Careful Nature  
+- Drill Peck  
+- Toxic  
+- Spikes  
+- Roar  
+
+Gengar @ Leftovers  
+Ability: Levitate  
+EVs: 64 HP / 16 SpA / 248 SpD / 180 Spe  
+Modest Nature  
+IVs: 0 Atk  
+- Will-O-Wisp  
+- Thunderbolt  
+- Giga Drain  
+- Taunt  
+
+Registeel @ Leftovers  
+Ability: Clear Body  
+EVs: 252 HP / 136 Def / 92 SpD / 28 Spe  
+Impish Nature  
+- Thunder Wave  
+- Seismic Toss  
+- Explosion  
+- Counter  
+
+Salamence @ Leftovers  
+Ability: Intimidate  
+EVs: 252 Atk / 48 SpA / 208 Spe  
+Lonely Nature  
+- Hidden Power [Flying]  
+- Brick Break  
+- Fire Blast  
+- Dragon Dance  
+
+Swampert @ Leftovers  
+Ability: Torrent  
+EVs: 248 HP / 88 Def / 96 SpA / 32 SpD / 44 Spe  
+Quiet Nature  
+- Surf  
+- Ice Beam  
+- Earthquake  
+- Refresh

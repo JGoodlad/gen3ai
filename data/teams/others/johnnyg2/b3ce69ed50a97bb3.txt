@@ -1,0 +1,55 @@
+Suicune @ Salac Berry  
+Ability: Pressure  
+EVs: 16 HP / 248 SpA / 12 SpD / 232 Spe  
+Modest Nature  
+IVs: 0 Atk  
+- Calm Mind  
+- Hydro Pump  
+- Ice Beam  
+- Toxic  
+
+Breloom @ Leftovers  
+Ability: Effect Spore  
+EVs: 252 Atk / 68 SpD / 188 Spe  
+Adamant Nature  
+- Spore  
+- Focus Punch  
+- Brick Break  
+- Mach Punch  
+
+Tyranitar @ Leftovers  
+Ability: Sand Stream  
+EVs: 200 HP / 192 Atk / 116 Spe  
+Adamant Nature  
+- Hidden Power [Bug]  
+- Rock Slide  
+- Earthquake  
+- Focus Punch  
+
+Metagross @ Leftovers  
+Ability: Clear Body  
+EVs: 128 HP / 252 SpA / 128 Spe  
+Modest Nature  
+- Thunder Punch  
+- Psychic  
+- Pursuit  
+- Explosion  
+
+Jirachi @ Leftovers  
+Ability: Serene Grace  
+EVs: 252 HP / 44 Def / 148 SpA / 64 Spe  
+Modest Nature  
+IVs: 2 Atk / 30 SpA  
+- Calm Mind  
+- Psychic  
+- Fire Punch  
+- Hidden Power [Grass]  
+
+Salamence @ Leftovers  
+Ability: Intimidate  
+EVs: 252 Atk / 48 SpA / 208 Spe  
+Lonely Nature  
+- Dragon Dance  
+- Hidden Power [Flying]  
+- Fire Blast  
+- Brick Break

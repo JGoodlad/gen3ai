@@ -1,0 +1,56 @@
+Metagross @ Salac Berry  
+Ability: Clear Body  
+EVs: 40 HP / 252 Atk / 216 Spe  
+Jolly Nature  
+- Meteor Mash  
+- Earthquake  
+- Explosion  
+- Endure  
+
+Lunatone @ Leftovers  
+Ability: Levitate  
+EVs: 248 HP / 252 Def / 8 Spe  
+Relaxed Nature  
+- Calm Mind  
+- Ice Beam  
+- Baton Pass  
+- Explosion  
+
+Snorlax @ Leftovers  
+Ability: Thick Fat  
+EVs: 8 HP / 252 Atk / 108 Def / 136 SpD / 4 Spe  
+Adamant Nature  
+- Curse  
+- Double-Edge  
+- Earthquake  
+- Shadow Ball  
+
+Zapdos @ Leftovers  
+Ability: Pressure  
+EVs: 252 HP / 60 SpA / 176 Spe  
+Modest Nature  
+IVs: 2 Atk / 30 SpA  
+- Thunderbolt  
+- Hidden Power [Grass]  
+- Baton Pass  
+- Roar  
+
+Magneton @ Magnet  
+Ability: Magnet Pull  
+EVs: 252 SpA / 4 SpD / 252 Spe  
+Modest Nature  
+IVs: 2 Atk / 30 SpA  
+- Thunderbolt  
+- Hidden Power [Grass]  
+- Rain Dance  
+- Thunder Wave  
+
+Ludicolo @ Leftovers  
+Ability: Swift Swim  
+EVs: 160 HP / 252 SpA / 96 Spe  
+Modest Nature  
+IVs: 2 Atk / 30 SpA  
+- Surf  
+- Rain Dance  
+- Ice Beam  
+- Hidden Power [Grass]

@@ -1,0 +1,54 @@
+Milotic @ Leftovers  
+Ability: Marvel Scale  
+EVs: 24 HP / 252 Def / 224 SpA / 8 Spe  
+Modest Nature  
+IVs: 0 Atk  
+- Surf  
+- Ice Beam  
+- Rain Dance  
+- Recover  
+
+Heracross @ Salac Berry  
+Ability: Swarm  
+EVs: 252 Atk / 4 SpD / 252 Spe  
+Jolly Nature  
+- Megahorn  
+- Reversal  
+- Swords Dance  
+- Endure  
+
+Claydol @ Choice Band  
+Ability: Levitate  
+EVs: 252 HP / 252 Atk / 4 Spe  
+Impish Nature  
+- Earthquake  
+- Rock Slide  
+- Explosion  
+- Rapid Spin  
+
+Salamence @ Leftovers  
+Ability: Intimidate  
+EVs: 252 HP / 112 Atk / 80 SpD / 64 Spe  
+Adamant Nature  
+- Refresh  
+- Dragon Dance  
+- Hidden Power [Flying]  
+- Brick Break  
+
+Metagross @ Leftovers  
+Ability: Clear Body  
+EVs: 252 HP / 228 SpA / 28 Spe  
+Quiet Nature  
+- Meteor Mash  
+- Hidden Power [Fire]  
+- Psychic  
+- Explosion  
+
+Snorlax @ Leftovers  
+Ability: Immunity  
+EVs: 76 HP / 184 Atk / 96 Def / 140 SpD / 12 Spe  
+Adamant Nature  
+- Focus Punch  
+- Counter  
+- Shadow Ball  
+- Body Slam

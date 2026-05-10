@@ -1,0 +1,57 @@
+Forretress @ Leftovers  
+Ability: Sturdy  
+EVs: 252 HP / 4 Def / 252 SpD  
+Careful Nature  
+- Spikes  
+- Earthquake  
+- Explosion  
+- Rapid Spin  
+
+Donphan @ Leftovers  
+Ability: Sturdy  
+EVs: 252 HP / 4 Atk / 252 Def  
+Impish Nature  
+- Earthquake  
+- Hidden Power [Rock]  
+- Rest  
+- Rapid Spin  
+
+Suicune @ Leftovers  
+Ability: Pressure  
+EVs: 252 HP / 176 Def / 80 Spe  
+Bold Nature  
+IVs: 0 Atk  
+- Surf  
+- Calm Mind  
+- Rest  
+- Roar  
+
+Umbreon @ Leftovers  
+Ability: Synchronize  
+EVs: 252 HP / 192 SpA / 56 SpD / 8 Spe  
+Calm Nature  
+IVs: 0 Atk  
+- Pursuit  
+- Charm  
+- Wish  
+- Protect  
+
+Blissey (F) @ Leftovers  
+Ability: Natural Cure  
+EVs: 168 HP / 252 Def / 88 Spe  
+Bold Nature  
+IVs: 0 Atk  
+- Aromatherapy  
+- Thunder Wave  
+- Seismic Toss  
+- Soft-Boiled  
+
+Moltres @ Leftovers  
+Ability: Pressure  
+EVs: 104 HP / 176 SpA / 228 Spe  
+Timid Nature  
+IVs: 0 Atk  
+- Flamethrower  
+- Toxic  
+- Sunny Day  
+- Morning Sun

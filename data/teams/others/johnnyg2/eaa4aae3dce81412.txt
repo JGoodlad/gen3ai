@@ -1,0 +1,56 @@
+Zapdos @ Leftovers  
+Ability: Pressure  
+EVs: 192 SpA / 116 SpD / 200 Spe  
+Modest Nature  
+IVs: 2 Atk / 30 SpA  
+- Thunderbolt  
+- Hidden Power [Grass]  
+- Protect  
+- Baton Pass  
+
+Celebi @ Leftovers  
+Ability: Natural Cure  
+EVs: 24 HP / 248 Def / 200 SpA / 36 Spe  
+Modest Nature  
+IVs: 2 Atk / 30 Def  
+- Hidden Power [Ice]  
+- Calm Mind  
+- Baton Pass  
+- Giga Drain  
+
+Heracross @ Salac Berry  
+Ability: Swarm  
+EVs: 252 Atk / 4 SpD / 252 Spe  
+Adamant Nature  
+IVs: 30 HP  
+- Megahorn  
+- Focus Punch  
+- Substitute  
+- Swords Dance  
+
+Swampert @ Leftovers  
+Ability: Torrent  
+EVs: 248 HP / 88 Def / 96 SpA / 32 SpD / 44 Spe  
+Quiet Nature  
+- Surf  
+- Ice Beam  
+- Earthquake  
+- Refresh  
+
+Metagross @ Choice Band  
+Ability: Clear Body  
+EVs: 196 HP / 252 Atk / 60 Spe  
+Adamant Nature  
+- Meteor Mash  
+- Earthquake  
+- Hidden Power [Rock]  
+- Explosion  
+
+Charizard @ Leftovers  
+Ability: Blaze  
+EVs: 64 Atk / 192 SpA / 252 Spe  
+Hasty Nature  
+- Substitute  
+- Fire Blast  
+- Focus Punch  
+- Hidden Power [Grass]

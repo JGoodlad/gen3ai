@@ -1,0 +1,55 @@
+Zapdos @ Choice Band  
+Ability: Pressure  
+EVs: 252 Atk / 12 SpA / 244 Spe  
+Lonely Nature  
+- Thunderbolt  
+- Hidden Power [Fighting]  
+- Thunder Wave  
+- Drill Peck  
+
+Snorlax @ Leftovers  
+Ability: Immunity  
+EVs: 64 HP / 176 Atk / 108 Def / 144 SpD / 16 Spe  
+Adamant Nature  
+- Body Slam  
+- Self-Destruct  
+- Earthquake  
+- Shadow Ball  
+
+Magneton @ Magnet  
+Ability: Magnet Pull  
+EVs: 252 SpA / 4 SpD / 252 Spe  
+Modest Nature  
+IVs: 2 Atk / 30 SpA / 30 Spe  
+- Thunderbolt  
+- Hidden Power [Fire]  
+- Sunny Day  
+- Thunder Wave  
+
+Suicune @ Leftovers  
+Ability: Pressure  
+EVs: 248 HP / 176 SpA / 56 SpD / 28 Spe  
+Calm Nature  
+IVs: 0 Atk  
+- Surf  
+- Ice Beam  
+- Calm Mind  
+- Rest  
+
+Metagross @ Leftovers  
+Ability: Clear Body  
+EVs: 248 HP / 180 Atk / 32 SpA / 48 Spe  
+Brave Nature  
+- Meteor Mash  
+- Earthquake  
+- Explosion  
+- Hidden Power [Grass]  
+
+Aerodactyl @ Choice Band  
+Ability: Rock Head  
+EVs: 4 HP / 252 Atk / 252 Spe  
+Jolly Nature  
+- Rock Slide  
+- Earthquake  
+- Double-Edge  
+- Hidden Power [Bug]

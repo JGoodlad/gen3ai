@@ -1,0 +1,55 @@
+Milotic @ Leftovers  
+Ability: Marvel Scale  
+EVs: 24 HP / 252 Def / 216 SpA / 16 Spe  
+Modest Nature  
+IVs: 0 Atk  
+- Surf  
+- Ice Beam  
+- Hypnosis  
+- Recover  
+
+Celebi @ Leftovers  
+Ability: Natural Cure  
+EVs: 88 HP / 240 Def / 180 Spe  
+Impish Nature  
+- Hidden Power [Rock]  
+- Swords Dance  
+- Baton Pass  
+- Recover  
+
+Magneton @ Magnet  
+Ability: Magnet Pull  
+EVs: 252 SpA / 4 SpD / 252 Spe  
+Modest Nature  
+IVs: 2 Atk / 30 SpA / 30 Spe  
+- Thunderbolt  
+- Hidden Power [Fire]  
+- Sunny Day  
+- Thunder Wave  
+
+Salamence @ Leftovers  
+Ability: Intimidate  
+EVs: 100 HP / 252 Atk / 4 SpD / 152 Spe  
+Adamant Nature  
+- Hidden Power [Flying]  
+- Brick Break  
+- Substitute  
+- Dragon Dance  
+
+Metagross @ Salac Berry  
+Ability: Clear Body  
+EVs: 40 HP / 252 Atk / 216 Spe  
+Jolly Nature  
+- Meteor Mash  
+- Earthquake  
+- Endure  
+- Explosion  
+
+Snorlax @ Leftovers  
+Ability: Immunity  
+EVs: 8 HP / 252 Atk / 108 Def / 136 SpD / 4 Spe  
+Adamant Nature  
+- Curse  
+- Double-Edge  
+- Earthquake  
+- Shadow Ball

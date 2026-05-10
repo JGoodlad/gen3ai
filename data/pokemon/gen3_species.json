@@ -1,0 +1,4634 @@
+{
+    "abra": {
+        "name": "Abra",
+        "num": 63,
+        "baseStats": {
+            "atk": 20,
+            "def": 15,
+            "hp": 25,
+            "spa": 105,
+            "spd": 55,
+            "spe": 90
+        }
+    },
+    "absol": {
+        "name": "Absol",
+        "num": 359,
+        "baseStats": {
+            "atk": 130,
+            "def": 60,
+            "hp": 65,
+            "spa": 75,
+            "spd": 60,
+            "spe": 75
+        }
+    },
+    "aerodactyl": {
+        "name": "Aerodactyl",
+        "num": 142,
+        "baseStats": {
+            "atk": 105,
+            "def": 65,
+            "hp": 80,
+            "spa": 60,
+            "spd": 75,
+            "spe": 130
+        }
+    },
+    "aggron": {
+        "name": "Aggron",
+        "num": 306,
+        "baseStats": {
+            "atk": 110,
+            "def": 180,
+            "hp": 70,
+            "spa": 60,
+            "spd": 60,
+            "spe": 50
+        }
+    },
+    "aipom": {
+        "name": "Aipom",
+        "num": 190,
+        "baseStats": {
+            "atk": 70,
+            "def": 55,
+            "hp": 55,
+            "spa": 40,
+            "spd": 55,
+            "spe": 85
+        }
+    },
+    "alakazam": {
+        "name": "Alakazam",
+        "num": 65,
+        "baseStats": {
+            "atk": 50,
+            "def": 45,
+            "hp": 55,
+            "spa": 135,
+            "spd": 85,
+            "spe": 120
+        }
+    },
+    "altaria": {
+        "name": "Altaria",
+        "num": 334,
+        "baseStats": {
+            "atk": 70,
+            "def": 90,
+            "hp": 75,
+            "spa": 70,
+            "spd": 105,
+            "spe": 80
+        }
+    },
+    "ampharos": {
+        "name": "Ampharos",
+        "num": 181,
+        "baseStats": {
+            "atk": 75,
+            "def": 75,
+            "hp": 90,
+            "spa": 115,
+            "spd": 90,
+            "spe": 55
+        }
+    },
+    "anorith": {
+        "name": "Anorith",
+        "num": 347,
+        "baseStats": {
+            "atk": 95,
+            "def": 50,
+            "hp": 45,
+            "spa": 40,
+            "spd": 50,
+            "spe": 75
+        }
+    },
+    "arbok": {
+        "name": "Arbok",
+        "num": 24,
+        "baseStats": {
+            "atk": 85,
+            "def": 69,
+            "hp": 60,
+            "spa": 65,
+            "spd": 79,
+            "spe": 80
+        }
+    },
+    "arcanine": {
+        "name": "Arcanine",
+        "num": 59,
+        "baseStats": {
+            "atk": 110,
+            "def": 80,
+            "hp": 90,
+            "spa": 100,
+            "spd": 80,
+            "spe": 95
+        }
+    },
+    "ariados": {
+        "name": "Ariados",
+        "num": 168,
+        "baseStats": {
+            "atk": 90,
+            "def": 70,
+            "hp": 70,
+            "spa": 60,
+            "spd": 60,
+            "spe": 40
+        }
+    },
+    "armaldo": {
+        "name": "Armaldo",
+        "num": 348,
+        "baseStats": {
+            "atk": 125,
+            "def": 100,
+            "hp": 75,
+            "spa": 70,
+            "spd": 80,
+            "spe": 45
+        }
+    },
+    "aron": {
+        "name": "Aron",
+        "num": 304,
+        "baseStats": {
+            "atk": 70,
+            "def": 100,
+            "hp": 50,
+            "spa": 40,
+            "spd": 40,
+            "spe": 30
+        }
+    },
+    "articuno": {
+        "name": "Articuno",
+        "num": 144,
+        "baseStats": {
+            "atk": 85,
+            "def": 100,
+            "hp": 90,
+            "spa": 95,
+            "spd": 125,
+            "spe": 85
+        }
+    },
+    "azumarill": {
+        "name": "Azumarill",
+        "num": 184,
+        "baseStats": {
+            "atk": 50,
+            "def": 80,
+            "hp": 100,
+            "spa": 50,
+            "spd": 80,
+            "spe": 50
+        }
+    },
+    "azurill": {
+        "name": "Azurill",
+        "num": 298,
+        "baseStats": {
+            "atk": 20,
+            "def": 40,
+            "hp": 50,
+            "spa": 20,
+            "spd": 40,
+            "spe": 20
+        }
+    },
+    "bagon": {
+        "name": "Bagon",
+        "num": 371,
+        "baseStats": {
+            "atk": 75,
+            "def": 60,
+            "hp": 45,
+            "spa": 40,
+            "spd": 30,
+            "spe": 50
+        }
+    },
+    "baltoy": {
+        "name": "Baltoy",
+        "num": 343,
+        "baseStats": {
+            "atk": 40,
+            "def": 55,
+            "hp": 40,
+            "spa": 40,
+            "spd": 70,
+            "spe": 55
+        }
+    },
+    "banette": {
+        "name": "Banette",
+        "num": 354,
+        "baseStats": {
+            "atk": 115,
+            "def": 65,
+            "hp": 64,
+            "spa": 83,
+            "spd": 63,
+            "spe": 65
+        }
+    },
+    "barboach": {
+        "name": "Barboach",
+        "num": 339,
+        "baseStats": {
+            "atk": 48,
+            "def": 43,
+            "hp": 50,
+            "spa": 46,
+            "spd": 41,
+            "spe": 60
+        }
+    },
+    "bayleef": {
+        "name": "Bayleef",
+        "num": 153,
+        "baseStats": {
+            "atk": 62,
+            "def": 80,
+            "hp": 60,
+            "spa": 63,
+            "spd": 80,
+            "spe": 60
+        }
+    },
+    "beautifly": {
+        "name": "Beautifly",
+        "num": 267,
+        "baseStats": {
+            "atk": 70,
+            "def": 50,
+            "hp": 60,
+            "spa": 90,
+            "spd": 50,
+            "spe": 65
+        }
+    },
+    "beedrill": {
+        "name": "Beedrill",
+        "num": 15,
+        "baseStats": {
+            "atk": 80,
+            "def": 40,
+            "hp": 65,
+            "spa": 45,
+            "spd": 80,
+            "spe": 75
+        }
+    },
+    "beldum": {
+        "name": "Beldum",
+        "num": 374,
+        "baseStats": {
+            "atk": 55,
+            "def": 80,
+            "hp": 40,
+            "spa": 35,
+            "spd": 60,
+            "spe": 30
+        }
+    },
+    "bellossom": {
+        "name": "Bellossom",
+        "num": 182,
+        "baseStats": {
+            "atk": 80,
+            "def": 85,
+            "hp": 75,
+            "spa": 90,
+            "spd": 100,
+            "spe": 50
+        }
+    },
+    "bellsprout": {
+        "name": "Bellsprout",
+        "num": 69,
+        "baseStats": {
+            "atk": 75,
+            "def": 35,
+            "hp": 50,
+            "spa": 70,
+            "spd": 30,
+            "spe": 40
+        }
+    },
+    "blastoise": {
+        "name": "Blastoise",
+        "num": 9,
+        "baseStats": {
+            "atk": 83,
+            "def": 100,
+            "hp": 79,
+            "spa": 85,
+            "spd": 105,
+            "spe": 78
+        }
+    },
+    "blaziken": {
+        "name": "Blaziken",
+        "num": 257,
+        "baseStats": {
+            "atk": 120,
+            "def": 70,
+            "hp": 80,
+            "spa": 110,
+            "spd": 70,
+            "spe": 80
+        }
+    },
+    "blissey": {
+        "name": "Blissey",
+        "num": 242,
+        "baseStats": {
+            "atk": 10,
+            "def": 10,
+            "hp": 255,
+            "spa": 75,
+            "spd": 135,
+            "spe": 55
+        }
+    },
+    "breloom": {
+        "name": "Breloom",
+        "num": 286,
+        "baseStats": {
+            "atk": 130,
+            "def": 80,
+            "hp": 60,
+            "spa": 60,
+            "spd": 60,
+            "spe": 70
+        }
+    },
+    "bulbasaur": {
+        "name": "Bulbasaur",
+        "num": 1,
+        "baseStats": {
+            "atk": 49,
+            "def": 49,
+            "hp": 45,
+            "spa": 65,
+            "spd": 65,
+            "spe": 45
+        }
+    },
+    "butterfree": {
+        "name": "Butterfree",
+        "num": 12,
+        "baseStats": {
+            "atk": 45,
+            "def": 50,
+            "hp": 60,
+            "spa": 80,
+            "spd": 80,
+            "spe": 70
+        }
+    },
+    "cacnea": {
+        "name": "Cacnea",
+        "num": 331,
+        "baseStats": {
+            "atk": 85,
+            "def": 40,
+            "hp": 50,
+            "spa": 85,
+            "spd": 40,
+            "spe": 35
+        }
+    },
+    "cacturne": {
+        "name": "Cacturne",
+        "num": 332,
+        "baseStats": {
+            "atk": 115,
+            "def": 60,
+            "hp": 70,
+            "spa": 115,
+            "spd": 60,
+            "spe": 55
+        }
+    },
+    "camerupt": {
+        "name": "Camerupt",
+        "num": 323,
+        "baseStats": {
+            "atk": 100,
+            "def": 70,
+            "hp": 70,
+            "spa": 105,
+            "spd": 75,
+            "spe": 40
+        }
+    },
+    "carvanha": {
+        "name": "Carvanha",
+        "num": 318,
+        "baseStats": {
+            "atk": 90,
+            "def": 20,
+            "hp": 45,
+            "spa": 65,
+            "spd": 20,
+            "spe": 65
+        }
+    },
+    "cascoon": {
+        "name": "Cascoon",
+        "num": 268,
+        "baseStats": {
+            "atk": 35,
+            "def": 55,
+            "hp": 50,
+            "spa": 25,
+            "spd": 25,
+            "spe": 15
+        }
+    },
+    "castform": {
+        "name": "Castform",
+        "num": 351,
+        "baseStats": {
+            "atk": 70,
+            "def": 70,
+            "hp": 70,
+            "spa": 70,
+            "spd": 70,
+            "spe": 70
+        }
+    },
+    "caterpie": {
+        "name": "Caterpie",
+        "num": 10,
+        "baseStats": {
+            "atk": 30,
+            "def": 35,
+            "hp": 45,
+            "spa": 20,
+            "spd": 20,
+            "spe": 45
+        }
+    },
+    "celebi": {
+        "name": "Celebi",
+        "num": 251,
+        "baseStats": {
+            "atk": 100,
+            "def": 100,
+            "hp": 100,
+            "spa": 100,
+            "spd": 100,
+            "spe": 100
+        }
+    },
+    "chansey": {
+        "name": "Chansey",
+        "num": 113,
+        "baseStats": {
+            "atk": 5,
+            "def": 5,
+            "hp": 250,
+            "spa": 35,
+            "spd": 105,
+            "spe": 50
+        }
+    },
+    "charizard": {
+        "name": "Charizard",
+        "num": 6,
+        "baseStats": {
+            "atk": 84,
+            "def": 78,
+            "hp": 78,
+            "spa": 109,
+            "spd": 85,
+            "spe": 100
+        }
+    },
+    "charmander": {
+        "name": "Charmander",
+        "num": 4,
+        "baseStats": {
+            "atk": 52,
+            "def": 43,
+            "hp": 39,
+            "spa": 60,
+            "spd": 50,
+            "spe": 65
+        }
+    },
+    "charmeleon": {
+        "name": "Charmeleon",
+        "num": 5,
+        "baseStats": {
+            "atk": 64,
+            "def": 58,
+            "hp": 58,
+            "spa": 80,
+            "spd": 65,
+            "spe": 80
+        }
+    },
+    "chikorita": {
+        "name": "Chikorita",
+        "num": 152,
+        "baseStats": {
+            "atk": 49,
+            "def": 65,
+            "hp": 45,
+            "spa": 49,
+            "spd": 65,
+            "spe": 45
+        }
+    },
+    "chimecho": {
+        "name": "Chimecho",
+        "num": 358,
+        "baseStats": {
+            "atk": 50,
+            "def": 70,
+            "hp": 65,
+            "spa": 95,
+            "spd": 80,
+            "spe": 65
+        }
+    },
+    "chinchou": {
+        "name": "Chinchou",
+        "num": 170,
+        "baseStats": {
+            "atk": 38,
+            "def": 38,
+            "hp": 75,
+            "spa": 56,
+            "spd": 56,
+            "spe": 67
+        }
+    },
+    "clamperl": {
+        "name": "Clamperl",
+        "num": 366,
+        "baseStats": {
+            "atk": 64,
+            "def": 85,
+            "hp": 35,
+            "spa": 74,
+            "spd": 55,
+            "spe": 32
+        }
+    },
+    "claydol": {
+        "name": "Claydol",
+        "num": 344,
+        "baseStats": {
+            "atk": 70,
+            "def": 105,
+            "hp": 60,
+            "spa": 70,
+            "spd": 120,
+            "spe": 75
+        }
+    },
+    "clefable": {
+        "name": "Clefable",
+        "num": 36,
+        "baseStats": {
+            "atk": 70,
+            "def": 73,
+            "hp": 95,
+            "spa": 85,
+            "spd": 90,
+            "spe": 60
+        }
+    },
+    "clefairy": {
+        "name": "Clefairy",
+        "num": 35,
+        "baseStats": {
+            "atk": 45,
+            "def": 48,
+            "hp": 70,
+            "spa": 60,
+            "spd": 65,
+            "spe": 35
+        }
+    },
+    "cleffa": {
+        "name": "Cleffa",
+        "num": 173,
+        "baseStats": {
+            "atk": 25,
+            "def": 28,
+            "hp": 50,
+            "spa": 45,
+            "spd": 55,
+            "spe": 15
+        }
+    },
+    "cloyster": {
+        "name": "Cloyster",
+        "num": 91,
+        "baseStats": {
+            "atk": 95,
+            "def": 180,
+            "hp": 50,
+            "spa": 85,
+            "spd": 45,
+            "spe": 70
+        }
+    },
+    "combusken": {
+        "name": "Combusken",
+        "num": 256,
+        "baseStats": {
+            "atk": 85,
+            "def": 60,
+            "hp": 60,
+            "spa": 85,
+            "spd": 60,
+            "spe": 55
+        }
+    },
+    "corphish": {
+        "name": "Corphish",
+        "num": 341,
+        "baseStats": {
+            "atk": 80,
+            "def": 65,
+            "hp": 43,
+            "spa": 50,
+            "spd": 35,
+            "spe": 35
+        }
+    },
+    "corsola": {
+        "name": "Corsola",
+        "num": 222,
+        "baseStats": {
+            "atk": 55,
+            "def": 85,
+            "hp": 55,
+            "spa": 65,
+            "spd": 85,
+            "spe": 35
+        }
+    },
+    "cradily": {
+        "name": "Cradily",
+        "num": 346,
+        "baseStats": {
+            "atk": 81,
+            "def": 97,
+            "hp": 86,
+            "spa": 81,
+            "spd": 107,
+            "spe": 43
+        }
+    },
+    "crawdaunt": {
+        "name": "Crawdaunt",
+        "num": 342,
+        "baseStats": {
+            "atk": 120,
+            "def": 85,
+            "hp": 63,
+            "spa": 90,
+            "spd": 55,
+            "spe": 55
+        }
+    },
+    "crobat": {
+        "name": "Crobat",
+        "num": 169,
+        "baseStats": {
+            "atk": 90,
+            "def": 80,
+            "hp": 85,
+            "spa": 70,
+            "spd": 80,
+            "spe": 130
+        }
+    },
+    "croconaw": {
+        "name": "Croconaw",
+        "num": 159,
+        "baseStats": {
+            "atk": 80,
+            "def": 80,
+            "hp": 65,
+            "spa": 59,
+            "spd": 63,
+            "spe": 58
+        }
+    },
+    "cubone": {
+        "name": "Cubone",
+        "num": 104,
+        "baseStats": {
+            "atk": 50,
+            "def": 95,
+            "hp": 50,
+            "spa": 40,
+            "spd": 50,
+            "spe": 35
+        }
+    },
+    "cyndaquil": {
+        "name": "Cyndaquil",
+        "num": 155,
+        "baseStats": {
+            "atk": 52,
+            "def": 43,
+            "hp": 39,
+            "spa": 60,
+            "spd": 50,
+            "spe": 65
+        }
+    },
+    "delcatty": {
+        "name": "Delcatty",
+        "num": 301,
+        "baseStats": {
+            "atk": 65,
+            "def": 65,
+            "hp": 70,
+            "spa": 55,
+            "spd": 55,
+            "spe": 70
+        }
+    },
+    "delibird": {
+        "name": "Delibird",
+        "num": 225,
+        "baseStats": {
+            "atk": 55,
+            "def": 45,
+            "hp": 45,
+            "spa": 65,
+            "spd": 45,
+            "spe": 75
+        }
+    },
+    "deoxys": {
+        "name": "Deoxys",
+        "num": 386,
+        "baseStats": {
+            "atk": 150,
+            "def": 50,
+            "hp": 50,
+            "spa": 150,
+            "spd": 50,
+            "spe": 150
+        }
+    },
+    "dewgong": {
+        "name": "Dewgong",
+        "num": 87,
+        "baseStats": {
+            "atk": 70,
+            "def": 80,
+            "hp": 90,
+            "spa": 70,
+            "spd": 95,
+            "spe": 70
+        }
+    },
+    "diglett": {
+        "name": "Diglett",
+        "num": 50,
+        "baseStats": {
+            "atk": 55,
+            "def": 25,
+            "hp": 10,
+            "spa": 35,
+            "spd": 45,
+            "spe": 95
+        }
+    },
+    "ditto": {
+        "name": "Ditto",
+        "num": 132,
+        "baseStats": {
+            "atk": 48,
+            "def": 48,
+            "hp": 48,
+            "spa": 48,
+            "spd": 48,
+            "spe": 48
+        }
+    },
+    "dodrio": {
+        "name": "Dodrio",
+        "num": 85,
+        "baseStats": {
+            "atk": 110,
+            "def": 70,
+            "hp": 60,
+            "spa": 60,
+            "spd": 60,
+            "spe": 100
+        }
+    },
+    "doduo": {
+        "name": "Doduo",
+        "num": 84,
+        "baseStats": {
+            "atk": 85,
+            "def": 45,
+            "hp": 35,
+            "spa": 35,
+            "spd": 35,
+            "spe": 75
+        }
+    },
+    "donphan": {
+        "name": "Donphan",
+        "num": 232,
+        "baseStats": {
+            "atk": 120,
+            "def": 120,
+            "hp": 90,
+            "spa": 60,
+            "spd": 60,
+            "spe": 50
+        }
+    },
+    "dragonair": {
+        "name": "Dragonair",
+        "num": 148,
+        "baseStats": {
+            "atk": 84,
+            "def": 65,
+            "hp": 61,
+            "spa": 70,
+            "spd": 70,
+            "spe": 70
+        }
+    },
+    "dragonite": {
+        "name": "Dragonite",
+        "num": 149,
+        "baseStats": {
+            "atk": 134,
+            "def": 95,
+            "hp": 91,
+            "spa": 100,
+            "spd": 100,
+            "spe": 80
+        }
+    },
+    "dratini": {
+        "name": "Dratini",
+        "num": 147,
+        "baseStats": {
+            "atk": 64,
+            "def": 45,
+            "hp": 41,
+            "spa": 50,
+            "spd": 50,
+            "spe": 50
+        }
+    },
+    "drowzee": {
+        "name": "Drowzee",
+        "num": 96,
+        "baseStats": {
+            "atk": 48,
+            "def": 45,
+            "hp": 60,
+            "spa": 43,
+            "spd": 90,
+            "spe": 42
+        }
+    },
+    "dugtrio": {
+        "name": "Dugtrio",
+        "num": 51,
+        "baseStats": {
+            "atk": 80,
+            "def": 50,
+            "hp": 35,
+            "spa": 50,
+            "spd": 70,
+            "spe": 120
+        }
+    },
+    "dunsparce": {
+        "name": "Dunsparce",
+        "num": 206,
+        "baseStats": {
+            "atk": 70,
+            "def": 70,
+            "hp": 100,
+            "spa": 65,
+            "spd": 65,
+            "spe": 45
+        }
+    },
+    "dusclops": {
+        "name": "Dusclops",
+        "num": 356,
+        "baseStats": {
+            "atk": 70,
+            "def": 130,
+            "hp": 40,
+            "spa": 60,
+            "spd": 130,
+            "spe": 25
+        }
+    },
+    "duskull": {
+        "name": "Duskull",
+        "num": 355,
+        "baseStats": {
+            "atk": 40,
+            "def": 90,
+            "hp": 20,
+            "spa": 30,
+            "spd": 90,
+            "spe": 25
+        }
+    },
+    "dustox": {
+        "name": "Dustox",
+        "num": 269,
+        "baseStats": {
+            "atk": 50,
+            "def": 70,
+            "hp": 60,
+            "spa": 50,
+            "spd": 90,
+            "spe": 65
+        }
+    },
+    "eevee": {
+        "name": "Eevee",
+        "num": 133,
+        "baseStats": {
+            "atk": 55,
+            "def": 50,
+            "hp": 55,
+            "spa": 45,
+            "spd": 65,
+            "spe": 55
+        }
+    },
+    "ekans": {
+        "name": "Ekans",
+        "num": 23,
+        "baseStats": {
+            "atk": 60,
+            "def": 44,
+            "hp": 35,
+            "spa": 40,
+            "spd": 54,
+            "spe": 55
+        }
+    },
+    "electabuzz": {
+        "name": "Electabuzz",
+        "num": 125,
+        "baseStats": {
+            "atk": 83,
+            "def": 57,
+            "hp": 65,
+            "spa": 95,
+            "spd": 85,
+            "spe": 105
+        }
+    },
+    "electrike": {
+        "name": "Electrike",
+        "num": 309,
+        "baseStats": {
+            "atk": 45,
+            "def": 40,
+            "hp": 40,
+            "spa": 65,
+            "spd": 40,
+            "spe": 65
+        }
+    },
+    "electrode": {
+        "name": "Electrode",
+        "num": 101,
+        "baseStats": {
+            "atk": 50,
+            "def": 70,
+            "hp": 60,
+            "spa": 80,
+            "spd": 80,
+            "spe": 140
+        }
+    },
+    "elekid": {
+        "name": "Elekid",
+        "num": 239,
+        "baseStats": {
+            "atk": 63,
+            "def": 37,
+            "hp": 45,
+            "spa": 65,
+            "spd": 55,
+            "spe": 95
+        }
+    },
+    "entei": {
+        "name": "Entei",
+        "num": 244,
+        "baseStats": {
+            "atk": 115,
+            "def": 85,
+            "hp": 115,
+            "spa": 90,
+            "spd": 75,
+            "spe": 100
+        }
+    },
+    "espeon": {
+        "name": "Espeon",
+        "num": 196,
+        "baseStats": {
+            "atk": 65,
+            "def": 60,
+            "hp": 65,
+            "spa": 130,
+            "spd": 95,
+            "spe": 110
+        }
+    },
+    "exeggcute": {
+        "name": "Exeggcute",
+        "num": 102,
+        "baseStats": {
+            "atk": 40,
+            "def": 80,
+            "hp": 60,
+            "spa": 60,
+            "spd": 45,
+            "spe": 40
+        }
+    },
+    "exeggutor": {
+        "name": "Exeggutor",
+        "num": 103,
+        "baseStats": {
+            "atk": 95,
+            "def": 85,
+            "hp": 95,
+            "spa": 125,
+            "spd": 65,
+            "spe": 55
+        }
+    },
+    "exploud": {
+        "name": "Exploud",
+        "num": 295,
+        "baseStats": {
+            "atk": 91,
+            "def": 63,
+            "hp": 104,
+            "spa": 91,
+            "spd": 63,
+            "spe": 68
+        }
+    },
+    "farfetchd": {
+        "name": "Farfetch\u2019d",
+        "num": 83,
+        "baseStats": {
+            "atk": 65,
+            "def": 55,
+            "hp": 52,
+            "spa": 58,
+            "spd": 62,
+            "spe": 60
+        }
+    },
+    "fearow": {
+        "name": "Fearow",
+        "num": 22,
+        "baseStats": {
+            "atk": 90,
+            "def": 65,
+            "hp": 65,
+            "spa": 61,
+            "spd": 61,
+            "spe": 100
+        }
+    },
+    "feebas": {
+        "name": "Feebas",
+        "num": 349,
+        "baseStats": {
+            "atk": 15,
+            "def": 20,
+            "hp": 20,
+            "spa": 10,
+            "spd": 55,
+            "spe": 80
+        }
+    },
+    "feraligatr": {
+        "name": "Feraligatr",
+        "num": 160,
+        "baseStats": {
+            "atk": 105,
+            "def": 100,
+            "hp": 85,
+            "spa": 79,
+            "spd": 83,
+            "spe": 78
+        }
+    },
+    "flaaffy": {
+        "name": "Flaaffy",
+        "num": 180,
+        "baseStats": {
+            "atk": 55,
+            "def": 55,
+            "hp": 70,
+            "spa": 80,
+            "spd": 60,
+            "spe": 45
+        }
+    },
+    "flareon": {
+        "name": "Flareon",
+        "num": 136,
+        "baseStats": {
+            "atk": 130,
+            "def": 60,
+            "hp": 65,
+            "spa": 95,
+            "spd": 110,
+            "spe": 65
+        }
+    },
+    "flygon": {
+        "name": "Flygon",
+        "num": 330,
+        "baseStats": {
+            "atk": 100,
+            "def": 80,
+            "hp": 80,
+            "spa": 80,
+            "spd": 80,
+            "spe": 100
+        }
+    },
+    "forretress": {
+        "name": "Forretress",
+        "num": 205,
+        "baseStats": {
+            "atk": 90,
+            "def": 140,
+            "hp": 75,
+            "spa": 60,
+            "spd": 60,
+            "spe": 40
+        }
+    },
+    "furret": {
+        "name": "Furret",
+        "num": 162,
+        "baseStats": {
+            "atk": 76,
+            "def": 64,
+            "hp": 85,
+            "spa": 45,
+            "spd": 55,
+            "spe": 90
+        }
+    },
+    "gardevoir": {
+        "name": "Gardevoir",
+        "num": 282,
+        "baseStats": {
+            "atk": 65,
+            "def": 65,
+            "hp": 68,
+            "spa": 125,
+            "spd": 115,
+            "spe": 80
+        }
+    },
+    "gastly": {
+        "name": "Gastly",
+        "num": 92,
+        "baseStats": {
+            "atk": 35,
+            "def": 30,
+            "hp": 30,
+            "spa": 100,
+            "spd": 35,
+            "spe": 80
+        }
+    },
+    "gengar": {
+        "name": "Gengar",
+        "num": 94,
+        "baseStats": {
+            "atk": 65,
+            "def": 60,
+            "hp": 60,
+            "spa": 130,
+            "spd": 75,
+            "spe": 110
+        }
+    },
+    "geodude": {
+        "name": "Geodude",
+        "num": 74,
+        "baseStats": {
+            "atk": 80,
+            "def": 100,
+            "hp": 40,
+            "spa": 30,
+            "spd": 30,
+            "spe": 20
+        }
+    },
+    "girafarig": {
+        "name": "Girafarig",
+        "num": 203,
+        "baseStats": {
+            "atk": 80,
+            "def": 65,
+            "hp": 70,
+            "spa": 90,
+            "spd": 65,
+            "spe": 85
+        }
+    },
+    "glalie": {
+        "name": "Glalie",
+        "num": 362,
+        "baseStats": {
+            "atk": 80,
+            "def": 80,
+            "hp": 80,
+            "spa": 80,
+            "spd": 80,
+            "spe": 80
+        }
+    },
+    "gligar": {
+        "name": "Gligar",
+        "num": 207,
+        "baseStats": {
+            "atk": 75,
+            "def": 105,
+            "hp": 65,
+            "spa": 35,
+            "spd": 65,
+            "spe": 85
+        }
+    },
+    "gloom": {
+        "name": "Gloom",
+        "num": 44,
+        "baseStats": {
+            "atk": 65,
+            "def": 70,
+            "hp": 60,
+            "spa": 85,
+            "spd": 75,
+            "spe": 40
+        }
+    },
+    "golbat": {
+        "name": "Golbat",
+        "num": 42,
+        "baseStats": {
+            "atk": 80,
+            "def": 70,
+            "hp": 75,
+            "spa": 65,
+            "spd": 75,
+            "spe": 90
+        }
+    },
+    "goldeen": {
+        "name": "Goldeen",
+        "num": 118,
+        "baseStats": {
+            "atk": 67,
+            "def": 60,
+            "hp": 45,
+            "spa": 35,
+            "spd": 50,
+            "spe": 63
+        }
+    },
+    "golduck": {
+        "name": "Golduck",
+        "num": 55,
+        "baseStats": {
+            "atk": 82,
+            "def": 78,
+            "hp": 80,
+            "spa": 95,
+            "spd": 80,
+            "spe": 85
+        }
+    },
+    "golem": {
+        "name": "Golem",
+        "num": 76,
+        "baseStats": {
+            "atk": 110,
+            "def": 130,
+            "hp": 80,
+            "spa": 55,
+            "spd": 65,
+            "spe": 45
+        }
+    },
+    "gorebyss": {
+        "name": "Gorebyss",
+        "num": 368,
+        "baseStats": {
+            "atk": 84,
+            "def": 105,
+            "hp": 55,
+            "spa": 114,
+            "spd": 75,
+            "spe": 52
+        }
+    },
+    "granbull": {
+        "name": "Granbull",
+        "num": 210,
+        "baseStats": {
+            "atk": 120,
+            "def": 75,
+            "hp": 90,
+            "spa": 60,
+            "spd": 60,
+            "spe": 45
+        }
+    },
+    "graveler": {
+        "name": "Graveler",
+        "num": 75,
+        "baseStats": {
+            "atk": 95,
+            "def": 115,
+            "hp": 55,
+            "spa": 45,
+            "spd": 45,
+            "spe": 35
+        }
+    },
+    "grimer": {
+        "name": "Grimer",
+        "num": 88,
+        "baseStats": {
+            "atk": 80,
+            "def": 50,
+            "hp": 80,
+            "spa": 40,
+            "spd": 50,
+            "spe": 25
+        }
+    },
+    "groudon": {
+        "name": "Groudon",
+        "num": 383,
+        "baseStats": {
+            "atk": 150,
+            "def": 140,
+            "hp": 100,
+            "spa": 100,
+            "spd": 90,
+            "spe": 90
+        }
+    },
+    "grovyle": {
+        "name": "Grovyle",
+        "num": 253,
+        "baseStats": {
+            "atk": 65,
+            "def": 45,
+            "hp": 50,
+            "spa": 85,
+            "spd": 65,
+            "spe": 95
+        }
+    },
+    "growlithe": {
+        "name": "Growlithe",
+        "num": 58,
+        "baseStats": {
+            "atk": 70,
+            "def": 45,
+            "hp": 55,
+            "spa": 70,
+            "spd": 50,
+            "spe": 60
+        }
+    },
+    "grumpig": {
+        "name": "Grumpig",
+        "num": 326,
+        "baseStats": {
+            "atk": 45,
+            "def": 65,
+            "hp": 80,
+            "spa": 90,
+            "spd": 110,
+            "spe": 80
+        }
+    },
+    "gulpin": {
+        "name": "Gulpin",
+        "num": 316,
+        "baseStats": {
+            "atk": 43,
+            "def": 53,
+            "hp": 70,
+            "spa": 43,
+            "spd": 53,
+            "spe": 40
+        }
+    },
+    "gyarados": {
+        "name": "Gyarados",
+        "num": 130,
+        "baseStats": {
+            "atk": 125,
+            "def": 79,
+            "hp": 95,
+            "spa": 60,
+            "spd": 100,
+            "spe": 81
+        }
+    },
+    "hariyama": {
+        "name": "Hariyama",
+        "num": 297,
+        "baseStats": {
+            "atk": 120,
+            "def": 60,
+            "hp": 144,
+            "spa": 40,
+            "spd": 60,
+            "spe": 50
+        }
+    },
+    "haunter": {
+        "name": "Haunter",
+        "num": 93,
+        "baseStats": {
+            "atk": 50,
+            "def": 45,
+            "hp": 45,
+            "spa": 115,
+            "spd": 55,
+            "spe": 95
+        }
+    },
+    "heracross": {
+        "name": "Heracross",
+        "num": 214,
+        "baseStats": {
+            "atk": 125,
+            "def": 75,
+            "hp": 80,
+            "spa": 40,
+            "spd": 95,
+            "spe": 85
+        }
+    },
+    "hitmonchan": {
+        "name": "Hitmonchan",
+        "num": 107,
+        "baseStats": {
+            "atk": 105,
+            "def": 79,
+            "hp": 50,
+            "spa": 35,
+            "spd": 110,
+            "spe": 76
+        }
+    },
+    "hitmonlee": {
+        "name": "Hitmonlee",
+        "num": 106,
+        "baseStats": {
+            "atk": 120,
+            "def": 53,
+            "hp": 50,
+            "spa": 35,
+            "spd": 110,
+            "spe": 87
+        }
+    },
+    "hitmontop": {
+        "name": "Hitmontop",
+        "num": 237,
+        "baseStats": {
+            "atk": 95,
+            "def": 95,
+            "hp": 50,
+            "spa": 35,
+            "spd": 110,
+            "spe": 70
+        }
+    },
+    "hooh": {
+        "name": "Ho-Oh",
+        "num": 250,
+        "baseStats": {
+            "atk": 130,
+            "def": 90,
+            "hp": 106,
+            "spa": 110,
+            "spd": 154,
+            "spe": 90
+        }
+    },
+    "hoothoot": {
+        "name": "Hoothoot",
+        "num": 163,
+        "baseStats": {
+            "atk": 30,
+            "def": 30,
+            "hp": 60,
+            "spa": 36,
+            "spd": 56,
+            "spe": 50
+        }
+    },
+    "hoppip": {
+        "name": "Hoppip",
+        "num": 187,
+        "baseStats": {
+            "atk": 35,
+            "def": 40,
+            "hp": 35,
+            "spa": 35,
+            "spd": 55,
+            "spe": 50
+        }
+    },
+    "horsea": {
+        "name": "Horsea",
+        "num": 116,
+        "baseStats": {
+            "atk": 40,
+            "def": 70,
+            "hp": 30,
+            "spa": 70,
+            "spd": 25,
+            "spe": 60
+        }
+    },
+    "houndoom": {
+        "name": "Houndoom",
+        "num": 229,
+        "baseStats": {
+            "atk": 90,
+            "def": 50,
+            "hp": 75,
+            "spa": 110,
+            "spd": 80,
+            "spe": 95
+        }
+    },
+    "houndour": {
+        "name": "Houndour",
+        "num": 228,
+        "baseStats": {
+            "atk": 60,
+            "def": 30,
+            "hp": 45,
+            "spa": 80,
+            "spd": 50,
+            "spe": 65
+        }
+    },
+    "huntail": {
+        "name": "Huntail",
+        "num": 367,
+        "baseStats": {
+            "atk": 104,
+            "def": 105,
+            "hp": 55,
+            "spa": 94,
+            "spd": 75,
+            "spe": 52
+        }
+    },
+    "hypno": {
+        "name": "Hypno",
+        "num": 97,
+        "baseStats": {
+            "atk": 73,
+            "def": 70,
+            "hp": 85,
+            "spa": 73,
+            "spd": 115,
+            "spe": 67
+        }
+    },
+    "igglybuff": {
+        "name": "Igglybuff",
+        "num": 174,
+        "baseStats": {
+            "atk": 30,
+            "def": 15,
+            "hp": 90,
+            "spa": 40,
+            "spd": 20,
+            "spe": 15
+        }
+    },
+    "illumise": {
+        "name": "Illumise",
+        "num": 314,
+        "baseStats": {
+            "atk": 47,
+            "def": 55,
+            "hp": 65,
+            "spa": 73,
+            "spd": 75,
+            "spe": 85
+        }
+    },
+    "ivysaur": {
+        "name": "Ivysaur",
+        "num": 2,
+        "baseStats": {
+            "atk": 62,
+            "def": 63,
+            "hp": 60,
+            "spa": 80,
+            "spd": 80,
+            "spe": 60
+        }
+    },
+    "jigglypuff": {
+        "name": "Jigglypuff",
+        "num": 39,
+        "baseStats": {
+            "atk": 45,
+            "def": 20,
+            "hp": 115,
+            "spa": 45,
+            "spd": 25,
+            "spe": 20
+        }
+    },
+    "jirachi": {
+        "name": "Jirachi",
+        "num": 385,
+        "baseStats": {
+            "atk": 100,
+            "def": 100,
+            "hp": 100,
+            "spa": 100,
+            "spd": 100,
+            "spe": 100
+        }
+    },
+    "jolteon": {
+        "name": "Jolteon",
+        "num": 135,
+        "baseStats": {
+            "atk": 65,
+            "def": 60,
+            "hp": 65,
+            "spa": 110,
+            "spd": 95,
+            "spe": 130
+        }
+    },
+    "jumpluff": {
+        "name": "Jumpluff",
+        "num": 189,
+        "baseStats": {
+            "atk": 55,
+            "def": 70,
+            "hp": 75,
+            "spa": 55,
+            "spd": 85,
+            "spe": 110
+        }
+    },
+    "jynx": {
+        "name": "Jynx",
+        "num": 124,
+        "baseStats": {
+            "atk": 50,
+            "def": 35,
+            "hp": 65,
+            "spa": 115,
+            "spd": 95,
+            "spe": 95
+        }
+    },
+    "kabuto": {
+        "name": "Kabuto",
+        "num": 140,
+        "baseStats": {
+            "atk": 80,
+            "def": 90,
+            "hp": 30,
+            "spa": 55,
+            "spd": 45,
+            "spe": 55
+        }
+    },
+    "kabutops": {
+        "name": "Kabutops",
+        "num": 141,
+        "baseStats": {
+            "atk": 115,
+            "def": 105,
+            "hp": 60,
+            "spa": 65,
+            "spd": 70,
+            "spe": 80
+        }
+    },
+    "kadabra": {
+        "name": "Kadabra",
+        "num": 64,
+        "baseStats": {
+            "atk": 35,
+            "def": 30,
+            "hp": 40,
+            "spa": 120,
+            "spd": 70,
+            "spe": 105
+        }
+    },
+    "kakuna": {
+        "name": "Kakuna",
+        "num": 14,
+        "baseStats": {
+            "atk": 25,
+            "def": 50,
+            "hp": 45,
+            "spa": 25,
+            "spd": 25,
+            "spe": 35
+        }
+    },
+    "kangaskhan": {
+        "name": "Kangaskhan",
+        "num": 115,
+        "baseStats": {
+            "atk": 95,
+            "def": 80,
+            "hp": 105,
+            "spa": 40,
+            "spd": 80,
+            "spe": 90
+        }
+    },
+    "kecleon": {
+        "name": "Kecleon",
+        "num": 352,
+        "baseStats": {
+            "atk": 90,
+            "def": 70,
+            "hp": 60,
+            "spa": 60,
+            "spd": 120,
+            "spe": 40
+        }
+    },
+    "kingdra": {
+        "name": "Kingdra",
+        "num": 230,
+        "baseStats": {
+            "atk": 95,
+            "def": 95,
+            "hp": 75,
+            "spa": 95,
+            "spd": 95,
+            "spe": 85
+        }
+    },
+    "kingler": {
+        "name": "Kingler",
+        "num": 99,
+        "baseStats": {
+            "atk": 130,
+            "def": 115,
+            "hp": 55,
+            "spa": 50,
+            "spd": 50,
+            "spe": 75
+        }
+    },
+    "kirlia": {
+        "name": "Kirlia",
+        "num": 281,
+        "baseStats": {
+            "atk": 35,
+            "def": 35,
+            "hp": 38,
+            "spa": 65,
+            "spd": 55,
+            "spe": 50
+        }
+    },
+    "koffing": {
+        "name": "Koffing",
+        "num": 109,
+        "baseStats": {
+            "atk": 65,
+            "def": 95,
+            "hp": 40,
+            "spa": 60,
+            "spd": 45,
+            "spe": 35
+        }
+    },
+    "krabby": {
+        "name": "Krabby",
+        "num": 98,
+        "baseStats": {
+            "atk": 105,
+            "def": 90,
+            "hp": 30,
+            "spa": 25,
+            "spd": 25,
+            "spe": 50
+        }
+    },
+    "kyogre": {
+        "name": "Kyogre",
+        "num": 382,
+        "baseStats": {
+            "atk": 100,
+            "def": 90,
+            "hp": 100,
+            "spa": 150,
+            "spd": 140,
+            "spe": 90
+        }
+    },
+    "lairon": {
+        "name": "Lairon",
+        "num": 305,
+        "baseStats": {
+            "atk": 90,
+            "def": 140,
+            "hp": 60,
+            "spa": 50,
+            "spd": 50,
+            "spe": 40
+        }
+    },
+    "lanturn": {
+        "name": "Lanturn",
+        "num": 171,
+        "baseStats": {
+            "atk": 58,
+            "def": 58,
+            "hp": 125,
+            "spa": 76,
+            "spd": 76,
+            "spe": 67
+        }
+    },
+    "lapras": {
+        "name": "Lapras",
+        "num": 131,
+        "baseStats": {
+            "atk": 85,
+            "def": 80,
+            "hp": 130,
+            "spa": 85,
+            "spd": 95,
+            "spe": 60
+        }
+    },
+    "larvitar": {
+        "name": "Larvitar",
+        "num": 246,
+        "baseStats": {
+            "atk": 64,
+            "def": 50,
+            "hp": 50,
+            "spa": 45,
+            "spd": 50,
+            "spe": 41
+        }
+    },
+    "latias": {
+        "name": "Latias",
+        "num": 380,
+        "baseStats": {
+            "atk": 80,
+            "def": 90,
+            "hp": 80,
+            "spa": 110,
+            "spd": 130,
+            "spe": 110
+        }
+    },
+    "latios": {
+        "name": "Latios",
+        "num": 381,
+        "baseStats": {
+            "atk": 90,
+            "def": 80,
+            "hp": 80,
+            "spa": 130,
+            "spd": 110,
+            "spe": 110
+        }
+    },
+    "ledian": {
+        "name": "Ledian",
+        "num": 166,
+        "baseStats": {
+            "atk": 35,
+            "def": 50,
+            "hp": 55,
+            "spa": 55,
+            "spd": 110,
+            "spe": 85
+        }
+    },
+    "ledyba": {
+        "name": "Ledyba",
+        "num": 165,
+        "baseStats": {
+            "atk": 20,
+            "def": 30,
+            "hp": 40,
+            "spa": 40,
+            "spd": 80,
+            "spe": 55
+        }
+    },
+    "lickitung": {
+        "name": "Lickitung",
+        "num": 108,
+        "baseStats": {
+            "atk": 55,
+            "def": 75,
+            "hp": 90,
+            "spa": 60,
+            "spd": 75,
+            "spe": 30
+        }
+    },
+    "lileep": {
+        "name": "Lileep",
+        "num": 345,
+        "baseStats": {
+            "atk": 41,
+            "def": 77,
+            "hp": 66,
+            "spa": 61,
+            "spd": 87,
+            "spe": 23
+        }
+    },
+    "linoone": {
+        "name": "Linoone",
+        "num": 264,
+        "baseStats": {
+            "atk": 70,
+            "def": 61,
+            "hp": 78,
+            "spa": 50,
+            "spd": 61,
+            "spe": 100
+        }
+    },
+    "lombre": {
+        "name": "Lombre",
+        "num": 271,
+        "baseStats": {
+            "atk": 50,
+            "def": 50,
+            "hp": 60,
+            "spa": 60,
+            "spd": 70,
+            "spe": 50
+        }
+    },
+    "lotad": {
+        "name": "Lotad",
+        "num": 270,
+        "baseStats": {
+            "atk": 30,
+            "def": 30,
+            "hp": 40,
+            "spa": 40,
+            "spd": 50,
+            "spe": 30
+        }
+    },
+    "loudred": {
+        "name": "Loudred",
+        "num": 294,
+        "baseStats": {
+            "atk": 71,
+            "def": 43,
+            "hp": 84,
+            "spa": 71,
+            "spd": 43,
+            "spe": 48
+        }
+    },
+    "ludicolo": {
+        "name": "Ludicolo",
+        "num": 272,
+        "baseStats": {
+            "atk": 70,
+            "def": 70,
+            "hp": 80,
+            "spa": 90,
+            "spd": 100,
+            "spe": 70
+        }
+    },
+    "lugia": {
+        "name": "Lugia",
+        "num": 249,
+        "baseStats": {
+            "atk": 90,
+            "def": 130,
+            "hp": 106,
+            "spa": 90,
+            "spd": 154,
+            "spe": 110
+        }
+    },
+    "lunatone": {
+        "name": "Lunatone",
+        "num": 337,
+        "baseStats": {
+            "atk": 55,
+            "def": 65,
+            "hp": 70,
+            "spa": 95,
+            "spd": 85,
+            "spe": 70
+        }
+    },
+    "luvdisc": {
+        "name": "Luvdisc",
+        "num": 370,
+        "baseStats": {
+            "atk": 30,
+            "def": 55,
+            "hp": 43,
+            "spa": 40,
+            "spd": 65,
+            "spe": 97
+        }
+    },
+    "machamp": {
+        "name": "Machamp",
+        "num": 68,
+        "baseStats": {
+            "atk": 130,
+            "def": 80,
+            "hp": 90,
+            "spa": 65,
+            "spd": 85,
+            "spe": 55
+        }
+    },
+    "machoke": {
+        "name": "Machoke",
+        "num": 67,
+        "baseStats": {
+            "atk": 100,
+            "def": 70,
+            "hp": 80,
+            "spa": 50,
+            "spd": 60,
+            "spe": 45
+        }
+    },
+    "machop": {
+        "name": "Machop",
+        "num": 66,
+        "baseStats": {
+            "atk": 80,
+            "def": 50,
+            "hp": 70,
+            "spa": 35,
+            "spd": 35,
+            "spe": 35
+        }
+    },
+    "magby": {
+        "name": "Magby",
+        "num": 240,
+        "baseStats": {
+            "atk": 75,
+            "def": 37,
+            "hp": 45,
+            "spa": 70,
+            "spd": 55,
+            "spe": 83
+        }
+    },
+    "magcargo": {
+        "name": "Magcargo",
+        "num": 219,
+        "baseStats": {
+            "atk": 50,
+            "def": 120,
+            "hp": 50,
+            "spa": 80,
+            "spd": 80,
+            "spe": 30
+        }
+    },
+    "magikarp": {
+        "name": "Magikarp",
+        "num": 129,
+        "baseStats": {
+            "atk": 10,
+            "def": 55,
+            "hp": 20,
+            "spa": 15,
+            "spd": 20,
+            "spe": 80
+        }
+    },
+    "magmar": {
+        "name": "Magmar",
+        "num": 126,
+        "baseStats": {
+            "atk": 95,
+            "def": 57,
+            "hp": 65,
+            "spa": 100,
+            "spd": 85,
+            "spe": 93
+        }
+    },
+    "magnemite": {
+        "name": "Magnemite",
+        "num": 81,
+        "baseStats": {
+            "atk": 35,
+            "def": 70,
+            "hp": 25,
+            "spa": 95,
+            "spd": 55,
+            "spe": 45
+        }
+    },
+    "magneton": {
+        "name": "Magneton",
+        "num": 82,
+        "baseStats": {
+            "atk": 60,
+            "def": 95,
+            "hp": 50,
+            "spa": 120,
+            "spd": 70,
+            "spe": 70
+        }
+    },
+    "makuhita": {
+        "name": "Makuhita",
+        "num": 296,
+        "baseStats": {
+            "atk": 60,
+            "def": 30,
+            "hp": 72,
+            "spa": 20,
+            "spd": 30,
+            "spe": 25
+        }
+    },
+    "manectric": {
+        "name": "Manectric",
+        "num": 310,
+        "baseStats": {
+            "atk": 75,
+            "def": 60,
+            "hp": 70,
+            "spa": 105,
+            "spd": 60,
+            "spe": 105
+        }
+    },
+    "mankey": {
+        "name": "Mankey",
+        "num": 56,
+        "baseStats": {
+            "atk": 80,
+            "def": 35,
+            "hp": 40,
+            "spa": 35,
+            "spd": 45,
+            "spe": 70
+        }
+    },
+    "mantine": {
+        "name": "Mantine",
+        "num": 226,
+        "baseStats": {
+            "atk": 40,
+            "def": 70,
+            "hp": 65,
+            "spa": 80,
+            "spd": 140,
+            "spe": 70
+        }
+    },
+    "mareep": {
+        "name": "Mareep",
+        "num": 179,
+        "baseStats": {
+            "atk": 40,
+            "def": 40,
+            "hp": 55,
+            "spa": 65,
+            "spd": 45,
+            "spe": 35
+        }
+    },
+    "marill": {
+        "name": "Marill",
+        "num": 183,
+        "baseStats": {
+            "atk": 20,
+            "def": 50,
+            "hp": 70,
+            "spa": 20,
+            "spd": 50,
+            "spe": 40
+        }
+    },
+    "marowak": {
+        "name": "Marowak",
+        "num": 105,
+        "baseStats": {
+            "atk": 80,
+            "def": 110,
+            "hp": 60,
+            "spa": 50,
+            "spd": 80,
+            "spe": 45
+        }
+    },
+    "marshtomp": {
+        "name": "Marshtomp",
+        "num": 259,
+        "baseStats": {
+            "atk": 85,
+            "def": 70,
+            "hp": 70,
+            "spa": 60,
+            "spd": 70,
+            "spe": 50
+        }
+    },
+    "masquerain": {
+        "name": "Masquerain",
+        "num": 284,
+        "baseStats": {
+            "atk": 60,
+            "def": 62,
+            "hp": 70,
+            "spa": 80,
+            "spd": 82,
+            "spe": 60
+        }
+    },
+    "mawile": {
+        "name": "Mawile",
+        "num": 303,
+        "baseStats": {
+            "atk": 85,
+            "def": 85,
+            "hp": 50,
+            "spa": 55,
+            "spd": 55,
+            "spe": 50
+        }
+    },
+    "medicham": {
+        "name": "Medicham",
+        "num": 308,
+        "baseStats": {
+            "atk": 60,
+            "def": 75,
+            "hp": 60,
+            "spa": 60,
+            "spd": 75,
+            "spe": 80
+        }
+    },
+    "meditite": {
+        "name": "Meditite",
+        "num": 307,
+        "baseStats": {
+            "atk": 40,
+            "def": 55,
+            "hp": 30,
+            "spa": 40,
+            "spd": 55,
+            "spe": 60
+        }
+    },
+    "meganium": {
+        "name": "Meganium",
+        "num": 154,
+        "baseStats": {
+            "atk": 82,
+            "def": 100,
+            "hp": 80,
+            "spa": 83,
+            "spd": 100,
+            "spe": 80
+        }
+    },
+    "meowth": {
+        "name": "Meowth",
+        "num": 52,
+        "baseStats": {
+            "atk": 45,
+            "def": 35,
+            "hp": 40,
+            "spa": 40,
+            "spd": 40,
+            "spe": 90
+        }
+    },
+    "metagross": {
+        "name": "Metagross",
+        "num": 376,
+        "baseStats": {
+            "atk": 135,
+            "def": 130,
+            "hp": 80,
+            "spa": 95,
+            "spd": 90,
+            "spe": 70
+        }
+    },
+    "metang": {
+        "name": "Metang",
+        "num": 375,
+        "baseStats": {
+            "atk": 75,
+            "def": 100,
+            "hp": 60,
+            "spa": 55,
+            "spd": 80,
+            "spe": 50
+        }
+    },
+    "metapod": {
+        "name": "Metapod",
+        "num": 11,
+        "baseStats": {
+            "atk": 20,
+            "def": 55,
+            "hp": 50,
+            "spa": 25,
+            "spd": 25,
+            "spe": 30
+        }
+    },
+    "mew": {
+        "name": "Mew",
+        "num": 151,
+        "baseStats": {
+            "atk": 100,
+            "def": 100,
+            "hp": 100,
+            "spa": 100,
+            "spd": 100,
+            "spe": 100
+        }
+    },
+    "mewtwo": {
+        "name": "Mewtwo",
+        "num": 150,
+        "baseStats": {
+            "atk": 110,
+            "def": 90,
+            "hp": 106,
+            "spa": 154,
+            "spd": 90,
+            "spe": 130
+        }
+    },
+    "mightyena": {
+        "name": "Mightyena",
+        "num": 262,
+        "baseStats": {
+            "atk": 90,
+            "def": 70,
+            "hp": 70,
+            "spa": 60,
+            "spd": 60,
+            "spe": 70
+        }
+    },
+    "milotic": {
+        "name": "Milotic",
+        "num": 350,
+        "baseStats": {
+            "atk": 60,
+            "def": 79,
+            "hp": 95,
+            "spa": 100,
+            "spd": 125,
+            "spe": 81
+        }
+    },
+    "miltank": {
+        "name": "Miltank",
+        "num": 241,
+        "baseStats": {
+            "atk": 80,
+            "def": 105,
+            "hp": 95,
+            "spa": 40,
+            "spd": 70,
+            "spe": 100
+        }
+    },
+    "minun": {
+        "name": "Minun",
+        "num": 312,
+        "baseStats": {
+            "atk": 40,
+            "def": 50,
+            "hp": 60,
+            "spa": 75,
+            "spd": 85,
+            "spe": 95
+        }
+    },
+    "misdreavus": {
+        "name": "Misdreavus",
+        "num": 200,
+        "baseStats": {
+            "atk": 60,
+            "def": 60,
+            "hp": 60,
+            "spa": 85,
+            "spd": 85,
+            "spe": 85
+        }
+    },
+    "moltres": {
+        "name": "Moltres",
+        "num": 146,
+        "baseStats": {
+            "atk": 100,
+            "def": 90,
+            "hp": 90,
+            "spa": 125,
+            "spd": 85,
+            "spe": 90
+        }
+    },
+    "mrmime": {
+        "name": "Mr. Mime",
+        "num": 122,
+        "baseStats": {
+            "atk": 45,
+            "def": 65,
+            "hp": 40,
+            "spa": 100,
+            "spd": 120,
+            "spe": 90
+        }
+    },
+    "mudkip": {
+        "name": "Mudkip",
+        "num": 258,
+        "baseStats": {
+            "atk": 70,
+            "def": 50,
+            "hp": 50,
+            "spa": 50,
+            "spd": 50,
+            "spe": 40
+        }
+    },
+    "muk": {
+        "name": "Muk",
+        "num": 89,
+        "baseStats": {
+            "atk": 105,
+            "def": 75,
+            "hp": 105,
+            "spa": 65,
+            "spd": 100,
+            "spe": 50
+        }
+    },
+    "murkrow": {
+        "name": "Murkrow",
+        "num": 198,
+        "baseStats": {
+            "atk": 85,
+            "def": 42,
+            "hp": 60,
+            "spa": 85,
+            "spd": 42,
+            "spe": 91
+        }
+    },
+    "natu": {
+        "name": "Natu",
+        "num": 177,
+        "baseStats": {
+            "atk": 50,
+            "def": 45,
+            "hp": 40,
+            "spa": 70,
+            "spd": 45,
+            "spe": 70
+        }
+    },
+    "nidoking": {
+        "name": "Nidoking",
+        "num": 34,
+        "baseStats": {
+            "atk": 92,
+            "def": 77,
+            "hp": 81,
+            "spa": 85,
+            "spd": 75,
+            "spe": 85
+        }
+    },
+    "nidoqueen": {
+        "name": "Nidoqueen",
+        "num": 31,
+        "baseStats": {
+            "atk": 82,
+            "def": 87,
+            "hp": 90,
+            "spa": 75,
+            "spd": 85,
+            "spe": 76
+        }
+    },
+    "nidoranf": {
+        "name": "Nidoran-F",
+        "num": 29,
+        "baseStats": {
+            "atk": 47,
+            "def": 52,
+            "hp": 55,
+            "spa": 40,
+            "spd": 40,
+            "spe": 41
+        }
+    },
+    "nidoranm": {
+        "name": "Nidoran-M",
+        "num": 32,
+        "baseStats": {
+            "atk": 57,
+            "def": 40,
+            "hp": 46,
+            "spa": 40,
+            "spd": 40,
+            "spe": 50
+        }
+    },
+    "nidorina": {
+        "name": "Nidorina",
+        "num": 30,
+        "baseStats": {
+            "atk": 62,
+            "def": 67,
+            "hp": 70,
+            "spa": 55,
+            "spd": 55,
+            "spe": 56
+        }
+    },
+    "nidorino": {
+        "name": "Nidorino",
+        "num": 33,
+        "baseStats": {
+            "atk": 72,
+            "def": 57,
+            "hp": 61,
+            "spa": 55,
+            "spd": 55,
+            "spe": 65
+        }
+    },
+    "nincada": {
+        "name": "Nincada",
+        "num": 290,
+        "baseStats": {
+            "atk": 45,
+            "def": 90,
+            "hp": 31,
+            "spa": 30,
+            "spd": 30,
+            "spe": 40
+        }
+    },
+    "ninetales": {
+        "name": "Ninetales",
+        "num": 38,
+        "baseStats": {
+            "atk": 76,
+            "def": 75,
+            "hp": 73,
+            "spa": 81,
+            "spd": 100,
+            "spe": 100
+        }
+    },
+    "ninjask": {
+        "name": "Ninjask",
+        "num": 291,
+        "baseStats": {
+            "atk": 90,
+            "def": 45,
+            "hp": 61,
+            "spa": 50,
+            "spd": 50,
+            "spe": 160
+        }
+    },
+    "noctowl": {
+        "name": "Noctowl",
+        "num": 164,
+        "baseStats": {
+            "atk": 50,
+            "def": 50,
+            "hp": 100,
+            "spa": 76,
+            "spd": 96,
+            "spe": 70
+        }
+    },
+    "nosepass": {
+        "name": "Nosepass",
+        "num": 299,
+        "baseStats": {
+            "atk": 45,
+            "def": 135,
+            "hp": 30,
+            "spa": 45,
+            "spd": 90,
+            "spe": 30
+        }
+    },
+    "numel": {
+        "name": "Numel",
+        "num": 322,
+        "baseStats": {
+            "atk": 60,
+            "def": 40,
+            "hp": 60,
+            "spa": 65,
+            "spd": 45,
+            "spe": 35
+        }
+    },
+    "nuzleaf": {
+        "name": "Nuzleaf",
+        "num": 274,
+        "baseStats": {
+            "atk": 70,
+            "def": 40,
+            "hp": 70,
+            "spa": 60,
+            "spd": 40,
+            "spe": 60
+        }
+    },
+    "octillery": {
+        "name": "Octillery",
+        "num": 224,
+        "baseStats": {
+            "atk": 105,
+            "def": 75,
+            "hp": 75,
+            "spa": 105,
+            "spd": 75,
+            "spe": 45
+        }
+    },
+    "oddish": {
+        "name": "Oddish",
+        "num": 43,
+        "baseStats": {
+            "atk": 50,
+            "def": 55,
+            "hp": 45,
+            "spa": 75,
+            "spd": 65,
+            "spe": 30
+        }
+    },
+    "omanyte": {
+        "name": "Omanyte",
+        "num": 138,
+        "baseStats": {
+            "atk": 40,
+            "def": 100,
+            "hp": 35,
+            "spa": 90,
+            "spd": 55,
+            "spe": 35
+        }
+    },
+    "omastar": {
+        "name": "Omastar",
+        "num": 139,
+        "baseStats": {
+            "atk": 60,
+            "def": 125,
+            "hp": 70,
+            "spa": 115,
+            "spd": 70,
+            "spe": 55
+        }
+    },
+    "onix": {
+        "name": "Onix",
+        "num": 95,
+        "baseStats": {
+            "atk": 45,
+            "def": 160,
+            "hp": 35,
+            "spa": 30,
+            "spd": 45,
+            "spe": 70
+        }
+    },
+    "paras": {
+        "name": "Paras",
+        "num": 46,
+        "baseStats": {
+            "atk": 70,
+            "def": 55,
+            "hp": 35,
+            "spa": 45,
+            "spd": 55,
+            "spe": 25
+        }
+    },
+    "parasect": {
+        "name": "Parasect",
+        "num": 47,
+        "baseStats": {
+            "atk": 95,
+            "def": 80,
+            "hp": 60,
+            "spa": 60,
+            "spd": 80,
+            "spe": 30
+        }
+    },
+    "pelipper": {
+        "name": "Pelipper",
+        "num": 279,
+        "baseStats": {
+            "atk": 50,
+            "def": 100,
+            "hp": 60,
+            "spa": 85,
+            "spd": 70,
+            "spe": 65
+        }
+    },
+    "persian": {
+        "name": "Persian",
+        "num": 53,
+        "baseStats": {
+            "atk": 70,
+            "def": 60,
+            "hp": 65,
+            "spa": 65,
+            "spd": 65,
+            "spe": 115
+        }
+    },
+    "phanpy": {
+        "name": "Phanpy",
+        "num": 231,
+        "baseStats": {
+            "atk": 60,
+            "def": 60,
+            "hp": 90,
+            "spa": 40,
+            "spd": 40,
+            "spe": 40
+        }
+    },
+    "pichu": {
+        "name": "Pichu",
+        "num": 172,
+        "baseStats": {
+            "atk": 40,
+            "def": 15,
+            "hp": 20,
+            "spa": 35,
+            "spd": 35,
+            "spe": 60
+        }
+    },
+    "pidgeot": {
+        "name": "Pidgeot",
+        "num": 18,
+        "baseStats": {
+            "atk": 80,
+            "def": 75,
+            "hp": 83,
+            "spa": 70,
+            "spd": 70,
+            "spe": 91
+        }
+    },
+    "pidgeotto": {
+        "name": "Pidgeotto",
+        "num": 17,
+        "baseStats": {
+            "atk": 60,
+            "def": 55,
+            "hp": 63,
+            "spa": 50,
+            "spd": 50,
+            "spe": 71
+        }
+    },
+    "pidgey": {
+        "name": "Pidgey",
+        "num": 16,
+        "baseStats": {
+            "atk": 45,
+            "def": 40,
+            "hp": 40,
+            "spa": 35,
+            "spd": 35,
+            "spe": 56
+        }
+    },
+    "pikachu": {
+        "name": "Pikachu",
+        "num": 25,
+        "baseStats": {
+            "atk": 55,
+            "def": 30,
+            "hp": 35,
+            "spa": 50,
+            "spd": 40,
+            "spe": 90
+        }
+    },
+    "piloswine": {
+        "name": "Piloswine",
+        "num": 221,
+        "baseStats": {
+            "atk": 100,
+            "def": 80,
+            "hp": 100,
+            "spa": 60,
+            "spd": 60,
+            "spe": 50
+        }
+    },
+    "pineco": {
+        "name": "Pineco",
+        "num": 204,
+        "baseStats": {
+            "atk": 65,
+            "def": 90,
+            "hp": 50,
+            "spa": 35,
+            "spd": 35,
+            "spe": 15
+        }
+    },
+    "pinsir": {
+        "name": "Pinsir",
+        "num": 127,
+        "baseStats": {
+            "atk": 125,
+            "def": 100,
+            "hp": 65,
+            "spa": 55,
+            "spd": 70,
+            "spe": 85
+        }
+    },
+    "plusle": {
+        "name": "Plusle",
+        "num": 311,
+        "baseStats": {
+            "atk": 50,
+            "def": 40,
+            "hp": 60,
+            "spa": 85,
+            "spd": 75,
+            "spe": 95
+        }
+    },
+    "politoed": {
+        "name": "Politoed",
+        "num": 186,
+        "baseStats": {
+            "atk": 75,
+            "def": 75,
+            "hp": 90,
+            "spa": 90,
+            "spd": 100,
+            "spe": 70
+        }
+    },
+    "poliwag": {
+        "name": "Poliwag",
+        "num": 60,
+        "baseStats": {
+            "atk": 50,
+            "def": 40,
+            "hp": 40,
+            "spa": 40,
+            "spd": 40,
+            "spe": 90
+        }
+    },
+    "poliwhirl": {
+        "name": "Poliwhirl",
+        "num": 61,
+        "baseStats": {
+            "atk": 65,
+            "def": 65,
+            "hp": 65,
+            "spa": 50,
+            "spd": 50,
+            "spe": 90
+        }
+    },
+    "poliwrath": {
+        "name": "Poliwrath",
+        "num": 62,
+        "baseStats": {
+            "atk": 85,
+            "def": 95,
+            "hp": 90,
+            "spa": 70,
+            "spd": 90,
+            "spe": 70
+        }
+    },
+    "ponyta": {
+        "name": "Ponyta",
+        "num": 77,
+        "baseStats": {
+            "atk": 85,
+            "def": 55,
+            "hp": 50,
+            "spa": 65,
+            "spd": 65,
+            "spe": 90
+        }
+    },
+    "poochyena": {
+        "name": "Poochyena",
+        "num": 261,
+        "baseStats": {
+            "atk": 55,
+            "def": 35,
+            "hp": 35,
+            "spa": 30,
+            "spd": 30,
+            "spe": 35
+        }
+    },
+    "porygon": {
+        "name": "Porygon",
+        "num": 137,
+        "baseStats": {
+            "atk": 60,
+            "def": 70,
+            "hp": 65,
+            "spa": 85,
+            "spd": 75,
+            "spe": 40
+        }
+    },
+    "porygon2": {
+        "name": "Porygon2",
+        "num": 233,
+        "baseStats": {
+            "atk": 80,
+            "def": 90,
+            "hp": 85,
+            "spa": 105,
+            "spd": 95,
+            "spe": 60
+        }
+    },
+    "primeape": {
+        "name": "Primeape",
+        "num": 57,
+        "baseStats": {
+            "atk": 105,
+            "def": 60,
+            "hp": 65,
+            "spa": 60,
+            "spd": 70,
+            "spe": 95
+        }
+    },
+    "psyduck": {
+        "name": "Psyduck",
+        "num": 54,
+        "baseStats": {
+            "atk": 52,
+            "def": 48,
+            "hp": 50,
+            "spa": 65,
+            "spd": 50,
+            "spe": 55
+        }
+    },
+    "pupitar": {
+        "name": "Pupitar",
+        "num": 247,
+        "baseStats": {
+            "atk": 84,
+            "def": 70,
+            "hp": 70,
+            "spa": 65,
+            "spd": 70,
+            "spe": 51
+        }
+    },
+    "quagsire": {
+        "name": "Quagsire",
+        "num": 195,
+        "baseStats": {
+            "atk": 85,
+            "def": 85,
+            "hp": 95,
+            "spa": 65,
+            "spd": 65,
+            "spe": 35
+        }
+    },
+    "quilava": {
+        "name": "Quilava",
+        "num": 156,
+        "baseStats": {
+            "atk": 64,
+            "def": 58,
+            "hp": 58,
+            "spa": 80,
+            "spd": 65,
+            "spe": 80
+        }
+    },
+    "qwilfish": {
+        "name": "Qwilfish",
+        "num": 211,
+        "baseStats": {
+            "atk": 95,
+            "def": 75,
+            "hp": 65,
+            "spa": 55,
+            "spd": 55,
+            "spe": 85
+        }
+    },
+    "raichu": {
+        "name": "Raichu",
+        "num": 26,
+        "baseStats": {
+            "atk": 90,
+            "def": 55,
+            "hp": 60,
+            "spa": 90,
+            "spd": 80,
+            "spe": 100
+        }
+    },
+    "raikou": {
+        "name": "Raikou",
+        "num": 243,
+        "baseStats": {
+            "atk": 85,
+            "def": 75,
+            "hp": 90,
+            "spa": 115,
+            "spd": 100,
+            "spe": 115
+        }
+    },
+    "ralts": {
+        "name": "Ralts",
+        "num": 280,
+        "baseStats": {
+            "atk": 25,
+            "def": 25,
+            "hp": 28,
+            "spa": 45,
+            "spd": 35,
+            "spe": 40
+        }
+    },
+    "rapidash": {
+        "name": "Rapidash",
+        "num": 78,
+        "baseStats": {
+            "atk": 100,
+            "def": 70,
+            "hp": 65,
+            "spa": 80,
+            "spd": 80,
+            "spe": 105
+        }
+    },
+    "raticate": {
+        "name": "Raticate",
+        "num": 20,
+        "baseStats": {
+            "atk": 81,
+            "def": 60,
+            "hp": 55,
+            "spa": 50,
+            "spd": 70,
+            "spe": 97
+        }
+    },
+    "rattata": {
+        "name": "Rattata",
+        "num": 19,
+        "baseStats": {
+            "atk": 56,
+            "def": 35,
+            "hp": 30,
+            "spa": 25,
+            "spd": 35,
+            "spe": 72
+        }
+    },
+    "rayquaza": {
+        "name": "Rayquaza",
+        "num": 384,
+        "baseStats": {
+            "atk": 150,
+            "def": 90,
+            "hp": 105,
+            "spa": 150,
+            "spd": 90,
+            "spe": 95
+        }
+    },
+    "regice": {
+        "name": "Regice",
+        "num": 378,
+        "baseStats": {
+            "atk": 50,
+            "def": 100,
+            "hp": 80,
+            "spa": 100,
+            "spd": 200,
+            "spe": 50
+        }
+    },
+    "regirock": {
+        "name": "Regirock",
+        "num": 377,
+        "baseStats": {
+            "atk": 100,
+            "def": 200,
+            "hp": 80,
+            "spa": 50,
+            "spd": 100,
+            "spe": 50
+        }
+    },
+    "registeel": {
+        "name": "Registeel",
+        "num": 379,
+        "baseStats": {
+            "atk": 75,
+            "def": 150,
+            "hp": 80,
+            "spa": 75,
+            "spd": 150,
+            "spe": 50
+        }
+    },
+    "relicanth": {
+        "name": "Relicanth",
+        "num": 369,
+        "baseStats": {
+            "atk": 90,
+            "def": 130,
+            "hp": 100,
+            "spa": 45,
+            "spd": 65,
+            "spe": 55
+        }
+    },
+    "remoraid": {
+        "name": "Remoraid",
+        "num": 223,
+        "baseStats": {
+            "atk": 65,
+            "def": 35,
+            "hp": 35,
+            "spa": 65,
+            "spd": 35,
+            "spe": 65
+        }
+    },
+    "rhydon": {
+        "name": "Rhydon",
+        "num": 112,
+        "baseStats": {
+            "atk": 130,
+            "def": 120,
+            "hp": 105,
+            "spa": 45,
+            "spd": 45,
+            "spe": 40
+        }
+    },
+    "rhyhorn": {
+        "name": "Rhyhorn",
+        "num": 111,
+        "baseStats": {
+            "atk": 85,
+            "def": 95,
+            "hp": 80,
+            "spa": 30,
+            "spd": 30,
+            "spe": 25
+        }
+    },
+    "roselia": {
+        "name": "Roselia",
+        "num": 315,
+        "baseStats": {
+            "atk": 60,
+            "def": 45,
+            "hp": 50,
+            "spa": 100,
+            "spd": 80,
+            "spe": 65
+        }
+    },
+    "sableye": {
+        "name": "Sableye",
+        "num": 302,
+        "baseStats": {
+            "atk": 75,
+            "def": 75,
+            "hp": 50,
+            "spa": 65,
+            "spd": 65,
+            "spe": 50
+        }
+    },
+    "salamence": {
+        "name": "Salamence",
+        "num": 373,
+        "baseStats": {
+            "atk": 135,
+            "def": 80,
+            "hp": 95,
+            "spa": 110,
+            "spd": 80,
+            "spe": 100
+        }
+    },
+    "sandshrew": {
+        "name": "Sandshrew",
+        "num": 27,
+        "baseStats": {
+            "atk": 75,
+            "def": 85,
+            "hp": 50,
+            "spa": 20,
+            "spd": 30,
+            "spe": 40
+        }
+    },
+    "sandslash": {
+        "name": "Sandslash",
+        "num": 28,
+        "baseStats": {
+            "atk": 100,
+            "def": 110,
+            "hp": 75,
+            "spa": 45,
+            "spd": 55,
+            "spe": 65
+        }
+    },
+    "sceptile": {
+        "name": "Sceptile",
+        "num": 254,
+        "baseStats": {
+            "atk": 85,
+            "def": 65,
+            "hp": 70,
+            "spa": 105,
+            "spd": 85,
+            "spe": 120
+        }
+    },
+    "scizor": {
+        "name": "Scizor",
+        "num": 212,
+        "baseStats": {
+            "atk": 130,
+            "def": 100,
+            "hp": 70,
+            "spa": 55,
+            "spd": 80,
+            "spe": 65
+        }
+    },
+    "scyther": {
+        "name": "Scyther",
+        "num": 123,
+        "baseStats": {
+            "atk": 110,
+            "def": 80,
+            "hp": 70,
+            "spa": 55,
+            "spd": 80,
+            "spe": 105
+        }
+    },
+    "seadra": {
+        "name": "Seadra",
+        "num": 117,
+        "baseStats": {
+            "atk": 65,
+            "def": 95,
+            "hp": 55,
+            "spa": 95,
+            "spd": 45,
+            "spe": 85
+        }
+    },
+    "seaking": {
+        "name": "Seaking",
+        "num": 119,
+        "baseStats": {
+            "atk": 92,
+            "def": 65,
+            "hp": 80,
+            "spa": 65,
+            "spd": 80,
+            "spe": 68
+        }
+    },
+    "sealeo": {
+        "name": "Sealeo",
+        "num": 364,
+        "baseStats": {
+            "atk": 60,
+            "def": 70,
+            "hp": 90,
+            "spa": 75,
+            "spd": 70,
+            "spe": 45
+        }
+    },
+    "seedot": {
+        "name": "Seedot",
+        "num": 273,
+        "baseStats": {
+            "atk": 40,
+            "def": 50,
+            "hp": 40,
+            "spa": 30,
+            "spd": 30,
+            "spe": 30
+        }
+    },
+    "seel": {
+        "name": "Seel",
+        "num": 86,
+        "baseStats": {
+            "atk": 45,
+            "def": 55,
+            "hp": 65,
+            "spa": 45,
+            "spd": 70,
+            "spe": 45
+        }
+    },
+    "sentret": {
+        "name": "Sentret",
+        "num": 161,
+        "baseStats": {
+            "atk": 46,
+            "def": 34,
+            "hp": 35,
+            "spa": 35,
+            "spd": 45,
+            "spe": 20
+        }
+    },
+    "seviper": {
+        "name": "Seviper",
+        "num": 336,
+        "baseStats": {
+            "atk": 100,
+            "def": 60,
+            "hp": 73,
+            "spa": 100,
+            "spd": 60,
+            "spe": 65
+        }
+    },
+    "sharpedo": {
+        "name": "Sharpedo",
+        "num": 319,
+        "baseStats": {
+            "atk": 120,
+            "def": 40,
+            "hp": 70,
+            "spa": 95,
+            "spd": 40,
+            "spe": 95
+        }
+    },
+    "shedinja": {
+        "name": "Shedinja",
+        "num": 292,
+        "baseStats": {
+            "atk": 90,
+            "def": 45,
+            "hp": 1,
+            "spa": 30,
+            "spd": 30,
+            "spe": 40
+        }
+    },
+    "shelgon": {
+        "name": "Shelgon",
+        "num": 372,
+        "baseStats": {
+            "atk": 95,
+            "def": 100,
+            "hp": 65,
+            "spa": 60,
+            "spd": 50,
+            "spe": 50
+        }
+    },
+    "shellder": {
+        "name": "Shellder",
+        "num": 90,
+        "baseStats": {
+            "atk": 65,
+            "def": 100,
+            "hp": 30,
+            "spa": 45,
+            "spd": 25,
+            "spe": 40
+        }
+    },
+    "shiftry": {
+        "name": "Shiftry",
+        "num": 275,
+        "baseStats": {
+            "atk": 100,
+            "def": 60,
+            "hp": 90,
+            "spa": 90,
+            "spd": 60,
+            "spe": 80
+        }
+    },
+    "shroomish": {
+        "name": "Shroomish",
+        "num": 285,
+        "baseStats": {
+            "atk": 40,
+            "def": 60,
+            "hp": 60,
+            "spa": 40,
+            "spd": 60,
+            "spe": 35
+        }
+    },
+    "shuckle": {
+        "name": "Shuckle",
+        "num": 213,
+        "baseStats": {
+            "atk": 10,
+            "def": 230,
+            "hp": 20,
+            "spa": 10,
+            "spd": 230,
+            "spe": 5
+        }
+    },
+    "shuppet": {
+        "name": "Shuppet",
+        "num": 353,
+        "baseStats": {
+            "atk": 75,
+            "def": 35,
+            "hp": 44,
+            "spa": 63,
+            "spd": 33,
+            "spe": 45
+        }
+    },
+    "silcoon": {
+        "name": "Silcoon",
+        "num": 266,
+        "baseStats": {
+            "atk": 35,
+            "def": 55,
+            "hp": 50,
+            "spa": 25,
+            "spd": 25,
+            "spe": 15
+        }
+    },
+    "skarmory": {
+        "name": "Skarmory",
+        "num": 227,
+        "baseStats": {
+            "atk": 80,
+            "def": 140,
+            "hp": 65,
+            "spa": 40,
+            "spd": 70,
+            "spe": 70
+        }
+    },
+    "skiploom": {
+        "name": "Skiploom",
+        "num": 188,
+        "baseStats": {
+            "atk": 45,
+            "def": 50,
+            "hp": 55,
+            "spa": 45,
+            "spd": 65,
+            "spe": 80
+        }
+    },
+    "skitty": {
+        "name": "Skitty",
+        "num": 300,
+        "baseStats": {
+            "atk": 45,
+            "def": 45,
+            "hp": 50,
+            "spa": 35,
+            "spd": 35,
+            "spe": 50
+        }
+    },
+    "slaking": {
+        "name": "Slaking",
+        "num": 289,
+        "baseStats": {
+            "atk": 160,
+            "def": 100,
+            "hp": 150,
+            "spa": 95,
+            "spd": 65,
+            "spe": 100
+        }
+    },
+    "slakoth": {
+        "name": "Slakoth",
+        "num": 287,
+        "baseStats": {
+            "atk": 60,
+            "def": 60,
+            "hp": 60,
+            "spa": 35,
+            "spd": 35,
+            "spe": 30
+        }
+    },
+    "slowbro": {
+        "name": "Slowbro",
+        "num": 80,
+        "baseStats": {
+            "atk": 75,
+            "def": 110,
+            "hp": 95,
+            "spa": 100,
+            "spd": 80,
+            "spe": 30
+        }
+    },
+    "slowking": {
+        "name": "Slowking",
+        "num": 199,
+        "baseStats": {
+            "atk": 75,
+            "def": 80,
+            "hp": 95,
+            "spa": 100,
+            "spd": 110,
+            "spe": 30
+        }
+    },
+    "slowpoke": {
+        "name": "Slowpoke",
+        "num": 79,
+        "baseStats": {
+            "atk": 65,
+            "def": 65,
+            "hp": 90,
+            "spa": 40,
+            "spd": 40,
+            "spe": 15
+        }
+    },
+    "slugma": {
+        "name": "Slugma",
+        "num": 218,
+        "baseStats": {
+            "atk": 40,
+            "def": 40,
+            "hp": 40,
+            "spa": 70,
+            "spd": 40,
+            "spe": 20
+        }
+    },
+    "smeargle": {
+        "name": "Smeargle",
+        "num": 235,
+        "baseStats": {
+            "atk": 20,
+            "def": 35,
+            "hp": 55,
+            "spa": 20,
+            "spd": 45,
+            "spe": 75
+        }
+    },
+    "smoochum": {
+        "name": "Smoochum",
+        "num": 238,
+        "baseStats": {
+            "atk": 30,
+            "def": 15,
+            "hp": 45,
+            "spa": 85,
+            "spd": 65,
+            "spe": 65
+        }
+    },
+    "sneasel": {
+        "name": "Sneasel",
+        "num": 215,
+        "baseStats": {
+            "atk": 95,
+            "def": 55,
+            "hp": 55,
+            "spa": 35,
+            "spd": 75,
+            "spe": 115
+        }
+    },
+    "snorlax": {
+        "name": "Snorlax",
+        "num": 143,
+        "baseStats": {
+            "atk": 110,
+            "def": 65,
+            "hp": 160,
+            "spa": 65,
+            "spd": 110,
+            "spe": 30
+        }
+    },
+    "snorunt": {
+        "name": "Snorunt",
+        "num": 361,
+        "baseStats": {
+            "atk": 50,
+            "def": 50,
+            "hp": 50,
+            "spa": 50,
+            "spd": 50,
+            "spe": 50
+        }
+    },
+    "snubbull": {
+        "name": "Snubbull",
+        "num": 209,
+        "baseStats": {
+            "atk": 80,
+            "def": 50,
+            "hp": 60,
+            "spa": 40,
+            "spd": 40,
+            "spe": 30
+        }
+    },
+    "solrock": {
+        "name": "Solrock",
+        "num": 338,
+        "baseStats": {
+            "atk": 95,
+            "def": 85,
+            "hp": 70,
+            "spa": 55,
+            "spd": 65,
+            "spe": 70
+        }
+    },
+    "spearow": {
+        "name": "Spearow",
+        "num": 21,
+        "baseStats": {
+            "atk": 60,
+            "def": 30,
+            "hp": 40,
+            "spa": 31,
+            "spd": 31,
+            "spe": 70
+        }
+    },
+    "spheal": {
+        "name": "Spheal",
+        "num": 363,
+        "baseStats": {
+            "atk": 40,
+            "def": 50,
+            "hp": 70,
+            "spa": 55,
+            "spd": 50,
+            "spe": 25
+        }
+    },
+    "spinarak": {
+        "name": "Spinarak",
+        "num": 167,
+        "baseStats": {
+            "atk": 60,
+            "def": 40,
+            "hp": 40,
+            "spa": 40,
+            "spd": 40,
+            "spe": 30
+        }
+    },
+    "spinda": {
+        "name": "Spinda",
+        "num": 327,
+        "baseStats": {
+            "atk": 60,
+            "def": 60,
+            "hp": 60,
+            "spa": 60,
+            "spd": 60,
+            "spe": 60
+        }
+    },
+    "spoink": {
+        "name": "Spoink",
+        "num": 325,
+        "baseStats": {
+            "atk": 25,
+            "def": 35,
+            "hp": 60,
+            "spa": 70,
+            "spd": 80,
+            "spe": 60
+        }
+    },
+    "squirtle": {
+        "name": "Squirtle",
+        "num": 7,
+        "baseStats": {
+            "atk": 48,
+            "def": 65,
+            "hp": 44,
+            "spa": 50,
+            "spd": 64,
+            "spe": 43
+        }
+    },
+    "stantler": {
+        "name": "Stantler",
+        "num": 234,
+        "baseStats": {
+            "atk": 95,
+            "def": 62,
+            "hp": 73,
+            "spa": 85,
+            "spd": 65,
+            "spe": 85
+        }
+    },
+    "starmie": {
+        "name": "Starmie",
+        "num": 121,
+        "baseStats": {
+            "atk": 75,
+            "def": 85,
+            "hp": 60,
+            "spa": 100,
+            "spd": 85,
+            "spe": 115
+        }
+    },
+    "staryu": {
+        "name": "Staryu",
+        "num": 120,
+        "baseStats": {
+            "atk": 45,
+            "def": 55,
+            "hp": 30,
+            "spa": 70,
+            "spd": 55,
+            "spe": 85
+        }
+    },
+    "steelix": {
+        "name": "Steelix",
+        "num": 208,
+        "baseStats": {
+            "atk": 85,
+            "def": 200,
+            "hp": 75,
+            "spa": 55,
+            "spd": 65,
+            "spe": 30
+        }
+    },
+    "sudowoodo": {
+        "name": "Sudowoodo",
+        "num": 185,
+        "baseStats": {
+            "atk": 100,
+            "def": 115,
+            "hp": 70,
+            "spa": 30,
+            "spd": 65,
+            "spe": 30
+        }
+    },
+    "suicune": {
+        "name": "Suicune",
+        "num": 245,
+        "baseStats": {
+            "atk": 75,
+            "def": 115,
+            "hp": 100,
+            "spa": 90,
+            "spd": 115,
+            "spe": 85
+        }
+    },
+    "sunflora": {
+        "name": "Sunflora",
+        "num": 192,
+        "baseStats": {
+            "atk": 75,
+            "def": 55,
+            "hp": 75,
+            "spa": 105,
+            "spd": 85,
+            "spe": 30
+        }
+    },
+    "sunkern": {
+        "name": "Sunkern",
+        "num": 191,
+        "baseStats": {
+            "atk": 30,
+            "def": 30,
+            "hp": 30,
+            "spa": 30,
+            "spd": 30,
+            "spe": 30
+        }
+    },
+    "surskit": {
+        "name": "Surskit",
+        "num": 283,
+        "baseStats": {
+            "atk": 30,
+            "def": 32,
+            "hp": 40,
+            "spa": 50,
+            "spd": 52,
+            "spe": 65
+        }
+    },
+    "swablu": {
+        "name": "Swablu",
+        "num": 333,
+        "baseStats": {
+            "atk": 40,
+            "def": 60,
+            "hp": 45,
+            "spa": 40,
+            "spd": 75,
+            "spe": 50
+        }
+    },
+    "swalot": {
+        "name": "Swalot",
+        "num": 317,
+        "baseStats": {
+            "atk": 73,
+            "def": 83,
+            "hp": 100,
+            "spa": 73,
+            "spd": 83,
+            "spe": 55
+        }
+    },
+    "swampert": {
+        "name": "Swampert",
+        "num": 260,
+        "baseStats": {
+            "atk": 110,
+            "def": 90,
+            "hp": 100,
+            "spa": 85,
+            "spd": 90,
+            "spe": 60
+        }
+    },
+    "swellow": {
+        "name": "Swellow",
+        "num": 277,
+        "baseStats": {
+            "atk": 85,
+            "def": 60,
+            "hp": 60,
+            "spa": 50,
+            "spd": 50,
+            "spe": 125
+        }
+    },
+    "swinub": {
+        "name": "Swinub",
+        "num": 220,
+        "baseStats": {
+            "atk": 50,
+            "def": 40,
+            "hp": 50,
+            "spa": 30,
+            "spd": 30,
+            "spe": 50
+        }
+    },
+    "taillow": {
+        "name": "Taillow",
+        "num": 276,
+        "baseStats": {
+            "atk": 55,
+            "def": 30,
+            "hp": 40,
+            "spa": 30,
+            "spd": 30,
+            "spe": 85
+        }
+    },
+    "tangela": {
+        "name": "Tangela",
+        "num": 114,
+        "baseStats": {
+            "atk": 55,
+            "def": 115,
+            "hp": 65,
+            "spa": 100,
+            "spd": 40,
+            "spe": 60
+        }
+    },
+    "tauros": {
+        "name": "Tauros",
+        "num": 128,
+        "baseStats": {
+            "atk": 100,
+            "def": 95,
+            "hp": 75,
+            "spa": 40,
+            "spd": 70,
+            "spe": 110
+        }
+    },
+    "teddiursa": {
+        "name": "Teddiursa",
+        "num": 216,
+        "baseStats": {
+            "atk": 80,
+            "def": 50,
+            "hp": 60,
+            "spa": 50,
+            "spd": 50,
+            "spe": 40
+        }
+    },
+    "tentacool": {
+        "name": "Tentacool",
+        "num": 72,
+        "baseStats": {
+            "atk": 40,
+            "def": 35,
+            "hp": 40,
+            "spa": 50,
+            "spd": 100,
+            "spe": 70
+        }
+    },
+    "tentacruel": {
+        "name": "Tentacruel",
+        "num": 73,
+        "baseStats": {
+            "atk": 70,
+            "def": 65,
+            "hp": 80,
+            "spa": 80,
+            "spd": 120,
+            "spe": 100
+        }
+    },
+    "togepi": {
+        "name": "Togepi",
+        "num": 175,
+        "baseStats": {
+            "atk": 20,
+            "def": 65,
+            "hp": 35,
+            "spa": 40,
+            "spd": 65,
+            "spe": 20
+        }
+    },
+    "togetic": {
+        "name": "Togetic",
+        "num": 176,
+        "baseStats": {
+            "atk": 40,
+            "def": 85,
+            "hp": 55,
+            "spa": 80,
+            "spd": 105,
+            "spe": 40
+        }
+    },
+    "torchic": {
+        "name": "Torchic",
+        "num": 255,
+        "baseStats": {
+            "atk": 60,
+            "def": 40,
+            "hp": 45,
+            "spa": 70,
+            "spd": 50,
+            "spe": 45
+        }
+    },
+    "torkoal": {
+        "name": "Torkoal",
+        "num": 324,
+        "baseStats": {
+            "atk": 85,
+            "def": 140,
+            "hp": 70,
+            "spa": 85,
+            "spd": 70,
+            "spe": 20
+        }
+    },
+    "totodile": {
+        "name": "Totodile",
+        "num": 158,
+        "baseStats": {
+            "atk": 65,
+            "def": 64,
+            "hp": 50,
+            "spa": 44,
+            "spd": 48,
+            "spe": 43
+        }
+    },
+    "trapinch": {
+        "name": "Trapinch",
+        "num": 328,
+        "baseStats": {
+            "atk": 100,
+            "def": 45,
+            "hp": 45,
+            "spa": 45,
+            "spd": 45,
+            "spe": 10
+        }
+    },
+    "treecko": {
+        "name": "Treecko",
+        "num": 252,
+        "baseStats": {
+            "atk": 45,
+            "def": 35,
+            "hp": 40,
+            "spa": 65,
+            "spd": 55,
+            "spe": 70
+        }
+    },
+    "tropius": {
+        "name": "Tropius",
+        "num": 357,
+        "baseStats": {
+            "atk": 68,
+            "def": 83,
+            "hp": 99,
+            "spa": 72,
+            "spd": 87,
+            "spe": 51
+        }
+    },
+    "typhlosion": {
+        "name": "Typhlosion",
+        "num": 157,
+        "baseStats": {
+            "atk": 84,
+            "def": 78,
+            "hp": 78,
+            "spa": 109,
+            "spd": 85,
+            "spe": 100
+        }
+    },
+    "tyranitar": {
+        "name": "Tyranitar",
+        "num": 248,
+        "baseStats": {
+            "atk": 134,
+            "def": 110,
+            "hp": 100,
+            "spa": 95,
+            "spd": 100,
+            "spe": 61
+        }
+    },
+    "tyrogue": {
+        "name": "Tyrogue",
+        "num": 236,
+        "baseStats": {
+            "atk": 35,
+            "def": 35,
+            "hp": 35,
+            "spa": 35,
+            "spd": 35,
+            "spe": 35
+        }
+    },
+    "umbreon": {
+        "name": "Umbreon",
+        "num": 197,
+        "baseStats": {
+            "atk": 65,
+            "def": 110,
+            "hp": 95,
+            "spa": 60,
+            "spd": 130,
+            "spe": 65
+        }
+    },
+    "unownquestion": {
+        "name": "Unown",
+        "num": 201,
+        "baseStats": {
+            "atk": 72,
+            "def": 48,
+            "hp": 48,
+            "spa": 72,
+            "spd": 48,
+            "spe": 48
+        }
+    },
+    "ursaring": {
+        "name": "Ursaring",
+        "num": 217,
+        "baseStats": {
+            "atk": 130,
+            "def": 75,
+            "hp": 90,
+            "spa": 75,
+            "spd": 75,
+            "spe": 55
+        }
+    },
+    "vaporeon": {
+        "name": "Vaporeon",
+        "num": 134,
+        "baseStats": {
+            "atk": 65,
+            "def": 60,
+            "hp": 130,
+            "spa": 110,
+            "spd": 95,
+            "spe": 65
+        }
+    },
+    "venomoth": {
+        "name": "Venomoth",
+        "num": 49,
+        "baseStats": {
+            "atk": 65,
+            "def": 60,
+            "hp": 70,
+            "spa": 90,
+            "spd": 75,
+            "spe": 90
+        }
+    },
+    "venonat": {
+        "name": "Venonat",
+        "num": 48,
+        "baseStats": {
+            "atk": 55,
+            "def": 50,
+            "hp": 60,
+            "spa": 40,
+            "spd": 55,
+            "spe": 45
+        }
+    },
+    "venusaur": {
+        "name": "Venusaur",
+        "num": 3,
+        "baseStats": {
+            "atk": 82,
+            "def": 83,
+            "hp": 80,
+            "spa": 100,
+            "spd": 100,
+            "spe": 80
+        }
+    },
+    "vibrava": {
+        "name": "Vibrava",
+        "num": 329,
+        "baseStats": {
+            "atk": 70,
+            "def": 50,
+            "hp": 50,
+            "spa": 50,
+            "spd": 50,
+            "spe": 70
+        }
+    },
+    "victreebel": {
+        "name": "Victreebel",
+        "num": 71,
+        "baseStats": {
+            "atk": 105,
+            "def": 65,
+            "hp": 80,
+            "spa": 100,
+            "spd": 60,
+            "spe": 70
+        }
+    },
+    "vigoroth": {
+        "name": "Vigoroth",
+        "num": 288,
+        "baseStats": {
+            "atk": 80,
+            "def": 80,
+            "hp": 80,
+            "spa": 55,
+            "spd": 55,
+            "spe": 90
+        }
+    },
+    "vileplume": {
+        "name": "Vileplume",
+        "num": 45,
+        "baseStats": {
+            "atk": 80,
+            "def": 85,
+            "hp": 75,
+            "spa": 100,
+            "spd": 90,
+            "spe": 50
+        }
+    },
+    "volbeat": {
+        "name": "Volbeat",
+        "num": 313,
+        "baseStats": {
+            "atk": 73,
+            "def": 55,
+            "hp": 65,
+            "spa": 47,
+            "spd": 75,
+            "spe": 85
+        }
+    },
+    "voltorb": {
+        "name": "Voltorb",
+        "num": 100,
+        "baseStats": {
+            "atk": 30,
+            "def": 50,
+            "hp": 40,
+            "spa": 55,
+            "spd": 55,
+            "spe": 100
+        }
+    },
+    "vulpix": {
+        "name": "Vulpix",
+        "num": 37,
+        "baseStats": {
+            "atk": 41,
+            "def": 40,
+            "hp": 38,
+            "spa": 50,
+            "spd": 65,
+            "spe": 65
+        }
+    },
+    "wailmer": {
+        "name": "Wailmer",
+        "num": 320,
+        "baseStats": {
+            "atk": 70,
+            "def": 35,
+            "hp": 130,
+            "spa": 70,
+            "spd": 35,
+            "spe": 60
+        }
+    },
+    "wailord": {
+        "name": "Wailord",
+        "num": 321,
+        "baseStats": {
+            "atk": 90,
+            "def": 45,
+            "hp": 170,
+            "spa": 90,
+            "spd": 45,
+            "spe": 60
+        }
+    },
+    "walrein": {
+        "name": "Walrein",
+        "num": 365,
+        "baseStats": {
+            "atk": 80,
+            "def": 90,
+            "hp": 110,
+            "spa": 95,
+            "spd": 90,
+            "spe": 65
+        }
+    },
+    "wartortle": {
+        "name": "Wartortle",
+        "num": 8,
+        "baseStats": {
+            "atk": 63,
+            "def": 80,
+            "hp": 59,
+            "spa": 65,
+            "spd": 80,
+            "spe": 58
+        }
+    },
+    "weedle": {
+        "name": "Weedle",
+        "num": 13,
+        "baseStats": {
+            "atk": 35,
+            "def": 30,
+            "hp": 40,
+            "spa": 20,
+            "spd": 20,
+            "spe": 50
+        }
+    },
+    "weepinbell": {
+        "name": "Weepinbell",
+        "num": 70,
+        "baseStats": {
+            "atk": 90,
+            "def": 50,
+            "hp": 65,
+            "spa": 85,
+            "spd": 45,
+            "spe": 55
+        }
+    },
+    "weezing": {
+        "name": "Weezing",
+        "num": 110,
+        "baseStats": {
+            "atk": 90,
+            "def": 120,
+            "hp": 65,
+            "spa": 85,
+            "spd": 70,
+            "spe": 60
+        }
+    },
+    "whiscash": {
+        "name": "Whiscash",
+        "num": 340,
+        "baseStats": {
+            "atk": 78,
+            "def": 73,
+            "hp": 110,
+            "spa": 76,
+            "spd": 71,
+            "spe": 60
+        }
+    },
+    "whismur": {
+        "name": "Whismur",
+        "num": 293,
+        "baseStats": {
+            "atk": 51,
+            "def": 23,
+            "hp": 64,
+            "spa": 51,
+            "spd": 23,
+            "spe": 28
+        }
+    },
+    "wigglytuff": {
+        "name": "Wigglytuff",
+        "num": 40,
+        "baseStats": {
+            "atk": 70,
+            "def": 45,
+            "hp": 140,
+            "spa": 75,
+            "spd": 50,
+            "spe": 45
+        }
+    },
+    "wingull": {
+        "name": "Wingull",
+        "num": 278,
+        "baseStats": {
+            "atk": 30,
+            "def": 30,
+            "hp": 40,
+            "spa": 55,
+            "spd": 30,
+            "spe": 85
+        }
+    },
+    "wobbuffet": {
+        "name": "Wobbuffet",
+        "num": 202,
+        "baseStats": {
+            "atk": 33,
+            "def": 58,
+            "hp": 190,
+            "spa": 33,
+            "spd": 58,
+            "spe": 33
+        }
+    },
+    "wooper": {
+        "name": "Wooper",
+        "num": 194,
+        "baseStats": {
+            "atk": 45,
+            "def": 45,
+            "hp": 55,
+            "spa": 25,
+            "spd": 25,
+            "spe": 15
+        }
+    },
+    "wurmple": {
+        "name": "Wurmple",
+        "num": 265,
+        "baseStats": {
+            "atk": 45,
+            "def": 35,
+            "hp": 45,
+            "spa": 20,
+            "spd": 30,
+            "spe": 20
+        }
+    },
+    "wynaut": {
+        "name": "Wynaut",
+        "num": 360,
+        "baseStats": {
+            "atk": 23,
+            "def": 48,
+            "hp": 95,
+            "spa": 23,
+            "spd": 48,
+            "spe": 23
+        }
+    },
+    "xatu": {
+        "name": "Xatu",
+        "num": 178,
+        "baseStats": {
+            "atk": 75,
+            "def": 70,
+            "hp": 65,
+            "spa": 95,
+            "spd": 70,
+            "spe": 95
+        }
+    },
+    "yanma": {
+        "name": "Yanma",
+        "num": 193,
+        "baseStats": {
+            "atk": 65,
+            "def": 45,
+            "hp": 65,
+            "spa": 75,
+            "spd": 45,
+            "spe": 95
+        }
+    },
+    "zangoose": {
+        "name": "Zangoose",
+        "num": 335,
+        "baseStats": {
+            "atk": 115,
+            "def": 60,
+            "hp": 73,
+            "spa": 60,
+            "spd": 60,
+            "spe": 90
+        }
+    },
+    "zapdos": {
+        "name": "Zapdos",
+        "num": 145,
+        "baseStats": {
+            "atk": 90,
+            "def": 85,
+            "hp": 90,
+            "spa": 125,
+            "spd": 90,
+            "spe": 100
+        }
+    },
+    "zigzagoon": {
+        "name": "Zigzagoon",
+        "num": 263,
+        "baseStats": {
+            "atk": 30,
+            "def": 41,
+            "hp": 38,
+            "spa": 30,
+            "spd": 41,
+            "spe": 60
+        }
+    },
+    "zubat": {
+        "name": "Zubat",
+        "num": 41,
+        "baseStats": {
+            "atk": 45,
+            "def": 35,
+            "hp": 40,
+            "spa": 30,
+            "spd": 40,
+            "spe": 55
+        }
+    }
+}

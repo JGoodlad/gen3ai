@@ -1,0 +1,56 @@
+Slaking @ Choice Band  
+Ability: Truant  
+EVs: 252 Atk / 4 SpD / 252 Spe  
+Jolly Nature  
+- Double-Edge  
+- Earthquake  
+- Encore  
+- Focus Punch  
+
+Forretress @ Leftovers  
+Ability: Sturdy  
+EVs: 252 HP / 160 Def / 96 SpA  
+Relaxed Nature  
+- Spikes  
+- Hidden Power [Fire]  
+- Explosion  
+- Rapid Spin  
+
+Umbreon @ Leftovers  
+Ability: Synchronize  
+EVs: 248 HP / 196 SpA / 56 SpD / 8 Spe  
+Calm Nature  
+IVs: 0 Atk  
+- Pursuit  
+- Wish  
+- Protect  
+- Toxic  
+
+Salamence @ Leftovers  
+Ability: Intimidate  
+EVs: 4 Atk / 252 SpA / 252 Spe  
+Rash Nature  
+- Dragon Claw  
+- Flamethrower  
+- Brick Break  
+- Refresh  
+
+Blissey (F) @ Leftovers  
+Ability: Natural Cure  
+EVs: 252 Def / 200 SpA / 56 Spe  
+Modest Nature  
+IVs: 0 Atk  
+- Ice Beam  
+- Thunderbolt  
+- Soft-Boiled  
+- Calm Mind  
+
+Swampert @ Leftovers  
+Ability: Torrent  
+EVs: 248 HP / 136 Def / 80 SpA / 44 SpD  
+Bold Nature  
+IVs: 0 Atk  
+- Surf  
+- Counter  
+- Roar  
+- Protect

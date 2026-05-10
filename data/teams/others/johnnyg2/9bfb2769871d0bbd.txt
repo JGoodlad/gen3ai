@@ -1,0 +1,57 @@
+Medicham @ Choice Band  
+Ability: Pure Power  
+EVs: 252 Atk / 4 SpD / 252 Spe  
+Jolly Nature  
+- Focus Punch  
+- Brick Break  
+- Shadow Ball  
+- Rock Slide  
+
+Porygon2 @ Leftovers  
+Ability: Trace  
+EVs: 248 HP / 200 Def / 60 SpD  
+Bold Nature  
+IVs: 0 Atk  
+- Thunderbolt  
+- Ice Beam  
+- Thunder Wave  
+- Recover  
+
+Jirachi @ Leftovers  
+Ability: Serene Grace  
+EVs: 248 HP / 184 Def / 40 SpA / 36 Spe  
+Bold Nature  
+IVs: 2 Atk / 30 SpA  
+- Calm Mind  
+- Wish  
+- Hidden Power [Grass]  
+- Fire Punch  
+
+Celebi @ Leftovers  
+Ability: Natural Cure  
+EVs: 248 HP / 156 Def / 104 SpD  
+Calm Nature  
+IVs: 0 Atk / 27 Spe  
+- Psychic  
+- Leech Seed  
+- Recover  
+- Baton Pass  
+
+Swampert @ Leftovers  
+Ability: Torrent  
+EVs: 248 HP / 156 Def / 60 SpA / 44 SpD  
+Bold Nature  
+IVs: 0 Atk  
+- Surf  
+- Roar  
+- Toxic  
+- Protect  
+
+Salamence @ Leftovers  
+Ability: Intimidate  
+EVs: 120 Atk / 212 SpD / 176 Spe  
+Adamant Nature  
+- Dragon Dance  
+- Hidden Power [Flying]  
+- Earthquake  
+- Rock Slide

@@ -1,0 +1,54 @@
+Zapdos @ Leftovers  
+Ability: Pressure  
+EVs: 228 SpA / 80 SpD / 200 Spe  
+Modest Nature  
+IVs: 2 Atk / 30 SpA  
+- Thunderbolt  
+- Hidden Power [Grass]  
+- Thunder Wave  
+- Roar  
+
+Camerupt @ Leftovers  
+Ability: Magma Armor  
+EVs: 180 SpA / 76 SpD / 252 Spe  
+Mild Nature  
+- Flamethrower  
+- Toxic  
+- Explosion  
+- Hidden Power [Grass]  
+
+Snorlax @ Leftovers  
+Ability: Immunity  
+EVs: 64 HP / 176 Atk / 108 Def / 144 SpD / 16 Spe  
+Adamant Nature  
+- Body Slam  
+- Self-Destruct  
+- Focus Punch  
+- Earthquake  
+
+Swampert @ Leftovers  
+Ability: Torrent  
+EVs: 248 HP / 88 Def / 96 SpA / 32 SpD / 44 Spe  
+Quiet Nature  
+- Hydro Pump  
+- Ice Beam  
+- Earthquake  
+- Refresh  
+
+Metagross @ Choice Band  
+Ability: Clear Body  
+EVs: 200 HP / 252 Atk / 56 Spe  
+Adamant Nature  
+- Meteor Mash  
+- Earthquake  
+- Rock Slide  
+- Explosion  
+
+Salamence @ Leftovers  
+Ability: Intimidate  
+EVs: 144 Atk / 212 SpD / 152 Spe  
+Adamant Nature  
+- Hidden Power [Flying]  
+- Earthquake  
+- Rock Slide  
+- Dragon Dance

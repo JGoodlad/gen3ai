@@ -1,0 +1,55 @@
+Regirock @ Leftovers  
+Ability: Clear Body  
+EVs: 252 HP / 188 Atk / 68 SpD  
+Adamant Nature  
+- Superpower  
+- Thunder Wave  
+- Hidden Power [Rock]  
+- Explosion  
+
+Dugtrio @ Choice Band  
+Ability: Arena Trap  
+EVs: 8 HP / 248 Atk / 252 Spe  
+Jolly Nature  
+- Earthquake  
+- Aerial Ace  
+- Hidden Power [Bug]  
+- Rock Slide  
+
+Celebi @ Leftovers  
+Ability: Natural Cure  
+EVs: 252 HP / 36 Def / 76 SpA / 108 SpD / 36 Spe  
+Calm Nature  
+IVs: 2 Atk / 30 SpA  
+- Leech Seed  
+- Recover  
+- Hidden Power [Grass]  
+- Perish Song  
+
+Magneton @ Leftovers  
+Ability: Magnet Pull  
+EVs: 248 HP / 72 Def / 188 Spe  
+Timid Nature  
+IVs: 2 Atk / 30 SpA / 30 Spe  
+- Thunderbolt  
+- Hidden Power [Fire]  
+- Thunder Wave  
+- Rain Dance  
+
+Claydol @ Leftovers  
+Ability: Levitate  
+EVs: 248 HP / 88 Atk / 116 Def / 56 SpD  
+Sassy Nature  
+- Earthquake  
+- Psychic  
+- Explosion  
+- Rapid Spin  
+
+Gyarados @ Leftovers  
+Ability: Intimidate  
+EVs: 252 HP / 20 Atk / 52 Def / 172 SpD / 12 Spe  
+Adamant Nature  
+- Thunder Wave  
+- Hidden Power [Flying]  
+- Rest  
+- Dragon Dance

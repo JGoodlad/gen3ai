@@ -1,0 +1,57 @@
+Jynx (F) @ Never-Melt Ice  
+Ability: Oblivious  
+EVs: 4 Def / 252 SpA / 252 Spe  
+Modest Nature  
+IVs: 0 Atk  
+- Ice Beam  
+- Lovely Kiss  
+- Mean Look  
+- Perish Song  
+
+Dugtrio @ Choice Band  
+Ability: Arena Trap  
+EVs: 8 HP / 248 Atk / 252 Spe  
+Jolly Nature  
+- Earthquake  
+- Aerial Ace  
+- Substitute  
+- Hidden Power [Bug]  
+
+Gengar @ Leftovers  
+Ability: Levitate  
+EVs: 248 HP / 60 SpD / 200 Spe  
+Timid Nature  
+IVs: 0 Atk  
+- Ice Punch  
+- Thunderbolt  
+- Mean Look  
+- Perish Song  
+
+Metagross @ Leftovers  
+Ability: Clear Body  
+EVs: 252 HP / 16 Atk / 192 SpA / 48 Spe  
+Quiet Nature  
+- Meteor Mash  
+- Hidden Power [Fire]  
+- Psychic  
+- Explosion  
+
+Zapdos @ Leftovers  
+Ability: Pressure  
+EVs: 180 SpA / 116 SpD / 212 Spe  
+Modest Nature  
+IVs: 2 Atk / 30 SpA  
+- Thunderbolt  
+- Hidden Power [Grass]  
+- Substitute  
+- Baton Pass  
+
+Starmie @ Leftovers  
+Ability: Natural Cure  
+EVs: 252 SpA / 4 SpD / 252 Spe  
+Modest Nature  
+IVs: 0 Atk  
+- Surf  
+- Thunderbolt  
+- Ice Beam  
+- Rapid Spin

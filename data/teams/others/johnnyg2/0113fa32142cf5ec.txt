@@ -1,0 +1,55 @@
+Gengar @ Choice Band  
+Ability: Levitate  
+EVs: 40 HP / 252 Atk / 216 Spe  
+Adamant Nature  
+- Perish Song  
+- Explosion  
+- Brick Break  
+- Hypnosis  
+
+Milotic @ Leftovers  
+Ability: Marvel Scale  
+EVs: 248 HP / 252 Def / 8 Spe  
+Bold Nature  
+IVs: 0 Atk  
+- Surf  
+- Toxic  
+- Recover  
+- Refresh  
+
+Claydol @ Leftovers  
+Ability: Levitate  
+EVs: 252 HP / 88 Atk / 32 Def / 136 SpD  
+Careful Nature  
+- Explosion  
+- Rapid Spin  
+- Shadow Ball  
+- Rest  
+
+Blissey (F) @ Leftovers  
+Ability: Natural Cure  
+EVs: 252 Def / 200 SpA / 56 Spe  
+Modest Nature  
+IVs: 0 Atk  
+- Soft-Boiled  
+- Thunderbolt  
+- Ice Beam  
+- Calm Mind  
+
+Registeel @ Leftovers  
+Ability: Clear Body  
+EVs: 252 HP / 136 Def / 92 SpD / 28 Spe  
+Impish Nature  
+- Seismic Toss  
+- Thunder Wave  
+- Counter  
+- Explosion  
+
+Dugtrio @ Choice Band  
+Ability: Arena Trap  
+EVs: 8 HP / 248 Atk / 252 Spe  
+Jolly Nature  
+- Earthquake  
+- Aerial Ace  
+- Hidden Power [Bug]  
+- Substitute

@@ -1,0 +1,56 @@
+Snorlax @ Choice Band  
+Ability: Immunity  
+EVs: 8 HP / 252 Atk / 48 Def / 116 SpD / 84 Spe  
+Adamant Nature  
+- Body Slam  
+- Self-Destruct  
+- Focus Punch  
+- Sleep Talk  
+
+Zapdos @ Leftovers  
+Ability: Pressure  
+EVs: 252 HP / 108 Def / 116 SpD / 32 Spe  
+Calm Nature  
+IVs: 0 Atk  
+- Roar  
+- Substitute  
+- Baton Pass  
+- Agility  
+
+Celebi @ Leftovers  
+Ability: Natural Cure  
+EVs: 252 HP / 124 Def / 100 SpD / 32 Spe  
+Bold Nature  
+- Leech Seed  
+- Hidden Power [Bug]  
+- Substitute  
+- Baton Pass  
+
+Umbreon @ Leftovers  
+Ability: Synchronize  
+EVs: 252 HP / 4 SpD / 252 Spe  
+Timid Nature  
+IVs: 0 Atk  
+- Taunt  
+- Substitute  
+- Baton Pass  
+- Sand Attack  
+
+Magneton @ Magnet  
+Ability: Magnet Pull  
+EVs: 252 SpA / 4 SpD / 252 Spe  
+Timid Nature  
+IVs: 2 Atk / 30 SpA  
+- Thunderbolt  
+- Hidden Power [Grass]  
+- Thunder Wave  
+- Reflect  
+
+Marowak @ Thick Club  
+Ability: Rock Head  
+EVs: 24 HP / 252 Atk / 232 Spe  
+Jolly Nature  
+- Belly Drum  
+- Earthquake  
+- Hidden Power [Rock]  
+- Double-Edge

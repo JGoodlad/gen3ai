@@ -1,0 +1,56 @@
+Medicham @ Lum Berry  
+Ability: Pure Power  
+EVs: 252 Atk / 4 Def / 252 Spe  
+Jolly Nature  
+- Focus Punch  
+- Brick Break  
+- Shadow Ball  
+- Rock Slide  
+
+Breloom @ Leftovers  
+Ability: Effect Spore  
+EVs: 252 Atk / 4 SpD / 252 Spe  
+Jolly Nature  
+IVs: 1 HP  
+- Spore  
+- Substitute  
+- Focus Punch  
+- Leech Seed  
+
+Salamence @ Leftovers  
+Ability: Intimidate  
+EVs: 252 Atk / 48 SpA / 208 Spe  
+Lonely Nature  
+- Dragon Dance  
+- Hidden Power [Flying]  
+- Fire Blast  
+- Earthquake  
+
+Zapdos @ Leftovers  
+Ability: Pressure  
+EVs: 248 HP / 108 Def / 88 SpA / 64 Spe  
+Modest Nature  
+IVs: 2 Atk / 30 SpA  
+- Thunderbolt  
+- Hidden Power [Grass]  
+- Agility  
+- Baton Pass  
+
+Suicune @ Leftovers  
+Ability: Pressure  
+EVs: 248 HP / 176 SpA / 56 SpD / 28 Spe  
+Calm Nature  
+IVs: 0 Atk  
+- Surf  
+- Ice Beam  
+- Calm Mind  
+- Rest  
+
+Registeel @ Leftovers  
+Ability: Clear Body  
+EVs: 252 HP / 136 Def / 92 SpD / 28 Spe  
+Impish Nature  
+- Seismic Toss  
+- Thunder Wave  
+- Explosion  
+- Counter

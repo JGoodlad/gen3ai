@@ -1,0 +1,56 @@
+Dugtrio @ Choice Band  
+Ability: Arena Trap  
+EVs: 140 HP / 252 Atk / 12 Def / 4 SpD / 100 Spe  
+Adamant Nature  
+- Earthquake  
+- Rock Slide  
+- Hidden Power [Bug]  
+- Aerial Ace  
+
+Forretress @ Leftovers  
+Ability: Sturdy  
+EVs: 252 HP / 4 Def / 252 SpD  
+Sassy Nature  
+- Spikes  
+- Explosion  
+- Hidden Power [Bug]  
+- Zap Cannon  
+
+Claydol @ Leftovers  
+Ability: Levitate  
+EVs: 252 HP / 88 Atk / 112 Def / 56 SpD  
+Sassy Nature  
+- Rapid Spin  
+- Rain Dance  
+- Psychic  
+- Explosion  
+
+Blissey (F) @ Leftovers  
+Ability: Natural Cure  
+EVs: 168 HP / 252 Def / 88 Spe  
+Bold Nature  
+IVs: 0 Atk  
+- Seismic Toss  
+- Thunder Wave  
+- Aromatherapy  
+- Soft-Boiled  
+
+Suicune @ Leftovers  
+Ability: Pressure  
+EVs: 248 HP / 176 Def / 84 Spe  
+Bold Nature  
+IVs: 0 Atk  
+- Calm Mind  
+- Surf  
+- Rest  
+- Roar  
+
+Raikou @ Leftovers  
+Ability: Pressure  
+EVs: 220 HP / 108 SpA / 4 SpD / 176 Spe  
+Timid Nature  
+IVs: 2 Atk / 30 Def  
+- Thunderbolt  
+- Calm Mind  
+- Hidden Power [Ice]  
+- Rest

@@ -1,0 +1,53 @@
+Tyranitar @ Leftovers  
+Ability: Sand Stream  
+EVs: 252 HP / 24 Def / 188 SpA / 44 Spe  
+Modest Nature  
+- Crunch  
+- Pursuit  
+- Flamethrower  
+- Brick Break  
+
+Jirachi @ Leftovers  
+Ability: Serene Grace  
+EVs: 252 HP / 36 Atk / 72 Def / 148 SpD  
+Sassy Nature  
+- Body Slam  
+- Fire Punch  
+- Wish  
+- Protect  
+
+Claydol @ Leftovers  
+Ability: Levitate  
+EVs: 252 HP / 212 Atk / 16 Def / 28 SpD  
+Impish Nature  
+- Earthquake  
+- Rock Slide  
+- Explosion  
+- Rapid Spin  
+
+Breloom @ Leftovers  
+Ability: Effect Spore  
+EVs: 252 Atk / 4 SpD / 252 Spe  
+Jolly Nature  
+- Spore  
+- Brick Break  
+- Swords Dance  
+- Mach Punch  
+
+Skarmory @ Leftovers  
+Ability: Keen Eye  
+EVs: 248 HP / 248 SpD / 12 Spe  
+Careful Nature  
+- Spikes  
+- Drill Peck  
+- Protect  
+- Roar  
+
+Zapdos @ Leftovers  
+Ability: Pressure  
+EVs: 120 Atk / 188 SpA / 200 Spe  
+Mild Nature  
+- Thunderbolt  
+- Drill Peck  
+- Hidden Power [Grass]  
+- Agility

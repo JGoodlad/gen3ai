@@ -1,0 +1,55 @@
+Dugtrio @ Choice Band  
+Ability: Arena Trap  
+EVs: 140 HP / 252 Atk / 12 Def / 104 Spe  
+Adamant Nature  
+IVs: 30 SpD / 30 Spe  
+- Earthquake  
+- Aerial Ace  
+- Hidden Power [Bug]  
+- Rock Slide  
+
+Gengar @ Leftovers  
+Ability: Levitate  
+EVs: 76 HP / 252 SpA / 180 Spe  
+Modest Nature  
+- Rain Dance  
+- Explosion  
+- Thunderbolt  
+- Giga Drain  
+
+Suicune @ Leftovers  
+Ability: Pressure  
+EVs: 252 SpA / 4 SpD / 252 Spe  
+Modest Nature  
+IVs: 2 Atk / 30 SpA  
+- Surf  
+- Ice Beam  
+- Hidden Power [Grass]  
+- Calm Mind  
+
+Heracross @ Salac Berry  
+Ability: Swarm  
+EVs: 252 Atk / 4 SpD / 252 Spe  
+Adamant Nature  
+- Megahorn  
+- Reversal  
+- Swords Dance  
+- Endure  
+
+Metagross @ Choice Band  
+Ability: Clear Body  
+EVs: 200 HP / 252 Atk / 56 Spe  
+Adamant Nature  
+- Meteor Mash  
+- Earthquake  
+- Rock Slide  
+- Explosion  
+
+Snorlax @ Lum Berry  
+Ability: Immunity  
+EVs: 64 HP / 176 Atk / 108 Def / 144 SpD / 16 Spe  
+Adamant Nature  
+- Body Slam  
+- Focus Punch  
+- Shadow Ball  
+- Self-Destruct

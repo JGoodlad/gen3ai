@@ -1,0 +1,56 @@
+Aerodactyl @ Choice Band  
+Ability: Rock Head  
+EVs: 4 HP / 252 Atk / 252 Spe  
+Jolly Nature  
+- Rock Slide  
+- Earthquake  
+- Hidden Power [Flying]  
+- Double-Edge  
+
+Celebi @ Leftovers  
+Ability: Natural Cure  
+EVs: 184 HP / 252 SpA / 72 Spe  
+Modest Nature  
+IVs: 2 Atk / 30 SpA / 30 Spe  
+- Leech Seed  
+- Psychic  
+- Hidden Power [Fire]  
+- Giga Drain  
+
+Jirachi @ Leftovers  
+Ability: Serene Grace  
+EVs: 252 HP / 236 Def / 20 Spe  
+Bold Nature  
+IVs: 0 Atk  
+- Wish  
+- Protect  
+- Fire Punch  
+- Toxic  
+
+Suicune @ Leftovers  
+Ability: Pressure  
+EVs: 248 HP / 232 SpA / 28 Spe  
+Modest Nature  
+IVs: 0 Atk  
+- Surf  
+- Ice Beam  
+- Calm Mind  
+- Rest  
+
+Claydol @ Leftovers  
+Ability: Levitate  
+EVs: 16 HP / 248 Atk / 4 Def / 240 Spe  
+Jolly Nature  
+- Earthquake  
+- Shadow Ball  
+- Explosion  
+- Rapid Spin  
+
+Skarmory @ Leftovers  
+Ability: Keen Eye  
+EVs: 248 HP / 248 SpD / 12 Spe  
+Careful Nature  
+- Spikes  
+- Drill Peck  
+- Protect  
+- Roar

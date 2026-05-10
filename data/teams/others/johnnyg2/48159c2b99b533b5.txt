@@ -1,0 +1,56 @@
+Salamence @ Choice Band  
+Ability: Intimidate  
+EVs: 252 Atk / 4 SpD / 252 Spe  
+Adamant Nature  
+- Hidden Power [Flying]  
+- Earthquake  
+- Rock Slide  
+- Brick Break  
+
+Forretress @ Leftovers  
+Ability: Sturdy  
+EVs: 252 HP / 4 Atk / 252 SpD  
+Careful Nature  
+- Hidden Power [Ghost]  
+- Spikes  
+- Rest  
+- Rapid Spin  
+
+Blissey (F) @ Leftovers  
+Ability: Natural Cure  
+EVs: 252 Def / 212 SpA / 44 Spe  
+Bold Nature  
+IVs: 0 Atk  
+- Soft-Boiled  
+- Seismic Toss  
+- Ice Beam  
+- Aromatherapy  
+
+Vaporeon @ Leftovers  
+Ability: Water Absorb  
+EVs: 252 HP / 252 Def / 4 SpD  
+Bold Nature  
+IVs: 0 Atk  
+- Surf  
+- Wish  
+- Protect  
+- Toxic  
+
+Steelix @ Leftovers  
+Ability: Rock Head  
+EVs: 248 HP / 104 Atk / 68 Def / 84 SpD / 4 Spe  
+Impish Nature  
+- Earthquake  
+- Roar  
+- Protect  
+- Explosion  
+
+Raikou @ Leftovers  
+Ability: Pressure  
+EVs: 212 HP / 116 SpA / 4 SpD / 176 Spe  
+Timid Nature  
+IVs: 2 Atk / 30 Def  
+- Calm Mind  
+- Thunderbolt  
+- Hidden Power [Ice]  
+- Substitute

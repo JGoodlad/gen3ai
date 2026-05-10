@@ -1,0 +1,56 @@
+Zapdos @ Leftovers  
+Ability: Pressure  
+EVs: 232 HP / 64 SpA / 212 Spe  
+Modest Nature  
+IVs: 2 Atk / 30 Def  
+- Thunderbolt  
+- Light Screen  
+- Hidden Power [Ice]  
+- Toxic  
+
+Skarmory @ Leftovers  
+Ability: Keen Eye  
+EVs: 248 HP / 248 SpD / 12 Spe  
+Careful Nature  
+- Spikes  
+- Toxic  
+- Drill Peck  
+- Roar  
+
+Tyranitar @ Leftovers  
+Ability: Sand Stream  
+EVs: 240 HP / 228 Atk / 40 Spe  
+Adamant Nature  
+- Rock Slide  
+- Earthquake  
+- Hidden Power [Bug]  
+- Focus Punch  
+
+Aerodactyl @ Choice Band  
+Ability: Rock Head  
+EVs: 252 Atk / 4 SpD / 252 Spe  
+Jolly Nature  
+- Rock Slide  
+- Double-Edge  
+- Hidden Power [Bug]  
+- Earthquake  
+
+Swampert @ Leftovers  
+Ability: Torrent  
+EVs: 248 HP / 156 Def / 104 SpD  
+Bold Nature  
+IVs: 0 Atk  
+- Surf  
+- Toxic  
+- Refresh  
+- Protect  
+
+Gengar @ Leftovers  
+Ability: Levitate  
+EVs: 80 HP / 16 SpA / 232 SpD / 180 Spe  
+Modest Nature  
+IVs: 0 Atk  
+- Giga Drain  
+- Taunt  
+- Will-O-Wisp  
+- Thunderbolt

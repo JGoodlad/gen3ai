@@ -77,6 +77,30 @@ npm run test-all
 
 *(Note: These scripts point to `deps/` and `tools/` so you never have to `cd` manually.)*
 
+## 🧠 Training & Reinforcement Learning
+
+The project uses Stable Baselines3 (PPO) to train a Gen 3 OU agent. The system features a modular observation space and an entity-based embedding layer for Pokémon species.
+
+### Key Components
+- **Observation Space (1684 dims)**: Enriched with base stats, move properties (power, secondary effects, recoil), and battle state.
+* **Species Embedding**: Uses a learned 32-dimensional latent vector for each of the 386 Pokémon species.
+- **Fail-Fast Mappings**: Training automatically validates all metadata JSONs in `data/pokemon/` before starting.
+
+### Training a Model
+To start a new training run with the optimized CPU hyperparameters:
+```bash
+PYTHONPATH=src ./deps/venv/bin/python3 src/main/train_rl_agent.py --steps 100000 --n-envs 8 --eval-battles 200
+```
+
+### Monitoring Progress
+We use a multi-stage coordinator to track learning across milestones (1k, 10k, 100k, 250k steps).
+```bash
+./deps/venv/bin/python3 scratch/multi_stage_coordinator.py
+```
+This script produces a real-time log and a final progress report in `scratch/training_progress_report.md`.
+
+---
+
 ## 📈 Long-term Goals
 - [ ] Implement a custom neural network architecture tailored for Gen 3 state representation.
 - [ ] Train via Self-Play Reinforcement Learning.

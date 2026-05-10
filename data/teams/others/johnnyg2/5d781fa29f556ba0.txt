@@ -1,0 +1,57 @@
+Milotic @ Leftovers  
+Ability: Marvel Scale  
+EVs: 248 HP / 252 Def / 8 Spe  
+Bold Nature  
+IVs: 0 Atk  
+- Surf  
+- Toxic  
+- Refresh  
+- Recover  
+
+Misdreavus @ Leftovers  
+Ability: Levitate  
+EVs: 252 HP / 4 SpA / 252 SpD  
+Calm Nature  
+IVs: 0 Atk  
+- Thunderbolt  
+- Rest  
+- Perish Song  
+- Mean Look  
+
+Cloyster @ Leftovers  
+Ability: Shell Armor  
+EVs: 248 HP / 8 Def / 252 SpD  
+Calm Nature  
+IVs: 0 Atk  
+- Surf  
+- Rest  
+- Rapid Spin  
+- Spikes  
+
+Steelix @ Leftovers  
+Ability: Rock Head  
+EVs: 248 HP / 144 Atk / 16 Def / 100 SpD  
+Impish Nature  
+- Earthquake  
+- Roar  
+- Toxic  
+- Protect  
+
+Zapdos @ Leftovers  
+Ability: Pressure  
+EVs: 224 HP / 252 SpD / 32 Spe  
+Calm Nature  
+IVs: 0 Atk  
+- Thunderbolt  
+- Rest  
+- Roar  
+- Sleep Talk  
+
+Aerodactyl @ Choice Band  
+Ability: Rock Head  
+EVs: 252 Atk / 4 SpD / 252 Spe  
+Jolly Nature  
+- Rock Slide  
+- Earthquake  
+- Double-Edge  
+- Hidden Power [Bug]

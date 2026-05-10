@@ -1,0 +1,57 @@
+Swampert @ Leftovers  
+Ability: Torrent  
+EVs: 248 HP / 156 Def / 104 SpD  
+Bold Nature  
+IVs: 0 Atk  
+- Surf  
+- Counter  
+- Roar  
+- Protect  
+
+Forretress @ Leftovers  
+Ability: Sturdy  
+EVs: 252 HP / 4 Atk / 252 SpD  
+Careful Nature  
+- Hidden Power [Ghost]  
+- Spikes  
+- Rest  
+- Rapid Spin  
+
+Starmie @ Leftovers  
+Ability: Natural Cure  
+EVs: 252 SpA / 4 SpD / 252 Spe  
+Modest Nature  
+IVs: 0 Atk  
+- Surf  
+- Ice Beam  
+- Thunderbolt  
+- Recover  
+
+Zapdos @ Leftovers  
+Ability: Pressure  
+EVs: 224 HP / 252 SpD / 32 Spe  
+Calm Nature  
+IVs: 2 Atk / 30 SpA  
+- Thunderbolt  
+- Rest  
+- Hidden Power [Grass]  
+- Roar  
+
+Blissey (F) @ Leftovers  
+Ability: Natural Cure  
+EVs: 168 HP / 252 Def / 88 Spe  
+Bold Nature  
+IVs: 0 Atk  
+- Aromatherapy  
+- Thunder Wave  
+- Soft-Boiled  
+- Seismic Toss  
+
+Medicham @ Leftovers  
+Ability: Pure Power  
+EVs: 4 HP / 252 Atk / 252 Spe  
+Jolly Nature  
+- Brick Break  
+- Focus Punch  
+- Recover  
+- Shadow Ball

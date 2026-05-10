@@ -1,0 +1,55 @@
+Snorlax @ Choice Band  
+Ability: Immunity  
+EVs: 8 HP / 252 Atk / 48 Def / 116 SpD / 84 Spe  
+Adamant Nature  
+- Body Slam  
+- Focus Punch  
+- Self-Destruct  
+- Sleep Talk  
+
+Marowak @ Thick Club  
+Ability: Rock Head  
+EVs: 24 HP / 252 Atk / 232 Spe  
+Jolly Nature  
+- Swords Dance  
+- Earthquake  
+- Focus Punch  
+- Hidden Power [Ghost]  
+
+Zapdos @ Leftovers  
+Ability: Pressure  
+EVs: 248 HP / 108 Def / 20 SpA / 100 SpD / 32 Spe  
+Modest Nature  
+IVs: 2 Atk / 30 SpA  
+- Thunderbolt  
+- Agility  
+- Hidden Power [Grass]  
+- Baton Pass  
+
+Regirock @ Leftovers  
+Ability: Clear Body  
+EVs: 252 HP / 188 Atk / 68 SpD  
+Adamant Nature  
+- Hidden Power [Rock]  
+- Thunder Wave  
+- Explosion  
+- Earthquake  
+
+Metagross @ Leftovers  
+Ability: Clear Body  
+EVs: 108 HP / 252 Atk / 148 Spe  
+Adamant Nature  
+- Meteor Mash  
+- Earthquake  
+- Agility  
+- Explosion  
+
+Suicune @ Leftovers  
+Ability: Pressure  
+EVs: 252 HP / 136 SpA / 56 SpD / 64 Spe  
+Calm Nature  
+IVs: 0 Atk  
+- Surf  
+- Ice Beam  
+- Calm Mind  
+- Rest

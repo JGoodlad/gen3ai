@@ -1,0 +1,56 @@
+Medicham @ Lum Berry  
+Ability: Pure Power  
+EVs: 252 Atk / 4 SpD / 252 Spe  
+Jolly Nature  
+- Brick Break  
+- Focus Punch  
+- Rock Slide  
+- Shadow Ball  
+
+Celebi @ Leftovers  
+Ability: Natural Cure  
+EVs: 80 HP / 252 SpA / 176 Spe  
+Timid Nature  
+IVs: 3 Atk / 30 SpA  
+- Giga Drain  
+- Hidden Power [Electric]  
+- Calm Mind  
+- Baton Pass  
+
+Metagross @ Leftovers  
+Ability: Clear Body  
+EVs: 184 HP / 232 Atk / 92 Spe  
+Adamant Nature  
+- Meteor Mash  
+- Earthquake  
+- Explosion  
+- Agility  
+
+Zapdos @ Leftovers  
+Ability: Pressure  
+EVs: 252 SpA / 80 SpD / 176 Spe  
+Modest Nature  
+IVs: 2 Atk / 30 SpA  
+- Thunderbolt  
+- Hidden Power [Grass]  
+- Baton Pass  
+- Roar  
+
+Charizard @ Leftovers  
+Ability: Blaze  
+EVs: 252 SpA / 4 SpD / 252 Spe  
+Timid Nature  
+IVs: 2 Atk / 30 SpA  
+- Fire Blast  
+- Hidden Power [Grass]  
+- Dragon Claw  
+- Beat Up  
+
+Swampert @ Leftovers  
+Ability: Torrent  
+EVs: 248 HP / 88 Def / 96 SpA / 32 SpD / 44 Spe  
+Quiet Nature  
+- Surf  
+- Earthquake  
+- Ice Beam  
+- Refresh

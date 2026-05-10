@@ -1,0 +1,56 @@
+Aerodactyl @ Choice Band  
+Ability: Rock Head  
+EVs: 4 HP / 252 Atk / 252 Spe  
+Jolly Nature  
+- Rock Slide  
+- Earthquake  
+- Double-Edge  
+- Hidden Power [Flying]  
+
+Forretress @ Leftovers  
+Ability: Sturdy  
+EVs: 252 HP / 4 Atk / 252 SpD  
+Careful Nature  
+- Spikes  
+- Rest  
+- Hidden Power [Ghost]  
+- Rapid Spin  
+
+Suicune @ Leftovers  
+Ability: Pressure  
+EVs: 248 HP / 176 Def / 84 Spe  
+Bold Nature  
+IVs: 0 Atk  
+- Surf  
+- Calm Mind  
+- Rest  
+- Roar  
+
+Donphan @ Leftovers  
+Ability: Sturdy  
+EVs: 252 HP / 4 Atk / 252 Def  
+Impish Nature  
+- Earthquake  
+- Hidden Power [Rock]  
+- Rapid Spin  
+- Rest  
+
+Blissey (F) @ Leftovers  
+Ability: Natural Cure  
+EVs: 252 Def / 200 SpA / 56 Spe  
+Modest Nature  
+IVs: 0 Atk  
+- Soft-Boiled  
+- Seismic Toss  
+- Ice Beam  
+- Aromatherapy  
+
+Sableye @ Leftovers  
+Ability: Keen Eye  
+EVs: 252 HP / 252 Def / 4 SpD  
+Bold Nature  
+IVs: 0 Atk  
+- Seismic Toss  
+- Knock Off  
+- Psych Up  
+- Recover

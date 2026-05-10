@@ -1,0 +1,57 @@
+Regirock @ Leftovers  
+Ability: Clear Body  
+EVs: 248 HP / 196 Atk / 64 SpD  
+Adamant Nature  
+- Hidden Power [Rock]  
+- Thunder Wave  
+- Explosion  
+- Earthquake  
+
+Jirachi @ Leftovers  
+Ability: Serene Grace  
+EVs: 252 HP / 120 SpA / 136 Spe  
+Modest Nature  
+IVs: 2 Atk / 30 SpA  
+- Calm Mind  
+- Hidden Power [Grass]  
+- Psychic  
+- Fire Punch  
+
+Blissey (F) @ Leftovers  
+Ability: Natural Cure  
+EVs: 168 HP / 252 Def / 88 Spe  
+Bold Nature  
+IVs: 0 Atk  
+- Thunder Wave  
+- Soft-Boiled  
+- Seismic Toss  
+- Wish  
+
+Starmie @ Leftovers  
+Ability: Natural Cure  
+EVs: 248 HP / 52 Def / 32 SpD / 176 Spe  
+Timid Nature  
+IVs: 0 Atk  
+- Surf  
+- Ice Beam  
+- Recover  
+- Rapid Spin  
+
+Swampert @ Leftovers  
+Ability: Torrent  
+EVs: 252 HP / 148 Def / 108 SpD  
+Bold Nature  
+IVs: 0 Atk  
+- Surf  
+- Counter  
+- Roar  
+- Protect  
+
+Salamence @ Leftovers  
+Ability: Intimidate  
+EVs: 252 HP / 144 Atk / 112 Spe  
+Adamant Nature  
+- Dragon Dance  
+- Hidden Power [Flying]  
+- Earthquake  
+- Rock Slide

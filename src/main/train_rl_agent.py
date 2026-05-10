@@ -1,50 +1,90 @@
 import asyncio
 import os
+import sys
 import json
 import numpy as np
 import torch
 import argparse
-import time
 from datetime import datetime
-from typing import Dict, Optional, List, Any
-
-from poke_env.player import (
-    Player,
-    RandomPlayer,
-    SimpleHeuristicsPlayer,
-)
-from poke_env.battle.abstract_battle import AbstractBattle
-from poke_env.player.battle_order import BattleOrder, DefaultBattleOrder
-from poke_env.battle.pokemon import Pokemon
-from poke_env.battle.move import Move
-from poke_env.data import GenData
-from poke_env.ps_client import LocalhostServerConfiguration, AccountConfiguration
-
-# RL Imports
-import gymnasium as gym
-from gymnasium.spaces import Box, Discrete
-from poke_env.environment.singles_env import SinglesEnv
-from poke_env.environment.single_agent_wrapper import SingleAgentWrapper
+from gymnasium import spaces
 from stable_baselines3 import PPO
 from stable_baselines3.common.callbacks import CheckpointCallback
 from stable_baselines3.common.vec_env import DummyVecEnv, SubprocVecEnv
 from stable_baselines3.common.monitor import Monitor
-from stable_baselines3.common.torch_layers import BaseFeaturesExtractor
 from stable_baselines3.common.policies import ActorCriticPolicy
 
+from agents.observation.state_encoder import Gen3ObservationEncoder
+from agents.action.mask_generator import Gen3ActionMasker
+from agents.rl_agent import RLPlayer, SingleAgentWrapper
+from agents.observation.species import SpeciesEncoder
+from agents.observation.moves import MovesEncoder
+from agents.observation.items import ItemsEncoder
+from agents.observation.abilities import AbilitiesEncoder
+from agents.observation.reactive import ReactiveEncoder
+from agents.observation.global_env import GlobalEnvEncoder
 from utils.teambuilder import Gen3Teambuilder
+from utils.team_loader import TeamLoader
 
-# --- Configuration ---
+from poke_env.player import RandomPlayer, SimpleHeuristicsPlayer
+from poke_env import AccountConfiguration, LocalhostServerConfiguration
+from poke_env.environment.singles_env import SinglesEnv
+
 BATTLE_FORMAT = "gen3ou"
-N_FEATURES = 15 
-DEFAULT_TEAM_NAME = "Big 5 + Starmie (Beerlover)"
 
-class Gen3FeaturesExtractor(BaseFeaturesExtractor):
-    def __init__(self, observation_space):
-        super().__init__(observation_space, features_dim=N_FEATURES)
-
+class Gen3FeaturesExtractor(torch.nn.Module):
+    def __init__(self, observation_space: spaces.Dict):
+        super().__init__()
+        # Total observation dimension is 1684
+        # We want to embed the species IDs
+        # There are 12 pokemon slots, each has species ID as the first feature
+        self.species_embedding = torch.nn.Embedding(387, 32) # Gen 3 has 386 pokemon
+        
+        # Output dimension after embedding and concatenating remaining features
+        # Each pokemon (12) has: 32 (embed) + 101 (other features) = 133
+        # Total: 12 * 133 = 1596
+        # Remaining features (Global + Active + Reactive): 73 + 15 = 88
+        # Total features: 1596 + 88 = 1684
+        
+        # Projection layer to reach features_dim
+        self.projection = torch.nn.Linear(1684, 256)
+        self.features_dim = 256
+        self.trace_count = 0
+        
     def forward(self, obs):
-        return obs["observation"]
+        x = obs["observation"]
+        batch_size = x.shape[0]
+        
+        # Separate pokemon parts from global/reactive parts
+        # Pokemon part is first 1596 dims (12 * 133)
+        # But wait, in our encoder, each pokemon block is 133 dims
+        # [SpeciesID(1), Stats(6), Type1(18), Type2(18), Move1(13)*4, Status(7), Item(1), Ability(1), Level(1), HP(1), Active(1)] = 133
+        pokemon_part = x[:, :1596].reshape(batch_size, 12, 133)
+        remaining_part = x[:, 1596:]
+        
+        # Extract IDs (first dim of each block)
+        species_ids = pokemon_part[:, :, 0].long() # [B, 12]
+        
+        if self.trace_count < 1:
+            print(f"\n[MACHINERY TRACE] Batch Size: {batch_size}")
+            print(f"[MACHINERY TRACE] Raw Species IDs (First 3 slots): {species_ids[0, :3].tolist()}")
+            self.trace_count += 1
+        
+        # Embed species
+        embedded_species = self.species_embedding(species_ids) # [B, 12, 32]
+        
+        # The first 32 dims of each pokemon_part block are reserved for species
+        # We replace them with the embedding
+        rest_of_pokemon = pokemon_part[:, :, 32:] # [B, 12, 101]
+        
+        # Combine
+        pokemon_enriched = torch.cat([embedded_species, rest_of_pokemon], dim=2) # [B, 12, 133]
+        pokemon_flat = pokemon_enriched.reshape(batch_size, -1) # [B, 1596]
+        
+        # Final combined vector (1596 + 73 + 15 = 1684)
+        combined = torch.cat([pokemon_flat, remaining_part], dim=1) # [B, 1684]
+        
+        # Project to features_dim
+        return self.projection(combined)
 
 class MaskedActorCriticPolicy(ActorCriticPolicy):
     def __init__(self, *args, **kwargs):
@@ -55,9 +95,16 @@ class MaskedActorCriticPolicy(ActorCriticPolicy):
             features_extractor_class=Gen3FeaturesExtractor,
         )
 
-    def forward(self, obs, deterministic=False):
+    def extract_features(self, obs, features_extractor=None):
         self._mask = obs["action_mask"]
+        return super().extract_features(obs, features_extractor)
+
+    def forward(self, obs, deterministic=False):
         return super().forward(obs, deterministic)
+
+    def get_distribution(self, obs):
+        self._mask = obs["action_mask"]
+        return super().get_distribution(obs)
 
     def evaluate_actions(self, obs, actions):
         self._mask = obs["action_mask"]
@@ -65,161 +112,99 @@ class MaskedActorCriticPolicy(ActorCriticPolicy):
 
     def _get_action_dist_from_latent(self, latent_pi):
         action_logits = self.action_net(latent_pi)
-        mask = torch.where(self._mask == 1, 0, float("-inf"))
+        # self._mask is (batch, 10). 1 for valid, 0 for invalid.
+        mask = torch.where(self._mask == 1, 0.0, float("-inf"))
+            
         return self.action_dist.proba_distribution(action_logits + mask)
 
+def load_mappings():
+    mappings = {}
+    mapping_files = {
+        "species": "data/pokemon/gen3_species.json",
+        "moves": "data/pokemon/gen3_moves.json",
+        "abilities": "data/pokemon/gen3_abilities.json",
+        "items": "data/pokemon/gen3_items.json"
+    }
+    for key, path in mapping_files.items():
+        if not os.path.exists(path):
+            raise FileNotFoundError(f"CRITICAL: Mapping file missing: {path}. Run data generation script first!")
+        
+        with open(path, "r") as f:
+            data = json.load(f)
+            if not data:
+                raise ValueError(f"CRITICAL: Mapping file is empty: {path}")
+            mappings[key] = data
+            
+    return mappings
+
+MAPPINGS = load_mappings()
+
+def get_observation_encoder():
+    return Gen3ObservationEncoder(MAPPINGS)
+
+
 class Gen3Env(SinglesEnv):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.observation_encoder = get_observation_encoder()
+        
+        # Define spaces
+        obs_dim = self.observation_encoder.dimension
+        self.observation_space = spaces.Box(low=-np.inf, high=np.inf, shape=(obs_dim,), dtype=np.float32)
+        # Gen 3 has 10 actions: 6 switches (0-5) and 4 moves (6-9)
+        self.action_space = spaces.Discrete(10)
+        
+        # PokeEnv will automatically wrap observation_spaces in a Dict(observation, action_mask)
+        # because of its __setattr__ override. We just need to provide the raw space here.
         self.observation_spaces = {
-            agent: self.describe_embedding()
-            for agent in self.possible_agents
+            self.agent1.username: self.observation_space,
+            self.agent2.username: self.observation_space
         }
 
-    def embed_battle(self, battle: AbstractBattle):
-        moves_base_power = np.zeros(4)
-        moves_dmg_multiplier = np.ones(4)
-        for i, move in enumerate(battle.available_moves):
-            moves_base_power[i] = move.base_power / 100
-            if battle.opponent_active_pokemon is not None:
-                moves_dmg_multiplier[i] = move.type.damage_multiplier(
-                    battle.opponent_active_pokemon.type_1,
-                    battle.opponent_active_pokemon.type_2,
-                    type_chart=GenData.from_gen(3).type_chart,
-                )
+    def embed_battle(self, battle):
+        return self.observation_encoder.encode(battle)
 
-        fainted_mon_team = len([mon for mon in battle.team.values() if mon.fainted]) / 6
-        fainted_mon_opponent = (
-            len([mon for mon in battle.opponent_team.values() if mon.fainted]) / 6
-        )
-
-        our_hp = battle.active_pokemon.current_hp_fraction if battle.active_pokemon else 0.0
-        opp_hp = (
-            battle.opponent_active_pokemon.current_hp_fraction 
-            if battle.opponent_active_pokemon else 0.0
-        )
-
-        our_spikes = battle.side_conditions.get("spikes", 0) / 3
-        opp_spikes = battle.opponent_side_conditions.get("spikes", 0) / 3
-
-        return np.concatenate(
-            [
-                moves_base_power,
-                moves_dmg_multiplier,
-                [fainted_mon_team, fainted_mon_opponent],
-                [our_hp, opp_hp],
-                [our_spikes, opp_spikes],
-                [1.0 if battle.active_pokemon and battle.active_pokemon.status else 0.0]
-            ],
-            dtype=np.float32,
-        )
-
-    def calc_reward(self, battle) -> float:
+    def get_action_mask(self, battle):
+        return Gen3ActionMasker.get_mask(battle)
+        
+    def calc_reward(self, battle):
         return self.reward_computing_helper(
             battle,
             fainted_value=2.0,
             hp_value=1.0,
-            status_value=0.5,
-            victory_value=30.0,
+            victory_value=30.0
         )
-
-    def describe_embedding(self):
-        return Box(-1, 4, shape=(N_FEATURES,), dtype=np.float32)
-
-class RLPlayer(Player):
-    def __init__(self, model, team, *args, **kwargs):
-        super().__init__(team=team, *args, **kwargs)
-        self.model = model
-
-    def choose_move(self, battle: AbstractBattle) -> BattleOrder:
-        if battle.wait:
-            return DefaultBattleOrder()
-        
-        obs = Gen3Env.embed_battle(self, battle) 
-        mask = np.array(SinglesEnv.get_action_mask(battle))
-        
-        # Manually apply masking for the prediction
-        with torch.no_grad():
-            obs_dict = {
-                "observation": torch.as_tensor(obs, device=self.model.device).unsqueeze(0),
-                "action_mask": torch.as_tensor(mask, device=self.model.device).unsqueeze(0),
-            }
-            
-            # This follows our MaskedActorCriticPolicy logic
-            features = self.model.policy.extract_features(obs_dict)
-            latent_pi, _ = self.model.policy.mlp_extractor(features)
-            action_logits = self.model.policy.action_net(latent_pi)
-            
-            m = torch.where(obs_dict["action_mask"] == 1, 0, float("-inf"))
-            probs = torch.softmax(action_logits + m, dim=1)
-            action = torch.argmax(probs, dim=1).cpu().numpy()
-        
-        return SinglesEnv.action_to_order(action[0], battle)
-
-def create_training_env(team_text):
-    def _init():
-        env = Gen3Env(
-            battle_format=BATTLE_FORMAT,
-            team=Gen3Teambuilder(team_text),
-            log_level=40,
-            server_configuration=LocalhostServerConfiguration,
-        )
-        opponent = SimpleHeuristicsPlayer(
-            battle_format=BATTLE_FORMAT,
-            team=Gen3Teambuilder(team_text),
-            server_configuration=LocalhostServerConfiguration,
-        )
-        return Monitor(SingleAgentWrapper(env, opponent))
-    return _init
-
-async def evaluate_model(model, team_text):
-    print("\nStarting Evaluation...")
-    rl_player = RLPlayer(
-        model=model,
-        team=Gen3Teambuilder(team_text),
-        battle_format=BATTLE_FORMAT,
-        server_configuration=LocalhostServerConfiguration,
-        max_concurrent_battles=10
-    )
-    
-    random_player = RandomPlayer(
-        battle_format=BATTLE_FORMAT,
-        team=Gen3Teambuilder(team_text),
-        server_configuration=LocalhostServerConfiguration,
-        max_concurrent_battles=10
-    )
-    
-    heuristic_player = SimpleHeuristicsPlayer(
-        battle_format=BATTLE_FORMAT,
-        team=Gen3Teambuilder(team_text),
-        server_configuration=LocalhostServerConfiguration,
-        max_concurrent_battles=10
-    )
-
-    print("Evaluating against RandomPlayer (100 battles)...")
-    await rl_player.battle_against(random_player, n_battles=100)
-    print(f"Win rate vs Random: {rl_player.n_won_battles}%")
-
-    rl_player.reset_battles()
-    print("Evaluating against SimpleHeuristicsPlayer (100 battles)...")
-    await rl_player.battle_against(heuristic_player, n_battles=100)
-    print(f"Win rate vs Heuristic: {rl_player.n_won_battles}%")
 
 async def main():
     parser = argparse.ArgumentParser(description="Train or Evaluate Gen 3 OU RL Agent")
+    
+    # --- Operational Flags ---
     parser.add_argument("--model", type=str, help="Path to existing model to load")
-    parser.add_argument("--eval-only", action="store_true", help="Skip training and only evaluate the model")
-    parser.add_argument("--steps", type=int, default=100000, help="Number of training steps")
+    parser.add_argument("--eval-only", action="store_true", help="Skip training and only evaluate")
+    parser.add_argument("--steps", type=int, default=100000, help="Total training timesteps")
+    parser.add_argument("--debug", action="store_true", help="Use DummyVecEnv (1 env) for debugging")
+    parser.add_argument("--n-envs", type=int, default=8, help="Number of parallel environments")
+    parser.add_argument("--eval-battles", type=int, default=100, help="Battles per evaluation opponent")
+    parser.add_argument("--seed", type=int, default=42, help="Random seed for reproducibility")
+
+    # --- Hyperparameter Flags (Optimized for CPU) ---
+    parser.add_argument("--batch-size", type=int, default=512, help="PPO mini-batch size")
+    parser.add_argument("--n-epochs", type=int, default=4, help="PPO optimization epochs")
+    parser.add_argument("--lr", type=float, default=3e-4, help="Learning rate")
+    parser.add_argument("--n-steps", type=int, default=2048, help="Steps per environment per rollout")
+    
     args = parser.parse_args()
 
-    # Load all teams
-    with open("data/teams/teams.json", "r") as f:
-        teams_meta = json.load(f)
+    # Load all teams using the new TeamLoader
+    loader = TeamLoader()
+    sample_teams = loader.get_sample_teams()
+    all_teams = loader.get_all_teams()
     
-    all_team_texts = [open(os.path.join("data", t["file"])).read() for t in teams_meta]
+    print(f"Loaded {len(sample_teams)} sample teams for trainee and {len(all_teams)} total teams for opponents.")
 
-    def get_random_team():
-        return np.random.choice(all_team_texts)
+    # Pre-pack teambuilders for performance and variety
+    trainee_teambuilder = Gen3Teambuilder(sample_teams)
+    opponent_teambuilder = Gen3Teambuilder(all_teams)
 
     def create_training_env_random(idx):
         def _init():
@@ -229,14 +214,14 @@ async def main():
             
             env = Gen3Env(
                 battle_format=BATTLE_FORMAT,
-                team=Gen3Teambuilder(get_random_team()),
+                team=trainee_teambuilder,
                 log_level=40,
                 server_configuration=LocalhostServerConfiguration,
                 account_configuration1=AccountConfiguration(env_username, "password"),
             )
             opponent = SimpleHeuristicsPlayer(
                 battle_format=BATTLE_FORMAT,
-                team=Gen3Teambuilder(get_random_team()),
+                team=opponent_teambuilder,
                 server_configuration=LocalhostServerConfiguration,
                 account_configuration=AccountConfiguration(opp_username, "password"),
             )
@@ -244,42 +229,51 @@ async def main():
         return _init
 
     # Running parallel environments
-    n_envs = 4
-    print(f"Initializing {n_envs} parallel environments via SubprocVecEnv...")
-    env = SubprocVecEnv([create_training_env_random(i) for i in range(n_envs)])
+    n_envs = 1 if args.debug else args.n_envs
+    EnvClass = DummyVecEnv if args.debug else SubprocVecEnv
+    
+    print(f"Initializing {n_envs} environments via {EnvClass.__name__}...")
+    env = EnvClass([create_training_env_random(i) for i in range(n_envs)])
+    # Note: env.seed() is deprecated in gymnasium VecEnv, use seed in reset or at init if supported.
+    # But for reproducibility, we pass it to PPO.
 
     async def evaluate_model_random(model):
-        print("\nStarting Random-vs-Random Evaluation...")
+        ts = datetime.now().strftime('%H%M%S')
+        print(f"\nStarting Evaluation (Session {ts}, Battles: {args.eval_battles})...")
+        
         rl_player = RLPlayer(
             model=model,
-            team=Gen3Teambuilder(get_random_team()),
+            team=trainee_teambuilder,
             battle_format=BATTLE_FORMAT,
             server_configuration=LocalhostServerConfiguration,
-            max_concurrent_battles=10
+            account_configuration=AccountConfiguration(f"RL_Eval_{ts}", "password"),
+            max_concurrent_battles=50
         )
         
         random_player = RandomPlayer(
             battle_format=BATTLE_FORMAT,
-            team=Gen3Teambuilder(get_random_team()),
+            team=opponent_teambuilder,
             server_configuration=LocalhostServerConfiguration,
-            max_concurrent_battles=10
+            account_configuration=AccountConfiguration(f"Rand_Eval_{ts}", "password"),
+            max_concurrent_battles=50
         )
         
         heuristic_player = SimpleHeuristicsPlayer(
             battle_format=BATTLE_FORMAT,
-            team=Gen3Teambuilder(get_random_team()),
+            team=opponent_teambuilder,
             server_configuration=LocalhostServerConfiguration,
-            max_concurrent_battles=10
+            account_configuration=AccountConfiguration(f"Heur_Eval_{ts}", "password"),
+            max_concurrent_battles=50
         )
 
-        print("Evaluating (Random Team) against RandomPlayer (Random Team) [100 battles]...")
-        await rl_player.battle_against(random_player, n_battles=100)
-        print(f"Win rate vs Random: {rl_player.n_won_battles}%")
-
+        print(f"Evaluating against RandomPlayer [{args.eval_battles} battles]...")
+        await rl_player.battle_against(random_player, n_battles=args.eval_battles)
+        print(f"Win rate vs Random: {rl_player.n_won_battles / args.eval_battles * 100:.1f}%")
+        
         rl_player.reset_battles()
-        print("Evaluating (Random Team) against HeuristicPlayer (Random Team) [100 battles]...")
-        await rl_player.battle_against(heuristic_player, n_battles=100)
-        print(f"Win rate vs Heuristic: {rl_player.n_won_battles}%")
+        print(f"Evaluating against HeuristicPlayer [{args.eval_battles} battles]...")
+        await rl_player.battle_against(heuristic_player, n_battles=args.eval_battles)
+        print(f"Win rate vs Heuristic: {rl_player.n_won_battles / args.eval_battles * 100:.1f}%")
 
     if args.model:
         model_path = args.model
@@ -295,54 +289,89 @@ async def main():
                     break
 
         print(f"Loading existing model from {model_path}")
-        model = PPO.load(model_path, env=env, device="cpu")
+        model = PPO.load(model_path, env=env, device="cpu", tensorboard_log="./tensorboard/")
         
         if args.eval_only:
             await evaluate_model_random(model)
             return
         else:
-            print(f"Continuing training for {args.steps} additional steps...")
+            print(f"Continuing Training (Steps: {args.steps}, LR: {args.lr})")
             unique_id = datetime.now().strftime("%Y%m%d_%H%M%S")
-            model_dir = f"models/gen3ou_ppo_random_continued_{unique_id}"
+            model_dir = f"models/gen3ou_ppo_continued_{unique_id}"
             os.makedirs(model_dir, exist_ok=True)
             
+            import signal
+            def signal_handler(sig, frame):
+                print("\nInterrupt received, saving model...")
+                final_path = os.path.join(model_dir, "final_model_interrupted")
+                model.save(final_path)
+                print(f"Model saved to {final_path}. Exiting.")
+                sys.exit(0)
+            
+            signal.signal(signal.SIGINT, signal_handler)
+            signal.signal(signal.SIGTERM, signal_handler)
+
             checkpoint_callback = CheckpointCallback(
-                save_freq=10000, 
+                save_freq=50000, 
                 save_path=model_dir,
                 name_prefix="checkpoint"
             )
             
-            model.learn(total_timesteps=args.steps, callback=checkpoint_callback, reset_num_timesteps=False)
-            
+            try:
+                model.learn(total_timesteps=args.steps, callback=checkpoint_callback, reset_num_timesteps=False)
+            except Exception as e:
+                print(f"Training interrupted by exception: {e}")
+                final_path = os.path.join(model_dir, "final_model_exception")
+                model.save(final_path)
+                
             final_path = os.path.join(model_dir, "final_model")
             model.save(final_path)
-            print(f"Continued training complete. Model saved to {final_path}")
+            print(f"Training complete. Model saved to {final_path}")
             await evaluate_model_random(model)
     else:
-        print(f"Starting NEW Generalist RL training (Random vs Random, Parallel x4)")
+        print(f"Starting NEW Training (Parallel x{n_envs}, Batch: {args.batch_size}, Epochs: {args.n_epochs})")
+        unique_id = datetime.now().strftime("%Y%m%d_%H%M%S")
+        model_dir = f"models/gen3ou_ppo_new_{unique_id}"
+        os.makedirs(model_dir, exist_ok=True)
+        
         model = PPO(
             MaskedActorCriticPolicy,
             env,
             verbose=1,
-            learning_rate=3e-4,
-            n_steps=2048,
-            batch_size=64,
-            n_epochs=10,
+            learning_rate=args.lr,
+            n_steps=args.n_steps,
+            batch_size=args.batch_size,
+            n_epochs=args.n_epochs,
             gamma=0.99,
             device="cpu",
+            seed=args.seed,
+            tensorboard_log="./tensorboard/"
         )
 
-        unique_id = datetime.now().strftime("%Y%m%d_%H%M%S")
-        model_dir = f"models/gen3ou_ppo_generalist_{unique_id}"
-        os.makedirs(model_dir, exist_ok=True)
+        import signal
+        def signal_handler(sig, frame):
+            print("\nInterrupt received, saving model...")
+            final_path = os.path.join(model_dir, "final_model_interrupted")
+            model.save(final_path)
+            print(f"Model saved to {final_path}. Exiting.")
+            sys.exit(0)
+        
+        signal.signal(signal.SIGINT, signal_handler)
+        signal.signal(signal.SIGTERM, signal_handler)
 
         checkpoint_callback = CheckpointCallback(
-            save_freq=10000, 
+            save_freq=50000, 
             save_path=model_dir,
             name_prefix="checkpoint"
         )
-
-        model.learn(total_timesteps=args.steps, callback=checkpoint_callback)
+        
+        try:
+            model.learn(total_timesteps=args.steps, callback=checkpoint_callback, reset_num_timesteps=False)
+        except Exception as e:
+            print(f"Training interrupted by exception: {e}")
+            final_path = os.path.join(model_dir, "final_model_exception")
+            model.save(final_path)
+            
         final_path = os.path.join(model_dir, "final_model")
         model.save(final_path)
         print(f"Training complete. Model saved to {final_path}")

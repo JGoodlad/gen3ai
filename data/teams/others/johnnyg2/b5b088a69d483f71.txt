@@ -1,0 +1,56 @@
+Swampert @ Salac Berry  
+Ability: Torrent  
+EVs: 252 SpA / 4 SpD / 252 Spe  
+Timid Nature  
+IVs: 0 Atk  
+- Surf  
+- Roar  
+- Substitute  
+- Endeavor  
+
+Celebi @ Leftovers  
+Ability: Natural Cure  
+EVs: 252 SpA / 76 SpD / 180 Spe  
+Modest Nature  
+IVs: 2 Atk / 30 SpA / 30 Spe  
+- Leech Seed  
+- Psychic  
+- Giga Drain  
+- Hidden Power [Fire]  
+
+Tyranitar @ Silk Scarf  
+Ability: Sand Stream  
+EVs: 252 Atk / 4 SpD / 252 Spe  
+Adamant Nature  
+- Dragon Dance  
+- Rock Slide  
+- Earthquake  
+- Hyper Beam  
+
+Porygon2 @ Leftovers  
+Ability: Trace  
+EVs: 248 HP / 200 Def / 60 SpD  
+Bold Nature  
+IVs: 0 Atk  
+- Ice Beam  
+- Thunderbolt  
+- Recover  
+- Thunder Wave  
+
+Metagross @ Leftovers  
+Ability: Clear Body  
+EVs: 240 HP / 176 Atk / 92 Spe  
+Adamant Nature  
+- Meteor Mash  
+- Earthquake  
+- Agility  
+- Explosion  
+
+Salamence @ Leftovers  
+Ability: Intimidate  
+EVs: 144 Atk / 212 SpD / 152 Spe  
+Adamant Nature  
+- Dragon Dance  
+- Hidden Power [Flying]  
+- Earthquake  
+- Rock Slide

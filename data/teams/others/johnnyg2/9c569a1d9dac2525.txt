@@ -1,0 +1,55 @@
+Politoed  
+Ability: Water Absorb  
+EVs: 160 Def / 252 SpA / 96 Spe  
+Modest Nature  
+IVs: 0 Atk  
+- Surf  
+- Ice Beam  
+- Thief  
+- Hypnosis  
+
+Jolteon @ Leftovers  
+Ability: Volt Absorb  
+EVs: 72 HP / 184 SpA / 252 Spe  
+Timid Nature  
+IVs: 2 Atk / 30 SpA  
+- Thunderbolt  
+- Hidden Power [Grass]  
+- Thunder Wave  
+- Baton Pass  
+
+Tyranitar @ Leftovers  
+Ability: Sand Stream  
+EVs: 240 HP / 224 Atk / 44 Spe  
+Adamant Nature  
+- Rock Slide  
+- Earthquake  
+- Focus Punch  
+- Hidden Power [Bug]  
+
+Skarmory @ Leftovers  
+Ability: Keen Eye  
+EVs: 240 HP / 248 SpD / 20 Spe  
+Careful Nature  
+- Drill Peck  
+- Toxic  
+- Spikes  
+- Roar  
+
+Metagross @ Leftovers  
+Ability: Clear Body  
+EVs: 232 HP / 176 Atk / 100 Spe  
+Adamant Nature  
+- Meteor Mash  
+- Earthquake  
+- Agility  
+- Explosion  
+
+Gengar @ Leftovers  
+Ability: Levitate  
+EVs: 64 HP / 192 SpA / 252 Spe  
+Hasty Nature  
+- Ice Punch  
+- Fire Punch  
+- Hidden Power [Grass]  
+- Explosion

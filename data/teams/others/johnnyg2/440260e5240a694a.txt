@@ -1,0 +1,56 @@
+Flygon @ Choice Band  
+Ability: Levitate  
+EVs: 252 Atk / 4 SpD / 252 Spe  
+Jolly Nature  
+- Earthquake  
+- Hidden Power [Bug]  
+- Rock Slide  
+- Gust  
+
+Metagross @ Leftovers  
+Ability: Clear Body  
+EVs: 248 HP / 176 Atk / 80 SpD / 4 Spe  
+Adamant Nature  
+- Meteor Mash  
+- Earthquake  
+- Explosion  
+- Protect  
+
+Skarmory  
+Ability: Keen Eye  
+EVs: 248 HP / 248 SpD / 12 Spe  
+Careful Nature  
+- Thief  
+- Drill Peck  
+- Roar  
+- Spikes  
+
+Zapdos @ Leftovers  
+Ability: Pressure  
+EVs: 248 HP / 216 SpD / 44 Spe  
+Calm Nature  
+IVs: 2 Atk / 30 SpA  
+- Thunderbolt  
+- Rest  
+- Roar  
+- Hidden Power [Grass]  
+
+Blissey (F) @ Leftovers  
+Ability: Natural Cure  
+EVs: 252 Def / 212 SpA / 44 Spe  
+Bold Nature  
+IVs: 0 Atk  
+- Ice Beam  
+- Seismic Toss  
+- Soft-Boiled  
+- Aromatherapy  
+
+Misdreavus @ Leftovers  
+Ability: Levitate  
+EVs: 252 HP / 4 SpA / 252 SpD  
+Calm Nature  
+IVs: 2 Atk / 30 SpA  
+- Mean Look  
+- Perish Song  
+- Hidden Power [Grass]  
+- Rest

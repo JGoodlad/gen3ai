@@ -1,0 +1,55 @@
+Zapdos @ Leftovers  
+Ability: Pressure  
+EVs: 192 SpA / 116 SpD / 200 Spe  
+Modest Nature  
+IVs: 2 Atk / 30 Def  
+- Thunderbolt  
+- Hidden Power [Ice]  
+- Toxic  
+- Roar  
+
+Jirachi @ Leftovers  
+Ability: Serene Grace  
+EVs: 252 HP / 72 Def / 176 SpD / 8 Spe  
+Sassy Nature  
+- Body Slam  
+- Fire Punch  
+- Protect  
+- Wish  
+
+Tyranitar (M) @ Leftovers  
+Ability: Sand Stream  
+EVs: 248 HP / 28 Def / 216 SpA / 16 Spe  
+Modest Nature  
+- Crunch  
+- Flamethrower  
+- Pursuit  
+- Focus Punch  
+
+Skarmory (F) @ Leftovers  
+Ability: Keen Eye  
+EVs: 248 HP / 248 SpD / 12 Spe  
+Careful Nature  
+- Drill Peck  
+- Toxic  
+- Spikes  
+- Roar  
+
+Swampert (M) @ Leftovers  
+Ability: Torrent  
+EVs: 248 HP / 156 Def / 104 SpD  
+Bold Nature  
+IVs: 0 Atk  
+- Surf  
+- Toxic  
+- Protect  
+- Refresh  
+
+Aerodactyl (F) @ Choice Band  
+Ability: Rock Head  
+EVs: 252 Atk / 4 SpD / 252 Spe  
+Jolly Nature  
+- Rock Slide  
+- Hidden Power [Bug]  
+- Earthquake  
+- Double-Edge

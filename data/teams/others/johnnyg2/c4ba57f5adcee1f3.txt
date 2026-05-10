@@ -1,0 +1,54 @@
+Suicune @ Leftovers  
+Ability: Pressure  
+EVs: 248 HP / 232 SpA / 28 Spe  
+Modest Nature  
+IVs: 0 Atk  
+- Surf  
+- Calm Mind  
+- Rest  
+- Sleep Talk  
+
+Regice @ Leftovers  
+Ability: Clear Body  
+EVs: 80 HP / 176 Atk / 252 SpA  
+Quiet Nature  
+- Ice Beam  
+- Thunderbolt  
+- Explosion  
+- Thunder Wave  
+
+Tyranitar @ Lum Berry  
+Ability: Sand Stream  
+EVs: 224 Atk / 32 SpA / 252 Spe  
+Hasty Nature  
+- Dragon Dance  
+- Rock Slide  
+- Earthquake  
+- Hidden Power [Grass]  
+
+Metagross @ Leftovers  
+Ability: Clear Body  
+EVs: 240 HP / 176 Atk / 92 Spe  
+Adamant Nature  
+- Meteor Mash  
+- Earthquake  
+- Explosion  
+- Agility  
+
+Forretress @ Leftovers  
+Ability: Sturdy  
+EVs: 248 HP / 16 Atk / 36 SpD / 208 Spe  
+Adamant Nature  
+- Earthquake  
+- Explosion  
+- Spikes  
+- Rapid Spin  
+
+Gengar @ Leftovers  
+Ability: Levitate  
+EVs: 64 HP / 192 SpA / 252 Spe  
+Timid Nature  
+- Ice Punch  
+- Fire Punch  
+- Hidden Power [Grass]  
+- Explosion

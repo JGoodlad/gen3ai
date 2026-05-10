@@ -1,0 +1,55 @@
+Salamence @ Leftovers  
+Ability: Intimidate  
+EVs: 4 Atk / 252 SpA / 252 Spe  
+Rash Nature  
+- Dragon Claw  
+- Flamethrower  
+- Brick Break  
+- Hidden Power [Grass]  
+
+Jirachi @ Leftovers  
+Ability: Serene Grace  
+EVs: 252 HP / 252 Def / 4 SpD  
+Relaxed Nature  
+- Fire Punch  
+- Hidden Power [Fighting]  
+- Wish  
+- Protect  
+
+Tyranitar @ Black Glasses  
+Ability: Sand Stream  
+EVs: 136 HP / 252 SpA / 4 SpD / 116 Spe  
+Modest Nature  
+IVs: 0 Atk  
+- Crunch  
+- Pursuit  
+- Thunder Wave  
+- Flamethrower  
+
+Suicune @ Leftovers  
+Ability: Pressure  
+EVs: 248 HP / 232 SpA / 28 Spe  
+Modest Nature  
+IVs: 0 Atk  
+- Calm Mind  
+- Surf  
+- Ice Beam  
+- Rest  
+
+Snorlax @ Leftovers  
+Ability: Immunity  
+EVs: 64 HP / 176 Atk / 108 Def / 144 SpD / 16 Spe  
+Adamant Nature  
+- Curse  
+- Body Slam  
+- Earthquake  
+- Focus Punch  
+
+Claydol @ Leftovers  
+Ability: Levitate  
+EVs: 252 HP / 212 Atk / 16 Def / 28 SpD  
+Relaxed Nature  
+- Earthquake  
+- Psychic  
+- Explosion  
+- Rapid Spin

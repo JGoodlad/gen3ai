@@ -1,0 +1,56 @@
+Swampert @ Leftovers  
+Ability: Torrent  
+EVs: 252 HP / 176 Def / 36 SpD / 44 Spe  
+Relaxed Nature  
+- Ice Beam  
+- Earthquake  
+- Roar  
+- Protect  
+
+Umbreon @ Leftovers  
+Ability: Synchronize  
+EVs: 252 HP / 192 SpA / 56 SpD / 8 Spe  
+Calm Nature  
+IVs: 0 Atk  
+- Charm  
+- Wish  
+- Pursuit  
+- Protect  
+
+Salamence @ Leftovers  
+Ability: Intimidate  
+EVs: 252 HP / 112 Atk / 80 SpD / 64 Spe  
+Adamant Nature  
+- Hidden Power [Flying]  
+- Brick Break  
+- Dragon Dance  
+- Refresh  
+
+Forretress @ Leftovers  
+Ability: Sturdy  
+EVs: 252 HP / 160 Def / 96 SpA  
+Relaxed Nature  
+- Hidden Power [Fire]  
+- Explosion  
+- Spikes  
+- Rapid Spin  
+
+Blissey (F) @ Leftovers  
+Ability: Natural Cure  
+EVs: 168 HP / 252 Def / 88 Spe  
+Bold Nature  
+IVs: 0 Atk  
+- Toxic  
+- Soft-Boiled  
+- Seismic Toss  
+- Snatch  
+
+Raikou @ Leftovers  
+Ability: Pressure  
+EVs: 212 HP / 116 SpA / 4 SpD / 176 Spe  
+Timid Nature  
+IVs: 2 Atk / 30 SpA  
+- Calm Mind  
+- Thunderbolt  
+- Hidden Power [Grass]  
+- Substitute

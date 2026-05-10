@@ -1,0 +1,3332 @@
+{
+    "absorb": {
+        "name": "Absorb",
+        "num": 71,
+        "type": "Grass",
+        "basePower": 20,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "acid": {
+        "name": "Acid",
+        "num": 51,
+        "type": "Poison",
+        "basePower": 40,
+        "target": "allAdjacentFoes",
+        "hasSecondary": true,
+        "hasRecoil": false
+    },
+    "acidarmor": {
+        "name": "Acid Armor",
+        "num": 151,
+        "type": "Poison",
+        "basePower": 0,
+        "target": "self",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "aerialace": {
+        "name": "Aerial Ace",
+        "num": 332,
+        "type": "Flying",
+        "basePower": 60,
+        "target": "any",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "aeroblast": {
+        "name": "Aeroblast",
+        "num": 177,
+        "type": "Flying",
+        "basePower": 100,
+        "target": "any",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "agility": {
+        "name": "Agility",
+        "num": 97,
+        "type": "Psychic",
+        "basePower": 0,
+        "target": "self",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "aircutter": {
+        "name": "Air Cutter",
+        "num": 314,
+        "type": "Flying",
+        "basePower": 55,
+        "target": "allAdjacentFoes",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "amnesia": {
+        "name": "Amnesia",
+        "num": 133,
+        "type": "Psychic",
+        "basePower": 0,
+        "target": "self",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "ancientpower": {
+        "name": "Ancient Power",
+        "num": 246,
+        "type": "Rock",
+        "basePower": 60,
+        "target": "normal",
+        "hasSecondary": true,
+        "hasRecoil": false
+    },
+    "armthrust": {
+        "name": "Arm Thrust",
+        "num": 292,
+        "type": "Fighting",
+        "basePower": 15,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "aromatherapy": {
+        "name": "Aromatherapy",
+        "num": 312,
+        "type": "Grass",
+        "basePower": 0,
+        "target": "allyTeam",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "assist": {
+        "name": "Assist",
+        "num": 274,
+        "type": "Normal",
+        "basePower": 0,
+        "target": "self",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "astonish": {
+        "name": "Astonish",
+        "num": 310,
+        "type": "Ghost",
+        "basePower": 30,
+        "target": "normal",
+        "hasSecondary": true,
+        "hasRecoil": false
+    },
+    "attract": {
+        "name": "Attract",
+        "num": 213,
+        "type": "Normal",
+        "basePower": 0,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "aurorabeam": {
+        "name": "Aurora Beam",
+        "num": 62,
+        "type": "Ice",
+        "basePower": 65,
+        "target": "normal",
+        "hasSecondary": true,
+        "hasRecoil": false
+    },
+    "barrage": {
+        "name": "Barrage",
+        "num": 140,
+        "type": "Normal",
+        "basePower": 15,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "barrier": {
+        "name": "Barrier",
+        "num": 112,
+        "type": "Psychic",
+        "basePower": 0,
+        "target": "self",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "batonpass": {
+        "name": "Baton Pass",
+        "num": 226,
+        "type": "Normal",
+        "basePower": 0,
+        "target": "self",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "beatup": {
+        "name": "Beat Up",
+        "num": 251,
+        "type": "Dark",
+        "basePower": 10,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "bellydrum": {
+        "name": "Belly Drum",
+        "num": 187,
+        "type": "Normal",
+        "basePower": 0,
+        "target": "self",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "bide": {
+        "name": "Bide",
+        "num": 117,
+        "type": "Normal",
+        "basePower": 0,
+        "target": "self",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "bind": {
+        "name": "Bind",
+        "num": 20,
+        "type": "Normal",
+        "basePower": 15,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "bite": {
+        "name": "Bite",
+        "num": 44,
+        "type": "Dark",
+        "basePower": 60,
+        "target": "normal",
+        "hasSecondary": true,
+        "hasRecoil": false
+    },
+    "blastburn": {
+        "name": "Blast Burn",
+        "num": 307,
+        "type": "Fire",
+        "basePower": 150,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "blazekick": {
+        "name": "Blaze Kick",
+        "num": 299,
+        "type": "Fire",
+        "basePower": 85,
+        "target": "normal",
+        "hasSecondary": true,
+        "hasRecoil": false
+    },
+    "blizzard": {
+        "name": "Blizzard",
+        "num": 59,
+        "type": "Ice",
+        "basePower": 120,
+        "target": "allAdjacentFoes",
+        "hasSecondary": true,
+        "hasRecoil": false
+    },
+    "block": {
+        "name": "Block",
+        "num": 335,
+        "type": "Normal",
+        "basePower": 0,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "bodyslam": {
+        "name": "Body Slam",
+        "num": 34,
+        "type": "Normal",
+        "basePower": 85,
+        "target": "normal",
+        "hasSecondary": true,
+        "hasRecoil": false
+    },
+    "boneclub": {
+        "name": "Bone Club",
+        "num": 125,
+        "type": "Ground",
+        "basePower": 65,
+        "target": "normal",
+        "hasSecondary": true,
+        "hasRecoil": false
+    },
+    "bonemerang": {
+        "name": "Bonemerang",
+        "num": 155,
+        "type": "Ground",
+        "basePower": 50,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "bonerush": {
+        "name": "Bone Rush",
+        "num": 198,
+        "type": "Ground",
+        "basePower": 25,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "bounce": {
+        "name": "Bounce",
+        "num": 340,
+        "type": "Flying",
+        "basePower": 85,
+        "target": "any",
+        "hasSecondary": true,
+        "hasRecoil": false
+    },
+    "brickbreak": {
+        "name": "Brick Break",
+        "num": 280,
+        "type": "Fighting",
+        "basePower": 75,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "bubble": {
+        "name": "Bubble",
+        "num": 145,
+        "type": "Water",
+        "basePower": 20,
+        "target": "allAdjacentFoes",
+        "hasSecondary": true,
+        "hasRecoil": false
+    },
+    "bubblebeam": {
+        "name": "Bubble Beam",
+        "num": 61,
+        "type": "Water",
+        "basePower": 65,
+        "target": "normal",
+        "hasSecondary": true,
+        "hasRecoil": false
+    },
+    "bulkup": {
+        "name": "Bulk Up",
+        "num": 339,
+        "type": "Fighting",
+        "basePower": 0,
+        "target": "self",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "bulletseed": {
+        "name": "Bullet Seed",
+        "num": 331,
+        "type": "Grass",
+        "basePower": 10,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "calmmind": {
+        "name": "Calm Mind",
+        "num": 347,
+        "type": "Psychic",
+        "basePower": 0,
+        "target": "self",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "camouflage": {
+        "name": "Camouflage",
+        "num": 293,
+        "type": "Normal",
+        "basePower": 0,
+        "target": "self",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "charge": {
+        "name": "Charge",
+        "num": 268,
+        "type": "Electric",
+        "basePower": 0,
+        "target": "self",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "charm": {
+        "name": "Charm",
+        "num": 204,
+        "type": "Normal",
+        "basePower": 0,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "clamp": {
+        "name": "Clamp",
+        "num": 128,
+        "type": "Water",
+        "basePower": 35,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "cometpunch": {
+        "name": "Comet Punch",
+        "num": 4,
+        "type": "Normal",
+        "basePower": 18,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "confuseray": {
+        "name": "Confuse Ray",
+        "num": 109,
+        "type": "Ghost",
+        "basePower": 0,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "confusion": {
+        "name": "Confusion",
+        "num": 93,
+        "type": "Psychic",
+        "basePower": 50,
+        "target": "normal",
+        "hasSecondary": true,
+        "hasRecoil": false
+    },
+    "constrict": {
+        "name": "Constrict",
+        "num": 132,
+        "type": "Normal",
+        "basePower": 10,
+        "target": "normal",
+        "hasSecondary": true,
+        "hasRecoil": false
+    },
+    "conversion": {
+        "name": "Conversion",
+        "num": 160,
+        "type": "Normal",
+        "basePower": 0,
+        "target": "self",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "conversion2": {
+        "name": "Conversion 2",
+        "num": 176,
+        "type": "Normal",
+        "basePower": 0,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "cosmicpower": {
+        "name": "Cosmic Power",
+        "num": 322,
+        "type": "Psychic",
+        "basePower": 0,
+        "target": "self",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "cottonspore": {
+        "name": "Cotton Spore",
+        "num": 178,
+        "type": "Grass",
+        "basePower": 0,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "counter": {
+        "name": "Counter",
+        "num": 68,
+        "type": "Fighting",
+        "basePower": 0,
+        "target": "scripted",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "covet": {
+        "name": "Covet",
+        "num": 343,
+        "type": "Normal",
+        "basePower": 40,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "crabhammer": {
+        "name": "Crabhammer",
+        "num": 152,
+        "type": "Water",
+        "basePower": 90,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "crosschop": {
+        "name": "Cross Chop",
+        "num": 238,
+        "type": "Fighting",
+        "basePower": 100,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "crunch": {
+        "name": "Crunch",
+        "num": 242,
+        "type": "Dark",
+        "basePower": 80,
+        "target": "normal",
+        "hasSecondary": true,
+        "hasRecoil": false
+    },
+    "crushclaw": {
+        "name": "Crush Claw",
+        "num": 306,
+        "type": "Normal",
+        "basePower": 75,
+        "target": "normal",
+        "hasSecondary": true,
+        "hasRecoil": false
+    },
+    "curse": {
+        "name": "Curse",
+        "num": 174,
+        "type": "???",
+        "basePower": 0,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "cut": {
+        "name": "Cut",
+        "num": 15,
+        "type": "Normal",
+        "basePower": 50,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "defensecurl": {
+        "name": "Defense Curl",
+        "num": 111,
+        "type": "Normal",
+        "basePower": 0,
+        "target": "self",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "destinybond": {
+        "name": "Destiny Bond",
+        "num": 194,
+        "type": "Ghost",
+        "basePower": 0,
+        "target": "self",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "detect": {
+        "name": "Detect",
+        "num": 197,
+        "type": "Fighting",
+        "basePower": 0,
+        "target": "self",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "dig": {
+        "name": "Dig",
+        "num": 91,
+        "type": "Ground",
+        "basePower": 60,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "disable": {
+        "name": "Disable",
+        "num": 50,
+        "type": "Normal",
+        "basePower": 0,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "dive": {
+        "name": "Dive",
+        "num": 291,
+        "type": "Water",
+        "basePower": 60,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "dizzypunch": {
+        "name": "Dizzy Punch",
+        "num": 146,
+        "type": "Normal",
+        "basePower": 70,
+        "target": "normal",
+        "hasSecondary": true,
+        "hasRecoil": false
+    },
+    "doomdesire": {
+        "name": "Doom Desire",
+        "num": 353,
+        "type": "Steel",
+        "basePower": 120,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "doubleedge": {
+        "name": "Double-Edge",
+        "num": 38,
+        "type": "Normal",
+        "basePower": 120,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": true
+    },
+    "doublekick": {
+        "name": "Double Kick",
+        "num": 24,
+        "type": "Fighting",
+        "basePower": 30,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "doubleslap": {
+        "name": "Double Slap",
+        "num": 3,
+        "type": "Normal",
+        "basePower": 15,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "doubleteam": {
+        "name": "Double Team",
+        "num": 104,
+        "type": "Normal",
+        "basePower": 0,
+        "target": "self",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "dragonbreath": {
+        "name": "Dragon Breath",
+        "num": 225,
+        "type": "Dragon",
+        "basePower": 60,
+        "target": "normal",
+        "hasSecondary": true,
+        "hasRecoil": false
+    },
+    "dragonclaw": {
+        "name": "Dragon Claw",
+        "num": 337,
+        "type": "Dragon",
+        "basePower": 80,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "dragondance": {
+        "name": "Dragon Dance",
+        "num": 349,
+        "type": "Dragon",
+        "basePower": 0,
+        "target": "self",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "dragonrage": {
+        "name": "Dragon Rage",
+        "num": 82,
+        "type": "Dragon",
+        "basePower": 0,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "dreameater": {
+        "name": "Dream Eater",
+        "num": 138,
+        "type": "Psychic",
+        "basePower": 100,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "drillpeck": {
+        "name": "Drill Peck",
+        "num": 65,
+        "type": "Flying",
+        "basePower": 80,
+        "target": "any",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "dynamicpunch": {
+        "name": "Dynamic Punch",
+        "num": 223,
+        "type": "Fighting",
+        "basePower": 100,
+        "target": "normal",
+        "hasSecondary": true,
+        "hasRecoil": false
+    },
+    "earthquake": {
+        "name": "Earthquake",
+        "num": 89,
+        "type": "Ground",
+        "basePower": 100,
+        "target": "allAdjacent",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "eggbomb": {
+        "name": "Egg Bomb",
+        "num": 121,
+        "type": "Normal",
+        "basePower": 100,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "ember": {
+        "name": "Ember",
+        "num": 52,
+        "type": "Fire",
+        "basePower": 40,
+        "target": "normal",
+        "hasSecondary": true,
+        "hasRecoil": false
+    },
+    "encore": {
+        "name": "Encore",
+        "num": 227,
+        "type": "Normal",
+        "basePower": 0,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "endeavor": {
+        "name": "Endeavor",
+        "num": 283,
+        "type": "Normal",
+        "basePower": 0,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "endure": {
+        "name": "Endure",
+        "num": 203,
+        "type": "Normal",
+        "basePower": 0,
+        "target": "self",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "eruption": {
+        "name": "Eruption",
+        "num": 284,
+        "type": "Fire",
+        "basePower": 150,
+        "target": "allAdjacentFoes",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "explosion": {
+        "name": "Explosion",
+        "num": 153,
+        "type": "Normal",
+        "basePower": 250,
+        "target": "allAdjacent",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "extrasensory": {
+        "name": "Extrasensory",
+        "num": 326,
+        "type": "Psychic",
+        "basePower": 80,
+        "target": "normal",
+        "hasSecondary": true,
+        "hasRecoil": false
+    },
+    "extremespeed": {
+        "name": "Extreme Speed",
+        "num": 245,
+        "type": "Normal",
+        "basePower": 80,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "facade": {
+        "name": "Facade",
+        "num": 263,
+        "type": "Normal",
+        "basePower": 70,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "fakeout": {
+        "name": "Fake Out",
+        "num": 252,
+        "type": "Normal",
+        "basePower": 40,
+        "target": "normal",
+        "hasSecondary": true,
+        "hasRecoil": false
+    },
+    "faketears": {
+        "name": "Fake Tears",
+        "num": 313,
+        "type": "Dark",
+        "basePower": 0,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "falseswipe": {
+        "name": "False Swipe",
+        "num": 206,
+        "type": "Normal",
+        "basePower": 40,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "featherdance": {
+        "name": "Feather Dance",
+        "num": 297,
+        "type": "Flying",
+        "basePower": 0,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "feintattack": {
+        "name": "Feint Attack",
+        "num": 185,
+        "type": "Dark",
+        "basePower": 60,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "fireblast": {
+        "name": "Fire Blast",
+        "num": 126,
+        "type": "Fire",
+        "basePower": 120,
+        "target": "normal",
+        "hasSecondary": true,
+        "hasRecoil": false
+    },
+    "firepunch": {
+        "name": "Fire Punch",
+        "num": 7,
+        "type": "Fire",
+        "basePower": 75,
+        "target": "normal",
+        "hasSecondary": true,
+        "hasRecoil": false
+    },
+    "firespin": {
+        "name": "Fire Spin",
+        "num": 83,
+        "type": "Fire",
+        "basePower": 15,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "fissure": {
+        "name": "Fissure",
+        "num": 90,
+        "type": "Ground",
+        "basePower": 0,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "flail": {
+        "name": "Flail",
+        "num": 175,
+        "type": "Normal",
+        "basePower": 0,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "flamethrower": {
+        "name": "Flamethrower",
+        "num": 53,
+        "type": "Fire",
+        "basePower": 95,
+        "target": "normal",
+        "hasSecondary": true,
+        "hasRecoil": false
+    },
+    "flamewheel": {
+        "name": "Flame Wheel",
+        "num": 172,
+        "type": "Fire",
+        "basePower": 60,
+        "target": "normal",
+        "hasSecondary": true,
+        "hasRecoil": false
+    },
+    "flash": {
+        "name": "Flash",
+        "num": 148,
+        "type": "Normal",
+        "basePower": 0,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "flatter": {
+        "name": "Flatter",
+        "num": 260,
+        "type": "Dark",
+        "basePower": 0,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "fly": {
+        "name": "Fly",
+        "num": 19,
+        "type": "Flying",
+        "basePower": 70,
+        "target": "any",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "focusenergy": {
+        "name": "Focus Energy",
+        "num": 116,
+        "type": "Normal",
+        "basePower": 0,
+        "target": "self",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "focuspunch": {
+        "name": "Focus Punch",
+        "num": 264,
+        "type": "Fighting",
+        "basePower": 150,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "followme": {
+        "name": "Follow Me",
+        "num": 266,
+        "type": "Normal",
+        "basePower": 0,
+        "target": "self",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "foresight": {
+        "name": "Foresight",
+        "num": 193,
+        "type": "Normal",
+        "basePower": 0,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "frenzyplant": {
+        "name": "Frenzy Plant",
+        "num": 338,
+        "type": "Grass",
+        "basePower": 150,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "frustration": {
+        "name": "Frustration",
+        "num": 218,
+        "type": "Normal",
+        "basePower": 0,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "furyattack": {
+        "name": "Fury Attack",
+        "num": 31,
+        "type": "Normal",
+        "basePower": 15,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "furycutter": {
+        "name": "Fury Cutter",
+        "num": 210,
+        "type": "Bug",
+        "basePower": 10,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "furyswipes": {
+        "name": "Fury Swipes",
+        "num": 154,
+        "type": "Normal",
+        "basePower": 18,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "futuresight": {
+        "name": "Future Sight",
+        "num": 248,
+        "type": "Psychic",
+        "basePower": 80,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "gigadrain": {
+        "name": "Giga Drain",
+        "num": 202,
+        "type": "Grass",
+        "basePower": 60,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "glare": {
+        "name": "Glare",
+        "num": 137,
+        "type": "Normal",
+        "basePower": 0,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "grasswhistle": {
+        "name": "Grass Whistle",
+        "num": 320,
+        "type": "Grass",
+        "basePower": 0,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "growl": {
+        "name": "Growl",
+        "num": 45,
+        "type": "Normal",
+        "basePower": 0,
+        "target": "allAdjacentFoes",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "growth": {
+        "name": "Growth",
+        "num": 74,
+        "type": "Normal",
+        "basePower": 0,
+        "target": "self",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "grudge": {
+        "name": "Grudge",
+        "num": 288,
+        "type": "Ghost",
+        "basePower": 0,
+        "target": "self",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "guillotine": {
+        "name": "Guillotine",
+        "num": 12,
+        "type": "Normal",
+        "basePower": 0,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "gust": {
+        "name": "Gust",
+        "num": 16,
+        "type": "Flying",
+        "basePower": 40,
+        "target": "any",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "hail": {
+        "name": "Hail",
+        "num": 258,
+        "type": "Ice",
+        "basePower": 0,
+        "target": "all",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "harden": {
+        "name": "Harden",
+        "num": 106,
+        "type": "Normal",
+        "basePower": 0,
+        "target": "self",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "haze": {
+        "name": "Haze",
+        "num": 114,
+        "type": "Ice",
+        "basePower": 0,
+        "target": "all",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "headbutt": {
+        "name": "Headbutt",
+        "num": 29,
+        "type": "Normal",
+        "basePower": 70,
+        "target": "normal",
+        "hasSecondary": true,
+        "hasRecoil": false
+    },
+    "healbell": {
+        "name": "Heal Bell",
+        "num": 215,
+        "type": "Normal",
+        "basePower": 0,
+        "target": "allyTeam",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "heatwave": {
+        "name": "Heat Wave",
+        "num": 257,
+        "type": "Fire",
+        "basePower": 100,
+        "target": "allAdjacentFoes",
+        "hasSecondary": true,
+        "hasRecoil": false
+    },
+    "helpinghand": {
+        "name": "Helping Hand",
+        "num": 270,
+        "type": "Normal",
+        "basePower": 0,
+        "target": "adjacentAlly",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "hiddenpower": {
+        "name": "Hidden Power",
+        "num": 237,
+        "type": "Normal",
+        "basePower": 0,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "hiddenpowerbug": {
+        "name": "Hidden Power Bug",
+        "num": 237,
+        "type": "Bug",
+        "basePower": 70,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "hiddenpowerdark": {
+        "name": "Hidden Power Dark",
+        "num": 237,
+        "type": "Dark",
+        "basePower": 70,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "hiddenpowerdragon": {
+        "name": "Hidden Power Dragon",
+        "num": 237,
+        "type": "Dragon",
+        "basePower": 70,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "hiddenpowerelectric": {
+        "name": "Hidden Power Electric",
+        "num": 237,
+        "type": "Electric",
+        "basePower": 70,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "hiddenpowerfighting": {
+        "name": "Hidden Power Fighting",
+        "num": 237,
+        "type": "Fighting",
+        "basePower": 70,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "hiddenpowerfire": {
+        "name": "Hidden Power Fire",
+        "num": 237,
+        "type": "Fire",
+        "basePower": 70,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "hiddenpowerflying": {
+        "name": "Hidden Power Flying",
+        "num": 237,
+        "type": "Flying",
+        "basePower": 70,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "hiddenpowerghost": {
+        "name": "Hidden Power Ghost",
+        "num": 237,
+        "type": "Ghost",
+        "basePower": 70,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "hiddenpowergrass": {
+        "name": "Hidden Power Grass",
+        "num": 237,
+        "type": "Grass",
+        "basePower": 70,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "hiddenpowerground": {
+        "name": "Hidden Power Ground",
+        "num": 237,
+        "type": "Ground",
+        "basePower": 70,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "hiddenpowerice": {
+        "name": "Hidden Power Ice",
+        "num": 237,
+        "type": "Ice",
+        "basePower": 70,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "hiddenpowerpoison": {
+        "name": "Hidden Power Poison",
+        "num": 237,
+        "type": "Poison",
+        "basePower": 70,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "hiddenpowerpsychic": {
+        "name": "Hidden Power Psychic",
+        "num": 237,
+        "type": "Psychic",
+        "basePower": 70,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "hiddenpowerrock": {
+        "name": "Hidden Power Rock",
+        "num": 237,
+        "type": "Rock",
+        "basePower": 70,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "hiddenpowersteel": {
+        "name": "Hidden Power Steel",
+        "num": 237,
+        "type": "Steel",
+        "basePower": 70,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "hiddenpowerwater": {
+        "name": "Hidden Power Water",
+        "num": 237,
+        "type": "Water",
+        "basePower": 70,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "highjumpkick": {
+        "name": "High Jump Kick",
+        "num": 136,
+        "type": "Fighting",
+        "basePower": 85,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "hornattack": {
+        "name": "Horn Attack",
+        "num": 30,
+        "type": "Normal",
+        "basePower": 65,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "horndrill": {
+        "name": "Horn Drill",
+        "num": 32,
+        "type": "Normal",
+        "basePower": 0,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "howl": {
+        "name": "Howl",
+        "num": 336,
+        "type": "Normal",
+        "basePower": 0,
+        "target": "self",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "hydrocannon": {
+        "name": "Hydro Cannon",
+        "num": 308,
+        "type": "Water",
+        "basePower": 150,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "hydropump": {
+        "name": "Hydro Pump",
+        "num": 56,
+        "type": "Water",
+        "basePower": 120,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "hyperbeam": {
+        "name": "Hyper Beam",
+        "num": 63,
+        "type": "Normal",
+        "basePower": 150,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "hyperfang": {
+        "name": "Hyper Fang",
+        "num": 158,
+        "type": "Normal",
+        "basePower": 80,
+        "target": "normal",
+        "hasSecondary": true,
+        "hasRecoil": false
+    },
+    "hypervoice": {
+        "name": "Hyper Voice",
+        "num": 304,
+        "type": "Normal",
+        "basePower": 90,
+        "target": "allAdjacentFoes",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "hypnosis": {
+        "name": "Hypnosis",
+        "num": 95,
+        "type": "Psychic",
+        "basePower": 0,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "iceball": {
+        "name": "Ice Ball",
+        "num": 301,
+        "type": "Ice",
+        "basePower": 30,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "icebeam": {
+        "name": "Ice Beam",
+        "num": 58,
+        "type": "Ice",
+        "basePower": 95,
+        "target": "normal",
+        "hasSecondary": true,
+        "hasRecoil": false
+    },
+    "icepunch": {
+        "name": "Ice Punch",
+        "num": 8,
+        "type": "Ice",
+        "basePower": 75,
+        "target": "normal",
+        "hasSecondary": true,
+        "hasRecoil": false
+    },
+    "iciclespear": {
+        "name": "Icicle Spear",
+        "num": 333,
+        "type": "Ice",
+        "basePower": 10,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "icywind": {
+        "name": "Icy Wind",
+        "num": 196,
+        "type": "Ice",
+        "basePower": 55,
+        "target": "allAdjacentFoes",
+        "hasSecondary": true,
+        "hasRecoil": false
+    },
+    "imprison": {
+        "name": "Imprison",
+        "num": 286,
+        "type": "Psychic",
+        "basePower": 0,
+        "target": "self",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "ingrain": {
+        "name": "Ingrain",
+        "num": 275,
+        "type": "Grass",
+        "basePower": 0,
+        "target": "self",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "irondefense": {
+        "name": "Iron Defense",
+        "num": 334,
+        "type": "Steel",
+        "basePower": 0,
+        "target": "self",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "irontail": {
+        "name": "Iron Tail",
+        "num": 231,
+        "type": "Steel",
+        "basePower": 100,
+        "target": "normal",
+        "hasSecondary": true,
+        "hasRecoil": false
+    },
+    "jumpkick": {
+        "name": "Jump Kick",
+        "num": 26,
+        "type": "Fighting",
+        "basePower": 70,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "karatechop": {
+        "name": "Karate Chop",
+        "num": 2,
+        "type": "Fighting",
+        "basePower": 50,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "kinesis": {
+        "name": "Kinesis",
+        "num": 134,
+        "type": "Psychic",
+        "basePower": 0,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "knockoff": {
+        "name": "Knock Off",
+        "num": 282,
+        "type": "Dark",
+        "basePower": 20,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "leafblade": {
+        "name": "Leaf Blade",
+        "num": 348,
+        "type": "Grass",
+        "basePower": 70,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "leechlife": {
+        "name": "Leech Life",
+        "num": 141,
+        "type": "Bug",
+        "basePower": 20,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "leechseed": {
+        "name": "Leech Seed",
+        "num": 73,
+        "type": "Grass",
+        "basePower": 0,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "leer": {
+        "name": "Leer",
+        "num": 43,
+        "type": "Normal",
+        "basePower": 0,
+        "target": "allAdjacentFoes",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "lick": {
+        "name": "Lick",
+        "num": 122,
+        "type": "Ghost",
+        "basePower": 20,
+        "target": "normal",
+        "hasSecondary": true,
+        "hasRecoil": false
+    },
+    "lightscreen": {
+        "name": "Light Screen",
+        "num": 113,
+        "type": "Psychic",
+        "basePower": 0,
+        "target": "allySide",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "lockon": {
+        "name": "Lock-On",
+        "num": 199,
+        "type": "Normal",
+        "basePower": 0,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "lovelykiss": {
+        "name": "Lovely Kiss",
+        "num": 142,
+        "type": "Normal",
+        "basePower": 0,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "lowkick": {
+        "name": "Low Kick",
+        "num": 67,
+        "type": "Fighting",
+        "basePower": 0,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "lusterpurge": {
+        "name": "Luster Purge",
+        "num": 295,
+        "type": "Psychic",
+        "basePower": 70,
+        "target": "normal",
+        "hasSecondary": true,
+        "hasRecoil": false
+    },
+    "machpunch": {
+        "name": "Mach Punch",
+        "num": 183,
+        "type": "Fighting",
+        "basePower": 40,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "magicalleaf": {
+        "name": "Magical Leaf",
+        "num": 345,
+        "type": "Grass",
+        "basePower": 60,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "magiccoat": {
+        "name": "Magic Coat",
+        "num": 277,
+        "type": "Psychic",
+        "basePower": 0,
+        "target": "self",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "magnitude": {
+        "name": "Magnitude",
+        "num": 222,
+        "type": "Ground",
+        "basePower": 0,
+        "target": "allAdjacent",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "meanlook": {
+        "name": "Mean Look",
+        "num": 212,
+        "type": "Normal",
+        "basePower": 0,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "meditate": {
+        "name": "Meditate",
+        "num": 96,
+        "type": "Psychic",
+        "basePower": 0,
+        "target": "self",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "megadrain": {
+        "name": "Mega Drain",
+        "num": 72,
+        "type": "Grass",
+        "basePower": 40,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "megahorn": {
+        "name": "Megahorn",
+        "num": 224,
+        "type": "Bug",
+        "basePower": 120,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "megakick": {
+        "name": "Mega Kick",
+        "num": 25,
+        "type": "Normal",
+        "basePower": 120,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "megapunch": {
+        "name": "Mega Punch",
+        "num": 5,
+        "type": "Normal",
+        "basePower": 80,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "memento": {
+        "name": "Memento",
+        "num": 262,
+        "type": "Dark",
+        "basePower": 0,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "metalclaw": {
+        "name": "Metal Claw",
+        "num": 232,
+        "type": "Steel",
+        "basePower": 50,
+        "target": "normal",
+        "hasSecondary": true,
+        "hasRecoil": false
+    },
+    "metalsound": {
+        "name": "Metal Sound",
+        "num": 319,
+        "type": "Steel",
+        "basePower": 0,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "meteormash": {
+        "name": "Meteor Mash",
+        "num": 309,
+        "type": "Steel",
+        "basePower": 100,
+        "target": "normal",
+        "hasSecondary": true,
+        "hasRecoil": false
+    },
+    "metronome": {
+        "name": "Metronome",
+        "num": 118,
+        "type": "Normal",
+        "basePower": 0,
+        "target": "self",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "milkdrink": {
+        "name": "Milk Drink",
+        "num": 208,
+        "type": "Normal",
+        "basePower": 0,
+        "target": "self",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "mimic": {
+        "name": "Mimic",
+        "num": 102,
+        "type": "Normal",
+        "basePower": 0,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "mindreader": {
+        "name": "Mind Reader",
+        "num": 170,
+        "type": "Normal",
+        "basePower": 0,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "minimize": {
+        "name": "Minimize",
+        "num": 107,
+        "type": "Normal",
+        "basePower": 0,
+        "target": "self",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "mirrorcoat": {
+        "name": "Mirror Coat",
+        "num": 243,
+        "type": "Psychic",
+        "basePower": 0,
+        "target": "scripted",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "mirrormove": {
+        "name": "Mirror Move",
+        "num": 119,
+        "type": "Flying",
+        "basePower": 0,
+        "target": "self",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "mist": {
+        "name": "Mist",
+        "num": 54,
+        "type": "Ice",
+        "basePower": 0,
+        "target": "allySide",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "mistball": {
+        "name": "Mist Ball",
+        "num": 296,
+        "type": "Psychic",
+        "basePower": 70,
+        "target": "normal",
+        "hasSecondary": true,
+        "hasRecoil": false
+    },
+    "moonlight": {
+        "name": "Moonlight",
+        "num": 236,
+        "type": "Normal",
+        "basePower": 0,
+        "target": "self",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "morningsun": {
+        "name": "Morning Sun",
+        "num": 234,
+        "type": "Normal",
+        "basePower": 0,
+        "target": "self",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "muddywater": {
+        "name": "Muddy Water",
+        "num": 330,
+        "type": "Water",
+        "basePower": 95,
+        "target": "allAdjacentFoes",
+        "hasSecondary": true,
+        "hasRecoil": false
+    },
+    "mudshot": {
+        "name": "Mud Shot",
+        "num": 341,
+        "type": "Ground",
+        "basePower": 55,
+        "target": "normal",
+        "hasSecondary": true,
+        "hasRecoil": false
+    },
+    "mudslap": {
+        "name": "Mud-Slap",
+        "num": 189,
+        "type": "Ground",
+        "basePower": 20,
+        "target": "normal",
+        "hasSecondary": true,
+        "hasRecoil": false
+    },
+    "mudsport": {
+        "name": "Mud Sport",
+        "num": 300,
+        "type": "Ground",
+        "basePower": 0,
+        "target": "all",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "naturepower": {
+        "name": "Nature Power",
+        "num": 267,
+        "type": "Normal",
+        "basePower": 0,
+        "target": "self",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "needlearm": {
+        "name": "Needle Arm",
+        "num": 302,
+        "type": "Grass",
+        "basePower": 60,
+        "target": "normal",
+        "hasSecondary": true,
+        "hasRecoil": false
+    },
+    "nightmare": {
+        "name": "Nightmare",
+        "num": 171,
+        "type": "Ghost",
+        "basePower": 0,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "nightshade": {
+        "name": "Night Shade",
+        "num": 101,
+        "type": "Ghost",
+        "basePower": 0,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "octazooka": {
+        "name": "Octazooka",
+        "num": 190,
+        "type": "Water",
+        "basePower": 65,
+        "target": "normal",
+        "hasSecondary": true,
+        "hasRecoil": false
+    },
+    "odorsleuth": {
+        "name": "Odor Sleuth",
+        "num": 316,
+        "type": "Normal",
+        "basePower": 0,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "outrage": {
+        "name": "Outrage",
+        "num": 200,
+        "type": "Dragon",
+        "basePower": 90,
+        "target": "randomNormal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "overheat": {
+        "name": "Overheat",
+        "num": 315,
+        "type": "Fire",
+        "basePower": 140,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "painsplit": {
+        "name": "Pain Split",
+        "num": 220,
+        "type": "Normal",
+        "basePower": 0,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "payday": {
+        "name": "Pay Day",
+        "num": 6,
+        "type": "Normal",
+        "basePower": 40,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "peck": {
+        "name": "Peck",
+        "num": 64,
+        "type": "Flying",
+        "basePower": 35,
+        "target": "any",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "perishsong": {
+        "name": "Perish Song",
+        "num": 195,
+        "type": "Normal",
+        "basePower": 0,
+        "target": "all",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "petaldance": {
+        "name": "Petal Dance",
+        "num": 80,
+        "type": "Grass",
+        "basePower": 70,
+        "target": "randomNormal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "pinmissile": {
+        "name": "Pin Missile",
+        "num": 42,
+        "type": "Bug",
+        "basePower": 14,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "poisonfang": {
+        "name": "Poison Fang",
+        "num": 305,
+        "type": "Poison",
+        "basePower": 50,
+        "target": "normal",
+        "hasSecondary": true,
+        "hasRecoil": false
+    },
+    "poisongas": {
+        "name": "Poison Gas",
+        "num": 139,
+        "type": "Poison",
+        "basePower": 0,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "poisonpowder": {
+        "name": "Poison Powder",
+        "num": 77,
+        "type": "Poison",
+        "basePower": 0,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "poisonsting": {
+        "name": "Poison Sting",
+        "num": 40,
+        "type": "Poison",
+        "basePower": 15,
+        "target": "normal",
+        "hasSecondary": true,
+        "hasRecoil": false
+    },
+    "poisontail": {
+        "name": "Poison Tail",
+        "num": 342,
+        "type": "Poison",
+        "basePower": 50,
+        "target": "normal",
+        "hasSecondary": true,
+        "hasRecoil": false
+    },
+    "pound": {
+        "name": "Pound",
+        "num": 1,
+        "type": "Normal",
+        "basePower": 40,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "powdersnow": {
+        "name": "Powder Snow",
+        "num": 181,
+        "type": "Ice",
+        "basePower": 40,
+        "target": "allAdjacentFoes",
+        "hasSecondary": true,
+        "hasRecoil": false
+    },
+    "present": {
+        "name": "Present",
+        "num": 217,
+        "type": "Normal",
+        "basePower": 0,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "protect": {
+        "name": "Protect",
+        "num": 182,
+        "type": "Normal",
+        "basePower": 0,
+        "target": "self",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "psybeam": {
+        "name": "Psybeam",
+        "num": 60,
+        "type": "Psychic",
+        "basePower": 65,
+        "target": "normal",
+        "hasSecondary": true,
+        "hasRecoil": false
+    },
+    "psychic": {
+        "name": "Psychic",
+        "num": 94,
+        "type": "Psychic",
+        "basePower": 90,
+        "target": "normal",
+        "hasSecondary": true,
+        "hasRecoil": false
+    },
+    "psychoboost": {
+        "name": "Psycho Boost",
+        "num": 354,
+        "type": "Psychic",
+        "basePower": 140,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "psychup": {
+        "name": "Psych Up",
+        "num": 244,
+        "type": "Normal",
+        "basePower": 0,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "psywave": {
+        "name": "Psywave",
+        "num": 149,
+        "type": "Psychic",
+        "basePower": 0,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "pursuit": {
+        "name": "Pursuit",
+        "num": 228,
+        "type": "Dark",
+        "basePower": 40,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "quickattack": {
+        "name": "Quick Attack",
+        "num": 98,
+        "type": "Normal",
+        "basePower": 40,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "rage": {
+        "name": "Rage",
+        "num": 99,
+        "type": "Normal",
+        "basePower": 20,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "raindance": {
+        "name": "Rain Dance",
+        "num": 240,
+        "type": "Water",
+        "basePower": 0,
+        "target": "all",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "rapidspin": {
+        "name": "Rapid Spin",
+        "num": 229,
+        "type": "Normal",
+        "basePower": 20,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "razorleaf": {
+        "name": "Razor Leaf",
+        "num": 75,
+        "type": "Grass",
+        "basePower": 55,
+        "target": "allAdjacentFoes",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "razorwind": {
+        "name": "Razor Wind",
+        "num": 13,
+        "type": "Normal",
+        "basePower": 80,
+        "target": "allAdjacentFoes",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "recover": {
+        "name": "Recover",
+        "num": 105,
+        "type": "Normal",
+        "basePower": 0,
+        "target": "self",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "recycle": {
+        "name": "Recycle",
+        "num": 278,
+        "type": "Normal",
+        "basePower": 0,
+        "target": "self",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "reflect": {
+        "name": "Reflect",
+        "num": 115,
+        "type": "Psychic",
+        "basePower": 0,
+        "target": "allySide",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "refresh": {
+        "name": "Refresh",
+        "num": 287,
+        "type": "Normal",
+        "basePower": 0,
+        "target": "self",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "rest": {
+        "name": "Rest",
+        "num": 156,
+        "type": "Psychic",
+        "basePower": 0,
+        "target": "self",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "return": {
+        "name": "Return",
+        "num": 216,
+        "type": "Normal",
+        "basePower": 0,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "revenge": {
+        "name": "Revenge",
+        "num": 279,
+        "type": "Fighting",
+        "basePower": 60,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "reversal": {
+        "name": "Reversal",
+        "num": 179,
+        "type": "Fighting",
+        "basePower": 0,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "roar": {
+        "name": "Roar",
+        "num": 46,
+        "type": "Normal",
+        "basePower": 0,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "rockblast": {
+        "name": "Rock Blast",
+        "num": 350,
+        "type": "Rock",
+        "basePower": 25,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "rockslide": {
+        "name": "Rock Slide",
+        "num": 157,
+        "type": "Rock",
+        "basePower": 75,
+        "target": "allAdjacentFoes",
+        "hasSecondary": true,
+        "hasRecoil": false
+    },
+    "rocksmash": {
+        "name": "Rock Smash",
+        "num": 249,
+        "type": "Fighting",
+        "basePower": 20,
+        "target": "normal",
+        "hasSecondary": true,
+        "hasRecoil": false
+    },
+    "rockthrow": {
+        "name": "Rock Throw",
+        "num": 88,
+        "type": "Rock",
+        "basePower": 50,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "rocktomb": {
+        "name": "Rock Tomb",
+        "num": 317,
+        "type": "Rock",
+        "basePower": 50,
+        "target": "normal",
+        "hasSecondary": true,
+        "hasRecoil": false
+    },
+    "roleplay": {
+        "name": "Role Play",
+        "num": 272,
+        "type": "Psychic",
+        "basePower": 0,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "rollingkick": {
+        "name": "Rolling Kick",
+        "num": 27,
+        "type": "Fighting",
+        "basePower": 60,
+        "target": "normal",
+        "hasSecondary": true,
+        "hasRecoil": false
+    },
+    "rollout": {
+        "name": "Rollout",
+        "num": 205,
+        "type": "Rock",
+        "basePower": 30,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "sacredfire": {
+        "name": "Sacred Fire",
+        "num": 221,
+        "type": "Fire",
+        "basePower": 100,
+        "target": "normal",
+        "hasSecondary": true,
+        "hasRecoil": false
+    },
+    "safeguard": {
+        "name": "Safeguard",
+        "num": 219,
+        "type": "Normal",
+        "basePower": 0,
+        "target": "allySide",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "sandattack": {
+        "name": "Sand Attack",
+        "num": 28,
+        "type": "Ground",
+        "basePower": 0,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "sandstorm": {
+        "name": "Sandstorm",
+        "num": 201,
+        "type": "Rock",
+        "basePower": 0,
+        "target": "all",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "sandtomb": {
+        "name": "Sand Tomb",
+        "num": 328,
+        "type": "Ground",
+        "basePower": 15,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "scaryface": {
+        "name": "Scary Face",
+        "num": 184,
+        "type": "Normal",
+        "basePower": 0,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "scratch": {
+        "name": "Scratch",
+        "num": 10,
+        "type": "Normal",
+        "basePower": 40,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "screech": {
+        "name": "Screech",
+        "num": 103,
+        "type": "Normal",
+        "basePower": 0,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "secretpower": {
+        "name": "Secret Power",
+        "num": 290,
+        "type": "Normal",
+        "basePower": 70,
+        "target": "normal",
+        "hasSecondary": true,
+        "hasRecoil": false
+    },
+    "seismictoss": {
+        "name": "Seismic Toss",
+        "num": 69,
+        "type": "Fighting",
+        "basePower": 0,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "selfdestruct": {
+        "name": "Self-Destruct",
+        "num": 120,
+        "type": "Normal",
+        "basePower": 200,
+        "target": "allAdjacent",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "shadowball": {
+        "name": "Shadow Ball",
+        "num": 247,
+        "type": "Ghost",
+        "basePower": 80,
+        "target": "normal",
+        "hasSecondary": true,
+        "hasRecoil": false
+    },
+    "shadowpunch": {
+        "name": "Shadow Punch",
+        "num": 325,
+        "type": "Ghost",
+        "basePower": 60,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "sharpen": {
+        "name": "Sharpen",
+        "num": 159,
+        "type": "Normal",
+        "basePower": 0,
+        "target": "self",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "sheercold": {
+        "name": "Sheer Cold",
+        "num": 329,
+        "type": "Ice",
+        "basePower": 0,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "shockwave": {
+        "name": "Shock Wave",
+        "num": 351,
+        "type": "Electric",
+        "basePower": 60,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "signalbeam": {
+        "name": "Signal Beam",
+        "num": 324,
+        "type": "Bug",
+        "basePower": 75,
+        "target": "normal",
+        "hasSecondary": true,
+        "hasRecoil": false
+    },
+    "silverwind": {
+        "name": "Silver Wind",
+        "num": 318,
+        "type": "Bug",
+        "basePower": 60,
+        "target": "normal",
+        "hasSecondary": true,
+        "hasRecoil": false
+    },
+    "sing": {
+        "name": "Sing",
+        "num": 47,
+        "type": "Normal",
+        "basePower": 0,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "sketch": {
+        "name": "Sketch",
+        "num": 166,
+        "type": "Normal",
+        "basePower": 0,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "skillswap": {
+        "name": "Skill Swap",
+        "num": 285,
+        "type": "Psychic",
+        "basePower": 0,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "skullbash": {
+        "name": "Skull Bash",
+        "num": 130,
+        "type": "Normal",
+        "basePower": 100,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "skyattack": {
+        "name": "Sky Attack",
+        "num": 143,
+        "type": "Flying",
+        "basePower": 140,
+        "target": "any",
+        "hasSecondary": true,
+        "hasRecoil": false
+    },
+    "skyuppercut": {
+        "name": "Sky Uppercut",
+        "num": 327,
+        "type": "Fighting",
+        "basePower": 85,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "slackoff": {
+        "name": "Slack Off",
+        "num": 303,
+        "type": "Normal",
+        "basePower": 0,
+        "target": "self",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "slam": {
+        "name": "Slam",
+        "num": 21,
+        "type": "Normal",
+        "basePower": 80,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "slash": {
+        "name": "Slash",
+        "num": 163,
+        "type": "Normal",
+        "basePower": 70,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "sleeppowder": {
+        "name": "Sleep Powder",
+        "num": 79,
+        "type": "Grass",
+        "basePower": 0,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "sleeptalk": {
+        "name": "Sleep Talk",
+        "num": 214,
+        "type": "Normal",
+        "basePower": 0,
+        "target": "self",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "sludge": {
+        "name": "Sludge",
+        "num": 124,
+        "type": "Poison",
+        "basePower": 65,
+        "target": "normal",
+        "hasSecondary": true,
+        "hasRecoil": false
+    },
+    "sludgebomb": {
+        "name": "Sludge Bomb",
+        "num": 188,
+        "type": "Poison",
+        "basePower": 90,
+        "target": "normal",
+        "hasSecondary": true,
+        "hasRecoil": false
+    },
+    "smellingsalts": {
+        "name": "Smelling Salts",
+        "num": 265,
+        "type": "Normal",
+        "basePower": 60,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "smog": {
+        "name": "Smog",
+        "num": 123,
+        "type": "Poison",
+        "basePower": 20,
+        "target": "normal",
+        "hasSecondary": true,
+        "hasRecoil": false
+    },
+    "smokescreen": {
+        "name": "Smokescreen",
+        "num": 108,
+        "type": "Normal",
+        "basePower": 0,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "snatch": {
+        "name": "Snatch",
+        "num": 289,
+        "type": "Dark",
+        "basePower": 0,
+        "target": "self",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "snore": {
+        "name": "Snore",
+        "num": 173,
+        "type": "Normal",
+        "basePower": 40,
+        "target": "normal",
+        "hasSecondary": true,
+        "hasRecoil": false
+    },
+    "softboiled": {
+        "name": "Soft-Boiled",
+        "num": 135,
+        "type": "Normal",
+        "basePower": 0,
+        "target": "self",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "solarbeam": {
+        "name": "Solar Beam",
+        "num": 76,
+        "type": "Grass",
+        "basePower": 120,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "sonicboom": {
+        "name": "Sonic Boom",
+        "num": 49,
+        "type": "Normal",
+        "basePower": 0,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "spark": {
+        "name": "Spark",
+        "num": 209,
+        "type": "Electric",
+        "basePower": 65,
+        "target": "normal",
+        "hasSecondary": true,
+        "hasRecoil": false
+    },
+    "spiderweb": {
+        "name": "Spider Web",
+        "num": 169,
+        "type": "Bug",
+        "basePower": 0,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "spikecannon": {
+        "name": "Spike Cannon",
+        "num": 131,
+        "type": "Normal",
+        "basePower": 20,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "spikes": {
+        "name": "Spikes",
+        "num": 191,
+        "type": "Ground",
+        "basePower": 0,
+        "target": "foeSide",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "spite": {
+        "name": "Spite",
+        "num": 180,
+        "type": "Ghost",
+        "basePower": 0,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "spitup": {
+        "name": "Spit Up",
+        "num": 255,
+        "type": "Normal",
+        "basePower": 0,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "splash": {
+        "name": "Splash",
+        "num": 150,
+        "type": "Normal",
+        "basePower": 0,
+        "target": "self",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "spore": {
+        "name": "Spore",
+        "num": 147,
+        "type": "Grass",
+        "basePower": 0,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "steelwing": {
+        "name": "Steel Wing",
+        "num": 211,
+        "type": "Steel",
+        "basePower": 70,
+        "target": "normal",
+        "hasSecondary": true,
+        "hasRecoil": false
+    },
+    "stockpile": {
+        "name": "Stockpile",
+        "num": 254,
+        "type": "Normal",
+        "basePower": 0,
+        "target": "self",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "stomp": {
+        "name": "Stomp",
+        "num": 23,
+        "type": "Normal",
+        "basePower": 65,
+        "target": "normal",
+        "hasSecondary": true,
+        "hasRecoil": false
+    },
+    "strength": {
+        "name": "Strength",
+        "num": 70,
+        "type": "Normal",
+        "basePower": 80,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "stringshot": {
+        "name": "String Shot",
+        "num": 81,
+        "type": "Bug",
+        "basePower": 0,
+        "target": "allAdjacentFoes",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "struggle": {
+        "name": "Struggle",
+        "num": 165,
+        "type": "Normal",
+        "basePower": 50,
+        "target": "randomNormal",
+        "hasSecondary": false,
+        "hasRecoil": true
+    },
+    "stunspore": {
+        "name": "Stun Spore",
+        "num": 78,
+        "type": "Grass",
+        "basePower": 0,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "submission": {
+        "name": "Submission",
+        "num": 66,
+        "type": "Fighting",
+        "basePower": 80,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": true
+    },
+    "substitute": {
+        "name": "Substitute",
+        "num": 164,
+        "type": "Normal",
+        "basePower": 0,
+        "target": "self",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "sunnyday": {
+        "name": "Sunny Day",
+        "num": 241,
+        "type": "Fire",
+        "basePower": 0,
+        "target": "all",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "superfang": {
+        "name": "Super Fang",
+        "num": 162,
+        "type": "Normal",
+        "basePower": 0,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "superpower": {
+        "name": "Superpower",
+        "num": 276,
+        "type": "Fighting",
+        "basePower": 120,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "supersonic": {
+        "name": "Supersonic",
+        "num": 48,
+        "type": "Normal",
+        "basePower": 0,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "surf": {
+        "name": "Surf",
+        "num": 57,
+        "type": "Water",
+        "basePower": 95,
+        "target": "allAdjacentFoes",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "swagger": {
+        "name": "Swagger",
+        "num": 207,
+        "type": "Normal",
+        "basePower": 0,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "swallow": {
+        "name": "Swallow",
+        "num": 256,
+        "type": "Normal",
+        "basePower": 0,
+        "target": "self",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "sweetkiss": {
+        "name": "Sweet Kiss",
+        "num": 186,
+        "type": "Normal",
+        "basePower": 0,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "sweetscent": {
+        "name": "Sweet Scent",
+        "num": 230,
+        "type": "Normal",
+        "basePower": 0,
+        "target": "allAdjacentFoes",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "swift": {
+        "name": "Swift",
+        "num": 129,
+        "type": "Normal",
+        "basePower": 60,
+        "target": "allAdjacentFoes",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "swordsdance": {
+        "name": "Swords Dance",
+        "num": 14,
+        "type": "Normal",
+        "basePower": 0,
+        "target": "self",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "synthesis": {
+        "name": "Synthesis",
+        "num": 235,
+        "type": "Grass",
+        "basePower": 0,
+        "target": "self",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "tackle": {
+        "name": "Tackle",
+        "num": 33,
+        "type": "Normal",
+        "basePower": 35,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "tailglow": {
+        "name": "Tail Glow",
+        "num": 294,
+        "type": "Bug",
+        "basePower": 0,
+        "target": "self",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "tailwhip": {
+        "name": "Tail Whip",
+        "num": 39,
+        "type": "Normal",
+        "basePower": 0,
+        "target": "allAdjacentFoes",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "takedown": {
+        "name": "Take Down",
+        "num": 36,
+        "type": "Normal",
+        "basePower": 90,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": true
+    },
+    "taunt": {
+        "name": "Taunt",
+        "num": 269,
+        "type": "Dark",
+        "basePower": 0,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "teeterdance": {
+        "name": "Teeter Dance",
+        "num": 298,
+        "type": "Normal",
+        "basePower": 0,
+        "target": "allAdjacent",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "teleport": {
+        "name": "Teleport",
+        "num": 100,
+        "type": "Psychic",
+        "basePower": 0,
+        "target": "self",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "thief": {
+        "name": "Thief",
+        "num": 168,
+        "type": "Dark",
+        "basePower": 40,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "thrash": {
+        "name": "Thrash",
+        "num": 37,
+        "type": "Normal",
+        "basePower": 90,
+        "target": "randomNormal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "thunder": {
+        "name": "Thunder",
+        "num": 87,
+        "type": "Electric",
+        "basePower": 120,
+        "target": "normal",
+        "hasSecondary": true,
+        "hasRecoil": false
+    },
+    "thunderbolt": {
+        "name": "Thunderbolt",
+        "num": 85,
+        "type": "Electric",
+        "basePower": 95,
+        "target": "normal",
+        "hasSecondary": true,
+        "hasRecoil": false
+    },
+    "thunderpunch": {
+        "name": "Thunder Punch",
+        "num": 9,
+        "type": "Electric",
+        "basePower": 75,
+        "target": "normal",
+        "hasSecondary": true,
+        "hasRecoil": false
+    },
+    "thundershock": {
+        "name": "Thunder Shock",
+        "num": 84,
+        "type": "Electric",
+        "basePower": 40,
+        "target": "normal",
+        "hasSecondary": true,
+        "hasRecoil": false
+    },
+    "thunderwave": {
+        "name": "Thunder Wave",
+        "num": 86,
+        "type": "Electric",
+        "basePower": 0,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "tickle": {
+        "name": "Tickle",
+        "num": 321,
+        "type": "Normal",
+        "basePower": 0,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "torment": {
+        "name": "Torment",
+        "num": 259,
+        "type": "Dark",
+        "basePower": 0,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "toxic": {
+        "name": "Toxic",
+        "num": 92,
+        "type": "Poison",
+        "basePower": 0,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "transform": {
+        "name": "Transform",
+        "num": 144,
+        "type": "Normal",
+        "basePower": 0,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "triattack": {
+        "name": "Tri Attack",
+        "num": 161,
+        "type": "Normal",
+        "basePower": 80,
+        "target": "normal",
+        "hasSecondary": true,
+        "hasRecoil": false
+    },
+    "trick": {
+        "name": "Trick",
+        "num": 271,
+        "type": "Psychic",
+        "basePower": 0,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "triplekick": {
+        "name": "Triple Kick",
+        "num": 167,
+        "type": "Fighting",
+        "basePower": 10,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "twineedle": {
+        "name": "Twineedle",
+        "num": 41,
+        "type": "Bug",
+        "basePower": 25,
+        "target": "normal",
+        "hasSecondary": true,
+        "hasRecoil": false
+    },
+    "twister": {
+        "name": "Twister",
+        "num": 239,
+        "type": "Dragon",
+        "basePower": 40,
+        "target": "allAdjacentFoes",
+        "hasSecondary": true,
+        "hasRecoil": false
+    },
+    "uproar": {
+        "name": "Uproar",
+        "num": 253,
+        "type": "Normal",
+        "basePower": 50,
+        "target": "randomNormal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "vinewhip": {
+        "name": "Vine Whip",
+        "num": 22,
+        "type": "Grass",
+        "basePower": 35,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "visegrip": {
+        "name": "Vise Grip",
+        "num": 11,
+        "type": "Normal",
+        "basePower": 55,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "vitalthrow": {
+        "name": "Vital Throw",
+        "num": 233,
+        "type": "Fighting",
+        "basePower": 70,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "volttackle": {
+        "name": "Volt Tackle",
+        "num": 344,
+        "type": "Electric",
+        "basePower": 120,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": true
+    },
+    "waterfall": {
+        "name": "Waterfall",
+        "num": 127,
+        "type": "Water",
+        "basePower": 80,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "watergun": {
+        "name": "Water Gun",
+        "num": 55,
+        "type": "Water",
+        "basePower": 40,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "waterpulse": {
+        "name": "Water Pulse",
+        "num": 352,
+        "type": "Water",
+        "basePower": 60,
+        "target": "any",
+        "hasSecondary": true,
+        "hasRecoil": false
+    },
+    "watersport": {
+        "name": "Water Sport",
+        "num": 346,
+        "type": "Water",
+        "basePower": 0,
+        "target": "all",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "waterspout": {
+        "name": "Water Spout",
+        "num": 323,
+        "type": "Water",
+        "basePower": 150,
+        "target": "allAdjacentFoes",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "weatherball": {
+        "name": "Weather Ball",
+        "num": 311,
+        "type": "Normal",
+        "basePower": 50,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "whirlpool": {
+        "name": "Whirlpool",
+        "num": 250,
+        "type": "Water",
+        "basePower": 15,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "whirlwind": {
+        "name": "Whirlwind",
+        "num": 18,
+        "type": "Normal",
+        "basePower": 0,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "willowisp": {
+        "name": "Will-O-Wisp",
+        "num": 261,
+        "type": "Fire",
+        "basePower": 0,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "wingattack": {
+        "name": "Wing Attack",
+        "num": 17,
+        "type": "Flying",
+        "basePower": 60,
+        "target": "any",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "wish": {
+        "name": "Wish",
+        "num": 273,
+        "type": "Normal",
+        "basePower": 0,
+        "target": "self",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "withdraw": {
+        "name": "Withdraw",
+        "num": 110,
+        "type": "Water",
+        "basePower": 0,
+        "target": "self",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "wrap": {
+        "name": "Wrap",
+        "num": 35,
+        "type": "Normal",
+        "basePower": 15,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "yawn": {
+        "name": "Yawn",
+        "num": 281,
+        "type": "Normal",
+        "basePower": 0,
+        "target": "normal",
+        "hasSecondary": false,
+        "hasRecoil": false
+    },
+    "zapcannon": {
+        "name": "Zap Cannon",
+        "num": 192,
+        "type": "Electric",
+        "basePower": 100,
+        "target": "normal",
+        "hasSecondary": true,
+        "hasRecoil": false
+    }
+}

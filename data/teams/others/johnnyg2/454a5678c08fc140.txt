@@ -1,0 +1,57 @@
+Dugtrio @ Choice Band  
+Ability: Arena Trap  
+EVs: 140 HP / 252 Atk / 12 Def / 104 Spe  
+Adamant Nature  
+IVs: 30 SpD / 30 Spe  
+- Earthquake  
+- Aerial Ace  
+- Hidden Power [Bug]  
+- Rock Slide  
+
+Gengar @ Leftovers  
+Ability: Levitate  
+EVs: 248 HP / 60 SpD / 200 Spe  
+Timid Nature  
+- Rain Dance  
+- Thunderbolt  
+- Ice Punch  
+- Explosion  
+
+Swampert @ Leftovers  
+Ability: Torrent  
+EVs: 248 HP / 152 Def / 64 SpA / 44 SpD  
+Bold Nature  
+IVs: 0 Atk  
+- Roar  
+- Counter  
+- Surf  
+- Protect  
+
+Starmie @ Leftovers  
+Ability: Natural Cure  
+EVs: 248 HP / 44 SpA / 216 Spe  
+Timid Nature  
+IVs: 0 Atk  
+- Surf  
+- Ice Beam  
+- Recover  
+- Rapid Spin  
+
+Blissey (F) @ Leftovers  
+Ability: Natural Cure  
+EVs: 168 HP / 252 Def / 88 Spe  
+Bold Nature  
+IVs: 0 Atk  
+- Aromatherapy  
+- Thunder Wave  
+- Seismic Toss  
+- Soft-Boiled  
+
+Snorlax @ Leftovers  
+Ability: Immunity  
+EVs: 184 HP / 24 Atk / 204 Def / 96 SpD  
+Careful Nature  
+- Curse  
+- Rest  
+- Return  
+- Shadow Ball

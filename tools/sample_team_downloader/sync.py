@@ -5,7 +5,8 @@ import re
 import time
 
 SMOGON_URL = "https://www.smogon.com/forums/threads/adv-ou-sample-teams.3687813/"
-OUTPUT_DIR = "data/teams"
+OUTPUT_DIR = "data/teams/sample"
+METADATA_PATH = os.path.join(OUTPUT_DIR, "teams.json")
 
 def extract_metadata(first_post):
     """Extracts team metadata from the Smogon post using an ordered zip strategy."""
@@ -68,7 +69,12 @@ def fetch_and_save_team(meta):
         res = requests.get(raw_url, timeout=10)
         if res.status_code == 200:
             with open(filepath, 'w') as f: f.write(res.text)
-            return {**meta, "id": paste_id, "file": f"teams/{filename}"}
+            return {
+                **meta, 
+                "id": paste_id, 
+                "file": f"teams/sample/{filename}",
+                "source": url
+            }
     except Exception as e:
         print(f" Error {url}: {e}")
     return None
@@ -99,12 +105,11 @@ def sync_teams():
 
     # Save the index metadata
     import json
-    metadata_path = "data/teams/teams.json"
-    with open(metadata_path, 'w') as f:
+    with open(METADATA_PATH, 'w') as f:
         json.dump(teams_metadata, f, indent=2)
 
     print(f"Successfully synced {len(teams_metadata)} teams to {OUTPUT_DIR}")
-    print(f"Metadata index saved to {metadata_path}")
+    print(f"Metadata index saved to {METADATA_PATH}")
 
 if __name__ == "__main__":
     sync_teams()

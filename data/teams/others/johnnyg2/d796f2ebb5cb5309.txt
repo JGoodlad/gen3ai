@@ -1,0 +1,54 @@
+Metagross @ Choice Band  
+Ability: Clear Body  
+EVs: 200 HP / 252 Atk / 56 Spe  
+Adamant Nature  
+- Meteor Mash  
+- Earthquake  
+- Explosion  
+- Rock Slide  
+
+Quagsire @ Leftovers  
+Ability: Water Absorb  
+EVs: 252 HP / 196 Def / 60 SpD  
+Relaxed Nature  
+- Earthquake  
+- Ice Beam  
+- Curse  
+- Rest  
+
+Skarmory @ Leftovers  
+Ability: Keen Eye  
+EVs: 248 HP / 240 SpD / 20 Spe  
+Careful Nature  
+- Spikes  
+- Hidden Power [Steel]  
+- Roar  
+- Protect  
+
+Blissey (F) @ Leftovers  
+Ability: Natural Cure  
+EVs: 252 Def / 200 SpA / 56 Spe  
+Bold Nature  
+IVs: 0 Atk  
+- Ice Beam  
+- Soft-Boiled  
+- Seismic Toss  
+- Aromatherapy  
+
+Salamence @ Leftovers  
+Ability: Intimidate  
+EVs: 40 Atk / 216 SpA / 252 Spe  
+Naive Nature  
+- Dragon Claw  
+- Flamethrower  
+- Brick Break  
+- Hidden Power [Bug]  
+
+Claydol @ Leftovers  
+Ability: Levitate  
+EVs: 252 HP / 88 Atk / 112 Def / 56 SpD  
+Sassy Nature  
+- Earthquake  
+- Psychic  
+- Explosion  
+- Rapid Spin

@@ -1,0 +1,518 @@
+{
+    "aguavberry": {
+        "name": "Aguav Berry",
+        "num": 5
+    },
+    "apicotberry": {
+        "name": "Apicot Berry",
+        "num": 10
+    },
+    "aspearberry": {
+        "name": "Aspear Berry",
+        "num": 13
+    },
+    "belueberry": {
+        "name": "Belue Berry",
+        "num": 21
+    },
+    "berryjuice": {
+        "name": "Berry Juice",
+        "num": 22
+    },
+    "blackbelt": {
+        "name": "Black Belt",
+        "num": 32
+    },
+    "blackglasses": {
+        "name": "Black Glasses",
+        "num": 35
+    },
+    "blukberry": {
+        "name": "Bluk Berry",
+        "num": 44
+    },
+    "brightpowder": {
+        "name": "Bright Powder",
+        "num": 51
+    },
+    "charcoal": {
+        "name": "Charcoal",
+        "num": 61
+    },
+    "cheriberry": {
+        "name": "Cheri Berry",
+        "num": 63
+    },
+    "chestoberry": {
+        "name": "Chesto Berry",
+        "num": 65
+    },
+    "choiceband": {
+        "name": "Choice Band",
+        "num": 68
+    },
+    "clawfossil": {
+        "name": "Claw Fossil",
+        "num": 72
+    },
+    "cornnberry": {
+        "name": "Cornn Berry",
+        "num": 81
+    },
+    "deepseascale": {
+        "name": "Deep Sea Scale",
+        "num": 93
+    },
+    "deepseatooth": {
+        "name": "Deep Sea Tooth",
+        "num": 94
+    },
+    "diveball": {
+        "name": "Dive Ball",
+        "num": 101
+    },
+    "domefossil": {
+        "name": "Dome Fossil",
+        "num": 102
+    },
+    "dragonfang": {
+        "name": "Dragon Fang",
+        "num": 106
+    },
+    "dragonscale": {
+        "name": "Dragon Scale",
+        "num": 108
+    },
+    "durinberry": {
+        "name": "Durin Berry",
+        "num": 114
+    },
+    "enigmaberry": {
+        "name": "Enigma Berry",
+        "num": 124
+    },
+    "fastball": {
+        "name": "Fast Ball",
+        "num": 137
+    },
+    "figyberry": {
+        "name": "Figy Berry",
+        "num": 140
+    },
+    "firestone": {
+        "name": "Fire Stone",
+        "num": 142
+    },
+    "focusband": {
+        "name": "Focus Band",
+        "num": 150
+    },
+    "friendball": {
+        "name": "Friend Ball",
+        "num": 153
+    },
+    "ganlonberry": {
+        "name": "Ganlon Berry",
+        "num": 158
+    },
+    "greatball": {
+        "name": "Great Ball",
+        "num": 174
+    },
+    "grepaberry": {
+        "name": "Grepa Berry",
+        "num": 178
+    },
+    "hardstone": {
+        "name": "Hard Stone",
+        "num": 187
+    },
+    "heavyball": {
+        "name": "Heavy Ball",
+        "num": 194
+    },
+    "helixfossil": {
+        "name": "Helix Fossil",
+        "num": 195
+    },
+    "hondewberry": {
+        "name": "Hondew Berry",
+        "num": 213
+    },
+    "iapapaberry": {
+        "name": "Iapapa Berry",
+        "num": 217
+    },
+    "kelpsyberry": {
+        "name": "Kelpsy Berry",
+        "num": 235
+    },
+    "kingsrock": {
+        "name": "King's Rock",
+        "num": 236
+    },
+    "lansatberry": {
+        "name": "Lansat Berry",
+        "num": 238
+    },
+    "laxincense": {
+        "name": "Lax Incense",
+        "num": 240
+    },
+    "leafstone": {
+        "name": "Leaf Stone",
+        "num": 241
+    },
+    "leftovers": {
+        "name": "Leftovers",
+        "num": 242
+    },
+    "leppaberry": {
+        "name": "Leppa Berry",
+        "num": 244
+    },
+    "levelball": {
+        "name": "Level Ball",
+        "num": 246
+    },
+    "liechiberry": {
+        "name": "Liechi Berry",
+        "num": 248
+    },
+    "lightball": {
+        "name": "Light Ball",
+        "num": 251
+    },
+    "loveball": {
+        "name": "Love Ball",
+        "num": 258
+    },
+    "luckypunch": {
+        "name": "Lucky Punch",
+        "num": 261
+    },
+    "lumberry": {
+        "name": "Lum Berry",
+        "num": 262
+    },
+    "lureball": {
+        "name": "Lure Ball",
+        "num": 264
+    },
+    "luxuryball": {
+        "name": "Luxury Ball",
+        "num": 266
+    },
+    "machobrace": {
+        "name": "Macho Brace",
+        "num": 269
+    },
+    "magnet": {
+        "name": "Magnet",
+        "num": 273
+    },
+    "magoberry": {
+        "name": "Mago Berry",
+        "num": 274
+    },
+    "magostberry": {
+        "name": "Magost Berry",
+        "num": 275
+    },
+    "mail": {
+        "name": "Mail",
+        "num": 403
+    },
+    "masterball": {
+        "name": "Master Ball",
+        "num": 276
+    },
+    "mentalherb": {
+        "name": "Mental Herb",
+        "num": 285
+    },
+    "metalcoat": {
+        "name": "Metal Coat",
+        "num": 286
+    },
+    "metalpowder": {
+        "name": "Metal Powder",
+        "num": 287
+    },
+    "miracleseed": {
+        "name": "Miracle Seed",
+        "num": 292
+    },
+    "moonball": {
+        "name": "Moon Ball",
+        "num": 294
+    },
+    "moonstone": {
+        "name": "Moon Stone",
+        "num": 295
+    },
+    "mysticwater": {
+        "name": "Mystic Water",
+        "num": 300
+    },
+    "nanabberry": {
+        "name": "Nanab Berry",
+        "num": 302
+    },
+    "nestball": {
+        "name": "Nest Ball",
+        "num": 303
+    },
+    "netball": {
+        "name": "Net Ball",
+        "num": 304
+    },
+    "nevermeltice": {
+        "name": "Never-Melt Ice",
+        "num": 305
+    },
+    "nomelberry": {
+        "name": "Nomel Berry",
+        "num": 306
+    },
+    "oldamber": {
+        "name": "Old Amber",
+        "num": 314
+    },
+    "oranberry": {
+        "name": "Oran Berry",
+        "num": 319
+    },
+    "pamtreberry": {
+        "name": "Pamtre Berry",
+        "num": 323
+    },
+    "pechaberry": {
+        "name": "Pecha Berry",
+        "num": 333
+    },
+    "persimberry": {
+        "name": "Persim Berry",
+        "num": 334
+    },
+    "petayaberry": {
+        "name": "Petaya Berry",
+        "num": 335
+    },
+    "pinapberry": {
+        "name": "Pinap Berry",
+        "num": 337
+    },
+    "poisonbarb": {
+        "name": "Poison Barb",
+        "num": 343
+    },
+    "pokeball": {
+        "name": "Poke Ball",
+        "num": 345
+    },
+    "pomegberry": {
+        "name": "Pomeg Berry",
+        "num": 351
+    },
+    "premierball": {
+        "name": "Premier Ball",
+        "num": 363
+    },
+    "qualotberry": {
+        "name": "Qualot Berry",
+        "num": 371
+    },
+    "quickclaw": {
+        "name": "Quick Claw",
+        "num": 373
+    },
+    "rabutaberry": {
+        "name": "Rabuta Berry",
+        "num": 375
+    },
+    "rawstberry": {
+        "name": "Rawst Berry",
+        "num": 381
+    },
+    "razzberry": {
+        "name": "Razz Berry",
+        "num": 384
+    },
+    "repeatball": {
+        "name": "Repeat Ball",
+        "num": 401
+    },
+    "rootfossil": {
+        "name": "Root Fossil",
+        "num": 418
+    },
+    "safariball": {
+        "name": "Safari Ball",
+        "num": 425
+    },
+    "salacberry": {
+        "name": "Salac Berry",
+        "num": 426
+    },
+    "scopelens": {
+        "name": "Scope Lens",
+        "num": 429
+    },
+    "seaincense": {
+        "name": "Sea Incense",
+        "num": 430
+    },
+    "sharpbeak": {
+        "name": "Sharp Beak",
+        "num": 436
+    },
+    "shellbell": {
+        "name": "Shell Bell",
+        "num": 438
+    },
+    "silkscarf": {
+        "name": "Silk Scarf",
+        "num": 444
+    },
+    "silverpowder": {
+        "name": "Silver Powder",
+        "num": 447
+    },
+    "sitrusberry": {
+        "name": "Sitrus Berry",
+        "num": 448
+    },
+    "softsand": {
+        "name": "Soft Sand",
+        "num": 456
+    },
+    "souldew": {
+        "name": "Soul Dew",
+        "num": 459
+    },
+    "spelltag": {
+        "name": "Spell Tag",
+        "num": 461
+    },
+    "spelonberry": {
+        "name": "Spelon Berry",
+        "num": 462
+    },
+    "sportball": {
+        "name": "Sport Ball",
+        "num": 465
+    },
+    "starfberry": {
+        "name": "Starf Berry",
+        "num": 472
+    },
+    "stick": {
+        "name": "Stick",
+        "num": 475
+    },
+    "sunstone": {
+        "name": "Sun Stone",
+        "num": 480
+    },
+    "tamatoberry": {
+        "name": "Tamato Berry",
+        "num": 486
+    },
+    "thickclub": {
+        "name": "Thick Club",
+        "num": 491
+    },
+    "thunderstone": {
+        "name": "Thunder Stone",
+        "num": 492
+    },
+    "timerball": {
+        "name": "Timer Ball",
+        "num": 494
+    },
+    "twistedspoon": {
+        "name": "Twisted Spoon",
+        "num": 520
+    },
+    "ultraball": {
+        "name": "Ultra Ball",
+        "num": 521
+    },
+    "upgrade": {
+        "name": "Up-Grade",
+        "num": 523
+    },
+    "waterstone": {
+        "name": "Water Stone",
+        "num": 529
+    },
+    "watmelberry": {
+        "name": "Watmel Berry",
+        "num": 530
+    },
+    "wepearberry": {
+        "name": "Wepear Berry",
+        "num": 533
+    },
+    "whiteherb": {
+        "name": "White Herb",
+        "num": 535
+    },
+    "wikiberry": {
+        "name": "Wiki Berry",
+        "num": 538
+    },
+    "berry": {
+        "name": "Berry",
+        "num": 319
+    },
+    "berserkgene": {
+        "name": "Berserk Gene",
+        "num": 388
+    },
+    "bitterberry": {
+        "name": "Bitter Berry",
+        "num": 334
+    },
+    "burntberry": {
+        "name": "Burnt Berry",
+        "num": 13
+    },
+    "goldberry": {
+        "name": "Gold Berry",
+        "num": 448
+    },
+    "iceberry": {
+        "name": "Ice Berry",
+        "num": 381
+    },
+    "mintberry": {
+        "name": "Mint Berry",
+        "num": 65
+    },
+    "miracleberry": {
+        "name": "Miracle Berry",
+        "num": 262
+    },
+    "mysteryberry": {
+        "name": "Mystery Berry",
+        "num": 244
+    },
+    "pinkbow": {
+        "name": "Pink Bow",
+        "num": 444
+    },
+    "polkadotbow": {
+        "name": "Polkadot Bow",
+        "num": 444
+    },
+    "przcureberry": {
+        "name": "PRZ Cure Berry",
+        "num": 63
+    },
+    "psncureberry": {
+        "name": "PSN Cure Berry",
+        "num": 333
+    }
+}

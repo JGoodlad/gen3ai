@@ -1,0 +1,55 @@
+Zapdos @ Leftovers  
+Ability: Pressure  
+EVs: 184 SpA / 116 SpD / 208 Spe  
+Modest Nature  
+IVs: 2 Atk / 30 SpA  
+- Thunderbolt  
+- Hidden Power [Grass]  
+- Substitute  
+- Baton Pass  
+
+Dugtrio @ Choice Band  
+Ability: Arena Trap  
+EVs: 252 Atk / 144 SpD / 112 Spe  
+Jolly Nature  
+- Earthquake  
+- Hidden Power [Bug]  
+- Aerial Ace  
+- Beat Up  
+
+Tyranitar @ Choice Band  
+Ability: Sand Stream  
+EVs: 40 HP / 252 Atk / 8 Def / 208 Spe  
+Adamant Nature  
+- Rock Slide  
+- Earthquake  
+- Hidden Power [Bug]  
+- Focus Punch  
+
+Aerodactyl @ Choice Band  
+Ability: Rock Head  
+EVs: 4 HP / 252 Atk / 252 Spe  
+Jolly Nature  
+- Rock Slide  
+- Earthquake  
+- Hidden Power [Flying]  
+- Double-Edge  
+
+Swampert @ Leftovers  
+Ability: Torrent  
+EVs: 248 HP / 156 Def / 104 SpD  
+Bold Nature  
+IVs: 0 Atk  
+- Surf  
+- Toxic  
+- Protect  
+- Refresh  
+
+Gengar @ Leftovers  
+Ability: Levitate  
+EVs: 64 HP / 192 SpA / 252 Spe  
+Timid Nature  
+- Thunderbolt  
+- Ice Punch  
+- Explosion  
+- Hypnosis

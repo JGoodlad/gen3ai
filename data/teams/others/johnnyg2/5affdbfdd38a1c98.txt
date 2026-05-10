@@ -1,0 +1,55 @@
+Jirachi @ Choice Band  
+Ability: Serene Grace  
+EVs: 252 Atk / 52 SpA / 204 Spe  
+Lonely Nature  
+- Body Slam  
+- Fire Punch  
+- Doom Desire  
+- Hidden Power [Fighting]  
+
+Celebi @ Leftovers  
+Ability: Natural Cure  
+EVs: 252 SpA / 4 SpD / 252 Spe  
+Modest Nature  
+IVs: 2 Atk / 30 SpA / 30 Spe  
+- Calm Mind  
+- Psychic  
+- Hidden Power [Fire]  
+- Giga Drain  
+
+Tyranitar @ Leftovers  
+Ability: Sand Stream  
+EVs: 200 HP / 140 Atk / 168 Spe  
+Adamant Nature  
+- Dragon Dance  
+- Rock Slide  
+- Earthquake  
+- Double-Edge  
+
+Suicune @ Leftovers  
+Ability: Pressure  
+EVs: 248 HP / 232 SpA / 28 Spe  
+Modest Nature  
+IVs: 0 Atk  
+- Surf  
+- Calm Mind  
+- Rest  
+- Sleep Talk  
+
+Claydol @ Leftovers  
+Ability: Levitate  
+EVs: 252 HP / 212 Atk / 16 Def / 28 SpD  
+Relaxed Nature  
+- Earthquake  
+- Explosion  
+- Rapid Spin  
+- Psychic  
+
+Salamence @ Leftovers  
+Ability: Intimidate  
+EVs: 252 Atk / 56 SpA / 200 Spe  
+Lonely Nature  
+- Dragon Dance  
+- Hidden Power [Flying]  
+- Fire Blast  
+- Brick Break

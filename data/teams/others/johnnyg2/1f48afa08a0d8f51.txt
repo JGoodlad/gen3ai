@@ -1,0 +1,56 @@
+Swampert @ Leftovers  
+Ability: Torrent  
+EVs: 252 HP / 200 Def / 44 SpD / 12 Spe  
+Bold Nature  
+IVs: 0 Atk  
+- Surf  
+- Counter  
+- Roar  
+- Protect  
+
+Gengar @ Leftovers  
+Ability: Levitate  
+EVs: 248 HP / 60 SpD / 200 Spe  
+Timid Nature  
+- Hypnosis  
+- Explosion  
+- Ice Punch  
+- Will-O-Wisp  
+
+Skarmory @ Leftovers  
+Ability: Keen Eye  
+EVs: 248 HP / 248 SpD / 12 Spe  
+Careful Nature  
+- Drill Peck  
+- Spikes  
+- Toxic  
+- Roar  
+
+Blissey (F) @ Leftovers  
+Ability: Natural Cure  
+EVs: 252 Def / 200 SpA / 56 Spe  
+Modest Nature  
+IVs: 0 Atk  
+- Thunder Wave  
+- Soft-Boiled  
+- Seismic Toss  
+- Ice Beam  
+
+Claydol @ Leftovers  
+Ability: Levitate  
+EVs: 252 HP / 212 Atk / 16 Def / 28 SpD  
+Relaxed Nature  
+- Earthquake  
+- Psychic  
+- Explosion  
+- Rapid Spin  
+
+Raikou @ Leftovers  
+Ability: Pressure  
+EVs: 220 HP / 108 SpA / 4 SpD / 176 Spe  
+Timid Nature  
+IVs: 2 Atk / 30 SpA  
+- Thunderbolt  
+- Calm Mind  
+- Hidden Power [Grass]  
+- Substitute

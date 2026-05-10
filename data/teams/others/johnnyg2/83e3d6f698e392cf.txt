@@ -1,0 +1,55 @@
+Forretress @ Leftovers  
+Ability: Sturdy  
+EVs: 252 HP / 4 SpA / 252 SpD  
+Sassy Nature  
+- Spikes  
+- Zap Cannon  
+- Hidden Power [Bug]  
+- Explosion  
+
+Skarmory @ Leftovers  
+Ability: Keen Eye  
+EVs: 248 HP / 252 SpD / 8 Spe  
+Careful Nature  
+- Spikes  
+- Roar  
+- Protect  
+- Hidden Power [Steel]  
+
+Blissey (F) @ Leftovers  
+Ability: Natural Cure  
+EVs: 252 Def / 200 SpA / 56 Spe  
+Modest Nature  
+IVs: 0 Atk  
+- Ice Beam  
+- Thunderbolt  
+- Soft-Boiled  
+- Calm Mind  
+
+Claydol @ Leftovers  
+Ability: Levitate  
+EVs: 248 HP / 88 Atk / 116 Def / 56 SpD  
+Sassy Nature  
+- Earthquake  
+- Psychic  
+- Explosion  
+- Rapid Spin  
+
+Dugtrio @ Choice Band  
+Ability: Sand Veil  
+EVs: 8 HP / 248 Atk / 252 Spe  
+Jolly Nature  
+- Earthquake  
+- Rock Slide  
+- Aerial Ace  
+- Hidden Power [Bug]  
+
+Milotic @ Leftovers  
+Ability: Marvel Scale  
+EVs: 248 HP / 252 Def / 8 Spe  
+Bold Nature  
+IVs: 0 Atk  
+- Surf  
+- Ice Beam  
+- Refresh  
+- Recover

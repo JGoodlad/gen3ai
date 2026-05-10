@@ -1,0 +1,57 @@
+Zapdos @ Leftovers  
+Ability: Pressure  
+EVs: 248 HP / 228 SpD / 32 Spe  
+Calm Nature  
+IVs: 2 Atk / 30 Def  
+- Thunderbolt  
+- Hidden Power [Ice]  
+- Thunder Wave  
+- Roar  
+
+Breloom @ Leftovers  
+Ability: Effect Spore  
+EVs: 4 HP / 252 Atk / 252 Spe  
+Adamant Nature  
+- Brick Break  
+- Focus Punch  
+- Mach Punch  
+- Spore  
+
+Tyranitar @ Black Glasses  
+Ability: Sand Stream  
+EVs: 168 HP / 252 SpA / 88 Spe  
+Modest Nature  
+- Crunch  
+- Pursuit  
+- Flamethrower  
+- Brick Break  
+
+Swampert @ Salac Berry  
+Ability: Torrent  
+EVs: 252 SpA / 4 SpD / 252 Spe  
+Timid Nature  
+IVs: 0 Atk  
+- Hydro Pump  
+- Ice Beam  
+- Endeavor  
+- Substitute  
+
+Jirachi @ Leftovers  
+Ability: Serene Grace  
+EVs: 252 HP / 76 SpA / 180 Spe  
+Modest Nature  
+IVs: 2 Atk / 30 SpA  
+- Substitute  
+- Thunderbolt  
+- Hidden Power [Grass]  
+- Calm Mind  
+
+Charizard @ Leftovers  
+Ability: Blaze  
+EVs: 252 SpA / 4 SpD / 252 Spe  
+Timid Nature  
+IVs: 2 Atk / 30 SpA  
+- Fire Blast  
+- Beat Up  
+- Hidden Power [Grass]  
+- Dragon Claw

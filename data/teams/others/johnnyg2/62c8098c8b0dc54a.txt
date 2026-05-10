@@ -1,0 +1,57 @@
+Salamence @ Leftovers  
+Ability: Intimidate  
+EVs: 252 HP / 236 Def / 20 Spe  
+Bold Nature  
+IVs: 0 Atk  
+- Wish  
+- Flamethrower  
+- Protect  
+- Toxic  
+
+Jirachi @ Leftovers  
+Ability: Serene Grace  
+EVs: 252 HP / 144 SpA / 112 Spe  
+Modest Nature  
+IVs: 2 Atk / 30 SpA  
+- Calm Mind  
+- Ice Punch  
+- Thunderbolt  
+- Hidden Power [Grass]  
+
+Houndoom @ Leftovers  
+Ability: Flash Fire  
+EVs: 164 SpA / 120 SpD / 216 Spe  
+Modest Nature  
+IVs: 0 Atk  
+- Flamethrower  
+- Beat Up  
+- Pursuit  
+- Will-O-Wisp  
+
+Machamp @ Leftovers  
+Ability: Guts  
+EVs: 152 HP / 220 Atk / 136 Spe  
+Adamant Nature  
+- Bulk Up  
+- Cross Chop  
+- Rock Slide  
+- Hidden Power [Bug]  
+
+Suicune @ Leftovers  
+Ability: Pressure  
+EVs: 248 HP / 184 Def / 76 Spe  
+Bold Nature  
+IVs: 0 Atk  
+- Surf  
+- Rest  
+- Roar  
+- Calm Mind  
+
+Claydol @ Leftovers  
+Ability: Levitate  
+EVs: 252 HP / 212 Atk / 16 Def / 28 SpD  
+Relaxed Nature  
+- Earthquake  
+- Ice Beam  
+- Explosion  
+- Rapid Spin

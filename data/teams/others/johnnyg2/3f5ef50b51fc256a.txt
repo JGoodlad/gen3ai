@@ -1,0 +1,57 @@
+Regirock @ Leftovers  
+Ability: Clear Body  
+EVs: 252 HP / 188 Atk / 68 SpD  
+Adamant Nature  
+- Thunder Wave  
+- Hidden Power [Rock]  
+- Superpower  
+- Explosion  
+
+Magneton @ Magnet  
+Ability: Magnet Pull  
+EVs: 4 Def / 252 SpA / 252 Spe  
+Modest Nature  
+IVs: 2 Atk / 30 SpA  
+- Thunderbolt  
+- Hidden Power [Grass]  
+- Rain Dance  
+- Thunder Wave  
+
+Ninjask @ Leftovers  
+Ability: Speed Boost  
+EVs: 184 HP / 252 SpD / 72 Spe  
+Careful Nature  
+IVs: 0 Atk  
+- Substitute  
+- Toxic  
+- Baton Pass  
+- Protect  
+
+Celebi @ Leftovers  
+Ability: Natural Cure  
+EVs: 252 HP / 120 Def / 100 SpD / 36 Spe  
+Impish Nature  
+IVs: 30 SpD / 30 Spe  
+- Leech Seed  
+- Substitute  
+- Baton Pass  
+- Hidden Power [Bug]  
+
+Marowak @ Thick Club  
+Ability: Rock Head  
+EVs: 24 HP / 252 Atk / 232 Spe  
+Jolly Nature  
+- Swords Dance  
+- Earthquake  
+- Double-Edge  
+- Hidden Power [Rock]  
+
+Suicune @ Leftovers  
+Ability: Pressure  
+EVs: 252 HP / 192 SpA / 64 Spe  
+Modest Nature  
+IVs: 0 Atk  
+- Surf  
+- Substitute  
+- Calm Mind  
+- Roar

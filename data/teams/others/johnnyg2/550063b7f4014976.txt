@@ -1,0 +1,57 @@
+Slaking @ Choice Band  
+Ability: Truant  
+EVs: 252 Atk / 4 SpD / 252 Spe  
+Jolly Nature  
+- Double-Edge  
+- Earthquake  
+- Encore  
+- Focus Punch  
+
+Forretress @ Leftovers  
+Ability: Sturdy  
+EVs: 252 HP / 4 Atk / 252 Def  
+Impish Nature  
+- Spikes  
+- Hidden Power [Steel]  
+- Rapid Spin  
+- Protect  
+
+Umbreon @ Leftovers  
+Ability: Synchronize  
+EVs: 252 HP / 192 SpA / 56 SpD / 8 Spe  
+Calm Nature  
+IVs: 0 Atk  
+- Toxic  
+- Pursuit  
+- Wish  
+- Protect  
+
+Venusaur @ Leftovers  
+Ability: Overgrow  
+EVs: 64 HP / 252 SpD / 192 Spe  
+Calm Nature  
+IVs: 2 Atk / 30 SpA  
+- Hidden Power [Grass]  
+- Roar  
+- Leech Seed  
+- Sleep Powder  
+
+Suicune @ Leftovers  
+Ability: Pressure  
+EVs: 248 HP / 164 Def / 80 SpA / 16 Spe  
+Bold Nature  
+IVs: 0 Atk  
+- Surf  
+- Ice Beam  
+- Calm Mind  
+- Rest  
+
+Moltres @ Leftovers  
+Ability: Pressure  
+EVs: 104 HP / 172 SpA / 232 Spe  
+Timid Nature  
+IVs: 2 Atk / 30 SpA  
+- Flamethrower  
+- Hidden Power [Grass]  
+- Sunny Day  
+- Morning Sun

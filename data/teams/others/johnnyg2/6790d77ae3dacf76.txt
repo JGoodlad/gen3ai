@@ -1,0 +1,55 @@
+Aerodactyl @ Choice Band  
+Ability: Rock Head  
+EVs: 252 Atk / 4 SpD / 252 Spe  
+Jolly Nature  
+- Rock Slide  
+- Earthquake  
+- Hidden Power [Flying]  
+- Double-Edge  
+
+Skarmory @ Leftovers  
+Ability: Keen Eye  
+EVs: 240 HP / 216 SpD / 52 Spe  
+Careful Nature  
+IVs: 0 Atk  
+- Toxic  
+- Taunt  
+- Roar  
+- Spikes  
+
+Tyranitar @ Leftovers  
+Ability: Sand Stream  
+EVs: 252 HP / 24 Def / 192 SpA / 40 Spe  
+Modest Nature  
+- Crunch  
+- Pursuit  
+- Flamethrower  
+- Brick Break  
+
+Registeel @ Leftovers  
+Ability: Clear Body  
+EVs: 252 HP / 136 Def / 92 SpD / 28 Spe  
+Impish Nature  
+- Thunder Wave  
+- Seismic Toss  
+- Explosion  
+- Counter  
+
+Swampert @ Leftovers  
+Ability: Torrent  
+EVs: 248 HP / 156 Def / 104 SpD  
+Bold Nature  
+IVs: 0 Atk  
+- Surf  
+- Toxic  
+- Refresh  
+- Protect  
+
+Dragonite @ Leftovers  
+Ability: Inner Focus  
+EVs: 252 Atk / 40 SpD / 216 Spe  
+Adamant Nature  
+- Dragon Dance  
+- Hidden Power [Flying]  
+- Focus Punch  
+- Earthquake

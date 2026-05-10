@@ -1,0 +1,56 @@
+Flygon @ Leftovers  
+Ability: Levitate  
+EVs: 248 HP / 200 Def / 24 SpD / 36 Spe  
+Impish Nature  
+- Earthquake  
+- Hidden Power [Rock]  
+- Toxic  
+- Protect  
+
+Zapdos @ Leftovers  
+Ability: Pressure  
+EVs: 240 HP / 56 SpA / 212 Spe  
+Modest Nature  
+IVs: 2 Atk / 30 Def  
+- Thunderbolt  
+- Hidden Power [Ice]  
+- Roar  
+- Rest  
+
+Gyarados @ Leftovers  
+Ability: Intimidate  
+EVs: 252 HP / 168 Def / 88 SpD  
+Impish Nature  
+- Hidden Power [Flying]  
+- Thunder Wave  
+- Roar  
+- Rest  
+
+Skarmory  
+Ability: Keen Eye  
+EVs: 248 HP / 248 SpD / 12 Spe  
+Calm Nature  
+- Spikes  
+- Roar  
+- Thief  
+- Drill Peck  
+
+Blissey (F) @ Leftovers  
+Ability: Natural Cure  
+EVs: 252 Def / 212 SpA / 44 Spe  
+Bold Nature  
+IVs: 0 Atk  
+- Seismic Toss  
+- Ice Beam  
+- Aromatherapy  
+- Soft-Boiled  
+
+Misdreavus @ Leftovers  
+Ability: Levitate  
+EVs: 252 HP / 4 SpA / 252 SpD  
+Calm Nature  
+IVs: 0 Atk  
+- Thunderbolt  
+- Mean Look  
+- Perish Song  
+- Rest

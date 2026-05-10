@@ -1,0 +1,57 @@
+Dugtrio @ Choice Band  
+Ability: Arena Trap  
+EVs: 140 HP / 252 Atk / 12 Def / 104 Spe  
+Adamant Nature  
+IVs: 30 SpD / 30 Spe  
+- Earthquake  
+- Aerial Ace  
+- Hidden Power [Bug]  
+- Rock Slide  
+
+Magneton @ Leftovers  
+Ability: Magnet Pull  
+EVs: 248 HP / 72 Def / 188 Spe  
+Timid Nature  
+IVs: 2 Atk / 30 SpA / 30 Spe  
+- Thunderbolt  
+- Thunder Wave  
+- Hidden Power [Fire]  
+- Toxic  
+
+Milotic @ Leftovers  
+Ability: Marvel Scale  
+EVs: 248 HP / 252 Def / 8 Spe  
+Bold Nature  
+IVs: 0 Atk  
+- Surf  
+- Ice Beam  
+- Recover  
+- Refresh  
+
+Zapdos @ Leftovers  
+Ability: Pressure  
+EVs: 248 HP / 216 SpD / 44 Spe  
+Calm Nature  
+IVs: 0 Atk  
+- Thunderbolt  
+- Toxic  
+- Rain Dance  
+- Rest  
+
+Claydol @ Choice Band  
+Ability: Levitate  
+EVs: 144 HP / 252 Atk / 112 Spe  
+Adamant Nature  
+- Earthquake  
+- Shadow Ball  
+- Explosion  
+- Rapid Spin  
+
+Snorlax @ Leftovers  
+Ability: Immunity  
+EVs: 184 HP / 24 Atk / 204 Def / 96 SpD  
+Careful Nature  
+- Return  
+- Shadow Ball  
+- Curse  
+- Rest

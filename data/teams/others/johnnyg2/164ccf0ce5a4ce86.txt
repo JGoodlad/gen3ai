@@ -1,0 +1,57 @@
+Zapdos @ Choice Band  
+Ability: Pressure  
+EVs: 252 Atk / 4 SpA / 252 Spe  
+Lonely Nature  
+- Drill Peck  
+- Thunderbolt  
+- Hidden Power [Fighting]  
+- Rain Dance  
+
+Porygon2 @ Leftovers  
+Ability: Trace  
+EVs: 252 HP / 200 Def / 56 SpD  
+Bold Nature  
+IVs: 0 Atk  
+- Ice Beam  
+- Thunderbolt  
+- Thunder Wave  
+- Recover  
+
+Jirachi @ Leftovers  
+Ability: Serene Grace  
+EVs: 252 HP / 176 Def / 44 SpA / 36 Spe  
+Bold Nature  
+IVs: 2 Atk / 30 SpA  
+- Calm Mind  
+- Wish  
+- Fire Punch  
+- Hidden Power [Grass]  
+
+Celebi @ Leftovers  
+Ability: Natural Cure  
+EVs: 252 HP / 56 Def / 164 SpD / 36 Spe  
+Bold Nature  
+IVs: 0 Atk  
+- Psychic  
+- Leech Seed  
+- Calm Mind  
+- Recover  
+
+Suicune @ Leftovers  
+Ability: Pressure  
+EVs: 248 HP / 176 Def / 84 Spe  
+Bold Nature  
+IVs: 0 Atk  
+- Surf  
+- Roar  
+- Rest  
+- Calm Mind  
+
+Claydol @ Leftovers  
+Ability: Levitate  
+EVs: 252 HP / 88 Atk / 112 Def / 56 SpD  
+Sassy Nature  
+- Earthquake  
+- Rapid Spin  
+- Explosion  
+- Psychic
