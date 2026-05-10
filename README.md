@@ -53,12 +53,23 @@ npm run showdown
 npm run battle
 ```
 
-### 3. Run Tests
-```bash
-# Run unit tests
-npm test
+## 🧪 Testing Suite
 
-# Run integration tests (requires Showdown server to be running)
+We maintain two distinct test suites to ensure both logic and infrastructure integrity:
+
+### 1. Unit Tests (Fast, No Server Required)
+Used for verifying local logic like Gen 3 IV fixes and teambuilder parsing.
+```bash
+npm test
+```
+
+### 2. Integration Tests (Requires Showdown Server)
+Validates that all downloaded teams are actually legal and valid within the current Pokémon Showdown environment.
+```bash
+# 1. Start the server in one terminal
+npm run showdown
+
+# 2. Run the integration suite in another
 PYTHONPATH=src deps/venv/bin/pytest -m integration
 ```
 
