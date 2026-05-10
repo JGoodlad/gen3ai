@@ -213,10 +213,10 @@ async def main():
     args = parser.parse_args()
 
     # Load all teams
-    with open("pokemon/teams/teams.json", "r") as f:
+    with open("data/teams/teams.json", "r") as f:
         teams_meta = json.load(f)
     
-    all_team_texts = [open(os.path.join("pokemon", t["file"])).read() for t in teams_meta]
+    all_team_texts = [open(os.path.join("data", t["file"])).read() for t in teams_meta]
 
     def get_random_team():
         return np.random.choice(all_team_texts)
