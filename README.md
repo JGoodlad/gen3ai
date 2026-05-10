@@ -69,14 +69,10 @@ Used for verifying local logic like Gen 3 IV fixes and teambuilder parsing.
 npm test
 ```
 
-### 2. Integration Tests (Requires Showdown Server)
-Validates that all downloaded teams are actually legal and valid within the current Pokémon Showdown environment.
+### 2. Integration Tests (Local Validator Bridge)
+Validates that all downloaded teams are legal and valid using a local Node.js bridge to the Showdown library. This is fast and does not require a running server.
 ```bash
-# 1. Start the server in one terminal
-npm run showdown
-
-# 2. Run the integration suite in another
-PYTHONPATH=src deps/venv/bin/pytest -m integration
+npm run test-all
 ```
 
 *(Note: These scripts point to `deps/` and `tools/` so you never have to `cd` manually.)*
