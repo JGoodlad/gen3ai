@@ -2,6 +2,11 @@
 
 Evaluation of 32 sample teams over ~10,000 games (20 runs per pair) using `RandomPlayer` agents.
 
+**Command Used:**
+```bash
+npm run stop; npm run showdown & sleep 5 && npm run evaluate-teams && npm run stop
+```
+
 ```text
 ================================================================================
 GEN 3 OU SAMPLE TEAM EVALUATION RESULTS

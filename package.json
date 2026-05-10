@@ -8,6 +8,7 @@
     "battle": "PYTHONPATH=src deps/venv/bin/python3.11 src/main/play.py",
     "battle-random": "PYTHONPATH=src deps/venv/bin/python3.11 src/main/random_team_battle.py",
     "evaluate-teams": "PYTHONPATH=src deps/venv/bin/python3.11 src/main/evaluate_sample_teams.py",
+    "train-rl": "PYTHONPATH=src deps/venv/bin/python3.11 src/main/train_rl_agent.py",
     "test": "PYTHONPATH=src deps/venv/bin/pytest -m \"not integration\"",
     "test-all": "PYTHONPATH=src deps/venv/bin/pytest",
     "sync-teams": "PYTHONPATH=src deps/venv/bin/python3.11 tools/sample_team_downloader/sync.py",

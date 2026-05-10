@@ -4,3 +4,7 @@ numpy
 requests
 beautifulsoup4
 lxml
+tabulate
+stable-baselines3
+torch
+gymnasium
