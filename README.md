@@ -18,7 +18,25 @@ The goal is to move beyond simple heuristic-based bots and develop a model that 
     - `venv/`: Virtual environment containing `poke-env` and its dependencies.
     - `first_battle.py`: A quick-start script to verify the connection between the AI and the server.
 
-## 🛠 Getting Started
+## 🛠 Installation & Setup
+
+### Cloning the Repository
+Since this project uses a Git Submodule for the Showdown server, clone it using:
+```bash
+git clone --recursive <repo-url>
+```
+*If you've already cloned it without `--recursive`, run:*
+```bash
+git submodule update --init --recursive
+```
+
+### Initial Setup
+Run the following to install all Python and Node.js dependencies:
+```bash
+npm run setup
+```
+
+## 🎮 Running the Project
 
 You can run everything from the root directory using `npm` scripts:
 
