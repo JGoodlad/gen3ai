@@ -1,47 +1,61 @@
 import pytest
-from unittest.mock import patch, MagicMock
-from tools.sample_team_downloader.sync import sync_teams
-import os
+from unittest.mock import MagicMock
+from bs4 import BeautifulSoup
+from tools.sample_team_downloader.sync import extract_metadata
 
-@patch('requests.get')
-def test_sync_teams_logic(mock_get):
-    # Mock Smogon Thread
-    mock_thread_res = MagicMock()
-    mock_thread_res.status_code = 200
-    mock_thread_res.text = """
-    <html>
-        <body>
-            <div class="message-inner">
-                <div class="bbWrapper">
-                    <b>Big 5 Team</b>: <a href="https://pokepast.es/test1">https://pokepast.es/test1</a>
-                    <br>
-                    <b>Superman Team</b>: <a href="https://pokepast.es/test2">Link</a>
-                </div>
-            </div>
-        </body>
-    </html>
+def test_extract_metadata_logic():
+    html = """
+    <div class="message-inner">
+        <div class="bbWrapper">
+            <b>Balance</b>
+            <br>
+            <a href="https://pokepast.es/team1"><img src="sprite1.png"></a>
+            <br>
+            Big 5 + Starmie – by UD
+            <br>
+            <b>Offense</b>
+            <br>
+            <a href="https://pokepast.es/team2"><img src="sprite2.png"></a>
+            <br>
+            Superman TSS – by ADV Community
+        </div>
+    </div>
     """
+    soup = BeautifulSoup(html, 'lxml')
+    first_post = soup.select_one('.bbWrapper')
     
-    # Mock PokePaste Raws
-    mock_raw_res = MagicMock()
-    mock_raw_res.status_code = 200
-    mock_raw_res.text = "Pokemon 1 @ Item\n- Move 1"
+    teams = extract_metadata(first_post)
     
-    mock_get.side_effect = [mock_thread_res, mock_raw_res, mock_raw_res]
+    assert len(teams) == 2
     
-    # Ensure data/teams exists for test
-    os.makedirs("data/teams", exist_ok=True)
+    # Team 1
+    assert teams[0]["url"] == "https://pokepast.es/team1"
+    assert teams[0]["name"] == "Big 5 + Starmie"
+    assert teams[0]["author"] == "UD"
+    assert teams[0]["category"] == "Balance"
     
-    # Run the sync (with small timeout/sleep mocks if needed, but here it's fine)
-    with patch('time.sleep', return_value=None):
-        sync_teams()
+    # Team 2
+    assert teams[1]["url"] == "https://pokepast.es/team2"
+    assert teams[1]["name"] == "Superman TSS"
+    assert teams[1]["author"] == "ADV Community"
+    assert teams[1]["category"] == "Offense"
+
+def test_extract_metadata_with_author_link():
+    html = """
+    <div class="bbWrapper">
+        <b>Stall</b>
+        <br>
+        <a href="https://pokepast.es/team3"></a>
+        <br>
+        Triple Natural Cure – by <a href="/members/abr.123/">ABR</a>
+    </div>
+    """
+    soup = BeautifulSoup(html, 'lxml')
+    first_post = soup.select_one('.bbWrapper')
     
-    # Check if files were created
-    # Based on our regex/logic, names should be derived from link text or siblings
-    # In the mock:
-    # 1. link text is URL, previous sibling is "Big 5 Team: "
-    # 2. link text is "Link", previous sibling is "Superman Team: "
+    teams = extract_metadata(first_post)
     
-    files = os.listdir("data/teams")
-    assert any("big_5_team_test1" in f for f in files)
-    assert any("superman_team_test2" in f for f in files)
+    assert len(teams) == 1
+    assert teams[0]["name"] == "Triple Natural Cure"
+    assert teams[0]["author"] == "ABR"
+    assert teams[0]["category"] == "Stall"
