@@ -1,6 +1,6 @@
 # Dependencies
 node_modules/
-venv/
+deps/venv/
 .env
 
 # Python
@@ -11,6 +11,3 @@ __pycache__/
 # OS
 .DS_Store
 Thumbs.db
-
-# Showdown (if not using submodules, we ignore the whole folder)
-# tools/pokemon-showdown/

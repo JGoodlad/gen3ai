@@ -1,7 +1,6 @@
 import asyncio
 from poke_env.player import RandomPlayer
-from poke_env.teambuilder import Teambuilder
-from gen3_utils import fix_gen3_hp_ivs
+from utils.teambuilder import Gen3Teambuilder
 
 # Team from https://pokepast.es/f6229d2c867e21d6
 STAR_TSS_TEAM = """
@@ -64,22 +63,9 @@ IVs: 0 Atk
 - Rapid Spin
 """
 
-class ConstantTeambuilder(Teambuilder):
-    def __init__(self, team_string):
-        # 1. Parse the showdown string into a list of TeambuilderPokemon
-        parsed_team = self.parse_showdown_team(team_string)
-        
-        # 2. Automatically fix IVs for Hidden Power moves in Gen 3
-        fixed_team = fix_gen3_hp_ivs(parsed_team)
-        
-        # 3. Join the team into the packed format
-        self.packed_team = self.join_team(fixed_team)
-
-    def yield_team(self):
-        return self.packed_team
-
 async def main():
-    teambuilder = ConstantTeambuilder(STAR_TSS_TEAM)
+    # Instantiate the new Gen3Teambuilder
+    teambuilder = Gen3Teambuilder(STAR_TSS_TEAM)
 
     player_1 = RandomPlayer(
         battle_format="gen3ou",

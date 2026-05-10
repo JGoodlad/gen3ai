@@ -3,9 +3,10 @@
   "version": "1.0.0",
   "description": "Gen 3 Pokémon AI Project",
   "scripts": {
-    "showdown": "node tools/pokemon-showdown/pokemon-showdown start --no-security",
+    "showdown": "node deps/pokemon-showdown/pokemon-showdown start --no-security",
     "stop": "lsof -t -i :8000 | xargs kill -9 || echo 'Server not running'",
-    "battle": "tools/poke-env/venv/bin/python3.11 tools/poke-env/first_battle.py",
-    "setup": "brew install python@3.11 && tools/poke-env/venv/bin/pip install poke-env && npm install --prefix tools/pokemon-showdown"
+    "battle": "PYTHONPATH=src deps/venv/bin/python3.11 src/main/play.py",
+    "test": "PYTHONPATH=src deps/venv/bin/pytest",
+    "setup": "python3.11 -m venv deps/venv && deps/venv/bin/pip install -r requirements.txt && npm install --prefix deps/pokemon-showdown && npm run build --prefix deps/pokemon-showdown"
   }
 }

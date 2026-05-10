@@ -12,11 +12,14 @@ The goal is to move beyond simple heuristic-based bots and develop a model that 
 
 ## 📂 Repository Structure
 
-- `tools/`
-  - `pokemon-showdown/`: A local, high-performance instance of the Pokémon Showdown server. Configured with `--no-security` for faster AI training.
-  - `poke-env/`: The Python development environment.
-    - `venv/`: Virtual environment containing `poke-env` and its dependencies.
-    - `first_battle.py`: A quick-start script to verify the connection between the AI and the server.
+- `deps/`: Third-party dependencies and environments.
+  - `pokemon-showdown/`: Local instance of the Showdown server (Git Submodule).
+  - `venv/`: Python virtual environment.
+- `src/`: 1st-party core project logic.
+  - `agents/`: Custom AI agent implementations.
+  - `utils/`: Shared utilities (e.g., Gen 3 Hidden Power logic).
+- `tools/`: 1st-party scripts and developer tools.
+  - `run_battle.py`: High-level script for running/testing battles.
 
 ## 🛠 Installation & Setup
 
@@ -50,7 +53,7 @@ npm run showdown
 npm run battle
 ```
 
-*(Note: These scripts point directly to the `tools/` directory so you don't have to `cd` around.)*
+*(Note: These scripts point to `deps/` and `tools/` so you never have to `cd` manually.)*
 
 ## 📈 Long-term Goals
 - [ ] Implement a custom neural network architecture tailored for Gen 3 state representation.
