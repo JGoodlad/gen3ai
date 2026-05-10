@@ -1,0 +1,56 @@
+Medicham @ Lum Berry  
+Ability: Pure Power  
+EVs: 252 Atk / 4 SpD / 252 Spe  
+Jolly Nature  
+- Focus Punch  
+- Brick Break  
+- Rock Slide  
+- Shadow Ball  
+
+Salamence @ Leftovers  
+Ability: Intimidate  
+EVs: 116 HP / 252 Atk / 140 Spe  
+Adamant Nature  
+- Dragon Dance  
+- Hidden Power [Flying]  
+- Rock Slide  
+- Earthquake  
+
+Suicune @ Leftovers  
+Ability: Pressure  
+EVs: 216 HP / 252 SpA / 40 Spe  
+Calm Nature  
+IVs: 0 Atk  
+- Calm Mind  
+- Surf  
+- Ice Beam  
+- Rest  
+
+Snorlax @ Leftovers  
+Ability: Immunity  
+EVs: 12 HP / 216 Atk / 104 Def / 176 SpD  
+Adamant Nature  
+- Body Slam  
+- Earthquake  
+- Self-Destruct  
+- Shadow Ball  
+
+Magneton @ Magnet  
+Ability: Magnet Pull  
+EVs: 4 HP / 252 SpA / 252 Spe  
+Modest Nature  
+IVs: 2 Atk / 30 SpA / 30 Spe  
+- Thunderbolt  
+- Hidden Power [Fire]  
+- Thunder Wave  
+- Rain Dance  
+
+Metagross @ Leftovers  
+Ability: Clear Body  
+EVs: 168 HP / 232 Atk / 16 Def / 92 Spe  
+Adamant Nature  
+- Agility  
+- Meteor Mash  
+- Earthquake  
+- Explosion  
+

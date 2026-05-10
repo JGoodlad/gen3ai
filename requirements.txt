@@ -1,3 +1,6 @@
 poke-env==0.15.0
 asyncio
 numpy
+requests
+beautifulsoup4
+lxml

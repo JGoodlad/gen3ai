@@ -1,0 +1,57 @@
+Jynx (F) @ Leftovers  
+Ability: Oblivious  
+EVs: 36 HP / 252 SpA / 220 Spe  
+Timid Nature  
+IVs: 0 Atk  
+- Ice Beam  
+- Calm Mind  
+- Substitute  
+- Lovely Kiss  
+
+Suicune @ Leftovers  
+Ability: Pressure  
+EVs: 56 HP / 220 SpA / 232 Spe  
+Timid Nature  
+IVs: 2 Atk / 30 SpA  
+- Calm Mind  
+- Hydro Pump  
+- Ice Beam  
+- Hidden Power [Grass]  
+
+Dugtrio @ Choice Band  
+Ability: Arena Trap  
+EVs: 40 HP / 144 Atk / 100 SpD / 224 Spe  
+Jolly Nature  
+- Earthquake  
+- Beat Up  
+- Hidden Power [Bug]  
+- Aerial Ace  
+
+Claydol @ Leftovers  
+Ability: Levitate  
+EVs: 244 HP / 204 Atk / 32 SpA / 20 SpD / 8 Spe  
+Adamant Nature  
+- Rapid Spin  
+- Earthquake  
+- Psychic  
+- Explosion  
+
+Gengar @ Leftovers  
+Ability: Levitate  
+EVs: 168 HP / 164 SpD / 176 Spe  
+Timid Nature  
+- Explosion  
+- Hidden Power [Grass]  
+- Thunderbolt  
+- Will-O-Wisp  
+
+Jirachi @ Leftovers  
+Ability: Serene Grace  
+EVs: 252 HP / 4 SpA / 252 Spe  
+Timid Nature  
+IVs: 0 Atk  
+- Calm Mind  
+- Ice Punch  
+- Thunderbolt  
+- Substitute  
+

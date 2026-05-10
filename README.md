@@ -53,6 +53,15 @@ npm run showdown
 npm run battle
 ```
 
+### 3. Run Tests
+```bash
+# Run unit tests
+npm test
+
+# Run integration tests (requires Showdown server to be running)
+PYTHONPATH=src deps/venv/bin/pytest -m integration
+```
+
 *(Note: These scripts point to `deps/` and `tools/` so you never have to `cd` manually.)*
 
 ## 📈 Long-term Goals

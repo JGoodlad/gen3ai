@@ -1,0 +1,57 @@
+Zapdos @ Leftovers  
+Ability: Pressure  
+EVs: 200 HP / 252 SpD / 56 Spe  
+Calm Nature  
+IVs: 0 Atk  
+- Rest  
+- Roar  
+- Thunderbolt  
+- Toxic  
+
+Claydol @ Leftovers  
+Ability: Levitate  
+EVs: 252 HP / 124 Atk / 96 Def / 20 SpA / 16 SpD  
+Sassy Nature  
+- Rapid Spin  
+- Earthquake  
+- Psychic  
+- Explosion  
+
+Skarmory @ Leftovers  
+Ability: Keen Eye  
+EVs: 248 HP / 248 SpD / 12 Spe  
+Careful Nature  
+- Spikes  
+- Roar  
+- Protect  
+- Drill Peck  
+
+Dugtrio @ Choice Band  
+Ability: Arena Trap  
+EVs: 252 Atk / 4 SpD / 252 Spe  
+Jolly Nature  
+- Earthquake  
+- Sunny Day  
+- Hidden Power [Bug]  
+- Aerial Ace  
+
+Blissey (F) @ Leftovers  
+Ability: Natural Cure  
+EVs: 240 HP / 252 Def / 16 Spe  
+Bold Nature  
+IVs: 0 Atk  
+- Seismic Toss  
+- Thunder Wave  
+- Aromatherapy  
+- Soft-Boiled  
+
+Suicune @ Leftovers  
+Ability: Pressure  
+EVs: 252 HP / 228 Def / 28 Spe  
+Bold Nature  
+IVs: 0 Atk  
+- Calm Mind  
+- Surf  
+- Rest  
+- Roar  
+
