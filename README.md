@@ -16,10 +16,10 @@ The goal is to move beyond simple heuristic-based bots and develop a model that 
   - `pokemon-showdown/`: Local instance of the Showdown server (Git Submodule).
   - `venv/`: Python virtual environment.
 - `src/`: 1st-party core project logic.
+  - `main/`: Entry points for the application (e.g., `play.py`).
   - `agents/`: Custom AI agent implementations.
   - `utils/`: Shared utilities (e.g., Gen 3 Hidden Power logic).
-- `tools/`: 1st-party scripts and developer tools.
-  - `run_battle.py`: High-level script for running/testing battles.
+- `tools/`: 1st-party developer tools and scripts.
 
 ## 🛠 Installation & Setup
 
