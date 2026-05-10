@@ -4,7 +4,7 @@ const path = require('path');
 
 // Point to the local Pokemon Showdown installation
 // Based on the repository structure: deps/pokemon-showdown
-const psPath = path.resolve(__dirname, '../../deps/pokemon-showdown');
+const psPath = path.resolve(__dirname, '../../../deps/pokemon-showdown');
 const { Teams, TeamValidator } = require(psPath);
 
 let inputData = '';

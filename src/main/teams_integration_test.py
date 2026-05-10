@@ -1,7 +1,7 @@
 import pytest
 import json
 import os
-from src.utils.team_validator import validate_team_locally
+from src.utils.bridge.team_validator import validate_team_locally
 
 # This test integrates with the local Pokemon Showdown sim library via a Node bridge.
 # It is much faster than server-based testing and doesn't require a running instance.
