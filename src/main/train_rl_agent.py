@@ -18,7 +18,7 @@ from poke_env.player.battle_order import BattleOrder, DefaultBattleOrder
 from poke_env.battle.pokemon import Pokemon
 from poke_env.battle.move import Move
 from poke_env.data import GenData
-from poke_env.ps_client import LocalhostServerConfiguration
+from poke_env.ps_client import LocalhostServerConfiguration, AccountConfiguration
 
 # RL Imports
 import gymnasium as gym
@@ -37,7 +37,7 @@ from utils.teambuilder import Gen3Teambuilder
 # --- Configuration ---
 BATTLE_FORMAT = "gen3ou"
 N_FEATURES = 15 
-DEFAULT_TEAM_NAME = "ZapDug"
+DEFAULT_TEAM_NAME = "Big 5 + Starmie (Beerlover)"
 
 class Gen3FeaturesExtractor(BaseFeaturesExtractor):
     def __init__(self, observation_space):
@@ -212,26 +212,98 @@ async def main():
     parser.add_argument("--steps", type=int, default=100000, help="Number of training steps")
     args = parser.parse_args()
 
-    # Load the team
-    with open("data/teams/teams.json", "r") as f:
-        meta = json.load(f)
-    target_team = next((m for m in meta if m["name"] == DEFAULT_TEAM_NAME), meta[0])
-    with open(os.path.join("data", target_team["file"]), "r") as f:
-        team_text = f.read()
+    # Load all teams
+    with open("pokemon/teams/teams.json", "r") as f:
+        teams_meta = json.load(f)
+    
+    all_team_texts = [open(os.path.join("pokemon", t["file"])).read() for t in teams_meta]
 
-    env = DummyVecEnv([create_training_env(team_text)])
+    def get_random_team():
+        return np.random.choice(all_team_texts)
+
+    def create_training_env_random(idx):
+        def _init():
+            ts = datetime.now().strftime('%H%M%S')
+            env_username = f"RLAgent_{idx}_{ts}"
+            opp_username = f"Opponent_{idx}_{ts}"
+            
+            env = Gen3Env(
+                battle_format=BATTLE_FORMAT,
+                team=Gen3Teambuilder(get_random_team()),
+                log_level=40,
+                server_configuration=LocalhostServerConfiguration,
+                account_configuration1=AccountConfiguration(env_username, "password"),
+            )
+            opponent = SimpleHeuristicsPlayer(
+                battle_format=BATTLE_FORMAT,
+                team=Gen3Teambuilder(get_random_team()),
+                server_configuration=LocalhostServerConfiguration,
+                account_configuration=AccountConfiguration(opp_username, "password"),
+            )
+            return Monitor(SingleAgentWrapper(env, opponent))
+        return _init
+
+    # Running parallel environments
+    n_envs = 4
+    print(f"Initializing {n_envs} parallel environments via SubprocVecEnv...")
+    env = SubprocVecEnv([create_training_env_random(i) for i in range(n_envs)])
+
+    async def evaluate_model_random(model):
+        print("\nStarting Random-vs-Random Evaluation...")
+        rl_player = RLPlayer(
+            model=model,
+            team=Gen3Teambuilder(get_random_team()),
+            battle_format=BATTLE_FORMAT,
+            server_configuration=LocalhostServerConfiguration,
+            max_concurrent_battles=10
+        )
+        
+        random_player = RandomPlayer(
+            battle_format=BATTLE_FORMAT,
+            team=Gen3Teambuilder(get_random_team()),
+            server_configuration=LocalhostServerConfiguration,
+            max_concurrent_battles=10
+        )
+        
+        heuristic_player = SimpleHeuristicsPlayer(
+            battle_format=BATTLE_FORMAT,
+            team=Gen3Teambuilder(get_random_team()),
+            server_configuration=LocalhostServerConfiguration,
+            max_concurrent_battles=10
+        )
+
+        print("Evaluating (Random Team) against RandomPlayer (Random Team) [100 battles]...")
+        await rl_player.battle_against(random_player, n_battles=100)
+        print(f"Win rate vs Random: {rl_player.n_won_battles}%")
+
+        rl_player.reset_battles()
+        print("Evaluating (Random Team) against HeuristicPlayer (Random Team) [100 battles]...")
+        await rl_player.battle_against(heuristic_player, n_battles=100)
+        print(f"Win rate vs Heuristic: {rl_player.n_won_battles}%")
 
     if args.model:
-        print(f"Loading existing model from {args.model}")
-        model = PPO.load(args.model, env=env, device="cpu")
+        model_path = args.model
+        if not os.path.exists(model_path) and not model_path.endswith(".zip"):
+            potential_paths = [
+                os.path.join("models", "goldens", model_path),
+                os.path.join("models", "goldens", model_path, "final_model"),
+                os.path.join("models", "goldens", model_path, "final_model.zip"),
+            ]
+            for p in potential_paths:
+                if os.path.exists(p) or os.path.exists(p + ".zip"):
+                    model_path = p
+                    break
+
+        print(f"Loading existing model from {model_path}")
+        model = PPO.load(model_path, env=env, device="cpu")
         
         if args.eval_only:
-            await evaluate_model(model, team_text)
+            await evaluate_model_random(model)
             return
         else:
             print(f"Continuing training for {args.steps} additional steps...")
             unique_id = datetime.now().strftime("%Y%m%d_%H%M%S")
-            model_dir = f"models/gen3ou_ppo_continued_{unique_id}"
+            model_dir = f"models/gen3ou_ppo_random_continued_{unique_id}"
             os.makedirs(model_dir, exist_ok=True)
             
             checkpoint_callback = CheckpointCallback(
@@ -240,18 +312,14 @@ async def main():
                 name_prefix="checkpoint"
             )
             
-            model.learn(
-                total_timesteps=args.steps, 
-                callback=checkpoint_callback,
-                reset_num_timesteps=False
-            )
+            model.learn(total_timesteps=args.steps, callback=checkpoint_callback, reset_num_timesteps=False)
             
             final_path = os.path.join(model_dir, "final_model")
             model.save(final_path)
             print(f"Continued training complete. Model saved to {final_path}")
-            await evaluate_model(model, team_text)
+            await evaluate_model_random(model)
     else:
-        print(f"Starting NEW RL training with team: {target_team['name']}")
+        print(f"Starting NEW Generalist RL training (Random vs Random, Parallel x4)")
         model = PPO(
             MaskedActorCriticPolicy,
             env,
@@ -265,7 +333,7 @@ async def main():
         )
 
         unique_id = datetime.now().strftime("%Y%m%d_%H%M%S")
-        model_dir = f"models/gen3ou_ppo_{unique_id}"
+        model_dir = f"models/gen3ou_ppo_generalist_{unique_id}"
         os.makedirs(model_dir, exist_ok=True)
 
         checkpoint_callback = CheckpointCallback(
@@ -274,14 +342,11 @@ async def main():
             name_prefix="checkpoint"
         )
 
-        print(f"Training for {args.steps} steps...")
         model.learn(total_timesteps=args.steps, callback=checkpoint_callback)
-        
         final_path = os.path.join(model_dir, "final_model")
         model.save(final_path)
         print(f"Training complete. Model saved to {final_path}")
-        
-        await evaluate_model(model, team_text)
+        await evaluate_model_random(model)
 
 if __name__ == "__main__":
     asyncio.run(main())

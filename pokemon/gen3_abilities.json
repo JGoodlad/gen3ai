@@ -1,0 +1,310 @@
+{
+    "airlock": {
+        "name": "Air Lock",
+        "num": 76
+    },
+    "arenatrap": {
+        "name": "Arena Trap",
+        "num": 71
+    },
+    "battlearmor": {
+        "name": "Battle Armor",
+        "num": 4
+    },
+    "blaze": {
+        "name": "Blaze",
+        "num": 66
+    },
+    "chlorophyll": {
+        "name": "Chlorophyll",
+        "num": 34
+    },
+    "clearbody": {
+        "name": "Clear Body",
+        "num": 29
+    },
+    "cloudnine": {
+        "name": "Cloud Nine",
+        "num": 13
+    },
+    "colorchange": {
+        "name": "Color Change",
+        "num": 16
+    },
+    "compoundeyes": {
+        "name": "Compound Eyes",
+        "num": 14
+    },
+    "cutecharm": {
+        "name": "Cute Charm",
+        "num": 56
+    },
+    "damp": {
+        "name": "Damp",
+        "num": 6
+    },
+    "drizzle": {
+        "name": "Drizzle",
+        "num": 2
+    },
+    "drought": {
+        "name": "Drought",
+        "num": 70
+    },
+    "earlybird": {
+        "name": "Early Bird",
+        "num": 48
+    },
+    "effectspore": {
+        "name": "Effect Spore",
+        "num": 27
+    },
+    "flamebody": {
+        "name": "Flame Body",
+        "num": 49
+    },
+    "flashfire": {
+        "name": "Flash Fire",
+        "num": 18
+    },
+    "forecast": {
+        "name": "Forecast",
+        "num": 59
+    },
+    "guts": {
+        "name": "Guts",
+        "num": 62
+    },
+    "hugepower": {
+        "name": "Huge Power",
+        "num": 37
+    },
+    "hustle": {
+        "name": "Hustle",
+        "num": 55
+    },
+    "hypercutter": {
+        "name": "Hyper Cutter",
+        "num": 52
+    },
+    "illuminate": {
+        "name": "Illuminate",
+        "num": 35
+    },
+    "immunity": {
+        "name": "Immunity",
+        "num": 17
+    },
+    "innerfocus": {
+        "name": "Inner Focus",
+        "num": 39
+    },
+    "insomnia": {
+        "name": "Insomnia",
+        "num": 15
+    },
+    "intimidate": {
+        "name": "Intimidate",
+        "num": 22
+    },
+    "keeneye": {
+        "name": "Keen Eye",
+        "num": 51
+    },
+    "levitate": {
+        "name": "Levitate",
+        "num": 26
+    },
+    "lightningrod": {
+        "name": "Lightning Rod",
+        "num": 31
+    },
+    "limber": {
+        "name": "Limber",
+        "num": 7
+    },
+    "liquidooze": {
+        "name": "Liquid Ooze",
+        "num": 64
+    },
+    "magmaarmor": {
+        "name": "Magma Armor",
+        "num": 40
+    },
+    "magnetpull": {
+        "name": "Magnet Pull",
+        "num": 42
+    },
+    "marvelscale": {
+        "name": "Marvel Scale",
+        "num": 63
+    },
+    "minus": {
+        "name": "Minus",
+        "num": 58
+    },
+    "naturalcure": {
+        "name": "Natural Cure",
+        "num": 30
+    },
+    "oblivious": {
+        "name": "Oblivious",
+        "num": 12
+    },
+    "overgrow": {
+        "name": "Overgrow",
+        "num": 65
+    },
+    "owntempo": {
+        "name": "Own Tempo",
+        "num": 20
+    },
+    "pickup": {
+        "name": "Pickup",
+        "num": 53
+    },
+    "plus": {
+        "name": "Plus",
+        "num": 57
+    },
+    "poisonpoint": {
+        "name": "Poison Point",
+        "num": 38
+    },
+    "pressure": {
+        "name": "Pressure",
+        "num": 46
+    },
+    "purepower": {
+        "name": "Pure Power",
+        "num": 74
+    },
+    "raindish": {
+        "name": "Rain Dish",
+        "num": 44
+    },
+    "rockhead": {
+        "name": "Rock Head",
+        "num": 69
+    },
+    "roughskin": {
+        "name": "Rough Skin",
+        "num": 24
+    },
+    "runaway": {
+        "name": "Run Away",
+        "num": 50
+    },
+    "sandstream": {
+        "name": "Sand Stream",
+        "num": 45
+    },
+    "sandveil": {
+        "name": "Sand Veil",
+        "num": 8
+    },
+    "serenegrace": {
+        "name": "Serene Grace",
+        "num": 32
+    },
+    "shadowtag": {
+        "name": "Shadow Tag",
+        "num": 23
+    },
+    "shedskin": {
+        "name": "Shed Skin",
+        "num": 61
+    },
+    "shellarmor": {
+        "name": "Shell Armor",
+        "num": 75
+    },
+    "shielddust": {
+        "name": "Shield Dust",
+        "num": 19
+    },
+    "soundproof": {
+        "name": "Soundproof",
+        "num": 43
+    },
+    "speedboost": {
+        "name": "Speed Boost",
+        "num": 3
+    },
+    "static": {
+        "name": "Static",
+        "num": 9
+    },
+    "stench": {
+        "name": "Stench",
+        "num": 1
+    },
+    "stickyhold": {
+        "name": "Sticky Hold",
+        "num": 60
+    },
+    "sturdy": {
+        "name": "Sturdy",
+        "num": 5
+    },
+    "suctioncups": {
+        "name": "Suction Cups",
+        "num": 21
+    },
+    "swarm": {
+        "name": "Swarm",
+        "num": 68
+    },
+    "swiftswim": {
+        "name": "Swift Swim",
+        "num": 33
+    },
+    "synchronize": {
+        "name": "Synchronize",
+        "num": 28
+    },
+    "tangledfeet": {
+        "name": "Tangled Feet",
+        "num": 77
+    },
+    "thickfat": {
+        "name": "Thick Fat",
+        "num": 47
+    },
+    "torrent": {
+        "name": "Torrent",
+        "num": 67
+    },
+    "trace": {
+        "name": "Trace",
+        "num": 36
+    },
+    "truant": {
+        "name": "Truant",
+        "num": 54
+    },
+    "vitalspirit": {
+        "name": "Vital Spirit",
+        "num": 72
+    },
+    "voltabsorb": {
+        "name": "Volt Absorb",
+        "num": 10
+    },
+    "waterabsorb": {
+        "name": "Water Absorb",
+        "num": 11
+    },
+    "waterveil": {
+        "name": "Water Veil",
+        "num": 41
+    },
+    "whitesmoke": {
+        "name": "White Smoke",
+        "num": 73
+    },
+    "wonderguard": {
+        "name": "Wonder Guard",
+        "num": 25
+    }
+}

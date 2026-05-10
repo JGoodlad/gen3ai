@@ -1,50 +1,47 @@
 import re
 
 # Single source of truth for Gen 3 Hidden Power IVs (ensures 70 Power)
-# Authoritative Gen 3 Hidden Power IVs for Power 70
-# Each entry is (HP, Atk, Def, SpA, SpD, Spe)
 GEN3_HP_IVS = {
-    "Fighting": [31, 30, 30, 30, 30, 30],
-    "Flying":   [31, 30, 31, 30, 30, 30],
-    "Poison":   [31, 30, 30, 30, 30, 31],
-    "Ground":   [31, 30, 31, 30, 30, 31],
-    "Rock":     [31, 30, 30, 31, 30, 30],
-    "Bug":      [30, 31, 31, 31, 30, 30],
-    "Ghost":    [30, 31, 30, 31, 30, 31],
-    "Steel":    [30, 31, 31, 31, 30, 31],
-    "Fire":     [30, 31, 30, 30, 31, 30],
-    "Water":    [30, 31, 31, 30, 31, 30],
-    "Grass":    [31, 31, 30, 30, 31, 31],
-    "Electric": [31, 31, 31, 30, 31, 31],
-    "Psychic":  [31, 31, 30, 31, 31, 30],
-    "Ice":      [31, 31, 31, 31, 31, 30],
-    "Dragon":   [31, 31, 30, 31, 31, 31],
-    "Dark":     [30, 30, 30, 30, 30, 30],
+    "Fighting": {"hp": 31, "atk": 31, "def": 30, "spa": 30, "spd": 30, "spe": 30},
+    "Rock":     {"hp": 31, "atk": 31, "def": 30, "spa": 31, "spd": 30, "spe": 30},
+    "Fire":     {"hp": 31, "atk": 30, "def": 31, "spa": 30, "spd": 31, "spe": 30},
+    "Psychic":  {"hp": 31, "atk": 30, "def": 31, "spa": 31, "spd": 31, "spe": 30},
+    "Flying":   {"hp": 30, "atk": 30, "def": 30, "spa": 30, "spd": 30, "spe": 31},
+    "Poison":   {"hp": 31, "atk": 31, "def": 30, "spa": 30, "spd": 30, "spe": 31},
+    "Ground":   {"hp": 31, "atk": 31, "def": 31, "spa": 30, "spd": 30, "spe": 31},
+    "Bug":      {"hp": 31, "atk": 30, "def": 30, "spa": 31, "spd": 30, "spe": 31},
+    "Ghost":    {"hp": 31, "atk": 30, "def": 31, "spa": 31, "spd": 30, "spe": 31},
+    "Steel":    {"hp": 31, "atk": 31, "def": 31, "spa": 31, "spd": 30, "spe": 31},
+    "Water":    {"hp": 31, "atk": 30, "def": 30, "spa": 30, "spd": 31, "spe": 31},
+    "Grass":    {"hp": 31, "atk": 30, "def": 31, "spa": 30, "spd": 31, "spe": 31},
+    "Electric": {"hp": 31, "atk": 31, "def": 31, "spa": 30, "spd": 31, "spe": 31},
+    "Ice":      {"hp": 31, "atk": 30, "def": 30, "spa": 31, "spd": 31, "spe": 31},
+    "Dragon":   {"hp": 31, "atk": 30, "def": 31, "spa": 31, "spd": 31, "spe": 31},
+    "Dark":     {"hp": 31, "atk": 31, "def": 31, "spa": 31, "spd": 31, "spe": 31},
 }
 
 def fix_gen3_hp_ivs(pokemon_list):
-    """Detects Hidden Power and applies correct Gen 3 IVs ONLY if missing or default."""
+    """Detects Hidden Power and applies the correct Gen 3 IVs ONLY if they are all 31."""
     for mon in pokemon_list:
-        # Check if the pokemon has Hidden Power
-        hp_type = None
-        for move in mon.moves:
-            normalized = move.lower().replace(" ", "").replace("[", "").replace("]", "")
-            if "hiddenpower" in normalized:
-                match = re.search(r"\[(\w+)\]", move)
-                hp_type = match.group(1).capitalize() if match else normalized.replace("hiddenpower", "").capitalize()
-                break
-        
-        if not hp_type:
+        # Check if mon has a Hidden Power move
+        hp_move = next((m for m in mon.moves if "hiddenpower" in m.lower().replace(" ", "")), None)
+        if not hp_move:
             continue
             
-        # Check if IVs are default (all 31s or None/Empty)
-        is_default = mon.ivs is None or len(mon.ivs) == 0 or all(iv == 31 for iv in mon.ivs)
+        # Only fix if current IVs are default (all 31)
+        if mon.ivs and any(iv != 31 for iv in mon.ivs):
+            continue
+
+        if mon.ivs is None or len(mon.ivs) == 0:
+            mon.ivs = [31] * 6
+            
+        normalized = hp_move.lower().replace(" ", "").replace("[", "").replace("]", "")
+        match = re.search(r"\[(\w+)\]", hp_move)
+        hp_type = match.group(1).capitalize() if match else normalized.replace("hiddenpower", "").capitalize()
         
-        if is_default:
-            if mon.ivs is None or len(mon.ivs) == 0:
-                mon.ivs = [31] * 6
-                
-            if hp_type in GEN3_HP_IVS:
-                mon.ivs = list(GEN3_HP_IVS[hp_type])
-                
+        if hp_type in GEN3_HP_IVS:
+            print(f"Fixing IVs for {mon.species} with {hp_move}...")
+            indices = {"hp": 0, "atk": 1, "def": 2, "spa": 3, "spd": 4, "spe": 5}
+            for stat, value in GEN3_HP_IVS[hp_type].items():
+                mon.ivs[indices[stat]] = value
     return pokemon_list
