@@ -11,3 +11,7 @@ __pycache__/
 # OS
 .DS_Store
 Thumbs.db
+
+# Models
+models/*
+!models/goldens/
