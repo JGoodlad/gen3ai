@@ -1,0 +1,16 @@
+# Dependencies
+node_modules/
+venv/
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Showdown (if not using submodules, we ignore the whole folder)
+# tools/pokemon-showdown/
