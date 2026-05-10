@@ -16,7 +16,7 @@ By bridging Python to Node.js, we can utilize the actual `pokemon-showdown` code
 
 ## Usage
 ```python
-from src.utils.bridge.team_validator import validate_team_locally
+from utils.bridge.team_validator import validate_team_locally
 
 result = validate_team_locally("gen3ou", team_text)
 if result["valid"]:

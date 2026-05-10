@@ -6,6 +6,7 @@
     "showdown": "node deps/pokemon-showdown/pokemon-showdown start --no-security",
     "stop": "lsof -t -i :8000 | xargs kill -9 || echo 'Server not running'",
     "battle": "PYTHONPATH=src deps/venv/bin/python3.11 src/main/play.py",
+    "battle-random": "PYTHONPATH=src deps/venv/bin/python3.11 src/main/random_team_battle.py",
     "test": "PYTHONPATH=src deps/venv/bin/pytest -m \"not integration\"",
     "test-all": "PYTHONPATH=src deps/venv/bin/pytest",
     "sync-teams": "PYTHONPATH=src deps/venv/bin/python3.11 tools/sample_team_downloader/sync.py",
