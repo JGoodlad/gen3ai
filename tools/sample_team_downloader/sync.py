@@ -43,28 +43,69 @@ def sync_teams():
             raw_url = url
             url = url.replace('/raw', '')
 
-        # Try to determine a name for the team
-        name = link.get_text().strip()
-        if "pokepast.es" in name.lower() or not name:
-            bold_tag = link.find_previous('b') or link.find_previous('strong')
-            if bold_tag:
-                name = bold_tag.get_text().strip()
-            else:
-                prev_text = link.previous_sibling
-                if prev_text and isinstance(prev_text, str):
-                    name = prev_text.strip().rstrip(':').strip()
+        # Try to determine a name and category for the team
+        name = ""
+        category = ""
+        author = ""
+        ignored_words = ["description", "click", "paste", "link", "hide", "spikes", "here"]
         
-        if not name or "pokepast.es" in name.lower():
-            parent_text = link.parent.get_text().split('\n')[0].strip()
-            if len(parent_text) < 100:
-                name = parent_text.split(': http')[0].strip()
+        # Strategy 1: Iterate backwards to find name and category
+        # We look for text nodes that look like names (often contain "by" or are longer than 5 chars)
+        for s in link.previous_siblings:
+            text = ""
+            is_bold = False
+            if isinstance(s, str):
+                text = s.strip()
+            elif s.name in ['b', 'strong']:
+                text = s.get_text().strip()
+                is_bold = True
+            
+            # Clean up the text
+            text = text.rstrip(':').rstrip('-').rstrip('—').strip()
+            if not text or len(text) <= 2 or any(w in text.lower() for w in ignored_words):
+                continue
+                
+            if is_bold and not category:
+                category = text
+            elif not name:
+                # Check if this text contains an author "by [Name]"
+                if " by" in text.lower() or " – by" in text.lower():
+                    # Extract name and author if possible
+                    parts = re.split(r' [–-] by ', text, flags=re.IGNORECASE)
+                    if len(parts) > 1:
+                        name = parts[0].strip()
+                        author = parts[1].strip()
+                    else:
+                        name = text.rstrip('by').rstrip('–').strip()
+                        # Look at the next sibling for the author (might be a link)
+                        next_s = s.next_sibling
+                        if next_s:
+                            author = next_s.get_text().strip()
+                else:
+                    name = text
+            
+            # If we found both, we can stop
+            if name and category:
+                break
 
-        # Use the PokePaste ID as the filename to ensure uniqueness
+        # Strategy 2: If name is still just the category or empty, check link text
+        if not name or name.lower() == category.lower():
+            link_text = link.get_text().strip()
+            if link_text and "pokepast.es" not in link_text.lower():
+                name = link_text
+
+        # Final fallback to unique identifier if everything fails
         paste_id = url.split('/')[-1]
+        if not name or name.lower() == category.lower():
+            name = f"Team {paste_id}"
+        
+        # Final name cleanup
+        name = name.strip().rstrip('–').rstrip('-').strip()
+        
         filename = f"{paste_id}.txt"
         filepath = os.path.join(OUTPUT_DIR, filename)
 
-        print(f"Syncing: {name} ({url}) -> {filename}")
+        print(f"Syncing: [{category}] {name} ({url}) -> {filename}")
         
         try:
             team_res = requests.get(raw_url)
@@ -75,6 +116,8 @@ def sync_teams():
                 teams_metadata.append({
                     "id": paste_id,
                     "name": name,
+                    "author": author,
+                    "category": category,
                     "url": url,
                     "file": f"teams/{filename}"
                 })
