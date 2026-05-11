@@ -93,16 +93,18 @@ def load_mappings():
                     normalized[name] = {"num": int(val)}
             mappings[key] = normalized
             
-        # Pre-compute reverse mappings for IDs to names
-        mappings["reverse"] = {}
-        for category in ["species", "moves", "abilities", "items"]:
-            rev = {}
-            for name, data in mappings[category].items():
-                if isinstance(data, dict) and "num" in data:
-                    rev[data["num"]] = name
-                elif isinstance(data, (int, float)):
-                    rev[int(data)] = name
-            mappings["reverse"][category] = rev
+        mappings[key] = normalized
+            
+    # Pre-compute reverse mappings for IDs to names
+    mappings["reverse"] = {}
+    for category in ["species", "moves", "abilities", "items"]:
+        rev = {}
+        for name, data in mappings[category].items():
+            if isinstance(data, dict) and "num" in data:
+                rev[data["num"]] = name
+            elif isinstance(data, (int, float)):
+                rev[int(data)] = name
+        mappings["reverse"][category] = rev
             
     return mappings
 
@@ -344,6 +346,12 @@ async def main():
             "net_arch": [512, 512]
         }
         
+        # --- Model Initialization ---
+        total_rollout_size = args.n_steps * n_envs
+        if args.batch_size > total_rollout_size:
+            print(f"Note: Capping batch_size from {args.batch_size} to {total_rollout_size} to match rollout capacity.")
+            args.batch_size = total_rollout_size
+
         model = PPO(
             MaskedActorCriticPolicy,
             env,
@@ -371,46 +379,42 @@ async def main():
         signal.signal(signal.SIGINT, signal_handler)
         signal.signal(signal.SIGTERM, signal_handler)
 
-        from stable_baselines3.common.callbacks import EvalCallback
+        callbacks = [checkpoint_callback]
         
-        # Evaluation environments: use 8 as requested
-        def create_eval_env(idx):
-            def _init():
-                ts = datetime.now().strftime('%H%M%S')
-                env = Gen3Env(
-                    mappings,
-                    battle_format=BATTLE_FORMAT,
-                    team=trainee_teambuilder,
-                    server_configuration=LocalhostServerConfiguration,
-                    account_configuration1=AccountConfiguration(f"RLEval{idx}{ts}", "password"),
-                )
-                opponent = SimpleHeuristicsPlayer(
-                    battle_format=BATTLE_FORMAT,
-                    team=opponent_teambuilder,
-                    server_configuration=LocalhostServerConfiguration,
-                    account_configuration=AccountConfiguration(f"OppEval{idx}{ts}", "password"),
-                )
-                return SingleAgentWrapper(env, opponent)
-            return _init
-        
-        eval_env = SubprocVecEnv([create_eval_env(i) for i in range(8)])
-        
-        eval_callback = EvalCallback(
-            eval_env,
-            best_model_save_path=os.path.join(model_dir, "best_model"),
-            log_path=os.path.join(model_dir, "eval_logs"),
-            eval_freq=max(1000, 500000 // args.n_envs), # Eval every 500k steps
-            deterministic=False,
-            n_eval_episodes=args.eval_battles
-        )
-
-        checkpoint_callback = CheckpointCallback(
-            save_freq=50000, 
-            save_path=model_dir,
-            name_prefix="checkpoint"
-        )
-        
-        callbacks = [checkpoint_callback, eval_callback]
+        if not args.debug:
+            from stable_baselines3.common.callbacks import EvalCallback
+            
+            # Evaluation environments: use 8 as requested
+            def create_eval_env(idx):
+                def _init():
+                    ts = datetime.now().strftime('%H%M%S')
+                    env = Gen3Env(
+                        mappings,
+                        battle_format=BATTLE_FORMAT,
+                        team=trainee_teambuilder,
+                        server_configuration=LocalhostServerConfiguration,
+                        account_configuration1=AccountConfiguration(f"RLEval{idx}{ts}", "password"),
+                    )
+                    opponent = SimpleHeuristicsPlayer(
+                        battle_format=BATTLE_FORMAT,
+                        team=opponent_teambuilder,
+                        server_configuration=LocalhostServerConfiguration,
+                        account_configuration=AccountConfiguration(f"OppEval{idx}{ts}", "password"),
+                    )
+                    return SingleAgentWrapper(env, opponent)
+                return _init
+            
+            eval_env = SubprocVecEnv([create_eval_env(i) for i in range(8)])
+            
+            eval_callback = EvalCallback(
+                eval_env,
+                best_model_save_path=os.path.join(model_dir, "best_model"),
+                log_path=os.path.join(model_dir, "eval_logs"),
+                eval_freq=max(1000, 500000 // args.n_envs), # Eval every 500k steps
+                deterministic=False,
+                n_eval_episodes=args.eval_battles
+            )
+            callbacks.append(eval_callback)
 
         try:
             model.learn(total_timesteps=args.steps, callback=callbacks, reset_num_timesteps=False)
