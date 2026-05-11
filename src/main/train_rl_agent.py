@@ -359,14 +359,31 @@ async def main():
         signal.signal(signal.SIGINT, signal_handler)
         signal.signal(signal.SIGTERM, signal_handler)
 
+        from stable_baselines3.common.callbacks import EvalCallback
+        
+        # Define evaluation environment
+        eval_env = create_training_env_random(99)() # Unique index for eval
+        
+        eval_callback = EvalCallback(
+            eval_env,
+            best_model_save_path=os.path.join(model_dir, "best_model"),
+            log_path=os.path.join(model_dir, "eval_logs"),
+            eval_freq=50000, # Eval every 50k steps (since we have 8 envs, this is ~6.25k iterations)
+            deterministic=True,
+            render=False,
+            n_eval_episodes=20
+        )
+
         checkpoint_callback = CheckpointCallback(
             save_freq=50000, 
             save_path=model_dir,
             name_prefix="checkpoint"
         )
         
+        callbacks = [checkpoint_callback, eval_callback]
+
         try:
-            model.learn(total_timesteps=args.steps, callback=checkpoint_callback, reset_num_timesteps=False)
+            model.learn(total_timesteps=args.steps, callback=callbacks, reset_num_timesteps=False)
         except Exception as e:
             print(f"Training interrupted by exception: {e}")
             final_path = os.path.join(model_dir, "final_model_exception")
