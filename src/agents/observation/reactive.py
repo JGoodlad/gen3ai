@@ -2,7 +2,7 @@ import numpy as np
 from .base import ObservationEncoder
 from poke_env.battle.abstract_battle import AbstractBattle
 from poke_env.data import GenData
-from typing import Any
+from typing import Any, Dict
 
 class ReactiveEncoder(ObservationEncoder):
     """
@@ -31,7 +31,7 @@ class ReactiveEncoder(ObservationEncoder):
         for i, move in enumerate(battle.available_moves):
             if i >= 4: break
             moves_base_power[i] = move.base_power / 100.0
-            if battle.opponent_active_pokemon is not None:
+            if battle.opponent_active_pokemon is not None and not battle.opponent_active_pokemon.fainted:
                 moves_dmg_multiplier[i] = move.type.damage_multiplier(
                     battle.opponent_active_pokemon.type_1,
                     battle.opponent_active_pokemon.type_2,
@@ -66,3 +66,20 @@ class ReactiveEncoder(ObservationEncoder):
         vec[14] = 1.0 if battle.active_pokemon and battle.active_pokemon.status else 0.0
         
         return vec
+
+    def get_layout(self) -> Dict[str, Any]:
+        return {
+            "move_power": (0, 4),
+            "move_multiplier": (4, 4),
+            "fainted": (8, 2),
+            "hp": (10, 2),
+            "spikes": (12, 2),
+            "active_status": (14, 1)
+        }
+
+    def describe_vector(self, vector: np.ndarray) -> Dict[str, Any]:
+        return {
+            "fainted_our": int(vector[8] * 6),
+            "fainted_opp": int(vector[9] * 6),
+            "move_mults": [f"{m:.1f}x" for m in vector[4:8].tolist()]
+        }

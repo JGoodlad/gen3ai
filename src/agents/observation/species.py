@@ -2,6 +2,7 @@ import numpy as np
 from .base import ObservationEncoder
 from poke_env.battle.abstract_battle import AbstractBattle
 from poke_env.battle.pokemon import Pokemon
+from typing import Dict, Any
 
 class SpeciesEncoder(ObservationEncoder):
     """
@@ -13,6 +14,14 @@ class SpeciesEncoder(ObservationEncoder):
         if not mapping:
             raise ValueError("SpeciesEncoder requires a non-empty mapping for enrichment!")
         self.mapping = mapping
+        
+        # Reverse mapping for decoding
+        self.reverse_mapping = {}
+        for name, data in self.mapping.items():
+            if isinstance(data, dict) and "num" in data:
+                self.reverse_mapping[data["num"]] = name
+            elif isinstance(data, (int, float)):
+                self.reverse_mapping[int(data)] = name
 
     @property
     def dimension(self) -> int:
@@ -24,7 +33,10 @@ class SpeciesEncoder(ObservationEncoder):
             return vec
             
         # 1. Species ID (1)
-        species_id = pokemon.species
+        species_id = str(pokemon.species)
+        if species_id not in self.mapping:
+            raise ValueError(f"Unrecognized species: {species_id}. Update data/mappings/gen3_mapping.json")
+            
         entry = self.mapping.get(species_id, {})
         if isinstance(entry, dict):
             num = entry.get("num", 0)
@@ -37,8 +49,7 @@ class SpeciesEncoder(ObservationEncoder):
         if isinstance(entry, dict) and "baseStats" in entry:
             stats = entry["baseStats"]
         else:
-            # If we are here, something is wrong because mapping should have it
-            # But we fallback just in case for robustness during runtime
+            # Fallback for robustness during runtime
             stats = pokemon.base_stats
             
         vec[1] = stats.get("hp", 100) / 255.0
@@ -49,3 +60,22 @@ class SpeciesEncoder(ObservationEncoder):
         vec[6] = stats.get("spe", 100) / 255.0
             
         return vec
+
+    def get_layout(self) -> Dict[str, Any]:
+        return {
+            "species_id": (0, 1),
+            "base_stats": (1, 6)
+        }
+
+    def describe_vector(self, vector: np.ndarray) -> Dict[str, Any]:
+        sid = int(vector[0])
+        name = self.reverse_mapping.get(sid, f"Unknown({sid})")
+        return {
+            "name": name,
+            "hp": f"{vector[1]*255:.0f}",
+            "atk": f"{vector[2]*255:.0f}",
+            "def": f"{vector[3]*255:.0f}",
+            "spa": f"{vector[4]*255:.0f}",
+            "spd": f"{vector[5]*255:.0f}",
+            "spe": f"{vector[6]*255:.0f}"
+        }

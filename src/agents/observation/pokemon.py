@@ -1,6 +1,15 @@
 import numpy as np
 from .base import ObservationEncoder
-from .constants import POKEMON_VECTOR_DIM, CONDITION_DIM
+from .constants import (
+    POKEMON_VECTOR_DIM, 
+    POKEMON_SPECIES_OFFSET,
+    POKEMON_ITEMS_OFFSET,
+    POKEMON_TYPES_OFFSET,
+    POKEMON_ABILITIES_OFFSET,
+    POKEMON_CONDITION_OFFSET,
+    POKEMON_MOVES_OFFSET,
+    POKEMON_HP_OFFSET
+)
 from .species import SpeciesEncoder
 from .items import ItemsEncoder
 from .types import TypeEncoder
@@ -9,7 +18,7 @@ from .moves import MovesEncoder
 from poke_env.battle.abstract_battle import AbstractBattle
 from poke_env.battle.pokemon import Pokemon
 from poke_env.battle.status import Status
-from typing import Any
+from typing import Any, Dict
 
 class PokemonEncoder(ObservationEncoder):
     """
@@ -32,30 +41,24 @@ class PokemonEncoder(ObservationEncoder):
         if mon is None:
             return vec
             
-        cursor = 0
-        
-        # 1. Species (32) + Stats (5) = 37
+        # 1. Species (1 ID + 6 Stats)
         species_vec = self.species_encoder.encode(mon, battle)
-        vec[cursor:cursor+len(species_vec)] = species_vec
-        cursor += 37 # Fixed size as per spec
+        vec[POKEMON_SPECIES_OFFSET : POKEMON_SPECIES_OFFSET + len(species_vec)] = species_vec
         
-        # 2. Items (16 + 1) = 17
+        # 2. Items (16 + 1)
         item_vec = self.items_encoder.encode(mon, battle)
-        vec[cursor:cursor+len(item_vec)] = item_vec
-        cursor += 17
+        vec[POKEMON_ITEMS_OFFSET : POKEMON_ITEMS_OFFSET + len(item_vec)] = item_vec
         
         # 3. Combined Types (8)
         type_vec = self.type_encoder.encode(mon, battle)
-        vec[cursor:cursor+len(type_vec)] = type_vec
-        cursor += 8
+        vec[POKEMON_TYPES_OFFSET : POKEMON_TYPES_OFFSET + len(type_vec)] = type_vec
         
-        # 4. Abilities (8 + 1 + 16) = 25
+        # 4. Abilities (25)
         ability_vec = self.abilities_encoder.encode(mon, battle)
-        vec[cursor:cursor+len(ability_vec)] = ability_vec
-        cursor += 25
+        vec[POKEMON_ABILITIES_OFFSET : POKEMON_ABILITIES_OFFSET + len(ability_vec)] = ability_vec
         
-        # 5. Condition (Status 7 + Status Turn 1) = 8
-        # None, BRN, PAR, SLP, FRZ, PSN, TOX
+        # 5. Condition (8)
+        cursor = POKEMON_CONDITION_OFFSET
         status = mon.status
         if status:
             status_map = {
@@ -65,23 +68,45 @@ class PokemonEncoder(ObservationEncoder):
             idx = status_map.get(status, 0)
             if idx > 0:
                 vec[cursor + idx] = 1.0
-            
-            # Status Turn (Normalized)
-            # Sleep turns: 1-7 in Gen 3
-            # Toxic: 1-15?
-            # We'll just put the raw turn count for now if available.
-            # poke-env doesn't always expose this directly, might need to track it.
-            # TODO: Implement status turn tracking.
-            
-        cursor += 8
         
-        # 6. Moves (32 + 4) = 36
+        # 6. Moves (36)
         moves_vec = self.moves_encoder.encode(mon, battle)
-        vec[cursor:cursor+len(moves_vec)] = moves_vec
-        cursor += 36
+        vec[POKEMON_MOVES_OFFSET : POKEMON_MOVES_OFFSET + len(moves_vec)] = moves_vec
         
         # 7. HP (1)
-        vec[cursor] = mon.current_hp_fraction
-        cursor += 1
+        vec[POKEMON_HP_OFFSET] = mon.current_hp_fraction
         
         return vec
+
+    def get_layout(self) -> Dict[str, Any]:
+        return {
+            "species": (POKEMON_SPECIES_OFFSET, self.species_encoder.dimension),
+            "items": (POKEMON_ITEMS_OFFSET, self.items_encoder.dimension),
+            "types": (POKEMON_TYPES_OFFSET, self.type_encoder.dimension),
+            "abilities": (POKEMON_ABILITIES_OFFSET, self.abilities_encoder.dimension),
+            "condition": (POKEMON_CONDITION_OFFSET, 8),
+            "moves": (POKEMON_MOVES_OFFSET, self.moves_encoder.dimension),
+            "hp": (POKEMON_HP_OFFSET, 1)
+        }
+
+    def describe_vector(self, vector: np.ndarray) -> Dict[str, Any]:
+        species_part = vector[POKEMON_SPECIES_OFFSET : POKEMON_SPECIES_OFFSET + 7]
+        species_desc = self.species_encoder.describe_vector(species_part)
+        
+        moves_part = vector[POKEMON_MOVES_OFFSET : POKEMON_MOVES_OFFSET + 36]
+        moves_desc = self.moves_encoder.describe_vector(moves_part)
+        
+        return {
+            "species": species_desc["name"],
+            "hp": f"{vector[POKEMON_HP_OFFSET]*100:.1f}%",
+            "stats": {k: v for k, v in species_desc.items() if k != "name"},
+            "status": self._decode_status(vector[POKEMON_CONDITION_OFFSET : POKEMON_CONDITION_OFFSET + 7]),
+            "moves": moves_desc["moves"]
+        }
+
+    def _decode_status(self, vec: np.ndarray) -> str:
+        names = ["NONE", "BRN", "PAR", "SLP", "FRZ", "PSN", "TOX"]
+        for i, val in enumerate(vec):
+            if val > 0.5:
+                return names[i]
+        return "NONE"

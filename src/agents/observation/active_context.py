@@ -2,7 +2,7 @@ import numpy as np
 from .base import ObservationEncoder
 from .constants import ACTIVE_CONTEXT_DIM, BOOSTS_DIM, VOLATILES_DIM, TEMPORAL_DIM
 from poke_env.battle.abstract_battle import AbstractBattle
-from typing import Any
+from typing import Any, Dict
 
 class ActiveContextEncoder(ObservationEncoder):
     """
@@ -34,8 +34,6 @@ class ActiveContextEncoder(ObservationEncoder):
             cursor += 2
             
         # 2. Volatiles (8)
-        # Confusion, Substitute, Taunt, Encore, etc.
-        # TODO: Map specific volatiles to indices.
         volatiles = getattr(mon, "volatiles", {})
         volatile_map = {
             "confusion": 0, "substitute": 1, "taunt": 2, "encore": 3,
@@ -49,12 +47,37 @@ class ActiveContextEncoder(ObservationEncoder):
         # 3. Temporal (9)
         # Turns on Field (1)
         # Last Move Used (8 dims embedding)
-        # TODO: Implement turns on field tracking.
         cursor += 1 
-        
-        # Last Move
-        # last_move = mon.last_move # poke-env doesn't always have this directly on Pokemon
-        # For now, we'll leave it 0.
         cursor += 8
         
         return vec
+
+    def get_layout(self) -> Dict[str, Any]:
+        return {
+            "boosts": (0, 14),
+            "volatiles": (14, 8),
+            "temporal": (22, 9)
+        }
+
+    def describe_vector(self, vector: np.ndarray) -> Dict[str, Any]:
+        # Boosts
+        stats = ["atk", "def", "spa", "spd", "spe", "acc", "eva"]
+        boosts = {}
+        for i, stat in enumerate(stats):
+            pos = vector[i*2] * 6.0
+            neg = vector[i*2 + 1] * 6.0
+            val = int(pos - neg)
+            if val != 0:
+                boosts[stat] = f"{val:+d}"
+        
+        # Volatiles
+        volatile_names = ["CONF", "SUB", "TAUNT", "ENC", "PERISH", "LEECH", "FOCUS", "ATTRACT"]
+        active_volatiles = []
+        for i in range(8):
+            if vector[14 + i] > 0.5:
+                active_volatiles.append(volatile_names[i])
+        
+        return {
+            "boosts": boosts,
+            "volatiles": active_volatiles
+        }

@@ -1,4 +1,5 @@
 import multiprocessing
+import traceback
 try:
     multiprocessing.set_start_method('spawn', force=True)
 except RuntimeError:
@@ -16,6 +17,7 @@ from stable_baselines3.common.callbacks import CheckpointCallback
 from stable_baselines3.common.vec_env import DummyVecEnv, SubprocVecEnv
 from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.policies import ActorCriticPolicy
+from typing import Dict, Any
 
 from agents.observation.state_encoder import Gen3ObservationEncoder
 from agents.action.mask_generator import Gen3ActionMasker
@@ -38,66 +40,125 @@ BATTLE_FORMAT = "gen3ou"
 import torch
 
 class Gen3FeaturesExtractor(torch.nn.Module):
-    def __init__(self, observation_space: spaces.Dict):
+    def __init__(self, observation_space: spaces.Dict, layout: Dict[str, Any] = None, mappings: Dict[str, Any] = None):
         super().__init__()
+        self.layout = layout
+        self.mappings = mappings
+        self._encoder = None # Lazy init for decoding
+        
         # Total observation dimension is 1684
-        # We want to embed the species IDs
-        # There are 12 pokemon slots, each has species ID as the first feature
-        self.species_embedding = torch.nn.Embedding(387, 32) # Gen 3 has 386 pokemon
+        self.species_embedding = torch.nn.Embedding(387, 32)
         
-        # Output dimension after embedding and concatenating remaining features
-        # Each pokemon (12) has: 32 (embed) + 101 (other features) = 133
-        # Total: 12 * 133 = 1596
-        # Remaining features (Global + Active + Reactive): 73 + 15 = 88
-        # Total features: 1596 + 88 = 1684
-        
-        # Projection layer to reach features_dim
-        self.projection = torch.nn.Linear(1684, 256)
+        # Projection layer
+        # New dimension: 12 * (32 + 132) + 88 = 2056
+        self.projection = torch.nn.Linear(2056, 256)
+        self.activation = torch.nn.ReLU()
         self.features_dim = 256
-        self.trace_count = 0
+        self.last_trace_time = 0
         
+    def _print_deep_trace(self, x, pokemon_part, species_ids):
+        import time
+        if self._encoder is None and self.mappings:
+            self._encoder = Gen3ObservationEncoder(self.mappings)
+            
+        print("\n" + "🧬" * 30)
+        print(f"🧬 [DEEP TRACE - {time.strftime('%H:%M:%S')}]")
+        print("=" * 60)
+        
+        if self._encoder:
+            # Use the encoder's master description logic
+            desc = self._encoder.describe_vector(x[0].cpu().numpy())
+            world = desc.get('world', {})
+            print(f"Turn: {world.get('turn', '???')} | Weather: {world.get('weather', 'NONE')} | Spikes: {world.get('our_spikes', 0)} (Us) / {world.get('opp_spikes', 0)} (Them)")
+            
+            print("\n--- OUR ACTIVE CONTEXT ---")
+            ctx = desc.get('our_active', {})
+            print(f"Boosts: {ctx.get('boosts', {})} | Volatiles: {ctx.get('volatiles', [])}")
+            
+            print("\n--- TEAM SUMMARIES ---")
+            for i, mon in enumerate(desc['our_team']):
+                active_str = " [Actv]" if mon.get('active') else "       "
+                s = mon['stats']
+                stats_str = f"{s['hp']}/{s['atk']}/{s['def']}/{s['spa']}/{s['spd']}/{s['spe']}"
+                print(f"[OUR {i}] {mon['species']:12} | HP: {mon['hp']:6} | Status: {mon['status']:5}{active_str} | {stats_str}")
+                print(f"  Moves: {mon.get('moves', [])}")
+                
+            print("-" * 30)
+            for i, mon in enumerate(desc['opp_team']):
+                active_str = " [Actv]" if mon.get('active') else "       "
+                s = mon['stats']
+                stats_str = f"{s['hp']}/{s['atk']}/{s['def']}/{s['spa']}/{s['spd']}/{s['spe']}"
+                print(f"[OPP {i}] {mon['species']:12} | HP: {mon['hp']:6} | Status: {mon['status']:5}{active_str} | {stats_str}")
+                print(f"  Moves: {mon.get('moves', [])}")
+            
+            momentum = desc.get('momentum', {})
+            print(f"\n--- MOMENTUM ---")
+            print(f"Fainted: {momentum.get('fainted_our', 0)} (Us) / {momentum.get('fainted_opp', 0)} (Them) | Matchups: {momentum.get('move_mults', [])}")
+            
+            # --- INTEGRITY CHECK ---
+            warnings, is_critical = self._encoder.integrity_check(x[0].cpu().numpy())
+            if warnings:
+                print("\n⚠️ [INTEGRITY CHECK WARNINGS]")
+                for w in warnings:
+                    print(f"  - {w}")
+                    
+            if is_critical:
+                raise ValueError(f"CRITICAL INTEGRITY FAILURE: {warnings}")
+        else:
+            print("Trace available but encoder/mappings missing.")
+            
+        print("=" * 60 + "\n")
+
     def forward(self, obs):
         x = obs["observation"]
         batch_size = x.shape[0]
         
-        # Separate pokemon parts from global/reactive parts
-        # Pokemon part is first 1596 dims (12 * 133)
-        # But wait, in our encoder, each pokemon block is 133 dims
-        # [SpeciesID(1), Stats(6), Type1(18), Type2(18), Move1(13)*4, Status(7), Item(1), Ability(1), Level(1), HP(1), Active(1)] = 133
-        pokemon_part = x[:, :1596].reshape(batch_size, 12, 133)
-        remaining_part = x[:, 1596:]
+        from agents.observation.constants import (
+            OFFSET_OUR_TEAM, OFFSET_OPP_TEAM, OFFSET_CONTEXT, 
+            POKEMON_FULL_DIM, POKEMON_VECTOR_DIM
+        )
+        
+        # Extract pokemon parts using constants/layout
+        # We handle 12 pokemon (6 our, 6 opp)
+        our_team = x[:, OFFSET_OUR_TEAM : OFFSET_OPP_TEAM].reshape(batch_size, 6, POKEMON_FULL_DIM)
+        opp_team = x[:, OFFSET_OPP_TEAM : OFFSET_CONTEXT].reshape(batch_size, 6, POKEMON_FULL_DIM)
+        
+        pokemon_part = torch.cat([our_team, opp_team], dim=1) # [B, 12, 133]
+        remaining_part = x[:, OFFSET_CONTEXT:] # [B, 88] (62 context + 11 global + 15 reactive)
         
         # Extract IDs (first dim of each block)
         species_ids = pokemon_part[:, :, 0].long() # [B, 12]
         
-        if self.trace_count < 1:
-            print(f"\n[MACHINERY TRACE] Batch Size: {batch_size}")
-            print(f"[MACHINERY TRACE] Raw Species IDs (First 3 slots): {species_ids[0, :3].tolist()}")
-            self.trace_count += 1
+        import time
+        current_time = time.time()
+        if current_time - self.last_trace_time > 15:
+            self.last_trace_time = current_time
+            self._print_deep_trace(x, pokemon_part, species_ids)
         
         # Embed species
         embedded_species = self.species_embedding(species_ids) # [B, 12, 32]
         
-        # The first 32 dims of each pokemon_part block are reserved for species
-        # We replace them with the embedding
-        rest_of_pokemon = pokemon_part[:, :, 32:] # [B, 12, 101]
+        # Keep everything else (stats, moves, items, etc.)
+        # pokemon_part is [B, 12, 133]. Index 0 is ID. 1-132 is the rest.
+        rest_of_pokemon = pokemon_part[:, :, 1:132] # [B, 12, 131] -- Wait, index 131 is HP. 1:132 is 131 dims.
+        # Actually, let's just take everything except index 0.
+        rest_of_pokemon = pokemon_part[:, :, 1:] # [B, 12, 132]
         
         # Combine
-        pokemon_enriched = torch.cat([embedded_species, rest_of_pokemon], dim=2) # [B, 12, 133]
-        pokemon_flat = pokemon_enriched.reshape(batch_size, -1) # [B, 1596]
+        pokemon_enriched = torch.cat([embedded_species, rest_of_pokemon], dim=2) # [B, 12, 164]
+        pokemon_flat = pokemon_enriched.reshape(batch_size, -1) # [B, 1968]
         
-        # Final combined vector (1596 + 73 + 15 = 1684)
-        combined = torch.cat([pokemon_flat, remaining_part], dim=1) # [B, 1684]
+        # Final combined vector (1968 + 88 = 2056)
+        combined = torch.cat([pokemon_flat, remaining_part], dim=1) # [B, 2056]
         
-        # Project to features_dim
-        return self.projection(combined)
+        # Project to features_dim with activation
+        return self.activation(self.projection(combined))
 
 class MaskedActorCriticPolicy(ActorCriticPolicy):
     def __init__(self, *args, **kwargs):
         super().__init__(
             *args,
             **kwargs,
-            net_arch=[128, 128],
             features_extractor_class=Gen3FeaturesExtractor,
         )
 
@@ -353,6 +414,16 @@ async def main():
         model_dir = f"models/gen3ou_ppo_new_{unique_id}"
         os.makedirs(model_dir, exist_ok=True)
         
+        # Initialize a dummy encoder to get the layout
+        temp_encoder = Gen3ObservationEncoder(mappings)
+        policy_kwargs = {
+            "features_extractor_kwargs": {
+                "layout": temp_encoder.get_layout(),
+                "mappings": mappings
+            },
+            "net_arch": [512, 512]
+        }
+        
         model = PPO(
             MaskedActorCriticPolicy,
             env,
@@ -364,7 +435,8 @@ async def main():
             gamma=0.99,
             device=args.device,
             seed=args.seed,
-            tensorboard_log="./tensorboard/"
+            tensorboard_log="./tensorboard/",
+            policy_kwargs=policy_kwargs
         )
 
         import signal
@@ -425,6 +497,7 @@ async def main():
             model.learn(total_timesteps=args.steps, callback=callbacks, reset_num_timesteps=False)
         except Exception as e:
             print(f"Training interrupted by exception: {e}")
+            traceback.print_exc()
             final_path = os.path.join(model_dir, "final_model_exception")
             model.save(final_path)
             

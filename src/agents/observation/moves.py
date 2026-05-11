@@ -2,7 +2,7 @@ import numpy as np
 from .base import ObservationEncoder
 from .constants import MOVE_SLOT_DIM, MOVES_KNOWN_DIM
 from poke_env.battle.abstract_battle import AbstractBattle
-from typing import Any, List
+from typing import Any, List, Dict
 
 class MovesEncoder(ObservationEncoder):
     """
@@ -14,6 +14,14 @@ class MovesEncoder(ObservationEncoder):
         if not mapping:
             raise ValueError("MovesEncoder requires a non-empty mapping for enrichment!")
         self.mapping = mapping
+        
+        # Reverse mapping for decoding
+        self.reverse_mapping = {}
+        for name, data in self.mapping.items():
+            if isinstance(data, dict) and "num" in data:
+                self.reverse_mapping[data["num"]] = name
+            elif isinstance(data, (int, float)):
+                self.reverse_mapping[int(data)] = name
 
     @property
     def dimension(self) -> int:
@@ -30,9 +38,12 @@ class MovesEncoder(ObservationEncoder):
         for i in range(4):
             if i < len(moves):
                 move = moves[i]
-                move_id = move.id
+                move_id = str(move.id)
                 
                 # Extract metadata from mapping
+                if move_id not in self.mapping:
+                    raise ValueError(f"Unrecognized move: {move_id}. Update data/mappings/gen3_mapping.json")
+                    
                 entry = self.mapping.get(move_id, {})
                 if isinstance(entry, dict):
                     num = entry.get("num", 0)
@@ -59,3 +70,18 @@ class MovesEncoder(ObservationEncoder):
                 vec[4 * MOVE_SLOT_DIM + i] = 1.0
                 
         return vec
+
+    def get_layout(self) -> Dict[str, Any]:
+        return {
+            "slots": [(i * MOVE_SLOT_DIM, MOVE_SLOT_DIM) for i in range(4)],
+            "known": (4 * MOVE_SLOT_DIM, MOVES_KNOWN_DIM)
+        }
+
+    def describe_vector(self, vector: np.ndarray) -> Dict[str, Any]:
+        move_names = []
+        for i in range(4):
+            if vector[4 * MOVE_SLOT_DIM + i] > 0.5:
+                mid = int(vector[i * MOVE_SLOT_DIM])
+                name = self.reverse_mapping.get(mid, f"Move({mid})")
+                move_names.append(name)
+        return {"moves": move_names}

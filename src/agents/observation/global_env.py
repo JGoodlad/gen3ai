@@ -4,7 +4,7 @@ from .base import ObservationEncoder
 from .constants import GLOBAL_ENV_DIM, MAX_TURNS, MAX_SPIKES
 from poke_env.battle.abstract_battle import AbstractBattle
 from poke_env.battle.weather import Weather
-from typing import Any
+from typing import Any, Dict
 
 class GlobalEnvEncoder(ObservationEncoder):
     """
@@ -18,48 +18,63 @@ class GlobalEnvEncoder(ObservationEncoder):
     def encode(self, battle: AbstractBattle) -> np.ndarray:
         vec = np.zeros(self.dimension, dtype=np.float32)
         
-        cursor = 0
-        
         # 1. Weather (5 + 1 = 6)
-        # None, Sun, Rain, Sand, Hail
         weather_map = {
             Weather.SUNNYDAY: 1, Weather.DESOLATELAND: 1,
             Weather.RAINDANCE: 2, Weather.PRIMORDIALSEA: 2,
             Weather.SANDSTORM: 3, Weather.HAIL: 4, Weather.SNOW: 4
         }
         
-        # In poke-env, battle.weather is a Dict[Weather, int] (turns remaining)
         current_weather = None
         if battle.weather:
             current_weather = next(iter(battle.weather.keys()))
             
         idx = weather_map.get(current_weather, 0)
-        if idx >= 0:
-            vec[cursor + idx] = 1.0
-        
-        # Weather turns remaining (Normalized)
-        # In poke-env, weather_duration is not always easy to get without tracking.
-        # Placeholder.
-        cursor += 6
+        vec[idx] = 1.0
         
         # 2. Hazards (2)
-        # P1 Spikes (1), P2 Spikes (1)
         p1_spikes = battle.side_conditions.get("spikes", 0)
         p2_spikes = battle.opponent_side_conditions.get("spikes", 0)
-        vec[cursor] = float(p1_spikes) / MAX_SPIKES
-        vec[cursor+1] = float(p2_spikes) / MAX_SPIKES
-        cursor += 2
+        vec[6] = float(p1_spikes) / MAX_SPIKES
+        vec[7] = float(p2_spikes) / MAX_SPIKES
         
         # 3. Clock (3)
-        # Turn count (ln(1+T) / ln(1001))
         turn = battle.turn
-        vec[cursor] = math.log(1 + turn) / math.log(1 + MAX_TURNS)
+        vec[8] = math.log(1 + turn) / math.log(1 + MAX_TURNS)
         
-        # Screen R (Reflect), LS (Light Screen)
-        # linear normalized T_rem / 5
-        # side_conditions value is usually 1 (active) but poke-env might store turns.
-        # In ADV, screens last 5 turns.
-        cursor += 1
-        # TODO: Implement screen turn tracking.
+        # Reflect/Light Screen placeholders
+        # vec[9] = reflect
+        # vec[10] = light_screen
         
         return vec
+
+    def get_layout(self) -> Dict[str, Any]:
+        return {
+            "weather": (0, 6),
+            "hazards": (6, 2),
+            "clock": (8, 3)
+        }
+
+    def describe_vector(self, vector: np.ndarray) -> Dict[str, Any]:
+        # Weather
+        weather_names = ["NONE", "SUN", "RAIN", "SAND", "HAIL"]
+        weather = "NONE"
+        for i in range(5):
+            if vector[i] > 0.5:
+                weather = weather_names[i]
+                break
+        
+        # Hazards
+        our_spikes = int(vector[6] * MAX_SPIKES)
+        opp_spikes = int(vector[7] * MAX_SPIKES)
+        
+        # Turn
+        turn_norm = vector[8]
+        turn = math.exp(turn_norm * math.log(1 + MAX_TURNS)) - 1
+        
+        return {
+            "weather": weather,
+            "our_spikes": our_spikes,
+            "opp_spikes": opp_spikes,
+            "turn": round(turn, 1)
+        }
