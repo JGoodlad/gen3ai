@@ -1,3 +1,8 @@
+import multiprocessing
+try:
+    multiprocessing.set_start_method('spawn', force=True)
+except RuntimeError:
+    pass
 import asyncio
 import os
 import sys
@@ -174,12 +179,6 @@ class Gen3Env(SinglesEnv):
         )
 
 async def main():
-    import multiprocessing
-    try:
-        multiprocessing.set_start_method('spawn', force=True)
-    except RuntimeError:
-        pass
-
     parser = argparse.ArgumentParser(description="Train or Evaluate Gen 3 OU RL Agent")
     
     # --- Operational Flags ---
@@ -307,7 +306,7 @@ async def main():
                     break
 
         print(f"Loading existing model from {model_path}")
-        model = PPO.load(model_path, env=env, device="cpu", tensorboard_log="./tensorboard/")
+        model = PPO.load(model_path, env=env, device=args.device, tensorboard_log="./tensorboard/")
         
         if args.eval_only:
             await evaluate_model_random(model)
@@ -361,7 +360,7 @@ async def main():
             batch_size=args.batch_size,
             n_epochs=args.n_epochs,
             gamma=0.99,
-            device="cpu",
+            device=args.device,
             seed=args.seed,
             tensorboard_log="./tensorboard/"
         )
