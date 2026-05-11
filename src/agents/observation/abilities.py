@@ -53,3 +53,14 @@ class AbilitiesEncoder(ObservationEncoder):
             "id": {"offset": 0, "dim": 1},
             "known": {"offset": ABILITY_SLOT_DIM, "dim": ABILITY_KNOWN_DIM}
         }
+
+    def describe_vector(self, vector: np.ndarray) -> str:
+        # Index 0 is ID, ABILITY_SLOT_DIM is Known Flag
+        if vector[ABILITY_SLOT_DIM] < 0.5:
+            return "ABLY-UNKN"
+            
+        ab_id = int(vector[0])
+        if ab_id == 0:
+            return "NONE"
+            
+        return self.reverse_mapping.get(ab_id, f"Ably({ab_id})").upper()

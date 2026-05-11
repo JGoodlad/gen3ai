@@ -44,3 +44,14 @@ class ItemsEncoder(ObservationEncoder):
             "id": {"offset": 0, "dim": 1}, # We only use the first dim for the actual ID
             "known": {"offset": ITEM_ID_DIM, "dim": ITEM_KNOWN_DIM}
         }
+
+    def describe_vector(self, vector: np.ndarray) -> str:
+        # Index 0 is ID, ITEM_ID_DIM is Known Flag
+        if vector[ITEM_ID_DIM] < 0.5:
+            return "ITM-UNKN"
+            
+        item_id = int(vector[0])
+        if item_id == 0:
+            return "NONE"
+            
+        return self.reverse_mapping.get(item_id, f"Item({item_id})").upper()

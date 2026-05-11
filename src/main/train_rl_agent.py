@@ -148,7 +148,7 @@ async def main():
     parser.add_argument("--eval-battles", type=int, default=100, help="Battles per evaluation opponent")
     parser.add_argument("--seed", type=int, default=42, help="Random seed for reproducibility")
 
-    # --- Hyperparameter Flags (Optimized for CPU) ---
+    # --- Hyperparameter Flags (Optimized for GPU) ---
     parser.add_argument("--batch-size", type=int, default=4096, help="PPO mini-batch size")
     parser.add_argument("--n-epochs", type=int, default=4, help="PPO optimization epochs")
     parser.add_argument("--lr", type=float, default=3e-4, help="Learning rate")

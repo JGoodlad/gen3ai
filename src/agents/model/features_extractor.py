@@ -82,7 +82,7 @@ class Gen3FeaturesExtractor(torch.nn.Module):
                 s = mon['stats']
                 stats_str = f"{s['hp']}/{s['atk']}/{s['def']}/{s['spa']}/{s['spd']}/{s['spe']}"
                 print(f"[OUR {i}] {mon['species']:12} | HP: {mon['hp']:6} | Status: {mon['status']:5}{active_str} | {stats_str}")
-                print(f"  Moves: {mon.get('moves', [])}")
+                print(f"  Item: {mon['item']:12} | Ably: {mon['ability']:12} | Moves: {mon.get('moves', [])}")
                 
             print("-" * 30)
             for i, mon in enumerate(desc['opp_team']):
@@ -90,7 +90,7 @@ class Gen3FeaturesExtractor(torch.nn.Module):
                 s = mon['stats']
                 stats_str = f"{s['hp']}/{s['atk']}/{s['def']}/{s['spa']}/{s['spd']}/{s['spe']}"
                 print(f"[OPP {i}] {mon['species']:12} | HP: {mon['hp']:6} | Status: {mon['status']:5}{active_str} | {stats_str}")
-                print(f"  Moves: {mon.get('moves', [])}")
+                print(f"  Item: {mon['item']:12} | Ably: {mon['ability']:12} | Moves: {mon.get('moves', [])}")
             
             momentum = desc.get('momentum', {})
             print(f"\n--- MOMENTUM ---")
