@@ -101,6 +101,33 @@ class Gen3Env(SinglesEnv):
 
     def get_action_mask(self, battle):
         return Gen3ActionMasker.get_mask(battle)
+
+    def action_to_order(self, action, battle):
+        # FIXED SLOT MAPPING (STRICT MODE): No fallbacks allowed.
+        from poke_env.player.battle_order import SingleBattleOrder
+        
+        if action < 6:
+            # 0-5 -> Team Slots 1-6
+            team_list = list(battle.team.values())
+            if action < len(team_list):
+                target_mon = team_list[action]
+                if target_mon in battle.available_switches:
+                    return SingleBattleOrder(target_mon)
+            
+            raise ValueError(
+                f"ILLEGAL SWITCH: Agent picked Action {action} (Slot {action+1}), "
+                f"but that mon is not in available_switches! Valid: {battle.available_switches}"
+            )
+        else:
+            # 6-9 -> Move Slots 1-4
+            move_idx = action - 6
+            if move_idx < len(battle.available_moves):
+                return SingleBattleOrder(battle.available_moves[move_idx])
+            
+            raise ValueError(
+                f"ILLEGAL MOVE: Agent picked Action {action} (Slot {move_idx+1}), "
+                f"but that move is not in available_moves! Valid: {battle.available_moves}"
+            )
         
     def calc_reward(self, battle):
         reward = self.reward_computing_helper(
