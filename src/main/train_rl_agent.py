@@ -143,13 +143,13 @@ async def main():
     parser.add_argument("--eval-only", action="store_true", help="Skip training and only evaluate")
     parser.add_argument("--steps", type=int, default=100000, help="Total training timesteps")
     parser.add_argument("--debug", action="store_true", help="Use DummyVecEnv (1 env) for debugging")
-    parser.add_argument("--n-envs", type=int, default=8, help="Number of parallel environments")
-    parser.add_argument("--device", type=str, default="cpu", help="Device to use (cpu or cuda)")
+    parser.add_argument("--n-envs", type=int, default=32, help="Number of parallel environments")
+    parser.add_argument("--device", type=str, default="auto", help="Device to use (cpu, cuda, or auto)")
     parser.add_argument("--eval-battles", type=int, default=100, help="Battles per evaluation opponent")
     parser.add_argument("--seed", type=int, default=42, help="Random seed for reproducibility")
 
     # --- Hyperparameter Flags (Optimized for CPU) ---
-    parser.add_argument("--batch-size", type=int, default=512, help="PPO mini-batch size")
+    parser.add_argument("--batch-size", type=int, default=4096, help="PPO mini-batch size")
     parser.add_argument("--n-epochs", type=int, default=4, help="PPO optimization epochs")
     parser.add_argument("--lr", type=float, default=3e-4, help="Learning rate")
     parser.add_argument("--n-steps", type=int, default=2048, help="Steps per environment per rollout")
