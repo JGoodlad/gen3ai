@@ -232,8 +232,18 @@ async def main():
     n_envs = 1 if args.debug else args.n_envs
     EnvClass = DummyVecEnv if args.debug else SubprocVecEnv
     
-    print(f"Initializing {n_envs} environments via {EnvClass.__name__}...")
-    env = EnvClass([create_training_env_random(i) for i in range(n_envs)])
+    print(f"Initializing {n_envs} environments via {EnvClass.__name__} (staggered startup)...")
+    
+    # Staggered initialization to avoid "Connection Reset" during massive login storm
+    env_factories = [create_training_env_random(i) for i in range(n_envs)]
+    def create_staggered_env(idx):
+        import time
+        def _init():
+            time.sleep(idx * 0.5) # 0.5s delay per environment
+            return env_factories[idx]()
+        return _init
+
+    env = EnvClass([create_staggered_env(i) for i in range(n_envs)])
     # Note: env.seed() is deprecated in gymnasium VecEnv, use seed in reset or at init if supported.
     # But for reproducibility, we pass it to PPO.
 
