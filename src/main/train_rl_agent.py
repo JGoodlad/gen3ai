@@ -8,7 +8,6 @@ import os
 import sys
 import json
 import numpy as np
-import torch
 import argparse
 from datetime import datetime
 from gymnasium import spaces
@@ -35,6 +34,8 @@ from poke_env import AccountConfiguration, LocalhostServerConfiguration
 from poke_env.environment.singles_env import SinglesEnv
 
 BATTLE_FORMAT = "gen3ou"
+
+import torch
 
 class Gen3FeaturesExtractor(torch.nn.Module):
     def __init__(self, observation_space: spaces.Dict):
@@ -187,6 +188,7 @@ async def main():
     parser.add_argument("--steps", type=int, default=100000, help="Total training timesteps")
     parser.add_argument("--debug", action="store_true", help="Use DummyVecEnv (1 env) for debugging")
     parser.add_argument("--n-envs", type=int, default=8, help="Number of parallel environments")
+    parser.add_argument("--device", type=str, default="cpu", help="Device to use (cpu or cuda)")
     parser.add_argument("--eval-battles", type=int, default=100, help="Battles per evaluation opponent")
     parser.add_argument("--seed", type=int, default=42, help="Random seed for reproducibility")
 
