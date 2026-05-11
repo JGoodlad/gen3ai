@@ -48,9 +48,6 @@ class Gen3ObservationEncoder(ObservationEncoder):
         self.active_context_encoder = ActiveContextEncoder(mappings.get("moves"))
         self.global_env_encoder = GlobalEnvEncoder()
         self.reactive_encoder = ReactiveEncoder()
-        
-        # Stable mapping for opponent slots
-        self.opp_slot_map = {} 
         self.current_battle_id = None
 
     @property
@@ -58,11 +55,6 @@ class Gen3ObservationEncoder(ObservationEncoder):
         return 1684
 
     def encode(self, battle: AbstractBattle) -> np.ndarray:
-        # Reset opponent map if this is a new battle
-        if battle.battle_tag != self.current_battle_id:
-            self.opp_slot_map = {}
-            self.current_battle_id = battle.battle_tag
-            
         vec = np.zeros(self.dimension, dtype=np.float32)
         
         # 1. Our Team (0-797)
@@ -77,19 +69,20 @@ class Gen3ObservationEncoder(ObservationEncoder):
             vec[start + 132] = is_active
             
         # 2. Opponent Team (798-1595)
-        for mon_name in battle.opponent_team:
-            if mon_name not in self.opp_slot_map and len(self.opp_slot_map) < TEAM_SIZE:
-                self.opp_slot_map[mon_name] = len(self.opp_slot_map)
+        # We use the stable insertion order of the battle.opponent_team dict
+        # as our slot mapping. This ensures each Pokemon object has a unique
+        # slot regardless of species collisions (important for Transform/Ditto).
+        opponents = list(battle.opponent_team.values())
         
-        opp_slots = [None] * TEAM_SIZE
-        for mon_name, mon in battle.opponent_team.items():
-            if mon_name in self.opp_slot_map:
-                opp_slots[self.opp_slot_map[mon_name]] = mon
-        
+        # Safety: ensure active opponent is tracked
+        active_opp = battle.opponent_active_pokemon
+        if active_opp and active_opp not in opponents:
+            opponents.append(active_opp)
+            
         for i in range(TEAM_SIZE):
-            mon = opp_slots[i]
+            mon = opponents[i] if i < len(opponents) else None
             mon_vec = self.pokemon_encoder.encode(mon, battle)
-            is_active = 1.0 if (mon and mon.active) else 0.0
+            is_active = 1.0 if (mon and mon is active_opp) else 0.0
             
             start = OFFSET_OPP_TEAM + (i * POKEMON_FULL_DIM)
             vec[start : start + 132] = mon_vec
