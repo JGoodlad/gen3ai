@@ -117,20 +117,31 @@ class ReplayCallback(BaseCallback):
         self.last_save = 0
 
     def _on_step(self) -> bool:
-        if self.num_timesteps - self.last_save >= self.save_freq:
-            self.last_save = self.num_timesteps
-            # Progressive scaling capped at 2M steps
-            self.save_freq = min(2_000_000, int(self.save_freq * 1.5))
+        # HUMAN MILESTONE RAMP
+        if self.num_timesteps < 1_000_000:
+            interval = 200_000
+        elif self.num_timesteps < 10_000_000:
+            interval = 1_000_000
+        else:
+            interval = 2_000_000
             
+        trigger = False
+        if self.last_save == 0 and self.num_timesteps > 0:
+            trigger = True # First update proof-of-life
+        elif (self.num_timesteps // interval) > (self.last_save // interval):
+            trigger = True
+
+        if trigger:
+            self.last_save = self.num_timesteps
             step_dir = os.path.join(self.replay_dir, f"step_{self.num_timesteps}")
             os.makedirs(step_dir, exist_ok=True)
-            
             print(f"\n🎥 [REPLAY] Step {self.num_timesteps}: Recording {self.n_replays} games to {step_dir}...")
             
             # Use threading to run async battles without blocking SB3's main loop
             thread = threading.Thread(target=self._run_async_battles, args=(step_dir,))
             thread.start()
-            thread.join()
+            # We don't join here to allow training to continue while replays are recorded
+            # thread.join() 
             
         return True
 
