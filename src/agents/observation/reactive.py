@@ -31,7 +31,7 @@ class ReactiveEncoder(ObservationEncoder):
         for i, move in enumerate(battle.available_moves):
             if i >= 4: break
             moves_base_power[i] = move.base_power / 100.0
-            if battle.opponent_active_pokemon is not None and not battle.opponent_active_pokemon.fainted:
+            if battle.opponent_active_pokemon is not None:
                 moves_dmg_multiplier[i] = move.type.damage_multiplier(
                     battle.opponent_active_pokemon.type_1,
                     battle.opponent_active_pokemon.type_2,

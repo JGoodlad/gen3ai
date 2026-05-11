@@ -38,12 +38,9 @@ class MovesEncoder(ObservationEncoder):
         for i in range(4):
             if i < len(moves):
                 move = moves[i]
-                move_id = str(move.id)
+                move_id = move.id
                 
                 # Extract metadata from mapping
-                if move_id not in self.mapping:
-                    raise ValueError(f"Unrecognized move: {move_id}. Update data/mappings/gen3_mapping.json")
-                    
                 entry = self.mapping.get(move_id, {})
                 if isinstance(entry, dict):
                     num = entry.get("num", 0)

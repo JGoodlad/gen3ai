@@ -452,37 +452,35 @@ async def main():
 
         from stable_baselines3.common.callbacks import EvalCallback
         
-        # Define evaluation environment
-        def create_eval_env():
-            import time
-            # Even more staggered for eval
-            time.sleep(2.0) 
-            ts = datetime.now().strftime('%H%M%S')
-            env = Gen3Env(
-                mappings,
-                battle_format=BATTLE_FORMAT,
-                team=trainee_teambuilder,
-                server_configuration=LocalhostServerConfiguration,
-                account_configuration1=AccountConfiguration(f"RLEvalEnv{ts}", "password"),
-            )
-            opponent = SimpleHeuristicsPlayer(
-                battle_format=BATTLE_FORMAT,
-                team=opponent_teambuilder,
-                server_configuration=LocalhostServerConfiguration,
-                account_configuration=AccountConfiguration(f"OppEvalEnv{ts}", "password"),
-            )
-            return SingleAgentWrapper(env, opponent)
+        # Evaluation environments: use 8 as requested
+        def create_eval_env(idx):
+            def _init():
+                ts = datetime.now().strftime('%H%M%S')
+                env = Gen3Env(
+                    mappings,
+                    battle_format=BATTLE_FORMAT,
+                    team=trainee_teambuilder,
+                    server_configuration=LocalhostServerConfiguration,
+                    account_configuration1=AccountConfiguration(f"RLEval{idx}{ts}", "password"),
+                )
+                opponent = SimpleHeuristicsPlayer(
+                    battle_format=BATTLE_FORMAT,
+                    team=opponent_teambuilder,
+                    server_configuration=LocalhostServerConfiguration,
+                    account_configuration=AccountConfiguration(f"OppEval{idx}{ts}", "password"),
+                )
+                return SingleAgentWrapper(env, opponent)
+            return _init
         
-        eval_env = DummyVecEnv([create_eval_env])
+        eval_env = SubprocVecEnv([create_eval_env(i) for i in range(8)])
         
         eval_callback = EvalCallback(
             eval_env,
             best_model_save_path=os.path.join(model_dir, "best_model"),
             log_path=os.path.join(model_dir, "eval_logs"),
-            eval_freq=50000, # Eval every 50k steps (since we have 8 envs, this is ~6.25k iterations)
-            deterministic=True,
-            render=False,
-            n_eval_episodes=20
+            eval_freq=max(1000, 500000 // args.n_envs), # Eval every 500k steps
+            deterministic=False,
+            n_eval_episodes=args.eval_battles
         )
 
         checkpoint_callback = CheckpointCallback(
