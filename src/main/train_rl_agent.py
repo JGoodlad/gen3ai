@@ -137,16 +137,14 @@ def load_mappings():
             
     return mappings
 
-MAPPINGS = load_mappings()
-
-def get_observation_encoder():
-    return Gen3ObservationEncoder(MAPPINGS)
+def get_observation_encoder(mappings):
+    return Gen3ObservationEncoder(mappings)
 
 
 class Gen3Env(SinglesEnv):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, mappings, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.observation_encoder = get_observation_encoder()
+        self.observation_encoder = get_observation_encoder(mappings)
         
         # Define spaces
         obs_dim = self.observation_encoder.dimension
@@ -176,6 +174,12 @@ class Gen3Env(SinglesEnv):
         )
 
 async def main():
+    import multiprocessing
+    try:
+        multiprocessing.set_start_method('spawn', force=True)
+    except RuntimeError:
+        pass
+
     parser = argparse.ArgumentParser(description="Train or Evaluate Gen 3 OU RL Agent")
     
     # --- Operational Flags ---
@@ -206,6 +210,8 @@ async def main():
     trainee_teambuilder = Gen3Teambuilder(sample_teams)
     opponent_teambuilder = Gen3Teambuilder(all_teams)
 
+    mappings = load_mappings()
+    
     def create_training_env_random(idx):
         def _init():
             ts = datetime.now().strftime('%H%M%S')
@@ -213,6 +219,7 @@ async def main():
             opp_username = f"Opponent_{idx}_{ts}"
             
             env = Gen3Env(
+                mappings,
                 battle_format=BATTLE_FORMAT,
                 team=trainee_teambuilder,
                 log_level=40,
@@ -372,7 +379,24 @@ async def main():
         from stable_baselines3.common.callbacks import EvalCallback
         
         # Define evaluation environment
-        eval_env = create_training_env_random(99)() # Unique index for eval
+        def create_eval_env():
+            ts = datetime.now().strftime('%H%M%S')
+            env = Gen3Env(
+                mappings,
+                battle_format=BATTLE_FORMAT,
+                team=trainee_teambuilder,
+                server_configuration=LocalhostServerConfiguration,
+                account_configuration1=AccountConfiguration(f"RL_Eval_Env_{ts}", "password"),
+            )
+            opponent = SimpleHeuristicsPlayer(
+                battle_format=BATTLE_FORMAT,
+                team=opponent_teambuilder,
+                server_configuration=LocalhostServerConfiguration,
+                account_configuration=AccountConfiguration(f"Opp_Eval_Env_{ts}", "password"),
+            )
+            return SingleAgentWrapper(env, opponent)
+        
+        eval_env = DummyVecEnv([create_eval_env])
         
         eval_callback = EvalCallback(
             eval_env,
