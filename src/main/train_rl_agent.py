@@ -19,6 +19,7 @@ from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.policies import ActorCriticPolicy
 from typing import Dict, Any
 
+from agents.model.features_extractor import Gen3FeaturesExtractor
 from agents.observation.state_encoder import Gen3ObservationEncoder
 from agents.action.mask_generator import Gen3ActionMasker
 from agents.rl_agent import RLPlayer, SingleAgentWrapper
@@ -36,123 +37,6 @@ from poke_env import AccountConfiguration, LocalhostServerConfiguration
 from poke_env.environment.singles_env import SinglesEnv
 
 BATTLE_FORMAT = "gen3ou"
-
-import torch
-
-class Gen3FeaturesExtractor(torch.nn.Module):
-    def __init__(self, observation_space: spaces.Dict, layout: Dict[str, Any] = None, mappings: Dict[str, Any] = None):
-        super().__init__()
-        self.layout = layout
-        self.mappings = mappings
-        self._encoder = None # Lazy init for decoding
-        
-        # Total observation dimension is 1684
-        self.species_embedding = torch.nn.Embedding(387, 32)
-        
-        # Projection layer
-        # New dimension: 12 * (32 + 132) + 88 = 2056
-        self.projection = torch.nn.Linear(2056, 256)
-        self.activation = torch.nn.ReLU()
-        self.features_dim = 256
-        self.last_trace_time = 0
-        
-    def _print_deep_trace(self, x, pokemon_part, species_ids):
-        import time
-        if self._encoder is None and self.mappings:
-            self._encoder = Gen3ObservationEncoder(self.mappings)
-            
-        print("\n" + "🧬" * 30)
-        print(f"🧬 [DEEP TRACE - {time.strftime('%H:%M:%S')}]")
-        print("=" * 60)
-        
-        if self._encoder:
-            # Use the encoder's master description logic
-            desc = self._encoder.describe_vector(x[0].cpu().numpy())
-            world = desc.get('world', {})
-            print(f"Turn: {world.get('turn', '???')} | Weather: {world.get('weather', 'NONE')} | Spikes: {world.get('our_spikes', 0)} (Us) / {world.get('opp_spikes', 0)} (Them)")
-            
-            print("\n--- OUR ACTIVE CONTEXT ---")
-            ctx = desc.get('our_active', {})
-            print(f"Boosts: {ctx.get('boosts', {})} | Volatiles: {ctx.get('volatiles', [])}")
-            
-            print("\n--- TEAM SUMMARIES ---")
-            for i, mon in enumerate(desc['our_team']):
-                active_str = " [Actv]" if mon.get('active') else "       "
-                s = mon['stats']
-                stats_str = f"{s['hp']}/{s['atk']}/{s['def']}/{s['spa']}/{s['spd']}/{s['spe']}"
-                print(f"[OUR {i}] {mon['species']:12} | HP: {mon['hp']:6} | Status: {mon['status']:5}{active_str} | {stats_str}")
-                print(f"  Moves: {mon.get('moves', [])}")
-                
-            print("-" * 30)
-            for i, mon in enumerate(desc['opp_team']):
-                active_str = " [Actv]" if mon.get('active') else "       "
-                s = mon['stats']
-                stats_str = f"{s['hp']}/{s['atk']}/{s['def']}/{s['spa']}/{s['spd']}/{s['spe']}"
-                print(f"[OPP {i}] {mon['species']:12} | HP: {mon['hp']:6} | Status: {mon['status']:5}{active_str} | {stats_str}")
-                print(f"  Moves: {mon.get('moves', [])}")
-            
-            momentum = desc.get('momentum', {})
-            print(f"\n--- MOMENTUM ---")
-            print(f"Fainted: {momentum.get('fainted_our', 0)} (Us) / {momentum.get('fainted_opp', 0)} (Them) | Matchups: {momentum.get('move_mults', [])}")
-            
-            # --- INTEGRITY CHECK ---
-            warnings, is_critical = self._encoder.integrity_check(x[0].cpu().numpy())
-            if warnings:
-                print("\n⚠️ [INTEGRITY CHECK WARNINGS]")
-                for w in warnings:
-                    print(f"  - {w}")
-                    
-            if is_critical:
-                raise ValueError(f"CRITICAL INTEGRITY FAILURE: {warnings}")
-        else:
-            print("Trace available but encoder/mappings missing.")
-            
-        print("=" * 60 + "\n")
-
-    def forward(self, obs):
-        x = obs["observation"]
-        batch_size = x.shape[0]
-        
-        from agents.observation.constants import (
-            OFFSET_OUR_TEAM, OFFSET_OPP_TEAM, OFFSET_CONTEXT, 
-            POKEMON_FULL_DIM, POKEMON_VECTOR_DIM
-        )
-        
-        # Extract pokemon parts using constants/layout
-        # We handle 12 pokemon (6 our, 6 opp)
-        our_team = x[:, OFFSET_OUR_TEAM : OFFSET_OPP_TEAM].reshape(batch_size, 6, POKEMON_FULL_DIM)
-        opp_team = x[:, OFFSET_OPP_TEAM : OFFSET_CONTEXT].reshape(batch_size, 6, POKEMON_FULL_DIM)
-        
-        pokemon_part = torch.cat([our_team, opp_team], dim=1) # [B, 12, 133]
-        remaining_part = x[:, OFFSET_CONTEXT:] # [B, 88] (62 context + 11 global + 15 reactive)
-        
-        # Extract IDs (first dim of each block)
-        species_ids = pokemon_part[:, :, 0].long() # [B, 12]
-        
-        import time
-        current_time = time.time()
-        if current_time - self.last_trace_time > 15:
-            self.last_trace_time = current_time
-            self._print_deep_trace(x, pokemon_part, species_ids)
-        
-        # Embed species
-        embedded_species = self.species_embedding(species_ids) # [B, 12, 32]
-        
-        # Keep everything else (stats, moves, items, etc.)
-        # pokemon_part is [B, 12, 133]. Index 0 is ID. 1-132 is the rest.
-        rest_of_pokemon = pokemon_part[:, :, 1:132] # [B, 12, 131] -- Wait, index 131 is HP. 1:132 is 131 dims.
-        # Actually, let's just take everything except index 0.
-        rest_of_pokemon = pokemon_part[:, :, 1:] # [B, 12, 132]
-        
-        # Combine
-        pokemon_enriched = torch.cat([embedded_species, rest_of_pokemon], dim=2) # [B, 12, 164]
-        pokemon_flat = pokemon_enriched.reshape(batch_size, -1) # [B, 1968]
-        
-        # Final combined vector (1968 + 88 = 2056)
-        combined = torch.cat([pokemon_flat, remaining_part], dim=1) # [B, 2056]
-        
-        # Project to features_dim with activation
-        return self.activation(self.projection(combined))
 
 class MaskedActorCriticPolicy(ActorCriticPolicy):
     def __init__(self, *args, **kwargs):
@@ -201,6 +85,17 @@ def load_mappings():
             if not data:
                 raise ValueError(f"CRITICAL: Mapping file is empty: {path}")
             mappings[key] = data
+            
+        # Pre-compute reverse mappings for IDs to names
+        mappings["reverse"] = {}
+        for category in ["species", "moves", "abilities", "items"]:
+            rev = {}
+            for name, data in mappings[category].items():
+                if isinstance(data, dict) and "num" in data:
+                    rev[data["num"]] = name
+                elif isinstance(data, (int, float)):
+                    rev[int(data)] = name
+            mappings["reverse"][category] = rev
             
     return mappings
 
@@ -414,13 +309,10 @@ async def main():
         model_dir = f"models/gen3ou_ppo_new_{unique_id}"
         os.makedirs(model_dir, exist_ok=True)
         
-        # Initialize a dummy encoder to get the layout
+        # Initialize a dummy encoder to get the handoff kwargs
         temp_encoder = Gen3ObservationEncoder(mappings)
         policy_kwargs = {
-            "features_extractor_kwargs": {
-                "layout": temp_encoder.get_layout(),
-                "mappings": mappings
-            },
+            "features_extractor_kwargs": temp_encoder.get_features_extractor_kwargs(),
             "net_arch": [512, 512]
         }
         

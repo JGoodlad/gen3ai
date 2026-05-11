@@ -3,6 +3,7 @@ import math
 from .base import ObservationEncoder
 from .constants import GLOBAL_ENV_DIM, MAX_TURNS, MAX_SPIKES
 from poke_env.battle.abstract_battle import AbstractBattle
+from poke_env.battle.side_condition import SideCondition
 from poke_env.battle.weather import Weather
 from typing import Any, Dict
 
@@ -33,8 +34,8 @@ class GlobalEnvEncoder(ObservationEncoder):
         vec[idx] = 1.0
         
         # 2. Hazards (2)
-        p1_spikes = battle.side_conditions.get("spikes", 0)
-        p2_spikes = battle.opponent_side_conditions.get("spikes", 0)
+        p1_spikes = battle.side_conditions.get(SideCondition.SPIKES, 0)
+        p2_spikes = battle.opponent_side_conditions.get(SideCondition.SPIKES, 0)
         vec[6] = float(p1_spikes) / MAX_SPIKES
         vec[7] = float(p2_spikes) / MAX_SPIKES
         
@@ -50,9 +51,9 @@ class GlobalEnvEncoder(ObservationEncoder):
 
     def get_layout(self) -> Dict[str, Any]:
         return {
-            "weather": (0, 6),
-            "hazards": (6, 2),
-            "clock": (8, 3)
+            "weather": {"offset": 0, "dim": 6},
+            "hazards": {"offset": 6, "dim": 2},
+            "clock": {"offset": 8, "dim": 3}
         }
 
     def describe_vector(self, vector: np.ndarray) -> Dict[str, Any]:

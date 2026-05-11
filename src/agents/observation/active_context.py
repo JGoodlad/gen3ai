@@ -2,6 +2,7 @@ import numpy as np
 from .base import ObservationEncoder
 from .constants import ACTIVE_CONTEXT_DIM, BOOSTS_DIM, VOLATILES_DIM, TEMPORAL_DIM
 from poke_env.battle.abstract_battle import AbstractBattle
+from poke_env.battle.effect import Effect
 from typing import Any, Dict
 
 class ActiveContextEncoder(ObservationEncoder):
@@ -36,12 +37,17 @@ class ActiveContextEncoder(ObservationEncoder):
         # 2. Volatiles (8)
         volatiles = getattr(mon, "volatiles", {})
         volatile_map = {
-            "confusion": 0, "substitute": 1, "taunt": 2, "encore": 3,
-            "perishsong": 4, "leechseed": 5, "focusenergy": 6, "attract": 7
+            Effect.CONFUSION: 0, Effect.SUBSTITUTE: 1, Effect.TAUNT: 2, Effect.ENCORE: 3,
+            Effect.LEECH_SEED: 5, Effect.FOCUS_ENERGY: 6, Effect.ATTRACT: 7
         }
         for v, idx in volatile_map.items():
             if v in volatiles:
                 vec[cursor + idx] = 1.0
+        
+        # Perish Song (Index 4) - Check all counts
+        if any(e in volatiles for e in [Effect.PERISH0, Effect.PERISH1, Effect.PERISH2, Effect.PERISH3]):
+            vec[cursor + 4] = 1.0
+            
         cursor += 8
         
         # 3. Temporal (9)
@@ -54,9 +60,9 @@ class ActiveContextEncoder(ObservationEncoder):
 
     def get_layout(self) -> Dict[str, Any]:
         return {
-            "boosts": (0, 14),
-            "volatiles": (14, 8),
-            "temporal": (22, 9)
+            "boosts": {"offset": 0, "dim": 14},
+            "volatiles": {"offset": 14, "dim": 8},
+            "temporal": {"offset": 22, "dim": 9}
         }
 
     def describe_vector(self, vector: np.ndarray) -> Dict[str, Any]:

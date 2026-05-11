@@ -10,18 +10,11 @@ class MovesEncoder(ObservationEncoder):
     Enriches with metadata from mappings (Power, Secondary, Recoil).
     """
     
-    def __init__(self, mapping=None):
+    def __init__(self, mapping=None, reverse_mapping=None):
         if not mapping:
             raise ValueError("MovesEncoder requires a non-empty mapping for enrichment!")
         self.mapping = mapping
-        
-        # Reverse mapping for decoding
-        self.reverse_mapping = {}
-        for name, data in self.mapping.items():
-            if isinstance(data, dict) and "num" in data:
-                self.reverse_mapping[data["num"]] = name
-            elif isinstance(data, (int, float)):
-                self.reverse_mapping[int(data)] = name
+        self.reverse_mapping = reverse_mapping or {}
 
     @property
     def dimension(self) -> int:
@@ -70,8 +63,8 @@ class MovesEncoder(ObservationEncoder):
 
     def get_layout(self) -> Dict[str, Any]:
         return {
-            "slots": [(i * MOVE_SLOT_DIM, MOVE_SLOT_DIM) for i in range(4)],
-            "known": (4 * MOVE_SLOT_DIM, MOVES_KNOWN_DIM)
+            "slots": [{"offset": i * MOVE_SLOT_DIM, "dim": MOVE_SLOT_DIM} for i in range(4)],
+            "known": {"offset": 4 * MOVE_SLOT_DIM, "dim": MOVES_KNOWN_DIM}
         }
 
     def describe_vector(self, vector: np.ndarray) -> Dict[str, Any]:

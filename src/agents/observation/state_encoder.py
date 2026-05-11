@@ -28,14 +28,16 @@ class Gen3ObservationEncoder(ObservationEncoder):
     """
     
     def __init__(self, mappings: Dict[str, Any] = None):
-        mappings = mappings or {}
+        self.mappings = mappings or {}
+        mappings = self.mappings
         
         # Sub-encoders
-        self.species_encoder = SpeciesEncoder(mappings.get("species"))
-        self.items_encoder = ItemsEncoder(mappings.get("items"))
+        rev = self.mappings.get("reverse", {})
+        self.species_encoder = SpeciesEncoder(mappings.get("species"), rev.get("species"))
+        self.items_encoder = ItemsEncoder(mappings.get("items"), rev.get("items"))
         self.type_encoder = TypeEncoder()
-        self.abilities_encoder = AbilitiesEncoder(mappings.get("abilities"))
-        self.moves_encoder = MovesEncoder(mappings.get("moves"))
+        self.abilities_encoder = AbilitiesEncoder(mappings.get("abilities"), rev.get("abilities"))
+        self.moves_encoder = MovesEncoder(mappings.get("moves"), rev.get("moves"))
         
         self.pokemon_encoder = PokemonEncoder(
             self.species_encoder, 
@@ -103,11 +105,49 @@ class Gen3ObservationEncoder(ObservationEncoder):
     def get_layout(self) -> Dict[str, Any]:
         pokemon_layout = self.pokemon_encoder.get_layout()
         return {
-            "our_team": [(OFFSET_OUR_TEAM + i*POKEMON_FULL_DIM, pokemon_layout) for i in range(TEAM_SIZE)],
-            "opp_team": [(OFFSET_OPP_TEAM + i*POKEMON_FULL_DIM, pokemon_layout) for i in range(TEAM_SIZE)],
-            "context": (OFFSET_CONTEXT, 62),
-            "global": (OFFSET_GLOBAL, 11),
-            "reactive": (OFFSET_REACTIVE, 15)
+            "parts": {
+                "our_team": {
+                    "start": OFFSET_OUR_TEAM, 
+                    "end": OFFSET_OPP_TEAM, 
+                    "reshape": (TEAM_SIZE, POKEMON_FULL_DIM)
+                },
+                "opp_team": {
+                    "start": OFFSET_OPP_TEAM, 
+                    "end": OFFSET_CONTEXT, 
+                    "reshape": (TEAM_SIZE, POKEMON_FULL_DIM)
+                },
+                "context": {
+                    "start": OFFSET_CONTEXT, 
+                    "end": OFFSET_GLOBAL, 
+                    "reshape": (2, self.active_context_encoder.dimension)
+                },
+                "global": {
+                    "start": OFFSET_GLOBAL, 
+                    "end": OFFSET_REACTIVE, 
+                    "dim": self.global_env_encoder.dimension
+                },
+                "reactive": {
+                    "start": OFFSET_REACTIVE, 
+                    "end": self.dimension, 
+                    "dim": self.reactive_encoder.dimension
+                }
+            },
+            "pokemon": pokemon_layout,
+            "total_dim": self.dimension,
+            "max_species": 387,
+            "species_embedding_dim": 32,
+            "max_moves": 371,
+            "move_embedding_dim": 16,
+            "max_items": 130,
+            "item_embedding_dim": 16,
+            "max_abilities": 77,
+            "ability_embedding_dim": 16
+        }
+
+    def get_features_extractor_kwargs(self) -> Dict[str, Any]:
+        return {
+            "layout": self.get_layout(),
+            "mappings": self.mappings
         }
 
     def describe_vector(self, vector: np.ndarray) -> Dict[str, Any]:

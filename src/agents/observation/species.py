@@ -10,18 +10,11 @@ class SpeciesEncoder(ObservationEncoder):
     Dimension: 7 (1 + 6)
     """
     
-    def __init__(self, mapping=None):
+    def __init__(self, mapping=None, reverse_mapping=None):
         if not mapping:
             raise ValueError("SpeciesEncoder requires a non-empty mapping for enrichment!")
         self.mapping = mapping
-        
-        # Reverse mapping for decoding
-        self.reverse_mapping = {}
-        for name, data in self.mapping.items():
-            if isinstance(data, dict) and "num" in data:
-                self.reverse_mapping[data["num"]] = name
-            elif isinstance(data, (int, float)):
-                self.reverse_mapping[int(data)] = name
+        self.reverse_mapping = reverse_mapping or {}
 
     @property
     def dimension(self) -> int:

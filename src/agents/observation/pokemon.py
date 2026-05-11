@@ -80,13 +80,13 @@ class PokemonEncoder(ObservationEncoder):
 
     def get_layout(self) -> Dict[str, Any]:
         return {
-            "species": (POKEMON_SPECIES_OFFSET, self.species_encoder.dimension),
-            "items": (POKEMON_ITEMS_OFFSET, self.items_encoder.dimension),
-            "types": (POKEMON_TYPES_OFFSET, self.type_encoder.dimension),
-            "abilities": (POKEMON_ABILITIES_OFFSET, self.abilities_encoder.dimension),
-            "condition": (POKEMON_CONDITION_OFFSET, 8),
-            "moves": (POKEMON_MOVES_OFFSET, self.moves_encoder.dimension),
-            "hp": (POKEMON_HP_OFFSET, 1)
+            "species": {"offset": POKEMON_SPECIES_OFFSET, "dim": self.species_encoder.dimension},
+            "items": {"offset": POKEMON_ITEMS_OFFSET, "dim": self.items_encoder.dimension},
+            "types": {"offset": POKEMON_TYPES_OFFSET, "dim": self.type_encoder.dimension},
+            "abilities": {"offset": POKEMON_ABILITIES_OFFSET, "dim": self.abilities_encoder.dimension},
+            "condition": {"offset": POKEMON_CONDITION_OFFSET, "dim": 8},
+            "moves": {"offset": POKEMON_MOVES_OFFSET, "dim": self.moves_encoder.dimension},
+            "hp": {"offset": POKEMON_HP_OFFSET, "dim": 1}
         }
 
     def describe_vector(self, vector: np.ndarray) -> Dict[str, Any]:

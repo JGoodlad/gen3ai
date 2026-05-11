@@ -9,8 +9,9 @@ class ItemsEncoder(ObservationEncoder):
     Encodes item IDs and reveal status.
     """
     
-    def __init__(self, item_to_id=None):
+    def __init__(self, item_to_id=None, reverse_mapping=None):
         self.item_to_id = item_to_id or {}
+        self.reverse_mapping = reverse_mapping or {}
 
     @property
     def dimension(self) -> int:
@@ -37,3 +38,9 @@ class ItemsEncoder(ObservationEncoder):
             vec[ITEM_ID_DIM] = 0.0
             
         return vec
+
+    def get_layout(self) -> dict:
+        return {
+            "id": {"offset": 0, "dim": 1}, # We only use the first dim for the actual ID
+            "known": {"offset": ITEM_ID_DIM, "dim": ITEM_KNOWN_DIM}
+        }

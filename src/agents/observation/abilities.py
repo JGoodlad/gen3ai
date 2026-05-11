@@ -9,8 +9,9 @@ class AbilitiesEncoder(ObservationEncoder):
     Encodes revealed and possible abilities.
     """
     
-    def __init__(self, ability_to_id=None):
+    def __init__(self, ability_to_id=None, reverse_mapping=None):
         self.ability_to_id = ability_to_id or {}
+        self.reverse_mapping = reverse_mapping or {}
 
     @property
     def dimension(self) -> int:
@@ -46,3 +47,9 @@ class AbilitiesEncoder(ObservationEncoder):
         # TODO: Implement possible abilities lookup.
         
         return vec
+
+    def get_layout(self) -> dict:
+        return {
+            "id": {"offset": 0, "dim": 1},
+            "known": {"offset": ABILITY_SLOT_DIM, "dim": ABILITY_KNOWN_DIM}
+        }

@@ -1,6 +1,7 @@
 import numpy as np
 from .base import ObservationEncoder
 from poke_env.battle.abstract_battle import AbstractBattle
+from poke_env.battle.side_condition import SideCondition
 from poke_env.data import GenData
 from typing import Any, Dict
 
@@ -57,8 +58,8 @@ class ReactiveEncoder(ObservationEncoder):
         vec[11] = opp_hp
         
         # 4. Spikes
-        our_spikes = battle.side_conditions.get("spikes", 0) / 3.0
-        opp_spikes = battle.opponent_side_conditions.get("spikes", 0) / 3.0
+        our_spikes = battle.side_conditions.get(SideCondition.SPIKES, 0) / 3.0
+        opp_spikes = battle.opponent_side_conditions.get(SideCondition.SPIKES, 0) / 3.0
         vec[12] = our_spikes
         vec[13] = opp_spikes
         
@@ -69,12 +70,12 @@ class ReactiveEncoder(ObservationEncoder):
 
     def get_layout(self) -> Dict[str, Any]:
         return {
-            "move_power": (0, 4),
-            "move_multiplier": (4, 4),
-            "fainted": (8, 2),
-            "hp": (10, 2),
-            "spikes": (12, 2),
-            "active_status": (14, 1)
+            "move_power": {"offset": 0, "dim": 4},
+            "move_multiplier": {"offset": 4, "dim": 4},
+            "fainted": {"offset": 8, "dim": 2},
+            "hp": {"offset": 10, "dim": 2},
+            "spikes": {"offset": 12, "dim": 2},
+            "active_status": {"offset": 14, "dim": 1}
         }
 
     def describe_vector(self, vector: np.ndarray) -> Dict[str, Any]:
