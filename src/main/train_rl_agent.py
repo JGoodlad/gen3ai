@@ -149,7 +149,7 @@ class Gen3Env(SinglesEnv):
         # Reward the first 5 switches of a battle to encourage exploration
         if hasattr(self, "_last_action") and self._last_action < 6:
             if self.switch_count < 5:
-                reward += 0.5
+                reward += 0.1
                 self.switch_count += 1
                 
         return reward
