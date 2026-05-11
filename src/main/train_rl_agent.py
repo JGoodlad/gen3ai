@@ -216,8 +216,8 @@ async def main():
     def create_training_env_random(idx):
         def _init():
             ts = datetime.now().strftime('%H%M%S')
-            env_username = f"RLAgent_{idx}_{ts}"
-            opp_username = f"Opponent_{idx}_{ts}"
+            env_username = f"RLAgent{idx}{ts}"
+            opp_username = f"Opponent{idx}{ts}"
             
             env = Gen3Env(
                 mappings,
@@ -265,7 +265,7 @@ async def main():
             battle_format=BATTLE_FORMAT,
             server_configuration=LocalhostServerConfiguration,
             mappings=mappings,
-            account_configuration=AccountConfiguration(f"RL_Eval_{ts}", "password"),
+            account_configuration=AccountConfiguration(f"RLEval{ts}", "password"),
             max_concurrent_battles=50
         )
         
@@ -273,7 +273,7 @@ async def main():
             battle_format=BATTLE_FORMAT,
             team=opponent_teambuilder,
             server_configuration=LocalhostServerConfiguration,
-            account_configuration=AccountConfiguration(f"Rand_Eval_{ts}", "password"),
+            account_configuration=AccountConfiguration(f"RandEval{ts}", "password"),
             max_concurrent_battles=50
         )
         
@@ -281,7 +281,7 @@ async def main():
             battle_format=BATTLE_FORMAT,
             team=opponent_teambuilder,
             server_configuration=LocalhostServerConfiguration,
-            account_configuration=AccountConfiguration(f"Heur_Eval_{ts}", "password"),
+            account_configuration=AccountConfiguration(f"HeurEval{ts}", "password"),
             max_concurrent_battles=50
         )
 
@@ -391,13 +391,13 @@ async def main():
                 battle_format=BATTLE_FORMAT,
                 team=trainee_teambuilder,
                 server_configuration=LocalhostServerConfiguration,
-                account_configuration1=AccountConfiguration(f"RL_Eval_Env_{ts}", "password"),
+                account_configuration1=AccountConfiguration(f"RLEvalEnv{ts}", "password"),
             )
             opponent = SimpleHeuristicsPlayer(
                 battle_format=BATTLE_FORMAT,
                 team=opponent_teambuilder,
                 server_configuration=LocalhostServerConfiguration,
-                account_configuration=AccountConfiguration(f"Opp_Eval_Env_{ts}", "password"),
+                account_configuration=AccountConfiguration(f"OppEvalEnv{ts}", "password"),
             )
             return SingleAgentWrapper(env, opponent)
         
