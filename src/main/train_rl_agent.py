@@ -143,7 +143,9 @@ def get_observation_encoder(mappings):
 
 class Gen3Env(SinglesEnv):
     def __init__(self, mappings, *args, **kwargs):
+        print(f"DEBUG: Initializing Gen3Env...")
         super().__init__(*args, **kwargs)
+        print(f"DEBUG: Gen3Env super().__init__ done.")
         self.observation_encoder = get_observation_encoder(mappings)
         
         # Define spaces
