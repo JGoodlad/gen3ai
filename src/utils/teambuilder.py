@@ -15,23 +15,25 @@ class Gen3Teambuilder(Teambuilder):
         if isinstance(teams, str):
             teams = [teams]
         
+        # STRICT VALIDATION: Ensure all teams are legal for Gen 3 OU in one batch
+        from utils.bridge.team_validator import validate_team_locally
+        
+        validations = validate_team_locally("gen3ou", teams)
+        if not isinstance(validations, list):
+            validations = [validations]
+            
         self.packed_teams = []
-        for team_str in teams:
-            # 1. Parse the showdown string
-            parsed_team = self.parse_showdown_team(team_str)
-            
-            # 2. Automatically fix IVs for Hidden Power and other Gen 3 quirks
-            fixed_team = fix_gen3_hp_ivs(parsed_team)
-            packed = self.join_team(fixed_team)
-            
-            # 3. STRICT VALIDATION: Ensure the team is legal for Gen 3 OU
-            from utils.bridge.team_validator import validate_team_locally
-            validation = validate_team_locally("gen3ou", team_str)
-            if not validation.get("valid"):
-                errors = ", ".join(validation.get("errors", ["Unknown error"]))
+        for i, team_str in enumerate(teams):
+            if not validations[i].get("valid"):
+                errors = ", ".join(validations[i].get("errors", ["Unknown error"]))
+                # Log the error but don't necessarily crash if we have other valid teams?
+                # Actually, user wants fail-fast.
                 raise ValueError(f"Team Validation Failed: {errors}\nTeam:\n{team_str}")
-                
-            self.packed_teams.append(packed)
+            
+            # Parse and Pack
+            parsed_team = self.parse_showdown_team(team_str)
+            fixed_team = fix_gen3_hp_ivs(parsed_team)
+            self.packed_teams.append(self.join_team(fixed_team))
 
     def yield_team(self):
         """Returns a random team from the pool (or the only team if pool size is 1)."""

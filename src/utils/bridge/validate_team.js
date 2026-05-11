@@ -19,22 +19,32 @@ process.stdin.on('end', () => {
 
         const request = JSON.parse(inputData);
         const formatId = request.format || 'gen3ou'; 
-        const teamText = request.team;   
-
-        if (!teamText) {
-            console.log(JSON.stringify({ valid: false, errors: ['No team text provided'] }));
-            return;
-        }
-
         const validator = new TeamValidator(formatId);
-        const teamJson = Teams.import(teamText);
-        const errors = validator.validateTeam(teamJson);
 
-        if (errors && errors.length > 0) {
-            console.log(JSON.stringify({ valid: false, errors: errors }));
-        } else {
-            console.log(JSON.stringify({ valid: true, errors: [] }));
+        // Handle both single team and array of teams
+        const teams = Array.isArray(request.team) ? request.team : [request.team];
+        const results = [];
+
+        for (const teamText of teams) {
+            if (!teamText) {
+                results.push({ valid: false, errors: ['No team text provided'] });
+                continue;
+            }
+            try {
+                const teamJson = Teams.import(teamText);
+                const errors = validator.validateTeam(teamJson);
+                if (errors && errors.length > 0) {
+                    results.push({ valid: false, errors: errors });
+                } else {
+                    results.push({ valid: true, errors: [] });
+                }
+            } catch (err) {
+                results.push({ valid: false, errors: [err.message] });
+            }
         }
+
+        // Return single object for single team, array for multiple
+        console.log(JSON.stringify(Array.isArray(request.team) ? results : results[0]));
     } catch (e) {
         console.log(JSON.stringify({ valid: false, errors: [e.message] }));
     }
