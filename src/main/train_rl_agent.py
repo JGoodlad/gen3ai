@@ -263,6 +263,7 @@ async def main():
             team=trainee_teambuilder,
             battle_format=BATTLE_FORMAT,
             server_configuration=LocalhostServerConfiguration,
+            mappings=mappings,
             account_configuration=AccountConfiguration(f"RL_Eval_{ts}", "password"),
             max_concurrent_battles=50
         )

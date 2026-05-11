@@ -8,7 +8,7 @@ from gymnasium import spaces
 import gymnasium as gym
 
 class RLPlayer(Player):
-    def __init__(self, model, team, battle_format, server_configuration, account_configuration=None, max_concurrent_battles=10):
+    def __init__(self, model, team, battle_format, server_configuration, mappings=None, account_configuration=None, max_concurrent_battles=10):
         super().__init__(
             battle_format=battle_format,
             team=team,
@@ -17,12 +17,13 @@ class RLPlayer(Player):
             max_concurrent_battles=max_concurrent_battles,
         )
         self.model = model
+        self.mappings = mappings
         self.observation_encoder = None
 
     def choose_move(self, battle):
         if self.observation_encoder is None:
             from main.train_rl_agent import get_observation_encoder
-            self.observation_encoder = get_observation_encoder()
+            self.observation_encoder = get_observation_encoder(self.mappings)
             
         obs = self.observation_encoder.encode(battle)
         
