@@ -22,9 +22,16 @@ class Gen3Teambuilder(Teambuilder):
             
             # 2. Automatically fix IVs for Hidden Power and other Gen 3 quirks
             fixed_team = fix_gen3_hp_ivs(parsed_team)
+            packed = self.join_team(fixed_team)
             
-            # 3. Join and store the packed format
-            self.packed_teams.append(self.join_team(fixed_team))
+            # 3. STRICT VALIDATION: Ensure the team is legal for Gen 3 OU
+            from utils.bridge.team_validator import validate_team_locally
+            validation = validate_team_locally("gen3ou", team_str)
+            if not validation.get("valid"):
+                errors = ", ".join(validation.get("errors", ["Unknown error"]))
+                raise ValueError(f"Team Validation Failed: {errors}\nTeam:\n{team_str}")
+                
+            self.packed_teams.append(packed)
 
     def yield_team(self):
         """Returns a random team from the pool (or the only team if pool size is 1)."""
