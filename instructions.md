@@ -1,67 +1,63 @@
-# Gen3 AI Training Instructions
+# 🧬 Gen3 RL Architecture & Training Guide
 
-This document explains how to run and monitor the Gen3 Reinforcement Learning training on the remote Ubuntu workstation.
+This guide covers how to train, debug, and optimize the Gen3 Reinforcement Learning pipeline.
 
-## 🚀 1. Start Training (The Marathon)
+## 🚀 Quick Start (Production Training)
+To start a high-performance training run using the full capacity of your RTX 3080 Ti:
 
-The training runs in a `tmux` session named `gen3_training`. 
-
-To start a new training run:
-1. SSH into the desktop: `ssh goodlad@goodlad-desktop.local`
-2. Attach to the tmux session: `tmux a -t gen3_training` (or create it: `tmux new -s gen3_training`)
-3. In Window 0 (Training), run:
 ```bash
-cd ~/dev/gen3ai
-PYTHONPATH=src:. /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 src/main/train_rl_agent.py --steps 10000000 --n-envs 32 --device cuda
+export PYTHONPATH=$PYTHONPATH:src
+/home/goodlad/miniconda3/bin/python3 src/main/train_rl_agent.py --steps 25000000 --n-envs 32 --batch-size 4096
 ```
 
-## 🎮 2. Showdown Server (Backend)
+## 🔍 Debugging & Deep Traces
+If you want to see exactly what the model is "thinking" and verify the state encoding, use the `--debug` flag. This disables parallel workers to allow deep diagnostic traces to print to your console.
 
-The training requires a local Pokemon Showdown server running with `--no-security`.
-- **Location**: tmux Window 1
-- **Command**: `npm run showdown`
-- **Access UI**: `http://goodlad-desktop.local:8000/`
+```bash
+export PYTHONPATH=$PYTHONPATH:src
+/home/goodlad/miniconda3/bin/python3 src/main/train_rl_agent.py --steps 1000 --debug
+```
 
-## 📊 3. Monitor Progress (TensorBoard)
+### What to look for in Traces:
+- **Team Summaries**: Real-time HP, Status, Items, and Abilities for both teams.
+- **Momentum Block**: Type effectiveness matchups for all 4 moves against the current opponent.
+- **Integrity Checks**: Automated warnings if the state vector becomes desynchronized.
 
-Track reward curves and learning metrics in real-time.
-- **Location**: tmux Window 2
-- **Command**: `/home/goodlad/miniconda3/envs/gen3ai_stable/bin/tensorboard --logdir ./tensorboard/ --host 0.0.0.0 --port 6006`
-- **Access UI**: `http://goodlad-desktop.local:6006/`
+## 🛠️ Requirements & Troubleshooting
+- **Tensorboard (MANDATORY)**: Professional logging is required. The script will fail-fast if `tensorboard` is not installed.
+- **Python Path**: Always include `src` in your `PYTHONPATH`.
+- **Conda Environment**: Use the absolute path `/home/goodlad/miniconda3/bin/python3` to ensure you are using the environment with `torch` and `stable-baselines3` installed.
 
-## 🛠️ Environment Reference
+## 🧠 Strategic Tuning
+The pipeline now includes several "Hardened" features you can tune:
 
-- **Conda Env**: `gen3ai_stable` (Python 3.11.15)
-- **Conda Path**: `/home/goodlad/miniconda3/bin/conda`
-- **Python Path**: `/home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3`
-- **Device**: `cuda` (NVIDIA RTX 3080 Ti)
+### 1. The Switching Subsidy
+To prevent the model from getting stuck in an "attack-only" local optima, we reward the first 5 switches in every battle.
+- **Current Reward**: `+0.1` points per switch (first 5).
+- **Entropy**: We use `ent_coef: 0.01` to encourage variety in actions.
+- **Adjustment**: If the model switches too much, lower the reward in `train_rl_agent.py`.
 
-- **Username Errors**: Avoid underscores in usernames; Showdown strips them and breaks the `poke-env` handshake.
+### 2. Shared Latent Spaces
+The model uses shared 16-dim embeddings for:
+- **Types**: Pokémon and Move types share the same latent concepts.
+- **Species/Moves/Items/Abilities**: All categorical data is embedded before reaching the policy network.
 
-## 🏎️ Tuning for Performance
-
-To get the most out of your 16-core CPU and RTX 3080 Ti:
+## 🏎️ Performance Optimization
 
 ### 1. Parallel Environments (`--n-envs`)
-- **Current Sweet Spot**: 32 envs (~50% CPU, ~50% GPU).
-- **Max Effort**: 48-64 envs. 
-- *Note*: Going above 64 on a 16-core machine may cause diminishing returns due to context switching.
+- **Current Sweet Spot**: 32 envs.
+- **Max Effort**: 48-64 envs (monitor CPU context switching).
 
-### 2. Showdown Workers
-If you increase `--n-envs`, you must also increase Showdown workers to prevent a bottleneck.
-- **Location**: `deps/pokemon-showdown/config/config.js`
-- **Settings**:
-  - `simulator: 8` (The primary bottleneck; handle battle logic)
-  - `network: 4` (Handles WebSocket traffic)
-  - `validator: 4` (Handles team validation)
+### 2. Batch Size
+- **Default**: 4096.
+- **Note**: The script will automatically cap the batch size in `--debug` mode to match the smaller rollout buffer.
 
-### 3. Monitoring the "Gauges"
-Run this command to see if you are bottlenecked:
+### 3. Monitoring
+Run these to check for bottlenecks:
 ```bash
-# Check CPU usage (Look for %id - higher is more idle)
-top -bn1 | head -n 20
+# Watch GPU utilization
+watch -n 1 nvidia-smi
 
-# Check GPU usage (Look for GPU-Util and Pwr:Usage)
-nvidia-smi
+# Watch CPU utilization
+htop
 ```
-- **Ideal State**: CPU idle at 20-30%, GPU util at 50-70%.
