@@ -382,6 +382,9 @@ async def main():
         
         # Define evaluation environment
         def create_eval_env():
+            import time
+            # Even more staggered for eval
+            time.sleep(2.0) 
             ts = datetime.now().strftime('%H%M%S')
             env = Gen3Env(
                 mappings,
