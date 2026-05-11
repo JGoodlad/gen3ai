@@ -4,3 +4,6 @@ numpy
 requests
 beautifulsoup4
 lxml
+stable-baselines3
+torch
+shimmy[gymnasium]
