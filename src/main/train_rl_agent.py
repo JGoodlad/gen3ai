@@ -143,9 +143,7 @@ def get_observation_encoder(mappings):
 
 class Gen3Env(SinglesEnv):
     def __init__(self, mappings, *args, **kwargs):
-        print(f"DEBUG: Initializing Gen3Env...")
         super().__init__(*args, **kwargs)
-        print(f"DEBUG: Gen3Env super().__init__ done.")
         self.observation_encoder = get_observation_encoder(mappings)
         
         # Define spaces
@@ -248,7 +246,7 @@ async def main():
     def create_staggered_env(idx):
         import time
         def _init():
-            time.sleep(idx * 0.5) # 0.5s delay per environment
+            time.sleep(idx * 0.1) # 0.1s delay per environment
             return env_factories[idx]()
         return _init
 
