@@ -127,6 +127,9 @@ class Gen3Env(SinglesEnv):
             self.agent1.username: self.observation_space,
             self.agent2.username: self.observation_space
         }
+        
+        # Subsidy tracking
+        self.switch_count = 0
 
     def embed_battle(self, battle):
         return self.observation_encoder.encode(battle)
@@ -135,12 +138,30 @@ class Gen3Env(SinglesEnv):
         return Gen3ActionMasker.get_mask(battle)
         
     def calc_reward(self, battle):
-        return self.reward_computing_helper(
+        reward = self.reward_computing_helper(
             battle,
             fainted_value=2.0,
             hp_value=1.0,
             victory_value=30.0
         )
+        
+        # --- Switching Subsidy ---
+        # Reward the first 5 switches of a battle to encourage exploration
+        if hasattr(self, "_last_action") and self._last_action < 6:
+            if self.switch_count < 5:
+                reward += 0.5
+                self.switch_count += 1
+                
+        return reward
+
+    def step(self, action):
+        self._last_action = action
+        return super().step(action)
+
+    def reset(self, *args, **kwargs):
+        self.switch_count = 0
+        self._last_action = -1
+        return super().reset(*args, **kwargs)
 
 async def main():
     parser = argparse.ArgumentParser(description="Train or Evaluate Gen 3 OU RL Agent")
@@ -332,6 +353,7 @@ async def main():
             batch_size=args.batch_size,
             n_epochs=args.n_epochs,
             gamma=0.99,
+            ent_coef=0.01, # Increased entropy to encourage switching
             device=args.device,
             seed=args.seed,
             tensorboard_log="./tensorboard/",

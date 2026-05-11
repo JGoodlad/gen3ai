@@ -141,7 +141,9 @@ class Gen3ObservationEncoder(ObservationEncoder):
             "max_items": 130,
             "item_embedding_dim": 16,
             "max_abilities": 77,
-            "ability_embedding_dim": 16
+            "ability_embedding_dim": 16,
+            "max_types": 19, # 18 types + ???
+            "type_embedding_dim": 16
         }
 
     def get_features_extractor_kwargs(self) -> Dict[str, Any]:

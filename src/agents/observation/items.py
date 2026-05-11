@@ -10,7 +10,9 @@ class ItemsEncoder(ObservationEncoder):
     """
     
     def __init__(self, item_to_id=None, reverse_mapping=None):
-        self.item_to_id = item_to_id or {}
+        if not item_to_id:
+            raise ValueError("ItemsEncoder requires a non-empty mapping!")
+        self.item_to_id = item_to_id
         self.reverse_mapping = reverse_mapping or {}
 
     @property
@@ -25,7 +27,9 @@ class ItemsEncoder(ObservationEncoder):
         item = mon.item
         if item:
             item_key = item.lower().replace(" ", "")
-            entry = self.item_to_id.get(item_key, {})
+            if item_key not in self.item_to_id:
+                raise ValueError(f"Unrecognized item: {item_key}. Update data/pokemon/gen3_items.json")
+            entry = self.item_to_id[item_key]
             vec[0] = float(entry.get("num", 0))
             # Known Flag
             vec[ITEM_ID_DIM] = 1.0

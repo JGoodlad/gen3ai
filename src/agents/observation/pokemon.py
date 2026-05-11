@@ -96,6 +96,9 @@ class PokemonEncoder(ObservationEncoder):
         item_part = vector[POKEMON_ITEMS_OFFSET : POKEMON_ITEMS_OFFSET + self.items_encoder.dimension]
         item_name = self.items_encoder.describe_vector(item_part)
         
+        type_part = vector[POKEMON_TYPES_OFFSET : POKEMON_TYPES_OFFSET + self.type_encoder.dimension]
+        type_name = self.type_encoder.describe_vector(type_part)
+        
         ability_part = vector[POKEMON_ABILITIES_OFFSET : POKEMON_ABILITIES_OFFSET + self.abilities_encoder.dimension]
         ability_name = self.abilities_encoder.describe_vector(ability_part)
         
@@ -105,6 +108,7 @@ class PokemonEncoder(ObservationEncoder):
         return {
             "species": species_desc["name"],
             "hp": f"{vector[POKEMON_HP_OFFSET]*100:.1f}%",
+            "types": type_name,
             "stats": {k: v for k, v in species_desc.items() if k != "name"},
             "status": self._decode_status(vector[POKEMON_CONDITION_OFFSET : POKEMON_CONDITION_OFFSET + 7]),
             "item": item_name,

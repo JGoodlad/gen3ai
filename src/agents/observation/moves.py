@@ -34,11 +34,18 @@ class MovesEncoder(ObservationEncoder):
                 move_id = move.id
                 
                 # Extract metadata from mapping
-                entry = self.mapping.get(move_id, {})
+                if move_id not in self.mapping:
+                    raise ValueError(f"Unrecognized move: {move_id}. Update data/pokemon/gen3_moves.json")
+                entry = self.mapping[move_id]
                 num = entry.get("num", 0)
                 power = entry.get("basePower", move.base_power)
                 secondary = 1.0 if entry.get("hasSecondary") else 0.0
                 recoil = 1.0 if entry.get("hasRecoil") else 0.0
+                
+                # Get type from mapping and convert to ID using TypeEncoder
+                from .types import TypeEncoder
+                move_type = entry.get("type", "Normal").upper()
+                type_id = TypeEncoder.TYPE_TO_IDX.get(move_type, 0)
                 
                 base_idx = i * MOVE_SLOT_DIM
                 # 1. Move ID
@@ -49,6 +56,8 @@ class MovesEncoder(ObservationEncoder):
                 vec[base_idx + 2] = secondary
                 # 4. Recoil Flag
                 vec[base_idx + 3] = recoil
+                # 5. Type ID
+                vec[base_idx + 4] = float(type_id)
                 
                 # Known Flag (Binary)
                 vec[4 * MOVE_SLOT_DIM + i] = 1.0

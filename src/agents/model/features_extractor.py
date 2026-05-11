@@ -10,7 +10,7 @@ class Gen3FeaturesExtractor(torch.nn.Module):
     """
     Custom feature extractor for Gen 3 Pokémon battles.
     Uses a dynamic layout provided by the Observation Encoder to avoid magic constants.
-    Supports latent embeddings for Species, Move, Item, and Ability IDs.
+    Supports shared latent embeddings for Species, Moves, Items, Abilities, and Types.
     """
     def __init__(self, observation_space: spaces.Dict, layout: Dict[str, Any] = None, mappings: Dict[str, Any] = None):
         super().__init__()
@@ -35,16 +35,33 @@ class Gen3FeaturesExtractor(torch.nn.Module):
             layout['max_abilities'],
             layout['ability_embedding_dim']
         )
+        # Shared Type Embedding for both Pokémon and Moves
+        self.type_embedding = torch.nn.Embedding(
+            layout['max_types'],
+            layout['type_embedding_dim']
+        )
         
         # 2. Calculate the size of the enriched vector
         pokemon_full_dim = layout['parts']['our_team']['reshape'][1]
         
         species_growth = layout['species_embedding_dim'] - 1
         moves_growth = 4 * (layout['move_embedding_dim'] - 1)
+        # Each move also gets a type embedding (replacing the 1-dim type ID)
+        move_types_growth = 4 * (layout['type_embedding_dim'] - 1)
         item_growth = layout['item_embedding_dim'] - 1
         ability_growth = layout['ability_embedding_dim'] - 1
+        # Pokemon types (replacing the 8-dim types block with a single embedding sum)
+        pokemon_types_growth = layout['type_embedding_dim'] - 8
         
-        self.enriched_mon_dim = pokemon_full_dim + species_growth + moves_growth + item_growth + ability_growth
+        self.enriched_mon_dim = (
+            pokemon_full_dim + 
+            species_growth + 
+            moves_growth + 
+            move_types_growth + 
+            item_growth + 
+            ability_growth + 
+            pokemon_types_growth
+        )
         
         # 3. Calculate total projection input dimension
         num_pokemon = layout['parts']['our_team']['reshape'][0] + layout['parts']['opp_team']['reshape'][0]
@@ -81,7 +98,8 @@ class Gen3FeaturesExtractor(torch.nn.Module):
                 active_str = " [Actv]" if mon.get('active') else "       "
                 s = mon['stats']
                 stats_str = f"{s['hp']}/{s['atk']}/{s['def']}/{s['spa']}/{s['spd']}/{s['spe']}"
-                print(f"[OUR {i}] {mon['species']:12} | HP: {mon['hp']:6} | Status: {mon['status']:5}{active_str} | {stats_str}")
+                type_str = f"({mon['types']})"
+                print(f"[OUR {i}] {mon['species']:12} {type_str:13} | HP: {mon['hp']:6} | Status: {mon['status']:5}{active_str} | {stats_str}")
                 print(f"  Item: {mon['item']:12} | Ably: {mon['ability']:12} | Moves: {mon.get('moves', [])}")
                 
             print("-" * 30)
@@ -89,7 +107,8 @@ class Gen3FeaturesExtractor(torch.nn.Module):
                 active_str = " [Actv]" if mon.get('active') else "       "
                 s = mon['stats']
                 stats_str = f"{s['hp']}/{s['atk']}/{s['def']}/{s['spa']}/{s['spd']}/{s['spe']}"
-                print(f"[OPP {i}] {mon['species']:12} | HP: {mon['hp']:6} | Status: {mon['status']:5}{active_str} | {stats_str}")
+                type_str = f"({mon['types']})"
+                print(f"[OPP {i}] {mon['species']:12} {type_str:13} | HP: {mon['hp']:6} | Status: {mon['status']:5}{active_str} | {stats_str}")
                 print(f"  Item: {mon['item']:12} | Ably: {mon['ability']:12} | Moves: {mon.get('moves', [])}")
             
             momentum = desc.get('momentum', {})
@@ -132,14 +151,20 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         species_idx = pk_layout['species']['offset']
         species_ids = pokemon_part[:, :, species_idx].long()
         
-        # Move IDs
+        # Move IDs & Move Type IDs
         moves_layout = pk_layout['moves']
         moves_offset = moves_layout['offset']
         move_id_tensors = []
+        move_type_id_tensors = []
         for i in range(4):
             slot_idx = moves_offset + moves_layout['slots'][i]['offset']
+            # Move ID at index 0 of slot
             move_id_tensors.append(pokemon_part[:, :, slot_idx].long().unsqueeze(2))
+            # Move Type ID at index 4 of slot
+            move_type_id_tensors.append(pokemon_part[:, :, slot_idx + 4].long().unsqueeze(2))
+            
         all_move_ids = torch.cat(move_id_tensors, dim=2) # [B, 12, 4]
+        all_move_type_ids = torch.cat(move_type_id_tensors, dim=2) # [B, 12, 4]
         
         # Item ID
         items_layout = pk_layout['items']
@@ -151,6 +176,11 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         ability_idx = abilities_layout['offset'] + abilities_layout['id']['offset']
         ability_ids = pokemon_part[:, :, ability_idx].long() # [B, 12]
         
+        # Pokémon Type IDs (2 IDs in the 'types' block)
+        types_layout = pk_layout['types']
+        type1_ids = pokemon_part[:, :, types_layout['offset']].long()
+        type2_ids = pokemon_part[:, :, types_layout['offset'] + 1].long()
+        
         # 3. Diagnostic Trace
         current_time = time.time()
         if current_time - self.last_trace_time > TRACE_INTERVAL:
@@ -159,47 +189,52 @@ class Gen3FeaturesExtractor(torch.nn.Module):
             
         # 4. Embed Everything
         embedded_species = self.species_embedding(species_ids) # [B, 12, 32]
+        
         embedded_moves = self.move_embedding(all_move_ids) # [B, 12, 4, 16]
         embedded_moves_flat = embedded_moves.reshape(batch_size, 12, -1) # [B, 12, 64]
+        
+        embedded_move_types = self.type_embedding(all_move_type_ids) # [B, 12, 4, 16]
+        embedded_move_types_flat = embedded_move_types.reshape(batch_size, 12, -1) # [B, 12, 64]
+        
         embedded_items = self.item_embedding(item_ids) # [B, 12, 16]
         embedded_abilities = self.ability_embedding(ability_ids) # [B, 12, 16]
         
-        # 5. Construct the enriched Pokemon vector by stitching
+        # Pokémon Types: sum of embeddings (E1 + E2)
+        embedded_t1 = self.type_embedding(type1_ids) # [B, 12, 16]
+        embedded_t2 = self.type_embedding(type2_ids) # [B, 12, 16]
+        embedded_pk_types = embedded_t1 + embedded_t2 # [B, 12, 16]
         
+        # 5. Construct the enriched Pokemon vector by stitching
         # Part A: Stats (between Species (0) and Items (37))
-        # species_idx is 0. items_layout['offset'] is 37.
         part_a = pokemon_part[:, :, species_idx + 1 : items_layout['offset']] # [B, 12, 36]
         
         # Part B: Item remnants (Known flag)
         item_remnant_idx = items_layout['offset'] + items_layout['known']['offset']
         item_remnant = pokemon_part[:, :, item_remnant_idx : item_remnant_idx + 1] # [B, 12, 1]
         
-        # Part C: Types (between Items and Abilities)
-        # items_layout['offset'] + dim(17) = 54. abilities_layout['offset'] is 62.
-        part_c = pokemon_part[:, :, items_layout['offset'] + 17 : abilities_layout['offset']] # [B, 12, 8]
-        
-        # Part D: Ability remnants (Known flag)
+        # Part C: Ability remnants (Known flag)
         ability_remnant_idx = abilities_layout['offset'] + abilities_layout['known']['offset']
         ability_remnant = pokemon_part[:, :, ability_remnant_idx : ability_remnant_idx + 1] # [B, 12, 1]
         
-        # Part E: Condition (between Abilities and Moves)
-        # abilities_layout['offset'] + dim(25) = 87. moves_offset is 95.
-        part_e = pokemon_part[:, :, abilities_layout['offset'] + 25 : moves_offset] # [B, 12, 8]
+        # Part D: Condition (between Abilities and Moves)
+        part_d = pokemon_part[:, :, abilities_layout['offset'] + 25 : moves_offset] # [B, 12, 8]
         
-        # Part F: Move remnants
+        # Part E: Move remnants (Power, Secondary, Recoil - everything but ID and Type)
         move_remnants = []
         for i in range(4):
             slot_start = moves_offset + moves_layout['slots'][i]['offset']
-            slot_dim = moves_layout['slots'][i]['dim']
-            move_remnants.append(pokemon_part[:, :, slot_start + 1 : slot_start + slot_dim])
-        all_move_remnants = torch.cat(move_remnants, dim=2) # [B, 12, 28]
+            # Indices: 1 (Power), 2 (Secondary), 3 (Recoil)
+            move_remnants.append(pokemon_part[:, :, slot_start + 1 : slot_start + 4])
+            # Index 5, 6, 7 are extra remnants in the 8-dim slot
+            move_remnants.append(pokemon_part[:, :, slot_start + 5 : slot_start + 8])
+        all_move_remnants = torch.cat(move_remnants, dim=2) # [B, 12, 24] (4 slots * 6 remnants)
         
-        # Part G: Move Known Flags
+        # Part F: Move Known Flags
         known_idx = moves_offset + moves_layout['known']['offset']
         known_dim = moves_layout['known']['dim']
         known_flags = pokemon_part[:, :, known_idx : known_idx + known_dim] # [B, 12, 4]
         
-        # Part H: HP and Active Flag
+        # Part G: HP and Active Flag
         hp_and_active = pokemon_part[:, :, -2:] # [B, 12, 2]
         
         # Final stitch
@@ -208,19 +243,20 @@ class Gen3FeaturesExtractor(torch.nn.Module):
             part_a,                # 36
             embedded_items,        # 16
             item_remnant,          # 1
-            part_c,                # 8
+            embedded_pk_types,     # 16 (Replaced the 8-dim types block)
             embedded_abilities,    # 16
             ability_remnant,       # 1
-            part_e,                # 8
+            part_d,                # 8
             embedded_moves_flat,   # 64
-            all_move_remnants,     # 28
+            embedded_move_types_flat, # 64
+            all_move_remnants,     # 24
             known_flags,           # 4
             hp_and_active          # 2
-        ], dim=2) # Total: 32+36+16+1+8+16+1+8+64+28+4+2 = 216? 
-        # Wait, let's re-calculate. 
-        # Original: 133.
-        # Species: +31. Move: 4*+15 = +60. Item: +15. Ability: +15.
-        # 133 + 31 + 60 + 15 + 15 = 254.
+        ], dim=2) # Total: 32+36+16+1+16+16+1+8+64+64+24+4+2 = 284?
+        # Wait, let's re-calculate:
+        # Original: 133
+        # Species: +31. Move IDs: +60. Move Types: +60. Items: +15. Abilities: +15. PK Types: +8.
+        # 133 + 31 + 60 + 60 + 15 + 15 + 8 = 322.
         
         pokemon_flat = pokemon_enriched.reshape(batch_size, -1)
         combined = torch.cat([pokemon_flat, remaining_part], dim=1)

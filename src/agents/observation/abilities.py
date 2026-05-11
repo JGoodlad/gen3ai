@@ -10,7 +10,9 @@ class AbilitiesEncoder(ObservationEncoder):
     """
     
     def __init__(self, ability_to_id=None, reverse_mapping=None):
-        self.ability_to_id = ability_to_id or {}
+        if not ability_to_id:
+            raise ValueError("AbilitiesEncoder requires a non-empty mapping!")
+        self.ability_to_id = ability_to_id
         self.reverse_mapping = reverse_mapping or {}
 
     @property
@@ -27,7 +29,9 @@ class AbilitiesEncoder(ObservationEncoder):
         ability = mon.ability
         if ability:
             ability_key = ability.lower().replace(" ", "")
-            entry = self.ability_to_id.get(ability_key, {})
+            if ability_key not in self.ability_to_id:
+                raise ValueError(f"Unrecognized ability: {ability_key}. Update data/pokemon/gen3_abilities.json")
+            entry = self.ability_to_id[ability_key]
             vec[0] = float(entry.get("num", 0))
             # Known Flag
             # For our team, it's always known. For opponent, if it's set, it's revealed.
