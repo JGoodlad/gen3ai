@@ -41,6 +41,14 @@ class Gen3FeaturesExtractor(torch.nn.Module):
             layout['type_embedding_dim']
         )
         
+        # 1.5 Shared Move Processor (Step 1)
+        move_input_dim = layout['move_embedding_dim'] + layout['type_embedding_dim'] + 6 + 1
+        self.move_network = torch.nn.Sequential(
+            torch.nn.Linear(move_input_dim, 64),
+            torch.nn.ReLU(),
+            torch.nn.Linear(64, 32)
+        )
+        
         # 2. Dynamic Input Dimension Discovery (Dummy Forward)
         # We run a single fake observation through the logic to determine the exact projection dimension.
         with torch.no_grad():
@@ -193,11 +201,7 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         embedded_species = self.species_embedding(species_ids) # [B, 12, 32]
         
         embedded_moves = self.move_embedding(all_move_ids) # [B, 12, 4, 16]
-        embedded_moves_flat = embedded_moves.reshape(batch_size, 12, -1) # [B, 12, 64]
-        
         embedded_move_types = self.type_embedding(all_move_type_ids) # [B, 12, 4, 16]
-        embedded_move_types_flat = embedded_move_types.reshape(batch_size, 12, -1) # [B, 12, 64]
-        
         embedded_items = self.item_embedding(item_ids) # [B, 12, 16]
         embedded_abilities = self.ability_embedding(ability_ids) # [B, 12, 16]
         
@@ -240,6 +244,23 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         hp_and_active = pokemon_part[:, :, -2:] # [B, 12, 2]
         
         # Final stitch
+        # --- SHARED MOVE PROCESSING (Step 1) ---
+        # Reshape move remnants and flags to align with the 4 slots
+        move_remnants_reshaped = all_move_remnants.reshape(batch_size, 12, 4, 6)
+        known_flags_reshaped = known_flags.reshape(batch_size, 12, 4, 1)
+        
+        # Combine all move features into [B, 12, 4, 39]
+        move_features = torch.cat([
+            embedded_moves, 
+            embedded_move_types, 
+            move_remnants_reshaped, 
+            known_flags_reshaped
+        ], dim=3)
+        
+        # Process through shared network
+        processed_moves = self.move_network(move_features.reshape(-1, move_features.shape[-1]))
+        processed_moves = processed_moves.reshape(batch_size, 12, -1) # [B, 12, 4 * 32 = 128]
+        
         pokemon_enriched = torch.cat([
             embedded_species,      # 32
             part_a,                # 36
@@ -249,10 +270,7 @@ class Gen3FeaturesExtractor(torch.nn.Module):
             embedded_abilities,    # 16
             ability_remnant,       # 1
             part_d,                # 8
-            embedded_moves_flat,   # 64
-            embedded_move_types_flat, # 64
-            all_move_remnants,     # 24
-            known_flags,           # 4
+            processed_moves,       # 128 (Shared Processor Output)
             hp_and_active          # 2
         ], dim=2)
         

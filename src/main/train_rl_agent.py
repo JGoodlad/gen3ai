@@ -31,6 +31,7 @@ from agents.observation.reactive import ReactiveEncoder
 from agents.observation.global_env import GlobalEnvEncoder
 from utils.teambuilder import Gen3Teambuilder
 from utils.team_loader import TeamLoader
+from agents.training.callbacks import ReplayCallback
 
 from poke_env.player import RandomPlayer, SimpleHeuristicsPlayer
 from poke_env import AccountConfiguration, LocalhostServerConfiguration
@@ -68,6 +69,8 @@ class MaskedActorCriticPolicy(ActorCriticPolicy):
         mask = torch.where(self._mask == 1, 0.0, torch.tensor(float("-inf"), device=self.device))
             
         return self.action_dist.proba_distribution(action_logits + mask)
+
+
 
 def load_mappings():
     mappings = {}
@@ -157,8 +160,8 @@ class Gen3Env(SinglesEnv):
                 action_val = action_val[0]
             
             if isinstance(action_val, (int, np.integer)) and action_val < 6:
-                if self.switch_count < 5:
-                    reward += 0.1
+                if self.switch_count < 15:
+                    reward += 0.4
                     self.switch_count += 1
                 
         return reward
@@ -219,6 +222,7 @@ async def main():
     parser.add_argument("--batch-size", type=int, default=4096, help="PPO mini-batch size")
     parser.add_argument("--n-epochs", type=int, default=4, help="PPO optimization epochs")
     parser.add_argument("--lr", type=float, default=3e-4, help="Learning rate")
+    parser.add_argument("--ent-coef", type=float, default=0.02, help="Entropy coefficient (exploration bonus)")
     parser.add_argument("--n-steps", type=int, default=2048, help="Steps per environment per rollout")
     
     args = parser.parse_args()
@@ -336,6 +340,7 @@ async def main():
 
         print(f"Loading existing model from {model_path}")
         model = PPO.load(model_path, env=env, device=args.device, tensorboard_log="./tensorboard/")
+        model.ent_coef = args.ent_coef # Allow overriding entropy during continuation
         
         if args.eval_only:
             await evaluate_model_random(model)
@@ -402,7 +407,7 @@ async def main():
             batch_size=args.batch_size,
             n_epochs=args.n_epochs,
             gamma=0.99,
-            ent_coef=0.01, # Increased entropy to encourage switching
+            ent_coef=args.ent_coef, # Use the CLI argument
             device=args.device,
             seed=args.seed,
             tensorboard_log="./tensorboard/",
@@ -426,7 +431,16 @@ async def main():
             name_prefix="checkpoint"
         )
         
-        callbacks = [checkpoint_callback]
+        replay_callback = ReplayCallback(
+            model_dir=model_dir,
+            mappings=mappings,
+            trainee_teambuilder=trainee_teambuilder,
+            opponent_teambuilder=opponent_teambuilder,
+            save_freq=100000, # Start at 100k
+            n_replays=3
+        )
+        
+        callbacks = [checkpoint_callback, replay_callback]
         
         if not args.debug:
             from stable_baselines3.common.callbacks import EvalCallback

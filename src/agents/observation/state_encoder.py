@@ -17,7 +17,9 @@ from .constants import (
     OFFSET_OPP_TEAM,
     OFFSET_CONTEXT,
     OFFSET_GLOBAL,
-    OFFSET_REACTIVE
+    OFFSET_REACTIVE,
+    REACTIVE_DIM,
+    ACTIVE_CONTEXT_DIM
 )
 from poke_env.battle.abstract_battle import AbstractBattle
 from typing import Dict, Any, List, Tuple
@@ -55,12 +57,12 @@ class Gen3ObservationEncoder(ObservationEncoder):
 
     @property
     def dimension(self) -> int:
-        return 1324
+        return OFFSET_REACTIVE + REACTIVE_DIM
 
     def encode(self, battle: AbstractBattle) -> np.ndarray:
         vec = np.zeros(self.dimension, dtype=np.float32)
         
-        # 1. Our Team (0-797)
+        # 1. Our Team
         our_team_list = list(battle.team.values())
         for i in range(TEAM_SIZE):
             mon = our_team_list[i] if i < len(our_team_list) else None
@@ -71,7 +73,7 @@ class Gen3ObservationEncoder(ObservationEncoder):
             vec[start : start + POKEMON_VECTOR_DIM] = mon_vec
             vec[start + POKEMON_VECTOR_DIM] = is_active
             
-        # 2. Opponent Team (798-1595)
+        # 2. Opponent Team
         # We use the stable insertion order of the battle.opponent_team dict
         # as our slot mapping. This ensures each Pokemon object has a unique
         # slot regardless of species collisions (important for Transform/Ditto).
@@ -91,15 +93,15 @@ class Gen3ObservationEncoder(ObservationEncoder):
             vec[start : start + POKEMON_VECTOR_DIM] = mon_vec
             vec[start + POKEMON_VECTOR_DIM] = is_active
             
-        # 3. Active Context (1596-1657)
-        vec[OFFSET_CONTEXT : OFFSET_CONTEXT+31] = self.active_context_encoder.encode(battle.active_pokemon, battle)
-        vec[OFFSET_CONTEXT+31 : OFFSET_CONTEXT+62] = self.active_context_encoder.encode(battle.opponent_active_pokemon, battle)
+        # 3. Active Context
+        vec[OFFSET_CONTEXT : OFFSET_CONTEXT + ACTIVE_CONTEXT_DIM] = self.active_context_encoder.encode(battle.active_pokemon, battle)
+        vec[OFFSET_CONTEXT + ACTIVE_CONTEXT_DIM : OFFSET_CONTEXT + (2 * ACTIVE_CONTEXT_DIM)] = self.active_context_encoder.encode(battle.opponent_active_pokemon, battle)
         
-        # 4. Global Environment (1658-1668)
-        vec[OFFSET_GLOBAL : OFFSET_GLOBAL+11] = self.global_env_encoder.encode(battle)
+        # 4. Global Environment
+        vec[OFFSET_GLOBAL : OFFSET_GLOBAL + 11] = self.global_env_encoder.encode(battle)
         
-        # 5. Reactive Features (1669-1683)
-        vec[OFFSET_REACTIVE : OFFSET_REACTIVE+15] = self.reactive_encoder.encode(battle)
+        # 5. Reactive Features
+        vec[OFFSET_REACTIVE : OFFSET_REACTIVE + REACTIVE_DIM] = self.reactive_encoder.encode(battle)
         
         return vec
 
