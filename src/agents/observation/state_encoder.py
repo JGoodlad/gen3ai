@@ -10,6 +10,7 @@ from .abilities import AbilitiesEncoder
 from .moves import MovesEncoder
 from .reactive import ReactiveEncoder
 from .constants import (
+    POKEMON_VECTOR_DIM,
     POKEMON_FULL_DIM,
     TEAM_SIZE,
     OFFSET_OUR_TEAM,
@@ -67,8 +68,8 @@ class Gen3ObservationEncoder(ObservationEncoder):
             is_active = 1.0 if (mon and mon.active) else 0.0
             
             start = OFFSET_OUR_TEAM + (i * POKEMON_FULL_DIM)
-            vec[start : start + 132] = mon_vec
-            vec[start + 132] = is_active
+            vec[start : start + POKEMON_VECTOR_DIM] = mon_vec
+            vec[start + POKEMON_VECTOR_DIM] = is_active
             
         # 2. Opponent Team (798-1595)
         # We use the stable insertion order of the battle.opponent_team dict
@@ -87,8 +88,8 @@ class Gen3ObservationEncoder(ObservationEncoder):
             is_active = 1.0 if (mon and mon is active_opp) else 0.0
             
             start = OFFSET_OPP_TEAM + (i * POKEMON_FULL_DIM)
-            vec[start : start + 132] = mon_vec
-            vec[start + 132] = is_active
+            vec[start : start + POKEMON_VECTOR_DIM] = mon_vec
+            vec[start + POKEMON_VECTOR_DIM] = is_active
             
         # 3. Active Context (1596-1657)
         vec[OFFSET_CONTEXT : OFFSET_CONTEXT+31] = self.active_context_encoder.encode(battle.active_pokemon, battle)
@@ -158,16 +159,16 @@ class Gen3ObservationEncoder(ObservationEncoder):
         # 1. Teams
         for i in range(TEAM_SIZE):
             start = OFFSET_OUR_TEAM + (i * POKEMON_FULL_DIM)
-            mon_vec = vector[start : start + 132]
-            is_active = vector[start + 132] > 0.5
+            mon_vec = vector[start : start + POKEMON_VECTOR_DIM]
+            is_active = vector[start + POKEMON_VECTOR_DIM] > 0.5
             if np.any(mon_vec):
                 mon_desc = self.pokemon_encoder.describe_vector(mon_vec)
                 mon_desc["active"] = is_active
                 desc["our_team"].append(mon_desc)
                 
             start_opp = OFFSET_OPP_TEAM + (i * POKEMON_FULL_DIM)
-            opp_vec = vector[start_opp : start_opp + 132]
-            is_active_opp = vector[start_opp + 132] > 0.5
+            opp_vec = vector[start_opp : start_opp + POKEMON_VECTOR_DIM]
+            is_active_opp = vector[start_opp + POKEMON_VECTOR_DIM] > 0.5
             if np.any(opp_vec):
                 opp_desc = self.pokemon_encoder.describe_vector(opp_vec)
                 opp_desc["active"] = is_active_opp

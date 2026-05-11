@@ -212,6 +212,7 @@ async def main():
     parser.add_argument("--n-envs", type=int, default=32, help="Number of parallel environments")
     parser.add_argument("--device", type=str, default="auto", help="Device to use (cpu, cuda, or auto)")
     parser.add_argument("--eval-battles", type=int, default=100, help="Battles per evaluation opponent")
+    parser.add_argument("--eval-concurrency", type=int, default=100, help="Concurrent battles during evaluation")
     parser.add_argument("--seed", type=int, default=42, help="Random seed for reproducibility")
 
     # --- Hyperparameter Flags (Optimized for GPU) ---
@@ -279,7 +280,7 @@ async def main():
 
     async def evaluate_model_random(model):
         ts = datetime.now().strftime('%H%M%S')
-        print(f"\nStarting Evaluation (Session {ts}, Battles: {args.eval_battles})...")
+        print(f"\nStarting Evaluation (Session {ts}, Battles: {args.eval_battles}, Concurrency: {args.eval_concurrency})...")
         
         rl_player = RLPlayer(
             model=model,
@@ -288,7 +289,7 @@ async def main():
             server_configuration=LocalhostServerConfiguration,
             mappings=mappings,
             account_configuration=AccountConfiguration(f"RLEval{ts}", "password"),
-            max_concurrent_battles=50
+            max_concurrent_battles=args.eval_concurrency
         )
         
         random_player = RandomPlayer(
@@ -296,7 +297,7 @@ async def main():
             team=opponent_teambuilder,
             server_configuration=LocalhostServerConfiguration,
             account_configuration=AccountConfiguration(f"RandEval{ts}", "password"),
-            max_concurrent_battles=50
+            max_concurrent_battles=args.eval_concurrency
         )
         
         heuristic_player = SimpleHeuristicsPlayer(
@@ -304,17 +305,21 @@ async def main():
             team=opponent_teambuilder,
             server_configuration=LocalhostServerConfiguration,
             account_configuration=AccountConfiguration(f"HeurEval{ts}", "password"),
-            max_concurrent_battles=50
+            max_concurrent_battles=args.eval_concurrency
         )
 
         print(f"Evaluating against RandomPlayer [{args.eval_battles} battles]...")
+        start_time = datetime.now()
         await rl_player.battle_against(random_player, n_battles=args.eval_battles)
-        print(f"Win rate vs Random: {rl_player.n_won_battles / args.eval_battles * 100:.1f}%")
+        duration = datetime.now() - start_time
+        print(f"Win rate vs Random: {rl_player.n_won_battles / args.eval_battles * 100:.1f}% (Time: {duration})")
         
         rl_player.reset_battles()
         print(f"Evaluating against HeuristicPlayer [{args.eval_battles} battles]...")
+        start_time = datetime.now()
         await rl_player.battle_against(heuristic_player, n_battles=args.eval_battles)
-        print(f"Win rate vs Heuristic: {rl_player.n_won_battles / args.eval_battles * 100:.1f}%")
+        duration = datetime.now() - start_time
+        print(f"Win rate vs Heuristic: {rl_player.n_won_battles / args.eval_battles * 100:.1f}% (Time: {duration})")
 
     if args.model:
         model_path = args.model
