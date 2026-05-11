@@ -80,12 +80,32 @@ class PokemonEncoder(ObservationEncoder):
 
     def get_layout(self) -> Dict[str, Any]:
         return {
-            "species": {"offset": POKEMON_SPECIES_OFFSET, "dim": self.species_encoder.dimension},
-            "items": {"offset": POKEMON_ITEMS_OFFSET, "dim": self.items_encoder.dimension},
-            "types": {"offset": POKEMON_TYPES_OFFSET, "dim": self.type_encoder.dimension},
-            "abilities": {"offset": POKEMON_ABILITIES_OFFSET, "dim": self.abilities_encoder.dimension},
+            "species": {
+                "offset": POKEMON_SPECIES_OFFSET, 
+                "dim": self.species_encoder.dimension,
+                "layout": self.species_encoder.get_layout()
+            },
+            "items": {
+                "offset": POKEMON_ITEMS_OFFSET, 
+                "dim": self.items_encoder.dimension,
+                "layout": self.items_encoder.get_layout()
+            },
+            "types": {
+                "offset": POKEMON_TYPES_OFFSET, 
+                "dim": self.type_encoder.dimension,
+                "layout": self.type_encoder.get_layout()
+            },
+            "abilities": {
+                "offset": POKEMON_ABILITIES_OFFSET, 
+                "dim": self.abilities_encoder.dimension,
+                "layout": self.abilities_encoder.get_layout()
+            },
             "condition": {"offset": POKEMON_CONDITION_OFFSET, "dim": 8},
-            "moves": {"offset": POKEMON_MOVES_OFFSET, "dim": self.moves_encoder.dimension},
+            "moves": {
+                "offset": POKEMON_MOVES_OFFSET, 
+                "dim": self.moves_encoder.dimension,
+                "layout": self.moves_encoder.get_layout()
+            },
             "hp": {"offset": POKEMON_HP_OFFSET, "dim": 1}
         }
 

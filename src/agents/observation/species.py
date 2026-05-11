@@ -52,8 +52,8 @@ class SpeciesEncoder(ObservationEncoder):
 
     def get_layout(self) -> Dict[str, Any]:
         return {
-            "species_id": (0, 1),
-            "base_stats": (1, 6)
+            "species_id": {"offset": 0, "dim": 1},
+            "base_stats": {"offset": 1, "dim": 6}
         }
 
     def describe_vector(self, vector: np.ndarray) -> Dict[str, Any]:

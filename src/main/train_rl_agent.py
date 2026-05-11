@@ -62,9 +62,10 @@ class MaskedActorCriticPolicy(ActorCriticPolicy):
         return super().evaluate_actions(obs, actions)
 
     def _get_action_dist_from_latent(self, latent_pi):
+        import torch # Local import to ensure availability in all scopes
         action_logits = self.action_net(latent_pi)
         # self._mask is (batch, 10). 1 for valid, 0 for invalid.
-        mask = torch.where(self._mask == 1, 0.0, float("-inf"))
+        mask = torch.where(self._mask == 1, 0.0, torch.tensor(float("-inf"), device=self.device))
             
         return self.action_dist.proba_distribution(action_logits + mask)
 
@@ -149,10 +150,16 @@ class Gen3Env(SinglesEnv):
         
         # --- Switching Subsidy ---
         # Reward the first 5 switches of a battle to encourage exploration
-        if hasattr(self, "_last_action") and self._last_action < 6:
-            if self.switch_count < 5:
-                reward += 0.1
-                self.switch_count += 1
+        if hasattr(self, "_last_action"):
+            action_val = self._last_action
+            # Handle cases where action might be wrapped in a list or array
+            if isinstance(action_val, (np.ndarray, list)) and len(action_val) > 0:
+                action_val = action_val[0]
+            
+            if isinstance(action_val, (int, np.integer)) and action_val < 6:
+                if self.switch_count < 5:
+                    reward += 0.1
+                    self.switch_count += 1
                 
         return reward
 
@@ -166,6 +173,35 @@ class Gen3Env(SinglesEnv):
         return super().reset(*args, **kwargs)
 
 async def main():
+    # --- Pre-flight Checks ---
+    try:
+        import tensorboard
+    except ImportError:
+        print("\n" + "🛑" * 30)
+        print("🛑 ERROR: Tensorboard is NOT installed.")
+        print("🛑 Training requires tensorboard for professional logging.")
+        print("🛑 Please run: pip install tensorboard")
+        print("🛑" * 30 + "\n")
+        os._exit(1)
+
+    # --- Fail-Fast Handlers ---
+    def global_exception_handler(exctype, value, tb):
+        print("\n" + "🛑" * 20)
+        print("🛑 FATAL ERROR DETECTED - FAILING FAST")
+        print("🛑" * 20)
+        traceback.print_exception(exctype, value, tb)
+        os._exit(1) # Force immediate termination of all threads
+
+    sys.excepthook = global_exception_handler
+    
+    def asyncio_exception_handler(loop, context):
+        msg = context.get("exception", context["message"])
+        print(f"\n🛑 Asyncio Error: {msg}")
+        os._exit(1)
+        
+    loop = asyncio.get_event_loop()
+    loop.set_exception_handler(asyncio_exception_handler)
+
     parser = argparse.ArgumentParser(description="Train or Evaluate Gen 3 OU RL Agent")
     
     # --- Operational Flags ---
@@ -379,6 +415,12 @@ async def main():
         signal.signal(signal.SIGINT, signal_handler)
         signal.signal(signal.SIGTERM, signal_handler)
 
+        checkpoint_callback = CheckpointCallback(
+            save_freq=50000, 
+            save_path=model_dir,
+            name_prefix="checkpoint"
+        )
+        
         callbacks = [checkpoint_callback]
         
         if not args.debug:
@@ -419,8 +461,11 @@ async def main():
         try:
             model.learn(total_timesteps=args.steps, callback=callbacks, reset_num_timesteps=False)
         except Exception as e:
-            print(f"Training interrupted by exception: {e}")
+            print("\n" + "🛑" * 30)
+            print(f"🛑 TRAINING CRASHED: {e}")
+            print("🛑" * 30)
             traceback.print_exc()
+            os._exit(1) # Stop immediately, do not proceed to evaluation
             final_path = os.path.join(model_dir, "final_model_exception")
             model.save(final_path)
             

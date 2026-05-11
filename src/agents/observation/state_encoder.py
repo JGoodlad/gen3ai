@@ -54,7 +54,7 @@ class Gen3ObservationEncoder(ObservationEncoder):
 
     @property
     def dimension(self) -> int:
-        return 1684
+        return 1324
 
     def encode(self, battle: AbstractBattle) -> np.ndarray:
         vec = np.zeros(self.dimension, dtype=np.float32)
@@ -134,15 +134,15 @@ class Gen3ObservationEncoder(ObservationEncoder):
             },
             "pokemon": pokemon_layout,
             "total_dim": self.dimension,
-            "max_species": 387,
+            "max_species": 400,
             "species_embedding_dim": 32,
-            "max_moves": 371,
+            "max_moves": 400,
             "move_embedding_dim": 16,
-            "max_items": 130,
+            "max_items": 600,
             "item_embedding_dim": 16,
-            "max_abilities": 77,
+            "max_abilities": 100,
             "ability_embedding_dim": 16,
-            "max_types": 19, # 18 types + ???
+            "max_types": 20, # 18 types + placeholders
             "type_embedding_dim": 16
         }
 

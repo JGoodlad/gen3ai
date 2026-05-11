@@ -28,7 +28,14 @@ class AbilitiesEncoder(ObservationEncoder):
         # 1. Revealed Ability
         ability = mon.ability
         if ability:
-            ability_key = ability.lower().replace(" ", "")
+            ability_key = ability.lower().replace(" ", "").replace("_", "")
+            
+            # Handle poke-env's special "unknown_ability" placeholder
+            if ability_key == "unknownability":
+                vec[0] = 0.0
+                vec[ABILITY_SLOT_DIM] = 0.0
+                return vec
+
             if ability_key not in self.ability_to_id:
                 raise ValueError(f"Unrecognized ability: {ability_key}. Update data/pokemon/gen3_abilities.json")
             entry = self.ability_to_id[ability_key]

@@ -26,7 +26,14 @@ class ItemsEncoder(ObservationEncoder):
             
         item = mon.item
         if item:
-            item_key = item.lower().replace(" ", "")
+            item_key = item.lower().replace(" ", "").replace("_", "")
+            
+            # Handle poke-env's special "unknown_item" placeholder
+            if item_key == "unknownitem":
+                vec[0] = 0.0
+                vec[ITEM_ID_DIM] = 0.0
+                return vec
+
             if item_key not in self.item_to_id:
                 raise ValueError(f"Unrecognized item: {item_key}. Update data/pokemon/gen3_items.json")
             entry = self.item_to_id[item_key]
