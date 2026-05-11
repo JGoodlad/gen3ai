@@ -36,8 +36,32 @@ Track reward curves and learning metrics in real-time.
 - **Python Path**: `/home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3`
 - **Device**: `cuda` (NVIDIA RTX 3080 Ti)
 
-## 💡 Troubleshooting
-
-- **"Connection Reset"**: The script uses a 0.1s stagger. If it still crashes, increase the stagger in `src/main/train_rl_agent.py`.
-- **"Broken Pipe"**: Ensure `multiprocessing.set_start_method('spawn')` is called at the very top of `train_rl_agent.py`.
 - **Username Errors**: Avoid underscores in usernames; Showdown strips them and breaks the `poke-env` handshake.
+
+## 🏎️ Tuning for Performance
+
+To get the most out of your 16-core CPU and RTX 3080 Ti:
+
+### 1. Parallel Environments (`--n-envs`)
+- **Current Sweet Spot**: 32 envs (~50% CPU, ~50% GPU).
+- **Max Effort**: 48-64 envs. 
+- *Note*: Going above 64 on a 16-core machine may cause diminishing returns due to context switching.
+
+### 2. Showdown Workers
+If you increase `--n-envs`, you must also increase Showdown workers to prevent a bottleneck.
+- **Location**: `deps/pokemon-showdown/config/config.js`
+- **Settings**:
+  - `simulator: 8` (The primary bottleneck; handle battle logic)
+  - `network: 4` (Handles WebSocket traffic)
+  - `validator: 4` (Handles team validation)
+
+### 3. Monitoring the "Gauges"
+Run this command to see if you are bottlenecked:
+```bash
+# Check CPU usage (Look for %id - higher is more idle)
+top -bn1 | head -n 20
+
+# Check GPU usage (Look for GPU-Util and Pwr:Usage)
+nvidia-smi
+```
+- **Ideal State**: CPU idle at 20-30%, GPU util at 50-70%.
