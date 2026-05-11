@@ -395,7 +395,7 @@ async def main():
             mappings=mappings,
             trainee_teambuilder=trainee_teambuilder,
             opponent_teambuilder=opponent_teambuilder,
-            save_freq=5000, # Set low for verification
+            save_freq=100000, # Start progressive scaling at 100k
             n_replays=3
         )
         

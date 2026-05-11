@@ -119,8 +119,8 @@ class ReplayCallback(BaseCallback):
     def _on_step(self) -> bool:
         if self.num_timesteps - self.last_save >= self.save_freq:
             self.last_save = self.num_timesteps
-            # Decreasing rate logic (max 1M step interval)
-            self.save_freq = min(1_000_000, int(self.save_freq * 1.5))
+            # Progressive scaling capped at 2M steps
+            self.save_freq = min(2_000_000, int(self.save_freq * 1.5))
             
             step_dir = os.path.join(self.replay_dir, f"step_{self.num_timesteps}")
             os.makedirs(step_dir, exist_ok=True)
