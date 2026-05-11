@@ -47,12 +47,23 @@ class StatTrackingRLPlayer(RLPlayer):
         obs_dict = {"observation": obs_tensor, "action_mask": mask_tensor}
 
         with torch.no_grad():
+            # Get raw distribution from the policy
             dist = self.model.policy.get_distribution(obs_dict)
-            probs = dist.distribution.probs[0].cpu().numpy()
-            action_idx = dist.get_actions(deterministic=True)
-        
-        action_tensor = action_idx[0]
-        idx = action_tensor.item()
+            logits = dist.distribution.logits
+            
+            # Apply mask: Set illegal actions to a very low value (-1e9)
+            masked_logits = logits + (mask_tensor - 1.0) * 1e9
+            
+            # Get the best legal action index
+            idx = torch.argmax(masked_logits, dim=1).item()
+            
+            # Verify legality (Strict Mode)
+            if mask[idx] == 0:
+                raise ValueError(f"STRICT MODE FAILURE: Replay player picked illegal action {idx}. Mask: {mask}")
+            
+            # Recalculate probabilities for logging
+            probs = torch.softmax(masked_logits, dim=1)[0].cpu().numpy()
+            
         stats = self.battle_summaries[battle.battle_tag]
         
         # Log probabilities and mask for this turn
@@ -140,8 +151,8 @@ class ReplayCallback(BaseCallback):
             # Use threading to run async battles without blocking SB3's main loop
             thread = threading.Thread(target=self._run_async_battles, args=(step_dir,))
             thread.start()
-            # We don't join here to allow training to continue while replays are recorded
-            # thread.join() 
+            # We join here to ensure replays are fully recorded before continuing
+            thread.join() 
             
         return True
 
