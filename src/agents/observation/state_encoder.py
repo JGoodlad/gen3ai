@@ -23,6 +23,50 @@ from .constants import (
 )
 from poke_env.battle.abstract_battle import AbstractBattle
 from typing import Dict, Any, List, Tuple
+import json
+import os
+
+def load_mappings():
+    """Loads move, species, and item mappings with validation."""
+    mappings = {}
+    mapping_files = {
+        "species": "data/pokemon/gen3_species.json",
+        "moves": "data/pokemon/gen3_moves.json",
+        "abilities": "data/pokemon/gen3_abilities.json",
+        "items": "data/pokemon/gen3_items.json"
+    }
+    for key, path in mapping_files.items():
+        if not os.path.exists(path):
+            raise FileNotFoundError(f"CRITICAL: Mapping file missing: {path}. Run data generation script first!")
+        
+        with open(path, "r") as f:
+            data = json.load(f)
+            if not data:
+                raise ValueError(f"CRITICAL: Mapping file is empty: {path}")
+            # Normalize data: Ensure every entry is a dict with a 'num' key
+            normalized = {}
+            for name, val in data.items():
+                if isinstance(val, dict):
+                    normalized[name] = val
+                else:
+                    normalized[name] = {"num": int(val)}
+            mappings[key] = normalized
+            
+    # Pre-compute reverse mappings for IDs to names
+    mappings["reverse"] = {}
+    for category in ["species", "moves", "abilities", "items"]:
+        rev = {}
+        for name, data in mappings[category].items():
+            if isinstance(data, dict) and "num" in data:
+                rev[data["num"]] = name
+            elif isinstance(data, (int, float)):
+                rev[int(data)] = name
+        mappings["reverse"][category] = rev
+            
+    return mappings
+
+def get_observation_encoder(mappings):
+    return Gen3ObservationEncoder(mappings)
 
 class Gen3ObservationEncoder(ObservationEncoder):
     """

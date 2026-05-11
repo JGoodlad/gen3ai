@@ -8,13 +8,14 @@ import numpy as np
 import torch
 
 class RLPlayer(Player):
-    def __init__(self, model, team, battle_format, server_configuration, mappings=None, account_configuration=None, max_concurrent_battles=10):
+    def __init__(self, model, team, battle_format, server_configuration, mappings=None, account_configuration=None, max_concurrent_battles=10, **kwargs):
         super().__init__(
             battle_format=battle_format,
             team=team,
             server_configuration=server_configuration,
             account_configuration=account_configuration,
             max_concurrent_battles=max_concurrent_battles,
+            **kwargs
         )
         self.model = model
         self.mappings = mappings

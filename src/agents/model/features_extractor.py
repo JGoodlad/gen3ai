@@ -49,6 +49,14 @@ class Gen3FeaturesExtractor(torch.nn.Module):
             torch.nn.Linear(64, 32)
         )
         
+        # 1.6 Pokémon Role Encoder (Step 2)
+        # pokemon_enriched dim is 256 (Species: 32, Stats: 36, Item: 16+1, Types: 16, Ability: 16+1, Condition: 8, Moves: 128, HP: 2)
+        self.role_encoder = torch.nn.Sequential(
+            torch.nn.Linear(226, 256),
+            torch.nn.ReLU(),
+            torch.nn.Linear(256, 128) # Final Role Token Size
+        )
+        
         # 2. Dynamic Input Dimension Discovery (Dummy Forward)
         # We run a single fake observation through the logic to determine the exact projection dimension.
         with torch.no_grad():
@@ -272,9 +280,14 @@ class Gen3FeaturesExtractor(torch.nn.Module):
             part_d,                # 8
             processed_moves,       # 128 (Shared Processor Output)
             hp_and_active          # 2
-        ], dim=2)
+        ], dim=2) # [B, 12, 256]
         
-        pokemon_flat = pokemon_enriched.reshape(batch_size, -1)
+        # --- POKÉMON ROLE ENCODER (Step 2) ---
+        # Reshape to [B*12, 226] for shared processing
+        role_tokens = self.role_encoder(pokemon_enriched.reshape(-1, 226))
+        role_tokens = role_tokens.reshape(batch_size, 12, 128) # [B, 12, 128]
+        
+        pokemon_flat = role_tokens.reshape(batch_size, -1) # [B, 1536]
         combined = torch.cat([pokemon_flat, remaining_part], dim=1)
         return combined
 

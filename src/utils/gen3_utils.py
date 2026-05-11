@@ -40,7 +40,6 @@ def fix_gen3_hp_ivs(pokemon_list):
         hp_type = match.group(1).capitalize() if match else normalized.replace("hiddenpower", "").capitalize()
         
         if hp_type in GEN3_HP_IVS:
-            print(f"Fixing IVs for {mon.species} with {hp_move}...")
             indices = {"hp": 0, "atk": 1, "def": 2, "spa": 3, "spd": 4, "spe": 5}
             for stat, value in GEN3_HP_IVS[hp_type].items():
                 mon.ivs[indices[stat]] = value

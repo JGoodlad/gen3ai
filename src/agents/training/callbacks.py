@@ -7,12 +7,10 @@ import torch
 from datetime import datetime
 from stable_baselines3.common.callbacks import BaseCallback
 from poke_env.player import Player
-from poke_env.player.battle_order import MoveOrder, DefaultBattleOrder
+from poke_env.player.battle_order import BattleOrder, DefaultBattleOrder
 from poke_env.environment.singles_env import SinglesEnv
-from poke_env.player.random_player import RandomPlayer
-from poke_env.player.baselines import SimpleHeuristicsPlayer
-from poke_env.data import LocalhostServerConfiguration
-from poke_env.player.account_configuration import AccountConfiguration
+from poke_env.player import Player, RandomPlayer, SimpleHeuristicsPlayer
+from poke_env.ps_client import LocalhostServerConfiguration, AccountConfiguration
 from agents.rl_agent import RLPlayer
 from agents.action.mask_generator import Gen3ActionMasker
 
@@ -38,9 +36,7 @@ class StatTrackingRLPlayer(RLPlayer):
         
         # Logic to get action index and granular probabilities
         if self.observation_encoder is None:
-            # Avoid circular import by importing here if needed, 
-            # though we should pass it in or use a factory.
-            from main.train_rl_agent import get_observation_encoder
+            from agents.observation.state_encoder import get_observation_encoder
             self.observation_encoder = get_observation_encoder(self.mappings)
         
         obs = self.observation_encoder.encode(battle)
@@ -55,7 +51,8 @@ class StatTrackingRLPlayer(RLPlayer):
             probs = dist.distribution.probs[0].cpu().numpy()
             action_idx = dist.get_actions(deterministic=True)
         
-        idx = action_idx[0].item()
+        action_tensor = action_idx[0]
+        idx = action_tensor.item()
         stats = self.battle_summaries[battle.battle_tag]
         
         # Log probabilities and mask for this turn
@@ -76,7 +73,7 @@ class StatTrackingRLPlayer(RLPlayer):
                 if mon_name not in stats["moves"]: stats["moves"][mon_name] = {}
                 stats["moves"][mon_name][move_name] = stats["moves"][mon_name].get(move_name, 0) + 1
 
-        return SinglesEnv.action_to_order(idx, battle)
+        return SinglesEnv.action_to_order(action_tensor, battle)
 
 class StatTrackingHeuristicPlayer(SimpleHeuristicsPlayer):
     """Extends SimpleHeuristicsPlayer to capture opponent behavior statistics."""
@@ -91,9 +88,11 @@ class StatTrackingHeuristicPlayer(SimpleHeuristicsPlayer):
         order = super().choose_move(battle)
         stats = self.battle_summaries[battle.battle_tag]
         
-        if isinstance(order, MoveOrder):
+        from poke_env.battle.move import Move
+        
+        if isinstance(order.order, Move):
             mon_name = battle.active_pokemon.species
-            move_name = order.move.id if hasattr(order.move, 'id') else str(order.move)
+            move_name = order.order.id
             if mon_name not in stats["moves"]: stats["moves"][mon_name] = {}
             stats["moves"][mon_name][move_name] = stats["moves"][mon_name].get(move_name, 0) + 1
         elif not isinstance(order, DefaultBattleOrder):
@@ -145,9 +144,9 @@ class ReplayCallback(BaseCallback):
                 battle_format=BATTLE_FORMAT,
                 server_configuration=LocalhostServerConfiguration,
                 mappings=self.mappings,
-                account_configuration=AccountConfiguration(f"Replay{ts}", "password")
+                account_configuration=AccountConfiguration(f"Replay{ts}", "password"),
+                save_replays=step_dir
             )
-            replay_player.save_replays(step_dir)
             
             replay_opp = StatTrackingHeuristicPlayer(
                 battle_format=BATTLE_FORMAT,
@@ -183,11 +182,11 @@ class ReplayCallback(BaseCallback):
                     }
                 }
                 
-                with open(os.path.join(step_dir, f"summary_step_{self.num_timesteps}_{i+1}.json"), "w") as f:
+                with open(os.path.join(step_dir, f"battle_{i+1}_summary.json"), "w") as f:
                     json.dump(summary, f, indent=4)
                 
                 if i < len(html_files):
-                    os.rename(html_files[i], os.path.join(step_dir, f"replay_step_{self.num_timesteps}_{i+1}.html"))
+                    os.rename(html_files[i], os.path.join(step_dir, f"battle_{i+1}_replay.html"))
 
         new_loop = asyncio.new_event_loop()
         asyncio.set_event_loop(new_loop)

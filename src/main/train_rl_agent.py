@@ -20,7 +20,7 @@ from stable_baselines3.common.policies import ActorCriticPolicy
 from typing import Dict, Any
 
 from agents.model.features_extractor import Gen3FeaturesExtractor
-from agents.observation.state_encoder import Gen3ObservationEncoder
+from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings, get_observation_encoder
 from agents.action.mask_generator import Gen3ActionMasker
 from agents.rl_agent import RLPlayer, SingleAgentWrapper
 from agents.observation.species import SpeciesEncoder
@@ -72,48 +72,7 @@ class MaskedActorCriticPolicy(ActorCriticPolicy):
 
 
 
-def load_mappings():
-    mappings = {}
-    mapping_files = {
-        "species": "data/pokemon/gen3_species.json",
-        "moves": "data/pokemon/gen3_moves.json",
-        "abilities": "data/pokemon/gen3_abilities.json",
-        "items": "data/pokemon/gen3_items.json"
-    }
-    for key, path in mapping_files.items():
-        if not os.path.exists(path):
-            raise FileNotFoundError(f"CRITICAL: Mapping file missing: {path}. Run data generation script first!")
-        
-        with open(path, "r") as f:
-            data = json.load(f)
-            if not data:
-                raise ValueError(f"CRITICAL: Mapping file is empty: {path}")
-            # Normalize data: Ensure every entry is a dict with a 'num' key
-            normalized = {}
-            for name, val in data.items():
-                if isinstance(val, dict):
-                    normalized[name] = val
-                else:
-                    normalized[name] = {"num": int(val)}
-            mappings[key] = normalized
-            
-        mappings[key] = normalized
-            
-    # Pre-compute reverse mappings for IDs to names
-    mappings["reverse"] = {}
-    for category in ["species", "moves", "abilities", "items"]:
-        rev = {}
-        for name, data in mappings[category].items():
-            if isinstance(data, dict) and "num" in data:
-                rev[data["num"]] = name
-            elif isinstance(data, (int, float)):
-                rev[int(data)] = name
-        mappings["reverse"][category] = rev
-            
-    return mappings
 
-def get_observation_encoder(mappings):
-    return Gen3ObservationEncoder(mappings)
 
 
 class Gen3Env(SinglesEnv):
@@ -436,7 +395,7 @@ async def main():
             mappings=mappings,
             trainee_teambuilder=trainee_teambuilder,
             opponent_teambuilder=opponent_teambuilder,
-            save_freq=100000, # Start at 100k
+            save_freq=5000, # Set low for verification
             n_replays=3
         )
         
