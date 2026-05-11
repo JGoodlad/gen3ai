@@ -5,10 +5,10 @@
   "scripts": {
     "showdown": "node deps/pokemon-showdown/pokemon-showdown start --no-security",
     "stop": "lsof -t -i :8000 | xargs kill -9 || echo 'Server not running'",
-    "battle": "PYTHONPATH=src deps/venv/bin/python3.11 src/main/play.py",
+    "battle": "PYTHONPATH=src deps/venv/bin/python3 src/main/play.py",
     "test": "PYTHONPATH=src deps/venv/bin/pytest -m \"not integration\"",
     "test-all": "PYTHONPATH=src deps/venv/bin/pytest",
-    "sync-teams": "PYTHONPATH=src deps/venv/bin/python3.11 tools/sample_team_downloader/sync.py",
-    "setup": "python3.11 -m venv deps/venv && deps/venv/bin/pip install -r requirements.txt && npm install --prefix deps/pokemon-showdown && npm run build --prefix deps/pokemon-showdown"
+    "sync-teams": "PYTHONPATH=src deps/venv/bin/python3 tools/sample_team_downloader/sync.py",
+    "setup": "python3 -m venv deps/venv && deps/venv/bin/pip install -r requirements.txt && npm install --prefix deps/pokemon-showdown && npm run build --prefix deps/pokemon-showdown"
   }
 }
