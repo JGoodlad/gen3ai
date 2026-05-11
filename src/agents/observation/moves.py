@@ -35,16 +35,10 @@ class MovesEncoder(ObservationEncoder):
                 
                 # Extract metadata from mapping
                 entry = self.mapping.get(move_id, {})
-                if isinstance(entry, dict):
-                    num = entry.get("num", 0)
-                    power = entry.get("basePower", 0)
-                    secondary = 1.0 if entry.get("hasSecondary") else 0.0
-                    recoil = 1.0 if entry.get("hasRecoil") else 0.0
-                else:
-                    num = entry
-                    power = move.base_power
-                    secondary = 0.0 # Unknown
-                    recoil = 0.0 # Unknown
+                num = entry.get("num", 0)
+                power = entry.get("basePower", move.base_power)
+                secondary = 1.0 if entry.get("hasSecondary") else 0.0
+                recoil = 1.0 if entry.get("hasRecoil") else 0.0
                 
                 base_idx = i * MOVE_SLOT_DIM
                 # 1. Move ID

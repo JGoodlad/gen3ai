@@ -27,12 +27,8 @@ class AbilitiesEncoder(ObservationEncoder):
         ability = mon.ability
         if ability:
             ability_key = ability.lower().replace(" ", "")
-            entry = self.ability_to_id.get(ability_key, 0)
-            if isinstance(entry, dict):
-                ab_num = entry.get("num", 0)
-            else:
-                ab_num = entry
-            vec[0] = float(ab_num)
+            entry = self.ability_to_id.get(ability_key, {})
+            vec[0] = float(entry.get("num", 0))
             # Known Flag
             # For our team, it's always known. For opponent, if it's set, it's revealed.
             vec[ABILITY_SLOT_DIM] = 1.0

@@ -84,7 +84,14 @@ def load_mappings():
             data = json.load(f)
             if not data:
                 raise ValueError(f"CRITICAL: Mapping file is empty: {path}")
-            mappings[key] = data
+            # Normalize data: Ensure every entry is a dict with a 'num' key
+            normalized = {}
+            for name, val in data.items():
+                if isinstance(val, dict):
+                    normalized[name] = val
+                else:
+                    normalized[name] = {"num": int(val)}
+            mappings[key] = normalized
             
         # Pre-compute reverse mappings for IDs to names
         mappings["reverse"] = {}

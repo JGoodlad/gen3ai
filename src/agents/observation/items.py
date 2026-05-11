@@ -25,12 +25,8 @@ class ItemsEncoder(ObservationEncoder):
         item = mon.item
         if item:
             item_key = item.lower().replace(" ", "")
-            entry = self.item_to_id.get(item_key, 0)
-            if isinstance(entry, dict):
-                item_num = entry.get("num", 0)
-            else:
-                item_num = entry
-            vec[0] = float(item_num)
+            entry = self.item_to_id.get(item_key, {})
+            vec[0] = float(entry.get("num", 0))
             # Known Flag
             vec[ITEM_ID_DIM] = 1.0
         else:

@@ -31,15 +31,11 @@ class SpeciesEncoder(ObservationEncoder):
             raise ValueError(f"Unrecognized species: {species_id}. Update data/mappings/gen3_mapping.json")
             
         entry = self.mapping.get(species_id, {})
-        if isinstance(entry, dict):
-            num = entry.get("num", 0)
-        else:
-            num = entry
-        vec[0] = float(num)
+        vec[0] = float(entry.get("num", 0))
         
         # 2. Base Stats (6)
         # Order: HP, Atk, Def, SpA, SpD, Spe
-        if isinstance(entry, dict) and "baseStats" in entry:
+        if "baseStats" in entry:
             stats = entry["baseStats"]
         else:
             # Fallback for robustness during runtime
