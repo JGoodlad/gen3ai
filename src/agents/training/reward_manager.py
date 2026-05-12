@@ -45,6 +45,10 @@ class Gen3RewardManager:
         self.logger = RateLimitedLogger(interval_seconds=1.0)
         self.episode_logger = RateLimitedLogger(interval_seconds=15.0)
         self._last_active_name = "NULL"
+        self._last_opp_active_name = "NULL"
+        self._opp_turns_active = 0
+        self._prev_active_name = "NULL"  # The one BEFORE the current one
+        self._last_action_idx = -1
         
     def reset(self):
         """Prepares for a new episode."""
@@ -55,6 +59,10 @@ class Gen3RewardManager:
         self.remaining_switch_pool = 7.5
         self.last_switch_turn = -1
         self._last_active_name = "NULL"
+        self._last_opp_active_name = "NULL"
+        self._opp_turns_active = 0
+        self._prev_active_name = "NULL"
+        self._last_action_idx = -1
 
     def record_action(self, battle, action: int):
         """
@@ -76,17 +84,39 @@ class Gen3RewardManager:
             self._last_active_name, current_active, latched_mask
         )
         
+        # 3. Track Opponent "Freshness"
+        opp_active = "NONE" if not battle.opponent_active_pokemon else battle.opponent_active_pokemon.species
+        if opp_active != self._last_opp_active_name:
+            self._last_opp_active_name = opp_active
+            self._opp_turns_active = 0
+        else:
+            self._opp_turns_active += 1
+
         # We only apply the subsidy here so it's tied to the CHOICE, not the turn delta
         self._pending_subsidy = 0.0
+        
+        # 4. Repetition & Bouncing Penalties
+        # Penalty for clicking the exact same move/switch slot twice in a row
+        if action == self._last_action_idx and action != -1:
+            self._pending_subsidy -= 0.02
+            
         if is_real:
             if is_voluntary is True:
+                # Bouncing Penalty: Penalize switching back to the mon we just left
+                if current_active == self._prev_active_name and self._prev_active_name != "NONE":
+                    self._pending_subsidy -= 0.15
+                
                 payout = self.remaining_switch_pool * 0.5
                 attack_ratio = self.attack_count / max(1, battle.turn)
                 ratio_mult = 1.0 if attack_ratio >= 0.33 else 0.5
                 spam_mult = 1.0 if (battle.turn - self.last_switch_turn) > 1 else 0.0
                 turn_decay = max(0.0, 1.0 - battle.turn / 250.0)
                 
-                self._pending_subsidy = min(payout * ratio_mult * spam_mult * turn_decay, 1.0)
+                # Reactive Bonus: Reward switches more if the opponent just arrived (within 2 turns)
+                # This fixes "aimless" switching against a stable opponent.
+                reactive_mult = 1.0 if self._opp_turns_active <= 2 else 0.25
+                
+                self._pending_subsidy += min(payout * ratio_mult * spam_mult * turn_decay * reactive_mult, 1.0)
                 
                 self.remaining_switch_pool -= payout
                 self.switch_count += 1
@@ -95,7 +125,9 @@ class Gen3RewardManager:
                 # This is a forced switch (Replacement or Roar/Whirlwind)
                 self.forced_switch_count += 1
 
+        self._prev_active_name = self._last_active_name
         self._last_active_name = current_active
+        self._last_action_idx = action
 
     def process_turn_reward(self, battle, base_reward: float) -> float:
         """

@@ -333,6 +333,10 @@ async def main():
     else:
         model_dir = f"models/gen3ou_ppo_new_{unique_id}"
     
+    os.makedirs(model_dir, exist_ok=True)
+    with open(os.path.join(model_dir, "command.txt"), "w") as f:
+        f.write(" ".join(sys.argv))
+        
     stalls_dir = os.path.join(model_dir, "stalls")
     os.makedirs(stalls_dir, exist_ok=True)
 
