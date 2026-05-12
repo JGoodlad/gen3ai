@@ -32,7 +32,8 @@ class Gen3ActionMasker:
         active_pokemon = battle.active_pokemon
         
         if active_pokemon:
-            mon_moves = list(active_pokemon.moves.values())[:4]
+            # SORT moves by ID to ensure stable mapping across workers
+            mon_moves = sorted(active_pokemon.moves.values(), key=lambda m: m.id)[:4]
             mon_move_ids = [m.id for m in mon_moves]
             
             # Normal Moves (6-9)

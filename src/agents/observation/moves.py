@@ -25,8 +25,10 @@ class MovesEncoder(ObservationEncoder):
         if mon is None:
             return vec
             
-        # Get moves
-        moves = list(mon.moves.values()) if hasattr(mon, "moves") else []
+        # Get moves and SORT them by ID to ensure stable mapping across workers
+        moves = []
+        if hasattr(mon, "moves"):
+            moves = sorted(mon.moves.values(), key=lambda m: m.id)
         
         for i in range(4):
             if i < len(moves):

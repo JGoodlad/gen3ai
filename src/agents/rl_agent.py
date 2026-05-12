@@ -49,35 +49,42 @@ class RLPlayer(Player):
         return idx, probs, mask
 
     def action_to_order(self, action_idx, battle):
-        """Shared logic for absolute team slot mapping (11 Actions)."""
+        """
+        Maps an 11-action discrete index to a poke_env BattleOrder.
+        Uses Strict Alphabetical Move Sorting to ensure stability across workers.
+        """
         from poke_env.player.battle_order import SingleBattleOrder
         
+        # 0-5: Switches (Team Slots 1-6)
+        team_list = list(battle.team.values())
         if action_idx < 6:
-            # 0-5 -> Team Slots 1-6
-            team_list = list(battle.team.values())
             if action_idx < len(team_list):
                 target_mon = team_list[action_idx]
                 if target_mon in battle.available_switches:
                     return SingleBattleOrder(target_mon)
+            return self.choose_random_move(battle)
+
+        # 6-9: Moves (Slots 1-4)
         elif action_idx < 10:
-            # 6-9 -> Move Slots 1-4 (Absolute)
             move_idx = action_idx - 6
             active_pokemon = battle.active_pokemon
             if active_pokemon:
-                mon_moves = list(active_pokemon.moves.values())[:4]
+                # SORT moves by ID to ensure stable mapping (Matches Encoder and Masker)
+                mon_moves = sorted(active_pokemon.moves.values(), key=lambda m: m.id)[:4]
                 if move_idx < len(mon_moves):
                     target_move = mon_moves[move_idx]
-                    available_move_ids = [m.id for m in battle.available_moves]
-                    if target_move.id in available_move_ids:
+                    if target_move in battle.available_moves:
                         return SingleBattleOrder(target_move)
+            return self.choose_random_move(battle)
+
+        # 10: Struggle
         elif action_idx == 10:
-            # 10 -> Dedicated Struggle
             available_moves = battle.available_moves
             if len(available_moves) == 1 and available_moves[0].id == "struggle":
                 return SingleBattleOrder(available_moves[0])
-        
-        # Fallback to standard (should be masked)
-        return SinglesEnv.action_to_order(np.int64(action_idx), battle)
+            return self.choose_random_move(battle)
+
+        return self.choose_random_move(battle)
 
     def choose_move(self, battle):
         idx, _, _ = self._predict_best_action(battle)

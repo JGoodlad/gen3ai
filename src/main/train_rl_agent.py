@@ -64,38 +64,42 @@ class Gen3Env(SinglesEnv):
 
     def embed_battle(self, battle):
         # LATCH STAGE 1: Generate mask and store in PENDING buffer
-        # This prevents background battle updates from corrupting the active turn
         if hasattr(self, "battle1") and battle is self.battle1:
-            self._pending_obs_mask = Gen3ActionMasker.get_mask(battle)
+            self._pending_obs_mask = Gen3ActionMasker.get_mask(battle).astype(np.int8)
             self._pending_obs_battle = battle
             
         return self.observation_encoder.encode(battle)
 
     def get_action_mask(self, battle):
-        # Use the COMMITTED mask if available to ensure absolute sync
+        # AUTO-COMMIT: The first thing to ask for a mask after an observation
+        # will lock that observation's state as the active turn state.
+        self._commit_latch()
+        
         if hasattr(self, "_active_mask"):
             return self._active_mask
-        return Gen3ActionMasker.get_mask(battle)
+        return Gen3ActionMasker.get_mask(battle).astype(np.int8)
     
     def action_masks(self):
         # Return the committed mask
         return self.get_action_mask(getattr(self, "battle1", None))
 
     def _commit_latch(self):
-        # LATCH STAGE 2: Commit pending state to active state
-        # This is called right before returning an observation to the agent
+        # Promote pending state to active state if a new observation exists
         if hasattr(self, "_pending_obs_mask"):
             self._active_mask = self._pending_obs_mask
             self._active_battle = self._pending_obs_battle
+            # Clear pending to ensure we only commit once per observation cycle
+            del self._pending_obs_mask
+            del self._pending_obs_battle
 
     def action_to_order(self, action, battle, **kwargs):
-        # LOCKDOWN: Use the COMMITTED snapshot from the observation to avoid race conditions
+        # LOCKDOWN: Use the COMMITTED snapshot from the observation
         battle = getattr(self, "_active_battle", battle)
+        mask = self.action_masks()
         
         # FIXED SLOT MAPPING (STRICT MODE): No fallbacks allowed.
         from poke_env.player.battle_order import SingleBattleOrder
         
-        mask = self.action_masks()
         team_list = list(battle.team.values())
         mon_names = [p.species for p in team_list]
         
@@ -106,6 +110,8 @@ class Gen3Env(SinglesEnv):
                 if target_mon in battle.available_switches:
                     return SingleBattleOrder(target_mon)
             
+            # DIAGNOSTIC CRASH: If we reach here, the model picked an illegal move.
+            print(f"🛑 [SYNC ERROR] Model picked illegal action {action}. Mask was: {mask}")
             raise ValueError(
                 f"ILLEGAL SWITCH: Action {action} (Slot {action+1}: {mon_names[action] if action < len(mon_names) else 'Empty'}).\n"
                 f"Valid: {[p.species for p in battle.available_switches]}\n"
@@ -116,7 +122,8 @@ class Gen3Env(SinglesEnv):
             move_idx = action - 6
             active_pokemon = battle.active_pokemon
             if active_pokemon:
-                mon_moves = list(active_pokemon.moves.values())[:4]
+                # SORT moves by ID to ensure stable mapping across workers (Matches Encoder and Masker)
+                mon_moves = sorted(active_pokemon.moves.values(), key=lambda m: m.id)[:4]
                 if move_idx < len(mon_moves):
                     target_move = mon_moves[move_idx]
                     available_move_ids = [m.id for m in battle.available_moves]
@@ -169,12 +176,7 @@ class Gen3Env(SinglesEnv):
     def step(self, action):
         try:
             self._last_action = action
-            res = super().step(action)
-            
-            # COMMIT LATCH: Promote the next-turn snapshot to active state
-            self._commit_latch()
-            
-            return res
+            return super().step(action)
         except Exception as e:
             print(f"🛑 ERROR IN STEP: {e}")
             import traceback
@@ -185,10 +187,6 @@ class Gen3Env(SinglesEnv):
         try:
             self.switch_count = 0
             self._last_action = -1
-            
-            # COMMIT LATCH: Promote the observation-time snapshot to the active turn state
-            self._commit_latch()
-            
             return super().reset(*args, **kwargs)
         except Exception as e:
             print(f"🛑 ERROR IN RESET: {e}")
