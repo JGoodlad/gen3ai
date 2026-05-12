@@ -63,9 +63,9 @@ class Gen3Env(SinglesEnv):
         self.switch_count = 0
 
     def embed_battle(self, battle):
-        # SNAPSHOT: Cache the specific battle object used for this observation
-        # This prevents race conditions between observation and masking
-        self._last_obs_battle = battle
+        # SNAPSHOT: Only cache for the trainee (agent1) to avoid opponent desync
+        if hasattr(self, "agent1") and battle.account_configuration.username == self.agent1.username:
+            self._last_obs_battle = battle
         return self.observation_encoder.encode(battle)
 
     def get_action_mask(self, battle):
