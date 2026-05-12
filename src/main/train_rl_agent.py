@@ -66,29 +66,22 @@ class Gen3Env(SinglesEnv):
         # SNAPSHOT: Generate and freeze the mask for this specific observation
         # This is the ULTIMATE synchronization: the mask is pinned to the obs.
         if hasattr(self, "battle1") and battle is self.battle1:
-            self._last_obs_mask = self.get_action_mask(battle)
+            # Generate the mask once and FREEZE it
+            self._last_obs_mask = Gen3ActionMasker.get_mask(battle)
             # We still keep the battle snapshot for action_to_order
             self._last_obs_battle = battle
             
         return self.observation_encoder.encode(battle)
 
     def get_action_mask(self, battle):
+        # Use the frozen mask if available to ensure sync with observation
+        if hasattr(self, "_last_obs_mask"):
+            return self._last_obs_mask
         return Gen3ActionMasker.get_mask(battle)
 
     def action_masks(self):
-        # Return the frozen mask from the last observation
-        if hasattr(self, "_last_obs_mask"):
-            return self._last_obs_mask
-            
-        # Fallback for initialization (only if no snapshot exists)
-        battle = getattr(self, "battle1", None)
-        if battle:
-            return self.get_action_mask(battle)
-            
-        # Hard default
-        mask = np.zeros(11, dtype=np.int8)
-        mask[6] = 1 # Move 1
-        return mask
+        # Return the frozen mask from the last observation (fallback to current if needed)
+        return self.get_action_mask(getattr(self, "battle1", None))
 
     def action_to_order(self, action, battle, **kwargs):
         # LOCKDOWN: Use the snapshot from the observation to avoid race conditions
@@ -286,6 +279,7 @@ async def main():
                     "observation": env.observation_space
                 })
                 
+                from sb3_contrib.common.wrappers import ActionMasker
                 return Monitor(ActionMasker(wrapped, lambda e: env.action_masks()))
             except Exception as e:
                 print(f"🛑 ERROR IN WORKER {idx}: {e}")
@@ -497,6 +491,7 @@ async def main():
                         "observation": env.observation_space
                     })
                     
+                    from sb3_contrib.common.wrappers import ActionMasker
                     return ActionMasker(wrapped, lambda e: env.action_masks())
                 return _init
             
