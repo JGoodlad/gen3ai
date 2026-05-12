@@ -31,33 +31,59 @@ class StatTrackingRLPlayer(RLPlayer):
 
     def choose_move(self, battle):
         if battle.battle_tag not in self.battle_summaries:
-            self.battle_summaries[battle.battle_tag] = init_stats()
-            self.battle_summaries[battle.battle_tag]["turn_log"] = {}
+            stats = init_stats()
+            stats["turn_log"] = {}
+            stats["last_mon"] = None
+            stats["last_mask"] = None
+            self.battle_summaries[battle.battle_tag] = stats
+        
+        stats = self.battle_summaries[battle.battle_tag]
+        current_mon = battle.active_pokemon.species if battle.active_pokemon else "None"
         
         # 1. Use centralized prediction logic from parent RLPlayer
         idx, probs, mask = self._predict_best_action(battle)
             
-        # 2. Log probabilities and mask for this turn
-        stats = self.battle_summaries[battle.battle_tag]
+        # 2. Detect and log Switch Transitions
+        transition = None
+        if stats["last_mon"] is not None and stats["last_mon"] != current_mon:
+            # Determine if it was a forced switch (faint)
+            is_faint = False
+            if stats["last_mask"] is not None:
+                # If no moves (6-11) were legal in the PREVIOUS mask, it was forced.
+                if not any(stats["last_mask"][6:11] == 1):
+                    is_faint = True
+            
+            prefix = "(faint) " if is_faint else ""
+            transition = f"{prefix}{stats['last_mon']} -> {current_mon}"
+
+        # 3. Log data for this turn
         stats["turn_log"][battle.turn] = {
-            "action_idx": idx,
+            "action_idx": int(idx),
             "probabilities": [round(float(p), 4) for p in probs],
-            "mask": mask.tolist()
+            "mask": mask.tolist(),
+            "active_mon": current_mon
         }
+        if transition:
+            stats["turn_log"][battle.turn]["transition"] = transition
+            stats["turn_log"][battle.turn]["total_switches"] = stats["switches_made"]
         
-        # 3. Track Stats
+        # 4. Track Stats
         if idx < 6:
             stats["switches_made"] += 1
         else:
             move_slot = idx - 6
             available = battle.available_moves
             if move_slot < len(available):
-                mon_name = battle.active_pokemon.species
+                mon_name = current_mon
                 move_name = available[move_slot].id
                 if mon_name not in stats["moves"]: stats["moves"][mon_name] = {}
                 stats["moves"][mon_name][move_name] = stats["moves"][mon_name].get(move_name, 0) + 1
 
-        # 4. Use Centralized Absolute Mapping
+        # Update trackers for next turn
+        stats["last_mon"] = current_mon
+        stats["last_mask"] = mask.copy()
+
+        # 5. Use Centralized Absolute Mapping
         return self.action_to_order(idx, battle)
 
 class StatTrackingHeuristicPlayer(SimpleHeuristicsPlayer):
