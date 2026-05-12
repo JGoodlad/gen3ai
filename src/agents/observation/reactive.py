@@ -14,12 +14,13 @@ class ReactiveEncoder(ObservationEncoder):
     - HP fractions (2)
     - Spikes (2)
     - Status flag (1)
-    Total: 15 dims
+    - Forced Struggle flag (1)
+    Total: 16 dims
     """
     
     @property
     def dimension(self) -> int:
-        return 15
+        return 16
 
     def encode(self, battle: AbstractBattle) -> np.ndarray:
         vec = np.zeros(self.dimension, dtype=np.float32)
@@ -29,8 +30,19 @@ class ReactiveEncoder(ObservationEncoder):
         # 1. Moves (Power and Multiplier)
         moves_base_power = np.zeros(4)
         moves_dmg_multiplier = np.ones(4)
+        
+        # We need to know which moves are known to the mon to identify struggle correctly
+        mon_move_ids = []
+        if battle.active_pokemon:
+            mon_move_ids = [m.id for m in battle.active_pokemon.moves.values()]
+
         for i, move in enumerate(battle.available_moves):
             if i >= 4: break
+            
+            # If this is a struggle (not in known moves), skip BP/Mult slots
+            if move.id == "struggle" and move.id not in mon_move_ids:
+                continue
+                
             moves_base_power[i] = move.base_power / 100.0
             if battle.opponent_active_pokemon is not None:
                 moves_dmg_multiplier[i] = move.type.damage_multiplier(
@@ -66,6 +78,13 @@ class ReactiveEncoder(ObservationEncoder):
         # 5. Status
         vec[14] = 1.0 if battle.active_pokemon and battle.active_pokemon.status else 0.0
         
+        # 6. Forced Struggle (Semantic Flag)
+        is_struggle = 0.0
+        if len(battle.available_moves) == 1 and battle.available_moves[0].id == "struggle":
+            if battle.available_moves[0].id not in mon_move_ids:
+                is_struggle = 1.0
+        vec[15] = is_struggle
+        
         return vec
 
     def get_layout(self) -> Dict[str, Any]:
@@ -75,12 +94,14 @@ class ReactiveEncoder(ObservationEncoder):
             "fainted": {"offset": 8, "dim": 2},
             "hp": {"offset": 10, "dim": 2},
             "spikes": {"offset": 12, "dim": 2},
-            "active_status": {"offset": 14, "dim": 1}
+            "active_status": {"offset": 14, "dim": 1},
+            "forced_struggle": {"offset": 15, "dim": 1}
         }
 
     def describe_vector(self, vector: np.ndarray) -> Dict[str, Any]:
         return {
             "fainted_our": int(vector[8] * 6),
             "fainted_opp": int(vector[9] * 6),
-            "move_mults": [f"{m:.1f}x" for m in vector[4:8].tolist()]
+            "move_mults": [f"{m:.1f}x" for m in vector[4:8].tolist()],
+            "struggle": bool(vector[15])
         }

@@ -39,42 +39,6 @@ from poke_env.environment.singles_env import SinglesEnv
 
 BATTLE_FORMAT = "gen3ou"
 
-class MaskedActorCriticPolicy(ActorCriticPolicy):
-    def __init__(self, *args, **kwargs):
-        super().__init__(
-            *args,
-            **kwargs,
-            features_extractor_class=Gen3FeaturesExtractor,
-        )
-
-    def extract_features(self, obs, features_extractor=None):
-        self._mask = obs["action_mask"]
-        return super().extract_features(obs, features_extractor)
-
-    def forward(self, obs, deterministic=False):
-        return super().forward(obs, deterministic)
-
-    def get_distribution(self, obs):
-        self._mask = obs["action_mask"]
-        return super().get_distribution(obs)
-
-    def evaluate_actions(self, obs, actions):
-        self._mask = obs["action_mask"]
-        return super().evaluate_actions(obs, actions)
-
-    def _get_action_dist_from_latent(self, latent_pi):
-        import torch # Local import to ensure availability in all scopes
-        action_logits = self.action_net(latent_pi)
-        # self._mask is (batch, 10). 1 for valid, 0 for invalid.
-        mask = torch.where(self._mask == 1, 0.0, torch.tensor(float("-inf"), device=self.device))
-            
-        return self.action_dist.proba_distribution(action_logits + mask)
-
-
-
-
-
-
 class Gen3Env(SinglesEnv):
     def __init__(self, mappings, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -82,12 +46,14 @@ class Gen3Env(SinglesEnv):
         
         # Define spaces
         obs_dim = self.observation_encoder.dimension
-        self.observation_space = spaces.Box(low=-np.inf, high=np.inf, shape=(obs_dim,), dtype=np.float32)
-        # Gen 3 has 10 actions: 6 switches (0-5) and 4 moves (6-9)
-        self.action_space = spaces.Discrete(10)
         
-        # PokeEnv will automatically wrap observation_spaces in a Dict(observation, action_mask)
-        # because of its __setattr__ override. We just need to provide the raw space here.
+        # Standard flat Box for SinglesEnv
+        self.observation_space = spaces.Box(low=-np.inf, high=np.inf, shape=(obs_dim,), dtype=np.float32)
+        
+        # Gen 3 has 11 actions: 6 switches (0-5), 4 moves (6-9), and Struggle (10)
+        self.action_space = spaces.Discrete(11)
+        
+        # PokeEnv's SingleAgentWrapper expects the plural observation_spaces property
         self.observation_spaces = {
             self.agent1.username: self.observation_space,
             self.agent2.username: self.observation_space
@@ -97,37 +63,84 @@ class Gen3Env(SinglesEnv):
         self.switch_count = 0
 
     def embed_battle(self, battle):
+        # SNAPSHOT: Cache the specific battle object used for this observation
+        # This prevents race conditions between observation and masking
+        self._last_obs_battle = battle
         return self.observation_encoder.encode(battle)
 
     def get_action_mask(self, battle):
         return Gen3ActionMasker.get_mask(battle)
 
-    def action_to_order(self, action, battle):
+    def action_masks(self):
+        # Use the battle snapshot from the last observation
+        battle = getattr(self, "_last_obs_battle", None)
+        
+        # Fallback to current battle1 if no snapshot exists (initialization)
+        if battle is None:
+            battle = getattr(self, "battle1", None)
+        
+        if battle is None:
+            # RESTRICTIVE DEFAULT
+            mask = np.zeros(11, dtype=np.int8)
+            mask[6] = 1 # Move 1
+            return mask
+            
+        return self.get_action_mask(battle)
+
+    def action_to_order(self, action, battle, **kwargs):
+        # LOCKDOWN: Use the snapshot from the observation to avoid race conditions
+        battle = getattr(self, "_last_obs_battle", battle)
+        
         # FIXED SLOT MAPPING (STRICT MODE): No fallbacks allowed.
         from poke_env.player.battle_order import SingleBattleOrder
         
+        mask = self.action_masks()
+        team_list = list(battle.team.values())
+        mon_names = [p.species for p in team_list]
+        
         if action < 6:
             # 0-5 -> Team Slots 1-6
-            team_list = list(battle.team.values())
             if action < len(team_list):
                 target_mon = team_list[action]
                 if target_mon in battle.available_switches:
                     return SingleBattleOrder(target_mon)
             
             raise ValueError(
-                f"ILLEGAL SWITCH: Agent picked Action {action} (Slot {action+1}), "
-                f"but that mon is not in available_switches! Valid: {battle.available_switches}"
+                f"ILLEGAL SWITCH: Action {action} (Slot {action+1}: {mon_names[action] if action < len(mon_names) else 'Empty'}).\n"
+                f"Valid: {[p.species for p in battle.available_switches]}\n"
+                f"Mask: {mask}"
             )
-        else:
-            # 6-9 -> Move Slots 1-4
+        elif action < 10:
+            # 6-9 -> Move Slots 1-4 (Absolute Mapping)
             move_idx = action - 6
-            if move_idx < len(battle.available_moves):
-                return SingleBattleOrder(battle.available_moves[move_idx])
+            active_pokemon = battle.active_pokemon
+            if active_pokemon:
+                mon_moves = list(active_pokemon.moves.values())[:4]
+                if move_idx < len(mon_moves):
+                    target_move = mon_moves[move_idx]
+                    available_move_ids = [m.id for m in battle.available_moves]
+                    
+                    if target_move.id in available_move_ids:
+                        return SingleBattleOrder(target_move)
             
             raise ValueError(
-                f"ILLEGAL MOVE: Agent picked Action {action} (Slot {move_idx+1}), "
-                f"but that move is not in available_moves! Valid: {battle.available_moves}"
+                f"ILLEGAL MOVE: Action {action} (Slot {move_idx+1}).\n"
+                f"Valid: {[m.id for m in battle.available_moves]}\n"
+                f"Mask: {mask}"
             )
+        elif action == 10:
+            # 10 -> Dedicated Struggle
+            available_moves = battle.available_moves
+            if len(available_moves) == 1 and available_moves[0].id == "struggle":
+                return SingleBattleOrder(available_moves[0])
+            
+            raise ValueError(
+                f"ILLEGAL STRUGGLE: Action 10 picked but struggle not available!\n"
+                f"Valid: {[m.id for m in battle.available_moves]}\n"
+                f"Mask: {mask}"
+            )
+        
+        raise ValueError(f"Invalid Action Index: {action}")
         
     def calc_reward(self, battle):
         reward = self.reward_computing_helper(
@@ -153,13 +166,25 @@ class Gen3Env(SinglesEnv):
         return reward
 
     def step(self, action):
-        self._last_action = action
-        return super().step(action)
+        try:
+            self._last_action = action
+            return super().step(action)
+        except Exception as e:
+            print(f"🛑 ERROR IN STEP: {e}")
+            import traceback
+            traceback.print_exc()
+            raise e
 
     def reset(self, *args, **kwargs):
-        self.switch_count = 0
-        self._last_action = -1
-        return super().reset(*args, **kwargs)
+        try:
+            self.switch_count = 0
+            self._last_action = -1
+            return super().reset(*args, **kwargs)
+        except Exception as e:
+            print(f"🛑 ERROR IN RESET: {e}")
+            import traceback
+            traceback.print_exc()
+            raise e
 
 async def main():
     # --- Pre-flight Checks ---
@@ -228,43 +253,51 @@ async def main():
     
     def create_training_env_random(idx):
         def _init():
-            ts = datetime.now().strftime('%H%M%S')
-            env_username = f"RLAgent{idx}{ts}"
-            opp_username = f"Opponent{idx}{ts}"
-            
-            env = Gen3Env(
-                mappings,
-                battle_format=BATTLE_FORMAT,
-                team=trainee_teambuilder,
-                log_level=40,
-                server_configuration=LocalhostServerConfiguration,
-                account_configuration1=AccountConfiguration(env_username, "password"),
-            )
-            opponent = SimpleHeuristicsPlayer(
-                battle_format=BATTLE_FORMAT,
-                team=opponent_teambuilder,
-                server_configuration=LocalhostServerConfiguration,
-                account_configuration=AccountConfiguration(opp_username, "password"),
-            )
-            return Monitor(SingleAgentWrapper(env, opponent))
+            try:
+                ts = datetime.now().strftime('%H%M%S')
+                env_username = f"RLAgent{idx}{ts}"
+                opp_username = f"Opponent{idx}{ts}"
+                
+                env = Gen3Env(
+                    mappings,
+                    battle_format=BATTLE_FORMAT,
+                    team=trainee_teambuilder,
+                    log_level=40,
+                    server_configuration=LocalhostServerConfiguration,
+                    account_configuration1=AccountConfiguration(env_username, "password"),
+                )
+                opponent = SimpleHeuristicsPlayer(
+                    battle_format=BATTLE_FORMAT,
+                    team=opponent_teambuilder,
+                    server_configuration=LocalhostServerConfiguration,
+                    account_configuration=AccountConfiguration(opp_username, "password"),
+                )
+                from sb3_contrib.common.wrappers import ActionMasker
+                wrapped = SingleAgentWrapper(env, opponent)
+                
+                # FORCE OVERRIDE: SingleAgentWrapper hardcodes 10 for gen3ou. We need 11.
+                from gymnasium import spaces
+                wrapped.action_space = spaces.Discrete(11)
+                wrapped.observation_space = spaces.Dict({
+                    "action_mask": spaces.Box(0, 1, shape=(11,), dtype=np.int8),
+                    "observation": env.observation_space
+                })
+                
+                return Monitor(ActionMasker(wrapped, lambda e: env.action_masks()))
+            except Exception as e:
+                print(f"🛑 ERROR IN WORKER {idx}: {e}")
+                traceback.print_exc()
+                raise e
         return _init
 
     # Running parallel environments
     n_envs = 1 if args.debug else args.n_envs
     EnvClass = DummyVecEnv if args.debug else SubprocVecEnv
     
-    print(f"Initializing {n_envs} environments via {EnvClass.__name__} (staggered startup)...")
+    print(f"Initializing {n_envs} environments via {EnvClass.__name__}...")
     
-    # Staggered initialization to avoid "Connection Reset" during massive login storm
     env_factories = [create_training_env_random(i) for i in range(n_envs)]
-    def create_staggered_env(idx):
-        import time
-        def _init():
-            time.sleep(idx * 0.1) # 0.1s delay per environment
-            return env_factories[idx]()
-        return _init
-
-    env = EnvClass([create_staggered_env(i) for i in range(n_envs)])
+    env = EnvClass(env_factories)
     # Note: env.seed() is deprecated in gymnasium VecEnv, use seed in reset or at init if supported.
     # But for reproducibility, we pass it to PPO.
 
@@ -374,6 +407,7 @@ async def main():
         # Initialize a dummy encoder to get the handoff kwargs
         temp_encoder = Gen3ObservationEncoder(mappings)
         policy_kwargs = {
+            "features_extractor_class": Gen3FeaturesExtractor,
             "features_extractor_kwargs": temp_encoder.get_features_extractor_kwargs(),
             "net_arch": [512, 512]
         }
@@ -384,8 +418,9 @@ async def main():
             print(f"Note: Capping batch_size from {args.batch_size} to {total_rollout_size} to match rollout capacity.")
             args.batch_size = total_rollout_size
 
-        model = PPO(
-            MaskedActorCriticPolicy,
+        from sb3_contrib import MaskablePPO
+        model = MaskablePPO(
+            "MultiInputPolicy",
             env,
             verbose=1,
             learning_rate=args.lr,
@@ -393,7 +428,7 @@ async def main():
             batch_size=args.batch_size,
             n_epochs=args.n_epochs,
             gamma=0.99,
-            ent_coef=args.ent_coef, # Use the CLI argument
+            ent_coef=args.ent_coef,
             device=args.device,
             seed=args.seed,
             tensorboard_log="./tensorboard/",
@@ -448,7 +483,18 @@ async def main():
                         server_configuration=LocalhostServerConfiguration,
                         account_configuration=AccountConfiguration(f"OppEval{idx}{ts}", "password"),
                     )
-                    return SingleAgentWrapper(env, opponent)
+                    from sb3_contrib.common.wrappers import ActionMasker
+                    wrapped = SingleAgentWrapper(env, opponent)
+                    
+                    # FORCE OVERRIDE: Support 11 actions
+                    from gymnasium import spaces
+                    wrapped.action_space = spaces.Discrete(11)
+                    wrapped.observation_space = spaces.Dict({
+                        "action_mask": spaces.Box(0, 1, shape=(11,), dtype=np.int8),
+                        "observation": env.observation_space
+                    })
+                    
+                    return ActionMasker(wrapped, lambda e: env.action_masks())
                 return _init
             
             eval_env = SubprocVecEnv([create_eval_env(i) for i in range(8)])

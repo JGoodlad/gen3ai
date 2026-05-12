@@ -34,45 +34,18 @@ class StatTrackingRLPlayer(RLPlayer):
             self.battle_summaries[battle.battle_tag] = init_stats()
             self.battle_summaries[battle.battle_tag]["turn_log"] = {}
         
-        # Logic to get action index and granular probabilities
-        if self.observation_encoder is None:
-            from agents.observation.state_encoder import get_observation_encoder
-            self.observation_encoder = get_observation_encoder(self.mappings)
-        
-        obs = self.observation_encoder.encode(battle)
-        mask = Gen3ActionMasker.get_mask(battle)
-        
-        obs_tensor = torch.as_tensor(np.expand_dims(obs, axis=0)).to(self.model.device)
-        mask_tensor = torch.as_tensor(np.expand_dims(mask, axis=0)).to(self.model.device)
-        obs_dict = {"observation": obs_tensor, "action_mask": mask_tensor}
-
-        with torch.no_grad():
-            # Get raw distribution from the policy
-            dist = self.model.policy.get_distribution(obs_dict)
-            logits = dist.distribution.logits
+        # 1. Use centralized prediction logic from parent RLPlayer
+        idx, probs, mask = self._predict_best_action(battle)
             
-            # Apply mask: Set illegal actions to a very low value (-1e9)
-            masked_logits = logits + (mask_tensor - 1.0) * 1e9
-            
-            # Get the best legal action index
-            idx = torch.argmax(masked_logits, dim=1).item()
-            
-            # Verify legality (Strict Mode)
-            if mask[idx] == 0:
-                raise ValueError(f"STRICT MODE FAILURE: Replay player picked illegal action {idx}. Mask: {mask}")
-            
-            # Recalculate probabilities for logging
-            probs = torch.softmax(masked_logits, dim=1)[0].cpu().numpy()
-            
+        # 2. Log probabilities and mask for this turn
         stats = self.battle_summaries[battle.battle_tag]
-        
-        # Log probabilities and mask for this turn
         stats["turn_log"][battle.turn] = {
             "action_idx": idx,
             "probabilities": [round(float(p), 4) for p in probs],
             "mask": mask.tolist()
         }
         
+        # 3. Track Stats
         if idx < 6:
             stats["switches_made"] += 1
         else:
@@ -84,7 +57,8 @@ class StatTrackingRLPlayer(RLPlayer):
                 if mon_name not in stats["moves"]: stats["moves"][mon_name] = {}
                 stats["moves"][mon_name][move_name] = stats["moves"][mon_name].get(move_name, 0) + 1
 
-        return SinglesEnv.action_to_order(action_tensor, battle)
+        # 4. Use Centralized Absolute Mapping
+        return self.action_to_order(idx, battle)
 
 class StatTrackingHeuristicPlayer(SimpleHeuristicsPlayer):
     """Extends SimpleHeuristicsPlayer to capture opponent behavior statistics."""

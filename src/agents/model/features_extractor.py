@@ -50,7 +50,8 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         )
         
         # 1.6 Pokémon Role Encoder (Step 2)
-        # pokemon_enriched dim is 256 (Species: 32, Stats: 36, Item: 16+1, Types: 16, Ability: 16+1, Condition: 8, Moves: 128, HP: 2)
+        # pokemon_enriched dim is 226:
+        # (Species: 32, Stats: 6, Item: 16+1, Types: 16, Ability: 16+1, Condition: 8, Moves: 128, HP: 2)
         self.role_encoder = torch.nn.Sequential(
             torch.nn.Linear(226, 256),
             torch.nn.ReLU(),

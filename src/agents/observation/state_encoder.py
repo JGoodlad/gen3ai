@@ -231,7 +231,7 @@ class Gen3ObservationEncoder(ObservationEncoder):
         desc["world"] = self.global_env_encoder.describe_vector(global_vec)
         
         # 4. Reactive
-        reactive_vec = vector[OFFSET_REACTIVE : OFFSET_REACTIVE+15]
+        reactive_vec = vector[OFFSET_REACTIVE : OFFSET_REACTIVE + REACTIVE_DIM]
         desc["momentum"] = self.reactive_encoder.describe_vector(reactive_vec)
         
         return desc

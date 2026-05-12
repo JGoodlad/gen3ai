@@ -21,22 +21,19 @@ class RLPlayer(Player):
         self.mappings = mappings
         self.observation_encoder = None
 
-    def choose_move(self, battle):
+    def _predict_best_action(self, battle):
+        """Shared logic for masked action prediction."""
         if self.observation_encoder is None:
             from main.train_rl_agent import get_observation_encoder
             self.observation_encoder = get_observation_encoder(self.mappings)
             
         obs = self.observation_encoder.encode(battle)
-        
-        # Convert to 10-dim binary mask
         from agents.action.mask_generator import Gen3ActionMasker
         mask = Gen3ActionMasker.get_mask(battle)
         
-        # Ensure batch dimension for SB3
         obs_batched = np.expand_dims(obs, axis=0)
         mask_batched = np.expand_dims(mask, axis=0)
         
-        # Manually apply mask to logits for deterministic legal action
         with torch.no_grad():
             obs_tensor = torch.as_tensor(obs_batched).to(self.model.device)
             mask_tensor = torch.as_tensor(mask_batched).to(self.model.device)
@@ -44,23 +41,47 @@ class RLPlayer(Player):
             logits = dist.distribution.logits
             masked_logits = logits + (mask_tensor - 1.0) * 1e9
             idx = torch.argmax(masked_logits, dim=1).item()
-        
-        # Verify legality (Strict Mode)
+            probs = torch.softmax(masked_logits, dim=1)[0].cpu().numpy()
+            
         if mask[idx] == 0:
-            raise ValueError(f"STRICT MODE FAILURE: Main player picked illegal action {idx}. Mask: {mask}")
+            raise ValueError(f"STRICT MODE FAILURE: Illegal action {idx}. Mask: {mask}")
+            
+        return idx, probs, mask
 
-        # Absolute Team Slot Mapping
-        if idx < 6:
-            team_list = list(battle.team.values())
-            if idx < len(team_list):
-                return SinglesEnv.action_to_order(team_list[idx], battle)
-        else:
-            move_idx = idx - 6
-            if move_idx < len(battle.available_moves):
-                return SinglesEnv.action_to_order(battle.available_moves[move_idx], battle)
+    def action_to_order(self, action_idx, battle):
+        """Shared logic for absolute team slot mapping (11 Actions)."""
+        from poke_env.player.battle_order import SingleBattleOrder
         
-        # Final fallback to standard (should never happen in strict mode)
-        return SinglesEnv.action_to_order(idx, battle)
+        if action_idx < 6:
+            # 0-5 -> Team Slots 1-6
+            team_list = list(battle.team.values())
+            if action_idx < len(team_list):
+                target_mon = team_list[action_idx]
+                if target_mon in battle.available_switches:
+                    return SingleBattleOrder(target_mon)
+        elif action_idx < 10:
+            # 6-9 -> Move Slots 1-4 (Absolute)
+            move_idx = action_idx - 6
+            active_pokemon = battle.active_pokemon
+            if active_pokemon:
+                mon_moves = list(active_pokemon.moves.values())[:4]
+                if move_idx < len(mon_moves):
+                    target_move = mon_moves[move_idx]
+                    available_move_ids = [m.id for m in battle.available_moves]
+                    if target_move.id in available_move_ids:
+                        return SingleBattleOrder(target_move)
+        elif action_idx == 10:
+            # 10 -> Dedicated Struggle
+            available_moves = battle.available_moves
+            if len(available_moves) == 1 and available_moves[0].id == "struggle":
+                return SingleBattleOrder(available_moves[0])
+        
+        # Fallback to standard (should be masked)
+        return SinglesEnv.action_to_order(np.int64(action_idx), battle)
+
+    def choose_move(self, battle):
+        idx, _, _ = self._predict_best_action(battle)
+        return self.action_to_order(idx, battle)
 
 # We re-export SingleAgentWrapper from poke_env to maintain compatibility with train_rl_agent.py imports
 from poke_env.environment.single_agent_wrapper import SingleAgentWrapper
