@@ -43,7 +43,7 @@ class Gen3RewardManager:
         self.remaining_switch_pool = 7.5  # Max total points for switching
         self.last_switch_turn = -1
         self.logger = RateLimitedLogger(interval_seconds=1.0)
-        self.episode_logger = RateLimitedLogger(interval_seconds=15.0)
+        self.episode_logger = RateLimitedLogger(interval_seconds=5.0)
         self._last_active_name = "NULL"
         self._last_opp_active_name = "NULL"
         self._opp_turns_active = 0
