@@ -4,6 +4,7 @@ import traceback
 from typing import Dict, Any
 from poke_env.player import Player
 from poke_env.environment.singles_env import SinglesEnv
+from agents.action.mapper import Gen3ActionMapper
 import numpy as np
 import torch
 
@@ -49,43 +50,12 @@ class RLPlayer(Player):
         return idx, probs, mask
 
     def action_to_order(self, action_idx, battle):
-        """
-        Maps an 11-action discrete index to a poke_env BattleOrder.
-        Uses Strict Alphabetical Move Sorting to ensure stability across workers.
-        """
-        from poke_env.player.battle_order import SingleBattleOrder
-        
-        # 0-5: Switches (Team Slots 1-6)
-        team_list = list(battle.team.values())
-        if action_idx < 6:
-            if action_idx < len(team_list):
-                target_mon = team_list[action_idx]
-                if target_mon in battle.available_switches:
-                    return SingleBattleOrder(target_mon)
-            return self.choose_random_move(battle)
-
-        # 6-9: Moves (Slots 1-4)
-        elif action_idx < 10:
-            move_idx = action_idx - 6
-            active_pokemon = battle.active_pokemon
-            if active_pokemon:
-                # SORT moves by ID to ensure stable mapping (Matches Encoder and Masker)
-                mon_moves = sorted(active_pokemon.moves.values(), key=lambda m: m.id)[:4]
-                if move_idx < len(mon_moves):
-                    target_move = mon_moves[move_idx]
-                    if target_move in battle.available_moves:
-                        return SingleBattleOrder(target_move)
-            return self.choose_random_move(battle)
-
-        # 10: Struggle
-        elif action_idx == 10:
-            available_moves = battle.available_moves
-            if len(available_moves) == 1 and available_moves[0].id == "struggle":
-                return SingleBattleOrder(available_moves[0])
-            return self.choose_random_move(battle)
-
-        return self.choose_random_move(battle)
-
+        """Delegates to the centralized Gen3ActionMapper."""
+        # RLPlayer (Inference) uses the same strict mapping as the trainee
+        return Gen3ActionMapper.action_to_order(
+            action=action_idx,
+            battle=battle
+        )
     def choose_move(self, battle):
         idx, _, _ = self._predict_best_action(battle)
         return self.action_to_order(idx, battle)

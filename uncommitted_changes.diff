@@ -1,0 +1,281 @@
+diff --git a/instructions.md b/instructions.md
+index efdaaf4..5660e91 100644
+--- a/instructions.md
++++ b/instructions.md
+@@ -14,8 +14,7 @@ export PYTHONPATH=$PYTHONPATH:src
+ If you want to see exactly what the model is "thinking" and verify the state encoding, use the `--debug` flag. This disables parallel workers to allow deep diagnostic traces to print to your console.
+ 
+ ```bash
+-export PYTHONPATH=$PYTHONPATH:src
+-/home/goodlad/miniconda3/bin/python3 src/main/train_rl_agent.py --steps 1000 --debug
++export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 src/main/train_rl_agent.py --debug --steps 10000
+ ```
+ 
+ ### What to look for in Traces:
+@@ -79,3 +78,7 @@ watch -n 1 nvidia-smi
+ # Watch CPU utilization
+ htop
+ ```
++### 4 Production Run
++```
++export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 src/main/train_rl_agent.py --steps 13000000 --n-envs 32 --ent-coef 0.02 --batch-size 4096 --lr 0.0003
++```
+\ No newline at end of file
+diff --git a/src/agents/action/mask_generator.py b/src/agents/action/mask_generator.py
+index 8f67d3a..308c57e 100644
+--- a/src/agents/action/mask_generator.py
++++ b/src/agents/action/mask_generator.py
+@@ -32,8 +32,7 @@ class Gen3ActionMasker:
+         active_pokemon = battle.active_pokemon
+         
+         if active_pokemon:
+-            # SORT moves by ID to ensure stable mapping across workers
+-            mon_moves = sorted(active_pokemon.moves.values(), key=lambda m: m.id)[:4]
++            mon_moves = list(active_pokemon.moves.values())[:4]
+             mon_move_ids = [m.id for m in mon_moves]
+             
+             # Normal Moves (6-9)
+diff --git a/src/agents/observation/moves.py b/src/agents/observation/moves.py
+index e07649d..60dba1e 100644
+--- a/src/agents/observation/moves.py
++++ b/src/agents/observation/moves.py
+@@ -25,10 +25,8 @@ class MovesEncoder(ObservationEncoder):
+         if mon is None:
+             return vec
+             
+-        # Get moves and SORT them by ID to ensure stable mapping across workers
+-        moves = []
+-        if hasattr(mon, "moves"):
+-            moves = sorted(mon.moves.values(), key=lambda m: m.id)
++        # Get moves
++        moves = list(mon.moves.values()) if hasattr(mon, "moves") else []
+         
+         for i in range(4):
+             if i < len(moves):
+diff --git a/src/agents/rl_agent.py b/src/agents/rl_agent.py
+index ae97beb..a963a06 100644
+--- a/src/agents/rl_agent.py
++++ b/src/agents/rl_agent.py
+@@ -49,42 +49,35 @@ class RLPlayer(Player):
+         return idx, probs, mask
+ 
+     def action_to_order(self, action_idx, battle):
+-        """
+-        Maps an 11-action discrete index to a poke_env BattleOrder.
+-        Uses Strict Alphabetical Move Sorting to ensure stability across workers.
+-        """
++        """Shared logic for absolute team slot mapping (11 Actions)."""
+         from poke_env.player.battle_order import SingleBattleOrder
+         
+-        # 0-5: Switches (Team Slots 1-6)
+-        team_list = list(battle.team.values())
+         if action_idx < 6:
++            # 0-5 -> Team Slots 1-6
++            team_list = list(battle.team.values())
+             if action_idx < len(team_list):
+                 target_mon = team_list[action_idx]
+                 if target_mon in battle.available_switches:
+                     return SingleBattleOrder(target_mon)
+-            return self.choose_random_move(battle)
+-
+-        # 6-9: Moves (Slots 1-4)
+         elif action_idx < 10:
++            # 6-9 -> Move Slots 1-4 (Absolute)
+             move_idx = action_idx - 6
+             active_pokemon = battle.active_pokemon
+             if active_pokemon:
+-                # SORT moves by ID to ensure stable mapping (Matches Encoder and Masker)
+-                mon_moves = sorted(active_pokemon.moves.values(), key=lambda m: m.id)[:4]
++                mon_moves = list(active_pokemon.moves.values())[:4]
+                 if move_idx < len(mon_moves):
+                     target_move = mon_moves[move_idx]
+-                    if target_move in battle.available_moves:
++                    available_move_ids = [m.id for m in battle.available_moves]
++                    if target_move.id in available_move_ids:
+                         return SingleBattleOrder(target_move)
+-            return self.choose_random_move(battle)
+-
+-        # 10: Struggle
+         elif action_idx == 10:
++            # 10 -> Dedicated Struggle
+             available_moves = battle.available_moves
+             if len(available_moves) == 1 and available_moves[0].id == "struggle":
+                 return SingleBattleOrder(available_moves[0])
+-            return self.choose_random_move(battle)
+-
+-        return self.choose_random_move(battle)
++        
++        # Fallback to standard (should be masked)
++        return SinglesEnv.action_to_order(np.int64(action_idx), battle)
+ 
+     def choose_move(self, battle):
+         idx, _, _ = self._predict_best_action(battle)
+diff --git a/src/main/train_rl_agent.py b/src/main/train_rl_agent.py
+index 3adfc87..56e6a9b 100644
+--- a/src/main/train_rl_agent.py
++++ b/src/main/train_rl_agent.py
+@@ -39,15 +39,19 @@ from poke_env.environment.singles_env import SinglesEnv
+ 
+ BATTLE_FORMAT = "gen3ou"
+ 
++class Gen3SingleAgentWrapper(SingleAgentWrapper):
++    """ Exposes action_masks() for MaskablePPO without nesting the observation space. """
++    def action_masks(self):
++        return self.env.action_masks()
++
+ class Gen3Env(SinglesEnv):
+     def __init__(self, mappings, *args, **kwargs):
+         super().__init__(*args, **kwargs)
+         self.observation_encoder = get_observation_encoder(mappings)
+         
+-        # Define spaces
++        # Standard flat Box for the vector part
++        # PokeEnv will wrap this in a Dict containing "observation" and "action_mask"
+         obs_dim = self.observation_encoder.dimension
+-        
+-        # Standard flat Box for SinglesEnv
+         self.observation_space = spaces.Box(low=-np.inf, high=np.inf, shape=(obs_dim,), dtype=np.float32)
+         
+         # Gen 3 has 11 actions: 6 switches (0-5), 4 moves (6-9), and Struggle (10)
+@@ -58,42 +62,50 @@ class Gen3Env(SinglesEnv):
+             self.agent1.username: self.observation_space,
+             self.agent2.username: self.observation_space
+         }
++        # AND the plural action_spaces property
++        self.action_spaces = {
++            self.agent1.username: self.action_space,
++            self.agent2.username: self.action_space
++        }
+         
+         # Subsidy tracking
+         self.switch_count = 0
+ 
++    @staticmethod
++    def get_action_space_size(gen: int = 3) -> int:
++        # FORCE 11 ACTIONS FOR GEN 3 (6 Switches + 4 Moves + 1 Struggle)
++        return 11
++
+     def embed_battle(self, battle):
+-        # LATCH STAGE 1: Generate mask and store in PENDING buffer
++        # LATCH STAGE 1: Snapshot battle for consistency
++        # This pins the state for the action mask and action execution.
+         if hasattr(self, "battle1") and battle is self.battle1:
+-            self._pending_obs_mask = Gen3ActionMasker.get_mask(battle).astype(np.int8)
+             self._pending_obs_battle = battle
+             
++        # Return ONLY the vector. PokeEnv.step() will wrap it in {"observation": ..., "action_mask": ...}
+         return self.observation_encoder.encode(battle)
+ 
+     def get_action_mask(self, battle):
+-        # AUTO-COMMIT: The first thing to ask for a mask after an observation
+-        # will lock that observation's state as the active turn state.
+-        self._commit_latch()
++        # AUTO-COMMIT: Lock the observation state when mask is requested
++        if hasattr(self, "battle1") and battle is self.battle1:
++            self._commit_latch()
+         
+-        if hasattr(self, "_active_mask"):
+-            return self._active_mask
+-        return Gen3ActionMasker.get_mask(battle).astype(np.int8)
++        # Return the 11-dimensional mask
++        return Gen3ActionMasker.get_mask(battle).tolist()
+     
+     def action_masks(self):
+-        # Return the committed mask
+-        return self.get_action_mask(getattr(self, "battle1", None))
++        # Helper for wrappers/SB3
++        return np.array(self.get_action_mask(getattr(self, "battle1", None)), dtype=np.int8)
+ 
+     def _commit_latch(self):
+-        # Promote pending state to active state if a new observation exists
+-        if hasattr(self, "_pending_obs_mask"):
+-            self._active_mask = self._pending_obs_mask
++        # Promote pending state to active state
++        if hasattr(self, "_pending_obs_battle"):
+             self._active_battle = self._pending_obs_battle
+             # Clear pending to ensure we only commit once per observation cycle
+-            del self._pending_obs_mask
+             del self._pending_obs_battle
+ 
+     def action_to_order(self, action, battle, **kwargs):
+-        # LOCKDOWN: Use the COMMITTED snapshot from the observation
++        # LOCKDOWN: Use the COMMITTED snapshot from the observation turn
+         battle = getattr(self, "_active_battle", battle)
+         mask = self.action_masks()
+         
+@@ -111,19 +123,18 @@ class Gen3Env(SinglesEnv):
+                     return SingleBattleOrder(target_mon)
+             
+             # DIAGNOSTIC CRASH: If we reach here, the model picked an illegal move.
+-            print(f"🛑 [SYNC ERROR] Model picked illegal action {action}. Mask was: {mask}")
++            print(f"🛑 [SYNC ERROR] Model picked illegal switch action {action}. Mask was: {mask}")
+             raise ValueError(
+                 f"ILLEGAL SWITCH: Action {action} (Slot {action+1}: {mon_names[action] if action < len(mon_names) else 'Empty'}).\n"
+                 f"Valid: {[p.species for p in battle.available_switches]}\n"
+                 f"Mask: {mask}"
+             )
+         elif action < 10:
+-            # 6-9 -> Move Slots 1-4 (Absolute Mapping)
++            # 6-9 -> Move Slots 1-4 (Discovery Order Mapping)
+             move_idx = action - 6
+             active_pokemon = battle.active_pokemon
+             if active_pokemon:
+-                # SORT moves by ID to ensure stable mapping across workers (Matches Encoder and Masker)
+-                mon_moves = sorted(active_pokemon.moves.values(), key=lambda m: m.id)[:4]
++                mon_moves = list(active_pokemon.moves.values())[:4]
+                 if move_idx < len(mon_moves):
+                     target_move = mon_moves[move_idx]
+                     available_move_ids = [m.id for m in battle.available_moves]
+@@ -131,6 +142,7 @@ class Gen3Env(SinglesEnv):
+                     if target_move.id in available_move_ids:
+                         return SingleBattleOrder(target_move)
+             
++            print(f"🛑 [SYNC ERROR] Model picked illegal move action {action}. Mask was: {mask}")
+             raise ValueError(
+                 f"ILLEGAL MOVE: Action {action} (Slot {move_idx+1}).\n"
+                 f"Valid: {[m.id for m in battle.available_moves]}\n"
+@@ -280,19 +292,8 @@ async def main():
+                     server_configuration=LocalhostServerConfiguration,
+                     account_configuration=AccountConfiguration(opp_username, "password"),
+                 )
+-                from sb3_contrib.common.wrappers import ActionMasker
+-                wrapped = SingleAgentWrapper(env, opponent)
+-                
+-                # FORCE OVERRIDE: SingleAgentWrapper hardcodes 10 for gen3ou. We need 11.
+-                from gymnasium import spaces
+-                wrapped.action_space = spaces.Discrete(11)
+-                wrapped.observation_space = spaces.Dict({
+-                    "action_mask": spaces.Box(0, 1, shape=(11,), dtype=np.int8),
+-                    "observation": env.observation_space
+-                })
+-                
+-                from sb3_contrib.common.wrappers import ActionMasker
+-                return Monitor(ActionMasker(wrapped, lambda e: env.action_masks()))
++                wrapped = Gen3SingleAgentWrapper(env, opponent)
++                return Monitor(wrapped)
+             except Exception as e:
+                 print(f"🛑 ERROR IN WORKER {idx}: {e}")
+                 traceback.print_exc()
+@@ -492,21 +493,8 @@ async def main():
+                         server_configuration=LocalhostServerConfiguration,
+                         account_configuration=AccountConfiguration(f"OppEval{idx}{ts}", "password"),
+                     )
+-                    from sb3_contrib.common.wrappers import ActionMasker
+-                    wrapped = SingleAgentWrapper(env, opponent)
+-                    
+-                    # FORCE OVERRIDE: Support 11 actions
+-                    from gymnasium import spaces
+-                    wrapped.action_space = spaces.Discrete(11)
+-                    wrapped.observation_space = spaces.Dict({
+-                        "action_mask": spaces.Box(0, 1, shape=(11,), dtype=np.int8),
+-                        "observation": env.observation_space
+-                    })
+-                    
+-                    from sb3_contrib.common.wrappers import ActionMasker
+-                    return ActionMasker(wrapped, lambda e: env.action_masks())
++                    return Gen3SingleAgentWrapper(env, opponent)
+                 return _init
+-            
+             eval_env = SubprocVecEnv([create_eval_env(i) for i in range(8)])
+             
+             eval_callback = EvalCallback(

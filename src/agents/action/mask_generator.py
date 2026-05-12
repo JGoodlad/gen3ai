@@ -1,4 +1,5 @@
 import numpy as np
+import weakref
 from poke_env.battle.abstract_battle import AbstractBattle
 
 class Gen3ActionMasker:
@@ -14,6 +15,7 @@ class Gen3ActionMasker:
     def get_mask(battle: AbstractBattle) -> np.ndarray:
         """
         Generates a binary mask where 1 is a valid action and 0 is invalid.
+        Maps Actions 6-9 directly to Server Move Slots 1-4 for absolute stability.
         """
         mask = np.zeros(11, dtype=np.int8)
         
@@ -22,38 +24,39 @@ class Gen3ActionMasker:
         available_pokemon_species = [p.species for p in battle.available_switches]
         
         for i, pokemon in enumerate(team_list):
-            if i < 6: # Gen 3 is 6 mons
+            if i < 6:
                 if pokemon.species in available_pokemon_species:
                     mask[i] = 1
                     
         # --- Moves (6-10) ---
         available_moves = battle.available_moves
-        available_move_ids = [m.id for m in available_moves]
         active_pokemon = battle.active_pokemon
         
-        if active_pokemon:
-            # SORT moves by ID to ensure stable mapping across workers
-            mon_moves = sorted(active_pokemon.moves.values(), key=lambda m: m.id)[:4]
-            mon_move_ids = [m.id for m in mon_moves]
+        if active_pokemon and battle.last_request:
+            # Use Server's Native Move Slots (most stable)
+            active_request = battle.last_request.get("active", [{}])[0]
+            request_moves = active_request.get("moves", [])
             
-            # Normal Moves (6-9)
-            for i, move in enumerate(mon_moves):
-                if i < 4:
-                    if move.id in available_move_ids:
-                        mask[i + 6] = 1
+            # Map slots 0-3 to Actions 6-9
+            for i, move_data in enumerate(request_moves):
+                if i < 4 and not move_data.get("disabled", False):
+                    mask[i + 6] = 1
             
             # Dedicated Struggle (10)
-            if len(available_moves) == 1 and available_moves[0].id == "struggle":
-                if available_moves[0].id not in mon_move_ids:
-                    mask[10] = 1
+            if any(m.id == "struggle" for m in available_moves):
+                mask[10] = 1
         
-        # Final safety
-        if np.sum(mask) == 0:
-            if available_moves:
-                mask[6] = 1
-            elif battle.available_switches:
-                mask[0] = 1
+        # Final safety check: if no moves are masked but some are available, 
+        # fall back to basic ID matching (handles edge cases where request is stale)
+        if np.sum(mask[6:10]) == 0 and available_moves:
+            avail_ids = [m.id for m in available_moves]
+            if "struggle" in avail_ids:
+                mask[10] = 1
             else:
-                mask[6] = 1
+                # Fallback to alphabetical just in case request is missing
+                stable_ids = sorted(active_pokemon.moves.keys()) if active_pokemon else []
+                for i, m_id in enumerate(stable_ids):
+                    if i < 4 and m_id in avail_ids:
+                        mask[i + 6] = 1
                 
         return mask

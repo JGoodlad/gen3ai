@@ -32,6 +32,9 @@ from agents.observation.global_env import GlobalEnvEncoder
 from utils.teambuilder import Gen3Teambuilder
 from utils.team_loader import TeamLoader
 from agents.training.callbacks import ReplayCallback
+from agents.training.reward_manager import Gen3RewardManager
+from agents.action.mapper import Gen3ActionMapper
+from utils.logging.levels import LogLevel
 
 from poke_env.player import RandomPlayer, SimpleHeuristicsPlayer
 from poke_env import AccountConfiguration, LocalhostServerConfiguration
@@ -58,8 +61,13 @@ class Gen3SingleAgentWrapper(SingleAgentWrapper):
     def action_masks(self):
         return self._current_mask
 
+STALL_THRESHOLD = 800
+
 class Gen3Env(SinglesEnv):
-    def __init__(self, mappings, *args, **kwargs):
+    def __init__(self, mappings, log_level=LogLevel.QUIET, stalls_dir=None, *args, **kwargs):
+        self.log_level = log_level
+        self.stalls_dir = stalls_dir
+        self._stall_logged = False
         super().__init__(*args, **kwargs)
         self.observation_encoder = get_observation_encoder(mappings)
         
@@ -84,8 +92,8 @@ class Gen3Env(SinglesEnv):
             self.agent2.username: self.observation_space
         }
         
-        # Subsidy tracking
-        self.switch_count = 0
+        # Reward & Metric Tracking
+        self.reward_manager = Gen3RewardManager(log_level=self.log_level)
 
     def embed_battle(self, battle):
         # Generate mask and LATCH it to this specific turn on the battle object
@@ -94,122 +102,89 @@ class Gen3Env(SinglesEnv):
         battle._latched_turn = battle.turn
         return self.observation_encoder.encode(battle)
 
+
+    def _save_stall_html(self, battle, suffix=""):
+        """Saves a Pokémon Showdown compatible HTML replay using poke-env's built-in saver."""
+        if not self.stalls_dir:
+            return
+            
+        try:
+            os.makedirs(self.stalls_dir, exist_ok=True)
+            ts = datetime.now().strftime('%Y%m%d_%H%M%S')
+            suffix_str = f"_{suffix}" if suffix else ""
+            filename = f"stall_{battle.battle_tag}_{ts}{suffix_str}.html"
+            path = os.path.join(self.stalls_dir, filename)
+            
+            # Use the official poke-env saver
+            battle.save_replay(path)
+            
+            # Print a distinct alert so the user knows where to look
+            sys.stderr.write(f"\n🛑 [STALL LOGGED] Battle {battle.battle_tag} lasted {battle.turn} turns. HTML saved to {path}\n")
+            sys.stderr.flush()
+        except Exception as e:
+            sys.stderr.write(f"Failed to save stall log: {e}\n")
+            sys.stderr.flush()
+
     def get_action_mask(self, battle):
         # Return the synced mask if available, otherwise regenerate
         return getattr(battle, "_gen3_synced_mask", Gen3ActionMasker.get_mask(battle).astype(np.int8))
 
     def action_to_order(self, action, battle, **kwargs):
-        # 0. Pass-through for pre-calculated orders (like from a Heuristic opponent)
-        from poke_env.player.battle_order import BattleOrder, SingleBattleOrder, DefaultBattleOrder
+        """Delegates to Gen3ActionMapper with strict turn-locked validation."""
+        # Pass-through for pre-calculated orders (like from a Heuristic opponent)
+        from poke_env.player.battle_order import BattleOrder
         if isinstance(action, BattleOrder):
             return action
 
-        # 1. Strict Legal Check (Using TURN-LOCKED mask)
-        # We trust the mask that was generated when the agent saw the observation.
         mask = getattr(battle, "_latched_mask", None)
         latched_turn = getattr(battle, "_latched_turn", -1)
         
-        # Trainee-Specific Strictness: NO FALLBACKS
+        # TRAINEE (battle1): Use our strict Gen3 mapping logic
         if battle is self.battle1:
-            if mask is None:
-                raise ValueError(f"STRICT MODE FAILURE: No latched mask found for trainee battle on Turn {battle.turn}.")
-            if latched_turn != battle.turn:
-                raise ValueError(f"STRICT MODE FAILURE: Stale mask latch detected!\n"
-                                 f"Latched Turn: {latched_turn}, Current Battle Turn: {battle.turn}.\n"
-                                 f"The agent is acting on old information.")
-        
-        # Fallback for opponents/other cases where latching isn't used
-        if mask is None or latched_turn != battle.turn:
-            mask = self.get_action_mask(battle)
+            return Gen3ActionMapper.action_to_order(
+                action=action,
+                battle=battle,
+                mask=mask,
+                latched_turn=latched_turn
+            )
             
-        if mask[action] == 0:
-            raise ValueError(f"STRICT MODE FAILURE: Illegal Action {action} requested.\n"
-                             f"Latched Turn: {latched_turn}, Current Turn: {battle.turn}\n"
-                             f"Mask: {mask}")
-        
-        # 2. Action Mapping
-        if action < 6:
-            # Switch
-            team_list = list(battle.team.values())
-            if action < len(team_list):
-                return SingleBattleOrder(team_list[action])
-            raise ValueError(f"Switch Action {action} out of bounds for team size {len(team_list)}")
-
-        elif action < 10:
-            # Move (Slots 1-4 from Server)
-            move_idx = action - 6
-            if not battle.last_request:
-                raise ValueError("STRICT MODE FAILURE: Move action requested but last_request is missing.")
-            
-            active_request = battle.last_request.get("active", [{}])[0]
-            request_moves = active_request.get("moves", [])
-            
-            if move_idx < len(request_moves):
-                move_id = request_moves[move_idx].get("id")
-                # Smart Match: Handle hiddenpowergrass vs hiddenpower
-                for move in battle.available_moves:
-                    if move.id == move_id:
-                        return SingleBattleOrder(move)
-                    # Fallback for hiddenpower variants
-                    if (move.id.startswith("hiddenpower") and move_id.startswith("hiddenpower")):
-                        return SingleBattleOrder(move)
-                
-                raise ValueError(f"Move slot {move_idx} ({move_id}) not found in available_moves: {[m.id for m in battle.available_moves]}")
-            raise ValueError(f"Move Action {action} (Slot {move_idx}) out of bounds for move count {len(request_moves)}")
-
-        elif action == 10:
-            # Struggle
-            for m in battle.available_moves:
-                if m.id == "struggle":
-                    return SingleBattleOrder(m)
-            # If server hasn't updated available_moves yet but we know we must struggle
-            from poke_env.battle.move import Move
-            return SingleBattleOrder(Move("struggle", gen=3))
-            
-        raise ValueError(f"UNHANDLED ACTION: {action}")
+        # OPPONENT (battle2/others): Unmodified default poke-env logic
+        return super().action_to_order(action, battle)
         
     def calc_reward(self, battle):
-        reward = self.reward_computing_helper(
+        base_reward = self.reward_computing_helper(
             battle,
             fainted_value=2.0,
             hp_value=1.0,
             victory_value=30.0
         )
-        
-        # --- Voluntary Switching Subsidy ---
-        # Only reward if the switch was voluntary (moves were legal) AND it actually happened.
-        if hasattr(self, "_last_action") and hasattr(self, "_last_active_name"):
-            action_val = self._last_action
-            if isinstance(action_val, (np.ndarray, list)) and len(action_val) > 0:
-                action_val = action_val[0]
-            
-            if isinstance(action_val, (int, np.integer)) and action_val < 6:
-                # 1. Did a switch actually occur?
-                current_active = battle.active_pokemon.name if battle.active_pokemon else ""
-                if current_active != self._last_active_name:
-                    
-                    # 2. Was it voluntary? (Were moves legal in the mask we used?)
-                    latched_mask = getattr(battle, "_latched_mask", None)
-                    if latched_mask is not None:
-                        # If any move (6-9) or Struggle (10) was legal, the agent had a choice.
-                        # If only switches (0-5) were legal, it was a forced switch.
-                        can_attack = any(latched_mask[6:11] == 1)
-                        
-                        if can_attack:
-                            print(f"🔄 [TURN {battle.turn}] VOLUNTARY SWITCH: {self._last_active_name} -> {current_active}")
-                            reward += 0.4
-                            self.switch_count += 1
-                        else:
-                            print(f"💀 [TURN {battle.turn}] FORCED SWITCH (Faint): {self._last_active_name} -> {current_active}")
-        
-        # Update tracker for the next turn
-        self._last_active_name = battle.active_pokemon.name if battle.active_pokemon else ""
-        return reward
+        # Delegate to RewardManager for subsidies, logging, and trainee-specific tracking
+        return self.reward_manager.process_turn_reward(
+            battle, 
+            base_reward=base_reward, 
+            is_trainee=(battle is self.battle1)
+        )
 
     def step(self, action):
         try:
-            self._last_action = action
-            return super().step(action)
+            # Pre-capture the battle object in case super().step() resets it
+            battle = getattr(self, "_battle", None)
+            if battle is None:
+                battle = self.battle1 # Fallback
+
+            obs, reward, term, trunc, info = super().step(action)
+            
+            # Stall Detection: Trigger EXACTLY once at turn 800
+            if battle and battle.turn == STALL_THRESHOLD and not self._stall_logged:
+                self._save_stall_html(battle, suffix="STALL")
+                self._stall_logged = True
+            
+            # Pass switch logs up to the main process
+            if hasattr(self, "_pending_switch_log"):
+                info["switch_log"] = self._pending_switch_log
+                del self._pending_switch_log
+                
+            return obs, reward, term, trunc, info
         except Exception as e:
             print(f"🛑 ERROR IN STEP: {e}")
             import traceback
@@ -217,11 +192,19 @@ class Gen3Env(SinglesEnv):
             raise e
 
     def reset(self, *args, **kwargs):
+        # Report previous episode metrics via the manager
+        self.reward_manager.report_episode(getattr(self, "battle1", None))
+
         # Clear move slot cache and reset trackers on reset
         self._move_slot_cache = {}
         self._last_active_name = ""
         try:
-            self.switch_count = 0
+            # Disable replay saving for the new battle unless it stalls later
+            if hasattr(self, "agent1"):
+                self.agent1.save_replays = None
+
+            self.reward_manager.reset()
+            self._stall_logged = False
             self._last_action = -1
             return super().reset(*args, **kwargs)
         except Exception as e:
@@ -272,6 +255,7 @@ async def main():
     parser.add_argument("--eval-battles", type=int, default=100, help="Battles per evaluation opponent")
     parser.add_argument("--eval-concurrency", type=int, default=100, help="Concurrent battles during evaluation")
     parser.add_argument("--seed", type=int, default=42, help="Random seed for reproducibility")
+    parser.add_argument("--log-level", type=str, default="periodic", choices=["quiet", "periodic", "detailed", "debug"], help="Logging verbosity level")
 
     # --- Hyperparameter Flags (Optimized for GPU) ---
     parser.add_argument("--batch-size", type=int, default=4096, help="PPO mini-batch size")
@@ -281,6 +265,7 @@ async def main():
     parser.add_argument("--n-steps", type=int, default=2048, help="Steps per environment per rollout")
     
     args = parser.parse_args()
+    log_level = LogLevel[args.log_level.upper()]
 
     # Load all teams using the new TeamLoader
     loader = TeamLoader()
@@ -295,18 +280,21 @@ async def main():
 
     mappings = load_mappings()
     
-    def create_training_env_random(idx):
+    def create_training_env_random(idx, stalls_dir=None):
         def _init():
             try:
                 ts = datetime.now().strftime('%H%M%S')
                 env_username = f"RLAgent{idx}{ts}"
                 opp_username = f"Opponent{idx}{ts}"
                 
+                env_log_level = log_level if idx == 0 else LogLevel.QUIET
+                
                 env = Gen3Env(
                     mappings,
                     battle_format=BATTLE_FORMAT,
                     team=trainee_teambuilder,
-                    log_level=40,
+                    log_level=env_log_level,
+                    stalls_dir=stalls_dir,
                     server_configuration=LocalhostServerConfiguration,
                     account_configuration1=AccountConfiguration(env_username, "password"),
                 )
@@ -330,13 +318,23 @@ async def main():
                 raise e
         return _init
 
+    # --- Directory Setup ---
+    unique_id = datetime.now().strftime("%Y%m%d_%H%M%S")
+    if args.model:
+        model_dir = f"models/gen3ou_ppo_continued_{unique_id}"
+    else:
+        model_dir = f"models/gen3ou_ppo_new_{unique_id}"
+    
+    stalls_dir = os.path.join(model_dir, "stalls")
+    os.makedirs(stalls_dir, exist_ok=True)
+
     # Running parallel environments
     n_envs = 1 if args.debug else args.n_envs
     EnvClass = DummyVecEnv if args.debug else SubprocVecEnv
     
     print(f"Initializing {n_envs} environments via {EnvClass.__name__}...")
     
-    env_factories = [create_training_env_random(i) for i in range(n_envs)]
+    env_factories = [create_training_env_random(i, stalls_dir=stalls_dir) for i in range(n_envs)]
     env = EnvClass(env_factories)
     # Note: env.seed() is deprecated in gymnasium VecEnv, use seed in reset or at init if supported.
     # But for reproducibility, we pass it to PPO.
@@ -406,9 +404,7 @@ async def main():
             return
         else:
             print(f"Continuing Training (Steps: {args.steps}, LR: {args.lr})")
-            unique_id = datetime.now().strftime("%Y%m%d_%H%M%S")
-            model_dir = f"models/gen3ou_ppo_continued_{unique_id}"
-            os.makedirs(model_dir, exist_ok=True)
+            # model_dir and unique_id are now pre-defined earlier in main()
             
             import signal
             def signal_handler(sig, frame):
@@ -440,15 +436,16 @@ async def main():
             await evaluate_model_random(model)
     else:
         print(f"Starting NEW Training (Parallel x{n_envs}, Batch: {args.batch_size}, Epochs: {args.n_epochs})")
-        unique_id = datetime.now().strftime("%Y%m%d_%H%M%S")
-        model_dir = f"models/gen3ou_ppo_new_{unique_id}"
-        os.makedirs(model_dir, exist_ok=True)
+        # model_dir and unique_id are now pre-defined earlier in main()
         
         # Initialize a dummy encoder to get the handoff kwargs
         temp_encoder = Gen3ObservationEncoder(mappings)
+        extractor_kwargs = temp_encoder.get_features_extractor_kwargs()
+        extractor_kwargs["log_level"] = log_level
+        
         policy_kwargs = {
             "features_extractor_class": Gen3FeaturesExtractor,
-            "features_extractor_kwargs": temp_encoder.get_features_extractor_kwargs(),
+            "features_extractor_kwargs": extractor_kwargs,
             "net_arch": [512, 512]
         }
         
@@ -550,7 +547,7 @@ async def main():
             callbacks.append(eval_callback)
 
         try:
-            if args.debug:
+            if log_level >= LogLevel.DETAILED:
                 from sb3_contrib.common.maskable.utils import is_masking_supported
                 print(f"✅ [DEBUG] Masking supported for env: {is_masking_supported(env)}")
             model.learn(total_timesteps=args.steps, callback=callbacks, reset_num_timesteps=False)

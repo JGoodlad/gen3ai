@@ -19,7 +19,8 @@ BATTLE_FORMAT = "gen3ou"
 def init_stats():
     """Helper to initialize stats for a battle."""
     return {
-        "switches_made": 0,
+        "voluntary_switches": 0,
+        "forced_switches": 0,
         "moves": {} # Species -> {Move -> Count}
     }
 
@@ -33,6 +34,7 @@ class StatTrackingRLPlayer(RLPlayer):
         if battle.battle_tag not in self.battle_summaries:
             stats = init_stats()
             stats["turn_log"] = {}
+            stats["switch_events"] = {} # Turn -> "From -> To"
             stats["last_mon"] = None
             stats["last_mask"] = None
             self.battle_summaries[battle.battle_tag] = stats
@@ -43,8 +45,7 @@ class StatTrackingRLPlayer(RLPlayer):
         # 1. Use centralized prediction logic from parent RLPlayer
         idx, probs, mask = self._predict_best_action(battle)
             
-        # 2. Detect and log Switch Transitions
-        transition = None
+        # 2. Detect and log ACTUAL Switch Transitions (the source of truth)
         if stats["last_mon"] is not None and stats["last_mon"] != current_mon:
             # Determine if it was a forced switch (faint)
             is_faint = False
@@ -53,8 +54,14 @@ class StatTrackingRLPlayer(RLPlayer):
                 if not any(stats["last_mask"][6:11] == 1):
                     is_faint = True
             
-            prefix = "(faint) " if is_faint else ""
-            transition = f"{prefix}{stats['last_mon']} -> {current_mon}"
+            label = "forced" if is_faint else "voluntary"
+            event_str = f"{stats['last_mon']} -> {current_mon} ({label})"
+            stats["switch_events"][str(battle.turn)] = event_str
+            
+            if is_faint:
+                stats["forced_switches"] += 1
+            else:
+                stats["voluntary_switches"] += 1
 
         # 3. Log data for this turn
         stats["turn_log"][battle.turn] = {
@@ -63,14 +70,9 @@ class StatTrackingRLPlayer(RLPlayer):
             "mask": mask.tolist(),
             "active_mon": current_mon
         }
-        if transition:
-            stats["turn_log"][battle.turn]["transition"] = transition
-            stats["turn_log"][battle.turn]["total_switches"] = stats["switches_made"]
         
-        # 4. Track Stats
-        if idx < 6:
-            stats["switches_made"] += 1
-        else:
+        # 4. Track Move Stats (Actions only)
+        if idx >= 6:
             move_slot = idx - 6
             available = battle.available_moves
             if move_slot < len(available):
@@ -107,7 +109,7 @@ class StatTrackingHeuristicPlayer(SimpleHeuristicsPlayer):
             if mon_name not in stats["moves"]: stats["moves"][mon_name] = {}
             stats["moves"][mon_name][move_name] = stats["moves"][mon_name].get(move_name, 0) + 1
         elif not isinstance(order, DefaultBattleOrder):
-            stats["switches_made"] += 1
+            stats["voluntary_switches"] += 1
         return order
 
 class ReplayCallback(BaseCallback):
@@ -192,13 +194,22 @@ class ReplayCallback(BaseCallback):
                     "winner": "US" if battle.won else "THEM",
                     "total_turns": battle.turn,
                     "our_team_stats": {
-                        "total_switches": replay_player.battle_summaries[tag]["switches_made"],
+                        "switches": {
+                            "total": replay_player.battle_summaries[tag]["voluntary_switches"] + replay_player.battle_summaries[tag]["forced_switches"],
+                            "voluntary": replay_player.battle_summaries[tag]["voluntary_switches"],
+                            "forced": replay_player.battle_summaries[tag]["forced_switches"],
+                            "log": replay_player.battle_summaries[tag]["switch_events"]
+                        },
                         "moves_per_pokemon": replay_player.battle_summaries[tag]["moves"],
                         "final_health": {m.species: f"{m.current_hp_fraction*100:.1f}%" for m in battle.team.values()},
                         "turn_log": replay_player.battle_summaries[tag]["turn_log"]
                     },
                     "opp_team_stats": {
-                        "total_switches": replay_opp.battle_summaries[tag]["switches_made"] if tag in replay_opp.battle_summaries else 0,
+                        "switches": {
+                            "total": replay_opp.battle_summaries[tag]["voluntary_switches"] + replay_opp.battle_summaries[tag]["forced_switches"] if tag in replay_opp.battle_summaries else 0,
+                            "voluntary": replay_opp.battle_summaries[tag]["voluntary_switches"] if tag in replay_opp.battle_summaries else 0,
+                            "forced": replay_opp.battle_summaries[tag]["forced_switches"] if tag in replay_opp.battle_summaries else 0
+                        },
                         "moves_per_pokemon": replay_opp.battle_summaries[tag]["moves"] if tag in replay_opp.battle_summaries else {},
                         "final_health": {m.species: f"{m.current_hp_fraction*100:.1f}%" for m in battle.opponent_team.values()}
                     }

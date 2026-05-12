@@ -5,6 +5,8 @@ from gymnasium import spaces
 from typing import Dict, Any
 from agents.observation.state_encoder import Gen3ObservationEncoder
 from agents.observation.constants import TRACE_INTERVAL
+from utils.logging.rate_limiter import RateLimitedLogger
+from utils.logging.levels import LogLevel
 
 class Gen3FeaturesExtractor(torch.nn.Module):
     """
@@ -12,10 +14,11 @@ class Gen3FeaturesExtractor(torch.nn.Module):
     Uses a dynamic layout provided by the Observation Encoder to avoid magic constants.
     Supports shared latent embeddings for Species, Moves, Items, Abilities, and Types.
     """
-    def __init__(self, observation_space: spaces.Dict, layout: Dict[str, Any] = None, mappings: Dict[str, Any] = None):
+    def __init__(self, observation_space: spaces.Dict, layout: Dict[str, Any] = None, mappings: Dict[str, Any] = None, log_level: LogLevel = LogLevel.QUIET):
         super().__init__()
         self.layout = layout
         self.mappings = mappings
+        self.log_level = log_level
         self._encoder = None # Lazy init for decoding
         
         # 1. Embedding Layers
@@ -71,7 +74,7 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         self.projection = torch.nn.Linear(self.projection_input_dim, 512)
         self.activation = torch.nn.ReLU()
         self.features_dim = 512
-        self.last_trace_time = 0
+        self.trace_logger = RateLimitedLogger(interval_seconds=TRACE_INTERVAL)
         
     def _print_deep_trace(self, x, pokemon_part, species_ids):
         if self._encoder is None and self.mappings:
@@ -296,9 +299,7 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         combined = self.forward_internal(obs)
         
         # Diagnostic Trace logic
-        current_time = time.time()
-        if current_time - self.last_trace_time > TRACE_INTERVAL:
-            self.last_trace_time = current_time
+        if self.log_level >= LogLevel.PERIODIC and self.trace_logger.should_log():
             # For trace, we need the original parts again (or pass them through)
             # Re-extracting for trace is fine since it's infrequent
             x = obs["observation"]

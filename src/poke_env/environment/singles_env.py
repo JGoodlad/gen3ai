@@ -1,0 +1,304 @@
+from typing import Any, Optional, Union
+
+import numpy as np
+from gymnasium.spaces import Discrete, Space
+
+from poke_env.battle import Battle, Pokemon
+from poke_env.battle.move import SPECIAL_MOVES
+from poke_env.data import GenData
+from poke_env.environment.env import PokeEnv
+from poke_env.player.battle_order import (
+    BattleOrder,
+    DefaultBattleOrder,
+    ForfeitBattleOrder,
+    SingleBattleOrder,
+)
+from poke_env.player.player import Player
+from poke_env.ps_client import (
+    AccountConfiguration,
+    LocalhostServerConfiguration,
+    ServerConfiguration,
+)
+from poke_env.teambuilder import Teambuilder
+
+
+class SinglesEnv(PokeEnv[np.int64]):
+    def __init__(
+        self,
+        *,
+        account_configuration1: Optional[AccountConfiguration] = None,
+        account_configuration2: Optional[AccountConfiguration] = None,
+        avatar: Optional[int] = None,
+        battle_format: str = "gen8randombattle",
+        log_level: Optional[int] = None,
+        save_replays: Union[bool, str] = False,
+        server_configuration: Optional[
+            ServerConfiguration
+        ] = LocalhostServerConfiguration,
+        accept_open_team_sheet: Optional[bool] = False,
+        start_timer_on_battle_start: bool = False,
+        start_listening: bool = True,
+        open_timeout: Optional[float] = 10.0,
+        ping_interval: Optional[float] = 20.0,
+        ping_timeout: Optional[float] = 20.0,
+        challenge_timeout: Optional[float] = 60.0,
+        team: Optional[Union[str, Teambuilder]] = None,
+        choose_on_teampreview: bool = True,
+        fake: bool = False,
+        strict: bool = True,
+    ):
+        super().__init__(
+            account_configuration1=account_configuration1,
+            account_configuration2=account_configuration2,
+            avatar=avatar,
+            battle_format=battle_format,
+            log_level=log_level,
+            save_replays=save_replays,
+            server_configuration=server_configuration,
+            accept_open_team_sheet=accept_open_team_sheet,
+            start_timer_on_battle_start=start_timer_on_battle_start,
+            start_listening=start_listening,
+            open_timeout=open_timeout,
+            ping_interval=ping_interval,
+            ping_timeout=ping_timeout,
+            challenge_timeout=challenge_timeout,
+            team=team,
+            choose_on_teampreview=choose_on_teampreview,
+            fake=fake,
+            strict=strict,
+        )
+        gen = GenData.from_format(battle_format).gen
+        self.action_spaces: dict[str, Space[Any]] = {
+            agent: Discrete(SinglesEnv.get_action_space_size(gen))
+            for agent in self.possible_agents
+        }
+
+    @staticmethod
+    def action_to_order(
+        action: np.int64, battle: Battle, fake: bool = False, strict: bool = True
+    ) -> BattleOrder:
+        """
+        Returns the BattleOrder relative to the given action.
+
+        The action mapping is as follows:
+        action = -2: default
+        action = -1: forfeit
+        0 <= action <= 5: switch
+        6 <= action <= 9: move
+        10 <= action <= 13: move and mega evolve
+        14 <= action <= 17: move and z-move
+        18 <= action <= 21: move and dynamax
+        22 <= action <= 25: move and terastallize
+
+        :param action: The action to take.
+        :type action: int64
+        :param battle: The current battle state
+        :type battle: AbstractBattle
+        :param fake: If true, action-order converters will try to avoid returning a default
+            output if at all possible, even if the output isn't a legal decision. Defaults
+            to False.
+        :type fake: bool
+        :param strict: If true, action-order converters will throw an error if the move is
+            illegal. Otherwise, it will return default. Defaults to True.
+        :type strict: bool
+
+        :return: The battle order for the given action in context of the current battle.
+        :rtype: BattleOrder
+        """
+        try:
+            if action == -2:
+                return DefaultBattleOrder()
+            elif action == -1:
+                return ForfeitBattleOrder()
+            elif action < 6:
+                order = Player.create_order(list(battle.team.values())[action])
+            else:
+                if battle.active_pokemon is None:
+                    raise ValueError(
+                        f"Invalid order from player {battle.player_username} "
+                        f"in battle {battle.battle_tag} - action specifies a "
+                        f"move, but battle.active_pokemon is None!"
+                    )
+                avail_ids = [m.id for m in battle.available_moves]
+                known_moves = list(battle.active_pokemon.moves.values())[:4]
+                known_ids = [m.id for m in known_moves]
+                mvs = (
+                    battle.available_moves
+                    if len(avail_ids) == 1 and avail_ids[0] not in known_ids
+                    else known_moves
+                )
+                if (action - 6) % 4 not in range(len(mvs)):
+                    raise ValueError(
+                        f"Invalid action {action} from player {battle.player_username} "
+                        f"in battle {battle.battle_tag} - action specifies a move "
+                        f"but the move index {(action - 6) % 4} is out of bounds "
+                        f"for available moves {mvs}!"
+                    )
+                order = Player.create_order(
+                    mvs[(action - 6) % 4],
+                    mega=10 <= action.item() < 14,
+                    z_move=14 <= action.item() < 18,
+                    dynamax=18 <= action.item() < 22,
+                    terastallize=22 <= action.item() < 26,
+                )
+            if not fake and str(order) not in [str(o) for o in battle.valid_orders]:
+                raise ValueError(
+                    f"Invalid action {action} from player {battle.player_username} "
+                    f"in battle {battle.battle_tag} - converted order {order} "
+                    f"not in valid orders {[str(o) for o in battle.valid_orders]}!"
+                )
+            return order
+        except ValueError as e:
+            if strict:
+                raise e
+            else:
+                if battle.logger is not None:
+                    battle.logger.warning(str(e) + " Defaulting to random move.")
+                return Player.choose_random_singles_move(battle)
+
+    @staticmethod
+    def order_to_action(
+        order: BattleOrder, battle: Battle, fake: bool = False, strict: bool = True
+    ) -> np.int64:
+        """
+        Returns the action relative to the given BattleOrder.
+
+        :param order: The order to take.
+        :type order: BattleOrder
+        :param battle: The current battle state
+        :type battle: AbstractBattle
+        :param fake: If true, action-order converters will try to avoid returning a default
+            output if at all possible, even if the output isn't a legal decision. Defaults
+            to False.
+        :type fake: bool
+        :param strict: If true, action-order converters will throw an error if the move is
+            illegal. Otherwise, it will return default. Defaults to True.
+        :type strict: bool
+
+        :return: The action for the given battle order in context of the current battle.
+        :rtype: int64
+        """
+        try:
+            if isinstance(order, DefaultBattleOrder):
+                action = -2
+            elif isinstance(order, ForfeitBattleOrder):
+                action = -1
+            else:
+                assert isinstance(order, SingleBattleOrder)
+                assert not isinstance(order.order, str)
+                if not fake and str(order) not in [str(o) for o in battle.valid_orders]:
+                    raise ValueError(
+                        f"Invalid order from player {battle.player_username} "
+                        f"in battle {battle.battle_tag} - order {order} "
+                        f"not in valid orders {[str(o) for o in battle.valid_orders]}!"
+                    )
+                if isinstance(order.order, Pokemon):
+                    action = [p.base_species for p in battle.team.values()].index(
+                        order.order.base_species
+                    )
+                else:
+                    assert battle.active_pokemon is not None
+                    avail_ids = [m.id for m in battle.available_moves]
+                    known_moves = list(battle.active_pokemon.moves.values())[:4]
+                    known_ids = [m.id for m in known_moves]
+                    mvs = (
+                        battle.available_moves
+                        if len(avail_ids) == 1 and avail_ids[0] not in known_ids
+                        else known_moves
+                    )
+                    action = [m.id for m in mvs].index(order.order.id)
+                    if order.mega:
+                        gimmick = 1
+                    elif order.z_move:
+                        gimmick = 2
+                    elif order.dynamax:
+                        gimmick = 3
+                    elif order.terastallize:
+                        gimmick = 4
+                    else:
+                        gimmick = 0
+                    action = 6 + action + 4 * gimmick
+            return np.int64(action)
+        except ValueError as e:
+            if strict:
+                raise e
+            else:
+                if battle.logger is not None:
+                    battle.logger.warning(str(e) + " Defaulting to random move.")
+                return SinglesEnv.order_to_action(
+                    Player.choose_random_singles_move(battle), battle, fake, strict
+                )
+
+    @staticmethod
+    def get_action_mask(battle: Battle) -> list[int]:
+        switch_space = [
+            i
+            for i, pokemon in enumerate(battle.team.values())
+            if not battle.trapped
+            and pokemon.base_species
+            in [p.base_species for p in battle.available_switches]
+        ]
+        if battle._wait:
+            actions = [0]
+        elif battle.active_pokemon is None:
+            actions = switch_space
+        else:
+            known_moves = list(battle.active_pokemon.moves.values())[:4]
+            move_space = [
+                i + 6
+                for i, move in enumerate(known_moves)
+                if move.id in [m.id for m in battle.available_moves]
+            ]
+            if (
+                not move_space
+                and len(battle.available_moves) == 1
+                and battle.available_moves[0].id not in SPECIAL_MOVES
+            ):
+                move_space = [6]
+            avail_move_ids = [m.id for m in battle.available_moves]
+            available_z_ids = [m.id for m in battle.active_pokemon.available_z_moves]
+            mega_space = [i + 4 for i in move_space if battle.can_mega_evolve]
+            zmove_space = [
+                i + 6 + 8
+                for i, move in enumerate(known_moves)
+                if battle.can_z_move
+                and move.id in avail_move_ids
+                and move.id in available_z_ids
+            ]
+            dynamax_space = [i + 12 for i in move_space if battle.can_dynamax]
+            tera_space = [i + 16 for i in move_space if battle.can_tera]
+            if (
+                not move_space
+                and len(battle.available_moves) == 1
+                and battle.available_moves[0].id in SPECIAL_MOVES
+            ):
+                move_space = [6]
+            actions = (
+                switch_space
+                + move_space
+                + mega_space
+                + zmove_space
+                + dynamax_space
+                + tera_space
+            )
+        action_mask = [
+            int(i in actions)
+            for i in range(SinglesEnv.get_action_space_size(battle.gen))
+        ]
+        return action_mask
+
+    @staticmethod
+    def get_action_space_size(gen: int) -> int:
+        num_switches = 6
+        num_moves = 4
+        if gen == 6:
+            num_gimmicks = 1
+        elif gen == 7:
+            num_gimmicks = 2
+        elif gen == 8:
+            num_gimmicks = 3
+        elif gen == 9:
+            num_gimmicks = 4
+        else:
+            num_gimmicks = 0
+        return num_switches + num_moves * (num_gimmicks + 1)

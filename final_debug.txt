@@ -1,0 +1,41 @@
+Loaded 32 sample teams for trainee and 126 total teams for opponents.
+Initializing 1 environments via DummyVecEnv (staggered startup)...
+Starting NEW Training (Parallel x1, Batch: 256, Epochs: 4)
+Using cuda device
+Traceback (most recent call last):
+  File "/home/goodlad/dev/gen3ai/src/main/train_rl_agent.py", line 456, in <module>
+    asyncio.run(main())
+  File "/home/goodlad/miniconda3/envs/gen3ai_stable/lib/python3.11/asyncio/runners.py", line 190, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/home/goodlad/miniconda3/envs/gen3ai_stable/lib/python3.11/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/goodlad/miniconda3/envs/gen3ai_stable/lib/python3.11/asyncio/base_events.py", line 654, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/home/goodlad/dev/gen3ai/src/main/train_rl_agent.py", line 360, in main
+    model = PPO(
+            ^^^^
+  File "/home/goodlad/miniconda3/envs/gen3ai_stable/lib/python3.11/site-packages/stable_baselines3/ppo/ppo.py", line 171, in __init__
+    self._setup_model()
+  File "/home/goodlad/miniconda3/envs/gen3ai_stable/lib/python3.11/site-packages/stable_baselines3/ppo/ppo.py", line 174, in _setup_model
+    super()._setup_model()
+  File "/home/goodlad/miniconda3/envs/gen3ai_stable/lib/python3.11/site-packages/stable_baselines3/common/on_policy_algorithm.py", line 135, in _setup_model
+    self.policy = self.policy_class(  # type: ignore[assignment]
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/goodlad/dev/gen3ai/src/main/train_rl_agent.py", line 44, in __init__
+    super().__init__(
+  File "/home/goodlad/miniconda3/envs/gen3ai_stable/lib/python3.11/site-packages/stable_baselines3/common/policies.py", line 507, in __init__
+    self.features_extractor = self.make_features_extractor()
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/goodlad/miniconda3/envs/gen3ai_stable/lib/python3.11/site-packages/stable_baselines3/common/policies.py", line 120, in make_features_extractor
+    return self.features_extractor_class(self.observation_space, **self.features_extractor_kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/goodlad/dev/gen3ai/src/agents/model/features_extractor.py", line 66, in __init__
+    sample_output = self.forward_internal(dummy_dict)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/goodlad/dev/gen3ai/src/agents/model/features_extractor.py", line 287, in forward_internal
+    role_tokens = self.role_encoder(pokemon_enriched.reshape(-1, 256))
+                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+RuntimeError: shape '[-1, 256]' is invalid for input of size 2712
