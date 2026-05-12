@@ -63,29 +63,32 @@ class Gen3Env(SinglesEnv):
         self.switch_count = 0
 
     def embed_battle(self, battle):
-        # SNAPSHOT: Only cache for the trainee (agent1) to avoid opponent desync
+        # SNAPSHOT: Generate and freeze the mask for this specific observation
+        # This is the ULTIMATE synchronization: the mask is pinned to the obs.
         if hasattr(self, "battle1") and battle is self.battle1:
+            self._last_obs_mask = self.get_action_mask(battle)
+            # We still keep the battle snapshot for action_to_order
             self._last_obs_battle = battle
+            
         return self.observation_encoder.encode(battle)
 
     def get_action_mask(self, battle):
         return Gen3ActionMasker.get_mask(battle)
 
     def action_masks(self):
-        # Use the battle snapshot from the last observation
-        battle = getattr(self, "_last_obs_battle", None)
-        
-        # Fallback to current battle1 if no snapshot exists (initialization)
-        if battle is None:
-            battle = getattr(self, "battle1", None)
-        
-        if battle is None:
-            # RESTRICTIVE DEFAULT
-            mask = np.zeros(11, dtype=np.int8)
-            mask[6] = 1 # Move 1
-            return mask
+        # Return the frozen mask from the last observation
+        if hasattr(self, "_last_obs_mask"):
+            return self._last_obs_mask
             
-        return self.get_action_mask(battle)
+        # Fallback for initialization (only if no snapshot exists)
+        battle = getattr(self, "battle1", None)
+        if battle:
+            return self.get_action_mask(battle)
+            
+        # Hard default
+        mask = np.zeros(11, dtype=np.int8)
+        mask[6] = 1 # Move 1
+        return mask
 
     def action_to_order(self, action, battle, **kwargs):
         # LOCKDOWN: Use the snapshot from the observation to avoid race conditions
