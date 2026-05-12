@@ -167,10 +167,18 @@ class Gen3Env(SinglesEnv):
 
     def step(self, action):
         try:
-            # Pre-capture the battle object in case super().step() resets it
+            # Pre-capture the battle object
             battle = getattr(self, "_battle", None)
             if battle is None:
-                battle = self.battle1 # Fallback
+                battle = self.battle1 
+
+            # Record the action ONE-SHOT before processing
+            if isinstance(action, dict):
+                trainee_idx = action.get(self.agent1.username, -1)
+            else:
+                trainee_idx = action
+            
+            self.reward_manager.record_action(battle, trainee_idx, is_trainee=(battle is self.battle1))
 
             obs, reward, term, trunc, info = super().step(action)
             
@@ -495,7 +503,7 @@ async def main():
             trainee_teambuilder=trainee_teambuilder,
             opponent_teambuilder=opponent_teambuilder,
             save_freq=100000, # Start progressive scaling at 100k
-            n_replays=3
+            n_replays=10
         )
         
         callbacks = [checkpoint_callback, replay_callback]

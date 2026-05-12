@@ -37,12 +37,14 @@ class StatTrackingRLPlayer(RLPlayer):
             stats = init_stats()
             stats["turn_log"] = {}
             stats["switch_events"] = {} # Turn -> "From -> To"
-            stats["last_mon"] = None
+            stats["last_mon"] = "NULL"
             stats["last_mask"] = None
             self.battle_summaries[battle.battle_tag] = stats
         
         stats = self.battle_summaries[battle.battle_tag]
-        current_mon = battle.active_pokemon.species if battle.active_pokemon else "None"
+        # Treat fainted as NONE to prevent ghost voluntary switches
+        is_fainted = battle.active_pokemon.fainted if battle.active_pokemon else False
+        current_mon = "NONE" if is_fainted or not battle.active_pokemon else battle.active_pokemon.species
         
         # 1. Use centralized prediction logic from parent RLPlayer
         idx, probs, mask = self._predict_best_action(battle)
@@ -66,29 +68,54 @@ class StatTrackingRLPlayer(RLPlayer):
             event_str = f"{stats['last_mon']} -> {current_mon} ({label})"
             stats["switch_events"][str(battle.turn)] = event_str
 
-        # 3. Log data for this turn
+        # 3. Enhanced Turn Logging (Forensic Metadata)
+        available_switches = [m.species for m in battle.available_switches]
+        available_moves = [m.id for m in battle.available_moves]
+        
+        # Map the chosen action to a label
+        action_label = "unknown"
+        if idx < 6:
+            action_label = f"switch {available_switches[idx]}" if idx < len(available_switches) else "illegal_switch"
+        elif idx < 10:
+            move_idx = idx - 6
+            action_label = available_moves[move_idx] if move_idx < len(available_moves) else "illegal_move"
+        elif idx == 10:
+            action_label = "struggle"
+
+        # Construct mapped options for easier debugging
+        options = {}
+        for i in range(11):
+            label = "unknown"
+            if i < 6: label = f"switch_{available_switches[i]}" if i < len(available_switches) else f"slot_{i}"
+            elif i < 10: label = available_moves[i-6] if (i-6) < len(available_moves) else f"move_{i-6}"
+            elif i == 10: label = "struggle"
+            
+            options[label] = {
+                "prob": round(float(probs[i]), 4),
+                "allowed": int(mask[i])
+            }
+
         stats["turn_log"][battle.turn] = {
+            "action": action_label,
+            "active_mon": current_mon,
+            "opponent_mon": battle.opponent_active_pokemon.species if battle.opponent_active_pokemon else "unknown",
+            "opponent_revealed_moves": [m.id for m in battle.opponent_active_pokemon.moves.values()] if battle.opponent_active_pokemon else [],
             "action_idx": int(idx),
-            "probabilities": [round(float(p), 4) for p in probs],
-            "mask": mask.tolist(),
-            "active_mon": current_mon
+            "options": options
         }
         
-        # 4. Track Move Stats (Actions only)
-        if idx >= 6:
-            move_slot = idx - 6
-            available = battle.available_moves
-            if move_slot < len(available):
-                mon_name = current_mon
-                move_name = available[move_slot].id
-                if mon_name not in stats["moves"]: stats["moves"][mon_name] = {}
-                stats["moves"][mon_name][move_name] = stats["moves"][mon_name].get(move_name, 0) + 1
+        # 4. Track Move Frequency Stats
+        if idx >= 6 and idx < 10:
+            move_idx = idx - 6
+            if move_idx < len(battle.available_moves):
+                move_name = battle.available_moves[move_idx].id
+                if current_mon not in stats["moves"]: stats["moves"][current_mon] = {}
+                stats["moves"][current_mon][move_name] = stats["moves"][current_mon].get(move_name, 0) + 1
 
         # Update trackers for next turn
         stats["last_mon"] = current_mon
         stats["last_mask"] = mask.copy()
 
-        # 5. Use Centralized Absolute Mapping
         return self.action_to_order(idx, battle)
 
 class StatTrackingHeuristicPlayer(SimpleHeuristicsPlayer):

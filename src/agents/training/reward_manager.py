@@ -18,6 +18,10 @@ class SinglePlayerRewardManager:
             return self.manager.process_turn_reward(battle, base_reward)
         return base_reward
 
+    def record_action(self, battle, action: int, is_trainee: bool):
+        if is_trainee:
+            self.manager.record_action(battle, action)
+
     def __getattr__(self, name):
         """Delegate everything else (reset, report_episode, etc) to the internal manager."""
         return getattr(self.manager, name)
@@ -33,63 +37,91 @@ class Gen3RewardManager:
     def __init__(self, log_level: LogLevel = LogLevel.QUIET):
         self.log_level = log_level
         self.switch_count = 0
+        self.forced_switch_count = 0
+        self.attack_count = 0
         self.total_reward = 0.0
+        self.remaining_switch_pool = 7.5  # Max total points for switching
+        self.last_switch_turn = -1
         self.logger = RateLimitedLogger(interval_seconds=1.0)
         self.episode_logger = RateLimitedLogger(interval_seconds=15.0)
-        self._last_active_name = ""
+        self._last_active_name = "NULL"
         
     def reset(self):
         """Prepares for a new episode."""
         self.switch_count = 0
+        self.forced_switch_count = 0
+        self.attack_count = 0
         self.total_reward = 0.0
-        self._last_active_name = ""
+        self.remaining_switch_pool = 7.5
+        self.last_switch_turn = -1
+        self._last_active_name = "NULL"
 
-    def process_turn_reward(self, battle, base_reward: float) -> float:
+    def record_action(self, battle, action: int):
         """
-        Calculates the final reward for a turn, including subsidies and logging.
-        
-        :param battle: The battle object for the current turn.
-        :param base_reward: The delta from reward_computing_helper.
-        :return: The final reward value to be passed to the RL agent.
+        Records a voluntary action EXACTLY ONCE.
+        Called by Gen3Env.step before the simulation proceeds.
         """
-        reward = base_reward
+        # 1. Track Attacks
+        if action >= 6:
+            self.attack_count += 1
+            
+        # 2. Track Switches
+        # Treat fainted Pokémon as NONE to prevent 'ghost' voluntary switches
+        is_fainted = battle.active_pokemon.fainted if battle.active_pokemon else False
+        current_active = "NONE" if is_fainted or not battle.active_pokemon else battle.active_pokemon.species
         
-        # 1. Rate-limited logging check
-        is_log_turn = self.log_level >= LogLevel.DETAILED and self.logger.should_log()
-        
-        if is_log_turn:
-            hp = battle.active_pokemon.current_hp_fraction if battle.active_pokemon else 0.0
-            self.logger.log(
-                f"  [REWARD] Turn {battle.turn} | Base: {base_reward:+.4f} | HP: {hp:.2f} | Won: {battle.won} | Lost: {battle.lost}\n",
-                force=True
-            )
-
-        # 2. Logarithmic Switch Reward with Turn Decay
-        current_active = battle.active_pokemon.species if battle.active_pokemon else "NONE"
         latched_mask = getattr(battle, "_latched_mask", None)
         
         has_switched, is_real, is_voluntary = SwitchDetection.get_switch_type(
             self._last_active_name, current_active, latched_mask
         )
         
-        if is_real and is_voluntary is True:
-            # Decay to 0 at Turn 250
-            turn_decay = max(0.0, 1.0 - battle.turn / 250.0)
-            subsidy = (3.75 / (self.switch_count + 1)) * turn_decay
-            reward += subsidy
-            self.switch_count += 1
-            
-            if is_log_turn:
-                self.logger.log(
-                    f"  [SUBSIDY] +{subsidy:.2f} | Switches: {self.switch_count} | Decay: {turn_decay:.2f}\n",
-                    force=True
-                )
+        # We only apply the subsidy here so it's tied to the CHOICE, not the turn delta
+        self._pending_subsidy = 0.0
+        if is_real:
+            if is_voluntary is True:
+                payout = self.remaining_switch_pool * 0.5
+                attack_ratio = self.attack_count / max(1, battle.turn)
+                ratio_mult = 1.0 if attack_ratio >= 0.33 else 0.5
+                spam_mult = 1.0 if (battle.turn - self.last_switch_turn) > 1 else 0.0
+                turn_decay = max(0.0, 1.0 - battle.turn / 250.0)
+                
+                self._pending_subsidy = min(payout * ratio_mult * spam_mult * turn_decay, 1.0)
+                
+                self.remaining_switch_pool -= payout
+                self.switch_count += 1
+                self.last_switch_turn = battle.turn
+            elif is_voluntary is False:
+                # This is a forced switch (Replacement or Roar/Whirlwind)
+                self.forced_switch_count += 1
 
         self._last_active_name = current_active
+
+    def process_turn_reward(self, battle, base_reward: float) -> float:
+        """
+        Calculates the final reward for a turn, including subsidies and logging.
+        """
+        reward = base_reward
         
-        # 3. Trainee-only tracking (Already isolated by wrapper)
+        # Apply any subsidy calculated in the last record_action call
+        if hasattr(self, "_pending_subsidy"):
+            reward += self._pending_subsidy
+            subsidy_val = self._pending_subsidy
+            del self._pending_subsidy
+        else:
+            subsidy_val = 0.0
+        
+        # Rate-limited logging check
+        is_log_turn = self.log_level >= LogLevel.DETAILED and self.logger.should_log()
+        
+        if is_log_turn:
+            hp = battle.active_pokemon.current_hp_fraction if battle.active_pokemon else 0.0
+            self.logger.log(
+                f"  [REWARD] Turn {battle.turn} | Base: {base_reward:+.4f} | Subsidy: {subsidy_val:+.2f} | Won: {battle.won}\n",
+                force=True
+            )
+
         self.total_reward += reward
-            
         return reward
 
     def report_episode(self, battle):
@@ -98,10 +130,20 @@ class Gen3RewardManager:
             return
 
         status = "UNKNOWN"
+        our_alive = 0
+        opp_alive = 0
+        turns = 0
         if battle:
             if battle.won: status = "WIN"
             elif battle.lost: status = "LOSS"
             elif battle.finished: status = "FINISHED"
+            
+            our_alive = len([p for p in battle.team.values() if not p.fainted])
+            opp_alive = len([p for p in battle.opponent_team.values() if not p.fainted])
+            turns = battle.turn
 
-        msg = f"\n🏁 Episode Finished | Status: {status} | Total Reward: {self.total_reward:.2f} | Voluntary Switches: {self.switch_count}\n"
+        msg = (f"\n🏁 Episode Finished | Reward: {self.total_reward:6.2f} | Status: {status:4} | "
+               f"Mon: {our_alive} vs {opp_alive} | Turns: {turns:3} | "
+               f"Attacks: {self.attack_count:2} | Sw(Vol): {self.switch_count:2} | Sw(For): {self.forced_switch_count:2}\n")
+        
         self.episode_logger.log(msg, force=False)

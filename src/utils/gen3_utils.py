@@ -35,16 +35,25 @@ class SwitchDetection:
         if not last_mon or not current_mon:
             return False, False, None
             
-        has_changed = last_mon != current_mon
-        
         # Normalize 'NONE' strings from various sources
         l_norm = str(last_mon).upper()
         c_norm = str(current_mon).upper()
-        is_real = l_norm != "NONE" and c_norm != "NONE" and l_norm != "NULL" and c_norm != "NULL"
         
+        has_changed = l_norm != c_norm
+        is_real = False
         voluntary = None
-        if has_changed and is_real:
-            voluntary = SwitchDetection.is_voluntary(last_mask)
+        
+        if has_changed:
+            # Case 1: MON -> MON (Standard switch)
+            if l_norm not in ["NONE", "NULL", "NONE_P1", "NONE_P2"] and c_norm not in ["NONE", "NULL"]:
+                is_real = True
+                voluntary = SwitchDetection.is_voluntary(last_mask)
+            # Case 2: NONE -> MON (Replacement after faint - ALWAYS FORCED)
+            elif l_norm == "NONE" and c_norm not in ["NONE", "NULL"]:
+                is_real = True
+                voluntary = False
+            # Case 3: NULL -> MON (Start of game - IGNORE)
+            # Case 4: ANY -> NONE (Faint - IGNORE, wait for replacement)
             
         return has_changed, is_real, voluntary
 
