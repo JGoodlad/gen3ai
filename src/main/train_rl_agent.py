@@ -64,7 +64,7 @@ class Gen3Env(SinglesEnv):
 
     def embed_battle(self, battle):
         # SNAPSHOT: Only cache for the trainee (agent1) to avoid opponent desync
-        if hasattr(self, "agent1") and battle.account_configuration.username == self.agent1.username:
+        if hasattr(self, "battle1") and battle is self.battle1:
             self._last_obs_battle = battle
         return self.observation_encoder.encode(battle)
 
