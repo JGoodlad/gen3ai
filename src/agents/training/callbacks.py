@@ -13,6 +13,7 @@ from poke_env.player import Player, RandomPlayer, SimpleHeuristicsPlayer
 from poke_env.ps_client import LocalhostServerConfiguration, AccountConfiguration
 from agents.rl_agent import RLPlayer
 from agents.action.mask_generator import Gen3ActionMasker
+from utils.gen3_utils import SwitchDetection
 
 BATTLE_FORMAT = "gen3ou"
 
@@ -21,6 +22,7 @@ def init_stats():
     return {
         "voluntary_switches": 0,
         "forced_switches": 0,
+        "unknown_switches": 0,
         "moves": {} # Species -> {Move -> Count}
     }
 
@@ -46,22 +48,23 @@ class StatTrackingRLPlayer(RLPlayer):
         idx, probs, mask = self._predict_best_action(battle)
             
         # 2. Detect and log ACTUAL Switch Transitions (the source of truth)
-        if stats["last_mon"] is not None and stats["last_mon"] != current_mon:
-            # Determine if it was a forced switch (faint)
-            is_faint = False
-            if stats["last_mask"] is not None:
-                # If no moves (6-11) were legal in the PREVIOUS mask, it was forced.
-                if not any(stats["last_mask"][6:11] == 1):
-                    is_faint = True
-            
-            label = "forced" if is_faint else "voluntary"
-            event_str = f"{stats['last_mon']} -> {current_mon} ({label})"
-            stats["switch_events"][str(battle.turn)] = event_str
-            
-            if is_faint:
+        has_switched, is_real, is_voluntary = SwitchDetection.get_switch_type(
+            stats["last_mon"], current_mon, stats["last_mask"]
+        )
+        
+        if has_switched and is_real:
+            if is_voluntary is True:
+                label = "voluntary"
+                stats["voluntary_switches"] += 1
+            elif is_voluntary is False:
+                label = "forced"
                 stats["forced_switches"] += 1
             else:
-                stats["voluntary_switches"] += 1
+                label = "unknown"
+                stats["unknown_switches"] += 1
+            
+            event_str = f"{stats['last_mon']} -> {current_mon} ({label})"
+            stats["switch_events"][str(battle.turn)] = event_str
 
         # 3. Log data for this turn
         stats["turn_log"][battle.turn] = {
@@ -195,9 +198,12 @@ class ReplayCallback(BaseCallback):
                     "total_turns": battle.turn,
                     "our_team_stats": {
                         "switches": {
-                            "total": replay_player.battle_summaries[tag]["voluntary_switches"] + replay_player.battle_summaries[tag]["forced_switches"],
+                            "total": (replay_player.battle_summaries[tag]["voluntary_switches"] + 
+                                      replay_player.battle_summaries[tag]["forced_switches"] +
+                                      replay_player.battle_summaries[tag]["unknown_switches"]),
                             "voluntary": replay_player.battle_summaries[tag]["voluntary_switches"],
                             "forced": replay_player.battle_summaries[tag]["forced_switches"],
+                            "unknown": replay_player.battle_summaries[tag]["unknown_switches"],
                             "log": replay_player.battle_summaries[tag]["switch_events"]
                         },
                         "moves_per_pokemon": replay_player.battle_summaries[tag]["moves"],

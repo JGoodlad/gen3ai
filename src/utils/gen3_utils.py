@@ -1,4 +1,53 @@
 import re
+import numpy as np
+from typing import Optional, Tuple
+
+class SwitchDetection:
+    """
+    Centralized logic for identifying and categorizing Pokémon switches.
+    Ensures consistency between reward calculation and diagnostic logging.
+    """
+    
+    @staticmethod
+    def is_voluntary(mask: Optional[np.ndarray]) -> Optional[bool]:
+        """
+        Determines if a switch was voluntary based on the action mask.
+        Returns:
+            True: Moves/Struggle were available (Voluntary choice)
+            False: Only switches/nothing available (Forced/Faint)
+            None: Mask missing (Unknown status)
+        """
+        if mask is None:
+            return None
+        # 6-9 are moves, 10 is struggle.
+        return any(mask[6:11] == 1)
+
+    @staticmethod
+    def get_switch_type(last_mon: str, current_mon: str, last_mask: Optional[np.ndarray]) -> Tuple[bool, bool, Optional[bool]]:
+        """
+        Analyzes a transition between two Pokémon.
+        
+        Returns:
+            is_switch (bool): True if species changed.
+            is_real (bool): True if neither side is 'NONE' (filters faints/transitions).
+            is_voluntary (Optional[bool]): True (Voluntary), False (Forced), None (Unknown).
+        """
+        if not last_mon or not current_mon:
+            return False, False, None
+            
+        has_changed = last_mon != current_mon
+        
+        # Normalize 'NONE' strings from various sources
+        l_norm = str(last_mon).upper()
+        c_norm = str(current_mon).upper()
+        is_real = l_norm != "NONE" and c_norm != "NONE" and l_norm != "NULL" and c_norm != "NULL"
+        
+        voluntary = None
+        if has_changed and is_real:
+            voluntary = SwitchDetection.is_voluntary(last_mask)
+            
+        return has_changed, is_real, voluntary
+
 
 # Single source of truth for Gen 3 Hidden Power IVs (ensures 70 Power)
 GEN3_HP_IVS = {

@@ -32,7 +32,7 @@ from agents.observation.global_env import GlobalEnvEncoder
 from utils.teambuilder import Gen3Teambuilder
 from utils.team_loader import TeamLoader
 from agents.training.callbacks import ReplayCallback
-from agents.training.reward_manager import Gen3RewardManager
+from agents.training.reward_manager import Gen3RewardManager, SinglePlayerRewardManager
 from agents.action.mapper import Gen3ActionMapper
 from utils.logging.levels import LogLevel
 
@@ -93,7 +93,7 @@ class Gen3Env(SinglesEnv):
         }
         
         # Reward & Metric Tracking
-        self.reward_manager = Gen3RewardManager(log_level=self.log_level)
+        self.reward_manager = SinglePlayerRewardManager(Gen3RewardManager(log_level=self.log_level))
 
     def embed_battle(self, battle):
         # Generate mask and LATCH it to this specific turn on the battle object
