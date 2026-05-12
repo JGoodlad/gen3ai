@@ -63,29 +63,34 @@ class Gen3Env(SinglesEnv):
         self.switch_count = 0
 
     def embed_battle(self, battle):
-        # SNAPSHOT: Generate and freeze the mask for this specific observation
-        # This is the ULTIMATE synchronization: the mask is pinned to the obs.
+        # LATCH STAGE 1: Generate mask and store in PENDING buffer
+        # This prevents background battle updates from corrupting the active turn
         if hasattr(self, "battle1") and battle is self.battle1:
-            # Generate the mask once and FREEZE it
-            self._last_obs_mask = Gen3ActionMasker.get_mask(battle)
-            # We still keep the battle snapshot for action_to_order
-            self._last_obs_battle = battle
+            self._pending_obs_mask = Gen3ActionMasker.get_mask(battle)
+            self._pending_obs_battle = battle
             
         return self.observation_encoder.encode(battle)
 
     def get_action_mask(self, battle):
-        # Use the frozen mask if available to ensure sync with observation
-        if hasattr(self, "_last_obs_mask"):
-            return self._last_obs_mask
+        # Use the COMMITTED mask if available to ensure absolute sync
+        if hasattr(self, "_active_mask"):
+            return self._active_mask
         return Gen3ActionMasker.get_mask(battle)
-
+    
     def action_masks(self):
-        # Return the frozen mask from the last observation (fallback to current if needed)
+        # Return the committed mask
         return self.get_action_mask(getattr(self, "battle1", None))
 
+    def _commit_latch(self):
+        # LATCH STAGE 2: Commit pending state to active state
+        # This is called right before returning an observation to the agent
+        if hasattr(self, "_pending_obs_mask"):
+            self._active_mask = self._pending_obs_mask
+            self._active_battle = self._pending_obs_battle
+
     def action_to_order(self, action, battle, **kwargs):
-        # LOCKDOWN: Use the snapshot from the observation to avoid race conditions
-        battle = getattr(self, "_last_obs_battle", battle)
+        # LOCKDOWN: Use the COMMITTED snapshot from the observation to avoid race conditions
+        battle = getattr(self, "_active_battle", battle)
         
         # FIXED SLOT MAPPING (STRICT MODE): No fallbacks allowed.
         from poke_env.player.battle_order import SingleBattleOrder
@@ -164,7 +169,12 @@ class Gen3Env(SinglesEnv):
     def step(self, action):
         try:
             self._last_action = action
-            return super().step(action)
+            res = super().step(action)
+            
+            # COMMIT LATCH: Promote the next-turn snapshot to active state
+            self._commit_latch()
+            
+            return res
         except Exception as e:
             print(f"🛑 ERROR IN STEP: {e}")
             import traceback
@@ -175,6 +185,10 @@ class Gen3Env(SinglesEnv):
         try:
             self.switch_count = 0
             self._last_action = -1
+            
+            # COMMIT LATCH: Promote the observation-time snapshot to the active turn state
+            self._commit_latch()
+            
             return super().reset(*args, **kwargs)
         except Exception as e:
             print(f"🛑 ERROR IN RESET: {e}")
