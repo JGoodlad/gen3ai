@@ -1,6 +1,7 @@
 import numpy as np
 from .base import ObservationEncoder
 from .constants import MOVE_SLOT_DIM, MOVES_KNOWN_DIM
+from .types import TypeEncoder
 from poke_env.battle.abstract_battle import AbstractBattle
 from typing import Any, List, Dict
 
@@ -45,7 +46,6 @@ class MovesEncoder(ObservationEncoder):
                 recoil = 1.0 if entry.get("hasRecoil") else 0.0
                 
                 # Get type from mapping and convert to ID using TypeEncoder
-                from .types import TypeEncoder
                 move_type = entry.get("type", "Normal").upper()
                 type_id = TypeEncoder.TYPE_TO_IDX.get(move_type, 0)
                 
@@ -69,6 +69,13 @@ class MovesEncoder(ObservationEncoder):
     def get_layout(self) -> Dict[str, Any]:
         return {
             "slots": [{"offset": i * MOVE_SLOT_DIM, "dim": MOVE_SLOT_DIM} for i in range(4)],
+            "slot_layout": {
+                "id": {"offset": 0, "dim": 1},
+                "power": {"offset": 1, "dim": 1},
+                "secondary": {"offset": 2, "dim": 1},
+                "recoil": {"offset": 3, "dim": 1},
+                "type": {"offset": 4, "dim": 1}
+            },
             "known": {"offset": 4 * MOVE_SLOT_DIM, "dim": MOVES_KNOWN_DIM}
         }
 

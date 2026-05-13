@@ -258,37 +258,51 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         embedded_pk_types = embedded_t1 + embedded_t2 # [B, 12, 16]
         
         # 5. Construct the enriched Pokemon vector by stitching
-        # Part A: Stats (between Species (0) and Items)
-        part_a = pokemon_part[:, :, species_idx + 1 : items_info['offset']] # [B, 12, 6]
+        # Part A: Stats (between Species ID and Items)
+        species_id_layout = species_info['layout']['species_id']
+        stats_start = species_idx + species_id_layout['dim']
+        part_a = pokemon_part[:, :, stats_start : items_info['offset']] # [B, 12, 6]
         
         # Part B: Item remnants (Known flag)
         item_remnant_idx = items_info['offset'] + items_layout['known']['offset']
-        item_remnant = pokemon_part[:, :, item_remnant_idx : item_remnant_idx + 1] # [B, 12, 1]
+        item_remnant = pokemon_part[:, :, item_remnant_idx : item_remnant_idx + items_layout['known']['dim']] # [B, 12, 1]
         
         # Part C: Ability remnants (Known flag)
         ability_remnant_idx = abilities_info['offset'] + abilities_layout['known']['offset']
-        ability_remnant = pokemon_part[:, :, ability_remnant_idx : ability_remnant_idx + 1] # [B, 12, 1]
+        ability_remnant = pokemon_part[:, :, ability_remnant_idx : ability_remnant_idx + abilities_layout['known']['dim']] # [B, 12, 1]
         
         # Part D: Condition (between Abilities and Moves)
-        part_d = pokemon_part[:, :, abilities_info['offset'] + 25 : moves_offset] # [B, 12, 8]
+        condition_start = abilities_info['offset'] + abilities_info['dim']
+        part_d = pokemon_part[:, :, condition_start : moves_offset] # [B, 12, 8]
         
         # Part E: Move remnants (Power, Secondary, Recoil - everything but ID and Type)
         move_remnants = []
+        m_slot_layout = moves_layout['slot_layout']
         for i in range(4):
-            slot_start = moves_offset + moves_layout['slots'][i]['offset']
-            # Indices: 1 (Power), 2 (Secondary), 3 (Recoil)
-            move_remnants.append(pokemon_part[:, :, slot_start + 1 : slot_start + 4])
-            # Index 5, 6, 7 are extra remnants in the 8-dim slot
-            move_remnants.append(pokemon_part[:, :, slot_start + 5 : slot_start + 8])
-        all_move_remnants = torch.cat(move_remnants, dim=2) # [B, 12, 24] (4 slots * 6 remnants)
+            slot_info = moves_layout['slots'][i]
+            slot_start = moves_offset + slot_info['offset']
+            
+            # Extract remnants using slot_layout to avoid magic numbers
+            # Power, Secondary, Recoil
+            rem1_start = slot_start + m_slot_layout['power']['offset']
+            rem1_end = slot_start + m_slot_layout['type']['offset'] # Up to but not including Type
+            move_remnants.append(pokemon_part[:, :, rem1_start : rem1_end])
+            
+            # Extra remnants after Type
+            rem2_start = slot_start + m_slot_layout['type']['offset'] + m_slot_layout['type']['dim']
+            rem2_end = slot_start + slot_info['dim']
+            move_remnants.append(pokemon_part[:, :, rem2_start : rem2_end])
+        all_move_remnants = torch.cat(move_remnants, dim=2) # [B, 12, 24]
         
         # Part F: Move Known Flags
-        known_idx = moves_offset + moves_layout['known']['offset']
-        known_dim = moves_layout['known']['dim']
-        known_flags = pokemon_part[:, :, known_idx : known_idx + known_dim] # [B, 12, 4]
+        known_layout = moves_layout['known']
+        known_idx = moves_offset + known_layout['offset']
+        known_flags = pokemon_part[:, :, known_idx : known_idx + known_layout['dim']] # [B, 12, 4]
         
         # Part G: HP and Active Flag
-        hp_and_active = pokemon_part[:, :, -2:] # [B, 12, 2]
+        hp_offset = pk_layout['hp']['offset']
+        # Extract from HP offset to the end of the Pokémon vector (includes Active Flag)
+        hp_and_active = pokemon_part[:, :, hp_offset:] 
         
         # Final stitch
         # --- SHARED MOVE PROCESSING (Step 1) ---
