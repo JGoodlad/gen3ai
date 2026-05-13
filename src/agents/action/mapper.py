@@ -29,9 +29,22 @@ class Gen3ActionMapper:
                 raise ValueError(f"STRICT MODE FAILURE: Illegal action {action} requested. Mask: {mask}")
 
         # --- 2. Action Mapping ---
+        # Retrieve the latched context if available
+        context = getattr(battle, "_gen3_decision_context", None)
+        if context and context.get("turn") != battle.turn:
+            # If the context is from a previous turn, it's stale
+            context = None
+
         # 0-5: Switches (Team Slots 1-6)
         if action < 6:
-            team_list = list(battle.team.values())
+            # Use latched team if available, otherwise fall back to current
+            team_list = context.get("team_objects") if context else list(battle.team.values())
+            
+            # Integrity Check: No duplicate species allowed
+            species_list = context.get("team_species") if context else [p.species for p in team_list]
+            if len(species_list) != len(set(species_list)):
+                raise RuntimeError(f"STRICT MODE FAILURE: Duplicate species detected in team: {species_list}")
+                
             if action < len(team_list):
                 target_mon = team_list[action]
                 if target_mon in battle.available_switches:
@@ -43,28 +56,27 @@ class Gen3ActionMapper:
         elif action < 10:
             move_idx = action - 6
             
-            # Preferred Source: Server request (Most accurate for active choices)
-            if battle.last_request:
-                active_request = battle.last_request.get("active", [{}])[0]
-                request_moves = active_request.get("moves", [])
-                if move_idx < len(request_moves):
-                    move_id = request_moves[move_idx].get("id")
+            # Use latched move IDs if available
+            if context:
+                move_ids = context.get("move_ids", [])
+                if move_idx < len(move_ids):
+                    move_id = move_ids[move_idx]
                     # Match move_id to available_moves
                     for move in battle.available_moves:
                         if move.id == move_id:
                             return SingleBattleOrder(move)
                         # Handle Hidden Power variants
-                        if move.id.startswith("hiddenpower") and move_id.startswith("hiddenpower"):
+                        if move.id.startswith("hiddenpower") and (move_id and move_id.startswith("hiddenpower")):
                             return SingleBattleOrder(move)
             
-            # Secondary Source: Stable sorted move list (for non-standard states)
-            active_pokemon = battle.active_pokemon
-            if active_pokemon and battle.available_moves:
-                stable_ids = sorted(active_pokemon.moves.keys())
-                if move_idx < len(stable_ids):
-                    m_id = stable_ids[move_idx]
+            # Fallback to current request if no context (should not happen in training)
+            if not context and battle.last_request:
+                active_request = battle.last_request.get("active", [{}])[0]
+                request_moves = active_request.get("moves", [])
+                if move_idx < len(request_moves):
+                    move_id = request_moves[move_idx].get("id")
                     for move in battle.available_moves:
-                        if move.id == m_id:
+                        if move.id == move_id:
                             return SingleBattleOrder(move)
             
             available = [m.id for m in battle.available_moves]
@@ -76,7 +88,7 @@ class Gen3ActionMapper:
                 if m.id == "struggle":
                     return SingleBattleOrder(m)
             
-            # Final fallback for struggle
+            # Final fallback for struggle (in case server request is slightly desynced)
             from poke_env.battle.move import Move
             return SingleBattleOrder(Move("struggle", gen=3))
 

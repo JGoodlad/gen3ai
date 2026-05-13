@@ -15,48 +15,51 @@ class Gen3ActionMasker:
     def get_mask(battle: AbstractBattle) -> np.ndarray:
         """
         Generates a binary mask where 1 is a valid action and 0 is invalid.
-        Maps Actions 6-9 directly to Server Move Slots 1-4 for absolute stability.
+        STRICT MODE: Only uses the server request. Crashes on ambiguity.
         """
+        if not battle.last_request:
+            # We crash if we are asked to mask but have no request context.
+            # This is a 'junk in junk out' prevention measure.
+            raise RuntimeError("STRICT MODE FAILURE: No last_request found in battle. Cannot mask.")
+
         mask = np.zeros(11, dtype=np.int8)
         
-        # --- Switches (0-5) ---
+        # --- 1. Switches (0-5) ---
         team_list = list(battle.team.values())
-        available_pokemon_species = [p.species for p in battle.available_switches]
         
+        # Integrity Check: No duplicate species allowed (Gen 3 OU standard)
+        species_list = [p.species for p in team_list]
+        if len(species_list) != len(set(species_list)):
+            raise RuntimeError(f"STRICT MODE FAILURE: Duplicate species detected in team: {species_list}")
+            
         for i, pokemon in enumerate(team_list):
             if i < 6:
-                if pokemon.species in available_pokemon_species:
+                # Use object equality check for maximum robustness
+                if pokemon in battle.available_switches:
                     mask[i] = 1
                     
-        # --- Moves (6-10) ---
-        available_moves = battle.available_moves
-        active_pokemon = battle.active_pokemon
+        # --- 2. Moves (6-10) ---
+        active_request = battle.last_request.get("active", [{}])[0]
+        request_moves = active_request.get("moves", [])
         
-        if active_pokemon and battle.last_request:
-            # Use Server's Native Move Slots (most stable)
-            active_request = battle.last_request.get("active", [{}])[0]
-            request_moves = active_request.get("moves", [])
-            
-            # Map slots 0-3 to Actions 6-9
-            for i, move_data in enumerate(request_moves):
-                if i < 4 and not move_data.get("disabled", False):
-                    mask[i + 6] = 1
-            
-            # Dedicated Struggle (10)
-            if any(m.id == "struggle" for m in available_moves):
-                mask[10] = 1
+        # --- Decision Context Latch ---
+        # We 'pin' the current slots to the battle object so the mapper 
+        # is guaranteed to use the same mapping as the mask.
+        battle._gen3_decision_context = {
+            "turn": battle.turn,
+            "move_ids": [m.get("id") for m in request_moves],
+            "team_species": [p.species for p in team_list],
+            "team_objects": team_list # For direct object mapping
+        }
+
+        # Map slots 0-3 to Actions 6-9
+        for i, move_data in enumerate(request_moves):
+            if i < 4 and not move_data.get("disabled", False):
+                mask[i + 6] = 1
         
-        # Final safety check: if no moves are masked but some are available, 
-        # fall back to basic ID matching (handles edge cases where request is stale)
-        if np.sum(mask[6:10]) == 0 and available_moves:
-            avail_ids = [m.id for m in available_moves]
-            if "struggle" in avail_ids:
-                mask[10] = 1
-            else:
-                # Fallback to alphabetical just in case request is missing
-                stable_ids = sorted(active_pokemon.moves.keys()) if active_pokemon else []
-                for i, m_id in enumerate(stable_ids):
-                    if i < 4 and m_id in avail_ids:
-                        mask[i + 6] = 1
+        # Dedicated Struggle (10)
+        # Note: Struggle is only in available_moves if the server explicitly forces it
+        if any(m.id == "struggle" for m in battle.available_moves):
+            mask[10] = 1
                 
         return mask
