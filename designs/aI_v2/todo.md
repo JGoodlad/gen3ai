@@ -22,3 +22,12 @@ This document tracks high-level architectural ideas to revisit after completing 
 
 **Concept**: Fix the `ActiveContextEncoder` to actually encode the `active_turns` feature.
 - **Motivation**: Necessary for perfect implementation of *Fake Out* and understanding the "faded" value of temporary boosts or effects.
+
+---
+
+## 3. Scalar Context Expansion ("Voice of the Scalars")
+
+**Concept**: Instead of raw 1D scalars for HP, Turn, and Spikes, project them into a larger latent space (e.g., 32 or 64 dims) using a small projection network.
+- **Problem**: In a 128-dim or 256-dim model, single scalars like `HP=0.85` have very low "influence" compared to multi-dimensional embeddings. They can easily be "drowned out" by the high-variance norms of larger vectors.
+- **Solution**: Use an `nn.Linear` or `nn.Sequential` to expand the 12 global context scalars into a larger feature block before concatenation.
+- **Extension**: Use Sinusoidal (Positional) Encoding for the **Turn Count** to help the model perceive the phase of the battle (Early/Mid/Late) with much higher resolution than a single float.
