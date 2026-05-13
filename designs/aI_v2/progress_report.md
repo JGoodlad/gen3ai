@@ -82,8 +82,37 @@ The primary goal of this run is to break the `-30.0` plateau (under the new Hard
 *   **Current Trend**: The reward is trending upwards as the model learns to use the **Fainted Count** context to know when to stop switching and start closing the game.
 *   **Strategic Mastery**: The model is now capable of realizing that a 10% HP Mon is "Fodder" and should be sacrificed for a clean switch, rather than trying to heal it in a losing matchup.
 
-## 🛠 Next Steps: Step 4 (Team-Wide Attention)
-Once the Active Matchup logic stabilizes, the final architectural push will be **Step 4: Switching/Team Attention**. This will allow the "Active Situation" to query the **Bench** to find the optimal counter-switch, rather than treating the bench as a flat list of 5 choices.
+---
+
+# 📊 Part 3.1: Final Spotlight Evaluation (20M Step Benchmark)
+
+## 🚀 Overview
+The Step 3.1 run has concluded at the **20.0M Step** milestone. This run solidified the "Strategic Context" and "Matchup Attention" layers, resulting in the most decisive and tactically sound agent produced to date.
+
+![TensorBoard Final Run](file:///home/goodlad/dev/gen3ai/designs/aI_v2/imgs/tensorboard_part3_1_run2.png)
+
+## 📈 Learning Stability
+The final 20M step curves show significant maturity:
+*   **Episode Reward Mean**: Stabilized around **-23.0** to **-25.0**. Under the "Hardened" scoring system (where a loss/stall is -30.0), this represents a massive improvement over the early -32.0 baseline, showing the agent is now winning or narrowly losing a significant portion of its games.
+*   **Explained Variance**: Maintained a very healthy **0.65+**, confirming the architecture scales well with increased step counts.
+
+## ⚔️ Final Evaluation (1,000 Battle Snapshot)
+We performed a high-concurrency evaluation of the final model to establish a formal performance benchmark:
+
+| Opponent | Win Rate | Status |
+| :--- | :--- | :--- |
+| **RandomPlayer** | **86.3%** | ✅ Dominant |
+| **SimpleHeuristicsPlayer** | **27.7%** | ⚠️ Competent / Room for Growth |
+
+### Analysis: The "Heuristic Barrier"
+While the model dominates random play, the 27.7% win rate against the Heuristic opponent highlights the "Mid-Level Plateau."
+1.  **Strategic Discipline**: The model has learned to trade effectively but still occasionally falls for common heuristic traps (like staying in against a predictable counter).
+2.  **Endgame Logic**: The agent can reach the 5v5 or 6v6 trade phase reliably but lacks the "Closing" precision required to beat a rule-based bot that never makes tactical blunders.
+
+## 🛠 Next Steps: Step 4 (Full Team Attention)
+To break through the 30% barrier against Heuristics, we are moving to **Step 4: Full Team Attention**. 
+*   **Goal**: Allow the model to "query" the bench during the active duel to evaluate counter-switches with the same depth as move selection.
+*   **Focus**: Transforming the Bench from a "fallback list" into a "strategic reserve."
 
 ---
-*Report updated on 2026-05-12 21:55*
+*Report updated on 2026-05-13 07:55*

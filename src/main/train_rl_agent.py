@@ -13,6 +13,7 @@ import argparse
 from datetime import datetime
 from gymnasium import spaces
 from stable_baselines3 import PPO
+from sb3_contrib import MaskablePPO
 from stable_baselines3.common.callbacks import CheckpointCallback
 from stable_baselines3.common.vec_env import DummyVecEnv, SubprocVecEnv
 from stable_baselines3.common.monitor import Monitor
@@ -420,7 +421,7 @@ async def main():
                     break
 
         print(f"Loading existing model from {model_path}")
-        model = PPO.load(model_path, env=env, device=args.device, tensorboard_log="./tensorboard/")
+        model = MaskablePPO.load(model_path, env=env, device=args.device, tensorboard_log="./tensorboard/")
         model.ent_coef = args.ent_coef # Allow overriding entropy during continuation
         
         if args.eval_only:
@@ -479,7 +480,6 @@ async def main():
             print(f"Note: Capping batch_size from {args.batch_size} to {total_rollout_size} to match rollout capacity.")
             args.batch_size = total_rollout_size
 
-        from sb3_contrib import MaskablePPO
         model = MaskablePPO(
             "MultiInputPolicy",
             env,
