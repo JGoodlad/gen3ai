@@ -3,7 +3,10 @@
 This guide covers how to train, debug, and optimize the Gen3 Reinforcement Learning pipeline.
 
 ## 🚀 Quick Start (Production Training)
-To start a high-performance training run using the full capacity of your RTX 3080 Ti:
+To start a high-performance training run using the full capacity 4of your RTX 3080 Ti:
+
+```bash
+NODE_ENV=production node --turbo-fast-api-calls --fast-math --max-old-space-size=4096 deps/pokemon-showdown/pokemon-showdown start --no-security
 
 ```bash
 export PYTHONPATH=$PYTHONPATH:src
@@ -78,4 +81,25 @@ watch -n 1 nvidia-smi
 
 # Watch CPU utilization
 htop
+```
+
+
+
+#### 4 Go Vroom:
+```bash
+NODE_ENV=production node --turbo-fast-api-calls --max-old-space-size=4096 deps/pokemon-showdown/pokemon-showdown start --no-security
+```
+
+```bash
+export PYTHONPATH=$PYTHONPATH:src && \
+/home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 src/main/train_rl_agent.py \
+  --steps 13000000 \
+  --n-envs 64 \
+  --batch-size 16384 \
+  --n-epochs 10 \
+  --ent-coef 0.02 \
+  --n-steps 2048 \
+  --lr 0.0003 \
+  --device cuda \
+  --log-level periodic
 ```
