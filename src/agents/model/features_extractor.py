@@ -277,6 +277,15 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         
         # Part E: Move remnants (Power, Secondary, Recoil - everything but ID and Type)
         move_remnants = []
+        # Fallback for models trained before slot_layout was added to the saved layout
+        if 'slot_layout' not in moves_layout:
+            moves_layout['slot_layout'] = {
+                "id": {"offset": 0, "dim": 1},
+                "power": {"offset": 1, "dim": 1},
+                "secondary": {"offset": 2, "dim": 1},
+                "recoil": {"offset": 3, "dim": 1},
+                "type": {"offset": 4, "dim": 1}
+            }
         m_slot_layout = moves_layout['slot_layout']
         for i in range(4):
             slot_info = moves_layout['slots'][i]

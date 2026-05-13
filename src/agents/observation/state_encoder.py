@@ -221,8 +221,8 @@ class Gen3ObservationEncoder(ObservationEncoder):
                 desc["opp_team"].append(opp_desc)
         
         # 2. Context
-        our_active_ctx = vector[OFFSET_CONTEXT : OFFSET_CONTEXT+31]
-        opp_active_ctx = vector[OFFSET_CONTEXT+31 : OFFSET_CONTEXT+62]
+        our_active_ctx = vector[OFFSET_CONTEXT : OFFSET_CONTEXT + ACTIVE_CONTEXT_DIM]
+        opp_active_ctx = vector[OFFSET_CONTEXT + ACTIVE_CONTEXT_DIM : OFFSET_CONTEXT + (2 * ACTIVE_CONTEXT_DIM)]
         desc["our_active"] = self.active_context_encoder.describe_vector(our_active_ctx)
         desc["opp_active"] = self.active_context_encoder.describe_vector(opp_active_ctx)
         

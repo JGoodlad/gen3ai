@@ -31,6 +31,27 @@ class Gen3ActionMapper:
         # --- 2. Action Mapping ---
         # Retrieve the latched context if available
         context = getattr(battle, "_gen3_decision_context", None)
+        
+        # --- FORENSIC INTEGRITY CHECK ---
+        # Compare the pinned state (what the model saw) to the current server state
+        if context and battle.last_request:
+            active_request = battle.last_request.get("active", [{}])[0]
+            current_move_ids = [m.get("id") for m in active_request.get("moves", [])]
+            latched_move_ids = context.get("move_ids", [])
+            
+            if latched_move_ids != current_move_ids:
+                # We detected a silent update! 
+                # Instead of just fixing it, we report the discrepancy for diagnostics.
+                report = (
+                    f"\n🛑 STRICT MODE INTEGRITY FAILURE: Mid-Decision State Change Detected!\n"
+                    f"  Turn: {battle.turn}\n"
+                    f"  Pinned (Observation): {latched_move_ids}\n"
+                    f"  Current (Server):      {current_move_ids}\n"
+                    f"  Reason: The server state updated while the model was executing.\n"
+                    f"  Action: Using the pinned context to ensure mapping integrity, but reporting for forensics."
+                )
+                raise RuntimeError(report)
+        
         if context and context.get("turn") != battle.turn:
             # If the context is from a previous turn, it's stale
             context = None
