@@ -4,7 +4,12 @@ import time
 from gymnasium import spaces
 from typing import Dict, Any
 from agents.observation.state_encoder import Gen3ObservationEncoder
-from agents.observation.constants import TRACE_INTERVAL
+from agents.observation.constants import (
+    TRACE_INTERVAL, 
+    TEAM_SIZE, 
+    GLOBAL_ENV_DIM, 
+    POKEMON_FULL_DIM
+)
 from utils.logging.rate_limiter import RateLimitedLogger
 from utils.logging.levels import LogLevel
 
@@ -56,20 +61,28 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         )
         
         # 1.6 Pokémon Role Encoder (Step 2)
-        # pokemon_enriched dim is 226 + 11 (Context) = 237:
-        # (Species: 32, Stats: 6, Item: 16+1, Types: 16, Ability: 16+1, Condition: 8, Moves: 128, HP: 2, Turn: 1, Weather: 6, Fainted: 2, Spikes: 2)
+        # pokemon_enriched dim is move_processor_output (128) + context_broadcasted (11) + others
+        self.role_token_size = 128
+        role_input_dim = 237 # (32 + 6 + 16 + 1 + 16 + 16 + 1 + 8 + 128 + 2) + 11
         self.role_encoder = torch.nn.Sequential(
-            torch.nn.Linear(237, 256),
+            torch.nn.Linear(role_input_dim, 256),
             torch.nn.ReLU(),
-            torch.nn.Linear(256, 128) # Final Role Token Size
+            torch.nn.Linear(256, self.role_token_size) # Final Role Token Size
         )
         
-        # 1.7 Active Matchup Attention (Step 3)
-        self.matchup_attention = torch.nn.MultiheadAttention(
-            embed_dim=128, 
-            num_heads=4, 
-            batch_first=True
-        )
+        # 1.7 Team-Wide Attention (Step 4)
+        # 1.7.1 Status Biases (0: Our Active, 1: Our Bench, 2: Their Active, 3: Their Bench)
+        self.status_embedding = torch.nn.Embedding(4, self.role_token_size)
+
+        # 1.7.2 Multi-Path Attention Heads
+        self.pressure_attn = torch.nn.MultiheadAttention(embed_dim=self.role_token_size, num_heads=4, batch_first=True)
+        self.safety_attn = torch.nn.MultiheadAttention(embed_dim=self.role_token_size, num_heads=4, batch_first=True)
+        self.synergy_attn = torch.nn.MultiheadAttention(embed_dim=self.role_token_size, num_heads=4, batch_first=True)
+
+        # 1.7.3 LayerNorm for Residual Stability
+        self.norm1 = torch.nn.LayerNorm(self.role_token_size)
+        self.norm2 = torch.nn.LayerNorm(self.role_token_size)
+        self.norm3 = torch.nn.LayerNorm(self.role_token_size)
         
         # 2. Dynamic Input Dimension Discovery (Dummy Forward)
         # We run a single fake observation through the logic to determine the exact projection dimension.
@@ -81,9 +94,10 @@ class Gen3FeaturesExtractor(torch.nn.Module):
             self.projection_input_dim = sample_output.shape[1]
         
         # 3. Projection layer
-        self.projection = torch.nn.Linear(self.projection_input_dim, 512)
+        self.projection_dim = 512
+        self.projection = torch.nn.Linear(self.projection_input_dim, self.projection_dim)
         self.activation = torch.nn.ReLU()
-        self.features_dim = 512
+        self.features_dim = self.projection_dim
         self.trace_logger = RateLimitedLogger(interval_seconds=TRACE_INTERVAL)
         
     def _print_deep_trace(self, x, pokemon_part, species_ids):
@@ -181,7 +195,7 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         reactive_start = parts['reactive']['start'] - ctx['start']
         fainted_feature = remaining_part[:, reactive_start + 8 : reactive_start + 10] # [B, 2]
         
-        pokemon_part = torch.cat([our_team, opp_team], dim=1) # [B, 12, 133]
+        pokemon_part = torch.cat([our_team, opp_team], dim=1) # [B, 2 * TEAM_SIZE, POKEMON_FULL_DIM]
         
         # 2. Extract IDs for embedding
         pk_layout = self.layout['pokemon']
@@ -231,7 +245,7 @@ class Gen3FeaturesExtractor(torch.nn.Module):
              pass # Trace logic handled in forward()
 
         # 4. Embed Everything
-        embedded_species = self.species_embedding(species_ids) # [B, 12, 32]
+        embedded_species = self.species_embedding(species_ids) # [B, 2 * TEAM_SIZE, 32]
         
         embedded_moves = self.move_embedding(all_move_ids) # [B, 12, 4, 16]
         embedded_move_types = self.type_embedding(all_move_type_ids) # [B, 12, 4, 16]
@@ -245,7 +259,7 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         
         # 5. Construct the enriched Pokemon vector by stitching
         # Part A: Stats (between Species (0) and Items)
-        part_a = pokemon_part[:, :, species_idx + 1 : items_info['offset']] # [B, 12, 36]
+        part_a = pokemon_part[:, :, species_idx + 1 : items_info['offset']] # [B, 12, 6]
         
         # Part B: Item remnants (Known flag)
         item_remnant_idx = items_info['offset'] + items_layout['known']['offset']
@@ -285,10 +299,10 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         # Combine all move features into [B, 12, 4, 51]
         # Context: HP (1), Turn (1), Weather (6), Fainted (2), Spikes (2)
         hp_feature = hp_and_active[:, :, 0:1] # [B, 12, 1]
-        turn_expanded = turn_feature.unsqueeze(1).expand(-1, 12, -1) # [B, 12, 1]
-        weather_expanded = weather_feature.unsqueeze(1).expand(-1, 12, -1) # [B, 12, 6]
-        fainted_expanded = fainted_feature.unsqueeze(1).expand(-1, 12, -1) # [B, 12, 2]
-        spikes_expanded = spikes_feature.unsqueeze(1).expand(-1, 12, -1) # [B, 12, 2]
+        turn_expanded = turn_feature.unsqueeze(1).expand(-1, 2 * TEAM_SIZE, -1) # [B, 12, 1]
+        weather_expanded = weather_feature.unsqueeze(1).expand(-1, 2 * TEAM_SIZE, -1) # [B, 12, 6]
+        fainted_expanded = fainted_feature.unsqueeze(1).expand(-1, 2 * TEAM_SIZE, -1) # [B, 12, 2]
+        spikes_expanded = spikes_feature.unsqueeze(1).expand(-1, 2 * TEAM_SIZE, -1) # [B, 12, 2]
         
         # Combine into a [B, 12, 12] context vector
         move_context = torch.cat([
@@ -307,7 +321,7 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         
         # Process through shared network
         processed_moves = self.move_network(move_features.reshape(-1, move_features.shape[-1]))
-        processed_moves = processed_moves.reshape(batch_size, 12, -1) # [B, 12, 4 * 32 = 128]
+        processed_moves = processed_moves.reshape(batch_size, 2 * TEAM_SIZE, -1) # [B, 12, 4 * 32 = 128]
         
         pokemon_enriched = torch.cat([
             embedded_species,      # 32
@@ -324,34 +338,55 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         
         # --- POKÉMON ROLE ENCODER (Step 2) ---
         # Add Global context to the role encoder to make roles phase-aware and environment-aware
-        global_context = torch.cat([turn_feature, weather_feature, fainted_feature, spikes_feature], dim=1) # [B, 11]
-        context_broadcasted = global_context.unsqueeze(1).expand(-1, 12, -1) # [B, 12, 11]
+        global_context = torch.cat([turn_feature, weather_feature, fainted_feature, spikes_feature], dim=1) # [B, GLOBAL_ENV_DIM]
+        context_broadcasted = global_context.unsqueeze(1).expand(-1, 2 * TEAM_SIZE, -1) # [B, 12, 11]
         pokemon_enriched_with_context = torch.cat([pokemon_enriched, context_broadcasted], dim=2)
         
-        # Reshape to [B*12, 237] for shared processing
-        role_tokens = self.role_encoder(pokemon_enriched_with_context.reshape(-1, 237))
-        role_tokens = role_tokens.reshape(batch_size, 12, 128) # [B, 12, 128]
+        # Reshape to [B*12, role_input_dim] for shared processing
+        role_tokens = self.role_encoder(pokemon_enriched_with_context.reshape(-1, pokemon_enriched_with_context.shape[-1]))
+        role_tokens = role_tokens.reshape(batch_size, 2 * TEAM_SIZE, self.role_token_size) # [B, 12, 128]
         
-        # --- ACTIVE MATCHUP ATTENTION (Step 3) ---
-        # Find who is active on both teams using the active_flags from the original vector
+        # --- TEAM-WIDE ATTENTION (Step 4) ---
+        # 1. Find who is active on both teams
         active_flags = hp_and_active[:, :, 1] # [B, 12]
+        our_active_idx = torch.argmax(active_flags[:, 0:TEAM_SIZE], dim=1) # [B]
+        opp_active_idx = torch.argmax(active_flags[:, TEAM_SIZE:2*TEAM_SIZE], dim=1) + TEAM_SIZE # [B]
+
+        # 2. Apply Status Biases (Pre-Attention)
+        status_idx = torch.ones((batch_size, 12), device=role_tokens.device).long() # Default to Bench
+        status_idx[:, 0:TEAM_SIZE] = 1   # Our Bench
+        status_idx[:, TEAM_SIZE:2*TEAM_SIZE] = 3  # Their Bench
+        status_idx[torch.arange(batch_size), our_active_idx] = 0 # Our Active
+        status_idx[torch.arange(batch_size), opp_active_idx] = 2 # Their Active
         
-        # Dynamic Indexing
-        # Note: argmax gives the FIRST active mon. Integrity checks ensure only 1 is active.
-        our_active_idx = torch.argmax(active_flags[:, 0:6], dim=1) # [B]
-        opp_active_idx = torch.argmax(active_flags[:, 6:12], dim=1) + 6 # [B]
+        role_tokens = role_tokens + self.status_embedding(status_idx)
+
+        # 3. Split Teams for Logic Paths
+        our_team = role_tokens[:, 0:TEAM_SIZE, :]
+        their_team = role_tokens[:, TEAM_SIZE:2*TEAM_SIZE, :]
+        our_active = role_tokens[torch.arange(batch_size), our_active_idx].unsqueeze(1)
+        their_active = role_tokens[torch.arange(batch_size), opp_active_idx].unsqueeze(1)
+
+        # --- ATTENTION PATHS WITH RESIDUALS ---
+
+        # Path 1: The Pressure (Update Our Active with Opponent Context)
+        pressure_delta, _ = self.pressure_attn(our_active, their_team, their_team)
+        our_active = self.norm1(our_active + pressure_delta)
         
-        # Extract the specific Role Tokens for the duel
-        our_active_token = role_tokens[torch.arange(batch_size), our_active_idx].unsqueeze(1) # [B, 1, 128]
-        opp_active_token = role_tokens[torch.arange(batch_size), opp_active_idx].unsqueeze(1) # [B, 1, 128]
+        # Path 2: The Safety (Update Our Team with Opponent Active Context)
+        safety_delta, _ = self.safety_attn(our_team, their_active, their_active)
+        our_team = self.norm2(our_team + safety_delta)
         
-        # Query (Us) -> Key/Value (Them)
-        matchup_context, _ = self.matchup_attention(our_active_token, opp_active_token, opp_active_token)
-        matchup_context = matchup_context.squeeze(1) # [B, 128]
+        # Path 3: Synergy (Update Our Team with Internal Context)
+        synergy_delta, _ = self.synergy_attn(our_team, our_team, our_team)
+        our_team = self.norm3(our_team + synergy_delta)
+
+        # --- FINAL AGGREGATION ---
+        # Combine the refined team assets and the focused pressure token
+        our_team_flat = our_team.reshape(batch_size, -1)
+        our_active_refined = our_active.squeeze(1)
         
-        # Final Concatenation
-        pokemon_flat = role_tokens.reshape(batch_size, -1) # [B, 1536]
-        combined = torch.cat([pokemon_flat, matchup_context, remaining_part], dim=1)
+        combined = torch.cat([our_team_flat, our_active_refined, remaining_part], dim=1)
         return combined
 
     def forward(self, obs):
