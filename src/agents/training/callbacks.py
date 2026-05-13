@@ -1,7 +1,9 @@
 import os
 import json
+import glob
 import asyncio
 import threading
+import traceback
 import numpy as np
 import torch
 from datetime import datetime
@@ -39,6 +41,8 @@ class StatTrackingRLPlayer(RLPlayer):
             stats["switch_events"] = {} # Turn -> "From -> To"
             stats["last_mon"] = "NULL"
             stats["last_mask"] = None
+            stats["last_opp_faints"] = 0
+            stats["last_our_faints"] = 0
             self.battle_summaries[battle.battle_tag] = stats
         
         stats = self.battle_summaries[battle.battle_tag]
@@ -46,8 +50,22 @@ class StatTrackingRLPlayer(RLPlayer):
         is_fainted = battle.active_pokemon.fainted if battle.active_pokemon else False
         current_mon = "NONE" if is_fainted or not battle.active_pokemon else battle.active_pokemon.species
         
-        # 1. Use centralized prediction logic from parent RLPlayer
-        idx, probs, mask = self._predict_best_action(battle)
+        # 1. Retroactive Result Logging (Record what happened on the PREVIOUS turn)
+        prev_turn = battle.turn - 1
+        if prev_turn in stats["turn_log"]:
+            results = []
+            opp_faints = len([m for m in battle.opponent_team.values() if m.fainted])
+            our_faints = len([m for m in battle.team.values() if m.fainted])
+            
+            if opp_faints > stats["last_opp_faints"]: results.append("Opponent Fainted")
+            if our_faints > stats["last_our_faints"]: results.append("Our Mon Fainted")
+            
+            stats["turn_log"][prev_turn]["result"] = ", ".join(results) if results else "None"
+            stats["last_opp_faints"] = opp_faints
+            stats["last_our_faints"] = our_faints
+
+        # 2. Use centralized prediction logic from parent RLPlayer
+        idx, probs, mask = self._predict_best_action(battle, stochastic=True)
             
         # 2. Detect and log ACTUAL Switch Transitions (the source of truth)
         has_switched, is_real, is_voluntary = SwitchDetection.get_switch_type(
@@ -69,48 +87,66 @@ class StatTrackingRLPlayer(RLPlayer):
             stats["switch_events"][str(battle.turn)] = event_str
 
         # 3. Enhanced Turn Logging (Forensic Metadata)
-        available_switches = [m.species for m in battle.available_switches]
-        available_moves = [m.id for m in battle.available_moves]
+        available_moves = list(battle.available_moves)
         
         # Map the chosen action to a label
         action_label = "unknown"
+        
+        team_list = list(battle.team.values())
         if idx < 6:
-            action_label = f"switch {available_switches[idx]}" if idx < len(available_switches) else "illegal_switch"
+            mon_name = team_list[idx].species.capitalize() if idx < len(team_list) else f"Slot_{idx}"
+            action_label = f"switch_{mon_name.lower()}"
         elif idx < 10:
             move_idx = idx - 6
-            action_label = available_moves[move_idx] if move_idx < len(available_moves) else "illegal_move"
+            move_id = available_moves[move_idx].id if move_idx < len(available_moves) else f"move_{move_idx}"
+            action_label = move_id
         elif idx == 10:
             action_label = "struggle"
-
+            
         # Construct mapped options for easier debugging
         options = {}
         for i in range(11):
             label = "unknown"
-            if i < 6: label = f"switch_{available_switches[i]}" if i < len(available_switches) else f"slot_{i}"
-            elif i < 10: label = available_moves[i-6] if (i-6) < len(available_moves) else f"move_{i-6}"
-            elif i == 10: label = "struggle"
+            if i < 6: 
+                label = f"switch_{team_list[i].species}" if i < len(team_list) else f"slot_{i}"
+            elif i < 10: 
+                label = available_moves[i-6].id if (i-6) < len(available_moves) else f"move_{i-6}"
+            elif i == 10: 
+                label = "struggle"
             
-            options[label] = {
-                "prob": round(float(probs[i]), 4),
-                "allowed": int(mask[i])
-            }
+            status = "OK" if mask[i] else "NO"
+            options[label] = f"{probs[i]:.4f} [{status}]"
+
+        our_mon = "unknown"
+        if battle.active_pokemon:
+            our_hp = battle.active_pokemon.current_hp_fraction * 100
+            our_mon = f"{battle.active_pokemon.species} ({our_hp:.0f}%)"
+
+        opp_mon = "unknown"
+        if battle.opponent_active_pokemon:
+            hp_pct = battle.opponent_active_pokemon.current_hp_fraction * 100
+            opp_mon = f"{battle.opponent_active_pokemon.species} ({hp_pct:.0f}%)"
 
         stats["turn_log"][battle.turn] = {
             "action": action_label,
-            "active_mon": current_mon,
-            "opponent_mon": battle.opponent_active_pokemon.species if battle.opponent_active_pokemon else "unknown",
+            "active_mon": our_mon,
+            "opponent_mon": opp_mon,
             "opponent_revealed_moves": [m.id for m in battle.opponent_active_pokemon.moves.values()] if battle.opponent_active_pokemon else [],
             "action_idx": int(idx),
+            "result": "Pending...",
             "options": options
         }
         
         # 4. Track Move Frequency Stats
-        if idx >= 6 and idx < 10:
-            move_idx = idx - 6
-            if move_idx < len(battle.available_moves):
-                move_name = battle.available_moves[move_idx].id
-                if current_mon not in stats["moves"]: stats["moves"][current_mon] = {}
-                stats["moves"][current_mon][move_name] = stats["moves"][current_mon].get(move_name, 0) + 1
+        if (idx >= 6 and idx < 10) or idx == 10:
+            if idx == 10:
+                move_name = "struggle"
+            else:
+                move_idx = idx - 6
+                move_name = available_moves[move_idx].id if move_idx < len(available_moves) else f"move_{move_idx}"
+                
+            if current_mon not in stats["moves"]: stats["moves"][current_mon] = {}
+            stats["moves"][current_mon][move_name] = stats["moves"][current_mon].get(move_name, 0) + 1
 
         # Update trackers for next turn
         stats["last_mon"] = current_mon
@@ -181,7 +217,8 @@ class ReplayCallback(BaseCallback):
             print(f"\n🎥 [REPLAY] Step {self.num_timesteps}: Recording {self.n_replays} games to {step_dir}...")
             
             # Use threading to run async battles without blocking SB3's main loop
-            thread = threading.Thread(target=self._run_async_battles, args=(step_dir,))
+            # daemon=True ensures the thread dies if the main process exits
+            thread = threading.Thread(target=self._run_async_battles, args=(step_dir,), daemon=True)
             thread.start()
             # We join here to ensure replays are fully recorded before continuing
             thread.join() 
@@ -212,12 +249,22 @@ class ReplayCallback(BaseCallback):
             await replay_player.battle_against(replay_opp, n_battles=self.n_replays)
             
             # Combined Summary Generation
-            import glob
             html_files = sorted(glob.glob(os.path.join(step_dir, "*.html")))
             for i, tag in enumerate(replay_player.battle_summaries.keys()):
                 battle = replay_player._battles.get(tag)
                 if not battle: continue
                 
+                # Final Turn Result Patching
+                stats = replay_player.battle_summaries[tag]
+                last_turn = battle.turn
+                if last_turn in stats["turn_log"]:
+                    results = []
+                    opp_faints = len([m for m in battle.opponent_team.values() if m.fainted])
+                    our_faints = len([m for m in battle.team.values() if m.fainted])
+                    if opp_faints > stats["last_opp_faints"]: results.append("Opponent Fainted")
+                    if our_faints > stats["last_our_faints"]: results.append("Our Mon Fainted")
+                    stats["turn_log"][last_turn]["result"] = ", ".join(results) if results else "None"
+
                 summary = {
                     "step": self.num_timesteps,
                     "battle_id": tag,
@@ -256,5 +303,22 @@ class ReplayCallback(BaseCallback):
 
         new_loop = asyncio.new_event_loop()
         asyncio.set_event_loop(new_loop)
-        new_loop.run_until_complete(run_it())
-        new_loop.close()
+        
+        def exception_handler(loop, context):
+            exception = context.get("exception")
+            msg = exception if exception else context["message"]
+            print(f"\n🛑 [REPLAY FATAL] Background task failed: {msg}")
+            if exception:
+                traceback.print_stack()
+            os._exit(1)
+
+        new_loop.set_exception_handler(exception_handler)
+
+        try:
+            new_loop.run_until_complete(run_it())
+        except Exception as e:
+            print(f"\n🛑 [REPLAY CRASH] Step {self.num_timesteps} failed: {e}")
+            traceback.print_exc()
+            os._exit(1)
+        finally:
+            new_loop.close()

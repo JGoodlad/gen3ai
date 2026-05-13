@@ -49,6 +49,7 @@ class Gen3RewardManager:
         self._opp_turns_active = 0
         self._prev_active_name = "NULL"  # The one BEFORE the current one
         self._last_action_idx = -1
+        self._last_reward_metadata = {}
         
     def reset(self):
         """Prepares for a new episode."""
@@ -63,6 +64,7 @@ class Gen3RewardManager:
         self._opp_turns_active = 0
         self._prev_active_name = "NULL"
         self._last_action_idx = -1
+        self._last_reward_metadata = {}
 
     def record_action(self, battle, action: int):
         """
@@ -96,15 +98,20 @@ class Gen3RewardManager:
         self._pending_subsidy = 0.0
         
         # 4. Repetition & Bouncing Penalties
+        repetition_tax = 0.0
+        bouncing_tax = 0.0
+        
         # Penalty for clicking the exact same move/switch slot twice in a row
         if action == self._last_action_idx and action != -1:
-            self._pending_subsidy -= 0.02
+            repetition_tax = -0.02
+            self._pending_subsidy += repetition_tax
             
         if is_real:
             if is_voluntary is True:
                 # Bouncing Penalty: Penalize switching back to the mon we just left
                 if current_active == self._prev_active_name and self._prev_active_name != "NONE":
-                    self._pending_subsidy -= 0.15
+                    bouncing_tax = -0.15
+                    self._pending_subsidy += bouncing_tax
                 
                 payout = self.remaining_switch_pool * 0.5
                 attack_ratio = self.attack_count / max(1, battle.turn)
@@ -116,7 +123,19 @@ class Gen3RewardManager:
                 # This fixes "aimless" switching against a stable opponent.
                 reactive_mult = 1.0 if self._opp_turns_active <= 2 else 0.25
                 
-                self._pending_subsidy += min(payout * ratio_mult * spam_mult * turn_decay * reactive_mult, 1.0)
+                subsidy = min(payout * ratio_mult * spam_mult * turn_decay * reactive_mult, 1.0)
+                self._pending_subsidy += subsidy
+                
+                self._last_reward_metadata = {
+                    "type": "VOLUNTARY",
+                    "payout": payout,
+                    "ratio_mult": ratio_mult,
+                    "spam_mult": spam_mult,
+                    "reactive_mult": reactive_mult,
+                    "repetition_tax": repetition_tax,
+                    "bouncing_tax": bouncing_tax,
+                    "subsidy": subsidy
+                }
                 
                 self.remaining_switch_pool -= payout
                 self.switch_count += 1
@@ -124,6 +143,9 @@ class Gen3RewardManager:
             elif is_voluntary is False:
                 # This is a forced switch (Replacement or Roar/Whirlwind)
                 self.forced_switch_count += 1
+                self._last_reward_metadata = {"type": "FORCED"}
+        else:
+            self._last_reward_metadata = {"type": "ATTACK", "repetition_tax": repetition_tax}
 
         self._prev_active_name = self._last_active_name
         self._last_active_name = current_active
@@ -152,6 +174,20 @@ class Gen3RewardManager:
                 f"  [REWARD] Turn {battle.turn} | Base: {base_reward:+.4f} | Subsidy: {subsidy_val:+.2f} | Won: {battle.won}\n",
                 force=True
             )
+            
+            # Deep Diagnostic Trace
+            if self.log_level >= LogLevel.DEBUG:
+                m = self._last_reward_metadata
+                if m.get("type") == "VOLUNTARY":
+                    print(f"    🔍 [DEEP TRACE] Type: VOLUNTARY SWITCH")
+                    print(f"       Pool Remaining: {self.remaining_switch_pool + m['payout']:.2f} -> Payout: {m['payout']:.2f}")
+                    print(f"       Multipliers: Ratio:{m['ratio_mult']:.1f} | Spam:{m['spam_mult']:.1f} | Reactive:{m['reactive_mult']:.2f}")
+                    print(f"       Taxes: Repetition:{m['repetition_tax']:.2f} | Bouncing:{m['bouncing_tax']:.2f}")
+                    print(f"       Final Subsidy: {m['subsidy']:.4f}")
+                elif m.get("type") == "ATTACK" and m.get("repetition_tax", 0) != 0:
+                    print(f"    🔍 [DEEP TRACE] Type: ATTACK | Repetition Tax: {m['repetition_tax']:.2f}")
+                elif m.get("type") == "FORCED":
+                    print(f"    🔍 [DEEP TRACE] Type: FORCED SWITCH (No Subsidy)")
 
         self.total_reward += reward
         return reward
@@ -168,7 +204,7 @@ class Gen3RewardManager:
         if battle:
             if battle.won: status = "WIN"
             elif battle.lost: status = "LOSS"
-            elif battle.finished: status = "FINISHED"
+            elif battle.finished: status = "TIE/STALL"
             
             our_alive = len([p for p in battle.team.values() if not p.fainted])
             opp_alive = len([p for p in battle.opponent_team.values() if not p.fainted])

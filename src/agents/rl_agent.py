@@ -22,7 +22,7 @@ class RLPlayer(Player):
         self.mappings = mappings
         self.observation_encoder = None
 
-    def _predict_best_action(self, battle):
+    def _predict_best_action(self, battle, stochastic=False):
         """Shared logic for masked action prediction."""
         if self.observation_encoder is None:
             from main.train_rl_agent import get_observation_encoder
@@ -39,9 +39,18 @@ class RLPlayer(Player):
             obs_tensor = torch.as_tensor(obs_batched).to(self.model.device)
             mask_tensor = torch.as_tensor(mask_batched).to(self.model.device)
             dist = self.model.policy.get_distribution({"observation": obs_tensor, "action_mask": mask_tensor})
+            
+            # Apply mask to logits for both stochastic and deterministic paths
             logits = dist.distribution.logits
             masked_logits = logits + (mask_tensor - 1.0) * 1e9
-            idx = torch.argmax(masked_logits, dim=1).item()
+            
+            if stochastic:
+                # Create a new categorical distribution using the masked logits
+                idx = torch.distributions.Categorical(logits=masked_logits).sample().item()
+            else:
+                idx = torch.argmax(masked_logits, dim=1).item()
+            
+            # Ensure probabilities reported in logs also reflect the mask
             probs = torch.softmax(masked_logits, dim=1)[0].cpu().numpy()
             
         if mask[idx] == 0:

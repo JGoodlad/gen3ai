@@ -4,6 +4,7 @@ POKEMON_FULL_DIM = 103 # Vector + Active Flag
 ACTIVE_CONTEXT_DIM = 31
 GLOBAL_ENV_DIM = 11
 REACTIVE_DIM = 16
+REACTIVE_DIM = 16
 
 # Top-level Offsets (Total Dim: 1325)
 NUM_POKEMON = 12

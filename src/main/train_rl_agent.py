@@ -152,13 +152,21 @@ class Gen3Env(SinglesEnv):
         return super().action_to_order(action, battle)
         
     def calc_reward(self, battle):
+        # 1. Standard Performance Reward
         base_reward = self.reward_computing_helper(
             battle,
             fainted_value=2.0,
             hp_value=1.0,
             victory_value=30.0
         )
-        # Delegate to RewardManager for subsidies, logging, and trainee-specific tracking
+
+        # 2. Handle Final Results (Punish Ties/Stalls as much as Losses)
+        if battle.finished and not battle.won and not battle.lost:
+            # This was a tie or a timer-stall. 
+            # We subtract 30.0 so it matches the penalty of a loss.
+            base_reward -= 30.0
+        
+        # 3. Delegate to RewardManager for subsidies, logging, and trainee-specific tracking
         return self.reward_manager.process_turn_reward(
             battle, 
             base_reward=base_reward, 
@@ -274,6 +282,10 @@ async def main():
     
     args = parser.parse_args()
     log_level = LogLevel[args.log_level.upper()]
+    
+    # Automatically enable deep traces if --debug is set
+    if args.debug:
+        log_level = LogLevel.DEBUG
 
     # Load all teams using the new TeamLoader
     loader = TeamLoader()

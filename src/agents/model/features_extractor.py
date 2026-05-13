@@ -61,6 +61,13 @@ class Gen3FeaturesExtractor(torch.nn.Module):
             torch.nn.Linear(256, 128) # Final Role Token Size
         )
         
+        # 1.7 Active Matchup Attention (Step 3)
+        self.matchup_attention = torch.nn.MultiheadAttention(
+            embed_dim=128, 
+            num_heads=4, 
+            batch_first=True
+        )
+        
         # 2. Dynamic Input Dimension Discovery (Dummy Forward)
         # We run a single fake observation through the logic to determine the exact projection dimension.
         with torch.no_grad():
@@ -291,8 +298,26 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         role_tokens = self.role_encoder(pokemon_enriched.reshape(-1, 226))
         role_tokens = role_tokens.reshape(batch_size, 12, 128) # [B, 12, 128]
         
+        # --- ACTIVE MATCHUP ATTENTION (Step 3) ---
+        # Find who is active on both teams using the active_flags from the original vector
+        active_flags = hp_and_active[:, :, 1] # [B, 12]
+        
+        # Dynamic Indexing
+        # Note: argmax gives the FIRST active mon. Integrity checks ensure only 1 is active.
+        our_active_idx = torch.argmax(active_flags[:, 0:6], dim=1) # [B]
+        opp_active_idx = torch.argmax(active_flags[:, 6:12], dim=1) + 6 # [B]
+        
+        # Extract the specific Role Tokens for the duel
+        our_active_token = role_tokens[torch.arange(batch_size), our_active_idx].unsqueeze(1) # [B, 1, 128]
+        opp_active_token = role_tokens[torch.arange(batch_size), opp_active_idx].unsqueeze(1) # [B, 1, 128]
+        
+        # Query (Us) -> Key/Value (Them)
+        matchup_context, _ = self.matchup_attention(our_active_token, opp_active_token, opp_active_token)
+        matchup_context = matchup_context.squeeze(1) # [B, 128]
+        
+        # Final Concatenation
         pokemon_flat = role_tokens.reshape(batch_size, -1) # [B, 1536]
-        combined = torch.cat([pokemon_flat, remaining_part], dim=1)
+        combined = torch.cat([pokemon_flat, matchup_context, remaining_part], dim=1)
         return combined
 
     def forward(self, obs):
