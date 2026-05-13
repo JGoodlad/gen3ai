@@ -45,7 +45,10 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         )
         
         # 1.5 Shared Move Processor (Step 1)
-        move_input_dim = layout['move_embedding_dim'] + layout['type_embedding_dim'] + 6 + 1
+        # Input: Move Embedding (16) + Type Embedding (16) + Remnants (6) + Known (1) 
+        # Context: HP (1) + Turn (1) + Weather (6) + Fainted (2) + Spikes (2) = 12
+        # Total: 39 + 12 = 51
+        move_input_dim = layout['move_embedding_dim'] + layout['type_embedding_dim'] + 6 + 1 + 12
         self.move_network = torch.nn.Sequential(
             torch.nn.Linear(move_input_dim, 64),
             torch.nn.ReLU(),
@@ -53,10 +56,10 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         )
         
         # 1.6 Pokémon Role Encoder (Step 2)
-        # pokemon_enriched dim is 226:
-        # (Species: 32, Stats: 6, Item: 16+1, Types: 16, Ability: 16+1, Condition: 8, Moves: 128, HP: 2)
+        # pokemon_enriched dim is 226 + 11 (Context) = 237:
+        # (Species: 32, Stats: 6, Item: 16+1, Types: 16, Ability: 16+1, Condition: 8, Moves: 128, HP: 2, Turn: 1, Weather: 6, Fainted: 2, Spikes: 2)
         self.role_encoder = torch.nn.Sequential(
-            torch.nn.Linear(226, 256),
+            torch.nn.Linear(237, 256),
             torch.nn.ReLU(),
             torch.nn.Linear(256, 128) # Final Role Token Size
         )
@@ -167,6 +170,17 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         ctx = parts['context']
         remaining_part = x[:, ctx['start']:] 
         
+        # 1.1 Context Features for Move Selection
+        # Global: Weather (offset 0), Spikes (6), Turn (8)
+        global_start = parts['global']['start'] - ctx['start']
+        weather_feature = remaining_part[:, global_start : global_start + 6] # [B, 6]
+        spikes_feature = remaining_part[:, global_start + 6 : global_start + 8] # [B, 2]
+        turn_feature = remaining_part[:, global_start + 8 : global_start + 9] # [B, 1]
+        
+        # Fainted counts (Phase) are at Reactive block offset 8
+        reactive_start = parts['reactive']['start'] - ctx['start']
+        fainted_feature = remaining_part[:, reactive_start + 8 : reactive_start + 10] # [B, 2]
+        
         pokemon_part = torch.cat([our_team, opp_team], dim=1) # [B, 12, 133]
         
         # 2. Extract IDs for embedding
@@ -268,12 +282,27 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         move_remnants_reshaped = all_move_remnants.reshape(batch_size, 12, 4, 6)
         known_flags_reshaped = known_flags.reshape(batch_size, 12, 4, 1)
         
-        # Combine all move features into [B, 12, 4, 39]
+        # Combine all move features into [B, 12, 4, 51]
+        # Context: HP (1), Turn (1), Weather (6), Fainted (2), Spikes (2)
+        hp_feature = hp_and_active[:, :, 0:1] # [B, 12, 1]
+        turn_expanded = turn_feature.unsqueeze(1).expand(-1, 12, -1) # [B, 12, 1]
+        weather_expanded = weather_feature.unsqueeze(1).expand(-1, 12, -1) # [B, 12, 6]
+        fainted_expanded = fainted_feature.unsqueeze(1).expand(-1, 12, -1) # [B, 12, 2]
+        spikes_expanded = spikes_feature.unsqueeze(1).expand(-1, 12, -1) # [B, 12, 2]
+        
+        # Combine into a [B, 12, 12] context vector
+        move_context = torch.cat([
+            hp_feature, turn_expanded, weather_expanded, fainted_expanded, spikes_expanded
+        ], dim=2)
+        # Expand to each move slot [B, 12, 4, 12]
+        move_context_final = move_context.unsqueeze(2).expand(-1, -1, 4, -1)
+        
         move_features = torch.cat([
             embedded_moves, 
             embedded_move_types, 
             move_remnants_reshaped, 
-            known_flags_reshaped
+            known_flags_reshaped,
+            move_context_final
         ], dim=3)
         
         # Process through shared network
@@ -282,7 +311,7 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         
         pokemon_enriched = torch.cat([
             embedded_species,      # 32
-            part_a,                # 36
+            part_a,                # 6
             embedded_items,        # 16
             item_remnant,          # 1
             embedded_pk_types,     # 16
@@ -291,11 +320,16 @@ class Gen3FeaturesExtractor(torch.nn.Module):
             part_d,                # 8
             processed_moves,       # 128 (Shared Processor Output)
             hp_and_active          # 2
-        ], dim=2) # [B, 12, 256]
+        ], dim=2) # [B, 12, 226]
         
         # --- POKÉMON ROLE ENCODER (Step 2) ---
-        # Reshape to [B*12, 226] for shared processing
-        role_tokens = self.role_encoder(pokemon_enriched.reshape(-1, 226))
+        # Add Global context to the role encoder to make roles phase-aware and environment-aware
+        global_context = torch.cat([turn_feature, weather_feature, fainted_feature, spikes_feature], dim=1) # [B, 11]
+        context_broadcasted = global_context.unsqueeze(1).expand(-1, 12, -1) # [B, 12, 11]
+        pokemon_enriched_with_context = torch.cat([pokemon_enriched, context_broadcasted], dim=2)
+        
+        # Reshape to [B*12, 237] for shared processing
+        role_tokens = self.role_encoder(pokemon_enriched_with_context.reshape(-1, 237))
         role_tokens = role_tokens.reshape(batch_size, 12, 128) # [B, 12, 128]
         
         # --- ACTIVE MATCHUP ATTENTION (Step 3) ---

@@ -102,4 +102,4 @@ export PYTHONPATH=$PYTHONPATH:src && \
   --lr 0.0003 \
   --device cuda \
   --log-level periodic
-```
+``3`

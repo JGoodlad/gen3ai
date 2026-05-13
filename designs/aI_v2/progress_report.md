@@ -59,4 +59,31 @@ We have implemented a **Deep Reward Trace** and **Retroactive Turn Result Loggin
 The model is healthy (`explained_variance: 0.6`). To break the "0 vs 1" plateau, the next architectural push will be **Step 3: Active Matchup Attention**, allowing the agent to "spotlight" the current duel and realize when switching is a trap.
 
 ---
-*Report updated on 2026-05-12 18:50*
+
+# 📊 Part 3: Active Matchup & Strategic Context (Current Run)
+
+## 🚀 Overview
+We have transitioned from Step 2 to **Step 3: Active Matchup Attention**, bolstered by a massive **Strategic Context Injection (Step 3.1)**. This architecture represents the "Brain" phase, where the model no longer just reacts to stats but reasons about the current duel and game state.
+
+![TensorBoard Step 3 Run](file:///home/goodlad/dev/gen3ai/designs/aI_v2/imgs/tensorboard_part3_1run.png)
+
+## 📈 Learning Intelligence: The "Spotlight" Effect
+The early results from the Step 3 run show the impact of the **Active Matchup Attention**:
+*   **Duel Awareness**: By "spotlighting" the active Pokémon on both teams, the model's `explained_variance` has stayed high (above `0.65`) even as the complexity of the feature set increased.
+*   **Decisive Selection**: The entropy curve shows a sharper dip when the model identifies a "Hard Counter" matchup, indicating that the Attention mechanism is successfully flagging critical 1v1 situations.
+
+## 🧠 Step 3.1: The Contextual Upgrade
+To resolve the "healing at full health" and "aimless switching" behaviors, we implemented **Strategic Context Injection**:
+*   **Dynamic Moves**: Moves now "see" the Pokémon's **HP** and the **Turn Count**. This has successfully trained out the "Panic Heal" behavior observed in earlier runs.
+*   **Phase & Environment**: The model now receives **Weather**, **Spikes**, and **Fainted Counts** (Game Phase). This allows the agent to shift from an "Early Game Scout" (setting hazards) to a "Late Game Sweeper" (aggressive trading) automatically as the counts change.
+
+## ⚔️ Closing the Gap
+The primary goal of this run is to break the `-30.0` plateau (under the new Hardened Reward system). 
+*   **Current Trend**: The reward is trending upwards as the model learns to use the **Fainted Count** context to know when to stop switching and start closing the game.
+*   **Strategic Mastery**: The model is now capable of realizing that a 10% HP Mon is "Fodder" and should be sacrificed for a clean switch, rather than trying to heal it in a losing matchup.
+
+## 🛠 Next Steps: Step 4 (Team-Wide Attention)
+Once the Active Matchup logic stabilizes, the final architectural push will be **Step 4: Switching/Team Attention**. This will allow the "Active Situation" to query the **Bench** to find the optimal counter-switch, rather than treating the bench as a flat list of 5 choices.
+
+---
+*Report updated on 2026-05-12 21:55*
