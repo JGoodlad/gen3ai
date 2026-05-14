@@ -122,3 +122,40 @@ class Gen3ActionMapper:
         decide the move (standard default behavior).
         """
         return SingleBattleOrder(None)
+
+    @staticmethod
+    def order_to_action(order: BattleOrder, battle) -> int:
+        """Reverse mapping from BattleOrder to Gen 3 action index (0-10)."""
+        if not isinstance(order, SingleBattleOrder):
+            return 0
+            
+        # 1. Switch Mapping (0-5)
+        if order.switch:
+            team_list = list(battle.team.values())
+            for i, mon in enumerate(team_list):
+                if mon == order.switch:
+                    return i
+            return 0
+            
+        # 2. Move Mapping (6-10)
+        if order.move:
+            if order.move.id == "struggle":
+                return 10
+                
+            # Retrieve context or last request to find the slot
+            context = getattr(battle, "_gen3_decision_context", None)
+            move_ids = context.get("move_ids") if context else None
+            
+            if move_ids is None and battle.last_request:
+                active_request = battle.last_request.get("active", [{}])[0]
+                move_ids = [m.get("id") for m in active_request.get("moves", [])]
+                
+            if move_ids:
+                for i, mid in enumerate(move_ids):
+                    if mid == order.move.id:
+                        return i + 6
+                    # Handle Hidden Power desync
+                    if mid and mid.startswith("hiddenpower") and order.move.id.startswith("hiddenpower"):
+                        return i + 6
+                        
+        return 0

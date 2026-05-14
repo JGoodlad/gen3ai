@@ -25,6 +25,7 @@ from poke_env.battle.abstract_battle import AbstractBattle
 from typing import Dict, Any, List, Tuple
 import json
 import os
+from agents.action.mask_generator import Gen3ActionMasker
 
 def load_mappings():
     """Loads move, species, and item mappings with validation."""
@@ -148,6 +149,23 @@ class Gen3ObservationEncoder(ObservationEncoder):
         vec[OFFSET_REACTIVE : OFFSET_REACTIVE + REACTIVE_DIM] = self.reactive_encoder.encode(battle)
         
         return vec
+
+    def get_observation(self, battle: AbstractBattle) -> Dict[str, Any]:
+        """
+        Standardized entry point for getting the full observation dictionary.
+        Includes both the encoded state vector and the action mask.
+        """
+        if battle.wait:
+            error_msg = f"⚠️ [OBSERVATION] CRITICAL: Observation requested while battle.wait is True for {battle.battle_tag}"
+            print(error_msg)
+            raise RuntimeError(error_msg)
+            
+        obs = self.encode(battle)
+        mask = Gen3ActionMasker.get_mask(battle)
+        return {
+            "observation": obs,
+            "action_mask": mask
+        }
 
     def get_layout(self) -> Dict[str, Any]:
         pokemon_layout = self.pokemon_encoder.get_layout()

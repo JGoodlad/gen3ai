@@ -8,9 +8,36 @@ from agents.action.mapper import Gen3ActionMapper
 import numpy as np
 import torch
 
-class RLPlayer(Player):
+class Gen3Player(Player):
+    """Base class for all Gen 3 players that handles embedding and mapping."""
+    def __init__(self, observation_encoder=None, mappings=None, **kwargs):
+        super().__init__(**kwargs)
+        self.observation_encoder = observation_encoder
+        self.mappings = mappings
+
+    def embed_battle(self, battle) -> Dict[str, Any]:
+        """Centralized method to get the observation dict (obs + mask)."""
+        if self.observation_encoder is None:
+            from agents.observation.state_encoder import get_observation_encoder
+            # mappings should be loaded if not provided
+            if self.mappings is None:
+                from agents.observation.state_encoder import load_mappings
+                self.mappings = load_mappings()
+            self.observation_encoder = get_observation_encoder(self.mappings)
+        return self.observation_encoder.get_observation(battle)
+
+    def action_to_order(self, action_idx, battle):
+        """Delegates to the centralized Gen3ActionMapper."""
+        return Gen3ActionMapper.action_to_order(
+            action=action_idx,
+            battle=battle
+        )
+
+class RLPlayer(Gen3Player):
     def __init__(self, model, team, battle_format, server_configuration, mappings=None, account_configuration=None, max_concurrent_battles=10, **kwargs):
         super().__init__(
+            observation_encoder=None,
+            mappings=mappings,
             battle_format=battle_format,
             team=team,
             server_configuration=server_configuration,
@@ -19,18 +46,12 @@ class RLPlayer(Player):
             **kwargs
         )
         self.model = model
-        self.mappings = mappings
-        self.observation_encoder = None
 
     def _predict_best_action(self, battle, stochastic=False):
         """Shared logic for masked action prediction."""
-        if self.observation_encoder is None:
-            from main.train_rl_agent import get_observation_encoder
-            self.observation_encoder = get_observation_encoder(self.mappings)
-            
-        obs = self.observation_encoder.encode(battle)
-        from agents.action.mask_generator import Gen3ActionMasker
-        mask = Gen3ActionMasker.get_mask(battle)
+        obs_dict = self.embed_battle(battle)
+        obs = obs_dict["observation"]
+        mask = obs_dict["action_mask"]
         
         obs_batched = np.expand_dims(obs, axis=0)
         mask_batched = np.expand_dims(mask, axis=0)
@@ -58,13 +79,6 @@ class RLPlayer(Player):
             
         return idx, probs, mask
 
-    def action_to_order(self, action_idx, battle):
-        """Delegates to the centralized Gen3ActionMapper."""
-        # RLPlayer (Inference) uses the same strict mapping as the trainee
-        return Gen3ActionMapper.action_to_order(
-            action=action_idx,
-            battle=battle
-        )
     def choose_move(self, battle):
         idx, _, _ = self._predict_best_action(battle)
         return self.action_to_order(idx, battle)
