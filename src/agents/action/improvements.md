@@ -35,3 +35,12 @@ To ensure the mapper is bulletproof, we will implement an integration "fuzz" tes
     - On every turn, assert that `mask_generator.get_mask(battle)` matches the legality of the `battle.available_moves` and `battle.available_switches`.
     - Verify that `action_to_order` never produces a server-rejected choice.
     - Run 1,000+ battles with random teams to catch edge cases (forced switches, trapping, choice-locks).
+
+## 5. Completed Hardening Checklist
+- [x] **Integrity-First Architecture**: Crash-over-corruption logic implemented.
+- [x] **Single Source of Truth**: Removed all alphabetical fallbacks (`stable_ids`).
+- [x] **Double Latch Protection**: 
+    - **Moves**: Pins the server's slot IDs at observation.
+    - **Pokémon**: Pins the team list ordering at observation.
+- [x] **Forensic Reporting**: Hard crash on mid-decision state shifts with diagnostic reports.
+- [x] **Verified**: Zero temporal desyncs detected in real-game telemetry.
