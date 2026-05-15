@@ -84,9 +84,7 @@ class ReplayCallback(BaseCallback):
             print(f"\n🎥 [REPLAY] Step {self.num_timesteps}: Recording {self.n_replays} games to {step_dir}...")
             thread = threading.Thread(target=self._run_async_battles, args=(step_dir,), daemon=True)
             thread.start()
-            thread.join(timeout=30)
-            if thread.is_alive():
-                print(f"\n⚠️ [REPLAY] Recording timed out after 30s — continuing training.")
+            thread.join()
 
         return True
 
@@ -112,13 +110,7 @@ class ReplayCallback(BaseCallback):
                 account_configuration=AccountConfiguration(f"RepOpp{ts}", "password"),
             )
 
-            try:
-                await asyncio.wait_for(
-                    replay_player.battle_against(opponent, n_battles=self.n_replays),
-                    timeout=25,
-                )
-            except asyncio.TimeoutError:
-                print(f"\n⚠️ [REPLAY] battle_against() timed out after 25s")
+            await replay_player.battle_against(opponent, n_battles=self.n_replays)
 
             html_files = sorted(f for f in os.listdir(step_dir) if f.endswith(".html"))
             for i, (tag, recorder) in enumerate(replay_player._recorders.items()):
