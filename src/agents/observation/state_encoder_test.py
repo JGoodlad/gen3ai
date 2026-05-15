@@ -7,7 +7,7 @@ from .state_encoder import Gen3ObservationEncoder, load_mappings
 def test_encoder_dimension():
     mappings = load_mappings()
     encoder = Gen3ObservationEncoder(mappings)
-    assert encoder.dimension == 1565
+    assert encoder.dimension == 1021
 
 def test_encoder_output_shape():
     mappings = load_mappings()
@@ -24,4 +24,4 @@ def test_encoder_output_shape():
     battle.turn = 0
 
     obs = encoder.encode(battle)
-    assert obs.shape == (1565,)
+    assert obs.shape == (1021,)

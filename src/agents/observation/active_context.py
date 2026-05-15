@@ -1,6 +1,6 @@
 import numpy as np
 from .base import ObservationEncoder
-from .constants import ACTIVE_CONTEXT_DIM, BOOSTS_DIM, VOLATILES_DIM, TEMPORAL_DIM
+from .constants import ACTIVE_CONTEXT_DIM, BOOSTS_DIM, VOLATILES_DIM
 from poke_env.battle.abstract_battle import AbstractBattle
 from poke_env.battle.effect import Effect
 from typing import Any, Dict
@@ -49,20 +49,13 @@ class ActiveContextEncoder(ObservationEncoder):
             vec[cursor + 4] = 1.0
             
         cursor += 8
-        
-        # 3. Temporal (9)
-        # Turns on Field (1)
-        # Last Move Used (8 dims embedding)
-        cursor += 1 
-        cursor += 8
-        
+
         return vec
 
     def get_layout(self) -> Dict[str, Any]:
         return {
             "boosts": {"offset": 0, "dim": 14},
-            "volatiles": {"offset": 14, "dim": 8},
-            "temporal": {"offset": 22, "dim": 9}
+            "volatiles": {"offset": 14, "dim": 8}
         }
 
     def describe_vector(self, vector: np.ndarray) -> Dict[str, Any]:

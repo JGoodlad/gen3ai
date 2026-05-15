@@ -17,8 +17,7 @@ def test_pokemon_encoder_dimension():
     me = MovesEncoder(mappings["moves"])
     
     encoder = PokemonEncoder(se, ie, te, ae, me)
-    # 98 dims (Reduced from 102)
-    assert encoder.dimension == 98
+    assert encoder.dimension == 54
 
 def test_pokemon_encoder_empty():
     mappings = load_mappings()
@@ -30,5 +29,5 @@ def test_pokemon_encoder_empty():
     
     encoder = PokemonEncoder(se, ie, te, ae, me)
     vec = encoder.encode(None, None)
-    assert len(vec) == 98
+    assert len(vec) == 54
     assert np.all(vec == 0)

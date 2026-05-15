@@ -5,7 +5,7 @@ from unittest.mock import MagicMock
 
 def test_type_encoder_dimension():
     encoder = TypeEncoder()
-    assert encoder.dimension == 8
+    assert encoder.dimension == 2
 
 def test_type_encoder_order_invariance():
     encoder = TypeEncoder()

@@ -19,7 +19,8 @@ from .constants import (
     OFFSET_GLOBAL,
     OFFSET_REACTIVE,
     REACTIVE_DIM,
-    ACTIVE_CONTEXT_DIM
+    ACTIVE_CONTEXT_DIM,
+    GLOBAL_ENV_DIM
 )
 from poke_env.battle.abstract_battle import AbstractBattle
 from typing import Dict, Any, List, Tuple
@@ -135,7 +136,7 @@ class Gen3ObservationEncoder(ObservationEncoder):
         vec[OFFSET_CONTEXT + ACTIVE_CONTEXT_DIM : OFFSET_CONTEXT + (2 * ACTIVE_CONTEXT_DIM)] = self.active_context_encoder.encode(battle.opponent_active_pokemon, battle)
         
         # 4. Global Environment
-        vec[OFFSET_GLOBAL : OFFSET_GLOBAL + 11] = self.global_env_encoder.encode(battle)
+        vec[OFFSET_GLOBAL : OFFSET_GLOBAL + GLOBAL_ENV_DIM] = self.global_env_encoder.encode(battle)
         
         # 5. Reactive Features
         vec[OFFSET_REACTIVE : OFFSET_REACTIVE + REACTIVE_DIM] = self.reactive_encoder.encode(battle)
@@ -237,7 +238,7 @@ class Gen3ObservationEncoder(ObservationEncoder):
         desc["opp_active"] = self.active_context_encoder.describe_vector(opp_active_ctx)
         
         # 3. Global
-        global_vec = vector[OFFSET_GLOBAL : OFFSET_GLOBAL+11]
+        global_vec = vector[OFFSET_GLOBAL : OFFSET_GLOBAL + GLOBAL_ENV_DIM]
         desc["world"] = self.global_env_encoder.describe_vector(global_vec)
         
         # 4. Reactive

@@ -50,12 +50,12 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         )
         
         # 1.5 Shared Move Processor (Step 1)
-        # Input: Move Embedding (16) + Type Embedding (16) + Remnants (6) + Known (1) 
-        # Context: HP (1) + Turn (1) + Weather (6) + fainted (2) + Spikes (2) = 12
+        # Input: Move Embedding (16) + Type Embedding (16) + Remnants (4) + Known (1)
+        # Context: HP (1) + Turn (1) + Weather (6) + Fainted (2) + Spikes (2) = 12
         # Matchups: Effectiveness against 6 potential targets = 6
-        # Remnants include: Power, Secondary, Recoil, Category
-        # Total: 39 + 12 + 6 = 57
-        move_input_dim = layout['move_embedding_dim'] + layout['type_embedding_dim'] + 6 + 1 + 12 + 6
+        # Remnants: Power, Secondary, Recoil, Category (known extracted separately below)
+        # Total: 37 + 12 + 6 = 55
+        move_input_dim = layout['move_embedding_dim'] + layout['type_embedding_dim'] + 4 + 1 + 12 + 6
         self.move_network = torch.nn.Sequential(
             torch.nn.Linear(move_input_dim, 64),
             torch.nn.ReLU(),
@@ -330,24 +330,25 @@ class Gen3FeaturesExtractor(torch.nn.Module):
                 "power": {"offset": 1, "dim": 1},
                 "secondary": {"offset": 2, "dim": 1},
                 "recoil": {"offset": 3, "dim": 1},
-                "type": {"offset": 4, "dim": 1}
+                "type": {"offset": 4, "dim": 1},
+                "category": {"offset": 5, "dim": 1},
+                "known": {"offset": 6, "dim": 1}
             }
         m_slot_layout = moves_layout['slot_layout']
         for i in range(4):
             slot_info = moves_layout['slots'][i]
             slot_start = moves_offset + slot_info['offset']
             
-            # Extract remnants using slot_layout to avoid magic numbers
-            # Power, Secondary, Recoil
+            # Power, Secondary, Recoil  [3 dims]
             rem1_start = slot_start + m_slot_layout['power']['offset']
-            rem1_end = slot_start + m_slot_layout['type']['offset'] # Up to but not including Type
+            rem1_end = slot_start + m_slot_layout['type']['offset']
             move_remnants.append(pokemon_part[:, :, rem1_start : rem1_end])
-            
-            # Extra remnants after Type
+
+            # Category  [1 dim] — stop before known flag to avoid duplication
             rem2_start = slot_start + m_slot_layout['type']['offset'] + m_slot_layout['type']['dim']
-            rem2_end = slot_start + slot_info['dim']
+            rem2_end = slot_start + m_slot_layout['known']['offset']
             move_remnants.append(pokemon_part[:, :, rem2_start : rem2_end])
-        all_move_remnants = torch.cat(move_remnants, dim=2) # [B, 12, 24]
+        all_move_remnants = torch.cat(move_remnants, dim=2) # [B, 12, 16]
         
         # Part F: Move Known Flags (Now interleaved in slots)
         known_flags_tensors = []
@@ -365,7 +366,7 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         # Final stitch
         # --- SHARED MOVE PROCESSING (Step 1) ---
         # Reshape move remnants and flags to align with the 4 slots
-        move_remnants_reshaped = all_move_remnants.reshape(batch_size, 12, 4, 6)
+        move_remnants_reshaped = all_move_remnants.reshape(batch_size, 12, 4, 4)
         known_flags_reshaped = known_flags.reshape(batch_size, 12, 4, 1)
         
         # Combine all move features into [B, 12, 4, 51]
@@ -455,11 +456,12 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         our_team = self.norm3(our_team + synergy_delta)
 
         # --- FINAL AGGREGATION ---
-        # Combine the refined team assets and the focused pressure token
+        # Combine our refined team, the opponent's final role tokens, and the raw context
         our_team_flat = our_team.reshape(batch_size, -1)
+        their_team_flat = their_team.reshape(batch_size, -1)
         our_active_refined = our_active.squeeze(1)
-        
-        combined = torch.cat([our_team_flat, our_active_refined, remaining_part], dim=1)
+
+        combined = torch.cat([our_team_flat, their_team_flat, our_active_refined, remaining_part], dim=1)
         return combined
 
     def forward(self, obs):

@@ -17,8 +17,7 @@ class AbilitiesEncoder(ObservationEncoder):
 
     @property
     def dimension(self) -> int:
-        # Ability 1 (8) + Known (1) + Ability 2 (8) + Ability 3 (8) = 25
-        return (3 * ABILITY_SLOT_DIM) + ABILITY_KNOWN_DIM
+        return ABILITY_SLOT_DIM + ABILITY_KNOWN_DIM
 
     def encode(self, mon: Any, battle: AbstractBattle) -> np.ndarray:
         vec = np.zeros(self.dimension, dtype=np.float32)
@@ -48,11 +47,6 @@ class AbilitiesEncoder(ObservationEncoder):
             vec[0] = 0.0
             vec[ABILITY_SLOT_DIM] = 0.0
             
-        # 2. Possible Abilities (Ability 2/3)
-        # This requires dex data to know what's possible for the species.
-        # For now, we'll leave them as 0 or implement a basic lookup if possible.
-        # TODO: Implement possible abilities lookup.
-        
         return vec
 
     def get_layout(self) -> dict:

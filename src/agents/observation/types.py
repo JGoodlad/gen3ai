@@ -47,8 +47,7 @@ class TypeEncoder(ObservationEncoder):
     def get_layout(self) -> Dict[str, Any]:
         return {
             "type1": {"offset": 0, "dim": 1},
-            "type2": {"offset": 1, "dim": 1},
-            "placeholders": {"offset": 2, "dim": 6}
+            "type2": {"offset": 1, "dim": 1}
         }
 
     def describe_vector(self, vector: np.ndarray) -> str:
