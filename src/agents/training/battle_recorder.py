@@ -133,47 +133,8 @@ class BattleRecorder:
     # ------------------------------------------------------------------
 
     def _build_ctx(self, battle, mask: np.ndarray) -> BattleContext:
-        for mon in battle.team.values():
-            self._our_slots.assign(mon.species)
-        for mon in battle.opponent_team.values():
-            self._opp_slots.assign(mon.species)
-
-        our_hp = np.zeros(6, dtype=np.float32)
-        for mon in battle.team.values():
-            slot = self._our_slots.get(mon.species)
-            if slot is not None:
-                our_hp[slot] = mon.current_hp_fraction
-
-        opp_hp = np.zeros(6, dtype=np.float32)
-        for mon in battle.opponent_team.values():
-            slot = self._opp_slots.get(mon.species)
-            if slot is not None:
-                opp_hp[slot] = mon.current_hp_fraction
-
-        our_active = (
-            battle.active_pokemon.species
-            if battle.active_pokemon and not battle.active_pokemon.fainted
-            else "NONE"
-        )
-        opp_active = (
-            battle.opponent_active_pokemon.species
-            if battle.opponent_active_pokemon
-            else "NONE"
-        )
-
-        return BattleContext(
-            turn=battle.turn,
-            phase="forced_switch" if battle.force_switch else "move_selection",
-            mask=mask,
-            obs=np.zeros(1, dtype=np.float32),
-            our_slot_map=self._our_slots.snapshot(),
-            opp_slot_map=self._opp_slots.snapshot(),
-            our_hp=our_hp,
-            opp_hp=opp_hp,
-            our_active=our_active,
-            opp_active=opp_active,
-            our_fainted_count=sum(1 for m in battle.team.values() if m.fainted),
-            opp_fainted_count=sum(1 for m in battle.opponent_team.values() if m.fainted),
+        return BattleContext.from_battle(
+            battle, mask, np.zeros(1, dtype=np.float32), self._our_slots, self._opp_slots
         )
 
     def _latched(self, battle) -> dict:

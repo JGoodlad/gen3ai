@@ -53,49 +53,9 @@ class Gen3Env(SinglesEnv):
 
         if battle is self.battle1 and not battle.finished:
             mask = Gen3ActionMasker.get_mask(battle).astype(np.int8)
-
             if mask.sum() > 0:
-                for mon in battle.team.values():
-                    self._our_slots.assign(mon.species)
-                for mon in battle.opponent_team.values():
-                    self._opp_slots.assign(mon.species)
-
-                our_hp = np.zeros(6, dtype=np.float32)
-                for mon in battle.team.values():
-                    slot = self._our_slots.get(mon.species)
-                    if slot is not None:
-                        our_hp[slot] = mon.current_hp_fraction
-
-                opp_hp = np.zeros(6, dtype=np.float32)
-                for mon in battle.opponent_team.values():
-                    slot = self._opp_slots.get(mon.species)
-                    if slot is not None:
-                        opp_hp[slot] = mon.current_hp_fraction
-
-                our_active = (
-                    battle.active_pokemon.species
-                    if battle.active_pokemon and not battle.active_pokemon.fainted
-                    else "NONE"
-                )
-                opp_active = (
-                    battle.opponent_active_pokemon.species
-                    if battle.opponent_active_pokemon
-                    else "NONE"
-                )
-
-                self._last_ctx = BattleContext(
-                    turn=battle.turn,
-                    phase="forced_switch" if battle.force_switch else "move_selection",
-                    mask=mask,
-                    obs=obs,
-                    our_slot_map=self._our_slots.snapshot(),
-                    opp_slot_map=self._opp_slots.snapshot(),
-                    our_hp=our_hp,
-                    opp_hp=opp_hp,
-                    our_active=our_active,
-                    opp_active=opp_active,
-                    our_fainted_count=sum(1 for m in battle.team.values() if m.fainted),
-                    opp_fainted_count=sum(1 for m in battle.opponent_team.values() if m.fainted),
+                self._last_ctx = BattleContext.from_battle(
+                    battle, mask, obs, self._our_slots, self._opp_slots
                 )
 
         return obs
@@ -159,11 +119,6 @@ class Gen3Env(SinglesEnv):
                 self.reward_manager.record_action(self._last_ctx, trainee_idx)
 
             obs, reward, term, trunc, info = super().step(action)
-
-            if hasattr(self, "_pending_switch_log"):
-                info["switch_log"] = self._pending_switch_log
-                del self._pending_switch_log
-
             return obs, reward, term, trunc, info
         except Exception as e:
             import traceback
@@ -174,8 +129,6 @@ class Gen3Env(SinglesEnv):
     def reset(self, *args, **kwargs):
         self.reward_manager.report_episode(getattr(self, "battle1", None))
 
-        self._move_slot_cache = {}
-        self._last_active_name = ""
         self._our_slots.reset()
         self._opp_slots.reset()
         self._last_ctx = None
