@@ -433,7 +433,12 @@ class PokeEnv(ParallelEnv[str, Dict[str, Any], ActionType]):
             )
             self.agent2.order_queue.put(order2)
         elif self.agent2_to_move and agent1_forfeited:
+            # Unblock agent2's pending _choose_move() with an empty order so it
+            # doesn't leak into the next episode and steal orders meant for it.
+            # _EmptyBattleOrder has a null/empty message so nothing is sent to the
+            # server — no popup.
             self.agent2_to_move = False
+            self.agent2.order_queue.put(_EmptyBattleOrder())
         battle1 = self.agent1.battle_queue.race_get(
             self.agent1._waiting, self.agent2._trying_again
         )
@@ -506,6 +511,11 @@ class PokeEnv(ParallelEnv[str, Dict[str, Any], ActionType]):
                 self.agent1.battle_queue.get()
             if not self.agent2.battle_queue.empty():
                 self.agent2.battle_queue.get()
+            # If poke-env cancelled agent2's _choose_move() task before it consumed
+            # the _EmptyBattleOrder we put in step(), drain it now so it doesn't
+            # corrupt the next battle's order_queue.
+            if not self.agent2.order_queue.empty():
+                self.agent2.order_queue.get()
         self.reset_battles()
         self._challenge_task = asyncio.run_coroutine_threadsafe(
             self.agent1.battle_against(self.agent2, n_battles=1), self._loop
