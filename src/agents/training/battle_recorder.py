@@ -110,7 +110,7 @@ class BattleRecorder:
                 "ours": [
                     {
                         "species": m.species,
-                        "item": getattr(m.item, "name", m.item) if m.item else "none",
+                        "item": m.item or "none",
                         "final_hp": f"{m.current_hp_fraction * 100:.0f}%",
                         "fainted": m.fainted,
                     }
