@@ -27,19 +27,23 @@ class StatTrackingRLPlayer(RLPlayer):
         self._recorders: dict[str, BattleRecorder] = {}
 
     def choose_move(self, battle):
-        if battle.battle_tag != self._last_battle_tag:
-            self._last_battle_tag = battle.battle_tag
-            self._stall_logger.reset()
-        if battle.turn >= self._stall_logger.threshold:
-            self._stall_logger.log_once(battle, suffix="REPLAY_STALL")
+        try:
+            if battle.battle_tag != self._last_battle_tag:
+                self._last_battle_tag = battle.battle_tag
+                self._stall_logger.reset()
+            if battle.turn >= self._stall_logger.threshold:
+                self._stall_logger.log_once(battle, suffix="REPLAY_STALL")
+                return ForfeitBattleOrder()
+
+            if battle.battle_tag not in self._recorders:
+                self._recorders[battle.battle_tag] = BattleRecorder(battle.battle_tag)
+
+            idx, probs, mask = self._predict_best_action(battle, stochastic=True)
+            self._recorders[battle.battle_tag].record(battle, idx, probs, mask)
+            return self.action_to_order(idx, battle)
+        except Exception as e:
+            print(f"\n⚠️ [REPLAY] choose_move() failed at turn {battle.turn}: {e}")
             return ForfeitBattleOrder()
-
-        if battle.battle_tag not in self._recorders:
-            self._recorders[battle.battle_tag] = BattleRecorder(battle.battle_tag)
-
-        idx, probs, mask = self._predict_best_action(battle, stochastic=True)
-        self._recorders[battle.battle_tag].record(battle, idx, probs, mask)
-        return self.action_to_order(idx, battle)
 
 
 class ReplayCallback(BaseCallback):
@@ -80,7 +84,9 @@ class ReplayCallback(BaseCallback):
             print(f"\n🎥 [REPLAY] Step {self.num_timesteps}: Recording {self.n_replays} games to {step_dir}...")
             thread = threading.Thread(target=self._run_async_battles, args=(step_dir,), daemon=True)
             thread.start()
-            thread.join()
+            thread.join(timeout=480)
+            if thread.is_alive():
+                print(f"\n⚠️ [REPLAY] Recording timed out after 8 minutes — continuing training.")
 
         return True
 
@@ -106,7 +112,13 @@ class ReplayCallback(BaseCallback):
                 account_configuration=AccountConfiguration(f"RepOpp{ts}", "password"),
             )
 
-            await replay_player.battle_against(opponent, n_battles=self.n_replays)
+            try:
+                await asyncio.wait_for(
+                    replay_player.battle_against(opponent, n_battles=self.n_replays),
+                    timeout=420,
+                )
+            except asyncio.TimeoutError:
+                print(f"\n⚠️ [REPLAY] battle_against() timed out after 7 minutes")
 
             html_files = sorted(f for f in os.listdir(step_dir) if f.endswith(".html"))
             for i, (tag, recorder) in enumerate(replay_player._recorders.items()):

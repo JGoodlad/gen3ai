@@ -88,11 +88,15 @@ class RLPlayer(Gen3Player):
         return idx, probs, mask
 
     def choose_move(self, battle):
-        if battle.battle_tag != self._last_battle_tag:
-            self._last_battle_tag = battle.battle_tag
-            self._stall_logger.reset()
-        if battle.turn >= self._stall_logger.threshold:
-            self._stall_logger.log_once(battle, suffix="INFERENCE_STALL")
+        try:
+            if battle.battle_tag != self._last_battle_tag:
+                self._last_battle_tag = battle.battle_tag
+                self._stall_logger.reset()
+            if battle.turn >= self._stall_logger.threshold:
+                self._stall_logger.log_once(battle, suffix="INFERENCE_STALL")
+                return ForfeitBattleOrder()
+            idx, _, _ = self._predict_best_action(battle)
+            return self.action_to_order(idx, battle)
+        except Exception as e:
+            print(f"\n⚠️ [INFERENCE] choose_move() failed at turn {battle.turn}: {e}")
             return ForfeitBattleOrder()
-        idx, _, _ = self._predict_best_action(battle)
-        return self.action_to_order(idx, battle)
