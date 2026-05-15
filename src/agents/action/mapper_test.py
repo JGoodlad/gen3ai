@@ -198,6 +198,22 @@ class TestGen3ActionMasker:
         mask = Gen3ActionMasker.get_mask(battle)
         assert mask[10] == 0
 
+    def test_struggle_not_double_enabled_at_slot_6(self):
+        # When struggle is the only available move it appears in request_moves[0].
+        # It must only be enabled at the dedicated slot (10), not at slot 6.
+        battle, _, _ = _make_battle(
+            team_species=["tyranitar"],
+            available_switch_indices=[],
+            move_ids=[],
+            struggle=True,
+        )
+        # Manually put struggle in request_moves[0] (what the server sends when all PP gone)
+        battle.last_request["active"][0]["moves"] = [{"id": "struggle", "disabled": False}]
+        battle.available_moves = [_move("struggle")]
+        mask = Gen3ActionMasker.get_mask(battle)
+        assert mask[6] == 0, "struggle must not be enabled at move slot 6"
+        assert mask[10] == 1, "struggle must be enabled at dedicated slot 10"
+
     def test_decision_context_latched(self):
         battle, mons, moves = _make_battle(
             team_species=["tyranitar", "skarmory"],

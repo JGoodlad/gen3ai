@@ -37,27 +37,29 @@ class Gen3ActionMasker:
                 if pokemon in battle.available_switches:
                     mask[i] = 1
                     
-        # --- 2. Moves (6-10) ---
+        # --- 2. Moves (6-9) ---
         active_request = battle.last_request.get("active", [{}])[0]
         request_moves = active_request.get("moves", [])
-        
+
         # --- Decision Context Latch ---
-        # We 'pin' the current slots to the battle object so the mapper 
-        # is guaranteed to use the same mapping as the mask.
+        # Pin current move/team ordering onto the battle object so the mapper
+        # uses the identical mapping that produced this mask.
         battle._gen3_decision_context = {
             "turn": battle.turn,
             "move_ids": [m.get("id") for m in request_moves],
             "team_species": [p.species for p in team_list],
-            "team_objects": team_list # For direct object mapping
+            "team_objects": team_list,
         }
 
-        # Map slots 0-3 to Actions 6-9
+        # Map request move slots 0-3 to actions 6-9.
+        # Struggle is excluded here — it has a dedicated slot (10) below.
+        # This prevents the same move being enabled at two different indices.
         for i, move_data in enumerate(request_moves):
-            if i < 4 and not move_data.get("disabled", False):
+            if i < 4 and not move_data.get("disabled", False) and move_data.get("id") != "struggle":
                 mask[i + 6] = 1
-        
-        # Dedicated Struggle (10)
-        # Note: Struggle is only in available_moves if the server explicitly forces it
+
+        # --- 3. Struggle (10) ---
+        # Enabled only when the server forces it (all PP depleted).
         if any(m.id == "struggle" for m in battle.available_moves):
             mask[10] = 1
                 

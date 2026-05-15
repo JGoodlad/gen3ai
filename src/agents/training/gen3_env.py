@@ -58,6 +58,11 @@ class Gen3Env(SinglesEnv):
     def action_masks(self) -> np.ndarray:
         if self._last_ctx is not None:
             return self._last_ctx.mask
+        import sys
+        sys.stderr.write(
+            "[WARN] action_masks() called before any BattleContext was built — "
+            "returning all-valid fallback. This should only happen before the first reset.\n"
+        )
         return np.ones(11, dtype=np.int8)
 
     def get_action_mask(self, battle):

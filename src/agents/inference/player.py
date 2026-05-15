@@ -23,6 +23,13 @@ class Gen3Player(Player):
         return self.observation_encoder.get_observation(battle)
 
     def action_to_order(self, action_idx, battle):
+        ctx = getattr(battle, "_gen3_decision_context", None)
+        if ctx is None or ctx.get("turn") != battle.turn:
+            raise RuntimeError(
+                f"action_to_order() called at turn {battle.turn} but decision context is "
+                f"{'missing' if ctx is None else f'from turn {ctx.get(\"turn\")}'}. "
+                "embed_battle() must be called before action_to_order()."
+            )
         return Gen3ActionMapper.action_to_order(action=action_idx, battle=battle)
 
 
