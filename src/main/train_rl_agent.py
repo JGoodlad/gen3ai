@@ -167,12 +167,20 @@ class Gen3Env(SinglesEnv):
             # We subtract 30.0 so it matches the penalty of a loss.
             base_reward -= 30.0
         
-        # 3. Delegate to RewardManager for subsidies, logging, and trainee-specific tracking
-        return self.reward_manager.process_turn_reward(
+        # 3. Delegate to RewardManager
+        total_reward = self.reward_manager.process_turn_reward(
             battle, 
             base_reward=base_reward, 
             is_trainee=(battle is self.battle1)
         )
+
+        # 4. Progressive Stall Tax (Turns 200-250)
+        # Apply a per-turn penalty to discourage the game from dragging on
+        if battle.turn > 200:
+            stall_tax = -1.0 * (battle.turn - 200) / 10.0 # Ramping from -0.1 to -5.0
+            total_reward += stall_tax
+            
+        return total_reward
 
     def step(self, action):
         try:
@@ -197,9 +205,9 @@ class Gen3Env(SinglesEnv):
                     self._save_stall_html(battle, suffix="STALL")
                     self._stall_logged = True
                 
-                # Force a forfeit to end the stall loop
+                # Force a forfeit with a severe penalty (-50.0)
                 if not battle.finished:
-                    return obs, -30.0, True, True, info
+                    return obs, -50.0, True, True, info
             
             # Pass switch logs up to the main process
             if hasattr(self, "_pending_switch_log"):
