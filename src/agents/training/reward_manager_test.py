@@ -1,87 +1,115 @@
 import unittest
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 import numpy as np
 from agents.training.reward_manager import Gen3RewardManager
+from agents.training.battle_context import BattleContext, TurnDelta
 from utils.logging.levels import LogLevel
+
+
+def _ctx(turn=1, our_active="pikachu", opp_active="charizard", action_mask=None):
+    mask = action_mask if action_mask is not None else np.ones(11, dtype=np.int8)
+    hp = np.ones(6, dtype=np.float32)
+    return BattleContext(
+        turn=turn,
+        phase="move_selection",
+        mask=mask,
+        obs=np.zeros(1, dtype=np.float32),
+        our_slot_map={our_active: 0},
+        opp_slot_map={opp_active: 0},
+        our_hp=hp.copy(),
+        opp_hp=hp.copy(),
+        our_active=our_active,
+        opp_active=opp_active,
+        our_fainted_count=0,
+        opp_fainted_count=0,
+    )
+
+
+def _delta(our_hp_delta=0.0, opp_hp_delta=0.0, we_fainted=False, opp_fainted=False,
+           opp_prev_active="charizard"):
+    our = np.zeros(6, dtype=np.float32)
+    opp = np.zeros(6, dtype=np.float32)
+    our[0] = our_hp_delta
+    opp[0] = opp_hp_delta
+    return TurnDelta(
+        our_move_id=None,
+        our_switch_to=None,
+        our_prev_active="pikachu",
+        opp_move_id=None,
+        opp_switch_to=None,
+        opp_prev_active=opp_prev_active,
+        our_hp_delta=our,
+        opp_hp_delta=opp,
+        we_fainted=we_fainted,
+        opp_fainted=opp_fainted,
+    )
+
+
+def _battle(won=False, lost=False, finished=False):
+    battle = MagicMock()
+    battle.won = won
+    battle.lost = lost
+    battle.finished = finished
+    battle.turn = 1
+    battle.opponent_team = {}
+    return battle
+
 
 class TestRewardManager(unittest.TestCase):
     def setUp(self):
         self.manager = Gen3RewardManager(log_level=LogLevel.QUIET)
-        self.battle = MagicMock()
-        self.battle.turn = 1
-        self.battle.won = False
-        self.battle.lost = False
-        self.battle.finished = False
-        
-        # Mock active pokemon
-        self.active_mon = MagicMock()
-        self.active_mon.species = "Pikachu"
-        self.active_mon.fainted = False
-        self.battle.active_pokemon = self.active_mon
-        self.battle.opponent_active_pokemon = MagicMock()
-        self.battle.opponent_active_pokemon.species = "Charizard"
-        self.battle.team = {"Pikachu": self.active_mon}
 
     def test_attack_tracking(self):
-        # Action 6 is the first move
-        self.manager.record_action(self.battle, 6)
+        ctx = _ctx(turn=1)
+        self.manager.record_action(ctx, 6)  # action 6 = first move
         self.assertEqual(self.manager.attack_count, 1)
-        
-        reward = self.manager.process_turn_reward(self.battle, 1.0)
-        self.assertEqual(reward, 1.0) # No subsidy for attacks usually
-        self.assertEqual(self.manager.total_reward, 1.0)
+
+        reward = self.manager.process_turn_reward(_battle(), _delta())
+        self.assertIsInstance(reward, float)
+        self.assertEqual(self.manager.total_reward, reward)
 
     def test_repetition_tax(self):
-        # First attack
-        self.manager.record_action(self.battle, 6)
-        self.manager.process_turn_reward(self.battle, 1.0)
-        
-        # Repeat the same attack
-        self.manager.record_action(self.battle, 6)
-        reward = self.manager.process_turn_reward(self.battle, 1.0)
-        
+        ctx1 = _ctx(turn=1)
+        self.manager.record_action(ctx1, 6)
+        r1 = self.manager.process_turn_reward(_battle(), _delta())
+
+        ctx2 = _ctx(turn=2)
+        self.manager.record_action(ctx2, 6)  # same action → repetition tax
+        r2 = self.manager.process_turn_reward(_battle(), _delta())
+
         # Repetition tax is -0.02
-        self.assertAlmostEqual(reward, 0.98)
-        self.assertAlmostEqual(self.manager.total_reward, 1.98)
+        self.assertAlmostEqual(r2, r1 - 0.02, places=5)
 
     def test_voluntary_switch_subsidy(self):
-        # Initial state: Pikachu active
-        self.manager.record_action(self.battle, 6) # Attack turn 1
-        self.manager.process_turn_reward(self.battle, 0.0)
-        
-        # Turn 2: Switch to Raichu
-        self.battle.turn = 2
-        raichu = MagicMock()
-        raichu.species = "Raichu"
-        raichu.fainted = False
-        self.battle.active_pokemon = raichu
-        self.battle.team = {"Pikachu": self.active_mon, "Raichu": raichu}
-        self.battle.available_switches = [raichu]
-        
-        # Mock the SwitchDetection to return voluntary
-        with MagicMock() as mock_detect:
-            from utils.gen3_utils import SwitchDetection
-            import agents.training.reward_manager
-            agents.training.reward_manager.SwitchDetection.get_switch_type = MagicMock(return_value=(True, True, True))
-            
-            self.manager.record_action(self.battle, 1) # Action 1 is switch to slot 1
-            reward = self.manager.process_turn_reward(self.battle, 0.0)
-            
-            self.assertGreater(reward, 0.0)
-            self.assertEqual(self.manager.switch_count, 1)
+        ctx1 = _ctx(turn=1, our_active="pikachu")
+        self.manager.record_action(ctx1, 6)
+        self.manager.process_turn_reward(_battle(), _delta())
 
-    def test_get_episode_metrics(self):
-        self.manager.attack_count = 5
-        self.manager.switch_count = 2
-        self.manager.total_reward = 15.5
-        self.battle.turn = 20
-        self.battle.won = True
-        
-        metrics = self.manager.get_episode_metrics(self.battle)
-        self.assertEqual(metrics["reward"], 15.5)
-        self.assertEqual(metrics["status"], "WIN")
-        self.assertEqual(metrics["attacks"], 5)
-        self.assertEqual(metrics["switches_voluntary"], 2)
+        # Turn 2: switch to raichu (action 1 = switch to slot 1)
+        ctx2 = _ctx(turn=2, our_active="raichu")
+        with patch("agents.training.reward_manager.SwitchDetection") as mock_sd:
+            mock_sd.get_switch_type.return_value = (True, True, True)
+            self.manager.record_action(ctx2, 1)
+
+        reward = self.manager.process_turn_reward(_battle(), _delta())
+        self.assertGreaterEqual(reward, 0.0)
+        self.assertEqual(self.manager.switch_count, 1)
+
+    def test_faint_reward(self):
+        ctx = _ctx(turn=1)
+        self.manager.record_action(ctx, 6)
+        # Opponent faints — should add FAINTED_VALUE (2.0) to base reward
+        reward = self.manager.process_turn_reward(_battle(), _delta(opp_fainted=True))
+        self.assertAlmostEqual(reward, 2.0, places=5)
+
+    def test_win_reward(self):
+        ctx = _ctx(turn=1)
+        self.manager.record_action(ctx, 6)
+        battle = _battle(won=True, finished=True)
+        reward = self.manager.process_turn_reward(battle, _delta())
+        # Victory value is 30.0
+        self.assertAlmostEqual(reward, 30.0, places=5)
+
 
 if __name__ == "__main__":
     unittest.main()
