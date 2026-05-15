@@ -1,5 +1,4 @@
 import numpy as np
-import weakref
 from poke_env.battle.abstract_battle import AbstractBattle
 
 class Gen3ActionMasker:

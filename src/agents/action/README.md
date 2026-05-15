@@ -1,39 +1,35 @@
-# Gen3 Action System: Integrity & Mapping
+# Gen3 Action System
 
-This directory contains the core logic for translating between the RL model's discrete action space and the Pokémon Showdown `BattleOrder` system. It is designed with a **"Crash over Corruption"** philosophy to eliminate state-action desynchronization.
+Translates between the RL model's 11-action discrete space and poke_env `BattleOrder`.
 
-## Architecture: Decision Context Latching
+## Action Space
 
-To prevent race conditions (where the server state updates while the model is executing), we use a **Decision Context Latch**:
+| Index | Meaning |
+|---|---|
+| 0–5 | Switch to team slot 0–5 |
+| 6–9 | Use move in slot 0–3 |
+| 10 | Struggle |
 
-1.  **Observation Time**: `Gen3ActionMasker.get_mask()` captures a "pinned" snapshot of the server's move slots and team order.
-2.  **Action Time**: `Gen3ActionMapper.action_to_order()` strictly consumes that snapshot. 
-3.  **Integrity Check**: If the current server state has moved from the pinned snapshot, the system will raise a `RuntimeError` with a full forensic report rather than sending an invalid action.
+## Design: Crash Over Corruption
 
-## Validation Suite
+The system enforces a strict "crash over corruption" contract — ambiguous or stale state raises immediately rather than silently sending a wrong action.
 
-### 1. Serverless Unit-Fuzz (`fuzz_test_unit.py`)
-This is a high-speed validation tool that simulates thousands of random battle states (forced switches, disabled moves, status effects) and ensures the mapper never produces an invalid order.
+### Decision Context Latch
 
-**Run**:
-```bash
-PYTHONPATH=src python3 src/agents/action/fuzz_test_unit.py
-```
+`Gen3ActionMasker.get_mask()` pins the current server slot ordering onto `battle._gen3_decision_context` at observation time. `Gen3ActionMapper.action_to_order()` consumes that snapshot. If the server state has moved between observation and action (move IDs changed within the same turn), a `RuntimeError` is raised with a diagnostic message.
 
-### 2. Real-Game Telemetry (`telemetry_test.py`)
-This tool plays actual battles against a random opponent and monitors for "Silent Updates"—instances where the server state changes during the decision window.
+This prevents the subtle race condition where poke-env processes a background server message and mutates `last_request` while the model is executing.
 
-**Run**:
-```bash
-# Note: Requires a local Showdown server running on port 8001
-PYTHONPATH=src python3 src/agents/action/telemetry_test.py
-```
+### Invariants
 
-## Troubleshooting: Forensic Reports
+- **No fallbacks**: every action index maps to exactly one source of truth (the latched context). There is no "try last_request if context is missing" path.
+- **Duplicate species check**: if the team contains duplicate species (Species Clause violation or state corruption), the system crashes.
+- **Struggle is explicit**: action 10 is only valid when the server returns `struggle` in `available_moves`.
 
-When a desync is detected, the `mapper` will throw a `RuntimeError` with a diagnostic block:
-- **Pinned (Observation)**: The moves the model actually "saw."
-- **Current (Server)**: The moves currently in the server's request.
-- **Delta**: Explains exactly what changed (e.g., "Moves changed under the model").
+## Tests
 
-If you see this error frequently, check your `poke-env` queue-draining logic or reduce model inference latency.
+| File | Type | What it covers |
+|---|---|---|
+| `fuzz_test_unit.py` | Unit (standalone script) | Simulates 2000 random battle states including forced switches, disabled moves, and mid-turn request changes; verifies the latch provides 100% protection |
+| `fuzz_e2e_test.py` | E2E (requires server) | Real battles vs RandomPlayer; asserts mask legality and that no server-rejected actions occur |
+| `telemetry_e2e_test.py` | E2E (requires server) | Monitors for silent mid-decision state updates in live battles |
