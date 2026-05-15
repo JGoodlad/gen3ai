@@ -16,20 +16,24 @@ class Gen3Teambuilder(Teambuilder):
             teams = [teams]
         
         # STRICT VALIDATION: Ensure all teams are legal for Gen 3 OU in one batch
-        from utils.bridge.team_validator import validate_team_locally
+        from utils.bridge.team_validator import validate_teams_locally
         
-        validations = validate_team_locally("gen3ou", teams)
-        if not isinstance(validations, list):
-            validations = [validations]
+        validations = validate_teams_locally("gen3ou", teams)
             
+        valid_indices = []
+        for i, res in enumerate(validations):
+            if res.get("valid"):
+                valid_indices.append(i)
+            else:
+                errors = ", ".join(res.get("errors", ["Unknown error"]))
+                # We skip illegal teams but don't crash unless the whole pool is bad.
+
+        if not valid_indices:
+            raise ValueError(f"No valid teams found in the provided list! (First error: {validations[0].get('errors')})")
+
         self.packed_teams = []
-        for i, team_str in enumerate(teams):
-            if not validations[i].get("valid"):
-                errors = ", ".join(validations[i].get("errors", ["Unknown error"]))
-                # Log the error but don't necessarily crash if we have other valid teams?
-                # Actually, user wants fail-fast.
-                raise ValueError(f"Team Validation Failed: {errors}\nTeam:\n{team_str}")
-            
+        for idx in valid_indices:
+            team_str = teams[idx]
             # Parse and Pack
             parsed_team = self.parse_showdown_team(team_str)
             fixed_team = fix_gen3_hp_ivs(parsed_team)

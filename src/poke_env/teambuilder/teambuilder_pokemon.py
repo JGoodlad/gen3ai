@@ -243,9 +243,7 @@ class TeambuilderPokemon:
         mon = TeambuilderPokemon()
 
         for line in showdown_mon.split("\n"):
-            while line and line.startswith(" "):
-                line = line[1:]
-
+            line = line.strip()
             if not line:
                 continue
             elif line.startswith("Ability"):

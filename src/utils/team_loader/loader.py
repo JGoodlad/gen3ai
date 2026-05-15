@@ -29,6 +29,10 @@ class TeamLoader:
                     continue
                     
                 for entry in meta:
+                    # Skip invalid teams if the metadata flag is present
+                    if entry.get("valid") is False:
+                        continue
+                        
                     rel_file_path = entry.get("file")
                     if not rel_file_path:
                         continue

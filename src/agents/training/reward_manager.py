@@ -4,6 +4,7 @@ from typing import Optional
 from utils.logging.rate_limiter import RateLimitedLogger
 from utils.logging.levels import LogLevel
 from utils.gen3_utils import SwitchDetection
+from poke_env.data import GenData
 
 class SinglePlayerRewardManager:
     """
@@ -50,6 +51,7 @@ class Gen3RewardManager:
         self._prev_active_name = "NULL"  # The one BEFORE the current one
         self._last_action_idx = -1
         self._last_reward_metadata = {}
+        self._last_opp_fainted_count = 0
         
     def reset(self):
         """Prepares for a new episode."""
@@ -65,6 +67,7 @@ class Gen3RewardManager:
         self._prev_active_name = "NULL"
         self._last_action_idx = -1
         self._last_reward_metadata = {}
+        self._last_opp_fainted_count = 0
 
     def record_action(self, battle, action: int):
         """
@@ -94,8 +97,12 @@ class Gen3RewardManager:
         else:
             self._opp_turns_active += 1
 
+        # Track opponent fainted count for explosion detection
+        self._last_opp_fainted_count = len([m for m in battle.opponent_team.values() if m.fainted])
+
         # We only apply the subsidy here so it's tied to the CHOICE, not the turn delta
         self._pending_subsidy = 0.0
+
         
         # 4. Repetition & Bouncing Penalties
         repetition_tax = 0.0
@@ -140,6 +147,32 @@ class Gen3RewardManager:
                 self.remaining_switch_pool -= payout
                 self.switch_count += 1
                 self.last_switch_turn = battle.turn
+
+                # Defensive Pivot Bonus
+                pivot_bonus = 0.0
+                if battle.active_pokemon and battle.opponent_active_pokemon and action < 6:
+                    old_mon = battle.active_pokemon
+                    team_list = list(battle.team.values())
+                    if action < len(team_list):
+                        new_mon = team_list[action]
+                        opp_mon = battle.opponent_active_pokemon
+                        
+                        # Estimate threat using STAB types of the opponent
+                        opp_types = [opp_mon.type_1]
+                        if opp_mon.type_2: opp_types.append(opp_mon.type_2)
+                        
+                        type_chart = GenData.from_gen(3).type_chart
+                        
+                        def get_max_mult(mon):
+                            return max(t.damage_multiplier(mon.type_1, mon.type_2, type_chart=type_chart) for t in opp_types)
+                        
+                        old_threat = get_max_mult(old_mon)
+                        new_threat = get_max_mult(new_mon)
+                        
+                        if new_threat < old_threat:
+                            pivot_bonus = 0.15 if new_threat == 0 else 0.1
+                            self._pending_subsidy += pivot_bonus
+                            self._last_reward_metadata["pivot_bonus"] = pivot_bonus
             elif is_voluntary is False:
                 # This is a forced switch (Replacement or Roar/Whirlwind)
                 self.forced_switch_count += 1
@@ -157,6 +190,34 @@ class Gen3RewardManager:
         """
         reward = base_reward
         
+        # Explosion Mitigation Detection
+        # Logic: If an opponent mon faints, and it was a 'nuclear' threat, 
+        # check if we survived it.
+        explosion_bonus = 0.0
+        explosion_penalty = 0.0
+        
+        current_opp_fainted_count = len([m for m in battle.opponent_team.values() if m.fainted])
+        if current_opp_fainted_count > self._last_opp_fainted_count:
+            # Opponent fainted! 
+            # We look at revealed moves of the opponent team to find the one that just fainted
+            # This is an approximation since poke_env doesn't easily tell us which one just fainted
+            # in the middle of a turn, but usually there's only one.
+            for mon in battle.opponent_team.values():
+                if mon.fainted and "explosion" in [m.id for m in mon.moves.values()]:
+                     # Found a fainted mon with explosion!
+                     if battle.active_pokemon and not battle.active_pokemon.fainted:
+                         # We survived!
+                         explosion_bonus = 1.0
+                         # print(f"  ✨ [STRATEGY] Explosion Mitigated! Reward: +{explosion_bonus}")
+                     elif battle.active_pokemon and battle.active_pokemon.fainted:
+                         # We fainted to it
+                         explosion_penalty = -0.5
+                         # print(f"  💣 [STRATEGY] Fainted to Explosion. Penalty: {explosion_penalty}")
+                     break
+        
+        reward += explosion_bonus
+        reward += explosion_penalty
+        
         # Apply any subsidy calculated in the last record_action call
         if hasattr(self, "_pending_subsidy"):
             reward += self._pending_subsidy
@@ -165,7 +226,9 @@ class Gen3RewardManager:
         else:
             subsidy_val = 0.0
         
-        # Rate-limited logging check
+        # Update trackers for next turn
+        self._last_opp_fainted_count = current_opp_fainted_count
+
         is_log_turn = self.log_level >= LogLevel.DETAILED and self.logger.should_log()
         
         if is_log_turn:
@@ -183,6 +246,8 @@ class Gen3RewardManager:
                     print(f"       Pool Remaining: {self.remaining_switch_pool + m['payout']:.2f} -> Payout: {m['payout']:.2f}")
                     print(f"       Multipliers: Ratio:{m['ratio_mult']:.1f} | Spam:{m['spam_mult']:.1f} | Reactive:{m['reactive_mult']:.2f}")
                     print(f"       Taxes: Repetition:{m['repetition_tax']:.2f} | Bouncing:{m['bouncing_tax']:.2f}")
+                    if m.get("pivot_bonus"):
+                        print(f"       Pivot Bonus: +{m['pivot_bonus']:.2f}")
                     print(f"       Final Subsidy: {m['subsidy']:.4f}")
                 elif m.get("type") == "ATTACK" and m.get("repetition_tax", 0) != 0:
                     print(f"    🔍 [DEEP TRACE] Type: ATTACK | Repetition Tax: {m['repetition_tax']:.2f}")

@@ -4,10 +4,19 @@ try:
     multiprocessing.set_start_method('spawn', force=True)
 except RuntimeError:
     pass
-import asyncio
-import os
+
+# Hardened path injection for worker reliability
 import sys
-import json
+import os
+script_path = os.path.abspath(__file__)
+main_dir = os.path.dirname(script_path)
+src_dir = os.path.dirname(main_dir)
+root_dir = os.path.dirname(src_dir)
+for d in [root_dir, src_dir, main_dir]:
+    if d not in sys.path:
+        sys.path.insert(0, d)
+
+import asyncio
 import numpy as np
 import argparse
 from datetime import datetime
@@ -207,6 +216,8 @@ class Gen3Env(SinglesEnv):
                 
                 # Force a forfeit with a severe penalty (-50.0)
                 if not battle.finished:
+                    if isinstance(action, dict):
+                        return obs, {self.agent1.username: -50.0}, {self.agent1.username: True}, {self.agent1.username: True}, info
                     return obs, -50.0, True, True, info
             
             # Pass switch logs up to the main process
@@ -420,6 +431,65 @@ async def main():
         duration = datetime.now() - start_time
         print(f"Win rate vs Heuristic: {rl_player.n_won_battles / args.eval_battles * 100:.1f}% (Time: {duration})")
 
+    # --- Callback Setup (Shared) ---
+    checkpoint_callback = CheckpointCallback(
+        save_freq=50000, 
+        save_path=model_dir,
+        name_prefix="checkpoint"
+    )
+    
+    replay_callback = ReplayCallback(
+        model_dir=model_dir,
+        mappings=mappings,
+        trainee_teambuilder=trainee_teambuilder,
+        opponent_teambuilder=opponent_teambuilder,
+        save_freq=100000,
+        n_replays=10
+    )
+    
+    callbacks = [checkpoint_callback, replay_callback]
+    
+    if not args.debug:
+        from sb3_contrib.common.maskable.callbacks import MaskableEvalCallback
+        
+        def create_eval_env(idx):
+            def _init():
+                try:
+                    ts = datetime.now().strftime('%H%M%S')
+                    env = Gen3Env(
+                        mappings,
+                        battle_format=BATTLE_FORMAT,
+                        team=trainee_teambuilder,
+                        server_configuration=LocalhostServerConfiguration,
+                        account_configuration1=AccountConfiguration(f"RLEval{idx}{ts}", "password"),
+                    )
+                    opponent = SimpleHeuristicsPlayer(
+                        battle_format=BATTLE_FORMAT,
+                        team=opponent_teambuilder,
+                        server_configuration=LocalhostServerConfiguration,
+                        account_configuration=AccountConfiguration(f"OppEval{idx}{ts}", "password"),
+                    )
+                    wrapped = Gen3SingleAgentWrapper(env, opponent)
+                    wrapped.action_space = env.action_space
+                    wrapped.observation_space = env.observation_space
+                    return Monitor(wrapped)
+                except Exception as e:
+                    print(f"🛑 ERROR IN EVAL WORKER {idx}: {e}")
+                    traceback.print_exc()
+                    raise e
+            return _init
+        
+        eval_env = SubprocVecEnv([create_eval_env(i) for i in range(8)])
+        eval_callback = MaskableEvalCallback(
+            eval_env,
+            best_model_save_path=os.path.join(model_dir, "best_model"),
+            log_path=os.path.join(model_dir, "eval_logs"),
+            eval_freq=max(1000, 500000 // args.n_envs),
+            deterministic=False,
+            n_eval_episodes=args.eval_battles
+        )
+        callbacks.append(eval_callback)
+
     if args.model:
         model_path = args.model
         if not os.path.exists(model_path) and not model_path.endswith(".zip"):
@@ -455,14 +525,8 @@ async def main():
             signal.signal(signal.SIGINT, signal_handler)
             signal.signal(signal.SIGTERM, signal_handler)
 
-            checkpoint_callback = CheckpointCallback(
-                save_freq=50000, 
-                save_path=model_dir,
-                name_prefix="checkpoint"
-            )
-            
             try:
-                model.learn(total_timesteps=args.steps, callback=checkpoint_callback, reset_num_timesteps=False)
+                model.learn(total_timesteps=args.steps, callback=callbacks, reset_num_timesteps=False)
             except Exception as e:
                 print(f"Training interrupted by exception: {e}")
                 final_path = os.path.join(model_dir, "final_model_exception")
@@ -520,68 +584,7 @@ async def main():
         signal.signal(signal.SIGINT, signal_handler)
         signal.signal(signal.SIGTERM, signal_handler)
 
-        checkpoint_callback = CheckpointCallback(
-            save_freq=50000, 
-            save_path=model_dir,
-            name_prefix="checkpoint"
-        )
-        
-        replay_callback = ReplayCallback(
-            model_dir=model_dir,
-            mappings=mappings,
-            trainee_teambuilder=trainee_teambuilder,
-            opponent_teambuilder=opponent_teambuilder,
-            save_freq=100000, # Start progressive scaling at 100k
-            n_replays=10
-        )
-        
-        callbacks = [checkpoint_callback, replay_callback]
-        
-        if not args.debug:
-            from sb3_contrib.common.maskable.callbacks import MaskableEvalCallback
-            
-            # Evaluation environments: use 8 as requested
-            def create_eval_env(idx):
-                def _init():
-                    try:
-                        ts = datetime.now().strftime('%H%M%S')
-                        env = Gen3Env(
-                            mappings,
-                            battle_format=BATTLE_FORMAT,
-                            team=trainee_teambuilder,
-                            server_configuration=LocalhostServerConfiguration,
-                            account_configuration1=AccountConfiguration(f"RLEval{idx}{ts}", "password"),
-                        )
-                        opponent = SimpleHeuristicsPlayer(
-                            battle_format=BATTLE_FORMAT,
-                            team=opponent_teambuilder,
-                            server_configuration=LocalhostServerConfiguration,
-                            account_configuration=AccountConfiguration(f"OppEval{idx}{ts}", "password"),
-                        )
-                        wrapped = Gen3SingleAgentWrapper(env, opponent)
-                        
-                        # FORCE OVERRIDE: Support 11 actions and Dict space
-                        wrapped.action_space = env.action_space
-                        wrapped.observation_space = env.observation_space
-                        
-                        return Monitor(wrapped)
-                    except Exception as e:
-                        print(f"🛑 ERROR IN EVAL WORKER {idx}: {e}")
-                        traceback.print_exc()
-                        raise e
-                return _init
-            
-            eval_env = SubprocVecEnv([create_eval_env(i) for i in range(8)])
-            
-            eval_callback = MaskableEvalCallback(
-                eval_env,
-                best_model_save_path=os.path.join(model_dir, "best_model"),
-                log_path=os.path.join(model_dir, "eval_logs"),
-                eval_freq=max(1000, 500000 // args.n_envs), # Eval every 500k steps
-                deterministic=False,
-                n_eval_episodes=args.eval_battles
-            )
-            callbacks.append(eval_callback)
+        pass # Callbacks are now defined above
 
         try:
             if log_level >= LogLevel.DETAILED:
