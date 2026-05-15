@@ -1,0 +1,57 @@
+Vaporeon @ Salac Berry
+Ability: Water Absorb
+EVs: 16 HP / 228 SpA / 12 SpD / 252 Spe
+Timid Nature
+IVs: 31 HP / 0 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Hydro Pump
+- Ice Beam
+- Substitute
+- Baton Pass
+
+Smeargle @ Salac Berry
+Ability: Own Tempo
+EVs: 4 HP / 20 Atk / 232 SpD / 252 Spe
+Jolly Nature
+- Spikes
+- Spore
+- Thunder Wave
+- Explosion
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 32 Atk / 252 SpA / 224 Spe
+Rash Nature
+IVs: 31 HP / 30 Atk / 31 Def / 30 SpA / 31 SpD / 31 Spe
+- Thunder Punch
+- Hidden Power Grass
+- Earthquake
+- Explosion
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 8 HP / 196 Def / 104 SpA / 200 Spe
+Timid Nature
+IVs: 31 HP / 30 Atk / 31 Def / 30 SpA / 31 SpD / 31 Spe
+- Fire Punch
+- Ice Punch
+- Hidden Power Grass
+- Explosion
+
+Tyranitar @ Lum Berry
+Ability: Sand Stream
+EVs: 228 HP / 80 Atk / 84 SpD / 116 Spe
+Adamant Nature
+- Dragon Dance
+- Rock Slide
+- Earthquake
+- Double-Edge
+
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 224 Atk / 32 SpD / 252 Spe
+Jolly Nature
+IVs: 31 HP / 30 Atk / 30 Def / 31 SpA / 30 SpD / 31 Spe
+- Double-Edge
+- Earthquake
+- Hidden Power Bug
+- Rock Slide

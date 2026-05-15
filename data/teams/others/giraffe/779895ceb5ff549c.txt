@@ -1,0 +1,56 @@
+Zapdos @ Leftovers  
+Ability: Pressure  
+EVs: 216 HP / 136 SpA / 156 Spe  
+Modest Nature  
+IVs: 30 Spe  
+- Thunder Wave  
+- Toxic  
+- Thunderbolt  
+- Hidden Power [Ice]  
+
+Swampert @ Leftovers  
+Ability: Torrent  
+EVs: 240 HP / 252 SpA / 16 Spe  
+Quiet Nature  
+- Curse  
+- Earthquake  
+- Hydro Pump  
+- Ice Beam  
+
+Jirachi @ Leftovers  
+Ability: Serene Grace  
+EVs: 252 HP / 80 Def / 140 SpA / 36 Spe  
+Modest Nature  
+IVs: 2 Atk / 30 SpA  
+- Calm Mind  
+- Fire Punch  
+- Hidden Power [Grass]  
+- Psychic  
+
+Gengar @ Leftovers  
+Ability: Levitate  
+EVs: 4 HP / 252 SpA / 252 Spe  
+Timid Nature  
+- Will-O-Wisp  
+- Ice Punch  
+- Thunderbolt  
+- Explosion  
+
+Celebi @ Leftovers  
+Ability: Natural Cure  
+EVs: 192 HP / 4 Def / 136 SpA / 176 Spe  
+Modest Nature  
+IVs: 0 Atk  
+- Leech Seed  
+- Calm Mind  
+- Giga Drain  
+- Psychic  
+
+Dugtrio @ Choice Band  
+Ability: Arena Trap  
+EVs: 252 Atk / 4 Def / 252 Spe  
+Jolly Nature  
+- Earthquake  
+- Hidden Power [Bug]  
+- Aerial Ace  
+- Rock Slide

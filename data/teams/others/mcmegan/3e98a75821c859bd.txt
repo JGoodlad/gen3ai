@@ -1,0 +1,56 @@
+Tyranocif (Tyranitar) @ Leftovers  
+Ability: Sand Stream  
+EVs: 252 HP / 188 Atk / 32 Def / 36 Spe  
+Adamant Nature  
+- Thunder Wave  
+- Rock Slide  
+- Earthquake  
+- Hidden Power [Bug]  
+
+Airmure (Skarmory) @ Leftovers  
+Ability: Keen Eye  
+EVs: 240 HP / 248 SpD / 20 Spe  
+Careful Nature  
+- Drill Peck  
+- Roar  
+- Protect  
+- Spikes  
+
+Milobellus (Milotic) @ Leftovers  
+Ability: Marvel Scale  
+EVs: 248 HP / 212 Def / 48 Spe  
+Bold Nature  
+IVs: 0 Atk  
+- Surf  
+- Toxic  
+- Refresh  
+- Recover  
+
+Kaorine (Claydol) @ Leftovers  
+Ability: Levitate  
+EVs: 252 HP / 176 Def / 52 SpA / 28 SpD  
+Bold Nature  
+IVs: 2 Atk / 30 SpA / 30 Spe  
+- Hidden Power [Fire]  
+- Psychic  
+- Rapid Spin  
+- Refresh  
+
+Leuphorie (Blissey) (F) @ Leftovers  
+Ability: Natural Cure  
+EVs: 252 Def / 252 SpA / 4 Spe  
+Modest Nature  
+IVs: 0 Atk  
+- Thunderbolt  
+- Ice Beam  
+- Soft-Boiled  
+- Calm Mind  
+
+Triopikeur (Dugtrio) @ Choice Band  
+Ability: Arena Trap  
+EVs: 252 Atk / 4 SpD / 252 Spe  
+Jolly Nature  
+- Earthquake  
+- Hidden Power [Bug]  
+- Aerial Ace  
+- Screech

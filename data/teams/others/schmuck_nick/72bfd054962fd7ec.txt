@@ -1,0 +1,54 @@
+Swampert @ Leftovers  
+Ability: Torrent  
+EVs: 176 HP / 136 Atk / 156 SpA / 4 SpD / 36 Spe  
+Brave Nature  
+- Hydro Pump  
+- Earthquake  
+- Ice Beam  
+- Focus Punch  
+
+Flygon @ Leftovers  
+Ability: Levitate  
+EVs: 16 HP / 240 Atk / 252 Spe  
+Jolly Nature  
+- Earthquake  
+- Rock Slide  
+- Hidden Power [Bug]  
+- Fire Blast  
+
+Zapdos @ Leftovers  
+Ability: Pressure  
+EVs: 248 HP / 100 SpA / 120 SpD / 40 Spe  
+Modest Nature  
+IVs: 2 Atk / 30 SpA  
+- Thunderbolt  
+- Hidden Power [Grass]  
+- Rest  
+- Sleep Talk  
+
+Gengar @ Leftovers  
+Ability: Levitate  
+EVs: 104 HP / 220 SpA / 184 Spe  
+Timid Nature  
+- Thunderbolt  
+- Ice Punch  
+- Hypnosis  
+- Explosion  
+
+Skarmory @ Leftovers  
+Ability: Keen Eye  
+EVs: 248 HP / 248 SpD / 12 Spe  
+Careful Nature  
+- Drill Peck  
+- Toxic  
+- Spikes  
+- Roar  
+
+Tyranitar @ Leftovers  
+Ability: Sand Stream  
+EVs: 248 HP / 12 Atk / 160 SpA / 52 SpD / 36 Spe  
+Quiet Nature  
+- Rock Slide  
+- Crunch  
+- Pursuit  
+- Focus Punch

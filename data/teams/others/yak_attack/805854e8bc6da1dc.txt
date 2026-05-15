@@ -1,0 +1,56 @@
+Blissey @ Leftovers
+Ability: Natural Cure
+EVs: 224 HP / 252 Def / 32 Spe
+Bold Nature
+- Seismic Toss
+- Ice Beam
+- Wish
+- Soft-Boiled
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 112 HP / 244 Atk / 152 Spe
+Adamant Nature
+- Meteor Mash
+- Earthquake
+- Agility
+- Explosion
+
+Magneton @ Magnet
+Ability: Magnet Pull
+EVs: 240 HP / 212 SpA / 56 Spe
+Modest Nature
+IVs: 31 HP / 2 Atk / 31 Def / 30 SpA / 31 SpD / 30 Spe
+- Thunderbolt
+- Hidden Power Fire
+- Toxic
+- Thunder Wave
+
+Salamence @ Choice Band
+Ability: Intimidate
+EVs: 4 HP / 252 Atk / 252 Spe
+Adamant Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD / 31 Spe
+- Brick Break
+- Earthquake
+- Hidden Power Flying
+- Rock Slide
+
+Milotic @ Leftovers
+Ability: Marvel Scale
+EVs: 248 HP / 212 Def / 48 Spe
+Bold Nature
+- Surf
+- Toxic
+- Refresh
+- Recover
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 248 HP / 36 Def / 92 SpA / 100 SpD / 32 Spe
+Calm Nature
+IVs: 31 HP / 2 Atk / 31 Def / 30 SpA / 31 SpD / 31 Spe
+- Hidden Power Grass
+- Baton Pass
+- Leech Seed
+- Recover

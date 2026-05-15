@@ -1,0 +1,56 @@
+Machamp @ Choice Band
+Ability: Guts
+EVs: 4 HP / 252 Atk / 252 Spe
+Adamant Nature
+IVs: 31 HP / 30 Atk / 30 Def / 31 SpA / 30 SpD / 31 Spe
+- Cross Chop
+- Focus Punch
+- Rock Slide
+- Hidden Power Bug
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 248 HP / 244 Def / 16 Spe
+Bold Nature
+IVs: 31 HP / 0 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Flamethrower
+- Protect
+- Toxic
+- Wish
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+- Hydro Pump
+- Ice Beam
+- Rapid Spin
+- Recover
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 248 HP / 252 Atk / 8 Spe
+Adamant Nature
+- Meteor Mash
+- Earthquake
+- Protect
+- Explosion
+
+Houndoom @ Leftovers
+Ability: Early Bird
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 31 HP / 2 Atk / 31 Def / 30 SpA / 31 SpD / 31 Spe
+- Pursuit
+- Fire Blast
+- Will-O-Wisp
+- Hidden Power Grass
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 52 HP / 176 Atk / 144 Def / 136 SpD
+Adamant Nature
+- Curse
+- Return
+- Earthquake
+- Self-Destruct

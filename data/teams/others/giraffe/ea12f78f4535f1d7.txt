@@ -1,0 +1,23 @@
+Charizard @ Choice Band  
+Ability: Blaze  
+EVs: 4 HP / 252 Atk / 252 Spe  
+Lonely Nature  
+- Rock Slide  
+- Brick Break  
+- Hidden Power [Flying]  
+- Fire Blast  
+
+Skarmory @ Leftovers  
+Ability: Keen Eye  
+
+Swampert  
+Ability: Torrent  
+
+Jirachi  
+Ability: Serene Grace  
+
+Blissey (F)  
+Ability: Natural Cure  
+
+Celebi  
+Ability: Natural Cure

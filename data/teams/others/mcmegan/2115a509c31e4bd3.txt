@@ -1,0 +1,57 @@
+Leuphorie (Blissey) @ Leftovers  
+Ability: Natural Cure  
+EVs: 252 Def / 244 SpA / 12 Spe  
+Bold Nature  
+IVs: 0 Atk  
+- Seismic Toss  
+- Ice Beam  
+- Aromatherapy  
+- Soft-Boiled  
+
+Airmure (Skarmory)  
+Ability: Keen Eye  
+EVs: 248 HP / 248 SpD / 12 Spe  
+Careful Nature  
+IVs: 0 Atk  
+- Spikes  
+- Protect  
+- Roar  
+- Thief  
+
+Laggron (Swampert) @ Leftovers  
+Ability: Torrent  
+EVs: 240 HP / 216 Def / 40 SpD / 12 Spe  
+Bold Nature  
+IVs: 0 Atk  
+- Surf  
+- Roar  
+- Protect  
+- Toxic  
+
+Kaorine (Claydol) @ Leftovers  
+Ability: Levitate  
+EVs: 248 HP / 112 Def / 132 SpD / 16 Spe  
+Sassy Nature  
+- Earthquake  
+- Psychic  
+- Rapid Spin  
+- Rest  
+
+Jirachi @ Leftovers  
+Ability: Serene Grace  
+EVs: 252 HP / 216 Def / 8 SpA / 32 Spe  
+Bold Nature  
+IVs: 0 Atk  
+- Calm Mind  
+- Ice Punch  
+- Thunderbolt  
+- Wish  
+
+Triopikeur (Dugtrio) @ Choice Band  
+Ability: Arena Trap  
+EVs: 252 Atk / 4 SpD / 252 Spe  
+Jolly Nature  
+- Aerial Ace  
+- Earthquake  
+- Hidden Power [Bug]  
+- Rock Slide

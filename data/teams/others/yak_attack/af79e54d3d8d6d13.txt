@@ -1,0 +1,56 @@
+Jynx @ Leftovers
+Ability: Oblivious
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 31 HP / 0 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Ice Beam
+- Substitute
+- Calm Mind
+- Lovely Kiss
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 4 Atk / 252 SpA / 252 Spe
+Rash Nature
+- Hydro Pump
+- Ice Beam
+- Earthquake
+- Focus Punch
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 172 SpA / 84 Spe
+Timid Nature
+IVs: 31 HP / 0 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Psychic
+- Thunder
+- Calm Mind
+- Substitute
+
+Moltres @ Leftovers
+Ability: Pressure
+EVs: 4 Def / 252 SpA / 252 Spe
+Timid Nature
+IVs: 31 HP / 2 Atk / 31 Def / 30 SpA / 31 SpD / 31 Spe
+- Fire Blast
+- Hidden Power Grass
+- Will-O-Wisp
+- Agility
+
+Wailord @ Leftovers
+Ability: Water Veil
+EVs: 68 Atk / 188 SpA / 252 Spe
+Hasty Nature
+- Water Spout
+- Ice Beam
+- Self-Destruct
+- Earthquake
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 80 HP / 100 Atk / 140 Def / 160 SpD / 28 Spe
+Adamant Nature
+- Body Slam
+- Focus Punch
+- Shadow Ball
+- Self-Destruct

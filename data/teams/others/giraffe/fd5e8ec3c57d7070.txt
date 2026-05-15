@@ -1,0 +1,55 @@
+Salamence @ Leftovers  
+Ability: Intimidate  
+EVs: 244 SpA / 144 Spe  
+Rash Nature  
+- Dragon Claw  
+- Flamethrower  
+- Hidden Power [Grass]  
+- Brick Break  
+
+Tyranitar @ Leftovers  
+Ability: Sand Stream  
+EVs: 240 HP / 252 SpA / 16 Spe  
+Modest Nature  
+IVs: 0 Atk  
+- Crunch  
+- Pursuit  
+- Flamethrower  
+- Roar  
+
+Forretress @ Leftovers  
+Ability: Sturdy  
+EVs: 252 HP / 4 Atk / 252 SpD  
+Careful Nature  
+- Spikes  
+- Rapid Spin  
+- Hidden Power [Ghost]  
+- Counter  
+
+Swampert @ Leftovers  
+Ability: Torrent  
+EVs: 240 HP / 136 Def / 72 SpA / 44 SpD / 16 Spe  
+Relaxed Nature  
+- Protect  
+- Earthquake  
+- Hydro Pump  
+- Ice Beam  
+
+Jirachi @ Leftovers  
+Ability: Serene Grace  
+EVs: 80 Atk / 252 SpA / 176 Spe  
+Rash Nature  
+- Body Slam  
+- Fire Punch  
+- Hidden Power [Grass]  
+- Dynamic Punch  
+
+Blissey (F) @ Leftovers  
+Ability: Natural Cure  
+EVs: 252 Def / 252 SpA / 4 Spe  
+Modest Nature  
+IVs: 0 Atk  
+- Soft-Boiled  
+- Calm Mind  
+- Ice Beam  
+- Thunderbolt

@@ -1,0 +1,56 @@
+Metagross @ Leftovers  
+Ability: Clear Body  
+EVs: 168 HP / 52 Atk / 16 Def / 252 SpA / 20 Spe  
+Rash Nature  
+- Meteor Mash  
+- Hidden Power [Fire]  
+- Psychic  
+- Explosion  
+
+Swampert @ Leftovers  
+Ability: Torrent  
+EVs: 248 HP / 56 Atk / 64 Def / 140 SpA  
+Quiet Nature  
+- Curse  
+- Earthquake  
+- Hydro Pump  
+- Ice Beam  
+
+Celebi @ Leftovers  
+Ability: Natural Cure  
+EVs: 244 HP / 36 Def / 160 SpA / 68 Spe  
+Modest Nature  
+IVs: 0 Atk  
+- Leech Seed  
+- Calm Mind  
+- Giga Drain  
+- Psychic  
+
+Raikou @ Leftovers  
+Ability: Pressure  
+EVs: 252 HP / 160 SpD / 96 Spe  
+Calm Nature  
+IVs: 2 Atk / 30 SpA  
+- Rest  
+- Calm Mind  
+- Thunderbolt  
+- Hidden Power [Grass]  
+
+Charizard @ Leftovers  
+Ability: Blaze  
+EVs: 4 Atk / 252 SpA / 252 Spe  
+Hasty Nature  
+- Substitute  
+- Fire Blast  
+- Hidden Power [Grass]  
+- Focus Punch  
+
+Porygon2 @ Leftovers  
+Ability: Trace  
+EVs: 252 HP / 252 Def / 4 SpA  
+Bold Nature  
+IVs: 0 Atk  
+- Recover  
+- Toxic  
+- Ice Beam  
+- Thunderbolt

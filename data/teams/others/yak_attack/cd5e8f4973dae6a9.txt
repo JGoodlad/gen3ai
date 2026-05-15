@@ -1,0 +1,58 @@
+Tyranitar @ Lum Berry
+Ability: Sand Stream
+EVs: 4 Atk / 252 SpA / 252 Spe
+Rash Nature
+IVs: 31 HP / 30 Atk / 31 Def / 30 SpA / 31 SpD / 31 Spe
+- Crunch
+- Hidden Power Grass
+- Ice Beam
+- Brick Break
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 4 HP / 252 Atk / 252 Spe
+Adamant Nature
+IVs: 31 HP / 31 Atk / 31 Def / 30 SpA / 30 SpD / 31 Spe
+- Hidden Power Ground
+- Drill Peck
+- Spikes
+- Taunt
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 80 HP / 96 Atk / 140 Def / 156 SpD / 36 Spe
+Adamant Nature
+- Body Slam
+- Earthquake
+- Shadow Ball
+- Self-Destruct
+
+Flygon @ Choice Band
+Ability: Levitate
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 31 HP / 30 Atk / 30 Def / 31 SpA / 30 SpD / 31 Spe
+- Earthquake
+- Hidden Power Bug
+- Rock Slide
+- Gust
+
+Magneton @ Leftovers
+Ability: Magnet Pull
+EVs: 224 SpA / 32 SpD / 252 Spe
+Modest Nature
+IVs: 31 HP / 2 Atk / 31 Def / 30 SpA / 31 SpD / 30 Spe
+- Protect
+- Thunderbolt
+- Hidden Power Fire
+- Toxic
+
+Gyarados @ Leftovers
+Ability: Intimidate
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 31 HP / 31 Atk / 30 Def / 31 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Hidden Power Rock
+- Earthquake
+- Double-Edge

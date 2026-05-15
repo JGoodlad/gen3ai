@@ -1,0 +1,57 @@
+Milotic @ Leftovers
+Ability: Marvel Scale
+EVs: 248 HP / 212 Def / 48 Spe
+Bold Nature
+IVs: 31 HP / 0 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Toxic
+- Surf
+- Refresh
+- Recover
+
+Umbreon @ Leftovers
+Ability: Synchronize
+EVs: 252 HP / 196 SpA / 52 SpD / 8 Spe
+Calm Nature
+IVs: 31 HP / 0 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Wish
+- Protect
+- Pursuit
+- Toxic
+
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 8 HP / 248 Atk / 252 Spe
+Jolly Nature
+IVs: 31 HP / 30 Atk / 30 Def / 31 SpA / 30 SpD / 31 Spe
+- Earthquake
+- Hidden Power Bug
+- Rock Slide
+- Aerial Ace
+
+Magneton @ Magnet
+Ability: Magnet Pull
+EVs: 240 HP / 212 SpA / 56 Spe
+Modest Nature
+IVs: 31 HP / 2 Atk / 31 Def / 30 SpA / 31 SpD / 30 Spe
+- Thunderbolt
+- Hidden Power Fire
+- Protect
+- Toxic
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 176 Def / 40 SpA / 40 SpD
+Relaxed Nature
+- Explosion
+- Rapid Spin
+- Earthquake
+- Psychic
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 144 HP / 112 Atk / 128 Def / 124 SpD
+Careful Nature
+- Curse
+- Body Slam
+- Rest
+- Sleep Talk

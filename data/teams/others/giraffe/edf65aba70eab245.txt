@@ -1,0 +1,54 @@
+Jirachi @ Leftovers  
+Ability: Serene Grace  
+EVs: 68 Atk / 252 SpA / 188 Spe  
+Rash Nature  
+- Body Slam  
+- Fire Punch  
+- Ice Punch  
+- Hidden Power [Fighting]  
+
+Metagross @ Leftovers  
+Ability: Clear Body  
+EVs: 168 HP / 180 Atk / 16 Def / 52 SpA / 92 Spe  
+Naughty Nature  
+- Meteor Mash  
+- Earthquake  
+- Hidden Power [Grass]  
+- Explosion  
+
+Heracross @ Leftovers  
+Ability: Guts  
+EVs: 252 Atk / 4 SpD / 252 Spe  
+Jolly Nature  
+- Swords Dance  
+- Megahorn  
+- Rock Slide  
+- Brick Break  
+
+Jolteon @ Leftovers  
+Ability: Volt Absorb  
+EVs: 8 HP / 248 SpA / 252 Spe  
+Timid Nature  
+IVs: 2 Atk / 30 Def  
+- Substitute  
+- Thunderbolt  
+- Hidden Power [Ice]  
+- Baton Pass  
+
+Salamence @ Leftovers  
+Ability: Intimidate  
+EVs: 76 HP / 252 SpA / 180 Spe  
+Rash Nature  
+- Dragon Claw  
+- Flamethrower  
+- Hidden Power [Grass]  
+- Brick Break  
+
+Linoone @ Lum Berry  
+Ability: Pickup  
+EVs: 148 HP / 252 Atk / 108 Spe  
+Adamant Nature  
+- Belly Drum  
+- Extreme Speed  
+- Hidden Power [Ground]  
+- Shadow Ball

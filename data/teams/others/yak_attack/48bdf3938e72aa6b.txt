@@ -1,0 +1,54 @@
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 240 HP / 244 SpD / 24 Spe
+Careful Nature
+- Protect
+- Toxic
+- Whirlwind
+- Spikes
+
+Moltres @ Leftovers
+Ability: Pressure
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 31 HP / 30 Atk / 31 Def / 30 SpA / 31 SpD / 31 Spe
+- Fire Blast
+- Hidden Power Grass
+- Will-O-Wisp
+- Roar
+
+Flygon @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 156 Def / 40 SpD / 60 Spe
+Adamant Nature
+- Protect
+- Toxic
+- Earthquake
+- Rock Slide
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 184 HP / 20 Atk / 216 SpA / 88 Spe
+Quiet Nature
+- Crunch
+- Pursuit
+- Fire Blast
+- Brick Break
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 248 HP / 60 SpD / 200 Spe
+Timid Nature
+- Thunderbolt
+- Ice Punch
+- Will-O-Wisp
+- Explosion
+
+Blissey @ Leftovers
+Ability: Natural Cure
+EVs: 4 HP / 252 Def / 252 Spe
+Jolly Nature
+- Seismic Toss
+- Sing
+- Toxic
+- Soft-Boiled

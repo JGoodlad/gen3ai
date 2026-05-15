@@ -1,0 +1,203 @@
+[
+  {
+    "id": "8e753aabe6035e14",
+    "name": "Speed Tiers 80-130",
+    "format": "gen3ou-box",
+    "valid": false,
+    "errors": [
+      "You may only bring up to 6 Pok\u00e9mon (your team has 23)."
+    ],
+    "file": "teams/others/schmuck_nick/8e753aabe6035e14.txt",
+    "source": "https://pokepast.es/a284a3cd20490a94"
+  },
+  {
+    "id": "12812323549f6537",
+    "name": "Speed Tiers 30-75",
+    "format": "gen3ou-box",
+    "valid": false,
+    "errors": [
+      "You may only bring up to 6 Pok\u00e9mon (your team has 22)."
+    ],
+    "file": "teams/others/schmuck_nick/12812323549f6537.txt",
+    "source": "https://pokepast.es/a284a3cd20490a94"
+  },
+  {
+    "id": "bc04b518b0e1348d",
+    "name": "VR 1",
+    "format": "gen3ou-box",
+    "valid": false,
+    "errors": [
+      "You may only bring up to 6 Pok\u00e9mon (your team has 16)."
+    ],
+    "file": "teams/others/schmuck_nick/bc04b518b0e1348d.txt",
+    "source": "https://pokepast.es/a284a3cd20490a94"
+  },
+  {
+    "id": "67f8344b031164aa",
+    "name": "VR 2",
+    "format": "gen3ou-box",
+    "valid": false,
+    "errors": [
+      "You may only bring up to 6 Pok\u00e9mon (your team has 11)."
+    ],
+    "file": "teams/others/schmuck_nick/67f8344b031164aa.txt",
+    "source": "https://pokepast.es/a284a3cd20490a94"
+  },
+  {
+    "id": "1ae4b41644d1b297",
+    "name": "VR 3",
+    "format": "gen3ou-box",
+    "valid": false,
+    "errors": [
+      "You may only bring up to 6 Pok\u00e9mon (your team has 24)."
+    ],
+    "file": "teams/others/schmuck_nick/1ae4b41644d1b297.txt",
+    "source": "https://pokepast.es/a284a3cd20490a94"
+  },
+  {
+    "id": "bc786922e7f80fa7",
+    "name": "VR 4",
+    "format": "gen3ou-box",
+    "valid": false,
+    "errors": [
+      "You may only bring up to 6 Pok\u00e9mon (your team has 24)."
+    ],
+    "file": "teams/others/schmuck_nick/bc786922e7f80fa7.txt",
+    "source": "https://pokepast.es/a284a3cd20490a94"
+  },
+  {
+    "id": "7e5c0056122cd255",
+    "name": "Storm and Slumber [Regice Rain]",
+    "format": "gen3ou",
+    "valid": true,
+    "errors": [],
+    "file": "teams/others/schmuck_nick/7e5c0056122cd255.txt",
+    "source": "https://pokepast.es/a284a3cd20490a94"
+  },
+  {
+    "id": "c538e872c8aeaeaf",
+    "name": "King and Kahuna [Forre Rain]",
+    "format": "gen3ou",
+    "valid": true,
+    "errors": [],
+    "file": "teams/others/schmuck_nick/c538e872c8aeaeaf.txt",
+    "source": "https://pokepast.es/a284a3cd20490a94"
+  },
+  {
+    "id": "b3fa7a613ce0b5dc",
+    "name": "Fairy-Catching [Zapdos SubPass]",
+    "format": "gen3ou",
+    "valid": true,
+    "errors": [],
+    "file": "teams/others/schmuck_nick/b3fa7a613ce0b5dc.txt",
+    "source": "https://pokepast.es/a284a3cd20490a94"
+  },
+  {
+    "id": "5f6de348593e92e0",
+    "name": "Traitor [Celebi SubPass]",
+    "format": "gen3ou",
+    "valid": true,
+    "errors": [],
+    "file": "teams/others/schmuck_nick/5f6de348593e92e0.txt",
+    "source": "https://pokepast.es/a284a3cd20490a94"
+  },
+  {
+    "id": "85b6a4660d927611",
+    "name": "Badger the Dog [VenuPert ForreGarDoom]",
+    "format": "gen3ou",
+    "valid": true,
+    "errors": [],
+    "file": "teams/others/schmuck_nick/85b6a4660d927611.txt",
+    "source": "https://pokepast.es/a284a3cd20490a94"
+  },
+  {
+    "id": "d0f4165d49b41dd1",
+    "name": "Nebula [Modest Starmie ForreGarTar]",
+    "format": "gen3ou",
+    "valid": true,
+    "errors": [],
+    "file": "teams/others/schmuck_nick/d0f4165d49b41dd1.txt",
+    "source": "https://pokepast.es/a284a3cd20490a94"
+  },
+  {
+    "id": "7316c5f4115292a3",
+    "name": "Chester's Team [Retro]",
+    "format": "gen3ou",
+    "valid": true,
+    "errors": [],
+    "file": "teams/others/schmuck_nick/7316c5f4115292a3.txt",
+    "source": "https://pokepast.es/a284a3cd20490a94"
+  },
+  {
+    "id": "3802c5455423a298",
+    "name": "Jeremy's Team [GyaraLix]",
+    "format": "gen3ou",
+    "valid": true,
+    "errors": [],
+    "file": "teams/others/schmuck_nick/3802c5455423a298.txt",
+    "source": "https://pokepast.es/a284a3cd20490a94"
+  },
+  {
+    "id": "c6601c94473cb0fe",
+    "name": "Eyes to the Sky [DDMence CelePert]",
+    "format": "gen3ou",
+    "valid": true,
+    "errors": [],
+    "file": "teams/others/schmuck_nick/c6601c94473cb0fe.txt",
+    "source": "https://pokepast.es/a284a3cd20490a94"
+  },
+  {
+    "id": "836c2cc75f027b43",
+    "name": "Gazebo [Mixed Attackers CMPass]",
+    "format": "gen3ou",
+    "valid": true,
+    "errors": [],
+    "file": "teams/others/schmuck_nick/836c2cc75f027b43.txt",
+    "source": "https://pokepast.es/a284a3cd20490a94"
+  },
+  {
+    "id": "ccd0dbf70c3eb09d",
+    "name": "Double-Clutching [ArcaLoom]",
+    "format": "gen3ou",
+    "valid": true,
+    "errors": [],
+    "file": "teams/others/schmuck_nick/ccd0dbf70c3eb09d.txt",
+    "source": "https://pokepast.es/a284a3cd20490a94"
+  },
+  {
+    "id": "dea061e41de8742f",
+    "name": "Natural Lure [Anti-Breloom]",
+    "format": "gen3ou",
+    "valid": true,
+    "errors": [],
+    "file": "teams/others/schmuck_nick/dea061e41de8742f.txt",
+    "source": "https://pokepast.es/a284a3cd20490a94"
+  },
+  {
+    "id": "760b2b7d91dde4b0",
+    "name": "Serpent's Path [SwampGon PhysOff]",
+    "format": "gen3ou",
+    "valid": true,
+    "errors": [],
+    "file": "teams/others/schmuck_nick/760b2b7d91dde4b0.txt",
+    "source": "https://pokepast.es/a284a3cd20490a94"
+  },
+  {
+    "id": "72bfd054962fd7ec",
+    "name": "Spectrifice [SwampGon Superman]",
+    "format": "gen3ou",
+    "valid": true,
+    "errors": [],
+    "file": "teams/others/schmuck_nick/72bfd054962fd7ec.txt",
+    "source": "https://pokepast.es/a284a3cd20490a94"
+  },
+  {
+    "id": "46a1ddc038ec76d5",
+    "name": "Quirky Shocks [ZapKou]",
+    "format": "gen3ou",
+    "valid": true,
+    "errors": [],
+    "file": "teams/others/schmuck_nick/46a1ddc038ec76d5.txt",
+    "source": "https://pokepast.es/a284a3cd20490a94"
+  }
+]

@@ -1,0 +1,59 @@
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 252 Def / 4 Spe
+Bold Nature
+IVs: 31 HP / 2 Atk / 31 Def / 30 SpA / 31 SpD / 31 Spe
+- Thunderbolt
+- Hidden Power Grass
+- Agility
+- Baton Pass
+
+Mr. Mime @ Leftovers
+Ability: Soundproof
+EVs: 248 HP / 56 Def / 204 SpD
+Calm Nature
+IVs: 31 HP / 0 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Taunt
+- Encore
+- Calm Mind
+- Baton Pass
+
+Vaporeon @ Leftovers
+Ability: Water Absorb
+EVs: 248 HP / 132 Def / 128 Spe
+Bold Nature
+IVs: 31 HP / 0 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Roar
+- Acid Armor
+- Baton Pass
+- Substitute
+
+Umbreon @ Leftovers
+Ability: Synchronize
+EVs: 248 HP / 32 Def / 4 SpD / 224 Spe
+Bold Nature
+IVs: 31 HP / 0 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Mean Look
+- Taunt
+- Baton Pass
+- Wish
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 248 HP / 76 Def / 164 SpD / 20 Spe
+Bold Nature
+IVs: 31 HP / 0 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Baton Pass
+- Calm Mind
+- Psychic
+- Recover
+
+Mawile @ Leftovers
+Ability: Intimidate
+EVs: 252 HP / 8 Def / 248 Spe
+Impish Nature
+IVs: 31 HP / 0 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Taunt
+- Iron Defense
+- Substitute
+- Baton Pass

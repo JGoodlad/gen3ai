@@ -1,0 +1,32 @@
+Tyranitar @ Leftovers  
+Ability: Sand Stream  
+- Dragon Dance  
+- Earthquake  
+- Rock Slide  
+- Double-Edge  
+
+Cloyster @ Leftovers  
+Ability: Shell Armor  
+EVs: 168 SpA / 244 SpD / 96 Spe  
+Modest Nature  
+- Spikes  
+- Rapid Spin  
+- Ice Beam  
+- Explosion  
+
+Celebi @ Leftovers  
+Ability: Natural Cure  
+IVs: 2 Atk / 30 SpA / 30 Spe  
+- Leech Seed  
+- Giga Drain  
+- Hidden Power [Fire]  
+- Psychic  
+
+Swampert  
+Ability: Torrent  
+
+Metagross  
+Ability: Clear Body  
+
+Charizard  
+Ability: Blaze

@@ -1,0 +1,57 @@
+Tyranitar @ Leftovers  
+Ability: Sand Stream  
+EVs: 184 HP / 104 Atk / 220 Spe  
+Adamant Nature  
+- Dragon Dance  
+- Earthquake  
+- Rock Slide  
+- Double-Edge  
+
+Metagross @ Leftovers  
+Ability: Clear Body  
+EVs: 168 HP / 16 Def / 252 SpA / 72 Spe  
+Rash Nature  
+- Meteor Mash  
+- Hidden Power [Fire]  
+- Psychic  
+- Explosion  
+
+Suicune @ Leftovers  
+Ability: Pressure  
+EVs: 252 HP / 228 SpA / 28 Spe  
+Modest Nature  
+IVs: 0 Atk  
+- Rest  
+- Calm Mind  
+- Surf  
+- Ice Beam  
+
+Porygon2 @ Leftovers  
+Ability: Trace  
+EVs: 252 HP / 192 Def / 64 SpA  
+Bold Nature  
+IVs: 0 Atk  
+- Recover  
+- Thunder Wave  
+- Ice Beam  
+- Thunderbolt  
+
+Celebi @ Leftovers  
+Ability: Natural Cure  
+EVs: 192 HP / 176 SpA / 140 Spe  
+Modest Nature  
+IVs: 0 Atk  
+- Leech Seed  
+- Calm Mind  
+- Giga Drain  
+- Psychic  
+
+Charizard @ Leftovers  
+Ability: Blaze  
+EVs: 252 SpA / 4 SpD / 252 Spe  
+Modest Nature  
+IVs: 2 Atk / 30 SpA  
+- Dragon Claw  
+- Flamethrower  
+- Hidden Power [Grass]  
+- Beat Up

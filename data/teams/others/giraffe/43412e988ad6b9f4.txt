@@ -1,0 +1,56 @@
+Metagross @ Leftovers  
+Ability: Clear Body  
+EVs: 168 HP / 16 Def / 252 SpA / 72 Spe  
+Rash Nature  
+- Earthquake  
+- Thunder Punch  
+- Hidden Power [Grass]  
+- Explosion  
+
+Suicune @ Leftovers  
+Ability: Pressure  
+EVs: 252 HP / 184 SpA / 72 Spe  
+Modest Nature  
+IVs: 0 Atk  
+- Calm Mind  
+- Surf  
+- Ice Beam  
+- Roar  
+
+Tyranitar @ Leftovers  
+Ability: Sand Stream  
+EVs: 240 HP / 252 SpA / 16 SpD  
+Modest Nature  
+IVs: 0 Atk  
+- Toxic  
+- Crunch  
+- Pursuit  
+- Fire Blast  
+
+Celebi @ Leftovers  
+Ability: Natural Cure  
+EVs: 192 HP / 176 SpA / 140 Spe  
+Modest Nature  
+IVs: 0 Atk  
+- Leech Seed  
+- Calm Mind  
+- Giga Drain  
+- Psychic  
+
+Snorlax @ Leftovers  
+Ability: Immunity  
+EVs: 32 HP / 188 Atk / 116 Def / 172 SpD  
+Adamant Nature  
+- Curse  
+- Return  
+- Focus Punch  
+- Self-Destruct  
+
+Charizard @ Leftovers  
+Ability: Blaze  
+EVs: 4 Atk / 252 SpA / 252 Spe  
+Hasty Nature  
+- Dragon Claw  
+- Flamethrower  
+- Hidden Power [Grass]  
+- Focus Punch

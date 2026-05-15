@@ -1,0 +1,56 @@
+Metagross @ Choice Band
+Ability: Clear Body
+EVs: 112 HP / 208 Atk / 188 Spe
+Adamant Nature
+- Meteor Mash
+- Earthquake
+- Rock Slide
+- Explosion
+
+Charizard @ Petaya Berry
+Ability: Blaze
+EVs: 96 Atk / 160 SpA / 252 Spe
+Hasty Nature
+IVs: 31 HP / 31 Atk / 30 Def / 30 SpA / 31 SpD / 31 Spe
+- Fire Blast
+- Substitute
+- Focus Punch
+- Hidden Power Grass
+
+Heracross @ Salac Berry
+Ability: Swarm
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
+IVs: 30 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Substitute
+- Megahorn
+- Swords Dance
+- Rock Slide
+
+Umbreon @ Leftovers
+Ability: Synchronize
+EVs: 252 HP / 104 Def / 88 SpA / 56 SpD / 8 Spe
+Bold Nature
+- Protect
+- Pursuit
+- Toxic
+- Wish
+
+Tyranitar @ Lum Berry
+Ability: Sand Stream
+EVs: 244 Atk / 12 SpA / 252 Spe
+Naive Nature
+IVs: 31 HP / 31 Atk / 30 Def / 30 SpA / 31 SpD / 31 Spe
+- Dragon Dance
+- Rock Slide
+- Earthquake
+- Hidden Power Grass
+
+Breloom @ Leftovers
+Ability: Effect Spore
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+- Mach Punch
+- Swords Dance
+- Sky Uppercut
+- Spore

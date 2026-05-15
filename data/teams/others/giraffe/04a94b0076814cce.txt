@@ -1,0 +1,55 @@
+Gengar @ Leftovers  
+Ability: Levitate  
+EVs: 168 HP / 164 SpD / 176 Spe  
+Timid Nature  
+- Mean Look  
+- Ice Punch  
+- Thunderbolt  
+- Explosion  
+
+Tyranitar @ Leftovers  
+Ability: Sand Stream  
+EVs: 184 HP / 104 Atk / 220 Spe  
+Adamant Nature  
+- Dragon Dance  
+- Earthquake  
+- Rock Slide  
+- Double-Edge  
+
+Zapdos @ Leftovers  
+Ability: Pressure  
+EVs: 216 HP / 140 SpA / 152 Spe  
+Modest Nature  
+IVs: 2 Atk / 30 SpA  
+- Protect  
+- Toxic  
+- Thunderbolt  
+- Hidden Power [Grass]  
+
+Swampert @ Leftovers  
+Ability: Torrent  
+EVs: 240 HP / 136 Def / 72 SpA / 44 SpD / 16 Spe  
+Relaxed Nature  
+- Curse  
+- Earthquake  
+- Hydro Pump  
+- Ice Beam  
+
+Jirachi @ Leftovers  
+Ability: Serene Grace  
+EVs: 252 HP / 80 Def / 136 SpA / 40 Spe  
+Modest Nature  
+IVs: 2 Atk / 30 SpA  
+- Calm Mind  
+- Fire Punch  
+- Hidden Power [Grass]  
+- Psychic  
+
+Dugtrio @ Choice Band  
+Ability: Arena Trap  
+EVs: 252 Atk / 4 Def / 252 Spe  
+Jolly Nature  
+- Earthquake  
+- Hidden Power [Bug]  
+- Aerial Ace  
+- Rock Slide

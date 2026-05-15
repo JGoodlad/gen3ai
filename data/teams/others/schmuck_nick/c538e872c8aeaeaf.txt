@@ -1,0 +1,58 @@
+Forretress @ Leftovers  
+Ability: Sturdy  
+EVs: 252 HP / 248 SpD / 8 Spe  
+Careful Nature  
+IVs: 30 SpD / 30 Spe  
+- Hidden Power [Bug]  
+- Spikes  
+- Rapid Spin  
+- Explosion  
+
+Hariyama @ Leftovers  
+Ability: Guts  
+EVs: 216 Atk / 176 Def / 104 SpD / 12 Spe  
+Adamant Nature  
+IVs: 30 SpD / 30 Spe  
+- Cross Chop  
+- Rock Slide  
+- Hidden Power [Bug]  
+- Knock Off  
+
+Snorlax @ Leftovers  
+Ability: Immunity  
+EVs: 80 HP / 176 Atk / 124 Def / 108 SpD / 20 Spe  
+Adamant Nature  
+- Body Slam  
+- Shadow Ball  
+- Focus Punch  
+- Self-Destruct  
+
+Zapdos @ Leftovers  
+Ability: Pressure  
+EVs: 252 HP / 100 SpA / 120 SpD / 36 Spe  
+Modest Nature  
+IVs: 2 Atk / 30 SpA  
+- Thunderbolt  
+- Hidden Power [Grass]  
+- Thunder Wave  
+- Baton Pass  
+
+Dugtrio @ Choice Band  
+Ability: Arena Trap  
+EVs: 44 HP / 104 Atk / 128 SpD / 232 Spe  
+Adamant Nature  
+IVs: 30 SpD / 30 Spe  
+- Earthquake  
+- Aerial Ace  
+- Hidden Power [Bug]  
+- Beat Up  
+
+Kingdra @ Leftovers  
+Ability: Swift Swim  
+EVs: 248 HP / 244 SpA / 16 Spe  
+Modest Nature  
+IVs: 0 Atk  
+- Surf  
+- Ice Beam  
+- Rain Dance  
+- Substitute

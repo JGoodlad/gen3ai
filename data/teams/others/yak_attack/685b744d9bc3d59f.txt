@@ -1,0 +1,56 @@
+Salamence @ Choice Band
+Ability: Intimidate
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD / 31 Spe
+- Brick Break
+- Earthquake
+- Hidden Power Flying
+- Rock Slide
+
+Metagross @ Salac Berry
+Ability: Clear Body
+EVs: 168 HP / 128 Atk / 8 Def / 204 Spe
+Jolly Nature
+- Meteor Mash
+- Earthquake
+- Rock Slide
+- Explosion
+
+Breloom @ Leftovers
+Ability: Effect Spore
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+- Spore
+- Swords Dance
+- Sky Uppercut
+- Mach Punch
+
+Houndoom @ Leftovers
+Ability: Early Bird
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 31 HP / 2 Atk / 31 Def / 30 SpA / 31 SpD / 31 Spe
+- Pursuit
+- Fire Blast
+- Crunch
+- Hidden Power Grass
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 16 HP / 176 Atk / 120 Def / 160 SpD / 36 Spe
+Adamant Nature
+- Body Slam
+- Earthquake
+- Shadow Ball
+- Self-Destruct
+
+Magneton @ Magnet
+Ability: Magnet Pull
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+IVs: 31 HP / 2 Atk / 31 Def / 30 SpA / 31 SpD / 31 Spe
+- Thunderbolt
+- Hidden Power Grass
+- Thunder Wave
+- Toxic

@@ -1,0 +1,57 @@
+Metagross @ Lum Berry
+Ability: Clear Body
+EVs: 112 HP / 244 Atk / 152 Spe
+Adamant Nature
+- Meteor Mash
+- Earthquake
+- Rock Slide
+- Explosion
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 80 HP / 96 Atk / 140 Def / 156 SpD / 36 Spe
+Adamant Nature
+- Body Slam
+- Shadow Ball
+- Earthquake
+- Self-Destruct
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 92 HP / 196 SpA / 220 Spe
+Timid Nature
+IVs: 31 HP / 2 Atk / 31 Def / 30 SpA / 31 SpD / 30 Spe
+- Psychic
+- Giga Drain
+- Hidden Power Fire
+- Calm Mind
+
+Heracross @ Salac Berry
+Ability: Swarm
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
+IVs: 30 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Megahorn
+- Rock Slide
+- Substitute
+- Swords Dance
+
+Magneton @ Magnet
+Ability: Magnet Pull
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 31 HP / 2 Atk / 31 Def / 30 SpA / 31 SpD / 31 Spe
+- Thunderbolt
+- Hidden Power Grass
+- Toxic
+- Thunder Wave
+
+Gyarados @ Leftovers
+Ability: Intimidate
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 31 HP / 31 Atk / 31 Def / 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Hidden Power Flying
+- Earthquake
+- Thunder Wave

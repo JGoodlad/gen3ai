@@ -1,0 +1,55 @@
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 248 HP / 252 SpD / 8 Spe
+Careful Nature
+- Toxic
+- Spikes
+- Whirlwind
+- Protect
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 216 HP / 252 SpA / 40 Spe
+Quiet Nature
+- Crunch
+- Pursuit
+- Fire Blast
+- Focus Punch
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 248 HP / 240 Def / 20 Spe
+Bold Nature
+IVs: 31 HP / 0 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Surf
+- Roar
+- Calm Mind
+- Rest
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 248 HP / 56 Atk / 108 Def / 96 SpD
+Relaxed Nature
+- Earthquake
+- Psychic
+- Rapid Spin
+- Explosion
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 248 HP / 76 SpD / 184 Spe
+Timid Nature
+- Thunderbolt
+- Ice Punch
+- Will-O-Wisp
+- Explosion
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 248 HP / 44 Atk / 68 Def / 148 SpD
+Sassy Nature
+IVs: 31 HP / 31 Atk / 30 Def / 30 SpA / 30 SpD / 30 Spe
+- Body Slam
+- Fire Punch
+- Hidden Power Fighting
+- Wish

@@ -1,0 +1,57 @@
+Jolteon @ Leftovers
+Ability: Volt Absorb
+EVs: 104 HP / 152 SpA / 252 Spe
+Timid Nature
+IVs: 31 HP / 2 Atk / 31 Def / 30 SpA / 31 SpD / 31 Spe
+- Thunderbolt
+- Hidden Power Grass
+- Roar
+- Baton Pass
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 240 HP / 244 SpD / 24 Spe
+Careful Nature
+IVs: 31 HP / 0 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Protect
+- Toxic
+- Whirlwind
+- Spikes
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+IVs: 31 HP / 0 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Hydro Pump
+- Ice Beam
+- Thunderbolt
+- Rapid Spin
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 28 Atk / 252 SpA / 228 Spe
+Rash Nature
+- Hydro Pump
+- Ice Beam
+- Earthquake
+- Focus Punch
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 248 HP / 60 SpD / 200 Spe
+Timid Nature
+- Thunderbolt
+- Ice Punch
+- Will-O-Wisp
+- Explosion
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 248 HP / 84 Atk / 176 Spe
+Adamant Nature
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 30 SpD / 30 Spe
+- Rock Slide
+- Earthquake
+- Hidden Power Bug
+- Dragon Dance

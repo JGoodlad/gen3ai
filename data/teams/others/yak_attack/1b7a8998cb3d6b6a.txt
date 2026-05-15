@@ -1,0 +1,57 @@
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 112 HP / 244 Atk / 152 Spe
+Adamant Nature
+- Meteor Mash
+- Earthquake
+- Agility
+- Explosion
+
+Cloyster @ Leftovers
+Ability: Shell Armor
+EVs: 72 HP / 244 SpD / 192 Spe
+Timid Nature
+- Surf
+- Ice Beam
+- Explosion
+- Spikes
+
+Tyranitar @ Lum Berry
+Ability: Sand Stream
+EVs: 216 HP / 64 Atk / 228 Spe
+Adamant Nature
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Rock Slide
+- Earthquake
+- Hidden Power Bug
+
+Moltres @ Leftovers
+Ability: Pressure
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+IVs: 31 HP / 2 Atk / 31 Def / 30 SpA / 31 SpD / 31 Spe
+- Fire Blast
+- Hidden Power Grass
+- Roar
+- Will-O-Wisp
+
+Jolteon @ Leftovers
+Ability: Volt Absorb
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 31 HP / 2 Atk / 30 Def / 31 SpA / 31 SpD / 31 Spe
+- Baton Pass
+- Hidden Power Ice
+- Roar
+- Thunderbolt
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 8 HP / 248 SpA / 252 Spe
+Hasty Nature
+IVs: 31 HP / 31 Atk / 30 Def / 30 SpA / 31 SpD / 31 Spe
+- Hidden Power Grass
+- Fire Punch
+- Explosion
+- Hypnosis

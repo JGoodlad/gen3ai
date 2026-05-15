@@ -1,0 +1,75 @@
+266,296,359,394 (Jolteon)  
+Ability: Volt Absorb  
+
+266,296,359,394 (Aerodactyl)  
+Ability: Rock Head  
+IVs: 0 Atk  
+
+248,276,339,372 (Dugtrio)  
+Ability: Arena Trap  
+Quirky Nature  
+IVs: 0 Atk  
+
+239,266,329,361 (Raikou)  
+Ability: Pressure  
+
+239,266,329,361 (Starmie)  
+Ability: Natural Cure  
+Quirky Nature  
+IVs: 0 Atk  
+
+230,256,319,350 (Gengar)  
+Ability: Levitate  
+
+212,236,299,328 (Charizard)  
+Ability: Blaze  
+
+212,236,299,328 (Salamence)  
+Ability: Intimidate  
+
+212,236,299,328 (Flygon)  
+Ability: Levitate  
+
+212,236,299,328 (Zapdos)  
+Ability: Pressure  
+
+212,236,299,328 (Jirachi)  
+Ability: Serene Grace  
+
+212,236,299,328 (Celebi)  
+Ability: Natural Cure  
+
+203,226,289,317 (Jynx) (F)  
+Ability: Oblivious  
+
+194,216,279,306 (Moltres)  
+Ability: Pressure  
+
+185,206,269,295 (Heracross)  
+Ability: Guts  
+IVs: 0 Atk  
+
+185,206,269,295 (Suicune)  
+Ability: Pressure  
+
+185,206,269,295 (Kingdra)  
+Ability: Swift Swim  
+
+178,198,261,287 (Gyarados)  
+Ability: Intimidate  
+Docile Nature  
+
+178,198,261,287 (Milotic)  
+Ability: Marvel Scale  
+
+176,196,259,284 (Glalie)  
+Ability: Inner Focus  
+
+176,196,259,284 (Medicham)  
+Ability: Pure Power  
+
+176,196,259,284 (Blaziken)  
+Ability: Blaze  
+
+176,196,259,284 (Venusaur)  
+Ability: Overgrow

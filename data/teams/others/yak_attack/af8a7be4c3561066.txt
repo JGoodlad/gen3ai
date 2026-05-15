@@ -1,0 +1,58 @@
+Milotic @ Leftovers
+Ability: Marvel Scale
+EVs: 248 HP / 212 Def / 48 Spe
+Bold Nature
+IVs: 31 HP / 0 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Surf
+- Toxic
+- Refresh
+- Recover
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 240 HP / 36 Def / 88 SpA / 76 SpD / 68 Spe
+Calm Nature
+IVs: 31 HP / 2 Atk / 31 Def / 30 SpA / 31 SpD / 31 Spe
+- Hidden Power Grass
+- Perish Song
+- Leech Seed
+- Recover
+
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
+IVs: 31 HP / 30 Atk / 30 Def / 31 SpA / 30 SpD / 31 Spe
+- Aerial Ace
+- Earthquake
+- Hidden Power Bug
+- Rock Slide
+
+Magneton @ Leftovers
+Ability: Magnet Pull
+EVs: 240 HP / 212 SpA / 56 Spe
+Modest Nature
+IVs: 31 HP / 2 Atk / 31 Def / 30 SpA / 31 SpD / 30 Spe
+- Thunderbolt
+- Hidden Power Fire
+- Toxic
+- Protect
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 216 Atk / 32 SpA / 8 Spe
+Adamant Nature
+- Earthquake
+- Psychic
+- Explosion
+- Rapid Spin
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 192 Def / 64 Spe
+Bold Nature
+IVs: 31 HP / 0 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Thunderbolt
+- Calm Mind
+- Wish
+- Ice Punch

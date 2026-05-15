@@ -1,0 +1,57 @@
+Tyranitar @ Leftovers  
+Ability: Sand Stream  
+EVs: 240 HP / 76 Def / 176 SpA / 16 Spe  
+Serious Nature  
+IVs: 0 Atk  
+- Crunch  
+- Pursuit  
+- Flamethrower  
+- Roar  
+
+Forretress @ Leftovers  
+Ability: Sturdy  
+EVs: 252 HP / 4 Def / 252 SpD  
+Careful Nature  
+IVs: 30 SpD / 30 Spe  
+- Spikes  
+- Rapid Spin  
+- Hidden Power [Bug]  
+- Counter  
+
+Swampert @ Leftovers  
+Ability: Torrent  
+EVs: 240 HP / 176 Def / 44 SpD / 48 Spe  
+Relaxed Nature  
+- Protect  
+- Earthquake  
+- Surf  
+- Ice Beam  
+
+Blissey (F) @ Leftovers  
+Ability: Natural Cure  
+EVs: 4 HP / 252 Def / 252 SpA  
+Bold Nature  
+IVs: 0 Atk  
+- Soft-Boiled  
+- Thunder Wave  
+- Ice Beam  
+- Thunderbolt  
+
+Gyarados @ Choice Band  
+Ability: Intimidate  
+EVs: 4 HP / 252 Atk / 252 Spe  
+Jolly Nature  
+IVs: 30 SpA / 30 SpD / 30 Spe  
+- Thunder Wave  
+- Earthquake  
+- Return  
+- Hidden Power [Flying]  
+
+Salamence @ Leftovers  
+Ability: Intimidate  
+EVs: 8 Atk / 248 SpA / 252 Spe  
+Naive Nature  
+- Wish  
+- Dragon Claw  
+- Flamethrower  
+- Brick Break

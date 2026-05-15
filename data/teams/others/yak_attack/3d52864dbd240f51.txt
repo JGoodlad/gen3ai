@@ -1,0 +1,58 @@
+Metagross @ Lum Berry
+Ability: Clear Body
+EVs: 112 HP / 244 Atk / 16 SpA / 136 Spe
+Adamant Nature
+IVs: 31 HP / 31 Atk / 30 Def / 30 SpA / 31 SpD / 31 Spe
+- Meteor Mash
+- Earthquake
+- Explosion
+- Hidden Power Grass
+
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD / 31 Spe
+- Double-Edge
+- Rock Slide
+- Earthquake
+- Hidden Power Flying
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 80 HP / 252 Atk / 136 Def / 4 SpD / 36 Spe
+Adamant Nature
+- Body Slam
+- Shadow Ball
+- Focus Punch
+- Self-Destruct
+
+Magneton @ Magnet
+Ability: Magnet Pull
+EVs: 4 HP / 252 SpA / 252 Spe
+Modest Nature
+IVs: 31 HP / 2 Atk / 31 Def / 30 SpA / 31 SpD / 30 Spe
+- Thunderbolt
+- Hidden Power Fire
+- Toxic
+- Protect
+
+Gyarados @ Leftovers
+Ability: Intimidate
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 31 HP / 31 Atk / 31 Def / 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Hidden Power Flying
+- Earthquake
+- Double-Edge
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 200 HP / 252 SpA / 56 Spe
+Modest Nature
+IVs: 31 HP / 30 Atk / 31 Def / 30 SpA / 31 SpD / 31 Spe
+- Crunch
+- Brick Break
+- Pursuit
+- Hidden Power Grass

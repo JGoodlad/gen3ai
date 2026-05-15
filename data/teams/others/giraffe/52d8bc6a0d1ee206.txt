@@ -1,0 +1,56 @@
+Salamence @ Leftovers  
+Ability: Intimidate  
+EVs: 112 HP / 252 Atk / 144 Spe  
+Adamant Nature  
+IVs: 30 SpA / 30 SpD / 30 Spe  
+- Dragon Dance  
+- Rock Slide  
+- Brick Break  
+- Hidden Power [Flying]  
+
+Magneton @ Magnet  
+Ability: Magnet Pull  
+EVs: 8 HP / 252 SpA / 24 SpD / 224 Spe  
+Modest Nature  
+IVs: 2 Atk / 30 SpA / 30 Spe  
+- Rest  
+- Toxic  
+- Thunderbolt  
+- Hidden Power [Fire]  
+
+Metagross @ Leftovers  
+Ability: Clear Body  
+EVs: 252 HP / 176 Atk / 56 SpD / 24 Spe  
+Adamant Nature  
+- Toxic  
+- Meteor Mash  
+- Earthquake  
+- Explosion  
+
+Suicune @ Leftovers  
+Ability: Pressure  
+EVs: 252 HP / 228 SpA / 28 Spe  
+Modest Nature  
+- Substitute  
+- Calm Mind  
+- Surf  
+- Ice Beam  
+
+Celebi @ Leftovers  
+Ability: Natural Cure  
+EVs: 252 HP / 220 SpA / 36 Spe  
+Modest Nature  
+IVs: 0 Atk  
+- Leech Seed  
+- Calm Mind  
+- Giga Drain  
+- Psychic  
+
+Snorlax @ Leftovers  
+Ability: Immunity  
+EVs: 32 HP / 164 Atk / 140 Def / 172 SpD  
+Adamant Nature  
+- Return  
+- Earthquake  
+- Shadow Ball  
+- Self-Destruct

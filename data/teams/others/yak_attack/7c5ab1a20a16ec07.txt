@@ -1,0 +1,56 @@
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 184 HP / 252 SpA / 72 Spe
+Quiet Nature
+IVs: 31 HP / 30 Atk / 31 Def / 30 SpA / 31 SpD / 30 Spe
+- Meteor Mash
+- Hidden Power Fire
+- Psychic
+- Explosion
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 104 HP / 60 Atk / 144 Def / 32 SpA / 160 SpD / 8 Spe
+Brave Nature
+- Body Slam
+- Earthquake
+- Fire Blast
+- Self-Destruct
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 112 Def / 128 SpD / 16 Spe
+Sassy Nature
+- Refresh
+- Rapid Spin
+- Earthquake
+- Psychic
+
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 8 HP / 212 Atk / 36 SpD / 252 Spe
+Jolly Nature
+IVs: 31 HP / 30 Atk / 30 Def / 31 SpA / 30 SpD / 31 Spe
+- Earthquake
+- Rock Slide
+- Aerial Ace
+- Hidden Power Bug
+
+Milotic @ Leftovers
+Ability: Marvel Scale
+EVs: 248 HP / 212 Def / 48 Spe
+Bold Nature
+- Surf
+- Toxic
+- Refresh
+- Recover
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 240 HP / 36 Def / 96 SpD / 136 Spe
+Calm Nature
+IVs: 31 HP / 0 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Psychic
+- Perish Song
+- Leech Seed
+- Recover

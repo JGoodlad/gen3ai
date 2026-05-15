@@ -1,0 +1,55 @@
+Metagross @ Leftovers  
+Ability: Clear Body  
+EVs: 252 HP / 228 SpA / 28 SpD  
+Modest Nature  
+- Pursuit  
+- Hidden Power [Fire]  
+- Psychic  
+- Explosion  
+
+Swampert @ Leftovers  
+Ability: Torrent  
+EVs: 240 HP / 252 SpA / 16 Spe  
+Quiet Nature  
+- Curse  
+- Earthquake  
+- Hydro Pump  
+- Ice Beam  
+
+Gengar @ Leftovers  
+Ability: Levitate  
+EVs: 252 SpA / 4 SpD / 252 Spe  
+Timid Nature  
+- Will-O-Wisp  
+- Ice Punch  
+- Thunderbolt  
+- Explosion  
+
+Jolteon @ Leftovers  
+Ability: Volt Absorb  
+EVs: 8 HP / 248 SpA / 252 Spe  
+Timid Nature  
+IVs: 2 Atk / 30 SpA  
+- Substitute  
+- Thunderbolt  
+- Hidden Power [Grass]  
+- Baton Pass  
+
+Salamence @ Leftovers  
+Ability: Intimidate  
+EVs: 136 HP / 252 Atk / 120 Spe  
+Adamant Nature  
+IVs: 30 SpA / 30 SpD / 30 Spe  
+- Dragon Dance  
+- Rock Slide  
+- Brick Break  
+- Hidden Power [Flying]  
+
+Dugtrio @ Choice Band  
+Ability: Arena Trap  
+EVs: 252 Atk / 4 Def / 252 Spe  
+Jolly Nature  
+- Earthquake  
+- Hidden Power [Bug]  
+- Aerial Ace  
+- Rock Slide

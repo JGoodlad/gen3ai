@@ -1,0 +1,57 @@
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 4 Atk / 252 SpA / 252 Spe
+Naive Nature
+IVs: 31 HP / 31 Atk / 30 Def / 30 SpA / 31 SpD / 31 Spe
+- Dragon Claw
+- Fire Blast
+- Hidden Power Grass
+- Brick Break
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+IVs: 31 HP / 2 Atk / 30 Def / 31 SpA / 31 SpD / 31 Spe
+- Thunderbolt
+- Hidden Power Ice
+- Thunder Wave
+- Roar
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 32 Atk / 224 SpA / 252 Spe
+Naive Nature
+IVs: 31 HP / 31 Atk / 30 Def / 30 SpA / 31 SpD / 31 Spe
+- Fire Blast
+- Hidden Power Grass
+- Ice Beam
+- Brick Break
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 112 HP / 244 Atk / 152 Spe
+Adamant Nature
+- Meteor Mash
+- Earthquake
+- Agility
+- Explosion
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 252 Atk / 220 SpD / 36 Spe
+Adamant Nature
+- Focus Punch
+- Shadow Ball
+- Counter
+- Self-Destruct
+
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 76 HP / 252 Atk / 180 Spe
+Jolly Nature
+IVs: 31 HP / 31 Atk / 30 Def / 30 SpA / 30 SpD / 30 Spe
+- Double-Edge
+- Rock Slide
+- Earthquake
+- Hidden Power Fighting

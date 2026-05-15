@@ -1,0 +1,57 @@
+Forretress @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 4 Def / 252 SpD
+Careful Nature
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 30 SpD / 30 Spe
+- Spikes
+- Rapid Spin
+- Hidden Power Bug
+- Earthquake
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 200 HP / 216 SpA / 92 Spe
+Modest Nature
+IVs: 31 HP / 0 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Crunch
+- Pursuit
+- Fire Blast
+- Roar
+
+Blissey @ Leftovers
+Ability: Natural Cure
+EVs: 184 HP / 252 Def / 72 Spe
+Impish Nature
+- Seismic Toss
+- Toxic
+- Snatch
+- Soft-Boiled
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 248 HP / 124 Def / 92 SpA / 44 SpD
+Relaxed Nature
+- Earthquake
+- Ice Beam
+- Hydro Pump
+- Protect
+
+Venusaur @ Leftovers
+Ability: Overgrow
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+IVs: 31 HP / 2 Atk / 31 Def / 30 SpA / 31 SpD / 30 Spe
+- Giga Drain
+- Hidden Power Fire
+- Sleep Powder
+- Leech Seed
+
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD / 31 Spe
+- Rock Slide
+- Earthquake
+- Double-Edge
+- Hidden Power Flying

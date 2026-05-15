@@ -1,0 +1,57 @@
+Jirachi @ Leftovers  
+Ability: Serene Grace  
+EVs: 112 HP / 220 SpA / 176 Spe  
+Modest Nature  
+- Ice Punch  
+- Fire Punch  
+- Hidden Power [Grass]  
+- Dynamic Punch  
+
+Starmie @ Leftovers  
+Ability: Natural Cure  
+EVs: 252 SpA / 4 SpD / 252 Spe  
+Timid Nature  
+IVs: 0 Atk  
+- Rapid Spin  
+- Surf  
+- Ice Beam  
+- Thunderbolt  
+
+Hariyama @ Leftovers  
+Ability: Guts  
+EVs: 16 HP / 56 Atk / 160 Def / 248 SpD / 28 Spe  
+Adamant Nature  
+IVs: 30 SpD / 30 Spe  
+- Brick Break  
+- Rock Slide  
+- Hidden Power [Bug]  
+- Knock Off  
+
+Celebi @ Leftovers  
+Ability: Natural Cure  
+EVs: 188 HP / 180 SpA / 140 Spe  
+Modest Nature  
+IVs: 2 Atk / 30 SpA / 30 Spe  
+- Calm Mind  
+- Giga Drain  
+- Hidden Power [Fire]  
+- Psychic  
+
+Snorlax @ Leftovers  
+Ability: Immunity  
+EVs: 16 HP / 216 Atk / 96 Def / 168 SpD / 12 Spe  
+Adamant Nature  
+- Body Slam  
+- Shadow Ball  
+- Focus Punch  
+- Self-Destruct  
+
+Charizard @ Leftovers  
+Ability: Blaze  
+EVs: 252 SpA / 4 SpD / 252 Spe  
+Modest Nature  
+IVs: 2 Atk / 30 SpA  
+- Dragon Claw  
+- Flamethrower  
+- Hidden Power [Grass]  
+- Beat Up

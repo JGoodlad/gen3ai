@@ -1,0 +1,55 @@
+Tyranocif (Tyranitar) @ Lum Berry  
+Ability: Sand Stream  
+EVs: 32 Atk / 8 Def / 216 SpA / 252 Spe  
+Hasty Nature  
+IVs: 30 Def / 30 SpA  
+- Fire Blast  
+- Hidden Power [Grass]  
+- Ice Beam  
+- Brick Break  
+
+Crustabri (Cloyster) @ Leftovers  
+Ability: Shell Armor  
+EVs: 72 HP / 244 SpD / 192 Spe  
+Timid Nature  
+- Surf  
+- Rapid Spin  
+- Explosion  
+- Spikes  
+
+Ectoplasma (Gengar) @ Leftovers  
+Ability: Levitate  
+EVs: 248 HP / 52 Def / 28 SpD / 180 Spe  
+Timid Nature  
+- Hypnosis  
+- Ice Punch  
+- Taunt  
+- Explosion  
+
+Laggron (Swampert) @ Leftovers  
+Ability: Torrent  
+EVs: 248 HP / 136 Def / 48 SpA / 44 SpD / 32 Spe  
+Bold Nature  
+- Surf  
+- Roar  
+- Focus Punch  
+- Protect  
+
+PtÃ©ra (Aerodactyl) @ Liechi Berry  
+Ability: Rock Head  
+EVs: 4 HP / 252 Atk / 252 Spe  
+Jolly Nature  
+- Substitute  
+- Rock Slide  
+- Earthquake  
+- Double-Edge  
+
+Ãlecthor (Zapdos) @ Leftovers  
+Ability: Pressure  
+EVs: 248 HP / 184 SpD / 76 Spe  
+Timid Nature  
+IVs: 2 Atk / 30 SpA  
+- Thunderbolt  
+- Roar  
+- Thunder Wave  
+- Hidden Power [Grass]

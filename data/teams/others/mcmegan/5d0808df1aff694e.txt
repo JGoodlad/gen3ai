@@ -1,0 +1,56 @@
+Airmure (Skarmory) @ Leftovers  
+Ability: Keen Eye  
+EVs: 248 HP / 248 SpD / 12 Spe  
+Careful Nature  
+IVs: 0 Atk  
+- Spikes  
+- Toxic  
+- Roar  
+- Protect  
+
+Tyranocif (Tyranitar) @ Leftovers  
+Ability: Sand Stream  
+EVs: 252 HP / 88 Atk / 168 Spe  
+Adamant Nature  
+- Dragon Dance  
+- Substitute  
+- Rock Slide  
+- Earthquake  
+
+Arcanin (Arcanine) @ Leftovers  
+Ability: Intimidate  
+EVs: 28 HP / 8 Atk / 252 SpA / 220 Spe  
+Mild Nature  
+- Fire Blast  
+- Extreme Speed  
+- Toxic  
+- Hidden Power [Ice]  
+
+Kaorine (Claydol) @ Leftovers  
+Ability: Levitate  
+EVs: 240 HP / 176 Atk / 32 SpA / 60 Spe  
+Adamant Nature  
+- Earthquake  
+- Psychic  
+- Explosion  
+- Rapid Spin  
+
+Electhor (Zapdos) @ Leftovers  
+Ability: Pressure  
+EVs: 252 HP / 216 SpD / 32 Spe  
+Calm Nature  
+IVs: 0 Atk  
+- Thunderbolt  
+- Roar  
+- Rest  
+- Sleep Talk  
+
+Jungko (Sceptile) @ Leftovers  
+Ability: Overgrow  
+EVs: 4 HP / 252 SpA / 252 Spe  
+Timid Nature  
+IVs: 2 Atk / 30 Def  
+- Pursuit  
+- Leaf Blade  
+- Leech Seed  
+- Hidden Power [Ice]

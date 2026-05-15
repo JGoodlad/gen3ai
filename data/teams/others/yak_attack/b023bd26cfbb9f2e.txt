@@ -1,0 +1,57 @@
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 248 HP / 60 SpD / 200 Spe
+Timid Nature
+- Thunderbolt
+- Explosion
+- Mean Look
+- Hypnosis
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 240 HP / 196 Def / 72 Spe
+Bold Nature
+- Calm Mind
+- Rest
+- Roar
+- Surf
+
+Ludicolo @ Leftovers
+Ability: Swift Swim
+EVs: 96 HP / 252 SpA / 160 Spe
+Modest Nature
+IVs: 31 HP / 2 Atk / 31 Def / 30 SpA / 31 SpD / 31 Spe
+- Hydro Pump
+- Ice Beam
+- Hidden Power Grass
+- Rain Dance
+
+Kingdra @ Lum Berry
+Ability: Swift Swim
+EVs: 40 HP / 252 SpA / 216 Spe
+Modest Nature
+IVs: 31 HP / 2 Atk / 31 Def / 30 SpA / 31 SpD / 31 Spe
+- Rain Dance
+- Hydro Pump
+- Ice Beam
+- Hidden Power Grass
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 136 Def / 88 SpA / 32 Spe
+Bold Nature
+IVs: 31 HP / 0 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Calm Mind
+- Psychic
+- Thunder
+- Substitute
+
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
+IVs: 31 HP / 30 Atk / 30 Def / 31 SpA / 30 SpD / 31 Spe
+- Aerial Ace
+- Earthquake
+- Hidden Power Bug
+- Rock Slide

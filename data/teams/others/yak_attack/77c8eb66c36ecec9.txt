@@ -1,0 +1,56 @@
+Tyranitar @ Salac Berry
+Ability: Sand Stream
+EVs: 4 HP / 252 Atk / 252 Spe
+Adamant Nature
+- Dragon Dance
+- Rock Slide
+- Earthquake
+- Endure
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 248 HP / 56 SpD / 204 Spe
+Timid Nature
+- Thunderbolt
+- Explosion
+- Will-O-Wisp
+- Hypnosis
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 248 HP / 40 Def / 152 SpA / 68 Spe
+Modest Nature
+IVs: 31 HP / 2 Atk / 31 Def / 30 SpA / 31 SpD / 31 Spe
+- Psychic
+- Fire Punch
+- Hidden Power Grass
+- Calm Mind
+
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
+IVs: 31 HP / 30 Atk / 30 Def / 31 SpA / 30 SpD / 31 Spe
+- Aerial Ace
+- Earthquake
+- Hidden Power Bug
+- Rock Slide
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 112 HP / 216 SpA / 180 Spe
+Modest Nature
+- Calm Mind
+- Hydro Pump
+- Ice Beam
+- Roar
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 248 HP / 132 Def / 64 SpA / 12 SpD / 52 Spe
+Timid Nature
+IVs: 31 HP / 2 Atk / 31 Def / 30 SpA / 31 SpD / 30 Spe
+- Calm Mind
+- Baton Pass
+- Giga Drain
+- Hidden Power Fire

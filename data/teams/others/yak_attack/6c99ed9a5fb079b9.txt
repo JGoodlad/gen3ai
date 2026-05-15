@@ -1,0 +1,54 @@
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 4 Atk / 252 SpA / 252 Spe
+Rash Nature
+- Hydro Pump
+- Ice Beam
+- Earthquake
+- Focus Punch
+
+Forretress @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 4 Def / 252 SpD
+Careful Nature
+- Spikes
+- Rapid Spin
+- Earthquake
+- Explosion
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 184 HP / 220 SpA / 104 Spe
+Modest Nature
+- Crunch
+- Pursuit
+- Fire Blast
+- Roar
+
+Milotic @ Leftovers
+Ability: Marvel Scale
+EVs: 248 HP / 212 Def / 48 Spe
+Bold Nature
+IVs: 31 HP / 0 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Surf
+- Toxic
+- Refresh
+- Recover
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 248 HP / 52 Def / 112 SpD / 96 Spe
+Timid Nature
+- Thunderbolt
+- Ice Punch
+- Will-O-Wisp
+- Taunt
+
+Blissey @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 168 SpA / 88 Spe
+Modest Nature
+- Fire Blast
+- Seismic Toss
+- Soft-Boiled
+- Toxic

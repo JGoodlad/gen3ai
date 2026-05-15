@@ -1,0 +1,55 @@
+Swampert @ Leftovers  
+Ability: Torrent  
+EVs: 240 HP / 252 SpA / 16 Spe  
+Quiet Nature  
+- Curse  
+- Earthquake  
+- Hydro Pump  
+- Ice Beam  
+
+Jynx (F) @ Leftovers  
+Ability: Oblivious  
+EVs: 252 SpA / 4 SpD / 252 Spe  
+Timid Nature  
+IVs: 0 Atk  
+- Mean Look  
+- Lovely Kiss  
+- Ice Beam  
+- Perish Song  
+
+Jirachi @ Leftovers  
+Ability: Serene Grace  
+EVs: 80 Atk / 252 SpA / 176 Spe  
+Rash Nature  
+- Body Slam  
+- Fire Punch  
+- Hidden Power [Grass]  
+- Dynamic Punch  
+
+Tyranitar @ Leftovers  
+Ability: Sand Stream  
+EVs: 184 HP / 72 Atk / 252 Spe  
+Adamant Nature  
+- Dragon Dance  
+- Earthquake  
+- Rock Slide  
+- Double-Edge  
+
+Zapdos @ Leftovers  
+Ability: Pressure  
+EVs: 252 SpA / 120 SpD / 136 Spe  
+Modest Nature  
+IVs: 2 Atk / 30 Def  
+- Protect  
+- Toxic  
+- Thunderbolt  
+- Hidden Power [Ice]  
+
+Dugtrio @ Choice Band  
+Ability: Arena Trap  
+EVs: 252 Atk / 4 Def / 252 Spe  
+Jolly Nature  
+- Substitute  
+- Earthquake  
+- Hidden Power [Bug]  
+- Aerial Ace

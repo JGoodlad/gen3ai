@@ -1,0 +1,17 @@
+Tyranitar  
+Ability: Sand Stream  
+
+Skarmory  
+Ability: Keen Eye  
+
+Swampert  
+Ability: Torrent  
+
+Celebi  
+Ability: Natural Cure  
+
+Jirachi  
+Ability: Serene Grace  
+
+Charizard  
+Ability: Blaze

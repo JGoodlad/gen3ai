@@ -1,0 +1,55 @@
+Salamence @ Leftovers  
+Ability: Intimidate  
+EVs: 24 HP / 24 Atk / 252 SpA / 64 SpD / 144 Spe  
+Mild Nature  
+- Dragon Claw  
+- Rock Slide  
+- Flamethrower  
+- Brick Break  
+
+Claydol @ Leftovers  
+Ability: Levitate  
+EVs: 252 HP / 100 Atk / 112 Def / 28 SpA / 16 SpD  
+Careful Nature  
+- Rapid Spin  
+- Earthquake  
+- Psychic  
+- Explosion  
+
+Swampert @ Leftovers  
+Ability: Torrent  
+EVs: 240 HP / 136 Def / 88 SpA / 44 SpD  
+Relaxed Nature  
+- Curse  
+- Earthquake  
+- Surf  
+- Ice Beam  
+
+Machamp @ Leftovers  
+Ability: Guts  
+EVs: 252 HP / 176 Atk / 20 Def / 60 SpD  
+Adamant Nature  
+- Bulk Up  
+- Cross Chop  
+- Rock Slide  
+- Hidden Power [Bug]  
+
+Celebi @ Leftovers  
+Ability: Natural Cure  
+EVs: 252 HP / 220 SpA / 36 Spe  
+Modest Nature  
+IVs: 0 Atk  
+- Leech Seed  
+- Calm Mind  
+- Giga Drain  
+- Psychic  
+
+Jirachi @ Leftovers  
+Ability: Serene Grace  
+EVs: 252 HP / 120 Def / 136 SpD  
+Sassy Nature  
+IVs: 0 Atk  
+- Wish  
+- Protect  
+- Fire Punch  
+- Body Slam

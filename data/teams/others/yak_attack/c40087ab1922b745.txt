@@ -1,0 +1,57 @@
+Zapdos @ Choice Band
+Ability: Pressure
+EVs: 252 Atk / 12 SpA / 244 Spe
+Lonely Nature
+IVs: 31 HP / 31 Atk / 30 Def / 30 SpA / 30 SpD / 30 Spe
+- Drill Peck
+- Hidden Power Fighting
+- Thunder
+- Baton Pass
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 16 HP / 176 Atk / 120 Def / 160 SpD / 36 Spe
+Adamant Nature
+- Body Slam
+- Earthquake
+- Shadow Ball
+- Self-Destruct
+
+Magneton @ Magnet
+Ability: Magnet Pull
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 31 HP / 2 Atk / 31 Def / 30 SpA / 31 SpD / 31 Spe
+- Thunderbolt
+- Hidden Power Grass
+- Thunder
+- Thunder Wave
+
+Metagross @ Lum Berry
+Ability: Clear Body
+EVs: 112 HP / 244 Atk / 152 Spe
+Adamant Nature
+- Meteor Mash
+- Earthquake
+- Agility
+- Explosion
+
+Regirock @ Lum Berry
+Ability: Clear Body
+EVs: 248 HP / 208 Atk / 52 SpD
+Adamant Nature
+IVs: 31 HP / 31 Atk / 30 Def / 31 SpA / 30 SpD / 30 Spe
+- Earthquake
+- Curse
+- Hidden Power Rock
+- Explosion
+
+Gyarados @ Leftovers
+Ability: Intimidate
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 31 HP / 31 Atk / 30 Def / 31 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Hidden Power Rock
+- Earthquake
+- Double-Edge

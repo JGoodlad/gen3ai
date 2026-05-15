@@ -1,0 +1,56 @@
+Hariyama @ Leftovers  
+Ability: Guts  
+EVs: 96 Atk / 232 Def / 180 Spe  
+Adamant Nature  
+- Knock Off  
+- Cross Chop  
+- Rock Slide  
+- Hidden Power [Ghost]  
+
+Airmure (Skarmory)  
+Ability: Keen Eye  
+EVs: 248 HP / 248 SpD / 12 Spe  
+Calm Nature  
+IVs: 0 Atk  
+- Protect  
+- Spikes  
+- Roar  
+- Thief  
+
+MÃ©talosse (Metagross) @ Leftovers  
+Ability: Clear Body  
+EVs: 244 HP / 48 Atk / 216 Def  
+Impish Nature  
+- Meteor Mash  
+- Earthquake  
+- Protect  
+- Explosion  
+
+Kaorine (Claydol) @ Leftovers  
+Ability: Levitate  
+EVs: 252 HP / 180 Atk / 16 SpA / 60 Spe  
+Adamant Nature  
+- Earthquake  
+- Psychic  
+- Explosion  
+- Rapid Spin  
+
+Leuphorie (Blissey) (F) @ Leftovers  
+Ability: Natural Cure  
+EVs: 252 Def / 252 SpA / 4 Spe  
+Bold Nature  
+IVs: 0 Atk  
+- Soft-Boiled  
+- Thunder  
+- Ice Beam  
+- Seismic Toss  
+
+LÃ©viator (Gyarados) @ Leftovers  
+Ability: Intimidate  
+EVs: 252 Atk / 48 SpD / 208 Spe  
+Adamant Nature  
+IVs: 30 SpA / 30 SpD / 30 Spe  
+- Dragon Dance  
+- Earthquake  
+- Double-Edge  
+- Hidden Power [Flying]

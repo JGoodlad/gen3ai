@@ -1,0 +1,56 @@
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 252 Atk / 12 SpA / 244 Spe
+Lonely Nature
+IVs: 31 HP / 31 Atk / 30 Def / 30 SpA / 30 SpD / 30 Spe
+- Drill Peck
+- Hidden Power Fighting
+- Thunderbolt
+- Thunder Wave
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 24 Atk / 252 SpA / 232 Spe
+Rash Nature
+- Hydro Pump
+- Ice Beam
+- Earthquake
+- Focus Punch
+
+Metagross @ Choice Band
+Ability: Clear Body
+EVs: 112 HP / 208 Atk / 188 Spe
+Adamant Nature
+- Meteor Mash
+- Earthquake
+- Double-Edge
+- Explosion
+
+Tyranitar @ Lum Berry
+Ability: Sand Stream
+EVs: 236 Atk / 20 SpA / 252 Spe
+Naive Nature
+IVs: 31 HP / 31 Atk / 30 Def / 30 SpA / 31 SpD / 31 Spe
+- Rock Slide
+- Earthquake
+- Hidden Power Grass
+- Dragon Dance
+
+Jolteon @ Leftovers
+Ability: Volt Absorb
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 31 HP / 2 Atk / 30 Def / 31 SpA / 31 SpD / 31 Spe
+- Thunderbolt
+- Hidden Power Ice
+- Roar
+- Thunder Wave
+
+Cloyster @ Leftovers
+Ability: Shell Armor
+EVs: 72 HP / 244 SpD / 192 Spe
+Timid Nature
+- Surf
+- Ice Beam
+- Explosion
+- Spikes

@@ -1,0 +1,56 @@
+Forretress @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 4 Def / 252 SpD
+Sassy Nature
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 29 Spe
+- Earthquake
+- Spikes
+- Rapid Spin
+- Explosion
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 248 HP / 184 Def / 44 SpA / 32 Spe
+Bold Nature
+- Surf
+- Roar
+- Toxic
+- Protect
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 184 HP / 220 SpA / 104 Spe
+Modest Nature
+IVs: 31 HP / 30 Atk / 31 Def / 30 SpA / 31 SpD / 31 Spe
+- Crunch
+- Pursuit
+- Fire Blast
+- Hidden Power Grass
+
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 32 HP / 252 Atk / 224 Spe
+Adamant Nature
+IVs: 31 HP / 31 Atk / 31 Def / 30 SpA / 30 SpD / 30 Spe
+- Rock Slide
+- Earthquake
+- Hidden Power Flying
+- Double-Edge
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 248 HP / 52 Def / 112 SpD / 96 Spe
+Timid Nature
+- Thunderbolt
+- Ice Punch
+- Will-O-Wisp
+- Explosion
+
+Blissey @ Leftovers
+Ability: Natural Cure
+EVs: 4 HP / 252 Def / 252 Spe
+Timid Nature
+- Seismic Toss
+- Sing
+- Toxic
+- Soft-Boiled

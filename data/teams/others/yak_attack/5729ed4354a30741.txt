@@ -1,0 +1,56 @@
+Hariyama @ Leftovers
+Ability: Thick Fat
+EVs: 4 Atk / 252 Def / 252 SpD
+Adamant Nature
+- Brick Break
+- Knock Off
+- Whirlwind
+- Rest
+
+Forretress @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 4 Def / 252 SpD
+Careful Nature
+- Spikes
+- Rapid Spin
+- Earthquake
+- Explosion
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 184 HP / 220 SpA / 104 Spe
+Modest Nature
+- Crunch
+- Pursuit
+- Fire Blast
+- Roar
+
+Milotic @ Leftovers
+Ability: Marvel Scale
+EVs: 248 HP / 212 Def / 48 Spe
+Bold Nature
+IVs: 31 HP / 0 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Surf
+- Toxic
+- Refresh
+- Recover
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 248 HP / 60 SpD / 200 Spe
+Timid Nature
+IVs: 31 HP / 2 Atk / 31 Def / 30 SpA / 31 SpD / 31 Spe
+- Thunderbolt
+- Fire Punch
+- Hidden Power Grass
+- Will-O-Wisp
+
+Blissey @ Leftovers
+Ability: Natural Cure
+EVs: 224 HP / 252 Def / 32 Spe
+Bold Nature
+IVs: 31 HP / 0 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Seismic Toss
+- Thunder Wave
+- Wish
+- Soft-Boiled

@@ -1,0 +1,57 @@
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 31 HP / 2 Atk / 31 Def / 30 SpA / 31 SpD / 31 Spe
+- Thunderbolt
+- Hidden Power Grass
+- Toxic
+- Protect
+
+Alakazam @ Leftovers
+Ability: Synchronize
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+IVs: 31 HP / 2 Atk / 31 Def / 30 SpA / 31 SpD / 31 Spe
+- Calm Mind
+- Psychic
+- Hidden Power Grass
+- Fire Punch
+
+Kingdra @ Lum Berry
+Ability: Swift Swim
+EVs: 80 HP / 252 SpA / 176 Spe
+Modest Nature
+IVs: 31 HP / 2 Atk / 31 Def / 30 SpA / 31 SpD / 31 Spe
+- Rain Dance
+- Hydro Pump
+- Ice Beam
+- Hidden Power Grass
+
+Metagross @ Lum Berry
+Ability: Clear Body
+EVs: 112 HP / 244 Atk / 152 Spe
+Adamant Nature
+- Meteor Mash
+- Earthquake
+- Agility
+- Explosion
+
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 31 HP / 30 Atk / 30 Def / 31 SpA / 30 SpD / 31 Spe
+- Earthquake
+- Rock Slide
+- Aerial Ace
+- Hidden Power Bug
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 60 SpD / 196 Spe
+Timid Nature
+- Thunderbolt
+- Explosion
+- Will-O-Wisp
+- Mean Look

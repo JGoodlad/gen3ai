@@ -1,0 +1,54 @@
+Blaziken @ Lum Berry  
+Ability: Blaze  
+EVs: 12 Atk / 244 SpA / 252 Spe  
+Hasty Nature  
+- Toxic  
+- Overheat  
+- Hidden Power [Grass]  
+- Sky Uppercut  
+
+Swampert @ Leftovers  
+Ability: Torrent  
+EVs: 240 HP / 252 SpA / 16 Spe  
+Quiet Nature  
+- Curse  
+- Earthquake  
+- Hydro Pump  
+- Ice Beam  
+
+Metagross @ Leftovers  
+Ability: Clear Body  
+EVs: 168 HP / 16 Def / 252 SpA / 72 Spe  
+Rash Nature  
+- Earthquake  
+- Thunder Punch  
+- Hidden Power [Grass]  
+- Explosion  
+
+Tyranitar @ Leftovers  
+Ability: Sand Stream  
+EVs: 184 HP / 104 Atk / 220 Spe  
+Adamant Nature  
+- Dragon Dance  
+- Earthquake  
+- Rock Slide  
+- Double-Edge  
+
+Jolteon @ Leftovers  
+Ability: Volt Absorb  
+EVs: 8 HP / 248 SpA / 252 Spe  
+Timid Nature  
+IVs: 2 Atk / 30 SpA  
+- Substitute  
+- Thunderbolt  
+- Hidden Power [Grass]  
+- Baton Pass  
+
+Charizard @ Leftovers  
+Ability: Blaze  
+EVs: 4 Atk / 252 SpA / 252 Spe  
+Mild Nature  
+- Substitute  
+- Flamethrower  
+- Hidden Power [Grass]  
+- Focus Punch

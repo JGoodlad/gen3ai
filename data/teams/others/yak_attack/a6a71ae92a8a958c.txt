@@ -1,0 +1,57 @@
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 184 HP / 192 Atk / 132 Spe
+Adamant Nature
+IVs: 31 HP / 30 Atk / 30 Def / 31 SpA / 30 SpD / 31 Spe
+- Focus Punch
+- Rock Slide
+- Earthquake
+- Hidden Power Bug
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 240 HP / 248 SpD / 20 Spe
+Careful Nature
+IVs: 31 HP / 0 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Spikes
+- Whirlwind
+- Protect
+- Toxic
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 172 Def / 96 Spe
+Relaxed Nature
+- Earthquake
+- Ice Beam
+- Protect
+- Roar
+
+Magneton @ Magnet
+Ability: Magnet Pull
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 31 HP / 2 Atk / 31 Def / 30 SpA / 31 SpD / 30 Spe
+- Thunderbolt
+- Hidden Power Fire
+- Toxic
+- Thunder Wave
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 40 HP / 252 SpA / 216 Spe
+Modest Nature
+IVs: 31 HP / 2 Atk / 31 Def / 30 SpA / 31 SpD / 31 Spe
+- Hypnosis
+- Thunderbolt
+- Ice Punch
+- Hidden Power Grass
+
+Blissey @ Leftovers
+Ability: Natural Cure
+EVs: 20 HP / 252 Def / 216 SpA / 20 Spe
+Modest Nature
+- Thunder Wave
+- Seismic Toss
+- Ice Beam
+- Soft-Boiled

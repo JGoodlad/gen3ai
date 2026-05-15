@@ -1,0 +1,58 @@
+Metagross @ Choice Band
+Ability: Clear Body
+EVs: 112 HP / 208 Atk / 188 Spe
+Adamant Nature
+- Meteor Mash
+- Earthquake
+- Rock Slide
+- Explosion
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 180 Atk / 212 SpD / 116 Spe
+Adamant Nature
+IVs: 31 HP / 31 Atk / 31 Def / 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Hidden Power Flying
+- Earthquake
+- Rock Slide
+
+Swampert @ Salac Berry
+Ability: Torrent
+EVs: 4 Def / 252 SpA / 252 Spe
+Timid Nature
+IVs: 31 HP / 0 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Endeavor
+- Hydro Pump
+- Roar
+- Substitute
+
+Tyranitar @ Lum Berry
+Ability: Sand Stream
+EVs: 168 Atk / 88 SpA / 252 Spe
+Naive Nature
+IVs: 31 HP / 30 Atk / 31 Def / 30 SpA / 31 SpD / 31 Spe
+- Dragon Dance
+- Rock Slide
+- Earthquake
+- Hidden Power Grass
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 8 HP / 248 SpA / 252 Spe
+Hasty Nature
+IVs: 31 HP / 30 Atk / 31 Def / 30 SpA / 31 SpD / 31 Spe
+- Explosion
+- Ice Punch
+- Fire Punch
+- Hidden Power Grass
+
+Raikou @ Leftovers
+Ability: Pressure
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 31 HP / 2 Atk / 31 Def / 30 SpA / 31 SpD / 31 Spe
+- Calm Mind
+- Thunderbolt
+- Hidden Power Grass
+- Substitute

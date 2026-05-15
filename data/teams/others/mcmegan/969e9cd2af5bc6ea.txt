@@ -1,0 +1,57 @@
+Tyranocif (Tyranitar) @ Leftovers  
+Ability: Sand Stream  
+EVs: 136 HP / 244 SpA / 128 Spe  
+Modest Nature  
+- Crunch  
+- Pursuit  
+- Fire Blast  
+- Brick Break  
+
+Foretress (Forretress) @ Leftovers  
+Ability: Sturdy  
+EVs: 252 HP / 8 Atk / 248 SpD  
+Sassy Nature  
+IVs: 30 SpD / 30 Spe  
+- Zap Cannon  
+- Hidden Power [Bug]  
+- Spikes  
+- Explosion  
+
+Milobellus (Milotic) @ Leftovers  
+Ability: Marvel Scale  
+EVs: 248 HP / 212 Def / 48 Spe  
+Bold Nature  
+IVs: 0 Atk  
+- Surf  
+- Toxic  
+- Refresh  
+- Recover  
+
+Kaorine (Claydol) @ Leftovers  
+Ability: Levitate  
+EVs: 252 HP / 64 Atk / 136 Def / 16 SpA / 36 SpD / 4 Spe  
+Impish Nature  
+- Earthquake  
+- Psychic  
+- Rapid Spin  
+- Explosion  
+
+Jirachi @ Leftovers  
+Ability: Serene Grace  
+EVs: 252 HP / 76 Def / 148 SpD / 32 Spe  
+Calm Nature  
+IVs: 0 Atk  
+- Wish  
+- Protect  
+- Toxic  
+- Fire Punch  
+
+Drattak (Salamence) @ Leftovers  
+Ability: Intimidate  
+EVs: 252 Atk / 72 SpD / 184 Spe  
+Adamant Nature  
+IVs: 30 SpA / 30 SpD / 30 Spe  
+- Hidden Power [Flying]  
+- Earthquake  
+- Rock Slide  
+- Dragon Dance

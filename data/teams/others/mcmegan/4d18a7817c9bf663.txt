@@ -1,0 +1,57 @@
+Electhor (Zapdos) @ Leftovers  
+Ability: Pressure  
+EVs: 252 HP / 216 SpD / 40 Spe  
+Calm Nature  
+IVs: 0 Atk  
+- Thunderbolt  
+- Roar  
+- Sleep Talk  
+- Rest  
+
+Foretress (Forretress) @ Leftovers  
+Ability: Sturdy  
+EVs: 252 HP / 4 Atk / 4 SpA / 248 SpD  
+Sassy Nature  
+- Spikes  
+- Rapid Spin  
+- Hidden Power [Fire]  
+- Explosion  
+
+Tyranocif (Tyranitar) @ Leftovers  
+Ability: Sand Stream  
+EVs: 124 HP / 252 SpA / 132 Spe  
+Modest Nature  
+IVs: 0 Atk  
+- Counter  
+- Crunch  
+- Pursuit  
+- Flamethrower  
+
+Laggron (Swampert) @ Leftovers  
+Ability: Torrent  
+EVs: 248 HP / 184 Def / 44 SpA / 32 SpD  
+Relaxed Nature  
+- Surf  
+- Ice Beam  
+- Earthquake  
+- Protect  
+
+Jirachi @ Leftovers  
+Ability: Serene Grace  
+EVs: 252 HP / 76 Def / 148 SpD / 32 Spe  
+Calm Nature  
+IVs: 0 Atk  
+- Wish  
+- Protect  
+- Toxic  
+- Fire Punch  
+
+Drattak (Salamence) @ Leftovers  
+Ability: Intimidate  
+EVs: 252 Atk / 72 SpD / 184 Spe  
+Adamant Nature  
+IVs: 30 SpA / 30 SpD / 30 Spe  
+- Hidden Power [Flying]  
+- Earthquake  
+- Rock Slide  
+- Dragon Dance

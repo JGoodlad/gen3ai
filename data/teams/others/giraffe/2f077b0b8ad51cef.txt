@@ -1,0 +1,56 @@
+Zapdos @ Leftovers  
+Ability: Pressure  
+EVs: 216 HP / 136 SpA / 156 Spe  
+Modest Nature  
+IVs: 2 Atk / 30 Def  
+- Thunder Wave  
+- Toxic  
+- Thunderbolt  
+- Hidden Power [Ice]  
+
+Skarmory @ Leftovers  
+Ability: Keen Eye  
+EVs: 252 HP / 252 SpD / 4 Spe  
+Careful Nature  
+- Spikes  
+- Toxic  
+- Drill Peck  
+- Roar  
+
+Celebi @ Leftovers  
+Ability: Natural Cure  
+EVs: 192 HP / 8 Def / 168 SpA / 140 Spe  
+Modest Nature  
+IVs: 2 Atk / 30 SpA / 30 Spe  
+- Leech Seed  
+- Giga Drain  
+- Hidden Power [Fire]  
+- Psychic  
+
+Swampert @ Leftovers  
+Ability: Torrent  
+EVs: 240 HP / 136 Def / 40 SpA / 44 SpD / 48 Spe  
+Relaxed Nature  
+- Curse  
+- Earthquake  
+- Hydro Pump  
+- Ice Beam  
+
+Metagross @ Leftovers  
+Ability: Clear Body  
+EVs: 168 HP / 16 Def / 252 SpA / 72 Spe  
+Rash Nature  
+- Meteor Mash  
+- Ice Punch  
+- Thunder Punch  
+- Explosion  
+
+Charizard @ Leftovers  
+Ability: Blaze  
+EVs: 4 HP / 252 SpA / 252 Spe  
+Mild Nature  
+IVs: 30 Atk  
+- Substitute  
+- Hidden Power [Grass]  
+- Fire Blast  
+- Focus Punch

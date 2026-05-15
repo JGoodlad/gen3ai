@@ -1,0 +1,57 @@
+Solrock @ Choice Band
+Ability: Levitate
+EVs: 4 HP / 252 Atk / 252 Spe
+Adamant Nature
+IVs: 31 HP / 31 Atk / 30 Def / 30 SpA / 30 SpD / 30 Spe
+- Rock Slide
+- Hidden Power Fighting
+- Explosion
+- Earthquake
+
+Magneton @ Leftovers
+Ability: Magnet Pull
+EVs: 144 HP / 112 SpA / 252 Spe
+Timid Nature
+IVs: 31 HP / 2 Atk / 31 Def / 30 SpA / 31 SpD / 30 Spe
+- Thunderbolt
+- Protect
+- Toxic
+- Hidden Power Fire
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 4 HP / 252 Atk / 252 Spe
+Adamant Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD / 31 Spe
+- Dragon Dance
+- Hidden Power Flying
+- Rock Slide
+- Brick Break
+
+Swampert @ Salac Berry
+Ability: Torrent
+EVs: 4 Def / 252 SpA / 252 Spe
+Timid Nature
+IVs: 31 HP / 0 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Hydro Pump
+- Swagger
+- Substitute
+- Endeavor
+
+Metagross @ Lum Berry
+Ability: Clear Body
+EVs: 192 HP / 228 Atk / 88 Spe
+Adamant Nature
+- Meteor Mash
+- Earthquake
+- Agility
+- Explosion
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 64 HP / 176 Atk / 100 Def / 128 SpD / 40 Spe
+Adamant Nature
+- Return
+- Earthquake
+- Shadow Ball
+- Self-Destruct

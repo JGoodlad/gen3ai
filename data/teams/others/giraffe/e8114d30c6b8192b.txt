@@ -1,0 +1,55 @@
+Swampert @ Choice Band  
+Ability: Torrent  
+EVs: 252 Atk / 44 SpD / 212 Spe  
+Naughty Nature  
+- Earthquake  
+- Rock Slide  
+- Hidden Power [Ghost]  
+- Hydro Pump  
+
+Magneton @ Magnet  
+Ability: Magnet Pull  
+EVs: 68 HP / 252 SpA / 188 Spe  
+Modest Nature  
+IVs: 2 Atk / 30 Def  
+- Toxic  
+- Thunderbolt  
+- Hidden Power [Ice]  
+- Sunny Day  
+
+Umbreon @ Leftovers  
+Ability: Synchronize  
+EVs: 252 HP / 144 SpA / 96 SpD / 16 Spe  
+Calm Nature  
+IVs: 0 Atk  
+- Wish  
+- Protect  
+- Charm  
+- Pursuit  
+
+Snorlax @ Leftovers  
+Ability: Immunity  
+EVs: 32 HP / 152 Atk / 152 Def / 172 SpD  
+Adamant Nature  
+- Curse  
+- Return  
+- Earthquake  
+- Self-Destruct  
+
+Metagross @ Leftovers  
+Ability: Clear Body  
+EVs: 252 HP / 176 Atk / 20 Def / 28 SpD / 32 Spe  
+Adamant Nature  
+- Toxic  
+- Meteor Mash  
+- Earthquake  
+- Explosion  
+
+Gyarados @ Leftovers  
+Ability: Intimidate  
+EVs: 24 HP / 252 Atk / 232 Spe  
+Jolly Nature  
+- Dragon Dance  
+- Earthquake  
+- Hidden Power [Rock]  
+- Return

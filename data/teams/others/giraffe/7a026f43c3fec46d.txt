@@ -1,0 +1,55 @@
+Salamence @ Leftovers  
+Ability: Intimidate  
+EVs: 24 HP / 244 SpA / 64 SpD / 176 Spe  
+Mild Nature  
+- Dragon Claw  
+- Flamethrower  
+- Hidden Power [Grass]  
+- Brick Break  
+
+Starmie @ Leftovers  
+Ability: Natural Cure  
+EVs: 4 HP / 252 SpA / 252 Spe  
+Timid Nature  
+IVs: 0 Atk  
+- Rapid Spin  
+- Surf  
+- Ice Beam  
+- Thunderbolt  
+
+Metagross @ Choice Band  
+Ability: Clear Body  
+EVs: 252 Atk / 68 SpD / 188 Spe  
+Adamant Nature  
+- Meteor Mash  
+- Brick Break  
+- Return  
+- Explosion  
+
+Jirachi @ Leftovers  
+Ability: Serene Grace  
+EVs: 68 Atk / 252 SpA / 188 Spe  
+Rash Nature  
+- Body Slam  
+- Fire Punch  
+- Ice Punch  
+- Hidden Power [Fighting]  
+
+Tyranitar @ Leftovers  
+Ability: Sand Stream  
+EVs: 184 HP / 104 Atk / 220 Spe  
+Adamant Nature  
+- Dragon Dance  
+- Earthquake  
+- Rock Slide  
+- Hidden Power [Bug]  
+
+Celebi @ Leftovers  
+Ability: Natural Cure  
+EVs: 188 HP / 140 SpA / 180 Spe  
+Modest Nature  
+IVs: 2 Atk / 30 SpA / 30 Spe  
+- Calm Mind  
+- Giga Drain  
+- Hidden Power [Fire]  
+- Psychic

@@ -1,0 +1,15 @@
+Metagross @ Choice Band  
+Ability: Clear Body  
+- Meteor Mash  
+
+Swampert  
+Ability: Torrent  
+
+Jirachi  
+Ability: Serene Grace  
+
+Tyranitar  
+Ability: Sand Stream  
+
+Salamence  
+Ability: Intimidate

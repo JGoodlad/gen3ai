@@ -1,0 +1,56 @@
+Milotic @ Leftovers
+Ability: Marvel Scale
+EVs: 248 HP / 212 Def / 48 Spe
+Bold Nature
+- Surf
+- Toxic
+- Refresh
+- Recover
+
+Blissey @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 168 SpA / 88 Spe
+Modest Nature
+- Fire Blast
+- Ice Beam
+- Soft-Boiled
+- Seismic Toss
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 240 HP / 244 SpD / 24 Spe
+Careful Nature
+- Protect
+- Drill Peck
+- Roar
+- Spikes
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 248 HP / 92 Def / 96 SpA / 40 SpD / 32 Spe
+Bold Nature
+IVs: 31 HP / 2 Atk / 31 Def / 30 SpA / 31 SpD / 31 Spe
+- Perish Song
+- Hidden Power Grass
+- Leech Seed
+- Recover
+
+Gengar @ Leftovers
+Ability: Cursed Body
+EVs: 8 HP / 252 SpA / 248 Spe
+Modest Nature
+IVs: 31 HP / 0 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Hypnosis
+- Ice Punch
+- Giga Drain
+- Fire Punch
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 216 Def / 40 SpD
+Relaxed Nature
+IVs: 31 HP / 30 Atk / 31 Def / 30 SpA / 31 SpD / 30 Spe
+- Earthquake
+- Psychic
+- Hidden Power Fire
+- Rapid Spin

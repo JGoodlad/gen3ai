@@ -1,0 +1,55 @@
+Tyranitar @ Leftovers  
+Ability: Sand Stream  
+EVs: 184 HP / 104 Atk / 220 Spe  
+Adamant Nature  
+- Dragon Dance  
+- Earthquake  
+- Rock Slide  
+- Double-Edge  
+
+Skarmory @ Leftovers  
+Ability: Keen Eye  
+EVs: 240 HP / 240 SpD / 28 Spe  
+Careful Nature  
+- Spikes  
+- Protect  
+- Toxic  
+- Roar  
+
+Magneton @ Magnet  
+Ability: Magnet Pull  
+EVs: 4 HP / 252 SpA / 60 SpD / 192 Spe  
+Modest Nature  
+IVs: 0 Atk  
+- Rest  
+- Sleep Talk  
+- Toxic  
+- Thunderbolt  
+
+Celebi @ Leftovers  
+Ability: Natural Cure  
+EVs: 252 HP / 36 Def / 12 SpA / 176 SpD / 32 Spe  
+Calm Nature  
+IVs: 2 Atk / 30 SpA  
+- Recover  
+- Leech Seed  
+- Hidden Power [Grass]  
+- Psychic  
+
+Swampert @ Leftovers  
+Ability: Torrent  
+EVs: 240 HP / 176 Def / 76 SpD / 16 Spe  
+Relaxed Nature  
+- Protect  
+- Curse  
+- Earthquake  
+- Ice Beam  
+
+Aerodactyl @ Choice Band  
+Ability: Rock Head  
+EVs: 4 HP / 252 Atk / 252 Spe  
+Jolly Nature  
+- Earthquake  
+- Rock Slide  
+- Hidden Power [Bug]  
+- Double-Edge

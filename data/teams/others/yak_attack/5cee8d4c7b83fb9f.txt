@@ -1,0 +1,57 @@
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 40 HP / 252 SpA / 216 Spe
+Modest Nature
+IVs: 31 HP / 0 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Calm Mind
+- Hydro Pump
+- Ice Beam
+- Roar
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 240 HP / 212 SpD / 56 Spe
+Careful Nature
+- Taunt
+- Drill Peck
+- Roar
+- Spikes
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 248 HP / 56 SpD / 204 Spe
+Timid Nature
+- Thunderbolt
+- Explosion
+- Will-O-Wisp
+- Hypnosis
+
+Blissey @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 168 SpA / 88 Spe
+Modest Nature
+IVs: 31 HP / 0 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Fire Blast
+- Ice Beam
+- Soft-Boiled
+- Toxic
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 248 HP / 40 Def / 152 SpA / 68 Spe
+Modest Nature
+IVs: 31 HP / 2 Atk / 31 Def / 30 SpA / 31 SpD / 31 Spe
+- Psychic
+- Fire Punch
+- Hidden Power Grass
+- Calm Mind
+
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
+IVs: 31 HP / 30 Atk / 30 Def / 31 SpA / 30 SpD / 31 Spe
+- Aerial Ace
+- Earthquake
+- Hidden Power Bug
+- Rock Slide

@@ -1,0 +1,59 @@
+Salamence @ Choice Band
+Ability: Intimidate
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD / 31 Spe
+- Hidden Power Flying
+- Earthquake
+- Rock Slide
+- Brick Break
+
+Heracross @ Salac Berry
+Ability: Swarm
+EVs: 252 Atk / 4 SpD / 252 Spe
+Adamant Nature
+IVs: 30 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Megahorn
+- Rock Slide
+- Substitute
+- Swords Dance
+
+Magneton @ Magnet
+Ability: Magnet Pull
+EVs: 4 HP / 252 SpA / 252 Spe
+Modest Nature
+IVs: 31 HP / 2 Atk / 31 Def / 30 SpA / 31 SpD / 30 Spe
+- Thunderbolt
+- Hidden Power Fire
+- Toxic
+- Protect
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 192 HP / 252 SpA / 64 Spe
+Quiet Nature
+IVs: 31 HP / 30 Atk / 31 Def / 30 SpA / 31 SpD / 30 Spe
+- Meteor Mash
+- Hidden Power Fire
+- Psychic
+- Explosion
+
+Porygon2 @ Leftovers
+Ability: Trace
+EVs: 252 HP / 200 Def / 56 SpD
+Bold Nature
+IVs: 31 HP / 0 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Thunder
+- Ice Beam
+- Thunder Wave
+- Recover
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 40 HP / 216 SpA / 252 Spe
+Timid Nature
+IVs: 31 HP / 2 Atk / 30 Def / 31 SpA / 31 SpD / 31 Spe
+- Calm Mind
+- Giga Drain
+- Hidden Power Ice
+- Baton Pass

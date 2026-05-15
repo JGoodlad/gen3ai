@@ -1,0 +1,56 @@
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 104 SpA / 152 Spe
+Modest Nature
+IVs: 31 HP / 0 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Hydro Pump
+- Ice Beam
+- Roar
+- Calm Mind
+
+Moltres @ Leftovers
+Ability: Pressure
+EVs: 4 HP / 252 SpA / 252 Spe
+Modest Nature
+IVs: 31 HP / 2 Atk / 31 Def / 30 SpA / 31 SpD / 31 Spe
+- Fire Blast
+- Hidden Power Grass
+- Will-O-Wisp
+- Agility
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 184 HP / 12 Atk / 224 SpA / 88 Spe
+Quiet Nature
+- Brick Break
+- Ice Beam
+- Pursuit
+- Fire Blast
+
+Cloyster @ Leftovers
+Ability: Shell Armor
+EVs: 72 HP / 244 SpD / 192 Spe
+Timid Nature
+- Rapid Spin
+- Ice Beam
+- Explosion
+- Spikes
+
+Metagross @ Choice Band
+Ability: Clear Body
+EVs: 112 HP / 208 Atk / 188 Spe
+Adamant Nature
+- Meteor Mash
+- Earthquake
+- Rock Slide
+- Explosion
+
+Blissey @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 232 SpA / 24 Spe
+Modest Nature
+IVs: 31 HP / 0 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Seismic Toss
+- Ice Beam
+- Toxic
+- Soft-Boiled

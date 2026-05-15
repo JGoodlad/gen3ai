@@ -1,0 +1,57 @@
+Suicune @ Leftovers  
+Ability: Pressure  
+EVs: 252 HP / 228 SpA / 28 Spe  
+Modest Nature  
+IVs: 0 Atk  
+- Substitute  
+- Calm Mind  
+- Surf  
+- Ice Beam  
+
+Tyranitar @ Leftovers  
+Ability: Sand Stream  
+EVs: 184 HP / 104 Atk / 220 Spe  
+Adamant Nature  
+- Dragon Dance  
+- Rock Slide  
+- Earthquake  
+- Double-Edge  
+
+Metagross @ Leftovers  
+Ability: Clear Body  
+EVs: 168 HP / 16 Def / 252 SpA / 72 Spe  
+Rash Nature  
+- Earthquake  
+- Thunder Punch  
+- Hidden Power [Grass]  
+- Explosion  
+
+Raikou @ Leftovers  
+Ability: Pressure  
+EVs: 4 HP / 252 SpA / 252 Spe  
+Timid Nature  
+IVs: 2 Atk / 30 SpA  
+- Substitute  
+- Calm Mind  
+- Thunderbolt  
+- Hidden Power [Grass]  
+
+Charizard @ Leftovers  
+Ability: Blaze  
+EVs: 252 SpA / 4 SpD / 252 Spe  
+Timid Nature  
+IVs: 2 Atk / 30 SpA  
+- Dragon Claw  
+- Flamethrower  
+- Hidden Power [Grass]  
+- Beat Up  
+
+Salamence @ Leftovers  
+Ability: Intimidate  
+EVs: 180 Atk / 212 SpD / 116 Spe  
+Adamant Nature  
+IVs: 30 SpA / 30 SpD / 30 Spe  
+- Dragon Dance  
+- Rock Slide  
+- Brick Break  
+- Hidden Power [Flying]

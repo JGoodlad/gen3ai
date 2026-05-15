@@ -1,0 +1,57 @@
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 32 Atk / 224 SpA / 252 Spe
+Naive Nature
+IVs: 31 HP / 31 Atk / 30 Def / 30 SpA / 31 SpD / 31 Spe
+- Fire Blast
+- Hidden Power Grass
+- Ice Beam
+- Brick Break
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 108 Def / 252 SpA / 148 Spe
+Rash Nature
+- Hydro Pump
+- Ice Beam
+- Earthquake
+- Focus Punch
+
+Jolteon @ Leftovers
+Ability: Volt Absorb
+EVs: 76 HP / 180 SpA / 252 Spe
+Timid Nature
+IVs: 31 HP / 2 Atk / 31 Def / 30 SpA / 31 SpD / 31 Spe
+- Thunderbolt
+- Hidden Power Grass
+- Roar
+- Thunder Wave
+
+Cloyster @ Leftovers
+Ability: Shell Armor
+EVs: 72 HP / 244 SpD / 192 Spe
+Timid Nature
+IVs: 31 HP / 30 Atk / 31 Def / 30 SpA / 31 SpD / 31 Spe
+- Surf
+- Hidden Power Grass
+- Explosion
+- Spikes
+
+Metagross @ Salac Berry
+Ability: Clear Body
+EVs: 168 HP / 128 Atk / 8 Def / 204 Spe
+Jolly Nature
+- Meteor Mash
+- Earthquake
+- Rock Slide
+- Explosion
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 8 HP / 248 SpA / 252 Spe
+Hasty Nature
+IVs: 31 HP / 30 Atk / 31 Def / 30 SpA / 31 SpD / 31 Spe
+- Explosion
+- Fire Punch
+- Ice Punch
+- Hidden Power Grass

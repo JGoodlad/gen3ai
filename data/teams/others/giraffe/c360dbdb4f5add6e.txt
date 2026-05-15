@@ -1,0 +1,56 @@
+Zapdos @ Leftovers  
+Ability: Pressure  
+EVs: 252 SpA / 4 SpD / 252 Spe  
+Timid Nature  
+IVs: 2 Atk / 30 Def  
+- Thunder Wave  
+- Toxic  
+- Thunderbolt  
+- Hidden Power [Ice]  
+
+Magneton @ Magnet  
+Ability: Magnet Pull  
+EVs: 4 HP / 252 SpA / 252 Spe  
+Modest Nature  
+IVs: 0 Atk  
+- Rest  
+- Sleep Talk  
+- Toxic  
+- Thunderbolt  
+
+Swampert @ Leftovers  
+Ability: Torrent  
+EVs: 240 HP / 44 Atk / 136 Def / 80 SpD / 8 Spe  
+Relaxed Nature  
+- Rest  
+- Curse  
+- Earthquake  
+- Ice Beam  
+
+Metagross @ Leftovers  
+Ability: Clear Body  
+EVs: 168 HP / 180 Atk / 16 Def / 52 SpA / 92 Spe  
+Naughty Nature  
+- Meteor Mash  
+- Earthquake  
+- Hidden Power [Grass]  
+- Explosion  
+
+Raikou @ Leftovers  
+Ability: Pressure  
+EVs: 4 HP / 252 SpA / 252 Spe  
+Timid Nature  
+IVs: 2 Atk / 30 Def  
+- Substitute  
+- Calm Mind  
+- Thunderbolt  
+- Hidden Power [Ice]  
+
+Salamence @ Leftovers  
+Ability: Intimidate  
+EVs: 156 Atk / 212 SpD / 140 Spe  
+Adamant Nature  
+- Dragon Dance  
+- Earthquake  
+- Rock Slide  
+- Hidden Power [Flying]

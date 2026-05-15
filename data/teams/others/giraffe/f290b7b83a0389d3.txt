@@ -1,0 +1,55 @@
+Swampert @ Leftovers  
+Ability: Torrent  
+EVs: 240 HP / 252 SpA / 16 Spe  
+Quiet Nature  
+- Curse  
+- Earthquake  
+- Hydro Pump  
+- Ice Beam  
+
+Claydol @ Leftovers  
+Ability: Levitate  
+EVs: 252 HP / 100 Atk / 112 Def / 16 SpD / 28 Spe  
+Sassy Nature  
+- Rapid Spin  
+- Earthquake  
+- Psychic  
+- Explosion  
+
+Jirachi @ Leftovers  
+Ability: Serene Grace  
+EVs: 112 HP / 220 SpA / 176 Spe  
+Rash Nature  
+- Body Slam  
+- Fire Punch  
+- Hidden Power [Grass]  
+- Dynamic Punch  
+
+Tyranitar @ Leftovers  
+Ability: Sand Stream  
+EVs: 184 HP / 104 Atk / 4 SpD / 216 Spe  
+Adamant Nature  
+IVs: 30 SpD / 30 Spe  
+- Dragon Dance  
+- Earthquake  
+- Rock Slide  
+- Hidden Power [Bug]  
+
+Celebi @ Leftovers  
+Ability: Natural Cure  
+EVs: 192 HP / 4 Def / 136 SpA / 176 Spe  
+Modest Nature  
+IVs: 0 Atk  
+- Leech Seed  
+- Calm Mind  
+- Giga Drain  
+- Psychic  
+
+Charizard @ Leftovers  
+Ability: Blaze  
+EVs: 4 Atk / 252 SpA / 252 Spe  
+Mild Nature  
+- Dragon Claw  
+- Flamethrower  
+- Hidden Power [Grass]  
+- Brick Break

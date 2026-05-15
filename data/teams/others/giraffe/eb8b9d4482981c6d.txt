@@ -1,0 +1,55 @@
+Zapdos @ Leftovers  
+Ability: Pressure  
+EVs: 248 HP / 228 SpD / 32 Spe  
+Calm Nature  
+IVs: 0 Atk  
+- Rest  
+- Toxic  
+- Thunderbolt  
+- Rain Dance  
+
+Claydol @ Leftovers  
+Ability: Levitate  
+EVs: 252 HP / 112 Def / 136 SpD / 8 Spe  
+Sassy Nature  
+- Rapid Spin  
+- Earthquake  
+- Psychic  
+- Explosion  
+
+Metagross @ Leftovers  
+Ability: Clear Body  
+EVs: 168 HP / 16 Def / 252 SpA / 28 Spe  
+Rash Nature  
+- Meteor Mash  
+- Hidden Power [Fire]  
+- Psychic  
+- Explosion  
+
+Suicune @ Leftovers  
+Ability: Pressure  
+EVs: 252 HP  
+IVs: 0 Atk  
+- Rest  
+- Calm Mind  
+- Surf  
+- Roar  
+
+Blissey (F) @ Leftovers  
+Ability: Natural Cure  
+EVs: 252 Def / 252 SpA / 4 Spe  
+Modest Nature  
+IVs: 0 Atk  
+- Soft-Boiled  
+- Toxic  
+- Flamethrower  
+- Ice Beam  
+
+Salamence @ Leftovers  
+Ability: Intimidate  
+EVs: 4 Atk / 252 SpA / 252 Spe  
+Rash Nature  
+- Wish  
+- Dragon Claw  
+- Flamethrower  
+- Brick Break

@@ -1,0 +1,18 @@
+Zapdos  
+Ability: Pressure  
+
+Tyranitar  
+Ability: Sand Stream  
+
+Cloyster  
+Ability: Shell Armor  
+
+Jirachi @ Leftovers  
+Ability: Serene Grace  
+IVs: 0 Atk  
+
+Flygon  
+Ability: Levitate  
+
+Charizard  
+Ability: Blaze

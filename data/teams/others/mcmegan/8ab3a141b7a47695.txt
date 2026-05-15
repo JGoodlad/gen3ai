@@ -1,0 +1,55 @@
+Tyranitar @ Lum Berry  
+Ability: Sand Stream  
+EVs: 4 HP / 252 Atk / 252 Spe  
+Adamant Nature  
+- Dragon Dance  
+- Focus Punch  
+- Rock Slide  
+- Earthquake  
+
+Skarmory  
+Ability: Keen Eye  
+EVs: 248 HP / 248 SpD / 12 Spe  
+Careful Nature  
+- Spikes  
+- Roar  
+- Thief  
+- Protect  
+
+Salamence @ Leftovers  
+Ability: Intimidate  
+EVs: 76 HP / 252 Atk / 180 Spe  
+Adamant Nature  
+IVs: 30 SpA / 30 SpD / 30 Spe  
+- Hidden Power [Flying]  
+- Earthquake  
+- Rock Slide  
+- Dragon Dance  
+
+Metagross @ Leftovers  
+Ability: Clear Body  
+EVs: 252 HP / 56 Atk / 140 Def / 60 Spe  
+Adamant Nature  
+- Explosion  
+- Protect  
+- Meteor Mash  
+- Earthquake  
+
+Blissey (F) @ Leftovers  
+Ability: Natural Cure  
+EVs: 252 Def / 228 SpA / 28 Spe  
+Modest Nature  
+IVs: 0 Atk  
+- Thunderbolt  
+- Toxic  
+- Ice Beam  
+- Soft-Boiled  
+
+Claydol @ Leftovers  
+Ability: Levitate  
+EVs: 252 HP / 196 Atk / 60 Spe  
+Adamant Nature  
+- Earthquake  
+- Psychic  
+- Explosion  
+- Rapid Spin

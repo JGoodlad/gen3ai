@@ -1,0 +1,56 @@
+Metagross @ Leftovers  
+Ability: Clear Body  
+EVs: 168 HP / 16 Def / 252 SpA / 72 Spe  
+Rash Nature  
+- Meteor Mash  
+- Hidden Power [Fire]  
+- Psychic  
+- Explosion  
+
+Starmie @ Leftovers  
+Ability: Natural Cure  
+EVs: 4 HP / 252 SpA / 252 Spe  
+Timid Nature  
+IVs: 0 Atk  
+- Rapid Spin  
+- Surf  
+- Ice Beam  
+- Thunderbolt  
+
+Jirachi @ Leftovers  
+Ability: Serene Grace  
+EVs: 48 HP / 68 Atk / 252 SpA / 140 Spe  
+Rash Nature  
+- Body Slam  
+- Fire Punch  
+- Ice Punch  
+- Hidden Power [Fighting]  
+
+Jolteon @ Leftovers  
+Ability: Volt Absorb  
+EVs: 8 HP / 248 SpA / 252 Spe  
+Timid Nature  
+IVs: 2 Atk / 30 SpA  
+- Substitute  
+- Thunderbolt  
+- Hidden Power [Grass]  
+- Baton Pass  
+
+Celebi @ Leftovers  
+Ability: Natural Cure  
+EVs: 192 HP / 4 Def / 176 SpA / 136 Spe  
+Modest Nature  
+IVs: 0 Atk  
+- Leech Seed  
+- Calm Mind  
+- Giga Drain  
+- Psychic  
+
+Charizard @ Leftovers  
+Ability: Blaze  
+EVs: 4 Atk / 252 SpA / 252 Spe  
+Mild Nature  
+- Dragon Claw  
+- Flamethrower  
+- Hidden Power [Grass]  
+- Focus Punch

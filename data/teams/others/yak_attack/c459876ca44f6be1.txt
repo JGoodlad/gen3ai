@@ -1,0 +1,58 @@
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 240 HP / 28 Def / 208 SpD / 32 Spe
+Calm Nature
+IVs: 31 HP / 2 Atk / 30 Def / 31 SpA / 31 SpD / 31 Spe
+- Thunderbolt
+- Hidden Power Ice
+- Thunder Wave
+- Baton Pass
+
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 8 HP / 248 Atk / 252 Spe
+Jolly Nature
+IVs: 31 HP / 30 Atk / 30 Def / 31 SpA / 30 SpD / 31 Spe
+- Aerial Ace
+- Earthquake
+- Hidden Power Bug
+- Beat Up
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 56 HP / 220 SpA / 232 Spe
+Timid Nature
+IVs: 31 HP / 2 Atk / 31 Def / 30 SpA / 31 SpD / 31 Spe
+- Calm Mind
+- Hydro Pump
+- Ice Beam
+- Hidden Power Grass
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 248 HP / 52 Def / 12 SpA / 196 Spe
+Timid Nature
+- Will-O-Wisp
+- Thunderbolt
+- Ice Punch
+- Explosion
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 40 Def / 108 SpA / 108 Spe
+Modest Nature
+IVs: 31 HP / 0 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Substitute
+- Thunder
+- Ice Punch
+- Calm Mind
+
+Tyranitar @ Lum Berry
+Ability: Sand Stream
+EVs: 244 Atk / 12 SpA / 252 Spe
+Naive Nature
+IVs: 31 HP / 31 Atk / 30 Def / 30 SpA / 31 SpD / 31 Spe
+- Dragon Dance
+- Rock Slide
+- Earthquake
+- Hidden Power Grass

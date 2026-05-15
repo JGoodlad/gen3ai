@@ -1,0 +1,57 @@
+Metagross @ Leftovers  
+Ability: Clear Body  
+EVs: 168 HP / 16 Def / 252 SpA / 72 Spe  
+Rash Nature  
+IVs: 30 Atk  
+- Meteor Mash  
+- Hidden Power [Fire]  
+- Psychic  
+- Explosion  
+
+Starmie @ Leftovers  
+Ability: Natural Cure  
+EVs: 4 HP / 252 SpA / 252 Spe  
+Timid Nature  
+IVs: 0 Atk  
+- Rapid Spin  
+- Surf  
+- Ice Beam  
+- Thunderbolt  
+
+Porygon2 @ Leftovers  
+Ability: Trace  
+EVs: 252 HP / 200 Def / 56 SpA  
+Bold Nature  
+IVs: 0 Atk  
+- Recover  
+- Toxic  
+- Ice Beam  
+- Thunderbolt  
+
+Tyranitar @ Leftovers  
+Ability: Sand Stream  
+EVs: 184 HP / 104 Atk / 220 Spe  
+Adamant Nature  
+- Dragon Dance  
+- Earthquake  
+- Rock Slide  
+- Double-Edge  
+
+Celebi @ Leftovers  
+Ability: Natural Cure  
+EVs: 192 HP / 176 SpA / 140 Spe  
+Modest Nature  
+IVs: 0 Atk  
+- Leech Seed  
+- Calm Mind  
+- Giga Drain  
+- Psychic  
+
+Charizard @ Leftovers  
+Ability: Blaze  
+EVs: 252 SpA / 4 SpD / 252 Spe  
+Mild Nature  
+- Substitute  
+- Flamethrower  
+- Hidden Power [Grass]  
+- Focus Punch

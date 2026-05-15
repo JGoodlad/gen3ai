@@ -1,0 +1,56 @@
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 16 HP / 104 Def / 252 SpA / 136 Spe
+Rash Nature
+- Dragon Claw
+- Fire Blast
+- Brick Break
+- Roar
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 232 HP / 60 Def / 216 SpA
+Modest Nature
+IVs: 31 HP / 0 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Crunch
+- Pursuit
+- Fire Blast
+- Counter
+
+Forretress @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 252 SpD / 4 Spe
+Careful Nature
+- Spikes
+- Earthquake
+- Explosion
+- Rapid Spin
+
+Blissey @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 252 Def / 4 SpD
+Bold Nature
+- Seismic Toss
+- Counter
+- Thunder Wave
+- Soft-Boiled
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 224 Def / 32 Spe
+Bold Nature
+IVs: 31 HP / 0 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Fire Punch
+- Toxic
+- Wish
+- Protect
+
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 4 HP / 252 Atk / 72 SpD / 180 Spe
+Jolly Nature
+IVs: 31 HP / 31 Atk / 30 Def / 30 SpA / 30 SpD / 30 Spe
+- Rock Slide
+- Earthquake
+- Double-Edge
+- Hidden Power Fighting

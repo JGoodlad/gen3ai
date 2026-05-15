@@ -1,0 +1,55 @@
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 8 HP / 236 SpA / 112 SpD / 152 Spe
+Modest Nature
+IVs: 31 HP / 31 Atk / 30 Def / 30 SpA / 31 SpD / 31 Spe
+- Dragon Claw
+- Fire Blast
+- Hidden Power Grass
+- Wish
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 216 Def / 52 Spe
+Bold Nature
+- Earthquake
+- Ice Beam
+- Protect
+- Refresh
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 252 SpD / 4 Spe
+Careful Nature
+- Drill Peck
+- Roar
+- Toxic
+- Spikes
+
+Magneton @ Magnet
+Ability: Magnet Pull
+EVs: 4 HP / 252 SpA / 252 Spe
+Modest Nature
+IVs: 31 HP / 2 Atk / 31 Def / 30 SpA / 31 SpD / 30 Spe
+- Thunderbolt
+- Hidden Power Fire
+- Thunder Wave
+- Toxic
+
+Blissey @ Leftovers
+Ability: Natural Cure
+EVs: 20 HP / 252 Def / 216 SpA / 20 Spe
+Modest Nature
+- Thunder Wave
+- Seismic Toss
+- Ice Beam
+- Soft-Boiled
+
+Metagross @ Choice Band
+Ability: Clear Body
+EVs: 112 HP / 208 Atk / 188 Spe
+Adamant Nature
+- Meteor Mash
+- Earthquake
+- Rock Slide
+- Explosion

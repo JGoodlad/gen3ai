@@ -1,0 +1,59 @@
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 248 HP / 228 SpD / 32 Spe
+Calm Nature
+IVs: 31 HP / 0 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Thunderbolt
+- Toxic
+- Thunder Wave
+- Rest
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 184 HP / 204 Atk / 120 Spe
+Adamant Nature
+IVs: 31 HP / 30 Atk / 30 Def / 31 SpA / 30 SpD / 31 Spe
+- Rock Slide
+- Earthquake
+- Focus Punch
+- Hidden Power Bug
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 248 HP / 216 SpD / 44 Spe
+Careful Nature
+IVs: 31 HP / 0 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Spikes
+- Whirlwind
+- Toxic
+- Taunt
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 240 HP / 100 Def / 136 SpD / 32 Spe
+Calm Nature
+IVs: 31 HP / 0 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Calm Mind
+- Psychic
+- Leech Seed
+- Recover
+
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 8 HP / 248 Atk / 252 Spe
+Jolly Nature
+IVs: 31 HP / 30 Atk / 30 Def / 31 SpA / 30 SpD / 31 Spe
+- Earthquake
+- Rock Slide
+- Hidden Power Bug
+- Aerial Ace
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 188 Def / 56 SpD / 24 Spe
+Bold Nature
+IVs: 31 HP / 0 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Surf
+- Toxic
+- Protect
+- Refresh

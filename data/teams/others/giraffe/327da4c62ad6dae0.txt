@@ -1,0 +1,55 @@
+Vaporeon @ Petaya Berry  
+Ability: Water Absorb  
+EVs: 16 HP / 252 Def / 176 SpA / 12 SpD / 52 Spe  
+Modest Nature  
+IVs: 0 Atk  
+- Substitute  
+- Hydro Pump  
+- Ice Beam  
+- Baton Pass  
+
+Tyranitar @ Leftovers  
+Ability: Sand Stream  
+EVs: 184 HP / 72 Atk / 252 Spe  
+Adamant Nature  
+- Dragon Dance  
+- Earthquake  
+- Rock Slide  
+- Double-Edge  
+
+Jirachi @ Leftovers  
+Ability: Serene Grace  
+EVs: 68 Atk / 252 SpA / 188 Spe  
+Mild Nature  
+- Body Slam  
+- Fire Punch  
+- Ice Punch  
+- Hidden Power [Fighting]  
+
+Gengar @ Leftovers  
+Ability: Levitate  
+EVs: 4 Atk / 252 SpA / 252 Spe  
+Hasty Nature  
+- Ice Punch  
+- Fire Punch  
+- Hidden Power [Grass]  
+- Explosion  
+
+Celebi @ Leftovers  
+Ability: Natural Cure  
+EVs: 192 HP / 8 Def / 252 SpA / 56 Spe  
+Modest Nature  
+IVs: 0 Atk  
+- Leech Seed  
+- Calm Mind  
+- Giga Drain  
+- Psychic  
+
+Charizard @ Leftovers  
+Ability: Blaze  
+EVs: 252 SpA / 4 SpD / 252 Spe  
+Mild Nature  
+- Substitute  
+- Flamethrower  
+- Hidden Power [Grass]  
+- Focus Punch

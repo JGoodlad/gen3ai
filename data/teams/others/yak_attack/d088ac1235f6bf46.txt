@@ -1,0 +1,58 @@
+Hariyama @ Leftovers
+Ability: Guts
+EVs: 228 Atk / 160 Def / 60 SpD / 60 Spe
+Adamant Nature
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 30 SpD / 30 Spe
+- Brick Break
+- Focus Punch
+- Knock Off
+- Hidden Power Bug
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 244 HP / 148 Def / 116 SpD
+Sassy Nature
+- Fire Punch
+- Body Slam
+- Wish
+- Protect
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 80 Def / 40 SpA / 136 Spe
+Bold Nature
+IVs: 31 HP / 2 Atk / 31 Def / 30 SpA / 31 SpD / 31 Spe
+- Psychic
+- Hidden Power Grass
+- Leech Seed
+- Recover
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 40 Def / 8 SpA / 32 SpD / 176 Spe
+Timid Nature
+IVs: 31 HP / 0 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Surf
+- Thunder Wave
+- Rapid Spin
+- Recover
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 252 HP / 224 Def / 32 Spe
+Bold Nature
+IVs: 31 HP / 0 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Flamethrower
+- Toxic
+- Wish
+- Protect
+
+Marowak @ Thick Club
+Ability: Rock Head
+EVs: 24 HP / 252 Atk / 4 SpD / 228 Spe
+Adamant Nature
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 30 SpD / 30 Spe
+- Earthquake
+- Rock Slide
+- Hidden Power Bug
+- Focus Punch

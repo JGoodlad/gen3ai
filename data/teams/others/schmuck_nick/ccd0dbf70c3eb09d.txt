@@ -1,0 +1,53 @@
+Swampert @ Leftovers  
+Ability: Torrent  
+EVs: 176 HP / 136 Atk / 156 SpA / 4 SpD / 36 Spe  
+Brave Nature  
+- Hydro Pump  
+- Earthquake  
+- Ice Beam  
+- Focus Punch  
+
+Breloom @ Leftovers  
+Ability: Effect Spore  
+EVs: 252 Atk / 4 SpD / 252 Spe  
+Jolly Nature  
+- Brick Break  
+- Hidden Power [Ghost]  
+- Mach Punch  
+- Spore  
+
+Arcanine @ Leftovers  
+Ability: Intimidate  
+EVs: 252 HP / 180 SpA / 36 SpD / 40 Spe  
+Quiet Nature  
+- Flamethrower  
+- Hidden Power [Grass]  
+- Extreme Speed  
+- Toxic  
+
+Snorlax @ Leftovers  
+Ability: Immunity  
+EVs: 80 HP / 124 Atk / 184 Def / 108 SpD / 12 Spe  
+Adamant Nature  
+- Body Slam  
+- Shadow Ball  
+- Focus Punch  
+- Self-Destruct  
+
+Gengar @ Leftovers  
+Ability: Levitate  
+EVs: 112 HP / 208 SpA / 188 Spe  
+Timid Nature  
+- Thunderbolt  
+- Ice Punch  
+- Will-O-Wisp  
+- Explosion  
+
+Claydol @ Leftovers  
+Ability: Levitate  
+EVs: 240 HP / 220 Atk / 32 SpD / 16 Spe  
+Sassy Nature  
+- Earthquake  
+- Psychic  
+- Rapid Spin  
+- Explosion

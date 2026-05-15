@@ -1,0 +1,17 @@
+Swampert  
+Ability: Torrent  
+
+Metagross  
+Ability: Clear Body  
+
+Gengar  
+Ability: Levitate  
+
+Tyranitar  
+Ability: Sand Stream  
+
+Jolteon  
+Ability: Volt Absorb  
+
+Salamence  
+Ability: Intimidate

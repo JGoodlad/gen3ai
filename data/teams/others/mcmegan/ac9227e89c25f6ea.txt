@@ -1,0 +1,57 @@
+Milobellus (Milotic) @ Leftovers  
+Ability: Marvel Scale  
+EVs: 248 HP / 224 Def / 36 Spe  
+Bold Nature  
+IVs: 0 Atk  
+- Surf  
+- Recover  
+- Refresh  
+- Toxic  
+
+Ronflex (Snorlax) @ Leftovers  
+Ability: Thick Fat  
+EVs: 184 HP / 164 Def / 136 SpD / 24 Spe  
+Careful Nature  
+- Curse  
+- Body Slam  
+- Sleep Talk  
+- Rest  
+
+Tyranocif (Tyranitar) @ Black Glasses  
+Ability: Sand Stream  
+EVs: 240 HP / 252 SpA / 16 Spe  
+Modest Nature  
+IVs: 0 Atk  
+- Crunch  
+- Pursuit  
+- Sunny Day  
+- Thunder Wave  
+
+Kaorine (Claydol) @ Leftovers  
+Ability: Levitate  
+EVs: 236 HP / 40 Atk / 136 Def / 96 Spe  
+Impish Nature  
+- Earthquake  
+- Explosion  
+- Rock Slide  
+- Rapid Spin  
+
+Triopikeur (Dugtrio) @ Choice Band  
+Ability: Arena Trap  
+EVs: 252 Atk / 4 SpA / 252 Spe  
+Lonely Nature  
+IVs: 30 SpD / 30 Spe  
+- Earthquake  
+- Hidden Power [Bug]  
+- Aerial Ace  
+- Pursuit  
+
+MagnÃ©ton (Magneton) @ Leftovers  
+Ability: Magnet Pull  
+EVs: 144 HP / 172 SpA / 192 Spe  
+Timid Nature  
+IVs: 2 Atk / 30 SpA / 30 Spe  
+- Thunderbolt  
+- Hidden Power [Fire]  
+- Toxic  
+- Protect

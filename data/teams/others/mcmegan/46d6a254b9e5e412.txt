@@ -1,0 +1,55 @@
+MÃ©talosse (Metagross) @ Leftovers  
+Ability: Clear Body  
+EVs: 244 HP / 48 Atk / 216 Def  
+Impish Nature  
+- Meteor Mash  
+- Earthquake  
+- Protect  
+- Explosion  
+
+Airmure (Skarmory) (M) @ Leftovers  
+Ability: Keen Eye  
+EVs: 248 HP / 248 SpD / 12 Spe  
+Careful Nature  
+- Spikes  
+- Drill Peck  
+- Roar  
+- Protect  
+
+Suicune @ Leftovers  
+Ability: Pressure  
+EVs: 252 HP / 240 Def / 16 Spe  
+Bold Nature  
+IVs: 0 Atk  
+- Roar  
+- Surf  
+- Calm Mind  
+- Rest  
+
+Kaorine (Claydol) @ Leftovers  
+Ability: Levitate  
+EVs: 252 HP / 112 Def / 16 SpA / 128 SpD  
+Careful Nature  
+- Explosion  
+- Rapid Spin  
+- Earthquake  
+- Psychic  
+
+Leuphorie (Blissey) (F) @ Leftovers  
+Ability: Natural Cure  
+EVs: 252 Def / 240 SpA / 16 Spe  
+Bold Nature  
+- Wish  
+- Seismic Toss  
+- Ice Beam  
+- Soft-Boiled  
+
+MagnÃ©ton (Magneton) @ Leftovers  
+Ability: Magnet Pull  
+EVs: 132 HP / 8 Def / 116 SpA / 252 Spe  
+Timid Nature  
+IVs: 2 Atk / 30 SpA / 30 Spe  
+- Thunderbolt  
+- Hidden Power [Fire]  
+- Thunder Wave  
+- Toxic

@@ -1,0 +1,57 @@
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 184 HP / 20 Atk / 216 SpA / 88 Spe
+Quiet Nature
+- Crunch
+- Pursuit
+- Rock Slide
+- Earthquake
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 252 SpD / 4 Spe
+Careful Nature
+- Drill Peck
+- Spikes
+- Roar
+- Protect
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 248 HP / 192 Def / 68 Spe
+Bold Nature
+IVs: 31 HP / 0 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Surf
+- Roar
+- Calm Mind
+- Rest
+
+Magneton @ Magnet
+Ability: Magnet Pull
+EVs: 240 HP / 212 SpA / 56 Spe
+Modest Nature
+IVs: 31 HP / 2 Atk / 31 Def / 30 SpA / 31 SpD / 30 Spe
+- Thunderbolt
+- Hidden Power Fire
+- Toxic
+- Thunder Wave
+
+Donphan @ Leftovers
+Ability: Sturdy
+EVs: 248 HP / 100 Def / 160 SpD
+Impish Nature
+IVs: 31 HP / 31 Atk / 30 Def / 31 SpA / 30 SpD / 30 Spe
+- Earthquake
+- Hidden Power Rock
+- Rapid Spin
+- Protect
+
+Blissey @ Leftovers
+Ability: Natural Cure
+EVs: 4 HP / 252 Def / 252 Spe
+Bold Nature
+IVs: 31 HP / 0 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Seismic Toss
+- Wish
+- Toxic
+- Soft-Boiled

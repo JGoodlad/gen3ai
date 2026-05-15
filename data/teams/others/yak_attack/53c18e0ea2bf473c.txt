@@ -1,0 +1,56 @@
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 240 HP / 244 SpD / 24 Spe
+Careful Nature
+- Drill Peck
+- Toxic
+- Roar
+- Spikes
+
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 8 HP / 248 Atk / 252 Spe
+Jolly Nature
+IVs: 31 HP / 30 Atk / 30 Def / 31 SpA / 30 SpD / 31 Spe
+- Earthquake
+- Rock Slide
+- Hidden Power Bug
+- Aerial Ace
+
+Blissey @ Leftovers
+Ability: Natural Cure
+EVs: 224 HP / 252 Def / 32 Spe
+Bold Nature
+- Seismic Toss
+- Ice Beam
+- Thunder Wave
+- Soft-Boiled
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 216 Atk / 32 SpA / 8 Spe
+Adamant Nature
+- Earthquake
+- Psychic
+- Refresh
+- Rapid Spin
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 32 Def / 224 SpD
+Calm Nature
+IVs: 31 HP / 0 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Thunderbolt
+- Toxic
+- Roar
+- Rest
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 120 Def / 92 SpA / 44 Spe
+Bold Nature
+IVs: 31 HP / 2 Atk / 31 Def / 30 SpA / 31 SpD / 30 Spe
+- Giga Drain
+- Leech Seed
+- Hidden Power Fire
+- Recover

@@ -1,0 +1,56 @@
+Blissey (F) @ Leftovers  
+Ability: Natural Cure  
+EVs: 248 HP / 252 Def / 8 Spe  
+Impish Nature  
+- Soft-Boiled  
+- Aromatherapy  
+- Thunder Wave  
+- Seismic Toss  
+
+Skarmory @ Leftovers  
+Ability: Keen Eye  
+EVs: 252 HP / 252 SpD / 4 Spe  
+Careful Nature  
+- Spikes  
+- Protect  
+- Drill Peck  
+- Roar  
+
+Misdreavus @ Leftovers  
+Ability: Levitate  
+EVs: 252 HP / 248 SpD / 8 Spe  
+Calm Nature  
+IVs: 0 Atk  
+- Rest  
+- Toxic  
+- Thunderbolt  
+- Perish Song  
+
+Zapdos @ Leftovers  
+Ability: Pressure  
+EVs: 248 HP / 228 SpD / 32 Spe  
+Calm Nature  
+IVs: 0 Atk  
+- Rest  
+- Sleep Talk  
+- Thunderbolt  
+- Roar  
+
+Flygon @ Leftovers  
+Ability: Levitate  
+EVs: 252 HP / 220 Def / 36 Spe  
+Impish Nature  
+- Rest  
+- Toxic  
+- Earthquake  
+- Rock Slide  
+
+Jirachi @ Leftovers  
+Ability: Serene Grace  
+EVs: 252 HP / 216 Def / 20 SpA / 20 Spe  
+Bold Nature  
+IVs: 0 Atk  
+- Wish  
+- Protect  
+- Toxic  
+- Fire Punch

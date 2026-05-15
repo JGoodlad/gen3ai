@@ -1,0 +1,57 @@
+Zapdos @ Leftovers  
+Ability: Pressure  
+EVs: 216 HP / 136 SpA / 156 Spe  
+Modest Nature  
+IVs: 1 Atk / 30 Spe  
+- Protect  
+- Toxic  
+- Thunderbolt  
+- Hidden Power [Ice]  
+
+Cloyster @ Leftovers  
+Ability: Shell Armor  
+EVs: 168 SpA / 244 SpD / 96 Spe  
+Modest Nature  
+- Spikes  
+- Rapid Spin  
+- Surf  
+- Explosion  
+
+Magneton @ Salac Berry  
+Ability: Magnet Pull  
+EVs: 4 HP / 252 SpA / 252 Spe  
+Timid Nature  
+IVs: 2 Atk / 30 Def  
+- Endure  
+- Toxic  
+- Thunderbolt  
+- Hidden Power [Ice]  
+
+Metagross @ Leftovers  
+Ability: Clear Body  
+EVs: 252 HP / 176 Atk / 64 Def / 16 Spe  
+Adamant Nature  
+IVs: 30 SpA / 30 Spe  
+- Toxic  
+- Meteor Mash  
+- Earthquake  
+- Explosion  
+
+Celebi @ Leftovers  
+Ability: Natural Cure  
+EVs: 192 HP / 8 Def / 168 SpA / 140 Spe  
+Modest Nature  
+IVs: 2 Atk / 30 Def  
+- Leech Seed  
+- Giga Drain  
+- Hidden Power [Ice]  
+- Psychic  
+
+Aerodactyl @ Choice Band  
+Ability: Rock Head  
+EVs: 4 HP / 252 Atk / 252 Spe  
+Jolly Nature  
+- Earthquake  
+- Rock Slide  
+- Hidden Power [Flying]  
+- Double-Edge

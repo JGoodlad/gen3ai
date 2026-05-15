@@ -1,0 +1,73 @@
+Smeargle  
+Ability: Own Tempo  
+
+Hariyama  
+Ability: Guts  
+IVs: 0 Atk  
+
+Jynx (F)  
+Ability: Oblivious  
+
+Porygon2  
+Ability: Trace  
+
+Regice  
+Ability: Clear Body  
+
+Medicham  
+Ability: Pure Power  
+
+Venusaur  
+Ability: Overgrow  
+
+Raikou  
+Ability: Pressure  
+
+Vaporeon  
+Ability: Water Absorb  
+
+Kingdra  
+Ability: Swift Swim  
+
+Machamp  
+Ability: Guts  
+
+Blaziken  
+Ability: Blaze  
+
+Ludicolo  
+Ability: Swift Swim  
+
+Weezing  
+Ability: Levitate  
+
+Glalie  
+Ability: Inner Focus  
+
+Steelix  
+Ability: Rock Head  
+
+Camerupt  
+Ability: Magma Armor  
+
+Marowak @ Thick Club  
+Ability: Rock Head  
+
+Houndoom  
+Ability: Flash Fire  
+IVs: 0 Atk  
+
+Misdreavus  
+Ability: Levitate  
+
+Roselia  
+Ability: Natural Cure  
+
+Regirock  
+Ability: Clear Body  
+
+Armaldo  
+Ability: Battle Armor  
+
+Donphan  
+Ability: Sturdy

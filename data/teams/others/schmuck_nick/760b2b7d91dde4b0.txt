@@ -1,0 +1,54 @@
+Heracross @ Leftovers  
+Ability: Guts  
+EVs: 248 HP / 124 Atk / 116 SpD / 20 Spe  
+Adamant Nature  
+- Megahorn  
+- Rock Slide  
+- Focus Punch  
+- Toxic  
+
+Magneton @ Magnet  
+Ability: Magnet Pull  
+EVs: 240 HP / 248 SpA / 20 Spe  
+Modest Nature  
+IVs: 2 Atk / 30 SpA / 30 Spe  
+- Thunderbolt  
+- Hidden Power [Fire]  
+- Thunder Wave  
+- Toxic  
+
+Tyranitar @ Leftovers  
+Ability: Sand Stream  
+EVs: 248 HP / 12 Atk / 160 SpA / 52 SpD / 36 Spe  
+Quiet Nature  
+- Rock Slide  
+- Crunch  
+- Pursuit  
+- Focus Punch  
+
+Swampert @ Leftovers  
+Ability: Torrent  
+EVs: 176 HP / 136 Atk / 156 SpA / 4 SpD / 36 Spe  
+Brave Nature  
+- Hydro Pump  
+- Earthquake  
+- Ice Beam  
+- Focus Punch  
+
+Flygon @ Leftovers  
+Ability: Levitate  
+EVs: 16 HP / 240 Atk / 252 Spe  
+Jolly Nature  
+- Earthquake  
+- Rock Slide  
+- Hidden Power [Bug]  
+- Substitute  
+
+Gyarados @ Leftovers  
+Ability: Intimidate  
+EVs: 4 HP / 252 Atk / 252 Spe  
+Jolly Nature  
+- Hidden Power [Flying]  
+- Earthquake  
+- Dragon Dance  
+- Substitute

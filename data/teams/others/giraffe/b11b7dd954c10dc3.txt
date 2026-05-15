@@ -1,0 +1,55 @@
+Metagross @ Choice Band  
+Ability: Clear Body  
+EVs: 188 HP / 252 Atk / 68 Spe  
+Adamant Nature  
+- Meteor Mash  
+- Earthquake  
+- Rock Slide  
+- Explosion  
+
+Swampert @ Leftovers  
+Ability: Torrent  
+EVs: 240 HP / 108 Def / 160 SpA  
+Relaxed Nature  
+- Curse  
+- Earthquake  
+- Surf  
+- Ice Beam  
+
+Tyranitar @ Leftovers  
+Ability: Sand Stream  
+EVs: 184 HP / 104 Atk / 220 Spe  
+Adamant Nature  
+- Dragon Dance  
+- Earthquake  
+- Rock Slide  
+- Double-Edge  
+
+Celebi @ Leftovers  
+Ability: Natural Cure  
+EVs: 252 HP / 100 SpA / 156 Spe  
+Modest Nature  
+IVs: 2 Atk / 30 SpA / 30 Spe  
+- Leech Seed  
+- Giga Drain  
+- Hidden Power [Fire]  
+- Psychic  
+
+Heracross @ Leftovers  
+Ability: Guts  
+EVs: 4 HP / 252 Atk / 252 Spe  
+Jolly Nature  
+- Swords Dance  
+- Megahorn  
+- Brick Break  
+- Rock Slide  
+
+Salamence @ Leftovers  
+Ability: Intimidate  
+EVs: 156 Atk / 212 SpD / 140 Spe  
+Adamant Nature  
+IVs: 30 SpA / 30 SpD / 30 Spe  
+- Dragon Dance  
+- Earthquake  
+- Rock Slide  
+- Hidden Power [Flying]

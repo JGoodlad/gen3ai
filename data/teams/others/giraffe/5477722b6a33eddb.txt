@@ -1,0 +1,55 @@
+Salamence @ Choice Band  
+Ability: Intimidate  
+EVs: 4 HP / 252 Atk / 252 Spe  
+Adamant Nature  
+- Earthquake  
+- Rock Slide  
+- Brick Break  
+- Hidden Power [Flying]  
+
+Tyranitar @ Leftovers  
+Ability: Sand Stream  
+EVs: 240 Atk / 16 SpA / 252 Spe  
+Naughty Nature  
+- Dragon Dance  
+- Earthquake  
+- Rock Slide  
+- Hidden Power [Grass]  
+
+Magneton @ Magnet  
+Ability: Magnet Pull  
+EVs: 4 HP / 252 SpA / 252 Spe  
+Modest Nature  
+IVs: 2 Atk / 30 SpA  
+- Thunder Wave  
+- Toxic  
+- Thunderbolt  
+- Hidden Power [Grass]  
+
+Jolteon @ Leftovers  
+Ability: Volt Absorb  
+EVs: 8 HP / 248 SpA / 252 Spe  
+Timid Nature  
+IVs: 2 Atk / 30 Def  
+- Substitute  
+- Thunderbolt  
+- Hidden Power [Ice]  
+- Baton Pass  
+
+Snorlax @ Leftovers  
+Ability: Immunity  
+EVs: 32 HP / 136 Atk / 152 Def / 172 SpD / 16 Spe  
+Adamant Nature  
+- Body Slam  
+- Earthquake  
+- Shadow Ball  
+- Self-Destruct  
+
+Swampert @ Leftovers  
+Ability: Torrent  
+EVs: 240 HP / 136 Def / 124 SpD / 8 Spe  
+Relaxed Nature  
+- Rest  
+- Curse  
+- Earthquake  
+- Ice Beam

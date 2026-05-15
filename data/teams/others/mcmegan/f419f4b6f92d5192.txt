@@ -1,0 +1,56 @@
+Foretress (Forretress) @ Leftovers  
+Ability: Sturdy  
+EVs: 252 HP / 8 Atk / 248 SpD  
+Sassy Nature  
+IVs: 30 SpD / 30 Spe  
+- Zap Cannon  
+- Hidden Power [Bug]  
+- Spikes  
+- Explosion  
+
+Airmure (Skarmory) @ Leftovers  
+Ability: Keen Eye  
+EVs: 248 HP / 248 SpD / 12 Spe  
+Careful Nature  
+- Spikes  
+- Roar  
+- Drill Peck  
+- Protect  
+
+Suicune @ Leftovers  
+Ability: Pressure  
+EVs: 252 HP / 240 Def / 16 Spe  
+Bold Nature  
+IVs: 0 Atk  
+- Roar  
+- Surf  
+- Calm Mind  
+- Rest  
+
+Kaorine (Claydol) @ Leftovers  
+Ability: Levitate  
+EVs: 252 HP / 176 Def / 52 SpA / 28 SpD  
+Relaxed Nature  
+- Earthquake  
+- Psychic  
+- Rest  
+- Rapid Spin  
+
+Leuphorie (Blissey) (F) @ Leftovers  
+Ability: Natural Cure  
+EVs: 252 Def / 252 SpA / 4 Spe  
+Bold Nature  
+IVs: 0 Atk  
+- Aromatherapy  
+- Ice Beam  
+- Soft-Boiled  
+- Seismic Toss  
+
+Triopikeur (Dugtrio) @ Choice Band  
+Ability: Arena Trap  
+EVs: 252 Atk / 4 SpD / 252 Spe  
+Jolly Nature  
+- Earthquake  
+- Hidden Power [Bug]  
+- Aerial Ace  
+- Screech

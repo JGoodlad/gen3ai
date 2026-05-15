@@ -1,0 +1,57 @@
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 200 HP / 12 Atk / 252 SpA / 44 Spe
+Quiet Nature
+- Rock Slide
+- Crunch
+- Fire Blast
+- Pursuit
+
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 8 HP / 208 Atk / 40 SpD / 252 Spe
+Jolly Nature
+IVs: 31 HP / 30 Atk / 30 Def / 31 SpA / 30 SpD / 31 Spe
+- Earthquake
+- Rock Slide
+- Aerial Ace
+- Hidden Power Bug
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 240 HP / 196 Def / 72 Spe
+Bold Nature
+IVs: 31 HP / 0 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Surf
+- Roar
+- Calm Mind
+- Rest
+
+Forretress @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 4 Def / 252 SpD
+Careful Nature
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 30 SpD / 30 Spe
+- Hidden Power Bug
+- Spikes
+- Rapid Spin
+- Explosion
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 240 HP / 244 SpD / 24 Spe
+Careful Nature
+- Protect
+- Drill Peck
+- Roar
+- Spikes
+
+Blissey @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 228 SpA / 28 Spe
+Bold Nature
+IVs: 31 HP / 0 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Seismic Toss
+- Ice Beam
+- Toxic
+- Soft-Boiled

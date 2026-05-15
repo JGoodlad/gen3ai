@@ -1,0 +1,54 @@
+Tyranitar @ Leftovers  
+Ability: Sand Stream  
+EVs: 184 HP / 108 Atk / 216 Spe  
+Adamant Nature  
+- Dragon Dance  
+- Earthquake  
+- Rock Slide  
+- Hidden Power [Grass]  
+
+Skarmory @ Leftovers  
+Ability: Keen Eye  
+EVs: 248 HP / 252 SpD / 8 Spe  
+Careful Nature  
+- Spikes  
+- Toxic  
+- Drill Peck  
+- Roar  
+
+Claydol @ Leftovers  
+Ability: Levitate  
+EVs: 252 HP / 96 Atk / 112 Def / 32 SpA / 16 SpD  
+Careful Nature  
+- Rapid Spin  
+- Earthquake  
+- Psychic  
+- Explosion  
+
+Swampert @ Leftovers  
+Ability: Torrent  
+EVs: 240 HP / 136 Def / 72 SpA / 44 SpD / 16 Spe  
+Relaxed Nature  
+- Protect  
+- Earthquake  
+- Hydro Pump  
+- Ice Beam  
+
+Jirachi @ Leftovers  
+Ability: Serene Grace  
+EVs: 252 HP / 120 Def / 104 SpD / 32 Spe  
+Calm Nature  
+IVs: 2 Atk / 30 SpA  
+- Wish  
+- Ice Punch  
+- Fire Punch  
+- Hidden Power [Grass]  
+
+Salamence @ Leftovers  
+Ability: Intimidate  
+EVs: 24 HP / 240 SpA / 64 SpD / 180 Spe  
+Mild Nature  
+- Dragon Claw  
+- Flamethrower  
+- Hidden Power [Grass]  
+- Brick Break

@@ -1,0 +1,54 @@
+Metagross @ Leftovers  
+Ability: Clear Body  
+EVs: 168 HP / 16 Def / 252 SpA / 72 Spe  
+Rash Nature  
+- Meteor Mash  
+- Hidden Power [Fire]  
+- Psychic  
+- Explosion  
+
+Jolteon @ Leftovers  
+Ability: Volt Absorb  
+EVs: 76 HP / 252 SpA / 180 Spe  
+Timid Nature  
+IVs: 2 Atk / 30 SpA  
+- Wish  
+- Thunderbolt  
+- Hidden Power [Grass]  
+- Baton Pass  
+
+Swampert @ Leftovers  
+Ability: Torrent  
+EVs: 240 HP / 252 SpA / 16 Spe  
+Quiet Nature  
+- Curse  
+- Earthquake  
+- Hydro Pump  
+- Ice Beam  
+
+Jirachi @ Leftovers  
+Ability: Serene Grace  
+EVs: 80 Atk / 252 SpA / 176 Spe  
+Rash Nature  
+- Body Slam  
+- Fire Punch  
+- Hidden Power [Grass]  
+- Dynamic Punch  
+
+Snorlax @ Leftovers  
+Ability: Thick Fat  
+EVs: 32 HP / 176 Atk / 112 Def / 172 SpD / 16 Spe  
+Adamant Nature  
+- Return  
+- Earthquake  
+- Shadow Ball  
+- Self-Destruct  
+
+Salamence @ Leftovers  
+Ability: Intimidate  
+EVs: 80 Atk / 244 SpA / 184 Spe  
+Rash Nature  
+- Dragon Claw  
+- Flamethrower  
+- Hidden Power [Grass]  
+- Brick Break

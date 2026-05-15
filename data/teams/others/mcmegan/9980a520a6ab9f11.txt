@@ -1,0 +1,58 @@
+Hariyama @ Leftovers  
+Ability: Guts  
+EVs: 96 Atk / 228 Def / 184 Spe  
+Adamant Nature  
+IVs: 30 SpD / 30 Spe  
+- Knock Off  
+- Cross Chop  
+- Hidden Power [Bug]  
+- Focus Punch  
+
+Airmure (Skarmory)  
+Ability: Keen Eye  
+EVs: 248 HP / 248 SpD / 12 Spe  
+Careful Nature  
+IVs: 0 Atk  
+- Protect  
+- Spikes  
+- Roar  
+- Thief  
+
+Staross (Starmie) @ Leftovers  
+Ability: Natural Cure  
+EVs: 252 HP / 40 Def / 8 SpA / 32 SpD / 176 Spe  
+Timid Nature  
+IVs: 0 Atk  
+- Thunder Wave  
+- Surf  
+- Rapid Spin  
+- Recover  
+
+Jirachi @ Leftovers  
+Ability: Serene Grace  
+EVs: 236 HP / 96 Def / 176 Spe  
+Bold Nature  
+IVs: 0 Atk  
+- Calm Mind  
+- Wish  
+- Protect  
+- Psychic  
+
+Leuphorie (Blissey) (F) @ Leftovers  
+Ability: Natural Cure  
+EVs: 252 Def / 240 SpA / 16 Spe  
+Bold Nature  
+IVs: 0 Atk  
+- Soft-Boiled  
+- Ice Beam  
+- Seismic Toss  
+- Aromatherapy  
+
+Triopikeur (Dugtrio) @ Choice Band  
+Ability: Arena Trap  
+EVs: 252 Atk / 4 SpD / 252 Spe  
+Jolly Nature  
+- Earthquake  
+- Hidden Power [Bug]  
+- Aerial Ace  
+- Screech

@@ -1,0 +1,56 @@
+Zapdos @ Leftovers  
+Ability: Pressure  
+EVs: 4 Def / 252 SpA / 252 Spe  
+Timid Nature  
+IVs: 2 Atk / 30 SpA  
+- Thunder  
+- Hidden Power [Grass]  
+- Substitute  
+- Baton Pass  
+
+Regice @ Leftovers  
+Ability: Clear Body  
+EVs: 208 HP / 236 SpA / 64 Spe  
+Modest Nature  
+- Ice Beam  
+- Thunder  
+- Rain Dance  
+- Explosion  
+
+Dugtrio @ Choice Band  
+Ability: Arena Trap  
+EVs: 44 HP / 104 Atk / 128 SpD / 232 Spe  
+Adamant Nature  
+IVs: 30 SpD / 30 Spe  
+- Earthquake  
+- Aerial Ace  
+- Hidden Power [Bug]  
+- Beat Up  
+
+Kingdra @ Leftovers  
+Ability: Swift Swim  
+EVs: 248 HP / 244 SpA / 16 Spe  
+Modest Nature  
+IVs: 0 Atk  
+- Surf  
+- Ice Beam  
+- Rain Dance  
+- Substitute  
+
+Breloom @ Leftovers  
+Ability: Effect Spore  
+EVs: 252 Atk / 4 SpD / 252 Spe  
+Jolly Nature  
+- Brick Break  
+- Hidden Power [Ghost]  
+- Focus Punch  
+- Spore  
+
+Metagross @ Leftovers  
+Ability: Clear Body  
+EVs: 248 HP / 136 Atk / 12 Def / 88 SpD / 24 Spe  
+Adamant Nature  
+- Meteor Mash  
+- Earthquake  
+- Rock Slide  
+- Explosion

@@ -1,0 +1,57 @@
+Metagross @ Lum Berry
+Ability: Clear Body
+EVs: 168 HP / 120 Atk / 8 Def / 212 Spe
+Naive Nature
+IVs: 31 HP / 30 Atk / 31 Def / 30 SpA / 31 SpD / 31 Spe
+- Meteor Mash
+- Earthquake
+- Hidden Power Grass
+- Explosion
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 8 HP / 248 SpA / 252 Spe
+Hasty Nature
+- Explosion
+- Thunderbolt
+- Ice Punch
+- Hypnosis
+
+Blissey @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 152 SpA / 104 Spe
+Modest Nature
+- Toxic
+- Seismic Toss
+- Ice Beam
+- Soft-Boiled
+
+Cloyster @ Leftovers
+Ability: Shell Armor
+EVs: 72 HP / 244 SpD / 192 Spe
+Timid Nature
+IVs: 31 HP / 31 Atk / 30 Def / 30 SpA / 31 SpD / 31 Spe
+- Surf
+- Hidden Power Grass
+- Explosion
+- Spikes
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 32 Atk / 224 SpA / 252 Spe
+Naive Nature
+IVs: 31 HP / 31 Atk / 30 Def / 30 SpA / 31 SpD / 31 Spe
+- Fire Blast
+- Hidden Power Grass
+- Ice Beam
+- Brick Break
+
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 76 HP / 252 Atk / 180 Spe
+Jolly Nature
+IVs: 31 HP / 31 Atk / 30 Def / 30 SpA / 30 SpD / 30 Spe
+- Double-Edge
+- Rock Slide
+- Earthquake
+- Hidden Power Fighting

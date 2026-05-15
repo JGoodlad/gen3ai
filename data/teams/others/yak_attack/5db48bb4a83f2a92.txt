@@ -1,0 +1,56 @@
+Swampert @ Salac Berry
+Ability: Torrent
+EVs: 4 Def / 252 SpA / 252 Spe
+Timid Nature
+- Hydro Pump
+- Ice Beam
+- Substitute
+- Endeavor
+
+Metagross @ Lum Berry
+Ability: Clear Body
+EVs: 120 HP / 252 Atk / 136 Spe
+Adamant Nature
+- Meteor Mash
+- Earthquake
+- Agility
+- Explosion
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 80 HP / 252 Atk / 136 Def / 4 SpD / 36 Spe
+Adamant Nature
+- Body Slam
+- Shadow Ball
+- Focus Punch
+- Self-Destruct
+
+Magneton @ Magnet
+Ability: Magnet Pull
+EVs: 4 HP / 252 SpA / 252 Spe
+Modest Nature
+IVs: 31 HP / 2 Atk / 31 Def / 30 SpA / 31 SpD / 30 Spe
+- Thunderbolt
+- Hidden Power Fire
+- Toxic
+- Protect
+
+Gyarados @ Leftovers
+Ability: Intimidate
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 31 HP / 31 Atk / 31 Def / 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Hidden Power Flying
+- Earthquake
+- Double-Edge
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 200 HP / 252 SpA / 56 Spe
+Modest Nature
+IVs: 31 HP / 2 Atk / 31 Def / 30 SpA / 31 SpD / 31 Spe
+- Crunch
+- Ice Beam
+- Pursuit
+- Hidden Power Grass

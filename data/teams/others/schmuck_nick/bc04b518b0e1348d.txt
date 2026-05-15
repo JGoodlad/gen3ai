@@ -1,0 +1,49 @@
+Tyranitar  
+Ability: Sand Stream  
+
+Skarmory  
+Ability: Keen Eye  
+
+Metagross  
+Ability: Clear Body  
+
+Zapdos  
+Ability: Pressure  
+
+Gengar  
+Ability: Levitate  
+
+Swampert  
+Ability: Torrent  
+
+Jirachi  
+Ability: Serene Grace  
+
+Blissey (F)  
+Ability: Natural Cure  
+
+Salamence  
+Ability: Intimidate  
+
+Celebi  
+Ability: Natural Cure  
+
+Suicune  
+Ability: Pressure  
+
+Claydol  
+Ability: Levitate  
+
+Aerodactyl  
+Ability: Rock Head  
+
+Dugtrio  
+Ability: Arena Trap  
+IVs: 0 Atk  
+
+Starmie  
+Ability: Natural Cure  
+IVs: 0 Atk  
+
+Snorlax  
+Ability: Immunity

@@ -1,0 +1,54 @@
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 144 HP / 96 Atk / 132 Def / 136 SpD
+Careful Nature
+- Curse
+- Return
+- Earthquake
+- Rest
+
+Forretress @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 4 Def / 252 SpD
+Careful Nature
+- Counter
+- Earthquake
+- Rapid Spin
+- Spikes
+
+Metagross @ Choice Band
+Ability: Clear Body
+EVs: 112 HP / 208 Atk / 188 Spe
+Adamant Nature
+- Meteor Mash
+- Earthquake
+- Rock Slide
+- Explosion
+
+Salamence @ Choice Band
+Ability: Intimidate
+EVs: 244 Atk / 12 Def / 252 Spe
+Adamant Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD / 31 Spe
+- Brick Break
+- Earthquake
+- Hidden Power Flying
+- Rock Slide
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+- Hydro Pump
+- Ice Beam
+- Rapid Spin
+- Thunderbolt
+
+Umbreon @ Leftovers
+Ability: Synchronize
+EVs: 252 HP / 104 Def / 88 SpA / 56 SpD / 8 Spe
+Bold Nature
+- Protect
+- Pursuit
+- Toxic
+- Wish

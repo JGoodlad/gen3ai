@@ -1,0 +1,29 @@
+[
+  {
+    "name": "Yak Attack",
+    "url": "https://pokepast.es/aed6c2ad0c5c2593",
+    "directory": "data/teams/others/yak_attack",
+    "teams_count": 1122
+  },
+  {
+    "name": "McMegan",
+    "url": "https://pokepast.es/fafdde1bde1b139b",
+    "directory": "data/teams/others/mcmegan",
+    "teams_count": 36
+  },
+  {
+    "name": "Schmuck Nick",
+    "url": "https://pokepast.es/a284a3cd20490a94",
+    "directory": "data/teams/others/schmuck_nick",
+    "teams_count": 21
+  },
+  {
+    "name": "Giraffe",
+    "urls": [
+      "https://pokepast.es/aeb9b0463613fef0",
+      "https://pokepast.es/d75f47ad30d08853"
+    ],
+    "directory": "data/teams/others/giraffe",
+    "teams_count": 396
+  }
+]

@@ -1,0 +1,54 @@
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 248 HP / 124 Def / 40 SpA / 96 Spe
+Relaxed Nature
+- Earthquake
+- Ice Beam
+- Hydro Pump
+- Protect
+
+Forretress @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 4 Def / 252 SpD
+Careful Nature
+- Spikes
+- Rapid Spin
+- Earthquake
+- Explosion
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 184 HP / 220 SpA / 104 Spe
+Modest Nature
+- Crunch
+- Pursuit
+- Fire Blast
+- Roar
+
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 8 HP / 252 Atk / 20 SpD / 228 Spe
+Adamant Nature
+IVs: 31 HP / 30 Atk / 30 Def / 31 SpA / 30 SpD / 31 Spe
+- Earthquake
+- Rock Slide
+- Aerial Ace
+- Hidden Power Bug
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 248 HP / 52 Def / 112 SpD / 96 Spe
+Timid Nature
+- Thunderbolt
+- Ice Punch
+- Will-O-Wisp
+- Taunt
+
+Blissey @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 168 SpA / 88 Spe
+Modest Nature
+- Fire Blast
+- Seismic Toss
+- Soft-Boiled
+- Toxic

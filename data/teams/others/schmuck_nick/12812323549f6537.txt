@@ -1,0 +1,69 @@
+167,186,249,273 (Smeargle)  
+Ability: Own Tempo  
+
+167,186,249,273 (Claydol)  
+Ability: Levitate  
+
+158,176,239,262 (Breloom)  
+Ability: Effect Spore  
+
+158,176,239,262 (Magneton)  
+Ability: Magnet Pull  
+
+158,176,239,262 (Cloyster)  
+Ability: Shell Armor  
+
+158,176,239,262 (Metagross)  
+Ability: Clear Body  
+
+158,176,239,262 (Skarmory)  
+Ability: Keen Eye  
+
+158,176,239,262 (Ludicolo)  
+Ability: Swift Swim  
+
+149,166,229,251 (Vaporeon)  
+Ability: Water Absorb  
+
+142,158,221,243 (Tyranitar)  
+Ability: Sand Stream  
+Quirky Nature  
+
+140,156,219,240 (Swampert)  
+Ability: Torrent  
+
+140,156,219,240 (Porygon2)  
+Ability: Trace  
+
+140,156,219,240 (Weezing)  
+Ability: Levitate  
+
+131,146,209,229 (Machamp)  
+Ability: Guts  
+
+131,146,209,229 (Blissey) (F)  
+Ability: Natural Cure  
+
+122,136,199,218 (Regice)  
+Ability: Clear Body  
+
+122,136,199,218 (Hariyama)  
+Ability: Guts  
+IVs: 0 Atk  
+
+113,126,189,207 (Marowak) @ Thick Club  
+Ability: Rock Head  
+Quirky Nature  
+
+104,116,179,196 (Camerupt)  
+Ability: Magma Armor  
+
+104,116,179,196 (Forretress)  
+Ability: Sturdy  
+
+86,96,159,174 (Steelix)  
+Ability: Rock Head  
+
+86,96,159,174 (Snorlax)  
+Ability: Immunity  
+Hardy Nature

@@ -1,0 +1,56 @@
+Tyranitar @ Leftovers  
+Ability: Sand Stream  
+EVs: 248 HP / 104 Atk / 8 SpD / 148 Spe  
+Adamant Nature  
+IVs: 30 SpD / 30 Spe  
+- Dragon Dance  
+- Rock Slide  
+- Hidden Power [Bug]  
+- Focus Punch  
+
+Skarmory @ Leftovers  
+Ability: Keen Eye  
+EVs: 252 HP / 180 Def / 76 SpD  
+Impish Nature  
+- Spikes  
+- Protect  
+- Hidden Power [Steel]  
+- Roar  
+
+Claydol @ Leftovers  
+Ability: Levitate  
+EVs: 252 HP / 56 Atk / 112 Def / 32 SpA / 56 Spe  
+Careful Nature  
+- Rapid Spin  
+- Earthquake  
+- Psychic  
+- Explosion  
+
+Milotic @ Leftovers  
+Ability: Marvel Scale  
+EVs: 248 HP / 252 Def / 8 Spe  
+Bold Nature  
+IVs: 0 Atk  
+- Recover  
+- Refresh  
+- Toxic  
+- Surf  
+
+Jirachi @ Leftovers  
+Ability: Serene Grace  
+EVs: 252 HP / 40 Def / 60 SpA / 136 SpD / 20 Spe  
+Calm Nature  
+IVs: 0 Atk  
+- Wish  
+- Protect  
+- Toxic  
+- Fire Punch  
+
+Dugtrio @ Choice Band  
+Ability: Arena Trap  
+EVs: 252 Atk / 4 Def / 252 Spe  
+Jolly Nature  
+- Screech  
+- Earthquake  
+- Hidden Power [Bug]  
+- Aerial Ace

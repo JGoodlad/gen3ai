@@ -1,0 +1,55 @@
+Metagross @ Choice Band  
+Ability: Clear Body  
+EVs: 188 HP / 216 Atk / 104 Spe  
+Adamant Nature  
+- Meteor Mash  
+- Earthquake  
+- Brick Break  
+- Explosion  
+
+Magneton @ Magnet  
+Ability: Magnet Pull  
+EVs: 8 HP / 252 SpA / 24 SpD / 224 Spe  
+Modest Nature  
+IVs: 2 Atk / 30 SpA / 30 Spe  
+- Rest  
+- Toxic  
+- Thunderbolt  
+- Hidden Power [Fire]  
+
+Swampert @ Leftovers  
+Ability: Torrent  
+EVs: 240 HP / 40 Def / 180 SpD / 48 Spe  
+Sassy Nature  
+- Rest  
+- Curse  
+- Earthquake  
+- Ice Beam  
+
+Celebi @ Leftovers  
+Ability: Natural Cure  
+EVs: 252 HP / 220 SpA / 36 Spe  
+Modest Nature  
+IVs: 0 Atk  
+- Leech Seed  
+- Calm Mind  
+- Giga Drain  
+- Psychic  
+
+Snorlax @ Leftovers  
+Ability: Immunity  
+EVs: 32 HP / 164 Atk / 140 Def / 172 SpD  
+Adamant Nature  
+- Return  
+- Earthquake  
+- Shadow Ball  
+- Self-Destruct  
+
+Gyarados @ Leftovers  
+Ability: Intimidate  
+EVs: 60 HP / 252 Atk / 196 Spe  
+Jolly Nature  
+- Dragon Dance  
+- Earthquake  
+- Hidden Power [Ghost]  
+- Double-Edge

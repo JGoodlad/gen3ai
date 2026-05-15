@@ -1,0 +1,56 @@
+Slaking @ Choice Band
+Ability: Truant
+EVs: 4 HP / 252 Atk / 252 Spe
+Adamant Nature
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 30 SpD / 31 Spe
+- Return
+- Earthquake
+- Shadow Ball
+- Hidden Power Steel
+
+Vaporeon @ Leftovers
+Ability: Water Absorb
+EVs: 240 HP / 216 Def / 28 SpD / 24 Spe
+Bold Nature
+IVs: 31 HP / 0 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Surf
+- Wish
+- Protect
+- Roar
+
+Magneton @ Magnet
+Ability: Magnet Pull
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 31 HP / 2 Atk / 31 Def / 30 SpA / 31 SpD / 30 Spe
+- Thunderbolt
+- Hidden Power Fire
+- Toxic
+- Thunder Wave
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 240 HP / 252 Atk / 16 Spe
+Brave Nature
+- Earthquake
+- Explosion
+- Psychic
+- Rapid Spin
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 192 HP / 252 SpA / 64 Spe
+Quiet Nature
+- Meteor Mash
+- Pursuit
+- Psychic
+- Explosion
+
+Blissey @ Leftovers
+Ability: Natural Cure
+EVs: 224 HP / 252 Def / 32 Spe
+Impish Nature
+- Seismic Toss
+- Thunder Wave
+- Counter
+- Soft-Boiled

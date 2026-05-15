@@ -1,0 +1,57 @@
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 4 Def / 252 SpA / 252 Spe
+Timid Nature
+IVs: 31 HP / 30 Atk / 30 Def / 31 SpA / 31 SpD / 31 Spe
+- Thunderbolt
+- Substitute
+- Hidden Power Ice
+- Roar
+
+Smeargle @ Salac Berry
+Ability: Own Tempo
+EVs: 244 HP / 12 Def / 252 Spe
+Timid Nature
+- Substitute
+- Spore
+- Belly Drum
+- Baton Pass
+
+Aerodactyl @ Lum Berry
+Ability: Rock Head
+EVs: 172 HP / 252 Atk / 64 Def / 20 Spe
+Adamant Nature
+IVs: 31 HP / 31 Atk / 30 Def / 31 SpA / 30 SpD / 30 Spe
+- Double-Edge
+- Earthquake
+- Hidden Power Rock
+- Taunt
+
+Exploud @ Leftovers
+Ability: Soundproof
+EVs: 252 Atk / 36 Def / 220 Spe
+Jolly Nature
+- Return
+- Shadow Ball
+- Earthquake
+- Taunt
+
+Nidoking @ Lum Berry
+Ability: Poison Point
+EVs: 252 Atk / 20 Def / 236 Spe
+Adamant Nature
+IVs: 31 HP / 31 Atk / 30 Def / 31 SpA / 30 SpD / 30 Spe
+- Hidden Power Rock
+- Earthquake
+- Shadow Ball
+- Taunt
+
+Cradily @ Lum Berry
+Ability: Suction Cups
+EVs: 252 Atk / 4 Def / 252 Spe
+Jolly Nature
+IVs: 31 HP / 30 Atk / 30 Def / 31 SpA / 30 SpD / 31 Spe
+- Rock Slide
+- Substitute
+- Earthquake
+- Hidden Power Bug

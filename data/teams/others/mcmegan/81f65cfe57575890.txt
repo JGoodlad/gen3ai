@@ -1,0 +1,58 @@
+Vaporeon @ Leftovers  
+Ability: Water Absorb  
+EVs: 72 HP / 44 Def / 64 SpA / 76 SpD / 252 Spe  
+Timid Nature  
+IVs: 0 Atk  
+- Substitute  
+- Baton Pass  
+- Surf  
+- Roar  
+
+Porygon2 @ Leftovers  
+Ability: Trace  
+EVs: 224 HP / 116 Def / 168 Spe  
+Bold Nature  
+IVs: 0 Atk  
+- Ice Beam  
+- Thunderbolt  
+- Agility  
+- Recover  
+
+Zapdos @ Leftovers  
+Ability: Pressure  
+EVs: 4 Def / 252 SpA / 252 Spe  
+Timid Nature  
+IVs: 2 Atk / 30 SpA  
+- Thunderbolt  
+- Baton Pass  
+- Substitute  
+- Hidden Power [Grass]  
+
+Jirachi @ Leftovers  
+Ability: Serene Grace  
+EVs: 252 HP / 220 Def / 36 Spe  
+Impish Nature  
+- Wish  
+- Protect  
+- Hidden Power [Fighting]  
+- Body Slam  
+
+Celebi @ Leftovers  
+Ability: Natural Cure  
+EVs: 240 HP / 92 Def / 176 Spe  
+Bold Nature  
+IVs: 0 Atk  
+- Leech Seed  
+- Baton Pass  
+- Calm Mind  
+- Recover  
+
+Magneton @ Magnet  
+Ability: Magnet Pull  
+EVs: 252 SpA / 4 SpD / 252 Spe  
+Modest Nature  
+IVs: 2 Atk / 30 Def  
+- Substitute  
+- Thunderbolt  
+- Hidden Power [Ice]  
+- Toxic

@@ -1,0 +1,33 @@
+Flygon  
+Ability: Levitate  
+
+Magneton  
+Ability: Magnet Pull  
+
+Moltres  
+Ability: Pressure  
+
+Charizard  
+Ability: Blaze  
+
+Heracross  
+Ability: Guts  
+IVs: 0 Atk  
+
+Milotic  
+Ability: Marvel Scale  
+
+Forretress  
+Ability: Sturdy  
+
+Breloom  
+Ability: Effect Spore  
+
+Gyarados  
+Ability: Intimidate  
+
+Jolteon  
+Ability: Volt Absorb  
+
+Cloyster  
+Ability: Shell Armor

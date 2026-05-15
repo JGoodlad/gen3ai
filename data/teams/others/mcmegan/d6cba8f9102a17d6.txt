@@ -1,0 +1,56 @@
+Tyranocif (Tyranitar) @ Leftovers  
+Ability: Sand Stream  
+EVs: 40 HP / 252 SpA / 84 SpD / 132 Spe  
+Modest Nature  
+IVs: 2 Atk / 30 SpA  
+- Hidden Power [Grass]  
+- Crunch  
+- Pursuit  
+- Flamethrower  
+
+Airmure (Skarmory)  
+Ability: Keen Eye  
+EVs: 240 HP / 248 SpD / 20 Spe  
+Calm Nature  
+IVs: 0 Atk  
+- Protect  
+- Spikes  
+- Roar  
+- Thief  
+
+Staross (Starmie) @ Leftovers  
+Ability: Natural Cure  
+EVs: 252 HP / 40 Def / 8 SpA / 32 SpD / 176 Spe  
+Timid Nature  
+- Thunder Wave  
+- Surf  
+- Rapid Spin  
+- Recover  
+
+MÃ©talosse (Metagross) @ Leftovers  
+Ability: Clear Body  
+EVs: 244 HP / 216 Def / 48 Spe  
+Impish Nature  
+- Meteor Mash  
+- Earthquake  
+- Protect  
+- Explosion  
+
+Leuphorie (Blissey) (F) @ Leftovers  
+Ability: Natural Cure  
+EVs: 252 Def / 252 SpA / 4 SpD  
+Bold Nature  
+IVs: 22 Spe  
+- Sing  
+- Seismic Toss  
+- Ice Beam  
+- Soft-Boiled  
+
+Triopikeur (Dugtrio) (M) @ Choice Band  
+Ability: Arena Trap  
+EVs: 252 Atk / 4 SpD / 252 Spe  
+Jolly Nature  
+- Earthquake  
+- Hidden Power [Bug]  
+- Aerial Ace  
+- Screech

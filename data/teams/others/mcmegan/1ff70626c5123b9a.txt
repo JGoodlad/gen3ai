@@ -1,0 +1,57 @@
+Tyranocif (Tyranitar) @ Lum Berry  
+Ability: Sand Stream  
+EVs: 236 Atk / 8 Def / 12 SpA / 252 Spe  
+Hasty Nature  
+IVs: 30 Def / 30 SpA  
+- Dragon Dance  
+- Rock Slide  
+- Earthquake  
+- Hidden Power [Grass]  
+
+Airmure (Skarmory) @ Leftovers  
+Ability: Keen Eye  
+EVs: 120 HP / 252 SpD / 136 Spe  
+Careful Nature  
+- Roar  
+- Drill Peck  
+- Spikes  
+- Taunt  
+
+Voltali (Jolteon) @ Leftovers  
+Ability: Volt Absorb  
+EVs: 4 HP / 252 SpA / 252 Spe  
+Timid Nature  
+IVs: 2 Atk / 30 Def  
+- Thunderbolt  
+- Hidden Power [Ice]  
+- Roar  
+- Baton Pass  
+
+Laggron (Swampert) @ Leftovers  
+Ability: Torrent  
+EVs: 248 HP / 136 Def / 48 SpA / 44 SpD / 32 Spe  
+Bold Nature  
+- Surf  
+- Roar  
+- Focus Punch  
+- Protect  
+
+Ectoplasma (Gengar) @ Leftovers  
+Ability: Levitate  
+EVs: 168 HP / 164 SpD / 176 Spe  
+Timid Nature  
+IVs: 0 Atk  
+- Taunt  
+- Hypnosis  
+- Ice Punch  
+- Destiny Bond  
+
+Drattak (Salamence) @ Leftovers  
+Ability: Intimidate  
+EVs: 8 HP / 168 Atk / 192 SpD / 140 Spe  
+Adamant Nature  
+IVs: 30 SpA / 30 SpD / 30 Spe  
+- Dragon Dance  
+- Hidden Power [Flying]  
+- Earthquake  
+- Rock Slide

@@ -1,0 +1,56 @@
+Metagross @ Choice Band
+Ability: Clear Body
+EVs: 112 HP / 208 Atk / 188 Spe
+Adamant Nature
+- Meteor Mash
+- Earthquake
+- Rock Slide
+- Explosion
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 248 HP / 60 SpD / 200 Spe
+Timid Nature
+- Mean Look
+- Explosion
+- Will-O-Wisp
+- Hypnosis
+
+Heracross @ Salac Berry
+Ability: Swarm
+EVs: 252 Atk / 4 SpD / 252 Spe
+Adamant Nature
+IVs: 30 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Megahorn
+- Rock Slide
+- Substitute
+- Swords Dance
+
+Kingdra @ Leftovers
+Ability: Swift Swim
+EVs: 80 HP / 252 SpA / 176 Spe
+Modest Nature
+IVs: 31 HP / 2 Atk / 31 Def / 30 SpA / 31 SpD / 31 Spe
+- Rain Dance
+- Hydro Pump
+- Ice Beam
+- Hidden Power Grass
+
+Houndoom @ Leftovers
+Ability: Early Bird
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 31 HP / 2 Atk / 31 Def / 30 SpA / 31 SpD / 31 Spe
+- Pursuit
+- Fire Blast
+- Will-O-Wisp
+- Hidden Power Grass
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 80 HP / 252 Atk / 120 Def / 28 SpD / 28 Spe
+Adamant Nature
+- Body Slam
+- Shadow Ball
+- Curse
+- Self-Destruct

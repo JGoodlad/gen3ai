@@ -1,0 +1,55 @@
+Heracross @ Choice Band  
+Ability: Guts  
+EVs: 8 HP / 248 Atk / 252 Spe  
+Jolly Nature  
+- Megahorn  
+- Brick Break  
+- Rock Slide  
+- Facade  
+
+Magneton @ Leftovers  
+Ability: Magnet Pull  
+EVs: 252 HP / 236 SpA / 20 Spe  
+Modest Nature  
+IVs: 2 Atk / 30 SpA / 30 Spe  
+- Thunderbolt  
+- Hidden Power [Fire]  
+- Thunder Wave  
+- Toxic  
+
+Houndoom @ Leftovers  
+Ability: Flash Fire  
+EVs: 56 HP / 252 SpA / 200 Spe  
+Modest Nature  
+IVs: 2 Atk / 30 SpA  
+- Crunch  
+- Fire Blast  
+- Hidden Power [Grass]  
+- Pursuit  
+
+Donphan @ Leftovers  
+Ability: Sturdy  
+EVs: 252 HP / 196 Atk / 60 Spe  
+Adamant Nature  
+- Earthquake  
+- Rock Slide  
+- Toxic  
+- Rapid Spin  
+
+Snorlax @ Leftovers  
+Ability: Immunity  
+EVs: 80 HP / 124 Atk / 184 Def / 108 SpD / 12 Spe  
+Adamant Nature  
+- Body Slam  
+- Earthquake  
+- Focus Punch  
+- Self-Destruct  
+
+Gyarados @ Leftovers  
+Ability: Intimidate  
+EVs: 4 HP / 252 Atk / 252 Spe  
+Jolly Nature  
+- Hidden Power [Flying]  
+- Earthquake  
+- Dragon Dance  
+- Substitute

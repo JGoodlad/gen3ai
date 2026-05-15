@@ -1,0 +1,58 @@
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 248 HP / 64 SpD / 196 Spe
+Timid Nature
+- Thunderbolt
+- Ice Punch
+- Hypnosis
+- Explosion
+
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 8 HP / 228 Atk / 40 SpD / 232 Spe
+Adamant Nature
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 30 SpD / 30 Spe
+- Earthquake
+- Rock Slide
+- Aerial Ace
+- Hidden Power Bug
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 248 HP / 252 Def / 8 Spe
+Bold Nature
+IVs: 31 HP / 0 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Surf
+- Roar
+- Calm Mind
+- Rest
+
+Shiftry @ Leftovers
+Ability: Chlorophyll
+EVs: 180 HP / 40 Atk / 252 SpA / 36 Spe
+Modest Nature
+IVs: 31 HP / 30 Atk / 31 Def / 30 SpA / 31 SpD / 30 Spe
+- Solar Beam
+- Hidden Power Fire
+- Sunny Day
+- Explosion
+
+Exeggutor @ Leftovers
+Ability: Chlorophyll
+EVs: 20 Atk / 252 SpA / 236 Spe
+Modest Nature
+IVs: 31 HP / 30 Atk / 31 Def / 30 SpA / 31 SpD / 30 Spe
+- Solar Beam
+- Hidden Power Fire
+- Sunny Day
+- Explosion
+
+Houndoom @ Leftovers
+Ability: Early Bird
+EVs: 216 SpA / 100 SpD / 192 Spe
+Modest Nature
+IVs: 31 HP / 0 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Fire Blast
+- Solar Beam
+- Pursuit
+- Sunny Day

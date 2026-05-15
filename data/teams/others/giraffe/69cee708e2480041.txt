@@ -1,0 +1,54 @@
+Swampert @ Leftovers  
+Ability: Torrent  
+EVs: 240 HP / 136 Def / 124 SpA / 8 Spe  
+Relaxed Nature  
+- Protect  
+- Earthquake  
+- Hydro Pump  
+- Ice Beam  
+
+Tyranitar @ Leftovers  
+Ability: Sand Stream  
+EVs: 4 HP / 252 SpA / 252 Spe  
+Rash Nature  
+- Fire Blast  
+- Ice Beam  
+- Hidden Power [Grass]  
+- Brick Break  
+
+Cloyster @ Leftovers  
+Ability: Shell Armor  
+EVs: 168 SpA / 244 SpD / 96 Spe  
+Modest Nature  
+- Spikes  
+- Rapid Spin  
+- Ice Beam  
+- Explosion  
+
+Jolteon @ Leftovers  
+Ability: Volt Absorb  
+EVs: 252 SpA / 4 SpD / 252 Spe  
+Timid Nature  
+IVs: 2 Atk / 30 Def  
+- Toxic  
+- Thunderbolt  
+- Hidden Power [Ice]  
+- Baton Pass  
+
+Heracross @ Leftovers  
+Ability: Swarm  
+EVs: 252 Atk / 4 SpD / 252 Spe  
+Jolly Nature  
+- Swords Dance  
+- Megahorn  
+- Brick Break  
+- Rock Slide  
+
+Aerodactyl @ Choice Band  
+Ability: Rock Head  
+EVs: 4 HP / 252 Atk / 252 Spe  
+Jolly Nature  
+- Earthquake  
+- Rock Slide  
+- Hidden Power [Flying]  
+- Double-Edge

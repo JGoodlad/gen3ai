@@ -1,0 +1,57 @@
+Suicune @ Leftovers  
+Ability: Pressure  
+EVs: 252 HP / 188 SpA / 68 Spe  
+Modest Nature  
+IVs: 0 Atk  
+- Rest  
+- Calm Mind  
+- Surf  
+- Ice Beam  
+
+Metagross @ Choice Band  
+Ability: Clear Body  
+EVs: 188 HP / 252 Atk / 68 Spe  
+Adamant Nature  
+- Meteor Mash  
+- Earthquake  
+- Double-Edge  
+- Explosion  
+
+Jolteon @ Leftovers  
+Ability: Volt Absorb  
+EVs: 8 HP / 248 SpA / 252 Spe  
+Timid Nature  
+IVs: 2 Atk / 30 SpA  
+- Substitute  
+- Thunderbolt  
+- Hidden Power [Grass]  
+- Baton Pass  
+
+Snorlax @ Leftovers  
+Ability: Immunity  
+EVs: 32 HP / 176 Atk / 128 Def / 172 SpD  
+Adamant Nature  
+- Curse  
+- Return  
+- Shadow Ball  
+- Self-Destruct  
+
+Charizard @ Salac Berry  
+Ability: Blaze  
+EVs: 88 HP / 252 Atk / 16 SpD / 152 Spe  
+Lonely Nature  
+IVs: 30 SpA / 30 SpD / 30 Spe  
+- Belly Drum  
+- Hidden Power [Flying]  
+- Rock Slide  
+- Fire Blast  
+
+Gyarados @ Leftovers  
+Ability: Intimidate  
+EVs: 44 HP / 252 Atk / 212 Spe  
+Jolly Nature  
+IVs: 30 SpA / 30 SpD / 30 Spe  
+- Thunder Wave  
+- Dragon Dance  
+- Earthquake  
+- Hidden Power [Flying]

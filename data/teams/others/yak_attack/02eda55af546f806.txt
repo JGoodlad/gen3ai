@@ -1,0 +1,58 @@
+Heracross @ Choice Band
+Ability: Guts
+EVs: 252 Atk / 4 SpD / 252 Spe
+Adamant Nature
+- Focus Punch
+- Rock Slide
+- Megahorn
+- Brick Break
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 200 HP / 252 SpA / 56 Spe
+Modest Nature
+IVs: 31 HP / 2 Atk / 31 Def / 30 SpA / 31 SpD / 31 Spe
+- Crunch
+- Pursuit
+- Roar
+- Hidden Power Grass
+
+Magneton @ Magnet
+Ability: Magnet Pull
+EVs: 240 HP / 212 SpA / 56 Spe
+Modest Nature
+IVs: 31 HP / 2 Atk / 31 Def / 30 SpA / 31 SpD / 30 Spe
+- Thunderbolt
+- Hidden Power Fire
+- Toxic
+- Thunder Wave
+
+Flygon @ Choice Band
+Ability: Levitate
+EVs: 252 Atk / 4 Def / 252 Spe
+Jolly Nature
+IVs: 31 HP / 30 Atk / 30 Def / 31 SpA / 30 SpD / 31 Spe
+- Earthquake
+- Rock Slide
+- Hidden Power Bug
+- Gust
+
+Milotic @ Leftovers
+Ability: Marvel Scale
+EVs: 248 HP / 212 Def / 48 Spe
+Bold Nature
+IVs: 31 HP / 0 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Surf
+- Toxic
+- Refresh
+- Recover
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 248 HP / 36 Def / 92 SpA / 100 SpD / 32 Spe
+Calm Nature
+IVs: 31 HP / 2 Atk / 31 Def / 30 SpA / 31 SpD / 31 Spe
+- Hidden Power Grass
+- Baton Pass
+- Leech Seed
+- Recover

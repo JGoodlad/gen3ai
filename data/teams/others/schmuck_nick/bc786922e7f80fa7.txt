@@ -1,0 +1,75 @@
+Registeel  
+Ability: Clear Body  
+
+Dusclops  
+Ability: Pressure  
+
+Umbreon  
+Ability: Synchronize  
+
+Dragonite  
+Ability: Inner Focus  
+
+Jumpluff  
+Ability: Chlorophyll  
+
+Arcanine  
+Ability: Intimidate  
+
+Sceptile  
+Ability: Overgrow  
+
+Slaking  
+Ability: Truant  
+
+Scizor  
+Ability: Swarm  
+
+Lunatone  
+Ability: Levitate  
+
+Articuno  
+Ability: Pressure  
+
+Miltank (F)  
+Ability: Thick Fat  
+
+Lanturn  
+Ability: Volt Absorb  
+
+Alakazam  
+Ability: Synchronize  
+
+Wailord  
+Ability: Water Veil  
+
+Exeggutor  
+Ability: Chlorophyll  
+
+Golduck  
+Ability: Cloud Nine  
+IVs: 0 Atk  
+
+Rhydon  
+Ability: Rock Head  
+IVs: 0 Atk  
+
+Ninjask  
+Ability: Speed Boost  
+
+Solrock  
+Ability: Levitate  
+
+Mantine  
+Ability: Water Absorb  
+IVs: 0 Atk  
+
+Politoed  
+Ability: Damp  
+IVs: 0 Atk  
+
+Tauros (M)  
+Ability: Intimidate  
+
+Lapras  
+Ability: Water Absorb

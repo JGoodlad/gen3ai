@@ -1,0 +1,55 @@
+MÃ©talosse (Metagross) @ Salac Berry  
+Ability: Clear Body  
+EVs: 168 HP / 128 Atk / 8 Def / 204 Spe  
+Jolly Nature  
+- Meteor Mash  
+- Earthquake  
+- Hidden Power [Grass]  
+- Explosion  
+
+Ronflex (Snorlax) @ Leftovers  
+Ability: Immunity  
+EVs: 16 HP / 176 Atk / 120 Def / 160 SpD / 36 Spe  
+Adamant Nature  
+- Body Slam  
+- Earthquake  
+- Shadow Ball  
+- Self-Destruct  
+
+Tyranocif (Tyranitar) @ Lum Berry  
+Ability: Sand Stream  
+EVs: 4 HP / 252 Atk / 252 Spe  
+Jolly Nature  
+- Dragon Dance  
+- Rock Slide  
+- Earthquake  
+- Double-Edge  
+
+LÃ©viator (Gyarados) @ Leftovers  
+Ability: Intimidate  
+EVs: 252 Atk / 60 SpD / 196 Spe  
+Jolly Nature  
+- Dragon Dance  
+- Hidden Power [Rock]  
+- Double-Edge  
+- Earthquake  
+
+Voltali (Jolteon) @ Leftovers  
+Ability: Volt Absorb  
+EVs: 76 HP / 180 SpA / 252 Spe  
+Timid Nature  
+IVs: 2 Atk / 30 SpA  
+- Thunderbolt  
+- Thunder Wave  
+- Wish  
+- Hidden Power [Grass]  
+
+MagnÃ©ton (Magneton) @ Magnet  
+Ability: Magnet Pull  
+EVs: 4 HP / 252 SpA / 252 Spe  
+Timid Nature  
+IVs: 2 Atk / 30 SpA  
+- Thunderbolt  
+- Hidden Power [Grass]  
+- Thunder Wave  
+- Screech

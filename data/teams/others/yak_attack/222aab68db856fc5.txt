@@ -1,0 +1,56 @@
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 4 Atk / 252 SpA / 252 Spe
+Naive Nature
+IVs: 31 HP / 31 Atk / 30 Def / 30 SpA / 31 SpD / 31 Spe
+- Dragon Claw
+- Fire Blast
+- Hidden Power Grass
+- Brick Break
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 248 HP / 184 Def / 44 SpA / 32 Spe
+Bold Nature
+- Surf
+- Roar
+- Toxic
+- Protect
+
+Tyranitar @ Lum Berry
+Ability: Sand Stream
+EVs: 244 Atk / 12 SpA / 252 Spe
+Naive Nature
+IVs: 31 HP / 31 Atk / 30 Def / 30 SpA / 31 SpD / 31 Spe
+- Dragon Dance
+- Rock Slide
+- Earthquake
+- Hidden Power Grass
+
+Metagross @ Choice Band
+Ability: Clear Body
+EVs: 112 HP / 208 Atk / 188 Spe
+Adamant Nature
+- Meteor Mash
+- Earthquake
+- Rock Slide
+- Explosion
+
+Regice @ Leftovers
+Ability: Clear Body
+EVs: 248 HP / 176 Atk / 84 SpA
+Quiet Nature
+- Ice Beam
+- Thunderbolt
+- Thunder Wave
+- Explosion
+
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
+IVs: 31 HP / 30 Atk / 30 Def / 31 SpA / 30 SpD / 31 Spe
+- Double-Edge
+- Rock Slide
+- Earthquake
+- Hidden Power Bug

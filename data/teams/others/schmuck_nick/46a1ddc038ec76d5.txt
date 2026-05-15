@@ -1,0 +1,56 @@
+Raikou @ Leftovers  
+Ability: Pressure  
+EVs: 4 Def / 252 SpA / 252 Spe  
+Modest Nature  
+IVs: 2 Atk / 30 Def  
+- Thunderbolt  
+- Hidden Power [Ice]  
+- Roar  
+- Substitute  
+
+Dugtrio @ Choice Band  
+Ability: Arena Trap  
+EVs: 44 HP / 104 Atk / 128 SpD / 232 Spe  
+Adamant Nature  
+IVs: 30 SpD / 30 Spe  
+- Earthquake  
+- Aerial Ace  
+- Hidden Power [Bug]  
+- Beat Up  
+
+Zapdos @ Leftovers  
+Ability: Pressure  
+EVs: 252 HP / 104 Def / 44 SpA / 72 SpD / 36 Spe  
+Modest Nature  
+IVs: 2 Atk / 30 SpA  
+- Thunderbolt  
+- Hidden Power [Grass]  
+- Thunder Wave  
+- Baton Pass  
+
+Cloyster @ Leftovers  
+Ability: Shell Armor  
+EVs: 252 HP / 236 SpA / 20 Spe  
+Modest Nature  
+- Surf  
+- Spikes  
+- Rapid Spin  
+- Explosion  
+
+Machamp @ Leftovers  
+Ability: Guts  
+EVs: 252 HP / 136 Atk / 112 Def / 8 Spe  
+Adamant Nature  
+- Low Kick  
+- Earthquake  
+- Rock Slide  
+- Hidden Power [Ghost]  
+
+Snorlax @ Leftovers  
+Ability: Immunity  
+EVs: 80 HP / 176 Atk / 124 Def / 108 SpD / 20 Spe  
+Adamant Nature  
+- Body Slam  
+- Shadow Ball  
+- Focus Punch  
+- Self-Destruct

@@ -1,0 +1,56 @@
+Tyranocif (Tyranitar) @ Lum Berry  
+Ability: Sand Stream  
+EVs: 216 HP / 16 Def / 244 SpA / 32 Spe  
+Modest Nature  
+- Crunch  
+- Pursuit  
+- Fire Blast  
+- Brick Break  
+
+Foretress (Forretress) @ Leftovers  
+Ability: Sturdy  
+EVs: 252 HP / 8 Atk / 248 SpD  
+Careful Nature  
+IVs: 30 SpD / 30 Spe  
+- Rapid Spin  
+- Hidden Power [Bug]  
+- Spikes  
+- Explosion  
+
+Electhor (Zapdos) @ Leftovers  
+Ability: Pressure  
+EVs: 240 HP / 40 Def / 196 SpD / 32 Spe  
+Calm Nature  
+IVs: 0 Atk  
+- Thunderbolt  
+- Roar  
+- Rest  
+- Sleep Talk  
+
+Kaorine (Claydol) @ Leftovers  
+Ability: Levitate  
+EVs: 252 HP / 88 Atk / 112 Def / 16 SpA / 36 SpD / 4 Spe  
+Careful Nature  
+- Earthquake  
+- Psychic  
+- Rapid Spin  
+- Explosion  
+
+Jirachi @ Leftovers  
+Ability: Serene Grace  
+EVs: 252 HP / 224 Def / 32 Spe  
+Bold Nature  
+IVs: 0 Atk  
+- Fire Punch  
+- Toxic  
+- Wish  
+- Protect  
+
+PtÃ©ra (Aerodactyl) @ Choice Band  
+Ability: Rock Head  
+EVs: 4 HP / 252 Atk / 72 SpD / 180 Spe  
+Jolly Nature  
+- Rock Slide  
+- Earthquake  
+- Double-Edge  
+- Hidden Power [Fighting]

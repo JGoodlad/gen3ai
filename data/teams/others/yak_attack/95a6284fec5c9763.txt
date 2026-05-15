@@ -1,0 +1,57 @@
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 8 HP / 40 Atk / 192 SpA / 112 SpD / 156 Spe
+Mild Nature
+IVs: 31 HP / 31 Atk / 30 Def / 30 SpA / 31 SpD / 31 Spe
+- Brick Break
+- Rock Slide
+- Fire Blast
+- Hidden Power Grass
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 248 HP / 124 Def / 92 SpA / 44 SpD
+Relaxed Nature
+- Earthquake
+- Hydro Pump
+- Roar
+- Protect
+
+Jirachi @ Lum Berry
+Ability: Serene Grace
+EVs: 4 Atk / 252 SpA / 252 Spe
+Hasty Nature
+IVs: 31 HP / 31 Atk / 30 Def / 30 SpA / 31 SpD / 31 Spe
+- Dynamic Punch
+- Thunder
+- Ice Punch
+- Hidden Power Grass
+
+Blissey @ Leftovers
+Ability: Natural Cure
+EVs: 4 HP / 252 Def / 252 SpA
+Modest Nature
+- Seismic Toss
+- Ice Beam
+- Wish
+- Soft-Boiled
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 72 SpA / 184 Spe
+Modest Nature
+IVs: 31 HP / 0 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Substitute
+- Hydro Pump
+- Ice Beam
+- Calm Mind
+
+Tyranitar @ Choice Band
+Ability: Sand Stream
+EVs: 240 HP / 240 Atk / 28 Spe
+Adamant Nature
+IVs: 31 HP / 30 Atk / 30 Def / 31 SpA / 30 SpD / 31 Spe
+- Hidden Power Bug
+- Focus Punch
+- Earthquake
+- Rock Slide

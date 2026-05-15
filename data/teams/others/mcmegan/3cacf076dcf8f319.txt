@@ -1,0 +1,57 @@
+MÃ©talosse (Metagross) @ Leftovers  
+Ability: Clear Body  
+EVs: 252 HP / 136 Atk / 84 SpD / 36 Spe  
+Adamant Nature  
+- Meteor Mash  
+- Explosion  
+- Rock Slide  
+- Earthquake  
+
+Ronflex (Snorlax) @ Leftovers  
+Ability: Immunity  
+EVs: 16 HP / 200 Atk / 132 Def / 160 SpD  
+Adamant Nature  
+- Curse  
+- Shadow Ball  
+- Brick Break  
+- Self-Destruct  
+
+Tyranocif (Tyranitar) @ Lum Berry  
+Ability: Sand Stream  
+EVs: 252 Atk / 4 Def / 252 Spe  
+Hasty Nature  
+- Dragon Dance  
+- Rock Slide  
+- Earthquake  
+- Ice Beam  
+
+LÃ©viator (Gyarados) @ Leftovers  
+Ability: Intimidate  
+Happiness: 0  
+EVs: 252 Atk / 60 SpD / 196 Spe  
+Jolly Nature  
+IVs: 30 SpA / 30 SpD / 30 Spe  
+- Hidden Power [Flying]  
+- Substitute  
+- Earthquake  
+- Dragon Dance  
+
+Celebi @ Leftovers  
+Ability: Natural Cure  
+EVs: 152 Def / 180 SpA / 176 Spe  
+Modest Nature  
+IVs: 2 Atk / 30 Def  
+- Calm Mind  
+- Psychic  
+- Hidden Power [Ice]  
+- Giga Drain  
+
+MagnÃ©ton (Magneton) @ Magnet  
+Ability: Magnet Pull  
+EVs: 4 HP / 252 SpA / 252 Spe  
+Modest Nature  
+IVs: 2 Atk / 30 SpA / 30 Spe  
+- Thunderbolt  
+- Thunder Wave  
+- Hidden Power [Fire]  
+- Toxic

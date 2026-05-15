@@ -1,0 +1,54 @@
+Salamence @ Choice Band
+Ability: Intimidate
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD / 31 Spe
+- Brick Break
+- Earthquake
+- Hidden Power Flying
+- Rock Slide
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 248 HP / 172 Def / 40 SpA / 32 SpD / 16 Spe
+Bold Nature
+- Rapid Spin
+- Recover
+- Surf
+- Thunder Wave
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 236 Atk / 16 Def / 88 Spe
+Adamant Nature
+- Meteor Mash
+- Earthquake
+- Agility
+- Explosion
+
+Blissey @ Leftovers
+Ability: Natural Cure
+EVs: 4 HP / 252 Def / 252 SpA
+Modest Nature
+- Thunder Wave
+- Seismic Toss
+- Ice Beam
+- Soft-Boiled
+
+Heracross @ Leftovers
+Ability: Guts
+EVs: 144 HP / 180 SpD / 184 Spe
+Adamant Nature
+- Megahorn
+- Rock Slide
+- Sleep Talk
+- Focus Punch
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 248 HP / 52 Def / 208 Spe
+Timid Nature
+- Ice Punch
+- Hypnosis
+- Will-O-Wisp
+- Explosion

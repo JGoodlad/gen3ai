@@ -1,0 +1,58 @@
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 240 HP / 28 Def / 208 SpD / 32 Spe
+Calm Nature
+IVs: 31 HP / 2 Atk / 30 Def / 31 SpA / 31 SpD / 31 Spe
+- Thunderbolt
+- Hidden Power Ice
+- Agility
+- Baton Pass
+
+Dugtrio @ Salac Berry
+Ability: Arena Trap
+EVs: 100 HP / 248 Atk / 160 SpD
+Adamant Nature
+IVs: 31 HP / 30 Atk / 30 Def / 31 SpA / 30 SpD / 31 Spe
+- Earthquake
+- Endure
+- Beat Up
+- Hidden Power Bug
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 56 HP / 220 SpA / 232 Spe
+Timid Nature
+IVs: 31 HP / 0 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Calm Mind
+- Hydro Pump
+- Ice Beam
+- Roar
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 248 HP / 40 Def / 152 SpA / 68 Spe
+Modest Nature
+IVs: 31 HP / 2 Atk / 31 Def / 30 SpA / 31 SpD / 31 Spe
+- Psychic
+- Fire Punch
+- Hidden Power Grass
+- Calm Mind
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 248 HP / 52 Def / 12 SpA / 196 Spe
+Timid Nature
+- Will-O-Wisp
+- Thunderbolt
+- Ice Punch
+- Explosion
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 88 HP / 200 SpA / 220 Spe
+Timid Nature
+IVs: 31 HP / 2 Atk / 31 Def / 30 SpA / 31 SpD / 30 Spe
+- Baton Pass
+- Giga Drain
+- Hidden Power Fire
+- Calm Mind
