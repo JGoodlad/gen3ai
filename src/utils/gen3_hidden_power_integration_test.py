@@ -24,6 +24,7 @@ def get_showdown_hp(ivs):
     
     return json.loads(stdout)
 
+@pytest.mark.integration
 @pytest.mark.parametrize("hp_type, ivs", GEN3_HP_IVS.items())
 def test_hidden_power_mappings(hp_type, ivs):
     """

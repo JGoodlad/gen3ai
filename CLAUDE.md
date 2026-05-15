@@ -26,13 +26,30 @@ ln -s /home/goodlad/dev/gen3ai/deps/pokemon-showdown deps/pokemon-showdown
 
 ## Running Tests
 
+### Test file naming conventions
+
+| Pattern | Requires | Marker |
+|---|---|---|
+| `*_test.py` | Nothing — pure unit tests with mocks | — |
+| `*_integration_test.py` | `deps/pokemon-showdown` Node bridge (no live server) | `@pytest.mark.integration` |
+| `*_e2e_test.py` | Live Showdown server on localhost:8000 | `@pytest.mark.e2e` (scripts only, run directly) |
+
+### Unit tests only (default)
 ```bash
-export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 -m pytest src/agents/ src/utils/ -q
+export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 -m pytest src/ -m "not integration and not e2e" -q
 ```
 
-Two tests in `src/utils/` (hidden power bridge, teambuilder) require the Node.js `deps/pokemon-showdown` submodule and will fail in git worktrees or on machines without it. This is expected and pre-existing.
+### Unit + integration (requires symlinked deps/pokemon-showdown)
+```bash
+export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 -m pytest src/ -q
+```
 
-Test files follow the `*_test.py` naming convention (configured in `pytest.ini`).
+### E2E tests (run directly as scripts, require a running server)
+```bash
+# Start server first: npm run showdown
+export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 src/agents/action/fuzz_e2e_test.py
+export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 src/agents/action/telemetry_e2e_test.py
+```
 
 ---
 

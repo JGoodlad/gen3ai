@@ -1,6 +1,7 @@
 import pytest
 from utils.teambuilder import Gen3Teambuilder
 
+@pytest.mark.integration
 def test_gen3_teambuilder_initialization():
     team_str = """
     Tyranitar @ Leftovers
@@ -23,6 +24,7 @@ def test_gen3_teambuilder_initialization():
     # Packed team should contain Tyranitar (usually first part of packed string)
     assert "Tyranitar" in team
 
+@pytest.mark.integration
 def test_gen3_teambuilder_multiple_teams():
     team_1 = """Pikachu @ Light Ball
 Ability: Static
