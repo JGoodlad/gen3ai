@@ -32,6 +32,7 @@ from utils.team_loader import TeamLoader
 from agents.training.replay_recorder import ReplayCallback
 from agents.training.wrappers import MaskableAgentWrapper
 from agents.training.gen3_env import Gen3Env
+from agents.training.stall import StallConfig
 from utils.logging.levels import LogLevel
 
 from poke_env.player import RandomPlayer, SimpleHeuristicsPlayer
@@ -110,21 +111,21 @@ async def main():
 
     mappings = load_mappings()
     
-    def create_training_env_random(idx, stalls_dir=None):
+    def create_training_env_random(idx, stall_config=None):
         def _init():
             try:
                 ts = datetime.now().strftime('%H%M%S')
                 env_username = f"RLAgent{idx}{ts}"
                 opp_username = f"Opponent{idx}{ts}"
-                
+
                 env_log_level = log_level if idx == 0 else LogLevel.QUIET
-                
+
                 env = Gen3Env(
                     mappings,
                     battle_format=BATTLE_FORMAT,
                     team=trainee_teambuilder,
                     log_level=env_log_level,
-                    stalls_dir=stalls_dir,
+                    stall_config=stall_config,
                     server_configuration=LocalhostServerConfiguration,
                     account_configuration1=AccountConfiguration(env_username, "password"),
                 )
@@ -159,16 +160,15 @@ async def main():
     with open(os.path.join(model_dir, "command.txt"), "w") as f:
         f.write(" ".join(sys.argv))
         
-    stalls_dir = os.path.join(model_dir, "stalls")
-    os.makedirs(stalls_dir, exist_ok=True)
+    stall_cfg = StallConfig(output_dir=os.path.join(model_dir, "stalls"))
 
     # Running parallel environments
     n_envs = 1 if args.debug else args.n_envs
     EnvClass = DummyVecEnv if args.debug else SubprocVecEnv
-    
+
     print(f"Initializing {n_envs} environments via {EnvClass.__name__}...")
-    
-    env_factories = [create_training_env_random(i, stalls_dir=stalls_dir) for i in range(n_envs)]
+
+    env_factories = [create_training_env_random(i, stall_config=stall_cfg) for i in range(n_envs)]
     env = EnvClass(env_factories)
     # Note: env.seed() is deprecated in gymnasium VecEnv, use seed in reset or at init if supported.
     # But for reproducibility, we pass it to PPO.

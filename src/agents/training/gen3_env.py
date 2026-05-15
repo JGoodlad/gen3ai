@@ -1,7 +1,4 @@
-import sys
-import os
 import numpy as np
-from datetime import datetime
 from gymnasium import spaces
 from typing import Optional
 
@@ -15,16 +12,14 @@ from agents.training.reward_manager import Gen3RewardManager
 from agents.training.reward_function import RewardFunction
 from agents.training.battle_context import BattleContext, TurnDelta
 from agents.training.slot_registry import SlotRegistry
+from agents.training.stall import StallConfig, StallLogger
 from utils.logging.levels import LogLevel
-
-STALL_THRESHOLD = 250
 
 
 class Gen3Env(SinglesEnv):
-    def __init__(self, mappings, reward_fn: Optional[RewardFunction] = None, log_level=LogLevel.QUIET, stalls_dir=None, *args, **kwargs):
+    def __init__(self, mappings, reward_fn: Optional[RewardFunction] = None, log_level=LogLevel.QUIET, stall_config: Optional[StallConfig] = None, *args, **kwargs):
         self.log_level = log_level
-        self.stalls_dir = stalls_dir
-        self._stall_logged = False
+        self._stall_logger = StallLogger(stall_config)
         super().__init__(*args, **kwargs)
         self.observation_encoder = get_observation_encoder(mappings)
 
@@ -75,10 +70,8 @@ class Gen3Env(SinglesEnv):
             return action
 
         if battle is self.battle1:
-            if battle.turn >= STALL_THRESHOLD:
-                if not self._stall_logged:
-                    self._save_stall_html(battle, suffix="STALL")
-                    self._stall_logged = True
+            if battle.turn >= self._stall_logger.threshold:
+                self._stall_logger.log_once(battle, suffix="STALL")
                 return ForfeitBattleOrder()
 
             ctx = self._last_ctx
@@ -138,7 +131,7 @@ class Gen3Env(SinglesEnv):
                 self.agent1.save_replays = None
 
             self.reward_manager.reset()
-            self._stall_logged = False
+            self._stall_logger.reset()
             self._last_action = -1
             return super().reset(*args, **kwargs)
         except Exception as e:
@@ -147,18 +140,3 @@ class Gen3Env(SinglesEnv):
             traceback.print_exc()
             raise e
 
-    def _save_stall_html(self, battle, suffix=""):
-        if not self.stalls_dir:
-            return
-        try:
-            os.makedirs(self.stalls_dir, exist_ok=True)
-            ts = datetime.now().strftime('%Y%m%d_%H%M%S')
-            suffix_str = f"_{suffix}" if suffix else ""
-            filename = f"stall_{battle.battle_tag}_{ts}{suffix_str}.html"
-            path = os.path.join(self.stalls_dir, filename)
-            battle.save_replay(path)
-            sys.stderr.write(f"\n[STALL LOGGED] Battle {battle.battle_tag} lasted {battle.turn} turns. HTML saved to {path}\n")
-            sys.stderr.flush()
-        except Exception as e:
-            sys.stderr.write(f"Failed to save stall log: {e}\n")
-            sys.stderr.flush()
