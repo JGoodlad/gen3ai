@@ -49,7 +49,7 @@ class ReactiveEncoder(ObservationEncoder):
                     battle.opponent_active_pokemon.type_1,
                     battle.opponent_active_pokemon.type_2,
                     type_chart=GenData.from_gen(3).type_chart,
-                )
+                ) / 4.0
         
         vec[0:4] = moves_base_power
         vec[4:8] = moves_dmg_multiplier
@@ -137,14 +137,14 @@ class ReactiveEncoder(ObservationEncoder):
         }
 
     def describe_vector(self, vector: np.ndarray) -> Dict[str, Any]:
-        # Extract matrices
-        our_m = vector[16:160].reshape(TEAM_SIZE, 4, TEAM_SIZE)
-        their_m = vector[160:304].reshape(TEAM_SIZE, 4, TEAM_SIZE)
+        # Extract matrices and scale back up by 4.0 for human-readable display
+        our_m = vector[16:160].reshape(TEAM_SIZE, 4, TEAM_SIZE) * 4.0
+        their_m = vector[160:304].reshape(TEAM_SIZE, 4, TEAM_SIZE) * 4.0
         
         return {
             "fainted_our": int(vector[8] * 6),
             "fainted_opp": int(vector[9] * 6),
-            "active_move_mults": [f"{m:.1f}x" for m in vector[4:8].tolist()],
+            "active_move_mults": [f"{m*4.0:.1f}x" for m in vector[4:8].tolist()],
             "struggle": bool(vector[15]),
             "our_vs_their": our_m, # Full matrix for deeper trace
             "their_vs_our": their_m
