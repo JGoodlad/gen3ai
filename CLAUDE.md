@@ -65,6 +65,24 @@ export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable
 
 ---
 
+## Smoke Test
+
+Before a full training run, verify the full pipeline (env, reward, replay callback, stall detection, evaluation) with a quick debug run (~1 min):
+
+```bash
+export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 src/main/train_rl_agent.py --debug --steps 10000
+```
+
+What to look for:
+- `🏁 Episode Finished` lines appearing throughout — episodes completing and resetting
+- `🎥 [REPLAY]` fires once early (step 1), then training continues — replay callback works
+- `[STALL LOGGED]` may appear if a 250-turn game occurs — should be followed by another `🏁 Episode Finished`, not a hang
+- `Win rate vs Random` and `Win rate vs Heuristic` printed at the end — evaluation ran
+
+A hang after `[STALL LOGGED]` or a crash before "Training complete" indicates a regression in the env/stall/forfeit pipeline.
+
+---
+
 ## Training
 
 ```bash
