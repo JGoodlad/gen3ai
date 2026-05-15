@@ -24,8 +24,22 @@ def test_gen3_teambuilder_initialization():
     assert "Tyranitar" in team
 
 def test_gen3_teambuilder_multiple_teams():
-    team_1 = "Pikachu @ Light Ball\n- Thunderbolt"
-    team_2 = "Snorlax @ Leftovers\n- Body Slam"
+    team_1 = """Pikachu @ Light Ball
+Ability: Static
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+- Thunderbolt
+- Surf
+- Hidden Power [Ice]
+- Thunder Wave"""
+    team_2 = """Snorlax @ Leftovers
+Ability: Thick Fat
+EVs: 144 HP / 252 Atk / 112 SpD
+Adamant Nature
+- Body Slam
+- Earthquake
+- Shadow Ball
+- Self-Destruct"""
     
     tb = Gen3Teambuilder([team_1, team_2])
     assert len(tb.packed_teams) == 2

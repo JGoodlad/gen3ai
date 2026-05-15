@@ -13,6 +13,17 @@ The conda env is `gen3ai_stable`. `deps/venv` exists but is outdated — ignore 
 
 ---
 
+## Git Worktree Setup
+
+When opening a new git worktree (e.g. via Claude Code), the `deps/pokemon-showdown` submodule directory is created but left empty. Symlink it from the main repo before running tests:
+
+```bash
+rmdir deps/pokemon-showdown
+ln -s /home/goodlad/dev/gen3ai/deps/pokemon-showdown deps/pokemon-showdown
+```
+
+---
+
 ## Running Tests
 
 ```bash
