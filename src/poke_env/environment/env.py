@@ -491,6 +491,15 @@ class PokeEnv(ParallelEnv[str, Dict[str, Any], ActionType]):
                 raise RuntimeError(
                     "Environment and agent aren't synchronized. Try to restart"
                 )
+        elif self.battle1 and self.battle1.finished:
+            # Battle ended via forfeit returned from action_to_order. race_get() may
+            # have returned None for agent2 without consuming its queue item, leaving
+            # a stale finished-battle entry that would be picked up as the "new"
+            # battle by the battle_queue.get() calls below.
+            if not self.agent1.battle_queue.empty():
+                self.agent1.battle_queue.get()
+            if not self.agent2.battle_queue.empty():
+                self.agent2.battle_queue.get()
         self.reset_battles()
         self._challenge_task = asyncio.run_coroutine_threadsafe(
             self.agent1.battle_against(self.agent2, n_battles=1), self._loop
