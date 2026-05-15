@@ -6,10 +6,12 @@ import traceback
 from datetime import datetime
 from stable_baselines3.common.callbacks import BaseCallback
 from poke_env.player import SimpleHeuristicsPlayer
+from poke_env.player.battle_order import ForfeitBattleOrder
 from poke_env.ps_client import LocalhostServerConfiguration, AccountConfiguration
 
 from agents.inference.player import RLPlayer
 from agents.training.battle_recorder import BattleRecorder
+from agents.training.stall import StallConfig
 
 BATTLE_FORMAT = "gen3ou"
 
@@ -25,6 +27,13 @@ class StatTrackingRLPlayer(RLPlayer):
         self._recorders: dict[str, BattleRecorder] = {}
 
     def choose_move(self, battle):
+        if battle.battle_tag != self._last_battle_tag:
+            self._last_battle_tag = battle.battle_tag
+            self._stall_logger.reset()
+        if battle.turn >= self._stall_logger.threshold:
+            self._stall_logger.log_once(battle, suffix="REPLAY_STALL")
+            return ForfeitBattleOrder()
+
         if battle.battle_tag not in self._recorders:
             self._recorders[battle.battle_tag] = BattleRecorder(battle.battle_tag)
 
@@ -40,7 +49,7 @@ class ReplayCallback(BaseCallback):
     """
 
     def __init__(self, model_dir, mappings, trainee_teambuilder, opponent_teambuilder,
-                 save_freq=100000, n_replays=3, verbose=0):
+                 save_freq=100000, n_replays=3, stall_config: StallConfig = None, verbose=0):
         super().__init__(verbose)
         self.model_dir = model_dir
         self.mappings = mappings
@@ -48,6 +57,7 @@ class ReplayCallback(BaseCallback):
         self.opponent_teambuilder = opponent_teambuilder
         self.save_freq = save_freq
         self.n_replays = n_replays
+        self.stall_config = stall_config or StallConfig()
         self.replay_dir = os.path.join(model_dir, "replays")
         os.makedirs(self.replay_dir, exist_ok=True)
         self.last_save = 0
@@ -84,6 +94,7 @@ class ReplayCallback(BaseCallback):
                 battle_format=BATTLE_FORMAT,
                 server_configuration=LocalhostServerConfiguration,
                 mappings=self.mappings,
+                stall_config=self.stall_config,
                 account_configuration=AccountConfiguration(f"Replay{ts}", "password"),
                 save_replays=step_dir,
             )

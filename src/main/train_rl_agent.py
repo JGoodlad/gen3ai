@@ -229,7 +229,8 @@ async def main():
         trainee_teambuilder=trainee_teambuilder,
         opponent_teambuilder=opponent_teambuilder,
         save_freq=100000,
-        n_replays=10
+        n_replays=10,
+        stall_config=stall_cfg,
     )
     
     callbacks = [checkpoint_callback, replay_callback]

@@ -1,18 +1,23 @@
 import numpy as np
 import torch
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 from poke_env.player import Player
+from poke_env.player.battle_order import ForfeitBattleOrder
 
 from agents.action.mapper import Gen3ActionMapper
+from agents.training.stall import StallConfig, StallLogger
 
 
 class Gen3Player(Player):
     """Base player: embeds battle state and maps actions using Gen 3 logic."""
 
-    def __init__(self, observation_encoder=None, mappings=None, **kwargs):
+    def __init__(self, observation_encoder=None, mappings=None,
+                 stall_config: Optional[StallConfig] = None, **kwargs):
         super().__init__(**kwargs)
         self.observation_encoder = observation_encoder
         self.mappings = mappings
+        self._stall_logger = StallLogger(stall_config)
+        self._last_battle_tag: Optional[str] = None
 
     def embed_battle(self, battle) -> Dict[str, Any]:
         if self.observation_encoder is None:
@@ -38,10 +43,12 @@ class RLPlayer(Gen3Player):
 
     def __init__(self, model, team, battle_format, server_configuration,
                  mappings=None, account_configuration=None,
+                 stall_config: Optional[StallConfig] = None,
                  max_concurrent_battles=10, **kwargs):
         super().__init__(
             observation_encoder=None,
             mappings=mappings,
+            stall_config=stall_config,
             battle_format=battle_format,
             team=team,
             server_configuration=server_configuration,
@@ -81,5 +88,11 @@ class RLPlayer(Gen3Player):
         return idx, probs, mask
 
     def choose_move(self, battle):
+        if battle.battle_tag != self._last_battle_tag:
+            self._last_battle_tag = battle.battle_tag
+            self._stall_logger.reset()
+        if battle.turn >= self._stall_logger.threshold:
+            self._stall_logger.log_once(battle, suffix="INFERENCE_STALL")
+            return ForfeitBattleOrder()
         idx, _, _ = self._predict_best_action(battle)
         return self.action_to_order(idx, battle)

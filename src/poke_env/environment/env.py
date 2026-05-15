@@ -410,6 +410,7 @@ class PokeEnv(ParallelEnv[str, Dict[str, Any], ActionType]):
         assert self.battle2 is not None
         assert not self.battle1.finished
         assert not self.battle2.finished
+        agent1_forfeited = False
         if self.agent1_to_move:
             self.agent1_to_move = False
             order1 = self.action_to_order(
@@ -419,7 +420,10 @@ class PokeEnv(ParallelEnv[str, Dict[str, Any], ActionType]):
                 strict=self._strict,
             )
             self.agent1.order_queue.put(order1)
-        if self.agent2_to_move:
+            agent1_forfeited = isinstance(order1, ForfeitBattleOrder)
+        if self.agent2_to_move and not agent1_forfeited:
+            # Skip agent2's order when agent1 forfeited — the battle room closes
+            # immediately and sending a move to a closed room triggers a server popup.
             self.agent2_to_move = False
             order2 = self.action_to_order(
                 actions[self.agents[1]],
@@ -428,6 +432,8 @@ class PokeEnv(ParallelEnv[str, Dict[str, Any], ActionType]):
                 strict=self._strict,
             )
             self.agent2.order_queue.put(order2)
+        elif self.agent2_to_move and agent1_forfeited:
+            self.agent2_to_move = False
         battle1 = self.agent1.battle_queue.race_get(
             self.agent1._waiting, self.agent2._trying_again
         )
