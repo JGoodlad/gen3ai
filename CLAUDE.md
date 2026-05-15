@@ -201,3 +201,24 @@ Training requires JSON mapping files in `data/pokemon/`:
 - `gen3_abilities.json` — ability ID → `{num}`
 
 These are loaded at startup and will raise `FileNotFoundError` / `ValueError` if missing or empty.
+
+---
+
+## Current State (End of Step 1)
+
+Step 1 is complete. The pipeline is stable and all known correctness issues are resolved.
+
+**What was hardened in Step 1:**
+
+- `BattleContext` / `TurnDelta` / `SlotRegistry` — clean per-turn state, no battle object mutation
+- `EpisodeTracker` — owns all per-episode mutable state; extension point for turn history
+- `StallConfig` / `StallLogger` — stall detection extracted, shared by env and inference
+- poke-env `env.py` — three lifecycle bugs fixed: stale battle queue, forfeit popup, stale `_choose_move()` hang
+- Action mask — struggle double-enabling fixed; mask correctness audited and tested
+- `RLPlayer` / `StatTrackingRLPlayer` — exception-safe `choose_move()`, stall detection on inference
+
+**Ready for Step 2: Turn History + Action Mask as Features**
+
+- `EpisodeTracker._history` holds the full episode; cap to `deque(maxlen=N)` for N-frame history
+- Each `BattleContext` already carries `obs` and `mask` — no new fields needed
+- Extend `Gen3ObservationEncoder` to accept `history: list[BattleContext]` alongside the current frame

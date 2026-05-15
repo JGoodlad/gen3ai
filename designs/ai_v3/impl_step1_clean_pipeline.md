@@ -245,9 +245,93 @@ This caused `git status` to fail with `error: expected submodule path
 
 ---
 
-## What's Next (`todo.md`)
+## Phase 2: Pipeline Hardening
 
-- Populate `opp_move_id` from the battle log so explosion detection can be precise rather
-  than heuristic (mutual-KO proxy).
-- Status and stat-stage deltas (Aromatherapy, Calm Mind, Curse) — tracked in `todo.md`.
-- Consider migrating `Gen3Env` out of `train_rl_agent.py` into `agents/training/`.
+### Stall Detection Refactor
+
+**`src/agents/training/stall.py`** — new
+
+Extracted stall detection into `StallConfig` (dataclass) and `StallLogger`:
+- `StallConfig(threshold=250, output_dir=...)` — configures threshold and HTML output dir
+- `StallLogger.log_once(battle, suffix)` — idempotent per episode; writes HTML on first call
+- `StallLogger.reset()` — called at episode start
+
+Used by `Gen3Env`, `RLPlayer`, and `StatTrackingRLPlayer` with per-battle reset via
+`_last_battle_tag` tracking on inference players.
+
+### Action Mapping Fixes
+
+**`src/agents/action/mask_generator.py`**
+
+Struggle was being enabled at both slot 6 (move slot) and slot 10 (dedicated struggle slot)
+when PP hit zero, because `request_moves[0]` holds the struggle entry. Fixed by filtering
+`move.id == "struggle"` from the move loop. Regression test added.
+
+### poke-env Stability Fixes
+
+**`src/poke_env/environment/env.py`**
+
+Three bugs fixed in the env lifecycle:
+
+1. **Stale battle queue after forfeit** — when `action_to_order()` returns
+   `ForfeitBattleOrder()`, `race_get()` for agent2 could return None without consuming its
+   queue item. On the next `reset()`, this stale entry was picked up as the new battle.
+   Fixed by draining non-empty queues in the `elif battle1.finished` branch of `reset()`.
+
+2. **Popup after forfeit** — after agent1 forfeited, agent2's order was still queued and
+   sent to the server after the battle room closed. Fixed by detecting
+   `agent1_forfeited = isinstance(order1, ForfeitBattleOrder)` in `step()` and skipping
+   agent2's order entirely.
+
+3. **Stale `_choose_move()` hang** — skipping agent2's order left its `_choose_move()`
+   coroutine suspended forever awaiting `order_queue`. On the next episode, the stale
+   coroutine competed with the fresh one, stealing the first order and causing `step()` to
+   hang indefinitely. Fixed by sending `_EmptyBattleOrder()` (null message, no server popup)
+   to unblock the stale coroutine, plus draining agent2's `order_queue` in `reset()` in
+   case poke-env cancelled the task before it consumed the empty order.
+
+### Inference Player Hardening
+
+**`src/agents/inference/player.py`**
+
+- `Gen3Player` now owns `StallLogger` and `_last_battle_tag` for per-battle reset
+- `action_to_order()` guards against missing decision context — raises `RuntimeError` if
+  called without a preceding `embed_battle()`, catching turn-mismatch bugs early
+- `RLPlayer.choose_move()` wrapped in try/except returning `ForfeitBattleOrder()` on any
+  exception, preventing poke-env from hanging with no response to the server
+
+### EpisodeTracker Extraction
+
+**`src/agents/training/episode_tracker.py`** — new
+
+Pulled the scattered per-episode mutable state (`_our_slots`, `_opp_slots`, `_last_ctx`,
+`_prev_ctx`, `_last_action`) out of `Gen3Env` into a dedicated `EpisodeTracker`:
+
+- `record(battle, mask, obs)` — builds and stores a `BattleContext` for the current turn
+- `advance(action)` — records the chosen action before the game steps forward
+- `build_delta()` — returns `TurnDelta.build(history[-2], history[-1], last_action)`,
+  or `TurnDelta.empty()` at episode start
+- `reset()` — clears all episode state
+
+`Gen3Env` holds zero episode-scoped mutable state directly. The `_history: list[BattleContext]`
+is the natural extension point for turn history: cap it to a `deque(maxlen=N)` and expose
+`get_history() -> list[BattleContext]`.
+
+---
+
+## Final State
+
+Step 1 is complete. The smoke test (`--debug --steps 10000`, ~1 min) passes reliably
+including under stall conditions. 92 unit tests pass.
+
+**Ready for Step 2: Turn History + Action Mask as Observation Features**
+
+- `EpisodeTracker._history` → cap to `deque(maxlen=N)` to retain last N frames
+- `Gen3ObservationEncoder` → `encode_with_history(current_obs, history: list[BattleContext])`
+- Each `BattleContext` already carries `mask` and `obs` — no new fields needed
+- `Gen3Env.embed_battle()` passes `tracker.get_history()` to the encoder
+
+**Remaining `todo.md` items**
+
+- Populate `opp_move_id` from the battle log (explosion detection precision)
+- Status and stat-stage deltas (Aromatherapy, Calm Mind, Curse)
