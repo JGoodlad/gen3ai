@@ -26,7 +26,7 @@ from stable_baselines3.common.monitor import Monitor
 
 from agents.model.features_extractor import Gen3FeaturesExtractor
 from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings
-from agents.rl_agent import RLPlayer
+from agents.inference.player import RLPlayer
 from utils.teambuilder import Gen3Teambuilder
 from utils.team_loader import TeamLoader
 from agents.training.replay_recorder import ReplayCallback

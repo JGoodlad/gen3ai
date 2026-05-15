@@ -1,4 +1,4 @@
-from agents.rl_agent import SingleAgentWrapper
+from poke_env.environment.single_agent_wrapper import SingleAgentWrapper
 
 
 class MaskableAgentWrapper(SingleAgentWrapper):

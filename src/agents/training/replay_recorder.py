@@ -8,7 +8,7 @@ from stable_baselines3.common.callbacks import BaseCallback
 from poke_env.player import SimpleHeuristicsPlayer
 from poke_env.ps_client import LocalhostServerConfiguration, AccountConfiguration
 
-from agents.rl_agent import RLPlayer
+from agents.inference.player import RLPlayer
 from agents.training.battle_recorder import BattleRecorder
 
 BATTLE_FORMAT = "gen3ou"
