@@ -40,16 +40,18 @@ class ReactiveEncoder(ObservationEncoder):
 
         for i, move in enumerate(battle.available_moves):
             if i >= 4: break
-            if move.id == "struggle" and move.id not in mon_move_ids:
-                continue
-                
+            
             moves_base_power[i] = move.base_power / 100.0
             if battle.opponent_active_pokemon is not None:
-                moves_dmg_multiplier[i] = move.type.damage_multiplier(
-                    battle.opponent_active_pokemon.type_1,
-                    battle.opponent_active_pokemon.type_2,
-                    type_chart=GenData.from_gen(3).type_chart,
-                ) / 4.0
+                if move.id == "struggle":
+                    mult = 1.0
+                else:
+                    mult = move.type.damage_multiplier(
+                        battle.opponent_active_pokemon.type_1,
+                        battle.opponent_active_pokemon.type_2,
+                        type_chart=GenData.from_gen(3).type_chart,
+                    )
+                moves_dmg_multiplier[i] = mult / 4.0
         
         vec[0:4] = moves_base_power
         vec[4:8] = moves_dmg_multiplier
