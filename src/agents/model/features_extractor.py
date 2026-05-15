@@ -65,7 +65,7 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         # 1.6 Pokémon Role Encoder (Step 2)
         # pokemon_enriched dim is move_processor_output (128) + context_broadcasted (11) + others
         self.role_token_size = 128
-        role_input_dim = 237 # (32 + 6 + 16 + 1 + 16 + 16 + 1 + 8 + 128 + 2) + 11
+        role_input_dim = 238 # (32 + 6 + 16 + 1 + 16 + 16 + 1 + 8 + 128 + 2) + 12
         self.role_encoder = torch.nn.Sequential(
             torch.nn.Linear(role_input_dim, 256),
             torch.nn.ReLU(),
@@ -411,8 +411,11 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         ], dim=2) # [B, 12, 226]
         
         # --- POKÉMON ROLE ENCODER (Step 2) ---
-        # Add Global context to the role encoder to make roles phase-aware and environment-aware
-        global_context = torch.cat([turn_feature, weather_feature, fainted_feature, spikes_feature], dim=1) # [B, GLOBAL_ENV_DIM]
+        # Add Global context to the role encoder to make roles phase-aware and environment-aware.
+        # forced_struggle flag (reactive offset 15): active mon has no PP, must use Struggle.
+        # Broadcast to all role encoders so each mon's token knows the active mon is useless.
+        struggle_feature = remaining_part[:, reactive_start + 15 : reactive_start + 16] # [B, 1]
+        global_context = torch.cat([turn_feature, weather_feature, fainted_feature, spikes_feature, struggle_feature], dim=1) # [B, 12]
         context_broadcasted = global_context.unsqueeze(1).expand(-1, 2 * TEAM_SIZE, -1) # [B, 12, 11]
         pokemon_enriched_with_context = torch.cat([pokemon_enriched, context_broadcasted], dim=2)
         

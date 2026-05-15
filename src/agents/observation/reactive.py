@@ -33,26 +33,32 @@ class ReactiveEncoder(ObservationEncoder):
         # 1. Active Moves (Power and Multiplier)
         moves_base_power = np.zeros(4)
         moves_dmg_multiplier = np.ones(4)
-        
+
         mon_move_ids = []
         if battle.active_pokemon:
             mon_move_ids = [m.id for m in battle.active_pokemon.moves.values()]
 
-        for i, move in enumerate(battle.available_moves):
-            if i >= 4: break
-            
-            moves_base_power[i] = move.base_power / 100.0
-            if battle.opponent_active_pokemon is not None:
-                if move.id == "struggle":
-                    mult = 1.0
-                else:
+        # Skip Struggle — it has a dedicated action (10) and a dedicated flag (vec[15]).
+        # Filling the move slots with Struggle's stats would create a confusing alias
+        # between slot 0 (action 6) and the Struggle action (10).
+        is_forced_struggle = (
+            len(battle.available_moves) == 1
+            and battle.available_moves[0].id == "struggle"
+        )
+
+        if not is_forced_struggle:
+            for i, move in enumerate(battle.available_moves):
+                if i >= 4:
+                    break
+                moves_base_power[i] = move.base_power / 100.0
+                if battle.opponent_active_pokemon is not None:
                     mult = move.type.damage_multiplier(
                         battle.opponent_active_pokemon.type_1,
                         battle.opponent_active_pokemon.type_2,
                         type_chart=GenData.from_gen(3).type_chart,
                     )
-                moves_dmg_multiplier[i] = mult / 4.0
-        
+                    moves_dmg_multiplier[i] = mult / 4.0
+
         vec[0:4] = moves_base_power
         vec[4:8] = moves_dmg_multiplier
         
@@ -81,11 +87,7 @@ class ReactiveEncoder(ObservationEncoder):
         vec[14] = 1.0 if battle.active_pokemon and battle.active_pokemon.status else 0.0
         
         # 6. Forced Struggle
-        is_struggle = 0.0
-        if len(battle.available_moves) == 1 and battle.available_moves[0].id == "struggle":
-            if battle.available_moves[0].id not in mon_move_ids:
-                is_struggle = 1.0
-        vec[15] = is_struggle
+        vec[15] = 1.0 if is_forced_struggle else 0.0
 
         # --- Matchup Matrices ---
         our_team = self.get_team_list(battle, is_opponent=False)
