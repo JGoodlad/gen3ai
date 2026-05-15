@@ -27,7 +27,7 @@ from stable_baselines3.common.callbacks import CheckpointCallback
 from stable_baselines3.common.vec_env import DummyVecEnv, SubprocVecEnv
 from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.policies import ActorCriticPolicy
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 
 from agents.model.features_extractor import Gen3FeaturesExtractor
 from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings, get_observation_encoder
@@ -42,7 +42,11 @@ from agents.observation.global_env import GlobalEnvEncoder
 from utils.teambuilder import Gen3Teambuilder
 from utils.team_loader import TeamLoader
 from agents.training.callbacks import ReplayCallback
-from agents.training.reward_manager import Gen3RewardManager, SinglePlayerRewardManager
+from agents.training.reward_manager import Gen3RewardManager
+from agents.training.reward_function import RewardFunction
+from agents.training.battle_context import BattleContext, TurnDelta
+from agents.training.slot_registry import SlotRegistry
+from agents.training.wrappers import MaskableAgentWrapper
 from agents.action.mapper import Gen3ActionMapper
 from utils.logging.levels import LogLevel
 
@@ -52,65 +56,103 @@ from poke_env.environment.singles_env import SinglesEnv
 
 BATTLE_FORMAT = "gen3ou"
 
-class Gen3SingleAgentWrapper(SingleAgentWrapper):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self._last_action_mask = np.ones(11, dtype=np.int8)
-
-    def reset(self, **kwargs):
-        obs, info = super().reset(**kwargs)
-        # LATCH the mask from the reset observation
-        self._current_mask = obs["action_mask"]
-        return obs, info
-
-    def step(self, action):
-        obs, reward, term, trunc, info = super().step(action)
-        self._current_mask = obs["action_mask"]
-        return obs, reward, term, trunc, info
-
-    def action_masks(self):
-        return self._current_mask
-
 STALL_THRESHOLD = 250
 
 class Gen3Env(SinglesEnv):
-    def __init__(self, mappings, log_level=LogLevel.QUIET, stalls_dir=None, *args, **kwargs):
+    def __init__(self, mappings, reward_fn: Optional[RewardFunction] = None, log_level=LogLevel.QUIET, stalls_dir=None, *args, **kwargs):
         self.log_level = log_level
         self.stalls_dir = stalls_dir
         self._stall_logged = False
         super().__init__(*args, **kwargs)
         self.observation_encoder = get_observation_encoder(mappings)
-        
-        # Define spaces
+
         obs_dim = self.observation_encoder.dimension
-        
-        # Standard flat Box for the vector part
         self.vector_space = spaces.Box(low=-np.inf, high=np.inf, shape=(obs_dim,), dtype=np.float32)
-        
-        # Gen 3 has 11 actions: 6 switches (0-5), 4 moves (6-9), and Struggle (10)
         self.action_space = spaces.Discrete(11)
-        
-        # Bundle the vector and action mask natively for MaskablePPO
         self.observation_space = spaces.Dict({
             "observation": self.vector_space,
             "action_mask": spaces.Box(0, 1, shape=(11,), dtype=np.int8)
         })
-        
-        # PokeEnv's SingleAgentWrapper expects the plural observation_spaces property
         self.observation_spaces = {
             self.agent1.username: self.observation_space,
             self.agent2.username: self.observation_space
         }
-        
-        # Reward & Metric Tracking
-        self.reward_manager = SinglePlayerRewardManager(Gen3RewardManager(log_level=self.log_level))
+
+        # Trainee reward function — injected or defaulted. Opponent battles fall
+        # back to poke-env's reward_computing_helper and never touch this.
+        self.reward_manager: RewardFunction = reward_fn or Gen3RewardManager(log_level=self.log_level)
+
+        # Per-episode stable slot assignment for our team and opponent team
+        self._our_slots = SlotRegistry()
+        self._opp_slots = SlotRegistry()
+        self._last_ctx: Optional[BattleContext] = None
+        self._prev_ctx: Optional[BattleContext] = None
+        self._last_action: int = -1
 
     def embed_battle(self, battle):
-        # Generate mask and LATCH it to this specific turn on the battle object
-        mask = Gen3ActionMasker.get_mask(battle).astype(np.int8)
-        battle._latched_mask = mask
-        battle._latched_turn = battle.turn
-        return self.observation_encoder.encode(battle)
+        obs = self.observation_encoder.encode(battle)
+
+        # Only build a new context for the trainee while the battle is live.
+        # Skip on terminal observations (battle.finished) and transitional wait
+        # states where poke-env emits an embed_battle call before the server has
+        # sent a valid request — both cases have no valid actions so we keep the
+        # last context intact (MaskablePPO uses it for value estimation only).
+        if battle is self.battle1 and not battle.finished:
+            mask = Gen3ActionMasker.get_mask(battle).astype(np.int8)
+
+            if mask.sum() > 0:
+                for mon in battle.team.values():
+                    self._our_slots.assign(mon.species)
+                for mon in battle.opponent_team.values():
+                    self._opp_slots.assign(mon.species)
+
+                our_hp = np.zeros(6, dtype=np.float32)
+                for mon in battle.team.values():
+                    slot = self._our_slots.get(mon.species)
+                    if slot is not None:
+                        our_hp[slot] = mon.current_hp_fraction
+
+                opp_hp = np.zeros(6, dtype=np.float32)
+                for mon in battle.opponent_team.values():
+                    slot = self._opp_slots.get(mon.species)
+                    if slot is not None:
+                        opp_hp[slot] = mon.current_hp_fraction
+
+                our_active = (
+                    battle.active_pokemon.species
+                    if battle.active_pokemon and not battle.active_pokemon.fainted
+                    else "NONE"
+                )
+                opp_active = (
+                    battle.opponent_active_pokemon.species
+                    if battle.opponent_active_pokemon
+                    else "NONE"
+                )
+                our_fainted_count = sum(1 for m in battle.team.values() if m.fainted)
+                opp_fainted_count = sum(1 for m in battle.opponent_team.values() if m.fainted)
+
+                phase = "forced_switch" if battle.force_switch else "move_selection"
+                self._last_ctx = BattleContext(
+                    turn=battle.turn,
+                    phase=phase,
+                    mask=mask,
+                    obs=obs,
+                    our_slot_map=self._our_slots.snapshot(),
+                    opp_slot_map=self._opp_slots.snapshot(),
+                    our_hp=our_hp,
+                    opp_hp=opp_hp,
+                    our_active=our_active,
+                    opp_active=opp_active,
+                    our_fainted_count=our_fainted_count,
+                    opp_fainted_count=opp_fainted_count,
+                )
+
+        return obs
+
+    def action_masks(self) -> np.ndarray:
+        if self._last_ctx is not None:
+            return self._last_ctx.mask
+        return np.ones(11, dtype=np.int8)
 
 
     def _save_stall_html(self, battle, suffix=""):
@@ -136,60 +178,44 @@ class Gen3Env(SinglesEnv):
             sys.stderr.flush()
 
     def get_action_mask(self, battle):
-        # Return the synced mask if available, otherwise regenerate
-        return getattr(battle, "_gen3_synced_mask", Gen3ActionMasker.get_mask(battle).astype(np.int8))
+        if battle is self.battle1 and self._last_ctx is not None:
+            return self._last_ctx.mask
+        return Gen3ActionMasker.get_mask(battle).astype(np.int8)
 
     def action_to_order(self, action, battle, **kwargs):
         """Delegates to Gen3ActionMapper with strict turn-locked validation."""
-        # Pass-through for pre-calculated orders (like from a Heuristic opponent)
-        from poke_env.player.battle_order import BattleOrder
+        from poke_env.player.battle_order import BattleOrder, ForfeitBattleOrder
         if isinstance(action, BattleOrder):
             return action
 
-        mask = getattr(battle, "_latched_mask", None)
-        latched_turn = getattr(battle, "_latched_turn", -1)
-        
-        # TRAINEE (battle1): Use our strict Gen3 mapping logic
         if battle is self.battle1:
+            if battle.turn >= STALL_THRESHOLD:
+                if not self._stall_logged:
+                    self._save_stall_html(battle, suffix="STALL")
+                    self._stall_logged = True
+                return ForfeitBattleOrder()
+
+            ctx = self._last_ctx
             return Gen3ActionMapper.action_to_order(
                 action=action,
                 battle=battle,
-                mask=mask,
-                latched_turn=latched_turn
+                mask=ctx.mask if ctx is not None else None,
+                latched_turn=ctx.turn if ctx is not None else -1,
             )
-            
+
         # OPPONENT (battle2/others): Unmodified default poke-env logic
         return super().action_to_order(action, battle)
         
     def calc_reward(self, battle):
-        # 1. Standard Performance Reward
-        base_reward = self.reward_computing_helper(
-            battle,
-            fainted_value=2.0,
-            hp_value=1.0,
-            victory_value=30.0
+        if battle is self.battle1:
+            if self._prev_ctx is not None and self._last_ctx is not None:
+                delta = TurnDelta.build(self._prev_ctx, self._last_ctx, self._last_action)
+            else:
+                delta = TurnDelta.empty()
+            return self.reward_manager.process_turn_reward(battle, delta)
+        return self.reward_computing_helper(
+            battle, fainted_value=2.0, hp_value=1.0, victory_value=30.0
         )
-
-        # 2. Handle Final Results (Punish Ties/Stalls as much as Losses)
-        if battle.finished and not battle.won and not battle.lost:
-            # This was a tie or a timer-stall. 
-            # We subtract 30.0 so it matches the penalty of a loss.
-            base_reward -= 30.0
-        
-        # 3. Delegate to RewardManager
-        total_reward = self.reward_manager.process_turn_reward(
-            battle, 
-            base_reward=base_reward, 
-            is_trainee=(battle is self.battle1)
-        )
-
-        # 4. Progressive Stall Tax (Turns 200-250)
-        # Apply a per-turn penalty to discourage the game from dragging on
-        if battle.turn > 200:
-            stall_tax = -1.0 * (battle.turn - 200) / 10.0 # Ramping from -0.1 to -5.0
-            total_reward += stall_tax
-            
-        return total_reward
 
     def step(self, action):
         try:
@@ -204,22 +230,13 @@ class Gen3Env(SinglesEnv):
             else:
                 trainee_idx = action
             
-            self.reward_manager.record_action(battle, trainee_idx, is_trainee=(battle is self.battle1))
+            if battle is self.battle1 and self._last_ctx is not None:
+                self._prev_ctx = self._last_ctx
+                self._last_action = trainee_idx
+                self.reward_manager.record_action(self._last_ctx, trainee_idx)
 
             obs, reward, term, trunc, info = super().step(action)
-            
-            # Stall Termination: Trigger forfeit at 250 turns
-            if battle and battle.turn >= STALL_THRESHOLD:
-                if not self._stall_logged:
-                    self._save_stall_html(battle, suffix="STALL")
-                    self._stall_logged = True
-                
-                # Force a forfeit with a severe penalty (-50.0)
-                if not battle.finished:
-                    if isinstance(action, dict):
-                        return obs, {self.agent1.username: -50.0}, {self.agent1.username: True}, {self.agent1.username: True}, info
-                    return obs, -50.0, True, True, info
-            
+
             # Pass switch logs up to the main process
             if hasattr(self, "_pending_switch_log"):
                 info["switch_log"] = self._pending_switch_log
@@ -239,6 +256,10 @@ class Gen3Env(SinglesEnv):
         # Clear move slot cache and reset trackers on reset
         self._move_slot_cache = {}
         self._last_active_name = ""
+        self._our_slots.reset()
+        self._opp_slots.reset()
+        self._last_ctx = None
+        self._prev_ctx = None
         try:
             # Disable replay saving for the new battle unless it stalls later
             if hasattr(self, "agent1"):
@@ -349,7 +370,7 @@ async def main():
                     server_configuration=LocalhostServerConfiguration,
                     account_configuration=AccountConfiguration(opp_username, "password"),
                 )
-                wrapped = Gen3SingleAgentWrapper(env, opponent)
+                wrapped = MaskableAgentWrapper(env, opponent)
                 
                 # FORCE OVERRIDE: SingleAgentWrapper hardcodes 10 for gen3ou. We need 11.
                 # Also ensure it propagates our Dict observation space natively.
@@ -469,7 +490,7 @@ async def main():
                         server_configuration=LocalhostServerConfiguration,
                         account_configuration=AccountConfiguration(f"OppEval{idx}{ts}", "password"),
                     )
-                    wrapped = Gen3SingleAgentWrapper(env, opponent)
+                    wrapped = MaskableAgentWrapper(env, opponent)
                     wrapped.action_space = env.action_space
                     wrapped.observation_space = env.observation_space
                     return Monitor(wrapped)

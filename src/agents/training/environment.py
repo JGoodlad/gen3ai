@@ -11,6 +11,7 @@ from poke_env.player.battle_order import ForfeitBattleOrder, BattleOrder
 from poke_env.ps_client import AccountConfiguration, LocalhostServerConfiguration
 
 from agents.training.reward_manager import Gen3RewardManager
+from agents.training.battle_context import BattleContext, TurnDelta
 from agents.action.mask_generator import Gen3ActionMasker
 from agents.action.mapper import Gen3ActionMapper
 from utils.logging.levels import LogLevel
@@ -58,6 +59,9 @@ class Gen3SinglesEnv(SinglesEnv, gym.Env):
         self._seen_opponent_slots: Dict[str, int] = {}
         self._step_count = 0
         self._episode_count = 0
+        self._last_ctx: Optional[BattleContext] = None
+        self._prev_ctx: Optional[BattleContext] = None
+        self._last_action: int = -1
         
         # Forensic History
         self._forensic_history: List[Dict[str, Any]] = []
@@ -76,29 +80,76 @@ class Gen3SinglesEnv(SinglesEnv, gym.Env):
     def _get_observation(self, battle) -> Dict[str, Any]:
         """Delegates observation and mask generation to the encoder."""
         obs_dict = self.observation_encoder.get_observation(battle)
-        self._last_mask = obs_dict["action_mask"]
+        mask = obs_dict["action_mask"]
+        self._last_mask = mask
+
+        if not battle.finished and mask.sum() > 0:
+            our_hp = np.zeros(6, dtype=np.float32)
+            opp_hp = np.zeros(6, dtype=np.float32)
+            slot_map: Dict[str, int] = {}
+            opp_slot_map: Dict[str, int] = {}
+            for i, mon in enumerate(battle.team.values()):
+                if i < 6:
+                    our_hp[i] = mon.current_hp_fraction
+                    slot_map[mon.species] = i
+            for i, mon in enumerate(battle.opponent_team.values()):
+                if i < 6:
+                    opp_hp[i] = mon.current_hp_fraction
+                    opp_slot_map[mon.species] = i
+
+            our_active = (
+                battle.active_pokemon.species
+                if battle.active_pokemon and not battle.active_pokemon.fainted
+                else "NONE"
+            )
+            opp_active = (
+                battle.opponent_active_pokemon.species
+                if battle.opponent_active_pokemon
+                else "NONE"
+            )
+            self._last_ctx = BattleContext(
+                turn=battle.turn,
+                phase="forced_switch" if battle.force_switch else "move_selection",
+                mask=mask,
+                obs=obs_dict["observation"],
+                our_slot_map=slot_map,
+                opp_slot_map=opp_slot_map,
+                our_hp=our_hp,
+                opp_hp=opp_hp,
+                our_active=our_active,
+                opp_active=opp_active,
+                our_fainted_count=sum(1 for m in battle.team.values() if m.fainted),
+                opp_fainted_count=sum(1 for m in battle.opponent_team.values() if m.fainted),
+            )
+
         return obs_dict
 
     def reset(self, seed=None, options=None):
         self._episode_count += 1
         self.reward_manager.reset()
-        
+        self._last_ctx = None
+        self._prev_ctx = None
+        self._last_action = -1
+
         # Reset via SinglesEnv (PettingZoo API)
         obs_dict, info_dict = super().reset(seed=seed, options=options)
-        
+
         self.battle = self.battle1
         self.opponent_battle = self.battle2
-        
+
         # Sync the opponent with their battle
         self.opponent.reset_battles()
         self.opponent._battles[self.opponent_battle.battle_tag] = self.opponent_battle
-        
+
         return self._get_observation(self.battle), self._get_info()
 
     def step(self, action: int):
         self._step_count += 1
-        self.reward_manager.record_action(self.battle, action)
-        
+        if self._last_ctx is not None:
+            self._prev_ctx = self._last_ctx
+            self._last_action = action
+            self.reward_manager.record_action(self._last_ctx, action)
+
         # Get Opponent Action
         if self.opponent_battle.wait:
             opp_action = 0
@@ -133,7 +184,11 @@ class Gen3SinglesEnv(SinglesEnv, gym.Env):
             obs_dict, reward_dict, term_dict, trunc_dict, info_dict = super().step(actions)
 
         # Calculate Reward & Log Forensics (Delegated to Hub)
-        final_reward = self.reward_manager.process_turn_reward(self.battle, None)
+        if self._prev_ctx is not None and self._last_ctx is not None:
+            delta = TurnDelta.build(self._prev_ctx, self._last_ctx, self._last_action)
+        else:
+            delta = TurnDelta.empty()
+        final_reward = self.reward_manager.process_turn_reward(self.battle, delta)
         
         terminated = term_dict[self.agent1.username]
         truncated = trunc_dict[self.agent1.username]
@@ -142,7 +197,7 @@ class Gen3SinglesEnv(SinglesEnv, gym.Env):
         return obs, final_reward, terminated, truncated, self._get_info()
 
     def _get_info(self) -> Dict[str, Any]:
-        info = self.reward_manager.get_episode_metrics(self.battle)
+        info: Dict[str, Any] = {}
         if self.battle:
             info["turn"] = self.battle.turn
             info["battle_tag"] = self.battle.battle_tag
