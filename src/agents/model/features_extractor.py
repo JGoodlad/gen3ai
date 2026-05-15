@@ -2,7 +2,7 @@ import torch
 import numpy as np
 import time
 from gymnasium import spaces
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 from agents.observation.state_encoder import Gen3ObservationEncoder
 from agents.observation.constants import (
     TRACE_INTERVAL, 
@@ -19,7 +19,7 @@ class Gen3FeaturesExtractor(torch.nn.Module):
     Uses a dynamic layout provided by the Observation Encoder to avoid magic constants.
     Supports shared latent embeddings for Species, Moves, Items, Abilities, and Types.
     """
-    def __init__(self, observation_space: spaces.Dict, layout: Dict[str, Any] = None, mappings: Dict[str, Any] = None, log_level: LogLevel = LogLevel.QUIET):
+    def __init__(self, observation_space: spaces.Dict, layout: Optional[Dict[str, Any]] = None, mappings: Optional[Dict[str, Any]] = None, log_level: LogLevel = LogLevel.QUIET):
         super().__init__()
         self.layout = layout
         self.mappings = mappings
@@ -63,9 +63,12 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         )
         
         # 1.6 Pokémon Role Encoder (Step 2)
-        # pokemon_enriched dim is move_processor_output (128) + context_broadcasted (11) + others
+        # pokemon_enriched (226) + global_context broadcast (12) = 238
+        # pokemon_enriched: species(32) + stats(6) + item_emb(16) + item_known(1) +
+        #   pk_types(16) + ability_emb(16) + ability_known(1) + condition(8) + moves(128) + hp+active(2)
+        # global_context: turn(1) + weather(6) + fainted(2) + spikes(2) + struggle(1) = 12
         self.role_token_size = 128
-        role_input_dim = 238 # (32 + 6 + 16 + 1 + 16 + 16 + 1 + 8 + 128 + 2) + 12
+        role_input_dim = 238
         self.role_encoder = torch.nn.Sequential(
             torch.nn.Linear(role_input_dim, 256),
             torch.nn.ReLU(),
@@ -285,12 +288,7 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         type1_ids = pokemon_part[:, :, types_info['offset'] + types_layout['type1']['offset']].long()
         type2_ids = pokemon_part[:, :, types_info['offset'] + types_layout['type2']['offset']].long()
         
-        # 3. Diagnostic Trace (Only in real forward)
-        # We skip this in dummy pass by checking if it's training or testing
-        if self.training or not hasattr(self, 'dummy_pass'):
-             pass # Trace logic handled in forward()
-
-        # 4. Embed Everything
+        # 3. Embed Everything
         embedded_species = self.species_embedding(species_ids) # [B, 2 * TEAM_SIZE, 32]
         
         embedded_moves = self.move_embedding(all_move_ids) # [B, 12, 4, 16]
@@ -323,17 +321,6 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         
         # Part E: Move remnants (Power, Secondary, Recoil - everything but ID and Type)
         move_remnants = []
-        # Fallback for models trained before slot_layout was added to the saved layout
-        if 'slot_layout' not in moves_layout:
-            moves_layout['slot_layout'] = {
-                "id": {"offset": 0, "dim": 1},
-                "power": {"offset": 1, "dim": 1},
-                "secondary": {"offset": 2, "dim": 1},
-                "recoil": {"offset": 3, "dim": 1},
-                "type": {"offset": 4, "dim": 1},
-                "category": {"offset": 5, "dim": 1},
-                "known": {"offset": 6, "dim": 1}
-            }
         m_slot_layout = moves_layout['slot_layout']
         for i in range(4):
             slot_info = moves_layout['slots'][i]
@@ -416,7 +403,7 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         # Broadcast to all role encoders so each mon's token knows the active mon is useless.
         struggle_feature = remaining_part[:, reactive_start + 15 : reactive_start + 16] # [B, 1]
         global_context = torch.cat([turn_feature, weather_feature, fainted_feature, spikes_feature, struggle_feature], dim=1) # [B, 12]
-        context_broadcasted = global_context.unsqueeze(1).expand(-1, 2 * TEAM_SIZE, -1) # [B, 12, 11]
+        context_broadcasted = global_context.unsqueeze(1).expand(-1, 2 * TEAM_SIZE, -1) # [B, 12, 12]
         pokemon_enriched_with_context = torch.cat([pokemon_enriched, context_broadcasted], dim=2)
         
         # Reshape to [B*12, role_input_dim] for shared processing
