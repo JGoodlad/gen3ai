@@ -6,27 +6,29 @@ from .items import ItemsEncoder
 from .types import TypeEncoder
 from .abilities import AbilitiesEncoder
 from .moves import MovesEncoder
-from unittest.mock import MagicMock
+from .state_encoder import load_mappings
 
 def test_pokemon_encoder_dimension():
-    # Setup sub-encoders
-    se = SpeciesEncoder()
-    ie = ItemsEncoder()
+    mappings = load_mappings()
+    se = SpeciesEncoder(mappings["species"])
+    ie = ItemsEncoder(mappings["items"])
     te = TypeEncoder()
-    ae = AbilitiesEncoder()
-    me = MovesEncoder()
+    ae = AbilitiesEncoder(mappings["abilities"])
+    me = MovesEncoder(mappings["moves"])
     
     encoder = PokemonEncoder(se, ie, te, ae, me)
-    assert encoder.dimension == 132
+    # 98 dims (Reduced from 102)
+    assert encoder.dimension == 98
 
 def test_pokemon_encoder_empty():
-    se = SpeciesEncoder()
-    ie = ItemsEncoder()
+    mappings = load_mappings()
+    se = SpeciesEncoder(mappings["species"])
+    ie = ItemsEncoder(mappings["items"])
     te = TypeEncoder()
-    ae = AbilitiesEncoder()
-    me = MovesEncoder()
-    encoder = PokemonEncoder(se, ie, te, ae, me)
+    ae = AbilitiesEncoder(mappings["abilities"])
+    me = MovesEncoder(mappings["moves"])
     
+    encoder = PokemonEncoder(se, ie, te, ae, me)
     vec = encoder.encode(None, None)
-    assert vec.shape == (132,)
+    assert len(vec) == 98
     assert np.all(vec == 0)

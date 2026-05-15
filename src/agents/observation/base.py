@@ -17,6 +17,29 @@ class ObservationEncoder(ABC):
         """Encodes the item into a numpy array."""
         pass
 
+    @staticmethod
+    def get_sorted_moves(mon: Any) -> list:
+        """Returns a stable, sorted list of move objects for a Pokémon."""
+        if mon is None or not hasattr(mon, "moves"):
+            return []
+        # Sort by ID string to ensure stable slot mapping across observations
+        return sorted(mon.moves.values(), key=lambda m: m.id)
+
+    @staticmethod
+    def get_team_list(battle: AbstractBattle, is_opponent: bool) -> list:
+        """Returns a stable list of Pokémon for a team."""
+        if battle is None:
+            return []
+        if is_opponent:
+            team = list(battle.opponent_team.values())
+            # Safety: Ensure active opponent is always included in the list
+            active_opp = battle.opponent_active_pokemon
+            if active_opp and active_opp not in team:
+                team.append(active_opp)
+        else:
+            team = list(battle.team.values())
+        return team
+
     def get_layout(self) -> Dict[str, Any]:
         """
         Returns a dictionary describing the layout of the encoded vector.

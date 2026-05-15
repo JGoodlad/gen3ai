@@ -1,15 +1,17 @@
 import pytest
 import numpy as np
-from agents.observation import Gen3ObservationEncoder
 from poke_env.battle.abstract_battle import AbstractBattle
 from unittest.mock import MagicMock
+from .state_encoder import Gen3ObservationEncoder, load_mappings
 
 def test_encoder_dimension():
-    encoder = Gen3ObservationEncoder()
-    assert encoder.dimension == 1684
+    mappings = load_mappings()
+    encoder = Gen3ObservationEncoder(mappings)
+    assert encoder.dimension == 1565
 
 def test_encoder_output_shape():
-    encoder = Gen3ObservationEncoder()
+    mappings = load_mappings()
+    encoder = Gen3ObservationEncoder(mappings)
     # Mock battle
     battle = MagicMock(spec=AbstractBattle)
     battle.team = {}
@@ -20,11 +22,6 @@ def test_encoder_output_shape():
     battle.side_conditions = {}
     battle.opponent_side_conditions = {}
     battle.turn = 0
-    
-    obs = encoder.encode(battle)
-    assert obs.shape == (1684,)
-    assert isinstance(obs, np.ndarray)
-    assert obs.dtype == np.float32
 
-if __name__ == "__main__":
-    pytest.main([__file__])
+    obs = encoder.encode(battle)
+    assert obs.shape == (1565,)

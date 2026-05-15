@@ -72,7 +72,7 @@ def get_observation_encoder(mappings):
 class Gen3ObservationEncoder(ObservationEncoder):
     """
     Top-level encoder that orchestrates the entire Gen 3 observation vector.
-    Total dimensions: 1684
+    Total dimensions: 1613
     """
     
     def __init__(self, mappings: Dict[str, Any] = None):
@@ -108,7 +108,7 @@ class Gen3ObservationEncoder(ObservationEncoder):
         vec = np.zeros(self.dimension, dtype=np.float32)
         
         # 1. Our Team
-        our_team_list = list(battle.team.values())
+        our_team_list = self.get_team_list(battle, is_opponent=False)
         for i in range(TEAM_SIZE):
             mon = our_team_list[i] if i < len(our_team_list) else None
             mon_vec = self.pokemon_encoder.encode(mon, battle)
@@ -119,20 +119,12 @@ class Gen3ObservationEncoder(ObservationEncoder):
             vec[start + POKEMON_VECTOR_DIM] = is_active
             
         # 2. Opponent Team
-        # We use the stable insertion order of the battle.opponent_team dict
-        # as our slot mapping. This ensures each Pokemon object has a unique
-        # slot regardless of species collisions (important for Transform/Ditto).
-        opponents = list(battle.opponent_team.values())
-        
-        # Safety: ensure active opponent is tracked
-        active_opp = battle.opponent_active_pokemon
-        if active_opp and active_opp not in opponents:
-            opponents.append(active_opp)
+        opponents = self.get_team_list(battle, is_opponent=True)
             
         for i in range(TEAM_SIZE):
             mon = opponents[i] if i < len(opponents) else None
             mon_vec = self.pokemon_encoder.encode(mon, battle)
-            is_active = 1.0 if (mon and mon is active_opp) else 0.0
+            is_active = 1.0 if (mon and mon is battle.opponent_active_pokemon) else 0.0
             
             start = OFFSET_OPP_TEAM + (i * POKEMON_FULL_DIM)
             vec[start : start + POKEMON_VECTOR_DIM] = mon_vec

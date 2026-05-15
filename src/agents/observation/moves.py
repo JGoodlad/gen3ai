@@ -1,8 +1,9 @@
 import numpy as np
 from .base import ObservationEncoder
-from .constants import MOVE_SLOT_DIM, MOVES_KNOWN_DIM
+from .constants import MOVE_SLOT_DIM
 from .types import TypeEncoder
 from poke_env.battle.abstract_battle import AbstractBattle
+from poke_env.battle.move_category import MoveCategory
 from typing import Any, List, Dict
 
 class MovesEncoder(ObservationEncoder):
@@ -19,7 +20,7 @@ class MovesEncoder(ObservationEncoder):
 
     @property
     def dimension(self) -> int:
-        return (4 * MOVE_SLOT_DIM) + MOVES_KNOWN_DIM
+        return 4 * MOVE_SLOT_DIM
 
     def encode(self, mon: Any, battle: AbstractBattle) -> np.ndarray:
         vec = np.zeros(self.dimension, dtype=np.float32)
@@ -27,9 +28,7 @@ class MovesEncoder(ObservationEncoder):
             return vec
             
         # Get moves and SORT them by ID to ensure stable mapping across workers
-        moves = []
-        if hasattr(mon, "moves"):
-            moves = sorted(mon.moves.values(), key=lambda m: m.id)
+        moves = self.get_sorted_moves(mon)
         
         for i in range(4):
             if i < len(moves):
@@ -60,9 +59,16 @@ class MovesEncoder(ObservationEncoder):
                 vec[base_idx + 3] = recoil
                 # 5. Type ID
                 vec[base_idx + 4] = float(type_id)
+                # 6. Category ID (0=Status, 1=Physical, 2=Special)
+                category_val = 0.0
+                if move.category == MoveCategory.PHYSICAL:
+                    category_val = 1.0
+                elif move.category == MoveCategory.SPECIAL:
+                    category_val = 2.0
+                vec[base_idx + 5] = category_val
                 
-                # Known Flag (Binary)
-                vec[4 * MOVE_SLOT_DIM + i] = 1.0
+                # 7. Known Flag (Binary) - Now interleaved
+                vec[base_idx + 6] = 1.0
                 
         return vec
 
@@ -74,15 +80,16 @@ class MovesEncoder(ObservationEncoder):
                 "power": {"offset": 1, "dim": 1},
                 "secondary": {"offset": 2, "dim": 1},
                 "recoil": {"offset": 3, "dim": 1},
-                "type": {"offset": 4, "dim": 1}
-            },
-            "known": {"offset": 4 * MOVE_SLOT_DIM, "dim": MOVES_KNOWN_DIM}
+                "type": {"offset": 4, "dim": 1},
+                "category": {"offset": 5, "dim": 1},
+                "known": {"offset": 6, "dim": 1}
+            }
         }
 
     def describe_vector(self, vector: np.ndarray) -> Dict[str, Any]:
         move_names = []
         for i in range(4):
-            if vector[4 * MOVE_SLOT_DIM + i] > 0.5:
+            if vector[i * MOVE_SLOT_DIM + 6] > 0.5:
                 mid = int(vector[i * MOVE_SLOT_DIM])
                 name = self.reverse_mapping.get(mid, f"Move({mid})")
                 move_names.append(name)

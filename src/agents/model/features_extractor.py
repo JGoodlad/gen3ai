@@ -51,9 +51,11 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         
         # 1.5 Shared Move Processor (Step 1)
         # Input: Move Embedding (16) + Type Embedding (16) + Remnants (6) + Known (1) 
-        # Context: HP (1) + Turn (1) + Weather (6) + Fainted (2) + Spikes (2) = 12
-        # Total: 39 + 12 = 51
-        move_input_dim = layout['move_embedding_dim'] + layout['type_embedding_dim'] + 6 + 1 + 12
+        # Context: HP (1) + Turn (1) + Weather (6) + fainted (2) + Spikes (2) = 12
+        # Matchups: Effectiveness against 6 potential targets = 6
+        # Remnants include: Power, Secondary, Recoil, Category
+        # Total: 39 + 12 + 6 = 57
+        move_input_dim = layout['move_embedding_dim'] + layout['type_embedding_dim'] + 6 + 1 + 12 + 6
         self.move_network = torch.nn.Sequential(
             torch.nn.Linear(move_input_dim, 64),
             torch.nn.ReLU(),
@@ -154,7 +156,41 @@ class Gen3FeaturesExtractor(torch.nn.Module):
             
             momentum = desc.get('momentum', {})
             print(f"\n--- MOMENTUM ---")
-            print(f"Fainted: {momentum.get('fainted_our', 0)} (Us) / {momentum.get('fainted_opp', 0)} (Them) | Matchups: {momentum.get('move_mults', [])}")
+            print(f"Fainted: {momentum.get('fainted_our', 0)} (Us) / {momentum.get('fainted_opp', 0)} (Them)")
+            
+            # --- MATCHUP MATRIX ---
+            our_vs_their = momentum.get('our_vs_their') # [6, 4, 6]
+            if our_vs_their is not None:
+                print("\n--- MATCHUPS (Our Moves vs Their Team) ---")
+                opp_mons = [m['species'][:6] for m in desc['opp_team']]
+                if opp_mons:
+                    header = "               " + "".join([f"{m:>8}" for m in opp_mons])
+                    print(header)
+                    for i, mon in enumerate(desc['our_team']):
+                        moves = mon.get('moves', [])
+                        for m_idx in range(4):
+                            if m_idx < len(moves):
+                                move_name = moves[m_idx]
+                                row_label = f"[{i}] {mon['species'][:3]}:{move_name[:7]}"
+                                vals = "".join([f"{our_vs_their[i, m_idx, j]:>8.1f}x" for j in range(len(opp_mons))])
+                                print(f"{row_label:15} {vals}")
+                else:
+                    print("No opponent Pokémon revealed yet.")
+
+            their_vs_our = momentum.get('their_vs_our') # [6, 4, 6]
+            if their_vs_our is not None and np.any(their_vs_our):
+                print("\n--- MATCHUPS (Their Moves vs Our Team) ---")
+                our_mons = [m['species'][:6] for m in desc['our_team']]
+                header = "               " + "".join([f"{m:>8}" for m in our_mons])
+                print(header)
+                for i, mon in enumerate(desc['opp_team']):
+                    moves = mon.get('moves', [])
+                    for m_idx in range(4):
+                        if m_idx < len(moves):
+                            move_name = moves[m_idx]
+                            row_label = f"[{i}] {mon['species'][:3]}:{move_name[:7]}"
+                            vals = "".join([f"{their_vs_our[i, m_idx, j]:>8.1f}x" for j in range(len(our_mons))])
+                            print(f"{row_label:15} {vals}")
             
             # --- INTEGRITY CHECK ---
             warnings, is_critical = self._encoder.integrity_check(x[0].cpu().numpy())
@@ -194,6 +230,16 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         # Fainted counts (Phase) are at Reactive block offset 8
         reactive_start = parts['reactive']['start'] - ctx['start']
         fainted_feature = remaining_part[:, reactive_start + 8 : reactive_start + 10] # [B, 2]
+        
+        # 1.2 Matchup Matrix Extraction (New)
+        # Extract 144 dims for Our Matchups and 144 for Theirs
+        our_matchups_flat = remaining_part[:, reactive_start + 16 : reactive_start + 160]
+        their_matchups_flat = remaining_part[:, reactive_start + 160 : reactive_start + 304]
+        
+        # Reshape to [B, 6, 4, 6] to align with Move Processor
+        our_matchups = our_matchups_flat.reshape(batch_size, TEAM_SIZE, 4, TEAM_SIZE)
+        their_matchups = their_matchups_flat.reshape(batch_size, TEAM_SIZE, 4, TEAM_SIZE)
+        matchups_all = torch.cat([our_matchups, their_matchups], dim=1) # [B, 12, 4, 6]
         
         pokemon_part = torch.cat([our_team, opp_team], dim=1) # [B, 2 * TEAM_SIZE, POKEMON_FULL_DIM]
         
@@ -303,10 +349,13 @@ class Gen3FeaturesExtractor(torch.nn.Module):
             move_remnants.append(pokemon_part[:, :, rem2_start : rem2_end])
         all_move_remnants = torch.cat(move_remnants, dim=2) # [B, 12, 24]
         
-        # Part F: Move Known Flags
-        known_layout = moves_layout['known']
-        known_idx = moves_offset + known_layout['offset']
-        known_flags = pokemon_part[:, :, known_idx : known_idx + known_layout['dim']] # [B, 12, 4]
+        # Part F: Move Known Flags (Now interleaved in slots)
+        known_flags_tensors = []
+        for i in range(4):
+            slot_start = moves_offset + moves_layout['slots'][i]['offset']
+            # Known flag is at index 6 of the slot
+            known_flags_tensors.append(pokemon_part[:, :, slot_start + 6 : slot_start + 7])
+        known_flags = torch.cat(known_flags_tensors, dim=2) # [B, 12, 4]
         
         # Part G: HP and Active Flag
         hp_offset = pk_layout['hp']['offset']
@@ -339,7 +388,8 @@ class Gen3FeaturesExtractor(torch.nn.Module):
             embedded_move_types, 
             move_remnants_reshaped, 
             known_flags_reshaped,
-            move_context_final
+            move_context_final,
+            matchups_all
         ], dim=3)
         
         # Process through shared network
