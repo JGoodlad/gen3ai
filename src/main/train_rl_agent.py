@@ -17,263 +17,27 @@ for d in [root_dir, src_dir, main_dir]:
         sys.path.insert(0, d)
 
 import asyncio
-import numpy as np
 import argparse
 from datetime import datetime
-from gymnasium import spaces
-from stable_baselines3 import PPO
 from sb3_contrib import MaskablePPO
 from stable_baselines3.common.callbacks import CheckpointCallback
 from stable_baselines3.common.vec_env import DummyVecEnv, SubprocVecEnv
 from stable_baselines3.common.monitor import Monitor
-from stable_baselines3.common.policies import ActorCriticPolicy
-from typing import Dict, Any, Optional
 
 from agents.model.features_extractor import Gen3FeaturesExtractor
-from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings, get_observation_encoder
-from agents.action.mask_generator import Gen3ActionMasker
-from agents.rl_agent import RLPlayer, SingleAgentWrapper
-from agents.observation.species import SpeciesEncoder
-from agents.observation.moves import MovesEncoder
-from agents.observation.items import ItemsEncoder
-from agents.observation.abilities import AbilitiesEncoder
-from agents.observation.reactive import ReactiveEncoder
-from agents.observation.global_env import GlobalEnvEncoder
+from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings
+from agents.rl_agent import RLPlayer
 from utils.teambuilder import Gen3Teambuilder
 from utils.team_loader import TeamLoader
 from agents.training.replay_recorder import ReplayCallback
-from agents.training.reward_manager import Gen3RewardManager
-from agents.training.reward_function import RewardFunction
-from agents.training.battle_context import BattleContext, TurnDelta
-from agents.training.slot_registry import SlotRegistry
 from agents.training.wrappers import MaskableAgentWrapper
-from agents.action.mapper import Gen3ActionMapper
+from agents.training.gen3_env import Gen3Env
 from utils.logging.levels import LogLevel
 
 from poke_env.player import RandomPlayer, SimpleHeuristicsPlayer
 from poke_env import AccountConfiguration, LocalhostServerConfiguration
-from poke_env.environment.singles_env import SinglesEnv
 
 BATTLE_FORMAT = "gen3ou"
-
-STALL_THRESHOLD = 250
-
-class Gen3Env(SinglesEnv):
-    def __init__(self, mappings, reward_fn: Optional[RewardFunction] = None, log_level=LogLevel.QUIET, stalls_dir=None, *args, **kwargs):
-        self.log_level = log_level
-        self.stalls_dir = stalls_dir
-        self._stall_logged = False
-        super().__init__(*args, **kwargs)
-        self.observation_encoder = get_observation_encoder(mappings)
-
-        obs_dim = self.observation_encoder.dimension
-        self.vector_space = spaces.Box(low=-np.inf, high=np.inf, shape=(obs_dim,), dtype=np.float32)
-        self.action_space = spaces.Discrete(11)
-        self.observation_space = spaces.Dict({
-            "observation": self.vector_space,
-            "action_mask": spaces.Box(0, 1, shape=(11,), dtype=np.int8)
-        })
-        self.observation_spaces = {
-            self.agent1.username: self.observation_space,
-            self.agent2.username: self.observation_space
-        }
-
-        # Trainee reward function — injected or defaulted. Opponent battles fall
-        # back to poke-env's reward_computing_helper and never touch this.
-        self.reward_manager: RewardFunction = reward_fn or Gen3RewardManager(log_level=self.log_level)
-
-        # Per-episode stable slot assignment for our team and opponent team
-        self._our_slots = SlotRegistry()
-        self._opp_slots = SlotRegistry()
-        self._last_ctx: Optional[BattleContext] = None
-        self._prev_ctx: Optional[BattleContext] = None
-        self._last_action: int = -1
-
-    def embed_battle(self, battle):
-        obs = self.observation_encoder.encode(battle)
-
-        # Only build a new context for the trainee while the battle is live.
-        # Skip on terminal observations (battle.finished) and transitional wait
-        # states where poke-env emits an embed_battle call before the server has
-        # sent a valid request — both cases have no valid actions so we keep the
-        # last context intact (MaskablePPO uses it for value estimation only).
-        if battle is self.battle1 and not battle.finished:
-            mask = Gen3ActionMasker.get_mask(battle).astype(np.int8)
-
-            if mask.sum() > 0:
-                for mon in battle.team.values():
-                    self._our_slots.assign(mon.species)
-                for mon in battle.opponent_team.values():
-                    self._opp_slots.assign(mon.species)
-
-                our_hp = np.zeros(6, dtype=np.float32)
-                for mon in battle.team.values():
-                    slot = self._our_slots.get(mon.species)
-                    if slot is not None:
-                        our_hp[slot] = mon.current_hp_fraction
-
-                opp_hp = np.zeros(6, dtype=np.float32)
-                for mon in battle.opponent_team.values():
-                    slot = self._opp_slots.get(mon.species)
-                    if slot is not None:
-                        opp_hp[slot] = mon.current_hp_fraction
-
-                our_active = (
-                    battle.active_pokemon.species
-                    if battle.active_pokemon and not battle.active_pokemon.fainted
-                    else "NONE"
-                )
-                opp_active = (
-                    battle.opponent_active_pokemon.species
-                    if battle.opponent_active_pokemon
-                    else "NONE"
-                )
-                our_fainted_count = sum(1 for m in battle.team.values() if m.fainted)
-                opp_fainted_count = sum(1 for m in battle.opponent_team.values() if m.fainted)
-
-                phase = "forced_switch" if battle.force_switch else "move_selection"
-                self._last_ctx = BattleContext(
-                    turn=battle.turn,
-                    phase=phase,
-                    mask=mask,
-                    obs=obs,
-                    our_slot_map=self._our_slots.snapshot(),
-                    opp_slot_map=self._opp_slots.snapshot(),
-                    our_hp=our_hp,
-                    opp_hp=opp_hp,
-                    our_active=our_active,
-                    opp_active=opp_active,
-                    our_fainted_count=our_fainted_count,
-                    opp_fainted_count=opp_fainted_count,
-                )
-
-        return obs
-
-    def action_masks(self) -> np.ndarray:
-        if self._last_ctx is not None:
-            return self._last_ctx.mask
-        return np.ones(11, dtype=np.int8)
-
-
-    def _save_stall_html(self, battle, suffix=""):
-        """Saves a Pokémon Showdown compatible HTML replay using poke-env's built-in saver."""
-        if not self.stalls_dir:
-            return
-            
-        try:
-            os.makedirs(self.stalls_dir, exist_ok=True)
-            ts = datetime.now().strftime('%Y%m%d_%H%M%S')
-            suffix_str = f"_{suffix}" if suffix else ""
-            filename = f"stall_{battle.battle_tag}_{ts}{suffix_str}.html"
-            path = os.path.join(self.stalls_dir, filename)
-            
-            # Use the official poke-env saver
-            battle.save_replay(path)
-            
-            # Print a distinct alert so the user knows where to look
-            sys.stderr.write(f"\n🛑 [STALL LOGGED] Battle {battle.battle_tag} lasted {battle.turn} turns. HTML saved to {path}\n")
-            sys.stderr.flush()
-        except Exception as e:
-            sys.stderr.write(f"Failed to save stall log: {e}\n")
-            sys.stderr.flush()
-
-    def get_action_mask(self, battle):
-        if battle is self.battle1 and self._last_ctx is not None:
-            return self._last_ctx.mask
-        return Gen3ActionMasker.get_mask(battle).astype(np.int8)
-
-    def action_to_order(self, action, battle, **kwargs):
-        """Delegates to Gen3ActionMapper with strict turn-locked validation."""
-        from poke_env.player.battle_order import BattleOrder, ForfeitBattleOrder
-        if isinstance(action, BattleOrder):
-            return action
-
-        if battle is self.battle1:
-            if battle.turn >= STALL_THRESHOLD:
-                if not self._stall_logged:
-                    self._save_stall_html(battle, suffix="STALL")
-                    self._stall_logged = True
-                return ForfeitBattleOrder()
-
-            ctx = self._last_ctx
-            return Gen3ActionMapper.action_to_order(
-                action=action,
-                battle=battle,
-                mask=ctx.mask if ctx is not None else None,
-                latched_turn=ctx.turn if ctx is not None else -1,
-            )
-
-        # OPPONENT (battle2/others): Unmodified default poke-env logic
-        return super().action_to_order(action, battle)
-        
-    def calc_reward(self, battle):
-        if battle is self.battle1:
-            if self._prev_ctx is not None and self._last_ctx is not None:
-                delta = TurnDelta.build(self._prev_ctx, self._last_ctx, self._last_action)
-            else:
-                delta = TurnDelta.empty()
-            return self.reward_manager.process_turn_reward(battle, delta)
-        return self.reward_computing_helper(
-            battle, fainted_value=2.0, hp_value=1.0, victory_value=30.0
-        )
-
-    def step(self, action):
-        try:
-            # Pre-capture the battle object
-            battle = getattr(self, "_battle", None)
-            if battle is None:
-                battle = self.battle1 
-
-            # Record the action ONE-SHOT before processing
-            if isinstance(action, dict):
-                trainee_idx = action.get(self.agent1.username, -1)
-            else:
-                trainee_idx = action
-            
-            if battle is self.battle1 and self._last_ctx is not None:
-                self._prev_ctx = self._last_ctx
-                self._last_action = trainee_idx
-                self.reward_manager.record_action(self._last_ctx, trainee_idx)
-
-            obs, reward, term, trunc, info = super().step(action)
-
-            # Pass switch logs up to the main process
-            if hasattr(self, "_pending_switch_log"):
-                info["switch_log"] = self._pending_switch_log
-                del self._pending_switch_log
-                
-            return obs, reward, term, trunc, info
-        except Exception as e:
-            print(f"🛑 ERROR IN STEP: {e}")
-            import traceback
-            traceback.print_exc()
-            raise e
-
-    def reset(self, *args, **kwargs):
-        # Report previous episode metrics via the manager
-        self.reward_manager.report_episode(getattr(self, "battle1", None))
-
-        # Clear move slot cache and reset trackers on reset
-        self._move_slot_cache = {}
-        self._last_active_name = ""
-        self._our_slots.reset()
-        self._opp_slots.reset()
-        self._last_ctx = None
-        self._prev_ctx = None
-        try:
-            # Disable replay saving for the new battle unless it stalls later
-            if hasattr(self, "agent1"):
-                self.agent1.save_replays = None
-
-            self.reward_manager.reset()
-            self._stall_logged = False
-            self._last_action = -1
-            return super().reset(*args, **kwargs)
-        except Exception as e:
-            print(f"🛑 ERROR IN RESET: {e}")
-            import traceback
-            traceback.print_exc()
-            raise e
 
 async def main():
     # --- Pre-flight Checks ---
