@@ -62,7 +62,7 @@ class Gen3SingleAgentWrapper(SingleAgentWrapper):
     def action_masks(self):
         return self._current_mask
 
-STALL_THRESHOLD = 800
+STALL_THRESHOLD = 250
 
 class Gen3Env(SinglesEnv):
     def __init__(self, mappings, log_level=LogLevel.QUIET, stalls_dir=None, *args, **kwargs):
@@ -191,10 +191,15 @@ class Gen3Env(SinglesEnv):
 
             obs, reward, term, trunc, info = super().step(action)
             
-            # Stall Detection: Trigger EXACTLY once at turn 800
-            if battle and battle.turn == STALL_THRESHOLD and not self._stall_logged:
-                self._save_stall_html(battle, suffix="STALL")
-                self._stall_logged = True
+            # Stall Termination: Trigger forfeit at 250 turns
+            if battle and battle.turn >= STALL_THRESHOLD:
+                if not self._stall_logged:
+                    self._save_stall_html(battle, suffix="STALL")
+                    self._stall_logged = True
+                
+                # Force a forfeit to end the stall loop
+                if not battle.finished:
+                    return obs, -30.0, True, True, info
             
             # Pass switch logs up to the main process
             if hasattr(self, "_pending_switch_log"):
