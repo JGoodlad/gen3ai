@@ -1,0 +1,275 @@
+from typing import Optional
+import numpy as np
+
+from agents.training.battle_context import BattleContext, TurnDelta
+from agents.training.slot_registry import SlotRegistry
+
+
+class BattleRecorder:
+    """
+    Records every model invocation for a single battle and exports a
+    human-readable summary JSON.
+
+    Call record() once per choose_move(), finalize() at battle end,
+    then to_summary() to get the exportable dict.
+
+    Each invocation entry is self-contained — action labels are inlined,
+    not referenced from a legend — so a human can read any turn in isolation.
+    """
+
+    def __init__(self, battle_tag: str):
+        self.battle_tag = battle_tag
+        self._our_slots = SlotRegistry()
+        self._opp_slots = SlotRegistry()
+        self._invocations: list[dict] = []
+        self._pending_ctx: Optional[BattleContext] = None
+        self._pending_action: int = -1
+        self._pending_entry: Optional[dict] = None
+
+    # ------------------------------------------------------------------
+    # Public API
+    # ------------------------------------------------------------------
+
+    def record(self, battle, action_idx: int, probs: np.ndarray, mask: np.ndarray) -> None:
+        """Record a model invocation. Call from choose_move() after prediction."""
+        ctx = self._build_ctx(battle, mask)
+
+        if self._pending_entry is not None:
+            self._complete_pending(ctx, battle)
+
+        chosen = self._action_label(action_idx, battle)
+        entry = {
+            "i": len(self._invocations) + 1,
+            "turn": ctx.turn,
+            "phase": ctx.phase,
+            "our": {"species": ctx.our_active, "hp": self._our_hp_pct(ctx)},
+            "opp": {"species": ctx.opp_active, "hp": self._opp_hp_pct(ctx)},
+            "outcome": None,
+            "chosen": chosen,
+            "actions": self._all_action_labels(battle, probs, mask),
+        }
+
+        self._pending_ctx = ctx
+        self._pending_action = action_idx
+        self._pending_entry = entry
+
+    def finalize(self, battle) -> None:
+        """Complete the last pending invocation at battle end."""
+        if self._pending_entry is None:
+            return
+
+        prev_ctx = self._pending_ctx
+        our_hp, opp_hp = self._terminal_hp(battle)
+
+        prev_our_slot = prev_ctx.our_slot_map.get(prev_ctx.our_active, 0)
+        prev_opp_slot = prev_ctx.opp_slot_map.get(prev_ctx.opp_active, 0)
+        our_delta = (our_hp[prev_our_slot] - prev_ctx.our_hp[prev_our_slot]) * 100
+        opp_delta = (opp_hp[prev_opp_slot] - prev_ctx.opp_hp[prev_opp_slot]) * 100
+
+        events = []
+        final_our_fainted = sum(1 for m in battle.team.values() if m.fainted)
+        final_opp_fainted = sum(1 for m in battle.opponent_team.values() if m.fainted)
+        if final_our_fainted > prev_ctx.our_fainted_count:
+            events.append(f"our:{prev_ctx.our_active}:fainted")
+        if final_opp_fainted > prev_ctx.opp_fainted_count:
+            events.append(f"opp:{prev_ctx.opp_active}:fainted")
+
+        if battle.won:
+            events.append("result:win")
+        elif battle.lost:
+            events.append("result:loss")
+        else:
+            events.append("result:tie")
+
+        self._pending_entry["outcome"] = {
+            "we":   {"action": self._pending_entry["chosen"], "hp_delta": f"{our_delta:+.0f}%"},
+            "they": {"action": "unknown",                     "hp_delta": f"{opp_delta:+.0f}%"},
+            "events": events,
+        }
+        self._invocations.append(self._pending_entry)
+        self._pending_entry = None
+
+    def to_summary(self, battle, step: int) -> dict:
+        """Export the full battle summary as a JSON-serializable dict."""
+        if battle.won:
+            result = "WIN"
+        elif battle.lost:
+            result = "LOSS"
+        else:
+            result = "TIE"
+
+        return {
+            "meta": {
+                "step": step,
+                "battle_id": self.battle_tag,
+                "result": result,
+                "turns": battle.turn,
+                "invocations": len(self._invocations),
+            },
+            "teams": {
+                "ours": [
+                    {
+                        "species": m.species,
+                        "item": m.item.name if m.item else "none",
+                        "final_hp": f"{m.current_hp_fraction * 100:.0f}%",
+                        "fainted": m.fainted,
+                    }
+                    for m in battle.team.values()
+                ],
+                "opponent": [
+                    {
+                        "species": m.species,
+                        "final_hp": f"{m.current_hp_fraction * 100:.0f}%",
+                        "fainted": m.fainted,
+                    }
+                    for m in battle.opponent_team.values()
+                ],
+            },
+            "invocations": self._invocations,
+        }
+
+    # ------------------------------------------------------------------
+    # Internal helpers
+    # ------------------------------------------------------------------
+
+    def _build_ctx(self, battle, mask: np.ndarray) -> BattleContext:
+        for mon in battle.team.values():
+            self._our_slots.assign(mon.species)
+        for mon in battle.opponent_team.values():
+            self._opp_slots.assign(mon.species)
+
+        our_hp = np.zeros(6, dtype=np.float32)
+        for mon in battle.team.values():
+            slot = self._our_slots.get(mon.species)
+            if slot is not None:
+                our_hp[slot] = mon.current_hp_fraction
+
+        opp_hp = np.zeros(6, dtype=np.float32)
+        for mon in battle.opponent_team.values():
+            slot = self._opp_slots.get(mon.species)
+            if slot is not None:
+                opp_hp[slot] = mon.current_hp_fraction
+
+        our_active = (
+            battle.active_pokemon.species
+            if battle.active_pokemon and not battle.active_pokemon.fainted
+            else "NONE"
+        )
+        opp_active = (
+            battle.opponent_active_pokemon.species
+            if battle.opponent_active_pokemon
+            else "NONE"
+        )
+
+        return BattleContext(
+            turn=battle.turn,
+            phase="forced_switch" if battle.force_switch else "move_selection",
+            mask=mask,
+            obs=np.zeros(1, dtype=np.float32),
+            our_slot_map=self._our_slots.snapshot(),
+            opp_slot_map=self._opp_slots.snapshot(),
+            our_hp=our_hp,
+            opp_hp=opp_hp,
+            our_active=our_active,
+            opp_active=opp_active,
+            our_fainted_count=sum(1 for m in battle.team.values() if m.fainted),
+            opp_fainted_count=sum(1 for m in battle.opponent_team.values() if m.fainted),
+        )
+
+    def _latched(self, battle) -> dict:
+        """Return the decision context latched by Gen3ActionMasker, or empty dict."""
+        return getattr(battle, "_gen3_decision_context", {})
+
+    def _action_label(self, action_idx: int, battle) -> str:
+        ctx = self._latched(battle)
+        team_list = ctx.get("team_objects", list(battle.team.values()))
+        move_ids = ctx.get("move_ids", [])
+
+        if action_idx < 6:
+            return f"switch:{team_list[action_idx].species}" if action_idx < len(team_list) else f"switch:slot{action_idx}"
+        elif action_idx < 10:
+            m = action_idx - 6
+            return move_ids[m] if m < len(move_ids) else f"move{m}"
+        return "struggle"
+
+    def _all_action_labels(self, battle, probs: np.ndarray, mask: np.ndarray) -> dict:
+        ctx = self._latched(battle)
+        team_list = ctx.get("team_objects", list(battle.team.values()))
+        move_ids = ctx.get("move_ids", [])
+
+        result = {}
+        for i in range(11):
+            if i < 6:
+                label = f"switch:{team_list[i].species}" if i < len(team_list) else f"switch:slot{i}"
+            elif i < 10:
+                m = i - 6
+                label = move_ids[m] if m < len(move_ids) else f"move{m}"
+            else:
+                label = "struggle"
+            result[label] = {"prob": f"{probs[i] * 100:.1f}%", "valid": bool(mask[i])}
+        return result
+
+    def _our_hp_pct(self, ctx: BattleContext) -> str:
+        if ctx.our_active == "NONE":
+            return "0%"
+        return f"{ctx.our_hp[ctx.our_slot_map.get(ctx.our_active, 0)] * 100:.0f}%"
+
+    def _opp_hp_pct(self, ctx: BattleContext) -> str:
+        if ctx.opp_active == "NONE":
+            return "?%"
+        slot = ctx.opp_slot_map.get(ctx.opp_active)
+        return f"{ctx.opp_hp[slot] * 100:.0f}%" if slot is not None else "?%"
+
+    def _complete_pending(self, curr_ctx: BattleContext, battle) -> None:
+        prev_ctx = self._pending_ctx
+        delta = TurnDelta.build(prev_ctx, curr_ctx, self._pending_action)
+
+        # Our action
+        if delta.our_switch_to:
+            we_action = f"switched_to:{delta.our_switch_to}"
+        elif prev_ctx.phase == "forced_switch" and curr_ctx.our_active not in ("NONE", prev_ctx.our_active):
+            we_action = f"forced_switch_to:{curr_ctx.our_active}"
+        else:
+            we_action = self._pending_entry["chosen"]
+
+        # Their action — prefer TurnDelta switch detection, then poke-env last_move
+        if delta.opp_switch_to:
+            they_action = f"switched_to:{delta.opp_switch_to}"
+        else:
+            opp_mon = battle.opponent_active_pokemon
+            last_move = getattr(opp_mon, "last_move", None) if opp_mon else None
+            they_action = last_move.id if (last_move and hasattr(last_move, "id")) else "unknown"
+
+        # HP deltas for the mons that were active at decision time
+        prev_our_slot = prev_ctx.our_slot_map.get(prev_ctx.our_active, 0)
+        prev_opp_slot = prev_ctx.opp_slot_map.get(prev_ctx.opp_active, 0)
+        our_delta = delta.our_hp_delta[prev_our_slot] * 100
+        opp_delta = delta.opp_hp_delta[prev_opp_slot] * 100
+
+        events = []
+        if delta.we_fainted:
+            events.append(f"our:{prev_ctx.our_active}:fainted")
+        if delta.opp_fainted:
+            events.append(f"opp:{prev_ctx.opp_active}:fainted")
+
+        self._pending_entry["outcome"] = {
+            "we":   {"action": we_action,   "hp_delta": f"{our_delta:+.0f}%"},
+            "they": {"action": they_action, "hp_delta": f"{opp_delta:+.0f}%"},
+            "events": events,
+        }
+        self._invocations.append(self._pending_entry)
+        self._pending_entry = None
+        self._pending_ctx = None
+
+    def _terminal_hp(self, battle) -> tuple[np.ndarray, np.ndarray]:
+        our_hp = np.zeros(6, dtype=np.float32)
+        for mon in battle.team.values():
+            slot = self._our_slots.get(mon.species)
+            if slot is not None:
+                our_hp[slot] = mon.current_hp_fraction
+        opp_hp = np.zeros(6, dtype=np.float32)
+        for mon in battle.opponent_team.values():
+            slot = self._opp_slots.get(mon.species)
+            if slot is not None:
+                opp_hp[slot] = mon.current_hp_fraction
+        return our_hp, opp_hp

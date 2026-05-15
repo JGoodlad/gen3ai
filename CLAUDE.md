@@ -15,12 +15,24 @@ The conda env is `gen3ai_stable`. `deps/venv` exists but is outdated — ignore 
 
 ## Git Worktree Setup
 
-When opening a new git worktree (e.g. via Claude Code), the `deps/pokemon-showdown` submodule directory is created but left empty. Symlink it from the main repo before running tests:
+When opening a new git worktree (e.g. via Claude Code), the `deps/pokemon-showdown` submodule directory is created but left empty. Two steps are required before training or running tests:
 
+**Step 1 — initialize the submodule** (gets source files, fixes VS Code git integration):
 ```bash
-rmdir deps/pokemon-showdown
-ln -s /home/goodlad/dev/gen3ai/deps/pokemon-showdown deps/pokemon-showdown
+git submodule update --init
 ```
+
+**Step 2 — symlink the build artifacts** (the submodule checkout has no compiled `dist/` or installed `node_modules/`, but the main repo already has them):
+```bash
+ln -s /home/goodlad/dev/gen3ai/deps/pokemon-showdown/dist \
+      deps/pokemon-showdown/dist
+ln -s /home/goodlad/dev/gen3ai/deps/pokemon-showdown/node_modules \
+      deps/pokemon-showdown/node_modules
+```
+
+Both `dist/` and `node_modules/` are gitignored in pokemon-showdown, so these symlinks don't affect `git status`. Without step 2, training fails with `Cannot find module '.../dist/sim/index.js'`.
+
+Do **not** symlink the entire `deps/pokemon-showdown` directory — git treats the submodule path as a symlink rather than a real checkout, which breaks `git status` and VS Code's git integration.
 
 ---
 

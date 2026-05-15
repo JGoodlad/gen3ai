@@ -152,6 +152,89 @@ active mon is in Struggle, enabling the model to learn "switch out the useless m
 
 ---
 
+### Replay Recorder (`callbacks.py` → `replay_recorder.py`)
+
+Rewrote the replay and summary system. The old `callbacks.py` had `StatTrackingRLPlayer`
+doing retroactive result patching, duplicated switch detection, and manual HP subtraction —
+all the patterns we eliminated in the reward pipeline. The new design uses the same
+primitives.
+
+**`src/agents/training/battle_recorder.py`** — new
+
+`BattleRecorder` owns all tracking logic for a single battle:
+- `record(battle, action_idx, probs, mask)` — called once per model invocation; builds a
+  `BattleContext` using `SlotRegistry` for stable HP indexing, uses
+  `battle._gen3_decision_context` (latched by `Gen3ActionMasker`) for consistent action
+  labels, stores the invocation as pending.
+- `_complete_pending(curr_ctx, battle)` — called at the next invocation; calls
+  `TurnDelta.build(prev_ctx, curr_ctx, action)` to get HP deltas, switch events, and faint
+  events for free. No manual state diffing.
+- `finalize(battle)` — completes the last pending invocation at battle end.
+- `to_summary(battle, step)` — exports a JSON-serializable dict.
+
+Each invocation entry is self-contained — action labels are inlined, not referenced from a
+legend — so a human can read any turn in isolation:
+
+```json
+{
+  "i": 3, "turn": 5, "phase": "move_selection",
+  "our": { "species": "tyranitar", "hp": "82%" },
+  "opp": { "species": "zapdos",    "hp": "65%" },
+  "outcome": {
+    "we":   { "action": "rockslide",   "hp_delta": "-18%" },
+    "they": { "action": "thunderbolt", "hp_delta": "-35%" },
+    "events": []
+  },
+  "chosen": "rockslide",
+  "actions": {
+    "switch:skarmory": { "prob": "12.5%", "valid": true },
+    "rockslide":       { "prob": "18.3%", "valid": true },
+    ...
+  }
+}
+```
+
+**`src/agents/training/replay_recorder.py`** (renamed from `callbacks.py`)
+
+`StatTrackingRLPlayer` is now 8 lines — just hooks `choose_move` to call
+`recorder.record()`. `StatTrackingHeuristicPlayer` and `init_stats` are removed entirely.
+Summary files drop from ~30 KB to ~3-5 KB per battle.
+
+---
+
+## Infrastructure Fix: Git Worktree + Submodule
+
+The original `CLAUDE.md` worktree setup used a symlink for `deps/pokemon-showdown`:
+
+```bash
+rmdir deps/pokemon-showdown
+ln -s /home/goodlad/dev/gen3ai/deps/pokemon-showdown deps/pokemon-showdown
+```
+
+This caused `git status` to fail with `error: expected submodule path
+'deps/pokemon-showdown' not to be a symbolic link`, breaking VS Code's git integration.
+
+**Fix — two steps**:
+
+1. Initialize the submodule (gets source files, fixes VS Code git integration):
+   ```bash
+   git submodule update --init
+   ```
+   Git creates a real checkout with a `.git` file pointing back to the shared objects store.
+
+2. Symlink the build artifacts (`dist/` and `node_modules/` are gitignored, so not part of the checkout, but the main repo already has them built):
+   ```bash
+   ln -s /home/goodlad/dev/gen3ai/deps/pokemon-showdown/dist \
+         deps/pokemon-showdown/dist
+   ln -s /home/goodlad/dev/gen3ai/deps/pokemon-showdown/node_modules \
+         deps/pokemon-showdown/node_modules
+   ```
+   Without step 2, training fails with `Cannot find module '.../dist/sim/index.js'`.
+
+`CLAUDE.md` updated accordingly.
+
+---
+
 ## Tests Added
 
 | File | Coverage |

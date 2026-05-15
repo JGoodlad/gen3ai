@@ -41,7 +41,7 @@ from agents.observation.reactive import ReactiveEncoder
 from agents.observation.global_env import GlobalEnvEncoder
 from utils.teambuilder import Gen3Teambuilder
 from utils.team_loader import TeamLoader
-from agents.training.callbacks import ReplayCallback
+from agents.training.replay_recorder import ReplayCallback
 from agents.training.reward_manager import Gen3RewardManager
 from agents.training.reward_function import RewardFunction
 from agents.training.battle_context import BattleContext, TurnDelta
