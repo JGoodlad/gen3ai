@@ -142,40 +142,131 @@ self._print_deep_trace(x_base, pokemon_part, species_ids)
 
 ---
 
-## Files Changed
+## Files Changed (prev_mask feature)
 
 | File | Change |
 |---|---|
-| `src/agents/observation/state_encoder.py` | Added `base_dimension` property (1021); `dimension` now 1032; `encode()` allocates only `base_dimension`; `get_layout()` exposes `base_dim` and `prev_mask_dim: 11` |
+| `src/agents/observation/state_encoder.py` | Added `base_dimension` property (1021); `dimension` now 1032; `encode()` allocates only `base_dimension`; `get_layout()` exposes `base_dim`, `prev_mask_dim: 11`, `active_context_dim: 22`, `reactive_layout` |
 | `src/agents/training/episode_tracker.py` | Added `prev_mask` property (returns `history[-2].mask` or all-ones) |
 | `src/agents/training/gen3_env.py` | `embed_battle()` appends `_tracker.prev_mask` |
 | `src/agents/inference/player.py` | `embed_battle()` appends all-ones prev_mask for inference players |
-| `src/agents/model/features_extractor.py` | `move_input_dim` 55→56; `role_input_dim` 238→240; prev_mask slicing and routing in `forward_internal()`; `remaining_part` slice fixed; trace strips mask tail |
+| `src/agents/model/features_extractor.py` | `move_input_dim` 55→56; `role_input_dim` 238→256; prev_mask slicing and routing in `forward_internal()`; `remaining_part` slice fixed; trace strips mask tail |
 | `src/agents/observation/state_encoder_test.py` | `EXPECTED_OBS_DIM` 1021→1032; added `EXPECTED_BASE_DIM = 1021`; `encode()` tested against `base_dimension` |
+
+---
+
+## Phase 2: Network Architecture Fixes
+
+Following a structured review of `features_extractor.py`, six architectural issues were fixed in
+the same step. All changes are non-checkpoint-safe (rapid iteration phase — no trained weights to
+preserve).
+
+### P1 — Strip matchup matrix from projection input
+
+The 288-dim matchup matrix (at `reactive_start + 16`) was being concatenated into the projection
+input even though the move processor had already encoded it into role tokens. This added ~147K
+projection parameters for zero structural gain.
+
+**Fix:** Slice `remaining_part[:, 2*active_ctx_dim : reactive_start + matchup_offset]` for the
+projection — global env scalars and reactive scalars only, no matchup block.
+
+### P2 — Threat attention path (opponent introspection)
+
+The three original attention paths (Pressure, Safety, Synergy) all update `our_team`. The
+opponent bench tokens (`their_team`) received zero cross-team attention — they were raw role
+encoder outputs concatenated directly into the projection. The value head had no structured way to
+reason about which opponent bench mon is most dangerous given our current active.
+
+**Fix:** Added a fourth path — **Threat**: `their_team` queries `our_active` (post-Pressure).
+Adds `threat_attn` (MultiheadAttention, 4 heads) and `norm4` (LayerNorm).
+
+```
+Path 4: Threat — their_team ← our_active_post_pressure
+```
+
+### P3 — Learned encoder for active context (boosts and volatiles)
+
+The 44 dims of `active_context` (22 each for our active and opponent active — boosts, stat stages,
+volatiles, confusion) were fed raw to the projection MLP. No learned transformation meant the
+network had no structural bias to learn non-linear boost interactions (e.g. +2 Atk is not "twice
+as good" — it changes the entire decision surface).
+
+**Fix:** Added `active_ctx_encoder`: `Linear(22→64)→ReLU→Linear(64→32)`, shared weights for both
+sides. The raw 44-dim block is replaced in the projection by two 32-dim encoded tokens (64 dims
+total).
+
+### P4 — Fix `our_active_refined` to post-all-paths state
+
+The original code extracted `our_active_refined` after the Pressure path only, before Safety and
+Synergy updated `our_team`. The projection saw the active mon twice in contradictory
+post-attention states.
+
+**Fix:** Write the Pressure-refined active slot back into `our_team` before Safety/Synergy run,
+so all three paths compose correctly:
+
+```python
+our_team[torch.arange(batch_size), our_active_idx] = our_active_post_pressure.squeeze(1)
+# Safety and Synergy now see the Pressure-updated active slot
+our_active_refined = our_team[torch.arange(batch_size), our_active_idx]  # after all paths
+```
+
+### P5 — Layout-driven reactive offsets
+
+Hardcoded arithmetic (`reactive_start + 8`, `+15`, `+16`) in `forward_internal` was replaced with
+lookups from `self.layout['reactive_layout']`, which is now populated from
+`ReactiveEncoder.get_layout()` via `get_layout()` in `state_encoder.py`.
+
+### P6 — Type embedding concatenation instead of summation
+
+Pokémon dual-type was encoded as `E_type1 + E_type2` (16 dims). This is destructive: the
+single-type case forces `E_none` to act as an additive identity, wasting embedding capacity.
+
+**Fix:** `torch.cat([embedded_t1, embedded_t2], dim=-1)` — 32 dims, preserving the full type-pair
+signal. This cascades: `pokemon_enriched` 226→242, `role_input_dim` 240→256.
+
+### QW5 — `.float()` on move validity tensor
+
+Added `.float()` to `move_validity_ours` after `.expand()` to be explicit about dtype regardless
+of how `prev_mask` arrives.
+
+---
+
+## Final Dimensions After All Fixes
+
+| Component | Before step 2 | After step 2 (all fixes) |
+|---|---|---|
+| Observation dim | 1021 | 1032 (+ 11 prev_mask) |
+| Move processor input | 55 | 56 (+ validity bit) |
+| Pokémon type embedding | 16 (sum) | 32 (concat) |
+| `pokemon_enriched` | 226 | 242 |
+| Role encoder input | 238 | 256 |
+| Attention paths | 3 | 4 (+ Threat) |
+| Projection input | ~1961 (with matchup raw) | ~989 (matchup stripped, ctx encoded) |
+| Projection output | 512 | 512 |
 
 ---
 
 ## Tests
 
-101 unit tests pass. The `test_encoder_and_features_extractor_are_compatible` integration test
-exercises the full encoder → features_extractor forward pass with the new 1032-dim observation,
-catching any obs-space/architecture mismatch before it surfaces at checkpoint load.
+126 unit tests pass. The `test_encoder_and_features_extractor_are_compatible` integration test
+exercises the full encoder → features_extractor forward pass with the 1032-dim observation.
+`model_embedding_test.py` verifies forensic offsets for move known flag, matchup routing, item
+known flag, and ability known flag (updated to offset 103 after P6 type concat).
 
-Smoke test (`--debug --steps 10000`) passes end-to-end: episodes complete, replay callback fires,
-evaluation runs, matchup matrix prints correctly.
+Smoke test (`--debug --steps 10`) passes end-to-end.
 
 ---
 
 ## Final State
 
-The observation now carries 11 dims of prev_mask alongside the 1021 base features. Each mask
-component flows to the most semantically relevant network component rather than entering as raw
-features at the projection layer.
+The observation carries 11 dims of prev_mask alongside the 1021 base features. Each mask
+component flows to the most semantically relevant network component. The network architecture
+is structurally sound: four attention paths, encoded boosts, no raw matchup data in the
+projection, and coherent active-slot composition across attention paths.
 
 **Ready for Step 3: Turn History**
 
 - `EpisodeTracker._history` is a plain list — cap to `deque(maxlen=N)` for N-frame history
 - Each `BattleContext` carries `obs` and `mask` — no new fields needed
-- `Gen3ObservationEncoder` would gain an `encode_with_history(history: list[BattleContext])` path
-- The 11-dim prev_mask slot in the observation could expand to N × 11 if turn history is
-  concatenated rather than encoded via an RNN or attention layer
+- The 11-dim prev_mask slot could expand to N × 11 for concatenated history, or the
+  `active_ctx_encoder` pattern could extend to encode per-turn snapshots via an LSTM/GRU
