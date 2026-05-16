@@ -1,6 +1,7 @@
 import torch
 import numpy as np
 import time
+import collections
 from gymnasium import spaces
 from typing import Dict, Any, Optional
 from agents.observation.state_encoder import Gen3ObservationEncoder
@@ -131,89 +132,71 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         self.projection = torch.nn.Linear(self.projection_input_dim, self.projection_dim)
         self.activation = torch.nn.ReLU()
         self.features_dim = self.projection_dim
-        self.trace_logger = RateLimitedLogger(interval_seconds=TRACE_INTERVAL)
+        self.trace_logger = RateLimitedLogger(interval_seconds=30)
+        self._trace_buffer: collections.deque = collections.deque(maxlen=3)
         
-    def _print_deep_trace(self, x, pokemon_part, species_ids):
+    def _print_one_turn(self, obs_np: np.ndarray, label: str):
+        """Print one turn's decoded state from a full 1093-dim obs array."""
+        desc = self._encoder.describe_vector(obs_np)
+        world = desc.get('world', {})
+        NAME_W, ACTV_W, TYPE_W = 12, 6, 18
+        TAB = "    "
+
+        print(f"\n{'─' * 60}")
+        print(f"  {label}   |  Turn: {world.get('turn', '?')} | Weather: {world.get('weather', 'NONE')} | Spikes: {world.get('our_spikes', 0)}/{world.get('opp_spikes', 0)}")
+        print(f"{'─' * 60}")
+
+        ctx = desc.get('our_active', {})
+        print(f"Active ctx — Boosts: {ctx.get('boosts', {})} | Volatiles: {ctx.get('volatiles', [])}")
+
+        print("\n--- TEAMS ---")
+        for i, mon in enumerate(desc['our_team']):
+            active_str = "[actv]" if mon.get('active') else "      "
+            s = mon['stats']
+            print(f"[OUR {i}] {mon['species'].lower():{NAME_W}} {active_str:{ACTV_W}}  {mon['types'].lower():{TYPE_W}}  hp: {mon['hp']:>6}  status: {mon['status'].lower():7}  {s['hp']}/{s['atk']}/{s['def']}/{s['spa']}/{s['spd']}/{s['spe']}")
+            print(f"{TAB}item: {mon['item'].lower():17}  ably: {mon['ability'].lower():16}  moves: {mon.get('moves', [])}")
+        print("-" * 30)
+        for i, mon in enumerate(desc['opp_team']):
+            active_str = "[actv]" if mon.get('active') else "      "
+            s = mon['stats']
+            print(f"[OPP {i}] {mon['species'].lower():{NAME_W}} {active_str:{ACTV_W}}  {mon['types'].lower():{TYPE_W}}  hp: {mon['hp']:>6}  status: {mon['status'].lower():7}  {s['hp']}/{s['atk']}/{s['def']}/{s['spa']}/{s['spd']}/{s['spe']}")
+            print(f"{TAB}item: {mon['item'].lower():17}  ably: {mon['ability'].lower():16}  moves: {mon.get('moves', [])}")
+
+        momentum = desc.get('momentum', {})
+        print(f"\nFainted: {momentum.get('fainted_our', 0)} (Us) / {momentum.get('fainted_opp', 0)} (Them)")
+
+        td = desc.get("turn_delta")
+        if td is not None:
+            def _action_str(switched, failed, cant, move):
+                if switched: return "SWITCH"
+                if failed: return f"FAIL({cant or '?'})"
+                if move: return f"move pwr={move['power']} sec={int(move['secondary'])} recoil={int(move['recoil'])}"
+                return "none (first turn)"
+            print(f"TurnDelta — Us: {_action_str(td['our_switched'], td['our_failed'], td['our_cant'], td['our_move'])}  hp={td['our_hp_delta']:+.2f}  fainted={int(td['we_fainted'])}")
+            print(f"            Opp: {_action_str(td['opp_switched'], td['opp_failed'], td['opp_cant'], td['opp_move'])}  hp={td['opp_hp_delta']:+.2f}  fainted={int(td['opp_fainted'])}  known={int(td['opp_move_known'])}")
+
+        warnings, is_critical = self._encoder.integrity_check(obs_np)
+        if warnings:
+            print("\n⚠️ [INTEGRITY CHECK WARNINGS]")
+            for w in warnings:
+                print(f"  - {w}")
+        if is_critical:
+            raise ValueError(f"CRITICAL INTEGRITY FAILURE: {warnings}")
+
+    def _print_deep_trace(self):
+        """Print the last 3 buffered turns as a succession."""
         if self._encoder is None and self.mappings:
             self._encoder = Gen3ObservationEncoder(self.mappings)
-            
+        if not self._encoder or not self._trace_buffer:
+            return
+
+        n = len(self._trace_buffer)
         print("\n" + "🧬" * 30)
-        print(f"🧬 [DEEP TRACE - {time.strftime('%H:%M:%S')}]")
+        print(f"🧬 [DEEP TRACE — {n} turns ending at {time.strftime('%H:%M:%S')}]")
         print("=" * 60)
-        
-        if self._encoder:
-            # Pass the full obs (including prev_mask + TurnDelta tail) so describe_vector
-            # can delegate to turn_delta_encoder.describe_vector for the tail block.
-            desc = self._encoder.describe_vector(x[0].cpu().numpy())
-            world = desc.get('world', {})
-            print(f"Turn: {world.get('turn', '???')} | Weather: {world.get('weather', 'NONE')} | Spikes: {world.get('our_spikes', 0)} (Us) / {world.get('opp_spikes', 0)} (Them)")
-            
-            print("\n--- OUR ACTIVE CONTEXT ---")
-            ctx = desc.get('our_active', {})
-            print(f"Boosts: {ctx.get('boosts', {})} | Volatiles: {ctx.get('volatiles', [])}")
-            
-            # --- Layout Constants ---
-            NAME_W, ACTV_W, TYPE_W = 12, 6, 18
-            TAB = "    " 
-            
-            print("\n--- TEAM SUMMARIES ---")
-            for i, mon in enumerate(desc['our_team']):
-                # Primary Row
-                active_str = "[actv]" if mon.get('active') else "      "
-                s = mon['stats']
-                stats_str = f"{s['hp']}/{s['atk']}/{s['def']}/{s['spa']}/{s['spd']}/{s['spe']}"
-                type_str = mon['types'].lower()
-                species_name = mon['species'].lower()
-                
-                line1 = f"[OUR {i}] {species_name:{NAME_W}} {active_str:{ACTV_W}}  {type_str:{TYPE_W}}  hp: {mon['hp']:>6}  status: {mon['status'].lower():7}  {stats_str}"
-                print(line1)
-                
-                # Secondary Row (Minimalist)
-                line2 = f"{TAB}item: {mon['item'].lower():17}  ably: {mon['ability'].lower():16}  moves: {mon.get('moves', [])}"
-                print(line2)
-                
-            print("-" * 30)
-            for i, mon in enumerate(desc['opp_team']):
-                active_str = "[actv]" if mon.get('active') else "      "
-                s = mon['stats']
-                stats_str = f"{s['hp']}/{s['atk']}/{s['def']}/{s['spa']}/{s['spd']}/{s['spe']}"
-                type_str = mon['types'].lower()
-                species_name = mon['species'].lower()
-                
-                line1 = f"[OPP {i}] {species_name:{NAME_W}} {active_str:{ACTV_W}}  {type_str:{TYPE_W}}  hp: {mon['hp']:>6}  status: {mon['status'].lower():7}  {stats_str}"
-                print(line1)
-                
-                line2 = f"{TAB}item: {mon['item'].lower():17}  ably: {mon['ability'].lower():16}  moves: {mon.get('moves', [])}"
-                print(line2)
-            
-            momentum = desc.get('momentum', {})
-            print(f"\n--- MOMENTUM ---")
-            print(f"Fainted: {momentum.get('fainted_our', 0)} (Us) / {momentum.get('fainted_opp', 0)} (Them)")
-
-            # --- TURN DELTA ---
-            td = desc.get("turn_delta")
-            if td is not None:
-                def _action_str(switched, failed, cant, move):
-                    if switched: return "SWITCH"
-                    if failed: return f"FAIL({cant or '?'})"
-                    if move: return f"move pwr={move['power']} sec={int(move['secondary'])} recoil={int(move['recoil'])}"
-                    return "none (first turn)"
-                print(f"\n--- LAST TURN (TurnDelta) ---")
-                print(f"  Us:  {_action_str(td['our_switched'], td['our_failed'], td['our_cant'], td['our_move'])}  hp_delta={td['our_hp_delta']:+.2f}  fainted={int(td['we_fainted'])}")
-                print(f"  Opp: {_action_str(td['opp_switched'], td['opp_failed'], td['opp_cant'], td['opp_move'])}  hp_delta={td['opp_hp_delta']:+.2f}  fainted={int(td['opp_fainted'])}  known={int(td['opp_move_known'])}")
-
-            # --- INTEGRITY CHECK ---
-            warnings, is_critical = self._encoder.integrity_check(x[0].cpu().numpy())
-            if warnings:
-                print("\n⚠️ [INTEGRITY CHECK WARNINGS]")
-                for w in warnings:
-                    print(f"  - {w}")
-                    
-            if is_critical:
-                raise ValueError(f"CRITICAL INTEGRITY FAILURE: {warnings}")
-        else:
-            print("Trace available but encoder/mappings missing.")
-            
+        labels = [f"turn -2 (oldest)", "turn -1", "turn 0 (current)"][-n:]
+        for obs_np, label in zip(self._trace_buffer, labels):
+            self._print_one_turn(obs_np, label)
         print("=" * 60 + "\n")
 
     def forward_internal(self, obs):
@@ -530,22 +513,10 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         combined = self.forward_internal(obs)
         
         # Diagnostic Trace logic
-        if self.log_level >= LogLevel.PERIODIC and self.trace_logger.should_log():
+        if self.log_level >= LogLevel.PERIODIC:
             x = obs["observation"]
-            x_base = x[:, :self.layout['base_dim']]
-            parts = self.layout['parts']
-            ot = parts['our_team']
-            our_team = x_base[:, ot['start']:ot['end']].reshape(x_base.shape[0], *ot['reshape'])
-            opt = parts['opp_team']
-            opp_team = x_base[:, opt['start']:opt['end']].reshape(x_base.shape[0], *opt['reshape'])
-            pokemon_part = torch.cat([our_team, opp_team], dim=1)
-
-            pk_layout = self.layout['pokemon']
-            species_info = pk_layout['species']
-            species_idx = species_info['offset'] + species_info['layout']['species_id']['offset']
-            species_ids = pokemon_part[:, :, species_idx].long()
-
-            # Pass the full obs so describe_vector can delegate TurnDelta to its encoder
-            self._print_deep_trace(x, pokemon_part, species_ids)
+            self._trace_buffer.append(x[0].detach().cpu().numpy())
+            if self.trace_logger.should_log():
+                self._print_deep_trace()
         
         return self.activation(self.projection(combined))
