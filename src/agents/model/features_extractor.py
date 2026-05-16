@@ -117,6 +117,14 @@ class Gen3FeaturesExtractor(torch.nn.Module):
             torch.nn.Linear(64, 32),
         )
 
+        # 1.9 TurnDelta Encoder
+        # Projects the 29-dim last-turn signal into a dense 32-dim token before projection.
+        self.turn_delta_encoder = torch.nn.Sequential(
+            torch.nn.Linear(TURN_DELTA_DIM, 64),
+            torch.nn.ReLU(),
+            torch.nn.Linear(64, 32),
+        )
+
         # 2. Dynamic Input Dimension Discovery (Dummy Forward)
         # We run a single fake observation through the logic to determine the exact projection dimension.
         with torch.no_grad():
@@ -515,11 +523,13 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         # Keep: active_ctx replaced by encoded tokens + global env + reactive scalars (before matchups)
         non_matchup_rest = remaining_part[:, 2 * active_ctx_dim : reactive_start + matchup_offset]  # global + scalars
 
+        turn_delta_enc = self.turn_delta_encoder(turn_delta_feat)  # [B, 32]
+
         combined = torch.cat([
             our_team_flat, their_team_flat, our_active_refined,
             our_ctx_enc, opp_ctx_enc,
             non_matchup_rest,
-            turn_delta_feat,
+            turn_delta_enc,
         ], dim=1)
         return combined
 
