@@ -11,7 +11,7 @@ class BattleContext:
     """
     Frozen per-turn snapshot of agent-relevant battle state.
 
-    Built once per turn in embed_battle() and stored as self._last_ctx on the env.
+    Built once per turn in EpisodeTracker.record() and stored as self._last_ctx on the env.
     Gives the reward function, action mapper, and callbacks a single stable source
     of truth for what the model saw when it chose its action.
     """
@@ -34,19 +34,43 @@ class BattleContext:
     our_fainted_count: int
     opp_fainted_count: int
 
-    # Move IDs in action-slot order (indices 0-3 correspond to actions 6-9).
-    # None for disabled/PP-depleted slots or when no moves are available (e.g. forced switch).
-    # Always length 4.
-    our_moves: list  # list[str | None], length 4
+    # Move IDs in request-slot order (len 4, None for empty/missing slots).
+    # Used by TurnDelta.build() to resolve which move action indices 6-9 map to.
+    active_move_ids: list       # list[str | None]
+
+    # The move the opponent's active Pokémon used on the PREVIOUS turn, sourced
+    # from battle.opponent_active_pokemon.last_move (poke-env parses the Showdown
+    # |-move| protocol and sets Move._is_last_used on the correct move object).
+    # None if the opponent hasn't moved yet, switched in this snapshot's turn,
+    # or the move cannot be identified (e.g. Explosion aftermath).
+    #
+    # Known behaviors (confirmed by transition_fuzz_e2e_test.py):
+    #   - Sleep Talk: when delegation succeeds, stores the delegated move (e.g. "surf").
+    #     When delegation FAILS (all PP depleted), stores "sleeptalk" directly.
+    #   - Recharge turns (Hyper Beam): persists as "hyperbeam" on the |cant|recharge turn.
+    #   - |cant| turns (par, flinch, frz, sleep-no-talk): persists from the prior turn
+    #     IF the mon has already used a move; None if first active turn.
+    opp_last_move_id: str | None
+
+    # All move IDs the opponent's current active Pokémon has revealed so far.
+    # Kept for potential use by the observation encoder and diagnostics.
+    opp_active_revealed_moves: frozenset  # frozenset[str]
+
+    # Cant-move reason for each side's active Pokémon, snapshotted after the turn resolves.
+    # Set by |cant| messages (paralysis, flinch, freeze, sleep-no-sleep-talk, confusion).
+    # Cleared by |move| messages (Pokemon.moved() resets _last_cant_reason to None).
+    # None means the mon moved normally this turn (or is a fresh switch-in with no history).
+    our_cant_reason: str | None
+    opp_cant_reason: str | None
 
     def __post_init__(self):
         if self.mask.shape != (11,):
             raise RuntimeError(
                 f"BattleContext mask shape {self.mask.shape} != (11,) at turn {self.turn}"
             )
-        if len(self.our_moves) != 4:
+        if len(self.active_move_ids) != 4:
             raise RuntimeError(
-                f"BattleContext our_moves length {len(self.our_moves)} != 4 at turn {self.turn}"
+                f"BattleContext active_move_ids length {len(self.active_move_ids)} != 4 at turn {self.turn}"
             )
 
     @classmethod
@@ -81,27 +105,36 @@ class BattleContext:
             if battle.active_pokemon and not battle.active_pokemon.fainted
             else "NONE"
         )
-        opp_active = (
-            battle.opponent_active_pokemon.species
-            if battle.opponent_active_pokemon
-            else "NONE"
-        )
+        opp_mon = battle.opponent_active_pokemon
+        opp_active = opp_mon.species if opp_mon else "NONE"
 
-        # Build our_moves: 4-element list mirroring the masker's move-slot assignment.
-        # The masker reads request_moves from battle.last_request and assigns slot i+6
-        # to request_moves[i], skipping disabled moves and struggle. We do the same here
-        # so that our_moves[i] is the move ID for action slot i+6 (None if disabled).
-        our_moves: list = [None, None, None, None]
-        try:
-            active_request = battle.last_request.get("active", [{}])[0]
-            request_moves = active_request.get("moves", [])
-            for i, move_data in enumerate(request_moves):
-                if i < 4 and move_data.get("id") != "struggle":
-                    if not move_data.get("disabled", False):
-                        our_moves[i] = move_data.get("id")
-        except (AttributeError, IndexError, TypeError):
-            # No request available (e.g. forced switch phase) — all slots remain None
-            pass
+        # Build active_move_ids: 4-element list mirroring the masker's move-slot assignment.
+        # Prefer _gen3_decision_context (latched by the masker) to guarantee slot ordering
+        # is identical to what the action mask was built from.
+        dec_ctx = getattr(battle, "_gen3_decision_context", None)
+        if dec_ctx and dec_ctx.get("turn") == battle.turn:
+            raw_ids = dec_ctx.get("move_ids", [])
+            active_move_ids = (list(raw_ids) + [None, None, None, None])[:4]
+        else:
+            active_move_ids: list = [None, None, None, None]
+            try:
+                active_request = battle.last_request.get("active", [{}])[0]
+                request_moves = active_request.get("moves", [])
+                for i, move_data in enumerate(request_moves):
+                    if i < 4 and move_data.get("id") != "struggle":
+                        if not move_data.get("disabled", False):
+                            active_move_ids[i] = move_data.get("id")
+            except (AttributeError, IndexError, TypeError):
+                pass
+
+        opp_last_move = opp_mon.last_move if opp_mon else None
+        opp_last_move_id = opp_last_move.id if opp_last_move else None
+        opp_active_revealed_moves = frozenset(opp_mon.moves.keys() if opp_mon else [])
+        our_cant_reason = (
+            battle.active_pokemon.last_cant_reason
+            if battle.active_pokemon else None
+        )
+        opp_cant_reason = opp_mon.last_cant_reason if opp_mon else None
 
         return cls(
             turn=battle.turn,
@@ -116,7 +149,11 @@ class BattleContext:
             opp_active=opp_active,
             our_fainted_count=sum(1 for m in battle.team.values() if m.fainted),
             opp_fainted_count=sum(1 for m in battle.opponent_team.values() if m.fainted),
-            our_moves=our_moves,
+            active_move_ids=active_move_ids,
+            opp_last_move_id=opp_last_move_id,
+            opp_active_revealed_moves=opp_active_revealed_moves,
+            our_cant_reason=our_cant_reason,
+            opp_cant_reason=opp_cant_reason,
         )
 
 
@@ -134,10 +171,12 @@ class TurnDelta:
     our_switch_to: str | None     # species we switched to, None if we moved
     our_prev_active: str          # species that was active at turn start
 
-    # What they did this turn (may be None if not visible from battle log)
-    opp_move_id: str | None
-    opp_switch_to: str | None
+    # What they did this turn
+    opp_move_id: str | None       # move ID from poke-env's last_move tracking; None if switched
+    opp_switch_to: str | None     # species they switched to, None if they moved
     opp_prev_active: str
+    opp_move_known: bool          # False only when we know they attacked but have no move ID
+                                  # (e.g. Explosion aftermath where the attacker is no longer active)
 
     # HP outcomes per slot (indexed by slot_map from BattleContext)
     our_hp_delta: np.ndarray      # (6,) float32 — negative means damage taken
@@ -146,6 +185,13 @@ class TurnDelta:
     # Faint events this turn
     we_fainted: bool
     opp_fainted: bool
+
+    # Did each side fail to act this turn?
+    # Derived from curr_ctx cant_reason — True whenever |cant| fired for that side.
+    our_failed_to_move: bool
+    our_cant_reason: str | None
+    opp_failed_to_move: bool
+    opp_cant_reason: str | None
 
     # TODO: status and stat-stage deltas — see designs/ai_v3/todo.md
     # Aromatherapy clears the entire team at once; Calm Mind / Curse track
@@ -160,26 +206,36 @@ class TurnDelta:
         we_fainted = curr_ctx.our_fainted_count > prev_ctx.our_fainted_count
         opp_fainted = curr_ctx.opp_fainted_count > prev_ctx.opp_fainted_count
 
+        # --- Our action ---
         if action < 6:
             our_switch_to = curr_ctx.our_active if curr_ctx.our_active != "NONE" else None
             our_move_id = None
-        elif action == 10:
+        elif action < 10:
+            our_switch_to = None
+            slot = action - 6
+            ids = prev_ctx.active_move_ids
+            our_move_id = ids[slot] if slot < len(ids) else None
+        else:
+            # action == 10: Struggle
             our_switch_to = None
             our_move_id = "struggle"
-        else:
-            # action is 6-9; map to move slot index 0-3 in prev_ctx.our_moves
-            our_switch_to = None
-            our_move_id = prev_ctx.our_moves[action - 6]
 
+        # --- Opponent action ---
+        # opp_last_move_id in curr_ctx was read from battle.opponent_active_pokemon.last_move
+        # AFTER the turn resolved. Guard against contamination from a newly switched-in
+        # Pokémon's prior-appearance last_move by checking if the opponent switched.
         opp_switched = prev_ctx.opp_active != curr_ctx.opp_active
         opp_switch_to = curr_ctx.opp_active if opp_switched and curr_ctx.opp_active != "NONE" else None
-        # poke-env exposes Pokemon.last_move (the last move used by that pokemon).
-        # curr_ctx does not hold a battle reference, so opp_move_id must be sourced
-        # externally (e.g. from battle.opponent_active_pokemon.last_move after the turn
-        # resolves). TurnDelta.build() operates on frozen contexts only, so we leave
-        # opp_move_id = None here. Callers with access to the live battle object can
-        # populate this field themselves if needed.
-        opp_move_id = None
+
+        if opp_switched:
+            opp_move_id = None
+            opp_move_known = True   # we know they switched; no move was used
+        else:
+            opp_move_id = curr_ctx.opp_last_move_id
+            opp_move_known = opp_move_id is not None
+
+        our_failed_to_move = curr_ctx.our_cant_reason is not None
+        opp_failed_to_move = curr_ctx.opp_cant_reason is not None
 
         return cls(
             our_move_id=our_move_id,
@@ -188,10 +244,15 @@ class TurnDelta:
             opp_move_id=opp_move_id,
             opp_switch_to=opp_switch_to,
             opp_prev_active=prev_ctx.opp_active,
+            opp_move_known=opp_move_known,
             our_hp_delta=our_hp_delta,
             opp_hp_delta=opp_hp_delta,
             we_fainted=we_fainted,
             opp_fainted=opp_fainted,
+            our_failed_to_move=our_failed_to_move,
+            our_cant_reason=curr_ctx.our_cant_reason,
+            opp_failed_to_move=opp_failed_to_move,
+            opp_cant_reason=curr_ctx.opp_cant_reason,
         )
 
     @classmethod
@@ -199,7 +260,10 @@ class TurnDelta:
         return cls(
             our_move_id=None, our_switch_to=None, our_prev_active="NULL",
             opp_move_id=None, opp_switch_to=None, opp_prev_active="NULL",
+            opp_move_known=False,
             our_hp_delta=np.zeros(6, dtype=np.float32),
             opp_hp_delta=np.zeros(6, dtype=np.float32),
             we_fainted=False, opp_fainted=False,
+            our_failed_to_move=False, our_cant_reason=None,
+            opp_failed_to_move=False, opp_cant_reason=None,
         )

@@ -12,6 +12,8 @@ class _FakeMon:
         self.fainted = fainted
         self.item = None
         self.last_move = None
+        self.last_cant_reason = None
+        self.moves = {}
 
 
 class _Ns:

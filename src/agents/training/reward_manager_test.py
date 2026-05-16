@@ -22,7 +22,11 @@ def _ctx(turn=1, our_active="pikachu", opp_active="charizard", action_mask=None)
         opp_active=opp_active,
         our_fainted_count=0,
         opp_fainted_count=0,
-        our_moves=[None, None, None, None],
+        active_move_ids=[None, None, None, None],
+        opp_last_move_id=None,
+        opp_active_revealed_moves=frozenset(),
+        our_cant_reason=None,
+        opp_cant_reason=None,
     )
 
 
@@ -39,10 +43,15 @@ def _delta(our_hp_delta=0.0, opp_hp_delta=0.0, we_fainted=False, opp_fainted=Fal
         opp_move_id=None,
         opp_switch_to=None,
         opp_prev_active=opp_prev_active,
+        opp_move_known=False,
         our_hp_delta=our,
         opp_hp_delta=opp,
         we_fainted=we_fainted,
         opp_fainted=opp_fainted,
+        our_failed_to_move=False,
+        our_cant_reason=None,
+        opp_failed_to_move=False,
+        opp_cant_reason=None,
     )
 
 

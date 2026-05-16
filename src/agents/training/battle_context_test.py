@@ -37,7 +37,11 @@ def _ctx(**overrides):
         opp_active="salamence",
         our_fainted_count=0,
         opp_fainted_count=0,
-        our_moves=[None, None, None, None],
+        active_move_ids=[None, None, None, None],
+        opp_last_move_id=None,
+        opp_active_revealed_moves=frozenset(),
+        our_cant_reason=None,
+        opp_cant_reason=None,
     )
     defaults.update(overrides)
     return BattleContext(**defaults)
@@ -62,8 +66,6 @@ def test_valid_forced_switch_context():
 
 
 def test_empty_mask_is_accepted():
-    # Empty masks happen during poke-env transitional states. BattleContext itself
-    # does not reject them — embed_battle guards against building a context from one.
     ctx = _ctx(mask=np.zeros(11, dtype=np.int8))
     assert ctx.mask.sum() == 0
 
@@ -83,7 +85,11 @@ def test_wrong_mask_shape_raises():
             opp_active="NONE",
             our_fainted_count=0,
             opp_fainted_count=0,
-            our_moves=[None, None, None, None],
+            active_move_ids=[None, None, None, None],
+            opp_last_move_id=None,
+            opp_active_revealed_moves=frozenset(),
+            our_cant_reason=None,
+            opp_cant_reason=None,
         )
 
 
@@ -112,6 +118,106 @@ def test_fainted_counts_stored():
     assert ctx.opp_fainted_count == 1
 
 
+# ---------------------------------------------------------------------------
+# TurnDelta — our action
+# ---------------------------------------------------------------------------
+
+def test_turn_delta_build_switch_action():
+    prev = _ctx(our_active="tyranitar", opp_active="salamence")
+    curr = _ctx(our_active="skarmory", opp_active="salamence")
+    delta = TurnDelta.build(prev, curr, action=1)  # action < 6 = switch
+    assert delta.our_switch_to == "skarmory"
+    assert delta.our_move_id is None
+    assert delta.our_prev_active == "tyranitar"
+    assert delta.opp_switch_to is None
+
+
+def test_turn_delta_build_our_move_id():
+    prev = _ctx(active_move_ids=["earthquake", "rockslide", "crunch", "fireblast"])
+    curr = _ctx()
+    delta = TurnDelta.build(prev, curr, action=7)   # slot 1 → "rockslide"
+    assert delta.our_move_id == "rockslide"
+    assert delta.our_switch_to is None
+
+
+def test_turn_delta_build_our_move_id_first_slot():
+    prev = _ctx(active_move_ids=["surf", "icebeam", None, None])
+    curr = _ctx()
+    delta = TurnDelta.build(prev, curr, action=6)   # slot 0 → "surf"
+    assert delta.our_move_id == "surf"
+
+
+def test_turn_delta_build_struggle():
+    prev = _ctx(active_move_ids=[None, None, None, None])
+    curr = _ctx()
+    delta = TurnDelta.build(prev, curr, action=10)
+    assert delta.our_move_id == "struggle"
+    assert delta.our_switch_to is None
+
+
+def test_turn_delta_build_our_move_slot_missing_ids():
+    # Slot 3 has None in active_move_ids (e.g. PP-depleted move).
+    prev = _ctx(active_move_ids=["surf", "icebeam", "thunderbolt", None])
+    curr = _ctx()
+    delta = TurnDelta.build(prev, curr, action=9)   # slot 3 — None move
+    assert delta.our_move_id is None
+
+
+# ---------------------------------------------------------------------------
+# TurnDelta — opponent action
+# ---------------------------------------------------------------------------
+
+def test_turn_delta_opp_move_known_from_last_move():
+    prev = _ctx(opp_active="salamence")
+    curr = _ctx(opp_active="salamence", opp_last_move_id="surf")
+    delta = TurnDelta.build(prev, curr, action=6)
+    assert delta.opp_move_id == "surf"
+    assert delta.opp_move_known is True
+    assert delta.opp_switch_to is None
+
+
+def test_turn_delta_opp_move_unknown_no_last_move():
+    # Opponent attacked but last_move is None (e.g. Explosion aftermath)
+    prev = _ctx(opp_active="electrode")
+    curr = _ctx(opp_active="electrode", opp_last_move_id=None)
+    delta = TurnDelta.build(prev, curr, action=6)
+    assert delta.opp_move_id is None
+    assert delta.opp_move_known is False
+
+
+def test_turn_delta_opp_switch_known():
+    prev = _ctx(opp_active="salamence")
+    curr = _ctx(opp_active="tyranitar", opp_last_move_id=None)
+    delta = TurnDelta.build(prev, curr, action=6)
+    assert delta.opp_switch_to == "tyranitar"
+    assert delta.opp_move_id is None
+    assert delta.opp_move_known is True   # switch is always known
+
+
+def test_turn_delta_opp_switch_ignores_last_move():
+    # If the opponent switched AND the new mon has a last_move from a prior appearance,
+    # we must not use it as opp_move_id (the switch guard prevents contamination).
+    prev = _ctx(opp_active="salamence")
+    curr = _ctx(opp_active="gengar", opp_last_move_id="shadowball")  # gengar's prior last_move
+    delta = TurnDelta.build(prev, curr, action=6)
+    assert delta.opp_switch_to == "gengar"
+    assert delta.opp_move_id is None        # NOT "shadowball"
+    assert delta.opp_move_known is True
+
+
+def test_turn_delta_opp_switch_to_none_active():
+    # Edge case: opp switches but new active is "NONE" (between faints, shouldn't normally occur)
+    prev = _ctx(opp_active="salamence")
+    curr = _ctx(opp_active="NONE")
+    delta = TurnDelta.build(prev, curr, action=6)
+    assert delta.opp_switch_to is None
+    assert delta.opp_move_known is True
+
+
+# ---------------------------------------------------------------------------
+# TurnDelta — HP and faint deltas
+# ---------------------------------------------------------------------------
+
 def test_turn_delta_build_detects_faint():
     prev = _ctx(our_fainted_count=0, opp_fainted_count=0,
                 our_hp=_hp(1.0, 1.0), opp_hp=_hp(1.0))
@@ -124,20 +230,99 @@ def test_turn_delta_build_detects_faint():
     assert delta.opp_hp_delta[0] == pytest.approx(-0.5)
 
 
-def test_turn_delta_build_switch_action():
-    prev = _ctx(our_active="tyranitar", opp_active="salamence")
-    curr = _ctx(our_active="skarmory", opp_active="salamence")
-    delta = TurnDelta.build(prev, curr, action=1)  # action < 6 = switch
-    assert delta.our_switch_to == "skarmory"
-    assert delta.our_prev_active == "tyranitar"
-    assert delta.opp_switch_to is None
+def test_turn_delta_both_fainted():
+    prev = _ctx(our_fainted_count=0, opp_fainted_count=0)
+    curr = _ctx(our_fainted_count=1, opp_fainted_count=1)
+    delta = TurnDelta.build(prev, curr, action=6)
+    assert delta.we_fainted is True
+    assert delta.opp_fainted is True
 
 
-def _mock_mon(species, hp_fraction=1.0, fainted=False, active=False):
+# ---------------------------------------------------------------------------
+# TurnDelta.empty()
+# ---------------------------------------------------------------------------
+
+def test_turn_delta_empty():
+    delta = TurnDelta.empty()
+    assert delta.we_fainted is False
+    assert delta.opp_fainted is False
+    assert delta.our_hp_delta.shape == (6,)
+    assert delta.our_hp_delta.sum() == 0
+    assert delta.opp_move_known is False
+    assert delta.our_move_id is None
+    assert delta.opp_move_id is None
+
+
+# ---------------------------------------------------------------------------
+# TurnDelta — failed to move
+# ---------------------------------------------------------------------------
+
+def test_turn_delta_opp_failed_to_move_par():
+    prev = _ctx(opp_active="salamence")
+    curr = _ctx(opp_active="salamence", opp_cant_reason="par")
+    delta = TurnDelta.build(prev, curr, action=6)
+    assert delta.opp_failed_to_move is True
+    assert delta.opp_cant_reason == "par"
+    assert delta.opp_move_id is None   # cant + no last_move = None
+
+
+def test_turn_delta_opp_failed_to_move_flinch():
+    prev = _ctx(opp_active="salamence")
+    curr = _ctx(opp_active="salamence", opp_cant_reason="flinch")
+    delta = TurnDelta.build(prev, curr, action=6)
+    assert delta.opp_failed_to_move is True
+    assert delta.opp_cant_reason == "flinch"
+
+
+def test_turn_delta_opp_moved_normally():
+    prev = _ctx(opp_active="salamence")
+    curr = _ctx(opp_active="salamence", opp_last_move_id="surf", opp_cant_reason=None)
+    delta = TurnDelta.build(prev, curr, action=6)
+    assert delta.opp_failed_to_move is False
+    assert delta.opp_cant_reason is None
+    assert delta.opp_move_id == "surf"
+
+
+def test_turn_delta_our_failed_to_move_slp():
+    prev = _ctx()
+    curr = _ctx(our_cant_reason="slp")
+    delta = TurnDelta.build(prev, curr, action=7)
+    assert delta.our_failed_to_move is True
+    assert delta.our_cant_reason == "slp"
+
+
+def test_turn_delta_empty_no_failed_to_move():
+    delta = TurnDelta.empty()
+    assert delta.our_failed_to_move is False
+    assert delta.opp_failed_to_move is False
+    assert delta.our_cant_reason is None
+    assert delta.opp_cant_reason is None
+
+
+def test_turn_delta_flinch_with_persisting_last_move():
+    # Opponent used earthquake last turn, then flinched this turn.
+    # last_move persists as "earthquake" (|cant| doesn't clear _is_last_used).
+    # With cant_reason, we can still detect the flinch.
+    prev = _ctx(opp_active="salamence")
+    curr = _ctx(opp_active="salamence", opp_last_move_id="earthquake", opp_cant_reason="flinch")
+    delta = TurnDelta.build(prev, curr, action=6)
+    assert delta.opp_failed_to_move is True
+    assert delta.opp_cant_reason == "flinch"
+    assert delta.opp_move_id == "earthquake"   # persisted from prior turn
+
+
+# ---------------------------------------------------------------------------
+# BattleContext.from_battle()
+# ---------------------------------------------------------------------------
+
+def _mock_mon(species, hp_fraction=1.0, fainted=False):
     mon = MagicMock()
     mon.species = species
     mon.current_hp_fraction = hp_fraction
     mon.fainted = fainted
+    mon.last_move = None
+    mon.last_cant_reason = None
+    mon.moves = {}
     return mon
 
 
@@ -152,6 +337,7 @@ def test_from_battle_builds_correct_context():
     battle.opponent_team = {"p2: zapdos": opp_mon}
     battle.active_pokemon = our_mon
     battle.opponent_active_pokemon = opp_mon
+    battle.last_request = {}
 
     mask = np.zeros(11, dtype=np.int8)
     mask[6] = 1
@@ -169,6 +355,9 @@ def test_from_battle_builds_correct_context():
     assert ctx.opp_hp[opp_slots.get("zapdos")] == pytest.approx(0.5)
     assert ctx.our_fainted_count == 0
     assert ctx.opp_fainted_count == 0
+    assert ctx.opp_last_move_id is None
+    assert ctx.our_cant_reason is None
+    assert ctx.opp_cant_reason is None
 
 
 def test_from_battle_forced_switch_phase():
@@ -204,16 +393,8 @@ def test_from_battle_slot_registry_mutated():
     assert our_slots.get("skarmory") == 0
 
 
-def test_turn_delta_empty():
-    delta = TurnDelta.empty()
-    assert delta.we_fainted is False
-    assert delta.opp_fainted is False
-    assert delta.our_hp_delta.shape == (6,)
-    assert delta.our_hp_delta.sum() == 0
-
-
 # ---------------------------------------------------------------------------
-# our_moves field
+# active_move_ids field (via from_battle)
 # ---------------------------------------------------------------------------
 
 def _mock_battle_with_moves(move_ids, disabled=None):
@@ -248,17 +429,17 @@ def _mock_battle_with_moves(move_ids, disabled=None):
     return battle
 
 
-def test_our_moves_populated_from_last_request():
-    """our_moves mirrors the masker's slot assignment for normal moves."""
+def test_active_move_ids_populated_from_last_request():
+    """active_move_ids mirrors the masker's slot assignment for normal moves."""
     battle = _mock_battle_with_moves(
         ["rockslide", "earthquake", "thunderbolt", "surf"]
     )
     mask = _mask(6, 7, 8, 9)
     ctx = BattleContext.from_battle(battle, mask, np.zeros(1), SlotRegistry(), SlotRegistry())
-    assert ctx.our_moves == ["rockslide", "earthquake", "thunderbolt", "surf"]
+    assert ctx.active_move_ids == ["rockslide", "earthquake", "thunderbolt", "surf"]
 
 
-def test_our_moves_disabled_slot_is_none():
+def test_active_move_ids_disabled_slot_is_none():
     """Disabled move slots are set to None regardless of mask."""
     battle = _mock_battle_with_moves(
         ["rockslide", "earthquake", "thunderbolt", "surf"],
@@ -266,34 +447,34 @@ def test_our_moves_disabled_slot_is_none():
     )
     mask = _mask(6, 8, 9)  # slot 7 (earthquake) disabled
     ctx = BattleContext.from_battle(battle, mask, np.zeros(1), SlotRegistry(), SlotRegistry())
-    assert ctx.our_moves[0] == "rockslide"
-    assert ctx.our_moves[1] is None   # disabled
-    assert ctx.our_moves[2] == "thunderbolt"
-    assert ctx.our_moves[3] == "surf"
+    assert ctx.active_move_ids[0] == "rockslide"
+    assert ctx.active_move_ids[1] is None   # disabled
+    assert ctx.active_move_ids[2] == "thunderbolt"
+    assert ctx.active_move_ids[3] == "surf"
 
 
-def test_our_moves_struggle_slot_is_none():
-    """Struggle is excluded from our_moves (it uses the dedicated action 10)."""
+def test_active_move_ids_struggle_slot_is_none():
+    """Struggle is excluded from active_move_ids (it uses the dedicated action 10)."""
     battle = _mock_battle_with_moves(["struggle", "struggle", "struggle", "struggle"])
     mask = _mask(10)
     ctx = BattleContext.from_battle(battle, mask, np.zeros(1), SlotRegistry(), SlotRegistry())
-    assert ctx.our_moves == [None, None, None, None]
+    assert ctx.active_move_ids == [None, None, None, None]
 
 
-def test_our_moves_always_length_4():
-    """our_moves is always a 4-element list, even with fewer than 4 moves."""
+def test_active_move_ids_always_length_4():
+    """active_move_ids is always a 4-element list, even with fewer than 4 moves."""
     battle = _mock_battle_with_moves(["rockslide", "earthquake"])
     mask = _mask(6, 7)
     ctx = BattleContext.from_battle(battle, mask, np.zeros(1), SlotRegistry(), SlotRegistry())
-    assert len(ctx.our_moves) == 4
-    assert ctx.our_moves[0] == "rockslide"
-    assert ctx.our_moves[1] == "earthquake"
-    assert ctx.our_moves[2] is None
-    assert ctx.our_moves[3] is None
+    assert len(ctx.active_move_ids) == 4
+    assert ctx.active_move_ids[0] == "rockslide"
+    assert ctx.active_move_ids[1] == "earthquake"
+    assert ctx.active_move_ids[2] is None
+    assert ctx.active_move_ids[3] is None
 
 
-def test_our_moves_no_request_is_all_none():
-    """Forced-switch phase (no active request) yields all-None our_moves."""
+def test_active_move_ids_no_request_is_all_none():
+    """Forced-switch phase (no active request) yields all-None active_move_ids."""
     battle = MagicMock()
     battle.turn = 3
     battle.force_switch = True
@@ -301,53 +482,9 @@ def test_our_moves_no_request_is_all_none():
     battle.opponent_team = {}
     battle.active_pokemon = None
     battle.opponent_active_pokemon = None
-    # last_request has no "active" key
     battle.last_request = {}
 
     ctx = BattleContext.from_battle(
         battle, np.ones(11, dtype=np.int8), np.zeros(1), SlotRegistry(), SlotRegistry()
     )
-    assert ctx.our_moves == [None, None, None, None]
-
-
-# ---------------------------------------------------------------------------
-# TurnDelta.build() — our_move_id
-# ---------------------------------------------------------------------------
-
-def test_turn_delta_move_action_returns_move_id():
-    """Action 6-9 resolves to the move ID stored in prev_ctx.our_moves."""
-    prev = _ctx(
-        our_active="tyranitar", opp_active="salamence",
-        our_moves=["rockslide", "earthquake", "thunderbolt", "surf"],
-    )
-    curr = _ctx(our_active="tyranitar", opp_active="salamence")
-    delta = TurnDelta.build(prev, curr, action=6)
-    assert delta.our_move_id == "rockslide"
-    assert delta.our_switch_to is None
-
-
-def test_turn_delta_move_action_slot_7():
-    prev = _ctx(
-        our_moves=["rockslide", "earthquake", "thunderbolt", "surf"],
-    )
-    curr = _ctx()
-    delta = TurnDelta.build(prev, curr, action=8)
-    assert delta.our_move_id == "thunderbolt"
-
-
-def test_turn_delta_switch_action_returns_none_move_id():
-    """Action < 6 is a switch; our_move_id must be None."""
-    prev = _ctx(our_active="tyranitar", opp_active="salamence")
-    curr = _ctx(our_active="skarmory", opp_active="salamence")
-    delta = TurnDelta.build(prev, curr, action=2)
-    assert delta.our_move_id is None
-    assert delta.our_switch_to == "skarmory"
-
-
-def test_turn_delta_struggle_action_returns_struggle():
-    """Action 10 (struggle) always yields our_move_id == 'struggle'."""
-    prev = _ctx(our_moves=[None, None, None, None])
-    curr = _ctx()
-    delta = TurnDelta.build(prev, curr, action=10)
-    assert delta.our_move_id == "struggle"
-    assert delta.our_switch_to is None
+    assert ctx.active_move_ids == [None, None, None, None]

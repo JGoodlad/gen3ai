@@ -740,8 +740,9 @@ class AbstractBattle(ABC):
                     move, failed=failed, use=use, reveal=reveal, pressure=pressure
                 )
         elif event[1] == "cant":
-            pokemon, _ = event[2:4]
-            self.get_pokemon(pokemon).cant_move()
+            pokemon = event[2]
+            reason = event[3] if len(event) > 3 else None
+            self.get_pokemon(pokemon).cant_move(reason)
         elif event[1] == "turn":
             self.end_turn(int(event[2]))
         elif event[1] == "-heal":

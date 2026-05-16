@@ -32,6 +32,7 @@ class Pokemon:
         "_heightm",
         "_item",
         "_ivs",
+        "_last_cant_reason",
         "_last_details",
         "_last_request",
         "_level",
@@ -135,6 +136,7 @@ class Pokemon:
         self._temporary_base_stats: Optional[Dict[str, int]] = None
         self._temporary_types: List[PokemonType] = []
         self._dancing = False
+        self._last_cant_reason: Optional[str] = None
 
         if request_pokemon:
             self.update_from_request(request_pokemon)
@@ -186,7 +188,8 @@ class Pokemon:
         elif self._boosts[stat] < -6:
             self._boosts[stat] = -6
 
-    def cant_move(self):
+    def cant_move(self, reason: Optional[str] = None):
+        self._last_cant_reason = reason
         self._dancing = False
         self._protect_counter = 0
 
@@ -462,6 +465,7 @@ class Pokemon:
         reveal: bool = True,
         pressure: bool = False,
     ):
+        self._last_cant_reason = None
         self._must_recharge = False
         self._preparing_move = None
         self._preparing_target = None
@@ -1119,6 +1123,14 @@ class Pokemon:
         :rtype: List[int] | None
         """
         return self._ivs
+
+    @property
+    def last_cant_reason(self) -> Optional[str]:
+        """
+        :return: The reason this pokemon could not move last turn, or None if it moved normally.
+        :rtype: str | None
+        """
+        return self._last_cant_reason
 
     @property
     def last_move(self) -> Optional[Move]:

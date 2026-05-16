@@ -1,0 +1,176 @@
+# poke-env Gaps — Research & Fuzz Coverage
+
+This directory documents known gaps between what poke-env tracks and what we need for
+accurate `TurnDelta.opp_move_id` in Gen 3 OU. It also contains the e2e fuzz test that
+confirmed these behaviors at scale.
+
+---
+
+## Background
+
+`TurnDelta` (in `battle_context.py`) exposes `opp_move_id` and `opp_move_known` to the
+reward function and, eventually, the observation encoder. Accuracy depends on
+`battle.opponent_active_pokemon.last_move`, which poke-env populates from the Showdown
+`|-move|` protocol.
+
+poke-env's `Pokemon.last_move` iterates `self.moves.values()` and returns the `Move` whose
+`_is_last_used` flag is `True`. That flag is set inside `Pokemon.moved()`:
+
+```python
+def moved(self, move_id, failed=False, use=True, reveal=True, pressure=False):
+    move = None
+    if reveal:
+        move = self._add_move(move_id)   # adds to self.moves, returns the Move object
+    if use:
+        for m in self.moves.values():
+            m._is_last_used = m is move  # exactly one gets True; None → all get False
+```
+
+The `reveal=False` path is the core of all gaps below: when `move=None`, every flag goes
+to `False` and `last_move` returns `None`.
+
+---
+
+## Confirmed Behaviors (from fuzz test + poke-env source)
+
+### 1. Normal moves
+`last_move` is always set correctly after `|-move|`. No gap.
+
+### 2. `|cant|` turns (paralysis, freeze, flinch, confusion, sleep-no-sleeptalk)
+`cant_move()` does **not** clear `_is_last_used`. So:
+- If the mon has used a move before this `|cant|` turn → `last_move` persists from last
+  actual use (e.g., Hyper Beam recharge shows `"hyperbeam"` again). Correct and useful.
+- If `|cant|` fires on the mon's **first active turn** (no prior move in this appearance)
+  → `last_move = None`. Expected; the mon literally has no move history yet.
+
+TurnDelta handles this via `opp_move_known = False` when `opp_last_move_id is None`.
+
+### 3. Explosion / Self-Destruct (the attacker-fainted gap)
+When the opponent uses Explosion and faints:
+1. `|-move|` sets `last_move = "explosion"` on the attacker.
+2. `|faint|` removes the attacker from `opponent_active_pokemon`.
+3. The new switch-in becomes `opponent_active_pokemon`, whose `last_move = None`.
+
+By the time `_get_observation()` reads `opponent_active_pokemon.last_move`, the attacker
+is gone. `opp_last_move_id = None`.
+
+TurnDelta still captures the outcome via `opp_fainted = True` and `opp_prev_active` (the
+species that exploded). The reward function uses this correctly.
+
+**Fix (if ever needed):** Intercept `|faint|` in `AbstractBattle._parse_message()` and
+snapshot `last_move` before the active slot changes. Requires forking poke-env.
+
+### 4. Sleep Talk — success path
+Showdown sends two `|move|` messages:
+```
+|move|p1a: Suicune|Sleep Talk|p1a: Suicune
+|move|p1a: Suicune|Surf|p2a: Blissey|[from] Sleep Talk
+```
+poke-env converts `[from] Sleep Talk` → `[from] move: Sleep Talk` → `pass` (no change to
+`use`/`reveal`). The second call `moved("surf", reveal=True, use=True)` runs normally.
+Result: `last_move = "surf"`. **Works correctly.**
+
+### 5. Sleep Talk — delegation failure
+When Sleep Talk cannot delegate (e.g., all moves at 0 PP, picks a move that can't execute),
+only the first `|move|Sleep Talk` message fires.
+Result: `last_move = "sleeptalk"`.
+
+This is **correct and useful** — we know the opponent tried Sleep Talk and failed. The
+model sees `opp_move_id = "sleeptalk"` with `opp_move_known = True`. Observed ~5-10% of
+Sleep Talk uses in fuzz testing (159 of ~1,000+ Sleep Talk turns in scenario B).
+
+### 6. Delegating moves with `reveal=False` — THE GAP
+
+The following moves in `abstract_battle.py` set `reveal=False` for the delegated move:
+
+```python
+elif overridden_move in {"Copycat", "Metronome", "Nature Power", "Round"}:
+    reveal = False
+```
+
+Because `reveal=False` → `move=None` → all `_is_last_used` flags cleared → `last_move = None`.
+
+| Move | Gen 3 competitive viability | Gap severity |
+|------|------|------|
+| **Metronome** | Extremely rare (Clefable) | Low — too chaotic to be meta |
+| **Nature Power** | Niche (becomes Swift in standard terrain) | Low |
+| **Copycat** | Gen 4+ — not in Gen 3 | N/A |
+| **Assist** | Niche (Delcatty, Persian) — not in handler, falls to warning | Low |
+| **Mirror Move** | Niche (Pidgeot, Swellow) — not in handler | Low |
+
+After any of these fires: `opp_last_move_id = None`, `opp_move_known = False`. The model
+sees uncertainty for that turn but continues correctly.
+
+---
+
+## Fuzz Test Results Summary (50 battles × 3 scenarios, ~30K transitions)
+
+Run: `python src/agents/training/poke_env_gaps/transition_fuzz_e2e_test.py 50`
+
+| Metric | A-Explosion | B-Rest/SleepTalk | C-HyperBeam | Total |
+|--------|------------|------------------|-------------|-------|
+| Total transitions | 5,602 | 17,540 | 7,294 | 30,436 |
+| `our_move_slot_unknown` | 0 | 0 | 0 | **0** |
+| Explosion gap | 124 | 778 | 135 | 1,037 |
+| Cant-move (estimated) | 457 | 1,086 | 684 | 2,227 |
+| True anomalies¹ | 24 | 96 | 45 | **165 (0.5%)** |
+| `last_move == "sleeptalk"` | 0 | 159 | 0 | 159 |
+| Two-turn same move | 203 | 34 | 301 | 538 |
+
+¹ "True anomaly" = `revealed_moves` grew (a move was used) but `last_move = None`. These
+  are almost certainly false positives from poke-env's `_update_from_request()` adding
+  moves to a Pokémon via the `|request|` metadata path (not via `|-move|`), so
+  `last_move = None` is actually correct in those cases. Not a training concern.
+
+**Key finding:** `our_move_slot_unknown = 0` across all 30K transitions confirms
+`active_move_ids` resolution in `BattleContext` is correct for all observable move actions.
+
+---
+
+## Proposed Fix for the `reveal=False` Gap
+
+If we ever want accurate `last_move` for Metronome / Nature Power / Assist / Mirror Move,
+the fix is small and targeted:
+
+**In `src/poke_env/battle/pokemon.py`, `moved()` method:**
+
+```python
+def moved(self, move_id, failed=False, use=True, reveal=True, pressure=False):
+    move = None
+    if reveal:
+        move = self._add_move(move_id)
+    if use:
+        self._last_delegated_move_id = to_id_str(move_id)  # NEW: always track the ID
+        for m in self.moves.values():
+            m._is_last_used = m is move
+```
+
+And update `last_move` to prefer `_last_delegated_move_id` when `_is_last_used` scan
+returns None. Or simpler: store the move ID directly and expose `last_move_id: str | None`
+as a separate property that bypasses the `moves` dict lookup entirely.
+
+This is a **5-line change** but it modifies a core poke-env class with broad reach. Worth
+doing only if these moves become relevant in training.
+
+---
+
+## Running the Fuzz Test
+
+Requires a running Showdown server (`npm run showdown`) and the `pokemon-showdown` symlink:
+
+```bash
+# One-time worktree setup
+rmdir deps/pokemon-showdown && ln -s /home/goodlad/dev/gen3ai/deps/pokemon-showdown deps/pokemon-showdown
+
+# Run (30 battles per scenario ≈ 2 min)
+export PYTHONPATH=$PYTHONPATH:src
+python src/agents/training/poke_env_gaps/transition_fuzz_e2e_test.py 30
+
+# More thorough (50 battles ≈ 5 min)
+python src/agents/training/poke_env_gaps/transition_fuzz_e2e_test.py 50
+```
+
+Scenarios:
+- **A — Explosion**: Gengar/Claydol/Metagross with Explosion — stresses the attacker-fainted gap
+- **B — Rest/Sleep Talk**: Suicune/Snorlax with Rest+Sleep Talk, Smeargle/Gengar with sleep inducers
+- **C — Hyper Beam**: Tyranitar/Regice with Hyper Beam — confirms recharge-turn `last_move` persistence
