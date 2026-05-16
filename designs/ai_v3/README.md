@@ -71,11 +71,10 @@ flowchart TD
     OAR --> AGG
 
     ACT_RAW --> ACTENC["Active Context Encoder · shared\nLinear 22→64 → ReLU → Linear 64→32\nour side + opp side"]
-    TD --> TDENC["TurnDelta Encoder\nLinear 29→64 → ReLU → Linear 64→32"]
-    TDENC --> AGG
-    ACTENC --> AGG["Aggregation\ncat(\n  our_team·768\n  their_team·768\n  our_active_refined·128\n  our_ctx_enc·32\n  opp_ctx_enc·32\n  global+scalars·29\n  turn_delta_enc·32\n)"]
+    ACTENC --> AGG["Aggregation\ncat(\n  our_team·768\n  their_team·768\n  our_active_refined·128\n  our_ctx_enc·32\n  opp_ctx_enc·32\n  global+scalars·29\n  turn_delta·29\n)"]
     GLOBAL --> AGG
     REACT --> AGG
+    TD --> AGG
 
     AGG --> PROJ["Projection\nLinear N→512 → ReLU\n(N auto-discovered via dummy forward)"]
     PROJ --> OUT["Features · [B, 512]\n→ policy head + value head"]
@@ -88,7 +87,6 @@ flowchart TD
 | Move Processor | 58 | 32 | shared; run 12×4 times per forward pass |
 | Role Encoder | 259 | 128 | shared; run 12 times per forward pass |
 | Active Ctx Encoder | 22 | 32 | shared; run twice (our side + opp side) |
-| TurnDelta Encoder | 29 | 32 | encodes last-turn signal before projection |
 | Pressure Attn | 128 (Q), 128 (KV) | 128 | our_active queries their_team |
 | Safety Attn | 128 (Q), 128 (KV) | 128 | our_team queries their_active |
 | Synergy Attn | 128 (Q/K/V) | 128 | our_team self-attention |
