@@ -141,7 +141,7 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         self.features_dim = self.projection_dim
         self.trace_logger = RateLimitedLogger(interval_seconds=TRACE_INTERVAL)
         
-    def _print_deep_trace(self, x, pokemon_part, species_ids, turn_delta=None):
+    def _print_deep_trace(self, x, pokemon_part, species_ids):
         if self._encoder is None and self.mappings:
             self._encoder = Gen3ObservationEncoder(self.mappings)
             
@@ -150,7 +150,8 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         print("=" * 60)
         
         if self._encoder:
-            # Use the encoder's master description logic
+            # Pass the full obs (including prev_mask + TurnDelta tail) so describe_vector
+            # can delegate to turn_delta_encoder.describe_vector for the tail block.
             desc = self._encoder.describe_vector(x[0].cpu().numpy())
             world = desc.get('world', {})
             print(f"Turn: {world.get('turn', '???')} | Weather: {world.get('weather', 'NONE')} | Spikes: {world.get('our_spikes', 0)} (Us) / {world.get('opp_spikes', 0)} (Them)")
@@ -198,14 +199,16 @@ class Gen3FeaturesExtractor(torch.nn.Module):
             print(f"Fainted: {momentum.get('fainted_our', 0)} (Us) / {momentum.get('fainted_opp', 0)} (Them)")
 
             # --- TURN DELTA ---
-            if turn_delta is not None:
-                _CANT = ["par", "slp", "frz", "flinch", "conf"]
-                td = turn_delta
-                our_cant = _CANT[int(np.argmax(td[14:19]))] if td[14:19].any() else "none"
-                opp_cant = _CANT[int(np.argmax(td[19:24]))] if td[19:24].any() else "none"
+            td = desc.get("turn_delta")
+            if td is not None:
+                def _action_str(switched, failed, cant, move):
+                    if switched: return "SWITCH"
+                    if failed: return f"FAIL({cant or '?'})"
+                    if move: return f"move pwr={move['power']} sec={int(move['secondary'])} recoil={int(move['recoil'])}"
+                    return "none (first turn)"
                 print(f"\n--- LAST TURN (TurnDelta) ---")
-                print(f"  Us:  {'SWITCH' if td[10] else ('FAIL('+our_cant+')' if td[12] else f'move pwr={td[1]*200:.0f} sec={td[2]:.0f} recoil={td[3]:.0f}')}  hp_delta={td[24]:+.2f}  fainted={td[26]:.0f}")
-                print(f"  Opp: {'SWITCH' if td[11] else ('FAIL('+opp_cant+')' if td[13] else f'move pwr={td[6]*200:.0f} sec={td[7]:.0f} recoil={td[8]:.0f}')}  hp_delta={td[25]:+.2f}  fainted={td[27]:.0f}  known={td[28]:.0f}")
+                print(f"  Us:  {_action_str(td['our_switched'], td['our_failed'], td['our_cant'], td['our_move'])}  hp_delta={td['our_hp_delta']:+.2f}  fainted={int(td['we_fainted'])}")
+                print(f"  Opp: {_action_str(td['opp_switched'], td['opp_failed'], td['opp_cant'], td['opp_move'])}  hp_delta={td['opp_hp_delta']:+.2f}  fainted={int(td['opp_fainted'])}  known={int(td['opp_move_known'])}")
 
             # --- INTEGRITY CHECK ---
             warnings, is_critical = self._encoder.integrity_check(x[0].cpu().numpy())
@@ -539,7 +542,7 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         # Diagnostic Trace logic
         if self.log_level >= LogLevel.PERIODIC and self.trace_logger.should_log():
             x = obs["observation"]
-            x_base = x[:, :self.layout['base_dim']]  # strip prev_mask tail for describe_vector
+            x_base = x[:, :self.layout['base_dim']]
             parts = self.layout['parts']
             ot = parts['our_team']
             our_team = x_base[:, ot['start']:ot['end']].reshape(x_base.shape[0], *ot['reshape'])
@@ -552,8 +555,7 @@ class Gen3FeaturesExtractor(torch.nn.Module):
             species_idx = species_info['offset'] + species_info['layout']['species_id']['offset']
             species_ids = pokemon_part[:, :, species_idx].long()
 
-            base_dim = self.layout['base_dim']
-            turn_delta_np = x[0, base_dim + 11 : base_dim + 11 + TURN_DELTA_DIM].cpu().numpy()
-            self._print_deep_trace(x_base, pokemon_part, species_ids, turn_delta_np)
+            # Pass the full obs so describe_vector can delegate TurnDelta to its encoder
+            self._print_deep_trace(x, pokemon_part, species_ids)
         
         return self.activation(self.projection(combined))

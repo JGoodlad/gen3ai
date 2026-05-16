@@ -73,6 +73,39 @@ class TurnDeltaEncoder:
                 pass
         return vec
 
+    def describe_vector(self, vec: np.ndarray) -> dict:
+        """Decode a 29-dim encoded TurnDelta vector back to human-readable form."""
+        _CANT = _CANT_REASONS
+        def _cant_label(onehot):
+            idx = int(np.argmax(onehot))
+            return _CANT[idx] if onehot[idx] > 0.5 else None
+
+        our_move = {
+            "power": round(float(vec[1]) * 200),
+            "secondary": bool(vec[2] > 0.5),
+            "recoil": bool(vec[3] > 0.5),
+        }
+        opp_move = {
+            "power": round(float(vec[6]) * 200),
+            "secondary": bool(vec[7] > 0.5),
+            "recoil": bool(vec[8] > 0.5),
+        }
+        return {
+            "our_move": our_move if (vec[0] > 0 or our_move["power"] > 0) else None,
+            "opp_move": opp_move if (vec[5] > 0 or opp_move["power"] > 0) else None,
+            "our_switched": bool(vec[10] > 0.5),
+            "opp_switched": bool(vec[11] > 0.5),
+            "our_failed": bool(vec[12] > 0.5),
+            "opp_failed": bool(vec[13] > 0.5),
+            "our_cant": _cant_label(vec[14:19]),
+            "opp_cant": _cant_label(vec[19:24]),
+            "our_hp_delta": float(vec[24]),
+            "opp_hp_delta": float(vec[25]),
+            "we_fainted": bool(vec[26] > 0.5),
+            "opp_fainted": bool(vec[27] > 0.5),
+            "opp_move_known": bool(vec[28] > 0.5),
+        }
+
     def encode(self, delta: TurnDelta) -> np.ndarray:
         our_hp_delta = float(delta.our_hp_delta.sum())
         opp_hp_delta = float(delta.opp_hp_delta.sum())

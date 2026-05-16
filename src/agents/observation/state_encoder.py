@@ -100,6 +100,9 @@ class Gen3ObservationEncoder(ObservationEncoder):
         self.active_context_encoder = ActiveContextEncoder(mappings.get("moves"))
         self.global_env_encoder = GlobalEnvEncoder()
         self.reactive_encoder = ReactiveEncoder()
+        from agents.observation.turn_delta_encoder import TurnDeltaEncoder, TURN_DELTA_DIM as _TD_DIM
+        self.turn_delta_encoder = TurnDeltaEncoder(mappings.get("moves", {}))
+        self._turn_delta_dim = _TD_DIM
         self.current_battle_id = None
 
     @property
@@ -258,7 +261,13 @@ class Gen3ObservationEncoder(ObservationEncoder):
         # 4. Reactive
         reactive_vec = vector[OFFSET_REACTIVE : OFFSET_REACTIVE + REACTIVE_DIM]
         desc["momentum"] = self.reactive_encoder.describe_vector(reactive_vec)
-        
+
+        # 5. TurnDelta tail (present when the full obs is passed, not just base)
+        td_start = self.base_dimension + 11
+        if len(vector) >= td_start + self._turn_delta_dim:
+            td_vec = vector[td_start : td_start + self._turn_delta_dim]
+            desc["turn_delta"] = self.turn_delta_encoder.describe_vector(td_vec)
+
         return desc
 
     def integrity_check(self, vector: np.ndarray) -> Tuple[List[str], bool]:
