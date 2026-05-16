@@ -11,6 +11,8 @@ HP_VALUE = 1.0
 VICTORY_VALUE = 30.0
 STALL_TAX_START_TURN = 200
 STALL_TAX_DENOMINATOR = 10.0
+STRUGGLE_LOOP_TAX = -0.5
+STRUGGLE_LOOP_THRESHOLD = 3
 
 
 class Gen3RewardManager:
@@ -41,6 +43,8 @@ class Gen3RewardManager:
         self._prev_active_name = "NULL"
         self._last_action_idx = -1
         self._last_reward_metadata = {}
+        self._consecutive_struggle = 0
+        self.struggle_turns = 0
 
     def reset(self):
         self.switch_count = 0
@@ -55,6 +59,8 @@ class Gen3RewardManager:
         self._prev_active_name = "NULL"
         self._last_action_idx = -1
         self._last_reward_metadata = {}
+        self._consecutive_struggle = 0
+        self.struggle_turns = 0
 
     def record_action(self, ctx: BattleContext, action: int) -> None:
         """
@@ -84,6 +90,16 @@ class Gen3RewardManager:
         if action == self._last_action_idx and action != -1:
             repetition_tax = -0.02
             self._pending_subsidy += repetition_tax
+
+        struggle_loop_tax = 0.0
+        if action == 10:  # struggle — forced by server when all PP depleted
+            self.struggle_turns += 1
+            self._consecutive_struggle += 1
+            if self._consecutive_struggle >= STRUGGLE_LOOP_THRESHOLD:
+                struggle_loop_tax = STRUGGLE_LOOP_TAX
+                self._pending_subsidy += struggle_loop_tax
+        else:
+            self._consecutive_struggle = 0
 
         if is_real:
             if is_voluntary is True:
@@ -120,7 +136,7 @@ class Gen3RewardManager:
                 self.forced_switch_count += 1
                 self._last_reward_metadata = {"type": "FORCED"}
         else:
-            self._last_reward_metadata = {"type": "ATTACK", "repetition_tax": repetition_tax}
+            self._last_reward_metadata = {"type": "ATTACK", "repetition_tax": repetition_tax, "struggle_loop_tax": struggle_loop_tax}
 
         self._prev_active_name = self._last_active_name
         self._last_active_name = current_active
@@ -234,8 +250,8 @@ class Gen3RewardManager:
                     if m.get("pivot_bonus"):
                         print(f"       Pivot Bonus: +{m['pivot_bonus']:.2f}")
                     print(f"       Final Subsidy: {m['subsidy']:.4f}")
-                elif m.get("type") == "ATTACK" and m.get("repetition_tax", 0) != 0:
-                    print(f"    🔍 [DEEP TRACE] Type: ATTACK | Repetition Tax: {m['repetition_tax']:.2f}")
+                elif m.get("type") == "ATTACK" and (m.get("repetition_tax", 0) != 0 or m.get("struggle_loop_tax", 0) != 0):
+                    print(f"    🔍 [DEEP TRACE] Type: ATTACK | Repetition Tax: {m['repetition_tax']:.2f} | Struggle Loop Tax: {m['struggle_loop_tax']:.2f}")
                 elif m.get("type") == "FORCED":
                     print(f"    🔍 [DEEP TRACE] Type: FORCED SWITCH (No Subsidy)")
 
@@ -259,6 +275,7 @@ class Gen3RewardManager:
         self.episode_logger.log(
             f"\n🏁 Episode Finished | Reward: {self.total_reward:6.2f} | Status: {status:4} | "
             f"Mon: {our_alive} vs {opp_alive} | Turns: {turns:3} | "
-            f"Attacks: {self.attack_count:2} | Sw(Vol): {self.switch_count:2} | Sw(For): {self.forced_switch_count:2}\n",
+            f"Attacks: {self.attack_count:2} | Sw(Vol): {self.switch_count:2} | Sw(For): {self.forced_switch_count:2} | "
+            f"Struggle: {self.struggle_turns:2}\n",
             force=False
         )
