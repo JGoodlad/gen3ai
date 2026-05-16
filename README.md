@@ -41,22 +41,32 @@ npm run setup
 
 ## 🎮 Running the Project
 
-You can run everything from the root directory using `npm` scripts:
-
-### 1. Start the Showdown Server
+### Start the Showdown Server
 ```bash
 npm run showdown
 ```
 
-### 2. Run your AI Agents
+To stop it cleanly (use this instead of Ctrl+C, which orphans subprocesses):
 ```bash
-npm run battle
+npm run stop
 ```
 
-### 3. Sync Sample Teams (Smogon)
+The server runs on port 8000. Config is at `deps/pokemon-showdown/config/config.js` — subprocess counts require a full restart to take effect, but most other settings are picked up live.
+
+### Play / Evaluate
+```bash
+export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 src/main/play.py
+```
+
+### Sync Sample Teams (Smogon)
 Automatically downloads and indexes the latest ADV OU sample teams.
 ```bash
 npm run sync-teams
+```
+
+### TensorBoard
+```bash
+cd ~/dev/gen3ai && /home/goodlad/miniconda3/envs/gen3ai_stable/bin/tensorboard --logdir ./tensorboard/ --host 0.0.0.0 --port 6006
 ```
 
 ## 🧪 Testing Suite
@@ -82,22 +92,47 @@ npm run test-all
 The project uses Stable Baselines3 (PPO) to train a Gen 3 OU agent. The system features a modular observation space and an entity-based embedding layer for Pokémon species.
 
 ### Key Components
-- **Observation Space (1684 dims)**: Enriched with base stats, move properties (power, secondary effects, recoil), and battle state.
-* **Species Embedding**: Uses a learned 32-dimensional latent vector for each of the 386 Pokémon species.
-- **Fail-Fast Mappings**: Training automatically validates all metadata JSONs in `data/pokemon/` before starting.
+- **Observation Space (1021 dims)**: Encodes team state, active context, global env, and type matchups.
+- **Species Embedding**: Learned 32-dimensional latent vector per species; moves (16), items (16), abilities (16), types (16) also embedded.
+- **Fail-Fast Mappings**: Training validates all metadata JSONs in `data/pokemon/` before starting.
 
-### Training a Model
-To start a new training run with the optimized CPU hyperparameters:
+### Start a New Training Run
 ```bash
-PYTHONPATH=src ./deps/venv/bin/python3 src/main/train_rl_agent.py --steps 100000 --n-envs 8 --eval-battles 200
+export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 src/main/train_rl_agent.py \
+  --steps 50000000 \
+  --n-envs 96 \
+  --batch-size 16384 \
+  --n-epochs 10 \
+  --ent-coef 0.02 \
+  --n-steps 2048 \
+  --lr 0.0003 \
+  --device cuda \
+  --log-level periodic
 ```
 
-### Monitoring Progress
-We use a multi-stage coordinator to track learning across milestones (1k, 10k, 100k, 250k steps).
+### Continue from a Checkpoint
+Add `--model <path>` to resume from a saved checkpoint:
 ```bash
-./deps/venv/bin/python3 scratch/multi_stage_coordinator.py
+export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 src/main/train_rl_agent.py \
+  --model models/<run-name>/final_model \
+  --steps 50000000 \
+  --n-envs 96 \
+  --batch-size 16384 \
+  --n-epochs 10 \
+  --ent-coef 0.02 \
+  --n-steps 2048 \
+  --lr 0.0003 \
+  --device cuda \
+  --log-level periodic
 ```
-This script produces a real-time log and a final progress report in `scratch/training_progress_report.md`.
+
+Checkpoints are saved to `models/` automatically. TensorBoard logs always write to `./tensorboard/` in the repo root regardless of which worktree training is launched from.
+
+### Debug Mode
+Use `--debug` to run with a single environment (DummyVecEnv) and full trace logging — useful for inspecting observations, rewards, and action masks without spinning up 96 envs:
+```bash
+export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 src/main/train_rl_agent.py --debug
+```
 
 ---
 
