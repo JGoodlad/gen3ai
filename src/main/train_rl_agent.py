@@ -18,6 +18,8 @@ for d in [root_dir, src_dir, main_dir]:
 
 import asyncio
 import random
+import threading
+import time
 import argparse
 from datetime import datetime
 from sb3_contrib import MaskablePPO
@@ -179,10 +181,25 @@ async def main():
     n_envs = 1 if args.debug else args.n_envs
     EnvClass = DummyVecEnv if args.debug else SubprocVecEnv
 
+    def start_subprocess_watchdog(vec_env, label="env"):
+        """Kill the main process immediately if any SubprocVecEnv worker dies unexpectedly."""
+        processes = getattr(vec_env, "processes", None)
+        if not processes:
+            return
+        def _watch():
+            while True:
+                for p in processes:
+                    if not p.is_alive() and p.exitcode not in (0, None):
+                        print(f"\n🛑 [{label}] Worker PID {p.pid} died (exitcode={p.exitcode}). Exiting.")
+                        os._exit(1)
+                time.sleep(1)
+        threading.Thread(target=_watch, daemon=True).start()
+
     print(f"Initializing {n_envs} environments via {EnvClass.__name__}...")
 
     env_factories = [create_training_env_random(i, stall_config=stall_cfg) for i in range(n_envs)]
     env = EnvClass(env_factories)
+    start_subprocess_watchdog(env, label="train_env")
     # Note: env.seed() is deprecated in gymnasium VecEnv, use seed in reset or at init if supported.
     # But for reproducibility, we pass it to PPO.
 
@@ -282,6 +299,7 @@ async def main():
             return _init
         
         eval_env = SubprocVecEnv([create_eval_env(i) for i in range(8)])
+        start_subprocess_watchdog(eval_env, label="eval_env")
         eval_callback = MaskableEvalCallback(
             eval_env,
             best_model_save_path=os.path.join(model_dir, "best_model"),
