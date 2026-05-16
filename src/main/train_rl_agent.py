@@ -17,6 +17,7 @@ for d in [root_dir, src_dir, main_dir]:
         sys.path.insert(0, d)
 
 import asyncio
+import random
 import argparse
 from datetime import datetime
 from sb3_contrib import MaskablePPO
@@ -36,6 +37,7 @@ from agents.training.stall import StallConfig
 from utils.logging.levels import LogLevel
 
 from poke_env.player import RandomPlayer, SimpleHeuristicsPlayer
+from agents.opponents import Gen3StallerPlayer, Gen3AggressivePlayer, Gen3SetupSweepPlayer
 from poke_env import AccountConfiguration, LocalhostServerConfiguration
 
 BATTLE_FORMAT = "gen3ou"
@@ -111,6 +113,13 @@ async def main():
 
     mappings = load_mappings()
     
+    OPPONENT_CLASSES = [
+        SimpleHeuristicsPlayer,
+        Gen3StallerPlayer,
+        Gen3AggressivePlayer,
+        Gen3SetupSweepPlayer,
+    ]
+
     def create_training_env_random(idx, stall_config=None):
         def _init():
             try:
@@ -129,7 +138,8 @@ async def main():
                     server_configuration=LocalhostServerConfiguration,
                     account_configuration1=AccountConfiguration(env_username, "password"),
                 )
-                opponent = SimpleHeuristicsPlayer(
+                opponent_cls = random.choice(OPPONENT_CLASSES)
+                opponent = opponent_cls(
                     battle_format=BATTLE_FORMAT,
                     team=opponent_teambuilder,
                     server_configuration=LocalhostServerConfiguration,
@@ -249,7 +259,8 @@ async def main():
                         server_configuration=LocalhostServerConfiguration,
                         account_configuration1=AccountConfiguration(f"RLEval{idx}{ts}", "password"),
                     )
-                    opponent = SimpleHeuristicsPlayer(
+                    opponent_cls = random.choice(OPPONENT_CLASSES)
+                    opponent = opponent_cls(
                         battle_format=BATTLE_FORMAT,
                         team=opponent_teambuilder,
                         server_configuration=LocalhostServerConfiguration,
