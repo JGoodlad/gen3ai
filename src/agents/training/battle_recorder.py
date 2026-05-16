@@ -44,8 +44,8 @@ class BattleRecorder:
             "phase": ctx.phase,
             "our": {"species": ctx.our_active, "hp": self._our_hp_pct(ctx)},
             "opp": {"species": ctx.opp_active, "hp": self._opp_hp_pct(ctx)},
-            "bench": self._bench_summary(battle),
             "outcome": None,
+            "bench": self._bench_summary(battle),
             "chosen": chosen,
             "actions": self._all_action_labels(battle, probs, mask),
         }
@@ -83,8 +83,8 @@ class BattleRecorder:
             events.append("result:tie")
 
         self._pending_entry["outcome"] = {
-            "we":   {"action": self._pending_entry["chosen"], "hp_delta": f"{our_delta:+.0f}%"},
-            "they": {"action": "unknown",                     "hp_delta": f"{opp_delta:+.0f}%"},
+            "our": {"action": self._pending_entry["chosen"], "hp_delta": f"{our_delta:+.0f}%"},
+            "opp": {"action": "unknown",                     "hp_delta": f"{opp_delta:+.0f}%"},
             "events": events,
         }
         self._invocations.append(self._pending_entry)
@@ -227,8 +227,8 @@ class BattleRecorder:
             events.append(f"opp:{prev_ctx.opp_active}:fainted")
 
         self._pending_entry["outcome"] = {
-            "we":   {"action": we_action,   "hp_delta": f"{our_delta:+.0f}%"},
-            "they": {"action": they_action, "hp_delta": f"{opp_delta:+.0f}%"},
+            "our": {"action": we_action,   "hp_delta": f"{our_delta:+.0f}%"},
+            "opp": {"action": they_action, "hp_delta": f"{opp_delta:+.0f}%"},
             "events": events,
         }
         self._invocations.append(self._pending_entry)

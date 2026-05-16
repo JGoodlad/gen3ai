@@ -134,6 +134,11 @@ class ReplayCallback(BaseCallback):
                         r'{"species": "\1", "hp": "\2"}',
                         text,
                     )
+                    text = re.sub(
+                        r'\{\s*"action":\s*"([^"]+)",\s*"hp_delta":\s*"([^"]+)"\s*\}',
+                        r'{"action": "\1", "hp_delta": "\2"}',
+                        text,
+                    )
                     f.write(text)
 
                 if i < len(html_files):
