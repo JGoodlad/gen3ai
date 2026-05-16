@@ -306,7 +306,7 @@ async def main():
                     break
 
         print(f"Loading existing model from {model_path}")
-        model = MaskablePPO.load(model_path, env=env, device=args.device, tensorboard_log="./tensorboard/")
+        model = MaskablePPO.load(model_path, env=env, device=args.device, tensorboard_log=os.path.join(root_dir, "tensorboard"))
         model.ent_coef = args.ent_coef # Allow overriding entropy during continuation
         
         if args.eval_only:
@@ -371,7 +371,7 @@ async def main():
             ent_coef=args.ent_coef,
             device=args.device,
             seed=args.seed,
-            tensorboard_log="./tensorboard/",
+            tensorboard_log=os.path.join(root_dir, "tensorboard"),
             policy_kwargs=policy_kwargs
         )
 
