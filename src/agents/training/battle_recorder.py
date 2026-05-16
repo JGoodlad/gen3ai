@@ -66,10 +66,19 @@ class BattleRecorder:
         prev_ctx = self._pending_ctx
         our_hp, opp_hp = self._terminal_hp(battle)
 
-        prev_our_slot = prev_ctx.our_slot_map.get(prev_ctx.our_active, 0)
-        prev_opp_slot = prev_ctx.opp_slot_map.get(prev_ctx.opp_active, 0)
-        our_delta = (our_hp[prev_our_slot] - prev_ctx.our_hp[prev_our_slot]) * 100
-        opp_delta = (opp_hp[prev_opp_slot] - prev_ctx.opp_hp[prev_opp_slot]) * 100
+        terminal_ctx = BattleContext.from_battle(
+            battle, np.zeros(11, dtype=np.float32), np.zeros(1, dtype=np.float32),
+            self._our_slots, self._opp_slots,
+        )
+        delta = TurnDelta.build(prev_ctx, terminal_ctx, self._pending_action)
+        self._reward_fn.record_action(prev_ctx, self._pending_action)
+        reward = self._reward_fn.process_turn_reward(battle, delta)
+
+        # When a switch occurred, damage landed on the incoming mon — track that slot.
+        our_slot = prev_ctx.our_slot_map.get(delta.our_switch_to or prev_ctx.our_active, 0)
+        opp_slot = prev_ctx.opp_slot_map.get(delta.opp_switch_to or prev_ctx.opp_active, 0)
+        our_delta = (our_hp[our_slot] - prev_ctx.our_hp[our_slot]) * 100
+        opp_delta = (opp_hp[opp_slot] - prev_ctx.opp_hp[opp_slot]) * 100
 
         events = []
         final_our_fainted = sum(1 for m in battle.team.values() if m.fainted)
@@ -85,14 +94,6 @@ class BattleRecorder:
             events.append("result:loss")
         else:
             events.append("result:tie")
-
-        terminal_ctx = BattleContext.from_battle(
-            battle, np.zeros(11, dtype=np.float32), np.zeros(1, dtype=np.float32),
-            self._our_slots, self._opp_slots,
-        )
-        delta = TurnDelta.build(prev_ctx, terminal_ctx, self._pending_action)
-        self._reward_fn.record_action(prev_ctx, self._pending_action)
-        reward = self._reward_fn.process_turn_reward(battle, delta)
 
         self._pending_entry["outcome"] = {
             "our": {"action": self._pending_entry["chosen"], "hp_delta": f"{our_delta:+.0f}%"},
@@ -229,11 +230,11 @@ class BattleRecorder:
             last_move = getattr(opp_mon, "last_move", None) if opp_mon else None
             they_action = last_move.id if (last_move and hasattr(last_move, "id")) else "unknown"
 
-        # HP deltas for the mons that were active at decision time
-        prev_our_slot = prev_ctx.our_slot_map.get(prev_ctx.our_active, 0)
-        prev_opp_slot = prev_ctx.opp_slot_map.get(prev_ctx.opp_active, 0)
-        our_delta = delta.our_hp_delta[prev_our_slot] * 100
-        opp_delta = delta.opp_hp_delta[prev_opp_slot] * 100
+        # When a switch occurred, damage landed on the incoming mon — track that slot.
+        our_slot = prev_ctx.our_slot_map.get(delta.our_switch_to or prev_ctx.our_active, 0)
+        opp_slot = prev_ctx.opp_slot_map.get(delta.opp_switch_to or prev_ctx.opp_active, 0)
+        our_delta = delta.our_hp_delta[our_slot] * 100
+        opp_delta = delta.opp_hp_delta[opp_slot] * 100
 
         events = []
         if delta.we_fainted:
