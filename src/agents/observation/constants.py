@@ -12,7 +12,7 @@ STATS_DIM = 6 # HP, Atk, Def, SpA, SpD, Spe
 
 # Active Context Sub-dimensions (temporal block removed — was unimplemented)
 BOOSTS_DIM = 14
-VOLATILES_DIM = 8
+VOLATILES_DIM = 9
 
 # Internal Pokémon Vector Offsets
 # Species: 7 (1 ID + 6 Stats)
@@ -33,8 +33,8 @@ POKEMON_SPECIES_KNOWN_OFFSET = 57  # 56 + 1 (HP); 1.0 when slot is populated, 0.
 POKEMON_VECTOR_DIM = 58         # 57 + 1 (species_known)
 POKEMON_FULL_DIM = 59           # 58 + 1 (active flag appended by state_encoder)
 
-# Active context: boosts(14) + volatiles(8) = 22
-ACTIVE_CONTEXT_DIM = 22
+# Active context: boosts(14) + volatiles(9) = 23
+ACTIVE_CONTEXT_DIM = 23
 
 # Global env: weather(6) + spikes(2) + turn(1) + our_reflect(1) + our_light_screen(1) + opp_reflect(1) + opp_light_screen(1) = 13
 GLOBAL_ENV_DIM = 13

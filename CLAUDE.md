@@ -174,17 +174,17 @@ deps/
 
 ## Observation Vector
 
-The full observation is a **1105-dim float32 vector** (`Gen3ObservationEncoder.dimension`):
+The full observation is a **1107-dim float32 vector** (`Gen3ObservationEncoder.dimension`):
 
 | Block | Dims | Offset | Notes |
 |---|---|---|---|
 | Our team (6 × 59) | 354 | 0 | base encoder |
 | Opp team (6 × 59) | 354 | 354 | base encoder |
-| Active context ×2 | 44 | 708 | base encoder |
-| Global env | 13 | 752 | base encoder |
-| Reactive + matchups | 300 | 765 | base encoder |
-| Prev-turn action mask | 11 | 1065 | appended by `gen3_env.embed_battle()` |
-| TurnDelta block | 29 | 1076 | appended by `gen3_env.embed_battle()` |
+| Active context ×2 | 46 | 708 | base encoder |
+| Global env | 13 | 754 | base encoder |
+| Reactive + matchups | 300 | 767 | base encoder |
+| Prev-turn action mask | 11 | 1067 | appended by `gen3_env.embed_battle()` |
+| TurnDelta block | 29 | 1078 | appended by `gen3_env.embed_battle()` |
 
 Per-Pokémon slot (59 dims): species ID + 6 base stats, item ID + known, 2 type IDs, ability ID + known, 7-dim condition (status one-hot), 4 × 9-dim move slots, HP fraction, species_known flag, active flag. `species_known = 1.0` for all populated slots (own team and revealed opponent mons), `0.0` for unseen opponent slots.
 

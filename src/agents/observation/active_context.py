@@ -38,7 +38,8 @@ class ActiveContextEncoder(ObservationEncoder):
         volatiles = getattr(mon, "volatiles", {})
         volatile_map = {
             Effect.CONFUSION: 0, Effect.SUBSTITUTE: 1, Effect.TAUNT: 2, Effect.ENCORE: 3,
-            Effect.LEECH_SEED: 5, Effect.FOCUS_ENERGY: 6, Effect.ATTRACT: 7
+            Effect.LEECH_SEED: 5, Effect.FOCUS_ENERGY: 6, Effect.ATTRACT: 7,
+            Effect.DESTINY_BOND: 8,
         }
         for v, idx in volatile_map.items():
             if v in volatiles:
@@ -48,14 +49,14 @@ class ActiveContextEncoder(ObservationEncoder):
         if any(e in volatiles for e in [Effect.PERISH0, Effect.PERISH1, Effect.PERISH2, Effect.PERISH3]):
             vec[cursor + 4] = 1.0
             
-        cursor += 8
+        cursor += 9
 
         return vec
 
     def get_layout(self) -> Dict[str, Any]:
         return {
             "boosts": {"offset": 0, "dim": 14},
-            "volatiles": {"offset": 14, "dim": 8}
+            "volatiles": {"offset": 14, "dim": 9}
         }
 
     def describe_vector(self, vector: np.ndarray) -> Dict[str, Any]:
@@ -70,9 +71,9 @@ class ActiveContextEncoder(ObservationEncoder):
                 boosts[stat] = f"{val:+d}"
         
         # Volatiles
-        volatile_names = ["CONF", "SUB", "TAUNT", "ENC", "PERISH", "LEECH", "FOCUS", "ATTRACT"]
+        volatile_names = ["CONF", "SUB", "TAUNT", "ENC", "PERISH", "LEECH", "FOCUS", "ATTRACT", "DBOND"]
         active_volatiles = []
-        for i in range(8):
+        for i in range(9):
             if vector[14 + i] > 0.5:
                 active_volatiles.append(volatile_names[i])
         
