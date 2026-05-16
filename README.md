@@ -1,102 +1,82 @@
 # Gen3AI: Advanced Pokémon AI for Gen 3 OU
 
-This repository is dedicated to building a high-performance, custom-modeled AI agent for playing Generation 3 Overused (OU) Pokémon battles. It utilizes `poke-env` for the reinforcement learning environment and a local Pokémon Showdown server for training and evaluation.
+Reinforcement learning agent for Generation 3 Overused Pokémon battles, built on `poke-env` and a local Pokémon Showdown server.
 
-## 🚀 Project Overview
+## Project Goals
 
-The goal is to move beyond simple heuristic-based bots and develop a model that understands the unique mechanics of the ADV (Gen 3) metagame, including:
-- **No Physical/Special Split**: Damage types are determined by the move's type.
-- **Sandstream Dominance**: Managing weather effects (Tyranitar).
-- **Spikes & Rapid Spin**: The importance of entry hazards and hazard removal.
-- **Precision Switching**: Predicting opponent moves in a high-stakes environment.
+- Learn strategic play specific to ADV Gen 3: no physical/special split, Sandstream weather, Spikes/Rapid Spin, and high-stakes switching
+- Train via PPO against a diverse opponent pool (random, heuristic, staller, aggressive, setup sweeper)
+- Evaluate against progressively stronger opponents
 
-## 📂 Repository Structure
+---
 
-- `deps/`: Third-party dependencies and environments.
-  - `pokemon-showdown/`: Local instance of the Showdown server (Git Submodule).
-  - `venv/`: Python virtual environment.
-- `src/`: 1st-party core project logic.
-  - `main/`: Entry points for the application (e.g., `play.py`).
-  - `agents/`: Custom AI agent implementations.
-  - `utils/`: Shared utilities (e.g., Gen 3 Hidden Power logic).
-- `tools/`: 1st-party developer tools and scripts.
+## Environment Setup
 
-## 🛠 Installation & Setup
+Uses the **`gen3ai_stable` conda environment** — not `deps/venv` (outdated, ignore it).
 
-### Cloning the Repository
-Since this project uses a Git Submodule for the Showdown server, clone it using:
+Always prefix Python commands with:
 ```bash
-git clone --recursive <repo-url>
-```
-*If you've already cloned it without `--recursive`, run:*
-```bash
-git submodule update --init --recursive
+export PYTHONPATH=$PYTHONPATH:src
+/home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 <script>
 ```
 
-### Initial Setup
-Run the following to install all Python and Node.js dependencies:
+### Git Worktrees
+When opening a new worktree, the `deps/pokemon-showdown` submodule is empty. Symlink it from the main repo:
 ```bash
-npm run setup
+rmdir deps/pokemon-showdown
+ln -s /home/goodlad/dev/gen3ai/deps/pokemon-showdown deps/pokemon-showdown
 ```
 
-## 🎮 Running the Project
+---
 
-### Start the Showdown Server
-```bash
-npm run showdown
-```
+## Showdown Server
 
-To stop it cleanly (use this instead of Ctrl+C, which orphans subprocesses):
 ```bash
+# Start (with performance flags)
+NODE_ENV=production node --turbo-fast-api-calls --max-old-space-size=2048 deps/pokemon-showdown/pokemon-showdown start --no-security
+
+# Stop cleanly (Ctrl+C orphans subprocesses — use this instead)
 npm run stop
 ```
 
-The server runs on port 8000. Config is at `deps/pokemon-showdown/config/config.js` — subprocess counts require a full restart to take effect, but most other settings are picked up live.
+The server runs on port 8000. Key config at `deps/pokemon-showdown/config/config.js` — subprocess counts (`simulator`, `network`) require a full restart; most other settings reload live.
 
-### Play / Evaluate
+---
+
+## Testing
+
+Three tiers of tests — run from the repo root:
+
+| Pattern | Requires | Command |
+|---|---|---|
+| `*_test.py` | Nothing (pure unit tests) | See below |
+| `*_integration_test.py` | Symlinked `deps/pokemon-showdown` Node bridge | See below |
+| `*_e2e_test.py` | Live Showdown server on `localhost:8000` | Run directly as scripts |
+
+### Unit tests only
 ```bash
-export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 src/main/play.py
+export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 -m pytest src/ -m "not integration and not e2e" -q
 ```
 
-### Sync Sample Teams (Smogon)
-Automatically downloads and indexes the latest ADV OU sample teams.
+### Unit + integration
 ```bash
-npm run sync-teams
+export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 -m pytest src/ -q
 ```
 
-### TensorBoard
+### E2E tests (requires running server)
 ```bash
-cd ~/dev/gen3ai && /home/goodlad/miniconda3/envs/gen3ai_stable/bin/tensorboard --logdir ./tensorboard/ --host 0.0.0.0 --port 6006
+# Start the server first, then:
+export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 src/agents/action/fuzz_e2e_test.py
+export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 src/agents/action/telemetry_e2e_test.py
+export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 src/agents/training/gen3_env_e2e_test.py
+export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 src/agents/training/poke_env_gaps/transition_fuzz_e2e_test.py
 ```
 
-## 🧪 Testing Suite
+---
 
-We maintain two distinct test suites to ensure both logic and infrastructure integrity:
+## Training
 
-### 1. Unit Tests (Fast, No Server Required)
-Used for verifying local logic like Gen 3 IV fixes and teambuilder parsing.
-```bash
-npm test
-```
-
-### 2. Integration Tests (Local Validator Bridge)
-Validates that all downloaded teams are legal and valid using a local Node.js bridge to the Showdown library. This is fast and does not require a running server.
-```bash
-npm run test-all
-```
-
-*(Note: These scripts point to `deps/` and `tools/` so you never have to `cd` manually.)*
-
-## 🧠 Training & Reinforcement Learning
-
-The project uses Stable Baselines3 (PPO) to train a Gen 3 OU agent. The system features a modular observation space and an entity-based embedding layer for Pokémon species.
-
-### Key Components
-- **Observation Space (1021 dims)**: Encodes team state, active context, global env, and type matchups.
-- **Species Embedding**: Learned 32-dimensional latent vector per species; moves (16), items (16), abilities (16), types (16) also embedded.
-- **Fail-Fast Mappings**: Training validates all metadata JSONs in `data/pokemon/` before starting.
-
-### Start a New Training Run
+### New run
 ```bash
 export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 src/main/train_rl_agent.py \
   --steps 50000000 \
@@ -110,8 +90,7 @@ export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable
   --log-level periodic
 ```
 
-### Continue from a Checkpoint
-Add `--model <path>` to resume from a saved checkpoint:
+### Continue from checkpoint
 ```bash
 export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 src/main/train_rl_agent.py \
   --model models/<run-name>/final_model \
@@ -126,21 +105,99 @@ export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable
   --log-level periodic
 ```
 
-Checkpoints are saved to `models/` automatically. TensorBoard logs always write to `./tensorboard/` in the repo root regardless of which worktree training is launched from.
-
-### Debug Mode
-Use `--debug` to run with a single environment (DummyVecEnv) and full trace logging — useful for inspecting observations, rewards, and action masks without spinning up 96 envs:
+### Debug mode
+Single environment with full trace logging — no 96-env overhead:
 ```bash
 export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 src/main/train_rl_agent.py --debug
 ```
 
+Checkpoints save to `models/` automatically. TensorBoard logs always write to `./tensorboard/` in the repo root, regardless of which worktree training is launched from.
+
+### TensorBoard
+```bash
+cd ~/dev/gen3ai && /home/goodlad/miniconda3/envs/gen3ai_stable/bin/tensorboard --logdir ./tensorboard/ --host 0.0.0.0 --port 6006
+```
+
 ---
 
-## 📈 Long-term Goals
-- [ ] Implement a custom neural network architecture tailored for Gen 3 state representation.
-- [ ] Train via Self-Play Reinforcement Learning.
-- [ ] Evaluate against high-ladder ADV OU players.
-- [ ] Integrate with the `poketeam` logic engine for team-building optimization.
+## Play / Evaluate
+
+```bash
+export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 src/main/play.py
+```
+
+Requires the Showdown server to be running.
+
+---
+
+## Repository Structure
+
+```
+src/
+  agents/
+    action/          # Action masking, mapping, and fuzz tests
+    inference/       # RLPlayer — loads a model checkpoint and battles
+    model/           # Gen3FeaturesExtractor (PyTorch)
+    observation/     # Observation encoders: species, moves, items, abilities,
+                     #   active context, global env, reactive/matchups
+    opponents/       # Scripted opponents: staller, aggressive, setup sweeper
+    training/        # Gen3Env, reward manager, battle context, wrappers,
+                     #   stall detection, replay recorder
+  main/
+    train_rl_agent.py  # Training entry point
+    play.py            # Battle / evaluation entry point
+  poke_env/          # Forked poke-env library
+  utils/             # Gen 3 utilities, team loader, teambuilder, logging
+data/
+  pokemon/           # JSON mappings: gen3_species, gen3_moves, gen3_items, gen3_abilities
+  teams/             # ADV OU sample teams pool
+models/              # Saved PPO checkpoints
+tensorboard/         # Training logs (always written here from any worktree)
+deps/
+  pokemon-showdown/  # Git submodule — local Showdown server
+designs/             # Architecture design docs
+```
+
+---
+
+## Observation Vector (1021-dim float32)
+
+| Block | Dims | Offset |
+|---|---|---|
+| Our team (6 × 55) | 330 | 0 |
+| Opp team (6 × 55) | 330 | 330 |
+| Active context ×2 | 44 | 660 |
+| Global env | 13 | 704 |
+| Reactive + matchups | 304 | 717 |
+
+Per-Pokémon slot (55 dims): species ID + 6 base stats, item ID + known flag, 2 type IDs, ability ID + known flag, 8-dim status one-hot, 4 × 8-dim move slots, HP fraction, active flag.
+
+Global env (13 dims): weather one-hot (6), spikes ×2 (2), log-turn (1), our reflect (1), our light screen (1), opp reflect (1), opp light screen (1).
+
+---
+
+## Model Architecture (`Gen3FeaturesExtractor`)
+
+1. **Embedding lookups** — species (32-dim), move (16), item (16), ability (16), type (16, shared)
+2. **Shared move processor** — Linear(55→64)→ReLU→Linear(64→32) per move slot, including per-move type matchup against all 6 opponents
+3. **Role encoder** — Linear(237→256)→ReLU→Linear(256→128) per Pokémon, with broadcasted global context
+4. **Team-wide attention** (three `MultiheadAttention` paths with residuals):
+   - *Pressure*: our active ← their team
+   - *Safety*: our team ← their active
+   - *Synergy*: our team ← our team
+5. **Projection** — Linear(N→512)→ReLU over concatenated team tokens + remaining context
+
+The projection input dimension `N` is computed via a dummy forward pass at init — no magic constants.
+
+---
+
+## Data Dependencies
+
+Training requires JSON files in `data/pokemon/`:
+- `gen3_species.json` — `{num, baseStats}`
+- `gen3_moves.json` — `{num, basePower, type, hasSecondary, hasRecoil}`
+- `gen3_items.json` — `{num}`
+- `gen3_abilities.json` — `{num}`
 
 ---
 
