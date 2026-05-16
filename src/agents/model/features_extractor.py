@@ -133,7 +133,8 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         self.activation = torch.nn.ReLU()
         self.features_dim = self.projection_dim
         self.trace_logger = RateLimitedLogger(interval_seconds=30)
-        self._trace_buffer: collections.deque = collections.deque(maxlen=3)
+        self._trace_buffer: list = []
+        self._trace_collect_remaining: int = 0
         
     def _print_one_turn(self, obs_np: np.ndarray, label: str):
         """Print one turn's decoded state from a full 1093-dim obs array."""
@@ -512,11 +513,16 @@ class Gen3FeaturesExtractor(torch.nn.Module):
     def forward(self, obs):
         combined = self.forward_internal(obs)
         
-        # Diagnostic Trace logic — buffer on GPU, convert to numpy only at print time
+        # Diagnostic Trace logic — collect only 3 turns when the timer fires, free otherwise
         if self.log_level >= LogLevel.PERIODIC:
-            x = obs["observation"]
-            self._trace_buffer.append(x[0].detach().clone())
             if self.trace_logger.should_log():
-                self._print_deep_trace()
+                self._trace_buffer = []
+                self._trace_collect_remaining = 3
+            if self._trace_collect_remaining > 0:
+                x = obs["observation"]
+                self._trace_buffer.append(x[0].detach().clone())
+                self._trace_collect_remaining -= 1
+                if self._trace_collect_remaining == 0:
+                    self._print_deep_trace()
         
         return self.activation(self.projection(combined))
