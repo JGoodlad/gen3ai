@@ -194,12 +194,31 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         td = desc.get("turn_delta")
         if td is not None:
             def _action_str(switched, failed, cant, move):
-                if switched: return "SWITCH"
-                if failed: return f"FAIL({cant or '?'})"
-                if move: return f"move pwr={move['power']} sec={int(move['secondary'])} recoil={int(move['recoil'])}"
-                return "none (first turn)"
-            print(f"TurnDelta — Us: {_action_str(td['our_switched'], td['our_failed'], td['our_cant'], td['our_move'])}  hp={td['our_hp_delta']:+.2f}  fainted={int(td['we_fainted'])}")
-            print(f"            Opp: {_action_str(td['opp_switched'], td['opp_failed'], td['opp_cant'], td['opp_move'])}  hp={td['opp_hp_delta']:+.2f}  fainted={int(td['opp_fainted'])}  known={int(td['opp_move_known'])}")
+                if switched:
+                    return "switch"
+                if failed:
+                    return f"✗ {cant or '?'}"
+                if move:
+                    name = move.get("move_name") or f"#{move['move_id']}"
+                    type_ = (move.get("move_type") or "").title()
+                    pwr = move["power"]
+                    meta = []
+                    if type_: meta.append(type_)
+                    if pwr > 0: meta.append(f"{pwr}bp")
+                    if move["secondary"]: meta.append("+eff")
+                    if move["recoil"]: meta.append("recoil")
+                    suffix = f" [{', '.join(meta)}]" if meta else ""
+                    return f"{name}{suffix}"
+                return "(first turn)"
+
+            W = 36
+            opp_known = "" if td["opp_move_known"] else "  [unconfirmed]"
+            faint_parts = (["us"] if td["we_fainted"] else []) + (["opp"] if td["opp_fainted"] else [])
+            faint_str = f"   💀 fainted: {'/'.join(faint_parts)}" if faint_parts else ""
+            print(f"--- Last Turn ---")
+            print(f"  Us:  {_action_str(td['our_switched'], td['our_failed'], td['our_cant'], td['our_move']):{W}}")
+            print(f"  Opp: {_action_str(td['opp_switched'], td['opp_failed'], td['opp_cant'], td['opp_move']) + opp_known:{W}}")
+            print(f"  ΔHP  us={td['our_hp_delta']:+.2f}  opp={td['opp_hp_delta']:+.2f}{faint_str}")
 
         warnings, is_critical = self._encoder.integrity_check(obs_np)
         if warnings:

@@ -41,6 +41,8 @@ class TurnDeltaEncoder:
         self._moves = gen3_moves
         nums = [v.get("num", 0) for v in gen3_moves.values()]
         self._max_num = float(max(nums, default=1))
+        self._num_to_name = {v.get("num"): k for k, v in gen3_moves.items() if "num" in v}
+        self._idx_to_type = TypeEncoder.IDX_TO_TYPE
 
     @property
     def dimension(self) -> int:
@@ -80,20 +82,20 @@ class TurnDeltaEncoder:
             idx = int(np.argmax(onehot))
             return _CANT[idx] if onehot[idx] > 0.5 else None
 
-        our_move = {
-            "move_id": int(vec[0]),
-            "power": round(float(vec[1]) * 200),
-            "secondary": bool(vec[2] > 0.5),
-            "recoil": bool(vec[3] > 0.5),
-            "type_id": int(vec[4]),
-        }
-        opp_move = {
-            "move_id": int(vec[5]),
-            "power": round(float(vec[6]) * 200),
-            "secondary": bool(vec[7] > 0.5),
-            "recoil": bool(vec[8] > 0.5),
-            "type_id": int(vec[9]),
-        }
+        def _move_dict(id_raw, pwr_raw, sec_raw, recoil_raw, type_raw):
+            num = int(id_raw)
+            type_id = int(type_raw)
+            return {
+                "move_id": num,
+                "move_name": self._num_to_name.get(num),
+                "power": round(float(pwr_raw) * 200),
+                "secondary": bool(sec_raw > 0.5),
+                "recoil": bool(recoil_raw > 0.5),
+                "type_id": type_id,
+                "move_type": self._idx_to_type.get(type_id),
+            }
+        our_move = _move_dict(vec[0], vec[1], vec[2], vec[3], vec[4])
+        opp_move = _move_dict(vec[5], vec[6], vec[7], vec[8], vec[9])
         return {
             "our_move": our_move if (our_move["move_id"] > 0 or our_move["power"] > 0) else None,
             "opp_move": opp_move if (opp_move["move_id"] > 0 or opp_move["power"] > 0) else None,
