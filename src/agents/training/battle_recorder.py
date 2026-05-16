@@ -44,6 +44,7 @@ class BattleRecorder:
             "phase": ctx.phase,
             "our": {"species": ctx.our_active, "hp": self._our_hp_pct(ctx)},
             "opp": {"species": ctx.opp_active, "hp": self._opp_hp_pct(ctx)},
+            "bench": self._bench_summary(battle),
             "outcome": None,
             "chosen": chosen,
             "actions": self._all_action_labels(battle, probs, mask),
@@ -169,6 +170,18 @@ class BattleRecorder:
                 label = "struggle"
             result[label] = {"prob": f"{probs[i] * 100:.1f}%", "valid": bool(mask[i])}
         return result
+
+    def _bench_summary(self, battle) -> str:
+        active = battle.active_pokemon
+        parts = []
+        for mon in battle.team.values():
+            if active and mon.species == active.species:
+                continue
+            if mon.fainted:
+                parts.append(f"{mon.species}(faint)")
+            else:
+                parts.append(f"{mon.species}({mon.current_hp_fraction * 100:.0f}%)")
+        return ", ".join(parts)
 
     def _our_hp_pct(self, ctx: BattleContext) -> str:
         if ctx.our_active == "NONE":

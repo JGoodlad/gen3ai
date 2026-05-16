@@ -1,4 +1,5 @@
 import os
+import re
 import json
 import asyncio
 import threading
@@ -122,7 +123,18 @@ class ReplayCallback(BaseCallback):
                 summary = recorder.to_summary(battle, self.num_timesteps)
 
                 with open(os.path.join(step_dir, f"battle_{i + 1}_summary.json"), "w") as f:
-                    json.dump(summary, f, indent=2)
+                    text = json.dumps(summary, indent=2)
+                    text = re.sub(
+                        r'\{\s*"prob":\s*"([^"]+)",\s*"valid":\s*(true|false)\s*\}',
+                        r'{"prob": "\1", "valid": \2}',
+                        text,
+                    )
+                    text = re.sub(
+                        r'\{\s*"species":\s*"([^"]+)",\s*"hp":\s*"([^"]+)"\s*\}',
+                        r'{"species": "\1", "hp": "\2"}',
+                        text,
+                    )
+                    f.write(text)
 
                 if i < len(html_files):
                     os.rename(
