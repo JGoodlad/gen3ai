@@ -90,7 +90,7 @@ def test_move_and_team_alignment():
     # 5. Verify Reactive Matrix Alignment (Our Moves vs Their Team)
     # The matrix starts at OFFSET_REACTIVE + 16
     # Shape is (TEAM_SIZE, 4, TEAM_SIZE) -> (Our Mon, Our Move, Their Mon)
-    matrix_start = OFFSET_REACTIVE + 16
+    matrix_start = OFFSET_REACTIVE + 12
     our_vs_their = vector[matrix_start : matrix_start + 144].reshape(TEAM_SIZE, 4, TEAM_SIZE)
     
     # Check p1's moves against opponent's first mon (o1)

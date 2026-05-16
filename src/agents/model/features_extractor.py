@@ -74,15 +74,15 @@ class Gen3FeaturesExtractor(torch.nn.Module):
             torch.nn.Linear(64, 32)
         )
         
-        # 1.6 Pokémon Role Encoder (Step 2)
-        # pokemon_enriched (242) + global_context broadcast (12) + switch_valid (1) + struggle_from_prev (1) = 256
+        # 1.6 Pokémon Role Encoder
+        # pokemon_enriched (241) + global_context broadcast (16) + switch_valid (1) + struggle_from_prev (1) = 259
         # pokemon_enriched: species(32) + stats(6) + item_emb(16) + item_known(1) +
-        #   pk_types(32) + ability_emb(16) + ability_known(1) + condition(8) + moves(128) + hp+active(2)
-        # global_context: turn(1) + weather(6) + fainted(2) + spikes(2) + struggle(1) = 12
+        #   pk_types(32) + ability_emb(16) + ability_known(1) + condition(7) + moves(128) + hp+active(2)
+        # global_context: turn(1) + weather(6) + fainted(2) + spikes(2) + struggle(1) + screens(4) = 16
         # switch_valid: was this slot a valid switch target in the previous turn's mask (1)
         # struggle_from_prev: was struggle the only option last turn (1)
         self.role_token_size = 128
-        role_input_dim = 256
+        role_input_dim = 259
         self.role_encoder = torch.nn.Sequential(
             torch.nn.Linear(role_input_dim, 256),
             torch.nn.ReLU(),
@@ -263,8 +263,13 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         opt = parts['opp_team']
         opp_team = x[:, opt['start']:opt['end']].reshape(batch_size, *opt['reshape'])
         ctx = parts['context']
-        remaining_part = x[:, ctx['start']:base_dim]  # stop before prev_mask tail 
-        
+        remaining_part = x[:, ctx['start']:base_dim]  # stop before prev_mask tail
+
+        # Reactive layout offsets — extracted here so all downstream code can reference them
+        reactive_layout = self.layout.get('reactive_layout', {})
+        struggle_offset = reactive_layout.get('forced_struggle', {}).get('offset', 11)
+        matchup_offset  = reactive_layout.get('our_matchups', {}).get('offset', 12)
+
         # 1.1 Context Features for Move Selection
         global_start = parts['global']['start'] - ctx['start']
         _w  = global_layout.get('weather', {});  _w_off, _w_dim  = _w.get('offset', 0), _w.get('dim', 6)
@@ -427,17 +432,17 @@ class Gen3FeaturesExtractor(torch.nn.Module):
             embedded_pk_types,     # 32 (concatenated type pair, was 16)
             embedded_abilities,    # 16
             ability_remnant,       # 1
-            part_d,                # 8
+            part_d,                # 7 (condition one-hot, unused slot removed)
             processed_moves,       # 128 (Shared Processor Output)
             hp_and_active          # 2
-        ], dim=2) # [B, 12, 242]
+        ], dim=2) # [B, 12, 241]
         
         # --- POKÉMON ROLE ENCODER ---
-        struggle_offset = reactive_layout.get('forced_struggle', {}).get('offset', 15)
-        matchup_offset  = reactive_layout.get('our_matchups', {}).get('offset', 16)
-
-        struggle_feature = remaining_part[:, reactive_start + struggle_offset : reactive_start + struggle_offset + 1]
-        global_context = torch.cat([turn_feature, weather_feature, fainted_feature, spikes_feature, struggle_feature], dim=1)
+        _fs = reactive_layout.get('forced_struggle', {}); struggle_offset = _fs.get('offset', 11)
+        struggle_feature = remaining_part[:, reactive_start + struggle_offset : reactive_start + struggle_offset + 1] # [B, 1]
+        # S3: screens (Reflect/Light Screen both sides) are critical switch-safety context
+        screen_feature = remaining_part[:, global_start + 9 : global_start + 13] # [B, 4]
+        global_context = torch.cat([turn_feature, weather_feature, fainted_feature, spikes_feature, struggle_feature, screen_feature], dim=1) # [B, 16]
         context_broadcasted = global_context.unsqueeze(1).expand(-1, n_poke, -1)
 
         switch_validity_ours = switch_mask.unsqueeze(2)                                          # [B, 6, 1]
@@ -448,16 +453,28 @@ class Gen3FeaturesExtractor(torch.nn.Module):
 
         pokemon_enriched_with_context = torch.cat([
             pokemon_enriched, context_broadcasted, switch_validity, struggle_from_prev
-        ], dim=2)
+        ], dim=2)  # [B, 12, 259]
 
         role_tokens = self.role_encoder(pokemon_enriched_with_context.reshape(-1, pokemon_enriched_with_context.shape[-1]))
         role_tokens = role_tokens.reshape(batch_size, n_poke, self.role_token_size)
 
         # --- TEAM-WIDE ATTENTION ---
         # 1. Find who is active on both teams
-        active_flags = hp_and_active[:, :, 1] # [B, n_poke]
-        our_active_idx = torch.argmax(active_flags[:, 0:TEAM_SIZE], dim=1)                         # [B] — 0-5
-        opp_active_idx = torch.argmax(active_flags[:, TEAM_SIZE:2*TEAM_SIZE], dim=1) + TEAM_SIZE   # [B] — 6-11
+        active_flags = hp_and_active[:, :, 1] # [B, 12]
+        # QW3: guard argmax — if no active flag is set (opponent not revealed, or dummy forward),
+        # argmax silently returns 0; clamp to valid range explicitly.
+        our_active_flags = active_flags[:, 0:TEAM_SIZE]
+        opp_active_flags = active_flags[:, TEAM_SIZE:2*TEAM_SIZE]
+        our_active_idx = torch.where(
+            our_active_flags.any(dim=1),
+            torch.argmax(our_active_flags, dim=1),
+            torch.zeros(batch_size, dtype=torch.long, device=x.device)
+        )  # [B] — 0-5
+        opp_active_idx = torch.where(
+            opp_active_flags.any(dim=1),
+            torch.argmax(opp_active_flags, dim=1),
+            torch.zeros(batch_size, dtype=torch.long, device=x.device)
+        ) + TEAM_SIZE  # [B] — 6-11
 
         # 2. Apply Status Biases (Pre-Attention)
         status_idx = torch.ones((batch_size, n_poke), device=role_tokens.device).long()
@@ -489,7 +506,12 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         our_team = self.norm2(our_team + safety_delta)
 
         # Path 3: Synergy — our team learns internal role cohesion
-        synergy_delta, _ = self.synergy_attn(our_team, our_team, our_team)
+        # QW1: mask fainted slots as keys so dead Pokémon don't pollute the key space.
+        # Always unmask the active slot — if all keys were masked softmax produces NaN.
+        fainted_mask_ours = (hp_and_active[:, 0:TEAM_SIZE, 0] == 0)  # [B, 6] True = fainted
+        fainted_mask_ours[torch.arange(batch_size), our_active_idx] = False
+        synergy_delta, _ = self.synergy_attn(our_team, our_team, our_team,
+                                              key_padding_mask=fainted_mask_ours)
         our_team = self.norm3(our_team + synergy_delta)
 
         # Path 4: Threat — their bench learns which of them threatens our active most (P2)

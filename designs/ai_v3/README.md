@@ -1,27 +1,27 @@
 # Gen3AI Network Architecture
 
-Feature extractor used by MaskablePPO. Takes a 1080-dim observation and produces 512-dim features for the policy and value heads.
+Feature extractor used by MaskablePPO. Takes a 1064-dim observation and produces 512-dim features for the policy and value heads.
 
 ## Data Flow Digraph
 
 ```mermaid
 flowchart TD
-    OBS["Observation · 1080-dim float32"]
+    OBS["Observation · 1064-dim float32"]
 
-    OBS --> BASE["Base obs · 1069-dim"]
+    OBS --> BASE["Base obs · 1053-dim"]
     OBS --> PM["prev_mask · 11-dim\n(previous turn's action mask)"]
 
     PM --> SW["switch_mask [0:6]\nbench slot validity"]
     PM --> MV["move_mask [6:10]\nmove slot validity"]
     PM --> STR["struggle_mask [10]"]
 
-    BASE --> TEAM["Pokémon vectors\n[B, 12, 59]  our + opp team"]
+    BASE --> TEAM["Pokémon vectors\n[B, 12, 58]  our + opp team"]
     BASE --> REM["remaining_part\nactive_ctx · global · reactive"]
 
     TEAM --> EMB["Embedding Lookups\nspecies · 32\nmove · 16\nitem · 16\nability · 16\ntype · 16  shared"]
     REM --> ACT_RAW["active_context · 22-dim × 2\nboosts · stat stages · volatiles"]
     REM --> GLOBAL["global env · 13-dim\nturn · weather·6 · fainted·2\nspikes·2 · reflect·2 · screen·2"]
-    REM --> REACT["reactive scalars · 16-dim\npow·4 mult·4 fainted·2 hp·2\nspikes·2 struggle·1 status·1"]
+    REM --> REACT["reactive scalars · 12-dim\npow·4 mult·4 fainted·2\nstatus·1 struggle·1\n(hp/spikes removed — in per-mon and global)"]
     REM --> MATCH["matchup matrix · 288-dim\n[B, 12, 4, 6] type effectiveness\n(used by move processor only)"]
 
     MV --> MPIN
@@ -32,15 +32,15 @@ flowchart TD
     MPIN --> MP["Shared Move Processor\nLinear 58→64 → ReLU\nLinear 64→32\n(all 12 mons × 4 slots)"]
     MP --> PMOV["Processed moves · [B, 12, 128]\n4 slots × 32-dim"]
 
-    EMB --> PE["pokemon_enriched · [B, 12, 242]\nspecies·32 + stats·6 + item_emb·16\nitem_known·1 + pk_types·32\nability_emb·16 + ability_known·1\ncondition·8 + moves·128 + hp+active·2"]
+    EMB --> PE["pokemon_enriched · [B, 12, 241]\nspecies·32 + stats·6 + item_emb·16\nitem_known·1 + pk_types·32\nability_emb·16 + ability_known·1\ncondition·7 + moves·128 + hp+active·2"]
     PMOV --> PE
 
     GLOBAL --> RIN
     SW --> RIN
     STR --> RIN
-    PE --> RIN["Role Encoder input · [B, 12, 256]\nenriched·242 + ctx·12\nswitch_valid·1 + struggle_prev·1"]
+    PE --> RIN["Role Encoder input · [B, 12, 259]\nenriched·241 + ctx·16\nswitch_valid·1 + struggle_prev·1\n(ctx=16: turn·1+weather·6+fainted·2+spikes·2+screens·4+struggle·1)"]
 
-    RIN --> RE["Shared Role Encoder\nLinear 256→256 → ReLU\nLinear 256→128\n(all 12 mons)"]
+    RIN --> RE["Shared Role Encoder\nLinear 259→256 → ReLU\nLinear 256→128\n(all 12 mons)"]
     RE --> RT["Role tokens · [B, 12, 128]\n+ status embedding bias\n(our active / our bench / their active / their bench)"]
 
     RT --> OT["our_team · [B, 6, 128]"]
@@ -83,7 +83,7 @@ flowchart TD
 | Layer | Input dim | Output dim | Notes |
 |---|---|---|---|
 | Move Processor | 58 | 32 | shared; run 12×4 times per forward pass |
-| Role Encoder | 256 | 128 | shared; run 12 times per forward pass |
+| Role Encoder | 259 | 128 | shared; run 12 times per forward pass |
 | Active Ctx Encoder | 22 | 32 | shared; run twice (our side + opp side) |
 | Pressure Attn | 128 (Q), 128 (KV) | 128 | our_active queries their_team |
 | Safety Attn | 128 (Q), 128 (KV) | 128 | our_team queries their_active |
@@ -95,17 +95,17 @@ flowchart TD
 
 | Block | Dims | Offset |
 |---|---|---|
-| Our team (6 × 55) | 330 | 0 |
-| Opp team (6 × 55) | 330 | 330 |
-| Active context ×2 (boosts, volatiles) | 44 | 660 |
-| Global env | 13 | 704 |
-| Reactive scalars + matchup matrix | 304 | 717 |
-| **prev_mask** | **11** | **1021** |
-| **Total** | **1032** | |
+| Our team (6 × 58) | 348 | 0 |
+| Opp team (6 × 58) | 348 | 348 |
+| Active context ×2 (boosts, volatiles) | 44 | 696 |
+| Global env | 13 | 740 |
+| Reactive scalars + matchup matrix | 300 | 753 |
+| **prev_mask** | **11** | **1053** |
+| **Total** | **1064** | |
 
-The matchup matrix (288 of the 304 reactive dims) is consumed by the move processor only — it is **not** fed to the projection directly.
+The matchup matrix (288 of the 300 reactive dims) is consumed by the move processor only — it is **not** fed to the projection directly.
 
-## Per-Pokémon Vector (55 dims)
+## Per-Pokémon Vector (58 dims)
 
 | Field | Dims | Notes |
 |---|---|---|
@@ -117,8 +117,8 @@ The matchup matrix (288 of the 304 reactive dims) is consumed by the move proces
 | Type 2 ID | 1 | embedded → 16 |
 | Ability ID | 1 | embedded → 16 |
 | Ability known | 1 | |
-| Condition (status one-hot) | 8 | |
-| Moves (4 × 8) | 32 | id, power, secondary, recoil, type_id, category, known |
+| Condition (status one-hot) | 7 | None, BRN, PAR, SLP, FRZ, PSN, TOX |
+| Moves (4 × 9) | 36 | id, power, secondary, recoil, type_id, category, known, cur_pp, max_pp |
 | HP fraction | 1 | |
 | Active flag | 1 | |
 
@@ -138,7 +138,7 @@ Pressure result is written back into `our_team` before Safety/Synergy run, so al
 | File | Role |
 |---|---|
 | `src/agents/model/features_extractor.py` | Network definition |
-| `src/agents/observation/state_encoder.py` | Observation encoding; owns `base_dimension` (1021) and `dimension` (1032) |
+| `src/agents/observation/state_encoder.py` | Observation encoding; owns `base_dimension` (1053) and `dimension` (1064) |
 | `src/agents/observation/constants.py` | Layout offsets and dimension constants |
 | `src/agents/observation/reactive.py` | Reactive block encoder; `get_layout()` drives reactive offsets in the network |
 | `designs/ai_v3/impl_step2_obs_features.md` | Design notes for prev_mask feature + architecture fixes |

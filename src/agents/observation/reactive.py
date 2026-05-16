@@ -12,13 +12,12 @@ class ReactiveEncoder(ObservationEncoder):
     - Base Power of 4 active moves (4)
     - Damage multipliers of 4 active moves (4)
     - Fainted counts (2)
-    - HP fractions (2)
-    - Spikes (2)
     - Status flag (1)
     - Forced Struggle flag (1)
     - Matchup Matrix: Our moves vs Their mons (144)
     - Matchup Matrix: Their moves vs Our mons (144)
-    Total: 304 dims
+    Total: 300 dims
+    (HP and Spikes removed — duplicated in per-Pokémon vector and global env respectively)
     """
     
     @property
@@ -50,7 +49,7 @@ class ReactiveEncoder(ObservationEncoder):
             for i, move in enumerate(battle.available_moves):
                 if i >= 4:
                     break
-                moves_base_power[i] = move.base_power / 100.0
+                moves_base_power[i] = move.base_power / 200.0
                 if battle.opponent_active_pokemon is not None:
                     mult = move.type.damage_multiplier(
                         battle.opponent_active_pokemon.type_1,
@@ -61,41 +60,26 @@ class ReactiveEncoder(ObservationEncoder):
 
         vec[0:4] = moves_base_power
         vec[4:8] = moves_dmg_multiplier
-        
+
         # 2. Fainted Counts
         fainted_mon_team = len([mon for mon in battle.team.values() if mon.fainted]) / 6.0
         fainted_mon_opponent = len([mon for mon in battle.opponent_team.values() if mon.fainted]) / 6.0
         vec[8] = fainted_mon_team
         vec[9] = fainted_mon_opponent
-        
-        # 3. HP
-        our_hp = battle.active_pokemon.current_hp_fraction if battle.active_pokemon else 0.0
-        opp_hp = (
-            battle.opponent_active_pokemon.current_hp_fraction 
-            if battle.opponent_active_pokemon else 0.0
-        )
-        vec[10] = our_hp
-        vec[11] = opp_hp
-        
-        # 4. Spikes
-        our_spikes = battle.side_conditions.get(SideCondition.SPIKES, 0) / 3.0
-        opp_spikes = battle.opponent_side_conditions.get(SideCondition.SPIKES, 0) / 3.0
-        vec[12] = our_spikes
-        vec[13] = opp_spikes
-        
-        # 5. Status
-        vec[14] = 1.0 if battle.active_pokemon and battle.active_pokemon.status else 0.0
-        
-        # 6. Forced Struggle
-        vec[15] = 1.0 if is_forced_struggle else 0.0
+
+        # 3. Status (HP and Spikes removed — available in per-Pokémon vector and global env)
+        vec[10] = 1.0 if battle.active_pokemon and battle.active_pokemon.status else 0.0
+
+        # 4. Forced Struggle
+        vec[11] = 1.0 if is_forced_struggle else 0.0
 
         # --- Matchup Matrices ---
         our_team = self.get_team_list(battle, is_opponent=False)
         their_team = self.get_team_list(battle, is_opponent=True)
         type_chart = GenData.from_gen(3).type_chart
 
-        # 7. Our moves vs Their mons (144 dims)
-        cursor = 16
+        # 5. Our moves vs Their mons (144 dims)
+        cursor = 12
         for i in range(TEAM_SIZE):
             our_mon = our_team[i] if i < len(our_team) else None
             our_moves = self.get_sorted_moves(our_mon)
@@ -110,7 +94,7 @@ class ReactiveEncoder(ObservationEncoder):
                         ) / 4.0
                     cursor += 1
 
-        # 8. Their moves vs Our mons (144 dims)
+        # 6. Their moves vs Our mons (144 dims)
         for i in range(TEAM_SIZE):
             their_mon = their_team[i] if i < len(their_team) else None
             their_moves = self.get_sorted_moves(their_mon)
@@ -132,18 +116,16 @@ class ReactiveEncoder(ObservationEncoder):
             "move_power": {"offset": 0, "dim": 4},
             "move_multiplier": {"offset": 4, "dim": 4},
             "fainted": {"offset": 8, "dim": 2},
-            "hp": {"offset": 10, "dim": 2},
-            "spikes": {"offset": 12, "dim": 2},
-            "active_status": {"offset": 14, "dim": 1},
-            "forced_struggle": {"offset": 15, "dim": 1},
-            "our_matchups": {"offset": 16, "dim": 144},
-            "their_matchups": {"offset": 160, "dim": 144}
+            "active_status": {"offset": 10, "dim": 1},
+            "forced_struggle": {"offset": 11, "dim": 1},
+            "our_matchups": {"offset": 12, "dim": 144},
+            "their_matchups": {"offset": 156, "dim": 144}
         }
 
     def describe_vector(self, vector: np.ndarray) -> Dict[str, Any]:
         # Extract matrices and scale back up by 4.0 for human-readable display
-        our_m = vector[16:160].reshape(TEAM_SIZE, 4, TEAM_SIZE) * 4.0
-        their_m = vector[160:304].reshape(TEAM_SIZE, 4, TEAM_SIZE) * 4.0
+        our_m = vector[12:156].reshape(TEAM_SIZE, 4, TEAM_SIZE) * 4.0
+        their_m = vector[156:300].reshape(TEAM_SIZE, 4, TEAM_SIZE) * 4.0
         
         return {
             "fainted_our": int(vector[8] * 6),
