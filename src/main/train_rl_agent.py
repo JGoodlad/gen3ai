@@ -18,8 +18,6 @@ for d in [root_dir, src_dir, main_dir]:
 
 import asyncio
 import random
-import threading
-import time
 import argparse
 from datetime import datetime
 from sb3_contrib import MaskablePPO
@@ -37,6 +35,7 @@ from agents.training.wrappers import MaskableAgentWrapper
 from agents.training.gen3_env import Gen3Env
 from agents.training.reward_manager import Gen3RewardManager
 from agents.training.stall import StallConfig
+from agents.training.watchdog import start_subprocess_watchdog
 from utils.logging.levels import LogLevel
 
 from poke_env.player import RandomPlayer, SimpleHeuristicsPlayer
@@ -180,20 +179,6 @@ async def main():
     # Running parallel environments
     n_envs = 1 if args.debug else args.n_envs
     EnvClass = DummyVecEnv if args.debug else SubprocVecEnv
-
-    def start_subprocess_watchdog(vec_env, label="env"):
-        """Kill the main process immediately if any SubprocVecEnv worker dies unexpectedly."""
-        processes = getattr(vec_env, "processes", None)
-        if not processes:
-            return
-        def _watch():
-            while True:
-                for p in processes:
-                    if not p.is_alive() and p.exitcode not in (0, None):
-                        print(f"\n🛑 [{label}] Worker PID {p.pid} died (exitcode={p.exitcode}). Exiting.")
-                        os._exit(1)
-                time.sleep(1)
-        threading.Thread(target=_watch, daemon=True).start()
 
     print(f"Initializing {n_envs} environments via {EnvClass.__name__}...")
 
