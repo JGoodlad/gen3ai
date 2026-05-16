@@ -138,23 +138,26 @@ A targeted e2e fuzz test was written to verify the behavior of `last_move` and
 |------|--------|
 | `src/poke_env/battle/pokemon.py` | `cant_move(reason)`, `_last_cant_reason` field + property, `moved()` clears field |
 | `src/poke_env/battle/abstract_battle.py` | Pass `event[3]` to `cant_move()` |
-| `src/agents/training/battle_context.py` | 5 new `BattleContext` fields; `TurnDelta` completed (6 new fields); `build()` and `empty()` updated |
-| `src/agents/training/environment.py` | Populates all new `BattleContext` fields in `_get_observation()` |
-| `src/main/train_rl_agent.py` | Updated parallel `embed_battle()` BattleContext construction to include all new fields |
-| `src/agents/training/battle_context_test.py` | `_ctx()` helper updated; 13 new tests added |
+| `src/agents/training/battle_context.py` | 5 new `BattleContext` fields; `from_battle()` classmethod; `TurnDelta` completed (6 new fields); `build()` and `empty()` updated |
+| `src/agents/training/gen3_env.py` | `TurnDeltaEncoder` created in `__init__`; `embed_battle()` appends delta encoding after obs+prev_mask |
+| `src/agents/training/battle_context_test.py` | `_ctx()` helper updated; 20+ tests including `from_battle()` coverage |
+| `src/agents/observation/turn_delta_encoder.py` | New — 29-dim `TurnDeltaEncoder` class |
+| `src/agents/observation/turn_delta_encoder_test.py` | New — 13 tests |
+| `src/agents/observation/state_encoder.py` | `dimension` updated to include 29-dim TurnDelta block |
+| `src/agents/observation/state_encoder_test.py` | `EXPECTED_OBS_DIM` updated 1064 → 1093 |
 
 ---
 
 ## Tests Added
 
-**`src/agents/training/battle_context_test.py`** — 27 tests total (13 new):
+**`src/agents/training/battle_context_test.py`** — 35 tests total:
 
 | Test | What it covers |
 |------|---------------|
 | `test_turn_delta_build_our_move_id` | action 7 → `active_move_ids[1]` |
 | `test_turn_delta_build_our_move_id_first_slot` | action 6 → `active_move_ids[0]` |
 | `test_turn_delta_build_struggle` | action 10 → `our_move_id = "struggle"` |
-| `test_turn_delta_build_our_move_slot_missing_ids` | graceful None when ids list is short |
+| `test_turn_delta_build_our_move_slot_missing_ids` | None slot handled gracefully |
 | `test_turn_delta_opp_move_known_from_last_move` | `opp_last_move_id` → `opp_move_id`, `opp_move_known=True` |
 | `test_turn_delta_opp_move_unknown_no_last_move` | None last_move + no switch → `opp_move_known=False` |
 | `test_turn_delta_opp_switch_known` | active species change → `opp_switch_to`, `opp_move_id=None` |
@@ -164,6 +167,39 @@ A targeted e2e fuzz test was written to verify the behavior of `last_move` and
 | `test_turn_delta_opp_failed_to_move_flinch` | flinch reason |
 | `test_turn_delta_our_failed_to_move_slp` | our side sleep tracking |
 | `test_turn_delta_flinch_with_persisting_last_move` | documents that `opp_move_id` may be non-None even when `opp_failed_to_move=True` |
+| `test_from_battle_*` (5 tests) | `BattleContext.from_battle()` with real mock battles |
+| `test_active_move_ids_*` (5 tests) | move ID slot ordering from `last_request` |
+
+**`src/agents/observation/turn_delta_encoder_test.py`** — 13 tests:
+dimension, empty delta → zeros, move feature population, per-slot offsets, switch/failed/cant flags, HP delta scalars, faint flags, opp_move_known, unknown move graceful zeros.
+
+---
+
+### TurnDeltaEncoder Design
+
+**`src/agents/observation/turn_delta_encoder.py`** — 29-dim block:
+
+| Block | Dims | What |
+|-------|------|------|
+| our_move features | 5 | id_norm, power_norm, has_secondary, has_recoil, type_id_norm |
+| opp_move features | 5 | same |
+| our_switched | 1 | bool |
+| opp_switched | 1 | bool |
+| our_failed_to_move | 1 | bool |
+| opp_failed_to_move | 1 | bool |
+| our_cant_reason | 5 | one-hot: par / slp / frz / flinch / confusion |
+| opp_cant_reason | 5 | same |
+| our_hp_delta | 1 | sum of HP delta vector (negative = damage) |
+| opp_hp_delta | 1 | same |
+| we_fainted | 1 | bool |
+| opp_fainted | 1 | bool |
+| opp_move_known | 1 | bool |
+
+All values are normalized floats, so they flow through the features_extractor's projection
+layer without needing special embedding treatment. The projection layer input dimension is
+auto-discovered via a dummy forward pass, so no architecture change is required.
+
+`TurnDelta.empty()` encodes to an all-zeros vector (first turn of each episode).
 
 ---
 
@@ -187,7 +223,4 @@ See `designs/ai_v3/todo.md` for remaining items:
    affects only niche gen3ou sets. Fix is ~5 lines in `Pokemon.moved()`.
 2. **Status and stat-stage deltas** in `TurnDelta` — needed for reward signals around
    Aromatherapy, Calm Mind, Curse, and Intimidate.
-3. **`TurnDeltaEncoder` observation block** — once `TurnDelta` is proven stable through
-   training, append a fixed-dim encoding of last-turn events to the observation vector
-   (what move we used, what they used, did either side fail to move, HP deltas). Gives the
-   feedforward model a one-turn memory without an RNN.
+3. ~~`TurnDeltaEncoder` observation block~~ — **done** (Step 3).

@@ -82,10 +82,10 @@ to consume them.
 
 ---
 
-## 3. `TurnDeltaEncoder` — One-Turn Memory in the Observation Vector
+## 3. `TurnDeltaEncoder` — One-Turn Memory in the Observation Vector ✓ DONE
 
-**Where:** new `src/agents/observation/turn_delta_encoder.py`
-**Priority:** Medium — implement once `TurnDelta` is proven stable through a training run.
+**Where:** `src/agents/observation/turn_delta_encoder.py`
+**Implemented in Step 3 (same session as TurnDelta).** 29-dim block appended to obs by `gen3_env.embed_battle()`. See CLAUDE.md for layout.
 
 ### Problem
 

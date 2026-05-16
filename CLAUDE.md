@@ -174,19 +174,23 @@ deps/
 
 ## Observation Vector
 
-The encoded battle state is a **1021-dim float32 vector**:
+The full observation is a **1093-dim float32 vector** (`Gen3ObservationEncoder.dimension`):
 
-| Block | Dims | Offset |
-|---|---|---|
-| Our team (6 × 55) | 330 | 0 |
-| Opp team (6 × 55) | 330 | 330 |
-| Active context ×2 | 44 | 660 |
-| Global env | 13 | 704 |
-| Reactive + matchups | 304 | 717 |
+| Block | Dims | Offset | Notes |
+|---|---|---|---|
+| Our team (6 × 55) | 330 | 0 | base encoder |
+| Opp team (6 × 55) | 330 | 330 | base encoder |
+| Active context ×2 | 44 | 660 | base encoder |
+| Global env | 13 | 704 | base encoder |
+| Reactive + matchups | 304 | 717 | base encoder |
+| Prev-turn action mask | 11 | 1053 | appended by `gen3_env.embed_battle()` |
+| TurnDelta block | 29 | 1064 | appended by `gen3_env.embed_battle()` |
 
-Per-Pokémon slot (55 dims): species ID + 6 base stats, item ID + known, 2 type IDs, ability ID + known, 8-dim condition (status one-hot), 4 × 8-dim move slots, HP fraction, active flag.
+Per-Pokémon slot (55 dims): species ID + 6 base stats, item ID + known, 2 type IDs, ability ID + known, 8-dim condition (status one-hot), 4 × 9-dim move slots, HP fraction, active flag.
 
 Global env (13 dims): weather one-hot (6), spikes ×2 (2), log-turn (1), our reflect (1), our light screen (1), opp reflect (1), opp light screen (1).
+
+TurnDelta block (29 dims): last-turn move features for our move and opp move (5 dims each: id_norm, power_norm, has_secondary, has_recoil, type_id_norm), plus: our_switched, opp_switched, our_failed_to_move, opp_failed_to_move, our_cant_onehot (5: par/slp/frz/flinch/confusion), opp_cant_onehot (5), our_hp_delta, opp_hp_delta, we_fainted, opp_fainted, opp_move_known. All zeros on the first turn of each episode. See `src/agents/observation/turn_delta_encoder.py`.
 
 ---
 

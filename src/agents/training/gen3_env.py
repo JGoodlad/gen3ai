@@ -6,10 +6,12 @@ from poke_env.environment.singles_env import SinglesEnv
 from poke_env.player.battle_order import BattleOrder, ForfeitBattleOrder
 
 from agents.observation.state_encoder import get_observation_encoder
+from agents.observation.turn_delta_encoder import TurnDeltaEncoder
 from agents.action.mask_generator import Gen3ActionMasker
 from agents.action.mapper import Gen3ActionMapper
 from agents.training.reward_manager import Gen3RewardManager
 from agents.training.reward_function import RewardFunction
+from agents.training.battle_context import TurnDelta
 from agents.training.episode_tracker import EpisodeTracker
 from agents.training.stall import StallConfig, StallLogger
 from utils.logging.levels import LogLevel
@@ -38,6 +40,7 @@ class Gen3Env(SinglesEnv):
 
         self.reward_manager: RewardFunction = reward_fn or Gen3RewardManager(log_level=self.log_level)
         self._tracker = EpisodeTracker()
+        self._turn_delta_encoder = TurnDeltaEncoder(mappings.get("moves", {}))
 
     def embed_battle(self, battle):
         obs = self.observation_encoder.encode(battle)
@@ -45,8 +48,16 @@ class Gen3Env(SinglesEnv):
             mask = Gen3ActionMasker.get_mask(battle).astype(np.int8)
             if mask.sum() > 0:
                 self._tracker.record(battle, mask, obs)
-        prev_mask = self._tracker.prev_mask if battle is self.battle1 else np.ones(11, dtype=np.float32)
-        return np.concatenate([obs, prev_mask])
+
+        if battle is self.battle1:
+            prev_mask = self._tracker.prev_mask
+            # build_delta() returns TurnDelta.empty() on the first turn (no prior context).
+            delta_enc = self._turn_delta_encoder.encode(self._tracker.build_delta())
+        else:
+            prev_mask = np.ones(11, dtype=np.float32)
+            delta_enc = self._turn_delta_encoder.encode(TurnDelta.empty())
+
+        return np.concatenate([obs, prev_mask, delta_enc])
 
     def action_masks(self) -> np.ndarray:
         ctx = self._tracker.last_ctx
