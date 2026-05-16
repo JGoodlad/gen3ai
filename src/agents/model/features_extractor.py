@@ -5,11 +5,12 @@ from gymnasium import spaces
 from typing import Dict, Any, Optional
 from agents.observation.state_encoder import Gen3ObservationEncoder
 from agents.observation.constants import (
-    TRACE_INTERVAL, 
-    TEAM_SIZE, 
-    GLOBAL_ENV_DIM, 
+    TRACE_INTERVAL,
+    TEAM_SIZE,
+    GLOBAL_ENV_DIM,
     POKEMON_FULL_DIM
 )
+from agents.observation.turn_delta_encoder import TURN_DELTA_DIM
 from utils.logging.rate_limiter import RateLimitedLogger
 from utils.logging.levels import LogLevel
 
@@ -188,40 +189,6 @@ class Gen3FeaturesExtractor(torch.nn.Module):
             print(f"\n--- MOMENTUM ---")
             print(f"Fainted: {momentum.get('fainted_our', 0)} (Us) / {momentum.get('fainted_opp', 0)} (Them)")
             
-            # --- MATCHUP MATRIX ---
-            our_vs_their = momentum.get('our_vs_their') # [6, 4, 6]
-            if our_vs_their is not None:
-                print("\n--- MATCHUPS (Our Moves vs Their Team) ---")
-                opp_mons = [m['species'][:6] for m in desc['opp_team']]
-                if opp_mons:
-                    header = "               " + "".join([f"{m:>8}" for m in opp_mons])
-                    print(header)
-                    for i, mon in enumerate(desc['our_team']):
-                        moves = mon.get('moves', [])
-                        for m_idx in range(4):
-                            if m_idx < len(moves):
-                                move_name = moves[m_idx]
-                                row_label = f"[{i}] {mon['species'][:3]}:{move_name[:7]}"
-                                vals = "".join([f"{our_vs_their[i, m_idx, j]:>8.1f}x" for j in range(len(opp_mons))])
-                                print(f"{row_label:15} {vals}")
-                else:
-                    print("No opponent Pokémon revealed yet.")
-
-            their_vs_our = momentum.get('their_vs_our') # [6, 4, 6]
-            if their_vs_our is not None and np.any(their_vs_our):
-                print("\n--- MATCHUPS (Their Moves vs Our Team) ---")
-                our_mons = [m['species'][:6] for m in desc['our_team']]
-                header = "               " + "".join([f"{m:>8}" for m in our_mons])
-                print(header)
-                for i, mon in enumerate(desc['opp_team']):
-                    moves = mon.get('moves', [])
-                    for m_idx in range(4):
-                        if m_idx < len(moves):
-                            move_name = moves[m_idx]
-                            row_label = f"[{i}] {mon['species'][:3]}:{move_name[:7]}"
-                            vals = "".join([f"{their_vs_our[i, m_idx, j]:>8.1f}x" for j in range(len(our_mons))])
-                            print(f"{row_label:15} {vals}")
-            
             # --- INTEGRITY CHECK ---
             warnings, is_critical = self._encoder.integrity_check(x[0].cpu().numpy())
             if warnings:
@@ -250,8 +217,9 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         m_slot_layout   = moves_layout['slot_layout']
         num_moves       = len(moves_layout['slots'])
 
-        # Extract prev_mask from the last 11 dims (appended by embed_battle / inference player)
-        prev_mask = x[:, base_dim:]                                              # [B, 11]
+        # Extract prev_mask (11 dims) and TurnDelta block (29 dims) from observation tail
+        prev_mask = x[:, base_dim : base_dim + 11]                               # [B, 11]
+        turn_delta_feat = x[:, base_dim + 11 : base_dim + 11 + TURN_DELTA_DIM]  # [B, 29]
         switch_mask  = prev_mask[:, 0:TEAM_SIZE]                                 # [B, 6]
         move_mask    = prev_mask[:, TEAM_SIZE:TEAM_SIZE + num_moves]             # [B, 4]
         struggle_mask = prev_mask[:, TEAM_SIZE + num_moves:TEAM_SIZE + num_moves + 1]  # [B, 1]
@@ -286,7 +254,7 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         fainted_feature     = remaining_part[:, reactive_start + _f_off  : reactive_start + _f_off  + _f_dim]   # [B, 2]
         our_matchups_flat   = remaining_part[:, reactive_start + _om_off : reactive_start + _om_off + _om_dim]  # [B, 144]
         their_matchups_flat = remaining_part[:, reactive_start + _tm_off : reactive_start + _tm_off + _tm_dim]  # [B, 144]
-        
+
         our_matchups   = our_matchups_flat.reshape(batch_size, TEAM_SIZE, num_moves, TEAM_SIZE)
         their_matchups = their_matchups_flat.reshape(batch_size, TEAM_SIZE, num_moves, TEAM_SIZE)
         matchups_all = torch.cat([our_matchups, their_matchups], dim=1) # [B, n_poke, num_moves, TEAM_SIZE]
@@ -541,6 +509,7 @@ class Gen3FeaturesExtractor(torch.nn.Module):
             our_team_flat, their_team_flat, our_active_refined,
             our_ctx_enc, opp_ctx_enc,
             non_matchup_rest,
+            turn_delta_feat,
         ], dim=1)
         return combined
 

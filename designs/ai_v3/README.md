@@ -1,15 +1,16 @@
 # Gen3AI Network Architecture
 
-Feature extractor used by MaskablePPO. Takes a 1064-dim observation and produces 512-dim features for the policy and value heads.
+Feature extractor used by MaskablePPO. Takes a 1093-dim observation and produces 512-dim features for the policy and value heads.
 
 ## Data Flow Digraph
 
 ```mermaid
 flowchart TD
-    OBS["Observation · 1064-dim float32"]
+    OBS["Observation · 1093-dim float32"]
 
     OBS --> BASE["Base obs · 1053-dim"]
     OBS --> PM["prev_mask · 11-dim\n(previous turn's action mask)"]
+    OBS --> TD["TurnDelta block · 29-dim\n(last turn's transition signal)"]
 
     PM --> SW["switch_mask [0:6]\nbench slot validity"]
     PM --> MV["move_mask [6:10]\nmove slot validity"]
@@ -70,9 +71,10 @@ flowchart TD
     OAR --> AGG
 
     ACT_RAW --> ACTENC["Active Context Encoder · shared\nLinear 22→64 → ReLU → Linear 64→32\nour side + opp side"]
-    ACTENC --> AGG["Aggregation\ncat(\n  our_team·768\n  their_team·768\n  our_active_refined·128\n  our_ctx_enc·32\n  opp_ctx_enc·32\n  global+scalars·29\n)"]
+    ACTENC --> AGG["Aggregation\ncat(\n  our_team·768\n  their_team·768\n  our_active_refined·128\n  our_ctx_enc·32\n  opp_ctx_enc·32\n  global+scalars·29\n  turn_delta·29\n)"]
     GLOBAL --> AGG
     REACT --> AGG
+    TD --> AGG
 
     AGG --> PROJ["Projection\nLinear N→512 → ReLU\n(N auto-discovered via dummy forward)"]
     PROJ --> OUT["Features · [B, 512]\n→ policy head + value head"]
@@ -101,9 +103,30 @@ flowchart TD
 | Global env | 13 | 740 |
 | Reactive scalars + matchup matrix | 300 | 753 |
 | **prev_mask** | **11** | **1053** |
-| **Total** | **1064** | |
+| **TurnDelta block** | **29** | **1064** |
+| **Total** | **1093** | |
 
-The matchup matrix (288 of the 300 reactive dims) is consumed by the move processor only — it is **not** fed to the projection directly.
+The matchup matrix (288 of the 300 reactive dims) is consumed by the move processor only — it is **not** fed to the projection directly. The TurnDelta block is appended by `gen3_env.embed_battle()` and fed directly into the projection aggregation.
+
+## TurnDelta Block Layout (29 dims, offset 1064)
+
+| Field | Dims | Notes |
+|---|---|---|
+| our_move features | 5 | id_norm, power/200, has_secondary, has_recoil, type_id_norm |
+| opp_move features | 5 | same |
+| our_switched | 1 | bool |
+| opp_switched | 1 | bool |
+| our_failed_to_move | 1 | bool |
+| opp_failed_to_move | 1 | bool |
+| our_cant_reason | 5 | one-hot: par / slp / frz / flinch / confusion |
+| opp_cant_reason | 5 | same |
+| our_hp_delta | 1 | sum of our HP delta vector (negative = damage taken) |
+| opp_hp_delta | 1 | sum of opp HP delta vector |
+| we_fainted | 1 | bool |
+| opp_fainted | 1 | bool |
+| opp_move_known | 1 | False on Explosion gap or first active turn |
+
+All zeros on the first turn of each episode (`TurnDelta.empty()`). See `src/agents/observation/turn_delta_encoder.py`.
 
 ## Per-Pokémon Vector (58 dims)
 
@@ -138,8 +161,10 @@ Pressure result is written back into `our_team` before Safety/Synergy run, so al
 | File | Role |
 |---|---|
 | `src/agents/model/features_extractor.py` | Network definition |
-| `src/agents/observation/state_encoder.py` | Observation encoding; owns `base_dimension` (1053) and `dimension` (1064) |
+| `src/agents/observation/state_encoder.py` | Observation encoding; owns `base_dimension` (1053) and `dimension` (1093) |
+| `src/agents/observation/turn_delta_encoder.py` | TurnDelta → 29-dim float32 block |
+| `src/agents/training/battle_context.py` | `BattleContext` snapshot + `TurnDelta` diff |
 | `src/agents/observation/constants.py` | Layout offsets and dimension constants |
 | `src/agents/observation/reactive.py` | Reactive block encoder; `get_layout()` drives reactive offsets in the network |
-| `designs/ai_v3/impl_step2_obs_features.md` | Design notes for prev_mask feature + architecture fixes |
+| `designs/ai_v3/impl_step3_turn_transition_signal.md` | Design notes for TurnDelta + cant-move tracking |
 | `designs/ai_v3/network_review.md` | Full architectural review with prioritised suggestions |
