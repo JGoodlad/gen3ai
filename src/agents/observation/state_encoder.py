@@ -27,6 +27,7 @@ from typing import Dict, Any, List, Tuple
 import json
 import os
 from agents.action.mask_generator import Gen3ActionMasker
+from agents.observation.reactive import ReactiveEncoder as _ReactiveEncoder
 
 def load_mappings():
     """Loads move, species, and item mappings with validation."""
@@ -200,6 +201,8 @@ class Gen3ObservationEncoder(ObservationEncoder):
             "total_dim": self.dimension,    # includes 11-dim prev_mask appended by env
             "base_dim": self.base_dimension, # raw encoder output without prev_mask
             "prev_mask_dim": 11,
+            "active_context_dim": ACTIVE_CONTEXT_DIM,
+            "reactive_layout": _ReactiveEncoder().get_layout(),
             "max_species": 400,
             "species_embedding_dim": 32,
             "max_moves": 400,

@@ -64,14 +64,14 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         )
         
         # 1.6 Pokémon Role Encoder (Step 2)
-        # pokemon_enriched (226) + global_context broadcast (12) + switch_valid (1) + struggle_from_prev (1) = 240
+        # pokemon_enriched (242) + global_context broadcast (12) + switch_valid (1) + struggle_from_prev (1) = 256
         # pokemon_enriched: species(32) + stats(6) + item_emb(16) + item_known(1) +
-        #   pk_types(16) + ability_emb(16) + ability_known(1) + condition(8) + moves(128) + hp+active(2)
+        #   pk_types(32) + ability_emb(16) + ability_known(1) + condition(8) + moves(128) + hp+active(2)
         # global_context: turn(1) + weather(6) + fainted(2) + spikes(2) + struggle(1) = 12
         # switch_valid: was this slot a valid switch target in the previous turn's mask (1)
         # struggle_from_prev: was struggle the only option last turn (1)
         self.role_token_size = 128
-        role_input_dim = 240
+        role_input_dim = 256
         self.role_encoder = torch.nn.Sequential(
             torch.nn.Linear(role_input_dim, 256),
             torch.nn.ReLU(),
@@ -86,12 +86,25 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         self.pressure_attn = torch.nn.MultiheadAttention(embed_dim=self.role_token_size, num_heads=4, batch_first=True)
         self.safety_attn = torch.nn.MultiheadAttention(embed_dim=self.role_token_size, num_heads=4, batch_first=True)
         self.synergy_attn = torch.nn.MultiheadAttention(embed_dim=self.role_token_size, num_heads=4, batch_first=True)
+        # Path 4: Threat — their_team queries our_active (which of their bench threatens us most?)
+        self.threat_attn = torch.nn.MultiheadAttention(embed_dim=self.role_token_size, num_heads=4, batch_first=True)
 
         # 1.7.3 LayerNorm for Residual Stability
         self.norm1 = torch.nn.LayerNorm(self.role_token_size)
         self.norm2 = torch.nn.LayerNorm(self.role_token_size)
         self.norm3 = torch.nn.LayerNorm(self.role_token_size)
+        self.norm4 = torch.nn.LayerNorm(self.role_token_size)
         
+        # 1.8 Active Context Encoder
+        # Encodes boosts, volatiles, and other per-active-mon context (22 dims each side)
+        # into a dense 32-dim token. Shared weights between our side and opponent side.
+        active_ctx_dim = layout.get('active_context_dim', 22)
+        self.active_ctx_encoder = torch.nn.Sequential(
+            torch.nn.Linear(active_ctx_dim, 64),
+            torch.nn.ReLU(),
+            torch.nn.Linear(64, 32),
+        )
+
         # 2. Dynamic Input Dimension Discovery (Dummy Forward)
         # We run a single fake observation through the logic to determine the exact projection dimension.
         with torch.no_grad():
@@ -306,10 +319,10 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         embedded_items = self.item_embedding(item_ids) # [B, 12, 16]
         embedded_abilities = self.ability_embedding(ability_ids) # [B, 12, 16]
         
-        # Pokémon Types: sum of embeddings (E1 + E2)
+        # Pokémon Types: concatenate E1 and E2 (32 dims) — sum loses type-pair signal
         embedded_t1 = self.type_embedding(type1_ids) # [B, 12, 16]
         embedded_t2 = self.type_embedding(type2_ids) # [B, 12, 16]
-        embedded_pk_types = embedded_t1 + embedded_t2 # [B, 12, 16]
+        embedded_pk_types = torch.cat([embedded_t1, embedded_t2], dim=-1) # [B, 12, 32]
         
         # 5. Construct the enriched Pokemon vector by stitching
         # Part A: Stats (between Species ID and Items)
@@ -382,7 +395,7 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         move_context_final = move_context.unsqueeze(2).expand(-1, -1, 4, -1)
         
         # Move validity from prev_mask: our moves get their validity bit, opp gets all-ones
-        move_validity_ours = move_mask.unsqueeze(1).unsqueeze(3).expand(-1, TEAM_SIZE, -1, -1)  # [B, 6, 4, 1]
+        move_validity_ours = move_mask.unsqueeze(1).unsqueeze(3).expand(-1, TEAM_SIZE, -1, -1).float()  # [B, 6, 4, 1]
         move_validity_opp = torch.ones(batch_size, TEAM_SIZE, 4, 1, device=x.device)           # [B, 6, 4, 1]
         move_validity = torch.cat([move_validity_ours, move_validity_opp], dim=1)              # [B, 12, 4, 1]
 
@@ -405,19 +418,21 @@ class Gen3FeaturesExtractor(torch.nn.Module):
             part_a,                # 6
             embedded_items,        # 16
             item_remnant,          # 1
-            embedded_pk_types,     # 16
+            embedded_pk_types,     # 32 (concatenated type pair, was 16)
             embedded_abilities,    # 16
             ability_remnant,       # 1
             part_d,                # 8
             processed_moves,       # 128 (Shared Processor Output)
             hp_and_active          # 2
-        ], dim=2) # [B, 12, 226]
+        ], dim=2) # [B, 12, 242]
         
-        # --- POKÉMON ROLE ENCODER (Step 2) ---
-        # Add Global context to the role encoder to make roles phase-aware and environment-aware.
-        # forced_struggle flag (reactive offset 15): active mon has no PP, must use Struggle.
-        # Broadcast to all role encoders so each mon's token knows the active mon is useless.
-        struggle_feature = remaining_part[:, reactive_start + 15 : reactive_start + 16] # [B, 1]
+        # --- POKÉMON ROLE ENCODER ---
+        # P5: use layout-driven reactive offsets instead of hardcoded arithmetic
+        reactive_layout = self.layout.get('reactive_layout', {})
+        struggle_offset = reactive_layout.get('forced_struggle', {}).get('offset', 15)
+        matchup_offset  = reactive_layout.get('our_matchups', {}).get('offset', 16)
+
+        struggle_feature = remaining_part[:, reactive_start + struggle_offset : reactive_start + struggle_offset + 1] # [B, 1]
         global_context = torch.cat([turn_feature, weather_feature, fainted_feature, spikes_feature, struggle_feature], dim=1) # [B, 12]
         context_broadcasted = global_context.unsqueeze(1).expand(-1, 2 * TEAM_SIZE, -1) # [B, 12, 12]
 
@@ -431,54 +446,78 @@ class Gen3FeaturesExtractor(torch.nn.Module):
 
         pokemon_enriched_with_context = torch.cat([
             pokemon_enriched, context_broadcasted, switch_validity, struggle_from_prev
-        ], dim=2)  # [B, 12, 240]
-        
+        ], dim=2)  # [B, 12, 256]
+
         # Reshape to [B*12, role_input_dim] for shared processing
         role_tokens = self.role_encoder(pokemon_enriched_with_context.reshape(-1, pokemon_enriched_with_context.shape[-1]))
         role_tokens = role_tokens.reshape(batch_size, 2 * TEAM_SIZE, self.role_token_size) # [B, 12, 128]
-        
-        # --- TEAM-WIDE ATTENTION (Step 4) ---
+
+        # --- TEAM-WIDE ATTENTION ---
         # 1. Find who is active on both teams
         active_flags = hp_and_active[:, :, 1] # [B, 12]
-        our_active_idx = torch.argmax(active_flags[:, 0:TEAM_SIZE], dim=1) # [B]
-        opp_active_idx = torch.argmax(active_flags[:, TEAM_SIZE:2*TEAM_SIZE], dim=1) + TEAM_SIZE # [B]
+        our_active_idx = torch.argmax(active_flags[:, 0:TEAM_SIZE], dim=1)                         # [B] — 0-5
+        opp_active_idx = torch.argmax(active_flags[:, TEAM_SIZE:2*TEAM_SIZE], dim=1) + TEAM_SIZE   # [B] — 6-11
 
         # 2. Apply Status Biases (Pre-Attention)
-        status_idx = torch.ones((batch_size, 12), device=role_tokens.device).long() # Default to Bench
-        status_idx[:, 0:TEAM_SIZE] = 1   # Our Bench
-        status_idx[:, TEAM_SIZE:2*TEAM_SIZE] = 3  # Their Bench
-        status_idx[torch.arange(batch_size), our_active_idx] = 0 # Our Active
-        status_idx[torch.arange(batch_size), opp_active_idx] = 2 # Their Active
-        
+        status_idx = torch.ones((batch_size, 12), device=role_tokens.device).long()
+        status_idx[:, 0:TEAM_SIZE] = 1
+        status_idx[:, TEAM_SIZE:2*TEAM_SIZE] = 3
+        status_idx[torch.arange(batch_size), our_active_idx] = 0
+        status_idx[torch.arange(batch_size), opp_active_idx] = 2
+
         role_tokens = role_tokens + self.status_embedding(status_idx)
 
-        # 3. Split Teams for Logic Paths
-        our_team = role_tokens[:, 0:TEAM_SIZE, :]
-        their_team = role_tokens[:, TEAM_SIZE:2*TEAM_SIZE, :]
-        our_active = role_tokens[torch.arange(batch_size), our_active_idx].unsqueeze(1)
-        their_active = role_tokens[torch.arange(batch_size), opp_active_idx].unsqueeze(1)
+        # 3. Split Teams for Attention Paths
+        our_team = role_tokens[:, 0:TEAM_SIZE, :]           # [B, 6, 128]
+        their_team = role_tokens[:, TEAM_SIZE:2*TEAM_SIZE, :]  # [B, 6, 128]
+        our_active_pre = role_tokens[torch.arange(batch_size), our_active_idx].unsqueeze(1)   # [B, 1, 128]
+        their_active = role_tokens[torch.arange(batch_size), opp_active_idx].unsqueeze(1)     # [B, 1, 128]
 
         # --- ATTENTION PATHS WITH RESIDUALS ---
 
-        # Path 1: The Pressure (Update Our Active with Opponent Context)
-        pressure_delta, _ = self.pressure_attn(our_active, their_team, their_team)
-        our_active = self.norm1(our_active + pressure_delta)
-        
-        # Path 2: The Safety (Update Our Team with Opponent Active Context)
+        # Path 1: Pressure — our_active learns what threatens it from their bench
+        pressure_delta, _ = self.pressure_attn(our_active_pre, their_team, their_team)
+        our_active_post_pressure = self.norm1(our_active_pre + pressure_delta)  # [B, 1, 128]
+
+        # Write Pressure result back into our_team so Safety/Synergy see the updated active slot
+        our_team = our_team.clone()
+        our_team[torch.arange(batch_size), our_active_idx] = our_active_post_pressure.squeeze(1)
+
+        # Path 2: Safety — our bench learns which opponent active threatens each slot
         safety_delta, _ = self.safety_attn(our_team, their_active, their_active)
         our_team = self.norm2(our_team + safety_delta)
-        
-        # Path 3: Synergy (Update Our Team with Internal Context)
+
+        # Path 3: Synergy — our team learns internal role cohesion
         synergy_delta, _ = self.synergy_attn(our_team, our_team, our_team)
         our_team = self.norm3(our_team + synergy_delta)
 
-        # --- FINAL AGGREGATION ---
-        # Combine our refined team, the opponent's final role tokens, and the raw context
-        our_team_flat = our_team.reshape(batch_size, -1)
-        their_team_flat = their_team.reshape(batch_size, -1)
-        our_active_refined = our_active.squeeze(1)
+        # Path 4: Threat — their bench learns which of them threatens our active most (P2)
+        threat_delta, _ = self.threat_attn(their_team, our_active_post_pressure, our_active_post_pressure)
+        their_team = self.norm4(their_team + threat_delta)
 
-        combined = torch.cat([our_team_flat, their_team_flat, our_active_refined, remaining_part], dim=1)
+        # --- FINAL AGGREGATION ---
+        our_team_flat = our_team.reshape(batch_size, -1)       # [B, 768]
+        their_team_flat = their_team.reshape(batch_size, -1)   # [B, 768]
+
+        # P4: extract our_active_refined from our_team after ALL paths (not Pressure-only)
+        our_active_refined = our_team[torch.arange(batch_size), our_active_idx]  # [B, 128]
+
+        # P3: encode active_context (boosts, volatiles) through a learned MLP
+        active_ctx_dim = self.layout.get('active_context_dim', 22)
+        our_ctx_raw = remaining_part[:, 0 : active_ctx_dim]           # [B, 22]
+        opp_ctx_raw = remaining_part[:, active_ctx_dim : 2 * active_ctx_dim]  # [B, 22]
+        our_ctx_enc = self.active_ctx_encoder(our_ctx_raw)             # [B, 32]
+        opp_ctx_enc = self.active_ctx_encoder(opp_ctx_raw)             # [B, 32]
+
+        # P1: strip matchup matrix from projection input (already encoded in role tokens)
+        # Keep: active_ctx replaced by encoded tokens + global env + reactive scalars (before matchups)
+        non_matchup_rest = remaining_part[:, 2 * active_ctx_dim : reactive_start + matchup_offset]  # global + scalars
+
+        combined = torch.cat([
+            our_team_flat, their_team_flat, our_active_refined,
+            our_ctx_enc, opp_ctx_enc,
+            non_matchup_rest,
+        ], dim=1)
         return combined
 
     def forward(self, obs):

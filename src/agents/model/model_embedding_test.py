@@ -66,23 +66,23 @@ def test_model_full_embedding_forensics():
     move_in = captured_inputs["move_input"]
     role_in = captured_inputs["role_input"]  # Flattened shape [12, 237]
 
-    # Move input layout (55 dims total):
-    #   embedded_moves (16) + embedded_move_types (16) + remnants (4) + known (1) + context (12) + matchups (6)
+    # Move input layout (56 dims total):
+    #   embedded_moves (16) + embedded_move_types (16) + remnants (4) + known (1) + context (12) + matchups (6) + validity (1)
     # known is at index 36, first matchup at index 49
     m0_features = move_in[0]
     assert m0_features[36] == 1.0, f"Move Known Flag mismatch: {m0_features[36]}"
     assert m0_features[49] == 0.5, f"Matchup Matrix mismatch: {m0_features[49]}"
 
-    # Role input layout (237 dims):
+    # Role input layout (256 dims total):
     #   embedded_species (32) + stats (6) + embedded_items (16) + item_known (1) = index 54
-    #   + embedded_pk_types (16) + embedded_abilities (16) + ability_known (1) = index 87
+    #   + embedded_pk_types (32, concat) + embedded_abilities (16) + ability_known (1) = index 103
     p0_features = role_in[0]
     assert p0_features[54] == 1.0, f"Item Known Flag mismatch: {p0_features[54]}"
-    assert p0_features[87] == 1.0, f"Ability Known Flag mismatch: {p0_features[87]}"
+    assert p0_features[103] == 1.0, f"Ability Known Flag mismatch: {p0_features[103]}"
 
     print("✅ Full Model Forensic Audit PASSED!")
     print(f"  - Move Path: Known (idx 36), Matchup (idx 49)")
-    print(f"  - Pokemon Path: Item Known (idx 54), Ability Known (idx 87)")
+    print(f"  - Pokemon Path: Item Known (idx 54), Ability Known (idx 103)")
 
 if __name__ == "__main__":
     test_model_full_embedding_forensics()

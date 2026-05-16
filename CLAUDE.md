@@ -1,5 +1,9 @@
 # CLAUDE.md — Gen3AI Project Guide
 
+## Development Stage
+
+**Rapid iteration — checkpoint compatibility is not a concern.** We have no trained checkpoints worth preserving. Breaking changes to the observation space, network architecture, or action space are fine. Do not add backwards-compatibility shims or hesitate to change dims, layer sizes, or layouts.
+
 ## Git Workflow
 
 This is a personal project — no pull requests needed. Merge completed work directly to `main` and push:
