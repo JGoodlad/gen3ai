@@ -3,6 +3,7 @@ import numpy as np
 
 from agents.training.battle_context import BattleContext, TurnDelta
 from agents.training.slot_registry import SlotRegistry
+from agents.training.reward_manager import Gen3RewardManager
 
 
 class BattleRecorder:
@@ -25,6 +26,8 @@ class BattleRecorder:
         self._pending_ctx: Optional[BattleContext] = None
         self._pending_action: int = -1
         self._pending_entry: Optional[dict] = None
+        self._reward_fn = Gen3RewardManager()
+        self._reward_fn.reset()
 
     # ------------------------------------------------------------------
     # Public API
@@ -82,9 +85,18 @@ class BattleRecorder:
         else:
             events.append("result:tie")
 
+        terminal_ctx = BattleContext.from_battle(
+            battle, np.zeros(11, dtype=np.float32), np.zeros(1, dtype=np.float32),
+            self._our_slots, self._opp_slots,
+        )
+        delta = TurnDelta.build(prev_ctx, terminal_ctx, self._pending_action)
+        self._reward_fn.record_action(prev_ctx, self._pending_action)
+        reward = self._reward_fn.process_turn_reward(battle, delta)
+
         self._pending_entry["outcome"] = {
             "our": {"action": self._pending_entry["chosen"], "hp_delta": f"{our_delta:+.0f}%"},
             "opp": {"action": "unknown",                     "hp_delta": f"{opp_delta:+.0f}%"},
+            "reward": round(reward, 3),
             "events": events,
         }
         self._invocations.append(self._pending_entry)
@@ -196,7 +208,9 @@ class BattleRecorder:
 
     def _complete_pending(self, curr_ctx: BattleContext, battle) -> None:
         prev_ctx = self._pending_ctx
+        self._reward_fn.record_action(prev_ctx, self._pending_action)
         delta = TurnDelta.build(prev_ctx, curr_ctx, self._pending_action)
+        reward = self._reward_fn.process_turn_reward(battle, delta)
 
         # Our action
         if delta.our_switch_to:
@@ -229,6 +243,7 @@ class BattleRecorder:
         self._pending_entry["outcome"] = {
             "our": {"action": we_action,   "hp_delta": f"{our_delta:+.0f}%"},
             "opp": {"action": they_action, "hp_delta": f"{opp_delta:+.0f}%"},
+            "reward": round(reward, 3),
             "events": events,
         }
         self._invocations.append(self._pending_entry)
