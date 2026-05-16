@@ -102,11 +102,17 @@ class Gen3ObservationEncoder(ObservationEncoder):
         self.current_battle_id = None
 
     @property
-    def dimension(self) -> int:
+    def base_dimension(self) -> int:
+        """Raw encoder output dimension, before the previous-turn mask is appended."""
         return OFFSET_REACTIVE + REACTIVE_DIM
 
+    @property
+    def dimension(self) -> int:
+        """Full observation dimension including the 11-dim previous-turn action mask."""
+        return self.base_dimension + 11
+
     def encode(self, battle: AbstractBattle) -> np.ndarray:
-        vec = np.zeros(self.dimension, dtype=np.float32)
+        vec = np.zeros(self.base_dimension, dtype=np.float32)
         
         # 1. Our Team
         our_team_list = self.get_team_list(battle, is_opponent=False)
@@ -191,7 +197,9 @@ class Gen3ObservationEncoder(ObservationEncoder):
                 }
             },
             "pokemon": pokemon_layout,
-            "total_dim": self.dimension,
+            "total_dim": self.dimension,    # includes 11-dim prev_mask appended by env
+            "base_dim": self.base_dimension, # raw encoder output without prev_mask
+            "prev_mask_dim": 11,
             "max_species": 400,
             "species_embedding_dim": 32,
             "max_moves": 400,

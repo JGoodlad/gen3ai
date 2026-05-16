@@ -53,9 +53,10 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         # Input: Move Embedding (16) + Type Embedding (16) + Remnants (4) + Known (1)
         # Context: HP (1) + Turn (1) + Weather (6) + Fainted (2) + Spikes (2) = 12
         # Matchups: Effectiveness against 6 potential targets = 6
+        # Prev-mask validity bit (was this move available last turn): 1
         # Remnants: Power, Secondary, Recoil, Category (known extracted separately below)
-        # Total: 37 + 12 + 6 = 55
-        move_input_dim = layout['move_embedding_dim'] + layout['type_embedding_dim'] + 4 + 1 + 12 + 6
+        # Total: 37 + 12 + 6 + 1 = 56
+        move_input_dim = layout['move_embedding_dim'] + layout['type_embedding_dim'] + 4 + 1 + 12 + 6 + 1
         self.move_network = torch.nn.Sequential(
             torch.nn.Linear(move_input_dim, 64),
             torch.nn.ReLU(),
@@ -63,12 +64,14 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         )
         
         # 1.6 Pokémon Role Encoder (Step 2)
-        # pokemon_enriched (226) + global_context broadcast (12) = 238
+        # pokemon_enriched (226) + global_context broadcast (12) + switch_valid (1) + struggle_from_prev (1) = 240
         # pokemon_enriched: species(32) + stats(6) + item_emb(16) + item_known(1) +
         #   pk_types(16) + ability_emb(16) + ability_known(1) + condition(8) + moves(128) + hp+active(2)
         # global_context: turn(1) + weather(6) + fainted(2) + spikes(2) + struggle(1) = 12
+        # switch_valid: was this slot a valid switch target in the previous turn's mask (1)
+        # struggle_from_prev: was struggle the only option last turn (1)
         self.role_token_size = 128
-        role_input_dim = 238
+        role_input_dim = 240
         self.role_encoder = torch.nn.Sequential(
             torch.nn.Linear(role_input_dim, 256),
             torch.nn.ReLU(),
@@ -213,15 +216,22 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         """Internal forward pass that constructs the combined feature vector without the final projection."""
         x = obs["observation"]
         batch_size = x.shape[0]
-        
-        # 1. Extract parts using dynamic layout
+        base_dim = self.layout['base_dim']
+
+        # Extract prev_mask from the last 11 dims (appended by embed_battle / inference player)
+        prev_mask = x[:, base_dim:]                   # [B, 11]
+        switch_mask = prev_mask[:, 0:6]               # [B, 6] — valid switch slots last turn
+        move_mask = prev_mask[:, 6:10]                # [B, 4] — valid move slots last turn
+        struggle_mask = prev_mask[:, 10:11]           # [B, 1] — struggle was only option last turn
+
+        # 1. Extract parts using dynamic layout (all offsets are within the base 1021-dim obs)
         parts = self.layout['parts']
         ot = parts['our_team']
         our_team = x[:, ot['start']:ot['end']].reshape(batch_size, *ot['reshape'])
         opt = parts['opp_team']
         opp_team = x[:, opt['start']:opt['end']].reshape(batch_size, *opt['reshape'])
         ctx = parts['context']
-        remaining_part = x[:, ctx['start']:] 
+        remaining_part = x[:, ctx['start']:base_dim]  # stop before prev_mask tail 
         
         # 1.1 Context Features for Move Selection
         # Global: Weather (offset 0), Spikes (6), Turn (8)
@@ -371,13 +381,19 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         # Expand to each move slot [B, 12, 4, 12]
         move_context_final = move_context.unsqueeze(2).expand(-1, -1, 4, -1)
         
+        # Move validity from prev_mask: our moves get their validity bit, opp gets all-ones
+        move_validity_ours = move_mask.unsqueeze(1).unsqueeze(3).expand(-1, TEAM_SIZE, -1, -1)  # [B, 6, 4, 1]
+        move_validity_opp = torch.ones(batch_size, TEAM_SIZE, 4, 1, device=x.device)           # [B, 6, 4, 1]
+        move_validity = torch.cat([move_validity_ours, move_validity_opp], dim=1)              # [B, 12, 4, 1]
+
         move_features = torch.cat([
-            embedded_moves, 
-            embedded_move_types, 
-            move_remnants_reshaped, 
+            embedded_moves,
+            embedded_move_types,
+            move_remnants_reshaped,
             known_flags_reshaped,
             move_context_final,
-            matchups_all
+            matchups_all,
+            move_validity,
         ], dim=3)
         
         # Process through shared network
@@ -404,7 +420,18 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         struggle_feature = remaining_part[:, reactive_start + 15 : reactive_start + 16] # [B, 1]
         global_context = torch.cat([turn_feature, weather_feature, fainted_feature, spikes_feature, struggle_feature], dim=1) # [B, 12]
         context_broadcasted = global_context.unsqueeze(1).expand(-1, 2 * TEAM_SIZE, -1) # [B, 12, 12]
-        pokemon_enriched_with_context = torch.cat([pokemon_enriched, context_broadcasted], dim=2)
+
+        # Switch validity from prev_mask: our slots get their bit, opp slots get all-ones
+        switch_validity_ours = switch_mask.unsqueeze(2)                                          # [B, 6, 1]
+        switch_validity_opp = torch.ones(batch_size, TEAM_SIZE, 1, device=x.device)             # [B, 6, 1]
+        switch_validity = torch.cat([switch_validity_ours, switch_validity_opp], dim=1)         # [B, 12, 1]
+
+        # Struggle validity from prev_mask broadcast to all Pokémon tokens
+        struggle_from_prev = struggle_mask.unsqueeze(1).expand(-1, 2 * TEAM_SIZE, -1)           # [B, 12, 1]
+
+        pokemon_enriched_with_context = torch.cat([
+            pokemon_enriched, context_broadcasted, switch_validity, struggle_from_prev
+        ], dim=2)  # [B, 12, 240]
         
         # Reshape to [B*12, role_input_dim] for shared processing
         role_tokens = self.role_encoder(pokemon_enriched_with_context.reshape(-1, pokemon_enriched_with_context.shape[-1]))
@@ -459,21 +486,20 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         
         # Diagnostic Trace logic
         if self.log_level >= LogLevel.PERIODIC and self.trace_logger.should_log():
-            # For trace, we need the original parts again (or pass them through)
-            # Re-extracting for trace is fine since it's infrequent
             x = obs["observation"]
+            x_base = x[:, :self.layout['base_dim']]  # strip prev_mask tail for describe_vector
             parts = self.layout['parts']
             ot = parts['our_team']
-            our_team = x[:, ot['start']:ot['end']].reshape(x.shape[0], *ot['reshape'])
+            our_team = x_base[:, ot['start']:ot['end']].reshape(x_base.shape[0], *ot['reshape'])
             opt = parts['opp_team']
-            opp_team = x[:, opt['start']:opt['end']].reshape(x.shape[0], *opt['reshape'])
+            opp_team = x_base[:, opt['start']:opt['end']].reshape(x_base.shape[0], *opt['reshape'])
             pokemon_part = torch.cat([our_team, opp_team], dim=1)
-            
+
             pk_layout = self.layout['pokemon']
             species_info = pk_layout['species']
             species_idx = species_info['offset'] + species_info['layout']['species_id']['offset']
             species_ids = pokemon_part[:, :, species_idx].long()
-            
-            self._print_deep_trace(x, pokemon_part, species_ids)
+
+            self._print_deep_trace(x_base, pokemon_part, species_ids)
         
         return self.activation(self.projection(combined))

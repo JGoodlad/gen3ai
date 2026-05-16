@@ -25,7 +25,10 @@ class Gen3Player(Player):
             if self.mappings is None:
                 self.mappings = load_mappings()
             self.observation_encoder = get_observation_encoder(self.mappings)
-        return self.observation_encoder.get_observation(battle)
+        result = self.observation_encoder.get_observation(battle)
+        # Inference players have no episode history, so append all-ones prev_mask
+        result["observation"] = np.concatenate([result["observation"], np.ones(11, dtype=np.float32)])
+        return result
 
     def action_to_order(self, action_idx, battle):
         ctx = getattr(battle, "_gen3_decision_context", None)

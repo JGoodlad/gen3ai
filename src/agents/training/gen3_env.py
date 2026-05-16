@@ -45,7 +45,8 @@ class Gen3Env(SinglesEnv):
             mask = Gen3ActionMasker.get_mask(battle).astype(np.int8)
             if mask.sum() > 0:
                 self._tracker.record(battle, mask, obs)
-        return obs
+        prev_mask = self._tracker.prev_mask if battle is self.battle1 else np.ones(11, dtype=np.float32)
+        return np.concatenate([obs, prev_mask])
 
     def action_masks(self) -> np.ndarray:
         ctx = self._tracker.last_ctx

@@ -6,12 +6,14 @@ from poke_env.battle.abstract_battle import AbstractBattle
 from unittest.mock import MagicMock
 from .state_encoder import Gen3ObservationEncoder, load_mappings
 
-EXPECTED_OBS_DIM = 1021
+EXPECTED_BASE_DIM = 1021
+EXPECTED_OBS_DIM = 1032  # base + 11-dim prev_mask appended by embed_battle
 
 
 def test_encoder_dimension():
     mappings = load_mappings()
     encoder = Gen3ObservationEncoder(mappings)
+    assert encoder.base_dimension == EXPECTED_BASE_DIM
     assert encoder.dimension == EXPECTED_OBS_DIM
 
 
@@ -29,7 +31,7 @@ def test_encoder_output_shape():
     battle.turn = 0
 
     obs = encoder.encode(battle)
-    assert obs.shape == (EXPECTED_OBS_DIM,)
+    assert obs.shape == (EXPECTED_BASE_DIM,)  # encode() returns base dims; prev_mask appended by embed_battle
 
 
 def test_encoder_and_features_extractor_are_compatible():

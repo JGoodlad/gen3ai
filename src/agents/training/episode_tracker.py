@@ -26,6 +26,13 @@ class EpisodeTracker:
     def last_ctx(self) -> Optional[BattleContext]:
         return self._history[-1] if self._history else None
 
+    @property
+    def prev_mask(self) -> np.ndarray:
+        """Action mask from the previous turn. All-ones if no previous turn recorded yet."""
+        if len(self._history) >= 2:
+            return self._history[-2].mask.astype(np.float32)
+        return np.ones(11, dtype=np.float32)
+
     def record(self, battle, mask: np.ndarray, obs: np.ndarray) -> BattleContext:
         """Build and store a context snapshot for the current turn."""
         ctx = BattleContext.from_battle(battle, mask, obs, self._our_slots, self._opp_slots)
