@@ -5,6 +5,7 @@ from poke_env.player import Player
 from poke_env.player.battle_order import ForfeitBattleOrder
 
 from agents.action.mapper import Gen3ActionMapper
+from agents.observation.turn_delta_encoder import TURN_DELTA_DIM
 from agents.training.stall import StallConfig, StallLogger
 
 
@@ -26,8 +27,12 @@ class Gen3Player(Player):
                 self.mappings = load_mappings()
             self.observation_encoder = get_observation_encoder(self.mappings)
         result = self.observation_encoder.get_observation(battle)
-        # Inference players have no episode history, so append all-ones prev_mask
-        result["observation"] = np.concatenate([result["observation"], np.ones(11, dtype=np.float32)])
+        # Inference players have no episode history: all-ones prev_mask, zeros TurnDelta
+        result["observation"] = np.concatenate([
+            result["observation"],
+            np.ones(11, dtype=np.float32),
+            np.zeros(TURN_DELTA_DIM, dtype=np.float32),
+        ])
         return result
 
     def action_to_order(self, action_idx, battle):
