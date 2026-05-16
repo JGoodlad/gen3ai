@@ -133,7 +133,7 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         self.features_dim = self.projection_dim
         self.trace_logger = RateLimitedLogger(interval_seconds=TRACE_INTERVAL)
         
-    def _print_deep_trace(self, x, pokemon_part, species_ids):
+    def _print_deep_trace(self, x, pokemon_part, species_ids, turn_delta=None):
         if self._encoder is None and self.mappings:
             self._encoder = Gen3ObservationEncoder(self.mappings)
             
@@ -188,7 +188,17 @@ class Gen3FeaturesExtractor(torch.nn.Module):
             momentum = desc.get('momentum', {})
             print(f"\n--- MOMENTUM ---")
             print(f"Fainted: {momentum.get('fainted_our', 0)} (Us) / {momentum.get('fainted_opp', 0)} (Them)")
-            
+
+            # --- TURN DELTA ---
+            if turn_delta is not None:
+                _CANT = ["par", "slp", "frz", "flinch", "conf"]
+                td = turn_delta
+                our_cant = _CANT[int(np.argmax(td[14:19]))] if td[14:19].any() else "none"
+                opp_cant = _CANT[int(np.argmax(td[19:24]))] if td[19:24].any() else "none"
+                print(f"\n--- LAST TURN (TurnDelta) ---")
+                print(f"  Us:  {'SWITCH' if td[10] else ('FAIL('+our_cant+')' if td[12] else f'move pwr={td[1]*200:.0f} sec={td[2]:.0f} recoil={td[3]:.0f}')}  hp_delta={td[24]:+.2f}  fainted={td[26]:.0f}")
+                print(f"  Opp: {'SWITCH' if td[11] else ('FAIL('+opp_cant+')' if td[13] else f'move pwr={td[6]*200:.0f} sec={td[7]:.0f} recoil={td[8]:.0f}')}  hp_delta={td[25]:+.2f}  fainted={td[27]:.0f}  known={td[28]:.0f}")
+
             # --- INTEGRITY CHECK ---
             warnings, is_critical = self._encoder.integrity_check(x[0].cpu().numpy())
             if warnings:
@@ -532,6 +542,8 @@ class Gen3FeaturesExtractor(torch.nn.Module):
             species_idx = species_info['offset'] + species_info['layout']['species_id']['offset']
             species_ids = pokemon_part[:, :, species_idx].long()
 
-            self._print_deep_trace(x_base, pokemon_part, species_ids)
+            base_dim = self.layout['base_dim']
+            turn_delta_np = x[0, base_dim + 11 : base_dim + 11 + TURN_DELTA_DIM].cpu().numpy()
+            self._print_deep_trace(x_base, pokemon_part, species_ids, turn_delta_np)
         
         return self.activation(self.projection(combined))
