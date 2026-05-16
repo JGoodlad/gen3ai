@@ -1,7 +1,6 @@
 import torch
 import numpy as np
 import time
-import collections
 from gymnasium import spaces
 from typing import Dict, Any, Optional
 from agents.observation.state_encoder import Gen3ObservationEncoder
@@ -77,14 +76,14 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         )
         
         # 1.6 Pokémon Role Encoder
-        # pokemon_enriched (241) + global_context broadcast (16) + switch_valid (1) + struggle_from_prev (1) = 259
+        # pokemon_enriched (242) + global_context broadcast (16) + switch_valid (1) + struggle_from_prev (1) = 260
         # pokemon_enriched: species(32) + stats(6) + item_emb(16) + item_known(1) +
-        #   pk_types(32) + ability_emb(16) + ability_known(1) + condition(7) + moves(128) + hp+active(2)
+        #   pk_types(32) + ability_emb(16) + ability_known(1) + condition(7) + moves(128) + hp+species_known+active(3)
         # global_context: turn(1) + weather(6) + fainted(2) + spikes(2) + struggle(1) + screens(4) = 16
         # switch_valid: was this slot a valid switch target in the previous turn's mask (1)
         # struggle_from_prev: was struggle the only option last turn (1)
         self.role_token_size = 128
-        role_input_dim = 259
+        role_input_dim = 260
         self.role_encoder = torch.nn.Sequential(
             torch.nn.Linear(role_input_dim, 256),
             torch.nn.ReLU(),
@@ -107,7 +106,29 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         self.norm2 = torch.nn.LayerNorm(self.role_token_size)
         self.norm3 = torch.nn.LayerNorm(self.role_token_size)
         self.norm4 = torch.nn.LayerNorm(self.role_token_size)
-        
+
+        # N3 — Opponent synergy: their_team attends to itself so the opponent's
+        # bench can learn internal role cohesion (mirrors our Path 3).
+        self.opp_synergy_attn = torch.nn.MultiheadAttention(embed_dim=self.role_token_size, num_heads=4, batch_first=True)
+        self.norm_opp_synergy = torch.nn.LayerNorm(self.role_token_size)
+
+        # N4 — Within-Pokémon move self-attention: before folding the 4 processed
+        # move slots into the role encoder, let them attend to each other so the
+        # role encoder can see "this mon has two physical attacks + a spread move."
+        self.move_self_attn = torch.nn.MultiheadAttention(embed_dim=32, num_heads=2, batch_first=True)
+        self.move_self_norm = torch.nn.LayerNorm(32)
+
+        # 1.7.4 Attention pool — replaces the slot-order team flatten with a
+        # permutation-equivariant pooled token per team. A single learned query
+        # attends over the 6 role tokens (with fainted slots key-masked) and
+        # produces one 128-dim pooled vector per side.
+        self.our_pool_query = torch.nn.Parameter(torch.randn(1, 1, self.role_token_size) * 0.02)
+        self.their_pool_query = torch.nn.Parameter(torch.randn(1, 1, self.role_token_size) * 0.02)
+        self.our_pool_attn = torch.nn.MultiheadAttention(embed_dim=self.role_token_size, num_heads=4, batch_first=True)
+        self.their_pool_attn = torch.nn.MultiheadAttention(embed_dim=self.role_token_size, num_heads=4, batch_first=True)
+        self.norm_pool_our = torch.nn.LayerNorm(self.role_token_size)
+        self.norm_pool_their = torch.nn.LayerNorm(self.role_token_size)
+
         # 1.8 Active Context Encoder
         # Encodes boosts, volatiles, and other per-active-mon context (22 dims each side)
         # into a dense 32-dim token. Shared weights between our side and opponent side.
@@ -128,6 +149,10 @@ class Gen3FeaturesExtractor(torch.nn.Module):
             self.projection_input_dim = sample_output.shape[1]
         
         # 3. Projection layer
+        # Pre-projection LayerNorm equalises the very different per-block scales
+        # in `combined` (embedding outputs, 0/1 validity bits, HP fractions,
+        # ±1 TurnDelta deltas) before they hit a single Linear.
+        self.pre_proj_norm = torch.nn.LayerNorm(self.projection_input_dim)
         self.projection_dim = 512
         self.projection = torch.nn.Linear(self.projection_input_dim, self.projection_dim)
         self.activation = torch.nn.ReLU()
@@ -387,7 +412,14 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         
         # Process through shared network
         processed_moves = self.move_network(move_features.reshape(-1, move_features.shape[-1]))
-        processed_moves = processed_moves.reshape(batch_size, n_poke, -1)  # [B, n_poke, num_moves * 32]
+        processed_moves = processed_moves.reshape(batch_size, n_poke, num_moves, 32)  # [B, n_poke, 4, 32]
+
+        # N4 — Within-Pokémon move self-attention: let the 4 move slots attend to
+        # each other so the role encoder sees "2 physical attackers + coverage move."
+        mv_in = processed_moves.reshape(batch_size * n_poke, num_moves, 32)
+        mv_delta, _ = self.move_self_attn(mv_in, mv_in, mv_in)
+        mv_out = self.move_self_norm(mv_in + mv_delta)
+        processed_moves = mv_out.reshape(batch_size, n_poke, -1)  # [B, n_poke, num_moves * 32]
         
         pokemon_enriched = torch.cat([
             embedded_species,      # 32
@@ -399,7 +431,7 @@ class Gen3FeaturesExtractor(torch.nn.Module):
             ability_remnant,       # 1
             part_d,                # 7 (condition one-hot, unused slot removed)
             processed_moves,       # 128 (Shared Processor Output)
-            hp_and_active          # 2
+            hp_and_active          # 3 (hp, species_known, active)
         ], dim=2) # [B, 12, 241]
         
         # --- POKÉMON ROLE ENCODER ---
@@ -426,7 +458,7 @@ class Gen3FeaturesExtractor(torch.nn.Module):
 
         # --- TEAM-WIDE ATTENTION ---
         # 1. Find who is active on both teams
-        active_flags = hp_and_active[:, :, 1] # [B, 12]
+        active_flags = hp_and_active[:, :, 2] # [B, 12] — active flag is now at index 2 (hp, species_known, active)
         # QW3: guard argmax — if no active flag is set (opponent not revealed, or dummy forward),
         # argmax silently returns 0; clamp to valid range explicitly.
         our_active_flags = active_flags[:, 0:TEAM_SIZE]
@@ -459,6 +491,19 @@ class Gen3FeaturesExtractor(torch.nn.Module):
 
         # --- ATTENTION PATHS WITH RESIDUALS ---
 
+        # Fainted masks — True = fainted slot. Always unmask the active slot on
+        # each side: if every key gets masked, softmax produces NaN; if every
+        # query gets masked, the slot's delta multiplier collapses to zero
+        # (harmless but redundant).
+        fainted_mask_ours = (hp_and_active[:, 0:TEAM_SIZE, 0] == 0)            # [B, 6]
+        fainted_mask_ours[torch.arange(batch_size), our_active_idx] = False
+        fainted_mask_opp_local = (hp_and_active[:, TEAM_SIZE:2*TEAM_SIZE, 0] == 0)  # [B, 6]
+        # opp_active_idx is in [6, 11]; convert to local [0, 5] for the opp-team mask
+        opp_active_local = opp_active_idx - TEAM_SIZE
+        fainted_mask_opp_local[torch.arange(batch_size), opp_active_local] = False
+        live_ours = (~fainted_mask_ours).float().unsqueeze(-1)                 # [B, 6, 1]
+        live_opp  = (~fainted_mask_opp_local).float().unsqueeze(-1)            # [B, 6, 1]
+
         # Path 1: Pressure — our_active learns what threatens it from their bench
         pressure_delta, _ = self.pressure_attn(our_active_pre, their_team, their_team)
         our_active_post_pressure = self.norm1(our_active_pre + pressure_delta)  # [B, 1, 128]
@@ -467,26 +512,40 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         our_team = our_team.clone()
         our_team[torch.arange(batch_size), our_active_idx] = our_active_post_pressure.squeeze(1)
 
-        # Path 2: Safety — our bench learns which opponent active threatens each slot
+        # Path 2: Safety — our bench learns which opponent active threatens each slot.
+        # Zero the delta at fainted query rows so dead slots don't accumulate noise.
         safety_delta, _ = self.safety_attn(our_team, their_active, their_active)
-        our_team = self.norm2(our_team + safety_delta)
+        our_team = self.norm2(our_team + safety_delta * live_ours)
 
-        # Path 3: Synergy — our team learns internal role cohesion
-        # QW1: mask fainted slots as keys so dead Pokémon don't pollute the key space.
-        # Always unmask the active slot — if all keys were masked softmax produces NaN.
-        fainted_mask_ours = (hp_and_active[:, 0:TEAM_SIZE, 0] == 0)  # [B, 6] True = fainted
-        fainted_mask_ours[torch.arange(batch_size), our_active_idx] = False
+        # Path 3: Synergy — our team learns internal role cohesion.
+        # Mask fainted slots as keys so dead Pokémon don't pollute the key space.
         synergy_delta, _ = self.synergy_attn(our_team, our_team, our_team,
                                               key_padding_mask=fainted_mask_ours)
-        our_team = self.norm3(our_team + synergy_delta)
+        our_team = self.norm3(our_team + synergy_delta * live_ours)
 
-        # Path 4: Threat — their bench learns which of them threatens our active most (P2)
+        # Path 4: Threat — their bench learns which of them threatens our active most (P2).
+        # Zero the delta at fainted opp-query rows for the same reason as Safety.
         threat_delta, _ = self.threat_attn(their_team, our_active_post_pressure, our_active_post_pressure)
-        their_team = self.norm4(their_team + threat_delta)
+        their_team = self.norm4(their_team + threat_delta * live_opp)
+
+        # Path 5: Opp Synergy — their team attends to itself (mirrors our Path 3).
+        # Fainted slots key-masked; output zeroed for fainted queries.
+        opp_synergy_delta, _ = self.opp_synergy_attn(their_team, their_team, their_team,
+                                                      key_padding_mask=fainted_mask_opp_local)
+        their_team = self.norm_opp_synergy(their_team + opp_synergy_delta * live_opp)
 
         # --- FINAL AGGREGATION ---
-        our_team_flat = our_team.reshape(batch_size, -1)       # [B, 768]
-        their_team_flat = their_team.reshape(batch_size, -1)   # [B, 768]
+        # N1: replace slot-order flatten with attention pooling (permutation-equivariant).
+        # One learned query per team attends over the 6 role tokens; fainted slots are
+        # key-masked so they cannot dominate the pool.
+        our_pool_q   = self.our_pool_query.expand(batch_size, -1, -1)         # [B, 1, 128]
+        their_pool_q = self.their_pool_query.expand(batch_size, -1, -1)
+        our_pool_out, _   = self.our_pool_attn(our_pool_q, our_team, our_team,
+                                                key_padding_mask=fainted_mask_ours)
+        their_pool_out, _ = self.their_pool_attn(their_pool_q, their_team, their_team,
+                                                  key_padding_mask=fainted_mask_opp_local)
+        our_team_pooled   = self.norm_pool_our(our_pool_out).squeeze(1)        # [B, 128]
+        their_team_pooled = self.norm_pool_their(their_pool_out).squeeze(1)    # [B, 128]
 
         # P4: extract our_active_refined from our_team after ALL paths (not Pressure-only)
         our_active_refined = our_team[torch.arange(batch_size), our_active_idx]  # [B, 128]
@@ -502,11 +561,37 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         # Keep: active_ctx replaced by encoded tokens + global env + reactive scalars (before matchups)
         non_matchup_rest = remaining_part[:, 2 * active_ctx_dim : reactive_start + matchup_offset]  # global + scalars
 
+        # N2 — embed TurnDelta move and type IDs through the shared embedding tables.
+        # Positions 0/4 (our move id, our type id) and 5/9 (opp move id, opp type id)
+        # carry raw int IDs (stored as float32); the 25 remaining positions are scalars.
+        our_move_id   = turn_delta_feat[:, 0].long()
+        our_type_id   = turn_delta_feat[:, 4].long()
+        opp_move_id   = turn_delta_feat[:, 5].long()
+        opp_type_id   = turn_delta_feat[:, 9].long()
+        # Clamp to embedding range — at init (zeros obs), ids are 0 which is valid
+        our_move_id   = our_move_id.clamp(0, self.move_embedding.num_embeddings - 1)
+        our_type_id   = our_type_id.clamp(0, self.type_embedding.num_embeddings - 1)
+        opp_move_id   = opp_move_id.clamp(0, self.move_embedding.num_embeddings - 1)
+        opp_type_id   = opp_type_id.clamp(0, self.type_embedding.num_embeddings - 1)
+        our_move_emb  = self.move_embedding(our_move_id)   # [B, 16]
+        our_type_emb  = self.type_embedding(our_type_id)   # [B, 16]
+        opp_move_emb  = self.move_embedding(opp_move_id)   # [B, 16]
+        opp_type_emb  = self.type_embedding(opp_type_id)   # [B, 16]
+        # Scalar remnants: power/sec/recoil for each side + all 19 event scalars
+        td_scalars = torch.cat([
+            turn_delta_feat[:, 1:4],    # our: power, secondary, recoil
+            turn_delta_feat[:, 6:9],    # opp: power, secondary, recoil
+            turn_delta_feat[:, 10:],    # 19 event scalars
+        ], dim=1)  # [B, 25]
+        turn_delta_embedded = torch.cat([
+            our_move_emb, our_type_emb, opp_move_emb, opp_type_emb, td_scalars
+        ], dim=1)  # [B, 89]
+
         combined = torch.cat([
-            our_team_flat, their_team_flat, our_active_refined,
+            our_team_pooled, their_team_pooled, our_active_refined,
             our_ctx_enc, opp_ctx_enc,
             non_matchup_rest,
-            turn_delta_feat,
+            turn_delta_embedded,
         ], dim=1)
         return combined
 
@@ -525,4 +610,4 @@ class Gen3FeaturesExtractor(torch.nn.Module):
                 if self._trace_collect_remaining == 0:
                     self._print_deep_trace()
         
-        return self.activation(self.projection(combined))
+        return self.activation(self.projection(self.pre_proj_norm(combined)))

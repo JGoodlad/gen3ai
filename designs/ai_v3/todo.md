@@ -139,3 +139,30 @@ The `TurnDelta.empty()` sentinel (first turn of episode) maps to an all-zeros bl
   switching. The network cannot learn sleep-turn-aware switch timing without this signal.
 
 Not critical for early training, but affects late-game decision quality.
+
+---
+
+## 5. Turn-History Memory
+
+**Where:** `src/agents/model/features_extractor.py`, `src/agents/training/episode_tracker.py`
+
+Out of scope for the current breaking-change wave, but the natural next step
+after the one-turn `TurnDelta` block already in the observation. Two-phase
+plan, in order:
+
+1. **Sliding window first.** Append the last K `TurnDelta` blocks (or the
+   last K `our_active_refined` tokens after attention) to the projection
+   input. K configurable, default 3. This is the cheapest possible
+   recurrence approximation: no recurrent state, no architecture change,
+   only a wider concat. Easy to ablate by setting K=1.
+
+2. **GRU pass.** Once the sliding window is in place and the model has
+   learned to exploit it, replace the stacked-window block with a small
+   `nn.GRUCell(128, 128)` over the per-turn role-token deltas. Hidden state
+   threaded through `EpisodeTracker` (extension point already wired in
+   Step 1). Adds true recurrence without committing to a full LSTM/
+   Transformer history.
+
+`EpisodeTracker._history` already exists and both designs build on it. The
+sliding-window prototype should land first to establish a baseline that the
+GRU has to beat.

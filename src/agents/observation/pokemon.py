@@ -1,14 +1,15 @@
 import numpy as np
 from .base import ObservationEncoder
 from .constants import (
-    POKEMON_VECTOR_DIM, 
+    POKEMON_VECTOR_DIM,
     POKEMON_SPECIES_OFFSET,
     POKEMON_ITEMS_OFFSET,
     POKEMON_TYPES_OFFSET,
     POKEMON_ABILITIES_OFFSET,
     POKEMON_CONDITION_OFFSET,
     POKEMON_MOVES_OFFSET,
-    POKEMON_HP_OFFSET
+    POKEMON_HP_OFFSET,
+    POKEMON_SPECIES_KNOWN_OFFSET,
 )
 from .species import SpeciesEncoder
 from .items import ItemsEncoder
@@ -75,7 +76,11 @@ class PokemonEncoder(ObservationEncoder):
         
         # 7. HP (1)
         vec[POKEMON_HP_OFFSET] = mon.current_hp_fraction
-        
+
+        # 8. Species known (1) — always 1.0 for a real slot; 0.0 for absent slots
+        # (the None path returned early above, so all populated slots hit this)
+        vec[POKEMON_SPECIES_KNOWN_OFFSET] = 1.0
+
         return vec
 
     def get_layout(self) -> Dict[str, Any]:
@@ -106,7 +111,8 @@ class PokemonEncoder(ObservationEncoder):
                 "dim": self.moves_encoder.dimension,
                 "layout": self.moves_encoder.get_layout()
             },
-            "hp": {"offset": POKEMON_HP_OFFSET, "dim": 1}
+            "hp": {"offset": POKEMON_HP_OFFSET, "dim": 1},
+            "species_known": {"offset": POKEMON_SPECIES_KNOWN_OFFSET, "dim": 1}
         }
 
     def describe_vector(self, vector: np.ndarray) -> Dict[str, Any]:

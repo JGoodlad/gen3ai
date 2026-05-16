@@ -1,17 +1,16 @@
 """
 Encodes a TurnDelta into a fixed-dim float32 vector that is appended to the
-per-turn observation, giving the feedforward model a one-turn memory without
-requiring an RNN.
-
-All values are normalized floats so they flow through the features_extractor's
-projection layer without special embedding treatment.
+per-turn observation, giving the feedforward model a one-turn memory.
 
 Output layout (29 dims total):
-  our_move  (5): id_norm, power_norm, has_secondary, has_recoil, type_id_norm
+  our_move  (5): move_id (raw int as float), power_norm, has_secondary, has_recoil, type_id (raw int as float)
   opp_move  (5): same
   scalars  (19): our_switched, opp_switched, our_failed_to_move, opp_failed_to_move,
                  our_cant_onehot(5), opp_cant_onehot(5),
                  our_hp_delta, opp_hp_delta, we_fainted, opp_fainted, opp_move_known
+
+move_id and type_id are stored as raw ints (float32 is exact for values < 2^24).
+The features_extractor routes them through move_embedding / type_embedding respectively.
 """
 from __future__ import annotations
 import numpy as np
@@ -48,20 +47,21 @@ class TurnDeltaEncoder:
         return TURN_DELTA_DIM
 
     def _move_features(self, move_id: Optional[str]) -> np.ndarray:
-        """5-dim move feature vector; zeros when move_id is None or unknown."""
+        """5-dim move feature vector; zeros when move_id is None or unknown.
+        Positions 0 and 4 carry raw int IDs (as float32) for the extractor to embed."""
         vec = np.zeros(MOVE_FEAT_DIM, dtype=np.float32)
         if move_id is None:
             return vec
         entry = self._moves.get(move_id)
         if entry is None:
             return vec
-        vec[0] = entry.get("num", 0) / self._max_num
+        vec[0] = float(entry.get("num", 0))          # raw move num — embedded by extractor
         vec[1] = min(entry.get("basePower", 0) / 200.0, 1.0)
         vec[2] = float(bool(entry.get("hasSecondary")))
         vec[3] = float(bool(entry.get("hasRecoil")))
         move_type = entry.get("type", "Normal").upper()
         type_id = TypeEncoder.TYPE_TO_IDX.get(move_type, 0)
-        vec[4] = float(type_id) / _MAX_TYPE_ID
+        vec[4] = float(type_id)                       # raw type id — embedded by extractor
         return vec
 
     def _cant_onehot(self, reason: Optional[str]) -> np.ndarray:
@@ -81,18 +81,22 @@ class TurnDeltaEncoder:
             return _CANT[idx] if onehot[idx] > 0.5 else None
 
         our_move = {
+            "move_id": int(vec[0]),
             "power": round(float(vec[1]) * 200),
             "secondary": bool(vec[2] > 0.5),
             "recoil": bool(vec[3] > 0.5),
+            "type_id": int(vec[4]),
         }
         opp_move = {
+            "move_id": int(vec[5]),
             "power": round(float(vec[6]) * 200),
             "secondary": bool(vec[7] > 0.5),
             "recoil": bool(vec[8] > 0.5),
+            "type_id": int(vec[9]),
         }
         return {
-            "our_move": our_move if (vec[0] > 0 or our_move["power"] > 0) else None,
-            "opp_move": opp_move if (vec[5] > 0 or opp_move["power"] > 0) else None,
+            "our_move": our_move if (our_move["move_id"] > 0 or our_move["power"] > 0) else None,
+            "opp_move": opp_move if (opp_move["move_id"] > 0 or opp_move["power"] > 0) else None,
             "our_switched": bool(vec[10] > 0.5),
             "opp_switched": bool(vec[11] > 0.5),
             "our_failed": bool(vec[12] > 0.5),

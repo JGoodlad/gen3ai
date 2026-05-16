@@ -174,23 +174,23 @@ deps/
 
 ## Observation Vector
 
-The full observation is a **1093-dim float32 vector** (`Gen3ObservationEncoder.dimension`):
+The full observation is a **1105-dim float32 vector** (`Gen3ObservationEncoder.dimension`):
 
 | Block | Dims | Offset | Notes |
 |---|---|---|---|
-| Our team (6 × 55) | 330 | 0 | base encoder |
-| Opp team (6 × 55) | 330 | 330 | base encoder |
-| Active context ×2 | 44 | 660 | base encoder |
-| Global env | 13 | 704 | base encoder |
-| Reactive + matchups | 304 | 717 | base encoder |
-| Prev-turn action mask | 11 | 1053 | appended by `gen3_env.embed_battle()` |
-| TurnDelta block | 29 | 1064 | appended by `gen3_env.embed_battle()` |
+| Our team (6 × 59) | 354 | 0 | base encoder |
+| Opp team (6 × 59) | 354 | 354 | base encoder |
+| Active context ×2 | 44 | 708 | base encoder |
+| Global env | 13 | 752 | base encoder |
+| Reactive + matchups | 300 | 765 | base encoder |
+| Prev-turn action mask | 11 | 1065 | appended by `gen3_env.embed_battle()` |
+| TurnDelta block | 29 | 1076 | appended by `gen3_env.embed_battle()` |
 
-Per-Pokémon slot (55 dims): species ID + 6 base stats, item ID + known, 2 type IDs, ability ID + known, 8-dim condition (status one-hot), 4 × 9-dim move slots, HP fraction, active flag.
+Per-Pokémon slot (59 dims): species ID + 6 base stats, item ID + known, 2 type IDs, ability ID + known, 7-dim condition (status one-hot), 4 × 9-dim move slots, HP fraction, species_known flag, active flag. `species_known = 1.0` for all populated slots (own team and revealed opponent mons), `0.0` for unseen opponent slots.
 
 Global env (13 dims): weather one-hot (6), spikes ×2 (2), log-turn (1), our reflect (1), our light screen (1), opp reflect (1), opp light screen (1).
 
-TurnDelta block (29 dims): last-turn move features for our move and opp move (5 dims each: id_norm, power_norm, has_secondary, has_recoil, type_id_norm), plus: our_switched, opp_switched, our_failed_to_move, opp_failed_to_move, our_cant_onehot (5: par/slp/frz/flinch/confusion), opp_cant_onehot (5), our_hp_delta, opp_hp_delta, we_fainted, opp_fainted, opp_move_known. All zeros on the first turn of each episode. See `src/agents/observation/turn_delta_encoder.py`.
+TurnDelta block (29 dims): our_move_id (raw int), our_power_norm, our_has_secondary, our_has_recoil, our_type_id (raw int), opp_move_id (raw int), opp_power_norm, opp_has_secondary, opp_has_recoil, opp_type_id (raw int), our_switched, opp_switched, our_failed_to_move, opp_failed_to_move, our_cant_onehot (5), opp_cant_onehot (5), our_hp_delta, opp_hp_delta, we_fainted, opp_fainted, opp_move_known. The extractor embeds the 4 raw IDs through shared move/type embedding tables, producing a 89-dim block for the projection. All zeros on the first turn of each episode. See `src/agents/observation/turn_delta_encoder.py`.
 
 ---
 
@@ -198,16 +198,21 @@ TurnDelta block (29 dims): last-turn move features for our move and opp move (5 
 
 `Gen3FeaturesExtractor` in `src/agents/model/features_extractor.py`:
 
-1. **Embedding lookups** — species (32), move (16), item (16), ability (16), type (16, shared for both Pokémon and move types)
-2. **Shared move processor** — Linear(55→64)→ReLU→Linear(64→32) per move slot; input includes move/type embeddings, power/secondary/recoil/category remnants, known flag, battle context, and per-move type matchup against all 6 opponents
-3. **Role encoder** — Linear(237→256)→ReLU→Linear(256→128) per Pokémon; input is the full enriched Pokémon vector + broadcasted global context
-4. **Team-wide attention** — three `MultiheadAttention` paths with residuals:
+1. **Embedding lookups** — species (32), move (16), item (16), ability (16), type (16, shared for both Pokémon and move types, and for TurnDelta move/type IDs)
+2. **Shared move processor** — Linear(58→64)→ReLU→Linear(64→32) per move slot; input includes move/type embeddings, power/secondary/recoil/category remnants, known flag, battle context, and per-move type matchup against all 6 opponents
+3. **Within-Pokémon move self-attention** — MHA(32, 2 heads) + LayerNorm residual across the 4 move slots of each Pokémon; lets the role encoder see "this mon has two physical attackers"
+4. **Role encoder** — Linear(260→256)→ReLU→Linear(256→128) per Pokémon; input is the full enriched Pokémon vector (242 dims, including `species_known` flag) + broadcasted global context + validity bits
+5. **Team-wide attention** — five `MultiheadAttention` paths with residuals (fainted slots masked/zeroed throughout):
    - *Pressure*: our active ← their team (what threatens us right now)
    - *Safety*: our team ← their active (what can switch in safely)
    - *Synergy*: our team ← our team (internal team cohesion)
-5. **Projection** — Linear(N→512)→ReLU; input concatenates our refined team (6×128), opponent refined team (6×128), our refined active token (128), and raw remaining context
+   - *Threat*: their team ← our active (which of their bench counters us most)
+   - *Opp Synergy*: their team ← their team (opponent team cohesion)
+6. **Attention pool** — one learned query per side attends over the 6 role tokens (fainted key-masked) producing a single 128-dim pooled team token per side; replaces the slot-order flatten for permutation equivariance
+7. **Pre-projection LayerNorm** — normalises the concatenated projection input to equalise per-block scales (embeddings, 0/1 validity bits, HP fractions, ±1 TurnDelta deltas)
+8. **Projection** — Linear(562→512)→ReLU; input is: our_pool(128) + their_pool(128) + our_active_refined(128) + active_ctx_enc(32×2) + global+scalars(29) + turn_delta_embedded(89)
 
-The projection input dimension `N` is discovered automatically via a dummy forward pass in `__init__`, so no magic constant needs updating when the architecture changes.
+The projection input dimension is discovered automatically via a dummy forward pass in `__init__`, so no magic constant needs updating when the architecture changes.
 
 ---
 

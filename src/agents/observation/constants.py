@@ -28,9 +28,10 @@ POKEMON_TYPES_OFFSET = 9   # 7 + 2
 POKEMON_ABILITIES_OFFSET = 11  # 9 + 2
 POKEMON_CONDITION_OFFSET = 13  # 11 + 2
 POKEMON_MOVES_OFFSET = 20  # 13 + 7
-POKEMON_HP_OFFSET = 56     # 20 + 36
-POKEMON_VECTOR_DIM = 57    # 56 + 1
-POKEMON_FULL_DIM = 58      # 57 + 1 (active flag)
+POKEMON_HP_OFFSET = 56          # 20 + 36
+POKEMON_SPECIES_KNOWN_OFFSET = 57  # 56 + 1 (HP); 1.0 when slot is populated, 0.0 when absent
+POKEMON_VECTOR_DIM = 58         # 57 + 1 (species_known)
+POKEMON_FULL_DIM = 59           # 58 + 1 (active flag appended by state_encoder)
 
 # Active context: boosts(14) + volatiles(8) = 22
 ACTIVE_CONTEXT_DIM = 22
