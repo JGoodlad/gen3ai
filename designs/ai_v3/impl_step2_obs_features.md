@@ -31,8 +31,8 @@ gradient signal. The previous turn's mask is genuinely new information.
 
 | Property | Value | Meaning |
 |---|---|---|
-| `base_dimension` | 1021 | Raw encoder output from `encode()` |
-| `dimension` | 1032 | Full obs fed to the network: base + 11-dim prev_mask |
+| `base_dimension` | 1053 | Raw encoder output from `encode()` (see Phase 3 for evolution) |
+| `dimension` | 1064 | Full obs fed to the network: base + 11-dim prev_mask |
 
 The 11-dim prev_mask layout mirrors the action space:
 
@@ -231,38 +231,100 @@ of how `prev_mask` arrives.
 
 ---
 
+## Phase 3: Hardening Pass
+
+A third batch of fixes was applied after Phase 2. All are non-checkpoint-safe (rapid iteration
+phase). Combined with an independent remote change (PP tracking) that was merged in.
+
+### PP tracking in move slots (remote)
+
+`MOVE_SLOT_DIM` 8→9: added `current_pp` (normalised by `MAX_PP=64`) and `max_pp` to each move
+slot. These flow to the move processor as remnants — `move_remnant_dim` 4→6. Enables the network
+to detect moves about to run out of PP.
+
+`POKEMON_FULL_DIM` grows from 55→58 (condition 7 + moves 4×9=36 + HP + active).
+
+### 1.5 — Dedup HP and spikes from reactive block
+
+The reactive block previously encoded `our_hp` (offset 10), `opp_hp` (11), `our_spikes` (12),
+`opp_spikes` (13) — all already present in the per-Pokémon vectors and global env block. Removed.
+
+`REACTIVE_DIM` 304→300; matchup cursor shifts 16→12. `get_layout()` and all hardcoded offset
+references updated.
+
+### QW2 — base_power normalisation
+
+`move.base_power / 100.0` → `/ 200.0`. Max base power in Gen 3 is ~150 (Eruption/Water Spout at
+full HP); `/ 100` was producing values > 1. Fixed to keep the reactive move-power feature in [0, 1].
+
+### QW3 — argmax guard on active-flag lookup
+
+`torch.argmax(flags, dim=1)` returns 0 silently when all flags are zero (opponent not revealed, or
+dummy forward pass in `__init__`). Replaced with `torch.where(flags.any(...), argmax(...), zeros)`.
+Prevents silent index corruption on sparse observations.
+
+### QW1 — fainted-key padding mask on synergy attention
+
+Fainted Pokémon (HP=0) attending as *keys* in the synergy path let dead slots pollute the key
+space. Added `key_padding_mask` to `synergy_attn` — fainted slots are masked out.
+
+**NaN guard:** always unmask the active slot regardless of HP. An episode start where all HP fields
+are zero (dummy forward in `__init__`) would mask every key → softmax of all -inf → NaN logits.
+Forcing the active slot open prevents this.
+
+### S3 — Screens routed to global context
+
+Reflect and Light Screen (both sides, 4 dims total) were already encoded in the global env block
+but excluded from `global_context`. Critical for switch-safety decisions — switching into a screen
+turn dramatically changes the calculus.
+
+`global_context` 12→16 dims; `role_input_dim` 256→259. Screen offsets are extracted from
+`global_start + 9 : global_start + 13` (fixed within the 13-dim global block).
+
+### QW5 (condition slot) — Remove unused 8th condition dim
+
+`CONDITION_DIM` 8→7. The 8th slot (index 7) was reserved as a placeholder and never written.
+Removing it drops one dim from each of the 12 Pokémon vectors → `pokemon_enriched` 242→241.
+
+---
+
 ## Final Dimensions After All Fixes
 
-| Component | Before step 2 | After step 2 (all fixes) |
-|---|---|---|
-| Observation dim | 1021 | 1032 (+ 11 prev_mask) |
-| Move processor input | 55 | 56 (+ validity bit) |
-| Pokémon type embedding | 16 (sum) | 32 (concat) |
-| `pokemon_enriched` | 226 | 242 |
-| Role encoder input | 238 | 256 |
-| Attention paths | 3 | 4 (+ Threat) |
-| Projection input | ~1961 (with matchup raw) | ~989 (matchup stripped, ctx encoded) |
-| Projection output | 512 | 512 |
+| Component | Before step 2 | After phase 2 | After phase 3 |
+|---|---|---|---|
+| Per-Pokémon dims | — | 55 | 58 (condition 7, moves 4×9) |
+| Observation (base) | 1021 | 1021 | 1053 |
+| Observation (full) | 1021 | 1032 (+ 11 prev_mask) | 1064 |
+| Move remnant dim | — | 4 | 6 (+ cur_pp, max_pp) |
+| Move processor input | 55 | 56 | 58 |
+| Pokémon type embedding | 16 (sum) | 32 (concat) | 32 |
+| `pokemon_enriched` | 226 | 242 | 241 (condition −1) |
+| `global_context` | — | 12 | 16 (+ screens) |
+| Role encoder input | 238 | 256 | 259 |
+| Attention paths | 3 | 4 (+ Threat) | 4 |
+| Projection input | ~1961 (with matchup raw) | ~989 | N (auto-discovered) |
+| Projection output | 512 | 512 | 512 |
 
 ---
 
 ## Tests
 
-126 unit tests pass. The `test_encoder_and_features_extractor_are_compatible` integration test
-exercises the full encoder → features_extractor forward pass with the 1032-dim observation.
-`model_embedding_test.py` verifies forensic offsets for move known flag, matchup routing, item
-known flag, and ability known flag (updated to offset 103 after P6 type concat).
+129 unit tests pass. The `test_encoder_and_features_extractor_are_compatible` integration test
+exercises the full encoder → features_extractor forward pass with the 1064-dim observation.
+`model_embedding_test.py` verifies forensic offsets for move known flag, matchup routing, PP
+values, item known flag, and ability known flag.
 
-Smoke test (`--debug --steps 10`) passes end-to-end.
+Smoke test (`--debug --steps 10000`) passes end-to-end with no NaN logits.
 
 ---
 
 ## Final State
 
-The observation carries 11 dims of prev_mask alongside the 1021 base features. Each mask
+The observation carries 11 dims of prev_mask alongside the 1053 base features. Each mask
 component flows to the most semantically relevant network component. The network architecture
 is structurally sound: four attention paths, encoded boosts, no raw matchup data in the
-projection, and coherent active-slot composition across attention paths.
+projection, coherent active-slot composition across attention paths, and no duplicate features
+in the reactive block.
 
 **Ready for Step 3: Turn History**
 
