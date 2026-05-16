@@ -1,5 +1,15 @@
 # CLAUDE.md — Gen3AI Project Guide
 
+## Git Workflow
+
+This is a personal project — no pull requests needed. Merge completed work directly to `main` and push:
+
+```bash
+git push origin <worktree-branch>:main
+```
+
+---
+
 ## Python Environment
 
 The project uses a dedicated conda environment, **not** `deps/venv`. Always prefix commands with the correct interpreter and `PYTHONPATH`:
