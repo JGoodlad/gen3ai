@@ -33,7 +33,7 @@ ln -s /home/goodlad/dev/gen3ai/deps/pokemon-showdown deps/pokemon-showdown
 
 ```bash
 # Start (with performance flags)
-NODE_ENV=production node --turbo-fast-api-calls --max-old-space-size=2048 deps/pokemon-showdown/pokemon-showdown start --no-security
+NODE_ENV=production node --turbo-fast-api-calls --max-old-space-size=6144 deps/pokemon-showdown/pokemon-showdown start --no-security
 
 # Stop cleanly (Ctrl+C orphans subprocesses — use this instead)
 npm run stop
