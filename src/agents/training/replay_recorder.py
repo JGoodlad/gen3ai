@@ -4,6 +4,7 @@ import json
 import asyncio
 import threading
 import traceback
+from typing import Callable
 from datetime import datetime
 from stable_baselines3.common.callbacks import BaseCallback
 from poke_env.player import SimpleHeuristicsPlayer
@@ -12,6 +13,8 @@ from poke_env.ps_client import LocalhostServerConfiguration, AccountConfiguratio
 
 from agents.inference.player import RLPlayer
 from agents.training.battle_recorder import BattleRecorder
+from agents.training.reward_function import RewardFunction
+from agents.training.reward_manager import Gen3RewardManager
 from agents.training.stall import StallConfig
 
 BATTLE_FORMAT = "gen3ou"
@@ -23,8 +26,9 @@ class StatTrackingRLPlayer(RLPlayer):
     All tracking logic lives in BattleRecorder — this class is purely a hook.
     """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, reward_fn_factory: Callable[[], RewardFunction] = Gen3RewardManager, **kwargs):
         super().__init__(*args, **kwargs)
+        self._reward_fn_factory = reward_fn_factory
         self._recorders: dict[str, BattleRecorder] = {}
 
     def choose_move(self, battle):
@@ -37,7 +41,7 @@ class StatTrackingRLPlayer(RLPlayer):
                 return ForfeitBattleOrder()
 
             if battle.battle_tag not in self._recorders:
-                self._recorders[battle.battle_tag] = BattleRecorder(battle.battle_tag)
+                self._recorders[battle.battle_tag] = BattleRecorder(battle.battle_tag, self._reward_fn_factory)
 
             idx, probs, mask = self._predict_best_action(battle, stochastic=True)
             self._recorders[battle.battle_tag].record(battle, idx, probs, mask)
@@ -54,7 +58,8 @@ class ReplayCallback(BaseCallback):
     """
 
     def __init__(self, model_dir, mappings, trainee_teambuilder, opponent_teambuilder,
-                 save_freq=100000, n_replays=3, stall_config: StallConfig = None, verbose=0):
+                 save_freq=100000, n_replays=3, stall_config: StallConfig = None,
+                 reward_fn_factory: Callable[[], RewardFunction] = Gen3RewardManager, verbose=0):
         super().__init__(verbose)
         self.model_dir = model_dir
         self.mappings = mappings
@@ -63,6 +68,7 @@ class ReplayCallback(BaseCallback):
         self.save_freq = save_freq
         self.n_replays = n_replays
         self.stall_config = stall_config or StallConfig()
+        self.reward_fn_factory = reward_fn_factory
         self.replay_dir = os.path.join(model_dir, "replays")
         os.makedirs(self.replay_dir, exist_ok=True)
         self.last_save = 0
@@ -100,6 +106,7 @@ class ReplayCallback(BaseCallback):
                 server_configuration=LocalhostServerConfiguration,
                 mappings=self.mappings,
                 stall_config=self.stall_config,
+                reward_fn_factory=self.reward_fn_factory,
                 account_configuration=AccountConfiguration(f"Replay{ts}", "password"),
                 save_replays=step_dir,
             )

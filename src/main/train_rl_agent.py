@@ -33,6 +33,7 @@ from utils.team_loader import TeamLoader
 from agents.training.replay_recorder import ReplayCallback
 from agents.training.wrappers import MaskableAgentWrapper
 from agents.training.gen3_env import Gen3Env
+from agents.training.reward_manager import Gen3RewardManager
 from agents.training.stall import StallConfig
 from utils.logging.levels import LogLevel
 
@@ -135,6 +136,7 @@ async def main():
                     team=trainee_teambuilder,
                     log_level=env_log_level,
                     stall_config=stall_config,
+                    reward_fn=reward_factory(log_level=env_log_level),
                     server_configuration=LocalhostServerConfiguration,
                     account_configuration1=AccountConfiguration(env_username, "password"),
                 )
@@ -171,6 +173,7 @@ async def main():
         f.write(" ".join(sys.argv))
         
     stall_cfg = StallConfig(output_dir=os.path.join(model_dir, "stalls"))
+    reward_factory = Gen3RewardManager
 
     # Running parallel environments
     n_envs = 1 if args.debug else args.n_envs
@@ -241,6 +244,7 @@ async def main():
         save_freq=100000,
         n_replays=10,
         stall_config=stall_cfg,
+        reward_fn_factory=reward_factory,
     )
     
     callbacks = [checkpoint_callback, replay_callback]
@@ -256,6 +260,7 @@ async def main():
                         mappings,
                         battle_format=BATTLE_FORMAT,
                         team=trainee_teambuilder,
+                        reward_fn=reward_factory(),
                         server_configuration=LocalhostServerConfiguration,
                         account_configuration1=AccountConfiguration(f"RLEval{idx}{ts}", "password"),
                     )

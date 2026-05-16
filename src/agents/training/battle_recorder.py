@@ -1,7 +1,8 @@
-from typing import Optional
+from typing import Callable, Optional
 import numpy as np
 
 from agents.training.battle_context import BattleContext, TurnDelta
+from agents.training.reward_function import RewardFunction
 from agents.training.slot_registry import SlotRegistry
 from agents.training.reward_manager import Gen3RewardManager
 
@@ -18,7 +19,7 @@ class BattleRecorder:
     not referenced from a legend — so a human can read any turn in isolation.
     """
 
-    def __init__(self, battle_tag: str):
+    def __init__(self, battle_tag: str, reward_fn_factory: Callable[[], RewardFunction] = Gen3RewardManager):
         self.battle_tag = battle_tag
         self._our_slots = SlotRegistry()
         self._opp_slots = SlotRegistry()
@@ -26,7 +27,7 @@ class BattleRecorder:
         self._pending_ctx: Optional[BattleContext] = None
         self._pending_action: int = -1
         self._pending_entry: Optional[dict] = None
-        self._reward_fn = Gen3RewardManager()
+        self._reward_fn = reward_fn_factory()
         self._reward_fn.reset()
 
     # ------------------------------------------------------------------
