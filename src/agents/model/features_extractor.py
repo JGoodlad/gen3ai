@@ -50,13 +50,24 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         )
         
         # 1.5 Shared Move Processor (Step 1)
-        # Input: Move Embedding (16) + Type Embedding (16) + Remnants (4) + Known (1)
-        # Context: HP (1) + Turn (1) + Weather (6) + Fainted (2) + Spikes (2) = 12
-        # Matchups: Effectiveness against 6 potential targets = 6
-        # Prev-mask validity bit (was this move available last turn): 1
-        # Remnants: Power, Secondary, Recoil, Category (known extracted separately below)
-        # Total: 37 + 12 + 6 + 1 = 56
-        move_input_dim = layout['move_embedding_dim'] + layout['type_embedding_dim'] + 4 + 1 + 12 + 6 + 1
+        # Input: move_emb + type_emb + remnants + known(1) + context + matchups(TEAM_SIZE) + validity(1)
+        # Remnants: power, secondary, recoil, category, current_pp, max_pp (known extracted separately)
+        # Context: HP(1) + turn(1) + weather + fainted + spikes
+        _msl = layout['pokemon']['moves']['layout']['slot_layout']
+        _rem1 = _msl['type']['offset'] - _msl['power']['offset']              # power+secondary+recoil = 3
+        _rem2 = _msl['known']['offset'] - (_msl['type']['offset'] + _msl['type']['dim'])  # category = 1
+        _rem3 = (_msl['max_pp']['offset'] + _msl['max_pp']['dim']) - _msl['current_pp']['offset']  # pp = 2
+        self.move_remnant_dim = _rem1 + _rem2 + _rem3
+        _gl = layout.get('global_layout', {})
+        _rl = layout.get('reactive_layout', {})
+        _move_ctx_dim = (1 + 1                                      # hp + turn
+                         + _gl.get('weather', {}).get('dim', 6)     # weather
+                         + _rl.get('fainted', {}).get('dim', 2)     # fainted
+                         + _gl.get('hazards', {}).get('dim', 2))    # spikes
+        move_input_dim = (layout['move_embedding_dim'] + layout['type_embedding_dim']
+                          + self.move_remnant_dim + 1               # remnants + known
+                          + _move_ctx_dim                           # context
+                          + TEAM_SIZE + 1)                          # matchups + validity
         self.move_network = torch.nn.Sequential(
             torch.nn.Linear(move_input_dim, 64),
             torch.nn.ReLU(),
@@ -231,11 +242,19 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         batch_size = x.shape[0]
         base_dim = self.layout['base_dim']
 
+        # Layouts (derived from observation encoder; avoid hardcoded offsets below)
+        reactive_layout = self.layout.get('reactive_layout', {})
+        global_layout   = self.layout.get('global_layout', {})
+        moves_info      = self.layout['pokemon']['moves']
+        moves_layout    = moves_info['layout']
+        m_slot_layout   = moves_layout['slot_layout']
+        num_moves       = len(moves_layout['slots'])
+
         # Extract prev_mask from the last 11 dims (appended by embed_battle / inference player)
-        prev_mask = x[:, base_dim:]                   # [B, 11]
-        switch_mask = prev_mask[:, 0:6]               # [B, 6] — valid switch slots last turn
-        move_mask = prev_mask[:, 6:10]                # [B, 4] — valid move slots last turn
-        struggle_mask = prev_mask[:, 10:11]           # [B, 1] — struggle was only option last turn
+        prev_mask = x[:, base_dim:]                                              # [B, 11]
+        switch_mask  = prev_mask[:, 0:TEAM_SIZE]                                 # [B, 6]
+        move_mask    = prev_mask[:, TEAM_SIZE:TEAM_SIZE + num_moves]             # [B, 4]
+        struggle_mask = prev_mask[:, TEAM_SIZE + num_moves:TEAM_SIZE + num_moves + 1]  # [B, 1]
 
         # 1. Extract parts using dynamic layout (all offsets are within the base 1021-dim obs)
         parts = self.layout['parts']
@@ -247,25 +266,25 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         remaining_part = x[:, ctx['start']:base_dim]  # stop before prev_mask tail 
         
         # 1.1 Context Features for Move Selection
-        # Global: Weather (offset 0), Spikes (6), Turn (8)
         global_start = parts['global']['start'] - ctx['start']
-        weather_feature = remaining_part[:, global_start : global_start + 6] # [B, 6]
-        spikes_feature = remaining_part[:, global_start + 6 : global_start + 8] # [B, 2]
-        turn_feature = remaining_part[:, global_start + 8 : global_start + 9] # [B, 1]
+        _w  = global_layout.get('weather', {});  _w_off, _w_dim  = _w.get('offset', 0), _w.get('dim', 6)
+        _hz = global_layout.get('hazards', {});  _hz_off, _hz_dim = _hz.get('offset', 6), _hz.get('dim', 2)
+        _ck = global_layout.get('clock',   {});  _ck_off, _ck_dim = _ck.get('offset', 8), _ck.get('dim', 1)
+        weather_feature = remaining_part[:, global_start + _w_off  : global_start + _w_off  + _w_dim]   # [B, 6]
+        spikes_feature  = remaining_part[:, global_start + _hz_off : global_start + _hz_off + _hz_dim]  # [B, 2]
+        turn_feature    = remaining_part[:, global_start + _ck_off : global_start + _ck_off + _ck_dim]  # [B, 1]
         
-        # Fainted counts (Phase) are at Reactive block offset 8
         reactive_start = parts['reactive']['start'] - ctx['start']
-        fainted_feature = remaining_part[:, reactive_start + 8 : reactive_start + 10] # [B, 2]
+        _f   = reactive_layout.get('fainted', {});      _f_off, _f_dim  = _f.get('offset', 8),   _f.get('dim', 2)
+        _om  = reactive_layout.get('our_matchups', {}); _om_off, _om_dim = _om.get('offset', 16), _om.get('dim', 144)
+        _tm  = reactive_layout.get('their_matchups', {}); _tm_off, _tm_dim = _tm.get('offset', 160), _tm.get('dim', 144)
+        fainted_feature     = remaining_part[:, reactive_start + _f_off  : reactive_start + _f_off  + _f_dim]   # [B, 2]
+        our_matchups_flat   = remaining_part[:, reactive_start + _om_off : reactive_start + _om_off + _om_dim]  # [B, 144]
+        their_matchups_flat = remaining_part[:, reactive_start + _tm_off : reactive_start + _tm_off + _tm_dim]  # [B, 144]
         
-        # 1.2 Matchup Matrix Extraction (New)
-        # Extract 144 dims for Our Matchups and 144 for Theirs
-        our_matchups_flat = remaining_part[:, reactive_start + 16 : reactive_start + 160]
-        their_matchups_flat = remaining_part[:, reactive_start + 160 : reactive_start + 304]
-        
-        # Reshape to [B, 6, 4, 6] to align with Move Processor
-        our_matchups = our_matchups_flat.reshape(batch_size, TEAM_SIZE, 4, TEAM_SIZE)
-        their_matchups = their_matchups_flat.reshape(batch_size, TEAM_SIZE, 4, TEAM_SIZE)
-        matchups_all = torch.cat([our_matchups, their_matchups], dim=1) # [B, 12, 4, 6]
+        our_matchups   = our_matchups_flat.reshape(batch_size, TEAM_SIZE, num_moves, TEAM_SIZE)
+        their_matchups = their_matchups_flat.reshape(batch_size, TEAM_SIZE, num_moves, TEAM_SIZE)
+        matchups_all = torch.cat([our_matchups, their_matchups], dim=1) # [B, n_poke, num_moves, TEAM_SIZE]
         
         pokemon_part = torch.cat([our_team, opp_team], dim=1) # [B, 2 * TEAM_SIZE, POKEMON_FULL_DIM]
         
@@ -278,17 +297,14 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         species_ids = pokemon_part[:, :, species_idx].long()
         
         # Move IDs & Move Type IDs
-        moves_info = pk_layout['moves']
         moves_offset = moves_info['offset']
-        moves_layout = moves_info['layout']
+        _type_off = m_slot_layout['type']['offset']
         move_id_tensors = []
         move_type_id_tensors = []
-        for i in range(4):
+        for i in range(num_moves):
             slot_idx = moves_offset + moves_layout['slots'][i]['offset']
-            # Move ID at index 0 of slot
             move_id_tensors.append(pokemon_part[:, :, slot_idx].long().unsqueeze(2))
-            # Move Type ID at index 4 of slot
-            move_type_id_tensors.append(pokemon_part[:, :, slot_idx + 4].long().unsqueeze(2))
+            move_type_id_tensors.append(pokemon_part[:, :, slot_idx + _type_off].long().unsqueeze(2))
             
         all_move_ids = torch.cat(move_id_tensors, dim=2) # [B, 12, 4]
         all_move_type_ids = torch.cat(move_type_id_tensors, dim=2) # [B, 12, 4]
@@ -342,62 +358,52 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         condition_start = abilities_info['offset'] + abilities_info['dim']
         part_d = pokemon_part[:, :, condition_start : moves_offset] # [B, 12, 8]
         
-        # Part E: Move remnants (Power, Secondary, Recoil - everything but ID and Type)
+        # Part E: Move remnants (power, secondary, recoil, category, current_pp, max_pp)
+        _known_off = m_slot_layout['known']['offset']
         move_remnants = []
-        m_slot_layout = moves_layout['slot_layout']
-        for i in range(4):
-            slot_info = moves_layout['slots'][i]
-            slot_start = moves_offset + slot_info['offset']
-            
-            # Power, Secondary, Recoil  [3 dims]
-            rem1_start = slot_start + m_slot_layout['power']['offset']
-            rem1_end = slot_start + m_slot_layout['type']['offset']
-            move_remnants.append(pokemon_part[:, :, rem1_start : rem1_end])
-
-            # Category  [1 dim] — stop before known flag to avoid duplication
-            rem2_start = slot_start + m_slot_layout['type']['offset'] + m_slot_layout['type']['dim']
-            rem2_end = slot_start + m_slot_layout['known']['offset']
-            move_remnants.append(pokemon_part[:, :, rem2_start : rem2_end])
-        all_move_remnants = torch.cat(move_remnants, dim=2) # [B, 12, 16]
-        
-        # Part F: Move Known Flags (Now interleaved in slots)
-        known_flags_tensors = []
-        for i in range(4):
+        for i in range(num_moves):
             slot_start = moves_offset + moves_layout['slots'][i]['offset']
-            # Known flag is at index 6 of the slot
-            known_flags_tensors.append(pokemon_part[:, :, slot_start + 6 : slot_start + 7])
-        known_flags = torch.cat(known_flags_tensors, dim=2) # [B, 12, 4]
+            # power, secondary, recoil  [3 dims]
+            move_remnants.append(pokemon_part[:, :, slot_start + m_slot_layout['power']['offset'] : slot_start + m_slot_layout['type']['offset']])
+            # category  [1 dim]
+            move_remnants.append(pokemon_part[:, :, slot_start + m_slot_layout['type']['offset'] + m_slot_layout['type']['dim'] : slot_start + _known_off])
+            # current_pp, max_pp  [2 dims]
+            move_remnants.append(pokemon_part[:, :, slot_start + m_slot_layout['current_pp']['offset'] : slot_start + m_slot_layout['max_pp']['offset'] + m_slot_layout['max_pp']['dim']])
+        all_move_remnants = torch.cat(move_remnants, dim=2) # [B, 2*TEAM_SIZE, num_moves * move_remnant_dim]
+
+        # Part F: Move Known Flags (interleaved in slots)
+        known_flags_tensors = []
+        for i in range(num_moves):
+            slot_start = moves_offset + moves_layout['slots'][i]['offset']
+            known_flags_tensors.append(pokemon_part[:, :, slot_start + _known_off : slot_start + _known_off + 1])
+        known_flags = torch.cat(known_flags_tensors, dim=2) # [B, 2*TEAM_SIZE, num_moves]
         
         # Part G: HP and Active Flag
         hp_offset = pk_layout['hp']['offset']
         # Extract from HP offset to the end of the Pokémon vector (includes Active Flag)
         hp_and_active = pokemon_part[:, :, hp_offset:] 
         
-        # Final stitch
         # --- SHARED MOVE PROCESSING (Step 1) ---
-        # Reshape move remnants and flags to align with the 4 slots
-        move_remnants_reshaped = all_move_remnants.reshape(batch_size, 12, 4, 4)
-        known_flags_reshaped = known_flags.reshape(batch_size, 12, 4, 1)
+        # Reshape move remnants and flags to align with per-slot dims
+        n_poke = 2 * TEAM_SIZE
+        move_remnants_reshaped = all_move_remnants.reshape(batch_size, n_poke, num_moves, self.move_remnant_dim)
+        known_flags_reshaped   = known_flags.reshape(batch_size, n_poke, num_moves, 1)
         
         # Combine all move features into [B, 12, 4, 51]
         # Context: HP (1), Turn (1), Weather (6), Fainted (2), Spikes (2)
-        hp_feature = hp_and_active[:, :, 0:1] # [B, 12, 1]
-        turn_expanded = turn_feature.unsqueeze(1).expand(-1, 2 * TEAM_SIZE, -1) # [B, 12, 1]
-        weather_expanded = weather_feature.unsqueeze(1).expand(-1, 2 * TEAM_SIZE, -1) # [B, 12, 6]
-        fainted_expanded = fainted_feature.unsqueeze(1).expand(-1, 2 * TEAM_SIZE, -1) # [B, 12, 2]
-        spikes_expanded = spikes_feature.unsqueeze(1).expand(-1, 2 * TEAM_SIZE, -1) # [B, 12, 2]
-        
-        # Combine into a [B, 12, 12] context vector
-        move_context = torch.cat([
-            hp_feature, turn_expanded, weather_expanded, fainted_expanded, spikes_expanded
-        ], dim=2)
-        # Expand to each move slot [B, 12, 4, 12]
-        move_context_final = move_context.unsqueeze(2).expand(-1, -1, 4, -1)
-        
+        hp_feature = hp_and_active[:, :, 0:1]                                             # [B, n_poke, 1]
+        turn_expanded    = turn_feature.unsqueeze(1).expand(-1, n_poke, -1)               # [B, n_poke, 1]
+        weather_expanded = weather_feature.unsqueeze(1).expand(-1, n_poke, -1)            # [B, n_poke, 6]
+        fainted_expanded = fainted_feature.unsqueeze(1).expand(-1, n_poke, -1)            # [B, n_poke, 2]
+        spikes_expanded  = spikes_feature.unsqueeze(1).expand(-1, n_poke, -1)             # [B, n_poke, 2]
+
+        move_context = torch.cat([hp_feature, turn_expanded, weather_expanded, fainted_expanded, spikes_expanded], dim=2)
+        move_context_final = move_context.unsqueeze(2).expand(-1, -1, num_moves, -1)      # [B, n_poke, num_moves, ctx_dim]
+
         # Move validity from prev_mask: our moves get their validity bit, opp gets all-ones
-        move_validity_ours = move_mask.unsqueeze(1).unsqueeze(3).expand(-1, TEAM_SIZE, -1, -1).float()  # [B, 6, 4, 1]
-        move_validity_opp = torch.ones(batch_size, TEAM_SIZE, 4, 1, device=x.device)           # [B, 6, 4, 1]
-        move_validity = torch.cat([move_validity_ours, move_validity_opp], dim=1)              # [B, 12, 4, 1]
+        move_validity_ours = move_mask.unsqueeze(1).unsqueeze(3).expand(-1, TEAM_SIZE, -1, -1).float()  # [B, 6, num_moves, 1]
+        move_validity_opp  = torch.ones(batch_size, TEAM_SIZE, num_moves, 1, device=x.device)
+        move_validity = torch.cat([move_validity_ours, move_validity_opp], dim=1)                       # [B, n_poke, num_moves, 1]
 
         move_features = torch.cat([
             embedded_moves,
@@ -411,7 +417,7 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         
         # Process through shared network
         processed_moves = self.move_network(move_features.reshape(-1, move_features.shape[-1]))
-        processed_moves = processed_moves.reshape(batch_size, 2 * TEAM_SIZE, -1) # [B, 12, 4 * 32 = 128]
+        processed_moves = processed_moves.reshape(batch_size, n_poke, -1)  # [B, n_poke, num_moves * 32]
         
         pokemon_enriched = torch.cat([
             embedded_species,      # 32
@@ -427,39 +433,34 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         ], dim=2) # [B, 12, 242]
         
         # --- POKÉMON ROLE ENCODER ---
-        # P5: use layout-driven reactive offsets instead of hardcoded arithmetic
-        reactive_layout = self.layout.get('reactive_layout', {})
         struggle_offset = reactive_layout.get('forced_struggle', {}).get('offset', 15)
         matchup_offset  = reactive_layout.get('our_matchups', {}).get('offset', 16)
 
-        struggle_feature = remaining_part[:, reactive_start + struggle_offset : reactive_start + struggle_offset + 1] # [B, 1]
-        global_context = torch.cat([turn_feature, weather_feature, fainted_feature, spikes_feature, struggle_feature], dim=1) # [B, 12]
-        context_broadcasted = global_context.unsqueeze(1).expand(-1, 2 * TEAM_SIZE, -1) # [B, 12, 12]
+        struggle_feature = remaining_part[:, reactive_start + struggle_offset : reactive_start + struggle_offset + 1]
+        global_context = torch.cat([turn_feature, weather_feature, fainted_feature, spikes_feature, struggle_feature], dim=1)
+        context_broadcasted = global_context.unsqueeze(1).expand(-1, n_poke, -1)
 
-        # Switch validity from prev_mask: our slots get their bit, opp slots get all-ones
         switch_validity_ours = switch_mask.unsqueeze(2)                                          # [B, 6, 1]
-        switch_validity_opp = torch.ones(batch_size, TEAM_SIZE, 1, device=x.device)             # [B, 6, 1]
-        switch_validity = torch.cat([switch_validity_ours, switch_validity_opp], dim=1)         # [B, 12, 1]
+        switch_validity_opp  = torch.ones(batch_size, TEAM_SIZE, 1, device=x.device)
+        switch_validity = torch.cat([switch_validity_ours, switch_validity_opp], dim=1)         # [B, n_poke, 1]
 
-        # Struggle validity from prev_mask broadcast to all Pokémon tokens
-        struggle_from_prev = struggle_mask.unsqueeze(1).expand(-1, 2 * TEAM_SIZE, -1)           # [B, 12, 1]
+        struggle_from_prev = struggle_mask.unsqueeze(1).expand(-1, n_poke, -1)                  # [B, n_poke, 1]
 
         pokemon_enriched_with_context = torch.cat([
             pokemon_enriched, context_broadcasted, switch_validity, struggle_from_prev
-        ], dim=2)  # [B, 12, 256]
+        ], dim=2)
 
-        # Reshape to [B*12, role_input_dim] for shared processing
         role_tokens = self.role_encoder(pokemon_enriched_with_context.reshape(-1, pokemon_enriched_with_context.shape[-1]))
-        role_tokens = role_tokens.reshape(batch_size, 2 * TEAM_SIZE, self.role_token_size) # [B, 12, 128]
+        role_tokens = role_tokens.reshape(batch_size, n_poke, self.role_token_size)
 
         # --- TEAM-WIDE ATTENTION ---
         # 1. Find who is active on both teams
-        active_flags = hp_and_active[:, :, 1] # [B, 12]
+        active_flags = hp_and_active[:, :, 1] # [B, n_poke]
         our_active_idx = torch.argmax(active_flags[:, 0:TEAM_SIZE], dim=1)                         # [B] — 0-5
         opp_active_idx = torch.argmax(active_flags[:, TEAM_SIZE:2*TEAM_SIZE], dim=1) + TEAM_SIZE   # [B] — 6-11
 
         # 2. Apply Status Biases (Pre-Attention)
-        status_idx = torch.ones((batch_size, 12), device=role_tokens.device).long()
+        status_idx = torch.ones((batch_size, n_poke), device=role_tokens.device).long()
         status_idx[:, 0:TEAM_SIZE] = 1
         status_idx[:, TEAM_SIZE:2*TEAM_SIZE] = 3
         status_idx[torch.arange(batch_size), our_active_idx] = 0

@@ -4,7 +4,7 @@ from poke_env.battle.abstract_battle import AbstractBattle
 from poke_env.battle.pokemon import Pokemon
 from poke_env.battle.move import Move
 from .state_encoder import Gen3ObservationEncoder, load_mappings
-from .constants import TEAM_SIZE, OFFSET_REACTIVE, POKEMON_FULL_DIM, OFFSET_OUR_TEAM
+from .constants import TEAM_SIZE, OFFSET_REACTIVE, POKEMON_FULL_DIM, OFFSET_OUR_TEAM, MOVE_SLOT_DIM
 
 def create_mock_move(move_id, base_power=60, move_type="Normal"):
     move = MagicMock(spec=Move)
@@ -12,9 +12,9 @@ def create_mock_move(move_id, base_power=60, move_type="Normal"):
     move.base_power = base_power
     move.type = MagicMock()
     move.type.name = move_type.upper()
-    # Mock damage_multiplier to return a predictable value based on move_id
-    # We'll use the first char's ASCII to make it unique-ish
-    move.type.damage_multiplier.return_value = float(ord(move_id[0]) % 5) 
+    move.type.damage_multiplier.return_value = float(ord(move_id[0]) % 5)
+    move.current_pp = 16
+    move.max_pp = 16
     return move
 
 def create_mock_pokemon(species, moves_dict, active=False):
@@ -75,11 +75,11 @@ def test_move_and_team_alignment():
     
     # 4. Verify Move Embedding Order
     # Pokemon 0 (p1) moves start at OFFSET_OUR_TEAM + POKEMON_MOVES_OFFSET
-    from .constants import POKEMON_MOVES_OFFSET
+    from .constants import POKEMON_MOVES_OFFSET  # noqa: PLC0415
     moves_start = OFFSET_OUR_TEAM + POKEMON_MOVES_OFFSET
     
     for i in range(4):
-        slot_idx = moves_start + (i * 8)
+        slot_idx = moves_start + (i * MOVE_SLOT_DIM)
         move_id_val = vector[slot_idx] # First element of slot is ID
         known_flag = vector[slot_idx + 6] # Known is at 6
         if i < 4:

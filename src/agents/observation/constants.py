@@ -5,7 +5,7 @@ ITEM_KNOWN_DIM = 1
 COMBINED_TYPES_DIM = 2  # Two type IDs only; was 8 (6 placeholders removed)
 ABILITY_SLOT_DIM = 1    # ID only; was 8 (possible-ability slots removed)
 ABILITY_KNOWN_DIM = 1
-MOVE_SLOT_DIM = 8
+MOVE_SLOT_DIM = 9
 MOVES_KNOWN_DIM = 0
 CONDITION_DIM = 8 # None, BRN, PAR, SLP, FRZ, PSN, TOX, (unused)
 STATS_DIM = 6 # HP, Atk, Def, SpA, SpD, Spe
@@ -20,17 +20,17 @@ VOLATILES_DIM = 8
 # Types: COMBINED_TYPES_DIM(2) = 2
 # Abilities: ABILITY_SLOT_DIM(1) + ABILITY_KNOWN_DIM(1) = 2
 # Condition: CONDITION_DIM(8) = 8
-# Moves: 4 * MOVE_SLOT_DIM(8) = 32
-# HP: 1   Total: 54
+# Moves: 4 * MOVE_SLOT_DIM(9) = 36
+# HP: 1   Total: 58
 POKEMON_SPECIES_OFFSET = 0
 POKEMON_ITEMS_OFFSET = 7   # 0 + 7
 POKEMON_TYPES_OFFSET = 9   # 7 + 2
 POKEMON_ABILITIES_OFFSET = 11  # 9 + 2
 POKEMON_CONDITION_OFFSET = 13  # 11 + 2
 POKEMON_MOVES_OFFSET = 21  # 13 + 8
-POKEMON_HP_OFFSET = 53     # 21 + 32
-POKEMON_VECTOR_DIM = 54    # 53 + 1
-POKEMON_FULL_DIM = 55      # 54 + 1 (active flag)
+POKEMON_HP_OFFSET = 57     # 21 + 36
+POKEMON_VECTOR_DIM = 58    # 57 + 1
+POKEMON_FULL_DIM = 59      # 58 + 1 (active flag)
 
 # Active context: boosts(14) + volatiles(8) = 22
 ACTIVE_CONTEXT_DIM = 22
@@ -58,4 +58,5 @@ MAX_SPECIES_ID = 387
 MAX_MOVE_ID = 371
 MAX_ITEM_ID = 600
 MAX_ABILITY_ID = 100
+MAX_PP = 64  # Splash (40 base) * 8//5 = 64; covers all Gen 3 moves with full PP Ups
 TRACE_INTERVAL = 15

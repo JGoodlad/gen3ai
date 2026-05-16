@@ -1,21 +1,21 @@
 # Gen3AI Network Architecture
 
-Feature extractor used by MaskablePPO. Takes a 1032-dim observation and produces 512-dim features for the policy and value heads.
+Feature extractor used by MaskablePPO. Takes a 1080-dim observation and produces 512-dim features for the policy and value heads.
 
 ## Data Flow Digraph
 
 ```mermaid
 flowchart TD
-    OBS["Observation · 1032-dim float32"]
+    OBS["Observation · 1080-dim float32"]
 
-    OBS --> BASE["Base obs · 1021-dim"]
+    OBS --> BASE["Base obs · 1069-dim"]
     OBS --> PM["prev_mask · 11-dim\n(previous turn's action mask)"]
 
     PM --> SW["switch_mask [0:6]\nbench slot validity"]
     PM --> MV["move_mask [6:10]\nmove slot validity"]
     PM --> STR["struggle_mask [10]"]
 
-    BASE --> TEAM["Pokémon vectors\n[B, 12, 55]  our + opp team"]
+    BASE --> TEAM["Pokémon vectors\n[B, 12, 59]  our + opp team"]
     BASE --> REM["remaining_part\nactive_ctx · global · reactive"]
 
     TEAM --> EMB["Embedding Lookups\nspecies · 32\nmove · 16\nitem · 16\nability · 16\ntype · 16  shared"]
@@ -25,11 +25,11 @@ flowchart TD
     REM --> MATCH["matchup matrix · 288-dim\n[B, 12, 4, 6] type effectiveness\n(used by move processor only)"]
 
     MV --> MPIN
-    EMB --> MPIN["Move Processor input · [B, 12, 4, 56]\nmove_emb·16 + type_emb·16\nremnants·4 + known·1\ncontext·12 + matchups·6 + validity·1"]
+    EMB --> MPIN["Move Processor input · [B, 12, 4, 58]\nmove_emb·16 + type_emb·16\nremnants·6 + known·1\ncontext·12 + matchups·6 + validity·1\nremnants: power secondary recoil category cur_pp max_pp"]
     MATCH --> MPIN
     GLOBAL --> MPIN
 
-    MPIN --> MP["Shared Move Processor\nLinear 56→64 → ReLU\nLinear 64→32\n(all 12 mons × 4 slots)"]
+    MPIN --> MP["Shared Move Processor\nLinear 58→64 → ReLU\nLinear 64→32\n(all 12 mons × 4 slots)"]
     MP --> PMOV["Processed moves · [B, 12, 128]\n4 slots × 32-dim"]
 
     EMB --> PE["pokemon_enriched · [B, 12, 242]\nspecies·32 + stats·6 + item_emb·16\nitem_known·1 + pk_types·32\nability_emb·16 + ability_known·1\ncondition·8 + moves·128 + hp+active·2"]
@@ -82,7 +82,7 @@ flowchart TD
 
 | Layer | Input dim | Output dim | Notes |
 |---|---|---|---|
-| Move Processor | 56 | 32 | shared; run 12×4 times per forward pass |
+| Move Processor | 58 | 32 | shared; run 12×4 times per forward pass |
 | Role Encoder | 256 | 128 | shared; run 12 times per forward pass |
 | Active Ctx Encoder | 22 | 32 | shared; run twice (our side + opp side) |
 | Pressure Attn | 128 (Q), 128 (KV) | 128 | our_active queries their_team |

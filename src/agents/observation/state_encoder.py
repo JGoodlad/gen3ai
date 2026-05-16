@@ -203,6 +203,7 @@ class Gen3ObservationEncoder(ObservationEncoder):
             "prev_mask_dim": 11,
             "active_context_dim": ACTIVE_CONTEXT_DIM,
             "reactive_layout": _ReactiveEncoder().get_layout(),
+            "global_layout": self.global_env_encoder.get_layout(),
             "max_species": 400,
             "species_embedding_dim": 32,
             "max_moves": 400,

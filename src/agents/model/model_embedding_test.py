@@ -1,3 +1,4 @@
+import pytest
 import torch
 import numpy as np
 from agents.model.features_extractor import Gen3FeaturesExtractor
@@ -48,12 +49,18 @@ def test_model_full_embedding_forensics():
     # Ability: Volt Absorb (ID 10), Known=1
     obs[pk0_start + POKEMON_ABILITIES_OFFSET] = 10.0
     obs[pk0_start + POKEMON_ABILITIES_OFFSET + ABILITY_SLOT_DIM] = 1.0
-    # Move 0: Surf (ID 57), Type: Water (ID 11), Known=1
-    obs[pk0_start + POKEMON_MOVES_OFFSET + 0] = 57.0  # ID
-    obs[pk0_start + POKEMON_MOVES_OFFSET + 6] = 1.0   # Known flag
+    # Move 0: Surf (ID 57), Known=1, partially depleted PP (8 current / 24 max)
+    m_slot_layout = layout['pokemon']['moves']['layout']['slot_layout']
+    reactive_layout = layout['reactive_layout']
+    from agents.observation.constants import MAX_PP
+    _cur_pp, _max_pp = 8, 24
+    obs[pk0_start + POKEMON_MOVES_OFFSET + 0] = 57.0
+    obs[pk0_start + POKEMON_MOVES_OFFSET + m_slot_layout['known']['offset']]    = 1.0
+    obs[pk0_start + POKEMON_MOVES_OFFSET + m_slot_layout['current_pp']['offset']] = _cur_pp / MAX_PP
+    obs[pk0_start + POKEMON_MOVES_OFFSET + m_slot_layout['max_pp']['offset']]     = _max_pp / MAX_PP
 
     # --- Reactive Matrix ---
-    obs[OFFSET_REACTIVE + 16] = 0.5
+    obs[OFFSET_REACTIVE + reactive_layout['our_matchups']['offset']] = 0.5
 
     obs_tensor = torch.from_numpy(obs).unsqueeze(0)
     obs_dict = {"observation": obs_tensor}
@@ -64,25 +71,56 @@ def test_model_full_embedding_forensics():
 
     # --- VERIFICATIONS ---
     move_in = captured_inputs["move_input"]
-    role_in = captured_inputs["role_input"]  # Flattened shape [12, 237]
+    role_in = captured_inputs["role_input"]
 
-    # Move input layout (56 dims total):
-    #   embedded_moves (16) + embedded_move_types (16) + remnants (4) + known (1) + context (12) + matchups (6) + validity (1)
-    # known is at index 36, first matchup at index 49
+    # Compute move_input known and matchup indices from layout
+    emb_dim = layout['move_embedding_dim'] + layout['type_embedding_dim']  # 32
+    remnant_dim = model.move_remnant_dim                                    # 6
+    known_idx    = emb_dim + remnant_dim                                    # 38
+    gl = layout.get('global_layout', {}); rl = layout.get('reactive_layout', {})
+    ctx_dim = (1 + 1
+               + gl.get('weather', {}).get('dim', 6)
+               + rl.get('fainted', {}).get('dim', 2)
+               + gl.get('hazards', {}).get('dim', 2))                      # 12
+    matchup_idx = known_idx + 1 + ctx_dim                                   # 51
+
+    # PP indices: current_pp and max_pp sit in the remnants block just before the known flag
+    _rem1 = m_slot_layout['type']['offset'] - m_slot_layout['power']['offset']         # 3
+    _rem2 = m_slot_layout['known']['offset'] - (m_slot_layout['type']['offset'] + m_slot_layout['type']['dim'])  # 1
+    current_pp_idx = emb_dim + _rem1 + _rem2        # first PP dim in remnants
+    max_pp_idx     = current_pp_idx + 1
+
     m0_features = move_in[0]
-    assert m0_features[36] == 1.0, f"Move Known Flag mismatch: {m0_features[36]}"
-    assert m0_features[49] == 0.5, f"Matchup Matrix mismatch: {m0_features[49]}"
+    assert m0_features[known_idx]      == 1.0,                           f"Move Known Flag mismatch at idx {known_idx}: {m0_features[known_idx]}"
+    assert m0_features[matchup_idx]    == 0.5,                           f"Matchup Matrix mismatch at idx {matchup_idx}: {m0_features[matchup_idx]}"
+    assert float(m0_features[current_pp_idx]) == pytest.approx(_cur_pp / MAX_PP), f"current_pp mismatch at idx {current_pp_idx}: {m0_features[current_pp_idx]}"
+    assert float(m0_features[max_pp_idx])     == pytest.approx(_max_pp / MAX_PP), f"max_pp mismatch at idx {max_pp_idx}: {m0_features[max_pp_idx]}"
+    assert float(m0_features[current_pp_idx]) < float(m0_features[max_pp_idx]),   "current_pp should be less than max_pp for depleted move"
 
-    # Role input layout (256 dims total):
-    #   embedded_species (32) + stats (6) + embedded_items (16) + item_known (1) = index 54
-    #   + embedded_pk_types (32, concat) + embedded_abilities (16) + ability_known (1) = index 103
+    # Compute role_input known-flag indices from layout
+    pk_layout = layout['pokemon']
+    items_info = pk_layout['items']; items_layout = items_info['layout']
+    item_known_idx = (layout['move_embedding_dim'] * 2 + 6   # species_emb(32) + stats(6) + item_emb(16)
+                      - layout['move_embedding_dim']          # undo double-count: species=32, item=16
+                      + items_info['offset'] - pk_layout['species']['offset'] - 1  # offset within pokemon
+                      )
+    # Simpler: compute directly from known layout offsets in role-encoder input
+    # role input = species_emb(32) + stats(6) + item_emb(16) + item_known(1) + pk_types(32) + ability_emb(16) + ability_known(1) + ...
+    _species_emb = layout['species_embedding_dim']     # 32
+    _stats       = 6
+    _item_emb    = layout['item_embedding_dim']        # 16
+    item_known_role_idx = _species_emb + _stats + _item_emb   # 54
+    _pk_types    = layout['type_embedding_dim'] * 2    # 32 (concatenated pair)
+    _ability_emb = layout['ability_embedding_dim']     # 16
+    ability_known_role_idx = item_known_role_idx + 1 + _pk_types + _ability_emb  # 103
+
     p0_features = role_in[0]
-    assert p0_features[54] == 1.0, f"Item Known Flag mismatch: {p0_features[54]}"
-    assert p0_features[103] == 1.0, f"Ability Known Flag mismatch: {p0_features[103]}"
+    assert p0_features[item_known_role_idx]    == 1.0, f"Item Known Flag mismatch at idx {item_known_role_idx}: {p0_features[item_known_role_idx]}"
+    assert p0_features[ability_known_role_idx] == 1.0, f"Ability Known Flag mismatch at idx {ability_known_role_idx}: {p0_features[ability_known_role_idx]}"
 
     print("✅ Full Model Forensic Audit PASSED!")
-    print(f"  - Move Path: Known (idx 36), Matchup (idx 49)")
-    print(f"  - Pokemon Path: Item Known (idx 54), Ability Known (idx 103)")
+    print(f"  - Move Path: Known (idx {known_idx}), Matchup (idx {matchup_idx}), cur_pp (idx {current_pp_idx}), max_pp (idx {max_pp_idx})")
+    print(f"  - Pokemon Path: Item Known (idx {item_known_role_idx}), Ability Known (idx {ability_known_role_idx})")
 
 if __name__ == "__main__":
     test_model_full_embedding_forensics()

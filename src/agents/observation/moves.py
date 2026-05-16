@@ -1,6 +1,6 @@
 import numpy as np
 from .base import ObservationEncoder
-from .constants import MOVE_SLOT_DIM
+from .constants import MOVE_SLOT_DIM, MAX_PP
 from .types import TypeEncoder
 from poke_env.battle.abstract_battle import AbstractBattle
 from poke_env.battle.move_category import MoveCategory
@@ -69,7 +69,14 @@ class MovesEncoder(ObservationEncoder):
                 
                 # 7. Known Flag (Binary) - Now interleaved
                 vec[base_idx + 6] = 1.0
-                
+
+                # 8-9. PP: current and max, each normalized by MAX_PP.
+                # Encoding both separately lets the model distinguish move spammability (max)
+                # from depletion state (current). Opponent moves in Gen 3 always show full PP
+                # since Showdown doesn't track opponent PP for Gen 3.
+                vec[base_idx + 7] = float(move.current_pp) / MAX_PP
+                vec[base_idx + 8] = float(move.max_pp) / MAX_PP
+
         return vec
 
     def get_layout(self) -> Dict[str, Any]:
@@ -82,7 +89,9 @@ class MovesEncoder(ObservationEncoder):
                 "recoil": {"offset": 3, "dim": 1},
                 "type": {"offset": 4, "dim": 1},
                 "category": {"offset": 5, "dim": 1},
-                "known": {"offset": 6, "dim": 1}
+                "known": {"offset": 6, "dim": 1},
+                "current_pp": {"offset": 7, "dim": 1},
+                "max_pp": {"offset": 8, "dim": 1}
             }
         }
 

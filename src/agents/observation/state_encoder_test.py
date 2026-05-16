@@ -6,8 +6,8 @@ from poke_env.battle.abstract_battle import AbstractBattle
 from unittest.mock import MagicMock
 from .state_encoder import Gen3ObservationEncoder, load_mappings
 
-EXPECTED_BASE_DIM = 1021
-EXPECTED_OBS_DIM = 1032  # base + 11-dim prev_mask appended by embed_battle
+EXPECTED_BASE_DIM = 1069  # 1021 base + 48 (12 pokemon × 4 moves × 1 PP dim)
+EXPECTED_OBS_DIM = 1080   # base + 11-dim prev_mask appended by embed_battle
 
 
 def test_encoder_dimension():
