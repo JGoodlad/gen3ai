@@ -441,7 +441,8 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         _fs = reactive_layout.get('forced_struggle', {}); struggle_offset = _fs.get('offset', 11)
         struggle_feature = remaining_part[:, reactive_start + struggle_offset : reactive_start + struggle_offset + 1] # [B, 1]
         # S3: screens (Reflect/Light Screen both sides) are critical switch-safety context
-        screen_feature = remaining_part[:, global_start + 9 : global_start + 13] # [B, 4]
+        _sc = global_layout.get('screens', {}); _sc_off, _sc_dim = _sc.get('offset', 9), _sc.get('dim', 4)
+        screen_feature = remaining_part[:, global_start + _sc_off : global_start + _sc_off + _sc_dim] # [B, 4]
         global_context = torch.cat([turn_feature, weather_feature, fainted_feature, spikes_feature, struggle_feature, screen_feature], dim=1) # [B, 16]
         context_broadcasted = global_context.unsqueeze(1).expand(-1, n_poke, -1)
 

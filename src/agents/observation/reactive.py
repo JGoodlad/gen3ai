@@ -131,7 +131,7 @@ class ReactiveEncoder(ObservationEncoder):
             "fainted_our": int(vector[8] * 6),
             "fainted_opp": int(vector[9] * 6),
             "active_move_mults": [f"{m*4.0:.1f}x" for m in vector[4:8].tolist()],
-            "struggle": bool(vector[15]),
+            "struggle": bool(vector[11]),
             "our_vs_their": our_m, # Full matrix for deeper trace
             "their_vs_our": their_m
         }
