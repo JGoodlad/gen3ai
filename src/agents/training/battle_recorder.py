@@ -46,11 +46,10 @@ class BattleRecorder:
             "i": len(self._invocations) + 1,
             "turn": ctx.turn,
             "phase": ctx.phase,
-            "our": {"species": ctx.our_active, "hp": self._our_hp_pct(ctx)},
-            "opp": {"species": ctx.opp_active, "hp": self._opp_hp_pct(ctx)},
-            "outcome": None,
-            "bench": self._bench_summary(battle),
             "chosen": chosen,
+            "our": {"species": ctx.our_active, "hp": self._our_hp_pct(ctx), "bench": self._our_bench_summary(battle)},
+            "opp": {"species": ctx.opp_active, "hp": self._opp_hp_pct(ctx), "bench": self._opp_bench_summary(battle)},
+            "outcome": None,
             "actions": self._all_action_labels(battle, probs, mask),
         }
 
@@ -185,7 +184,7 @@ class BattleRecorder:
             result[label] = {"prob": f"{probs[i] * 100:.1f}%", "valid": bool(mask[i])}
         return result
 
-    def _bench_summary(self, battle) -> str:
+    def _our_bench_summary(self, battle) -> str:
         active = battle.active_pokemon
         parts = []
         for mon in battle.team.values():
@@ -195,6 +194,19 @@ class BattleRecorder:
                 parts.append(f"{mon.species}(faint)")
             else:
                 parts.append(f"{mon.species}({mon.current_hp_fraction * 100:.0f}%)")
+        return ", ".join(parts)
+
+    def _opp_bench_summary(self, battle) -> str:
+        active = battle.opponent_active_pokemon
+        parts = []
+        for mon in battle.opponent_team.values():
+            if active and mon.species == active.species:
+                continue
+            if mon.fainted:
+                parts.append(f"{mon.species}(faint)")
+            else:
+                pct = mon.current_hp_fraction * 100
+                parts.append(f"{mon.species}({pct:.0f}%)")
         return ", ".join(parts)
 
     def _our_hp_pct(self, ctx: BattleContext) -> str:
