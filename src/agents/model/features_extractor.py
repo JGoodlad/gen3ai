@@ -195,8 +195,8 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         print(f"🧬 [DEEP TRACE — {n} turns ending at {time.strftime('%H:%M:%S')}]")
         print("=" * 60)
         labels = [f"turn -2 (oldest)", "turn -1", "turn 0 (current)"][-n:]
-        for obs_np, label in zip(self._trace_buffer, labels):
-            self._print_one_turn(obs_np, label)
+        for obs_t, label in zip(self._trace_buffer, labels):
+            self._print_one_turn(obs_t.cpu().numpy(), label)
         print("=" * 60 + "\n")
 
     def forward_internal(self, obs):
@@ -512,10 +512,10 @@ class Gen3FeaturesExtractor(torch.nn.Module):
     def forward(self, obs):
         combined = self.forward_internal(obs)
         
-        # Diagnostic Trace logic
+        # Diagnostic Trace logic — buffer on GPU, convert to numpy only at print time
         if self.log_level >= LogLevel.PERIODIC:
             x = obs["observation"]
-            self._trace_buffer.append(x[0].detach().cpu().numpy())
+            self._trace_buffer.append(x[0].detach().clone())
             if self.trace_logger.should_log():
                 self._print_deep_trace()
         
