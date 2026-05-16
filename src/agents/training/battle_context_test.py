@@ -37,6 +37,7 @@ def _ctx(**overrides):
         opp_active="salamence",
         our_fainted_count=0,
         opp_fainted_count=0,
+        our_moves=[None, None, None, None],
     )
     defaults.update(overrides)
     return BattleContext(**defaults)
@@ -82,6 +83,7 @@ def test_wrong_mask_shape_raises():
             opp_active="NONE",
             our_fainted_count=0,
             opp_fainted_count=0,
+            our_moves=[None, None, None, None],
         )
 
 
@@ -208,3 +210,144 @@ def test_turn_delta_empty():
     assert delta.opp_fainted is False
     assert delta.our_hp_delta.shape == (6,)
     assert delta.our_hp_delta.sum() == 0
+
+
+# ---------------------------------------------------------------------------
+# our_moves field
+# ---------------------------------------------------------------------------
+
+def _mock_battle_with_moves(move_ids, disabled=None):
+    """
+    Build a minimal mock battle whose last_request contains the given move IDs.
+    disabled: set of indices (0-based) that should be marked disabled.
+    """
+    if disabled is None:
+        disabled = set()
+
+    our_mon = _mock_mon("tyranitar", hp_fraction=1.0)
+    our_mon.fainted = False
+
+    request_moves = [
+        {
+            "id": move_id,
+            "disabled": (i in disabled),
+        }
+        for i, move_id in enumerate(move_ids)
+    ]
+
+    battle = MagicMock()
+    battle.turn = 1
+    battle.force_switch = False
+    battle.team = {"p1: tyranitar": our_mon}
+    battle.opponent_team = {}
+    battle.active_pokemon = our_mon
+    battle.opponent_active_pokemon = None
+    battle.last_request = {
+        "active": [{"moves": request_moves}],
+    }
+    return battle
+
+
+def test_our_moves_populated_from_last_request():
+    """our_moves mirrors the masker's slot assignment for normal moves."""
+    battle = _mock_battle_with_moves(
+        ["rockslide", "earthquake", "thunderbolt", "surf"]
+    )
+    mask = _mask(6, 7, 8, 9)
+    ctx = BattleContext.from_battle(battle, mask, np.zeros(1), SlotRegistry(), SlotRegistry())
+    assert ctx.our_moves == ["rockslide", "earthquake", "thunderbolt", "surf"]
+
+
+def test_our_moves_disabled_slot_is_none():
+    """Disabled move slots are set to None regardless of mask."""
+    battle = _mock_battle_with_moves(
+        ["rockslide", "earthquake", "thunderbolt", "surf"],
+        disabled={1},  # earthquake is disabled
+    )
+    mask = _mask(6, 8, 9)  # slot 7 (earthquake) disabled
+    ctx = BattleContext.from_battle(battle, mask, np.zeros(1), SlotRegistry(), SlotRegistry())
+    assert ctx.our_moves[0] == "rockslide"
+    assert ctx.our_moves[1] is None   # disabled
+    assert ctx.our_moves[2] == "thunderbolt"
+    assert ctx.our_moves[3] == "surf"
+
+
+def test_our_moves_struggle_slot_is_none():
+    """Struggle is excluded from our_moves (it uses the dedicated action 10)."""
+    battle = _mock_battle_with_moves(["struggle", "struggle", "struggle", "struggle"])
+    mask = _mask(10)
+    ctx = BattleContext.from_battle(battle, mask, np.zeros(1), SlotRegistry(), SlotRegistry())
+    assert ctx.our_moves == [None, None, None, None]
+
+
+def test_our_moves_always_length_4():
+    """our_moves is always a 4-element list, even with fewer than 4 moves."""
+    battle = _mock_battle_with_moves(["rockslide", "earthquake"])
+    mask = _mask(6, 7)
+    ctx = BattleContext.from_battle(battle, mask, np.zeros(1), SlotRegistry(), SlotRegistry())
+    assert len(ctx.our_moves) == 4
+    assert ctx.our_moves[0] == "rockslide"
+    assert ctx.our_moves[1] == "earthquake"
+    assert ctx.our_moves[2] is None
+    assert ctx.our_moves[3] is None
+
+
+def test_our_moves_no_request_is_all_none():
+    """Forced-switch phase (no active request) yields all-None our_moves."""
+    battle = MagicMock()
+    battle.turn = 3
+    battle.force_switch = True
+    battle.team = {}
+    battle.opponent_team = {}
+    battle.active_pokemon = None
+    battle.opponent_active_pokemon = None
+    # last_request has no "active" key
+    battle.last_request = {}
+
+    ctx = BattleContext.from_battle(
+        battle, np.ones(11, dtype=np.int8), np.zeros(1), SlotRegistry(), SlotRegistry()
+    )
+    assert ctx.our_moves == [None, None, None, None]
+
+
+# ---------------------------------------------------------------------------
+# TurnDelta.build() — our_move_id
+# ---------------------------------------------------------------------------
+
+def test_turn_delta_move_action_returns_move_id():
+    """Action 6-9 resolves to the move ID stored in prev_ctx.our_moves."""
+    prev = _ctx(
+        our_active="tyranitar", opp_active="salamence",
+        our_moves=["rockslide", "earthquake", "thunderbolt", "surf"],
+    )
+    curr = _ctx(our_active="tyranitar", opp_active="salamence")
+    delta = TurnDelta.build(prev, curr, action=6)
+    assert delta.our_move_id == "rockslide"
+    assert delta.our_switch_to is None
+
+
+def test_turn_delta_move_action_slot_7():
+    prev = _ctx(
+        our_moves=["rockslide", "earthquake", "thunderbolt", "surf"],
+    )
+    curr = _ctx()
+    delta = TurnDelta.build(prev, curr, action=8)
+    assert delta.our_move_id == "thunderbolt"
+
+
+def test_turn_delta_switch_action_returns_none_move_id():
+    """Action < 6 is a switch; our_move_id must be None."""
+    prev = _ctx(our_active="tyranitar", opp_active="salamence")
+    curr = _ctx(our_active="skarmory", opp_active="salamence")
+    delta = TurnDelta.build(prev, curr, action=2)
+    assert delta.our_move_id is None
+    assert delta.our_switch_to == "skarmory"
+
+
+def test_turn_delta_struggle_action_returns_struggle():
+    """Action 10 (struggle) always yields our_move_id == 'struggle'."""
+    prev = _ctx(our_moves=[None, None, None, None])
+    curr = _ctx()
+    delta = TurnDelta.build(prev, curr, action=10)
+    assert delta.our_move_id == "struggle"
+    assert delta.our_switch_to is None

@@ -22,6 +22,7 @@ def _ctx(turn=1, our_active="pikachu", opp_active="charizard", action_mask=None)
         opp_active=opp_active,
         our_fainted_count=0,
         opp_fainted_count=0,
+        our_moves=[None, None, None, None],
     )
 
 

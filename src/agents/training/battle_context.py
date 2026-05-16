@@ -34,10 +34,19 @@ class BattleContext:
     our_fainted_count: int
     opp_fainted_count: int
 
+    # Move IDs in action-slot order (indices 0-3 correspond to actions 6-9).
+    # None for disabled/PP-depleted slots or when no moves are available (e.g. forced switch).
+    # Always length 4.
+    our_moves: list  # list[str | None], length 4
+
     def __post_init__(self):
         if self.mask.shape != (11,):
             raise RuntimeError(
                 f"BattleContext mask shape {self.mask.shape} != (11,) at turn {self.turn}"
+            )
+        if len(self.our_moves) != 4:
+            raise RuntimeError(
+                f"BattleContext our_moves length {len(self.our_moves)} != 4 at turn {self.turn}"
             )
 
     @classmethod
@@ -78,6 +87,22 @@ class BattleContext:
             else "NONE"
         )
 
+        # Build our_moves: 4-element list mirroring the masker's move-slot assignment.
+        # The masker reads request_moves from battle.last_request and assigns slot i+6
+        # to request_moves[i], skipping disabled moves and struggle. We do the same here
+        # so that our_moves[i] is the move ID for action slot i+6 (None if disabled).
+        our_moves: list = [None, None, None, None]
+        try:
+            active_request = battle.last_request.get("active", [{}])[0]
+            request_moves = active_request.get("moves", [])
+            for i, move_data in enumerate(request_moves):
+                if i < 4 and move_data.get("id") != "struggle":
+                    if not move_data.get("disabled", False):
+                        our_moves[i] = move_data.get("id")
+        except (AttributeError, IndexError, TypeError):
+            # No request available (e.g. forced switch phase) — all slots remain None
+            pass
+
         return cls(
             turn=battle.turn,
             phase="forced_switch" if battle.force_switch else "move_selection",
@@ -91,6 +116,7 @@ class BattleContext:
             opp_active=opp_active,
             our_fainted_count=sum(1 for m in battle.team.values() if m.fainted),
             opp_fainted_count=sum(1 for m in battle.opponent_team.values() if m.fainted),
+            our_moves=our_moves,
         )
 
 
@@ -137,13 +163,23 @@ class TurnDelta:
         if action < 6:
             our_switch_to = curr_ctx.our_active if curr_ctx.our_active != "NONE" else None
             our_move_id = None
-        else:
+        elif action == 10:
             our_switch_to = None
-            our_move_id = None  # TODO: add move_ids to BattleContext
+            our_move_id = "struggle"
+        else:
+            # action is 6-9; map to move slot index 0-3 in prev_ctx.our_moves
+            our_switch_to = None
+            our_move_id = prev_ctx.our_moves[action - 6]
 
         opp_switched = prev_ctx.opp_active != curr_ctx.opp_active
         opp_switch_to = curr_ctx.opp_active if opp_switched and curr_ctx.opp_active != "NONE" else None
-        opp_move_id = None  # TODO: extract from battle log
+        # poke-env exposes Pokemon.last_move (the last move used by that pokemon).
+        # curr_ctx does not hold a battle reference, so opp_move_id must be sourced
+        # externally (e.g. from battle.opponent_active_pokemon.last_move after the turn
+        # resolves). TurnDelta.build() operates on frozen contexts only, so we leave
+        # opp_move_id = None here. Callers with access to the live battle object can
+        # populate this field themselves if needed.
+        opp_move_id = None
 
         return cls(
             our_move_id=our_move_id,
