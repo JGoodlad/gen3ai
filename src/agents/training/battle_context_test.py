@@ -317,6 +317,54 @@ def test_turn_delta_both_fainted():
     assert delta.opp_fainted is True
 
 
+def test_turn_delta_newly_revealed_opp_mon_hp_zeroed():
+    # Swampert was at 42% and fainted this turn (slot 0: 0.42 → 0).
+    # Tyranitar entered as replacement, revealed for the first time at 100% (slot 1: 0 → 1.0).
+    # Without the fix, opp_hp_delta.sum() = -0.42 + 1.0 = +0.58 → looks like opp gained HP.
+    # With the fix, slot 1 delta is zeroed → sum = -0.42, correctly reflecting damage dealt.
+    prev = _ctx(
+        opp_slot_map={"swampert": 0},
+        opp_hp=_hp(0.42, 0.0, 0.0, 0.0, 0.0, 0.0),
+        opp_fainted_count=0,
+    )
+    curr = _ctx(
+        opp_slot_map={"swampert": 0, "tyranitar": 1},
+        opp_hp=_hp(0.0, 1.0, 0.0, 0.0, 0.0, 0.0),
+        opp_fainted_count=1,
+    )
+    delta = TurnDelta.build(prev, curr, action=6)
+    assert delta.opp_hp_delta[0] == pytest.approx(-0.42)   # Swampert fainted — real delta
+    assert delta.opp_hp_delta[1] == pytest.approx(0.0)     # Tyranitar revealed — zeroed
+    assert delta.opp_hp_delta.sum() == pytest.approx(-0.42)
+
+
+def test_turn_delta_previously_revealed_opp_hp_not_zeroed():
+    # Tyranitar was already known (in prev slot_map at 80%). This turn it took damage to 50%.
+    # Delta should be -0.30, NOT zeroed out.
+    prev = _ctx(
+        opp_slot_map={"tyranitar": 0},
+        opp_hp=_hp(0.80),
+    )
+    curr = _ctx(
+        opp_slot_map={"tyranitar": 0},
+        opp_hp=_hp(0.50),
+    )
+    delta = TurnDelta.build(prev, curr, action=6)
+    assert delta.opp_hp_delta[0] == pytest.approx(-0.30)
+
+
+def test_turn_delta_newly_revealed_at_partial_hp_zeroed():
+    # Opp reveals a damaged mon (e.g. sent in from bench at 60%). We don't know if
+    # we caused that damage, so the delta (0 → 0.60) should be zeroed.
+    prev = _ctx(opp_slot_map={}, opp_hp=np.zeros(6, dtype=np.float32))
+    curr = _ctx(
+        opp_slot_map={"starmie": 0},
+        opp_hp=_hp(0.60),
+    )
+    delta = TurnDelta.build(prev, curr, action=6)
+    assert delta.opp_hp_delta[0] == pytest.approx(0.0)
+
+
 # ---------------------------------------------------------------------------
 # TurnDelta.empty()
 # ---------------------------------------------------------------------------

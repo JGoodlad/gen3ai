@@ -219,6 +219,15 @@ class TurnDelta:
         our_hp_delta = curr_ctx.our_hp - prev_ctx.our_hp
         opp_hp_delta = curr_ctx.opp_hp - prev_ctx.opp_hp
 
+        # When an opponent mon is revealed for the first time (not in prev slot_map),
+        # its HP slot transitions from 0 (unrevealed default) to its actual value.
+        # This looks like the opponent "gained" HP, but we didn't cause that — we just
+        # learned about it. Zero out the delta for newly-revealed slots to prevent false
+        # hp_opp penalties in compute_base_reward.
+        for species, slot in curr_ctx.opp_slot_map.items():
+            if species not in prev_ctx.opp_slot_map and opp_hp_delta[slot] > 0:
+                opp_hp_delta[slot] = 0.0
+
         we_fainted = curr_ctx.our_fainted_count > prev_ctx.our_fainted_count
         opp_fainted = curr_ctx.opp_fainted_count > prev_ctx.opp_fainted_count
 
