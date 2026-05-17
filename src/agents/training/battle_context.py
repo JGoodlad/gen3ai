@@ -52,6 +52,13 @@ class BattleContext:
     #     IF the mon has already used a move; None if first active turn.
     opp_last_move_id: str | None
 
+    # last_move snapshot for every revealed opponent Pokémon (not just the active one).
+    # Used by TurnDelta.build() to recover the phazed mon's move when Roar/Whirlwind fires:
+    # poke-env swaps the active slot to the new mon before we snapshot, so
+    # opp_last_move_id (which reads from the NEW active mon) would be None. The phazed mon
+    # still has last_move set in battle.opponent_team, captured here.
+    opp_all_last_move_ids: dict  # dict[str, str | None] — species → last_move_id
+
     # All move IDs the opponent's current active Pokémon has revealed so far.
     # Kept for potential use by the observation encoder and diagnostics.
     opp_active_revealed_moves: frozenset  # frozenset[str]
@@ -130,6 +137,10 @@ class BattleContext:
         opp_last_move = opp_mon.last_move if opp_mon else None
         opp_last_move_id = opp_last_move.id if opp_last_move else None
         opp_active_revealed_moves = frozenset(opp_mon.moves.keys() if opp_mon else [])
+        opp_all_last_move_ids: dict = {}
+        for mon in battle.opponent_team.values():
+            lm = mon.last_move
+            opp_all_last_move_ids[mon.species] = lm.id if lm else None
         our_cant_reason = (
             battle.active_pokemon.last_cant_reason
             if battle.active_pokemon else None
@@ -151,6 +162,7 @@ class BattleContext:
             opp_fainted_count=sum(1 for m in battle.opponent_team.values() if m.fainted),
             active_move_ids=active_move_ids,
             opp_last_move_id=opp_last_move_id,
+            opp_all_last_move_ids=opp_all_last_move_ids,
             opp_active_revealed_moves=opp_active_revealed_moves,
             our_cant_reason=our_cant_reason,
             opp_cant_reason=opp_cant_reason,
@@ -198,6 +210,10 @@ class TurnDelta:
     # stat stages that reset on switch. Needs per-slot before/after snapshots
     # rather than a delta list.
 
+    # Moves that force the opponent to switch (phazing). In Gen 3, both have -6 priority
+    # so the opponent always gets to move before being phazed.
+    _PHAZING_MOVES: frozenset = frozenset({"roar", "whirlwind"})
+
     @classmethod
     def build(cls, prev_ctx: BattleContext, curr_ctx: BattleContext, action: int) -> TurnDelta:
         our_hp_delta = curr_ctx.our_hp - prev_ctx.our_hp
@@ -228,8 +244,16 @@ class TurnDelta:
         opp_switch_to = curr_ctx.opp_active if opp_switched and curr_ctx.opp_active != "NONE" else None
 
         if opp_switched:
-            opp_move_id = None
-            opp_move_known = True   # we know they switched; no move was used
+            if our_move_id in cls._PHAZING_MOVES:
+                # Phaze case (Roar/Whirlwind): the opponent moved first (Gen 3 phazing moves
+                # have -6 priority), then was forced out. opp_last_move_id reads from the NEW
+                # active mon (which hasn't moved), so we recover the phazed mon's last_move
+                # from the full-team snapshot in opp_all_last_move_ids.
+                opp_move_id = curr_ctx.opp_all_last_move_ids.get(prev_ctx.opp_active)
+                opp_move_known = opp_move_id is not None
+            else:
+                opp_move_id = None
+                opp_move_known = True   # voluntary switch — no move was used
         else:
             opp_move_id = curr_ctx.opp_last_move_id
             opp_move_known = opp_move_id is not None

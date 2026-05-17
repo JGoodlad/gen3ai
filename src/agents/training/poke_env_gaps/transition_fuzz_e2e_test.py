@@ -1,10 +1,13 @@
 """
 E2E transition-coverage fuzz test for BattleContext / TurnDelta in gen3ou.
 
-Runs three targeted scenario batches to exercise known edge cases:
+Runs four targeted scenario batches to exercise known edge cases:
   A — Explosion        : fainted-attacker gap in opp_last_move_id
   B — Rest / Sleep Talk: last_move persistence during sleep turns + delegated-move tracking
   C — Hyper Beam       : last_move persistence across recharge turns
+  D — Roar / Whirlwind : phaze-induced switch — opp_move_id must be recovered from
+                         opp_all_last_move_ids (the active slot changes to the new mon
+                         before the snapshot, so opp_last_move_id reads None otherwise)
 
 Key findings from runtime observation (confirmed by running this test):
   - |cant| turns (par full-para, flinch, confusion self-hit, sleep no-sleep-talk):
@@ -251,6 +254,73 @@ Jolly Nature
 - Rest
 """
 
+# ---------------------------------------------------------------------------
+# Scenario D — Roar / Whirlwind (phazing)
+# Tests:
+#   When we use Roar or Whirlwind, the opponent moves first (Gen 3 phazing moves
+#   have -6 priority), then their mon is forced out. TurnDelta must recover the
+#   phazed mon's last_move from opp_all_last_move_ids rather than reading from
+#   the newly-active mon (which has never moved and returns None).
+#
+# Both sides carry Roar/Whirlwind and a full bench so phazing fires from both
+# sides frequently.
+# ---------------------------------------------------------------------------
+ROAR_TEAM = """\
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 252 Def / 4 Spe
+Impish Nature
+- Whirlwind
+- Spikes
+- Drill Peck
+- Toxic
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 252 Def / 4 Spe
+Bold Nature
+- Roar
+- Surf
+- Ice Beam
+- Calm Mind
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 4 HP / 252 Def / 252 SpD
+Bold Nature
+- Soft-Boiled
+- Ice Beam
+- Thunder Wave
+- Aromatherapy
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 252 HP / 40 Atk / 216 SpD
+Careful Nature
+- Rock Slide
+- Earthquake
+- Crunch
+- Fire Blast
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 4 HP / 252 Atk / 252 Spe
+Adamant Nature
+- Dragon Claw
+- Earthquake
+- Rock Slide
+- Dragon Dance
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 236 Atk / 20 Spe
+Adamant Nature
+- Meteor Mash
+- Earthquake
+- Psychic
+- Brick Break
+"""
+
 
 # ---------------------------------------------------------------------------
 # Snapshot and stats
@@ -269,6 +339,7 @@ class TurnSnapshot:
     opp_fainted_count: int
     active_move_ids: list               # list[str | None] len 4
     opp_last_move_id: Optional[str]
+    opp_all_last_move_ids: dict         # dict[str, str | None] — all opp mons' last_move
     opp_active_revealed_moves: frozenset
 
 
@@ -288,6 +359,10 @@ class ScenarioStats:
     sleep_state_move_known: int = 0     # opp was asleep AND we have a move ID
     sleep_state_move_unknown: int = 0   # opp was asleep AND move ID is None
     sleeptalk_as_last_move: int = 0     # last_move=="sleeptalk" (delegation failed)
+    # Phaze tracking (Scenario D)
+    phaze_fired: int = 0                # turns where we used Roar/Whirlwind and opp species changed
+    phaze_opp_move_captured: int = 0    # phaze turn where opp move was recovered correctly
+    phaze_opp_move_missing: int = 0     # phaze turn where opp move is None (should be 0 after fix)
     opp_move_id_counts: Counter = field(default_factory=Counter)
     true_anomaly_details: list = field(default_factory=list)
     _prev_opp_move_id: Optional[str] = field(default=None, repr=False)
@@ -335,6 +410,11 @@ class TransitionFuzzPlayer(Player):
         for i, mon in enumerate(list(battle.opponent_team.values())[:6]):
             opp_hp[i] = mon.current_hp_fraction
 
+        opp_all_last_move_ids: dict = {}
+        for mon in battle.opponent_team.values():
+            lm = mon.last_move
+            opp_all_last_move_ids[mon.species] = lm.id if lm else None
+
         return TurnSnapshot(
             turn=battle.turn,
             force_switch=battle.force_switch,
@@ -351,6 +431,7 @@ class TransitionFuzzPlayer(Player):
             opp_fainted_count=sum(1 for m in battle.opponent_team.values() if m.fainted),
             active_move_ids=active_move_ids,
             opp_last_move_id=opp_last_move.id if opp_last_move else None,
+            opp_all_last_move_ids=opp_all_last_move_ids,
             opp_active_revealed_moves=frozenset(opp_mon.moves.keys() if opp_mon else []),
         )
 
@@ -378,7 +459,20 @@ class TransitionFuzzPlayer(Player):
         # --- Opponent action ---
         opp_switched = prev.opp_active != curr.opp_active
         if opp_switched:
-            s.opp_switch_known += 1
+            # Check if this was a phaze we induced (Roar/Whirlwind have -6 priority
+            # so the opponent always moves first before being forced out).
+            our_move_id = prev.active_move_ids[action - 6] if 6 <= action < 10 else None
+            if our_move_id in {"roar", "whirlwind"} and prev.opp_active != "NONE":
+                s.phaze_fired += 1
+                # Recover opp move from the full-team snapshot (the phazed mon retains
+                # last_move even after being swapped out by poke-env).
+                recovered = curr.opp_all_last_move_ids.get(prev.opp_active)
+                if recovered is not None:
+                    s.phaze_opp_move_captured += 1
+                else:
+                    s.phaze_opp_move_missing += 1
+            else:
+                s.opp_switch_known += 1
             s._prev_opp_move_id = None
             s._prev_opp_status = None
             return
@@ -503,6 +597,12 @@ def print_report(s: ScenarioStats) -> None:
             marker = "  <- Sleep Talk delegation FAILED" if move_id == "sleeptalk" else ""
             print(f"    {move_id:<20} {count:4d}{marker}")
 
+    if s.phaze_fired > 0:
+        print(f"  Phaze (Roar/Whirlwind):")
+        print(f"    Phaze turns         : {s.phaze_fired}")
+        print(f"    Opp move captured   : {_pct(s.phaze_opp_move_captured, s.phaze_fired)}")
+        print(f"    Opp move missing[!] :   {s.phaze_opp_move_missing}  <- should be 0")
+
     if s.opp_true_anomaly > 0:
         print(f"  TRUE ANOMALIES (new move revealed but last_move=None):")
         for a in s.true_anomaly_details[:5]:
@@ -549,6 +649,7 @@ async def main(n_battles: int = 50) -> None:
         ("A-Explosion", EXPLOSION_TEAM),
         ("B-Rest/SleepTalk", REST_SLEEP_TEAM),
         ("C-Outrage/HyperBeam", LOCKED_TEAM),
+        ("D-Roar/Whirlwind", ROAR_TEAM),
     ]
 
     all_stats = []
@@ -562,11 +663,16 @@ async def main(n_battles: int = 50) -> None:
     # Final verdict
     total_our_unknown = sum(s.our_move_slot_unknown for s in all_stats)
     total_true_anomaly = sum(s.opp_true_anomaly for s in all_stats)
+    total_phaze_missing = sum(s.phaze_opp_move_missing for s in all_stats)
+    total_phaze_fired = sum(s.phaze_fired for s in all_stats)
 
     print(f"\n{'=' * 65}")
-    if total_our_unknown == 0 and total_true_anomaly == 0:
+    issues = total_our_unknown > 0 or total_true_anomaly > 0 or total_phaze_missing > 0
+    if not issues:
         print("PASS — All transitions representable.")
         print("  Explosion gaps and cant-move cases are expected and classified correctly.")
+        if total_phaze_fired > 0:
+            print(f"  Phaze coverage: {total_phaze_fired} phaze turns observed across all scenarios.")
     else:
         print("ISSUES FOUND:")
         if total_our_unknown:
@@ -575,6 +681,9 @@ async def main(n_battles: int = 50) -> None:
             print(f"  opp true anomalies    : {total_true_anomaly}  (should be 0)")
             print("  -> new move was revealed this turn but opp_last_move_id is None")
             print("  -> indicates a poke-env parsing gap for those move types")
+        if total_phaze_missing:
+            print(f"  phaze_opp_move_missing: {total_phaze_missing}  (should be 0)")
+            print("  -> we used Roar/Whirlwind but opp move was not recovered from opp_all_last_move_ids")
     print("=" * 65)
 
 

@@ -39,6 +39,7 @@ def _ctx(**overrides):
         opp_fainted_count=0,
         active_move_ids=[None, None, None, None],
         opp_last_move_id=None,
+        opp_all_last_move_ids={},
         opp_active_revealed_moves=frozenset(),
         our_cant_reason=None,
         opp_cant_reason=None,
@@ -87,6 +88,7 @@ def test_wrong_mask_shape_raises():
             opp_fainted_count=0,
             active_move_ids=[None, None, None, None],
             opp_last_move_id=None,
+            opp_all_last_move_ids={},
             opp_active_revealed_moves=frozenset(),
             our_cant_reason=None,
             opp_cant_reason=None,
@@ -212,6 +214,83 @@ def test_turn_delta_opp_switch_to_none_active():
     delta = TurnDelta.build(prev, curr, action=6)
     assert delta.opp_switch_to is None
     assert delta.opp_move_known is True
+
+
+# ---------------------------------------------------------------------------
+# TurnDelta — phaze (Roar / Whirlwind)
+# ---------------------------------------------------------------------------
+
+def test_turn_delta_roar_captures_phazed_mon_move():
+    # We use Roar (action slot 0, which maps to "roar"). Opponent used Surf before being
+    # phazed out. opp_last_move_id is None (new active mon hasn't moved), but
+    # opp_all_last_move_ids retains the phazed mon's last_move.
+    prev = _ctx(
+        active_move_ids=["roar", None, None, None],
+        opp_active="salamence",
+    )
+    curr = _ctx(
+        opp_active="gengar",
+        opp_last_move_id=None,   # new active mon — never moved
+        opp_all_last_move_ids={"salamence": "surf", "gengar": None},
+    )
+    delta = TurnDelta.build(prev, curr, action=6)   # slot 0 → "roar"
+    assert delta.our_move_id == "roar"
+    assert delta.opp_move_id == "surf"              # recovered from phazed mon
+    assert delta.opp_move_known is True
+    assert delta.opp_switch_to == "gengar"
+
+
+def test_turn_delta_whirlwind_captures_phazed_mon_move():
+    prev = _ctx(
+        active_move_ids=["whirlwind", None, None, None],
+        opp_active="zapdos",
+    )
+    curr = _ctx(
+        opp_active="raikou",
+        opp_last_move_id=None,
+        opp_all_last_move_ids={"zapdos": "thunderbolt", "raikou": None},
+    )
+    delta = TurnDelta.build(prev, curr, action=6)   # slot 0 → "whirlwind"
+    assert delta.our_move_id == "whirlwind"
+    assert delta.opp_move_id == "thunderbolt"
+    assert delta.opp_switch_to == "raikou"
+
+
+def test_turn_delta_roar_opp_hadnt_moved_before_phaze():
+    # Opponent was paralyzed/frozen and couldn't move before being phazed.
+    # opp_all_last_move_ids has None for the phazed mon.
+    prev = _ctx(
+        active_move_ids=["roar", None, None, None],
+        opp_active="salamence",
+    )
+    curr = _ctx(
+        opp_active="gengar",
+        opp_last_move_id=None,
+        opp_all_last_move_ids={"salamence": None, "gengar": None},
+    )
+    delta = TurnDelta.build(prev, curr, action=6)
+    assert delta.our_move_id == "roar"
+    assert delta.opp_move_id is None
+    assert delta.opp_move_known is False   # genuinely unknown — they may have been unable to move
+    assert delta.opp_switch_to == "gengar"
+
+
+def test_turn_delta_voluntary_switch_not_treated_as_phaze():
+    # Opponent voluntarily switches — should NOT recover their previous last_move.
+    prev = _ctx(
+        active_move_ids=["surf", None, None, None],
+        opp_active="salamence",
+    )
+    curr = _ctx(
+        opp_active="gengar",
+        opp_last_move_id=None,
+        opp_all_last_move_ids={"salamence": "outrage", "gengar": None},
+    )
+    delta = TurnDelta.build(prev, curr, action=6)   # slot 0 → "surf" (not a phazing move)
+    assert delta.our_move_id == "surf"
+    assert delta.opp_move_id is None        # voluntary switch — move must not bleed through
+    assert delta.opp_move_known is True     # switch is always known
+    assert delta.opp_switch_to == "gengar"
 
 
 # ---------------------------------------------------------------------------
