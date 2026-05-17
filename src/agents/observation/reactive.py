@@ -2,8 +2,8 @@ import numpy as np
 from .base import ObservationEncoder
 from poke_env.battle.abstract_battle import AbstractBattle
 from poke_env.battle.side_condition import SideCondition
-from poke_env.data import GenData
 from .constants import REACTIVE_DIM, TEAM_SIZE
+from agents.type_utils import effective_multiplier
 from typing import Any, Dict, List, Tuple
 
 class ReactiveEncoder(ObservationEncoder):
@@ -51,11 +51,7 @@ class ReactiveEncoder(ObservationEncoder):
                     break
                 moves_base_power[i] = move.base_power / 200.0
                 if battle.opponent_active_pokemon is not None:
-                    mult = move.type.damage_multiplier(
-                        battle.opponent_active_pokemon.type_1,
-                        battle.opponent_active_pokemon.type_2,
-                        type_chart=GenData.from_gen(3).type_chart,
-                    )
+                    mult = effective_multiplier(move.type, battle.opponent_active_pokemon)
                     moves_dmg_multiplier[i] = mult / 4.0
 
         vec[0:4] = moves_base_power
@@ -76,7 +72,6 @@ class ReactiveEncoder(ObservationEncoder):
         # --- Matchup Matrices ---
         our_team = self.get_team_list(battle, is_opponent=False)
         their_team = self.get_team_list(battle, is_opponent=True)
-        type_chart = GenData.from_gen(3).type_chart
 
         # 5. Our moves vs Their mons (144 dims)
         cursor = 12
@@ -89,9 +84,7 @@ class ReactiveEncoder(ObservationEncoder):
                     their_mon = their_team[j] if j < len(their_team) else None
                     if move and their_mon:
                         # Normalize by 4.0 to keep values in [0, 1] range for better MLP convergence
-                        vec[cursor] = move.type.damage_multiplier(
-                            their_mon.type_1, their_mon.type_2, type_chart=type_chart
-                        ) / 4.0
+                        vec[cursor] = effective_multiplier(move.type, their_mon) / 4.0
                     cursor += 1
 
         # 6. Their moves vs Our mons (144 dims)
@@ -104,9 +97,7 @@ class ReactiveEncoder(ObservationEncoder):
                     our_mon = our_team[j] if j < len(our_team) else None
                     if move and our_mon:
                         # Normalize by 4.0 to keep values in [0, 1] range for better MLP convergence
-                        vec[cursor] = move.type.damage_multiplier(
-                            our_mon.type_1, our_mon.type_2, type_chart=type_chart
-                        ) / 4.0
+                        vec[cursor] = effective_multiplier(move.type, our_mon) / 4.0
                     cursor += 1
         
         return vec

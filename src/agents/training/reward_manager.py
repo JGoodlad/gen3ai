@@ -8,6 +8,7 @@ from poke_env.battle.side_condition import SideCondition
 from poke_env.battle.status import Status
 from poke_env.battle.pokemon_type import PokemonType
 from agents.training.battle_context import BattleContext, TurnDelta
+from agents.type_utils import ABILITY_TYPE_IMMUNITY, effective_multiplier as _effective_multiplier_fn
 
 @dataclass
 class RewardBreakdown:
@@ -118,15 +119,8 @@ STATUS_IMMUNE_SWITCH_BONUS = 0.10  # our switch-in was immune to their status mo
 # Gen 3 moves that make the user invulnerable for one turn
 _INVULNERABLE_MOVES = frozenset({"protect", "detect", "endure"})
 
-# Abilities that grant a full type immunity in Gen 3.
-# Used by _is_immune_via_ability() to correct type-chart calculations that don't
-# account for abilities (e.g. Gengar's Levitate blocking Ground-type moves).
-_ABILITY_TYPE_IMMUNITY: dict = {
-    "levitate":    PokemonType.GROUND,
-    "voltabsorb":  PokemonType.ELECTRIC,
-    "waterabsorb": PokemonType.WATER,
-    "flashfire":   PokemonType.FIRE,
-}
+# Re-exported so existing references within this module continue to work.
+_ABILITY_TYPE_IMMUNITY = ABILITY_TYPE_IMMUNITY
 
 # Status moves → types that are immune to the status they inflict (Gen 3)
 # stunspore is Normal-type in Gen 3 (reclassified Grass in Gen 6) — no type immunity
@@ -460,16 +454,7 @@ class Gen3RewardManager:
         return MATCHUP_PENALTY if self._prev_opp_se_threat else 0.0
 
     def _effective_multiplier(self, move_type: PokemonType, mon) -> float:
-        """Type effectiveness of move_type vs mon, accounting for ability-based immunities.
-
-        damage_multiplier() uses only the type chart; it doesn't know about abilities
-        like Levitate (Ground immunity), Volt Absorb (Electric), etc. This wrapper
-        returns 0.0 when the mon's ability nullifies the move type entirely.
-        """
-        ability = (getattr(mon, "ability", None) or "").lower()
-        if _ABILITY_TYPE_IMMUNITY.get(ability) == move_type:
-            return 0.0
-        return move_type.damage_multiplier(mon.type_1, mon.type_2, type_chart=self._type_chart)
+        return _effective_multiplier_fn(move_type, mon)
 
     def _update_opp_se_threat(self, battle) -> None:
         """Snapshot whether opp active has a revealed SE move vs our active, for next turn."""

@@ -16,6 +16,7 @@ from poke_env.battle.status import Status
 from poke_env.player.battle_order import BattleOrder
 from poke_env.player.baselines import SimpleHeuristicsPlayer
 from poke_env.player.player import Player
+from agents.type_utils import effective_multiplier
 
 
 # ---------------------------------------------------------------------------
@@ -27,7 +28,7 @@ def _effective_damage_score(move: Move, active: Pokemon, opponent: Pokemon) -> f
     if move.base_power == 0:
         return 0.0
     stab = 1.5 if move.type in active.types else 1.0
-    eff = opponent.damage_multiplier(move)
+    eff = effective_multiplier(move.type, opponent)
     return move.base_power * stab * eff * move.accuracy
 
 

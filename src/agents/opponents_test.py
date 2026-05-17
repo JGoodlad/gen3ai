@@ -15,20 +15,27 @@ from agents.opponents import (
 # Helpers
 # ---------------------------------------------------------------------------
 
-def _make_move(id_, base_power=80, type_=None, accuracy=1.0, target="normal", boosts=None):
+def _make_move(id_, base_power=80, type_=None, accuracy=1.0, target="normal", boosts=None, effectiveness=1.0):
     move = MagicMock()
     move.id = id_
     move.base_power = base_power
-    move.type = type_ or MagicMock()
     move.accuracy = accuracy
     move.target = target
     move.boosts = boosts
+    if type_ is not None:
+        move.type = type_
+    else:
+        move.type = MagicMock()
+        move.type.damage_multiplier.return_value = effectiveness
     return move
 
 
 def _make_mon(types=None, base_stats=None, boosts=None, hp_fraction=1.0, status=None):
     mon = MagicMock()
     mon.types = types or [MagicMock(), MagicMock()]
+    mon.type_1 = None
+    mon.type_2 = None
+    mon.ability = None
     mon.base_stats = base_stats or {"hp": 80, "atk": 80, "def": 80, "spa": 80, "spd": 80, "spe": 80}
     mon.boosts = boosts or {"atk": 0, "def": 0, "spa": 0, "spd": 0, "spe": 0, "acc": 0, "eva": 0}
     mon.current_hp_fraction = hp_fraction
@@ -200,29 +207,25 @@ class TestGen3AggressivePlayer:
         return getattr(order.order, "id", None)
 
     def test_picks_highest_damage_move(self):
-        weak = _make_move("tackle", base_power=40)
-        strong = _make_move("closecombat", base_power=120)
+        weak = _make_move("tackle", base_power=40, effectiveness=1.0)
+        strong = _make_move("closecombat", base_power=120, effectiveness=1.0)
         active = _make_mon()
-        opponent = _make_mon()
-        opponent.damage_multiplier.return_value = 1.0
         # Neither move shares active's type so no STAB modifier difference
         active.types = [MagicMock()]
-        weak.type = MagicMock()   # different from active's type
-        strong.type = MagicMock()
+        opponent = _make_mon()
         battle = _make_battle(moves=[weak, strong], active=active, opponent=opponent)
 
         assert self._order_id(battle) == "closecombat"
 
     def test_prefers_stab_move(self):
         shared_type = MagicMock()
+        shared_type.damage_multiplier.return_value = 1.0
         stab_move = _make_move("waterfall", base_power=80)
         stab_move.type = shared_type
-        no_stab = _make_move("earthquake", base_power=100)
-        no_stab.type = MagicMock()
+        no_stab = _make_move("earthquake", base_power=100, effectiveness=1.0)
 
         active = _make_mon(types=[shared_type])
         opponent = _make_mon()
-        opponent.damage_multiplier.return_value = 1.0
 
         battle = _make_battle(moves=[stab_move, no_stab], active=active, opponent=opponent)
 
@@ -230,20 +233,11 @@ class TestGen3AggressivePlayer:
         assert self._order_id(battle) == "waterfall"
 
     def test_prefers_super_effective_move(self):
-        normal_move = _make_move("tackle", base_power=80)
-        super_eff = _make_move("icebeam", base_power=90)
+        normal_move = _make_move("tackle", base_power=80, effectiveness=1.0)
+        super_eff = _make_move("icebeam", base_power=90, effectiveness=2.0)
 
         active = _make_mon(types=[MagicMock()])
-        normal_move.type = MagicMock()
-        super_eff.type = MagicMock()
-
         opponent = _make_mon()
-        def dmg_mult(move_type):
-            if move_type is super_eff.type:
-                return 2.0
-            return 1.0
-        opponent.damage_multiplier.side_effect = dmg_mult
-
         battle = _make_battle(moves=[normal_move, super_eff], active=active, opponent=opponent)
 
         # ice beam: 90 * 1.0 * 2.0 = 180 > tackle: 80 * 1.0 * 1.0 = 80
