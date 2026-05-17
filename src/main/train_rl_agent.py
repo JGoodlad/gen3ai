@@ -374,7 +374,9 @@ async def main():
         except ModelVersionError as e:
             print(f"\n[ModelVersion] FATAL: {e}")
             os._exit(1)
-        model.ent_coef = args.ent_coef # Allow overriding entropy during continuation
+        model.ent_coef = args.ent_coef
+        model.learning_rate = args.lr
+        model.clip_range = lambda _: 0.15
 
         if args.eval_only:
             await evaluate_model_random(model)
