@@ -104,7 +104,7 @@ def _battle(won=False, lost=False, finished=False, opp_spikes=0,
     return battle
 
 
-def _make_mon(type1_name, type2_name=None, moves=None, status=None):
+def _make_mon(type1_name, type2_name=None, moves=None, status=None, ability=None):
     """Build a mock Pokemon with the given types and optional revealed moves."""
     from poke_env.data import GenData
     type_chart = GenData.from_gen(3).type_chart
@@ -118,6 +118,7 @@ def _make_mon(type1_name, type2_name=None, moves=None, status=None):
     mon.type_1 = type1
     mon.type_2 = type2
     mon.status = status
+    mon.ability = ability  # e.g. "levitate", "voltabsorb"
     mon.boosts = {}
 
     if moves:
@@ -380,6 +381,39 @@ class TestMatchupPenalty(unittest.TestCase):
         r = self.manager.process_turn_reward(_battle(), _delta())
         self.assertAlmostEqual(r, 0.0, places=5)
 
+    def test_matchup_penalty_skipped_when_levitate_blocks_ground(self):
+        # Gengar is Ghost/Poison — Poison is 2× weak to Ground — but Levitate grants immunity.
+        # The SE threat snapshot should NOT fire, so no matchup penalty next turn.
+        gengar = _make_mon("GHOST", "POISON", ability="levitate")
+        ttar = _make_mon("ROCK", "DARK")
+        eq_move = MagicMock()
+        from poke_env.battle.pokemon_type import PokemonType
+        eq_move.base_power = 100
+        eq_move.type = PokemonType.GROUND
+        ttar.moves = {"earthquake": eq_move}
+
+        battle = _battle(our_mon=gengar, opp_mon=ttar)
+        self.manager.record_action(_ctx(turn=1), 6)
+        self.manager.process_turn_reward(battle, _delta())   # snapshots threat
+        # Next turn: threat should NOT have been flagged
+        self.assertFalse(self.manager._prev_opp_se_threat)
+
+    def test_matchup_penalty_still_fires_for_non_immune_type(self):
+        # Gengar has Levitate but not immunity to all moves; Rock slide still 2× vs Flying.
+        # Confirm non-Ground SE moves still flag the threat.
+        zapdos = _make_mon("ELECTRIC", "FLYING", ability="levitate")
+        opp = _make_mon("ROCK")
+        rock_move = MagicMock()
+        from poke_env.battle.pokemon_type import PokemonType
+        rock_move.base_power = 75
+        rock_move.type = PokemonType.ROCK
+        opp.moves = {"rockslide": rock_move}
+
+        battle = _battle(our_mon=zapdos, opp_mon=opp)
+        self.manager.record_action(_ctx(turn=1), 6)
+        self.manager.process_turn_reward(battle, _delta())
+        self.assertTrue(self.manager._prev_opp_se_threat)
+
 
 def _pivot_battle(new_mon, opp_mon, prev_species="prevmon", prev_mon=None):
     """Build a minimal battle mock for pivot bonus tests."""
@@ -414,12 +448,13 @@ def _pivot_delta(opp_move_id, opp_switch_to=None, prev_species="prevmon"):
     )
 
 
-def _type_mon(type1_name, type2_name=None, status=None):
+def _type_mon(type1_name, type2_name=None, status=None, ability=None):
     from poke_env.battle.pokemon_type import PokemonType
     mon = MagicMock()
     mon.type_1 = PokemonType[type1_name.upper()]
     mon.type_2 = PokemonType[type2_name.upper()] if type2_name else None
     mon.status = status
+    mon.ability = ability
     mon.moves = {}
     return mon
 
@@ -564,6 +599,25 @@ class TestPivotDamage(unittest.TestCase):
     def test_not_a_switch_no_bonus(self):
         manager = Gen3RewardManager(log_level=LogLevel.QUIET)
         result = sum(manager._compute_pivot_bonus(_delta(), MagicMock()))
+        self.assertAlmostEqual(result, 0.0, places=5)
+
+    def test_levitate_switch_in_vs_ground_earns_immunity_bonus(self):
+        # Gengar (Ghost/Poison) has Levitate — Ground move is 0× (immune via ability),
+        # even though type chart would say 2× (Poison weakness).
+        # prev=Normal (1×), new=Gengar+Levitate (0× via ability) → +0.15
+        gengar = _type_mon("GHOST", "POISON", ability="levitate")
+        prev = _type_mon("NORMAL")
+        result = self._run(gengar, prev, "GROUND")
+        self.assertAlmostEqual(result, 0.15, places=5)
+
+    def test_levitate_correct_vs_non_ground_move(self):
+        # Levitate only blocks Ground. Ice Beam vs Gengar (Ghost/Poison): normal 0.5×
+        # (Ghost resists... actually Normal → Ghost is 0, Poison vs Ice is 1×).
+        # Point: Levitate should NOT affect Ice Beam effectiveness.
+        gengar = _type_mon("GHOST", "POISON", ability="levitate")
+        prev = _type_mon("NORMAL")
+        # Ice vs Normal (1×) and Ice vs Ghost/Poison (1×) — no improvement, no bonus
+        result = self._run(gengar, prev, "ICE")
         self.assertAlmostEqual(result, 0.0, places=5)
 
 

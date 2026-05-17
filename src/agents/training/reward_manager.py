@@ -118,6 +118,16 @@ STATUS_IMMUNE_SWITCH_BONUS = 0.10  # our switch-in was immune to their status mo
 # Gen 3 moves that make the user invulnerable for one turn
 _INVULNERABLE_MOVES = frozenset({"protect", "detect", "endure"})
 
+# Abilities that grant a full type immunity in Gen 3.
+# Used by _is_immune_via_ability() to correct type-chart calculations that don't
+# account for abilities (e.g. Gengar's Levitate blocking Ground-type moves).
+_ABILITY_TYPE_IMMUNITY: dict = {
+    "levitate":    PokemonType.GROUND,
+    "voltabsorb":  PokemonType.ELECTRIC,
+    "waterabsorb": PokemonType.WATER,
+    "flashfire":   PokemonType.FIRE,
+}
+
 # Status moves → types that are immune to the status they inflict (Gen 3)
 # stunspore is Normal-type in Gen 3 (reclassified Grass in Gen 6) — no type immunity
 # glare (Normal-type) — no type immunity
@@ -414,12 +424,8 @@ class Gen3RewardManager:
         )
         if prev_mon is None:
             return 0.0
-        mult_vs_new = opp_move.type.damage_multiplier(
-            new_mon.type_1, new_mon.type_2, type_chart=self._type_chart
-        )
-        mult_vs_old = opp_move.type.damage_multiplier(
-            prev_mon.type_1, prev_mon.type_2, type_chart=self._type_chart
-        )
+        mult_vs_new = self._effective_multiplier(opp_move.type, new_mon)
+        mult_vs_old = self._effective_multiplier(opp_move.type, prev_mon)
         if mult_vs_new < mult_vs_old:
             return 0.15 if mult_vs_new == 0 else 0.10
         return 0.0
@@ -453,6 +459,18 @@ class Gen3RewardManager:
             return 0.0  # we switched out — no staying-in penalty
         return MATCHUP_PENALTY if self._prev_opp_se_threat else 0.0
 
+    def _effective_multiplier(self, move_type: PokemonType, mon) -> float:
+        """Type effectiveness of move_type vs mon, accounting for ability-based immunities.
+
+        damage_multiplier() uses only the type chart; it doesn't know about abilities
+        like Levitate (Ground immunity), Volt Absorb (Electric), etc. This wrapper
+        returns 0.0 when the mon's ability nullifies the move type entirely.
+        """
+        ability = (getattr(mon, "ability", None) or "").lower()
+        if _ABILITY_TYPE_IMMUNITY.get(ability) == move_type:
+            return 0.0
+        return move_type.damage_multiplier(mon.type_1, mon.type_2, type_chart=self._type_chart)
+
     def _update_opp_se_threat(self, battle) -> None:
         """Snapshot whether opp active has a revealed SE move vs our active, for next turn."""
         our_mon = battle.active_pokemon
@@ -462,9 +480,7 @@ class Gen3RewardManager:
             return
         for move in opp_mon.moves.values():
             if move.base_power > 0:
-                mult = move.type.damage_multiplier(
-                    our_mon.type_1, our_mon.type_2, type_chart=self._type_chart
-                )
+                mult = self._effective_multiplier(move.type, our_mon)
                 if mult >= 2.0:
                     self._prev_opp_se_threat = True
                     return
