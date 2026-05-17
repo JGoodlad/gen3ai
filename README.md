@@ -12,7 +12,15 @@ Reinforcement learning agent for Generation 3 Overused Pokémon battles, built o
 
 ## Environment Setup
 
-Uses the **`gen3ai_stable` conda environment** — not `deps/venv` (outdated, ignore it).
+Uses the **`gen3ai_stable` conda environment**. To create it from scratch:
+```bash
+conda env create -f environment.yml
+```
+
+To update an existing env after `environment.yml` changes:
+```bash
+conda env update -f environment.yml
+```
 
 Always prefix Python commands with:
 ```bash
@@ -21,11 +29,13 @@ export PYTHONPATH=$PYTHONPATH:src
 ```
 
 ### Git Worktrees
-When opening a new worktree, the `deps/pokemon-showdown` submodule is empty. Symlink it from the main repo:
+When opening a new worktree, the `deps/pokemon-showdown` submodule is empty. Run:
 ```bash
-rmdir deps/pokemon-showdown
-ln -s /home/goodlad/dev/gen3ai/deps/pokemon-showdown deps/pokemon-showdown
+git submodule update --init
+ln -s /home/goodlad/dev/gen3ai/deps/pokemon-showdown/dist deps/pokemon-showdown/dist
+ln -s /home/goodlad/dev/gen3ai/deps/pokemon-showdown/node_modules deps/pokemon-showdown/node_modules
 ```
+Do **not** symlink the entire `deps/pokemon-showdown` directory — it breaks `git status` and VS Code git integration.
 
 ---
 
@@ -156,38 +166,48 @@ tensorboard/         # Training logs (always written here from any worktree)
 deps/
   pokemon-showdown/  # Git submodule — local Showdown server
 designs/             # Architecture design docs
+tools/               # Data generation and team sync utilities
 ```
 
 ---
 
-## Observation Vector (1021-dim float32)
+## Observation Vector (1107-dim float32)
 
 | Block | Dims | Offset |
 |---|---|---|
-| Our team (6 × 55) | 330 | 0 |
-| Opp team (6 × 55) | 330 | 330 |
-| Active context ×2 | 44 | 660 |
-| Global env | 13 | 704 |
-| Reactive + matchups | 304 | 717 |
+| Our team (6 × 59) | 354 | 0 |
+| Opp team (6 × 59) | 354 | 354 |
+| Active context ×2 | 46 | 708 |
+| Global env | 13 | 754 |
+| Reactive + matchups | 300 | 767 |
+| Prev-turn action mask | 11 | 1067 |
+| TurnDelta block | 29 | 1078 |
 
-Per-Pokémon slot (55 dims): species ID + 6 base stats, item ID + known flag, 2 type IDs, ability ID + known flag, 8-dim status one-hot, 4 × 8-dim move slots, HP fraction, active flag.
+Per-Pokémon slot (59 dims): species ID + 6 base stats, item ID + known, 2 type IDs, ability ID + known, 7-dim status one-hot, 4 × 9-dim move slots, HP fraction, species_known flag, active flag.
 
 Global env (13 dims): weather one-hot (6), spikes ×2 (2), log-turn (1), our reflect (1), our light screen (1), opp reflect (1), opp light screen (1).
+
+TurnDelta block (29 dims): move/type IDs and metadata for both sides last turn, switch flags, fail flags, cant one-hots, HP deltas, faint flags, opp_move_known. All zeros on the first turn of each episode.
 
 ---
 
 ## Model Architecture (`Gen3FeaturesExtractor`)
 
-1. **Embedding lookups** — species (32-dim), move (16), item (16), ability (16), type (16, shared)
-2. **Shared move processor** — Linear(55→64)→ReLU→Linear(64→32) per move slot, including per-move type matchup against all 6 opponents
-3. **Role encoder** — Linear(237→256)→ReLU→Linear(256→128) per Pokémon, with broadcasted global context
-4. **Team-wide attention** (three `MultiheadAttention` paths with residuals):
+1. **Embedding lookups** — species (32-dim), move (16), item (16), ability (16), type (16, shared across Pokémon types, move types, and TurnDelta IDs)
+2. **Shared move processor** — Linear(58→64)→ReLU→Linear(64→32) per move slot; includes per-move type matchup against all 6 opponents
+3. **Within-Pokémon move self-attention** — MHA(32, 2 heads) + LayerNorm residual across the 4 move slots of each Pokémon
+4. **Role encoder** — Linear(260→256)→ReLU→Linear(256→128) per Pokémon, with broadcasted global context and validity bits
+5. **Team-wide attention** (five `MultiheadAttention` paths with residuals, fainted slots masked):
    - *Pressure*: our active ← their team
    - *Safety*: our team ← their active
    - *Synergy*: our team ← our team
-5. **Projection** — Linear(N→512)→ReLU over concatenated team tokens + remaining context
+   - *Threat*: their team ← our active
+   - *Opp Synergy*: their team ← their team
+6. **Attention pool** — one learned query per side attends over 6 role tokens → single 128-dim pooled team token per side
+7. **Pre-projection LayerNorm** — normalises concatenated inputs to equalise per-block scales
+8. **Projection** — Linear(562→512)→ReLU; input: our_pool + their_pool + our_active_refined + active_ctx_enc + global/scalars + turn_delta_embedded
 
-The projection input dimension `N` is computed via a dummy forward pass at init — no magic constants.
+The projection input dimension is discovered via a dummy forward pass at init — no magic constants.
 
 ---
 
