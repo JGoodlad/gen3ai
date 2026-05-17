@@ -375,7 +375,7 @@ async def main():
             print(f"\n[ModelVersion] FATAL: {e}")
             os._exit(1)
         model.ent_coef = args.ent_coef
-        model.learning_rate = args.lr
+        model.lr_schedule = lambda _: args.lr
         model.clip_range = lambda _: 0.15
 
         if args.eval_only:
