@@ -30,7 +30,7 @@ TensorBoard logs `train/learning_rate` automatically — should show a smooth de
 
 ---
 
-## 2. Reduce clip_range and Learning Rate
+## 2. Reduce clip_range and Learning Rate ✓ DONE
 
 **Where:** `src/main/train_rl_agent.py`
 

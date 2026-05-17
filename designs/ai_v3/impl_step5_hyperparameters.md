@@ -79,6 +79,21 @@ the value function a bit more, reducing noise in advantage estimates. The thesis
 0.85 is a conservative step in that direction without fully committing to a value tuned
 for a different format.
 
+### 3. clip_range: 0.2 → 0.15 and lr: 3e-4 → 1.5e-4
+
+**`src/main/train_rl_agent.py`**
+
+Motivated by live TensorBoard diagnostics at 33M steps of the first run with the
+gamma/gae_lambda changes:
+
+- `clip_fraction = 0.23–0.26` — policy was regularly hitting the clip boundary,
+  meaning it was trying to take larger steps than clip_range=0.2 allowed. Healthy
+  target is ~0.1–0.15. Clear sign the LR was too aggressive.
+- `approx_kl = 0.028–0.030` — slightly above the typical 0.01–0.02 stable range.
+
+`clip_range` lowered from 0.2 to 0.15 and default `lr` halved from 3e-4 to 1.5e-4.
+Run was resumed from the 33M-step checkpoint rather than restarted from scratch.
+
 ---
 
 ## Reward Signal Summary (unchanged from Step 4)
@@ -110,7 +125,7 @@ discounted return without touching the constants themselves.
 
 | File | Change |
 |------|--------|
-| `src/main/train_rl_agent.py` | `gamma` 0.99 → 0.9999; `gae_lambda` 0.95 → 0.85 |
+| `src/main/train_rl_agent.py` | `gamma` 0.99 → 0.9999; `gae_lambda` 0.95 → 0.85; `clip_range` 0.2 → 0.15; default `lr` 3e-4 → 1.5e-4 |
 | `designs/ai_v3/todo.md` | LR annealing added as §1; clip_range + LR reduction added as §2 |
 
 ---

@@ -133,7 +133,7 @@ async def main():
     # --- Hyperparameter Flags (Optimized for GPU) ---
     parser.add_argument("--batch-size", type=int, default=4096, help="PPO mini-batch size")
     parser.add_argument("--n-epochs", type=int, default=4, help="PPO optimization epochs")
-    parser.add_argument("--lr", type=float, default=3e-4, help="Learning rate")
+    parser.add_argument("--lr", type=float, default=1.5e-4, help="Learning rate")
     parser.add_argument("--ent-coef", type=float, default=0.02, help="Entropy coefficient (exploration bonus)")
     parser.add_argument("--n-steps", type=int, default=2048, help="Steps per environment per rollout")
     
@@ -441,6 +441,7 @@ async def main():
             n_epochs=args.n_epochs,
             gamma=0.9999,
             gae_lambda=0.85,
+            clip_range=0.15,
             ent_coef=args.ent_coef,
             device=args.device,
             seed=args.seed,
