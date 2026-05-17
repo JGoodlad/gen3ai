@@ -155,15 +155,15 @@ Reward constants:
 | `SWITCH_BASE_BONUS` | 0.5 | Flat per-voluntary-switch (× spam_mult) |
 | `STATUS_BONUS` | 0.3 | One-time on status infliction/cure |
 | `ROAR_BONUS` | 0.2 | Roar that forces a switch under spikes or vs boosted mon |
+| `FAILED_ROAR_PENALTY` | −0.2 | Roar used but no switch forced (wasted turn) |
 | `SE_SWITCH_BONUS` | 0.2 | Switch-in with a SE damaging move vs opponent's active |
 | `SLEEP_SWAP_BONUS` | 0.25 | Rotating a sleeping mon out (+) / in (−) |
 
 #### `_compute_roar_bonus(delta, battle)`
 
-Fires `+ROAR_BONUS` when:
-- `delta.our_move_id == "roar"` AND `delta.opp_switch_to is not None` (Roar succeeded)
-- AND: opponent side has Spikes (`battle.opponent_side_conditions`) **or** opponent's
-  active had positive stat boosts last turn (`self._prev_opp_boosts`)
+Extended to also cover the failure case:
+- If `delta.our_move_id == "roar"` AND `delta.opp_switch_to is None` → `FAILED_ROAR_PENALTY` (−0.2). Roar that didn't force a switch is a wasted turn — symmetric to `SPIKES_WASTE_PENALTY`.
+- If Roar succeeded (`opp_switch_to is not None`) AND opponent had Spikes up or positive boosts → `+ROAR_BONUS`.
 
 `_prev_opp_boosts` is updated at the end of each turn from `battle.opponent_active_pokemon.boosts`.
 
@@ -204,6 +204,61 @@ return 0.0
 | `SPIKES_LAYER_BONUS` | +0.5 | Per layer successfully added to opponent's side |
 | `SPIKES_WASTE_PENALTY` | −0.2 | Spikes used when 3 layers already up |
 
+#### `_compute_futile_attack_penalty(delta, battle)`
+
+Fires `FUTILE_ATTACK_PENALTY` (−0.05) when a damaging move leaves the opponent's
+net HP `≥ 0` for the turn — i.e., Leftovers healed as much or more than we dealt.
+
+Skips: status moves (`base_power == 0`), switches, turns where we failed to move
+(paralysis/sleep), turns where the opponent used Rest (expected large self-heal),
+and turns where the opponent switched (fresh-mon HP noise).
+
+Motivation: the stall loop where the agent cycles Rapid Spin / maxed-Spikes / failed
+Roar against a Struggling+Leftovers opponent, making zero net HP progress through 250
+turns. The penalty is small (−0.05) to avoid discouraging chip damage or
+defensive moves that are net-positive strategically.
+
+#### `_compute_matchup_penalty(delta)` / `_update_opp_se_threat(battle)`
+
+Fires `MATCHUP_PENALTY` (−0.15) each turn the agent stays in while the opponent had
+a revealed SE move against the active mon **at decision time** (i.e., at the end of
+the previous turn).
+
+```python
+# At end of each turn:
+self._update_opp_se_threat(battle)  # snapshots _prev_opp_se_threat
+
+# Next turn's reward:
+if delta.our_switch_to is None and self._prev_opp_se_threat:
+    reward += MATCHUP_PENALTY
+```
+
+Only fires for threats already known — not the first turn a move is revealed.
+Skips if we switched out this turn. Addresses the failure mode (3M-step replay)
+where Tyranitar stayed in vs Swampert at 36% HP and used Dragon Dance, knowing
+Earthquake would KO it.
+
+| Constant | Value | Signal |
+|----------|-------|--------|
+| `FUTILE_ATTACK_PENALTY` | −0.05 | Damaging move, opponent net-healed this turn |
+| `MATCHUP_PENALTY` | −0.15 | Per turn staying in vs a known SE threat |
+
+---
+
+## Calibration changes (`cd003a0`)
+
+Two scalar constants were retuned to address stalling:
+
+| Constant | Before | After | Reason |
+|----------|--------|-------|--------|
+| `HP_VALUE` | 1.0 | **2.0** | Doubles per-turn signal so move choices that make HP progress are meaningfully rewarded over neutral/harmful moves |
+| `STALL_TAX_START_TURN` | 200 | **125** | Pressure starts while agent still has options; a 150-turn win still nets positive overall |
+| `STALL_TAX_DENOMINATOR` | 10 | **30** | Ramps to −4.2/turn at turn 250 (was −5.0/turn at turn 250) — gentler slope keeps long-game losses proportional |
+
+The `HP_VALUE` doubling has the largest effect: faint is now worth 1× HP unit
+(unchanged at 2.0), but each percentage of HP dealt/healed is worth twice as
+much, making the HP-delta signal more competitive with shaping bonuses.
+
 ---
 
 ## Reward Signal Summary
@@ -220,9 +275,12 @@ All shaping signals remain small relative to the base reward scale:
 | Sleep swap in | −0.25 | one-time, unless phazing |
 | SE switch-in | +0.2 | one-time; skipped if phazing |
 | Roar bonus | +0.2 | one-time on Roar turn |
+| Failed Roar penalty | −0.2 | one-time on Roar turn (symmetric to Spikes waste) |
 | Pivot bonus | +0.1–0.15 | one-time; skipped if phazing |
 | Spikes layer set | +0.5 | per layer added (max +1.5 for full spikes) |
 | Spikes waste | −0.2 | used Spikes at 3-layer cap |
+| Matchup penalty | −0.15 | per turn in a known-bad matchup |
+| Futile attack | −0.05 | damaging move, opp net-healed this turn |
 
 ---
 
@@ -237,7 +295,7 @@ All shaping signals remain small relative to the base reward scale:
 | `src/agents/training/battle_context.py` | `opp_all_last_move_ids` field; phaze recovery in `TurnDelta.build()` |
 | `src/agents/training/battle_context_test.py` | 4 new phaze unit tests |
 | `src/agents/training/poke_env_gaps/transition_fuzz_e2e_test.py` | Scenario D (ROAR_TEAM) |
-| `src/agents/training/reward_manager.py` | `SWITCH_BASE_BONUS` (flat subsidy replaces pool); `STATUS_BONUS`, `ROAR_BONUS`, `SE_SWITCH_BONUS`, `SLEEP_SWAP_BONUS`, `SPIKES_LAYER_BONUS`, `SPIKES_WASTE_PENALTY`; `_compute_roar_bonus`, `_compute_se_switch_bonus`, `_compute_status_reward`, `_compute_spikes_bonus`; `_prev_opp_boosts`, `_prev_opp_spikes`, `_prev_our_statused`, `_prev_opp_statused`, `_last_switch_was_roared` tracking; roar-exclusion gates on SE/pivot/sleep-swap bonuses |
+| `src/agents/training/reward_manager.py` | `SWITCH_BASE_BONUS` (flat subsidy replaces pool); `STATUS_BONUS`, `ROAR_BONUS`, `FAILED_ROAR_PENALTY`, `SE_SWITCH_BONUS`, `SLEEP_SWAP_BONUS`, `SPIKES_LAYER_BONUS`, `SPIKES_WASTE_PENALTY`, `FUTILE_ATTACK_PENALTY`, `MATCHUP_PENALTY`; `HP_VALUE` 1.0→2.0; stall tax start 200→125, denominator 10→30; `_compute_roar_bonus` (extended with failure penalty), `_compute_se_switch_bonus`, `_compute_status_reward`, `_compute_spikes_bonus`, `_compute_futile_attack_penalty`, `_compute_matchup_penalty`, `_update_opp_se_threat`; `_prev_opp_boosts`, `_prev_opp_spikes`, `_prev_opp_se_threat`, `_prev_our_statused`, `_prev_opp_statused`, `_last_switch_was_roared` tracking; roar-exclusion gates on SE/pivot/sleep-swap bonuses |
 | `src/agents/model/features_extractor.py` | Phaze turn display in `_action_str` |
 | `src/agents/training/battle_recorder.py` | Phaze turn format: `"move → phazed_to:species"` |
 | `CLAUDE.md` | Obs dim table updated to 1107 |
