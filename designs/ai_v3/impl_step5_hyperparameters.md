@@ -64,6 +64,21 @@ At `gamma=0.9999`, the terminal win signal retains >99% of its value even at tur
 The win signal now dominates the shaping bonuses throughout the full episode length,
 including games that hit the stall-tax window (turn 125+).
 
+### 2. GAE Lambda: 0.95 → 0.85
+
+**`src/main/train_rl_agent.py`**
+
+```python
+gae_lambda=0.85,
+```
+
+SB3's default of 0.95 leans toward Monte Carlo returns (low bias, high variance). For
+100-turn Gen 3 games with `gamma=0.9999`, far-future rewards contribute almost fully to
+every advantage estimate, amplifying that variance considerably. Lowering to 0.85 trusts
+the value function a bit more, reducing noise in advantage estimates. The thesis used 0.754;
+0.85 is a conservative step in that direction without fully committing to a value tuned
+for a different format.
+
 ---
 
 ## Reward Signal Summary (unchanged from Step 4)
@@ -95,8 +110,8 @@ discounted return without touching the constants themselves.
 
 | File | Change |
 |------|--------|
-| `src/main/train_rl_agent.py` | `gamma` 0.99 → 0.9999 |
-| `designs/ai_v3/todo.md` | LR annealing added as item §1 |
+| `src/main/train_rl_agent.py` | `gamma` 0.99 → 0.9999; `gae_lambda` 0.95 → 0.85 |
+| `designs/ai_v3/todo.md` | LR annealing added as §1; clip_range + LR reduction added as §2 |
 
 ---
 

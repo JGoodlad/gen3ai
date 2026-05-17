@@ -440,6 +440,7 @@ async def main():
             batch_size=args.batch_size,
             n_epochs=args.n_epochs,
             gamma=0.9999,
+            gae_lambda=0.85,
             ent_coef=args.ent_coef,
             device=args.device,
             seed=args.seed,

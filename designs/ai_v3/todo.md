@@ -30,6 +30,25 @@ TensorBoard logs `train/learning_rate` automatically — should show a smooth de
 
 ---
 
+## 2. Reduce clip_range and Learning Rate
+
+**Where:** `src/main/train_rl_agent.py`
+
+Current values use SB3 defaults (`clip_range=0.2`, `lr=3e-4`). Wang (2024) used
+`clip_range=0.0829` and a peak LR of ~6e-5 (with annealing). Both suggest our updates
+are currently too large.
+
+Suggested first step (conservative, easy to reason about):
+- `clip_range`: 0.2 → 0.15 — reduces max policy jump per update without being as
+  aggressive as the thesis; well-motivated by our large rollout size (96×2048=196K steps)
+- `lr`: 3e-4 → 1.5e-4 — halves the LR, gets closer to the thesis's range without
+  committing to a full annealing schedule; pair with LR annealing (§1) once validated
+
+These can be added as hardcoded values first (like `gae_lambda`) or as CLI args if
+you want to keep them easy to tune.
+
+---
+
 ## 3. poke-env: Delegating Move `last_move` Gap
 
 **Where:** `src/poke_env/battle/pokemon.py` → `Pokemon.moved()`
