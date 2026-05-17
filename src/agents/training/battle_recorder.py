@@ -235,7 +235,10 @@ class BattleRecorder:
             we_action = self._pending_entry["chosen"]
 
         # Their action — prefer TurnDelta switch detection, then poke-env last_move
-        if delta.opp_switch_to:
+        if prev_ctx.phase == "forced_switch":
+            # Opponent doesn't act on forced-switch turns — we're just picking a replacement
+            they_action = "none"
+        elif delta.opp_switch_to:
             if delta.opp_move_id:
                 # Phaze (Roar/Whirlwind): they moved first, then were forced out
                 they_action = f"{delta.opp_move_id} → phazed_to:{delta.opp_switch_to}"

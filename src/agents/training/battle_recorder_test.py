@@ -160,3 +160,41 @@ def test_hp_delta_opp_switch():
 
     outcome = rec._invocations[0]["outcome"]
     assert outcome["opp"]["hp_delta"] == "-30%"
+
+
+def test_forced_switch_opp_action_is_none():
+    """
+    On a forced-switch turn the opponent doesn't act.
+    outcome['opp']['action'] must be 'none', not the stale last_move from
+    the turn our mon fainted.
+    """
+    class _FakeMove:
+        def __init__(self, move_id): self.id = move_id
+
+    # Turn 1: zapdos uses thunderbolt, tyranitar uses rockslide and kills zapdos.
+    zapdos = _FakeMon("zapdos", 0.30)
+    opp = _FakeMon("tyranitar", 0.80)
+    b1 = _battle([zapdos], [opp], "zapdos", "tyranitar", turn=1, move_ids=["thunderbolt"])
+
+    # Turn 2: zapdos fainted → forced switch.
+    # Tyranitar's last_move is still rockslide (stale from turn 1).
+    zapdos_fainted = _FakeMon("zapdos", 0.0, fainted=True)
+    swampert = _FakeMon("swampert", 1.0)
+    opp2 = _FakeMon("tyranitar", 0.80)
+    opp2.last_move = _FakeMove("rockslide")
+    b2 = _battle([zapdos_fainted, swampert], [opp2], "zapdos", "tyranitar",
+                 turn=2, force_switch=True, move_ids=[])
+
+    # Turn 3: swampert is now active; completing b2's invocation triggers the bug.
+    swampert3 = _FakeMon("swampert", 1.0)
+    opp3 = _FakeMon("tyranitar", 0.80)
+    b3 = _battle([zapdos_fainted, swampert3], [opp3], "swampert", "tyranitar",
+                 turn=3, move_ids=["surf"])
+
+    rec = _rec()
+    rec.record(b1, 6, _probs(), _mask(6))   # turn 1: thunderbolt
+    rec.record(b2, 1, _probs(), _mask(1))   # forced switch: pick swampert (slot 1)
+    rec.record(b3, 6, _probs(), _mask(6))   # turn 3: completes the forced-switch invocation
+
+    forced_outcome = rec._invocations[1]["outcome"]
+    assert forced_outcome["opp"]["action"] == "none"
