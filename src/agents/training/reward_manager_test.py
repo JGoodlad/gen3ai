@@ -63,6 +63,8 @@ def _battle(won=False, lost=False, finished=False, opp_spikes=0):
     battle.finished = finished
     battle.turn = 1
     battle.opponent_team = {}
+    battle.active_pokemon = None
+    battle.opponent_active_pokemon = None
     from poke_env.battle.side_condition import SideCondition
     battle.opponent_side_conditions = (
         {SideCondition.SPIKES: opp_spikes} if opp_spikes > 0 else {}
@@ -178,6 +180,101 @@ class TestRewardManager(unittest.TestCase):
         ctx = _ctx(turn=1)
         self.manager.record_action(ctx, 6)
         reward = self.manager.process_turn_reward(_battle(opp_spikes=0), _delta())
+        self.assertAlmostEqual(reward, 0.0, places=5)
+
+    def test_failed_roar_penalty(self):
+        from agents.training.reward_manager import FAILED_ROAR_PENALTY
+        ctx = _ctx(turn=1)
+        self.manager.record_action(ctx, 6)
+        delta = TurnDelta(
+            our_move_id="roar",
+            our_switch_to=None,
+            our_prev_active="pikachu",
+            opp_move_id=None,
+            opp_switch_to=None,       # Roar failed — no switch forced
+            opp_prev_active="charizard",
+            opp_move_known=False,
+            our_hp_delta=np.zeros(6, dtype=np.float32),
+            opp_hp_delta=np.zeros(6, dtype=np.float32),
+            we_fainted=False,
+            opp_fainted=False,
+            our_failed_to_move=False,
+            our_cant_reason=None,
+            opp_failed_to_move=False,
+            opp_cant_reason=None,
+        )
+        reward = self.manager.process_turn_reward(_battle(), delta)
+        self.assertAlmostEqual(reward, FAILED_ROAR_PENALTY, places=5)
+
+    def test_futile_attack_penalty_fires_when_opp_net_healed(self):
+        from agents.training.reward_manager import FUTILE_ATTACK_PENALTY, HP_VALUE
+        ctx = _ctx(turn=1)
+        self.manager.record_action(ctx, 6)
+
+        battle = _battle()
+        move_mock = MagicMock()
+        move_mock.base_power = 20
+        battle.active_pokemon = MagicMock()
+        battle.active_pokemon.moves = {"rapidspin": move_mock}
+
+        opp_hp = np.zeros(6, dtype=np.float32)
+        opp_hp[0] = 0.05   # opponent net gained 5% HP (Leftovers > damage dealt)
+        delta = TurnDelta(
+            our_move_id="rapidspin",
+            our_switch_to=None,
+            our_prev_active="pikachu",
+            opp_move_id="struggle",
+            opp_switch_to=None,
+            opp_prev_active="charizard",
+            opp_move_known=True,
+            our_hp_delta=np.zeros(6, dtype=np.float32),
+            opp_hp_delta=opp_hp,
+            we_fainted=False,
+            opp_fainted=False,
+            our_failed_to_move=False,
+            our_cant_reason=None,
+            opp_failed_to_move=False,
+            opp_cant_reason=None,
+        )
+        reward = self.manager.process_turn_reward(battle, delta)
+        # base: -opp_hp_delta.sum() * HP_VALUE = -0.05 * 2.0 = -0.10
+        # futile penalty: -0.05
+        # total: -0.15
+        expected = -0.05 * HP_VALUE + FUTILE_ATTACK_PENALTY
+        self.assertAlmostEqual(reward, expected, places=4)
+
+    def test_futile_attack_penalty_skips_status_moves(self):
+        from agents.training.reward_manager import FUTILE_ATTACK_PENALTY
+        ctx = _ctx(turn=1)
+        self.manager.record_action(ctx, 6)
+
+        battle = _battle()
+        move_mock = MagicMock()
+        move_mock.base_power = 0   # status move
+        battle.active_pokemon = MagicMock()
+        battle.active_pokemon.moves = {"thunderwave": move_mock}
+
+        delta = TurnDelta(
+            our_move_id="thunderwave",
+            our_switch_to=None,
+            our_prev_active="pikachu",
+            opp_move_id=None,
+            opp_switch_to=None,
+            opp_prev_active="charizard",
+            opp_move_known=False,
+            our_hp_delta=np.zeros(6, dtype=np.float32),
+            opp_hp_delta=np.zeros(6, dtype=np.float32),
+            we_fainted=False,
+            opp_fainted=False,
+            our_failed_to_move=False,
+            our_cant_reason=None,
+            opp_failed_to_move=False,
+            opp_cant_reason=None,
+        )
+        reward = self.manager.process_turn_reward(battle, delta)
+        # Should NOT include FUTILE_ATTACK_PENALTY since base_power == 0
+        self.assertNotAlmostEqual(reward, FUTILE_ATTACK_PENALTY, places=5)
+        # Reward should just be 0 (no HP change, no other signals)
         self.assertAlmostEqual(reward, 0.0, places=5)
 
 

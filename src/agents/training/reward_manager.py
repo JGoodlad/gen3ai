@@ -9,10 +9,10 @@ from poke_env.battle.status import Status
 from agents.training.battle_context import BattleContext, TurnDelta
 
 FAINTED_VALUE = 2.0
-HP_VALUE = 1.0
+HP_VALUE = 2.0
 VICTORY_VALUE = 30.0
-STALL_TAX_START_TURN = 200
-STALL_TAX_DENOMINATOR = 10.0
+STALL_TAX_START_TURN = 125
+STALL_TAX_DENOMINATOR = 30.0
 STRUGGLE_LOOP_TAX = -0.5
 STRUGGLE_LOOP_THRESHOLD = 3
 
@@ -23,6 +23,8 @@ SE_SWITCH_BONUS = 0.2     # reward for switching in a mon with a SE damaging mov
 SLEEP_SWAP_BONUS = 0.25   # reward for rotating a sleeping mon out; penalty for rotating one in
 SPIKES_LAYER_BONUS = 0.5  # per layer added to opponent's side (credit assignment bridge)
 SPIKES_WASTE_PENALTY = -0.2  # wasted turn using Spikes when 3 layers already up
+FAILED_ROAR_PENALTY = -0.2   # Roar used but opponent didn't switch (no target / already phazed out)
+FUTILE_ATTACK_PENALTY = -0.05  # attacking move used but opponent net gained HP (Leftovers > damage)
 
 
 class Gen3RewardManager:
@@ -169,9 +171,12 @@ class Gen3RewardManager:
         return reward
 
     def _compute_roar_bonus(self, delta: TurnDelta, battle) -> float:
-        """Reward Roar when it actually forces a switch AND spikes are up or opp had positive boosts."""
-        if delta.our_move_id != "roar" or delta.opp_switch_to is None:
+        """Reward Roar when it forces a switch AND spikes are up or opp had positive boosts.
+        Penalise Roar when it fails to force any switch at all (wasted turn)."""
+        if delta.our_move_id != "roar":
             return 0.0
+        if delta.opp_switch_to is None:
+            return FAILED_ROAR_PENALTY
         has_spikes = battle.opponent_side_conditions.get(SideCondition.SPIKES, 0) > 0
         had_boosts = any(v > 0 for v in self._prev_opp_boosts.values())
         return ROAR_BONUS if (has_spikes or had_boosts) else 0.0
@@ -273,6 +278,27 @@ class Gen3RewardManager:
             return SPIKES_WASTE_PENALTY
         return 0.0
 
+    def _compute_futile_attack_penalty(self, delta: TurnDelta, battle) -> float:
+        """Penalise attacking moves where the opponent's total HP went up or stayed even
+        (Leftovers healed as much or more than we dealt). Skips status moves, switches,
+        and cases where we failed to act or the opponent used Rest."""
+        if delta.our_move_id is None:
+            return 0.0  # we switched
+        if delta.our_failed_to_move:
+            return 0.0  # paralysis / sleep — not our fault
+        if delta.opp_switch_to is not None:
+            return 0.0  # they switched; HP delta is noisy (fresh mon entering)
+        if delta.opp_move_id == "rest":
+            return 0.0  # opponent used Rest; large self-heal is expected
+        move = battle.active_pokemon.moves.get(delta.our_move_id) if battle.active_pokemon else None
+        if move is None or move.base_power == 0:
+            return 0.0  # status or utility move — handled by other signals
+        # Net HP sum across all opp slots: bench mons don't change between turns in Gen 3,
+        # so the sum is dominated by the active slot. >= 0 means we made no net progress.
+        if delta.opp_hp_delta.sum() >= 0:
+            return FUTILE_ATTACK_PENALTY
+        return 0.0
+
     def process_turn_reward(self, battle, delta: TurnDelta) -> float:
         """
         Computes the full reward for a completed turn from the TurnDelta.
@@ -303,9 +329,13 @@ class Gen3RewardManager:
                 reward += pivot_bonus
                 self._last_reward_metadata["pivot_bonus"] = pivot_bonus
 
-        # Roar bonus (forces switch when spikes are up or opp was boosted)
+        # Roar bonus (forces switch when spikes are up or opp was boosted); penalty if Roar failed
         roar_bonus = self._compute_roar_bonus(delta, battle)
         reward += roar_bonus
+
+        # Futile attack penalty — attacking move that didn't overcome opponent's Leftovers healing
+        futile_penalty = self._compute_futile_attack_penalty(delta, battle)
+        reward += futile_penalty
 
         # Spikes setup bonus / waste penalty
         spikes_bonus = self._compute_spikes_bonus(delta, battle)
@@ -332,7 +362,7 @@ class Gen3RewardManager:
         else:
             subsidy_val = 0.0
 
-        # Progressive stall tax (turns 200-250): ramps from -0.1 to -5.0
+        # Progressive stall tax: starts at turn 125, ramps to -4.2/turn at turn 250
         if battle.turn > STALL_TAX_START_TURN:
             reward += -1.0 * (battle.turn - STALL_TAX_START_TURN) / STALL_TAX_DENOMINATOR
 
