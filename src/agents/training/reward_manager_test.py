@@ -439,7 +439,7 @@ class TestPivotProtect(unittest.TestCase):
         manager = Gen3RewardManager(log_level=LogLevel.QUIET)
         delta = _pivot_delta(move_id)
         battle = _pivot_battle(_type_mon("NORMAL"), _opp_with_status_move(move_id))
-        return manager._compute_pivot_bonus(delta, battle)
+        return sum(manager._compute_pivot_bonus(delta, battle))
 
     def test_protect(self):
         from agents.training.reward_manager import PROTECT_SWITCH_BONUS
@@ -461,7 +461,7 @@ class TestPivotStatus(unittest.TestCase):
         manager = Gen3RewardManager(log_level=LogLevel.QUIET)
         delta = _pivot_delta(move_id)
         battle = _pivot_battle(new_mon, _opp_with_status_move(move_id))
-        return manager._compute_pivot_bonus(delta, battle)
+        return sum(manager._compute_pivot_bonus(delta, battle))
 
     def test_ground_immune_to_thunderwave(self):
         from agents.training.reward_manager import STATUS_IMMUNE_SWITCH_BONUS
@@ -519,7 +519,7 @@ class TestPivotDamage(unittest.TestCase):
 
         delta = _pivot_delta("testmove")
         battle = _pivot_battle(new_mon, opp, prev_mon=prev_mon)
-        return manager._compute_pivot_bonus(delta, battle)
+        return sum(manager._compute_pivot_bonus(delta, battle))
 
     def test_resist_improvement_earns_bonus(self):
         # Fire move: prev=Normal (1×), new=Water (0.5×) — improvement
@@ -551,19 +551,19 @@ class TestPivotDamage(unittest.TestCase):
         manager = Gen3RewardManager(log_level=LogLevel.QUIET)
         delta = _pivot_delta(None, opp_switch_to="newmon")
         battle = _pivot_battle(_type_mon("WATER"), MagicMock())
-        result = manager._compute_pivot_bonus(delta, battle)
+        result = sum(manager._compute_pivot_bonus(delta, battle))
         self.assertAlmostEqual(result, 0.0, places=5)
 
     def test_no_opp_move_id_no_bonus(self):
         manager = Gen3RewardManager(log_level=LogLevel.QUIET)
         delta = _pivot_delta(None)
         battle = _pivot_battle(_type_mon("WATER"), MagicMock())
-        result = manager._compute_pivot_bonus(delta, battle)
+        result = sum(manager._compute_pivot_bonus(delta, battle))
         self.assertAlmostEqual(result, 0.0, places=5)
 
     def test_not_a_switch_no_bonus(self):
         manager = Gen3RewardManager(log_level=LogLevel.QUIET)
-        result = manager._compute_pivot_bonus(_delta(), MagicMock())
+        result = sum(manager._compute_pivot_bonus(_delta(), MagicMock()))
         self.assertAlmostEqual(result, 0.0, places=5)
 
 

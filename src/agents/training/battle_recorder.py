@@ -94,10 +94,11 @@ class BattleRecorder:
         else:
             events.append("result:tie")
 
+        breakdown = getattr(self._reward_fn, "_last_breakdown", None)
         self._pending_entry["outcome"] = {
             "our": {"action": self._pending_entry["chosen"], "hp_delta": f"{our_delta:+.0f}%"},
             "opp": {"action": "unknown",                     "hp_delta": f"{opp_delta:+.0f}%"},
-            "reward": round(reward, 3),
+            "reward": breakdown.to_dict() if breakdown is not None else round(reward, 3),
             "events": events,
         }
         self._invocations.append(self._pending_entry)
@@ -261,10 +262,11 @@ class BattleRecorder:
         if delta.opp_fainted:
             events.append(f"opp:{prev_ctx.opp_active}:fainted")
 
+        breakdown = getattr(self._reward_fn, "_last_breakdown", None)
         self._pending_entry["outcome"] = {
             "our": {"action": we_action,   "hp_delta": f"{our_delta:+.0f}%"},
             "opp": {"action": they_action, "hp_delta": f"{opp_delta:+.0f}%"},
-            "reward": round(reward, 3),
+            "reward": breakdown.to_dict() if breakdown is not None else round(reward, 3),
             "events": events,
         }
         self._invocations.append(self._pending_entry)
