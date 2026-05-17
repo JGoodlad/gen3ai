@@ -381,6 +381,192 @@ class TestMatchupPenalty(unittest.TestCase):
         self.assertAlmostEqual(r, 0.0, places=5)
 
 
+def _pivot_battle(new_mon, opp_mon, prev_species="prevmon", prev_mon=None):
+    """Build a minimal battle mock for pivot bonus tests."""
+    battle = MagicMock()
+    battle.won = False
+    battle.lost = False
+    battle.finished = False
+    battle.turn = 1
+    battle.opponent_team = {}
+    battle.active_pokemon = new_mon
+    battle.opponent_active_pokemon = opp_mon
+    from poke_env.battle.side_condition import SideCondition
+    battle.opponent_side_conditions = {}
+    if prev_mon is not None:
+        prev_mon.species = prev_species
+        battle.team = {prev_species: prev_mon}
+    else:
+        battle.team = {}
+    return battle
+
+
+def _pivot_delta(opp_move_id, opp_switch_to=None, prev_species="prevmon"):
+    return TurnDelta(
+        our_move_id=None, our_switch_to="newmon", our_prev_active=prev_species,
+        opp_move_id=opp_move_id, opp_switch_to=opp_switch_to,
+        opp_prev_active="opponentmon", opp_move_known=opp_move_id is not None,
+        our_hp_delta=np.zeros(6, dtype=np.float32),
+        opp_hp_delta=np.zeros(6, dtype=np.float32),
+        we_fainted=False, opp_fainted=False,
+        our_failed_to_move=False, our_cant_reason=None,
+        opp_failed_to_move=False, opp_cant_reason=None,
+    )
+
+
+def _type_mon(type1_name, type2_name=None, status=None):
+    from poke_env.battle.pokemon_type import PokemonType
+    mon = MagicMock()
+    mon.type_1 = PokemonType[type1_name.upper()]
+    mon.type_2 = PokemonType[type2_name.upper()] if type2_name else None
+    mon.status = status
+    mon.moves = {}
+    return mon
+
+
+def _opp_with_status_move(move_id):
+    move = MagicMock()
+    move.base_power = 0
+    opp = MagicMock()
+    opp.moves = {move_id: move}
+    return opp
+
+
+class TestPivotProtect(unittest.TestCase):
+    """_pivot_protect_bonus: fires on Protect/Detect/Endure."""
+
+    def _run(self, move_id):
+        manager = Gen3RewardManager(log_level=LogLevel.QUIET)
+        delta = _pivot_delta(move_id)
+        battle = _pivot_battle(_type_mon("NORMAL"), _opp_with_status_move(move_id))
+        return manager._compute_pivot_bonus(delta, battle)
+
+    def test_protect(self):
+        from agents.training.reward_manager import PROTECT_SWITCH_BONUS
+        self.assertAlmostEqual(self._run("protect"), PROTECT_SWITCH_BONUS, places=5)
+
+    def test_detect(self):
+        from agents.training.reward_manager import PROTECT_SWITCH_BONUS
+        self.assertAlmostEqual(self._run("detect"), PROTECT_SWITCH_BONUS, places=5)
+
+    def test_endure(self):
+        from agents.training.reward_manager import PROTECT_SWITCH_BONUS
+        self.assertAlmostEqual(self._run("endure"), PROTECT_SWITCH_BONUS, places=5)
+
+
+class TestPivotStatus(unittest.TestCase):
+    """_pivot_status_bonus: type and already-statused immunity."""
+
+    def _run(self, move_id, new_mon):
+        manager = Gen3RewardManager(log_level=LogLevel.QUIET)
+        delta = _pivot_delta(move_id)
+        battle = _pivot_battle(new_mon, _opp_with_status_move(move_id))
+        return manager._compute_pivot_bonus(delta, battle)
+
+    def test_ground_immune_to_thunderwave(self):
+        from agents.training.reward_manager import STATUS_IMMUNE_SWITCH_BONUS
+        self.assertAlmostEqual(
+            self._run("thunderwave", _type_mon("GROUND")),
+            STATUS_IMMUNE_SWITCH_BONUS, places=5,
+        )
+
+    def test_steel_immune_to_toxic(self):
+        from agents.training.reward_manager import STATUS_IMMUNE_SWITCH_BONUS
+        self.assertAlmostEqual(
+            self._run("toxic", _type_mon("STEEL")),
+            STATUS_IMMUNE_SWITCH_BONUS, places=5,
+        )
+
+    def test_poison_immune_to_toxic(self):
+        from agents.training.reward_manager import STATUS_IMMUNE_SWITCH_BONUS
+        self.assertAlmostEqual(
+            self._run("toxic", _type_mon("POISON")),
+            STATUS_IMMUNE_SWITCH_BONUS, places=5,
+        )
+
+    def test_fire_immune_to_willowisp(self):
+        from agents.training.reward_manager import STATUS_IMMUNE_SWITCH_BONUS
+        self.assertAlmostEqual(
+            self._run("willowisp", _type_mon("FIRE")),
+            STATUS_IMMUNE_SWITCH_BONUS, places=5,
+        )
+
+    def test_already_statused_mon(self):
+        from agents.training.reward_manager import STATUS_IMMUNE_SWITCH_BONUS
+        from poke_env.battle.status import Status
+        self.assertAlmostEqual(
+            self._run("thunderwave", _type_mon("NORMAL", status=Status.PAR)),
+            STATUS_IMMUNE_SWITCH_BONUS, places=5,
+        )
+
+    def test_normal_type_not_immune_to_toxic(self):
+        self.assertAlmostEqual(self._run("toxic", _type_mon("NORMAL")), 0.0, places=5)
+
+
+class TestPivotDamage(unittest.TestCase):
+    """_pivot_damage_bonus: Signal A — actual move effectiveness comparison."""
+
+    def _run(self, new_mon, prev_mon, move_type_name, base_power=80):
+        from poke_env.battle.pokemon_type import PokemonType
+        manager = Gen3RewardManager(log_level=LogLevel.QUIET)
+
+        move = MagicMock()
+        move.base_power = base_power
+        move.type = PokemonType[move_type_name.upper()]
+
+        opp = MagicMock()
+        opp.moves = {"testmove": move}
+
+        delta = _pivot_delta("testmove")
+        battle = _pivot_battle(new_mon, opp, prev_mon=prev_mon)
+        return manager._compute_pivot_bonus(delta, battle)
+
+    def test_resist_improvement_earns_bonus(self):
+        # Fire move: prev=Normal (1×), new=Water (0.5×) — improvement
+        result = self._run(_type_mon("WATER"), _type_mon("NORMAL"), "FIRE")
+        self.assertAlmostEqual(result, 0.10, places=5)
+
+    def test_immune_switch_earns_larger_bonus(self):
+        # Ground move: prev=Normal (1×), new=Flying (0×) — Flying is immune to Ground
+        result = self._run(_type_mon("FLYING"), _type_mon("NORMAL"), "GROUND")
+        self.assertAlmostEqual(result, 0.15, places=5)
+
+    def test_no_improvement_no_bonus(self):
+        # Fire move: prev=Water (0.5×), new=Grass (2×) — worse matchup
+        result = self._run(_type_mon("GRASS"), _type_mon("WATER"), "FIRE")
+        self.assertAlmostEqual(result, 0.0, places=5)
+
+    def test_equal_effectiveness_no_bonus(self):
+        # Both mons are Water vs Fire move (both 0.5×)
+        result = self._run(_type_mon("WATER"), _type_mon("WATER"), "FIRE")
+        self.assertAlmostEqual(result, 0.0, places=5)
+
+    def test_off_type_coverage_respected(self):
+        # Opp is Normal-type but has Ice Beam: prev=Water (0.5× vs Ice), new=Grass (2×)
+        # Grass should get NO bonus — the switch was bad against the actual move used
+        result = self._run(_type_mon("GRASS"), _type_mon("WATER"), "ICE")
+        self.assertAlmostEqual(result, 0.0, places=5)
+
+    def test_opponent_switched_no_bonus(self):
+        manager = Gen3RewardManager(log_level=LogLevel.QUIET)
+        delta = _pivot_delta(None, opp_switch_to="newmon")
+        battle = _pivot_battle(_type_mon("WATER"), MagicMock())
+        result = manager._compute_pivot_bonus(delta, battle)
+        self.assertAlmostEqual(result, 0.0, places=5)
+
+    def test_no_opp_move_id_no_bonus(self):
+        manager = Gen3RewardManager(log_level=LogLevel.QUIET)
+        delta = _pivot_delta(None)
+        battle = _pivot_battle(_type_mon("WATER"), MagicMock())
+        result = manager._compute_pivot_bonus(delta, battle)
+        self.assertAlmostEqual(result, 0.0, places=5)
+
+    def test_not_a_switch_no_bonus(self):
+        manager = Gen3RewardManager(log_level=LogLevel.QUIET)
+        result = manager._compute_pivot_bonus(_delta(), MagicMock())
+        self.assertAlmostEqual(result, 0.0, places=5)
+
+
 class TestRoarBonus(unittest.TestCase):
     def setUp(self):
         self.manager = Gen3RewardManager(log_level=LogLevel.QUIET)

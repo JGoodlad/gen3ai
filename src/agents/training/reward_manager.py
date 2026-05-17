@@ -5,6 +5,7 @@ from utils.logging.levels import LogLevel
 from poke_env.data import GenData
 from poke_env.battle.side_condition import SideCondition
 from poke_env.battle.status import Status
+from poke_env.battle.pokemon_type import PokemonType
 from agents.training.battle_context import BattleContext, TurnDelta
 
 FAINTED_VALUE = 2.0
@@ -15,16 +16,33 @@ STALL_TAX_DENOMINATOR = 30.0
 STRUGGLE_LOOP_TAX = -0.5
 STRUGGLE_LOOP_THRESHOLD = 3
 
-SWITCH_BASE_BONUS = 0.5   # flat per-voluntary-switch bonus; consistent throughout the game
-STATUS_BONUS = 0.3        # reward for inflicting status; penalty for receiving
-ROAR_BONUS = 0.2          # reward for Roar when spikes on opp side or opp had positive boosts
-SE_SWITCH_BONUS = 0.2     # reward for switching in a mon with a SE damaging move vs opp active
-SLEEP_SWAP_BONUS = 0.25   # reward for rotating a sleeping mon out; penalty for rotating one in
-SPIKES_LAYER_BONUS = 0.5  # per layer added to opponent's side (credit assignment bridge)
-SPIKES_WASTE_PENALTY = -0.2  # wasted turn using Spikes when 3 layers already up
-FAILED_ROAR_PENALTY = -0.2   # Roar used but opponent didn't switch (no target / already phazed out)
+SWITCH_BASE_BONUS = 0.5        # flat per-voluntary-switch bonus
+STATUS_BONUS = 0.3             # reward for inflicting status; penalty for receiving
+ROAR_BONUS = 0.2               # reward for Roar when spikes on opp side or opp had positive boosts
+SE_SWITCH_BONUS = 0.2          # reward for switching in a mon with a SE damaging move vs opp active
+SLEEP_SWAP_BONUS = 0.25        # reward for rotating a sleeping mon out; penalty for rotating one in
+SPIKES_LAYER_BONUS = 0.5       # per layer added to opponent's side (credit assignment bridge)
+SPIKES_WASTE_PENALTY = -0.2    # wasted turn using Spikes when 3 layers already up
+FAILED_ROAR_PENALTY = -0.2     # Roar used but opponent didn't switch
 FUTILE_ATTACK_PENALTY = -0.05  # attacking move used but opponent net gained HP (Leftovers > damage)
-MATCHUP_PENALTY = -0.15   # per turn we stay in while opp has a revealed SE move vs us
+MATCHUP_PENALTY = -0.15        # per turn we stay in while opp has a revealed SE move vs us
+PROTECT_SWITCH_BONUS = 0.10    # opponent used Protect/Detect/Endure on our switch turn
+STATUS_IMMUNE_SWITCH_BONUS = 0.10  # our switch-in was immune to their status move
+
+# Gen 3 moves that make the user invulnerable for one turn
+_INVULNERABLE_MOVES = frozenset({"protect", "detect", "endure"})
+
+# Status moves → types that are immune to the status they inflict (Gen 3)
+# stunspore is Normal-type in Gen 3 (reclassified Grass in Gen 6) — no type immunity
+# glare (Normal-type) — no type immunity
+# sleep moves (spore, sleeppowder, hypnosis, lovelykiss, yawn) — no type immunity
+_STATUS_MOVE_IMMUNITY: dict = {
+    "thunderwave":  frozenset({PokemonType.GROUND}),
+    "toxic":        frozenset({PokemonType.STEEL, PokemonType.POISON}),
+    "poisongas":    frozenset({PokemonType.STEEL, PokemonType.POISON}),
+    "poisonpowder": frozenset({PokemonType.STEEL, PokemonType.POISON}),
+    "willowisp":    frozenset({PokemonType.FIRE}),
+}
 
 
 class Gen3RewardManager:
@@ -235,12 +253,7 @@ class Gen3RewardManager:
         return 0.0
 
     def _compute_status_reward(self, delta: TurnDelta, battle) -> float:
-        """One-time status reward: fires only when the status count changes (inflicted or cured).
-        Counts all non-fainted mons on each side, bench included.
-        Also rewards rotating a sleeping mon OUT and penalises rotating one IN."""
-        our_mon = battle.active_pokemon
-        opp_mon = battle.opponent_active_pokemon
-
+        """One-time reward when the statused-mon count changes on either side."""
         our_statused = sum(
             1 for mon in battle.team.values()
             if mon.status is not None and not mon.fainted
@@ -253,53 +266,114 @@ class Gen3RewardManager:
         d_opp = opp_statused - self._prev_opp_statused
         self._prev_our_statused = our_statused
         self._prev_opp_statused = opp_statused
-        reward = (d_opp - d_our) * STATUS_BONUS
+        return (d_opp - d_our) * STATUS_BONUS
 
-        # Sleep-swap signals.
-        # Bonus for rotating a sleeping mon OUT: only on voluntary switches — if the mon
-        # fainted there's no preservation value, the opponent can just sleep another mon.
-        # Penalty for rotating a sleeping mon IN: applies to voluntary + post-faint
-        # (you still chose the replacement), but not Roar/Whirlwind.
-        if delta.our_switch_to is not None:
-            is_voluntary = self._last_reward_metadata.get("type") == "VOLUNTARY"
-            if is_voluntary:
-                for mon in battle.team.values():
-                    if mon.species == delta.our_prev_active:
-                        if mon.status == Status.SLP:
-                            reward += SLEEP_SWAP_BONUS
-                        break
-            if not self._last_switch_was_roared and our_mon and our_mon.status == Status.SLP:
-                reward -= SLEEP_SWAP_BONUS
+    # =========================================================
+    # SWITCH REWARDS
+    #
+    # All switch-specific signals funnel through
+    # _compute_all_switch_bonuses, which dispatches to one
+    # focused sub-function per outcome type.  The subsidy set
+    # by record_action() is applied separately at the end of
+    # process_turn_reward (it runs before the turn, not after).
+    # =========================================================
 
+    def _compute_all_switch_bonuses(self, delta: TurnDelta, battle) -> float:
+        """Aggregate of every switch-specific bonus for this turn."""
+        if delta.our_switch_to is None:
+            return 0.0
+        reward = 0.0
+        # Pivot, SE bonus, and sleep-out credit are skipped when we were phazed —
+        # roar/whirlwind removes our choice, so we shouldn't be rewarded for it.
+        if not self._last_switch_was_roared:
+            reward += self._compute_pivot_bonus(delta, battle)
+            reward += self._compute_se_switch_bonus(delta, battle)
+            reward += self._compute_sleep_out_bonus(delta, battle)
+        # Sleep-in penalty fires even on roar (we still chose the replacement
+        # for post-faint; roar replaces the roared mon, not a freely chosen slot).
+        reward += self._compute_sleep_in_penalty(delta, battle)
         return reward
 
     def _compute_pivot_bonus(self, delta: TurnDelta, battle) -> float:
-        if not delta.our_switch_to or not delta.our_prev_active:
-            return 0.0
+        """Dispatch to the appropriate pivot sub-signal based on what the opponent did."""
+        opp_move_id = delta.opp_move_id
+        if delta.opp_switch_to is not None or opp_move_id is None:
+            return 0.0  # opponent switched or move unknown — no signal
+
+        if opp_move_id in _INVULNERABLE_MOVES:
+            return self._pivot_protect_bonus()
+
         opp_mon = battle.opponent_active_pokemon
         if not opp_mon:
             return 0.0
+        opp_move = opp_mon.moves.get(opp_move_id)
+        if opp_move is None:
+            return 0.0
 
-        opp_types = [opp_mon.type_1]
-        if opp_mon.type_2:
-            opp_types.append(opp_mon.type_2)
+        if opp_move.base_power == 0:
+            return self._pivot_status_bonus(opp_move_id, battle)
+        return self._pivot_damage_bonus(opp_move, delta, battle)
 
-        type_chart = GenData.from_gen(3).type_chart
+    def _pivot_protect_bonus(self) -> float:
+        """Opponent used Protect/Detect/Endure — we repositioned for free."""
+        return PROTECT_SWITCH_BONUS
 
-        def max_threat(species: str) -> float:
-            for mon in battle.team.values():
-                if mon.species == species:
-                    return max(
-                        t.damage_multiplier(mon.type_1, mon.type_2, type_chart=type_chart)
-                        for t in opp_types
-                    )
-            return 1.0
+    def _pivot_status_bonus(self, opp_move_id: str, battle) -> float:
+        """Opponent used a status move our switch-in was immune to (type or already statused)."""
+        new_mon = battle.active_pokemon
+        if not new_mon:
+            return 0.0
+        immune_types = _STATUS_MOVE_IMMUNITY.get(opp_move_id, frozenset())
+        mon_types = {new_mon.type_1, new_mon.type_2} - {None}
+        if immune_types & mon_types or new_mon.status is not None:
+            return STATUS_IMMUNE_SWITCH_BONUS
+        return 0.0
 
-        old_threat = max_threat(delta.our_prev_active)
-        new_threat = max_threat(delta.our_switch_to)
+    def _pivot_damage_bonus(self, opp_move, delta: TurnDelta, battle) -> float:
+        """Opponent used a damaging move — bonus if it hit our new mon less than the old one.
 
-        if new_threat < old_threat:
-            return 0.15 if new_threat == 0 else 0.1
+        Signal A: comparison of actual type effectiveness vs old mon vs new mon.
+        The HP delta in compute_base_reward already penalises the raw damage taken,
+        so this signal focuses purely on whether the switch improved the matchup.
+        """
+        new_mon = battle.active_pokemon
+        if not new_mon:
+            return 0.0
+        prev_mon = next(
+            (m for m in battle.team.values() if m.species == delta.our_prev_active), None
+        )
+        if prev_mon is None:
+            return 0.0
+        mult_vs_new = opp_move.type.damage_multiplier(
+            new_mon.type_1, new_mon.type_2, type_chart=self._type_chart
+        )
+        mult_vs_old = opp_move.type.damage_multiplier(
+            prev_mon.type_1, prev_mon.type_2, type_chart=self._type_chart
+        )
+        if mult_vs_new < mult_vs_old:
+            return 0.15 if mult_vs_new == 0 else 0.10
+        return 0.0
+
+    def _compute_sleep_out_bonus(self, delta: TurnDelta, battle) -> float:
+        """Reward rotating a sleeping mon to the bench on a voluntary switch.
+        Preserving a sleeping mon's PP/position has strategic value; post-faint
+        replacements don't qualify since there's no choice involved."""
+        if self._last_reward_metadata.get("type") != "VOLUNTARY":
+            return 0.0
+        for mon in battle.team.values():
+            if mon.species == delta.our_prev_active:
+                return SLEEP_SWAP_BONUS if mon.status == Status.SLP else 0.0
+        return 0.0
+
+    def _compute_sleep_in_penalty(self, delta: TurnDelta, battle) -> float:
+        """Penalise sending in a sleeping mon — it can't act and wastes a slot.
+        Applies to voluntary switches and post-faint replacements; skipped for roar
+        since the phazer chose our slot, not us."""
+        if self._last_switch_was_roared:
+            return 0.0
+        our_mon = battle.active_pokemon
+        if our_mon and our_mon.status == Status.SLP:
+            return -SLEEP_SWAP_BONUS
         return 0.0
 
     def _compute_matchup_penalty(self, delta: TurnDelta) -> float:
@@ -359,66 +433,38 @@ class Gen3RewardManager:
         return 0.0
 
     def process_turn_reward(self, battle, delta: TurnDelta) -> float:
-        """
-        Computes the full reward for a completed turn from the TurnDelta.
-        """
+        """Computes the full reward for a completed turn from the TurnDelta."""
         base_reward = self.compute_base_reward(delta, battle)
         reward = base_reward
 
-        # Explosion/self-destruct signal.
-        # Targets only the mon that was active this turn (delta.opp_prev_active), not
-        # all previously-fainted mons. Mutual KOs in Gen 3 are almost exclusively
-        # explosion/self-destruct, so this is a reliable proxy until opp_move_id is
-        # populated from the battle log.
+        # --- Explosion / self-destruct ---
+        # Only checks the mon that was active this turn; mutual KOs in Gen 3
+        # are almost exclusively explosion, so this is a reliable proxy.
         if delta.opp_fainted:
             for mon in battle.opponent_team.values():
                 if mon.species == delta.opp_prev_active:
                     move_ids = {m.id for m in mon.moves.values()}
                     if move_ids & {"explosion", "selfdestruct"}:
-                        if delta.we_fainted:
-                            reward -= 3.0  # got blown up — strong penalty
-                        else:
-                            reward += 2.0  # survived/played around explosion
+                        reward += -3.0 if delta.we_fainted else 2.0
                     break
 
-        # Defensive pivot bonus — skip if we were roared/whirlwinded out (not our choice)
-        if not self._last_switch_was_roared:
-            pivot_bonus = self._compute_pivot_bonus(delta, battle)
-            if pivot_bonus > 0:
-                reward += pivot_bonus
-                self._last_reward_metadata["pivot_bonus"] = pivot_bonus
+        # --- Attack signals ---
+        reward += self._compute_roar_bonus(delta, battle)
+        reward += self._compute_futile_attack_penalty(delta, battle)
 
-        # Roar bonus (forces switch when spikes are up or opp was boosted); penalty if Roar failed
-        roar_bonus = self._compute_roar_bonus(delta, battle)
-        reward += roar_bonus
+        # --- Field control ---
+        reward += self._compute_spikes_bonus(delta, battle)
 
-        # Futile attack penalty — attacking move that didn't overcome opponent's Leftovers healing
-        futile_penalty = self._compute_futile_attack_penalty(delta, battle)
-        reward += futile_penalty
+        # --- Positional: penalty for staying in against a known threat ---
+        reward += self._compute_matchup_penalty(delta)
 
-        # Spikes setup bonus / waste penalty
-        spikes_bonus = self._compute_spikes_bonus(delta, battle)
-        reward += spikes_bonus
+        # --- Switch rewards (see SWITCH_REWARDS.md for full breakdown) ---
+        reward += self._compute_all_switch_bonuses(delta, battle)
 
-        # Matchup disadvantage penalty (known SE threat at decision time, and we stayed in)
-        matchup_penalty = self._compute_matchup_penalty(delta)
-        reward += matchup_penalty
+        # --- Status signals ---
+        reward += self._compute_status_reward(delta, battle)
 
-        # SE switch-in bonus — skip if we were roared/whirlwinded out
-        if not self._last_switch_was_roared:
-            se_switch_bonus = self._compute_se_switch_bonus(delta, battle)
-            reward += se_switch_bonus
-
-        # Status reward (+/- on inflict/cure); sleep-swap skipped if roared out
-        status_reward = self._compute_status_reward(delta, battle)
-        reward += status_reward
-
-        # Update end-of-turn snapshots for next turn's checks
-        opp_mon = battle.opponent_active_pokemon
-        self._prev_opp_boosts = dict(opp_mon.boosts) if opp_mon else {}
-        self._update_opp_se_threat(battle)
-
-        # Switch subsidy from record_action
+        # --- Switch subsidy (set by record_action before the turn) ---
         if hasattr(self, "_pending_subsidy"):
             subsidy_val = self._pending_subsidy
             reward += subsidy_val
@@ -426,9 +472,14 @@ class Gen3RewardManager:
         else:
             subsidy_val = 0.0
 
-        # Progressive stall tax: starts at turn 125, ramps to -4.2/turn at turn 250
+        # --- Progressive stall tax: ramps from turn 125 to -4.2/turn at turn 250 ---
         if battle.turn > STALL_TAX_START_TURN:
             reward += -1.0 * (battle.turn - STALL_TAX_START_TURN) / STALL_TAX_DENOMINATOR
+
+        # Update end-of-turn snapshots for next turn's checks
+        opp_mon = battle.opponent_active_pokemon
+        self._prev_opp_boosts = dict(opp_mon.boosts) if opp_mon else {}
+        self._update_opp_se_threat(battle)
 
         if self.log_level >= LogLevel.DETAILED and self.logger.should_log():
             self.logger.log(
@@ -441,8 +492,6 @@ class Gen3RewardManager:
                     print(f"    🔍 [DEEP TRACE] Type: VOLUNTARY SWITCH")
                     print(f"       Spam mult: {m['spam_mult']:.1f}")
                     print(f"       Taxes: Repetition:{m['repetition_tax']:.2f} | Bouncing:{m['bouncing_tax']:.2f}")
-                    if m.get("pivot_bonus"):
-                        print(f"       Pivot Bonus: +{m['pivot_bonus']:.2f}")
                     print(f"       Final Subsidy: {m['subsidy']:.4f}")
                 elif m.get("type") == "ATTACK" and (m.get("repetition_tax", 0) != 0 or m.get("struggle_loop_tax", 0) != 0):
                     print(f"    🔍 [DEEP TRACE] Type: ATTACK | Repetition Tax: {m['repetition_tax']:.2f} | Struggle Loop Tax: {m['struggle_loop_tax']:.2f}")
