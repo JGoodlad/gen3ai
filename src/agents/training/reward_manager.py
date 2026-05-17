@@ -4,6 +4,7 @@ from utils.logging.rate_limiter import RateLimitedLogger
 from utils.logging.levels import LogLevel
 from utils.gen3_utils import SwitchDetection
 from poke_env.data import GenData
+from poke_env.battle.side_condition import SideCondition
 from agents.training.battle_context import BattleContext, TurnDelta
 
 FAINTED_VALUE = 2.0
@@ -13,6 +14,10 @@ STALL_TAX_START_TURN = 200
 STALL_TAX_DENOMINATOR = 10.0
 STRUGGLE_LOOP_TAX = -0.5
 STRUGGLE_LOOP_THRESHOLD = 3
+
+STATUS_BONUS = 0.3    # reward for inflicting status; penalty for receiving
+ROAR_BONUS = 0.2      # reward for Roar when spikes on opp side or opp had positive boosts
+SE_SWITCH_BONUS = 0.2 # reward for switching in a mon with a SE damaging move vs opp active
 
 
 class Gen3RewardManager:
@@ -45,6 +50,10 @@ class Gen3RewardManager:
         self._last_reward_metadata = {}
         self._consecutive_struggle = 0
         self.struggle_turns = 0
+        self._prev_opp_boosts: dict = {}    # opp active boosts after last turn (for Roar check)
+        self._prev_our_status = None        # our active's status after last turn
+        self._prev_opp_status = None        # opp active's status after last turn
+        self._type_chart = GenData.from_gen(3).type_chart
 
     def reset(self):
         self.switch_count = 0
@@ -61,6 +70,9 @@ class Gen3RewardManager:
         self._last_reward_metadata = {}
         self._consecutive_struggle = 0
         self.struggle_turns = 0
+        self._prev_opp_boosts = {}
+        self._prev_our_status = None
+        self._prev_opp_status = None
 
     def record_action(self, ctx: BattleContext, action: int) -> None:
         """
@@ -165,6 +177,53 @@ class Gen3RewardManager:
 
         return reward
 
+    def _compute_roar_bonus(self, delta: TurnDelta, battle) -> float:
+        """Reward Roar when it actually forces a switch AND spikes are up or opp had positive boosts."""
+        if delta.our_move_id != "roar" or delta.opp_switch_to is None:
+            return 0.0
+        has_spikes = battle.opponent_side_conditions.get(SideCondition.SPIKES, 0) > 0
+        had_boosts = any(v > 0 for v in self._prev_opp_boosts.values())
+        return ROAR_BONUS if (has_spikes or had_boosts) else 0.0
+
+    def _compute_se_switch_bonus(self, delta: TurnDelta, battle) -> float:
+        """Reward switching in a mon that has at least one SE damaging move vs the opponent."""
+        if delta.our_switch_to is None:
+            return 0.0
+        our_mon = battle.active_pokemon
+        opp_mon = battle.opponent_active_pokemon
+        if not our_mon or not opp_mon:
+            return 0.0
+        for move in our_mon.moves.values():
+            if move.base_power <= 0:
+                continue
+            mult = move.type.damage_multiplier(
+                opp_mon.type_1, opp_mon.type_2, type_chart=self._type_chart
+            )
+            if mult >= 2.0:
+                return SE_SWITCH_BONUS
+        return 0.0
+
+    def _compute_status_reward(self, delta: TurnDelta, battle) -> float:
+        """Symmetric reward: +STATUS_BONUS for inflicting status on opp, -STATUS_BONUS for receiving.
+        Only fires on the turn status is first applied; ignores pre-existing status on switch-ins."""
+        our_mon = battle.active_pokemon
+        opp_mon = battle.opponent_active_pokemon
+        our_status = our_mon.status if our_mon else None
+        opp_status = opp_mon.status if opp_mon else None
+
+        reward = 0.0
+        if delta.our_switch_to is None:
+            if our_status is not None and self._prev_our_status is None:
+                reward -= STATUS_BONUS
+        if delta.opp_switch_to is None:
+            if opp_status is not None and self._prev_opp_status is None:
+                reward += STATUS_BONUS
+
+        # Always update — on switch the new mon's current status becomes the baseline
+        self._prev_our_status = our_status
+        self._prev_opp_status = opp_status
+        return reward
+
     def _compute_pivot_bonus(self, delta: TurnDelta, battle) -> float:
         if not delta.our_switch_to or not delta.our_prev_active:
             return 0.0
@@ -222,6 +281,22 @@ class Gen3RewardManager:
         if pivot_bonus > 0:
             reward += pivot_bonus
             self._last_reward_metadata["pivot_bonus"] = pivot_bonus
+
+        # Roar bonus (forces switch when spikes are up or opp was boosted)
+        roar_bonus = self._compute_roar_bonus(delta, battle)
+        reward += roar_bonus
+
+        # SE switch-in bonus (brings in a mon with a SE damaging move vs opp)
+        se_switch_bonus = self._compute_se_switch_bonus(delta, battle)
+        reward += se_switch_bonus
+
+        # Symmetric status reward (+/- on inflict/receive)
+        status_reward = self._compute_status_reward(delta, battle)
+        reward += status_reward
+
+        # Update opp boosts for next turn's Roar check (done after Roar bonus is computed)
+        opp_mon = battle.opponent_active_pokemon
+        self._prev_opp_boosts = dict(opp_mon.boosts) if opp_mon else {}
 
         # Switch subsidy from record_action
         if hasattr(self, "_pending_subsidy"):
