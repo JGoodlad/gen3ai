@@ -14,6 +14,16 @@ from agents.observation.turn_delta_encoder import TURN_DELTA_DIM
 from utils.logging.rate_limiter import RateLimitedLogger
 from utils.logging.levels import LogLevel
 
+# Architecture constants — single source of truth.
+# ModelVersion imports these so model_config.json always reflects the live values.
+# When you change any of these, also bump MODEL_CONFIG_VERSION in model_version.py.
+ROLE_TOKEN_SIZE = 128
+PROJECTION_DIM = 512
+MOVE_NET_HIDDEN = [64, 32]        # [hidden, output] of shared move processor
+ROLE_ENCODER_HIDDEN = [256, 128]  # [hidden, output] of per-Pokémon role encoder
+ACTIVE_CTX_HIDDEN = [64, 32]     # [hidden, output] of active context encoder
+
+
 class Gen3FeaturesExtractor(torch.nn.Module):
     """
     Custom feature extractor for Gen 3 Pokémon battles.
@@ -70,11 +80,11 @@ class Gen3FeaturesExtractor(torch.nn.Module):
                           + _move_ctx_dim                           # context
                           + TEAM_SIZE + 1)                          # matchups + validity
         self.move_network = torch.nn.Sequential(
-            torch.nn.Linear(move_input_dim, 64),
+            torch.nn.Linear(move_input_dim, MOVE_NET_HIDDEN[0]),
             torch.nn.ReLU(),
-            torch.nn.Linear(64, 32)
+            torch.nn.Linear(MOVE_NET_HIDDEN[0], MOVE_NET_HIDDEN[1])
         )
-        
+
         # 1.6 Pokémon Role Encoder
         # pokemon_enriched (242) + global_context broadcast (16) + switch_valid (1) + struggle_from_prev (1) = 260
         # pokemon_enriched: species(32) + stats(6) + item_emb(16) + item_known(1) +
@@ -82,12 +92,12 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         # global_context: turn(1) + weather(6) + fainted(2) + spikes(2) + struggle(1) + screens(4) = 16
         # switch_valid: was this slot a valid switch target in the previous turn's mask (1)
         # struggle_from_prev: was struggle the only option last turn (1)
-        self.role_token_size = 128
+        self.role_token_size = ROLE_TOKEN_SIZE
         role_input_dim = 260
         self.role_encoder = torch.nn.Sequential(
-            torch.nn.Linear(role_input_dim, 256),
+            torch.nn.Linear(role_input_dim, ROLE_ENCODER_HIDDEN[0]),
             torch.nn.ReLU(),
-            torch.nn.Linear(256, self.role_token_size) # Final Role Token Size
+            torch.nn.Linear(ROLE_ENCODER_HIDDEN[0], ROLE_ENCODER_HIDDEN[1])
         )
         
         # 1.7 Team-Wide Attention (Step 4)
@@ -134,9 +144,9 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         # into a dense 32-dim token. Shared weights between our side and opponent side.
         active_ctx_dim = layout.get('active_context_dim', 22)
         self.active_ctx_encoder = torch.nn.Sequential(
-            torch.nn.Linear(active_ctx_dim, 64),
+            torch.nn.Linear(active_ctx_dim, ACTIVE_CTX_HIDDEN[0]),
             torch.nn.ReLU(),
-            torch.nn.Linear(64, 32),
+            torch.nn.Linear(ACTIVE_CTX_HIDDEN[0], ACTIVE_CTX_HIDDEN[1]),
         )
 
         # 2. Dynamic Input Dimension Discovery (Dummy Forward)
@@ -153,7 +163,7 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         # in `combined` (embedding outputs, 0/1 validity bits, HP fractions,
         # ±1 TurnDelta deltas) before they hit a single Linear.
         self.pre_proj_norm = torch.nn.LayerNorm(self.projection_input_dim)
-        self.projection_dim = 512
+        self.projection_dim = PROJECTION_DIM
         self.projection = torch.nn.Linear(self.projection_input_dim, self.projection_dim)
         self.activation = torch.nn.ReLU()
         self.features_dim = self.projection_dim

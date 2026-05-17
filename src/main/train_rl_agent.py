@@ -26,6 +26,8 @@ from stable_baselines3.common.vec_env import DummyVecEnv, SubprocVecEnv
 from stable_baselines3.common.monitor import Monitor
 
 from agents.model.features_extractor import Gen3FeaturesExtractor
+from agents.model.model_version import ModelVersion, ModelVersionError
+from agents.model.snapshot import save_model_snapshot, load_model_snapshot
 from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings
 from agents.inference.player import RLPlayer
 from utils.teambuilder import Gen3Teambuilder
@@ -43,6 +45,46 @@ from agents.opponents import Gen3StallerPlayer, Gen3AggressivePlayer, Gen3SetupS
 from poke_env import AccountConfiguration, LocalhostServerConfiguration
 
 BATTLE_FORMAT = "gen3ou"
+
+
+def _run_roundtrip_test(model, layout: dict, policy_kwargs: dict, debug: bool = False) -> None:
+    """Startup smoke test: save → reload → zero forward pass → assert output shape.
+
+    Catches serialization failures at second 5, not hour 50. Raises on any failure.
+    """
+    import shutil
+    import tempfile
+    import torch
+    import numpy as np
+    from agents.model.features_extractor import PROJECTION_DIM
+
+    version = ModelVersion.from_layout_and_policy_kwargs(layout, policy_kwargs)
+    total_dim = layout["total_dim"]
+    tmpdir = tempfile.mkdtemp(prefix="roundtrip_")
+    try:
+        zip_path = os.path.join(tmpdir, "roundtrip_model")
+        model.save(zip_path)
+        save_model_snapshot(tmpdir, version, git_hash="roundtrip-test")
+        reloaded = load_model_snapshot(
+            zip_path + ".zip",
+            env=model.get_env(),
+            current_version=version,
+        )
+        dev = next(reloaded.policy.parameters()).device
+        dummy_obs = {
+            "observation": torch.zeros(1, total_dim, device=dev),
+            "action_mask": torch.ones(1, 11, dtype=torch.int8, device=dev),
+        }
+        with torch.no_grad():
+            features = reloaded.policy.features_extractor(dummy_obs)
+        assert features.shape == (1, PROJECTION_DIM), (
+            f"Round-trip test: unexpected output shape {features.shape}, expected (1, {PROJECTION_DIM})"
+        )
+        if debug:
+            print(f"[ModelVersion] Round-trip smoke test PASSED (output shape: {features.shape})")
+    finally:
+        shutil.rmtree(tmpdir, ignore_errors=True)
+
 
 async def main():
     # --- Pre-flight Checks ---
@@ -308,17 +350,40 @@ async def main():
                     model_path = p
                     break
 
+        # Build the current-code version for compatibility check
+        _load_encoder = Gen3ObservationEncoder(mappings)
+        _load_extractor_kwargs = _load_encoder.get_features_extractor_kwargs()
+        _load_policy_kwargs = {
+            "features_extractor_class": Gen3FeaturesExtractor,
+            "features_extractor_kwargs": _load_extractor_kwargs,
+            "net_arch": [512, 512],
+        }
+        current_version = ModelVersion.from_layout_and_policy_kwargs(
+            _load_extractor_kwargs["layout"], _load_policy_kwargs
+        )
+
         print(f"Loading existing model from {model_path}")
-        model = MaskablePPO.load(model_path, env=env, device=args.device, tensorboard_log=os.path.join(root_dir, "tensorboard"))
+        try:
+            model = load_model_snapshot(
+                model_path,
+                env=env,
+                current_version=current_version,
+                device=args.device,
+                tensorboard_log=os.path.join(root_dir, "tensorboard"),
+            )
+        except ModelVersionError as e:
+            print(f"\n[ModelVersion] FATAL: {e}")
+            os._exit(1)
         model.ent_coef = args.ent_coef # Allow overriding entropy during continuation
-        
+
         if args.eval_only:
             await evaluate_model_random(model)
             return
         else:
             print(f"Continuing Training (Steps: {args.steps}, LR: {args.lr})")
-            # model_dir and unique_id are now pre-defined earlier in main()
-            
+            _run_roundtrip_test(model, _load_extractor_kwargs["layout"], _load_policy_kwargs, debug=args.debug)
+            save_model_snapshot(model_dir, current_version)
+
             import signal
             def signal_handler(sig, frame):
                 print("\nInterrupt received, saving model...")
@@ -326,7 +391,7 @@ async def main():
                 model.save(final_path)
                 print(f"Model saved to {final_path}. Exiting.")
                 sys.exit(0)
-            
+
             signal.signal(signal.SIGINT, signal_handler)
             signal.signal(signal.SIGTERM, signal_handler)
 
@@ -336,10 +401,14 @@ async def main():
                 print(f"Training interrupted by exception: {e}")
                 final_path = os.path.join(model_dir, "final_model_exception")
                 model.save(final_path)
-                
+
             final_path = os.path.join(model_dir, "final_model")
             model.save(final_path)
+            save_model_snapshot(os.path.dirname(final_path), current_version)
             print(f"Training complete. Model saved to {final_path}")
+            best_model_dir = os.path.join(model_dir, "best_model")
+            if os.path.isdir(best_model_dir):
+                save_model_snapshot(best_model_dir, current_version)
             await evaluate_model_random(model)
     else:
         print(f"Starting NEW Training (Parallel x{n_envs}, Batch: {args.batch_size}, Epochs: {args.n_epochs})")
@@ -378,6 +447,10 @@ async def main():
             policy_kwargs=policy_kwargs
         )
 
+        version = ModelVersion.from_layout_and_policy_kwargs(extractor_kwargs["layout"], policy_kwargs)
+        _run_roundtrip_test(model, extractor_kwargs["layout"], policy_kwargs, debug=args.debug)
+        save_model_snapshot(model_dir, version)
+
         import signal
         def signal_handler(sig, frame):
             print("\nInterrupt received, saving model...")
@@ -407,7 +480,11 @@ async def main():
             
         final_path = os.path.join(model_dir, "final_model")
         model.save(final_path)
+        save_model_snapshot(os.path.dirname(final_path), version)
         print(f"Training complete. Model saved to {final_path}")
+        best_model_dir = os.path.join(model_dir, "best_model")
+        if os.path.isdir(best_model_dir):
+            save_model_snapshot(best_model_dir, version)
         await evaluate_model_random(model)
 
 if __name__ == "__main__":
