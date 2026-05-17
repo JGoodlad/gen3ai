@@ -277,6 +277,84 @@ class TestRewardManager(unittest.TestCase):
         # Reward should just be 0 (no HP change, no other signals)
         self.assertAlmostEqual(reward, 0.0, places=5)
 
+    def _make_battle_with_opp_move(self, move_type_name, base_power, our_type1, our_type2=None):
+        """Helper: battle where opp active has one revealed move of given type."""
+        battle = MagicMock()
+        battle.won = False
+        battle.lost = False
+        battle.finished = False
+        battle.turn = 1
+        battle.opponent_team = {}
+        battle.opponent_side_conditions = {}
+
+        our_mon = MagicMock()
+        our_mon.type_1 = MagicMock()
+        our_mon.type_2 = our_type2
+        battle.active_pokemon = our_mon
+
+        opp_move = MagicMock()
+        opp_move.base_power = base_power
+        opp_move.type = MagicMock()
+
+        def se_mult(t1, t2, type_chart):
+            return 2.0 if move_type_name == "SE" else 0.5
+        opp_move.type.damage_multiplier = se_mult
+
+        opp_mon = MagicMock()
+        opp_mon.moves = {"testmove": opp_move}
+        opp_mon.boosts = {}
+        battle.opponent_active_pokemon = opp_mon
+
+        return battle
+
+    def test_matchup_penalty_fires_on_second_turn(self):
+        from agents.training.reward_manager import MATCHUP_PENALTY
+        # Turn 1: opp SE move revealed — penalty should NOT fire (unknown at decision time)
+        ctx1 = _ctx(turn=1)
+        self.manager.record_action(ctx1, 6)
+        battle1 = self._make_battle_with_opp_move("SE", 80, None)
+        r1 = self.manager.process_turn_reward(battle1, _delta())
+        self.assertAlmostEqual(r1, 0.0, places=5)
+
+        # Turn 2: threat is now known at decision time — penalty fires
+        ctx2 = _ctx(turn=2)
+        self.manager.record_action(ctx2, 7)
+        battle2 = self._make_battle_with_opp_move("SE", 80, None)
+        r2 = self.manager.process_turn_reward(battle2, _delta())
+        self.assertAlmostEqual(r2, MATCHUP_PENALTY, places=5)
+
+    def test_matchup_penalty_skipped_on_switch(self):
+        from agents.training.reward_manager import MATCHUP_PENALTY
+        self.manager._prev_opp_se_threat = True
+        ctx = _ctx(turn=1)
+        self.manager.record_action(ctx, 6)
+        delta = TurnDelta(
+            our_move_id=None,
+            our_switch_to="raichu",
+            our_prev_active="pikachu",
+            opp_move_id=None,
+            opp_switch_to=None,
+            opp_prev_active="charizard",
+            opp_move_known=False,
+            our_hp_delta=np.zeros(6, dtype=np.float32),
+            opp_hp_delta=np.zeros(6, dtype=np.float32),
+            we_fainted=False,
+            opp_fainted=False,
+            our_failed_to_move=False,
+            our_cant_reason=None,
+            opp_failed_to_move=False,
+            opp_cant_reason=None,
+        )
+        r = self.manager.process_turn_reward(_battle(), delta)
+        self.assertGreater(r, MATCHUP_PENALTY)
+
+    def test_matchup_penalty_absent_when_no_threat(self):
+        self.manager._prev_opp_se_threat = False
+        ctx = _ctx(turn=1)
+        self.manager.record_action(ctx, 6)
+        r = self.manager.process_turn_reward(_battle(), _delta())
+        self.assertAlmostEqual(r, 0.0, places=5)
+
 
 if __name__ == "__main__":
     unittest.main()

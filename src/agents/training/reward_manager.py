@@ -25,6 +25,7 @@ SPIKES_LAYER_BONUS = 0.5  # per layer added to opponent's side (credit assignmen
 SPIKES_WASTE_PENALTY = -0.2  # wasted turn using Spikes when 3 layers already up
 FAILED_ROAR_PENALTY = -0.2   # Roar used but opponent didn't switch (no target / already phazed out)
 FUTILE_ATTACK_PENALTY = -0.05  # attacking move used but opponent net gained HP (Leftovers > damage)
+MATCHUP_PENALTY = -0.15   # per turn we stay in while opp has a revealed SE move vs us
 
 
 class Gen3RewardManager:
@@ -56,6 +57,7 @@ class Gen3RewardManager:
         self.struggle_turns = 0
         self._prev_opp_boosts: dict = {}    # opp active boosts after last turn (for Roar check)
         self._prev_opp_spikes: int = 0      # opp spikes layers after last turn (for Spikes bonus)
+        self._prev_opp_se_threat: bool = False  # did opp have a revealed SE move vs us last turn
         self._prev_our_statused = 0
         self._prev_opp_statused = 0
         self._last_switch_was_roared = False
@@ -75,6 +77,7 @@ class Gen3RewardManager:
         self.struggle_turns = 0
         self._prev_opp_boosts = {}
         self._prev_opp_spikes = 0
+        self._prev_opp_se_threat = False
         self._prev_our_statused = 0
         self._prev_opp_statused = 0
         self._last_switch_was_roared = False
@@ -267,6 +270,30 @@ class Gen3RewardManager:
             return 0.15 if new_threat == 0 else 0.1
         return 0.0
 
+    def _compute_matchup_penalty(self, delta: TurnDelta) -> float:
+        """Per-turn penalty for staying in while the opp had a revealed SE move vs us last turn.
+        Uses last-turn's snapshot so we only penalise for threats known at decision time."""
+        if delta.our_switch_to is not None:
+            return 0.0  # we switched out — no staying-in penalty
+        return MATCHUP_PENALTY if self._prev_opp_se_threat else 0.0
+
+    def _update_opp_se_threat(self, battle) -> None:
+        """Snapshot whether opp active has a revealed SE move vs our active, for next turn."""
+        our_mon = battle.active_pokemon
+        opp_mon = battle.opponent_active_pokemon
+        if not our_mon or not opp_mon:
+            self._prev_opp_se_threat = False
+            return
+        for move in opp_mon.moves.values():
+            if move.base_power > 0:
+                mult = move.type.damage_multiplier(
+                    our_mon.type_1, our_mon.type_2, type_chart=self._type_chart
+                )
+                if mult >= 2.0:
+                    self._prev_opp_se_threat = True
+                    return
+        self._prev_opp_se_threat = False
+
     def _compute_spikes_bonus(self, delta: TurnDelta, battle) -> float:
         """Reward each new spike layer added; penalise wasting a turn at layer cap."""
         curr = battle.opponent_side_conditions.get(SideCondition.SPIKES, 0)
@@ -341,6 +368,10 @@ class Gen3RewardManager:
         spikes_bonus = self._compute_spikes_bonus(delta, battle)
         reward += spikes_bonus
 
+        # Matchup disadvantage penalty (known SE threat at decision time, and we stayed in)
+        matchup_penalty = self._compute_matchup_penalty(delta)
+        reward += matchup_penalty
+
         # SE switch-in bonus — skip if we were roared/whirlwinded out
         if not self._last_switch_was_roared:
             se_switch_bonus = self._compute_se_switch_bonus(delta, battle)
@@ -350,9 +381,10 @@ class Gen3RewardManager:
         status_reward = self._compute_status_reward(delta, battle)
         reward += status_reward
 
-        # Update opp boosts for next turn's Roar check (done after Roar bonus is computed)
+        # Update end-of-turn snapshots for next turn's checks
         opp_mon = battle.opponent_active_pokemon
         self._prev_opp_boosts = dict(opp_mon.boosts) if opp_mon else {}
+        self._update_opp_se_threat(battle)
 
         # Switch subsidy from record_action
         if hasattr(self, "_pending_subsidy"):
