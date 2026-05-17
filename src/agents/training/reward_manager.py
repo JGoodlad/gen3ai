@@ -1,5 +1,5 @@
 from dataclasses import dataclass, fields
-from typing import Optional
+from typing import ClassVar, Optional
 import numpy as np
 from utils.logging.rate_limiter import RateLimitedLogger
 from utils.logging.levels import LogLevel
@@ -57,18 +57,40 @@ class RewardBreakdown:
     # Progressive stall tax
     stall_tax: float = 0.0
 
+    # Groups ordered by how frequently they produce non-zero values.
+    # Each group's fields are listed in the order they should appear in the string.
+    _GROUPS: ClassVar[tuple] = (
+        ("base",   ("hp_ours", "hp_opp", "faint_ours", "faint_opp", "win_loss", "explosion")),
+        ("attack", ("roar", "futile_attack", "repetition_tax", "struggle_tax")),
+        ("switch", ("switch_base", "switch_bouncing_tax", "pivot_protect", "pivot_status",
+                    "pivot_damage", "se_switch", "sleep_out", "sleep_in")),
+        ("field",  ("spikes", "matchup_penalty", "status", "stall_tax")),
+    )
+
     @property
     def total(self) -> float:
         return sum(getattr(self, f.name) for f in fields(self))
 
     def to_dict(self) -> dict:
-        """Compact JSON-serializable dict — total always included, zero fields omitted."""
-        result = {
-            f.name: round(getattr(self, f.name), 4)
-            for f in fields(self)
-            if getattr(self, f.name) != 0.0
-        }
-        result["total"] = round(self.total, 4)
+        """Grouped, compact JSON dict.
+
+        Each category (base/attack/switch/field) becomes a single string of
+        'key=±value' pairs for non-zero fields. Empty categories are omitted.
+        'total' is always present.
+
+        Example:
+            {'total': 0.06, 'base': 'hp_ours=-0.64 hp_opp=+0.20',
+             'switch': 'switch_base=+0.50 se_switch=+0.20 pivot_damage=+0.10'}
+        """
+        result: dict = {"total": round(self.total, 4)}
+        for group_name, group_fields in self._GROUPS:
+            parts = []
+            for fname in group_fields:
+                v = getattr(self, fname)
+                if v != 0.0:
+                    parts.append(f"{fname}={v:+.4g}")
+            if parts:
+                result[group_name] = " ".join(parts)
         return result
 
 

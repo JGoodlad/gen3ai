@@ -686,5 +686,84 @@ class TestOriginalScenario(unittest.TestCase):
         self.assertGreater(reward, 0.0, "should be positive: ttar switch is correct")
 
 
+class TestRewardBreakdownToDict(unittest.TestCase):
+    """RewardBreakdown.to_dict() — grouped compact format."""
+
+    def test_total_always_present(self):
+        from agents.training.reward_manager import RewardBreakdown
+        bd = RewardBreakdown()
+        d = bd.to_dict()
+        self.assertIn("total", d)
+        self.assertAlmostEqual(d["total"], 0.0, places=5)
+
+    def test_all_zeros_has_only_total(self):
+        from agents.training.reward_manager import RewardBreakdown
+        bd = RewardBreakdown()
+        d = bd.to_dict()
+        self.assertEqual(list(d.keys()), ["total"])
+
+    def test_base_group_appears_for_hp_delta(self):
+        from agents.training.reward_manager import RewardBreakdown
+        bd = RewardBreakdown(hp_ours=-0.64, hp_opp=0.20)
+        d = bd.to_dict()
+        self.assertIn("base", d)
+        self.assertNotIn("attack", d)
+        self.assertNotIn("switch", d)
+        self.assertNotIn("field", d)
+        self.assertIn("hp_ours=-0.64", d["base"])
+        self.assertIn("hp_opp=+0.2", d["base"])
+
+    def test_attack_group_appears_for_roar(self):
+        from agents.training.reward_manager import RewardBreakdown
+        bd = RewardBreakdown(hp_ours=-0.1, roar=0.2)
+        d = bd.to_dict()
+        self.assertIn("attack", d)
+        self.assertIn("roar=+0.2", d["attack"])
+        # base also fires since hp_ours != 0
+        self.assertIn("base", d)
+
+    def test_switch_group_contains_multiple_signals(self):
+        from agents.training.reward_manager import RewardBreakdown
+        bd = RewardBreakdown(switch_base=0.5, se_switch=0.2, pivot_damage=0.1)
+        d = bd.to_dict()
+        self.assertIn("switch", d)
+        self.assertIn("switch_base=+0.5", d["switch"])
+        self.assertIn("se_switch=+0.2", d["switch"])
+        self.assertIn("pivot_damage=+0.1", d["switch"])
+
+    def test_field_group_contains_stall_tax(self):
+        from agents.training.reward_manager import RewardBreakdown
+        bd = RewardBreakdown(hp_ours=-0.05, stall_tax=-1.5)
+        d = bd.to_dict()
+        self.assertIn("field", d)
+        self.assertIn("stall_tax=-1.5", d["field"])
+
+    def test_group_ordering_is_base_attack_switch_field(self):
+        from agents.training.reward_manager import RewardBreakdown
+        bd = RewardBreakdown(
+            hp_ours=-0.1, roar=0.2, switch_base=0.5, stall_tax=-0.5,
+        )
+        d = bd.to_dict()
+        keys = [k for k in d.keys() if k != "total"]
+        self.assertEqual(keys, ["base", "attack", "switch", "field"])
+
+    def test_zero_fields_within_group_are_omitted(self):
+        from agents.training.reward_manager import RewardBreakdown
+        # Only faint_opp set in base group; hp_ours/hp_opp/win_loss etc should not appear
+        bd = RewardBreakdown(faint_opp=2.0)
+        d = bd.to_dict()
+        self.assertIn("faint_opp=+2", d["base"])
+        self.assertNotIn("hp_ours", d["base"])
+        self.assertNotIn("hp_opp", d["base"])
+
+    def test_win_scenario(self):
+        from agents.training.reward_manager import RewardBreakdown
+        bd = RewardBreakdown(hp_opp=-0.3, faint_opp=2.0, win_loss=30.0)
+        d = bd.to_dict()
+        self.assertAlmostEqual(d["total"], 31.7, places=4)
+        self.assertIn("win_loss=+30", d["base"])
+        self.assertIn("faint_opp=+2", d["base"])
+
+
 if __name__ == "__main__":
     unittest.main()
