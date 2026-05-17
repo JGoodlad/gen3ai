@@ -94,6 +94,22 @@ gamma/gae_lambda changes:
 `clip_range` lowered from 0.2 to 0.15 and default `lr` halved from 3e-4 to 1.5e-4.
 Run was resumed from the 33M-step checkpoint rather than restarted from scratch.
 
+**Bug fix — checkpoint resume not applying overrides (`4bac4e8`, `2b8cfa8`):**
+
+When loading from a checkpoint, SB3 restores all hyperparameters from the saved model.
+The initial fix set `model.learning_rate = args.lr`, but SB3 uses `lr_schedule` (a
+callable) internally — `learning_rate` is only the constructor input. The optimizer LR
+remained at 3e-4 until corrected. The fix:
+
+```python
+model.ent_coef = args.ent_coef
+model.lr_schedule = lambda _: args.lr   # SB3 reads lr_schedule, not learning_rate
+model.clip_range = lambda _: 0.15       # clip_range is already a callable in PPO
+```
+
+Confirmed working via TensorBoard: `train/learning_rate` shows `0.00015` and
+`train/clip_range` shows `0.15` after resume.
+
 ---
 
 ## Reward Signal Summary (unchanged from Step 4)
@@ -125,7 +141,7 @@ discounted return without touching the constants themselves.
 
 | File | Change |
 |------|--------|
-| `src/main/train_rl_agent.py` | `gamma` 0.99 → 0.9999; `gae_lambda` 0.95 → 0.85; `clip_range` 0.2 → 0.15; default `lr` 3e-4 → 1.5e-4 |
+| `src/main/train_rl_agent.py` | `gamma` 0.99 → 0.9999; `gae_lambda` 0.95 → 0.85; `clip_range` 0.2 → 0.15; default `lr` 3e-4 → 1.5e-4; checkpoint resume override fix (`lr_schedule`, `clip_range`) |
 | `designs/ai_v3/todo.md` | LR annealing added as §1; clip_range + LR reduction added as §2 |
 
 ---
