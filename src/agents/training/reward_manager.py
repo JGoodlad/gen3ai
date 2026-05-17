@@ -16,6 +16,7 @@ STALL_TAX_DENOMINATOR = 10.0
 STRUGGLE_LOOP_TAX = -0.5
 STRUGGLE_LOOP_THRESHOLD = 3
 
+SWITCH_BASE_BONUS = 0.5   # flat per-voluntary-switch bonus; consistent throughout the game
 STATUS_BONUS = 0.3        # reward for inflicting status; penalty for receiving
 ROAR_BONUS = 0.2          # reward for Roar when spikes on opp side or opp had positive boosts
 SE_SWITCH_BONUS = 0.2     # reward for switching in a mon with a SE damaging move vs opp active
@@ -40,13 +41,10 @@ class Gen3RewardManager:
         self.forced_switch_count = 0
         self.attack_count = 0
         self.total_reward = 0.0
-        self.remaining_switch_pool = 7.5
         self.last_switch_turn = -1
         self.logger = RateLimitedLogger(interval_seconds=1.0)
         self.episode_logger = RateLimitedLogger(interval_seconds=5.0)
         self._last_active_name = "NULL"
-        self._last_opp_active_name = "NULL"
-        self._opp_turns_active = 0
         self._prev_active_name = "NULL"
         self._last_action_idx = -1
         self._last_reward_metadata = {}
@@ -63,11 +61,8 @@ class Gen3RewardManager:
         self.forced_switch_count = 0
         self.attack_count = 0
         self.total_reward = 0.0
-        self.remaining_switch_pool = 7.5
         self.last_switch_turn = -1
         self._last_active_name = "NULL"
-        self._last_opp_active_name = "NULL"
-        self._opp_turns_active = 0
         self._prev_active_name = "NULL"
         self._last_action_idx = -1
         self._last_reward_metadata = {}
@@ -91,12 +86,6 @@ class Gen3RewardManager:
         has_switched, is_real, is_voluntary = SwitchDetection.get_switch_type(
             self._last_active_name, current_active, ctx.mask
         )
-
-        if ctx.opp_active != self._last_opp_active_name:
-            self._last_opp_active_name = ctx.opp_active
-            self._opp_turns_active = 0
-        else:
-            self._opp_turns_active += 1
 
         self._pending_subsidy = 0.0
         self._last_switch_was_roared = False
@@ -124,28 +113,22 @@ class Gen3RewardManager:
                     bouncing_tax = -0.15
                     self._pending_subsidy += bouncing_tax
 
-                payout = self.remaining_switch_pool * 0.5
                 attack_ratio = self.attack_count / max(1, ctx.turn)
                 ratio_mult = 1.0 if attack_ratio >= 0.33 else 0.5
                 spam_mult = 1.0 if (ctx.turn - self.last_switch_turn) > 1 else 0.0
-                turn_decay = max(0.0, 1.0 - ctx.turn / 250.0)
-                reactive_mult = 1.0 if self._opp_turns_active <= 2 else 0.25
 
-                subsidy = min(payout * ratio_mult * spam_mult * turn_decay * reactive_mult, 1.0)
+                subsidy = SWITCH_BASE_BONUS * ratio_mult * spam_mult
                 self._pending_subsidy += subsidy
 
                 self._last_reward_metadata = {
                     "type": "VOLUNTARY",
-                    "payout": payout,
                     "ratio_mult": ratio_mult,
                     "spam_mult": spam_mult,
-                    "reactive_mult": reactive_mult,
                     "repetition_tax": repetition_tax,
                     "bouncing_tax": bouncing_tax,
                     "subsidy": subsidy,
                 }
 
-                self.remaining_switch_pool -= payout
                 self.switch_count += 1
                 self.last_switch_turn = ctx.turn
 
@@ -346,8 +329,7 @@ class Gen3RewardManager:
                 m = self._last_reward_metadata
                 if m.get("type") == "VOLUNTARY":
                     print(f"    🔍 [DEEP TRACE] Type: VOLUNTARY SWITCH")
-                    print(f"       Pool Remaining: {self.remaining_switch_pool + m['payout']:.2f} -> Payout: {m['payout']:.2f}")
-                    print(f"       Multipliers: Ratio:{m['ratio_mult']:.1f} | Spam:{m['spam_mult']:.1f} | Reactive:{m['reactive_mult']:.2f}")
+                    print(f"       Multipliers: Ratio:{m['ratio_mult']:.1f} | Spam:{m['spam_mult']:.1f}")
                     print(f"       Taxes: Repetition:{m['repetition_tax']:.2f} | Bouncing:{m['bouncing_tax']:.2f}")
                     if m.get("pivot_bonus"):
                         print(f"       Pivot Bonus: +{m['pivot_bonus']:.2f}")
