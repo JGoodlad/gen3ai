@@ -2,7 +2,9 @@
 
 ## Development Stage
 
-**Rapid iteration — checkpoint compatibility is not a concern.** We have no trained checkpoints worth preserving. Breaking changes to the observation space, network architecture, or action space are fine. Do not add backwards-compatibility shims or hesitate to change dims, layer sizes, or layouts.
+**Rapid iteration — checkpoint compatibility is not a concern.** Breaking changes to the observation space, network architecture, or action space are fine. Do not add backwards-compatibility shims or hesitate to change dims, layer sizes, or layouts.
+
+Architecture constants (embedding dims, layer sizes, etc.) are defined as module-level constants in `src/agents/model/features_extractor.py` — that is the single source of truth. When you change one, change it there and nowhere else. See [Model Versioning](#model-versioning).
 
 ## Git Workflow
 
@@ -89,12 +91,13 @@ export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable
 ```
 
 What to look for:
+- `[ModelVersion] Round-trip smoke test PASSED` — serialization and reload are healthy (printed early, before training begins)
 - `🏁 Episode Finished` lines appearing throughout — episodes completing and resetting
 - `🎥 [REPLAY]` fires once early (step 1), then training continues — replay callback works
 - `[STALL LOGGED]` may appear if a 250-turn game occurs — should be followed by another `🏁 Episode Finished`, not a hang
 - `Win rate vs Random` and `Win rate vs Heuristic` printed at the end — evaluation ran
 
-A hang after `[STALL LOGGED]` or a crash before "Training complete" indicates a regression in the env/stall/forfeit pipeline.
+A hang after `[STALL LOGGED]` or a crash before "Training complete" indicates a regression in the env/stall/forfeit pipeline. A `[ModelVersion] FATAL` error at startup means the checkpoint was saved with a different architecture than the current code.
 
 ---
 
@@ -213,6 +216,46 @@ TurnDelta block (29 dims): our_move_id (raw int), our_power_norm, our_has_second
 8. **Projection** — Linear(562→512)→ReLU; input is: our_pool(128) + their_pool(128) + our_active_refined(128) + active_ctx_enc(32×2) + global+scalars(29) + turn_delta_embedded(89)
 
 The projection input dimension is discovered automatically via a dummy forward pass in `__init__`, so no magic constant needs updating when the architecture changes.
+
+---
+
+## Model Versioning
+
+Every model save writes two files alongside the `.zip`:
+
+- `model_config.json` — all weight-shape-relevant architecture params (embedding dims, layer sizes, obs dim, etc.)
+- `metadata.json` — git hash, timestamp, SB3/Python versions
+
+`load_model_snapshot()` in `src/agents/model/snapshot.py` checks these before calling `MaskablePPO.load()`. A mismatch causes a hard `[ModelVersion] FATAL` error at startup, not a silent wrong-output bug later.
+
+### Key files
+
+| File | Purpose |
+|------|---------|
+| `src/agents/model/features_extractor.py` | Module-level constants `ROLE_TOKEN_SIZE`, `PROJECTION_DIM`, `MOVE_NET_HIDDEN`, `ROLE_ENCODER_HIDDEN`, `ACTIVE_CTX_HIDDEN` — **single source of truth** for architecture dims |
+| `src/agents/model/model_version.py` | `ModelVersion` dataclass, `MODEL_CONFIG_VERSION`, `ARCH_SIGNATURE`, `_migrate_config()` |
+| `src/agents/model/snapshot.py` | `save_model_snapshot()` / `load_model_snapshot()` |
+| `src/agents/model/snapshot_test.py` | Unit tests including a full save→load→forward-pass round-trip |
+
+### When you change the architecture
+
+**Changing a dim** (e.g. `ROLE_TOKEN_SIZE = 128 → 256`):
+1. Update the constant in `features_extractor.py`
+2. `check_compatible()` catches it automatically — old models can't load, which is correct
+
+**Adding an optional feature** (e.g. dropout):
+1. Add the field with a default to `ModelVersion` in `model_version.py`
+2. Bump `MODEL_CONFIG_VERSION` (e.g. 1 → 2)
+3. Add a migration in `_migrate_config()`: `if version < 2: data.setdefault("dropout_rate", 0.0); data["config_version"] = 2`
+4. Decide if the field is weight-relevant (add to `_WEIGHT_FIELDS` in `check_compatible`) or advisory (skip)
+
+**Structural change** (e.g. adding LSTM — different forward pass):
+1. Change `ARCH_SIGNATURE = "gen3_lstm_v1"` in `model_version.py`
+2. Old models fail with a clear arch-family error; no code needed to support them
+
+### Startup smoke test
+
+`_run_roundtrip_test()` in `train_rl_agent.py` runs automatically before `model.learn()` on every training start. It saves to a temp dir, reloads, and runs a zero forward pass. If serialization is broken it crashes in seconds rather than hours.
 
 ---
 
