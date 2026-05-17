@@ -1,20 +1,41 @@
 import unittest
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 import numpy as np
-from agents.training.reward_manager import Gen3RewardManager
+from agents.training.reward_manager import (
+    Gen3RewardManager,
+    SWITCH_BASE_BONUS, SE_SWITCH_BONUS, MATCHUP_PENALTY,
+    SPIKES_LAYER_BONUS, SPIKES_WASTE_PENALTY, FAILED_ROAR_PENALTY,
+    FUTILE_ATTACK_PENALTY, HP_VALUE, FAINTED_VALUE, VICTORY_VALUE,
+)
 from agents.training.battle_context import BattleContext, TurnDelta
 from utils.logging.levels import LogLevel
 
 
-def _ctx(turn=1, our_active="pikachu", opp_active="charizard", action_mask=None):
+# ---------------------------------------------------------------------------
+# Context / delta / battle factories
+# ---------------------------------------------------------------------------
+
+def _ctx(
+    turn=1,
+    our_active="pikachu",
+    opp_active="charizard",
+    slot_map=None,
+    phase="move_selection",
+    action_mask=None,
+):
+    """Build a minimal BattleContext.
+
+    slot_map: {species: slot_index} for OUR team. Defaults to {our_active: 0}.
+    """
     mask = action_mask if action_mask is not None else np.ones(11, dtype=np.int8)
     hp = np.ones(6, dtype=np.float32)
+    our_slot_map = slot_map if slot_map is not None else {our_active: 0}
     return BattleContext(
         turn=turn,
-        phase="move_selection",
+        phase=phase,
         mask=mask,
         obs=np.zeros(1, dtype=np.float32),
-        our_slot_map={our_active: 0},
+        our_slot_map=our_slot_map,
         opp_slot_map={opp_active: 0},
         our_hp=hp.copy(),
         opp_hp=hp.copy(),
@@ -31,20 +52,30 @@ def _ctx(turn=1, our_active="pikachu", opp_active="charizard", action_mask=None)
     )
 
 
-def _delta(our_hp_delta=0.0, opp_hp_delta=0.0, we_fainted=False, opp_fainted=False,
-           opp_prev_active="charizard"):
+def _delta(
+    our_hp_delta=0.0,
+    opp_hp_delta=0.0,
+    we_fainted=False,
+    opp_fainted=False,
+    our_switch_to=None,
+    our_move_id=None,
+    opp_switch_to=None,
+    opp_move_id=None,
+    our_prev_active="pikachu",
+    opp_prev_active="charizard",
+):
     our = np.zeros(6, dtype=np.float32)
     opp = np.zeros(6, dtype=np.float32)
     our[0] = our_hp_delta
     opp[0] = opp_hp_delta
     return TurnDelta(
-        our_move_id=None,
-        our_switch_to=None,
-        our_prev_active="pikachu",
-        opp_move_id=None,
-        opp_switch_to=None,
+        our_move_id=our_move_id,
+        our_switch_to=our_switch_to,
+        our_prev_active=our_prev_active,
+        opp_move_id=opp_move_id,
+        opp_switch_to=opp_switch_to,
         opp_prev_active=opp_prev_active,
-        opp_move_known=False,
+        opp_move_known=opp_move_id is not None,
         our_hp_delta=our,
         opp_hp_delta=opp,
         we_fainted=we_fainted,
@@ -56,15 +87,16 @@ def _delta(our_hp_delta=0.0, opp_hp_delta=0.0, we_fainted=False, opp_fainted=Fal
     )
 
 
-def _battle(won=False, lost=False, finished=False, opp_spikes=0):
+def _battle(won=False, lost=False, finished=False, opp_spikes=0,
+            our_mon=None, opp_mon=None):
     battle = MagicMock()
     battle.won = won
     battle.lost = lost
     battle.finished = finished
     battle.turn = 1
     battle.opponent_team = {}
-    battle.active_pokemon = None
-    battle.opponent_active_pokemon = None
+    battle.active_pokemon = our_mon
+    battle.opponent_active_pokemon = opp_mon
     from poke_env.battle.side_condition import SideCondition
     battle.opponent_side_conditions = (
         {SideCondition.SPIKES: opp_spikes} if opp_spikes > 0 else {}
@@ -72,288 +104,400 @@ def _battle(won=False, lost=False, finished=False, opp_spikes=0):
     return battle
 
 
-class TestRewardManager(unittest.TestCase):
+def _make_mon(type1_name, type2_name=None, moves=None, status=None):
+    """Build a mock Pokemon with the given types and optional revealed moves."""
+    from poke_env.data import GenData
+    type_chart = GenData.from_gen(3).type_chart
+
+    # Use real PokemonType objects so damage_multiplier works correctly
+    from poke_env.battle.pokemon_type import PokemonType
+    type1 = PokemonType[type1_name.upper()]
+    type2 = PokemonType[type2_name.upper()] if type2_name else None
+
+    mon = MagicMock()
+    mon.type_1 = type1
+    mon.type_2 = type2
+    mon.status = status
+    mon.boosts = {}
+
+    if moves:
+        mon.moves = {}
+        for move_id, move_type_name, base_power in moves:
+            move = MagicMock()
+            move.base_power = base_power
+            move.type = PokemonType[move_type_name.upper()]
+            mon.moves[move_id] = move
+    else:
+        mon.moves = {}
+
+    return mon
+
+
+# ---------------------------------------------------------------------------
+# Tests
+# ---------------------------------------------------------------------------
+
+class TestRewardManagerBasics(unittest.TestCase):
     def setUp(self):
         self.manager = Gen3RewardManager(log_level=LogLevel.QUIET)
 
     def test_attack_tracking(self):
-        ctx = _ctx(turn=1)
-        self.manager.record_action(ctx, 6)  # action 6 = first move
+        self.manager.record_action(_ctx(turn=1), 6)
         self.assertEqual(self.manager.attack_count, 1)
-
         reward = self.manager.process_turn_reward(_battle(), _delta())
         self.assertIsInstance(reward, float)
         self.assertEqual(self.manager.total_reward, reward)
 
     def test_repetition_tax(self):
-        ctx1 = _ctx(turn=1)
-        self.manager.record_action(ctx1, 6)
+        self.manager.record_action(_ctx(turn=1), 6)
         r1 = self.manager.process_turn_reward(_battle(), _delta())
 
-        ctx2 = _ctx(turn=2)
-        self.manager.record_action(ctx2, 6)  # same action → repetition tax
+        self.manager.record_action(_ctx(turn=2), 6)  # same action
         r2 = self.manager.process_turn_reward(_battle(), _delta())
 
-        # Repetition tax is -0.02
         self.assertAlmostEqual(r2, r1 - 0.02, places=5)
 
-    def test_voluntary_switch_subsidy(self):
-        ctx1 = _ctx(turn=1, our_active="pikachu")
-        self.manager.record_action(ctx1, 6)
-        self.manager.process_turn_reward(_battle(), _delta())
-
-        # Turn 2: switch to raichu (action 1 = switch to slot 1)
-        ctx2 = _ctx(turn=2, our_active="raichu")
-        with patch("agents.training.reward_manager.SwitchDetection") as mock_sd:
-            mock_sd.get_switch_type.return_value = (True, True, True)
-            self.manager.record_action(ctx2, 1)
-
-        reward = self.manager.process_turn_reward(_battle(), _delta())
-        self.assertGreaterEqual(reward, 0.0)
-        self.assertEqual(self.manager.switch_count, 1)
-
     def test_faint_reward(self):
-        ctx = _ctx(turn=1)
-        self.manager.record_action(ctx, 6)
-        # Opponent faints — should add FAINTED_VALUE (2.0) to base reward
+        self.manager.record_action(_ctx(turn=1), 6)
         reward = self.manager.process_turn_reward(_battle(), _delta(opp_fainted=True))
-        self.assertAlmostEqual(reward, 2.0, places=5)
+        self.assertAlmostEqual(reward, FAINTED_VALUE, places=5)
 
     def test_win_reward(self):
+        self.manager.record_action(_ctx(turn=1), 6)
+        reward = self.manager.process_turn_reward(_battle(won=True, finished=True), _delta())
+        self.assertAlmostEqual(reward, VICTORY_VALUE, places=5)
+
+    def test_hp_delta_reward(self):
+        self.manager.record_action(_ctx(turn=1), 6)
+        reward = self.manager.process_turn_reward(_battle(), _delta(our_hp_delta=-0.5))
+        self.assertAlmostEqual(reward, -0.5 * HP_VALUE, places=5)
+
+
+class TestSwitchSubsidy(unittest.TestCase):
+    """Switch subsidy must be credited in the SAME turn as the switch action."""
+
+    def setUp(self):
+        self.manager = Gen3RewardManager(log_level=LogLevel.QUIET)
+
+    def test_voluntary_switch_subsidy_same_turn(self):
+        # Slot map: pikachu=0, raichu=1.  Action 1 = switch to raichu.
+        ctx = _ctx(
+            turn=1, our_active="pikachu",
+            slot_map={"pikachu": 0, "raichu": 1},
+        )
+        self.manager.record_action(ctx, 1)  # switch to slot 1 (raichu)
+        reward = self.manager.process_turn_reward(_battle(), _delta(our_switch_to="raichu"))
+
+        # No HP change → reward should equal the switch subsidy alone
+        self.assertAlmostEqual(reward, SWITCH_BASE_BONUS, places=5)
+        self.assertEqual(self.manager.switch_count, 1)
+
+    def test_voluntary_switch_spam_mult_zero(self):
+        # Two voluntary switches on consecutive turns → second gets spam_mult=0
+        ctx1 = _ctx(turn=1, our_active="pikachu", slot_map={"pikachu": 0, "raichu": 1})
+        self.manager.record_action(ctx1, 1)
+        self.manager.process_turn_reward(_battle(), _delta(our_switch_to="raichu"))
+
+        ctx2 = _ctx(turn=2, our_active="raichu", slot_map={"raichu": 0, "starmie": 1})
+        self.manager.record_action(ctx2, 1)
+        r2 = self.manager.process_turn_reward(_battle(), _delta(our_switch_to="starmie"))
+
+        # spam_mult=0 → no subsidy, no HP → reward should be 0
+        self.assertAlmostEqual(r2, 0.0, places=5)
+
+    def test_bouncing_tax(self):
+        # Switch pikachu→raichu then raichu→pikachu triggers bouncing tax
+        ctx1 = _ctx(turn=1, our_active="pikachu", slot_map={"pikachu": 0, "raichu": 1})
+        self.manager.record_action(ctx1, 1)
+        self.manager.process_turn_reward(_battle(), _delta(our_switch_to="raichu"))
+
+        # Turn 3 (skip a turn so spam_mult=1): switch back to pikachu
+        ctx3 = _ctx(turn=3, our_active="raichu", slot_map={"raichu": 1, "pikachu": 0})
+        self.manager.record_action(ctx3, 0)  # action 0 = slot 0 = pikachu
+        r3 = self.manager.process_turn_reward(_battle(), _delta(our_switch_to="pikachu"))
+
+        # subsidy (+0.5) - bouncing_tax (-0.15) = +0.35
+        self.assertAlmostEqual(r3, SWITCH_BASE_BONUS - 0.15, places=5)
+
+    def test_forced_faint_switch_no_subsidy(self):
+        ctx = _ctx(turn=1, our_active="NONE", phase="forced_switch",
+                   slot_map={"raichu": 1})
+        self.manager.record_action(ctx, 1)
+        reward = self.manager.process_turn_reward(_battle(), _delta(our_switch_to="raichu"))
+        self.assertAlmostEqual(reward, 0.0, places=5)
+        self.assertEqual(self.manager.forced_switch_count, 1)
+        self.assertEqual(self.manager.switch_count, 0)
+
+    def test_roar_forced_switch_no_subsidy_and_sets_flag(self):
+        # Forced switch while we still have a live active mon → roar
+        ctx = _ctx(turn=1, our_active="pikachu", phase="forced_switch",
+                   slot_map={"pikachu": 0, "raichu": 1})
+        self.manager.record_action(ctx, 1)
+        self.assertTrue(self.manager._last_switch_was_roared)
+        reward = self.manager.process_turn_reward(_battle(), _delta(our_switch_to="raichu"))
+        # No subsidy → reward = 0 (no HP change, no other signals)
+        self.assertAlmostEqual(reward, 0.0, places=5)
+        self.assertEqual(self.manager.forced_switch_count, 1)
+        self.assertEqual(self.manager.switch_count, 0)
+
+
+class TestSeSwitchBonus(unittest.TestCase):
+    """SE switch bonus fires for both revealed moves and type-advantage fallback."""
+
+    def setUp(self):
+        self.manager = Gen3RewardManager(log_level=LogLevel.QUIET)
+
+    def _do_switch(self, our_mon, opp_mon):
+        """Trigger one switch turn and return the reward."""
+        ctx = _ctx(turn=1, our_active="incoming", slot_map={"incoming": 1, "prev": 0})
+        self.manager.record_action(ctx, 1)
+        battle = _battle(our_mon=our_mon, opp_mon=opp_mon)
+        delta = _delta(our_switch_to="incoming")
+        return self.manager.process_turn_reward(battle, delta)
+
+    def test_se_bonus_with_revealed_move(self):
+        # Rock move (Rock type) vs Zapdos (Electric/Flying) → SE (2× on Flying)
+        our = _make_mon("ROCK", moves=[("rockslide", "ROCK", 75)])
+        opp = _make_mon("ELECTRIC", "FLYING")
+        reward = self._do_switch(our, opp)
+        self.assertAlmostEqual(reward, SWITCH_BASE_BONUS + SE_SWITCH_BONUS, places=5)
+
+    def test_se_bonus_type_fallback_no_moves_revealed(self):
+        # Tyranitar (Rock/Dark) vs Zapdos (Electric/Flying): Rock STAB is 2× vs Flying
+        # No moves revealed yet — should still fire via type fallback
+        our = _make_mon("ROCK", "DARK")  # no moves
+        opp = _make_mon("ELECTRIC", "FLYING")
+        reward = self._do_switch(our, opp)
+        self.assertAlmostEqual(reward, SWITCH_BASE_BONUS + SE_SWITCH_BONUS, places=5)
+
+    def test_no_se_bonus_when_not_super_effective(self):
+        # Normal type vs Normal type: 1× — no bonus
+        our = _make_mon("NORMAL")
+        opp = _make_mon("NORMAL")
+        reward = self._do_switch(our, opp)
+        self.assertAlmostEqual(reward, SWITCH_BASE_BONUS, places=5)
+
+    def test_no_se_bonus_on_attack(self):
+        # SE bonus only fires on switches, not attacks
+        our = _make_mon("ROCK", "DARK")
+        opp = _make_mon("ELECTRIC", "FLYING")
         ctx = _ctx(turn=1)
         self.manager.record_action(ctx, 6)
-        battle = _battle(won=True, finished=True)
+        battle = _battle(our_mon=our, opp_mon=opp)
         reward = self.manager.process_turn_reward(battle, _delta())
-        # Victory value is 30.0
-        self.assertAlmostEqual(reward, 30.0, places=5)
+        self.assertAlmostEqual(reward, 0.0, places=5)
 
+    def test_roar_forced_switch_skips_se_bonus(self):
+        # When roared out, SE switch bonus must be skipped even if type advantage exists
+        ctx = _ctx(turn=1, our_active="pikachu", phase="forced_switch",
+                   slot_map={"pikachu": 0, "tyranitar": 1})
+        self.manager.record_action(ctx, 1)
+        our = _make_mon("ROCK", "DARK")
+        opp = _make_mon("ELECTRIC", "FLYING")
+        battle = _battle(our_mon=our, opp_mon=opp)
+        reward = self.manager.process_turn_reward(battle, _delta(our_switch_to="tyranitar"))
+        # No subsidy, no SE bonus → 0
+        self.assertAlmostEqual(reward, 0.0, places=5)
+
+
+class TestSpikes(unittest.TestCase):
+    def setUp(self):
+        self.manager = Gen3RewardManager(log_level=LogLevel.QUIET)
 
     def test_spikes_layer_bonus(self):
-        from agents.training.reward_manager import SPIKES_LAYER_BONUS
-        ctx = _ctx(turn=1)
-        self.manager.record_action(ctx, 6)
-        # First spikes layer goes down
-        battle = _battle(opp_spikes=1)
-        reward = self.manager.process_turn_reward(battle, _delta())
+        self.manager.record_action(_ctx(turn=1), 6)
+        reward = self.manager.process_turn_reward(_battle(opp_spikes=1), _delta())
         self.assertAlmostEqual(reward, SPIKES_LAYER_BONUS, places=5)
 
-    def test_spikes_two_layers_bonus(self):
-        from agents.training.reward_manager import SPIKES_LAYER_BONUS
-        # Simulate spikes going from 1 → 3 in two separate turns
-        ctx = _ctx(turn=1)
-        self.manager.record_action(ctx, 6)
+    def test_spikes_two_layers_sequential(self):
+        self.manager.record_action(_ctx(turn=1), 6)
         self.manager.process_turn_reward(_battle(opp_spikes=1), _delta())
-
-        ctx2 = _ctx(turn=2)
-        self.manager.record_action(ctx2, 7)  # different move to avoid repetition tax
+        self.manager.record_action(_ctx(turn=2), 7)
         reward = self.manager.process_turn_reward(_battle(opp_spikes=2), _delta())
         self.assertAlmostEqual(reward, SPIKES_LAYER_BONUS, places=5)
 
     def test_spikes_waste_penalty(self):
-        from agents.training.reward_manager import SPIKES_WASTE_PENALTY
-        # Pre-set internal state to 3 layers already up
         self.manager._prev_opp_spikes = 3
-        ctx = _ctx(turn=1)
-        self.manager.record_action(ctx, 6)
+        self.manager.record_action(_ctx(turn=1), 6)
         delta = TurnDelta(
-            our_move_id="spikes",
-            our_switch_to=None,
-            our_prev_active="pikachu",
-            opp_move_id=None,
-            opp_switch_to=None,
-            opp_prev_active="charizard",
+            our_move_id="spikes", our_switch_to=None, our_prev_active="pikachu",
+            opp_move_id=None, opp_switch_to=None, opp_prev_active="charizard",
             opp_move_known=False,
             our_hp_delta=np.zeros(6, dtype=np.float32),
             opp_hp_delta=np.zeros(6, dtype=np.float32),
-            we_fainted=False,
-            opp_fainted=False,
-            our_failed_to_move=False,
-            our_cant_reason=None,
-            opp_failed_to_move=False,
-            opp_cant_reason=None,
+            we_fainted=False, opp_fainted=False,
+            our_failed_to_move=False, our_cant_reason=None,
+            opp_failed_to_move=False, opp_cant_reason=None,
         )
         reward = self.manager.process_turn_reward(_battle(opp_spikes=3), delta)
         self.assertAlmostEqual(reward, SPIKES_WASTE_PENALTY, places=5)
 
-    def test_spikes_no_bonus_without_change(self):
-        # No spikes → no spikes: zero bonus
-        ctx = _ctx(turn=1)
-        self.manager.record_action(ctx, 6)
+    def test_no_spikes_bonus_without_change(self):
+        self.manager.record_action(_ctx(turn=1), 6)
         reward = self.manager.process_turn_reward(_battle(opp_spikes=0), _delta())
         self.assertAlmostEqual(reward, 0.0, places=5)
 
+
+class TestMatchupPenalty(unittest.TestCase):
+    def setUp(self):
+        self.manager = Gen3RewardManager(log_level=LogLevel.QUIET)
+
+    def _se_battle(self):
+        """Battle where opponent has a revealed SE move vs our mon."""
+        our = _make_mon("ELECTRIC", "FLYING")   # Zapdos
+        opp = _make_mon("ROCK")
+        # Opp has Rock move — 2× vs Flying
+        opp_move = MagicMock()
+        opp_move.base_power = 80
+        from poke_env.battle.pokemon_type import PokemonType
+        opp_move.type = PokemonType.ROCK
+        opp.moves = {"rockblast": opp_move}
+        return _battle(our_mon=our, opp_mon=opp)
+
+    def test_matchup_penalty_fires_on_second_turn(self):
+        # Turn 1: opp reveals SE move — penalty should NOT fire yet (unknown at decision time)
+        self.manager.record_action(_ctx(turn=1), 6)
+        r1 = self.manager.process_turn_reward(self._se_battle(), _delta())
+        self.assertAlmostEqual(r1, 0.0, places=5)
+
+        # Turn 2: threat is now known — penalty fires
+        self.manager.record_action(_ctx(turn=2), 7)
+        r2 = self.manager.process_turn_reward(self._se_battle(), _delta())
+        self.assertAlmostEqual(r2, MATCHUP_PENALTY, places=5)
+
+    def test_matchup_penalty_skipped_on_switch(self):
+        self.manager._prev_opp_se_threat = True
+        self.manager.record_action(
+            _ctx(turn=1, our_active="pikachu", slot_map={"pikachu": 0, "raichu": 1}), 1
+        )
+        r = self.manager.process_turn_reward(_battle(), _delta(our_switch_to="raichu"))
+        # subsidy (+0.5) with no penalty → must be > 0
+        self.assertGreater(r, 0.0)
+
+    def test_matchup_penalty_absent_when_no_threat(self):
+        self.manager._prev_opp_se_threat = False
+        self.manager.record_action(_ctx(turn=1), 6)
+        r = self.manager.process_turn_reward(_battle(), _delta())
+        self.assertAlmostEqual(r, 0.0, places=5)
+
+
+class TestRoarBonus(unittest.TestCase):
+    def setUp(self):
+        self.manager = Gen3RewardManager(log_level=LogLevel.QUIET)
+
     def test_failed_roar_penalty(self):
-        from agents.training.reward_manager import FAILED_ROAR_PENALTY
-        ctx = _ctx(turn=1)
-        self.manager.record_action(ctx, 6)
+        self.manager.record_action(_ctx(turn=1), 6)
         delta = TurnDelta(
-            our_move_id="roar",
-            our_switch_to=None,
-            our_prev_active="pikachu",
-            opp_move_id=None,
-            opp_switch_to=None,       # Roar failed — no switch forced
-            opp_prev_active="charizard",
+            our_move_id="roar", our_switch_to=None, our_prev_active="pikachu",
+            opp_move_id=None, opp_switch_to=None, opp_prev_active="charizard",
             opp_move_known=False,
             our_hp_delta=np.zeros(6, dtype=np.float32),
             opp_hp_delta=np.zeros(6, dtype=np.float32),
-            we_fainted=False,
-            opp_fainted=False,
-            our_failed_to_move=False,
-            our_cant_reason=None,
-            opp_failed_to_move=False,
-            opp_cant_reason=None,
+            we_fainted=False, opp_fainted=False,
+            our_failed_to_move=False, our_cant_reason=None,
+            opp_failed_to_move=False, opp_cant_reason=None,
         )
         reward = self.manager.process_turn_reward(_battle(), delta)
         self.assertAlmostEqual(reward, FAILED_ROAR_PENALTY, places=5)
 
-    def test_futile_attack_penalty_fires_when_opp_net_healed(self):
-        from agents.training.reward_manager import FUTILE_ATTACK_PENALTY, HP_VALUE
-        ctx = _ctx(turn=1)
-        self.manager.record_action(ctx, 6)
 
-        battle = _battle()
+class TestFutileAttack(unittest.TestCase):
+    def setUp(self):
+        self.manager = Gen3RewardManager(log_level=LogLevel.QUIET)
+
+    def test_futile_attack_penalty_fires_when_opp_net_healed(self):
+        self.manager.record_action(_ctx(turn=1), 6)
+
         move_mock = MagicMock()
         move_mock.base_power = 20
-        battle.active_pokemon = MagicMock()
-        battle.active_pokemon.moves = {"rapidspin": move_mock}
+        our_mon = MagicMock()
+        our_mon.moves = {"rapidspin": move_mock}
+        battle = _battle(our_mon=our_mon)
 
         opp_hp = np.zeros(6, dtype=np.float32)
-        opp_hp[0] = 0.05   # opponent net gained 5% HP (Leftovers > damage dealt)
+        opp_hp[0] = 0.05   # opponent net gained 5% (Leftovers > damage)
         delta = TurnDelta(
-            our_move_id="rapidspin",
-            our_switch_to=None,
-            our_prev_active="pikachu",
-            opp_move_id="struggle",
-            opp_switch_to=None,
-            opp_prev_active="charizard",
+            our_move_id="rapidspin", our_switch_to=None, our_prev_active="pikachu",
+            opp_move_id="struggle", opp_switch_to=None, opp_prev_active="charizard",
             opp_move_known=True,
             our_hp_delta=np.zeros(6, dtype=np.float32),
             opp_hp_delta=opp_hp,
-            we_fainted=False,
-            opp_fainted=False,
-            our_failed_to_move=False,
-            our_cant_reason=None,
-            opp_failed_to_move=False,
-            opp_cant_reason=None,
+            we_fainted=False, opp_fainted=False,
+            our_failed_to_move=False, our_cant_reason=None,
+            opp_failed_to_move=False, opp_cant_reason=None,
         )
         reward = self.manager.process_turn_reward(battle, delta)
-        # base: -opp_hp_delta.sum() * HP_VALUE = -0.05 * 2.0 = -0.10
-        # futile penalty: -0.05
-        # total: -0.15
         expected = -0.05 * HP_VALUE + FUTILE_ATTACK_PENALTY
         self.assertAlmostEqual(reward, expected, places=4)
 
     def test_futile_attack_penalty_skips_status_moves(self):
-        from agents.training.reward_manager import FUTILE_ATTACK_PENALTY
-        ctx = _ctx(turn=1)
-        self.manager.record_action(ctx, 6)
-
-        battle = _battle()
+        self.manager.record_action(_ctx(turn=1), 6)
         move_mock = MagicMock()
-        move_mock.base_power = 0   # status move
-        battle.active_pokemon = MagicMock()
-        battle.active_pokemon.moves = {"thunderwave": move_mock}
+        move_mock.base_power = 0
+        our_mon = MagicMock()
+        our_mon.moves = {"thunderwave": move_mock}
 
         delta = TurnDelta(
-            our_move_id="thunderwave",
-            our_switch_to=None,
-            our_prev_active="pikachu",
-            opp_move_id=None,
-            opp_switch_to=None,
-            opp_prev_active="charizard",
+            our_move_id="thunderwave", our_switch_to=None, our_prev_active="pikachu",
+            opp_move_id=None, opp_switch_to=None, opp_prev_active="charizard",
             opp_move_known=False,
             our_hp_delta=np.zeros(6, dtype=np.float32),
             opp_hp_delta=np.zeros(6, dtype=np.float32),
-            we_fainted=False,
-            opp_fainted=False,
-            our_failed_to_move=False,
-            our_cant_reason=None,
-            opp_failed_to_move=False,
-            opp_cant_reason=None,
+            we_fainted=False, opp_fainted=False,
+            our_failed_to_move=False, our_cant_reason=None,
+            opp_failed_to_move=False, opp_cant_reason=None,
         )
-        reward = self.manager.process_turn_reward(battle, delta)
-        # Should NOT include FUTILE_ATTACK_PENALTY since base_power == 0
-        self.assertNotAlmostEqual(reward, FUTILE_ATTACK_PENALTY, places=5)
-        # Reward should just be 0 (no HP change, no other signals)
+        reward = self.manager.process_turn_reward(_battle(our_mon=our_mon), delta)
         self.assertAlmostEqual(reward, 0.0, places=5)
 
-    def _make_battle_with_opp_move(self, move_type_name, base_power, our_type1, our_type2=None):
-        """Helper: battle where opp active has one revealed move of given type."""
-        battle = MagicMock()
-        battle.won = False
-        battle.lost = False
-        battle.finished = False
-        battle.turn = 1
-        battle.opponent_team = {}
-        battle.opponent_side_conditions = {}
 
-        our_mon = MagicMock()
-        our_mon.type_1 = MagicMock()
-        our_mon.type_2 = our_type2
-        battle.active_pokemon = our_mon
+class TestOriginalScenario(unittest.TestCase):
+    """Reproduce the Zapdos→Tyranitar vs Zapdos matchup from the bug report."""
 
-        opp_move = MagicMock()
-        opp_move.base_power = base_power
-        opp_move.type = MagicMock()
+    def test_ttar_switch_reward_components(self):
+        """
+        Turn 1: we lead Zapdos, opponent leads Zapdos.
+        We switch to Tyranitar (Rock/Dark). Opp uses Thunderbolt → Ttar takes -28%.
+        Rock STAB is 2× vs opponent's Flying type.
 
-        def se_mult(t1, t2, type_chart):
-            return 2.0 if move_type_name == "SE" else 0.5
-        opp_move.type.damage_multiplier = se_mult
+        Expected reward = HP_delta + switch_subsidy + SE_bonus
+                        = (-0.28 * 2) + 0.5 + 0.2 = -0.56 + 0.5 + 0.2 = +0.14
+        (The old code produced ≈ -0.66 because subsidy was delayed one turn
+         and the SE bonus never fired on an unrevealed mon.)
+        """
+        manager = Gen3RewardManager(log_level=LogLevel.QUIET)
 
-        opp_mon = MagicMock()
-        opp_mon.moves = {"testmove": opp_move}
-        opp_mon.boosts = {}
-        battle.opponent_active_pokemon = opp_mon
-
-        return battle
-
-    def test_matchup_penalty_fires_on_second_turn(self):
-        from agents.training.reward_manager import MATCHUP_PENALTY
-        # Turn 1: opp SE move revealed — penalty should NOT fire (unknown at decision time)
-        ctx1 = _ctx(turn=1)
-        self.manager.record_action(ctx1, 6)
-        battle1 = self._make_battle_with_opp_move("SE", 80, None)
-        r1 = self.manager.process_turn_reward(battle1, _delta())
-        self.assertAlmostEqual(r1, 0.0, places=5)
-
-        # Turn 2: threat is now known at decision time — penalty fires
-        ctx2 = _ctx(turn=2)
-        self.manager.record_action(ctx2, 7)
-        battle2 = self._make_battle_with_opp_move("SE", 80, None)
-        r2 = self.manager.process_turn_reward(battle2, _delta())
-        self.assertAlmostEqual(r2, MATCHUP_PENALTY, places=5)
-
-    def test_matchup_penalty_skipped_on_switch(self):
-        from agents.training.reward_manager import MATCHUP_PENALTY
-        self.manager._prev_opp_se_threat = True
-        ctx = _ctx(turn=1)
-        self.manager.record_action(ctx, 6)
-        delta = TurnDelta(
-            our_move_id=None,
-            our_switch_to="raichu",
-            our_prev_active="pikachu",
-            opp_move_id=None,
-            opp_switch_to=None,
-            opp_prev_active="charizard",
-            opp_move_known=False,
-            our_hp_delta=np.zeros(6, dtype=np.float32),
-            opp_hp_delta=np.zeros(6, dtype=np.float32),
-            we_fainted=False,
-            opp_fainted=False,
-            our_failed_to_move=False,
-            our_cant_reason=None,
-            opp_failed_to_move=False,
-            opp_cant_reason=None,
+        # Slot 0 = Zapdos (current active), slot 2 = Tyranitar
+        ctx = _ctx(
+            turn=1, our_active="zapdos",
+            slot_map={"zapdos": 0, "skarmory": 1, "tyranitar": 2,
+                      "flygon": 3, "jirachi": 4, "charizard": 5},
         )
-        r = self.manager.process_turn_reward(_battle(), delta)
-        self.assertGreater(r, MATCHUP_PENALTY)
+        manager.record_action(ctx, 2)  # action 2 = switch to slot 2 = tyranitar
 
-    def test_matchup_penalty_absent_when_no_threat(self):
-        self.manager._prev_opp_se_threat = False
-        ctx = _ctx(turn=1)
-        self.manager.record_action(ctx, 6)
-        r = self.manager.process_turn_reward(_battle(), _delta())
-        self.assertAlmostEqual(r, 0.0, places=5)
+        tyranitar = _make_mon("ROCK", "DARK")          # no revealed moves yet
+        opp_zapdos = _make_mon("ELECTRIC", "FLYING")
+
+        our_hp = np.zeros(6, dtype=np.float32)
+        our_hp[2] = -0.28   # Tyranitar (slot 2) took 28% damage
+
+        delta = TurnDelta(
+            our_move_id=None, our_switch_to="tyranitar", our_prev_active="zapdos",
+            opp_move_id="thunderbolt", opp_switch_to=None, opp_prev_active="zapdos",
+            opp_move_known=True,
+            our_hp_delta=our_hp,
+            opp_hp_delta=np.zeros(6, dtype=np.float32),
+            we_fainted=False, opp_fainted=False,
+            our_failed_to_move=False, our_cant_reason=None,
+            opp_failed_to_move=False, opp_cant_reason=None,
+        )
+        battle = _battle(our_mon=tyranitar, opp_mon=opp_zapdos)
+
+        reward = manager.process_turn_reward(battle, delta)
+
+        expected = (-0.28 * HP_VALUE) + SWITCH_BASE_BONUS + SE_SWITCH_BONUS
+        self.assertAlmostEqual(reward, expected, places=4)
+        self.assertGreater(reward, 0.0, "should be positive: ttar switch is correct")
 
 
 if __name__ == "__main__":

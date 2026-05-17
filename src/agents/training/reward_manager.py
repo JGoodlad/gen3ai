@@ -2,7 +2,6 @@ from typing import Optional
 import numpy as np
 from utils.logging.rate_limiter import RateLimitedLogger
 from utils.logging.levels import LogLevel
-from utils.gen3_utils import SwitchDetection
 from poke_env.data import GenData
 from poke_env.battle.side_condition import SideCondition
 from poke_env.battle.status import Status
@@ -49,8 +48,7 @@ class Gen3RewardManager:
         self.last_switch_turn = -1
         self.logger = RateLimitedLogger(interval_seconds=1.0)
         self.episode_logger = RateLimitedLogger(interval_seconds=5.0)
-        self._last_active_name = "NULL"
-        self._prev_active_name = "NULL"
+        self._last_switched_from = "NULL"   # species we last voluntarily switched away from
         self._last_action_idx = -1
         self._last_reward_metadata = {}
         self._consecutive_struggle = 0
@@ -69,8 +67,7 @@ class Gen3RewardManager:
         self.attack_count = 0
         self.total_reward = 0.0
         self.last_switch_turn = -1
-        self._last_active_name = "NULL"
-        self._prev_active_name = "NULL"
+        self._last_switched_from = "NULL"
         self._last_action_idx = -1
         self._last_reward_metadata = {}
         self._consecutive_struggle = 0
@@ -86,68 +83,84 @@ class Gen3RewardManager:
         """
         Records the action the model chose for this turn.
         Called before the turn is processed, using the context the model saw.
+
+        Switch detection uses the action index and ctx.phase directly so the
+        subsidy is credited in the SAME turn as the switch, not the next one.
         """
-        if action >= 6:
-            self.attack_count += 1
-
-        current_active = ctx.our_active
-
-        has_switched, is_real, is_voluntary = SwitchDetection.get_switch_type(
-            self._last_active_name, current_active, ctx.mask
-        )
-
         self._pending_subsidy = 0.0
         self._last_switch_was_roared = False
 
         repetition_tax = 0.0
         bouncing_tax = 0.0
-
-        if action == self._last_action_idx and action != -1:
-            repetition_tax = -0.02
-            self._pending_subsidy += repetition_tax
-
         struggle_loop_tax = 0.0
-        if action == 10:  # struggle — forced by server when all PP depleted
-            self.struggle_turns += 1
-            self._consecutive_struggle += 1
-            if self._consecutive_struggle >= STRUGGLE_LOOP_THRESHOLD:
-                struggle_loop_tax = STRUGGLE_LOOP_TAX
-                self._pending_subsidy += struggle_loop_tax
-        else:
-            self._consecutive_struggle = 0
 
-        if is_real:
-            if is_voluntary is True:
-                if current_active == self._prev_active_name and self._prev_active_name != "NONE":
+        if action >= 6:
+            # Attack or Struggle
+            self.attack_count += 1
+
+            if action == self._last_action_idx and action != -1:
+                repetition_tax = -0.02
+                self._pending_subsidy += repetition_tax
+
+            if action == 10:  # struggle — forced by server when all PP depleted
+                self.struggle_turns += 1
+                self._consecutive_struggle += 1
+                if self._consecutive_struggle >= STRUGGLE_LOOP_THRESHOLD:
+                    struggle_loop_tax = STRUGGLE_LOOP_TAX
+                    self._pending_subsidy += struggle_loop_tax
+            else:
+                self._consecutive_struggle = 0
+
+            self._last_reward_metadata = {
+                "type": "ATTACK",
+                "repetition_tax": repetition_tax,
+                "struggle_loop_tax": struggle_loop_tax,
+            }
+        else:
+            # Switch (action 0-5 = team slot index)
+            self._consecutive_struggle = 0
+            is_forced = ctx.phase == "forced_switch"
+            active_norm = str(ctx.our_active).upper()
+            has_live_active = active_norm not in ("NONE", "NULL", "NONE_P1", "NONE_P2")
+
+            if is_forced and has_live_active:
+                # Roar/Whirlwind: mon is alive but phazed out — no subsidy, skip bonuses
+                self._last_switch_was_roared = True
+                self.forced_switch_count += 1
+                self._last_switched_from = ctx.our_active
+                self._last_reward_metadata = {"type": "FORCED_ROAR"}
+
+            elif is_forced:
+                # Post-faint replacement — no subsidy
+                self.forced_switch_count += 1
+                self._last_reward_metadata = {"type": "FORCED_FAINT"}
+
+            else:
+                # Voluntary switch — look up the target species via slot map
+                slot_to_species = {v: k for k, v in ctx.our_slot_map.items()}
+                target_species = slot_to_species.get(action)
+
+                if (target_species and
+                        target_species == self._last_switched_from and
+                        self._last_switched_from not in ("NULL", "NONE")):
                     bouncing_tax = -0.15
                     self._pending_subsidy += bouncing_tax
 
                 spam_mult = 1.0 if (ctx.turn - self.last_switch_turn) > 1 else 0.0
-
                 subsidy = SWITCH_BASE_BONUS * spam_mult
                 self._pending_subsidy += subsidy
 
+                self.switch_count += 1
+                self.last_switch_turn = ctx.turn
+                self._last_switched_from = ctx.our_active  # what we're switching away from
                 self._last_reward_metadata = {
                     "type": "VOLUNTARY",
                     "spam_mult": spam_mult,
-                    "repetition_tax": repetition_tax,
+                    "repetition_tax": 0.0,
                     "bouncing_tax": bouncing_tax,
                     "subsidy": subsidy,
                 }
 
-                self.switch_count += 1
-                self.last_switch_turn = ctx.turn
-
-            elif is_voluntary is False:
-                self.forced_switch_count += 1
-                l_norm = str(self._last_active_name).upper()
-                self._last_switch_was_roared = l_norm not in ["NONE", "NULL", "NONE_P1", "NONE_P2"]
-                self._last_reward_metadata = {"type": "FORCED_ROAR" if self._last_switch_was_roared else "FORCED_FAINT"}
-        else:
-            self._last_reward_metadata = {"type": "ATTACK", "repetition_tax": repetition_tax, "struggle_loop_tax": struggle_loop_tax}
-
-        self._prev_active_name = self._last_active_name
-        self._last_active_name = current_active
         self._last_action_idx = action
 
     def compute_base_reward(self, delta: TurnDelta, battle) -> float:
@@ -185,13 +198,20 @@ class Gen3RewardManager:
         return ROAR_BONUS if (has_spikes or had_boosts) else 0.0
 
     def _compute_se_switch_bonus(self, delta: TurnDelta, battle) -> float:
-        """Reward switching in a mon that has at least one SE damaging move vs the opponent."""
+        """Reward switching in a mon that threatens the opponent with a SE move.
+
+        First checks revealed moves for confirmed SE; if none are revealed yet,
+        falls back to checking whether any of our mon's own types are SE vs the
+        opponent (a reliable proxy for STAB moves in Gen 3 OU).
+        """
         if delta.our_switch_to is None:
             return 0.0
         our_mon = battle.active_pokemon
         opp_mon = battle.opponent_active_pokemon
         if not our_mon or not opp_mon:
             return 0.0
+
+        # Confirmed SE via revealed move
         for move in our_mon.moves.values():
             if move.base_power <= 0:
                 continue
@@ -200,6 +220,18 @@ class Gen3RewardManager:
             )
             if mult >= 2.0:
                 return SE_SWITCH_BONUS
+
+        # Fallback: STAB type advantage (fires when no moves have been revealed yet)
+        our_types = [our_mon.type_1]
+        if our_mon.type_2:
+            our_types.append(our_mon.type_2)
+        for t in our_types:
+            mult = t.damage_multiplier(
+                opp_mon.type_1, opp_mon.type_2, type_chart=self._type_chart
+            )
+            if mult >= 2.0:
+                return SE_SWITCH_BONUS
+
         return 0.0
 
     def _compute_status_reward(self, delta: TurnDelta, battle) -> float:
