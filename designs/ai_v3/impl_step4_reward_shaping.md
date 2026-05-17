@@ -84,15 +84,76 @@ phaze turns correctly: `"surf → phazed_to:metagross"` instead of discarding th
 
 ---
 
-### 3. Strategic Reward Shaping (`f34b480`, `733ec32`, `6357175`, `61d319f`)
+### 3. Strategic Reward Shaping
 
 **`src/agents/training/reward_manager.py`**
 
-Four new reward constants and three new helper methods:
+#### Switch subsidy — flat bonus replacing pool system
+
+The original pool-based subsidy (`remaining_switch_pool = 7.5`, halved per switch,
+decaying with turn and `reactive_mult`) was replaced with a simple flat constant:
+
+```python
+SWITCH_BASE_BONUS = 0.5   # per voluntary switch
+```
+
+Payout: `SWITCH_BASE_BONUS × spam_mult`, where `spam_mult = 0` for consecutive
+switches (same turn immediately after the last). All other multipliers (`ratio_mult`,
+`turn_decay`, `reactive_mult`, `payout`) were removed. The pool state
+(`remaining_switch_pool`, `_opp_turns_active`, `_last_opp_active_name`) was
+deleted. The signal is now consistent throughout the game rather than front-loaded
+and decaying.
+
+Bouncing tax (`−0.15`) and repetition tax (`−0.02`) are unchanged.
+
+#### Roar/Whirlwind exclusion (`_last_switch_was_roared`)
+
+Forced switches via Roar/Whirlwind are now distinguished from faint-forced switches.
+`record_action()` sets `self._last_switch_was_roared = True` when a forced switch
+occurs and the outgoing mon was real (not `NONE`). This flag gates several bonuses:
+
+- **SE switch-in bonus**: skipped if roared — the incoming mon wasn't our choice.
+- **Pivot bonus**: skipped if roared.
+- **Sleep-swap bonus** (out): skipped if roared — no preservation value when
+  opponent phazes the sleeping mon.
+- **Sleep-swap penalty** (in): *not* skipped — we still end up with a sleeping
+  active mon regardless of cause.
+
+#### Status reward — one-time on change, not per-turn
+
+The original per-turn formula (`(opp_statused − our_statused) × STATUS_BONUS` every
+turn) was changed to fire **only when the count changes**:
+
+```python
+d_our = our_statused - self._prev_our_statused
+d_opp = opp_statused - self._prev_opp_statused
+self._prev_our_statused = our_statused
+self._prev_opp_statused = opp_statused
+reward = (d_opp - d_our) * STATUS_BONUS
+```
+
+Motivation: the per-turn version accumulated unbounded reward for a 3-statused
+opponent — misleading when a match was already decided. The one-time signal still
+fires the same `±0.3` per infliction/cure, which is the meaningful event.
+
+Bench mons and opponent-team coverage are unchanged.
+
+#### Sleep-swap signals (folded into `_compute_status_reward`)
+
+- `+SLEEP_SWAP_BONUS` when we voluntarily rotate a sleeping mon *out* — not on
+  Roar/Whirlwind and not on faint (no preservation value in those cases).
+- `−SLEEP_SWAP_BONUS` when the mon we switch *in* is sleeping, **unless** we were
+  phazing (i.e., `_last_switch_was_roared`).
+
+These teach the model to manage sleep: bench the sleeping mon while it wakes
+rather than wasting active turns.
+
+Reward constants:
 
 | Constant | Value | Signal |
 |----------|-------|--------|
-| `STATUS_BONUS` | 0.3 | Per-turn per-mon status advantage (team-wide) |
+| `SWITCH_BASE_BONUS` | 0.5 | Flat per-voluntary-switch (× spam_mult) |
+| `STATUS_BONUS` | 0.3 | One-time on status infliction/cure |
 | `ROAR_BONUS` | 0.2 | Roar that forces a switch under spikes or vs boosted mon |
 | `SE_SWITCH_BONUS` | 0.2 | Switch-in with a SE damaging move vs opponent's active |
 | `SLEEP_SWAP_BONUS` | 0.25 | Rotating a sleeping mon out (+) / in (−) |
@@ -108,40 +169,40 @@ Fires `+ROAR_BONUS` when:
 
 #### `_compute_se_switch_bonus(delta, battle)`
 
-Fires `+SE_SWITCH_BONUS` when `delta.our_switch_to is not None` and the newly active
-mon has at least one move with `base_power > 0` that hits `≥ 2×` vs the opponent's
-active types. Uses the shared `self._type_chart = GenData.from_gen(3).type_chart`.
+Fires `+SE_SWITCH_BONUS` when `delta.our_switch_to is not None` (and not a roared
+switch) and the newly active mon has at least one move with `base_power > 0` that
+hits `≥ 2×` vs the opponent's active types. Uses the shared
+`self._type_chart = GenData.from_gen(3).type_chart`.
 
 This directly targets the failure mode in the Tyranitar/Suicune replay: switching
 Zapdos in (Thunderbolt is 2× vs Suicune) would have fired the bonus.
 
-#### `_compute_status_reward(delta, battle)`
+#### `_compute_spikes_bonus(delta, battle)`
 
-Team-wide, per-turn status accounting:
+Bridges the credit assignment gap between setting hazards and the delayed entry chip:
 
 ```python
-our_statused  = sum(1 for mon in battle.team.values()
-                    if mon.status is not None and not mon.fainted)
-opp_statused  = sum(1 for mon in battle.opponent_team.values()
-                    if mon.status is not None and not mon.fainted)
-reward = (opp_statused - our_statused) * STATUS_BONUS
+curr = battle.opponent_side_conditions.get(SideCondition.SPIKES, 0)
+new_layers = curr - self._prev_opp_spikes
+self._prev_opp_spikes = curr
+if new_layers > 0:
+    return new_layers * SPIKES_LAYER_BONUS      # +0.5 per layer
+if delta.our_move_id == "spikes" and curr == 3:
+    return SPIKES_WASTE_PENALTY                  # −0.2 wasted turn
+return 0.0
 ```
 
-- **Cumulative but flat**: the same `±0.3` per statused mon fires every turn. A
-  5-turn sleep is worth `5 × 0.3 = 1.5` — close to a full faint (2.0), which reflects
-  the actual tempo loss.
-- **Bench mons included**: a toxic'd Blissey on the bench contributes every turn it
-  sits there, not just when it's active.
-- **Opponent-team coverage**: only revealed mons (`battle.opponent_team`) are counted,
-  so the model only gets credit for statuses it knows about.
+- Detection is state-diff based: if the move fails (e.g., Magic Coat), the count
+  doesn't increase and no bonus fires.
+- The penalty fires specifically when the agent chose Spikes but the field was
+  already at the 3-layer cap — a guaranteed wasted turn.
+- The HP reward still fires when entry chip lands on switch-in; the setup bonus is
+  additive, not a replacement.
 
-**Sleep-swap signals** (folded into `_compute_status_reward`):
-- `+SLEEP_SWAP_BONUS` when we rotate a sleeping mon *out* (found via `delta.our_prev_active`
-  lookup in `battle.team`)
-- `−SLEEP_SWAP_BONUS` when the mon we switch *in* is sleeping (`battle.active_pokemon.status == SLP`)
-
-These teach the model to manage sleep as a resource: put the sleeping mon on the
-bench while it wakes rather than wasting active turns.
+| Constant | Value | Signal |
+|----------|-------|--------|
+| `SPIKES_LAYER_BONUS` | +0.5 | Per layer successfully added to opponent's side |
+| `SPIKES_WASTE_PENALTY` | −0.2 | Spikes used when 3 layers already up |
 
 ---
 
@@ -149,18 +210,19 @@ bench while it wakes rather than wasting active turns.
 
 All shaping signals remain small relative to the base reward scale:
 
-| Signal | Scale | Comparison |
-|--------|-------|-----------|
+| Signal | Scale | Notes |
+|--------|-------|-------|
 | Faint | ±2.0 | base |
-| Status per turn per mon | ±0.3 | 1 sleep turn ≈ 15% of a faint |
-| Sleep swap | ±0.25 | one-time on the switch turn |
-| SE switch-in | +0.2 | one-time on the switch turn |
-| Roar bonus | +0.2 | one-time on the Roar turn |
-| Pivot bonus (existing) | +0.1–0.15 | one-time on the switch turn |
-
-Status is the largest cumulative signal: a team with 3 paralysed mons on the
-opponent's side while we are clean generates `3 × 0.3 = 0.9` per turn — meaningful
-but never larger than the faint/win signals that anchor the value function.
+| Victory | ±30.0 | terminal |
+| Switch subsidy | +0.5 | one-time per voluntary switch (× spam_mult); 0 if consecutive |
+| Status infliction/cure | ±0.3 | one-time on the event turn |
+| Sleep swap out | +0.25 | one-time, voluntary only |
+| Sleep swap in | −0.25 | one-time, unless phazing |
+| SE switch-in | +0.2 | one-time; skipped if phazing |
+| Roar bonus | +0.2 | one-time on Roar turn |
+| Pivot bonus | +0.1–0.15 | one-time; skipped if phazing |
+| Spikes layer set | +0.5 | per layer added (max +1.5 for full spikes) |
+| Spikes waste | −0.2 | used Spikes at 3-layer cap |
 
 ---
 
@@ -175,7 +237,7 @@ but never larger than the faint/win signals that anchor the value function.
 | `src/agents/training/battle_context.py` | `opp_all_last_move_ids` field; phaze recovery in `TurnDelta.build()` |
 | `src/agents/training/battle_context_test.py` | 4 new phaze unit tests |
 | `src/agents/training/poke_env_gaps/transition_fuzz_e2e_test.py` | Scenario D (ROAR_TEAM) |
-| `src/agents/training/reward_manager.py` | `STATUS_BONUS`, `ROAR_BONUS`, `SE_SWITCH_BONUS`, `SLEEP_SWAP_BONUS`; `_compute_roar_bonus`, `_compute_se_switch_bonus`, `_compute_status_reward`; `_prev_opp_boosts` tracking; `Status` import; `SideCondition` import |
+| `src/agents/training/reward_manager.py` | `SWITCH_BASE_BONUS` (flat subsidy replaces pool); `STATUS_BONUS`, `ROAR_BONUS`, `SE_SWITCH_BONUS`, `SLEEP_SWAP_BONUS`, `SPIKES_LAYER_BONUS`, `SPIKES_WASTE_PENALTY`; `_compute_roar_bonus`, `_compute_se_switch_bonus`, `_compute_status_reward`, `_compute_spikes_bonus`; `_prev_opp_boosts`, `_prev_opp_spikes`, `_prev_our_statused`, `_prev_opp_statused`, `_last_switch_was_roared` tracking; roar-exclusion gates on SE/pivot/sleep-swap bonuses |
 | `src/agents/model/features_extractor.py` | Phaze turn display in `_action_str` |
 | `src/agents/training/battle_recorder.py` | Phaze turn format: `"move → phazed_to:species"` |
 | `CLAUDE.md` | Obs dim table updated to 1107 |
