@@ -55,6 +55,7 @@ class Gen3RewardManager:
         self._prev_opp_boosts: dict = {}    # opp active boosts after last turn (for Roar check)
         self._prev_our_statused = 0
         self._prev_opp_statused = 0
+        self._last_switch_was_roared = False
         self._type_chart = GenData.from_gen(3).type_chart
 
     def reset(self):
@@ -75,6 +76,7 @@ class Gen3RewardManager:
         self._prev_opp_boosts = {}
         self._prev_our_statused = 0
         self._prev_opp_statused = 0
+        self._last_switch_was_roared = False
 
     def record_action(self, ctx: BattleContext, action: int) -> None:
         """
@@ -97,6 +99,7 @@ class Gen3RewardManager:
             self._opp_turns_active += 1
 
         self._pending_subsidy = 0.0
+        self._last_switch_was_roared = False
 
         repetition_tax = 0.0
         bouncing_tax = 0.0
@@ -148,7 +151,9 @@ class Gen3RewardManager:
 
             elif is_voluntary is False:
                 self.forced_switch_count += 1
-                self._last_reward_metadata = {"type": "FORCED"}
+                l_norm = str(self._last_active_name).upper()
+                self._last_switch_was_roared = l_norm not in ["NONE", "NULL", "NONE_P1", "NONE_P2"]
+                self._last_reward_metadata = {"type": "FORCED_ROAR" if self._last_switch_was_roared else "FORCED_FAINT"}
         else:
             self._last_reward_metadata = {"type": "ATTACK", "repetition_tax": repetition_tax, "struggle_loop_tax": struggle_loop_tax}
 
@@ -227,8 +232,8 @@ class Gen3RewardManager:
         reward = (d_opp - d_our) * STATUS_BONUS
 
         # Sleep-swap signals: rotating a sleeping mon out is good (preserves it);
-        # rotating one in wastes the switch turn.
-        if delta.our_switch_to is not None:
+        # rotating one in wastes the switch turn. Not credited for Roar/Whirlwind.
+        if delta.our_switch_to is not None and not self._last_switch_was_roared:
             for mon in battle.team.values():
                 if mon.species == delta.our_prev_active:
                     if mon.status == Status.SLP:
@@ -291,21 +296,23 @@ class Gen3RewardManager:
                             reward += 2.0  # survived/played around explosion
                     break
 
-        # Defensive pivot bonus
-        pivot_bonus = self._compute_pivot_bonus(delta, battle)
-        if pivot_bonus > 0:
-            reward += pivot_bonus
-            self._last_reward_metadata["pivot_bonus"] = pivot_bonus
+        # Defensive pivot bonus — skip if we were roared/whirlwinded out (not our choice)
+        if not self._last_switch_was_roared:
+            pivot_bonus = self._compute_pivot_bonus(delta, battle)
+            if pivot_bonus > 0:
+                reward += pivot_bonus
+                self._last_reward_metadata["pivot_bonus"] = pivot_bonus
 
         # Roar bonus (forces switch when spikes are up or opp was boosted)
         roar_bonus = self._compute_roar_bonus(delta, battle)
         reward += roar_bonus
 
-        # SE switch-in bonus (brings in a mon with a SE damaging move vs opp)
-        se_switch_bonus = self._compute_se_switch_bonus(delta, battle)
-        reward += se_switch_bonus
+        # SE switch-in bonus — skip if we were roared/whirlwinded out
+        if not self._last_switch_was_roared:
+            se_switch_bonus = self._compute_se_switch_bonus(delta, battle)
+            reward += se_switch_bonus
 
-        # Symmetric status reward (+/- on inflict/receive)
+        # Status reward (+/- on inflict/cure); sleep-swap skipped if roared out
         status_reward = self._compute_status_reward(delta, battle)
         reward += status_reward
 
@@ -342,8 +349,10 @@ class Gen3RewardManager:
                     print(f"       Final Subsidy: {m['subsidy']:.4f}")
                 elif m.get("type") == "ATTACK" and (m.get("repetition_tax", 0) != 0 or m.get("struggle_loop_tax", 0) != 0):
                     print(f"    🔍 [DEEP TRACE] Type: ATTACK | Repetition Tax: {m['repetition_tax']:.2f} | Struggle Loop Tax: {m['struggle_loop_tax']:.2f}")
-                elif m.get("type") == "FORCED":
-                    print(f"    🔍 [DEEP TRACE] Type: FORCED SWITCH (No Subsidy)")
+                elif m.get("type") == "FORCED_FAINT":
+                    print(f"    🔍 [DEEP TRACE] Type: FORCED SWITCH (post-faint, no subsidy)")
+                elif m.get("type") == "FORCED_ROAR":
+                    print(f"    🔍 [DEEP TRACE] Type: FORCED SWITCH (roar/whirlwind, no bonuses)")
 
         self.total_reward += reward
         return reward
