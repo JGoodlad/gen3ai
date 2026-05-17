@@ -113,15 +113,13 @@ class Gen3RewardManager:
                     bouncing_tax = -0.15
                     self._pending_subsidy += bouncing_tax
 
-                ratio_mult = 1.0 if self._last_action_idx >= 6 else 0.5
                 spam_mult = 1.0 if (ctx.turn - self.last_switch_turn) > 1 else 0.0
 
-                subsidy = SWITCH_BASE_BONUS * ratio_mult * spam_mult
+                subsidy = SWITCH_BASE_BONUS * spam_mult
                 self._pending_subsidy += subsidy
 
                 self._last_reward_metadata = {
                     "type": "VOLUNTARY",
-                    "ratio_mult": ratio_mult,
                     "spam_mult": spam_mult,
                     "repetition_tax": repetition_tax,
                     "bouncing_tax": bouncing_tax,
@@ -328,7 +326,7 @@ class Gen3RewardManager:
                 m = self._last_reward_metadata
                 if m.get("type") == "VOLUNTARY":
                     print(f"    🔍 [DEEP TRACE] Type: VOLUNTARY SWITCH")
-                    print(f"       Multipliers: Ratio:{m['ratio_mult']:.1f} | Spam:{m['spam_mult']:.1f}")
+                    print(f"       Spam mult: {m['spam_mult']:.1f}")
                     print(f"       Taxes: Repetition:{m['repetition_tax']:.2f} | Bouncing:{m['bouncing_tax']:.2f}")
                     if m.get("pivot_bonus"):
                         print(f"       Pivot Bonus: +{m['pivot_bonus']:.2f}")
