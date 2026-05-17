@@ -21,7 +21,8 @@ ROLE_TOKEN_SIZE = 128
 PROJECTION_DIM = 512
 MOVE_NET_HIDDEN = [64, 32]        # [hidden, output] of shared move processor
 ROLE_ENCODER_HIDDEN = [256, 128]  # [hidden, output] of per-Pokémon role encoder
-ACTIVE_CTX_HIDDEN = [64, 32]     # [hidden, output] of active context encoder
+ACTIVE_CTX_HIDDEN = [64, 32]      # [hidden, output] of active context encoder
+NET_ARCH = [512, 512]             # MLP policy layers (SB3 policy_kwargs["net_arch"])
 
 
 class Gen3FeaturesExtractor(torch.nn.Module):

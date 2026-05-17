@@ -61,6 +61,7 @@ class ModelVersion:
             MOVE_NET_HIDDEN,
             ROLE_ENCODER_HIDDEN,
             ACTIVE_CTX_HIDDEN,
+            NET_ARCH,
         )
         return cls(
             config_version=MODEL_CONFIG_VERSION,
@@ -82,7 +83,7 @@ class ModelVersion:
             move_net_hidden=list(MOVE_NET_HIDDEN),
             role_encoder_hidden=list(ROLE_ENCODER_HIDDEN),
             active_ctx_hidden=list(ACTIVE_CTX_HIDDEN),
-            net_arch=list(policy_kwargs.get("net_arch", [512, 512])),
+            net_arch=list(policy_kwargs.get("net_arch", NET_ARCH)),
         )
 
     def to_json(self) -> str:

@@ -25,7 +25,7 @@ from stable_baselines3.common.callbacks import CheckpointCallback
 from stable_baselines3.common.vec_env import DummyVecEnv, SubprocVecEnv
 from stable_baselines3.common.monitor import Monitor
 
-from agents.model.features_extractor import Gen3FeaturesExtractor
+from agents.model.features_extractor import Gen3FeaturesExtractor, NET_ARCH
 from agents.model.model_version import ModelVersion, ModelVersionError
 from agents.model.snapshot import save_model_snapshot, load_model_snapshot
 from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings
@@ -356,7 +356,7 @@ async def main():
         _load_policy_kwargs = {
             "features_extractor_class": Gen3FeaturesExtractor,
             "features_extractor_kwargs": _load_extractor_kwargs,
-            "net_arch": [512, 512],
+            "net_arch": NET_ARCH,
         }
         current_version = ModelVersion.from_layout_and_policy_kwargs(
             _load_extractor_kwargs["layout"], _load_policy_kwargs
