@@ -113,8 +113,7 @@ class Gen3RewardManager:
                     bouncing_tax = -0.15
                     self._pending_subsidy += bouncing_tax
 
-                attack_ratio = self.attack_count / max(1, ctx.turn)
-                ratio_mult = 1.0 if attack_ratio >= 0.33 else 0.5
+                ratio_mult = 1.0 if self._last_action_idx >= 6 else 0.5
                 spam_mult = 1.0 if (ctx.turn - self.last_switch_turn) > 1 else 0.0
 
                 subsidy = SWITCH_BASE_BONUS * ratio_mult * spam_mult
