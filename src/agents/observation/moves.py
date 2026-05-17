@@ -40,13 +40,18 @@ class MovesEncoder(ObservationEncoder):
                     raise ValueError(f"Unrecognized move: {move_id}. Update data/pokemon/gen3_moves.json")
                 entry = self.mapping[move_id]
                 num = entry.get("num", 0)
-                power = entry.get("basePower", move.base_power)
                 secondary = 1.0 if entry.get("hasSecondary") else 0.0
                 recoil = 1.0 if entry.get("hasRecoil") else 0.0
-                
-                # Get type from mapping and convert to ID using TypeEncoder
-                move_type = entry.get("type", "Normal").upper()
-                type_id = TypeEncoder.TYPE_TO_IDX.get(move_type, 0)
+
+                if move_id == "hiddenpower":
+                    # Gen 3: HP type unknowable from battle log. 70bp competitive assumption;
+                    # type_id=0 (unknown sentinel, distinct from Normal=1).
+                    power = 70
+                    type_id = 0
+                else:
+                    power = entry.get("basePower", move.base_power)
+                    move_type = entry.get("type", "Normal").upper()
+                    type_id = TypeEncoder.TYPE_TO_IDX.get(move_type, 0)
                 
                 base_idx = i * MOVE_SLOT_DIM
                 # 1. Move ID

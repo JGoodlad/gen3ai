@@ -169,3 +169,42 @@ plan, in order:
 `EpisodeTracker._history` already exists and both designs build on it. The
 sliding-window prototype should land first to establish a baseline that the
 GRU has to beat.
+
+---
+
+## 6. Hidden Power — Opponent Type Inference
+
+**Where:** `src/agents/observation/moves.py`, `src/agents/observation/turn_delta_encoder.py`
+
+### Problem
+
+Hidden Power is a critical competitive mechanic in Gen 3 (Celebi, Zapdos, Jolteon, etc.
+commonly run HP Water, HP Ice, HP Fire). Gen 3 Showdown uses the base "hiddenpower" move ID
+internally and sets the actual type at runtime via `onModifyMove`. The `|move|` battle log
+emits "Hidden Power" (no type suffix) — see `dist/sim/battle-actions.js:380`. poke-env
+cannot recover the HP type from this message.
+
+### Current Mitigation (already applied)
+
+- Opponent HP in both `moves.py` and `turn_delta_encoder.py` encodes `type_id=0` (unknown
+  sentinel, distinct from Normal=1) and `basePower=70` (competitive assumption).
+- `TypeEncoder.IDX_TO_TYPE[0] = "UNKNOWN"` so display shows `hiddenpower [Unknown, 70bp]`.
+- Our own HP moves encode correctly (typed variant comes from the Showdown request).
+
+### Proper Fix (future)
+
+Two avenues, both non-trivial:
+
+**a) Damage-effectiveness inference**: After `|move|` and `|-supereffective|` / `|-resisted|`
+messages, infer the HP type from the effectiveness and the target's known types. Needs
+poke-env message-stream access and type-chart lookup. Often ambiguous (e.g. a 2× hit on a
+Water/Ground mon could be HP Grass or HP Ice).
+
+**b) Explicit HP type tracking via poke-env extension**: Add a `hp_type: str | None`
+attribute to poke-env's `Pokemon` class, populated from team-preview or from the first
+move-use log if Showdown ever exposes it. Gen 3 Random Battles have no team preview, so
+this only helps in non-random formats.
+
+Until one of these is implemented, the model must infer the opponent's HP type from patterns
+(which mons use HP, HP delta magnitude, matchup context). The `type_id=0` encoding gives it
+a clean "I don't know" signal to reason from.

@@ -18,6 +18,7 @@ class TypeEncoder(ObservationEncoder):
     }
     
     IDX_TO_TYPE = {v: k for k, v in TYPE_TO_IDX.items()}
+    IDX_TO_TYPE[0] = "UNKNOWN"  # idx 0 = unset/unknown sentinel (not a real type)
 
     @property
     def dimension(self) -> int:

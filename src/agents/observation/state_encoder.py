@@ -61,7 +61,11 @@ def load_mappings():
         rev = {}
         for name, data in mappings[category].items():
             if isinstance(data, dict) and "num" in data:
-                rev[data["num"]] = name
+                num = data["num"]
+                # For moves, prefer the base "hiddenpower" name over typed HP variants
+                # (all 17 HP variants share num=237; the base name is the honest display)
+                if num not in rev or name == "hiddenpower":
+                    rev[num] = name
             elif isinstance(data, (int, float)):
                 rev[int(data)] = name
         mappings["reverse"][category] = rev

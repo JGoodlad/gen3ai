@@ -41,7 +41,14 @@ class TurnDeltaEncoder:
         self._moves = gen3_moves
         nums = [v.get("num", 0) for v in gen3_moves.values()]
         self._max_num = float(max(nums, default=1))
-        self._num_to_name = {v.get("num"): k for k, v in gen3_moves.items() if "num" in v}
+        # Build reverse map preferring "hiddenpower" base over typed variants for num=237
+        self._num_to_name = {}
+        for k, v in gen3_moves.items():
+            if "num" not in v:
+                continue
+            num = v["num"]
+            if num not in self._num_to_name or k == "hiddenpower":
+                self._num_to_name[num] = k
         self._idx_to_type = TypeEncoder.IDX_TO_TYPE
 
     @property
@@ -58,12 +65,18 @@ class TurnDeltaEncoder:
         if entry is None:
             return vec
         vec[0] = float(entry.get("num", 0))          # raw move num — embedded by extractor
-        vec[1] = min(entry.get("basePower", 0) / 200.0, 1.0)
         vec[2] = float(bool(entry.get("hasSecondary")))
         vec[3] = float(bool(entry.get("hasRecoil")))
-        move_type = entry.get("type", "Normal").upper()
-        type_id = TypeEncoder.TYPE_TO_IDX.get(move_type, 0)
-        vec[4] = float(type_id)                       # raw type id — embedded by extractor
+        if move_id == "hiddenpower":
+            # Gen 3 Showdown sends "Hidden Power" without type; type is unknowable from the
+            # battle log. Use 70bp (competitive assumption) and type_id=0 (unknown sentinel,
+            # distinct from Normal=1) so the model learns HP ≠ Normal-type move.
+            vec[1] = 70.0 / 200.0
+            # vec[4] stays 0 (unknown)
+        else:
+            vec[1] = min(entry.get("basePower", 0) / 200.0, 1.0)
+            move_type = entry.get("type", "Normal").upper()
+            vec[4] = float(TypeEncoder.TYPE_TO_IDX.get(move_type, 0))
         return vec
 
     def _cant_onehot(self, reason: Optional[str]) -> np.ndarray:
