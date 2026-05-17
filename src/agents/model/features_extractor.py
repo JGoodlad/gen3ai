@@ -194,11 +194,8 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         td = desc.get("turn_delta")
         if td is not None:
             def _action_str(switched, failed, cant, move):
-                if switched:
-                    return "switch"
-                if failed:
-                    return f"✗ {cant or '?'}"
-                if move:
+                move_str = None
+                if move and move.get("move_id", 0) > 0:
                     name = move.get("move_name") or f"#{move['move_id']}"
                     type_ = (move.get("move_type") or "").title()
                     pwr = move["power"]
@@ -208,7 +205,14 @@ class Gen3FeaturesExtractor(torch.nn.Module):
                     if move["secondary"]: meta.append("+eff")
                     if move["recoil"]: meta.append("recoil")
                     suffix = f" [{', '.join(meta)}]" if meta else ""
-                    return f"{name}{suffix}"
+                    move_str = f"{name}{suffix}"
+                if switched:
+                    # Phaze: they moved first, then were forced out
+                    return f"{move_str} → phazed" if move_str else "switch"
+                if failed:
+                    return f"✗ {cant or '?'}"
+                if move_str:
+                    return move_str
                 return "(first turn)"
 
             W = 36

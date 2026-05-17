@@ -236,7 +236,11 @@ class BattleRecorder:
 
         # Their action — prefer TurnDelta switch detection, then poke-env last_move
         if delta.opp_switch_to:
-            they_action = f"switched_to:{delta.opp_switch_to}"
+            if delta.opp_move_id:
+                # Phaze (Roar/Whirlwind): they moved first, then were forced out
+                they_action = f"{delta.opp_move_id} → phazed_to:{delta.opp_switch_to}"
+            else:
+                they_action = f"switched_to:{delta.opp_switch_to}"
         else:
             opp_mon = battle.opponent_active_pokemon
             last_move = getattr(opp_mon, "last_move", None) if opp_mon else None
