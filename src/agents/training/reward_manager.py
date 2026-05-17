@@ -202,17 +202,21 @@ class Gen3RewardManager:
         return 0.0
 
     def _compute_status_reward(self, delta: TurnDelta, battle) -> float:
-        """Per-turn symmetric status reward: fires every turn either active mon has a status condition.
-        Cumulative but flat — +STATUS_BONUS each turn opp is statused, -STATUS_BONUS each turn we are.
+        """Per-turn team-wide status reward: (opp_statused - our_statused) * STATUS_BONUS each turn.
+        Counts all non-fainted mons on each side, bench included. Cumulative but flat.
         Also rewards rotating a sleeping mon OUT and penalises rotating one IN."""
         our_mon = battle.active_pokemon
         opp_mon = battle.opponent_active_pokemon
 
-        reward = 0.0
-        if our_mon and our_mon.status is not None:
-            reward -= STATUS_BONUS
-        if opp_mon and opp_mon.status is not None:
-            reward += STATUS_BONUS
+        our_statused = sum(
+            1 for mon in battle.team.values()
+            if mon.status is not None and not mon.fainted
+        )
+        opp_statused = sum(
+            1 for mon in battle.opponent_team.values()
+            if mon.status is not None and not mon.fainted
+        )
+        reward = (opp_statused - our_statused) * STATUS_BONUS
 
         # Sleep-swap signals: rotating a sleeping mon out is good (preserves it);
         # rotating one in wastes the switch turn.
