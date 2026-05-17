@@ -5,6 +5,7 @@ from utils.logging.levels import LogLevel
 from utils.gen3_utils import SwitchDetection
 from poke_env.data import GenData
 from poke_env.battle.side_condition import SideCondition
+from poke_env.battle.status import Status
 from agents.training.battle_context import BattleContext, TurnDelta
 
 FAINTED_VALUE = 2.0
@@ -15,9 +16,10 @@ STALL_TAX_DENOMINATOR = 10.0
 STRUGGLE_LOOP_TAX = -0.5
 STRUGGLE_LOOP_THRESHOLD = 3
 
-STATUS_BONUS = 0.3    # reward for inflicting status; penalty for receiving
-ROAR_BONUS = 0.2      # reward for Roar when spikes on opp side or opp had positive boosts
-SE_SWITCH_BONUS = 0.2 # reward for switching in a mon with a SE damaging move vs opp active
+STATUS_BONUS = 0.3        # reward for inflicting status; penalty for receiving
+ROAR_BONUS = 0.2          # reward for Roar when spikes on opp side or opp had positive boosts
+SE_SWITCH_BONUS = 0.2     # reward for switching in a mon with a SE damaging move vs opp active
+SLEEP_SWAP_BONUS = 0.25   # reward for rotating a sleeping mon out; penalty for rotating one in
 
 
 class Gen3RewardManager:
@@ -205,7 +207,8 @@ class Gen3RewardManager:
 
     def _compute_status_reward(self, delta: TurnDelta, battle) -> float:
         """Symmetric reward: +STATUS_BONUS for inflicting status on opp, -STATUS_BONUS for receiving.
-        Only fires on the turn status is first applied; ignores pre-existing status on switch-ins."""
+        Only fires on the turn status is first applied; ignores pre-existing status on switch-ins.
+        Also rewards rotating a sleeping mon OUT and penalises rotating one IN."""
         our_mon = battle.active_pokemon
         opp_mon = battle.opponent_active_pokemon
         our_status = our_mon.status if our_mon else None
@@ -218,6 +221,19 @@ class Gen3RewardManager:
         if delta.opp_switch_to is None:
             if opp_status is not None and self._prev_opp_status is None:
                 reward += STATUS_BONUS
+
+        # Sleep-swap signals: rotating a sleeping mon out is good (preserves it);
+        # rotating one in wastes the switch turn.
+        if delta.our_switch_to is not None:
+            # Check whether the mon we just switched OUT was asleep
+            for mon in battle.team.values():
+                if mon.species == delta.our_prev_active:
+                    if mon.status == Status.SLP:
+                        reward += SLEEP_SWAP_BONUS
+                    break
+            # Check whether the mon we just switched IN is asleep
+            if our_mon and our_mon.status == Status.SLP:
+                reward -= SLEEP_SWAP_BONUS
 
         # Always update — on switch the new mon's current status becomes the baseline
         self._prev_our_status = our_status
