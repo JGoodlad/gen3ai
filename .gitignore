@@ -19,3 +19,4 @@ models/*
 
 # Logs
 tensorboard/
+.claude/worktrees/
