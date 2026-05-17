@@ -231,15 +231,20 @@ class Gen3RewardManager:
         self._prev_opp_statused = opp_statused
         reward = (d_opp - d_our) * STATUS_BONUS
 
-        # Sleep-swap signals: rotating a sleeping mon out is good (preserves it);
-        # rotating one in wastes the switch turn. Not credited for Roar/Whirlwind.
-        if delta.our_switch_to is not None and not self._last_switch_was_roared:
-            for mon in battle.team.values():
-                if mon.species == delta.our_prev_active:
-                    if mon.status == Status.SLP:
-                        reward += SLEEP_SWAP_BONUS
-                    break
-            if our_mon and our_mon.status == Status.SLP:
+        # Sleep-swap signals.
+        # Bonus for rotating a sleeping mon OUT: only on voluntary switches — if the mon
+        # fainted there's no preservation value, the opponent can just sleep another mon.
+        # Penalty for rotating a sleeping mon IN: applies to voluntary + post-faint
+        # (you still chose the replacement), but not Roar/Whirlwind.
+        if delta.our_switch_to is not None:
+            is_voluntary = self._last_reward_metadata.get("type") == "VOLUNTARY"
+            if is_voluntary:
+                for mon in battle.team.values():
+                    if mon.species == delta.our_prev_active:
+                        if mon.status == Status.SLP:
+                            reward += SLEEP_SWAP_BONUS
+                        break
+            if not self._last_switch_was_roared and our_mon and our_mon.status == Status.SLP:
                 reward -= SLEEP_SWAP_BONUS
 
         return reward
