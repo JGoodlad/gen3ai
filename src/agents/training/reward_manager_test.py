@@ -56,13 +56,17 @@ def _delta(our_hp_delta=0.0, opp_hp_delta=0.0, we_fainted=False, opp_fainted=Fal
     )
 
 
-def _battle(won=False, lost=False, finished=False):
+def _battle(won=False, lost=False, finished=False, opp_spikes=0):
     battle = MagicMock()
     battle.won = won
     battle.lost = lost
     battle.finished = finished
     battle.turn = 1
     battle.opponent_team = {}
+    from poke_env.battle.side_condition import SideCondition
+    battle.opponent_side_conditions = (
+        {SideCondition.SPIKES: opp_spikes} if opp_spikes > 0 else {}
+    )
     return battle
 
 
@@ -120,6 +124,61 @@ class TestRewardManager(unittest.TestCase):
         reward = self.manager.process_turn_reward(battle, _delta())
         # Victory value is 30.0
         self.assertAlmostEqual(reward, 30.0, places=5)
+
+
+    def test_spikes_layer_bonus(self):
+        from agents.training.reward_manager import SPIKES_LAYER_BONUS
+        ctx = _ctx(turn=1)
+        self.manager.record_action(ctx, 6)
+        # First spikes layer goes down
+        battle = _battle(opp_spikes=1)
+        reward = self.manager.process_turn_reward(battle, _delta())
+        self.assertAlmostEqual(reward, SPIKES_LAYER_BONUS, places=5)
+
+    def test_spikes_two_layers_bonus(self):
+        from agents.training.reward_manager import SPIKES_LAYER_BONUS
+        # Simulate spikes going from 1 → 3 in two separate turns
+        ctx = _ctx(turn=1)
+        self.manager.record_action(ctx, 6)
+        self.manager.process_turn_reward(_battle(opp_spikes=1), _delta())
+
+        ctx2 = _ctx(turn=2)
+        self.manager.record_action(ctx2, 7)  # different move to avoid repetition tax
+        reward = self.manager.process_turn_reward(_battle(opp_spikes=2), _delta())
+        self.assertAlmostEqual(reward, SPIKES_LAYER_BONUS, places=5)
+
+    def test_spikes_waste_penalty(self):
+        from agents.training.reward_manager import SPIKES_WASTE_PENALTY
+        # Pre-set internal state to 3 layers already up
+        self.manager._prev_opp_spikes = 3
+        ctx = _ctx(turn=1)
+        self.manager.record_action(ctx, 6)
+        delta = TurnDelta(
+            our_move_id="spikes",
+            our_switch_to=None,
+            our_prev_active="pikachu",
+            opp_move_id=None,
+            opp_switch_to=None,
+            opp_prev_active="charizard",
+            opp_move_known=False,
+            our_hp_delta=np.zeros(6, dtype=np.float32),
+            opp_hp_delta=np.zeros(6, dtype=np.float32),
+            we_fainted=False,
+            opp_fainted=False,
+            our_failed_to_move=False,
+            our_cant_reason=None,
+            opp_failed_to_move=False,
+            opp_cant_reason=None,
+        )
+        reward = self.manager.process_turn_reward(_battle(opp_spikes=3), delta)
+        self.assertAlmostEqual(reward, SPIKES_WASTE_PENALTY, places=5)
+
+    def test_spikes_no_bonus_without_change(self):
+        # No spikes → no spikes: zero bonus
+        ctx = _ctx(turn=1)
+        self.manager.record_action(ctx, 6)
+        reward = self.manager.process_turn_reward(_battle(opp_spikes=0), _delta())
+        self.assertAlmostEqual(reward, 0.0, places=5)
 
 
 if __name__ == "__main__":

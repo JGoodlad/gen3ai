@@ -21,6 +21,8 @@ STATUS_BONUS = 0.3        # reward for inflicting status; penalty for receiving
 ROAR_BONUS = 0.2          # reward for Roar when spikes on opp side or opp had positive boosts
 SE_SWITCH_BONUS = 0.2     # reward for switching in a mon with a SE damaging move vs opp active
 SLEEP_SWAP_BONUS = 0.25   # reward for rotating a sleeping mon out; penalty for rotating one in
+SPIKES_LAYER_BONUS = 0.5  # per layer added to opponent's side (credit assignment bridge)
+SPIKES_WASTE_PENALTY = -0.2  # wasted turn using Spikes when 3 layers already up
 
 
 class Gen3RewardManager:
@@ -51,6 +53,7 @@ class Gen3RewardManager:
         self._consecutive_struggle = 0
         self.struggle_turns = 0
         self._prev_opp_boosts: dict = {}    # opp active boosts after last turn (for Roar check)
+        self._prev_opp_spikes: int = 0      # opp spikes layers after last turn (for Spikes bonus)
         self._prev_our_statused = 0
         self._prev_opp_statused = 0
         self._last_switch_was_roared = False
@@ -69,6 +72,7 @@ class Gen3RewardManager:
         self._consecutive_struggle = 0
         self.struggle_turns = 0
         self._prev_opp_boosts = {}
+        self._prev_opp_spikes = 0
         self._prev_our_statused = 0
         self._prev_opp_statused = 0
         self._last_switch_was_roared = False
@@ -258,6 +262,17 @@ class Gen3RewardManager:
             return 0.15 if new_threat == 0 else 0.1
         return 0.0
 
+    def _compute_spikes_bonus(self, delta: TurnDelta, battle) -> float:
+        """Reward each new spike layer added; penalise wasting a turn at layer cap."""
+        curr = battle.opponent_side_conditions.get(SideCondition.SPIKES, 0)
+        new_layers = curr - self._prev_opp_spikes
+        self._prev_opp_spikes = curr
+        if new_layers > 0:
+            return new_layers * SPIKES_LAYER_BONUS
+        if delta.our_move_id == "spikes" and curr == 3:
+            return SPIKES_WASTE_PENALTY
+        return 0.0
+
     def process_turn_reward(self, battle, delta: TurnDelta) -> float:
         """
         Computes the full reward for a completed turn from the TurnDelta.
@@ -291,6 +306,10 @@ class Gen3RewardManager:
         # Roar bonus (forces switch when spikes are up or opp was boosted)
         roar_bonus = self._compute_roar_bonus(delta, battle)
         reward += roar_bonus
+
+        # Spikes setup bonus / waste penalty
+        spikes_bonus = self._compute_spikes_bonus(delta, battle)
+        reward += spikes_bonus
 
         # SE switch-in bonus — skip if we were roared/whirlwinded out
         if not self._last_switch_was_roared:
