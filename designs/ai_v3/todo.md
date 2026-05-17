@@ -2,7 +2,35 @@
 
 ---
 
-## 1. poke-env: Delegating Move `last_move` Gap
+## 1. Learning Rate Annealing
+
+**Where:** `src/main/train_rl_agent.py`
+
+Wang (2024) found constant LR plateaued at ~55% winrate vs SimpleHeuristicsPlayer;
+their annealing schedule reached ~80%. The formula:
+
+```
+ℓ(x) = peak_lr / (8x + 1)^1.5    where x = training progress 0→1
+```
+
+SB3 accepts a callable for `learning_rate` that receives `remaining_progress_fraction`
+(1→0), so `x = 1 - remaining`. Replace `learning_rate=args.lr` with:
+
+```python
+def make_lr_schedule(peak):
+    def schedule(remaining):
+        x = 1.0 - remaining
+        return peak / (8.0 * x + 1.0) ** 1.5
+    return schedule
+
+learning_rate=make_lr_schedule(args.lr)
+```
+
+TensorBoard logs `train/learning_rate` automatically — should show a smooth decay curve.
+
+---
+
+## 3. poke-env: Delegating Move `last_move` Gap
 
 **Where:** `src/poke_env/battle/pokemon.py` → `Pokemon.moved()`
 **Research:** `src/agents/training/poke_env_gaps/README.md`
@@ -56,7 +84,7 @@ Fix requires intercepting `|faint|` in `AbstractBattle._parse_message()` to snap
 
 ---
 
-## 2. Status and Stat-Stage Deltas in `TurnDelta`
+## 4. Status and Stat-Stage Deltas in `TurnDelta`
 
 **Where:** `src/agents/training/battle_context.py` → `TurnDelta`
 
@@ -82,7 +110,7 @@ to consume them.
 
 ---
 
-## 3. `TurnDeltaEncoder` — One-Turn Memory in the Observation Vector ✓ DONE
+## 5. `TurnDeltaEncoder` — One-Turn Memory in the Observation Vector ✓ DONE
 
 **Where:** `src/agents/observation/turn_delta_encoder.py`
 **Implemented in Step 3 (same session as TurnDelta).** 29-dim block appended to obs by `gen3_env.embed_battle()`. See CLAUDE.md for layout.
@@ -129,7 +157,7 @@ The `TurnDelta.empty()` sentinel (first turn of episode) maps to an all-zeros bl
 
 ---
 
-## 4. Observation / Encoding: Volatile Count Encoding
+## 6. Observation / Encoding: Volatile Count Encoding
 
 **Where:** `src/agents/observation/active_context.py`
 
@@ -145,7 +173,7 @@ Not critical for early training, but affects late-game decision quality.
 
 ---
 
-## 5. Turn-History Memory
+## 7. Turn-History Memory
 
 **Where:** `src/agents/model/features_extractor.py`, `src/agents/training/episode_tracker.py`
 
@@ -172,7 +200,7 @@ GRU has to beat.
 
 ---
 
-## 6. Hidden Power — Opponent Type Inference
+## 8. Hidden Power — Opponent Type Inference
 
 **Where:** `src/agents/observation/moves.py`, `src/agents/observation/turn_delta_encoder.py`
 

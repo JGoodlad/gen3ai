@@ -439,7 +439,7 @@ async def main():
             n_steps=args.n_steps,
             batch_size=args.batch_size,
             n_epochs=args.n_epochs,
-            gamma=0.99,
+            gamma=0.9999,
             ent_coef=args.ent_coef,
             device=args.device,
             seed=args.seed,
