@@ -137,6 +137,9 @@ The `TurnDelta.empty()` sentinel (first turn of episode) maps to an all-zeros bl
 - **Perish Song**: 0–3 turns remaining, encoded as a single bit regardless.
 - **Sleep**: 1–7 turns remaining per Gen 3 mechanics; you cannot reset the counter by
   switching. The network cannot learn sleep-turn-aware switch timing without this signal.
+- **Move PP / turn count**: moves with limited PP (e.g., Protect, Endure) or that
+  interact with turn count (e.g., Sleep Talk sequencing, Encore turn countdown) could
+  benefit from a scalar turn-count feature rather than a binary known/unknown flag.
 
 Not critical for early training, but affects late-game decision quality.
 
