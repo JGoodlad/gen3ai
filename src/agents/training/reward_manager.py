@@ -53,6 +53,8 @@ class Gen3RewardManager:
         self._consecutive_struggle = 0
         self.struggle_turns = 0
         self._prev_opp_boosts: dict = {}    # opp active boosts after last turn (for Roar check)
+        self._prev_our_statused = 0
+        self._prev_opp_statused = 0
         self._type_chart = GenData.from_gen(3).type_chart
 
     def reset(self):
@@ -71,6 +73,8 @@ class Gen3RewardManager:
         self._consecutive_struggle = 0
         self.struggle_turns = 0
         self._prev_opp_boosts = {}
+        self._prev_our_statused = 0
+        self._prev_opp_statused = 0
 
     def record_action(self, ctx: BattleContext, action: int) -> None:
         """
@@ -202,8 +206,8 @@ class Gen3RewardManager:
         return 0.0
 
     def _compute_status_reward(self, delta: TurnDelta, battle) -> float:
-        """Per-turn team-wide status reward: (opp_statused - our_statused) * STATUS_BONUS each turn.
-        Counts all non-fainted mons on each side, bench included. Cumulative but flat.
+        """One-time status reward: fires only when the status count changes (inflicted or cured).
+        Counts all non-fainted mons on each side, bench included.
         Also rewards rotating a sleeping mon OUT and penalises rotating one IN."""
         our_mon = battle.active_pokemon
         opp_mon = battle.opponent_active_pokemon
@@ -216,7 +220,11 @@ class Gen3RewardManager:
             1 for mon in battle.opponent_team.values()
             if mon.status is not None and not mon.fainted
         )
-        reward = (opp_statused - our_statused) * STATUS_BONUS
+        d_our = our_statused - self._prev_our_statused
+        d_opp = opp_statused - self._prev_opp_statused
+        self._prev_our_statused = our_statused
+        self._prev_opp_statused = opp_statused
+        reward = (d_opp - d_our) * STATUS_BONUS
 
         # Sleep-swap signals: rotating a sleeping mon out is good (preserves it);
         # rotating one in wastes the switch turn.
