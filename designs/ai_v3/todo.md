@@ -176,19 +176,27 @@ The `TurnDelta.empty()` sentinel (first turn of episode) maps to an all-zeros bl
 
 ---
 
-## 6. Observation / Encoding: Volatile Count Encoding
+## 6. Observation / Encoding: Volatile Count Encoding ✓ DONE (partial)
 
-**Where:** `src/agents/observation/active_context.py`
+**Where:** `src/agents/observation/active_context.py`, `src/agents/observation/pokemon.py`
 
-`active_context.py` encodes volatiles as binary flags only. Two cases where count matters:
-- **Perish Song**: 0–3 turns remaining, encoded as a single bit regardless.
-- **Sleep**: 1–7 turns remaining per Gen 3 mechanics; you cannot reset the counter by
-  switching. The network cannot learn sleep-turn-aware switch timing without this signal.
-- **Move PP / turn count**: moves with limited PP (e.g., Protect, Endure) or that
-  interact with turn count (e.g., Sleep Talk sequencing, Encore turn countdown) could
-  benefit from a scalar turn-count feature rather than a binary known/unknown flag.
+**Done:** Sleep counter (`min(ctr,4)/4`) and toxic counter (`min(ctr,8)/8`) added to
+per-Pokémon vector so they flow through role tokens and all 5 attention paths.
+Perish Song upgraded from binary to scalar (`turns_left/3`) in active context.
 
-Not critical for early training, but affects late-game decision quality.
+**Gen 3 sleep nuance to be aware of (not yet encoded):**
+Sleep lasts 1–4 turns in Gen 3. Using Sleep Talk or Snore while asleep increments
+`status_counter` like a normal turn, but those increments are **discarded on switch-out**
+due to an engine oversight — the counter reverts to its pre-Sleep-Talk value. The current
+encoding uses `mon.status_counter` as-is; it will be slightly inflated for mons that
+used Sleep Talk then switched. Not critical to fix — poke-env likely tracks this
+correctly for our own mons (via Showdown messages), and opponent sleep counter is
+already approximate.
+
+**Architectural gap (separate item below):** Boosts and volatiles in active context
+are invisible to all 5 attention paths — see item 9.
+
+**Remaining:** Move PP / Encore countdown — low priority.
 
 ---
 
@@ -255,3 +263,54 @@ this only helps in non-random formats.
 Until one of these is implemented, the model must infer the opponent's HP type from patterns
 (which mons use HP, HP delta magnitude, matchup context). The `type_id=0` encoding gives it
 a clean "I don't know" signal to reason from.
+
+---
+
+## 9. Architecture Gap: Boosts and Volatiles Blind to Attention
+
+**Where:** `src/agents/model/features_extractor.py`
+
+### Problem
+
+Boosts (stat stages) and volatile effects (Taunt, Confusion, Substitute, etc.) are encoded
+in the **active context** stream (23 dims → 32-dim MLP → concatenated at the projection head).
+This means all 5 attention paths (Pressure, Safety, Synergy, Threat, Opp Synergy) are
+**completely blind** to them.
+
+Concrete examples:
+- Pressure ("what threatens our active from their bench?") cannot see that their benched
+  Blissey is at +6 SpA after three Calm Minds.
+- Safety ("which of our bench can switch in safely?") doesn't know our active Skarmory
+  is Taunted and can't use Spikes or Roost.
+
+This is not a bug — it's a design gap from having status counters and volatile effects
+arrive too late in the pipeline (after attention has already run).
+
+### Proposed Fix
+
+For the **active mon only**, inject the active context encoding into that mon's role token
+**before** the attention paths run:
+
+```python
+# After role encoding, find the active slot and add the active-ctx projection
+our_active_idx = our_active_flags.argmax(dim=1)  # [B]
+# Project active context (23 dims) → role token size (128 dims)
+our_ctx_boost = self.active_ctx_to_role(our_ctx_raw)  # [B, 128]
+# Add into the active slot's role token
+role_tokens[:, our_active_idx, :] += our_ctx_boost
+# Same for opponent
+opp_active_idx = opp_active_flags.argmax(dim=1) + TEAM_SIZE
+opp_ctx_boost = self.active_ctx_to_role(opp_ctx_raw)
+role_tokens[:, opp_active_idx, :] += opp_ctx_boost
+```
+
+Where `self.active_ctx_to_role = nn.Linear(ACTIVE_CONTEXT_DIM, ROLE_TOKEN_SIZE)`.
+
+Benched mons have no boosts/volatiles, so only injecting into the active slot is correct.
+`ROLE_TOKEN_SIZE` stays at 128 — no downstream dim changes needed.
+
+### Priority
+
+Medium. The projection MLP can still use boosts/volatiles to influence final logits,
+so the model can partially compensate. But strategic attention-level reasoning (e.g.,
+"their bench +4 Blissey is a bigger threat than my typing suggests") requires this fix.
