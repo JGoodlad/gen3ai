@@ -3,7 +3,7 @@ from .base import ObservationEncoder
 from poke_env.battle.abstract_battle import AbstractBattle
 from poke_env.battle.side_condition import SideCondition
 from .constants import REACTIVE_DIM, TEAM_SIZE
-from agents.type_utils import effective_multiplier
+from agents.gen3_mechanics import effective_multiplier
 from typing import Any, Dict, List, Tuple
 
 class ReactiveEncoder(ObservationEncoder):

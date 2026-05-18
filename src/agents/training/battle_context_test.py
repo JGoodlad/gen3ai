@@ -3,6 +3,7 @@ import numpy as np
 from unittest.mock import MagicMock
 from agents.training.battle_context import BattleContext, TurnDelta
 from agents.training.slot_registry import SlotRegistry
+from agents.gen3_mechanics import BOOST_DIM, BOOST_STATS
 
 
 def _mask(*valid_actions):
@@ -21,6 +22,13 @@ def _hp(*fractions):
     for i, v in enumerate(fractions):
         hp[i] = v
     return hp
+
+
+def _boosts(**stages):
+    arr = np.zeros(BOOST_DIM, dtype=np.int8)
+    for stat, val in stages.items():
+        arr[BOOST_STATS.index(stat)] = val
+    return arr
 
 
 def _ctx(**overrides):
@@ -43,6 +51,8 @@ def _ctx(**overrides):
         opp_active_revealed_moves=frozenset(),
         our_cant_reason=None,
         opp_cant_reason=None,
+        our_boosts=np.zeros(BOOST_DIM, dtype=np.int8),
+        opp_boosts=np.zeros(BOOST_DIM, dtype=np.int8),
     )
     defaults.update(overrides)
     return BattleContext(**defaults)
@@ -92,6 +102,8 @@ def test_wrong_mask_shape_raises():
             opp_active_revealed_moves=frozenset(),
             our_cant_reason=None,
             opp_cant_reason=None,
+            our_boosts=np.zeros(BOOST_DIM, dtype=np.int8),
+            opp_boosts=np.zeros(BOOST_DIM, dtype=np.int8),
         )
 
 
@@ -375,6 +387,85 @@ def test_turn_delta_empty():
     assert delta.opp_fainted is False
     assert delta.our_hp_delta.shape == (6,)
     assert delta.our_hp_delta.sum() == 0
+    assert delta.our_boost_delta.shape == (BOOST_DIM,)
+    assert delta.our_boost_delta.sum() == 0
+    assert delta.opp_boost_delta.shape == (BOOST_DIM,)
+
+
+# ---------------------------------------------------------------------------
+# BattleContext — boost fields
+# ---------------------------------------------------------------------------
+
+def test_battle_context_stores_our_boosts():
+    boosts = _boosts(atk=2, spa=1)
+    ctx = _ctx(our_boosts=boosts)
+    assert ctx.our_boosts[BOOST_STATS.index("atk")] == 2
+    assert ctx.our_boosts[BOOST_STATS.index("spa")] == 1
+    assert ctx.our_boosts[BOOST_STATS.index("def")] == 0
+
+
+def test_battle_context_stores_opp_boosts():
+    boosts = _boosts(spe=-1)
+    ctx = _ctx(opp_boosts=boosts)
+    assert ctx.opp_boosts[BOOST_STATS.index("spe")] == -1
+
+
+def test_battle_context_wrong_boost_shape_raises():
+    with pytest.raises(RuntimeError, match="our_boosts"):
+        _ctx(our_boosts=np.zeros(5, dtype=np.int8))
+
+
+# ---------------------------------------------------------------------------
+# TurnDelta — boost delta
+# ---------------------------------------------------------------------------
+
+def test_turn_delta_boost_delta_gain():
+    # Swords Dance: our atk went from 0 to +2
+    prev = _ctx(our_boosts=_boosts())
+    curr = _ctx(our_boosts=_boosts(atk=2))
+    delta = TurnDelta.build(prev, curr, action=6)
+    assert delta.our_boost_delta[BOOST_STATS.index("atk")] == 2
+    assert delta.our_boost_delta.sum() == 2
+
+
+def test_turn_delta_boost_delta_loss():
+    # Opponent used Charm: our atk dropped from 0 to -2
+    prev = _ctx(our_boosts=_boosts())
+    curr = _ctx(our_boosts=_boosts(atk=-2))
+    delta = TurnDelta.build(prev, curr, action=6)
+    assert delta.our_boost_delta[BOOST_STATS.index("atk")] == -2
+
+
+def test_turn_delta_opp_boost_delta():
+    # Opp used Calm Mind: their spa and spd both +1
+    prev = _ctx(opp_boosts=_boosts())
+    curr = _ctx(opp_boosts=_boosts(spa=1, spd=1))
+    delta = TurnDelta.build(prev, curr, action=6)
+    assert delta.opp_boost_delta[BOOST_STATS.index("spa")] == 1
+    assert delta.opp_boost_delta[BOOST_STATS.index("spd")] == 1
+
+
+def test_turn_delta_boost_delta_zeroed_on_our_switch():
+    # We had +2 atk and switched out — boost delta should be zero (new mon, new baseline).
+    prev = _ctx(our_active="tyranitar", our_boosts=_boosts(atk=2))
+    curr = _ctx(our_active="skarmory", our_boosts=_boosts())
+    delta = TurnDelta.build(prev, curr, action=1)  # action < 6 = switch
+    np.testing.assert_array_equal(delta.our_boost_delta, np.zeros(BOOST_DIM, dtype=np.int8))
+
+
+def test_turn_delta_boost_delta_zeroed_on_opp_switch():
+    # Opp had +1 spa and voluntarily switched — delta should be zero.
+    prev = _ctx(opp_active="gengar", opp_boosts=_boosts(spa=1))
+    curr = _ctx(opp_active="starmie", opp_boosts=_boosts())
+    delta = TurnDelta.build(prev, curr, action=6)
+    np.testing.assert_array_equal(delta.opp_boost_delta, np.zeros(BOOST_DIM, dtype=np.int8))
+
+
+def test_turn_delta_no_change_gives_zero_delta():
+    prev = _ctx(our_boosts=_boosts(atk=1))
+    curr = _ctx(our_boosts=_boosts(atk=1))
+    delta = TurnDelta.build(prev, curr, action=6)
+    assert delta.our_boost_delta.sum() == 0
     assert delta.opp_move_known is False
     assert delta.our_move_id is None
     assert delta.opp_move_id is None
@@ -450,6 +541,7 @@ def _mock_mon(species, hp_fraction=1.0, fainted=False):
     mon.last_move = None
     mon.last_cant_reason = None
     mon.moves = {}
+    mon.boosts = {"atk": 0, "def": 0, "spa": 0, "spd": 0, "spe": 0, "accuracy": 0, "evasion": 0}
     return mon
 
 

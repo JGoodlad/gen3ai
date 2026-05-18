@@ -16,7 +16,14 @@ from poke_env.battle.status import Status
 from poke_env.player.battle_order import BattleOrder
 from poke_env.player.baselines import SimpleHeuristicsPlayer
 from poke_env.player.player import Player
-from agents.type_utils import effective_multiplier
+from agents.gen3_mechanics import (
+    effective_multiplier,
+    STATUS_MOVES as _STATUS_MOVES,
+    RECOVERY_MOVES as _RECOVERY_MOVES,
+    HAZARD_CLEAR_MOVES as _HAZARD_CLEAR,
+    INVULNERABLE_MOVES as _PROTECT_MOVES,
+    SETUP_MOVES as _SETUP_MOVES,
+)
 
 
 # ---------------------------------------------------------------------------
@@ -50,16 +57,6 @@ def _best_switch(battle: Battle):
         battle.available_switches,
         key=lambda s: SimpleHeuristicsPlayer._estimate_matchup(s, opponent),
     )
-
-
-# ---------------------------------------------------------------------------
-# Gen3StallerPlayer
-# ---------------------------------------------------------------------------
-
-_STATUS_MOVES = {"toxic", "willowisp", "thunderwave", "stunspore", "sleeppowder", "spore", "glare", "toxic"}
-_RECOVERY_MOVES = {"recover", "softboiled", "moonlight", "morningsun", "synthesis", "rest", "wish", "slackoff", "milkdrink"}
-_HAZARD_CLEAR = {"rapidspin"}
-_PROTECT_MOVES = {"protect", "detect"}
 
 _RECOVERY_HP_THRESHOLD = 0.50
 _PROTECT_PROBABILITY = 0.6  # use protect ~60% of turns when opponent is toxiced
@@ -170,10 +167,6 @@ class Gen3AggressivePlayer(Player):
 # Gen3SetupSweepPlayer
 # ---------------------------------------------------------------------------
 
-_SETUP_MOVES = {
-    "swordsdance", "calmmind", "dragondance", "nastyplot",
-    "bulkup", "curse", "meditate", "sharpen",
-}
 _SETUP_STATS = {"atk", "spa", "spe"}  # offensive boosts worth stacking
 _SETUP_HP_THRESHOLD = 0.75
 _SETUP_BOOST_CAP = 4   # stop boosting once we hit this total offensive boost

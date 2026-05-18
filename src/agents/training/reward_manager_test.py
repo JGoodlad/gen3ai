@@ -49,6 +49,8 @@ def _ctx(
         opp_active_revealed_moves=frozenset(),
         our_cant_reason=None,
         opp_cant_reason=None,
+        our_boosts=np.zeros(7, dtype=np.int8),
+        opp_boosts=np.zeros(7, dtype=np.int8),
     )
 
 
@@ -84,6 +86,8 @@ def _delta(
         our_cant_reason=None,
         opp_failed_to_move=False,
         opp_cant_reason=None,
+        our_boost_delta=np.zeros(7, dtype=np.int8),
+        opp_boost_delta=np.zeros(7, dtype=np.int8),
     )
 
 
@@ -329,6 +333,8 @@ class TestSpikes(unittest.TestCase):
             we_fainted=False, opp_fainted=False,
             our_failed_to_move=False, our_cant_reason=None,
             opp_failed_to_move=False, opp_cant_reason=None,
+            our_boost_delta=np.zeros(7, dtype=np.int8),
+            opp_boost_delta=np.zeros(7, dtype=np.int8),
         )
         reward = self.manager.process_turn_reward(_battle(opp_spikes=3), delta)
         self.assertAlmostEqual(reward, SPIKES_WASTE_PENALTY, places=5)
@@ -445,6 +451,8 @@ def _pivot_delta(opp_move_id, opp_switch_to=None, prev_species="prevmon"):
         we_fainted=False, opp_fainted=False,
         our_failed_to_move=False, our_cant_reason=None,
         opp_failed_to_move=False, opp_cant_reason=None,
+        our_boost_delta=np.zeros(7, dtype=np.int8),
+        opp_boost_delta=np.zeros(7, dtype=np.int8),
     )
 
 
@@ -636,6 +644,8 @@ class TestRoarBonus(unittest.TestCase):
             we_fainted=False, opp_fainted=False,
             our_failed_to_move=False, our_cant_reason=None,
             opp_failed_to_move=False, opp_cant_reason=None,
+            our_boost_delta=np.zeros(7, dtype=np.int8),
+            opp_boost_delta=np.zeros(7, dtype=np.int8),
         )
         reward = self.manager.process_turn_reward(_battle(), delta)
         self.assertAlmostEqual(reward, FAILED_ROAR_PENALTY, places=5)
@@ -665,6 +675,8 @@ class TestFutileAttack(unittest.TestCase):
             we_fainted=False, opp_fainted=False,
             our_failed_to_move=False, our_cant_reason=None,
             opp_failed_to_move=False, opp_cant_reason=None,
+            our_boost_delta=np.zeros(7, dtype=np.int8),
+            opp_boost_delta=np.zeros(7, dtype=np.int8),
         )
         reward = self.manager.process_turn_reward(battle, delta)
         expected = -0.05 * HP_VALUE + FUTILE_ATTACK_PENALTY
@@ -686,6 +698,8 @@ class TestFutileAttack(unittest.TestCase):
             we_fainted=False, opp_fainted=False,
             our_failed_to_move=False, our_cant_reason=None,
             opp_failed_to_move=False, opp_cant_reason=None,
+            our_boost_delta=np.zeros(7, dtype=np.int8),
+            opp_boost_delta=np.zeros(7, dtype=np.int8),
         )
         reward = self.manager.process_turn_reward(_battle(our_mon=our_mon), delta)
         self.assertAlmostEqual(reward, 0.0, places=5)
@@ -730,6 +744,8 @@ class TestOriginalScenario(unittest.TestCase):
             we_fainted=False, opp_fainted=False,
             our_failed_to_move=False, our_cant_reason=None,
             opp_failed_to_move=False, opp_cant_reason=None,
+            our_boost_delta=np.zeros(7, dtype=np.int8),
+            opp_boost_delta=np.zeros(7, dtype=np.int8),
         )
         battle = _battle(our_mon=tyranitar, opp_mon=opp_zapdos)
 

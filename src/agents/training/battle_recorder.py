@@ -5,11 +5,7 @@ from agents.training.battle_context import BattleContext, TurnDelta
 from agents.training.reward_function import RewardFunction
 from agents.training.slot_registry import SlotRegistry
 from agents.training.reward_manager import Gen3RewardManager
-from poke_env.battle.effect import Effect
-
-# Volatile effects worth surfacing in the log (Gen 3 relevant subset).
-_NOTABLE_EFFECTS = (Effect.TAUNT, Effect.CONFUSION, Effect.ENCORE, Effect.ATTRACT,
-                    Effect.DISABLE, Effect.SUBSTITUTE)
+from agents.gen3_mechanics import mon_status_str as _mon_status_str_fn, boosts_str as _boosts_str_fn
 
 
 class BattleRecorder:
@@ -47,23 +43,34 @@ class BattleRecorder:
             self._complete_pending(ctx, battle)
 
         chosen = self._action_label(action_idx, battle)
+        our_mon = battle.active_pokemon
+        opp_mon = battle.opponent_active_pokemon
+        our_status = self._mon_status_str(our_mon)
+        opp_status = self._mon_status_str(opp_mon)
+        our_boosts = _boosts_str_fn(our_mon)
+        opp_boosts = _boosts_str_fn(opp_mon)
+
+        our_section: dict = {"species": ctx.our_active, "hp": self._our_hp_pct(ctx)}
+        if our_status:
+            our_section["status"] = our_status
+        if our_boosts:
+            our_section["boosts"] = our_boosts
+        our_section["bench"] = self._our_bench_summary(battle)
+
+        opp_section: dict = {"species": ctx.opp_active, "hp": self._opp_hp_pct(ctx)}
+        if opp_status:
+            opp_section["status"] = opp_status
+        if opp_boosts:
+            opp_section["boosts"] = opp_boosts
+        opp_section["bench"] = self._opp_bench_summary(battle)
+
         entry = {
             "i": len(self._invocations) + 1,
             "turn": ctx.turn,
             "phase": ctx.phase,
             "chosen": chosen,
-            "our": {
-                "species": ctx.our_active,
-                "hp": self._our_hp_pct(ctx),
-                "status": self._mon_status_str(battle.active_pokemon),
-                "bench": self._our_bench_summary(battle),
-            },
-            "opp": {
-                "species": ctx.opp_active,
-                "hp": self._opp_hp_pct(ctx),
-                "status": self._mon_status_str(battle.opponent_active_pokemon),
-                "bench": self._opp_bench_summary(battle),
-            },
+            "our": our_section,
+            "opp": opp_section,
             "outcome": None,
             "actions": self._all_action_labels(battle, probs, mask),
         }
@@ -206,17 +213,7 @@ class BattleRecorder:
 
     @staticmethod
     def _mon_status_str(mon) -> str | None:
-        """Permanent status + notable volatile effects as a compact string, or None."""
-        if mon is None:
-            return None
-        parts = []
-        if mon.status is not None:
-            parts.append(mon.status.name)
-        effects = getattr(mon, "effects", {})
-        for eff in _NOTABLE_EFFECTS:
-            if eff in effects:
-                parts.append(eff.name.lower())
-        return ", ".join(parts) if parts else None
+        return _mon_status_str_fn(mon)
 
     def _our_bench_summary(self, battle) -> str:
         active = battle.active_pokemon

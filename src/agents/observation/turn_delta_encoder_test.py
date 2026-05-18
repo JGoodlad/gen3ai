@@ -29,6 +29,8 @@ def _delta(**kwargs):
         we_fainted=False, opp_fainted=False,
         our_failed_to_move=False, our_cant_reason=None,
         opp_failed_to_move=False, opp_cant_reason=None,
+        our_boost_delta=np.zeros(7, dtype=np.int8),
+        opp_boost_delta=np.zeros(7, dtype=np.int8),
     )
     base.update(kwargs)
     return TurnDelta(**base)

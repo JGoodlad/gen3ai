@@ -3,12 +3,14 @@ from typing import ClassVar, Optional
 import numpy as np
 from utils.logging.rate_limiter import RateLimitedLogger
 from utils.logging.levels import LogLevel
-from poke_env.data import GenData
 from poke_env.battle.side_condition import SideCondition
 from poke_env.battle.status import Status
-from poke_env.battle.pokemon_type import PokemonType
 from agents.training.battle_context import BattleContext, TurnDelta
-from agents.type_utils import ABILITY_TYPE_IMMUNITY, effective_multiplier as _effective_multiplier_fn
+from agents.gen3_mechanics import (
+    INVULNERABLE_MOVES as _INVULNERABLE_MOVES,
+    STATUS_MOVE_IMMUNITY as _STATUS_MOVE_IMMUNITY,
+    effective_multiplier as _effective_multiplier_fn,
+)
 
 @dataclass
 class RewardBreakdown:
@@ -116,24 +118,6 @@ MATCHUP_PENALTY = -0.15        # per turn we stay in while opp has a revealed SE
 PROTECT_SWITCH_BONUS = 0.10    # opponent used Protect/Detect/Endure on our switch turn
 STATUS_IMMUNE_SWITCH_BONUS = 0.10  # our switch-in was immune to their status move
 
-# Gen 3 moves that make the user invulnerable for one turn
-_INVULNERABLE_MOVES = frozenset({"protect", "detect", "endure"})
-
-# Re-exported so existing references within this module continue to work.
-_ABILITY_TYPE_IMMUNITY = ABILITY_TYPE_IMMUNITY
-
-# Status moves → types that are immune to the status they inflict (Gen 3)
-# stunspore is Normal-type in Gen 3 (reclassified Grass in Gen 6) — no type immunity
-# glare (Normal-type) — no type immunity
-# sleep moves (spore, sleeppowder, hypnosis, lovelykiss, yawn) — no type immunity
-_STATUS_MOVE_IMMUNITY: dict = {
-    "thunderwave":  frozenset({PokemonType.GROUND}),
-    "toxic":        frozenset({PokemonType.STEEL, PokemonType.POISON}),
-    "poisongas":    frozenset({PokemonType.STEEL, PokemonType.POISON}),
-    "poisonpowder": frozenset({PokemonType.STEEL, PokemonType.POISON}),
-    "willowisp":    frozenset({PokemonType.FIRE}),
-}
-
 
 class Gen3RewardManager:
     """
@@ -167,7 +151,6 @@ class Gen3RewardManager:
         self._prev_our_statused = 0
         self._prev_opp_statused = 0
         self._last_switch_was_roared = False
-        self._type_chart = GenData.from_gen(3).type_chart
 
     def reset(self):
         self.switch_count = 0
@@ -323,10 +306,7 @@ class Gen3RewardManager:
         for move in our_mon.moves.values():
             if move.base_power <= 0:
                 continue
-            mult = move.type.damage_multiplier(
-                opp_mon.type_1, opp_mon.type_2, type_chart=self._type_chart
-            )
-            if mult >= 2.0:
+            if _effective_multiplier_fn(move.type, opp_mon) >= 2.0:
                 return SE_SWITCH_BONUS
 
         # Fallback: STAB type advantage (fires when no moves have been revealed yet)
@@ -334,10 +314,7 @@ class Gen3RewardManager:
         if our_mon.type_2:
             our_types.append(our_mon.type_2)
         for t in our_types:
-            mult = t.damage_multiplier(
-                opp_mon.type_1, opp_mon.type_2, type_chart=self._type_chart
-            )
-            if mult >= 2.0:
+            if _effective_multiplier_fn(t, opp_mon) >= 2.0:
                 return SE_SWITCH_BONUS
 
         return 0.0
@@ -453,7 +430,7 @@ class Gen3RewardManager:
             return 0.0  # we switched out — no staying-in penalty
         return MATCHUP_PENALTY if self._prev_opp_se_threat else 0.0
 
-    def _effective_multiplier(self, move_type: PokemonType, mon) -> float:
+    def _effective_multiplier(self, move_type, mon) -> float:
         return _effective_multiplier_fn(move_type, mon)
 
     def _update_opp_se_threat(self, battle) -> None:

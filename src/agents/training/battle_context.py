@@ -4,6 +4,7 @@ from typing import Literal
 import numpy as np
 
 from agents.training.slot_registry import SlotRegistry
+from agents.gen3_mechanics import PHAZING_MOVES, BOOST_DIM, boosts_array
 
 
 @dataclass
@@ -70,6 +71,11 @@ class BattleContext:
     our_cant_reason: str | None
     opp_cant_reason: str | None
 
+    # Stat stages for each side's active Pokémon in BOOST_STATS order
+    # (atk/def/spa/spd/spe/accuracy/evasion).  All zeros if mon is None or not yet revealed.
+    our_boosts: np.ndarray   # (7,) int8
+    opp_boosts: np.ndarray   # (7,) int8
+
     def __post_init__(self):
         if self.mask.shape != (11,):
             raise RuntimeError(
@@ -78,6 +84,14 @@ class BattleContext:
         if len(self.active_move_ids) != 4:
             raise RuntimeError(
                 f"BattleContext active_move_ids length {len(self.active_move_ids)} != 4 at turn {self.turn}"
+            )
+        if self.our_boosts.shape != (BOOST_DIM,):
+            raise RuntimeError(
+                f"BattleContext our_boosts shape {self.our_boosts.shape} != ({BOOST_DIM},) at turn {self.turn}"
+            )
+        if self.opp_boosts.shape != (BOOST_DIM,):
+            raise RuntimeError(
+                f"BattleContext opp_boosts shape {self.opp_boosts.shape} != ({BOOST_DIM},) at turn {self.turn}"
             )
 
     @classmethod
@@ -147,6 +161,9 @@ class BattleContext:
         )
         opp_cant_reason = opp_mon.last_cant_reason if opp_mon else None
 
+        our_boosts = boosts_array(battle.active_pokemon)
+        opp_boosts = boosts_array(opp_mon)
+
         return cls(
             turn=battle.turn,
             phase="forced_switch" if battle.force_switch else "move_selection",
@@ -166,6 +183,8 @@ class BattleContext:
             opp_active_revealed_moves=opp_active_revealed_moves,
             our_cant_reason=our_cant_reason,
             opp_cant_reason=opp_cant_reason,
+            our_boosts=our_boosts,
+            opp_boosts=opp_boosts,
         )
 
 
@@ -205,14 +224,11 @@ class TurnDelta:
     opp_failed_to_move: bool
     opp_cant_reason: str | None
 
-    # TODO: status and stat-stage deltas — see designs/ai_v3/todo.md
-    # Aromatherapy clears the entire team at once; Calm Mind / Curse track
-    # stat stages that reset on switch. Needs per-slot before/after snapshots
-    # rather than a delta list.
-
-    # Moves that force the opponent to switch (phazing). In Gen 3, both have -6 priority
-    # so the opponent always gets to move before being phazed.
-    _PHAZING_MOVES: frozenset = frozenset({"roar", "whirlwind"})
+    # Stat-stage deltas for each side's active Pokémon (BOOST_STATS order).
+    # Positive = gained a stage, negative = lost a stage this turn.
+    # Zero when the active mon switched (new mon starts from its own current stages).
+    our_boost_delta: np.ndarray   # (7,) int8
+    opp_boost_delta: np.ndarray   # (7,) int8
 
     @classmethod
     def build(cls, prev_ctx: BattleContext, curr_ctx: BattleContext, action: int) -> TurnDelta:
@@ -253,7 +269,7 @@ class TurnDelta:
         opp_switch_to = curr_ctx.opp_active if opp_switched and curr_ctx.opp_active != "NONE" else None
 
         if opp_switched:
-            if our_move_id in cls._PHAZING_MOVES:
+            if our_move_id in PHAZING_MOVES:
                 # Phaze case (Roar/Whirlwind): the opponent moved first (Gen 3 phazing moves
                 # have -6 priority), then was forced out. opp_last_move_id reads from the NEW
                 # active mon (which hasn't moved), so we recover the phazed mon's last_move
@@ -276,6 +292,17 @@ class TurnDelta:
         our_failed_to_move = curr_ctx.our_cant_reason is not None
         opp_failed_to_move = curr_ctx.opp_cant_reason is not None
 
+        # Boost deltas: meaningful when the same mon stayed in; zeroed when switched
+        # (the switch-in's boosts are its own baseline, not a change from the prev mon).
+        our_boost_delta = (
+            np.zeros(BOOST_DIM, dtype=np.int8) if our_switch_to is not None
+            else (curr_ctx.our_boosts - prev_ctx.our_boosts).astype(np.int8)
+        )
+        opp_boost_delta = (
+            np.zeros(BOOST_DIM, dtype=np.int8) if opp_switch_to is not None
+            else (curr_ctx.opp_boosts - prev_ctx.opp_boosts).astype(np.int8)
+        )
+
         return cls(
             our_move_id=our_move_id,
             our_switch_to=our_switch_to,
@@ -292,6 +319,8 @@ class TurnDelta:
             our_cant_reason=curr_ctx.our_cant_reason,
             opp_failed_to_move=opp_failed_to_move,
             opp_cant_reason=curr_ctx.opp_cant_reason,
+            our_boost_delta=our_boost_delta,
+            opp_boost_delta=opp_boost_delta,
         )
 
     @classmethod
@@ -305,4 +334,6 @@ class TurnDelta:
             we_fainted=False, opp_fainted=False,
             our_failed_to_move=False, our_cant_reason=None,
             opp_failed_to_move=False, opp_cant_reason=None,
+            our_boost_delta=np.zeros(BOOST_DIM, dtype=np.int8),
+            opp_boost_delta=np.zeros(BOOST_DIM, dtype=np.int8),
         )
