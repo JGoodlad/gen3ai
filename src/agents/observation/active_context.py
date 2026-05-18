@@ -35,7 +35,7 @@ class ActiveContextEncoder(ObservationEncoder):
             cursor += 2
             
         # 2. Volatiles (8)
-        volatiles = getattr(mon, "volatiles", {})
+        volatiles = getattr(mon, "effects", {})
         volatile_map = {
             Effect.CONFUSION: 0, Effect.SUBSTITUTE: 1, Effect.TAUNT: 2, Effect.ENCORE: 3,
             Effect.LEECH_SEED: 5, Effect.FOCUS_ENERGY: 6, Effect.ATTRACT: 7,

@@ -9,7 +9,7 @@ def test_active_context_boosts():
     mon = MagicMock()
     # Atk +2, Def -1
     mon.boosts = {"atk": 2, "def": -1}
-    mon.volatiles = {}
+    mon.effects = {}
     
     vec = encoder.encode(mon, None)
     # [pos, neg] for each stat
@@ -22,7 +22,7 @@ def test_active_context_volatiles():
     encoder = ActiveContextEncoder()
     mon = MagicMock()
     mon.boosts = {}
-    mon.volatiles = {Effect.SUBSTITUTE: 1, Effect.TAUNT: 1}
+    mon.effects = {Effect.SUBSTITUTE: 1, Effect.TAUNT: 1}
 
     vec = encoder.encode(mon, None)
     # Volatiles start at index 14
@@ -36,7 +36,7 @@ def test_active_context_destiny_bond():
     encoder = ActiveContextEncoder()
     mon = MagicMock()
     mon.boosts = {}
-    mon.volatiles = {Effect.DESTINY_BOND: 1}
+    mon.effects = {Effect.DESTINY_BOND: 1}
 
     vec = encoder.encode(mon, None)
     # DBOND is index 8 in the volatile block (offset 14)
@@ -50,7 +50,7 @@ def test_active_context_destiny_bond_absent():
     encoder = ActiveContextEncoder()
     mon = MagicMock()
     mon.boosts = {}
-    mon.volatiles = {Effect.SUBSTITUTE: 1}
+    mon.effects = {Effect.SUBSTITUTE: 1}
 
     vec = encoder.encode(mon, None)
     assert vec[14 + 8] == 0.0  # DBOND bit is clear

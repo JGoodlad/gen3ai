@@ -8,7 +8,7 @@ from poke_env.battle.status import Status
 from agents.training.battle_context import BattleContext, TurnDelta
 from agents.gen3_mechanics import (
     INVULNERABLE_MOVES as _INVULNERABLE_MOVES,
-    STATUS_MOVE_IMMUNITY as _STATUS_MOVE_IMMUNITY,
+    is_status_move_immune as _is_status_move_immune,
     effective_multiplier as _effective_multiplier_fn,
 )
 
@@ -374,9 +374,7 @@ class Gen3RewardManager:
         new_mon = battle.active_pokemon
         if not new_mon:
             return 0.0
-        immune_types = _STATUS_MOVE_IMMUNITY.get(opp_move_id, frozenset())
-        mon_types = {new_mon.type_1, new_mon.type_2} - {None}
-        if immune_types & mon_types or new_mon.status is not None:
+        if _is_status_move_immune(opp_move_id, new_mon):
             return STATUS_IMMUNE_SWITCH_BONUS
         return 0.0
 
