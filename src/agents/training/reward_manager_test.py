@@ -859,5 +859,28 @@ class TestRewardBreakdownToDict(unittest.TestCase):
         self.assertIn("faint_opp=+2", d["base"])
 
 
+class TestStallTax(unittest.TestCase):
+    def _reward_at_turn(self, turn):
+        from agents.training.reward_manager import Gen3RewardManager
+        rm = Gen3RewardManager()
+        battle = _battle()
+        battle.turn = turn
+        delta = _delta()
+        return rm.process_turn_reward(battle, delta)
+
+    def test_no_stall_tax_at_or_before_turn_125(self):
+        reward = self._reward_at_turn(125)
+        self.assertAlmostEqual(reward, 0.0, places=4)
+
+    def test_flat_stall_tax_just_after_threshold(self):
+        reward = self._reward_at_turn(126)
+        self.assertAlmostEqual(reward, -0.1, places=4)
+
+    def test_flat_stall_tax_is_constant_regardless_of_turn(self):
+        r126 = self._reward_at_turn(126)
+        r237 = self._reward_at_turn(237)
+        self.assertAlmostEqual(r126, r237, places=4)
+
+
 if __name__ == "__main__":
     unittest.main()

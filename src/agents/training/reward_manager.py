@@ -101,7 +101,7 @@ FAINTED_VALUE = 2.0
 HP_VALUE = 2.0
 VICTORY_VALUE = 30.0
 STALL_TAX_START_TURN = 125
-STALL_TAX_DENOMINATOR = 30.0
+STALL_TAX_PER_TURN = 0.1
 STRUGGLE_LOOP_TAX = -0.5
 STRUGGLE_LOOP_THRESHOLD = 3
 
@@ -546,9 +546,9 @@ class Gen3RewardManager:
             bd.repetition_tax = meta.get("repetition_tax", 0.0)
             bd.struggle_tax = meta.get("struggle_loop_tax", 0.0)
 
-        # --- Progressive stall tax: ramps from turn 125 to -4.2/turn at turn 250 ---
+        # --- Flat stall tax: -0.1/turn after turn 125 ---
         if battle.turn > STALL_TAX_START_TURN:
-            bd.stall_tax = -1.0 * (battle.turn - STALL_TAX_START_TURN) / STALL_TAX_DENOMINATOR
+            bd.stall_tax = -STALL_TAX_PER_TURN
 
         # Update end-of-turn snapshots for next turn's checks
         opp_mon = battle.opponent_active_pokemon
