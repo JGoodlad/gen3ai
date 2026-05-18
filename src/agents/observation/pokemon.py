@@ -10,6 +10,7 @@ from .constants import (
     POKEMON_MOVES_OFFSET,
     POKEMON_HP_OFFSET,
     POKEMON_SPECIES_KNOWN_OFFSET,
+    POKEMON_COUNTER_OFFSET,
 )
 from .species import SpeciesEncoder
 from .items import ItemsEncoder
@@ -81,6 +82,15 @@ class PokemonEncoder(ObservationEncoder):
         # (the None path returned early above, so all populated slots hit this)
         vec[POKEMON_SPECIES_KNOWN_OFFSET] = 1.0
 
+        # 9. Status counters (2): sleep duration, toxic severity
+        # Gen 3 sleep: 1–4 turns. Sleep Talk/Snore increment the counter but the
+        # increment is discarded on switch-out (engine oversight), so this is approximate.
+        # Toxic: resets to 1 on switch-in; practical max ~8 turns before fainting.
+        status = mon.status
+        ctr = getattr(mon, "status_counter", 0) or 0
+        vec[POKEMON_COUNTER_OFFSET]     = min(ctr, 4) / 4.0 if status == Status.SLP else 0.0
+        vec[POKEMON_COUNTER_OFFSET + 1] = min(ctr, 8) / 8.0 if status == Status.TOX else 0.0
+
         return vec
 
     def get_layout(self) -> Dict[str, Any]:
@@ -112,7 +122,8 @@ class PokemonEncoder(ObservationEncoder):
                 "layout": self.moves_encoder.get_layout()
             },
             "hp": {"offset": POKEMON_HP_OFFSET, "dim": 1},
-            "species_known": {"offset": POKEMON_SPECIES_KNOWN_OFFSET, "dim": 1}
+            "species_known": {"offset": POKEMON_SPECIES_KNOWN_OFFSET, "dim": 1},
+            "status_counters": {"offset": POKEMON_COUNTER_OFFSET, "dim": 2},
         }
 
     def describe_vector(self, vector: np.ndarray) -> Dict[str, Any]:

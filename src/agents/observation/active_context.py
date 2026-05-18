@@ -45,9 +45,14 @@ class ActiveContextEncoder(ObservationEncoder):
             if v in volatiles:
                 vec[cursor + idx] = 1.0
         
-        # Perish Song (Index 4) - Check all counts
-        if any(e in volatiles for e in [Effect.PERISH0, Effect.PERISH1, Effect.PERISH2, Effect.PERISH3]):
-            vec[cursor + 4] = 1.0
+        # Perish Song (Index 4) — scalar: turns remaining / 3 (0 = absent or PERISH0)
+        # Switching out clears Perish Song in Gen 3, so this is active-mon-only.
+        perish_turns = 0
+        for n, e in [(3, Effect.PERISH3), (2, Effect.PERISH2), (1, Effect.PERISH1)]:
+            if e in volatiles:
+                perish_turns = n
+                break
+        vec[cursor + 4] = perish_turns / 3.0
             
         cursor += 9
 

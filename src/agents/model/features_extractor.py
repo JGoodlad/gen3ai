@@ -87,14 +87,14 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         )
 
         # 1.6 Pokémon Role Encoder
-        # pokemon_enriched (242) + global_context broadcast (16) + switch_valid (1) + struggle_from_prev (1) = 260
+        # pokemon_enriched (244) + global_context broadcast (16) + switch_valid (1) + struggle_from_prev (1) = 262
         # pokemon_enriched: species(32) + stats(6) + item_emb(16) + item_known(1) +
-        #   pk_types(32) + ability_emb(16) + ability_known(1) + condition(7) + moves(128) + hp+species_known+active(3)
+        #   pk_types(32) + ability_emb(16) + ability_known(1) + condition(7) + moves(128) + hp+species_known+active+counters(5)
         # global_context: turn(1) + weather(6) + fainted(2) + spikes(2) + struggle(1) + screens(4) = 16
         # switch_valid: was this slot a valid switch target in the previous turn's mask (1)
         # struggle_from_prev: was struggle the only option last turn (1)
         self.role_token_size = ROLE_TOKEN_SIZE
-        role_input_dim = 260
+        role_input_dim = 262
         self.role_encoder = torch.nn.Sequential(
             torch.nn.Linear(role_input_dim, ROLE_ENCODER_HIDDEN[0]),
             torch.nn.ReLU(),

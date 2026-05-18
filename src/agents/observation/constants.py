@@ -30,8 +30,10 @@ POKEMON_CONDITION_OFFSET = 13  # 11 + 2
 POKEMON_MOVES_OFFSET = 20  # 13 + 7
 POKEMON_HP_OFFSET = 56          # 20 + 36
 POKEMON_SPECIES_KNOWN_OFFSET = 57  # 56 + 1 (HP); 1.0 when slot is populated, 0.0 when absent
-POKEMON_VECTOR_DIM = 58         # 57 + 1 (species_known)
-POKEMON_FULL_DIM = 59           # 58 + 1 (active flag appended by state_encoder)
+POKEMON_COUNTER_OFFSET = 58    # 57 + 1 (species_known): sleep_ctr, toxic_ctr
+POKEMON_COUNTER_DIM = 2        # sleep turn count (norm), toxic turn count (norm)
+POKEMON_VECTOR_DIM = 60        # 58 + 2 (status counters)
+POKEMON_FULL_DIM = 61          # 60 + 1 (active flag appended by state_encoder)
 
 # Active context: boosts(14) + volatiles(9) = 23
 ACTIVE_CONTEXT_DIM = 23

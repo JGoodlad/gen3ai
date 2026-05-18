@@ -177,19 +177,19 @@ deps/
 
 ## Observation Vector
 
-The full observation is a **1107-dim float32 vector** (`Gen3ObservationEncoder.dimension`):
+The full observation is a **1131-dim float32 vector** (`Gen3ObservationEncoder.dimension`):
 
 | Block | Dims | Offset | Notes |
 |---|---|---|---|
-| Our team (6 × 59) | 354 | 0 | base encoder |
-| Opp team (6 × 59) | 354 | 354 | base encoder |
-| Active context ×2 | 46 | 708 | base encoder |
-| Global env | 13 | 754 | base encoder |
-| Reactive + matchups | 300 | 767 | base encoder |
-| Prev-turn action mask | 11 | 1067 | appended by `gen3_env.embed_battle()` |
-| TurnDelta block | 29 | 1078 | appended by `gen3_env.embed_battle()` |
+| Our team (6 × 61) | 366 | 0 | base encoder |
+| Opp team (6 × 61) | 366 | 366 | base encoder |
+| Active context ×2 | 46 | 732 | base encoder |
+| Global env | 13 | 778 | base encoder |
+| Reactive + matchups | 300 | 791 | base encoder |
+| Prev-turn action mask | 11 | 1091 | appended by `gen3_env.embed_battle()` |
+| TurnDelta block | 29 | 1102 | appended by `gen3_env.embed_battle()` |
 
-Per-Pokémon slot (59 dims): species ID + 6 base stats, item ID + known, 2 type IDs, ability ID + known, 7-dim condition (status one-hot), 4 × 9-dim move slots, HP fraction, species_known flag, active flag. `species_known = 1.0` for all populated slots (own team and revealed opponent mons), `0.0` for unseen opponent slots.
+Per-Pokémon slot (61 dims): species ID + 6 base stats, item ID + known, 2 type IDs, ability ID + known, 7-dim condition (status one-hot), 4 × 9-dim move slots, HP fraction, species_known flag, active flag, sleep_counter_norm, toxic_counter_norm. `species_known = 1.0` for all populated slots (own team and revealed opponent mons), `0.0` for unseen opponent slots. Sleep counter: `min(turns_slept, 4) / 4` (Gen 3 max 4 turns); toxic counter: `min(turns_poisoned, 8) / 8` (practical max before fainting with Leftovers).
 
 Global env (13 dims): weather one-hot (6), spikes ×2 (2), log-turn (1), our reflect (1), our light screen (1), opp reflect (1), opp light screen (1).
 
@@ -204,7 +204,7 @@ TurnDelta block (29 dims): our_move_id (raw int), our_power_norm, our_has_second
 1. **Embedding lookups** — species (32), move (16), item (16), ability (16), type (16, shared for both Pokémon and move types, and for TurnDelta move/type IDs)
 2. **Shared move processor** — Linear(58→64)→ReLU→Linear(64→32) per move slot; input includes move/type embeddings, power/secondary/recoil/category remnants, known flag, battle context, and per-move type matchup against all 6 opponents
 3. **Within-Pokémon move self-attention** — MHA(32, 2 heads) + LayerNorm residual across the 4 move slots of each Pokémon; lets the role encoder see "this mon has two physical attackers"
-4. **Role encoder** — Linear(260→256)→ReLU→Linear(256→128) per Pokémon; input is the full enriched Pokémon vector (242 dims, including `species_known` flag) + broadcasted global context + validity bits
+4. **Role encoder** — Linear(262→256)→ReLU→Linear(256→128) per Pokémon; input is the full enriched Pokémon vector (244 dims, including `species_known` flag + 2 status counters) + broadcasted global context + validity bits
 5. **Team-wide attention** — five `MultiheadAttention` paths with residuals (fainted slots masked/zeroed throughout):
    - *Pressure*: our active ← their team (what threatens us right now)
    - *Safety*: our team ← their active (what can switch in safely)

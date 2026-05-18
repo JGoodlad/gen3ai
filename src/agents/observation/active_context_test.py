@@ -32,6 +32,23 @@ def test_active_context_volatiles():
     assert vec[14 + 0] == 0.0 # CONFUSION
 
 
+def test_active_context_perish_song_scalar():
+    encoder = ActiveContextEncoder()
+    mon = MagicMock()
+    mon.boosts = {}
+    mon.effects = {Effect.PERISH3: 1}
+    vec = encoder.encode(mon, None)
+    assert vec[14 + 4] == pytest.approx(1.0)  # 3/3
+
+    mon.effects = {Effect.PERISH1: 1}
+    vec = encoder.encode(mon, None)
+    assert vec[14 + 4] == pytest.approx(1 / 3.0)
+
+    mon.effects = {}
+    vec = encoder.encode(mon, None)
+    assert vec[14 + 4] == 0.0
+
+
 def test_active_context_destiny_bond():
     encoder = ActiveContextEncoder()
     mon = MagicMock()
@@ -41,7 +58,7 @@ def test_active_context_destiny_bond():
     vec = encoder.encode(mon, None)
     # DBOND is index 8 in the volatile block (offset 14)
     assert vec[14 + 8] == 1.0
-    # No other volatiles should fire
+    # No other volatiles should fire (including perish at index 4)
     for i in range(8):
         assert vec[14 + i] == 0.0
 
