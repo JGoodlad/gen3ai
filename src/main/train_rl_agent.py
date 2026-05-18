@@ -39,6 +39,7 @@ from agents.training.reward_manager import Gen3RewardManager
 from agents.training.stall import StallConfig
 from agents.training.watchdog import start_subprocess_watchdog
 from agents.training.env_restart_callback import VecEnvRestartCallback
+from agents.training.adaptive_lr_callback import AdaptiveLRCallback
 from utils.logging.levels import LogLevel
 
 from poke_env.player import RandomPlayer, SimpleHeuristicsPlayer
@@ -134,7 +135,7 @@ async def main():
     # --- Hyperparameter Flags (Optimized for GPU) ---
     parser.add_argument("--batch-size", type=int, default=4096, help="PPO mini-batch size")
     parser.add_argument("--n-epochs", type=int, default=4, help="PPO optimization epochs")
-    parser.add_argument("--lr", type=float, default=1.5e-4, help="Learning rate")
+    parser.add_argument("--lr", type=float, default=3e-4, help="Initial learning rate (AdaptiveLRCallback adjusts from here)")
     parser.add_argument("--ent-coef", type=float, default=0.02, help="Entropy coefficient (exploration bonus)")
     parser.add_argument("--n-steps", type=int, default=2048, help="Steps per environment per rollout")
     parser.add_argument("--restart-interval-hours", type=float, default=3.0,
@@ -300,7 +301,8 @@ async def main():
         restart_interval_hours=args.restart_interval_hours,
     )
 
-    callbacks = [checkpoint_callback, replay_callback, restart_callback]
+    adaptive_lr_callback = AdaptiveLRCallback(initial_lr=args.lr)
+    callbacks = [checkpoint_callback, replay_callback, restart_callback, adaptive_lr_callback]
     
     if not args.debug:
         from sb3_contrib.common.maskable.callbacks import MaskableEvalCallback
@@ -384,7 +386,7 @@ async def main():
             print(f"\n[ModelVersion] FATAL: {e}")
             os._exit(1)
         model.ent_coef = args.ent_coef
-        model.lr_schedule = lambda _: args.lr
+        model.lr_schedule = lambda _: args.lr   # adaptive_lr_callback takes over from here
         model.clip_range = lambda _: 0.15
 
         if args.eval_only:
