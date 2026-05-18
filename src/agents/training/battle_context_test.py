@@ -53,6 +53,9 @@ def _ctx(**overrides):
         opp_cant_reason=None,
         our_boosts=np.zeros(BOOST_DIM, dtype=np.int8),
         opp_boosts=np.zeros(BOOST_DIM, dtype=np.int8),
+        our_last_effectiveness=None,
+        opp_last_effectiveness=None,
+        we_moved_first=None,
     )
     defaults.update(overrides)
     return BattleContext(**defaults)
@@ -104,6 +107,9 @@ def test_wrong_mask_shape_raises():
             opp_cant_reason=None,
             our_boosts=np.zeros(BOOST_DIM, dtype=np.int8),
             opp_boosts=np.zeros(BOOST_DIM, dtype=np.int8),
+            our_last_effectiveness=None,
+            opp_last_effectiveness=None,
+            we_moved_first=None,
         )
 
 

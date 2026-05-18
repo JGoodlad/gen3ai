@@ -31,6 +31,9 @@ def _delta(**kwargs):
         opp_failed_to_move=False, opp_cant_reason=None,
         our_boost_delta=np.zeros(7, dtype=np.int8),
         opp_boost_delta=np.zeros(7, dtype=np.int8),
+        our_effectiveness=None,
+        opp_effectiveness=None,
+        we_moved_first=None,
     )
     base.update(kwargs)
     return TurnDelta(**base)
@@ -38,7 +41,7 @@ def _delta(**kwargs):
 
 def test_dimension():
     assert _enc().dimension == TURN_DELTA_DIM
-    assert TURN_DELTA_DIM == 29
+    assert TURN_DELTA_DIM == 39
 
 
 def test_empty_delta_is_all_zeros_except_opp_move_known():

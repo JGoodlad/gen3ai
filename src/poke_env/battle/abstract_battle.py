@@ -32,8 +32,6 @@ class AbstractBattle(ABC):
         "-notarget",
         "-nothing",
         "-ohko",
-        "-resisted",
-        "-supereffective",
         "-waiting",
         "-zbroken",
         "J",
@@ -116,6 +114,10 @@ class AbstractBattle(ABC):
         "_teampreview",
         "_trapped",
         "_turn",
+        "_our_last_effectiveness",
+        "_opp_last_effectiveness",
+        "_we_moved_first",
+        "_this_turn_move_sides",
         "_used_dynamax",
         "_used_mega_evolve",
         "_used_tera",
@@ -183,6 +185,15 @@ class AbstractBattle(ABC):
         self._used_z_move = False
         self._used_dynamax = False
         self._used_tera = False
+
+        # Effectiveness and move-order tracking
+        # Each field is a (turn_set, value) tuple or None.
+        # The turn number encodes when it was last written so BattleContext can
+        # distinguish "this just happened" from a stale value from a prior turn.
+        self._our_last_effectiveness: Optional[tuple] = None
+        self._opp_last_effectiveness: Optional[tuple] = None
+        self._we_moved_first: Optional[tuple] = None  # (turn, bool)
+        self._this_turn_move_sides: list = []  # order of "ours"/"opp" |move| events
 
         # Pokemon attributes
         self._team: Dict[str, Pokemon] = {}
@@ -739,6 +750,25 @@ class AbstractBattle(ABC):
                 mon.moved(
                     move, failed=failed, use=use, reveal=reveal, pressure=pressure
                 )
+
+            # --- move-order tracking ---
+            move_side = "ours" if event[2][:2] == self._player_role else "opp"
+            if move_side not in self._this_turn_move_sides:
+                self._this_turn_move_sides.append(move_side)
+            if len(self._this_turn_move_sides) == 2:
+                we_first = self._this_turn_move_sides[0] == "ours"
+                self._we_moved_first = (self._turn, we_first)
+
+            # --- tentative neutral effectiveness for damaging moves ---
+            # Overridden below when |-supereffective|, |-resisted|, or |-immune| fires.
+            move_id_str = to_id_str(move)
+            _move_entry = GenData.from_gen(self._gen).moves.get(move_id_str, {})
+            if _move_entry.get("basePower", 0) > 0:
+                if move_side == "ours":
+                    self._our_last_effectiveness = (self._turn, 1.0)
+                else:
+                    self._opp_last_effectiveness = (self._turn, 1.0)
+
         elif event[1] == "cant":
             pokemon = event[2]
             reason = event[3] if len(event) > 3 else None
@@ -1160,7 +1190,29 @@ class AbstractBattle(ABC):
         elif event[1] in {"message", "-message"}:
             if self.logger is not None:
                 self.logger.info("Received message: %s", event[2])
+        elif event[1] == "-supereffective":
+            # |-supereffective|p2a: Mon| — the DEFENDER is p2a, so if p2 == us the
+            # opponent's move was super-effective on us; otherwise our move was SE on them.
+            if len(event) >= 3:
+                defender_side = event[2][:2]
+                if defender_side == self._player_role:
+                    self._opp_last_effectiveness = (self._turn, 2.0)
+                else:
+                    self._our_last_effectiveness = (self._turn, 2.0)
+        elif event[1] == "-resisted":
+            if len(event) >= 3:
+                defender_side = event[2][:2]
+                if defender_side == self._player_role:
+                    self._opp_last_effectiveness = (self._turn, 0.5)
+                else:
+                    self._our_last_effectiveness = (self._turn, 0.5)
         elif event[1] == "-immune":
+            if len(event) >= 3:
+                defender_side = event[2][:2]
+                if defender_side == self._player_role:
+                    self._opp_last_effectiveness = (self._turn, 0.0)
+                else:
+                    self._our_last_effectiveness = (self._turn, 0.0)
             if len(event) == 4:
                 pokemon, cause = event[2:]
 
@@ -1332,6 +1384,11 @@ class AbstractBattle(ABC):
         self._finish_battle()
 
     def end_turn(self, turn: int):
+        # Reset per-turn move-order tracking before advancing the counter.
+        # The (turn, value) tuples in _our/opp_last_effectiveness and _we_moved_first
+        # remain set; BattleContext reads them via the properties below, which
+        # gate on turn - 1 to ensure they came from the turn that just ended.
+        self._this_turn_move_sides = []
         self.turn = turn
 
         for mon in self.all_active_pokemons:
@@ -1744,6 +1801,47 @@ class AbstractBattle(ABC):
         :type turn: int
         """
         self._turn = turn
+
+    @property
+    def our_last_effectiveness(self) -> Optional[float]:
+        """Effectiveness multiplier of our last damaging move against the opponent.
+
+        0.0 = immune, 0.5 = resisted, 1.0 = neutral, 2.0 = super-effective.
+        None when we switched, used a non-damaging move, or the battle just started.
+        Only valid on the turn immediately after the move was used.
+        """
+        if self._our_last_effectiveness is not None:
+            turn_set, mult = self._our_last_effectiveness
+            if turn_set == self._turn - 1:
+                return mult
+        return None
+
+    @property
+    def opp_last_effectiveness(self) -> Optional[float]:
+        """Effectiveness multiplier of the opponent's last damaging move against us.
+
+        0.0 = immune, 0.5 = resisted, 1.0 = neutral, 2.0 = super-effective.
+        None when they switched, used a non-damaging move, or the battle just started.
+        Only valid on the turn immediately after the move was used.
+        """
+        if self._opp_last_effectiveness is not None:
+            turn_set, mult = self._opp_last_effectiveness
+            if turn_set == self._turn - 1:
+                return mult
+        return None
+
+    @property
+    def we_moved_first(self) -> Optional[bool]:
+        """True if we executed our action before the opponent last turn.
+
+        None when one or both sides did a normal switch (no competing move resolution).
+        Only valid on the turn immediately after the relevant turn.
+        """
+        if self._we_moved_first is not None:
+            turn_set, first = self._we_moved_first
+            if turn_set == self._turn - 1:
+                return first
+        return None
 
     @property
     def used_dynamax(self) -> bool:

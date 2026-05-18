@@ -76,6 +76,17 @@ class BattleContext:
     our_boosts: np.ndarray   # (7,) int8
     opp_boosts: np.ndarray   # (7,) int8
 
+    # Effectiveness of the last damaging move used by each side (from the turn that
+    # just ended).  0.0=immune, 0.5=resisted, 1.0=neutral, 2.0=super-effective.
+    # None when the side switched, used a non-damaging move, or the battle just started.
+    # Sourced from AbstractBattle.our/opp_last_effectiveness, which gates on turn-1.
+    our_last_effectiveness: float | None
+    opp_last_effectiveness: float | None
+
+    # True = we executed our action before the opponent in the turn that just ended.
+    # None when one or both sides performed a normal switch (no move competition).
+    we_moved_first: bool | None
+
     def __post_init__(self):
         if self.mask.shape != (11,):
             raise RuntimeError(
@@ -185,6 +196,9 @@ class BattleContext:
             opp_cant_reason=opp_cant_reason,
             our_boosts=our_boosts,
             opp_boosts=opp_boosts,
+            our_last_effectiveness=battle.our_last_effectiveness,
+            opp_last_effectiveness=battle.opp_last_effectiveness,
+            we_moved_first=battle.we_moved_first,
         )
 
 
@@ -229,6 +243,16 @@ class TurnDelta:
     # Zero when the active mon switched (new mon starts from its own current stages).
     our_boost_delta: np.ndarray   # (7,) int8
     opp_boost_delta: np.ndarray   # (7,) int8
+
+    # Type-effectiveness of each side's last damaging move (snapshotted from curr_ctx).
+    # 0.0=immune, 0.5=resisted, 1.0=neutral, 2.0=super-effective.
+    # None when the side switched, used a non-damaging move, or the battle just started.
+    our_effectiveness: float | None
+    opp_effectiveness: float | None
+
+    # True = we executed our action before the opponent this turn.
+    # None when one or both sides performed a normal switch.
+    we_moved_first: bool | None
 
     @classmethod
     def build(cls, prev_ctx: BattleContext, curr_ctx: BattleContext, action: int) -> TurnDelta:
@@ -321,6 +345,9 @@ class TurnDelta:
             opp_cant_reason=curr_ctx.opp_cant_reason,
             our_boost_delta=our_boost_delta,
             opp_boost_delta=opp_boost_delta,
+            our_effectiveness=curr_ctx.our_last_effectiveness,
+            opp_effectiveness=curr_ctx.opp_last_effectiveness,
+            we_moved_first=curr_ctx.we_moved_first,
         )
 
     @classmethod
@@ -336,4 +363,7 @@ class TurnDelta:
             opp_failed_to_move=False, opp_cant_reason=None,
             our_boost_delta=np.zeros(BOOST_DIM, dtype=np.int8),
             opp_boost_delta=np.zeros(BOOST_DIM, dtype=np.int8),
+            our_effectiveness=None,
+            opp_effectiveness=None,
+            we_moved_first=None,
         )

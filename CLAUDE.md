@@ -177,7 +177,7 @@ deps/
 
 ## Observation Vector
 
-The full observation is a **1131-dim float32 vector** (`Gen3ObservationEncoder.dimension`):
+The full observation is a **1141-dim float32 vector** (`Gen3ObservationEncoder.dimension`):
 
 | Block | Dims | Offset | Notes |
 |---|---|---|---|
@@ -187,13 +187,13 @@ The full observation is a **1131-dim float32 vector** (`Gen3ObservationEncoder.d
 | Global env | 13 | 778 | base encoder |
 | Reactive + matchups | 300 | 791 | base encoder |
 | Prev-turn action mask | 11 | 1091 | appended by `gen3_env.embed_battle()` |
-| TurnDelta block | 29 | 1102 | appended by `gen3_env.embed_battle()` |
+| TurnDelta block | 39 | 1102 | appended by `gen3_env.embed_battle()` |
 
 Per-Pokémon slot (61 dims): species ID + 6 base stats, item ID + known, 2 type IDs, ability ID + known, 7-dim condition (status one-hot), 4 × 9-dim move slots, HP fraction, species_known flag, active flag, sleep_counter_norm, toxic_counter_norm. `species_known = 1.0` for all populated slots (own team and revealed opponent mons), `0.0` for unseen opponent slots. Sleep counter: `min(turns_slept, 4) / 4` (Gen 3 max 4 turns); toxic counter: `min(turns_poisoned, 8) / 8` (practical max before fainting with Leftovers).
 
 Global env (13 dims): weather one-hot (6), spikes ×2 (2), log-turn (1), our reflect (1), our light screen (1), opp reflect (1), opp light screen (1).
 
-TurnDelta block (29 dims): our_move_id (raw int), our_power_norm, our_has_secondary, our_has_recoil, our_type_id (raw int), opp_move_id (raw int), opp_power_norm, opp_has_secondary, opp_has_recoil, opp_type_id (raw int), our_switched, opp_switched, our_failed_to_move, opp_failed_to_move, our_cant_onehot (5), opp_cant_onehot (5), our_hp_delta, opp_hp_delta, we_fainted, opp_fainted, opp_move_known. The extractor embeds the 4 raw IDs through shared move/type embedding tables, producing a 89-dim block for the projection. All zeros on the first turn of each episode. See `src/agents/observation/turn_delta_encoder.py`.
+TurnDelta block (39 dims): our_move_id (raw int), our_power_norm, our_has_secondary, our_has_recoil, our_type_id (raw int), opp_move_id (raw int), opp_power_norm, opp_has_secondary, opp_has_recoil, opp_type_id (raw int), our_switched, opp_switched, our_failed_to_move, opp_failed_to_move, our_cant_onehot (5), opp_cant_onehot (5), our_hp_delta, opp_hp_delta, we_fainted, opp_fainted, opp_move_known, our_effectiveness_onehot (4: immune/resisted/normal/SE), opp_effectiveness_onehot (4), move_order (2: we_first/opp_first, all-zero=na). The extractor embeds the 4 raw IDs through shared move/type embedding tables, producing a 89-dim block for the projection. All zeros on the first turn of each episode. See `src/agents/observation/turn_delta_encoder.py`.
 
 ---
 
