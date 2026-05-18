@@ -46,6 +46,7 @@ from agents.action.mask_generator import Gen3ActionMasker
 from agents.observation.state_encoder import load_mappings
 from agents.observation.turn_delta_encoder import TurnDeltaEncoder, EFF_DIM, ORDER_DIM
 from agents.training.battle_context import BattleContext, TurnDelta
+from agents.training.slot_registry import SlotRegistry
 from utils.teambuilder import Gen3Teambuilder
 
 BATTLE_FORMAT = "gen3ou"
@@ -83,7 +84,7 @@ EVs: 4 HP / 252 SpA / 252 Spe
 Timid Nature
 - Thunderbolt
 - Shadow Ball
-- Agility
+- Hidden Power Ice
 - Baton Pass
 
 Vaporeon @ Leftovers
@@ -123,9 +124,9 @@ Ability: Blaze
 EVs: 4 HP / 252 SpA / 252 Spe
 Timid Nature
 - Flamethrower
-- Air Slash
-- Focus Blast
-- Dragon Pulse
+- Dragon Claw
+- Earthquake
+- Aerial Ace
 
 Blastoise @ Leftovers
 Ability: Torrent
@@ -136,13 +137,13 @@ Modest Nature
 - Rapid Spin
 - Toxic
 
-Raichu @ Lum Berry
-Ability: Static
+Jolteon @ Lum Berry
+Ability: Volt Absorb
 EVs: 4 HP / 252 SpA / 252 Spe
 Timid Nature
 - Thunderbolt
-- Surf
-- Focus Blast
+- Shadow Ball
+- Bite
 - Agility
 
 Steelix @ Leftovers
@@ -161,7 +162,7 @@ Adamant Nature
 - Megahorn
 - Brick Break
 - Rock Slide
-- Shadow Ball
+- Earthquake
 
 Skarmory @ Leftovers
 Ability: Keen Eye
@@ -275,11 +276,18 @@ def _expected_we_moved_first_from_raw(
     raw: _TurnRaw,
     player_role: str,
 ) -> Optional[bool]:
-    """True if we moved first, False if opp first, None if only one/neither moved."""
-    if len(raw.move_sides) < 2:
+    """True if we moved first, False if opp first, None if only one/neither moved.
+
+    Sleep Talk (and similar) fires two |move| messages for the same side; we deduplicate
+    to match poke-env's behaviour (which uses `if side not in seen` guard).
+    """
+    seen: list[str] = []
+    for side in raw.move_sides:
+        if side not in seen:
+            seen.append(side)
+    if len(seen) < 2:
         return None
-    # Use only the first two (ignore any extras from multi-move mechanics)
-    return raw.move_sides[0] == player_role
+    return seen[0] == player_role
 
 
 # ---------------------------------------------------------------------------
@@ -354,6 +362,9 @@ class EffectivenessFuzzPlayer(Player):
         self._raw_curr: dict[str, _TurnRaw] = {}            # current-turn raw events
         self._prev_ctx: dict[str, Optional[BattleContext]] = {}  # prev BattleContext
         self._last_action: dict[str, Optional[int]] = {}
+        # Slot registries persist for the lifetime of each battle
+        self._our_slots: dict[str, SlotRegistry] = {}
+        self._opp_slots: dict[str, SlotRegistry] = {}
 
     async def _handle_battle_message(self, split_messages):
         """Override to intercept raw Showdown messages before poke-env parses them."""
@@ -415,36 +426,43 @@ class EffectivenessFuzzPlayer(Player):
         actual_opp_eff = battle.opp_last_effectiveness
         actual_order = battle.we_moved_first
 
-        if actual_our_eff != expected_our:
-            s.layer1_mismatches += 1
-            s.record_example(1, {
-                "check": "our_last_effectiveness",
-                "turn": battle.turn,
-                "expected": expected_our,
-                "actual": actual_our_eff,
-                "raw_eff_events": list(prev_raw.eff_events),
-                "player_role": player_role,
-            })
-        if actual_opp_eff != expected_opp:
-            s.layer1_mismatches += 1
-            s.record_example(1, {
-                "check": "opp_last_effectiveness",
-                "turn": battle.turn,
-                "expected": expected_opp,
-                "actual": actual_opp_eff,
-                "raw_eff_events": list(prev_raw.eff_events),
-                "player_role": player_role,
-            })
-        if actual_order != expected_order:
-            s.layer1_mismatches += 1
-            s.record_example(1, {
-                "check": "we_moved_first",
-                "turn": battle.turn,
-                "expected": expected_order,
-                "actual": actual_order,
-                "raw_move_sides": list(prev_raw.move_sides),
-                "player_role": player_role,
-            })
+        # Only flag a mismatch when the raw stream has an EXPLICIT effectiveness signal
+        # (SE/resisted/immune message fired) and poke-env disagrees.
+        # We skip turns where raw returns None (no explicit message) but poke-env returns
+        # 1.0 — that is intentional tentative-1.0 logic for normal-effectiveness moves.
+        # We also skip forced-switch decisions (battle.force_switch) since they fire
+        # mid-turn before |turn|N+1, making _xxx_effectiveness unavailable via properties.
+        if not battle.force_switch:
+            if expected_our is not None and actual_our_eff != expected_our:
+                s.layer1_mismatches += 1
+                s.record_example(1, {
+                    "check": "our_last_effectiveness",
+                    "turn": battle.turn,
+                    "expected": expected_our,
+                    "actual": actual_our_eff,
+                    "raw_eff_events": list(prev_raw.eff_events),
+                    "player_role": player_role,
+                })
+            if expected_opp is not None and actual_opp_eff != expected_opp:
+                s.layer1_mismatches += 1
+                s.record_example(1, {
+                    "check": "opp_last_effectiveness",
+                    "turn": battle.turn,
+                    "expected": expected_opp,
+                    "actual": actual_opp_eff,
+                    "raw_eff_events": list(prev_raw.eff_events),
+                    "player_role": player_role,
+                })
+            if actual_order != expected_order:
+                s.layer1_mismatches += 1
+                s.record_example(1, {
+                    "check": "we_moved_first",
+                    "turn": battle.turn,
+                    "expected": expected_order,
+                    "actual": actual_order,
+                    "raw_move_sides": list(prev_raw.move_sides),
+                    "player_role": player_role,
+                })
 
         # === Layer 2: poke-env properties vs BattleContext snapshot ===
         if curr_ctx.our_last_effectiveness != actual_our_eff:
@@ -597,8 +615,19 @@ class EffectivenessFuzzPlayer(Player):
             mask = Gen3ActionMasker.get_mask(battle)
             battle_tag = battle.battle_tag
 
-            # Build current BattleContext
-            curr_ctx = BattleContext.from_battle(battle)
+            # Initialize per-battle slot registries on first encounter
+            if battle_tag not in self._our_slots:
+                self._our_slots[battle_tag] = SlotRegistry()
+                self._opp_slots[battle_tag] = SlotRegistry()
+
+            # Build current BattleContext (obs is a stub — not needed for effectiveness validation)
+            curr_ctx = BattleContext.from_battle(
+                battle,
+                mask=mask,
+                obs=np.zeros(1, dtype=np.float32),
+                our_slots=self._our_slots[battle_tag],
+                opp_slots=self._opp_slots[battle_tag],
+            )
 
             prev_ctx = self._prev_ctx.get(battle_tag)
             last_action = self._last_action.get(battle_tag)
@@ -611,6 +640,8 @@ class EffectivenessFuzzPlayer(Player):
             if battle.finished:
                 self._prev_ctx[battle_tag] = None
                 self._last_action[battle_tag] = None
+                self._our_slots.pop(battle_tag, None)
+                self._opp_slots.pop(battle_tag, None)
                 valid = np.where(mask == 1)[0]
                 return Gen3ActionMapper.action_to_order(int(np.random.choice(valid)), battle)
 
