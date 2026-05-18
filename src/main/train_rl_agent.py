@@ -38,6 +38,7 @@ from agents.training.gen3_env import Gen3Env
 from agents.training.reward_manager import Gen3RewardManager
 from agents.training.stall import StallConfig
 from agents.training.watchdog import start_subprocess_watchdog
+from agents.training.env_restart_callback import VecEnvRestartCallback
 from utils.logging.levels import LogLevel
 
 from poke_env.player import RandomPlayer, SimpleHeuristicsPlayer
@@ -136,7 +137,9 @@ async def main():
     parser.add_argument("--lr", type=float, default=1.5e-4, help="Learning rate")
     parser.add_argument("--ent-coef", type=float, default=0.02, help="Entropy coefficient (exploration bonus)")
     parser.add_argument("--n-steps", type=int, default=2048, help="Steps per environment per rollout")
-    
+    parser.add_argument("--restart-interval-hours", type=float, default=3.0,
+                        help="Recycle SubprocVecEnv workers every N hours (default: 3, set 0 to disable)")
+
     args = parser.parse_args()
     log_level = LogLevel[args.log_level.upper()]
     
@@ -291,7 +294,13 @@ async def main():
         reward_fn_factory=reward_factory,
     )
     
-    callbacks = [checkpoint_callback, replay_callback]
+    restart_callback = VecEnvRestartCallback(
+        make_factories=lambda: [create_training_env_random(i, stall_config=stall_cfg)
+                                for i in range(n_envs)],
+        restart_interval_hours=args.restart_interval_hours,
+    )
+
+    callbacks = [checkpoint_callback, replay_callback, restart_callback]
     
     if not args.debug:
         from sb3_contrib.common.maskable.callbacks import MaskableEvalCallback
