@@ -200,7 +200,20 @@ are invisible to all 5 attention paths — see item 9.
 
 ---
 
-## 7. Turn-History Memory
+## 7. Move Effectiveness + Who-Moved-First Tracking ✓ DONE
+
+**Where:** `src/poke_env/battle/abstract_battle.py`, `src/agents/training/battle_context.py`,
+`src/agents/observation/turn_delta_encoder.py`
+
+**Implemented in Step 7.** TurnDelta block grew 29→39 dims: our/opp effectiveness one-hot
+(4 dims each: immune/resisted/normal/SE) + move-order one-hot (2 dims: we_first/opp_first;
+all-zero = na). Validation via three independent test layers (deterministic unit tests,
+replay test, 4-layer fuzz test across 50 battles × 3 scenarios, 0 mismatches at all layers).
+See `designs/ai_v3/impl_step7_effectiveness_and_move_order.md` for full details.
+
+---
+
+## 8. Turn-History Memory
 
 **Where:** `src/agents/model/features_extractor.py`, `src/agents/training/episode_tracker.py`
 
@@ -266,51 +279,12 @@ a clean "I don't know" signal to reason from.
 
 ---
 
-## 9. Architecture Gap: Boosts and Volatiles Blind to Attention
+## 9. Architecture Gap: Boosts and Volatiles Blind to Attention ✓ DONE
 
 **Where:** `src/agents/model/features_extractor.py`
 
-### Problem
-
-Boosts (stat stages) and volatile effects (Taunt, Confusion, Substitute, etc.) are encoded
-in the **active context** stream (23 dims → 32-dim MLP → concatenated at the projection head).
-This means all 5 attention paths (Pressure, Safety, Synergy, Threat, Opp Synergy) are
-**completely blind** to them.
-
-Concrete examples:
-- Pressure ("what threatens our active from their bench?") cannot see that their benched
-  Blissey is at +6 SpA after three Calm Minds.
-- Safety ("which of our bench can switch in safely?") doesn't know our active Skarmory
-  is Taunted and can't use Spikes or Roost.
-
-This is not a bug — it's a design gap from having status counters and volatile effects
-arrive too late in the pipeline (after attention has already run).
-
-### Proposed Fix
-
-For the **active mon only**, inject the active context encoding into that mon's role token
-**before** the attention paths run:
-
-```python
-# After role encoding, find the active slot and add the active-ctx projection
-our_active_idx = our_active_flags.argmax(dim=1)  # [B]
-# Project active context (23 dims) → role token size (128 dims)
-our_ctx_boost = self.active_ctx_to_role(our_ctx_raw)  # [B, 128]
-# Add into the active slot's role token
-role_tokens[:, our_active_idx, :] += our_ctx_boost
-# Same for opponent
-opp_active_idx = opp_active_flags.argmax(dim=1) + TEAM_SIZE
-opp_ctx_boost = self.active_ctx_to_role(opp_ctx_raw)
-role_tokens[:, opp_active_idx, :] += opp_ctx_boost
-```
-
-Where `self.active_ctx_to_role = nn.Linear(ACTIVE_CONTEXT_DIM, ROLE_TOKEN_SIZE)`.
-
-Benched mons have no boosts/volatiles, so only injecting into the active slot is correct.
-`ROLE_TOKEN_SIZE` stays at 128 — no downstream dim changes needed.
-
-### Priority
-
-Medium. The projection MLP can still use boosts/volatiles to influence final logits,
-so the model can partially compensate. But strategic attention-level reasoning (e.g.,
-"their bench +4 Blissey is a bigger threat than my typing suggests") requires this fix.
+**Implemented in Step 6.** A shared 2-layer MLP (`active_ctx_to_role: 23→64→128`) projects
+each side's active context into role token space and adds it to the active slot's role token
+**before** the 5 attention paths run. All 5 heads (Pressure, Safety, Synergy, Threat, Opp
+Synergy) now see boost and volatile state. `ARCH_SIGNATURE` bumped to `"gen3_attn_v2"`.
+See `designs/ai_v3/impl_step6_active_state_signals.md` for full details.
