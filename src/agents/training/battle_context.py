@@ -260,6 +260,12 @@ class TurnDelta:
                 # from the full-team snapshot in opp_all_last_move_ids.
                 opp_move_id = curr_ctx.opp_all_last_move_ids.get(prev_ctx.opp_active)
                 opp_move_known = opp_move_id is not None
+            elif opp_fainted:
+                # Forced switch after their mon fainted: they may have moved before dying.
+                # Recover from the full-team snapshot (opp_last_move_id reads the NEW active
+                # mon, which hasn't moved yet, so we must use the per-species snapshot).
+                opp_move_id = curr_ctx.opp_all_last_move_ids.get(prev_ctx.opp_active)
+                opp_move_known = True   # switch was forced (faint), whether or not we know the move
             else:
                 opp_move_id = None
                 opp_move_known = True   # voluntary switch — no move was used

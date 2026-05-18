@@ -14,6 +14,8 @@ class _FakeMon:
         self.last_move = None
         self.last_cant_reason = None
         self.moves = {}
+        self.status = None
+        self.effects = {}
 
 
 class _Ns:

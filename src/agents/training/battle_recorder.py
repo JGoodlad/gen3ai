@@ -5,6 +5,11 @@ from agents.training.battle_context import BattleContext, TurnDelta
 from agents.training.reward_function import RewardFunction
 from agents.training.slot_registry import SlotRegistry
 from agents.training.reward_manager import Gen3RewardManager
+from poke_env.battle.effect import Effect
+
+# Volatile effects worth surfacing in the log (Gen 3 relevant subset).
+_NOTABLE_EFFECTS = (Effect.TAUNT, Effect.CONFUSION, Effect.ENCORE, Effect.ATTRACT,
+                    Effect.DISABLE, Effect.SUBSTITUTE)
 
 
 class BattleRecorder:
@@ -47,8 +52,18 @@ class BattleRecorder:
             "turn": ctx.turn,
             "phase": ctx.phase,
             "chosen": chosen,
-            "our": {"species": ctx.our_active, "hp": self._our_hp_pct(ctx), "bench": self._our_bench_summary(battle)},
-            "opp": {"species": ctx.opp_active, "hp": self._opp_hp_pct(ctx), "bench": self._opp_bench_summary(battle)},
+            "our": {
+                "species": ctx.our_active,
+                "hp": self._our_hp_pct(ctx),
+                "status": self._mon_status_str(battle.active_pokemon),
+                "bench": self._our_bench_summary(battle),
+            },
+            "opp": {
+                "species": ctx.opp_active,
+                "hp": self._opp_hp_pct(ctx),
+                "status": self._mon_status_str(battle.opponent_active_pokemon),
+                "bench": self._opp_bench_summary(battle),
+            },
             "outcome": None,
             "actions": self._all_action_labels(battle, probs, mask),
         }
@@ -73,9 +88,11 @@ class BattleRecorder:
         self._reward_fn.record_action(prev_ctx, self._pending_action)
         reward = self._reward_fn.process_turn_reward(battle, delta)
 
-        # When a switch occurred, damage landed on the incoming mon — track that slot.
-        our_slot = prev_ctx.our_slot_map.get(delta.our_switch_to or prev_ctx.our_active, 0)
-        opp_slot = prev_ctx.opp_slot_map.get(delta.opp_switch_to or prev_ctx.opp_active, 0)
+        # HP delta: for faint turns use the fainted mon's slot, not the forced switch-in.
+        our_ref = prev_ctx.our_active if delta.we_fainted else (delta.our_switch_to or prev_ctx.our_active)
+        opp_ref = prev_ctx.opp_active if delta.opp_fainted else (delta.opp_switch_to or prev_ctx.opp_active)
+        our_slot = prev_ctx.our_slot_map.get(our_ref, 0)
+        opp_slot = prev_ctx.opp_slot_map.get(opp_ref, 0)
         our_delta = (our_hp[our_slot] - prev_ctx.our_hp[our_slot]) * 100
         opp_delta = (opp_hp[opp_slot] - prev_ctx.opp_hp[opp_slot]) * 100
 
@@ -86,6 +103,8 @@ class BattleRecorder:
             events.append(f"our:{prev_ctx.our_active}:fainted")
         if final_opp_fainted > prev_ctx.opp_fainted_count:
             events.append(f"opp:{prev_ctx.opp_active}:fainted")
+
+        self._append_status_events(events, prev_ctx, delta, battle)
 
         if battle.won:
             events.append("result:win")
@@ -185,6 +204,20 @@ class BattleRecorder:
             result[label] = {"prob": f"{probs[i] * 100:.1f}%", "valid": bool(mask[i])}
         return result
 
+    @staticmethod
+    def _mon_status_str(mon) -> str | None:
+        """Permanent status + notable volatile effects as a compact string, or None."""
+        if mon is None:
+            return None
+        parts = []
+        if mon.status is not None:
+            parts.append(mon.status.name)
+        effects = getattr(mon, "effects", {})
+        for eff in _NOTABLE_EFFECTS:
+            if eff in effects:
+                parts.append(eff.name.lower())
+        return ", ".join(parts) if parts else None
+
     def _our_bench_summary(self, battle) -> str:
         active = battle.active_pokemon
         parts = []
@@ -221,6 +254,31 @@ class BattleRecorder:
         slot = ctx.opp_slot_map.get(ctx.opp_active)
         return f"{ctx.opp_hp[slot] * 100:.0f}%" if slot is not None else "?%"
 
+    def _append_status_events(self, events: list, prev_ctx: BattleContext,
+                              delta: TurnDelta, battle) -> None:
+        """Append events for any status conditions newly applied this turn."""
+        prev_our_status = self._pending_entry["our"].get("status")
+        prev_opp_status = self._pending_entry["opp"].get("status")
+
+        # Only track the mon that was active at decision time; skip if they fainted.
+        if not delta.we_fainted:
+            our_mon = next(
+                (m for m in battle.team.values() if m.species == prev_ctx.our_active), None
+            )
+            if our_mon:
+                new_status = self._mon_status_str(our_mon)
+                if new_status and new_status != prev_our_status:
+                    events.append(f"our:{prev_ctx.our_active}:{new_status}")
+
+        if not delta.opp_fainted:
+            opp_mon = next(
+                (m for m in battle.opponent_team.values() if m.species == prev_ctx.opp_active), None
+            )
+            if opp_mon:
+                new_status = self._mon_status_str(opp_mon)
+                if new_status and new_status != prev_opp_status:
+                    events.append(f"opp:{prev_ctx.opp_active}:{new_status}")
+
     def _complete_pending(self, curr_ctx: BattleContext, battle) -> None:
         prev_ctx = self._pending_ctx
         self._reward_fn.record_action(prev_ctx, self._pending_action)
@@ -235,13 +293,18 @@ class BattleRecorder:
         else:
             we_action = self._pending_entry["chosen"]
 
-        # Their action — prefer TurnDelta switch detection, then poke-env last_move
+        # Their action — distinguish: voluntary switch / faint+forced-switch / phaze / moved
         if prev_ctx.phase == "forced_switch":
-            # Opponent doesn't act on forced-switch turns — we're just picking a replacement
             they_action = "none"
         elif delta.opp_switch_to:
-            if delta.opp_move_id:
-                # Phaze (Roar/Whirlwind): they moved first, then were forced out
+            if delta.opp_fainted and delta.opp_move_id:
+                # Attacked then fainted → forced switch in
+                they_action = f"{delta.opp_move_id} → {delta.opp_switch_to}_sent_in"
+            elif delta.opp_fainted:
+                # Fainted without moving (e.g. residual damage between turns)
+                they_action = f"{delta.opp_switch_to}_sent_in"
+            elif delta.opp_move_id:
+                # Phaze (Roar/Whirlwind)
                 they_action = f"{delta.opp_move_id} → phazed_to:{delta.opp_switch_to}"
             else:
                 they_action = f"switched_to:{delta.opp_switch_to}"
@@ -250,9 +313,11 @@ class BattleRecorder:
             last_move = getattr(opp_mon, "last_move", None) if opp_mon else None
             they_action = last_move.id if (last_move and hasattr(last_move, "id")) else "unknown"
 
-        # When a switch occurred, damage landed on the incoming mon — track that slot.
-        our_slot = prev_ctx.our_slot_map.get(delta.our_switch_to or prev_ctx.our_active, 0)
-        opp_slot = prev_ctx.opp_slot_map.get(delta.opp_switch_to or prev_ctx.opp_active, 0)
+        # HP delta: for faint turns use the fainted mon's slot, not the forced switch-in.
+        our_ref = prev_ctx.our_active if delta.we_fainted else (delta.our_switch_to or prev_ctx.our_active)
+        opp_ref = prev_ctx.opp_active if delta.opp_fainted else (delta.opp_switch_to or prev_ctx.opp_active)
+        our_slot = prev_ctx.our_slot_map.get(our_ref, 0)
+        opp_slot = prev_ctx.opp_slot_map.get(opp_ref, 0)
         our_delta = delta.our_hp_delta[our_slot] * 100
         opp_delta = delta.opp_hp_delta[opp_slot] * 100
 
@@ -261,6 +326,8 @@ class BattleRecorder:
             events.append(f"our:{prev_ctx.our_active}:fainted")
         if delta.opp_fainted:
             events.append(f"opp:{prev_ctx.opp_active}:fainted")
+
+        self._append_status_events(events, prev_ctx, delta, battle)
 
         breakdown = getattr(self._reward_fn, "_last_breakdown", None)
         self._pending_entry["outcome"] = {
