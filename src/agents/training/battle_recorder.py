@@ -5,7 +5,9 @@ from agents.training.battle_context import BattleContext, TurnDelta
 from agents.training.reward_function import RewardFunction
 from agents.training.slot_registry import SlotRegistry
 from agents.training.reward_manager import Gen3RewardManager
-from agents.gen3_mechanics import mon_status_str as _mon_status_str_fn, boosts_str as _boosts_str_fn
+from agents.gen3_mechanics import boosts_str as _boosts_str_fn
+from poke_env.battle.status import Status
+from poke_env.battle.effect import Effect
 
 
 class BattleRecorder:
@@ -45,8 +47,8 @@ class BattleRecorder:
         chosen = self._action_label(action_idx, battle)
         our_mon = battle.active_pokemon
         opp_mon = battle.opponent_active_pokemon
-        our_status = self._mon_status_str(our_mon)
-        opp_status = self._mon_status_str(opp_mon)
+        our_status = self._mon_display_status(our_mon)
+        opp_status = self._mon_display_status(opp_mon)
         our_boosts = _boosts_str_fn(our_mon)
         opp_boosts = _boosts_str_fn(opp_mon)
 
@@ -212,8 +214,44 @@ class BattleRecorder:
         return result
 
     @staticmethod
-    def _mon_status_str(mon) -> str | None:
-        return _mon_status_str_fn(mon)
+    def _mon_display_status(mon) -> str | None:
+        """Rich status string including counters and volatiles.
+
+        Examples: "SLP(3)", "TOX(5)", "BRN", "PAR|TAUNT", "PERISH(2)|CONF"
+        """
+        if mon is None:
+            return None
+        parts = []
+        status = getattr(mon, "status", None)
+        ctr = getattr(mon, "status_counter", 0) or 0
+        effects = getattr(mon, "effects", {})
+        if status == Status.SLP:
+            parts.append(f"SLP({ctr})" if ctr else "SLP")
+        elif status == Status.TOX:
+            parts.append(f"TOX({ctr})" if ctr else "TOX")
+        elif status is not None:
+            name_map = {Status.BRN: "BRN", Status.PAR: "PAR", Status.FRZ: "FRZ", Status.PSN: "PSN"}
+            if name := name_map.get(status):
+                parts.append(name)
+        effect_names = {
+            Effect.TAUNT: "TAUNT", Effect.CONFUSION: "CONF", Effect.ENCORE: "ENCORE",
+            Effect.ATTRACT: "ATTRACT", Effect.DISABLE: "DISABLE", Effect.SUBSTITUTE: "SUB",
+        }
+        for eff, name in effect_names.items():
+            if eff in effects:
+                parts.append(name)
+        for n, e in [(3, Effect.PERISH3), (2, Effect.PERISH2), (1, Effect.PERISH1), (0, Effect.PERISH0)]:
+            if e in effects:
+                parts.append(f"PERISH({n})")
+                break
+        return "|".join(parts) if parts else None
+
+    @staticmethod
+    def _status_key(status_str: str | None) -> str | None:
+        """Normalize for change detection — strips counter values, sorts parts."""
+        if not status_str:
+            return None
+        return "|".join(sorted(p.split("(")[0] for p in status_str.split("|")))
 
     def _our_bench_summary(self, battle) -> str:
         active = battle.active_pokemon
@@ -224,7 +262,9 @@ class BattleRecorder:
             if mon.fainted:
                 parts.append(f"{mon.species}(faint)")
             else:
-                parts.append(f"{mon.species}({mon.current_hp_fraction * 100:.0f}%)")
+                pct = f"{mon.current_hp_fraction * 100:.0f}%"
+                status = self._mon_display_status(mon)
+                parts.append(f"{mon.species}({pct},{status})" if status else f"{mon.species}({pct})")
         return ", ".join(parts)
 
     def _opp_bench_summary(self, battle) -> str:
@@ -236,8 +276,9 @@ class BattleRecorder:
             if mon.fainted:
                 parts.append(f"{mon.species}(faint)")
             else:
-                pct = mon.current_hp_fraction * 100
-                parts.append(f"{mon.species}({pct:.0f}%)")
+                pct = f"{mon.current_hp_fraction * 100:.0f}%"
+                status = self._mon_display_status(mon)
+                parts.append(f"{mon.species}({pct},{status})" if status else f"{mon.species}({pct})")
         return ", ".join(parts)
 
     def _our_hp_pct(self, ctx: BattleContext) -> str:
@@ -263,18 +304,20 @@ class BattleRecorder:
                 (m for m in battle.team.values() if m.species == prev_ctx.our_active), None
             )
             if our_mon:
-                new_status = self._mon_status_str(our_mon)
-                if new_status and new_status != prev_our_status:
-                    events.append(f"our:{prev_ctx.our_active}:{new_status}")
+                new_status = self._mon_display_status(our_mon)
+                if self._status_key(new_status) != self._status_key(prev_our_status):
+                    if new_status:
+                        events.append(f"our:{prev_ctx.our_active}:{new_status}")
 
         if not delta.opp_fainted:
             opp_mon = next(
                 (m for m in battle.opponent_team.values() if m.species == prev_ctx.opp_active), None
             )
             if opp_mon:
-                new_status = self._mon_status_str(opp_mon)
-                if new_status and new_status != prev_opp_status:
-                    events.append(f"opp:{prev_ctx.opp_active}:{new_status}")
+                new_status = self._mon_display_status(opp_mon)
+                if self._status_key(new_status) != self._status_key(prev_opp_status):
+                    if new_status:
+                        events.append(f"opp:{prev_ctx.opp_active}:{new_status}")
 
     def _complete_pending(self, curr_ctx: BattleContext, battle) -> None:
         prev_ctx = self._pending_ctx
