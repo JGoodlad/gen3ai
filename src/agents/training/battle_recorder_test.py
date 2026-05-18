@@ -41,6 +41,9 @@ def _battle(our_mons, opp_mons, our_active, opp_active,
         "team_objects": list(b.team.values()),
         "move_ids": move_ids,
     }
+    b.our_last_effectiveness = None
+    b.opp_last_effectiveness = None
+    b.we_moved_first = None
     return b
 
 

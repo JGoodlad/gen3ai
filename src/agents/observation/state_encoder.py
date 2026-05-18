@@ -116,7 +116,7 @@ class Gen3ObservationEncoder(ObservationEncoder):
 
     @property
     def dimension(self) -> int:
-        """Full observation dimension including the 11-dim prev-mask and 29-dim TurnDelta block."""
+        """Full observation dimension including the 11-dim prev-mask and 39-dim TurnDelta block."""
         from agents.observation.turn_delta_encoder import TURN_DELTA_DIM
         return self.base_dimension + 11 + TURN_DELTA_DIM
 
@@ -206,10 +206,10 @@ class Gen3ObservationEncoder(ObservationEncoder):
                 }
             },
             "pokemon": pokemon_layout,
-            "total_dim": self.dimension,    # base + 11 prev_mask + 29 turn_delta
+            "total_dim": self.dimension,    # base + 11 prev_mask + 39 turn_delta
             "base_dim": self.base_dimension, # raw encoder output without prev_mask or turn_delta
             "prev_mask_dim": 11,
-            "turn_delta_dim": 29,
+            "turn_delta_dim": 39,
             "active_context_dim": ACTIVE_CONTEXT_DIM,
             "reactive_layout": _ReactiveEncoder().get_layout(),
             "global_layout": self.global_env_encoder.get_layout(),
