@@ -465,11 +465,17 @@ All shaping signals remain small relative to the base reward scale:
 
 See `designs/ai_v3/todo.md`. Priority items after this step:
 
-1. **Stat-stage deltas in `TurnDelta`** — Calm Mind / Dragon Dance boosts reset on
-   switch; Intimidate fires on switch-in. Needed to reward setup moves properly and
-   to penalise letting the opponent boost unchecked. Tracking requires per-slot
-   before/after snapshots since Aromatherapy clears the whole team at once.
-2. **Turn-history memory** — Sliding window of K `TurnDelta` blocks, or a GRU over
+1. ~~**Stat-stage deltas in `TurnDelta`**~~ — **Done** (`7256ee5`). `BattleContext` now
+   carries `our_boosts`/`opp_boosts` (7-dim int8, one per BOOST_STATS entry).
+   `TurnDelta` computes `our_boost_delta`/`opp_boost_delta`, zeroed on switch.
+   **Still pending**: wire the boost delta into (a) the observation encoder so the
+   model can see that the opponent just Calm-Minded, and (b) a reward signal
+   (bonus for boosting when winning, penalty for letting opp boost unchecked).
+2. **Volatile-effect observation** — `reactive.py` `vec[10]` only checks `mon.status`
+   (permanent). Taunt, Confusion, Encore, Attract, Disable, Substitute are invisible
+   to the model. Needs a multi-bit encoding in the active-mon section of the
+   reactive encoder (see design note below).
+3. **Turn-history memory** — Sliding window of K `TurnDelta` blocks, or a GRU over
    the turn sequence, once the current reward signals are stable.
-3. **Delegating move gap** — Metronome/Nature Power/Assist produce `opp_move_known=False`;
+4. **Delegating move gap** — Metronome/Nature Power/Assist produce `opp_move_known=False`;
    low priority since these moves rarely appear in gen3ou.
