@@ -486,6 +486,49 @@ def _check_matchup(attacker: str, our_move: str, opp_active: str,
         f"{our_move} vs {opp_active}: expected {expected_mult}, got {b.our_last_effectiveness}"
 
 
+# ---------------------------------------------------------------------------
+# Counter and Mirror Coat: basePower=0 and -5 priority (Gen 3 and Gen 4 identical)
+# ---------------------------------------------------------------------------
+
+def test_counter_basePower_zero_no_effectiveness():
+    """
+    Counter has basePower=0 in gen3_moves.json — the tentative-1.0 guard must NOT
+    fire, so our_last_effectiveness stays None even though damage was dealt.
+    Opp moves first (normal priority 0 > Counter's -5), confirming we_moved_first=False.
+    """
+    b = _battle()
+    b.parse_message(["", "turn", "1"])
+    # Opp uses Body Slam first (priority 0 > Counter's -5)
+    b.parse_message(["", "move", "p2a: Blissey", "Body Slam", "p1a: Blissey"])
+    b.parse_message(["", "-damage", "p1a: Blissey", "70/100"])
+    # We use Counter second (priority -5, fires last)
+    b.parse_message(["", "move", "p1a: Blissey", "Counter", "p2a: Blissey"])
+    b.parse_message(["", "-damage", "p2a: Blissey", "30/100"])
+    b.parse_message(["", "turn", "2"])
+
+    assert b.our_last_effectiveness is None  # Counter: basePower=0, no type effectiveness
+    assert b.we_moved_first is False          # Counter is -5 priority; opp (0) moved first
+
+
+def test_mirror_coat_basePower_zero_no_effectiveness():
+    """
+    Mirror Coat has basePower=0 in gen3_moves.json — same guard as Counter.
+    Opp uses a Special move first; we use Mirror Coat second (priority -5).
+    """
+    b = _battle()
+    b.parse_message(["", "turn", "1"])
+    # Opp uses Thunderbolt first (priority 0 > Mirror Coat's -5)
+    b.parse_message(["", "move", "p2a: Jolteon", "Thunderbolt", "p1a: Blissey"])
+    b.parse_message(["", "-damage", "p1a: Blissey", "60/100"])
+    # We use Mirror Coat second
+    b.parse_message(["", "move", "p1a: Blissey", "Mirror Coat", "p2a: Jolteon"])
+    b.parse_message(["", "-damage", "p2a: Jolteon", "30/100"])
+    b.parse_message(["", "turn", "2"])
+
+    assert b.our_last_effectiveness is None  # Mirror Coat: basePower=0
+    assert b.we_moved_first is False          # Mirror Coat is -5 priority; opp moved first
+
+
 def test_known_matchups():
     """Regression test: known Gen 3 type matchups must produce the right effectiveness."""
     # Electric SE on Water/Flying

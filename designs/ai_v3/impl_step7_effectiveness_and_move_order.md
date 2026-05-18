@@ -572,7 +572,7 @@ encoded_vec[29:33], encoded_vec[33:37], encoded_vec[37:39]
 |---|---|---|
 | A — Immunity | Gengar/Flygon (Levitate), Jolteon (Volt Absorb), Vaporeon (Water Absorb) vs diverse attackers | All four effectiveness categories including multiple immunity types |
 | B — SE/Resisted | Charizard/Blastoise/Jolteon/Steelix/Heracross/Skarmory | Fire/Water/Electric/Ground/Fighting/Rock matchups; type-based SE and resisted from both sides |
-| C — Priority + speed | Arcanine (ExtremeSpeed +2), Jolteon (Quick Attack +1), Snorlax (Sleep Talk), Blissey, Forretress | we_moved_first correctness for priority users; Sleep Talk deduplication edge case; switch-turn None coverage |
+| C — Priority + speed | Arcanine (ExtremeSpeed +1, same tier as Quick Attack in Gen 3), Jolteon (Quick Attack +1), Snorlax (Sleep Talk), Blissey, Forretress | we_moved_first correctness for priority users; Sleep Talk deduplication edge case; switch-turn None coverage |
 
 ### Fuzz test results (50 battles per scenario)
 
@@ -685,14 +685,16 @@ Priorities that appear in gen3ou:
 | Move | Priority |
 |---|---|
 | Helping Hand | +5 |
-| Protect, Detect, Endure | +3 |
-| ExtremeSpeed | +2 |
+| Endure | +4 |
+| Protect, Detect | +3 |
+| ExtremeSpeed | +1 |
 | Quick Attack, Fake Out, Mach Punch, Bullet Punch | +1 |
 | All normal moves | 0 |
 | Vital Throw | −1 |
+| Counter, Mirror Coat | −5 |
 | Roar, Whirlwind | −6 |
 
-Note: Counter and Mirror Coat have −1 priority in Gen 3 (changed in Gen 4).
+Note: Counter and Mirror Coat are −5 priority in Gen 3 (same as Gen 4 — no change between gens).
 Note: Trick Room does NOT exist in Gen 3. Speed order is always faster-first within
 a priority tier.
 

@@ -175,9 +175,9 @@ Impish Nature
 """
 
 # Scenario C — Priority + speed tier verification
-# Arcanine (Extreme Speed, +2 priority), Ambipom-like Quick Attack users
-# vs slow tanky mons. Both sides use priority to generate we_moved_first=True
-# even when the priority user is slower.
+# Arcanine (ExtremeSpeed, +1 priority in Gen 3 — same tier as Quick Attack),
+# Jolteon (Quick Attack, +1) vs slow tanky mons. Priority users go first even
+# when their base speed would normally lose.
 PRIORITY_TEAM = """\
 Arcanine @ Lum Berry
 Ability: Intimidate
