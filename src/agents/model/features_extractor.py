@@ -150,6 +150,18 @@ class Gen3FeaturesExtractor(torch.nn.Module):
             torch.nn.Linear(ACTIVE_CTX_HIDDEN[0], ACTIVE_CTX_HIDDEN[1]),
         )
 
+        # 1.9 Active Context → Role Token Injection
+        # Projects active context (boosts/volatiles) into role token space so the 5
+        # attention paths can see boost/volatile state. 2-layer MLP captures non-linear
+        # interactions (e.g. "+2 SpA AND +2 Spe" is qualitatively different from either alone).
+        # Shared weights between our side and opponent side. Added additively to the active
+        # slot only — bench mons have no boosts/volatiles in Gen 3.
+        self.active_ctx_to_role = torch.nn.Sequential(
+            torch.nn.Linear(active_ctx_dim, 64),
+            torch.nn.ReLU(),
+            torch.nn.Linear(64, ROLE_TOKEN_SIZE),
+        )
+
         # 2. Dynamic Input Dimension Discovery (Dummy Forward)
         # We run a single fake observation through the logic to determine the exact projection dimension.
         with torch.no_grad():
@@ -490,6 +502,12 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         role_tokens = self.role_encoder(pokemon_enriched_with_context.reshape(-1, pokemon_enriched_with_context.shape[-1]))
         role_tokens = role_tokens.reshape(batch_size, n_poke, self.role_token_size)
 
+        # Extract active context raw vectors here so they are available for pre-attention
+        # injection below and for the direct encoder call later in the function.
+        active_ctx_dim = self.layout.get('active_context_dim', 22)
+        our_ctx_raw = remaining_part[:, 0 : active_ctx_dim]                   # [B, 23]
+        opp_ctx_raw = remaining_part[:, active_ctx_dim : 2 * active_ctx_dim]  # [B, 23]
+
         # --- TEAM-WIDE ATTENTION ---
         # 1. Find who is active on both teams
         active_flags = hp_and_active[:, :, 2] # [B, 12] — active flag is now at index 2 (hp, species_known, active)
@@ -507,6 +525,15 @@ class Gen3FeaturesExtractor(torch.nn.Module):
             torch.argmax(opp_active_flags, dim=1),
             torch.zeros(batch_size, dtype=torch.long, device=x.device)
         ) + TEAM_SIZE  # [B] — 6-11
+
+        # 1.5 Inject active context (boosts/volatiles) into each active slot's role token
+        # before attention runs. All 5 attention paths can now see boost/volatile state.
+        # Bench slots are not injected — they have no boosts/volatiles in Gen 3.
+        our_ctx_bias = self.active_ctx_to_role(our_ctx_raw)   # [B, 128]
+        opp_ctx_bias = self.active_ctx_to_role(opp_ctx_raw)   # [B, 128]
+        batch_idx = torch.arange(batch_size, device=x.device)
+        role_tokens[batch_idx, our_active_idx] = role_tokens[batch_idx, our_active_idx] + our_ctx_bias
+        role_tokens[batch_idx, opp_active_idx] = role_tokens[batch_idx, opp_active_idx] + opp_ctx_bias
 
         # 2. Apply Status Biases (Pre-Attention)
         status_idx = torch.ones((batch_size, n_poke), device=role_tokens.device).long()
@@ -584,10 +611,8 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         # P4: extract our_active_refined from our_team after ALL paths (not Pressure-only)
         our_active_refined = our_team[torch.arange(batch_size), our_active_idx]  # [B, 128]
 
-        # P3: encode active_context (boosts, volatiles) through a learned MLP
-        active_ctx_dim = self.layout.get('active_context_dim', 22)
-        our_ctx_raw = remaining_part[:, 0 : active_ctx_dim]           # [B, 22]
-        opp_ctx_raw = remaining_part[:, active_ctx_dim : 2 * active_ctx_dim]  # [B, 22]
+        # P3: encode active_context (boosts, volatiles) through a learned MLP for the
+        # direct projection path. (our_ctx_raw / opp_ctx_raw extracted earlier.)
         our_ctx_enc = self.active_ctx_encoder(our_ctx_raw)             # [B, 32]
         opp_ctx_enc = self.active_ctx_encoder(opp_ctx_raw)             # [B, 32]
 

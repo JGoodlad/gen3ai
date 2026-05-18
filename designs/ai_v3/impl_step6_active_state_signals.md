@@ -1,9 +1,13 @@
-# Implementation: Step 6 — Observation Signal Quality
+# Implementation: Step 6 — Active State Signals
 
-This step hardened the observation pipeline and the battle recording infrastructure.
-The primary themes are: fixing a silent bug that zeroed all volatile-effect bits,
-consolidating Gen 3 game mechanics into a single module, and surfacing status duration
-signals (sleep turns, toxic counter) to the neural network.
+This step closed all known gaps in how the active Pokémon's state (boosts, volatile
+effects, status duration) flows through the full pipeline — from observation encoding
+to the attention heads.
+
+Primary themes: fixing a silent bug that zeroed all volatile-effect bits, surfacing
+status duration signals (sleep turns, toxic counter), consolidating Gen 3 mechanics,
+and injecting active context into role tokens so every attention path can see boost and
+volatile state before reasoning about team dynamics.
 
 ---
 
@@ -205,6 +209,57 @@ Bench summaries updated to include status for non-fainted mons:
 "bench": "blissey(88%,TOX(2)), skarmory(100%,TAUNT), swampert(faint)"
 ```
 
+### 7. Active Context Injection into Role Tokens (Pre-Attention)
+
+**`src/agents/model/features_extractor.py`**
+
+The active context (boosts + volatile effects, 23 dims per side) was previously fed
+only into the final projection input — **after** all 5 attention paths had already run.
+This meant Safety, Threat, Pressure, Synergy, and Opp Synergy were completely blind
+to boost and volatile state.
+
+Concrete examples of what was missing:
+- **Safety** (our bench queries their active): couldn't see the opponent's active has
+  +2 Atk from Swords Dance when deciding which bench mon to switch in.
+- **Threat** (their bench queries our active): couldn't see our active has a Substitute
+  up, which halves the threat value of their status-move bench users.
+- **Pressure** (our active queries their bench): couldn't see our active is Taunted or
+  Confused, changing how urgently we need to switch.
+
+**Fix:** a new shared 2-layer MLP (`active_ctx_to_role: 23→64→128`) projects each
+side's active context into role token space and adds it to the active slot's role token
+**before** the 5 attention paths run. A 2-layer MLP (rather than a bare linear) captures
+non-linear interactions between boost dimensions ("+2 SpA AND +2 Spe" is qualitatively
+different from either alone).
+
+The active context now flows two ways:
+
+```
+active_context (23 dims)
+       │
+       ├── active_ctx_to_role (23→64→128, MLP) → + injected into active slot's role token
+       │                                                   │
+       │                                         [5 attention paths run — boost/volatile aware]
+       │
+       └── active_ctx_encoder (23→64→32, MLP) → appended to final projection input
+```
+
+The second path (direct to projection) is preserved: it gives the policy/value MLP an
+immediate read on current state for action selection.
+
+Bench slots are not injected — in Gen 3, switching out resets all stat boosts and clears
+all volatile effects, so bench slots have no boost/volatile signal.
+
+`ARCH_SIGNATURE` bumped from `"gen3_attn_v1"` to `"gen3_attn_v2"`. The projection
+input dimension is auto-discovered via dummy forward in `__init__`, so no constants
+need updating.
+
+New test file `src/agents/model/features_extractor_test.py` verifies:
+- `active_ctx_to_role` output shape is correct
+- Non-zero our-side active context changes the forward output
+- Non-zero opp-side active context changes the forward output
+- Zeroing `active_ctx_to_role` changes the output, proving the layer is wired in
+
 ---
 
 ## Reward Signals (unchanged from Step 5)
@@ -235,7 +290,10 @@ No reward constants were modified in this step.
 | `src/agents/observation/turn_delta_encoder_test.py` | Boost delta fields in test fixture |
 | `src/agents/observation/reactive.py` | Import from gen3_mechanics |
 | `src/agents/opponents.py` | Import from gen3_mechanics |
-| `src/agents/model/features_extractor.py` | `role_input_dim` 260→262 |
+| `src/agents/model/features_extractor.py` | `role_input_dim` 260→262; `active_ctx_to_role` MLP; pre-attention injection |
+| `src/agents/model/features_extractor_test.py` | New — 4 injection tests |
+| `src/agents/model/model_version.py` | `ARCH_SIGNATURE` `"gen3_attn_v1"` → `"gen3_attn_v2"` |
+| `designs/ai_v3/README.md` | Architecture digraph + tables updated for injection path |
 | `CLAUDE.md` | Obs dim 1107→1131; per-Pokémon slot 59→61 dims; role encoder input updated |
 | `designs/ai_v3/todo.md` | §6 marked partial done; §9 added (boosts/volatiles blind to attention) |
 
@@ -250,6 +308,4 @@ See `designs/ai_v3/todo.md`. Priority items after this step:
 2. **Boost delta in observation / reward** — `our_boost_delta` / `opp_boost_delta` are
    captured in `TurnDelta` but not yet consumed. Reward signal for setup moves (Calm Mind,
    Dragon Dance) and penalty for opponent unchecked boosts.
-3. **Architecture gap: boosts/volatiles blind to attention** (§9) — inject active context
-   into the active mon's role token pre-attention via `nn.Linear(ACTIVE_CONTEXT_DIM, ROLE_TOKEN_SIZE)`.
-4. **Turn-history memory** (§7) — sliding window of K `TurnDelta` blocks, then GRU.
+3. **Turn-history memory** (§7) — sliding window of K `TurnDelta` blocks, then GRU.

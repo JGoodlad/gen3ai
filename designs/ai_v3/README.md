@@ -20,7 +20,7 @@ flowchart TD
     BASE --> REM["remaining_part\nactive_ctx · global · reactive"]
 
     TEAM --> EMB["Embedding Lookups\nspecies · 32\nmove · 16\nitem · 16\nability · 16\ntype · 16  shared"]
-    REM --> ACT_RAW["active_context · 22-dim × 2\nboosts · stat stages · volatiles"]
+    REM --> ACT_RAW["active_context · 23-dim × 2\nboosts · stat stages · volatiles"]
     REM --> GLOBAL["global env · 13-dim\nturn · weather·6 · fainted·2\nspikes·2 · reflect·2 · screen·2"]
     REM --> REACT["reactive scalars · 12-dim\npow·4 mult·4 fainted·2\nstatus·1 struggle·1\n(hp/spikes removed — in per-mon and global)"]
     REM --> MATCH["matchup matrix · 288-dim\n[B, 12, 4, 6] type effectiveness\n(used by move processor only)"]
@@ -45,7 +45,11 @@ flowchart TD
     PE --> RIN["Role Encoder input · [B, 12, 260]\nenriched·242 + ctx·16\nswitch_valid·1 + struggle_prev·1\n(ctx=16: turn·1+weather·6+fainted·2+spikes·2+screens·4+struggle·1)"]
 
     RIN --> RE["Shared Role Encoder\nLinear 260→256 → ReLU\nLinear 256→128\n(all 12 mons)"]
-    RE --> RT["Role tokens · [B, 12, 128]\n+ status embedding bias\n(our active / our bench / their active / their bench)"]
+    RE --> RT0["Role tokens · [B, 12, 128]"]
+
+    ACT_RAW --> ACTINJ["Active Ctx → Role · shared\nLinear 23→64 → ReLU → Linear 64→128\n→ + injected into active slot only\n(bench mons have no boosts/volatiles)"]
+    RT0 --> ACTINJ
+    ACTINJ --> RT["Role tokens · [B, 12, 128]\n+ active-ctx bias at active slots\n+ status embedding bias\n(our active / our bench / their active / their bench)"]
 
     RT --> OT["our_team · [B, 6, 128]"]
     RT --> TT["their_team · [B, 6, 128]"]
@@ -77,7 +81,7 @@ flowchart TD
     OAR --> AGG
 
     POOL --> AGG["Aggregation\ncat(\n  our_pool·128\n  their_pool·128\n  our_active_refined·128\n  our_ctx_enc·32\n  opp_ctx_enc·32\n  global+scalars·29\n  turn_delta_emb·89\n)"]
-    ACT_RAW --> ACTENC["Active Context Encoder · shared\nLinear 22→64 → ReLU → Linear 64→32\nour side + opp side"]
+    ACT_RAW --> ACTENC["Active Context Encoder · shared\nLinear 23→64 → ReLU → Linear 64→32\nour side + opp side (direct path)"]
     ACTENC --> AGG
     GLOBAL --> AGG
     REACT --> AGG
@@ -95,7 +99,8 @@ flowchart TD
 | Move Processor | 58 | 32 | shared; run 12×4 times per forward pass |
 | Move Self-Attention | 32 (Q/K/V) | 32 | per-mon 4-slot self-attn; run 12 times |
 | Role Encoder | 260 | 128 | shared; run 12 times per forward pass |
-| Active Ctx Encoder | 22 | 32 | shared; run twice (our side + opp side) |
+| Active Ctx → Role (injection) | 23 | 128 | shared MLP; bias added to active slot's role token only, before all 5 attention paths |
+| Active Ctx Encoder (direct) | 23 | 32 | shared; run twice (our side + opp side); appended to final projection input |
 | Pressure Attn | 128 (Q), 128 (KV) | 128 | our_active queries their_team |
 | Safety Attn | 128 (Q), 128 (KV) | 128 | our_team queries their_active; fainted queries zeroed |
 | Synergy Attn | 128 (Q/K/V) | 128 | our_team self-attention; fainted keys+queries masked |
@@ -181,6 +186,8 @@ All zeros on the first turn of each episode (`TurnDelta.empty()`). See `src/agen
 | Pool (×2) | learned query | each team | 128-dim pool token | Permutation-equivariant team summary |
 
 Pressure result is written back into `our_team` before Safety/Synergy run, so all paths compose correctly. `our_active_refined` is extracted from the fully-composed `our_team` after all paths.
+
+All 5 paths operate on role tokens that have already received the **active-context injection** (boosts + volatile effects projected via `active_ctx_to_role`), so Safety can see "+2 Atk on their active", Threat can see "our active has Substitute up", etc.
 
 ## Key Files
 
