@@ -262,9 +262,12 @@ async def main():
 
     print(f"Initializing {n_envs} environments via {EnvClass.__name__}...")
 
+    import threading
+    _shutdown_event = threading.Event()
+
     env_factories = [create_training_env_random(i, stall_config=stall_cfg) for i in range(n_envs)]
     env = EnvClass(env_factories)
-    start_subprocess_watchdog(env, label="train_env")
+    start_subprocess_watchdog(env, label="train_env", shutdown_event=_shutdown_event)
     # Note: env.seed() is deprecated in gymnasium VecEnv, use seed in reset or at init if supported.
     # But for reproducibility, we pass it to PPO.
 
@@ -365,7 +368,7 @@ async def main():
             return _init
         
         eval_env = SubprocVecEnv([create_eval_env(i) for i in range(8)])
-        start_subprocess_watchdog(eval_env, label="eval_env")
+        start_subprocess_watchdog(eval_env, label="eval_env", shutdown_event=_shutdown_event)
         eval_callback = MaskableEvalCallback(
             eval_env,
             best_model_save_path=os.path.join(model_dir, "best_model"),
@@ -431,6 +434,7 @@ async def main():
 
             import signal
             def signal_handler(sig, frame):
+                _shutdown_event.set()
                 print("\nInterrupt received, saving model...")
                 final_path = os.path.join(model_dir, "final_model_interrupted")
                 model.save(final_path)
@@ -512,6 +516,7 @@ async def main():
 
         import signal
         def signal_handler(sig, frame):
+            _shutdown_event.set()
             print("\nInterrupt received, saving model...")
             final_path = os.path.join(model_dir, "final_model_interrupted")
             model.save(final_path)
