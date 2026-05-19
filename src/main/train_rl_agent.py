@@ -30,6 +30,8 @@ tensorboard_dir = os.path.join(_repo_root, "tensorboard")
 import asyncio
 import random
 import argparse
+import signal
+import threading
 from datetime import datetime
 from sb3_contrib import MaskablePPO
 from stable_baselines3.common.callbacks import CheckpointCallback
@@ -120,6 +122,29 @@ def _run_roundtrip_test(model, layout: dict, policy_kwargs: dict, debug: bool = 
             print(f"[ModelVersion] Round-trip smoke test PASSED (output shape: {features.shape})")
     finally:
         shutil.rmtree(tmpdir, ignore_errors=True)
+
+
+def _setup_signal_handlers(model, model_dir, shutdown_event):
+    def _interrupt(sig, frame):
+        shutdown_event.set()
+        print("\nInterrupt received, saving model...")
+        final_path = os.path.join(model_dir, "final_model_interrupted")
+        model.save(final_path)
+        _write_latest_txt(model_dir, "final_model_interrupted.zip")
+        print(f"Model saved to {final_path}. Exiting.")
+        sys.exit(TrainExitCode.INTERRUPTED)
+
+    def _forced_checkpoint(sig, frame):
+        step = model.num_timesteps
+        name = f"checkpoint_forced_{step:010d}_{datetime.now().strftime('%H%M%S')}"
+        ckpt = os.path.join(model_dir, name)
+        model.save(ckpt)
+        _write_latest_txt(model_dir, name + ".zip")
+        print(f"\n💾 [CHECKPOINT] Forced save → {ckpt}.zip")
+
+    signal.signal(signal.SIGINT, _interrupt)
+    signal.signal(signal.SIGTERM, _interrupt)
+    signal.signal(signal.SIGUSR1, _forced_checkpoint)
 
 
 async def main():
@@ -262,7 +287,6 @@ async def main():
 
     print(f"Initializing {n_envs} environments via {EnvClass.__name__}...")
 
-    import threading
     _shutdown_event = threading.Event()
 
     env_factories = [create_training_env_random(i, stall_config=stall_cfg) for i in range(n_envs)]
@@ -432,27 +456,7 @@ async def main():
             _run_roundtrip_test(model, _load_extractor_kwargs["layout"], _load_policy_kwargs, debug=args.debug)
             save_model_snapshot(model_dir, current_version)
 
-            import signal
-            def signal_handler(sig, frame):
-                _shutdown_event.set()
-                print("\nInterrupt received, saving model...")
-                final_path = os.path.join(model_dir, "final_model_interrupted")
-                model.save(final_path)
-                _write_latest_txt(model_dir, "final_model_interrupted.zip")
-                print(f"Model saved to {final_path}. Exiting.")
-                sys.exit(TrainExitCode.INTERRUPTED)
-
-            def sigusr1_handler(sig, frame):
-                step = model.num_timesteps
-                name = f"checkpoint_forced_{step:010d}_{datetime.now().strftime('%H%M%S')}"
-                ckpt = os.path.join(model_dir, name)
-                model.save(ckpt)
-                _write_latest_txt(model_dir, name + ".zip")
-                print(f"\n💾 [CHECKPOINT] Forced save → {ckpt}.zip")
-
-            signal.signal(signal.SIGINT, signal_handler)
-            signal.signal(signal.SIGTERM, signal_handler)
-            signal.signal(signal.SIGUSR1, sigusr1_handler)
+            _setup_signal_handlers(model, model_dir, _shutdown_event)
 
             try:
                 model.learn(total_timesteps=args.steps, callback=callbacks, reset_num_timesteps=False, tb_log_name=tb_run_name)
@@ -514,27 +518,7 @@ async def main():
         _run_roundtrip_test(model, extractor_kwargs["layout"], policy_kwargs, debug=args.debug)
         save_model_snapshot(model_dir, version)
 
-        import signal
-        def signal_handler(sig, frame):
-            _shutdown_event.set()
-            print("\nInterrupt received, saving model...")
-            final_path = os.path.join(model_dir, "final_model_interrupted")
-            model.save(final_path)
-            _write_latest_txt(model_dir, "final_model_interrupted.zip")
-            print(f"Model saved to {final_path}. Exiting.")
-            sys.exit(TrainExitCode.INTERRUPTED)
-
-        def sigusr1_handler(sig, frame):
-            step = model.num_timesteps
-            name = f"checkpoint_forced_{step:010d}_{datetime.now().strftime('%H%M%S')}"
-            ckpt = os.path.join(model_dir, name)
-            model.save(ckpt)
-            _write_latest_txt(model_dir, name + ".zip")
-            print(f"\n💾 [CHECKPOINT] Forced save → {ckpt}.zip")
-
-        signal.signal(signal.SIGINT, signal_handler)
-        signal.signal(signal.SIGTERM, signal_handler)
-        signal.signal(signal.SIGUSR1, sigusr1_handler)
+        _setup_signal_handlers(model, model_dir, _shutdown_event)
 
         try:
             if log_level >= LogLevel.DETAILED:

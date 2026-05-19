@@ -20,10 +20,12 @@ def start_subprocess_watchdog(vec_env, label="env", shutdown_event=None):
         while True:
             for p in processes:
                 if not p.is_alive() and p.exitcode not in (0, None):
-                    if shutdown_event is not None and shutdown_event.is_set():
-                        return
                     print(f"\n🛑 [{label}] Worker PID {p.pid} died (exitcode={p.exitcode}). Exiting.")
                     os._exit(1)
-            time.sleep(1)
+            if shutdown_event is not None:
+                if shutdown_event.wait(timeout=1):
+                    return
+            else:
+                time.sleep(1)
 
     threading.Thread(target=_watch, daemon=True).start()
