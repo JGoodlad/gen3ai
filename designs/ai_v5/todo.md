@@ -9,71 +9,62 @@ and saves the complete battle logs for offline use. See
 `designs/ai_v5/impl_step1_replay_collection.md`.
 
 **Deliverables:**
-- `src/poke_env/spectator/spectated_battle.py` — pure data object; accumulates log lines,
-  tracks current turn, player names, join time
-- `src/poke_env/spectator/spectator_client.py` — `BattleSpectator` async generator; rate
-  control, ghost-battle prevention, auto-reconnect on TCP reset
-- `src/poke_env/spectator/__init__.py` — package exports
-- `src/poke_env/ps_client/ps_client.py` — `QueryResponseCallback`, proxy support,
-  `ConnectionClosedError` demoted to WARNING, wire logs at DEBUG
-- `src/poke_env/battle/abstract_battle.py` — `":"` / `"t:"` added to `MESSAGES_TO_IGNORE`
-- `src/main/collect_replays.py` — daemon with Rich full-screen dashboard (active battles,
-  recent completions, live logs, PROXIED/DIRECT indicator); proxy + verbose CLI flags
+- `src/poke_env/spectator/` — `BattleSpectator` async generator, `SpectatedBattle` pure data object
+- `src/main/collect_replays.py` — long-running daemon with Rich dashboard
 - `src/poke_env/spectator/spectated_battle_test.py` — 9 unit tests
 - `src/poke_env/spectator/spectator_e2e_test.py` — live server test + round-trip log parse
 
-**Status:** Daemon is actively collecting at `replays/showdown/1/`. Running on POKE_LOOP
-via `asyncio.run_coroutine_threadsafe`. Reconnects automatically on connection drop.
+**Status:** Daemon actively collecting at `replays/showdown/1/`.
 
 ---
 
-## Step 2 — Replay Parsing Pipeline
+## Step 2 — Behavioural Cloning
 
-Convert raw `.log` files into (observation, action) pairs that can feed a behavioural
-cloning loss. Requires:
+Pre-train the policy on (observation, action) pairs extracted from human replay logs, then
+hand off to RL fine-tuning. Gives the agent a strong human prior so RL exploration starts
+from a competent baseline rather than random. See `designs/ai_v5/impl_step2_bc.md`.
 
-- A **log reader** that instantiates a `Battle` and replays log lines through
-  `parse_message` / `won_by` / `tied`, producing the sequence of battle states.
-- A **label extractor** that reads the `|move|` / `|switch|` lines to determine what
-  action each player took on each turn, maps those to the RL action space (via
-  `Gen3ActionMapper`), and aligns them with the observation vector at that turn.
-- An **observation reconstructor** that runs `Gen3ObservationEncoder` on each replayed
-  `Battle` state to produce the float32 obs vectors.
-
-Key challenge: the spectated log is from the spectator's perspective (public channel),
-so the opponent's moves are visible but the `|request|` JSON (which lists available
-moves with PP) is absent. The observation will be missing the `prev_mask` and exact PP
-values for the player whose turn it is. Decide whether to:
-  - Skip turns where the acting player's exact options are unknown, or
-  - Synthesise a best-effort mask from the known moveset.
+**Design questions to resolve:**
+- **Mask synthesis**: spectated logs lack `|request|` JSON (no PP data). Options: skip
+  turns where exact options are unknown, or synthesise a best-effort mask from the known
+  moveset and infer PP from move-use history.
+- **Class imbalance**: switch actions are far less frequent than move actions — weighted
+  sampling or focal loss needed.
+- **Stopping criterion**: monitor validation loss to avoid mode collapse (overfit to the
+  most common move). Early stopping when val loss plateaus or rises.
 
 ---
 
-## Step 3 — Behavioural Cloning Pre-training
+## Step 3 — Team Completion Model
 
-Pre-train (or fine-tune) the PPO policy network on the (obs, action) pairs from Step 2
-using a supervised cross-entropy loss before handing off to RL. Goal: give the agent a
-strong prior over human move selection so RL exploration starts from a sensible baseline
-rather than random.
+A masked-slot prediction model (BERT-style) that, given the opponent's revealed Pokémon
+mid-game, outputs a distribution over the unrevealed slots. This is the world-sampling
+step for MCTS: at the start of each search trajectory, sample one complete team hypothesis
+from this distribution. See `designs/ai_v5/impl_step3_team_completion.md`.
 
-Design questions to resolve:
-- **Dataset split:** hold out a fraction of replays for validation loss tracking.
-- **Class imbalance:** switch actions are far less frequent than move actions; consider
-  weighted sampling or focal loss.
-- **Architecture compatibility:** the existing `Gen3FeaturesExtractor` + PPO policy head
-  should be usable directly; no architecture change needed.
-- **Stopping criterion:** monitor validation loss and stop before the policy collapses to
-  mode-seeking (overfit to the most common action).
+**Design questions to resolve:**
+- **Backbone freezing**: freeze the PPO role encoder + embeddings and train only the new
+  transformer head, or fine-tune the backbone jointly once the head has converged?
+- **Inference mode**: sample one hypothesis per MCTS trajectory (stochastic, diverse) vs.
+  argmax (deterministic, biased toward common teams). Stochastic is correct for PIMC.
+- **Data sources**: 770 curated teams + self-play JSONL (from `--team-log`) + scraped
+  ladder replays. Which combination is needed before MCTS quality is acceptable?
 
 ---
 
-## Step 4 — RL Fine-tuning
+## Step 4 — MCTS
 
-Resume PPO training from the BC-pre-trained checkpoint. The pre-trained prior should
-reduce the number of steps needed to reach competency against the heuristic opponent,
-and may push the ceiling higher.
+Perfect Information Monte Carlo (PIMC) search using the trained policy and value networks.
+At the start of each trajectory, sample one complete team hypothesis from the team
+completion model (Step 3); run the search in that fully-observed world. Aggregate across
+trajectories to select the best action under uncertainty.
+See `designs/ai_v5/impl_step4_mcts.md`.
 
-Metrics to watch vs. a cold-start RL baseline:
-- Win rate vs. `RandomPlayer` at 100K steps
-- Win rate vs. `MaxDamagePlayer` at 500K steps
-- Entropy collapse rate (BC pre-training can over-reduce entropy — watch `ent_coef` tuning)
+**Design questions to resolve:**
+- **Rollout policy**: use the full neural net (slow, high quality) or a lightweight clone
+  (fast, lower quality)? Full net is simpler; a distilled policy is faster for deep search.
+- **Parallelism**: 20 workers × 10 rollouts per sync cycle (per the reference paper). How
+  much of the 10-second decision clock survives after poke-env WebSocket latency?
+- **Value head**: MCTS needs a value estimate at leaf nodes. The current PPO network has a
+  value head — verify it produces useful estimates before search, or add a short value
+  fine-tuning step after BC.
