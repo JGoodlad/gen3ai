@@ -24,6 +24,7 @@ from poke_env.ps_client.server_configuration import ServerConfiguration
 
 BattleMessageCallback = Callable[[List[List[str]]], Awaitable[None]]
 ChallengeCallback = Callable[[List[str]], Awaitable[None]]
+QueryResponseCallback = Callable[[List[str]], Awaitable[None]]
 
 
 async def _noop_battle_message(split_messages: List[List[str]]) -> None:
@@ -52,6 +53,7 @@ class PSClient:
         on_battle_message: Optional[BattleMessageCallback] = None,
         on_update_challenges: Optional[ChallengeCallback] = None,
         on_challenge_request: Optional[ChallengeCallback] = None,
+        on_query_response: Optional[QueryResponseCallback] = None,
         server_configuration: ServerConfiguration,
         start_listening: bool = True,
         open_timeout: Optional[float] = 10.0,
@@ -98,6 +100,7 @@ class PSClient:
         self._on_battle_message = on_battle_message or _noop_battle_message
         self._on_update_challenges = on_update_challenges or _noop_challenge_message
         self._on_challenge_request = on_challenge_request or _noop_challenge_message
+        self._on_query_response = on_query_response or _noop_challenge_message
 
         self.loop = loop
         self._logged_in: asyncio.Event = create_in_poke_loop(asyncio.Event, loop)
@@ -201,15 +204,32 @@ class PSClient:
                         if msg_type == "challstr":
                             await self.log_in(split_message)
                         elif msg_type == "updateuser":
-                            if split_message[2].strip() in [self.username, self.username + "@!"]:
+                            received_name = split_message[2].strip()
+                            if received_name in [self.username, self.username + "@!"]:
+                                self.logged_in.set()
+                            elif received_name.startswith("Guest ") and not self._account_configuration.password:
+                                # Server assigned a guest name — no login needed, connection is ready
                                 self.logged_in.set()
                         elif "updatechallenges" in msg_type:
                             await self._update_challenges(split_message)
+                        elif msg_type == "queryresponse":
+                            await self._on_query_response(split_message)
                         elif msg_type == "pm":
                             if len(split_message) > 4 and split_message[4].startswith("/challenge"):
                                 await self._handle_challenge_request(split_message)
                             else:
                                 self.logger.info("Received PM: %s", "|".join(split_message))
+                        elif msg_type == "nametaken":
+                            # The server rejected our chosen name (e.g. it is a registered
+                            # account and we provided no auth token). We still have a working
+                            # guest connection under the server-assigned "Guest XXXXX" name,
+                            # which is sufficient for read-only operations like spectating.
+                            self.logger.warning(
+                                "Name '%s' rejected (%s) — continuing as guest",
+                                split_message[2] if len(split_message) > 2 else "?",
+                                split_message[3] if len(split_message) > 3 else "",
+                            )
+                            self.logged_in.set()
                         elif msg_type == "popup":
                             self.logger.warning("Popup message received: %s", "|".join(split_message))
 
@@ -286,6 +306,9 @@ class PSClient:
         :param split_message: Message received from the server that triggers logging in.
         :type split_message: List[str]
         """
+        if not self.account_configuration.username:
+            # No username requested — stay as the server-assigned guest (already logged in).
+            return
         if self.account_configuration.password:
             log_in_request = requests.post(
                 self.server_configuration.authentication_url,

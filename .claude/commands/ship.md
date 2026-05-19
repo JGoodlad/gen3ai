@@ -1,5 +1,5 @@
 ---
-description: Commit all current changes and push to main (both remote and local). Takes an optional commit message as an argument — if not provided, ask the user for one. Always handles the rebase-before-push flow automatically.
+description: Commit all current changes and push to main (both remote and local). Takes an optional commit message as an argument — if not provided, pick one yourself based on the diff. Always handles the rebase-before-push flow automatically.
 ---
 
 # /ship
@@ -21,10 +21,10 @@ If the working tree is clean and nothing is staged, tell the user there's nothin
 
 If the user provided a message as an argument to `/ship`, use it directly (skip to step 3).
 
-Otherwise, show a one-line summary of what changed (from `git status`) and ask:
-> What's the commit message? (e.g. `fix(env): correct worktree symlink instructions`)
-
-Follow conventional commits: `type(scope): description` where type is one of `feat`, `fix`, `refactor`, `chore`, `docs`, `test`. Scope is optional but encouraged. If the user gives you a bare description without a prefix, pick the right type yourself and confirm.
+Otherwise, pick one yourself based on the diff — do not ask. Follow conventional commits:
+`type(scope): description` where type is one of `feat`, `fix`, `refactor`, `chore`, `docs`, `test`.
+Scope is optional but encouraged. Choose the type that best fits the dominant change.
+State the chosen message in your response before committing.
 
 ### 3. Stage and commit
 

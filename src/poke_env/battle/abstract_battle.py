@@ -64,6 +64,9 @@ class AbstractBattle(ABC):
         "upkeep",
         "uhtml",
         "zbroken",
+        # Timestamp lines injected by the server when replaying scrollback
+        ":",
+        "t:",
         "",
     }
 
