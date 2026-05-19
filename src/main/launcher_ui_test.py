@@ -22,6 +22,7 @@ def _snap(**kwargs) -> LauncherSnapshot:
         log_lines=[],
         events=[],
         initial_git_hash="abc1234",
+        run_dir=None,
     )
     defaults.update(kwargs)
     return LauncherSnapshot(**defaults)

@@ -1,5 +1,6 @@
 """Pure rendering logic for the training launcher TUI."""
 
+import os
 import time
 
 import rich.box
@@ -76,6 +77,7 @@ class LauncherUI:
         row1.add_row(pid_str, run_str, elapsed_str, restart_str)
 
         git = self._git_badge(snap)
+        model_badge = self._model_badge(snap)
         highlights = []
         if (steps := snap.metrics.get("time/total_timesteps")) is not None:
             highlights.append(f"steps [bold]{_fmt_val(steps)}[/bold]")
@@ -88,7 +90,7 @@ class LauncherUI:
 
         row2 = Table.grid(padding=(0, 1), expand=True)
         row2.add_column()
-        row2.add_row(f"  {git}  │  {hl}")
+        row2.add_row(f"  {git}  │  {model_badge}  │  {hl}")
 
         metrics_panel = self._render_metrics_table(snap.metrics, snap.metrics_ts, now)
         log_text = self._render_log_lines(snap.log_lines, n=6)
@@ -130,6 +132,11 @@ class LauncherUI:
         if not h:
             return "[dim]git: unknown[/dim]"
         return f"[green]📌 {h[:8]}[/green]"
+
+    def _model_badge(self, snap: LauncherSnapshot) -> str:
+        if not snap.run_dir:
+            return "[dim]model: —[/dim]"
+        return f"[magenta]🗂  {os.path.basename(snap.run_dir)}[/magenta]"
 
     def _render_metrics_table(self, metrics: dict, metrics_ts, now: float):
         tbl = Table(

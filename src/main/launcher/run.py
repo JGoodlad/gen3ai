@@ -97,6 +97,8 @@ def run(child_args: list, interval_hours: float, pin: bool = True) -> None:
     else:
         run_dir = None  # resolved from checkpoint path after first child exits
 
+    state.run_dir = run_dir
+
     cmd_q: queue.Queue = queue.Queue()
     _setup_raw_input()
     threading.Thread(target=_read_keys, args=(cmd_q,), daemon=True).start()
@@ -212,6 +214,7 @@ def run(child_args: list, interval_hours: float, pin: bool = True) -> None:
 
             run_dir = os.path.dirname(os.path.abspath(checkpoint))
             _run_dir_box[0] = run_dir
+            state.run_dir = run_dir
             state.add_event(f"✅ Restarting from {os.path.basename(checkpoint)}")
             child_args = _insert_or_replace_model_arg(child_args, checkpoint)
             child_args = _insert_or_replace_run_dir_arg(child_args, run_dir)

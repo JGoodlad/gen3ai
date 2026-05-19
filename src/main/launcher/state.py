@@ -21,6 +21,7 @@ class LauncherSnapshot:
     log_lines: list            # recent child stdout lines
     events: list               # launcher event strings (timestamped)
     initial_git_hash: Optional[str]
+    run_dir: Optional[str]     # current checkpoint output directory
 
 
 class LauncherState:
@@ -38,6 +39,7 @@ class LauncherState:
         self.restart_count: int = 0
         self.view_mode: str = "dashboard"
         self.initial_git_hash: Optional[str] = None
+        self.run_dir: Optional[str] = None
 
     def add_log(self, line: str) -> None:
         with self._lock:
@@ -73,4 +75,5 @@ class LauncherState:
                 log_lines=list(self._log_lines),
                 events=list(self._events),
                 initial_git_hash=self.initial_git_hash,
+                run_dir=self.run_dir,
             )
