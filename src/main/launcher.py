@@ -170,6 +170,16 @@ def _create_run_worktree(git_hash: str) -> "tuple[str, str, callable]":
 
 # ── Exit summary ─────────────────────────────────────────────────────────────
 
+def _print_crash_log(log_lines: "list | None") -> None:
+    """Dump captured child output to stderr after the Live screen has closed."""
+    if not log_lines:
+        return
+    print("\n── Child output (last 100 lines) ─────────────────────────────", file=sys.stderr)
+    for line in log_lines[-100:]:
+        print(line, file=sys.stderr)
+    print("──────────────────────────────────────────────────────────────", file=sys.stderr)
+
+
 def _print_exit_summary(run_dir: "str | None", state: LauncherState) -> None:
     snap = state.snapshot()
     lines = ["", "── Training session ended ──────────────────────────────────────"]
@@ -474,7 +484,8 @@ def run(child_args: list, interval_hours: float, pin: bool = True) -> None:
             if proc.returncode != 0:
                 state.add_event(f"🛑 Child crashed (exit {proc.returncode}) — not restarting")
                 live.update(ui.render(state.snapshot(), live.console.height))
-                time.sleep(2)
+                time.sleep(2)  # drain stdout reader thread before capturing log
+                atexit.register(_print_crash_log, state.snapshot().log_lines)
                 sys.exit(proc.returncode)
 
             if flags.quit_requested:
