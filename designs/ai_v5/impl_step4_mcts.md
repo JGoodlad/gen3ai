@@ -70,10 +70,60 @@ A rollout terminates when:
 - The game reaches a **terminal state** (`battle.finished`) — value is `+1`, `-1`, or `0`
 - The rollout reaches a **leaf node** (a state not yet recorded in the tree) — value is
   `V_θ(sT)` from the critic head; the leaf is then added to the tree
+- The rollout reaches `max_depth` turns — value is `V_θ(sT)`
 
 Leaf termination is what makes MCTS tractable without running every rollout to completion.
-A `max_depth` cap (default 20) is a practical guard against very long rollouts, but the
-primary termination is hitting a leaf node.
+`max_depth` is a first-class hyperparameter — see Stochasticity below.
+
+### Stochasticity and max_depth
+
+Gen 3 OU has meaningful per-turn randomness: damage rolls (±7.5%), critical hits
+(~6.25%), miss chances (Thunder 30%, Blizzard 30%, Fire Blast 15%), and variable sleep
+duration. This creates a problem specific to stochastic MCTS:
+
+**A crit or miss early in a rollout doesn't just add noise to that Q estimate — it
+creates a different game state that all subsequent turns evaluate from.** A crit on turn 2
+might leave the opponent at 30% HP instead of 70%. The rollout then plays out from that
+atypically favourable position, backing up an inflated value into `Q[root, a]`. With only
+~50–100 rollouts per action at a 1000-rollout budget, these rare-event branches can
+dominate the Q estimate rather than average out.
+
+**The key insight**: `V_θ(s)` is a better leaf estimator than a short noisy rollout.
+V_θ was trained on thousands of games where all random events occurred at their base
+rates — it already implicitly prices in expected crit rates, miss rates, and damage
+variance. A depth-3 rollout that happened to crit on turn 1 is a worse estimate of
+"expected value from here" than V_θ(s) computed at the root.
+
+This means **shallower depth may outperform deeper depth** in this format:
+
+| `max_depth` | Variance source | Leaf estimator |
+|-------------|----------------|----------------|
+| 20 | Accumulated over many turns — crits compound | V_θ is a small contributor |
+| 5 | 1–2 crit opportunities | V_θ handles 95%+ of the evaluation |
+| 3 | Negligible RNG accumulation | Nearly pure V_θ with action lookahead |
+
+The primary benefit of MCTS in Gen 3 OU is not "averaging over 20 turns of random
+outcomes" — it is "seeing that a switch now leads to a favourable type matchup 3 turns
+out". That insight is visible at depth 3–5, without accumulating the variance of a long
+rollout.
+
+**Recommended tuning order:**
+1. Start with `max_depth=5`. Profile win rate vs. raw PPO policy.
+2. Try `max_depth=3` and `max_depth=8`. Pick the highest-performing depth.
+3. Do not increase depth to chase the Wang 2024 reference value of 20 — that target was
+   for Random Battles, a format with more diverse sets where longer lookahead matters more.
+
+**PRNG seed per rollout**: When `sim_bridge.js` restores a battle state via
+`Battle.fromJSON()`, it must reinitialise the PRNG with a fresh random seed rather than
+restoring the serialised seed. If the same seed is restored across rollouts, all rollouts
+that take the same first action see identical damage rolls and crit outcomes on turn 1 —
+this biases Q toward one RNG draw instead of the expected value. One line in the bridge:
+
+```js
+const battle = Battle.fromJSON(state);
+battle.prng = new PRNG();  // fresh seed — do not restore serialised PRNG
+battle.restart(send);
+```
 
 ### Opponent Modeling
 
@@ -336,11 +386,22 @@ existing `action_to_order()` and Showdown communication logic are unchanged.
    hypotheses across 100 trajectories on a turn where 3 opponent slots are unrevealed.
    Confirm the hypotheses are diverse (not all identical) and all 6 slots are populated.
 
-4. **Time budget**: on the dev machine, measure rollouts-per-second with 20 workers.
-   Target ≥ 100 rollouts/second to reach 1000 rollouts in 10 seconds. If below target,
-   profile first before reducing `max_depth` (depth reduction is a last resort).
+4. **PRNG independence**: run 200 rollouts from the same root state with the same first
+   action. Plot the distribution of leaf values — it should be spread across [−1, +1]
+   rather than tightly clustered. A tight cluster indicates the PRNG seed is being
+   restored rather than randomised; check `sim_bridge.js`.
 
-5. **Win rate**: MCTSPlayer vs. the best league agent from ai_v4. MCTS should improve
+5. **max_depth ablation**: run 50-game evaluations at `max_depth` ∈ {3, 5, 8, 20} vs.
+   the top league snapshot. Plot win rate vs. depth. Expect a peak somewhere in 3–8;
+   if depth-20 wins, the value head may be undertrained. Do this before locking in a
+   default depth — it is the single highest-leverage hyperparameter for variance control.
+
+6. **Time budget**: on the dev machine, measure rollouts-per-second with 20 workers at
+   the chosen `max_depth`. Target ≥ 100 rollouts/second to reach 1000 rollouts in 10
+   seconds. Shallower depth also helps here — depth-5 rollouts are ~4× faster than
+   depth-20 rollouts, allowing 4× more rollouts in the same time budget.
+
+7. **Win rate**: MCTSPlayer vs. the best league agent from ai_v4. MCTS should improve
    win rate by ≥ 5 percentage points over the raw PPO policy at the same checkpoint.
    A smaller or zero gain suggests the value head is noisy and may need fine-tuning.
 
