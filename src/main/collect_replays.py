@@ -145,12 +145,15 @@ def render_dashboard(
         now = time.time()
         for tag, battle in sorted(active.items()):
             num = _room_num(tag)
-            p1 = battle.players.get("p1", "…")
-            p2 = battle.players.get("p2", "…")
+            p = battle.players
+            if p:
+                players_str = f"{p.get('p1', '?')} vs {p.get('p2', '?')}"
+            else:
+                players_str = "[dim]loading…[/dim]"
             age = now - battle.joined_at
-            turn_str = f"[bold]{battle.turn}[/bold]" if battle.turn > 0 else "[dim]init[/dim]"
+            turn_str = f"[bold]{battle.turn}[/bold]" if battle.turn > 0 else "[dim]--[/dim]"
             age_str = f"[dim]{_elapsed_str(age)}[/dim]"
-            active_tbl.add_row(f"[cyan]#{num}[/cyan]  {age_str}", turn_str, f"{p1} vs {p2}")
+            active_tbl.add_row(f"[cyan]#{num}[/cyan]  {age_str}", turn_str, players_str)
     else:
         active_tbl.add_row("[dim]—[/dim]", "[dim]—[/dim]", "[dim]connecting…[/dim]")
 
@@ -225,7 +228,7 @@ def main() -> None:
     )
 
     try:
-        with Live(refresh_per_second=2, screen=False, transient=False) as live:
+        with Live(refresh_per_second=2, screen=True) as live:
             while True:
                 live.update(render_dashboard(spectator, state, args.format, save_dir, args.max_concurrent))
                 time.sleep(0.5)

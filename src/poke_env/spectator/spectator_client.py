@@ -58,11 +58,12 @@ class BattleSpectator:
 
         self._client: Optional[PSClient] = None
         self._active: Dict[str, SpectatedBattle] = {}
-        self._seen: Set[str] = set()       # preserved across reconnects
+        self._seen: Set[str] = set()           # preserved across reconnects
+        self._finished_tags: Set[str] = set()  # reset per session; prevents ghost re-creation
         self._pending: Optional[Queue] = None
         self._done: Optional[Queue] = None
         self._format_id: str = ""
-        self._total_joined: int = 0        # preserved across reconnects
+        self._total_joined: int = 0            # preserved across reconnects
 
     # ------------------------------------------------------------------
     # Public API
@@ -99,6 +100,7 @@ class BattleSpectator:
         Raises on disconnect so watch() can reconnect.
         """
         self._active = {}
+        self._finished_tags = set()
         self._pending = Queue()
         self._done = Queue()
         self._format_id = format_id
@@ -201,6 +203,8 @@ class BattleSpectator:
         if not battle_tag.startswith("battle-"):
             return
 
+        if battle_tag in self._finished_tags:
+            return  # ignore late server messages after we've already finished this room
         if battle_tag not in self._active:
             self._active[battle_tag] = SpectatedBattle(battle_tag)
 
@@ -224,6 +228,7 @@ class BattleSpectator:
 
     async def _finish_battle(self, battle_tag: str, battle: SpectatedBattle) -> None:
         await self._client.send_message(f"/leave {battle_tag}")
+        self._finished_tags.add(battle_tag)
         del self._active[battle_tag]
         await self._done.put(battle)
         self._logger.info(
