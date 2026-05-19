@@ -403,7 +403,7 @@ async def main():
             os._exit(1)
         model.ent_coef = args.ent_coef
         model.lr_schedule = lambda _: args.lr   # adaptive_lr_callback takes over from here
-        model.clip_range = lambda _: 0.15
+        model.clip_range = lambda _: 0.20
 
         if args.eval_only:
             await evaluate_model_random(model)

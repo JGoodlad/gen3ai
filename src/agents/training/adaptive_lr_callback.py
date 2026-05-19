@@ -26,7 +26,7 @@ class AdaptiveLRCallback(BaseCallback):
         initial_lr: float,
         target_kl: float = 0.015,
         kl_tolerance: float = 0.3,
-        lr_factor: float = 1.5,
+        lr_factor: float = 1.2,
         min_lr: float = 1e-5,
         max_lr: float | None = None,
         verbose: int = 1,
