@@ -1,10 +1,11 @@
 # Implementation: Step 4 — MCTS
 
-This step adds Perfect Information Monte Carlo (PIMC) search on top of the trained
-policy and value networks. At the start of each search trajectory, the team completion
-model samples one complete team hypothesis for the opponent's unrevealed slots; the
-trajectory runs in that fully-observed world. Visit counts across trajectories aggregate
-over the uncertainty, producing an action selection that is optimal in expectation.
+This step adds Monte Carlo Tree Search on top of the trained policy and value networks,
+used purely at **inference time** as a policy improvement operator. The neural network is
+trained entirely via PPO self-play (v3/v4); MCTS is never used to generate training data.
+At the start of each search trajectory, the team completion model samples one complete
+team hypothesis for the opponent's unrevealed slots; the trajectory runs in that
+fully-observed world using Pokémon Showdown as the game simulator.
 
 ## Motivation
 
@@ -15,44 +16,64 @@ later changes the current move choice. MCTS provides this lookahead by simulatin
 trajectories through the game tree using the policy and value networks as heuristics,
 without requiring the agent to store an explicit model of multi-turn dynamics.
 
-The reference implementation (Huang et al., Gen 4 Random Battles) achieved 1000–2000
-rollouts within the 10-second per-turn decision limit using 20 parallel workers. Gen 3 OU
-has a more constrained action space than Gen 4 (fewer legal switches mid-game due to
-fixed teams) which may allow deeper search at the same rollout budget.
+**Why not use MCTS during training?** Pokémon Showdown environment stepping is the
+bottleneck — each rollout takes ~10ms of env stepping vs. negligible GPU inference. Using
+MCTS to generate training data would reduce sample throughput by ~1000× (one rollout per
+training step instead of one step). With 150M training steps needed, this is not feasible.
+The paper (Wang 2024) made this explicit: *"simulating the environment is very slow,
+compared to a game like chess; generating gameplay using MCTS would not likely lead to
+enough samples for a neural network to converge."*
+
+The reference implementation achieved 1000–2000 rollouts within the 10-second per-turn
+decision limit using 20 parallel workers. Gen 3 OU has a more constrained action space
+than Gen 4 (fewer legal switches mid-game due to fixed teams) which may allow deeper
+search at the same rollout budget.
 
 ---
 
 ## Algorithm
 
-### PUCT Selection
+### Tree Policy
 
-At each node in the search tree, select the action maximising:
+At each node, select the action maximising (Wang 2024, eq. 2.3):
 
 ```
-PUCT(s, a) = Q[s, a] + c_puct × P[s, a] × sqrt(N[s]) / (1 + N[s, a])
+at = argmax_a ( Q[s, a] + α · U(s, a) )
+
+where U(s, a) = P[s, a]^β · sqrt(M[s]) / (N[s, a] + 1)
 ```
 
-Where:
-- `Q[s, a]` — empirical mean return from taking action `a` in state `s` (updated after each rollout)
-- `P[s, a]` — neural network policy prior (probability of choosing `a` in state `s`)
-- `N[s]` — total visit count for state `s`
-- `N[s, a]` — visit count for the specific `(s, a)` pair
-- `c_puct` — exploration constant (default 1.5; tune based on rollout depth)
+| Symbol | Meaning |
+|--------|---------|
+| `Q[s, a]` | Empirical mean return from taking action `a` in state `s` |
+| `P[s, a]` | Neural network policy prior `π_θ(a \| s)` |
+| `M[s]` | Total visit count for state `s` (incremented once per rollout visit) |
+| `N[s, a]` | Visit count for `(s, a)` (incremented once per selection) |
+| `α ∈ [0, 1]` | Exploration weight — how much to value the exploration bonus |
+| `β ∈ [0, 1]` | Policy trust — how closely to follow the prior vs. treat actions uniformly |
 
-`P[s, a]` is computed once per node on first visit, cached for the lifetime of the search.
-It is **not** sent between workers (recomputed locally — cheap relative to env stepping).
+`β = 1` recovers standard PUCT (full trust in prior); `β = 0` ignores the prior and
+explores uniformly. Both are hyperparameters to tune.
+
+`P[s, a]` is computed once per node on first visit and **never synced between workers**
+— it is recomputed locally by each worker on demand. Recomputation is cheap (one forward
+pass) relative to env stepping, and sending 11-element distributions across processes is
+more expensive than recomputing them.
 
 ### Rollout Policy
 
-Rather than rolling out to terminal state with a random policy, use the trained neural
-network policy for all rollout moves. This produces far more realistic game trajectories
-and reduces the variance of the value estimate at the cost of a GPU forward pass per turn.
-At the leaf node, the value head provides a scalar estimate without completing the game.
+All rollout moves (both our side and opponent) are selected by the trained neural network
+policy from the respective player's observation. This produces realistic game trajectories
+and avoids the high-variance returns of random rollouts.
 
-The rollout terminates when:
-- The game reaches a terminal state (`battle.finished`), or
-- Rollout depth exceeds `max_depth` (default 20 turns — beyond this, the value head is
-  used as a terminal estimate regardless)
+A rollout terminates when:
+- The game reaches a **terminal state** (`battle.finished`) — value is `+1`, `-1`, or `0`
+- The rollout reaches a **leaf node** (a state not yet recorded in the tree) — value is
+  `V_θ(sT)` from the critic head; the leaf is then added to the tree
+
+Leaf termination is what makes MCTS tractable without running every rollout to completion.
+A `max_depth` cap (default 20) is a practical guard against very long rollouts, but the
+primary termination is hitting a leaf node.
 
 ### Opponent Modeling
 
@@ -65,18 +86,38 @@ post-v5 research question.
 
 ### State Representation
 
-The tree is stored as four dictionaries keyed by state hash:
+The tree is stored as five dictionaries keyed by state hash:
 
 | Dict | Type | Content |
 |------|------|---------|
-| `Q[s, a]` | `float` | Mean return from `(s, a)` |
-| `N[s, a]` | `int` | Visit count for `(s, a)` |
-| `N[s]` | `int` | Total visit count for `s` |
-| `P[s, a]` | `float` | Neural network prior for `(s, a)` (cached on first visit) |
+| `Q[s, a]` | `float` | Empirical mean return from `(s, a)` |
+| `N[s, a]` | `int` | Number of times action `a` was taken from state `s` |
+| `M[s]` | `int` | Number of times state `s` was visited (= `Σ_a N[s,a]`) |
+| `P[s, a]` | `float` | Neural network prior (cached per node, not synced between workers) |
 | `F[s]` | `int` | Total fainted Pokémon count in state `s` |
 
 State hash: hash of `(battle_tag, turn, our_team_hp_vector, opp_team_hp_vector, active_species_pair)`.
 Avoid hashing the full observation — it is slow and unnecessary.
+
+### Backup Rules
+
+When a rollout ends at state `sT` with value `v` (either `±1/0` for terminal, or
+`V_θ(sT)` for a leaf), apply for each `(st, at)` along the rollout path:
+
+```python
+Q[st, at] = (N[st, at] * Q[st, at] + v) / (N[st, at] + 1)
+N[st, at] += 1
+M[st]     += 1
+```
+
+After all rollouts, select the action with the highest visit count from the root:
+
+```python
+a* = argmax_a N[s0, a]
+```
+
+Max visit count rather than max Q — less-visited actions have higher variance in their
+Q estimates, so visit count is the more robust selection criterion at the root.
 
 ### Tree Pruning
 
@@ -184,7 +225,7 @@ existing `action_to_order()` and Showdown communication logic are unchanged.
 
 | File | Purpose |
 |------|---------|
-| `src/agents/mcts/tree.py` | `MCTSTree` — Q, N, P, F dicts; PUCT selection; tree pruning |
+| `src/agents/mcts/tree.py` | `MCTSTree` — Q, N, M, P, F dicts; tree policy (α, β); backup; pruning |
 | `src/agents/mcts/rollout.py` | Single trajectory: hidden-info sampling, env stepping, value backup |
 | `src/agents/mcts/worker.py` | Worker process: run 10 rollouts, send tree to aggregator |
 | `src/agents/mcts/aggregator.py` | Aggregator process: merge worker trees, broadcast master |

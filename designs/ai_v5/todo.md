@@ -54,17 +54,17 @@ from this distribution. See `designs/ai_v5/impl_step3_team_completion.md`.
 
 ## Step 4 — MCTS
 
-Perfect Information Monte Carlo (PIMC) search using the trained policy and value networks.
-At the start of each trajectory, sample one complete team hypothesis from the team
-completion model (Step 3); run the search in that fully-observed world. Aggregate across
-trajectories to select the best action under uncertainty.
-See `designs/ai_v5/impl_step4_mcts.md`.
+MCTS used at **inference time only** as a policy improvement operator on top of the
+trained PPO network. The neural network is never used to generate MCTS training data —
+environment stepping is the rollout bottleneck (~10ms per step), making MCTS-based data
+generation ~1000× too slow to collect 150M training steps. Following Wang (2024) exactly:
+20 workers, 10 rollouts per sync cycle, Showdown as the game simulator, policy+value
+networks for action selection and leaf evaluation, team completion model for hidden info
+sampling. See `designs/ai_v5/impl_step4_mcts.md`.
 
 **Design questions to resolve:**
-- **Rollout policy**: use the full neural net (slow, high quality) or a lightweight clone
-  (fast, lower quality)? Full net is simpler; a distilled policy is faster for deep search.
-- **Parallelism**: 20 workers × 10 rollouts per sync cycle (per the reference paper). How
-  much of the 10-second decision clock survives after poke-env WebSocket latency?
-- **Value head**: MCTS needs a value estimate at leaf nodes. The current PPO network has a
-  value head — verify it produces useful estimates before search, or add a short value
-  fine-tuning step after BC.
+- **α and β hyperparameters**: control exploration weight and policy trust in the tree
+  policy `U(s,a) = P[s,a]^β · sqrt(M[s]) / (N[s,a] + 1)`. Tune on a held-out set of
+  games; start with α=1.0, β=1.0 (standard PUCT) and ablate.
+- **Parallelism**: 20 workers × 10 rollouts per sync cycle. How much of the 10-second
+  decision clock survives after poke-env WebSocket latency on our hardware?
