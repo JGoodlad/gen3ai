@@ -16,6 +16,17 @@ for d in [root_dir, src_dir, main_dir]:
     if d not in sys.path:
         sys.path.insert(0, d)
 
+# Use the git repo root (cwd-based) so TB logs always land in the main repo,
+# even when the launcher pins this script to a tmp worktree.
+try:
+    import subprocess as _sp
+    _repo_root = _sp.check_output(
+        ["git", "rev-parse", "--show-toplevel"], text=True, stderr=_sp.DEVNULL
+    ).strip()
+except Exception:
+    _repo_root = root_dir
+tensorboard_dir = os.path.join(_repo_root, "tensorboard")
+
 import asyncio
 import random
 import argparse
@@ -397,7 +408,7 @@ async def main():
                 env=env,
                 current_version=current_version,
                 device=args.device,
-                tensorboard_log=os.path.join(root_dir, "tensorboard"),
+                tensorboard_log=tensorboard_dir,
             )
         except ModelVersionError as e:
             print(f"\n[ModelVersion] FATAL: {e}")
@@ -491,7 +502,7 @@ async def main():
             ent_coef=args.ent_coef,
             device=args.device,
             seed=args.seed,
-            tensorboard_log=os.path.join(root_dir, "tensorboard"),
+            tensorboard_log=tensorboard_dir,
             policy_kwargs=policy_kwargs
         )
 
