@@ -74,23 +74,72 @@ Same IP as `proxy.g5d.io` — the GCP VM handles both.
 
 ---
 
-## Security
+## Security model
 
-- **Port 2222** is publicly reachable but the local sshd is **key-only** —
-  no password brute-force is possible
-- **GCP VM sshd** (`/etc/ssh/sshd_config.d/99-hardened.conf`):
-  `PasswordAuthentication no`, `GatewayPorts yes`
-- **Local sshd** (`/etc/ssh/sshd_config.d/99-hardened.conf`):
-  `PasswordAuthentication no` — run once to apply:
-  ```bash
-  sudo tee /etc/ssh/sshd_config.d/99-hardened.conf <<'EOF'
-  PasswordAuthentication no
-  PubkeyAuthentication yes
-  EOF
-  sudo sshd -t && sudo systemctl reload ssh
-  ```
-- **Authorized keys**: only keys in `~/.ssh/authorized_keys` on the local machine
-  can connect. Currently includes `gcp_proxy` key.
+| Connection source | Auth allowed |
+|---|---|
+| Local network (`192.168.x`, `10.x`, `172.16.x`) | Password **or** key |
+| External via tunnel (appears as `127.0.0.1`) | Key only |
+
+This means you can always add a new device from your home network using just a password,
+but external access always requires a key — no brute-force possible remotely.
+
+### Local sshd config (`/etc/ssh/sshd_config.d/99-hardened.conf`)
+
+```
+# Default: key only
+PasswordAuthentication no
+PubkeyAuthentication yes
+
+# Local network: also allow password (for adding new devices)
+Match Address 192.168.0.0/16,10.0.0.0/8,172.16.0.0/12
+    PasswordAuthentication yes
+```
+
+To apply changes after editing:
+```bash
+sudo sshd -t && sudo systemctl daemon-reload && sudo systemctl reload ssh
+```
+
+### GCP VM sshd (`/etc/ssh/sshd_config.d/99-hardened.conf` on proxy.g5d.io)
+
+```
+GatewayPorts yes
+PasswordAuthentication no
+PubkeyAuthentication yes
+```
+
+### Authorized keys
+
+`~/.ssh/authorized_keys` on the desktop currently contains:
+- `gcp_proxy` key (for the reverse tunnel and remote connections)
+- MacBook Air key
+
+---
+
+## Adding a new device
+
+**From the local network** (easiest — no existing key needed):
+
+1. On the new device, generate a key if you don't have one:
+   ```bash
+   ssh-keygen -t ed25519 -C "device-name"
+   cat ~/.ssh/id_ed25519.pub
+   ```
+2. SSH to the desktop with your password (works on local network):
+   ```bash
+   ssh goodlad@goodlad-desktop.local
+   ```
+3. Add the new key:
+   ```bash
+   echo "ssh-ed25519 AAAA...newkey..." >> ~/.ssh/authorized_keys
+   ```
+
+The new device can now connect externally via `ssh -p 2222 goodlad@workstation.g5d.io` key-only.
+
+**From outside** (if you already have another authorized device):
+
+SSH in from an authorized device and add the new key to `~/.ssh/authorized_keys` as above.
 
 ---
 
