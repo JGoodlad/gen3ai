@@ -47,7 +47,19 @@ If there are commits, rebase:
 git rebase origin/main
 ```
 
-If the rebase hits a conflict, stop and tell the user clearly which files conflict. Do not attempt to resolve conflicts automatically.
+**If the rebase hits a conflict**, do NOT blindly take one side. For each conflicted file:
+
+1. Read both versions (`git diff` / inspect the conflict markers).
+2. Understand *why* each side changed — look at the commit messages for context.
+3. Produce a merged result that preserves the intent of both changes.
+4. If you cannot confidently merge (e.g. structural refactor vs. feature addition in the same area), stop and present the user with options:
+   - **Option A** — Take our version (describe what would be lost from theirs)
+   - **Option B** — Take their version (describe what would be lost from ours)
+   - **Option C** — Manual merge (describe what needs to be reconciled)
+   Use the multi-choice `AskUserQuestion` tool so the user can pick.
+
+Never use `git checkout --ours` or `--theirs` without first verifying the files are
+truly identical or that the discarded side has no intentional changes.
 
 ### 5. Push to remote main
 
@@ -59,10 +71,15 @@ git push origin HEAD:main
 
 The main worktree lives at `/home/goodlad/dev/gen3ai` (not the current worktree). Update it:
 ```bash
-git -C /home/goodlad/dev/gen3ai pull --ff-only
+git -C /home/goodlad/dev/gen3ai fetch origin main
+git -C /home/goodlad/dev/gen3ai merge --ff-only origin/main
 ```
 
-If this fails because local main has diverged, report it but don't treat it as a failure — remote is already updated, which is what matters for training runs.
+If the fast-forward fails because local main has diverged:
+1. Check what local main has that remote doesn't: `git -C /home/goodlad/dev/gen3ai log origin/main..HEAD --oneline`
+2. If those commits are doc-only or safe to replay, rebase local main: `git -C /home/goodlad/dev/gen3ai rebase origin/main`
+3. Then push local main: `git -C /home/goodlad/dev/gen3ai push origin main`
+4. If there are untracked files blocking the rebase, verify they match the committed version before removing them (`diff` first, then `rm`).
 
 ### 7. Confirm
 
