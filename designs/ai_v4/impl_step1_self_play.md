@@ -127,6 +127,34 @@ against its own distribution. Two mitigations:
    pinned to a fixed team). This prevents the agent from specialising against specific team
    matchups.
 
+### Reward Annealing
+
+The reward function has two categories of signals:
+
+- **Outcome signals** — HP delta, faints, win/loss: keep at full strength throughout.
+- **Guidance/shaping signals** — switch subsidies, pivot bonuses, matchup penalty, spikes,
+  status, sleep rotation, roar, repetition tax, etc.: useful early for sample efficiency,
+  but should be annealed toward zero as the agent matures.
+
+Two reasons to anneal:
+
+1. **Reward hacking**: a mature agent may optimise for shaping signals at the expense of
+   actual winning — the +0.5 switch subsidy can incentivise unnecessary switches if the
+   subsidy outweighs the positional cost.
+
+2. **V_θ calibration for MCTS** (v5): the value head must estimate expected win
+   *probability* from a given state. If trained with heavy shaping, V_θ outputs "expected
+   shaped reward," not probability — this degrades MCTS leaf evaluation quality.
+
+**Schedule**: start annealing when `eval/elo_live` has been flat for ~10M steps
+(indicating the agent has internalised the heuristics). Complete the anneal over the
+following 20M steps. For a typical 75M-step self-play run this is roughly
+`--reward-anneal-start 50000000 --reward-anneal-end 70000000`. Adjust based on when ELO
+actually plateaus — the flat-ELO trigger is the correct signal, not a fixed step count.
+
+If the self-play run ends before annealing completes, pass the same anneal range to the
+league play run so it completes naturally.
+
 ---
 
 ## Files to Create
@@ -152,12 +180,14 @@ against its own distribution. Two mitigations:
 export PYTHONPATH=$PYTHONPATH:src
 /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 src/main/train_rl_agent.py \
   --model models/v3_best.zip \
-  --steps 20000000 \
+  --steps 75000000 \
   --n-envs 64 \
   --self-play \
   --snapshot-dir models/v4_selfplay/snapshots \
   --eval-interval 500000 \
   --promote-threshold 0.65 \
+  --reward-anneal-start 50000000 \
+  --reward-anneal-end 70000000 \
   --device cuda \
   --log-level periodic
 ```
@@ -173,9 +203,10 @@ is additive — existing hyperparameters are unchanged.
    snapshot is written to `snapshots/`, the opponent loads without error, and at least one
    evaluation cycle runs.
 
-2. **ELO monotonicity**: Over a 5M-step run, `eval/elo_live` should trend upward (not
-   necessarily monotonically — short plateaus are fine). A flat ELO over 2M+ steps
-   indicates self-play has converged and league play (Step 2) is needed.
+2. **ELO monotonicity**: Over the first 20M steps, `eval/elo_live` should trend upward
+   (not necessarily monotonically — short plateaus are fine). A flat ELO over 10M+ steps
+   indicates self-play has converged and is the trigger for reward annealing (and
+   eventually league play in Step 2).
 
 3. **Win-rate calibration**: Spot-check that `eval/win_rate_vs_pool` is in [0.4, 0.8]
    for healthy training. Values persistently near 1.0 mean the pool is stale (promote
@@ -192,7 +223,7 @@ is additive — existing hyperparameters are unchanged.
 
 Step 1 is complete when:
 - The snapshot pool is growing with genuine diversity (ELOs spanning > 200 points)
-- `eval/elo_live` has been increasing for at least 10M steps
+- `eval/elo_live` has been increasing for at least 20M steps and has since plateaued (triggering reward annealing)
 - Win rate vs. `SimpleHeuristicsPlayer` (spot-checked in periodic eval) remains ≥ 80%
   — self-play should not cause regression on the baseline the agent already solved
 

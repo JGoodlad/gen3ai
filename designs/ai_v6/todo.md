@@ -29,7 +29,7 @@ team fixed for the duration. See `designs/ai_v6/impl_step2_specialisation.md`.
 - **Opponent distribution during fine-tuning**: league pool (as in v4 self-play) or the
   other two specialised teams as additional opponents? The latter adds within-stable
   coverage but risks over-fitting to the stable matchups.
-- **Run length**: 2–5M steps per team. Start at 2M; extend if win rate is still rising.
+- **Run length**: 10–15M steps per team. Start at 10M; extend if win rate is still rising.
 - **Parallelism**: the three fine-tuning runs are independent — run them concurrently on
   separate GPUs if available.
 

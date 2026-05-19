@@ -36,7 +36,7 @@ Start from the v5 MCTS checkpoint. Fine-tuning is a shorter run than generalist 
 | Parameter | Value |
 |-----------|-------|
 | Starting checkpoint | `models/v5_best.zip` |
-| Steps | 3M (extend to 5M if win rate still rising at 3M) |
+| Steps | 10M (extend to 15M if win rate still rising at 10M) |
 | `n_envs` | 32 (half of generalist — fixed team reduces variance so fewer envs needed) |
 | `lr` | 1e-4 (lower than generalist — we are sharpening, not relearning) |
 | `ent_coef` | 0.01 (lower entropy target — specialisation should reduce breadth) |
@@ -47,7 +47,7 @@ Start from the v5 MCTS checkpoint. Fine-tuning is a shorter run than generalist 
 Use the v4 league pool with PFSP sampling (same as league training). The specialised
 model should remain capable against all league members, not just the easiest ones.
 
-Optionally, after 2M steps, add the other two specialised team models (once they have
+Optionally, after 5M steps, add the other two specialised team models (once they have
 partially converged) as additional opponents at 20% weight. This trains each model to
 handle the stable's internal matchups — useful if the three teams are eventually deployed
 on the same account in rotation.
@@ -71,7 +71,7 @@ export PYTHONPATH=$PYTHONPATH:src
 /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 src/main/train_rl_agent.py \
   --model models/v5_best.zip \
   --fixed-team data/team_eval/top3/team_a.txt \
-  --steps 3000000 \
+  --steps 10000000 \
   --n-envs 32 \
   --lr 1e-4 \
   --ent-coef 0.01 \
@@ -83,7 +83,7 @@ export PYTHONPATH=$PYTHONPATH:src
 ```
 
 If three GPUs are available, launch all three simultaneously. If only one GPU, run
-sequentially (~6 hours per run at 1M steps/hour).
+sequentially (~10 hours per run at 1M steps/hour).
 
 ---
 

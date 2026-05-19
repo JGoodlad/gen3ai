@@ -197,16 +197,23 @@ checkpoint that joins the permanent league.
 export PYTHONPATH=$PYTHONPATH:src
 /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 src/main/train_league.py \
   --model models/v4_selfplay_best.zip \
-  --steps 30000000 \
+  --steps 75000000 \
   --n-envs 64 \
   --n-exploiters 2 \
   --exploit-threshold 0.70 \
-  --max-exploit-steps 3000000 \
+  --max-exploit-steps 5000000 \
   --main-fraction 0.7 \
   --pfsp-mode hard \
   --league-dir models/v4_league \
+  --reward-anneal-start 50000000 \
+  --reward-anneal-end 70000000 \
   --device cuda
 ```
+
+The anneal range matches the self-play run. The checkpoint from the end of self-play
+already has `num_timesteps ≈ 75M`, which is past the `anneal_end` of 70M — shaping is
+0.0 from the first league step. Passing the same flags is still correct; the step counter
+is global and preserved across checkpoint loads.
 
 ---
 
