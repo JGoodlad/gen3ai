@@ -453,7 +453,10 @@ def main() -> None:
         sys.exit(0)
 
     child_args = _strip_launcher_arg(sys.argv[1:])
-    run(child_args, interval_hours=known.restart_interval_hours)
+    try:
+        run(child_args, interval_hours=known.restart_interval_hours)
+    except KeyboardInterrupt:
+        sys.exit(0)
 
 
 if __name__ == "__main__":
