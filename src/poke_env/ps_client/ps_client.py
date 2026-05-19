@@ -11,7 +11,7 @@ from typing import Awaitable, Callable, List, Optional, Set
 import requests
 import websockets as ws
 from websockets import ClientConnection
-from websockets.exceptions import ConnectionClosedOK
+from websockets.exceptions import ConnectionClosedError, ConnectionClosedOK
 
 from poke_env.concurrency import (
     POKE_LOOP,
@@ -265,7 +265,7 @@ class PSClient:
                 while True:
                     try:
                         message = await websocket.recv()
-                    except ws.exceptions.ConnectionClosedOK:
+                    except (ws.exceptions.ConnectionClosedOK, ws.exceptions.ConnectionClosedError):
                         break
                     
                     message_str = str(message)
@@ -288,7 +288,7 @@ class PSClient:
                     self._active_tasks.add(task)
                     task.add_done_callback(self._active_tasks.discard)
 
-        except ConnectionClosedOK:
+        except (ConnectionClosedOK, ConnectionClosedError):
             self.logger.warning(
                 "Websocket connection with %s closed", self.websocket_url
             )

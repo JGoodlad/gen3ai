@@ -5,7 +5,6 @@ from asyncio import Queue
 from collections.abc import AsyncGenerator
 from typing import Dict, List, Optional, Set
 
-from poke_env.concurrency import POKE_LOOP, create_in_poke_loop
 from poke_env.ps_client.account_configuration import AccountConfiguration
 from poke_env.ps_client.ps_client import PSClient
 from poke_env.ps_client.server_configuration import ServerConfiguration
@@ -25,11 +24,17 @@ class BattleSpectator:
       - At most max_concurrent rooms watched simultaneously (default 10)
       - At least join_interval seconds between /join commands (default 10 s)
       - Roomlist re-queried every poll_interval seconds (default 30 s)
+
+    Reconnection:
+      - Detects dropped connections and reconnects automatically.
+      - _seen is preserved across reconnects (won't re-join old rooms).
+      - Reconnect delay is 10 s by default.
     """
 
     MAX_CONCURRENT: int = 10
     JOIN_INTERVAL: float = 10.0
     POLL_INTERVAL: float = 30.0
+    RECONNECT_DELAY: float = 10.0
 
     def __init__(
         self,
@@ -38,25 +43,26 @@ class BattleSpectator:
         max_concurrent: int = MAX_CONCURRENT,
         join_interval: float = JOIN_INTERVAL,
         poll_interval: float = POLL_INTERVAL,
+        reconnect_delay: float = RECONNECT_DELAY,
         log_level: Optional[int] = None,
     ) -> None:
         self._server_configuration = server_configuration
         self._max_concurrent = max_concurrent
         self._join_interval = join_interval
         self._poll_interval = poll_interval
+        self._reconnect_delay = reconnect_delay
 
         self._logger = logging.getLogger(__name__)
         if log_level is not None:
             self._logger.setLevel(log_level)
 
-        # Created fresh on each call to watch() so the object can be reused.
         self._client: Optional[PSClient] = None
         self._active: Dict[str, SpectatedBattle] = {}
-        self._seen: Set[str] = set()
-        self._pending: Optional[Queue] = None   # room IDs waiting to be joined
-        self._done: Optional[Queue] = None       # finished SpectatedBattle objects
+        self._seen: Set[str] = set()       # preserved across reconnects
+        self._pending: Optional[Queue] = None
+        self._done: Optional[Queue] = None
         self._format_id: str = ""
-        self._total_joined: int = 0
+        self._total_joined: int = 0        # preserved across reconnects
 
     # ------------------------------------------------------------------
     # Public API
@@ -65,22 +71,40 @@ class BattleSpectator:
     async def watch(self, format_id: str) -> AsyncGenerator[SpectatedBattle, None]:
         """
         Async generator that yields SpectatedBattle objects as battles complete.
-        Runs indefinitely until the calling task is cancelled.
+        Reconnects automatically on connection drop. Runs until cancelled.
+        """
+        while True:
+            try:
+                async for battle in self._watch_once(format_id):
+                    yield battle
+                # _watch_once returned cleanly — shouldn't happen in normal operation
+                return
+            except asyncio.CancelledError:
+                raise
+            except Exception as e:
+                self._logger.warning(
+                    "Spectator connection lost (%s: %s) — reconnecting in %.0fs",
+                    type(e).__name__, e, self._reconnect_delay,
+                )
+                self._active.clear()
+                await asyncio.sleep(self._reconnect_delay)
 
-        Must be awaited on POKE_LOOP:
-            fut = asyncio.run_coroutine_threadsafe(
-                _consume(spectator.watch("gen3ou")), POKE_LOOP
-            )
-            fut.result()
+    # ------------------------------------------------------------------
+    # Internal: single connection session
+    # ------------------------------------------------------------------
+
+    async def _watch_once(self, format_id: str) -> AsyncGenerator[SpectatedBattle, None]:
+        """
+        Single connection attempt. Yields battles until the WebSocket drops.
+        Raises on disconnect so watch() can reconnect.
         """
         self._active = {}
-        self._seen = set()
         self._pending = Queue()
         self._done = Queue()
         self._format_id = format_id
 
         self._client = PSClient(
-            AccountConfiguration("", None),  # connect as guest — server assigns "Guest XXXXX"
+            AccountConfiguration("", None),  # guest — server assigns "Guest XXXXX"
             server_configuration=self._server_configuration,
             on_battle_message=self._handle_battle_message,
             on_query_response=self._on_query_response,
@@ -94,11 +118,31 @@ class BattleSpectator:
         poll_task = asyncio.ensure_future(self._poll_loop())
         try:
             while True:
-                battle = await self._done.get()
-                yield battle
+                # Detect dropped connection: listen() coroutine has exited
+                listen_future = getattr(self._client, "_listening_coroutine", None)
+                if listen_future is not None and listen_future.done():
+                    raise ConnectionError("WebSocket listener exited — connection dropped")
+
+                # Detect background task failure (send on dead socket, etc.)
+                for task in (join_task, poll_task):
+                    if task.done() and not task.cancelled():
+                        exc = task.exception()
+                        if exc is not None:
+                            raise exc
+
+                try:
+                    battle = await asyncio.wait_for(self._done.get(), timeout=5.0)
+                    yield battle
+                except asyncio.TimeoutError:
+                    continue  # loop back to check connection health
         finally:
             join_task.cancel()
             poll_task.cancel()
+            for task in (join_task, poll_task):
+                try:
+                    await task
+                except (asyncio.CancelledError, Exception):
+                    pass
 
     # ------------------------------------------------------------------
     # Internal loops
@@ -112,7 +156,7 @@ class BattleSpectator:
             while len(self._active) >= self._max_concurrent:
                 await asyncio.sleep(1.0)
             self._logger.info("Joining %s", room_id)
-            await self._client.send_message(f"/join {room_id}")
+            await self._client.send_message(f"/join {room_id}")  # raises if connection dead
             self._total_joined += 1
             await asyncio.sleep(self._join_interval)
 
@@ -120,7 +164,7 @@ class BattleSpectator:
         """Re-query the roomlist every poll_interval seconds to find new battles."""
         while True:
             await asyncio.sleep(self._poll_interval)
-            await self._client.send_message(f"/query roomlist {self._format_id}")
+            await self._client.send_message(f"/query roomlist {self._format_id}")  # raises if dead
 
     # ------------------------------------------------------------------
     # PSClient callbacks
@@ -178,6 +222,14 @@ class BattleSpectator:
             else:
                 battle.add_lines([parts])
 
+    async def _finish_battle(self, battle_tag: str, battle: SpectatedBattle) -> None:
+        await self._client.send_message(f"/leave {battle_tag}")
+        del self._active[battle_tag]
+        await self._done.put(battle)
+        self._logger.info(
+            "Finished %s — winner: %s", battle_tag, battle.winner or "tie"
+        )
+
     # ------------------------------------------------------------------
     # Status properties (safe to read from any thread — benign races for display)
     # ------------------------------------------------------------------
@@ -201,11 +253,3 @@ class BattleSpectator:
     def total_joined(self) -> int:
         """Total /join commands sent since watch() was called."""
         return self._total_joined
-
-    async def _finish_battle(self, battle_tag: str, battle: SpectatedBattle) -> None:
-        await self._client.send_message(f"/leave {battle_tag}")
-        del self._active[battle_tag]
-        await self._done.put(battle)
-        self._logger.info(
-            "Finished %s — winner: %s", battle_tag, battle.winner or "tie"
-        )
