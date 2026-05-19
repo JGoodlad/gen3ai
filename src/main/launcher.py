@@ -117,6 +117,23 @@ def _git_hash() -> str:
         return "unknown"
 
 
+# ── Exit summary ─────────────────────────────────────────────────────────────
+
+def _print_exit_summary(run_dir: "str | None", state: LauncherState) -> None:
+    snap = state.snapshot()
+    lines = ["", "── Training session ended ──────────────────────────────────────"]
+    if run_dir:
+        lines.append(f"  Run folder : {run_dir}")
+    lines.append(f"  Restarts   : {snap.restart_count}")
+    if snap.metrics_step:
+        lines.append(f"  Last step  : {snap.metrics_step:,}")
+    if "rollout/ep_rew_mean" in snap.metrics:
+        lines.append(f"  Last reward: {snap.metrics['rollout/ep_rew_mean']:.2f}")
+    if "time/fps" in snap.metrics:
+        lines.append(f"  FPS        : {int(snap.metrics['time/fps']):,}")
+    print("\n".join(lines), file=sys.stderr)
+
+
 # ── IPC: pipe readers (run in daemon threads) ─────────────────────────────────
 
 def _read_metrics_pipe(fd_r: int, state: LauncherState) -> None:
@@ -226,14 +243,8 @@ def _dispatch_command(
             state.add_event("💾 Child already exited")
 
     elif ch == "q":
-        state.add_event("👋 Quit requested — waiting for child to save…")
-        flags.quit_requested = True
-        if not flags.sigterm_sent:
-            try:
-                os.kill(proc.pid, signal.SIGTERM)
-            except ProcessLookupError:
-                pass
-            flags.sigterm_sent = True
+        if state.view_mode == "dashboard":
+            state.view_mode = "confirm_quit"
 
     elif ch == "l":
         state.view_mode = "logs"
@@ -312,6 +323,13 @@ def run(child_args: list, interval_hours: float) -> None:
 
     run_dir: "str | None" = None
 
+    # _run_dir_box[0] is updated whenever run_dir is confirmed, so the atexit
+    # handler can print the correct folder even when sys.exit() is called deep
+    # inside the loop.
+    _run_dir_box: list = [None]
+    import atexit
+    atexit.register(lambda: _print_exit_summary(_run_dir_box[0], state))
+
     with Live(refresh_per_second=2, screen=True) as live:
         while True:
 
@@ -332,7 +350,7 @@ def run(child_args: list, interval_hours: float) -> None:
                                 state.add_event(
                                     f"✅ Git change acknowledged ({current_hash}) — restarting"
                                 )
-                            elif ch == "q":
+                            elif ch == "n":
                                 sys.exit(0)
 
             # ── Launch child ───────────────────────────────────────────────
@@ -367,9 +385,22 @@ def run(child_args: list, interval_hours: float) -> None:
                     pass
 
                 while not cmd_q.empty():
-                    _dispatch_command(
-                        cmd_q.get_nowait(), proc, state, flags, deadline, interval_hours
-                    )
+                    ch = cmd_q.get_nowait()
+                    if state.view_mode == "confirm_quit":
+                        if ch == "y":
+                            flags.quit_requested = True
+                            state.add_event("👋 Quit requested — waiting for child to save…")
+                            if not flags.sigterm_sent:
+                                try:
+                                    os.kill(proc.pid, signal.SIGTERM)
+                                except ProcessLookupError:
+                                    pass
+                                flags.sigterm_sent = True
+                            state.view_mode = "dashboard"
+                        elif ch in ("n", "d"):
+                            state.view_mode = "dashboard"
+                    else:
+                        _dispatch_command(ch, proc, state, flags, deadline, interval_hours)
 
             proc.wait()
             live.update(ui.render(state.snapshot()))
@@ -397,6 +428,7 @@ def run(child_args: list, interval_hours: float) -> None:
                 sys.exit(1)
 
             run_dir = os.path.dirname(os.path.abspath(checkpoint))
+            _run_dir_box[0] = run_dir
             state.add_event(f"✅ Restarting from {os.path.basename(checkpoint)}")
             child_args = _insert_or_replace_model_arg(child_args, checkpoint)
             child_args = _insert_or_replace_run_dir_arg(child_args, run_dir)

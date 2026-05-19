@@ -245,11 +245,22 @@ class TestDispatchCommand:
         snap = state.snapshot()
         assert any("already exited" in e for e in snap.events)
 
-    def test_q_sends_sigterm_and_sets_quit(self):
+    def test_q_from_dashboard_enters_confirm_quit(self):
         _, state, flags, sent = self._dispatch("q")
-        assert signal.SIGTERM in sent
-        assert flags.quit_requested
-        assert flags.sigterm_sent
+        assert state.view_mode == "confirm_quit"
+        assert not flags.quit_requested
+        assert not flags.sigterm_sent
+        assert signal.SIGTERM not in sent
+
+    def test_q_from_logs_is_noop(self):
+        proc, state, flags, deadline = self._setup()
+        state.view_mode = "logs"
+        sent = []
+        with patch("main.launcher.os.kill", side_effect=lambda pid, sig: sent.append(sig)):
+            _dispatch_command("q", proc, state, flags, deadline, 3.0)
+        assert state.view_mode == "logs"
+        assert not flags.sigterm_sent
+        assert not sent
 
     def test_l_switches_to_log_view(self):
         _, state, flags, _ = self._dispatch("l")

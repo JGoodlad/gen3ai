@@ -27,7 +27,7 @@ class LauncherSnapshot:
     deadline: float            # time.monotonic(), float("inf") if no restart
     restart_count: int
     interval_hours: float
-    view_mode: str             # "dashboard" | "logs" | "confirm_restart"
+    view_mode: str             # "dashboard" | "logs" | "confirm_restart" | "confirm_quit"
     metrics: dict              # {tag: float}
     metrics_step: int
     metrics_ts: Optional[float]    # monotonic time of last metrics update
@@ -142,6 +142,8 @@ class LauncherUI:
             return self._render_logs(snap)
         if snap.view_mode == "confirm_restart":
             return self._render_confirm(snap)
+        if snap.view_mode == "confirm_quit":
+            return self._render_confirm_quit(snap)
         return self._render_dashboard(snap)
 
     # ── Dashboard ────────────────────────────────────────────────────────────
@@ -290,7 +292,7 @@ class LauncherUI:
 
     def _render_logs(self, snap: LauncherSnapshot):
         log_text = self._render_log_lines(snap.log_lines, n=40)
-        footer = Text("  [d] dashboard  [q] quit", style="dim")
+        footer = Text("  [d] dashboard", style="dim")
         return Panel(
             Group(log_text, Text(""), footer),
             title="[bold blue]🎮 Gen3AI Training[/bold blue] — [yellow]LOGS[/yellow]",
@@ -315,11 +317,28 @@ class LauncherUI:
             "  but proceed with caution.\n\n",
             style="dim",
         )
-        body.append("  [y] proceed with restart    [q] quit", style="bold")
+        body.append("  [y] proceed with restart    [n] quit launcher", style="bold")
 
         return Panel(
             body,
             title="[bold yellow]⚠️  Git Working Tree Changed[/bold yellow]",
             border_style="yellow",
+            padding=(0, 1),
+        )
+
+    # ── Confirm-quit view ─────────────────────────────────────────────────────
+
+    def _render_confirm_quit(self, snap: LauncherSnapshot):
+        body = Text()
+        body.append(
+            "\n  This will SIGTERM the training child and wait for it to save a checkpoint.\n\n",
+            style="dim",
+        )
+        body.append("  [y] confirm quit    [n] cancel", style="bold")
+
+        return Panel(
+            body,
+            title="[bold red]⚠️  Confirm Quit[/bold red]",
+            border_style="red",
             padding=(0, 1),
         )
