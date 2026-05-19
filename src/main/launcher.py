@@ -265,6 +265,7 @@ def _build_child_env() -> dict:
     env = os.environ.copy()
     existing = env.get("PYTHONPATH", "")
     env["PYTHONPATH"] = (_SRC_DIR + ":" + existing) if existing else _SRC_DIR
+    env["PYTHONUNBUFFERED"] = "1"
     return env
 
 
@@ -283,7 +284,6 @@ def _launch_child(
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         pass_fds=(metrics_w,),
-        bufsize=1,
     )
     os.close(metrics_w)  # parent closes write end after fork
 
