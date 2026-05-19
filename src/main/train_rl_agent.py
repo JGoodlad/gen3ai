@@ -39,6 +39,7 @@ from agents.training.reward_manager import Gen3RewardManager
 from agents.training.stall import StallConfig
 from agents.training.watchdog import start_subprocess_watchdog
 from agents.training.adaptive_lr_callback import AdaptiveLRCallback
+from agents.training.metrics_exporter_callback import MetricsExporterCallback
 from utils.logging.levels import LogLevel
 
 from poke_env.player import RandomPlayer, SimpleHeuristicsPlayer
@@ -293,7 +294,7 @@ async def main():
     )
 
     adaptive_lr_callback = AdaptiveLRCallback(initial_lr=args.lr)
-    callbacks = [checkpoint_callback, replay_callback, adaptive_lr_callback]
+    callbacks = [checkpoint_callback, replay_callback, adaptive_lr_callback, MetricsExporterCallback()]
     
     if not args.debug:
         from sb3_contrib.common.maskable.callbacks import MaskableEvalCallback

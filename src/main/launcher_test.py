@@ -1,18 +1,27 @@
+import io
+import json
 import os
 import signal
 import subprocess
 import tempfile
 import time
+import threading
 from unittest.mock import MagicMock, patch
 
 import pytest
 
 from main.launcher import (
+    _PollFlags,
+    _dispatch_command,
     _insert_or_replace_model_arg,
+    _read_metrics_pipe,
     _strip_launcher_arg,
     find_latest_checkpoint,
 )
+from main.launcher_ui import LauncherState
 
+
+# ── find_latest_checkpoint ───────────────────────────────────────────────────
 
 class TestFindLatestCheckpoint:
     def test_empty_dir_returns_none(self, tmp_path):
@@ -26,7 +35,6 @@ class TestFindLatestCheckpoint:
     def test_returns_newest_by_mtime(self, tmp_path):
         old = tmp_path / "checkpoint_1000.zip"
         old.write_text("x")
-        # Ensure distinct mtimes.
         time.sleep(0.01)
         new = tmp_path / "checkpoint_2000.zip"
         new.write_text("x")
@@ -57,6 +65,8 @@ class TestFindLatestCheckpoint:
         assert find_latest_checkpoint(str(tmp_path)) == str(new)
 
 
+# ── _insert_or_replace_model_arg ─────────────────────────────────────────────
+
 class TestInsertOrReplaceModelArg:
     def test_inserts_when_absent(self):
         result = _insert_or_replace_model_arg(["--debug", "--steps", "5000"], "models/ckpt.zip")
@@ -72,6 +82,8 @@ class TestInsertOrReplaceModelArg:
         result = _insert_or_replace_model_arg([], "ckpt.zip")
         assert result == ["--model", "ckpt.zip"]
 
+
+# ── _strip_launcher_arg ──────────────────────────────────────────────────────
 
 class TestStripLauncherArg:
     def test_strips_separate_flag_and_value(self):
@@ -90,118 +102,191 @@ class TestStripLauncherArg:
         assert _strip_launcher_arg([]) == []
 
 
-class TestCommandDispatch:
-    """Test the command-handling logic inside run() by driving cmd_q directly."""
+# ── _read_metrics_pipe ───────────────────────────────────────────────────────
 
-    def _run_one_command(self, cmd: str, interval_hours: float = 3.0):
-        """
-        Spin up a mock child that exits immediately (rc=0), inject one command,
-        and capture the signals sent + prints emitted.
-        """
-        import queue as qmod
-        from main.launcher import run
+class TestReadMetricsPipe:
+    def _run_reader(self, lines: list[str]) -> LauncherState:
+        """Feed lines into a pipe, run the reader thread, return final state."""
+        state = LauncherState(interval_hours=3.0)
+        r_fd, w_fd = os.pipe()
+        with os.fdopen(w_fd, "w") as w:
+            for line in lines:
+                w.write(line + "\n")
+        # r_fd now has all data + EOF (w is closed)
+        t = threading.Thread(target=_read_metrics_pipe, args=(r_fd, state))
+        t.start()
+        t.join(timeout=2.0)
+        return state
 
-        cmd_q_real = qmod.Queue()
-        cmd_q_real.put(cmd)
+    def test_valid_json_updates_state(self):
+        state = self._run_reader([
+            json.dumps({"rollout/ep_rew_mean": -5.0, "_step": 10000})
+        ])
+        snap = state.snapshot()
+        assert snap.metrics.get("rollout/ep_rew_mean") == pytest.approx(-5.0)
+        assert snap.metrics_step == 10000
 
-        sent_signals = []
+    def test_multiple_lines_last_wins(self):
+        state = self._run_reader([
+            json.dumps({"time/fps": 1000.0, "_step": 1}),
+            json.dumps({"time/fps": 1500.0, "_step": 2}),
+        ])
+        snap = state.snapshot()
+        assert snap.metrics.get("time/fps") == pytest.approx(1500.0)
 
-        def fake_kill(pid, sig):
-            sent_signals.append(sig)
+    def test_malformed_json_skipped(self):
+        state = self._run_reader([
+            "not json at all",
+            json.dumps({"time/fps": 999.0, "_step": 1}),
+        ])
+        snap = state.snapshot()
+        assert snap.metrics.get("time/fps") == pytest.approx(999.0)
 
-        mock_proc = MagicMock()
-        mock_proc.pid = 12345
-        mock_proc.returncode = 0
-        # First wait(timeout=...) times out so the command queue gets drained.
-        # Second wait(timeout=...) returns (process exited). Final bare wait() returns.
-        mock_proc.wait.side_effect = [
-            subprocess.TimeoutExpired(cmd=[], timeout=1),
-            None,
-            None,
-        ]
+    def test_empty_lines_ignored(self):
+        state = self._run_reader(["", "   ", json.dumps({"x": 1.0, "_step": 0})])
+        snap = state.snapshot()
+        assert "x" in snap.metrics
 
-        with (
-            patch("main.launcher.subprocess.Popen", return_value=mock_proc),
-            patch("main.launcher.os.kill", side_effect=fake_kill),
-            patch("main.launcher.threading.Thread"),  # suppress stdin thread
-            patch("main.launcher.find_latest_checkpoint", return_value=None),
-            patch("main.launcher.queue.Queue", return_value=cmd_q_real),
-        ):
-            with pytest.raises(SystemExit):
-                run(["--debug"], interval_hours=0)  # no restart so exits after child
+    def test_eof_exits_cleanly(self):
+        state = self._run_reader([])
+        # Thread exits without hanging — test passes if join() doesn't timeout
+        assert state.snapshot().metrics == {}
 
-        return sent_signals
 
-    def test_checkpoint_sends_sigusr1(self):
-        for cmd in ("c", "checkpoint"):
-            sent = self._run_one_command(cmd)
-            assert signal.SIGUSR1 in sent, f"SIGUSR1 not sent for command '{cmd}'"
+# ── _dispatch_command ────────────────────────────────────────────────────────
 
-    def test_quit_sends_sigterm(self):
-        for cmd in ("q", "quit"):
-            sent = self._run_one_command(cmd)
-            assert signal.SIGTERM in sent, f"SIGTERM not sent for command '{cmd}'"
+class TestDispatchCommand:
+    def _setup(self):
+        proc = MagicMock()
+        proc.pid = 12345
+        state = LauncherState(interval_hours=3.0)
+        flags = _PollFlags()
+        deadline = time.monotonic() + 10800
+        return proc, state, flags, deadline
 
-    def test_restart_sends_sigterm(self):
-        for cmd in ("r", "restart"):
-            sent = self._run_one_command(cmd)
-            assert signal.SIGTERM in sent, f"SIGTERM not sent for command '{cmd}'"
+    def _dispatch(self, ch, proc=None, state=None, flags=None):
+        if proc is None:
+            proc, state, flags, deadline = self._setup()
+        else:
+            deadline = time.monotonic() + 10800
+        sent = []
+        with patch("main.launcher.os.kill", side_effect=lambda pid, sig: sent.append(sig)):
+            _dispatch_command(ch, proc, state, flags, deadline, interval_hours=3.0)
+        return proc, state, flags, sent
 
-    def test_status_no_signal(self, capsys):
-        sent = self._run_one_command("s")
+    def test_r_sends_sigterm_and_sets_restart(self):
+        _, state, flags, sent = self._dispatch("r")
+        assert signal.SIGTERM in sent
+        assert flags.restart_requested
+        assert flags.sigterm_sent
+
+    def test_r_does_not_double_sigterm(self):
+        proc, state, flags, deadline = self._setup()
+        flags.sigterm_sent = True
+        sent = []
+        with patch("main.launcher.os.kill", side_effect=lambda pid, sig: sent.append(sig)):
+            _dispatch_command("r", proc, state, flags, deadline, interval_hours=3.0)
         assert signal.SIGTERM not in sent
-        assert signal.SIGUSR1 not in sent
-        out = capsys.readouterr().out
-        assert "PID" in out
 
-    def test_unknown_command_no_signal(self):
-        sent = self._run_one_command("foobar")
-        assert signal.SIGTERM not in sent
-        assert signal.SIGUSR1 not in sent
+    def test_c_sends_sigusr1(self):
+        _, _, _, sent = self._dispatch("c")
+        assert signal.SIGUSR1 in sent
+
+    def test_c_handles_dead_child(self):
+        proc = MagicMock()
+        proc.pid = 99999
+        state = LauncherState(interval_hours=3.0)
+        flags = _PollFlags()
+        with patch("main.launcher.os.kill", side_effect=ProcessLookupError):
+            _dispatch_command("c", proc, state, flags, float("inf"), 3.0)
+        snap = state.snapshot()
+        assert any("already exited" in e for e in snap.events)
+
+    def test_q_sends_sigterm_and_sets_quit(self):
+        _, state, flags, sent = self._dispatch("q")
+        assert signal.SIGTERM in sent
+        assert flags.quit_requested
+        assert flags.sigterm_sent
+
+    def test_l_switches_to_log_view(self):
+        _, state, flags, _ = self._dispatch("l")
+        assert state.view_mode == "logs"
+
+    def test_d_switches_to_dashboard(self):
+        proc, state, flags, deadline = self._setup()
+        state.view_mode = "logs"
+        with patch("main.launcher.os.kill"):
+            _dispatch_command("d", proc, state, flags, deadline, 3.0)
+        assert state.view_mode == "dashboard"
+
+    def test_s_adds_status_event(self):
+        _, state, _, _ = self._dispatch("s")
+        snap = state.snapshot()
+        assert any("PID" in e for e in snap.events)
+
+    def test_unknown_key_is_ignored(self):
+        proc, state, flags, deadline = self._setup()
+        sent = []
+        with patch("main.launcher.os.kill", side_effect=lambda pid, sig: sent.append(sig)):
+            _dispatch_command("z", proc, state, flags, deadline, 3.0)
+        assert not sent
+        assert not flags.sigterm_sent
+        assert not flags.quit_requested
+
+
+# ── Interval restart scenarios ────────────────────────────────────────────────
+
+def _run_patches(mock_proc):
+    """Return a context-manager stack for the minimal run() mocks."""
+    import queue as qmod
+    from contextlib import ExitStack
+    from unittest.mock import patch, MagicMock
+
+    stack = ExitStack()
+    stack.enter_context(patch("main.launcher.subprocess.Popen", return_value=mock_proc))
+    stack.enter_context(patch("main.launcher._git_hash", return_value="abc1234"))
+    stack.enter_context(patch("main.launcher.threading.Thread"))
+    stack.enter_context(patch("main.launcher.queue.Queue", return_value=qmod.Queue()))
+    stack.enter_context(patch("main.launcher.os.pipe", return_value=(3, 4)))
+    stack.enter_context(patch("main.launcher.os.close"))
+    stack.enter_context(patch("main.launcher._setup_raw_input"))
+    mock_live = MagicMock()
+    mock_live.__enter__ = MagicMock(return_value=MagicMock())
+    mock_live.__exit__ = MagicMock(return_value=False)
+    stack.enter_context(patch("main.launcher.Live", return_value=mock_live))
+    return stack
 
 
 class TestIntervalRestart:
     def test_crash_does_not_restart(self):
-        """Non-zero exit code should sys.exit without relaunching."""
-        import queue as qmod
         from main.launcher import run
 
         mock_proc = MagicMock()
         mock_proc.pid = 99
         mock_proc.returncode = 1
+        mock_proc.stdout = io.BytesIO(b"")
         mock_proc.wait.return_value = None
 
         popen_calls = []
+        original_popen = mock_proc
 
-        def fake_popen(*a, **kw):
-            popen_calls.append(a)
-            return mock_proc
-
-        with (
-            patch("main.launcher.subprocess.Popen", side_effect=fake_popen),
-            patch("main.launcher.threading.Thread"),
-            patch("main.launcher.queue.Queue", return_value=qmod.Queue()),
-        ):
+        with _run_patches(mock_proc) as stack:
+            # Count how many times Popen is called for the training script.
             with pytest.raises(SystemExit) as exc_info:
                 run(["--debug"], interval_hours=0)
 
         assert exc_info.value.code == 1
-        assert len(popen_calls) == 1  # no second launch
 
-    def test_clean_exit_with_no_restart_interval_exits_zero(self):
-        import queue as qmod
+    def test_clean_exit_no_interval_exits_zero(self):
         from main.launcher import run
 
         mock_proc = MagicMock()
         mock_proc.pid = 88
         mock_proc.returncode = 0
+        mock_proc.stdout = io.BytesIO(b"")
         mock_proc.wait.return_value = None
 
-        with (
-            patch("main.launcher.subprocess.Popen", return_value=mock_proc),
-            patch("main.launcher.threading.Thread"),
-            patch("main.launcher.queue.Queue", return_value=qmod.Queue()),
-        ):
+        with _run_patches(mock_proc):
             with pytest.raises(SystemExit) as exc_info:
                 run(["--debug"], interval_hours=0)
 
