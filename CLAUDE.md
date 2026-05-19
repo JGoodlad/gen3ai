@@ -101,7 +101,62 @@ A hang after `[STALL LOGGED]` or a crash before "Training complete" indicates a 
 
 ---
 
+## Launcher (preferred for long runs)
+
+`src/main/launcher.py` wraps `train_rl_agent.py` with:
+- **Periodic restarts** — kills and relaunches the child every N hours to reclaim pymalloc fragmentation; the child saves a checkpoint on SIGTERM and the launcher picks it up automatically
+- **Worktree isolation** — at startup, creates a detached git worktree pinned to the current HEAD (or to the commit recorded in the checkpoint's `metadata.json` when resuming). Agent pushes to `main` never affect a running session
+- **Rich TUI** — live dashboard showing metrics, FPS, restart countdown; `l` for logs, `r` to restart now, `c` for forced checkpoint, `q` to quit cleanly
+- **Crash reporting** — child stdout/stderr is captured; on a non-zero exit the last 100 lines are dumped to the terminal after the TUI closes
+
+### Exit codes (`src/main/exit_codes.py`)
+
+| Code | `TrainExitCode` | Meaning |
+|------|----------------|---------|
+| 0 | `COMPLETE` | All steps done — launcher stops |
+| 15 | `INTERRUPTED` | SIGTERM received, checkpoint saved — launcher restarts |
+| 1 | `CRASH` | Unhandled exception — launcher stops, crash log printed |
+
+### Starting a fresh run via launcher
+```bash
+export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 src/main/launcher.py \
+  --restart-interval-hours 3 \
+  --steps 15000000 \
+  --n-envs 64 \
+  --batch-size 16384 \
+  --n-epochs 10 \
+  --ent-coef 0.02 \
+  --n-steps 2048 \
+  --lr 0.0003 \
+  --device cuda \
+  --log-level periodic
+```
+
+### Resuming from a checkpoint
+```bash
+export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 src/main/launcher.py \
+  --restart-interval-hours 3 \
+  --model models/<run>/checkpoint_NNNN_steps.zip \
+  --steps 15000000 \
+  --device cuda
+```
+
+The checkpoint must have a `metadata.json` with a `git_hash` field (written automatically by `save_model_snapshot()`). The launcher pins the worktree to that exact commit so the resumed run uses the same code as the original.
+
+### Flags
+
+| Flag | Default | Notes |
+|------|---------|-------|
+| `--restart-interval-hours` | `3.0` | Set to `0` for a single run with no restart |
+| `--no-pin` | off | Skip worktree creation; run from the current source tree |
+
+All other flags are forwarded verbatim to `train_rl_agent.py`.
+
+---
+
 ## Training
+
+Run directly (no restart loop, no worktree isolation):
 
 ```bash
 export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 src/main/train_rl_agent.py \
@@ -117,9 +172,9 @@ export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable
   --log-level periodic
 ```
 
-Omit `--model` to start a fresh run. Use `--debug` to run with a single env (DummyVecEnv) for debugging. Use `--device cpu` on machines without a GPU.
+Omit `--model` to start a fresh run. Use `--debug` for a single env (DummyVecEnv). Use `--device cpu` on machines without a GPU.
 
-Checkpoints are saved automatically during training. Models land in `models/`.
+Checkpoints are saved automatically. Models land in `models/run_<timestamp>/`.
 
 ---
 
@@ -161,14 +216,19 @@ src/
     action/          # Action masking and mapping
     training/        # Callbacks and reward manager
   main/
-    train_rl_agent.py  # Training entry point
+    launcher.py        # Restart loop + Rich TUI (preferred for long runs)
+    launcher_ui.py     # TUI state and rendering (LauncherState, LauncherUI)
+    exit_codes.py      # TrainExitCode enum (COMPLETE=0, INTERRUPTED=15, CRASH=1)
+    train_rl_agent.py  # Training entry point (also callable directly)
     play.py            # Battle / evaluation entry point
   poke_env/          # Forked poke-env library
-  utils/             # Gen 3 utilities (Hidden Power, teambuilder, team loader)
+  utils/
+    git.py           # get_git_hash(), get_repo_root()
+    (other utils)    # Hidden Power, teambuilder, team loader, logging
 data/
   pokemon/           # JSON mappings: gen3_species, gen3_moves, gen3_items, gen3_abilities
   teams/             # Downloaded sample teams (gen3ou pool)
-models/              # Saved PPO checkpoints
+models/              # Saved PPO checkpoints (run_<timestamp>/ subdirs)
 deps/
   pokemon-showdown/  # Git submodule — local Showdown server
 ```

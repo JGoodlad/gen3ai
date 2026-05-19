@@ -86,9 +86,13 @@ export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable
 
 ## Training
 
-### New run
+### Via launcher (recommended for long runs)
+
+`launcher.py` wraps the training script with periodic restarts to reclaim memory fragmentation, a Rich TUI dashboard, and **git worktree isolation** — it pins the child process to the exact commit at launch so agent pushes to `main` can't affect a running session.
+
 ```bash
-export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 src/main/train_rl_agent.py \
+export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 src/main/launcher.py \
+  --restart-interval-hours 3 \
   --steps 50000000 \
   --n-envs 96 \
   --batch-size 16384 \
@@ -100,10 +104,23 @@ export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable
   --log-level periodic
 ```
 
-### Continue from checkpoint
+Resume from a checkpoint (launcher reads the saved `git_hash` and pins to that commit):
+```bash
+export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 src/main/launcher.py \
+  --restart-interval-hours 3 \
+  --model models/<run>/checkpoint_NNNN_steps.zip \
+  --steps 50000000 \
+  --device cuda
+```
+
+Key launcher flags: `--restart-interval-hours` (default 3, set 0 for one-shot), `--no-pin` (skip worktree isolation). All other flags pass through to `train_rl_agent.py`.
+
+**TUI keys:** `r` restart now · `c` force checkpoint · `q` quit cleanly · `l` logs · `d` dashboard
+
+### Direct (no restart loop)
+
 ```bash
 export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 src/main/train_rl_agent.py \
-  --model models/<run-name>/final_model \
   --steps 50000000 \
   --n-envs 96 \
   --batch-size 16384 \
@@ -121,7 +138,7 @@ Single environment with full trace logging — no 96-env overhead:
 export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 src/main/train_rl_agent.py --debug
 ```
 
-Checkpoints save to `models/` automatically. TensorBoard logs always write to `./tensorboard/` in the repo root, regardless of which worktree training is launched from.
+Checkpoints save to `models/run_<timestamp>/` automatically. TensorBoard logs always write to `./tensorboard/` in the repo root.
 
 ### TensorBoard
 ```bash
@@ -154,14 +171,17 @@ src/
     training/        # Gen3Env, reward manager, battle context, wrappers,
                      #   stall detection, replay recorder
   main/
-    train_rl_agent.py  # Training entry point
+    launcher.py        # Restart loop + Rich TUI (preferred entry point)
+    launcher_ui.py     # TUI state and rendering
+    exit_codes.py      # TrainExitCode enum (COMPLETE/INTERRUPTED/CRASH)
+    train_rl_agent.py  # Training script (also callable directly)
     play.py            # Battle / evaluation entry point
   poke_env/          # Forked poke-env library
   utils/             # Gen 3 utilities, team loader, teambuilder, logging
 data/
   pokemon/           # JSON mappings: gen3_species, gen3_moves, gen3_items, gen3_abilities
   teams/             # ADV OU sample teams pool
-models/              # Saved PPO checkpoints
+models/              # Saved PPO checkpoints (run_<timestamp>/ subdirs)
 tensorboard/         # Training logs (always written here from any worktree)
 deps/
   pokemon-showdown/  # Git submodule — local Showdown server
