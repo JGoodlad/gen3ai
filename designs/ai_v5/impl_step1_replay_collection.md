@@ -56,6 +56,9 @@ finishes so the next queued room joins within ~0.1 s.
   propagates to the root logger, so callers control output formatting.
 - Raw `<<<`/`>>>` wire messages are logged at `DEBUG` (not `INFO`) to keep INFO-level
   output clean for application events only.
+- `ConnectionClosedError` (TCP reset — server drops connection without WebSocket
+  close frame) is now caught at `WARNING` level alongside `ConnectionClosedOK`, so
+  unclean disconnects produce a one-line warning instead of a full traceback at ERROR.
 
 ### `src/poke_env/spectator/spectated_battle.py`
 
@@ -111,11 +114,18 @@ BattleSpectator
 
 **Ghost-battle prevention:** `_finished_tags` tracks rooms that have been finished and
 left within a session. Late server messages arriving after `/leave` are silently ignored,
-preventing a finished room from being re-created as a ghost `_active` entry.
+preventing a finished room from being re-created as a ghost `_active` entry. Without
+this, a battle could appear simultaneously in Active Battles (as an empty "loading…"
+entry) and in Recent Completions.
 
-**Auto-reconnect:** `watch()` detects when the PSClient's listener coroutine exits
-(connection drop), clears `_active`, and reconnects after `reconnect_delay` (10 s).
+**Auto-reconnect:** `watch()` wraps `_watch_once()` in an outer retry loop.
+`_watch_once()` checks `client._listening_coroutine.done()` every 5 seconds (via
+`asyncio.wait_for` timeout on `_done.get()`). When `listen()` exits for any reason
+(TCP reset, server restart, etc.), `_watch_once` raises `ConnectionError` and `watch()`
+catches it, logs a warning, waits `reconnect_delay` (10 s), and reconnects.
 `_seen` is preserved across reconnects so old rooms are not re-joined.
+`_total_joined` and the `_seen` set persist across reconnects; `_active`,
+`_pending`, `_done`, and `_finished_tags` are reset each session.
 
 `BattleSpectator` runs on `POKE_LOOP` (poke-env's background event loop) so that
 `PSClient` callbacks, asyncio queues, and the generator all share the same loop.
@@ -152,10 +162,13 @@ python3 src/main/collect_replays.py --format gen3ou --save-dir replays/gen3ou --
 | `--proxy` | none | SOCKS5 proxy URL, e.g. `socks5h://127.0.0.1:1080` |
 | `--verbose` | off | Show DEBUG-level logs in the UI |
 
-**Dashboard:** Three sections — Active Battles, Recent Completions (last 5), and Logs
-(last 5 INFO+ lines). The stats row shows connection mode: **PROXIED** (green) or
-**DIRECT** (yellow). Active battle rows shrink dynamically to fit the terminal height;
-if space is very tight, recent completions drops to 3 rows.
+**Dashboard:** Uses Rich `Live(screen=True)` — takes over the alternate terminal buffer
+like `htop`, so resizing is clean and the normal scroll history is untouched. Three
+sections: Active Battles (with room #, age, turn, player names), Recent Completions
+(last 5), and Logs (last 5 INFO+ lines captured from the Python logging system). The
+stats row shows connection mode: **PROXIED** (green) or **DIRECT** (yellow). Active
+battle rows shrink dynamically to fit the terminal height; if space is very tight,
+recent completions drops to 3 rows. Exits cleanly on Ctrl+C, restoring the terminal.
 
 Stops cleanly on Ctrl+C.
 

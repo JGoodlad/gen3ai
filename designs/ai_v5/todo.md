@@ -9,10 +9,21 @@ and saves the complete battle logs for offline use. See
 `designs/ai_v5/impl_step1_replay_collection.md`.
 
 **Deliverables:**
-- `src/poke_env/spectator/` — `BattleSpectator` async generator, `SpectatedBattle` pure data object
-- `src/main/collect_replays.py` — long-running daemon, saves one `.log` file per completed battle
+- `src/poke_env/spectator/spectated_battle.py` — pure data object; accumulates log lines,
+  tracks current turn, player names, join time
+- `src/poke_env/spectator/spectator_client.py` — `BattleSpectator` async generator; rate
+  control, ghost-battle prevention, auto-reconnect on TCP reset
+- `src/poke_env/spectator/__init__.py` — package exports
+- `src/poke_env/ps_client/ps_client.py` — `QueryResponseCallback`, proxy support,
+  `ConnectionClosedError` demoted to WARNING, wire logs at DEBUG
+- `src/poke_env/battle/abstract_battle.py` — `":"` / `"t:"` added to `MESSAGES_TO_IGNORE`
+- `src/main/collect_replays.py` — daemon with Rich full-screen dashboard (active battles,
+  recent completions, live logs, PROXIED/DIRECT indicator); proxy + verbose CLI flags
 - `src/poke_env/spectator/spectated_battle_test.py` — 9 unit tests
-- `src/poke_env/spectator/spectator_e2e_test.py` — live server test + round-trip log parse through poke-env
+- `src/poke_env/spectator/spectator_e2e_test.py` — live server test + round-trip log parse
+
+**Status:** Daemon is actively collecting at `replays/showdown/1/`. Running on POKE_LOOP
+via `asyncio.run_coroutine_threadsafe`. Reconnects automatically on connection drop.
 
 ---
 

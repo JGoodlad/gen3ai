@@ -25,35 +25,46 @@ Both problems have the same root fix: a corpus of real ladder replays.
 
 ---
 
-## 1. Replay Scraper
+## 1. Replay Collection ✓ DONE (live spectator)
 
-**Goal:** download Gen 3 OU replays from Showdown and extract full team
-compositions with frequency data.
+**Goal:** build a corpus of complete Gen 3 OU battle logs.
 
-### What to build
+### What was built
 
-- Scrape `https://replay.pokemonshowdown.com/` for `gen3ou` format replays
-- Parse each replay log to extract both players' full revealed teams
-  (all 6 slots are typically revealed by end of game)
-- Store as `{ team: [species_id × 6], count: N, wins: M }` per unique team
-- Deduplicate by sorted team composition (order-independent)
+`src/main/collect_replays.py` — a long-running daemon that connects to Showdown as a
+guest, discovers active Gen 3 OU battles via `/query roomlist gen3ou`, spectates up to
+20 concurrent rooms, and saves each `.log` file the moment the battle finishes.
 
-### Output
+Joining mid-battle is fine: Showdown sends the full scrollback from turn 1 on connect,
+so no partial replays are produced. All data flows over a SOCKS5 proxy (routed through a
+GCP VM) to keep the home IP off Showdown's throttle lists.
+
+Currently collecting into `replays/showdown/1/` (daemon running).
+
+### Comparison to API scraping
+
+The live approach produces exactly the same log format as the Showdown replay archive
+(`replay.pokemonshowdown.com`), but with zero scraping latency and no pagination. The
+replay API is still useful for **historical data** (battles played before we started
+collecting). If a historical backfill is needed:
 
 ```
-data/ladder/
-  gen3ou_teams.jsonl      # one JSON object per unique team + frequency
-  gen3ou_replays_raw/     # optional: raw replay logs for debugging
+GET https://replay.pokemonshowdown.com/api/replays?format=gen3ou&page=N
+# then per replay:
+GET https://replay.pokemonshowdown.com/gen3ou-XXXXXXXX.json
 ```
 
-### Notes
+The JSON `.log` field is the same Showdown protocol format our parser already handles.
+A backfill script would be a thin wrapper around the existing parsing pipeline from Step 2.
 
-- Showdown replay API: `GET /api/replays?format=gen3ou&page=N` returns paginated
-  replay metadata; individual replays at `/gen3ou-XXXXXXXX.json`
-- Only include replays where both teams are fully revealed (forfeit at turn 1
-  leaves 5 slots unknown — skip these)
-- Minimum replay count threshold before a team enters the sampling pool (e.g.
-  only teams seen ≥ 3 times) to filter noise
+### Log format and parsing
+
+Each `.log` file is raw Showdown protocol (one message per line). Consumer rules:
+- `|win|username` → `battle.won_by(username)` (not via `parse_message`)
+- `|tie` → `battle.tied()`
+- All other lines → `battle.parse_message(line.split("|"))`
+
+Full format documented in `designs/ai_v5/impl_step1_replay_collection.md`.
 
 ---
 
@@ -145,8 +156,9 @@ until Phase 2.
 
 ## Build Order
 
-1. **Replay scraper** — critical path; everything else depends on it
+1. ✓ **Replay collection** — live spectator daemon collecting continuously
 2. **Ladder-weighted opponent sampling** — drop-in replace for training; fast win
+   (needs enough replays to have reliable frequency data — collect ~10K first)
 3. **Hidden-team predictor** — standalone model, trained offline on corpus
 4. **Observation integration** — wire predictor output into `gen3_env.embed_battle()`
 5. **Ladder team finder** — run after Phase 1 generalist is mature
