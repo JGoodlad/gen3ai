@@ -6,6 +6,7 @@ Includes a Rich TUI dashboard fed by metrics delivered via a pipe fd from the
 child's MetricsExporterCallback.
 """
 
+import atexit
 import glob
 import json
 import re
@@ -20,17 +21,23 @@ from dataclasses import dataclass
 
 from rich.live import Live
 
+from main.exit_codes import TrainExitCode
 from main.launcher_ui import LauncherState, LauncherUI
 from utils.git import get_git_hash, get_repo_root
 
 _PYTHON = "/home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3"
 _TRAIN_SCRIPT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "train_rl_agent.py")
 _SRC_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+_WORKTREE_PREFIX = "launcher-"
 
 
 # ── Pure utility functions ────────────────────────────────────────────────────
 
-def find_latest_checkpoint(models_root: str, run_dir: "str | None" = None) -> "str | None":
+def find_latest_checkpoint(
+    models_root: str,
+    run_dir: "str | None" = None,
+    min_mtime: float = 0.0,
+) -> "str | None":
     if run_dir:
         latest_txt = os.path.join(run_dir, "latest.txt")
         if os.path.exists(latest_txt):
@@ -41,6 +48,8 @@ def find_latest_checkpoint(models_root: str, run_dir: "str | None" = None) -> "s
                 return candidate
 
     zips = glob.glob(os.path.join(models_root, "**", "*.zip"), recursive=True)
+    if min_mtime:
+        zips = [p for p in zips if os.path.getmtime(p) >= min_mtime]
     if not zips:
         return None
 
@@ -55,6 +64,30 @@ def find_latest_checkpoint(models_root: str, run_dir: "str | None" = None) -> "s
         return 0
 
     return max(zips, key=lambda p: (_step_key(p), os.path.getmtime(p)))
+
+
+def _find_model_arg(args: list) -> "str | None":
+    for i, a in enumerate(args):
+        if a == "--model" and i + 1 < len(args):
+            return args[i + 1]
+    return None
+
+
+def _read_checkpoint_git_hash(model_path: str) -> "str | None":
+    """Read git_hash from the metadata.json saved alongside a checkpoint."""
+    candidates = [
+        os.path.dirname(os.path.abspath(model_path)),
+        os.path.abspath(model_path),
+    ]
+    for d in candidates:
+        meta = os.path.join(d, "metadata.json")
+        if os.path.exists(meta):
+            try:
+                with open(meta) as f:
+                    return json.load(f).get("git_hash")
+            except Exception:
+                return None
+    return None
 
 
 def _insert_or_replace_model_arg(args: list, checkpoint: str) -> list:
@@ -114,28 +147,24 @@ def _git_hash() -> str:
     return get_git_hash(short=True)
 
 
-def _find_model_arg(args: list) -> "str | None":
-    for i, a in enumerate(args):
-        if a == "--model" and i + 1 < len(args):
-            return args[i + 1]
-    return None
+# ── Worktree management ───────────────────────────────────────────────────────
 
-
-def _read_checkpoint_git_hash(model_path: str) -> "str | None":
-    """Read git_hash from the metadata.json saved alongside a checkpoint."""
-    candidates = [
-        os.path.dirname(os.path.abspath(model_path)),
-        os.path.abspath(model_path),
-    ]
-    for d in candidates:
-        meta = os.path.join(d, "metadata.json")
-        if os.path.exists(meta):
-            try:
-                with open(meta) as f:
-                    return json.load(f).get("git_hash")
-            except Exception:
-                return None
-    return None
+def _prune_stale_launcher_worktrees(repo_root: str) -> None:
+    """Remove any stale launcher-* worktrees left by crashed sessions."""
+    result = subprocess.run(
+        ["git", "worktree", "list", "--porcelain"],
+        capture_output=True, text=True, cwd=repo_root,
+    )
+    if result.returncode != 0:
+        return
+    for line in result.stdout.splitlines():
+        if line.startswith("worktree "):
+            path = line[len("worktree "):]
+            if os.path.basename(path).startswith(_WORKTREE_PREFIX):
+                subprocess.run(
+                    ["git", "worktree", "remove", "--force", path],
+                    capture_output=True, cwd=repo_root,
+                )
 
 
 def _create_run_worktree(git_hash: str) -> "tuple[str, str, callable]":
@@ -147,7 +176,7 @@ def _create_run_worktree(git_hash: str) -> "tuple[str, str, callable]":
     import tempfile
 
     repo_root = get_repo_root()
-    tmp = tempfile.mkdtemp(prefix=f"launcher-{git_hash[:8]}-")
+    tmp = tempfile.mkdtemp(prefix=f"{_WORKTREE_PREFIX}{git_hash[:8]}-")
     os.rmdir(tmp)  # git worktree add requires the target not to exist
     result = subprocess.run(
         ["git", "worktree", "add", "--detach", tmp, git_hash],
@@ -155,6 +184,16 @@ def _create_run_worktree(git_hash: str) -> "tuple[str, str, callable]":
     )
     if result.returncode != 0:
         raise RuntimeError(f"git worktree add failed:\n{result.stderr.strip()}")
+
+    # Symlink pokemon-showdown bridge artifacts (worktree has empty placeholder)
+    ps_main = os.path.join(repo_root, "deps", "pokemon-showdown")
+    ps_wt = os.path.join(tmp, "deps", "pokemon-showdown")
+    os.makedirs(ps_wt, exist_ok=True)
+    for artifact in ("dist", "node_modules"):
+        src = os.path.join(ps_main, artifact)
+        dst = os.path.join(ps_wt, artifact)
+        if os.path.exists(src) and not os.path.lexists(dst):
+            os.symlink(src, dst)
 
     train_script = os.path.join(tmp, "src", "main", "train_rl_agent.py")
     src_dir = os.path.join(tmp, "src")
@@ -168,7 +207,7 @@ def _create_run_worktree(git_hash: str) -> "tuple[str, str, callable]":
     return train_script, src_dir, cleanup
 
 
-# ── Exit summary ─────────────────────────────────────────────────────────────
+# ── Exit summary / crash log ──────────────────────────────────────────────────
 
 def _print_crash_log(log_lines: "list | None") -> None:
     """Dump captured child output to stderr after the Live screen has closed."""
@@ -231,7 +270,6 @@ def _setup_raw_input() -> None:
     if not sys.stdin.isatty():
         return
     try:
-        import atexit
         import termios
         import tty
         fd = sys.stdin.fileno()
@@ -335,8 +373,11 @@ def _build_child_env() -> dict:
 
 
 def _launch_child(
-    child_args: list, child_env: dict, state: LauncherState,
-    train_script: str, src_dir: str,
+    child_args: list,
+    child_env: dict,
+    state: LauncherState,
+    train_script: str,
+    src_dir: str,
 ) -> subprocess.Popen:
     """Create metrics pipe, spawn child, start reader threads."""
     metrics_r, metrics_w = os.pipe()
@@ -364,14 +405,15 @@ def _launch_child(
 
 def run(child_args: list, interval_hours: float, pin: bool = True) -> None:
     interval_seconds = interval_hours * 3600
+    session_start = time.time()
     child_env = _build_child_env()
     state = LauncherState(interval_hours=interval_hours)
     ui = LauncherUI()
 
-    import atexit
-
     # ── Worktree pinning ──────────────────────────────────────────────────────
     if pin:
+        repo_root = get_repo_root()
+        _prune_stale_launcher_worktrees(repo_root)
         model_path = _find_model_arg(child_args)
         if model_path:
             checkpoint_hash = _read_checkpoint_git_hash(model_path)
@@ -384,12 +426,24 @@ def run(child_args: list, interval_hours: float, pin: bool = True) -> None:
         else:
             pin_hash = get_git_hash()  # full hash for worktree add
 
-        train_script, src_dir, worktree_cleanup = _create_run_worktree(pin_hash)
+        try:
+            train_script, src_dir, worktree_cleanup = _create_run_worktree(pin_hash)
+        except RuntimeError as e:
+            sys.exit(f"[launcher] ERROR: {e}")
         atexit.register(worktree_cleanup)
         state.initial_git_hash = pin_hash[:8]
     else:
         train_script, src_dir = _TRAIN_SCRIPT, _SRC_DIR
         state.initial_git_hash = _git_hash()
+
+    # ── Fresh run: own the run directory from the start ───────────────────────
+    if not _find_model_arg(child_args):
+        ts = time.strftime("%Y%m%d_%H%M%S")
+        run_dir = os.path.join("models", f"run_{ts}")
+        os.makedirs(run_dir, exist_ok=True)
+        child_args = _insert_or_replace_run_dir_arg(child_args, run_dir)
+    else:
+        run_dir = None  # resolved from checkpoint path after first child exits
 
     cmd_q: queue.Queue = queue.Queue()
     _setup_raw_input()
@@ -405,12 +459,7 @@ def run(child_args: list, interval_hours: float, pin: bool = True) -> None:
     else:
         state.add_event(f"--no-pin: running from current tree ({state.initial_git_hash})")
 
-    run_dir: "str | None" = None
-
-    # _run_dir_box[0] is updated whenever run_dir is confirmed, so the atexit
-    # handler can print the correct folder even when sys.exit() is called deep
-    # inside the loop.
-    _run_dir_box: list = [None]
+    _run_dir_box: list = [run_dir]
     atexit.register(lambda: _print_exit_summary(_run_dir_box[0], state))
 
     with Live(refresh_per_second=2, screen=True) as live:
@@ -481,13 +530,24 @@ def run(child_args: list, interval_hours: float, pin: bool = True) -> None:
             proc.wait()
             live.update(ui.render(state.snapshot(), live.console.height))
 
-            if proc.returncode != 0:
-                state.add_event(f"🛑 Child crashed (exit {proc.returncode}) — not restarting")
-                live.update(ui.render(state.snapshot(), live.console.height))
-                time.sleep(2)  # drain stdout reader thread before capturing log
-                atexit.register(_print_crash_log, state.snapshot().log_lines)
-                sys.exit(proc.returncode)
+            # ── Decode exit code ───────────────────────────────────────────
+            rc = proc.returncode
 
+            if rc == TrainExitCode.COMPLETE:
+                state.add_event("✅ Training complete — all steps done")
+                live.update(ui.render(state.snapshot(), live.console.height))
+                time.sleep(1)
+                sys.exit(0)
+
+            if rc != TrainExitCode.INTERRUPTED:
+                # Crash or unknown exit
+                state.add_event(f"🛑 Child crashed (exit {rc}) — not restarting")
+                live.update(ui.render(state.snapshot(), live.console.height))
+                time.sleep(2)
+                atexit.register(_print_crash_log, state.snapshot().log_lines)
+                sys.exit(rc)
+
+            # rc == TrainExitCode.INTERRUPTED (graceful save + restart)
             if flags.quit_requested:
                 state.add_event("👋 Quit complete.")
                 live.update(ui.render(state.snapshot(), live.console.height))
@@ -497,7 +557,7 @@ def run(child_args: list, interval_hours: float, pin: bool = True) -> None:
             if interval_hours <= 0 and not flags.restart_requested:
                 sys.exit(0)
 
-            checkpoint = find_latest_checkpoint("models", run_dir=run_dir)
+            checkpoint = find_latest_checkpoint("models", run_dir=run_dir, min_mtime=session_start)
             if checkpoint is None:
                 state.add_event("🛑 No checkpoint found under models/ — cannot restart")
                 live.update(ui.render(state.snapshot(), live.console.height))

@@ -41,6 +41,7 @@ from agents.training.watchdog import start_subprocess_watchdog
 from agents.training.adaptive_lr_callback import AdaptiveLRCallback
 from agents.training.metrics_exporter_callback import MetricsExporterCallback
 from utils.logging.levels import LogLevel
+from main.exit_codes import TrainExitCode
 
 from poke_env.player import RandomPlayer, SimpleHeuristicsPlayer
 from agents.opponents import Gen3StallerPlayer, Gen3AggressivePlayer, Gen3SetupSweepPlayer
@@ -408,7 +409,11 @@ async def main():
             await evaluate_model_random(model)
             return
         else:
-            print(f"Continuing Training (Steps: {args.steps}, LR: {args.lr})")
+            remaining_steps = args.steps - model.num_timesteps
+            if remaining_steps <= 0:
+                print(f"Training already complete ({model.num_timesteps:,} / {args.steps:,} steps)")
+                sys.exit(TrainExitCode.COMPLETE)
+            print(f"Continuing Training (Steps: {remaining_steps:,} remaining of {args.steps:,}, LR: {args.lr})")
             _run_roundtrip_test(model, _load_extractor_kwargs["layout"], _load_policy_kwargs, debug=args.debug)
             save_model_snapshot(model_dir, current_version)
 
@@ -419,7 +424,7 @@ async def main():
                 model.save(final_path)
                 _write_latest_txt(model_dir, "final_model_interrupted.zip")
                 print(f"Model saved to {final_path}. Exiting.")
-                sys.exit(0)
+                sys.exit(TrainExitCode.INTERRUPTED)
 
             def sigusr1_handler(sig, frame):
                 step = model.num_timesteps
@@ -500,7 +505,7 @@ async def main():
             model.save(final_path)
             _write_latest_txt(model_dir, "final_model_interrupted.zip")
             print(f"Model saved to {final_path}. Exiting.")
-            sys.exit(0)
+            sys.exit(TrainExitCode.INTERRUPTED)
 
         def sigusr1_handler(sig, frame):
             step = model.num_timesteps

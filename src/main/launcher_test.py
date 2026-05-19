@@ -95,6 +95,25 @@ class TestFindLatestCheckpoint:
         (run / "latest.txt").write_text("ghost.zip\n")  # points to nonexistent file
         assert find_latest_checkpoint(str(tmp_path), run_dir=str(run)) == str(good)
 
+    def test_min_mtime_filters_old_checkpoints(self, tmp_path):
+        old = tmp_path / "checkpoint_9000_steps.zip"
+        old.write_text("x")
+        now = time.time()
+        # backdate the old file so it predates the cutoff
+        os.utime(str(old), (now - 100, now - 100))
+        new = tmp_path / "checkpoint_100_steps.zip"
+        new.write_text("x")
+        # new has current mtime; old has higher step count but is too old
+        result = find_latest_checkpoint(str(tmp_path), min_mtime=now - 10)
+        assert result == str(new)
+
+    def test_min_mtime_returns_none_when_all_filtered(self, tmp_path):
+        old = tmp_path / "checkpoint_9000_steps.zip"
+        old.write_text("x")
+        now = time.time()
+        os.utime(str(old), (now - 100, now - 100))
+        assert find_latest_checkpoint(str(tmp_path), min_mtime=now - 10) is None
+
 
 # ── _insert_or_replace_model_arg ─────────────────────────────────────────────
 
@@ -147,7 +166,6 @@ class TestFindModelArg:
 
 class TestReadCheckpointGitHash:
     def test_reads_hash_from_metadata(self, tmp_path):
-        import json
         (tmp_path / "metadata.json").write_text(json.dumps({"git_hash": "abc123full"}))
         result = _read_checkpoint_git_hash(str(tmp_path / "model.zip"))
         assert result == "abc123full"
@@ -157,7 +175,6 @@ class TestReadCheckpointGitHash:
         assert result is None
 
     def test_returns_none_when_key_missing(self, tmp_path):
-        import json
         (tmp_path / "metadata.json").write_text(json.dumps({"saved_at": "2026-01-01"}))
         result = _read_checkpoint_git_hash(str(tmp_path / "model.zip"))
         assert result is None
@@ -345,6 +362,7 @@ def _run_patches(mock_proc):
     stack.enter_context(patch("main.launcher.queue.Queue", return_value=qmod.Queue()))
     stack.enter_context(patch("main.launcher.os.pipe", return_value=(3, 4)))
     stack.enter_context(patch("main.launcher.os.close"))
+    stack.enter_context(patch("main.launcher.os.makedirs"))
     stack.enter_context(patch("main.launcher._setup_raw_input"))
     mock_live = MagicMock()
     mock_live.__enter__ = MagicMock(return_value=MagicMock())
