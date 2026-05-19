@@ -24,7 +24,7 @@ from main.launcher import (
     _strip_launcher_args,
     find_latest_checkpoint,
 )
-from main.launcher_ui import LauncherState
+from main.launcher import LauncherState
 
 
 # ── find_latest_checkpoint ───────────────────────────────────────────────────
@@ -272,7 +272,7 @@ class TestDispatchCommand:
         else:
             deadline = time.monotonic() + 10800
         sent = []
-        with patch("main.launcher.os.kill", side_effect=lambda pid, sig: sent.append(sig)):
+        with patch("main.launcher.input.os.kill", side_effect=lambda pid, sig: sent.append(sig)):
             _dispatch_command(ch, proc, state, flags, deadline, interval_hours=3.0)
         return proc, state, flags, sent
 
@@ -286,7 +286,7 @@ class TestDispatchCommand:
         proc, state, flags, deadline = self._setup()
         flags.sigterm_sent = True
         sent = []
-        with patch("main.launcher.os.kill", side_effect=lambda pid, sig: sent.append(sig)):
+        with patch("main.launcher.input.os.kill", side_effect=lambda pid, sig: sent.append(sig)):
             _dispatch_command("r", proc, state, flags, deadline, interval_hours=3.0)
         assert signal.SIGTERM not in sent
 
@@ -299,7 +299,7 @@ class TestDispatchCommand:
         proc.pid = 99999
         state = LauncherState(interval_hours=3.0)
         flags = _PollFlags()
-        with patch("main.launcher.os.kill", side_effect=ProcessLookupError):
+        with patch("main.launcher.input.os.kill", side_effect=ProcessLookupError):
             _dispatch_command("c", proc, state, flags, float("inf"), 3.0)
         snap = state.snapshot()
         assert any("already exited" in e for e in snap.events)
@@ -315,7 +315,7 @@ class TestDispatchCommand:
         proc, state, flags, deadline = self._setup()
         state.view_mode = "logs"
         sent = []
-        with patch("main.launcher.os.kill", side_effect=lambda pid, sig: sent.append(sig)):
+        with patch("main.launcher.input.os.kill", side_effect=lambda pid, sig: sent.append(sig)):
             _dispatch_command("q", proc, state, flags, deadline, 3.0)
         assert state.view_mode == "logs"
         assert not flags.sigterm_sent
@@ -328,7 +328,7 @@ class TestDispatchCommand:
     def test_d_switches_to_dashboard(self):
         proc, state, flags, deadline = self._setup()
         state.view_mode = "logs"
-        with patch("main.launcher.os.kill"):
+        with patch("main.launcher.input.os.kill"):
             _dispatch_command("d", proc, state, flags, deadline, 3.0)
         assert state.view_mode == "dashboard"
 
@@ -340,7 +340,7 @@ class TestDispatchCommand:
     def test_unknown_key_is_ignored(self):
         proc, state, flags, deadline = self._setup()
         sent = []
-        with patch("main.launcher.os.kill", side_effect=lambda pid, sig: sent.append(sig)):
+        with patch("main.launcher.input.os.kill", side_effect=lambda pid, sig: sent.append(sig)):
             _dispatch_command("z", proc, state, flags, deadline, 3.0)
         assert not sent
         assert not flags.sigterm_sent
@@ -356,19 +356,19 @@ def _run_patches(mock_proc):
     from unittest.mock import patch, MagicMock
 
     stack = ExitStack()
-    stack.enter_context(patch("main.launcher.subprocess.Popen", return_value=mock_proc))
-    stack.enter_context(patch("main.launcher._git_hash", return_value="abc1234"))
-    stack.enter_context(patch("main.launcher.get_git_hash", return_value="abc1234fullhash"))
-    stack.enter_context(patch("main.launcher.threading.Thread"))
-    stack.enter_context(patch("main.launcher.queue.Queue", return_value=qmod.Queue()))
-    stack.enter_context(patch("main.launcher.os.pipe", return_value=(3, 4)))
-    stack.enter_context(patch("main.launcher.os.close"))
-    stack.enter_context(patch("main.launcher.os.makedirs"))
-    stack.enter_context(patch("main.launcher._setup_raw_input"))
+    stack.enter_context(patch("main.launcher.child.subprocess.Popen", return_value=mock_proc))
+    stack.enter_context(patch("main.launcher.worktree._git_hash", return_value="abc1234"))
+    stack.enter_context(patch("main.launcher.worktree.get_git_hash", return_value="abc1234fullhash"))
+    stack.enter_context(patch("main.launcher.child.threading.Thread"))
+    stack.enter_context(patch("main.launcher.run.queue.Queue", return_value=qmod.Queue()))
+    stack.enter_context(patch("main.launcher.child.os.pipe", return_value=(3, 4)))
+    stack.enter_context(patch("main.launcher.child.os.close"))
+    stack.enter_context(patch("main.launcher.run.os.makedirs"))
+    stack.enter_context(patch("main.launcher.run._setup_raw_input"))
     mock_live = MagicMock()
     mock_live.__enter__ = MagicMock(return_value=MagicMock())
     mock_live.__exit__ = MagicMock(return_value=False)
-    stack.enter_context(patch("main.launcher.Live", return_value=mock_live))
+    stack.enter_context(patch("main.launcher.run.Live", return_value=mock_live))
     return stack
 
 

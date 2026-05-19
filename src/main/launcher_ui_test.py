@@ -2,13 +2,8 @@ import time
 
 import pytest
 
-from main.launcher_ui import (
-    LauncherSnapshot,
-    LauncherState,
-    LauncherUI,
-    _elapsed_str,
-    _fmt_val,
-)
+from main.launcher.state import LauncherSnapshot, LauncherState
+from main.launcher.ui import LauncherUI, _elapsed_str, _fmt_val
 
 
 # ── Helpers ──────────────────────────────────────────────────────────────────

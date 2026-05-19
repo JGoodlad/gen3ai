@@ -1,0 +1,76 @@
+"""Thread-safe mutable state and immutable snapshot for the training launcher."""
+
+import collections
+import threading
+import time
+from dataclasses import dataclass
+from typing import Optional
+
+
+@dataclass
+class LauncherSnapshot:
+    pid: Optional[int]
+    run_start: float           # time.monotonic()
+    deadline: float            # time.monotonic(), float("inf") if no restart
+    restart_count: int
+    interval_hours: float
+    view_mode: str             # "dashboard" | "logs" | "confirm_quit"
+    metrics: dict              # {tag: float}
+    metrics_step: int
+    metrics_ts: Optional[float]    # monotonic time of last metrics update
+    log_lines: list            # recent child stdout lines
+    events: list               # launcher event strings (timestamped)
+    initial_git_hash: Optional[str]
+
+
+class LauncherState:
+    def __init__(self, interval_hours: float) -> None:
+        self._lock = threading.Lock()
+        self.interval_hours = interval_hours
+        self._log_lines: collections.deque = collections.deque(maxlen=500)
+        self._events: list = []
+        self._metrics: dict = {}
+        self._metrics_step: int = 0
+        self._metrics_ts: Optional[float] = None
+        self.pid: Optional[int] = None
+        self.run_start: float = time.monotonic()
+        self.deadline: float = float("inf")
+        self.restart_count: int = 0
+        self.view_mode: str = "dashboard"
+        self.initial_git_hash: Optional[str] = None
+
+    def add_log(self, line: str) -> None:
+        with self._lock:
+            self._log_lines.append(line)
+
+    def add_event(self, msg: str) -> None:
+        ts = time.strftime("%H:%M:%S")
+        with self._lock:
+            self._events.append(f"[{ts}] {msg}")
+            if len(self._events) > 30:
+                self._events = self._events[-30:]
+
+    def update_metrics(self, payload: dict) -> None:
+        step = int(payload.get("_step", 0))
+        cleaned = {k: v for k, v in payload.items() if k != "_step"}
+        with self._lock:
+            self._metrics = cleaned
+            self._metrics_step = step
+            self._metrics_ts = time.monotonic()
+
+    def snapshot(self) -> LauncherSnapshot:
+        with self._lock:
+            return LauncherSnapshot(
+                pid=self.pid,
+                run_start=self.run_start,
+                deadline=self.deadline,
+                restart_count=self.restart_count,
+                interval_hours=self.interval_hours,
+                view_mode=self.view_mode,
+                metrics=dict(self._metrics),
+                metrics_step=self._metrics_step,
+                metrics_ts=self._metrics_ts,
+                log_lines=list(self._log_lines),
+                events=list(self._events),
+                initial_git_hash=self.initial_git_hash,
+            )
