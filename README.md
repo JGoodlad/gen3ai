@@ -88,10 +88,10 @@ export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable
 
 ### Via launcher (recommended for long runs)
 
-`launcher.py` wraps the training script with periodic restarts to reclaim memory fragmentation, a Rich TUI dashboard, and **git worktree isolation** — it pins the child process to the exact commit at launch so agent pushes to `main` can't affect a running session.
+The `launcher` package wraps the training script with periodic restarts to reclaim memory fragmentation, a Rich TUI dashboard, and **git worktree isolation** — it pins the child process to the exact commit at launch so agent pushes to `main` can't affect a running session.
 
 ```bash
-export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 src/main/launcher.py \
+export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 -m main.launcher \
   --restart-interval-hours 3 \
   --steps 50000000 \
   --n-envs 96 \
@@ -106,7 +106,7 @@ export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable
 
 Resume from a checkpoint (launcher reads the saved `git_hash` and pins to that commit):
 ```bash
-export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 src/main/launcher.py \
+export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 -m main.launcher \
   --restart-interval-hours 3 \
   --model models/<run>/checkpoint_NNNN_steps.zip \
   --steps 50000000 \
@@ -171,8 +171,9 @@ src/
     training/        # Gen3Env, reward manager, battle context, wrappers,
                      #   stall detection, replay recorder
   main/
-    launcher.py        # Restart loop + Rich TUI (preferred entry point)
-    launcher_ui.py     # TUI state and rendering
+    launcher/          # Restart loop + Rich TUI (preferred entry point)
+                     #   checkpoint.py, worktree.py, child.py, input.py,
+                     #   run.py, state.py, ui.py
     exit_codes.py      # TrainExitCode enum (COMPLETE/INTERRUPTED/CRASH)
     train_rl_agent.py  # Training script (also callable directly)
     play.py            # Battle / evaluation entry point

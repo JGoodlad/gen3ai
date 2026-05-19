@@ -103,7 +103,7 @@ A hang after `[STALL LOGGED]` or a crash before "Training complete" indicates a 
 
 ## Launcher (preferred for long runs)
 
-`src/main/launcher.py` wraps `train_rl_agent.py` with:
+`src/main/launcher/` wraps `train_rl_agent.py` with:
 - **Periodic restarts** — kills and relaunches the child every N hours to reclaim pymalloc fragmentation; the child saves a checkpoint on SIGTERM and the launcher picks it up automatically
 - **Worktree isolation** — at startup, creates a detached git worktree pinned to the current HEAD (or to the commit recorded in the checkpoint's `metadata.json` when resuming). Agent pushes to `main` never affect a running session
 - **Rich TUI** — live dashboard showing metrics, FPS, restart countdown; `l` for logs, `r` to restart now, `c` for forced checkpoint, `q` to quit cleanly
@@ -119,7 +119,7 @@ A hang after `[STALL LOGGED]` or a crash before "Training complete" indicates a 
 
 ### Starting a fresh run via launcher
 ```bash
-export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 src/main/launcher.py \
+export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 -m main.launcher \
   --restart-interval-hours 3 \
   --steps 15000000 \
   --n-envs 64 \
@@ -134,7 +134,7 @@ export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable
 
 ### Resuming from a checkpoint
 ```bash
-export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 src/main/launcher.py \
+export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 -m main.launcher \
   --restart-interval-hours 3 \
   --model models/<run>/checkpoint_NNNN_steps.zip \
   --steps 15000000 \
@@ -216,8 +216,9 @@ src/
     action/          # Action masking and mapping
     training/        # Callbacks and reward manager
   main/
-    launcher.py        # Restart loop + Rich TUI (preferred for long runs)
-    launcher_ui.py     # TUI state and rendering (LauncherState, LauncherUI)
+    launcher/          # Restart loop + Rich TUI (preferred for long runs)
+                     #   checkpoint.py, worktree.py, child.py, input.py,
+                     #   run.py, state.py, ui.py
     exit_codes.py      # TrainExitCode enum (COMPLETE=0, INTERRUPTED=15, CRASH=1)
     train_rl_agent.py  # Training entry point (also callable directly)
     play.py            # Battle / evaluation entry point
