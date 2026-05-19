@@ -185,15 +185,16 @@ def _create_run_worktree(git_hash: str) -> "tuple[str, str, callable]":
     if result.returncode != 0:
         raise RuntimeError(f"git worktree add failed:\n{result.stderr.strip()}")
 
-    # Symlink pokemon-showdown bridge artifacts (worktree has empty placeholder)
+    # Replace the empty submodule placeholder with a symlink to the main repo's
+    # fully-initialized pokemon-showdown checkout.  Node's require() needs the
+    # whole directory (including package.json), not just dist/ + node_modules/.
+    # Git-status correctness doesn't matter for this temporary /tmp worktree.
     ps_main = os.path.join(repo_root, "deps", "pokemon-showdown")
     ps_wt = os.path.join(tmp, "deps", "pokemon-showdown")
-    os.makedirs(ps_wt, exist_ok=True)
-    for artifact in ("dist", "node_modules"):
-        src = os.path.join(ps_main, artifact)
-        dst = os.path.join(ps_wt, artifact)
-        if os.path.exists(src) and not os.path.lexists(dst):
-            os.symlink(src, dst)
+    if os.path.isdir(ps_wt) and not os.path.islink(ps_wt):
+        os.rmdir(ps_wt)  # git leaves an empty placeholder directory
+    if not os.path.lexists(ps_wt):
+        os.symlink(ps_main, ps_wt)
 
     train_script = os.path.join(tmp, "src", "main", "train_rl_agent.py")
     src_dir = os.path.join(tmp, "src")
