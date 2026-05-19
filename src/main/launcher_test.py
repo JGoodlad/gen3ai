@@ -10,6 +10,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
+from main.exit_codes import TrainExitCode
 from main.launcher import (
     _TRAIN_SCRIPT,
     _SRC_DIR,
@@ -371,33 +372,46 @@ def _run_patches(mock_proc):
     return stack
 
 
-class TestIntervalRestart:
-    def test_crash_does_not_restart(self):
+def _make_proc(returncode: int, pid: int = 99) -> MagicMock:
+    proc = MagicMock()
+    proc.pid = pid
+    proc.returncode = returncode
+    proc.stdout = io.BytesIO(b"")
+    proc.wait.return_value = None
+    return proc
+
+
+class TestExitCodes:
+    """Three-way TrainExitCode decode in the launcher main loop."""
+
+    def test_complete_stops_loop(self):
+        """COMPLETE (0): launcher logs success and exits 0 without restarting."""
         from main.launcher import run
-
-        mock_proc = MagicMock()
-        mock_proc.pid = 99
-        mock_proc.returncode = 1
-        mock_proc.stdout = io.BytesIO(b"")
-        mock_proc.wait.return_value = None
-
-        with _run_patches(mock_proc):
+        with _run_patches(_make_proc(TrainExitCode.COMPLETE)):
             with pytest.raises(SystemExit) as exc_info:
                 run(["--debug"], interval_hours=0, pin=False)
-
-        assert exc_info.value.code == 1
-
-    def test_clean_exit_no_interval_exits_zero(self):
-        from main.launcher import run
-
-        mock_proc = MagicMock()
-        mock_proc.pid = 88
-        mock_proc.returncode = 0
-        mock_proc.stdout = io.BytesIO(b"")
-        mock_proc.wait.return_value = None
-
-        with _run_patches(mock_proc):
-            with pytest.raises(SystemExit) as exc_info:
-                run(["--debug"], interval_hours=0, pin=False)
-
         assert exc_info.value.code == 0
+
+    def test_interrupted_no_interval_exits_zero(self):
+        """INTERRUPTED (15) with no restart interval: launcher exits 0 cleanly."""
+        from main.launcher import run
+        with _run_patches(_make_proc(TrainExitCode.INTERRUPTED)):
+            with pytest.raises(SystemExit) as exc_info:
+                run(["--debug"], interval_hours=0, pin=False)
+        assert exc_info.value.code == 0
+
+    def test_crash_exits_with_returncode(self):
+        """CRASH (any other code): launcher exits with the child's code, no restart."""
+        from main.launcher import run
+        with _run_patches(_make_proc(TrainExitCode.CRASH)):
+            with pytest.raises(SystemExit) as exc_info:
+                run(["--debug"], interval_hours=0, pin=False)
+        assert exc_info.value.code == TrainExitCode.CRASH
+
+    def test_unknown_exit_code_treated_as_crash(self):
+        """Exit codes not in the enum are also treated as crashes."""
+        from main.launcher import run
+        with _run_patches(_make_proc(42)):
+            with pytest.raises(SystemExit) as exc_info:
+                run(["--debug"], interval_hours=0, pin=False)
+        assert exc_info.value.code == 42
