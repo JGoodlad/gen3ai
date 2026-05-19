@@ -34,6 +34,13 @@ class MetricsExporterCallback(BaseCallback):
                 for k, v in self.logger.name_to_value.items()
                 if isinstance(v, (int, float))
             }
+            # rollout/ep_rew_mean isn't logged into name_to_value until after this
+            # callback fires, so read directly from ep_info_buffer.
+            buf = getattr(self.model, "ep_info_buffer", None)
+            if buf:
+                from stable_baselines3.common.utils import safe_mean
+                payload["rollout/ep_rew_mean"] = float(safe_mean([ep["r"] for ep in buf]))
+                payload["rollout/ep_len_mean"] = float(safe_mean([ep["l"] for ep in buf]))
             payload["_step"] = int(self.num_timesteps)
             self._pipe.write(json.dumps(payload) + "\n")
         except (OSError, BrokenPipeError):
