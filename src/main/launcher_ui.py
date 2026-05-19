@@ -137,9 +137,9 @@ _METRIC_ORDER = [
 class LauncherUI:
     """No threads, no subprocess, no I/O — only Rich renderables out."""
 
-    def render(self, snap: LauncherSnapshot):
+    def render(self, snap: LauncherSnapshot, console_height: int = 40):
         if snap.view_mode == "logs":
-            return self._render_logs(snap)
+            return self._render_logs(snap, console_height)
         if snap.view_mode == "confirm_restart":
             return self._render_confirm(snap)
         if snap.view_mode == "confirm_quit":
@@ -290,8 +290,10 @@ class LauncherUI:
 
     # ── Log view ─────────────────────────────────────────────────────────────
 
-    def _render_logs(self, snap: LauncherSnapshot):
-        log_text = self._render_log_lines(snap.log_lines, n=40)
+    def _render_logs(self, snap: LauncherSnapshot, console_height: int = 40):
+        # 2 border lines + 1 empty spacer + 1 footer = 4 lines of chrome
+        n = max(1, console_height - 4)
+        log_text = self._render_log_lines(snap.log_lines, n=n)
         footer = Text("  [d] dashboard", style="dim")
         return Panel(
             Group(log_text, Text(""), footer),

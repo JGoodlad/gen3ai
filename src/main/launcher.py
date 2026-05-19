@@ -334,7 +334,7 @@ def run(child_args: list, interval_hours: float) -> None:
                     state.pending_restart_git_hash = current_hash
                     state.view_mode = "confirm_restart"
                     while state.view_mode == "confirm_restart":
-                        live.update(ui.render(state.snapshot()))
+                        live.update(ui.render(state.snapshot(), live.console.height))
                         time.sleep(0.25)
                         while not cmd_q.empty():
                             ch = cmd_q.get_nowait()
@@ -358,7 +358,7 @@ def run(child_args: list, interval_hours: float) -> None:
 
             # ── Poll loop ──────────────────────────────────────────────────
             while True:
-                live.update(ui.render(state.snapshot()))
+                live.update(ui.render(state.snapshot(), live.console.height))
 
                 now = time.monotonic()
                 remaining = deadline - now
@@ -397,17 +397,17 @@ def run(child_args: list, interval_hours: float) -> None:
                         _dispatch_command(ch, proc, state, flags, deadline, interval_hours)
 
             proc.wait()
-            live.update(ui.render(state.snapshot()))
+            live.update(ui.render(state.snapshot(), live.console.height))
 
             if proc.returncode != 0:
                 state.add_event(f"🛑 Child crashed (exit {proc.returncode}) — not restarting")
-                live.update(ui.render(state.snapshot()))
+                live.update(ui.render(state.snapshot(), live.console.height))
                 time.sleep(2)
                 sys.exit(proc.returncode)
 
             if flags.quit_requested:
                 state.add_event("👋 Quit complete.")
-                live.update(ui.render(state.snapshot()))
+                live.update(ui.render(state.snapshot(), live.console.height))
                 time.sleep(1)
                 sys.exit(0)
 
@@ -417,7 +417,7 @@ def run(child_args: list, interval_hours: float) -> None:
             checkpoint = find_latest_checkpoint("models", run_dir=run_dir)
             if checkpoint is None:
                 state.add_event("🛑 No checkpoint found under models/ — cannot restart")
-                live.update(ui.render(state.snapshot()))
+                live.update(ui.render(state.snapshot(), live.console.height))
                 time.sleep(2)
                 sys.exit(1)
 
