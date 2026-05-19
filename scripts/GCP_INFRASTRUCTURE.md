@@ -210,6 +210,24 @@ Worst-case recovery: ~100 seconds from network drop to tunnel restored.
 
 ---
 
+## TensorBoard remote access
+
+Forward TensorBoard from your desktop to your local browser over the workstation tunnel:
+
+```bash
+ssh -p 2222 -L 6006:localhost:6006 goodlad@workstation.g5d.io
+```
+
+Then open in Chrome: **http://localhost:6006**
+
+Keep the SSH session open while using TensorBoard. Make sure TensorBoard is running on
+the desktop first:
+```bash
+tensorboard --logdir runs/
+```
+
+---
+
 ## Troubleshooting
 
 **SOCKS5 tunnel not working:**
