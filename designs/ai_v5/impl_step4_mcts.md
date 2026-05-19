@@ -196,6 +196,85 @@ and `max_depth` accordingly.
 
 ---
 
+## Rollout Bridge
+
+### State Serialization
+
+Pokémon Showdown's `Battle` class has full round-trip serialization built in
+(`deps/pokemon-showdown/dist/sim/state.js`):
+
+```js
+const json = battle.toJSON();           // Battle → plain object
+const battle2 = Battle.fromJSON(json);  // plain object → new Battle
+battle2.restart(send);                  // wire up output callback
+```
+
+`toJSON()` serializes the entire battle graph: sides, each Pokémon's set and in-battle
+state, the action queue, PRNG seed, field conditions, and log. `fromJSON()` fully
+reconstructs it. This means **state injection is a solved problem** — no custom
+serialization needed.
+
+The PRNG seed is captured in the snapshot, so rollouts from the same state are
+deterministic across workers (each worker receives a copy with the same seed but runs
+independently — stochastic divergence comes from different team hypotheses sampled by
+the team completion model, not from PRNG variance).
+
+### Bridge Architecture: One Persistent Process per Worker
+
+Each MCTS worker owns one persistent `node sim_bridge.js` subprocess, launched when
+the worker starts and kept alive for the duration of the MCTS search. 20 workers = 20
+Node.js processes. Rationale:
+
+- **No shared state**: each worker runs fully independent rollouts with its own in-memory
+  `Battle` object — no locking, no message contention
+- **Startup cost amortized**: the ~80ms Node.js startup happens once per turn's search,
+  not once per rollout
+- **Simple protocol**: line-delimited JSON over stdin/stdout, same as the existing bridge
+  pattern in `src/utils/bridge/`
+- **No socket overhead**: Unix domain sockets or TCP would add latency per round-trip;
+  pipes are zero-copy on Linux
+
+A single shared Node.js server with `worker_threads` is not worth the complexity —
+Showdown's sim is synchronous CPU code and gains nothing from sharing a V8 heap across
+simulations.
+
+### Protocol
+
+Each round-trip is one JSON line in, one JSON line out:
+
+**Step a game turn:**
+```json
+→ {"cmd": "step", "state": <battle_json>, "p1": "move 1", "p2": "switch 3"}
+← {"state": <new_battle_json>, "done": false, "winner": null}
+← {"state": <final_battle_json>, "done": true,  "winner": "p1"}
+```
+
+**Query available choices:**
+```json
+→ {"cmd": "choices", "state": <battle_json>}
+← {"p1": ["move 1", "move 2", "switch 3"], "p2": ["move 1", "switch 2", "switch 4"]}
+```
+
+`<battle_json>` is the output of `battle.toJSON()` — a plain JSON object, not a
+string-escaped blob.
+
+`state` in the step response is only returned when needed (leaf node reached or terminal)
+— the Python rollout code tracks observations itself, so most responses are just
+`{"done": false}`.
+
+### Files to Create (Bridge)
+
+| File | Purpose |
+|------|---------|
+| `src/utils/bridge/sim_bridge.js` | Persistent Node.js process: loads Battle from JSON, steps game, returns new state + done flag |
+| `src/agents/mcts/sim_client.py` | Python wrapper: manages one `sim_bridge.js` subprocess, exposes `step(state_json, p1_choice, p2_choice) → (new_state, done, winner)` |
+
+`sim_bridge.js` follows the same pattern as `validate_team.js` and `get_hp.js` — reads
+newline-delimited JSON from stdin, writes newline-delimited JSON to stdout, imports from
+`deps/pokemon-showdown/dist/sim/`.
+
+---
+
 ## Integration with the Inference Player
 
 `Gen3Player` (in `src/agents/inference/player.py`) currently selects actions via a single
@@ -225,9 +304,11 @@ existing `action_to_order()` and Showdown communication logic are unchanged.
 
 | File | Purpose |
 |------|---------|
+| `src/utils/bridge/sim_bridge.js` | Persistent Node.js bridge: load Battle from JSON, step one game turn, return new state + outcome |
+| `src/agents/mcts/sim_client.py` | Python wrapper around `sim_bridge.js`: manages subprocess lifetime, exposes `step()` / `choices()` |
 | `src/agents/mcts/tree.py` | `MCTSTree` — Q, N, M, P, F dicts; tree policy (α, β); backup; pruning |
-| `src/agents/mcts/rollout.py` | Single trajectory: hidden-info sampling, env stepping, value backup |
-| `src/agents/mcts/worker.py` | Worker process: run 10 rollouts, send tree to aggregator |
+| `src/agents/mcts/rollout.py` | Single trajectory: hidden-info sampling, sim_client stepping, value backup |
+| `src/agents/mcts/worker.py` | Worker process: owns one `SimClient`, runs 10 rollouts, sends tree to aggregator |
 | `src/agents/mcts/aggregator.py` | Aggregator process: merge worker trees, broadcast master |
 | `src/agents/mcts/search.py` | `mcts_search()` — top-level entry point: spawn workers, collect result |
 | `src/agents/inference/mcts_player.py` | `MCTSPlayer` — wraps `Gen3Player`, calls `mcts_search()` |
