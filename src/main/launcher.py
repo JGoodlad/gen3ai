@@ -21,6 +21,7 @@ from dataclasses import dataclass
 from rich.live import Live
 
 from main.launcher_ui import LauncherState, LauncherUI
+from utils.git import get_git_hash
 
 _PYTHON = "/home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3"
 _TRAIN_SCRIPT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "train_rl_agent.py")
@@ -107,14 +108,7 @@ def _strip_launcher_arg(argv: list) -> list:
 # ── Git ───────────────────────────────────────────────────────────────────────
 
 def _git_hash() -> str:
-    try:
-        return subprocess.check_output(
-            ["git", "rev-parse", "--short", "HEAD"],
-            text=True,
-            stderr=subprocess.DEVNULL,
-        ).strip()
-    except Exception:
-        return "unknown"
+    return get_git_hash(short=True)
 
 
 # ── Exit summary ─────────────────────────────────────────────────────────────

@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import json
 import os
-import subprocess
 import sys
 from datetime import datetime, timezone
 from typing import Optional
@@ -11,6 +10,7 @@ import stable_baselines3
 from sb3_contrib import MaskablePPO
 
 from agents.model.model_version import ModelVersion, ModelVersionError
+from utils.git import get_git_hash
 
 
 def save_model_snapshot(
@@ -29,16 +29,7 @@ def save_model_snapshot(
         f.write(version.to_json())
 
     if git_hash is None:
-        try:
-            git_hash = (
-                subprocess.check_output(
-                    ["git", "rev-parse", "HEAD"], stderr=subprocess.DEVNULL
-                )
-                .decode()
-                .strip()
-            )
-        except Exception:
-            git_hash = "unknown"
+        git_hash = get_git_hash()
 
     metadata = {
         "saved_at": datetime.now(timezone.utc).isoformat(),
