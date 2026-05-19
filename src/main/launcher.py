@@ -21,7 +21,7 @@ from dataclasses import dataclass
 from rich.live import Live
 
 from main.launcher_ui import LauncherState, LauncherUI
-from utils.git import get_git_hash
+from utils.git import get_git_hash, get_repo_root
 
 _PYTHON = "/home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3"
 _TRAIN_SCRIPT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "train_rl_agent.py")
@@ -91,13 +91,16 @@ def _insert_or_replace_run_dir_arg(args: list, run_dir: str) -> list:
     return out
 
 
-def _strip_launcher_arg(argv: list) -> list:
+def _strip_launcher_args(argv: list) -> list:
+    """Strip launcher-only flags so they are not forwarded to train_rl_agent.py."""
     out = []
     i = 0
     while i < len(argv):
         if argv[i] == "--restart-interval-hours":
             i += 2
         elif argv[i].startswith("--restart-interval-hours="):
+            i += 1
+        elif argv[i] == "--no-pin":
             i += 1
         else:
             out.append(argv[i])
@@ -109,6 +112,60 @@ def _strip_launcher_arg(argv: list) -> list:
 
 def _git_hash() -> str:
     return get_git_hash(short=True)
+
+
+def _find_model_arg(args: list) -> "str | None":
+    for i, a in enumerate(args):
+        if a == "--model" and i + 1 < len(args):
+            return args[i + 1]
+    return None
+
+
+def _read_checkpoint_git_hash(model_path: str) -> "str | None":
+    """Read git_hash from the metadata.json saved alongside a checkpoint."""
+    candidates = [
+        os.path.dirname(os.path.abspath(model_path)),
+        os.path.abspath(model_path),
+    ]
+    for d in candidates:
+        meta = os.path.join(d, "metadata.json")
+        if os.path.exists(meta):
+            try:
+                with open(meta) as f:
+                    return json.load(f).get("git_hash")
+            except Exception:
+                return None
+    return None
+
+
+def _create_run_worktree(git_hash: str) -> "tuple[str, str, callable]":
+    """Create a detached git worktree pinned to git_hash.
+
+    Returns (train_script_path, src_dir_path, cleanup_fn).
+    Raises RuntimeError if git worktree add fails.
+    """
+    import tempfile
+
+    repo_root = get_repo_root()
+    tmp = tempfile.mkdtemp(prefix=f"launcher-{git_hash[:8]}-")
+    os.rmdir(tmp)  # git worktree add requires the target not to exist
+    result = subprocess.run(
+        ["git", "worktree", "add", "--detach", tmp, git_hash],
+        capture_output=True, text=True, cwd=repo_root,
+    )
+    if result.returncode != 0:
+        raise RuntimeError(f"git worktree add failed:\n{result.stderr.strip()}")
+
+    train_script = os.path.join(tmp, "src", "main", "train_rl_agent.py")
+    src_dir = os.path.join(tmp, "src")
+
+    def cleanup() -> None:
+        subprocess.run(
+            ["git", "worktree", "remove", "--force", tmp],
+            capture_output=True, cwd=repo_root,
+        )
+
+    return train_script, src_dir, cleanup
 
 
 # ── Exit summary ─────────────────────────────────────────────────────────────
@@ -263,24 +320,21 @@ def _dispatch_command(
 
 def _build_child_env() -> dict:
     env = os.environ.copy()
-    existing = env.get("PYTHONPATH", "")
-    env["PYTHONPATH"] = (_SRC_DIR + ":" + existing) if existing else _SRC_DIR
     env["PYTHONUNBUFFERED"] = "1"
     return env
 
 
 def _launch_child(
-    child_args: list, child_env: dict, state: LauncherState
-) -> tuple:
-    """Create metrics pipe, spawn child, start reader threads.
-
-    Returns (proc, metrics_r_fd). The metrics pipe read-fd is owned by the
-    _read_metrics_pipe daemon thread and will be closed when the child exits.
-    """
+    child_args: list, child_env: dict, state: LauncherState,
+    train_script: str, src_dir: str,
+) -> subprocess.Popen:
+    """Create metrics pipe, spawn child, start reader threads."""
     metrics_r, metrics_w = os.pipe()
+    existing = child_env.get("PYTHONPATH", "")
+    pythonpath = (src_dir + ":" + existing) if existing else src_dir
     proc = subprocess.Popen(
-        [_PYTHON, _TRAIN_SCRIPT] + child_args,
-        env={**child_env, "LAUNCHER_METRICS_FD": str(metrics_w)},
+        [_PYTHON, train_script] + child_args,
+        env={**child_env, "LAUNCHER_METRICS_FD": str(metrics_w), "PYTHONPATH": pythonpath},
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         pass_fds=(metrics_w,),
@@ -298,13 +352,34 @@ def _launch_child(
 
 # ── Main loop ─────────────────────────────────────────────────────────────────
 
-def run(child_args: list, interval_hours: float) -> None:
+def run(child_args: list, interval_hours: float, pin: bool = True) -> None:
     interval_seconds = interval_hours * 3600
     child_env = _build_child_env()
     state = LauncherState(interval_hours=interval_hours)
     ui = LauncherUI()
 
-    state.initial_git_hash = _git_hash()
+    import atexit
+
+    # ── Worktree pinning ──────────────────────────────────────────────────────
+    if pin:
+        model_path = _find_model_arg(child_args)
+        if model_path:
+            checkpoint_hash = _read_checkpoint_git_hash(model_path)
+            if not checkpoint_hash:
+                sys.exit(
+                    f"[launcher] ERROR: --model given but no git_hash found in metadata.json "
+                    f"for {model_path!r}.\nUse --no-pin to skip worktree isolation."
+                )
+            pin_hash = checkpoint_hash
+        else:
+            pin_hash = get_git_hash()  # full hash for worktree add
+
+        train_script, src_dir, worktree_cleanup = _create_run_worktree(pin_hash)
+        atexit.register(worktree_cleanup)
+        state.initial_git_hash = pin_hash[:8]
+    else:
+        train_script, src_dir = _TRAIN_SCRIPT, _SRC_DIR
+        state.initial_git_hash = _git_hash()
 
     cmd_q: queue.Queue = queue.Queue()
     _setup_raw_input()
@@ -315,40 +390,37 @@ def run(child_args: list, interval_hours: float) -> None:
     else:
         state.add_event("🚀 Starting — single run (no restart)")
 
+    if pin:
+        state.add_event(f"📌 Pinned to {state.initial_git_hash} (isolated worktree)")
+    else:
+        state.add_event(f"--no-pin: running from current tree ({state.initial_git_hash})")
+
     run_dir: "str | None" = None
 
     # _run_dir_box[0] is updated whenever run_dir is confirmed, so the atexit
     # handler can print the correct folder even when sys.exit() is called deep
     # inside the loop.
     _run_dir_box: list = [None]
-    import atexit
     atexit.register(lambda: _print_exit_summary(_run_dir_box[0], state))
 
     with Live(refresh_per_second=2, screen=True) as live:
         while True:
 
-            # ── Git check before each restart (skip on first launch) ───────
+            # ── Git drift check (informational only — worktree is immune) ──
             if state.restart_count > 0:
                 current_hash = _git_hash()
                 if current_hash != state.initial_git_hash:
-                    state.pending_restart_git_hash = current_hash
-                    state.view_mode = "confirm_restart"
-                    while state.view_mode == "confirm_restart":
-                        live.update(ui.render(state.snapshot(), live.console.height))
-                        time.sleep(0.25)
-                        while not cmd_q.empty():
-                            ch = cmd_q.get_nowait()
-                            if ch == "y":
-                                state.view_mode = "dashboard"
-                                state.pending_restart_git_hash = None
-                                state.add_event(
-                                    f"✅ Git change acknowledged ({current_hash}) — restarting"
-                                )
-                            elif ch == "n":
-                                sys.exit(0)
+                    if pin:
+                        state.add_event(
+                            f"ℹ️  main diverged to {current_hash} — pinned worktree unaffected"
+                        )
+                    else:
+                        state.add_event(
+                            f"ℹ️  main diverged to {current_hash} — next restart uses new code"
+                        )
 
             # ── Launch child ───────────────────────────────────────────────
-            proc = _launch_child(child_args, child_env, state)
+            proc = _launch_child(child_args, child_env, state, train_script, src_dir)
             state.add_event(f"✅ Child PID {proc.pid} started")
 
             deadline = state.run_start + interval_seconds if interval_hours > 0 else float("inf")
@@ -443,6 +515,12 @@ def main() -> None:
         default=3.0,
         help="Restart the training process every N hours (0 = run once)",
     )
+    parser.add_argument(
+        "--no-pin",
+        action="store_true",
+        default=False,
+        help="Skip worktree pinning — child runs from the current working tree (old behaviour)",
+    )
     parser.add_argument("-h", "--help", action="store_true")
 
     known, _ = parser.parse_known_args()
@@ -452,9 +530,9 @@ def main() -> None:
         print("\nAll other arguments are forwarded to train_rl_agent.py.")
         sys.exit(0)
 
-    child_args = _strip_launcher_arg(sys.argv[1:])
+    child_args = _strip_launcher_args(sys.argv[1:])
     try:
-        run(child_args, interval_hours=known.restart_interval_hours)
+        run(child_args, interval_hours=known.restart_interval_hours, pin=not known.no_pin)
     except KeyboardInterrupt:
         sys.exit(0)
 

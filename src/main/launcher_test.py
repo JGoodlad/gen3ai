@@ -11,12 +11,16 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from main.launcher import (
+    _TRAIN_SCRIPT,
+    _SRC_DIR,
     _PollFlags,
     _dispatch_command,
+    _find_model_arg,
     _insert_or_replace_model_arg,
     _insert_or_replace_run_dir_arg,
+    _read_checkpoint_git_hash,
     _read_metrics_pipe,
-    _strip_launcher_arg,
+    _strip_launcher_args,
     find_latest_checkpoint,
 )
 from main.launcher_ui import LauncherState
@@ -126,23 +130,60 @@ class TestInsertOrReplaceRunDirArg:
         assert result == ["--run-dir", "/models/run_x"]
 
 
-# ── _strip_launcher_arg ──────────────────────────────────────────────────────
+# ── _find_model_arg ──────────────────────────────────────────────────────────
 
-class TestStripLauncherArg:
+class TestFindModelArg:
+    def test_finds_model(self):
+        assert _find_model_arg(["--debug", "--model", "ckpt.zip"]) == "ckpt.zip"
+
+    def test_returns_none_when_absent(self):
+        assert _find_model_arg(["--debug", "--steps", "5000"]) is None
+
+    def test_returns_none_on_empty(self):
+        assert _find_model_arg([]) is None
+
+
+# ── _read_checkpoint_git_hash ─────────────────────────────────────────────────
+
+class TestReadCheckpointGitHash:
+    def test_reads_hash_from_metadata(self, tmp_path):
+        import json
+        (tmp_path / "metadata.json").write_text(json.dumps({"git_hash": "abc123full"}))
+        result = _read_checkpoint_git_hash(str(tmp_path / "model.zip"))
+        assert result == "abc123full"
+
+    def test_returns_none_when_no_metadata(self, tmp_path):
+        result = _read_checkpoint_git_hash(str(tmp_path / "model.zip"))
+        assert result is None
+
+    def test_returns_none_when_key_missing(self, tmp_path):
+        import json
+        (tmp_path / "metadata.json").write_text(json.dumps({"saved_at": "2026-01-01"}))
+        result = _read_checkpoint_git_hash(str(tmp_path / "model.zip"))
+        assert result is None
+
+
+# ── _strip_launcher_args ──────────────────────────────────────────────────────
+
+class TestStripLauncherArgs:
     def test_strips_separate_flag_and_value(self):
         args = ["--steps", "5000", "--restart-interval-hours", "3.0", "--debug"]
-        assert _strip_launcher_arg(args) == ["--steps", "5000", "--debug"]
+        assert _strip_launcher_args(args) == ["--steps", "5000", "--debug"]
 
     def test_strips_equals_form(self):
         args = ["--restart-interval-hours=2.5", "--debug"]
-        assert _strip_launcher_arg(args) == ["--debug"]
+        assert _strip_launcher_args(args) == ["--debug"]
+
+    def test_strips_no_pin(self):
+        args = ["--no-pin", "--steps", "5000"]
+        assert _strip_launcher_args(args) == ["--steps", "5000"]
 
     def test_no_op_when_absent(self):
         args = ["--steps", "5000", "--debug"]
-        assert _strip_launcher_arg(args) == args
+        assert _strip_launcher_args(args) == args
 
     def test_empty(self):
-        assert _strip_launcher_arg([]) == []
+        assert _strip_launcher_args([]) == []
 
 
 # ── _read_metrics_pipe ───────────────────────────────────────────────────────
@@ -299,6 +340,7 @@ def _run_patches(mock_proc):
     stack = ExitStack()
     stack.enter_context(patch("main.launcher.subprocess.Popen", return_value=mock_proc))
     stack.enter_context(patch("main.launcher._git_hash", return_value="abc1234"))
+    stack.enter_context(patch("main.launcher.get_git_hash", return_value="abc1234fullhash"))
     stack.enter_context(patch("main.launcher.threading.Thread"))
     stack.enter_context(patch("main.launcher.queue.Queue", return_value=qmod.Queue()))
     stack.enter_context(patch("main.launcher.os.pipe", return_value=(3, 4)))
@@ -321,13 +363,9 @@ class TestIntervalRestart:
         mock_proc.stdout = io.BytesIO(b"")
         mock_proc.wait.return_value = None
 
-        popen_calls = []
-        original_popen = mock_proc
-
-        with _run_patches(mock_proc) as stack:
-            # Count how many times Popen is called for the training script.
+        with _run_patches(mock_proc):
             with pytest.raises(SystemExit) as exc_info:
-                run(["--debug"], interval_hours=0)
+                run(["--debug"], interval_hours=0, pin=False)
 
         assert exc_info.value.code == 1
 
@@ -342,6 +380,6 @@ class TestIntervalRestart:
 
         with _run_patches(mock_proc):
             with pytest.raises(SystemExit) as exc_info:
-                run(["--debug"], interval_hours=0)
+                run(["--debug"], interval_hours=0, pin=False)
 
         assert exc_info.value.code == 0

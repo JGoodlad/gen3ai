@@ -8,3 +8,10 @@ def get_git_hash(short: bool = False) -> str:
         return subprocess.check_output(args, text=True, stderr=subprocess.DEVNULL).strip()
     except Exception:
         return "unknown"
+
+
+def get_repo_root() -> str:
+    """Return the absolute path of the git repo root."""
+    return subprocess.check_output(
+        ["git", "rev-parse", "--show-toplevel"], text=True, stderr=subprocess.DEVNULL
+    ).strip()

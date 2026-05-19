@@ -27,14 +27,13 @@ class LauncherSnapshot:
     deadline: float            # time.monotonic(), float("inf") if no restart
     restart_count: int
     interval_hours: float
-    view_mode: str             # "dashboard" | "logs" | "confirm_restart" | "confirm_quit"
+    view_mode: str             # "dashboard" | "logs" | "confirm_quit"
     metrics: dict              # {tag: float}
     metrics_step: int
     metrics_ts: Optional[float]    # monotonic time of last metrics update
     log_lines: list            # recent child stdout lines
     events: list               # launcher event strings (timestamped)
     initial_git_hash: Optional[str]
-    pending_restart_git_hash: Optional[str]
 
 
 # ── Thread-safe mutable state ────────────────────────────────────────────────
@@ -54,7 +53,6 @@ class LauncherState:
         self.restart_count: int = 0
         self.view_mode: str = "dashboard"
         self.initial_git_hash: Optional[str] = None
-        self.pending_restart_git_hash: Optional[str] = None
 
     def add_log(self, line: str) -> None:
         with self._lock:
@@ -90,7 +88,6 @@ class LauncherState:
                 log_lines=list(self._log_lines),
                 events=list(self._events),
                 initial_git_hash=self.initial_git_hash,
-                pending_restart_git_hash=self.pending_restart_git_hash,
             )
 
 
@@ -140,8 +137,6 @@ class LauncherUI:
     def render(self, snap: LauncherSnapshot, console_height: int = 40):
         if snap.view_mode == "logs":
             return self._render_logs(snap, console_height)
-        if snap.view_mode == "confirm_restart":
-            return self._render_confirm(snap)
         if snap.view_mode == "confirm_quit":
             return self._render_confirm_quit(snap)
         return self._render_dashboard(snap)
@@ -226,7 +221,7 @@ class LauncherUI:
         h = snap.initial_git_hash
         if not h:
             return "[dim]git: unknown[/dim]"
-        return f"[green]✅ {h}[/green]"
+        return f"[green]📌 {h[:8]}[/green]"
 
     def _render_metrics_table(self, metrics: dict, metrics_ts, now: float):
         tbl = Table(
@@ -298,32 +293,6 @@ class LauncherUI:
         return Panel(
             Group(log_text, Text(""), footer),
             title="[bold blue]🎮 Gen3AI Training[/bold blue] — [yellow]LOGS[/yellow]",
-            border_style="yellow",
-            padding=(0, 1),
-        )
-
-    # ── Confirm-restart view ──────────────────────────────────────────────────
-
-    def _render_confirm(self, snap: LauncherSnapshot):
-        old_h = snap.initial_git_hash or "unknown"
-        new_h = snap.pending_restart_git_hash or "unknown"
-
-        body = Text()
-        body.append("\n  Was:  ", style="dim")
-        body.append(old_h, style="bold green")
-        body.append("      Now:  ", style="dim")
-        body.append(new_h, style="bold yellow")
-        body.append(
-            "\n\n  The code changed since this run started.\n"
-            "  The model version checker will catch architecture mismatches,\n"
-            "  but proceed with caution.\n\n",
-            style="dim",
-        )
-        body.append("  [y] proceed with restart    [n] quit launcher", style="bold")
-
-        return Panel(
-            body,
-            title="[bold yellow]⚠️  Git Working Tree Changed[/bold yellow]",
             border_style="yellow",
             padding=(0, 1),
         )

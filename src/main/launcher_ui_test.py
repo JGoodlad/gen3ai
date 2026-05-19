@@ -27,7 +27,6 @@ def _snap(**kwargs) -> LauncherSnapshot:
         log_lines=[],
         events=[],
         initial_git_hash="abc1234",
-        pending_restart_git_hash=None,
     )
     defaults.update(kwargs)
     return LauncherSnapshot(**defaults)
@@ -119,23 +118,10 @@ class TestLauncherUI:
         result = ui.render(snap)
         assert result is not None
 
-    def test_render_confirm_restart(self):
-        ui = LauncherUI()
-        snap = _snap(
-            view_mode="confirm_restart",
-            initial_git_hash="abc1234",
-            pending_restart_git_hash="def5678",
-        )
-        result = ui.render(snap)
-        assert result is not None
-
     def test_render_dispatches_all_view_modes(self):
         ui = LauncherUI()
-        for mode in ("dashboard", "logs", "confirm_restart", "confirm_quit"):
-            snap = _snap(
-                view_mode=mode,
-                pending_restart_git_hash="x" if mode == "confirm_restart" else None,
-            )
+        for mode in ("dashboard", "logs", "confirm_quit"):
+            snap = _snap(view_mode=mode)
             assert ui.render(snap) is not None, f"render failed for view_mode={mode}"
 
     def test_render_confirm_quit(self):
