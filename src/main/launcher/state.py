@@ -56,7 +56,7 @@ class LauncherState:
         step = int(payload.get("_step", 0))
         cleaned = {k: v for k, v in payload.items() if k != "_step"}
         with self._lock:
-            self._metrics = cleaned
+            self._metrics.update(cleaned)
             self._metrics_step = step
             self._metrics_ts = time.monotonic()
 
