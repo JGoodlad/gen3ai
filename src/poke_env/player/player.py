@@ -68,6 +68,7 @@ class Player(ABC):
         open_timeout: Optional[float] = 10.0,
         ping_interval: Optional[float] = 20.0,
         ping_timeout: Optional[float] = 20.0,
+        proxy_url: Optional[str] = None,
         loop: asyncio.AbstractEventLoop = POKE_LOOP,
         team: Optional[Union[str, Teambuilder]] = None,
         strict_battle_tracking: bool = False,
@@ -160,6 +161,7 @@ class Player(ABC):
             open_timeout=open_timeout,
             ping_interval=ping_interval,
             ping_timeout=ping_timeout,
+            proxy_url=proxy_url,
             loop=loop,
         )
 

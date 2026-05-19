@@ -1,3 +1,4 @@
+import argparse
 import asyncio
 from poke_env.player import RandomPlayer
 from utils.teambuilder import Gen3Teambuilder
@@ -63,26 +64,33 @@ IVs: 0 Atk
 - Rapid Spin
 """
 
-async def main():
-    # Instantiate the new Gen3Teambuilder
+async def main(proxy_url=None):
     teambuilder = Gen3Teambuilder(STAR_TSS_TEAM)
 
     player_1 = RandomPlayer(
         battle_format="gen3ou",
         team=teambuilder,
-        max_concurrent_battles=1
+        max_concurrent_battles=1,
+        proxy_url=proxy_url,
     )
     player_2 = RandomPlayer(
         battle_format="gen3ou",
         team=teambuilder,
-        max_concurrent_battles=1
+        max_concurrent_battles=1,
+        proxy_url=proxy_url,
     )
 
-    print("Starting Gen 3 OU battle with Star TSS team...")
+    print(f"Starting Gen 3 OU battle (proxy={'enabled' if proxy_url else 'disabled'})...")
     await player_1.battle_against(player_2, n_battles=1)
 
     print(f"Finished battles: {player_1.n_finished_battles}")
     print(f"Player 1 wins: {player_1.n_won_battles}")
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    parser = argparse.ArgumentParser(description="Play on Pokemon Showdown")
+    parser.add_argument(
+        "--proxy", type=str, default=None, metavar="SOCKS5_URL",
+        help="SOCKS5 proxy URL, e.g. socks5h://127.0.0.1:1080",
+    )
+    args = parser.parse_args()
+    asyncio.run(main(proxy_url=args.proxy))

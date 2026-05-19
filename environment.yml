@@ -49,7 +49,9 @@ dependencies:
       - pyparsing==3.3.2
       - pytest==9.0.3
       - pytest-asyncio==1.3.0
+      - python-socks[asyncio]
       - requests==2.33.1
+      - requests[socks]
       - sb3-contrib==2.8.0
       - setuptools==69.5.1
       - shimmy==2.0.1

@@ -32,7 +32,7 @@ class BattleSpectator:
     """
 
     MAX_CONCURRENT: int = 10
-    JOIN_INTERVAL: float = 10.0
+    JOIN_INTERVAL: float = 1.0
     POLL_INTERVAL: float = 30.0
     RECONNECT_DELAY: float = 10.0
 
@@ -44,6 +44,7 @@ class BattleSpectator:
         join_interval: float = JOIN_INTERVAL,
         poll_interval: float = POLL_INTERVAL,
         reconnect_delay: float = RECONNECT_DELAY,
+        proxy_url: Optional[str] = None,
         log_level: Optional[int] = None,
     ) -> None:
         self._server_configuration = server_configuration
@@ -51,6 +52,7 @@ class BattleSpectator:
         self._join_interval = join_interval
         self._poll_interval = poll_interval
         self._reconnect_delay = reconnect_delay
+        self._proxy_url = proxy_url
 
         self._logger = logging.getLogger(__name__)
         if log_level is not None:
@@ -110,6 +112,7 @@ class BattleSpectator:
             server_configuration=self._server_configuration,
             on_battle_message=self._handle_battle_message,
             on_query_response=self._on_query_response,
+            proxy_url=self._proxy_url,
             log_level=None,
         )
 
@@ -156,7 +159,7 @@ class BattleSpectator:
             room_id = await self._pending.get()
             # Wait until a slot is available
             while len(self._active) >= self._max_concurrent:
-                await asyncio.sleep(1.0)
+                await asyncio.sleep(0.1)
             self._logger.info("Joining %s", room_id)
             await self._client.send_message(f"/join {room_id}")  # raises if connection dead
             self._total_joined += 1

@@ -8,6 +8,9 @@ from logging import Logger
 from time import perf_counter
 from typing import Awaitable, Callable, List, Optional, Set
 
+import ssl
+import urllib.parse
+
 import requests
 import websockets as ws
 from websockets import ClientConnection
@@ -59,6 +62,7 @@ class PSClient:
         open_timeout: Optional[float] = 10.0,
         ping_interval: Optional[float] = 20.0,
         ping_timeout: Optional[float] = 20.0,
+        proxy_url: Optional[str] = None,
         loop: asyncio.AbstractEventLoop = POKE_LOOP,
     ):
         """
@@ -92,6 +96,7 @@ class PSClient:
         self._open_timeout = open_timeout
         self._ping_interval = ping_interval
         self._ping_timeout = ping_timeout
+        self._proxy_url = proxy_url
 
         self._server_configuration = server_configuration
         self._account_configuration = account_configuration
@@ -136,7 +141,8 @@ class PSClient:
     def _create_logger(self, log_level: Optional[int]) -> Logger:
         """Creates a logger for the client.
 
-        Returns a Logger displaying asctime and the account's username before messages.
+        Returns a named Logger that propagates to the root handler.
+        Only sets the level if explicitly requested; otherwise inherits from root.
 
         :param log_level: The logger's level.
         :type log_level: int
@@ -144,17 +150,10 @@ class PSClient:
         :rtype: Logger
         """
         logger = logging.getLogger(self.username)
-
-        stream_handler = logging.StreamHandler()
         if log_level is not None:
             logger.setLevel(log_level)
-
-        formatter = logging.Formatter(
-            "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-        )
-        stream_handler.setFormatter(formatter)
-
-        logger.addHandler(stream_handler)
+        # Do not add a StreamHandler here — let the application configure the root
+        # logger however it wants (Rich capture, basicConfig, etc.).
         return logger
 
     async def _handle_message(self, message: str):
@@ -208,7 +207,6 @@ class PSClient:
                             if received_name in [self.username, self.username + "@!"]:
                                 self.logged_in.set()
                             elif received_name.startswith("Guest ") and not self._account_configuration.password:
-                                # Server assigned a guest name — no login needed, connection is ready
                                 self.logged_in.set()
                         elif "updatechallenges" in msg_type:
                             await self._update_challenges(split_message)
@@ -220,10 +218,6 @@ class PSClient:
                             else:
                                 self.logger.info("Received PM: %s", "|".join(split_message))
                         elif msg_type == "nametaken":
-                            # The server rejected our chosen name (e.g. it is a registered
-                            # account and we provided no auth token). We still have a working
-                            # guest connection under the server-assigned "Guest XXXXX" name,
-                            # which is sufficient for read-only operations like spectating.
                             self.logger.warning(
                                 "Name '%s' rejected (%s) — continuing as guest",
                                 split_message[2] if len(split_message) > 2 else "?",
@@ -254,18 +248,33 @@ class PSClient:
         """Listen to a showdown websocket and dispatch messages to be handled."""
         self.logger.info("Starting listening to showdown websocket")
         try:
-            async with ws.connect(
-                self.websocket_url,
-                max_queue=None,
-                open_timeout=self._open_timeout,
-                ping_interval=self._ping_interval,
-                ping_timeout=self._ping_timeout,
-            ) as websocket:
+            if self._proxy_url:
+                from python_socks.async_.asyncio import Proxy
+                parsed = urllib.parse.urlparse(self.websocket_url)
+                dest_port = parsed.port or (443 if parsed.scheme == "wss" else 80)
+                # python-socks doesn't recognise socks5h:// — normalise to socks5://.
+                # Remote hostname resolution still happens by default when a hostname is passed.
+                proxy_url = self._proxy_url.replace("socks5h://", "socks5://", 1)
+                proxy = Proxy.from_url(proxy_url)
+                sock = await proxy.connect(dest_host=parsed.hostname, dest_port=dest_port)
+                ssl_ctx = ssl.create_default_context() if parsed.scheme == "wss" else None
+                connect_cm = ws.connect(
+                    self.websocket_url, sock=sock, ssl=ssl_ctx,
+                    max_queue=None, open_timeout=self._open_timeout,
+                    ping_interval=self._ping_interval, ping_timeout=self._ping_timeout,
+                )
+            else:
+                connect_cm = ws.connect(
+                    self.websocket_url,
+                    max_queue=None, open_timeout=self._open_timeout,
+                    ping_interval=self._ping_interval, ping_timeout=self._ping_timeout,
+                )
+            async with connect_cm as websocket:
                 self.websocket = websocket
                 while True:
                     try:
                         message = await websocket.recv()
-                    except (ws.exceptions.ConnectionClosedOK, ws.exceptions.ConnectionClosedError):
+                    except ws.exceptions.ConnectionClosedOK:
                         break
                     
                     message_str = str(message)
@@ -283,12 +292,12 @@ class PSClient:
                             except (asyncio.TimeoutError, ws.exceptions.ConnectionClosedOK):
                                 break
 
-                    self.logger.info("\033[92m\033[1m<<<\033[0m %s", message_str)
+                    self.logger.debug("\033[92m\033[1m<<<\033[0m %s", message_str)
                     task = asyncio.create_task(self._handle_message(message_str))
                     self._active_tasks.add(task)
                     task.add_done_callback(self._active_tasks.discard)
 
-        except (ConnectionClosedOK, ConnectionClosedError):
+        except ConnectionClosedOK:
             self.logger.warning(
                 "Websocket connection with %s closed", self.websocket_url
             )
@@ -306,10 +315,11 @@ class PSClient:
         :param split_message: Message received from the server that triggers logging in.
         :type split_message: List[str]
         """
-        if not self.account_configuration.username:
-            # No username requested — stay as the server-assigned guest (already logged in).
-            return
         if self.account_configuration.password:
+            proxies = (
+                {"https": self._proxy_url, "http": self._proxy_url}
+                if self._proxy_url else None
+            )
             log_in_request = requests.post(
                 self.server_configuration.authentication_url,
                 data={
@@ -319,6 +329,7 @@ class PSClient:
                     "challstr": split_message[2] + "%7C" + split_message[3],
                 },
                 timeout=10.0,
+                proxies=proxies,
             )
             self.logger.info("Sending authentication request")
             assertion = json.loads(log_in_request.text[1:])["assertion"]
@@ -352,7 +363,7 @@ class PSClient:
             to_send = "|".join([room, message, message_2])
         else:
             to_send = "|".join([room, message])
-        self.logger.info("\033[93m\033[1m>>>\033[0m %s", to_send)
+        self.logger.debug("\033[93m\033[1m>>>\033[0m %s", to_send)
         await self.websocket.send(to_send)
 
     async def set_team(self, packed_team: Optional[str]):
