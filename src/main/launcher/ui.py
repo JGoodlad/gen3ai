@@ -169,16 +169,9 @@ class LauncherUI:
             if k not in seen:
                 ordered.append(k)
 
-        current_section = None
-        first_section = True
-        for key in ordered:
-            section, _, name = key.partition("/")
-            if section != current_section:
-                current_section = section
-                badge = stale_badge if first_section else ""
-                first_section = False
-                tbl.add_row(f"[bold dim]{section}/[/bold dim]{badge}", "")
-            tbl.add_row(f"  [dim]{name}[/dim]", f"[bold]{_fmt_val(metrics[key])}[/bold]")
+        for i, key in enumerate(ordered):
+            badge = stale_badge if i == 0 else ""
+            tbl.add_row(f"[dim]{key}[/dim]{badge}", f"[bold]{_fmt_val(metrics[key])}[/bold]")
 
         return tbl
 
