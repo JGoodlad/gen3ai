@@ -232,13 +232,11 @@ async def main():
     # --- Directory Setup ---
     if args.run_dir:
         model_dir = args.run_dir                                     # launcher-managed resume
-    elif args.model:
-        model_dir = os.path.dirname(os.path.abspath(args.model))    # manual resume fallback
     else:
         model_dir = f"models/run_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
 
     os.makedirs(model_dir, exist_ok=True)
-    if not args.run_dir and not args.model:
+    if not args.run_dir:
         with open(os.path.join(model_dir, "command.txt"), "w") as f:
             f.write(" ".join(sys.argv))
         
