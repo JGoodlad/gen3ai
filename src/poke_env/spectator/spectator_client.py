@@ -56,6 +56,7 @@ class BattleSpectator:
         self._pending: Optional[Queue] = None   # room IDs waiting to be joined
         self._done: Optional[Queue] = None       # finished SpectatedBattle objects
         self._format_id: str = ""
+        self._total_joined: int = 0
 
     # ------------------------------------------------------------------
     # Public API
@@ -112,6 +113,7 @@ class BattleSpectator:
                 await asyncio.sleep(1.0)
             self._logger.info("Joining %s", room_id)
             await self._client.send_message(f"/join {room_id}")
+            self._total_joined += 1
             await asyncio.sleep(self._join_interval)
 
     async def _poll_loop(self) -> None:
@@ -175,6 +177,30 @@ class BattleSpectator:
                 return
             else:
                 battle.add_lines([parts])
+
+    # ------------------------------------------------------------------
+    # Status properties (safe to read from any thread — benign races for display)
+    # ------------------------------------------------------------------
+
+    @property
+    def active_battles(self) -> Dict[str, SpectatedBattle]:
+        """Snapshot of currently-watched battles. Keys are battle tags."""
+        return dict(self._active)
+
+    @property
+    def pending_count(self) -> int:
+        """Number of room IDs waiting to be joined."""
+        return self._pending.qsize() if self._pending is not None else 0
+
+    @property
+    def seen_count(self) -> int:
+        """Total distinct rooms seen across all roomlist queries."""
+        return len(self._seen)
+
+    @property
+    def total_joined(self) -> int:
+        """Total /join commands sent since watch() was called."""
+        return self._total_joined
 
     async def _finish_battle(self, battle_tag: str, battle: SpectatedBattle) -> None:
         await self._client.send_message(f"/leave {battle_tag}")
