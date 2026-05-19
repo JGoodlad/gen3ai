@@ -38,7 +38,6 @@ from agents.training.gen3_env import Gen3Env
 from agents.training.reward_manager import Gen3RewardManager
 from agents.training.stall import StallConfig
 from agents.training.watchdog import start_subprocess_watchdog
-from agents.training.env_restart_callback import VecEnvRestartCallback
 from agents.training.adaptive_lr_callback import AdaptiveLRCallback
 from utils.logging.levels import LogLevel
 
@@ -138,8 +137,6 @@ async def main():
     parser.add_argument("--lr", type=float, default=3e-4, help="Initial learning rate (AdaptiveLRCallback adjusts from here)")
     parser.add_argument("--ent-coef", type=float, default=0.02, help="Entropy coefficient (exploration bonus)")
     parser.add_argument("--n-steps", type=int, default=2048, help="Steps per environment per rollout")
-    parser.add_argument("--restart-interval-hours", type=float, default=3.0,
-                        help="Recycle SubprocVecEnv workers every N hours (default: 3, set 0 to disable)")
 
     args = parser.parse_args()
     log_level = LogLevel[args.log_level.upper()]
@@ -294,15 +291,9 @@ async def main():
         stall_config=stall_cfg,
         reward_fn_factory=reward_factory,
     )
-    
-    restart_callback = VecEnvRestartCallback(
-        make_factories=lambda: [create_training_env_random(i, stall_config=stall_cfg)
-                                for i in range(n_envs)],
-        restart_interval_hours=args.restart_interval_hours,
-    )
 
     adaptive_lr_callback = AdaptiveLRCallback(initial_lr=args.lr)
-    callbacks = [checkpoint_callback, replay_callback, restart_callback, adaptive_lr_callback]
+    callbacks = [checkpoint_callback, replay_callback, adaptive_lr_callback]
     
     if not args.debug:
         from sb3_contrib.common.maskable.callbacks import MaskableEvalCallback
@@ -405,8 +396,14 @@ async def main():
                 print(f"Model saved to {final_path}. Exiting.")
                 sys.exit(0)
 
+            def sigusr1_handler(sig, frame):
+                ckpt = os.path.join(model_dir, f"checkpoint_forced_{datetime.now().strftime('%H%M%S')}")
+                model.save(ckpt)
+                print(f"\n💾 [CHECKPOINT] Forced save → {ckpt}.zip")
+
             signal.signal(signal.SIGINT, signal_handler)
             signal.signal(signal.SIGTERM, signal_handler)
+            signal.signal(signal.SIGUSR1, sigusr1_handler)
 
             try:
                 model.learn(total_timesteps=args.steps, callback=callbacks, reset_num_timesteps=False)
@@ -473,11 +470,15 @@ async def main():
             model.save(final_path)
             print(f"Model saved to {final_path}. Exiting.")
             sys.exit(0)
-        
+
+        def sigusr1_handler(sig, frame):
+            ckpt = os.path.join(model_dir, f"checkpoint_forced_{datetime.now().strftime('%H%M%S')}")
+            model.save(ckpt)
+            print(f"\n💾 [CHECKPOINT] Forced save → {ckpt}.zip")
+
         signal.signal(signal.SIGINT, signal_handler)
         signal.signal(signal.SIGTERM, signal_handler)
-
-        pass # Callbacks are now defined above
+        signal.signal(signal.SIGUSR1, sigusr1_handler)
 
         try:
             if log_level >= LogLevel.DETAILED:
