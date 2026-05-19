@@ -237,6 +237,7 @@ async def main():
         model_dir = f"models/run_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
 
     os.makedirs(model_dir, exist_ok=True)
+    tb_run_name = f"MPPO_{os.path.basename(model_dir)}"
     if not args.run_dir:
         with open(os.path.join(model_dir, "command.txt"), "w") as f:
             f.write(" ".join(sys.argv))
@@ -439,7 +440,7 @@ async def main():
             signal.signal(signal.SIGUSR1, sigusr1_handler)
 
             try:
-                model.learn(total_timesteps=args.steps, callback=callbacks, reset_num_timesteps=False)
+                model.learn(total_timesteps=args.steps, callback=callbacks, reset_num_timesteps=False, tb_log_name=tb_run_name)
             except Exception as e:
                 print(f"Training interrupted by exception: {e}")
                 final_path = os.path.join(model_dir, "final_model_exception")
@@ -523,7 +524,7 @@ async def main():
             if log_level >= LogLevel.DETAILED:
                 from sb3_contrib.common.maskable.utils import is_masking_supported
                 print(f"✅ [DEBUG] Masking supported for env: {is_masking_supported(env)}")
-            model.learn(total_timesteps=args.steps, callback=callbacks, reset_num_timesteps=False)
+            model.learn(total_timesteps=args.steps, callback=callbacks, reset_num_timesteps=False, tb_log_name=tb_run_name)
         except Exception as e:
             print("\n" + "🛑" * 30)
             print(f"🛑 TRAINING CRASHED: {e}")
