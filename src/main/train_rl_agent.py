@@ -49,6 +49,28 @@ from poke_env import AccountConfiguration, LocalhostServerConfiguration
 BATTLE_FORMAT = "gen3ou"
 
 
+def _write_latest_txt(model_dir: str, basename: str) -> None:
+    """Atomically record the most-recent checkpoint in <model_dir>/latest.txt."""
+    latest = os.path.join(model_dir, "latest.txt")
+    tmp = latest + ".tmp"
+    with open(tmp, "w") as f:
+        f.write(basename + "\n")
+    os.replace(tmp, latest)
+
+
+class _TrackingCheckpointCallback(CheckpointCallback):
+    """CheckpointCallback that keeps latest.txt up to date after each save."""
+
+    def _on_step(self) -> bool:
+        result = super()._on_step()
+        if self.n_calls % self.save_freq == 0:
+            _write_latest_txt(
+                self.save_path,
+                f"{self.name_prefix}_{self.num_timesteps}_steps.zip",
+            )
+        return result
+
+
 def _run_roundtrip_test(model, layout: dict, policy_kwargs: dict, debug: bool = False) -> None:
     """Startup smoke test: save → reload → zero forward pass → assert output shape.
 
@@ -122,6 +144,7 @@ async def main():
     
     # --- Operational Flags ---
     parser.add_argument("--model", type=str, help="Path to existing model to load")
+    parser.add_argument("--run-dir", type=str, help="Run folder to write checkpoints into (set by launcher on resume)")
     parser.add_argument("--eval-only", action="store_true", help="Skip training and only evaluate")
     parser.add_argument("--steps", type=int, default=100000, help="Total training timesteps")
     parser.add_argument("--debug", action="store_true", help="Use DummyVecEnv (1 env) for debugging")
@@ -207,15 +230,17 @@ async def main():
         return _init
 
     # --- Directory Setup ---
-    unique_id = datetime.now().strftime("%Y%m%d_%H%M%S")
-    if args.model:
-        model_dir = f"models/gen3ou_ppo_continued_{unique_id}"
+    if args.run_dir:
+        model_dir = args.run_dir                                     # launcher-managed resume
+    elif args.model:
+        model_dir = os.path.dirname(os.path.abspath(args.model))    # manual resume fallback
     else:
-        model_dir = f"models/gen3ou_ppo_new_{unique_id}"
-    
+        model_dir = f"models/run_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+
     os.makedirs(model_dir, exist_ok=True)
-    with open(os.path.join(model_dir, "command.txt"), "w") as f:
-        f.write(" ".join(sys.argv))
+    if not args.run_dir and not args.model:
+        with open(os.path.join(model_dir, "command.txt"), "w") as f:
+            f.write(" ".join(sys.argv))
         
     stall_cfg = StallConfig(output_dir=os.path.join(model_dir, "stalls"))
     reward_factory = Gen3RewardManager
@@ -276,10 +301,10 @@ async def main():
         print(f"Win rate vs Heuristic: {rl_player.n_won_battles / args.eval_battles * 100:.1f}% (Time: {duration})")
 
     # --- Callback Setup (Shared) ---
-    checkpoint_callback = CheckpointCallback(
-        save_freq=50000, 
+    checkpoint_callback = _TrackingCheckpointCallback(
+        save_freq=50000,
         save_path=model_dir,
-        name_prefix="checkpoint"
+        name_prefix="checkpoint",
     )
     
     replay_callback = ReplayCallback(
@@ -394,12 +419,16 @@ async def main():
                 print("\nInterrupt received, saving model...")
                 final_path = os.path.join(model_dir, "final_model_interrupted")
                 model.save(final_path)
+                _write_latest_txt(model_dir, "final_model_interrupted.zip")
                 print(f"Model saved to {final_path}. Exiting.")
                 sys.exit(0)
 
             def sigusr1_handler(sig, frame):
-                ckpt = os.path.join(model_dir, f"checkpoint_forced_{datetime.now().strftime('%H%M%S')}")
+                step = model.num_timesteps
+                name = f"checkpoint_forced_{step:010d}_{datetime.now().strftime('%H%M%S')}"
+                ckpt = os.path.join(model_dir, name)
                 model.save(ckpt)
+                _write_latest_txt(model_dir, name + ".zip")
                 print(f"\n💾 [CHECKPOINT] Forced save → {ckpt}.zip")
 
             signal.signal(signal.SIGINT, signal_handler)
@@ -412,9 +441,11 @@ async def main():
                 print(f"Training interrupted by exception: {e}")
                 final_path = os.path.join(model_dir, "final_model_exception")
                 model.save(final_path)
+                _write_latest_txt(model_dir, "final_model_exception.zip")
 
             final_path = os.path.join(model_dir, "final_model")
             model.save(final_path)
+            _write_latest_txt(model_dir, "final_model.zip")
             save_model_snapshot(os.path.dirname(final_path), current_version)
             print(f"Training complete. Model saved to {final_path}")
             best_model_dir = os.path.join(model_dir, "best_model")
@@ -469,12 +500,16 @@ async def main():
             print("\nInterrupt received, saving model...")
             final_path = os.path.join(model_dir, "final_model_interrupted")
             model.save(final_path)
+            _write_latest_txt(model_dir, "final_model_interrupted.zip")
             print(f"Model saved to {final_path}. Exiting.")
             sys.exit(0)
 
         def sigusr1_handler(sig, frame):
-            ckpt = os.path.join(model_dir, f"checkpoint_forced_{datetime.now().strftime('%H%M%S')}")
+            step = model.num_timesteps
+            name = f"checkpoint_forced_{step:010d}_{datetime.now().strftime('%H%M%S')}"
+            ckpt = os.path.join(model_dir, name)
             model.save(ckpt)
+            _write_latest_txt(model_dir, name + ".zip")
             print(f"\n💾 [CHECKPOINT] Forced save → {ckpt}.zip")
 
         signal.signal(signal.SIGINT, signal_handler)
@@ -492,11 +527,10 @@ async def main():
             print("🛑" * 30)
             traceback.print_exc()
             os._exit(1) # Stop immediately, do not proceed to evaluation
-            final_path = os.path.join(model_dir, "final_model_exception")
-            model.save(final_path)
-            
+
         final_path = os.path.join(model_dir, "final_model")
         model.save(final_path)
+        _write_latest_txt(model_dir, "final_model.zip")
         save_model_snapshot(os.path.dirname(final_path), version)
         print(f"Training complete. Model saved to {final_path}")
         best_model_dir = os.path.join(model_dir, "best_model")

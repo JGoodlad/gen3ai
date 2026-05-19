@@ -8,6 +8,7 @@ child's MetricsExporterCallback.
 
 import glob
 import json
+import re
 import os
 import queue
 import signal
@@ -28,9 +29,31 @@ _SRC_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # ── Pure utility functions ────────────────────────────────────────────────────
 
-def find_latest_checkpoint(models_root: str) -> "str | None":
+def find_latest_checkpoint(models_root: str, run_dir: "str | None" = None) -> "str | None":
+    if run_dir:
+        latest_txt = os.path.join(run_dir, "latest.txt")
+        if os.path.exists(latest_txt):
+            with open(latest_txt) as f:
+                name = f.read().strip()
+            candidate = os.path.join(run_dir, name)
+            if os.path.exists(candidate):
+                return candidate
+
     zips = glob.glob(os.path.join(models_root, "**", "*.zip"), recursive=True)
-    return max(zips, key=os.path.getmtime) if zips else None
+    if not zips:
+        return None
+
+    def _step_key(path: str) -> int:
+        n = os.path.basename(path)
+        m = re.search(r"(\d+)_steps\.zip$", n)
+        if m:
+            return int(m.group(1))
+        m = re.search(r"forced_(\d+)_", n)
+        if m:
+            return int(m.group(1))
+        return 0
+
+    return max(zips, key=lambda p: (_step_key(p), os.path.getmtime(p)))
 
 
 def _insert_or_replace_model_arg(args: list, checkpoint: str) -> list:
@@ -47,6 +70,23 @@ def _insert_or_replace_model_arg(args: list, checkpoint: str) -> list:
             i += 1
     if not replaced:
         out.extend(["--model", checkpoint])
+    return out
+
+
+def _insert_or_replace_run_dir_arg(args: list, run_dir: str) -> list:
+    out = []
+    i = 0
+    replaced = False
+    while i < len(args):
+        if args[i] == "--run-dir":
+            out.extend(["--run-dir", run_dir])
+            replaced = True
+            i += 2
+        else:
+            out.append(args[i])
+            i += 1
+    if not replaced:
+        out.extend(["--run-dir", run_dir])
     return out
 
 
@@ -270,6 +310,8 @@ def run(child_args: list, interval_hours: float) -> None:
     else:
         state.add_event("🚀 Starting — single run (no restart)")
 
+    run_dir: "str | None" = None
+
     with Live(refresh_per_second=2, screen=True) as live:
         while True:
 
@@ -347,15 +389,17 @@ def run(child_args: list, interval_hours: float) -> None:
             if interval_hours <= 0 and not flags.restart_requested:
                 sys.exit(0)
 
-            checkpoint = find_latest_checkpoint("models")
+            checkpoint = find_latest_checkpoint("models", run_dir=run_dir)
             if checkpoint is None:
                 state.add_event("🛑 No checkpoint found under models/ — cannot restart")
                 live.update(ui.render(state.snapshot()))
                 time.sleep(2)
                 sys.exit(1)
 
+            run_dir = os.path.dirname(os.path.abspath(checkpoint))
             state.add_event(f"✅ Restarting from {os.path.basename(checkpoint)}")
             child_args = _insert_or_replace_model_arg(child_args, checkpoint)
+            child_args = _insert_or_replace_run_dir_arg(child_args, run_dir)
             state.restart_count += 1
             state.view_mode = "dashboard"
 

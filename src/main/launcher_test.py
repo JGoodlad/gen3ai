@@ -14,6 +14,7 @@ from main.launcher import (
     _PollFlags,
     _dispatch_command,
     _insert_or_replace_model_arg,
+    _insert_or_replace_run_dir_arg,
     _read_metrics_pipe,
     _strip_launcher_arg,
     find_latest_checkpoint,
@@ -28,17 +29,21 @@ class TestFindLatestCheckpoint:
         assert find_latest_checkpoint(str(tmp_path)) is None
 
     def test_single_zip_returned(self, tmp_path):
-        p = tmp_path / "checkpoint_1000.zip"
+        p = tmp_path / "checkpoint_1000_steps.zip"
         p.write_text("x")
         assert find_latest_checkpoint(str(tmp_path)) == str(p)
 
-    def test_returns_newest_by_mtime(self, tmp_path):
-        old = tmp_path / "checkpoint_1000.zip"
-        old.write_text("x")
+    def test_falls_back_to_step_sort_without_latest_txt(self, tmp_path):
+        low = tmp_path / "checkpoint_1000_steps.zip"
+        low.write_text("x")
         time.sleep(0.01)
-        new = tmp_path / "checkpoint_2000.zip"
-        new.write_text("x")
-        assert find_latest_checkpoint(str(tmp_path)) == str(new)
+        high = tmp_path / "checkpoint_2000_steps.zip"
+        high.write_text("x")
+        # Flip mtimes so mtime-only sort would pick 'low'
+        now = time.time()
+        os.utime(str(high), (now - 10, now - 10))
+        os.utime(str(low), (now, now))
+        assert find_latest_checkpoint(str(tmp_path)) == str(high)
 
     def test_ignores_non_zip(self, tmp_path):
         (tmp_path / "model.pt").write_text("x")
@@ -48,21 +53,43 @@ class TestFindLatestCheckpoint:
     def test_searches_subdirectories(self, tmp_path):
         sub = tmp_path / "run_20240101"
         sub.mkdir()
-        deep = sub / "checkpoint_5000.zip"
+        deep = sub / "checkpoint_5000_steps.zip"
         deep.write_text("x")
         assert find_latest_checkpoint(str(tmp_path)) == str(deep)
 
-    def test_newest_across_subdirectories(self, tmp_path):
-        sub1 = tmp_path / "run_a"
-        sub1.mkdir()
-        old = sub1 / "checkpoint_1000.zip"
+    def test_forced_checkpoint_step_sort(self, tmp_path):
+        low = tmp_path / "checkpoint_1000_steps.zip"
+        low.write_text("x")
+        high = tmp_path / "checkpoint_forced_0000005000_143022.zip"
+        high.write_text("x")
+        assert find_latest_checkpoint(str(tmp_path)) == str(high)
+
+    def test_step_zero_files_fall_back_to_mtime(self, tmp_path):
+        old = tmp_path / "final_model.zip"
         old.write_text("x")
         time.sleep(0.01)
-        sub2 = tmp_path / "run_b"
-        sub2.mkdir()
-        new = sub2 / "checkpoint_2000.zip"
+        new = tmp_path / "final_model_interrupted.zip"
         new.write_text("x")
         assert find_latest_checkpoint(str(tmp_path)) == str(new)
+
+    def test_reads_latest_txt_when_run_dir_given(self, tmp_path):
+        run = tmp_path / "run_a"
+        run.mkdir()
+        low = run / "checkpoint_1000_steps.zip"
+        low.write_text("x")
+        high = run / "checkpoint_2000_steps.zip"
+        high.write_text("x")
+        (run / "latest.txt").write_text("checkpoint_1000_steps.zip\n")
+        # latest.txt points to the lower-step file — should trust it
+        assert find_latest_checkpoint(str(tmp_path), run_dir=str(run)) == str(low)
+
+    def test_latest_txt_missing_file_falls_back_to_glob(self, tmp_path):
+        run = tmp_path / "run_a"
+        run.mkdir()
+        good = run / "checkpoint_2000_steps.zip"
+        good.write_text("x")
+        (run / "latest.txt").write_text("ghost.zip\n")  # points to nonexistent file
+        assert find_latest_checkpoint(str(tmp_path), run_dir=str(run)) == str(good)
 
 
 # ── _insert_or_replace_model_arg ─────────────────────────────────────────────
@@ -81,6 +108,22 @@ class TestInsertOrReplaceModelArg:
     def test_empty_args(self):
         result = _insert_or_replace_model_arg([], "ckpt.zip")
         assert result == ["--model", "ckpt.zip"]
+
+
+# ── _insert_or_replace_run_dir_arg ───────────────────────────────────────────
+
+class TestInsertOrReplaceRunDirArg:
+    def test_inserts_when_absent(self):
+        result = _insert_or_replace_run_dir_arg(["--debug"], "/models/run_x")
+        assert result == ["--debug", "--run-dir", "/models/run_x"]
+
+    def test_replaces_existing(self):
+        result = _insert_or_replace_run_dir_arg(["--run-dir", "/old", "--debug"], "/new")
+        assert result == ["--run-dir", "/new", "--debug"]
+
+    def test_empty_args(self):
+        result = _insert_or_replace_run_dir_arg([], "/models/run_x")
+        assert result == ["--run-dir", "/models/run_x"]
 
 
 # ── _strip_launcher_arg ──────────────────────────────────────────────────────
