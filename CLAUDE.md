@@ -149,6 +149,7 @@ The checkpoint must have a `metadata.json` with a `git_hash` field (written auto
 |------|---------|-------|
 | `--restart-interval-hours` | `3.0` | Set to `0` for a single run with no restart |
 | `--no-pin` | off | Skip worktree creation; run from the current source tree |
+| `--sync-to-main` | off | When resuming from a checkpoint, pin the isolated worktree to the current HEAD instead of the checkpoint's original git hash. Use this to pick up UI or tooling fixes on `main` without discarding the checkpoint. |
 
 All other flags are forwarded verbatim to `train_rl_agent.py`.
 

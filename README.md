@@ -113,7 +113,7 @@ export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable
   --device cuda
 ```
 
-Key launcher flags: `--restart-interval-hours` (default 3, set 0 for one-shot), `--no-pin` (skip worktree isolation). All other flags pass through to `train_rl_agent.py`.
+Key launcher flags: `--restart-interval-hours` (default 3, set 0 for one-shot), `--no-pin` (skip worktree isolation), `--sync-to-main` (when resuming, pin the worktree to the current HEAD instead of the checkpoint's original commit — useful for picking up UI/tooling fixes without discarding a checkpoint). All other flags pass through to `train_rl_agent.py`.
 
 **TUI keys:** `r` restart now · `c` force checkpoint · `q` quit cleanly · `l` logs · `d` dashboard
 
