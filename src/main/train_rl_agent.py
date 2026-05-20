@@ -55,6 +55,7 @@ from agents.training.adaptive_lr_callback import AdaptiveLRCallback
 from agents.training.metrics_exporter_callback import MetricsExporterCallback
 from utils.logging.levels import LogLevel
 from main.exit_codes import TrainExitCode
+from main.launcher.ipc import send_event
 
 from poke_env.player import RandomPlayer, SimpleHeuristicsPlayer
 from agents.opponents import Gen3StallerPlayer, Gen3AggressivePlayer, Gen3SetupSweepPlayer
@@ -124,13 +125,14 @@ def _run_roundtrip_test(model, layout: dict, policy_kwargs: dict, debug: bool = 
         shutil.rmtree(tmpdir, ignore_errors=True)
 
 
-def _setup_signal_handlers(model, model_dir, shutdown_event):
+def _setup_signal_handlers(model, model_dir, shutdown_event, version, current_lr_fn):
     def _interrupt(sig, frame):
         shutdown_event.set()
         print("\nInterrupt received, saving model...")
         final_path = os.path.join(model_dir, "final_model_interrupted")
         model.save(final_path)
         _write_latest_txt(model_dir, "final_model_interrupted.zip")
+        save_model_snapshot(model_dir, version, current_lr=current_lr_fn())
         print(f"Model saved to {final_path}. Exiting.")
         sys.exit(TrainExitCode.INTERRUPTED)
 
@@ -441,8 +443,17 @@ async def main():
             print(f"\n[ModelVersion] FATAL: {e}")
             os._exit(1)
         model.ent_coef = args.ent_coef
-        model.lr_schedule = lambda _: args.lr   # adaptive_lr_callback takes over from here
+        # Resume at the LR that was active when the checkpoint was saved (stored in
+        # optimizer state by SB3), clamped to args.lr as a ceiling so a manual
+        # --lr override can still lower the rate.  AdaptiveLRCallback is seeded with
+        # the same value so it continues adapting from where it left off.
+        saved_lr = model.policy.optimizer.param_groups[0]["lr"]
+        resume_lr = min(saved_lr, args.lr)
+        _resume_lr_lambda = lambda _: resume_lr
+        model.lr_schedule = _resume_lr_lambda
+        adaptive_lr_callback._current_lr = resume_lr
         model.clip_range = lambda _: 0.20
+        send_event(f"▶️  Resuming at LR {resume_lr:.2e} (checkpoint={saved_lr:.2e})")
 
         if args.eval_only:
             await evaluate_model_random(model)
@@ -452,11 +463,14 @@ async def main():
             if remaining_steps <= 0:
                 print(f"Training already complete ({model.num_timesteps:,} / {args.steps:,} steps)")
                 sys.exit(TrainExitCode.COMPLETE)
-            print(f"Continuing Training (Steps: {remaining_steps:,} remaining of {args.steps:,}, LR: {args.lr})")
+            print(f"Continuing Training (Steps: {remaining_steps:,} remaining of {args.steps:,}, LR: {resume_lr:.2e} (saved={saved_lr:.2e}, arg={args.lr:.2e})")
             _run_roundtrip_test(model, _load_extractor_kwargs["layout"], _load_policy_kwargs, debug=args.debug)
             save_model_snapshot(model_dir, current_version)
 
-            _setup_signal_handlers(model, model_dir, _shutdown_event)
+            _setup_signal_handlers(
+                model, model_dir, _shutdown_event, current_version,
+                lambda: model.policy.optimizer.param_groups[0]["lr"],
+            )
 
             try:
                 model.learn(total_timesteps=args.steps, callback=callbacks, reset_num_timesteps=False, tb_log_name=tb_run_name)
@@ -518,7 +532,10 @@ async def main():
         _run_roundtrip_test(model, extractor_kwargs["layout"], policy_kwargs, debug=args.debug)
         save_model_snapshot(model_dir, version)
 
-        _setup_signal_handlers(model, model_dir, _shutdown_event)
+        _setup_signal_handlers(
+            model, model_dir, _shutdown_event, version,
+            lambda: model.policy.optimizer.param_groups[0]["lr"],
+        )
 
         try:
             if log_level >= LogLevel.DETAILED:

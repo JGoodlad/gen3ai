@@ -17,6 +17,7 @@ def save_model_snapshot(
     model_dir: str,
     version: ModelVersion,
     git_hash: Optional[str] = None,
+    current_lr: Optional[float] = None,
 ) -> None:
     """Write model_config.json and metadata.json into model_dir.
 
@@ -37,6 +38,8 @@ def save_model_snapshot(
         "python_version": sys.version,
         "sb3_version": stable_baselines3.__version__,
     }
+    if current_lr is not None:
+        metadata["current_lr"] = current_lr
     with open(os.path.join(model_dir, "metadata.json"), "w") as f:
         json.dump(metadata, f, indent=2)
 

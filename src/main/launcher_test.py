@@ -254,6 +254,33 @@ class TestReadMetricsPipe:
         # Thread exits without hanging — test passes if join() doesn't timeout
         assert state.snapshot().metrics == {}
 
+    def test_event_payload_adds_event_not_metrics(self):
+        state = self._run_reader([
+            json.dumps({"_event": "▶️  Resuming at LR 1.00e-04 (checkpoint=1.00e-04)"})
+        ])
+        snap = state.snapshot()
+        assert any("Resuming" in e for e in snap.events)
+        assert "_event" not in snap.metrics
+
+    def test_event_payload_does_not_update_metrics(self):
+        state = self._run_reader([
+            json.dumps({"_event": "some message", "time/fps": 999.0})
+        ])
+        snap = state.snapshot()
+        # Routed as an event — metrics not touched
+        assert snap.metrics == {}
+
+    def test_mixed_event_and_metrics(self):
+        state = self._run_reader([
+            json.dumps({"time/fps": 800.0, "_step": 1000}),
+            json.dumps({"_event": "child resumed"}),
+            json.dumps({"time/fps": 850.0, "_step": 2000}),
+        ])
+        snap = state.snapshot()
+        assert snap.metrics.get("time/fps") == pytest.approx(850.0)
+        assert snap.metrics_step == 2000
+        assert any("child resumed" in e for e in snap.events)
+
 
 # ── _dispatch_command ────────────────────────────────────────────────────────
 

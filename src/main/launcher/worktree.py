@@ -31,6 +31,23 @@ def _read_checkpoint_git_hash(model_path: str) -> "str | None":
     return None
 
 
+def _read_checkpoint_lr(model_path: str) -> "float | None":
+    """Read current_lr from the metadata.json saved alongside a checkpoint."""
+    candidates = [
+        os.path.dirname(os.path.abspath(model_path)),
+        os.path.abspath(model_path),
+    ]
+    for d in candidates:
+        meta = os.path.join(d, "metadata.json")
+        if os.path.exists(meta):
+            try:
+                with open(meta) as f:
+                    return json.load(f).get("current_lr")
+            except Exception:
+                return None
+    return None
+
+
 def _prune_stale_launcher_worktrees(repo_root: str) -> None:
     """Remove any stale launcher-* worktrees left by crashed sessions."""
     result = subprocess.run(

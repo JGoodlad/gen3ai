@@ -28,7 +28,11 @@ def _read_metrics_pipe(fd_r: int, state: LauncherState) -> None:
                 if not line:
                     continue
                 try:
-                    state.update_metrics(json.loads(line))
+                    data = json.loads(line)
+                    if "_event" in data:
+                        state.add_event(data["_event"])
+                    else:
+                        state.update_metrics(data)
                 except json.JSONDecodeError:
                     pass
     except Exception:
