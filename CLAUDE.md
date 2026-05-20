@@ -239,19 +239,19 @@ deps/
 
 ## Observation Vector
 
-The full observation is a **1141-dim float32 vector** (`Gen3ObservationEncoder.dimension`):
+The full observation is a **1153-dim float32 vector** (`Gen3ObservationEncoder.dimension`):
 
 | Block | Dims | Offset | Notes |
 |---|---|---|---|
-| Our team (6 × 61) | 366 | 0 | base encoder |
-| Opp team (6 × 61) | 366 | 366 | base encoder |
-| Active context ×2 | 46 | 732 | base encoder |
-| Global env | 13 | 778 | base encoder |
-| Reactive + matchups | 300 | 791 | base encoder |
-| Prev-turn action mask | 11 | 1091 | appended by `gen3_env.embed_battle()` |
-| TurnDelta block | 39 | 1102 | appended by `gen3_env.embed_battle()` |
+| Our team (6 × 62) | 372 | 0 | base encoder |
+| Opp team (6 × 62) | 372 | 372 | base encoder |
+| Active context ×2 | 46 | 744 | base encoder |
+| Global env | 13 | 790 | base encoder |
+| Reactive + matchups | 300 | 803 | base encoder |
+| Prev-turn action mask | 11 | 1103 | appended by `gen3_env.embed_battle()` |
+| TurnDelta block | 39 | 1114 | appended by `gen3_env.embed_battle()` |
 
-Per-Pokémon slot (61 dims): species ID + 6 base stats, item ID + known, 2 type IDs, ability ID + known, 7-dim condition (status one-hot), 4 × 9-dim move slots, HP fraction, species_known flag, active flag, sleep_counter_norm, toxic_counter_norm. `species_known = 1.0` for all populated slots (own team and revealed opponent mons), `0.0` for unseen opponent slots. Sleep counter: `min(turns_slept, 4) / 4` (Gen 3 max 4 turns); toxic counter: `min(turns_poisoned, 8) / 8` (practical max before fainting with Leftovers).
+Per-Pokémon slot (62 dims): species ID + 6 base stats, item ID + known + consumed, 2 type IDs, ability ID + known, 7-dim condition (status one-hot), 4 × 9-dim move slots, HP fraction, species_known flag, active flag, sleep_counter_norm, toxic_counter_norm. The item block is 3 dims: `[item_id, known, consumed]` — `consumed=1` when the item was spent this battle (Berry activated, Knock Off, Trick, etc.) and `item_id` retains the identity of the consumed item so the model knows what was lost. `species_known = 1.0` for all populated slots (own team and revealed opponent mons), `0.0` for unseen opponent slots. Sleep counter: `min(turns_slept, 4) / 4` (Gen 3 max 4 turns); toxic counter: `min(turns_poisoned, 8) / 8` (practical max before fainting with Leftovers).
 
 Global env (13 dims): weather one-hot (6), spikes ×2 (2), log-turn (1), our reflect (1), our light screen (1), opp reflect (1), opp light screen (1).
 

@@ -2,6 +2,7 @@
 SPECIES_ID_DIM = 1 # ID for embedding
 ITEM_ID_DIM = 1    # Only the first slot is the ID; was 16 (wasted)
 ITEM_KNOWN_DIM = 1
+ITEM_CONSUMED_DIM = 1  # 1.0 when item was consumed this battle (Berry, Trick, etc.)
 COMBINED_TYPES_DIM = 2  # Two type IDs only; was 8 (6 placeholders removed)
 ABILITY_SLOT_DIM = 1    # ID only; was 8 (possible-ability slots removed)
 ABILITY_KNOWN_DIM = 1
@@ -16,24 +17,24 @@ VOLATILES_DIM = 9
 
 # Internal Pokémon Vector Offsets
 # Species: 7 (1 ID + 6 Stats)
-# Items: ITEM_ID_DIM(1) + ITEM_KNOWN_DIM(1) = 2
+# Items: ITEM_ID_DIM(1) + ITEM_KNOWN_DIM(1) + ITEM_CONSUMED_DIM(1) = 3
 # Types: COMBINED_TYPES_DIM(2) = 2
 # Abilities: ABILITY_SLOT_DIM(1) + ABILITY_KNOWN_DIM(1) = 2
 # Condition: CONDITION_DIM(7) = 7
 # Moves: 4 * MOVE_SLOT_DIM(9) = 36
-# HP: 1   Total: 57
+# HP: 1   Total: 58
 POKEMON_SPECIES_OFFSET = 0
 POKEMON_ITEMS_OFFSET = 7   # 0 + 7
-POKEMON_TYPES_OFFSET = 9   # 7 + 2
-POKEMON_ABILITIES_OFFSET = 11  # 9 + 2
-POKEMON_CONDITION_OFFSET = 13  # 11 + 2
-POKEMON_MOVES_OFFSET = 20  # 13 + 7
-POKEMON_HP_OFFSET = 56          # 20 + 36
-POKEMON_SPECIES_KNOWN_OFFSET = 57  # 56 + 1 (HP); 1.0 when slot is populated, 0.0 when absent
-POKEMON_COUNTER_OFFSET = 58    # 57 + 1 (species_known): sleep_ctr, toxic_ctr
+POKEMON_TYPES_OFFSET = 10  # 7 + 3
+POKEMON_ABILITIES_OFFSET = 12  # 10 + 2
+POKEMON_CONDITION_OFFSET = 14  # 12 + 2
+POKEMON_MOVES_OFFSET = 21  # 14 + 7
+POKEMON_HP_OFFSET = 57          # 21 + 36
+POKEMON_SPECIES_KNOWN_OFFSET = 58  # 57 + 1 (HP); 1.0 when slot is populated, 0.0 when absent
+POKEMON_COUNTER_OFFSET = 59    # 58 + 1 (species_known): sleep_ctr, toxic_ctr
 POKEMON_COUNTER_DIM = 2        # sleep turn count (norm), toxic turn count (norm)
-POKEMON_VECTOR_DIM = 60        # 58 + 2 (status counters)
-POKEMON_FULL_DIM = 61          # 60 + 1 (active flag appended by state_encoder)
+POKEMON_VECTOR_DIM = 61        # 59 + 2 (status counters)
+POKEMON_FULL_DIM = 62          # 61 + 1 (active flag appended by state_encoder)
 
 # Active context: boosts(14) + volatiles(9) = 23
 ACTIVE_CONTEXT_DIM = 23

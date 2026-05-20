@@ -30,6 +30,7 @@ class Pokemon:
         "_gen",
         "_gender",
         "_heightm",
+        "_consumed_item",
         "_item",
         "_ivs",
         "_last_cant_reason",
@@ -113,6 +114,7 @@ class Pokemon:
         self._terastallized: bool = False
         self._terastallized_type: Optional[PokemonType] = None
         self._item: Optional[str] = GenData.from_gen(gen).UNKNOWN_ITEM
+        self._consumed_item: Optional[str] = None
         self._last_request: Optional[Dict[str, Any]] = {}
         self._last_details: str = ""
         self._must_recharge: bool = False
@@ -406,6 +408,7 @@ class Pokemon:
                     self._effects.pop(effect)
 
     def end_item(self, item: str):
+        self._consumed_item = item
         self._item = None
 
         if item == "powerherb":
@@ -735,6 +738,8 @@ class Pokemon:
 
         self._name = request_pokemon["ident"][4:]
         self._item = request_pokemon["item"]
+        if self._item:
+            self._consumed_item = None
 
         details = request_pokemon["details"]
         self._update_from_details(details)
@@ -1114,6 +1119,16 @@ class Pokemon:
     @item.setter
     def item(self, item: Optional[str]):
         self._item = to_id_str(item) if item is not None else None
+        if self._item:
+            self._consumed_item = None
+
+    @property
+    def consumed_item(self) -> Optional[str]:
+        """
+        :return: The item that was consumed this battle (via end_item), if any.
+        :rtype: str | None
+        """
+        return self._consumed_item
 
     @property
     def ivs(self) -> list[int] | None:

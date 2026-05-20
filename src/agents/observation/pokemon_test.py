@@ -24,13 +24,13 @@ def _make_encoder():
 
 
 def test_pokemon_encoder_dimension():
-    assert _make_encoder().dimension == 60
+    assert _make_encoder().dimension == 61
 
 
 def test_pokemon_encoder_empty():
     encoder = _make_encoder()
     vec = encoder.encode(None, None)
-    assert len(vec) == 60
+    assert len(vec) == 61
     assert np.all(vec == 0)
 
 
