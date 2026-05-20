@@ -139,17 +139,10 @@ class LauncherUI:
         return f"[magenta]🗂  {os.path.basename(snap.run_dir)}[/magenta]"
 
     def _render_metrics_table(self, metrics: dict, metrics_ts, now: float):
-        tbl = Table(
-            box=rich.box.SIMPLE_HEAD,
-            header_style="dim",
-            show_edge=False,
-            expand=True,
-            padding=(0, 1),
-        )
-        tbl.add_column("Metric", no_wrap=True)
-        tbl.add_column("Value", justify="right")
-
         if not metrics:
+            tbl = Table(box=rich.box.SIMPLE_HEAD, header_style="dim", show_edge=False, expand=True, padding=(0, 1))
+            tbl.add_column("Metric", no_wrap=True)
+            tbl.add_column("Value", justify="right")
             tbl.add_row("[dim]—[/dim]", "[dim]waiting…[/dim]")
             return tbl
 
@@ -159,6 +152,7 @@ class LauncherUI:
             if age > 60:
                 stale_badge = f" [dim]({int(age)}s ago)[/dim]"
 
+        # Order keys and group by section prefix.
         seen: set = set()
         ordered = []
         for k in _METRIC_ORDER:
@@ -169,11 +163,49 @@ class LauncherUI:
             if k not in seen:
                 ordered.append(k)
 
-        for i, key in enumerate(ordered):
-            badge = stale_badge if i == 0 else ""
-            tbl.add_row(f"[dim]{key}[/dim]{badge}", f"[bold]{_fmt_val(metrics[key])}[/bold]")
+        by_section: dict = {}
+        for key in ordered:
+            section = key.partition("/")[0]
+            by_section.setdefault(section, []).append(key)
 
-        return tbl
+        def _make_col(sections: list) -> Table:
+            t = Table(box=None, show_header=False, show_edge=False, padding=(0, 1))
+            t.add_column(no_wrap=True)
+            t.add_column(justify="right")
+            first = True
+            for sec in sections:
+                keys = by_section.get(sec, [])
+                if not keys:
+                    continue
+                badge = stale_badge if first else ""
+                first = False
+                t.add_row(f"[bold dim]{sec}/[/bold dim]{badge}", "")
+                for key in keys:
+                    name = key.partition("/")[2]
+                    t.add_row(f"  [dim]{name}[/dim]", f"[bold]{_fmt_val(metrics[key])}[/bold]")
+            return t
+
+        left = _make_col(["rollout", "eval"])
+        right = _make_col(["train", "time"])
+
+        # Any leftover sections not in the two fixed panels.
+        fixed = {"rollout", "eval", "train", "time"}
+        extra_sections = [s for s in by_section if s not in fixed]
+
+        grid = Table.grid(expand=True, padding=(0, 2))
+        grid.add_column(ratio=1)
+        grid.add_column(ratio=1)
+        grid.add_row(left, right)
+
+        if extra_sections:
+            extra = _make_col(extra_sections)
+            wrapper = Table.grid(expand=True)
+            wrapper.add_column()
+            wrapper.add_row(grid)
+            wrapper.add_row(extra)
+            return wrapper
+
+        return grid
 
     def _render_log_lines(self, log_lines: list, n: int = 6) -> Text:
         text = Text()
