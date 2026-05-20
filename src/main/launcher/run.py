@@ -57,7 +57,7 @@ def _print_exit_summary(run_dir: "str | None", state: LauncherState) -> None:
     print("\n".join(lines), file=sys.stderr)
 
 
-def run(child_args: list, interval_hours: float, pin: bool = True) -> None:
+def run(child_args: list, interval_hours: float, pin: bool = True, sync_to_main: bool = False) -> None:
     interval_seconds = interval_hours * 3600
     session_start = time.time()
     child_env = _build_child_env()
@@ -68,7 +68,7 @@ def run(child_args: list, interval_hours: float, pin: bool = True) -> None:
         repo_root = get_repo_root()
         _prune_stale_launcher_worktrees(repo_root)
         model_path = _find_model_arg(child_args)
-        if model_path:
+        if model_path and not sync_to_main:
             checkpoint_hash = _read_checkpoint_git_hash(model_path)
             if not checkpoint_hash:
                 sys.exit(
@@ -109,7 +109,13 @@ def run(child_args: list, interval_hours: float, pin: bool = True) -> None:
         state.add_event("🚀 Starting — single run (no restart)")
 
     if pin:
-        state.add_event(f"📌 Pinned to {state.initial_git_hash} (isolated worktree)")
+        if sync_to_main and _find_model_arg(child_args):
+            state.add_event(
+                f"🔄 --sync-to-main: pinned to current HEAD {state.initial_git_hash} "
+                f"(ignoring checkpoint's original hash)"
+            )
+        else:
+            state.add_event(f"📌 Pinned to {state.initial_git_hash} (isolated worktree)")
     else:
         state.add_event(f"--no-pin: running from current tree ({state.initial_git_hash})")
 

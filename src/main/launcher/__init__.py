@@ -40,6 +40,16 @@ def main() -> None:
         default=False,
         help="Skip worktree pinning — child runs from the current working tree (old behaviour)",
     )
+    parser.add_argument(
+        "--sync-to-main",
+        action="store_true",
+        default=False,
+        help=(
+            "When resuming from a checkpoint, pin the isolated worktree to the current HEAD "
+            "instead of the checkpoint's original git hash. Useful for picking up UI or tooling "
+            "fixes without discarding the checkpoint."
+        ),
+    )
     parser.add_argument("-h", "--help", action="store_true")
 
     known, _ = parser.parse_known_args()
@@ -51,6 +61,11 @@ def main() -> None:
 
     child_args = _strip_launcher_args(sys.argv[1:])
     try:
-        run(child_args, interval_hours=known.restart_interval_hours, pin=not known.no_pin)
+        run(
+            child_args,
+            interval_hours=known.restart_interval_hours,
+            pin=not known.no_pin,
+            sync_to_main=known.sync_to_main,
+        )
     except KeyboardInterrupt:
         sys.exit(0)
