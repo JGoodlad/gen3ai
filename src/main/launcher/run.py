@@ -32,6 +32,21 @@ from main.launcher.worktree import (
 )
 
 
+def _find_ent_coef(args: list) -> "float | None":
+    for i, a in enumerate(args):
+        if a == "--ent-coef" and i + 1 < len(args):
+            try:
+                return float(args[i + 1])
+            except ValueError:
+                return None
+        if a.startswith("--ent-coef="):
+            try:
+                return float(a.split("=", 1)[1])
+            except ValueError:
+                return None
+    return None
+
+
 def _print_crash_log(log_lines: "list | None") -> None:
     """Dump captured child output to stderr after the Live screen has closed."""
     if not log_lines:
@@ -100,6 +115,7 @@ def run(child_args: list, interval_hours: float, pin: bool = True, sync_to_main:
         child_args = _insert_or_replace_run_dir_arg(child_args, run_dir)
 
     state.run_dir = run_dir
+    state.ent_coef = _find_ent_coef(child_args)
 
     cmd_q: queue.Queue = queue.Queue()
     _setup_raw_input()

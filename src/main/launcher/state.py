@@ -22,6 +22,7 @@ class LauncherSnapshot:
     events: list               # launcher event strings (timestamped)
     initial_git_hash: Optional[str]
     run_dir: Optional[str]     # current checkpoint output directory
+    ent_coef: Optional[float]  # entropy coefficient passed via --ent-coef
 
 
 class LauncherState:
@@ -40,6 +41,7 @@ class LauncherState:
         self.view_mode: str = "dashboard"
         self.initial_git_hash: Optional[str] = None
         self.run_dir: Optional[str] = None
+        self.ent_coef: Optional[float] = None
 
     def add_log(self, line: str) -> None:
         with self._lock:
@@ -76,4 +78,5 @@ class LauncherState:
                 events=list(self._events),
                 initial_git_hash=self.initial_git_hash,
                 run_dir=self.run_dir,
+                ent_coef=self.ent_coef,
             )

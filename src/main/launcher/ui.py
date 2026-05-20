@@ -78,6 +78,11 @@ class LauncherUI:
 
         git = self._git_badge(snap)
         model_badge = self._model_badge(snap)
+        ec_badge = (
+            f"[cyan]ent_coef [bold]{snap.ent_coef}[/bold][/cyan]"
+            if snap.ent_coef is not None
+            else ""
+        )
         highlights = []
         if (steps := snap.metrics.get("time/total_timesteps")) is not None:
             highlights.append(f"steps [bold]{_fmt_val(steps)}[/bold]")
@@ -88,9 +93,10 @@ class LauncherUI:
             highlights.append(f"reward [{col}]{_fmt_val(rew)}[/{col}]")
         hl = "  │  ".join(highlights) if highlights else "[dim]waiting for first rollout…[/dim]"
 
+        ec_sep = f"  │  {ec_badge}" if ec_badge else ""
         row2 = Table.grid(padding=(0, 1), expand=True)
         row2.add_column()
-        row2.add_row(f"  {git}  │  {model_badge}  │  {hl}")
+        row2.add_row(f"  {git}  │  {model_badge}{ec_sep}  │  {hl}")
 
         metrics_panel = self._render_metrics_table(snap.metrics, snap.metrics_ts, now)
         log_text = self._render_log_lines(snap.log_lines, n=6)

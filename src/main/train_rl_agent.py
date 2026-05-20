@@ -34,7 +34,7 @@ import signal
 import threading
 from datetime import datetime
 from sb3_contrib import MaskablePPO
-from stable_baselines3.common.callbacks import CheckpointCallback
+from stable_baselines3.common.callbacks import BaseCallback, CheckpointCallback
 from stable_baselines3.common.vec_env import DummyVecEnv, SubprocVecEnv
 from stable_baselines3.common.monitor import Monitor
 
@@ -72,6 +72,21 @@ def _write_latest_txt(model_dir: str, basename: str) -> None:
     with open(tmp, "w") as f:
         f.write(basename + "\n")
     os.replace(tmp, latest)
+
+
+class _HparamLogCallback(BaseCallback):
+    """Logs static hyperparameters to TensorBoard once at training start."""
+
+    def __init__(self, ent_coef: float):
+        super().__init__()
+        self._ent_coef = ent_coef
+
+    def _on_training_start(self) -> None:
+        self.logger.record("hparams/ent_coef", self._ent_coef)
+        self.logger.dump(self.num_timesteps)
+
+    def _on_step(self) -> bool:
+        return True
 
 
 class _TrackingCheckpointCallback(CheckpointCallback):
@@ -383,7 +398,7 @@ async def main():
     )
 
     adaptive_lr_callback = AdaptiveLRCallback(initial_lr=args.lr)
-    callbacks = [checkpoint_callback, replay_callback, adaptive_lr_callback, MetricsExporterCallback()]
+    callbacks = [checkpoint_callback, replay_callback, adaptive_lr_callback, MetricsExporterCallback(), _HparamLogCallback(args.ent_coef)]
     
     if not args.debug:
         ts_cb = datetime.now().strftime('%H%M%S')
