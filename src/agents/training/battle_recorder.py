@@ -3,6 +3,7 @@ import numpy as np
 
 from agents.training.battle_context import BattleContext, TurnDelta
 from agents.training.reward_function import RewardFunction
+from agents.training.reward_tracker import RewardTracker
 from agents.training.slot_registry import SlotRegistry
 from agents.training.reward_manager import Gen3RewardManager
 from agents.gen3_mechanics import boosts_str as _boosts_str_fn
@@ -20,6 +21,9 @@ class BattleRecorder:
 
     Each invocation entry is self-contained — action labels are inlined,
     not referenced from a legend — so a human can read any turn in isolation.
+
+    Reward computation is delegated to RewardTracker, which shares the same
+    SlotRegistries so BattleContext slot lookups stay consistent.
     """
 
     def __init__(self, battle_tag: str, reward_fn_factory: Callable[[], RewardFunction] = Gen3RewardManager):
@@ -27,11 +31,8 @@ class BattleRecorder:
         self._our_slots = SlotRegistry()
         self._opp_slots = SlotRegistry()
         self._invocations: list[dict] = []
-        self._pending_ctx: Optional[BattleContext] = None
-        self._pending_action: int = -1
         self._pending_entry: Optional[dict] = None
-        self._reward_fn = reward_fn_factory()
-        self._reward_fn.reset()
+        self._tracker = RewardTracker(reward_fn_factory, self._our_slots, self._opp_slots)
 
     # ------------------------------------------------------------------
     # Public API
@@ -39,10 +40,12 @@ class BattleRecorder:
 
     def record(self, battle, action_idx: int, probs: np.ndarray, mask: np.ndarray) -> None:
         """Record a model invocation. Call from choose_move() after prediction."""
-        ctx = self._build_ctx(battle, mask)
+        curr_ctx = self._build_ctx(battle, mask)
 
         if self._pending_entry is not None:
-            self._complete_pending(ctx, battle)
+            prev_ctx = self._tracker.pending_ctx
+            delta, reward = self._tracker.complete_pending(curr_ctx, battle)
+            self._fill_pending_outcome(prev_ctx, curr_ctx, delta, reward, battle)
 
         chosen = self._action_label(action_idx, battle)
         our_mon = battle.active_pokemon
@@ -52,14 +55,14 @@ class BattleRecorder:
         our_boosts = _boosts_str_fn(our_mon)
         opp_boosts = _boosts_str_fn(opp_mon)
 
-        our_section: dict = {"species": ctx.our_active, "hp": self._our_hp_pct(ctx)}
+        our_section: dict = {"species": curr_ctx.our_active, "hp": self._our_hp_pct(curr_ctx)}
         if our_status:
             our_section["status"] = our_status
         if our_boosts:
             our_section["boosts"] = our_boosts
         our_section["bench"] = self._our_bench_summary(battle)
 
-        opp_section: dict = {"species": ctx.opp_active, "hp": self._opp_hp_pct(ctx)}
+        opp_section: dict = {"species": curr_ctx.opp_active, "hp": self._opp_hp_pct(curr_ctx)}
         if opp_status:
             opp_section["status"] = opp_status
         if opp_boosts:
@@ -68,8 +71,8 @@ class BattleRecorder:
 
         entry = {
             "i": len(self._invocations) + 1,
-            "turn": ctx.turn,
-            "phase": ctx.phase,
+            "turn": curr_ctx.turn,
+            "phase": curr_ctx.phase,
             "chosen": chosen,
             "our": our_section,
             "opp": opp_section,
@@ -77,8 +80,7 @@ class BattleRecorder:
             "actions": self._all_action_labels(battle, probs, mask),
         }
 
-        self._pending_ctx = ctx
-        self._pending_action = action_idx
+        self._tracker.begin_turn(curr_ctx, action_idx)
         self._pending_entry = entry
 
     def finalize(self, battle) -> None:
@@ -86,16 +88,9 @@ class BattleRecorder:
         if self._pending_entry is None:
             return
 
-        prev_ctx = self._pending_ctx
+        prev_ctx = self._tracker.pending_ctx
         our_hp, opp_hp = self._terminal_hp(battle)
-
-        terminal_ctx = BattleContext.from_battle(
-            battle, np.zeros(11, dtype=np.float32), np.zeros(1, dtype=np.float32),
-            self._our_slots, self._opp_slots,
-        )
-        delta = TurnDelta.build(prev_ctx, terminal_ctx, self._pending_action)
-        self._reward_fn.record_action(prev_ctx, self._pending_action)
-        reward = self._reward_fn.process_turn_reward(battle, delta)
+        terminal_ctx, delta, reward = self._tracker.finalize(battle)
 
         # HP delta: for faint turns use the fainted mon's slot, not the forced switch-in.
         our_ref = prev_ctx.our_active if delta.we_fainted else (delta.our_switch_to or prev_ctx.our_active)
@@ -122,7 +117,7 @@ class BattleRecorder:
         else:
             events.append("result:tie")
 
-        breakdown = getattr(self._reward_fn, "_last_breakdown", None)
+        breakdown = getattr(self._tracker._reward_fn, "_last_breakdown", None)
         self._pending_entry["outcome"] = {
             "our": {"action": self._pending_entry["chosen"], "hp_delta": f"{our_delta:+.0f}%"},
             "opp": {"action": "unknown",                     "hp_delta": f"{opp_delta:+.0f}%"},
@@ -319,12 +314,9 @@ class BattleRecorder:
                     if new_status:
                         events.append(f"opp:{prev_ctx.opp_active}:{new_status}")
 
-    def _complete_pending(self, curr_ctx: BattleContext, battle) -> None:
-        prev_ctx = self._pending_ctx
-        self._reward_fn.record_action(prev_ctx, self._pending_action)
-        delta = TurnDelta.build(prev_ctx, curr_ctx, self._pending_action)
-        reward = self._reward_fn.process_turn_reward(battle, delta)
-
+    def _fill_pending_outcome(self, prev_ctx: BattleContext, curr_ctx: BattleContext,
+                              delta: TurnDelta, reward: float, battle) -> None:
+        """Build and commit the JSON outcome for the pending entry using already-computed delta/reward."""
         # Our action
         if delta.our_switch_to:
             we_action = f"switched_to:{delta.our_switch_to}"
@@ -338,13 +330,10 @@ class BattleRecorder:
             they_action = "none"
         elif delta.opp_switch_to:
             if delta.opp_fainted and delta.opp_move_id:
-                # Attacked then fainted → forced switch in
                 they_action = f"{delta.opp_move_id} → {delta.opp_switch_to}_sent_in"
             elif delta.opp_fainted:
-                # Fainted without moving (e.g. residual damage between turns)
                 they_action = f"{delta.opp_switch_to}_sent_in"
             elif delta.opp_move_id:
-                # Phaze (Roar/Whirlwind)
                 they_action = f"{delta.opp_move_id} → phazed_to:{delta.opp_switch_to}"
             else:
                 they_action = f"switched_to:{delta.opp_switch_to}"
@@ -369,7 +358,7 @@ class BattleRecorder:
 
         self._append_status_events(events, prev_ctx, delta, battle)
 
-        breakdown = getattr(self._reward_fn, "_last_breakdown", None)
+        breakdown = getattr(self._tracker._reward_fn, "_last_breakdown", None)
         self._pending_entry["outcome"] = {
             "our": {"action": we_action,   "hp_delta": f"{our_delta:+.0f}%"},
             "opp": {"action": they_action, "hp_delta": f"{opp_delta:+.0f}%"},
@@ -378,7 +367,6 @@ class BattleRecorder:
         }
         self._invocations.append(self._pending_entry)
         self._pending_entry = None
-        self._pending_ctx = None
 
     def _terminal_hp(self, battle) -> tuple[np.ndarray, np.ndarray]:
         our_hp = np.zeros(6, dtype=np.float32)

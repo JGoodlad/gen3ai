@@ -8,9 +8,27 @@ from stable_baselines3.common.callbacks import BaseCallback
 from poke_env.ps_client import LocalhostServerConfiguration, AccountConfiguration
 
 from agents.inference.player import RLPlayer
+from agents.training.reward_tracker import RewardTrackingMixin
+from agents.training.reward_manager import Gen3RewardManager
 
 BATTLE_FORMAT = "gen3ou"
 _EVAL_CONCURRENCY = 100
+
+
+class EvalRLPlayer(RewardTrackingMixin, RLPlayer):
+    """RLPlayer with per-battle reward tracking for eval metrics."""
+
+    def __init__(self, *args, reward_fn_factory=Gen3RewardManager, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._init_reward_tracking(reward_fn_factory)
+
+    def choose_move(self, battle):
+        forfeit = self._handle_stall(battle, "EVAL_STALL")
+        if forfeit:
+            return forfeit
+        idx, _, mask = self._predict_best_action(battle, stochastic=False)
+        self._track_reward(battle, idx, mask)
+        return self.action_to_order(idx, battle)
 
 
 class PerOpponentEvalCallback(BaseCallback):
@@ -60,7 +78,7 @@ class PerOpponentEvalCallback(BaseCallback):
         if self.best_model_save_path is not None:
             os.makedirs(self.best_model_save_path, exist_ok=True)
         ts = datetime.now().strftime('%H%M%S')
-        self._rl_player = RLPlayer(
+        self._rl_player = EvalRLPlayer(
             model=self.model,
             team=self._trainee_teambuilder,
             battle_format=BATTLE_FORMAT,
@@ -118,19 +136,24 @@ class PerOpponentEvalCallback(BaseCallback):
             start = datetime.now()
             await self._rl_player.battle_against(opponent, n_battles=n_games)
             duration = datetime.now() - start
+            # _battle_finished_callback has fired for every battle by this point
 
             won = self._rl_player.n_won_battles
             finished = self._rl_player.n_finished_battles
             win_rate = won / finished if finished > 0 else 0.0
+            mean_reward = self._rl_player.mean_episode_reward
             win_rates[name] = win_rate
 
             ep_len = self._mean_episode_length()
             print(
                 f"  vs {name}: {win_rate * 100:.1f}%  "
-                f"({won}/{finished})  ep_len={ep_len:.1f}  [{duration}]"
+                f"({won}/{finished})  ep_len={ep_len:.1f}  reward={mean_reward:.3f}  [{duration}]"
             )
             self.logger.record(f"eval/win_rate_vs_{name}", win_rate)
             self.logger.record(f"eval/mean_ep_len_vs_{name}", ep_len)
+            self.logger.record(f"eval/mean_reward_vs_{name}", mean_reward)
+
+            self._rl_player.reset_reward_tracking()
 
         aggregate = sum(win_rates.values()) / len(win_rates) if win_rates else 0.0
         self.logger.record("eval/win_rate_mean", aggregate)

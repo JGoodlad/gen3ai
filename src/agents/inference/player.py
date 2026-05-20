@@ -17,8 +17,24 @@ class Gen3Player(Player):
         super().__init__(**kwargs)
         self.observation_encoder = observation_encoder
         self.mappings = mappings
-        self._stall_logger = StallLogger(stall_config)
-        self._last_battle_tag: Optional[str] = None
+        self._stall_config = stall_config or StallConfig()
+        self._stall_loggers: dict[str, StallLogger] = {}
+
+    def _handle_stall(self, battle, suffix: str) -> Optional[ForfeitBattleOrder]:
+        """Returns ForfeitBattleOrder if the battle exceeds the stall threshold, else None.
+        Each battle gets its own StallLogger, so concurrent battles don't interfere."""
+        tag = battle.battle_tag
+        if tag not in self._stall_loggers:
+            self._stall_loggers[tag] = StallLogger(self._stall_config)
+        stall_logger = self._stall_loggers[tag]
+        if battle.turn >= stall_logger.threshold:
+            stall_logger.log_once(battle, suffix=suffix)
+            return ForfeitBattleOrder()
+        return None
+
+    def _battle_finished_callback(self, battle) -> None:
+        super()._battle_finished_callback(battle)
+        self._stall_loggers.pop(battle.battle_tag, None)
 
     def embed_battle(self, battle) -> Dict[str, Any]:
         if self.observation_encoder is None:
@@ -96,15 +112,8 @@ class RLPlayer(Gen3Player):
         return idx, probs, mask
 
     def choose_move(self, battle):
-        try:
-            if battle.battle_tag != self._last_battle_tag:
-                self._last_battle_tag = battle.battle_tag
-                self._stall_logger.reset()
-            if battle.turn >= self._stall_logger.threshold:
-                self._stall_logger.log_once(battle, suffix="INFERENCE_STALL")
-                return ForfeitBattleOrder()
-            idx, _, _ = self._predict_best_action(battle)
-            return self.action_to_order(idx, battle)
-        except Exception as e:
-            print(f"\n⚠️ [INFERENCE] choose_move() failed at turn {battle.turn}: {e}")
-            return ForfeitBattleOrder()
+        forfeit = self._handle_stall(battle, "INFERENCE_STALL")
+        if forfeit:
+            return forfeit
+        idx, _, _ = self._predict_best_action(battle)
+        return self.action_to_order(idx, battle)

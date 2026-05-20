@@ -8,7 +8,6 @@ from typing import Callable
 from datetime import datetime
 from stable_baselines3.common.callbacks import BaseCallback
 from poke_env.player import SimpleHeuristicsPlayer
-from poke_env.player.battle_order import ForfeitBattleOrder
 from poke_env.ps_client import LocalhostServerConfiguration, AccountConfiguration
 
 from agents.inference.player import RLPlayer
@@ -32,23 +31,16 @@ class StatTrackingRLPlayer(RLPlayer):
         self._recorders: dict[str, BattleRecorder] = {}
 
     def choose_move(self, battle):
-        try:
-            if battle.battle_tag != self._last_battle_tag:
-                self._last_battle_tag = battle.battle_tag
-                self._stall_logger.reset()
-            if battle.turn >= self._stall_logger.threshold:
-                self._stall_logger.log_once(battle, suffix="REPLAY_STALL")
-                return ForfeitBattleOrder()
+        forfeit = self._handle_stall(battle, "REPLAY_STALL")
+        if forfeit:
+            return forfeit
 
-            if battle.battle_tag not in self._recorders:
-                self._recorders[battle.battle_tag] = BattleRecorder(battle.battle_tag, self._reward_fn_factory)
+        if battle.battle_tag not in self._recorders:
+            self._recorders[battle.battle_tag] = BattleRecorder(battle.battle_tag, self._reward_fn_factory)
 
-            idx, probs, mask = self._predict_best_action(battle, stochastic=True)
-            self._recorders[battle.battle_tag].record(battle, idx, probs, mask)
-            return self.action_to_order(idx, battle)
-        except Exception as e:
-            print(f"\n⚠️ [REPLAY] choose_move() failed at turn {battle.turn}: {e}")
-            return ForfeitBattleOrder()
+        idx, probs, mask = self._predict_best_action(battle, stochastic=True)
+        self._recorders[battle.battle_tag].record(battle, idx, probs, mask)
+        return self.action_to_order(idx, battle)
 
 
 class ReplayCallback(BaseCallback):
