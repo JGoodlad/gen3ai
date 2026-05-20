@@ -45,6 +45,7 @@ from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappin
 from agents.inference.player import RLPlayer
 from utils.teambuilder import Gen3Teambuilder
 from utils.team_loader import TeamLoader
+from agents.training.eval_callback import PerOpponentEvalCallback
 from agents.training.replay_recorder import ReplayCallback
 from agents.training.wrappers import MaskableAgentWrapper
 from agents.training.gen3_env import Gen3Env
@@ -299,46 +300,69 @@ async def main():
 
     async def evaluate_model_random(model):
         ts = datetime.now().strftime('%H%M%S')
-        print(f"\nStarting Evaluation (Session {ts}, Battles: {args.eval_battles}, Concurrency: {args.eval_concurrency})...")
-        
+        n = args.eval_battles
+        print(f"\nFinal Evaluation (Session {ts}, Battles: {n}, Concurrency: {args.eval_concurrency})...")
+
         rl_player = RLPlayer(
             model=model,
             team=trainee_teambuilder,
             battle_format=BATTLE_FORMAT,
             server_configuration=LocalhostServerConfiguration,
             mappings=mappings,
-            account_configuration=AccountConfiguration(f"RLEval{ts}", "password"),
-            max_concurrent_battles=args.eval_concurrency
-        )
-        
-        random_player = RandomPlayer(
-            battle_format=BATTLE_FORMAT,
-            team=opponent_teambuilder,
-            server_configuration=LocalhostServerConfiguration,
-            account_configuration=AccountConfiguration(f"RandEval{ts}", "password"),
-            max_concurrent_battles=args.eval_concurrency
-        )
-        
-        heuristic_player = SimpleHeuristicsPlayer(
-            battle_format=BATTLE_FORMAT,
-            team=opponent_teambuilder,
-            server_configuration=LocalhostServerConfiguration,
-            account_configuration=AccountConfiguration(f"HeurEval{ts}", "password"),
-            max_concurrent_battles=args.eval_concurrency
+            account_configuration=AccountConfiguration(f"RLFinal{ts}", "password"),
+            max_concurrent_battles=args.eval_concurrency,
         )
 
-        print(f"Evaluating against RandomPlayer [{args.eval_battles} battles]...")
-        start_time = datetime.now()
-        await rl_player.battle_against(random_player, n_battles=args.eval_battles)
-        duration = datetime.now() - start_time
-        print(f"Win rate vs Random: {rl_player.n_won_battles / args.eval_battles * 100:.1f}% (Time: {duration})")
-        
-        rl_player.reset_battles()
-        print(f"Evaluating against HeuristicPlayer [{args.eval_battles} battles]...")
-        start_time = datetime.now()
-        await rl_player.battle_against(heuristic_player, n_battles=args.eval_battles)
-        duration = datetime.now() - start_time
-        print(f"Win rate vs Heuristic: {rl_player.n_won_battles / args.eval_battles * 100:.1f}% (Time: {duration})")
+        final_opponents = [
+            ("Random", RandomPlayer(
+                battle_format=BATTLE_FORMAT, team=opponent_teambuilder,
+                server_configuration=LocalhostServerConfiguration,
+                account_configuration=AccountConfiguration(f"FinalRand{ts}", "password"),
+                max_concurrent_battles=args.eval_concurrency,
+            )),
+            ("Heuristic", SimpleHeuristicsPlayer(
+                battle_format=BATTLE_FORMAT, team=opponent_teambuilder,
+                server_configuration=LocalhostServerConfiguration,
+                account_configuration=AccountConfiguration(f"FinalHeur{ts}", "password"),
+                max_concurrent_battles=args.eval_concurrency,
+            )),
+            ("Staller", Gen3StallerPlayer(
+                battle_format=BATTLE_FORMAT, team=opponent_teambuilder,
+                server_configuration=LocalhostServerConfiguration,
+                account_configuration=AccountConfiguration(f"FinalStall{ts}", "password"),
+                max_concurrent_battles=args.eval_concurrency,
+            )),
+            ("Aggressive", Gen3AggressivePlayer(
+                battle_format=BATTLE_FORMAT, team=opponent_teambuilder,
+                server_configuration=LocalhostServerConfiguration,
+                account_configuration=AccountConfiguration(f"FinalAggr{ts}", "password"),
+                max_concurrent_battles=args.eval_concurrency,
+            )),
+            ("SetupSweep", Gen3SetupSweepPlayer(
+                battle_format=BATTLE_FORMAT, team=opponent_teambuilder,
+                server_configuration=LocalhostServerConfiguration,
+                account_configuration=AccountConfiguration(f"FinalSetup{ts}", "password"),
+                max_concurrent_battles=args.eval_concurrency,
+            )),
+        ]
+
+        win_rates: dict[str, float] = {}
+        for name, opponent in final_opponents:
+            if rl_player.n_finished_battles > 0:
+                rl_player.reset_battles()
+            print(f"  vs {name} [{n} battles]...")
+            start_time = datetime.now()
+            await rl_player.battle_against(opponent, n_battles=n)
+            duration = datetime.now() - start_time
+            wr = rl_player.n_won_battles / rl_player.n_finished_battles
+            win_rates[name] = wr
+            print(f"  Win rate vs {name}: {wr * 100:.1f}%  [{duration}]")
+            model.logger.record(f"eval_final/win_rate_vs_{name}", wr)
+
+        aggregate = sum(win_rates.values()) / len(win_rates)
+        model.logger.record("eval_final/win_rate_mean", aggregate)
+        model.logger.dump(model.num_timesteps)
+        print(f"\nFinal aggregate win rate: {aggregate * 100:.1f}%")
 
     # --- Callback Setup (Shared) ---
     checkpoint_callback = _TrackingCheckpointCallback(
@@ -362,46 +386,44 @@ async def main():
     callbacks = [checkpoint_callback, replay_callback, adaptive_lr_callback, MetricsExporterCallback()]
     
     if not args.debug:
-        from sb3_contrib.common.maskable.callbacks import MaskableEvalCallback
-        
-        def create_eval_env(idx):
-            def _init():
-                try:
-                    ts = datetime.now().strftime('%H%M%S')
-                    env = Gen3Env(
-                        mappings,
-                        battle_format=BATTLE_FORMAT,
-                        team=trainee_teambuilder,
-                        reward_fn=reward_factory(),
-                        server_configuration=LocalhostServerConfiguration,
-                        account_configuration1=AccountConfiguration(f"RLEval{idx}{ts}", "password"),
-                    )
-                    opponent_cls = random.choice(OPPONENT_CLASSES)
-                    opponent = opponent_cls(
-                        battle_format=BATTLE_FORMAT,
-                        team=opponent_teambuilder,
-                        server_configuration=LocalhostServerConfiguration,
-                        account_configuration=AccountConfiguration(f"OppEval{idx}{ts}", "password"),
-                    )
-                    wrapped = MaskableAgentWrapper(env, opponent)
-                    wrapped.action_space = env.action_space
-                    wrapped.observation_space = env.observation_space
-                    return Monitor(wrapped)
-                except Exception as e:
-                    print(f"🛑 ERROR IN EVAL WORKER {idx}: {e}")
-                    traceback.print_exc()
-                    raise e
-            return _init
-        
-        eval_env = SubprocVecEnv([create_eval_env(i) for i in range(8)])
-        start_subprocess_watchdog(eval_env, label="eval_env", shutdown_event=_shutdown_event)
-        eval_callback = MaskableEvalCallback(
-            eval_env,
+        ts_cb = datetime.now().strftime('%H%M%S')
+        eval_opponents = [
+            ("Random", RandomPlayer(
+                battle_format=BATTLE_FORMAT, team=opponent_teambuilder,
+                server_configuration=LocalhostServerConfiguration,
+                account_configuration=AccountConfiguration(f"CbRand{ts_cb}", "password"),
+                max_concurrent_battles=100,
+            )),
+            ("Heuristic", SimpleHeuristicsPlayer(
+                battle_format=BATTLE_FORMAT, team=opponent_teambuilder,
+                server_configuration=LocalhostServerConfiguration,
+                account_configuration=AccountConfiguration(f"CbHeur{ts_cb}", "password"),
+                max_concurrent_battles=100,
+            )),
+            ("Staller", Gen3StallerPlayer(
+                battle_format=BATTLE_FORMAT, team=opponent_teambuilder,
+                server_configuration=LocalhostServerConfiguration,
+                account_configuration=AccountConfiguration(f"CbStall{ts_cb}", "password"),
+                max_concurrent_battles=100,
+            )),
+            ("Aggressive", Gen3AggressivePlayer(
+                battle_format=BATTLE_FORMAT, team=opponent_teambuilder,
+                server_configuration=LocalhostServerConfiguration,
+                account_configuration=AccountConfiguration(f"CbAggr{ts_cb}", "password"),
+                max_concurrent_battles=100,
+            )),
+            ("SetupSweep", Gen3SetupSweepPlayer(
+                battle_format=BATTLE_FORMAT, team=opponent_teambuilder,
+                server_configuration=LocalhostServerConfiguration,
+                account_configuration=AccountConfiguration(f"CbSetup{ts_cb}", "password"),
+                max_concurrent_battles=100,
+            )),
+        ]
+        eval_callback = PerOpponentEvalCallback(
+            opponents=eval_opponents,
+            trainee_teambuilder=trainee_teambuilder,
+            mappings=mappings,
             best_model_save_path=os.path.join(model_dir, "best_model"),
-            log_path=os.path.join(model_dir, "eval_logs"),
-            eval_freq=max(1000, 500000 // args.n_envs),
-            deterministic=False,
-            n_eval_episodes=args.eval_battles
         )
         callbacks.append(eval_callback)
 
