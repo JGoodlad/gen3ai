@@ -177,12 +177,11 @@ class LauncherUI:
                 keys = by_section.get(sec, [])
                 if not keys:
                     continue
-                badge = stale_badge if first else ""
-                first = False
-                t.add_row(f"[bold dim]{sec}/[/bold dim]{badge}", "")
                 for key in keys:
+                    badge = stale_badge if first else ""
+                    first = False
                     name = key.partition("/")[2]
-                    t.add_row(f"  [dim]{name}[/dim]", f"[bold]{_fmt_val(metrics[key])}[/bold]")
+                    t.add_row(f"[dim]{name}[/dim]{badge}", f"[bold]{_fmt_val(metrics[key])}[/bold]")
             return t
 
         left = _make_col(["rollout", "eval"])
