@@ -89,13 +89,15 @@ def run(child_args: list, interval_hours: float, pin: bool = True, sync_to_main:
         train_script, src_dir = _TRAIN_SCRIPT, _SRC_DIR
         state.initial_git_hash = _git_hash()
 
-    if not _find_model_arg(child_args):
+    existing_model = _find_model_arg(child_args)
+    if not existing_model:
         ts = time.strftime("%Y%m%d_%H%M%S")
         run_dir = os.path.join("models", f"run_{ts}")
         os.makedirs(run_dir, exist_ok=True)
         child_args = _insert_or_replace_run_dir_arg(child_args, run_dir)
     else:
-        run_dir = None  # resolved from checkpoint path after first child exits
+        run_dir = os.path.dirname(os.path.abspath(existing_model))
+        child_args = _insert_or_replace_run_dir_arg(child_args, run_dir)
 
     state.run_dir = run_dir
 
