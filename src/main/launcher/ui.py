@@ -186,8 +186,7 @@ class LauncherUI:
             if k not in seen:
                 ordered.append(k)
 
-        # Split eval: summary rows stay in the main columns; per-opponent detail
-        # goes into a compact table below so train/time aren't crowded out.
+        # Split eval: aggregate summary vs per-opponent detail for the right column.
         _EVAL_SUMMARY = frozenset({"eval/win_rate_mean", "eval/mean_reward_mean"})
         per_opponent: list = []
         eval_summary: dict = {}
@@ -201,13 +200,6 @@ class LauncherUI:
                     per_opponent.append(key)
             else:
                 by_section.setdefault(section, []).append(key)
-
-        # Pull ep_rew_mean out of rollout so it lives in the per-opponent table.
-        training_reward = display.get("rollout/ep_rew_mean")
-        if "rollout" in by_section:
-            by_section["rollout"] = [k for k in by_section["rollout"] if k != "rollout/ep_rew_mean"]
-            if not by_section["rollout"]:
-                del by_section["rollout"]
 
         def _make_col(sections: list) -> Table:
             t = Table(box=None, show_header=False, show_edge=False, padding=(0, 1))
@@ -229,25 +221,19 @@ class LauncherUI:
                     t.add_row(f"[dim]{indent}{name}[/dim]{badge}", f"[bold]{_fmt_metric(key, display[key])}[/bold]")
             return t
 
-        left = _make_col(["train"])
-        right = _make_col(["rollout", "time"])
+        left = _make_col(["rollout", "time", "train"])
+
+        right = self._make_eval_table(per_opponent, display, eval_summary, stale_badge)
 
         fixed = {"rollout", "eval", "train", "time"}
         extra_sections = [s for s in by_section if s not in fixed]
 
         grid = Table.grid(expand=True, padding=(0, 2))
-        grid.add_column(ratio=1)
-        grid.add_column(ratio=1)
+        grid.add_column(ratio=11)
+        grid.add_column(ratio=10)
         grid.add_row(left, right)
 
         components: list = [grid]
-        if per_opponent or eval_summary or training_reward is not None:
-            label = Table(box=None, show_header=False, show_edge=False, padding=(0, 1))
-            label.add_column(no_wrap=True)
-            label.add_column(justify="right")
-            label.add_row(f"[dim italic]  vs opponents{stale_badge}[/dim italic]", "")
-            components.append(label)
-            components.append(self._make_per_opponent_table(per_opponent, display, eval_summary, training_reward))
         if extra_sections:
             components.append(_make_col(extra_sections))
 
@@ -259,8 +245,8 @@ class LauncherUI:
             wrapper.add_row(c)
         return wrapper
 
-    def _make_per_opponent_table(self, keys: list, metrics: dict, eval_summary: dict | None = None, training_reward: float | None = None) -> Table:
-        """Compact 3-column table: training baseline, eval mean, then per-opponent rows."""
+    def _make_eval_table(self, keys: list, metrics: dict, eval_summary: dict | None = None, stale_badge: str = "") -> Table:
+        """Right-column eval table: section header, 'all' aggregate row first, then per-opponent."""
         opponents: dict = {}
         order: list = []
         for key in keys:
@@ -278,12 +264,6 @@ class LauncherUI:
                     opponents[opp] = {}
                 opponents[opp]["reward"] = metrics[key]
 
-        t = Table(box=None, show_header=True, show_edge=False,
-                  padding=(0, 2), header_style="dim")
-        t.add_column("", style="dim", no_wrap=True)
-        t.add_column("win rate", justify="right")
-        t.add_column("reward", justify="right")
-
         def _wr_str(wr):
             if wr is None:
                 return "[dim]—[/dim]"
@@ -296,12 +276,20 @@ class LauncherUI:
             col = "green" if rw >= 0 else "red"
             return f"[{col}][bold]{_fmt_val(rw)}[/bold][/{col}]"
 
-        if training_reward is not None:
-            t.add_row("  training", "[dim]—[/dim]", _rw_str(training_reward))
+        t = Table(box=None, show_header=True, show_edge=False,
+                  padding=(0, 2), header_style="dim")
+        t.add_column("", style="dim", no_wrap=True)
+        t.add_column("win rate", justify="right")
+        t.add_column("reward", justify="right")
+
+        # Section header row (no data columns)
+        t.add_row(f"[dim italic]eval{stale_badge}[/dim italic]", "", "")
+
+        # Aggregate "all" row first
         if eval_summary:
             wr = eval_summary.get("eval/win_rate_mean")
             rw = eval_summary.get("eval/mean_reward_mean")
-            t.add_row("  mean", _wr_str(wr), _rw_str(rw), end_section=True)
+            t.add_row("  all", _wr_str(wr), _rw_str(rw), end_section=True)
 
         for opp in order:
             data = opponents[opp]
