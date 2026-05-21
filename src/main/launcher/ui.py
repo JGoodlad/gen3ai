@@ -39,6 +39,7 @@ _METRIC_ORDER = [
     # Eval — aggregate first, then per-opponent win rates, then per-opponent rewards.
     # Episode lengths fall alphabetically after (less actionable).
     "eval/win_rate_mean",
+    "eval/mean_reward_mean",
     "eval/win_rate_vs_Random",
     "eval/win_rate_vs_Heuristic",
     "eval/win_rate_vs_Staller",
@@ -112,6 +113,12 @@ class LauncherUI:
         if (rew := snap.metrics.get("rollout/ep_rew_mean")) is not None:
             col = "green" if rew >= 0 else "red"
             highlights.append(f"reward [{col}]{_fmt_val(rew)}[/{col}]")
+        if (wr := snap.metrics.get("eval/win_rate_mean")) is not None:
+            col = "green" if wr >= 0.5 else "red"
+            highlights.append(f"eval [{col}]{wr * 100:.1f}%[/{col}]")
+        if (er := snap.metrics.get("eval/mean_reward_mean")) is not None:
+            col = "green" if er >= 0 else "red"
+            highlights.append(f"eval_rew [{col}]{_fmt_val(er)}[/{col}]")
         hl = "  │  ".join(highlights) if highlights else "[dim]waiting for first rollout…[/dim]"
 
         ec_sep = f"  │  {ec_badge}" if ec_badge else ""

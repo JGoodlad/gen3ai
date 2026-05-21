@@ -127,6 +127,7 @@ class PerOpponentEvalCallback(BaseCallback):
             f"{len(self._opponents)} opponents × {n_games} games..."
         )
         win_rates: dict[str, float] = {}
+        reward_means: dict[str, float] = {}
         tui_metrics: dict[str, float] = {}
 
         for name, opponent in self._opponents:
@@ -145,6 +146,7 @@ class PerOpponentEvalCallback(BaseCallback):
             win_rate = won / finished if finished > 0 else 0.0
             mean_reward = self._rl_player.mean_episode_reward
             win_rates[name] = win_rate
+            reward_means[name] = mean_reward
 
             ep_len = self._mean_episode_length()
             print(
@@ -162,12 +164,15 @@ class PerOpponentEvalCallback(BaseCallback):
             self._rl_player.reset_reward_tracking()
 
         aggregate = sum(win_rates.values()) / len(win_rates) if win_rates else 0.0
+        aggregate_reward = sum(reward_means.values()) / len(reward_means) if reward_means else 0.0
         self.logger.record("eval/win_rate_mean", aggregate)
+        self.logger.record("eval/mean_reward_mean", aggregate_reward)
         self.logger.dump(self.num_timesteps)
 
         # logger.dump() clears name_to_value before the next rollout, so eval metrics
         # never reach MetricsExporterCallback. Send them directly to the TUI pipe.
         tui_metrics["eval/win_rate_mean"] = aggregate
+        tui_metrics["eval/mean_reward_mean"] = aggregate_reward
         tui_metrics["_step"] = self.num_timesteps
         send_metrics(tui_metrics)
 
