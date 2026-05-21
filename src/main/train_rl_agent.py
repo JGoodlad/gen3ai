@@ -229,10 +229,11 @@ async def main():
     sample_teams = loader.get_sample_teams()
     all_teams = loader.get_all_teams()
     
-    print(f"Loaded {len(sample_teams)} sample teams for trainee and {len(all_teams)} total teams for opponents.")
+    print(f"Loaded {len(sample_teams)} sample teams (bias) and {len(all_teams)} total teams.")
 
-    # Pre-pack teambuilders for performance and variety
-    trainee_teambuilder = Gen3Teambuilder(sample_teams)
+    # Trainee draws from the full pool, but 50% of the time uses a sample team.
+    # This exposes the agent to diverse team compositions while keeping a stable anchor.
+    trainee_teambuilder = Gen3Teambuilder(all_teams, bias_teams=sample_teams, bias_prob=0.5)
     opponent_teambuilder = Gen3Teambuilder(all_teams)
 
     mappings = load_mappings()
