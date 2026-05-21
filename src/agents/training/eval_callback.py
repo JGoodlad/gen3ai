@@ -10,6 +10,7 @@ from poke_env.ps_client import LocalhostServerConfiguration, AccountConfiguratio
 from agents.inference.player import RLPlayer
 from agents.training.reward_tracker import RewardTrackingMixin
 from agents.training.reward_manager import Gen3RewardManager
+from main.launcher.ipc import send_metrics
 
 BATTLE_FORMAT = "gen3ou"
 _EVAL_CONCURRENCY = 100
@@ -126,6 +127,7 @@ class PerOpponentEvalCallback(BaseCallback):
             f"{len(self._opponents)} opponents × {n_games} games..."
         )
         win_rates: dict[str, float] = {}
+        tui_metrics: dict[str, float] = {}
 
         for name, opponent in self._opponents:
             if self._rl_player.n_finished_battles > 0:
@@ -153,11 +155,21 @@ class PerOpponentEvalCallback(BaseCallback):
             self.logger.record(f"eval/mean_ep_len_vs_{name}", ep_len)
             self.logger.record(f"eval/mean_reward_vs_{name}", mean_reward)
 
+            tui_metrics[f"eval/win_rate_vs_{name}"] = win_rate
+            tui_metrics[f"eval/mean_ep_len_vs_{name}"] = ep_len
+            tui_metrics[f"eval/mean_reward_vs_{name}"] = mean_reward
+
             self._rl_player.reset_reward_tracking()
 
         aggregate = sum(win_rates.values()) / len(win_rates) if win_rates else 0.0
         self.logger.record("eval/win_rate_mean", aggregate)
         self.logger.dump(self.num_timesteps)
+
+        # logger.dump() clears name_to_value before the next rollout, so eval metrics
+        # never reach MetricsExporterCallback. Send them directly to the TUI pipe.
+        tui_metrics["eval/win_rate_mean"] = aggregate
+        tui_metrics["_step"] = self.num_timesteps
+        send_metrics(tui_metrics)
 
         print(
             f"[EVAL] Aggregate: {aggregate * 100:.1f}%  "

@@ -27,14 +27,35 @@ def _fmt_val(v: float) -> str:
     return f"{v:.4g}"
 
 
+def _fmt_metric(key: str, v: float) -> str:
+    """Format a metric value; win rates render as percentages."""
+    if "win_rate" in key:
+        return f"{v * 100:.1f}%"
+    return _fmt_val(v)
+
+
 # Preferred display order; any unlisted keys are appended alphabetically.
 _METRIC_ORDER = [
-    "eval/mean_ep_length",
-    "eval/mean_reward",
+    # Eval — aggregate first, then per-opponent win rates, then per-opponent rewards.
+    # Episode lengths fall alphabetically after (less actionable).
+    "eval/win_rate_mean",
+    "eval/win_rate_vs_Random",
+    "eval/win_rate_vs_Heuristic",
+    "eval/win_rate_vs_Staller",
+    "eval/win_rate_vs_Aggressive",
+    "eval/win_rate_vs_SetupSweep",
+    "eval/mean_reward_vs_Random",
+    "eval/mean_reward_vs_Heuristic",
+    "eval/mean_reward_vs_Staller",
+    "eval/mean_reward_vs_Aggressive",
+    "eval/mean_reward_vs_SetupSweep",
+    # Rollout
     "rollout/ep_len_mean",
     "rollout/ep_rew_mean",
+    # Time
     "time/fps",
     "time/total_timesteps",
+    # Train
     "train/approx_kl",
     "train/clip_fraction",
     "train/clip_range",
@@ -187,7 +208,7 @@ class LauncherUI:
                     badge = stale_badge if first else ""
                     first = False
                     name = key.partition("/")[2]
-                    t.add_row(f"[dim]{name}[/dim]{badge}", f"[bold]{_fmt_val(metrics[key])}[/bold]")
+                    t.add_row(f"[dim]{name}[/dim]{badge}", f"[bold]{_fmt_metric(key, metrics[key])}[/bold]")
             return t
 
         left = _make_col(["rollout", "eval"])
