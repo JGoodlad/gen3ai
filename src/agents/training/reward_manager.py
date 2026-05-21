@@ -103,7 +103,8 @@ class RewardBreakdown:
         return result
 
 
-FAINTED_VALUE = 2.0
+FAINT_BASE = 0.5        # minimum faint penalty/reward at 0% HP
+FAINT_HP_SCALE = 2.0   # scales faint cost/reward linearly with HP at time of faint
 HP_VALUE = 2.0
 VICTORY_VALUE = 30.0
 STALL_TAX_START_TURN = 125
@@ -148,7 +149,6 @@ STATUS_INFLICTING_MOVES: frozenset[str] = frozenset({
     "thunderwave",
     "willowisp",
     "sleeppowder", "hypnosis", "spore", "lovelykiss", "sing",
-    "attract", "confuseray", "supersonic",
 })
 
 
@@ -320,9 +320,9 @@ class Gen3RewardManager:
         reward -= float(delta.opp_hp_delta.sum()) * HP_VALUE
 
         if delta.we_fainted:
-            reward -= (0.5 + 2.0 * self._our_active_hp_before)
+            reward -= (FAINT_BASE + FAINT_HP_SCALE * self._our_active_hp_before)
         if delta.opp_fainted:
-            reward += (0.5 + 2.0 * self._opp_active_hp_before)
+            reward += (FAINT_BASE + FAINT_HP_SCALE * self._opp_active_hp_before)
 
         if battle.won:
             reward += VICTORY_VALUE
@@ -607,8 +607,8 @@ class Gen3RewardManager:
         # --- Base ---
         bd.hp_ours = float(delta.our_hp_delta.sum()) * HP_VALUE
         bd.hp_opp = -float(delta.opp_hp_delta.sum()) * HP_VALUE
-        bd.faint_ours = -(0.5 + 2.0 * self._our_active_hp_before) if delta.we_fainted else 0.0
-        bd.faint_opp = (0.5 + 2.0 * self._opp_active_hp_before) if delta.opp_fainted else 0.0
+        bd.faint_ours = -(FAINT_BASE + FAINT_HP_SCALE * self._our_active_hp_before) if delta.we_fainted else 0.0
+        bd.faint_opp = (FAINT_BASE + FAINT_HP_SCALE * self._opp_active_hp_before) if delta.opp_fainted else 0.0
         if battle.won:
             bd.win_loss = VICTORY_VALUE
         elif battle.lost or battle.finished:
