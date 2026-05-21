@@ -93,14 +93,14 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         )
 
         # 1.6 Pokémon Role Encoder
-        # pokemon_enriched (244) + global_context broadcast (16) + switch_valid (1) + struggle_from_prev (1) = 262
-        # pokemon_enriched: species(32) + stats(6) + item_emb(16) + item_known(1) +
-        #   pk_types(32) + ability_emb(16) + ability_known(1) + condition(7) + moves(128) + hp+species_known+active+counters(5)
+        # pokemon_enriched (245) + global_context broadcast (16) + switch_valid (1) + struggle_from_prev (1) = 263
+        # pokemon_enriched: species(32) + stats(6) + item_emb(16) + item_known(1) + item_consumed(1) +
+        #   pk_types(32) + ability_emb(16) + ability_known(1) + condition(7) + moves(128) + hp+species_known+sleep_ctr+toxic_ctr+active(5)
         # global_context: turn(1) + weather(6) + fainted(2) + spikes(2) + struggle(1) + screens(4) = 16
         # switch_valid: was this slot a valid switch target in the previous turn's mask (1)
         # struggle_from_prev: was struggle the only option last turn (1)
         self.role_token_size = ROLE_TOKEN_SIZE
-        role_input_dim = 262
+        role_input_dim = 263
         self.role_encoder = torch.nn.Sequential(
             torch.nn.Linear(role_input_dim, ROLE_ENCODER_HIDDEN[0]),
             torch.nn.ReLU(),
@@ -425,9 +425,11 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         stats_start = species_idx + species_id_layout['dim']
         part_a = pokemon_part[:, :, stats_start : items_info['offset']] # [B, 12, 6]
         
-        # Part B: Item remnants (Known flag)
+        # Part B: Item remnants (Known flag + Consumed flag)
         item_remnant_idx = items_info['offset'] + items_layout['known']['offset']
         item_remnant = pokemon_part[:, :, item_remnant_idx : item_remnant_idx + items_layout['known']['dim']] # [B, 12, 1]
+        item_consumed_idx = items_info['offset'] + items_layout['consumed']['offset']
+        item_consumed = pokemon_part[:, :, item_consumed_idx : item_consumed_idx + items_layout['consumed']['dim']]  # [B, 12, 1]
         
         # Part C: Ability remnants (Known flag)
         ability_remnant_idx = abilities_info['offset'] + abilities_layout['known']['offset']
@@ -435,7 +437,7 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         
         # Part D: Condition (between Abilities and Moves)
         condition_start = abilities_info['offset'] + abilities_info['dim']
-        part_d = pokemon_part[:, :, condition_start : moves_offset] # [B, 12, 8]
+        part_d = pokemon_part[:, :, condition_start : moves_offset] # [B, 12, 7]
         
         # Part E: Move remnants (power, secondary, recoil, category, current_pp, max_pp)
         _known_off = m_slot_layout['known']['offset']
@@ -509,14 +511,15 @@ class Gen3FeaturesExtractor(torch.nn.Module):
             embedded_species,      # 32
             part_a,                # 6
             embedded_items,        # 16
-            item_remnant,          # 1
-            embedded_pk_types,     # 32 (concatenated type pair, was 16)
+            item_remnant,          # 1  (known)
+            item_consumed,         # 1  (consumed)
+            embedded_pk_types,     # 32 (concatenated type pair)
             embedded_abilities,    # 16
             ability_remnant,       # 1
-            part_d,                # 7 (condition one-hot, unused slot removed)
+            part_d,                # 7  (condition one-hot)
             processed_moves,       # 128 (Shared Processor Output)
-            hp_and_active          # 3 (hp, species_known, active)
-        ], dim=2) # [B, 12, 241]
+            hp_and_active          # 5  (hp, species_known, sleep_ctr, toxic_ctr, active)
+        ], dim=2) # [B, 12, 245]
         
         # --- POKÉMON ROLE ENCODER ---
         _fs = reactive_layout.get('forced_struggle', {}); struggle_offset = _fs.get('offset', 11)
@@ -535,7 +538,7 @@ class Gen3FeaturesExtractor(torch.nn.Module):
 
         pokemon_enriched_with_context = torch.cat([
             pokemon_enriched, context_broadcasted, switch_validity, struggle_from_prev
-        ], dim=2)  # [B, 12, 259]
+        ], dim=2)  # [B, 12, 263]
 
         role_tokens = self.role_encoder(pokemon_enriched_with_context.reshape(-1, pokemon_enriched_with_context.shape[-1]))
         role_tokens = role_tokens.reshape(batch_size, n_poke, self.role_token_size)
@@ -548,7 +551,7 @@ class Gen3FeaturesExtractor(torch.nn.Module):
 
         # --- TEAM-WIDE ATTENTION ---
         # 1. Find who is active on both teams
-        active_flags = hp_and_active[:, :, 2] # [B, 12] — active flag is now at index 2 (hp, species_known, active)
+        active_flags = hp_and_active[:, :, 4]  # [B, 12] — layout: [hp, species_known, sleep_ctr, toxic_ctr, active]
         # QW3: guard argmax — if no active flag is set (opponent not revealed, or dummy forward),
         # argmax silently returns 0; clamp to valid range explicitly.
         our_active_flags = active_flags[:, 0:TEAM_SIZE]

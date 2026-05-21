@@ -115,7 +115,7 @@ class PokemonEncoder(ObservationEncoder):
                 "dim": self.abilities_encoder.dimension,
                 "layout": self.abilities_encoder.get_layout()
             },
-            "condition": {"offset": POKEMON_CONDITION_OFFSET, "dim": 8},
+            "condition": {"offset": POKEMON_CONDITION_OFFSET, "dim": 7},
             "moves": {
                 "offset": POKEMON_MOVES_OFFSET, 
                 "dim": self.moves_encoder.dimension,

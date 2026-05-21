@@ -105,14 +105,14 @@ def test_model_full_embedding_forensics():
                       + items_info['offset'] - pk_layout['species']['offset'] - 1  # offset within pokemon
                       )
     # Simpler: compute directly from known layout offsets in role-encoder input
-    # role input = species_emb(32) + stats(6) + item_emb(16) + item_known(1) + pk_types(32) + ability_emb(16) + ability_known(1) + ...
+    # role input = species_emb(32) + stats(6) + item_emb(16) + item_known(1) + item_consumed(1) + pk_types(32) + ability_emb(16) + ability_known(1) + ...
     _species_emb = layout['species_embedding_dim']     # 32
     _stats       = 6
     _item_emb    = layout['item_embedding_dim']        # 16
     item_known_role_idx = _species_emb + _stats + _item_emb   # 54
     _pk_types    = layout['type_embedding_dim'] * 2    # 32 (concatenated pair)
     _ability_emb = layout['ability_embedding_dim']     # 16
-    ability_known_role_idx = item_known_role_idx + 1 + _pk_types + _ability_emb  # 103
+    ability_known_role_idx = item_known_role_idx + 1 + 1 + _pk_types + _ability_emb  # 104 (extra 1 = item_consumed)
 
     p0_features = role_in[0]
     assert p0_features[item_known_role_idx]    == 1.0, f"Item Known Flag mismatch at idx {item_known_role_idx}: {p0_features[item_known_role_idx]}"
