@@ -63,6 +63,7 @@ from agents.opponents import Gen3StallerPlayer, Gen3AggressivePlayer, Gen3SetupS
 from poke_env import AccountConfiguration, LocalhostServerConfiguration
 
 BATTLE_FORMAT = "gen3ou"
+CLIP_RANGE = 0.20
 
 
 def _write_latest_txt(model_dir: str, basename: str) -> None:
@@ -490,7 +491,7 @@ async def main():
         _resume_lr_lambda = lambda _: resume_lr
         model.lr_schedule = _resume_lr_lambda
         adaptive_lr_callback._current_lr = resume_lr
-        model.clip_range = lambda _: 0.20
+        model.clip_range = lambda _: CLIP_RANGE
         send_event(f"▶️  Resuming at LR {resume_lr:.2e} (checkpoint={saved_lr:.2e})")
 
         if args.eval_only:
@@ -558,7 +559,7 @@ async def main():
             n_epochs=args.n_epochs,
             gamma=0.9999,
             gae_lambda=0.85,
-            clip_range=0.15,
+            clip_range=CLIP_RANGE,
             ent_coef=args.ent_coef,
             device=args.device,
             seed=args.seed,
