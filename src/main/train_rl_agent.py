@@ -56,7 +56,7 @@ from agents.training.adaptive_lr_callback import AdaptiveLRCallback
 from agents.training.metrics_exporter_callback import MetricsExporterCallback
 from utils.logging.levels import LogLevel
 from main.exit_codes import TrainExitCode
-from main.launcher.ipc import send_event
+from main.launcher.ipc import send_event, emit
 
 from poke_env.player import RandomPlayer, SimpleHeuristicsPlayer
 from agents.opponents import Gen3StallerPlayer, Gen3AggressivePlayer, Gen3SetupSweepPlayer
@@ -229,8 +229,7 @@ async def main():
     sample_teams = loader.get_sample_teams()
     all_teams = loader.get_all_teams()
     
-    print(f"Loaded {len(sample_teams)} sample teams (bias) and {len(all_teams)} total teams.")
-    send_event(f"📦 {len(sample_teams)} sample teams / {len(all_teams)} total loaded")
+    emit(f"📦 {len(sample_teams)} sample teams (bias) / {len(all_teams)} total loaded")
 
     # Trainee draws from the full pool, but 50% of the time uses a sample team.
     # This exposes the agent to diverse team compositions while keeping a stable anchor.
@@ -305,8 +304,7 @@ async def main():
     n_envs = 1 if args.debug else args.n_envs
     EnvClass = DummyVecEnv if args.debug else SubprocVecEnv
 
-    print(f"Initializing {n_envs} environments via {EnvClass.__name__}...")
-    send_event(f"⚙️  Initializing {n_envs} envs ({EnvClass.__name__})")
+    emit(f"⚙️  Initializing {n_envs} envs ({EnvClass.__name__})")
 
     _shutdown_event = threading.Event()
 

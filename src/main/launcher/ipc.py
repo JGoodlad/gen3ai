@@ -59,6 +59,14 @@ def send_metrics(payload: dict) -> None:
     _write(payload)
 
 
+def emit(msg: str) -> None:
+    """Send msg as a launcher event, or print() when running standalone."""
+    if _get_pipe() is not None:
+        send_event(msg)
+    else:
+        print(msg)
+
+
 def close() -> None:
     global _pipe, _pipe_initialised
     with _lock:

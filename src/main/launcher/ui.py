@@ -207,7 +207,7 @@ class LauncherUI:
             t.add_column(justify="right")
             first = True
             active = [(s, by_section.get(s, [])) for s in sections if by_section.get(s)]
-            show_headers = len(active) > 1
+            show_headers = len(active) >= 1
             for sec, keys in active:
                 if show_headers:
                     badge = stale_badge if first else ""
@@ -221,8 +221,8 @@ class LauncherUI:
                     t.add_row(f"[dim]{indent}{name}[/dim]{badge}", f"[bold]{_fmt_metric(key, display[key])}[/bold]")
             return t
 
-        left = _make_col(["rollout", "eval"])
-        right = _make_col(["train", "time"])
+        left = _make_col(["train"])
+        right = _make_col(["rollout", "eval", "time"])
 
         fixed = {"rollout", "eval", "train", "time"}
         extra_sections = [s for s in by_section if s not in fixed]
