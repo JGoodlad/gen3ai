@@ -10,9 +10,13 @@ from agents.observation.constants import (
     GLOBAL_ENV_DIM,
     POKEMON_FULL_DIM
 )
-from agents.observation.turn_delta_encoder import TURN_DELTA_DIM
+from agents.observation.turn_delta_encoder import TURN_DELTA_DIM, EFF_DIM, ORDER_DIM
 from utils.logging.rate_limiter import RateLimitedLogger
 from utils.logging.levels import LogLevel
+
+# Strategic TurnDelta slice: always the tail of the TurnDelta block (effectiveness + order).
+TD_STRATEGIC_DIM    = EFF_DIM * 2 + ORDER_DIM      # 10: our_eff(4) + opp_eff(4) + order(2)
+TD_STRATEGIC_OFFSET = TURN_DELTA_DIM - TD_STRATEGIC_DIM  # 29
 
 # Architecture constants — single source of truth.
 # ModelVersion imports these so model_config.json always reflects the live values.
@@ -162,6 +166,17 @@ class Gen3FeaturesExtractor(torch.nn.Module):
             torch.nn.Linear(64, ROLE_TOKEN_SIZE),
         )
 
+        # 1.10 TurnDelta Conditioner
+        # Maps the 10-dim strategic TurnDelta slice (effectiveness + order) into role
+        # token space. Applied additively to the active slots before all 5 attention paths,
+        # so the attention mechanism can reason about last-turn matchup quality and speed.
+        # Shared MLP — our and opp active tokens use perspective-flipped inputs.
+        self.td_conditioner = torch.nn.Sequential(
+            torch.nn.Linear(TD_STRATEGIC_DIM, 64),
+            torch.nn.ReLU(),
+            torch.nn.Linear(64, ROLE_TOKEN_SIZE),
+        )
+
         # 2. Dynamic Input Dimension Discovery (Dummy Forward)
         # We run a single fake observation through the logic to determine the exact projection dimension.
         with torch.no_grad():
@@ -287,7 +302,7 @@ class Gen3FeaturesExtractor(torch.nn.Module):
 
         # Extract prev_mask (11 dims) and TurnDelta block (29 dims) from observation tail
         prev_mask = x[:, base_dim : base_dim + 11]                               # [B, 11]
-        turn_delta_feat = x[:, base_dim + 11 : base_dim + 11 + TURN_DELTA_DIM]  # [B, 29]
+        turn_delta_feat = x[:, base_dim + 11 : base_dim + 11 + TURN_DELTA_DIM]  # [B, TURN_DELTA_DIM]
         switch_mask  = prev_mask[:, 0:TEAM_SIZE]                                 # [B, 6]
         move_mask    = prev_mask[:, TEAM_SIZE:TEAM_SIZE + num_moves]             # [B, 4]
         struggle_mask = prev_mask[:, TEAM_SIZE + num_moves:TEAM_SIZE + num_moves + 1]  # [B, 1]
@@ -535,6 +550,21 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         role_tokens[batch_idx, our_active_idx] = role_tokens[batch_idx, our_active_idx] + our_ctx_bias
         role_tokens[batch_idx, opp_active_idx] = role_tokens[batch_idx, opp_active_idx] + opp_ctx_bias
 
+        # 1.10 Inject TurnDelta strategic signals (effectiveness + order) into active role
+        # tokens before team attention runs. Perspective is flipped for the opp side so the
+        # shared MLP sees consistent [attacker_eff, defender_eff, we_first, opp_first] framing.
+        td_strategic = turn_delta_feat[:, TD_STRATEGIC_OFFSET:]  # [B, 10]
+        our_td_bias = self.td_conditioner(td_strategic)           # [B, 128]
+        opp_td_input = torch.cat([
+            td_strategic[:, 4:8],   # opp_eff → "our eff" from opp's view
+            td_strategic[:, 0:4],   # our_eff → "opp eff" from opp's view
+            td_strategic[:, 9:10],  # opp_first → "we first" from opp's view
+            td_strategic[:, 8:9],   # we_first  → "opp first" from opp's view
+        ], dim=1)                                                  # [B, 10]
+        opp_td_bias = self.td_conditioner(opp_td_input)           # [B, 128]
+        role_tokens[batch_idx, our_active_idx] += our_td_bias
+        role_tokens[batch_idx, opp_active_idx] += opp_td_bias
+
         # 2. Apply Status Biases (Pre-Attention)
         status_idx = torch.ones((batch_size, n_poke), device=role_tokens.device).long()
         status_idx[:, 0:TEAM_SIZE] = 1
@@ -622,7 +652,7 @@ class Gen3FeaturesExtractor(torch.nn.Module):
 
         # N2 — embed TurnDelta move and type IDs through the shared embedding tables.
         # Positions 0/4 (our move id, our type id) and 5/9 (opp move id, opp type id)
-        # carry raw int IDs (stored as float32); the 25 remaining positions are scalars.
+        # carry raw int IDs (stored as float32); the 35 remaining positions are scalars.
         our_move_id   = turn_delta_feat[:, 0].long()
         our_type_id   = turn_delta_feat[:, 4].long()
         opp_move_id   = turn_delta_feat[:, 5].long()
@@ -640,11 +670,11 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         td_scalars = torch.cat([
             turn_delta_feat[:, 1:4],    # our: power, secondary, recoil
             turn_delta_feat[:, 6:9],    # opp: power, secondary, recoil
-            turn_delta_feat[:, 10:],    # 19 event scalars
-        ], dim=1)  # [B, 25]
+            turn_delta_feat[:, 10:],    # event scalars: switched, failed, cant, hp_delta, fainted, move_known, eff, order
+        ], dim=1)  # [B, 35]
         turn_delta_embedded = torch.cat([
             our_move_emb, our_type_emb, opp_move_emb, opp_type_emb, td_scalars
-        ], dim=1)  # [B, 89]
+        ], dim=1)  # [B, 99]
 
         combined = torch.cat([
             our_team_pooled, their_team_pooled, our_active_refined,
