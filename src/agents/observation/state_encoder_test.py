@@ -7,7 +7,7 @@ from unittest.mock import MagicMock
 from .state_encoder import Gen3ObservationEncoder, load_mappings
 
 EXPECTED_BASE_DIM = 1103  # 6*62 teams(×2) + 46 active_ctx + 13 global + 300 reactive
-EXPECTED_OBS_DIM = 1153  # base + 11-dim prev_mask + 39-dim TurnDelta block
+EXPECTED_OBS_DIM = 1309  # base + 11-dim prev_mask + 5 * 39-dim TurnDelta history
 
 
 def test_encoder_dimension():

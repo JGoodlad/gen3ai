@@ -6,7 +6,7 @@ from typing import Any, Dict, List
 
 # Bump this whenever the ModelVersion schema changes (fields added/renamed/removed).
 # Also add a migration case in _migrate_config().
-MODEL_CONFIG_VERSION = 1
+MODEL_CONFIG_VERSION = 2
 
 # Change this when the neural architecture changes structurally in a way that makes
 # weights from a different signature incompatible (e.g. adding LSTM, replacing attention).
@@ -45,6 +45,7 @@ class ModelVersion:
     move_net_hidden: List[int]
     role_encoder_hidden: List[int]
     active_ctx_hidden: List[int]
+    n_history_turns: int
 
     # From policy_kwargs in train_rl_agent.py
     net_arch: List[int]
@@ -62,6 +63,7 @@ class ModelVersion:
             ROLE_ENCODER_HIDDEN,
             ACTIVE_CTX_HIDDEN,
             NET_ARCH,
+            N_HISTORY_TURNS,
         )
         return cls(
             config_version=MODEL_CONFIG_VERSION,
@@ -83,6 +85,7 @@ class ModelVersion:
             move_net_hidden=list(MOVE_NET_HIDDEN),
             role_encoder_hidden=list(ROLE_ENCODER_HIDDEN),
             active_ctx_hidden=list(ACTIVE_CTX_HIDDEN),
+            n_history_turns=N_HISTORY_TURNS,
             net_arch=list(policy_kwargs.get("net_arch", NET_ARCH)),
         )
 
@@ -119,6 +122,7 @@ class ModelVersion:
             "type_embedding_dim", "max_types",
             "role_token_size", "projection_dim",
             "move_net_hidden", "role_encoder_hidden", "active_ctx_hidden",
+            "n_history_turns",
             "net_arch",
         }
         current = asdict(self)
@@ -137,20 +141,10 @@ class ModelVersion:
 
 
 def _migrate_config(data: dict) -> dict:
-    """Apply incremental forward-migrations to bring an old config up to the current schema.
-
-    Pattern for future changes:
-    - Adding an optional field: add data.setdefault("new_field", default_value) in the
-      appropriate version block, then bump MODEL_CONFIG_VERSION above.
-    - Renaming a field: pop old key, assign new key, bump version.
-    - Structural architecture change: update ARCH_SIGNATURE instead — check_compatible()
-      handles the error. No migration needed (incompatible models can't be loaded anyway).
-    """
+    """Apply incremental forward-migrations to bring an old config up to the current schema."""
     version = data.get("config_version", 1)
-    # v1 is the initial version — no migrations yet.
-    # Future example:
-    #   if version < 2:
-    #       data.setdefault("dropout_rate", 0.0)
-    #       data["config_version"] = 2
-    _ = version  # suppress unused-variable warning until first migration is added
+    if version < 2:
+        # v2: added n_history_turns. Old models used a single TurnDelta (N=1).
+        data.setdefault("n_history_turns", 1)
+        data["config_version"] = 2
     return data

@@ -7,6 +7,7 @@ from poke_env.player.battle_order import BattleOrder, ForfeitBattleOrder
 
 from agents.observation.state_encoder import get_observation_encoder
 from agents.observation.turn_delta_encoder import TurnDeltaEncoder
+from agents.model.features_extractor import N_HISTORY_TURNS
 from agents.action.mask_generator import Gen3ActionMasker
 from agents.action.mapper import Gen3ActionMapper
 from agents.training.reward_manager import Gen3RewardManager
@@ -51,13 +52,12 @@ class Gen3Env(SinglesEnv):
 
         if battle is self.battle1:
             prev_mask = self._tracker.prev_mask
-            # build_delta() returns TurnDelta.empty() on the first turn (no prior context).
-            delta_enc = self._turn_delta_encoder.encode(self._tracker.build_delta())
+            history_vecs = self._tracker.prev_N_delta_vecs(N_HISTORY_TURNS, self._turn_delta_encoder)
         else:
             prev_mask = np.ones(11, dtype=np.float32)
-            delta_enc = self._turn_delta_encoder.encode(TurnDelta.empty())
+            history_vecs = np.zeros((N_HISTORY_TURNS, self._turn_delta_encoder.dimension), dtype=np.float32)
 
-        return np.concatenate([obs, prev_mask, delta_enc])
+        return np.concatenate([obs, prev_mask, history_vecs.flatten()])
 
     def action_masks(self) -> np.ndarray:
         ctx = self._tracker.last_ctx

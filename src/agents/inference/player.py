@@ -5,8 +5,11 @@ from poke_env.player import Player
 from poke_env.player.battle_order import ForfeitBattleOrder
 
 from agents.action.mapper import Gen3ActionMapper
-from agents.observation.turn_delta_encoder import TURN_DELTA_DIM
+from agents.action.mask_generator import Gen3ActionMasker
+from agents.observation.turn_delta_encoder import TurnDeltaEncoder
+from agents.training.episode_tracker import EpisodeTracker
 from agents.training.stall import StallConfig, StallLogger
+from agents.model.features_extractor import N_HISTORY_TURNS
 
 
 class Gen3Player(Player):
@@ -19,6 +22,8 @@ class Gen3Player(Player):
         self.mappings = mappings
         self._stall_config = stall_config or StallConfig()
         self._stall_loggers: dict[str, StallLogger] = {}
+        self._trackers: dict[str, EpisodeTracker] = {}
+        self._turn_delta_encoder: Optional[TurnDeltaEncoder] = None
 
     def _handle_stall(self, battle, suffix: str) -> Optional[ForfeitBattleOrder]:
         """Returns ForfeitBattleOrder if the battle exceeds the stall threshold, else None.
@@ -35,6 +40,13 @@ class Gen3Player(Player):
     def _battle_finished_callback(self, battle) -> None:
         super()._battle_finished_callback(battle)
         self._stall_loggers.pop(battle.battle_tag, None)
+        self._trackers.pop(battle.battle_tag, None)
+
+    def _get_tracker(self, battle) -> EpisodeTracker:
+        tag = battle.battle_tag
+        if tag not in self._trackers:
+            self._trackers[tag] = EpisodeTracker()
+        return self._trackers[tag]
 
     def embed_battle(self, battle) -> Dict[str, Any]:
         if self.observation_encoder is None:
@@ -42,14 +54,24 @@ class Gen3Player(Player):
             if self.mappings is None:
                 self.mappings = load_mappings()
             self.observation_encoder = get_observation_encoder(self.mappings)
-        result = self.observation_encoder.get_observation(battle)
-        # Inference players have no episode history: all-ones prev_mask, zeros TurnDelta
-        result["observation"] = np.concatenate([
-            result["observation"],
-            np.ones(11, dtype=np.float32),
-            np.zeros(TURN_DELTA_DIM, dtype=np.float32),
-        ])
-        return result
+        if self._turn_delta_encoder is None:
+            self._turn_delta_encoder = TurnDeltaEncoder(
+                self.mappings.get("moves", {}) if self.mappings else {}
+            )
+
+        obs_dict = self.observation_encoder.get_observation(battle)
+        obs = obs_dict["observation"]
+        mask = obs_dict["action_mask"].astype(np.int8)
+
+        tracker = self._get_tracker(battle)
+        if not battle.finished and mask.sum() > 0:
+            tracker.record(battle, mask, obs)
+
+        prev_mask = tracker.prev_mask
+        history_vecs = tracker.prev_N_delta_vecs(N_HISTORY_TURNS, self._turn_delta_encoder)
+
+        obs_dict["observation"] = np.concatenate([obs, prev_mask, history_vecs.flatten()])
+        return obs_dict
 
     def action_to_order(self, action_idx, battle):
         ctx = getattr(battle, "_gen3_decision_context", None)
@@ -109,6 +131,7 @@ class RLPlayer(Gen3Player):
         if mask[idx] == 0:
             raise ValueError(f"Illegal action {idx} selected. Mask: {mask}")
 
+        self._get_tracker(battle).advance(idx)
         return idx, probs, mask
 
     def choose_move(self, battle):

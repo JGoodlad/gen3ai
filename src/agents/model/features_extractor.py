@@ -27,6 +27,8 @@ MOVE_NET_HIDDEN = [64, 32]        # [hidden, output] of shared move processor
 ROLE_ENCODER_HIDDEN = [256, 128]  # [hidden, output] of per-Pokémon role encoder
 ACTIVE_CTX_HIDDEN = [64, 32]      # [hidden, output] of active context encoder
 NET_ARCH = [512, 512]             # MLP policy layers (SB3 policy_kwargs["net_arch"])
+N_HISTORY_TURNS = 5               # number of consecutive TurnDeltas in the observation
+# TURN_DELTA_EMBED_DIM is computed in __init__ from layout (2*move_emb + 2*type_emb + 35 scalars)
 
 
 class Gen3FeaturesExtractor(torch.nn.Module):
@@ -177,6 +179,24 @@ class Gen3FeaturesExtractor(torch.nn.Module):
             torch.nn.Linear(64, ROLE_TOKEN_SIZE),
         )
 
+        # 1.11 Turn-History Attention
+        # The observation carries N_HISTORY_TURNS raw TurnDelta vectors (oldest first).
+        # We embed each identically (reusing move/type tables), add learned positional
+        # encodings, run one MHA self-attention pass, then use the last (most-recent)
+        # position's output in place of the old single-TurnDelta slot.
+        # Embedded dim = 2*move_emb + 2*type_emb + (TURN_DELTA_DIM - 4 raw IDs) = 99
+        self._td_embed_dim = (
+            2 * layout['move_embedding_dim'] +
+            2 * layout['type_embedding_dim'] +
+            TURN_DELTA_DIM - 4
+        )
+        # 99 / 3 = 33 per head
+        self.turn_history_pos_emb = torch.nn.Embedding(N_HISTORY_TURNS, self._td_embed_dim)
+        self.turn_history_attn = torch.nn.MultiheadAttention(
+            embed_dim=self._td_embed_dim, num_heads=3, batch_first=True
+        )
+        self.turn_history_norm = torch.nn.LayerNorm(self._td_embed_dim)
+
         # 2. Dynamic Input Dimension Discovery (Dummy Forward)
         # We run a single fake observation through the logic to determine the exact projection dimension.
         with torch.no_grad():
@@ -300,9 +320,12 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         m_slot_layout   = moves_layout['slot_layout']
         num_moves       = len(moves_layout['slots'])
 
-        # Extract prev_mask (11 dims) and TurnDelta block (29 dims) from observation tail
+        # Extract prev_mask (11 dims) and turn-history block (N * TURN_DELTA_DIM) from obs tail
         prev_mask = x[:, base_dim : base_dim + 11]                               # [B, 11]
-        turn_delta_feat = x[:, base_dim + 11 : base_dim + 11 + TURN_DELTA_DIM]  # [B, TURN_DELTA_DIM]
+        history_dim = N_HISTORY_TURNS * TURN_DELTA_DIM
+        turn_history_raw = x[:, base_dim + 11 : base_dim + 11 + history_dim]    # [B, N*39]
+        # Most-recent TurnDelta is the last slot: used for td_conditioner and strategic slice
+        turn_delta_feat = turn_history_raw[:, -TURN_DELTA_DIM:]                  # [B, 39]
         switch_mask  = prev_mask[:, 0:TEAM_SIZE]                                 # [B, 6]
         move_mask    = prev_mask[:, TEAM_SIZE:TEAM_SIZE + num_moves]             # [B, 4]
         struggle_mask = prev_mask[:, TEAM_SIZE + num_moves:TEAM_SIZE + num_moves + 1]  # [B, 1]
@@ -650,31 +673,34 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         # Keep: active_ctx replaced by encoded tokens + global env + reactive scalars (before matchups)
         non_matchup_rest = remaining_part[:, 2 * active_ctx_dim : reactive_start + matchup_offset]  # global + scalars
 
-        # N2 — embed TurnDelta move and type IDs through the shared embedding tables.
-        # Positions 0/4 (our move id, our type id) and 5/9 (opp move id, opp type id)
-        # carry raw int IDs (stored as float32); the 35 remaining positions are scalars.
-        our_move_id   = turn_delta_feat[:, 0].long()
-        our_type_id   = turn_delta_feat[:, 4].long()
-        opp_move_id   = turn_delta_feat[:, 5].long()
-        opp_type_id   = turn_delta_feat[:, 9].long()
-        # Clamp to embedding range — at init (zeros obs), ids are 0 which is valid
-        our_move_id   = our_move_id.clamp(0, self.move_embedding.num_embeddings - 1)
-        our_type_id   = our_type_id.clamp(0, self.type_embedding.num_embeddings - 1)
-        opp_move_id   = opp_move_id.clamp(0, self.move_embedding.num_embeddings - 1)
-        opp_type_id   = opp_type_id.clamp(0, self.type_embedding.num_embeddings - 1)
-        our_move_emb  = self.move_embedding(our_move_id)   # [B, 16]
-        our_type_emb  = self.type_embedding(our_type_id)   # [B, 16]
-        opp_move_emb  = self.move_embedding(opp_move_id)   # [B, 16]
-        opp_type_emb  = self.type_embedding(opp_type_id)   # [B, 16]
-        # Scalar remnants: power/sec/recoil for each side + all 19 event scalars
-        td_scalars = torch.cat([
-            turn_delta_feat[:, 1:4],    # our: power, secondary, recoil
-            turn_delta_feat[:, 6:9],    # opp: power, secondary, recoil
-            turn_delta_feat[:, 10:],    # event scalars: switched, failed, cant, hp_delta, fainted, move_known, eff, order
-        ], dim=1)  # [B, 35]
-        turn_delta_embedded = torch.cat([
-            our_move_emb, our_type_emb, opp_move_emb, opp_type_emb, td_scalars
-        ], dim=1)  # [B, 99]
+        # N2 — embed all N TurnDeltas, apply self-attention over the history window,
+        # and use the last (most-recent) position's output for the projection.
+        history_slots = turn_history_raw.view(batch_size, N_HISTORY_TURNS, TURN_DELTA_DIM)  # [B, N, 39]
+
+        def _embed_delta_slot(slot):
+            """Embed one (B, 39) TurnDelta raw vector → (B, _td_embed_dim)."""
+            m_our = slot[:, 0].long().clamp(0, self.move_embedding.num_embeddings - 1)
+            t_our = slot[:, 4].long().clamp(0, self.type_embedding.num_embeddings - 1)
+            m_opp = slot[:, 5].long().clamp(0, self.move_embedding.num_embeddings - 1)
+            t_opp = slot[:, 9].long().clamp(0, self.type_embedding.num_embeddings - 1)
+            scalars = torch.cat([slot[:, 1:4], slot[:, 6:9], slot[:, 10:]], dim=1)  # [B, 35]
+            return torch.cat([
+                self.move_embedding(m_our), self.type_embedding(t_our),
+                self.move_embedding(m_opp), self.type_embedding(t_opp),
+                scalars,
+            ], dim=1)  # [B, _td_embed_dim]
+
+        embedded_slots = torch.stack(
+            [_embed_delta_slot(history_slots[:, t, :]) for t in range(N_HISTORY_TURNS)],
+            dim=1,
+        )  # [B, N, _td_embed_dim]
+
+        positions = torch.arange(N_HISTORY_TURNS, device=x.device)
+        embedded_slots = embedded_slots + self.turn_history_pos_emb(positions)  # [B, N, _td_embed_dim]
+
+        attn_out, _ = self.turn_history_attn(embedded_slots, embedded_slots, embedded_slots)
+        attended = self.turn_history_norm(embedded_slots + attn_out)
+        turn_delta_embedded = attended[:, -1, :]  # [B, _td_embed_dim] — most-recent, history-informed
 
         combined = torch.cat([
             our_team_pooled, their_team_pooled, our_active_refined,

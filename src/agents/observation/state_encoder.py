@@ -116,9 +116,10 @@ class Gen3ObservationEncoder(ObservationEncoder):
 
     @property
     def dimension(self) -> int:
-        """Full observation dimension including the 11-dim prev-mask and 39-dim TurnDelta block."""
+        """Full observation dimension including the 11-dim prev-mask and N-turn history block."""
         from agents.observation.turn_delta_encoder import TURN_DELTA_DIM
-        return self.base_dimension + 11 + TURN_DELTA_DIM
+        from agents.model.features_extractor import N_HISTORY_TURNS
+        return self.base_dimension + 11 + N_HISTORY_TURNS * TURN_DELTA_DIM
 
     def encode(self, battle: AbstractBattle) -> np.ndarray:
         vec = np.zeros(self.base_dimension, dtype=np.float32)
@@ -176,6 +177,8 @@ class Gen3ObservationEncoder(ObservationEncoder):
         }
 
     def get_layout(self) -> Dict[str, Any]:
+        from agents.observation.turn_delta_encoder import TURN_DELTA_DIM as _TD_DIM
+        from agents.model.features_extractor import N_HISTORY_TURNS as _N_HIST
         pokemon_layout = self.pokemon_encoder.get_layout()
         return {
             "parts": {
@@ -206,10 +209,13 @@ class Gen3ObservationEncoder(ObservationEncoder):
                 }
             },
             "pokemon": pokemon_layout,
-            "total_dim": self.dimension,    # base + 11 prev_mask + 39 turn_delta
-            "base_dim": self.base_dimension, # raw encoder output without prev_mask or turn_delta
+            "total_dim": self.dimension,    # base + 11 prev_mask + N * 39 turn_history
+            "base_dim": self.base_dimension, # raw encoder output without prev_mask or turn_history
             "prev_mask_dim": 11,
-            "turn_delta_dim": 39,
+            "turn_delta_dim": _TD_DIM,
+            "n_history_turns": _N_HIST,
+            "turn_history_offset": self.base_dimension + 11,
+            "turn_history_dim": _N_HIST * _TD_DIM,
             "active_context_dim": ACTIVE_CONTEXT_DIM,
             "reactive_layout": _ReactiveEncoder().get_layout(),
             "global_layout": self.global_env_encoder.get_layout(),
