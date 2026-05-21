@@ -304,7 +304,7 @@ async def main():
     n_envs = 1 if args.debug else args.n_envs
     EnvClass = DummyVecEnv if args.debug else SubprocVecEnv
 
-    emit(f"⚙️  Initializing {n_envs} envs ({EnvClass.__name__})")
+    emit(f"⚙️ Initializing {n_envs} envs ({EnvClass.__name__})")
 
     _shutdown_event = threading.Event()
 

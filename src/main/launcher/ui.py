@@ -107,13 +107,10 @@ class LauncherUI:
         git = self._git_badge(snap)
         model_badge = self._model_badge(snap)
         highlights = []
-        if (steps := snap.metrics.get("time/total_timesteps")) is not None:
-            highlights.append(f"steps [bold]{_fmt_val(steps)}[/bold]")
+        if snap.metrics_step:
+            highlights.append(f"steps [bold]{snap.metrics_step:,}[/bold]")
         if (fps := snap.metrics.get("time/fps")) is not None:
             highlights.append(f"fps [bold]{_fmt_val(fps)}[/bold]")
-        if (rew := snap.metrics.get("rollout/ep_rew_mean")) is not None:
-            col = "green" if rew >= 0 else "red"
-            highlights.append(f"reward [{col}]{_fmt_val(rew)}[/{col}]")
         hl = "  │  ".join(highlights) if highlights else "[dim]waiting for first rollout…[/dim]"
 
         row2 = Table.grid(padding=(0, 1), expand=True)
