@@ -69,10 +69,16 @@ def test_model_version_all_fields_present(version):
         "total_dim", "active_context_dim",
         "role_token_size", "projection_dim",
         "move_net_hidden", "role_encoder_hidden", "active_ctx_hidden",
+        "n_history_turns",
         "net_arch",
     ]
     for field in expected_fields:
         assert field in data, f"Missing field in serialized ModelVersion: {field}"
+
+
+def test_n_history_turns_in_version(version):
+    from agents.model.features_extractor import N_HISTORY_TURNS
+    assert version.n_history_turns == N_HISTORY_TURNS
 
 
 # ---------------------------------------------------------------------------
@@ -120,6 +126,19 @@ def test_check_compatible_reports_all_mismatches(version):
     msg = str(exc_info.value)
     assert "total_dim" in msg
     assert "max_moves" in msg
+
+
+def test_check_compatible_n_history_turns_mismatch(version):
+    """n_history_turns is a weight-relevant field — mismatch must raise ModelVersionError.
+
+    A saved model trained with N=1 (single TurnDelta) is incompatible with current
+    code running N=5, because the positional embedding and attention weights are
+    indexed by N.
+    """
+    saved_v1 = dataclasses.replace(version, n_history_turns=1)
+    with pytest.raises(ModelVersionError) as exc_info:
+        version.check_compatible(saved_v1)
+    assert "n_history_turns" in str(exc_info.value)
 
 
 # ---------------------------------------------------------------------------
@@ -224,7 +243,8 @@ def test_migrate_config_noop_on_current(version):
     assert migrated == data
 
 
-def test_migrate_config_accepts_missing_config_version():
+def test_migrate_v1_adds_n_history_turns_with_default_1():
+    """v1 configs lack n_history_turns (single-TurnDelta era). Migration must inject 1."""
     data = {
         "config_version": 1,
         "arch_signature": ARCH_SIGNATURE,
@@ -241,4 +261,27 @@ def test_migrate_config_accepts_missing_config_version():
         "net_arch": [512, 512],
     }
     result = _migrate_config(data)
-    assert result["config_version"] == 1
+    assert result["config_version"] == MODEL_CONFIG_VERSION
+    assert result["n_history_turns"] == 1
+
+
+def test_migrate_v1_does_not_overwrite_existing_n_history_turns():
+    """If a v1 config somehow already has n_history_turns, migration must not clobber it."""
+    data = {
+        "config_version": 1,
+        "arch_signature": ARCH_SIGNATURE,
+        "species_embedding_dim": 32, "max_species": 400,
+        "move_embedding_dim": 16, "max_moves": 400,
+        "item_embedding_dim": 16, "max_items": 600,
+        "ability_embedding_dim": 16, "max_abilities": 100,
+        "type_embedding_dim": 16, "max_types": 20,
+        "total_dim": 1000, "active_context_dim": 22,
+        "role_token_size": 128, "projection_dim": 512,
+        "move_net_hidden": [64, 32],
+        "role_encoder_hidden": [256, 128],
+        "active_ctx_hidden": [64, 32],
+        "net_arch": [512, 512],
+        "n_history_turns": 3,   # already present — must survive migration
+    }
+    result = _migrate_config(data)
+    assert result["n_history_turns"] == 3

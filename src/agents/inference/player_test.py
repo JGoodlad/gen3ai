@@ -24,6 +24,8 @@ def _make_player(threshold=250):
     player.mappings = mappings
     player._stall_config = StallConfig(threshold=threshold)
     player._stall_loggers = {}
+    player._trackers = {}
+    player._turn_delta_encoder = None
     return player, encoder
 
 
@@ -38,6 +40,7 @@ def _make_battle(encoder):
     """Return a mock battle that satisfies embed_battle's requirements."""
     battle = MagicMock()
     battle.wait = False
+    battle.finished = False
     battle.battle_tag = "battle-gen3ou-test"
     battle.team = {}
     battle.opponent_team = {}
@@ -46,6 +49,12 @@ def _make_battle(encoder):
     battle.weather = None
     battle.side_conditions = {}
     battle.opponent_side_conditions = {}
+    battle.force_switch = False
+    battle._gen3_decision_context = None
+    battle.last_request = None
+    battle.our_last_effectiveness = None
+    battle.opp_last_effectiveness = None
+    battle.we_moved_first = None
     battle.turn = 1
     return battle
 
@@ -190,3 +199,124 @@ def test_stall_state_not_reset_when_different_battle_fires():
     # A's logger must still exist with its own state — not reset by B's call
     assert "A" in player._stall_loggers
     assert player._stall_loggers["A"] is not player._stall_loggers["B"]
+
+
+# ---------------------------------------------------------------------------
+# Per-battle EpisodeTracker isolation
+# ---------------------------------------------------------------------------
+
+def test_per_battle_trackers_are_independent():
+    """Two concurrent battles must get separate EpisodeTracker instances."""
+    player, _ = _make_player()
+
+    battle_a = _make_battle(player.observation_encoder)
+    battle_a.battle_tag = "battle-gen3ou-A"
+
+    battle_b = _make_battle(player.observation_encoder)
+    battle_b.battle_tag = "battle-gen3ou-B"
+
+    base_obs = np.zeros(player.observation_encoder.base_dimension, dtype=np.float32)
+    mask = np.ones(11, dtype=np.int8)
+    player.observation_encoder.get_observation = MagicMock(return_value={
+        "observation": base_obs,
+        "action_mask": mask,
+    })
+
+    player.embed_battle(battle_a)
+    player.embed_battle(battle_b)
+
+    assert "battle-gen3ou-A" in player._trackers
+    assert "battle-gen3ou-B" in player._trackers
+    assert player._trackers["battle-gen3ou-A"] is not player._trackers["battle-gen3ou-B"]
+
+
+def test_battle_finished_removes_tracker():
+    """_battle_finished_callback must clean up the tracker for the finished battle."""
+    player, _ = _make_player()
+    battle = _make_battle(player.observation_encoder)
+    battle.battle_tag = "battle-gen3ou-cleanup"
+
+    base_obs = np.zeros(player.observation_encoder.base_dimension, dtype=np.float32)
+    mask = np.ones(11, dtype=np.int8)
+    player.observation_encoder.get_observation = MagicMock(return_value={
+        "observation": base_obs,
+        "action_mask": mask,
+    })
+
+    player.embed_battle(battle)
+    assert "battle-gen3ou-cleanup" in player._trackers
+
+    player._battle_finished_callback(battle)
+    assert "battle-gen3ou-cleanup" not in player._trackers
+
+
+def test_battle_finished_leaves_other_trackers_intact():
+    """Finishing battle A must not remove battle B's tracker."""
+    player, _ = _make_player()
+
+    def _make_battle_tagged(tag):
+        b = _make_battle(player.observation_encoder)
+        b.battle_tag = tag
+        return b
+
+    base_obs = np.zeros(player.observation_encoder.base_dimension, dtype=np.float32)
+    mask = np.ones(11, dtype=np.int8)
+    player.observation_encoder.get_observation = MagicMock(return_value={
+        "observation": base_obs,
+        "action_mask": mask,
+    })
+
+    battle_a = _make_battle_tagged("tag-A")
+    battle_b = _make_battle_tagged("tag-B")
+    player.embed_battle(battle_a)
+    player.embed_battle(battle_b)
+
+    player._battle_finished_callback(battle_a)
+    assert "tag-A" not in player._trackers
+    assert "tag-B" in player._trackers
+
+
+def test_embed_battle_history_zero_on_first_call():
+    """On the first embed_battle() call there is no prior context — history block must be zeros."""
+    player, encoder = _make_player()
+    battle = _make_battle(encoder)
+
+    base_obs = np.zeros(encoder.base_dimension, dtype=np.float32)
+    mask = np.ones(11, dtype=np.int8)
+    # Use side_effect so each call gets a fresh dict (avoids stale-dict mutation between calls)
+    player.observation_encoder.get_observation = MagicMock(
+        side_effect=lambda b: {"observation": base_obs.copy(), "action_mask": mask.copy()}
+    )
+
+    result1 = player.embed_battle(battle)
+    obs1 = result1["observation"]
+
+    history_start = encoder.base_dimension + 11
+    assert obs1.shape == (encoder.dimension,)
+    assert np.all(obs1[history_start:] == 0), (
+        "No prior context at turn 1 — history block must be all-zeros"
+    )
+
+
+def test_embed_battle_tracker_accumulates_across_calls():
+    """After two embed_battle() calls the tracker has two contexts (one committed delta)."""
+    player, encoder = _make_player()
+    battle = _make_battle(encoder)
+
+    base_obs = np.zeros(encoder.base_dimension, dtype=np.float32)
+    mask = np.ones(11, dtype=np.int8)
+    player.observation_encoder.get_observation = MagicMock(
+        side_effect=lambda b: {"observation": base_obs.copy(), "action_mask": mask.copy()}
+    )
+
+    player.embed_battle(battle)
+    player._get_tracker(battle).advance(0)
+    battle.turn = 2
+
+    result2 = player.embed_battle(battle)
+    obs2 = result2["observation"]
+
+    assert obs2.shape == (encoder.dimension,)
+    tracker = player._get_tracker(battle)
+    assert len(tracker._history) == 2
+    assert len(tracker._actions) == 1

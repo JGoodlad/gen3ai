@@ -2,6 +2,7 @@
 Unit tests for pre-attention injection in Gen3FeaturesExtractor:
   - active_ctx_to_role: boost/volatile state into active role tokens
   - td_conditioner: TurnDelta effectiveness + move-order into active role tokens
+  - turn_history_attn: N-turn MHA attention over TurnDelta history
 """
 import torch
 import numpy as np
@@ -11,10 +12,12 @@ import pytest
 from agents.model.features_extractor import (
     Gen3FeaturesExtractor,
     ROLE_TOKEN_SIZE,
+    N_HISTORY_TURNS,
     TD_STRATEGIC_DIM,
     TD_STRATEGIC_OFFSET,
 )
 from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings
+from agents.observation.turn_delta_encoder import TURN_DELTA_DIM
 
 
 def _make_model():
@@ -288,4 +291,144 @@ def test_td_conditioning_distinguishes_our_vs_opp_effectiveness():
     assert not torch.allclose(out_a, out_b), (
         "Swapping our_eff↔opp_eff should produce different outputs — "
         "the model must distinguish 'we are winning the matchup' from 'they are winning'."
+    )
+
+
+# ===========================================================================
+# Turn-History Attention tests
+# ===========================================================================
+
+def _history_start(layout: dict) -> int:
+    """Absolute index of the first dim of the turn-history block in obs."""
+    return layout["base_dim"] + 11
+
+
+def test_turn_history_modules_exist():
+    """turn_history_pos_emb, turn_history_attn, turn_history_norm must be present."""
+    model, _ = _make_model()
+    assert hasattr(model, "turn_history_pos_emb")
+    assert hasattr(model, "turn_history_attn")
+    assert hasattr(model, "turn_history_norm")
+
+
+def test_turn_history_pos_emb_shape():
+    """Positional embedding must have N_HISTORY_TURNS entries, each of size _td_embed_dim."""
+    model, _ = _make_model()
+    assert model.turn_history_pos_emb.num_embeddings == N_HISTORY_TURNS
+    assert model.turn_history_pos_emb.embedding_dim == model._td_embed_dim
+
+
+def test_turn_history_attn_embed_dim():
+    """MHA embed_dim must equal _td_embed_dim."""
+    model, _ = _make_model()
+    assert model.turn_history_attn.embed_dim == model._td_embed_dim
+
+
+def test_turn_history_td_embed_dim_value():
+    """_td_embed_dim = 2*move_emb + 2*type_emb + (TURN_DELTA_DIM - 4 raw IDs)."""
+    model, layout = _make_model()
+    expected = (
+        2 * layout["move_embedding_dim"]
+        + 2 * layout["type_embedding_dim"]
+        + TURN_DELTA_DIM - 4
+    )
+    assert model._td_embed_dim == expected, (
+        f"_td_embed_dim={model._td_embed_dim} != expected {expected}"
+    )
+
+
+def test_turn_history_block_changes_output():
+    """Non-zero values in the turn-history block must change forward_internal output."""
+    model, layout = _make_model()
+    start = _history_start(layout)
+
+    obs_zero = _zero_obs(layout)
+    obs_hist = obs_zero.clone()
+    obs_hist[0, start] = 1.0  # first dim of oldest TurnDelta slot
+
+    with torch.no_grad():
+        out_zero = model.forward_internal({"observation": obs_zero})
+        out_hist = model.forward_internal({"observation": obs_hist})
+
+    assert not torch.allclose(out_zero, out_hist), (
+        "forward_internal output should differ when turn-history block is non-zero"
+    )
+
+
+def test_turn_history_most_recent_slot_changes_output():
+    """The most-recent (last) history slot must influence the output."""
+    model, layout = _make_model()
+    start = _history_start(layout)
+    # Last TurnDelta slot: offset = (N_HISTORY_TURNS - 1) * TURN_DELTA_DIM within the block
+    last_slot_start = start + (N_HISTORY_TURNS - 1) * TURN_DELTA_DIM
+
+    obs_zero = _zero_obs(layout)
+    obs_hist = obs_zero.clone()
+    obs_hist[0, last_slot_start] = 1.0
+
+    with torch.no_grad():
+        out_zero = model.forward_internal({"observation": obs_zero})
+        out_hist = model.forward_internal({"observation": obs_hist})
+
+    assert not torch.allclose(out_zero, out_hist), (
+        "Changing the most-recent (last) history slot must affect forward_internal output"
+    )
+
+
+def test_turn_history_oldest_slot_changes_output():
+    """The oldest (first) history slot must also influence the output via attention."""
+    model, layout = _make_model()
+    start = _history_start(layout)
+
+    obs_zero = _zero_obs(layout)
+    obs_hist = obs_zero.clone()
+    obs_hist[0, start] = 1.0  # first dim of oldest slot
+
+    with torch.no_grad():
+        out_zero = model.forward_internal({"observation": obs_zero})
+        out_hist = model.forward_internal({"observation": obs_hist})
+
+    assert not torch.allclose(out_zero, out_hist), (
+        "The oldest history slot must influence forward_internal output via cross-turn attention"
+    )
+
+
+def test_turn_history_positional_embedding_wired_in():
+    """Zeroing turn_history_pos_emb changes output when history is non-zero.
+
+    This proves pos_emb is wired into the forward pass, not a dead module.
+    """
+    model, layout = _make_model()
+    start = _history_start(layout)
+
+    obs = _zero_obs(layout)
+    obs[0, start] = 1.0
+
+    with torch.no_grad():
+        out_before = model.forward_internal({"observation": obs})
+        for p in model.turn_history_pos_emb.parameters():
+            p.zero_()
+        out_after = model.forward_internal({"observation": obs})
+
+    assert not torch.allclose(out_before, out_after), (
+        "Zeroing turn_history_pos_emb must change output for a non-zero history obs"
+    )
+
+
+def test_turn_history_two_distinct_histories_differ():
+    """Two different non-zero history blocks must produce different outputs."""
+    model, layout = _make_model()
+    start = _history_start(layout)
+
+    obs_a = _zero_obs(layout)
+    obs_b = _zero_obs(layout)
+    obs_a[0, start] = 1.0                      # non-zero in oldest slot
+    obs_b[0, start + TURN_DELTA_DIM] = 1.0     # non-zero in second-oldest slot
+
+    with torch.no_grad():
+        out_a = model.forward_internal({"observation": obs_a})
+        out_b = model.forward_internal({"observation": obs_b})
+
+    assert not torch.allclose(out_a, out_b), (
+        "Different history patterns should produce different outputs"
     )
