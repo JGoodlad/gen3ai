@@ -25,10 +25,15 @@ class RewardBreakdown:
     faint_opp: float = 0.0
     win_loss: float = 0.0
     explosion: float = 0.0         # bonus/penalty for opponent self-KO via Explosion/Selfdestruct
+    explosion_block: float = 0.0   # Ghost immune or Protect blocked opponent Explosion
 
     # Attack signals
     roar: float = 0.0
     futile_attack: float = 0.0
+    futile_setup: float = 0.0      # setup move used at stat cap (+6 or -6)
+    setup_low_hp: float = 0.0      # setup move chosen below 40% HP (penalty)
+    boost_utilized: float = 0.0    # attacked while holding active stat boosts
+    status_wasted: float = 0.0     # status-inflicting move had no effect
 
     # Field control
     spikes: float = 0.0
@@ -63,8 +68,9 @@ class RewardBreakdown:
     # Groups ordered by how frequently they produce non-zero values.
     # Each group's fields are listed in the order they should appear in the string.
     _GROUPS: ClassVar[tuple] = (
-        ("base",   ("hp_ours", "hp_opp", "faint_ours", "faint_opp", "win_loss", "explosion")),
-        ("attack", ("roar", "futile_attack", "repetition_tax", "struggle_tax")),
+        ("base",   ("hp_ours", "hp_opp", "faint_ours", "faint_opp", "win_loss", "explosion", "explosion_block")),
+        ("attack", ("roar", "futile_attack", "futile_setup", "setup_low_hp",
+                    "boost_utilized", "status_wasted", "repetition_tax", "struggle_tax")),
         ("switch", ("switch_base", "switch_bouncing_tax", "pivot_protect", "pivot_status",
                     "pivot_damage", "se_switch", "sleep_out", "sleep_in")),
         ("field",  ("spikes", "matchup_penalty", "status", "stall_tax")),
@@ -118,6 +124,33 @@ MATCHUP_PENALTY = -0.15        # per turn we stay in while opp has a revealed SE
 PROTECT_SWITCH_BONUS = 0.10    # opponent used Protect/Detect/Endure on our switch turn
 STATUS_IMMUNE_SWITCH_BONUS = 0.10  # our switch-in was immune to their status move
 
+FUTILE_SETUP_PENALTY = -0.3
+SETUP_LOW_HP_THRESHOLD = 0.40      # HP fraction below which setup is penalised
+SETUP_LOW_HP_MAX_PENALTY = -0.10   # penalty at 0% HP; scales linearly to 0 at threshold
+STATUS_WASTED_PENALTY = -0.3
+BOOST_UTILIZED_SCALE = 0.03        # reward = boost_stage * scale * damage_dealt
+EXPLOSION_BLOCK_BONUS = 1.0        # Ghost immune or Protect blocks opponent Explosion
+
+# Repetition tax escalation: index = consecutive_repeats - 1 (capped at 3)
+REPETITION_TAX_SCALE = (-0.02, -0.05, -0.10, -0.20)
+REPETITION_TAX_ZERO_EFFECT_SCALE = (-0.05, -0.10, -0.20, -0.30)
+
+BOOST_MOVES: frozenset[str] = frozenset({
+    "calmmind", "dragondance", "swordsdance", "nastyplot",
+    "agility", "rockpolish", "bulkup", "cosmicpower",
+    "acidarmor", "barrier", "irondefense", "amnesia",
+    "growth", "meditate", "sharpen", "doubleteam", "minimize",
+    "harden", "withdraw", "defensecurl", "stockpile",
+})
+
+STATUS_INFLICTING_MOVES: frozenset[str] = frozenset({
+    "toxic", "poisonpowder",
+    "thunderwave",
+    "willowisp",
+    "sleeppowder", "hypnosis", "spore", "lovelykiss", "sing",
+    "attract", "confuseray", "supersonic",
+})
+
 
 class Gen3RewardManager:
     """
@@ -151,6 +184,11 @@ class Gen3RewardManager:
         self._prev_our_statused = 0
         self._prev_opp_statused = 0
         self._last_switch_was_roared = False
+        self._consecutive_attack_repeats: int = 0
+        self._last_attack_had_effect: bool = True
+        self._our_active_hp_before: float = 1.0
+        self._opp_active_hp_before: float = 1.0
+        self._our_boosts_before: np.ndarray = np.zeros(7, dtype=np.int8)
 
     def reset(self):
         self.switch_count = 0
@@ -169,6 +207,11 @@ class Gen3RewardManager:
         self._prev_our_statused = 0
         self._prev_opp_statused = 0
         self._last_switch_was_roared = False
+        self._consecutive_attack_repeats = 0
+        self._last_attack_had_effect = True
+        self._our_active_hp_before = 1.0
+        self._opp_active_hp_before = 1.0
+        self._our_boosts_before = np.zeros(7, dtype=np.int8)
 
     def record_action(self, ctx: BattleContext, action: int) -> None:
         """
@@ -181,6 +224,15 @@ class Gen3RewardManager:
         self._pending_subsidy = 0.0
         self._last_switch_was_roared = False
 
+        # Snapshot HP and boosts at decision time for use in process_turn_reward
+        our_slot = ctx.our_slot_map.get(ctx.our_active, 0)
+        opp_slot = ctx.opp_slot_map.get(ctx.opp_active, 0)
+        active_norm = str(ctx.our_active).upper()
+        has_live_active = active_norm not in ("NONE", "NULL", "NONE_P1", "NONE_P2")
+        self._our_active_hp_before = float(ctx.our_hp[our_slot]) if has_live_active else 0.0
+        self._opp_active_hp_before = float(ctx.opp_hp[opp_slot])
+        self._our_boosts_before = ctx.our_boosts.copy()
+
         repetition_tax = 0.0
         bouncing_tax = 0.0
         struggle_loop_tax = 0.0
@@ -190,8 +242,13 @@ class Gen3RewardManager:
             self.attack_count += 1
 
             if action == self._last_action_idx and action != -1:
-                repetition_tax = -0.02
+                self._consecutive_attack_repeats += 1
+                idx = min(self._consecutive_attack_repeats - 1, 3)
+                scale = REPETITION_TAX_ZERO_EFFECT_SCALE if not self._last_attack_had_effect else REPETITION_TAX_SCALE
+                repetition_tax = scale[idx]
                 self._pending_subsidy += repetition_tax
+            else:
+                self._consecutive_attack_repeats = 0
 
             if action == 10:  # struggle — forced by server when all PP depleted
                 self.struggle_turns += 1
@@ -210,9 +267,8 @@ class Gen3RewardManager:
         else:
             # Switch (action 0-5 = team slot index)
             self._consecutive_struggle = 0
+            self._consecutive_attack_repeats = 0
             is_forced = ctx.phase == "forced_switch"
-            active_norm = str(ctx.our_active).upper()
-            has_live_active = active_norm not in ("NONE", "NULL", "NONE_P1", "NONE_P2")
 
             if is_forced and has_live_active:
                 # Roar/Whirlwind: mon is alive but phazed out — no subsidy, skip bonuses
@@ -264,9 +320,9 @@ class Gen3RewardManager:
         reward -= float(delta.opp_hp_delta.sum()) * HP_VALUE
 
         if delta.we_fainted:
-            reward -= FAINTED_VALUE
+            reward -= (0.5 + 2.0 * self._our_active_hp_before)
         if delta.opp_fainted:
-            reward += FAINTED_VALUE
+            reward += (0.5 + 2.0 * self._opp_active_hp_before)
 
         if battle.won:
             reward += VICTORY_VALUE
@@ -302,6 +358,13 @@ class Gen3RewardManager:
         if not our_mon or not opp_mon:
             return 0.0
 
+        # Only award on voluntary switches; forced post-faint replacements don't count
+        if self._last_reward_metadata.get("type") != "VOLUNTARY":
+            return 0.0
+        # Opponent must be alive at switch-in
+        if opp_mon.fainted:
+            return 0.0
+
         # Confirmed SE via revealed move
         for move in our_mon.moves.values():
             if move.base_power <= 0:
@@ -319,8 +382,9 @@ class Gen3RewardManager:
 
         return 0.0
 
-    def _compute_status_reward(self, delta: TurnDelta, battle) -> float:
-        """One-time reward when the statused-mon count changes on either side."""
+    def _compute_status_reward(self, delta: TurnDelta, battle) -> tuple[float, int]:
+        """One-time reward when the statused-mon count changes on either side.
+        Returns (reward, d_opp) where d_opp is the delta in opponent statused count."""
         our_statused = sum(
             1 for mon in battle.team.values()
             if mon.status is not None and not mon.fainted
@@ -333,7 +397,7 @@ class Gen3RewardManager:
         d_opp = opp_statused - self._prev_opp_statused
         self._prev_our_statused = our_statused
         self._prev_opp_statused = opp_statused
-        return (d_opp - d_our) * STATUS_BONUS
+        return (d_opp - d_our) * STATUS_BONUS, d_opp
 
     # =========================================================
     # SWITCH REWARDS
@@ -478,6 +542,59 @@ class Gen3RewardManager:
             return FUTILE_ATTACK_PENALTY
         return 0.0
 
+    def _compute_futile_setup_penalty(self, delta: TurnDelta) -> float:
+        """Penalise using a stat-boosting move when already at the ±6 cap."""
+        if delta.our_move_id not in BOOST_MOVES:
+            return 0.0
+        if delta.our_failed_to_move or delta.we_fainted:
+            return 0.0
+        # If no boost stage changed, the move had zero mechanical effect
+        if delta.our_boost_delta.sum() == 0:
+            return FUTILE_SETUP_PENALTY
+        return 0.0
+
+    def _compute_setup_low_hp_penalty(self, delta: TurnDelta) -> float:
+        """Penalise choosing a setup move below 40% HP."""
+        if delta.our_move_id not in BOOST_MOVES:
+            return 0.0
+        if delta.our_failed_to_move or delta.we_fainted:
+            return 0.0
+        hp = self._our_active_hp_before
+        if hp >= SETUP_LOW_HP_THRESHOLD:
+            return 0.0
+        return SETUP_LOW_HP_MAX_PENALTY * (1.0 - hp / SETUP_LOW_HP_THRESHOLD)
+
+    def _compute_status_wasted_penalty(self, delta: TurnDelta, d_opp_statused: int) -> float:
+        """Penalise status-inflicting moves that produced no status event."""
+        if delta.our_move_id not in STATUS_INFLICTING_MOVES:
+            return 0.0
+        if delta.our_failed_to_move:
+            return 0.0
+        if delta.opp_switch_to is not None:
+            return 0.0  # opp switched; ambiguous
+        if d_opp_statused > 0:
+            return 0.0  # status landed — no penalty
+        return STATUS_WASTED_PENALTY
+
+    def _compute_boost_utilized(self, delta: TurnDelta, battle) -> float:
+        """Reward attacking moves that leverage active stat boosts."""
+        if delta.our_move_id is None or delta.our_switch_to is not None:
+            return 0.0
+        if delta.our_failed_to_move:
+            return 0.0
+        mon = battle.active_pokemon
+        if not mon:
+            return 0.0
+        move = mon.moves.get(delta.our_move_id)
+        if move is None or move.base_power == 0:
+            return 0.0
+        # Use the higher of atk (idx 0) or spa (idx 2) boost
+        effective_boost = max(int(self._our_boosts_before[0]), int(self._our_boosts_before[2]))
+        if effective_boost <= 0:
+            return 0.0
+        damage_dealt = max(0.0, -float(delta.opp_hp_delta.sum()))
+        return effective_boost * BOOST_UTILIZED_SCALE * damage_dealt
+
     def process_turn_reward(self, battle, delta: TurnDelta) -> float:
         """Computes the full reward for a completed turn from the TurnDelta.
 
@@ -490,8 +607,8 @@ class Gen3RewardManager:
         # --- Base ---
         bd.hp_ours = float(delta.our_hp_delta.sum()) * HP_VALUE
         bd.hp_opp = -float(delta.opp_hp_delta.sum()) * HP_VALUE
-        bd.faint_ours = -FAINTED_VALUE if delta.we_fainted else 0.0
-        bd.faint_opp = FAINTED_VALUE if delta.opp_fainted else 0.0
+        bd.faint_ours = -(0.5 + 2.0 * self._our_active_hp_before) if delta.we_fainted else 0.0
+        bd.faint_opp = (0.5 + 2.0 * self._opp_active_hp_before) if delta.opp_fainted else 0.0
         if battle.won:
             bd.win_loss = VICTORY_VALUE
         elif battle.lost or battle.finished:
@@ -500,19 +617,27 @@ class Gen3RewardManager:
         base_reward = bd.hp_ours + bd.hp_opp + bd.faint_ours + bd.faint_opp + bd.win_loss
 
         # --- Explosion / self-destruct ---
-        # Only checks the mon active this turn; mutual KOs in Gen 3 are almost
-        # exclusively explosion, so this is a reliable proxy.
         if delta.opp_fainted:
             for mon in battle.opponent_team.values():
                 if mon.species == delta.opp_prev_active:
                     move_ids = {m.id for m in mon.moves.values()}
                     if move_ids & {"explosion", "selfdestruct"}:
-                        bd.explosion = -3.0 if delta.we_fainted else 2.0
+                        if not delta.we_fainted:
+                            # Opponent used Explosion/SD but we survived — strategic win
+                            bd.explosion = 2.0
+                            # Extra bonus if we took 0 damage (Ghost immune or Protect)
+                            if delta.our_hp_delta.sum() == 0.0:
+                                bd.explosion_block = EXPLOSION_BLOCK_BONUS
+                        # When we_fainted: faint_ours already penalises the loss;
+                        # don't double-count with an explosion penalty on top.
                     break
 
         # --- Attack signals ---
         bd.roar = self._compute_roar_bonus(delta, battle)
         bd.futile_attack = self._compute_futile_attack_penalty(delta, battle)
+        bd.futile_setup = self._compute_futile_setup_penalty(delta)
+        bd.setup_low_hp = self._compute_setup_low_hp_penalty(delta)
+        bd.boost_utilized = self._compute_boost_utilized(delta, battle)
 
         # --- Field control ---
         bd.spikes = self._compute_spikes_bonus(delta, battle)
@@ -531,7 +656,8 @@ class Gen3RewardManager:
             bd.sleep_in = self._compute_sleep_in_penalty(delta, battle)
 
         # --- Status signals ---
-        bd.status = self._compute_status_reward(delta, battle)
+        bd.status, _d_opp_statused = self._compute_status_reward(delta, battle)
+        bd.status_wasted = self._compute_status_wasted_penalty(delta, _d_opp_statused)
 
         # --- Subsidy / taxes (set by record_action before the turn) ---
         # Consume _pending_subsidy to keep the existing handoff contract, then
@@ -554,6 +680,9 @@ class Gen3RewardManager:
         opp_mon = battle.opponent_active_pokemon
         self._prev_opp_boosts = dict(opp_mon.boosts) if opp_mon else {}
         self._update_opp_se_threat(battle)
+
+        # Track whether our last attack had any effect (for escalating repetition tax)
+        self._last_attack_had_effect = delta.opp_hp_delta.sum() < 0
 
         self._last_breakdown = bd
         reward = bd.total

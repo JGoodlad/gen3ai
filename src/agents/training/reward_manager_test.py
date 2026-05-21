@@ -1,3 +1,4 @@
+import dataclasses
 import unittest
 from unittest.mock import MagicMock
 import numpy as np
@@ -6,6 +7,8 @@ from agents.training.reward_manager import (
     SWITCH_BASE_BONUS, SE_SWITCH_BONUS, MATCHUP_PENALTY,
     SPIKES_LAYER_BONUS, SPIKES_WASTE_PENALTY, FAILED_ROAR_PENALTY,
     FUTILE_ATTACK_PENALTY, HP_VALUE, FAINTED_VALUE, VICTORY_VALUE,
+    FUTILE_SETUP_PENALTY, SETUP_LOW_HP_MAX_PENALTY, STATUS_WASTED_PENALTY,
+    EXPLOSION_BLOCK_BONUS,
 )
 from agents.training.battle_context import BattleContext, TurnDelta
 from utils.logging.levels import LogLevel
@@ -57,6 +60,17 @@ def _ctx(
     )
 
 
+def _ctx_with_boosts(our_boosts=None, our_hp_val=1.0, opp_hp_val=1.0, **kwargs):
+    """_ctx with custom boosts and HP fractions."""
+    ctx = _ctx(**kwargs)
+    if our_boosts is not None:
+        ctx = dataclasses.replace(ctx, our_boosts=np.array(our_boosts, dtype=np.int8))
+    hp = np.ones(6, dtype=np.float32) * our_hp_val
+    opp_hp = np.ones(6, dtype=np.float32) * opp_hp_val
+    ctx = dataclasses.replace(ctx, our_hp=hp, opp_hp=opp_hp)
+    return ctx
+
+
 def _delta(
     our_hp_delta=0.0,
     opp_hp_delta=0.0,
@@ -68,11 +82,13 @@ def _delta(
     opp_move_id=None,
     our_prev_active="pikachu",
     opp_prev_active="charizard",
+    our_boost_delta=None,
 ):
     our = np.zeros(6, dtype=np.float32)
     opp = np.zeros(6, dtype=np.float32)
     our[0] = our_hp_delta
     opp[0] = opp_hp_delta
+    boost_delta = our_boost_delta if our_boost_delta is not None else np.zeros(7, dtype=np.int8)
     return TurnDelta(
         our_move_id=our_move_id,
         our_switch_to=our_switch_to,
@@ -89,7 +105,7 @@ def _delta(
         our_cant_reason=None,
         opp_failed_to_move=False,
         opp_cant_reason=None,
-        our_boost_delta=np.zeros(7, dtype=np.int8),
+        our_boost_delta=boost_delta,
         opp_boost_delta=np.zeros(7, dtype=np.int8),
         our_effectiveness=None,
         opp_effectiveness=None,
@@ -105,6 +121,7 @@ def _battle(won=False, lost=False, finished=False, opp_spikes=0,
     battle.finished = finished
     battle.turn = 1
     battle.opponent_team = {}
+    battle.team = {}
     battle.active_pokemon = our_mon
     battle.opponent_active_pokemon = opp_mon
     from poke_env.battle.side_condition import SideCondition
@@ -130,6 +147,7 @@ def _make_mon(type1_name, type2_name=None, moves=None, status=None, ability=None
     mon.status = status
     mon.ability = ability  # e.g. "levitate", "voltabsorb"
     mon.boosts = {}
+    mon.fainted = False
 
     if moves:
         mon.moves = {}
@@ -160,18 +178,22 @@ class TestRewardManagerBasics(unittest.TestCase):
         self.assertEqual(self.manager.total_reward, reward)
 
     def test_repetition_tax(self):
+        # Use opp_hp_delta=-0.1 so the first attack "had effect", making the second use
+        # the effective-repeat scale (-0.02) rather than zero-effect scale (-0.05).
         self.manager.record_action(_ctx(turn=1), 6)
-        r1 = self.manager.process_turn_reward(_battle(), _delta())
+        r1 = self.manager.process_turn_reward(_battle(), _delta(opp_hp_delta=-0.1))
 
         self.manager.record_action(_ctx(turn=2), 6)  # same action
-        r2 = self.manager.process_turn_reward(_battle(), _delta())
+        r2 = self.manager.process_turn_reward(_battle(), _delta(opp_hp_delta=-0.1))
 
         self.assertAlmostEqual(r2, r1 - 0.02, places=5)
 
     def test_faint_reward(self):
-        self.manager.record_action(_ctx(turn=1), 6)
+        # With default opp_hp_val=1.0, faint_opp = 0.5 + 2.0*1.0 = 2.5
+        ctx = _ctx_with_boosts(opp_hp_val=1.0)
+        self.manager.record_action(ctx, 6)
         reward = self.manager.process_turn_reward(_battle(), _delta(opp_fainted=True))
-        self.assertAlmostEqual(reward, FAINTED_VALUE, places=5)
+        self.assertAlmostEqual(reward, 0.5 + 2.0 * 1.0, places=5)
 
     def test_win_reward(self):
         self.manager.record_action(_ctx(turn=1), 6)
@@ -476,6 +498,7 @@ def _type_mon(type1_name, type2_name=None, status=None, ability=None):
     mon.status = status
     mon.ability = ability
     mon.moves = {}
+    mon.fainted = False
     return mon
 
 
@@ -722,8 +745,9 @@ class TestFutileAttack(unittest.TestCase):
             opp_effectiveness=None,
             we_moved_first=None,
         )
-        reward = self.manager.process_turn_reward(_battle(our_mon=our_mon), delta)
-        self.assertAlmostEqual(reward, 0.0, places=5)
+        self.manager.process_turn_reward(_battle(our_mon=our_mon), delta)
+        # futile_attack specifically must not fire for status moves (base_power == 0)
+        self.assertAlmostEqual(self.manager._last_breakdown.futile_attack, 0.0, places=5)
 
 
 class TestOriginalScenario(unittest.TestCase):
@@ -880,6 +904,354 @@ class TestStallTax(unittest.TestCase):
         r126 = self._reward_at_turn(126)
         r237 = self._reward_at_turn(237)
         self.assertAlmostEqual(r126, r237, places=4)
+
+
+# ---------------------------------------------------------------------------
+# New test classes for reward improvements
+# ---------------------------------------------------------------------------
+
+class TestFaintScaling(unittest.TestCase):
+    """faint_ours and faint_opp scale with HP at time of faint."""
+
+    def setUp(self):
+        self.manager = Gen3RewardManager(log_level=LogLevel.QUIET)
+
+    def _faint_ours_reward(self, hp_before: float) -> float:
+        ctx = _ctx_with_boosts(our_hp_val=hp_before)
+        self.manager.record_action(ctx, 6)
+        return self.manager.process_turn_reward(_battle(), _delta(we_fainted=True))
+
+    def test_full_hp_faint_costs_max(self):
+        reward = self._faint_ours_reward(1.0)
+        self.assertAlmostEqual(reward, -(0.5 + 2.0 * 1.0), places=4)
+
+    def test_low_hp_faint_costs_less(self):
+        r_low = self._faint_ours_reward(0.1)
+        r_full = self._faint_ours_reward(1.0)
+        self.assertGreater(r_low, r_full)
+
+    def test_near_zero_hp_faint_costs_minimum(self):
+        reward = self._faint_ours_reward(0.0)
+        self.assertAlmostEqual(reward, -0.5, places=4)
+
+    def test_faint_opp_full_hp_earns_max(self):
+        ctx = _ctx_with_boosts(opp_hp_val=1.0)
+        self.manager.record_action(ctx, 6)
+        reward = self.manager.process_turn_reward(_battle(), _delta(opp_fainted=True))
+        self.assertAlmostEqual(reward, 0.5 + 2.0 * 1.0, places=4)
+
+    def test_faint_opp_low_hp_earns_less(self):
+        def _opp_faint(hp):
+            mgr = Gen3RewardManager(log_level=LogLevel.QUIET)
+            ctx = _ctx_with_boosts(opp_hp_val=hp)
+            mgr.record_action(ctx, 6)
+            return mgr.process_turn_reward(_battle(), _delta(opp_fainted=True))
+        self.assertGreater(_opp_faint(1.0), _opp_faint(0.1))
+
+
+class TestRepetitionTaxEscalation(unittest.TestCase):
+    """Repetition tax grows with consecutive repeats; zero-effect repeats cost more."""
+
+    def setUp(self):
+        self.manager = Gen3RewardManager(log_level=LogLevel.QUIET)
+
+    def _repeat_attack(self, n_times, opp_hp_delta=-0.1):
+        """Attack with action=6 n_times; return list of rewards.
+
+        Default opp_hp_delta=-0.1 ensures each attack "had effect", keeping
+        _last_attack_had_effect=True so the effective-repeat scale applies.
+        """
+        rewards = []
+        for _ in range(n_times):
+            self.manager.record_action(_ctx(), 6)
+            rewards.append(self.manager.process_turn_reward(_battle(), _delta(opp_hp_delta=opp_hp_delta)))
+        return rewards
+
+    def test_first_use_no_tax(self):
+        r = self._repeat_attack(1)
+        # First use: hp_opp = -(-0.1)*HP_VALUE = +0.2
+        self.assertAlmostEqual(r[0], -(-0.1) * HP_VALUE, places=5)
+
+    def test_second_use_gets_first_tax(self):
+        r = self._repeat_attack(2)
+        # Second repeat at effective-repeat tier 1: -0.02
+        self.assertAlmostEqual(r[1] - r[0], -0.02, places=5)
+
+    def test_tax_escalates_on_third_use(self):
+        r = self._repeat_attack(3)
+        # Third repeat at effective-repeat tier 2: -0.05
+        self.assertAlmostEqual(r[2] - r[0], -0.05, places=5)
+
+    def test_zero_effect_repeat_costs_more(self):
+        # First use: action 6, opp took no damage (net 0)
+        self.manager.record_action(_ctx(), 6)
+        self.manager.process_turn_reward(_battle(), _delta(opp_hp_delta=0.0))
+        # Second use: same action, opp took no damage — zero-effect repeat
+        self.manager.record_action(_ctx(), 6)
+        r2 = self.manager.process_turn_reward(_battle(), _delta(opp_hp_delta=0.0))
+        # Effective-repeat first tier: -0.02; zero-effect: -0.05
+        bd = self.manager._last_breakdown
+        self.assertAlmostEqual(bd.repetition_tax, -0.05, places=5)
+
+    def test_changing_action_resets_counter(self):
+        self._repeat_attack(3)
+        # Switch to action 7
+        self.manager.record_action(_ctx(), 7)
+        r = self.manager.process_turn_reward(_battle(), _delta())
+        bd = self.manager._last_breakdown
+        self.assertAlmostEqual(bd.repetition_tax, 0.0, places=5)
+
+
+class TestFutileSetup(unittest.TestCase):
+    """futile_setup fires when a boost move had no mechanical effect."""
+
+    def setUp(self):
+        self.manager = Gen3RewardManager(log_level=LogLevel.QUIET)
+
+    def test_penalty_when_boost_delta_zero(self):
+        self.manager.record_action(_ctx(), 6)
+        boost_delta = np.zeros(7, dtype=np.int8)  # no change — already at cap
+        delta = _delta(our_move_id="calmmind", our_boost_delta=boost_delta)
+        self.manager.process_turn_reward(_battle(), delta)
+        bd = self.manager._last_breakdown
+        self.assertAlmostEqual(bd.futile_setup, FUTILE_SETUP_PENALTY, places=5)
+
+    def test_no_penalty_when_boost_applied(self):
+        self.manager.record_action(_ctx(), 6)
+        boost_delta = np.zeros(7, dtype=np.int8)
+        boost_delta[2] = 1  # spa +1 (Calm Mind worked)
+        delta = _delta(our_move_id="calmmind", our_boost_delta=boost_delta)
+        self.manager.process_turn_reward(_battle(), delta)
+        bd = self.manager._last_breakdown
+        self.assertAlmostEqual(bd.futile_setup, 0.0, places=5)
+
+    def test_no_penalty_on_non_boost_move(self):
+        self.manager.record_action(_ctx(), 6)
+        delta = _delta(our_move_id="thunderbolt", our_boost_delta=np.zeros(7, dtype=np.int8))
+        self.manager.process_turn_reward(_battle(), delta)
+        bd = self.manager._last_breakdown
+        self.assertAlmostEqual(bd.futile_setup, 0.0, places=5)
+
+    def test_skipped_when_failed_to_move(self):
+        self.manager.record_action(_ctx(), 6)
+        d = _delta(our_move_id="calmmind")
+        d = dataclasses.replace(d, our_failed_to_move=True)
+        self.manager.process_turn_reward(_battle(), d)
+        bd = self.manager._last_breakdown
+        self.assertAlmostEqual(bd.futile_setup, 0.0, places=5)
+
+
+class TestSetupLowHP(unittest.TestCase):
+    """setup_low_hp penalises boost moves chosen below 40% HP."""
+
+    def setUp(self):
+        self.manager = Gen3RewardManager(log_level=LogLevel.QUIET)
+
+    def _setup_at_hp(self, hp_fraction: float) -> float:
+        boost_delta = np.zeros(7, dtype=np.int8)
+        boost_delta[2] = 1  # move worked (to isolate setup_low_hp from futile_setup)
+        ctx = _ctx_with_boosts(our_hp_val=hp_fraction)
+        self.manager.record_action(ctx, 6)
+        delta = _delta(our_move_id="calmmind", our_boost_delta=boost_delta)
+        self.manager.process_turn_reward(_battle(), delta)
+        return self.manager._last_breakdown.setup_low_hp
+
+    def test_no_penalty_at_threshold(self):
+        self.assertAlmostEqual(self._setup_at_hp(0.40), 0.0, places=5)
+
+    def test_no_penalty_above_threshold(self):
+        self.assertAlmostEqual(self._setup_at_hp(0.80), 0.0, places=5)
+
+    def test_penalty_at_zero_hp(self):
+        self.assertAlmostEqual(self._setup_at_hp(0.0), SETUP_LOW_HP_MAX_PENALTY, places=5)
+
+    def test_penalty_scales_linearly(self):
+        r20 = self._setup_at_hp(0.20)
+        r00 = self._setup_at_hp(0.0)
+        # At 20% HP, penalty should be half of max (linear from 40% to 0%)
+        self.assertAlmostEqual(r20, r00 / 2.0, places=4)
+
+    def test_no_penalty_for_non_boost_move(self):
+        ctx = _ctx_with_boosts(our_hp_val=0.10)
+        self.manager.record_action(ctx, 6)
+        delta = _delta(our_move_id="thunderbolt")
+        self.manager.process_turn_reward(_battle(), delta)
+        self.assertAlmostEqual(self.manager._last_breakdown.setup_low_hp, 0.0, places=5)
+
+
+class TestStatusWasted(unittest.TestCase):
+    """status_wasted fires when status move had no effect."""
+
+    def setUp(self):
+        self.manager = Gen3RewardManager(log_level=LogLevel.QUIET)
+
+    def _status_move_turn(self, move_id: str, opp_status_applied: bool) -> float:
+        from poke_env.battle.status import Status
+        self.manager.record_action(_ctx(), 6)
+        battle = _battle()
+        # Simulate whether status was applied
+        if opp_status_applied:
+            opp_mon = MagicMock()
+            opp_mon.status = Status.PAR
+            opp_mon.fainted = False
+            battle.opponent_team = {"charizard": opp_mon}
+        delta = _delta(our_move_id=move_id)
+        self.manager.process_turn_reward(battle, delta)
+        return self.manager._last_breakdown.status_wasted
+
+    def test_penalty_when_toxic_fails(self):
+        result = self._status_move_turn("toxic", opp_status_applied=False)
+        self.assertAlmostEqual(result, STATUS_WASTED_PENALTY, places=5)
+
+    def test_no_penalty_when_status_lands(self):
+        result = self._status_move_turn("toxic", opp_status_applied=True)
+        self.assertAlmostEqual(result, 0.0, places=5)
+
+    def test_no_penalty_for_attack_move(self):
+        result = self._status_move_turn("thunderbolt", opp_status_applied=False)
+        self.assertAlmostEqual(result, 0.0, places=5)
+
+    def test_skipped_when_failed_to_move(self):
+        self.manager.record_action(_ctx(), 6)
+        d = dataclasses.replace(_delta(our_move_id="thunderwave"), our_failed_to_move=True)
+        self.manager.process_turn_reward(_battle(), d)
+        self.assertAlmostEqual(self.manager._last_breakdown.status_wasted, 0.0, places=5)
+
+
+class TestBoostUtilized(unittest.TestCase):
+    """boost_utilized rewards attacking with active stat boosts."""
+
+    def setUp(self):
+        self.manager = Gen3RewardManager(log_level=LogLevel.QUIET)
+
+    def _attack_with_boosts(self, atk_boost: int = 0, spa_boost: int = 0,
+                             opp_hp_delta: float = -0.3) -> float:
+        boosts = np.zeros(7, dtype=np.int8)
+        boosts[0] = atk_boost
+        boosts[2] = spa_boost
+        ctx = _ctx_with_boosts(our_boosts=boosts.tolist())
+        self.manager.record_action(ctx, 6)
+        move = MagicMock()
+        move.base_power = 80
+        our_mon = MagicMock()
+        our_mon.moves = {"earthquake": move}
+        battle = _battle(our_mon=our_mon)
+        delta = _delta(our_move_id="earthquake", opp_hp_delta=opp_hp_delta)
+        self.manager.process_turn_reward(battle, delta)
+        return self.manager._last_breakdown.boost_utilized
+
+    def test_no_bonus_without_boosts(self):
+        self.assertAlmostEqual(self._attack_with_boosts(0, 0), 0.0, places=5)
+
+    def test_bonus_with_atk_boost(self):
+        result = self._attack_with_boosts(atk_boost=2, opp_hp_delta=-0.3)
+        self.assertGreater(result, 0.0)
+        # formula: 2 * 0.03 * 0.3
+        self.assertAlmostEqual(result, 2 * 0.03 * 0.3, places=5)
+
+    def test_bonus_with_spa_boost(self):
+        result = self._attack_with_boosts(spa_boost=3, opp_hp_delta=-0.5)
+        self.assertAlmostEqual(result, 3 * 0.03 * 0.5, places=5)
+
+    def test_uses_higher_of_atk_spa(self):
+        r_atk = self._attack_with_boosts(atk_boost=4, spa_boost=1, opp_hp_delta=-0.4)
+        self.assertAlmostEqual(r_atk, 4 * 0.03 * 0.4, places=5)
+
+    def test_no_bonus_when_no_damage_dealt(self):
+        # opp_hp_delta=0 (no damage) → no boost utilized bonus
+        result = self._attack_with_boosts(atk_boost=3, opp_hp_delta=0.0)
+        self.assertAlmostEqual(result, 0.0, places=5)
+
+    def test_no_bonus_for_status_move(self):
+        boosts = [2, 0, 0, 0, 0, 0, 0]
+        ctx = _ctx_with_boosts(our_boosts=boosts)
+        self.manager.record_action(ctx, 6)
+        move = MagicMock()
+        move.base_power = 0  # status move
+        our_mon = MagicMock()
+        our_mon.moves = {"thunderwave": move}
+        delta = _delta(our_move_id="thunderwave", opp_hp_delta=0.0)
+        self.manager.process_turn_reward(_battle(our_mon=our_mon), delta)
+        self.assertAlmostEqual(self.manager._last_breakdown.boost_utilized, 0.0, places=5)
+
+
+class TestExplosionReward(unittest.TestCase):
+    """Explosion: victim gets no extra penalty; surviving gets bonus; block gets extra."""
+
+    def setUp(self):
+        self.manager = Gen3RewardManager(log_level=LogLevel.QUIET)
+
+    def _make_exploder_battle(self, we_fainted=False, our_hp_delta=0.0):
+        opp_mon = MagicMock()
+        opp_mon.species = "gengar"
+        opp_exploder = MagicMock()
+        opp_exploder.id = "explosion"
+        opp_mon.moves = {"explosion": opp_exploder}
+        battle = _battle(opp_mon=opp_mon)
+        battle.opponent_team = {"gengar": opp_mon}
+        return battle
+
+    def test_no_extra_penalty_when_we_faint_to_explosion(self):
+        """When opponent uses Explosion and we faint, explosion field must be 0."""
+        self.manager.record_action(_ctx(), 6)
+        battle = self._make_exploder_battle()
+        d = _delta(opp_fainted=True, we_fainted=True,
+                   opp_prev_active="gengar", our_hp_delta=-1.0)
+        self.manager.process_turn_reward(battle, d)
+        bd = self.manager._last_breakdown
+        self.assertAlmostEqual(bd.explosion, 0.0, places=5)  # no victim penalty
+        self.assertLess(bd.faint_ours, 0.0)  # faint_ours still fires
+
+    def test_bonus_when_we_survive_explosion(self):
+        """When opponent Explodes and we survive (took damage), explosion=+2."""
+        self.manager.record_action(_ctx(), 6)
+        battle = self._make_exploder_battle()
+        d = _delta(opp_fainted=True, we_fainted=False, opp_prev_active="gengar",
+                   our_hp_delta=-0.5)
+        self.manager.process_turn_reward(battle, d)
+        bd = self.manager._last_breakdown
+        self.assertAlmostEqual(bd.explosion, 2.0, places=5)
+        self.assertAlmostEqual(bd.explosion_block, 0.0, places=5)  # took damage, no block bonus
+
+    def test_block_bonus_when_ghost_or_protect_immune(self):
+        """When opponent Explodes and we take 0 damage (Ghost/Protect), block bonus fires."""
+        self.manager.record_action(_ctx(), 6)
+        battle = self._make_exploder_battle()
+        d = _delta(opp_fainted=True, we_fainted=False, opp_prev_active="gengar",
+                   our_hp_delta=0.0)  # took zero damage
+        self.manager.process_turn_reward(battle, d)
+        bd = self.manager._last_breakdown
+        self.assertAlmostEqual(bd.explosion, 2.0, places=5)
+        self.assertAlmostEqual(bd.explosion_block, EXPLOSION_BLOCK_BONUS, places=5)
+
+
+class TestSeSwitchBonusFixed(unittest.TestCase):
+    """se_switch must not fire on forced post-faint switches or vs fainted opponents."""
+
+    def setUp(self):
+        self.manager = Gen3RewardManager(log_level=LogLevel.QUIET)
+
+    def test_no_se_bonus_on_forced_faint_switch(self):
+        """Post-faint replacement into SE matchup must NOT earn the bonus."""
+        ctx = _ctx(turn=1, our_active="NONE", phase="forced_switch",
+                   slot_map={"NONE": 0, "tyranitar": 1})
+        self.manager.record_action(ctx, 1)
+        our = _make_mon("ROCK", "DARK")
+        opp = _make_mon("ELECTRIC", "FLYING")
+        battle = _battle(our_mon=our, opp_mon=opp)
+        self.manager.process_turn_reward(battle, _delta(our_switch_to="tyranitar"))
+        self.assertAlmostEqual(self.manager._last_breakdown.se_switch, 0.0, places=5)
+
+    def test_no_se_bonus_vs_fainted_opponent(self):
+        """Should not award bonus when opponent active mon is fainted."""
+        ctx = _ctx(turn=1, our_active="pikachu", slot_map={"pikachu": 0, "tyranitar": 1})
+        self.manager.record_action(ctx, 1)
+        our = _make_mon("ROCK", "DARK")
+        opp = _make_mon("ELECTRIC", "FLYING")
+        opp.fainted = True
+        battle = _battle(our_mon=our, opp_mon=opp)
+        self.manager.process_turn_reward(battle, _delta(our_switch_to="tyranitar"))
+        self.assertAlmostEqual(self.manager._last_breakdown.se_switch, 0.0, places=5)
 
 
 if __name__ == "__main__":
