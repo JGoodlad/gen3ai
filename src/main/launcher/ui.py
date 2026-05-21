@@ -3,8 +3,6 @@
 import os
 import time
 
-_TMUX_OFFSET = 1 if os.environ.get("TMUX") else 0
-
 import rich.box
 from rich.console import Group
 from rich.panel import Panel
@@ -12,6 +10,10 @@ from rich.table import Table
 from rich.text import Text
 
 from main.launcher.state import LauncherSnapshot
+
+
+def _tmux_offset() -> int:
+    return 1 if os.environ.get("TMUX") else 0
 
 
 def _elapsed_str(seconds: float) -> str:
@@ -147,7 +149,7 @@ class LauncherUI:
             title="[bold blue]🎮 Gen3AI Training[/bold blue]",
             border_style="blue",
             padding=(0, 1),
-            height=console_height - _TMUX_OFFSET,
+            height=console_height - _tmux_offset(),
         )
 
     def _git_badge(self, snap: LauncherSnapshot) -> str:
@@ -305,33 +307,33 @@ class LauncherUI:
         return text
 
     def _render_logs(self, snap: LauncherSnapshot, console_height: int = 40):
-        # 2 border lines + 1 empty spacer + 1 footer = 4 lines of chrome
-        n = max(1, console_height - 4 - _TMUX_OFFSET)
+        offset = _tmux_offset()
+        # 2 border lines = 2 lines of chrome
+        n = max(1, console_height - 2 - offset)
         log_text = self._render_log_lines(snap.log_lines, n=n)
-        footer = Text("  [d] dashboard", style="dim")
         return Panel(
-            Group(log_text, Text(""), footer),
-            title="[bold blue]🎮 Gen3AI Training[/bold blue] — [yellow]LOGS[/yellow]",
+            log_text,
+            title="[bold blue]🎮 Gen3AI Training[/bold blue] — [yellow]LOGS[/yellow]  [dim][d] dashboard[/dim]",
             border_style="yellow",
             padding=(0, 1),
-            height=console_height - _TMUX_OFFSET,
+            height=console_height - offset,
         )
 
     def _render_events(self, snap: LauncherSnapshot, console_height: int = 40):
-        # 2 border lines + 1 empty spacer + 1 footer = 4 lines of chrome
-        n = max(1, console_height - 4 - _TMUX_OFFSET)
+        offset = _tmux_offset()
+        # 2 border lines = 2 lines of chrome
+        n = max(1, console_height - 2 - offset)
         evt_text = Text()
         for ev in snap.events[-n:]:
             evt_text.append(ev + "\n", style="dim")
         if not snap.events:
             evt_text.append("[dim]No events yet.[/dim]")
-        footer = Text("  [d] dashboard", style="dim")
         return Panel(
-            Group(evt_text, Text(""), footer),
-            title="[bold blue]🎮 Gen3AI Training[/bold blue] — [yellow]EVENTS[/yellow]",
+            evt_text,
+            title="[bold blue]🎮 Gen3AI Training[/bold blue] — [yellow]EVENTS[/yellow]  [dim][d] dashboard[/dim]",
             border_style="yellow",
             padding=(0, 1),
-            height=console_height - _TMUX_OFFSET,
+            height=console_height - offset,
         )
 
     def _render_confirm_quit(self, snap: LauncherSnapshot):
