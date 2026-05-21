@@ -78,9 +78,9 @@ class LauncherUI:
             return self._render_logs(snap, console_height)
         if snap.view_mode == "confirm_quit":
             return self._render_confirm_quit(snap)
-        return self._render_dashboard(snap)
+        return self._render_dashboard(snap, console_height)
 
-    def _render_dashboard(self, snap: LauncherSnapshot):
+    def _render_dashboard(self, snap: LauncherSnapshot, console_height: int = 40):
         now = time.monotonic()
         elapsed = now - snap.run_start
 
@@ -100,11 +100,6 @@ class LauncherUI:
 
         git = self._git_badge(snap)
         model_badge = self._model_badge(snap)
-        ec_badge = (
-            f"[cyan]ent_coef [bold]{snap.ent_coef}[/bold][/cyan]"
-            if snap.ent_coef is not None
-            else ""
-        )
         highlights = []
         if (steps := snap.metrics.get("time/total_timesteps")) is not None:
             highlights.append(f"steps [bold]{_fmt_val(steps)}[/bold]")
@@ -113,21 +108,18 @@ class LauncherUI:
         if (rew := snap.metrics.get("rollout/ep_rew_mean")) is not None:
             col = "green" if rew >= 0 else "red"
             highlights.append(f"reward [{col}]{_fmt_val(rew)}[/{col}]")
-        if (wr := snap.metrics.get("eval/win_rate_mean")) is not None:
-            col = "green" if wr >= 0.5 else "red"
-            highlights.append(f"eval [{col}]{wr * 100:.1f}%[/{col}]")
-        if (er := snap.metrics.get("eval/mean_reward_mean")) is not None:
-            col = "green" if er >= 0 else "red"
-            highlights.append(f"eval_rew [{col}]{_fmt_val(er)}[/{col}]")
         hl = "  │  ".join(highlights) if highlights else "[dim]waiting for first rollout…[/dim]"
 
-        ec_sep = f"  │  {ec_badge}" if ec_badge else ""
         row2 = Table.grid(padding=(0, 1), expand=True)
         row2.add_column()
-        row2.add_row(f"  {git}  │  {model_badge}{ec_sep}  │  {hl}")
+        row2.add_row(f"  {git}  │  {model_badge}  │  {hl}")
 
         metrics_panel = self._render_metrics_table(snap.metrics, snap.metrics_ts, now)
-        log_text = self._render_log_lines(snap.log_lines, n=6)
+        # Fixed chrome: 2 border + 2 header rows + 3 blank separators + 1 "Metrics" label
+        # + ~19 metrics panel + 1 "Recent Output" label + 2 blank + 1 "Events" label
+        # + 5 events + 1 blank + 1 footer = ~38 lines
+        log_n = max(3, int(console_height) - 38)
+        log_text = self._render_log_lines(snap.log_lines, n=log_n)
 
         evt_text = Text()
         for ev in snap.events[-5:]:
@@ -186,42 +178,55 @@ class LauncherUI:
             if age > 60:
                 stale_badge = f" [dim]({int(age)}s ago)[/dim]"
 
-        # Order keys and group by section prefix.
+        # Drop episode-length-per-opponent keys — not actionable in TUI.
+        display = {k: v for k, v in metrics.items() if "mean_ep_len_vs_" not in k}
+
+        # Order keys.
         seen: set = set()
         ordered = []
         for k in _METRIC_ORDER:
-            if k in metrics:
+            if k in display:
                 ordered.append(k)
                 seen.add(k)
-        for k in sorted(metrics):
+        for k in sorted(display):
             if k not in seen:
                 ordered.append(k)
 
+        # Split eval: summary rows stay in the main columns; per-opponent detail
+        # goes into a compact table below so train/time aren't crowded out.
+        _EVAL_SUMMARY = frozenset({"eval/win_rate_mean", "eval/mean_reward_mean"})
+        per_opponent: list = []
         by_section: dict = {}
         for key in ordered:
             section = key.partition("/")[0]
-            by_section.setdefault(section, []).append(key)
+            if section == "eval" and key not in _EVAL_SUMMARY:
+                per_opponent.append(key)
+            else:
+                by_section.setdefault(section, []).append(key)
 
         def _make_col(sections: list) -> Table:
             t = Table(box=None, show_header=False, show_edge=False, padding=(0, 1))
             t.add_column(no_wrap=True)
             t.add_column(justify="right")
             first = True
-            for sec in sections:
-                keys = by_section.get(sec, [])
-                if not keys:
-                    continue
+            active = [(s, by_section.get(s, [])) for s in sections if by_section.get(s)]
+            show_headers = len(active) > 1
+            for sec, keys in active:
+                if show_headers:
+                    badge = stale_badge if first else ""
+                    first = False
+                    t.add_row(f"[dim italic]{sec}{badge}[/dim italic]", "")
                 for key in keys:
                     badge = stale_badge if first else ""
                     first = False
+                    indent = "  " if show_headers else ""
                     name = key.partition("/")[2]
-                    t.add_row(f"[dim]{name}[/dim]{badge}", f"[bold]{_fmt_metric(key, metrics[key])}[/bold]")
+                    t.add_row(f"[dim]{indent}{name}[/dim]{badge}", f"[bold]{_fmt_metric(key, display[key])}[/bold]")
             return t
 
         left = _make_col(["rollout", "eval"])
         right = _make_col(["train", "time"])
 
-        # Any leftover sections not in the two fixed panels.
         fixed = {"rollout", "eval", "train", "time"}
         extra_sections = [s for s in by_section if s not in fixed]
 
@@ -230,15 +235,62 @@ class LauncherUI:
         grid.add_column(ratio=1)
         grid.add_row(left, right)
 
+        components: list = [grid]
+        if per_opponent:
+            components.append(self._make_per_opponent_table(per_opponent, display))
         if extra_sections:
-            extra = _make_col(extra_sections)
-            wrapper = Table.grid(expand=True)
-            wrapper.add_column()
-            wrapper.add_row(grid)
-            wrapper.add_row(extra)
-            return wrapper
+            components.append(_make_col(extra_sections))
 
-        return grid
+        if len(components) == 1:
+            return components[0]
+        wrapper = Table.grid(expand=True)
+        wrapper.add_column()
+        for c in components:
+            wrapper.add_row(c)
+        return wrapper
+
+    def _make_per_opponent_table(self, keys: list, metrics: dict) -> Table:
+        """Compact 3-column table: opponent | win rate | reward."""
+        opponents: dict = {}
+        order: list = []
+        for key in keys:
+            name_part = key.partition("/")[2]
+            if "win_rate_vs_" in name_part:
+                opp = name_part[len("win_rate_vs_"):]
+                if opp not in opponents:
+                    order.append(opp)
+                    opponents[opp] = {}
+                opponents[opp]["win_rate"] = metrics[key]
+            elif "mean_reward_vs_" in name_part:
+                opp = name_part[len("mean_reward_vs_"):]
+                if opp not in opponents:
+                    order.append(opp)
+                    opponents[opp] = {}
+                opponents[opp]["reward"] = metrics[key]
+
+        t = Table(box=None, show_header=True, show_edge=False,
+                  padding=(0, 2), header_style="dim")
+        t.add_column("", style="dim", no_wrap=True)
+        t.add_column("win rate", justify="right")
+        t.add_column("reward", justify="right")
+
+        for opp in order:
+            data = opponents[opp]
+            wr = data.get("win_rate")
+            rw = data.get("reward")
+            if wr is not None:
+                col = "green" if wr >= 0.5 else "red"
+                wr_str = f"[{col}][bold]{wr * 100:.1f}%[/bold][/{col}]"
+            else:
+                wr_str = "[dim]—[/dim]"
+            if rw is not None:
+                col = "green" if rw >= 0 else "red"
+                rw_str = f"[{col}][bold]{_fmt_val(rw)}[/bold][/{col}]"
+            else:
+                rw_str = "[dim]—[/dim]"
+            t.add_row(f"  vs {opp}", wr_str, rw_str)
+
+        return t
 
     def _render_log_lines(self, log_lines: list, n: int = 6) -> Text:
         text = Text()
