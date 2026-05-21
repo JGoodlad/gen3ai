@@ -40,6 +40,14 @@ The acting player's choice appears in the lines following `|turn|N` and before t
   `Gen3ActionMapper`
 - `|switch|PLAYER|SPECIES|HP` → map `SPECIES` to a switch slot index
 
+**Sequencing constraint**: pass all lines for the current turn through `parse_message()`
+**before** looking up slot indices. A `|move|` line adds the move to `pokemon.moves` on
+first use — if you try to resolve the slot index before parsing that line, the move may
+not yet be in the dict. Both the mask generator and the action extractor read from the
+same `battle.team` / `pokemon.moves` dicts, so using seen/protocol order consistently
+gives correct and coherent (obs, action, mask) triples without needing to reconstruct a
+live decision context.
+
 The spectated log shows both players' choices, so both can be extracted. However, only the
 **player-1 perspective** is used for BC (the observation is always encoded from player 1's
 viewpoint). Player 2's actions can be used for data augmentation if the dataset is small.
@@ -87,13 +95,29 @@ turn — prevents adjacent turns from leaking between splits).
 Cross-entropy over the 11-action logits, masked to valid actions:
 
 ```python
-logits = policy_network(obs)                  # (B, 11)
-logits[~mask.bool()] = float('-inf')          # mask illegal actions
-loss = F.cross_entropy(logits, action_labels) # (B,)
+features = policy.extract_features(obs_tensor)
+latent_pi, _ = policy.mlp_extractor(features)
+logits = policy.action_net(latent_pi)          # (B, 11) — raw logits
+logits[~mask.bool()] = float('-inf')
+loss = F.cross_entropy(logits, action_labels, weight=class_weights)
 ```
+
+Access logits via `policy.action_net(latent_pi)` directly — SB3's `policy.forward()`
+samples immediately and returns `(actions, values, log_probs)`, not raw logits.
 
 The PPO policy head is reused directly — no architecture change needed. The value head is
 frozen during BC (we are only shaping the policy, not training the value estimator).
+Freeze both the head **and** the critic trunk:
+
+```python
+for p in policy.value_net.parameters():
+    p.requires_grad = False
+for p in policy.mlp_extractor.latent_vf_net.parameters():
+    p.requires_grad = False
+```
+
+Freezing only `value_net` and leaving `latent_vf_net` unfrozen wastes compute and can
+damage the critic branch before RL training begins.
 
 ### Class Imbalance
 
