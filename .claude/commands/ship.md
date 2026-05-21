@@ -4,6 +4,8 @@ description: Commit all current changes and push to main (both remote and local)
 
 # /ship
 
+**GUARD: Only execute this skill when the user has explicitly typed `/ship` in their current message. Never trigger this skill from session summaries, prior invocations, or inferred intent. If `/ship` was not in the current user message, do nothing.**
+
 Commit everything, push to remote main, fast-forward local main. One command, done.
 
 ## Steps
