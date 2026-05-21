@@ -15,9 +15,11 @@ class MetricsExporterCallback(BaseCallback):
         super().__init__()
         init_pipe()  # grab FD now so close() can flush at training end
         self._start_time: float | None = None
+        self._start_timesteps: int = 0
 
     def _on_training_start(self) -> None:
         self._start_time = time.monotonic()
+        self._start_timesteps = self.num_timesteps
 
     def _on_step(self) -> bool:
         return True
@@ -36,10 +38,11 @@ class MetricsExporterCallback(BaseCallback):
         # SB3 logs time/fps and time/total_timesteps after on_rollout_end fires,
         # so they're never in name_to_value — compute them here instead.
         payload["time/total_timesteps"] = float(self.num_timesteps)
-        if self._start_time is not None and self.num_timesteps > 0:
+        if self._start_time is not None:
             elapsed = time.monotonic() - self._start_time
-            if elapsed > 0:
-                payload["time/fps"] = float(self.num_timesteps / elapsed)
+            steps_this_session = self.num_timesteps - self._start_timesteps
+            if elapsed > 0 and steps_this_session > 0:
+                payload["time/fps"] = float(steps_this_session / elapsed)
         payload["_step"] = int(self.num_timesteps)
         send_metrics(payload)
 
