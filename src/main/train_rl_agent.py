@@ -230,6 +230,7 @@ async def main():
     all_teams = loader.get_all_teams()
     
     print(f"Loaded {len(sample_teams)} sample teams (bias) and {len(all_teams)} total teams.")
+    send_event(f"📦 {len(sample_teams)} sample teams / {len(all_teams)} total loaded")
 
     # Trainee draws from the full pool, but 50% of the time uses a sample team.
     # This exposes the agent to diverse team compositions while keeping a stable anchor.
@@ -305,6 +306,7 @@ async def main():
     EnvClass = DummyVecEnv if args.debug else SubprocVecEnv
 
     print(f"Initializing {n_envs} environments via {EnvClass.__name__}...")
+    send_event(f"⚙️  Initializing {n_envs} envs ({EnvClass.__name__})")
 
     _shutdown_event = threading.Event()
 
