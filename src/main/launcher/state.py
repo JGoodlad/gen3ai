@@ -14,7 +14,7 @@ class LauncherSnapshot:
     deadline: float            # time.monotonic(), float("inf") if no restart
     restart_count: int
     interval_hours: float
-    view_mode: str             # "dashboard" | "logs" | "confirm_quit"
+    view_mode: str             # "dashboard" | "logs" | "events" | "confirm_quit"
     metrics: dict              # {tag: float}
     metrics_step: int
     metrics_ts: Optional[float]    # monotonic time of last metrics update

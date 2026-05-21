@@ -3,6 +3,8 @@
 import os
 import time
 
+_TMUX_OFFSET = 1 if os.environ.get("TMUX") else 0
+
 import rich.box
 from rich.console import Group
 from rich.panel import Panel
@@ -76,6 +78,8 @@ class LauncherUI:
     def render(self, snap: LauncherSnapshot, console_height: int = 40):
         if snap.view_mode == "logs":
             return self._render_logs(snap, console_height)
+        if snap.view_mode == "events":
+            return self._render_events(snap, console_height)
         if snap.view_mode == "confirm_quit":
             return self._render_confirm_quit(snap)
         return self._render_dashboard(snap, console_height)
@@ -115,20 +119,15 @@ class LauncherUI:
         row2.add_row(f"  {git}  │  {model_badge}  │  {hl}")
 
         metrics_panel = self._render_metrics_table(snap.metrics, snap.metrics_ts, now)
-        # Fixed chrome: 2 border + 2 header rows + 3 blank separators + 1 "Metrics" label
-        # + ~19 metrics panel + 1 "Recent Output" label + 2 blank + 1 "Events" label
-        # + 5 events + 1 blank + 1 footer + 1 tmux status bar = ~39 lines
-        log_n = max(3, int(console_height) - 39)
-        log_text = self._render_log_lines(snap.log_lines, n=log_n)
 
         evt_text = Text()
-        for ev in snap.events[-5:]:
+        for ev in snap.events[-10:]:
             evt_text.append(ev + "\n", style="dim")
         if not snap.events:
             evt_text.append("[dim]No events yet.[/dim]")
 
         footer = Text(
-            "  [r] restart  [c] checkpoint  [q] quit  [l] logs",
+            "  [r] restart  [c] checkpoint  [q] quit  [l] logs  [e] events",
             style="dim",
         )
 
@@ -140,9 +139,6 @@ class LauncherUI:
                 Text("  Metrics", style="bold"),
                 metrics_panel,
                 Text(""),
-                Text("  Recent Output", style="bold"),
-                log_text,
-                Text(""),
                 Text("  Events", style="bold"),
                 evt_text,
                 Text(""),
@@ -151,6 +147,7 @@ class LauncherUI:
             title="[bold blue]🎮 Gen3AI Training[/bold blue]",
             border_style="blue",
             padding=(0, 1),
+            height=console_height - _TMUX_OFFSET,
         )
 
     def _git_badge(self, snap: LauncherSnapshot) -> str:
@@ -308,8 +305,8 @@ class LauncherUI:
         return text
 
     def _render_logs(self, snap: LauncherSnapshot, console_height: int = 40):
-        # 2 border lines + 1 empty spacer + 1 footer + 1 tmux status bar = 5 lines of chrome
-        n = max(1, console_height - 5)
+        # 2 border lines + 1 empty spacer + 1 footer = 4 lines of chrome
+        n = max(1, console_height - 4 - _TMUX_OFFSET)
         log_text = self._render_log_lines(snap.log_lines, n=n)
         footer = Text("  [d] dashboard", style="dim")
         return Panel(
@@ -317,6 +314,24 @@ class LauncherUI:
             title="[bold blue]🎮 Gen3AI Training[/bold blue] — [yellow]LOGS[/yellow]",
             border_style="yellow",
             padding=(0, 1),
+            height=console_height - _TMUX_OFFSET,
+        )
+
+    def _render_events(self, snap: LauncherSnapshot, console_height: int = 40):
+        # 2 border lines + 1 empty spacer + 1 footer = 4 lines of chrome
+        n = max(1, console_height - 4 - _TMUX_OFFSET)
+        evt_text = Text()
+        for ev in snap.events[-n:]:
+            evt_text.append(ev + "\n", style="dim")
+        if not snap.events:
+            evt_text.append("[dim]No events yet.[/dim]")
+        footer = Text("  [d] dashboard", style="dim")
+        return Panel(
+            Group(evt_text, Text(""), footer),
+            title="[bold blue]🎮 Gen3AI Training[/bold blue] — [yellow]EVENTS[/yellow]",
+            border_style="yellow",
+            padding=(0, 1),
+            height=console_height - _TMUX_OFFSET,
         )
 
     def _render_confirm_quit(self, snap: LauncherSnapshot):

@@ -96,6 +96,9 @@ def _dispatch_command(
     elif ch == "l":
         state.view_mode = "logs"
 
+    elif ch == "e":
+        state.view_mode = "events"
+
     elif ch == "d":
         state.view_mode = "dashboard"
 
