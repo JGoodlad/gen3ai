@@ -80,6 +80,19 @@ export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable
 export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 src/agents/training/poke_env_gaps/transition_fuzz_e2e_test.py [n_battles]
 ```
 
+### What "fuzz test" means in this project
+
+**Fuzz tests are E2E tests that run real battles against the live Showdown server and validate observations or behaviour against the actual protocol stream.** They are NOT deterministic scenario tests with fixed inputs.
+
+The canonical pattern (see `src/agents/training/poke_env_gaps/`):
+
+1. Subclass `Player` and override `_handle_battle_message` to intercept raw Showdown protocol lines mid-battle.
+2. Archive per-turn snapshots of the state you care about (e.g. which items were consumed, which moves were used).
+3. In `choose_move()`, validate that the encoded observation vector matches what the archived protocol events say should be there.
+4. Run N random battles; any validation failure raises immediately with a detailed error.
+
+This catches poke-env parsing bugs and encoder gaps that unit tests with mocks cannot — the test exercises the real server → poke-env → encoder pipeline end to end. When asked to write a fuzz test, always follow this pattern rather than writing parametrized unit tests with hand-crafted mock objects.
+
 ---
 
 ## Smoke Test
