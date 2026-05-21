@@ -113,16 +113,16 @@ rollout.
 3. Do not increase depth to chase the Wang 2024 reference value of 20 — that target was
    for Random Battles, a format with more diverse sets where longer lookahead matters more.
 
-**PRNG seed per rollout**: When `sim_bridge.js` restores a battle state via
-`Battle.fromJSON()`, it must reinitialise the PRNG with a fresh random seed rather than
-restoring the serialised seed. If the same seed is restored across rollouts, all rollouts
-that take the same first action see identical damage rolls and crit outcomes on turn 1 —
-this biases Q toward one RNG draw instead of the expected value. One line in the bridge:
+**PRNG seed per rollout**: When `sim_bridge.js` forks a session, it must reinitialise the
+PRNG with a fresh random seed rather than preserving the source session's seed. If the same
+seed propagates into every fork, all rollouts that take the same first action see identical
+damage rolls and crit outcomes on turn 1 — this biases Q toward one RNG draw instead of
+the expected value. One line in the fork handler:
 
 ```js
-const battle = Battle.fromJSON(state);
-battle.prng = new PRNG();  // fresh seed — do not restore serialised PRNG
-battle.restart(send);
+const fork = Battle.fromJSON(sessions.get(src).toJSON());
+fork.prng = new PRNG();  // fresh seed — do not copy source PRNG state
+sessions.set(newId, fork);
 ```
 
 ### Opponent Modeling
@@ -250,24 +250,86 @@ and `max_depth` accordingly.
 
 ### State Serialization
 
-Pokémon Showdown's `Battle` class has full round-trip serialization built in
-(`deps/pokemon-showdown/dist/sim/state.js`):
+#### Why not `battle.toJSON()`?
+
+Showdown's `battle.toJSON()` / `Battle.fromJSON()` provides a full round-trip but
+serializes the entire battle graph — team set objects, action queue, PRNG state, full
+battle log, and all Pokémon metadata. A typical Gen 3 game state is **15–30 KB**. Passing
+this on every `step` call (once per rollout turn, ~5000 calls per MCTS decision) is
+expensive in both CPU (JSON stringify/parse) and IPC bandwidth.
+
+#### Compact snapshot format
+
+The root state is transmitted exactly once per MCTS decision turn via a **compact snapshot**
+of ~500 bytes. The static parts (species, moves, IVs, EVs, level, nature, ability) live in
+the team spec objects sent once at session start. The snapshot carries only the variable
+state that changes during battle:
 
 ```js
-const json = battle.toJSON();           // Battle → plain object
-const battle2 = Battle.fromJSON(json);  // plain object → new Battle
-battle2.restart(send);                  // wire up output callback
+// Top-level snapshot
+{
+  turn: number,
+  requestState: string,          // 'move' | 'switch' | ''
+  weather: string,               // '' if none, e.g. 'raindance'
+  weather_turns: number,
+  p1: SideSnap,
+  p2: SideSnap,
+}
+
+// Per-side
+SideSnap = {
+  active_slot: number,           // index into team array (0–5)
+  spikes: number,                // 0–3
+  reflect_turns: number,
+  light_screen_turns: number,
+  team: MonSnap[],
+}
+
+// Per-Pokémon
+MonSnap = {
+  hp: number,                    // exact current HP
+  status: string,                // '' | 'brn' | 'slp' | 'par' | 'psn' | 'tox' | 'frz'
+  status_turns: number,          // sleep counter (0–4) or toxic counter (1–N)
+  item: string,                  // '' if consumed
+  last_item: string,             // identity of consumed item (Knock Off, Berry, etc.)
+  boosts: object,                // {atk, def, spa, spd, spe, accuracy, evasion}
+  pp: number[],                  // one entry per move slot
+  volatiles: object,             // shallow dict: key → numeric counter or {}
+  fainted: boolean,
+  transformed: boolean,
+}
 ```
 
-`toJSON()` serializes the entire battle graph: sides, each Pokémon's set and in-battle
-state, the action queue, PRNG seed, field conditions, and log. `fromJSON()` fully
-reconstructs it. This means **state injection is a solved problem** — no custom
-serialization needed.
+#### `fromSnapshot(p1Sets, p2Sets, snapshot)` in JS
 
-The PRNG seed is captured in the snapshot, so rollouts from the same state are
-deterministic across workers (each worker receives a copy with the same seed but runs
-independently — stochastic divergence comes from different team hypotheses sampled by
-the team completion model, not from PRNG variance).
+Reconstructs a `Battle` object ready for `makeChoices()`:
+
+```js
+const battle = new Battle({
+  formatid: 'gen3anythinggoes',
+  deserialized: true,            // skip startup sequence
+  p1: { name: 'p1', team: p1Sets },
+  p2: { name: 'p2', team: p2Sets },
+});
+
+battle.turn = snapshot.turn;
+battle.requestState = snapshot.requestState;
+battle.started = true;
+// patch weather, sideConditions, and per-Pokémon fields...
+battle.prng = new PRNG();        // always fresh — do not restore serialised seed
+```
+
+The `deserialized: true` mode creates Pokemon objects from the team specs without
+starting the battle loop. Manual field injection then sets HP, status, boosts, PP,
+volatiles, item, and active slot. A fresh PRNG seed is set so rollouts forked from the
+same root diverge stochastically rather than replaying identical RNG sequences.
+
+#### Hot path: forks stay in Node memory
+
+After the root is loaded, all rollout forks are in-memory
+`Battle.fromJSON(canonical.toJSON())` calls entirely within the Node process — Python
+never sees those blobs. The compact snapshot cost (500 bytes × 1 parse) is paid once per
+MCTS decision turn; the 5000 fork operations per turn are free of IPC overhead.
 
 ### Bridge Architecture: One Persistent Process per Worker
 
@@ -290,38 +352,50 @@ simulations.
 
 ### Protocol
 
-Each round-trip is one JSON line in, one JSON line out:
+Each round-trip is one JSON line in, one JSON line out. The bridge is **stateful** — it
+holds `Battle` objects in memory identified by session IDs, so choices are transmitted
+without re-sending state.
 
-**Step a game turn:**
+**Load root state (once per MCTS decision turn):**
 ```json
-→ {"cmd": "step", "state": <battle_json>, "p1": "move 1", "p2": "switch 3"}
-← {"state": <new_battle_json>, "done": false, "winner": null}
-← {"state": <final_battle_json>, "done": true,  "winner": "p1"}
+→ {"cmd": "load_root", "id": "s0", "p1Sets": [...], "p2Sets": [...], "snapshot": {...}}
+← {"ok": true}
 ```
 
-**Query available choices:**
+**Fork a session (once per rollout):**
 ```json
-→ {"cmd": "choices", "state": <battle_json>}
-← {"p1": ["move 1", "move 2", "switch 3"], "p2": ["move 1", "switch 2", "switch 4"]}
+→ {"cmd": "fork", "src": "s0", "id": "s1"}
+← {"ok": true}
+```
+Fork is an in-memory `Battle.fromJSON(battle.toJSON())` — no IPC state transfer.
+
+**Step a game turn (once per rollout turn):**
+```json
+→ {"cmd": "step", "id": "s1", "p1": "move 1", "p2": "switch 3"}
+← {"done": false}
+← {"done": true, "winner": "p1"}
 ```
 
-`<battle_json>` is the output of `battle.toJSON()` — a plain JSON object, not a
-string-escaped blob.
+**Free a session (end of rollout):**
+```json
+→ {"cmd": "free", "id": "s1"}
+← {"ok": true}
+```
 
-`state` in the step response is only returned when needed (leaf node reached or terminal)
-— the Python rollout code tracks observations itself, so most responses are just
-`{"done": false}`.
+State is never returned during normal stepping — the Python rollout code computes
+observations from its own in-memory view. The bridge only returns `done` + `winner`.
 
 ### Files to Create (Bridge)
 
 | File | Purpose |
 |------|---------|
-| `src/utils/bridge/sim_bridge.js` | Persistent Node.js process: loads Battle from JSON, steps game, returns new state + done flag |
-| `src/agents/mcts/sim_client.py` | Python wrapper: manages one `sim_bridge.js` subprocess, exposes `step(state_json, p1_choice, p2_choice) → (new_state, done, winner)` |
+| `src/utils/bridge/sim_snapshot.js` | `toCompactSnapshot(battle)`, `fromSnapshot(p1Sets, p2Sets, snap)`, `compareStates(canonical, reconstructed)` utilities |
+| `src/utils/bridge/sim_bridge.js` | Persistent Node.js process: stateful session manager — `load_root`, `fork`, `step`, `free` commands |
+| `src/agents/mcts/sim_client.py` | Python wrapper: manages one `sim_bridge.js` subprocess, exposes `load_root()`, `fork()`, `step()`, `free()` |
 
-`sim_bridge.js` follows the same pattern as `validate_team.js` and `get_hp.js` — reads
-newline-delimited JSON from stdin, writes newline-delimited JSON to stdout, imports from
-`deps/pokemon-showdown/dist/sim/`.
+`sim_bridge.js` reads newline-delimited JSON from stdin, writes newline-delimited JSON to
+stdout, imports from `deps/pokemon-showdown/dist/sim/`, and keeps a `Map<id, Battle>`
+in memory across commands.
 
 ---
 
@@ -354,8 +428,10 @@ existing `action_to_order()` and Showdown communication logic are unchanged.
 
 | File | Purpose |
 |------|---------|
-| `src/utils/bridge/sim_bridge.js` | Persistent Node.js bridge: load Battle from JSON, step one game turn, return new state + outcome |
-| `src/agents/mcts/sim_client.py` | Python wrapper around `sim_bridge.js`: manages subprocess lifetime, exposes `step()` / `choices()` |
+| `src/utils/bridge/sim_snapshot.js` | `toCompactSnapshot()`, `fromSnapshot()`, `compareStates()` — snapshot utilities shared by bridge and fuzz test |
+| `src/utils/bridge/sim_bridge.js` | Persistent Node.js bridge: stateful session manager (`load_root`, `fork`, `step`, `free`) |
+| `src/agents/mcts/sim_client.py` | Python wrapper around `sim_bridge.js`: manages subprocess lifetime, exposes `load_root()`, `fork()`, `step()`, `free()` |
+| `src/agents/mcts/sim_bridge_fuzz_e2e_test.py` | E2E fuzz test: drives snapshot correctness by comparing poke-env observations against the canonical Node sim (see Verification §0) |
 | `src/agents/mcts/tree.py` | `MCTSTree` — Q, N, M, P, F dicts; tree policy (α, β); backup; pruning |
 | `src/agents/mcts/rollout.py` | Single trajectory: hidden-info sampling, sim_client stepping, value backup |
 | `src/agents/mcts/worker.py` | Worker process: owns one `SimClient`, runs 10 rollouts, sends tree to aggregator |
@@ -373,6 +449,31 @@ existing `action_to_order()` and Showdown communication logic are unchanged.
 ---
 
 ## Verification
+
+0. **Snapshot round-trip fuzz test** — run this first, before any other MCTS work. It
+   drives the correctness of `fromSnapshot()` incrementally:
+
+   ```bash
+   npm run showdown   # live server required
+   export PYTHONPATH=$PYTHONPATH:src
+   /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 \
+     src/agents/mcts/sim_bridge_fuzz_e2e_test.py 50
+   ```
+
+   **Loop (per turn)**: the live Showdown server steps Turn N → N+1; poke-env observes the
+   new state; `_handle_battle_message` intercepts `|move|`/`|switch|`/`|-boost|`/`|-status|`/
+   etc. lines and accumulates exact state for both sides (`OpponentTracker` reconstructs
+   opponent HP, boosts, PP, and volatiles from the protocol stream using the known team spec
+   for `maxhp`). Python then sends `step(p1_move, p2_move)` to a persistent Node bridge
+   which advances its canonical programmatic `Battle` to Turn N+1. Python builds a compact
+   snapshot from poke-env + `OpponentTracker` and sends it to the bridge as `compare`. The
+   bridge does `fromSnapshot(snap)` and diffs it field-by-field against the canonical
+   `Battle`. Any mismatch prints `path: canonical=X  reconstructed=Y` and exits 1.
+
+   Both teams are hardcoded and fully known — the comparison is exhaustive, no fields
+   skipped. Iterate: first run reveals gaps in `fromSnapshot()`; fix them; re-run until
+   `PASS  50 battles  ~1800 turns`. Then bump to 500 to catch rarer states (Transform,
+   mid-battle weather expiry, Baton Pass boosts, simultaneous faint).
 
 1. **Single-worker smoke test**: disable parallelism (`n_workers=1`); run 10 rollouts on
    the first turn of a debug game. Confirm `Q` and `N` are populated, `F` is tracked, and
