@@ -117,8 +117,8 @@ class LauncherUI:
         metrics_panel = self._render_metrics_table(snap.metrics, snap.metrics_ts, now)
         # Fixed chrome: 2 border + 2 header rows + 3 blank separators + 1 "Metrics" label
         # + ~19 metrics panel + 1 "Recent Output" label + 2 blank + 1 "Events" label
-        # + 5 events + 1 blank + 1 footer = ~38 lines
-        log_n = max(3, int(console_height) - 38)
+        # + 5 events + 1 blank + 1 footer + 1 tmux status bar = ~39 lines
+        log_n = max(3, int(console_height) - 39)
         log_text = self._render_log_lines(snap.log_lines, n=log_n)
 
         evt_text = Text()
@@ -308,8 +308,8 @@ class LauncherUI:
         return text
 
     def _render_logs(self, snap: LauncherSnapshot, console_height: int = 40):
-        # 2 border lines + 1 empty spacer + 1 footer = 4 lines of chrome
-        n = max(1, console_height - 4)
+        # 2 border lines + 1 empty spacer + 1 footer + 1 tmux status bar = 5 lines of chrome
+        n = max(1, console_height - 5)
         log_text = self._render_log_lines(snap.log_lines, n=n)
         footer = Text("  [d] dashboard", style="dim")
         return Panel(
