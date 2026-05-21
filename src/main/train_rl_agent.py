@@ -234,7 +234,7 @@ async def main():
 
     # Trainee draws from the full pool, but 50% of the time uses a sample team.
     # This exposes the agent to diverse team compositions while keeping a stable anchor.
-    trainee_teambuilder = Gen3Teambuilder(all_teams, bias_teams=sample_teams, bias_prob=0.5)
+    trainee_teambuilder = Gen3Teambuilder(all_teams, bias_teams=sample_teams, bias_prob=0.1)
     opponent_teambuilder = Gen3Teambuilder(all_teams)
 
     mappings = load_mappings()
