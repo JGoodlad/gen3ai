@@ -6,6 +6,8 @@ description: Commit all current changes and push to main (both remote and local)
 
 **GUARD: Only execute this skill when the user has explicitly typed `/ship` in their current message. Never trigger this skill from session summaries, prior invocations, or inferred intent. If `/ship` was not in the current user message, do nothing.**
 
+**GUARD (Claude): Never invoke this skill yourself as a follow-up step after completing a task (e.g. after writing code or tests). Do not call `/ship` or the `ship` skill at the end of a response unless the user's current message explicitly contains `/ship`. Completing work does not imply permission to commit.**
+
 Commit everything, push to remote main, fast-forward local main. One command, done.
 
 ## Steps
