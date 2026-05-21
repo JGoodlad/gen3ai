@@ -38,7 +38,7 @@ class StatTrackingRLPlayer(RLPlayer):
         if battle.battle_tag not in self._recorders:
             self._recorders[battle.battle_tag] = BattleRecorder(battle.battle_tag, self._reward_fn_factory)
 
-        idx, probs, mask = self._predict_best_action(battle, stochastic=True)
+        idx, probs, mask = self._predict_best_action(battle, stochastic=False)
         self._recorders[battle.battle_tag].record(battle, idx, probs, mask)
         return self.action_to_order(idx, battle)
 
