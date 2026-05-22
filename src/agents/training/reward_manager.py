@@ -54,6 +54,7 @@ class RewardBreakdown:
 
     # Switch: offensive threat
     se_switch: float = 0.0         # our switch-in has a SE move vs opponent active
+    escape_threat_switch: float = 0.0  # switched out while opp had a revealed SE threat vs us
 
     # Switch: sleep rotation
     sleep_out: float = 0.0         # rotated a sleeping mon to bench
@@ -71,7 +72,8 @@ class RewardBreakdown:
         ("base",   ("hp_ours", "hp_opp", "faint_ours", "faint_opp", "win_loss", "explosion", "explosion_block")),
         ("attack", ("roar", "futile_attack", "futile_setup", "setup_low_hp",
                     "boost_utilized", "status_wasted", "repetition_tax", "struggle_tax")),
-        ("switch", ("switch_base", "switch_bouncing_tax", "pivot_protect", "pivot_status",
+        ("switch", ("switch_base", "switch_bouncing_tax", "escape_threat_switch",
+                    "pivot_protect", "pivot_status",
                     "pivot_damage", "se_switch", "sleep_out", "sleep_in")),
         ("field",  ("spikes", "matchup_penalty", "status", "stall_tax")),
     )
@@ -121,6 +123,8 @@ SPIKES_LAYER_BONUS = 0.5       # per layer added to opponent's side (credit assi
 SPIKES_WASTE_PENALTY = -0.2    # wasted turn using Spikes when 3 layers already up
 FAILED_ROAR_PENALTY = -0.2     # Roar used but opponent didn't switch
 FUTILE_ATTACK_PENALTY = -0.05  # attacking move used but opponent net gained HP (Leftovers > damage)
+FUTILE_IMMUNE_PENALTY = -0.25  # attacking into a type immunity (our_effectiveness == 0.0)
+ESCAPE_THREAT_BONUS = 0.25     # voluntarily switching out while opp has a revealed SE threat vs us
 MATCHUP_PENALTY = -0.15        # per turn we stay in while opp has a revealed SE move vs us
 PROTECT_SWITCH_BONUS = 0.10    # opponent used Protect/Detect/Endure on our switch turn
 STATUS_IMMUNE_SWITCH_BONUS = 0.10  # our switch-in was immune to their status move
@@ -134,7 +138,7 @@ EXPLOSION_BLOCK_BONUS = 1.0        # Ghost immune or Protect blocks opponent Exp
 
 # Repetition tax escalation: index = consecutive_repeats - 1 (capped at 3)
 REPETITION_TAX_SCALE = (-0.02, -0.05, -0.10, -0.20)
-REPETITION_TAX_ZERO_EFFECT_SCALE = (-0.05, -0.10, -0.20, -0.30)
+REPETITION_TAX_ZERO_EFFECT_SCALE = (-0.10, -0.20, -0.30, -0.40)
 
 BOOST_MOVES: frozenset[str] = frozenset({
     "calmmind", "dragondance", "swordsdance", "nastyplot",
@@ -297,6 +301,11 @@ class Gen3RewardManager:
                 subsidy = SWITCH_BASE_BONUS * spam_mult
                 self._pending_subsidy += subsidy
 
+                escape_bonus = 0.0
+                if self._prev_opp_se_threat:
+                    escape_bonus = ESCAPE_THREAT_BONUS
+                    self._pending_subsidy += escape_bonus
+
                 self.switch_count += 1
                 self.last_switch_turn = ctx.turn
                 self._last_switched_from = ctx.our_active  # what we're switching away from
@@ -306,6 +315,7 @@ class Gen3RewardManager:
                     "repetition_tax": 0.0,
                     "bouncing_tax": bouncing_tax,
                     "subsidy": subsidy,
+                    "escape_threat_switch": escape_bonus,
                 }
 
         self._last_action_idx = action
@@ -536,6 +546,9 @@ class Gen3RewardManager:
         move = battle.active_pokemon.moves.get(delta.our_move_id) if battle.active_pokemon else None
         if move is None or move.base_power == 0:
             return 0.0  # status or utility move — handled by other signals
+        # Type immunity: 0 damage by definition — use the harder penalty.
+        if delta.our_effectiveness == 0.0:
+            return FUTILE_IMMUNE_PENALTY
         # Net HP sum across all opp slots: bench mons don't change between turns in Gen 3,
         # so the sum is dominated by the active slot. >= 0 means we made no net progress.
         if delta.opp_hp_delta.sum() >= 0:
@@ -668,6 +681,7 @@ class Gen3RewardManager:
         if meta.get("type") == "VOLUNTARY":
             bd.switch_base = meta.get("subsidy", 0.0)
             bd.switch_bouncing_tax = meta.get("bouncing_tax", 0.0)
+            bd.escape_threat_switch = meta.get("escape_threat_switch", 0.0)
         elif meta.get("type") == "ATTACK":
             bd.repetition_tax = meta.get("repetition_tax", 0.0)
             bd.struggle_tax = meta.get("struggle_loop_tax", 0.0)

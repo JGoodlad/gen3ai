@@ -6,7 +6,8 @@ from agents.training.reward_manager import (
     Gen3RewardManager,
     SWITCH_BASE_BONUS, SE_SWITCH_BONUS, MATCHUP_PENALTY,
     SPIKES_LAYER_BONUS, SPIKES_WASTE_PENALTY, FAILED_ROAR_PENALTY,
-    FUTILE_ATTACK_PENALTY, HP_VALUE, FAINT_BASE, FAINT_HP_SCALE, VICTORY_VALUE,
+    FUTILE_ATTACK_PENALTY, FUTILE_IMMUNE_PENALTY, ESCAPE_THREAT_BONUS,
+    HP_VALUE, FAINT_BASE, FAINT_HP_SCALE, VICTORY_VALUE,
     FUTILE_SETUP_PENALTY, SETUP_LOW_HP_MAX_PENALTY, STATUS_WASTED_PENALTY,
     EXPLOSION_BLOCK_BONUS,
 )
@@ -750,6 +751,112 @@ class TestFutileAttack(unittest.TestCase):
         self.assertAlmostEqual(self.manager._last_breakdown.futile_attack, 0.0, places=5)
 
 
+class TestFutileImmuneAttack(unittest.TestCase):
+    """FUTILE_IMMUNE_PENALTY fires for type-immunity; FUTILE_ATTACK_PENALTY fires for Leftovers case."""
+
+    def _immune_delta(self, our_move_id="thunderbolt"):
+        our = np.zeros(6, dtype=np.float32)
+        opp = np.zeros(6, dtype=np.float32)  # 0 damage — immune
+        return TurnDelta(
+            our_move_id=our_move_id, our_switch_to=None, our_prev_active="gengar",
+            opp_move_id="earthquake", opp_switch_to=None, opp_prev_active="swampert",
+            opp_move_known=True,
+            our_hp_delta=our, opp_hp_delta=opp,
+            we_fainted=False, opp_fainted=False,
+            our_failed_to_move=False, our_cant_reason=None,
+            opp_failed_to_move=False, opp_cant_reason=None,
+            our_boost_delta=np.zeros(7, dtype=np.int8),
+            opp_boost_delta=np.zeros(7, dtype=np.int8),
+            our_effectiveness=0.0,  # immune
+            opp_effectiveness=None,
+            we_moved_first=None,
+        )
+
+    def setUp(self):
+        self.manager = Gen3RewardManager(log_level=LogLevel.QUIET)
+        move_mock = MagicMock()
+        move_mock.base_power = 95
+        our_mon = MagicMock()
+        our_mon.moves = {"thunderbolt": move_mock}
+        self.battle = _battle(our_mon=our_mon)
+
+    def test_immune_attack_uses_harder_penalty(self):
+        self.manager.record_action(_ctx(), 6)
+        self.manager.process_turn_reward(self.battle, self._immune_delta())
+        bd = self.manager._last_breakdown
+        self.assertAlmostEqual(bd.futile_attack, FUTILE_IMMUNE_PENALTY, places=5)
+        self.assertLess(bd.futile_attack, FUTILE_ATTACK_PENALTY)
+
+    def test_leftovers_case_uses_normal_penalty(self):
+        # Slight net positive (Leftovers healed more than damage) — not immune
+        self.manager.record_action(_ctx(), 6)
+        move_mock = MagicMock()
+        move_mock.base_power = 95
+        our_mon = MagicMock()
+        our_mon.moves = {"thunderbolt": move_mock}
+        opp = np.zeros(6, dtype=np.float32)
+        opp[0] = 0.01  # net gained (Leftovers > damage)
+        delta = TurnDelta(
+            our_move_id="thunderbolt", our_switch_to=None, our_prev_active="gengar",
+            opp_move_id="surf", opp_switch_to=None, opp_prev_active="raichu",
+            opp_move_known=True,
+            our_hp_delta=np.zeros(6, dtype=np.float32), opp_hp_delta=opp,
+            we_fainted=False, opp_fainted=False,
+            our_failed_to_move=False, our_cant_reason=None,
+            opp_failed_to_move=False, opp_cant_reason=None,
+            our_boost_delta=np.zeros(7, dtype=np.int8),
+            opp_boost_delta=np.zeros(7, dtype=np.int8),
+            our_effectiveness=1.0,  # neutral — not immune
+            opp_effectiveness=None,
+            we_moved_first=None,
+        )
+        self.manager.process_turn_reward(_battle(our_mon=our_mon), delta)
+        bd = self.manager._last_breakdown
+        self.assertAlmostEqual(bd.futile_attack, FUTILE_ATTACK_PENALTY, places=5)
+
+
+class TestEscapeThreatSwitch(unittest.TestCase):
+    """escape_threat_switch bonus fires when switching out of a known SE threat."""
+
+    def setUp(self):
+        self.manager = Gen3RewardManager(log_level=LogLevel.QUIET)
+
+    def _set_se_threat(self, threatened: bool):
+        self.manager._prev_opp_se_threat = threatened
+
+    def test_escape_bonus_fires_when_se_threat_active(self):
+        self._set_se_threat(True)
+        self.manager.record_action(_ctx(), 0)  # voluntary switch to slot 0
+        self.manager.process_turn_reward(_battle(), _delta(our_switch_to="skarmory"))
+        bd = self.manager._last_breakdown
+        self.assertAlmostEqual(bd.escape_threat_switch, ESCAPE_THREAT_BONUS, places=5)
+
+    def test_escape_bonus_absent_when_no_threat(self):
+        self._set_se_threat(False)
+        self.manager.record_action(_ctx(), 0)
+        self.manager.process_turn_reward(_battle(), _delta(our_switch_to="skarmory"))
+        bd = self.manager._last_breakdown
+        self.assertAlmostEqual(bd.escape_threat_switch, 0.0, places=5)
+
+    def test_escape_bonus_absent_on_attack(self):
+        self._set_se_threat(True)
+        self.manager.record_action(_ctx(), 6)  # attack, not switch
+        self.manager.process_turn_reward(_battle(), _delta(our_move_id="rockslide"))
+        bd = self.manager._last_breakdown
+        self.assertAlmostEqual(bd.escape_threat_switch, 0.0, places=5)
+
+    def test_escape_bonus_cumulative_with_switch_base(self):
+        self._set_se_threat(True)
+        self.manager.record_action(_ctx(), 0)
+        self.manager.process_turn_reward(_battle(), _delta(our_switch_to="skarmory"))
+        bd = self.manager._last_breakdown
+        self.assertAlmostEqual(
+            bd.switch_base + bd.escape_threat_switch,
+            SWITCH_BASE_BONUS + ESCAPE_THREAT_BONUS,
+            places=5,
+        )
+
+
 class TestOriginalScenario(unittest.TestCase):
     """Reproduce the Zapdos→Tyranitar vs Zapdos matchup from the bug report."""
 
@@ -989,9 +1096,9 @@ class TestRepetitionTaxEscalation(unittest.TestCase):
         # Second use: same action, opp took no damage — zero-effect repeat
         self.manager.record_action(_ctx(), 6)
         r2 = self.manager.process_turn_reward(_battle(), _delta(opp_hp_delta=0.0))
-        # Effective-repeat first tier: -0.02; zero-effect: -0.05
+        # Effective-repeat first tier: -0.02; zero-effect first tier: -0.10
         bd = self.manager._last_breakdown
-        self.assertAlmostEqual(bd.repetition_tax, -0.05, places=5)
+        self.assertAlmostEqual(bd.repetition_tax, -0.10, places=5)
 
     def test_changing_action_resets_counter(self):
         self._repeat_attack(3)
