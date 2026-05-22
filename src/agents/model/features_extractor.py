@@ -93,14 +93,37 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         )
 
         # 1.6 Pokémon Role Encoder
-        # pokemon_enriched (245) + global_context broadcast (16) + switch_valid (1) + struggle_from_prev (1) = 263
-        # pokemon_enriched: species(32) + stats(6) + item_emb(16) + item_known(1) + item_consumed(1) +
-        #   pk_types(32) + ability_emb(16) + ability_known(1) + condition(7) + moves(128) + hp+species_known+sleep_ctr+toxic_ctr+active(5)
-        # global_context: turn(1) + weather(6) + fainted(2) + spikes(2) + struggle(1) + screens(4) = 16
-        # switch_valid: was this slot a valid switch target in the previous turn's mask (1)
-        # struggle_from_prev: was struggle the only option last turn (1)
+        # Input = pokemon_enriched + broadcasted global_context + switch_valid + struggle_from_prev.
+        # Computed dynamically so a change to any embedding dim or component automatically propagates.
+        _pk_layout = layout['pokemon']
+        _num_moves = len(_pk_layout['moves']['layout']['slots'])
+        _abilities_info = _pk_layout['abilities']
+        _condition_dim = _pk_layout['moves']['offset'] - (_abilities_info['offset'] + _abilities_info['dim'])
+        _hp_and_active_dim = POKEMON_FULL_DIM - _pk_layout['hp']['offset']
+        _global_ctx_dim = (
+            1                                           # turn
+            + _gl.get('weather', {}).get('dim', 6)
+            + _rl.get('fainted', {}).get('dim', 2)
+            + _gl.get('hazards', {}).get('dim', 2)
+            + 1                                         # struggle
+            + _gl.get('screens', {}).get('dim', 4)
+        )
+        role_input_dim = (
+            layout['species_embedding_dim']             # embedded species
+            + 6                                         # base stats
+            + layout['item_embedding_dim']              # embedded item
+            + 2                                         # item known + consumed
+            + 2 * layout['type_embedding_dim']          # embedded type pair
+            + layout['ability_embedding_dim']           # embedded ability
+            + 1                                         # ability known
+            + _condition_dim                            # condition one-hot
+            + MOVE_NET_HIDDEN[1] * _num_moves           # processed moves (4×32)
+            + _hp_and_active_dim                        # hp + species_known + sleep + toxic + active
+            + _global_ctx_dim                           # broadcasted global context
+            + 1                                         # switch_validity
+            + 1                                         # struggle_from_prev
+        )
         self.role_token_size = ROLE_TOKEN_SIZE
-        role_input_dim = 263
         self.role_encoder = torch.nn.Sequential(
             torch.nn.Linear(role_input_dim, ROLE_ENCODER_HIDDEN[0]),
             torch.nn.ReLU(),
@@ -219,6 +242,20 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         self._trace_buffer: list = []
         self._trace_collect_remaining: int = 0
         
+    @staticmethod
+    def _embed_delta_slot(slot, move_embedding, type_embedding):
+        """Embed one [B, TURN_DELTA_DIM] raw TurnDelta vector → [B, _td_embed_dim]."""
+        m_our = slot[:, 0].long().clamp(0, move_embedding.num_embeddings - 1)
+        t_our = slot[:, 4].long().clamp(0, type_embedding.num_embeddings - 1)
+        m_opp = slot[:, 5].long().clamp(0, move_embedding.num_embeddings - 1)
+        t_opp = slot[:, 9].long().clamp(0, type_embedding.num_embeddings - 1)
+        scalars = torch.cat([slot[:, 1:4], slot[:, 6:9], slot[:, 10:]], dim=1)  # [B, 35]
+        return torch.cat([
+            move_embedding(m_our), type_embedding(t_our),
+            move_embedding(m_opp), type_embedding(t_opp),
+            scalars,
+        ], dim=1)
+
     def _print_one_turn(self, obs_np: np.ndarray, label: str):
         """Print one turn's decoded state from a full 1093-dim obs array."""
         desc = self._encoder.describe_vector(obs_np)
@@ -481,8 +518,17 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         move_context = torch.cat([hp_feature, turn_expanded, weather_expanded, fainted_expanded, spikes_expanded], dim=2)
         move_context_final = move_context.unsqueeze(2).expand(-1, -1, num_moves, -1)      # [B, n_poke, num_moves, ctx_dim]
 
-        # Move validity from prev_mask: our moves get their validity bit, opp gets all-ones
-        move_validity_ours = move_mask.unsqueeze(1).unsqueeze(3).expand(-1, TEAM_SIZE, -1, -1).float()  # [B, 6, num_moves, 1]
+        # Move validity from prev_mask: only the active slot gets the real move mask;
+        # bench slots get all-ones (they have no move-validity context from prev turn).
+        _our_active_flags_early = hp_and_active[:, 0:TEAM_SIZE, 4]  # [B, 6]
+        _our_active_idx_early = torch.where(
+            _our_active_flags_early.any(dim=1),
+            torch.argmax(_our_active_flags_early, dim=1),
+            torch.zeros(batch_size, dtype=torch.long, device=x.device),
+        )  # [B]
+        move_validity_ours = torch.ones(batch_size, TEAM_SIZE, num_moves, 1, device=x.device)
+        move_validity_ours[torch.arange(batch_size, device=x.device), _our_active_idx_early] = \
+            move_mask.unsqueeze(-1).float()                                                              # [B, num_moves, 1]
         move_validity_opp  = torch.ones(batch_size, TEAM_SIZE, num_moves, 1, device=x.device)
         move_validity = torch.cat([move_validity_ours, move_validity_opp], dim=1)                       # [B, n_poke, num_moves, 1]
 
@@ -546,8 +592,8 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         # Extract active context raw vectors here so they are available for pre-attention
         # injection below and for the direct encoder call later in the function.
         active_ctx_dim = self.layout.get('active_context_dim', 22)
-        our_ctx_raw = remaining_part[:, 0 : active_ctx_dim]                   # [B, 23]
-        opp_ctx_raw = remaining_part[:, active_ctx_dim : 2 * active_ctx_dim]  # [B, 23]
+        our_ctx_raw = remaining_part[:, 0 : active_ctx_dim]                   # [B, active_ctx_dim]
+        opp_ctx_raw = remaining_part[:, active_ctx_dim : 2 * active_ctx_dim]  # [B, active_ctx_dim]
 
         # --- TEAM-WIDE ATTENTION ---
         # 1. Find who is active on both teams
@@ -592,8 +638,7 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         role_tokens[batch_idx, opp_active_idx] += opp_td_bias
 
         # 2. Apply Status Biases (Pre-Attention)
-        status_idx = torch.ones((batch_size, n_poke), device=role_tokens.device).long()
-        status_idx[:, 0:TEAM_SIZE] = 1
+        status_idx = torch.ones((batch_size, n_poke), device=role_tokens.device).long()  # our bench = 1
         status_idx[:, TEAM_SIZE:2*TEAM_SIZE] = 3
         status_idx[torch.arange(batch_size), our_active_idx] = 0
         status_idx[torch.arange(batch_size), opp_active_idx] = 2
@@ -621,7 +666,9 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         live_ours = (~fainted_mask_ours).float().unsqueeze(-1)                 # [B, 6, 1]
         live_opp  = (~fainted_mask_opp_local).float().unsqueeze(-1)            # [B, 6, 1]
 
-        # Path 1: Pressure — our_active learns what threatens it from their bench
+        # Path 1: Pressure — our_active learns what threatens it from their bench.
+        # Intentionally no key_padding_mask for fainted opp mons: knowing which
+        # opponent mons have already fainted is useful context for threat assessment.
         pressure_delta, _ = self.pressure_attn(our_active_pre, their_team, their_team)
         our_active_post_pressure = self.norm1(our_active_pre + pressure_delta)  # [B, 1, 128]
 
@@ -680,21 +727,9 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         # and use the last (most-recent) position's output for the projection.
         history_slots = turn_history_raw.view(batch_size, N_HISTORY_TURNS, TURN_DELTA_DIM)  # [B, N, 39]
 
-        def _embed_delta_slot(slot):
-            """Embed one (B, 39) TurnDelta raw vector → (B, _td_embed_dim)."""
-            m_our = slot[:, 0].long().clamp(0, self.move_embedding.num_embeddings - 1)
-            t_our = slot[:, 4].long().clamp(0, self.type_embedding.num_embeddings - 1)
-            m_opp = slot[:, 5].long().clamp(0, self.move_embedding.num_embeddings - 1)
-            t_opp = slot[:, 9].long().clamp(0, self.type_embedding.num_embeddings - 1)
-            scalars = torch.cat([slot[:, 1:4], slot[:, 6:9], slot[:, 10:]], dim=1)  # [B, 35]
-            return torch.cat([
-                self.move_embedding(m_our), self.type_embedding(t_our),
-                self.move_embedding(m_opp), self.type_embedding(t_opp),
-                scalars,
-            ], dim=1)  # [B, _td_embed_dim]
-
         embedded_slots = torch.stack(
-            [_embed_delta_slot(history_slots[:, t, :]) for t in range(N_HISTORY_TURNS)],
+            [self._embed_delta_slot(history_slots[:, t, :], self.move_embedding, self.type_embedding)
+             for t in range(N_HISTORY_TURNS)],
             dim=1,
         )  # [B, N, _td_embed_dim]
 

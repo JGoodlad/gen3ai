@@ -78,7 +78,7 @@ def get_observation_encoder(mappings):
 class Gen3ObservationEncoder(ObservationEncoder):
     """
     Top-level encoder that orchestrates the entire Gen 3 observation vector.
-    Total dimensions: 1613
+    Total dimensions: base_dimension + 11 (prev_mask) + N_HISTORY_TURNS * TURN_DELTA_DIM
     """
     
     def __init__(self, mappings: Dict[str, Any] = None):

@@ -16,6 +16,8 @@ ACTIVE_CTX_HIDDEN = [64, 32]
 
 Embedding dims (`species_embedding_dim`, `move_embedding_dim`, etc.) live in `state_encoder.get_layout()` and flow through `features_extractor_kwargs` — same principle, different file.
 
+**`role_input_dim` is not a module-level constant** — it is computed dynamically in `__init__` from the layout fields and `MOVE_NET_HIDDEN`. You do not need to update it manually when dims change; `__init__` derives it correctly. The projection input dim is also auto-discovered via a dummy forward pass for the same reason.
+
 ## Model versioning (`model_version.py`, `snapshot.py`)
 
 Every model save writes `model_config.json` + `metadata.json` alongside the `.zip` via `save_model_snapshot()`. Loading goes through `load_model_snapshot()` which runs `check_compatible()` before `MaskablePPO.load()` — a mismatch fails fast with a clear error rather than silently loading bad weights.
@@ -43,8 +45,9 @@ A startup smoke test (`_run_roundtrip_test` in `train_rl_agent.py`) saves to a t
 
 - Adding, removing, or resizing any layer (Linear dims, attention heads, embedding dims)
 - Changing what gets concatenated into move processor input, role encoder input, or the final aggregation
-- Changing the observation dimension (`base_dimension` or `dimension` in `state_encoder.py`)
-- Adding or removing an attention path (Pressure / Safety / Synergy)
-- Changing how `prev_mask` or future turn-history features are routed
+- Changing the observation dimension (`base_dimension` or `dimension` in `state_encoder.py`) or `N_HISTORY_TURNS`
+- Adding or removing an attention path (Pressure / Safety / Synergy / Threat / Opp Synergy)
+- Changing the turn-history attention block (slot count, embed dim, heads) or the TurnDelta conditioner
+- Changing how `prev_mask`, move validity, or active-context injection are routed
 
 The digraph is the fastest way for a new contributor (or Claude) to understand data flow. A stale digraph is worse than none.

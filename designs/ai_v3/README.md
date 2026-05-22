@@ -1,34 +1,39 @@
 # Gen3AI Network Architecture
 
-Feature extractor used by MaskablePPO. Takes a 1105-dim observation and produces 512-dim features for the policy and value heads.
+Feature extractor used by MaskablePPO. Takes a 1309-dim observation and produces 512-dim features for the policy and value heads.
 
 ## Data Flow Digraph
 
 ```mermaid
 flowchart TD
-    OBS["Observation · 1105-dim float32"]
+    OBS["Observation · 1309-dim float32"]
 
-    OBS --> BASE["Base obs · 1065-dim"]
+    OBS --> BASE["Base obs · 1103-dim"]
     OBS --> PM["prev_mask · 11-dim\n(previous turn's action mask)"]
-    OBS --> TD["TurnDelta block · 29-dim\n(last turn's transition signal)"]
+    OBS --> HIST["Turn history · 195-dim\n(5 × 39-dim TurnDelta, oldest first)"]
 
     PM --> SW["switch_mask [0:6]\nbench slot validity"]
     PM --> MV["move_mask [6:10]\nmove slot validity"]
     PM --> STR["struggle_mask [10]"]
 
-    BASE --> TEAM["Pokémon vectors\n[B, 12, 59]  our + opp team"]
+    BASE --> TEAM["Pokémon vectors\n[B, 12, 62]  our + opp team"]
     BASE --> REM["remaining_part\nactive_ctx · global · reactive"]
 
     TEAM --> EMB["Embedding Lookups\nspecies · 32\nmove · 16\nitem · 16\nability · 16\ntype · 16  shared"]
     REM --> ACT_RAW["active_context · 23-dim × 2\nboosts · stat stages · volatiles"]
     REM --> GLOBAL["global env · 13-dim\nturn · weather·6 · fainted·2\nspikes·2 · reflect·2 · screen·2"]
-    REM --> REACT["reactive scalars · 12-dim\npow·4 mult·4 fainted·2\nstatus·1 struggle·1\n(hp/spikes removed — in per-mon and global)"]
+    REM --> REACT["reactive scalars · 12-dim\nstatus·1 struggle·1 fainted·2\nour_matchup_scalars·8\n(matchup matrix used only by move processor)"]
     REM --> MATCH["matchup matrix · 288-dim\n[B, 12, 4, 6] type effectiveness\n(used by move processor only)"]
 
-    TD --> TDEMB["TurnDelta embedding\nour/opp move id → move_emb·16 each\nour/opp type id → type_emb·16 each\n+ 25 scalar remnants\n= 89-dim block"]
+    HIST --> TDHIST["5 TurnDelta slots\n[B, 5, 39]"]
+    TDHIST --> TDEMB["Per-slot embedding (shared weights)\nour/opp move id → move_emb·16 each\nour/opp type id → type_emb·16 each\n+ 35 scalar remnants\n= 99-dim per slot → [B, 5, 99]"]
+    TDEMB --> TDPOS["+ learned positional encodings\n[B, 5, 99]"]
+    TDPOS --> TDATTN["Turn History Self-Attention\nMHA 99-dim, 3 heads\n+ LayerNorm residual\n[B, 5, 99]"]
+    TDATTN --> TDOUT["take last position\n→ 99-dim history-informed token\n[B, 99]"]
+
     EMB --> MPIN
 
-    MV --> MPIN["Move Processor input · [B, 12, 4, 58]\nmove_emb·16 + type_emb·16\nremnants·6 + known·1\ncontext·12 + matchups·6 + validity·1"]
+    MV --> MPIN["Move Processor input · [B, 12, 4, 58]\nmove_emb·16 + type_emb·16\nremnants·6 + known·1\ncontext·12 + matchups·6 + validity·1\n(validity=active mon's mask; bench gets 1s)"]
     MATCH --> MPIN
     GLOBAL --> MPIN
 
@@ -36,25 +41,30 @@ flowchart TD
     MP --> MSA["Move Self-Attention\nMHA 32-dim, 2 heads\nper-mon 4-slot self-attn + residual+LN\n(lets moves see each other)"]
     MSA --> PMOV["Processed moves · [B, 12, 128]\n4 slots × 32-dim"]
 
-    EMB --> PE["pokemon_enriched · [B, 12, 242]\nspecies·32 + stats·6 + item_emb·16\nitem_known·1 + pk_types·32\nability_emb·16 + ability_known·1\ncondition·7 + moves·128\nhp+species_known+active·3"]
+    EMB --> PE["pokemon_enriched · [B, 12, 245]\nspecies·32 + stats·6 + item_emb·16\nitem_known·1 + item_consumed·1 + pk_types·32\nability_emb·16 + ability_known·1\ncondition·7 + moves·128\nhp+species_known+sleep_ctr+toxic_ctr+active·5"]
     PMOV --> PE
 
     GLOBAL --> RIN
     SW --> RIN
     STR --> RIN
-    PE --> RIN["Role Encoder input · [B, 12, 260]\nenriched·242 + ctx·16\nswitch_valid·1 + struggle_prev·1\n(ctx=16: turn·1+weather·6+fainted·2+spikes·2+screens·4+struggle·1)"]
+    PE --> RIN["Role Encoder input · [B, 12, 263]\nenriched·245 + ctx·16\nswitch_valid·1 + struggle_prev·1\n(ctx·16: turn·1+weather·6+fainted·2\n+spikes·2+screens·4+struggle·1)"]
 
-    RIN --> RE["Shared Role Encoder\nLinear 260→256 → ReLU\nLinear 256→128\n(all 12 mons)"]
+    RIN --> RE["Shared Role Encoder\nLinear 263→256 → ReLU\nLinear 256→128\n(all 12 mons)"]
     RE --> RT0["Role tokens · [B, 12, 128]"]
 
     ACT_RAW --> ACTINJ["Active Ctx → Role · shared\nLinear 23→64 → ReLU → Linear 64→128\n→ + injected into active slot only\n(bench mons have no boosts/volatiles)"]
     RT0 --> ACTINJ
-    ACTINJ --> RT["Role tokens · [B, 12, 128]\n+ active-ctx bias at active slots\n+ status embedding bias\n(our active / our bench / their active / their bench)"]
+
+    HIST --> TDCOND["TurnDelta Conditioner\nstrategic slice [our_eff·4, opp_eff·4, order·2]\nLinear 10→64 → ReLU → Linear 64→128\nperspective-flipped for opp active\n→ + injected into active slots only"]
+    RT0 --> TDCOND
+
+    ACTINJ --> RT["Role tokens · [B, 12, 128]\n+ active-ctx bias at active slots\n+ TurnDelta strategic bias at active slots\n+ status embedding bias\n(our active=0 / our bench=1 / their active=2 / their bench=3)"]
+    TDCOND --> RT
 
     RT --> OT["our_team · [B, 6, 128]"]
     RT --> TT["their_team · [B, 6, 128]"]
 
-    OT --> PA["① Pressure\nour_active ← their_team\nMHA + LayerNorm residual"]
+    OT --> PA["① Pressure\nour_active ← their_team\nMHA + LayerNorm residual\n(no fainted key-mask: fainted opp history is useful context)"]
     TT --> PA
     PA --> OAP["our_active_post_pressure\n[B, 1, 128]\nwritten back into our_team"]
 
@@ -80,15 +90,15 @@ flowchart TD
     OT4 --> OAR["our_active_refined · [B, 128]\nextracted from our_team final\nat our_active_idx"]
     OAR --> AGG
 
-    POOL --> AGG["Aggregation\ncat(\n  our_pool·128\n  their_pool·128\n  our_active_refined·128\n  our_ctx_enc·32\n  opp_ctx_enc·32\n  global+scalars·29\n  turn_delta_emb·89\n)"]
+    POOL --> AGG["Aggregation · 576-dim\ncat(\n  our_pool·128\n  their_pool·128\n  our_active_refined·128\n  our_ctx_enc·32\n  opp_ctx_enc·32\n  global+scalars·29\n  turn_delta_emb·99\n)"]
     ACT_RAW --> ACTENC["Active Context Encoder · shared\nLinear 23→64 → ReLU → Linear 64→32\nour side + opp side (direct path)"]
     ACTENC --> AGG
     GLOBAL --> AGG
     REACT --> AGG
-    TDEMB --> AGG
+    TDOUT --> AGG
 
     AGG --> LN["Pre-projection LayerNorm\n(equalises per-block scales)"]
-    LN --> PROJ["Projection\nLinear 562→512 → ReLU\n(562 auto-discovered via dummy forward)"]
+    LN --> PROJ["Projection\nLinear 576→512 → ReLU\n(576 auto-discovered via dummy forward in __init__)"]
     PROJ --> OUT["Features · [B, 512]\n→ policy head + value head"]
 ```
 
@@ -98,35 +108,37 @@ flowchart TD
 |---|---|---|---|
 | Move Processor | 58 | 32 | shared; run 12×4 times per forward pass |
 | Move Self-Attention | 32 (Q/K/V) | 32 | per-mon 4-slot self-attn; run 12 times |
-| Role Encoder | 260 | 128 | shared; run 12 times per forward pass |
+| Role Encoder | 263 | 128 | shared; run 12 times per forward pass; dim computed dynamically in `__init__` |
 | Active Ctx → Role (injection) | 23 | 128 | shared MLP; bias added to active slot's role token only, before all 5 attention paths |
+| TurnDelta Conditioner (injection) | 10 | 128 | shared MLP; strategic slice (eff×2 + order); bias added to active slots only, perspective-flipped for opp |
 | Active Ctx Encoder (direct) | 23 | 32 | shared; run twice (our side + opp side); appended to final projection input |
-| Pressure Attn | 128 (Q), 128 (KV) | 128 | our_active queries their_team |
+| Turn History Self-Attention | 99 (Q/K/V) | 99 | 5-slot self-attn with positional encodings; last slot used for projection |
+| Pressure Attn | 128 (Q), 128 (KV) | 128 | our_active queries their_team (no fainted mask — fainted history is useful) |
 | Safety Attn | 128 (Q), 128 (KV) | 128 | our_team queries their_active; fainted queries zeroed |
 | Synergy Attn | 128 (Q/K/V) | 128 | our_team self-attention; fainted keys+queries masked |
 | Threat Attn | 128 (Q), 128 (KV) | 128 | their_team queries our_active_post_pressure; fainted queries zeroed |
 | Opp Synergy Attn | 128 (Q/K/V) | 128 | their_team self-attention; fainted keys+queries masked |
 | Our Pool Attn | 128 (Q), 128 (KV) | 128 | learned query over our_team (fainted key-masked) |
 | Their Pool Attn | 128 (Q), 128 (KV) | 128 | learned query over their_team (fainted key-masked) |
-| Pre-proj LayerNorm | 562 | 562 | equalises scales before projection |
-| Projection | 562 | 512 | N auto-discovered via dummy forward in `__init__` |
+| Pre-proj LayerNorm | 576 | 576 | equalises scales before projection |
+| Projection | 576 | 512 | N auto-discovered via dummy forward in `__init__` |
 
 ## Observation Layout
 
 | Block | Dims | Offset |
 |---|---|---|
-| Our team (6 × 59) | 354 | 0 |
-| Opp team (6 × 59) | 354 | 354 |
-| Active context ×2 (boosts, volatiles) | 44 | 708 |
-| Global env | 13 | 752 |
-| Reactive scalars + matchup matrix | 300 | 765 |
-| **prev_mask** | **11** | **1065** |
-| **TurnDelta block** | **29** | **1076** |
-| **Total** | **1105** | |
+| Our team (6 × 62) | 372 | 0 |
+| Opp team (6 × 62) | 372 | 372 |
+| Active context ×2 (boosts, volatiles) | 46 | 744 |
+| Global env | 13 | 790 |
+| Reactive scalars + matchup matrix | 300 | 803 |
+| **prev_mask** | **11** | **1103** |
+| **Turn history (5 × 39)** | **195** | **1114** |
+| **Total** | **1309** | |
 
-The matchup matrix (288 of the 300 reactive dims) is consumed by the move processor only — it is **not** fed to the projection directly. The TurnDelta block is appended by `gen3_env.embed_battle()` and routed through the extractor's embedding tables (move/type IDs embedded; 25 scalars kept raw) producing a 89-dim embedded block at the projection.
+The matchup matrix (288 of the 300 reactive dims) is consumed by the move processor only — it is **not** fed to the projection directly. The turn history block is appended by `gen3_env.embed_battle()`. All 5 slots are embedded identically and processed through self-attention; the last (most-recent) slot's output is used in the projection aggregation.
 
-## TurnDelta Block Layout (29 dims, offset 1076)
+## TurnDelta Block Layout (39 dims per slot)
 
 | Field | Dims | Notes |
 |---|---|---|
@@ -151,12 +163,15 @@ The matchup matrix (288 of the 300 reactive dims) is consumed by the move proces
 | we_fainted | 1 | bool |
 | opp_fainted | 1 | bool |
 | opp_move_known | 1 | False on Explosion gap or first active turn |
+| our_effectiveness | 4 | one-hot: immune / resisted / normal / super-effective |
+| opp_effectiveness | 4 | same |
+| move_order | 2 | [we_first, opp_first]; all-zero = na / both switched |
 
-After embedding in the extractor: 4 × 16-dim embeddings + 25 raw scalars = **89-dim** block fed into the projection aggregation.
+After embedding in the extractor: 4 × 16-dim embeddings + 35 raw scalars = **99-dim** block per slot. The last slot's output (after self-attention) is fed into the projection aggregation.
 
 All zeros on the first turn of each episode (`TurnDelta.empty()`). See `src/agents/observation/turn_delta_encoder.py`.
 
-## Per-Pokémon Vector (59 dims)
+## Per-Pokémon Vector (62 dims)
 
 | Field | Dims | Notes |
 |---|---|---|
@@ -164,6 +179,7 @@ All zeros on the first turn of each episode (`TurnDelta.empty()`). See `src/agen
 | Base stats | 6 | hp/atk/def/spa/spd/spe |
 | Item ID | 1 | embedded → 16 |
 | Item known | 1 | |
+| Item consumed | 1 | 1.0 when item spent this battle (Berry, Knock Off, Trick, etc.) |
 | Type 1 ID | 1 | embedded → 16, concatenated (not summed) |
 | Type 2 ID | 1 | embedded → 16 |
 | Ability ID | 1 | embedded → 16 |
@@ -172,13 +188,15 @@ All zeros on the first turn of each episode (`TurnDelta.empty()`). See `src/agen
 | Moves (4 × 9) | 36 | id, power, secondary, recoil, type_id, category, known, cur_pp, max_pp |
 | HP fraction | 1 | |
 | Species known | 1 | 1.0 if slot is populated; 0.0 if absent (unseen opp slot) |
+| Sleep counter norm | 1 | min(turns_slept, 4) / 4 |
+| Toxic counter norm | 1 | min(turns_poisoned, 8) / 8 |
 | Active flag | 1 | appended by `state_encoder.py`, not `pokemon_encoder.py` |
 
 ## Attention Path Summary
 
 | Path | Query | Keys/Values | Updates | Purpose |
 |---|---|---|---|---|
-| ① Pressure | our_active | their_team | our_active | What threatens our active right now? |
+| ① Pressure | our_active | their_team (all 6, no fainted mask) | our_active | What threatens our active right now? Fainted opp mons visible — history of what's been used is useful. |
 | ② Safety | our_team | their_active | our_team (fainted zeroed) | Which of our bench can safely switch in? |
 | ③ Synergy | our_team | our_team | our_team (fainted zeroed) | Internal team role cohesion |
 | ④ Threat | their_team | our_active | their_team (fainted zeroed) | Which of their bench counters us most? |
@@ -187,15 +205,15 @@ All zeros on the first turn of each episode (`TurnDelta.empty()`). See `src/agen
 
 Pressure result is written back into `our_team` before Safety/Synergy run, so all paths compose correctly. `our_active_refined` is extracted from the fully-composed `our_team` after all paths.
 
-All 5 paths operate on role tokens that have already received the **active-context injection** (boosts + volatile effects projected via `active_ctx_to_role`), so Safety can see "+2 Atk on their active", Threat can see "our active has Substitute up", etc.
+All 5 paths operate on role tokens that have already received the **active-context injection** (boosts + volatile effects projected via `active_ctx_to_role`) and the **TurnDelta conditioner** (effectiveness + move-order signal via `td_conditioner`), so Safety can see "+2 Atk on their active", Threat can see "our active won the speed tie last turn", etc.
 
 ## Key Files
 
 | File | Role |
 |---|---|
 | `src/agents/model/features_extractor.py` | Network definition |
-| `src/agents/observation/state_encoder.py` | Observation encoding; owns `base_dimension` (1065) and `dimension` (1105) |
-| `src/agents/observation/turn_delta_encoder.py` | TurnDelta → 29-dim float32 block (move/type IDs as raw ints) |
+| `src/agents/observation/state_encoder.py` | Observation encoding; owns `base_dimension` (1103) and `dimension` (1309) |
+| `src/agents/observation/turn_delta_encoder.py` | TurnDelta → 39-dim float32 block (move/type IDs as raw ints) |
 | `src/agents/training/battle_context.py` | `BattleContext` snapshot + `TurnDelta` diff |
 | `src/agents/observation/constants.py` | Layout offsets and dimension constants |
 | `src/agents/observation/reactive.py` | Reactive block encoder; `get_layout()` drives reactive offsets in the network |

@@ -252,7 +252,7 @@ deps/
 
 ## Observation Vector
 
-The full observation is a **1153-dim float32 vector** (`Gen3ObservationEncoder.dimension`):
+The full observation is a **1309-dim float32 vector** (`Gen3ObservationEncoder.dimension`):
 
 | Block | Dims | Offset | Notes |
 |---|---|---|---|
@@ -262,13 +262,13 @@ The full observation is a **1153-dim float32 vector** (`Gen3ObservationEncoder.d
 | Global env | 13 | 790 | base encoder |
 | Reactive + matchups | 300 | 803 | base encoder |
 | Prev-turn action mask | 11 | 1103 | appended by `gen3_env.embed_battle()` |
-| TurnDelta block | 39 | 1114 | appended by `gen3_env.embed_battle()` |
+| Turn history (`N_HISTORY_TURNS` × 39) | 195 | 1114 | appended by `gen3_env.embed_battle()`; oldest first |
 
-Per-Pokémon slot (62 dims): species ID + 6 base stats, item ID + known + consumed, 2 type IDs, ability ID + known, 7-dim condition (status one-hot), 4 × 9-dim move slots, HP fraction, species_known flag, active flag, sleep_counter_norm, toxic_counter_norm. The item block is 3 dims: `[item_id, known, consumed]` — `consumed=1` when the item was spent this battle (Berry activated, Knock Off, Trick, etc.) and `item_id` retains the identity of the consumed item so the model knows what was lost. `species_known = 1.0` for all populated slots (own team and revealed opponent mons), `0.0` for unseen opponent slots. Sleep counter: `min(turns_slept, 4) / 4` (Gen 3 max 4 turns); toxic counter: `min(turns_poisoned, 8) / 8` (practical max before fainting with Leftovers).
+Per-Pokémon slot (62 dims): species ID + 6 base stats, item ID + known + consumed, 2 type IDs, ability ID + known, 7-dim condition (status one-hot), 4 × 9-dim move slots, HP fraction, species_known flag, sleep_counter_norm, toxic_counter_norm, active flag. The item block is 3 dims: `[item_id, known, consumed]` — `consumed=1` when the item was spent this battle (Berry activated, Knock Off, Trick, etc.) and `item_id` retains the identity of the consumed item so the model knows what was lost. `species_known = 1.0` for all populated slots (own team and revealed opponent mons), `0.0` for unseen opponent slots. Sleep counter: `min(turns_slept, 4) / 4` (Gen 3 max 4 turns); toxic counter: `min(turns_poisoned, 8) / 8` (practical max before fainting with Leftovers). The item block is 3 dims: `[item_id, known, consumed]` — `consumed=1` when the item was spent this battle (Berry activated, Knock Off, Trick, etc.) and `item_id` retains the identity of the consumed item so the model knows what was lost. `species_known = 1.0` for all populated slots (own team and revealed opponent mons), `0.0` for unseen opponent slots. Sleep counter: `min(turns_slept, 4) / 4` (Gen 3 max 4 turns); toxic counter: `min(turns_poisoned, 8) / 8` (practical max before fainting with Leftovers).
 
 Global env (13 dims): weather one-hot (6), spikes ×2 (2), log-turn (1), our reflect (1), our light screen (1), opp reflect (1), opp light screen (1).
 
-TurnDelta block (39 dims): our_move_id (raw int), our_power_norm, our_has_secondary, our_has_recoil, our_type_id (raw int), opp_move_id (raw int), opp_power_norm, opp_has_secondary, opp_has_recoil, opp_type_id (raw int), our_switched, opp_switched, our_failed_to_move, opp_failed_to_move, our_cant_onehot (5), opp_cant_onehot (5), our_hp_delta, opp_hp_delta, we_fainted, opp_fainted, opp_move_known, our_effectiveness_onehot (4: immune/resisted/normal/SE), opp_effectiveness_onehot (4), move_order (2: we_first/opp_first, all-zero=na). The extractor embeds the 4 raw IDs through shared move/type embedding tables, producing a 89-dim block for the projection. All zeros on the first turn of each episode. See `src/agents/observation/turn_delta_encoder.py`.
+Each TurnDelta slot (39 dims): our_move_id (raw int), our_power_norm, our_has_secondary, our_has_recoil, our_type_id (raw int), opp_move_id (raw int), opp_power_norm, opp_has_secondary, opp_has_recoil, opp_type_id (raw int), our_switched, opp_switched, our_failed_to_move, opp_failed_to_move, our_cant_onehot (5), opp_cant_onehot (5), our_hp_delta, opp_hp_delta, we_fainted, opp_fainted, opp_move_known, our_effectiveness_onehot (4: immune/resisted/normal/SE), opp_effectiveness_onehot (4), move_order (2: we_first/opp_first, all-zero=na). The extractor embeds all `N_HISTORY_TURNS` slots identically through shared move/type embedding tables (4 raw IDs → 4×16 embeddings + 35 scalars = 99-dim per slot), adds learned positional encodings, runs one self-attention pass, and uses the last (most-recent) slot's output as a 99-dim block for the projection. All zeros on the first turn of each episode. See `src/agents/observation/turn_delta_encoder.py`.
 
 ---
 
@@ -276,21 +276,25 @@ TurnDelta block (39 dims): our_move_id (raw int), our_power_norm, our_has_second
 
 `Gen3FeaturesExtractor` in `src/agents/model/features_extractor.py`:
 
-1. **Embedding lookups** — species (32), move (16), item (16), ability (16), type (16, shared for both Pokémon and move types, and for TurnDelta move/type IDs)
-2. **Shared move processor** — Linear(58→64)→ReLU→Linear(64→32) per move slot; input includes move/type embeddings, power/secondary/recoil/category remnants, known flag, battle context, and per-move type matchup against all 6 opponents
+1. **Embedding lookups** — species (32), move (16), item (16), ability (16), type (16, shared for Pokémon types, move types, and TurnDelta move/type IDs)
+2. **Shared move processor** — Linear(58→64)→ReLU→Linear(64→32) per move slot; input includes move/type embeddings, power/secondary/recoil/category remnants, known flag, battle context, and per-move type matchup against all 6 opponents. Move validity from the previous turn's action mask is applied to the active Pokémon's slots only; bench slots always see all-ones.
 3. **Within-Pokémon move self-attention** — MHA(32, 2 heads) + LayerNorm residual across the 4 move slots of each Pokémon; lets the role encoder see "this mon has two physical attackers"
-4. **Role encoder** — Linear(262→256)→ReLU→Linear(256→128) per Pokémon; input is the full enriched Pokémon vector (244 dims, including `species_known` flag + 2 status counters) + broadcasted global context + validity bits
-5. **Team-wide attention** — five `MultiheadAttention` paths with residuals (fainted slots masked/zeroed throughout):
-   - *Pressure*: our active ← their team (what threatens us right now)
-   - *Safety*: our team ← their active (what can switch in safely)
-   - *Synergy*: our team ← our team (internal team cohesion)
-   - *Threat*: their team ← our active (which of their bench counters us most)
-   - *Opp Synergy*: their team ← their team (opponent team cohesion)
-6. **Attention pool** — one learned query per side attends over the 6 role tokens (fainted key-masked) producing a single 128-dim pooled team token per side; replaces the slot-order flatten for permutation equivariance
-7. **Pre-projection LayerNorm** — normalises the concatenated projection input to equalise per-block scales (embeddings, 0/1 validity bits, HP fractions, ±1 TurnDelta deltas)
-8. **Projection** — Linear(562→512)→ReLU; input is: our_pool(128) + their_pool(128) + our_active_refined(128) + active_ctx_enc(32×2) + global+scalars(29) + turn_delta_embedded(89)
+4. **Role encoder** — Linear(263→256)→ReLU→Linear(256→128) per Pokémon; input is the full enriched Pokémon vector (245 dims) + broadcasted global context (16 dims: turn + weather + fainted + spikes + struggle + screens) + validity bits (switch_valid + struggle_from_prev). The 263 input dim is computed dynamically in `__init__` from layout fields — not hardcoded.
+5. **Pre-attention injection** — two signals are added to the active slots' role tokens before the attention paths run:
+   - *Active-context bias*: boosts + volatiles projected via `active_ctx_to_role` (Linear 23→64→128); bench slots unaffected (no boosts/volatiles in Gen 3)
+   - *TurnDelta conditioner*: effectiveness + move-order slice (10 dims) projected via `td_conditioner` (Linear 10→64→128); perspective-flipped for the opponent's active slot
+6. **Team-wide attention** — five `MultiheadAttention` paths with residuals:
+   - *Pressure*: our active ← their team; no fainted key-mask (fainted opp history is useful context)
+   - *Safety*: our team ← their active; fainted query slots zeroed
+   - *Synergy*: our team ← our team; fainted keys masked, fainted queries zeroed
+   - *Threat*: their team ← our active (post-Pressure); fainted query slots zeroed
+   - *Opp Synergy*: their team ← their team; fainted keys masked, fainted queries zeroed
+7. **Attention pool** — one learned query per side attends over the 6 role tokens (fainted key-masked) producing a single 128-dim pooled team token per side; replaces slot-order flatten for permutation equivariance
+8. **Turn-history attention** — all `N_HISTORY_TURNS` (5) raw TurnDelta vectors are embedded identically through the shared move/type tables (4 IDs → 4×16 embeddings + 35 scalars = 99-dim per slot), positional encodings added, one MHA self-attention pass applied, and the last (most-recent) position's output used as the 99-dim history-informed block for the projection
+9. **Pre-projection LayerNorm** — normalises the concatenated projection input to equalise per-block scales (embeddings, 0/1 validity bits, HP fractions, ±1 TurnDelta deltas)
+10. **Projection** — Linear(576→512)→ReLU; input is: our_pool(128) + their_pool(128) + our_active_refined(128) + active_ctx_enc(32×2) + global+scalars(29) + turn_delta_embedded(99)
 
-The projection input dimension is discovered automatically via a dummy forward pass in `__init__`, so no magic constant needs updating when the architecture changes.
+The projection input dimension (576) is discovered automatically via a dummy forward pass in `__init__`, so it stays correct when the architecture changes without any manual update.
 
 ---
 
