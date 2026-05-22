@@ -69,6 +69,9 @@ def _print_exit_summary(run_dir: "str | None", state: LauncherState) -> None:
         lines.append(f"  Last reward: {snap.metrics['rollout/ep_rew_mean']:.2f}")
     if "time/fps" in snap.metrics:
         lines.append(f"  FPS        : {int(snap.metrics['time/fps']):,}")
+    ckpt = find_latest_checkpoint("models", run_dir=run_dir)
+    if ckpt:
+        lines.append(f"  Last model : {ckpt}")
     print("\n".join(lines), file=sys.stderr)
 
 

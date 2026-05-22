@@ -42,7 +42,12 @@ def _read_metrics_pipe(fd_r: int, state: LauncherState) -> None:
 def _read_child_stdout(proc: subprocess.Popen, state: LauncherState) -> None:
     try:
         for raw in proc.stdout:
-            state.add_log(raw.decode(errors="replace").rstrip())
+            line = raw.decode(errors="replace").rstrip()
+            state.add_log(line)
+            if "[CHECKPOINT]" in line:
+                # Surface the save confirmation in the events panel too.
+                fname = line.split("→")[-1].strip() if "→" in line else line
+                state.add_event(f"💾 Checkpoint saved → {os.path.basename(fname)}")
     except Exception:
         pass
 
