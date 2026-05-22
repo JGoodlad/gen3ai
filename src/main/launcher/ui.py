@@ -264,17 +264,27 @@ class LauncherUI:
                     opponents[opp] = {}
                 opponents[opp]["reward"] = metrics[key]
 
+        def _gradient_color(t: float) -> str:
+            """t in [0,1]: 0=full red, 0.5=yellow, 1=full green."""
+            t = max(0.0, min(1.0, t))
+            r = int(255 * (1 - t) * 2) if t < 0.5 else 255 - int(255 * (t - 0.5) * 2)
+            g = int(255 * t * 2) if t < 0.5 else 255
+            r = max(0, min(255, r))
+            g = max(0, min(255, g))
+            return f"#{r:02x}{g:02x}00"
+
         def _wr_str(wr):
             if wr is None:
                 return "[dim]—[/dim]"
-            col = "green" if wr >= 0.5 else "red"
-            return f"[{col}][bold]{wr * 100:.1f}%[/bold][/{col}]"
+            col = _gradient_color(wr)
+            return f"[bold {col}]{wr * 100:.1f}%[/bold {col}]"
 
         def _rw_str(rw):
             if rw is None:
                 return "[dim]—[/dim]"
-            col = "green" if rw >= 0 else "red"
-            return f"[{col}][bold]{_fmt_val(rw)}[/bold][/{col}]"
+            t = (rw + 30) / 60  # -30 → 0, +30 → 1
+            col = _gradient_color(t)
+            return f"[bold {col}]{_fmt_val(rw)}[/bold {col}]"
 
         t = Table(box=None, show_header=True, show_edge=False,
                   padding=(0, 2), header_style="dim")
