@@ -16,7 +16,7 @@ from agents.model.model_version import (
     ModelVersionError,
     _migrate_config,
 )
-from agents.model.snapshot import save_model_snapshot, load_model_snapshot, write_checkpoint_sidecar, read_checkpoint_sidecar, record_snapshot_in_history, _sidecar_path
+from agents.model.snapshot import save_model_snapshot, load_model_snapshot, write_checkpoint_metadata, read_checkpoint_metadata, record_snapshot_in_history, _checkpoint_metadata_path
 from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings
 
 
@@ -234,51 +234,51 @@ def test_snapshot_save_load_roundtrip(layout, version, mappings):
 
 
 # ---------------------------------------------------------------------------
-# Checkpoint sidecar
+# Checkpoint metadata
 # ---------------------------------------------------------------------------
 
-def test_sidecar_path_strips_zip():
-    assert _sidecar_path("/models/run/checkpoint_1000_steps.zip") == "/models/run/checkpoint_1000_steps.json"
+def test_checkpoint_metadata_path_strips_zip():
+    assert _checkpoint_metadata_path("/models/run/checkpoint_1000_steps.zip") == "/models/run/checkpoint_1000_steps.json"
 
 
-def test_sidecar_path_no_zip_extension():
-    assert _sidecar_path("/models/run/checkpoint_1000_steps") == "/models/run/checkpoint_1000_steps.json"
+def test_checkpoint_metadata_path_no_zip_extension():
+    assert _checkpoint_metadata_path("/models/run/checkpoint_1000_steps") == "/models/run/checkpoint_1000_steps.json"
 
 
-def test_write_and_read_sidecar():
+def test_write_and_read_checkpoint_metadata():
     with tempfile.TemporaryDirectory() as tmpdir:
         ckpt = os.path.join(tmpdir, "checkpoint_500000_steps.zip")
-        write_checkpoint_sidecar(ckpt, current_lr=2.5e-5, current_epochs=7)
-        result = read_checkpoint_sidecar(ckpt)
+        write_checkpoint_metadata(ckpt, current_lr=2.5e-5, current_epochs=7)
+        result = read_checkpoint_metadata(ckpt)
     assert result["current_lr"] == pytest.approx(2.5e-5)
     assert result["current_epochs"] == 7
 
 
-def test_read_sidecar_returns_empty_when_missing():
+def test_read_checkpoint_metadata_returns_empty_when_missing():
     with tempfile.TemporaryDirectory() as tmpdir:
         ckpt = os.path.join(tmpdir, "checkpoint_500000_steps.zip")
-        result = read_checkpoint_sidecar(ckpt)
+        result = read_checkpoint_metadata(ckpt)
     assert result == {}
 
 
-def test_sidecar_overwrites_on_second_write():
+def test_checkpoint_metadata_overwrites_on_second_write():
     with tempfile.TemporaryDirectory() as tmpdir:
         ckpt = os.path.join(tmpdir, "checkpoint_500000_steps.zip")
-        write_checkpoint_sidecar(ckpt, current_lr=3e-4, current_epochs=10)
-        write_checkpoint_sidecar(ckpt, current_lr=1e-5, current_epochs=4)
-        result = read_checkpoint_sidecar(ckpt)
+        write_checkpoint_metadata(ckpt, current_lr=3e-4, current_epochs=10)
+        write_checkpoint_metadata(ckpt, current_lr=1e-5, current_epochs=4)
+        result = read_checkpoint_metadata(ckpt)
     assert result["current_lr"] == pytest.approx(1e-5)
     assert result["current_epochs"] == 4
 
 
-def test_sidecar_independent_per_checkpoint():
+def test_checkpoint_metadata_independent_per_checkpoint():
     with tempfile.TemporaryDirectory() as tmpdir:
         ckpt_50m = os.path.join(tmpdir, "checkpoint_50000000_steps.zip")
         ckpt_100m = os.path.join(tmpdir, "checkpoint_100000000_steps.zip")
-        write_checkpoint_sidecar(ckpt_50m, current_lr=3e-4, current_epochs=10)
-        write_checkpoint_sidecar(ckpt_100m, current_lr=8e-5, current_epochs=6)
-        r50 = read_checkpoint_sidecar(ckpt_50m)
-        r100 = read_checkpoint_sidecar(ckpt_100m)
+        write_checkpoint_metadata(ckpt_50m, current_lr=3e-4, current_epochs=10)
+        write_checkpoint_metadata(ckpt_100m, current_lr=8e-5, current_epochs=6)
+        r50 = read_checkpoint_metadata(ckpt_50m)
+        r100 = read_checkpoint_metadata(ckpt_100m)
     assert r50["current_epochs"] == 10
     assert r100["current_epochs"] == 6
 

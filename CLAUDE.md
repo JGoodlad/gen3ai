@@ -18,6 +18,8 @@ git push origin <worktree-branch>:main
 
 Never `git add` or `git commit` from `/home/goodlad/dev/gen3ai` directly.
 
+**NEVER run `git add`, `git commit`, or `git push` unless the user's current message explicitly contains `/ship`.** Completing a task, writing tests, or any other finishing signal is NOT permission to commit. This applies even when the task feels "done". Only `/ship` authorises a commit.
+
 ---
 
 ## Python Environment

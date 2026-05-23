@@ -41,7 +41,7 @@ from stable_baselines3.common.monitor import Monitor
 
 from agents.model.features_extractor import Gen3FeaturesExtractor, NET_ARCH
 from agents.model.model_version import ModelVersion, ModelVersionError
-from agents.model.snapshot import save_model_snapshot, load_model_snapshot, write_checkpoint_sidecar, read_checkpoint_sidecar, record_snapshot_in_history
+from agents.model.snapshot import save_model_snapshot, load_model_snapshot, write_checkpoint_metadata, read_checkpoint_metadata, record_snapshot_in_history
 from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings
 from agents.inference.player import RLPlayer
 from utils.teambuilder import Gen3Teambuilder
@@ -94,7 +94,7 @@ class _HparamLogCallback(BaseCallback):
 
 
 class _TrackingCheckpointCallback(CheckpointCallback):
-    """CheckpointCallback that keeps latest.txt up to date and writes per-checkpoint sidecars."""
+    """CheckpointCallback that keeps latest.txt up to date and writes per-checkpoint metadata."""
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -113,7 +113,7 @@ class _TrackingCheckpointCallback(CheckpointCallback):
                 ckpt_path = os.path.join(self.save_path, ckpt_name)
                 lr = self._current_lr_fn()
                 epochs = self._current_epochs_fn()
-                write_checkpoint_sidecar(ckpt_path, lr, epochs)
+                write_checkpoint_metadata(ckpt_path, lr, epochs)
                 record_snapshot_in_history(self.save_path, ckpt_name, lr, epochs)
         return result
 
@@ -590,13 +590,13 @@ async def main():
         model.lr_schedule = _resume_lr_lambda
         adaptive_ppo_callback._current_lr = resume_lr
         # Resume n_epochs (not in optimizer state). Priority:
-        #   1. Per-checkpoint sidecar ({checkpoint}.json) — most accurate for old checkpoints
+        #   1. Per-checkpoint metadata ({checkpoint}.json) — most accurate for old checkpoints
         #   2. Run-level metadata.json — reflects last SIGTERM save for launcher restarts
         #   3. args.n_epochs — fallback for first run or missing state
         # Must be read before save_model_snapshot() below overwrites the run-level file.
-        _sidecar = read_checkpoint_sidecar(model_path)
-        if "current_epochs" in _sidecar:
-            resume_epochs = _sidecar["current_epochs"]
+        _ckpt_meta = read_checkpoint_metadata(model_path)
+        if "current_epochs" in _ckpt_meta:
+            resume_epochs = _ckpt_meta["current_epochs"]
         else:
             _meta_path = os.path.join(model_dir, "metadata.json")
             resume_epochs = args.n_epochs

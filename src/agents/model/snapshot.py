@@ -81,30 +81,30 @@ def record_snapshot_in_history(
         json.dump(meta, f, indent=2)
 
 
-def write_checkpoint_sidecar(
+def write_checkpoint_metadata(
     checkpoint_path: str,
     current_lr: float,
     current_epochs: int,
 ) -> None:
-    """Write lr/epochs alongside a checkpoint .zip as a small JSON sidecar.
+    """Write lr/epochs alongside a checkpoint .zip as a per-checkpoint metadata file.
 
     checkpoint_path: full path to the .zip (with or without extension).
-    Sidecar lands at the same path with .zip replaced by .json.
+    Metadata file lands at the same path with .zip replaced by .json.
     """
-    with open(_sidecar_path(checkpoint_path), "w") as f:
+    with open(_checkpoint_metadata_path(checkpoint_path), "w") as f:
         json.dump({"current_lr": current_lr, "current_epochs": current_epochs}, f, indent=2)
 
 
-def read_checkpoint_sidecar(checkpoint_path: str) -> dict:
-    """Read the sidecar JSON for a checkpoint. Returns {} if not found."""
-    path = _sidecar_path(checkpoint_path)
+def read_checkpoint_metadata(checkpoint_path: str) -> dict:
+    """Read the per-checkpoint metadata JSON. Returns {} if not found."""
+    path = _checkpoint_metadata_path(checkpoint_path)
     if os.path.exists(path):
         with open(path) as f:
             return json.load(f)
     return {}
 
 
-def _sidecar_path(checkpoint_path: str) -> str:
+def _checkpoint_metadata_path(checkpoint_path: str) -> str:
     if checkpoint_path.endswith(".zip"):
         return checkpoint_path[:-4] + ".json"
     return checkpoint_path + ".json"
