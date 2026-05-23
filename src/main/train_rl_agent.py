@@ -70,13 +70,16 @@ CLIP_RANGE = 0.20
 
 
 def _model_hparams(model) -> dict:
+    clip_range_vf = float(model.clip_range_vf(1.0)) if model.clip_range_vf is not None else -1.0
     return {
         "gamma": model.gamma,
         "gae_lambda": model.gae_lambda,
         "ent_coef": float(model.ent_coef),
+        "vf_coef": float(model.vf_coef),
         "batch_size": model.batch_size,
         "n_steps": model.n_steps,
         "clip_range": float(model.clip_range(1.0)),
+        "clip_range_vf": clip_range_vf,
     }
 
 
@@ -100,6 +103,7 @@ class _HparamLogCallback(BaseCallback):
         self.logger.record("hparams/ent_coef", self._ent_coef)
         self.logger.record("hparams/gamma", self.model.gamma)
         self.logger.record("hparams/gae_lambda", self.model.gae_lambda)
+        self.logger.record("hparams/vf_coef", float(self.model.vf_coef))
         self.logger.dump(self.num_timesteps)
 
     def _on_step(self) -> bool:
@@ -257,6 +261,7 @@ async def main():
     parser.add_argument("--min-lr", type=float, default=1e-5, help="Hard lower bound on adaptive LR")
     parser.add_argument("--max-lr", type=float, default=None, help="Hard upper bound on adaptive LR (default: 2× --lr)")
     parser.add_argument("--ent-coef", type=float, default=0.02, help="Entropy coefficient (exploration bonus)")
+    parser.add_argument("--clip-range-vf", type=float, default=0.5, help="Value function clip range (None=disabled; thesis used 0.0184)")
     parser.add_argument("--n-steps", type=int, default=2048, help="Steps per environment per rollout")
 
     # --- Self-Play Flags ---
@@ -630,6 +635,7 @@ async def main():
         adaptive_ppo_callback._current_lr = resume_lr
         model.n_epochs = args.n_epochs
         model.clip_range = lambda _: CLIP_RANGE
+        model.clip_range_vf = lambda _: args.clip_range_vf
         send_event(f"▶️  Resuming at LR {resume_lr:.2e}, epochs {args.n_epochs} (checkpoint LR={saved_lr:.2e})")
 
         if args.eval_only:
@@ -701,6 +707,7 @@ async def main():
             gamma=0.9999,
             gae_lambda=0.80,
             clip_range=CLIP_RANGE,
+            clip_range_vf=args.clip_range_vf,
             ent_coef=args.ent_coef,
             device=args.device,
             seed=args.seed,
