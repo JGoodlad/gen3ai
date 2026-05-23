@@ -2,6 +2,7 @@ import numpy as np
 from typing import Optional
 from poke_env.player.battle_order import SingleBattleOrder, BattleOrder
 from poke_env.battle.move import Move
+from agents.action.constants import SWITCH_END, MOVE_START, MOVE_END, STRUGGLE
 
 
 class Gen3ActionMapper:
@@ -51,7 +52,7 @@ class Gen3ActionMapper:
             context = None
 
         # 0-5: Switches
-        if action < 6:
+        if action < SWITCH_END:
             team_list = context.get("team_objects") if context else list(battle.team.values())
             species_list = context.get("team_species") if context else [p.species for p in team_list]
             if len(species_list) != len(set(species_list)):
@@ -63,8 +64,8 @@ class Gen3ActionMapper:
             raise ValueError(f"Switch action {action} invalid for current state.")
 
         # 6-9: Moves
-        if action < 10:
-            move_idx = action - 6
+        if action < MOVE_END:
+            move_idx = action - MOVE_START
             if not context:
                 raise RuntimeError(
                     f"No decision context for move action {action} at turn {battle.turn}. "
@@ -81,14 +82,34 @@ class Gen3ActionMapper:
             available = [m.id for m in battle.available_moves]
             raise ValueError(f"Move slot {move_idx} not found in available_moves: {available}")
 
-        # 10: Struggle
-        if action == 10:
+        # Struggle
+        if action == STRUGGLE:
             for m in battle.available_moves:
                 if m.id == "struggle":
                     return SingleBattleOrder(m)
             return SingleBattleOrder(Move("struggle", gen=3))
 
         raise ValueError(f"Unhandled action index: {action}")
+
+    @staticmethod
+    def validate_context(battle) -> dict:
+        """Return the decision context if valid; raise RuntimeError otherwise.
+
+        Centralises the strict check used by both Gen3Player and the mapper so
+        the staleness logic lives in one place.
+        """
+        ctx = getattr(battle, "_gen3_decision_context", None)
+        if ctx is None:
+            raise RuntimeError(
+                f"Decision context is missing at turn {battle.turn}. "
+                "get_mask() / embed_battle() must be called before action_to_order()."
+            )
+        if ctx.get("turn") != battle.turn:
+            raise RuntimeError(
+                f"Decision context is from turn {ctx.get('turn')} but current turn is "
+                f"{battle.turn}. get_mask() / embed_battle() must be called before action_to_order()."
+            )
+        return ctx
 
     @staticmethod
     def order_to_action(order: BattleOrder, battle) -> int:

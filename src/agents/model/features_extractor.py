@@ -1,9 +1,7 @@
 import torch
 import numpy as np
-import time
 from gymnasium import spaces
 from typing import Dict, Any, Optional
-from agents.observation.state_encoder import Gen3ObservationEncoder
 from agents.observation.constants import (
     TRACE_INTERVAL,
     TEAM_SIZE,
@@ -11,7 +9,6 @@ from agents.observation.constants import (
     POKEMON_FULL_DIM
 )
 from agents.observation.turn_delta_encoder import TURN_DELTA_DIM, EFF_DIM, ORDER_DIM
-from utils.logging.rate_limiter import RateLimitedLogger
 from utils.logging.levels import LogLevel
 
 # Strategic TurnDelta slice: always the tail of the TurnDelta block (effectiveness + order).
@@ -42,8 +39,7 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         self.layout = layout
         self.mappings = mappings
         self.log_level = log_level
-        self._encoder = None # Lazy init for decoding
-        
+
         # 1. Embedding Layers
         self.species_embedding = torch.nn.Embedding(
             layout['max_species'], 
@@ -238,10 +234,13 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         self.projection = torch.nn.Linear(self.projection_input_dim, self.projection_dim)
         self.activation = torch.nn.ReLU()
         self.features_dim = self.projection_dim
-        self.trace_logger = RateLimitedLogger(interval_seconds=30)
-        self._trace_buffer: list = []
-        self._trace_collect_remaining: int = 0
-        
+
+        if log_level >= LogLevel.PERIODIC and mappings:
+            from agents.model.observation_debugger import ObservationDebugger
+            self._debugger: Optional[ObservationDebugger] = ObservationDebugger(mappings)
+        else:
+            self._debugger = None
+
     @staticmethod
     def _embed_delta_slot(slot, move_embedding, type_embedding):
         """Embed one [B, TURN_DELTA_DIM] raw TurnDelta vector → [B, _td_embed_dim]."""
@@ -255,93 +254,6 @@ class Gen3FeaturesExtractor(torch.nn.Module):
             move_embedding(m_opp), type_embedding(t_opp),
             scalars,
         ], dim=1)
-
-    def _print_one_turn(self, obs_np: np.ndarray, label: str):
-        """Print one turn's decoded state from a full 1093-dim obs array."""
-        desc = self._encoder.describe_vector(obs_np)
-        world = desc.get('world', {})
-        NAME_W, ACTV_W, TYPE_W = 12, 6, 18
-        TAB = "    "
-
-        print(f"\n{'─' * 60}")
-        print(f"  {label}   |  Turn: {world.get('turn', '?')} | Weather: {world.get('weather', 'NONE')} | Spikes: {world.get('our_spikes', 0)}/{world.get('opp_spikes', 0)}")
-        print(f"{'─' * 60}")
-
-        ctx = desc.get('our_active', {})
-        print(f"Active ctx — Boosts: {ctx.get('boosts', {})} | Volatiles: {ctx.get('volatiles', [])}")
-
-        print("\n--- TEAMS ---")
-        for i, mon in enumerate(desc['our_team']):
-            active_str = "[actv]" if mon.get('active') else "      "
-            s = mon['stats']
-            print(f"[OUR {i}] {mon['species'].lower():{NAME_W}} {active_str:{ACTV_W}}  {mon['types'].lower():{TYPE_W}}  hp: {mon['hp']:>6}  status: {mon['status'].lower():7}  {s['hp']}/{s['atk']}/{s['def']}/{s['spa']}/{s['spd']}/{s['spe']}")
-            print(f"{TAB}item: {mon['item'].lower():17}  ably: {mon['ability'].lower():16}  moves: {mon.get('moves', [])}")
-        print("-" * 30)
-        for i, mon in enumerate(desc['opp_team']):
-            active_str = "[actv]" if mon.get('active') else "      "
-            s = mon['stats']
-            print(f"[OPP {i}] {mon['species'].lower():{NAME_W}} {active_str:{ACTV_W}}  {mon['types'].lower():{TYPE_W}}  hp: {mon['hp']:>6}  status: {mon['status'].lower():7}  {s['hp']}/{s['atk']}/{s['def']}/{s['spa']}/{s['spd']}/{s['spe']}")
-            print(f"{TAB}item: {mon['item'].lower():17}  ably: {mon['ability'].lower():16}  moves: {mon.get('moves', [])}")
-
-        momentum = desc.get('momentum', {})
-        print(f"\nFainted: {momentum.get('fainted_our', 0)} (Us) / {momentum.get('fainted_opp', 0)} (Them)")
-
-        td = desc.get("turn_delta")
-        if td is not None:
-            def _action_str(switched, failed, cant, move):
-                move_str = None
-                if move and move.get("move_id", 0) > 0:
-                    name = move.get("move_name") or f"#{move['move_id']}"
-                    type_ = (move.get("move_type") or "").title()
-                    pwr = move["power"]
-                    meta = []
-                    if type_: meta.append(type_)
-                    if pwr > 0: meta.append(f"{pwr}bp")
-                    if move["secondary"]: meta.append("+eff")
-                    if move["recoil"]: meta.append("recoil")
-                    suffix = f" [{', '.join(meta)}]" if meta else ""
-                    move_str = f"{name}{suffix}"
-                if switched:
-                    # Phaze: they moved first, then were forced out
-                    return f"{move_str} → phazed" if move_str else "switch"
-                if failed:
-                    return f"✗ {cant or '?'}"
-                if move_str:
-                    return move_str
-                return "(first turn)"
-
-            W = 36
-            opp_known = "" if td["opp_move_known"] else "  [unconfirmed]"
-            faint_parts = (["us"] if td["we_fainted"] else []) + (["opp"] if td["opp_fainted"] else [])
-            faint_str = f"   💀 fainted: {'/'.join(faint_parts)}" if faint_parts else ""
-            print(f"--- Last Turn ---")
-            print(f"  Us:  {_action_str(td['our_switched'], td['our_failed'], td['our_cant'], td['our_move']):{W}}")
-            print(f"  Opp: {_action_str(td['opp_switched'], td['opp_failed'], td['opp_cant'], td['opp_move']) + opp_known:{W}}")
-            print(f"  ΔHP  us={td['our_hp_delta']:+.2f}  opp={td['opp_hp_delta']:+.2f}{faint_str}")
-
-        warnings, is_critical = self._encoder.integrity_check(obs_np)
-        if warnings:
-            print("\n⚠️ [INTEGRITY CHECK WARNINGS]")
-            for w in warnings:
-                print(f"  - {w}")
-        if is_critical:
-            raise ValueError(f"CRITICAL INTEGRITY FAILURE: {warnings}")
-
-    def _print_deep_trace(self):
-        """Print the last 3 buffered turns as a succession."""
-        if self._encoder is None and self.mappings:
-            self._encoder = Gen3ObservationEncoder(self.mappings)
-        if not self._encoder or not self._trace_buffer:
-            return
-
-        n = len(self._trace_buffer)
-        print("\n" + "🧬" * 30)
-        print(f"🧬 [DEEP TRACE — {n} turns ending at {time.strftime('%H:%M:%S')}]")
-        print("=" * 60)
-        labels = [f"turn -2 (oldest)", "turn -1", "turn 0 (current)"][-n:]
-        for obs_t, label in zip(self._trace_buffer, labels):
-            self._print_one_turn(obs_t.cpu().numpy(), label)
-        print("=" * 60 + "\n")
 
     def forward_internal(self, obs):
         """Internal forward pass that constructs the combined feature vector without the final projection."""
@@ -750,17 +662,6 @@ class Gen3FeaturesExtractor(torch.nn.Module):
 
     def forward(self, obs):
         combined = self.forward_internal(obs)
-        
-        # Diagnostic Trace logic — collect only 3 turns when the timer fires, free otherwise
-        if self.log_level >= LogLevel.PERIODIC:
-            if self.trace_logger.should_log():
-                self._trace_buffer = []
-                self._trace_collect_remaining = 3
-            if self._trace_collect_remaining > 0:
-                x = obs["observation"]
-                self._trace_buffer.append(x[0].detach().clone())
-                self._trace_collect_remaining -= 1
-                if self._trace_collect_remaining == 0:
-                    self._print_deep_trace()
-        
+        if self._debugger is not None:
+            self._debugger.on_forward(obs["observation"])
         return self.activation(self.projection(self.pre_proj_norm(combined)))

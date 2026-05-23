@@ -8,6 +8,10 @@ import pytest
 import numpy as np
 from unittest.mock import MagicMock
 
+from agents.action.constants import (
+    ACTION_SPACE_SIZE, SWITCH_START, SWITCH_END, N_SWITCH_SLOTS,
+    MOVE_START, MOVE_END, N_MOVE_SLOTS, STRUGGLE,
+)
 from agents.action.mask_generator import Gen3ActionMasker
 from agents.action.mapper import Gen3ActionMapper
 from poke_env.player.battle_order import SingleBattleOrder
@@ -94,6 +98,45 @@ def _make_battle(
     }
 
     return battle, mons, available_moves
+
+
+# ===========================================================================
+# Action space constants — lock in the values before literals are swapped
+# ===========================================================================
+
+class TestActionSpaceConstants:
+
+    def test_space_size(self):
+        assert ACTION_SPACE_SIZE == 11
+
+    def test_switch_range(self):
+        assert SWITCH_START == 0
+        assert SWITCH_END == 6
+        assert N_SWITCH_SLOTS == 6
+
+    def test_move_range(self):
+        assert MOVE_START == 6
+        assert MOVE_END == 10
+        assert N_MOVE_SLOTS == 4
+
+    def test_struggle_index(self):
+        assert STRUGGLE == 10
+
+    def test_ranges_are_contiguous_and_cover_space(self):
+        assert SWITCH_END == MOVE_START      # switches end where moves begin
+        assert MOVE_END == STRUGGLE          # moves end where struggle lives
+        assert STRUGGLE + 1 == ACTION_SPACE_SIZE
+
+    def test_mask_shape_matches_space_size(self):
+        """Sanity: get_mask() always produces a vector of ACTION_SPACE_SIZE."""
+        battle, _, _ = _make_battle(
+            team_species=["tyranitar"],
+            available_switch_indices=[],
+            move_ids=["rockslide"],
+        )
+        mask = Gen3ActionMasker.get_mask(battle)
+        assert mask.shape == (ACTION_SPACE_SIZE,)
+        assert mask.dtype == np.int8
 
 
 # ===========================================================================
@@ -507,3 +550,42 @@ class TestOrderToAction:
         )
         order = self._move_order(_move("surf"))   # not in context
         assert Gen3ActionMapper.order_to_action(order, battle) == 0
+
+
+# ===========================================================================
+# Gen3ActionMapper.validate_context tests
+# ===========================================================================
+
+class TestValidateContext:
+
+    def test_valid_context_returns_dict(self):
+        battle, _, _ = _make_battle(
+            team_species=["tyranitar"],
+            available_switch_indices=[],
+            move_ids=["rockslide"],
+            turn=3,
+        )
+        ctx = Gen3ActionMapper.validate_context(battle)
+        assert ctx["turn"] == 3
+        assert ctx["move_ids"] == ["rockslide"]
+
+    def test_missing_context_raises(self):
+        battle, _, _ = _make_battle(
+            team_species=["tyranitar"],
+            available_switch_indices=[],
+            move_ids=["rockslide"],
+        )
+        del battle._gen3_decision_context
+        with pytest.raises(RuntimeError, match="missing"):
+            Gen3ActionMapper.validate_context(battle)
+
+    def test_stale_context_raises(self):
+        battle, _, _ = _make_battle(
+            team_species=["tyranitar"],
+            available_switch_indices=[],
+            move_ids=["rockslide"],
+            turn=5,
+            context_turn=4,
+        )
+        with pytest.raises(RuntimeError, match="turn 4"):
+            Gen3ActionMapper.validate_context(battle)
