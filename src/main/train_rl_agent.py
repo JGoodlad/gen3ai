@@ -47,6 +47,8 @@ from agents.inference.player import RLPlayer
 from utils.teambuilder import Gen3Teambuilder
 from utils.team_loader import TeamLoader
 from agents.training.eval_callback import PerOpponentEvalCallback
+from agents.training.snapshot_pool import SnapshotPool, heuristic_fraction
+from agents.training.selfplay_callback import SelfPlayCallback
 from agents.training.replay_recorder import ReplayCallback
 from agents.training.wrappers import MaskableAgentWrapper
 from agents.training.gen3_env import Gen3Env
@@ -230,6 +232,11 @@ async def main():
     parser.add_argument("--ent-coef", type=float, default=0.02, help="Entropy coefficient (exploration bonus)")
     parser.add_argument("--n-steps", type=int, default=2048, help="Steps per environment per rollout")
 
+    # --- Self-Play Flags ---
+    parser.add_argument("--self-play", action="store_true", default=False, help="Enable self-play snapshot pool as training opponents")
+    parser.add_argument("--snapshot-dir", type=str, default=None, help="Pool directory (default: <run_dir>/snapshots)")
+    parser.add_argument("--promote-threshold", type=float, default=0.65, help="Win rate vs. pool to trigger snapshot promotion")
+
     args = parser.parse_args()
     log_level = LogLevel[args.log_level.upper()]
     
@@ -258,7 +265,7 @@ async def main():
         Gen3SetupSweepPlayer,
     ]
 
-    def create_training_env_random(idx, stall_config=None):
+    def create_training_env_random(idx, stall_config=None, snapshot_path=None, device="auto"):
         def _init():
             try:
                 ts = datetime.now().strftime('%H%M%S')
@@ -277,20 +284,33 @@ async def main():
                     server_configuration=LocalhostServerConfiguration,
                     account_configuration1=AccountConfiguration(env_username, "password"),
                 )
-                opponent_cls = random.choice(OPPONENT_CLASSES)
-                opponent = opponent_cls(
-                    battle_format=BATTLE_FORMAT,
-                    team=opponent_teambuilder,
-                    server_configuration=LocalhostServerConfiguration,
-                    account_configuration=AccountConfiguration(opp_username, "password"),
-                )
+
+                if snapshot_path is not None:
+                    from sb3_contrib import MaskablePPO as _PPO
+                    pool_model = _PPO.load(snapshot_path, device=device)
+                    opponent = RLPlayer(
+                        model=pool_model,
+                        team=opponent_teambuilder,
+                        battle_format=BATTLE_FORMAT,
+                        server_configuration=LocalhostServerConfiguration,
+                        account_configuration=AccountConfiguration(opp_username, "password"),
+                    )
+                else:
+                    opponent_cls = random.choice(OPPONENT_CLASSES)
+                    opponent = opponent_cls(
+                        battle_format=BATTLE_FORMAT,
+                        team=opponent_teambuilder,
+                        server_configuration=LocalhostServerConfiguration,
+                        account_configuration=AccountConfiguration(opp_username, "password"),
+                    )
+
                 wrapped = MaskableAgentWrapper(env, opponent)
-                
+
                 # FORCE OVERRIDE: SingleAgentWrapper hardcodes 10 for gen3ou. We need 11.
                 # Also ensure it propagates our Dict observation space natively.
                 wrapped.action_space = env.action_space
                 wrapped.observation_space = env.observation_space
-                
+
                 return Monitor(wrapped)
             except Exception as e:
                 print(f"🛑 ERROR IN WORKER {idx}: {e}")
@@ -321,7 +341,57 @@ async def main():
 
     _shutdown_event = threading.Event()
 
-    env_factories = [create_training_env_random(i, stall_config=stall_cfg) for i in range(n_envs)]
+    # --- Self-Play Pool Setup ---
+    # Pool is created before envs so it can provide snapshot paths to env factories.
+    # On launcher restart the pool directory already exists; _scan() restores state.
+    _pool: SnapshotPool | None = None
+    if args.self_play:
+        from pathlib import Path as _Path
+        from agents.model.model_version import ModelVersion as _MV
+        from agents.model.features_extractor import Gen3FeaturesExtractor as _FE, NET_ARCH as _NA
+        from agents.observation.state_encoder import Gen3ObservationEncoder as _OE
+
+        _snapshot_dir = _Path(args.snapshot_dir) if args.snapshot_dir else _Path(model_dir) / "snapshots"
+        _temp_enc = _OE(mappings)
+        _temp_ext_kwargs = _temp_enc.get_features_extractor_kwargs()
+        _temp_policy_kwargs = {
+            "features_extractor_class": _FE,
+            "features_extractor_kwargs": _temp_ext_kwargs,
+            "net_arch": _NA,
+        }
+        _cv = _MV.from_layout_and_policy_kwargs(_temp_ext_kwargs["layout"], _temp_policy_kwargs)
+        _pool = SnapshotPool(
+            pool_dir=_snapshot_dir,
+            current_version=_cv,
+            device=args.device,
+        )
+        _persisted_wr = _pool.load_persisted_win_rate()
+        _hfrac = heuristic_fraction(_persisted_wr)
+        _n_pool_envs = 0 if _pool.is_empty() else max(0, int(round(n_envs * (1.0 - _hfrac))))
+        emit(
+            f"🎮 [SELFPLAY] Pool has {len(_pool)} snapshots, "
+            f"win_rate_vs_bots={_persisted_wr:.2%}, "
+            f"heuristic_fraction={_hfrac:.0%} → {_n_pool_envs}/{n_envs} envs use pool opponents"
+        )
+        if args.self_play and _pool.is_empty():
+            emit("⚠️  [SELFPLAY] Pool dir exists but is empty — seeding will happen after model load")
+    else:
+        _n_pool_envs = 0
+
+    def _make_factories():
+        factories = []
+        pool_entries = []
+        if _pool and not _pool.is_empty() and _n_pool_envs > 0:
+            for _ in range(_n_pool_envs):
+                pool_entries.append(str(_pool.sample().path))
+        for i in range(n_envs):
+            snap = pool_entries[i] if i < len(pool_entries) else None
+            factories.append(
+                create_training_env_random(i, stall_config=stall_cfg, snapshot_path=snap, device=args.device)
+            )
+        return factories
+
+    env_factories = _make_factories()
     env = EnvClass(env_factories)
     start_subprocess_watchdog(env, label="train_env", shutdown_event=_shutdown_event)
     # Note: env.seed() is deprecated in gymnasium VecEnv, use seed in reset or at init if supported.
@@ -453,12 +523,23 @@ async def main():
                 max_concurrent_battles=100,
             )),
         ]
-        eval_callback = PerOpponentEvalCallback(
-            opponents=eval_opponents,
-            trainee_teambuilder=trainee_teambuilder,
-            mappings=mappings,
-            best_model_save_path=os.path.join(model_dir, "best_model"),
-        )
+        if args.self_play and _pool is not None:
+            eval_callback = SelfPlayCallback(
+                pool=_pool,
+                bot_opponents=eval_opponents,
+                trainee_teambuilder=trainee_teambuilder,
+                opp_teambuilder=opponent_teambuilder,
+                mappings=mappings,
+                promote_threshold=args.promote_threshold,
+                best_model_save_path=os.path.join(model_dir, "best_model"),
+            )
+        else:
+            eval_callback = PerOpponentEvalCallback(
+                opponents=eval_opponents,
+                trainee_teambuilder=trainee_teambuilder,
+                mappings=mappings,
+                best_model_save_path=os.path.join(model_dir, "best_model"),
+            )
         callbacks.append(eval_callback)
 
     if args.model:
