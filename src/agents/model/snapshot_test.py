@@ -16,7 +16,7 @@ from agents.model.model_version import (
     ModelVersionError,
     _migrate_config,
 )
-from agents.model.snapshot import save_model_snapshot, load_model_snapshot, write_checkpoint_metadata, read_checkpoint_metadata, record_snapshot_in_history, _checkpoint_metadata_path
+from agents.model.snapshot import save_model_snapshot, load_model_snapshot, write_checkpoint_metadata, read_checkpoint_metadata, record_snapshot_in_history, record_checkpoint, _checkpoint_metadata_path
 from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings
 
 
@@ -333,6 +333,106 @@ def test_record_snapshot_creates_metadata_if_missing():
         with open(os.path.join(tmpdir, "metadata.json")) as f:
             meta = json.load(f)
     assert meta["snapshot_history"]["checkpoint_50000000_steps.zip"]["lr"] == pytest.approx(3e-4)
+
+
+# ---------------------------------------------------------------------------
+# Migration
+# ---------------------------------------------------------------------------
+
+_SAMPLE_HPARAMS = {
+    "gamma": 0.9999,
+    "gae_lambda": 0.8,
+    "ent_coef": 0.02,
+    "batch_size": 16384,
+    "n_steps": 2048,
+    "clip_range": 0.2,
+}
+
+
+# ---------------------------------------------------------------------------
+# hparams propagation
+# ---------------------------------------------------------------------------
+
+def test_write_checkpoint_metadata_includes_hparams():
+    with tempfile.TemporaryDirectory() as tmpdir:
+        ckpt = os.path.join(tmpdir, "checkpoint_500000_steps.zip")
+        write_checkpoint_metadata(ckpt, current_lr=2.5e-5, current_epochs=7, hparams=_SAMPLE_HPARAMS)
+        result = read_checkpoint_metadata(ckpt)
+    for key, val in _SAMPLE_HPARAMS.items():
+        assert result[key] == pytest.approx(val), f"hparams[{key!r}] not written correctly"
+
+
+def test_write_checkpoint_metadata_lr_epochs_win_over_hparams():
+    """current_lr and current_epochs must not be clobbered by a conflicting hparams key."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        ckpt = os.path.join(tmpdir, "checkpoint_500000_steps.zip")
+        write_checkpoint_metadata(
+            ckpt,
+            current_lr=1.23e-5,
+            current_epochs=9,
+            hparams={"current_lr": 999.0, "current_epochs": 999},
+        )
+        result = read_checkpoint_metadata(ckpt)
+    assert result["current_lr"] == pytest.approx(1.23e-5)
+    assert result["current_epochs"] == 9
+
+
+def test_record_snapshot_in_history_includes_hparams(version):
+    with tempfile.TemporaryDirectory() as tmpdir:
+        save_model_snapshot(tmpdir, version, git_hash="abc")
+        record_snapshot_in_history(
+            tmpdir, "checkpoint_50000000_steps.zip",
+            lr=2.5e-4, n_epochs=10, hparams=_SAMPLE_HPARAMS,
+        )
+        with open(os.path.join(tmpdir, "metadata.json")) as f:
+            entry = json.load(f)["snapshot_history"]["checkpoint_50000000_steps.zip"]
+    for key, val in _SAMPLE_HPARAMS.items():
+        assert entry[key] == pytest.approx(val), f"history entry missing hparams[{key!r}]"
+
+
+def test_record_checkpoint_propagates_hparams(version):
+    with tempfile.TemporaryDirectory() as tmpdir:
+        ckpt = os.path.join(tmpdir, "checkpoint_50000000_steps.zip")
+        record_checkpoint(tmpdir, ckpt, lr=3e-4, n_epochs=10, hparams=_SAMPLE_HPARAMS)
+
+        per_ckpt = read_checkpoint_metadata(ckpt)
+        with open(os.path.join(tmpdir, "metadata.json")) as f:
+            history_entry = json.load(f)["snapshot_history"]["checkpoint_50000000_steps.zip"]
+
+    for key, val in _SAMPLE_HPARAMS.items():
+        assert per_ckpt[key] == pytest.approx(val), f"per-checkpoint JSON missing hparams[{key!r}]"
+        assert history_entry[key] == pytest.approx(val), f"history entry missing hparams[{key!r}]"
+
+
+def test_save_model_snapshot_includes_hparams(version):
+    with tempfile.TemporaryDirectory() as tmpdir:
+        save_model_snapshot(tmpdir, version, git_hash="abc", hparams=_SAMPLE_HPARAMS)
+        with open(os.path.join(tmpdir, "metadata.json")) as f:
+            meta = json.load(f)
+    for key, val in _SAMPLE_HPARAMS.items():
+        assert meta[key] == pytest.approx(val), f"metadata.json missing hparams[{key!r}]"
+
+
+def test_save_model_snapshot_lr_epochs_win_over_hparams(version):
+    with tempfile.TemporaryDirectory() as tmpdir:
+        save_model_snapshot(
+            tmpdir, version, git_hash="abc",
+            current_lr=1.23e-5, current_epochs=9,
+            hparams={"current_lr": 999.0, "current_epochs": 999},
+        )
+        with open(os.path.join(tmpdir, "metadata.json")) as f:
+            meta = json.load(f)
+    assert meta["current_lr"] == pytest.approx(1.23e-5)
+    assert meta["current_epochs"] == 9
+
+
+def test_hparams_none_does_not_affect_output(version):
+    with tempfile.TemporaryDirectory() as tmpdir:
+        save_model_snapshot(tmpdir, version, git_hash="abc", hparams=None)
+        with open(os.path.join(tmpdir, "metadata.json")) as f:
+            meta = json.load(f)
+    assert "gamma" not in meta
+    assert "gae_lambda" not in meta
 
 
 # ---------------------------------------------------------------------------

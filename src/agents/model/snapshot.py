@@ -19,6 +19,7 @@ def save_model_snapshot(
     git_hash: Optional[str] = None,
     current_lr: Optional[float] = None,
     current_epochs: Optional[int] = None,
+    hparams: Optional[dict] = None,
 ) -> None:
     """Write model_config.json and metadata.json into model_dir.
 
@@ -47,6 +48,8 @@ def save_model_snapshot(
         "python_version": sys.version,
         "sb3_version": stable_baselines3.__version__,
     }
+    if hparams:
+        metadata.update(hparams)
     if current_lr is not None:
         metadata["current_lr"] = current_lr
     if current_epochs is not None:
@@ -62,6 +65,7 @@ def record_snapshot_in_history(
     checkpoint_name: str,
     lr: float,
     n_epochs: int,
+    hparams: Optional[dict] = None,
 ) -> None:
     """Append or update a checkpoint entry in snapshot_history within metadata.json.
 
@@ -75,37 +79,50 @@ def record_snapshot_in_history(
         with open(meta_path) as f:
             meta = json.load(f)
     history = meta.get("snapshot_history", {})
-    history[checkpoint_name] = {"lr": lr, "n_epochs": n_epochs}
+    entry = {"lr": lr, "n_epochs": n_epochs}
+    if hparams:
+        entry.update(hparams)
+    history[checkpoint_name] = entry
     meta["snapshot_history"] = history
     with open(meta_path, "w") as f:
         json.dump(meta, f, indent=2)
 
 
-def record_checkpoint(model_dir: str, checkpoint_path: str, lr: float, n_epochs: int) -> None:
+def record_checkpoint(
+    model_dir: str,
+    checkpoint_path: str,
+    lr: float,
+    n_epochs: int,
+    hparams: Optional[dict] = None,
+) -> None:
     """Write per-checkpoint metadata file and append to run-level snapshot_history.
 
     checkpoint_path: full path to the .zip (with or without extension).
     Call this whenever a checkpoint .zip is saved.
     """
-    write_checkpoint_metadata(checkpoint_path, lr, n_epochs)
+    write_checkpoint_metadata(checkpoint_path, lr, n_epochs, hparams=hparams)
     name = os.path.basename(checkpoint_path)
     if not name.endswith(".zip"):
         name += ".zip"
-    record_snapshot_in_history(model_dir, name, lr, n_epochs)
+    record_snapshot_in_history(model_dir, name, lr, n_epochs, hparams=hparams)
 
 
 def write_checkpoint_metadata(
     checkpoint_path: str,
     current_lr: float,
     current_epochs: int,
+    hparams: Optional[dict] = None,
 ) -> None:
-    """Write lr/epochs alongside a checkpoint .zip as a per-checkpoint metadata file.
+    """Write lr/epochs (and optional hparams) alongside a checkpoint .zip.
 
     checkpoint_path: full path to the .zip (with or without extension).
     Metadata file lands at the same path with .zip replaced by .json.
     """
+    data = dict(hparams) if hparams else {}
+    data["current_lr"] = current_lr
+    data["current_epochs"] = current_epochs
     with open(_checkpoint_metadata_path(checkpoint_path), "w") as f:
-        json.dump({"current_lr": current_lr, "current_epochs": current_epochs}, f, indent=2)
+        json.dump(data, f, indent=2)
 
 
 def read_checkpoint_metadata(checkpoint_path: str) -> dict:

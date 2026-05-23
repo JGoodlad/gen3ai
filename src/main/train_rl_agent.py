@@ -69,6 +69,17 @@ BATTLE_FORMAT = "gen3ou"
 CLIP_RANGE = 0.20
 
 
+def _model_hparams(model) -> dict:
+    return {
+        "gamma": model.gamma,
+        "gae_lambda": model.gae_lambda,
+        "ent_coef": float(model.ent_coef),
+        "batch_size": model.batch_size,
+        "n_steps": model.n_steps,
+        "clip_range": float(model.clip_range(1.0)),
+    }
+
+
 def _write_latest_txt(model_dir: str, basename: str) -> None:
     """Atomically record the most-recent checkpoint in <model_dir>/latest.txt."""
     latest = os.path.join(model_dir, "latest.txt")
@@ -112,7 +123,7 @@ class _TrackingCheckpointCallback(CheckpointCallback):
             )
             if self._current_lr_fn is not None and self._current_epochs_fn is not None:
                 ckpt_path = os.path.join(self.save_path, f"{self.name_prefix}_{self.num_timesteps}_steps.zip")
-                record_checkpoint(self.save_path, ckpt_path, self._current_lr_fn(), self._current_epochs_fn())
+                record_checkpoint(self.save_path, ckpt_path, self._current_lr_fn(), self._current_epochs_fn(), hparams=_model_hparams(self.model))
         return result
 
 
@@ -173,7 +184,7 @@ def _setup_signal_handlers(model, model_dir, shutdown_event, version, current_lr
             path = os.path.join(model_dir, "final_model_interrupted")
             model.save(path)
             _write_latest_txt(model_dir, "final_model_interrupted.zip")
-            save_model_snapshot(model_dir, version, current_lr=current_lr_fn(), current_epochs=current_epochs_fn())
+            save_model_snapshot(model_dir, version, current_lr=current_lr_fn(), current_epochs=current_epochs_fn(), hparams=_model_hparams(model))
             print(f"[ABORT] Checkpoint saved → {path}.zip")
         except Exception as e:
             print(f"[ABORT] Save failed: {e}")
@@ -185,7 +196,7 @@ def _setup_signal_handlers(model, model_dir, shutdown_event, version, current_lr
         ckpt = os.path.join(model_dir, name)
         model.save(ckpt)
         _write_latest_txt(model_dir, name + ".zip")
-        record_checkpoint(model_dir, os.path.join(model_dir, name + ".zip"), current_lr_fn(), current_epochs_fn())
+        record_checkpoint(model_dir, os.path.join(model_dir, name + ".zip"), current_lr_fn(), current_epochs_fn(), hparams=_model_hparams(model))
         print(f"\n💾 [CHECKPOINT] Forced save → {ckpt}.zip")
 
     signal.signal(signal.SIGINT,  lambda sig, frame: abort_training("SIGINT received"))
@@ -632,7 +643,7 @@ async def main():
                 sys.exit(TrainExitCode.COMPLETE)
             print(f"Continuing Training (Steps: {remaining_steps:,} remaining of {args.steps:,}, LR: {resume_lr:.2e} (saved={saved_lr:.2e}, arg={args.lr:.2e})")
             _run_roundtrip_test(model, _load_extractor_kwargs["layout"], _load_policy_kwargs, debug=args.debug)
-            save_model_snapshot(model_dir, current_version)
+            save_model_snapshot(model_dir, current_version, hparams=_model_hparams(model))
 
             _abort_fn = _setup_signal_handlers(
                 model, model_dir, _shutdown_event, current_version,
@@ -653,11 +664,11 @@ async def main():
             final_path = os.path.join(model_dir, "final_model")
             model.save(final_path)
             _write_latest_txt(model_dir, "final_model.zip")
-            save_model_snapshot(os.path.dirname(final_path), current_version)
+            save_model_snapshot(os.path.dirname(final_path), current_version, hparams=_model_hparams(model))
             print(f"Training complete. Model saved to {final_path}")
             best_model_dir = os.path.join(model_dir, "best_model")
             if os.path.isdir(best_model_dir):
-                save_model_snapshot(best_model_dir, current_version)
+                save_model_snapshot(best_model_dir, current_version, hparams=_model_hparams(model))
             await evaluate_model_random(model)
     else:
         print(f"Starting NEW Training (Parallel x{n_envs}, Batch: {args.batch_size}, Epochs: {args.n_epochs})")
@@ -700,7 +711,7 @@ async def main():
 
         version = ModelVersion.from_layout_and_policy_kwargs(extractor_kwargs["layout"], policy_kwargs)
         _run_roundtrip_test(model, extractor_kwargs["layout"], policy_kwargs, debug=args.debug)
-        save_model_snapshot(model_dir, version)
+        save_model_snapshot(model_dir, version, hparams=_model_hparams(model))
 
         _abort_fn = _setup_signal_handlers(
             model, model_dir, _shutdown_event, version,
@@ -725,12 +736,12 @@ async def main():
         final_path = os.path.join(model_dir, "final_model")
         model.save(final_path)
         _write_latest_txt(model_dir, "final_model.zip")
-        record_checkpoint(model_dir, final_path + ".zip", adaptive_ppo_callback.current_lr, adaptive_ppo_callback.current_epochs)
-        save_model_snapshot(os.path.dirname(final_path), version)
+        record_checkpoint(model_dir, final_path + ".zip", adaptive_ppo_callback.current_lr, adaptive_ppo_callback.current_epochs, hparams=_model_hparams(model))
+        save_model_snapshot(os.path.dirname(final_path), version, hparams=_model_hparams(model))
         print(f"Training complete. Model saved to {final_path}")
         best_model_dir = os.path.join(model_dir, "best_model")
         if os.path.isdir(best_model_dir):
-            save_model_snapshot(best_model_dir, version)
+            save_model_snapshot(best_model_dir, version, hparams=_model_hparams(model))
         await evaluate_model_random(model)
 
 if __name__ == "__main__":
