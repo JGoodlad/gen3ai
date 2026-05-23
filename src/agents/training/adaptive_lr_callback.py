@@ -56,18 +56,17 @@ class AdaptivePPOCallback(BaseCallback):
         else:
             return
 
-        if new_lr == self._current_lr:
-            return
+        if new_lr != self._current_lr:
+            direction = "↓" if new_lr < self._current_lr else "↑"
+            if self.verbose >= 1:
+                print(
+                    f"[AdaptiveLR] approx_kl={kl:.4f} (target={self.target_kl:.3f}) "
+                    f"→ LR {direction} {self._current_lr:.2e} → {new_lr:.2e}"
+                )
+            self._current_lr = new_lr
+            self.model.lr_schedule = lambda _: new_lr
 
-        direction = "↓" if new_lr < self._current_lr else "↑"
-        if self.verbose >= 1:
-            print(
-                f"[AdaptiveLR] approx_kl={kl:.4f} (target={self.target_kl:.3f}) "
-                f"→ LR {direction} {self._current_lr:.2e} → {new_lr:.2e}"
-            )
-
-        self._current_lr = new_lr
-        self.model.lr_schedule = lambda _: new_lr
+        self.logger.record("train/n_epochs", self.model.n_epochs)
 
 
 # Alias so existing references still resolve.
