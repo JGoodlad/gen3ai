@@ -40,7 +40,11 @@ from a competent baseline rather than random. See `designs/ai_v5/impl_step2_bc.m
 A masked-slot prediction model (BERT-style) that, given the opponent's revealed Pokémon
 mid-game, outputs a distribution over the unrevealed slots. This is the world-sampling
 step for MCTS: at the start of each search trajectory, sample one complete team hypothesis
-from this distribution. See `designs/ai_v5/impl_step3_team_completion.md`.
+from this distribution. See `designs/ai_v5/impl_step3_team_completion.md` and the
+detailed architecture and data-pipeline notes in
+`designs/ai_v5/design_team_completion_detail.md`.
+Ladder data sources and opponent-sampling rationale are in
+`designs/ai_v5/design_ladder_sampling_and_prediction.md`.
 
 **Design questions to resolve:**
 - **Backbone freezing**: freeze the PPO role encoder + embeddings and train only the new

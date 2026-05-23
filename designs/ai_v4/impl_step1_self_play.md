@@ -127,6 +127,51 @@ against its own distribution. Two mitigations:
    pinned to a fixed team). This prevents the agent from specialising against specific team
    matchups.
 
+### Cycling and Forgetting Detection
+
+Early in self-play, the pool contains only the seed snapshot (v3 checkpoint) and behaves
+as a single fixed opponent. As the pool grows, two failure modes can emerge: **cycling**
+(the agent learns a strategy that beats the current snapshot but is exploited by older
+ones, producing an A→B→C→A loop) and **forgetting** (the agent loses the ability to beat
+older styles as it specialises against recent ones). Both are detectable from periodic
+evaluation data before they become severe.
+
+**Grandparent test** — keep 5 sentinel snapshots evenly spaced in training time and eval
+against all of them every 3M steps. Healthy training produces monotonically decreasing
+win rates as snapshots get older (old snapshots should be easier). Non-monotone ordering
+signals a cycle.
+
+**Monotonicity score** (Kendall's τ over the 5 win rates):
+
+```python
+def monotonicity_score(win_rates: list[float]) -> float:
+    """win_rates[0] = most recent snapshot, win_rates[-1] = oldest.
+    +1.0 = perfectly monotone (expected), −1.0 = fully inverted."""
+    n = len(win_rates)
+    concordant = sum(
+        win_rates[i] <= win_rates[j]
+        for i in range(n) for j in range(i + 1, n)
+    )
+    return 2 * concordant / (n * (n - 1)) - 1
+```
+
+Log as `eval/sentinel_monotonicity`. Below 0.6, the pool needs more diverse coverage
+and `recency_weight` should be reduced toward 0 (uniform sampling) to force the agent to
+keep solving older styles.
+
+**Win-rate oscillation** — track the standard deviation of `eval/win_rate_vs_pool` over
+the last 5 snapshot cycles. σ > 0.12 consistently indicates cycling; increase
+`max_snapshots` and reduce `recency_weight`.
+
+**Forgetting signal** — `eval/win_rate_vs_oldest_sentinel` should be stable or slowly
+rising. A drop > 10% over 10M steps means the agent is forgetting. Reduce snapshot
+deletion rate (raise `max_snapshots`) or pin the oldest sentinel as a permanent pool
+member.
+
+The pool size (default 20, covering roughly the last 10–20M steps at one snapshot per
+500K steps) is calibrated to break 2–3-step cycles. If the monotonicity score indicates
+longer cycles, raise `max_snapshots` proportionally.
+
 ### Reward Annealing
 
 The reward function has two categories of signals:
@@ -221,11 +266,27 @@ is additive — existing hyperparameters are unchanged.
 
 ## Final State
 
-Step 1 is complete when:
-- The snapshot pool is growing with genuine diversity (ELOs spanning > 200 points)
-- `eval/elo_live` has been increasing for at least 20M steps and has since plateaued (triggering reward annealing)
-- Win rate vs. `SimpleHeuristicsPlayer` (spot-checked in periodic eval) remains ≥ 80%
-  — self-play should not cause regression on the baseline the agent already solved
+Step 1 is complete when **all three gates are green**:
+
+| Gate | Metric | Threshold |
+|------|--------|-----------|
+| **Strength** | `eval/elo_live` flat for ≥ 10M steps | No improvement plateau |
+| **Diversity** | `eval/sentinel_monotonicity` ≥ 0.6 | Pool is not cycling |
+| **Regression guard** | `eval/win_rate_vs_heuristic` ≥ 80% | No forgetting of basics |
+
+The ELO plateau is the primary trigger — it means the self-play distribution is saturated
+and additional snapshots produce no new learning signal. The diversity gate confirms the
+plateau is strategic maturity rather than pool collapse (a collapsed pool also plateaus
+ELO, but with a falling monotonicity score and rising win-rate oscillation σ).
+
+Reward annealing (`--reward-anneal-start / --reward-anneal-end`) should be at least 50%
+complete before league play starts. If the run ends before annealing finishes, pass the
+same anneal range to the league training command so it completes naturally.
+
+**If diversity gate fails before strength gate:**
+The pool is cycling before ELO has plateaued — this is recoverable. Increase
+`max_snapshots`, reduce `recency_weight` to 0, and continue. Do not start league play
+until both gates are green.
 
 **Ready for Step 2: League Play**
 
@@ -233,3 +294,4 @@ Step 1 is complete when:
 - PFSP sampling replaces uniform sampling in `SnapshotPool.sample()`
 - Exploiter agents reuse `SnapshotPool` and `SelfPlayCallback` with a different
   `opponent_filter` (Main Agent snapshots only, not the full pool)
+- The final self-play checkpoint (at ELO plateau) becomes the Main Agent seed for league
