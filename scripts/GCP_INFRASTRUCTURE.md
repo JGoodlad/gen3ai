@@ -212,18 +212,29 @@ Worst-case recovery: ~100 seconds from network drop to tunnel restored.
 
 ## TensorBoard remote access
 
-Forward TensorBoard from your desktop to your local browser over the workstation tunnel:
+TensorBoard is exposed publicly via Cloudflare Tunnel at **https://tensorboard.g5d.io**.
 
-```bash
-ssh -p 2222 -L 6006:localhost:6006 goodlad@workstation.g5d.io
-```
-
-Then open in Chrome: **http://localhost:6006**
-
-Keep the SSH session open while using TensorBoard. Make sure TensorBoard is running on
-the desktop first:
+Make sure TensorBoard is running on the desktop first:
 ```bash
 tensorboard --logdir runs/
+```
+
+The tunnel daemon runs as a systemd user service and starts automatically on login:
+```bash
+systemctl --user status cloudflared-tensorboard
+systemctl --user restart cloudflared-tensorboard
+journalctl --user -u cloudflared-tensorboard -f
+```
+
+Config: `~/.cloudflared/config.yml`  
+Credentials: `~/.cloudflared/9ebabecb-fbdb-476a-925b-7329596cb38f.json`
+
+### SSH port-forward (alternative, no cloudflared required)
+
+If the tunnel is down, forward over the workstation SSH tunnel instead:
+```bash
+ssh -p 2222 -L 6006:localhost:6006 goodlad@workstation.g5d.io
+# then open http://localhost:6006
 ```
 
 ---
