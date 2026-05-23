@@ -87,6 +87,8 @@ class _HparamLogCallback(BaseCallback):
 
     def _on_training_start(self) -> None:
         self.logger.record("hparams/ent_coef", self._ent_coef)
+        self.logger.record("hparams/gamma", self.model.gamma)
+        self.logger.record("hparams/gae_lambda", self.model.gae_lambda)
         self.logger.dump(self.num_timesteps)
 
     def _on_step(self) -> bool:
@@ -593,7 +595,7 @@ async def main():
             print(f"\n[ModelVersion] FATAL: {e}")
             os._exit(1)
         model.ent_coef = args.ent_coef
-        model.gae_lambda = 0.85
+        model.gae_lambda = 0.80
         # Resume LR from optimizer state (stored in .zip by SB3), clamped to args.lr
         # so a manual --lr override can still lower the rate.
         saved_lr = model.policy.optimizer.param_groups[0]["lr"]
@@ -687,7 +689,7 @@ async def main():
             batch_size=args.batch_size,
             n_epochs=args.n_epochs,
             gamma=0.9999,
-            gae_lambda=0.85,
+            gae_lambda=0.80,
             clip_range=CLIP_RANGE,
             ent_coef=args.ent_coef,
             device=args.device,
