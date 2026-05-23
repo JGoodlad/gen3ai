@@ -8,6 +8,13 @@ Train the agent against frozen copies of itself rather than against fixed heuris
 Introduces a snapshot pool, win-rate gating, and ELO tracking to prevent strategy collapse
 and measure real improvement. See `designs/ai_v4/impl_step1_self_play.md`.
 
+**Known gap — mid-run opponent hot-swap:**  
+Currently, pool opponents refresh only at launcher restarts (~every 2.5h). A
+`_staged_opponent_path` mechanism in `Gen3Env.reset()` would allow the self-play callback
+to swap opponents between episodes without a restart, giving the agent fresher competition
+sooner after a new snapshot is promoted. Low priority until pool diversity becomes the
+bottleneck.
+
 ---
 
 ## Step 2 — League Play
