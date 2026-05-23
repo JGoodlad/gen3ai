@@ -8,8 +8,8 @@ from agents.training.adaptive_lr_callback import AdaptivePPOCallback
 def _make_callback(
     initial_lr=3e-4,
     initial_epochs=10,
-    clip_lo=0.05,
-    clip_hi=0.15,
+    clip_lo=0.10,
+    clip_hi=0.18,
     lr_factor=1.5,
     min_lr=1e-5,
     max_lr=None,
@@ -52,7 +52,7 @@ def _fire(cb, clip=None, kl=None):
 
 def test_no_lr_adjustment_when_clip_in_band():
     cb = _make_callback(initial_lr=3e-4)
-    _fire(cb, clip=0.10)  # inside [0.05, 0.15]
+    _fire(cb, clip=0.14)  # inside [0.10, 0.18]
     assert cb.current_lr == pytest.approx(3e-4)
 
 
