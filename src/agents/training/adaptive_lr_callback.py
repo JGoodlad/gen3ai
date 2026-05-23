@@ -29,7 +29,7 @@ class AdaptivePPOCallback(BaseCallback):
         self,
         initial_lr: float,
         initial_epochs: int = 10,
-        clip_lo: float = 0.05,
+        clip_lo: float = 0.07,
         clip_hi: float = 0.15,
         lr_factor: float = 1.2,
         min_lr: float = 1e-5,
