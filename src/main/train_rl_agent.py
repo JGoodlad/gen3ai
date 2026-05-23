@@ -593,7 +593,7 @@ async def main():
             print(f"\n[ModelVersion] FATAL: {e}")
             os._exit(1)
         model.ent_coef = args.ent_coef
-        model.gae_lambda = 0.95
+        model.gae_lambda = 0.85
         # Resume LR from optimizer state (stored in .zip by SB3), clamped to args.lr
         # so a manual --lr override can still lower the rate.
         saved_lr = model.policy.optimizer.param_groups[0]["lr"]
@@ -687,7 +687,7 @@ async def main():
             batch_size=args.batch_size,
             n_epochs=args.n_epochs,
             gamma=0.9999,
-            gae_lambda=0.95,
+            gae_lambda=0.85,
             clip_range=CLIP_RANGE,
             ent_coef=args.ent_coef,
             device=args.device,
