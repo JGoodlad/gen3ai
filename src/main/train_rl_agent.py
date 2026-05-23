@@ -41,7 +41,7 @@ from stable_baselines3.common.monitor import Monitor
 
 from agents.model.features_extractor import Gen3FeaturesExtractor, NET_ARCH
 from agents.model.model_version import ModelVersion, ModelVersionError
-from agents.model.snapshot import save_model_snapshot, load_model_snapshot, write_checkpoint_sidecar, read_checkpoint_sidecar
+from agents.model.snapshot import save_model_snapshot, load_model_snapshot, write_checkpoint_sidecar, read_checkpoint_sidecar, record_snapshot_in_history
 from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings
 from agents.inference.player import RLPlayer
 from utils.teambuilder import Gen3Teambuilder
@@ -109,11 +109,12 @@ class _TrackingCheckpointCallback(CheckpointCallback):
                 f"{self.name_prefix}_{self.num_timesteps}_steps.zip",
             )
             if self._current_lr_fn is not None and self._current_epochs_fn is not None:
-                ckpt_path = os.path.join(
-                    self.save_path,
-                    f"{self.name_prefix}_{self.num_timesteps}_steps.zip",
-                )
-                write_checkpoint_sidecar(ckpt_path, self._current_lr_fn(), self._current_epochs_fn())
+                ckpt_name = f"{self.name_prefix}_{self.num_timesteps}_steps.zip"
+                ckpt_path = os.path.join(self.save_path, ckpt_name)
+                lr = self._current_lr_fn()
+                epochs = self._current_epochs_fn()
+                write_checkpoint_sidecar(ckpt_path, lr, epochs)
+                record_snapshot_in_history(self.save_path, ckpt_name, lr, epochs)
         return result
 
 

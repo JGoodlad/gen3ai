@@ -16,7 +16,7 @@ from agents.model.model_version import (
     ModelVersionError,
     _migrate_config,
 )
-from agents.model.snapshot import save_model_snapshot, load_model_snapshot, write_checkpoint_sidecar, read_checkpoint_sidecar, _sidecar_path
+from agents.model.snapshot import save_model_snapshot, load_model_snapshot, write_checkpoint_sidecar, read_checkpoint_sidecar, record_snapshot_in_history, _sidecar_path
 from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings
 
 
@@ -281,6 +281,58 @@ def test_sidecar_independent_per_checkpoint():
         r100 = read_checkpoint_sidecar(ckpt_100m)
     assert r50["current_epochs"] == 10
     assert r100["current_epochs"] == 6
+
+
+# ---------------------------------------------------------------------------
+# snapshot_history
+# ---------------------------------------------------------------------------
+
+def test_record_snapshot_creates_history(version):
+    with tempfile.TemporaryDirectory() as tmpdir:
+        save_model_snapshot(tmpdir, version, git_hash="abc")
+        record_snapshot_in_history(tmpdir, "checkpoint_50000000_steps.zip", lr=2.5e-4, n_epochs=10)
+        with open(os.path.join(tmpdir, "metadata.json")) as f:
+            meta = json.load(f)
+    assert "snapshot_history" in meta
+    entry = meta["snapshot_history"]["checkpoint_50000000_steps.zip"]
+    assert entry["lr"] == pytest.approx(2.5e-4)
+    assert entry["n_epochs"] == 10
+
+
+def test_record_snapshot_accumulates_multiple_entries(version):
+    with tempfile.TemporaryDirectory() as tmpdir:
+        save_model_snapshot(tmpdir, version, git_hash="abc")
+        record_snapshot_in_history(tmpdir, "checkpoint_50000000_steps.zip", lr=3e-4, n_epochs=10)
+        record_snapshot_in_history(tmpdir, "checkpoint_100000000_steps.zip", lr=8e-5, n_epochs=7)
+        with open(os.path.join(tmpdir, "metadata.json")) as f:
+            history = json.load(f)["snapshot_history"]
+    assert len(history) == 2
+    assert history["checkpoint_50000000_steps.zip"]["n_epochs"] == 10
+    assert history["checkpoint_100000000_steps.zip"]["n_epochs"] == 7
+
+
+def test_save_model_snapshot_preserves_history(version):
+    with tempfile.TemporaryDirectory() as tmpdir:
+        save_model_snapshot(tmpdir, version, git_hash="abc")
+        record_snapshot_in_history(tmpdir, "checkpoint_50000000_steps.zip", lr=3e-4, n_epochs=10)
+        # Simulate a subsequent save_model_snapshot call (e.g. signal handler on restart)
+        save_model_snapshot(tmpdir, version, git_hash="def", current_lr=8e-5, current_epochs=7)
+        with open(os.path.join(tmpdir, "metadata.json")) as f:
+            meta = json.load(f)
+    assert "snapshot_history" in meta
+    assert "checkpoint_50000000_steps.zip" in meta["snapshot_history"]
+    # New fields also present
+    assert meta["current_lr"] == pytest.approx(8e-5)
+    assert meta["current_epochs"] == 7
+
+
+def test_record_snapshot_creates_metadata_if_missing():
+    with tempfile.TemporaryDirectory() as tmpdir:
+        # No prior save_model_snapshot call
+        record_snapshot_in_history(tmpdir, "checkpoint_50000000_steps.zip", lr=3e-4, n_epochs=10)
+        with open(os.path.join(tmpdir, "metadata.json")) as f:
+            meta = json.load(f)
+    assert meta["snapshot_history"]["checkpoint_50000000_steps.zip"]["lr"] == pytest.approx(3e-4)
 
 
 # ---------------------------------------------------------------------------

@@ -24,6 +24,7 @@ def save_model_snapshot(
 
     Does NOT call model.save() — the caller is responsible for the .zip file.
     Safe to call multiple times; files are overwritten in place.
+    Preserves any existing snapshot_history in the metadata file.
     """
     os.makedirs(model_dir, exist_ok=True)
 
@@ -32,6 +33,13 @@ def save_model_snapshot(
 
     if git_hash is None:
         git_hash = get_git_hash()
+
+    # Preserve snapshot_history accumulated by record_snapshot_in_history.
+    meta_path = os.path.join(model_dir, "metadata.json")
+    existing_history = {}
+    if os.path.exists(meta_path):
+        with open(meta_path) as f:
+            existing_history = json.load(f).get("snapshot_history", {})
 
     metadata = {
         "saved_at": datetime.now(timezone.utc).isoformat(),
@@ -43,8 +51,34 @@ def save_model_snapshot(
         metadata["current_lr"] = current_lr
     if current_epochs is not None:
         metadata["current_epochs"] = current_epochs
-    with open(os.path.join(model_dir, "metadata.json"), "w") as f:
+    if existing_history:
+        metadata["snapshot_history"] = existing_history
+    with open(meta_path, "w") as f:
         json.dump(metadata, f, indent=2)
+
+
+def record_snapshot_in_history(
+    model_dir: str,
+    checkpoint_name: str,
+    lr: float,
+    n_epochs: int,
+) -> None:
+    """Append or update a checkpoint entry in snapshot_history within metadata.json.
+
+    checkpoint_name: basename of the checkpoint zip, e.g. 'checkpoint_50000000_steps.zip'.
+    Creates metadata.json if it doesn't exist yet (history-only file until the next
+    save_model_snapshot call fills in the rest of the fields).
+    """
+    meta_path = os.path.join(model_dir, "metadata.json")
+    meta = {}
+    if os.path.exists(meta_path):
+        with open(meta_path) as f:
+            meta = json.load(f)
+    history = meta.get("snapshot_history", {})
+    history[checkpoint_name] = {"lr": lr, "n_epochs": n_epochs}
+    meta["snapshot_history"] = history
+    with open(meta_path, "w") as f:
+        json.dump(meta, f, indent=2)
 
 
 def write_checkpoint_sidecar(
