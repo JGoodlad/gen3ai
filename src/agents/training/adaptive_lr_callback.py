@@ -89,23 +89,23 @@ class AdaptivePPOCallback(BaseCallback):
         lr_changed = new_lr != self._current_lr
         epochs_changed = new_epochs != self._current_epochs
 
-        if not lr_changed and not epochs_changed:
-            return
+        if lr_changed or epochs_changed:
+            if self.verbose >= 1:
+                parts = []
+                if lr_changed:
+                    direction = "↓" if new_lr < self._current_lr else "↑"
+                    parts.append(f"clip={clip:.3f} → LR {direction} {self._current_lr:.2e} → {new_lr:.2e}")
+                if epochs_changed:
+                    direction = "↓" if new_epochs < self._current_epochs else "↑"
+                    parts.append(f"kl={kl:.4f} → epochs {direction} {self._current_epochs} → {new_epochs}")
+                print(f"[AdaptivePPO] {' | '.join(parts)}")
 
-        if self.verbose >= 1:
-            parts = []
-            if lr_changed:
-                direction = "↓" if new_lr < self._current_lr else "↑"
-                parts.append(f"clip={clip:.3f} → LR {direction} {self._current_lr:.2e} → {new_lr:.2e}")
-            if epochs_changed:
-                direction = "↓" if new_epochs < self._current_epochs else "↑"
-                parts.append(f"kl={kl:.4f} → epochs {direction} {self._current_epochs} → {new_epochs}")
-            print(f"[AdaptivePPO] {' | '.join(parts)}")
+            self._current_lr = new_lr
+            self._current_epochs = new_epochs
+            self.model.lr_schedule = lambda _: new_lr
+            self.model.n_epochs = new_epochs
 
-        self._current_lr = new_lr
-        self._current_epochs = new_epochs
-        self.model.lr_schedule = lambda _: new_lr
-        self.model.n_epochs = new_epochs
+        self.logger.record("train/n_epochs", self._current_epochs)
 
 
 # Alias so existing references (e.g. train_rl_agent.py resume seeding) still resolve.
