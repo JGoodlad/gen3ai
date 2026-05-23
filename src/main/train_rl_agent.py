@@ -28,6 +28,7 @@ except Exception:
 tensorboard_dir = os.path.join(_repo_root, "tensorboard")
 
 import asyncio
+import json
 import random
 import argparse
 import signal
@@ -52,7 +53,7 @@ from agents.training.gen3_env import Gen3Env
 from agents.training.reward_manager import Gen3RewardManager
 from agents.training.stall import StallConfig
 from agents.training.watchdog import start_subprocess_watchdog
-from agents.training.adaptive_lr_callback import AdaptiveLRCallback
+from agents.training.adaptive_lr_callback import AdaptivePPOCallback
 from agents.training.metrics_exporter_callback import MetricsExporterCallback
 from utils.logging.levels import LogLevel
 from main.exit_codes import TrainExitCode
@@ -142,14 +143,14 @@ def _run_roundtrip_test(model, layout: dict, policy_kwargs: dict, debug: bool = 
         shutil.rmtree(tmpdir, ignore_errors=True)
 
 
-def _setup_signal_handlers(model, model_dir, shutdown_event, version, current_lr_fn):
+def _setup_signal_handlers(model, model_dir, shutdown_event, version, current_lr_fn, current_epochs_fn):
     def _interrupt(sig, frame):
         shutdown_event.set()
         print("\nInterrupt received, saving model...")
         final_path = os.path.join(model_dir, "final_model_interrupted")
         model.save(final_path)
         _write_latest_txt(model_dir, "final_model_interrupted.zip")
-        save_model_snapshot(model_dir, version, current_lr=current_lr_fn())
+        save_model_snapshot(model_dir, version, current_lr=current_lr_fn(), current_epochs=current_epochs_fn())
         print(f"Model saved to {final_path}. Exiting.")
         sys.exit(TrainExitCode.INTERRUPTED)
 
@@ -399,8 +400,11 @@ async def main():
         reward_fn_factory=reward_factory,
     )
 
-    adaptive_lr_callback = AdaptiveLRCallback(initial_lr=args.lr)
-    callbacks = [checkpoint_callback, replay_callback, adaptive_lr_callback, MetricsExporterCallback(), _HparamLogCallback(args.ent_coef)]
+    adaptive_ppo_callback = AdaptivePPOCallback(
+        initial_lr=args.lr,
+        initial_epochs=args.n_epochs,
+    )
+    callbacks = [checkpoint_callback, replay_callback, adaptive_ppo_callback, MetricsExporterCallback(), _HparamLogCallback(args.ent_coef)]
     
     if not args.debug:
         ts_cb = datetime.now().strftime('%H%M%S')
@@ -482,17 +486,25 @@ async def main():
             print(f"\n[ModelVersion] FATAL: {e}")
             os._exit(1)
         model.ent_coef = args.ent_coef
-        # Resume at the LR that was active when the checkpoint was saved (stored in
-        # optimizer state by SB3), clamped to args.lr as a ceiling so a manual
-        # --lr override can still lower the rate.  AdaptiveLRCallback is seeded with
-        # the same value so it continues adapting from where it left off.
+        model.gae_lambda = 0.95
+        # Resume LR from optimizer state (stored in .zip by SB3), clamped to args.lr
+        # so a manual --lr override can still lower the rate.
         saved_lr = model.policy.optimizer.param_groups[0]["lr"]
         resume_lr = min(saved_lr, args.lr)
         _resume_lr_lambda = lambda _: resume_lr
         model.lr_schedule = _resume_lr_lambda
-        adaptive_lr_callback._current_lr = resume_lr
+        adaptive_ppo_callback._current_lr = resume_lr
+        # Resume n_epochs from metadata.json (not in optimizer state). Must be read
+        # before save_model_snapshot() below overwrites the file.
+        _meta_path = os.path.join(model_dir, "metadata.json")
+        resume_epochs = args.n_epochs
+        if os.path.exists(_meta_path):
+            with open(_meta_path) as _f:
+                resume_epochs = json.load(_f).get("current_epochs", args.n_epochs)
+        model.n_epochs = resume_epochs
+        adaptive_ppo_callback._current_epochs = resume_epochs
         model.clip_range = lambda _: CLIP_RANGE
-        send_event(f"▶️  Resuming at LR {resume_lr:.2e} (checkpoint={saved_lr:.2e})")
+        send_event(f"▶️  Resuming at LR {resume_lr:.2e}, epochs {resume_epochs} (checkpoint LR={saved_lr:.2e})")
 
         if args.eval_only:
             await evaluate_model_random(model)
@@ -509,6 +521,7 @@ async def main():
             _setup_signal_handlers(
                 model, model_dir, _shutdown_event, current_version,
                 lambda: model.policy.optimizer.param_groups[0]["lr"],
+                lambda: adaptive_ppo_callback.current_epochs,
             )
 
             try:
@@ -558,7 +571,7 @@ async def main():
             batch_size=args.batch_size,
             n_epochs=args.n_epochs,
             gamma=0.9999,
-            gae_lambda=0.85,
+            gae_lambda=0.95,
             clip_range=CLIP_RANGE,
             ent_coef=args.ent_coef,
             device=args.device,
@@ -574,6 +587,7 @@ async def main():
         _setup_signal_handlers(
             model, model_dir, _shutdown_event, version,
             lambda: model.policy.optimizer.param_groups[0]["lr"],
+            lambda: adaptive_ppo_callback.current_epochs,
         )
 
         try:
