@@ -81,6 +81,19 @@ def record_snapshot_in_history(
         json.dump(meta, f, indent=2)
 
 
+def record_checkpoint(model_dir: str, checkpoint_path: str, lr: float, n_epochs: int) -> None:
+    """Write per-checkpoint metadata file and append to run-level snapshot_history.
+
+    checkpoint_path: full path to the .zip (with or without extension).
+    Call this whenever a checkpoint .zip is saved.
+    """
+    write_checkpoint_metadata(checkpoint_path, lr, n_epochs)
+    name = os.path.basename(checkpoint_path)
+    if not name.endswith(".zip"):
+        name += ".zip"
+    record_snapshot_in_history(model_dir, name, lr, n_epochs)
+
+
 def write_checkpoint_metadata(
     checkpoint_path: str,
     current_lr: float,

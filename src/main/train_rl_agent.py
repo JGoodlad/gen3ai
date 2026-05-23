@@ -41,7 +41,7 @@ from stable_baselines3.common.monitor import Monitor
 
 from agents.model.features_extractor import Gen3FeaturesExtractor, NET_ARCH
 from agents.model.model_version import ModelVersion, ModelVersionError
-from agents.model.snapshot import save_model_snapshot, load_model_snapshot, write_checkpoint_metadata, read_checkpoint_metadata, record_snapshot_in_history
+from agents.model.snapshot import save_model_snapshot, load_model_snapshot, read_checkpoint_metadata, record_checkpoint
 from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings
 from agents.inference.player import RLPlayer
 from utils.teambuilder import Gen3Teambuilder
@@ -109,12 +109,8 @@ class _TrackingCheckpointCallback(CheckpointCallback):
                 f"{self.name_prefix}_{self.num_timesteps}_steps.zip",
             )
             if self._current_lr_fn is not None and self._current_epochs_fn is not None:
-                ckpt_name = f"{self.name_prefix}_{self.num_timesteps}_steps.zip"
-                ckpt_path = os.path.join(self.save_path, ckpt_name)
-                lr = self._current_lr_fn()
-                epochs = self._current_epochs_fn()
-                write_checkpoint_metadata(ckpt_path, lr, epochs)
-                record_snapshot_in_history(self.save_path, ckpt_name, lr, epochs)
+                ckpt_path = os.path.join(self.save_path, f"{self.name_prefix}_{self.num_timesteps}_steps.zip")
+                record_checkpoint(self.save_path, ckpt_path, self._current_lr_fn(), self._current_epochs_fn())
         return result
 
 
@@ -187,6 +183,7 @@ def _setup_signal_handlers(model, model_dir, shutdown_event, version, current_lr
         ckpt = os.path.join(model_dir, name)
         model.save(ckpt)
         _write_latest_txt(model_dir, name + ".zip")
+        record_checkpoint(model_dir, os.path.join(model_dir, name + ".zip"), current_lr_fn(), current_epochs_fn())
         print(f"\n💾 [CHECKPOINT] Forced save → {ckpt}.zip")
 
     signal.signal(signal.SIGINT,  lambda sig, frame: abort_training("SIGINT received"))
@@ -726,6 +723,7 @@ async def main():
         final_path = os.path.join(model_dir, "final_model")
         model.save(final_path)
         _write_latest_txt(model_dir, "final_model.zip")
+        record_checkpoint(model_dir, final_path + ".zip", adaptive_ppo_callback.current_lr, adaptive_ppo_callback.current_epochs)
         save_model_snapshot(os.path.dirname(final_path), version)
         print(f"Training complete. Model saved to {final_path}")
         best_model_dir = os.path.join(model_dir, "best_model")
