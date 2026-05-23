@@ -46,7 +46,7 @@ from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappin
 from agents.inference.player import RLPlayer
 from utils.teambuilder import Gen3Teambuilder
 from utils.team_loader import TeamLoader
-from agents.training.eval_callback import PerOpponentEvalCallback
+from agents.training.eval_callback import PerOpponentEvalCallback, opponent_name
 from agents.training.snapshot_pool import SnapshotPool, heuristic_fraction
 from agents.training.selfplay_callback import SelfPlayCallback
 from agents.training.replay_recorder import ReplayCallback
@@ -158,15 +158,28 @@ def _run_roundtrip_test(model, layout: dict, policy_kwargs: dict, debug: bool = 
 
 
 def _setup_signal_handlers(model, model_dir, shutdown_event, version, current_lr_fn, current_epochs_fn):
-    def _interrupt(sig, frame):
+    """Wire SIGINT/SIGTERM/SIGUSR1. Returns the abort_training closure so it can
+    be passed to eval callbacks as their canonical "die cleanly" path."""
+
+    def abort_training(reason: str) -> None:
+        """Single canonical abort path — works from any thread.
+
+        Saves a full checkpoint (with metadata + latest.txt), then exits with
+        TrainExitCode.INTERRUPTED (15) so the launcher restarts the run.
+        Uses os._exit() rather than sys.exit() so it terminates the whole
+        process even when called from a background eval thread.
+        """
         shutdown_event.set()
-        print("\nInterrupt received, saving model...")
-        final_path = os.path.join(model_dir, "final_model_interrupted")
-        model.save(final_path)
-        _write_latest_txt(model_dir, "final_model_interrupted.zip")
-        save_model_snapshot(model_dir, version, current_lr=current_lr_fn(), current_epochs=current_epochs_fn())
-        print(f"Model saved to {final_path}. Exiting.")
-        sys.exit(TrainExitCode.INTERRUPTED)
+        print(f"\n[ABORT] {reason}")
+        try:
+            path = os.path.join(model_dir, "final_model_interrupted")
+            model.save(path)
+            _write_latest_txt(model_dir, "final_model_interrupted.zip")
+            save_model_snapshot(model_dir, version, current_lr=current_lr_fn(), current_epochs=current_epochs_fn())
+            print(f"[ABORT] Checkpoint saved → {path}.zip")
+        except Exception as e:
+            print(f"[ABORT] Save failed: {e}")
+        os._exit(int(TrainExitCode.INTERRUPTED))
 
     def _forced_checkpoint(sig, frame):
         step = model.num_timesteps
@@ -176,9 +189,10 @@ def _setup_signal_handlers(model, model_dir, shutdown_event, version, current_lr
         _write_latest_txt(model_dir, name + ".zip")
         print(f"\n💾 [CHECKPOINT] Forced save → {ckpt}.zip")
 
-    signal.signal(signal.SIGINT, _interrupt)
-    signal.signal(signal.SIGTERM, _interrupt)
+    signal.signal(signal.SIGINT,  lambda sig, frame: abort_training("SIGINT received"))
+    signal.signal(signal.SIGTERM, lambda sig, frame: abort_training("SIGTERM received"))
     signal.signal(signal.SIGUSR1, _forced_checkpoint)
+    return abort_training
 
 
 async def main():
@@ -414,31 +428,31 @@ async def main():
         )
 
         final_opponents = [
-            ("Random", RandomPlayer(
+            (opponent_name(RandomPlayer), RandomPlayer(
                 battle_format=BATTLE_FORMAT, team=opponent_teambuilder,
                 server_configuration=LocalhostServerConfiguration,
                 account_configuration=AccountConfiguration(f"FinalRand{ts}", "password"),
                 max_concurrent_battles=args.eval_concurrency,
             )),
-            ("Heuristic", SimpleHeuristicsPlayer(
+            (opponent_name(SimpleHeuristicsPlayer), SimpleHeuristicsPlayer(
                 battle_format=BATTLE_FORMAT, team=opponent_teambuilder,
                 server_configuration=LocalhostServerConfiguration,
                 account_configuration=AccountConfiguration(f"FinalHeur{ts}", "password"),
                 max_concurrent_battles=args.eval_concurrency,
             )),
-            ("Staller", Gen3StallerPlayer(
+            (opponent_name(Gen3StallerPlayer), Gen3StallerPlayer(
                 battle_format=BATTLE_FORMAT, team=opponent_teambuilder,
                 server_configuration=LocalhostServerConfiguration,
                 account_configuration=AccountConfiguration(f"FinalStall{ts}", "password"),
                 max_concurrent_battles=args.eval_concurrency,
             )),
-            ("Aggressive", Gen3AggressivePlayer(
+            (opponent_name(Gen3AggressivePlayer), Gen3AggressivePlayer(
                 battle_format=BATTLE_FORMAT, team=opponent_teambuilder,
                 server_configuration=LocalhostServerConfiguration,
                 account_configuration=AccountConfiguration(f"FinalAggr{ts}", "password"),
                 max_concurrent_battles=args.eval_concurrency,
             )),
-            ("SetupSweep", Gen3SetupSweepPlayer(
+            (opponent_name(Gen3SetupSweepPlayer), Gen3SetupSweepPlayer(
                 battle_format=BATTLE_FORMAT, team=opponent_teambuilder,
                 server_configuration=LocalhostServerConfiguration,
                 account_configuration=AccountConfiguration(f"FinalSetup{ts}", "password"),
@@ -489,35 +503,36 @@ async def main():
     checkpoint_callback._current_lr_fn = lambda: model.policy.optimizer.param_groups[0]["lr"]
     checkpoint_callback._current_epochs_fn = lambda: adaptive_ppo_callback.current_epochs
     callbacks = [checkpoint_callback, replay_callback, adaptive_ppo_callback, MetricsExporterCallback(), _HparamLogCallback(args.ent_coef)]
-    
+    eval_callback = None
+
     if not args.debug:
         ts_cb = datetime.now().strftime('%H%M%S')
         eval_opponents = [
-            ("Random", RandomPlayer(
+            (opponent_name(RandomPlayer), RandomPlayer(
                 battle_format=BATTLE_FORMAT, team=opponent_teambuilder,
                 server_configuration=LocalhostServerConfiguration,
                 account_configuration=AccountConfiguration(f"CbRand{ts_cb}", "password"),
                 max_concurrent_battles=100,
             )),
-            ("Heuristic", SimpleHeuristicsPlayer(
+            (opponent_name(SimpleHeuristicsPlayer), SimpleHeuristicsPlayer(
                 battle_format=BATTLE_FORMAT, team=opponent_teambuilder,
                 server_configuration=LocalhostServerConfiguration,
                 account_configuration=AccountConfiguration(f"CbHeur{ts_cb}", "password"),
                 max_concurrent_battles=100,
             )),
-            ("Staller", Gen3StallerPlayer(
+            (opponent_name(Gen3StallerPlayer), Gen3StallerPlayer(
                 battle_format=BATTLE_FORMAT, team=opponent_teambuilder,
                 server_configuration=LocalhostServerConfiguration,
                 account_configuration=AccountConfiguration(f"CbStall{ts_cb}", "password"),
                 max_concurrent_battles=100,
             )),
-            ("Aggressive", Gen3AggressivePlayer(
+            (opponent_name(Gen3AggressivePlayer), Gen3AggressivePlayer(
                 battle_format=BATTLE_FORMAT, team=opponent_teambuilder,
                 server_configuration=LocalhostServerConfiguration,
                 account_configuration=AccountConfiguration(f"CbAggr{ts_cb}", "password"),
                 max_concurrent_battles=100,
             )),
-            ("SetupSweep", Gen3SetupSweepPlayer(
+            (opponent_name(Gen3SetupSweepPlayer), Gen3SetupSweepPlayer(
                 battle_format=BATTLE_FORMAT, team=opponent_teambuilder,
                 server_configuration=LocalhostServerConfiguration,
                 account_configuration=AccountConfiguration(f"CbSetup{ts_cb}", "password"),
@@ -620,11 +635,13 @@ async def main():
             _run_roundtrip_test(model, _load_extractor_kwargs["layout"], _load_policy_kwargs, debug=args.debug)
             save_model_snapshot(model_dir, current_version)
 
-            _setup_signal_handlers(
+            _abort_fn = _setup_signal_handlers(
                 model, model_dir, _shutdown_event, current_version,
                 lambda: model.policy.optimizer.param_groups[0]["lr"],
                 lambda: adaptive_ppo_callback.current_epochs,
             )
+            if not args.debug and eval_callback is not None:
+                eval_callback.abort_fn = _abort_fn
 
             try:
                 model.learn(total_timesteps=args.steps, callback=callbacks, reset_num_timesteps=False, tb_log_name=tb_run_name)
@@ -686,11 +703,13 @@ async def main():
         _run_roundtrip_test(model, extractor_kwargs["layout"], policy_kwargs, debug=args.debug)
         save_model_snapshot(model_dir, version)
 
-        _setup_signal_handlers(
+        _abort_fn = _setup_signal_handlers(
             model, model_dir, _shutdown_event, version,
             lambda: model.policy.optimizer.param_groups[0]["lr"],
             lambda: adaptive_ppo_callback.current_epochs,
         )
+        if not args.debug and eval_callback is not None:
+            eval_callback.abort_fn = _abort_fn
 
         try:
             if log_level >= LogLevel.DETAILED:

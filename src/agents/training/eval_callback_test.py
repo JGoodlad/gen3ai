@@ -2,7 +2,51 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from agents.training.eval_callback import PerOpponentEvalCallback
+from poke_env.player import RandomPlayer, SimpleHeuristicsPlayer
+from agents.opponents import Gen3StallerPlayer
+from agents.training.eval_callback import PerOpponentEvalCallback, bot_mean, opponent_name, RANDOM_OPPONENT_NAME
+
+
+# ── bot_mean ─────────────────────────────────────────────────────────────────
+
+def test_bot_mean_excludes_random():
+    assert bot_mean({"Random": 0.9, "Heuristic": 0.4, "Staller": 0.6}) == pytest.approx(0.5)
+
+
+def test_bot_mean_all_random_returns_zero():
+    assert bot_mean({"Random": 0.9}) == pytest.approx(0.0)
+
+
+def test_bot_mean_empty_returns_zero():
+    assert bot_mean({}) == pytest.approx(0.0)
+
+
+def test_bot_mean_no_random_averages_all():
+    assert bot_mean({"Heuristic": 0.4, "Staller": 0.6}) == pytest.approx(0.5)
+
+
+# ── opponent_name ─────────────────────────────────────────────────────────────
+
+def test_opponent_name_random():
+    assert opponent_name(RandomPlayer) == "Random"
+
+
+def test_opponent_name_heuristic():
+    assert opponent_name(SimpleHeuristicsPlayer) == "Heuristic"
+
+
+def test_opponent_name_staller():
+    assert opponent_name(Gen3StallerPlayer) == "Staller"
+
+
+def test_opponent_name_unknown_falls_back_to_class_name():
+    class MyCustomPlayer:
+        pass
+    assert opponent_name(MyCustomPlayer) == "MyCustomPlayer"
+
+
+def test_random_opponent_name_constant_matches_function():
+    assert RANDOM_OPPONENT_NAME == opponent_name(RandomPlayer)
 
 
 def _make_callback(best_model_save_path=None):

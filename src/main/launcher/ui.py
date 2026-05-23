@@ -43,7 +43,10 @@ _METRIC_ORDER = [
     # Eval — aggregate first, then per-opponent win rates, then per-opponent rewards.
     # Episode lengths fall alphabetically after (less actionable).
     "eval/win_rate_mean",
+    "eval/win_rate_vs_bots",
+    "eval/win_rate_vs_pool",
     "eval/mean_reward_mean",
+    "eval/mean_reward_vs_bots",
     "eval/win_rate_vs_Random",
     "eval/win_rate_vs_Heuristic",
     "eval/win_rate_vs_Staller",
@@ -187,7 +190,7 @@ class LauncherUI:
                 ordered.append(k)
 
         # Split eval: aggregate summary vs per-opponent detail for the right column.
-        _EVAL_SUMMARY = frozenset({"eval/win_rate_mean", "eval/mean_reward_mean"})
+        _EVAL_SUMMARY = frozenset({"eval/win_rate_mean", "eval/win_rate_vs_bots", "eval/win_rate_vs_pool", "eval/mean_reward_mean", "eval/mean_reward_vs_bots"})
         per_opponent: list = []
         eval_summary: dict = {}
         by_section: dict = {}
@@ -295,12 +298,23 @@ class LauncherUI:
         # Section header row (no data columns)
         t.add_row(f"[dim italic]eval{stale_badge}[/dim italic]", "", "")
 
-        # Aggregate "all" row first
+        # Aggregate rows: "all" (includes Random), "vs Bots" (excludes Random), "vs Pool" (self-play only)
         if eval_summary:
             wr = eval_summary.get("eval/win_rate_mean")
             rw = eval_summary.get("eval/mean_reward_mean")
-            t.add_row("  all", _wr_str(wr), _rw_str(rw), end_section=True)
+            t.add_row("  all", _wr_str(wr), _rw_str(rw))
+            wr_bots = eval_summary.get("eval/win_rate_vs_bots")
+            rw_bots = eval_summary.get("eval/mean_reward_vs_bots")
+            t.add_row("  vs Bots", _wr_str(wr_bots), _rw_str(rw_bots))
+            wr_pool = eval_summary.get("eval/win_rate_vs_pool")
+            if wr_pool is not None:
+                t.add_row("  vs Pool", _wr_str(wr_pool), "")
+            t.add_row("", "", "", end_section=True)
 
+        # Random always first, remaining opponents in metric-order (from keys).
+        if "Random" in order:
+            order.remove("Random")
+            order.insert(0, "Random")
         for opp in order:
             data = opponents[opp]
             t.add_row(f"  vs {opp}", _wr_str(data.get("win_rate")), _rw_str(data.get("reward")))

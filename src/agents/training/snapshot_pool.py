@@ -7,7 +7,6 @@ Reconstructs on every __init__ so launcher restarts are transparent.
 
 from __future__ import annotations
 
-import json
 import random
 from collections import OrderedDict
 from dataclasses import dataclass
@@ -51,7 +50,6 @@ class SnapshotPool:
     """
 
     _WIN_RATE_FILE = "win_rate_vs_bots.txt"
-    _BOT_PEAKS_FILE = "bot_peaks.json"
 
     def __init__(
         self,
@@ -162,22 +160,6 @@ class SnapshotPool:
             except (ValueError, OSError) as e:
                 print(f"[SELFPLAY] Warning: could not read {path}: {e} — defaulting to 0.0")
         return 0.0
-
-    # ── Bot-peak persistence ───────────────────────────────────────────────
-
-    def persist_bot_peaks(self, peaks: dict[str, float]) -> None:
-        """Write bot peak win rates to disk so regression guard survives restarts."""
-        (self.pool_dir / self._BOT_PEAKS_FILE).write_text(json.dumps(peaks))
-
-    def load_persisted_bot_peaks(self) -> dict[str, float]:
-        """Read last-persisted bot peaks, or empty dict if not available."""
-        path = self.pool_dir / self._BOT_PEAKS_FILE
-        if path.exists():
-            try:
-                return json.loads(path.read_text())
-            except (ValueError, OSError) as e:
-                print(f"[SELFPLAY] Warning: could not read {path}: {e} — peaks reset")
-        return {}
 
     # ── Convenience ────────────────────────────────────────────────────────
 

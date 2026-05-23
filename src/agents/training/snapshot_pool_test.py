@@ -274,22 +274,3 @@ def test_load_win_rate_returns_zero_on_corrupt_file(tmp_path):
     assert pool.load_persisted_win_rate() == pytest.approx(0.0)
 
 
-# ── bot-peak persistence ─────────────────────────────────────────────────────
-
-def test_persist_and_load_bot_peaks(tmp_path):
-    pool = _make_pool(tmp_path)
-    peaks = {"Heuristic": 0.75, "Staller": 0.82}
-    pool.persist_bot_peaks(peaks)
-    loaded = pool.load_persisted_bot_peaks()
-    assert loaded == pytest.approx(peaks)
-
-
-def test_load_bot_peaks_returns_empty_if_missing(tmp_path):
-    pool = _make_pool(tmp_path)
-    assert pool.load_persisted_bot_peaks() == {}
-
-
-def test_load_bot_peaks_returns_empty_on_corrupt_file(tmp_path):
-    pool = _make_pool(tmp_path)
-    (tmp_path / pool._BOT_PEAKS_FILE).write_text("{invalid json")
-    assert pool.load_persisted_bot_peaks() == {}

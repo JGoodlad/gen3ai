@@ -25,16 +25,13 @@ from stable_baselines3.common.callbacks import BaseCallback
 from poke_env.ps_client import LocalhostServerConfiguration, AccountConfiguration
 
 from agents.inference.player import RLPlayer
-from agents.training.eval_callback import EvalRLPlayer, _EVAL_CONCURRENCY, eval_schedule
+from agents.training.eval_callback import EvalRLPlayer, _EVAL_CONCURRENCY, eval_schedule, RANDOM_OPPONENT_NAME, bot_mean
 from agents.training.reward_manager import Gen3RewardManager
 from agents.training.reward_tracker import RewardTrackingMixin
 from agents.training.snapshot_pool import SnapshotPool, heuristic_fraction
 from main.launcher.ipc import emit, send_metrics
 
 BATTLE_FORMAT = "gen3ou"
-
-# Bot names that count toward win_rate_vs_bots (excludes Random — trivial).
-_BOT_NAMES = {"Heuristic", "Staller", "Aggressive", "SetupSweep"}
 
 # Regression guard: warn if a bot the agent was beating well drops below this.
 _REGRESSION_WARN_THRESHOLD = 0.60
@@ -97,11 +94,13 @@ class SelfPlayCallback(BaseCallback):
         self._pool_opp_players: list[RLPlayer] = []
         self._last_eval_step = 0
         self._best_aggregate_win_rate = -1.0
+        # Set by train_rl_agent after signal handlers are wired.
+        self.abort_fn = None
 
         # Shared state: written by eval thread, read by env factory on next restart.
         self.win_rate_vs_bots: float = pool.load_persisted_win_rate()
-        # Bot peaks persisted so regression guard survives launcher restarts.
-        self._bot_peak: dict[str, float] = pool.load_persisted_bot_peaks()
+        self._bot_peak: dict[str, float] = {}  # resets each run; TensorBoard has history
+        self._regression_active: set[str] = set()  # bots currently in warned state
 
     # ── SB3 lifecycle ──────────────────────────────────────────────────────
 
@@ -165,8 +164,7 @@ class SelfPlayCallback(BaseCallback):
         def exception_handler(loop, context):
             msg = context.get("exception", context["message"])
             print(f"\n[SELFPLAY EVAL FATAL] {msg}")
-            self._emergency_save()
-            os._exit(1)
+            self._abort("selfplay eval fatal")
 
         loop.set_exception_handler(exception_handler)
         try:
@@ -174,8 +172,7 @@ class SelfPlayCallback(BaseCallback):
         except Exception as e:
             print(f"\n[SELFPLAY EVAL CRASH] Step {self.num_timesteps}: {e}")
             traceback.print_exc()
-            self._emergency_save()
-            os._exit(1)
+            self._abort(f"selfplay eval crash at step {self.num_timesteps}")
         finally:
             loop.close()
 
@@ -190,23 +187,26 @@ class SelfPlayCallback(BaseCallback):
 
         win_rates: dict[str, float] = {}
         reward_means: dict[str, float] = {}
+        ep_lens: dict[str, float] = {}
         tui_metrics: dict[str, float] = {}
 
         # ── 1. Bot eval ────────────────────────────────────────────────────
         for name, opponent in self._bot_opponents:
-            wr, mean_reward = await self._battle(self._rl_player, opponent, n_games, name)
+            wr, mean_reward, ep_len = await self._battle(self._rl_player, opponent, n_games, name)
             win_rates[name] = wr
             reward_means[name] = mean_reward
+            ep_lens[name] = ep_len
             self.logger.record(f"eval/win_rate_vs_{name}", wr)
             self.logger.record(f"eval/mean_reward_vs_{name}", mean_reward)
+            self.logger.record(f"eval/mean_ep_len_vs_{name}", ep_len)
             tui_metrics[f"eval/win_rate_vs_{name}"] = wr
 
-        # Compute win_rate_vs_bots (strategic bots only, exclude Random)
-        bot_wrs = [v for k, v in win_rates.items() if k in _BOT_NAMES]
-        self.win_rate_vs_bots = sum(bot_wrs) / len(bot_wrs) if bot_wrs else 0.0
+        # Compute bot aggregates (exclude Random)
+        self.win_rate_vs_bots = bot_mean(win_rates)
+        mean_reward_vs_bots = bot_mean(reward_means)
+        mean_ep_len_vs_bots = bot_mean(ep_lens)
         self._pool.persist_win_rate(self.win_rate_vs_bots)
         self._check_bot_regression(win_rates)
-        self._pool.persist_bot_peaks(self._bot_peak)
 
         # ── 2. Pool / sentinel eval ────────────────────────────────────────
         sentinel_win_rates: list[float] = []
@@ -217,7 +217,7 @@ class SelfPlayCallback(BaseCallback):
             self._pool_opp_players[i].model = pool_model
             opp = self._pool_opp_players[i]
             label = f"sentinel_{i}"
-            wr, _ = await self._battle(self._rl_player, opp, n_games, label)
+            wr, _, _ = await self._battle(self._rl_player, opp, n_games, label)
             sentinel_win_rates.append(wr)
             self.logger.record(f"eval/win_rate_vs_{label}", wr)
             tui_metrics[f"eval/win_rate_vs_{label}"] = wr
@@ -246,7 +246,11 @@ class SelfPlayCallback(BaseCallback):
         # Overall aggregate (bots only — pool changes over time, bots are stable)
         bot_aggregate = self.win_rate_vs_bots
         self.logger.record("eval/win_rate_vs_bots", bot_aggregate)
+        self.logger.record("eval/mean_reward_vs_bots", mean_reward_vs_bots)
+        self.logger.record("eval/mean_ep_len_vs_bots", mean_ep_len_vs_bots)
         tui_metrics["eval/win_rate_vs_bots"] = bot_aggregate
+        tui_metrics["eval/mean_reward_vs_bots"] = mean_reward_vs_bots
+        tui_metrics["eval/mean_ep_len_vs_bots"] = mean_ep_len_vs_bots
         self.logger.dump(step)
 
         tui_metrics["_step"] = step
@@ -277,8 +281,8 @@ class SelfPlayCallback(BaseCallback):
         opponent,
         n_games: int,
         label: str,
-    ) -> tuple[float, float]:
-        """Run n_games, reset both players, return (win_rate, mean_reward)."""
+    ) -> tuple[float, float, float]:
+        """Run n_games, reset both players, return (win_rate, mean_reward, mean_ep_len)."""
         if trainee.n_finished_battles > 0:
             trainee.reset_battles()
         if opponent.n_finished_battles > 0:
@@ -300,25 +304,21 @@ class SelfPlayCallback(BaseCallback):
         )
         if hasattr(trainee, "reset_reward_tracking"):
             trainee.reset_reward_tracking()
-        return wr, mean_reward
+        return wr, mean_reward, ep_len
 
-    def _emergency_save(self) -> None:
-        """Save a crash checkpoint before os._exit so training progress isn't lost."""
-        if self.model is None or self.best_model_save_path is None:
-            return
-        try:
-            path = os.path.join(self.best_model_save_path, f"crash_{self.num_timesteps}")
-            self.model.save(path)
-            print(f"[SELFPLAY EVAL] Emergency checkpoint saved → {path}.zip")
-        except Exception as e:
-            print(f"[SELFPLAY EVAL] Emergency save failed: {e}")
+    def _abort(self, reason: str) -> None:
+        """Delegate to the canonical abort path if wired; fall back to hard exit."""
+        if self.abort_fn is not None:
+            self.abort_fn(reason)
+        else:
+            os._exit(1)
 
     def _mean_episode_length(self, player) -> float:
         battles = [b for b in player._battles.values() if b.finished]
         return sum(b.turn for b in battles) / len(battles) if battles else 0.0
 
     def _check_bot_regression(self, win_rates: dict[str, float]) -> None:
-        for name in _BOT_NAMES:
+        for name in (k for k in win_rates if k != RANDOM_OPPONENT_NAME):
             wr = win_rates.get(name)
             if wr is None:
                 continue
@@ -326,11 +326,14 @@ class SelfPlayCallback(BaseCallback):
             if wr > peak:
                 self._bot_peak[name] = wr
                 peak = wr
-            # Warn whenever current drops below threshold, as long as we've ever
-            # reached it — regardless of whether the high watermark hit 0.70.
             if peak >= _REGRESSION_WARN_THRESHOLD and wr < _REGRESSION_WARN_THRESHOLD:
-                emit(
-                    f"⚠️  [SELFPLAY] BOT_REGRESSION vs {name}: "
-                    f"peak={peak * 100:.1f}% → now={wr * 100:.1f}% "
-                    f"at step {self.num_timesteps:,}"
-                )
+                # Edge-trigger: only emit on the first eval where regression is detected.
+                if name not in self._regression_active:
+                    self._regression_active.add(name)
+                    emit(
+                        f"⚠️  [SELFPLAY] BOT_REGRESSION vs {name}: "
+                        f"peak={peak * 100:.1f}% → now={wr * 100:.1f}% "
+                        f"at step {self.num_timesteps:,}"
+                    )
+            elif wr >= _REGRESSION_WARN_THRESHOLD:
+                self._regression_active.discard(name)  # recovered — re-arm

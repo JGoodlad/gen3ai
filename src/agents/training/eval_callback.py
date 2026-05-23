@@ -5,15 +5,39 @@ import traceback
 from datetime import datetime
 
 from stable_baselines3.common.callbacks import BaseCallback
+from poke_env.player import RandomPlayer, SimpleHeuristicsPlayer
 from poke_env.ps_client import LocalhostServerConfiguration, AccountConfiguration
 
 from agents.inference.player import RLPlayer
+from agents.opponents import Gen3StallerPlayer, Gen3AggressivePlayer, Gen3SetupSweepPlayer
 from agents.training.reward_tracker import RewardTrackingMixin
 from agents.training.reward_manager import Gen3RewardManager
 from main.launcher.ipc import send_metrics
 
 BATTLE_FORMAT = "gen3ou"
 _EVAL_CONCURRENCY = 100
+
+_OPPONENT_NAMES: dict[type, str] = {
+    RandomPlayer: "Random",
+    SimpleHeuristicsPlayer: "Heuristic",
+    Gen3StallerPlayer: "Staller",
+    Gen3AggressivePlayer: "Aggressive",
+    Gen3SetupSweepPlayer: "SetupSweep",
+}
+
+
+def opponent_name(player_cls: type) -> str:
+    """Return the display name for a player class (TensorBoard keys, TUI labels)."""
+    return _OPPONENT_NAMES.get(player_cls, player_cls.__name__)
+
+
+RANDOM_OPPONENT_NAME = opponent_name(RandomPlayer)
+
+
+def bot_mean(d: dict[str, float]) -> float:
+    """Average of values across non-Random opponents."""
+    vals = [v for k, v in d.items() if k != RANDOM_OPPONENT_NAME]
+    return sum(vals) / len(vals) if vals else 0.0
 
 
 def eval_schedule(num_timesteps: int) -> tuple[int, int]:
@@ -79,6 +103,9 @@ class PerOpponentEvalCallback(BaseCallback):
         self._rl_player: RLPlayer | None = None
         self._last_eval_step = 0
         self._best_aggregate_win_rate = -1.0
+        # Set by train_rl_agent after signal handlers are wired. Used as the
+        # single canonical abort path so eval crashes save a proper checkpoint.
+        self.abort_fn = None
 
     def _schedule(self) -> tuple[int, int]:
         return eval_schedule(self.num_timesteps)
@@ -117,8 +144,7 @@ class PerOpponentEvalCallback(BaseCallback):
         def exception_handler(loop, context):
             msg = context.get("exception", context["message"])
             print(f"\n[EVAL FATAL] Background eval failed: {msg}")
-            self._emergency_save()
-            os._exit(1)
+            self._abort("eval fatal")
 
         loop.set_exception_handler(exception_handler)
         try:
@@ -126,8 +152,7 @@ class PerOpponentEvalCallback(BaseCallback):
         except Exception as e:
             print(f"\n[EVAL CRASH] Step {self.num_timesteps}: {e}")
             traceback.print_exc()
-            self._emergency_save()
-            os._exit(1)
+            self._abort(f"eval crash at step {self.num_timesteps}")
         finally:
             loop.close()
 
@@ -138,6 +163,7 @@ class PerOpponentEvalCallback(BaseCallback):
         )
         win_rates: dict[str, float] = {}
         reward_means: dict[str, float] = {}
+        ep_lens: dict[str, float] = {}
         tui_metrics: dict[str, float] = {}
 
         for name, opponent in self._opponents:
@@ -155,10 +181,11 @@ class PerOpponentEvalCallback(BaseCallback):
             finished = self._rl_player.n_finished_battles
             win_rate = won / finished if finished > 0 else 0.0
             mean_reward = self._rl_player.mean_episode_reward
+            ep_len = self._mean_episode_length()
             win_rates[name] = win_rate
             reward_means[name] = mean_reward
+            ep_lens[name] = ep_len
 
-            ep_len = self._mean_episode_length()
             print(
                 f"  vs {name}: {win_rate * 100:.1f}%  "
                 f"({won}/{finished})  ep_len={ep_len:.1f}  reward={mean_reward:.3f}  [{duration}]"
@@ -175,14 +202,23 @@ class PerOpponentEvalCallback(BaseCallback):
 
         aggregate = sum(win_rates.values()) / len(win_rates) if win_rates else 0.0
         aggregate_reward = sum(reward_means.values()) / len(reward_means) if reward_means else 0.0
+        win_rate_vs_bots = bot_mean(win_rates)
+        mean_reward_vs_bots = bot_mean(reward_means)
+        mean_ep_len_vs_bots = bot_mean(ep_lens)
         self.logger.record("eval/win_rate_mean", aggregate)
+        self.logger.record("eval/win_rate_vs_bots", win_rate_vs_bots)
         self.logger.record("eval/mean_reward_mean", aggregate_reward)
+        self.logger.record("eval/mean_reward_vs_bots", mean_reward_vs_bots)
+        self.logger.record("eval/mean_ep_len_vs_bots", mean_ep_len_vs_bots)
         self.logger.dump(self.num_timesteps)
 
         # logger.dump() clears name_to_value before the next rollout, so eval metrics
         # never reach MetricsExporterCallback. Send them directly to the TUI pipe.
         tui_metrics["eval/win_rate_mean"] = aggregate
+        tui_metrics["eval/win_rate_vs_bots"] = win_rate_vs_bots
         tui_metrics["eval/mean_reward_mean"] = aggregate_reward
+        tui_metrics["eval/mean_reward_vs_bots"] = mean_reward_vs_bots
+        tui_metrics["eval/mean_ep_len_vs_bots"] = mean_ep_len_vs_bots
         tui_metrics["_step"] = self.num_timesteps
         send_metrics(tui_metrics)
 
@@ -197,17 +233,12 @@ class PerOpponentEvalCallback(BaseCallback):
                 self.model.save(os.path.join(self.best_model_save_path, "best_model"))
                 print(f"[EVAL] New best ({aggregate * 100:.1f}%) saved.")
 
-    def _emergency_save(self) -> None:
-        """Save a crash checkpoint before os._exit so training progress isn't lost."""
-        if self.model is None or self.best_model_save_path is None:
-            return
-        try:
-            import os as _os
-            path = _os.path.join(self.best_model_save_path, f"crash_{self.num_timesteps}")
-            self.model.save(path)
-            print(f"[EVAL] Emergency checkpoint saved → {path}.zip")
-        except Exception as e:
-            print(f"[EVAL] Emergency save failed: {e}")
+    def _abort(self, reason: str) -> None:
+        """Delegate to the canonical abort path if wired; fall back to hard exit."""
+        if self.abort_fn is not None:
+            self.abort_fn(reason)
+        else:
+            os._exit(1)
 
     def _mean_episode_length(self) -> float:
         battles = [b for b in self._rl_player._battles.values() if b.finished]

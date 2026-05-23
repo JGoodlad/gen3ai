@@ -8,7 +8,6 @@ import pytest
 from agents.training.selfplay_callback import (
     _monotonicity_score,
     SelfPlayCallback,
-    _BOT_NAMES,
     _REGRESSION_WARN_THRESHOLD,
 )
 
@@ -127,39 +126,44 @@ def test_regression_only_fires_for_named_bots():
         mock_emit.assert_not_called()
 
 
-def test_regression_peak_persisted_after_check():
+# ── regression guard — edge-trigger ─────────────────────────────────────────
+
+def test_regression_fires_only_once_while_regressed():
     cb = _make_callback()
-    cb._check_bot_regression({"Heuristic": 0.75, "Staller": 0.60})
-    cb._pool.persist_bot_peaks.assert_not_called()  # persist called from _eval_all, not here
+    cb._check_bot_regression({"Heuristic": 0.75})
+    with patch("agents.training.selfplay_callback.emit") as mock_emit:
+        cb._check_bot_regression({"Heuristic": 0.50})  # enters warned state → fires
+        cb._check_bot_regression({"Heuristic": 0.45})  # still in warned state → silent
+        cb._check_bot_regression({"Heuristic": 0.40})  # still in warned state → silent
+        assert mock_emit.call_count == 1
 
 
-# ── _emergency_save ──────────────────────────────────────────────────────────
-
-def test_emergency_save_writes_checkpoint(tmp_path):
-    cb = _make_callback(best_model_save_path=str(tmp_path))
-    cb._emergency_save()
-    cb.model.save.assert_called_once()
-    saved_path = cb.model.save.call_args[0][0]
-    assert "crash_" in saved_path
-    assert str(cb.num_timesteps) in saved_path
-
-
-def test_emergency_save_no_op_without_save_path():
-    cb = _make_callback(best_model_save_path=None)
-    cb._emergency_save()
-    cb.model.save.assert_not_called()
+def test_regression_re_arms_after_recovery():
+    cb = _make_callback()
+    cb._check_bot_regression({"Heuristic": 0.75})
+    with patch("agents.training.selfplay_callback.emit") as mock_emit:
+        cb._check_bot_regression({"Heuristic": 0.50})  # first regression → fires
+        cb._check_bot_regression({"Heuristic": 0.70})  # recovered → re-arms
+        cb._check_bot_regression({"Heuristic": 0.45})  # regressed again → fires again
+        assert mock_emit.call_count == 2
 
 
-def test_emergency_save_no_op_without_model():
-    cb = _make_callback(best_model_save_path="/tmp")
-    cb.model = None
-    cb._emergency_save()  # should not raise
+# ── _abort ───────────────────────────────────────────────────────────────────
+
+def test_abort_calls_abort_fn_when_set():
+    cb = _make_callback()
+    abort_fn = MagicMock()
+    cb.abort_fn = abort_fn
+    cb._abort("test reason")
+    abort_fn.assert_called_once_with("test reason")
 
 
-def test_emergency_save_swallows_save_errors(tmp_path):
-    cb = _make_callback(best_model_save_path=str(tmp_path))
-    cb.model.save.side_effect = OSError("disk full")
-    cb._emergency_save()  # should not raise
+def test_abort_falls_back_to_os_exit_when_unset():
+    cb = _make_callback()
+    cb.abort_fn = None
+    with patch("os._exit") as mock_exit:
+        cb._abort("test reason")
+        mock_exit.assert_called_once_with(1)
 
 
 # ── _schedule delegated to eval_schedule ────────────────────────────────────
