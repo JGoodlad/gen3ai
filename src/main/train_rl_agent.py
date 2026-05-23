@@ -41,7 +41,7 @@ from stable_baselines3.common.monitor import Monitor
 
 from agents.model.features_extractor import Gen3FeaturesExtractor, NET_ARCH
 from agents.model.model_version import ModelVersion, ModelVersionError
-from agents.model.snapshot import save_model_snapshot, load_model_snapshot
+from agents.model.snapshot import save_model_snapshot, load_model_snapshot, write_checkpoint_sidecar, read_checkpoint_sidecar
 from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings
 from agents.inference.player import RLPlayer
 from utils.teambuilder import Gen3Teambuilder
@@ -92,7 +92,12 @@ class _HparamLogCallback(BaseCallback):
 
 
 class _TrackingCheckpointCallback(CheckpointCallback):
-    """CheckpointCallback that keeps latest.txt up to date after each save."""
+    """CheckpointCallback that keeps latest.txt up to date and writes per-checkpoint sidecars."""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._current_lr_fn = None
+        self._current_epochs_fn = None
 
     def _on_step(self) -> bool:
         result = super()._on_step()
@@ -101,6 +106,12 @@ class _TrackingCheckpointCallback(CheckpointCallback):
                 self.save_path,
                 f"{self.name_prefix}_{self.num_timesteps}_steps.zip",
             )
+            if self._current_lr_fn is not None and self._current_epochs_fn is not None:
+                ckpt_path = os.path.join(
+                    self.save_path,
+                    f"{self.name_prefix}_{self.num_timesteps}_steps.zip",
+                )
+                write_checkpoint_sidecar(ckpt_path, self._current_lr_fn(), self._current_epochs_fn())
         return result
 
 
@@ -404,6 +415,8 @@ async def main():
         initial_lr=args.lr,
         initial_epochs=args.n_epochs,
     )
+    checkpoint_callback._current_lr_fn = lambda: model.policy.optimizer.param_groups[0]["lr"]
+    checkpoint_callback._current_epochs_fn = lambda: adaptive_ppo_callback.current_epochs
     callbacks = [checkpoint_callback, replay_callback, adaptive_ppo_callback, MetricsExporterCallback(), _HparamLogCallback(args.ent_coef)]
     
     if not args.debug:
@@ -494,13 +507,20 @@ async def main():
         _resume_lr_lambda = lambda _: resume_lr
         model.lr_schedule = _resume_lr_lambda
         adaptive_ppo_callback._current_lr = resume_lr
-        # Resume n_epochs from metadata.json (not in optimizer state). Must be read
-        # before save_model_snapshot() below overwrites the file.
-        _meta_path = os.path.join(model_dir, "metadata.json")
-        resume_epochs = args.n_epochs
-        if os.path.exists(_meta_path):
-            with open(_meta_path) as _f:
-                resume_epochs = json.load(_f).get("current_epochs", args.n_epochs)
+        # Resume n_epochs (not in optimizer state). Priority:
+        #   1. Per-checkpoint sidecar ({checkpoint}.json) — most accurate for old checkpoints
+        #   2. Run-level metadata.json — reflects last SIGTERM save for launcher restarts
+        #   3. args.n_epochs — fallback for first run or missing state
+        # Must be read before save_model_snapshot() below overwrites the run-level file.
+        _sidecar = read_checkpoint_sidecar(model_path)
+        if "current_epochs" in _sidecar:
+            resume_epochs = _sidecar["current_epochs"]
+        else:
+            _meta_path = os.path.join(model_dir, "metadata.json")
+            resume_epochs = args.n_epochs
+            if os.path.exists(_meta_path):
+                with open(_meta_path) as _f:
+                    resume_epochs = json.load(_f).get("current_epochs", args.n_epochs)
         model.n_epochs = resume_epochs
         adaptive_ppo_callback._current_epochs = resume_epochs
         model.clip_range = lambda _: CLIP_RANGE

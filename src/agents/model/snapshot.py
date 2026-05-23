@@ -47,6 +47,35 @@ def save_model_snapshot(
         json.dump(metadata, f, indent=2)
 
 
+def write_checkpoint_sidecar(
+    checkpoint_path: str,
+    current_lr: float,
+    current_epochs: int,
+) -> None:
+    """Write lr/epochs alongside a checkpoint .zip as a small JSON sidecar.
+
+    checkpoint_path: full path to the .zip (with or without extension).
+    Sidecar lands at the same path with .zip replaced by .json.
+    """
+    with open(_sidecar_path(checkpoint_path), "w") as f:
+        json.dump({"current_lr": current_lr, "current_epochs": current_epochs}, f, indent=2)
+
+
+def read_checkpoint_sidecar(checkpoint_path: str) -> dict:
+    """Read the sidecar JSON for a checkpoint. Returns {} if not found."""
+    path = _sidecar_path(checkpoint_path)
+    if os.path.exists(path):
+        with open(path) as f:
+            return json.load(f)
+    return {}
+
+
+def _sidecar_path(checkpoint_path: str) -> str:
+    if checkpoint_path.endswith(".zip"):
+        return checkpoint_path[:-4] + ".json"
+    return checkpoint_path + ".json"
+
+
 def load_model_snapshot(
     model_path: str,
     env,
