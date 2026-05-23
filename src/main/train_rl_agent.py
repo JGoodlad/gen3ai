@@ -254,6 +254,8 @@ async def main():
     parser.add_argument("--batch-size", type=int, default=4096, help="PPO mini-batch size")
     parser.add_argument("--n-epochs", type=int, default=4, help="PPO optimization epochs")
     parser.add_argument("--lr", type=float, default=3e-4, help="Initial learning rate (AdaptiveLRCallback adjusts from here)")
+    parser.add_argument("--min-lr", type=float, default=1e-5, help="Hard lower bound on adaptive LR")
+    parser.add_argument("--max-lr", type=float, default=None, help="Hard upper bound on adaptive LR (default: 2× --lr)")
     parser.add_argument("--ent-coef", type=float, default=0.02, help="Entropy coefficient (exploration bonus)")
     parser.add_argument("--n-steps", type=int, default=2048, help="Steps per environment per rollout")
 
@@ -506,8 +508,16 @@ async def main():
         reward_fn_factory=reward_factory,
     )
 
+    _effective_max_lr = args.max_lr if args.max_lr is not None else args.lr * 2.0
+    if not (args.min_lr <= args.lr <= _effective_max_lr):
+        print(f"[AdaptiveLR] ERROR: --lr {args.lr:.2e} is outside "
+              f"[--min-lr {args.min_lr:.2e}, --max-lr {_effective_max_lr:.2e}]")
+        sys.exit(1)
+
     adaptive_ppo_callback = AdaptivePPOCallback(
         initial_lr=args.lr,
+        min_lr=args.min_lr,
+        max_lr=args.max_lr,
     )
     checkpoint_callback._current_lr_fn = lambda: model.policy.optimizer.param_groups[0]["lr"]
     checkpoint_callback._current_epochs_fn = lambda: model.n_epochs
@@ -610,6 +620,11 @@ async def main():
         # so a manual --lr override can still lower the rate.
         saved_lr = model.policy.optimizer.param_groups[0]["lr"]
         resume_lr = min(saved_lr, args.lr)
+        if not (args.min_lr <= resume_lr <= _effective_max_lr):
+            print(f"[AdaptiveLR] ERROR: resume LR {resume_lr:.2e} (saved={saved_lr:.2e}, "
+                  f"--lr={args.lr:.2e}) is outside [{args.min_lr:.2e}, {_effective_max_lr:.2e}]. "
+                  f"Pass an explicit --lr within bounds to override.")
+            sys.exit(1)
         _resume_lr_lambda = lambda _: resume_lr
         model.lr_schedule = _resume_lr_lambda
         adaptive_ppo_callback._current_lr = resume_lr
