@@ -25,7 +25,7 @@ from stable_baselines3.common.callbacks import BaseCallback
 from poke_env.ps_client import LocalhostServerConfiguration, AccountConfiguration
 
 from agents.inference.player import RLPlayer
-from agents.training.eval_callback import EvalRLPlayer, _EVAL_CONCURRENCY
+from agents.training.eval_callback import EvalRLPlayer, _EVAL_CONCURRENCY, eval_schedule
 from agents.training.reward_manager import Gen3RewardManager
 from agents.training.reward_tracker import RewardTrackingMixin
 from agents.training.snapshot_pool import SnapshotPool, heuristic_fraction
@@ -100,7 +100,8 @@ class SelfPlayCallback(BaseCallback):
 
         # Shared state: written by eval thread, read by env factory on next restart.
         self.win_rate_vs_bots: float = pool.load_persisted_win_rate()
-        self._bot_peak: dict[str, float] = {}  # peak win rate per bot for regression guard
+        # Bot peaks persisted so regression guard survives launcher restarts.
+        self._bot_peak: dict[str, float] = pool.load_persisted_bot_peaks()
 
     # ── SB3 lifecycle ──────────────────────────────────────────────────────
 
@@ -140,13 +141,7 @@ class SelfPlayCallback(BaseCallback):
         ]
 
     def _schedule(self) -> tuple[int, int]:
-        t = self.num_timesteps
-        if t < 20_000_000:
-            return 1_000_000, 100
-        elif t < 50_000_000:
-            return 2_000_000, 200
-        else:
-            return 3_000_000, 300
+        return eval_schedule(self.num_timesteps)
 
     def _on_step(self) -> bool:
         if self.num_timesteps == 0:
@@ -170,6 +165,7 @@ class SelfPlayCallback(BaseCallback):
         def exception_handler(loop, context):
             msg = context.get("exception", context["message"])
             print(f"\n[SELFPLAY EVAL FATAL] {msg}")
+            self._emergency_save()
             os._exit(1)
 
         loop.set_exception_handler(exception_handler)
@@ -178,6 +174,7 @@ class SelfPlayCallback(BaseCallback):
         except Exception as e:
             print(f"\n[SELFPLAY EVAL CRASH] Step {self.num_timesteps}: {e}")
             traceback.print_exc()
+            self._emergency_save()
             os._exit(1)
         finally:
             loop.close()
@@ -209,6 +206,7 @@ class SelfPlayCallback(BaseCallback):
         self.win_rate_vs_bots = sum(bot_wrs) / len(bot_wrs) if bot_wrs else 0.0
         self._pool.persist_win_rate(self.win_rate_vs_bots)
         self._check_bot_regression(win_rates)
+        self._pool.persist_bot_peaks(self._bot_peak)
 
         # ── 2. Pool / sentinel eval ────────────────────────────────────────
         sentinel_win_rates: list[float] = []
@@ -304,6 +302,17 @@ class SelfPlayCallback(BaseCallback):
             trainee.reset_reward_tracking()
         return wr, mean_reward
 
+    def _emergency_save(self) -> None:
+        """Save a crash checkpoint before os._exit so training progress isn't lost."""
+        if self.model is None or self.best_model_save_path is None:
+            return
+        try:
+            path = os.path.join(self.best_model_save_path, f"crash_{self.num_timesteps}")
+            self.model.save(path)
+            print(f"[SELFPLAY EVAL] Emergency checkpoint saved → {path}.zip")
+        except Exception as e:
+            print(f"[SELFPLAY EVAL] Emergency save failed: {e}")
+
     def _mean_episode_length(self, player) -> float:
         battles = [b for b in player._battles.values() if b.finished]
         return sum(b.turn for b in battles) / len(battles) if battles else 0.0
@@ -316,10 +325,10 @@ class SelfPlayCallback(BaseCallback):
             peak = self._bot_peak.get(name, 0.0)
             if wr > peak:
                 self._bot_peak[name] = wr
-            if (
-                peak >= _REGRESSION_TRIGGER_THRESHOLD
-                and wr < _REGRESSION_WARN_THRESHOLD
-            ):
+                peak = wr
+            # Warn whenever current drops below threshold, as long as we've ever
+            # reached it — regardless of whether the high watermark hit 0.70.
+            if peak >= _REGRESSION_WARN_THRESHOLD and wr < _REGRESSION_WARN_THRESHOLD:
                 emit(
                     f"⚠️  [SELFPLAY] BOT_REGRESSION vs {name}: "
                     f"peak={peak * 100:.1f}% → now={wr * 100:.1f}% "

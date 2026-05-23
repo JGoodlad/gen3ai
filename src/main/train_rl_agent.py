@@ -368,7 +368,7 @@ async def main():
         )
         _persisted_wr = _pool.load_persisted_win_rate()
         _hfrac = heuristic_fraction(_persisted_wr)
-        _n_pool_envs = 0 if _pool.is_empty() else max(0, int(round(n_envs * (1.0 - _hfrac))))
+        _n_pool_envs = 0 if _pool.is_empty() else max(1, int(round(n_envs * (1.0 - _hfrac))))
         emit(
             f"🎮 [SELFPLAY] Pool has {len(_pool)} snapshots, "
             f"win_rate_vs_bots={_persisted_wr:.2%}, "

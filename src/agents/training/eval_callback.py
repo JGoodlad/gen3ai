@@ -16,6 +16,21 @@ BATTLE_FORMAT = "gen3ou"
 _EVAL_CONCURRENCY = 100
 
 
+def eval_schedule(num_timesteps: int) -> tuple[int, int]:
+    """Shared adaptive eval schedule: returns (freq_steps, n_games).
+
+    0–20M:  every 1M steps, 100 games
+    20–50M: every 2M steps, 200 games
+    50M+:   every 3M steps, 300 games
+    """
+    if num_timesteps < 20_000_000:
+        return 1_000_000, 100
+    elif num_timesteps < 50_000_000:
+        return 2_000_000, 200
+    else:
+        return 3_000_000, 300
+
+
 class EvalRLPlayer(RewardTrackingMixin, RLPlayer):
     """RLPlayer with per-battle reward tracking for eval metrics."""
 
@@ -66,14 +81,7 @@ class PerOpponentEvalCallback(BaseCallback):
         self._best_aggregate_win_rate = -1.0
 
     def _schedule(self) -> tuple[int, int]:
-        """Returns (eval_freq_steps, n_games) for the current training step."""
-        t = self.num_timesteps
-        if t < 20_000_000:
-            return 1_000_000, 100
-        elif t < 50_000_000:
-            return 2_000_000, 200
-        else:
-            return 3_000_000, 300
+        return eval_schedule(self.num_timesteps)
 
     def _init_callback(self) -> None:
         if self.best_model_save_path is not None:
@@ -109,6 +117,7 @@ class PerOpponentEvalCallback(BaseCallback):
         def exception_handler(loop, context):
             msg = context.get("exception", context["message"])
             print(f"\n[EVAL FATAL] Background eval failed: {msg}")
+            self._emergency_save()
             os._exit(1)
 
         loop.set_exception_handler(exception_handler)
@@ -117,6 +126,7 @@ class PerOpponentEvalCallback(BaseCallback):
         except Exception as e:
             print(f"\n[EVAL CRASH] Step {self.num_timesteps}: {e}")
             traceback.print_exc()
+            self._emergency_save()
             os._exit(1)
         finally:
             loop.close()
@@ -186,6 +196,18 @@ class PerOpponentEvalCallback(BaseCallback):
             if self.best_model_save_path is not None:
                 self.model.save(os.path.join(self.best_model_save_path, "best_model"))
                 print(f"[EVAL] New best ({aggregate * 100:.1f}%) saved.")
+
+    def _emergency_save(self) -> None:
+        """Save a crash checkpoint before os._exit so training progress isn't lost."""
+        if self.model is None or self.best_model_save_path is None:
+            return
+        try:
+            import os as _os
+            path = _os.path.join(self.best_model_save_path, f"crash_{self.num_timesteps}")
+            self.model.save(path)
+            print(f"[EVAL] Emergency checkpoint saved → {path}.zip")
+        except Exception as e:
+            print(f"[EVAL] Emergency save failed: {e}")
 
     def _mean_episode_length(self) -> float:
         battles = [b for b in self._rl_player._battles.values() if b.finished]
