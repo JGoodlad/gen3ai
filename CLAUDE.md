@@ -8,11 +8,15 @@ Architecture constants (embedding dims, layer sizes, etc.) are defined as module
 
 ## Git Workflow
 
-This is a personal project — no pull requests needed. Merge completed work directly to `main` and push:
+This is a personal project — no pull requests needed. Work is pushed directly to `main`, but **all edits and commits must happen in a worktree or branch, never on the main checkout itself.**
+
+Main must never be in a dirty state. The `/ship` skill is the only mechanism that lands code on main — it commits in the worktree branch and pushes:
 
 ```bash
 git push origin <worktree-branch>:main
 ```
+
+Never `git add` or `git commit` from `/home/goodlad/dev/gen3ai` directly.
 
 ---
 
