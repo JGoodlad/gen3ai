@@ -508,10 +508,9 @@ async def main():
 
     adaptive_ppo_callback = AdaptivePPOCallback(
         initial_lr=args.lr,
-        initial_epochs=args.n_epochs,
     )
     checkpoint_callback._current_lr_fn = lambda: model.policy.optimizer.param_groups[0]["lr"]
-    checkpoint_callback._current_epochs_fn = lambda: adaptive_ppo_callback.current_epochs
+    checkpoint_callback._current_epochs_fn = lambda: model.n_epochs
     callbacks = [checkpoint_callback, replay_callback, adaptive_ppo_callback, MetricsExporterCallback(), _HparamLogCallback(args.ent_coef)]
     eval_callback = None
 
@@ -614,24 +613,9 @@ async def main():
         _resume_lr_lambda = lambda _: resume_lr
         model.lr_schedule = _resume_lr_lambda
         adaptive_ppo_callback._current_lr = resume_lr
-        # Resume n_epochs (not in optimizer state). Priority:
-        #   1. Per-checkpoint metadata ({checkpoint}.json) — most accurate for old checkpoints
-        #   2. Run-level metadata.json — reflects last SIGTERM save for launcher restarts
-        #   3. args.n_epochs — fallback for first run or missing state
-        # Must be read before save_model_snapshot() below overwrites the run-level file.
-        _ckpt_meta = read_checkpoint_metadata(model_path)
-        if "current_epochs" in _ckpt_meta:
-            resume_epochs = _ckpt_meta["current_epochs"]
-        else:
-            _meta_path = os.path.join(model_dir, "metadata.json")
-            resume_epochs = args.n_epochs
-            if os.path.exists(_meta_path):
-                with open(_meta_path) as _f:
-                    resume_epochs = json.load(_f).get("current_epochs", args.n_epochs)
-        model.n_epochs = resume_epochs
-        adaptive_ppo_callback._current_epochs = resume_epochs
+        model.n_epochs = args.n_epochs
         model.clip_range = lambda _: CLIP_RANGE
-        send_event(f"▶️  Resuming at LR {resume_lr:.2e}, epochs {resume_epochs} (checkpoint LR={saved_lr:.2e})")
+        send_event(f"▶️  Resuming at LR {resume_lr:.2e}, epochs {args.n_epochs} (checkpoint LR={saved_lr:.2e})")
 
         if args.eval_only:
             await evaluate_model_random(model)
@@ -648,7 +632,7 @@ async def main():
             _abort_fn = _setup_signal_handlers(
                 model, model_dir, _shutdown_event, current_version,
                 lambda: model.policy.optimizer.param_groups[0]["lr"],
-                lambda: adaptive_ppo_callback.current_epochs,
+                lambda: model.n_epochs,
             )
             if not args.debug and eval_callback is not None:
                 eval_callback.abort_fn = _abort_fn
@@ -716,7 +700,7 @@ async def main():
         _abort_fn = _setup_signal_handlers(
             model, model_dir, _shutdown_event, version,
             lambda: model.policy.optimizer.param_groups[0]["lr"],
-            lambda: adaptive_ppo_callback.current_epochs,
+            lambda: model.n_epochs,
         )
         if not args.debug and eval_callback is not None:
             eval_callback.abort_fn = _abort_fn
@@ -736,7 +720,7 @@ async def main():
         final_path = os.path.join(model_dir, "final_model")
         model.save(final_path)
         _write_latest_txt(model_dir, "final_model.zip")
-        record_checkpoint(model_dir, final_path + ".zip", adaptive_ppo_callback.current_lr, adaptive_ppo_callback.current_epochs, hparams=_model_hparams(model))
+        record_checkpoint(model_dir, final_path + ".zip", adaptive_ppo_callback.current_lr, model.n_epochs, hparams=_model_hparams(model))
         save_model_snapshot(os.path.dirname(final_path), version, hparams=_model_hparams(model))
         print(f"Training complete. Model saved to {final_path}")
         best_model_dir = os.path.join(model_dir, "best_model")
