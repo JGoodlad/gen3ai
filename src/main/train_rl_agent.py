@@ -33,6 +33,7 @@ import random
 import argparse
 import signal
 import threading
+import torch
 from datetime import datetime
 from sb3_contrib import MaskablePPO
 from stable_baselines3.common.callbacks import BaseCallback, CheckpointCallback
@@ -71,6 +72,7 @@ CLIP_RANGE = 0.20
 
 def _model_hparams(model) -> dict:
     clip_range_vf = float(model.clip_range_vf(1.0)) if model.clip_range_vf is not None else -1.0
+    opt = model.policy.optimizer
     return {
         "gamma": model.gamma,
         "gae_lambda": model.gae_lambda,
@@ -80,6 +82,8 @@ def _model_hparams(model) -> dict:
         "n_steps": model.n_steps,
         "clip_range": float(model.clip_range(1.0)),
         "clip_range_vf": clip_range_vf,
+        "optimizer": type(opt).__name__,
+        "weight_decay": opt.param_groups[0].get("weight_decay", 0.0),
     }
 
 
@@ -263,6 +267,8 @@ async def main():
     parser.add_argument("--ent-coef", type=float, default=0.02, help="Entropy coefficient (exploration bonus)")
     parser.add_argument("--clip-range-vf", type=float, default=0.5, help="Value function clip range (None=disabled; thesis used 0.0184)")
     parser.add_argument("--n-steps", type=int, default=2048, help="Steps per environment per rollout")
+    parser.add_argument("--weight-decay", type=float, default=1e-5,
+                        help="AdamW weight decay (L2 regularisation). Default 1e-5 is conservative for PPO.")
 
     # --- Self-Play Flags ---
     parser.add_argument("--self-play", action="store_true", default=False, help="Enable self-play snapshot pool as training opponents")
@@ -689,7 +695,9 @@ async def main():
         policy_kwargs = {
             "features_extractor_class": Gen3FeaturesExtractor,
             "features_extractor_kwargs": extractor_kwargs,
-            "net_arch": [512, 512]
+            "net_arch": [512, 512],
+            "optimizer_class": torch.optim.AdamW,
+            "optimizer_kwargs": {"weight_decay": args.weight_decay, "eps": 1e-5},
         }
         
         # --- Model Initialization ---
