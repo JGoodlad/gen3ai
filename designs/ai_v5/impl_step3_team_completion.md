@@ -24,18 +24,19 @@ learned model captures these correlations without hand-coding them.
 
 ## Data Sources
 
-Three sources, in increasing richness:
-
 | Source | Size | Notes |
 |--------|------|-------|
-| 770 curated teams (`data/teams/`) | ~48K examples | Available immediately; no training needed |
-| Self-play JSONL (`--team-log`) | Scales with training time | Logged by `Gen3Env.reset()` |
-| Scraped ladder replays (`replays/showdown/`) | Depends on collection time | Most realistic distribution |
+| Scraped ladder replays (`replays/showdown/1/`) | 18,869 battles → 37,940 team records | Parsed with `replay_parser.py` into `data/replay_teams.jsonl` |
 
-Each complete team of 6 yields 63 training examples (all bitmask patterns for 1–5 masked
-slots). Mask pattern is re-sampled each epoch so the model sees different masking on each
-pass. Start training with the 770-team pool (immediate); add self-play and ladder data as
-they accumulate.
+Gen 3 OU has **no team preview** (introduced Gen 5), so Pokémon are revealed only on
+switch-in. Ground truth is therefore partial: species is always known for revealed slots;
+moves and items are only known if they appeared in the battle. Average team record has 5.02
+Pokémon revealed, 1.82 moves known, and 62.7% item coverage (boosted by parsing `|-heal|`
+and `|-boost|` lines with `[from] item:` annotations in addition to `|-item|`/`|-enditem|`).
+
+The mask pattern is re-sampled per `__getitem__` call so each DataLoader epoch sees
+different masking. Loss is computed only over masked slots and, within items/moves, only
+where the value was revealed in the replay.
 
 ---
 
@@ -43,71 +44,105 @@ they accumulate.
 
 ### Frozen Backbone
 
-The PPO checkpoint (BC-then-RL from Step 2) already encodes team-level structure through
-its embedding tables, role encoder, and synergy attention. These weights are loaded and
-frozen — `requires_grad=False` throughout. This gives the completion model a strong
-representation of what each Pokémon is and how it relates to teammates, at zero
-additional training cost.
+Only the **embedding tables** are loaded and frozen from the PPO checkpoint. The full role
+encoder and move processor are not reused because they require battle context (weather,
+hazards, boosts, etc.) that doesn't exist in a static team record.
 
-Frozen components:
+Extracted from `policy.pth` inside the SB3 `.zip`:
 
-| Component | Output dims | Source in features_extractor.py |
-|-----------|-------------|----------------------------------|
-| Species embedding | 32 | `self.species_emb` |
-| Move embedding | 16 | `self.move_emb` |
-| Item embedding | 16 | `self.item_emb` |
-| Ability embedding | 16 | `self.ability_emb` |
-| Type embedding | 16 | `self.type_emb` |
-| Move processor | 32 per slot | `self.move_net` |
-| Role encoder | 128 per Pokémon | `self.role_encoder` |
+| Component | Dims | Key in state dict |
+|-----------|------|-------------------|
+| Species embedding | `[num_species, 32]` | `features_extractor.species_embedding.weight` |
+| Move embedding | `[num_moves_in_ckpt, 16]` | `features_extractor.move_embedding.weight` |
+| Item embedding | `[num_items, 16]` | `features_extractor.item_embedding.weight` |
 
-Loading: extract these modules by name from `torch.load(checkpoint.zip)`. Copy weights
-into the completion model. No PPO training state (optimizer, rollout buffers) is loaded.
+All three are set `requires_grad=False`. Ability is **not** used — Gen 3 battles don't
+reveal abilities, so there is no training signal for an ability head.
 
-### Trainable Head
+Move embedding may have more rows than the dataset vocabulary (backbone was trained with
+up to 400 move IDs; dataset has 355). The slot encoder slices `move_emb.weight[:M]` where
+`M = dataset.num_moves` to avoid shape mismatches.
 
-Three new components, all randomly initialized:
+### Trainable Components (~438K params)
 
-**1. Mask token** — a single learned 128-dim embedding substituted in place of unknown
-slot role tokens (analogous to `[MASK]` in BERT). Initialized to small random values.
+**Slot encoder** — instead of the full role encoder, a lightweight per-slot encoder takes
+the concatenation of frozen embeddings:
+```
+concat(species_emb[32], move_pool[16], item_emb[16])  →  Linear(64→128) → ReLU
+```
+`move_pool` is the weighted mean of move embeddings using the multi-hot input as weights
+(sum of embeddings for known moves, divided by number of known moves). Masked slots have
+all-zero inputs; their encoder output is discarded and replaced by `mask_token`.
 
-**2. Completion transformer** — 2-layer `nn.TransformerEncoder` (4 heads, 128-dim model,
-256-dim feedforward) over the 6 role token slots. Both observed and masked slots attend
-to each other, so revealed Pokémon condition the predictions for hidden slots:
-"given Skarmory in slot 0 and Blissey in slot 2, what belongs in slot 4?"
+**Mask token** — learned 128-dim parameter, substituted at masked slot positions.
 
-**3. Output heads** (applied only to masked slots):
-- Species: `Linear(128 → num_species)` → softmax
-- Item: `Linear(128 → num_items)` → softmax
-- Ability: `Linear(128 → num_abilities)` → softmax
-- Moves ×4: `Linear(128 → num_moves)` → softmax (independent, not autoregressive)
+**Completion transformer** — `nn.TransformerEncoder` (2 layers, 4 heads, 128-dim,
+256-dim FF, no positional encodings). Team order is arbitrary, so no positional
+encodings are used. Padding slots are masked out via `src_key_padding_mask`.
+
+**Output heads** (applied only to masked non-padding positions):
+- `species_head`: `Linear(128 → num_species)` — cross-entropy
+- `item_head`: `Linear(128 → num_items)` — cross-entropy (supervised only where item was revealed)
+- `move_head`: `Linear(128 → num_moves)` — **BCEWithLogitsLoss against a multi-hot target**
+
+### Why multi-label BCE for moves
+
+Moves are a **set** — "which of the `num_moves` moves is in this Pokémon's moveset?" —
+not an ordered tuple. A single multi-label head eliminates move-order dependence entirely.
+At inference, take the top-4 by sigmoid probability. This is cleaner and avoids the
+autoregressive or permutation-matching complexity of 4 separate CE heads.
 
 ### Training Objective
 
-BERT-style masked slot prediction. Loss is cross-entropy summed only over masked slots —
-unmasked slots contribute zero loss.
-
 ```
-L = Σ_{i ∈ masked} [ CE(species_i, label_i)
-                    + CE(item_i, label_i)
-                    + CE(ability_i, label_i)
-                    + Σ_{j=0}^{3} CE(move_i_j, label_i_j) ]
+L = CE(species_logits, target_species)                              # always for masked slots
+  + BCE(move_logits, target_move_multihot)                          # always for masked slots
+  + CE(item_logits, target_item) × item_known_mask                 # only where item was revealed
 ```
 
 ---
 
-## Training Stages
+## Training Infrastructure
 
-**Stage 1 — Bootstrap on 770 curated teams:**
-- Frozen backbone, only transformer head + output heads train
-- LR: 1e-3, batch: 64, epochs: 200
-- Expected outcome: learns core Gen 3 OU co-occurrence patterns (Skarmory→Blissey,
-  Tyranitar→Sand team, etc.)
+Entry point: `src/main/train_team_completion.py`
 
-**Stage 2 — Scale on self-play and ladder data:**
-- Optionally unfreeze role encoder at LR: 1e-5; new head at LR: 3e-4
-- Batch: 256, continuous training as new data arrives
-- Expected outcome: learns human-specific biases and real ladder distribution
+```
+# Fresh run
+python -m main.train_team_completion --backbone models/.../checkpoint.zip
+
+# Resume
+python -m main.train_team_completion --run-dir models/team_prediction/run_<timestamp>
+```
+
+Run directories mirror the PPO layout under `models/team_prediction/run_<timestamp>/`:
+
+| File | Contents |
+|------|----------|
+| `checkpoint_epoch_NNNN.pt` | `{epoch, model, optimizer, val_loss, val_top1}` |
+| `best_model.pt` | Copy of lowest-val-loss checkpoint |
+| `latest.txt` | Filename of most recent checkpoint (for resume) |
+| `metadata.json` | Git hash, args, and `evals` dict (see below) |
+| `model_config.json` | Architecture params for reload validation |
+| `command.txt` | Exact CLI invocation (fresh runs only) |
+
+`metadata.json` `evals` block written at each checkpoint save:
+```json
+"evals": {
+  "loss": 1.2341,
+  "species_loss": 0.8912,
+  "item_loss": 0.3124,
+  "move_loss": 0.2195,
+  "species_top1": 0.184,
+  "species_top5": 0.521,
+  "item_top1": 0.342,
+  "move_recall_at_4": 0.613,
+  "species_top1_by_ctx": {"1": 0.11, "2": 0.19, "3": 0.26, "4": 0.31, "5": 0.35}
+}
+```
+
+Default hyperparameters: `--epochs 200 --batch-size 64 --lr 1e-3 --val-split 0.1 --save-every 5`.
+Training is CPU-bound (model is tiny at ~438K trainable params); bottleneck is DataLoader
+building multi-hot tensors. Optimal batch size 512 on GPU runs ~200 epochs in ~5 min.
 
 ---
 
@@ -118,7 +153,7 @@ At the start of each MCTS trajectory:
 1. Encode revealed opponent slots through the frozen backbone → role tokens.
 2. Fill unrevealed slots with the learned mask token.
 3. Run completion transformer → per-slot softmax distributions.
-4. Sample one complete team hypothesis: for each unrevealed slot, sample species/item/ability/moves
+4. Sample one complete team hypothesis: for each unrevealed slot, sample species/item/moves
    from the per-slot distributions independently.
 5. This sampled hypothesis becomes the "true" opponent team for the duration of this trajectory.
 
@@ -132,52 +167,73 @@ makes PIMC work.
 
 ---
 
-## Files to Create
+## Files Created
 
 | File | Purpose |
 |------|---------|
-| `src/agents/team_model/team_serializer.py` | `Pokemon → Showdown text` for `--team-log` |
-| `src/agents/team_model/dataset.py` | `TeamCompletionDataset` — loads all three sources, random masking |
-| `src/agents/team_model/completion_model.py` | Architecture, frozen backbone loader, forward pass |
-| `src/agents/team_model/train.py` | Staged training script |
-| `src/agents/team_model/sampler.py` | `sample_completion(revealed_slots, n_samples) -> list[Team]` — MCTS interface |
-
-## Files to Modify
-
-| File | Change |
-|------|--------|
-| `src/agents/training/gen3_env.py` | Add `team_log_path` arg, log both teams in `reset()` before `super().reset()` |
-| `src/main/train_rl_agent.py` | Wire `--team-log` CLI arg |
+| `src/agents/training/team_completion/replay_parser.py` | Parse `.log` files → `TeamRecord` JSONL; handles switch/drag/move/-item/-enditem/-heal/-boost events; two-pass for winner resolution |
+| `src/agents/training/team_completion/team_dataset.py` | `TeamCompletionDataset` with BERT-style random masking; `Mappings` loads ID tables from `state_encoder.load_mappings()` |
+| `src/agents/model/team_completion_model.py` | `TeamCompletionModel`: frozen embeddings + slot encoder + transformer + 3 output heads; `model_config()` for serialization |
+| `src/main/train_team_completion.py` | Training entry point with resume, TensorBoard, Rich progress, PPO-style run dirs |
 
 ---
+
+## Evaluation Metrics
+
+All metrics are computed on the 10% held-out val split and logged to TensorBoard under
+`team_completion/` and written to `metadata.json["evals"]` at each checkpoint.
+
+| Metric | Description |
+|--------|-------------|
+| `species_top1` | Fraction of masked slots where predicted species (argmax) matches ground truth |
+| `species_top5` | Fraction where ground truth is in top-5 predictions |
+| `species_top1_by_ctx` | `species_top1` grouped by number of visible context Pokémon (1–5); diagnoses whether the model uses context |
+| `item_top1` | Top-1 accuracy on masked slots where item was revealed in the replay |
+| `move_recall_at_4` | For each masked slot, fraction of revealed moves that appear in the top-4 predicted moves |
+| `species_loss` / `item_loss` / `move_loss` | Per-component val losses |
+
+Baselines for species_top1:
+- Uniform random over ~387 species: ~0.3%
+- Always predict Blissey (most common): ~8%
+- Target: ≥25%
 
 ## Verification
 
-1. **Stage 1 qualitative checks:**
-   - Given only Skarmory → top-3 species predictions include Blissey
-   - Given Tyranitar → weather-setter species score low in remaining slots
-   - Given Spikes Skarmory + Blissey → Roar Pokémon scores higher than Taunt Pokémon
+1. **Qualitative checks** — given `[Skarmory]` as context, top-5 species predictions
+   should include Blissey; given `[Tyranitar]` predictions should favour sand-team staples.
 
-2. **Perplexity baseline**: held-out perplexity on 10% of the 770-team pool should be
-   lower than a flat marginal-usage-stats baseline.
+2. **Context sensitivity** — `species_top1_by_ctx` should increase monotonically with
+   context size. Flat values indicate the model is ignoring revealed teammates.
 
-3. **Sampling sanity**: 100 sampled completions given "Skarmory revealed" should show
-   Blissey appearing in > 50% of samples (reflecting its real ladder co-occurrence).
+3. **Sampling sanity** — 100 sampled completions given "Skarmory revealed" should show
+   Blissey appearing in > 50% of samples.
 
-4. **MCTS smoke test**: in the Step 4 debug run, confirm that `sampler.sample_completion()`
-   is called at the start of each trajectory, returns a valid 6-mon team, and that the
-   sampled teams show meaningful diversity across trajectories (not all identical).
+4. **MCTS smoke test** — Step 4 debug run should confirm `sample_completion()` returns a
+   valid 6-mon team and that teams vary across trajectories.
 
 ---
+
+## Current Status
+
+Pipeline is implemented and runnable. Training command:
+
+```bash
+export PYTHONPATH=$PYTHONPATH:src
+python -m main.train_team_completion \
+  --backbone models/<run>/checkpoint_<N>_steps.zip \
+  --data data/replay_teams.jsonl \
+  --epochs 200 --batch-size 512 --lr 1e-3
+```
 
 ## Final State
 
 Step 3 is complete when:
-- Stage 1 training has converged on the 770-team pool
+- Training has converged on ladder replay data (species_top1 ≥ 25%)
+- `species_top1_by_ctx` increases with context size (model uses context)
 - Qualitative checks pass (Skarmory→Blissey, Tyranitar→sand team)
-- `sampler.sample_completion()` returns valid teams in < 5ms (fast enough for MCTS)
+- A `predict_top_k()` wrapper is fast enough for MCTS (< 5ms per call)
 
-**Ready for Step 4: MCTS**
+**Ready for Step 5: MCTS**
 
-The completion model is the world-sampling oracle MCTS depends on. Once it is trained and
-fast, Step 4 can wire it into the trajectory loop.
+The completion model is the world-sampling oracle MCTS depends on. Once trained,
+Step 4 wires `predict_top_k()` (or a sampling wrapper) into the trajectory loop.

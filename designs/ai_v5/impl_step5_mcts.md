@@ -1,4 +1,4 @@
-# Implementation: Step 4 — MCTS
+# Implementation: Step 5 — MCTS
 
 This step adds Monte Carlo Tree Search on top of the trained policy and value networks,
 used purely at **inference time** as a policy improvement operator. The neural network is
@@ -510,7 +510,7 @@ existing `action_to_order()` and Showdown communication logic are unchanged.
 
 ## Final State
 
-Step 4 is complete when:
+Step 5 is complete when:
 - MCTSPlayer achieves ≥ 1000 rollouts per turn within the time budget
 - Win rate vs. the league is measurably higher than the raw PPO policy
 - Tree size stays bounded across a full game (pruning is working)
