@@ -127,7 +127,7 @@ class LauncherUI:
             evt_text.append("[dim]No events yet.[/dim]")
 
         footer = Text(
-            "  [r] restart  [c] checkpoint  [q] quit  [l] logs  [e] events",
+            "  [r] restart  [c] checkpoint  [p] plot  [q] quit  [l] logs  [e] events",
             style="dim",
         )
 

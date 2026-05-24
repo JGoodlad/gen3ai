@@ -5,6 +5,7 @@ import os
 import queue
 import signal
 import sys
+import threading
 import time
 from dataclasses import dataclass
 
@@ -102,6 +103,15 @@ def _dispatch_command(
     elif ch == "d":
         state.view_mode = "dashboard"
 
+    elif ch == "p":
+        if state.run_dir:
+            state.add_event("📊 Generating plots…")
+            threading.Thread(
+                target=_run_plots, args=(state,), daemon=True
+            ).start()
+        else:
+            state.add_event("⚠️  No run dir yet — can't generate plots")
+
     elif ch == "s":
         now = time.monotonic()
         elapsed = now - state.run_start
@@ -113,3 +123,24 @@ def _dispatch_command(
             )
         else:
             state.add_event(f"📊 PID {proc.pid} | elapsed {elapsed / 3600:.2f}h | no restart")
+
+
+def _run_plots(state: LauncherState) -> None:
+    """Background thread: generate plots and report back via events."""
+    try:
+        from utils.plot_tb import find_tb_dir_for_run, generate_plots
+
+        tb_dir = find_tb_dir_for_run(state.run_dir)
+        if tb_dir is None:
+            state.add_event("⚠️  TensorBoard dir not found for this run")
+            return
+
+        out_dir = os.path.join(state.run_dir, "tb_imgs")
+        paths = generate_plots(tb_dir, out_dir)
+
+        if paths:
+            state.add_event(f"📊 Plots saved → {out_dir}  ({len(paths)} files)")
+        else:
+            state.add_event("⚠️  No scalar data found — nothing written")
+    except Exception as exc:
+        state.add_event(f"❌ Plot error: {exc}")
