@@ -45,7 +45,16 @@ See `designs/ai_v7/impl_step2_rust_scaffold.md`.
 
 Extend the Rust sim to cover all Gen 3 mechanics until the fuzz harness passes 10k
 battles without divergence. Work is mechanic-by-mechanic guided entirely by fuzz
-failures — no speculative implementation.
+failures — no speculative implementation. Mechanic groups are largely independent
+after the damage formula is confirmed — parallel agents can tackle status, items,
+hazards, volatiles, weather, complex moves, and abilities concurrently.
+
+See `designs/ai_v7/impl_step3_gen3_mechanics.md`.
+
+**Deliverables:**
+- `src/sim/src/turn.rs` — all mechanic implementations
+- `src/sim/src/damage.rs` — formula refinements
+- `src/sim/src/data.rs` — physical/special split, item tables
 
 **Stopping criterion:** 10k random battles, zero state divergences vs Showdown.
 
