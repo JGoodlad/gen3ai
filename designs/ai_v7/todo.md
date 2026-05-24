@@ -1,10 +1,31 @@
 # AI v7 — Todo
 
-Replace the Node.js MCTS battle sim bridge (ai_v5) with a Rust battle simulator called
-via PyO3. The Rust sim runs in-process with near-zero IPC overhead, enabling millions of
-rollouts per turn rather than thousands. Hidden state (opponent sleep duration, unknown
-items, unrevealed team slots) is explicitly tagged at state construction time so every
-MCTS rollout knows exactly what it made up.
+**"Rustifying" the battle simulator.** v7 replaces the Node.js MCTS bridge (ai_v5/v6)
+with a Rust battle simulator called via PyO3. The Rust sim runs in-process with near-zero
+IPC overhead, enabling 50 000+ rollouts per turn rather than ~1 000 with the JS bridge.
+This throughput increase unlocks two capabilities that were impractical before:
+
+1. **Deep MCTS at inference time** — with 50× more rollouts in the same time budget,
+   the agent can search far deeper before committing to a move.
+
+2. **MCTS during training data generation** — generating PPO training samples using
+   full MCTS on both sides. With the JS bridge, this would reduce throughput by ~1 000×;
+   with the Rust sim, the overhead drops to ~5–10×, making it feasible at moderate scale.
+
+The end goal: a model that can train against **either** fixed-depth search **or** full
+MCTS, with the Rust sim as the common engine for both. Hidden state (opponent sleep
+duration, unknown items, unrevealed team slots) is explicitly tagged via `SampledValues`
+at state construction time so every MCTS rollout knows exactly what it made up.
+
+---
+
+## Version Context
+
+| Version | Sim | Rollouts/turn (inference) | Training data |
+|---------|-----|--------------------------|---------------|
+| ai_v5 | Node.js bridge | ~1 000 | Raw policy |
+| ai_v6 | Node.js bridge | ~1 000 | K=3 action sampling (shallow) |
+| ai_v7 | Rust sim (PyO3) | 50 000+ | Full MCTS both sides |
 
 ---
 
@@ -68,20 +89,49 @@ both adapters produce identical observation vectors.
 
 ---
 
-## Step 5 — MCTS with Rust Sim
+## Step 5 — MCTS with Rust Sim (Inference)
 
-Replace the ai_v5 Node.js sim bridge with the Rust sim. `fork()` becomes
-`rust_state.clone()` (a memcpy). Leaf evaluation is batched (accumulate K leaves →
-one network call). `SampledValues` makes all hidden-state guesses explicit.
+Replace the ai_v5/v6 Node.js bridge with the Rust sim for inference-time MCTS.
+`fork()` becomes `rust_state.clone()` (a memcpy — no serialization, no IPC).
+Leaf evaluation is batched (accumulate K leaves → one network call, amortizing GPU
+round-trip latency). `SampledValues` makes all hidden-state guesses explicit.
+
+**Key changes vs ai_v5 MCTS:**
+- `SimClient` → in-process `rust_state.clone()` (fork is free)
+- `step()` → `rust_sim.step_turn(state, p1, p2)` (no subprocess, no JSON)
+- Leaf batch size K replaces the per-turn neural-net call; tune to GPU latency
 
 ---
 
-## Step 6 — Evaluation + Tuning
+## Step 6 — MCTS in Training + Evaluation
 
-Benchmark rollout throughput vs ai_v5 Node bridge. Ablate `max_depth` and leaf
-batch size K. Measure win rate vs v6 league.
+### 6a — Training with Rust MCTS
 
-**Target:** ≥ 50k rollouts/turn (vs ~1k in ai_v5), win rate ≥ v6 MCTS baseline.
+Use the Rust sim to generate PPO training samples via full MCTS on both sides. Both
+the learning agent and its opponents select training-time actions by running N rollouts
+from the current state, replacing the raw policy or the shallow action sampling from v6.
+
+With the Rust sim, the overhead is ~5–10× vs. raw policy training (compared to ~1 000×
+with the JS bridge), making this feasible at large scale.
+
+**Training modes to benchmark:**
+- **Raw policy** (v5 baseline): single forward pass per decision
+- **Action sampling K=3** (v6): 3 rollouts per legal action, depth 1
+- **MCTS N=1 000** (v7): full tree search, depth 5, one-side (learning agent only)
+- **MCTS N=1 000 both sides** (v7): full tree search for both players in self-play
+
+Each mode produces different training data quality at different throughput costs.
+Measure win rate vs. v6 league after 15M steps per mode.
+
+### 6b — Evaluation + Tuning
+
+Benchmark rollout throughput vs. the ai_v5/v6 Node bridge. Ablate `max_depth` and leaf
+batch size K. Measure win rate vs. v6 league.
+
+**Targets:**
+- ≥ 50k rollouts/turn at inference (vs ~1k in ai_v5/v6)
+- Win rate ≥ v6 MCTS baseline with equal compute
+- Training throughput ≥ 50k steps/hour with MCTS-quality samples
 
 ---
 
@@ -94,3 +144,8 @@ batch size K. Measure win rate vs v6 league.
 - **MCTS parallelism**: multiple Python workers each with their own in-process Rust
   sim, or single-process Rust MCTS calling back to Python only for leaf eval?
   Single-process Rust is simpler; try it first.
+- **Training MCTS mode**: one-side (our agent only) vs. both sides? One-side is a
+  cleaner experimental control; both sides is closer to AlphaZero-style self-play.
+- **Curriculum**: start training with raw policy, then switch to MCTS after N steps?
+  Or use MCTS from the start? MCTS from the start is more principled; raw-policy warmup
+  may stabilise early training.

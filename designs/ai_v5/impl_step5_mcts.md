@@ -1,11 +1,24 @@
 # Implementation: Step 5 — MCTS
 
 This step adds Monte Carlo Tree Search on top of the trained policy and value networks,
-used purely at **inference time** as a policy improvement operator. The neural network is
-trained entirely via PPO self-play (v3/v4); MCTS is never used to generate training data.
-At the start of each search trajectory, the team completion model samples one complete
-team hypothesis for the opponent's unrevealed slots; the trajectory runs in that
-fully-observed world using Pokémon Showdown as the game simulator.
+used at **inference time** as a policy improvement operator. The neural network is trained
+entirely via PPO self-play (v3/v4); MCTS is not used to generate training data — that
+comes later in v7 once the Rust sim makes it fast enough.
+
+---
+
+## Version Context
+
+| Version | MCTS role | Simulator | Rollouts/turn |
+|---------|-----------|-----------|---------------|
+| ai_v5 | Inference only (ladder, eval) | Node.js bridge (JS) | ~1 000 |
+| ai_v6 | Inference + very cheap training | Node.js bridge (JS) | ~20 per action in training |
+| ai_v7 | Full training-time MCTS | Rust sim via PyO3 | 50 000+ |
+
+v5 proves the approach and ships a working MCTS player. v6 integrates cheap MCTS into the
+training loop. v7 replaces the JS bridge with the Rust sim for a ~50× throughput leap.
+
+---
 
 ## Motivation
 
@@ -16,22 +29,49 @@ later changes the current move choice. MCTS provides this lookahead by simulatin
 trajectories through the game tree using the policy and value networks as heuristics,
 without requiring the agent to store an explicit model of multi-turn dynamics.
 
-**Why not use MCTS during training?** Pokémon Showdown environment stepping is the
+**Why not use MCTS during training in v5?** Pokémon Showdown environment stepping is the
 bottleneck — each rollout takes ~10ms of env stepping vs. negligible GPU inference. Using
 MCTS to generate training data would reduce sample throughput by ~1000× (one rollout per
-training step instead of one step). With 150M training steps needed, this is not feasible.
-The paper (Wang 2024) made this explicit: *"simulating the environment is very slow,
-compared to a game like chess; generating gameplay using MCTS would not likely lead to
-enough samples for a neural network to converge."*
-
-The reference implementation achieved 1000–2000 rollouts within the 10-second per-turn
-decision limit using 20 parallel workers. Gen 3 OU has a more constrained action space
-than Gen 4 (fewer legal switches mid-game due to fixed teams) which may allow deeper
-search at the same rollout budget.
+training step instead of one step). With 150M training steps needed, this is not feasible
+with the JS bridge. The paper (Wang 2024) made this explicit: *"simulating the environment
+is very slow... generating gameplay using MCTS would not likely lead to enough samples for
+a neural network to converge."* The Rust sim in v7 changes this calculus.
 
 ---
 
-## Algorithm
+## Phase 1 — Action Sampling
+
+Before implementing the full UCB tree, deploy flat action sampling. It requires far less
+machinery, is easy to debug, and delivers the "try each option K times before committing"
+benefit the user asked for.
+
+**Algorithm:**
+
+1. At the start of a decision turn, enumerate all legal actions `a ∈ A` (4–6 in Gen 3 OU).
+2. For each legal action, run `K` rollouts — fork the root, force that action for our side
+   (with the opponent choosing via the neural-net policy), roll out `max_depth` turns.
+3. Estimate `Q(root, a) = mean(returns across K rollouts)`.
+4. Select `a* = argmax_a Q(root, a)`.
+
+With `K=3` and `max_depth=3`, a 6-action turn costs 18 rollouts — completely within a
+1-second budget. With 20 parallel workers, this drops to ~1 rollout per worker.
+
+**Why K=3 specifically?** Three attempts per action expose early-turn randomness
+(damage rolls, crits) without accumulating the compound variance of longer rollouts.
+`V_θ` at the leaf handles the rest. Tune `K` and `max_depth` together:
+
+| K | max_depth | Budget (6 actions, 1 worker) | Notes |
+|---|-----------|------------------------------|-------|
+| 3 | 3 | 18 rollouts | Phase 1 baseline; fast to ship |
+| 10 | 3 | 60 rollouts | Better Q estimates, same depth |
+| 20 | 5 | 120 rollouts | ~1 s with 20 workers |
+
+Action sampling is the v5 baseline that goes to the ladder first. Full MCTS (Phase 2)
+is added incrementally and compared head-to-head against it.
+
+---
+
+## Phase 2 — Full MCTS
 
 ### Tree Policy
 
@@ -47,112 +87,65 @@ where U(s, a) = P[s, a]^β · sqrt(M[s]) / (N[s, a] + 1)
 |--------|---------|
 | `Q[s, a]` | Empirical mean return from taking action `a` in state `s` |
 | `P[s, a]` | Neural network policy prior `π_θ(a \| s)` |
-| `M[s]` | Total visit count for state `s` (incremented once per rollout visit) |
-| `N[s, a]` | Visit count for `(s, a)` (incremented once per selection) |
-| `α ∈ [0, 1]` | Exploration weight — how much to value the exploration bonus |
-| `β ∈ [0, 1]` | Policy trust — how closely to follow the prior vs. treat actions uniformly |
+| `M[s]` | Total visit count for state `s` |
+| `N[s, a]` | Visit count for `(s, a)` |
+| `α ∈ [0, 1]` | Exploration weight |
+| `β ∈ [0, 1]` | Policy trust (`β=1` = standard PUCT; `β=0` = uniform exploration) |
 
-`β = 1` recovers standard PUCT (full trust in prior); `β = 0` ignores the prior and
-explores uniformly. Both are hyperparameters to tune.
-
-`P[s, a]` is computed once per node on first visit and **never synced between workers**
-— it is recomputed locally by each worker on demand. Recomputation is cheap (one forward
-pass) relative to env stepping, and sending 11-element distributions across processes is
-more expensive than recomputing them.
+`P[s, a]` is computed once per node on first visit and never synced between workers —
+recomputed locally on demand. Recomputation (one forward pass) is cheaper than shipping
+11-element distributions across processes.
 
 ### Rollout Policy
 
-All rollout moves (both our side and opponent) are selected by the trained neural network
-policy from the respective player's observation. This produces realistic game trajectories
-and avoids the high-variance returns of random rollouts.
-
-A rollout terminates when:
-- The game reaches a **terminal state** (`battle.finished`) — value is `+1`, `-1`, or `0`
-- The rollout reaches a **leaf node** (a state not yet recorded in the tree) — value is
-  `V_θ(sT)` from the critic head; the leaf is then added to the tree
+All rollout moves (both sides) are selected by the trained neural network policy from
+the respective player's observation. A rollout terminates when:
+- The game reaches a **terminal state** — value is `+1`, `-1`, or `0`
+- The rollout reaches a **leaf node** — value is `V_θ(sT)`, leaf added to tree
 - The rollout reaches `max_depth` turns — value is `V_θ(sT)`
-
-Leaf termination is what makes MCTS tractable without running every rollout to completion.
-`max_depth` is a first-class hyperparameter — see Stochasticity below.
 
 ### Stochasticity and max_depth
 
 Gen 3 OU has meaningful per-turn randomness: damage rolls (±7.5%), critical hits
-(~6.25%), miss chances (Thunder 30%, Blizzard 30%, Fire Blast 15%), and variable sleep
-duration. This creates a problem specific to stochastic MCTS:
+(~6.25%), miss chances, and variable sleep duration. A crit early in a rollout creates
+a different game state that all subsequent turns evaluate from. With only ~50–100 rollouts
+per action, rare-event branches can dominate Q rather than average out.
 
-**A crit or miss early in a rollout doesn't just add noise to that Q estimate — it
-creates a different game state that all subsequent turns evaluate from.** A crit on turn 2
-might leave the opponent at 30% HP instead of 70%. The rollout then plays out from that
-atypically favourable position, backing up an inflated value into `Q[root, a]`. With only
-~50–100 rollouts per action at a 1000-rollout budget, these rare-event branches can
-dominate the Q estimate rather than average out.
-
-**The key insight**: `V_θ(s)` is a better leaf estimator than a short noisy rollout.
-V_θ was trained on thousands of games where all random events occurred at their base
-rates — it already implicitly prices in expected crit rates, miss rates, and damage
-variance. A depth-3 rollout that happened to crit on turn 1 is a worse estimate of
-"expected value from here" than V_θ(s) computed at the root.
-
-This means **shallower depth may outperform deeper depth** in this format:
+`V_θ(s)` is a better leaf estimator than a short noisy rollout — it was trained on
+thousands of games where all random events occurred at their base rates. **Shallower depth
+may outperform deeper depth:**
 
 | `max_depth` | Variance source | Leaf estimator |
-|-------------|----------------|----------------|
-| 20 | Accumulated over many turns — crits compound | V_θ is a small contributor |
+|-------------|-----------------|----------------|
+| 20 | Accumulated crits compound | V_θ is a minor contributor |
 | 5 | 1–2 crit opportunities | V_θ handles 95%+ of the evaluation |
 | 3 | Negligible RNG accumulation | Nearly pure V_θ with action lookahead |
 
-The primary benefit of MCTS in Gen 3 OU is not "averaging over 20 turns of random
-outcomes" — it is "seeing that a switch now leads to a favourable type matchup 3 turns
-out". That insight is visible at depth 3–5, without accumulating the variance of a long
-rollout.
+The primary benefit of MCTS in Gen 3 OU is "seeing that a switch now leads to a
+favourable type matchup 3 turns out" — visible at depth 3–5 without accumulating
+long-rollout variance.
 
-**Recommended tuning order:**
-1. Start with `max_depth=5`. Profile win rate vs. raw PPO policy.
-2. Try `max_depth=3` and `max_depth=8`. Pick the highest-performing depth.
-3. Do not increase depth to chase the Wang 2024 reference value of 20 — that target was
-   for Random Battles, a format with more diverse sets where longer lookahead matters more.
-
-**PRNG seed per rollout**: When `sim_bridge.js` forks a session, it must reinitialise the
-PRNG with a fresh random seed rather than preserving the source session's seed. If the same
-seed propagates into every fork, all rollouts that take the same first action see identical
-damage rolls and crit outcomes on turn 1 — this biases Q toward one RNG draw instead of
-the expected value. One line in the fork handler:
-
-```js
-const fork = Battle.fromJSON(sessions.get(src).toJSON());
-fork.prng = new PRNG();  // fresh seed — do not copy source PRNG state
-sessions.set(newId, fork);
-```
-
-### Opponent Modeling
-
-During rollouts, the opponent's moves are selected by the same neural network policy,
-from the opponent's perspective (mirrored observation). This is the simplest possible
-opponent model and assumes the opponent plays similarly to our agent. Against exploiters
-(from ai_v4 league) or human players who deviate significantly, this assumption weakens —
-but it is a far better prior than random play, and improving it further is deferred to a
-post-v5 research question.
+**Recommended tuning order:** start at `max_depth=5`, compare `max_depth=3` and `max_depth=8`.
+Do not target the Wang 2024 value of 20 (Random Battles has more diverse sets; longer
+lookahead matters more there).
 
 ### State Representation
 
-The tree is stored as five dictionaries keyed by state hash:
+Five dicts keyed by state hash:
 
 | Dict | Type | Content |
 |------|------|---------|
 | `Q[s, a]` | `float` | Empirical mean return from `(s, a)` |
-| `N[s, a]` | `int` | Number of times action `a` was taken from state `s` |
-| `M[s]` | `int` | Number of times state `s` was visited (= `Σ_a N[s,a]`) |
-| `P[s, a]` | `float` | Neural network prior (cached per node, not synced between workers) |
+| `N[s, a]` | `int` | Times action `a` was taken from state `s` |
+| `M[s]` | `int` | Total visits to state `s` |
+| `P[s, a]` | `float` | Neural network prior (cached per node) |
 | `F[s]` | `int` | Total fainted Pokémon count in state `s` |
 
-State hash: hash of `(battle_tag, turn, our_team_hp_vector, opp_team_hp_vector, active_species_pair)`.
-Avoid hashing the full observation — it is slow and unnecessary.
+State hash: `(battle_tag, turn, our_team_hp_vector, opp_team_hp_vector, active_species_pair)`.
 
 ### Backup Rules
 
-When a rollout ends at state `sT` with value `v` (either `±1/0` for terminal, or
-`V_θ(sT)` for a leaf), apply for each `(st, at)` along the rollout path:
+For each `(st, at)` along the rollout path, with leaf value `v`:
 
 ```python
 Q[st, at] = (N[st, at] * Q[st, at] + v) / (N[st, at] + 1)
@@ -160,23 +153,118 @@ N[st, at] += 1
 M[st]     += 1
 ```
 
-After all rollouts, select the action with the highest visit count from the root:
-
-```python
-a* = argmax_a N[s0, a]
-```
-
-Max visit count rather than max Q — less-visited actions have higher variance in their
-Q estimates, so visit count is the more robust selection criterion at the root.
+Root action selection: `a* = argmax_a N[s0, a]` — visit count is more robust than Q at
+the root (less-visited actions have higher Q variance).
 
 ### Tree Pruning
 
-`F[s]` — total fainted Pokémon count — is monotonically non-decreasing during a game.
-Once the live game reaches `f1` total fainted Pokémon, all states `s'` where `F[s'] < f1`
-can never be revisited. Prune them from the dictionaries before each sync cycle.
+`F[s]` is monotonically non-decreasing. Once the live game reaches `f1` total fainted
+Pokémon, prune all states `s'` where `F[s'] < f1` before each sync cycle.
+Bounds tree size to 2,000–15,000 nodes during a typical game.
 
-This bounds tree size to 2,000–15,000 nodes during a typical game (per the reference
-implementation), keeping sync payloads small enough for efficient inter-process transfer.
+---
+
+## Rollout Bridge
+
+### Architecture
+
+Each MCTS worker owns one persistent `node sim_bridge.js` subprocess, launched when
+the worker starts and kept alive for the entire MCTS search. 20 workers = 20 Node.js
+processes.
+
+The bridge uses `BattleStream` for initial session setup (the designed, stable Showdown
+API), then works directly with the `stream.battle` object. All fork operations are
+**in-process `battle.toJSON()` / `Battle.fromJSON()` calls** — no serialized state ever
+crosses IPC during rollouts.
+
+```
+Python                     Node.js bridge
+  │  {"cmd":"new",...}         │
+  │ ──────────────────────►    │  BattleStream.write(">start...")
+  │                            │  BattleStream.write(">player p1 ...")
+  │                            │  BattleStream.write(">player p2 ...")
+  │  {"ok":true,"state":{}}    │  ◄── stream.battle for serializeBattle()
+  │ ◄──────────────────────    │
+  │                            │
+  │  {"cmd":"fork",...}        │
+  │ ──────────────────────►    │  Battle.fromJSON(root.toJSON())  ← in-process!
+  │  {"ok":true}               │    fork.prng = new PRNG()
+  │ ◄──────────────────────    │
+  │                            │
+  │  {"cmd":"step",...}        │
+  │ ──────────────────────►    │  fork.makeChoices(p1, p2)
+  │  {"ok":true,"state":{}}    │  ◄── State.serializeBattle(fork)
+  │ ◄──────────────────────    │
+```
+
+### Root Synchronization
+
+The bridge root session tracks the **real battle** turn-by-turn. After each real move
+decision (once the live server confirms both players' choices), feed those moves to the
+bridge so its root stays in sync:
+
+```
+→ {"cmd": "advance", "id": "root", "p1": "move 1", "p2": "switch 3"}
+← {"ok": true}
+```
+
+This avoids any state transfer from poke-env — the bridge replays the same move sequence
+and arrives at an identical state deterministically.
+
+### Protocol
+
+**Start a root session** (once per battle):
+```
+→ {"cmd": "new", "id": "root", "p1_team": "<packed>", "p2_team": "<packed>",
+   "seed": [s0, s1, s2, s3]}
+← {"ok": true, "state": { ...serializeBattle()... }}
+```
+Uses `BattleStream`:
+```js
+const stream = new BattleStream();
+stream.write('>start {"formatid":"gen3anythinggoes","seed":[s0,s1,s2,s3]}');
+stream.write(`>player p1 {"name":"p1","team":"${msg.p1_team}"}`);
+stream.write(`>player p2 {"name":"p2","team":"${msg.p2_team}"}`);
+// drain until |turn|1
+sessions.set(msg.id, stream);
+return { ok: true, state: State.serializeBattle(stream.battle) };
+```
+
+**Advance root** (after each real-game turn):
+```
+→ {"cmd": "advance", "id": "root", "p1": "move 1", "p2": "switch 3"}
+← {"ok": true}
+```
+```js
+stream.write(`>p1 ${msg.p1}`);
+stream.write(`>p2 ${msg.p2}`);
+// drain until |turn|N+1 or |win|...
+```
+
+**Fork to rollout session** (once per rollout):
+```
+→ {"cmd": "fork", "src": "root", "id": "r42"}
+← {"ok": true}
+```
+```js
+const fork = Battle.fromJSON(sessions.get(msg.src).battle.toJSON());
+fork.prng = new PRNG();  // fresh seed — rollouts must diverge stochastically
+battles.set(msg.id, fork);
+```
+
+**Step a rollout turn**:
+```
+→ {"cmd": "step", "id": "r42", "p1": "move 2", "p2": "move 1"}
+← {"ok": true, "done": false, "state": { ...serializeBattle()... }}
+← {"ok": true, "done": true, "winner": "p1", "state": { ... }}
+```
+Returns state so Python can encode the observation for neural-net leaf evaluation.
+
+**Free a session**:
+```
+→ {"cmd": "free", "id": "r42"}
+← {"ok": true}
+```
 
 ---
 
@@ -189,14 +277,9 @@ At the start of each MCTS trajectory:
    sampled hypothesis.
 3. Run the MCTS trajectory entirely in this fully-observed world.
 
-Different trajectories see different hypotheses, so the visit counts in `Q` and `N` are
-averaged over the distribution of plausible opponent teams. The action at the root with
-the highest visit count `N[root, a]` is selected — it is the action that performs best
-across the sampled worlds.
-
-This is the same strategy the reference implementation uses for Random Battles (where
-unknown sets are sampled via the server's generation procedure). The team completion
-model fills the equivalent role for Gen 3 OU.
+Different trajectories see different hypotheses, so Q and N are averaged over the
+distribution of plausible opponent teams. The team completion model (from ai_v4/v5 Step 4)
+fills this role for Gen 3 OU.
 
 ---
 
@@ -207,209 +290,38 @@ model fills the equivalent role for Gen 3 OU.
 20 worker processes + 1 aggregator process (following the reference implementation).
 
 Each worker:
-1. Receives a copy of the master tree (`Q, N, M, P` dicts) from the aggregator.
-2. Runs 10 rollouts, updating its local copy of the tree.
-3. Sends the updated tree back to the aggregator.
-4. Repeats until a time budget is exhausted.
+1. Receives the master tree (`Q, N, M, P` dicts) from the aggregator.
+2. Runs 10 rollouts, updating its local copy.
+3. Sends the updated tree back.
+4. Repeats until the time budget is exhausted.
 
-The aggregator:
-1. Waits for worker updates.
-2. Merges received trees into the master copy: `Q_master[s,a] = weighted_average(Q_worker[s,a], N_worker[s,a])`.
-3. Broadcasts the updated master tree to all waiting workers.
+The aggregator merges received trees:
+`Q_master[s,a] = weighted_average(Q_worker[s,a], N_worker[s,a])`.
 
-**P is not synced.** Neural network priors are recomputed locally by each worker on first
-node visit. Sending a 11-action distribution per node per sync cycle is expensive; recomputing
-it via a local GPU forward pass is faster given the small action space.
+**P is not synced.** Neural network priors are recomputed locally on first node visit —
+cheaper than shipping 11-action distributions per node per sync cycle.
 
-### Implementation
+### VRAM
 
-Workers and the aggregator run as Python `multiprocessing.Process` instances. The shared
-tree state is passed via `multiprocessing.Queue` (or `Pipe` for lower latency). Each
-worker holds a reference to the neural network (loaded in-process, not shared).
-
-If 20 workers each hold the full model in GPU memory, VRAM becomes the bottleneck. Mitigations:
-- Use CPU inference for rollout moves (the network is small enough that CPU throughput
-  is acceptable for Gen 3's tiny action space)
-- Or share a single GPU model via a dedicated inference server process that workers
-  submit batches to
-
-Start with CPU inference for simplicity; profile before committing to GPU batching.
+If 20 workers each hold the full model in GPU VRAM, memory becomes the bottleneck.
+Start with CPU inference (the network is small enough for Gen 3's tiny action space);
+profile before moving to GPU batching.
 
 ### Time Budget
 
-The Showdown server enforces a per-turn decision limit (~10 seconds for ladder play;
-longer in local play). The MCTS loop runs until `time.monotonic() - turn_start > TIME_BUDGET`
-(default 8 seconds, leaving 2 seconds for network round-trip).
-
-Target: 1000–2000 rollouts per turn. Profile on the dev machine; adjust `max_workers`
-and `max_depth` accordingly.
-
----
-
-## Rollout Bridge
-
-### State Serialization
-
-#### Why not `battle.toJSON()`?
-
-Showdown's `battle.toJSON()` / `Battle.fromJSON()` provides a full round-trip but
-serializes the entire battle graph — team set objects, action queue, PRNG state, full
-battle log, and all Pokémon metadata. A typical Gen 3 game state is **15–30 KB**. Passing
-this on every `step` call (once per rollout turn, ~5000 calls per MCTS decision) is
-expensive in both CPU (JSON stringify/parse) and IPC bandwidth.
-
-#### Compact snapshot format
-
-The root state is transmitted exactly once per MCTS decision turn via a **compact snapshot**
-of ~500 bytes. The static parts (species, moves, IVs, EVs, level, nature, ability) live in
-the team spec objects sent once at session start. The snapshot carries only the variable
-state that changes during battle:
-
-```js
-// Top-level snapshot
-{
-  turn: number,
-  requestState: string,          // 'move' | 'switch' | ''
-  weather: string,               // '' if none, e.g. 'raindance'
-  weather_turns: number,
-  p1: SideSnap,
-  p2: SideSnap,
-}
-
-// Per-side
-SideSnap = {
-  active_slot: number,           // index into team array (0–5)
-  spikes: number,                // 0–3
-  reflect_turns: number,
-  light_screen_turns: number,
-  team: MonSnap[],
-}
-
-// Per-Pokémon
-MonSnap = {
-  hp: number,                    // exact current HP
-  status: string,                // '' | 'brn' | 'slp' | 'par' | 'psn' | 'tox' | 'frz'
-  status_turns: number,          // sleep counter (0–4) or toxic counter (1–N)
-  item: string,                  // '' if consumed
-  last_item: string,             // identity of consumed item (Knock Off, Berry, etc.)
-  boosts: object,                // {atk, def, spa, spd, spe, accuracy, evasion}
-  pp: number[],                  // one entry per move slot
-  volatiles: object,             // shallow dict: key → numeric counter or {}
-  fainted: boolean,
-  transformed: boolean,
-}
-```
-
-#### `fromSnapshot(p1Sets, p2Sets, snapshot)` in JS
-
-Reconstructs a `Battle` object ready for `makeChoices()`:
-
-```js
-const battle = new Battle({
-  formatid: 'gen3anythinggoes',
-  deserialized: true,            // skip startup sequence
-  p1: { name: 'p1', team: p1Sets },
-  p2: { name: 'p2', team: p2Sets },
-});
-
-battle.turn = snapshot.turn;
-battle.requestState = snapshot.requestState;
-battle.started = true;
-// patch weather, sideConditions, and per-Pokémon fields...
-battle.prng = new PRNG();        // always fresh — do not restore serialised seed
-```
-
-The `deserialized: true` mode creates Pokemon objects from the team specs without
-starting the battle loop. Manual field injection then sets HP, status, boosts, PP,
-volatiles, item, and active slot. A fresh PRNG seed is set so rollouts forked from the
-same root diverge stochastically rather than replaying identical RNG sequences.
-
-#### Hot path: forks stay in Node memory
-
-After the root is loaded, all rollout forks are in-memory
-`Battle.fromJSON(canonical.toJSON())` calls entirely within the Node process — Python
-never sees those blobs. The compact snapshot cost (500 bytes × 1 parse) is paid once per
-MCTS decision turn; the 5000 fork operations per turn are free of IPC overhead.
-
-### Bridge Architecture: One Persistent Process per Worker
-
-Each MCTS worker owns one persistent `node sim_bridge.js` subprocess, launched when
-the worker starts and kept alive for the duration of the MCTS search. 20 workers = 20
-Node.js processes. Rationale:
-
-- **No shared state**: each worker runs fully independent rollouts with its own in-memory
-  `Battle` object — no locking, no message contention
-- **Startup cost amortized**: the ~80ms Node.js startup happens once per turn's search,
-  not once per rollout
-- **Simple protocol**: line-delimited JSON over stdin/stdout, same as the existing bridge
-  pattern in `src/utils/bridge/`
-- **No socket overhead**: Unix domain sockets or TCP would add latency per round-trip;
-  pipes are zero-copy on Linux
-
-A single shared Node.js server with `worker_threads` is not worth the complexity —
-Showdown's sim is synchronous CPU code and gains nothing from sharing a V8 heap across
-simulations.
-
-### Protocol
-
-Each round-trip is one JSON line in, one JSON line out. The bridge is **stateful** — it
-holds `Battle` objects in memory identified by session IDs, so choices are transmitted
-without re-sending state.
-
-**Load root state (once per MCTS decision turn):**
-```json
-→ {"cmd": "load_root", "id": "s0", "p1Sets": [...], "p2Sets": [...], "snapshot": {...}}
-← {"ok": true}
-```
-
-**Fork a session (once per rollout):**
-```json
-→ {"cmd": "fork", "src": "s0", "id": "s1"}
-← {"ok": true}
-```
-Fork is an in-memory `Battle.fromJSON(battle.toJSON())` — no IPC state transfer.
-
-**Step a game turn (once per rollout turn):**
-```json
-→ {"cmd": "step", "id": "s1", "p1": "move 1", "p2": "switch 3"}
-← {"done": false}
-← {"done": true, "winner": "p1"}
-```
-
-**Free a session (end of rollout):**
-```json
-→ {"cmd": "free", "id": "s1"}
-← {"ok": true}
-```
-
-State is never returned during normal stepping — the Python rollout code computes
-observations from its own in-memory view. The bridge only returns `done` + `winner`.
-
-### Files to Create (Bridge)
-
-| File | Purpose |
-|------|---------|
-| `src/utils/bridge/sim_snapshot.js` | `toCompactSnapshot(battle)`, `fromSnapshot(p1Sets, p2Sets, snap)`, `compareStates(canonical, reconstructed)` utilities |
-| `src/utils/bridge/sim_bridge.js` | Persistent Node.js process: stateful session manager — `load_root`, `fork`, `step`, `free` commands |
-| `src/agents/mcts/sim_client.py` | Python wrapper: manages one `sim_bridge.js` subprocess, exposes `load_root()`, `fork()`, `step()`, `free()` |
-
-`sim_bridge.js` reads newline-delimited JSON from stdin, writes newline-delimited JSON to
-stdout, imports from `deps/pokemon-showdown/dist/sim/`, and keeps a `Map<id, Battle>`
-in memory across commands.
+The Showdown server enforces a per-turn limit (~10 s for ladder). The MCTS loop runs
+until `time.monotonic() - turn_start > TIME_BUDGET` (default 8 s, leaving 2 s for the
+round-trip).
 
 ---
 
 ## Integration with the Inference Player
 
-`Gen3Player` (in `src/agents/inference/player.py`) currently selects actions via a single
-policy forward pass. The MCTS variant wraps this:
-
 ```python
 class MCTSPlayer(Gen3Player):
     def choose_move(self, battle):
-        root_state = build_state(battle)
         action = mcts_search(
-            root=root_state,
+            root_battle=battle,
             policy_fn=self.model.policy,
             value_fn=self.model.value,
             completion_model=self.completion_model,
@@ -419,8 +331,9 @@ class MCTSPlayer(Gen3Player):
         return self.action_to_order(action, battle)
 ```
 
-`mcts_search()` is a blocking call that returns the best action index. The player's
-existing `action_to_order()` and Showdown communication logic are unchanged.
+`mcts_search()` — blocking, returns the best action index. Phase 1 uses flat action
+sampling; Phase 2 switches to the full UCB tree. The player's Showdown communication
+logic is unchanged in both phases.
 
 ---
 
@@ -428,97 +341,84 @@ existing `action_to_order()` and Showdown communication logic are unchanged.
 
 | File | Purpose |
 |------|---------|
-| `src/utils/bridge/sim_snapshot.js` | `toCompactSnapshot()`, `fromSnapshot()`, `compareStates()` — snapshot utilities shared by bridge and fuzz test |
-| `src/utils/bridge/sim_bridge.js` | Persistent Node.js bridge: stateful session manager (`load_root`, `fork`, `step`, `free`) |
-| `src/agents/mcts/sim_client.py` | Python wrapper around `sim_bridge.js`: manages subprocess lifetime, exposes `load_root()`, `fork()`, `step()`, `free()` |
-| `src/agents/mcts/sim_bridge_fuzz_e2e_test.py` | E2E fuzz test: drives snapshot correctness by comparing poke-env observations against the canonical Node sim (see Verification §0) |
-| `src/agents/mcts/tree.py` | `MCTSTree` — Q, N, M, P, F dicts; tree policy (α, β); backup; pruning |
+| `src/utils/bridge/sim_bridge.js` | Persistent Node.js bridge: BattleStream setup, in-process forks, `new`/`advance`/`fork`/`step`/`free` |
+| `src/agents/mcts/sim_client.py` | Python wrapper: manages one `sim_bridge.js` subprocess, exposes `new_battle()`, `advance()`, `fork()`, `step()`, `free()` |
+| `src/agents/mcts/action_sampler.py` | Phase 1: K rollouts per legal action, returns Q estimates and best action |
+| `src/agents/mcts/tree.py` | Phase 2: `MCTSTree` — Q, N, M, P, F; tree policy (α, β); backup; pruning |
 | `src/agents/mcts/rollout.py` | Single trajectory: hidden-info sampling, sim_client stepping, value backup |
-| `src/agents/mcts/worker.py` | Worker process: owns one `SimClient`, runs 10 rollouts, sends tree to aggregator |
+| `src/agents/mcts/worker.py` | Worker process: owns one `SimClient`, runs rollouts, sends tree to aggregator |
 | `src/agents/mcts/aggregator.py` | Aggregator process: merge worker trees, broadcast master |
-| `src/agents/mcts/search.py` | `mcts_search()` — top-level entry point: spawn workers, collect result |
+| `src/agents/mcts/search.py` | `mcts_search()` — top-level entry: spawn workers, return best action |
 | `src/agents/inference/mcts_player.py` | `MCTSPlayer` — wraps `Gen3Player`, calls `mcts_search()` |
-| `src/main/play_mcts.py` | Evaluation entry point with MCTS player |
+| `src/main/play_mcts.py` | Evaluation entry point for MCTS player |
 
 ## Files to Modify
 
 | File | Change |
 |------|--------|
-| `src/agents/team_model/sampler.py` | Ensure `sample_completion()` is picklable (workers are forked) |
+| `src/agents/team_model/sampler.py` | Ensure `sample_completion()` is picklable (workers are forked processes) |
 
 ---
 
 ## Verification
 
-0. **Snapshot round-trip fuzz test** — run this first, before any other MCTS work. It
-   drives the correctness of `fromSnapshot()` incrementally:
+1. **Bridge smoke test**: start bridge, send `new` with two packed teams, send `fork`,
+   send `step` with `"move 1"` both sides, confirm `state.turn == 1`. Send `free`. No crash.
 
-   ```bash
-   npm run showdown   # live server required
-   export PYTHONPATH=$PYTHONPATH:src
-   /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 \
-     src/agents/mcts/sim_bridge_fuzz_e2e_test.py 50
-   ```
+2. **Fork independence**: fork the same root 10 times, run 5 steps in each. Confirm
+   step 3 damage rolls differ across forks (PRNG divergence working). A cluster of
+   identical outcomes means `fork.prng = new PRNG()` is not being applied.
 
-   **Loop (per turn)**: the live Showdown server steps Turn N → N+1; poke-env observes the
-   new state; `_handle_battle_message` intercepts `|move|`/`|switch|`/`|-boost|`/`|-status|`/
-   etc. lines and accumulates exact state for both sides (`OpponentTracker` reconstructs
-   opponent HP, boosts, PP, and volatiles from the protocol stream using the known team spec
-   for `maxhp`). Python then sends `step(p1_move, p2_move)` to a persistent Node bridge
-   which advances its canonical programmatic `Battle` to Turn N+1. Python builds a compact
-   snapshot from poke-env + `OpponentTracker` and sends it to the bridge as `compare`. The
-   bridge does `fromSnapshot(snap)` and diffs it field-by-field against the canonical
-   `Battle`. Any mismatch prints `path: canonical=X  reconstructed=Y` and exits 1.
+3. **Root sync**: run a 20-turn battle by alternating `advance` on the root, then forking
+   and comparing `state.turn` to the expected value. Any desync means the root and the
+   real battle are out of phase.
 
-   Both teams are hardcoded and fully known — the comparison is exhaustive, no fields
-   skipped. Iterate: first run reveals gaps in `fromSnapshot()`; fix them; re-run until
-   `PASS  50 battles  ~1800 turns`. Then bump to 500 to catch rarer states (Transform,
-   mid-battle weather expiry, Baton Pass boosts, simultaneous faint).
+4. **Phase 1 smoke test** (`action_sampler.py`): run 10 rollouts on the first turn of a
+   debug game with `K=3`, `max_depth=3`. Confirm Q estimates are non-trivial (not all 0)
+   and the selected action is legal.
 
-1. **Single-worker smoke test**: disable parallelism (`n_workers=1`); run 10 rollouts on
-   the first turn of a debug game. Confirm `Q` and `N` are populated, `F` is tracked, and
-   the selected action is legal.
+5. **Phase 2 tree sanity**: enable full MCTS (`n_workers=1`), run 100 rollouts. Confirm
+   `Q`, `N`, `M` are populated, `F` is tracked, and the selected action matches the
+   highest `N[root, a]`.
 
-2. **Tree pruning**: after a faint event, confirm that all pre-faint states are removed
-   from `Q`, `N`, `P`, `F` before the next sync cycle. Check tree size stays < 20K nodes
-   across a full game.
+6. **Rollout distribution**: with PIMC active, log sampled team hypotheses across 100
+   trajectories with 3 unrevealed opponent slots. Confirm diversity (not all identical)
+   and all 6 slots populated.
 
-3. **Rollout distribution**: with the team completion model active, log the sampled team
-   hypotheses across 100 trajectories on a turn where 3 opponent slots are unrevealed.
-   Confirm the hypotheses are diverse (not all identical) and all 6 slots are populated.
+7. **max_depth ablation**: run 50-game evaluations at `max_depth ∈ {3, 5, 8}` vs. the
+   top league snapshot. Expect peak somewhere in 3–8.
 
-4. **PRNG independence**: run 200 rollouts from the same root state with the same first
-   action. Plot the distribution of leaf values — it should be spread across [−1, +1]
-   rather than tightly clustered. A tight cluster indicates the PRNG seed is being
-   restored rather than randomised; check `sim_bridge.js`.
+8. **Time budget**: measure rollouts-per-second with 20 workers at the chosen `max_depth`.
+   Target ≥ 100 rollouts/second (≥ 1000 rollouts in 10 s).
 
-5. **max_depth ablation**: run 50-game evaluations at `max_depth` ∈ {3, 5, 8, 20} vs.
-   the top league snapshot. Plot win rate vs. depth. Expect a peak somewhere in 3–8;
-   if depth-20 wins, the value head may be undertrained. Do this before locking in a
-   default depth — it is the single highest-leverage hyperparameter for variance control.
-
-6. **Time budget**: on the dev machine, measure rollouts-per-second with 20 workers at
-   the chosen `max_depth`. Target ≥ 100 rollouts/second to reach 1000 rollouts in 10
-   seconds. Shallower depth also helps here — depth-5 rollouts are ~4× faster than
-   depth-20 rollouts, allowing 4× more rollouts in the same time budget.
-
-7. **Win rate**: MCTSPlayer vs. the best league agent from ai_v4. MCTS should improve
-   win rate by ≥ 5 percentage points over the raw PPO policy at the same checkpoint.
-   A smaller or zero gain suggests the value head is noisy and may need fine-tuning.
+9. **Win rate**: MCTSPlayer vs. the best league agent from ai_v4. MCTS should improve
+   win rate by ≥ 5 pp over the raw PPO policy at the same checkpoint.
 
 ---
 
 ## Final State
 
 Step 5 is complete when:
-- MCTSPlayer achieves ≥ 1000 rollouts per turn within the time budget
+- Phase 1 (action sampling, K=3) is on the ladder and collecting games
+- Phase 2 (full MCTS) achieves ≥ 1000 rollouts/turn within the time budget
 - Win rate vs. the league is measurably higher than the raw PPO policy
-- Tree size stays bounded across a full game (pruning is working)
+- Tree size stays bounded across a full game (pruning working)
 - No hangs or crashes in 100-game evaluation runs
 
-**Post-v5 directions:**
-- Opponent model: replace neural-net-policy opponent with an exploiter ensemble to handle
-  diverse human play styles (section 5.2.3 of the reference paper)
-- Value fine-tuning: if value head estimates are noisy, a short supervised fine-tuning
-  pass on terminal-state values from the league replay log may help
-- Distilled rollout policy: a lightweight policy clone for faster rollouts at greater depth
+---
+
+## Post-v5 Directions → v6 and v7
+
+**ai_v6 — Cheap MCTS in Training**:
+The Node.js bridge is too slow for full MCTS during PPO data collection, but very shallow
+action sampling (`K=3`, `max_depth=1`) adds only ~30ms per decision. v6 integrates this
+into the training loop so the model trains against better-quality action selections from
+both sides. This closes the gap between "policy trained on random actions" and "policy
+trained on MCTS actions" without waiting for the Rust sim.
+
+**ai_v7 — Rust Sim → Training-time MCTS at Scale**:
+The Rust sim (PyO3, in-process) targets 50 000+ rollouts/turn — enough for deep MCTS
+during training data generation. With the Rust sim, PPO training can use full MCTS to
+select every training-time action, dramatically improving data quality. The final model
+can be evaluated against both fixed-depth search and full MCTS to measure the contribution
+of each.

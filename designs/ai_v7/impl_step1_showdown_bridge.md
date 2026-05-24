@@ -6,10 +6,10 @@ subsequent steps.
 
 ## Does this need `npm run showdown`?
 
-**No.** The bridge `require()`s the Showdown sim library directly:
+**No.** The bridge uses `BattleStream` — Showdown's designed in-process battle driver:
 
 ```js
-const { Battle } = require('./deps/pokemon-showdown/dist/sim');
+const { BattleStream } = require('./deps/pokemon-showdown/dist/sim/battle-stream');
 ```
 
 No WebSocket server, no open ports, no `npm run showdown`. The compiled `dist/`
@@ -20,53 +20,56 @@ already exists and is symlinked in every worktree (per CLAUDE.md setup). You nee
 `npm run showdown` is still needed for live training battles through poke-env. It is
 not needed for the bridge, the fuzz harness, or MCTS rollouts.
 
+`BattleStream` is the designed, stable API for programmatic battle control. It exposes
+`stream.battle` — a direct reference to the live `Battle` object — which we use for
+`State.serializeBattle()` and `activeRequest` access. The stream output (protocol text
+starting with `|`) is deliberately ignored by the bridge; we read state from the object
+directly rather than parsing text.
+
 ---
 
 ## Protocol
 
 One JSON line in → one JSON line out. The bridge is stateful — it holds a
-`Map<id, Battle>` in memory across commands.
+`Map<id, BattleStream>` in memory across commands.
 
 ### `new` — start a battle with known teams
 
 ```
-→ {"cmd": "new", "id": "b1", "p1_team": "<packed>", "p2_team": "<packed>", "seed": "gen5,xxxx"}
-← {"ok": true, "state": { ...serializeBattle() output... }}
+→ {"cmd": "new", "id": "b1", "p1_team": "<packed>", "p2_team": "<packed>", "seed": [s0,s1,s2,s3]}
+← {"ok": true, "state": { ...serializeBattle() output... },
+   "p1_request": { ...activeRequest... }, "p2_request": { ...activeRequest... }}
 ```
 
-`seed` is optional. If omitted, Showdown generates a random seed. For reproducible
-fuzz runs, pass a fixed seed. Packed team format is the same as `Teams.pack()` output
-(what `validate_team.js` already uses).
+`seed` is an optional array of four 16-bit integers (Gen 5 PRNG format). If omitted,
+Showdown generates a random seed. For reproducible fuzz runs, pass a fixed seed.
+Packed team format is the same as `Teams.pack()` output.
 
-`state` is the initial battle state before either player has acted — turn 0, both
-active Pokémon on the field.
+`state` is the initial battle state at turn 1, both active Pokémon on the field.
+`p1_request` and `p2_request` are each side's legal action objects (see below) — so
+the fuzz harness can immediately pick actions without a separate round-trip.
 
 ### `step` — advance one turn
 
 ```
 → {"cmd": "step", "id": "b1", "p1": "move 1", "p2": "switch 2"}
-← {"ok": true, "state": { ...serializeBattle()... }, "winner": null}
+← {"ok": true, "state": { ...serializeBattle()... }, "winner": null,
+   "p1_request": { ...activeRequest... }, "p2_request": { ...activeRequest... }}
    OR
-← {"ok": true, "state": { ...serializeBattle()... }, "winner": "p1"}
+← {"ok": true, "state": { ...serializeBattle()... }, "winner": "p1",
+   "p1_request": null, "p2_request": null}
 ```
 
 `state` is the state after both actions resolve (end of turn, residuals applied).
 `winner` is `"p1"`, `"p2"`, `"draw"`, or `null` if the battle continues.
+`p1_request` / `p2_request` are `null` when `winner` is set (battle over).
 
 Action strings match Showdown's choice format: `"move 1"` through `"move 4"`,
 `"switch 2"` through `"switch 6"`. Move indices are 1-based; switch indices refer
 to team slot (1-based, skipping active and fainted).
 
-### `request` — get legal actions for both sides
-
-```
-→ {"cmd": "request", "id": "b1"}
-← {"ok": true, "p1": { ...activeRequest... }, "p2": { ...activeRequest... }}
-```
-
-Returns each side's `activeRequest` object — the same structure Showdown sends
-clients to tell them what choices are available. The fuzz harness uses this to
-enumerate legal moves and switches before picking randomly.
+**No separate `request` command.** Legal actions are returned with every `new` and
+`step` response, eliminating one round-trip per turn in the fuzz harness.
 
 Key fields in `activeRequest`:
 ```json
@@ -92,47 +95,53 @@ Key fields in `activeRequest`:
 'use strict';
 const path   = require('path');
 const psPath = path.resolve(__dirname, '../../../deps/pokemon-showdown');
-const { Battle } = require(path.join(psPath, 'dist/sim'));
-const { Teams }  = require(path.join(psPath, 'dist/sim'));
-const { PRNG }   = require(path.join(psPath, 'dist/sim/prng'));
-const { State }  = require(path.join(psPath, 'dist/sim/state'));
+const { BattleStream } = require(path.join(psPath, 'dist/sim/battle-stream'));
+const { State }        = require(path.join(psPath, 'dist/sim/state'));
 
-const battles = new Map();
+// BattleStream is the designed, stable Showdown API for programmatic battle control.
+// stream.battle is a direct reference to the live Battle object — we read state from
+// it directly and ignore the text protocol output (the | lines).
+// BattleStream._writeLine processes commands synchronously, so stream.battle is
+// immediately up to date after every stream.write() call.
+
+const streams = new Map();  // Map<id, BattleStream>
+
+function getRequests(battle) {
+    return {
+        p1_request: battle.sides[0].activeRequest,
+        p2_request: battle.sides[1].activeRequest,
+    };
+}
 
 function handleNew(msg) {
-    const battle = new Battle({
-        formatid: 'gen3anythinggoes',
-        send: () => {},  // discard protocol output — we use serializeBattle()
-    });
-    if (msg.seed) battle.prng = new PRNG(msg.seed);
-    battle.setPlayer('p1', { name: 'p1', team: msg.p1_team });
-    battle.setPlayer('p2', { name: 'p2', team: msg.p2_team });
-    battles.set(msg.id, battle);
-    return { ok: true, state: State.serializeBattle(battle) };
+    const stream = new BattleStream();
+    const seedStr = msg.seed ? `,"seed":${JSON.stringify(msg.seed)}` : '';
+    stream.write(`>start {"formatid":"gen3anythinggoes"${seedStr}}`);
+    stream.write(`>player p1 {"name":"p1","team":${JSON.stringify(msg.p1_team)}}`);
+    stream.write(`>player p2 {"name":"p2","team":${JSON.stringify(msg.p2_team)}}`);
+    streams.set(msg.id, stream);
+    const b = stream.battle;
+    return { ok: true, state: State.serializeBattle(b), ...getRequests(b) };
 }
 
 function handleStep(msg) {
-    const battle = battles.get(msg.id);
-    if (!battle) return { ok: false, error: `unknown id: ${msg.id}` };
-    battle.makeChoices(msg.p1, msg.p2);
-    const winner = battle.ended
-        ? (battle.winner || 'draw')
-        : null;
-    return { ok: true, state: State.serializeBattle(battle), winner };
-}
-
-function handleRequest(msg) {
-    const battle = battles.get(msg.id);
-    if (!battle) return { ok: false, error: `unknown id: ${msg.id}` };
+    const stream = streams.get(msg.id);
+    if (!stream) return { ok: false, error: `unknown id: ${msg.id}` };
+    stream.write(`>p1 ${msg.p1}`);
+    stream.write(`>p2 ${msg.p2}`);
+    const b = stream.battle;
+    const winner = b.ended ? (b.winner || 'draw') : null;
     return {
         ok: true,
-        p1: battle.sides[0].activeRequest,
-        p2: battle.sides[1].activeRequest,
+        state: State.serializeBattle(b),
+        winner,
+        p1_request: winner ? null : b.sides[0].activeRequest,
+        p2_request: winner ? null : b.sides[1].activeRequest,
     };
 }
 
 function handleFree(msg) {
-    battles.delete(msg.id);
+    streams.delete(msg.id);
     return { ok: true };
 }
 
@@ -150,11 +159,10 @@ process.stdin.on('data', chunk => {
         try {
             const msg = JSON.parse(line);
             switch (msg.cmd) {
-                case 'new':     resp = handleNew(msg);     break;
-                case 'step':    resp = handleStep(msg);    break;
-                case 'request': resp = handleRequest(msg); break;
-                case 'free':    resp = handleFree(msg);    break;
-                default:        resp = { ok: false, error: `unknown cmd: ${msg.cmd}` };
+                case 'new':  resp = handleNew(msg);  break;
+                case 'step': resp = handleStep(msg); break;
+                case 'free': resp = handleFree(msg); break;
+                default:     resp = { ok: false, error: `unknown cmd: ${msg.cmd}` };
             }
         } catch (e) {
             resp = { ok: false, error: e.message, stack: e.stack };
@@ -183,8 +191,9 @@ from pathlib import Path
 class SimBattleClient:
     """Persistent bridge to the Showdown sim for programmatic battle control.
 
-    Does not require a running Showdown server — the bridge loads the sim
-    library directly via Node.js require().
+    Does not require a running Showdown server — the bridge drives BattleStream
+    directly via Node.js require(). Legal actions are returned with every
+    new_battle() and step() call, so no separate request() round-trip is needed.
     """
 
     def __init__(self):
@@ -211,13 +220,14 @@ class SimBattleClient:
         self,
         p1_team: str,
         p2_team: str,
-        seed: str | None = None,
+        seed: list[int] | None = None,
         battle_id: str | None = None,
-    ) -> dict:
+    ) -> tuple[dict, dict, dict]:
         """Start a battle with packed team strings.
 
-        Returns the initial serializeBattle() state (turn 0).
-        seed: optional 'gen5,xxxx' string for reproducible battles.
+        Returns (state, p1_request, p2_request).
+        state: initial serializeBattle() state (turn 1, both Pokémon on field).
+        seed: optional [s0, s1, s2, s3] four 16-bit ints for reproducible battles.
         """
         self._battle_id = battle_id or str(uuid.uuid4())
         msg: dict = {
@@ -228,17 +238,18 @@ class SimBattleClient:
         }
         if seed:
             msg['seed'] = seed
-        return self._rpc(msg)['state']
+        resp = self._rpc(msg)
+        return resp['state'], resp['p1_request'], resp['p2_request']
 
-    def step(self, p1: str, p2: str) -> tuple[dict, str | None]:
-        """Advance one turn. Returns (new_state, winner_or_None)."""
+    def step(self, p1: str, p2: str) -> tuple[dict, str | None, dict | None, dict | None]:
+        """Advance one turn.
+
+        Returns (state, winner, p1_request, p2_request).
+        winner: 'p1', 'p2', 'draw', or None if battle continues.
+        p1_request, p2_request: None when winner is set.
+        """
         resp = self._rpc({'cmd': 'step', 'id': self._battle_id, 'p1': p1, 'p2': p2})
-        return resp['state'], resp['winner']
-
-    def request(self) -> tuple[dict, dict]:
-        """Returns (p1_active_request, p2_active_request)."""
-        resp = self._rpc({'cmd': 'request', 'id': self._battle_id})
-        return resp['p1'], resp['p2']
+        return resp['state'], resp['winner'], resp['p1_request'], resp['p2_request']
 
     def free(self) -> None:
         """Release the current battle from bridge memory."""
@@ -290,26 +301,25 @@ def legal_actions(request: dict) -> list[str]:
 
 ### M1 — Bridge boots
 `node src/utils/bridge/sim_battle.js` starts, accepts a `new` command with two
-packed teams, returns a JSON response with `ok: true` and a `state` object containing
-`turn: 0`. No crash on startup.
+packed teams, returns a JSON response with `ok: true`, a `state` object containing
+`turn: 1`, and non-null `p1_request`/`p2_request`. No crash on startup.
 
 ```bash
 echo '{"cmd":"new","id":"t1","p1_team":"<packed>","p2_team":"<packed>"}' \
   | node src/utils/bridge/sim_battle.js
-# → {"ok":true,"state":{"turn":0,...}}
+# → {"ok":true,"state":{"turn":1,...},"p1_request":{...},"p2_request":{...}}
 ```
 
 ### M2 — Turn steps
-`step` with `"move 1"` for both sides advances turn to 1, returns updated state.
-`winner` is null for a normal turn; correctly set when a side loses all Pokémon.
+`step` with `"move 1"` for both sides advances turn to 2, returns updated state with
+non-null requests. `winner` is null for a normal turn; requests are null when winner is set.
 
-### M3 — Request parses legal actions
-`request` returns non-empty `active.moves` and correct `side.pokemon` list.
-`legal_actions()` returns at least one valid string for both sides on every turn
-across 10 complete battles.
+### M3 — Legal actions parse correctly
+`legal_actions()` applied to the `p1_request`/`p2_request` in step responses returns
+at least one valid string for both sides on every turn across 10 complete battles.
 
 ### M4 — Python client wraps cleanly
-`SimBattleClient` starts the subprocess, runs a full battle via `new → step* → free`,
+`SimBattleClient` starts the subprocess, runs a full battle via `new_battle → step* → free`,
 cleans up without hanging. Context manager form works.
 
 ### M5 — 100 battles complete
@@ -352,17 +362,41 @@ def test_legal_actions_with_switch():
 
 
 def test_rpc_constructs_correct_message():
+    mock_resp = json.dumps({
+        'ok': True, 'state': {'turn': 1},
+        'p1_request': {}, 'p2_request': {},
+    })
     with patch('subprocess.Popen') as mock_popen:
         proc = MagicMock()
-        proc.stdout.readline.return_value = '{"ok":true,"state":{"turn":0}}\n'
+        proc.stdout.readline.return_value = mock_resp + '\n'
         mock_popen.return_value = proc
         client = SimBattleClient()
-        state = client.new_battle('team1', 'team2', seed='gen5,1234')
+        state, p1_req, p2_req = client.new_battle(
+            'team1', 'team2', seed=[1, 2, 3, 4])
         written = proc.stdin.write.call_args[0][0]
         msg = json.loads(written.rstrip('\n'))
         assert msg['cmd'] == 'new'
         assert msg['p1_team'] == 'team1'
-        assert msg['seed'] == 'gen5,1234'
+        assert msg['seed'] == [1, 2, 3, 4]
+
+
+def test_step_returns_requests():
+    mock_resp = json.dumps({
+        'ok': True, 'state': {'turn': 2}, 'winner': None,
+        'p1_request': {'active': [{'moves': [{'id': 'surf', 'disabled': False}]}],
+                       'side': {'pokemon': [{'active': True, 'condition': '200/200'}]}},
+        'p2_request': {'active': [{'moves': [{'id': 'tackle', 'disabled': False}]}],
+                       'side': {'pokemon': [{'active': True, 'condition': '150/150'}]}},
+    })
+    with patch('subprocess.Popen') as mock_popen:
+        proc = MagicMock()
+        proc.stdout.readline.return_value = mock_resp + '\n'
+        mock_popen.return_value = proc
+        client = SimBattleClient()
+        client._battle_id = 'test'
+        state, winner, p1_req, p2_req = client.step('move 1', 'move 1')
+        assert winner is None
+        assert legal_actions(p1_req) == ['move 1']
 ```
 
 ### Integration tests — `sim_battle_integration_test.py`
@@ -379,39 +413,39 @@ from utils.team_loader import load_packed_teams
 def test_bridge_full_battle():
     teams = load_packed_teams('data/teams/')
     with SimBattleClient() as client:
-        state = client.new_battle(teams[0], teams[1])
-        assert state['turn'] == 0
+        state, p1_req, p2_req = client.new_battle(teams[0], teams[1])
+        assert state['turn'] == 1
+        assert p1_req is not None and p2_req is not None
 
-        turn = 0
         winner = None
+        turn = 0
         while winner is None and turn < 200:
-            p1_req, p2_req = client.request()
             p1_action = legal_actions(p1_req)[0]
             p2_action = legal_actions(p2_req)[0]
-            state, winner = client.step(p1_action, p2_action)
+            state, winner, p1_req, p2_req = client.step(p1_action, p2_action)
             turn += 1
 
         assert winner in ('p1', 'p2', 'draw')
         assert turn < 200, "battle did not finish in 200 turns"
+        assert p1_req is None and p2_req is None  # requests null when battle ends
 
 @pytest.mark.integration
 def test_bridge_reproducible_with_seed():
     teams = load_packed_teams('data/teams/')
-    seed = 'gen5,1234567890abcdef'
+    seed = [0x1234, 0x5678, 0x9abc, 0xdef0]
 
     def run_battle(seed):
-        outcomes = []
+        turns_taken = []
         with SimBattleClient() as client:
-            client.new_battle(teams[0], teams[1], seed=seed)
+            _, p1_req, p2_req = client.new_battle(teams[0], teams[1], seed=seed)
             winner = None
             while winner is None:
-                p1_req, p2_req = client.request()
-                state, winner = client.step(
+                state, winner, p1_req, p2_req = client.step(
                     legal_actions(p1_req)[0],
                     legal_actions(p2_req)[0],
                 )
-                outcomes.append(state['turn'])
-        return outcomes, winner
+                turns_taken.append(state['turn'])
+        return turns_taken, winner
 
     result1 = run_battle(seed)
     result2 = run_battle(seed)
