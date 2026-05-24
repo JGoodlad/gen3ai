@@ -2,10 +2,15 @@ from stable_baselines3.common.callbacks import BaseCallback
 
 
 class AdaptivePPOCallback(BaseCallback):
-    """Adjusts LR after each rollout based on approx_kl.
+    """Adjusts LR after each rollout based on an EMA of approx_kl.
 
-    Reads approx_kl logged after the previous train() call and nudges the LR
-    up or down to keep KL inside [target_kl * (1 - tolerance), target_kl * (1 + tolerance)].
+    Reads approx_kl logged after the previous train() call, folds it into an
+    exponential moving average, and nudges the LR up or down to keep the EMA
+    inside [target_kl * (1 - tolerance), target_kl * (1 + tolerance)].
+
+    Using an EMA means a single outlier rollout only nudges the average by
+    `ema_alpha` of its distance, so sustained drift over several rollouts is
+    required before a LR change fires.
 
     Args:
         initial_lr:    Starting LR (also the basis for max_lr default).
@@ -14,6 +19,8 @@ class AdaptivePPOCallback(BaseCallback):
         lr_factor:     Multiply/divide LR by this per adjustment.
         min_lr:        Hard lower bound on LR.
         max_lr:        Hard upper bound on LR. Defaults to 2× initial_lr.
+        ema_alpha:     EMA smoothing factor (0, 1]. Lower = more smoothing,
+                       more rollouts needed to trigger a change. Default 0.3.
     """
 
     def __init__(
@@ -24,6 +31,7 @@ class AdaptivePPOCallback(BaseCallback):
         lr_factor: float = 1.5,
         min_lr: float = 1e-5,
         max_lr: float | None = None,
+        ema_alpha: float = 0.3,
         verbose: int = 1,
     ):
         super().__init__(verbose)
@@ -33,6 +41,8 @@ class AdaptivePPOCallback(BaseCallback):
         self.lr_factor = lr_factor
         self.min_lr = min_lr
         self.max_lr = max_lr if max_lr is not None else initial_lr * 2.0
+        self.ema_alpha = ema_alpha
+        self._kl_ema: float | None = None
 
     @property
     def current_lr(self) -> float:
@@ -46,12 +56,18 @@ class AdaptivePPOCallback(BaseCallback):
         if kl is None:
             return
 
+        # Update EMA; cold-start: seed with the first observed value.
+        if self._kl_ema is None:
+            self._kl_ema = kl
+        else:
+            self._kl_ema = self.ema_alpha * kl + (1.0 - self.ema_alpha) * self._kl_ema
+
         lo = self.target_kl * (1.0 - self.kl_tolerance)
         hi = self.target_kl * (1.0 + self.kl_tolerance)
 
-        if kl > hi:
+        if self._kl_ema > hi:
             new_lr = max(self._current_lr / self.lr_factor, self.min_lr)
-        elif kl < lo:
+        elif self._kl_ema < lo:
             new_lr = min(self._current_lr * self.lr_factor, self.max_lr)
         else:
             return
@@ -60,7 +76,7 @@ class AdaptivePPOCallback(BaseCallback):
             direction = "↓" if new_lr < self._current_lr else "↑"
             if self.verbose >= 1:
                 print(
-                    f"[AdaptiveLR] approx_kl={kl:.4f} (target={self.target_kl:.3f}) "
+                    f"[AdaptiveLR] approx_kl={kl:.4f} ema={self._kl_ema:.4f} (target={self.target_kl:.3f}) "
                     f"→ LR {direction} {self._current_lr:.2e} → {new_lr:.2e}"
                 )
             self._current_lr = new_lr

@@ -12,6 +12,7 @@ def _make_callback(
     lr_factor=1.5,
     min_lr=1e-5,
     max_lr=None,
+    ema_alpha=0.3,
     verbose=0,
 ):
     cb = AdaptivePPOCallback(
@@ -21,6 +22,7 @@ def _make_callback(
         lr_factor=lr_factor,
         min_lr=min_lr,
         max_lr=max_lr,
+        ema_alpha=ema_alpha,
         verbose=verbose,
     )
     cb.model = MagicMock()
@@ -87,3 +89,47 @@ def test_no_adjustment_when_metric_absent():
     cb = _make_callback(initial_lr=3e-4)
     _fire(cb, kl=None)  # no approx_kl in log
     assert cb.current_lr == pytest.approx(3e-4)
+
+
+# --- EMA smoothing behaviour ---
+
+def test_single_spike_does_not_trigger_after_warmup():
+    # Warm up: EMA converges to in-band value.
+    # target=0.015, tolerance=0.3 → hi=0.0195
+    # One spike to 0.030: EMA = 0.3*0.030 + 0.7*0.015 = 0.0195 (== hi, not > hi) → no change.
+    cb = _make_callback(initial_lr=3e-4, ema_alpha=0.3)
+    for _ in range(5):
+        _fire(cb, kl=0.015)
+    assert cb.current_lr == pytest.approx(3e-4)  # no change during warmup
+    _fire(cb, kl=0.030)
+    assert cb.current_lr == pytest.approx(3e-4)  # single spike absorbed by EMA
+
+
+def test_sustained_high_kl_triggers_after_warmup():
+    # After warmup at 0.015, two consecutive fires at 0.030 push EMA past hi=0.0195.
+    # fire 1: EMA = 0.3*0.030 + 0.7*0.015 = 0.0195 → no change
+    # fire 2: EMA = 0.3*0.030 + 0.7*0.0195 = 0.02265 → above 0.0195 → LR drops
+    cb = _make_callback(initial_lr=3e-4, ema_alpha=0.3)
+    for _ in range(5):
+        _fire(cb, kl=0.015)
+    _fire(cb, kl=0.030)
+    assert cb.current_lr == pytest.approx(3e-4)   # still no change after one spike
+    _fire(cb, kl=0.030)
+    assert cb.current_lr == pytest.approx(3e-4 / 1.5)  # triggered on second sustained fire
+
+
+def test_ema_resets_to_none_implicitly_on_first_value():
+    # Cold-start: first observed KL seeds the EMA directly.
+    cb = _make_callback(initial_lr=3e-4, ema_alpha=0.3)
+    assert cb._kl_ema is None
+    _fire(cb, kl=0.015)
+    assert cb._kl_ema == pytest.approx(0.015)
+
+
+def test_ema_alpha_controls_smoothing_rate():
+    # With alpha=1.0 the EMA equals the raw value every rollout (no smoothing).
+    cb = _make_callback(initial_lr=3e-4, ema_alpha=1.0)
+    for _ in range(5):
+        _fire(cb, kl=0.015)
+    _fire(cb, kl=0.030)
+    assert cb.current_lr == pytest.approx(3e-4 / 1.5)  # triggers immediately
