@@ -16,7 +16,7 @@ from agents.model.model_version import (
     ModelVersionError,
     _migrate_config,
 )
-from agents.model.snapshot import save_model_snapshot, load_model_snapshot, write_checkpoint_metadata, read_checkpoint_metadata, record_snapshot_in_history, record_checkpoint, record_eval_results, _checkpoint_metadata_path
+from agents.model.snapshot import save_model_snapshot, load_model_snapshot, write_checkpoint_metadata, read_checkpoint_metadata, record_snapshot_in_history, record_checkpoint, record_eval_results, _checkpoint_metadata_path, _latest_checkpoint
 from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings
 
 
@@ -490,6 +490,36 @@ def test_migrate_v1_does_not_overwrite_existing_n_history_turns():
 
 
 # ---------------------------------------------------------------------------
+# _latest_checkpoint
+# ---------------------------------------------------------------------------
+
+def test_latest_checkpoint_returns_highest_step():
+    history = {
+        "checkpoint_50000000_steps.zip": {},
+        "checkpoint_200000000_steps.zip": {},
+        "checkpoint_100000000_steps.zip": {},
+    }
+    assert _latest_checkpoint(history) == "checkpoint_200000000_steps.zip"
+
+
+def test_latest_checkpoint_single_entry():
+    history = {"checkpoint_75000000_steps.zip": {}}
+    assert _latest_checkpoint(history) == "checkpoint_75000000_steps.zip"
+
+
+def test_latest_checkpoint_empty_returns_none():
+    assert _latest_checkpoint({}) is None
+
+
+def test_latest_checkpoint_skips_unrecognized_names():
+    history = {
+        "final_model.zip": {},
+        "checkpoint_50000000_steps.zip": {},
+    }
+    assert _latest_checkpoint(history) == "checkpoint_50000000_steps.zip"
+
+
+# ---------------------------------------------------------------------------
 # record_eval_results
 # ---------------------------------------------------------------------------
 
@@ -505,49 +535,69 @@ _SAMPLE_EVALS = {
 }
 
 
-def test_record_eval_results_writes_evals_key():
+def test_record_eval_results_nested_under_latest_checkpoint():
     with tempfile.TemporaryDirectory() as tmpdir:
-        record_eval_results(tmpdir, step=1_000_000, metrics=_SAMPLE_EVALS)
+        record_snapshot_in_history(tmpdir, "checkpoint_50000000_steps.zip", lr=3e-4, n_epochs=10)
+        record_eval_results(tmpdir, step=51_000_000, metrics=_SAMPLE_EVALS)
         with open(os.path.join(tmpdir, "metadata.json")) as f:
             meta = json.load(f)
-    evals = meta["evals"]
-    assert evals["step"] == 1_000_000
+    evals = meta["snapshot_history"]["checkpoint_50000000_steps.zip"]["evals"]
+    assert evals["step"] == 51_000_000
     assert "evaluated_at" in evals
     assert evals["win_rate_vs_bots"] == pytest.approx(0.74)
     assert evals["opponents"]["Heuristic"]["win_rate"] == pytest.approx(0.72)
+    assert "evals" not in meta  # must not appear at top level
 
 
-def test_record_eval_results_overwrites_previous():
+def test_record_eval_results_attaches_to_most_recent_checkpoint():
     with tempfile.TemporaryDirectory() as tmpdir:
-        record_eval_results(tmpdir, step=1_000_000, metrics={"win_rate_vs_bots": 0.5})
-        record_eval_results(tmpdir, step=2_000_000, metrics={"win_rate_vs_bots": 0.75})
+        record_snapshot_in_history(tmpdir, "checkpoint_50000000_steps.zip", lr=3e-4, n_epochs=10)
+        record_snapshot_in_history(tmpdir, "checkpoint_100000000_steps.zip", lr=1e-4, n_epochs=8)
+        record_eval_results(tmpdir, step=105_000_000, metrics={"win_rate_vs_bots": 0.8})
         with open(os.path.join(tmpdir, "metadata.json")) as f:
-            meta = json.load(f)
-    assert meta["evals"]["step"] == 2_000_000
-    assert meta["evals"]["win_rate_vs_bots"] == pytest.approx(0.75)
+            history = json.load(f)["snapshot_history"]
+    assert "evals" not in history["checkpoint_50000000_steps.zip"]
+    assert history["checkpoint_100000000_steps.zip"]["evals"]["win_rate_vs_bots"] == pytest.approx(0.8)
 
 
-def test_save_model_snapshot_preserves_evals(version):
+def test_record_eval_results_overwrites_previous_on_same_checkpoint():
     with tempfile.TemporaryDirectory() as tmpdir:
-        save_model_snapshot(tmpdir, version, git_hash="abc")
-        record_eval_results(tmpdir, step=5_000_000, metrics=_SAMPLE_EVALS)
-        # Simulate a subsequent checkpoint save overwriting metadata.json
+        record_snapshot_in_history(tmpdir, "checkpoint_50000000_steps.zip", lr=3e-4, n_epochs=10)
+        record_eval_results(tmpdir, step=51_000_000, metrics={"win_rate_vs_bots": 0.5})
+        record_eval_results(tmpdir, step=52_000_000, metrics={"win_rate_vs_bots": 0.75})
+        with open(os.path.join(tmpdir, "metadata.json")) as f:
+            evals = json.load(f)["snapshot_history"]["checkpoint_50000000_steps.zip"]["evals"]
+    assert evals["step"] == 52_000_000
+    assert evals["win_rate_vs_bots"] == pytest.approx(0.75)
+
+
+def test_record_eval_results_no_checkpoint_does_not_write(capsys):
+    with tempfile.TemporaryDirectory() as tmpdir:
+        record_eval_results(tmpdir, step=500_000, metrics={"win_rate_vs_bots": 0.6})
+        assert not os.path.exists(os.path.join(tmpdir, "metadata.json"))
+    assert "[EVAL] Warning" in capsys.readouterr().out
+
+
+def test_save_model_snapshot_preserves_nested_evals(version):
+    """save_model_snapshot must preserve evals nested inside snapshot_history entries."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        record_snapshot_in_history(tmpdir, "checkpoint_50000000_steps.zip", lr=3e-4, n_epochs=10)
+        record_eval_results(tmpdir, step=51_000_000, metrics=_SAMPLE_EVALS)
         save_model_snapshot(tmpdir, version, git_hash="def", current_lr=1e-5)
         with open(os.path.join(tmpdir, "metadata.json")) as f:
             meta = json.load(f)
-    assert "evals" in meta
-    assert meta["evals"]["step"] == 5_000_000
-    assert meta["evals"]["win_rate_vs_bots"] == pytest.approx(0.74)
-    # Confirm the new fields also landed
+    evals = meta["snapshot_history"]["checkpoint_50000000_steps.zip"]["evals"]
+    assert evals["step"] == 51_000_000
+    assert evals["win_rate_vs_bots"] == pytest.approx(0.74)
     assert meta["git_hash"] == "def"
     assert meta["current_lr"] == pytest.approx(1e-5)
+    assert "evals" not in meta  # must not appear at top level
 
 
-def test_record_eval_results_works_without_existing_metadata():
+def test_save_model_snapshot_no_top_level_evals_key(version):
+    """save_model_snapshot must never write a top-level 'evals' key."""
     with tempfile.TemporaryDirectory() as tmpdir:
-        # No prior save_model_snapshot — metadata.json doesn't exist yet
-        record_eval_results(tmpdir, step=500_000, metrics={"win_rate_vs_bots": 0.6})
+        save_model_snapshot(tmpdir, version, git_hash="abc")
         with open(os.path.join(tmpdir, "metadata.json")) as f:
             meta = json.load(f)
-    assert meta["evals"]["step"] == 500_000
-    assert meta["evals"]["win_rate_vs_bots"] == pytest.approx(0.6)
+    assert "evals" not in meta

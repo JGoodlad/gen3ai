@@ -35,15 +35,13 @@ def save_model_snapshot(
     if git_hash is None:
         git_hash = get_git_hash()
 
-    # Preserve snapshot_history and evals accumulated by other writers.
+    # Preserve snapshot_history accumulated by other writers.
     meta_path = os.path.join(model_dir, "metadata.json")
     existing_history = {}
-    existing_evals = None
     if os.path.exists(meta_path):
         with open(meta_path) as f:
             existing = json.load(f)
             existing_history = existing.get("snapshot_history", {})
-            existing_evals = existing.get("evals")
 
     metadata = {
         "saved_at": datetime.now(timezone.utc).isoformat(),
@@ -57,8 +55,6 @@ def save_model_snapshot(
         metadata["current_lr"] = current_lr
     if current_epochs is not None:
         metadata["current_epochs"] = current_epochs
-    if existing_evals is not None:
-        metadata["evals"] = existing_evals
     if existing_history:
         metadata["snapshot_history"] = existing_history
     with open(meta_path, "w") as f:
@@ -66,22 +62,44 @@ def save_model_snapshot(
 
 
 def record_eval_results(model_dir: str, step: int, metrics: dict) -> None:
-    """Write/update the 'evals' key in metadata.json with the latest eval snapshot.
+    """Attach eval results to the most recently-saved checkpoint in snapshot_history.
 
-    Safe to call when metadata.json doesn't exist yet — creates the file.
+    If no checkpoint has been recorded yet, logs a warning and skips the write
+    rather than creating a top-level 'evals' key in an inconsistent location.
     """
     meta_path = os.path.join(model_dir, "metadata.json")
     meta = {}
     if os.path.exists(meta_path):
         with open(meta_path) as f:
             meta = json.load(f)
-    meta["evals"] = {
+
+    history = meta.get("snapshot_history", {})
+    latest = _latest_checkpoint(history)
+    if latest is None:
+        print("[EVAL] Warning: no checkpoint in snapshot_history yet; eval results not persisted.")
+        return
+
+    history[latest]["evals"] = {
         **metrics,
         "step": step,
         "evaluated_at": datetime.now(timezone.utc).isoformat(),
     }
+    meta["snapshot_history"] = history
     with open(meta_path, "w") as f:
         json.dump(meta, f, indent=2)
+
+
+def _latest_checkpoint(history: dict) -> str | None:
+    """Return the checkpoint name with the highest step number, or None."""
+    best_name, best_step = None, -1
+    for name in history:
+        try:
+            step = int(name.split("_")[1])
+        except (IndexError, ValueError):
+            continue
+        if step > best_step:
+            best_name, best_step = name, step
+    return best_name
 
 
 def record_snapshot_in_history(
