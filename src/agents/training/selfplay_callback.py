@@ -25,7 +25,8 @@ from stable_baselines3.common.callbacks import BaseCallback
 from poke_env.ps_client import LocalhostServerConfiguration, AccountConfiguration
 
 from agents.inference.player import RLPlayer
-from agents.training.eval_callback import EvalRLPlayer, _EVAL_CONCURRENCY, eval_schedule, RANDOM_OPPONENT_NAME, bot_mean
+from agents.model.snapshot import record_eval_results
+from agents.training.eval_callback import EvalRLPlayer, _EVAL_CONCURRENCY, eval_schedule, RANDOM_OPPONENT_NAME, bot_mean, build_bot_eval_block
 from agents.training.reward_manager import Gen3RewardManager
 from agents.training.reward_tracker import RewardTrackingMixin
 from agents.training.snapshot_pool import SnapshotPool, heuristic_fraction
@@ -79,6 +80,7 @@ class SelfPlayCallback(BaseCallback):
         mappings,
         promote_threshold: float = 0.65,
         best_model_save_path: str | None = None,
+        model_dir: str | None = None,
         verbose: int = 1,
     ):
         super().__init__(verbose)
@@ -89,6 +91,7 @@ class SelfPlayCallback(BaseCallback):
         self._mappings = mappings
         self._promote_threshold = promote_threshold
         self.best_model_save_path = best_model_save_path
+        self._model_dir = model_dir
 
         self._rl_player: EvalRLPlayer | None = None
         self._pool_opp_players: list[RLPlayer] = []
@@ -263,7 +266,26 @@ class SelfPlayCallback(BaseCallback):
             f"SelfPlay fraction: {sf * 100:.0f}%"
         )
 
-        # ── 4. Best model save ─────────────────────────────────────────────
+        # ── 4. Persist eval metrics to metadata.json ───────────────────────
+        if self._model_dir:
+            block = build_bot_eval_block(win_rates, reward_means, ep_lens)
+            block["pool"] = {
+                "win_rate": win_rate_vs_pool,
+                "monotonicity": round(monotonicity, 3),
+                "sentinels": [
+                    {
+                        "step": entry.step,
+                        "win_rate": round(sentinel_win_rates[i], 4),
+                        "weight": round(self._pool.entry_weight(entry), 3),
+                        "snapshot": entry.path.name,
+                    }
+                    for i, entry in enumerate(sentinels)
+                ],
+            }
+            block["opponents"] = block.pop("opponents")
+            record_eval_results(self._model_dir, step, block)
+
+        # ── 5. Best model save ─────────────────────────────────────────────
         if bot_aggregate > self._best_aggregate_win_rate:
             self._best_aggregate_win_rate = bot_aggregate
             if self.best_model_save_path:

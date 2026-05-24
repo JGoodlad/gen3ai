@@ -572,6 +572,7 @@ async def main():
                 mappings=mappings,
                 promote_threshold=args.promote_threshold,
                 best_model_save_path=os.path.join(model_dir, "best_model"),
+                model_dir=model_dir,
             )
         else:
             eval_callback = PerOpponentEvalCallback(
@@ -579,6 +580,7 @@ async def main():
                 trainee_teambuilder=trainee_teambuilder,
                 mappings=mappings,
                 best_model_save_path=os.path.join(model_dir, "best_model"),
+                model_dir=model_dir,
             )
         callbacks.append(eval_callback)
 

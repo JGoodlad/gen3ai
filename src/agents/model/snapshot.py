@@ -25,7 +25,7 @@ def save_model_snapshot(
 
     Does NOT call model.save() — the caller is responsible for the .zip file.
     Safe to call multiple times; files are overwritten in place.
-    Preserves any existing snapshot_history in the metadata file.
+    Preserves any existing snapshot_history and evals in the metadata file.
     """
     os.makedirs(model_dir, exist_ok=True)
 
@@ -35,12 +35,15 @@ def save_model_snapshot(
     if git_hash is None:
         git_hash = get_git_hash()
 
-    # Preserve snapshot_history accumulated by record_snapshot_in_history.
+    # Preserve snapshot_history and evals accumulated by other writers.
     meta_path = os.path.join(model_dir, "metadata.json")
     existing_history = {}
+    existing_evals = None
     if os.path.exists(meta_path):
         with open(meta_path) as f:
-            existing_history = json.load(f).get("snapshot_history", {})
+            existing = json.load(f)
+            existing_history = existing.get("snapshot_history", {})
+            existing_evals = existing.get("evals")
 
     metadata = {
         "saved_at": datetime.now(timezone.utc).isoformat(),
@@ -54,10 +57,31 @@ def save_model_snapshot(
         metadata["current_lr"] = current_lr
     if current_epochs is not None:
         metadata["current_epochs"] = current_epochs
+    if existing_evals is not None:
+        metadata["evals"] = existing_evals
     if existing_history:
         metadata["snapshot_history"] = existing_history
     with open(meta_path, "w") as f:
         json.dump(metadata, f, indent=2)
+
+
+def record_eval_results(model_dir: str, step: int, metrics: dict) -> None:
+    """Write/update the 'evals' key in metadata.json with the latest eval snapshot.
+
+    Safe to call when metadata.json doesn't exist yet — creates the file.
+    """
+    meta_path = os.path.join(model_dir, "metadata.json")
+    meta = {}
+    if os.path.exists(meta_path):
+        with open(meta_path) as f:
+            meta = json.load(f)
+    meta["evals"] = {
+        **metrics,
+        "step": step,
+        "evaluated_at": datetime.now(timezone.utc).isoformat(),
+    }
+    with open(meta_path, "w") as f:
+        json.dump(meta, f, indent=2)
 
 
 def record_snapshot_in_history(

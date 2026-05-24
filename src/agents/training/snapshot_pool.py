@@ -115,6 +115,14 @@ class SnapshotPool:
         ]
         return random.choices(self._entries, weights=weights, k=1)[0]
 
+    def entry_weight(self, entry: SnapshotEntry) -> float:
+        """Sampling weight for a specific entry (same formula used in sample())."""
+        if not self._entries:
+            return 1.0
+        steps = [e.step for e in self._entries]
+        span = max(steps[-1] - steps[0], 1)
+        return 1.0 + self.recency_weight * (entry.step - steps[0]) / span
+
     def sentinel_entries(self, n: int = 5) -> list[SnapshotEntry]:
         """Return up to ``n`` evenly spaced entries, newest first.
 

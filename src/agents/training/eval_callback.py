@@ -9,6 +9,7 @@ from poke_env.player import RandomPlayer, SimpleHeuristicsPlayer
 from poke_env.ps_client import LocalhostServerConfiguration, AccountConfiguration
 
 from agents.inference.player import RLPlayer
+from agents.model.snapshot import record_eval_results
 from agents.opponents import Gen3StallerPlayer, Gen3AggressivePlayer, Gen3SetupSweepPlayer
 from agents.training.reward_tracker import RewardTrackingMixin
 from agents.training.reward_manager import Gen3RewardManager
@@ -38,6 +39,28 @@ def bot_mean(d: dict[str, float]) -> float:
     """Average of values across non-Random opponents."""
     vals = [v for k, v in d.items() if k != RANDOM_OPPONENT_NAME]
     return sum(vals) / len(vals) if vals else 0.0
+
+
+def build_bot_eval_block(
+    win_rates: dict[str, float],
+    reward_means: dict[str, float],
+    ep_lens: dict[str, float],
+) -> dict:
+    """Build the standard bot-eval metrics dict for metadata.json (opponents last)."""
+    return {
+        "win_rate_mean": sum(win_rates.values()) / len(win_rates) if win_rates else 0.0,
+        "win_rate_vs_bots": bot_mean(win_rates),
+        "mean_reward_vs_bots": bot_mean(reward_means),
+        "mean_ep_len_vs_bots": bot_mean(ep_lens),
+        "opponents": {
+            name: {
+                "win_rate": win_rates[name],
+                "mean_reward": reward_means[name],
+                "mean_ep_len": ep_lens[name],
+            }
+            for name in win_rates
+        },
+    }
 
 
 def eval_schedule(num_timesteps: int) -> tuple[int, int]:
@@ -93,6 +116,7 @@ class PerOpponentEvalCallback(BaseCallback):
         trainee_teambuilder,
         mappings,
         best_model_save_path: str | None = None,
+        model_dir: str | None = None,
         verbose: int = 1,
     ):
         super().__init__(verbose)
@@ -100,6 +124,7 @@ class PerOpponentEvalCallback(BaseCallback):
         self._trainee_teambuilder = trainee_teambuilder
         self._mappings = mappings
         self.best_model_save_path = best_model_save_path
+        self._model_dir = model_dir
         self._rl_player: RLPlayer | None = None
         self._last_eval_step = 0
         self._best_aggregate_win_rate = -1.0
@@ -226,6 +251,13 @@ class PerOpponentEvalCallback(BaseCallback):
             f"[EVAL] Aggregate: {aggregate * 100:.1f}%  "
             f"(best so far: {self._best_aggregate_win_rate * 100:.1f}%)"
         )
+
+        if self._model_dir:
+            record_eval_results(
+                self._model_dir,
+                self.num_timesteps,
+                build_bot_eval_block(win_rates, reward_means, ep_lens),
+            )
 
         if aggregate > self._best_aggregate_win_rate:
             self._best_aggregate_win_rate = aggregate

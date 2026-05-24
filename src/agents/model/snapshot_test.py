@@ -16,7 +16,7 @@ from agents.model.model_version import (
     ModelVersionError,
     _migrate_config,
 )
-from agents.model.snapshot import save_model_snapshot, load_model_snapshot, write_checkpoint_metadata, read_checkpoint_metadata, record_snapshot_in_history, record_checkpoint, _checkpoint_metadata_path
+from agents.model.snapshot import save_model_snapshot, load_model_snapshot, write_checkpoint_metadata, read_checkpoint_metadata, record_snapshot_in_history, record_checkpoint, record_eval_results, _checkpoint_metadata_path
 from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings
 
 
@@ -487,3 +487,67 @@ def test_migrate_v1_does_not_overwrite_existing_n_history_turns():
     }
     result = _migrate_config(data)
     assert result["n_history_turns"] == 3
+
+
+# ---------------------------------------------------------------------------
+# record_eval_results
+# ---------------------------------------------------------------------------
+
+_SAMPLE_EVALS = {
+    "win_rate_mean": 0.78,
+    "win_rate_vs_bots": 0.74,
+    "mean_reward_vs_bots": 0.24,
+    "mean_ep_len_vs_bots": 22.1,
+    "opponents": {
+        "Random": {"win_rate": 0.95, "mean_reward": 0.82, "mean_ep_len": 14.3},
+        "Heuristic": {"win_rate": 0.72, "mean_reward": 0.23, "mean_ep_len": 22.1},
+    },
+}
+
+
+def test_record_eval_results_writes_evals_key():
+    with tempfile.TemporaryDirectory() as tmpdir:
+        record_eval_results(tmpdir, step=1_000_000, metrics=_SAMPLE_EVALS)
+        with open(os.path.join(tmpdir, "metadata.json")) as f:
+            meta = json.load(f)
+    evals = meta["evals"]
+    assert evals["step"] == 1_000_000
+    assert "evaluated_at" in evals
+    assert evals["win_rate_vs_bots"] == pytest.approx(0.74)
+    assert evals["opponents"]["Heuristic"]["win_rate"] == pytest.approx(0.72)
+
+
+def test_record_eval_results_overwrites_previous():
+    with tempfile.TemporaryDirectory() as tmpdir:
+        record_eval_results(tmpdir, step=1_000_000, metrics={"win_rate_vs_bots": 0.5})
+        record_eval_results(tmpdir, step=2_000_000, metrics={"win_rate_vs_bots": 0.75})
+        with open(os.path.join(tmpdir, "metadata.json")) as f:
+            meta = json.load(f)
+    assert meta["evals"]["step"] == 2_000_000
+    assert meta["evals"]["win_rate_vs_bots"] == pytest.approx(0.75)
+
+
+def test_save_model_snapshot_preserves_evals(version):
+    with tempfile.TemporaryDirectory() as tmpdir:
+        save_model_snapshot(tmpdir, version, git_hash="abc")
+        record_eval_results(tmpdir, step=5_000_000, metrics=_SAMPLE_EVALS)
+        # Simulate a subsequent checkpoint save overwriting metadata.json
+        save_model_snapshot(tmpdir, version, git_hash="def", current_lr=1e-5)
+        with open(os.path.join(tmpdir, "metadata.json")) as f:
+            meta = json.load(f)
+    assert "evals" in meta
+    assert meta["evals"]["step"] == 5_000_000
+    assert meta["evals"]["win_rate_vs_bots"] == pytest.approx(0.74)
+    # Confirm the new fields also landed
+    assert meta["git_hash"] == "def"
+    assert meta["current_lr"] == pytest.approx(1e-5)
+
+
+def test_record_eval_results_works_without_existing_metadata():
+    with tempfile.TemporaryDirectory() as tmpdir:
+        # No prior save_model_snapshot — metadata.json doesn't exist yet
+        record_eval_results(tmpdir, step=500_000, metrics={"win_rate_vs_bots": 0.6})
+        with open(os.path.join(tmpdir, "metadata.json")) as f:
+            meta = json.load(f)
+    assert meta["evals"]["step"] == 500_000
+    assert meta["evals"]["win_rate_vs_bots"] == pytest.approx(0.6)
