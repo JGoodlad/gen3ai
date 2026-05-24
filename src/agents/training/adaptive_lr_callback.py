@@ -14,7 +14,8 @@ class AdaptivePPOCallback(BaseCallback):
 
     Args:
         initial_lr:    Starting LR (also the basis for max_lr default).
-        target_kl:     Desired approx_kl. Healthy PPO range is 0.01–0.02.
+        target_kl:     Desired approx_kl. Healthy Gen3OU range is 0.005–0.015;
+                       default 0.01 centres the ±30% band at [0.007, 0.013].
         kl_tolerance:  Fractional band around target before adjusting (0.3 = ±30%).
         lr_factor:     Multiply/divide LR by this per adjustment.
         min_lr:        Hard lower bound on LR.
@@ -26,7 +27,7 @@ class AdaptivePPOCallback(BaseCallback):
     def __init__(
         self,
         initial_lr: float,
-        target_kl: float = 0.015,
+        target_kl: float = 0.01,
         kl_tolerance: float = 0.3,
         lr_factor: float = 1.5,
         min_lr: float = 1e-5,
