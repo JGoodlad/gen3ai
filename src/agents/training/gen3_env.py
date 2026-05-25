@@ -44,16 +44,22 @@ class Gen3Env(SinglesEnv):
         self._turn_delta_encoder = TurnDeltaEncoder(mappings.get("moves", {}))
 
     def embed_battle(self, battle):
-        obs = self.observation_encoder.encode(battle)
+        # Record FIRST so the tracker's HP-candidate state reflects the just-fired
+        # HP (if any) before we encode the obs. The observation at turn N then
+        # carries the narrowing from turns 1..N-1.
         if battle is self.battle1 and not battle.finished:
             mask = Gen3ActionMasker.get_mask(battle).astype(np.int8)
             if mask.sum() > 0:
-                self._tracker.record(battle, mask, obs)
+                self._tracker.record(battle, mask)
 
         if battle is self.battle1:
+            obs = self.observation_encoder.encode(
+                battle, hp_tracker=self._tracker.hidden_power_tracker
+            )
             prev_mask = self._tracker.prev_mask
             history_vecs = self._tracker.prev_N_delta_vecs(N_HISTORY_TURNS, self._turn_delta_encoder)
         else:
+            obs = self.observation_encoder.encode(battle)
             prev_mask = np.ones(11, dtype=np.float32)
             history_vecs = np.zeros((N_HISTORY_TURNS, self._turn_delta_encoder.dimension), dtype=np.float32)
 

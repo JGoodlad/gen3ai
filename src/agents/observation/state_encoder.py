@@ -134,10 +134,16 @@ class Gen3ObservationEncoder(ObservationEncoder):
         from agents.model.features_extractor import N_HISTORY_TURNS
         return self.base_dimension + 11 + N_HISTORY_TURNS * TURN_DELTA_DIM
 
-    def encode(self, battle: AbstractBattle) -> np.ndarray:
+    def encode(self, battle: AbstractBattle, hp_tracker=None) -> np.ndarray:
+        """Encode the full base observation vector.
+
+        hp_tracker: optional HiddenPowerTracker whose per-species probability
+        vectors are written into each opponent mon's 17-dim HP block. None
+        leaves the blocks at zero (e.g. when called outside the training env).
+        """
         vec = np.zeros(self.base_dimension, dtype=np.float32)
-        
-        # 1. Our Team
+
+        # 1. Our Team — HP block always zero (our HP type is known but not yet encoded)
         our_team_list = self.get_team_list(battle, is_opponent=False)
         for i in range(TEAM_SIZE):
             mon = our_team_list[i] if i < len(our_team_list) else None
@@ -148,14 +154,19 @@ class Gen3ObservationEncoder(ObservationEncoder):
             vec[start : start + POKEMON_VECTOR_DIM] = mon_vec
             vec[start + POKEMON_VECTOR_DIM] = is_active
 
-        # 2. Opponent Team
+        # 2. Opponent Team — HP block populated from the tracker when supplied.
         opponents = self.get_team_list(battle, is_opponent=True)
 
         for i in range(TEAM_SIZE):
             mon = opponents[i] if i < len(opponents) else None
-            mon_vec = self.pokemon_encoder.encode(mon, battle, is_own=False)
+            hp_probs = (
+                hp_tracker.get_probs(mon.species)
+                if (hp_tracker is not None and mon is not None)
+                else None
+            )
+            mon_vec = self.pokemon_encoder.encode(mon, battle, is_own=False, hp_probs=hp_probs)
             is_active = 1.0 if (mon and mon is battle.opponent_active_pokemon) else 0.0
-            
+
             start = OFFSET_OPP_TEAM + (i * POKEMON_FULL_DIM)
             vec[start : start + POKEMON_VECTOR_DIM] = mon_vec
             vec[start + POKEMON_VECTOR_DIM] = is_active

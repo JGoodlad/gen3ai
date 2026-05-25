@@ -39,8 +39,18 @@ POKEMON_COUNTER_DIM = 2        # sleep turn count (norm), toxic turn count (norm
 # spread_known=1.0 own team (IVs/EVs/nature are real values), 0.0 opponent (all zeros = padding)
 POKEMON_SPREAD_OFFSET = 61     # 59 + 2 (status counters)
 POKEMON_SPREAD_DIM = 18        # 6 IVs + 6 EVs + 1 flag + 5 nature modifiers
-POKEMON_VECTOR_DIM = 79        # 61 + 18 (spread block)
-POKEMON_FULL_DIM = 80          # 79 + 1 (active flag appended by state_encoder)
+# Hidden Power candidate block (per opp slot; all-zero for our team slots).
+# hp_revealed flag (1) lets the model distinguish "HP not yet seen" (whole block zero)
+# from "HP seen but type ambiguous" (one or more prob entries non-zero, flag = 1).
+# hp_type_probs (16) is the tracker's per-species candidate distribution in
+# HIDDEN_POWER_TYPE_ORDER (alphabetical: Bug, Dark, Dragon, Electric, Fighting, Fire,
+# Flying, Ghost, Grass, Ground, Ice, Poison, Psychic, Rock, Steel, Water).
+POKEMON_HP_BLOCK_OFFSET = 79   # 61 + 18 (spread end)
+POKEMON_HP_REVEALED_OFFSET = 79
+POKEMON_HP_PROBS_OFFSET = 80
+POKEMON_HP_BLOCK_DIM = 17      # 1 hp_revealed flag + 16 candidate-type probs
+POKEMON_VECTOR_DIM = 96        # 61 + 18 (spread) + 17 (HP block)
+POKEMON_FULL_DIM = 97          # 96 + 1 (active flag appended by state_encoder)
 
 # Active context: boosts(14) + volatiles(9) = 23
 ACTIVE_CONTEXT_DIM = 23
@@ -51,14 +61,14 @@ GLOBAL_ENV_DIM = 13
 MATCHUP_DIM = 288 # (6*4*6) for Our vs Their + (6*4*6) for Their vs Our
 REACTIVE_DIM = 12 + MATCHUP_DIM  # 300 (removed duplicate hp+spikes: 4 dims)
 
-# Top-level Offsets (Base dim = OFFSET_REACTIVE + REACTIVE_DIM = 1319)
+# Top-level Offsets (Base dim = OFFSET_REACTIVE + REACTIVE_DIM = 1523)
 NUM_POKEMON = 12
 TEAM_SIZE = 6
 OFFSET_OUR_TEAM = 0
-OFFSET_OPP_TEAM = 6 * POKEMON_FULL_DIM                     # 480
-OFFSET_CONTEXT = 2 * OFFSET_OPP_TEAM                       # 960
-OFFSET_GLOBAL = OFFSET_CONTEXT + (2 * ACTIVE_CONTEXT_DIM)  # 1006
-OFFSET_REACTIVE = OFFSET_GLOBAL + GLOBAL_ENV_DIM            # 1019
+OFFSET_OPP_TEAM = 6 * POKEMON_FULL_DIM                     # 582
+OFFSET_CONTEXT = 2 * OFFSET_OPP_TEAM                       # 1164
+OFFSET_GLOBAL = OFFSET_CONTEXT + (2 * ACTIVE_CONTEXT_DIM)  # 1210
+OFFSET_REACTIVE = OFFSET_GLOBAL + GLOBAL_ENV_DIM            # 1223
 
 # Max values for normalization
 MAX_TURNS = 250

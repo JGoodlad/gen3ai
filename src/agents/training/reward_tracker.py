@@ -68,7 +68,6 @@ class RewardTracker:
         terminal_ctx = BattleContext.from_battle(
             battle,
             np.zeros(11, dtype=np.float32),
-            np.zeros(1, dtype=np.float32),
             self._our_slots,
             self._opp_slots,
         )
@@ -106,7 +105,7 @@ class RewardTrackingMixin:
             self._reward_trackers[tag] = RewardTracker(self._reward_fn_factory, our_slots, opp_slots)
         tracker = self._reward_trackers[tag]
         curr_ctx = BattleContext.from_battle(
-            battle, mask, np.zeros(1, dtype=np.float32), tracker._our_slots, tracker._opp_slots
+            battle, mask, tracker._our_slots, tracker._opp_slots
         )
         if tracker.has_pending:
             tracker.complete_pending(curr_ctx, battle)

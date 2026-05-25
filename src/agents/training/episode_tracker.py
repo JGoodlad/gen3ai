@@ -157,15 +157,17 @@ class EpisodeTracker:
             return self._history[-2].mask.astype(np.float32)
         return np.ones(11, dtype=np.float32)
 
-    def record(self, battle, mask: np.ndarray, obs: np.ndarray) -> BattleContext:
+    def record(self, battle, mask: np.ndarray) -> BattleContext:
         """Build and store a context snapshot for the current turn.
 
         Also commits the pending _last_action as the action taken FROM the
         previous context, so prev_N_delta_vecs() can reconstruct all N deltas.
+        Updates the HiddenPowerTracker BEFORE the env encodes the observation,
+        so the encoded obs includes the just-fired HP's narrowing.
         """
         if self._history:
             self._actions.append(self._last_action)
-        ctx = BattleContext.from_battle(battle, mask, obs, self._our_slots, self._opp_slots)
+        ctx = BattleContext.from_battle(battle, mask, self._our_slots, self._opp_slots)
 
         self._maybe_observe_hidden_power(battle, ctx)
 
@@ -175,28 +177,47 @@ class EpisodeTracker:
     def _maybe_observe_hidden_power(self, battle, ctx: BattleContext) -> None:
         """Feed an HP observation to the tracker when applicable.
 
-        Gated to "move_selection" contexts: a forced-switch context can carry a
-        stale opp_last_effectiveness from the prior turn (when end-of-turn
-        damage triggers the switch after battle.turn already ticked forward), and
-        re-observing there would double-count with now-misaligned prev state.
-        The preceding move_selection context captured the HP correctly.
+        Only fires on move_selection contexts (a forced-switch context can carry
+        a stale opp_last_effectiveness from the prior turn). The `prev` snapshot
+        used here is the most recent *move_selection* context — intervening
+        forced-switch contexts in history would otherwise corrupt `newly_fainted`
+        (the fainted mon is already in the forced-switch snapshot, so the diff
+        against the current turn returns empty and the resolver falls through
+        to the switch-in path, picking the wrong target).
         """
-        if not self._history or ctx.phase != "move_selection":
+        if ctx.phase != "move_selection":
             return
         if ctx.opp_last_move_id != "hiddenpower" or ctx.opp_last_effectiveness is None:
             return
-        prev = self._history[-1]
+
+        prev_idx = self._find_prev_move_selection_index()
+        if prev_idx is None:
+            return
+        prev = self._history[prev_idx]
         if prev.our_active == "NONE" or prev.opp_active == "NONE":
             return
 
         # Build TurnDelta once and consume its already-decoded action / timing
         # fields — never re-decode raw last_action here.
-        delta = TurnDelta.build(prev, ctx, self._last_action)
+        action = self._actions[prev_idx] if prev_idx < len(self._actions) else self._last_action
+        delta = TurnDelta.build(prev, ctx, action)
         target = _resolve_hp_target(battle, prev, ctx, delta)
         if target is not None:
             self._hidden_power_tracker.observe(
                 prev.opp_active, ctx.opp_last_effectiveness, target
             )
+
+    def _find_prev_move_selection_index(self) -> Optional[int]:
+        """Most recent move_selection ctx in `_history`, or None.
+
+        Skips intervening forced-switch contexts so prev-vs-curr deltas span a
+        full turn rather than a mid-turn faint snapshot.
+        """
+        # _history was just appended in record(); skip the just-added ctx.
+        for i in range(len(self._history) - 1, -1, -1):
+            if self._history[i].phase == "move_selection":
+                return i
+        return None
 
     def advance(self, action: int) -> None:
         """Record the action chosen this turn, before the game steps forward."""

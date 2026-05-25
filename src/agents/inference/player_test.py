@@ -1,10 +1,24 @@
 import numpy as np
 import pytest
 from unittest.mock import MagicMock, patch
+from contextlib import contextmanager
 from poke_env.player.battle_order import ForfeitBattleOrder
 from agents.inference.player import Gen3Player
 from agents.observation.state_encoder import load_mappings, Gen3ObservationEncoder
 from agents.training.stall import StallConfig, StallLogger
+
+
+@contextmanager
+def _stubbed_encode(player, base_obs, mask):
+    """Stub encode() + Gen3ActionMasker so embed_battle can run on a bare mock.
+
+    Mirrors the new embed_battle flow: get_mask → record → encode(hp_tracker=...).
+    """
+    player.observation_encoder.encode = MagicMock(return_value=base_obs)
+    with patch(
+        "agents.inference.player.Gen3ActionMasker.get_mask", return_value=mask
+    ):
+        yield
 
 
 class _ConcretePlayer(Gen3Player):
@@ -68,15 +82,11 @@ def test_embed_battle_output_dim_matches_encoder():
     player, encoder = _make_player()
     battle = _make_battle(encoder)
 
-    # Stub get_observation to return a known base-dim obs + all-ones mask
     base_obs = np.zeros(encoder.base_dimension, dtype=np.float32)
     mask = np.ones(11, dtype=np.int8)
-    player.observation_encoder.get_observation = MagicMock(return_value={
-        "observation": base_obs,
-        "action_mask": mask,
-    })
+    with _stubbed_encode(player, base_obs, mask):
+        result = player.embed_battle(battle)
 
-    result = player.embed_battle(battle)
     assert result["observation"].shape == (encoder.dimension,), (
         f"embed_battle() produced {result['observation'].shape[0]} dims, "
         f"expected {encoder.dimension}. "
@@ -217,13 +227,9 @@ def test_per_battle_trackers_are_independent():
 
     base_obs = np.zeros(player.observation_encoder.base_dimension, dtype=np.float32)
     mask = np.ones(11, dtype=np.int8)
-    player.observation_encoder.get_observation = MagicMock(return_value={
-        "observation": base_obs,
-        "action_mask": mask,
-    })
-
-    player.embed_battle(battle_a)
-    player.embed_battle(battle_b)
+    with _stubbed_encode(player, base_obs, mask):
+        player.embed_battle(battle_a)
+        player.embed_battle(battle_b)
 
     assert "battle-gen3ou-A" in player._trackers
     assert "battle-gen3ou-B" in player._trackers
@@ -238,12 +244,8 @@ def test_battle_finished_removes_tracker():
 
     base_obs = np.zeros(player.observation_encoder.base_dimension, dtype=np.float32)
     mask = np.ones(11, dtype=np.int8)
-    player.observation_encoder.get_observation = MagicMock(return_value={
-        "observation": base_obs,
-        "action_mask": mask,
-    })
-
-    player.embed_battle(battle)
+    with _stubbed_encode(player, base_obs, mask):
+        player.embed_battle(battle)
     assert "battle-gen3ou-cleanup" in player._trackers
 
     player._battle_finished_callback(battle)
@@ -261,15 +263,11 @@ def test_battle_finished_leaves_other_trackers_intact():
 
     base_obs = np.zeros(player.observation_encoder.base_dimension, dtype=np.float32)
     mask = np.ones(11, dtype=np.int8)
-    player.observation_encoder.get_observation = MagicMock(return_value={
-        "observation": base_obs,
-        "action_mask": mask,
-    })
-
     battle_a = _make_battle_tagged("tag-A")
     battle_b = _make_battle_tagged("tag-B")
-    player.embed_battle(battle_a)
-    player.embed_battle(battle_b)
+    with _stubbed_encode(player, base_obs, mask):
+        player.embed_battle(battle_a)
+        player.embed_battle(battle_b)
 
     player._battle_finished_callback(battle_a)
     assert "tag-A" not in player._trackers
@@ -283,12 +281,8 @@ def test_embed_battle_history_zero_on_first_call():
 
     base_obs = np.zeros(encoder.base_dimension, dtype=np.float32)
     mask = np.ones(11, dtype=np.int8)
-    # Use side_effect so each call gets a fresh dict (avoids stale-dict mutation between calls)
-    player.observation_encoder.get_observation = MagicMock(
-        side_effect=lambda b: {"observation": base_obs.copy(), "action_mask": mask.copy()}
-    )
-
-    result1 = player.embed_battle(battle)
+    with _stubbed_encode(player, base_obs, mask):
+        result1 = player.embed_battle(battle)
     obs1 = result1["observation"]
 
     history_start = encoder.base_dimension + 11
@@ -305,15 +299,11 @@ def test_embed_battle_tracker_accumulates_across_calls():
 
     base_obs = np.zeros(encoder.base_dimension, dtype=np.float32)
     mask = np.ones(11, dtype=np.int8)
-    player.observation_encoder.get_observation = MagicMock(
-        side_effect=lambda b: {"observation": base_obs.copy(), "action_mask": mask.copy()}
-    )
-
-    player.embed_battle(battle)
-    player._get_tracker(battle).advance(0)
-    battle.turn = 2
-
-    result2 = player.embed_battle(battle)
+    with _stubbed_encode(player, base_obs, mask):
+        player.embed_battle(battle)
+        player._get_tracker(battle).advance(0)
+        battle.turn = 2
+        result2 = player.embed_battle(battle)
     obs2 = result2["observation"]
 
     assert obs2.shape == (encoder.dimension,)

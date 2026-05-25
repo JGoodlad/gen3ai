@@ -13,6 +13,9 @@ from .constants import (
     POKEMON_COUNTER_OFFSET,
     POKEMON_SPREAD_OFFSET,
     POKEMON_SPREAD_DIM,
+    POKEMON_HP_REVEALED_OFFSET,
+    POKEMON_HP_PROBS_OFFSET,
+    POKEMON_HP_BLOCK_DIM,
 )
 from .species import SpeciesEncoder
 from .items import ItemsEncoder
@@ -28,8 +31,13 @@ class PokemonEncoder(ObservationEncoder):
     """
     Aggregates all Pokémon-level encoders into a single POKEMON_VECTOR_DIM-wide vector.
     Layout: species(7) + items(3) + types(2) + abilities(2) + condition(7) + moves(36)
-            + hp(1) + species_known(1) + status_counters(2) + spread(18) = 79 dims.
-    The active flag (1 dim) is appended by state_encoder, making POKEMON_FULL_DIM = 80.
+            + hp(1) + species_known(1) + status_counters(2) + spread(18) + hp_block(17) = 96 dims.
+    The active flag (1 dim) is appended by state_encoder, making POKEMON_FULL_DIM = 97.
+
+    hp_block carries the per-species Hidden Power candidate distribution from
+    HiddenPowerTracker for opponent mons (1 hp_revealed flag + 16 type probs in
+    HIDDEN_POWER_TYPE_ORDER). Our team slots leave the block at zeros — our own HP
+    type is known at build time and is filled in as a separate change.
     """
     
     _NATURE_STAT_ORDER = ("atk", "def", "spa", "spd", "spe")
@@ -46,7 +54,20 @@ class PokemonEncoder(ObservationEncoder):
     def dimension(self) -> int:
         return POKEMON_VECTOR_DIM
 
-    def encode(self, mon: Any, battle: AbstractBattle, is_own: bool = False) -> np.ndarray:
+    def encode(
+        self,
+        mon: Any,
+        battle: AbstractBattle,
+        is_own: bool = False,
+        hp_probs: "np.ndarray | None" = None,
+    ) -> np.ndarray:
+        """Encode a single Pokémon slot.
+
+        hp_probs: optional (16,) float32 from HiddenPowerTracker.get_probs(species)
+        for opponent mons. All-zero means HP has not been observed yet; non-zero
+        entries are the surviving candidate types at their prior weights. Our team
+        slots always pass None and leave the block at zeros.
+        """
         vec = np.zeros(self.dimension, dtype=np.float32)
         if mon is None:
             return vec
@@ -125,6 +146,13 @@ class PokemonEncoder(ObservationEncoder):
                 vec[off + 13 + j] = float(nature_mods.get(stat, 1.0))
         # Opponent slots: all 18 dims remain 0.0 (spread_known=0 is the signal)
 
+        # 11. Hidden Power candidate block (17 dims): hp_revealed (1) + 16 type probs.
+        # Only populated for opponent slots when the tracker has data; our team's
+        # block stays at zeros (future work: encode our own known HP type directly).
+        if hp_probs is not None and hp_probs.any():
+            vec[POKEMON_HP_REVEALED_OFFSET] = 1.0
+            vec[POKEMON_HP_PROBS_OFFSET : POKEMON_HP_PROBS_OFFSET + 16] = hp_probs
+
         return vec
 
     def get_layout(self) -> Dict[str, Any]:
@@ -167,6 +195,14 @@ class PokemonEncoder(ObservationEncoder):
                     "spread_known": {"offset": 12, "dim": 1},
                     "nature": {"offset": 13, "dim": 5, "stats": list(self._NATURE_STAT_ORDER)},
                 }
+            },
+            "hp_block": {
+                "offset": POKEMON_HP_REVEALED_OFFSET,
+                "dim": POKEMON_HP_BLOCK_DIM,
+                "layout": {
+                    "hp_revealed": {"offset": 0, "dim": 1},
+                    "hp_type_probs": {"offset": 1, "dim": 16},
+                },
             },
             "pokemon_vector_dim": POKEMON_VECTOR_DIM,
         }

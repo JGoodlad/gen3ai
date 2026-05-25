@@ -59,19 +59,24 @@ class Gen3Player(Player):
                 self.mappings.get("moves", {}) if self.mappings else {}
             )
 
-        obs_dict = self.observation_encoder.get_observation(battle)
-        obs = obs_dict["observation"]
-        mask = obs_dict["action_mask"].astype(np.int8)
-
+        # Record first so the tracker's HP candidates are up-to-date BEFORE
+        # we encode the obs (mirrors gen3_env.embed_battle ordering).
+        mask = Gen3ActionMasker.get_mask(battle).astype(np.int8)
         tracker = self._get_tracker(battle)
         if not battle.finished and mask.sum() > 0:
-            tracker.record(battle, mask, obs)
+            tracker.record(battle, mask)
+
+        obs = self.observation_encoder.encode(
+            battle, hp_tracker=tracker.hidden_power_tracker
+        )
 
         prev_mask = tracker.prev_mask
         history_vecs = tracker.prev_N_delta_vecs(N_HISTORY_TURNS, self._turn_delta_encoder)
 
-        obs_dict["observation"] = np.concatenate([obs, prev_mask, history_vecs.flatten()])
-        return obs_dict
+        return {
+            "observation": np.concatenate([obs, prev_mask, history_vecs.flatten()]),
+            "action_mask": mask,
+        }
 
     def action_to_order(self, action_idx, battle):
         Gen3ActionMapper.validate_context(battle)

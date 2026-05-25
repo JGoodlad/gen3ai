@@ -395,7 +395,8 @@ class HiddenPowerTrackerFuzzPlayer(Player):
                         (battle.turn, opp_last_effectiveness, target_mon.species,
                          str(target_mon.type_1),
                          str(target_mon.type_2) if target_mon.type_2 else None,
-                         target_mon.ability)
+                         target_mon.ability,
+                         str(target_mon.status) if target_mon.status else None)
                     )
                     try:
                         tracker.observe(prev_opp, opp_last_effectiveness, target_mon)
@@ -415,7 +416,7 @@ class HiddenPowerTrackerFuzzPlayer(Player):
                         print(f"[FUZZ DBG] observation log for {prev_opp}:", flush=True)
                         for entry in self._obs_log.get(log_key, []):
                             print(f"  turn={entry[0]} eff={entry[1]}× target={entry[2]} "
-                                  f"types=({entry[3]}/{entry[4]}) ability={entry[5]}",
+                                  f"types=({entry[3]}/{entry[4]}) ability={entry[5]} status={entry[6] if len(entry) > 6 else None}",
                                   flush=True)
                         true_type = OPP_HP_GROUND_TRUTH.get(prev_opp, "?")
                         print(f"[FUZZ DBG] true HP type for {prev_opp}: {true_type}", flush=True)
@@ -619,7 +620,7 @@ async def main(n_battles: int = 500) -> None:
             print(f"    Observations for {f['species']}:")
             for entry in f.get("obs_log", []):
                 print(f"      turn={entry[0]} eff={entry[1]}× target={entry[2]} "
-                      f"types=({entry[3]}/{entry[4]}) ability={entry[5]}")
+                      f"types=({entry[3]}/{entry[4]}) ability={entry[5]} status={entry[6] if len(entry) > 6 else None}")
             # Dump turn log windows around each obs to show context
             turns_of_interest = {e[0] for e in f.get("obs_log", [])}
             tlog = f.get("turn_log", [])

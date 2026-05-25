@@ -12,7 +12,7 @@ MODEL_CONFIG_VERSION = 2
 # weights from a different signature incompatible (e.g. adding LSTM, replacing attention).
 # Same-family dim changes (role_token_size 128→256) don't need a new signature —
 # check_compatible() catches those via the dim fields.
-ARCH_SIGNATURE = "gen3_spread_v1"
+ARCH_SIGNATURE = "gen3_hp_v1"
 
 
 class ModelVersionError(Exception):

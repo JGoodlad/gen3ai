@@ -31,7 +31,6 @@ def _make_ctx(turn: int = 0, our_hp0: float = 1.0) -> BattleContext:
         turn=turn,
         phase="move_selection",
         mask=np.ones(11, dtype=np.int8),
-        obs=np.zeros(10, dtype=np.float32),
         our_slot_map={"bulbasaur": 0},
         opp_slot_map={"charmander": 0},
         our_hp=np.array([our_hp0, 0, 0, 0, 0, 0], dtype=np.float32),
@@ -85,7 +84,7 @@ def test_no_action_committed_on_first_record():
     """First record() has nothing to commit — _actions stays empty."""
     tracker = EpisodeTracker()
     tracker.advance(3)
-    tracker.record(_mock_battle(1), np.ones(11, dtype=np.int8), np.zeros(10))
+    tracker.record(_mock_battle(1), np.ones(11, dtype=np.int8))
     assert len(tracker._actions) == 0
     assert len(tracker._history) == 1
 
@@ -93,9 +92,9 @@ def test_no_action_committed_on_first_record():
 def test_action_committed_on_second_record():
     """Second record() commits the action that was advance()d after the first."""
     tracker = EpisodeTracker()
-    tracker.record(_mock_battle(1), np.ones(11, dtype=np.int8), np.zeros(10))
+    tracker.record(_mock_battle(1), np.ones(11, dtype=np.int8))
     tracker.advance(7)
-    tracker.record(_mock_battle(2), np.ones(11, dtype=np.int8), np.zeros(10))
+    tracker.record(_mock_battle(2), np.ones(11, dtype=np.int8))
 
     assert len(tracker._actions) == 1
     assert tracker._actions[0] == 7
@@ -106,7 +105,7 @@ def test_actions_parallel_to_history():
     tracker = EpisodeTracker()
     n_turns = 5
     for t in range(n_turns):
-        tracker.record(_mock_battle(t), np.ones(11, dtype=np.int8), np.zeros(10))
+        tracker.record(_mock_battle(t), np.ones(11, dtype=np.int8))
         tracker.advance(t)
     # 5 records → 4 committed actions (first record has nothing to commit)
     assert len(tracker._history) == n_turns
@@ -118,18 +117,18 @@ def test_actions_contain_correct_values():
     tracker = EpisodeTracker()
     actions = [2, 5, 8, 10, 1]
     for t, a in enumerate(actions):
-        tracker.record(_mock_battle(t), np.ones(11, dtype=np.int8), np.zeros(10))
+        tracker.record(_mock_battle(t), np.ones(11, dtype=np.int8))
         tracker.advance(a)
-    tracker.record(_mock_battle(len(actions)), np.ones(11, dtype=np.int8), np.zeros(10))
+    tracker.record(_mock_battle(len(actions)), np.ones(11, dtype=np.int8))
     # _actions[i] is the action advance()d from history[i] (committed at i+1's record)
     assert tracker._actions == actions
 
 
 def test_reset_clears_actions():
     tracker = EpisodeTracker()
-    tracker.record(_mock_battle(1), np.ones(11, dtype=np.int8), np.zeros(10))
+    tracker.record(_mock_battle(1), np.ones(11, dtype=np.int8))
     tracker.advance(4)
-    tracker.record(_mock_battle(2), np.ones(11, dtype=np.int8), np.zeros(10))
+    tracker.record(_mock_battle(2), np.ones(11, dtype=np.int8))
     assert len(tracker._actions) == 1
     tracker.reset()
     assert len(tracker._actions) == 0
@@ -280,7 +279,7 @@ def test_prev_N_delta_vecs_uses_stored_actions():
     encoder = _make_encoder()
     ctx0 = BattleContext(
         turn=0, phase="move_selection",
-        mask=np.ones(11, dtype=np.int8), obs=np.zeros(10, dtype=np.float32),
+        mask=np.ones(11, dtype=np.int8),
         our_slot_map={"bulbasaur": 0}, opp_slot_map={"charmander": 0},
         our_hp=np.ones(6, dtype=np.float32), opp_hp=np.zeros(6, dtype=np.float32),
         our_active="bulbasaur", opp_active="charmander",

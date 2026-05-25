@@ -38,7 +38,6 @@ def _ctx(
         turn=turn,
         phase=phase,
         mask=mask,
-        obs=np.zeros(1, dtype=np.float32),
         our_slot_map=our_slot_map,
         opp_slot_map={opp_active: 0},
         our_hp=hp.copy(),

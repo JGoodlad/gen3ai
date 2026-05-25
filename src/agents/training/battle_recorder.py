@@ -171,9 +171,7 @@ class BattleRecorder:
     # ------------------------------------------------------------------
 
     def _build_ctx(self, battle, mask: np.ndarray) -> BattleContext:
-        return BattleContext.from_battle(
-            battle, mask, np.zeros(1, dtype=np.float32), self._our_slots, self._opp_slots
-        )
+        return BattleContext.from_battle(battle, mask, self._our_slots, self._opp_slots)
 
     def _latched(self, battle) -> dict:
         """Return the decision context latched by Gen3ActionMasker, or empty dict."""

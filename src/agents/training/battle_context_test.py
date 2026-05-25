@@ -13,10 +13,6 @@ def _mask(*valid_actions):
     return m
 
 
-def _obs():
-    return np.zeros(1021, dtype=np.float32)
-
-
 def _hp(*fractions):
     hp = np.zeros(6, dtype=np.float32)
     for i, v in enumerate(fractions):
@@ -36,7 +32,6 @@ def _ctx(**overrides):
         turn=1,
         phase="move_selection",
         mask=_mask(6, 7),
-        obs=_obs(),
         our_slot_map={},
         opp_slot_map={},
         our_hp=np.zeros(6, dtype=np.float32),
@@ -90,7 +85,6 @@ def test_wrong_mask_shape_raises():
             turn=1,
             phase="forced_switch",
             mask=np.ones(9, dtype=np.int8),
-            obs=_obs(),
             our_slot_map={},
             opp_slot_map={},
             our_hp=np.zeros(6, dtype=np.float32),
@@ -566,11 +560,10 @@ def test_from_battle_builds_correct_context():
 
     mask = np.zeros(11, dtype=np.int8)
     mask[6] = 1
-    obs = np.ones(5, dtype=np.float32)
 
     our_slots = SlotRegistry()
     opp_slots = SlotRegistry()
-    ctx = BattleContext.from_battle(battle, mask, obs, our_slots, opp_slots)
+    ctx = BattleContext.from_battle(battle, mask, our_slots, opp_slots)
 
     assert ctx.turn == 7
     assert ctx.phase == "move_selection"
@@ -595,7 +588,7 @@ def test_from_battle_forced_switch_phase():
     battle.opponent_active_pokemon = None
 
     ctx = BattleContext.from_battle(
-        battle, np.ones(11, dtype=np.int8), np.zeros(1), SlotRegistry(), SlotRegistry()
+        battle, np.ones(11, dtype=np.int8), SlotRegistry(), SlotRegistry()
     )
     assert ctx.phase == "forced_switch"
     assert ctx.our_active == "NONE"
@@ -613,7 +606,7 @@ def test_from_battle_slot_registry_mutated():
 
     our_slots = SlotRegistry()
     BattleContext.from_battle(
-        battle, np.ones(11, dtype=np.int8), np.zeros(1), our_slots, SlotRegistry()
+        battle, np.ones(11, dtype=np.int8), our_slots, SlotRegistry()
     )
     assert our_slots.get("skarmory") == 0
 
@@ -660,7 +653,7 @@ def test_active_move_ids_populated_from_last_request():
         ["rockslide", "earthquake", "thunderbolt", "surf"]
     )
     mask = _mask(6, 7, 8, 9)
-    ctx = BattleContext.from_battle(battle, mask, np.zeros(1), SlotRegistry(), SlotRegistry())
+    ctx = BattleContext.from_battle(battle, mask, SlotRegistry(), SlotRegistry())
     assert ctx.active_move_ids == ["rockslide", "earthquake", "thunderbolt", "surf"]
 
 
@@ -671,7 +664,7 @@ def test_active_move_ids_disabled_slot_is_none():
         disabled={1},  # earthquake is disabled
     )
     mask = _mask(6, 8, 9)  # slot 7 (earthquake) disabled
-    ctx = BattleContext.from_battle(battle, mask, np.zeros(1), SlotRegistry(), SlotRegistry())
+    ctx = BattleContext.from_battle(battle, mask, SlotRegistry(), SlotRegistry())
     assert ctx.active_move_ids[0] == "rockslide"
     assert ctx.active_move_ids[1] is None   # disabled
     assert ctx.active_move_ids[2] == "thunderbolt"
@@ -682,7 +675,7 @@ def test_active_move_ids_struggle_slot_is_none():
     """Struggle is excluded from active_move_ids (it uses the dedicated action 10)."""
     battle = _mock_battle_with_moves(["struggle", "struggle", "struggle", "struggle"])
     mask = _mask(10)
-    ctx = BattleContext.from_battle(battle, mask, np.zeros(1), SlotRegistry(), SlotRegistry())
+    ctx = BattleContext.from_battle(battle, mask, SlotRegistry(), SlotRegistry())
     assert ctx.active_move_ids == [None, None, None, None]
 
 
@@ -690,7 +683,7 @@ def test_active_move_ids_always_length_4():
     """active_move_ids is always a 4-element list, even with fewer than 4 moves."""
     battle = _mock_battle_with_moves(["rockslide", "earthquake"])
     mask = _mask(6, 7)
-    ctx = BattleContext.from_battle(battle, mask, np.zeros(1), SlotRegistry(), SlotRegistry())
+    ctx = BattleContext.from_battle(battle, mask, SlotRegistry(), SlotRegistry())
     assert len(ctx.active_move_ids) == 4
     assert ctx.active_move_ids[0] == "rockslide"
     assert ctx.active_move_ids[1] == "earthquake"
@@ -710,6 +703,6 @@ def test_active_move_ids_no_request_is_all_none():
     battle.last_request = {}
 
     ctx = BattleContext.from_battle(
-        battle, np.ones(11, dtype=np.int8), np.zeros(1), SlotRegistry(), SlotRegistry()
+        battle, np.ones(11, dtype=np.int8), SlotRegistry(), SlotRegistry()
     )
     assert ctx.active_move_ids == [None, None, None, None]

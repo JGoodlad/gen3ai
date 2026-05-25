@@ -254,7 +254,7 @@ class RewardInvariantFuzzPlayer(Player):
             our_slots = SlotRegistry()
             opp_slots = SlotRegistry()
             # Rebuild slot maps from existing tracker state if possible
-            curr_ctx = BattleContext.from_battle(battle, mask, np.zeros(1, dtype=np.float32), our_slots, opp_slots)
+            curr_ctx = BattleContext.from_battle(battle, mask, our_slots, opp_slots)
 
             if self._prev_ctx is not None and self._last_action is not None:
                 delta = TurnDelta.build(self._prev_ctx, curr_ctx, self._last_action)

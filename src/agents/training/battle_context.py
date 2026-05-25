@@ -19,7 +19,6 @@ class BattleContext:
     turn: int
     phase: Literal["move_selection", "forced_switch"]
     mask: np.ndarray            # (11,) int8 — valid actions this turn
-    obs: np.ndarray             # (OBS_DIM,) float32 — encoded observation
     our_slot_map: dict[str, int]   # species -> stable slot index 0-5
     opp_slot_map: dict[str, int]   # species -> stable slot index 0-5
 
@@ -124,7 +123,6 @@ class BattleContext:
         cls,
         battle,
         mask: np.ndarray,
-        obs: np.ndarray,
         our_slots: SlotRegistry,
         opp_slots: SlotRegistry,
     ) -> BattleContext:
@@ -193,7 +191,6 @@ class BattleContext:
             turn=battle.turn,
             phase="forced_switch" if battle.force_switch else "move_selection",
             mask=mask,
-            obs=obs,
             our_slot_map=our_slots.snapshot(),
             opp_slot_map=opp_slots.snapshot(),
             our_hp=our_hp,

@@ -55,13 +55,13 @@ def _make_mon(nature="hardy", ivs=None, evs=None, status=None, status_counter=0,
 
 
 def test_pokemon_encoder_dimension():
-    assert _make_encoder().dimension == 79
+    assert _make_encoder().dimension == 96
 
 
 def test_pokemon_encoder_empty():
     encoder = _make_encoder()
     vec = encoder.encode(None, None)
-    assert len(vec) == 79
+    assert len(vec) == 96
     assert np.all(vec == 0)
 
 

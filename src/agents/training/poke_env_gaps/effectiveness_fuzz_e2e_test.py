@@ -620,11 +620,10 @@ class EffectivenessFuzzPlayer(Player):
                 self._our_slots[battle_tag] = SlotRegistry()
                 self._opp_slots[battle_tag] = SlotRegistry()
 
-            # Build current BattleContext (obs is a stub — not needed for effectiveness validation)
+            # Build current BattleContext for effectiveness validation
             curr_ctx = BattleContext.from_battle(
                 battle,
                 mask=mask,
-                obs=np.zeros(1, dtype=np.float32),
                 our_slots=self._our_slots[battle_tag],
                 opp_slots=self._opp_slots[battle_tag],
             )
