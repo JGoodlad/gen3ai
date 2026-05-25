@@ -15,19 +15,33 @@ def _git_hash() -> str:
 
 
 def _read_checkpoint_git_hash(model_path: str) -> "str | None":
-    """Read git_hash from the metadata.json saved alongside a checkpoint."""
-    candidates = [
-        os.path.dirname(os.path.abspath(model_path)),
-        os.path.abspath(model_path),
-    ]
-    for d in candidates:
-        meta = os.path.join(d, "metadata.json")
-        if os.path.exists(meta):
-            try:
-                with open(meta) as f:
-                    return json.load(f).get("git_hash")
-            except Exception:
-                return None
+    """Read git_hash from the per-checkpoint sidecar or run-level metadata.json.
+
+    Prefers the sidecar (checkpoint_XXXX.json) because it's written at save time
+    by the child inside the pinned worktree. The run-level metadata.json can be
+    overwritten by later saves and may not reflect the checkpoint's actual hash.
+    """
+    abs_path = os.path.abspath(model_path)
+    # Per-checkpoint sidecar: replace .zip extension (or append .json)
+    sidecar = abs_path[:-4] + ".json" if abs_path.endswith(".zip") else abs_path + ".json"
+    if os.path.exists(sidecar):
+        try:
+            with open(sidecar) as f:
+                h = json.load(f).get("git_hash")
+            if h:
+                return h
+        except Exception:
+            pass
+
+    # Fall back to run-level metadata.json
+    run_dir = os.path.dirname(abs_path)
+    meta = os.path.join(run_dir, "metadata.json")
+    if os.path.exists(meta):
+        try:
+            with open(meta) as f:
+                return json.load(f).get("git_hash")
+        except Exception:
+            return None
     return None
 
 

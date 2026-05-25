@@ -103,6 +103,7 @@ def run(child_args: list, interval_hours: float, pin: bool = True, sync_to_main:
             sys.exit(f"[launcher] ERROR: {e}")
         atexit.register(worktree_cleanup)
         state.initial_git_hash = pin_hash[:8]
+        child_env["LAUNCHER_GIT_HASH"] = pin_hash
     else:
         train_script, src_dir = _TRAIN_SCRIPT, _SRC_DIR
         state.initial_git_hash = _git_hash()

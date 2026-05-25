@@ -33,7 +33,8 @@ def save_model_snapshot(
         f.write(version.to_json())
 
     if git_hash is None:
-        git_hash = get_git_hash()
+        import os as _os
+        git_hash = _os.environ.get("LAUNCHER_GIT_HASH") or get_git_hash()
 
     # Preserve snapshot_history accumulated by other writers.
     meta_path = os.path.join(model_dir, "metadata.json")
@@ -168,7 +169,8 @@ def write_checkpoint_metadata(
     data = dict(hparams) if hparams else {}
     data["current_lr"] = current_lr
     data["current_epochs"] = current_epochs
-    data["git_hash"] = git_hash or get_git_hash()
+    import os as _os
+    data["git_hash"] = git_hash or _os.environ.get("LAUNCHER_GIT_HASH") or get_git_hash()
     with open(_checkpoint_metadata_path(checkpoint_path), "w") as f:
         json.dump(data, f, indent=2)
 
