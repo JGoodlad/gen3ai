@@ -9,7 +9,7 @@ from agents.training.reward_manager import (
     FUTILE_ATTACK_PENALTY, FUTILE_IMMUNE_PENALTY, ESCAPE_THREAT_BONUS,
     HP_VALUE, FAINT_BASE, FAINT_HP_SCALE, VICTORY_VALUE,
     FUTILE_SETUP_PENALTY, SETUP_LOW_HP_MAX_PENALTY, STATUS_WASTED_PENALTY,
-    EXPLOSION_BLOCK_BONUS,
+    EXPLOSION_BLOCK_BONUS, FINISHING_BLOW_BONUS,
 )
 from agents.training.battle_context import BattleContext, TurnDelta
 from utils.logging.levels import LogLevel
@@ -1359,6 +1359,284 @@ class TestSeSwitchBonusFixed(unittest.TestCase):
         battle = _battle(our_mon=our, opp_mon=opp)
         self.manager.process_turn_reward(battle, _delta(our_switch_to="tyranitar"))
         self.assertAlmostEqual(self.manager._last_breakdown.se_switch, 0.0, places=5)
+
+
+class TestSeSwitchOpponentTracking(unittest.TestCase):
+    """Per-mon opponent tracker gates se_switch to prevent switch loops."""
+
+    def setUp(self):
+        self.manager = Gen3RewardManager(log_level=LogLevel.QUIET)
+
+    def _do_voluntary_switch(self, our_mon, opp_mon, turn=1):
+        """Trigger one voluntary switch turn and return the breakdown."""
+        ctx = _ctx(turn=turn, our_active="prev", slot_map={"prev": 0, "incoming": 1})
+        self.manager.record_action(ctx, 1)
+        battle = _battle(our_mon=our_mon, opp_mon=opp_mon)
+        self.manager.process_turn_reward(battle, _delta(our_switch_to="incoming"))
+        return self.manager._last_breakdown
+
+    def test_se_bonus_fires_first_time_vs_new_opp(self):
+        """No prior matchup → se_switch fires normally (existing behaviour)."""
+        our = _make_mon("ROCK", "DARK")
+        our.species = "tyranitar"
+        opp = _make_mon("ELECTRIC", "FLYING")
+        opp.species = "zapdos"
+        bd = self._do_voluntary_switch(our, opp)
+        self.assertAlmostEqual(bd.se_switch, SE_SWITCH_BONUS, places=5)
+
+    def test_se_bonus_blocked_on_second_switch_same_opp(self):
+        """Switch vs Zapdos, come back vs Zapdos without Zapdos switching → se_switch == 0."""
+        our = _make_mon("ROCK", "DARK")
+        our.species = "tyranitar"
+        opp = _make_mon("ELECTRIC", "FLYING")
+        opp.species = "zapdos"
+        # First switch in: bonus fires, tracker set to tyranitar→zapdos
+        self._do_voluntary_switch(our, opp, turn=1)
+        # Second switch in vs same opp (spam_mult ok at turn 3): blocked by tracker
+        bd = self._do_voluntary_switch(our, opp, turn=3)
+        self.assertAlmostEqual(bd.se_switch, 0.0, places=5)
+
+    def test_se_bonus_fires_again_after_opponent_switches(self):
+        """After our mon sees A, opponent switches to B — switching back in vs B fires bonus."""
+        our = _make_mon("ROCK", "DARK")
+        our.species = "tyranitar"
+        opp_a = _make_mon("ELECTRIC", "FLYING")
+        opp_a.species = "zapdos"
+        opp_b = _make_mon("ELECTRIC", "FLYING")
+        opp_b.species = "raikou"
+        # First switch in vs zapdos: fires, tracker = tyranitar→zapdos
+        self._do_voluntary_switch(our, opp_a, turn=1)
+        # Opponent has switched (zapdos→raikou); our mon comes back in vs raikou: fires
+        bd = self._do_voluntary_switch(our, opp_b, turn=3)
+        self.assertAlmostEqual(bd.se_switch, SE_SWITCH_BONUS, places=5)
+
+    def test_se_bonus_resets_after_opp_switches_back(self):
+        """A→B→A opp rotation: each time our mon sees a new opp species, bonus fires again."""
+        our = _make_mon("ROCK", "DARK")
+        our.species = "tyranitar"
+        opp_a = _make_mon("ELECTRIC", "FLYING")
+        opp_a.species = "zapdos"
+        opp_b = _make_mon("ELECTRIC", "FLYING")
+        opp_b.species = "raikou"
+        # vs zapdos: fires, tracker = tyranitar→zapdos
+        self._do_voluntary_switch(our, opp_a, turn=1)
+        # vs raikou: fires, tracker = tyranitar→raikou
+        self._do_voluntary_switch(our, opp_b, turn=3)
+        # vs zapdos again: tracker is raikou ≠ zapdos → fires
+        bd = self._do_voluntary_switch(our, opp_a, turn=5)
+        self.assertAlmostEqual(bd.se_switch, SE_SWITCH_BONUS, places=5)
+
+    def test_roar_does_not_update_tracker(self):
+        """A roared switch-in does not update _last_opp_seen_by."""
+        our = _make_mon("ROCK", "DARK")
+        our.species = "tyranitar"
+        opp = _make_mon("ELECTRIC", "FLYING")
+        opp.species = "zapdos"
+        # Pre-populate tracker: tyranitar last saw "jumpluff"
+        self.manager._last_opp_seen_by["tyranitar"] = "jumpluff"
+        # Roared switch in
+        ctx = _ctx(turn=1, our_active="pikachu", phase="forced_switch",
+                   slot_map={"pikachu": 0, "tyranitar": 1})
+        self.manager.record_action(ctx, 1)
+        battle = _battle(our_mon=our, opp_mon=opp)
+        self.manager.process_turn_reward(battle, _delta(our_switch_to="tyranitar"))
+        # Tracker must remain unchanged — roars don't update it
+        self.assertEqual(self.manager._last_opp_seen_by.get("tyranitar"), "jumpluff")
+
+    def test_reset_clears_tracker(self):
+        """reset() wipes _last_opp_seen_by so the next battle starts clean."""
+        our = _make_mon("ROCK", "DARK")
+        our.species = "tyranitar"
+        opp = _make_mon("ELECTRIC", "FLYING")
+        opp.species = "zapdos"
+        # Populate the tracker in battle 1
+        self._do_voluntary_switch(our, opp, turn=1)
+        self.assertEqual(self.manager._last_opp_seen_by.get("tyranitar"), "zapdos")
+        # Simulate end-of-battle reset
+        self.manager.reset()
+        self.assertEqual(self.manager._last_opp_seen_by, {})
+        # After reset, the same matchup fires again as if it were the first time
+        bd = self._do_voluntary_switch(our, opp, turn=1)
+        self.assertAlmostEqual(bd.se_switch, SE_SWITCH_BONUS, places=5)
+
+    def test_independent_tracking_per_mon(self):
+        """Each mon has its own tracker entry — one mon being blocked doesn't affect another."""
+        tyranitar = _make_mon("ROCK", "DARK")
+        tyranitar.species = "tyranitar"
+        golem = _make_mon("ROCK", "GROUND")
+        golem.species = "golem"
+        opp = _make_mon("ELECTRIC", "FLYING")
+        opp.species = "zapdos"
+        # Tyranitar switches in: fires, tracker = {tyranitar: zapdos}
+        self._do_voluntary_switch(tyranitar, opp, turn=1)
+        # Tyranitar switches in again: blocked
+        bd_ttar = self._do_voluntary_switch(tyranitar, opp, turn=3)
+        self.assertAlmostEqual(bd_ttar.se_switch, 0.0, places=5)
+        # Golem has no tracker entry yet → should fire independently
+        bd_golem = self._do_voluntary_switch(golem, opp, turn=5)
+        self.assertAlmostEqual(bd_golem.se_switch, SE_SWITCH_BONUS, places=5)
+
+    def test_blocked_still_earns_switch_base(self):
+        """When se_switch is blocked by the tracker, switch_base subsidy is still awarded."""
+        our = _make_mon("ROCK", "DARK")
+        our.species = "tyranitar"
+        opp = _make_mon("ELECTRIC", "FLYING")
+        opp.species = "zapdos"
+        # First switch: both se_switch and switch_base fire
+        bd1 = self._do_voluntary_switch(our, opp, turn=1)
+        self.assertAlmostEqual(bd1.se_switch, SE_SWITCH_BONUS, places=5)
+        self.assertAlmostEqual(bd1.switch_base, SWITCH_BASE_BONUS, places=5)
+        # Second switch vs same opp: se_switch blocked, but switch_base still runs
+        bd2 = self._do_voluntary_switch(our, opp, turn=3)
+        self.assertAlmostEqual(bd2.se_switch, 0.0, places=5)
+        self.assertAlmostEqual(bd2.switch_base, SWITCH_BASE_BONUS, places=5)
+
+    def test_tracker_updates_even_without_type_advantage(self):
+        """Tracker records the matchup on any non-roared switch, not just SE ones."""
+        our = _make_mon("NORMAL")   # no SE advantage vs anything
+        our.species = "snorlax"
+        opp = _make_mon("NORMAL")
+        opp.species = "blissey"
+        ctx = _ctx(turn=1, our_active="prev", slot_map={"prev": 0, "incoming": 1})
+        self.manager.record_action(ctx, 1)
+        battle = _battle(our_mon=our, opp_mon=opp)
+        self.manager.process_turn_reward(battle, _delta(our_switch_to="incoming"))
+        # Tracker must be set even though se_switch == 0
+        self.assertEqual(self.manager._last_opp_seen_by.get("snorlax"), "blissey")
+        bd = self.manager._last_breakdown
+        self.assertAlmostEqual(bd.se_switch, 0.0, places=5)
+
+    def test_tracker_not_updated_when_opp_fainted(self):
+        """Switching into a fainted opponent does not write to the tracker."""
+        our = _make_mon("ROCK", "DARK")
+        our.species = "tyranitar"
+        opp = _make_mon("ELECTRIC", "FLYING")
+        opp.species = "zapdos"
+        opp.fainted = True
+        # Pre-set tracker to a known value
+        self.manager._last_opp_seen_by["tyranitar"] = "jumpluff"
+        ctx = _ctx(turn=1, our_active="prev", slot_map={"prev": 0, "incoming": 1})
+        self.manager.record_action(ctx, 1)
+        battle = _battle(our_mon=our, opp_mon=opp)
+        self.manager.process_turn_reward(battle, _delta(our_switch_to="incoming"))
+        # Fainted opp: tracker must remain unchanged
+        self.assertEqual(self.manager._last_opp_seen_by.get("tyranitar"), "jumpluff")
+
+
+class TestFinishingBlow(unittest.TestCase):
+    """finishing_blow bonus fires on damaging-move KOs."""
+
+    def setUp(self):
+        self.manager = Gen3RewardManager(log_level=LogLevel.QUIET)
+
+    def _do_attack_ko(self, our_mon, opp_fainted=True, our_move_id="earthquake",
+                      our_failed_to_move=False, our_switch_to=None, opp_hp_before=0.12):
+        """Simulate an attack turn that may KO the opponent."""
+        self.manager.record_action(_ctx(turn=1), 6)
+        self.manager._opp_active_hp_before = opp_hp_before
+        battle = _battle(our_mon=our_mon, opp_mon=None)
+        d = _delta(
+            opp_fainted=opp_fainted,
+            our_move_id=our_move_id if our_switch_to is None else None,
+            our_switch_to=our_switch_to,
+            opp_hp_delta=-0.1 if opp_fainted else 0.0,
+        )
+        if our_failed_to_move:
+            d = dataclasses.replace(d, our_failed_to_move=True)
+        self.manager.process_turn_reward(battle, d)
+        return self.manager._last_breakdown
+
+    def test_fires_on_any_kill_by_damaging_move(self):
+        """opp_fainted=True + damaging move → finishing_blow == FINISHING_BLOW_BONUS."""
+        our = _make_mon("GROUND", moves=[("earthquake", "GROUND", 100)])
+        bd = self._do_attack_ko(our, opp_fainted=True, our_move_id="earthquake")
+        self.assertAlmostEqual(bd.finishing_blow, FINISHING_BLOW_BONUS, places=5)
+
+    def test_no_bonus_for_non_damaging_move_kill(self):
+        """opp_fainted=True but move has base_power=0 → finishing_blow == 0."""
+        our = _make_mon("POISON", moves=[("toxic", "POISON", 0)])
+        bd = self._do_attack_ko(our, opp_fainted=True, our_move_id="toxic")
+        self.assertAlmostEqual(bd.finishing_blow, 0.0, places=5)
+
+    def test_no_bonus_when_opp_did_not_faint(self):
+        """opp_fainted=False → finishing_blow == 0."""
+        our = _make_mon("GROUND", moves=[("earthquake", "GROUND", 100)])
+        bd = self._do_attack_ko(our, opp_fainted=False, our_move_id="earthquake")
+        self.assertAlmostEqual(bd.finishing_blow, 0.0, places=5)
+
+    def test_no_bonus_when_failed_to_move(self):
+        """our_failed_to_move=True → finishing_blow == 0 even if opp fainted."""
+        our = _make_mon("GROUND", moves=[("earthquake", "GROUND", 100)])
+        bd = self._do_attack_ko(our, opp_fainted=True, our_move_id="earthquake",
+                                our_failed_to_move=True)
+        self.assertAlmostEqual(bd.finishing_blow, 0.0, places=5)
+
+    def test_no_bonus_on_switch_turn(self):
+        """our_switch_to is set → finishing_blow == 0 even if opp fainted."""
+        our = _make_mon("GROUND", moves=[("earthquake", "GROUND", 100)])
+        bd = self._do_attack_ko(our, opp_fainted=True, our_switch_to="marowak")
+        self.assertAlmostEqual(bd.finishing_blow, 0.0, places=5)
+
+    def test_bonus_included_in_breakdown_total(self):
+        """finishing_blow contributes positively to bd.total."""
+        our = _make_mon("GROUND", moves=[("earthquake", "GROUND", 100)])
+        self.manager.record_action(_ctx(turn=1), 6)
+        self.manager._opp_active_hp_before = 0.12
+        battle = _battle(our_mon=our, opp_mon=None)
+        d = _delta(opp_fainted=True, our_move_id="earthquake", opp_hp_delta=-0.1)
+        self.manager.process_turn_reward(battle, d)
+        bd = self.manager._last_breakdown
+        self.assertAlmostEqual(bd.finishing_blow, FINISHING_BLOW_BONUS, places=5)
+        # total must exceed what it would be without finishing_blow
+        self.assertGreater(bd.total, bd.total - bd.finishing_blow)
+
+    def test_no_bonus_when_move_not_in_moves_dict(self):
+        """finishing_blow is 0 when the move_id isn't in mon.moves (e.g. not yet revealed)."""
+        our = _make_mon("GROUND")  # moves = {} — no revealed moves
+        bd = self._do_attack_ko(our, opp_fainted=True, our_move_id="earthquake")
+        self.assertAlmostEqual(bd.finishing_blow, 0.0, places=5)
+
+    def test_no_bonus_when_no_active_mon(self):
+        """finishing_blow is 0 when battle.active_pokemon is None."""
+        self.manager.record_action(_ctx(turn=1), 6)
+        self.manager._opp_active_hp_before = 0.12
+        battle = _battle(our_mon=None, opp_mon=None)   # no active mon
+        d = _delta(opp_fainted=True, our_move_id="earthquake", opp_hp_delta=-0.1)
+        self.manager.process_turn_reward(battle, d)
+        self.assertAlmostEqual(self.manager._last_breakdown.finishing_blow, 0.0, places=5)
+
+    def test_fires_on_full_hp_ko(self):
+        """finishing_blow fires even when the opponent was at 100% HP — no HP threshold."""
+        our = _make_mon("PSYCHIC", moves=[("psychic", "PSYCHIC", 90)])
+        bd = self._do_attack_ko(our, opp_fainted=True, our_move_id="psychic",
+                                opp_hp_before=1.0)
+        self.assertAlmostEqual(bd.finishing_blow, FINISHING_BLOW_BONUS, places=5)
+
+    def test_stacks_correctly_with_faint_opp(self):
+        """Both faint_opp and finishing_blow fire together on a damaging-move KO."""
+        our = _make_mon("GROUND", moves=[("earthquake", "GROUND", 100)])
+        self.manager.record_action(_ctx(turn=1), 6)
+        self.manager._opp_active_hp_before = 0.12
+        battle = _battle(our_mon=our, opp_mon=None)
+        d = _delta(opp_fainted=True, our_move_id="earthquake", opp_hp_delta=-0.1)
+        self.manager.process_turn_reward(battle, d)
+        bd = self.manager._last_breakdown
+        expected_faint_opp = FAINT_BASE + FAINT_HP_SCALE * 0.12   # 0.5 + 2.0*0.12 = 0.74
+        self.assertAlmostEqual(bd.faint_opp, expected_faint_opp, places=5)
+        self.assertAlmostEqual(bd.finishing_blow, FINISHING_BLOW_BONUS, places=5)
+        # Both contribute — total must be at least their sum
+        self.assertGreaterEqual(bd.total, expected_faint_opp + FINISHING_BLOW_BONUS)
+
+    def test_no_bonus_when_move_id_is_none(self):
+        """finishing_blow is 0 when our_move_id is None (e.g. nothing acted this turn)."""
+        our = _make_mon("GROUND", moves=[("earthquake", "GROUND", 100)])
+        self.manager.record_action(_ctx(turn=1), 6)
+        self.manager._opp_active_hp_before = 0.12
+        battle = _battle(our_mon=our, opp_mon=None)
+        # our_move_id=None with opp_fainted=True — edge case: opp died to residual damage
+        d = _delta(opp_fainted=True, our_move_id=None, opp_hp_delta=-0.1)
+        self.manager.process_turn_reward(battle, d)
+        self.assertAlmostEqual(self.manager._last_breakdown.finishing_blow, 0.0, places=5)
 
 
 if __name__ == "__main__":

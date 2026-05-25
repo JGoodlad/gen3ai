@@ -26,6 +26,7 @@ class RewardBreakdown:
     win_loss: float = 0.0
     explosion: float = 0.0         # bonus/penalty for opponent self-KO via Explosion/Selfdestruct
     explosion_block: float = 0.0   # Ghost immune or Protect blocked opponent Explosion
+    finishing_blow: float = 0.0    # damaging move secured the KO
 
     # Attack signals
     roar: float = 0.0
@@ -69,7 +70,7 @@ class RewardBreakdown:
     # Groups ordered by how frequently they produce non-zero values.
     # Each group's fields are listed in the order they should appear in the string.
     _GROUPS: ClassVar[tuple] = (
-        ("base",   ("hp_ours", "hp_opp", "faint_ours", "faint_opp", "win_loss", "explosion", "explosion_block")),
+        ("base",   ("hp_ours", "hp_opp", "faint_ours", "faint_opp", "win_loss", "explosion", "explosion_block", "finishing_blow")),
         ("attack", ("roar", "futile_attack", "futile_setup", "setup_low_hp",
                     "boost_utilized", "status_wasted", "repetition_tax", "struggle_tax")),
         ("switch", ("switch_base", "switch_bouncing_tax", "escape_threat_switch",
@@ -109,6 +110,7 @@ FAINT_BASE = 0.5        # minimum faint penalty/reward at 0% HP
 FAINT_HP_SCALE = 2.0   # scales faint cost/reward linearly with HP at time of faint
 HP_VALUE = 2.0
 VICTORY_VALUE = 30.0
+FINISHING_BLOW_BONUS = 0.5   # extra bonus for KO'ing with a damaging move
 STALL_TAX_START_TURN = 125
 STALL_TAX_PER_TURN = 0.1
 STRUGGLE_LOOP_TAX = -0.5
@@ -193,6 +195,8 @@ class Gen3RewardManager:
         self._our_active_hp_before: float = 1.0
         self._opp_active_hp_before: float = 1.0
         self._our_boosts_before: np.ndarray = np.zeros(7, dtype=np.int8)
+        self._last_opp_seen_by: dict[str, str] = {}
+        # maps our_species → opp_species when this mon last switched in (voluntary, not roared)
 
     def reset(self):
         self.switch_count = 0
@@ -216,6 +220,7 @@ class Gen3RewardManager:
         self._our_active_hp_before = 1.0
         self._opp_active_hp_before = 1.0
         self._our_boosts_before = np.zeros(7, dtype=np.int8)
+        self._last_opp_seen_by = {}
 
     def record_action(self, ctx: BattleContext, action: int) -> None:
         """
@@ -373,6 +378,13 @@ class Gen3RewardManager:
             return 0.0
         # Opponent must be alive at switch-in
         if opp_mon.fainted:
+            return 0.0
+
+        # Gate: only fire if the opponent has switched since this mon was last in.
+        # Same matchup without opponent switching = bonus already spent for this matchup.
+        our_species = our_mon.species
+        opp_species = opp_mon.species
+        if self._last_opp_seen_by.get(our_species) == opp_species:
             return 0.0
 
         # Confirmed SE via revealed move
@@ -608,6 +620,22 @@ class Gen3RewardManager:
         damage_dealt = max(0.0, -float(delta.opp_hp_delta.sum()))
         return effective_boost * BOOST_UTILIZED_SCALE * damage_dealt
 
+    def _compute_finishing_blow_bonus(self, delta: TurnDelta, battle) -> float:
+        """Extra bonus when a damaging move secures the KO."""
+        if not delta.opp_fainted:
+            return 0.0
+        if delta.our_move_id is None or delta.our_switch_to is not None:
+            return 0.0
+        if delta.our_failed_to_move:
+            return 0.0
+        mon = battle.active_pokemon
+        if not mon:
+            return 0.0
+        move = mon.moves.get(delta.our_move_id)
+        if move is None or move.base_power == 0:
+            return 0.0
+        return FINISHING_BLOW_BONUS
+
     def process_turn_reward(self, battle, delta: TurnDelta) -> float:
         """Computes the full reward for a completed turn from the TurnDelta.
 
@@ -645,6 +673,9 @@ class Gen3RewardManager:
                         # don't double-count with an explosion penalty on top.
                     break
 
+        # --- Finishing blow ---
+        bd.finishing_blow = self._compute_finishing_blow_bonus(delta, battle)
+
         # --- Attack signals ---
         bd.roar = self._compute_roar_bonus(delta, battle)
         bd.futile_attack = self._compute_futile_attack_penalty(delta, battle)
@@ -666,6 +697,11 @@ class Gen3RewardManager:
                 bd.pivot_protect, bd.pivot_status, bd.pivot_damage = self._compute_pivot_bonus(delta, battle)
                 bd.se_switch = self._compute_se_switch_bonus(delta, battle)
                 bd.sleep_out = self._compute_sleep_out_bonus(delta, battle)
+                # Update per-mon opponent tracker for future se_switch gating
+                our_mon_in = battle.active_pokemon
+                opp_mon_in = battle.opponent_active_pokemon
+                if our_mon_in and opp_mon_in and not opp_mon_in.fainted:
+                    self._last_opp_seen_by[our_mon_in.species] = opp_mon_in.species
             bd.sleep_in = self._compute_sleep_in_penalty(delta, battle)
 
         # --- Status signals ---
