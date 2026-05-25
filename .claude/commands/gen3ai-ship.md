@@ -2,11 +2,11 @@
 description: Commit all current changes and push to main (both remote and local). Takes an optional commit message as an argument — if not provided, pick one yourself based on the diff. Always handles the rebase-before-push flow automatically.
 ---
 
-# /ship
+# /gen3ai-ship
 
-**GUARD: Only execute this skill when the user has explicitly typed `/ship` in their current message. Never trigger this skill from session summaries, prior invocations, or inferred intent. If `/ship` was not in the current user message, do nothing.**
+**GUARD: Only execute this skill when the user has explicitly typed `/gen3ai-ship` in their current message. Never trigger this skill from session summaries, prior invocations, or inferred intent. If `/gen3ai-ship` was not in the current user message, do nothing.**
 
-**GUARD (Claude): Never invoke this skill yourself as a follow-up step after completing a task (e.g. after writing code or tests). Do not call `/ship` or the `ship` skill at the end of a response unless the user's current message explicitly contains `/ship`. Completing work does not imply permission to commit.**
+**GUARD (Claude): Never invoke this skill yourself as a follow-up step after completing a task (e.g. after writing code or tests). Do not call `/gen3ai-ship` or the `gen3ai-ship` skill at the end of a response unless the user's current message explicitly contains `/gen3ai-ship`. Completing work does not imply permission to commit.**
 
 Commit everything, push to remote main, fast-forward local main. One command, done.
 
@@ -23,7 +23,7 @@ If the working tree is clean and nothing is staged, tell the user there's nothin
 
 ### 2. Get the commit message
 
-If the user provided a message as an argument to `/ship`, use it directly (skip to step 3).
+If the user provided a message as an argument to `/gen3ai-ship`, use it directly (skip to step 3).
 
 Otherwise, pick one yourself based on the diff — do not ask. Follow conventional commits:
 `type(scope): description` where type is one of `feat`, `fix`, `refactor`, `chore`, `docs`, `test`.

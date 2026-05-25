@@ -2,7 +2,7 @@
 description: Create a resume branch pinned to the exact git hash a model checkpoint was saved on, then print the training command to continue from it. Takes the model directory path as an argument.
 ---
 
-# /resume-run
+# /gen3ai-resume-run
 
 Given a model directory, create a branch at the exact git hash it was saved on and print the command to resume training.
 
