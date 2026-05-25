@@ -108,6 +108,7 @@ def record_snapshot_in_history(
     lr: float,
     n_epochs: int,
     hparams: Optional[dict] = None,
+    git_hash: Optional[str] = None,
 ) -> None:
     """Append or update a checkpoint entry in snapshot_history within metadata.json.
 
@@ -124,6 +125,7 @@ def record_snapshot_in_history(
     entry = {"lr": lr, "n_epochs": n_epochs}
     if hparams:
         entry.update(hparams)
+    entry["git_hash"] = git_hash or get_git_hash()
     history[checkpoint_name] = entry
     meta["snapshot_history"] = history
     with open(meta_path, "w") as f:
@@ -136,17 +138,19 @@ def record_checkpoint(
     lr: float,
     n_epochs: int,
     hparams: Optional[dict] = None,
+    git_hash: Optional[str] = None,
 ) -> None:
     """Write per-checkpoint metadata file and append to run-level snapshot_history.
 
     checkpoint_path: full path to the .zip (with or without extension).
     Call this whenever a checkpoint .zip is saved.
     """
-    write_checkpoint_metadata(checkpoint_path, lr, n_epochs, hparams=hparams)
+    resolved_hash = git_hash or get_git_hash()
+    write_checkpoint_metadata(checkpoint_path, lr, n_epochs, hparams=hparams, git_hash=resolved_hash)
     name = os.path.basename(checkpoint_path)
     if not name.endswith(".zip"):
         name += ".zip"
-    record_snapshot_in_history(model_dir, name, lr, n_epochs, hparams=hparams)
+    record_snapshot_in_history(model_dir, name, lr, n_epochs, hparams=hparams, git_hash=resolved_hash)
 
 
 def write_checkpoint_metadata(
@@ -154,6 +158,7 @@ def write_checkpoint_metadata(
     current_lr: float,
     current_epochs: int,
     hparams: Optional[dict] = None,
+    git_hash: Optional[str] = None,
 ) -> None:
     """Write lr/epochs (and optional hparams) alongside a checkpoint .zip.
 
@@ -163,6 +168,7 @@ def write_checkpoint_metadata(
     data = dict(hparams) if hparams else {}
     data["current_lr"] = current_lr
     data["current_epochs"] = current_epochs
+    data["git_hash"] = git_hash or get_git_hash()
     with open(_checkpoint_metadata_path(checkpoint_path), "w") as f:
         json.dump(data, f, indent=2)
 

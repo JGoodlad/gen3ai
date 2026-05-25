@@ -356,10 +356,11 @@ _SAMPLE_HPARAMS = {
 def test_write_checkpoint_metadata_includes_hparams():
     with tempfile.TemporaryDirectory() as tmpdir:
         ckpt = os.path.join(tmpdir, "checkpoint_500000_steps.zip")
-        write_checkpoint_metadata(ckpt, current_lr=2.5e-5, current_epochs=7, hparams=_SAMPLE_HPARAMS)
+        write_checkpoint_metadata(ckpt, current_lr=2.5e-5, current_epochs=7, hparams=_SAMPLE_HPARAMS, git_hash="deadbeef")
         result = read_checkpoint_metadata(ckpt)
     for key, val in _SAMPLE_HPARAMS.items():
         assert result[key] == pytest.approx(val), f"hparams[{key!r}] not written correctly"
+    assert result["git_hash"] == "deadbeef"
 
 
 def test_write_checkpoint_metadata_lr_epochs_win_over_hparams():
@@ -382,18 +383,19 @@ def test_record_snapshot_in_history_includes_hparams(version):
         save_model_snapshot(tmpdir, version, git_hash="abc")
         record_snapshot_in_history(
             tmpdir, "checkpoint_50000000_steps.zip",
-            lr=2.5e-4, n_epochs=10, hparams=_SAMPLE_HPARAMS,
+            lr=2.5e-4, n_epochs=10, hparams=_SAMPLE_HPARAMS, git_hash="cafebabe",
         )
         with open(os.path.join(tmpdir, "metadata.json")) as f:
             entry = json.load(f)["snapshot_history"]["checkpoint_50000000_steps.zip"]
     for key, val in _SAMPLE_HPARAMS.items():
         assert entry[key] == pytest.approx(val), f"history entry missing hparams[{key!r}]"
+    assert entry["git_hash"] == "cafebabe"
 
 
 def test_record_checkpoint_propagates_hparams(version):
     with tempfile.TemporaryDirectory() as tmpdir:
         ckpt = os.path.join(tmpdir, "checkpoint_50000000_steps.zip")
-        record_checkpoint(tmpdir, ckpt, lr=3e-4, n_epochs=10, hparams=_SAMPLE_HPARAMS)
+        record_checkpoint(tmpdir, ckpt, lr=3e-4, n_epochs=10, hparams=_SAMPLE_HPARAMS, git_hash="aabbccdd")
 
         per_ckpt = read_checkpoint_metadata(ckpt)
         with open(os.path.join(tmpdir, "metadata.json")) as f:
@@ -402,6 +404,8 @@ def test_record_checkpoint_propagates_hparams(version):
     for key, val in _SAMPLE_HPARAMS.items():
         assert per_ckpt[key] == pytest.approx(val), f"per-checkpoint JSON missing hparams[{key!r}]"
         assert history_entry[key] == pytest.approx(val), f"history entry missing hparams[{key!r}]"
+    assert per_ckpt["git_hash"] == "aabbccdd"
+    assert history_entry["git_hash"] == "aabbccdd"
 
 
 def test_save_model_snapshot_includes_hparams(version):
