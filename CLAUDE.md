@@ -10,7 +10,7 @@ Architecture constants (embedding dims, layer sizes, etc.) are defined as module
 
 This is a personal project — no pull requests needed. Work is pushed directly to `main`, but **all edits and commits must happen in a worktree or branch, never on the main checkout itself.**
 
-Main must never be in a dirty state. The `/ship` skill is the only mechanism that lands code on main — it commits in the worktree branch and pushes:
+Main must never be in a dirty state. The `/gen3ai-ship` skill is the only mechanism that lands code on main — it commits in the worktree branch and pushes:
 
 ```bash
 git push origin <worktree-branch>:main
@@ -18,7 +18,7 @@ git push origin <worktree-branch>:main
 
 Never `git add` or `git commit` from `/home/goodlad/dev/gen3ai` directly.
 
-**NEVER run `git add`, `git commit`, or `git push` unless the user's current message explicitly contains `/ship`.** Completing a task, writing tests, or any other finishing signal is NOT permission to commit. This applies even when the task feels "done". Only `/ship` authorises a commit.
+**NEVER run `git add`, `git commit`, or `git push` unless the user's current message explicitly contains `/gen3ai-ship`.** Completing a task, writing tests, or any other finishing signal is NOT permission to commit. This applies even when the task feels "done". Only `/gen3ai-ship` authorises a commit.
 
 ---
 
