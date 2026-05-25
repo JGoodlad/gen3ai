@@ -113,6 +113,126 @@ Careful Nature
 - Sleep Talk
 """
 
+# Second team variant: keeps the three ability quirks the resolver depends on
+# (Volt Absorb, Flash Fire, Thick Fat) but swaps the rest in for 4×-weak mons.
+# This drives opp HP into the bucketed-2.0 path that revealed the production
+# crash — Salamence 4× to Ice (Jolteon, Gengar), Swampert 4× to Grass (Zapdos,
+# Raikou), Forretress 4× to Fire (Starmie, Alakazam).
+OUR_TEAM_QUADWEAK = """\
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 252 HP / 4 Atk / 252 Spe
+Jolly Nature
+- Dragon Claw
+- Earthquake
+- Fire Blast
+- Rock Slide
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 196 Atk / 72 Spe
+Adamant Nature
+- Earthquake
+- Surf
+- Ice Beam
+- Roar
+
+Forretress @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 4 Atk / 252 SpD
+Sassy Nature
+- Spikes
+- Rapid Spin
+- Earthquake
+- Explosion
+
+Lanturn @ Leftovers
+Ability: Volt Absorb
+EVs: 252 HP / 68 Def / 188 SpD
+Bold Nature
+- Surf
+- Thunderbolt
+- Ice Beam
+- Thunder Wave
+
+Arcanine @ Leftovers
+Ability: Flash Fire
+EVs: 4 HP / 252 Atk / 252 Spe
+Adamant Nature
+- Flamethrower
+- Extreme Speed
+- Body Slam
+- Iron Tail
+
+Snorlax @ Leftovers
+Ability: Thick Fat
+EVs: 252 HP / 16 Atk / 136 Def / 104 SpD
+Careful Nature
+- Body Slam
+- Earthquake
+- Rest
+- Sleep Talk
+"""
+
+# Third our-team variant — exercises 0.25× → bucketed 0.5 (Skarmory's Steel/Flying
+# is double-resisted by Grass, hit at 0.25× by opp HP Grass) and a different 4× case
+# (Gyarados 4× to Electric, paired with Tentacruel's HP Electric in OPP_TEAM_VARIETY).
+OUR_TEAM_VARIETY = """\
+Gyarados @ Leftovers
+Ability: Intimidate
+EVs: 156 HP / 100 Atk / 252 Spe
+Adamant Nature
+- Dragon Dance
+- Earthquake
+- Return
+- Roar
+
+Skarmory @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 232 Def / 24 Spe
+Impish Nature
+- Spikes
+- Drill Peck
+- Roar
+- Rest
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 252 HP / 80 Atk / 176 SpD
+Adamant Nature
+- Rock Slide
+- Earthquake
+- Pursuit
+- Roar
+
+Vaporeon @ Leftovers
+Ability: Water Absorb
+EVs: 204 HP / 252 Def / 52 SpD
+Bold Nature
+- Surf
+- Ice Beam
+- Acid Armor
+- Rest
+
+Weezing @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 252 Def / 4 SpD
+Bold Nature
+- Sludge Bomb
+- Thunderbolt
+- Fire Blast
+- Rest
+
+Blissey @ Leftovers
+Ability: Natural Cure
+EVs: 4 HP / 252 Def / 252 SpD
+Bold Nature
+- Soft-Boiled
+- Ice Beam
+- Thunder Wave
+- Toxic
+"""
+
 # ---------------------------------------------------------------------------
 # Opponent team: every mon runs HP with a known type.
 # IVs are auto-corrected by Gen3Teambuilder via fix_gen3_hp_ivs.
@@ -174,14 +294,77 @@ Timid Nature
 - Rest
 """
 
+# Second opp team variant — different HP-type coverage. Tentacruel runs HP Electric
+# (only competitive HP Electric user), Celebi runs HP Fire. Ground truth for these
+# new species is added to OPP_HP_GROUND_TRUTH; species shared with OPP_TEAM use the
+# same HP type (consistency is required because the truth dict is per-species, not
+# per-team).
+OPP_TEAM_VARIETY = """\
+Tentacruel @ Leftovers
+Ability: Liquid Ooze
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+- Surf
+- Hidden Power [Electric]
+- Ice Beam
+- Toxic
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 4 Def / 252 SpD
+Calm Nature
+- Recover
+- Hidden Power [Fire]
+- Psychic
+- Calm Mind
+
+Jolteon @ Leftovers
+Ability: Volt Absorb
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+- Thunderbolt
+- Hidden Power [Ice]
+- Shadow Ball
+- Substitute
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 248 HP / 216 Def / 44 Spe
+Bold Nature
+- Thunderbolt
+- Hidden Power [Grass]
+- Roar
+- Rest
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+- Surf
+- Hidden Power [Fire]
+- Ice Beam
+- Rapid Spin
+
+Alakazam @ Lum Berry
+Ability: Synchronize
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+- Psychic
+- Hidden Power [Fire]
+- Shadow Ball
+- Recover
+"""
+
 # True HP types for each opponent species (lowercase, matches HIDDEN_POWER_TYPE_ORDER names)
 OPP_HP_GROUND_TRUTH: dict[str, str] = {
-    "jolteon":   "ice",
-    "starmie":   "fire",
-    "zapdos":    "grass",
-    "alakazam":  "fire",
-    "gengar":    "ice",
-    "raikou":    "grass",
+    "jolteon":    "ice",
+    "starmie":    "fire",
+    "zapdos":     "grass",
+    "alakazam":   "fire",
+    "gengar":     "ice",
+    "raikou":     "grass",
+    "tentacruel": "electric",
+    "celebi":     "fire",
 }
 
 
@@ -277,6 +460,29 @@ class HiddenPowerTrackerFuzzPlayer(Player):
         return self._trackers[tag]
 
     @staticmethod
+    def _snapshot_target(battle, species, prev_team_status):
+        """Wrap a live mon with the historical status from prev_team_status.
+
+        Critical for the Flash Fire-vs-frozen case: a frozen Flash Fire mon hit
+        by HP Fire takes 0.5× damage AND thaws AND often faints from the hit.
+        By observation time, live status is None or FNT — neither matches the
+        FRZ that was true when the move resolved. Using the snapshot is the
+        only way to evaluate Flash Fire's suppression correctly.
+        """
+        live_mon = next(
+            (m for m in battle.team.values() if m.species == species), None
+        )
+        if live_mon is None:
+            return None
+        return _HpTargetMon(
+            species=live_mon.species,
+            type_1=live_mon.type_1,
+            type_2=live_mon.type_2,
+            ability=live_mon.ability,
+            status=prev_team_status.get(species, live_mon.status),
+        )
+
+    @staticmethod
     def _resolve_target(battle, prev_active, prev_fainted, prev_was_switch,
                         prev_team_status):
         """Mirror of EpisodeTracker._resolve_hp_target using raw battle state.
@@ -287,6 +493,9 @@ class HiddenPowerTrackerFuzzPlayer(Player):
 
         Handles voluntary switches (priority +6, always before HP) and Baton Pass
         (move action that changes our active mid-turn; speed-based ordering vs HP).
+
+        All return paths go through _snapshot_target so the returned mon's
+        status reflects the moment HP fired, not the post-resolution state.
         """
         curr_fainted = frozenset(
             m.species for m in battle.team.values() if m.fainted
@@ -295,8 +504,8 @@ class HiddenPowerTrackerFuzzPlayer(Player):
 
         # Case A: prev_active fainted → opp HP hit them on the field.
         if prev_active in newly_fainted:
-            return next(
-                (m for m in battle.team.values() if m.species == prev_active), None
+            return HiddenPowerTrackerFuzzPlayer._snapshot_target(
+                battle, prev_active, prev_team_status
             )
 
         curr_active_mon = battle.active_pokemon
@@ -335,19 +544,8 @@ class HiddenPowerTrackerFuzzPlayer(Player):
 
         if target_species is None:
             return None
-        live_mon = next(
-            (m for m in battle.team.values() if m.species == target_species), None
-        )
-        if live_mon is None:
-            return None
-        # Override .status with the historical status at the start of the turn
-        # HP fired in. See episode_tracker._resolve_hp_target for the reasoning.
-        return _HpTargetMon(
-            species=live_mon.species,
-            type_1=live_mon.type_1,
-            type_2=live_mon.type_2,
-            ability=live_mon.ability,
-            status=prev_team_status.get(target_species, live_mon.status),
+        return HiddenPowerTrackerFuzzPlayer._snapshot_target(
+            battle, target_species, prev_team_status
         )
 
     def choose_move(self, battle):
@@ -576,8 +774,19 @@ async def main(n_battles: int = 500) -> None:
     ts = int(time.time()) % 100000
     print(f"HiddenPowerTracker fuzz — gen3ou — {n_battles} battles", flush=True)
 
-    our_tb = Gen3Teambuilder(OUR_TEAM)
-    opp_tb = Gen3Teambuilder(OPP_TEAM)
+    # Rotate three our-team variants and two opp-team variants — 6 combinations
+    # in total, each sampled randomly per battle by Gen3Teambuilder.yield_team():
+    #   A. OUR_TEAM             — ability-immunity coverage (Volt Absorb / Water Absorb /
+    #                             Levitate / Flash Fire / Thick Fat / Natural Cure)
+    #   B. OUR_TEAM_QUADWEAK    — Salamence / Swampert / Forretress for 4× hits from
+    #                             opp HP Ice / Grass / Fire respectively
+    #   C. OUR_TEAM_VARIETY     — Skarmory for 0.25× hits from opp HP Grass, Gyarados
+    #                             for 4× from opp HP Electric (Tentacruel in OPP_VARIETY)
+    #   1. OPP_TEAM             — HP Ice / Fire / Grass coverage
+    #   2. OPP_TEAM_VARIETY     — adds HP Electric (Tentacruel) and a second HP Fire
+    #                             user (Celebi)
+    our_tb = Gen3Teambuilder([OUR_TEAM, OUR_TEAM_QUADWEAK, OUR_TEAM_VARIETY])
+    opp_tb = Gen3Teambuilder([OPP_TEAM, OPP_TEAM_VARIETY])
 
     fuzz = HiddenPowerTrackerFuzzPlayer(
         battle_format=BATTLE_FORMAT,
