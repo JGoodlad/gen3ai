@@ -7,6 +7,9 @@ Restarts are safe — already-saved files are not overwritten.
 Usage:
     python src/main/collect_replays.py --format gen3ou --save-dir replays/gen3ou
     python src/main/collect_replays.py --format gen3ou --save-dir replays/gen3ou --local
+
+Replays are written to <save-dir>/<YYYY-MM-DD>/ — the date subfolder is computed per battle,
+so the tool rolls over to a new folder at midnight without needing a restart.
 """
 
 import argparse
@@ -18,6 +21,7 @@ import sys
 import threading
 import time
 from dataclasses import dataclass
+from datetime import datetime
 from pathlib import Path
 from typing import List, Optional
 
@@ -94,9 +98,10 @@ async def _run(
     spectator: BattleSpectator,
     state: CollectorState,
 ) -> None:
-    save_dir.mkdir(parents=True, exist_ok=True)
     async for battle in spectator.watch(format_id):
-        path = save_dir / f"{battle.battle_tag}.log"
+        dated_dir = save_dir / datetime.now().strftime("%Y-%m-%d")
+        dated_dir.mkdir(parents=True, exist_ok=True)
+        path = dated_dir / f"{battle.battle_tag}.log"
         saved = not path.exists()
         if saved:
             path.write_text(battle.log_text, encoding="utf-8")
