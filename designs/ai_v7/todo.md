@@ -1,151 +1,124 @@
-# AI v7 — Todo
+# AI v6 — Todo
 
-**"Rustifying" the battle simulator.** v7 replaces the Node.js MCTS bridge (ai_v5/v6)
-with a Rust battle simulator called via PyO3. The Rust sim runs in-process with near-zero
-IPC overhead, enabling 50 000+ rollouts per turn rather than ~1 000 with the JS bridge.
-This throughput increase unlocks two capabilities that were impractical before:
-
-1. **Deep MCTS at inference time** — with 50× more rollouts in the same time budget,
-   the agent can search far deeper before committing to a move.
-
-2. **MCTS during training data generation** — generating PPO training samples using
-   full MCTS on both sides. With the JS bridge, this would reduce throughput by ~1 000×;
-   with the Rust sim, the overhead drops to ~5–10×, making it feasible at moderate scale.
-
-The end goal: a model that can train against **either** fixed-depth search **or** full
-MCTS, with the Rust sim as the common engine for both. Hidden state (opponent sleep
-duration, unknown items, unrevealed team slots) is explicitly tagged via `SampledValues`
-at state construction time so every MCTS rollout knows exactly what it made up.
+The generalist trained in v3–v5 is a strong all-rounder. v6 has two goals: (1) identify
+the best teams and specialise a model per team, then take them to the ladder; (2) integrate
+cheap MCTS into the training loop so the final model trains against better-quality action
+selections on both sides — bridging toward v7's full training-time MCTS via the Rust sim.
 
 ---
 
-## Version Context
+## Step 1 — Team Evaluation
 
-| Version | Sim | Rollouts/turn (inference) | Training data |
-|---------|-----|--------------------------|---------------|
-| ai_v5 | Node.js bridge | ~1 000 | Raw policy |
-| ai_v6 | Node.js bridge | ~1 000 | K=3 action sampling (shallow) |
-| ai_v7 | Rust sim (PyO3) | 50 000+ | Full MCTS both sides |
+Run the v5 MCTS agent through all 32 sample teams against the v4 league pool, measuring
+win rate per team. Select the top 3. See `designs/ai_v6/impl_step1_team_eval.md`.
 
----
-
-## Step 1 — Showdown Bridge
-
-A persistent Node.js subprocess that drives the Showdown sim library directly —
-no server, no WebSocket, no `npm run showdown`. Just `require()` the already-compiled
-`dist/` and expose a newline-delimited JSON protocol over stdin/stdout. This is the
-oracle for all subsequent fuzz testing.
-
-See `designs/ai_v7/impl_step1_showdown_bridge.md`.
-
-**Deliverables:**
-- `src/utils/bridge/sim_battle.js` — persistent Node.js bridge
-- `src/utils/bridge/sim_battle_client.py` — Python wrapper
-- `src/utils/bridge/sim_battle_client_test.py` — unit tests (mock subprocess)
-- `src/utils/bridge/sim_battle_integration_test.py` — integration tests (real Node process)
+**Design questions to resolve:**
+- **Games per team**: 200 gives ~±7% confidence interval at 50% win rate. Increase to
+  500 if rankings are tight (within a few percent of each other).
+- **Opponent pool**: use the full v4 league (PFSP-weighted) or a fixed benchmark set
+  (e.g., best league snapshot + SimpleHeuristicsPlayer + MCTSPlayer)? Fixed benchmark is
+  more reproducible; PFSP-weighted is more realistic.
 
 ---
 
-## Step 2 — Rust Scaffold + First Fuzz
+## Step 2 — Per-Team Specialisation
 
-Stand up `src/sim/`, port Gen5RNG, deserialize Showdown battle state, implement
-damage calc and basic turn resolution, expose via PyO3, and run the first fuzz
-comparison against the bridge. The fuzz harness is Python — it holds both handles
-(bridge subprocess + Rust via PyO3) and diffs their outputs.
+Fine-tune one model per top-3 team, starting from the v5 generalist checkpoint, with the
+team fixed for the duration. See `designs/ai_v6/impl_step2_specialisation.md`.
 
-See `designs/ai_v7/impl_step2_rust_scaffold.md`.
-
-**Deliverables:**
-- `src/sim/` — Rust crate (`state.rs`, `prng.rs`, `damage.rs`, `turn.rs`, `python.rs`)
-- `src/sim/sim_binding_test.py` — Python pytest suite for the PyO3 API
-- `src/agents/mcts/rust_sim_fuzz_e2e_test.py` — fuzz harness vs bridge
-
----
-
-## Step 3 — Full Gen3 Mechanics
-
-Extend the Rust sim to cover all Gen 3 mechanics until the fuzz harness passes 10k
-battles without divergence. Work is mechanic-by-mechanic guided entirely by fuzz
-failures — no speculative implementation. Mechanic groups are largely independent
-after the damage formula is confirmed — parallel agents can tackle status, items,
-hazards, volatiles, weather, complex moves, and abilities concurrently.
-
-See `designs/ai_v7/impl_step3_gen3_mechanics.md`.
-
-**Deliverables:**
-- `src/sim/src/turn.rs` — all mechanic implementations
-- `src/sim/src/damage.rs` — formula refinements
-- `src/sim/src/data.rs` — physical/special split, item tables
-
-**Stopping criterion:** 10k random battles, zero state divergences vs Showdown.
+**Design questions to resolve:**
+- **Opponent distribution during fine-tuning**: league pool (as in v4 self-play) or the
+  other two specialised teams as additional opponents? The latter adds within-stable
+  coverage but risks over-fitting to the stable matchups.
+- **Run length**: 10–15M steps per team. Start at 10M; extend if win rate is still rising.
+- **Parallelism**: the three fine-tuning runs are independent — run them concurrently on
+  separate GPUs if available.
 
 ---
 
-## Step 4 — Encoder Dual Path
+## Step 3 — Ladder Run
 
-Introduce `EncoderState` as the single encoder input type. Implement adapters from
-both poke-env and Rust. Oracle fuzz test: at each real battle decision point, assert
-both adapters produce identical observation vectors.
+Deploy each of the three specialised MCTS players on the real Showdown ladder. Track ELO
+per team and use the results to decide which team is the primary ladder entry.
+See `designs/ai_v6/impl_step3_ladder.md`.
 
----
-
-## Step 5 — MCTS with Rust Sim (Inference)
-
-Replace the ai_v5/v6 Node.js bridge with the Rust sim for inference-time MCTS.
-`fork()` becomes `rust_state.clone()` (a memcpy — no serialization, no IPC).
-Leaf evaluation is batched (accumulate K leaves → one network call, amortizing GPU
-round-trip latency). `SampledValues` makes all hidden-state guesses explicit.
-
-**Key changes vs ai_v5 MCTS:**
-- `SimClient` → in-process `rust_state.clone()` (fork is free)
-- `step()` → `rust_sim.step_turn(state, p1, p2)` (no subprocess, no JSON)
-- Leaf batch size K replaces the per-turn neural-net call; tune to GPU latency
+**Design questions to resolve:**
+- **Account strategy**: one account per team (clean ELO per team), or rotate teams on a
+  single account? Separate accounts give cleaner data.
+- **Games per team**: 100 ladder games per team to get a stable ELO estimate.
+- **Stopping criterion**: stop when ELO has been stable (±30 points) for 30+ consecutive
+  games. A rising ELO after 100 games means keep playing, not stop.
 
 ---
 
-## Step 6 — MCTS in Training + Evaluation
+## Step 4 — Cheap MCTS in Training
 
-### 6a — Training with Rust MCTS
+Integrate shallow action sampling into the PPO self-play data collection loop. The Node.js
+bridge (from ai_v5 Step 5) is too slow for deep MCTS during training, but a very shallow
+sweep — `K=3` rollouts per legal action, `max_depth=1` — adds only ~30ms per decision and
+requires no changes to the bridge protocol.
 
-Use the Rust sim to generate PPO training samples via full MCTS on both sides. Both
-the learning agent and its opponents select training-time actions by running N rollouts
-from the current state, replacing the raw policy or the shallow action sampling from v6.
+**What changes:**
+- The training env's `choose_move()` runs flat action sampling instead of a raw policy
+  forward pass.
+- Both sides see improved action quality — not just our agent.
+- The PPO policy now trains on trajectories where actions were chosen with at least a
+  one-ply lookahead and 3-rollout confirmation per option.
 
-With the Rust sim, the overhead is ~5–10× vs. raw policy training (compared to ~1 000×
-with the JS bridge), making this feasible at large scale.
+**Expected benefit:** the model learns to value positions that are favourable for MCTS-like
+play, rather than positions that happen to look good to the raw policy. This should transfer
+positively when the model is later used with full MCTS at inference time.
 
-**Training modes to benchmark:**
-- **Raw policy** (v5 baseline): single forward pass per decision
-- **Action sampling K=3** (v6): 3 rollouts per legal action, depth 1
-- **MCTS N=1 000** (v7): full tree search, depth 5, one-side (learning agent only)
-- **MCTS N=1 000 both sides** (v7): full tree search for both players in self-play
+**Tuning knobs:**
+- `K` (rollouts per action): start at 3. Increase if throughput permits.
+- `max_depth`: keep at 1 for training (pure value-head leaf evaluation, minimal RNG
+  accumulation). Depth 1 means: fork, take action, ask `V_θ` for the resulting state.
+- **Throughput**: measure steps/second before and after. The target is ≤ 2× slowdown vs.
+  raw policy training. If slower, reduce `K` or disable for bench/utility Pokémon (only
+  run sampling when the active Pokémon has a non-trivial choice).
 
-Each mode produces different training data quality at different throughput costs.
-Measure win rate vs. v6 league after 15M steps per mode.
+**Design questions to resolve:**
+- **Both sides vs. our side only**: running sampling on both sides doubles the bridge
+  calls. Start with both sides for data quality; if throughput is unacceptable, sample
+  only for our agent and use the raw policy for the opponent.
+- **League opponent**: should league agents also use action sampling, or only the
+  learning agent? League agents with sampling are harder opponents; without sampling they
+  are consistent with how they were evaluated in v5.
 
-### 6b — Evaluation + Tuning
-
-Benchmark rollout throughput vs. the ai_v5/v6 Node bridge. Ablate `max_depth` and leaf
-batch size K. Measure win rate vs. v6 league.
-
-**Targets:**
-- ≥ 50k rollouts/turn at inference (vs ~1k in ai_v5/v6)
-- Win rate ≥ v6 MCTS baseline with equal compute
-- Training throughput ≥ 50k steps/hour with MCTS-quality samples
+**Stopping criterion:** v6 Step 4 is complete when:
+- Training with `K=3, max_depth=1` sampling runs without throughput regression > 2×
+- Win rate (v5 checkpoint evaluated with full MCTS) does not regress — the model trained
+  with cheap MCTS should be at least as strong as the raw-policy baseline
+- Ladder ELO (with full MCTS at inference) is ≥ Step 3 baseline
 
 ---
 
-## Design Questions
+## Future Work — Meta Alignment
 
-- **Rust sim scope**: implement only mechanics that appear in the 32 sample teams, or
-  aim for full Gen3OU coverage? Start narrow (sample teams cover ~80% of mechanics),
-  expand as fuzz failures demand.
-- **Leaf batch size K**: profile on dev hardware. Likely 64–256.
-- **MCTS parallelism**: multiple Python workers each with their own in-process Rust
-  sim, or single-process Rust MCTS calling back to Python only for leaf eval?
-  Single-process Rust is simpler; try it first.
-- **Training MCTS mode**: one-side (our agent only) vs. both sides? One-side is a
-  cleaner experimental control; both sides is closer to AlphaZero-style self-play.
-- **Curriculum**: start training with raw policy, then switch to MCTS after N steps?
-  Or use MCTS from the start? MCTS from the start is more principled; raw-policy warmup
-  may stabilise early training.
+The current setup measures win rate against the v4 league, which is a proxy for ladder
+performance. The league may not reflect the real Gen 3 OU meta distribution — certain
+teams and strategies appear far more frequently on the ladder than in self-play.
+
+Two directions to explore in a future version:
+
+**Ladder-weighted team selection**: after the initial ladder run, feed collected replays
+back into the team completion model and re-run the team evaluator, this time weighting
+opponents by their ladder frequency rather than league composition. The "best team"
+ranking may shift significantly once the opponent distribution reflects real ladder play.
+
+**Meta self-alignment**: continuously update the opponent pool during specialisation
+fine-tuning using replays collected from the ladder. The agent trains against what it
+actually encounters, closing the gap between league proxy and ladder reality. This is a
+training loop, not a one-shot evaluation — it requires the ladder daemon (v5 Step 1) to
+run concurrently with fine-tuning.
+
+---
+
+## Handoff to v7
+
+v6 ends with a strong specialised agent on the ladder and the infrastructure for cheap
+MCTS in training. v7 picks up here by replacing the Node.js bridge with a Rust sim
+(PyO3, in-process), enabling:
+- 50 000+ rollouts/turn at inference (vs. ~1 000 with the JS bridge)
+- Full MCTS during training data generation (previously blocked by JS bridge throughput)
+- Training against MCTS-quality opponents — the final frontier for data quality

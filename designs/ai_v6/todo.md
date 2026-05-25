@@ -1,124 +1,117 @@
-# AI v6 — Todo
-
-The generalist trained in v3–v5 is a strong all-rounder. v6 has two goals: (1) identify
-the best teams and specialise a model per team, then take them to the ladder; (2) integrate
-cheap MCTS into the training loop so the final model trains against better-quality action
-selections on both sides — bridging toward v7's full training-time MCTS via the Rust sim.
+# AI v5 — Todo
 
 ---
 
-## Step 1 — Team Evaluation
+## Step 1 — Replay Collection ✓ DONE
 
-Run the v5 MCTS agent through all 32 sample teams against the v4 league pool, measuring
-win rate per team. Select the top 3. See `designs/ai_v6/impl_step1_team_eval.md`.
+Passive spectator client that connects to Showdown, discovers active Gen 3 OU battles,
+and saves the complete battle logs for offline use. See
+`designs/ai_v5/impl_step1_replay_collection.md`.
+
+**Deliverables:**
+- `src/poke_env/spectator/` — `BattleSpectator` async generator, `SpectatedBattle` pure data object
+- `src/main/collect_replays.py` — long-running daemon with Rich dashboard
+- `src/poke_env/spectator/spectated_battle_test.py` — 9 unit tests
+- `src/poke_env/spectator/spectator_e2e_test.py` — live server test + round-trip log parse
+
+**Status:** Daemon actively collecting at `replays/showdown/1/`.
+
+---
+
+## Step 2 — Behavioural Cloning
+
+Pre-train the policy on (observation, action) pairs extracted from human replay logs, then
+hand off to RL fine-tuning. Gives the agent a strong human prior so RL exploration starts
+from a competent baseline rather than random. See `designs/ai_v5/impl_step2_bc.md`.
 
 **Design questions to resolve:**
-- **Games per team**: 200 gives ~±7% confidence interval at 50% win rate. Increase to
-  500 if rankings are tight (within a few percent of each other).
-- **Opponent pool**: use the full v4 league (PFSP-weighted) or a fixed benchmark set
-  (e.g., best league snapshot + SimpleHeuristicsPlayer + MCTSPlayer)? Fixed benchmark is
-  more reproducible; PFSP-weighted is more realistic.
+- **Mask synthesis**: spectated logs lack `|request|` JSON (no PP data). Options: skip
+  turns where exact options are unknown, or synthesise a best-effort mask from the known
+  moveset and infer PP from move-use history.
+- **Class imbalance**: switch actions are far less frequent than move actions — weighted
+  sampling or focal loss needed.
+- **Stopping criterion**: monitor validation loss to avoid mode collapse (overfit to the
+  most common move). Early stopping when val loss plateaus or rises.
 
 ---
 
-## Step 2 — Per-Team Specialisation
+## Step 3 — Team Completion Model
 
-Fine-tune one model per top-3 team, starting from the v5 generalist checkpoint, with the
-team fixed for the duration. See `designs/ai_v6/impl_step2_specialisation.md`.
+A masked-slot prediction model (BERT-style) that, given the opponent's revealed Pokémon
+mid-game, outputs a distribution over the unrevealed slots. This is the world-sampling
+step for MCTS: at the start of each search trajectory, sample one complete team hypothesis
+from this distribution. See `designs/ai_v5/impl_step3_team_completion.md` and the
+detailed architecture and data-pipeline notes in
+`designs/ai_v5/design_team_completion_detail.md`.
+Ladder data sources and opponent-sampling rationale are in
+`designs/ai_v5/design_ladder_sampling_and_prediction.md`.
 
 **Design questions to resolve:**
-- **Opponent distribution during fine-tuning**: league pool (as in v4 self-play) or the
-  other two specialised teams as additional opponents? The latter adds within-stable
-  coverage but risks over-fitting to the stable matchups.
-- **Run length**: 10–15M steps per team. Start at 10M; extend if win rate is still rising.
-- **Parallelism**: the three fine-tuning runs are independent — run them concurrently on
-  separate GPUs if available.
+- **Backbone freezing**: freeze the PPO role encoder + embeddings and train only the new
+  transformer head, or fine-tune the backbone jointly once the head has converged?
+- **Inference mode**: sample one hypothesis per MCTS trajectory (stochastic, diverse) vs.
+  argmax (deterministic, biased toward common teams). Stochastic is correct for PIMC.
+- **Data sources**: 770 curated teams + self-play JSONL (from `--team-log`) + scraped
+  ladder replays. Which combination is needed before MCTS quality is acceptable?
 
 ---
 
-## Step 3 — Ladder Run
+## Step 5 — MCTS
 
-Deploy each of the three specialised MCTS players on the real Showdown ladder. Track ELO
-per team and use the results to decide which team is the primary ladder entry.
-See `designs/ai_v6/impl_step3_ladder.md`.
+MCTS used at **inference time only** as a policy improvement operator on top of the
+trained PPO network. The neural network is never used to generate MCTS training data —
+environment stepping is the rollout bottleneck (~10ms per step), making MCTS-based data
+generation ~1000× too slow to collect 150M training steps. Following Wang (2024) exactly:
+20 workers, 10 rollouts per sync cycle, Showdown as the game simulator, policy+value
+networks for action selection and leaf evaluation, team completion model for hidden info
+sampling. See `designs/ai_v5/impl_step5_mcts.md`.
 
 **Design questions to resolve:**
-- **Account strategy**: one account per team (clean ELO per team), or rotate teams on a
-  single account? Separate accounts give cleaner data.
-- **Games per team**: 100 ladder games per team to get a stable ELO estimate.
-- **Stopping criterion**: stop when ELO has been stable (±30 points) for 30+ consecutive
-  games. A rising ELO after 100 games means keep playing, not stop.
+- **α and β hyperparameters**: control exploration weight and policy trust in the tree
+  policy `U(s,a) = P[s,a]^β · sqrt(M[s]) / (N[s,a] + 1)`. Tune on a held-out set of
+  games; start with α=1.0, β=1.0 (standard PUCT) and ablate.
+- **Parallelism**: 20 workers × 10 rollouts per sync cycle. How much of the 10-second
+  decision clock survives after poke-env WebSocket latency on our hardware?
 
----
+### Baby Step: Sim Bridge
 
-## Step 4 — Cheap MCTS in Training
+The first concrete implementation piece of Step 5. See
+`designs/ai_v5/impl_step5_sim_bridge.md`.
 
-Integrate shallow action sampling into the PPO self-play data collection loop. The Node.js
-bridge (from ai_v5 Step 5) is too slow for deep MCTS during training, but a very shallow
-sweep — `K=3` rollouts per legal action, `max_depth=1` — adds only ~30ms per decision and
-requires no changes to the bridge protocol.
+Covers `new` / `fork` / `step` / `inject` / `free` only. Uses a hybrid API:
+BattleStream for initial session setup (`new`), Direct Battle API for all fork/step
+operations (`Battle.fromJSON()`, `battle.makeChoices()`). Does NOT include root sync
+(`advance`), PIMC sampling, action sampler, or any tree logic.
 
-**What changes:**
-- The training env's `choose_move()` runs flat action sampling instead of a raw policy
-  forward pass.
-- Both sides see improved action quality — not just our agent.
-- The PPO policy now trains on trajectories where actions were chosen with at least a
-  one-ply lookahead and 3-rollout confirmation per option.
+**Go/no-go gate:** Step 2 of the baby step (injection test) must pass before any
+further MCTS code is written. If `Battle.fromJSON()` rejects modified state, the
+state-extraction approach for PIMC needs rethinking.
 
-**Expected benefit:** the model learns to value positions that are favourable for MCTS-like
-play, rather than positions that happen to look good to the raw policy. This should transfer
-positively when the model is later used with full MCTS at inference time.
+### Deferred from Baby Step
 
-**Tuning knobs:**
-- `K` (rollouts per action): start at 3. Increase if throughput permits.
-- `max_depth`: keep at 1 for training (pure value-head leaf evaluation, minimal RNG
-  accumulation). Depth 1 means: fork, take action, ask `V_θ` for the resulting state.
-- **Throughput**: measure steps/second before and after. The target is ≤ 2× slowdown vs.
-  raw policy training. If slower, reduce `K` or disable for bench/utility Pokémon (only
-  run sampling when the active Pokémon has a non-trivial choice).
+**`advance` (root sync)** — keeps the bridge root session in lock-step with the live
+poke-env game by replaying real move choices after each turn via BattleStream. Not
+needed until the bridge is wired into `choose_move`.
 
-**Design questions to resolve:**
-- **Both sides vs. our side only**: running sampling on both sides doubles the bridge
-  calls. Start with both sides for data quality; if throughput is unacceptable, sample
-  only for our agent and use the raw policy for the opponent.
-- **League opponent**: should league agents also use action sampling, or only the
-  learning agent? League agents with sampling are harder opponents; without sampling they
-  are consistent with how they were evaluated in v5.
+**`battle_serializer.py`** — converts a live poke-env `AbstractBattle` + team
+hypothesis into Showdown `toJSON()` format. Requires careful handling of: Gen 3 stat
+formula (EVs/IVs/nature → `baseStoredStats`), move PP tracking for opponent mons,
+volatiles/boosts/side-conditions dict formats, and the `"[Species:name]"` reference
+format. Depends on the injection test passing.
 
-**Stopping criterion:** v6 Step 4 is complete when:
-- Training with `K=3, max_depth=1` sampling runs without throughput regression > 2×
-- Win rate (v5 checkpoint evaluated with full MCTS) does not regress — the model trained
-  with cheap MCTS should be at least as strong as the raw-policy baseline
-- Ladder ELO (with full MCTS at inference) is ≥ Step 3 baseline
+**`hypothesis.py`** — fills unrevealed opponent slots for PIMC. Initially uniform
+random from Gen3OU usage stats; later replaced by the team completion model (Step 3/4).
 
----
+**`action_sampler.py`** (Phase 1) — K rollouts per legal action, mean return, argmax.
+The first search layer above the bridge. No tree needed.
 
-## Future Work — Meta Alignment
+**`tree.py` + `rollout.py`** (Phase 2) — full UCB tree with Q/N/M/P/F dicts, backup,
+and fainted-slot pruning. Deferred until Phase 1 shows win-rate signal.
 
-The current setup measures win rate against the v4 league, which is a proxy for ladder
-performance. The league may not reflect the real Gen 3 OU meta distribution — certain
-teams and strategies appear far more frequently on the ladder than in self-play.
+**`search_player.py` / `play_mcts.py`** — inference player wrapper and eval entry point.
 
-Two directions to explore in a future version:
+**Parallel workers (20 workers + aggregator)** — deferred until single-worker search
+is validated end-to-end.
 
-**Ladder-weighted team selection**: after the initial ladder run, feed collected replays
-back into the team completion model and re-run the team evaluator, this time weighting
-opponents by their ladder frequency rather than league composition. The "best team"
-ranking may shift significantly once the opponent distribution reflects real ladder play.
-
-**Meta self-alignment**: continuously update the opponent pool during specialisation
-fine-tuning using replays collected from the ladder. The agent trains against what it
-actually encounters, closing the gap between league proxy and ladder reality. This is a
-training loop, not a one-shot evaluation — it requires the ladder daemon (v5 Step 1) to
-run concurrently with fine-tuning.
-
----
-
-## Handoff to v7
-
-v6 ends with a strong specialised agent on the ladder and the infrastructure for cheap
-MCTS in training. v7 picks up here by replacing the Node.js bridge with a Rust sim
-(PyO3, in-process), enabling:
-- 50 000+ rollouts/turn at inference (vs. ~1 000 with the JS bridge)
-- Full MCTS during training data generation (previously blocked by JS bridge throughput)
-- Training against MCTS-quality opponents — the final frontier for data quality
+**Rust sim (v7)** — replaces `sim_bridge.js` with a PyO3 Rust sim (~50× faster). The
+`SimClient` interface is unchanged; only the bridge implementation swaps out.
