@@ -12,6 +12,7 @@ from agents.observation.turn_delta_encoder import TURN_DELTA_DIM, EFF_DIM, ORDER
 from utils.logging.levels import LogLevel
 
 # Strategic TurnDelta slice: always the tail of the TurnDelta block (effectiveness + order).
+# Kept exported because external tests reference these constants.
 TD_STRATEGIC_DIM    = EFF_DIM * 2 + ORDER_DIM      # 10: our_eff(4) + opp_eff(4) + order(2)
 TD_STRATEGIC_OFFSET = TURN_DELTA_DIM - TD_STRATEGIC_DIM  # 29
 
@@ -24,15 +25,40 @@ MOVE_NET_HIDDEN = [64, 32]        # [hidden, output] of shared move processor
 ROLE_ENCODER_HIDDEN = [256, 128]  # [hidden, output] of per-Pokémon role encoder
 ACTIVE_CTX_HIDDEN = [64, 32]      # [hidden, output] of active context encoder
 NET_ARCH = [512, 512]             # MLP policy layers (SB3 policy_kwargs["net_arch"])
-N_HISTORY_TURNS = 5               # number of consecutive TurnDeltas in the observation
-# TURN_DELTA_EMBED_DIM is computed in __init__ from layout (2*move_emb + 2*type_emb + 35 scalars)
+N_HISTORY_TURNS = 10              # number of consecutive TurnDeltas in the observation
+
+# Unified transformer hyperparameters. d_model matches ROLE_TOKEN_SIZE so team
+# role tokens enter the transformer without a projection step.
+D_MODEL = ROLE_TOKEN_SIZE         # 128
+TRANSFORMER_N_LAYERS = 2
+TRANSFORMER_N_HEADS = 4
+TRANSFORMER_FFN_DIM = 256
+
+# Token group ids for the unified transformer's type embedding.
+TOKEN_TYPE_OUR_TEAM = 0
+TOKEN_TYPE_THEIR_TEAM = 1
+TOKEN_TYPE_HISTORY = 2
+TOKEN_TYPE_GLOBAL = 3
+NUM_TOKEN_TYPES = 4
 
 
 class Gen3FeaturesExtractor(torch.nn.Module):
     """
     Custom feature extractor for Gen 3 Pokémon battles.
-    Uses a dynamic layout provided by the Observation Encoder to avoid magic constants.
-    Supports shared latent embeddings for Species, Moves, Items, Abilities, and Types.
+
+    Architecture (ai_v4 — unified transformer):
+      1. Per-Pokémon role tokens via the shared move processor + role encoder (unchanged from v3).
+      2. A single L=2 transformer stack attends over 23 tokens:
+           - 6 our-team role tokens
+           - 6 their-team role tokens
+           - N_HISTORY_TURNS history tokens (raw TurnDelta → embedded → projected to d_model)
+           - 1 global token (active contexts + global env + reactive scalars → projected)
+         Token type and (history-only) positional embeddings precede the transformer.
+         Fainted team slots and empty history slots are key-padding-masked.
+      3. Two learned CLS queries cross-attend over each side's 6 team output tokens to
+         produce permutation-equivariant team pools.
+      4. The projection input concatenates: our_pool, their_pool, our_active_out,
+         active context encodings, and the non-matchup scalar remainder.
     """
     def __init__(self, observation_space: spaces.Dict, layout: Optional[Dict[str, Any]] = None, mappings: Optional[Dict[str, Any]] = None, log_level: LogLevel = LogLevel.QUIET):
         super().__init__()
@@ -40,9 +66,11 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         self.mappings = mappings
         self.log_level = log_level
 
-        # 1. Embedding Layers
+        # ------------------------------------------------------------------
+        # 1. Embedding tables
+        # ------------------------------------------------------------------
         self.species_embedding = torch.nn.Embedding(
-            layout['max_species'], 
+            layout['max_species'],
             layout['species_embedding_dim']
         )
         self.move_embedding = torch.nn.Embedding(
@@ -62,8 +90,10 @@ class Gen3FeaturesExtractor(torch.nn.Module):
             layout['max_types'],
             layout['type_embedding_dim']
         )
-        
-        # 1.5 Shared Move Processor (Step 1)
+
+        # ------------------------------------------------------------------
+        # 2. Shared Move Processor + within-Pokémon move self-attention
+        # ------------------------------------------------------------------
         # Input: move_emb + type_emb + remnants + known(1) + context + matchups(TEAM_SIZE) + validity(1)
         # Remnants: power, secondary, recoil, category, current_pp, max_pp (known extracted separately)
         # Context: HP(1) + turn(1) + weather + fainted + spikes
@@ -88,7 +118,16 @@ class Gen3FeaturesExtractor(torch.nn.Module):
             torch.nn.Linear(MOVE_NET_HIDDEN[0], MOVE_NET_HIDDEN[1])
         )
 
-        # 1.6 Pokémon Role Encoder
+        # Within-Pokémon move self-attention: lets the role encoder see
+        # "this mon has 2 physical attackers + a coverage move."
+        self.move_self_attn = torch.nn.MultiheadAttention(
+            embed_dim=MOVE_NET_HIDDEN[1], num_heads=2, batch_first=True
+        )
+        self.move_self_norm = torch.nn.LayerNorm(MOVE_NET_HIDDEN[1])
+
+        # ------------------------------------------------------------------
+        # 3. Pokémon Role Encoder
+        # ------------------------------------------------------------------
         # Input = pokemon_enriched + broadcasted global_context + switch_valid + struggle_from_prev.
         # Computed dynamically so a change to any embedding dim or component automatically propagates.
         _pk_layout = layout['pokemon']
@@ -114,7 +153,7 @@ class Gen3FeaturesExtractor(torch.nn.Module):
             + 1                                         # ability known
             + _condition_dim                            # condition one-hot
             + MOVE_NET_HIDDEN[1] * _num_moves           # processed moves (4×32)
-            + _hp_and_active_dim                        # hp + species_known + sleep + toxic + active
+            + _hp_and_active_dim                        # hp + species_known + sleep + toxic + spread + hp_block + active
             + _global_ctx_dim                           # broadcasted global context
             + 1                                         # switch_validity
             + 1                                         # struggle_from_prev
@@ -125,49 +164,13 @@ class Gen3FeaturesExtractor(torch.nn.Module):
             torch.nn.ReLU(),
             torch.nn.Linear(ROLE_ENCODER_HIDDEN[0], ROLE_ENCODER_HIDDEN[1])
         )
-        
-        # 1.7 Team-Wide Attention (Step 4)
-        # 1.7.1 Status Biases (0: Our Active, 1: Our Bench, 2: Their Active, 3: Their Bench)
-        self.status_embedding = torch.nn.Embedding(4, self.role_token_size)
 
-        # 1.7.2 Multi-Path Attention Heads
-        self.pressure_attn = torch.nn.MultiheadAttention(embed_dim=self.role_token_size, num_heads=4, batch_first=True)
-        self.safety_attn = torch.nn.MultiheadAttention(embed_dim=self.role_token_size, num_heads=4, batch_first=True)
-        self.synergy_attn = torch.nn.MultiheadAttention(embed_dim=self.role_token_size, num_heads=4, batch_first=True)
-        # Path 4: Threat — their_team queries our_active (which of their bench threatens us most?)
-        self.threat_attn = torch.nn.MultiheadAttention(embed_dim=self.role_token_size, num_heads=4, batch_first=True)
-
-        # 1.7.3 LayerNorm for Residual Stability
-        self.norm1 = torch.nn.LayerNorm(self.role_token_size)
-        self.norm2 = torch.nn.LayerNorm(self.role_token_size)
-        self.norm3 = torch.nn.LayerNorm(self.role_token_size)
-        self.norm4 = torch.nn.LayerNorm(self.role_token_size)
-
-        # N3 — Opponent synergy: their_team attends to itself so the opponent's
-        # bench can learn internal role cohesion (mirrors our Path 3).
-        self.opp_synergy_attn = torch.nn.MultiheadAttention(embed_dim=self.role_token_size, num_heads=4, batch_first=True)
-        self.norm_opp_synergy = torch.nn.LayerNorm(self.role_token_size)
-
-        # N4 — Within-Pokémon move self-attention: before folding the 4 processed
-        # move slots into the role encoder, let them attend to each other so the
-        # role encoder can see "this mon has two physical attacks + a spread move."
-        self.move_self_attn = torch.nn.MultiheadAttention(embed_dim=32, num_heads=2, batch_first=True)
-        self.move_self_norm = torch.nn.LayerNorm(32)
-
-        # 1.7.4 Attention pool — replaces the slot-order team flatten with a
-        # permutation-equivariant pooled token per team. A single learned query
-        # attends over the 6 role tokens (with fainted slots key-masked) and
-        # produces one 128-dim pooled vector per side.
-        self.our_pool_query = torch.nn.Parameter(torch.randn(1, 1, self.role_token_size) * 0.02)
-        self.their_pool_query = torch.nn.Parameter(torch.randn(1, 1, self.role_token_size) * 0.02)
-        self.our_pool_attn = torch.nn.MultiheadAttention(embed_dim=self.role_token_size, num_heads=4, batch_first=True)
-        self.their_pool_attn = torch.nn.MultiheadAttention(embed_dim=self.role_token_size, num_heads=4, batch_first=True)
-        self.norm_pool_our = torch.nn.LayerNorm(self.role_token_size)
-        self.norm_pool_their = torch.nn.LayerNorm(self.role_token_size)
-
-        # 1.8 Active Context Encoder
-        # Encodes boosts, volatiles, and other per-active-mon context (22 dims each side)
-        # into a dense 32-dim token. Shared weights between our side and opponent side.
+        # ------------------------------------------------------------------
+        # 4. Active context encoder (kept for projection input only)
+        # ------------------------------------------------------------------
+        # Active context (boosts, volatiles) for each side enters the transformer
+        # through the global token and is also encoded separately into 32-dim
+        # tokens that go directly into the projection alongside the team pools.
         active_ctx_dim = layout.get('active_context_dim', 22)
         self.active_ctx_encoder = torch.nn.Sequential(
             torch.nn.Linear(active_ctx_dim, ACTIVE_CTX_HIDDEN[0]),
@@ -175,60 +178,86 @@ class Gen3FeaturesExtractor(torch.nn.Module):
             torch.nn.Linear(ACTIVE_CTX_HIDDEN[0], ACTIVE_CTX_HIDDEN[1]),
         )
 
-        # 1.9 Active Context → Role Token Injection
-        # Projects active context (boosts/volatiles) into role token space so the 5
-        # attention paths can see boost/volatile state. 2-layer MLP captures non-linear
-        # interactions (e.g. "+2 SpA AND +2 Spe" is qualitatively different from either alone).
-        # Shared weights between our side and opponent side. Added additively to the active
-        # slot only — bench mons have no boosts/volatiles in Gen 3.
-        self.active_ctx_to_role = torch.nn.Sequential(
-            torch.nn.Linear(active_ctx_dim, 64),
-            torch.nn.ReLU(),
-            torch.nn.Linear(64, ROLE_TOKEN_SIZE),
-        )
+        # ------------------------------------------------------------------
+        # 5. Unified transformer
+        # ------------------------------------------------------------------
+        # Token group identity (4: our_team / their_team / history / global).
+        self.token_type_emb = torch.nn.Embedding(NUM_TOKEN_TYPES, D_MODEL)
 
-        # 1.10 TurnDelta Conditioner
-        # Maps the 10-dim strategic TurnDelta slice (effectiveness + order) into role
-        # token space. Applied additively to the active slots before all 5 attention paths,
-        # so the attention mechanism can reason about last-turn matchup quality and speed.
-        # Shared MLP — our and opp active tokens use perspective-flipped inputs.
-        self.td_conditioner = torch.nn.Sequential(
-            torch.nn.Linear(TD_STRATEGIC_DIM, 64),
-            torch.nn.ReLU(),
-            torch.nn.Linear(64, ROLE_TOKEN_SIZE),
-        )
-
-        # 1.11 Turn-History Attention
-        # The observation carries N_HISTORY_TURNS raw TurnDelta vectors (oldest first).
-        # We embed each identically (reusing move/type tables), add learned positional
-        # encodings, run one MHA self-attention pass, then use the last (most-recent)
-        # position's output in place of the old single-TurnDelta slot.
-        # Embedded dim = 2*move_emb + 2*type_emb + (TURN_DELTA_DIM - 4 raw IDs) = 99
+        # History token: embed each raw TurnDelta identically (reuse move/type tables),
+        # project to d_model, then add a learned positional encoding so "2 turns ago"
+        # is distinguishable from "8 turns ago." Team slots stay permutation-equivariant
+        # (no positional encoding); the global token sits alone.
         self._td_embed_dim = (
-            2 * layout['move_embedding_dim'] +
-            2 * layout['type_embedding_dim'] +
-            TURN_DELTA_DIM - 4
+            2 * layout['move_embedding_dim']
+            + 2 * layout['type_embedding_dim']
+            + TURN_DELTA_DIM - 4
         )
-        # 99 / 3 = 33 per head
-        self.turn_history_pos_emb = torch.nn.Embedding(N_HISTORY_TURNS, self._td_embed_dim)
-        self.turn_history_attn = torch.nn.MultiheadAttention(
-            embed_dim=self._td_embed_dim, num_heads=3, batch_first=True
-        )
-        self.turn_history_norm = torch.nn.LayerNorm(self._td_embed_dim)
+        self.history_proj = torch.nn.Linear(self._td_embed_dim, D_MODEL)
+        self.turn_history_pos_emb = torch.nn.Embedding(N_HISTORY_TURNS, D_MODEL)
 
-        # 2. Dynamic Input Dimension Discovery (Dummy Forward)
-        # We run a single fake observation through the logic to determine the exact projection dimension.
+        # Global token input: active contexts (both sides) + non-matchup scalars
+        # (global env + reactive scalars before the matchup matrices).
+        reactive_layout = layout.get('reactive_layout', {})
+        _matchup_offset_in_reactive = reactive_layout.get('our_matchups', {}).get('offset', 12)
+        # `non_matchup_rest` in forward is `remaining_part[:, 2*ctx : reactive_start + matchup_offset]`,
+        # where remaining_part is sliced starting at OFFSET_CONTEXT. The dim of that
+        # span is the global env dim + the pre-matchup portion of the reactive block.
+        self._non_matchup_rest_dim = GLOBAL_ENV_DIM + _matchup_offset_in_reactive
+        self._global_token_input_dim = 2 * active_ctx_dim + self._non_matchup_rest_dim
+        self.global_proj = torch.nn.Linear(self._global_token_input_dim, D_MODEL)
+
+        # The transformer itself. norm_first=False keeps the post-LN formulation
+        # used by `nn.TransformerEncoderLayer`'s default; matches the design.
+        # dropout=0 because the rest of the network is dropout-free and we want
+        # forward_internal to be deterministic outside of train mode (the snapshot
+        # round-trip test compares feature outputs across save/load).
+        self.transformer_layers = torch.nn.ModuleList([
+            torch.nn.TransformerEncoderLayer(
+                d_model=D_MODEL,
+                nhead=TRANSFORMER_N_HEADS,
+                dim_feedforward=TRANSFORMER_FFN_DIM,
+                dropout=0.0,
+                activation="relu",
+                batch_first=True,
+                norm_first=False,
+            )
+            for _ in range(TRANSFORMER_N_LAYERS)
+        ])
+
+        # CLS cross-attention pooling: one learned query per team attends over the 6
+        # post-transformer team tokens (fainted slots key-masked).
+        self.our_cls = torch.nn.Parameter(torch.randn(1, 1, D_MODEL) * 0.02)
+        self.their_cls = torch.nn.Parameter(torch.randn(1, 1, D_MODEL) * 0.02)
+        self.our_cls_attn = torch.nn.MultiheadAttention(
+            embed_dim=D_MODEL, num_heads=TRANSFORMER_N_HEADS, batch_first=True
+        )
+        self.their_cls_attn = torch.nn.MultiheadAttention(
+            embed_dim=D_MODEL, num_heads=TRANSFORMER_N_HEADS, batch_first=True
+        )
+        self.norm_pool_our = torch.nn.LayerNorm(D_MODEL)
+        self.norm_pool_their = torch.nn.LayerNorm(D_MODEL)
+
+        # Token-count constants (handy for slicing transformer output).
+        self._n_team_tokens = TEAM_SIZE
+        self._our_token_slice = slice(0, TEAM_SIZE)
+        self._their_token_slice = slice(TEAM_SIZE, 2 * TEAM_SIZE)
+        self._history_token_slice = slice(2 * TEAM_SIZE, 2 * TEAM_SIZE + N_HISTORY_TURNS)
+        self._global_token_index = 2 * TEAM_SIZE + N_HISTORY_TURNS
+        self._total_tokens = 2 * TEAM_SIZE + N_HISTORY_TURNS + 1
+
+        # ------------------------------------------------------------------
+        # 6. Dynamic projection-input dim discovery (dummy forward)
+        # ------------------------------------------------------------------
         with torch.no_grad():
             dummy_obs = torch.zeros((1, layout['total_dim']))
-            dummy_dict = {"observation": dummy_obs}
-            # We call forward_internal which does everything except the projection
-            sample_output = self.forward_internal(dummy_dict)
+            sample_output = self.forward_internal({"observation": dummy_obs})
             self.projection_input_dim = sample_output.shape[1]
-        
-        # 3. Projection layer
-        # Pre-projection LayerNorm equalises the very different per-block scales
-        # in `combined` (embedding outputs, 0/1 validity bits, HP fractions,
-        # ±1 TurnDelta deltas) before they hit a single Linear.
+
+        # ------------------------------------------------------------------
+        # 7. Projection
+        # ------------------------------------------------------------------
+        # Pre-projection LayerNorm equalises per-block scales before the final Linear.
         self.pre_proj_norm = torch.nn.LayerNorm(self.projection_input_dim)
         self.projection_dim = PROJECTION_DIM
         self.projection = torch.nn.Linear(self.projection_input_dim, self.projection_dim)
@@ -256,7 +285,7 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         ], dim=1)
 
     def forward_internal(self, obs):
-        """Internal forward pass that constructs the combined feature vector without the final projection."""
+        """Internal forward pass: build the combined feature vector without the final projection."""
         x = obs["observation"]
         batch_size = x.shape[0]
         base_dim = self.layout['base_dim']
@@ -273,27 +302,25 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         prev_mask = x[:, base_dim : base_dim + 11]                               # [B, 11]
         history_dim = N_HISTORY_TURNS * TURN_DELTA_DIM
         turn_history_raw = x[:, base_dim + 11 : base_dim + 11 + history_dim]    # [B, N*39]
-        # Most-recent TurnDelta is the last slot: used for td_conditioner and strategic slice
-        turn_delta_feat = turn_history_raw[:, -TURN_DELTA_DIM:]                  # [B, 39]
         switch_mask  = prev_mask[:, 0:TEAM_SIZE]                                 # [B, 6]
         move_mask    = prev_mask[:, TEAM_SIZE:TEAM_SIZE + num_moves]             # [B, 4]
         struggle_mask = prev_mask[:, TEAM_SIZE + num_moves:TEAM_SIZE + num_moves + 1]  # [B, 1]
 
+        # ------------------------------------------------------------------
         # 1. Extract parts using dynamic layout (offsets read from layout, not hardcoded)
+        # ------------------------------------------------------------------
         parts = self.layout['parts']
         ot = parts['our_team']
-        our_team = x[:, ot['start']:ot['end']].reshape(batch_size, *ot['reshape'])
+        our_team_raw = x[:, ot['start']:ot['end']].reshape(batch_size, *ot['reshape'])
         opt = parts['opp_team']
-        opp_team = x[:, opt['start']:opt['end']].reshape(batch_size, *opt['reshape'])
+        opp_team_raw = x[:, opt['start']:opt['end']].reshape(batch_size, *opt['reshape'])
         ctx = parts['context']
         remaining_part = x[:, ctx['start']:base_dim]  # stop before prev_mask tail
 
-        # Reactive layout offsets — extracted here so all downstream code can reference them
-        reactive_layout = self.layout.get('reactive_layout', {})
-        struggle_offset = reactive_layout.get('forced_struggle', {}).get('offset', 11)
+        # Reactive layout offsets — `struggle_offset` is read again below where it is used.
         matchup_offset  = reactive_layout.get('our_matchups', {}).get('offset', 12)
 
-        # 1.1 Context Features for Move Selection
+        # 1.1 Context features for move selection
         global_start = parts['global']['start'] - ctx['start']
         _w  = global_layout.get('weather', {});  _w_off, _w_dim  = _w.get('offset', 0), _w.get('dim', 6)
         _hz = global_layout.get('hazards', {});  _hz_off, _hz_dim = _hz.get('offset', 6), _hz.get('dim', 2)
@@ -301,7 +328,7 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         weather_feature = remaining_part[:, global_start + _w_off  : global_start + _w_off  + _w_dim]   # [B, 6]
         spikes_feature  = remaining_part[:, global_start + _hz_off : global_start + _hz_off + _hz_dim]  # [B, 2]
         turn_feature    = remaining_part[:, global_start + _ck_off : global_start + _ck_off + _ck_dim]  # [B, 1]
-        
+
         reactive_start = parts['reactive']['start'] - ctx['start']
         _f   = reactive_layout.get('fainted', {});      _f_off, _f_dim  = _f.get('offset', 8),   _f.get('dim', 2)
         _om  = reactive_layout.get('our_matchups', {}); _om_off, _om_dim = _om.get('offset', 16), _om.get('dim', 144)
@@ -312,19 +339,19 @@ class Gen3FeaturesExtractor(torch.nn.Module):
 
         our_matchups   = our_matchups_flat.reshape(batch_size, TEAM_SIZE, num_moves, TEAM_SIZE)
         their_matchups = their_matchups_flat.reshape(batch_size, TEAM_SIZE, num_moves, TEAM_SIZE)
-        matchups_all = torch.cat([our_matchups, their_matchups], dim=1) # [B, n_poke, num_moves, TEAM_SIZE]
-        
-        pokemon_part = torch.cat([our_team, opp_team], dim=1) # [B, 2 * TEAM_SIZE, POKEMON_FULL_DIM]
-        
+        matchups_all = torch.cat([our_matchups, their_matchups], dim=1)  # [B, 2*TEAM_SIZE, num_moves, TEAM_SIZE]
+
+        pokemon_part = torch.cat([our_team_raw, opp_team_raw], dim=1)    # [B, 2*TEAM_SIZE, POKEMON_FULL_DIM]
+
+        # ------------------------------------------------------------------
         # 2. Extract IDs for embedding
+        # ------------------------------------------------------------------
         pk_layout = self.layout['pokemon']
-        
-        # Species ID
+
         species_info = pk_layout['species']
         species_idx = species_info['offset'] + species_info['layout']['species_id']['offset']
         species_ids = pokemon_part[:, :, species_idx].long()
-        
-        # Move IDs & Move Type IDs
+
         moves_offset = moves_info['offset']
         _type_off = m_slot_layout['type']['offset']
         move_id_tensors = []
@@ -333,116 +360,106 @@ class Gen3FeaturesExtractor(torch.nn.Module):
             slot_idx = moves_offset + moves_layout['slots'][i]['offset']
             move_id_tensors.append(pokemon_part[:, :, slot_idx].long().unsqueeze(2))
             move_type_id_tensors.append(pokemon_part[:, :, slot_idx + _type_off].long().unsqueeze(2))
-            
-        all_move_ids = torch.cat(move_id_tensors, dim=2) # [B, 12, 4]
-        all_move_type_ids = torch.cat(move_type_id_tensors, dim=2) # [B, 12, 4]
-        
-        # Item ID
+        all_move_ids = torch.cat(move_id_tensors, dim=2)            # [B, 12, 4]
+        all_move_type_ids = torch.cat(move_type_id_tensors, dim=2)  # [B, 12, 4]
+
         items_info = pk_layout['items']
         items_layout = items_info['layout']
         item_idx = items_info['offset'] + items_layout['id']['offset']
-        item_ids = pokemon_part[:, :, item_idx].long() # [B, 12]
-        
-        # Ability ID
+        item_ids = pokemon_part[:, :, item_idx].long()
+
         abilities_info = pk_layout['abilities']
         abilities_layout = abilities_info['layout']
         ability_idx = abilities_info['offset'] + abilities_layout['id']['offset']
-        ability_ids = pokemon_part[:, :, ability_idx].long() # [B, 12]
-        
-        # Pokémon Type IDs (2 IDs in the 'types' block)
+        ability_ids = pokemon_part[:, :, ability_idx].long()
+
         types_info = pk_layout['types']
         types_layout = types_info['layout']
         type1_ids = pokemon_part[:, :, types_info['offset'] + types_layout['type1']['offset']].long()
         type2_ids = pokemon_part[:, :, types_info['offset'] + types_layout['type2']['offset']].long()
-        
-        # 3. Embed Everything
-        embedded_species = self.species_embedding(species_ids) # [B, 2 * TEAM_SIZE, 32]
-        
-        embedded_moves = self.move_embedding(all_move_ids) # [B, 12, 4, 16]
-        embedded_move_types = self.type_embedding(all_move_type_ids) # [B, 12, 4, 16]
-        embedded_items = self.item_embedding(item_ids) # [B, 12, 16]
-        embedded_abilities = self.ability_embedding(ability_ids) # [B, 12, 16]
-        
-        # Pokémon Types: concatenate E1 and E2 (32 dims) — sum loses type-pair signal
-        embedded_t1 = self.type_embedding(type1_ids) # [B, 12, 16]
-        embedded_t2 = self.type_embedding(type2_ids) # [B, 12, 16]
-        embedded_pk_types = torch.cat([embedded_t1, embedded_t2], dim=-1) # [B, 12, 32]
-        
-        # 5. Construct the enriched Pokemon vector by stitching
-        # Part A: Stats (between Species ID and Items)
+
+        # ------------------------------------------------------------------
+        # 3. Embed everything
+        # ------------------------------------------------------------------
+        embedded_species = self.species_embedding(species_ids)
+        embedded_moves = self.move_embedding(all_move_ids)
+        embedded_move_types = self.type_embedding(all_move_type_ids)
+        embedded_items = self.item_embedding(item_ids)
+        embedded_abilities = self.ability_embedding(ability_ids)
+
+        # Pokémon types: concatenate E1 and E2 (32 dims) — sum loses type-pair signal
+        embedded_t1 = self.type_embedding(type1_ids)
+        embedded_t2 = self.type_embedding(type2_ids)
+        embedded_pk_types = torch.cat([embedded_t1, embedded_t2], dim=-1)
+
+        # ------------------------------------------------------------------
+        # 4. Stitch the enriched per-Pokémon vector
+        # ------------------------------------------------------------------
         species_id_layout = species_info['layout']['species_id']
         stats_start = species_idx + species_id_layout['dim']
-        part_a = pokemon_part[:, :, stats_start : items_info['offset']] # [B, 12, 6]
-        
-        # Part B: Item remnants (Known flag + Consumed flag)
+        part_a = pokemon_part[:, :, stats_start : items_info['offset']]   # base stats [B, 12, 6]
+
         item_remnant_idx = items_info['offset'] + items_layout['known']['offset']
-        item_remnant = pokemon_part[:, :, item_remnant_idx : item_remnant_idx + items_layout['known']['dim']] # [B, 12, 1]
+        item_remnant = pokemon_part[:, :, item_remnant_idx : item_remnant_idx + items_layout['known']['dim']]
         item_consumed_idx = items_info['offset'] + items_layout['consumed']['offset']
-        item_consumed = pokemon_part[:, :, item_consumed_idx : item_consumed_idx + items_layout['consumed']['dim']]  # [B, 12, 1]
-        
-        # Part C: Ability remnants (Known flag)
+        item_consumed = pokemon_part[:, :, item_consumed_idx : item_consumed_idx + items_layout['consumed']['dim']]
+
         ability_remnant_idx = abilities_info['offset'] + abilities_layout['known']['offset']
-        ability_remnant = pokemon_part[:, :, ability_remnant_idx : ability_remnant_idx + abilities_layout['known']['dim']] # [B, 12, 1]
-        
-        # Part D: Condition (between Abilities and Moves)
+        ability_remnant = pokemon_part[:, :, ability_remnant_idx : ability_remnant_idx + abilities_layout['known']['dim']]
+
         condition_start = abilities_info['offset'] + abilities_info['dim']
-        part_d = pokemon_part[:, :, condition_start : moves_offset] # [B, 12, 7]
-        
-        # Part E: Move remnants (power, secondary, recoil, category, current_pp, max_pp)
+        part_d = pokemon_part[:, :, condition_start : moves_offset]       # condition one-hot
+
         _known_off = m_slot_layout['known']['offset']
         move_remnants = []
         for i in range(num_moves):
             slot_start = moves_offset + moves_layout['slots'][i]['offset']
-            # power, secondary, recoil  [3 dims]
             move_remnants.append(pokemon_part[:, :, slot_start + m_slot_layout['power']['offset'] : slot_start + m_slot_layout['type']['offset']])
-            # category  [1 dim]
             move_remnants.append(pokemon_part[:, :, slot_start + m_slot_layout['type']['offset'] + m_slot_layout['type']['dim'] : slot_start + _known_off])
-            # current_pp, max_pp  [2 dims]
             move_remnants.append(pokemon_part[:, :, slot_start + m_slot_layout['current_pp']['offset'] : slot_start + m_slot_layout['max_pp']['offset'] + m_slot_layout['max_pp']['dim']])
-        all_move_remnants = torch.cat(move_remnants, dim=2) # [B, 2*TEAM_SIZE, num_moves * move_remnant_dim]
+        all_move_remnants = torch.cat(move_remnants, dim=2)
 
-        # Part F: Move Known Flags (interleaved in slots)
         known_flags_tensors = []
         for i in range(num_moves):
             slot_start = moves_offset + moves_layout['slots'][i]['offset']
             known_flags_tensors.append(pokemon_part[:, :, slot_start + _known_off : slot_start + _known_off + 1])
-        known_flags = torch.cat(known_flags_tensors, dim=2) # [B, 2*TEAM_SIZE, num_moves]
-        
-        # Part G: HP and Active Flag
+        known_flags = torch.cat(known_flags_tensors, dim=2)
+
         hp_offset = pk_layout['hp']['offset']
-        # Extract from HP offset to the end of the Pokémon vector (includes Active Flag)
-        hp_and_active = pokemon_part[:, :, hp_offset:] 
-        
-        # --- SHARED MOVE PROCESSING (Step 1) ---
-        # Reshape move remnants and flags to align with per-slot dims
+        hp_and_active = pokemon_part[:, :, hp_offset:]                    # [B, 12, _hp_and_active_dim]
+
+        # ------------------------------------------------------------------
+        # 5. Shared move processing
+        # ------------------------------------------------------------------
         n_poke = 2 * TEAM_SIZE
         move_remnants_reshaped = all_move_remnants.reshape(batch_size, n_poke, num_moves, self.move_remnant_dim)
         known_flags_reshaped   = known_flags.reshape(batch_size, n_poke, num_moves, 1)
-        
-        # Combine all move features into [B, 12, 4, 51]
-        # Context: HP (1), Turn (1), Weather (6), Fainted (2), Spikes (2)
-        hp_feature = hp_and_active[:, :, 0:1]                                             # [B, n_poke, 1]
-        turn_expanded    = turn_feature.unsqueeze(1).expand(-1, n_poke, -1)               # [B, n_poke, 1]
-        weather_expanded = weather_feature.unsqueeze(1).expand(-1, n_poke, -1)            # [B, n_poke, 6]
-        fainted_expanded = fainted_feature.unsqueeze(1).expand(-1, n_poke, -1)            # [B, n_poke, 2]
-        spikes_expanded  = spikes_feature.unsqueeze(1).expand(-1, n_poke, -1)             # [B, n_poke, 2]
+
+        hp_feature       = hp_and_active[:, :, 0:1]
+        turn_expanded    = turn_feature.unsqueeze(1).expand(-1, n_poke, -1)
+        weather_expanded = weather_feature.unsqueeze(1).expand(-1, n_poke, -1)
+        fainted_expanded = fainted_feature.unsqueeze(1).expand(-1, n_poke, -1)
+        spikes_expanded  = spikes_feature.unsqueeze(1).expand(-1, n_poke, -1)
 
         move_context = torch.cat([hp_feature, turn_expanded, weather_expanded, fainted_expanded, spikes_expanded], dim=2)
-        move_context_final = move_context.unsqueeze(2).expand(-1, -1, num_moves, -1)      # [B, n_poke, num_moves, ctx_dim]
+        move_context_final = move_context.unsqueeze(2).expand(-1, -1, num_moves, -1)
 
         # Move validity from prev_mask: only the active slot gets the real move mask;
         # bench slots get all-ones (they have no move-validity context from prev turn).
-        _our_active_flags_early = hp_and_active[:, 0:TEAM_SIZE, 4]  # [B, 6]
+        # The active flag is always the LAST dim of `hp_and_active` — keep this anchored
+        # to `-1` so future per-slot additions (more counters, candidate blocks, etc.)
+        # don't silently break it.
+        _our_active_flags_early = hp_and_active[:, 0:TEAM_SIZE, -1]
         _our_active_idx_early = torch.where(
             _our_active_flags_early.any(dim=1),
             torch.argmax(_our_active_flags_early, dim=1),
             torch.zeros(batch_size, dtype=torch.long, device=x.device),
-        )  # [B]
+        )
         move_validity_ours = torch.ones(batch_size, TEAM_SIZE, num_moves, 1, device=x.device)
         move_validity_ours[torch.arange(batch_size, device=x.device), _our_active_idx_early] = \
-            move_mask.unsqueeze(-1).float()                                                              # [B, num_moves, 1]
+            move_mask.unsqueeze(-1).float()
         move_validity_opp  = torch.ones(batch_size, TEAM_SIZE, num_moves, 1, device=x.device)
-        move_validity = torch.cat([move_validity_ours, move_validity_opp], dim=1)                       # [B, n_poke, num_moves, 1]
+        move_validity = torch.cat([move_validity_ours, move_validity_opp], dim=1)
 
         move_features = torch.cat([
             embedded_moves,
@@ -453,210 +470,165 @@ class Gen3FeaturesExtractor(torch.nn.Module):
             matchups_all,
             move_validity,
         ], dim=3)
-        
-        # Process through shared network
-        processed_moves = self.move_network(move_features.reshape(-1, move_features.shape[-1]))
-        processed_moves = processed_moves.reshape(batch_size, n_poke, num_moves, 32)  # [B, n_poke, 4, 32]
 
-        # N4 — Within-Pokémon move self-attention: let the 4 move slots attend to
-        # each other so the role encoder sees "2 physical attackers + coverage move."
-        mv_in = processed_moves.reshape(batch_size * n_poke, num_moves, 32)
+        processed_moves = self.move_network(move_features.reshape(-1, move_features.shape[-1]))
+        processed_moves = processed_moves.reshape(batch_size, n_poke, num_moves, MOVE_NET_HIDDEN[1])
+
+        # Within-Pokémon move self-attention.
+        mv_in = processed_moves.reshape(batch_size * n_poke, num_moves, MOVE_NET_HIDDEN[1])
         mv_delta, _ = self.move_self_attn(mv_in, mv_in, mv_in)
         mv_out = self.move_self_norm(mv_in + mv_delta)
-        processed_moves = mv_out.reshape(batch_size, n_poke, -1)  # [B, n_poke, num_moves * 32]
-        
+        processed_moves = mv_out.reshape(batch_size, n_poke, -1)
+
         pokemon_enriched = torch.cat([
-            embedded_species,      # 32
-            part_a,                # 6
-            embedded_items,        # 16
-            item_remnant,          # 1  (known)
-            item_consumed,         # 1  (consumed)
-            embedded_pk_types,     # 32 (concatenated type pair)
-            embedded_abilities,    # 16
-            ability_remnant,       # 1
-            part_d,                # 7  (condition one-hot)
-            processed_moves,       # 128 (Shared Processor Output)
-            hp_and_active          # 5  (hp, species_known, sleep_ctr, toxic_ctr, active)
-        ], dim=2) # [B, 12, 245]
-        
-        # --- POKÉMON ROLE ENCODER ---
+            embedded_species,
+            part_a,
+            embedded_items,
+            item_remnant,
+            item_consumed,
+            embedded_pk_types,
+            embedded_abilities,
+            ability_remnant,
+            part_d,
+            processed_moves,
+            hp_and_active,
+        ], dim=2)
+
+        # ------------------------------------------------------------------
+        # 6. Role encoder (per-Pokémon → 128-dim role token)
+        # ------------------------------------------------------------------
         _fs = reactive_layout.get('forced_struggle', {}); struggle_offset = _fs.get('offset', 11)
-        struggle_feature = remaining_part[:, reactive_start + struggle_offset : reactive_start + struggle_offset + 1] # [B, 1]
-        # S3: screens (Reflect/Light Screen both sides) are critical switch-safety context
+        struggle_feature = remaining_part[:, reactive_start + struggle_offset : reactive_start + struggle_offset + 1]
         _sc = global_layout.get('screens', {}); _sc_off, _sc_dim = _sc.get('offset', 9), _sc.get('dim', 4)
-        screen_feature = remaining_part[:, global_start + _sc_off : global_start + _sc_off + _sc_dim] # [B, 4]
-        global_context = torch.cat([turn_feature, weather_feature, fainted_feature, spikes_feature, struggle_feature, screen_feature], dim=1) # [B, 16]
+        screen_feature = remaining_part[:, global_start + _sc_off : global_start + _sc_off + _sc_dim]
+        global_context = torch.cat([turn_feature, weather_feature, fainted_feature, spikes_feature, struggle_feature, screen_feature], dim=1)
         context_broadcasted = global_context.unsqueeze(1).expand(-1, n_poke, -1)
 
-        switch_validity_ours = switch_mask.unsqueeze(2)                                          # [B, 6, 1]
+        switch_validity_ours = switch_mask.unsqueeze(2)
         switch_validity_opp  = torch.ones(batch_size, TEAM_SIZE, 1, device=x.device)
-        switch_validity = torch.cat([switch_validity_ours, switch_validity_opp], dim=1)         # [B, n_poke, 1]
+        switch_validity = torch.cat([switch_validity_ours, switch_validity_opp], dim=1)
 
-        struggle_from_prev = struggle_mask.unsqueeze(1).expand(-1, n_poke, -1)                  # [B, n_poke, 1]
+        struggle_from_prev = struggle_mask.unsqueeze(1).expand(-1, n_poke, -1)
 
         pokemon_enriched_with_context = torch.cat([
             pokemon_enriched, context_broadcasted, switch_validity, struggle_from_prev
-        ], dim=2)  # [B, 12, 263]
+        ], dim=2)
 
-        role_tokens = self.role_encoder(pokemon_enriched_with_context.reshape(-1, pokemon_enriched_with_context.shape[-1]))
-        role_tokens = role_tokens.reshape(batch_size, n_poke, self.role_token_size)
+        role_tokens = self.role_encoder(
+            pokemon_enriched_with_context.reshape(-1, pokemon_enriched_with_context.shape[-1])
+        )
+        role_tokens = role_tokens.reshape(batch_size, n_poke, self.role_token_size)   # [B, 12, 128]
 
-        # Extract active context raw vectors here so they are available for pre-attention
-        # injection below and for the direct encoder call later in the function.
+        # Active context — encoded directly into the projection input alongside the team pools.
         active_ctx_dim = self.layout.get('active_context_dim', 22)
-        our_ctx_raw = remaining_part[:, 0 : active_ctx_dim]                   # [B, active_ctx_dim]
-        opp_ctx_raw = remaining_part[:, active_ctx_dim : 2 * active_ctx_dim]  # [B, active_ctx_dim]
+        our_ctx_raw = remaining_part[:, 0 : active_ctx_dim]
+        opp_ctx_raw = remaining_part[:, active_ctx_dim : 2 * active_ctx_dim]
 
-        # --- TEAM-WIDE ATTENTION ---
-        # 1. Find who is active on both teams
-        active_flags = hp_and_active[:, :, 4]  # [B, 12] — layout: [hp, species_known, sleep_ctr, toxic_ctr, active]
-        # QW3: guard argmax — if no active flag is set (opponent not revealed, or dummy forward),
-        # argmax silently returns 0; clamp to valid range explicitly.
+        # Locate active slots for downstream extraction.
+        # The active flag is always the LAST dim of `hp_and_active` (see comment above).
+        active_flags = hp_and_active[:, :, -1]                  # [B, 12]
         our_active_flags = active_flags[:, 0:TEAM_SIZE]
-        opp_active_flags = active_flags[:, TEAM_SIZE:2*TEAM_SIZE]
+        opp_active_flags = active_flags[:, TEAM_SIZE:2 * TEAM_SIZE]
         our_active_idx = torch.where(
             our_active_flags.any(dim=1),
             torch.argmax(our_active_flags, dim=1),
-            torch.zeros(batch_size, dtype=torch.long, device=x.device)
-        )  # [B] — 0-5
-        opp_active_idx = torch.where(
+            torch.zeros(batch_size, dtype=torch.long, device=x.device),
+        )  # [B] in [0, 5]
+        opp_active_local = torch.where(
             opp_active_flags.any(dim=1),
             torch.argmax(opp_active_flags, dim=1),
-            torch.zeros(batch_size, dtype=torch.long, device=x.device)
-        ) + TEAM_SIZE  # [B] — 6-11
-
-        # 1.5 Inject active context (boosts/volatiles) into each active slot's role token
-        # before attention runs. All 5 attention paths can now see boost/volatile state.
-        # Bench slots are not injected — they have no boosts/volatiles in Gen 3.
-        our_ctx_bias = self.active_ctx_to_role(our_ctx_raw)   # [B, 128]
-        opp_ctx_bias = self.active_ctx_to_role(opp_ctx_raw)   # [B, 128]
+            torch.zeros(batch_size, dtype=torch.long, device=x.device),
+        )  # [B] in [0, 5]
         batch_idx = torch.arange(batch_size, device=x.device)
-        role_tokens[batch_idx, our_active_idx] = role_tokens[batch_idx, our_active_idx] + our_ctx_bias
-        role_tokens[batch_idx, opp_active_idx] = role_tokens[batch_idx, opp_active_idx] + opp_ctx_bias
 
-        # 1.10 Inject TurnDelta strategic signals (effectiveness + order) into active role
-        # tokens before team attention runs. Perspective is flipped for the opp side so the
-        # shared MLP sees consistent [attacker_eff, defender_eff, we_first, opp_first] framing.
-        td_strategic = turn_delta_feat[:, TD_STRATEGIC_OFFSET:]  # [B, 10]
-        our_td_bias = self.td_conditioner(td_strategic)           # [B, 128]
-        opp_td_input = torch.cat([
-            td_strategic[:, 4:8],   # opp_eff → "our eff" from opp's view
-            td_strategic[:, 0:4],   # our_eff → "opp eff" from opp's view
-            td_strategic[:, 9:10],  # opp_first → "we first" from opp's view
-            td_strategic[:, 8:9],   # we_first  → "opp first" from opp's view
-        ], dim=1)                                                  # [B, 10]
-        opp_td_bias = self.td_conditioner(opp_td_input)           # [B, 128]
-        role_tokens[batch_idx, our_active_idx] += our_td_bias
-        role_tokens[batch_idx, opp_active_idx] += opp_td_bias
+        # Fainted masks (True = fainted). Always unmask the active slot on each side
+        # so attention has at least one live key/query.
+        fainted_mask_ours = (hp_and_active[:, 0:TEAM_SIZE, 0] == 0)
+        fainted_mask_ours[batch_idx, our_active_idx] = False
+        fainted_mask_opp = (hp_and_active[:, TEAM_SIZE:2 * TEAM_SIZE, 0] == 0)
+        fainted_mask_opp[batch_idx, opp_active_local] = False
 
-        # 2. Apply Status Biases (Pre-Attention)
-        status_idx = torch.ones((batch_size, n_poke), device=role_tokens.device).long()  # our bench = 1
-        status_idx[:, TEAM_SIZE:2*TEAM_SIZE] = 3
-        status_idx[torch.arange(batch_size), our_active_idx] = 0
-        status_idx[torch.arange(batch_size), opp_active_idx] = 2
-
-        role_tokens = role_tokens + self.status_embedding(status_idx)
-
-        # 3. Split Teams for Attention Paths
-        our_team = role_tokens[:, 0:TEAM_SIZE, :]           # [B, 6, 128]
-        their_team = role_tokens[:, TEAM_SIZE:2*TEAM_SIZE, :]  # [B, 6, 128]
-        our_active_pre = role_tokens[torch.arange(batch_size), our_active_idx].unsqueeze(1)   # [B, 1, 128]
-        their_active = role_tokens[torch.arange(batch_size), opp_active_idx].unsqueeze(1)     # [B, 1, 128]
-
-        # --- ATTENTION PATHS WITH RESIDUALS ---
-
-        # Fainted masks — True = fainted slot. Always unmask the active slot on
-        # each side: if every key gets masked, softmax produces NaN; if every
-        # query gets masked, the slot's delta multiplier collapses to zero
-        # (harmless but redundant).
-        fainted_mask_ours = (hp_and_active[:, 0:TEAM_SIZE, 0] == 0)            # [B, 6]
-        fainted_mask_ours[torch.arange(batch_size), our_active_idx] = False
-        fainted_mask_opp_local = (hp_and_active[:, TEAM_SIZE:2*TEAM_SIZE, 0] == 0)  # [B, 6]
-        # opp_active_idx is in [6, 11]; convert to local [0, 5] for the opp-team mask
-        opp_active_local = opp_active_idx - TEAM_SIZE
-        fainted_mask_opp_local[torch.arange(batch_size), opp_active_local] = False
-        live_ours = (~fainted_mask_ours).float().unsqueeze(-1)                 # [B, 6, 1]
-        live_opp  = (~fainted_mask_opp_local).float().unsqueeze(-1)            # [B, 6, 1]
-
-        # Path 1: Pressure — our_active learns what threatens it from their bench.
-        # Intentionally no key_padding_mask for fainted opp mons: knowing which
-        # opponent mons have already fainted is useful context for threat assessment.
-        pressure_delta, _ = self.pressure_attn(our_active_pre, their_team, their_team)
-        our_active_post_pressure = self.norm1(our_active_pre + pressure_delta)  # [B, 1, 128]
-
-        # Write Pressure result back into our_team so Safety/Synergy see the updated active slot
-        our_team = our_team.clone()
-        our_team[torch.arange(batch_size), our_active_idx] = our_active_post_pressure.squeeze(1)
-
-        # Path 2: Safety — our bench learns which opponent active threatens each slot.
-        # Zero the delta at fainted query rows so dead slots don't accumulate noise.
-        safety_delta, _ = self.safety_attn(our_team, their_active, their_active)
-        our_team = self.norm2(our_team + safety_delta * live_ours)
-
-        # Path 3: Synergy — our team learns internal role cohesion.
-        # Mask fainted slots as keys so dead Pokémon don't pollute the key space.
-        synergy_delta, _ = self.synergy_attn(our_team, our_team, our_team,
-                                              key_padding_mask=fainted_mask_ours)
-        our_team = self.norm3(our_team + synergy_delta * live_ours)
-
-        # Path 4: Threat — their bench learns which of them threatens our active most (P2).
-        # Zero the delta at fainted opp-query rows for the same reason as Safety.
-        threat_delta, _ = self.threat_attn(their_team, our_active_post_pressure, our_active_post_pressure)
-        their_team = self.norm4(their_team + threat_delta * live_opp)
-
-        # Path 5: Opp Synergy — their team attends to itself (mirrors our Path 3).
-        # Fainted slots key-masked; output zeroed for fainted queries.
-        opp_synergy_delta, _ = self.opp_synergy_attn(their_team, their_team, their_team,
-                                                      key_padding_mask=fainted_mask_opp_local)
-        their_team = self.norm_opp_synergy(their_team + opp_synergy_delta * live_opp)
-
-        # --- FINAL AGGREGATION ---
-        # N1: replace slot-order flatten with attention pooling (permutation-equivariant).
-        # One learned query per team attends over the 6 role tokens; fainted slots are
-        # key-masked so they cannot dominate the pool.
-        our_pool_q   = self.our_pool_query.expand(batch_size, -1, -1)         # [B, 1, 128]
-        their_pool_q = self.their_pool_query.expand(batch_size, -1, -1)
-        our_pool_out, _   = self.our_pool_attn(our_pool_q, our_team, our_team,
-                                                key_padding_mask=fainted_mask_ours)
-        their_pool_out, _ = self.their_pool_attn(their_pool_q, their_team, their_team,
-                                                  key_padding_mask=fainted_mask_opp_local)
-        our_team_pooled   = self.norm_pool_our(our_pool_out).squeeze(1)        # [B, 128]
-        their_team_pooled = self.norm_pool_their(their_pool_out).squeeze(1)    # [B, 128]
-
-        # P4: extract our_active_refined from our_team after ALL paths (not Pressure-only)
-        our_active_refined = our_team[torch.arange(batch_size), our_active_idx]  # [B, 128]
-
-        # P3: encode active_context (boosts, volatiles) through a learned MLP for the
-        # direct projection path. (our_ctx_raw / opp_ctx_raw extracted earlier.)
-        our_ctx_enc = self.active_ctx_encoder(our_ctx_raw)             # [B, 32]
-        opp_ctx_enc = self.active_ctx_encoder(opp_ctx_raw)             # [B, 32]
-
-        # P1: strip matchup matrix from projection input (already encoded in role tokens)
-        # Keep: active_ctx replaced by encoded tokens + global env + reactive scalars (before matchups)
-        non_matchup_rest = remaining_part[:, 2 * active_ctx_dim : reactive_start + matchup_offset]  # global + scalars
-
-        # N2 — embed all N TurnDeltas, apply self-attention over the history window,
-        # and use the last (most-recent) position's output for the projection.
+        # ------------------------------------------------------------------
+        # 7. Unified transformer over 23 tokens
+        # ------------------------------------------------------------------
+        # 7a. History tokens — embed each raw TurnDelta, project to d_model, add positional encoding.
         history_slots = turn_history_raw.view(batch_size, N_HISTORY_TURNS, TURN_DELTA_DIM)  # [B, N, 39]
-
-        embedded_slots = torch.stack(
+        # An empty (padding) history slot is all-zero. Detect before projection because
+        # projection biases would otherwise produce non-zero outputs from a zero input.
+        empty_history = (history_slots.abs().sum(dim=-1) == 0)  # [B, N]
+        embedded_history = torch.stack(
             [self._embed_delta_slot(history_slots[:, t, :], self.move_embedding, self.type_embedding)
              for t in range(N_HISTORY_TURNS)],
             dim=1,
         )  # [B, N, _td_embed_dim]
-
+        history_tokens = self.history_proj(embedded_history)                       # [B, N, D_MODEL]
         positions = torch.arange(N_HISTORY_TURNS, device=x.device)
-        embedded_slots = embedded_slots + self.turn_history_pos_emb(positions)  # [B, N, _td_embed_dim]
+        history_tokens = history_tokens + self.turn_history_pos_emb(positions)     # [B, N, D_MODEL]
 
-        attn_out, _ = self.turn_history_attn(embedded_slots, embedded_slots, embedded_slots)
-        attended = self.turn_history_norm(embedded_slots + attn_out)
-        turn_delta_embedded = attended[:, -1, :]  # [B, _td_embed_dim] — most-recent, history-informed
+        # 7b. Global token — active contexts + non-matchup scalars projected into d_model.
+        non_matchup_rest = remaining_part[:, 2 * active_ctx_dim : reactive_start + matchup_offset]
+        global_token_input = torch.cat([our_ctx_raw, opp_ctx_raw, non_matchup_rest], dim=1)
+        global_token = self.global_proj(global_token_input).unsqueeze(1)           # [B, 1, D_MODEL]
+
+        # 7c. Add token-type embeddings to each group.
+        our_team_tokens   = role_tokens[:, 0:TEAM_SIZE, :]                          # [B, 6, 128]
+        their_team_tokens = role_tokens[:, TEAM_SIZE:2 * TEAM_SIZE, :]              # [B, 6, 128]
+
+        tt = self.token_type_emb
+        our_team_tokens   = our_team_tokens   + tt(torch.full((1,), TOKEN_TYPE_OUR_TEAM,   dtype=torch.long, device=x.device))
+        their_team_tokens = their_team_tokens + tt(torch.full((1,), TOKEN_TYPE_THEIR_TEAM, dtype=torch.long, device=x.device))
+        history_tokens    = history_tokens    + tt(torch.full((1,), TOKEN_TYPE_HISTORY,    dtype=torch.long, device=x.device))
+        global_token      = global_token      + tt(torch.full((1,), TOKEN_TYPE_GLOBAL,     dtype=torch.long, device=x.device))
+
+        # 7d. Build the token sequence and the key-padding mask.
+        tokens = torch.cat([our_team_tokens, their_team_tokens, history_tokens, global_token], dim=1)
+        # key_padding_mask: True at padding positions. Fainted team slots and empty
+        # history slots are masked; the global token is always live.
+        global_pad = torch.zeros(batch_size, 1, dtype=torch.bool, device=x.device)
+        key_padding_mask = torch.cat([
+            fainted_mask_ours,            # [B, 6]
+            fainted_mask_opp,             # [B, 6]
+            empty_history,                # [B, N]
+            global_pad,                   # [B, 1]
+        ], dim=1)                          # [B, 23]
+
+        # 7e. Run the transformer stack.
+        for layer in self.transformer_layers:
+            tokens = layer(tokens, src_key_padding_mask=key_padding_mask)
+
+        # 7f. Slice out the team outputs; discard the history and global outputs
+        # (their information has already flowed into team tokens via attention).
+        our_team_out   = tokens[:, self._our_token_slice, :]    # [B, 6, 128]
+        their_team_out = tokens[:, self._their_token_slice, :]  # [B, 6, 128]
+
+        # ------------------------------------------------------------------
+        # 8. Team pooling via CLS cross-attention
+        # ------------------------------------------------------------------
+        our_cls_q   = self.our_cls.expand(batch_size, -1, -1)
+        their_cls_q = self.their_cls.expand(batch_size, -1, -1)
+        our_pool_out, _   = self.our_cls_attn(our_cls_q,   our_team_out,   our_team_out,
+                                              key_padding_mask=fainted_mask_ours)
+        their_pool_out, _ = self.their_cls_attn(their_cls_q, their_team_out, their_team_out,
+                                                 key_padding_mask=fainted_mask_opp)
+        our_team_pooled   = self.norm_pool_our(our_pool_out).squeeze(1)             # [B, 128]
+        their_team_pooled = self.norm_pool_their(their_pool_out).squeeze(1)         # [B, 128]
+
+        # Our-active output from the transformer (after all attention layers).
+        our_active_refined = our_team_out[batch_idx, our_active_idx]                # [B, 128]
+
+        # ------------------------------------------------------------------
+        # 9. Projection input
+        # ------------------------------------------------------------------
+        our_ctx_enc = self.active_ctx_encoder(our_ctx_raw)                          # [B, 32]
+        opp_ctx_enc = self.active_ctx_encoder(opp_ctx_raw)                          # [B, 32]
 
         combined = torch.cat([
-            our_team_pooled, their_team_pooled, our_active_refined,
-            our_ctx_enc, opp_ctx_enc,
+            our_team_pooled,
+            their_team_pooled,
+            our_active_refined,
+            our_ctx_enc,
+            opp_ctx_enc,
             non_matchup_rest,
-            turn_delta_embedded,
         ], dim=1)
         return combined
 
