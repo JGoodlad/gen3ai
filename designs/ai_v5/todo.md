@@ -56,7 +56,7 @@ Ladder data sources and opponent-sampling rationale are in
 
 ---
 
-## Step 4 — MCTS
+## Step 5 — MCTS
 
 MCTS used at **inference time only** as a policy improvement operator on top of the
 trained PPO network. The neural network is never used to generate MCTS training data —
@@ -64,7 +64,7 @@ environment stepping is the rollout bottleneck (~10ms per step), making MCTS-bas
 generation ~1000× too slow to collect 150M training steps. Following Wang (2024) exactly:
 20 workers, 10 rollouts per sync cycle, Showdown as the game simulator, policy+value
 networks for action selection and leaf evaluation, team completion model for hidden info
-sampling. See `designs/ai_v5/impl_step4_mcts.md`.
+sampling. See `designs/ai_v5/impl_step5_mcts.md`.
 
 **Design questions to resolve:**
 - **α and β hyperparameters**: control exploration weight and policy trust in the tree
@@ -72,3 +72,46 @@ sampling. See `designs/ai_v5/impl_step4_mcts.md`.
   games; start with α=1.0, β=1.0 (standard PUCT) and ablate.
 - **Parallelism**: 20 workers × 10 rollouts per sync cycle. How much of the 10-second
   decision clock survives after poke-env WebSocket latency on our hardware?
+
+### Baby Step: Sim Bridge
+
+The first concrete implementation piece of Step 5. See
+`designs/ai_v5/impl_step5_sim_bridge.md`.
+
+Covers `new` / `fork` / `step` / `inject` / `free` only. Uses a hybrid API:
+BattleStream for initial session setup (`new`), Direct Battle API for all fork/step
+operations (`Battle.fromJSON()`, `battle.makeChoices()`). Does NOT include root sync
+(`advance`), PIMC sampling, action sampler, or any tree logic.
+
+**Go/no-go gate:** Step 2 of the baby step (injection test) must pass before any
+further MCTS code is written. If `Battle.fromJSON()` rejects modified state, the
+state-extraction approach for PIMC needs rethinking.
+
+### Deferred from Baby Step
+
+**`advance` (root sync)** — keeps the bridge root session in lock-step with the live
+poke-env game by replaying real move choices after each turn via BattleStream. Not
+needed until the bridge is wired into `choose_move`.
+
+**`battle_serializer.py`** — converts a live poke-env `AbstractBattle` + team
+hypothesis into Showdown `toJSON()` format. Requires careful handling of: Gen 3 stat
+formula (EVs/IVs/nature → `baseStoredStats`), move PP tracking for opponent mons,
+volatiles/boosts/side-conditions dict formats, and the `"[Species:name]"` reference
+format. Depends on the injection test passing.
+
+**`hypothesis.py`** — fills unrevealed opponent slots for PIMC. Initially uniform
+random from Gen3OU usage stats; later replaced by the team completion model (Step 3/4).
+
+**`action_sampler.py`** (Phase 1) — K rollouts per legal action, mean return, argmax.
+The first search layer above the bridge. No tree needed.
+
+**`tree.py` + `rollout.py`** (Phase 2) — full UCB tree with Q/N/M/P/F dicts, backup,
+and fainted-slot pruning. Deferred until Phase 1 shows win-rate signal.
+
+**`search_player.py` / `play_mcts.py`** — inference player wrapper and eval entry point.
+
+**Parallel workers (20 workers + aggregator)** — deferred until single-worker search
+is validated end-to-end.
+
+**Rust sim (v7)** — replaces `sim_bridge.js` with a PyO3 Rust sim (~50× faster). The
+`SimClient` interface is unchanged; only the bridge implementation swaps out.
