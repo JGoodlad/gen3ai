@@ -17,7 +17,8 @@ class LauncherSnapshot:
     view_mode: str             # "dashboard" | "logs" | "events" | "confirm_quit"
     metrics: dict              # {tag: float}
     metrics_step: int
-    metrics_ts: Optional[float]    # monotonic time of last metrics update
+    metrics_ts: Optional[float]      # monotonic time of last rollout/train metrics update
+    eval_metrics_ts: Optional[float] # monotonic time of last eval/* metrics update
     log_lines: list            # recent child stdout lines
     events: list               # launcher event strings (timestamped)
     initial_git_hash: Optional[str]
@@ -34,6 +35,7 @@ class LauncherState:
         self._metrics: dict = {}
         self._metrics_step: int = 0
         self._metrics_ts: Optional[float] = None
+        self._eval_metrics_ts: Optional[float] = None
         self.pid: Optional[int] = None
         self.run_start: float = time.monotonic()
         self.deadline: float = float("inf")
@@ -57,10 +59,13 @@ class LauncherState:
     def update_metrics(self, payload: dict) -> None:
         step = int(payload.get("_step", 0))
         cleaned = {k: v for k, v in payload.items() if k != "_step"}
+        now = time.monotonic()
         with self._lock:
             self._metrics.update(cleaned)
             self._metrics_step = step
-            self._metrics_ts = time.monotonic()
+            self._metrics_ts = now
+            if any(k.startswith("eval/") for k in cleaned):
+                self._eval_metrics_ts = now
 
     def snapshot(self) -> LauncherSnapshot:
         with self._lock:
@@ -74,6 +79,7 @@ class LauncherState:
                 metrics=dict(self._metrics),
                 metrics_step=self._metrics_step,
                 metrics_ts=self._metrics_ts,
+                eval_metrics_ts=self._eval_metrics_ts,
                 log_lines=list(self._log_lines),
                 events=list(self._events),
                 initial_git_hash=self.initial_git_hash,

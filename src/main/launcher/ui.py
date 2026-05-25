@@ -118,7 +118,7 @@ class LauncherUI:
         row2.add_column()
         row2.add_row(f"  {git}  │  {model_badge}  │  {hl}")
 
-        metrics_panel = self._render_metrics_table(snap.metrics, snap.metrics_ts, now)
+        metrics_panel = self._render_metrics_table(snap.metrics, snap.metrics_ts, now, snap.eval_metrics_ts)
 
         evt_text = Text()
         for ev in snap.events[-10:]:
@@ -161,7 +161,7 @@ class LauncherUI:
             return "[dim]model: —[/dim]"
         return f"[magenta]🗂  {os.path.basename(snap.run_dir)}[/magenta]"
 
-    def _render_metrics_table(self, metrics: dict, metrics_ts, now: float):
+    def _render_metrics_table(self, metrics: dict, metrics_ts, now: float, eval_metrics_ts=None):
         if not metrics:
             tbl = Table(box=rich.box.SIMPLE_HEAD, header_style="dim", show_edge=False, expand=True, padding=(0, 1))
             tbl.add_column("Metric", no_wrap=True)
@@ -174,6 +174,15 @@ class LauncherUI:
             age = now - metrics_ts
             if age > 60:
                 stale_badge = f" [dim]({int(age)}s ago)[/dim]"
+
+        eval_stale_badge = ""
+        if eval_metrics_ts is not None:
+            eval_age = now - eval_metrics_ts
+            if eval_age > 60:
+                eval_stale_badge = f" [dim]({int(eval_age)}s ago)[/dim]"
+        elif eval_metrics_ts is None and any(k.startswith("eval/") for k in metrics):
+            # eval keys present but no separate timestamp recorded (shouldn't happen post-fix)
+            eval_stale_badge = stale_badge
 
         # Drop episode-length-per-opponent keys — not actionable in TUI.
         display = {k: v for k, v in metrics.items() if "mean_ep_len_vs_" not in k}
@@ -226,7 +235,7 @@ class LauncherUI:
 
         left = _make_col(["rollout", "time", "train"])
 
-        right = self._make_eval_table(per_opponent, display, eval_summary, stale_badge)
+        right = self._make_eval_table(per_opponent, display, eval_summary, eval_stale_badge)
 
         fixed = {"rollout", "eval", "train", "time"}
         extra_sections = [s for s in by_section if s not in fixed]
