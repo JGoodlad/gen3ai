@@ -8,11 +8,20 @@ from .types import TypeEncoder
 from .abilities import AbilitiesEncoder
 from .moves import MovesEncoder
 from .state_encoder import load_mappings
-from .constants import POKEMON_COUNTER_OFFSET
+from .constants import POKEMON_COUNTER_OFFSET, POKEMON_SPREAD_OFFSET, POKEMON_SPREAD_DIM
 from poke_env.battle.status import Status
 
+# Minimal natures dict for unit tests — no file I/O needed
+_TEST_NATURES = {
+    "adamant": {"atk": 1.1, "def": 1.0, "spa": 0.9, "spd": 1.0, "spe": 1.0},
+    "modest":  {"atk": 0.9, "def": 1.0, "spa": 1.1, "spd": 1.0, "spe": 1.0},
+    "timid":   {"atk": 0.9, "def": 1.0, "spa": 1.0, "spd": 1.0, "spe": 1.1},
+    "hardy":   {"atk": 1.0, "def": 1.0, "spa": 1.0, "spd": 1.0, "spe": 1.0},
+    "serious": {"atk": 1.0, "def": 1.0, "spa": 1.0, "spd": 1.0, "spe": 1.0},
+}
 
-def _make_encoder():
+
+def _make_encoder(natures=None):
     mappings = load_mappings()
     return PokemonEncoder(
         SpeciesEncoder(mappings["species"]),
@@ -20,17 +29,39 @@ def _make_encoder():
         TypeEncoder(),
         AbilitiesEncoder(mappings["abilities"]),
         MovesEncoder(mappings["moves"]),
+        natures=natures if natures is not None else _TEST_NATURES,
     )
 
 
+def _make_mon(nature="hardy", ivs=None, evs=None, status=None, status_counter=0,
+              species="pikachu", hp_fraction=1.0):
+    """Build a minimal mock Pokemon for spread-encoding tests."""
+    mon = MagicMock()
+    mon.nature = nature
+    mon.ivs = ivs if ivs is not None else [31] * 6
+    mon.evs = evs if evs is not None else [0] * 6
+    mon.status = status
+    mon.status_counter = status_counter
+    mon.boosts = {}
+    mon.effects = {}
+    mon.moves = {}
+    mon.item = None
+    mon.ability = None
+    mon.type_1 = None
+    mon.type_2 = None
+    mon.species = species
+    mon.current_hp_fraction = hp_fraction
+    return mon
+
+
 def test_pokemon_encoder_dimension():
-    assert _make_encoder().dimension == 61
+    assert _make_encoder().dimension == 79
 
 
 def test_pokemon_encoder_empty():
     encoder = _make_encoder()
     vec = encoder.encode(None, None)
-    assert len(vec) == 61
+    assert len(vec) == 79
     assert np.all(vec == 0)
 
 
@@ -126,3 +157,194 @@ def test_no_status_leaves_counters_zero():
     vec = encoder.encode(mon, None)
     assert vec[POKEMON_COUNTER_OFFSET] == 0.0
     assert vec[POKEMON_COUNTER_OFFSET + 1] == 0.0
+
+
+# ---------------------------------------------------------------------------
+# Spread block tests
+# ---------------------------------------------------------------------------
+
+def test_spread_block_opponent_all_zeros():
+    """Opponent slots: entire 18-dim spread block must be zero (including spread_known)."""
+    encoder = _make_encoder()
+    mon = _make_mon(nature="adamant", ivs=[31]*6, evs=[252, 252, 4, 0, 0, 0])
+    vec = encoder.encode(mon, None, is_own=False)
+    spread = vec[POKEMON_SPREAD_OFFSET : POKEMON_SPREAD_OFFSET + POKEMON_SPREAD_DIM]
+    assert np.all(spread == 0.0), f"Expected all-zero spread for opponent, got: {spread}"
+
+
+def test_spread_block_own_standard():
+    """Own team: IVs, EVs, spread_known=1, and adamant nature modifiers correctly encoded."""
+    encoder = _make_encoder()
+    mon = _make_mon(nature="adamant", ivs=[31]*6, evs=[252, 252, 4, 0, 0, 0])
+    vec = encoder.encode(mon, None, is_own=True)
+    off = POKEMON_SPREAD_OFFSET
+    # IVs: all 31 → all 1.0
+    assert np.allclose(vec[off:off+6], [1.0]*6), f"IVs: {vec[off:off+6]}"
+    # EVs: [252, 252, 4, 0, 0, 0] normalized
+    assert np.allclose(vec[off+6:off+12], [1.0, 1.0, 4/252, 0.0, 0.0, 0.0], atol=1e-5)
+    # spread_known = 1.0
+    assert vec[off+12] == pytest.approx(1.0)
+    # adamant: atk=1.1, def=1.0, spa=0.9, spd=1.0, spe=1.0
+    assert np.allclose(vec[off+13:off+18], [1.1, 1.0, 0.9, 1.0, 1.0], atol=1e-5)
+
+
+def test_spread_block_own_hp_iv_spread():
+    """Non-31 IVs (e.g. Hidden Power Ice spread) encode correctly."""
+    encoder = _make_encoder()
+    ivs = [31, 30, 31, 30, 31, 30]  # common HP Ice spread
+    mon = _make_mon(nature="modest", ivs=ivs, evs=[0]*6)
+    vec = encoder.encode(mon, None, is_own=True)
+    off = POKEMON_SPREAD_OFFSET
+    expected_ivs = [iv / 31.0 for iv in ivs]
+    assert np.allclose(vec[off:off+6], expected_ivs, atol=1e-5)
+    # modest: atk=0.9, def=1.0, spa=1.1, spd=1.0, spe=1.0
+    assert np.allclose(vec[off+13:off+18], [0.9, 1.0, 1.1, 1.0, 1.0], atol=1e-5)
+
+
+def test_spread_block_own_zero_evs_distinguishable_from_opp():
+    """Own slot with 0 EVs has spread_known=1.0 → distinguishable from opponent (spread_known=0)."""
+    encoder = _make_encoder()
+    mon = _make_mon(nature="hardy", ivs=[31]*6, evs=[0]*6)
+    own_vec  = encoder.encode(mon, None, is_own=True)
+    opp_vec  = encoder.encode(mon, None, is_own=False)
+    own_spread = own_vec[POKEMON_SPREAD_OFFSET : POKEMON_SPREAD_OFFSET + POKEMON_SPREAD_DIM]
+    opp_spread = opp_vec[POKEMON_SPREAD_OFFSET : POKEMON_SPREAD_OFFSET + POKEMON_SPREAD_DIM]
+    # spread_known is at offset 12 within the block
+    assert own_spread[12] == pytest.approx(1.0), "Own slot: spread_known should be 1.0"
+    assert opp_spread[12] == pytest.approx(0.0), "Opp slot: spread_known should be 0.0"
+    # EVs are all zero for own slot but spread_known still distinguishes them
+    assert not np.array_equal(own_spread, opp_spread)
+
+
+def test_spread_block_own_neutral_nature_all_ones():
+    """Neutral nature (hardy/serious) → all 5 nature modifiers are 1.0."""
+    encoder = _make_encoder()
+    mon = _make_mon(nature="hardy", ivs=[31]*6, evs=[0]*6)
+    vec = encoder.encode(mon, None, is_own=True)
+    off = POKEMON_SPREAD_OFFSET
+    assert np.allclose(vec[off+13:off+18], [1.0]*5, atol=1e-5)
+
+
+def test_spread_block_is_own_default_false():
+    """is_own defaults to False → opponent encoding (spread block all zeros)."""
+    encoder = _make_encoder()
+    mon = _make_mon(nature="adamant", ivs=[31]*6, evs=[252]*6)
+    vec = encoder.encode(mon, None)  # no is_own kwarg
+    spread = vec[POKEMON_SPREAD_OFFSET : POKEMON_SPREAD_OFFSET + POKEMON_SPREAD_DIM]
+    assert np.all(spread == 0.0)
+
+
+def test_spread_block_own_none_ivs_fallback():
+    """If mon.ivs is None (poke_env edge case), IVs fall back to all-31, not all-0.
+    Encoding 0.0 for unknown IVs would silently tell the model 'this Pokémon has 0 in
+    every IV' — a lie. All-31 is the correct competitive assumption."""
+    encoder = _make_encoder()
+    mon = _make_mon(nature="adamant")
+    mon.ivs = None  # simulate poke_env not having set IVs
+    mon.evs = [0] * 6
+    vec = encoder.encode(mon, None, is_own=True)
+    off = POKEMON_SPREAD_OFFSET
+    # IVs should be 1.0 (all-31 fallback), NOT 0.0
+    assert np.allclose(vec[off:off+6], [1.0]*6), f"Expected all-31 fallback, got: {vec[off:off+6]}"
+    # spread_known still 1.0 — it's our own team
+    assert vec[off+12] == pytest.approx(1.0)
+
+
+# ---------------------------------------------------------------------------
+# poke_env layer: _update_from_teambuilder with all-zero EVs
+# ---------------------------------------------------------------------------
+
+def test_poke_env_all_zero_evs_stores_ivs_and_nature():
+    """Regression: poke_env must store ivs/evs/nature even when all EVs are zero.
+    The old guard `if not all(e == 0 for e in tb.evs)` left _ivs/_nature as None,
+    causing the spread encoder to silently use wrong values."""
+    from poke_env.teambuilder.teambuilder import Teambuilder
+    from poke_env.battle.pokemon import Pokemon
+
+    # Team paste with explicit 0 EVs and a non-trivial IV spread + non-neutral nature
+    team_paste = """Shedinja @ Lum Berry
+Ability: Wonder Guard
+EVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+Jolly Nature
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Shadow Ball
+- Silver Wind
+- Return
+- Shadow Ball
+"""
+    parsed = Teambuilder.parse_showdown_team(team_paste)
+    assert len(parsed) == 1
+    tb = parsed[0]
+    assert tb.evs == [0, 0, 0, 0, 0, 0], "EVs should all be zero"
+    assert tb.ivs == [31, 31, 31, 31, 31, 31]
+    assert tb.nature is not None and tb.nature.lower() == "jolly"
+
+    mon = Pokemon(gen=3)
+    mon._update_from_teambuilder(tb)
+
+    # After fix: these must NOT be None
+    assert mon.ivs is not None, "ivs should be stored even with all-zero EVs"
+    assert mon.evs is not None, "evs should be stored even with all-zero EVs"
+    assert mon.nature is not None, "nature should be stored even with all-zero EVs"
+    assert mon.ivs == [31, 31, 31, 31, 31, 31]
+    assert mon.evs == [0, 0, 0, 0, 0, 0]
+    assert mon.nature == "jolly"
+
+
+def test_poke_env_no_ev_line_stores_defaults():
+    """Team paste with no EV line → tb.evs=[0]*6 → _update_from_teambuilder must
+    still store the defaults (ivs=[31]*6, evs=[0]*6, nature from paste or 'serious')."""
+    from poke_env.teambuilder.teambuilder import Teambuilder
+    from poke_env.battle.pokemon import Pokemon
+
+    team_paste = """Gengar @ Leftovers
+Ability: Levitate
+Timid Nature
+- Shadow Ball
+- Thunderbolt
+- Ice Punch
+- Destiny Bond
+"""
+    parsed = Teambuilder.parse_showdown_team(team_paste)
+    tb = parsed[0]
+    assert tb.evs == [0, 0, 0, 0, 0, 0]  # default
+    assert tb.ivs == [31, 31, 31, 31, 31, 31]  # default
+
+    mon = Pokemon(gen=3)
+    mon._update_from_teambuilder(tb)
+
+    assert mon.ivs == [31, 31, 31, 31, 31, 31], "Default all-31 IVs should be stored"
+    assert mon.evs == [0, 0, 0, 0, 0, 0], "Default all-0 EVs should be stored"
+    assert mon.nature == "timid"
+
+
+def test_spread_encoder_all_zero_evs_end_to_end():
+    """End-to-end: a real Pokemon with all-zero EVs (from poke_env) must encode
+    correctly — IVs as 1.0, EVs as 0.0, correct nature modifiers, spread_known=1."""
+    from poke_env.teambuilder.teambuilder import Teambuilder
+    from poke_env.battle.pokemon import Pokemon
+
+    team_paste = """Shedinja @ Lum Berry
+Ability: Wonder Guard
+EVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+Adamant Nature
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Shadow Ball
+- Silver Wind
+- Return
+- Shadow Ball
+"""
+    parsed = Teambuilder.parse_showdown_team(team_paste)
+    mon = Pokemon(gen=3)
+    mon._update_from_teambuilder(parsed[0])
+
+    mappings = load_mappings()
+    encoder = _make_encoder(natures=mappings["natures"])
+    vec = encoder.encode(mon, None, is_own=True)
+    off = POKEMON_SPREAD_OFFSET
+
+    assert np.allclose(vec[off:off+6],   [1.0]*6,              atol=1e-5), f"IVs wrong: {vec[off:off+6]}"
+    assert np.allclose(vec[off+6:off+12],[0.0]*6,              atol=1e-5), f"EVs wrong: {vec[off+6:off+12]}"
+    assert vec[off+12] == pytest.approx(1.0),                               "spread_known wrong"
+    # adamant: atk=1.1, def=1.0, spa=0.9, spd=1.0, spe=1.0
+    assert np.allclose(vec[off+13:off+18],[1.1, 1.0, 0.9, 1.0, 1.0], atol=1e-5), f"Nature wrong: {vec[off+13:off+18]}"

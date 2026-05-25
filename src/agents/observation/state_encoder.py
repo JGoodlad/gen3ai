@@ -30,7 +30,7 @@ from agents.action.mask_generator import Gen3ActionMasker
 from agents.observation.reactive import ReactiveEncoder as _ReactiveEncoder
 
 def load_mappings():
-    """Loads move, species, and item mappings with validation."""
+    """Loads move, species, item, ability, and nature mappings with validation."""
     mappings = {}
     mapping_files = {
         "species": "data/pokemon/gen3_species.json",
@@ -41,7 +41,7 @@ def load_mappings():
     for key, path in mapping_files.items():
         if not os.path.exists(path):
             raise FileNotFoundError(f"CRITICAL: Mapping file missing: {path}. Run data generation script first!")
-        
+
         with open(path, "r") as f:
             data = json.load(f)
             if not data:
@@ -54,7 +54,19 @@ def load_mappings():
                 else:
                     normalized[name] = {"num": int(val)}
             mappings[key] = normalized
-            
+
+    # Load natures from poke_env static data — used for spread encoding
+    _natures_path = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", "..", "poke_env", "data", "static", "natures.json"))
+    if not os.path.exists(_natures_path):
+        raise FileNotFoundError(f"CRITICAL: natures.json missing at {_natures_path}. poke_env static data may be corrupted.")
+    with open(_natures_path, "r") as f:
+        raw_natures = json.load(f)
+    # Keep only the stat multipliers (atk/def/spa/spd/spe); drop "num"
+    mappings["natures"] = {
+        name: {k: float(v) for k, v in entry.items() if k in ("atk", "def", "spa", "spd", "spe")}
+        for name, entry in raw_natures.items()
+    }
+
     # Pre-compute reverse mappings for IDs to names
     mappings["reverse"] = {}
     for category in ["species", "moves", "abilities", "items"]:
@@ -69,7 +81,7 @@ def load_mappings():
             elif isinstance(data, (int, float)):
                 rev[int(data)] = name
         mappings["reverse"][category] = rev
-            
+
     return mappings
 
 def get_observation_encoder(mappings):
@@ -94,11 +106,12 @@ class Gen3ObservationEncoder(ObservationEncoder):
         self.moves_encoder = MovesEncoder(mappings.get("moves"), rev.get("moves"))
         
         self.pokemon_encoder = PokemonEncoder(
-            self.species_encoder, 
-            self.items_encoder, 
-            self.type_encoder, 
-            self.abilities_encoder, 
-            self.moves_encoder
+            self.species_encoder,
+            self.items_encoder,
+            self.type_encoder,
+            self.abilities_encoder,
+            self.moves_encoder,
+            natures=mappings.get("natures", {}),
         )
         
         self.active_context_encoder = ActiveContextEncoder(mappings.get("moves"))
@@ -128,19 +141,19 @@ class Gen3ObservationEncoder(ObservationEncoder):
         our_team_list = self.get_team_list(battle, is_opponent=False)
         for i in range(TEAM_SIZE):
             mon = our_team_list[i] if i < len(our_team_list) else None
-            mon_vec = self.pokemon_encoder.encode(mon, battle)
+            mon_vec = self.pokemon_encoder.encode(mon, battle, is_own=True)
             is_active = 1.0 if (mon and mon.active) else 0.0
-            
+
             start = OFFSET_OUR_TEAM + (i * POKEMON_FULL_DIM)
             vec[start : start + POKEMON_VECTOR_DIM] = mon_vec
             vec[start + POKEMON_VECTOR_DIM] = is_active
-            
+
         # 2. Opponent Team
         opponents = self.get_team_list(battle, is_opponent=True)
-            
+
         for i in range(TEAM_SIZE):
             mon = opponents[i] if i < len(opponents) else None
-            mon_vec = self.pokemon_encoder.encode(mon, battle)
+            mon_vec = self.pokemon_encoder.encode(mon, battle, is_own=False)
             is_active = 1.0 if (mon and mon is battle.opponent_active_pokemon) else 0.0
             
             start = OFFSET_OPP_TEAM + (i * POKEMON_FULL_DIM)

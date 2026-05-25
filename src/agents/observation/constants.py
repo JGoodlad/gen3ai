@@ -33,8 +33,14 @@ POKEMON_HP_OFFSET = 57          # 21 + 36
 POKEMON_SPECIES_KNOWN_OFFSET = 58  # 57 + 1 (HP); 1.0 when slot is populated, 0.0 when absent
 POKEMON_COUNTER_OFFSET = 59    # 58 + 1 (species_known): sleep_ctr, toxic_ctr
 POKEMON_COUNTER_DIM = 2        # sleep turn count (norm), toxic turn count (norm)
-POKEMON_VECTOR_DIM = 61        # 59 + 2 (status counters)
-POKEMON_FULL_DIM = 62          # 61 + 1 (active flag appended by state_encoder)
+# Spread block (18 dims): IVs (6) + EVs (6) + spread_known (1) + nature modifiers (5)
+# Stat order for IVs/EVs: [health_pts, atk, def, spa, spd, spe]
+# Stat order for nature modifiers: [atk, def, spa, spd, spe] (HP is never nature-modified)
+# spread_known=1.0 own team (IVs/EVs/nature are real values), 0.0 opponent (all zeros = padding)
+POKEMON_SPREAD_OFFSET = 61     # 59 + 2 (status counters)
+POKEMON_SPREAD_DIM = 18        # 6 IVs + 6 EVs + 1 flag + 5 nature modifiers
+POKEMON_VECTOR_DIM = 79        # 61 + 18 (spread block)
+POKEMON_FULL_DIM = 80          # 79 + 1 (active flag appended by state_encoder)
 
 # Active context: boosts(14) + volatiles(9) = 23
 ACTIVE_CONTEXT_DIM = 23
@@ -45,14 +51,14 @@ GLOBAL_ENV_DIM = 13
 MATCHUP_DIM = 288 # (6*4*6) for Our vs Their + (6*4*6) for Their vs Our
 REACTIVE_DIM = 12 + MATCHUP_DIM  # 300 (removed duplicate hp+spikes: 4 dims)
 
-# Top-level Offsets (Base dim = OFFSET_REACTIVE + REACTIVE_DIM = 1103)
+# Top-level Offsets (Base dim = OFFSET_REACTIVE + REACTIVE_DIM = 1319)
 NUM_POKEMON = 12
 TEAM_SIZE = 6
 OFFSET_OUR_TEAM = 0
-OFFSET_OPP_TEAM = 6 * POKEMON_FULL_DIM   # 372
-OFFSET_CONTEXT = 2 * OFFSET_OPP_TEAM     # 744
-OFFSET_GLOBAL = OFFSET_CONTEXT + (2 * ACTIVE_CONTEXT_DIM)  # 790
-OFFSET_REACTIVE = OFFSET_GLOBAL + GLOBAL_ENV_DIM  # 803
+OFFSET_OPP_TEAM = 6 * POKEMON_FULL_DIM                     # 480
+OFFSET_CONTEXT = 2 * OFFSET_OPP_TEAM                       # 960
+OFFSET_GLOBAL = OFFSET_CONTEXT + (2 * ACTIVE_CONTEXT_DIM)  # 1006
+OFFSET_REACTIVE = OFFSET_GLOBAL + GLOBAL_ENV_DIM            # 1019
 
 # Max values for normalization
 MAX_TURNS = 250

@@ -279,7 +279,7 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         move_mask    = prev_mask[:, TEAM_SIZE:TEAM_SIZE + num_moves]             # [B, 4]
         struggle_mask = prev_mask[:, TEAM_SIZE + num_moves:TEAM_SIZE + num_moves + 1]  # [B, 1]
 
-        # 1. Extract parts using dynamic layout (all offsets are within the base 1021-dim obs)
+        # 1. Extract parts using dynamic layout (offsets read from layout, not hardcoded)
         parts = self.layout['parts']
         ot = parts['our_team']
         our_team = x[:, ot['start']:ot['end']].reshape(batch_size, *ot['reshape'])

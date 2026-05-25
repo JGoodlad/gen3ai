@@ -258,19 +258,21 @@ deps/
 
 ## Observation Vector
 
-The full observation is a **1309-dim float32 vector** (`Gen3ObservationEncoder.dimension`):
+The full observation is a **1525-dim float32 vector** (`Gen3ObservationEncoder.dimension`):
 
 | Block | Dims | Offset | Notes |
 |---|---|---|---|
-| Our team (6 × 62) | 372 | 0 | base encoder |
-| Opp team (6 × 62) | 372 | 372 | base encoder |
-| Active context ×2 | 46 | 744 | base encoder |
-| Global env | 13 | 790 | base encoder |
-| Reactive + matchups | 300 | 803 | base encoder |
-| Prev-turn action mask | 11 | 1103 | appended by `gen3_env.embed_battle()` |
-| Turn history (`N_HISTORY_TURNS` × 39) | 195 | 1114 | appended by `gen3_env.embed_battle()`; oldest first |
+| Our team (6 × 80) | 480 | 0 | base encoder |
+| Opp team (6 × 80) | 480 | 480 | base encoder |
+| Active context ×2 | 46 | 960 | base encoder |
+| Global env | 13 | 1006 | base encoder |
+| Reactive + matchups | 300 | 1019 | base encoder |
+| Prev-turn action mask | 11 | 1319 | appended by `gen3_env.embed_battle()` |
+| Turn history (`N_HISTORY_TURNS` × 39) | 195 | 1330 | appended by `gen3_env.embed_battle()`; oldest first |
 
-Per-Pokémon slot (62 dims): species ID + 6 base stats, item ID + known + consumed, 2 type IDs, ability ID + known, 7-dim condition (status one-hot), 4 × 9-dim move slots, HP fraction, species_known flag, sleep_counter_norm, toxic_counter_norm, active flag. The item block is 3 dims: `[item_id, known, consumed]` — `consumed=1` when the item was spent this battle (Berry activated, Knock Off, Trick, etc.) and `item_id` retains the identity of the consumed item so the model knows what was lost. `species_known = 1.0` for all populated slots (own team and revealed opponent mons), `0.0` for unseen opponent slots. Sleep counter: `min(turns_slept, 4) / 4` (Gen 3 max 4 turns); toxic counter: `min(turns_poisoned, 8) / 8` (practical max before fainting with Leftovers). The item block is 3 dims: `[item_id, known, consumed]` — `consumed=1` when the item was spent this battle (Berry activated, Knock Off, Trick, etc.) and `item_id` retains the identity of the consumed item so the model knows what was lost. `species_known = 1.0` for all populated slots (own team and revealed opponent mons), `0.0` for unseen opponent slots. Sleep counter: `min(turns_slept, 4) / 4` (Gen 3 max 4 turns); toxic counter: `min(turns_poisoned, 8) / 8` (practical max before fainting with Leftovers).
+Per-Pokémon slot (80 dims): species ID + 6 base stats, item ID + known + consumed, 2 type IDs, ability ID + known, 7-dim condition (status one-hot), 4 × 9-dim move slots, HP fraction, species_known flag, sleep_counter_norm, toxic_counter_norm, **spread block (18 dims)**, active flag. The item block is 3 dims: `[item_id, known, consumed]` — `consumed=1` when the item was spent this battle (Berry activated, Knock Off, Trick, etc.) and `item_id` retains the identity of the consumed item so the model knows what was lost. `species_known = 1.0` for all populated slots (own team and revealed opponent mons), `0.0` for unseen opponent slots. Sleep counter: `min(turns_slept, 4) / 4` (Gen 3 max 4 turns); toxic counter: `min(turns_poisoned, 8) / 8` (practical max before fainting with Leftovers).
+
+Spread block (18 dims, appended at offset 61 within each slot): IVs ×6 each/31 + EVs ×6 each/252 + spread_known (1.0 own, 0.0 opp) + nature modifiers ×5 [atk, def, spa, spd, spe] as raw floats (0.9/1.0/1.1). Opponent slots have all 18 dims as zeros; `spread_known=0` distinguishes "unknown opponent" from "own Pokémon with 0 EVs".
 
 Global env (13 dims): weather one-hot (6), spikes ×2 (2), log-turn (1), our reflect (1), our light screen (1), opp reflect (1), opp light screen (1).
 

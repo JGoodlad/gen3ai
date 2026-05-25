@@ -778,10 +778,16 @@ class Pokemon:
             move = Move(Move.retrieve_id(move_str), gen=self.gen)
             self._moves[move.id] = move
 
-        if not all(e == 0 for e in tb.evs):
-            self._evs = tb.evs
-            self._ivs = tb.ivs
-            self._nature = tb.nature.lower() if tb.nature is not None else "serious"
+        # Always store IVs/EVs/nature from the teambuilder — all-zero EVs is a valid
+        # competitive spread (e.g. a Shedinja or a team paste with no EV line).
+        # The old guard `if not all(e == 0 for e in tb.evs)` would leave _ivs/_nature
+        # as None for those cases, causing our spread encoder to silently encode wrong
+        # values (IVs wrongly as 0/31, nature modifiers wrongly as 1.0).
+        # TeambuilderPokemon.__init__ already supplies safe defaults ([31]*6 for IVs,
+        # [0]*6 for EVs, None for nature → "serious") so unconditional storage is correct.
+        self._evs = tb.evs
+        self._ivs = tb.ivs
+        self._nature = tb.nature.lower() if tb.nature is not None else "serious"
 
         if tb.level:
             nature = tb.nature.lower() if tb.nature else "serious"
