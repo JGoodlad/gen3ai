@@ -7,7 +7,7 @@ from poke_env.battle.pokemon_type import PokemonType
 from poke_env.battle.status import Status
 
 from agents.gen3_mechanics import (
-    ABILITY_TYPE_IMMUNITY,
+    ABILITY_TYPE_MULTIPLIER,
     STATUS_MOVE_IMMUNITY,
     NOTABLE_EFFECTS,
     PHAZING_MOVES,

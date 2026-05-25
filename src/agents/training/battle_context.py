@@ -1,5 +1,5 @@
 from __future__ import annotations
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Literal
 import numpy as np
 
@@ -86,6 +86,20 @@ class BattleContext:
     # True = we executed our action before the opponent in the turn that just ended.
     # None when one or both sides performed a normal switch (no move competition).
     we_moved_first: bool | None
+
+    # Per-side set of fainted species — used to identify which specific mon
+    # newly fainted between two contexts (the count alone is ambiguous, e.g. for
+    # resolving the actual target of opponent Hidden Power when our side switched
+    # and the switch-in fainted in the same turn).
+    our_fainted_species: frozenset = field(default_factory=frozenset)  # frozenset[str]
+    opp_fainted_species: frozenset = field(default_factory=frozenset)  # frozenset[str]
+
+    # Per-mon status at this context's snapshot point. Used to evaluate Gen 3
+    # ability quirks that depend on status — currently the Flash Fire-vs-frozen
+    # interaction (a frozen target's Flash Fire does NOT block incoming Fire moves,
+    # and the move itself thaws the target). Without a historical snapshot we'd
+    # only see the post-thaw status and mis-evaluate the just-fired move.
+    our_team_status: dict = field(default_factory=dict)  # dict[str, Status | None]
 
     def __post_init__(self):
         if self.mask.shape != (11,):
@@ -188,6 +202,9 @@ class BattleContext:
             opp_active=opp_active,
             our_fainted_count=sum(1 for m in battle.team.values() if m.fainted),
             opp_fainted_count=sum(1 for m in battle.opponent_team.values() if m.fainted),
+            our_fainted_species=frozenset(m.species for m in battle.team.values() if m.fainted),
+            opp_fainted_species=frozenset(m.species for m in battle.opponent_team.values() if m.fainted),
+            our_team_status={m.species: m.status for m in battle.team.values()},
             active_move_ids=active_move_ids,
             opp_last_move_id=opp_last_move_id,
             opp_all_last_move_ids=opp_all_last_move_ids,

@@ -11,33 +11,48 @@ from __future__ import annotations
 import numpy as np
 from poke_env.battle.effect import Effect
 from poke_env.battle.pokemon_type import PokemonType
+from poke_env.battle.status import Status
 from poke_env.data import GenData
 
 # ---------------------------------------------------------------------------
 # Type effectiveness
 # ---------------------------------------------------------------------------
 
-# Abilities that grant a full type immunity in Gen 3.
-ABILITY_TYPE_IMMUNITY: dict[str, PokemonType] = {
-    "levitate":    PokemonType.GROUND,
-    "voltabsorb":  PokemonType.ELECTRIC,
-    "waterabsorb": PokemonType.WATER,
-    "flashfire":   PokemonType.FIRE,
+# Abilities that modify incoming move-type damage in Gen 3. Maps ability name to
+# {move_type: multiplier}. Multiplier 0.0 = full immunity (Levitate / Volt Absorb /
+# Water Absorb / Flash Fire); 0.5 = halved damage (Thick Fat). Each entry mirrors
+# the |-immune| or |-resisted| message Showdown emits for that ability, so callers
+# comparing against battle.*_last_effectiveness see consistent values.
+#
+# Gen 3-only — Heatproof / Filter / Solid Rock are Gen 4+, Wonder Guard is Shedinja-
+# only (not OU), and Lightning Rod doesn't grant immunity in Gen 3 singles.
+ABILITY_TYPE_MULTIPLIER: dict[str, dict[PokemonType, float]] = {
+    "levitate":    {PokemonType.GROUND:   0.0},
+    "voltabsorb":  {PokemonType.ELECTRIC: 0.0},
+    "waterabsorb": {PokemonType.WATER:    0.0},
+    "flashfire":   {PokemonType.FIRE:     0.0},
+    "thickfat":    {PokemonType.ICE:      0.5, PokemonType.FIRE: 0.5},
 }
 
 _type_chart = GenData.from_gen(3).type_chart
 
 
 def effective_multiplier(move_type: PokemonType, mon) -> float:
-    """Type effectiveness of move_type vs mon, accounting for Gen 3 ability immunities.
+    """Damage-type multiplier of move_type vs mon, including Gen 3 ability modifiers.
 
-    Returns 0.0 when the mon's ability (Levitate, Volt Absorb, Water Absorb, Flash Fire)
-    nullifies the move type entirely; otherwise delegates to the type chart.
+    Returns the final multiplier Showdown reports through |-immune|/|-resisted|/
+    |-supereffective| messages. Multiplies the raw type-chart value by the mon's
+    ability modifier from ABILITY_TYPE_MULTIPLIER (default 1.0 = no effect).
+
+    Gen 3 quirk: Flash Fire does NOT activate when the target is frozen — the
+    incoming Fire move falls through and is resisted normally (0.5× from Fire-type).
+    See pokemon-showdown/data/mods/gen3/abilities.ts.
     """
     ability = (getattr(mon, "ability", None) or "").lower()
-    if ABILITY_TYPE_IMMUNITY.get(ability) == move_type:
-        return 0.0
-    return move_type.damage_multiplier(mon.type_1, mon.type_2, type_chart=_type_chart)
+    base = move_type.damage_multiplier(mon.type_1, mon.type_2, type_chart=_type_chart)
+    if ability == "flashfire" and getattr(mon, "status", None) == Status.FRZ:
+        return base
+    return base * ABILITY_TYPE_MULTIPLIER.get(ability, {}).get(move_type, 1.0)
 
 
 # ---------------------------------------------------------------------------
