@@ -644,7 +644,7 @@ async def main():
         model.n_epochs = args.n_epochs
         model.clip_range = lambda _: CLIP_RANGE
         model.clip_range_vf = lambda _: args.clip_range_vf
-        send_event(f"▶️  Resuming at LR {resume_lr:.2e}, epochs {args.n_epochs} (checkpoint LR={saved_lr:.2e})")
+        send_event(f"▶️ Resuming at LR {resume_lr:.2e}, epochs {args.n_epochs} (checkpoint LR={saved_lr:.2e})")
 
         if args.eval_only:
             await evaluate_model_random(model)

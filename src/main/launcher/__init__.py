@@ -40,7 +40,8 @@ def main() -> None:
         default=False,
         help="Skip worktree pinning — child runs from the current working tree (old behaviour)",
     )
-    parser.add_argument(
+    pin_group = parser.add_mutually_exclusive_group()
+    pin_group.add_argument(
         "--sync-to-main",
         action="store_true",
         default=False,
@@ -48,6 +49,15 @@ def main() -> None:
             "When resuming from a checkpoint, pin the isolated worktree to the current HEAD "
             "instead of the checkpoint's original git hash. Useful for picking up UI or tooling "
             "fixes without discarding the checkpoint."
+        ),
+    )
+    pin_group.add_argument(
+        "--pin-to-hash",
+        metavar="HASH",
+        default=None,
+        help=(
+            "Pin the isolated worktree to a specific git hash instead of the checkpoint's "
+            "recorded hash or current HEAD. Useful for resuming a run against a known-good commit."
         ),
     )
     parser.add_argument("-h", "--help", action="store_true")
@@ -59,6 +69,9 @@ def main() -> None:
         print("\nAll other arguments are forwarded to train_rl_agent.py.")
         sys.exit(0)
 
+    if known.pin_to_hash and known.no_pin:
+        parser.error("--pin-to-hash and --no-pin are mutually exclusive")
+
     child_args = _strip_launcher_args(sys.argv[1:])
     try:
         run(
@@ -66,6 +79,7 @@ def main() -> None:
             interval_hours=known.restart_interval_hours,
             pin=not known.no_pin,
             sync_to_main=known.sync_to_main,
+            pin_hash_override=known.pin_to_hash,
         )
     except KeyboardInterrupt:
         sys.exit(0)

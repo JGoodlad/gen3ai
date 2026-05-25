@@ -75,7 +75,7 @@ def _print_exit_summary(run_dir: "str | None", state: LauncherState) -> None:
     print("\n".join(lines), file=sys.stderr)
 
 
-def run(child_args: list, interval_hours: float, pin: bool = True, sync_to_main: bool = False) -> None:
+def run(child_args: list, interval_hours: float, pin: bool = True, sync_to_main: bool = False, pin_hash_override: "str | None" = None) -> None:
     interval_seconds = interval_hours * 3600
     session_start = time.time()
     child_env = _build_child_env()
@@ -86,7 +86,9 @@ def run(child_args: list, interval_hours: float, pin: bool = True, sync_to_main:
         repo_root = get_repo_root()
         _prune_stale_launcher_worktrees(repo_root)
         model_path = _find_model_arg(child_args)
-        if model_path and not sync_to_main:
+        if pin_hash_override:
+            pin_hash = pin_hash_override
+        elif model_path and not sync_to_main:
             checkpoint_hash = _read_checkpoint_git_hash(model_path)
             if not checkpoint_hash:
                 sys.exit(
@@ -131,7 +133,11 @@ def run(child_args: list, interval_hours: float, pin: bool = True, sync_to_main:
         state.add_event("🚀 Starting — single run (no restart)")
 
     if pin:
-        if sync_to_main and _find_model_arg(child_args):
+        if pin_hash_override:
+            state.add_event(
+                f"📌 --pin-to-hash: pinned to {state.initial_git_hash} (explicit override)"
+            )
+        elif sync_to_main and _find_model_arg(child_args):
             state.add_event(
                 f"🔄 --sync-to-main: pinned to current HEAD {state.initial_git_hash} "
                 f"(ignoring checkpoint's original hash)"

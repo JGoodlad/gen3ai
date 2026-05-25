@@ -92,6 +92,10 @@ def _strip_launcher_args(argv: list) -> list:
             i += 1
         elif argv[i] == "--sync-to-main":
             i += 1
+        elif argv[i] == "--pin-to-hash":
+            i += 2
+        elif argv[i].startswith("--pin-to-hash="):
+            i += 1
         else:
             out.append(argv[i])
             i += 1
