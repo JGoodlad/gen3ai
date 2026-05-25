@@ -21,7 +21,7 @@ class AdaptivePPOCallback(BaseCallback):
         min_lr:        Hard lower bound on LR.
         max_lr:        Hard upper bound on LR. Defaults to 2× initial_lr.
         ema_alpha:     EMA smoothing factor (0, 1]. Lower = more smoothing,
-                       more rollouts needed to trigger a change. Default 0.3.
+                       more rollouts needed to trigger a change. Default 0.1.
     """
 
     def __init__(
@@ -32,7 +32,7 @@ class AdaptivePPOCallback(BaseCallback):
         lr_factor: float = 1.5,
         min_lr: float = 1e-5,
         max_lr: float | None = None,
-        ema_alpha: float = 0.3,
+        ema_alpha: float = 0.1,
         verbose: int = 1,
     ):
         super().__init__(verbose)
