@@ -33,7 +33,7 @@ from poke_env.player import RandomPlayer
 from poke_env.player.player import Player
 from poke_env.ps_client.server_configuration import LocalhostServerConfiguration
 
-from agents.gen3_mechanics import effective_multiplier
+from agents.gen3_mechanics import bucket_effectiveness, effective_multiplier
 from agents.training.hidden_power_tracker import HiddenPowerTracker, HIDDEN_POWER_TYPE_ORDER
 from utils.teambuilder import Gen3Teambuilder
 
@@ -436,11 +436,15 @@ class HiddenPowerTrackerFuzzPlayer(Player):
                         raise
 
                     # Invariant: every survivor is consistent with the observation.
+                    # Bucket the calculated multiplier to match poke-env's reported
+                    # effectiveness ({0, 0.5, 1, 2} — 4× collapses to 2.0).
                     probs = tracker.get_probs(prev_opp)
                     for i, prob in enumerate(probs):
                         if prob > 0.0:
                             hp_type = HIDDEN_POWER_TYPE_ORDER[i]
-                            actual = effective_multiplier(hp_type, target_mon)
+                            actual = bucket_effectiveness(
+                                effective_multiplier(hp_type, target_mon)
+                            )
                             if actual != opp_last_effectiveness:
                                 raise AssertionError(
                                     f"INVARIANT VIOLATED: {prev_opp} used HP on "

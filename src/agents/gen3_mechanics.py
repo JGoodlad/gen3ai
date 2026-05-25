@@ -40,9 +40,14 @@ _type_chart = GenData.from_gen(3).type_chart
 def effective_multiplier(move_type: PokemonType, mon) -> float:
     """Damage-type multiplier of move_type vs mon, including Gen 3 ability modifiers.
 
-    Returns the final multiplier Showdown reports through |-immune|/|-resisted|/
-    |-supereffective| messages. Multiplies the raw type-chart value by the mon's
-    ability modifier from ABILITY_TYPE_MULTIPLIER (default 1.0 = no effect).
+    Returns the *raw* multiplier — 0×, 0.25×, 0.5×, 1×, 2×, 4× are all possible.
+    Multiplies the raw type-chart value by the mon's ability modifier from
+    ABILITY_TYPE_MULTIPLIER (default 1.0 = no effect).
+
+    Callers comparing against `battle.*_last_effectiveness` (which poke-env
+    bucketizes to {0.0, 0.5, 1.0, 2.0}) must pipe this through
+    `bucket_effectiveness()` first — otherwise 4× HP Grass on Water/Ground
+    won't equal the 2.0 the protocol reports.
 
     Gen 3 quirk: Flash Fire does NOT activate when the target is frozen — the
     incoming Fire move falls through and is resisted normally (0.5× from Fire-type).
@@ -53,6 +58,25 @@ def effective_multiplier(move_type: PokemonType, mon) -> float:
     if ability == "flashfire" and getattr(mon, "status", None) == Status.FRZ:
         return base
     return base * ABILITY_TYPE_MULTIPLIER.get(ability, {}).get(move_type, 1.0)
+
+
+def bucket_effectiveness(mult: float) -> float:
+    """Bucket a raw type multiplier into Showdown's reported effectiveness.
+
+    Showdown emits one of |-immune| / |-resisted| / nothing-for-neutral /
+    |-supereffective| per damaging hit, which poke-env stores as
+    {0.0, 0.5, 1.0, 2.0}. Raw multipliers like 0.25× or 4× collapse into the
+    resisted / super-effective buckets. Use this when comparing against
+    `battle.*_last_effectiveness` so 4× SE hits match 2.0 and 0.25× double-
+    resisted hits match 0.5.
+    """
+    if mult == 0.0:
+        return 0.0
+    if mult < 1.0:
+        return 0.5
+    if mult == 1.0:
+        return 1.0
+    return 2.0
 
 
 # ---------------------------------------------------------------------------

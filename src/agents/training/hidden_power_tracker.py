@@ -17,7 +17,7 @@ import os
 import numpy as np
 from poke_env.battle.pokemon_type import PokemonType
 
-from agents.gen3_mechanics import effective_multiplier
+from agents.gen3_mechanics import bucket_effectiveness, effective_multiplier
 from utils.git import get_repo_root
 
 # Fixed alphabetical order — index is canonical across tracker, encoder, and design doc
@@ -72,6 +72,9 @@ class HiddenPowerTracker:
             with open(priors_path) as f:
                 self._priors = json.load(f)
         self._state: dict[str, np.ndarray] = {}
+        # Per-species observation log — kept so a ValueError dump can show
+        # exactly which earlier observations narrowed the candidate set to nothing.
+        self._obs_log: dict[str, list] = {}
 
     def observe(self, species: str, effectiveness: float, target_mon) -> None:
         """Filter the candidate distribution for species after HP hits target_mon.
@@ -96,31 +99,51 @@ class HiddenPowerTracker:
                 vec = np.full(16, _FLAT_PRIOR, dtype=np.float32)
             self._state[species] = vec
 
+        # poke-env reports effectiveness in the {0, 0.5, 1, 2} buckets — a 4× SE
+        # hit on a quad-weak target reads as 2.0, not 4.0. Bucket our computed
+        # multipliers the same way before comparing.
         for i, hidden_power_type in enumerate(HIDDEN_POWER_TYPE_ORDER):
             if self._state[species][i] != 0.0:
-                if effective_multiplier(hidden_power_type, target_mon) != effectiveness:
+                calc = bucket_effectiveness(
+                    effective_multiplier(hidden_power_type, target_mon)
+                )
+                if calc != effectiveness:
                     self._state[species][i] = 0.0
+
+        # Record this observation for the diagnostic dump below (and for callers
+        # introspecting the narrowing history).
+        self._obs_log.setdefault(species, []).append((
+            float(effectiveness),
+            getattr(target_mon, "species", "?"),
+            str(getattr(target_mon, "type_1", "?")),
+            str(getattr(target_mon, "type_2", None)),
+            getattr(target_mon, "ability", None),
+            str(getattr(target_mon, "status", None)),
+        ))
 
         if not np.any(self._state[species]):
             mon_desc = (
                 f"{getattr(target_mon, 'species', '?')} "
                 f"(type1={getattr(target_mon, 'type_1', '?')}, "
                 f"type2={getattr(target_mon, 'type_2', '?')}, "
-                f"ability={getattr(target_mon, 'ability', '?')})"
+                f"ability={getattr(target_mon, 'ability', '?')}, "
+                f"status={getattr(target_mon, 'status', None)})"
             )
-            if had_prior_entry:
-                raise ValueError(
-                    f"HiddenPowerTracker: all candidates eliminated for '{species}' "
-                    f"after observing {effectiveness}× on {mon_desc}. "
-                    f"Species has a prior entry — this is likely a tracker bug."
-                )
-            else:
-                raise ValueError(
-                    f"HiddenPowerTracker: all candidates eliminated for '{species}' "
-                    f"after observing {effectiveness}× on {mon_desc}. "
-                    f"Species has no prior entry (flat 1/16 used) — data gap: "
-                    f"add '{species}' to gen3_hidden_power_priors.json."
-                )
+            history = "\n  ".join(
+                f"eff={e}× target={s} types=({t1}/{t2}) ability={a} status={st}"
+                for (e, s, t1, t2, a, st) in self._obs_log[species]
+            )
+            why = (
+                "Species has a prior entry — this is likely a tracker bug."
+                if had_prior_entry
+                else "Species has no prior entry (flat 1/16 used) — data gap: "
+                     f"add '{species}' to gen3_hidden_power_priors.json."
+            )
+            raise ValueError(
+                f"HiddenPowerTracker: all candidates eliminated for '{species}' "
+                f"after observing {effectiveness}× on {mon_desc}. {why}\n"
+                f"Observation log for '{species}':\n  {history}"
+            )
 
     def is_feasible(self, effectiveness: float, target_mon) -> bool:
         """Return True if at least one HP type produces this effectiveness against target_mon.
@@ -131,7 +154,7 @@ class HiddenPowerTracker:
         and the observation should be discarded rather than raising ValueError.
         """
         return any(
-            effective_multiplier(hp_type, target_mon) == effectiveness
+            bucket_effectiveness(effective_multiplier(hp_type, target_mon)) == effectiveness
             for hp_type in HIDDEN_POWER_TYPE_ORDER
         )
 
@@ -146,3 +169,4 @@ class HiddenPowerTracker:
 
     def reset(self) -> None:
         self._state.clear()
+        self._obs_log.clear()

@@ -98,6 +98,40 @@ def test_flash_fire_healthy_arcanine_0x_leaves_fire_only():
     assert surviving == {HP_IDX["fire"]}, f"got {surviving}"
 
 
+def test_quad_se_hit_matches_bucketed_2x():
+    """Quad-effective hits (4×) report as 2.0 via Showdown's effectiveness bucket.
+
+    HP Grass on Swampert (Water/Ground): 2× × 2× = 4×, but Showdown emits
+    |-supereffective| → poke-env stores 2.0. The tracker must match the
+    bucketed value, not the raw 4× multiplier, or Grass gets wrongly eliminated
+    as a candidate and the whole vector zeros out.
+    """
+    tracker = make_tracker()
+    swampert = MockMon("swampert", PokemonType.WATER, PokemonType.GROUND, "torrent")
+    # Observed effectiveness from poke-env is 2.0, not 4.0
+    tracker.observe("zapdos", 2.0, swampert)
+    probs = tracker.get_probs("zapdos")
+    # Grass is the only type that gives any SE multiplier on Water/Ground (4×),
+    # so it must be the lone survivor — and the prior weight must be preserved.
+    assert probs[HP_IDX["grass"]] > 0.0, "Grass (4×, bucketed to SE) must survive"
+    survivors = {i for i, p in enumerate(probs) if p > 0}
+    assert survivors == {HP_IDX["grass"]}, f"got {survivors}"
+
+
+def test_double_resisted_quarter_hit_matches_bucketed_0_5x():
+    """0.25× double-resisted hits report as 0.5 via the bucket.
+
+    HP Grass on Charizard (Fire/Flying): 0.5× × 0.5× = 0.25×, bucketed to 0.5.
+    Tracker must accept Grass even though raw mult is 0.25 not 0.5.
+    """
+    tracker = make_tracker()
+    charizard = MockMon("charizard", PokemonType.FIRE, PokemonType.FLYING, "blaze")
+    tracker.observe("starmie", 0.5, charizard)
+    probs = tracker.get_probs("starmie")
+    # Grass survives (0.25× bucketed to resisted).
+    assert probs[HP_IDX["grass"]] > 0.0, "Grass (0.25×, bucketed to resisted) must survive"
+
+
 # ---------------------------------------------------------------------------
 # Prior initialisation
 # ---------------------------------------------------------------------------
