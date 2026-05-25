@@ -38,9 +38,10 @@ _FIG_BG = "#1a1a1a"
 _AXES_BG = "#262626"
 _GRID_ALPHA = 0.15
 _NCOLS = 3
-_ROW_HEIGHT = 3.5            # inches per row of subplots
-_FIG_WIDTH = 18.0            # inches
-_DPI = 150
+_MAX_PER_PAGE = 6            # charts per PNG (2 rows × 3 cols)
+_ROW_HEIGHT = 5.0            # inches per row of subplots
+_FIG_WIDTH = 24.0            # inches
+_DPI = 200
 
 # Mutex so concurrent TUI presses don't stomp each other's matplotlib state.
 _plot_lock = threading.Lock()
@@ -144,58 +145,77 @@ def generate_plots(tb_dir: str, out_dir: str, smoothing: float = 0.75) -> list[s
                 continue
 
             tags_with_data = sorted(data.keys())
-            n = len(tags_with_data)
-            ncols = min(_NCOLS, n)
-            nrows = (n + ncols - 1) // ncols
+            pages = _chunk(tags_with_data, _MAX_PER_PAGE)
+            multi = len(pages) > 1
 
-            fig, axes = plt.subplots(
-                nrows, ncols,
-                figsize=(_FIG_WIDTH, nrows * _ROW_HEIGHT),
-                squeeze=False,
-            )
-            fig.patch.set_facecolor(_FIG_BG)
+            for page_idx, page_tags in enumerate(pages):
+                n = len(page_tags)
+                ncols = min(_NCOLS, n)
+                nrows = (n + ncols - 1) // ncols
 
-            for idx, tag in enumerate(tags_with_data):
-                row, col = divmod(idx, ncols)
-                ax = axes[row][col]
-                steps, values = data[tag]
+                fig, axes = plt.subplots(
+                    nrows, ncols,
+                    figsize=(_FIG_WIDTH, nrows * _ROW_HEIGHT),
+                    squeeze=False,
+                )
+                fig.patch.set_facecolor(_FIG_BG)
 
-                # Raw line (faint).
-                ax.plot(steps, values, color=_ACCENT, alpha=0.2, linewidth=0.8)
+                for idx, tag in enumerate(page_tags):
+                    row, col = divmod(idx, ncols)
+                    ax = axes[row][col]
+                    steps, values = data[tag]
 
-                # EMA-smoothed line (solid).
-                if len(values) > 1:
-                    smoothed = _ema(values, smoothing)
-                    ax.plot(steps, smoothed, color=_ACCENT, alpha=1.0, linewidth=1.5)
+                    # Raw line (faint).
+                    ax.plot(steps, values, color=_ACCENT, alpha=0.2, linewidth=1.0)
 
-                # Style the axes.
-                ax.set_facecolor(_AXES_BG)
-                ax.grid(True, color="white", alpha=_GRID_ALPHA, linewidth=0.5)
-                ax.tick_params(colors="white", labelsize=7)
-                for spine in ax.spines.values():
-                    spine.set_edgecolor("#444444")
+                    # EMA-smoothed line (solid).
+                    smoothed = values
+                    if len(values) > 1:
+                        smoothed = _ema(values, smoothing)
+                        ax.plot(steps, smoothed, color=_ACCENT, alpha=1.0, linewidth=2.0)
 
-                # X-axis: abbreviated step counts.
-                ax.xaxis.set_major_formatter(mticker.FuncFormatter(_fmt_step))
-                ax.tick_params(axis="x", labelsize=6)
+                    # Style the axes.
+                    ax.set_facecolor(_AXES_BG)
+                    ax.grid(True, color="white", alpha=_GRID_ALPHA, linewidth=0.5)
+                    ax.tick_params(axis="y", colors="white", labelsize=9)
+                    ax.tick_params(axis="x", colors="white", labelsize=8)
+                    for spine in ax.spines.values():
+                        spine.set_edgecolor("#444444")
 
-                # Title: strip the group prefix.
-                short = tag.partition("/")[2] if "/" in tag else tag
-                ax.set_title(short, color="white", fontsize=8, pad=4)
+                    # X-axis: abbreviated step counts.
+                    ax.xaxis.set_major_formatter(mticker.FuncFormatter(_fmt_step))
 
-            # Hide unused subplot slots.
-            for idx in range(n, nrows * ncols):
-                row, col = divmod(idx, ncols)
-                axes[row][col].set_visible(False)
+                    # Pin win-rate axes to [0, 1] so all rate charts share a scale.
+                    if "win_rate" in tag:
+                        ax.set_ylim(0.0, 1.0)
 
-            fig.suptitle(group, color="#aaaaaa", fontsize=10, y=1.01)
-            fig.tight_layout(h_pad=2.0, w_pad=1.5)
+                    # Annotate the final smoothed value in the corner for quick reading.
+                    ax.annotate(
+                        f"{smoothed[-1]:.4g}",
+                        xy=(0.98, 0.95), xycoords="axes fraction",
+                        ha="right", va="top", color="#dddddd", fontsize=9,
+                        bbox=dict(boxstyle="round,pad=0.3", fc="#333333", ec="none", alpha=0.85),
+                    )
 
-            path = os.path.join(out_dir, f"{group}.png")
-            fig.savefig(path, dpi=_DPI, bbox_inches="tight",
-                        facecolor=_FIG_BG, edgecolor="none")
-            plt.close(fig)
-            written.append(os.path.abspath(path))
+                    # Title: strip the group prefix.
+                    short = tag.partition("/")[2] if "/" in tag else tag
+                    ax.set_title(short, color="white", fontsize=11, pad=6)
+
+                # Hide unused subplot slots.
+                for idx in range(n, nrows * ncols):
+                    row, col = divmod(idx, ncols)
+                    axes[row][col].set_visible(False)
+
+                title = f"{group} ({page_idx + 1}/{len(pages)})" if multi else group
+                fig.suptitle(title, color="#aaaaaa", fontsize=10, y=1.01)
+                fig.tight_layout(h_pad=2.0, w_pad=1.5)
+
+                stem = f"{group}_{page_idx + 1}" if multi else group
+                path = os.path.join(out_dir, f"{stem}.png")
+                fig.savefig(path, dpi=_DPI, bbox_inches="tight",
+                            facecolor=_FIG_BG, edgecolor="none")
+                plt.close(fig)
+                written.append(os.path.abspath(path))
 
     return written
 
@@ -203,6 +223,11 @@ def generate_plots(tb_dir: str, out_dir: str, smoothing: float = 0.75) -> list[s
 # ---------------------------------------------------------------------------
 # Internal helpers
 # ---------------------------------------------------------------------------
+
+def _chunk(items: list, size: int) -> list[list]:
+    """Split a list into consecutive chunks of at most *size* elements."""
+    return [items[i:i + size] for i in range(0, len(items), size)]
+
 
 def _ema(values: list[float], weight: float) -> list[float]:
     """Exponential moving average — same formula as TensorBoard's smoothing."""
