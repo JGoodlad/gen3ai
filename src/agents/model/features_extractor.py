@@ -9,6 +9,7 @@ from agents.observation.constants import (
     POKEMON_FULL_DIM
 )
 from agents.observation.turn_delta_encoder import TURN_DELTA_DIM, EFF_DIM, ORDER_DIM
+from agents.action.constants import ACTION_SPACE_SIZE
 from utils.logging.levels import LogLevel
 
 # Strategic TurnDelta slice: always the tail of the TurnDelta block (effectiveness + order).
@@ -239,11 +240,9 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         self.norm_pool_their = torch.nn.LayerNorm(D_MODEL)
 
         # Token-count constants (handy for slicing transformer output).
-        self._n_team_tokens = TEAM_SIZE
         self._our_token_slice = slice(0, TEAM_SIZE)
         self._their_token_slice = slice(TEAM_SIZE, 2 * TEAM_SIZE)
         self._history_token_slice = slice(2 * TEAM_SIZE, 2 * TEAM_SIZE + N_HISTORY_TURNS)
-        self._global_token_index = 2 * TEAM_SIZE + N_HISTORY_TURNS
         self._total_tokens = 2 * TEAM_SIZE + N_HISTORY_TURNS + 1
 
         # ------------------------------------------------------------------
@@ -269,6 +268,19 @@ class Gen3FeaturesExtractor(torch.nn.Module):
             self._debugger: Optional[ObservationDebugger] = ObservationDebugger(mappings)
         else:
             self._debugger = None
+
+    @staticmethod
+    def _locate_active_slot(active_flags: torch.Tensor) -> torch.Tensor:
+        """[B, TEAM_SIZE] active-flag tensor → [B] long index of the live active slot,
+        or 0 when no flag is set. Centralises the fallback so a future change to the
+        "no active" behaviour is a single-site edit.
+        """
+        B = active_flags.shape[0]
+        return torch.where(
+            active_flags.any(dim=1),
+            torch.argmax(active_flags, dim=1),
+            torch.zeros(B, dtype=torch.long, device=active_flags.device),
+        )
 
     @staticmethod
     def _embed_delta_slot(slot, move_embedding, type_embedding):
@@ -298,10 +310,10 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         m_slot_layout   = moves_layout['slot_layout']
         num_moves       = len(moves_layout['slots'])
 
-        # Extract prev_mask (11 dims) and turn-history block (N * TURN_DELTA_DIM) from obs tail
-        prev_mask = x[:, base_dim : base_dim + 11]                               # [B, 11]
+        # Extract prev_mask (ACTION_SPACE_SIZE dims) and turn-history block (N * TURN_DELTA_DIM) from obs tail
+        prev_mask = x[:, base_dim : base_dim + ACTION_SPACE_SIZE]                # [B, ACTION_SPACE_SIZE]
         history_dim = N_HISTORY_TURNS * TURN_DELTA_DIM
-        turn_history_raw = x[:, base_dim + 11 : base_dim + 11 + history_dim]    # [B, N*39]
+        turn_history_raw = x[:, base_dim + ACTION_SPACE_SIZE : base_dim + ACTION_SPACE_SIZE + history_dim]  # [B, N*39]
         switch_mask  = prev_mask[:, 0:TEAM_SIZE]                                 # [B, 6]
         move_mask    = prev_mask[:, TEAM_SIZE:TEAM_SIZE + num_moves]             # [B, 4]
         struggle_mask = prev_mask[:, TEAM_SIZE + num_moves:TEAM_SIZE + num_moves + 1]  # [B, 1]
@@ -449,12 +461,7 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         # The active flag is always the LAST dim of `hp_and_active` — keep this anchored
         # to `-1` so future per-slot additions (more counters, candidate blocks, etc.)
         # don't silently break it.
-        _our_active_flags_early = hp_and_active[:, 0:TEAM_SIZE, -1]
-        _our_active_idx_early = torch.where(
-            _our_active_flags_early.any(dim=1),
-            torch.argmax(_our_active_flags_early, dim=1),
-            torch.zeros(batch_size, dtype=torch.long, device=x.device),
-        )
+        _our_active_idx_early = self._locate_active_slot(hp_and_active[:, 0:TEAM_SIZE, -1])
         move_validity_ours = torch.ones(batch_size, TEAM_SIZE, num_moves, 1, device=x.device)
         move_validity_ours[torch.arange(batch_size, device=x.device), _our_active_idx_early] = \
             move_mask.unsqueeze(-1).float()
@@ -527,18 +534,8 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         # Locate active slots for downstream extraction.
         # The active flag is always the LAST dim of `hp_and_active` (see comment above).
         active_flags = hp_and_active[:, :, -1]                  # [B, 12]
-        our_active_flags = active_flags[:, 0:TEAM_SIZE]
-        opp_active_flags = active_flags[:, TEAM_SIZE:2 * TEAM_SIZE]
-        our_active_idx = torch.where(
-            our_active_flags.any(dim=1),
-            torch.argmax(our_active_flags, dim=1),
-            torch.zeros(batch_size, dtype=torch.long, device=x.device),
-        )  # [B] in [0, 5]
-        opp_active_local = torch.where(
-            opp_active_flags.any(dim=1),
-            torch.argmax(opp_active_flags, dim=1),
-            torch.zeros(batch_size, dtype=torch.long, device=x.device),
-        )  # [B] in [0, 5]
+        our_active_idx = self._locate_active_slot(active_flags[:, 0:TEAM_SIZE])           # [B] in [0, 5]
+        opp_active_local = self._locate_active_slot(active_flags[:, TEAM_SIZE:2 * TEAM_SIZE])  # [B] in [0, 5]
         batch_idx = torch.arange(batch_size, device=x.device)
 
         # Fainted masks (True = fainted). Always unmask the active slot on each side
