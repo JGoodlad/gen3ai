@@ -571,7 +571,11 @@ class Gen3RewardManager:
             return 0.0  # paralysis / sleep — not our fault
         if delta.opp_switch_to is not None:
             return 0.0  # they switched; HP delta is noisy (fresh mon entering)
-        if delta.opp_move_id == "rest":
+        # Rest detection uses opp_resolved_move_id (protocol-truth when an
+        # event fired). Raw delta.opp_move_id could be a stale "rest" from
+        # an earlier turn after opp switched between snapshots, mis-skipping
+        # the penalty on a normal turn where they didn't actually rest.
+        if delta.opp_resolved_move_id == "rest":
             return 0.0  # opponent used Rest; large self-heal is expected
         move = battle.active_pokemon.moves.get(delta.our_move_id) if battle.active_pokemon else None
         if move is None or move.base_power == 0:

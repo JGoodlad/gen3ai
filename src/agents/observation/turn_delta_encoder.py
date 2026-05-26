@@ -183,9 +183,14 @@ class TurnDeltaEncoder:
             float(delta.our_failed_to_move),
             float(delta.opp_failed_to_move),
         ], dtype=np.float32)
+        # opp move feature uses the protocol-truth event when available
+        # (falls back to delta.opp_move_id for non-damaging moves). Raw
+        # delta.opp_move_id can be a stale last_move from a different opp
+        # mon when opp switched between snapshots — feeding that into the
+        # model's observation pollutes training with mis-attributed moves.
         return np.concatenate([
             self._move_features(delta.our_move_id),                    # 5
-            self._move_features(delta.opp_move_id),                    # 5
+            self._move_features(delta.opp_resolved_move_id),           # 5
             scalars,                                                    # 4
             self._cant_onehot(delta.our_cant_reason),                  # 5
             self._cant_onehot(delta.opp_cant_reason),                  # 5

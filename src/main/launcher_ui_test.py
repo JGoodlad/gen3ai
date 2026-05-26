@@ -19,6 +19,7 @@ def _snap(**kwargs) -> LauncherSnapshot:
         metrics={},
         metrics_step=0,
         metrics_ts=None,
+        eval_metrics_ts=None,
         log_lines=[],
         events=[],
         initial_git_hash="abc1234",
