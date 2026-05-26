@@ -240,6 +240,66 @@ def test_reset_clears_state():
     assert not np.any(tracker.get_probs("blissey"))
 
 
+# ---------------------------------------------------------------------------
+# Rule-out path (mark_no_hp / is_known)
+# ---------------------------------------------------------------------------
+
+def test_is_known_false_by_default():
+    """Fresh tracker reports nothing known about any species."""
+    tracker = make_tracker()
+    assert tracker.is_known("jolteon") is False
+
+
+def test_mark_no_hp_makes_species_known_with_zero_probs():
+    """After mark_no_hp, is_known returns True and get_probs returns all-zero —
+    the encoder uses this pair to flip hp_revealed=1 with empty type probs."""
+    tracker = make_tracker()
+    tracker.mark_no_hp("snorlax")
+    assert tracker.is_known("snorlax") is True
+    assert not np.any(tracker.get_probs("snorlax"))
+
+
+def test_is_known_true_after_observation():
+    """An observe() call also flips is_known, with sparse probs."""
+    tracker = make_tracker()
+    blissey = MockMon("blissey", PokemonType.NORMAL, None, "naturalcure")
+    tracker.observe("blissey", 2.0, blissey)
+    assert tracker.is_known("blissey") is True
+    assert np.any(tracker.get_probs("blissey"))
+
+
+def test_mark_no_hp_overrides_prior_observation_probs():
+    """If a species had narrowed probs and we then learn its moveset has no HP
+    (e.g. a confusion observation got attributed to it, then proven false),
+    mark_no_hp should override — get_probs returns zeros after marking."""
+    tracker = make_tracker()
+    blissey = MockMon("blissey", PokemonType.NORMAL, None, "naturalcure")
+    tracker.observe("blissey", 2.0, blissey)
+    assert np.any(tracker.get_probs("blissey"))
+    tracker.mark_no_hp("blissey")
+    assert not np.any(tracker.get_probs("blissey"))
+    assert tracker.is_known("blissey") is True
+
+
+def test_reset_clears_ruled_out():
+    """Reset must wipe ruled_out alongside state and observation logs."""
+    tracker = make_tracker()
+    tracker.mark_no_hp("snorlax")
+    assert tracker.is_known("snorlax") is True
+    tracker.reset()
+    assert tracker.is_known("snorlax") is False
+    assert not np.any(tracker.get_probs("snorlax"))
+
+
+def test_mark_no_hp_is_idempotent():
+    """Calling mark_no_hp multiple times is safe."""
+    tracker = make_tracker()
+    tracker.mark_no_hp("snorlax")
+    tracker.mark_no_hp("snorlax")
+    assert tracker.is_known("snorlax") is True
+    assert not np.any(tracker.get_probs("snorlax"))
+
+
 def test_multiple_observations_narrow_further():
     """Two consecutive 1× observations on different targets narrow the candidate set."""
     tracker = make_tracker()

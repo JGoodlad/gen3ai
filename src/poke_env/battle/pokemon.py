@@ -775,7 +775,10 @@ class Pokemon:
             self._terastallized_type = PokemonType.from_name(tb.tera_type)
         self._moves = MoveSet({})
         for move_str in tb.moves:
-            move = Move(Move.retrieve_id(move_str), gen=self.gen)
+            # Pass raw_id so type-suffixed moves (e.g. "hiddenpowergrass") keep their
+            # type/base-power. Without this, Hidden Power collapses to bare
+            # "hiddenpower" → Normal/0bp, losing the type the team file declared.
+            move = Move(Move.retrieve_id(move_str), gen=self.gen, raw_id=move_str)
             self._moves[move.id] = move
 
         # Always store IVs/EVs/nature from the teambuilder — all-zero EVs is a valid

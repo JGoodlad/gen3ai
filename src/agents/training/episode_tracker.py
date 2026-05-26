@@ -103,9 +103,27 @@ class EpisodeTracker:
         ctx = BattleContext.from_battle(battle, mask, self._our_slots, self._opp_slots)
 
         self._maybe_observe_hidden_power(battle, ctx)
+        self._scan_opp_movesets_for_no_hp(battle)
 
         self._history.append(ctx)
         return ctx
+
+    def _scan_opp_movesets_for_no_hp(self, battle) -> None:
+        """Mark any opponent species whose four moves are fully revealed and
+        none is Hidden Power as definitively HP-less.
+
+        This converts the previously ambiguous "all-zero HP probs" state into a
+        positive signal (hp_revealed=1, probs all zero in the encoder).
+        Idempotent and cheap (~12 dict lookups per turn).
+        """
+        for mon in battle.opponent_team.values():
+            if mon is None or not mon.species:
+                continue
+            moves = mon.moves
+            if len(moves) >= 4 and not any(
+                k.startswith("hiddenpower") for k in moves
+            ):
+                self._hidden_power_tracker.mark_no_hp(mon.species)
 
     def _maybe_observe_hidden_power(self, battle, ctx: BattleContext) -> None:
         """Feed an HP observation to the tracker when opp's last damaging move

@@ -44,8 +44,11 @@ class MovesEncoder(ObservationEncoder):
                 recoil = 1.0 if entry.get("hasRecoil") else 0.0
 
                 if move_id == "hiddenpower":
-                    # Gen 3: HP type unknowable from battle log. 70bp competitive assumption;
-                    # type_id=0 (unknown sentinel, distinct from Normal=1).
+                    # Bare "hiddenpower" id = type unknown (opponent before reveal).
+                    # Our own HP arrives here as a typed variant (e.g. "hiddenpowergrass"),
+                    # routed through the else branch where the mapping entry supplies the
+                    # real type and 70bp. The mapping's bare-HP entry has basePower=0 and
+                    # type=Normal — neither correct — so we override here.
                     power = 70
                     type_id = 0
                 else:

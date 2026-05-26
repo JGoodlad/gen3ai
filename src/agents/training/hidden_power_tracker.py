@@ -72,6 +72,9 @@ class HiddenPowerTracker:
             with open(priors_path) as f:
                 self._priors = json.load(f)
         self._state: dict[str, np.ndarray] = {}
+        # Species whose moveset has been fully revealed without Hidden Power —
+        # we know definitively they cannot use HP this episode.
+        self._ruled_out: set[str] = set()
         # Per-species observation log — kept so a ValueError dump can show
         # exactly which earlier observations narrowed the candidate set to nothing.
         self._obs_log: dict[str, list] = {}
@@ -161,12 +164,35 @@ class HiddenPowerTracker:
     def get_probs(self, species: str) -> np.ndarray:
         """Return (16,) float32 candidate probability vector for species.
 
-        All-zero if HP has not been observed for this species this episode.
+        All-zero if HP has not been observed for this species this episode,
+        or if the species was marked ruled out via mark_no_hp().
         """
+        if species in self._ruled_out:
+            return np.zeros(16, dtype=np.float32)
         if species in self._state:
             return self._state[species].copy()
         return np.zeros(16, dtype=np.float32)
 
+    def mark_no_hp(self, species: str) -> None:
+        """Mark a species as definitively lacking Hidden Power in its moveset.
+
+        Called when an opponent has revealed all 4 moves and none is Hidden Power.
+        After this call, is_known(species) returns True and get_probs(species)
+        returns all-zero, signalling the model that HP is impossible (vs. the
+        all-zero default meaning "haven't observed yet").
+        """
+        self._ruled_out.add(species)
+
+    def is_known(self, species: str) -> bool:
+        """True if we have made a determination about this species' HP — either
+        narrowed via observation, or ruled out via mark_no_hp().
+
+        The encoder uses this to decide whether to set hp_revealed=1.0; the
+        probability vector itself may be sparse (narrowed) or all-zero (ruled out).
+        """
+        return species in self._ruled_out or species in self._state
+
     def reset(self) -> None:
         self._state.clear()
+        self._ruled_out.clear()
         self._obs_log.clear()

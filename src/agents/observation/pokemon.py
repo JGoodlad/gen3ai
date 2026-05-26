@@ -27,6 +27,39 @@ from poke_env.battle.pokemon import Pokemon
 from poke_env.battle.status import Status
 from typing import Any, Dict
 
+# Imported lazily inside encode() to avoid a hard import cycle with the training package.
+_HP_TYPE_INDEX: "dict[str, int] | None" = None
+
+
+def _hp_type_index() -> "dict[str, int]":
+    """Lazy-built mapping from PokemonType.name (uppercase) → index in
+    HIDDEN_POWER_TYPE_ORDER. Used to translate a known HP type into its
+    one-hot slot in the 16-dim probability block."""
+    global _HP_TYPE_INDEX
+    if _HP_TYPE_INDEX is None:
+        from agents.training.hidden_power_tracker import HIDDEN_POWER_TYPE_ORDER
+        _HP_TYPE_INDEX = {t.name: i for i, t in enumerate(HIDDEN_POWER_TYPE_ORDER)}
+    return _HP_TYPE_INDEX
+
+
+def _own_hp_type_index(mon: Any) -> "int | None":
+    """If `mon` has a Hidden Power move with its type preserved (via the
+    poke-env raw_id fix), return the index in HIDDEN_POWER_TYPE_ORDER for that
+    type. Returns None if the mon has no HP, or only has bare "hiddenpower"
+    with no type info."""
+    for move_id, move in mon.moves.items():
+        if not move_id.startswith("hiddenpower"):
+            continue
+        if move_id == "hiddenpower":
+            continue  # type-less variant — opponent path, shouldn't reach here for own
+        type_name = getattr(move.type, "name", None)
+        if type_name is None:
+            continue
+        idx = _hp_type_index().get(type_name)
+        if idx is not None:
+            return idx
+    return None
+
 class PokemonEncoder(ObservationEncoder):
     """
     Aggregates all Pokémon-level encoders into a single POKEMON_VECTOR_DIM-wide vector.
@@ -34,10 +67,16 @@ class PokemonEncoder(ObservationEncoder):
             + hp(1) + species_known(1) + status_counters(2) + spread(18) + hp_block(17) = 96 dims.
     The active flag (1 dim) is appended by state_encoder, making POKEMON_FULL_DIM = 97.
 
-    hp_block carries the per-species Hidden Power candidate distribution from
-    HiddenPowerTracker for opponent mons (1 hp_revealed flag + 16 type probs in
-    HIDDEN_POWER_TYPE_ORDER). Our team slots leave the block at zeros — our own HP
-    type is known at build time and is filled in as a separate change.
+    hp_block carries Hidden Power information as `hp_revealed (1) + type_probs (16)`:
+      - opponent unknown: hp_revealed=0, probs all zero
+      - opponent narrowed (observed HP, types ruled out): hp_revealed=1, sparse probs
+      - opponent ruled out (4 moves seen, none is HP): hp_revealed=1, all-zero probs
+      - our mon with HP: hp_revealed=1, one-hot at the known type
+      - our mon without HP: hp_revealed=1, all-zero probs
+
+    The four states are linearly separable by the (hp_revealed, probs.any()) pair,
+    so the model gets a clean signal that distinguishes "no information yet" from
+    "no HP possible."
     """
     
     _NATURE_STAT_ORDER = ("atk", "def", "spa", "spd", "spe")
@@ -60,13 +99,16 @@ class PokemonEncoder(ObservationEncoder):
         battle: AbstractBattle,
         is_own: bool = False,
         hp_probs: "np.ndarray | None" = None,
+        hp_known: bool = False,
     ) -> np.ndarray:
         """Encode a single Pokémon slot.
 
         hp_probs: optional (16,) float32 from HiddenPowerTracker.get_probs(species)
-        for opponent mons. All-zero means HP has not been observed yet; non-zero
-        entries are the surviving candidate types at their prior weights. Our team
-        slots always pass None and leave the block at zeros.
+        for opponent mons. Ignored for own mons (we derive the one-hot ourselves
+        from mon.moves).
+        hp_known: for opponent mons, True when the tracker has made a determination
+        — either narrowed via observation, or ruled out (4 moves revealed without HP).
+        Ignored for own mons (always known).
         """
         vec = np.zeros(self.dimension, dtype=np.float32)
         if mon is None:
@@ -147,11 +189,22 @@ class PokemonEncoder(ObservationEncoder):
         # Opponent slots: all 18 dims remain 0.0 (spread_known=0 is the signal)
 
         # 11. Hidden Power candidate block (17 dims): hp_revealed (1) + 16 type probs.
-        # Only populated for opponent slots when the tracker has data; our team's
-        # block stays at zeros (future work: encode our own known HP type directly).
-        if hp_probs is not None and hp_probs.any():
+        # Own mons: state is always known (set hp_revealed=1.0). If the mon has HP,
+        # derive the type from the move object (preserved via the poke-env raw_id
+        # fix in Pokemon._update_from_teambuilder) and write a one-hot. Otherwise
+        # leave probs at zero — encoding "we know this mon definitively has no HP."
+        if is_own:
             vec[POKEMON_HP_REVEALED_OFFSET] = 1.0
-            vec[POKEMON_HP_PROBS_OFFSET : POKEMON_HP_PROBS_OFFSET + 16] = hp_probs
+            idx = _own_hp_type_index(mon)
+            if idx is not None:
+                vec[POKEMON_HP_PROBS_OFFSET + idx] = 1.0
+        elif hp_known:
+            # Opponent: tracker has either narrowed (sparse probs) or ruled out
+            # (probs all zero). Either way, set hp_revealed and copy the (possibly
+            # all-zero) vector so the model can distinguish from "never observed."
+            vec[POKEMON_HP_REVEALED_OFFSET] = 1.0
+            if hp_probs is not None:
+                vec[POKEMON_HP_PROBS_OFFSET : POKEMON_HP_PROBS_OFFSET + 16] = hp_probs
 
         return vec
 

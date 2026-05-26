@@ -143,7 +143,8 @@ class Gen3ObservationEncoder(ObservationEncoder):
         """
         vec = np.zeros(self.base_dimension, dtype=np.float32)
 
-        # 1. Our Team — HP block always zero (our HP type is known but not yet encoded)
+        # 1. Our Team — HP block written by PokemonEncoder using mon.moves (the
+        # poke-env raw_id patch preserves the type on each move).
         our_team_list = self.get_team_list(battle, is_opponent=False)
         for i in range(TEAM_SIZE):
             mon = our_team_list[i] if i < len(our_team_list) else None
@@ -159,12 +160,15 @@ class Gen3ObservationEncoder(ObservationEncoder):
 
         for i in range(TEAM_SIZE):
             mon = opponents[i] if i < len(opponents) else None
-            hp_probs = (
-                hp_tracker.get_probs(mon.species)
-                if (hp_tracker is not None and mon is not None)
-                else None
+            if hp_tracker is not None and mon is not None:
+                hp_probs = hp_tracker.get_probs(mon.species)
+                hp_known = hp_tracker.is_known(mon.species)
+            else:
+                hp_probs = None
+                hp_known = False
+            mon_vec = self.pokemon_encoder.encode(
+                mon, battle, is_own=False, hp_probs=hp_probs, hp_known=hp_known
             )
-            mon_vec = self.pokemon_encoder.encode(mon, battle, is_own=False, hp_probs=hp_probs)
             is_active = 1.0 if (mon and mon is battle.opponent_active_pokemon) else 0.0
 
             start = OFFSET_OPP_TEAM + (i * POKEMON_FULL_DIM)
