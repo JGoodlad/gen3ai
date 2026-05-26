@@ -272,7 +272,7 @@ EVs: 252 HP / 252 Def / 4 Spe
 Impish Nature
 - Whirlwind
 - Spikes
-- Drill Peck
+- Steel Wing
 - Toxic
 
 Suicune @ Leftovers
