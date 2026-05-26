@@ -102,12 +102,12 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         _rem2 = _msl['known']['offset'] - (_msl['type']['offset'] + _msl['type']['dim'])  # category = 1
         _rem3 = (_msl['max_pp']['offset'] + _msl['max_pp']['dim']) - _msl['current_pp']['offset']  # pp = 2
         self.move_remnant_dim = _rem1 + _rem2 + _rem3
-        _gl = layout.get('global_layout', {})
-        _rl = layout.get('reactive_layout', {})
-        _move_ctx_dim = (1 + 1                                      # hp + turn
-                         + _gl.get('weather', {}).get('dim', 6)     # weather
-                         + _rl.get('fainted', {}).get('dim', 2)     # fainted
-                         + _gl.get('hazards', {}).get('dim', 2))    # spikes
+        _gl = layout['global_layout']
+        _rl = layout['reactive_layout']
+        _move_ctx_dim = (1 + 1                       # hp + turn
+                         + _gl['weather']['dim']     # weather
+                         + _rl['fainted']['dim']     # fainted
+                         + _gl['hazards']['dim'])    # spikes
         move_input_dim = (layout['move_embedding_dim'] + layout['type_embedding_dim']
                           + self.move_remnant_dim + 1               # remnants + known
                           + _move_ctx_dim                           # context
@@ -136,12 +136,12 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         _condition_dim = _pk_layout['moves']['offset'] - (_abilities_info['offset'] + _abilities_info['dim'])
         _hp_and_active_dim = POKEMON_FULL_DIM - _pk_layout['hp']['offset']
         _global_ctx_dim = (
-            1                                           # turn
-            + _gl.get('weather', {}).get('dim', 6)
-            + _rl.get('fainted', {}).get('dim', 2)
-            + _gl.get('hazards', {}).get('dim', 2)
-            + 1                                         # struggle
-            + _gl.get('screens', {}).get('dim', 4)
+            1                          # turn
+            + _gl['weather']['dim']
+            + _rl['fainted']['dim']
+            + _gl['hazards']['dim']
+            + 1                        # struggle
+            + _gl['screens']['dim']
         )
         role_input_dim = (
             layout['species_embedding_dim']             # embedded species
@@ -171,7 +171,7 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         # Active context (boosts, volatiles) for each side enters the transformer
         # through the global token and is also encoded separately into 32-dim
         # tokens that go directly into the projection alongside the team pools.
-        active_ctx_dim = layout.get('active_context_dim', 22)
+        active_ctx_dim = layout['active_context_dim']
         self.active_ctx_encoder = torch.nn.Sequential(
             torch.nn.Linear(active_ctx_dim, ACTIVE_CTX_HIDDEN[0]),
             torch.nn.ReLU(),
@@ -198,8 +198,8 @@ class Gen3FeaturesExtractor(torch.nn.Module):
 
         # Global token input: active contexts (both sides) + non-matchup scalars
         # (global env + reactive scalars before the matchup matrices).
-        reactive_layout = layout.get('reactive_layout', {})
-        _matchup_offset_in_reactive = reactive_layout.get('our_matchups', {}).get('offset', 12)
+        reactive_layout = layout['reactive_layout']
+        _matchup_offset_in_reactive = reactive_layout['our_matchups']['offset']
         # `non_matchup_rest` in forward is `remaining_part[:, 2*ctx : reactive_start + matchup_offset]`,
         # where remaining_part is sliced starting at OFFSET_CONTEXT. The dim of that
         # span is the global env dim + the pre-matchup portion of the reactive block.
@@ -291,8 +291,8 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         base_dim = self.layout['base_dim']
 
         # Layouts (derived from observation encoder; avoid hardcoded offsets below)
-        reactive_layout = self.layout.get('reactive_layout', {})
-        global_layout   = self.layout.get('global_layout', {})
+        reactive_layout = self.layout['reactive_layout']
+        global_layout   = self.layout['global_layout']
         moves_info      = self.layout['pokemon']['moves']
         moves_layout    = moves_info['layout']
         m_slot_layout   = moves_layout['slot_layout']
@@ -318,21 +318,21 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         remaining_part = x[:, ctx['start']:base_dim]  # stop before prev_mask tail
 
         # Reactive layout offsets — `struggle_offset` is read again below where it is used.
-        matchup_offset  = reactive_layout.get('our_matchups', {}).get('offset', 12)
+        matchup_offset  = reactive_layout['our_matchups']['offset']
 
         # 1.1 Context features for move selection
         global_start = parts['global']['start'] - ctx['start']
-        _w  = global_layout.get('weather', {});  _w_off, _w_dim  = _w.get('offset', 0), _w.get('dim', 6)
-        _hz = global_layout.get('hazards', {});  _hz_off, _hz_dim = _hz.get('offset', 6), _hz.get('dim', 2)
-        _ck = global_layout.get('clock',   {});  _ck_off, _ck_dim = _ck.get('offset', 8), _ck.get('dim', 1)
+        _w  = global_layout['weather'];  _w_off,  _w_dim  = _w['offset'], _w['dim']
+        _hz = global_layout['hazards'];  _hz_off, _hz_dim = _hz['offset'], _hz['dim']
+        _ck = global_layout['clock'];    _ck_off, _ck_dim = _ck['offset'], _ck['dim']
         weather_feature = remaining_part[:, global_start + _w_off  : global_start + _w_off  + _w_dim]   # [B, 6]
         spikes_feature  = remaining_part[:, global_start + _hz_off : global_start + _hz_off + _hz_dim]  # [B, 2]
         turn_feature    = remaining_part[:, global_start + _ck_off : global_start + _ck_off + _ck_dim]  # [B, 1]
 
         reactive_start = parts['reactive']['start'] - ctx['start']
-        _f   = reactive_layout.get('fainted', {});      _f_off, _f_dim  = _f.get('offset', 8),   _f.get('dim', 2)
-        _om  = reactive_layout.get('our_matchups', {}); _om_off, _om_dim = _om.get('offset', 16), _om.get('dim', 144)
-        _tm  = reactive_layout.get('their_matchups', {}); _tm_off, _tm_dim = _tm.get('offset', 160), _tm.get('dim', 144)
+        _f  = reactive_layout['fainted'];        _f_off,  _f_dim  = _f['offset'],  _f['dim']
+        _om = reactive_layout['our_matchups'];   _om_off, _om_dim = _om['offset'], _om['dim']
+        _tm = reactive_layout['their_matchups']; _tm_off, _tm_dim = _tm['offset'], _tm['dim']
         fainted_feature     = remaining_part[:, reactive_start + _f_off  : reactive_start + _f_off  + _f_dim]   # [B, 2]
         our_matchups_flat   = remaining_part[:, reactive_start + _om_off : reactive_start + _om_off + _om_dim]  # [B, 144]
         their_matchups_flat = remaining_part[:, reactive_start + _tm_off : reactive_start + _tm_off + _tm_dim]  # [B, 144]
@@ -497,9 +497,9 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         # ------------------------------------------------------------------
         # 6. Role encoder (per-Pokémon → 128-dim role token)
         # ------------------------------------------------------------------
-        _fs = reactive_layout.get('forced_struggle', {}); struggle_offset = _fs.get('offset', 11)
+        _fs = reactive_layout['forced_struggle']; struggle_offset = _fs['offset']
         struggle_feature = remaining_part[:, reactive_start + struggle_offset : reactive_start + struggle_offset + 1]
-        _sc = global_layout.get('screens', {}); _sc_off, _sc_dim = _sc.get('offset', 9), _sc.get('dim', 4)
+        _sc = global_layout['screens']; _sc_off, _sc_dim = _sc['offset'], _sc['dim']
         screen_feature = remaining_part[:, global_start + _sc_off : global_start + _sc_off + _sc_dim]
         global_context = torch.cat([turn_feature, weather_feature, fainted_feature, spikes_feature, struggle_feature, screen_feature], dim=1)
         context_broadcasted = global_context.unsqueeze(1).expand(-1, n_poke, -1)
@@ -520,7 +520,7 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         role_tokens = role_tokens.reshape(batch_size, n_poke, self.role_token_size)   # [B, 12, 128]
 
         # Active context — encoded directly into the projection input alongside the team pools.
-        active_ctx_dim = self.layout.get('active_context_dim', 22)
+        active_ctx_dim = self.layout['active_context_dim']
         our_ctx_raw = remaining_part[:, 0 : active_ctx_dim]
         opp_ctx_raw = remaining_part[:, active_ctx_dim : 2 * active_ctx_dim]
 
