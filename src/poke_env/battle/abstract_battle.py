@@ -2,7 +2,7 @@ import re
 from abc import ABC, abstractmethod
 from logging import Logger
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, NamedTuple, Optional, Tuple, Union
 
 from poke_env.battle.effect import Effect
 from poke_env.battle.field import Field
@@ -10,10 +10,37 @@ from poke_env.battle.move import Move
 from poke_env.battle.pokemon import Pokemon
 from poke_env.battle.pokemon_type import PokemonType
 from poke_env.battle.side_condition import STACKABLE_CONDITIONS, SideCondition
+from poke_env.battle.status import Status
 from poke_env.battle.weather import Weather
 from poke_env.data import GenData, to_id_str
 from poke_env.data.replay_template import REPLAY_TEMPLATE
 from poke_env.teambuilder.teambuilder_pokemon import TeambuilderPokemon
+
+
+class DamagingMoveEvent(NamedTuple):
+    """Per-side snapshot of the last damaging move resolved this turn.
+
+    Captures the protocol-level facts that battle.{our,opp}_last_effectiveness
+    is sourced from — but also records WHO fired and WHO got hit, so callers
+    don't have to re-infer attribution from before/after snapshot diffs.
+
+    Set by AbstractBattle when a |move| event with basePower > 0 parses, and
+    upgraded with the final effectiveness when |-supereffective|/|-resisted|/
+    |-immune| fires for the same turn. Read via the turn-gated
+    battle.{our,opp}_last_damaging_move properties — the underlying storage
+    keeps a turn number so a stale value from an earlier turn never leaks.
+
+    target_status is the defender's status AT MOVE-FIRE TIME (before the move's
+    effects resolve). This matters for Gen 3 Flash Fire-vs-frozen: a frozen
+    Flash Fire holder takes Fire-type 0.5× damage AND thaws in the same hit, so
+    reading status from the next snapshot misses the FRZ that determined the
+    multiplier.
+    """
+    user_species: str
+    target_species: str
+    target_status: Optional[Status]
+    move_id: str
+    effectiveness: float
 
 
 class AbstractBattle(ABC):
@@ -119,6 +146,10 @@ class AbstractBattle(ABC):
         "_turn",
         "_our_last_effectiveness",
         "_opp_last_effectiveness",
+        "_our_last_damaging_move",
+        "_opp_last_damaging_move",
+        "_pending_our_damaging_move",
+        "_pending_opp_damaging_move",
         "_we_moved_first",
         "_this_turn_move_sides",
         "_used_dynamax",
@@ -195,6 +226,26 @@ class AbstractBattle(ABC):
         # distinguish "this just happened" from a stale value from a prior turn.
         self._our_last_effectiveness: Optional[tuple] = None
         self._opp_last_effectiveness: Optional[tuple] = None
+        # Last damaging move per side, kept as (turn_set, DamagingMoveEvent).
+        # Only populated when an explicit effectiveness message (|-immune|,
+        # |-supereffective|, |-resisted|, or Flash Fire's |-start|) fires for
+        # the same turn — never tentatively at |move| time. Reason: damage-
+        # reducing abilities like Thick Fat silently halve damage without
+        # emitting any effectiveness signal, so a tentative-neutral fill at
+        # |move| would be wrong on those hits and would corrupt downstream
+        # attribution. Skipping the unconfirmed observation is the safer
+        # choice (it mirrors how `our/opp_last_effectiveness is None` skips in
+        # the pre-existing tracker code paths).
+        self._our_last_damaging_move: Optional[Tuple[int, DamagingMoveEvent]] = None
+        self._opp_last_damaging_move: Optional[Tuple[int, DamagingMoveEvent]] = None
+        # Pending damaging move per side: captured at |move| with user/target/
+        # status/move_id but no effectiveness yet. Promoted into the matching
+        # `_*_last_damaging_move` slot when an effectiveness emission lands in
+        # the same turn (via `_set_effectiveness`). Dropped silently when no
+        # such emission arrives — that's the "silent thick fat" case we
+        # deliberately skip.
+        self._pending_our_damaging_move: Optional[Tuple[int, DamagingMoveEvent]] = None
+        self._pending_opp_damaging_move: Optional[Tuple[int, DamagingMoveEvent]] = None
         self._we_moved_first: Optional[tuple] = None  # (turn, bool)
         self._this_turn_move_sides: list = []  # order of "ours"/"opp" |move| events
 
@@ -762,8 +813,17 @@ class AbstractBattle(ABC):
                 we_first = self._this_turn_move_sides[0] == "ours"
                 self._we_moved_first = (self._turn, we_first)
 
-            # --- tentative neutral effectiveness for damaging moves ---
-            # Overridden below when |-supereffective|, |-resisted|, or |-immune| fires.
+            # --- tentative neutral effectiveness for explicit-power moves ---
+            # Set so opp_last_effectiveness reports 1.0 (neutral) for moves that
+            # never emit a |-resisted|/|-supereffective|/|-immune| message.
+            # Overridden by `_set_effectiveness` when one of those fires.
+            # Note: this is gated on basePower (not category) to preserve
+            # backward-compatible semantics for callers that depended on the
+            # old "basePower>0 → tentative 1.0" rule. Callback-power moves
+            # like Hidden Power keep effectiveness=None until an explicit
+            # message arrives — silent damage reductions like Thick Fat would
+            # make a tentative 1.0 wrong, and HP attribution can't tolerate
+            # that.
             move_id_str = to_id_str(move)
             _move_entry = GenData.from_gen(self._gen).moves.get(move_id_str, {})
             if _move_entry.get("basePower", 0) > 0:
@@ -771,6 +831,37 @@ class AbstractBattle(ABC):
                     self._our_last_effectiveness = (self._turn, 1.0)
                 else:
                     self._opp_last_effectiveness = (self._turn, 1.0)
+
+            # --- pending damaging-move event ---
+            # Captured at |move| time for ANY damaging move (Physical/Special
+            # category — includes HP and other callback-power moves). The
+            # target's status is sampled BEFORE the move resolves (matters for
+            # Gen 3 Flash Fire-vs-frozen: a frozen Flash Fire holder thaws in
+            # the same hit, so post-resolution status would miss the FRZ that
+            # determined the multiplier). The pending event is promoted into
+            # `_*_last_damaging_move` only when an effectiveness emission lands
+            # in the same turn — see `_set_effectiveness`. If no emission ever
+            # arrives, the pending event silently expires.
+            if _move_entry.get("category") in ("Physical", "Special"):
+                user_species = self.get_pokemon(pokemon).species
+                target_mon = (
+                    self.get_pokemon(presumed_target)
+                    if presumed_target and presumed_target not in ("", None)
+                    else None
+                )
+                target_species = target_mon.species if target_mon else user_species
+                target_status = target_mon.status if target_mon else None
+                partial_event = DamagingMoveEvent(
+                    user_species=user_species,
+                    target_species=target_species,
+                    target_status=target_status,
+                    move_id=move_id_str,
+                    effectiveness=1.0,  # placeholder, overwritten on promotion
+                )
+                if move_side == "ours":
+                    self._pending_our_damaging_move = (self._turn, partial_event)
+                else:
+                    self._pending_opp_damaging_move = (self._turn, partial_event)
 
         elif event[1] == "cant":
             pokemon = event[2]
@@ -832,6 +923,16 @@ class AbstractBattle(ABC):
         elif split_message[1] == "-start":
             pokemon, effect = event[2:4]
             mon = self.get_pokemon(pokemon)
+
+            # Flash Fire is the one ability immunity that emits |-start| rather
+            # than |-immune|: when a Fire move hits a non-frozen Flash Fire
+            # holder, the move is absorbed (0× damage) AND the holder gains a
+            # Fire-boost flag — Showdown packages both as |-start|...|ability:
+            # Flash Fire|. Treat it as an effectiveness 0 emission so the
+            # last_effectiveness / last_damaging_move tracking matches what the
+            # protocol actually conveyed about the move's outcome.
+            if effect == "ability: Flash Fire":
+                self._set_effectiveness(pokemon[:2], 0.0)
 
             if effect == "typechange":
                 if len(event) > 5 and event[5].startswith("[of] "):
@@ -1197,25 +1298,13 @@ class AbstractBattle(ABC):
             # |-supereffective|p2a: Mon| — the DEFENDER is p2a, so if p2 == us the
             # opponent's move was super-effective on us; otherwise our move was SE on them.
             if len(event) >= 3:
-                defender_side = event[2][:2]
-                if defender_side == self._player_role:
-                    self._opp_last_effectiveness = (self._turn, 2.0)
-                else:
-                    self._our_last_effectiveness = (self._turn, 2.0)
+                self._set_effectiveness(event[2][:2], 2.0)
         elif event[1] == "-resisted":
             if len(event) >= 3:
-                defender_side = event[2][:2]
-                if defender_side == self._player_role:
-                    self._opp_last_effectiveness = (self._turn, 0.5)
-                else:
-                    self._our_last_effectiveness = (self._turn, 0.5)
+                self._set_effectiveness(event[2][:2], 0.5)
         elif event[1] == "-immune":
             if len(event) >= 3:
-                defender_side = event[2][:2]
-                if defender_side == self._player_role:
-                    self._opp_last_effectiveness = (self._turn, 0.0)
-                else:
-                    self._our_last_effectiveness = (self._turn, 0.0)
+                self._set_effectiveness(event[2][:2], 0.0)
             if len(event) == 4:
                 pokemon, cause = event[2:]
 
@@ -1805,6 +1894,25 @@ class AbstractBattle(ABC):
         """
         self._turn = turn
 
+    def _last_turn_gated(self, stored: Optional[tuple]):
+        """Unwrap a `(turn_set, value)` slot if the turn matches `self._turn - 1`.
+
+        Five fields share this shape — `_our/opp_last_effectiveness`,
+        `_our/opp_last_damaging_move`, and `_we_moved_first` — each storing a
+        `(turn_set, value)` tuple set by the protocol parser when the relevant
+        event fires. The turn-gate ensures callers only see values produced by
+        the most-recently-resolved turn (otherwise the value would leak from an
+        earlier turn whose state was never refreshed).
+
+        Returns `value` when the slot is set and its turn_set matches the
+        previous turn; `None` otherwise.
+        """
+        if stored is not None:
+            turn_set, value = stored
+            if turn_set == self._turn - 1:
+                return value
+        return None
+
     @property
     def our_last_effectiveness(self) -> Optional[float]:
         """Effectiveness multiplier of our last damaging move against the opponent.
@@ -1813,11 +1921,7 @@ class AbstractBattle(ABC):
         None when we switched, used a non-damaging move, or the battle just started.
         Only valid on the turn immediately after the move was used.
         """
-        if self._our_last_effectiveness is not None:
-            turn_set, mult = self._our_last_effectiveness
-            if turn_set == self._turn - 1:
-                return mult
-        return None
+        return self._last_turn_gated(self._our_last_effectiveness)
 
     @property
     def opp_last_effectiveness(self) -> Optional[float]:
@@ -1827,11 +1931,54 @@ class AbstractBattle(ABC):
         None when they switched, used a non-damaging move, or the battle just started.
         Only valid on the turn immediately after the move was used.
         """
-        if self._opp_last_effectiveness is not None:
-            turn_set, mult = self._opp_last_effectiveness
-            if turn_set == self._turn - 1:
-                return mult
-        return None
+        return self._last_turn_gated(self._opp_last_effectiveness)
+
+    @property
+    def our_last_damaging_move(self) -> Optional[DamagingMoveEvent]:
+        """The last damaging move WE used last turn, with user/target/eff.
+
+        None when we switched, used a non-damaging move, or the battle just
+        started. Only valid on the turn immediately after the move was used.
+        Turn-gated identically to `our_last_effectiveness`.
+        """
+        return self._last_turn_gated(self._our_last_damaging_move)
+
+    @property
+    def opp_last_damaging_move(self) -> Optional[DamagingMoveEvent]:
+        """The last damaging move the OPPONENT used last turn.
+
+        None when they switched, used a non-damaging move, or the battle just
+        started. Only valid on the turn immediately after the move was used.
+        Turn-gated identically to `opp_last_effectiveness`.
+        """
+        return self._last_turn_gated(self._opp_last_damaging_move)
+
+    def _set_effectiveness(self, defender_side: str, mult: float) -> None:
+        """Apply an effectiveness multiplier from |-supereffective|/|-resisted|/
+        |-immune| (or Flash Fire's |-start|) — updates the scalar effectiveness
+        and promotes the matching pending DamagingMoveEvent so the user/target
+        identity stays paired with the confirmed multiplier.
+
+        defender_side: 'p1' or 'p2' (the side prefix of the defender, parsed
+        from `event[2][:2]`). If it matches our player role, the opponent's
+        move just resolved against us; otherwise our move resolved against them.
+        """
+        if defender_side == self._player_role:
+            self._opp_last_effectiveness = (self._turn, mult)
+            pending = self._pending_opp_damaging_move
+            if pending is not None and pending[0] == self._turn:
+                self._opp_last_damaging_move = (
+                    self._turn,
+                    pending[1]._replace(effectiveness=mult),
+                )
+        else:
+            self._our_last_effectiveness = (self._turn, mult)
+            pending = self._pending_our_damaging_move
+            if pending is not None and pending[0] == self._turn:
+                self._our_last_damaging_move = (
+                    self._turn,
+                    pending[1]._replace(effectiveness=mult),
+                )
 
     @property
     def we_moved_first(self) -> Optional[bool]:
@@ -1840,11 +1987,7 @@ class AbstractBattle(ABC):
         None when one or both sides did a normal switch (no competing move resolution).
         Only valid on the turn immediately after the relevant turn.
         """
-        if self._we_moved_first is not None:
-            turn_set, first = self._we_moved_first
-            if turn_set == self._turn - 1:
-                return first
-        return None
+        return self._last_turn_gated(self._we_moved_first)
 
     @property
     def used_dynamax(self) -> bool:

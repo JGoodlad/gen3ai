@@ -1,7 +1,9 @@
 from __future__ import annotations
 from dataclasses import dataclass, field
-from typing import Literal
+from typing import Literal, Optional
 import numpy as np
+
+from poke_env.battle.abstract_battle import DamagingMoveEvent
 
 from agents.training.slot_registry import SlotRegistry
 from agents.gen3_mechanics import PHAZING_MOVES, BOOST_DIM, boosts_array
@@ -99,6 +101,23 @@ class BattleContext:
     # and the move itself thaws the target). Without a historical snapshot we'd
     # only see the post-thaw status and mis-evaluate the just-fired move.
     our_team_status: dict = field(default_factory=dict)  # dict[str, Status | None]
+
+    # Species in battle.team iteration order — the same order the action mapper
+    # uses to interpret switch actions 0–5. Captured at snapshot time so a later
+    # TurnDelta can recover the INTENT of a switch action (which slot we picked)
+    # even if the switch-in later dies and forced-replacements cycle in more
+    # mons by the time the next snapshot is built. Without this, our_switch_to
+    # would point at the end-of-chain active mon rather than the mon we sent in.
+    our_team_order: tuple = field(default_factory=tuple)  # tuple[str, ...]
+
+    # Full per-side record of the last damaging move resolved last turn —
+    # carries user_species, target_species, target_status (at move-fire time),
+    # move_id, and effectiveness. Lets callers attribute moves directly without
+    # inferring "who fired / who got hit" from before/after snapshot diffs.
+    # None when the side didn't use a damaging move last turn. Mirrors
+    # our/opp_last_effectiveness (set together at the same protocol events).
+    our_last_damaging_event: Optional[DamagingMoveEvent] = None
+    opp_last_damaging_event: Optional[DamagingMoveEvent] = None
 
     def __post_init__(self):
         if self.mask.shape != (11,):
@@ -212,7 +231,10 @@ class BattleContext:
             opp_boosts=opp_boosts,
             our_last_effectiveness=battle.our_last_effectiveness,
             opp_last_effectiveness=battle.opp_last_effectiveness,
+            our_last_damaging_event=battle.our_last_damaging_move,
+            opp_last_damaging_event=battle.opp_last_damaging_move,
             we_moved_first=battle.we_moved_first,
+            our_team_order=tuple(m.species for m in battle.team.values()),
         )
 
 
@@ -268,6 +290,37 @@ class TurnDelta:
     # None when one or both sides performed a normal switch.
     we_moved_first: bool | None
 
+    # Full per-side damaging-move record (user / target / target_status at
+    # fire time / move_id / effectiveness), pass-through from the curr_ctx
+    # snapshot. None when the side didn't use a damaging move whose
+    # effectiveness was confirmed by an explicit emission — preserves the
+    # "skip on uncertainty" semantics of the underlying property. Use this
+    # instead of (move_id, effectiveness) tuples for attribution-sensitive
+    # consumers (reward shaping, replay recording) where the protocol-truth
+    # user/target identity matters; the bare opp_move_id / opp_effectiveness
+    # fields stay for callers that just need any signal.
+    our_damaging_event: Optional[DamagingMoveEvent] = None
+    opp_damaging_event: Optional[DamagingMoveEvent] = None
+
+    @property
+    def opp_resolved_move_id(self) -> Optional[str]:
+        """Opp's move id with protocol-truth preference.
+
+        Returns `opp_damaging_event.move_id` when the event is set (the
+        |move| line of the just-resolved turn, captured before any |faint|
+        or active-slot reshuffle). Falls back to `opp_move_id` for
+        non-damaging moves (status, Roar, Calm Mind, BP, switches) where no
+        event ever promotes.
+
+        Attribution-sensitive callers (reward shaping, replay recording)
+        should use this instead of raw `opp_move_id` — the latter is
+        vulnerable to stale `last_move` reads when opp's mon switches
+        between snapshots.
+        """
+        if self.opp_damaging_event is not None:
+            return self.opp_damaging_event.move_id
+        return self.opp_move_id
+
     @classmethod
     def build(cls, prev_ctx: BattleContext, curr_ctx: BattleContext, action: int) -> TurnDelta:
         our_hp_delta = curr_ctx.our_hp - prev_ctx.our_hp
@@ -287,7 +340,16 @@ class TurnDelta:
 
         # --- Our action ---
         if action < 6:
-            our_switch_to = curr_ctx.our_active if curr_ctx.our_active != "NONE" else None
+            # The action's INTENT — which team-slot species we sent in — is the
+            # only correct answer here. Reading curr_ctx.our_active instead
+            # gets bitten when the switch-in dies and forced-replacements cycle
+            # more mons before the next snapshot (our_active ends up pointing
+            # at the final replacement, not the mon we switched to).
+            our_switch_to = (
+                prev_ctx.our_team_order[action]
+                if action < len(prev_ctx.our_team_order)
+                else None
+            )
             our_move_id = None
         elif action < 10:
             our_switch_to = None
@@ -362,6 +424,8 @@ class TurnDelta:
             our_effectiveness=curr_ctx.our_last_effectiveness,
             opp_effectiveness=curr_ctx.opp_last_effectiveness,
             we_moved_first=curr_ctx.we_moved_first,
+            our_damaging_event=curr_ctx.our_last_damaging_event,
+            opp_damaging_event=curr_ctx.opp_last_damaging_event,
         )
 
     @classmethod
@@ -380,4 +444,6 @@ class TurnDelta:
             our_effectiveness=None,
             opp_effectiveness=None,
             we_moved_first=None,
+            our_damaging_event=None,
+            opp_damaging_event=None,
         )

@@ -323,19 +323,30 @@ class BattleRecorder:
         else:
             we_action = self._pending_entry["chosen"]
 
-        # Their action — distinguish: voluntary switch / faint+forced-switch / phaze / moved
+        # Their action — distinguish: voluntary switch / faint+forced-switch / phaze / moved.
+        # `delta.opp_resolved_move_id` prefers the protocol-confirmed event when
+        # a damaging move resolved (protects against the stale-last_move bug
+        # surfaced in step 3 smoke tests), and falls back to the inferred
+        # opp_move_id for non-damaging moves (status, Roar, BP).
+        opp_move_id = delta.opp_resolved_move_id
         if prev_ctx.phase == "forced_switch":
             they_action = "none"
         elif delta.opp_switch_to:
-            if delta.opp_fainted and delta.opp_move_id:
-                they_action = f"{delta.opp_move_id} → {delta.opp_switch_to}_sent_in"
+            if delta.opp_fainted and opp_move_id:
+                they_action = f"{opp_move_id} → {delta.opp_switch_to}_sent_in"
             elif delta.opp_fainted:
                 they_action = f"{delta.opp_switch_to}_sent_in"
-            elif delta.opp_move_id:
-                they_action = f"{delta.opp_move_id} → phazed_to:{delta.opp_switch_to}"
+            elif opp_move_id:
+                they_action = f"{opp_move_id} → phazed_to:{delta.opp_switch_to}"
             else:
                 they_action = f"switched_to:{delta.opp_switch_to}"
+        elif opp_move_id is not None:
+            they_action = opp_move_id
         else:
+            # Last fallback: opp's current active has a `last_move` from
+            # previous turns even though no event fired this turn (e.g. a
+            # |cant| turn that didn't reset last_move). Rare but preserves the
+            # legacy diagnostic when nothing else is available.
             opp_mon = battle.opponent_active_pokemon
             last_move = getattr(opp_mon, "last_move", None) if opp_mon else None
             they_action = last_move.id if (last_move and hasattr(last_move, "id")) else "unknown"

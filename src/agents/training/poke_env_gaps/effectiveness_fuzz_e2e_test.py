@@ -1,7 +1,7 @@
 """
 E2E effectiveness + move-order fuzz test.
 
-Validates the full pipeline correctness at four independent layers:
+Validates the full pipeline correctness at five independent layers:
 
   Layer 1 — raw Showdown messages vs poke-env battle properties
               (battle.our/opp_last_effectiveness, battle.we_moved_first)
@@ -11,6 +11,10 @@ Validates the full pipeline correctness at four independent layers:
               (delta.our/opp_effectiveness, delta.we_moved_first)
   Layer 4 — TurnDelta vs encoded observation vector
               (TurnDeltaEncoder output at dims 29..38)
+  Layer 5 — battle.{our,opp}_last_damaging_move (DamagingMoveEvent) vs the
+              raw |move| lines that produced it. Asserts user_species,
+              target_species, move_id, and effectiveness all match. Added in
+              ai_v4 step 3 alongside the foundational attribution primitive.
 
 Runs three targeted scenarios:
   A — Immunity + SE: teams with Levitate/Volt Absorb/Water Absorb abilities and
@@ -247,6 +251,19 @@ class _TurnRaw:
     eff_events: list = field(default_factory=list)  # (defender_prefix: str, mult: float)
     # Move event prefixes in order of appearance
     move_sides: list = field(default_factory=list)  # e.g. ["p1", "p2"]
+    # Full move events from the |move| line. Each entry:
+    #   (user_prefix, user_name, move_name, target_prefix, target_name)
+    # The user/target names are the post-": " portion of the protocol ident
+    # (e.g. for "p1a: Salamence" → "Salamence"); they are lowercased for
+    # direct comparison against DamagingMoveEvent.user_species /
+    # target_species. The move name is also lowercased+space-stripped via
+    # to_id_str so it matches DamagingMoveEvent.move_id (e.g. "hiddenpower").
+    move_events: list = field(default_factory=list)
+
+
+def _opp_role(player_role: str) -> str:
+    """Return the opposite side prefix (p1↔p2)."""
+    return "p2" if player_role == "p1" else "p1"
 
 
 def _expected_effectiveness_from_raw(
@@ -304,6 +321,7 @@ class ScenarioStats:
     layer2_mismatches: int = 0
     layer3_mismatches: int = 0
     layer4_mismatches: int = 0
+    layer5_mismatches: int = 0  # battle.{our,opp}_last_damaging_move vs raw |move| lines
 
     # Coverage counters (must be > 0 after run)
     immune_seen: int = 0
@@ -400,6 +418,30 @@ class EffectivenessFuzzPlayer(Player):
             elif mt == "move" and len(msg) >= 3:
                 # Track move order: extract "p1"/"p2" prefix from "p1a: MonName"
                 curr.move_sides.append(msg[2][:2])
+                # Track full move events for Layer 5 (DamagingMoveEvent) validation:
+                # user/target identity and the move name. The target slot can be
+                # missing for self-targeted moves; record it as None in that case.
+                user_ident = msg[2]  # "p1a: Salamence"
+                user_prefix = user_ident[:2]
+                user_name = user_ident.split(": ", 1)[1].lower() if ": " in user_ident else ""
+                move_name = msg[3] if len(msg) >= 4 else ""
+                move_id = move_name.lower().replace(" ", "").replace("-", "")
+                # Strip "[Bug]" / "[Ice]" etc. from Hidden Power so move_id matches
+                # to_id_str (which strips brackets too).
+                if "[" in move_id:
+                    move_id = move_id.split("[", 1)[0]
+                target_prefix = None
+                target_name = None
+                if len(msg) >= 5 and msg[4] and msg[4].startswith(("p1", "p2")):
+                    target_ident = msg[4]
+                    target_prefix = target_ident[:2]
+                    target_name = (
+                        target_ident.split(": ", 1)[1].lower()
+                        if ": " in target_ident else ""
+                    )
+                curr.move_events.append(
+                    (user_prefix, user_name, move_id, target_prefix, target_name)
+                )
 
         # Let poke-env parse normally
         await super()._handle_battle_message(split_messages)
@@ -592,6 +634,84 @@ class EffectivenessFuzzPlayer(Player):
                     "vec": order_vec.tolist(),
                 })
 
+        # === Layer 5: DamagingMoveEvent vs raw |move| lines ===
+        # The DamagingMoveEvent (battle.{our,opp}_last_damaging_move) is the
+        # protocol-truth attribution primitive. Whenever it's set on the
+        # just-ended turn, we expect:
+        #   - move_id matches a |move| line where the *user* belongs to that
+        #     side (us vs opp, decided by player_role)
+        #   - target_species matches that line's target (post-": " name)
+        #   - effectiveness matches what an explicit |-supereffective|/
+        #     |-resisted|/|-immune|/|-start ability: Flash Fire| in the same
+        #     turn yielded against the same target
+        # This is the regression net for ai_v4 step 3's foundational primitive.
+        for side_label, event, expected_eff in [
+            ("our", battle.our_last_damaging_move, expected_our),
+            ("opp", battle.opp_last_damaging_move, expected_opp),
+        ]:
+            if event is None:
+                # No event set this turn — protocol either had no damaging
+                # move or no explicit effectiveness emission fired. Either
+                # way, nothing to assert (Layer 1 already validated the eff
+                # scalars match the raw stream).
+                continue
+            # Find the |move| line for this side. The user side is "ours"
+            # if `event` came from `our_last_damaging_move` (side_label "our").
+            user_side = player_role if side_label == "our" else _opp_role(player_role)
+            matching = [
+                (u_pref, u_name, m_id, t_pref, t_name)
+                for (u_pref, u_name, m_id, t_pref, t_name) in prev_raw.move_events
+                if u_pref == user_side
+            ]
+            if not matching:
+                s.layer5_mismatches += 1
+                s.record_example(5, {
+                    "check": f"{side_label}_event_without_raw_move",
+                    "turn": battle.turn,
+                    "event_move_id": event.move_id,
+                    "event_user": event.user_species,
+                    "event_target": event.target_species,
+                    "raw_move_events": list(prev_raw.move_events),
+                })
+                continue
+            # Take the LAST |move| from this side this turn (matches the
+            # protocol-parser's overwrite semantics for pending events).
+            _, last_user, last_move_id, _, last_target = matching[-1]
+            if event.user_species != last_user:
+                s.layer5_mismatches += 1
+                s.record_example(5, {
+                    "check": f"{side_label}_event_user_mismatch",
+                    "turn": battle.turn,
+                    "event_user": event.user_species,
+                    "raw_user": last_user,
+                })
+            if event.move_id != last_move_id:
+                s.layer5_mismatches += 1
+                s.record_example(5, {
+                    "check": f"{side_label}_event_move_id_mismatch",
+                    "turn": battle.turn,
+                    "event_move_id": event.move_id,
+                    "raw_move_id": last_move_id,
+                })
+            # Target identity — only when the raw |move| line carried one.
+            if last_target is not None and event.target_species != last_target:
+                s.layer5_mismatches += 1
+                s.record_example(5, {
+                    "check": f"{side_label}_event_target_mismatch",
+                    "turn": battle.turn,
+                    "event_target": event.target_species,
+                    "raw_target": last_target,
+                })
+            # Effectiveness — should match whatever Layer 1 expected.
+            if expected_eff is not None and event.effectiveness != expected_eff:
+                s.layer5_mismatches += 1
+                s.record_example(5, {
+                    "check": f"{side_label}_event_effectiveness_mismatch",
+                    "turn": battle.turn,
+                    "event_effectiveness": event.effectiveness,
+                    "expected_effectiveness": expected_eff,
+                })
+
         # === Coverage tracking ===
         for (val, label) in [(actual_our_eff, "our"), (actual_opp_eff, "opp")]:
             if val == 0.0:
@@ -664,6 +784,7 @@ def print_report(s: ScenarioStats) -> None:
     total_mismatches = (
         s.layer1_mismatches + s.layer2_mismatches
         + s.layer3_mismatches + s.layer4_mismatches
+        + s.layer5_mismatches
     )
     status = "PASS" if total_mismatches == 0 else "FAIL"
 
@@ -675,6 +796,7 @@ def print_report(s: ScenarioStats) -> None:
     print(f"Layer 2 mismatches    : {s.layer2_mismatches}  (poke-env properties vs BattleContext)")
     print(f"Layer 3 mismatches    : {s.layer3_mismatches}  (BattleContext vs TurnDelta)")
     print(f"Layer 4 mismatches    : {s.layer4_mismatches}  (TurnDelta vs encoded vector)")
+    print(f"Layer 5 mismatches    : {s.layer5_mismatches}  (DamagingMoveEvent vs raw |move| lines)")
     print(f"Coverage:")
     print(f"  immune seen         : {s.immune_seen}")
     print(f"  resisted seen       : {s.resisted_seen}")
@@ -741,6 +863,7 @@ async def main(n_battles: int = 50) -> None:
     total_mismatches = sum(
         s.layer1_mismatches + s.layer2_mismatches
         + s.layer3_mismatches + s.layer4_mismatches
+        + s.layer5_mismatches
         for s in all_stats
     )
 
@@ -768,7 +891,7 @@ async def main(n_battles: int = 50) -> None:
 
     print(f"\n{'=' * 65}")
     if total_mismatches == 0 and not coverage_issues:
-        print("PASS — All four layers correct across all scenarios.")
+        print("PASS — All five layers correct across all scenarios.")
         print(f"  Coverage confirmed: immune={total_immune} resisted={sum(s.resisted_seen for s in all_stats)}"
               f" normal={total_normal} SE={total_se}"
               f" we_first={total_we_first} opp_first={total_opp_first}"
@@ -778,10 +901,15 @@ async def main(n_battles: int = 50) -> None:
         if total_mismatches > 0:
             print(f"  Total mismatches: {total_mismatches}")
             for s in all_stats:
-                sm = s.layer1_mismatches + s.layer2_mismatches + s.layer3_mismatches + s.layer4_mismatches
+                sm = (
+                    s.layer1_mismatches + s.layer2_mismatches
+                    + s.layer3_mismatches + s.layer4_mismatches
+                    + s.layer5_mismatches
+                )
                 if sm > 0:
                     print(f"    {s.name}: L1={s.layer1_mismatches} L2={s.layer2_mismatches}"
-                          f" L3={s.layer3_mismatches} L4={s.layer4_mismatches}")
+                          f" L3={s.layer3_mismatches} L4={s.layer4_mismatches}"
+                          f" L5={s.layer5_mismatches}")
         for issue in coverage_issues:
             print(f"  Coverage gap: {issue}")
         sys.exit(1)

@@ -28,8 +28,6 @@ from dataclasses import dataclass, field
 
 import numpy as np
 from poke_env import AccountConfiguration
-from poke_env.battle.pokemon import Pokemon
-from poke_env.player import RandomPlayer
 from poke_env.player.player import Player
 from poke_env.ps_client.server_configuration import LocalhostServerConfiguration
 
@@ -40,11 +38,11 @@ from utils.teambuilder import Gen3Teambuilder
 
 @dataclass(frozen=True)
 class _HpTargetMon:
-    """Tracker-shaped target with status overridden to its value at HP-fire time.
+    """Tracker-shaped target with status from the DamagingMoveEvent.
 
-    Mirrors EpisodeTracker._HpTargetMon. Duplicated deliberately: this fuzz is an
-    *independent* validator of the tracker — sharing the resolver with production
-    code would let a bug in either piece pass the test.
+    Mirrors EpisodeTracker._HpTargetMon. Duplicated deliberately: this fuzz is
+    an E2E validator and importing the production wrapper would couple the
+    test to a code path it's meant to verify.
     """
     species: str
     type_1: object
@@ -355,6 +353,69 @@ Timid Nature
 - Recover
 """
 
+# Third opp team variant — Forretress as the HP user (HP Bug, its dominant
+# competitive spread per Smogon usage). Reproduces the original production crash
+# scenario: a bulky spiker that switches frequently, opening Case A
+# (prev_active newly fainted) and Case B (voluntary switch) target-resolution
+# paths. Paired with other Bug-bucketing targets in OUR_TEAM_VARIETY (Skarmory
+# Steel/Flying → 0.25× → bucket 0.5; Gengar / Weezing → 0.5×) the resolver gets
+# heavy stress on switch-attributed HP observations.
+OPP_TEAM_FORRETRESS = """\
+Forretress (M) @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 4 Def / 252 SpD
+Sassy Nature
+- Spikes
+- Rapid Spin
+- Hidden Power [Bug]
+- Explosion
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+- Shadow Ball
+- Hidden Power [Ice]
+- Thunderbolt
+- Taunt
+
+Jolteon @ Leftovers
+Ability: Volt Absorb
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+- Thunderbolt
+- Hidden Power [Ice]
+- Shadow Ball
+- Substitute
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 248 HP / 216 Def / 44 Spe
+Bold Nature
+- Thunderbolt
+- Hidden Power [Grass]
+- Roar
+- Rest
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+- Surf
+- Hidden Power [Fire]
+- Ice Beam
+- Rapid Spin
+
+Alakazam @ Lum Berry
+Ability: Synchronize
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+- Psychic
+- Hidden Power [Fire]
+- Shadow Ball
+- Recover
+"""
+
 # True HP types for each opponent species (lowercase, matches HIDDEN_POWER_TYPE_ORDER names)
 OPP_HP_GROUND_TRUTH: dict[str, str] = {
     "jolteon":    "ice",
@@ -365,6 +426,7 @@ OPP_HP_GROUND_TRUTH: dict[str, str] = {
     "raikou":     "grass",
     "tentacruel": "electric",
     "celebi":     "fire",
+    "forretress": "bug",
 }
 
 
@@ -399,52 +461,43 @@ class FuzzStats:
 
 
 class HiddenPowerTrackerFuzzPlayer(Player):
-    """Independent validator of HiddenPowerTracker.
+    """End-to-end validator for HiddenPowerTracker.
 
-    Reimplements HP-target resolution from raw battle state and asserts that
-    every observation the tracker accepts is consistent with the live mon hit by
-    the move (invariant) and that the true HP type for every opp species that
-    used HP is still in the candidate set at battle end (ground truth).
+    Reads opp's last damaging move directly from poke-env's protocol-derived
+    `battle.opp_last_damaging_move` property — the SAME signal the production
+    HP code consumes. The fuzz's value here is no longer "alternate target
+    resolution" (the protocol carries user/target/move/eff explicitly, so
+    resolution is unnecessary). What it validates is:
 
-    Resolution mirrors EpisodeTracker._resolve_hp_target by intent but takes a
-    different path through the data — actions are detected from the chosen
-    BattleOrder rather than from a TurnDelta. Sharing implementations would
-    defeat the test (a bug in shared logic would slip through).
+      1. INVARIANT — after every observe(), every surviving HP candidate type
+         satisfies effective_multiplier(type, target) == observed effectiveness.
+      2. GROUND TRUTH — at battle end, for each opp species that ever used HP,
+         the true HP type (known from the fixed opp team spec) is still a
+         non-zero candidate. A bug in the tracker's narrowing logic would
+         eliminate it.
+      3. PROTOCOL CROSS-CHECK — every observed event's user_species and
+         target_species are corroborated by an archived `|move|...|hidden
+         power|...|target|` line, catching any drift between poke-env's
+         protocol parser and the DamagingMoveEvent it emits.
     """
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.stats = FuzzStats()
         self._trackers: dict[str, HiddenPowerTracker] = {}
-        self._prev_our_active: dict[str, str | None] = {}
-        self._prev_opp_active: dict[str, str | None] = {}
-        self._prev_our_fainted: dict[str, frozenset] = {}
-        self._prev_action_was_switch: dict[str, bool] = {}
-        # Per-mon status snapshot at the start of the most recent normal turn.
-        # Used to evaluate Flash Fire-vs-frozen at the time the just-fired HP
-        # actually resolved (the move thaws the target, so post-turn status lies).
-        self._prev_our_team_status: dict[str, dict] = {}
-        # Per-(battle, opp_species) list of (turn, effectiveness, target_species)
-        # for diagnostic dump on observation failure.
+        # Per-(battle, opp_species) observation log for diagnostic dumps.
         self._obs_log: dict[tuple, list] = {}
-        # Per-battle list of (turn, force_sw, our_active_at_call, opp_active_at_call,
-        # opp_last_move_id, opp_last_eff, action_was_switch, switch_to, we_first)
-        self._turn_log: dict[str, list] = {}
-        # Per-battle list of raw protocol lines, for protocol-level debugging.
+        # Per-battle raw protocol lines — used for both the protocol cross-check
+        # invariant and the diagnostic dump on failure.
         self._proto_log: dict[str, list] = {}
+        # Per-battle set of (turn, user_species, target_species) tuples we've
+        # already observed, so we don't double-count when choose_move is called
+        # multiple times in one turn (e.g. force-switch sub-calls).
+        self._observed_keys: dict[str, set] = {}
 
     async def _handle_battle_message(self, split_messages):
-        # Intercept and archive raw protocol messages, then defer to base impl.
-        for sm in split_messages:
-            if len(sm) > 0 and sm[0].startswith(">"):
-                tag = sm[0][1:]
-            elif len(sm) > 1 and sm[1] in ("move", "switch", "-immune", "-supereffective",
-                                            "-resisted", "-ability", "-activate",
-                                            "faint", "turn"):
-                # Use the most recent known tag (last battle we saw a header for)
-                # The msg list usually starts with a tag header.
-                pass
-        # Walk through to find any battle tag header and accumulate
+        # Archive raw protocol lines per battle for the protocol cross-check
+        # and the diagnostic dump on failure.
         current_tag = None
         for sm in split_messages:
             if len(sm) > 0 and sm[0].startswith(">"):
@@ -459,246 +512,48 @@ class HiddenPowerTrackerFuzzPlayer(Player):
             self._trackers[tag] = HiddenPowerTracker()
         return self._trackers[tag]
 
-    @staticmethod
-    def _snapshot_target(battle, species, prev_team_status):
-        """Wrap a live mon with the historical status from prev_team_status.
-
-        Critical for the Flash Fire-vs-frozen case: a frozen Flash Fire mon hit
-        by HP Fire takes 0.5× damage AND thaws AND often faints from the hit.
-        By observation time, live status is None or FNT — neither matches the
-        FRZ that was true when the move resolved. Using the snapshot is the
-        only way to evaluate Flash Fire's suppression correctly.
+    def _protocol_says_hp(
+        self, tag: str, turn: int, user_species: str, target_species: str,
+    ) -> bool:
+        """Cross-check the DamagingMoveEvent against the raw protocol log:
+        confirm there's a `|move|<user-side>: <UserName>|Hidden Power|<targ-side>: <TargName>|`
+        line attributable to this turn. Returns True if found.
         """
-        live_mon = next(
-            (m for m in battle.team.values() if m.species == species), None
-        )
-        if live_mon is None:
-            return None
-        return _HpTargetMon(
-            species=live_mon.species,
-            type_1=live_mon.type_1,
-            type_2=live_mon.type_2,
-            ability=live_mon.ability,
-            status=prev_team_status.get(species, live_mon.status),
-        )
-
-    @staticmethod
-    def _resolve_target(battle, prev_active, prev_fainted, prev_was_switch,
-                        prev_team_status):
-        """Mirror of EpisodeTracker._resolve_hp_target using raw battle state.
-
-        Driven by what *we* did, not visible side state — the active mon at
-        turn N+1 start can be the same species as turn N start even after we
-        switched out (switch-in died and forced-replace cycled the same mon back).
-
-        Handles voluntary switches (priority +6, always before HP) and Baton Pass
-        (move action that changes our active mid-turn; speed-based ordering vs HP).
-
-        All return paths go through _snapshot_target so the returned mon's
-        status reflects the moment HP fired, not the post-resolution state.
-        """
-        curr_fainted = frozenset(
-            m.species for m in battle.team.values() if m.fainted
-        )
-        newly_fainted = curr_fainted - prev_fainted
-
-        # Case A: prev_active fainted → opp HP hit them on the field.
-        if prev_active in newly_fainted:
-            return HiddenPowerTrackerFuzzPlayer._snapshot_target(
-                battle, prev_active, prev_team_status
-            )
-
-        curr_active_mon = battle.active_pokemon
-        curr_active = (
-            curr_active_mon.species
-            if curr_active_mon and not curr_active_mon.fainted
-            else None
-        )
-        visible_side_change = (prev_active != curr_active)
-        # In Gen 3, only Baton Pass causes our side to change via a move action.
-        is_baton_pass = (not prev_was_switch and visible_side_change)
-
-        if prev_was_switch:
-            switch_first = True   # voluntary switch — always priority +6
-        elif is_baton_pass:
-            switch_first = battle.we_moved_first is True   # speed decides
-        else:
-            switch_first = False
-
-        if switch_first:
-            # Switch-in (voluntary or via BP) took the HP. Either curr_active
-            # (survived) or the newly-fainted mon != prev_active (KO'd by HP).
-            switch_in_fainted = newly_fainted - {prev_active}
-            if not switch_in_fainted:
-                target_species = curr_active
-            elif len(switch_in_fainted) == 1:
-                target_species = next(iter(switch_in_fainted))
-            else:
-                raise RuntimeError(
-                    f"HP target ambiguous: multiple newly-fainted mons "
-                    f"{switch_in_fainted} (prev={prev_active}, curr={curr_active})."
-                )
-        else:
-            # No switch action, or BP fired AFTER HP — prev_active took the hit.
-            target_species = prev_active
-
-        if target_species is None:
-            return None
-        return HiddenPowerTrackerFuzzPlayer._snapshot_target(
-            battle, target_species, prev_team_status
-        )
+        # Walk back through proto_log to find the most recent |turn|<turn>|
+        # marker, then scan forward up to the next |turn|N+1| or end.
+        plog = self._proto_log.get(tag, [])
+        turn_str = str(turn)
+        # Find the marker for `turn` (the turn during which the HP fired —
+        # which is the one before the snapshot's current turn).
+        for i, sm in enumerate(plog):
+            if len(sm) >= 3 and sm[1] == "turn" and sm[2] == turn_str:
+                # Scan forward until the next |turn| marker
+                for sm2 in plog[i + 1:]:
+                    if len(sm2) >= 3 and sm2[1] == "turn":
+                        return False
+                    if len(sm2) >= 5 and sm2[1] == "move":
+                        # sm2 = ('', 'move', '<side>: <name>', '<move>', '<side>: <target>', ...)
+                        if sm2[3].lower().replace(" ", "") == "hiddenpower":
+                            mover = sm2[2].split(": ", 1)[-1].lower()
+                            target = sm2[4].split(": ", 1)[-1].lower()
+                            if mover == user_species and target == target_species:
+                                return True
+                return False
+        return False
 
     def choose_move(self, battle):
         try:
             tag = battle.battle_tag
             tracker = self._tracker(tag)
-            opp_mon = battle.opponent_active_pokemon
-            opp_last_move = opp_mon.last_move if opp_mon else None
-            opp_last_effectiveness = battle.opp_last_effectiveness
-
-            prev_our = self._prev_our_active.get(tag)
-            prev_opp = self._prev_opp_active.get(tag)
-            prev_fainted = self._prev_our_fainted.get(tag, frozenset())
-            prev_was_switch = self._prev_action_was_switch.get(tag, False)
-            prev_team_status = self._prev_our_team_status.get(tag, {})
-
-            # Skip HP processing on forced-switch calls. The opp_last_effectiveness
-            # property gates on turn_set == self._turn - 1, so a forced switch mid-turn
-            # would return None for the just-fired HP. But a forced switch triggered
-            # by end-of-turn effects (poison etc.) AFTER battle.turn has ticked to N+1
-            # WILL still return the value from turn N — and re-running our resolver at
-            # that point would double-observe with stale prev state. The preceding
-            # normal call already captured this HP correctly.
-            if (not battle.force_switch
-                    and prev_our is not None
-                    and prev_opp is not None
-                    and opp_last_move is not None
-                    and opp_last_move.id == "hiddenpower"
-                    and opp_last_effectiveness is not None):
-
-                target_mon = self._resolve_target(
-                    battle, prev_our, prev_fainted, prev_was_switch, prev_team_status
-                )
-
-                if target_mon is not None:
-                    self.stats.hidden_power_observations += 1
-                    self.stats.species_observations[prev_opp] += 1
-
-                    if opp_last_effectiveness == 0.0:
-                        ability = (getattr(target_mon, "ability", None) or "").lower()
-                        self.stats.immunity_hits[ability] += 1
-
-                    log_key = (tag, prev_opp)
-                    self._obs_log.setdefault(log_key, []).append(
-                        (battle.turn, opp_last_effectiveness, target_mon.species,
-                         str(target_mon.type_1),
-                         str(target_mon.type_2) if target_mon.type_2 else None,
-                         target_mon.ability,
-                         str(target_mon.status) if target_mon.status else None)
-                    )
-                    try:
-                        tracker.observe(prev_opp, opp_last_effectiveness, target_mon)
-                    except ValueError as e:
-                        curr_active = (battle.active_pokemon.species
-                                       if battle.active_pokemon else None)
-                        force_sw = getattr(battle, "force_switch", None)
-                        we_first = getattr(battle, "we_moved_first", None)
-                        print(
-                            f"\n[FUZZ DBG] turn={battle.turn} force_sw={force_sw} "
-                            f"we_first={we_first} prev_our={prev_our} curr={curr_active} "
-                            f"prev_was_switch={prev_was_switch} target={target_mon.species} "
-                            f"eff={opp_last_effectiveness} opp={prev_opp} "
-                            f"opp_move={opp_last_move.id}",
-                            flush=True,
-                        )
-                        print(f"[FUZZ DBG] observation log for {prev_opp}:", flush=True)
-                        for entry in self._obs_log.get(log_key, []):
-                            print(f"  turn={entry[0]} eff={entry[1]}× target={entry[2]} "
-                                  f"types=({entry[3]}/{entry[4]}) ability={entry[5]} status={entry[6] if len(entry) > 6 else None}",
-                                  flush=True)
-                        true_type = OPP_HP_GROUND_TRUTH.get(prev_opp, "?")
-                        print(f"[FUZZ DBG] true HP type for {prev_opp}: {true_type}", flush=True)
-                        # Print last 15 turn entries for context
-                        recent = self._turn_log.get(tag, [])[-15:]
-                        print(f"[FUZZ DBG] recent turns for {tag}:", flush=True)
-                        for entry in recent:
-                            print(f"  turn={entry[0]} fsw={entry[1]} our={entry[2]} "
-                                  f"opp={entry[3]} opp_move={entry[4]} eff={entry[5]} "
-                                  f"sw_action={entry[6]} sw_to={entry[7]} "
-                                  f"we_first={entry[8]}", flush=True)
-                        # Dump protocol around the crash turn
-                        plog = self._proto_log.get(tag, [])
-                        print(f"[FUZZ DBG] last 60 protocol lines:", flush=True)
-                        for sm in plog[-60:]:
-                            print(f"  {sm}", flush=True)
-                        raise
-
-                    # Invariant: every survivor is consistent with the observation.
-                    # Bucket the calculated multiplier to match poke-env's reported
-                    # effectiveness ({0, 0.5, 1, 2} — 4× collapses to 2.0).
-                    probs = tracker.get_probs(prev_opp)
-                    for i, prob in enumerate(probs):
-                        if prob > 0.0:
-                            hp_type = HIDDEN_POWER_TYPE_ORDER[i]
-                            actual = bucket_effectiveness(
-                                effective_multiplier(hp_type, target_mon)
-                            )
-                            if actual != opp_last_effectiveness:
-                                raise AssertionError(
-                                    f"INVARIANT VIOLATED: {prev_opp} used HP on "
-                                    f"{target_mon.species} "
-                                    f"({target_mon.type_1}/{target_mon.type_2}/"
-                                    f"{target_mon.ability}) "
-                                    f"effectiveness={opp_last_effectiveness}, but "
-                                    f"{hp_type.name} survives with mult={actual}"
-                                )
-                    self.stats.invariant_checks_passed += 1
-
-            # Forced-switch calls happen mid-turn (after a mid-turn faint) and
-            # don't represent the start of a new turn. We must NOT update prev_*
-            # state here, or the next regular turn's HP resolution loses track of
-            # who was active when opp HP fired.
-            our_active_at_call = (
-                battle.active_pokemon.species
-                if battle.active_pokemon and not battle.active_pokemon.fainted
-                else None
-            )
-            if not battle.force_switch:
-                self._prev_our_active[tag] = our_active_at_call
-                self._prev_opp_active[tag] = opp_mon.species if opp_mon else None
-                self._prev_our_fainted[tag] = frozenset(
-                    m.species for m in battle.team.values() if m.fainted
-                )
-                self._prev_our_team_status[tag] = {
-                    m.species: m.status for m in battle.team.values()
-                }
-                order = self.choose_random_move(battle)
-                action_is_switch = self._is_switch_order(order)
-                self._prev_action_was_switch[tag] = action_is_switch
-                switch_to = (order.order.species if action_is_switch
-                             and hasattr(order, "order")
-                             and hasattr(order.order, "species") else None)
-                self._turn_log.setdefault(tag, []).append(
-                    (battle.turn, False, our_active_at_call,
-                     opp_mon.species if opp_mon else None,
-                     opp_last_move.id if opp_last_move else None,
-                     opp_last_effectiveness, action_is_switch, switch_to,
-                     battle.we_moved_first)
-                )
-                return order
-            else:
-                order = self.choose_random_move(battle)
-                switch_to = (order.order.species if hasattr(order, "order")
-                             and hasattr(order.order, "species") else None)
-                self._turn_log.setdefault(tag, []).append(
-                    (battle.turn, True, our_active_at_call,
-                     opp_mon.species if opp_mon else None,
-                     opp_last_move.id if opp_last_move else None,
-                     opp_last_effectiveness, True, switch_to,
-                     battle.we_moved_first)
-                )
-                return order
-
+            event = battle.opp_last_damaging_move
+            if event is not None and event.move_id == "hiddenpower":
+                # Dedupe: the same turn-gated event can show up on multiple
+                # consecutive choose_move calls (force-switch sub-calls).
+                dedupe_key = (battle.turn, event.user_species, event.target_species)
+                if dedupe_key not in self._observed_keys.setdefault(tag, set()):
+                    self._observed_keys[tag].add(dedupe_key)
+                    self._observe_event(battle, tag, tracker, event)
+            return self.choose_random_move(battle)
         except AssertionError:
             raise
         except Exception as e:
@@ -708,10 +563,96 @@ class HiddenPowerTrackerFuzzPlayer(Player):
             sys.stderr.flush()
             os._exit(1)
 
-    @staticmethod
-    def _is_switch_order(order) -> bool:
-        """True if the BattleOrder is a switch (sends in a Pokémon) rather than a move."""
-        return isinstance(getattr(order, "order", None), Pokemon)
+    def _observe_event(self, battle, tag, tracker, event):
+        """Record one HP observation, enforce invariants, dump diagnostics on
+        failure. Pulled out so choose_move stays a thin event-router."""
+        target_mon = next(
+            (m for m in battle.team.values() if m.species == event.target_species),
+            None,
+        )
+        if target_mon is None:
+            return
+        # Wrap with the event's snapshot status (Flash Fire-vs-frozen).
+        wrapped = _HpTargetMon(
+            species=target_mon.species,
+            type_1=target_mon.type_1,
+            type_2=target_mon.type_2,
+            ability=target_mon.ability,
+            status=event.target_status,
+        )
+
+        # Protocol cross-check: confirm the event corresponds to a real
+        # `|move|<user>|Hidden Power|<target>|` line in the just-ended turn.
+        fired_turn = battle.turn - 1
+        if not self._protocol_says_hp(
+            tag, fired_turn, event.user_species, event.target_species,
+        ):
+            print(
+                f"\n[FUZZ FATAL] {tag} turn {battle.turn}: DamagingMoveEvent "
+                f"user={event.user_species} target={event.target_species} "
+                f"move_id={event.move_id} has no matching |move|...|Hidden Power|...| "
+                f"line in turn {fired_turn}'s protocol.",
+                flush=True,
+            )
+            plog = self._proto_log.get(tag, [])
+            print("[FUZZ FATAL] last 60 protocol lines:", flush=True)
+            for sm in plog[-60:]:
+                print(f"  {sm}", flush=True)
+            os._exit(1)
+
+        self.stats.hidden_power_observations += 1
+        self.stats.species_observations[event.user_species] += 1
+        if event.effectiveness == 0.0:
+            ability = (wrapped.ability or "").lower()
+            self.stats.immunity_hits[ability] += 1
+
+        log_key = (tag, event.user_species)
+        self._obs_log.setdefault(log_key, []).append(
+            (battle.turn, event.effectiveness, wrapped.species,
+             str(wrapped.type_1),
+             str(wrapped.type_2) if wrapped.type_2 else None,
+             wrapped.ability,
+             str(wrapped.status) if wrapped.status else None)
+        )
+        try:
+            tracker.observe(event.user_species, event.effectiveness, wrapped)
+        except ValueError as e:
+            print(
+                f"\n[FUZZ DBG] turn={battle.turn} event={event} target_wrapped="
+                f"{wrapped}",
+                flush=True,
+            )
+            print(f"[FUZZ DBG] observation log for {event.user_species}:", flush=True)
+            for entry in self._obs_log.get(log_key, []):
+                print(f"  turn={entry[0]} eff={entry[1]}× target={entry[2]} "
+                      f"types=({entry[3]}/{entry[4]}) ability={entry[5]} status={entry[6] if len(entry) > 6 else None}",
+                      flush=True)
+            true_type = OPP_HP_GROUND_TRUTH.get(event.user_species, "?")
+            print(f"[FUZZ DBG] true HP type for {event.user_species}: {true_type}",
+                  flush=True)
+            plog = self._proto_log.get(tag, [])
+            print("[FUZZ DBG] last 60 protocol lines:", flush=True)
+            for sm in plog[-60:]:
+                print(f"  {sm}", flush=True)
+            raise
+
+        # Invariant: every surviving candidate must produce the observed
+        # effectiveness against this target.
+        probs = tracker.get_probs(event.user_species)
+        for i, prob in enumerate(probs):
+            if prob > 0.0:
+                hp_type = HIDDEN_POWER_TYPE_ORDER[i]
+                actual = bucket_effectiveness(
+                    effective_multiplier(hp_type, wrapped)
+                )
+                if actual != event.effectiveness:
+                    raise AssertionError(
+                        f"INVARIANT VIOLATED: {event.user_species} used HP on "
+                        f"{wrapped.species} ({wrapped.type_1}/{wrapped.type_2}/"
+                        f"{wrapped.ability}) effectiveness={event.effectiveness}, "
+                        f"but {hp_type.name} survives with mult={actual}"
+                    )
+        self.stats.invariant_checks_passed += 1
 
     def _battle_finished_callback(self, battle) -> None:
         self.stats.battles += 1
@@ -740,7 +681,6 @@ class HiddenPowerTrackerFuzzPlayer(Player):
                         if p > 0
                     ]
                     obs_log = self._obs_log.get((tag, species), [])
-                    turn_log = self._turn_log.get(tag, [])
                     proto_log = self._proto_log.get(tag, [])
                     self.stats.ground_truth_failures.append({
                         "species": species,
@@ -748,22 +688,16 @@ class HiddenPowerTrackerFuzzPlayer(Player):
                         "surviving": surviving,
                         "battle": tag,
                         "obs_log": list(obs_log),
-                        "turn_log": list(turn_log),
                         "proto_log": list(proto_log),
                     })
 
         # Clean up per-battle state
         self._trackers.pop(tag, None)
-        self._prev_our_active.pop(tag, None)
-        self._prev_opp_active.pop(tag, None)
-        self._prev_our_fainted.pop(tag, None)
-        self._prev_action_was_switch.pop(tag, None)
-        self._prev_our_team_status.pop(tag, None)
         for key in list(self._obs_log):
             if key[0] == tag:
                 self._obs_log.pop(key, None)
-        self._turn_log.pop(tag, None)
         self._proto_log.pop(tag, None)
+        self._observed_keys.pop(tag, None)
 
 
 # ---------------------------------------------------------------------------
@@ -774,7 +708,7 @@ async def main(n_battles: int = 500) -> None:
     ts = int(time.time()) % 100000
     print(f"HiddenPowerTracker fuzz — gen3ou — {n_battles} battles", flush=True)
 
-    # Rotate three our-team variants and two opp-team variants — 6 combinations
+    # Rotate three our-team variants and three opp-team variants — 9 combinations
     # in total, each sampled randomly per battle by Gen3Teambuilder.yield_team():
     #   A. OUR_TEAM             — ability-immunity coverage (Volt Absorb / Water Absorb /
     #                             Levitate / Flash Fire / Thick Fat / Natural Cure)
@@ -785,8 +719,11 @@ async def main(n_battles: int = 500) -> None:
     #   1. OPP_TEAM             — HP Ice / Fire / Grass coverage
     #   2. OPP_TEAM_VARIETY     — adds HP Electric (Tentacruel) and a second HP Fire
     #                             user (Celebi)
+    #   3. OPP_TEAM_FORRETRESS  — Forretress with HP Bug as a bulky switching pivot,
+    #                             reproducing the original production crash scenario
+    #                             (resolver target-misidentification on switch turns)
     our_tb = Gen3Teambuilder([OUR_TEAM, OUR_TEAM_QUADWEAK, OUR_TEAM_VARIETY])
-    opp_tb = Gen3Teambuilder([OPP_TEAM, OPP_TEAM_VARIETY])
+    opp_tb = Gen3Teambuilder([OPP_TEAM, OPP_TEAM_VARIETY, OPP_TEAM_FORRETRESS])
 
     fuzz = HiddenPowerTrackerFuzzPlayer(
         battle_format=BATTLE_FORMAT,
@@ -834,15 +771,7 @@ async def main(n_battles: int = 500) -> None:
             for entry in f.get("obs_log", []):
                 print(f"      turn={entry[0]} eff={entry[1]}× target={entry[2]} "
                       f"types=({entry[3]}/{entry[4]}) ability={entry[5]} status={entry[6] if len(entry) > 6 else None}")
-            # Dump turn log windows around each obs to show context
             turns_of_interest = {e[0] for e in f.get("obs_log", [])}
-            tlog = f.get("turn_log", [])
-            print(f"    Turn-by-turn context (turns appearing in obs):")
-            for e in tlog:
-                if e[0] in turns_of_interest or any(abs(e[0] - t) <= 1 for t in turns_of_interest):
-                    print(f"      turn={e[0]} fsw={e[1]} our={e[2]} opp={e[3]} "
-                          f"move={e[4]} eff={e[5]} sw_a={e[6]} sw_to={e[7]} "
-                          f"we_first={e[8]}")
             # Dump protocol log around the buggy observation turns. For each
             # buggy turn T, find the index of '|turn|T' / '|turn|T-1' and dump
             # the lines between them.

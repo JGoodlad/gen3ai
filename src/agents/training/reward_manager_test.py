@@ -12,7 +12,24 @@ from agents.training.reward_manager import (
     EXPLOSION_BLOCK_BONUS, FINISHING_BLOW_BONUS,
 )
 from agents.training.battle_context import BattleContext, TurnDelta
+from poke_env.battle.abstract_battle import DamagingMoveEvent
 from utils.logging.levels import LogLevel
+
+
+def _explosion_event(user_species="gengar", target_species="pikachu", effectiveness=1.0):
+    """Build a DamagingMoveEvent for Explosion — used in TestExplosionReward.
+
+    The reward manager's Explosion branch now reads delta.opp_damaging_event
+    directly (protocol truth) instead of scanning opp_mon.moves. Tests must
+    supply this event to exercise the bonus paths.
+    """
+    return DamagingMoveEvent(
+        user_species=user_species,
+        target_species=target_species,
+        target_status=None,
+        move_id="explosion",
+        effectiveness=effectiveness,
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -83,6 +100,8 @@ def _delta(
     our_prev_active="pikachu",
     opp_prev_active="charizard",
     our_boost_delta=None,
+    our_damaging_event=None,
+    opp_damaging_event=None,
 ):
     our = np.zeros(6, dtype=np.float32)
     opp = np.zeros(6, dtype=np.float32)
@@ -110,6 +129,8 @@ def _delta(
         our_effectiveness=None,
         opp_effectiveness=None,
         we_moved_first=None,
+        our_damaging_event=our_damaging_event,
+        opp_damaging_event=opp_damaging_event,
     )
 
 
@@ -472,7 +493,8 @@ def _pivot_battle(new_mon, opp_mon, prev_species="prevmon", prev_mon=None):
     return battle
 
 
-def _pivot_delta(opp_move_id, opp_switch_to=None, prev_species="prevmon"):
+def _pivot_delta(opp_move_id, opp_switch_to=None, prev_species="prevmon",
+                  opp_damaging_event=None):
     return TurnDelta(
         our_move_id=None, our_switch_to="newmon", our_prev_active=prev_species,
         opp_move_id=opp_move_id, opp_switch_to=opp_switch_to,
@@ -487,6 +509,7 @@ def _pivot_delta(opp_move_id, opp_switch_to=None, prev_species="prevmon"):
         our_effectiveness=None,
         opp_effectiveness=None,
         we_moved_first=None,
+        opp_damaging_event=opp_damaging_event,
     )
 
 
@@ -662,6 +685,65 @@ class TestPivotDamage(unittest.TestCase):
         # Ice vs Normal (1×) and Ice vs Ghost/Poison (1×) — no improvement, no bonus
         result = self._run(gengar, prev, "ICE")
         self.assertAlmostEqual(result, 0.0, places=5)
+
+    def test_event_effectiveness_preferred_over_local_recompute(self):
+        # Protocol-truth path: event's effectiveness for the switch-in is used as-is
+        # instead of recomputing from move.type × types. This decouples reward
+        # signal from any drift between our local mechanics and Showdown's.
+        from poke_env.battle.pokemon_type import PokemonType
+        manager = Gen3RewardManager(log_level=LogLevel.QUIET)
+        move = MagicMock()
+        move.base_power = 80
+        move.type = PokemonType.FIRE
+        opp = MagicMock()
+        opp.moves = {"flamethrower": move}
+        # New mon's typing would compute 1.0 vs Fire (Normal), but we override the
+        # event to 0.5 — the reward signal must follow the event, not the recompute.
+        new_mon = _type_mon("NORMAL")
+        new_mon.species = "newmon"
+        event = DamagingMoveEvent(
+            user_species="opponentmon",
+            target_species="newmon",
+            target_status=None,
+            move_id="flamethrower",
+            effectiveness=0.5,
+        )
+        delta = _pivot_delta("flamethrower", opp_damaging_event=event)
+        battle = _pivot_battle(new_mon, opp, prev_mon=_type_mon("NORMAL"))
+        # prev=Normal (1× Fire), new (via event)=0.5 → improvement → +0.10
+        result = sum(manager._compute_pivot_bonus(delta, battle))
+        self.assertAlmostEqual(result, 0.10, places=5)
+
+    def test_event_move_id_overrides_stale_delta_move_id(self):
+        # Stale delta.opp_move_id (e.g. from a force-replace cycle where opp_mon.last_move
+        # is from a different mon) gets superseded by the event's confirmed move_id.
+        from poke_env.battle.pokemon_type import PokemonType
+        manager = Gen3RewardManager(log_level=LogLevel.QUIET)
+        # opp's revealed moves include both moves; delta.opp_move_id is the stale one,
+        # but the event identifies the actual move that fired this turn.
+        stale_move = MagicMock()
+        stale_move.base_power = 80
+        stale_move.type = PokemonType.FIRE
+        real_move = MagicMock()
+        real_move.base_power = 80
+        real_move.type = PokemonType.GROUND
+        opp = MagicMock()
+        opp.moves = {"flamethrower": stale_move, "earthquake": real_move}
+        new_mon = _type_mon("FLYING")
+        new_mon.species = "newmon"
+        # Ground vs Flying = 0× (Flying immune). Event identifies it as the real fire.
+        event = DamagingMoveEvent(
+            user_species="opponentmon",
+            target_species="newmon",
+            target_status=None,
+            move_id="earthquake",
+            effectiveness=0.0,
+        )
+        delta = _pivot_delta("flamethrower", opp_damaging_event=event)
+        battle = _pivot_battle(new_mon, opp, prev_mon=_type_mon("NORMAL"))
+        # prev=Normal (1× Ground), new=Flying via event (0×) → +0.15
+        result = sum(manager._compute_pivot_bonus(delta, battle))
+        self.assertAlmostEqual(result, 0.15, places=5)
 
 
 class TestRoarBonus(unittest.TestCase):
@@ -1302,7 +1384,8 @@ class TestExplosionReward(unittest.TestCase):
         self.manager.record_action(_ctx(), 6)
         battle = self._make_exploder_battle()
         d = _delta(opp_fainted=True, we_fainted=True,
-                   opp_prev_active="gengar", our_hp_delta=-1.0)
+                   opp_prev_active="gengar", our_hp_delta=-1.0,
+                   opp_damaging_event=_explosion_event())
         self.manager.process_turn_reward(battle, d)
         bd = self.manager._last_breakdown
         self.assertAlmostEqual(bd.explosion, 0.0, places=5)  # no victim penalty
@@ -1313,7 +1396,8 @@ class TestExplosionReward(unittest.TestCase):
         self.manager.record_action(_ctx(), 6)
         battle = self._make_exploder_battle()
         d = _delta(opp_fainted=True, we_fainted=False, opp_prev_active="gengar",
-                   our_hp_delta=-0.5)
+                   our_hp_delta=-0.5,
+                   opp_damaging_event=_explosion_event())
         self.manager.process_turn_reward(battle, d)
         bd = self.manager._last_breakdown
         self.assertAlmostEqual(bd.explosion, 2.0, places=5)
@@ -1324,7 +1408,34 @@ class TestExplosionReward(unittest.TestCase):
         self.manager.record_action(_ctx(), 6)
         battle = self._make_exploder_battle()
         d = _delta(opp_fainted=True, we_fainted=False, opp_prev_active="gengar",
-                   our_hp_delta=0.0)  # took zero damage
+                   our_hp_delta=0.0,  # took zero damage
+                   opp_damaging_event=_explosion_event())
+        self.manager.process_turn_reward(battle, d)
+        bd = self.manager._last_breakdown
+        self.assertAlmostEqual(bd.explosion, 2.0, places=5)
+        self.assertAlmostEqual(bd.explosion_block, EXPLOSION_BLOCK_BONUS, places=5)
+
+    def test_explosion_not_triggered_without_event(self):
+        """Old code misfired when opp had Explosion in moveset but used a different move.
+        The event-driven check requires the actual fired move to be explosion."""
+        self.manager.record_action(_ctx(), 6)
+        battle = self._make_exploder_battle()
+        # opp_fainted but no damaging event — they fainted to status / sandstorm / etc.
+        d = _delta(opp_fainted=True, we_fainted=False, opp_prev_active="gengar",
+                   our_hp_delta=0.0)
+        self.manager.process_turn_reward(battle, d)
+        bd = self.manager._last_breakdown
+        self.assertAlmostEqual(bd.explosion, 0.0, places=5)
+        self.assertAlmostEqual(bd.explosion_block, 0.0, places=5)
+
+    def test_explosion_block_bonus_from_event_effectiveness(self):
+        """Ghost-immune explosion: event.effectiveness == 0.0 — block bonus should fire
+        even if our_hp_delta is nonzero (e.g. sandstorm chip we took separately)."""
+        self.manager.record_action(_ctx(), 6)
+        battle = self._make_exploder_battle()
+        d = _delta(opp_fainted=True, we_fainted=False, opp_prev_active="gengar",
+                   our_hp_delta=-0.05,  # tiny chip from weather, not explosion
+                   opp_damaging_event=_explosion_event(effectiveness=0.0))
         self.manager.process_turn_reward(battle, d)
         bd = self.manager._last_breakdown
         self.assertAlmostEqual(bd.explosion, 2.0, places=5)

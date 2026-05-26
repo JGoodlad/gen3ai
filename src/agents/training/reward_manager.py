@@ -432,8 +432,14 @@ class Gen3RewardManager:
     # =========================================================
 
     def _compute_pivot_bonus(self, delta: TurnDelta, battle) -> tuple[float, float, float]:
-        """Return (protect_bonus, status_bonus, damage_bonus) for this switch turn."""
-        opp_move_id = delta.opp_move_id
+        """Return (protect_bonus, status_bonus, damage_bonus) for this switch turn.
+
+        Uses `delta.opp_resolved_move_id` — protocol-truth attribution when a
+        damaging event is set, falling back to the inferred `delta.opp_move_id`
+        for non-damaging moves (status, Roar, etc.). Avoids the stale-last_move
+        class of bug that bit HP attribution.
+        """
+        opp_move_id = delta.opp_resolved_move_id
         if delta.opp_switch_to is not None or opp_move_id is None:
             return (0.0, 0.0, 0.0)
 
@@ -470,6 +476,14 @@ class Gen3RewardManager:
         Signal A: comparison of actual type effectiveness vs old mon vs new mon.
         The HP delta in compute_base_reward already penalises the raw damage taken,
         so this signal focuses purely on whether the switch improved the matchup.
+
+        `mult_vs_new` prefers `delta.opp_damaging_event.effectiveness` when the
+        event's target matches our switch-in — it's the protocol-confirmed bucket
+        (no drift if our local mechanics disagree with Showdown's). Falls back
+        to a local recompute when the event is missing or hit a different
+        target (e.g. opp damaged prev_active before switch-in was on field).
+        `mult_vs_old` always recomputes — the protocol can't tell us what the
+        multiplier *would have been* if we hadn't switched.
         """
         new_mon = battle.active_pokemon
         if not new_mon:
@@ -479,7 +493,11 @@ class Gen3RewardManager:
         )
         if prev_mon is None:
             return 0.0
-        mult_vs_new = self._effective_multiplier(opp_move.type, new_mon)
+        opp_event = delta.opp_damaging_event
+        if opp_event is not None and opp_event.target_species == new_mon.species:
+            mult_vs_new = opp_event.effectiveness
+        else:
+            mult_vs_new = self._effective_multiplier(opp_move.type, new_mon)
         mult_vs_old = self._effective_multiplier(opp_move.type, prev_mon)
         if mult_vs_new < mult_vs_old:
             return 0.15 if mult_vs_new == 0 else 0.10
@@ -658,20 +676,23 @@ class Gen3RewardManager:
         base_reward = bd.hp_ours + bd.hp_opp + bd.faint_ours + bd.faint_opp + bd.win_loss
 
         # --- Explosion / self-destruct ---
-        if delta.opp_fainted:
-            for mon in battle.opponent_team.values():
-                if mon.species == delta.opp_prev_active:
-                    move_ids = {m.id for m in mon.moves.values()}
-                    if move_ids & {"explosion", "selfdestruct"}:
-                        if not delta.we_fainted:
-                            # Opponent used Explosion/SD but we survived — strategic win
-                            bd.explosion = 2.0
-                            # Extra bonus if we took 0 damage (Ghost immune or Protect)
-                            if delta.our_hp_delta.sum() == 0.0:
-                                bd.explosion_block = EXPLOSION_BLOCK_BONUS
-                        # When we_fainted: faint_ours already penalises the loss;
-                        # don't double-count with an explosion penalty on top.
-                    break
+        # Read the damaging event directly: the protocol's |move|<user>|Explosion|
+        # is captured at parse time, before |faint| arrives and the active slot
+        # advances to a switch-in. The old `for mon in opponent_team … move_ids &
+        # {explosion, selfdestruct}` scan misfires for any opp mon that has
+        # Explosion in their revealed moveset — including turns they used
+        # something else. The event is per-turn-confirmed attribution.
+        opp_event = delta.opp_damaging_event
+        if opp_event is not None and opp_event.move_id in ("explosion", "selfdestruct"):
+            if not delta.we_fainted:
+                # Opponent used Explosion/SD but we survived — strategic win
+                bd.explosion = 2.0
+                # Extra bonus if we took 0 damage (Ghost immune, Protect, or
+                # the event's effectiveness reported 0× directly)
+                if delta.our_hp_delta.sum() == 0.0 or opp_event.effectiveness == 0.0:
+                    bd.explosion_block = EXPLOSION_BLOCK_BONUS
+            # When we_fainted: faint_ours already penalises the loss;
+            # don't double-count with an explosion penalty on top.
 
         # --- Finishing blow ---
         bd.finishing_blow = self._compute_finishing_blow_bonus(delta, battle)

@@ -137,13 +137,66 @@ def test_fainted_counts_stored():
 # ---------------------------------------------------------------------------
 
 def test_turn_delta_build_switch_action():
-    prev = _ctx(our_active="tyranitar", opp_active="salamence")
+    # our_team_order makes action=1 unambiguously map to "skarmory" — the species
+    # we sent in — independent of who happens to be active in curr_ctx.
+    prev = _ctx(
+        our_active="tyranitar",
+        opp_active="salamence",
+        our_team_order=("tyranitar", "skarmory", "blissey", "swampert", "lanturn", "snorlax"),
+    )
     curr = _ctx(our_active="skarmory", opp_active="salamence")
     delta = TurnDelta.build(prev, curr, action=1)  # action < 6 = switch
     assert delta.our_switch_to == "skarmory"
     assert delta.our_move_id is None
     assert delta.our_prev_active == "tyranitar"
     assert delta.opp_switch_to is None
+
+
+def test_opp_resolved_move_id_prefers_event_then_falls_back():
+    """`delta.opp_resolved_move_id` should return the damaging event's move_id
+    when set (protocol truth) and fall back to delta.opp_move_id otherwise
+    (non-damaging move case, or no event ever promoted)."""
+    from poke_env.battle.abstract_battle import DamagingMoveEvent
+
+    # 1. Event set → use event's move_id (even if delta.opp_move_id disagrees).
+    event = DamagingMoveEvent(
+        user_species="zapdos", target_species="snorlax",
+        target_status=None, move_id="hiddenpower", effectiveness=0.5,
+    )
+    prev = _ctx(our_team_order=("snorlax",))
+    curr = _ctx()
+    # Inject the event via TurnDelta directly (build() pulls from curr_ctx).
+    curr_with_event = _ctx(opp_last_damaging_event=event)
+    delta = TurnDelta.build(prev, curr_with_event, action=6)
+    assert delta.opp_resolved_move_id == "hiddenpower"
+
+    # 2. No event → use delta.opp_move_id.
+    curr_no_event = _ctx(opp_last_move_id="roar")  # opp_last_damaging_event=None by default
+    delta_no_event = TurnDelta.build(prev, curr_no_event, action=6)
+    assert delta_no_event.opp_resolved_move_id == "roar"
+
+    # 3. Neither set → None.
+    delta_none = TurnDelta.build(prev, _ctx(), action=6)
+    assert delta_none.opp_resolved_move_id is None
+
+
+def test_turn_delta_build_switch_action_uses_intent_not_end_state():
+    """A voluntary switch's our_switch_to must reflect the action's intent (the
+    species in the chosen team slot), not curr_ctx.our_active — which can be a
+    forced-replacement after the switch-in fainted and a faint-chain cycled in
+    more mons. Regression for the HiddenPower target-resolution bug caught by
+    the fuzz validator at 0.05%/battle.
+    """
+    # Turn N: active=Arcanine. We choose action=3 (slot 3 = Swampert).
+    prev = _ctx(
+        our_active="arcanine",
+        our_team_order=("arcanine", "salamence", "lanturn", "swampert", "snorlax", "forretress"),
+    )
+    # Turn N+1 snapshot: Swampert died to HP, Lanturn died to Spikes on switch-in,
+    # Snorlax is the final replacement.
+    curr = _ctx(our_active="snorlax")
+    delta = TurnDelta.build(prev, curr, action=3)
+    assert delta.our_switch_to == "swampert"  # intent, not "snorlax" (end-state)
 
 
 def test_turn_delta_build_our_move_id():
@@ -447,7 +500,11 @@ def test_turn_delta_opp_boost_delta():
 
 def test_turn_delta_boost_delta_zeroed_on_our_switch():
     # We had +2 atk and switched out — boost delta should be zero (new mon, new baseline).
-    prev = _ctx(our_active="tyranitar", our_boosts=_boosts(atk=2))
+    prev = _ctx(
+        our_active="tyranitar",
+        our_boosts=_boosts(atk=2),
+        our_team_order=("tyranitar", "skarmory"),
+    )
     curr = _ctx(our_active="skarmory", our_boosts=_boosts())
     delta = TurnDelta.build(prev, curr, action=1)  # action < 6 = switch
     np.testing.assert_array_equal(delta.our_boost_delta, np.zeros(BOOST_DIM, dtype=np.int8))

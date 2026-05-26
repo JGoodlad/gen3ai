@@ -43,6 +43,8 @@ def _battle(our_mons, opp_mons, our_active, opp_active,
     }
     b.our_last_effectiveness = None
     b.opp_last_effectiveness = None
+    b.our_last_damaging_move = None
+    b.opp_last_damaging_move = None
     b.we_moved_first = None
     return b
 
