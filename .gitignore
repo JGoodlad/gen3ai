@@ -23,3 +23,8 @@ tensorboard/
 
 # Replays
 replays/
+
+# Per-month Smogon stats cache — large (~3.5MB/month), regenerable by
+# running tools/smogon_stats_downloader/sync.py. The aggregated merged file
+# at data/pokemon/gen3_smogon_stats.json IS tracked.
+data/pokemon/smogon_stats_monthly/
