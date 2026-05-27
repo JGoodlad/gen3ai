@@ -55,7 +55,7 @@ from agents.training.gen3_env import Gen3Env
 from agents.training.reward_manager import Gen3RewardManager
 from agents.training.stall import StallConfig
 from agents.training.watchdog import start_subprocess_watchdog
-from agents.training.adaptive_lr_callback import AdaptivePPOCallback, AnnealingLRCallback
+from agents.training.adaptive_lr_callback import AdaptivePPOCallback, TwoPhaseLRCallback
 from agents.training.instrumented_ppo import InstrumentedMaskablePPO
 from agents.training.metrics_exporter_callback import MetricsExporterCallback
 from utils.logging.levels import LogLevel
@@ -121,6 +121,8 @@ class _TrackingCheckpointCallback(CheckpointCallback):
         super().__init__(*args, **kwargs)
         self._current_lr_fn = None
         self._current_epochs_fn = None
+        # Optional: returns the current TwoPhaseLR handoff_lr (or None).
+        self._handoff_lr_fn = None
 
     def _on_step(self) -> bool:
         result = super()._on_step()
@@ -131,7 +133,15 @@ class _TrackingCheckpointCallback(CheckpointCallback):
             )
             if self._current_lr_fn is not None and self._current_epochs_fn is not None:
                 ckpt_path = os.path.join(self.save_path, f"{self.name_prefix}_{self.num_timesteps}_steps.zip")
-                record_checkpoint(self.save_path, ckpt_path, self._current_lr_fn(), self._current_epochs_fn(), hparams=_model_hparams(self.model))
+                handoff_lr = self._handoff_lr_fn() if self._handoff_lr_fn is not None else None
+                record_checkpoint(
+                    self.save_path,
+                    ckpt_path,
+                    self._current_lr_fn(),
+                    self._current_epochs_fn(),
+                    hparams=_model_hparams(self.model),
+                    handoff_lr=handoff_lr,
+                )
         return result
 
 
@@ -174,9 +184,17 @@ def _run_roundtrip_test(model, layout: dict, policy_kwargs: dict, debug: bool = 
         shutil.rmtree(tmpdir, ignore_errors=True)
 
 
-def _setup_signal_handlers(model, model_dir, shutdown_event, version, current_lr_fn, current_epochs_fn):
+def _setup_signal_handlers(model, model_dir, shutdown_event, version, current_lr_fn, current_epochs_fn, handoff_lr_fn=None):
     """Wire SIGINT/SIGTERM/SIGUSR1. Returns the abort_training closure so it can
-    be passed to eval callbacks as their canonical "die cleanly" path."""
+    be passed to eval callbacks as their canonical "die cleanly" path.
+
+    ``handoff_lr_fn`` is optional; when present it returns the TwoPhaseLR
+    callback's current handoff_lr (or None while still in Phase 1) so the
+    cosine starting LR is persisted alongside the SIGTERM checkpoint.
+    """
+
+    def _handoff() -> "float | None":
+        return handoff_lr_fn() if handoff_lr_fn is not None else None
 
     def abort_training(reason: str) -> None:
         """Single canonical abort path — works from any thread.
@@ -196,7 +214,7 @@ def _setup_signal_handlers(model, model_dir, shutdown_event, version, current_lr
             epochs = current_epochs_fn()
             hparams = _model_hparams(model)
             save_model_snapshot(model_dir, version, current_lr=lr, current_epochs=epochs, hparams=hparams)
-            record_checkpoint(model_dir, path + ".zip", lr, epochs, hparams=hparams)
+            record_checkpoint(model_dir, path + ".zip", lr, epochs, hparams=hparams, handoff_lr=_handoff())
             print(f"[ABORT] Checkpoint saved → {path}.zip")
         except Exception as e:
             print(f"[ABORT] Save failed: {e}")
@@ -208,7 +226,14 @@ def _setup_signal_handlers(model, model_dir, shutdown_event, version, current_lr
         ckpt = os.path.join(model_dir, name)
         model.save(ckpt)
         _write_latest_txt(model_dir, name + ".zip")
-        record_checkpoint(model_dir, os.path.join(model_dir, name + ".zip"), current_lr_fn(), current_epochs_fn(), hparams=_model_hparams(model))
+        record_checkpoint(
+            model_dir,
+            os.path.join(model_dir, name + ".zip"),
+            current_lr_fn(),
+            current_epochs_fn(),
+            hparams=_model_hparams(model),
+            handoff_lr=_handoff(),
+        )
         print(f"\n💾 [CHECKPOINT] Forced save → {ckpt}.zip")
 
     signal.signal(signal.SIGINT,  lambda sig, frame: abort_training("SIGINT received"))
@@ -540,18 +565,38 @@ async def main():
         reward_fn_factory=reward_factory,
     )
 
+    # --lr must lie within [--min-lr, --max-lr]. This is the user-facing contract
+    # for both pure-adaptive runs and TwoPhaseLR Phase 1 — KL adaptation reads
+    # args.lr as the seed for fresh runs and as the cap for resumes, so it has
+    # to be a valid in-band LR. Enforced before any callback is constructed.
     _effective_max_lr = args.max_lr if args.max_lr is not None else args.lr * 2.0
-    if not annealing_mode and not (args.min_lr <= args.lr <= _effective_max_lr):
+    if not (args.min_lr <= args.lr <= _effective_max_lr):
         print(f"[AdaptiveLR] ERROR: --lr {args.lr:.2e} is outside "
               f"[--min-lr {args.min_lr:.2e}, --max-lr {_effective_max_lr:.2e}]")
         sys.exit(1)
 
+    # If resuming and the checkpoint has already crossed into the cosine phase,
+    # read the persisted handoff_lr so the new callback can pick up the same
+    # cosine starting point. None means "still in Phase 1, KL-driven."
+    resumed_handoff_lr: float | None = None
+    if annealing_mode and args.model and os.path.exists(args.model):
+        try:
+            _meta = read_checkpoint_metadata(args.model)
+            _h = _meta.get("handoff_lr")
+            if isinstance(_h, (int, float)):
+                resumed_handoff_lr = float(_h)
+        except Exception as e:
+            print(f"[TwoPhaseLR] WARNING: failed to read handoff_lr from {args.model}: {e}")
+
     if annealing_mode:
-        lr_callback = AnnealingLRCallback(
+        lr_callback = TwoPhaseLRCallback(
             initial_lr=args.lr,
             total_steps=args.steps,
             anneal_start_steps=args.anneal_lr_start_steps,
             anneal_min_lr=args.anneal_min_lr,
+            min_lr=args.min_lr,
+            max_lr=args.max_lr,
+            handoff_lr=resumed_handoff_lr,
         )
     else:
         lr_callback = AdaptivePPOCallback(
@@ -563,6 +608,10 @@ async def main():
     adaptive_ppo_callback = lr_callback
     checkpoint_callback._current_lr_fn = lambda: model.policy.optimizer.param_groups[0]["lr"]
     checkpoint_callback._current_epochs_fn = lambda: model.n_epochs
+    # Only TwoPhaseLRCallback exposes a handoff_lr; AdaptivePPOCallback does not.
+    checkpoint_callback._handoff_lr_fn = (
+        (lambda: lr_callback.handoff_lr) if isinstance(lr_callback, TwoPhaseLRCallback) else None
+    )
     callbacks = [checkpoint_callback, replay_callback, lr_callback, MetricsExporterCallback(), _HparamLogCallback(args.ent_coef)]
     eval_callback = None
 
@@ -660,27 +709,69 @@ async def main():
             os._exit(1)
         model.ent_coef = args.ent_coef
         model.gae_lambda = 0.80
+        # Resume-path LR setup. Phase determines whether we read from the
+        # optimizer (Phase 1, KL-driven) or compute the cosine (Phase 2).
+        saved_lr: float | None = None  # only set in branches that read it
         if annealing_mode:
-            # LR is a pure function of step count — fully restart-safe without any stored state.
-            resume_lr = lr_callback.lr_at(model.num_timesteps)
-            model.lr_schedule = lambda _: resume_lr
-            send_event(
-                f"▶️ Resuming with LR annealing: {resume_lr:.2e} at step {model.num_timesteps:,} "
-                f"(anneal_start={args.anneal_lr_start_steps:,}, total={args.steps:,}, "
-                f"min={args.anneal_min_lr:.2e})"
-            )
+            t = model.num_timesteps
+            if lr_callback.phase(t) == 1:
+                # Phase 1: KL-driven adaptation continues from the optimizer's saved LR,
+                # capped by args.lr (so a manual --lr override can lower the rate) and
+                # then clamped into [min_lr, max_lr]. args.lr is validated up front to
+                # be in-band, so the clamp only fires when saved_lr drifted outside the
+                # current bounds (e.g. user tightened --max-lr between restarts).
+                saved_lr = model.policy.optimizer.param_groups[0]["lr"]
+                resume_lr = min(saved_lr, args.lr)
+                resume_lr_clamped = max(args.min_lr, min(resume_lr, _effective_max_lr))
+                if resume_lr_clamped != resume_lr:
+                    print(
+                        f"[TwoPhaseLR] Clamping resume LR {resume_lr:.2e} → {resume_lr_clamped:.2e} "
+                        f"to fit [{args.min_lr:.2e}, {_effective_max_lr:.2e}] (saved={saved_lr:.2e})."
+                    )
+                resume_lr = resume_lr_clamped
+                model.lr_schedule = lambda _: resume_lr
+                lr_callback._current_lr = resume_lr
+                lr_detail = f"Phase 1 adaptive, saved={saved_lr:.2e}, arg={args.lr:.2e}"
+                send_event(
+                    f"▶️ Resuming TwoPhaseLR Phase 1 at LR {resume_lr:.2e}, step {t:,} "
+                    f"(anneal_start={args.anneal_lr_start_steps:,})"
+                )
+            else:
+                # Phase 2: cosine decay. handoff_lr was passed to the constructor
+                # from the sidecar; fall back to the optimizer's LR if missing
+                # (legacy run that pre-dates handoff_lr persistence).
+                if lr_callback.handoff_lr is None:
+                    lr_callback._handoff_lr = model.policy.optimizer.param_groups[0]["lr"]
+                    print(
+                        f"[TwoPhaseLR] No persisted handoff_lr on resume; "
+                        f"using optimizer LR {lr_callback._handoff_lr:.2e} as cosine start."
+                    )
+                resume_lr = lr_callback._cosine_lr_at(t)
+                model.lr_schedule = lambda _: resume_lr
+                lr_callback._current_lr = resume_lr
+                lr_detail = (
+                    f"Phase 2 cosine, handoff={lr_callback.handoff_lr:.2e} → "
+                    f"min={args.anneal_min_lr:.2e}"
+                )
+                send_event(
+                    f"▶️ Resuming TwoPhaseLR Phase 2 (cosine) at LR {resume_lr:.2e}, step {t:,} "
+                    f"(handoff={lr_callback.handoff_lr:.2e}, target={args.anneal_min_lr:.2e} at {args.steps:,})"
+                )
         else:
-            # Resume LR from optimizer state (stored in .zip by SB3), clamped to args.lr
-            # so a manual --lr override can still lower the rate.
+            # Pure adaptive: resume LR from optimizer state, capped by args.lr and
+            # clamped into [min_lr, max_lr]. args.lr is validated up front to be in-band.
             saved_lr = model.policy.optimizer.param_groups[0]["lr"]
             resume_lr = min(saved_lr, args.lr)
-            if not (args.min_lr <= resume_lr <= _effective_max_lr):
-                print(f"[AdaptiveLR] ERROR: resume LR {resume_lr:.2e} (saved={saved_lr:.2e}, "
-                      f"--lr={args.lr:.2e}) is outside [{args.min_lr:.2e}, {_effective_max_lr:.2e}]. "
-                      f"Pass an explicit --lr within bounds to override.")
-                sys.exit(1)
+            resume_lr_clamped = max(args.min_lr, min(resume_lr, _effective_max_lr))
+            if resume_lr_clamped != resume_lr:
+                print(
+                    f"[AdaptiveLR] Clamping resume LR {resume_lr:.2e} → {resume_lr_clamped:.2e} "
+                    f"to fit [{args.min_lr:.2e}, {_effective_max_lr:.2e}] (saved={saved_lr:.2e})."
+                )
+            resume_lr = resume_lr_clamped
             model.lr_schedule = lambda _: resume_lr
             adaptive_ppo_callback._current_lr = resume_lr
+            lr_detail = f"saved={saved_lr:.2e}, arg={args.lr:.2e}"
             send_event(f"▶️ Resuming at LR {resume_lr:.2e}, epochs {args.n_epochs} (checkpoint LR={saved_lr:.2e})")
         model.n_epochs = args.n_epochs
         model.clip_range = lambda _: args.clip_range
@@ -694,8 +785,7 @@ async def main():
             if remaining_steps <= 0:
                 print(f"Training already complete ({model.num_timesteps:,} / {args.steps:,} steps)")
                 sys.exit(TrainExitCode.COMPLETE)
-            lr_detail = f"annealed" if annealing_mode else f"saved={saved_lr:.2e}, arg={args.lr:.2e}"
-            print(f"Continuing Training (Steps: {remaining_steps:,} remaining of {args.steps:,}, LR: {resume_lr:.2e} ({lr_detail})")
+            print(f"Continuing Training (Steps: {remaining_steps:,} remaining of {args.steps:,}, LR: {resume_lr:.2e} ({lr_detail}))")
             _run_roundtrip_test(model, _load_extractor_kwargs["layout"], _load_policy_kwargs, debug=args.debug)
             save_model_snapshot(model_dir, current_version, hparams=_model_hparams(model))
 
@@ -703,6 +793,10 @@ async def main():
                 model, model_dir, _shutdown_event, current_version,
                 lambda: model.policy.optimizer.param_groups[0]["lr"],
                 lambda: model.n_epochs,
+                handoff_lr_fn=(
+                    (lambda: lr_callback.handoff_lr)
+                    if isinstance(lr_callback, TwoPhaseLRCallback) else None
+                ),
             )
             if not args.debug and eval_callback is not None:
                 eval_callback.abort_fn = _abort_fn
@@ -774,6 +868,10 @@ async def main():
             model, model_dir, _shutdown_event, version,
             lambda: model.policy.optimizer.param_groups[0]["lr"],
             lambda: model.n_epochs,
+            handoff_lr_fn=(
+                (lambda: lr_callback.handoff_lr)
+                if isinstance(lr_callback, TwoPhaseLRCallback) else None
+            ),
         )
         if not args.debug and eval_callback is not None:
             eval_callback.abort_fn = _abort_fn
@@ -793,7 +891,8 @@ async def main():
         final_path = os.path.join(model_dir, "final_model")
         model.save(final_path)
         _write_latest_txt(model_dir, "final_model.zip")
-        record_checkpoint(model_dir, final_path + ".zip", adaptive_ppo_callback.current_lr, model.n_epochs, hparams=_model_hparams(model))
+        _final_handoff = lr_callback.handoff_lr if isinstance(lr_callback, TwoPhaseLRCallback) else None
+        record_checkpoint(model_dir, final_path + ".zip", adaptive_ppo_callback.current_lr, model.n_epochs, hparams=_model_hparams(model), handoff_lr=_final_handoff)
         save_model_snapshot(os.path.dirname(final_path), version, hparams=_model_hparams(model))
         print(f"Training complete. Model saved to {final_path}")
         best_model_dir = os.path.join(model_dir, "best_model")

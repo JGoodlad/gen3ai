@@ -3,62 +3,216 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from agents.training.adaptive_lr_callback import AdaptivePPOCallback, AnnealingLRCallback
+from agents.training.adaptive_lr_callback import AdaptivePPOCallback, TwoPhaseLRCallback
 
 
 # ---------------------------------------------------------------------------
-# AnnealingLRCallback
+# TwoPhaseLRCallback — cosine math (Phase 2 in isolation)
 # ---------------------------------------------------------------------------
 
-def _make_annealing(initial_lr=3e-4, total_steps=100_000, anneal_start_steps=40_000, anneal_min_lr=1e-5):
-    return AnnealingLRCallback(
+
+def _make_two_phase(
+    initial_lr=3e-4,
+    total_steps=100_000,
+    anneal_start_steps=40_000,
+    anneal_min_lr=1e-5,
+    min_lr=1e-5,
+    max_lr=None,
+    handoff_lr=None,
+):
+    return TwoPhaseLRCallback(
         initial_lr=initial_lr,
         total_steps=total_steps,
         anneal_start_steps=anneal_start_steps,
         anneal_min_lr=anneal_min_lr,
+        min_lr=min_lr,
+        max_lr=max_lr,
+        ema_alpha=0.3,
+        verbose=0,
+        handoff_lr=handoff_lr,
     )
 
 
-def test_anneal_at_start_equals_initial_lr():
-    cb = _make_annealing()
-    assert cb.lr_at(40_000) == pytest.approx(3e-4)
+def test_cosine_at_anneal_start_equals_handoff():
+    cb = _make_two_phase(handoff_lr=3e-4)
+    assert cb._cosine_lr_at(40_000) == pytest.approx(3e-4)
 
 
-def test_anneal_at_total_steps_equals_min_lr():
-    cb = _make_annealing()
-    assert cb.lr_at(100_000) == pytest.approx(1e-5)
+def test_cosine_at_total_steps_equals_anneal_min():
+    cb = _make_two_phase(handoff_lr=3e-4)
+    assert cb._cosine_lr_at(100_000) == pytest.approx(1e-5)
 
 
-def test_anneal_before_start_holds_initial_lr():
-    cb = _make_annealing()
-    assert cb.lr_at(0) == pytest.approx(3e-4)
-    assert cb.lr_at(39_999) == pytest.approx(3e-4)
+def test_cosine_after_total_steps_clamped_at_min():
+    cb = _make_two_phase(handoff_lr=3e-4)
+    assert cb._cosine_lr_at(100_001) == pytest.approx(1e-5)
+    assert cb._cosine_lr_at(999_999) == pytest.approx(1e-5)
 
 
-def test_anneal_after_total_steps_clamped_at_min():
-    cb = _make_annealing()
-    assert cb.lr_at(100_001) == pytest.approx(1e-5)
-    assert cb.lr_at(999_999) == pytest.approx(1e-5)
-
-
-def test_anneal_midpoint_is_midpoint_of_range():
-    # At x=0.5 cosine gives exactly the midpoint of [min_lr, initial_lr].
-    cb = _make_annealing(initial_lr=3e-4, total_steps=100_000, anneal_start_steps=0, anneal_min_lr=1e-4)
-    mid = cb.lr_at(50_000)
-    expected = 1e-4 + (3e-4 - 1e-4) * 0.5  # cos(π*0.5)=0, so 0.5*(1+0)=0.5
+def test_cosine_midpoint_is_midpoint_of_range():
+    # At x=0.5 cosine gives exactly the midpoint of [anneal_min_lr, handoff_lr].
+    cb = _make_two_phase(
+        total_steps=100_000, anneal_start_steps=0, anneal_min_lr=1e-4, handoff_lr=3e-4
+    )
+    mid = cb._cosine_lr_at(50_000)
+    expected = 1e-4 + (3e-4 - 1e-4) * 0.5
     assert mid == pytest.approx(expected)
 
 
-def test_anneal_zero_duration_returns_min_lr():
-    cb = _make_annealing(total_steps=40_000, anneal_start_steps=40_000)
-    assert cb.lr_at(40_000) == pytest.approx(1e-5)
+def test_cosine_zero_duration_returns_anneal_min():
+    cb = _make_two_phase(total_steps=40_000, anneal_start_steps=40_000, handoff_lr=3e-4)
+    assert cb._cosine_lr_at(40_000) == pytest.approx(1e-5)
 
 
-def test_anneal_current_lr_uses_model_timesteps():
-    cb = _make_annealing()
+def test_cosine_uses_dynamic_handoff_not_initial_lr():
+    # Critical property: the cosine starts at handoff_lr (the LR Phase 1
+    # settled on), NOT at the constructor's initial_lr.
+    cb = _make_two_phase(initial_lr=3e-4, handoff_lr=1.5e-4)
+    assert cb._cosine_lr_at(40_000) == pytest.approx(1.5e-4)
+
+
+# ---------------------------------------------------------------------------
+# TwoPhaseLRCallback — phase classification
+# ---------------------------------------------------------------------------
+
+
+def test_phase_is_1_before_anneal_start():
+    cb = _make_two_phase(anneal_start_steps=40_000)
+    assert cb.phase(0) == 1
+    assert cb.phase(39_999) == 1
+
+
+def test_phase_is_2_at_anneal_start():
+    cb = _make_two_phase(anneal_start_steps=40_000)
+    assert cb.phase(40_000) == 2
+    assert cb.phase(100_000) == 2
+
+
+# ---------------------------------------------------------------------------
+# TwoPhaseLRCallback — Phase 1: KL-driven adaptation
+# ---------------------------------------------------------------------------
+
+
+def _attach_mock_model(cb, num_timesteps=0, optimizer_lr=3e-4):
     cb.model = MagicMock()
-    cb.model.num_timesteps = 70_000  # halfway through the annealing window
-    assert cb.current_lr == pytest.approx(cb.lr_at(70_000))
+    cb.model.num_timesteps = num_timesteps
+    cb.model.logger.name_to_value = {}
+    cb.model.n_epochs = 4
+    cb.model.policy.optimizer.param_groups = [{"lr": optimizer_lr}]
+    return cb
+
+
+def _fire_two_phase(cb, kl=None, num_timesteps=None):
+    if num_timesteps is not None:
+        cb.model.num_timesteps = num_timesteps
+    cb.model.logger.name_to_value = {}
+    if kl is not None:
+        cb.model.logger.name_to_value["train/approx_kl"] = kl
+    cb._on_rollout_end()
+
+
+def test_phase1_lr_decreases_when_kl_too_high():
+    cb = _make_two_phase(initial_lr=3e-4, max_lr=6e-4)
+    _attach_mock_model(cb, num_timesteps=1000)
+    # ema_alpha=0.3, target=0.01, hi=0.013. kl=0.030 → first fire seeds ema at 0.030,
+    # which is well above hi → immediate drop.
+    _fire_two_phase(cb, kl=0.030)
+    assert cb.current_lr == pytest.approx(3e-4 / 1.5)
+
+
+def test_phase1_lr_increases_when_kl_too_low():
+    cb = _make_two_phase(initial_lr=3e-4, max_lr=6e-4)
+    _attach_mock_model(cb, num_timesteps=1000)
+    # kl=0.003 → below lo=0.007 → increase.
+    _fire_two_phase(cb, kl=0.003)
+    assert cb.current_lr == pytest.approx(3e-4 * 1.5)
+
+
+def test_phase1_no_change_when_kl_in_band():
+    cb = _make_two_phase(initial_lr=3e-4, max_lr=6e-4)
+    _attach_mock_model(cb, num_timesteps=1000)
+    _fire_two_phase(cb, kl=0.010)
+    assert cb.current_lr == pytest.approx(3e-4)
+
+
+def test_phase1_handoff_lr_stays_none():
+    """Before crossing anneal_start_steps, handoff_lr must remain None."""
+    cb = _make_two_phase(initial_lr=3e-4, anneal_start_steps=40_000)
+    _attach_mock_model(cb, num_timesteps=10_000)
+    _fire_two_phase(cb, kl=0.005)
+    _fire_two_phase(cb, kl=0.020, num_timesteps=39_999)
+    assert cb.handoff_lr is None
+
+
+# ---------------------------------------------------------------------------
+# TwoPhaseLRCallback — Phase 1 → Phase 2 handoff
+# ---------------------------------------------------------------------------
+
+
+def test_handoff_lr_captured_at_first_phase2_rollout():
+    """When num_timesteps crosses anneal_start_steps, the optimizer's
+    current LR (the value Phase 1 settled on) is captured as the cosine
+    starting point — NOT args.lr from the constructor."""
+    cb = _make_two_phase(initial_lr=3e-4, anneal_start_steps=40_000)
+    # Phase 1 settled at 4.5e-4 (Phase 1 increased it from 3e-4 due to low KL).
+    _attach_mock_model(cb, num_timesteps=40_001, optimizer_lr=4.5e-4)
+    _fire_two_phase(cb, kl=0.010)
+    assert cb.handoff_lr == pytest.approx(4.5e-4)
+
+
+def test_handoff_lr_captured_once_only():
+    """Subsequent Phase 2 rollouts do not overwrite the captured handoff_lr."""
+    cb = _make_two_phase(initial_lr=3e-4, anneal_start_steps=40_000, total_steps=100_000)
+    _attach_mock_model(cb, num_timesteps=40_001, optimizer_lr=4.5e-4)
+    _fire_two_phase(cb, kl=0.010)
+    captured = cb.handoff_lr
+    # Now the optimizer LR drops due to cosine decay; handoff_lr must not change.
+    cb.model.policy.optimizer.param_groups[0]["lr"] = 2.0e-4
+    _fire_two_phase(cb, kl=0.010, num_timesteps=70_000)
+    assert cb.handoff_lr == captured
+
+
+def test_phase2_uses_cosine_not_kl():
+    """In Phase 2, KL is ignored — the LR follows the cosine deterministically."""
+    cb = _make_two_phase(
+        initial_lr=3e-4, anneal_start_steps=40_000, total_steps=100_000, handoff_lr=3e-4
+    )
+    _attach_mock_model(cb, num_timesteps=70_000)
+    # Very high KL — would shrink LR drastically in Phase 1.
+    _fire_two_phase(cb, kl=0.999)
+    # Phase 2 ignores KL: LR must match the cosine value at step 70_000.
+    expected = cb._cosine_lr_at(70_000)
+    assert cb.current_lr == pytest.approx(expected)
+
+
+def test_phase2_with_preloaded_handoff_lr_skips_capture():
+    """If handoff_lr is preloaded (e.g. from the sidecar on resume), the
+    Phase 2 rollout must use that value verbatim — not the optimizer's."""
+    cb = _make_two_phase(initial_lr=3e-4, anneal_start_steps=40_000, handoff_lr=4.5e-4)
+    # Optimizer LR may differ from handoff_lr after the run was paused.
+    _attach_mock_model(cb, num_timesteps=70_000, optimizer_lr=2.0e-4)
+    _fire_two_phase(cb, kl=0.010)
+    # Cosine should be computed from handoff_lr=4.5e-4, not optimizer_lr=2.0e-4.
+    duration = 100_000 - 40_000
+    x = (70_000 - 40_000) / duration
+    expected = 1e-5 + (4.5e-4 - 1e-5) * 0.5 * (1.0 + math.cos(math.pi * x))
+    assert cb.current_lr == pytest.approx(expected)
+    # And handoff_lr stays at the preloaded value.
+    assert cb.handoff_lr == pytest.approx(4.5e-4)
+
+
+def test_on_training_start_in_phase2_without_handoff_uses_optimizer():
+    """Resuming into Phase 2 with no persisted handoff_lr falls back to the
+    optimizer's current LR (graceful migration for legacy runs)."""
+    cb = _make_two_phase(initial_lr=3e-4, anneal_start_steps=40_000, handoff_lr=None)
+    _attach_mock_model(cb, num_timesteps=70_000, optimizer_lr=2.5e-4)
+    cb._on_training_start()
+    assert cb.handoff_lr == pytest.approx(2.5e-4)
+
+
+# ---------------------------------------------------------------------------
+# AdaptivePPOCallback (unchanged behaviour)
+# ---------------------------------------------------------------------------
 
 
 def _make_callback(
@@ -149,33 +303,27 @@ def test_no_adjustment_when_metric_absent():
 
 # --- EMA smoothing behaviour ---
 
+
 def test_single_spike_does_not_trigger_after_warmup():
-    # Warm up: EMA converges to in-band value.
-    # target=0.015, tolerance=0.3 → hi=0.0195
-    # One spike to 0.030: EMA = 0.3*0.030 + 0.7*0.015 = 0.0195 (== hi, not > hi) → no change.
     cb = _make_callback(initial_lr=3e-4, ema_alpha=0.3)
     for _ in range(5):
         _fire(cb, kl=0.015)
-    assert cb.current_lr == pytest.approx(3e-4)  # no change during warmup
+    assert cb.current_lr == pytest.approx(3e-4)
     _fire(cb, kl=0.030)
-    assert cb.current_lr == pytest.approx(3e-4)  # single spike absorbed by EMA
+    assert cb.current_lr == pytest.approx(3e-4)
 
 
 def test_sustained_high_kl_triggers_after_warmup():
-    # After warmup at 0.015, two consecutive fires at 0.030 push EMA past hi=0.0195.
-    # fire 1: EMA = 0.3*0.030 + 0.7*0.015 = 0.0195 → no change
-    # fire 2: EMA = 0.3*0.030 + 0.7*0.0195 = 0.02265 → above 0.0195 → LR drops
     cb = _make_callback(initial_lr=3e-4, ema_alpha=0.3)
     for _ in range(5):
         _fire(cb, kl=0.015)
     _fire(cb, kl=0.030)
-    assert cb.current_lr == pytest.approx(3e-4)   # still no change after one spike
+    assert cb.current_lr == pytest.approx(3e-4)
     _fire(cb, kl=0.030)
-    assert cb.current_lr == pytest.approx(3e-4 / 1.5)  # triggered on second sustained fire
+    assert cb.current_lr == pytest.approx(3e-4 / 1.5)
 
 
 def test_ema_resets_to_none_implicitly_on_first_value():
-    # Cold-start: first observed KL seeds the EMA directly.
     cb = _make_callback(initial_lr=3e-4, ema_alpha=0.3)
     assert cb._kl_ema is None
     _fire(cb, kl=0.015)
@@ -183,9 +331,8 @@ def test_ema_resets_to_none_implicitly_on_first_value():
 
 
 def test_ema_alpha_controls_smoothing_rate():
-    # With alpha=1.0 the EMA equals the raw value every rollout (no smoothing).
     cb = _make_callback(initial_lr=3e-4, ema_alpha=1.0)
     for _ in range(5):
         _fire(cb, kl=0.015)
     _fire(cb, kl=0.030)
-    assert cb.current_lr == pytest.approx(3e-4 / 1.5)  # triggers immediately
+    assert cb.current_lr == pytest.approx(3e-4 / 1.5)

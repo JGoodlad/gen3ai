@@ -111,6 +111,7 @@ def record_snapshot_in_history(
     n_epochs: int,
     hparams: Optional[dict] = None,
     git_hash: Optional[str] = None,
+    handoff_lr: Optional[float] = None,
 ) -> None:
     """Append or update a checkpoint entry in snapshot_history within metadata.json.
 
@@ -128,6 +129,8 @@ def record_snapshot_in_history(
     if hparams:
         entry.update(hparams)
     entry["git_hash"] = git_hash or get_git_hash()
+    if handoff_lr is not None:
+        entry["handoff_lr"] = handoff_lr
     history[checkpoint_name] = entry
     meta["snapshot_history"] = history
     with open(meta_path, "w") as f:
@@ -141,18 +144,38 @@ def record_checkpoint(
     n_epochs: int,
     hparams: Optional[dict] = None,
     git_hash: Optional[str] = None,
+    handoff_lr: Optional[float] = None,
 ) -> None:
     """Write per-checkpoint metadata file and append to run-level snapshot_history.
 
     checkpoint_path: full path to the .zip (with or without extension).
     Call this whenever a checkpoint .zip is saved.
+
+    handoff_lr: Phase 1 → Phase 2 LR for TwoPhaseLRCallback. ``None`` while
+    still in Phase 1; the float starting LR of the cosine once Phase 2 has
+    begun. Persisted so launcher restarts reproduce the cosine.
     """
     resolved_hash = git_hash or get_git_hash()
-    write_checkpoint_metadata(checkpoint_path, lr, n_epochs, hparams=hparams, git_hash=resolved_hash)
+    write_checkpoint_metadata(
+        checkpoint_path,
+        lr,
+        n_epochs,
+        hparams=hparams,
+        git_hash=resolved_hash,
+        handoff_lr=handoff_lr,
+    )
     name = os.path.basename(checkpoint_path)
     if not name.endswith(".zip"):
         name += ".zip"
-    record_snapshot_in_history(model_dir, name, lr, n_epochs, hparams=hparams, git_hash=resolved_hash)
+    record_snapshot_in_history(
+        model_dir,
+        name,
+        lr,
+        n_epochs,
+        hparams=hparams,
+        git_hash=resolved_hash,
+        handoff_lr=handoff_lr,
+    )
 
 
 def write_checkpoint_metadata(
@@ -161,17 +184,22 @@ def write_checkpoint_metadata(
     current_epochs: int,
     hparams: Optional[dict] = None,
     git_hash: Optional[str] = None,
+    handoff_lr: Optional[float] = None,
 ) -> None:
     """Write lr/epochs (and optional hparams) alongside a checkpoint .zip.
 
     checkpoint_path: full path to the .zip (with or without extension).
     Metadata file lands at the same path with .zip replaced by .json.
+
+    handoff_lr: see ``record_checkpoint``.
     """
     data = dict(hparams) if hparams else {}
     data["current_lr"] = current_lr
     data["current_epochs"] = current_epochs
     import os as _os
     data["git_hash"] = git_hash or _os.environ.get("LAUNCHER_GIT_HASH") or get_git_hash()
+    if handoff_lr is not None:
+        data["handoff_lr"] = handoff_lr
     with open(_checkpoint_metadata_path(checkpoint_path), "w") as f:
         json.dump(data, f, indent=2)
 
