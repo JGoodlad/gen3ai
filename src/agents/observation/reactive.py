@@ -6,6 +6,33 @@ from .constants import REACTIVE_DIM, TEAM_SIZE
 from agents.gen3_mechanics import effective_multiplier
 from typing import Any, Dict, List, Tuple
 
+
+def _hp_expected_multiplier(move, attacker, opp, hp_tracker) -> float:
+    """Effectiveness of `move` against `opp`, with Hidden Power's unknown type
+    handled by averaging across the tracker's narrowed distribution.
+
+    For bare "hiddenpower" (opponent pre-reveal), poke-env's `move.type` defaults
+    to Normal, so the plain `effective_multiplier` is wrong. When a tracker is
+    available, compute the expected effectiveness over the 16 candidate types
+    weighted by their current probabilities. For typed HP variants (own team)
+    `move.type` is already correct, so we fall through to the plain path —
+    which is mathematically identical to the weighted sum against a one-hot.
+    """
+    if (
+        move.id == "hiddenpower"
+        and hp_tracker is not None
+        and attacker is not None
+    ):
+        from agents.training.hidden_power_tracker import HIDDEN_POWER_TYPE_ORDER
+        probs = hp_tracker.get_probs(attacker.species)
+        if probs is not None and probs.sum() > 0:
+            return float(sum(
+                probs[i] * effective_multiplier(HIDDEN_POWER_TYPE_ORDER[i], opp)
+                for i in range(16) if probs[i] > 0
+            ))
+    return effective_multiplier(move.type, opp)
+
+
 class ReactiveEncoder(ObservationEncoder):
     """
     Encodes reactive features:
@@ -24,11 +51,19 @@ class ReactiveEncoder(ObservationEncoder):
     def dimension(self) -> int:
         return REACTIVE_DIM
 
-    def encode(self, battle: AbstractBattle) -> np.ndarray:
+    def encode(self, battle: AbstractBattle, hp_tracker=None) -> np.ndarray:
+        """Encode the 300-dim reactive block.
+
+        hp_tracker: optional HiddenPowerTracker. When supplied, matchup scalars
+        for bare "hiddenpower" move slots are replaced with the expected
+        effectiveness across the tracker's narrowed distribution. Without it,
+        bare HP slots fall back to poke-env's default move.type (typically
+        Normal), preserving legacy behaviour when called outside training.
+        """
         vec = np.zeros(self.dimension, dtype=np.float32)
         if battle is None:
             return vec
-            
+
         # 1. Active Moves (Power and Multiplier)
         moves_base_power = np.zeros(4)
         moves_dmg_multiplier = np.ones(4)
@@ -51,7 +86,9 @@ class ReactiveEncoder(ObservationEncoder):
                     break
                 moves_base_power[i] = move.base_power / 200.0
                 if battle.opponent_active_pokemon is not None:
-                    mult = effective_multiplier(move.type, battle.opponent_active_pokemon)
+                    mult = _hp_expected_multiplier(
+                        move, battle.active_pokemon, battle.opponent_active_pokemon, hp_tracker
+                    )
                     moves_dmg_multiplier[i] = mult / 4.0
 
         vec[0:4] = moves_base_power
@@ -84,7 +121,7 @@ class ReactiveEncoder(ObservationEncoder):
                     their_mon = their_team[j] if j < len(their_team) else None
                     if move and their_mon:
                         # Normalize by 4.0 to keep values in [0, 1] range for better MLP convergence
-                        vec[cursor] = effective_multiplier(move.type, their_mon) / 4.0
+                        vec[cursor] = _hp_expected_multiplier(move, our_mon, their_mon, hp_tracker) / 4.0
                     cursor += 1
 
         # 6. Their moves vs Our mons (144 dims)
@@ -97,7 +134,7 @@ class ReactiveEncoder(ObservationEncoder):
                     our_mon = our_team[j] if j < len(our_team) else None
                     if move and our_mon:
                         # Normalize by 4.0 to keep values in [0, 1] range for better MLP convergence
-                        vec[cursor] = effective_multiplier(move.type, our_mon) / 4.0
+                        vec[cursor] = _hp_expected_multiplier(move, their_mon, our_mon, hp_tracker) / 4.0
                     cursor += 1
         
         return vec

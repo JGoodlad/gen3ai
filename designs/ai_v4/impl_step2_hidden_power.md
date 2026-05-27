@@ -68,13 +68,25 @@ The 17-dim HP block appends after the existing 79 dims:
 
 | Field | Dims | Own slots | Opp slots |
 |-------|------|-----------|-----------|
-| `hp_revealed` flag | 1 | 0.0 | 1.0 once HP has been seen, else 0.0 |
-| HP candidate probs (in `HIDDEN_POWER_TYPE_ORDER`) | 16 | 0.0 (future work) | tracker output |
+| `hp_revealed` flag | 1 | 1.0 (always — own state is known) | 1.0 once HP has been seen *or* ruled out; 0.0 otherwise |
+| HP candidate probs (in `HIDDEN_POWER_TYPE_ORDER`) | 16 | one-hot at the known type; all-zero if no HP move | tracker output (sparse after narrowing; all-zero after ruled out) |
 
-The `hp_revealed` flag disambiguates "HP not yet seen" (block all-zero, flag 0) from
-"HP seen but type still ambiguous" (one or more non-zero entries). Own-team mons leave
-the block at zeros for now — our own HP type is known at build-time and will be filled
-in directly as a separate change.
+The `(hp_revealed, probs.any())` pair disambiguates four states linearly:
+
+| State | `hp_revealed` | `probs.any()` |
+|-------|---------------|---------------|
+| Opp HP not yet seen | 0 | 0 |
+| Opp HP narrowed via observation | 1 | 1 |
+| Opp HP ruled out (4 moves seen, none is HP) | 1 | 0 |
+| Own mon with HP | 1 | 1 |
+| Own mon without HP | 1 | 0 |
+
+Own-team HP type is recovered through a poke-env patch: `Pokemon._update_from_teambuilder`
+now passes `raw_id` so typed HP moves (e.g. `"hiddenpowergrass"`) retain their type and
+70 base power instead of collapsing to bare `"hiddenpower"` → Normal / 0bp. The encoder
+reads the resolved type from `mon.moves` directly. Opp HP is ruled out by
+`HiddenPowerTracker.mark_no_hp(species)`, called once 4 moves have been observed for that
+species with no HP among them — this flips `hp_revealed` without populating any probs.
 
 ### New and changed constants
 
@@ -287,6 +299,41 @@ The previous two-dict layout (`ABILITY_TYPE_IMMUNITY` and `ABILITY_DAMAGE_HALVE`
 collapsed into the single table above — they shared one purpose and a unified dict
 makes the contract explicit.
 
+### Bucketed effectiveness comparison
+
+poke-env stores `opp_last_effectiveness` in Showdown's reported `{0.0, 0.5, 1.0, 2.0}`
+buckets — the protocol emits `|-immune|`, `|-resisted|`, neutral, `|-supereffective|`
+without exposing raw multipliers. A 4× HP Grass on Swampert (Water/Ground) gets reported
+as 2.0; a 0.25× HP Grass on Skarmory (Steel/Flying) gets reported as 0.5. The tracker
+was comparing raw `effective_multiplier()` output (4.0, 0.25) against the bucketed
+report and wrongly zeroed the correct candidate when no type matched the unbucketed
+multiplier exactly.
+
+`bucket_effectiveness(mult)` in `gen3_mechanics` collapses any raw multiplier into the
+same four buckets:
+
+```python
+def bucket_effectiveness(mult: float) -> float:
+    if mult == 0.0:   return 0.0
+    if mult < 1.0:    return 0.5
+    if mult == 1.0:   return 1.0
+    return 2.0
+```
+
+`HiddenPowerTracker.observe()` pipes the calculated multiplier through this helper
+before comparing. The fuzz validator mirrors the same bucketing in its parallel
+implementation.
+
+### Ruling out HP via `mark_no_hp()`
+
+`HiddenPowerTracker.mark_no_hp(species)` is called by `state_encoder` once the opp
+has revealed 4 moves for that species and none of them is Hidden Power. The tracker
+sets a per-species `_ruled_out` flag and `get_probs()` returns an all-zero vector
+thereafter; `is_known(species)` returns True even though the probs are empty. This
+is what powers the "HP ruled out" state in the per-mon block (hp_revealed=1,
+probs all-zero) — a definitive signal that the model can use to commit team-building
+threat assessments without leaving a stale prior on the table.
+
 ### Historical status snapshot
 
 Fire moves *thaw* their target. A frozen Arcanine hit by HP Fire takes resisted damage
@@ -346,15 +393,24 @@ and treats `None` as "no data, leave block at zero".
 ### Per-mon encoding (`src/agents/observation/pokemon.py`)
 
 ```python
-def encode(self, mon, battle, is_own=False, hp_probs=None) -> np.ndarray:
+def encode(self, mon, battle, is_own=False, hp_probs=None, hp_known=False) -> np.ndarray:
     ...
-    if hp_probs is not None and hp_probs.any():
+    if is_own:
         vec[POKEMON_HP_REVEALED_OFFSET] = 1.0
-        vec[POKEMON_HP_PROBS_OFFSET : POKEMON_HP_PROBS_OFFSET + 16] = hp_probs
+        idx = _own_hp_type_index(mon)        # scans mon.moves for "hiddenpower<type>"
+        if idx is not None:
+            vec[POKEMON_HP_PROBS_OFFSET + idx] = 1.0
+    elif hp_known:
+        vec[POKEMON_HP_REVEALED_OFFSET] = 1.0
+        if hp_probs is not None:
+            vec[POKEMON_HP_PROBS_OFFSET : POKEMON_HP_PROBS_OFFSET + 16] = hp_probs
 ```
 
-`hp_probs.any()` is the gate: `get_probs()` returns all-zero before any HP has been
-observed for that species, so the flag stays 0 until the first observation lands.
+Own slots derive the type index from the move object — the poke-env raw_id patch
+preserves the typed variant so `move.type` returns the correct `PokemonType`. Opp slots
+flow through the explicit `hp_known` gate so we can distinguish "narrowed to sparse
+probs" from "ruled out" (both have `hp_revealed=1` but only narrowed has non-zero probs).
+`state_encoder` provides `hp_known` from `tracker.is_known(species)`.
 
 ### Smogon priors data
 
@@ -363,6 +419,105 @@ observed for that species, so the flag stays 0 until the first observation lands
 extracts `hiddenpower*` move keys per species, normalises by total HP usage, and writes
 `data/pokemon/gen3_hidden_power_priors.json` keyed by lowercase species name. 173
 species, ~608k observations.
+
+### Feeding HP into the move processor
+
+The 17-dim per-mon HP block puts the candidate distribution in the **role encoder**'s
+input, but every per-move feature (type embedding, type matchups) still treated bare
+`"hiddenpower"` as a typeless move. Two paths were rewired to consume the same
+distribution:
+
+**1. Weighted type embedding (`features_extractor.py`).** For move slots whose move-id
+equals `HIDDEN_POWER_MOVE_NUM = 237` (all 16 typed variants and the bare form already
+share this num in `gen3_moves.json`), the move's type embedding is replaced with the
+probability-weighted blend of the 16 candidate-type embeddings:
+
+```python
+hp_probs = pokemon_part[:, :, POKEMON_HP_PROBS_OFFSET : POKEMON_HP_PROBS_OFFSET + 16]
+hp_type_rows = self.type_embedding(self.hp_type_idx_map)     # [16, type_emb_dim]
+soft_type_emb_per_pk = hp_probs @ hp_type_rows                # [B, 12, type_emb_dim]
+is_hp_slot = (all_move_ids == HIDDEN_POWER_MOVE_NUM)
+embedded_move_types = torch.where(
+    is_hp_slot.unsqueeze(-1),
+    soft_type_emb_per_pk.unsqueeze(2).expand(-1, -1, num_moves, -1),
+    embedded_move_types,
+)
+```
+
+`hp_type_idx_map` is a (16,) buffer built at init that maps each
+`HIDDEN_POWER_TYPE_ORDER` index to its row in `type_embedding`. For a one-hot p (own
+team), the weighted sum collapses to `type_embedding(known_type)` — algebraically
+identical to the pre-change path, so own behaviour is unchanged.
+
+**2. Expected matchup (`reactive.py`).** The 144-dim `our_matchups` / `their_matchups`
+blocks compute `effective_multiplier(move.type, opp)` per cell. For HP move slots the
+default `move.type` is Normal (poke-env's fallback for bare `"hiddenpower"`), so every
+opp-HP matchup cell was structurally wrong. The new `_hp_expected_multiplier()` helper
+takes the tracker's per-species distribution and returns the probability-weighted
+effectiveness:
+
+```python
+def _hp_expected_multiplier(move, attacker, opp, hp_tracker) -> float:
+    if move.id == "hiddenpower" and hp_tracker is not None and attacker is not None:
+        probs = hp_tracker.get_probs(attacker.species)
+        if probs is not None and probs.sum() > 0:
+            return float(sum(
+                probs[i] * effective_multiplier(HIDDEN_POWER_TYPE_ORDER[i], opp)
+                for i in range(16) if probs[i] > 0
+            ))
+    return effective_multiplier(move.type, opp)
+```
+
+Typed HP variants (own team) fall through to the plain `effective_multiplier(move.type)`
+path — equivalent to the one-hot weighted sum, so own matchup cells are unchanged.
+`ReactiveEncoder.encode()` now takes an optional `hp_tracker` parameter, threaded from
+`state_encoder.encode()` alongside the existing per-mon tracker plumbing.
+
+**3. HP probs as a raw feature in `move_network`.** The expected matchup is a
+projection of the distribution onto effectiveness against currently-known opps. It
+loses two signals:
+
+- **Uncertainty/variance.** A one-hot Ice HP and a `[0.5 Ice, 0.5 Fire]` HP can have
+  the same expected matchup against your team but very different risk profiles.
+- **Threat against future-revealed opps.** The 144-dim matchup matrix only covers
+  currently-revealed mons.
+
+The 16-dim distribution is broadcast per Pokémon to its 4 move slots and zeroed for
+non-HP slots (`torch.where` on `is_hp_slot`), then appended to the `move_network` input
+alongside the existing 6-dim matchup scalars.
+
+### Matchup validity: unknown vs immune
+
+The 144-dim matchup matrices initialise to zero and only overwrite cells where both
+`move` and `their_mon` exist. This conflated four scenarios into the same cell value:
+
+- Move slot empty (no move at that index)
+- Opp slot unrevealed
+- Genuine 0× immunity (Ghost-vs-Normal, Levitate-vs-Ground, etc.)
+- Bucketed 0× from `bucket_effectiveness`
+
+Per-cell validity bits — `move_known AND species_known(opp)` — are computed inside the
+feature extractor from the existing observation fields (`POKEMON_SPECIES_KNOWN_OFFSET`
+and the move slot's `known` flag) and appended to `move_network` input as 6 dims per
+move slot (one per opponent). With this, `matchup=0, valid=1` means "real immune wall"
+and `matchup=0, valid=0` means "no information." No observation-dim change needed; the
+extractor derives the validity tensor from already-present scalars.
+
+### Move processor capacity bump
+
+The two new feature blocks (16-dim hp_probs + 6-dim matchup validity) grow the
+`move_network` input from 58 to 80 dims. To keep the expansion ratio sensible the
+hidden layer was bumped:
+
+| Constant | Before | After |
+|----------|--------|-------|
+| `move_network` input dim | 58 | 80 |
+| `MOVE_NET_HIDDEN[0]` (hidden layer) | 64 | 96 |
+| `MOVE_NET_HIDDEN[1]` (output dim) | 32 | 32 |
+
+Old checkpoints fail `check_compatible()` on the `move_network` Linear shapes — expected
+under the project's rapid-iteration stance, and surfaces as a clean error at startup
+via the model-version round-trip smoke test.
 
 ### Independent fuzz validator (`hidden_power_tracker_fuzz_e2e_test.py`)
 
@@ -387,9 +542,18 @@ The test teams exercise the interesting edge cases:
 | Vaporeon Baton Pass | Move-action side change |
 | Zapdos Roar | Opp phazing (which doesn't co-occur with HP; verifies we don't mis-attribute) |
 | Raikou Rest + Sleep Talk + HP Grass | Sleep Talk → HP delegation |
+| Skarmory hit by HP Grass (0.25×) | Exercises the `bucket_effectiveness` 0.25 → 0.5 collapse |
+| Salamence / Swampert / Forretress hit by 4× HP | Exercises the 4× → bucketed-2.0 path |
 
-Result at 1000 battles: 11122 observations, 100% invariant pass, 3725 ground-truth
-checks, zero failures.
+The fuzz now cross-rotates 3 our-team variants × 2 opp-team variants, sampled per
+battle by `Gen3Teambuilder`. At 3000 battles: 27531 observations across 8 opp species,
+100% invariant pass, zero ground-truth failures.
+
+The fuzz validator also caught a self-bug: its `_resolve_target` Case A returned the
+live `Pokemon` directly instead of wrapping it through the historical status snapshot,
+so the Flash Fire-vs-frozen evaluation read post-faint `FNT` status and wrongly
+eliminated Fire. Both return paths were refactored through a shared
+`_snapshot_target()` helper that mirrors the production code.
 
 ---
 
@@ -480,6 +644,23 @@ single-target move per turn, but the explicit error is safer than picking arbitr
 The `obs` field removal cascaded into ~80 tests that constructed `BattleContext`
 directly or called `record(battle, mask, obs)`. All were updated to the new signature.
 
+### Move-processor wiring tests
+
+| Test file | What it validates |
+|-----------|-------------------|
+| `reactive_test.py::test_one_hot_distribution_collapses_to_exact_effectiveness` | One-hot p reproduces exact effectiveness (own-team regression guard) |
+| `reactive_test.py::test_two_type_distribution_gives_expected_value` | `[0.5 Ice, 0.5 Grass]` HP vs Salamence = `0.5*4 + 0.5*0.25 = 2.125` |
+| `reactive_test.py::test_uniform_distribution_equals_mean_over_all_16_types` | Uniform 1/16 = mean of all 16 type effectivenesses (analytic ground truth) |
+| `reactive_test.py::test_typed_hp_variant_uses_move_type_directly` | Own-team typed `"hiddenpowerice"` falls through to `effective_multiplier(move.type)` |
+| `reactive_test.py::test_no_tracker_falls_back_to_move_type` | No-tracker path preserves legacy behaviour for inference outside training |
+| `reactive_test.py::test_non_hp_move_unchanged` | Non-HP moves ignore the tracker entirely |
+| `reactive_test.py::test_levitate_blocks_ground_hp` | One-hot Ground HP vs Levitate = literal 0× (real immunity, not unknown) |
+| `features_extractor_hp_test.py::test_hp_type_idx_map_matches_type_encoder` | The (16,) buffer maps HP slot i → row in `type_embedding` for that type |
+| `features_extractor_hp_test.py::test_one_hot_hp_distribution_collapses_to_direct_lookup` | `p @ type_embedding[hp_type_idx_map] == type_embedding(known_idx)` for one-hot p |
+| `features_extractor_hp_test.py::test_hp_slot_detection_only_fires_on_canonical_move_num` | `is_hp_slot` mask triggers only on `move_num == HIDDEN_POWER_MOVE_NUM` |
+| `features_extractor_hp_test.py::test_matchup_validity_distinguishes_unknown_from_immune` | Unrevealed opp (validity 0) vs revealed-with-zero-matchup (validity 1) produce different forward outputs |
+| `features_extractor_hp_test.py::test_forward_runs_with_hp_probs_in_obs` | Smoke: populated hp_probs in obs produces finite forward output |
+
 ### Fuzz E2E (`hidden_power_tracker_fuzz_e2e_test.py`)
 
 Runs N battles (default 500) against `HiddenPowerSpammer` (always picks HP when
@@ -528,3 +709,12 @@ Requires a live Showdown server (`npm run showdown`).
 | `src/agents/training/reward_invariants_e2e_test.py` | Drop `obs=` from `from_battle()` |
 | `src/agents/training/poke_env_gaps/effectiveness_fuzz_e2e_test.py` | Drop `obs=` from `from_battle()` |
 | `src/agents/inference/player_test.py` | Stub `encode()` + `Gen3ActionMasker.get_mask` via `_stubbed_encode` context manager |
+| `src/poke_env/battle/pokemon.py` | `_update_from_teambuilder` passes `raw_id` so typed HP moves keep their type/basePower |
+| `src/poke_env/battle/hidden_power_raw_id_test.py` | **New** — validates the raw_id patch round-trips HP type through the move object |
+| `src/agents/training/hidden_power_tracker.py` (later commits) | `mark_no_hp(species)` ruled-out path; per-species observation log dumped on the impossible-observation `ValueError` |
+| `src/agents/gen3_mechanics.py` (later commits) | `bucket_effectiveness(mult)` helper collapsing raw multipliers into the {0.0, 0.5, 1.0, 2.0} reported buckets |
+| `src/agents/observation/moves.py` | `HIDDEN_POWER_MOVE_NUM = 237` module constant (canonical HP detector) |
+| `src/agents/observation/reactive.py` | `_hp_expected_multiplier()` helper; `ReactiveEncoder.encode()` takes `hp_tracker=`; applied to both 4-dim active-move and 144+144-dim matchup paths |
+| `src/agents/observation/reactive_test.py` | **New** — 7 unit tests for the expected-effectiveness helper |
+| `src/agents/model/features_extractor.py` | `MOVE_NET_HIDDEN` 64→96; `hp_type_idx_map` buffer; weighted type embedding for HP slots; appended `hp_probs_per_slot` (16) + `matchup_validity` (6) to `move_network` input (58→80) |
+| `src/agents/model/features_extractor_hp_test.py` | **New** — 5 unit tests for the weighted embedding, validity mask, and forward smoke |

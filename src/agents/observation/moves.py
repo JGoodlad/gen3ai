@@ -6,6 +6,13 @@ from poke_env.battle.abstract_battle import AbstractBattle
 from poke_env.battle.move_category import MoveCategory
 from typing import Any, List, Dict
 
+# Hidden Power's Pokémon ID. All 16 typed variants ("hiddenpowergrass" etc.)
+# share this num with the bare "hiddenpower" in data/pokemon/gen3_moves.json,
+# so a single equality check detects any HP slot regardless of how the type
+# was (or wasn't) revealed. Used by the feature extractor to route HP slots
+# through the weighted-type-embedding path.
+HIDDEN_POWER_MOVE_NUM = 237
+
 class MovesEncoder(ObservationEncoder):
     """
     Encodes move IDs and reveal status for 4 move slots.

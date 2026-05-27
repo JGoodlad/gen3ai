@@ -6,8 +6,11 @@ from agents.observation.constants import (
     TRACE_INTERVAL,
     TEAM_SIZE,
     GLOBAL_ENV_DIM,
-    POKEMON_FULL_DIM
+    POKEMON_FULL_DIM,
+    POKEMON_HP_PROBS_OFFSET,
+    POKEMON_SPECIES_KNOWN_OFFSET,
 )
+from agents.observation.moves import HIDDEN_POWER_MOVE_NUM
 from agents.observation.turn_delta_encoder import (
     TURN_DELTA_DIM,
     EFF_DIM,
@@ -32,7 +35,7 @@ TD_STRATEGIC_OFFSET = TURN_DELTA_DIM - TD_STRATEGIC_DIM  # 29
 # When you change any of these, also bump MODEL_CONFIG_VERSION in model_version.py.
 ROLE_TOKEN_SIZE = 128
 PROJECTION_DIM = 512
-MOVE_NET_HIDDEN = [64, 32]        # [hidden, output] of shared move processor
+MOVE_NET_HIDDEN = [96, 32]        # [hidden, output] of shared move processor
 ROLE_ENCODER_HIDDEN = [256, 128]  # [hidden, output] of per-Pokémon role encoder
 ACTIVE_CTX_HIDDEN = [64, 32]      # [hidden, output] of active context encoder
 NET_ARCH = [512, 512]             # MLP policy layers (SB3 policy_kwargs["net_arch"])
@@ -102,12 +105,29 @@ class Gen3FeaturesExtractor(torch.nn.Module):
             layout['type_embedding_dim']
         )
 
+        # Hidden Power: map the 16 candidate-type slots in HIDDEN_POWER_TYPE_ORDER
+        # to their rows in `type_embedding`. The probability-weighted soft type
+        # embedding for an HP move slot is `hp_probs @ type_embedding[hp_type_idx_map]`,
+        # which collapses to a direct lookup for one-hot (own-team) distributions.
+        from agents.training.hidden_power_tracker import HIDDEN_POWER_TYPE_ORDER
+        from agents.observation.types import TypeEncoder
+        _hp_rows = [TypeEncoder.TYPE_TO_IDX[t.name] for t in HIDDEN_POWER_TYPE_ORDER]
+        self.register_buffer(
+            'hp_type_idx_map',
+            torch.tensor(_hp_rows, dtype=torch.long),
+        )
+
         # ------------------------------------------------------------------
         # 2. Shared Move Processor + within-Pokémon move self-attention
         # ------------------------------------------------------------------
-        # Input: move_emb + type_emb + remnants + known(1) + context + matchups(TEAM_SIZE) + validity(1)
+        # Input: move_emb + type_emb + remnants + known(1) + context + matchups(TEAM_SIZE)
+        #        + matchup_validity(TEAM_SIZE) + hp_probs(16) + validity(1)
         # Remnants: power, secondary, recoil, category, current_pp, max_pp (known extracted separately)
         # Context: HP(1) + turn(1) + weather + fainted + spikes
+        # matchup_validity: per-opponent (move_known AND opp_species_known) bits — disambiguates
+        #   "unknown matchup" (cell=0 because move/opp absent) from "real immunity" (cell=0 from 0×).
+        # hp_probs: 16-dim distribution from the parent Pokémon's hp_block, zeroed for non-HP slots,
+        #   so the move processor sees uncertainty (variance/entropy) beyond just expected matchup.
         _msl = layout['pokemon']['moves']['layout']['slot_layout']
         _rem1 = _msl['type']['offset'] - _msl['power']['offset']              # power+secondary+recoil = 3
         _rem2 = _msl['known']['offset'] - (_msl['type']['offset'] + _msl['type']['dim'])  # category = 1
@@ -119,10 +139,14 @@ class Gen3FeaturesExtractor(torch.nn.Module):
                          + _gl['weather']['dim']     # weather
                          + _rl['fainted']['dim']     # fainted
                          + _gl['hazards']['dim'])    # spikes
+        HP_PROBS_DIM = 16                            # Hidden Power candidate-type distribution
         move_input_dim = (layout['move_embedding_dim'] + layout['type_embedding_dim']
                           + self.move_remnant_dim + 1               # remnants + known
                           + _move_ctx_dim                           # context
-                          + TEAM_SIZE + 1)                          # matchups + validity
+                          + TEAM_SIZE                                # matchups
+                          + TEAM_SIZE                                # matchup validity (per opponent)
+                          + HP_PROBS_DIM                             # hp candidate-type distribution
+                          + 1)                                       # move validity
         self.move_network = torch.nn.Sequential(
             torch.nn.Linear(move_input_dim, MOVE_NET_HIDDEN[0]),
             torch.nn.ReLU(),
@@ -442,6 +466,21 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         embedded_ability1 = self.ability_embedding(ability1_ids)
         embedded_ability2 = self.ability_embedding(ability2_ids)
 
+        # Hidden Power: replace the (typeless) type embedding on HP move slots with
+        # the probability-weighted blend of the 16 candidate-type embeddings.
+        # For own team this collapses to a direct lookup (one-hot p); for opponents
+        # it's a soft blend whose entropy reflects the tracker's narrowing.
+        hp_probs = pokemon_part[:, :, POKEMON_HP_PROBS_OFFSET : POKEMON_HP_PROBS_OFFSET + 16]  # [B, 12, 16]
+        hp_type_rows = self.type_embedding(self.hp_type_idx_map)                                # [16, type_emb_dim]
+        soft_type_emb_per_pk = hp_probs @ hp_type_rows                                          # [B, 12, type_emb_dim]
+        soft_type_emb = soft_type_emb_per_pk.unsqueeze(2).expand(-1, -1, num_moves, -1)         # [B, 12, 4, type_emb_dim]
+        is_hp_slot = (all_move_ids == HIDDEN_POWER_MOVE_NUM)                                    # [B, 12, 4] bool
+        embedded_move_types = torch.where(
+            is_hp_slot.unsqueeze(-1),
+            soft_type_emb,
+            embedded_move_types,
+        )
+
         # Pokémon types: concatenate E1 and E2 (32 dims) — sum loses type-pair signal
         embedded_t1 = self.type_embedding(type1_ids)
         embedded_t2 = self.type_embedding(type2_ids)
@@ -513,6 +552,35 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         move_validity_opp  = torch.ones(batch_size, TEAM_SIZE, num_moves, 1, device=x.device)
         move_validity = torch.cat([move_validity_ours, move_validity_opp], dim=1)
 
+        # HP candidate-type distribution per move slot: the parent Pokémon's 16-dim
+        # block, broadcast to its 4 move slots, then zeroed for non-HP slots so the
+        # move processor only sees uncertainty signal where it applies.
+        hp_probs_per_slot = hp_probs.unsqueeze(2).expand(-1, -1, num_moves, -1)  # [B, 12, 4, 16]
+        hp_probs_per_slot = torch.where(
+            is_hp_slot.unsqueeze(-1),
+            hp_probs_per_slot,
+            torch.zeros_like(hp_probs_per_slot),
+        )
+
+        # Per-cell matchup validity: `move_known(slot) AND species_known(opp)`.
+        # Disambiguates "matchup cell is 0 because move or opp is missing" from
+        # "matchup cell is 0 because of a genuine 0× immunity wall."
+        species_known_all = pokemon_part[:, :, POKEMON_SPECIES_KNOWN_OFFSET]  # [B, 12]
+        our_species_known = species_known_all[:, :TEAM_SIZE]                  # [B, 6]
+        opp_species_known = species_known_all[:, TEAM_SIZE:]                  # [B, 6]
+        move_known_all = known_flags_reshaped.squeeze(-1)                     # [B, 12, 4]
+        # Our matchup rows (mons 0..5): opp = their team's species_known
+        our_match_validity = (
+            move_known_all[:, :TEAM_SIZE].unsqueeze(-1)                       # [B, 6, 4, 1]
+            * opp_species_known[:, None, None, :]                             # [B, 1, 1, 6]
+        )
+        # Their matchup rows (mons 6..11): opp = our team's species_known
+        their_match_validity = (
+            move_known_all[:, TEAM_SIZE:].unsqueeze(-1)                       # [B, 6, 4, 1]
+            * our_species_known[:, None, None, :]                             # [B, 1, 1, 6]
+        )
+        matchup_validity = torch.cat([our_match_validity, their_match_validity], dim=1)  # [B, 12, 4, 6]
+
         move_features = torch.cat([
             embedded_moves,
             embedded_move_types,
@@ -520,6 +588,8 @@ class Gen3FeaturesExtractor(torch.nn.Module):
             known_flags_reshaped,
             move_context_final,
             matchups_all,
+            matchup_validity,
+            hp_probs_per_slot,
             move_validity,
         ], dim=3)
 

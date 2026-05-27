@@ -205,7 +205,7 @@ class Gen3ObservationEncoder(ObservationEncoder):
         vec[OFFSET_GLOBAL : OFFSET_GLOBAL + GLOBAL_ENV_DIM] = self.global_env_encoder.encode(battle)
         
         # 5. Reactive Features
-        vec[OFFSET_REACTIVE : OFFSET_REACTIVE + REACTIVE_DIM] = self.reactive_encoder.encode(battle)
+        vec[OFFSET_REACTIVE : OFFSET_REACTIVE + REACTIVE_DIM] = self.reactive_encoder.encode(battle, hp_tracker=hp_tracker)
         
         return vec
 
