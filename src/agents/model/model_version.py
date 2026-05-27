@@ -28,7 +28,16 @@ MODEL_CONFIG_VERSION = 2
 #   encoder embeds BOTH ability IDs through the existing ability_embedding
 #   table — a wire that didn't exist in v2. POKEMON_FULL_DIM 97 → 98, total
 #   obs dim 2414 → 2426.
-ARCH_SIGNATURE = "gen3_abilities_v1"
+#
+# v4 (gen3_abilities_v2): ability block grows to 4 dims with an inserted
+#   `dominance` scalar — the Smogon-observed probability of ability1.
+#   Layout becomes [ability1_id, ability2_id, dominance, known]. Priors are
+#   now sourced from data/pokemon/gen3_ability_priors.json (top-2 by Smogon
+#   usage), replacing the dex-slot-order approach from v3. POKEMON_FULL_DIM
+#   98 → 99, total obs dim 2426 → 2438. The role encoder picks up the
+#   dominance scalar as a passthrough float alongside the two ability
+#   embeddings.
+ARCH_SIGNATURE = "gen3_abilities_v2"
 
 
 class ModelVersionError(Exception):

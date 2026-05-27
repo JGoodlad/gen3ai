@@ -1,9 +1,5 @@
 {
     "abra": {
-        "abilities": [
-            "synchronize",
-            "innerfocus"
-        ],
         "baseStats": {
             "atk": 20,
             "def": 15,
@@ -16,10 +12,6 @@
         "num": 63
     },
     "absol": {
-        "abilities": [
-            "pressure",
-            null
-        ],
         "baseStats": {
             "atk": 130,
             "def": 60,
@@ -32,10 +24,6 @@
         "num": 359
     },
     "aerodactyl": {
-        "abilities": [
-            "rockhead",
-            "pressure"
-        ],
         "baseStats": {
             "atk": 105,
             "def": 65,
@@ -48,10 +36,6 @@
         "num": 142
     },
     "aggron": {
-        "abilities": [
-            "sturdy",
-            "rockhead"
-        ],
         "baseStats": {
             "atk": 110,
             "def": 180,
@@ -64,10 +48,6 @@
         "num": 306
     },
     "aipom": {
-        "abilities": [
-            "runaway",
-            "pickup"
-        ],
         "baseStats": {
             "atk": 70,
             "def": 55,
@@ -80,10 +60,6 @@
         "num": 190
     },
     "alakazam": {
-        "abilities": [
-            "synchronize",
-            "innerfocus"
-        ],
         "baseStats": {
             "atk": 50,
             "def": 45,
@@ -96,10 +72,6 @@
         "num": 65
     },
     "altaria": {
-        "abilities": [
-            "naturalcure",
-            null
-        ],
         "baseStats": {
             "atk": 70,
             "def": 90,
@@ -112,10 +84,6 @@
         "num": 334
     },
     "ampharos": {
-        "abilities": [
-            "static",
-            null
-        ],
         "baseStats": {
             "atk": 75,
             "def": 75,
@@ -128,10 +96,6 @@
         "num": 181
     },
     "anorith": {
-        "abilities": [
-            "battlearmor",
-            null
-        ],
         "baseStats": {
             "atk": 95,
             "def": 50,
@@ -144,10 +108,6 @@
         "num": 347
     },
     "arbok": {
-        "abilities": [
-            "intimidate",
-            "shedskin"
-        ],
         "baseStats": {
             "atk": 85,
             "def": 69,
@@ -160,10 +120,6 @@
         "num": 24
     },
     "arcanine": {
-        "abilities": [
-            "intimidate",
-            "flashfire"
-        ],
         "baseStats": {
             "atk": 110,
             "def": 80,
@@ -176,10 +132,6 @@
         "num": 59
     },
     "ariados": {
-        "abilities": [
-            "swarm",
-            "insomnia"
-        ],
         "baseStats": {
             "atk": 90,
             "def": 70,
@@ -192,10 +144,6 @@
         "num": 168
     },
     "armaldo": {
-        "abilities": [
-            "battlearmor",
-            null
-        ],
         "baseStats": {
             "atk": 125,
             "def": 100,
@@ -208,10 +156,6 @@
         "num": 348
     },
     "aron": {
-        "abilities": [
-            "sturdy",
-            "rockhead"
-        ],
         "baseStats": {
             "atk": 70,
             "def": 100,
@@ -224,10 +168,6 @@
         "num": 304
     },
     "articuno": {
-        "abilities": [
-            "pressure",
-            null
-        ],
         "baseStats": {
             "atk": 85,
             "def": 100,
@@ -240,10 +180,6 @@
         "num": 144
     },
     "azumarill": {
-        "abilities": [
-            "thickfat",
-            "hugepower"
-        ],
         "baseStats": {
             "atk": 50,
             "def": 80,
@@ -256,10 +192,6 @@
         "num": 184
     },
     "azurill": {
-        "abilities": [
-            "thickfat",
-            "hugepower"
-        ],
         "baseStats": {
             "atk": 20,
             "def": 40,
@@ -272,10 +204,6 @@
         "num": 298
     },
     "bagon": {
-        "abilities": [
-            "rockhead",
-            null
-        ],
         "baseStats": {
             "atk": 75,
             "def": 60,
@@ -288,10 +216,6 @@
         "num": 371
     },
     "baltoy": {
-        "abilities": [
-            "levitate",
-            null
-        ],
         "baseStats": {
             "atk": 40,
             "def": 55,
@@ -304,10 +228,6 @@
         "num": 343
     },
     "banette": {
-        "abilities": [
-            "insomnia",
-            null
-        ],
         "baseStats": {
             "atk": 115,
             "def": 65,
@@ -320,10 +240,6 @@
         "num": 354
     },
     "barboach": {
-        "abilities": [
-            "oblivious",
-            null
-        ],
         "baseStats": {
             "atk": 48,
             "def": 43,
@@ -336,10 +252,6 @@
         "num": 339
     },
     "bayleef": {
-        "abilities": [
-            "overgrow",
-            null
-        ],
         "baseStats": {
             "atk": 62,
             "def": 80,
@@ -352,10 +264,6 @@
         "num": 153
     },
     "beautifly": {
-        "abilities": [
-            "swarm",
-            null
-        ],
         "baseStats": {
             "atk": 70,
             "def": 50,
@@ -368,10 +276,6 @@
         "num": 267
     },
     "beedrill": {
-        "abilities": [
-            "swarm",
-            null
-        ],
         "baseStats": {
             "atk": 80,
             "def": 40,
@@ -384,10 +288,6 @@
         "num": 15
     },
     "beldum": {
-        "abilities": [
-            "clearbody",
-            null
-        ],
         "baseStats": {
             "atk": 55,
             "def": 80,
@@ -400,10 +300,6 @@
         "num": 374
     },
     "bellossom": {
-        "abilities": [
-            "chlorophyll",
-            null
-        ],
         "baseStats": {
             "atk": 80,
             "def": 85,
@@ -416,10 +312,6 @@
         "num": 182
     },
     "bellsprout": {
-        "abilities": [
-            "chlorophyll",
-            null
-        ],
         "baseStats": {
             "atk": 75,
             "def": 35,
@@ -432,10 +324,6 @@
         "num": 69
     },
     "blastoise": {
-        "abilities": [
-            "torrent",
-            null
-        ],
         "baseStats": {
             "atk": 83,
             "def": 100,
@@ -448,10 +336,6 @@
         "num": 9
     },
     "blaziken": {
-        "abilities": [
-            "blaze",
-            null
-        ],
         "baseStats": {
             "atk": 120,
             "def": 70,
@@ -464,10 +348,6 @@
         "num": 257
     },
     "blissey": {
-        "abilities": [
-            "naturalcure",
-            "serenegrace"
-        ],
         "baseStats": {
             "atk": 10,
             "def": 10,
@@ -480,10 +360,6 @@
         "num": 242
     },
     "breloom": {
-        "abilities": [
-            "effectspore",
-            null
-        ],
         "baseStats": {
             "atk": 130,
             "def": 80,
@@ -496,10 +372,6 @@
         "num": 286
     },
     "bulbasaur": {
-        "abilities": [
-            "overgrow",
-            null
-        ],
         "baseStats": {
             "atk": 49,
             "def": 49,
@@ -512,10 +384,6 @@
         "num": 1
     },
     "butterfree": {
-        "abilities": [
-            "compoundeyes",
-            null
-        ],
         "baseStats": {
             "atk": 45,
             "def": 50,
@@ -528,10 +396,6 @@
         "num": 12
     },
     "cacnea": {
-        "abilities": [
-            "sandveil",
-            null
-        ],
         "baseStats": {
             "atk": 85,
             "def": 40,
@@ -544,10 +408,6 @@
         "num": 331
     },
     "cacturne": {
-        "abilities": [
-            "sandveil",
-            null
-        ],
         "baseStats": {
             "atk": 115,
             "def": 60,
@@ -560,10 +420,6 @@
         "num": 332
     },
     "camerupt": {
-        "abilities": [
-            "magmaarmor",
-            null
-        ],
         "baseStats": {
             "atk": 100,
             "def": 70,
@@ -576,10 +432,6 @@
         "num": 323
     },
     "carvanha": {
-        "abilities": [
-            "roughskin",
-            null
-        ],
         "baseStats": {
             "atk": 90,
             "def": 20,
@@ -592,10 +444,6 @@
         "num": 318
     },
     "cascoon": {
-        "abilities": [
-            "shedskin",
-            null
-        ],
         "baseStats": {
             "atk": 35,
             "def": 55,
@@ -608,10 +456,6 @@
         "num": 268
     },
     "castform": {
-        "abilities": [
-            "forecast",
-            null
-        ],
         "baseStats": {
             "atk": 70,
             "def": 70,
@@ -624,10 +468,6 @@
         "num": 351
     },
     "caterpie": {
-        "abilities": [
-            "shielddust",
-            null
-        ],
         "baseStats": {
             "atk": 30,
             "def": 35,
@@ -640,10 +480,6 @@
         "num": 10
     },
     "celebi": {
-        "abilities": [
-            "naturalcure",
-            null
-        ],
         "baseStats": {
             "atk": 100,
             "def": 100,
@@ -656,10 +492,6 @@
         "num": 251
     },
     "chansey": {
-        "abilities": [
-            "naturalcure",
-            "serenegrace"
-        ],
         "baseStats": {
             "atk": 5,
             "def": 5,
@@ -672,10 +504,6 @@
         "num": 113
     },
     "charizard": {
-        "abilities": [
-            "blaze",
-            null
-        ],
         "baseStats": {
             "atk": 84,
             "def": 78,
@@ -688,10 +516,6 @@
         "num": 6
     },
     "charmander": {
-        "abilities": [
-            "blaze",
-            null
-        ],
         "baseStats": {
             "atk": 52,
             "def": 43,
@@ -704,10 +528,6 @@
         "num": 4
     },
     "charmeleon": {
-        "abilities": [
-            "blaze",
-            null
-        ],
         "baseStats": {
             "atk": 64,
             "def": 58,
@@ -720,10 +540,6 @@
         "num": 5
     },
     "chikorita": {
-        "abilities": [
-            "overgrow",
-            null
-        ],
         "baseStats": {
             "atk": 49,
             "def": 65,
@@ -736,10 +552,6 @@
         "num": 152
     },
     "chimecho": {
-        "abilities": [
-            "levitate",
-            null
-        ],
         "baseStats": {
             "atk": 50,
             "def": 70,
@@ -752,10 +564,6 @@
         "num": 358
     },
     "chinchou": {
-        "abilities": [
-            "voltabsorb",
-            "illuminate"
-        ],
         "baseStats": {
             "atk": 38,
             "def": 38,
@@ -768,10 +576,6 @@
         "num": 170
     },
     "clamperl": {
-        "abilities": [
-            "shellarmor",
-            null
-        ],
         "baseStats": {
             "atk": 64,
             "def": 85,
@@ -784,10 +588,6 @@
         "num": 366
     },
     "claydol": {
-        "abilities": [
-            "levitate",
-            null
-        ],
         "baseStats": {
             "atk": 70,
             "def": 105,
@@ -800,10 +600,6 @@
         "num": 344
     },
     "clefable": {
-        "abilities": [
-            "cutecharm",
-            null
-        ],
         "baseStats": {
             "atk": 70,
             "def": 73,
@@ -816,10 +612,6 @@
         "num": 36
     },
     "clefairy": {
-        "abilities": [
-            "cutecharm",
-            null
-        ],
         "baseStats": {
             "atk": 45,
             "def": 48,
@@ -832,10 +624,6 @@
         "num": 35
     },
     "cleffa": {
-        "abilities": [
-            "cutecharm",
-            null
-        ],
         "baseStats": {
             "atk": 25,
             "def": 28,
@@ -848,10 +636,6 @@
         "num": 173
     },
     "cloyster": {
-        "abilities": [
-            "shellarmor",
-            null
-        ],
         "baseStats": {
             "atk": 95,
             "def": 180,
@@ -864,10 +648,6 @@
         "num": 91
     },
     "combusken": {
-        "abilities": [
-            "blaze",
-            null
-        ],
         "baseStats": {
             "atk": 85,
             "def": 60,
@@ -880,10 +660,6 @@
         "num": 256
     },
     "corphish": {
-        "abilities": [
-            "hypercutter",
-            "shellarmor"
-        ],
         "baseStats": {
             "atk": 80,
             "def": 65,
@@ -896,10 +672,6 @@
         "num": 341
     },
     "corsola": {
-        "abilities": [
-            "hustle",
-            "naturalcure"
-        ],
         "baseStats": {
             "atk": 55,
             "def": 85,
@@ -912,10 +684,6 @@
         "num": 222
     },
     "cradily": {
-        "abilities": [
-            "suctioncups",
-            null
-        ],
         "baseStats": {
             "atk": 81,
             "def": 97,
@@ -928,10 +696,6 @@
         "num": 346
     },
     "crawdaunt": {
-        "abilities": [
-            "hypercutter",
-            "shellarmor"
-        ],
         "baseStats": {
             "atk": 120,
             "def": 85,
@@ -944,10 +708,6 @@
         "num": 342
     },
     "crobat": {
-        "abilities": [
-            "innerfocus",
-            null
-        ],
         "baseStats": {
             "atk": 90,
             "def": 80,
@@ -960,10 +720,6 @@
         "num": 169
     },
     "croconaw": {
-        "abilities": [
-            "torrent",
-            null
-        ],
         "baseStats": {
             "atk": 80,
             "def": 80,
@@ -976,10 +732,6 @@
         "num": 159
     },
     "cubone": {
-        "abilities": [
-            "rockhead",
-            "lightningrod"
-        ],
         "baseStats": {
             "atk": 50,
             "def": 95,
@@ -992,10 +744,6 @@
         "num": 104
     },
     "cyndaquil": {
-        "abilities": [
-            "blaze",
-            null
-        ],
         "baseStats": {
             "atk": 52,
             "def": 43,
@@ -1008,10 +756,6 @@
         "num": 155
     },
     "delcatty": {
-        "abilities": [
-            "cutecharm",
-            null
-        ],
         "baseStats": {
             "atk": 65,
             "def": 65,
@@ -1024,10 +768,6 @@
         "num": 301
     },
     "delibird": {
-        "abilities": [
-            "vitalspirit",
-            "hustle"
-        ],
         "baseStats": {
             "atk": 55,
             "def": 45,
@@ -1040,10 +780,6 @@
         "num": 225
     },
     "deoxys": {
-        "abilities": [
-            "pressure",
-            null
-        ],
         "baseStats": {
             "atk": 150,
             "def": 50,
@@ -1056,10 +792,6 @@
         "num": 386
     },
     "dewgong": {
-        "abilities": [
-            "thickfat",
-            null
-        ],
         "baseStats": {
             "atk": 70,
             "def": 80,
@@ -1072,10 +804,6 @@
         "num": 87
     },
     "diglett": {
-        "abilities": [
-            "sandveil",
-            "arenatrap"
-        ],
         "baseStats": {
             "atk": 55,
             "def": 25,
@@ -1088,10 +816,6 @@
         "num": 50
     },
     "ditto": {
-        "abilities": [
-            "limber",
-            null
-        ],
         "baseStats": {
             "atk": 48,
             "def": 48,
@@ -1104,10 +828,6 @@
         "num": 132
     },
     "dodrio": {
-        "abilities": [
-            "runaway",
-            "earlybird"
-        ],
         "baseStats": {
             "atk": 110,
             "def": 70,
@@ -1120,10 +840,6 @@
         "num": 85
     },
     "doduo": {
-        "abilities": [
-            "runaway",
-            "earlybird"
-        ],
         "baseStats": {
             "atk": 85,
             "def": 45,
@@ -1136,10 +852,6 @@
         "num": 84
     },
     "donphan": {
-        "abilities": [
-            "sturdy",
-            null
-        ],
         "baseStats": {
             "atk": 120,
             "def": 120,
@@ -1152,10 +864,6 @@
         "num": 232
     },
     "dragonair": {
-        "abilities": [
-            "shedskin",
-            null
-        ],
         "baseStats": {
             "atk": 84,
             "def": 65,
@@ -1168,10 +876,6 @@
         "num": 148
     },
     "dragonite": {
-        "abilities": [
-            "innerfocus",
-            null
-        ],
         "baseStats": {
             "atk": 134,
             "def": 95,
@@ -1184,10 +888,6 @@
         "num": 149
     },
     "dratini": {
-        "abilities": [
-            "shedskin",
-            null
-        ],
         "baseStats": {
             "atk": 64,
             "def": 45,
@@ -1200,10 +900,6 @@
         "num": 147
     },
     "drowzee": {
-        "abilities": [
-            "insomnia",
-            null
-        ],
         "baseStats": {
             "atk": 48,
             "def": 45,
@@ -1216,10 +912,6 @@
         "num": 96
     },
     "dugtrio": {
-        "abilities": [
-            "sandveil",
-            "arenatrap"
-        ],
         "baseStats": {
             "atk": 80,
             "def": 50,
@@ -1232,10 +924,6 @@
         "num": 51
     },
     "dunsparce": {
-        "abilities": [
-            "serenegrace",
-            "runaway"
-        ],
         "baseStats": {
             "atk": 70,
             "def": 70,
@@ -1248,10 +936,6 @@
         "num": 206
     },
     "dusclops": {
-        "abilities": [
-            "pressure",
-            null
-        ],
         "baseStats": {
             "atk": 70,
             "def": 130,
@@ -1264,10 +948,6 @@
         "num": 356
     },
     "duskull": {
-        "abilities": [
-            "levitate",
-            null
-        ],
         "baseStats": {
             "atk": 40,
             "def": 90,
@@ -1280,10 +960,6 @@
         "num": 355
     },
     "dustox": {
-        "abilities": [
-            "shielddust",
-            null
-        ],
         "baseStats": {
             "atk": 50,
             "def": 70,
@@ -1296,10 +972,6 @@
         "num": 269
     },
     "eevee": {
-        "abilities": [
-            "runaway",
-            null
-        ],
         "baseStats": {
             "atk": 55,
             "def": 50,
@@ -1312,10 +984,6 @@
         "num": 133
     },
     "ekans": {
-        "abilities": [
-            "intimidate",
-            "shedskin"
-        ],
         "baseStats": {
             "atk": 60,
             "def": 44,
@@ -1328,10 +996,6 @@
         "num": 23
     },
     "electabuzz": {
-        "abilities": [
-            "static",
-            null
-        ],
         "baseStats": {
             "atk": 83,
             "def": 57,
@@ -1344,10 +1008,6 @@
         "num": 125
     },
     "electrike": {
-        "abilities": [
-            "static",
-            "lightningrod"
-        ],
         "baseStats": {
             "atk": 45,
             "def": 40,
@@ -1360,10 +1020,6 @@
         "num": 309
     },
     "electrode": {
-        "abilities": [
-            "soundproof",
-            "static"
-        ],
         "baseStats": {
             "atk": 50,
             "def": 70,
@@ -1376,10 +1032,6 @@
         "num": 101
     },
     "elekid": {
-        "abilities": [
-            "static",
-            null
-        ],
         "baseStats": {
             "atk": 63,
             "def": 37,
@@ -1392,10 +1044,6 @@
         "num": 239
     },
     "entei": {
-        "abilities": [
-            "pressure",
-            null
-        ],
         "baseStats": {
             "atk": 115,
             "def": 85,
@@ -1408,10 +1056,6 @@
         "num": 244
     },
     "espeon": {
-        "abilities": [
-            "synchronize",
-            null
-        ],
         "baseStats": {
             "atk": 65,
             "def": 60,
@@ -1424,10 +1068,6 @@
         "num": 196
     },
     "exeggcute": {
-        "abilities": [
-            "chlorophyll",
-            null
-        ],
         "baseStats": {
             "atk": 40,
             "def": 80,
@@ -1440,10 +1080,6 @@
         "num": 102
     },
     "exeggutor": {
-        "abilities": [
-            "chlorophyll",
-            null
-        ],
         "baseStats": {
             "atk": 95,
             "def": 85,
@@ -1456,10 +1092,6 @@
         "num": 103
     },
     "exploud": {
-        "abilities": [
-            "soundproof",
-            null
-        ],
         "baseStats": {
             "atk": 91,
             "def": 63,
@@ -1472,10 +1104,6 @@
         "num": 295
     },
     "farfetchd": {
-        "abilities": [
-            "keeneye",
-            "innerfocus"
-        ],
         "baseStats": {
             "atk": 65,
             "def": 55,
@@ -1488,10 +1116,6 @@
         "num": 83
     },
     "fearow": {
-        "abilities": [
-            "keeneye",
-            null
-        ],
         "baseStats": {
             "atk": 90,
             "def": 65,
@@ -1504,10 +1128,6 @@
         "num": 22
     },
     "feebas": {
-        "abilities": [
-            "swiftswim",
-            null
-        ],
         "baseStats": {
             "atk": 15,
             "def": 20,
@@ -1520,10 +1140,6 @@
         "num": 349
     },
     "feraligatr": {
-        "abilities": [
-            "torrent",
-            null
-        ],
         "baseStats": {
             "atk": 105,
             "def": 100,
@@ -1536,10 +1152,6 @@
         "num": 160
     },
     "flaaffy": {
-        "abilities": [
-            "static",
-            null
-        ],
         "baseStats": {
             "atk": 55,
             "def": 55,
@@ -1552,10 +1164,6 @@
         "num": 180
     },
     "flareon": {
-        "abilities": [
-            "flashfire",
-            null
-        ],
         "baseStats": {
             "atk": 130,
             "def": 60,
@@ -1568,10 +1176,6 @@
         "num": 136
     },
     "flygon": {
-        "abilities": [
-            "levitate",
-            null
-        ],
         "baseStats": {
             "atk": 100,
             "def": 80,
@@ -1584,10 +1188,6 @@
         "num": 330
     },
     "forretress": {
-        "abilities": [
-            "sturdy",
-            null
-        ],
         "baseStats": {
             "atk": 90,
             "def": 140,
@@ -1600,10 +1200,6 @@
         "num": 205
     },
     "furret": {
-        "abilities": [
-            "runaway",
-            "keeneye"
-        ],
         "baseStats": {
             "atk": 76,
             "def": 64,
@@ -1616,10 +1212,6 @@
         "num": 162
     },
     "gardevoir": {
-        "abilities": [
-            "synchronize",
-            "trace"
-        ],
         "baseStats": {
             "atk": 65,
             "def": 65,
@@ -1632,10 +1224,6 @@
         "num": 282
     },
     "gastly": {
-        "abilities": [
-            "levitate",
-            null
-        ],
         "baseStats": {
             "atk": 35,
             "def": 30,
@@ -1648,10 +1236,6 @@
         "num": 92
     },
     "gengar": {
-        "abilities": [
-            "levitate",
-            null
-        ],
         "baseStats": {
             "atk": 65,
             "def": 60,
@@ -1664,10 +1248,6 @@
         "num": 94
     },
     "geodude": {
-        "abilities": [
-            "rockhead",
-            "sturdy"
-        ],
         "baseStats": {
             "atk": 80,
             "def": 100,
@@ -1680,10 +1260,6 @@
         "num": 74
     },
     "girafarig": {
-        "abilities": [
-            "innerfocus",
-            "earlybird"
-        ],
         "baseStats": {
             "atk": 80,
             "def": 65,
@@ -1696,10 +1272,6 @@
         "num": 203
     },
     "glalie": {
-        "abilities": [
-            "innerfocus",
-            null
-        ],
         "baseStats": {
             "atk": 80,
             "def": 80,
@@ -1712,10 +1284,6 @@
         "num": 362
     },
     "gligar": {
-        "abilities": [
-            "hypercutter",
-            "sandveil"
-        ],
         "baseStats": {
             "atk": 75,
             "def": 105,
@@ -1728,10 +1296,6 @@
         "num": 207
     },
     "gloom": {
-        "abilities": [
-            "chlorophyll",
-            null
-        ],
         "baseStats": {
             "atk": 65,
             "def": 70,
@@ -1744,10 +1308,6 @@
         "num": 44
     },
     "golbat": {
-        "abilities": [
-            "innerfocus",
-            null
-        ],
         "baseStats": {
             "atk": 80,
             "def": 70,
@@ -1760,10 +1320,6 @@
         "num": 42
     },
     "goldeen": {
-        "abilities": [
-            "swiftswim",
-            "waterveil"
-        ],
         "baseStats": {
             "atk": 67,
             "def": 60,
@@ -1776,10 +1332,6 @@
         "num": 118
     },
     "golduck": {
-        "abilities": [
-            "damp",
-            "cloudnine"
-        ],
         "baseStats": {
             "atk": 82,
             "def": 78,
@@ -1792,10 +1344,6 @@
         "num": 55
     },
     "golem": {
-        "abilities": [
-            "rockhead",
-            "sturdy"
-        ],
         "baseStats": {
             "atk": 110,
             "def": 130,
@@ -1808,10 +1356,6 @@
         "num": 76
     },
     "gorebyss": {
-        "abilities": [
-            "swiftswim",
-            null
-        ],
         "baseStats": {
             "atk": 84,
             "def": 105,
@@ -1824,10 +1368,6 @@
         "num": 368
     },
     "granbull": {
-        "abilities": [
-            "intimidate",
-            null
-        ],
         "baseStats": {
             "atk": 120,
             "def": 75,
@@ -1840,10 +1380,6 @@
         "num": 210
     },
     "graveler": {
-        "abilities": [
-            "rockhead",
-            "sturdy"
-        ],
         "baseStats": {
             "atk": 95,
             "def": 115,
@@ -1856,10 +1392,6 @@
         "num": 75
     },
     "grimer": {
-        "abilities": [
-            "stench",
-            "stickyhold"
-        ],
         "baseStats": {
             "atk": 80,
             "def": 50,
@@ -1872,10 +1404,6 @@
         "num": 88
     },
     "groudon": {
-        "abilities": [
-            "drought",
-            null
-        ],
         "baseStats": {
             "atk": 150,
             "def": 140,
@@ -1888,10 +1416,6 @@
         "num": 383
     },
     "grovyle": {
-        "abilities": [
-            "overgrow",
-            null
-        ],
         "baseStats": {
             "atk": 65,
             "def": 45,
@@ -1904,10 +1428,6 @@
         "num": 253
     },
     "growlithe": {
-        "abilities": [
-            "intimidate",
-            "flashfire"
-        ],
         "baseStats": {
             "atk": 70,
             "def": 45,
@@ -1920,10 +1440,6 @@
         "num": 58
     },
     "grumpig": {
-        "abilities": [
-            "thickfat",
-            "owntempo"
-        ],
         "baseStats": {
             "atk": 45,
             "def": 65,
@@ -1936,10 +1452,6 @@
         "num": 326
     },
     "gulpin": {
-        "abilities": [
-            "liquidooze",
-            "stickyhold"
-        ],
         "baseStats": {
             "atk": 43,
             "def": 53,
@@ -1952,10 +1464,6 @@
         "num": 316
     },
     "gyarados": {
-        "abilities": [
-            "intimidate",
-            null
-        ],
         "baseStats": {
             "atk": 125,
             "def": 79,
@@ -1968,10 +1476,6 @@
         "num": 130
     },
     "hariyama": {
-        "abilities": [
-            "thickfat",
-            "guts"
-        ],
         "baseStats": {
             "atk": 120,
             "def": 60,
@@ -1984,10 +1488,6 @@
         "num": 297
     },
     "haunter": {
-        "abilities": [
-            "levitate",
-            null
-        ],
         "baseStats": {
             "atk": 50,
             "def": 45,
@@ -2000,10 +1500,6 @@
         "num": 93
     },
     "heracross": {
-        "abilities": [
-            "swarm",
-            "guts"
-        ],
         "baseStats": {
             "atk": 125,
             "def": 75,
@@ -2016,10 +1512,6 @@
         "num": 214
     },
     "hitmonchan": {
-        "abilities": [
-            "keeneye",
-            null
-        ],
         "baseStats": {
             "atk": 105,
             "def": 79,
@@ -2032,10 +1524,6 @@
         "num": 107
     },
     "hitmonlee": {
-        "abilities": [
-            "limber",
-            null
-        ],
         "baseStats": {
             "atk": 120,
             "def": 53,
@@ -2048,10 +1536,6 @@
         "num": 106
     },
     "hitmontop": {
-        "abilities": [
-            "intimidate",
-            null
-        ],
         "baseStats": {
             "atk": 95,
             "def": 95,
@@ -2064,10 +1548,6 @@
         "num": 237
     },
     "hooh": {
-        "abilities": [
-            "pressure",
-            null
-        ],
         "baseStats": {
             "atk": 130,
             "def": 90,
@@ -2080,10 +1560,6 @@
         "num": 250
     },
     "hoothoot": {
-        "abilities": [
-            "insomnia",
-            "keeneye"
-        ],
         "baseStats": {
             "atk": 30,
             "def": 30,
@@ -2096,10 +1572,6 @@
         "num": 163
     },
     "hoppip": {
-        "abilities": [
-            "chlorophyll",
-            null
-        ],
         "baseStats": {
             "atk": 35,
             "def": 40,
@@ -2112,10 +1584,6 @@
         "num": 187
     },
     "horsea": {
-        "abilities": [
-            "swiftswim",
-            null
-        ],
         "baseStats": {
             "atk": 40,
             "def": 70,
@@ -2128,10 +1596,6 @@
         "num": 116
     },
     "houndoom": {
-        "abilities": [
-            "earlybird",
-            "flashfire"
-        ],
         "baseStats": {
             "atk": 90,
             "def": 50,
@@ -2144,10 +1608,6 @@
         "num": 229
     },
     "houndour": {
-        "abilities": [
-            "earlybird",
-            "flashfire"
-        ],
         "baseStats": {
             "atk": 60,
             "def": 30,
@@ -2160,10 +1620,6 @@
         "num": 228
     },
     "huntail": {
-        "abilities": [
-            "swiftswim",
-            null
-        ],
         "baseStats": {
             "atk": 104,
             "def": 105,
@@ -2176,10 +1632,6 @@
         "num": 367
     },
     "hypno": {
-        "abilities": [
-            "insomnia",
-            null
-        ],
         "baseStats": {
             "atk": 73,
             "def": 70,
@@ -2192,10 +1644,6 @@
         "num": 97
     },
     "igglybuff": {
-        "abilities": [
-            "cutecharm",
-            null
-        ],
         "baseStats": {
             "atk": 30,
             "def": 15,
@@ -2208,10 +1656,6 @@
         "num": 174
     },
     "illumise": {
-        "abilities": [
-            "oblivious",
-            null
-        ],
         "baseStats": {
             "atk": 47,
             "def": 55,
@@ -2224,10 +1668,6 @@
         "num": 314
     },
     "ivysaur": {
-        "abilities": [
-            "overgrow",
-            null
-        ],
         "baseStats": {
             "atk": 62,
             "def": 63,
@@ -2240,10 +1680,6 @@
         "num": 2
     },
     "jigglypuff": {
-        "abilities": [
-            "cutecharm",
-            null
-        ],
         "baseStats": {
             "atk": 45,
             "def": 20,
@@ -2256,10 +1692,6 @@
         "num": 39
     },
     "jirachi": {
-        "abilities": [
-            "serenegrace",
-            null
-        ],
         "baseStats": {
             "atk": 100,
             "def": 100,
@@ -2272,10 +1704,6 @@
         "num": 385
     },
     "jolteon": {
-        "abilities": [
-            "voltabsorb",
-            null
-        ],
         "baseStats": {
             "atk": 65,
             "def": 60,
@@ -2288,10 +1716,6 @@
         "num": 135
     },
     "jumpluff": {
-        "abilities": [
-            "chlorophyll",
-            null
-        ],
         "baseStats": {
             "atk": 55,
             "def": 70,
@@ -2304,10 +1728,6 @@
         "num": 189
     },
     "jynx": {
-        "abilities": [
-            "oblivious",
-            null
-        ],
         "baseStats": {
             "atk": 50,
             "def": 35,
@@ -2320,10 +1740,6 @@
         "num": 124
     },
     "kabuto": {
-        "abilities": [
-            "swiftswim",
-            "battlearmor"
-        ],
         "baseStats": {
             "atk": 80,
             "def": 90,
@@ -2336,10 +1752,6 @@
         "num": 140
     },
     "kabutops": {
-        "abilities": [
-            "swiftswim",
-            "battlearmor"
-        ],
         "baseStats": {
             "atk": 115,
             "def": 105,
@@ -2352,10 +1764,6 @@
         "num": 141
     },
     "kadabra": {
-        "abilities": [
-            "synchronize",
-            "innerfocus"
-        ],
         "baseStats": {
             "atk": 35,
             "def": 30,
@@ -2368,10 +1776,6 @@
         "num": 64
     },
     "kakuna": {
-        "abilities": [
-            "shedskin",
-            null
-        ],
         "baseStats": {
             "atk": 25,
             "def": 50,
@@ -2384,10 +1788,6 @@
         "num": 14
     },
     "kangaskhan": {
-        "abilities": [
-            "earlybird",
-            null
-        ],
         "baseStats": {
             "atk": 95,
             "def": 80,
@@ -2400,10 +1800,6 @@
         "num": 115
     },
     "kecleon": {
-        "abilities": [
-            "colorchange",
-            null
-        ],
         "baseStats": {
             "atk": 90,
             "def": 70,
@@ -2416,10 +1812,6 @@
         "num": 352
     },
     "kingdra": {
-        "abilities": [
-            "swiftswim",
-            null
-        ],
         "baseStats": {
             "atk": 95,
             "def": 95,
@@ -2432,10 +1824,6 @@
         "num": 230
     },
     "kingler": {
-        "abilities": [
-            "hypercutter",
-            "shellarmor"
-        ],
         "baseStats": {
             "atk": 130,
             "def": 115,
@@ -2448,10 +1836,6 @@
         "num": 99
     },
     "kirlia": {
-        "abilities": [
-            "synchronize",
-            "trace"
-        ],
         "baseStats": {
             "atk": 35,
             "def": 35,
@@ -2464,10 +1848,6 @@
         "num": 281
     },
     "koffing": {
-        "abilities": [
-            "levitate",
-            null
-        ],
         "baseStats": {
             "atk": 65,
             "def": 95,
@@ -2480,10 +1860,6 @@
         "num": 109
     },
     "krabby": {
-        "abilities": [
-            "hypercutter",
-            "shellarmor"
-        ],
         "baseStats": {
             "atk": 105,
             "def": 90,
@@ -2496,10 +1872,6 @@
         "num": 98
     },
     "kyogre": {
-        "abilities": [
-            "drizzle",
-            null
-        ],
         "baseStats": {
             "atk": 100,
             "def": 90,
@@ -2512,10 +1884,6 @@
         "num": 382
     },
     "lairon": {
-        "abilities": [
-            "sturdy",
-            "rockhead"
-        ],
         "baseStats": {
             "atk": 90,
             "def": 140,
@@ -2528,10 +1896,6 @@
         "num": 305
     },
     "lanturn": {
-        "abilities": [
-            "voltabsorb",
-            "illuminate"
-        ],
         "baseStats": {
             "atk": 58,
             "def": 58,
@@ -2544,10 +1908,6 @@
         "num": 171
     },
     "lapras": {
-        "abilities": [
-            "waterabsorb",
-            "shellarmor"
-        ],
         "baseStats": {
             "atk": 85,
             "def": 80,
@@ -2560,10 +1920,6 @@
         "num": 131
     },
     "larvitar": {
-        "abilities": [
-            "guts",
-            null
-        ],
         "baseStats": {
             "atk": 64,
             "def": 50,
@@ -2576,10 +1932,6 @@
         "num": 246
     },
     "latias": {
-        "abilities": [
-            "levitate",
-            null
-        ],
         "baseStats": {
             "atk": 80,
             "def": 90,
@@ -2592,10 +1944,6 @@
         "num": 380
     },
     "latios": {
-        "abilities": [
-            "levitate",
-            null
-        ],
         "baseStats": {
             "atk": 90,
             "def": 80,
@@ -2608,10 +1956,6 @@
         "num": 381
     },
     "ledian": {
-        "abilities": [
-            "swarm",
-            "earlybird"
-        ],
         "baseStats": {
             "atk": 35,
             "def": 50,
@@ -2624,10 +1968,6 @@
         "num": 166
     },
     "ledyba": {
-        "abilities": [
-            "swarm",
-            "earlybird"
-        ],
         "baseStats": {
             "atk": 20,
             "def": 30,
@@ -2640,10 +1980,6 @@
         "num": 165
     },
     "lickitung": {
-        "abilities": [
-            "owntempo",
-            "oblivious"
-        ],
         "baseStats": {
             "atk": 55,
             "def": 75,
@@ -2656,10 +1992,6 @@
         "num": 108
     },
     "lileep": {
-        "abilities": [
-            "suctioncups",
-            null
-        ],
         "baseStats": {
             "atk": 41,
             "def": 77,
@@ -2672,10 +2004,6 @@
         "num": 345
     },
     "linoone": {
-        "abilities": [
-            "pickup",
-            null
-        ],
         "baseStats": {
             "atk": 70,
             "def": 61,
@@ -2688,10 +2016,6 @@
         "num": 264
     },
     "lombre": {
-        "abilities": [
-            "swiftswim",
-            "raindish"
-        ],
         "baseStats": {
             "atk": 50,
             "def": 50,
@@ -2704,10 +2028,6 @@
         "num": 271
     },
     "lotad": {
-        "abilities": [
-            "swiftswim",
-            "raindish"
-        ],
         "baseStats": {
             "atk": 30,
             "def": 30,
@@ -2720,10 +2040,6 @@
         "num": 270
     },
     "loudred": {
-        "abilities": [
-            "soundproof",
-            null
-        ],
         "baseStats": {
             "atk": 71,
             "def": 43,
@@ -2736,10 +2052,6 @@
         "num": 294
     },
     "ludicolo": {
-        "abilities": [
-            "swiftswim",
-            "raindish"
-        ],
         "baseStats": {
             "atk": 70,
             "def": 70,
@@ -2752,10 +2064,6 @@
         "num": 272
     },
     "lugia": {
-        "abilities": [
-            "pressure",
-            null
-        ],
         "baseStats": {
             "atk": 90,
             "def": 130,
@@ -2768,10 +2076,6 @@
         "num": 249
     },
     "lunatone": {
-        "abilities": [
-            "levitate",
-            null
-        ],
         "baseStats": {
             "atk": 55,
             "def": 65,
@@ -2784,10 +2088,6 @@
         "num": 337
     },
     "luvdisc": {
-        "abilities": [
-            "swiftswim",
-            null
-        ],
         "baseStats": {
             "atk": 30,
             "def": 55,
@@ -2800,10 +2100,6 @@
         "num": 370
     },
     "machamp": {
-        "abilities": [
-            "guts",
-            null
-        ],
         "baseStats": {
             "atk": 130,
             "def": 80,
@@ -2816,10 +2112,6 @@
         "num": 68
     },
     "machoke": {
-        "abilities": [
-            "guts",
-            null
-        ],
         "baseStats": {
             "atk": 100,
             "def": 70,
@@ -2832,10 +2124,6 @@
         "num": 67
     },
     "machop": {
-        "abilities": [
-            "guts",
-            null
-        ],
         "baseStats": {
             "atk": 80,
             "def": 50,
@@ -2848,10 +2136,6 @@
         "num": 66
     },
     "magby": {
-        "abilities": [
-            "flamebody",
-            null
-        ],
         "baseStats": {
             "atk": 75,
             "def": 37,
@@ -2864,10 +2148,6 @@
         "num": 240
     },
     "magcargo": {
-        "abilities": [
-            "magmaarmor",
-            "flamebody"
-        ],
         "baseStats": {
             "atk": 50,
             "def": 120,
@@ -2880,10 +2160,6 @@
         "num": 219
     },
     "magikarp": {
-        "abilities": [
-            "swiftswim",
-            null
-        ],
         "baseStats": {
             "atk": 10,
             "def": 55,
@@ -2896,10 +2172,6 @@
         "num": 129
     },
     "magmar": {
-        "abilities": [
-            "flamebody",
-            null
-        ],
         "baseStats": {
             "atk": 95,
             "def": 57,
@@ -2912,10 +2184,6 @@
         "num": 126
     },
     "magnemite": {
-        "abilities": [
-            "magnetpull",
-            "sturdy"
-        ],
         "baseStats": {
             "atk": 35,
             "def": 70,
@@ -2928,10 +2196,6 @@
         "num": 81
     },
     "magneton": {
-        "abilities": [
-            "magnetpull",
-            "sturdy"
-        ],
         "baseStats": {
             "atk": 60,
             "def": 95,
@@ -2944,10 +2208,6 @@
         "num": 82
     },
     "makuhita": {
-        "abilities": [
-            "thickfat",
-            "guts"
-        ],
         "baseStats": {
             "atk": 60,
             "def": 30,
@@ -2960,10 +2220,6 @@
         "num": 296
     },
     "manectric": {
-        "abilities": [
-            "static",
-            "lightningrod"
-        ],
         "baseStats": {
             "atk": 75,
             "def": 60,
@@ -2976,10 +2232,6 @@
         "num": 310
     },
     "mankey": {
-        "abilities": [
-            "vitalspirit",
-            null
-        ],
         "baseStats": {
             "atk": 80,
             "def": 35,
@@ -2992,10 +2244,6 @@
         "num": 56
     },
     "mantine": {
-        "abilities": [
-            "swiftswim",
-            "waterabsorb"
-        ],
         "baseStats": {
             "atk": 40,
             "def": 70,
@@ -3008,10 +2256,6 @@
         "num": 226
     },
     "mareep": {
-        "abilities": [
-            "static",
-            null
-        ],
         "baseStats": {
             "atk": 40,
             "def": 40,
@@ -3024,10 +2268,6 @@
         "num": 179
     },
     "marill": {
-        "abilities": [
-            "thickfat",
-            "hugepower"
-        ],
         "baseStats": {
             "atk": 20,
             "def": 50,
@@ -3040,10 +2280,6 @@
         "num": 183
     },
     "marowak": {
-        "abilities": [
-            "rockhead",
-            "lightningrod"
-        ],
         "baseStats": {
             "atk": 80,
             "def": 110,
@@ -3056,10 +2292,6 @@
         "num": 105
     },
     "marshtomp": {
-        "abilities": [
-            "torrent",
-            null
-        ],
         "baseStats": {
             "atk": 85,
             "def": 70,
@@ -3072,10 +2304,6 @@
         "num": 259
     },
     "masquerain": {
-        "abilities": [
-            "intimidate",
-            null
-        ],
         "baseStats": {
             "atk": 60,
             "def": 62,
@@ -3088,10 +2316,6 @@
         "num": 284
     },
     "mawile": {
-        "abilities": [
-            "hypercutter",
-            "intimidate"
-        ],
         "baseStats": {
             "atk": 85,
             "def": 85,
@@ -3104,10 +2328,6 @@
         "num": 303
     },
     "medicham": {
-        "abilities": [
-            "purepower",
-            null
-        ],
         "baseStats": {
             "atk": 60,
             "def": 75,
@@ -3120,10 +2340,6 @@
         "num": 308
     },
     "meditite": {
-        "abilities": [
-            "purepower",
-            null
-        ],
         "baseStats": {
             "atk": 40,
             "def": 55,
@@ -3136,10 +2352,6 @@
         "num": 307
     },
     "meganium": {
-        "abilities": [
-            "overgrow",
-            null
-        ],
         "baseStats": {
             "atk": 82,
             "def": 100,
@@ -3152,10 +2364,6 @@
         "num": 154
     },
     "meowth": {
-        "abilities": [
-            "pickup",
-            null
-        ],
         "baseStats": {
             "atk": 45,
             "def": 35,
@@ -3168,10 +2376,6 @@
         "num": 52
     },
     "metagross": {
-        "abilities": [
-            "clearbody",
-            null
-        ],
         "baseStats": {
             "atk": 135,
             "def": 130,
@@ -3184,10 +2388,6 @@
         "num": 376
     },
     "metang": {
-        "abilities": [
-            "clearbody",
-            null
-        ],
         "baseStats": {
             "atk": 75,
             "def": 100,
@@ -3200,10 +2400,6 @@
         "num": 375
     },
     "metapod": {
-        "abilities": [
-            "shedskin",
-            null
-        ],
         "baseStats": {
             "atk": 20,
             "def": 55,
@@ -3216,10 +2412,6 @@
         "num": 11
     },
     "mew": {
-        "abilities": [
-            "synchronize",
-            null
-        ],
         "baseStats": {
             "atk": 100,
             "def": 100,
@@ -3232,10 +2424,6 @@
         "num": 151
     },
     "mewtwo": {
-        "abilities": [
-            "pressure",
-            null
-        ],
         "baseStats": {
             "atk": 110,
             "def": 90,
@@ -3248,10 +2436,6 @@
         "num": 150
     },
     "mightyena": {
-        "abilities": [
-            "intimidate",
-            null
-        ],
         "baseStats": {
             "atk": 90,
             "def": 70,
@@ -3264,10 +2448,6 @@
         "num": 262
     },
     "milotic": {
-        "abilities": [
-            "marvelscale",
-            null
-        ],
         "baseStats": {
             "atk": 60,
             "def": 79,
@@ -3280,10 +2460,6 @@
         "num": 350
     },
     "miltank": {
-        "abilities": [
-            "thickfat",
-            null
-        ],
         "baseStats": {
             "atk": 80,
             "def": 105,
@@ -3296,10 +2472,6 @@
         "num": 241
     },
     "minun": {
-        "abilities": [
-            "minus",
-            null
-        ],
         "baseStats": {
             "atk": 40,
             "def": 50,
@@ -3312,10 +2484,6 @@
         "num": 312
     },
     "misdreavus": {
-        "abilities": [
-            "levitate",
-            null
-        ],
         "baseStats": {
             "atk": 60,
             "def": 60,
@@ -3328,10 +2496,6 @@
         "num": 200
     },
     "moltres": {
-        "abilities": [
-            "pressure",
-            null
-        ],
         "baseStats": {
             "atk": 100,
             "def": 90,
@@ -3344,10 +2508,6 @@
         "num": 146
     },
     "mrmime": {
-        "abilities": [
-            "soundproof",
-            null
-        ],
         "baseStats": {
             "atk": 45,
             "def": 65,
@@ -3360,10 +2520,6 @@
         "num": 122
     },
     "mudkip": {
-        "abilities": [
-            "torrent",
-            null
-        ],
         "baseStats": {
             "atk": 70,
             "def": 50,
@@ -3376,10 +2532,6 @@
         "num": 258
     },
     "muk": {
-        "abilities": [
-            "stench",
-            "stickyhold"
-        ],
         "baseStats": {
             "atk": 105,
             "def": 75,
@@ -3392,10 +2544,6 @@
         "num": 89
     },
     "murkrow": {
-        "abilities": [
-            "insomnia",
-            null
-        ],
         "baseStats": {
             "atk": 85,
             "def": 42,
@@ -3408,10 +2556,6 @@
         "num": 198
     },
     "natu": {
-        "abilities": [
-            "synchronize",
-            "earlybird"
-        ],
         "baseStats": {
             "atk": 50,
             "def": 45,
@@ -3424,10 +2568,6 @@
         "num": 177
     },
     "nidoking": {
-        "abilities": [
-            "poisonpoint",
-            null
-        ],
         "baseStats": {
             "atk": 92,
             "def": 77,
@@ -3440,10 +2580,6 @@
         "num": 34
     },
     "nidoqueen": {
-        "abilities": [
-            "poisonpoint",
-            null
-        ],
         "baseStats": {
             "atk": 82,
             "def": 87,
@@ -3456,10 +2592,6 @@
         "num": 31
     },
     "nidoranf": {
-        "abilities": [
-            "poisonpoint",
-            null
-        ],
         "baseStats": {
             "atk": 47,
             "def": 52,
@@ -3472,10 +2604,6 @@
         "num": 29
     },
     "nidoranm": {
-        "abilities": [
-            "poisonpoint",
-            null
-        ],
         "baseStats": {
             "atk": 57,
             "def": 40,
@@ -3488,10 +2616,6 @@
         "num": 32
     },
     "nidorina": {
-        "abilities": [
-            "poisonpoint",
-            null
-        ],
         "baseStats": {
             "atk": 62,
             "def": 67,
@@ -3504,10 +2628,6 @@
         "num": 30
     },
     "nidorino": {
-        "abilities": [
-            "poisonpoint",
-            null
-        ],
         "baseStats": {
             "atk": 72,
             "def": 57,
@@ -3520,10 +2640,6 @@
         "num": 33
     },
     "nincada": {
-        "abilities": [
-            "compoundeyes",
-            null
-        ],
         "baseStats": {
             "atk": 45,
             "def": 90,
@@ -3536,10 +2652,6 @@
         "num": 290
     },
     "ninetales": {
-        "abilities": [
-            "flashfire",
-            null
-        ],
         "baseStats": {
             "atk": 76,
             "def": 75,
@@ -3552,10 +2664,6 @@
         "num": 38
     },
     "ninjask": {
-        "abilities": [
-            "speedboost",
-            null
-        ],
         "baseStats": {
             "atk": 90,
             "def": 45,
@@ -3568,10 +2676,6 @@
         "num": 291
     },
     "noctowl": {
-        "abilities": [
-            "insomnia",
-            "keeneye"
-        ],
         "baseStats": {
             "atk": 50,
             "def": 50,
@@ -3584,10 +2688,6 @@
         "num": 164
     },
     "nosepass": {
-        "abilities": [
-            "sturdy",
-            "magnetpull"
-        ],
         "baseStats": {
             "atk": 45,
             "def": 135,
@@ -3600,10 +2700,6 @@
         "num": 299
     },
     "numel": {
-        "abilities": [
-            "oblivious",
-            null
-        ],
         "baseStats": {
             "atk": 60,
             "def": 40,
@@ -3616,10 +2712,6 @@
         "num": 322
     },
     "nuzleaf": {
-        "abilities": [
-            "chlorophyll",
-            "earlybird"
-        ],
         "baseStats": {
             "atk": 70,
             "def": 40,
@@ -3632,10 +2724,6 @@
         "num": 274
     },
     "octillery": {
-        "abilities": [
-            "suctioncups",
-            null
-        ],
         "baseStats": {
             "atk": 105,
             "def": 75,
@@ -3648,10 +2736,6 @@
         "num": 224
     },
     "oddish": {
-        "abilities": [
-            "chlorophyll",
-            null
-        ],
         "baseStats": {
             "atk": 50,
             "def": 55,
@@ -3664,10 +2748,6 @@
         "num": 43
     },
     "omanyte": {
-        "abilities": [
-            "swiftswim",
-            "shellarmor"
-        ],
         "baseStats": {
             "atk": 40,
             "def": 100,
@@ -3680,10 +2760,6 @@
         "num": 138
     },
     "omastar": {
-        "abilities": [
-            "swiftswim",
-            "shellarmor"
-        ],
         "baseStats": {
             "atk": 60,
             "def": 125,
@@ -3696,10 +2772,6 @@
         "num": 139
     },
     "onix": {
-        "abilities": [
-            "rockhead",
-            "sturdy"
-        ],
         "baseStats": {
             "atk": 45,
             "def": 160,
@@ -3712,10 +2784,6 @@
         "num": 95
     },
     "paras": {
-        "abilities": [
-            "effectspore",
-            null
-        ],
         "baseStats": {
             "atk": 70,
             "def": 55,
@@ -3728,10 +2796,6 @@
         "num": 46
     },
     "parasect": {
-        "abilities": [
-            "effectspore",
-            null
-        ],
         "baseStats": {
             "atk": 95,
             "def": 80,
@@ -3744,10 +2808,6 @@
         "num": 47
     },
     "pelipper": {
-        "abilities": [
-            "keeneye",
-            null
-        ],
         "baseStats": {
             "atk": 50,
             "def": 100,
@@ -3760,10 +2820,6 @@
         "num": 279
     },
     "persian": {
-        "abilities": [
-            "limber",
-            null
-        ],
         "baseStats": {
             "atk": 70,
             "def": 60,
@@ -3776,10 +2832,6 @@
         "num": 53
     },
     "phanpy": {
-        "abilities": [
-            "pickup",
-            null
-        ],
         "baseStats": {
             "atk": 60,
             "def": 60,
@@ -3792,10 +2844,6 @@
         "num": 231
     },
     "pichu": {
-        "abilities": [
-            "static",
-            null
-        ],
         "baseStats": {
             "atk": 40,
             "def": 15,
@@ -3808,10 +2856,6 @@
         "num": 172
     },
     "pidgeot": {
-        "abilities": [
-            "keeneye",
-            null
-        ],
         "baseStats": {
             "atk": 80,
             "def": 75,
@@ -3824,10 +2868,6 @@
         "num": 18
     },
     "pidgeotto": {
-        "abilities": [
-            "keeneye",
-            null
-        ],
         "baseStats": {
             "atk": 60,
             "def": 55,
@@ -3840,10 +2880,6 @@
         "num": 17
     },
     "pidgey": {
-        "abilities": [
-            "keeneye",
-            null
-        ],
         "baseStats": {
             "atk": 45,
             "def": 40,
@@ -3856,10 +2892,6 @@
         "num": 16
     },
     "pikachu": {
-        "abilities": [
-            "static",
-            null
-        ],
         "baseStats": {
             "atk": 55,
             "def": 30,
@@ -3872,10 +2904,6 @@
         "num": 25
     },
     "piloswine": {
-        "abilities": [
-            "oblivious",
-            null
-        ],
         "baseStats": {
             "atk": 100,
             "def": 80,
@@ -3888,10 +2916,6 @@
         "num": 221
     },
     "pineco": {
-        "abilities": [
-            "sturdy",
-            null
-        ],
         "baseStats": {
             "atk": 65,
             "def": 90,
@@ -3904,10 +2928,6 @@
         "num": 204
     },
     "pinsir": {
-        "abilities": [
-            "hypercutter",
-            null
-        ],
         "baseStats": {
             "atk": 125,
             "def": 100,
@@ -3920,10 +2940,6 @@
         "num": 127
     },
     "plusle": {
-        "abilities": [
-            "plus",
-            null
-        ],
         "baseStats": {
             "atk": 50,
             "def": 40,
@@ -3936,10 +2952,6 @@
         "num": 311
     },
     "politoed": {
-        "abilities": [
-            "waterabsorb",
-            "damp"
-        ],
         "baseStats": {
             "atk": 75,
             "def": 75,
@@ -3952,10 +2964,6 @@
         "num": 186
     },
     "poliwag": {
-        "abilities": [
-            "waterabsorb",
-            "damp"
-        ],
         "baseStats": {
             "atk": 50,
             "def": 40,
@@ -3968,10 +2976,6 @@
         "num": 60
     },
     "poliwhirl": {
-        "abilities": [
-            "waterabsorb",
-            "damp"
-        ],
         "baseStats": {
             "atk": 65,
             "def": 65,
@@ -3984,10 +2988,6 @@
         "num": 61
     },
     "poliwrath": {
-        "abilities": [
-            "waterabsorb",
-            "damp"
-        ],
         "baseStats": {
             "atk": 85,
             "def": 95,
@@ -4000,10 +3000,6 @@
         "num": 62
     },
     "ponyta": {
-        "abilities": [
-            "runaway",
-            "flashfire"
-        ],
         "baseStats": {
             "atk": 85,
             "def": 55,
@@ -4016,10 +3012,6 @@
         "num": 77
     },
     "poochyena": {
-        "abilities": [
-            "runaway",
-            null
-        ],
         "baseStats": {
             "atk": 55,
             "def": 35,
@@ -4032,10 +3024,6 @@
         "num": 261
     },
     "porygon": {
-        "abilities": [
-            "trace",
-            null
-        ],
         "baseStats": {
             "atk": 60,
             "def": 70,
@@ -4048,10 +3036,6 @@
         "num": 137
     },
     "porygon2": {
-        "abilities": [
-            "trace",
-            null
-        ],
         "baseStats": {
             "atk": 80,
             "def": 90,
@@ -4064,10 +3048,6 @@
         "num": 233
     },
     "primeape": {
-        "abilities": [
-            "vitalspirit",
-            null
-        ],
         "baseStats": {
             "atk": 105,
             "def": 60,
@@ -4080,10 +3060,6 @@
         "num": 57
     },
     "psyduck": {
-        "abilities": [
-            "damp",
-            "cloudnine"
-        ],
         "baseStats": {
             "atk": 52,
             "def": 48,
@@ -4096,10 +3072,6 @@
         "num": 54
     },
     "pupitar": {
-        "abilities": [
-            "shedskin",
-            null
-        ],
         "baseStats": {
             "atk": 84,
             "def": 70,
@@ -4112,10 +3084,6 @@
         "num": 247
     },
     "quagsire": {
-        "abilities": [
-            "damp",
-            "waterabsorb"
-        ],
         "baseStats": {
             "atk": 85,
             "def": 85,
@@ -4128,10 +3096,6 @@
         "num": 195
     },
     "quilava": {
-        "abilities": [
-            "blaze",
-            null
-        ],
         "baseStats": {
             "atk": 64,
             "def": 58,
@@ -4144,10 +3108,6 @@
         "num": 156
     },
     "qwilfish": {
-        "abilities": [
-            "poisonpoint",
-            "swiftswim"
-        ],
         "baseStats": {
             "atk": 95,
             "def": 75,
@@ -4160,10 +3120,6 @@
         "num": 211
     },
     "raichu": {
-        "abilities": [
-            "static",
-            null
-        ],
         "baseStats": {
             "atk": 90,
             "def": 55,
@@ -4176,10 +3132,6 @@
         "num": 26
     },
     "raikou": {
-        "abilities": [
-            "pressure",
-            null
-        ],
         "baseStats": {
             "atk": 85,
             "def": 75,
@@ -4192,10 +3144,6 @@
         "num": 243
     },
     "ralts": {
-        "abilities": [
-            "synchronize",
-            "trace"
-        ],
         "baseStats": {
             "atk": 25,
             "def": 25,
@@ -4208,10 +3156,6 @@
         "num": 280
     },
     "rapidash": {
-        "abilities": [
-            "runaway",
-            "flashfire"
-        ],
         "baseStats": {
             "atk": 100,
             "def": 70,
@@ -4224,10 +3168,6 @@
         "num": 78
     },
     "raticate": {
-        "abilities": [
-            "runaway",
-            "guts"
-        ],
         "baseStats": {
             "atk": 81,
             "def": 60,
@@ -4240,10 +3180,6 @@
         "num": 20
     },
     "rattata": {
-        "abilities": [
-            "runaway",
-            "guts"
-        ],
         "baseStats": {
             "atk": 56,
             "def": 35,
@@ -4256,10 +3192,6 @@
         "num": 19
     },
     "rayquaza": {
-        "abilities": [
-            "airlock",
-            null
-        ],
         "baseStats": {
             "atk": 150,
             "def": 90,
@@ -4272,10 +3204,6 @@
         "num": 384
     },
     "regice": {
-        "abilities": [
-            "clearbody",
-            null
-        ],
         "baseStats": {
             "atk": 50,
             "def": 100,
@@ -4288,10 +3216,6 @@
         "num": 378
     },
     "regirock": {
-        "abilities": [
-            "clearbody",
-            null
-        ],
         "baseStats": {
             "atk": 100,
             "def": 200,
@@ -4304,10 +3228,6 @@
         "num": 377
     },
     "registeel": {
-        "abilities": [
-            "clearbody",
-            null
-        ],
         "baseStats": {
             "atk": 75,
             "def": 150,
@@ -4320,10 +3240,6 @@
         "num": 379
     },
     "relicanth": {
-        "abilities": [
-            "swiftswim",
-            "rockhead"
-        ],
         "baseStats": {
             "atk": 90,
             "def": 130,
@@ -4336,10 +3252,6 @@
         "num": 369
     },
     "remoraid": {
-        "abilities": [
-            "hustle",
-            null
-        ],
         "baseStats": {
             "atk": 65,
             "def": 35,
@@ -4352,10 +3264,6 @@
         "num": 223
     },
     "rhydon": {
-        "abilities": [
-            "lightningrod",
-            "rockhead"
-        ],
         "baseStats": {
             "atk": 130,
             "def": 120,
@@ -4368,10 +3276,6 @@
         "num": 112
     },
     "rhyhorn": {
-        "abilities": [
-            "lightningrod",
-            "rockhead"
-        ],
         "baseStats": {
             "atk": 85,
             "def": 95,
@@ -4384,10 +3288,6 @@
         "num": 111
     },
     "roselia": {
-        "abilities": [
-            "naturalcure",
-            "poisonpoint"
-        ],
         "baseStats": {
             "atk": 60,
             "def": 45,
@@ -4400,10 +3300,6 @@
         "num": 315
     },
     "sableye": {
-        "abilities": [
-            "keeneye",
-            null
-        ],
         "baseStats": {
             "atk": 75,
             "def": 75,
@@ -4416,10 +3312,6 @@
         "num": 302
     },
     "salamence": {
-        "abilities": [
-            "intimidate",
-            null
-        ],
         "baseStats": {
             "atk": 135,
             "def": 80,
@@ -4432,10 +3324,6 @@
         "num": 373
     },
     "sandshrew": {
-        "abilities": [
-            "sandveil",
-            null
-        ],
         "baseStats": {
             "atk": 75,
             "def": 85,
@@ -4448,10 +3336,6 @@
         "num": 27
     },
     "sandslash": {
-        "abilities": [
-            "sandveil",
-            null
-        ],
         "baseStats": {
             "atk": 100,
             "def": 110,
@@ -4464,10 +3348,6 @@
         "num": 28
     },
     "sceptile": {
-        "abilities": [
-            "overgrow",
-            null
-        ],
         "baseStats": {
             "atk": 85,
             "def": 65,
@@ -4480,10 +3360,6 @@
         "num": 254
     },
     "scizor": {
-        "abilities": [
-            "swarm",
-            null
-        ],
         "baseStats": {
             "atk": 130,
             "def": 100,
@@ -4496,10 +3372,6 @@
         "num": 212
     },
     "scyther": {
-        "abilities": [
-            "swarm",
-            null
-        ],
         "baseStats": {
             "atk": 110,
             "def": 80,
@@ -4512,10 +3384,6 @@
         "num": 123
     },
     "seadra": {
-        "abilities": [
-            "poisonpoint",
-            null
-        ],
         "baseStats": {
             "atk": 65,
             "def": 95,
@@ -4528,10 +3396,6 @@
         "num": 117
     },
     "seaking": {
-        "abilities": [
-            "swiftswim",
-            "waterveil"
-        ],
         "baseStats": {
             "atk": 92,
             "def": 65,
@@ -4544,10 +3408,6 @@
         "num": 119
     },
     "sealeo": {
-        "abilities": [
-            "thickfat",
-            null
-        ],
         "baseStats": {
             "atk": 60,
             "def": 70,
@@ -4560,10 +3420,6 @@
         "num": 364
     },
     "seedot": {
-        "abilities": [
-            "chlorophyll",
-            "earlybird"
-        ],
         "baseStats": {
             "atk": 40,
             "def": 50,
@@ -4576,10 +3432,6 @@
         "num": 273
     },
     "seel": {
-        "abilities": [
-            "thickfat",
-            null
-        ],
         "baseStats": {
             "atk": 45,
             "def": 55,
@@ -4592,10 +3444,6 @@
         "num": 86
     },
     "sentret": {
-        "abilities": [
-            "runaway",
-            "keeneye"
-        ],
         "baseStats": {
             "atk": 46,
             "def": 34,
@@ -4608,10 +3456,6 @@
         "num": 161
     },
     "seviper": {
-        "abilities": [
-            "shedskin",
-            null
-        ],
         "baseStats": {
             "atk": 100,
             "def": 60,
@@ -4624,10 +3468,6 @@
         "num": 336
     },
     "sharpedo": {
-        "abilities": [
-            "roughskin",
-            null
-        ],
         "baseStats": {
             "atk": 120,
             "def": 40,
@@ -4640,10 +3480,6 @@
         "num": 319
     },
     "shedinja": {
-        "abilities": [
-            "wonderguard",
-            null
-        ],
         "baseStats": {
             "atk": 90,
             "def": 45,
@@ -4656,10 +3492,6 @@
         "num": 292
     },
     "shelgon": {
-        "abilities": [
-            "rockhead",
-            null
-        ],
         "baseStats": {
             "atk": 95,
             "def": 100,
@@ -4672,10 +3504,6 @@
         "num": 372
     },
     "shellder": {
-        "abilities": [
-            "shellarmor",
-            null
-        ],
         "baseStats": {
             "atk": 65,
             "def": 100,
@@ -4688,10 +3516,6 @@
         "num": 90
     },
     "shiftry": {
-        "abilities": [
-            "chlorophyll",
-            "earlybird"
-        ],
         "baseStats": {
             "atk": 100,
             "def": 60,
@@ -4704,10 +3528,6 @@
         "num": 275
     },
     "shroomish": {
-        "abilities": [
-            "effectspore",
-            null
-        ],
         "baseStats": {
             "atk": 40,
             "def": 60,
@@ -4720,10 +3540,6 @@
         "num": 285
     },
     "shuckle": {
-        "abilities": [
-            "sturdy",
-            null
-        ],
         "baseStats": {
             "atk": 10,
             "def": 230,
@@ -4736,10 +3552,6 @@
         "num": 213
     },
     "shuppet": {
-        "abilities": [
-            "insomnia",
-            null
-        ],
         "baseStats": {
             "atk": 75,
             "def": 35,
@@ -4752,10 +3564,6 @@
         "num": 353
     },
     "silcoon": {
-        "abilities": [
-            "shedskin",
-            null
-        ],
         "baseStats": {
             "atk": 35,
             "def": 55,
@@ -4768,10 +3576,6 @@
         "num": 266
     },
     "skarmory": {
-        "abilities": [
-            "keeneye",
-            "sturdy"
-        ],
         "baseStats": {
             "atk": 80,
             "def": 140,
@@ -4784,10 +3588,6 @@
         "num": 227
     },
     "skiploom": {
-        "abilities": [
-            "chlorophyll",
-            null
-        ],
         "baseStats": {
             "atk": 45,
             "def": 50,
@@ -4800,10 +3600,6 @@
         "num": 188
     },
     "skitty": {
-        "abilities": [
-            "cutecharm",
-            null
-        ],
         "baseStats": {
             "atk": 45,
             "def": 45,
@@ -4816,10 +3612,6 @@
         "num": 300
     },
     "slaking": {
-        "abilities": [
-            "truant",
-            null
-        ],
         "baseStats": {
             "atk": 160,
             "def": 100,
@@ -4832,10 +3624,6 @@
         "num": 289
     },
     "slakoth": {
-        "abilities": [
-            "truant",
-            null
-        ],
         "baseStats": {
             "atk": 60,
             "def": 60,
@@ -4848,10 +3636,6 @@
         "num": 287
     },
     "slowbro": {
-        "abilities": [
-            "oblivious",
-            "owntempo"
-        ],
         "baseStats": {
             "atk": 75,
             "def": 110,
@@ -4864,10 +3648,6 @@
         "num": 80
     },
     "slowking": {
-        "abilities": [
-            "oblivious",
-            "owntempo"
-        ],
         "baseStats": {
             "atk": 75,
             "def": 80,
@@ -4880,10 +3660,6 @@
         "num": 199
     },
     "slowpoke": {
-        "abilities": [
-            "oblivious",
-            "owntempo"
-        ],
         "baseStats": {
             "atk": 65,
             "def": 65,
@@ -4896,10 +3672,6 @@
         "num": 79
     },
     "slugma": {
-        "abilities": [
-            "magmaarmor",
-            "flamebody"
-        ],
         "baseStats": {
             "atk": 40,
             "def": 40,
@@ -4912,10 +3684,6 @@
         "num": 218
     },
     "smeargle": {
-        "abilities": [
-            "owntempo",
-            null
-        ],
         "baseStats": {
             "atk": 20,
             "def": 35,
@@ -4928,10 +3696,6 @@
         "num": 235
     },
     "smoochum": {
-        "abilities": [
-            "oblivious",
-            null
-        ],
         "baseStats": {
             "atk": 30,
             "def": 15,
@@ -4944,10 +3708,6 @@
         "num": 238
     },
     "sneasel": {
-        "abilities": [
-            "innerfocus",
-            "keeneye"
-        ],
         "baseStats": {
             "atk": 95,
             "def": 55,
@@ -4960,10 +3720,6 @@
         "num": 215
     },
     "snorlax": {
-        "abilities": [
-            "immunity",
-            "thickfat"
-        ],
         "baseStats": {
             "atk": 110,
             "def": 65,
@@ -4976,10 +3732,6 @@
         "num": 143
     },
     "snorunt": {
-        "abilities": [
-            "innerfocus",
-            null
-        ],
         "baseStats": {
             "atk": 50,
             "def": 50,
@@ -4992,10 +3744,6 @@
         "num": 361
     },
     "snubbull": {
-        "abilities": [
-            "intimidate",
-            "runaway"
-        ],
         "baseStats": {
             "atk": 80,
             "def": 50,
@@ -5008,10 +3756,6 @@
         "num": 209
     },
     "solrock": {
-        "abilities": [
-            "levitate",
-            null
-        ],
         "baseStats": {
             "atk": 95,
             "def": 85,
@@ -5024,10 +3768,6 @@
         "num": 338
     },
     "spearow": {
-        "abilities": [
-            "keeneye",
-            null
-        ],
         "baseStats": {
             "atk": 60,
             "def": 30,
@@ -5040,10 +3780,6 @@
         "num": 21
     },
     "spheal": {
-        "abilities": [
-            "thickfat",
-            null
-        ],
         "baseStats": {
             "atk": 40,
             "def": 50,
@@ -5056,10 +3792,6 @@
         "num": 363
     },
     "spinarak": {
-        "abilities": [
-            "swarm",
-            "insomnia"
-        ],
         "baseStats": {
             "atk": 60,
             "def": 40,
@@ -5072,10 +3804,6 @@
         "num": 167
     },
     "spinda": {
-        "abilities": [
-            "owntempo",
-            null
-        ],
         "baseStats": {
             "atk": 60,
             "def": 60,
@@ -5088,10 +3816,6 @@
         "num": 327
     },
     "spoink": {
-        "abilities": [
-            "thickfat",
-            "owntempo"
-        ],
         "baseStats": {
             "atk": 25,
             "def": 35,
@@ -5104,10 +3828,6 @@
         "num": 325
     },
     "squirtle": {
-        "abilities": [
-            "torrent",
-            null
-        ],
         "baseStats": {
             "atk": 48,
             "def": 65,
@@ -5120,10 +3840,6 @@
         "num": 7
     },
     "stantler": {
-        "abilities": [
-            "intimidate",
-            null
-        ],
         "baseStats": {
             "atk": 95,
             "def": 62,
@@ -5136,10 +3852,6 @@
         "num": 234
     },
     "starmie": {
-        "abilities": [
-            "illuminate",
-            "naturalcure"
-        ],
         "baseStats": {
             "atk": 75,
             "def": 85,
@@ -5152,10 +3864,6 @@
         "num": 121
     },
     "staryu": {
-        "abilities": [
-            "illuminate",
-            "naturalcure"
-        ],
         "baseStats": {
             "atk": 45,
             "def": 55,
@@ -5168,10 +3876,6 @@
         "num": 120
     },
     "steelix": {
-        "abilities": [
-            "rockhead",
-            "sturdy"
-        ],
         "baseStats": {
             "atk": 85,
             "def": 200,
@@ -5184,10 +3888,6 @@
         "num": 208
     },
     "sudowoodo": {
-        "abilities": [
-            "sturdy",
-            "rockhead"
-        ],
         "baseStats": {
             "atk": 100,
             "def": 115,
@@ -5200,10 +3900,6 @@
         "num": 185
     },
     "suicune": {
-        "abilities": [
-            "pressure",
-            null
-        ],
         "baseStats": {
             "atk": 75,
             "def": 115,
@@ -5216,10 +3912,6 @@
         "num": 245
     },
     "sunflora": {
-        "abilities": [
-            "chlorophyll",
-            null
-        ],
         "baseStats": {
             "atk": 75,
             "def": 55,
@@ -5232,10 +3924,6 @@
         "num": 192
     },
     "sunkern": {
-        "abilities": [
-            "chlorophyll",
-            null
-        ],
         "baseStats": {
             "atk": 30,
             "def": 30,
@@ -5248,10 +3936,6 @@
         "num": 191
     },
     "surskit": {
-        "abilities": [
-            "swiftswim",
-            null
-        ],
         "baseStats": {
             "atk": 30,
             "def": 32,
@@ -5264,10 +3948,6 @@
         "num": 283
     },
     "swablu": {
-        "abilities": [
-            "naturalcure",
-            null
-        ],
         "baseStats": {
             "atk": 40,
             "def": 60,
@@ -5280,10 +3960,6 @@
         "num": 333
     },
     "swalot": {
-        "abilities": [
-            "liquidooze",
-            "stickyhold"
-        ],
         "baseStats": {
             "atk": 73,
             "def": 83,
@@ -5296,10 +3972,6 @@
         "num": 317
     },
     "swampert": {
-        "abilities": [
-            "torrent",
-            null
-        ],
         "baseStats": {
             "atk": 110,
             "def": 90,
@@ -5312,10 +3984,6 @@
         "num": 260
     },
     "swellow": {
-        "abilities": [
-            "guts",
-            null
-        ],
         "baseStats": {
             "atk": 85,
             "def": 60,
@@ -5328,10 +3996,6 @@
         "num": 277
     },
     "swinub": {
-        "abilities": [
-            "oblivious",
-            null
-        ],
         "baseStats": {
             "atk": 50,
             "def": 40,
@@ -5344,10 +4008,6 @@
         "num": 220
     },
     "taillow": {
-        "abilities": [
-            "guts",
-            null
-        ],
         "baseStats": {
             "atk": 55,
             "def": 30,
@@ -5360,10 +4020,6 @@
         "num": 276
     },
     "tangela": {
-        "abilities": [
-            "chlorophyll",
-            null
-        ],
         "baseStats": {
             "atk": 55,
             "def": 115,
@@ -5376,10 +4032,6 @@
         "num": 114
     },
     "tauros": {
-        "abilities": [
-            "intimidate",
-            null
-        ],
         "baseStats": {
             "atk": 100,
             "def": 95,
@@ -5392,10 +4044,6 @@
         "num": 128
     },
     "teddiursa": {
-        "abilities": [
-            "pickup",
-            null
-        ],
         "baseStats": {
             "atk": 80,
             "def": 50,
@@ -5408,10 +4056,6 @@
         "num": 216
     },
     "tentacool": {
-        "abilities": [
-            "clearbody",
-            "liquidooze"
-        ],
         "baseStats": {
             "atk": 40,
             "def": 35,
@@ -5424,10 +4068,6 @@
         "num": 72
     },
     "tentacruel": {
-        "abilities": [
-            "clearbody",
-            "liquidooze"
-        ],
         "baseStats": {
             "atk": 70,
             "def": 65,
@@ -5440,10 +4080,6 @@
         "num": 73
     },
     "togepi": {
-        "abilities": [
-            "hustle",
-            "serenegrace"
-        ],
         "baseStats": {
             "atk": 20,
             "def": 65,
@@ -5456,10 +4092,6 @@
         "num": 175
     },
     "togetic": {
-        "abilities": [
-            "hustle",
-            "serenegrace"
-        ],
         "baseStats": {
             "atk": 40,
             "def": 85,
@@ -5472,10 +4104,6 @@
         "num": 176
     },
     "torchic": {
-        "abilities": [
-            "blaze",
-            null
-        ],
         "baseStats": {
             "atk": 60,
             "def": 40,
@@ -5488,10 +4116,6 @@
         "num": 255
     },
     "torkoal": {
-        "abilities": [
-            "whitesmoke",
-            null
-        ],
         "baseStats": {
             "atk": 85,
             "def": 140,
@@ -5504,10 +4128,6 @@
         "num": 324
     },
     "totodile": {
-        "abilities": [
-            "torrent",
-            null
-        ],
         "baseStats": {
             "atk": 65,
             "def": 64,
@@ -5520,10 +4140,6 @@
         "num": 158
     },
     "trapinch": {
-        "abilities": [
-            "hypercutter",
-            "arenatrap"
-        ],
         "baseStats": {
             "atk": 100,
             "def": 45,
@@ -5536,10 +4152,6 @@
         "num": 328
     },
     "treecko": {
-        "abilities": [
-            "overgrow",
-            null
-        ],
         "baseStats": {
             "atk": 45,
             "def": 35,
@@ -5552,10 +4164,6 @@
         "num": 252
     },
     "tropius": {
-        "abilities": [
-            "chlorophyll",
-            null
-        ],
         "baseStats": {
             "atk": 68,
             "def": 83,
@@ -5568,10 +4176,6 @@
         "num": 357
     },
     "typhlosion": {
-        "abilities": [
-            "blaze",
-            null
-        ],
         "baseStats": {
             "atk": 84,
             "def": 78,
@@ -5584,10 +4188,6 @@
         "num": 157
     },
     "tyranitar": {
-        "abilities": [
-            "sandstream",
-            null
-        ],
         "baseStats": {
             "atk": 134,
             "def": 110,
@@ -5600,10 +4200,6 @@
         "num": 248
     },
     "tyrogue": {
-        "abilities": [
-            "guts",
-            null
-        ],
         "baseStats": {
             "atk": 35,
             "def": 35,
@@ -5616,10 +4212,6 @@
         "num": 236
     },
     "umbreon": {
-        "abilities": [
-            "synchronize",
-            null
-        ],
         "baseStats": {
             "atk": 65,
             "def": 110,
@@ -5644,10 +4236,6 @@
         "num": 201
     },
     "ursaring": {
-        "abilities": [
-            "guts",
-            null
-        ],
         "baseStats": {
             "atk": 130,
             "def": 75,
@@ -5660,10 +4248,6 @@
         "num": 217
     },
     "vaporeon": {
-        "abilities": [
-            "waterabsorb",
-            null
-        ],
         "baseStats": {
             "atk": 65,
             "def": 60,
@@ -5676,10 +4260,6 @@
         "num": 134
     },
     "venomoth": {
-        "abilities": [
-            "shielddust",
-            null
-        ],
         "baseStats": {
             "atk": 65,
             "def": 60,
@@ -5692,10 +4272,6 @@
         "num": 49
     },
     "venonat": {
-        "abilities": [
-            "compoundeyes",
-            null
-        ],
         "baseStats": {
             "atk": 55,
             "def": 50,
@@ -5708,10 +4284,6 @@
         "num": 48
     },
     "venusaur": {
-        "abilities": [
-            "overgrow",
-            null
-        ],
         "baseStats": {
             "atk": 82,
             "def": 83,
@@ -5724,10 +4296,6 @@
         "num": 3
     },
     "vibrava": {
-        "abilities": [
-            "levitate",
-            null
-        ],
         "baseStats": {
             "atk": 70,
             "def": 50,
@@ -5740,10 +4308,6 @@
         "num": 329
     },
     "victreebel": {
-        "abilities": [
-            "chlorophyll",
-            null
-        ],
         "baseStats": {
             "atk": 105,
             "def": 65,
@@ -5756,10 +4320,6 @@
         "num": 71
     },
     "vigoroth": {
-        "abilities": [
-            "vitalspirit",
-            null
-        ],
         "baseStats": {
             "atk": 80,
             "def": 80,
@@ -5772,10 +4332,6 @@
         "num": 288
     },
     "vileplume": {
-        "abilities": [
-            "chlorophyll",
-            null
-        ],
         "baseStats": {
             "atk": 80,
             "def": 85,
@@ -5788,10 +4344,6 @@
         "num": 45
     },
     "volbeat": {
-        "abilities": [
-            "illuminate",
-            "swarm"
-        ],
         "baseStats": {
             "atk": 73,
             "def": 55,
@@ -5804,10 +4356,6 @@
         "num": 313
     },
     "voltorb": {
-        "abilities": [
-            "soundproof",
-            "static"
-        ],
         "baseStats": {
             "atk": 30,
             "def": 50,
@@ -5820,10 +4368,6 @@
         "num": 100
     },
     "vulpix": {
-        "abilities": [
-            "flashfire",
-            null
-        ],
         "baseStats": {
             "atk": 41,
             "def": 40,
@@ -5836,10 +4380,6 @@
         "num": 37
     },
     "wailmer": {
-        "abilities": [
-            "waterveil",
-            "oblivious"
-        ],
         "baseStats": {
             "atk": 70,
             "def": 35,
@@ -5852,10 +4392,6 @@
         "num": 320
     },
     "wailord": {
-        "abilities": [
-            "waterveil",
-            "oblivious"
-        ],
         "baseStats": {
             "atk": 90,
             "def": 45,
@@ -5868,10 +4404,6 @@
         "num": 321
     },
     "walrein": {
-        "abilities": [
-            "thickfat",
-            null
-        ],
         "baseStats": {
             "atk": 80,
             "def": 90,
@@ -5884,10 +4416,6 @@
         "num": 365
     },
     "wartortle": {
-        "abilities": [
-            "torrent",
-            null
-        ],
         "baseStats": {
             "atk": 63,
             "def": 80,
@@ -5900,10 +4428,6 @@
         "num": 8
     },
     "weedle": {
-        "abilities": [
-            "shielddust",
-            null
-        ],
         "baseStats": {
             "atk": 35,
             "def": 30,
@@ -5916,10 +4440,6 @@
         "num": 13
     },
     "weepinbell": {
-        "abilities": [
-            "chlorophyll",
-            null
-        ],
         "baseStats": {
             "atk": 90,
             "def": 50,
@@ -5932,10 +4452,6 @@
         "num": 70
     },
     "weezing": {
-        "abilities": [
-            "levitate",
-            null
-        ],
         "baseStats": {
             "atk": 90,
             "def": 120,
@@ -5948,10 +4464,6 @@
         "num": 110
     },
     "whiscash": {
-        "abilities": [
-            "oblivious",
-            null
-        ],
         "baseStats": {
             "atk": 78,
             "def": 73,
@@ -5964,10 +4476,6 @@
         "num": 340
     },
     "whismur": {
-        "abilities": [
-            "soundproof",
-            null
-        ],
         "baseStats": {
             "atk": 51,
             "def": 23,
@@ -5980,10 +4488,6 @@
         "num": 293
     },
     "wigglytuff": {
-        "abilities": [
-            "cutecharm",
-            null
-        ],
         "baseStats": {
             "atk": 70,
             "def": 45,
@@ -5996,10 +4500,6 @@
         "num": 40
     },
     "wingull": {
-        "abilities": [
-            "keeneye",
-            null
-        ],
         "baseStats": {
             "atk": 30,
             "def": 30,
@@ -6012,10 +4512,6 @@
         "num": 278
     },
     "wobbuffet": {
-        "abilities": [
-            "shadowtag",
-            null
-        ],
         "baseStats": {
             "atk": 33,
             "def": 58,
@@ -6028,10 +4524,6 @@
         "num": 202
     },
     "wooper": {
-        "abilities": [
-            "damp",
-            "waterabsorb"
-        ],
         "baseStats": {
             "atk": 45,
             "def": 45,
@@ -6044,10 +4536,6 @@
         "num": 194
     },
     "wurmple": {
-        "abilities": [
-            "shielddust",
-            null
-        ],
         "baseStats": {
             "atk": 45,
             "def": 35,
@@ -6060,10 +4548,6 @@
         "num": 265
     },
     "wynaut": {
-        "abilities": [
-            "shadowtag",
-            null
-        ],
         "baseStats": {
             "atk": 23,
             "def": 48,
@@ -6076,10 +4560,6 @@
         "num": 360
     },
     "xatu": {
-        "abilities": [
-            "synchronize",
-            "earlybird"
-        ],
         "baseStats": {
             "atk": 75,
             "def": 70,
@@ -6092,10 +4572,6 @@
         "num": 178
     },
     "yanma": {
-        "abilities": [
-            "speedboost",
-            "compoundeyes"
-        ],
         "baseStats": {
             "atk": 65,
             "def": 45,
@@ -6108,10 +4584,6 @@
         "num": 193
     },
     "zangoose": {
-        "abilities": [
-            "immunity",
-            null
-        ],
         "baseStats": {
             "atk": 115,
             "def": 60,
@@ -6124,10 +4596,6 @@
         "num": 335
     },
     "zapdos": {
-        "abilities": [
-            "pressure",
-            null
-        ],
         "baseStats": {
             "atk": 90,
             "def": 85,
@@ -6140,10 +4608,6 @@
         "num": 145
     },
     "zigzagoon": {
-        "abilities": [
-            "pickup",
-            null
-        ],
         "baseStats": {
             "atk": 30,
             "def": 41,
@@ -6156,10 +4620,6 @@
         "num": 263
     },
     "zubat": {
-        "abilities": [
-            "innerfocus",
-            null
-        ],
         "baseStats": {
             "atk": 45,
             "def": 35,

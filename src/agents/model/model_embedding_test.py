@@ -6,7 +6,7 @@ from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappin
 from agents.observation.constants import (
     POKEMON_FULL_DIM, POKEMON_MOVES_OFFSET,
     POKEMON_SPECIES_OFFSET, POKEMON_ITEMS_OFFSET, ITEM_ID_DIM,
-    POKEMON_ABILITIES_OFFSET, ABILITY_SLOT_DIM,
+    POKEMON_ABILITIES_OFFSET, ABILITY_SLOT_DIM, ABILITY_DOMINANCE_DIM,
     OFFSET_REACTIVE
 )
 import gymnasium as gym
@@ -46,9 +46,10 @@ def test_model_full_embedding_forensics():
     # Item: Leftovers (ID 100), Known=1
     obs[pk0_start + POKEMON_ITEMS_OFFSET] = 100.0
     obs[pk0_start + POKEMON_ITEMS_OFFSET + ITEM_ID_DIM] = 1.0
-    # Ability: Volt Absorb (ID 10), Known=1
+    # Ability: Volt Absorb (ID 10), Known=1, dominance=1.0 (revealed → no alternative)
     obs[pk0_start + POKEMON_ABILITIES_OFFSET] = 10.0
-    obs[pk0_start + POKEMON_ABILITIES_OFFSET + ABILITY_SLOT_DIM] = 1.0
+    obs[pk0_start + POKEMON_ABILITIES_OFFSET + ABILITY_SLOT_DIM] = 1.0   # dominance
+    obs[pk0_start + POKEMON_ABILITIES_OFFSET + ABILITY_SLOT_DIM + ABILITY_DOMINANCE_DIM] = 1.0  # known
     # Move 0: Surf (ID 57), Known=1, partially depleted PP (8 current / 24 max)
     m_slot_layout = layout['pokemon']['moves']['layout']['slot_layout']
     reactive_layout = layout['reactive_layout']
@@ -106,15 +107,16 @@ def test_model_full_embedding_forensics():
                       )
     # Simpler: compute directly from known layout offsets in role-encoder input
     # role input = species_emb(32) + stats(6) + item_emb(16) + item_known(1) + item_consumed(1)
-    #             + pk_types(32) + ability1_emb(16) + ability2_emb(16) + ability_known(1) + ...
+    #             + pk_types(32) + ability1_emb(16) + ability2_emb(16) + dominance(1)
+    #             + ability_known(1) + ...
     _species_emb = layout['species_embedding_dim']     # 32
     _stats       = 6
     _item_emb    = layout['item_embedding_dim']        # 16
     item_known_role_idx = _species_emb + _stats + _item_emb   # 54
     _pk_types    = layout['type_embedding_dim'] * 2    # 32 (concatenated pair)
     _ability_emb = layout['ability_embedding_dim']     # 16
-    # Both ability1 and ability2 embeddings are concatenated; +1+1 = item_consumed + item_known
-    ability_known_role_idx = item_known_role_idx + 1 + 1 + _pk_types + 2 * _ability_emb
+    # Both ability embeddings + dominance scalar precede the known flag in role input
+    ability_known_role_idx = item_known_role_idx + 1 + 1 + _pk_types + 2 * _ability_emb + 1
 
     p0_features = role_in[0]
     assert p0_features[item_known_role_idx]    == 1.0, f"Item Known Flag mismatch at idx {item_known_role_idx}: {p0_features[item_known_role_idx]}"

@@ -45,15 +45,18 @@ from poke_env.ps_client.server_configuration import LocalhostServerConfiguration
 from agents.action.mapper import Gen3ActionMapper
 from agents.action.mask_generator import Gen3ActionMasker
 from agents.observation.abilities import AbilitiesEncoder
-from agents.observation.constants import ABILITY_SLOT_DIM, ABILITY_KNOWN_DIM
+from agents.observation.constants import (
+    ABILITY_SLOT_DIM, ABILITY_DOMINANCE_DIM, ABILITY_KNOWN_DIM,
+)
 from agents.observation.state_encoder import load_mappings
 from utils.teambuilder import Gen3Teambuilder
 
 BATTLE_FORMAT = "gen3ou"
 
-_AB1   = 0
-_AB2   = 1
-_KNOWN = ABILITY_SLOT_DIM   # 2
+_AB1       = 0
+_AB2       = 1
+_DOMINANCE = ABILITY_SLOT_DIM                          # 2
+_KNOWN     = ABILITY_SLOT_DIM + ABILITY_DOMINANCE_DIM  # 3
 
 
 # ---------------------------------------------------------------------------
@@ -220,7 +223,10 @@ class ScenarioStats:
 
 _MAPPINGS = None
 _ABILITY_ENC: Optional[AbilitiesEncoder] = None
-_SPECIES_PRIORS: dict[str, tuple[int, int]] = {}
+# Independent oracle: species → (ability1_num, ability2_num, dominance) derived
+# straight from gen3_ability_priors.json so we catch encoder drift without
+# sharing its lookup table.
+_SPECIES_PRIORS: dict[str, tuple[int, int, float]] = {}
 
 
 def _get_encoder() -> AbilitiesEncoder:
@@ -228,29 +234,22 @@ def _get_encoder() -> AbilitiesEncoder:
     if _ABILITY_ENC is None:
         _MAPPINGS = load_mappings()
         rev = _MAPPINGS["reverse"]["abilities"]
-        species_to_abilities = {
-            sp: data["abilities"]
-            for sp, data in _MAPPINGS["species"].items()
-            if isinstance(data, dict) and data.get("abilities")
-        }
+        prior_table = _MAPPINGS.get("ability_priors", {})
         _ABILITY_ENC = AbilitiesEncoder(
             _MAPPINGS["abilities"], rev,
-            species_to_abilities=species_to_abilities,
+            species_to_ability_priors=prior_table,
         )
-        # Independent re-derivation of the priors — used as the ORACLE during
-        # validation. If the encoder ever drifts from the JSON file, this catches
-        # it without sharing the encoder's lookup table.
         ab_map = _MAPPINGS["abilities"]
-        for sp, ab_list in species_to_abilities.items():
-            nums: list[int] = []
-            for ab_id in ab_list[:2]:
-                if ab_id is None:
-                    nums.append(0)
-                else:
-                    nums.append(int(ab_map.get(ab_id, {}).get("num", 0)))
-            while len(nums) < 2:
-                nums.append(0)
-            _SPECIES_PRIORS[sp] = (nums[0], nums[1])
+        for sp, ab_probs in prior_table.items():
+            if not ab_probs:
+                continue
+            ranked = sorted(ab_probs.items(), key=lambda kv: (-kv[1], kv[0]))
+            num1 = int(ab_map.get(ranked[0][0], {}).get("num", 0))
+            num2 = (
+                int(ab_map.get(ranked[1][0], {}).get("num", 0))
+                if len(ranked) > 1 else 0
+            )
+            _SPECIES_PRIORS[sp] = (num1, num2, float(ranked[0][1]))
     return _ABILITY_ENC
 
 
@@ -303,7 +302,8 @@ class AbilityFuzzPlayer(Player):
             expected_num = float(ab_map.get(ab_key, {}).get("num", 0))
             if not (vec[_KNOWN] >= 0.5
                     and vec[_AB1] == expected_num
-                    and vec[_AB2] == 0.0):
+                    and vec[_AB2] == 0.0
+                    and vec[_DOMINANCE] == 1.0):
                 s.layer1_fail += 1
                 s.record_example(1, {
                     "check": "own_encoding_wrong",
@@ -346,9 +346,11 @@ class AbilityFuzzPlayer(Player):
                         "vec": vec.tolist(),
                     })
                     continue
+                exp_num1, exp_num2, exp_dom = expected
                 if not (vec[_KNOWN] < 0.5
-                        and int(vec[_AB1]) == expected[0]
-                        and int(vec[_AB2]) == expected[1]):
+                        and int(vec[_AB1]) == exp_num1
+                        and int(vec[_AB2]) == exp_num2
+                        and abs(float(vec[_DOMINANCE]) - exp_dom) < 1e-4):
                     s.layer2_fail += 1
                     s.record_example(2, {
                         "check": "opp_unrevealed_priors_wrong",
@@ -363,7 +365,8 @@ class AbilityFuzzPlayer(Player):
                 expected_num = float(ab_map.get(ab_key, {}).get("num", 0))
                 if not (vec[_KNOWN] >= 0.5
                         and vec[_AB1] == expected_num
-                        and vec[_AB2] == 0.0):
+                        and vec[_AB2] == 0.0
+                        and vec[_DOMINANCE] == 1.0):
                     s.layer3_fail += 1
                     s.record_example(3, {
                         "check": "opp_revealed_encoding_wrong",
@@ -373,18 +376,21 @@ class AbilityFuzzPlayer(Player):
                         "vec": vec.tolist(),
                     })
                     continue
-                # Cross-check: the revealed ability must be ONE of the species
-                # dex priors. If not, our priors are wrong for this species.
+                # Cross-check: the revealed ability must be one of the Smogon
+                # priors for this species. If not, either the priors are stale
+                # or this is a creative ladder choice not represented in the
+                # 12-month aggregate.
                 expected_priors = _SPECIES_PRIORS.get(mon.species)
                 if expected_priors is not None:
-                    if expected_num not in expected_priors:
+                    prior_ids = (expected_priors[0], expected_priors[1])
+                    if expected_num not in prior_ids:
                         s.layer3_fail += 1
                         s.record_example(3, {
                             "check": "revealed_ability_not_in_priors",
                             "species": mon.species,
                             "revealed_ability": ab_raw,
                             "revealed_id": expected_num,
-                            "priors": expected_priors,
+                            "priors": prior_ids,
                         })
 
     def choose_move(self, battle):

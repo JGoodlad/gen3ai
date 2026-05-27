@@ -1,51 +1,65 @@
 import numpy as np
 from .base import ObservationEncoder
-from .constants import ABILITY_SLOT_DIM, ABILITY_KNOWN_DIM
+from .constants import ABILITY_SLOT_DIM, ABILITY_DOMINANCE_DIM, ABILITY_KNOWN_DIM
 from poke_env.battle.abstract_battle import AbstractBattle
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 
 
 class AbilitiesEncoder(ObservationEncoder):
-    """Encodes the ability block: [ability1_id, ability2_id, known_flag].
+    """Encodes the ability block: [ability1_id, ability2_id, dominance, known].
 
-    Three states the model must distinguish:
-      - Empty slot (mon is None): all zeros.
-      - Ability revealed (own team always, opp once an ability message fires):
-        known=1, ability1=revealed_id, ability2=0.
-      - Opp ability not yet revealed: known=0, ability1 + ability2 = the
-        species' two dex-possible Gen 3 abilities (from gen3_species.json).
-        For single-ability species (Shedinja, Salamence, etc.) ability2=0.
+    Priors come from data/pokemon/gen3_ability_priors.json (per-species Smogon
+    usage distributions, mirrors the gen3_hidden_power_priors.json pattern).
+    Layout:
+
+      - ability1_id / ability2_id : the top 2 Smogon-observed abilities for
+        the species, sorted by usage (ability1 is the more common one). For
+        single-ability species (Salamence → only Intimidate, Shedinja → only
+        Wonder Guard) ability2_id stays 0.
+      - dominance ∈ [0, 1] : the Smogon-observed probability share of ability1.
+        For known revelations or single-ability species it's 1.0.
+      - known flag : 1.0 if the actual ability has been confirmed (own team
+        always; opp once an ability message fires), else 0.0.
+
+    Three observable states:
+      - Empty slot (mon is None) — all zeros.
+      - Revealed (own team, or opp once an ability triggers) —
+        [revealed_id, 0, 1.0, 1.0].
+      - Opp unrevealed — [top1_id, top2_id_or_0, dominance, 0.0].
     """
 
     def __init__(
         self,
         ability_to_id: Optional[Dict[str, Any]] = None,
         reverse_mapping: Optional[Dict[int, str]] = None,
-        species_to_abilities: Optional[Dict[str, List[Optional[str]]]] = None,
+        species_to_ability_priors: Optional[Dict[str, Dict[str, float]]] = None,
     ):
         if not ability_to_id:
             raise ValueError("AbilitiesEncoder requires a non-empty ability mapping!")
         self.ability_to_id = ability_to_id
         self.reverse_mapping = reverse_mapping or {}
-        # Pre-compute species → (ability_num_1, ability_num_2) for fast lookup.
-        # Missing species (or species with no Gen 3-valid abilities) get (0, 0).
-        self._species_ability_nums: Dict[str, tuple[int, int]] = {}
-        for sp, ab_list in (species_to_abilities or {}).items():
-            if not ab_list:
+        # Pre-compute species → (ability1_num, ability2_num, dominance) so the
+        # hot path is a single dict lookup. Missing species (no Smogon data) get
+        # (0, 0, 0.0).
+        self._species_priors: Dict[str, tuple[int, int, float]] = {}
+        for sp, ab_probs in (species_to_ability_priors or {}).items():
+            if not ab_probs:
                 continue
-            nums = []
-            for ab_id in ab_list[:2]:
-                if ab_id is None:
-                    nums.append(0)
-                else:
-                    nums.append(int(self.ability_to_id.get(ab_id, {}).get("num", 0)))
-            while len(nums) < 2:
-                nums.append(0)
-            self._species_ability_nums[sp] = (nums[0], nums[1])
+            # Sort by probability descending; ties broken by ability name for
+            # determinism across runs.
+            ranked = sorted(ab_probs.items(), key=lambda kv: (-kv[1], kv[0]))
+            top1_id, top1_p = ranked[0]
+            top2_id = ranked[1][0] if len(ranked) > 1 else None
+            num1 = int(self.ability_to_id.get(top1_id, {}).get("num", 0))
+            num2 = (
+                int(self.ability_to_id.get(top2_id, {}).get("num", 0))
+                if top2_id is not None else 0
+            )
+            self._species_priors[sp] = (num1, num2, float(top1_p))
 
     @property
     def dimension(self) -> int:
-        return ABILITY_SLOT_DIM + ABILITY_KNOWN_DIM  # 2 + 1 = 3
+        return ABILITY_SLOT_DIM + ABILITY_DOMINANCE_DIM + ABILITY_KNOWN_DIM  # 4
 
     def _normalize(self, name: str) -> str:
         return name.lower().replace(" ", "").replace("_", "")
@@ -58,8 +72,6 @@ class AbilitiesEncoder(ObservationEncoder):
         ability = mon.ability
         if ability:
             ability_key = self._normalize(ability)
-            # poke-env stores "unknownability" as the sentinel for unrevealed
-            # opp abilities. Fall through to the species-prior path.
             if ability_key != "unknownability":
                 if ability_key not in self.ability_to_id:
                     raise ValueError(
@@ -68,29 +80,35 @@ class AbilitiesEncoder(ObservationEncoder):
                     )
                 vec[0] = float(self.ability_to_id[ability_key].get("num", 0))
                 vec[1] = 0.0
-                vec[2] = 1.0  # known
+                vec[2] = 1.0  # dominance forced to 1.0 — alternative no longer hypothetical
+                vec[3] = 1.0  # known
                 return vec
 
-        # Not revealed — encode the species' two dex-possible abilities so the
-        # model has prior knowledge instead of a flat "unknown" signal.
+        # Opp unrevealed — emit Smogon-derived priors so the model has a head
+        # start instead of a flat "unknown" signal.
         species = getattr(mon, "species", None)
         if species:
-            nums = self._species_ability_nums.get(species)
-            if nums is not None:
-                vec[0] = float(nums[0])
-                vec[1] = float(nums[1])
-        # vec[2] stays 0.0 (not known)
+            priors = self._species_priors.get(species)
+            if priors is not None:
+                num1, num2, dominance = priors
+                vec[0] = float(num1)
+                vec[1] = float(num2)
+                vec[2] = float(dominance)
+        # vec[3] stays 0.0 (not known)
         return vec
 
     def get_layout(self) -> dict:
         return {
-            "id1":   {"offset": 0, "dim": 1},
-            "id2":   {"offset": 1, "dim": 1},
-            "known": {"offset": ABILITY_SLOT_DIM, "dim": ABILITY_KNOWN_DIM},
+            "id1":       {"offset": 0, "dim": 1},
+            "id2":       {"offset": 1, "dim": 1},
+            "dominance": {"offset": ABILITY_SLOT_DIM, "dim": ABILITY_DOMINANCE_DIM},
+            "known":     {"offset": ABILITY_SLOT_DIM + ABILITY_DOMINANCE_DIM,
+                          "dim": ABILITY_KNOWN_DIM},
         }
 
     def describe_vector(self, vector: np.ndarray) -> str:
-        known = vector[ABILITY_SLOT_DIM] >= 0.5
+        dom = float(vector[ABILITY_SLOT_DIM])
+        known = vector[ABILITY_SLOT_DIM + ABILITY_DOMINANCE_DIM] >= 0.5
         ab1_id = int(vector[0])
         ab2_id = int(vector[1])
         if ab1_id == 0 and ab2_id == 0:
@@ -103,8 +121,9 @@ class AbilitiesEncoder(ObservationEncoder):
 
         if known:
             return name(ab1_id)
-        # Unrevealed: show the candidate set
-        names = [name(ab1_id)]
-        if ab2_id != 0:
-            names.append(name(ab2_id))
-        return "?(" + "|".join(names) + ")"
+        # Unrevealed: show the candidate set with the dominance probability
+        n1 = name(ab1_id)
+        n2 = name(ab2_id)
+        if ab2_id == 0:
+            return f"?({n1} p={dom:.2f})"
+        return f"?({n1} p={dom:.2f} | {n2} p={1-dom:.2f})"

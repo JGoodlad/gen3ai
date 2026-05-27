@@ -161,7 +161,8 @@ class Gen3FeaturesExtractor(torch.nn.Module):
             + 2                                         # item known + consumed
             + 2 * layout['type_embedding_dim']          # embedded type pair
             + 2 * layout['ability_embedding_dim']       # embedded ability1 + ability2
-                                                         # (revealed → ability1; opp unrevealed → both dex candidates)
+                                                         # (revealed → ability1; opp unrevealed → Smogon top-2)
+            + 1                                         # ability dominance (Smogon prob of ability1)
             + 1                                         # ability known
             + _condition_dim                            # condition one-hot
             + MOVE_NET_HIDDEN[1] * _num_moves           # processed moves (4×32)
@@ -460,6 +461,8 @@ class Gen3FeaturesExtractor(torch.nn.Module):
 
         ability_remnant_idx = abilities_info['offset'] + abilities_layout['known']['offset']
         ability_remnant = pokemon_part[:, :, ability_remnant_idx : ability_remnant_idx + abilities_layout['known']['dim']]
+        ability_dominance_idx = abilities_info['offset'] + abilities_layout['dominance']['offset']
+        ability_dominance = pokemon_part[:, :, ability_dominance_idx : ability_dominance_idx + abilities_layout['dominance']['dim']]
 
         condition_start = abilities_info['offset'] + abilities_info['dim']
         part_d = pokemon_part[:, :, condition_start : moves_offset]       # condition one-hot
@@ -538,6 +541,7 @@ class Gen3FeaturesExtractor(torch.nn.Module):
             embedded_pk_types,
             embedded_ability1,
             embedded_ability2,
+            ability_dominance,
             ability_remnant,
             part_d,
             processed_moves,

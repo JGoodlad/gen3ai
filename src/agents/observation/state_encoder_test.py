@@ -6,8 +6,8 @@ from poke_env.battle.abstract_battle import AbstractBattle
 from unittest.mock import MagicMock
 from .state_encoder import Gen3ObservationEncoder, load_mappings
 
-EXPECTED_BASE_DIM = 1535  # 6*98 teams(×2) + 46 active_ctx + 13 global + 300 reactive
-EXPECTED_OBS_DIM = 2426  # base + 11-dim prev_mask + 10 * 88-dim TurnDelta history
+EXPECTED_BASE_DIM = 1547  # 6*99 teams(×2) + 46 active_ctx + 13 global + 300 reactive
+EXPECTED_OBS_DIM = 2438  # base + 11-dim prev_mask + 10 * 88-dim TurnDelta history
 
 
 def test_encoder_dimension():

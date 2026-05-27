@@ -55,6 +55,17 @@ def load_mappings():
                     normalized[name] = {"num": int(val)}
             mappings[key] = normalized
 
+    # Load ability priors (Smogon Gen3 OU usage) — used for opp-unrevealed encoding.
+    # Format: {species_name: {ability_id: probability}}.
+    _ability_priors_path = "data/pokemon/gen3_ability_priors.json"
+    if not os.path.exists(_ability_priors_path):
+        raise FileNotFoundError(
+            f"CRITICAL: {_ability_priors_path} missing. Run "
+            "tools/smogon_stats_downloader/compute_ability_priors.py first."
+        )
+    with open(_ability_priors_path, "r") as f:
+        mappings["ability_priors"] = json.load(f)
+
     # Load natures from poke_env static data — used for spread encoding
     _natures_path = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", "..", "poke_env", "data", "static", "natures.json"))
     if not os.path.exists(_natures_path):
@@ -102,17 +113,14 @@ class Gen3ObservationEncoder(ObservationEncoder):
         self.species_encoder = SpeciesEncoder(mappings.get("species"), rev.get("species"))
         self.items_encoder = ItemsEncoder(mappings.get("items"), rev.get("items"))
         self.type_encoder = TypeEncoder()
-        # Build species → possible-abilities lookup so the encoder can emit
-        # dex priors (ability1, ability2) for unrevealed opp Pokémon.
-        species_to_abilities = {
-            sp_id: data["abilities"]
-            for sp_id, data in mappings.get("species", {}).items()
-            if isinstance(data, dict) and data.get("abilities")
-        }
+        # Smogon-derived per-species ability priors, loaded by load_mappings()
+        # from data/pokemon/gen3_ability_priors.json. The encoder picks the
+        # top-2 abilities by Smogon usage for opp-unrevealed slots and writes
+        # the dominance probability of ability1 alongside.
         self.abilities_encoder = AbilitiesEncoder(
             mappings.get("abilities"),
             rev.get("abilities"),
-            species_to_abilities=species_to_abilities,
+            species_to_ability_priors=mappings.get("ability_priors", {}),
         )
         self.moves_encoder = MovesEncoder(mappings.get("moves"), rev.get("moves"))
         
