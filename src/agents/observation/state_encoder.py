@@ -135,7 +135,12 @@ class Gen3ObservationEncoder(ObservationEncoder):
         
         self.active_context_encoder = ActiveContextEncoder(mappings.get("moves"))
         self.global_env_encoder = GlobalEnvEncoder()
-        self.reactive_encoder = ReactiveEncoder()
+        # ability_priors threads into reactive so matchup cells against
+        # unrevealed opp abilities show expected effectiveness instead of
+        # the live (None → 1.0×) fallback. Mirrors the AbilitiesEncoder wiring.
+        self.reactive_encoder = ReactiveEncoder(
+            ability_priors=mappings.get("ability_priors", {}),
+        )
         from agents.observation.turn_delta_encoder import TurnDeltaEncoder, TURN_DELTA_DIM as _TD_DIM
         self.turn_delta_encoder = TurnDeltaEncoder(
             mappings.get("moves", {}),

@@ -4,20 +4,69 @@ from poke_env.battle.abstract_battle import AbstractBattle
 from poke_env.battle.side_condition import SideCondition
 from .constants import REACTIVE_DIM, TEAM_SIZE
 from agents.gen3_mechanics import effective_multiplier
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 
-def _hp_expected_multiplier(move, attacker, opp, hp_tracker) -> float:
-    """Effectiveness of `move` against `opp`, with Hidden Power's unknown type
-    handled by averaging across the tracker's narrowed distribution.
-
-    For bare "hiddenpower" (opponent pre-reveal), poke-env's `move.type` defaults
-    to Normal, so the plain `effective_multiplier` is wrong. When a tracker is
-    available, compute the expected effectiveness over the 16 candidate types
-    weighted by their current probabilities. For typed HP variants (own team)
-    `move.type` is already correct, so we fall through to the plain path —
-    which is mathematically identical to the weighted sum against a one-hot.
+class _AbilityOverrideMon:
+    """Lightweight wrapper that overrides `mon.ability` while passing through
+    `type_1`, `type_2`, `status`, and anything else `effective_multiplier`
+    reads. Used to compute expected effectiveness across an opponent's
+    unrevealed-ability prior distribution without mutating the live Pokémon.
     """
+    __slots__ = ("_mon", "ability")
+
+    def __init__(self, mon, ability):
+        self._mon = mon
+        self.ability = ability or ""
+
+    def __getattr__(self, name):
+        return getattr(self._mon, name)
+
+
+def _resolve_ability_distribution(opp, ability_priors):
+    """Return a list of (ability_name, probability) pairs describing the
+    defender's ability — a singleton for known abilities, the Smogon-derived
+    prior distribution for unrevealed opponents, or a sentinel singleton
+    `(None, 1.0)` when we have no information (no priors loaded, or species
+    absent from the priors file). The `None` sentinel means "pass the mon
+    through unchanged" — recovers the pre-fix behaviour without a special case.
+
+    Treats both `None` *and* poke-env's `"unknownability"` sentinel as
+    unrevealed — the `AbilitiesEncoder` uses the same gate, so the two
+    encoders stay consistent about which mons are "known".
+    """
+    if opp is None:
+        return [(None, 1.0)]
+    ability = getattr(opp, "ability", None)
+    if ability and ability.lower().replace(" ", "").replace("_", "") != "unknownability":
+        return [(ability, 1.0)]
+    if ability_priors:
+        species = getattr(opp, "species", None)
+        if species:
+            priors = ability_priors.get(species)
+            if priors:
+                return list(priors.items())
+    return [(None, 1.0)]
+
+
+def _expected_multiplier(move, attacker, opp, hp_tracker, ability_priors) -> float:
+    """Joint-expectation effectiveness handling two independent uncertainties:
+
+    - **Attacker-side**: bare "hiddenpower" with an unrevealed type → the
+      `hp_tracker` exposes a 16-dim distribution narrowed by past observations.
+    - **Defender-side**: an opponent whose ability hasn't fired yet → the
+      Smogon-derived `ability_priors` give the per-species ability distribution.
+
+    Each axis collapses to a singleton when known: own-team typed HP gives a
+    1-entry type distribution; revealed opp ability gives a 1-entry ability
+    distribution. The joint expectation is therefore identical to the plain
+    `effective_multiplier(move.type, opp)` when nothing is uncertain.
+
+    Without `ability_priors` (no opp ability data available, e.g. evaluation
+    outside training), the defender path falls through to the live `mon.ability`
+    → preserves legacy behaviour for any caller that has never been wired up.
+    """
+    # Attacker-side: enumerate possible move types
     if (
         move.id == "hiddenpower"
         and hp_tracker is not None
@@ -26,11 +75,25 @@ def _hp_expected_multiplier(move, attacker, opp, hp_tracker) -> float:
         from agents.training.hidden_power_tracker import HIDDEN_POWER_TYPE_ORDER
         probs = hp_tracker.get_probs(attacker.species)
         if probs is not None and probs.sum() > 0:
-            return float(sum(
-                probs[i] * effective_multiplier(HIDDEN_POWER_TYPE_ORDER[i], opp)
+            type_dist = [
+                (HIDDEN_POWER_TYPE_ORDER[i], float(probs[i]))
                 for i in range(16) if probs[i] > 0
-            ))
-    return effective_multiplier(move.type, opp)
+            ]
+        else:
+            type_dist = [(move.type, 1.0)]
+    else:
+        type_dist = [(move.type, 1.0)]
+
+    # Defender-side: enumerate possible abilities
+    ability_dist = _resolve_ability_distribution(opp, ability_priors)
+
+    # Joint expectation
+    total = 0.0
+    for move_type, p in type_dist:
+        for ability, q in ability_dist:
+            target = opp if ability is None else _AbilityOverrideMon(opp, ability)
+            total += p * q * effective_multiplier(move_type, target)
+    return total
 
 
 class ReactiveEncoder(ObservationEncoder):
@@ -47,6 +110,15 @@ class ReactiveEncoder(ObservationEncoder):
     (HP and Spikes removed — duplicated in per-Pokémon vector and global env respectively)
     """
     
+    def __init__(self, ability_priors: Optional[Dict[str, Dict[str, float]]] = None):
+        """ability_priors: Smogon-derived per-species ability distributions
+        keyed by lowercase species name → {ability_id: probability}. Used to
+        compute expected matchup effectiveness against opponents whose ability
+        hasn't yet fired. None recovers legacy behaviour (no ability expectation —
+        equivalent to assuming the live `mon.ability` is authoritative).
+        """
+        self._ability_priors = ability_priors or {}
+
     @property
     def dimension(self) -> int:
         return REACTIVE_DIM
@@ -59,6 +131,12 @@ class ReactiveEncoder(ObservationEncoder):
         effectiveness across the tracker's narrowed distribution. Without it,
         bare HP slots fall back to poke-env's default move.type (typically
         Normal), preserving legacy behaviour when called outside training.
+
+        Ability priors are taken from `self._ability_priors` (set in __init__)
+        and applied to every matchup cell — for opponents with an unrevealed
+        ability, the cell is the expected effectiveness across the prior
+        distribution; for revealed/own-team mons it collapses to the exact
+        value via the proxy in `_expected_multiplier`.
         """
         vec = np.zeros(self.dimension, dtype=np.float32)
         if battle is None:
@@ -86,8 +164,12 @@ class ReactiveEncoder(ObservationEncoder):
                     break
                 moves_base_power[i] = move.base_power / 200.0
                 if battle.opponent_active_pokemon is not None:
-                    mult = _hp_expected_multiplier(
-                        move, battle.active_pokemon, battle.opponent_active_pokemon, hp_tracker
+                    mult = _expected_multiplier(
+                        move,
+                        battle.active_pokemon,
+                        battle.opponent_active_pokemon,
+                        hp_tracker,
+                        self._ability_priors,
                     )
                     moves_dmg_multiplier[i] = mult / 4.0
 
@@ -121,7 +203,9 @@ class ReactiveEncoder(ObservationEncoder):
                     their_mon = their_team[j] if j < len(their_team) else None
                     if move and their_mon:
                         # Normalize by 4.0 to keep values in [0, 1] range for better MLP convergence
-                        vec[cursor] = _hp_expected_multiplier(move, our_mon, their_mon, hp_tracker) / 4.0
+                        vec[cursor] = _expected_multiplier(
+                            move, our_mon, their_mon, hp_tracker, self._ability_priors
+                        ) / 4.0
                     cursor += 1
 
         # 6. Their moves vs Our mons (144 dims)
@@ -134,7 +218,9 @@ class ReactiveEncoder(ObservationEncoder):
                     our_mon = our_team[j] if j < len(our_team) else None
                     if move and our_mon:
                         # Normalize by 4.0 to keep values in [0, 1] range for better MLP convergence
-                        vec[cursor] = _hp_expected_multiplier(move, their_mon, our_mon, hp_tracker) / 4.0
+                        vec[cursor] = _expected_multiplier(
+                            move, their_mon, our_mon, hp_tracker, self._ability_priors
+                        ) / 4.0
                     cursor += 1
         
         return vec

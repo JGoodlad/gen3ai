@@ -519,6 +519,85 @@ Old checkpoints fail `check_compatible()` on the `move_network` Linear shapes �
 under the project's rapid-iteration stance, and surfaces as a clean error at startup
 via the model-version round-trip smoke test.
 
+### Ability-priors path: joint expectation in the matchup matrix
+
+The HP work surfaced a parallel gap on the *defender* side. `effective_multiplier(move_type, mon)`
+already applies ability immunity (Levitate / Volt Absorb / Water Absorb / Flash Fire) and
+damage-halving (Thick Fat) when `mon.ability` is set, but for opponents whose ability hasn't
+fired yet `mon.ability` is `None` (or poke-env's `"unknownability"` sentinel) and the lookup
+returns 1.0 — so the matchup cell for Earthquake vs an unrevealed Levitate Gengar shows ~1×
+instead of 0×.
+
+The Smogon-derived `data/pokemon/gen3_ability_priors.json` (added by upstream commits
+`46854fa` + `fcd8034`) already feeds the per-mon ability block as `[ability1_id, ability2_id,
+dominance, known]`, but only into the role encoder. The same priors are now threaded into
+the matchup-matrix computation via a generalised joint expectation:
+
+```python
+def _expected_multiplier(move, attacker, opp, hp_tracker, ability_priors) -> float:
+    # Axis 1 (attacker): HP type distribution if bare "hiddenpower", else singleton
+    if move.id == "hiddenpower" and hp_tracker is not None and attacker is not None:
+        probs = hp_tracker.get_probs(attacker.species)
+        type_dist = [(HIDDEN_POWER_TYPE_ORDER[i], float(probs[i]))
+                     for i in range(16) if probs[i] > 0] if probs.sum() > 0 \
+                    else [(move.type, 1.0)]
+    else:
+        type_dist = [(move.type, 1.0)]
+    # Axis 2 (defender): ability priors if unrevealed, else singleton on mon.ability
+    ability_dist = _resolve_ability_distribution(opp, ability_priors)
+    # Joint expectation across both independent uncertainties
+    total = 0.0
+    for move_type, p in type_dist:
+        for ability, q in ability_dist:
+            target = opp if ability is None else _AbilityOverrideMon(opp, ability)
+            total += p * q * effective_multiplier(move_type, target)
+    return total
+```
+
+Each axis collapses to a singleton when known:
+- Own-team typed HP → `type_dist = [(move.type, 1.0)]` → identical to direct lookup
+- Revealed opp ability → `ability_dist = [(mon.ability, 1.0)]` → identical to direct lookup
+- Both known → the joint becomes a single `effective_multiplier(move.type, opp)` call
+
+So own-team and revealed-opp matchups are mathematically unchanged; only unrevealed opp
+abilities now show expected effectiveness instead of the naive 1.0-multiplier fallback.
+
+**`_AbilityOverrideMon`** is a lightweight `__slots__`-based proxy that overrides
+`mon.ability` while delegating everything else (`type_1`, `type_2`, `status`, `species`)
+to the live Pokémon via `__getattr__`. Status delegation is critical — it preserves the
+Flash Fire-vs-frozen quirk (`effective_multiplier` reads `mon.status` to decide whether
+the Fire immunity is suppressed) and avoids needing a separate code path for the
+hypothetical-ability evaluation. Pattern mirrors `_HpTargetMon` in `episode_tracker.py`.
+
+**Unrevealed gate** matches `AbilitiesEncoder` at `abilities.py:75`:
+
+```python
+if ability and ability.lower().replace(" ", "").replace("_", "") != "unknownability":
+    return [(ability, 1.0)]  # known
+```
+
+poke-env reports `"unknownability"` (not `None`) for opp mons in some code paths — both
+sentinels must route to the priors lookup, otherwise the two encoders would disagree on
+which mons are "known" and the matchup matrix would silently skip priors for those slots.
+
+**Wiring:** `ReactiveEncoder.__init__(ability_priors)` takes the priors once at
+construction (set by `state_encoder` from `mappings["ability_priors"]`), mirroring how
+the priors are passed into `AbilitiesEncoder`. `encode()` still takes `hp_tracker` per
+call since the tracker is per-episode state, while priors are static data.
+
+**Performance** measured at 100k iterations per case on the unit-test mon mocks:
+
+| Cell type | µs/call | Per turn (288 cells, hypothetical) |
+|-----------|---------|------------------------------------|
+| Typed move × known/single-ability opp | 1.9 | 0.54 ms |
+| Typed move × 2-ability uncertain opp | 3.7 | 1.05 ms |
+| HP attacker × 2-ability uncertain opp (worst) | 56 | 16 ms |
+
+Realistic-mix per turn (~280 cells in (A) + ~6 cells in (B) + ~2 cells in (C)) lands at
+**~0.66 ms/turn** — well under 5% of a typical environment step. The 9k-call worst case
+is unreachable because most cells have either a typed move (axis 1 collapses) or a
+known/single-ability defender (axis 2 collapses).
+
 ### Independent fuzz validator (`hidden_power_tracker_fuzz_e2e_test.py`)
 
 The fuzz test reimplements HP-target resolution from raw battle state with a parallel
@@ -655,6 +734,14 @@ directly or called `record(battle, mask, obs)`. All were updated to the new sign
 | `reactive_test.py::test_no_tracker_falls_back_to_move_type` | No-tracker path preserves legacy behaviour for inference outside training |
 | `reactive_test.py::test_non_hp_move_unchanged` | Non-HP moves ignore the tracker entirely |
 | `reactive_test.py::test_levitate_blocks_ground_hp` | One-hot Ground HP vs Levitate = literal 0× (real immunity, not unknown) |
+| `reactive_test.py::test_unrevealed_single_ability_collapses_to_known_value` | Earthquake vs unrevealed Gengar (priors 100% Levitate) → 0× |
+| `reactive_test.py::test_unrevealed_two_ability_gives_weighted_value` | Ice Beam vs unrevealed Snorlax (0.86 Immunity / 0.14 Thick Fat) → 0.93× |
+| `reactive_test.py::test_revealed_ability_ignores_priors` | Revealed Thick Fat Snorlax collapses to exact 0.5× ignoring priors |
+| `reactive_test.py::test_no_priors_falls_back_to_live_ability` | No priors → reads `mon.ability` directly (legacy behaviour) |
+| `reactive_test.py::test_species_absent_from_priors_falls_through` | Species not in priors file → falls through to type-chart only |
+| `reactive_test.py::test_ability_with_no_type_relevance_doesnt_affect_matchup` | Tentacruel Clear Body / Liquid Ooze split — matchup unchanged at 2× |
+| `reactive_test.py::test_joint_hp_and_ability_uncertainty_composes` | 4-way cross-product: `[0.5 Ice, 0.5 Grass]` HP vs unrevealed Snorlax |
+| `reactive_test.py::test_unknownability_sentinel_treated_as_unrevealed` | poke-env's `"unknownability"` string routes to priors, matching `AbilitiesEncoder` |
 | `features_extractor_hp_test.py::test_hp_type_idx_map_matches_type_encoder` | The (16,) buffer maps HP slot i → row in `type_embedding` for that type |
 | `features_extractor_hp_test.py::test_one_hot_hp_distribution_collapses_to_direct_lookup` | `p @ type_embedding[hp_type_idx_map] == type_embedding(known_idx)` for one-hot p |
 | `features_extractor_hp_test.py::test_hp_slot_detection_only_fires_on_canonical_move_num` | `is_hp_slot` mask triggers only on `move_num == HIDDEN_POWER_MOVE_NUM` |
@@ -714,7 +801,8 @@ Requires a live Showdown server (`npm run showdown`).
 | `src/agents/training/hidden_power_tracker.py` (later commits) | `mark_no_hp(species)` ruled-out path; per-species observation log dumped on the impossible-observation `ValueError` |
 | `src/agents/gen3_mechanics.py` (later commits) | `bucket_effectiveness(mult)` helper collapsing raw multipliers into the {0.0, 0.5, 1.0, 2.0} reported buckets |
 | `src/agents/observation/moves.py` | `HIDDEN_POWER_MOVE_NUM = 237` module constant (canonical HP detector) |
-| `src/agents/observation/reactive.py` | `_hp_expected_multiplier()` helper; `ReactiveEncoder.encode()` takes `hp_tracker=`; applied to both 4-dim active-move and 144+144-dim matchup paths |
-| `src/agents/observation/reactive_test.py` | **New** — 7 unit tests for the expected-effectiveness helper |
+| `src/agents/observation/reactive.py` | `_expected_multiplier()` joint-expectation helper (HP type × ability priors); `_AbilityOverrideMon` proxy; `_resolve_ability_distribution()`; `ReactiveEncoder.__init__(ability_priors=)` for static priors; `encode()` still takes `hp_tracker=` per call. Applied to the 4-dim active-move and 144+144-dim matchup paths |
+| `src/agents/observation/reactive_test.py` | **New** — 15 unit tests covering HP, ability priors, joint uncertainty, and the `"unknownability"` sentinel |
+| `src/agents/observation/state_encoder.py` | Passes `mappings["ability_priors"]` to `ReactiveEncoder` at construction (mirrors the `AbilitiesEncoder` wiring) |
 | `src/agents/model/features_extractor.py` | `MOVE_NET_HIDDEN` 64→96; `hp_type_idx_map` buffer; weighted type embedding for HP slots; appended `hp_probs_per_slot` (16) + `matchup_validity` (6) to `move_network` input (58→80) |
 | `src/agents/model/features_extractor_hp_test.py` | **New** — 5 unit tests for the weighted embedding, validity mask, and forward smoke |

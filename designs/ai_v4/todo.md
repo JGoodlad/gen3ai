@@ -146,7 +146,39 @@ No current bugs identified, but worth flagging as a recurring foot-gun.
 
 ---
 
-## 7. Reward signal cross-product matrix
+## 7. Broadcast ability priors into the move_network input
+
+**Where:** `src/agents/model/features_extractor.py` move_features concat (~line 540)
+
+The defender's 4-dim ability block (`[ability1_id, ability2_id, dominance, known]`)
+reaches the **role encoder** but never the per-move processor. After fixing the
+matchup-cell math to factor in expected ability immunity (see commit landing
+expected-matchup-with-ability), the role token carries the *abilities-likely* signal
+and the matchup cell carries the *expected effectiveness*. Cross-team attention
+(Threat / Pressure) connects them.
+
+If the model still under-reads critical immunities (e.g. fails to switch out of
+Earthquake when opp has 95%+ Levitate-likely), broadcast the opp's 4-dim ability
+block per matchup cell into `move_network` input the same way we did with the
+16-dim HP probs. Per cell: `[ability1_id, ability2_id, dominance, known]` × 6 opps
+= 24 extra dims per move slot (or compress to dominance + "ability-affects-this-move"
+flag).
+
+**Defer until evidence of under-reading.** The matchup-cell fix gives the model the
+correct expected effectiveness; the role encoder already carries the ability
+embedding; cross-team attention can connect the two. Adding dims has clear cost
+(param count, churn, weight-shape invalidation) and should only land if it's
+demonstrably better than what the attention paths can derive on their own.
+
+**Detection sketch:** Sample 50 battles where opp has high-dominance Levitate and
+we click a Ground move on turn 1 (before the immunity is revealed). Track:
+- Pre-fix: how often we pick Ground anyway (model treats matchup cell as 1×).
+- Post-fix: how often the corrected matchup cell (~0×) steers us to a different move.
+- If a meaningful gap remains after the matchup fix, this TODO becomes actionable.
+
+---
+
+## 8. Reward signal cross-product matrix
 
 **Where:** `src/agents/training/reward_invariants_e2e_test.py`
 
