@@ -68,6 +68,11 @@ def _make_battle(encoder):
     battle.last_request = None
     battle.our_last_effectiveness = None
     battle.opp_last_effectiveness = None
+    # Explicit None — otherwise MagicMock auto-creates a tree whose
+    # .user_species / .target_species would leak into the TurnDelta encoder
+    # and trip its strict species lookup.
+    battle.our_last_damaging_move = None
+    battle.opp_last_damaging_move = None
     battle.we_moved_first = None
     battle.turn = 1
     return battle

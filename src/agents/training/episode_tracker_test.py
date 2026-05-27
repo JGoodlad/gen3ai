@@ -11,7 +11,11 @@ from unittest.mock import MagicMock
 
 from agents.training.battle_context import BattleContext, TurnDelta
 from agents.training.episode_tracker import EpisodeTracker
-from agents.observation.turn_delta_encoder import TurnDeltaEncoder, TURN_DELTA_DIM
+from agents.observation.turn_delta_encoder import (
+    TurnDeltaEncoder,
+    TURN_DELTA_DIM,
+    OFFSET_OUR_HP_DELTA_SUM,
+)
 from agents.observation.state_encoder import load_mappings
 from agents.gen3_mechanics import BOOST_DIM
 
@@ -22,7 +26,10 @@ from agents.gen3_mechanics import BOOST_DIM
 
 def _make_encoder():
     mappings = load_mappings()
-    return TurnDeltaEncoder(mappings.get("moves", {}))
+    return TurnDeltaEncoder(
+        mappings.get("moves", {}),
+        mappings.get("species", {}),
+    )
 
 
 def _make_ctx(turn: int = 0, our_hp0: float = 1.0) -> BattleContext:
@@ -207,8 +214,8 @@ def test_prev_N_delta_vecs_ordering_oldest_first():
     """Index 0 = oldest delta, index n-1 = most recent.
 
     We create contexts with decreasing HP at slot 0, so our_hp_delta
-    (field at index 17 of the encoded vector) is negative and distinct per turn.
-    The magnitude tells us which delta is which.
+    (the our_hp_delta_sum scalar within the base block) is negative and
+    distinct per turn. The magnitude tells us which delta is which.
     """
     encoder = _make_encoder()
     tracker = EpisodeTracker()
@@ -225,8 +232,9 @@ def test_prev_N_delta_vecs_ordering_oldest_first():
 
     # Slot 1 = delta between ctxs[0] and ctxs[1] (oldest: hp_delta = 0.9-1.0 = -0.1)
     # Slot 4 = delta between ctxs[3] and ctxs[4] (most recent: hp_delta = 0.0-0.4 = -0.4)
-    # hp_delta is at raw obs index 17 in the 39-dim TurnDelta vector.
-    OUR_HP_DELTA_IDX = 17
+    # Drive the offset from the encoder constant so a layout shift surfaces
+    # in the error message instead of silently pointing at the wrong field.
+    OUR_HP_DELTA_IDX = OFFSET_OUR_HP_DELTA_SUM
     delta_oldest = TurnDelta.build(ctxs[0], ctxs[1], 0)
     delta_newest = TurnDelta.build(ctxs[3], ctxs[4], 0)
     oldest_encoded = encoder.encode(delta_oldest)

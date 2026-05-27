@@ -353,7 +353,10 @@ def _get_encoder():
     global _MAPPINGS, _ENCODER
     if _ENCODER is None:
         _MAPPINGS = load_mappings()
-        _ENCODER = TurnDeltaEncoder(_MAPPINGS.get("moves", {}))
+        _ENCODER = TurnDeltaEncoder(
+            _MAPPINGS.get("moves", {}),
+            _MAPPINGS.get("species", {}),
+        )
     return _ENCODER
 
 

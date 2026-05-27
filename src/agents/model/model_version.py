@@ -12,7 +12,15 @@ MODEL_CONFIG_VERSION = 2
 # weights from a different signature incompatible (e.g. adding LSTM, replacing attention).
 # Same-family dim changes (role_token_size 128→256) don't need a new signature —
 # check_compatible() catches those via the dim fields.
-ARCH_SIGNATURE = "gen3_unified_v1"
+#
+# v2 (gen3_unified_v2): turn-history TurnDelta slot expanded to 88 dims —
+#   actor / target / switch_to species IDs (×6), boost deltas (×14), phase flag,
+#   target_hp_delta, per-slot HP-level vectors, target-status onehots (×14, at
+#   move-fire time, for Flash Fire-vs-frozen and sleep-talker reads). The history
+#   embedding now reaches the species_embedding table for the first time, a new
+#   wire that's not weight-compatible with v1 even if total_dim coincidentally
+#   matched.
+ARCH_SIGNATURE = "gen3_unified_v2"
 
 
 class ModelVersionError(Exception):

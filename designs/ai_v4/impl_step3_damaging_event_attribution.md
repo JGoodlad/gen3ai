@@ -10,10 +10,22 @@ lookup, and the Roar/phazing workarounds all delete — total HP-attribution cod
 shrinks from ~70 lines to ~5. A silent gap in Flash Fire effectiveness reporting
 was found and fixed along the way.
 
+A follow-on pass then **threads the protocol-truth data into the model's
+observation**: the per-turn `TurnDelta` slot in the turn-history block grows from
+39 dims → 88 dims, picking up actor/target/switch_to species IDs (routed through
+the existing `species_embedding` table), boost deltas, a forced-switch phase
+flag, per-side target HP deltas, full per-slot HP-level vectors, and target-
+status onehots at move-fire time. `ARCH_SIGNATURE` bumps to `gen3_unified_v2`.
+After this pass the model can finally learn cross-turn inferences like "Hidden
+Power was SE against the mon we switched in 3 turns ago" — the original
+motivation for step 3's protocol-truth attribution.
+
 Primary themes: protocol-truth over snapshot-diff inference, the pending → promote
 pattern that distinguishes "tentative neutral" from "confirmed effectiveness", an
 intent-correct `our_switch_to` semantic that survives force-replacement chains,
-and a fuzz validator restructured around protocol cross-checks.
+a fuzz validator restructured around protocol cross-checks, and a "this-side-
+this-turn" convention for the model-facing slot that keeps `our_*` fields
+semantically consistent across every column.
 
 ---
 
@@ -506,21 +518,224 @@ steps), zero tracker errors across the run.
 `test_turn_delta_build_switch_action_uses_intent_not_end_state`). Nine
 pre-existing `launcher_ui_test.py` failures unrelated to this work.
 
+### TurnDelta history expansion — added tests
+
+`turn_delta_encoder_test.py` grew from 11 to 22 tests covering the extended
+slot:
+
+| Test | What it validates |
+|------|-------------------|
+| `test_dimension` | `TURN_DELTA_DIM == 88` |
+| `test_boost_deltas_encoded` | Raw 7-dim signed boost deltas pass through |
+| `test_phase_forced_switch_flag` | 0/1 flag from `delta.phase_is_forced_switch` |
+| `test_target_hp_delta_signed` / `_none_is_zero` | Signed scalar + None→0.0 coercion |
+| `test_hp_levels_vector` | 6-dim per-side `hp_after` round-trips |
+| `test_actor_species_falls_back_to_prev_active` | No event → `prev_active` species ID |
+| `test_actor_species_prefers_damaging_event_user` | Event `user_species` wins (mirror match correctness) |
+| `test_target_species_from_damaging_event` | "This-side-this-turn" convention: `our_target_species_id` ← `opp_damaging_event.target_species` |
+| `test_switch_to_species_encoded` / `_zero_when_no_switch` | Sentinel handling for switch-to slot |
+| `test_target_status_onehot_encoded` / `_zero_when_no_status` | 7-state status onehot with sentinel zero |
+| `test_unknown_species_raises` | `ValueError` on non-sentinel species not in mapping |
+| `test_sentinel_species_encode_to_zero` | `None`/`"NONE"`/`"NULL"` stay at id 0 without raising |
+| `test_describe_vector_decodes_extended_fields` | Full round-trip on every new field with both sides' events |
+
+`state_encoder_test.EXPECTED_OBS_DIM` 1924 → 2414. `episode_tracker_test`'s
+encoder factory now passes the species mapping, and its `OUR_HP_DELTA_IDX`
+is driven from `OFFSET_OUR_HP_DELTA_SUM` rather than a magic number.
+`player_test._make_battle` mock fixed to stub `our_last_damaging_move` /
+`opp_last_damaging_move` to `None` (latent test bug surfaced by the new
+strict species lookup).
+
+Post-expansion: **779 passing**, two-step `train_rl_agent.py --debug`
+smoke (5000 + 10000 steps): exit 0, `[ModelVersion] Round-trip smoke test
+PASSED`, evaluation completes against all five fixed bots.
+
+---
+
+## Exposure to the Model: TurnDelta History Expansion
+
+The damaging event sat on `BattleContext` and was consumed by the reward
+function and HP tracker, but the model's observation tail (the
+`N_HISTORY_TURNS` × 39-dim turn-history block) didn't carry it. The history
+block only encoded *what move ID fired* and *summed HP deltas* — actor,
+target, switch_to identities, target status, and boost magnitudes were all
+dropped at the encoder boundary. The model could see "Hidden Power was SE
+last turn" but not "SE against the mon we just switched in."
+
+This sub-step routes the protocol-truth attribution data directly into the
+slot, expanding it from 39 → 88 dims.
+
+### The "this-side-this-turn" convention
+
+Every `our_*` field in the slot describes the mon ON our side this turn,
+mirrored for `opp_*`:
+
+| Field | Source | Meaning |
+|-------|--------|---------|
+| `our_actor_species_id` | `delta.our_damaging_event.user_species` ∪ `delta.our_prev_active` | The mon on our side that acted |
+| `our_target_species_id` | `delta.opp_damaging_event.target_species` | The mon on our side that opp hit |
+| `our_target_status` | `delta.opp_damaging_event.target_status` | Its status at move-fire time |
+| `our_target_hp_delta` | `delta.our_hp_delta[slot_of(opp_event.target_species)]` | HP loss on the named target |
+| `our_switch_to_species_id` | `delta.our_switch_to` | The mon we sent in |
+| `our_boost_delta` | `delta.our_boost_delta` | Stat-stage change on our active |
+| `our_hp_levels` (6) | `delta.our_hp_after` | End-of-turn HP for every team slot |
+
+A semantic mismatch was caught and fixed in code review: an early
+implementation had `our_target_species_id` sourced from `our_damaging_event`
+(the mon we hit on opp's side), which would have silently miscoded training
+data — the species ID and the hp_delta scalar at the same `our_target_*`
+prefix described Pokémon on opposite sides. Now everything under the `our_*`
+prefix is consistently "what happened to / on our side this turn."
+
+### Slot layout (88 dims, indices 0–87)
+
+Indices 0–38 are the legacy base block (unchanged positions for layout
+stability — old encoders' assumptions about the move/type/cant/effectiveness
+positions still hold). Indices 39–87 are the new extended block, grouped by
+purpose:
+
+| Offset | Dims | Field |
+|--------|------|-------|
+| 39 | 7 | `our_boost_delta` (BOOST_STATS order) |
+| 46 | 7 | `opp_boost_delta` |
+| 53 | 1 | `phase_is_forced_switch` |
+| 54–55 | 2 | `our_target_hp_delta`, `opp_target_hp_delta` |
+| 56 | 6 | `our_hp_levels` (end-of-turn HP for all team slots) |
+| 62 | 6 | `opp_hp_levels` |
+| 68 | 7 | `our_target_status_onehot` (BRN, FNT, FRZ, PAR, PSN, SLP, TOX) |
+| 75 | 7 | `opp_target_status_onehot` |
+| 82–87 | 6 | Six raw species IDs — our/opp × actor/target/switch_to |
+
+Named offset constants `OFFSET_OUR_BOOST_DELTA` … `OFFSET_OPP_SWITCH_TO_SPEC`
+are exported from `turn_delta_encoder.py` so external code (tests, debug
+tooling) never magic-number-indexes into the slot. Two named constants for
+the base block (`OFFSET_OUR_HP_DELTA_SUM`, `OFFSET_OPP_HP_DELTA_SUM`) cover
+the two positions that are referenced from outside the encoder.
+
+### Phase flag — what is "one slot of history"?
+
+`EpisodeTracker.record()` appends a `BattleContext` *every time the agent is
+asked for input*, not every Showdown turn. A real turn that includes a
+faint produces two slots: `move_selection_N → forced_switch` (captures opp's
+killing move + our faint) and `forced_switch → move_selection_{N+1}`
+(captures our replacement choice). This is the natural human framing —
+"they KO'd me, I picked a replacement" reads as two events — and the
+actor/target binding for the killing move stays intact in one slot.
+
+But the model needed a way to distinguish a half-turn replacement slot from
+a full action-pair slot. `phase_is_forced_switch` (1 dim, sourced from
+`BattleContext.phase`) flips the bit, preventing the model from reading "no
+opp move this slot" as "opp voluntarily passed."
+
+### Per-slot HP levels, not deltas
+
+The slot stores `our_hp_after` / `opp_hp_after` (6 floats each, end-of-turn
+HP for every team slot) rather than per-slot deltas. Levels strictly
+dominate deltas at the same dim cost:
+
+- Adjacent-position deltas are recoverable by attention subtracting consecutive slots
+- Levels additionally give the model absolute reference points ("this mon has been at 5% for 3 turns and isn't dead → Recover pending or Sitrus held"), which deltas can't express
+
+The single-scalar `our_hp_delta_sum` at offset 24 also stays in the base
+block for backwards-compatible coarse signal — the level vector is the
+richer alternative, not a replacement.
+
+### Strict species lookup
+
+`_species_id(species)` previously fell back to ID 0 for any unknown name.
+That collided with the "no actor / target / switch_to / unrevealed"
+sentinel (also ID 0), so a typo or a stale `gen3_species.json` would
+silently train on the wrong embedding. It now:
+
+- Returns 0 for `None` / `"NONE"` / `"NULL"` — the legitimate empty case
+- **Raises `ValueError`** for any other species name not in the mapping
+
+This matches `SpeciesEncoder.encode()`'s existing convention. A latent bug
+in `player_test._make_battle` surfaced immediately — the mock didn't stub
+`our_last_damaging_move` / `opp_last_damaging_move`, so `MagicMock`
+auto-created a tree whose `.user_species` (another `MagicMock`) leaked into
+the encoder. Previously masked by the silent fallback; now an explicit
+`= None` in the mock.
+
+### `_embed_delta_slot` extension
+
+`Gen3FeaturesExtractor._embed_delta_slot` now threads `species_embedding`
+alongside `move_embedding` and `type_embedding`. Each history slot's 4 raw
+move/type IDs (positions 0, 4, 5, 9) plus 6 raw species IDs (contiguous at
+slot tail, offsets 82–87) get looked up and concatenated with the 78
+pass-through scalars:
+
+```
+_td_embed_dim = 2 * move_emb + 2 * type_emb + 6 * species_emb + (TURN_DELTA_DIM - 10)
+              = 2*16 + 2*16 + 6*32 + 78
+              = 334
+```
+
+`history_proj` Linear's input dim auto-adjusts in `__init__` because the
+projection input dim is discovered via dummy forward pass — no manual
+plumbing change. Layer reuse means no new embedding table.
+
+### Observation dimension growth
+
+| Block | Pre-expansion | Post-expansion |
+|-------|---------------|----------------|
+| Base (teams + active ctx + global + reactive) | 1523 | 1523 |
+| Prev-turn action mask | 11 | 11 |
+| Turn history (N × slot_dim) | 10 × 39 = 390 | 10 × 88 = 880 |
+| **Total** | **1924** | **2414** |
+
+### Architecture version bump
+
+`ARCH_SIGNATURE` changed from `"gen3_unified_v1"` to `"gen3_unified_v2"`.
+The total_dim mismatch alone would catch v1 checkpoints via
+`check_compatible()`, but the signature bump produces an explicit
+"architecture family mismatch" error — and the slot extension introduces a
+new wire (the species_embedding table is now reached from the history
+block, which it never was before in v1), so the structural break is real.
+`MODEL_CONFIG_VERSION` stays at 2; no migration needed because every
+weight-shape difference is covered by existing fields plus the signature.
+
+### TurnDelta extensions (`battle_context.py`)
+
+| Field | Type | Default | Purpose |
+|-------|------|---------|---------|
+| `phase_is_forced_switch` | `bool` | `False` | From `curr_ctx.phase == "forced_switch"` |
+| `our_hp_after` | `np.ndarray` (6,) float32 | zeros | Copied from `curr_ctx.our_hp` |
+| `opp_hp_after` | `np.ndarray` (6,) float32 | zeros | Copied from `curr_ctx.opp_hp` |
+| `our_target_hp_delta` | `Optional[float]` | `None` | HP delta on opp's damaging-event target on our side |
+| `opp_target_hp_delta` | `Optional[float]` | `None` | Symmetric |
+
+`_resolve_target_hp_delta(event, hp_delta, slot_map)` is a small helper that
+looks up the named target species in the slot map and returns the delta at
+that slot — None when no event fired or the target isn't in the map.
+
+### `Optional[float]` → 0.0 ambiguity in encoded slot
+
+`target_hp_delta` is coerced `None → 0.0` in the encoded vector. "No
+damaging event this turn" and "event with exactly zero damage" both encode
+as 0.0 — but the paired actor / target species IDs collapse to 0 in the
+no-event case, and `power_norm` / effectiveness onehots are also zero, so
+the model has multiple signals to disambiguate. Not worth a separate
+validity bit.
+
 ---
 
 ## What This Enables
 
 The protocol's `|move|<user>|<move>|<target>|` line is now first-class data on
-`BattleContext`. Downstream consumers that needed this information had no clean
-way to ask for it:
+`BattleContext`, **and** the protocol-truth attribution data is now in the
+model's observation through the expanded turn-history block:
 
 - **Reward shaping** can attribute pressure correctly. "Opp Pursuit'd our
   switch" is now a single field check — previously required cross-referencing
   prev/curr active mons against `delta.our_switch_to` and move IDs.
-- **Turn-history features** (Step 4+) can record real events rather than
-  inferred ones. The 39-dim TurnDelta block currently computes effectiveness
-  from move IDs; with the event in hand, it can use the observed value
-  directly.
+- **Turn-history features** record real events rather than inferred ones —
+  shipped in this same step. The 88-dim TurnDelta slot now carries actor,
+  target, target_status, switch_to species, boost magnitudes, phase, and
+  per-slot HP levels in addition to the legacy move/effectiveness scalars.
+  The model can learn cross-turn inferences like Hidden Power type narrowing
+  by target species, Toxic-on-Steel immunity confirmation, CM-magnitude
+  reads, post-KO forced-in identity, and mirror-match attribution.
 - **Replay analysis** in tooling can show ground-truth attribution. The Step 2
   `_resolve_hp_target` was production-only — no replay viewer could call into
   it without dragging in the full episode tracker. The damaging event is
@@ -541,3 +756,13 @@ way to ask for it:
 | `src/agents/training/hidden_power_tracker_fuzz_e2e_test.py` | **Delete** `_resolve_target`, `_snapshot_target`, `_is_switch_order`, all `_prev_*` tracking, the turn_log diagnostic; **add** `_protocol_says_hp` cross-check, `_observed_keys` dedupe, `_observe_event` helper; choose_move shrinks to a thin event router; ~38% net line reduction |
 | `src/agents/training/battle_context_test.py` | Set `our_team_order` on prev in switch-action tests; new `test_turn_delta_build_switch_action_uses_intent_not_end_state` covering the multi-faint regression |
 | `src/agents/training/battle_recorder_test.py` | `_battle` helper sets `our_last_damaging_move = None`, `opp_last_damaging_move = None` so the namespace stub satisfies `BattleContext.from_battle` |
+| `src/agents/training/battle_context.py` (TurnDelta expansion) | Add `phase_is_forced_switch`, `our/opp_hp_after`, `our/opp_target_hp_delta` fields with defaults; `_resolve_target_hp_delta` helper; `build()` populates them via `curr_ctx.phase`, `curr_ctx.{our,opp}_hp.copy()`, and slot-map lookup |
+| `src/agents/observation/turn_delta_encoder.py` | `TURN_DELTA_DIM` 39 → 88; new constants `STATUS_DIM`, `HP_LEVEL_DIM`, `SPECIES_ID_COUNT`, `OFFSET_OUR_HP_DELTA_SUM`/`OFFSET_OPP_HP_DELTA_SUM` (base block) and `OFFSET_OUR_BOOST_DELTA` … `OFFSET_OPP_SWITCH_TO_SPEC` (extended block); accept `gen3_species` mapping; `_species_id` (raises on unknown non-sentinel); `_status_onehot`; `_actor_species` / `_target_species` helpers using "this-side-this-turn" convention; `encode()` emits extended block; `describe_vector` decodes every new field |
+| `src/agents/model/features_extractor.py` | `_embed_delta_slot` extended to look up 6 species IDs via `species_embedding`; `_td_embed_dim` formula updated (`+ 6 * species_emb`, `- 10` raw IDs); `history_proj` input auto-adjusts |
+| `src/agents/model/model_version.py` | `ARCH_SIGNATURE` `"gen3_unified_v1"` → `"gen3_unified_v2"` with changelog comment listing the slot additions |
+| `src/agents/observation/state_encoder.py`, `src/agents/training/gen3_env.py`, `src/agents/inference/player.py`, `src/agents/training/poke_env_gaps/effectiveness_fuzz_e2e_test.py` | TurnDeltaEncoder constructor call sites pass `mappings.get("species", {})` |
+| `src/agents/observation/turn_delta_encoder_test.py` | Rewritten: minimal `_SPECIES` fixture, `TURN_DELTA_DIM == 88` assertion, +11 new tests covering every extended field including the strict-species raise and sentinel paths |
+| `src/agents/observation/state_encoder_test.py` | `EXPECTED_OBS_DIM` 1924 → 2414 (and 2274 in the in-between commit) |
+| `src/agents/training/episode_tracker_test.py` | Encoder factory passes species mapping; `OUR_HP_DELTA_IDX` imported from `OFFSET_OUR_HP_DELTA_SUM` |
+| `src/agents/inference/player_test.py` | Mock battle explicitly stubs `our/opp_last_damaging_move = None` (surfaced by strict species lookup) |
+| `CLAUDE.md` | Observation Vector table updated: 1525 → 2414 total dim, turn-history slot 39 → 88 dims, prev_mask offset 1319 → 1523, history offset 1330 → 1534; turn-history slot section rewritten to describe base + extended layout |

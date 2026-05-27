@@ -56,7 +56,8 @@ class Gen3Player(Player):
             self.observation_encoder = get_observation_encoder(self.mappings)
         if self._turn_delta_encoder is None:
             self._turn_delta_encoder = TurnDeltaEncoder(
-                self.mappings.get("moves", {}) if self.mappings else {}
+                self.mappings.get("moves", {}) if self.mappings else {},
+                self.mappings.get("species", {}) if self.mappings else {},
             )
 
         # Record first so the tracker's HP candidates are up-to-date BEFORE

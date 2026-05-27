@@ -9,6 +9,24 @@ from agents.training.slot_registry import SlotRegistry
 from agents.gen3_mechanics import PHAZING_MOVES, BOOST_DIM, boosts_array
 
 
+def _resolve_target_hp_delta(
+    event: Optional[DamagingMoveEvent],
+    hp_delta: np.ndarray,
+    slot_map: dict,
+) -> Optional[float]:
+    """Look up the HP delta on the species named by event.target_species.
+
+    Returns None when the event is None or the target species isn't in the
+    slot map (shouldn't happen for confirmed damaging events, but defensive).
+    """
+    if event is None:
+        return None
+    slot = slot_map.get(event.target_species)
+    if slot is None:
+        return None
+    return float(hp_delta[slot])
+
+
 @dataclass
 class BattleContext:
     """
@@ -302,6 +320,30 @@ class TurnDelta:
     our_damaging_event: Optional[DamagingMoveEvent] = None
     opp_damaging_event: Optional[DamagingMoveEvent] = None
 
+    # True when this delta closes on a forced_switch input request (mid-turn
+    # replacement after a faint, end-of-turn replacement). False for normal
+    # move-selection turns. Lets the model distinguish half-turn replacement
+    # slots from full action-pair slots — without this, the absence of an opp
+    # move in a forced-switch slot looks like "opp voluntarily passed."
+    phase_is_forced_switch: bool = False
+
+    # Per-slot HP levels AT THE END OF THE TURN (i.e. from curr_ctx). Carried
+    # alongside the deltas so the encoder can expose the full HP trajectory
+    # to the model across the history window without forcing the transformer
+    # to inverse-cumsum delta scalars across attention positions. In slot_map
+    # order; zeros for unrevealed slots.
+    our_hp_after: np.ndarray = field(default_factory=lambda: np.zeros(6, dtype=np.float32))
+    opp_hp_after: np.ndarray = field(default_factory=lambda: np.zeros(6, dtype=np.float32))
+
+    # HP delta on the named target species of each side's damaging move this
+    # turn. our_target_hp_delta = opp's damaging move's target (i.e. our mon
+    # that got hit); opp_target_hp_delta = our damaging move's target. None
+    # when the side didn't use a damaging move or the target slot can't be
+    # resolved. Pairs with the actor/target species IDs in the encoder's
+    # slot — gives the model "how hard the named target got hit."
+    our_target_hp_delta: Optional[float] = None
+    opp_target_hp_delta: Optional[float] = None
+
     @property
     def opp_resolved_move_id(self) -> Optional[str]:
         """Opp's move id with protocol-truth preference.
@@ -403,6 +445,17 @@ class TurnDelta:
             else (curr_ctx.opp_boosts - prev_ctx.opp_boosts).astype(np.int8)
         )
 
+        # Target-HP-delta attribution: look the named target's species up in
+        # the current slot map (where it actually lives now, post-turn) so
+        # newly-revealed opp mons resolve correctly. Returns None when no
+        # damaging move fired or the target species isn't in the slot map.
+        our_target_hp_delta = _resolve_target_hp_delta(
+            curr_ctx.opp_last_damaging_event, our_hp_delta, curr_ctx.our_slot_map
+        )
+        opp_target_hp_delta = _resolve_target_hp_delta(
+            curr_ctx.our_last_damaging_event, opp_hp_delta, curr_ctx.opp_slot_map
+        )
+
         return cls(
             our_move_id=our_move_id,
             our_switch_to=our_switch_to,
@@ -426,6 +479,11 @@ class TurnDelta:
             we_moved_first=curr_ctx.we_moved_first,
             our_damaging_event=curr_ctx.our_last_damaging_event,
             opp_damaging_event=curr_ctx.opp_last_damaging_event,
+            phase_is_forced_switch=(curr_ctx.phase == "forced_switch"),
+            our_hp_after=curr_ctx.our_hp.copy(),
+            opp_hp_after=curr_ctx.opp_hp.copy(),
+            our_target_hp_delta=our_target_hp_delta,
+            opp_target_hp_delta=opp_target_hp_delta,
         )
 
     @classmethod
@@ -446,4 +504,9 @@ class TurnDelta:
             we_moved_first=None,
             our_damaging_event=None,
             opp_damaging_event=None,
+            phase_is_forced_switch=False,
+            our_hp_after=np.zeros(6, dtype=np.float32),
+            opp_hp_after=np.zeros(6, dtype=np.float32),
+            our_target_hp_delta=None,
+            opp_target_hp_delta=None,
         )

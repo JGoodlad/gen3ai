@@ -8,7 +8,17 @@ from agents.observation.constants import (
     GLOBAL_ENV_DIM,
     POKEMON_FULL_DIM
 )
-from agents.observation.turn_delta_encoder import TURN_DELTA_DIM, EFF_DIM, ORDER_DIM
+from agents.observation.turn_delta_encoder import (
+    TURN_DELTA_DIM,
+    EFF_DIM,
+    ORDER_DIM,
+    OFFSET_OUR_ACTOR_SPECIES,
+    OFFSET_OPP_ACTOR_SPECIES,
+    OFFSET_OUR_TARGET_SPECIES,
+    OFFSET_OPP_TARGET_SPECIES,
+    OFFSET_OUR_SWITCH_TO_SPEC,
+    OFFSET_OPP_SWITCH_TO_SPEC,
+)
 from agents.action.constants import ACTION_SPACE_SIZE
 from utils.logging.levels import LogLevel
 
@@ -185,14 +195,19 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         # Token group identity (4: our_team / their_team / history / global).
         self.token_type_emb = torch.nn.Embedding(NUM_TOKEN_TYPES, D_MODEL)
 
-        # History token: embed each raw TurnDelta identically (reuse move/type tables),
-        # project to d_model, then add a learned positional encoding so "2 turns ago"
-        # is distinguishable from "8 turns ago." Team slots stay permutation-equivariant
-        # (no positional encoding); the global token sits alone.
+        # History token: embed each raw TurnDelta identically (reuse move/type/species
+        # tables), project to d_model, then add a learned positional encoding so "2 turns
+        # ago" is distinguishable from "8 turns ago." Team slots stay permutation-
+        # equivariant (no positional encoding); the global token sits alone.
+        #
+        # The slot's 4 move/type raw ints + 6 species raw ints (actor/target/switch_to
+        # for both sides) are replaced by their embedded vectors; the remaining
+        # TURN_DELTA_DIM-10 dims pass through as raw scalars.
         self._td_embed_dim = (
             2 * layout['move_embedding_dim']
             + 2 * layout['type_embedding_dim']
-            + TURN_DELTA_DIM - 4
+            + 6 * layout['species_embedding_dim']
+            + TURN_DELTA_DIM - 10
         )
         self.history_proj = torch.nn.Linear(self._td_embed_dim, D_MODEL)
         self.turn_history_pos_emb = torch.nn.Embedding(N_HISTORY_TURNS, D_MODEL)
@@ -283,16 +298,39 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         )
 
     @staticmethod
-    def _embed_delta_slot(slot, move_embedding, type_embedding):
-        """Embed one [B, TURN_DELTA_DIM] raw TurnDelta vector → [B, _td_embed_dim]."""
+    def _embed_delta_slot(slot, move_embedding, type_embedding, species_embedding):
+        """Embed one [B, TURN_DELTA_DIM] raw TurnDelta vector → [B, _td_embed_dim].
+
+        The slot carries 4 raw move/type IDs (positions 0, 4, 5, 9) and 6 raw species IDs
+        (positions OFFSET_OUR_ACTOR_SPECIES..OFFSET_OPP_SWITCH_TO_SPEC, contiguous at the
+        tail of the slot). All ten positions get looked up against their embedding tables
+        and concatenated alongside the remaining scalar dims.
+        """
         m_our = slot[:, 0].long().clamp(0, move_embedding.num_embeddings - 1)
         t_our = slot[:, 4].long().clamp(0, type_embedding.num_embeddings - 1)
         m_opp = slot[:, 5].long().clamp(0, move_embedding.num_embeddings - 1)
         t_opp = slot[:, 9].long().clamp(0, type_embedding.num_embeddings - 1)
-        scalars = torch.cat([slot[:, 1:4], slot[:, 6:9], slot[:, 10:]], dim=1)  # [B, 35]
+        # Species IDs are contiguous at the tail; slice once and clamp.
+        species_block = slot[:, OFFSET_OUR_ACTOR_SPECIES:OFFSET_OPP_SWITCH_TO_SPEC + 1].long()
+        species_block = species_block.clamp(0, species_embedding.num_embeddings - 1)
+        s_our_actor   = species_embedding(species_block[:, 0])
+        s_opp_actor   = species_embedding(species_block[:, 1])
+        s_our_target  = species_embedding(species_block[:, 2])
+        s_opp_target  = species_embedding(species_block[:, 3])
+        s_our_switch  = species_embedding(species_block[:, 4])
+        s_opp_switch  = species_embedding(species_block[:, 5])
+        # Pass-through scalars: everything that isn't a raw embedding ID.
+        # Positions 1-3, 6-8, 10..OFFSET_OUR_ACTOR_SPECIES.
+        scalars = torch.cat([
+            slot[:, 1:4],
+            slot[:, 6:9],
+            slot[:, 10:OFFSET_OUR_ACTOR_SPECIES],
+        ], dim=1)
         return torch.cat([
             move_embedding(m_our), type_embedding(t_our),
             move_embedding(m_opp), type_embedding(t_opp),
+            s_our_actor, s_opp_actor, s_our_target, s_opp_target,
+            s_our_switch, s_opp_switch,
             scalars,
         ], dim=1)
 
@@ -554,7 +592,10 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         # projection biases would otherwise produce non-zero outputs from a zero input.
         empty_history = (history_slots.abs().sum(dim=-1) == 0)  # [B, N]
         embedded_history = torch.stack(
-            [self._embed_delta_slot(history_slots[:, t, :], self.move_embedding, self.type_embedding)
+            [self._embed_delta_slot(history_slots[:, t, :],
+                                    self.move_embedding,
+                                    self.type_embedding,
+                                    self.species_embedding)
              for t in range(N_HISTORY_TURNS)],
             dim=1,
         )  # [B, N, _td_embed_dim]

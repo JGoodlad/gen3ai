@@ -1,4 +1,13 @@
-# Implementation: Step 3 — Unified Transformer Feature Extractor
+# Implementation: Step 4 — Unified Transformer Feature Extractor
+
+> Renumbered from Step 3 — this work landed after the damaging-event
+> attribution work (`impl_step3_damaging_event_attribution.md`) and originally
+> collided with its step number. The numbers below (`N_HISTORY_TURNS = 10`,
+> `TURN_DELTA_DIM = 39`, total obs dim 1924, `ARCH_SIGNATURE =
+> "gen3_unified_v1"`) reflect the state of the codebase at the time **this**
+> step was implemented. Step 3's follow-on history-expansion pass later grew
+> the slot to 88 dims and bumped the signature to `gen3_unified_v2`; see
+> Step 3 for the current numbers.
 
 This step replaces the v3 feature extractor's three isolated sub-networks
 (role-token + 5 hand-engineered attention paths, single-TurnDelta history

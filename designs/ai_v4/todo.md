@@ -31,8 +31,10 @@ meaningless — comparing two different Pokémon's stat stages.
   but the delta reads zero — the penalty fires incorrectly. Semantic argument:
   losing the boost to phaze IS a wasted turn, but the penalty is mis-attributing
   the mechanism.
-- TurnDelta encoder doesn't currently emit boost_delta features, so the model
-  is insulated for now.
+- **TurnDelta encoder now emits boost_delta features** (Step 3 history
+  expansion, slot offsets 39–52). The model is no longer insulated — the
+  corrupted delta flows into the per-slot observation. Fix priority is
+  higher than originally noted.
 
 **Fix sketch:** Mirror the opp-switched logic — when our active species changed
 between snapshots AND we didn't voluntarily switch, treat it as a phaze and
@@ -73,8 +75,8 @@ properties. Could share infrastructure with `_pending_opp_damaging_move`.
 
 ## 3. TurnDelta encoder full-vector consistency fuzz
 
-**Where:** `src/agents/observation/turn_delta_encoder.py` produces a
-39-dim vector per historical turn.
+**Where:** `src/agents/observation/turn_delta_encoder.py` produces an
+88-dim vector per historical turn (post Step 3 history expansion).
 
 Effectiveness_fuzz currently validates layers 1-5 around effectiveness, order,
 and the new DamagingMoveEvent. The encoder's OTHER features (move id
@@ -92,7 +94,8 @@ diagnostic purposes.
 ## 4. State encoder per-slot consistency fuzz
 
 **Where:** `src/agents/observation/state_encoder.py` produces the
-~1729-dim full observation vector via `Gen3ObservationEncoder.encode()`.
+2414-dim full observation vector via `Gen3ObservationEncoder.encode()`
+(post Step 3 history expansion + Step 4 unified transformer).
 
 No e2e test verifies that the observation dims encode the live battle
 state correctly. Specifically:
@@ -178,3 +181,15 @@ known-impossible pairs never fire together. Examples:
   per-signal invariants.
 - Structural delta invariants (`opp_resolved_move_id == event.move_id` when
   event set, effectiveness is bucketed, scalar matches event).
+- TurnDelta history expansion (Step 3 continuation): slot grew 39 → 88 dims
+  with actor / target / switch_to species IDs (routed through
+  `species_embedding`), boost deltas, phase flag, target_hp_delta, per-slot
+  HP-level vectors, and target-status onehots at move-fire time.
+  `ARCH_SIGNATURE` bumped to `gen3_unified_v2`.
+- `TurnDeltaEncoder._species_id` now raises on unknown non-sentinel species
+  (matches `SpeciesEncoder.encode()`); sentinel zeros stay for the
+  "unrevealed / no actor" case. Caught a latent mock-leak bug in
+  `player_test._make_battle`.
+- Renamed `impl_step3_unified_transformer.md` → `impl_step4_unified_transformer.md`
+  (was a duplicate-numbered step3; the unified transformer landed
+  chronologically after damaging-event attribution).

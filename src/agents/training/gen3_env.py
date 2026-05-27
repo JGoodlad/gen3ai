@@ -41,7 +41,10 @@ class Gen3Env(SinglesEnv):
 
         self.reward_manager: RewardFunction = reward_fn or Gen3RewardManager(log_level=self.log_level)
         self._tracker = EpisodeTracker()
-        self._turn_delta_encoder = TurnDeltaEncoder(mappings.get("moves", {}))
+        self._turn_delta_encoder = TurnDeltaEncoder(
+            mappings.get("moves", {}),
+            mappings.get("species", {}),
+        )
 
     def embed_battle(self, battle):
         # Record FIRST so the tracker's HP-candidate state reflects the just-fired

@@ -258,7 +258,7 @@ deps/
 
 ## Observation Vector
 
-The full observation is a **1525-dim float32 vector** (`Gen3ObservationEncoder.dimension`):
+The full observation is a **2414-dim float32 vector** (`Gen3ObservationEncoder.dimension`):
 
 | Block | Dims | Offset | Notes |
 |---|---|---|---|
@@ -267,8 +267,8 @@ The full observation is a **1525-dim float32 vector** (`Gen3ObservationEncoder.d
 | Active context ×2 | 46 | 960 | base encoder |
 | Global env | 13 | 1006 | base encoder |
 | Reactive + matchups | 300 | 1019 | base encoder |
-| Prev-turn action mask | 11 | 1319 | appended by `gen3_env.embed_battle()` |
-| Turn history (`N_HISTORY_TURNS` × 39) | 195 | 1330 | appended by `gen3_env.embed_battle()`; oldest first |
+| Prev-turn action mask | 11 | 1523 | appended by `gen3_env.embed_battle()` |
+| Turn history (`N_HISTORY_TURNS` × 88) | 880 | 1534 | appended by `gen3_env.embed_battle()`; oldest first |
 
 Per-Pokémon slot (80 dims): species ID + 6 base stats, item ID + known + consumed, 2 type IDs, ability ID + known, 7-dim condition (status one-hot), 4 × 9-dim move slots, HP fraction, species_known flag, sleep_counter_norm, toxic_counter_norm, **spread block (18 dims)**, active flag. The item block is 3 dims: `[item_id, known, consumed]` — `consumed=1` when the item was spent this battle (Berry activated, Knock Off, Trick, etc.) and `item_id` retains the identity of the consumed item so the model knows what was lost. `species_known = 1.0` for all populated slots (own team and revealed opponent mons), `0.0` for unseen opponent slots. Sleep counter: `min(turns_slept, 4) / 4` (Gen 3 max 4 turns); toxic counter: `min(turns_poisoned, 8) / 8` (practical max before fainting with Leftovers).
 
@@ -276,7 +276,14 @@ Spread block (18 dims, appended at offset 61 within each slot): IVs ×6 each/31 
 
 Global env (13 dims): weather one-hot (6), spikes ×2 (2), log-turn (1), our reflect (1), our light screen (1), opp reflect (1), opp light screen (1).
 
-Each TurnDelta slot (39 dims): our_move_id (raw int), our_power_norm, our_has_secondary, our_has_recoil, our_type_id (raw int), opp_move_id (raw int), opp_power_norm, opp_has_secondary, opp_has_recoil, opp_type_id (raw int), our_switched, opp_switched, our_failed_to_move, opp_failed_to_move, our_cant_onehot (5), opp_cant_onehot (5), our_hp_delta, opp_hp_delta, we_fainted, opp_fainted, opp_move_known, our_effectiveness_onehot (4: immune/resisted/normal/SE), opp_effectiveness_onehot (4), move_order (2: we_first/opp_first, all-zero=na). The extractor embeds all `N_HISTORY_TURNS` slots identically through shared move/type embedding tables (4 raw IDs → 4×16 embeddings + 35 scalars = 99-dim per slot), adds learned positional encodings, runs one self-attention pass, and uses the last (most-recent) slot's output as a 99-dim block for the projection. All zeros on the first turn of each episode. See `src/agents/observation/turn_delta_encoder.py`.
+Each TurnDelta slot (88 dims, layout in `src/agents/observation/turn_delta_encoder.py`):
+
+- **Base block (39 dims, indices 0–38)** — our/opp move features (5 each: raw move_id int, power_norm, has_secondary, has_recoil, raw type_id int), switched/failed flags, cant onehots (5 ea), summed HP deltas, faint flags, opp_move_known, effectiveness onehots (4 ea), move-order (2).
+- **Extended block (49 dims, indices 39–87, added in `gen3_unified_v2`)** — our/opp boost deltas (7 each, in BOOST_STATS order); `phase_is_forced_switch` (1, distinguishes half-turn replacement slots from full action-pair slots); our/opp `target_hp_delta` (1 each, HP delta on the named target of each side's damaging move); per-side **HP-level vectors** (6 each, end-of-turn HP for every team slot, giving the model the full HP trajectory across the window); our/opp **target_status onehots** (7 each, status of the named target AT MOVE-FIRE TIME — for Flash Fire-vs-frozen and sleep-talker reads); 6 raw species IDs — `our_actor` / `opp_actor` / `our_target` / `opp_target` / `our_switch_to` / `opp_switch_to` — embedded by the extractor through `species_embedding`.
+
+The extractor embeds all `N_HISTORY_TURNS` slots identically through shared move (16) / type (16) / species (32) embedding tables: 4 raw move/type IDs → 4×16 + 6 raw species IDs → 6×32 + 78 pass-through scalars = 334-dim per slot. Positional encodings are added, one self-attention pass runs, and the last (most-recent) slot's output flows into the projection block. All zeros on the first turn of each episode.
+
+Actor species resolution prefers `damaging_event.user_species` (protocol-truth) and falls back to `prev_active` for switches and non-damaging moves; target species comes from the OTHER side's `damaging_event.target_species`. Species ID 0 is the unknown sentinel.
 
 ---
 

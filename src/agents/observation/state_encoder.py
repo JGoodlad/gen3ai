@@ -118,7 +118,10 @@ class Gen3ObservationEncoder(ObservationEncoder):
         self.global_env_encoder = GlobalEnvEncoder()
         self.reactive_encoder = ReactiveEncoder()
         from agents.observation.turn_delta_encoder import TurnDeltaEncoder, TURN_DELTA_DIM as _TD_DIM
-        self.turn_delta_encoder = TurnDeltaEncoder(mappings.get("moves", {}))
+        self.turn_delta_encoder = TurnDeltaEncoder(
+            mappings.get("moves", {}),
+            mappings.get("species", {}),
+        )
         self._turn_delta_dim = _TD_DIM
         self.current_battle_id = None
 

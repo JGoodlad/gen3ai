@@ -2,53 +2,151 @@
 Encodes a TurnDelta into a fixed-dim float32 vector that is appended to the
 per-turn observation, giving the feedforward model a one-turn memory.
 
-Output layout (39 dims total):
-  our_move  (5): move_id (raw int as float), power_norm, has_secondary, has_recoil, type_id (raw int as float)
-  opp_move  (5): same
-  scalars  (29): our_switched, opp_switched, our_failed_to_move, opp_failed_to_move,
-                 our_cant_onehot(5), opp_cant_onehot(5),
-                 our_hp_delta, opp_hp_delta, we_fainted, opp_fainted, opp_move_known,
-                 our_effectiveness_onehot(4), opp_effectiveness_onehot(4),
-                 move_order(2)
+Output layout (88 dims total):
+  Indices 0-38  — original 39-dim block (unchanged positions):
+    our_move  (5): move_id (raw int as float), power_norm, has_secondary, has_recoil, type_id (raw int as float)
+    opp_move  (5): same
+    scalars  (29): our_switched, opp_switched, our_failed_to_move, opp_failed_to_move,
+                   our_cant_onehot(5), opp_cant_onehot(5),
+                   our_hp_delta_sum, opp_hp_delta_sum, we_fainted, opp_fainted, opp_move_known,
+                   our_effectiveness_onehot(4), opp_effectiveness_onehot(4),
+                   move_order(2)
 
-move_id and type_id are stored as raw ints (float32 is exact for values < 2^24).
-The features_extractor routes them through move_embedding / type_embedding respectively.
+  Indices 39-87 — extended block (added in gen3_unified_v2):
+    our_boost_delta (7), opp_boost_delta (7),
+    phase_is_forced_switch (1),
+    our_target_hp_delta (1), opp_target_hp_delta (1),
+    our_hp_levels (6), opp_hp_levels (6),
+    our_target_status_onehot (7), opp_target_status_onehot (7),
+    our_actor_species_id (1, raw int as float — embedded by extractor),
+    opp_actor_species_id (1, raw int as float — embedded by extractor),
+    our_target_species_id (1, raw int as float — embedded by extractor),
+    opp_target_species_id (1, raw int as float — embedded by extractor),
+    our_switch_to_species_id (1, raw int as float — embedded by extractor),
+    opp_switch_to_species_id (1, raw int as float — embedded by extractor)
+
+target_status_onehot is the status of the named target species AT MOVE-FIRE
+TIME (sourced from DamagingMoveEvent.target_status, captured by the protocol
+parser before the move's effects resolve). 7 status states (BRN, FNT, FRZ,
+PAR, PSN, SLP, TOX); all-zeros when the side didn't use a damaging move or
+the target had no status.
+
+move_id, type_id, and species_id positions are stored as raw ints (float32 is
+exact for values < 2^24). The features_extractor routes them through
+move_embedding / type_embedding / species_embedding respectively.
 
 Effectiveness one-hot (4 dims): [immune, resisted, normal, super-effective]
   All zeros when the side switched or used a non-damaging move.
 
 Move-order (2 dims): [we_first, opp_first]
   All zeros = na (one/both sides switched) or turn 0 (no previous turn).
+
+Actor species ID resolution: prefers damaging_event.user_species (protocol-
+truth), falls back to prev_active for non-damaging actions. 0 when no actor
+is identifiable (e.g. empty delta).
+
+Target species ID: from the OTHER side's damaging_event.target_species.
+0 when the other side didn't use a confirmed damaging move.
 """
 from __future__ import annotations
 import numpy as np
 from typing import Optional
 from agents.training.battle_context import TurnDelta
 from agents.observation.types import TypeEncoder
+from agents.gen3_mechanics import BOOST_DIM
+from poke_env.battle.status import Status
 
 # Reason → one-hot index (unknown/other → all-zeros)
 _CANT_REASONS = ["par", "slp", "frz", "flinch", "confusion"]
+
+# Status one-hot index. None / no status → all-zeros (the natural sentinel).
+# Order is stable; do not reorder without bumping ARCH_SIGNATURE.
+_STATUS_ORDER: tuple[Status, ...] = (
+    Status.BRN,
+    Status.FNT,
+    Status.FRZ,
+    Status.PAR,
+    Status.PSN,
+    Status.SLP,
+    Status.TOX,
+)
+_STATUS_TO_IDX = {s: i for i, s in enumerate(_STATUS_ORDER)}
+_STATUS_LABELS = [s.name for s in _STATUS_ORDER]
+STATUS_DIM = len(_STATUS_ORDER)  # 7
 
 MOVE_FEAT_DIM = 5   # per-move feature block
 CANT_DIM = 5        # one-hot over cant reasons
 EFF_DIM = 4         # one-hot: immune | resisted | normal | super-effective
 ORDER_DIM = 2       # binary: [we_first, opp_first]; all-zero = na / unknown
 SCALAR_DIM = 4 + CANT_DIM * 2 + 5 + EFF_DIM * 2 + ORDER_DIM  # 4+10+5+8+2 = 29
-TURN_DELTA_DIM = MOVE_FEAT_DIM * 2 + SCALAR_DIM  # 5+5+29 = 39
 
-_MAX_TYPE_ID = float(max(TypeEncoder.TYPE_TO_IDX.values(), default=1))
+# Original 39-dim block (kept at indices 0-38 for layout stability).
+TURN_DELTA_BASE_DIM = MOVE_FEAT_DIM * 2 + SCALAR_DIM  # 5+5+29 = 39
+
+# Named offsets into the base block for the handful of positions that need
+# to be referenced from outside this module (tests, debug tooling). The base
+# block layout is otherwise implicit in encode() — most fields don't need a
+# named constant because nothing outside the encoder consumes them by index.
+OFFSET_OUR_MOVE_BLOCK       = 0                                        # 0  (5 dims)
+OFFSET_OPP_MOVE_BLOCK       = MOVE_FEAT_DIM                            # 5  (5 dims)
+OFFSET_OUR_HP_DELTA_SUM     = MOVE_FEAT_DIM * 2 + 4 + CANT_DIM * 2     # 24 — summed our hp delta scalar
+OFFSET_OPP_HP_DELTA_SUM     = OFFSET_OUR_HP_DELTA_SUM + 1              # 25
+
+# Extended block (gen3_unified_v2 additions): boost deltas, phase flag,
+# target_hp_deltas, per-slot HP levels, target status onehots, six species IDs.
+HP_LEVEL_DIM = 6
+SPECIES_ID_COUNT = 6  # our/opp × actor/target/switch_to
+TURN_DELTA_EXT_DIM = (
+    BOOST_DIM * 2          # 14 — our/opp boost deltas
+    + 1                    # phase_is_forced_switch
+    + 2                    # our/opp target_hp_delta
+    + HP_LEVEL_DIM * 2     # 12 — per-slot HP levels for both sides
+    + STATUS_DIM * 2       # 14 — target status onehots (at move-fire time)
+    + SPECIES_ID_COUNT     # 6 — species IDs (embedded by extractor)
+)  # = 49
+
+TURN_DELTA_DIM = TURN_DELTA_BASE_DIM + TURN_DELTA_EXT_DIM  # 39 + 49 = 88
+
+# Offsets into the slot vector for the extended block — used by the encoder
+# AND by features_extractor._embed_delta_slot to slice species IDs out for
+# embedding. Keep in lockstep with the layout comment above.
+OFFSET_OUR_BOOST_DELTA      = TURN_DELTA_BASE_DIM                           # 39
+OFFSET_OPP_BOOST_DELTA      = OFFSET_OUR_BOOST_DELTA + BOOST_DIM            # 46
+OFFSET_PHASE_FORCED_SWITCH  = OFFSET_OPP_BOOST_DELTA + BOOST_DIM            # 53
+OFFSET_OUR_TARGET_HP_DELTA  = OFFSET_PHASE_FORCED_SWITCH + 1                # 54
+OFFSET_OPP_TARGET_HP_DELTA  = OFFSET_OUR_TARGET_HP_DELTA + 1                # 55
+OFFSET_OUR_HP_LEVELS        = OFFSET_OPP_TARGET_HP_DELTA + 1                # 56
+OFFSET_OPP_HP_LEVELS        = OFFSET_OUR_HP_LEVELS + HP_LEVEL_DIM           # 62
+OFFSET_OUR_TARGET_STATUS    = OFFSET_OPP_HP_LEVELS + HP_LEVEL_DIM           # 68
+OFFSET_OPP_TARGET_STATUS    = OFFSET_OUR_TARGET_STATUS + STATUS_DIM         # 75
+OFFSET_OUR_ACTOR_SPECIES    = OFFSET_OPP_TARGET_STATUS + STATUS_DIM         # 82
+OFFSET_OPP_ACTOR_SPECIES    = OFFSET_OUR_ACTOR_SPECIES + 1                  # 83
+OFFSET_OUR_TARGET_SPECIES   = OFFSET_OPP_ACTOR_SPECIES + 1                  # 84
+OFFSET_OPP_TARGET_SPECIES   = OFFSET_OUR_TARGET_SPECIES + 1                 # 85
+OFFSET_OUR_SWITCH_TO_SPEC   = OFFSET_OPP_TARGET_SPECIES + 1                 # 86
+OFFSET_OPP_SWITCH_TO_SPEC   = OFFSET_OUR_SWITCH_TO_SPEC + 1                 # 87
+
+# Raw-int slot positions that the features_extractor looks up against an
+# embedding table. The 4 move/type IDs sit at fixed positions 0/4/5/9
+# (legacy base block); the 6 species IDs are contiguous at the slot tail
+# [OFFSET_OUR_ACTOR_SPECIES .. OFFSET_OPP_SWITCH_TO_SPEC]. Any future
+# embedded field added between species IDs would break the contiguity
+# assumption in features_extractor.py:_embed_delta_slot — append at the
+# tail instead.
 
 
 class TurnDeltaEncoder:
     """
-    Stateless encoder: encodes a TurnDelta into a 27-dim float32 vector.
-    Requires the gen3_moves mapping to look up move attributes by ID.
+    Stateless encoder: encodes a TurnDelta into a `TURN_DELTA_DIM`-dim
+    (currently 88) float32 vector. Requires the gen3_moves and gen3_species
+    mappings to look up move/species attributes by ID.
     """
 
     TURN_DELTA_DIM: int = TURN_DELTA_DIM
 
-    def __init__(self, gen3_moves: dict):
+    def __init__(self, gen3_moves: dict, gen3_species: Optional[dict] = None):
         self._moves = gen3_moves
+        self._species = gen3_species or {}
         nums = [v.get("num", 0) for v in gen3_moves.values()]
         self._max_num = float(max(nums, default=1))
         # Build reverse map preferring "hiddenpower" base over typed variants for num=237
@@ -60,10 +158,46 @@ class TurnDeltaEncoder:
             if num not in self._num_to_name or k == "hiddenpower":
                 self._num_to_name[num] = k
         self._idx_to_type = TypeEncoder.IDX_TO_TYPE
+        # Species name → num lookup; reverse map for describe_vector.
+        self._species_num = {
+            name: int(entry.get("num", 0))
+            for name, entry in self._species.items()
+        }
+        self._num_to_species = {
+            num: name for name, num in self._species_num.items() if num > 0
+        }
 
     @property
     def dimension(self) -> int:
         return TURN_DELTA_DIM
+
+    def _species_id(self, species: Optional[str]) -> float:
+        """Map a species name to its embedding-table index.
+
+        Returns 0.0 for the "no species this turn / unrevealed" sentinels
+        (None, "NONE", "NULL") — that's the legitimate empty case where there
+        is genuinely no actor / target / switch_to to identify.
+
+        Raises ValueError for a non-sentinel species name that isn't in the
+        gen3_species mapping. That case means either poke-env handed us a
+        species ID we don't know about or the JSON mapping is out of date —
+        both are bugs we want to fail loudly on rather than silently train
+        with the wrong embedding (id 0 collides with the unrevealed sentinel).
+        Matches SpeciesEncoder.encode()'s behavior.
+
+        Tests that exercise the encoder must pass a species mapping that
+        covers every species name reachable through their delta fixtures.
+        """
+        if species is None or species == "NONE" or species == "NULL":
+            return 0.0
+        num = self._species_num.get(species)
+        if num is None:
+            raise ValueError(
+                f"Unrecognized species in TurnDelta: {species!r}. "
+                "Either poke-env produced an unknown species ID or the "
+                "gen3_species.json mapping is out of date."
+            )
+        return float(num)
 
     def _move_features(self, move_id: Optional[str]) -> np.ndarray:
         """5-dim move feature vector; zeros when move_id is None or unknown.
@@ -122,11 +256,67 @@ class TurnDeltaEncoder:
                 pass
         return vec
 
+    @staticmethod
+    def _status_onehot(status: Optional[Status]) -> np.ndarray:
+        """7-dim onehot over Status enum; all-zeros when status is None.
+
+        Status values are captured AT MOVE-FIRE TIME (per DamagingMoveEvent
+        docstring), which matters for Gen 3 Flash Fire-vs-frozen: a frozen
+        Flash Fire holder takes Fire-type 0.5× damage AND thaws in the same
+        hit, so reading status from the next snapshot misses the FRZ.
+        """
+        vec = np.zeros(STATUS_DIM, dtype=np.float32)
+        if status is None:
+            return vec
+        idx = _STATUS_TO_IDX.get(status)
+        if idx is not None:
+            vec[idx] = 1.0
+        return vec
+
+    @staticmethod
+    def _actor_species(delta: TurnDelta, side: str) -> Optional[str]:
+        """Pick the actor species for a side this turn.
+
+        Prefers the protocol-truth damaging_event.user_species (handles mirror
+        matches and post-switch attribution correctly). Falls back to the
+        prev_active species, which is what the side acted from for switches
+        and non-damaging moves. Returns None when prev_active is "NONE" or
+        "NULL" so the encoded ID falls back to the unknown sentinel.
+        """
+        if side == "our":
+            event = delta.our_damaging_event
+            fallback = delta.our_prev_active
+        else:
+            event = delta.opp_damaging_event
+            fallback = delta.opp_prev_active
+        if event is not None:
+            return event.user_species
+        if fallback in (None, "NONE", "NULL"):
+            return None
+        return fallback
+
+    @staticmethod
+    def _target_species(delta: TurnDelta, side: str) -> Optional[str]:
+        """Pick the target species ON THIS side (the mon that got hit on this
+        side this turn).
+
+        The slot's `our_*` fields follow the "this-side-this-turn" convention:
+        `our_actor_species_id` is the mon ON our side that acted,
+        `our_target_hp_delta` is the HP loss on the mon ON our side that got
+        hit, and `our_target_species_id` is the species of that mon — sourced
+        from the OPPONENT's damaging event (their move's target IS our mon).
+        Returns None when the other side didn't use a damaging move this turn.
+        """
+        event = delta.opp_damaging_event if side == "our" else delta.our_damaging_event
+        if event is None:
+            return None
+        return event.target_species
+
     def describe_vector(self, vec: np.ndarray) -> dict:
-        """Decode a 39-dim encoded TurnDelta vector back to human-readable form."""
+        """Decode a TURN_DELTA_DIM-dim (currently 88) encoded TurnDelta vector
+        back to human-readable form."""
         _CANT = _CANT_REASONS
         _EFF_LABELS = ["immune", "resisted", "normal", "super-effective"]
-        _ORDER_LABELS = ["we_first", "opp_first", "na"]
 
         def _cant_label(onehot):
             idx = int(np.argmax(onehot))
@@ -148,6 +338,11 @@ class TurnDeltaEncoder:
                 "type_id": type_id,
                 "move_type": self._idx_to_type.get(type_id),
             }
+
+        def _species_name(raw):
+            num = int(raw)
+            return self._num_to_species.get(num) if num > 0 else None
+
         our_move = _move_dict(vec[0], vec[1], vec[2], vec[3], vec[4])
         opp_move = _move_dict(vec[5], vec[6], vec[7], vec[8], vec[9])
         order_label = None
@@ -172,11 +367,30 @@ class TurnDeltaEncoder:
             "our_effectiveness": _onehot_label(vec[29:33], _EFF_LABELS),
             "opp_effectiveness": _onehot_label(vec[33:37], _EFF_LABELS),
             "move_order": order_label,
+            "our_boost_delta": vec[OFFSET_OUR_BOOST_DELTA:OFFSET_OUR_BOOST_DELTA + BOOST_DIM].tolist(),
+            "opp_boost_delta": vec[OFFSET_OPP_BOOST_DELTA:OFFSET_OPP_BOOST_DELTA + BOOST_DIM].tolist(),
+            "phase_is_forced_switch": bool(vec[OFFSET_PHASE_FORCED_SWITCH] > 0.5),
+            "our_target_hp_delta": float(vec[OFFSET_OUR_TARGET_HP_DELTA]),
+            "opp_target_hp_delta": float(vec[OFFSET_OPP_TARGET_HP_DELTA]),
+            "our_hp_levels": vec[OFFSET_OUR_HP_LEVELS:OFFSET_OUR_HP_LEVELS + HP_LEVEL_DIM].tolist(),
+            "opp_hp_levels": vec[OFFSET_OPP_HP_LEVELS:OFFSET_OPP_HP_LEVELS + HP_LEVEL_DIM].tolist(),
+            "our_target_status": _onehot_label(
+                vec[OFFSET_OUR_TARGET_STATUS:OFFSET_OUR_TARGET_STATUS + STATUS_DIM], _STATUS_LABELS,
+            ),
+            "opp_target_status": _onehot_label(
+                vec[OFFSET_OPP_TARGET_STATUS:OFFSET_OPP_TARGET_STATUS + STATUS_DIM], _STATUS_LABELS,
+            ),
+            "our_actor_species": _species_name(vec[OFFSET_OUR_ACTOR_SPECIES]),
+            "opp_actor_species": _species_name(vec[OFFSET_OPP_ACTOR_SPECIES]),
+            "our_target_species": _species_name(vec[OFFSET_OUR_TARGET_SPECIES]),
+            "opp_target_species": _species_name(vec[OFFSET_OPP_TARGET_SPECIES]),
+            "our_switch_to_species": _species_name(vec[OFFSET_OUR_SWITCH_TO_SPEC]),
+            "opp_switch_to_species": _species_name(vec[OFFSET_OPP_SWITCH_TO_SPEC]),
         }
 
     def encode(self, delta: TurnDelta) -> np.ndarray:
-        our_hp_delta = float(delta.our_hp_delta.sum())
-        opp_hp_delta = float(delta.opp_hp_delta.sum())
+        our_hp_delta_sum = float(delta.our_hp_delta.sum())
+        opp_hp_delta_sum = float(delta.opp_hp_delta.sum())
         scalars = np.array([
             float(delta.our_switch_to is not None),
             float(delta.opp_switch_to is not None),
@@ -188,13 +402,13 @@ class TurnDeltaEncoder:
         # delta.opp_move_id can be a stale last_move from a different opp
         # mon when opp switched between snapshots — feeding that into the
         # model's observation pollutes training with mis-attributed moves.
-        return np.concatenate([
+        base_block = np.concatenate([
             self._move_features(delta.our_move_id),                    # 5
             self._move_features(delta.opp_resolved_move_id),           # 5
             scalars,                                                    # 4
             self._cant_onehot(delta.our_cant_reason),                  # 5
             self._cant_onehot(delta.opp_cant_reason),                  # 5
-            np.array([our_hp_delta, opp_hp_delta,                      # 5
+            np.array([our_hp_delta_sum, opp_hp_delta_sum,              # 5
                       float(delta.we_fainted),
                       float(delta.opp_fainted),
                       float(delta.opp_move_known)],
@@ -203,3 +417,52 @@ class TurnDeltaEncoder:
             self._effectiveness_onehot(delta.opp_effectiveness),       # 4
             self._order_onehot(delta.we_moved_first),                  # 2
         ])
+        assert base_block.shape[0] == TURN_DELTA_BASE_DIM
+
+        # Target status at move-fire time, paired with `our_target_species_id`
+        # and `our_target_hp_delta` (all "this-side-this-turn" convention):
+        # our_target_status = status of OUR mon when OPP hit it = read from
+        # opp_damaging_event.target_status. None when the other side didn't
+        # use a damaging move this turn.
+        our_target_status = (
+            delta.opp_damaging_event.target_status
+            if delta.opp_damaging_event is not None else None
+        )
+        opp_target_status = (
+            delta.our_damaging_event.target_status
+            if delta.our_damaging_event is not None else None
+        )
+
+        # Extended block (gen3_unified_v2): kept contiguous and in the order
+        # documented at the top of this file. Species IDs are stored as raw
+        # ints (float32) for the extractor to look up via species_embedding.
+        ext_block = np.concatenate([
+            delta.our_boost_delta.astype(np.float32),                  # 7
+            delta.opp_boost_delta.astype(np.float32),                  # 7
+            np.array([float(delta.phase_is_forced_switch)], dtype=np.float32),  # 1
+            # `target_hp_delta` is coerced None → 0.0 here. The "no damaging
+            # event this turn" case and "event with exactly zero damage" case
+            # both encode as 0.0 — but the paired actor/target species IDs
+            # both become 0 in the no-event case, and the existing power_norm
+            # / effectiveness onehot are also zero, so the model has multiple
+            # signals to disambiguate. Not worth a separate validity bit.
+            np.array([
+                float(delta.our_target_hp_delta) if delta.our_target_hp_delta is not None else 0.0,
+                float(delta.opp_target_hp_delta) if delta.opp_target_hp_delta is not None else 0.0,
+            ], dtype=np.float32),                                       # 2
+            delta.our_hp_after.astype(np.float32),                     # 6
+            delta.opp_hp_after.astype(np.float32),                     # 6
+            self._status_onehot(our_target_status),                    # 7
+            self._status_onehot(opp_target_status),                    # 7
+            np.array([
+                self._species_id(self._actor_species(delta, "our")),
+                self._species_id(self._actor_species(delta, "opp")),
+                self._species_id(self._target_species(delta, "our")),
+                self._species_id(self._target_species(delta, "opp")),
+                self._species_id(delta.our_switch_to),
+                self._species_id(delta.opp_switch_to),
+            ], dtype=np.float32),                                       # 6
+        ])
+        assert ext_block.shape[0] == TURN_DELTA_EXT_DIM
+
+        return np.concatenate([base_block, ext_block])
