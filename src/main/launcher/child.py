@@ -17,6 +17,11 @@ _SRC_DIR = os.path.dirname(_MAIN_DIR)
 def _build_child_env() -> dict:
     env = os.environ.copy()
     env["PYTHONUNBUFFERED"] = "1"
+    # Prevent PyTorch from spawning extra threads inside each SubprocVecEnv worker.
+    # With 64 workers, the default (1 thread per core) creates hundreds of competing
+    # threads and kills throughput.
+    env["OMP_NUM_THREADS"] = "1"
+    env["MKL_NUM_THREADS"] = "1"
     return env
 
 
