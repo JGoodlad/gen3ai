@@ -61,7 +61,7 @@ def load_mappings():
     if not os.path.exists(_ability_priors_path):
         raise FileNotFoundError(
             f"CRITICAL: {_ability_priors_path} missing. Run "
-            "tools/smogon_stats_downloader/compute_ability_priors.py first."
+            "tools/smogon_stats_downloader/compute_priors.py first."
         )
     with open(_ability_priors_path, "r") as f:
         mappings["ability_priors"] = json.load(f)

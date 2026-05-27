@@ -1,6 +1,7 @@
 {
   "abra": {
-    "synchronize": 1.0
+    "innerfocus": 0.01,
+    "synchronize": 0.9900000000000001
   },
   "absol": {
     "pressure": 1.0
@@ -27,6 +28,9 @@
   "ampharos": {
     "static": 1.0
   },
+  "anorith": {
+    "battlearmor": 1.0
+  },
   "arbok": {
     "intimidate": 0.9715654173509604,
     "shedskin": 0.028434582649039683
@@ -42,6 +46,10 @@
   "armaldo": {
     "battlearmor": 1.0
   },
+  "aron": {
+    "rockhead": 0.5,
+    "sturdy": 0.5
+  },
   "articuno": {
     "pressure": 1.0
   },
@@ -49,13 +57,38 @@
     "hugepower": 0.968459294793582,
     "thickfat": 0.03154070520641794
   },
+  "azurill": {
+    "hugepower": 0.5,
+    "thickfat": 0.5
+  },
+  "bagon": {
+    "rockhead": 1.0
+  },
+  "baltoy": {
+    "levitate": 1.0
+  },
   "banette": {
     "insomnia": 1.0
+  },
+  "barboach": {
+    "oblivious": 1.0
+  },
+  "bayleef": {
+    "overgrow": 1.0
+  },
+  "beautifly": {
+    "swarm": 1.0
   },
   "beedrill": {
     "swarm": 1.0
   },
+  "beldum": {
+    "clearbody": 1.0
+  },
   "bellossom": {
+    "chlorophyll": 1.0
+  },
+  "bellsprout": {
     "chlorophyll": 1.0
   },
   "blastoise": {
@@ -71,14 +104,32 @@
   "breloom": {
     "effectspore": 1.0
   },
+  "bulbasaur": {
+    "overgrow": 1.0
+  },
   "butterfree": {
     "compoundeyes": 1.0
+  },
+  "cacnea": {
+    "sandveil": 1.0
+  },
+  "cacturne": {
+    "sandveil": 1.0
   },
   "camerupt": {
     "magmaarmor": 1.0
   },
+  "carvanha": {
+    "roughskin": 1.0
+  },
+  "cascoon": {
+    "shedskin": 1.0
+  },
   "castform": {
     "forecast": 1.0
+  },
+  "caterpie": {
+    "shielddust": 1.0
   },
   "celebi": {
     "naturalcure": 1.0
@@ -90,6 +141,22 @@
   "charizard": {
     "blaze": 1.0
   },
+  "charmander": {
+    "blaze": 1.0
+  },
+  "charmeleon": {
+    "blaze": 1.0
+  },
+  "chikorita": {
+    "overgrow": 1.0
+  },
+  "chimecho": {
+    "levitate": 1.0
+  },
+  "chinchou": {
+    "illuminate": 0.5,
+    "voltabsorb": 0.5
+  },
   "clamperl": {
     "shellarmor": 1.0
   },
@@ -99,8 +166,21 @@
   "clefable": {
     "cutecharm": 1.0
   },
+  "clefairy": {
+    "cutecharm": 1.0
+  },
+  "cleffa": {
+    "cutecharm": 1.0
+  },
   "cloyster": {
     "shellarmor": 1.0
+  },
+  "combusken": {
+    "blaze": 1.0
+  },
+  "corphish": {
+    "hypercutter": 0.5,
+    "shellarmor": 0.5
   },
   "corsola": {
     "hustle": 0.006379943050873719,
@@ -116,6 +196,16 @@
   "crobat": {
     "innerfocus": 1.0
   },
+  "croconaw": {
+    "torrent": 1.0
+  },
+  "cubone": {
+    "lightningrod": 0.5,
+    "rockhead": 0.5
+  },
+  "cyndaquil": {
+    "blaze": 1.0
+  },
   "delcatty": {
     "cutecharm": 1.0
   },
@@ -123,18 +213,26 @@
     "hustle": 0.7290692724244575,
     "vitalspirit": 0.2709307275755425
   },
+  "deoxys": {
+    "pressure": 1.0
+  },
   "dewgong": {
     "thickfat": 1.0
   },
   "diglett": {
-    "arenatrap": 1.0
+    "arenatrap": 0.99,
+    "sandveil": 0.01
+  },
+  "ditto": {
+    "limber": 1.0
   },
   "dodrio": {
     "earlybird": 0.9400798313955442,
     "runaway": 0.0599201686044558
   },
   "doduo": {
-    "earlybird": 1.0
+    "earlybird": 0.99,
+    "runaway": 0.01
   },
   "donphan": {
     "sturdy": 1.0
@@ -145,8 +243,15 @@
   "dragonite": {
     "innerfocus": 1.0
   },
+  "dratini": {
+    "shedskin": 1.0
+  },
+  "drowzee": {
+    "insomnia": 1.0
+  },
   "dugtrio": {
-    "arenatrap": 1.0
+    "arenatrap": 0.99,
+    "sandveil": 0.01
   },
   "dunsparce": {
     "runaway": 0.00040048427950621916,
@@ -161,10 +266,25 @@
   "dustox": {
     "shielddust": 1.0
   },
+  "eevee": {
+    "runaway": 1.0
+  },
+  "ekans": {
+    "intimidate": 0.5,
+    "shedskin": 0.5
+  },
   "electabuzz": {
     "static": 1.0
   },
+  "electrike": {
+    "lightningrod": 0.5,
+    "static": 0.5
+  },
   "electrode": {
+    "soundproof": 0.01,
+    "static": 0.99
+  },
+  "elekid": {
     "static": 1.0
   },
   "entei": {
@@ -173,11 +293,30 @@
   "espeon": {
     "synchronize": 1.0
   },
+  "exeggcute": {
+    "chlorophyll": 1.0
+  },
   "exeggutor": {
     "chlorophyll": 1.0
   },
+  "exploud": {
+    "soundproof": 1.0
+  },
+  "farfetchd": {
+    "innerfocus": 0.5,
+    "keeneye": 0.5
+  },
+  "fearow": {
+    "keeneye": 1.0
+  },
+  "feebas": {
+    "swiftswim": 1.0
+  },
   "feraligatr": {
     "torrent": 1.0
+  },
+  "flaaffy": {
+    "static": 1.0
   },
   "flareon": {
     "flashfire": 1.0
@@ -202,6 +341,10 @@
   "gengar": {
     "levitate": 1.0
   },
+  "geodude": {
+    "rockhead": 0.5,
+    "sturdy": 0.5
+  },
   "girafarig": {
     "earlybird": 0.8333369219969217,
     "innerfocus": 0.16666307800307828
@@ -210,7 +353,18 @@
     "innerfocus": 1.0
   },
   "gligar": {
-    "hypercutter": 1.0
+    "hypercutter": 0.99,
+    "sandveil": 0.01
+  },
+  "gloom": {
+    "chlorophyll": 1.0
+  },
+  "golbat": {
+    "innerfocus": 1.0
+  },
+  "goldeen": {
+    "swiftswim": 0.5,
+    "waterveil": 0.5
   },
   "golduck": {
     "cloudnine": 0.945523295583641,
@@ -226,9 +380,31 @@
   "granbull": {
     "intimidate": 1.0
   },
+  "graveler": {
+    "rockhead": 0.5,
+    "sturdy": 0.5
+  },
+  "grimer": {
+    "stench": 0.5,
+    "stickyhold": 0.5
+  },
+  "groudon": {
+    "drought": 1.0
+  },
+  "grovyle": {
+    "overgrow": 1.0
+  },
+  "growlithe": {
+    "flashfire": 0.5,
+    "intimidate": 0.5
+  },
   "grumpig": {
     "owntempo": 0.0013810824997609178,
     "thickfat": 0.9986189175002391
+  },
+  "gulpin": {
+    "liquidooze": 0.5,
+    "stickyhold": 0.5
   },
   "gyarados": {
     "intimidate": 1.0
@@ -253,12 +429,44 @@
   "hitmontop": {
     "intimidate": 1.0
   },
+  "hooh": {
+    "pressure": 1.0
+  },
+  "hoothoot": {
+    "insomnia": 0.5,
+    "keeneye": 0.5
+  },
+  "hoppip": {
+    "chlorophyll": 1.0
+  },
+  "horsea": {
+    "swiftswim": 1.0
+  },
   "houndoom": {
     "earlybird": 0.2228738431263317,
     "flashfire": 0.7771261568736683
   },
+  "houndour": {
+    "earlybird": 0.5,
+    "flashfire": 0.5
+  },
+  "huntail": {
+    "swiftswim": 1.0
+  },
   "hypno": {
     "insomnia": 1.0
+  },
+  "igglybuff": {
+    "cutecharm": 1.0
+  },
+  "illumise": {
+    "oblivious": 1.0
+  },
+  "ivysaur": {
+    "overgrow": 1.0
+  },
+  "jigglypuff": {
+    "cutecharm": 1.0
   },
   "jirachi": {
     "serenegrace": 1.0
@@ -272,6 +480,10 @@
   "jynx": {
     "oblivious": 1.0
   },
+  "kabuto": {
+    "battlearmor": 0.5,
+    "swiftswim": 0.5
+  },
   "kabutops": {
     "battlearmor": 0.1145209760042481,
     "swiftswim": 0.885479023995752
@@ -279,6 +491,9 @@
   "kadabra": {
     "innerfocus": 0.008643715532603976,
     "synchronize": 0.9913562844673961
+  },
+  "kakuna": {
+    "shedskin": 1.0
   },
   "kangaskhan": {
     "earlybird": 1.0
@@ -300,6 +515,17 @@
   "koffing": {
     "levitate": 1.0
   },
+  "krabby": {
+    "hypercutter": 0.5,
+    "shellarmor": 0.5
+  },
+  "kyogre": {
+    "drizzle": 1.0
+  },
+  "lairon": {
+    "rockhead": 0.5,
+    "sturdy": 0.5
+  },
   "lanturn": {
     "illuminate": 0.0027549099421638953,
     "voltabsorb": 0.9972450900578361
@@ -308,44 +534,108 @@
     "shellarmor": 0.0359657215221237,
     "waterabsorb": 0.9640342784778763
   },
+  "larvitar": {
+    "guts": 1.0
+  },
+  "latias": {
+    "levitate": 1.0
+  },
+  "latios": {
+    "levitate": 1.0
+  },
+  "ledian": {
+    "earlybird": 0.5,
+    "swarm": 0.5
+  },
+  "ledyba": {
+    "earlybird": 0.5,
+    "swarm": 0.5
+  },
   "lickitung": {
     "oblivious": 0.02493026791282423,
     "owntempo": 0.9750697320871757
   },
+  "lileep": {
+    "suctioncups": 1.0
+  },
   "linoone": {
     "pickup": 1.0
+  },
+  "lombre": {
+    "raindish": 0.5,
+    "swiftswim": 0.5
+  },
+  "lotad": {
+    "raindish": 0.5,
+    "swiftswim": 0.5
+  },
+  "loudred": {
+    "soundproof": 1.0
   },
   "ludicolo": {
     "raindish": 0.11497129685757125,
     "swiftswim": 0.8850287031424288
   },
+  "lugia": {
+    "pressure": 1.0
+  },
   "lunatone": {
     "levitate": 1.0
   },
+  "luvdisc": {
+    "swiftswim": 1.0
+  },
   "machamp": {
     "guts": 1.0
+  },
+  "machoke": {
+    "guts": 1.0
+  },
+  "machop": {
+    "guts": 1.0
+  },
+  "magby": {
+    "flamebody": 1.0
   },
   "magcargo": {
     "flamebody": 0.9329322538604644,
     "magmaarmor": 0.06706774613953556
   },
+  "magikarp": {
+    "swiftswim": 1.0
+  },
   "magmar": {
     "flamebody": 1.0
   },
   "magnemite": {
-    "magnetpull": 1.0
+    "magnetpull": 0.99,
+    "sturdy": 0.01
   },
   "magneton": {
     "magnetpull": 0.9991848682042761,
     "sturdy": 0.00081513179572399
   },
+  "makuhita": {
+    "guts": 0.5,
+    "thickfat": 0.5
+  },
   "manectric": {
     "lightningrod": 0.20070977117160352,
     "static": 0.7992902288283965
   },
+  "mankey": {
+    "vitalspirit": 1.0
+  },
   "mantine": {
     "swiftswim": 0.15567028299457086,
     "waterabsorb": 0.8443297170054291
+  },
+  "mareep": {
+    "static": 1.0
+  },
+  "marill": {
+    "hugepower": 0.5,
+    "thickfat": 0.5
   },
   "marowak": {
     "lightningrod": 0.0033325598084847376,
@@ -370,11 +660,23 @@
   "meganium": {
     "overgrow": 1.0
   },
+  "meowth": {
+    "pickup": 1.0
+  },
   "metagross": {
     "clearbody": 1.0
   },
   "metang": {
     "clearbody": 1.0
+  },
+  "metapod": {
+    "shedskin": 1.0
+  },
+  "mew": {
+    "synchronize": 1.0
+  },
+  "mewtwo": {
+    "pressure": 1.0
   },
   "mightyena": {
     "intimidate": 1.0
@@ -394,6 +696,12 @@
   "moltres": {
     "pressure": 1.0
   },
+  "mrmime": {
+    "soundproof": 1.0
+  },
+  "mudkip": {
+    "torrent": 1.0
+  },
   "muk": {
     "stench": 0.10093915373368523,
     "stickyhold": 0.8990608462663149
@@ -401,11 +709,30 @@
   "murkrow": {
     "insomnia": 1.0
   },
+  "natu": {
+    "earlybird": 0.5,
+    "synchronize": 0.5
+  },
   "nidoking": {
     "poisonpoint": 1.0
   },
   "nidoqueen": {
     "poisonpoint": 1.0
+  },
+  "nidoranf": {
+    "poisonpoint": 1.0
+  },
+  "nidoranm": {
+    "poisonpoint": 1.0
+  },
+  "nidorina": {
+    "poisonpoint": 1.0
+  },
+  "nidorino": {
+    "poisonpoint": 1.0
+  },
+  "nincada": {
+    "compoundeyes": 1.0
   },
   "ninetales": {
     "flashfire": 1.0
@@ -421,8 +748,22 @@
     "magnetpull": 0.9560403406950334,
     "sturdy": 0.04395965930496664
   },
+  "numel": {
+    "oblivious": 1.0
+  },
+  "nuzleaf": {
+    "chlorophyll": 0.5,
+    "earlybird": 0.5
+  },
   "octillery": {
     "suctioncups": 1.0
+  },
+  "oddish": {
+    "chlorophyll": 1.0
+  },
+  "omanyte": {
+    "shellarmor": 0.5,
+    "swiftswim": 0.5
   },
   "omastar": {
     "shellarmor": 0.13829869969273817,
@@ -431,6 +772,9 @@
   "onix": {
     "rockhead": 0.9628109628537211,
     "sturdy": 0.03718903714627888
+  },
+  "paras": {
+    "effectspore": 1.0
   },
   "parasect": {
     "effectspore": 1.0
@@ -441,7 +785,19 @@
   "persian": {
     "limber": 1.0
   },
+  "phanpy": {
+    "pickup": 1.0
+  },
+  "pichu": {
+    "static": 1.0
+  },
   "pidgeot": {
+    "keeneye": 1.0
+  },
+  "pidgeotto": {
+    "keeneye": 1.0
+  },
+  "pidgey": {
     "keeneye": 1.0
   },
   "pikachu": {
@@ -450,16 +806,37 @@
   "piloswine": {
     "oblivious": 1.0
   },
+  "pineco": {
+    "sturdy": 1.0
+  },
   "pinsir": {
     "hypercutter": 1.0
+  },
+  "plusle": {
+    "plus": 1.0
   },
   "politoed": {
     "damp": 0.13106069779306595,
     "waterabsorb": 0.868939302206934
   },
+  "poliwag": {
+    "damp": 0.5,
+    "waterabsorb": 0.5
+  },
+  "poliwhirl": {
+    "damp": 0.5,
+    "waterabsorb": 0.5
+  },
   "poliwrath": {
     "damp": 0.16281288403686045,
     "waterabsorb": 0.8371871159631395
+  },
+  "ponyta": {
+    "flashfire": 0.5,
+    "runaway": 0.5
+  },
+  "poochyena": {
+    "runaway": 1.0
   },
   "porygon": {
     "trace": 1.0
@@ -470,12 +847,19 @@
   "primeape": {
     "vitalspirit": 1.0
   },
+  "psyduck": {
+    "cloudnine": 0.5,
+    "damp": 0.5
+  },
   "pupitar": {
     "shedskin": 1.0
   },
   "quagsire": {
     "damp": 0.03278233572048135,
     "waterabsorb": 0.9672176642795186
+  },
+  "quilava": {
+    "blaze": 1.0
   },
   "qwilfish": {
     "poisonpoint": 0.2245895322307993,
@@ -486,6 +870,10 @@
   },
   "raikou": {
     "pressure": 1.0
+  },
+  "ralts": {
+    "synchronize": 0.5,
+    "trace": 0.5
   },
   "rapidash": {
     "flashfire": 0.9285148030777184,
@@ -498,6 +886,9 @@
   "rattata": {
     "guts": 0.7579626231930183,
     "runaway": 0.24203737680698162
+  },
+  "rayquaza": {
+    "airlock": 1.0
   },
   "regice": {
     "clearbody": 1.0
@@ -512,9 +903,16 @@
     "rockhead": 0.13791255390732046,
     "swiftswim": 0.8620874460926795
   },
+  "remoraid": {
+    "hustle": 1.0
+  },
   "rhydon": {
     "lightningrod": 0.37916131242069606,
     "rockhead": 0.6208386875793039
+  },
+  "rhyhorn": {
+    "lightningrod": 0.5,
+    "rockhead": 0.5
   },
   "roselia": {
     "naturalcure": 0.9856287109403128,
@@ -526,6 +924,12 @@
   "salamence": {
     "intimidate": 1.0
   },
+  "sandshrew": {
+    "sandveil": 1.0
+  },
+  "sandslash": {
+    "sandveil": 1.0
+  },
   "sceptile": {
     "overgrow": 1.0
   },
@@ -535,9 +939,26 @@
   "scyther": {
     "swarm": 1.0
   },
+  "seadra": {
+    "poisonpoint": 1.0
+  },
   "seaking": {
     "swiftswim": 0.4388210987930354,
     "waterveil": 0.5611789012069646
+  },
+  "sealeo": {
+    "thickfat": 1.0
+  },
+  "seedot": {
+    "chlorophyll": 0.5,
+    "earlybird": 0.5
+  },
+  "seel": {
+    "thickfat": 1.0
+  },
+  "sentret": {
+    "keeneye": 0.5,
+    "runaway": 0.5
   },
   "seviper": {
     "shedskin": 1.0
@@ -548,18 +969,42 @@
   "shedinja": {
     "wonderguard": 1.0
   },
+  "shelgon": {
+    "rockhead": 1.0
+  },
+  "shellder": {
+    "shellarmor": 1.0
+  },
   "shiftry": {
     "chlorophyll": 0.715980162086919,
     "earlybird": 0.2840198379130811
   },
+  "shroomish": {
+    "effectspore": 1.0
+  },
   "shuckle": {
     "sturdy": 1.0
+  },
+  "shuppet": {
+    "insomnia": 1.0
+  },
+  "silcoon": {
+    "shedskin": 1.0
   },
   "skarmory": {
     "keeneye": 0.9805456225006184,
     "sturdy": 0.01945437749938165
   },
+  "skiploom": {
+    "chlorophyll": 1.0
+  },
+  "skitty": {
+    "cutecharm": 1.0
+  },
   "slaking": {
+    "truant": 1.0
+  },
+  "slakoth": {
     "truant": 1.0
   },
   "slowbro": {
@@ -570,8 +1015,19 @@
     "oblivious": 0.14141173907215365,
     "owntempo": 0.8585882609278463
   },
+  "slowpoke": {
+    "oblivious": 0.5,
+    "owntempo": 0.5
+  },
+  "slugma": {
+    "flamebody": 0.5,
+    "magmaarmor": 0.5
+  },
   "smeargle": {
     "owntempo": 1.0
+  },
+  "smoochum": {
+    "oblivious": 1.0
   },
   "sneasel": {
     "innerfocus": 0.9234519307434783,
@@ -581,11 +1037,35 @@
     "immunity": 0.8598275054771922,
     "thickfat": 0.14017249452280772
   },
+  "snorunt": {
+    "innerfocus": 1.0
+  },
+  "snubbull": {
+    "intimidate": 0.5,
+    "runaway": 0.5
+  },
   "solrock": {
     "levitate": 1.0
   },
+  "spearow": {
+    "keeneye": 1.0
+  },
+  "spheal": {
+    "thickfat": 1.0
+  },
+  "spinarak": {
+    "insomnia": 0.5,
+    "swarm": 0.5
+  },
   "spinda": {
     "owntempo": 1.0
+  },
+  "spoink": {
+    "owntempo": 0.5,
+    "thickfat": 0.5
+  },
+  "squirtle": {
+    "torrent": 1.0
   },
   "stantler": {
     "intimidate": 1.0
@@ -593,6 +1073,10 @@
   "starmie": {
     "illuminate": 0.008036922991760426,
     "naturalcure": 0.9919630770082396
+  },
+  "staryu": {
+    "illuminate": 0.5,
+    "naturalcure": 0.5
   },
   "steelix": {
     "rockhead": 0.7486284471942667,
@@ -611,6 +1095,12 @@
   "sunkern": {
     "chlorophyll": 1.0
   },
+  "surskit": {
+    "swiftswim": 1.0
+  },
+  "swablu": {
+    "naturalcure": 1.0
+  },
   "swalot": {
     "liquidooze": 0.7826231374245061,
     "stickyhold": 0.21737686257549393
@@ -621,26 +1111,52 @@
   "swellow": {
     "guts": 1.0
   },
+  "swinub": {
+    "oblivious": 1.0
+  },
+  "taillow": {
+    "guts": 1.0
+  },
   "tangela": {
     "chlorophyll": 1.0
   },
   "tauros": {
     "intimidate": 1.0
   },
+  "teddiursa": {
+    "pickup": 1.0
+  },
+  "tentacool": {
+    "clearbody": 0.5,
+    "liquidooze": 0.5
+  },
   "tentacruel": {
     "clearbody": 0.20687469774266276,
     "liquidooze": 0.7931253022573372
+  },
+  "togepi": {
+    "hustle": 0.5,
+    "serenegrace": 0.5
   },
   "togetic": {
     "hustle": 0.046477273276681934,
     "serenegrace": 0.9535227267233182
   },
+  "torchic": {
+    "blaze": 1.0
+  },
   "torkoal": {
     "whitesmoke": 1.0
+  },
+  "totodile": {
+    "torrent": 1.0
   },
   "trapinch": {
     "arenatrap": 0.9660535270482655,
     "hypercutter": 0.033946472951734474
+  },
+  "treecko": {
+    "overgrow": 1.0
   },
   "tropius": {
     "chlorophyll": 1.0
@@ -650,6 +1166,9 @@
   },
   "tyranitar": {
     "sandstream": 1.0
+  },
+  "tyrogue": {
+    "guts": 1.0
   },
   "umbreon": {
     "synchronize": 1.0
@@ -669,6 +1188,9 @@
   "venusaur": {
     "overgrow": 1.0
   },
+  "vibrava": {
+    "levitate": 1.0
+  },
   "victreebel": {
     "chlorophyll": 1.0
   },
@@ -682,6 +1204,17 @@
     "illuminate": 0.25980561409719527,
     "swarm": 0.7401943859028047
   },
+  "voltorb": {
+    "soundproof": 0.5,
+    "static": 0.5
+  },
+  "vulpix": {
+    "flashfire": 1.0
+  },
+  "wailmer": {
+    "oblivious": 0.5,
+    "waterveil": 0.5
+  },
   "wailord": {
     "oblivious": 0.0057115577353015,
     "waterveil": 0.9942884422646985
@@ -689,17 +1222,42 @@
   "walrein": {
     "thickfat": 1.0
   },
+  "wartortle": {
+    "torrent": 1.0
+  },
+  "weedle": {
+    "shielddust": 1.0
+  },
+  "weepinbell": {
+    "chlorophyll": 1.0
+  },
   "weezing": {
     "levitate": 1.0
   },
   "whiscash": {
     "oblivious": 1.0
   },
+  "whismur": {
+    "soundproof": 1.0
+  },
   "wigglytuff": {
     "cutecharm": 1.0
   },
   "wingull": {
     "keeneye": 1.0
+  },
+  "wobbuffet": {
+    "shadowtag": 1.0
+  },
+  "wooper": {
+    "damp": 0.5,
+    "waterabsorb": 0.5
+  },
+  "wurmple": {
+    "shielddust": 1.0
+  },
+  "wynaut": {
+    "shadowtag": 1.0
   },
   "xatu": {
     "earlybird": 0.19095423253029462,
@@ -717,5 +1275,8 @@
   },
   "zigzagoon": {
     "pickup": 1.0
+  },
+  "zubat": {
+    "innerfocus": 1.0
   }
 }
