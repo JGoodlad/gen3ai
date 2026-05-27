@@ -102,7 +102,18 @@ class Gen3ObservationEncoder(ObservationEncoder):
         self.species_encoder = SpeciesEncoder(mappings.get("species"), rev.get("species"))
         self.items_encoder = ItemsEncoder(mappings.get("items"), rev.get("items"))
         self.type_encoder = TypeEncoder()
-        self.abilities_encoder = AbilitiesEncoder(mappings.get("abilities"), rev.get("abilities"))
+        # Build species → possible-abilities lookup so the encoder can emit
+        # dex priors (ability1, ability2) for unrevealed opp Pokémon.
+        species_to_abilities = {
+            sp_id: data["abilities"]
+            for sp_id, data in mappings.get("species", {}).items()
+            if isinstance(data, dict) and data.get("abilities")
+        }
+        self.abilities_encoder = AbilitiesEncoder(
+            mappings.get("abilities"),
+            rev.get("abilities"),
+            species_to_abilities=species_to_abilities,
+        )
         self.moves_encoder = MovesEncoder(mappings.get("moves"), rev.get("moves"))
         
         self.pokemon_encoder = PokemonEncoder(

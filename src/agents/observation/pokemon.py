@@ -65,7 +65,7 @@ class PokemonEncoder(ObservationEncoder):
     Aggregates all Pokémon-level encoders into a single POKEMON_VECTOR_DIM-wide vector.
     Layout: species(7) + items(3) + types(2) + abilities(2) + condition(7) + moves(36)
             + hp(1) + species_known(1) + status_counters(2) + spread(18) + hp_block(17) = 96 dims.
-    The active flag (1 dim) is appended by state_encoder, making POKEMON_FULL_DIM = 97.
+    The active flag (1 dim) is appended by state_encoder, making POKEMON_FULL_DIM = 98.
 
     hp_block carries Hidden Power information as `hp_revealed (1) + type_probs (16)`:
       - opponent unknown: hp_revealed=0, probs all zero
@@ -126,7 +126,10 @@ class PokemonEncoder(ObservationEncoder):
         type_vec = self.type_encoder.encode(mon, battle)
         vec[POKEMON_TYPES_OFFSET : POKEMON_TYPES_OFFSET + len(type_vec)] = type_vec
         
-        # 4. Abilities (25)
+        # 4. Abilities (3): [ability1_id, ability2_id, known_flag]
+        # For unrevealed opp mons, ability1/2 hold the species' dex-possible
+        # Gen 3 abilities (e.g. Snorlax = [Immunity, Thick Fat]); once revealed,
+        # ability1 holds the actual ability and known flips to 1.
         ability_vec = self.abilities_encoder.encode(mon, battle)
         vec[POKEMON_ABILITIES_OFFSET : POKEMON_ABILITIES_OFFSET + len(ability_vec)] = ability_vec
         

@@ -20,7 +20,15 @@ MODEL_CONFIG_VERSION = 2
 #   embedding now reaches the species_embedding table for the first time, a new
 #   wire that's not weight-compatible with v1 even if total_dim coincidentally
 #   matched.
-ARCH_SIGNATURE = "gen3_unified_v2"
+#
+# v3 (gen3_abilities_v1): per-Pokémon ability block expanded 2 → 3 dims
+#   ([ability1_id, ability2_id, known_flag]). For unrevealed opp slots the two
+#   dex-possible Gen 3 abilities are written so the model has prior knowledge
+#   (e.g. Snorlax = Immunity OR Thick Fat) instead of a flat zero. The role
+#   encoder embeds BOTH ability IDs through the existing ability_embedding
+#   table — a wire that didn't exist in v2. POKEMON_FULL_DIM 97 → 98, total
+#   obs dim 2414 → 2426.
+ARCH_SIGNATURE = "gen3_abilities_v1"
 
 
 class ModelVersionError(Exception):

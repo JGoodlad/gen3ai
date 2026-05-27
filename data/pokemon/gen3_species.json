@@ -1,7 +1,9 @@
 {
     "abra": {
-        "name": "Abra",
-        "num": 63,
+        "abilities": [
+            "synchronize",
+            "innerfocus"
+        ],
         "baseStats": {
             "atk": 20,
             "def": 15,
@@ -9,11 +11,15 @@
             "spa": 105,
             "spd": 55,
             "spe": 90
-        }
+        },
+        "name": "Abra",
+        "num": 63
     },
     "absol": {
-        "name": "Absol",
-        "num": 359,
+        "abilities": [
+            "pressure",
+            null
+        ],
         "baseStats": {
             "atk": 130,
             "def": 60,
@@ -21,11 +27,15 @@
             "spa": 75,
             "spd": 60,
             "spe": 75
-        }
+        },
+        "name": "Absol",
+        "num": 359
     },
     "aerodactyl": {
-        "name": "Aerodactyl",
-        "num": 142,
+        "abilities": [
+            "rockhead",
+            "pressure"
+        ],
         "baseStats": {
             "atk": 105,
             "def": 65,
@@ -33,11 +43,15 @@
             "spa": 60,
             "spd": 75,
             "spe": 130
-        }
+        },
+        "name": "Aerodactyl",
+        "num": 142
     },
     "aggron": {
-        "name": "Aggron",
-        "num": 306,
+        "abilities": [
+            "sturdy",
+            "rockhead"
+        ],
         "baseStats": {
             "atk": 110,
             "def": 180,
@@ -45,11 +59,15 @@
             "spa": 60,
             "spd": 60,
             "spe": 50
-        }
+        },
+        "name": "Aggron",
+        "num": 306
     },
     "aipom": {
-        "name": "Aipom",
-        "num": 190,
+        "abilities": [
+            "runaway",
+            "pickup"
+        ],
         "baseStats": {
             "atk": 70,
             "def": 55,
@@ -57,11 +75,15 @@
             "spa": 40,
             "spd": 55,
             "spe": 85
-        }
+        },
+        "name": "Aipom",
+        "num": 190
     },
     "alakazam": {
-        "name": "Alakazam",
-        "num": 65,
+        "abilities": [
+            "synchronize",
+            "innerfocus"
+        ],
         "baseStats": {
             "atk": 50,
             "def": 45,
@@ -69,11 +91,15 @@
             "spa": 135,
             "spd": 85,
             "spe": 120
-        }
+        },
+        "name": "Alakazam",
+        "num": 65
     },
     "altaria": {
-        "name": "Altaria",
-        "num": 334,
+        "abilities": [
+            "naturalcure",
+            null
+        ],
         "baseStats": {
             "atk": 70,
             "def": 90,
@@ -81,11 +107,15 @@
             "spa": 70,
             "spd": 105,
             "spe": 80
-        }
+        },
+        "name": "Altaria",
+        "num": 334
     },
     "ampharos": {
-        "name": "Ampharos",
-        "num": 181,
+        "abilities": [
+            "static",
+            null
+        ],
         "baseStats": {
             "atk": 75,
             "def": 75,
@@ -93,11 +123,15 @@
             "spa": 115,
             "spd": 90,
             "spe": 55
-        }
+        },
+        "name": "Ampharos",
+        "num": 181
     },
     "anorith": {
-        "name": "Anorith",
-        "num": 347,
+        "abilities": [
+            "battlearmor",
+            null
+        ],
         "baseStats": {
             "atk": 95,
             "def": 50,
@@ -105,11 +139,15 @@
             "spa": 40,
             "spd": 50,
             "spe": 75
-        }
+        },
+        "name": "Anorith",
+        "num": 347
     },
     "arbok": {
-        "name": "Arbok",
-        "num": 24,
+        "abilities": [
+            "intimidate",
+            "shedskin"
+        ],
         "baseStats": {
             "atk": 85,
             "def": 69,
@@ -117,11 +155,15 @@
             "spa": 65,
             "spd": 79,
             "spe": 80
-        }
+        },
+        "name": "Arbok",
+        "num": 24
     },
     "arcanine": {
-        "name": "Arcanine",
-        "num": 59,
+        "abilities": [
+            "intimidate",
+            "flashfire"
+        ],
         "baseStats": {
             "atk": 110,
             "def": 80,
@@ -129,11 +171,15 @@
             "spa": 100,
             "spd": 80,
             "spe": 95
-        }
+        },
+        "name": "Arcanine",
+        "num": 59
     },
     "ariados": {
-        "name": "Ariados",
-        "num": 168,
+        "abilities": [
+            "swarm",
+            "insomnia"
+        ],
         "baseStats": {
             "atk": 90,
             "def": 70,
@@ -141,11 +187,15 @@
             "spa": 60,
             "spd": 60,
             "spe": 40
-        }
+        },
+        "name": "Ariados",
+        "num": 168
     },
     "armaldo": {
-        "name": "Armaldo",
-        "num": 348,
+        "abilities": [
+            "battlearmor",
+            null
+        ],
         "baseStats": {
             "atk": 125,
             "def": 100,
@@ -153,11 +203,15 @@
             "spa": 70,
             "spd": 80,
             "spe": 45
-        }
+        },
+        "name": "Armaldo",
+        "num": 348
     },
     "aron": {
-        "name": "Aron",
-        "num": 304,
+        "abilities": [
+            "sturdy",
+            "rockhead"
+        ],
         "baseStats": {
             "atk": 70,
             "def": 100,
@@ -165,11 +219,15 @@
             "spa": 40,
             "spd": 40,
             "spe": 30
-        }
+        },
+        "name": "Aron",
+        "num": 304
     },
     "articuno": {
-        "name": "Articuno",
-        "num": 144,
+        "abilities": [
+            "pressure",
+            null
+        ],
         "baseStats": {
             "atk": 85,
             "def": 100,
@@ -177,11 +235,15 @@
             "spa": 95,
             "spd": 125,
             "spe": 85
-        }
+        },
+        "name": "Articuno",
+        "num": 144
     },
     "azumarill": {
-        "name": "Azumarill",
-        "num": 184,
+        "abilities": [
+            "thickfat",
+            "hugepower"
+        ],
         "baseStats": {
             "atk": 50,
             "def": 80,
@@ -189,11 +251,15 @@
             "spa": 50,
             "spd": 80,
             "spe": 50
-        }
+        },
+        "name": "Azumarill",
+        "num": 184
     },
     "azurill": {
-        "name": "Azurill",
-        "num": 298,
+        "abilities": [
+            "thickfat",
+            "hugepower"
+        ],
         "baseStats": {
             "atk": 20,
             "def": 40,
@@ -201,11 +267,15 @@
             "spa": 20,
             "spd": 40,
             "spe": 20
-        }
+        },
+        "name": "Azurill",
+        "num": 298
     },
     "bagon": {
-        "name": "Bagon",
-        "num": 371,
+        "abilities": [
+            "rockhead",
+            null
+        ],
         "baseStats": {
             "atk": 75,
             "def": 60,
@@ -213,11 +283,15 @@
             "spa": 40,
             "spd": 30,
             "spe": 50
-        }
+        },
+        "name": "Bagon",
+        "num": 371
     },
     "baltoy": {
-        "name": "Baltoy",
-        "num": 343,
+        "abilities": [
+            "levitate",
+            null
+        ],
         "baseStats": {
             "atk": 40,
             "def": 55,
@@ -225,11 +299,15 @@
             "spa": 40,
             "spd": 70,
             "spe": 55
-        }
+        },
+        "name": "Baltoy",
+        "num": 343
     },
     "banette": {
-        "name": "Banette",
-        "num": 354,
+        "abilities": [
+            "insomnia",
+            null
+        ],
         "baseStats": {
             "atk": 115,
             "def": 65,
@@ -237,11 +315,15 @@
             "spa": 83,
             "spd": 63,
             "spe": 65
-        }
+        },
+        "name": "Banette",
+        "num": 354
     },
     "barboach": {
-        "name": "Barboach",
-        "num": 339,
+        "abilities": [
+            "oblivious",
+            null
+        ],
         "baseStats": {
             "atk": 48,
             "def": 43,
@@ -249,11 +331,15 @@
             "spa": 46,
             "spd": 41,
             "spe": 60
-        }
+        },
+        "name": "Barboach",
+        "num": 339
     },
     "bayleef": {
-        "name": "Bayleef",
-        "num": 153,
+        "abilities": [
+            "overgrow",
+            null
+        ],
         "baseStats": {
             "atk": 62,
             "def": 80,
@@ -261,11 +347,15 @@
             "spa": 63,
             "spd": 80,
             "spe": 60
-        }
+        },
+        "name": "Bayleef",
+        "num": 153
     },
     "beautifly": {
-        "name": "Beautifly",
-        "num": 267,
+        "abilities": [
+            "swarm",
+            null
+        ],
         "baseStats": {
             "atk": 70,
             "def": 50,
@@ -273,11 +363,15 @@
             "spa": 90,
             "spd": 50,
             "spe": 65
-        }
+        },
+        "name": "Beautifly",
+        "num": 267
     },
     "beedrill": {
-        "name": "Beedrill",
-        "num": 15,
+        "abilities": [
+            "swarm",
+            null
+        ],
         "baseStats": {
             "atk": 80,
             "def": 40,
@@ -285,11 +379,15 @@
             "spa": 45,
             "spd": 80,
             "spe": 75
-        }
+        },
+        "name": "Beedrill",
+        "num": 15
     },
     "beldum": {
-        "name": "Beldum",
-        "num": 374,
+        "abilities": [
+            "clearbody",
+            null
+        ],
         "baseStats": {
             "atk": 55,
             "def": 80,
@@ -297,11 +395,15 @@
             "spa": 35,
             "spd": 60,
             "spe": 30
-        }
+        },
+        "name": "Beldum",
+        "num": 374
     },
     "bellossom": {
-        "name": "Bellossom",
-        "num": 182,
+        "abilities": [
+            "chlorophyll",
+            null
+        ],
         "baseStats": {
             "atk": 80,
             "def": 85,
@@ -309,11 +411,15 @@
             "spa": 90,
             "spd": 100,
             "spe": 50
-        }
+        },
+        "name": "Bellossom",
+        "num": 182
     },
     "bellsprout": {
-        "name": "Bellsprout",
-        "num": 69,
+        "abilities": [
+            "chlorophyll",
+            null
+        ],
         "baseStats": {
             "atk": 75,
             "def": 35,
@@ -321,11 +427,15 @@
             "spa": 70,
             "spd": 30,
             "spe": 40
-        }
+        },
+        "name": "Bellsprout",
+        "num": 69
     },
     "blastoise": {
-        "name": "Blastoise",
-        "num": 9,
+        "abilities": [
+            "torrent",
+            null
+        ],
         "baseStats": {
             "atk": 83,
             "def": 100,
@@ -333,11 +443,15 @@
             "spa": 85,
             "spd": 105,
             "spe": 78
-        }
+        },
+        "name": "Blastoise",
+        "num": 9
     },
     "blaziken": {
-        "name": "Blaziken",
-        "num": 257,
+        "abilities": [
+            "blaze",
+            null
+        ],
         "baseStats": {
             "atk": 120,
             "def": 70,
@@ -345,11 +459,15 @@
             "spa": 110,
             "spd": 70,
             "spe": 80
-        }
+        },
+        "name": "Blaziken",
+        "num": 257
     },
     "blissey": {
-        "name": "Blissey",
-        "num": 242,
+        "abilities": [
+            "naturalcure",
+            "serenegrace"
+        ],
         "baseStats": {
             "atk": 10,
             "def": 10,
@@ -357,11 +475,15 @@
             "spa": 75,
             "spd": 135,
             "spe": 55
-        }
+        },
+        "name": "Blissey",
+        "num": 242
     },
     "breloom": {
-        "name": "Breloom",
-        "num": 286,
+        "abilities": [
+            "effectspore",
+            null
+        ],
         "baseStats": {
             "atk": 130,
             "def": 80,
@@ -369,11 +491,15 @@
             "spa": 60,
             "spd": 60,
             "spe": 70
-        }
+        },
+        "name": "Breloom",
+        "num": 286
     },
     "bulbasaur": {
-        "name": "Bulbasaur",
-        "num": 1,
+        "abilities": [
+            "overgrow",
+            null
+        ],
         "baseStats": {
             "atk": 49,
             "def": 49,
@@ -381,11 +507,15 @@
             "spa": 65,
             "spd": 65,
             "spe": 45
-        }
+        },
+        "name": "Bulbasaur",
+        "num": 1
     },
     "butterfree": {
-        "name": "Butterfree",
-        "num": 12,
+        "abilities": [
+            "compoundeyes",
+            null
+        ],
         "baseStats": {
             "atk": 45,
             "def": 50,
@@ -393,11 +523,15 @@
             "spa": 80,
             "spd": 80,
             "spe": 70
-        }
+        },
+        "name": "Butterfree",
+        "num": 12
     },
     "cacnea": {
-        "name": "Cacnea",
-        "num": 331,
+        "abilities": [
+            "sandveil",
+            null
+        ],
         "baseStats": {
             "atk": 85,
             "def": 40,
@@ -405,11 +539,15 @@
             "spa": 85,
             "spd": 40,
             "spe": 35
-        }
+        },
+        "name": "Cacnea",
+        "num": 331
     },
     "cacturne": {
-        "name": "Cacturne",
-        "num": 332,
+        "abilities": [
+            "sandveil",
+            null
+        ],
         "baseStats": {
             "atk": 115,
             "def": 60,
@@ -417,11 +555,15 @@
             "spa": 115,
             "spd": 60,
             "spe": 55
-        }
+        },
+        "name": "Cacturne",
+        "num": 332
     },
     "camerupt": {
-        "name": "Camerupt",
-        "num": 323,
+        "abilities": [
+            "magmaarmor",
+            null
+        ],
         "baseStats": {
             "atk": 100,
             "def": 70,
@@ -429,11 +571,15 @@
             "spa": 105,
             "spd": 75,
             "spe": 40
-        }
+        },
+        "name": "Camerupt",
+        "num": 323
     },
     "carvanha": {
-        "name": "Carvanha",
-        "num": 318,
+        "abilities": [
+            "roughskin",
+            null
+        ],
         "baseStats": {
             "atk": 90,
             "def": 20,
@@ -441,11 +587,15 @@
             "spa": 65,
             "spd": 20,
             "spe": 65
-        }
+        },
+        "name": "Carvanha",
+        "num": 318
     },
     "cascoon": {
-        "name": "Cascoon",
-        "num": 268,
+        "abilities": [
+            "shedskin",
+            null
+        ],
         "baseStats": {
             "atk": 35,
             "def": 55,
@@ -453,11 +603,15 @@
             "spa": 25,
             "spd": 25,
             "spe": 15
-        }
+        },
+        "name": "Cascoon",
+        "num": 268
     },
     "castform": {
-        "name": "Castform",
-        "num": 351,
+        "abilities": [
+            "forecast",
+            null
+        ],
         "baseStats": {
             "atk": 70,
             "def": 70,
@@ -465,11 +619,15 @@
             "spa": 70,
             "spd": 70,
             "spe": 70
-        }
+        },
+        "name": "Castform",
+        "num": 351
     },
     "caterpie": {
-        "name": "Caterpie",
-        "num": 10,
+        "abilities": [
+            "shielddust",
+            null
+        ],
         "baseStats": {
             "atk": 30,
             "def": 35,
@@ -477,11 +635,15 @@
             "spa": 20,
             "spd": 20,
             "spe": 45
-        }
+        },
+        "name": "Caterpie",
+        "num": 10
     },
     "celebi": {
-        "name": "Celebi",
-        "num": 251,
+        "abilities": [
+            "naturalcure",
+            null
+        ],
         "baseStats": {
             "atk": 100,
             "def": 100,
@@ -489,11 +651,15 @@
             "spa": 100,
             "spd": 100,
             "spe": 100
-        }
+        },
+        "name": "Celebi",
+        "num": 251
     },
     "chansey": {
-        "name": "Chansey",
-        "num": 113,
+        "abilities": [
+            "naturalcure",
+            "serenegrace"
+        ],
         "baseStats": {
             "atk": 5,
             "def": 5,
@@ -501,11 +667,15 @@
             "spa": 35,
             "spd": 105,
             "spe": 50
-        }
+        },
+        "name": "Chansey",
+        "num": 113
     },
     "charizard": {
-        "name": "Charizard",
-        "num": 6,
+        "abilities": [
+            "blaze",
+            null
+        ],
         "baseStats": {
             "atk": 84,
             "def": 78,
@@ -513,11 +683,15 @@
             "spa": 109,
             "spd": 85,
             "spe": 100
-        }
+        },
+        "name": "Charizard",
+        "num": 6
     },
     "charmander": {
-        "name": "Charmander",
-        "num": 4,
+        "abilities": [
+            "blaze",
+            null
+        ],
         "baseStats": {
             "atk": 52,
             "def": 43,
@@ -525,11 +699,15 @@
             "spa": 60,
             "spd": 50,
             "spe": 65
-        }
+        },
+        "name": "Charmander",
+        "num": 4
     },
     "charmeleon": {
-        "name": "Charmeleon",
-        "num": 5,
+        "abilities": [
+            "blaze",
+            null
+        ],
         "baseStats": {
             "atk": 64,
             "def": 58,
@@ -537,11 +715,15 @@
             "spa": 80,
             "spd": 65,
             "spe": 80
-        }
+        },
+        "name": "Charmeleon",
+        "num": 5
     },
     "chikorita": {
-        "name": "Chikorita",
-        "num": 152,
+        "abilities": [
+            "overgrow",
+            null
+        ],
         "baseStats": {
             "atk": 49,
             "def": 65,
@@ -549,11 +731,15 @@
             "spa": 49,
             "spd": 65,
             "spe": 45
-        }
+        },
+        "name": "Chikorita",
+        "num": 152
     },
     "chimecho": {
-        "name": "Chimecho",
-        "num": 358,
+        "abilities": [
+            "levitate",
+            null
+        ],
         "baseStats": {
             "atk": 50,
             "def": 70,
@@ -561,11 +747,15 @@
             "spa": 95,
             "spd": 80,
             "spe": 65
-        }
+        },
+        "name": "Chimecho",
+        "num": 358
     },
     "chinchou": {
-        "name": "Chinchou",
-        "num": 170,
+        "abilities": [
+            "voltabsorb",
+            "illuminate"
+        ],
         "baseStats": {
             "atk": 38,
             "def": 38,
@@ -573,11 +763,15 @@
             "spa": 56,
             "spd": 56,
             "spe": 67
-        }
+        },
+        "name": "Chinchou",
+        "num": 170
     },
     "clamperl": {
-        "name": "Clamperl",
-        "num": 366,
+        "abilities": [
+            "shellarmor",
+            null
+        ],
         "baseStats": {
             "atk": 64,
             "def": 85,
@@ -585,11 +779,15 @@
             "spa": 74,
             "spd": 55,
             "spe": 32
-        }
+        },
+        "name": "Clamperl",
+        "num": 366
     },
     "claydol": {
-        "name": "Claydol",
-        "num": 344,
+        "abilities": [
+            "levitate",
+            null
+        ],
         "baseStats": {
             "atk": 70,
             "def": 105,
@@ -597,11 +795,15 @@
             "spa": 70,
             "spd": 120,
             "spe": 75
-        }
+        },
+        "name": "Claydol",
+        "num": 344
     },
     "clefable": {
-        "name": "Clefable",
-        "num": 36,
+        "abilities": [
+            "cutecharm",
+            null
+        ],
         "baseStats": {
             "atk": 70,
             "def": 73,
@@ -609,11 +811,15 @@
             "spa": 85,
             "spd": 90,
             "spe": 60
-        }
+        },
+        "name": "Clefable",
+        "num": 36
     },
     "clefairy": {
-        "name": "Clefairy",
-        "num": 35,
+        "abilities": [
+            "cutecharm",
+            null
+        ],
         "baseStats": {
             "atk": 45,
             "def": 48,
@@ -621,11 +827,15 @@
             "spa": 60,
             "spd": 65,
             "spe": 35
-        }
+        },
+        "name": "Clefairy",
+        "num": 35
     },
     "cleffa": {
-        "name": "Cleffa",
-        "num": 173,
+        "abilities": [
+            "cutecharm",
+            null
+        ],
         "baseStats": {
             "atk": 25,
             "def": 28,
@@ -633,11 +843,15 @@
             "spa": 45,
             "spd": 55,
             "spe": 15
-        }
+        },
+        "name": "Cleffa",
+        "num": 173
     },
     "cloyster": {
-        "name": "Cloyster",
-        "num": 91,
+        "abilities": [
+            "shellarmor",
+            null
+        ],
         "baseStats": {
             "atk": 95,
             "def": 180,
@@ -645,11 +859,15 @@
             "spa": 85,
             "spd": 45,
             "spe": 70
-        }
+        },
+        "name": "Cloyster",
+        "num": 91
     },
     "combusken": {
-        "name": "Combusken",
-        "num": 256,
+        "abilities": [
+            "blaze",
+            null
+        ],
         "baseStats": {
             "atk": 85,
             "def": 60,
@@ -657,11 +875,15 @@
             "spa": 85,
             "spd": 60,
             "spe": 55
-        }
+        },
+        "name": "Combusken",
+        "num": 256
     },
     "corphish": {
-        "name": "Corphish",
-        "num": 341,
+        "abilities": [
+            "hypercutter",
+            "shellarmor"
+        ],
         "baseStats": {
             "atk": 80,
             "def": 65,
@@ -669,11 +891,15 @@
             "spa": 50,
             "spd": 35,
             "spe": 35
-        }
+        },
+        "name": "Corphish",
+        "num": 341
     },
     "corsola": {
-        "name": "Corsola",
-        "num": 222,
+        "abilities": [
+            "hustle",
+            "naturalcure"
+        ],
         "baseStats": {
             "atk": 55,
             "def": 85,
@@ -681,11 +907,15 @@
             "spa": 65,
             "spd": 85,
             "spe": 35
-        }
+        },
+        "name": "Corsola",
+        "num": 222
     },
     "cradily": {
-        "name": "Cradily",
-        "num": 346,
+        "abilities": [
+            "suctioncups",
+            null
+        ],
         "baseStats": {
             "atk": 81,
             "def": 97,
@@ -693,11 +923,15 @@
             "spa": 81,
             "spd": 107,
             "spe": 43
-        }
+        },
+        "name": "Cradily",
+        "num": 346
     },
     "crawdaunt": {
-        "name": "Crawdaunt",
-        "num": 342,
+        "abilities": [
+            "hypercutter",
+            "shellarmor"
+        ],
         "baseStats": {
             "atk": 120,
             "def": 85,
@@ -705,11 +939,15 @@
             "spa": 90,
             "spd": 55,
             "spe": 55
-        }
+        },
+        "name": "Crawdaunt",
+        "num": 342
     },
     "crobat": {
-        "name": "Crobat",
-        "num": 169,
+        "abilities": [
+            "innerfocus",
+            null
+        ],
         "baseStats": {
             "atk": 90,
             "def": 80,
@@ -717,11 +955,15 @@
             "spa": 70,
             "spd": 80,
             "spe": 130
-        }
+        },
+        "name": "Crobat",
+        "num": 169
     },
     "croconaw": {
-        "name": "Croconaw",
-        "num": 159,
+        "abilities": [
+            "torrent",
+            null
+        ],
         "baseStats": {
             "atk": 80,
             "def": 80,
@@ -729,11 +971,15 @@
             "spa": 59,
             "spd": 63,
             "spe": 58
-        }
+        },
+        "name": "Croconaw",
+        "num": 159
     },
     "cubone": {
-        "name": "Cubone",
-        "num": 104,
+        "abilities": [
+            "rockhead",
+            "lightningrod"
+        ],
         "baseStats": {
             "atk": 50,
             "def": 95,
@@ -741,11 +987,15 @@
             "spa": 40,
             "spd": 50,
             "spe": 35
-        }
+        },
+        "name": "Cubone",
+        "num": 104
     },
     "cyndaquil": {
-        "name": "Cyndaquil",
-        "num": 155,
+        "abilities": [
+            "blaze",
+            null
+        ],
         "baseStats": {
             "atk": 52,
             "def": 43,
@@ -753,11 +1003,15 @@
             "spa": 60,
             "spd": 50,
             "spe": 65
-        }
+        },
+        "name": "Cyndaquil",
+        "num": 155
     },
     "delcatty": {
-        "name": "Delcatty",
-        "num": 301,
+        "abilities": [
+            "cutecharm",
+            null
+        ],
         "baseStats": {
             "atk": 65,
             "def": 65,
@@ -765,11 +1019,15 @@
             "spa": 55,
             "spd": 55,
             "spe": 70
-        }
+        },
+        "name": "Delcatty",
+        "num": 301
     },
     "delibird": {
-        "name": "Delibird",
-        "num": 225,
+        "abilities": [
+            "vitalspirit",
+            "hustle"
+        ],
         "baseStats": {
             "atk": 55,
             "def": 45,
@@ -777,11 +1035,15 @@
             "spa": 65,
             "spd": 45,
             "spe": 75
-        }
+        },
+        "name": "Delibird",
+        "num": 225
     },
     "deoxys": {
-        "name": "Deoxys",
-        "num": 386,
+        "abilities": [
+            "pressure",
+            null
+        ],
         "baseStats": {
             "atk": 150,
             "def": 50,
@@ -789,11 +1051,15 @@
             "spa": 150,
             "spd": 50,
             "spe": 150
-        }
+        },
+        "name": "Deoxys",
+        "num": 386
     },
     "dewgong": {
-        "name": "Dewgong",
-        "num": 87,
+        "abilities": [
+            "thickfat",
+            null
+        ],
         "baseStats": {
             "atk": 70,
             "def": 80,
@@ -801,11 +1067,15 @@
             "spa": 70,
             "spd": 95,
             "spe": 70
-        }
+        },
+        "name": "Dewgong",
+        "num": 87
     },
     "diglett": {
-        "name": "Diglett",
-        "num": 50,
+        "abilities": [
+            "sandveil",
+            "arenatrap"
+        ],
         "baseStats": {
             "atk": 55,
             "def": 25,
@@ -813,11 +1083,15 @@
             "spa": 35,
             "spd": 45,
             "spe": 95
-        }
+        },
+        "name": "Diglett",
+        "num": 50
     },
     "ditto": {
-        "name": "Ditto",
-        "num": 132,
+        "abilities": [
+            "limber",
+            null
+        ],
         "baseStats": {
             "atk": 48,
             "def": 48,
@@ -825,11 +1099,15 @@
             "spa": 48,
             "spd": 48,
             "spe": 48
-        }
+        },
+        "name": "Ditto",
+        "num": 132
     },
     "dodrio": {
-        "name": "Dodrio",
-        "num": 85,
+        "abilities": [
+            "runaway",
+            "earlybird"
+        ],
         "baseStats": {
             "atk": 110,
             "def": 70,
@@ -837,11 +1115,15 @@
             "spa": 60,
             "spd": 60,
             "spe": 100
-        }
+        },
+        "name": "Dodrio",
+        "num": 85
     },
     "doduo": {
-        "name": "Doduo",
-        "num": 84,
+        "abilities": [
+            "runaway",
+            "earlybird"
+        ],
         "baseStats": {
             "atk": 85,
             "def": 45,
@@ -849,11 +1131,15 @@
             "spa": 35,
             "spd": 35,
             "spe": 75
-        }
+        },
+        "name": "Doduo",
+        "num": 84
     },
     "donphan": {
-        "name": "Donphan",
-        "num": 232,
+        "abilities": [
+            "sturdy",
+            null
+        ],
         "baseStats": {
             "atk": 120,
             "def": 120,
@@ -861,11 +1147,15 @@
             "spa": 60,
             "spd": 60,
             "spe": 50
-        }
+        },
+        "name": "Donphan",
+        "num": 232
     },
     "dragonair": {
-        "name": "Dragonair",
-        "num": 148,
+        "abilities": [
+            "shedskin",
+            null
+        ],
         "baseStats": {
             "atk": 84,
             "def": 65,
@@ -873,11 +1163,15 @@
             "spa": 70,
             "spd": 70,
             "spe": 70
-        }
+        },
+        "name": "Dragonair",
+        "num": 148
     },
     "dragonite": {
-        "name": "Dragonite",
-        "num": 149,
+        "abilities": [
+            "innerfocus",
+            null
+        ],
         "baseStats": {
             "atk": 134,
             "def": 95,
@@ -885,11 +1179,15 @@
             "spa": 100,
             "spd": 100,
             "spe": 80
-        }
+        },
+        "name": "Dragonite",
+        "num": 149
     },
     "dratini": {
-        "name": "Dratini",
-        "num": 147,
+        "abilities": [
+            "shedskin",
+            null
+        ],
         "baseStats": {
             "atk": 64,
             "def": 45,
@@ -897,11 +1195,15 @@
             "spa": 50,
             "spd": 50,
             "spe": 50
-        }
+        },
+        "name": "Dratini",
+        "num": 147
     },
     "drowzee": {
-        "name": "Drowzee",
-        "num": 96,
+        "abilities": [
+            "insomnia",
+            null
+        ],
         "baseStats": {
             "atk": 48,
             "def": 45,
@@ -909,11 +1211,15 @@
             "spa": 43,
             "spd": 90,
             "spe": 42
-        }
+        },
+        "name": "Drowzee",
+        "num": 96
     },
     "dugtrio": {
-        "name": "Dugtrio",
-        "num": 51,
+        "abilities": [
+            "sandveil",
+            "arenatrap"
+        ],
         "baseStats": {
             "atk": 80,
             "def": 50,
@@ -921,11 +1227,15 @@
             "spa": 50,
             "spd": 70,
             "spe": 120
-        }
+        },
+        "name": "Dugtrio",
+        "num": 51
     },
     "dunsparce": {
-        "name": "Dunsparce",
-        "num": 206,
+        "abilities": [
+            "serenegrace",
+            "runaway"
+        ],
         "baseStats": {
             "atk": 70,
             "def": 70,
@@ -933,11 +1243,15 @@
             "spa": 65,
             "spd": 65,
             "spe": 45
-        }
+        },
+        "name": "Dunsparce",
+        "num": 206
     },
     "dusclops": {
-        "name": "Dusclops",
-        "num": 356,
+        "abilities": [
+            "pressure",
+            null
+        ],
         "baseStats": {
             "atk": 70,
             "def": 130,
@@ -945,11 +1259,15 @@
             "spa": 60,
             "spd": 130,
             "spe": 25
-        }
+        },
+        "name": "Dusclops",
+        "num": 356
     },
     "duskull": {
-        "name": "Duskull",
-        "num": 355,
+        "abilities": [
+            "levitate",
+            null
+        ],
         "baseStats": {
             "atk": 40,
             "def": 90,
@@ -957,11 +1275,15 @@
             "spa": 30,
             "spd": 90,
             "spe": 25
-        }
+        },
+        "name": "Duskull",
+        "num": 355
     },
     "dustox": {
-        "name": "Dustox",
-        "num": 269,
+        "abilities": [
+            "shielddust",
+            null
+        ],
         "baseStats": {
             "atk": 50,
             "def": 70,
@@ -969,11 +1291,15 @@
             "spa": 50,
             "spd": 90,
             "spe": 65
-        }
+        },
+        "name": "Dustox",
+        "num": 269
     },
     "eevee": {
-        "name": "Eevee",
-        "num": 133,
+        "abilities": [
+            "runaway",
+            null
+        ],
         "baseStats": {
             "atk": 55,
             "def": 50,
@@ -981,11 +1307,15 @@
             "spa": 45,
             "spd": 65,
             "spe": 55
-        }
+        },
+        "name": "Eevee",
+        "num": 133
     },
     "ekans": {
-        "name": "Ekans",
-        "num": 23,
+        "abilities": [
+            "intimidate",
+            "shedskin"
+        ],
         "baseStats": {
             "atk": 60,
             "def": 44,
@@ -993,11 +1323,15 @@
             "spa": 40,
             "spd": 54,
             "spe": 55
-        }
+        },
+        "name": "Ekans",
+        "num": 23
     },
     "electabuzz": {
-        "name": "Electabuzz",
-        "num": 125,
+        "abilities": [
+            "static",
+            null
+        ],
         "baseStats": {
             "atk": 83,
             "def": 57,
@@ -1005,11 +1339,15 @@
             "spa": 95,
             "spd": 85,
             "spe": 105
-        }
+        },
+        "name": "Electabuzz",
+        "num": 125
     },
     "electrike": {
-        "name": "Electrike",
-        "num": 309,
+        "abilities": [
+            "static",
+            "lightningrod"
+        ],
         "baseStats": {
             "atk": 45,
             "def": 40,
@@ -1017,11 +1355,15 @@
             "spa": 65,
             "spd": 40,
             "spe": 65
-        }
+        },
+        "name": "Electrike",
+        "num": 309
     },
     "electrode": {
-        "name": "Electrode",
-        "num": 101,
+        "abilities": [
+            "soundproof",
+            "static"
+        ],
         "baseStats": {
             "atk": 50,
             "def": 70,
@@ -1029,11 +1371,15 @@
             "spa": 80,
             "spd": 80,
             "spe": 140
-        }
+        },
+        "name": "Electrode",
+        "num": 101
     },
     "elekid": {
-        "name": "Elekid",
-        "num": 239,
+        "abilities": [
+            "static",
+            null
+        ],
         "baseStats": {
             "atk": 63,
             "def": 37,
@@ -1041,11 +1387,15 @@
             "spa": 65,
             "spd": 55,
             "spe": 95
-        }
+        },
+        "name": "Elekid",
+        "num": 239
     },
     "entei": {
-        "name": "Entei",
-        "num": 244,
+        "abilities": [
+            "pressure",
+            null
+        ],
         "baseStats": {
             "atk": 115,
             "def": 85,
@@ -1053,11 +1403,15 @@
             "spa": 90,
             "spd": 75,
             "spe": 100
-        }
+        },
+        "name": "Entei",
+        "num": 244
     },
     "espeon": {
-        "name": "Espeon",
-        "num": 196,
+        "abilities": [
+            "synchronize",
+            null
+        ],
         "baseStats": {
             "atk": 65,
             "def": 60,
@@ -1065,11 +1419,15 @@
             "spa": 130,
             "spd": 95,
             "spe": 110
-        }
+        },
+        "name": "Espeon",
+        "num": 196
     },
     "exeggcute": {
-        "name": "Exeggcute",
-        "num": 102,
+        "abilities": [
+            "chlorophyll",
+            null
+        ],
         "baseStats": {
             "atk": 40,
             "def": 80,
@@ -1077,11 +1435,15 @@
             "spa": 60,
             "spd": 45,
             "spe": 40
-        }
+        },
+        "name": "Exeggcute",
+        "num": 102
     },
     "exeggutor": {
-        "name": "Exeggutor",
-        "num": 103,
+        "abilities": [
+            "chlorophyll",
+            null
+        ],
         "baseStats": {
             "atk": 95,
             "def": 85,
@@ -1089,11 +1451,15 @@
             "spa": 125,
             "spd": 65,
             "spe": 55
-        }
+        },
+        "name": "Exeggutor",
+        "num": 103
     },
     "exploud": {
-        "name": "Exploud",
-        "num": 295,
+        "abilities": [
+            "soundproof",
+            null
+        ],
         "baseStats": {
             "atk": 91,
             "def": 63,
@@ -1101,11 +1467,15 @@
             "spa": 91,
             "spd": 63,
             "spe": 68
-        }
+        },
+        "name": "Exploud",
+        "num": 295
     },
     "farfetchd": {
-        "name": "Farfetch\u2019d",
-        "num": 83,
+        "abilities": [
+            "keeneye",
+            "innerfocus"
+        ],
         "baseStats": {
             "atk": 65,
             "def": 55,
@@ -1113,11 +1483,15 @@
             "spa": 58,
             "spd": 62,
             "spe": 60
-        }
+        },
+        "name": "Farfetch\u2019d",
+        "num": 83
     },
     "fearow": {
-        "name": "Fearow",
-        "num": 22,
+        "abilities": [
+            "keeneye",
+            null
+        ],
         "baseStats": {
             "atk": 90,
             "def": 65,
@@ -1125,11 +1499,15 @@
             "spa": 61,
             "spd": 61,
             "spe": 100
-        }
+        },
+        "name": "Fearow",
+        "num": 22
     },
     "feebas": {
-        "name": "Feebas",
-        "num": 349,
+        "abilities": [
+            "swiftswim",
+            null
+        ],
         "baseStats": {
             "atk": 15,
             "def": 20,
@@ -1137,11 +1515,15 @@
             "spa": 10,
             "spd": 55,
             "spe": 80
-        }
+        },
+        "name": "Feebas",
+        "num": 349
     },
     "feraligatr": {
-        "name": "Feraligatr",
-        "num": 160,
+        "abilities": [
+            "torrent",
+            null
+        ],
         "baseStats": {
             "atk": 105,
             "def": 100,
@@ -1149,11 +1531,15 @@
             "spa": 79,
             "spd": 83,
             "spe": 78
-        }
+        },
+        "name": "Feraligatr",
+        "num": 160
     },
     "flaaffy": {
-        "name": "Flaaffy",
-        "num": 180,
+        "abilities": [
+            "static",
+            null
+        ],
         "baseStats": {
             "atk": 55,
             "def": 55,
@@ -1161,11 +1547,15 @@
             "spa": 80,
             "spd": 60,
             "spe": 45
-        }
+        },
+        "name": "Flaaffy",
+        "num": 180
     },
     "flareon": {
-        "name": "Flareon",
-        "num": 136,
+        "abilities": [
+            "flashfire",
+            null
+        ],
         "baseStats": {
             "atk": 130,
             "def": 60,
@@ -1173,11 +1563,15 @@
             "spa": 95,
             "spd": 110,
             "spe": 65
-        }
+        },
+        "name": "Flareon",
+        "num": 136
     },
     "flygon": {
-        "name": "Flygon",
-        "num": 330,
+        "abilities": [
+            "levitate",
+            null
+        ],
         "baseStats": {
             "atk": 100,
             "def": 80,
@@ -1185,11 +1579,15 @@
             "spa": 80,
             "spd": 80,
             "spe": 100
-        }
+        },
+        "name": "Flygon",
+        "num": 330
     },
     "forretress": {
-        "name": "Forretress",
-        "num": 205,
+        "abilities": [
+            "sturdy",
+            null
+        ],
         "baseStats": {
             "atk": 90,
             "def": 140,
@@ -1197,11 +1595,15 @@
             "spa": 60,
             "spd": 60,
             "spe": 40
-        }
+        },
+        "name": "Forretress",
+        "num": 205
     },
     "furret": {
-        "name": "Furret",
-        "num": 162,
+        "abilities": [
+            "runaway",
+            "keeneye"
+        ],
         "baseStats": {
             "atk": 76,
             "def": 64,
@@ -1209,11 +1611,15 @@
             "spa": 45,
             "spd": 55,
             "spe": 90
-        }
+        },
+        "name": "Furret",
+        "num": 162
     },
     "gardevoir": {
-        "name": "Gardevoir",
-        "num": 282,
+        "abilities": [
+            "synchronize",
+            "trace"
+        ],
         "baseStats": {
             "atk": 65,
             "def": 65,
@@ -1221,11 +1627,15 @@
             "spa": 125,
             "spd": 115,
             "spe": 80
-        }
+        },
+        "name": "Gardevoir",
+        "num": 282
     },
     "gastly": {
-        "name": "Gastly",
-        "num": 92,
+        "abilities": [
+            "levitate",
+            null
+        ],
         "baseStats": {
             "atk": 35,
             "def": 30,
@@ -1233,11 +1643,15 @@
             "spa": 100,
             "spd": 35,
             "spe": 80
-        }
+        },
+        "name": "Gastly",
+        "num": 92
     },
     "gengar": {
-        "name": "Gengar",
-        "num": 94,
+        "abilities": [
+            "levitate",
+            null
+        ],
         "baseStats": {
             "atk": 65,
             "def": 60,
@@ -1245,11 +1659,15 @@
             "spa": 130,
             "spd": 75,
             "spe": 110
-        }
+        },
+        "name": "Gengar",
+        "num": 94
     },
     "geodude": {
-        "name": "Geodude",
-        "num": 74,
+        "abilities": [
+            "rockhead",
+            "sturdy"
+        ],
         "baseStats": {
             "atk": 80,
             "def": 100,
@@ -1257,11 +1675,15 @@
             "spa": 30,
             "spd": 30,
             "spe": 20
-        }
+        },
+        "name": "Geodude",
+        "num": 74
     },
     "girafarig": {
-        "name": "Girafarig",
-        "num": 203,
+        "abilities": [
+            "innerfocus",
+            "earlybird"
+        ],
         "baseStats": {
             "atk": 80,
             "def": 65,
@@ -1269,11 +1691,15 @@
             "spa": 90,
             "spd": 65,
             "spe": 85
-        }
+        },
+        "name": "Girafarig",
+        "num": 203
     },
     "glalie": {
-        "name": "Glalie",
-        "num": 362,
+        "abilities": [
+            "innerfocus",
+            null
+        ],
         "baseStats": {
             "atk": 80,
             "def": 80,
@@ -1281,11 +1707,15 @@
             "spa": 80,
             "spd": 80,
             "spe": 80
-        }
+        },
+        "name": "Glalie",
+        "num": 362
     },
     "gligar": {
-        "name": "Gligar",
-        "num": 207,
+        "abilities": [
+            "hypercutter",
+            "sandveil"
+        ],
         "baseStats": {
             "atk": 75,
             "def": 105,
@@ -1293,11 +1723,15 @@
             "spa": 35,
             "spd": 65,
             "spe": 85
-        }
+        },
+        "name": "Gligar",
+        "num": 207
     },
     "gloom": {
-        "name": "Gloom",
-        "num": 44,
+        "abilities": [
+            "chlorophyll",
+            null
+        ],
         "baseStats": {
             "atk": 65,
             "def": 70,
@@ -1305,11 +1739,15 @@
             "spa": 85,
             "spd": 75,
             "spe": 40
-        }
+        },
+        "name": "Gloom",
+        "num": 44
     },
     "golbat": {
-        "name": "Golbat",
-        "num": 42,
+        "abilities": [
+            "innerfocus",
+            null
+        ],
         "baseStats": {
             "atk": 80,
             "def": 70,
@@ -1317,11 +1755,15 @@
             "spa": 65,
             "spd": 75,
             "spe": 90
-        }
+        },
+        "name": "Golbat",
+        "num": 42
     },
     "goldeen": {
-        "name": "Goldeen",
-        "num": 118,
+        "abilities": [
+            "swiftswim",
+            "waterveil"
+        ],
         "baseStats": {
             "atk": 67,
             "def": 60,
@@ -1329,11 +1771,15 @@
             "spa": 35,
             "spd": 50,
             "spe": 63
-        }
+        },
+        "name": "Goldeen",
+        "num": 118
     },
     "golduck": {
-        "name": "Golduck",
-        "num": 55,
+        "abilities": [
+            "damp",
+            "cloudnine"
+        ],
         "baseStats": {
             "atk": 82,
             "def": 78,
@@ -1341,11 +1787,15 @@
             "spa": 95,
             "spd": 80,
             "spe": 85
-        }
+        },
+        "name": "Golduck",
+        "num": 55
     },
     "golem": {
-        "name": "Golem",
-        "num": 76,
+        "abilities": [
+            "rockhead",
+            "sturdy"
+        ],
         "baseStats": {
             "atk": 110,
             "def": 130,
@@ -1353,11 +1803,15 @@
             "spa": 55,
             "spd": 65,
             "spe": 45
-        }
+        },
+        "name": "Golem",
+        "num": 76
     },
     "gorebyss": {
-        "name": "Gorebyss",
-        "num": 368,
+        "abilities": [
+            "swiftswim",
+            null
+        ],
         "baseStats": {
             "atk": 84,
             "def": 105,
@@ -1365,11 +1819,15 @@
             "spa": 114,
             "spd": 75,
             "spe": 52
-        }
+        },
+        "name": "Gorebyss",
+        "num": 368
     },
     "granbull": {
-        "name": "Granbull",
-        "num": 210,
+        "abilities": [
+            "intimidate",
+            null
+        ],
         "baseStats": {
             "atk": 120,
             "def": 75,
@@ -1377,11 +1835,15 @@
             "spa": 60,
             "spd": 60,
             "spe": 45
-        }
+        },
+        "name": "Granbull",
+        "num": 210
     },
     "graveler": {
-        "name": "Graveler",
-        "num": 75,
+        "abilities": [
+            "rockhead",
+            "sturdy"
+        ],
         "baseStats": {
             "atk": 95,
             "def": 115,
@@ -1389,11 +1851,15 @@
             "spa": 45,
             "spd": 45,
             "spe": 35
-        }
+        },
+        "name": "Graveler",
+        "num": 75
     },
     "grimer": {
-        "name": "Grimer",
-        "num": 88,
+        "abilities": [
+            "stench",
+            "stickyhold"
+        ],
         "baseStats": {
             "atk": 80,
             "def": 50,
@@ -1401,11 +1867,15 @@
             "spa": 40,
             "spd": 50,
             "spe": 25
-        }
+        },
+        "name": "Grimer",
+        "num": 88
     },
     "groudon": {
-        "name": "Groudon",
-        "num": 383,
+        "abilities": [
+            "drought",
+            null
+        ],
         "baseStats": {
             "atk": 150,
             "def": 140,
@@ -1413,11 +1883,15 @@
             "spa": 100,
             "spd": 90,
             "spe": 90
-        }
+        },
+        "name": "Groudon",
+        "num": 383
     },
     "grovyle": {
-        "name": "Grovyle",
-        "num": 253,
+        "abilities": [
+            "overgrow",
+            null
+        ],
         "baseStats": {
             "atk": 65,
             "def": 45,
@@ -1425,11 +1899,15 @@
             "spa": 85,
             "spd": 65,
             "spe": 95
-        }
+        },
+        "name": "Grovyle",
+        "num": 253
     },
     "growlithe": {
-        "name": "Growlithe",
-        "num": 58,
+        "abilities": [
+            "intimidate",
+            "flashfire"
+        ],
         "baseStats": {
             "atk": 70,
             "def": 45,
@@ -1437,11 +1915,15 @@
             "spa": 70,
             "spd": 50,
             "spe": 60
-        }
+        },
+        "name": "Growlithe",
+        "num": 58
     },
     "grumpig": {
-        "name": "Grumpig",
-        "num": 326,
+        "abilities": [
+            "thickfat",
+            "owntempo"
+        ],
         "baseStats": {
             "atk": 45,
             "def": 65,
@@ -1449,11 +1931,15 @@
             "spa": 90,
             "spd": 110,
             "spe": 80
-        }
+        },
+        "name": "Grumpig",
+        "num": 326
     },
     "gulpin": {
-        "name": "Gulpin",
-        "num": 316,
+        "abilities": [
+            "liquidooze",
+            "stickyhold"
+        ],
         "baseStats": {
             "atk": 43,
             "def": 53,
@@ -1461,11 +1947,15 @@
             "spa": 43,
             "spd": 53,
             "spe": 40
-        }
+        },
+        "name": "Gulpin",
+        "num": 316
     },
     "gyarados": {
-        "name": "Gyarados",
-        "num": 130,
+        "abilities": [
+            "intimidate",
+            null
+        ],
         "baseStats": {
             "atk": 125,
             "def": 79,
@@ -1473,11 +1963,15 @@
             "spa": 60,
             "spd": 100,
             "spe": 81
-        }
+        },
+        "name": "Gyarados",
+        "num": 130
     },
     "hariyama": {
-        "name": "Hariyama",
-        "num": 297,
+        "abilities": [
+            "thickfat",
+            "guts"
+        ],
         "baseStats": {
             "atk": 120,
             "def": 60,
@@ -1485,11 +1979,15 @@
             "spa": 40,
             "spd": 60,
             "spe": 50
-        }
+        },
+        "name": "Hariyama",
+        "num": 297
     },
     "haunter": {
-        "name": "Haunter",
-        "num": 93,
+        "abilities": [
+            "levitate",
+            null
+        ],
         "baseStats": {
             "atk": 50,
             "def": 45,
@@ -1497,11 +1995,15 @@
             "spa": 115,
             "spd": 55,
             "spe": 95
-        }
+        },
+        "name": "Haunter",
+        "num": 93
     },
     "heracross": {
-        "name": "Heracross",
-        "num": 214,
+        "abilities": [
+            "swarm",
+            "guts"
+        ],
         "baseStats": {
             "atk": 125,
             "def": 75,
@@ -1509,11 +2011,15 @@
             "spa": 40,
             "spd": 95,
             "spe": 85
-        }
+        },
+        "name": "Heracross",
+        "num": 214
     },
     "hitmonchan": {
-        "name": "Hitmonchan",
-        "num": 107,
+        "abilities": [
+            "keeneye",
+            null
+        ],
         "baseStats": {
             "atk": 105,
             "def": 79,
@@ -1521,11 +2027,15 @@
             "spa": 35,
             "spd": 110,
             "spe": 76
-        }
+        },
+        "name": "Hitmonchan",
+        "num": 107
     },
     "hitmonlee": {
-        "name": "Hitmonlee",
-        "num": 106,
+        "abilities": [
+            "limber",
+            null
+        ],
         "baseStats": {
             "atk": 120,
             "def": 53,
@@ -1533,11 +2043,15 @@
             "spa": 35,
             "spd": 110,
             "spe": 87
-        }
+        },
+        "name": "Hitmonlee",
+        "num": 106
     },
     "hitmontop": {
-        "name": "Hitmontop",
-        "num": 237,
+        "abilities": [
+            "intimidate",
+            null
+        ],
         "baseStats": {
             "atk": 95,
             "def": 95,
@@ -1545,11 +2059,15 @@
             "spa": 35,
             "spd": 110,
             "spe": 70
-        }
+        },
+        "name": "Hitmontop",
+        "num": 237
     },
     "hooh": {
-        "name": "Ho-Oh",
-        "num": 250,
+        "abilities": [
+            "pressure",
+            null
+        ],
         "baseStats": {
             "atk": 130,
             "def": 90,
@@ -1557,11 +2075,15 @@
             "spa": 110,
             "spd": 154,
             "spe": 90
-        }
+        },
+        "name": "Ho-Oh",
+        "num": 250
     },
     "hoothoot": {
-        "name": "Hoothoot",
-        "num": 163,
+        "abilities": [
+            "insomnia",
+            "keeneye"
+        ],
         "baseStats": {
             "atk": 30,
             "def": 30,
@@ -1569,11 +2091,15 @@
             "spa": 36,
             "spd": 56,
             "spe": 50
-        }
+        },
+        "name": "Hoothoot",
+        "num": 163
     },
     "hoppip": {
-        "name": "Hoppip",
-        "num": 187,
+        "abilities": [
+            "chlorophyll",
+            null
+        ],
         "baseStats": {
             "atk": 35,
             "def": 40,
@@ -1581,11 +2107,15 @@
             "spa": 35,
             "spd": 55,
             "spe": 50
-        }
+        },
+        "name": "Hoppip",
+        "num": 187
     },
     "horsea": {
-        "name": "Horsea",
-        "num": 116,
+        "abilities": [
+            "swiftswim",
+            null
+        ],
         "baseStats": {
             "atk": 40,
             "def": 70,
@@ -1593,11 +2123,15 @@
             "spa": 70,
             "spd": 25,
             "spe": 60
-        }
+        },
+        "name": "Horsea",
+        "num": 116
     },
     "houndoom": {
-        "name": "Houndoom",
-        "num": 229,
+        "abilities": [
+            "earlybird",
+            "flashfire"
+        ],
         "baseStats": {
             "atk": 90,
             "def": 50,
@@ -1605,11 +2139,15 @@
             "spa": 110,
             "spd": 80,
             "spe": 95
-        }
+        },
+        "name": "Houndoom",
+        "num": 229
     },
     "houndour": {
-        "name": "Houndour",
-        "num": 228,
+        "abilities": [
+            "earlybird",
+            "flashfire"
+        ],
         "baseStats": {
             "atk": 60,
             "def": 30,
@@ -1617,11 +2155,15 @@
             "spa": 80,
             "spd": 50,
             "spe": 65
-        }
+        },
+        "name": "Houndour",
+        "num": 228
     },
     "huntail": {
-        "name": "Huntail",
-        "num": 367,
+        "abilities": [
+            "swiftswim",
+            null
+        ],
         "baseStats": {
             "atk": 104,
             "def": 105,
@@ -1629,11 +2171,15 @@
             "spa": 94,
             "spd": 75,
             "spe": 52
-        }
+        },
+        "name": "Huntail",
+        "num": 367
     },
     "hypno": {
-        "name": "Hypno",
-        "num": 97,
+        "abilities": [
+            "insomnia",
+            null
+        ],
         "baseStats": {
             "atk": 73,
             "def": 70,
@@ -1641,11 +2187,15 @@
             "spa": 73,
             "spd": 115,
             "spe": 67
-        }
+        },
+        "name": "Hypno",
+        "num": 97
     },
     "igglybuff": {
-        "name": "Igglybuff",
-        "num": 174,
+        "abilities": [
+            "cutecharm",
+            null
+        ],
         "baseStats": {
             "atk": 30,
             "def": 15,
@@ -1653,11 +2203,15 @@
             "spa": 40,
             "spd": 20,
             "spe": 15
-        }
+        },
+        "name": "Igglybuff",
+        "num": 174
     },
     "illumise": {
-        "name": "Illumise",
-        "num": 314,
+        "abilities": [
+            "oblivious",
+            null
+        ],
         "baseStats": {
             "atk": 47,
             "def": 55,
@@ -1665,11 +2219,15 @@
             "spa": 73,
             "spd": 75,
             "spe": 85
-        }
+        },
+        "name": "Illumise",
+        "num": 314
     },
     "ivysaur": {
-        "name": "Ivysaur",
-        "num": 2,
+        "abilities": [
+            "overgrow",
+            null
+        ],
         "baseStats": {
             "atk": 62,
             "def": 63,
@@ -1677,11 +2235,15 @@
             "spa": 80,
             "spd": 80,
             "spe": 60
-        }
+        },
+        "name": "Ivysaur",
+        "num": 2
     },
     "jigglypuff": {
-        "name": "Jigglypuff",
-        "num": 39,
+        "abilities": [
+            "cutecharm",
+            null
+        ],
         "baseStats": {
             "atk": 45,
             "def": 20,
@@ -1689,11 +2251,15 @@
             "spa": 45,
             "spd": 25,
             "spe": 20
-        }
+        },
+        "name": "Jigglypuff",
+        "num": 39
     },
     "jirachi": {
-        "name": "Jirachi",
-        "num": 385,
+        "abilities": [
+            "serenegrace",
+            null
+        ],
         "baseStats": {
             "atk": 100,
             "def": 100,
@@ -1701,11 +2267,15 @@
             "spa": 100,
             "spd": 100,
             "spe": 100
-        }
+        },
+        "name": "Jirachi",
+        "num": 385
     },
     "jolteon": {
-        "name": "Jolteon",
-        "num": 135,
+        "abilities": [
+            "voltabsorb",
+            null
+        ],
         "baseStats": {
             "atk": 65,
             "def": 60,
@@ -1713,11 +2283,15 @@
             "spa": 110,
             "spd": 95,
             "spe": 130
-        }
+        },
+        "name": "Jolteon",
+        "num": 135
     },
     "jumpluff": {
-        "name": "Jumpluff",
-        "num": 189,
+        "abilities": [
+            "chlorophyll",
+            null
+        ],
         "baseStats": {
             "atk": 55,
             "def": 70,
@@ -1725,11 +2299,15 @@
             "spa": 55,
             "spd": 85,
             "spe": 110
-        }
+        },
+        "name": "Jumpluff",
+        "num": 189
     },
     "jynx": {
-        "name": "Jynx",
-        "num": 124,
+        "abilities": [
+            "oblivious",
+            null
+        ],
         "baseStats": {
             "atk": 50,
             "def": 35,
@@ -1737,11 +2315,15 @@
             "spa": 115,
             "spd": 95,
             "spe": 95
-        }
+        },
+        "name": "Jynx",
+        "num": 124
     },
     "kabuto": {
-        "name": "Kabuto",
-        "num": 140,
+        "abilities": [
+            "swiftswim",
+            "battlearmor"
+        ],
         "baseStats": {
             "atk": 80,
             "def": 90,
@@ -1749,11 +2331,15 @@
             "spa": 55,
             "spd": 45,
             "spe": 55
-        }
+        },
+        "name": "Kabuto",
+        "num": 140
     },
     "kabutops": {
-        "name": "Kabutops",
-        "num": 141,
+        "abilities": [
+            "swiftswim",
+            "battlearmor"
+        ],
         "baseStats": {
             "atk": 115,
             "def": 105,
@@ -1761,11 +2347,15 @@
             "spa": 65,
             "spd": 70,
             "spe": 80
-        }
+        },
+        "name": "Kabutops",
+        "num": 141
     },
     "kadabra": {
-        "name": "Kadabra",
-        "num": 64,
+        "abilities": [
+            "synchronize",
+            "innerfocus"
+        ],
         "baseStats": {
             "atk": 35,
             "def": 30,
@@ -1773,11 +2363,15 @@
             "spa": 120,
             "spd": 70,
             "spe": 105
-        }
+        },
+        "name": "Kadabra",
+        "num": 64
     },
     "kakuna": {
-        "name": "Kakuna",
-        "num": 14,
+        "abilities": [
+            "shedskin",
+            null
+        ],
         "baseStats": {
             "atk": 25,
             "def": 50,
@@ -1785,11 +2379,15 @@
             "spa": 25,
             "spd": 25,
             "spe": 35
-        }
+        },
+        "name": "Kakuna",
+        "num": 14
     },
     "kangaskhan": {
-        "name": "Kangaskhan",
-        "num": 115,
+        "abilities": [
+            "earlybird",
+            null
+        ],
         "baseStats": {
             "atk": 95,
             "def": 80,
@@ -1797,11 +2395,15 @@
             "spa": 40,
             "spd": 80,
             "spe": 90
-        }
+        },
+        "name": "Kangaskhan",
+        "num": 115
     },
     "kecleon": {
-        "name": "Kecleon",
-        "num": 352,
+        "abilities": [
+            "colorchange",
+            null
+        ],
         "baseStats": {
             "atk": 90,
             "def": 70,
@@ -1809,11 +2411,15 @@
             "spa": 60,
             "spd": 120,
             "spe": 40
-        }
+        },
+        "name": "Kecleon",
+        "num": 352
     },
     "kingdra": {
-        "name": "Kingdra",
-        "num": 230,
+        "abilities": [
+            "swiftswim",
+            null
+        ],
         "baseStats": {
             "atk": 95,
             "def": 95,
@@ -1821,11 +2427,15 @@
             "spa": 95,
             "spd": 95,
             "spe": 85
-        }
+        },
+        "name": "Kingdra",
+        "num": 230
     },
     "kingler": {
-        "name": "Kingler",
-        "num": 99,
+        "abilities": [
+            "hypercutter",
+            "shellarmor"
+        ],
         "baseStats": {
             "atk": 130,
             "def": 115,
@@ -1833,11 +2443,15 @@
             "spa": 50,
             "spd": 50,
             "spe": 75
-        }
+        },
+        "name": "Kingler",
+        "num": 99
     },
     "kirlia": {
-        "name": "Kirlia",
-        "num": 281,
+        "abilities": [
+            "synchronize",
+            "trace"
+        ],
         "baseStats": {
             "atk": 35,
             "def": 35,
@@ -1845,11 +2459,15 @@
             "spa": 65,
             "spd": 55,
             "spe": 50
-        }
+        },
+        "name": "Kirlia",
+        "num": 281
     },
     "koffing": {
-        "name": "Koffing",
-        "num": 109,
+        "abilities": [
+            "levitate",
+            null
+        ],
         "baseStats": {
             "atk": 65,
             "def": 95,
@@ -1857,11 +2475,15 @@
             "spa": 60,
             "spd": 45,
             "spe": 35
-        }
+        },
+        "name": "Koffing",
+        "num": 109
     },
     "krabby": {
-        "name": "Krabby",
-        "num": 98,
+        "abilities": [
+            "hypercutter",
+            "shellarmor"
+        ],
         "baseStats": {
             "atk": 105,
             "def": 90,
@@ -1869,11 +2491,15 @@
             "spa": 25,
             "spd": 25,
             "spe": 50
-        }
+        },
+        "name": "Krabby",
+        "num": 98
     },
     "kyogre": {
-        "name": "Kyogre",
-        "num": 382,
+        "abilities": [
+            "drizzle",
+            null
+        ],
         "baseStats": {
             "atk": 100,
             "def": 90,
@@ -1881,11 +2507,15 @@
             "spa": 150,
             "spd": 140,
             "spe": 90
-        }
+        },
+        "name": "Kyogre",
+        "num": 382
     },
     "lairon": {
-        "name": "Lairon",
-        "num": 305,
+        "abilities": [
+            "sturdy",
+            "rockhead"
+        ],
         "baseStats": {
             "atk": 90,
             "def": 140,
@@ -1893,11 +2523,15 @@
             "spa": 50,
             "spd": 50,
             "spe": 40
-        }
+        },
+        "name": "Lairon",
+        "num": 305
     },
     "lanturn": {
-        "name": "Lanturn",
-        "num": 171,
+        "abilities": [
+            "voltabsorb",
+            "illuminate"
+        ],
         "baseStats": {
             "atk": 58,
             "def": 58,
@@ -1905,11 +2539,15 @@
             "spa": 76,
             "spd": 76,
             "spe": 67
-        }
+        },
+        "name": "Lanturn",
+        "num": 171
     },
     "lapras": {
-        "name": "Lapras",
-        "num": 131,
+        "abilities": [
+            "waterabsorb",
+            "shellarmor"
+        ],
         "baseStats": {
             "atk": 85,
             "def": 80,
@@ -1917,11 +2555,15 @@
             "spa": 85,
             "spd": 95,
             "spe": 60
-        }
+        },
+        "name": "Lapras",
+        "num": 131
     },
     "larvitar": {
-        "name": "Larvitar",
-        "num": 246,
+        "abilities": [
+            "guts",
+            null
+        ],
         "baseStats": {
             "atk": 64,
             "def": 50,
@@ -1929,11 +2571,15 @@
             "spa": 45,
             "spd": 50,
             "spe": 41
-        }
+        },
+        "name": "Larvitar",
+        "num": 246
     },
     "latias": {
-        "name": "Latias",
-        "num": 380,
+        "abilities": [
+            "levitate",
+            null
+        ],
         "baseStats": {
             "atk": 80,
             "def": 90,
@@ -1941,11 +2587,15 @@
             "spa": 110,
             "spd": 130,
             "spe": 110
-        }
+        },
+        "name": "Latias",
+        "num": 380
     },
     "latios": {
-        "name": "Latios",
-        "num": 381,
+        "abilities": [
+            "levitate",
+            null
+        ],
         "baseStats": {
             "atk": 90,
             "def": 80,
@@ -1953,11 +2603,15 @@
             "spa": 130,
             "spd": 110,
             "spe": 110
-        }
+        },
+        "name": "Latios",
+        "num": 381
     },
     "ledian": {
-        "name": "Ledian",
-        "num": 166,
+        "abilities": [
+            "swarm",
+            "earlybird"
+        ],
         "baseStats": {
             "atk": 35,
             "def": 50,
@@ -1965,11 +2619,15 @@
             "spa": 55,
             "spd": 110,
             "spe": 85
-        }
+        },
+        "name": "Ledian",
+        "num": 166
     },
     "ledyba": {
-        "name": "Ledyba",
-        "num": 165,
+        "abilities": [
+            "swarm",
+            "earlybird"
+        ],
         "baseStats": {
             "atk": 20,
             "def": 30,
@@ -1977,11 +2635,15 @@
             "spa": 40,
             "spd": 80,
             "spe": 55
-        }
+        },
+        "name": "Ledyba",
+        "num": 165
     },
     "lickitung": {
-        "name": "Lickitung",
-        "num": 108,
+        "abilities": [
+            "owntempo",
+            "oblivious"
+        ],
         "baseStats": {
             "atk": 55,
             "def": 75,
@@ -1989,11 +2651,15 @@
             "spa": 60,
             "spd": 75,
             "spe": 30
-        }
+        },
+        "name": "Lickitung",
+        "num": 108
     },
     "lileep": {
-        "name": "Lileep",
-        "num": 345,
+        "abilities": [
+            "suctioncups",
+            null
+        ],
         "baseStats": {
             "atk": 41,
             "def": 77,
@@ -2001,11 +2667,15 @@
             "spa": 61,
             "spd": 87,
             "spe": 23
-        }
+        },
+        "name": "Lileep",
+        "num": 345
     },
     "linoone": {
-        "name": "Linoone",
-        "num": 264,
+        "abilities": [
+            "pickup",
+            null
+        ],
         "baseStats": {
             "atk": 70,
             "def": 61,
@@ -2013,11 +2683,15 @@
             "spa": 50,
             "spd": 61,
             "spe": 100
-        }
+        },
+        "name": "Linoone",
+        "num": 264
     },
     "lombre": {
-        "name": "Lombre",
-        "num": 271,
+        "abilities": [
+            "swiftswim",
+            "raindish"
+        ],
         "baseStats": {
             "atk": 50,
             "def": 50,
@@ -2025,11 +2699,15 @@
             "spa": 60,
             "spd": 70,
             "spe": 50
-        }
+        },
+        "name": "Lombre",
+        "num": 271
     },
     "lotad": {
-        "name": "Lotad",
-        "num": 270,
+        "abilities": [
+            "swiftswim",
+            "raindish"
+        ],
         "baseStats": {
             "atk": 30,
             "def": 30,
@@ -2037,11 +2715,15 @@
             "spa": 40,
             "spd": 50,
             "spe": 30
-        }
+        },
+        "name": "Lotad",
+        "num": 270
     },
     "loudred": {
-        "name": "Loudred",
-        "num": 294,
+        "abilities": [
+            "soundproof",
+            null
+        ],
         "baseStats": {
             "atk": 71,
             "def": 43,
@@ -2049,11 +2731,15 @@
             "spa": 71,
             "spd": 43,
             "spe": 48
-        }
+        },
+        "name": "Loudred",
+        "num": 294
     },
     "ludicolo": {
-        "name": "Ludicolo",
-        "num": 272,
+        "abilities": [
+            "swiftswim",
+            "raindish"
+        ],
         "baseStats": {
             "atk": 70,
             "def": 70,
@@ -2061,11 +2747,15 @@
             "spa": 90,
             "spd": 100,
             "spe": 70
-        }
+        },
+        "name": "Ludicolo",
+        "num": 272
     },
     "lugia": {
-        "name": "Lugia",
-        "num": 249,
+        "abilities": [
+            "pressure",
+            null
+        ],
         "baseStats": {
             "atk": 90,
             "def": 130,
@@ -2073,11 +2763,15 @@
             "spa": 90,
             "spd": 154,
             "spe": 110
-        }
+        },
+        "name": "Lugia",
+        "num": 249
     },
     "lunatone": {
-        "name": "Lunatone",
-        "num": 337,
+        "abilities": [
+            "levitate",
+            null
+        ],
         "baseStats": {
             "atk": 55,
             "def": 65,
@@ -2085,11 +2779,15 @@
             "spa": 95,
             "spd": 85,
             "spe": 70
-        }
+        },
+        "name": "Lunatone",
+        "num": 337
     },
     "luvdisc": {
-        "name": "Luvdisc",
-        "num": 370,
+        "abilities": [
+            "swiftswim",
+            null
+        ],
         "baseStats": {
             "atk": 30,
             "def": 55,
@@ -2097,11 +2795,15 @@
             "spa": 40,
             "spd": 65,
             "spe": 97
-        }
+        },
+        "name": "Luvdisc",
+        "num": 370
     },
     "machamp": {
-        "name": "Machamp",
-        "num": 68,
+        "abilities": [
+            "guts",
+            null
+        ],
         "baseStats": {
             "atk": 130,
             "def": 80,
@@ -2109,11 +2811,15 @@
             "spa": 65,
             "spd": 85,
             "spe": 55
-        }
+        },
+        "name": "Machamp",
+        "num": 68
     },
     "machoke": {
-        "name": "Machoke",
-        "num": 67,
+        "abilities": [
+            "guts",
+            null
+        ],
         "baseStats": {
             "atk": 100,
             "def": 70,
@@ -2121,11 +2827,15 @@
             "spa": 50,
             "spd": 60,
             "spe": 45
-        }
+        },
+        "name": "Machoke",
+        "num": 67
     },
     "machop": {
-        "name": "Machop",
-        "num": 66,
+        "abilities": [
+            "guts",
+            null
+        ],
         "baseStats": {
             "atk": 80,
             "def": 50,
@@ -2133,11 +2843,15 @@
             "spa": 35,
             "spd": 35,
             "spe": 35
-        }
+        },
+        "name": "Machop",
+        "num": 66
     },
     "magby": {
-        "name": "Magby",
-        "num": 240,
+        "abilities": [
+            "flamebody",
+            null
+        ],
         "baseStats": {
             "atk": 75,
             "def": 37,
@@ -2145,11 +2859,15 @@
             "spa": 70,
             "spd": 55,
             "spe": 83
-        }
+        },
+        "name": "Magby",
+        "num": 240
     },
     "magcargo": {
-        "name": "Magcargo",
-        "num": 219,
+        "abilities": [
+            "magmaarmor",
+            "flamebody"
+        ],
         "baseStats": {
             "atk": 50,
             "def": 120,
@@ -2157,11 +2875,15 @@
             "spa": 80,
             "spd": 80,
             "spe": 30
-        }
+        },
+        "name": "Magcargo",
+        "num": 219
     },
     "magikarp": {
-        "name": "Magikarp",
-        "num": 129,
+        "abilities": [
+            "swiftswim",
+            null
+        ],
         "baseStats": {
             "atk": 10,
             "def": 55,
@@ -2169,11 +2891,15 @@
             "spa": 15,
             "spd": 20,
             "spe": 80
-        }
+        },
+        "name": "Magikarp",
+        "num": 129
     },
     "magmar": {
-        "name": "Magmar",
-        "num": 126,
+        "abilities": [
+            "flamebody",
+            null
+        ],
         "baseStats": {
             "atk": 95,
             "def": 57,
@@ -2181,11 +2907,15 @@
             "spa": 100,
             "spd": 85,
             "spe": 93
-        }
+        },
+        "name": "Magmar",
+        "num": 126
     },
     "magnemite": {
-        "name": "Magnemite",
-        "num": 81,
+        "abilities": [
+            "magnetpull",
+            "sturdy"
+        ],
         "baseStats": {
             "atk": 35,
             "def": 70,
@@ -2193,11 +2923,15 @@
             "spa": 95,
             "spd": 55,
             "spe": 45
-        }
+        },
+        "name": "Magnemite",
+        "num": 81
     },
     "magneton": {
-        "name": "Magneton",
-        "num": 82,
+        "abilities": [
+            "magnetpull",
+            "sturdy"
+        ],
         "baseStats": {
             "atk": 60,
             "def": 95,
@@ -2205,11 +2939,15 @@
             "spa": 120,
             "spd": 70,
             "spe": 70
-        }
+        },
+        "name": "Magneton",
+        "num": 82
     },
     "makuhita": {
-        "name": "Makuhita",
-        "num": 296,
+        "abilities": [
+            "thickfat",
+            "guts"
+        ],
         "baseStats": {
             "atk": 60,
             "def": 30,
@@ -2217,11 +2955,15 @@
             "spa": 20,
             "spd": 30,
             "spe": 25
-        }
+        },
+        "name": "Makuhita",
+        "num": 296
     },
     "manectric": {
-        "name": "Manectric",
-        "num": 310,
+        "abilities": [
+            "static",
+            "lightningrod"
+        ],
         "baseStats": {
             "atk": 75,
             "def": 60,
@@ -2229,11 +2971,15 @@
             "spa": 105,
             "spd": 60,
             "spe": 105
-        }
+        },
+        "name": "Manectric",
+        "num": 310
     },
     "mankey": {
-        "name": "Mankey",
-        "num": 56,
+        "abilities": [
+            "vitalspirit",
+            null
+        ],
         "baseStats": {
             "atk": 80,
             "def": 35,
@@ -2241,11 +2987,15 @@
             "spa": 35,
             "spd": 45,
             "spe": 70
-        }
+        },
+        "name": "Mankey",
+        "num": 56
     },
     "mantine": {
-        "name": "Mantine",
-        "num": 226,
+        "abilities": [
+            "swiftswim",
+            "waterabsorb"
+        ],
         "baseStats": {
             "atk": 40,
             "def": 70,
@@ -2253,11 +3003,15 @@
             "spa": 80,
             "spd": 140,
             "spe": 70
-        }
+        },
+        "name": "Mantine",
+        "num": 226
     },
     "mareep": {
-        "name": "Mareep",
-        "num": 179,
+        "abilities": [
+            "static",
+            null
+        ],
         "baseStats": {
             "atk": 40,
             "def": 40,
@@ -2265,11 +3019,15 @@
             "spa": 65,
             "spd": 45,
             "spe": 35
-        }
+        },
+        "name": "Mareep",
+        "num": 179
     },
     "marill": {
-        "name": "Marill",
-        "num": 183,
+        "abilities": [
+            "thickfat",
+            "hugepower"
+        ],
         "baseStats": {
             "atk": 20,
             "def": 50,
@@ -2277,11 +3035,15 @@
             "spa": 20,
             "spd": 50,
             "spe": 40
-        }
+        },
+        "name": "Marill",
+        "num": 183
     },
     "marowak": {
-        "name": "Marowak",
-        "num": 105,
+        "abilities": [
+            "rockhead",
+            "lightningrod"
+        ],
         "baseStats": {
             "atk": 80,
             "def": 110,
@@ -2289,11 +3051,15 @@
             "spa": 50,
             "spd": 80,
             "spe": 45
-        }
+        },
+        "name": "Marowak",
+        "num": 105
     },
     "marshtomp": {
-        "name": "Marshtomp",
-        "num": 259,
+        "abilities": [
+            "torrent",
+            null
+        ],
         "baseStats": {
             "atk": 85,
             "def": 70,
@@ -2301,11 +3067,15 @@
             "spa": 60,
             "spd": 70,
             "spe": 50
-        }
+        },
+        "name": "Marshtomp",
+        "num": 259
     },
     "masquerain": {
-        "name": "Masquerain",
-        "num": 284,
+        "abilities": [
+            "intimidate",
+            null
+        ],
         "baseStats": {
             "atk": 60,
             "def": 62,
@@ -2313,11 +3083,15 @@
             "spa": 80,
             "spd": 82,
             "spe": 60
-        }
+        },
+        "name": "Masquerain",
+        "num": 284
     },
     "mawile": {
-        "name": "Mawile",
-        "num": 303,
+        "abilities": [
+            "hypercutter",
+            "intimidate"
+        ],
         "baseStats": {
             "atk": 85,
             "def": 85,
@@ -2325,11 +3099,15 @@
             "spa": 55,
             "spd": 55,
             "spe": 50
-        }
+        },
+        "name": "Mawile",
+        "num": 303
     },
     "medicham": {
-        "name": "Medicham",
-        "num": 308,
+        "abilities": [
+            "purepower",
+            null
+        ],
         "baseStats": {
             "atk": 60,
             "def": 75,
@@ -2337,11 +3115,15 @@
             "spa": 60,
             "spd": 75,
             "spe": 80
-        }
+        },
+        "name": "Medicham",
+        "num": 308
     },
     "meditite": {
-        "name": "Meditite",
-        "num": 307,
+        "abilities": [
+            "purepower",
+            null
+        ],
         "baseStats": {
             "atk": 40,
             "def": 55,
@@ -2349,11 +3131,15 @@
             "spa": 40,
             "spd": 55,
             "spe": 60
-        }
+        },
+        "name": "Meditite",
+        "num": 307
     },
     "meganium": {
-        "name": "Meganium",
-        "num": 154,
+        "abilities": [
+            "overgrow",
+            null
+        ],
         "baseStats": {
             "atk": 82,
             "def": 100,
@@ -2361,11 +3147,15 @@
             "spa": 83,
             "spd": 100,
             "spe": 80
-        }
+        },
+        "name": "Meganium",
+        "num": 154
     },
     "meowth": {
-        "name": "Meowth",
-        "num": 52,
+        "abilities": [
+            "pickup",
+            null
+        ],
         "baseStats": {
             "atk": 45,
             "def": 35,
@@ -2373,11 +3163,15 @@
             "spa": 40,
             "spd": 40,
             "spe": 90
-        }
+        },
+        "name": "Meowth",
+        "num": 52
     },
     "metagross": {
-        "name": "Metagross",
-        "num": 376,
+        "abilities": [
+            "clearbody",
+            null
+        ],
         "baseStats": {
             "atk": 135,
             "def": 130,
@@ -2385,11 +3179,15 @@
             "spa": 95,
             "spd": 90,
             "spe": 70
-        }
+        },
+        "name": "Metagross",
+        "num": 376
     },
     "metang": {
-        "name": "Metang",
-        "num": 375,
+        "abilities": [
+            "clearbody",
+            null
+        ],
         "baseStats": {
             "atk": 75,
             "def": 100,
@@ -2397,11 +3195,15 @@
             "spa": 55,
             "spd": 80,
             "spe": 50
-        }
+        },
+        "name": "Metang",
+        "num": 375
     },
     "metapod": {
-        "name": "Metapod",
-        "num": 11,
+        "abilities": [
+            "shedskin",
+            null
+        ],
         "baseStats": {
             "atk": 20,
             "def": 55,
@@ -2409,11 +3211,15 @@
             "spa": 25,
             "spd": 25,
             "spe": 30
-        }
+        },
+        "name": "Metapod",
+        "num": 11
     },
     "mew": {
-        "name": "Mew",
-        "num": 151,
+        "abilities": [
+            "synchronize",
+            null
+        ],
         "baseStats": {
             "atk": 100,
             "def": 100,
@@ -2421,11 +3227,15 @@
             "spa": 100,
             "spd": 100,
             "spe": 100
-        }
+        },
+        "name": "Mew",
+        "num": 151
     },
     "mewtwo": {
-        "name": "Mewtwo",
-        "num": 150,
+        "abilities": [
+            "pressure",
+            null
+        ],
         "baseStats": {
             "atk": 110,
             "def": 90,
@@ -2433,11 +3243,15 @@
             "spa": 154,
             "spd": 90,
             "spe": 130
-        }
+        },
+        "name": "Mewtwo",
+        "num": 150
     },
     "mightyena": {
-        "name": "Mightyena",
-        "num": 262,
+        "abilities": [
+            "intimidate",
+            null
+        ],
         "baseStats": {
             "atk": 90,
             "def": 70,
@@ -2445,11 +3259,15 @@
             "spa": 60,
             "spd": 60,
             "spe": 70
-        }
+        },
+        "name": "Mightyena",
+        "num": 262
     },
     "milotic": {
-        "name": "Milotic",
-        "num": 350,
+        "abilities": [
+            "marvelscale",
+            null
+        ],
         "baseStats": {
             "atk": 60,
             "def": 79,
@@ -2457,11 +3275,15 @@
             "spa": 100,
             "spd": 125,
             "spe": 81
-        }
+        },
+        "name": "Milotic",
+        "num": 350
     },
     "miltank": {
-        "name": "Miltank",
-        "num": 241,
+        "abilities": [
+            "thickfat",
+            null
+        ],
         "baseStats": {
             "atk": 80,
             "def": 105,
@@ -2469,11 +3291,15 @@
             "spa": 40,
             "spd": 70,
             "spe": 100
-        }
+        },
+        "name": "Miltank",
+        "num": 241
     },
     "minun": {
-        "name": "Minun",
-        "num": 312,
+        "abilities": [
+            "minus",
+            null
+        ],
         "baseStats": {
             "atk": 40,
             "def": 50,
@@ -2481,11 +3307,15 @@
             "spa": 75,
             "spd": 85,
             "spe": 95
-        }
+        },
+        "name": "Minun",
+        "num": 312
     },
     "misdreavus": {
-        "name": "Misdreavus",
-        "num": 200,
+        "abilities": [
+            "levitate",
+            null
+        ],
         "baseStats": {
             "atk": 60,
             "def": 60,
@@ -2493,11 +3323,15 @@
             "spa": 85,
             "spd": 85,
             "spe": 85
-        }
+        },
+        "name": "Misdreavus",
+        "num": 200
     },
     "moltres": {
-        "name": "Moltres",
-        "num": 146,
+        "abilities": [
+            "pressure",
+            null
+        ],
         "baseStats": {
             "atk": 100,
             "def": 90,
@@ -2505,11 +3339,15 @@
             "spa": 125,
             "spd": 85,
             "spe": 90
-        }
+        },
+        "name": "Moltres",
+        "num": 146
     },
     "mrmime": {
-        "name": "Mr. Mime",
-        "num": 122,
+        "abilities": [
+            "soundproof",
+            null
+        ],
         "baseStats": {
             "atk": 45,
             "def": 65,
@@ -2517,11 +3355,15 @@
             "spa": 100,
             "spd": 120,
             "spe": 90
-        }
+        },
+        "name": "Mr. Mime",
+        "num": 122
     },
     "mudkip": {
-        "name": "Mudkip",
-        "num": 258,
+        "abilities": [
+            "torrent",
+            null
+        ],
         "baseStats": {
             "atk": 70,
             "def": 50,
@@ -2529,11 +3371,15 @@
             "spa": 50,
             "spd": 50,
             "spe": 40
-        }
+        },
+        "name": "Mudkip",
+        "num": 258
     },
     "muk": {
-        "name": "Muk",
-        "num": 89,
+        "abilities": [
+            "stench",
+            "stickyhold"
+        ],
         "baseStats": {
             "atk": 105,
             "def": 75,
@@ -2541,11 +3387,15 @@
             "spa": 65,
             "spd": 100,
             "spe": 50
-        }
+        },
+        "name": "Muk",
+        "num": 89
     },
     "murkrow": {
-        "name": "Murkrow",
-        "num": 198,
+        "abilities": [
+            "insomnia",
+            null
+        ],
         "baseStats": {
             "atk": 85,
             "def": 42,
@@ -2553,11 +3403,15 @@
             "spa": 85,
             "spd": 42,
             "spe": 91
-        }
+        },
+        "name": "Murkrow",
+        "num": 198
     },
     "natu": {
-        "name": "Natu",
-        "num": 177,
+        "abilities": [
+            "synchronize",
+            "earlybird"
+        ],
         "baseStats": {
             "atk": 50,
             "def": 45,
@@ -2565,11 +3419,15 @@
             "spa": 70,
             "spd": 45,
             "spe": 70
-        }
+        },
+        "name": "Natu",
+        "num": 177
     },
     "nidoking": {
-        "name": "Nidoking",
-        "num": 34,
+        "abilities": [
+            "poisonpoint",
+            null
+        ],
         "baseStats": {
             "atk": 92,
             "def": 77,
@@ -2577,11 +3435,15 @@
             "spa": 85,
             "spd": 75,
             "spe": 85
-        }
+        },
+        "name": "Nidoking",
+        "num": 34
     },
     "nidoqueen": {
-        "name": "Nidoqueen",
-        "num": 31,
+        "abilities": [
+            "poisonpoint",
+            null
+        ],
         "baseStats": {
             "atk": 82,
             "def": 87,
@@ -2589,11 +3451,15 @@
             "spa": 75,
             "spd": 85,
             "spe": 76
-        }
+        },
+        "name": "Nidoqueen",
+        "num": 31
     },
     "nidoranf": {
-        "name": "Nidoran-F",
-        "num": 29,
+        "abilities": [
+            "poisonpoint",
+            null
+        ],
         "baseStats": {
             "atk": 47,
             "def": 52,
@@ -2601,11 +3467,15 @@
             "spa": 40,
             "spd": 40,
             "spe": 41
-        }
+        },
+        "name": "Nidoran-F",
+        "num": 29
     },
     "nidoranm": {
-        "name": "Nidoran-M",
-        "num": 32,
+        "abilities": [
+            "poisonpoint",
+            null
+        ],
         "baseStats": {
             "atk": 57,
             "def": 40,
@@ -2613,11 +3483,15 @@
             "spa": 40,
             "spd": 40,
             "spe": 50
-        }
+        },
+        "name": "Nidoran-M",
+        "num": 32
     },
     "nidorina": {
-        "name": "Nidorina",
-        "num": 30,
+        "abilities": [
+            "poisonpoint",
+            null
+        ],
         "baseStats": {
             "atk": 62,
             "def": 67,
@@ -2625,11 +3499,15 @@
             "spa": 55,
             "spd": 55,
             "spe": 56
-        }
+        },
+        "name": "Nidorina",
+        "num": 30
     },
     "nidorino": {
-        "name": "Nidorino",
-        "num": 33,
+        "abilities": [
+            "poisonpoint",
+            null
+        ],
         "baseStats": {
             "atk": 72,
             "def": 57,
@@ -2637,11 +3515,15 @@
             "spa": 55,
             "spd": 55,
             "spe": 65
-        }
+        },
+        "name": "Nidorino",
+        "num": 33
     },
     "nincada": {
-        "name": "Nincada",
-        "num": 290,
+        "abilities": [
+            "compoundeyes",
+            null
+        ],
         "baseStats": {
             "atk": 45,
             "def": 90,
@@ -2649,11 +3531,15 @@
             "spa": 30,
             "spd": 30,
             "spe": 40
-        }
+        },
+        "name": "Nincada",
+        "num": 290
     },
     "ninetales": {
-        "name": "Ninetales",
-        "num": 38,
+        "abilities": [
+            "flashfire",
+            null
+        ],
         "baseStats": {
             "atk": 76,
             "def": 75,
@@ -2661,11 +3547,15 @@
             "spa": 81,
             "spd": 100,
             "spe": 100
-        }
+        },
+        "name": "Ninetales",
+        "num": 38
     },
     "ninjask": {
-        "name": "Ninjask",
-        "num": 291,
+        "abilities": [
+            "speedboost",
+            null
+        ],
         "baseStats": {
             "atk": 90,
             "def": 45,
@@ -2673,11 +3563,15 @@
             "spa": 50,
             "spd": 50,
             "spe": 160
-        }
+        },
+        "name": "Ninjask",
+        "num": 291
     },
     "noctowl": {
-        "name": "Noctowl",
-        "num": 164,
+        "abilities": [
+            "insomnia",
+            "keeneye"
+        ],
         "baseStats": {
             "atk": 50,
             "def": 50,
@@ -2685,11 +3579,15 @@
             "spa": 76,
             "spd": 96,
             "spe": 70
-        }
+        },
+        "name": "Noctowl",
+        "num": 164
     },
     "nosepass": {
-        "name": "Nosepass",
-        "num": 299,
+        "abilities": [
+            "sturdy",
+            "magnetpull"
+        ],
         "baseStats": {
             "atk": 45,
             "def": 135,
@@ -2697,11 +3595,15 @@
             "spa": 45,
             "spd": 90,
             "spe": 30
-        }
+        },
+        "name": "Nosepass",
+        "num": 299
     },
     "numel": {
-        "name": "Numel",
-        "num": 322,
+        "abilities": [
+            "oblivious",
+            null
+        ],
         "baseStats": {
             "atk": 60,
             "def": 40,
@@ -2709,11 +3611,15 @@
             "spa": 65,
             "spd": 45,
             "spe": 35
-        }
+        },
+        "name": "Numel",
+        "num": 322
     },
     "nuzleaf": {
-        "name": "Nuzleaf",
-        "num": 274,
+        "abilities": [
+            "chlorophyll",
+            "earlybird"
+        ],
         "baseStats": {
             "atk": 70,
             "def": 40,
@@ -2721,11 +3627,15 @@
             "spa": 60,
             "spd": 40,
             "spe": 60
-        }
+        },
+        "name": "Nuzleaf",
+        "num": 274
     },
     "octillery": {
-        "name": "Octillery",
-        "num": 224,
+        "abilities": [
+            "suctioncups",
+            null
+        ],
         "baseStats": {
             "atk": 105,
             "def": 75,
@@ -2733,11 +3643,15 @@
             "spa": 105,
             "spd": 75,
             "spe": 45
-        }
+        },
+        "name": "Octillery",
+        "num": 224
     },
     "oddish": {
-        "name": "Oddish",
-        "num": 43,
+        "abilities": [
+            "chlorophyll",
+            null
+        ],
         "baseStats": {
             "atk": 50,
             "def": 55,
@@ -2745,11 +3659,15 @@
             "spa": 75,
             "spd": 65,
             "spe": 30
-        }
+        },
+        "name": "Oddish",
+        "num": 43
     },
     "omanyte": {
-        "name": "Omanyte",
-        "num": 138,
+        "abilities": [
+            "swiftswim",
+            "shellarmor"
+        ],
         "baseStats": {
             "atk": 40,
             "def": 100,
@@ -2757,11 +3675,15 @@
             "spa": 90,
             "spd": 55,
             "spe": 35
-        }
+        },
+        "name": "Omanyte",
+        "num": 138
     },
     "omastar": {
-        "name": "Omastar",
-        "num": 139,
+        "abilities": [
+            "swiftswim",
+            "shellarmor"
+        ],
         "baseStats": {
             "atk": 60,
             "def": 125,
@@ -2769,11 +3691,15 @@
             "spa": 115,
             "spd": 70,
             "spe": 55
-        }
+        },
+        "name": "Omastar",
+        "num": 139
     },
     "onix": {
-        "name": "Onix",
-        "num": 95,
+        "abilities": [
+            "rockhead",
+            "sturdy"
+        ],
         "baseStats": {
             "atk": 45,
             "def": 160,
@@ -2781,11 +3707,15 @@
             "spa": 30,
             "spd": 45,
             "spe": 70
-        }
+        },
+        "name": "Onix",
+        "num": 95
     },
     "paras": {
-        "name": "Paras",
-        "num": 46,
+        "abilities": [
+            "effectspore",
+            null
+        ],
         "baseStats": {
             "atk": 70,
             "def": 55,
@@ -2793,11 +3723,15 @@
             "spa": 45,
             "spd": 55,
             "spe": 25
-        }
+        },
+        "name": "Paras",
+        "num": 46
     },
     "parasect": {
-        "name": "Parasect",
-        "num": 47,
+        "abilities": [
+            "effectspore",
+            null
+        ],
         "baseStats": {
             "atk": 95,
             "def": 80,
@@ -2805,11 +3739,15 @@
             "spa": 60,
             "spd": 80,
             "spe": 30
-        }
+        },
+        "name": "Parasect",
+        "num": 47
     },
     "pelipper": {
-        "name": "Pelipper",
-        "num": 279,
+        "abilities": [
+            "keeneye",
+            null
+        ],
         "baseStats": {
             "atk": 50,
             "def": 100,
@@ -2817,11 +3755,15 @@
             "spa": 85,
             "spd": 70,
             "spe": 65
-        }
+        },
+        "name": "Pelipper",
+        "num": 279
     },
     "persian": {
-        "name": "Persian",
-        "num": 53,
+        "abilities": [
+            "limber",
+            null
+        ],
         "baseStats": {
             "atk": 70,
             "def": 60,
@@ -2829,11 +3771,15 @@
             "spa": 65,
             "spd": 65,
             "spe": 115
-        }
+        },
+        "name": "Persian",
+        "num": 53
     },
     "phanpy": {
-        "name": "Phanpy",
-        "num": 231,
+        "abilities": [
+            "pickup",
+            null
+        ],
         "baseStats": {
             "atk": 60,
             "def": 60,
@@ -2841,11 +3787,15 @@
             "spa": 40,
             "spd": 40,
             "spe": 40
-        }
+        },
+        "name": "Phanpy",
+        "num": 231
     },
     "pichu": {
-        "name": "Pichu",
-        "num": 172,
+        "abilities": [
+            "static",
+            null
+        ],
         "baseStats": {
             "atk": 40,
             "def": 15,
@@ -2853,11 +3803,15 @@
             "spa": 35,
             "spd": 35,
             "spe": 60
-        }
+        },
+        "name": "Pichu",
+        "num": 172
     },
     "pidgeot": {
-        "name": "Pidgeot",
-        "num": 18,
+        "abilities": [
+            "keeneye",
+            null
+        ],
         "baseStats": {
             "atk": 80,
             "def": 75,
@@ -2865,11 +3819,15 @@
             "spa": 70,
             "spd": 70,
             "spe": 91
-        }
+        },
+        "name": "Pidgeot",
+        "num": 18
     },
     "pidgeotto": {
-        "name": "Pidgeotto",
-        "num": 17,
+        "abilities": [
+            "keeneye",
+            null
+        ],
         "baseStats": {
             "atk": 60,
             "def": 55,
@@ -2877,11 +3835,15 @@
             "spa": 50,
             "spd": 50,
             "spe": 71
-        }
+        },
+        "name": "Pidgeotto",
+        "num": 17
     },
     "pidgey": {
-        "name": "Pidgey",
-        "num": 16,
+        "abilities": [
+            "keeneye",
+            null
+        ],
         "baseStats": {
             "atk": 45,
             "def": 40,
@@ -2889,11 +3851,15 @@
             "spa": 35,
             "spd": 35,
             "spe": 56
-        }
+        },
+        "name": "Pidgey",
+        "num": 16
     },
     "pikachu": {
-        "name": "Pikachu",
-        "num": 25,
+        "abilities": [
+            "static",
+            null
+        ],
         "baseStats": {
             "atk": 55,
             "def": 30,
@@ -2901,11 +3867,15 @@
             "spa": 50,
             "spd": 40,
             "spe": 90
-        }
+        },
+        "name": "Pikachu",
+        "num": 25
     },
     "piloswine": {
-        "name": "Piloswine",
-        "num": 221,
+        "abilities": [
+            "oblivious",
+            null
+        ],
         "baseStats": {
             "atk": 100,
             "def": 80,
@@ -2913,11 +3883,15 @@
             "spa": 60,
             "spd": 60,
             "spe": 50
-        }
+        },
+        "name": "Piloswine",
+        "num": 221
     },
     "pineco": {
-        "name": "Pineco",
-        "num": 204,
+        "abilities": [
+            "sturdy",
+            null
+        ],
         "baseStats": {
             "atk": 65,
             "def": 90,
@@ -2925,11 +3899,15 @@
             "spa": 35,
             "spd": 35,
             "spe": 15
-        }
+        },
+        "name": "Pineco",
+        "num": 204
     },
     "pinsir": {
-        "name": "Pinsir",
-        "num": 127,
+        "abilities": [
+            "hypercutter",
+            null
+        ],
         "baseStats": {
             "atk": 125,
             "def": 100,
@@ -2937,11 +3915,15 @@
             "spa": 55,
             "spd": 70,
             "spe": 85
-        }
+        },
+        "name": "Pinsir",
+        "num": 127
     },
     "plusle": {
-        "name": "Plusle",
-        "num": 311,
+        "abilities": [
+            "plus",
+            null
+        ],
         "baseStats": {
             "atk": 50,
             "def": 40,
@@ -2949,11 +3931,15 @@
             "spa": 85,
             "spd": 75,
             "spe": 95
-        }
+        },
+        "name": "Plusle",
+        "num": 311
     },
     "politoed": {
-        "name": "Politoed",
-        "num": 186,
+        "abilities": [
+            "waterabsorb",
+            "damp"
+        ],
         "baseStats": {
             "atk": 75,
             "def": 75,
@@ -2961,11 +3947,15 @@
             "spa": 90,
             "spd": 100,
             "spe": 70
-        }
+        },
+        "name": "Politoed",
+        "num": 186
     },
     "poliwag": {
-        "name": "Poliwag",
-        "num": 60,
+        "abilities": [
+            "waterabsorb",
+            "damp"
+        ],
         "baseStats": {
             "atk": 50,
             "def": 40,
@@ -2973,11 +3963,15 @@
             "spa": 40,
             "spd": 40,
             "spe": 90
-        }
+        },
+        "name": "Poliwag",
+        "num": 60
     },
     "poliwhirl": {
-        "name": "Poliwhirl",
-        "num": 61,
+        "abilities": [
+            "waterabsorb",
+            "damp"
+        ],
         "baseStats": {
             "atk": 65,
             "def": 65,
@@ -2985,11 +3979,15 @@
             "spa": 50,
             "spd": 50,
             "spe": 90
-        }
+        },
+        "name": "Poliwhirl",
+        "num": 61
     },
     "poliwrath": {
-        "name": "Poliwrath",
-        "num": 62,
+        "abilities": [
+            "waterabsorb",
+            "damp"
+        ],
         "baseStats": {
             "atk": 85,
             "def": 95,
@@ -2997,11 +3995,15 @@
             "spa": 70,
             "spd": 90,
             "spe": 70
-        }
+        },
+        "name": "Poliwrath",
+        "num": 62
     },
     "ponyta": {
-        "name": "Ponyta",
-        "num": 77,
+        "abilities": [
+            "runaway",
+            "flashfire"
+        ],
         "baseStats": {
             "atk": 85,
             "def": 55,
@@ -3009,11 +4011,15 @@
             "spa": 65,
             "spd": 65,
             "spe": 90
-        }
+        },
+        "name": "Ponyta",
+        "num": 77
     },
     "poochyena": {
-        "name": "Poochyena",
-        "num": 261,
+        "abilities": [
+            "runaway",
+            null
+        ],
         "baseStats": {
             "atk": 55,
             "def": 35,
@@ -3021,11 +4027,15 @@
             "spa": 30,
             "spd": 30,
             "spe": 35
-        }
+        },
+        "name": "Poochyena",
+        "num": 261
     },
     "porygon": {
-        "name": "Porygon",
-        "num": 137,
+        "abilities": [
+            "trace",
+            null
+        ],
         "baseStats": {
             "atk": 60,
             "def": 70,
@@ -3033,11 +4043,15 @@
             "spa": 85,
             "spd": 75,
             "spe": 40
-        }
+        },
+        "name": "Porygon",
+        "num": 137
     },
     "porygon2": {
-        "name": "Porygon2",
-        "num": 233,
+        "abilities": [
+            "trace",
+            null
+        ],
         "baseStats": {
             "atk": 80,
             "def": 90,
@@ -3045,11 +4059,15 @@
             "spa": 105,
             "spd": 95,
             "spe": 60
-        }
+        },
+        "name": "Porygon2",
+        "num": 233
     },
     "primeape": {
-        "name": "Primeape",
-        "num": 57,
+        "abilities": [
+            "vitalspirit",
+            null
+        ],
         "baseStats": {
             "atk": 105,
             "def": 60,
@@ -3057,11 +4075,15 @@
             "spa": 60,
             "spd": 70,
             "spe": 95
-        }
+        },
+        "name": "Primeape",
+        "num": 57
     },
     "psyduck": {
-        "name": "Psyduck",
-        "num": 54,
+        "abilities": [
+            "damp",
+            "cloudnine"
+        ],
         "baseStats": {
             "atk": 52,
             "def": 48,
@@ -3069,11 +4091,15 @@
             "spa": 65,
             "spd": 50,
             "spe": 55
-        }
+        },
+        "name": "Psyduck",
+        "num": 54
     },
     "pupitar": {
-        "name": "Pupitar",
-        "num": 247,
+        "abilities": [
+            "shedskin",
+            null
+        ],
         "baseStats": {
             "atk": 84,
             "def": 70,
@@ -3081,11 +4107,15 @@
             "spa": 65,
             "spd": 70,
             "spe": 51
-        }
+        },
+        "name": "Pupitar",
+        "num": 247
     },
     "quagsire": {
-        "name": "Quagsire",
-        "num": 195,
+        "abilities": [
+            "damp",
+            "waterabsorb"
+        ],
         "baseStats": {
             "atk": 85,
             "def": 85,
@@ -3093,11 +4123,15 @@
             "spa": 65,
             "spd": 65,
             "spe": 35
-        }
+        },
+        "name": "Quagsire",
+        "num": 195
     },
     "quilava": {
-        "name": "Quilava",
-        "num": 156,
+        "abilities": [
+            "blaze",
+            null
+        ],
         "baseStats": {
             "atk": 64,
             "def": 58,
@@ -3105,11 +4139,15 @@
             "spa": 80,
             "spd": 65,
             "spe": 80
-        }
+        },
+        "name": "Quilava",
+        "num": 156
     },
     "qwilfish": {
-        "name": "Qwilfish",
-        "num": 211,
+        "abilities": [
+            "poisonpoint",
+            "swiftswim"
+        ],
         "baseStats": {
             "atk": 95,
             "def": 75,
@@ -3117,11 +4155,15 @@
             "spa": 55,
             "spd": 55,
             "spe": 85
-        }
+        },
+        "name": "Qwilfish",
+        "num": 211
     },
     "raichu": {
-        "name": "Raichu",
-        "num": 26,
+        "abilities": [
+            "static",
+            null
+        ],
         "baseStats": {
             "atk": 90,
             "def": 55,
@@ -3129,11 +4171,15 @@
             "spa": 90,
             "spd": 80,
             "spe": 100
-        }
+        },
+        "name": "Raichu",
+        "num": 26
     },
     "raikou": {
-        "name": "Raikou",
-        "num": 243,
+        "abilities": [
+            "pressure",
+            null
+        ],
         "baseStats": {
             "atk": 85,
             "def": 75,
@@ -3141,11 +4187,15 @@
             "spa": 115,
             "spd": 100,
             "spe": 115
-        }
+        },
+        "name": "Raikou",
+        "num": 243
     },
     "ralts": {
-        "name": "Ralts",
-        "num": 280,
+        "abilities": [
+            "synchronize",
+            "trace"
+        ],
         "baseStats": {
             "atk": 25,
             "def": 25,
@@ -3153,11 +4203,15 @@
             "spa": 45,
             "spd": 35,
             "spe": 40
-        }
+        },
+        "name": "Ralts",
+        "num": 280
     },
     "rapidash": {
-        "name": "Rapidash",
-        "num": 78,
+        "abilities": [
+            "runaway",
+            "flashfire"
+        ],
         "baseStats": {
             "atk": 100,
             "def": 70,
@@ -3165,11 +4219,15 @@
             "spa": 80,
             "spd": 80,
             "spe": 105
-        }
+        },
+        "name": "Rapidash",
+        "num": 78
     },
     "raticate": {
-        "name": "Raticate",
-        "num": 20,
+        "abilities": [
+            "runaway",
+            "guts"
+        ],
         "baseStats": {
             "atk": 81,
             "def": 60,
@@ -3177,11 +4235,15 @@
             "spa": 50,
             "spd": 70,
             "spe": 97
-        }
+        },
+        "name": "Raticate",
+        "num": 20
     },
     "rattata": {
-        "name": "Rattata",
-        "num": 19,
+        "abilities": [
+            "runaway",
+            "guts"
+        ],
         "baseStats": {
             "atk": 56,
             "def": 35,
@@ -3189,11 +4251,15 @@
             "spa": 25,
             "spd": 35,
             "spe": 72
-        }
+        },
+        "name": "Rattata",
+        "num": 19
     },
     "rayquaza": {
-        "name": "Rayquaza",
-        "num": 384,
+        "abilities": [
+            "airlock",
+            null
+        ],
         "baseStats": {
             "atk": 150,
             "def": 90,
@@ -3201,11 +4267,15 @@
             "spa": 150,
             "spd": 90,
             "spe": 95
-        }
+        },
+        "name": "Rayquaza",
+        "num": 384
     },
     "regice": {
-        "name": "Regice",
-        "num": 378,
+        "abilities": [
+            "clearbody",
+            null
+        ],
         "baseStats": {
             "atk": 50,
             "def": 100,
@@ -3213,11 +4283,15 @@
             "spa": 100,
             "spd": 200,
             "spe": 50
-        }
+        },
+        "name": "Regice",
+        "num": 378
     },
     "regirock": {
-        "name": "Regirock",
-        "num": 377,
+        "abilities": [
+            "clearbody",
+            null
+        ],
         "baseStats": {
             "atk": 100,
             "def": 200,
@@ -3225,11 +4299,15 @@
             "spa": 50,
             "spd": 100,
             "spe": 50
-        }
+        },
+        "name": "Regirock",
+        "num": 377
     },
     "registeel": {
-        "name": "Registeel",
-        "num": 379,
+        "abilities": [
+            "clearbody",
+            null
+        ],
         "baseStats": {
             "atk": 75,
             "def": 150,
@@ -3237,11 +4315,15 @@
             "spa": 75,
             "spd": 150,
             "spe": 50
-        }
+        },
+        "name": "Registeel",
+        "num": 379
     },
     "relicanth": {
-        "name": "Relicanth",
-        "num": 369,
+        "abilities": [
+            "swiftswim",
+            "rockhead"
+        ],
         "baseStats": {
             "atk": 90,
             "def": 130,
@@ -3249,11 +4331,15 @@
             "spa": 45,
             "spd": 65,
             "spe": 55
-        }
+        },
+        "name": "Relicanth",
+        "num": 369
     },
     "remoraid": {
-        "name": "Remoraid",
-        "num": 223,
+        "abilities": [
+            "hustle",
+            null
+        ],
         "baseStats": {
             "atk": 65,
             "def": 35,
@@ -3261,11 +4347,15 @@
             "spa": 65,
             "spd": 35,
             "spe": 65
-        }
+        },
+        "name": "Remoraid",
+        "num": 223
     },
     "rhydon": {
-        "name": "Rhydon",
-        "num": 112,
+        "abilities": [
+            "lightningrod",
+            "rockhead"
+        ],
         "baseStats": {
             "atk": 130,
             "def": 120,
@@ -3273,11 +4363,15 @@
             "spa": 45,
             "spd": 45,
             "spe": 40
-        }
+        },
+        "name": "Rhydon",
+        "num": 112
     },
     "rhyhorn": {
-        "name": "Rhyhorn",
-        "num": 111,
+        "abilities": [
+            "lightningrod",
+            "rockhead"
+        ],
         "baseStats": {
             "atk": 85,
             "def": 95,
@@ -3285,11 +4379,15 @@
             "spa": 30,
             "spd": 30,
             "spe": 25
-        }
+        },
+        "name": "Rhyhorn",
+        "num": 111
     },
     "roselia": {
-        "name": "Roselia",
-        "num": 315,
+        "abilities": [
+            "naturalcure",
+            "poisonpoint"
+        ],
         "baseStats": {
             "atk": 60,
             "def": 45,
@@ -3297,11 +4395,15 @@
             "spa": 100,
             "spd": 80,
             "spe": 65
-        }
+        },
+        "name": "Roselia",
+        "num": 315
     },
     "sableye": {
-        "name": "Sableye",
-        "num": 302,
+        "abilities": [
+            "keeneye",
+            null
+        ],
         "baseStats": {
             "atk": 75,
             "def": 75,
@@ -3309,11 +4411,15 @@
             "spa": 65,
             "spd": 65,
             "spe": 50
-        }
+        },
+        "name": "Sableye",
+        "num": 302
     },
     "salamence": {
-        "name": "Salamence",
-        "num": 373,
+        "abilities": [
+            "intimidate",
+            null
+        ],
         "baseStats": {
             "atk": 135,
             "def": 80,
@@ -3321,11 +4427,15 @@
             "spa": 110,
             "spd": 80,
             "spe": 100
-        }
+        },
+        "name": "Salamence",
+        "num": 373
     },
     "sandshrew": {
-        "name": "Sandshrew",
-        "num": 27,
+        "abilities": [
+            "sandveil",
+            null
+        ],
         "baseStats": {
             "atk": 75,
             "def": 85,
@@ -3333,11 +4443,15 @@
             "spa": 20,
             "spd": 30,
             "spe": 40
-        }
+        },
+        "name": "Sandshrew",
+        "num": 27
     },
     "sandslash": {
-        "name": "Sandslash",
-        "num": 28,
+        "abilities": [
+            "sandveil",
+            null
+        ],
         "baseStats": {
             "atk": 100,
             "def": 110,
@@ -3345,11 +4459,15 @@
             "spa": 45,
             "spd": 55,
             "spe": 65
-        }
+        },
+        "name": "Sandslash",
+        "num": 28
     },
     "sceptile": {
-        "name": "Sceptile",
-        "num": 254,
+        "abilities": [
+            "overgrow",
+            null
+        ],
         "baseStats": {
             "atk": 85,
             "def": 65,
@@ -3357,11 +4475,15 @@
             "spa": 105,
             "spd": 85,
             "spe": 120
-        }
+        },
+        "name": "Sceptile",
+        "num": 254
     },
     "scizor": {
-        "name": "Scizor",
-        "num": 212,
+        "abilities": [
+            "swarm",
+            null
+        ],
         "baseStats": {
             "atk": 130,
             "def": 100,
@@ -3369,11 +4491,15 @@
             "spa": 55,
             "spd": 80,
             "spe": 65
-        }
+        },
+        "name": "Scizor",
+        "num": 212
     },
     "scyther": {
-        "name": "Scyther",
-        "num": 123,
+        "abilities": [
+            "swarm",
+            null
+        ],
         "baseStats": {
             "atk": 110,
             "def": 80,
@@ -3381,11 +4507,15 @@
             "spa": 55,
             "spd": 80,
             "spe": 105
-        }
+        },
+        "name": "Scyther",
+        "num": 123
     },
     "seadra": {
-        "name": "Seadra",
-        "num": 117,
+        "abilities": [
+            "poisonpoint",
+            null
+        ],
         "baseStats": {
             "atk": 65,
             "def": 95,
@@ -3393,11 +4523,15 @@
             "spa": 95,
             "spd": 45,
             "spe": 85
-        }
+        },
+        "name": "Seadra",
+        "num": 117
     },
     "seaking": {
-        "name": "Seaking",
-        "num": 119,
+        "abilities": [
+            "swiftswim",
+            "waterveil"
+        ],
         "baseStats": {
             "atk": 92,
             "def": 65,
@@ -3405,11 +4539,15 @@
             "spa": 65,
             "spd": 80,
             "spe": 68
-        }
+        },
+        "name": "Seaking",
+        "num": 119
     },
     "sealeo": {
-        "name": "Sealeo",
-        "num": 364,
+        "abilities": [
+            "thickfat",
+            null
+        ],
         "baseStats": {
             "atk": 60,
             "def": 70,
@@ -3417,11 +4555,15 @@
             "spa": 75,
             "spd": 70,
             "spe": 45
-        }
+        },
+        "name": "Sealeo",
+        "num": 364
     },
     "seedot": {
-        "name": "Seedot",
-        "num": 273,
+        "abilities": [
+            "chlorophyll",
+            "earlybird"
+        ],
         "baseStats": {
             "atk": 40,
             "def": 50,
@@ -3429,11 +4571,15 @@
             "spa": 30,
             "spd": 30,
             "spe": 30
-        }
+        },
+        "name": "Seedot",
+        "num": 273
     },
     "seel": {
-        "name": "Seel",
-        "num": 86,
+        "abilities": [
+            "thickfat",
+            null
+        ],
         "baseStats": {
             "atk": 45,
             "def": 55,
@@ -3441,11 +4587,15 @@
             "spa": 45,
             "spd": 70,
             "spe": 45
-        }
+        },
+        "name": "Seel",
+        "num": 86
     },
     "sentret": {
-        "name": "Sentret",
-        "num": 161,
+        "abilities": [
+            "runaway",
+            "keeneye"
+        ],
         "baseStats": {
             "atk": 46,
             "def": 34,
@@ -3453,11 +4603,15 @@
             "spa": 35,
             "spd": 45,
             "spe": 20
-        }
+        },
+        "name": "Sentret",
+        "num": 161
     },
     "seviper": {
-        "name": "Seviper",
-        "num": 336,
+        "abilities": [
+            "shedskin",
+            null
+        ],
         "baseStats": {
             "atk": 100,
             "def": 60,
@@ -3465,11 +4619,15 @@
             "spa": 100,
             "spd": 60,
             "spe": 65
-        }
+        },
+        "name": "Seviper",
+        "num": 336
     },
     "sharpedo": {
-        "name": "Sharpedo",
-        "num": 319,
+        "abilities": [
+            "roughskin",
+            null
+        ],
         "baseStats": {
             "atk": 120,
             "def": 40,
@@ -3477,11 +4635,15 @@
             "spa": 95,
             "spd": 40,
             "spe": 95
-        }
+        },
+        "name": "Sharpedo",
+        "num": 319
     },
     "shedinja": {
-        "name": "Shedinja",
-        "num": 292,
+        "abilities": [
+            "wonderguard",
+            null
+        ],
         "baseStats": {
             "atk": 90,
             "def": 45,
@@ -3489,11 +4651,15 @@
             "spa": 30,
             "spd": 30,
             "spe": 40
-        }
+        },
+        "name": "Shedinja",
+        "num": 292
     },
     "shelgon": {
-        "name": "Shelgon",
-        "num": 372,
+        "abilities": [
+            "rockhead",
+            null
+        ],
         "baseStats": {
             "atk": 95,
             "def": 100,
@@ -3501,11 +4667,15 @@
             "spa": 60,
             "spd": 50,
             "spe": 50
-        }
+        },
+        "name": "Shelgon",
+        "num": 372
     },
     "shellder": {
-        "name": "Shellder",
-        "num": 90,
+        "abilities": [
+            "shellarmor",
+            null
+        ],
         "baseStats": {
             "atk": 65,
             "def": 100,
@@ -3513,11 +4683,15 @@
             "spa": 45,
             "spd": 25,
             "spe": 40
-        }
+        },
+        "name": "Shellder",
+        "num": 90
     },
     "shiftry": {
-        "name": "Shiftry",
-        "num": 275,
+        "abilities": [
+            "chlorophyll",
+            "earlybird"
+        ],
         "baseStats": {
             "atk": 100,
             "def": 60,
@@ -3525,11 +4699,15 @@
             "spa": 90,
             "spd": 60,
             "spe": 80
-        }
+        },
+        "name": "Shiftry",
+        "num": 275
     },
     "shroomish": {
-        "name": "Shroomish",
-        "num": 285,
+        "abilities": [
+            "effectspore",
+            null
+        ],
         "baseStats": {
             "atk": 40,
             "def": 60,
@@ -3537,11 +4715,15 @@
             "spa": 40,
             "spd": 60,
             "spe": 35
-        }
+        },
+        "name": "Shroomish",
+        "num": 285
     },
     "shuckle": {
-        "name": "Shuckle",
-        "num": 213,
+        "abilities": [
+            "sturdy",
+            null
+        ],
         "baseStats": {
             "atk": 10,
             "def": 230,
@@ -3549,11 +4731,15 @@
             "spa": 10,
             "spd": 230,
             "spe": 5
-        }
+        },
+        "name": "Shuckle",
+        "num": 213
     },
     "shuppet": {
-        "name": "Shuppet",
-        "num": 353,
+        "abilities": [
+            "insomnia",
+            null
+        ],
         "baseStats": {
             "atk": 75,
             "def": 35,
@@ -3561,11 +4747,15 @@
             "spa": 63,
             "spd": 33,
             "spe": 45
-        }
+        },
+        "name": "Shuppet",
+        "num": 353
     },
     "silcoon": {
-        "name": "Silcoon",
-        "num": 266,
+        "abilities": [
+            "shedskin",
+            null
+        ],
         "baseStats": {
             "atk": 35,
             "def": 55,
@@ -3573,11 +4763,15 @@
             "spa": 25,
             "spd": 25,
             "spe": 15
-        }
+        },
+        "name": "Silcoon",
+        "num": 266
     },
     "skarmory": {
-        "name": "Skarmory",
-        "num": 227,
+        "abilities": [
+            "keeneye",
+            "sturdy"
+        ],
         "baseStats": {
             "atk": 80,
             "def": 140,
@@ -3585,11 +4779,15 @@
             "spa": 40,
             "spd": 70,
             "spe": 70
-        }
+        },
+        "name": "Skarmory",
+        "num": 227
     },
     "skiploom": {
-        "name": "Skiploom",
-        "num": 188,
+        "abilities": [
+            "chlorophyll",
+            null
+        ],
         "baseStats": {
             "atk": 45,
             "def": 50,
@@ -3597,11 +4795,15 @@
             "spa": 45,
             "spd": 65,
             "spe": 80
-        }
+        },
+        "name": "Skiploom",
+        "num": 188
     },
     "skitty": {
-        "name": "Skitty",
-        "num": 300,
+        "abilities": [
+            "cutecharm",
+            null
+        ],
         "baseStats": {
             "atk": 45,
             "def": 45,
@@ -3609,11 +4811,15 @@
             "spa": 35,
             "spd": 35,
             "spe": 50
-        }
+        },
+        "name": "Skitty",
+        "num": 300
     },
     "slaking": {
-        "name": "Slaking",
-        "num": 289,
+        "abilities": [
+            "truant",
+            null
+        ],
         "baseStats": {
             "atk": 160,
             "def": 100,
@@ -3621,11 +4827,15 @@
             "spa": 95,
             "spd": 65,
             "spe": 100
-        }
+        },
+        "name": "Slaking",
+        "num": 289
     },
     "slakoth": {
-        "name": "Slakoth",
-        "num": 287,
+        "abilities": [
+            "truant",
+            null
+        ],
         "baseStats": {
             "atk": 60,
             "def": 60,
@@ -3633,11 +4843,15 @@
             "spa": 35,
             "spd": 35,
             "spe": 30
-        }
+        },
+        "name": "Slakoth",
+        "num": 287
     },
     "slowbro": {
-        "name": "Slowbro",
-        "num": 80,
+        "abilities": [
+            "oblivious",
+            "owntempo"
+        ],
         "baseStats": {
             "atk": 75,
             "def": 110,
@@ -3645,11 +4859,15 @@
             "spa": 100,
             "spd": 80,
             "spe": 30
-        }
+        },
+        "name": "Slowbro",
+        "num": 80
     },
     "slowking": {
-        "name": "Slowking",
-        "num": 199,
+        "abilities": [
+            "oblivious",
+            "owntempo"
+        ],
         "baseStats": {
             "atk": 75,
             "def": 80,
@@ -3657,11 +4875,15 @@
             "spa": 100,
             "spd": 110,
             "spe": 30
-        }
+        },
+        "name": "Slowking",
+        "num": 199
     },
     "slowpoke": {
-        "name": "Slowpoke",
-        "num": 79,
+        "abilities": [
+            "oblivious",
+            "owntempo"
+        ],
         "baseStats": {
             "atk": 65,
             "def": 65,
@@ -3669,11 +4891,15 @@
             "spa": 40,
             "spd": 40,
             "spe": 15
-        }
+        },
+        "name": "Slowpoke",
+        "num": 79
     },
     "slugma": {
-        "name": "Slugma",
-        "num": 218,
+        "abilities": [
+            "magmaarmor",
+            "flamebody"
+        ],
         "baseStats": {
             "atk": 40,
             "def": 40,
@@ -3681,11 +4907,15 @@
             "spa": 70,
             "spd": 40,
             "spe": 20
-        }
+        },
+        "name": "Slugma",
+        "num": 218
     },
     "smeargle": {
-        "name": "Smeargle",
-        "num": 235,
+        "abilities": [
+            "owntempo",
+            null
+        ],
         "baseStats": {
             "atk": 20,
             "def": 35,
@@ -3693,11 +4923,15 @@
             "spa": 20,
             "spd": 45,
             "spe": 75
-        }
+        },
+        "name": "Smeargle",
+        "num": 235
     },
     "smoochum": {
-        "name": "Smoochum",
-        "num": 238,
+        "abilities": [
+            "oblivious",
+            null
+        ],
         "baseStats": {
             "atk": 30,
             "def": 15,
@@ -3705,11 +4939,15 @@
             "spa": 85,
             "spd": 65,
             "spe": 65
-        }
+        },
+        "name": "Smoochum",
+        "num": 238
     },
     "sneasel": {
-        "name": "Sneasel",
-        "num": 215,
+        "abilities": [
+            "innerfocus",
+            "keeneye"
+        ],
         "baseStats": {
             "atk": 95,
             "def": 55,
@@ -3717,11 +4955,15 @@
             "spa": 35,
             "spd": 75,
             "spe": 115
-        }
+        },
+        "name": "Sneasel",
+        "num": 215
     },
     "snorlax": {
-        "name": "Snorlax",
-        "num": 143,
+        "abilities": [
+            "immunity",
+            "thickfat"
+        ],
         "baseStats": {
             "atk": 110,
             "def": 65,
@@ -3729,11 +4971,15 @@
             "spa": 65,
             "spd": 110,
             "spe": 30
-        }
+        },
+        "name": "Snorlax",
+        "num": 143
     },
     "snorunt": {
-        "name": "Snorunt",
-        "num": 361,
+        "abilities": [
+            "innerfocus",
+            null
+        ],
         "baseStats": {
             "atk": 50,
             "def": 50,
@@ -3741,11 +4987,15 @@
             "spa": 50,
             "spd": 50,
             "spe": 50
-        }
+        },
+        "name": "Snorunt",
+        "num": 361
     },
     "snubbull": {
-        "name": "Snubbull",
-        "num": 209,
+        "abilities": [
+            "intimidate",
+            "runaway"
+        ],
         "baseStats": {
             "atk": 80,
             "def": 50,
@@ -3753,11 +5003,15 @@
             "spa": 40,
             "spd": 40,
             "spe": 30
-        }
+        },
+        "name": "Snubbull",
+        "num": 209
     },
     "solrock": {
-        "name": "Solrock",
-        "num": 338,
+        "abilities": [
+            "levitate",
+            null
+        ],
         "baseStats": {
             "atk": 95,
             "def": 85,
@@ -3765,11 +5019,15 @@
             "spa": 55,
             "spd": 65,
             "spe": 70
-        }
+        },
+        "name": "Solrock",
+        "num": 338
     },
     "spearow": {
-        "name": "Spearow",
-        "num": 21,
+        "abilities": [
+            "keeneye",
+            null
+        ],
         "baseStats": {
             "atk": 60,
             "def": 30,
@@ -3777,11 +5035,15 @@
             "spa": 31,
             "spd": 31,
             "spe": 70
-        }
+        },
+        "name": "Spearow",
+        "num": 21
     },
     "spheal": {
-        "name": "Spheal",
-        "num": 363,
+        "abilities": [
+            "thickfat",
+            null
+        ],
         "baseStats": {
             "atk": 40,
             "def": 50,
@@ -3789,11 +5051,15 @@
             "spa": 55,
             "spd": 50,
             "spe": 25
-        }
+        },
+        "name": "Spheal",
+        "num": 363
     },
     "spinarak": {
-        "name": "Spinarak",
-        "num": 167,
+        "abilities": [
+            "swarm",
+            "insomnia"
+        ],
         "baseStats": {
             "atk": 60,
             "def": 40,
@@ -3801,11 +5067,15 @@
             "spa": 40,
             "spd": 40,
             "spe": 30
-        }
+        },
+        "name": "Spinarak",
+        "num": 167
     },
     "spinda": {
-        "name": "Spinda",
-        "num": 327,
+        "abilities": [
+            "owntempo",
+            null
+        ],
         "baseStats": {
             "atk": 60,
             "def": 60,
@@ -3813,11 +5083,15 @@
             "spa": 60,
             "spd": 60,
             "spe": 60
-        }
+        },
+        "name": "Spinda",
+        "num": 327
     },
     "spoink": {
-        "name": "Spoink",
-        "num": 325,
+        "abilities": [
+            "thickfat",
+            "owntempo"
+        ],
         "baseStats": {
             "atk": 25,
             "def": 35,
@@ -3825,11 +5099,15 @@
             "spa": 70,
             "spd": 80,
             "spe": 60
-        }
+        },
+        "name": "Spoink",
+        "num": 325
     },
     "squirtle": {
-        "name": "Squirtle",
-        "num": 7,
+        "abilities": [
+            "torrent",
+            null
+        ],
         "baseStats": {
             "atk": 48,
             "def": 65,
@@ -3837,11 +5115,15 @@
             "spa": 50,
             "spd": 64,
             "spe": 43
-        }
+        },
+        "name": "Squirtle",
+        "num": 7
     },
     "stantler": {
-        "name": "Stantler",
-        "num": 234,
+        "abilities": [
+            "intimidate",
+            null
+        ],
         "baseStats": {
             "atk": 95,
             "def": 62,
@@ -3849,11 +5131,15 @@
             "spa": 85,
             "spd": 65,
             "spe": 85
-        }
+        },
+        "name": "Stantler",
+        "num": 234
     },
     "starmie": {
-        "name": "Starmie",
-        "num": 121,
+        "abilities": [
+            "illuminate",
+            "naturalcure"
+        ],
         "baseStats": {
             "atk": 75,
             "def": 85,
@@ -3861,11 +5147,15 @@
             "spa": 100,
             "spd": 85,
             "spe": 115
-        }
+        },
+        "name": "Starmie",
+        "num": 121
     },
     "staryu": {
-        "name": "Staryu",
-        "num": 120,
+        "abilities": [
+            "illuminate",
+            "naturalcure"
+        ],
         "baseStats": {
             "atk": 45,
             "def": 55,
@@ -3873,11 +5163,15 @@
             "spa": 70,
             "spd": 55,
             "spe": 85
-        }
+        },
+        "name": "Staryu",
+        "num": 120
     },
     "steelix": {
-        "name": "Steelix",
-        "num": 208,
+        "abilities": [
+            "rockhead",
+            "sturdy"
+        ],
         "baseStats": {
             "atk": 85,
             "def": 200,
@@ -3885,11 +5179,15 @@
             "spa": 55,
             "spd": 65,
             "spe": 30
-        }
+        },
+        "name": "Steelix",
+        "num": 208
     },
     "sudowoodo": {
-        "name": "Sudowoodo",
-        "num": 185,
+        "abilities": [
+            "sturdy",
+            "rockhead"
+        ],
         "baseStats": {
             "atk": 100,
             "def": 115,
@@ -3897,11 +5195,15 @@
             "spa": 30,
             "spd": 65,
             "spe": 30
-        }
+        },
+        "name": "Sudowoodo",
+        "num": 185
     },
     "suicune": {
-        "name": "Suicune",
-        "num": 245,
+        "abilities": [
+            "pressure",
+            null
+        ],
         "baseStats": {
             "atk": 75,
             "def": 115,
@@ -3909,11 +5211,15 @@
             "spa": 90,
             "spd": 115,
             "spe": 85
-        }
+        },
+        "name": "Suicune",
+        "num": 245
     },
     "sunflora": {
-        "name": "Sunflora",
-        "num": 192,
+        "abilities": [
+            "chlorophyll",
+            null
+        ],
         "baseStats": {
             "atk": 75,
             "def": 55,
@@ -3921,11 +5227,15 @@
             "spa": 105,
             "spd": 85,
             "spe": 30
-        }
+        },
+        "name": "Sunflora",
+        "num": 192
     },
     "sunkern": {
-        "name": "Sunkern",
-        "num": 191,
+        "abilities": [
+            "chlorophyll",
+            null
+        ],
         "baseStats": {
             "atk": 30,
             "def": 30,
@@ -3933,11 +5243,15 @@
             "spa": 30,
             "spd": 30,
             "spe": 30
-        }
+        },
+        "name": "Sunkern",
+        "num": 191
     },
     "surskit": {
-        "name": "Surskit",
-        "num": 283,
+        "abilities": [
+            "swiftswim",
+            null
+        ],
         "baseStats": {
             "atk": 30,
             "def": 32,
@@ -3945,11 +5259,15 @@
             "spa": 50,
             "spd": 52,
             "spe": 65
-        }
+        },
+        "name": "Surskit",
+        "num": 283
     },
     "swablu": {
-        "name": "Swablu",
-        "num": 333,
+        "abilities": [
+            "naturalcure",
+            null
+        ],
         "baseStats": {
             "atk": 40,
             "def": 60,
@@ -3957,11 +5275,15 @@
             "spa": 40,
             "spd": 75,
             "spe": 50
-        }
+        },
+        "name": "Swablu",
+        "num": 333
     },
     "swalot": {
-        "name": "Swalot",
-        "num": 317,
+        "abilities": [
+            "liquidooze",
+            "stickyhold"
+        ],
         "baseStats": {
             "atk": 73,
             "def": 83,
@@ -3969,11 +5291,15 @@
             "spa": 73,
             "spd": 83,
             "spe": 55
-        }
+        },
+        "name": "Swalot",
+        "num": 317
     },
     "swampert": {
-        "name": "Swampert",
-        "num": 260,
+        "abilities": [
+            "torrent",
+            null
+        ],
         "baseStats": {
             "atk": 110,
             "def": 90,
@@ -3981,11 +5307,15 @@
             "spa": 85,
             "spd": 90,
             "spe": 60
-        }
+        },
+        "name": "Swampert",
+        "num": 260
     },
     "swellow": {
-        "name": "Swellow",
-        "num": 277,
+        "abilities": [
+            "guts",
+            null
+        ],
         "baseStats": {
             "atk": 85,
             "def": 60,
@@ -3993,11 +5323,15 @@
             "spa": 50,
             "spd": 50,
             "spe": 125
-        }
+        },
+        "name": "Swellow",
+        "num": 277
     },
     "swinub": {
-        "name": "Swinub",
-        "num": 220,
+        "abilities": [
+            "oblivious",
+            null
+        ],
         "baseStats": {
             "atk": 50,
             "def": 40,
@@ -4005,11 +5339,15 @@
             "spa": 30,
             "spd": 30,
             "spe": 50
-        }
+        },
+        "name": "Swinub",
+        "num": 220
     },
     "taillow": {
-        "name": "Taillow",
-        "num": 276,
+        "abilities": [
+            "guts",
+            null
+        ],
         "baseStats": {
             "atk": 55,
             "def": 30,
@@ -4017,11 +5355,15 @@
             "spa": 30,
             "spd": 30,
             "spe": 85
-        }
+        },
+        "name": "Taillow",
+        "num": 276
     },
     "tangela": {
-        "name": "Tangela",
-        "num": 114,
+        "abilities": [
+            "chlorophyll",
+            null
+        ],
         "baseStats": {
             "atk": 55,
             "def": 115,
@@ -4029,11 +5371,15 @@
             "spa": 100,
             "spd": 40,
             "spe": 60
-        }
+        },
+        "name": "Tangela",
+        "num": 114
     },
     "tauros": {
-        "name": "Tauros",
-        "num": 128,
+        "abilities": [
+            "intimidate",
+            null
+        ],
         "baseStats": {
             "atk": 100,
             "def": 95,
@@ -4041,11 +5387,15 @@
             "spa": 40,
             "spd": 70,
             "spe": 110
-        }
+        },
+        "name": "Tauros",
+        "num": 128
     },
     "teddiursa": {
-        "name": "Teddiursa",
-        "num": 216,
+        "abilities": [
+            "pickup",
+            null
+        ],
         "baseStats": {
             "atk": 80,
             "def": 50,
@@ -4053,11 +5403,15 @@
             "spa": 50,
             "spd": 50,
             "spe": 40
-        }
+        },
+        "name": "Teddiursa",
+        "num": 216
     },
     "tentacool": {
-        "name": "Tentacool",
-        "num": 72,
+        "abilities": [
+            "clearbody",
+            "liquidooze"
+        ],
         "baseStats": {
             "atk": 40,
             "def": 35,
@@ -4065,11 +5419,15 @@
             "spa": 50,
             "spd": 100,
             "spe": 70
-        }
+        },
+        "name": "Tentacool",
+        "num": 72
     },
     "tentacruel": {
-        "name": "Tentacruel",
-        "num": 73,
+        "abilities": [
+            "clearbody",
+            "liquidooze"
+        ],
         "baseStats": {
             "atk": 70,
             "def": 65,
@@ -4077,11 +5435,15 @@
             "spa": 80,
             "spd": 120,
             "spe": 100
-        }
+        },
+        "name": "Tentacruel",
+        "num": 73
     },
     "togepi": {
-        "name": "Togepi",
-        "num": 175,
+        "abilities": [
+            "hustle",
+            "serenegrace"
+        ],
         "baseStats": {
             "atk": 20,
             "def": 65,
@@ -4089,11 +5451,15 @@
             "spa": 40,
             "spd": 65,
             "spe": 20
-        }
+        },
+        "name": "Togepi",
+        "num": 175
     },
     "togetic": {
-        "name": "Togetic",
-        "num": 176,
+        "abilities": [
+            "hustle",
+            "serenegrace"
+        ],
         "baseStats": {
             "atk": 40,
             "def": 85,
@@ -4101,11 +5467,15 @@
             "spa": 80,
             "spd": 105,
             "spe": 40
-        }
+        },
+        "name": "Togetic",
+        "num": 176
     },
     "torchic": {
-        "name": "Torchic",
-        "num": 255,
+        "abilities": [
+            "blaze",
+            null
+        ],
         "baseStats": {
             "atk": 60,
             "def": 40,
@@ -4113,11 +5483,15 @@
             "spa": 70,
             "spd": 50,
             "spe": 45
-        }
+        },
+        "name": "Torchic",
+        "num": 255
     },
     "torkoal": {
-        "name": "Torkoal",
-        "num": 324,
+        "abilities": [
+            "whitesmoke",
+            null
+        ],
         "baseStats": {
             "atk": 85,
             "def": 140,
@@ -4125,11 +5499,15 @@
             "spa": 85,
             "spd": 70,
             "spe": 20
-        }
+        },
+        "name": "Torkoal",
+        "num": 324
     },
     "totodile": {
-        "name": "Totodile",
-        "num": 158,
+        "abilities": [
+            "torrent",
+            null
+        ],
         "baseStats": {
             "atk": 65,
             "def": 64,
@@ -4137,11 +5515,15 @@
             "spa": 44,
             "spd": 48,
             "spe": 43
-        }
+        },
+        "name": "Totodile",
+        "num": 158
     },
     "trapinch": {
-        "name": "Trapinch",
-        "num": 328,
+        "abilities": [
+            "hypercutter",
+            "arenatrap"
+        ],
         "baseStats": {
             "atk": 100,
             "def": 45,
@@ -4149,11 +5531,15 @@
             "spa": 45,
             "spd": 45,
             "spe": 10
-        }
+        },
+        "name": "Trapinch",
+        "num": 328
     },
     "treecko": {
-        "name": "Treecko",
-        "num": 252,
+        "abilities": [
+            "overgrow",
+            null
+        ],
         "baseStats": {
             "atk": 45,
             "def": 35,
@@ -4161,11 +5547,15 @@
             "spa": 65,
             "spd": 55,
             "spe": 70
-        }
+        },
+        "name": "Treecko",
+        "num": 252
     },
     "tropius": {
-        "name": "Tropius",
-        "num": 357,
+        "abilities": [
+            "chlorophyll",
+            null
+        ],
         "baseStats": {
             "atk": 68,
             "def": 83,
@@ -4173,11 +5563,15 @@
             "spa": 72,
             "spd": 87,
             "spe": 51
-        }
+        },
+        "name": "Tropius",
+        "num": 357
     },
     "typhlosion": {
-        "name": "Typhlosion",
-        "num": 157,
+        "abilities": [
+            "blaze",
+            null
+        ],
         "baseStats": {
             "atk": 84,
             "def": 78,
@@ -4185,11 +5579,15 @@
             "spa": 109,
             "spd": 85,
             "spe": 100
-        }
+        },
+        "name": "Typhlosion",
+        "num": 157
     },
     "tyranitar": {
-        "name": "Tyranitar",
-        "num": 248,
+        "abilities": [
+            "sandstream",
+            null
+        ],
         "baseStats": {
             "atk": 134,
             "def": 110,
@@ -4197,11 +5595,15 @@
             "spa": 95,
             "spd": 100,
             "spe": 61
-        }
+        },
+        "name": "Tyranitar",
+        "num": 248
     },
     "tyrogue": {
-        "name": "Tyrogue",
-        "num": 236,
+        "abilities": [
+            "guts",
+            null
+        ],
         "baseStats": {
             "atk": 35,
             "def": 35,
@@ -4209,11 +5611,15 @@
             "spa": 35,
             "spd": 35,
             "spe": 35
-        }
+        },
+        "name": "Tyrogue",
+        "num": 236
     },
     "umbreon": {
-        "name": "Umbreon",
-        "num": 197,
+        "abilities": [
+            "synchronize",
+            null
+        ],
         "baseStats": {
             "atk": 65,
             "def": 110,
@@ -4221,11 +5627,11 @@
             "spa": 60,
             "spd": 130,
             "spe": 65
-        }
+        },
+        "name": "Umbreon",
+        "num": 197
     },
     "unownquestion": {
-        "name": "Unown",
-        "num": 201,
         "baseStats": {
             "atk": 72,
             "def": 48,
@@ -4233,11 +5639,15 @@
             "spa": 72,
             "spd": 48,
             "spe": 48
-        }
+        },
+        "name": "Unown",
+        "num": 201
     },
     "ursaring": {
-        "name": "Ursaring",
-        "num": 217,
+        "abilities": [
+            "guts",
+            null
+        ],
         "baseStats": {
             "atk": 130,
             "def": 75,
@@ -4245,11 +5655,15 @@
             "spa": 75,
             "spd": 75,
             "spe": 55
-        }
+        },
+        "name": "Ursaring",
+        "num": 217
     },
     "vaporeon": {
-        "name": "Vaporeon",
-        "num": 134,
+        "abilities": [
+            "waterabsorb",
+            null
+        ],
         "baseStats": {
             "atk": 65,
             "def": 60,
@@ -4257,11 +5671,15 @@
             "spa": 110,
             "spd": 95,
             "spe": 65
-        }
+        },
+        "name": "Vaporeon",
+        "num": 134
     },
     "venomoth": {
-        "name": "Venomoth",
-        "num": 49,
+        "abilities": [
+            "shielddust",
+            null
+        ],
         "baseStats": {
             "atk": 65,
             "def": 60,
@@ -4269,11 +5687,15 @@
             "spa": 90,
             "spd": 75,
             "spe": 90
-        }
+        },
+        "name": "Venomoth",
+        "num": 49
     },
     "venonat": {
-        "name": "Venonat",
-        "num": 48,
+        "abilities": [
+            "compoundeyes",
+            null
+        ],
         "baseStats": {
             "atk": 55,
             "def": 50,
@@ -4281,11 +5703,15 @@
             "spa": 40,
             "spd": 55,
             "spe": 45
-        }
+        },
+        "name": "Venonat",
+        "num": 48
     },
     "venusaur": {
-        "name": "Venusaur",
-        "num": 3,
+        "abilities": [
+            "overgrow",
+            null
+        ],
         "baseStats": {
             "atk": 82,
             "def": 83,
@@ -4293,11 +5719,15 @@
             "spa": 100,
             "spd": 100,
             "spe": 80
-        }
+        },
+        "name": "Venusaur",
+        "num": 3
     },
     "vibrava": {
-        "name": "Vibrava",
-        "num": 329,
+        "abilities": [
+            "levitate",
+            null
+        ],
         "baseStats": {
             "atk": 70,
             "def": 50,
@@ -4305,11 +5735,15 @@
             "spa": 50,
             "spd": 50,
             "spe": 70
-        }
+        },
+        "name": "Vibrava",
+        "num": 329
     },
     "victreebel": {
-        "name": "Victreebel",
-        "num": 71,
+        "abilities": [
+            "chlorophyll",
+            null
+        ],
         "baseStats": {
             "atk": 105,
             "def": 65,
@@ -4317,11 +5751,15 @@
             "spa": 100,
             "spd": 60,
             "spe": 70
-        }
+        },
+        "name": "Victreebel",
+        "num": 71
     },
     "vigoroth": {
-        "name": "Vigoroth",
-        "num": 288,
+        "abilities": [
+            "vitalspirit",
+            null
+        ],
         "baseStats": {
             "atk": 80,
             "def": 80,
@@ -4329,11 +5767,15 @@
             "spa": 55,
             "spd": 55,
             "spe": 90
-        }
+        },
+        "name": "Vigoroth",
+        "num": 288
     },
     "vileplume": {
-        "name": "Vileplume",
-        "num": 45,
+        "abilities": [
+            "chlorophyll",
+            null
+        ],
         "baseStats": {
             "atk": 80,
             "def": 85,
@@ -4341,11 +5783,15 @@
             "spa": 100,
             "spd": 90,
             "spe": 50
-        }
+        },
+        "name": "Vileplume",
+        "num": 45
     },
     "volbeat": {
-        "name": "Volbeat",
-        "num": 313,
+        "abilities": [
+            "illuminate",
+            "swarm"
+        ],
         "baseStats": {
             "atk": 73,
             "def": 55,
@@ -4353,11 +5799,15 @@
             "spa": 47,
             "spd": 75,
             "spe": 85
-        }
+        },
+        "name": "Volbeat",
+        "num": 313
     },
     "voltorb": {
-        "name": "Voltorb",
-        "num": 100,
+        "abilities": [
+            "soundproof",
+            "static"
+        ],
         "baseStats": {
             "atk": 30,
             "def": 50,
@@ -4365,11 +5815,15 @@
             "spa": 55,
             "spd": 55,
             "spe": 100
-        }
+        },
+        "name": "Voltorb",
+        "num": 100
     },
     "vulpix": {
-        "name": "Vulpix",
-        "num": 37,
+        "abilities": [
+            "flashfire",
+            null
+        ],
         "baseStats": {
             "atk": 41,
             "def": 40,
@@ -4377,11 +5831,15 @@
             "spa": 50,
             "spd": 65,
             "spe": 65
-        }
+        },
+        "name": "Vulpix",
+        "num": 37
     },
     "wailmer": {
-        "name": "Wailmer",
-        "num": 320,
+        "abilities": [
+            "waterveil",
+            "oblivious"
+        ],
         "baseStats": {
             "atk": 70,
             "def": 35,
@@ -4389,11 +5847,15 @@
             "spa": 70,
             "spd": 35,
             "spe": 60
-        }
+        },
+        "name": "Wailmer",
+        "num": 320
     },
     "wailord": {
-        "name": "Wailord",
-        "num": 321,
+        "abilities": [
+            "waterveil",
+            "oblivious"
+        ],
         "baseStats": {
             "atk": 90,
             "def": 45,
@@ -4401,11 +5863,15 @@
             "spa": 90,
             "spd": 45,
             "spe": 60
-        }
+        },
+        "name": "Wailord",
+        "num": 321
     },
     "walrein": {
-        "name": "Walrein",
-        "num": 365,
+        "abilities": [
+            "thickfat",
+            null
+        ],
         "baseStats": {
             "atk": 80,
             "def": 90,
@@ -4413,11 +5879,15 @@
             "spa": 95,
             "spd": 90,
             "spe": 65
-        }
+        },
+        "name": "Walrein",
+        "num": 365
     },
     "wartortle": {
-        "name": "Wartortle",
-        "num": 8,
+        "abilities": [
+            "torrent",
+            null
+        ],
         "baseStats": {
             "atk": 63,
             "def": 80,
@@ -4425,11 +5895,15 @@
             "spa": 65,
             "spd": 80,
             "spe": 58
-        }
+        },
+        "name": "Wartortle",
+        "num": 8
     },
     "weedle": {
-        "name": "Weedle",
-        "num": 13,
+        "abilities": [
+            "shielddust",
+            null
+        ],
         "baseStats": {
             "atk": 35,
             "def": 30,
@@ -4437,11 +5911,15 @@
             "spa": 20,
             "spd": 20,
             "spe": 50
-        }
+        },
+        "name": "Weedle",
+        "num": 13
     },
     "weepinbell": {
-        "name": "Weepinbell",
-        "num": 70,
+        "abilities": [
+            "chlorophyll",
+            null
+        ],
         "baseStats": {
             "atk": 90,
             "def": 50,
@@ -4449,11 +5927,15 @@
             "spa": 85,
             "spd": 45,
             "spe": 55
-        }
+        },
+        "name": "Weepinbell",
+        "num": 70
     },
     "weezing": {
-        "name": "Weezing",
-        "num": 110,
+        "abilities": [
+            "levitate",
+            null
+        ],
         "baseStats": {
             "atk": 90,
             "def": 120,
@@ -4461,11 +5943,15 @@
             "spa": 85,
             "spd": 70,
             "spe": 60
-        }
+        },
+        "name": "Weezing",
+        "num": 110
     },
     "whiscash": {
-        "name": "Whiscash",
-        "num": 340,
+        "abilities": [
+            "oblivious",
+            null
+        ],
         "baseStats": {
             "atk": 78,
             "def": 73,
@@ -4473,11 +5959,15 @@
             "spa": 76,
             "spd": 71,
             "spe": 60
-        }
+        },
+        "name": "Whiscash",
+        "num": 340
     },
     "whismur": {
-        "name": "Whismur",
-        "num": 293,
+        "abilities": [
+            "soundproof",
+            null
+        ],
         "baseStats": {
             "atk": 51,
             "def": 23,
@@ -4485,11 +5975,15 @@
             "spa": 51,
             "spd": 23,
             "spe": 28
-        }
+        },
+        "name": "Whismur",
+        "num": 293
     },
     "wigglytuff": {
-        "name": "Wigglytuff",
-        "num": 40,
+        "abilities": [
+            "cutecharm",
+            null
+        ],
         "baseStats": {
             "atk": 70,
             "def": 45,
@@ -4497,11 +5991,15 @@
             "spa": 75,
             "spd": 50,
             "spe": 45
-        }
+        },
+        "name": "Wigglytuff",
+        "num": 40
     },
     "wingull": {
-        "name": "Wingull",
-        "num": 278,
+        "abilities": [
+            "keeneye",
+            null
+        ],
         "baseStats": {
             "atk": 30,
             "def": 30,
@@ -4509,11 +6007,15 @@
             "spa": 55,
             "spd": 30,
             "spe": 85
-        }
+        },
+        "name": "Wingull",
+        "num": 278
     },
     "wobbuffet": {
-        "name": "Wobbuffet",
-        "num": 202,
+        "abilities": [
+            "shadowtag",
+            null
+        ],
         "baseStats": {
             "atk": 33,
             "def": 58,
@@ -4521,11 +6023,15 @@
             "spa": 33,
             "spd": 58,
             "spe": 33
-        }
+        },
+        "name": "Wobbuffet",
+        "num": 202
     },
     "wooper": {
-        "name": "Wooper",
-        "num": 194,
+        "abilities": [
+            "damp",
+            "waterabsorb"
+        ],
         "baseStats": {
             "atk": 45,
             "def": 45,
@@ -4533,11 +6039,15 @@
             "spa": 25,
             "spd": 25,
             "spe": 15
-        }
+        },
+        "name": "Wooper",
+        "num": 194
     },
     "wurmple": {
-        "name": "Wurmple",
-        "num": 265,
+        "abilities": [
+            "shielddust",
+            null
+        ],
         "baseStats": {
             "atk": 45,
             "def": 35,
@@ -4545,11 +6055,15 @@
             "spa": 20,
             "spd": 30,
             "spe": 20
-        }
+        },
+        "name": "Wurmple",
+        "num": 265
     },
     "wynaut": {
-        "name": "Wynaut",
-        "num": 360,
+        "abilities": [
+            "shadowtag",
+            null
+        ],
         "baseStats": {
             "atk": 23,
             "def": 48,
@@ -4557,11 +6071,15 @@
             "spa": 23,
             "spd": 48,
             "spe": 23
-        }
+        },
+        "name": "Wynaut",
+        "num": 360
     },
     "xatu": {
-        "name": "Xatu",
-        "num": 178,
+        "abilities": [
+            "synchronize",
+            "earlybird"
+        ],
         "baseStats": {
             "atk": 75,
             "def": 70,
@@ -4569,11 +6087,15 @@
             "spa": 95,
             "spd": 70,
             "spe": 95
-        }
+        },
+        "name": "Xatu",
+        "num": 178
     },
     "yanma": {
-        "name": "Yanma",
-        "num": 193,
+        "abilities": [
+            "speedboost",
+            "compoundeyes"
+        ],
         "baseStats": {
             "atk": 65,
             "def": 45,
@@ -4581,11 +6103,15 @@
             "spa": 75,
             "spd": 45,
             "spe": 95
-        }
+        },
+        "name": "Yanma",
+        "num": 193
     },
     "zangoose": {
-        "name": "Zangoose",
-        "num": 335,
+        "abilities": [
+            "immunity",
+            null
+        ],
         "baseStats": {
             "atk": 115,
             "def": 60,
@@ -4593,11 +6119,15 @@
             "spa": 60,
             "spd": 60,
             "spe": 90
-        }
+        },
+        "name": "Zangoose",
+        "num": 335
     },
     "zapdos": {
-        "name": "Zapdos",
-        "num": 145,
+        "abilities": [
+            "pressure",
+            null
+        ],
         "baseStats": {
             "atk": 90,
             "def": 85,
@@ -4605,11 +6135,15 @@
             "spa": 125,
             "spd": 90,
             "spe": 100
-        }
+        },
+        "name": "Zapdos",
+        "num": 145
     },
     "zigzagoon": {
-        "name": "Zigzagoon",
-        "num": 263,
+        "abilities": [
+            "pickup",
+            null
+        ],
         "baseStats": {
             "atk": 30,
             "def": 41,
@@ -4617,11 +6151,15 @@
             "spa": 30,
             "spd": 41,
             "spe": 60
-        }
+        },
+        "name": "Zigzagoon",
+        "num": 263
     },
     "zubat": {
-        "name": "Zubat",
-        "num": 41,
+        "abilities": [
+            "innerfocus",
+            null
+        ],
         "baseStats": {
             "atk": 45,
             "def": 35,
@@ -4629,6 +6167,8 @@
             "spa": 30,
             "spd": 40,
             "spe": 55
-        }
+        },
+        "name": "Zubat",
+        "num": 41
     }
 }

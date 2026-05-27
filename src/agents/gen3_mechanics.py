@@ -24,8 +24,9 @@ from poke_env.data import GenData
 # the |-immune| or |-resisted| message Showdown emits for that ability, so callers
 # comparing against battle.*_last_effectiveness see consistent values.
 #
-# Gen 3-only — Heatproof / Filter / Solid Rock are Gen 4+, Wonder Guard is Shedinja-
-# only (not OU), and Lightning Rod doesn't grant immunity in Gen 3 singles.
+# Gen 3-only — Heatproof / Filter / Solid Rock are Gen 4+, and Lightning Rod doesn't
+# grant immunity in Gen 3 singles. Wonder Guard depends on the full type-chart
+# product (not a single type) so it's handled separately in effective_multiplier.
 ABILITY_TYPE_MULTIPLIER: dict[str, dict[PokemonType, float]] = {
     "levitate":    {PokemonType.GROUND:   0.0},
     "voltabsorb":  {PokemonType.ELECTRIC: 0.0},
@@ -52,9 +53,14 @@ def effective_multiplier(move_type: PokemonType, mon) -> float:
     Gen 3 quirk: Flash Fire does NOT activate when the target is frozen — the
     incoming Fire move falls through and is resisted normally (0.5× from Fire-type).
     See pokemon-showdown/data/mods/gen3/abilities.ts.
+
+    Wonder Guard (Shedinja): only super-effective moves do damage; everything else
+    is fully absorbed. Returns the raw type-chart product for SE hits, else 0.
     """
     ability = (getattr(mon, "ability", None) or "").lower()
     base = move_type.damage_multiplier(mon.type_1, mon.type_2, type_chart=_type_chart)
+    if ability == "wonderguard":
+        return base if base > 1.0 else 0.0
     if ability == "flashfire" and getattr(mon, "status", None) == Status.FRZ:
         return base
     return base * ABILITY_TYPE_MULTIPLIER.get(ability, {}).get(move_type, 1.0)

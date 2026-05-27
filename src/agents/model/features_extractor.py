@@ -160,7 +160,8 @@ class Gen3FeaturesExtractor(torch.nn.Module):
             + layout['item_embedding_dim']              # embedded item
             + 2                                         # item known + consumed
             + 2 * layout['type_embedding_dim']          # embedded type pair
-            + layout['ability_embedding_dim']           # embedded ability
+            + 2 * layout['ability_embedding_dim']       # embedded ability1 + ability2
+                                                         # (revealed → ability1; opp unrevealed → both dex candidates)
             + 1                                         # ability known
             + _condition_dim                            # condition one-hot
             + MOVE_NET_HIDDEN[1] * _num_moves           # processed moves (4×32)
@@ -420,8 +421,10 @@ class Gen3FeaturesExtractor(torch.nn.Module):
 
         abilities_info = pk_layout['abilities']
         abilities_layout = abilities_info['layout']
-        ability_idx = abilities_info['offset'] + abilities_layout['id']['offset']
-        ability_ids = pokemon_part[:, :, ability_idx].long()
+        ability1_idx = abilities_info['offset'] + abilities_layout['id1']['offset']
+        ability2_idx = abilities_info['offset'] + abilities_layout['id2']['offset']
+        ability1_ids = pokemon_part[:, :, ability1_idx].long()
+        ability2_ids = pokemon_part[:, :, ability2_idx].long()
 
         types_info = pk_layout['types']
         types_layout = types_info['layout']
@@ -435,7 +438,8 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         embedded_moves = self.move_embedding(all_move_ids)
         embedded_move_types = self.type_embedding(all_move_type_ids)
         embedded_items = self.item_embedding(item_ids)
-        embedded_abilities = self.ability_embedding(ability_ids)
+        embedded_ability1 = self.ability_embedding(ability1_ids)
+        embedded_ability2 = self.ability_embedding(ability2_ids)
 
         # Pokémon types: concatenate E1 and E2 (32 dims) — sum loses type-pair signal
         embedded_t1 = self.type_embedding(type1_ids)
@@ -532,7 +536,8 @@ class Gen3FeaturesExtractor(torch.nn.Module):
             item_remnant,
             item_consumed,
             embedded_pk_types,
-            embedded_abilities,
+            embedded_ability1,
+            embedded_ability2,
             ability_remnant,
             part_d,
             processed_moves,

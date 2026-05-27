@@ -98,6 +98,50 @@ def test_flash_fire_healthy_arcanine_0x_leaves_fire_only():
     assert surviving == {HP_IDX["fire"]}, f"got {surviving}"
 
 
+def test_wonder_guard_shedinja_2x_leaves_only_se_types():
+    """Wonder Guard (Shedinja, Bug/Ghost) makes non-SE moves do 0; only SE moves
+    land. If we observe 2.0, every surviving candidate must be SE on Bug/Ghost:
+    Flying, Rock, Fire (all 2× on Bug), plus Ghost and Dark (2× on Ghost).
+
+    Without the Wonder Guard branch in effective_multiplier, the raw type-chart
+    product would mismatch the SE bucket for non-SE candidates (returning 0.5 or
+    1.0, not 2.0) — they'd be eliminated correctly, but the SE candidates would
+    survive without the ability multiplier ever being consulted. The real failure
+    mode is the 0× observation case below, which would wipe everything without
+    the new branch.
+    """
+    tracker = make_tracker()
+    shedinja = MockMon("shedinja", PokemonType.BUG, PokemonType.GHOST, "wonderguard")
+    tracker.observe("shedinja", 2.0, shedinja)
+    probs = tracker.get_probs("shedinja")
+    surviving = {i for i, p in enumerate(probs) if p > 0}
+    assert surviving == {
+        HP_IDX["flying"], HP_IDX["rock"], HP_IDX["fire"],
+        HP_IDX["ghost"], HP_IDX["dark"],
+    }, f"got {surviving}"
+
+
+def test_wonder_guard_shedinja_0x_does_not_crash():
+    """Non-SE moves vs Shedinja get 0× via Wonder Guard, regardless of base type
+    multiplier. Without the branch, no candidate type produces 0× against
+    Bug/Ghost (everything is 0.5/1/2 from the type chart alone), so every
+    candidate gets eliminated → ValueError → episode crash.
+
+    With the branch, calc(non-SE type) == 0.0 matches the observation and those
+    types survive; calc(SE type) == 2.0 ≠ 0.0 so SE types are eliminated.
+    """
+    tracker = make_tracker()
+    shedinja = MockMon("shedinja", PokemonType.BUG, PokemonType.GHOST, "wonderguard")
+    tracker.observe("shedinja", 0.0, shedinja)  # must NOT raise
+    probs = tracker.get_probs("shedinja")
+    surviving = {i for i, p in enumerate(probs) if p > 0}
+    # The five SE-on-Bug/Ghost types must be eliminated; everything else survives.
+    se_types = {HP_IDX["flying"], HP_IDX["rock"], HP_IDX["fire"],
+                HP_IDX["ghost"], HP_IDX["dark"]}
+    assert surviving.isdisjoint(se_types), f"SE types should be eliminated, got {surviving}"
+    assert len(surviving) == 16 - len(se_types), f"got {len(surviving)} survivors"
+
+
 def test_quad_se_hit_matches_bucketed_2x():
     """Quad-effective hits (4×) report as 2.0 via Showdown's effectiveness bucket.
 
