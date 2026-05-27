@@ -45,7 +45,16 @@ class TwoPhaseLRCallback(BaseCallback):
         target_kl:          Phase 1 KL setpoint.
         kl_tolerance:       Phase 1 KL band as a fraction of ``target_kl``.
         lr_factor:          Phase 1 LR step (multiplicative).
-        ema_alpha:          Phase 1 EMA smoothing on ``approx_kl``.
+        ema_alpha:          Phase 1 EMA smoothing on ``approx_kl``. With α=0.20
+                            the EMA half-life is ~3 rollouts.
+        cooldown_rollouts:  After every LR adjustment, skip this many rollouts
+                            before considering another adjustment. The EMA
+                            continues to update during cooldown, so when the
+                            next decision fires it sees current state rather
+                            than stale state. Also seeded at startup so a
+                            fresh callback (e.g. after a launcher restart)
+                            cannot fire on the very first rollout's noise.
+                            Default 7 (~2× the EMA half-life at α=0.20).
         handoff_lr:         If not None, treat the run as having already
                             crossed into Phase 2 with this as the cosine
                             start. Used on resume.
@@ -61,8 +70,9 @@ class TwoPhaseLRCallback(BaseCallback):
         max_lr: float | None = None,
         target_kl: float = 0.01,
         kl_tolerance: float = 0.3,
-        lr_factor: float = 1.5,
-        ema_alpha: float = 0.1,
+        lr_factor: float = 1.2,
+        ema_alpha: float = 0.20,
+        cooldown_rollouts: int = 7,
         handoff_lr: float | None = None,
         verbose: int = 1,
     ):
@@ -75,7 +85,14 @@ class TwoPhaseLRCallback(BaseCallback):
         self.kl_tolerance = kl_tolerance
         self.lr_factor = lr_factor
         self.ema_alpha = ema_alpha
+        self.cooldown_rollouts = cooldown_rollouts
         self._kl_ema: float | None = None
+        # Seed cooldown so the first ``cooldown_rollouts`` rollouts after
+        # startup/restart also let the EMA settle before any adjustment fires.
+        # Without this, a launcher restart would immediately act on whatever
+        # KL the first rollout happens to log, which is exactly the chatter
+        # the cooldown is meant to suppress.
+        self._cooldown_remaining: int = cooldown_rollouts
 
         # Phase 2 state
         self._total_steps = total_steps
@@ -189,15 +206,27 @@ class TwoPhaseLRCallback(BaseCallback):
         self.logger.record("train/n_epochs", self.model.n_epochs)
 
     def _adapt_lr_from_kl(self) -> None:
-        """Phase 1: nudge LR based on EMA of approx_kl."""
+        """Phase 1: nudge LR based on EMA of approx_kl, with post-adjustment cooldown.
+
+        The EMA is updated every rollout (so it tracks current state during
+        the cooldown), but LR adjustments only fire when no cooldown is
+        pending. Each adjustment arms ``cooldown_rollouts`` rollouts of
+        suppression — preventing the per-rollout compounding that would
+        otherwise overshoot when the EMA lags reality.
+        """
         kl = self.model.logger.name_to_value.get("train/approx_kl")
         if kl is None:
             return
 
+        # Always update EMA so it tracks during cooldown.
         if self._kl_ema is None:
             self._kl_ema = kl
         else:
             self._kl_ema = self.ema_alpha * kl + (1.0 - self.ema_alpha) * self._kl_ema
+
+        if self._cooldown_remaining > 0:
+            self._cooldown_remaining -= 1
+            return
 
         lo = self.target_kl * (1.0 - self.kl_tolerance)
         hi = self.target_kl * (1.0 + self.kl_tolerance)
@@ -215,10 +244,12 @@ class TwoPhaseLRCallback(BaseCallback):
                 print(
                     f"[AdaptiveLR] approx_kl={kl:.4f} ema={self._kl_ema:.4f} "
                     f"(target={self.target_kl:.3f}) → LR {direction} "
-                    f"{self._current_lr:.2e} → {new_lr:.2e}"
+                    f"{self._current_lr:.2e} → {new_lr:.2e} "
+                    f"(cooldown {self.cooldown_rollouts} rollouts)"
                 )
             self._current_lr = new_lr
             self.model.lr_schedule = lambda _: new_lr
+            self._cooldown_remaining = self.cooldown_rollouts
 
     def _on_step(self) -> bool:
         return True
@@ -236,15 +267,23 @@ class AdaptivePPOCallback(BaseCallback):
     required before a LR change fires.
 
     Args:
-        initial_lr:    Starting LR (also the basis for max_lr default).
-        target_kl:     Desired approx_kl. Healthy Gen3OU range is 0.005–0.015;
-                       default 0.01 centres the ±30% band at [0.007, 0.013].
-        kl_tolerance:  Fractional band around target before adjusting (0.3 = ±30%).
-        lr_factor:     Multiply/divide LR by this per adjustment.
-        min_lr:        Hard lower bound on LR.
-        max_lr:        Hard upper bound on LR. Defaults to 2× initial_lr.
-        ema_alpha:     EMA smoothing factor (0, 1]. Lower = more smoothing,
-                       more rollouts needed to trigger a change. Default 0.1.
+        initial_lr:         Starting LR (also the basis for max_lr default).
+        target_kl:          Desired approx_kl. Healthy Gen3OU range is
+                            0.005–0.015; default 0.01 centres the ±30% band
+                            at [0.007, 0.013].
+        kl_tolerance:       Fractional band around target before adjusting
+                            (0.3 = ±30%).
+        lr_factor:          Multiply/divide LR by this per adjustment.
+        min_lr:             Hard lower bound on LR.
+        max_lr:             Hard upper bound on LR. Defaults to 2× initial_lr.
+        ema_alpha:          EMA smoothing factor (0, 1]. With α=0.20 the EMA
+                            half-life is ~3 rollouts.
+        cooldown_rollouts:  After every adjustment, skip this many rollouts
+                            before considering another. The EMA still updates
+                            so the next decision sees current state, not stale
+                            state. Also seeded at startup so a fresh callback
+                            cannot fire on the first rollout's noise.
+                            Default 7 (~2× the EMA half-life at α=0.20).
     """
 
     def __init__(
@@ -252,10 +291,11 @@ class AdaptivePPOCallback(BaseCallback):
         initial_lr: float,
         target_kl: float = 0.01,
         kl_tolerance: float = 0.3,
-        lr_factor: float = 1.5,
+        lr_factor: float = 1.2,
         min_lr: float = 1e-5,
         max_lr: float | None = None,
-        ema_alpha: float = 0.1,
+        ema_alpha: float = 0.20,
+        cooldown_rollouts: int = 7,
         verbose: int = 1,
     ):
         super().__init__(verbose)
@@ -266,7 +306,11 @@ class AdaptivePPOCallback(BaseCallback):
         self.min_lr = min_lr
         self.max_lr = max_lr if max_lr is not None else initial_lr * 2.0
         self.ema_alpha = ema_alpha
+        self.cooldown_rollouts = cooldown_rollouts
         self._kl_ema: float | None = None
+        # Seed cooldown so launcher restarts and fresh runs both give the EMA
+        # ``cooldown_rollouts`` to settle before any adjustment fires.
+        self._cooldown_remaining: int = cooldown_rollouts
 
     @property
     def current_lr(self) -> float:
@@ -280,11 +324,16 @@ class AdaptivePPOCallback(BaseCallback):
         if kl is None:
             return
 
-        # Update EMA; cold-start: seed with the first observed value.
+        # Always update EMA so it tracks during cooldown.
         if self._kl_ema is None:
             self._kl_ema = kl
         else:
             self._kl_ema = self.ema_alpha * kl + (1.0 - self.ema_alpha) * self._kl_ema
+
+        if self._cooldown_remaining > 0:
+            self._cooldown_remaining -= 1
+            self.logger.record("train/n_epochs", self.model.n_epochs)
+            return
 
         lo = self.target_kl * (1.0 - self.kl_tolerance)
         hi = self.target_kl * (1.0 + self.kl_tolerance)
@@ -301,10 +350,12 @@ class AdaptivePPOCallback(BaseCallback):
             if self.verbose >= 1:
                 print(
                     f"[AdaptiveLR] approx_kl={kl:.4f} ema={self._kl_ema:.4f} (target={self.target_kl:.3f}) "
-                    f"→ LR {direction} {self._current_lr:.2e} → {new_lr:.2e}"
+                    f"→ LR {direction} {self._current_lr:.2e} → {new_lr:.2e} "
+                    f"(cooldown {self.cooldown_rollouts} rollouts)"
                 )
             self._current_lr = new_lr
             self.model.lr_schedule = lambda _: new_lr
+            self._cooldown_remaining = self.cooldown_rollouts
 
         self.logger.record("train/n_epochs", self.model.n_epochs)
 

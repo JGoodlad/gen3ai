@@ -19,7 +19,11 @@ def _make_two_phase(
     min_lr=1e-5,
     max_lr=None,
     handoff_lr=None,
+    cooldown_rollouts=0,
 ):
+    # Most tests fire-and-check immediately. Default cooldown_rollouts=0 so
+    # those tests aren't gated by the cooldown; dedicated cooldown tests pass
+    # a positive value explicitly.
     return TwoPhaseLRCallback(
         initial_lr=initial_lr,
         total_steps=total_steps,
@@ -28,6 +32,7 @@ def _make_two_phase(
         min_lr=min_lr,
         max_lr=max_lr,
         ema_alpha=0.3,
+        cooldown_rollouts=cooldown_rollouts,
         verbose=0,
         handoff_lr=handoff_lr,
     )
@@ -115,17 +120,17 @@ def test_phase1_lr_decreases_when_kl_too_high():
     cb = _make_two_phase(initial_lr=3e-4, max_lr=6e-4)
     _attach_mock_model(cb, num_timesteps=1000)
     # ema_alpha=0.3, target=0.01, hi=0.013. kl=0.030 → first fire seeds ema at 0.030,
-    # which is well above hi → immediate drop.
+    # which is well above hi → immediate drop by default lr_factor=1.2.
     _fire_two_phase(cb, kl=0.030)
-    assert cb.current_lr == pytest.approx(3e-4 / 1.5)
+    assert cb.current_lr == pytest.approx(3e-4 / 1.2)
 
 
 def test_phase1_lr_increases_when_kl_too_low():
     cb = _make_two_phase(initial_lr=3e-4, max_lr=6e-4)
     _attach_mock_model(cb, num_timesteps=1000)
-    # kl=0.003 → below lo=0.007 → increase.
+    # kl=0.003 → below lo=0.007 → increase by default lr_factor=1.2.
     _fire_two_phase(cb, kl=0.003)
-    assert cb.current_lr == pytest.approx(3e-4 * 1.5)
+    assert cb.current_lr == pytest.approx(3e-4 * 1.2)
 
 
 def test_phase1_no_change_when_kl_in_band():
@@ -223,8 +228,11 @@ def _make_callback(
     min_lr=1e-5,
     max_lr=None,
     ema_alpha=0.3,
+    cooldown_rollouts=0,
     verbose=0,
 ):
+    # Default cooldown_rollouts=0 — keeps the rollout-by-rollout tests below
+    # exercising raw EMA/threshold logic. Dedicated cooldown tests opt in.
     cb = AdaptivePPOCallback(
         initial_lr=initial_lr,
         target_kl=target_kl,
@@ -233,6 +241,7 @@ def _make_callback(
         min_lr=min_lr,
         max_lr=max_lr,
         ema_alpha=ema_alpha,
+        cooldown_rollouts=cooldown_rollouts,
         verbose=verbose,
     )
     cb.model = MagicMock()
@@ -336,3 +345,146 @@ def test_ema_alpha_controls_smoothing_rate():
         _fire(cb, kl=0.015)
     _fire(cb, kl=0.030)
     assert cb.current_lr == pytest.approx(3e-4 / 1.5)
+
+
+# ---------------------------------------------------------------------------
+# Cooldown after adjustment — prevents per-rollout compounding overshoot
+# ---------------------------------------------------------------------------
+
+
+def test_cooldown_blocks_consecutive_adjustments():
+    """After an adjustment, the next ``cooldown_rollouts`` rollouts must NOT
+    fire another adjustment, even if approx_kl stays out of band."""
+    cb = _make_callback(initial_lr=3e-4, lr_factor=1.5, ema_alpha=1.0, cooldown_rollouts=5)
+    cb._cooldown_remaining = 0  # bypass startup cooldown; this test targets post-adjustment cooldown
+    # alpha=1.0 means EMA tracks the raw value with no smoothing.
+    _fire(cb, kl=0.030)  # first fire: triggers ↓ and arms cooldown of 5
+    assert cb.current_lr == pytest.approx(3e-4 / 1.5)
+    # The next 5 rollouts at the same high KL must be suppressed.
+    for _ in range(5):
+        _fire(cb, kl=0.030)
+    assert cb.current_lr == pytest.approx(3e-4 / 1.5)
+    # The 6th rollout after the first fire is allowed to adjust again.
+    _fire(cb, kl=0.030)
+    assert cb.current_lr == pytest.approx(3e-4 / 1.5 / 1.5)
+
+
+def test_ema_still_updates_during_cooldown():
+    """EMA must keep tracking during cooldown so the post-cooldown decision
+    reflects current KL, not stale pre-cooldown KL."""
+    cb = _make_callback(initial_lr=3e-4, lr_factor=1.5, ema_alpha=0.5, cooldown_rollouts=3)
+    cb._cooldown_remaining = 0  # bypass startup cooldown
+    _fire(cb, kl=0.030)  # seed EMA at 0.030, fire ↓
+    assert cb.current_lr == pytest.approx(3e-4 / 1.5)
+    # During cooldown: kl drops back into band. EMA should track.
+    for _ in range(3):
+        _fire(cb, kl=0.010)
+    # EMA should now be close to 0.010, in band — next fire should NOT adjust.
+    assert cb._kl_ema == pytest.approx(0.5 * 0.010 + 0.5 * (0.5 * 0.010 + 0.5 * (0.5 * 0.010 + 0.5 * 0.030)))
+    _fire(cb, kl=0.010)  # post-cooldown, EMA in band → no adjust
+    assert cb.current_lr == pytest.approx(3e-4 / 1.5)
+
+
+def test_cooldown_zero_means_no_gating():
+    """cooldown_rollouts=0 keeps the old per-rollout behaviour for callers
+    that want it (e.g. existing test fixtures)."""
+    cb = _make_callback(initial_lr=3e-4, lr_factor=1.5, ema_alpha=1.0, cooldown_rollouts=0)
+    _fire(cb, kl=0.030)
+    _fire(cb, kl=0.030)
+    assert cb.current_lr == pytest.approx(3e-4 / 1.5 / 1.5)
+
+
+def test_cooldown_blocks_both_directions():
+    """Cooldown applies whether the last fire was ↑ or ↓ — symmetric."""
+    cb = _make_callback(initial_lr=3e-4, lr_factor=1.5, ema_alpha=1.0, cooldown_rollouts=3)
+    cb._cooldown_remaining = 0  # bypass startup cooldown
+    _fire(cb, kl=0.001)  # very low → ↑ to 4.5e-4 and arm cooldown
+    assert cb.current_lr == pytest.approx(3e-4 * 1.5)
+    # Cooldown should also block a ↓ fire, not just same-direction.
+    for _ in range(3):
+        _fire(cb, kl=0.030)
+    assert cb.current_lr == pytest.approx(3e-4 * 1.5)
+    # 4th rollout post-fire is unblocked → ↓ fires.
+    _fire(cb, kl=0.030)
+    assert cb.current_lr == pytest.approx(3e-4 * 1.5 / 1.5)
+
+
+def test_two_phase_cooldown_applies():
+    """TwoPhaseLRCallback's Phase 1 honors cooldown the same way."""
+    cb = _make_two_phase(initial_lr=3e-4, max_lr=6e-4, cooldown_rollouts=5)
+    _attach_mock_model(cb, num_timesteps=1000)
+    cb._cooldown_remaining = 0  # bypass startup cooldown
+    _fire_two_phase(cb, kl=0.030)  # fires ↓
+    assert cb.current_lr == pytest.approx(3e-4 / 1.2)  # default lr_factor=1.2
+    # Next 5 rollouts at the same high KL must be suppressed.
+    for _ in range(5):
+        _fire_two_phase(cb, kl=0.030)
+    assert cb.current_lr == pytest.approx(3e-4 / 1.2)
+    # 6th rollout is unblocked.
+    _fire_two_phase(cb, kl=0.030)
+    assert cb.current_lr == pytest.approx(3e-4 / 1.2 / 1.2)
+
+
+def test_startup_cooldown_blocks_first_adjustment():
+    """On a fresh callback (and on every launcher restart, which constructs a
+    fresh callback), the first ``cooldown_rollouts`` rollouts must NOT fire
+    an adjustment — the EMA hasn't had time to settle on representative state."""
+    cb = _make_callback(initial_lr=3e-4, lr_factor=1.5, ema_alpha=1.0, cooldown_rollouts=5)
+    # Even with extreme KL on the very first rollouts, no adjustment fires.
+    for _ in range(5):
+        _fire(cb, kl=0.030)
+    assert cb.current_lr == pytest.approx(3e-4)
+    # The 6th rollout is the first one allowed to adjust.
+    _fire(cb, kl=0.030)
+    assert cb.current_lr == pytest.approx(3e-4 / 1.5)
+
+
+def test_startup_cooldown_zero_means_immediate_fire():
+    """cooldown_rollouts=0 disables both startup and post-adjustment gating."""
+    cb = _make_callback(initial_lr=3e-4, lr_factor=1.5, ema_alpha=1.0, cooldown_rollouts=0)
+    _fire(cb, kl=0.030)
+    assert cb.current_lr == pytest.approx(3e-4 / 1.5)
+
+
+def test_startup_cooldown_lets_ema_settle():
+    """During startup cooldown, the EMA tracks. When the cooldown ends, the
+    decision uses the settled EMA, not the very first noisy KL."""
+    cb = _make_callback(initial_lr=3e-4, lr_factor=1.5, ema_alpha=0.5, cooldown_rollouts=3)
+    # Noisy spike on the first rollout, then KL settles into the in-band region.
+    _fire(cb, kl=0.030)  # would normally trigger ↓ — but cooldown blocks it
+    _fire(cb, kl=0.010)
+    _fire(cb, kl=0.010)
+    assert cb.current_lr == pytest.approx(3e-4)  # untouched during startup
+    # 4th rollout: cooldown elapsed. EMA has settled toward 0.010, in-band → no adjust.
+    _fire(cb, kl=0.010)
+    assert cb.current_lr == pytest.approx(3e-4)
+
+
+def test_two_phase_startup_cooldown_applies():
+    """TwoPhaseLRCallback's Phase 1 also honors startup cooldown."""
+    cb = _make_two_phase(initial_lr=3e-4, max_lr=6e-4, cooldown_rollouts=4)
+    _attach_mock_model(cb, num_timesteps=1000)
+    for _ in range(4):
+        _fire_two_phase(cb, kl=0.030)
+    assert cb.current_lr == pytest.approx(3e-4)  # no adjust during startup
+    _fire_two_phase(cb, kl=0.030)
+    assert cb.current_lr == pytest.approx(3e-4 / 1.2)  # 5th rollout: first fire
+
+
+def test_two_phase_phase2_ignores_cooldown():
+    """Cooldown is a Phase 1 concept. Phase 2 cosine ignores it — the cosine
+    schedule fires every rollout regardless."""
+    cb = _make_two_phase(
+        initial_lr=3e-4,
+        anneal_start_steps=40_000,
+        total_steps=100_000,
+        handoff_lr=3e-4,
+        cooldown_rollouts=5,
+    )
+    _attach_mock_model(cb, num_timesteps=50_000)
+    # Phase 2: every rollout sets LR to the cosine value.
+    _fire_two_phase(cb, kl=0.010, num_timesteps=50_000)
+    lr_a = cb.current_lr
+    _fire_two_phase(cb, kl=0.010, num_timesteps=60_000)
+    lr_b = cb.current_lr
+    assert lr_a != lr_b  # cosine kept advancing
