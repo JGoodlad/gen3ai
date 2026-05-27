@@ -35,7 +35,6 @@ import signal
 import threading
 import torch
 from datetime import datetime
-from sb3_contrib import MaskablePPO
 from stable_baselines3.common.callbacks import BaseCallback, CheckpointCallback
 from stable_baselines3.common.vec_env import DummyVecEnv, SubprocVecEnv
 from stable_baselines3.common.monitor import Monitor
@@ -57,6 +56,7 @@ from agents.training.reward_manager import Gen3RewardManager
 from agents.training.stall import StallConfig
 from agents.training.watchdog import start_subprocess_watchdog
 from agents.training.adaptive_lr_callback import AdaptivePPOCallback, AnnealingLRCallback
+from agents.training.instrumented_ppo import InstrumentedMaskablePPO
 from agents.training.metrics_exporter_callback import MetricsExporterCallback
 from utils.logging.levels import LogLevel
 from main.exit_codes import TrainExitCode
@@ -746,7 +746,7 @@ async def main():
             print(f"Note: Capping batch_size from {args.batch_size} to {total_rollout_size} to match rollout capacity.")
             args.batch_size = total_rollout_size
 
-        model = MaskablePPO(
+        model = InstrumentedMaskablePPO(
             "MultiInputPolicy",
             env,
             verbose=1,

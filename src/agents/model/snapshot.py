@@ -10,6 +10,7 @@ import stable_baselines3
 from sb3_contrib import MaskablePPO
 
 from agents.model.model_version import ModelVersion, ModelVersionError
+from agents.training.instrumented_ppo import InstrumentedMaskablePPO
 from utils.git import get_git_hash
 
 
@@ -204,8 +205,8 @@ def load_model_snapshot(
                          containing final_model.zip or best_model.zip.
         env:             VecEnv to attach to the loaded model.
         current_version: ModelVersion reflecting current code; checked against saved config.
-        device:          Passed to MaskablePPO.load().
-        tensorboard_log: Passed to MaskablePPO.load().
+        device:          Passed to InstrumentedMaskablePPO.load().
+        tensorboard_log: Passed to InstrumentedMaskablePPO.load().
 
     Raises:
         ModelVersionError:  If saved config is incompatible with current_version.
@@ -227,7 +228,7 @@ def load_model_snapshot(
     if tensorboard_log:
         kwargs["tensorboard_log"] = tensorboard_log
 
-    return MaskablePPO.load(zip_path, **kwargs)
+    return InstrumentedMaskablePPO.load(zip_path, **kwargs)
 
 
 def _resolve_paths(model_path: str) -> tuple[str, str]:
