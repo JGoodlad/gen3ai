@@ -694,7 +694,8 @@ async def main():
             if remaining_steps <= 0:
                 print(f"Training already complete ({model.num_timesteps:,} / {args.steps:,} steps)")
                 sys.exit(TrainExitCode.COMPLETE)
-            print(f"Continuing Training (Steps: {remaining_steps:,} remaining of {args.steps:,}, LR: {resume_lr:.2e} (saved={saved_lr:.2e}, arg={args.lr:.2e})")
+            lr_detail = f"annealed" if annealing_mode else f"saved={saved_lr:.2e}, arg={args.lr:.2e}"
+            print(f"Continuing Training (Steps: {remaining_steps:,} remaining of {args.steps:,}, LR: {resume_lr:.2e} ({lr_detail})")
             _run_roundtrip_test(model, _load_extractor_kwargs["layout"], _load_policy_kwargs, debug=args.debug)
             save_model_snapshot(model_dir, current_version, hparams=_model_hparams(model))
 
