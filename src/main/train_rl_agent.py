@@ -56,7 +56,7 @@ from agents.training.gen3_env import Gen3Env
 from agents.training.reward_manager import Gen3RewardManager
 from agents.training.stall import StallConfig
 from agents.training.watchdog import start_subprocess_watchdog
-from agents.training.adaptive_lr_callback import AdaptivePPOCallback
+from agents.training.adaptive_lr_callback import AdaptivePPOCallback, AnnealingLRCallback
 from agents.training.metrics_exporter_callback import MetricsExporterCallback
 from utils.logging.levels import LogLevel
 from main.exit_codes import TrainExitCode
@@ -67,7 +67,7 @@ from agents.opponents import Gen3StallerPlayer, Gen3AggressivePlayer, Gen3SetupS
 from poke_env import AccountConfiguration, LocalhostServerConfiguration
 
 BATTLE_FORMAT = "gen3ou"
-CLIP_RANGE = 0.20
+CLIP_RANGE_DEFAULT = 0.15
 
 
 def _model_hparams(model) -> dict:
@@ -192,7 +192,11 @@ def _setup_signal_handlers(model, model_dir, shutdown_event, version, current_lr
             path = os.path.join(model_dir, "final_model_interrupted")
             model.save(path)
             _write_latest_txt(model_dir, "final_model_interrupted.zip")
-            save_model_snapshot(model_dir, version, current_lr=current_lr_fn(), current_epochs=current_epochs_fn(), hparams=_model_hparams(model))
+            lr = current_lr_fn()
+            epochs = current_epochs_fn()
+            hparams = _model_hparams(model)
+            save_model_snapshot(model_dir, version, current_lr=lr, current_epochs=epochs, hparams=hparams)
+            record_checkpoint(model_dir, path + ".zip", lr, epochs, hparams=hparams)
             print(f"[ABORT] Checkpoint saved → {path}.zip")
         except Exception as e:
             print(f"[ABORT] Save failed: {e}")
@@ -264,7 +268,14 @@ async def main():
     parser.add_argument("--lr", type=float, default=3e-4, help="Initial learning rate (AdaptiveLRCallback adjusts from here)")
     parser.add_argument("--min-lr", type=float, default=1e-5, help="Hard lower bound on adaptive LR")
     parser.add_argument("--max-lr", type=float, default=None, help="Hard upper bound on adaptive LR (default: 2× --lr)")
+    parser.add_argument("--anneal-lr-start-steps", type=int, default=None,
+                        help="Absolute global step at which cosine LR decay begins. "
+                             "Duration = --steps minus this value. Pass the same value on every resume.")
+    parser.add_argument("--anneal-min-lr", type=float, default=None,
+                        help="LR floor for annealing (required with --anneal-lr-start-steps). "
+                             "Separate from --min-lr used by AdaptivePPO.")
     parser.add_argument("--ent-coef", type=float, default=0.02, help="Entropy coefficient (exploration bonus)")
+    parser.add_argument("--clip-range", type=float, default=CLIP_RANGE_DEFAULT, help="PPO policy clip range (default 0.15)")
     parser.add_argument("--clip-range-vf", type=float, default=0.5, help="Value function clip range (None=disabled; thesis used 0.0184)")
     parser.add_argument("--n-steps", type=int, default=2048, help="Steps per environment per rollout")
     parser.add_argument("--weight-decay", type=float, default=1e-5,
@@ -277,7 +288,17 @@ async def main():
 
     args = parser.parse_args()
     log_level = LogLevel[args.log_level.upper()]
-    
+
+    annealing_mode = args.anneal_lr_start_steps is not None
+    if annealing_mode:
+        if args.anneal_min_lr is None:
+            print("[AnnealLR] ERROR: --anneal-min-lr is required when --anneal-lr-start-steps is set")
+            sys.exit(1)
+        if args.anneal_lr_start_steps >= args.steps:
+            print(f"[AnnealLR] ERROR: --anneal-lr-start-steps ({args.anneal_lr_start_steps:,}) "
+                  f"must be less than --steps ({args.steps:,})")
+            sys.exit(1)
+
     # Automatically enable deep traces if --debug is set
     if args.debug:
         log_level = LogLevel.DEBUG
@@ -520,19 +541,29 @@ async def main():
     )
 
     _effective_max_lr = args.max_lr if args.max_lr is not None else args.lr * 2.0
-    if not (args.min_lr <= args.lr <= _effective_max_lr):
+    if not annealing_mode and not (args.min_lr <= args.lr <= _effective_max_lr):
         print(f"[AdaptiveLR] ERROR: --lr {args.lr:.2e} is outside "
               f"[--min-lr {args.min_lr:.2e}, --max-lr {_effective_max_lr:.2e}]")
         sys.exit(1)
 
-    adaptive_ppo_callback = AdaptivePPOCallback(
-        initial_lr=args.lr,
-        min_lr=args.min_lr,
-        max_lr=args.max_lr,
-    )
+    if annealing_mode:
+        lr_callback = AnnealingLRCallback(
+            initial_lr=args.lr,
+            total_steps=args.steps,
+            anneal_start_steps=args.anneal_lr_start_steps,
+            anneal_min_lr=args.anneal_min_lr,
+        )
+    else:
+        lr_callback = AdaptivePPOCallback(
+            initial_lr=args.lr,
+            min_lr=args.min_lr,
+            max_lr=args.max_lr,
+        )
+    # Keep alias so references below still resolve during the resume path.
+    adaptive_ppo_callback = lr_callback
     checkpoint_callback._current_lr_fn = lambda: model.policy.optimizer.param_groups[0]["lr"]
     checkpoint_callback._current_epochs_fn = lambda: model.n_epochs
-    callbacks = [checkpoint_callback, replay_callback, adaptive_ppo_callback, MetricsExporterCallback(), _HparamLogCallback(args.ent_coef)]
+    callbacks = [checkpoint_callback, replay_callback, lr_callback, MetricsExporterCallback(), _HparamLogCallback(args.ent_coef)]
     eval_callback = None
 
     if not args.debug:
@@ -629,22 +660,31 @@ async def main():
             os._exit(1)
         model.ent_coef = args.ent_coef
         model.gae_lambda = 0.80
-        # Resume LR from optimizer state (stored in .zip by SB3), clamped to args.lr
-        # so a manual --lr override can still lower the rate.
-        saved_lr = model.policy.optimizer.param_groups[0]["lr"]
-        resume_lr = min(saved_lr, args.lr)
-        if not (args.min_lr <= resume_lr <= _effective_max_lr):
-            print(f"[AdaptiveLR] ERROR: resume LR {resume_lr:.2e} (saved={saved_lr:.2e}, "
-                  f"--lr={args.lr:.2e}) is outside [{args.min_lr:.2e}, {_effective_max_lr:.2e}]. "
-                  f"Pass an explicit --lr within bounds to override.")
-            sys.exit(1)
-        _resume_lr_lambda = lambda _: resume_lr
-        model.lr_schedule = _resume_lr_lambda
-        adaptive_ppo_callback._current_lr = resume_lr
+        if annealing_mode:
+            # LR is a pure function of step count — fully restart-safe without any stored state.
+            resume_lr = lr_callback.lr_at(model.num_timesteps)
+            model.lr_schedule = lambda _: resume_lr
+            send_event(
+                f"▶️ Resuming with LR annealing: {resume_lr:.2e} at step {model.num_timesteps:,} "
+                f"(anneal_start={args.anneal_lr_start_steps:,}, total={args.steps:,}, "
+                f"min={args.anneal_min_lr:.2e})"
+            )
+        else:
+            # Resume LR from optimizer state (stored in .zip by SB3), clamped to args.lr
+            # so a manual --lr override can still lower the rate.
+            saved_lr = model.policy.optimizer.param_groups[0]["lr"]
+            resume_lr = min(saved_lr, args.lr)
+            if not (args.min_lr <= resume_lr <= _effective_max_lr):
+                print(f"[AdaptiveLR] ERROR: resume LR {resume_lr:.2e} (saved={saved_lr:.2e}, "
+                      f"--lr={args.lr:.2e}) is outside [{args.min_lr:.2e}, {_effective_max_lr:.2e}]. "
+                      f"Pass an explicit --lr within bounds to override.")
+                sys.exit(1)
+            model.lr_schedule = lambda _: resume_lr
+            adaptive_ppo_callback._current_lr = resume_lr
+            send_event(f"▶️ Resuming at LR {resume_lr:.2e}, epochs {args.n_epochs} (checkpoint LR={saved_lr:.2e})")
         model.n_epochs = args.n_epochs
-        model.clip_range = lambda _: CLIP_RANGE
+        model.clip_range = lambda _: args.clip_range
         model.clip_range_vf = lambda _: args.clip_range_vf
-        send_event(f"▶️ Resuming at LR {resume_lr:.2e}, epochs {args.n_epochs} (checkpoint LR={saved_lr:.2e})")
 
         if args.eval_only:
             await evaluate_model_random(model)
@@ -716,7 +756,7 @@ async def main():
             n_epochs=args.n_epochs,
             gamma=0.9999,
             gae_lambda=0.80,
-            clip_range=CLIP_RANGE,
+            clip_range=args.clip_range,
             clip_range_vf=args.clip_range_vf,
             ent_coef=args.ent_coef,
             device=args.device,

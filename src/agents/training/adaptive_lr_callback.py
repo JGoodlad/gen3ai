@@ -1,4 +1,60 @@
+import math
+
 from stable_baselines3.common.callbacks import BaseCallback
+
+
+class AnnealingLRCallback(BaseCallback):
+    """Cosine LR decay from initial_lr to anneal_min_lr over [anneal_start_steps, total_steps].
+
+    Fully stateless across restarts: all parameters come from CLI flags and model.num_timesteps.
+    The schedule is a pure function — no metadata persistence required.
+
+    Before anneal_start_steps: holds at initial_lr.
+    At total_steps: reaches anneal_min_lr exactly.
+    After total_steps: clamped at anneal_min_lr.
+    """
+
+    def __init__(
+        self,
+        initial_lr: float,
+        total_steps: int,
+        anneal_start_steps: int,
+        anneal_min_lr: float,
+        verbose: int = 1,
+    ):
+        super().__init__(verbose)
+        self._initial_lr = initial_lr
+        self._total_steps = total_steps
+        self._anneal_start_steps = anneal_start_steps
+        self._anneal_min_lr = anneal_min_lr
+
+    def lr_at(self, t: int) -> float:
+        duration = self._total_steps - self._anneal_start_steps
+        if duration <= 0:
+            return self._anneal_min_lr
+        x = max(0.0, min(1.0, (t - self._anneal_start_steps) / duration))
+        return self._anneal_min_lr + (self._initial_lr - self._anneal_min_lr) * 0.5 * (1.0 + math.cos(math.pi * x))
+
+    @property
+    def current_lr(self) -> float:
+        return self.lr_at(self.model.num_timesteps)
+
+    def _on_training_start(self) -> None:
+        lr = self.lr_at(self.model.num_timesteps)
+        self.model.lr_schedule = lambda _: lr
+        if self.verbose >= 1:
+            print(
+                f"[AnnealLR] Starting at LR {lr:.2e} (step={self.model.num_timesteps:,}, "
+                f"anneal_start={self._anneal_start_steps:,}, total={self._total_steps:,})"
+            )
+
+    def _on_rollout_end(self) -> None:
+        lr = self.lr_at(self.model.num_timesteps)
+        self.model.lr_schedule = lambda _: lr
+        self.logger.record("train/lr_annealing", lr)
+
+    def _on_step(self) -> bool:
+        return True
 
 
 class AdaptivePPOCallback(BaseCallback):

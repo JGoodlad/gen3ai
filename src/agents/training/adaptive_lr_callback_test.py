@@ -1,8 +1,64 @@
+import math
 from unittest.mock import MagicMock
 
 import pytest
 
-from agents.training.adaptive_lr_callback import AdaptivePPOCallback
+from agents.training.adaptive_lr_callback import AdaptivePPOCallback, AnnealingLRCallback
+
+
+# ---------------------------------------------------------------------------
+# AnnealingLRCallback
+# ---------------------------------------------------------------------------
+
+def _make_annealing(initial_lr=3e-4, total_steps=100_000, anneal_start_steps=40_000, anneal_min_lr=1e-5):
+    return AnnealingLRCallback(
+        initial_lr=initial_lr,
+        total_steps=total_steps,
+        anneal_start_steps=anneal_start_steps,
+        anneal_min_lr=anneal_min_lr,
+    )
+
+
+def test_anneal_at_start_equals_initial_lr():
+    cb = _make_annealing()
+    assert cb.lr_at(40_000) == pytest.approx(3e-4)
+
+
+def test_anneal_at_total_steps_equals_min_lr():
+    cb = _make_annealing()
+    assert cb.lr_at(100_000) == pytest.approx(1e-5)
+
+
+def test_anneal_before_start_holds_initial_lr():
+    cb = _make_annealing()
+    assert cb.lr_at(0) == pytest.approx(3e-4)
+    assert cb.lr_at(39_999) == pytest.approx(3e-4)
+
+
+def test_anneal_after_total_steps_clamped_at_min():
+    cb = _make_annealing()
+    assert cb.lr_at(100_001) == pytest.approx(1e-5)
+    assert cb.lr_at(999_999) == pytest.approx(1e-5)
+
+
+def test_anneal_midpoint_is_midpoint_of_range():
+    # At x=0.5 cosine gives exactly the midpoint of [min_lr, initial_lr].
+    cb = _make_annealing(initial_lr=3e-4, total_steps=100_000, anneal_start_steps=0, anneal_min_lr=1e-4)
+    mid = cb.lr_at(50_000)
+    expected = 1e-4 + (3e-4 - 1e-4) * 0.5  # cos(π*0.5)=0, so 0.5*(1+0)=0.5
+    assert mid == pytest.approx(expected)
+
+
+def test_anneal_zero_duration_returns_min_lr():
+    cb = _make_annealing(total_steps=40_000, anneal_start_steps=40_000)
+    assert cb.lr_at(40_000) == pytest.approx(1e-5)
+
+
+def test_anneal_current_lr_uses_model_timesteps():
+    cb = _make_annealing()
+    cb.model = MagicMock()
+    cb.model.num_timesteps = 70_000  # halfway through the annealing window
+    assert cb.current_lr == pytest.approx(cb.lr_at(70_000))
 
 
 def _make_callback(
