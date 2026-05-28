@@ -715,13 +715,13 @@ async def main():
         if annealing_mode:
             t = model.num_timesteps
             if lr_callback.phase(t) == 1:
-                # Phase 1: KL-driven adaptation continues from the optimizer's saved LR,
-                # capped by args.lr (so a manual --lr override can lower the rate) and
-                # then clamped into [min_lr, max_lr]. args.lr is validated up front to
-                # be in-band, so the clamp only fires when saved_lr drifted outside the
-                # current bounds (e.g. user tightened --max-lr between restarts).
+                # Phase 1: KL-driven adaptation continues from the optimizer's saved
+                # LR. --lr is a fresh-run seed only; on resume it's ignored so the
+                # controller can keep whatever rate Phase 1 had settled on. The
+                # saved LR is still clamped into [min_lr, max_lr] in case the user
+                # tightened the bounds between restarts.
                 saved_lr = model.policy.optimizer.param_groups[0]["lr"]
-                resume_lr = min(saved_lr, args.lr)
+                resume_lr = saved_lr
                 resume_lr_clamped = max(args.min_lr, min(resume_lr, _effective_max_lr))
                 if resume_lr_clamped != resume_lr:
                     print(
@@ -731,7 +731,7 @@ async def main():
                 resume_lr = resume_lr_clamped
                 model.lr_schedule = lambda _: resume_lr
                 lr_callback._current_lr = resume_lr
-                lr_detail = f"Phase 1 adaptive, saved={saved_lr:.2e}, arg={args.lr:.2e}"
+                lr_detail = f"Phase 1 adaptive, saved={saved_lr:.2e} (arg --lr={args.lr:.2e} ignored on resume)"
                 send_event(
                     f"▶️ Resuming TwoPhaseLR Phase 1 at LR {resume_lr:.2e}, step {t:,} "
                     f"(anneal_start={args.anneal_lr_start_steps:,})"
@@ -758,10 +758,12 @@ async def main():
                     f"(handoff={lr_callback.handoff_lr:.2e}, target={args.anneal_min_lr:.2e} at {args.steps:,})"
                 )
         else:
-            # Pure adaptive: resume LR from optimizer state, capped by args.lr and
-            # clamped into [min_lr, max_lr]. args.lr is validated up front to be in-band.
+            # Pure adaptive: resume LR from optimizer state. --lr is a fresh-run
+            # seed only; on resume the controller keeps whatever rate it had
+            # settled on. The saved LR is still clamped into [min_lr, max_lr]
+            # in case the user tightened the bounds between restarts.
             saved_lr = model.policy.optimizer.param_groups[0]["lr"]
-            resume_lr = min(saved_lr, args.lr)
+            resume_lr = saved_lr
             resume_lr_clamped = max(args.min_lr, min(resume_lr, _effective_max_lr))
             if resume_lr_clamped != resume_lr:
                 print(
@@ -771,7 +773,7 @@ async def main():
             resume_lr = resume_lr_clamped
             model.lr_schedule = lambda _: resume_lr
             adaptive_ppo_callback._current_lr = resume_lr
-            lr_detail = f"saved={saved_lr:.2e}, arg={args.lr:.2e}"
+            lr_detail = f"saved={saved_lr:.2e} (arg --lr={args.lr:.2e} ignored on resume)"
             send_event(f"▶️ Resuming at LR {resume_lr:.2e}, epochs {args.n_epochs} (checkpoint LR={saved_lr:.2e})")
         model.n_epochs = args.n_epochs
         model.clip_range = lambda _: args.clip_range

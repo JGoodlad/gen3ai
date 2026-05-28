@@ -20,11 +20,17 @@ class TwoPhaseLRCallback(BaseCallback):
         restarts reproduce the schedule exactly.
 
     handoff_lr is captured ONCE, at the first rollout where ``num_timesteps``
-    crosses ``anneal_start_steps``, as the optimizer's current LR — i.e.,
-    the value Phase 1 dynamically settled on. It must be persisted across
-    launcher restarts (via the checkpoint sidecar) so a resumed run picks
-    up the same cosine. Pass the persisted value via the ``handoff_lr=``
-    constructor arg when resuming.
+    crosses ``anneal_start_steps``. By default it uses an EMA of
+    ``_current_lr`` maintained across Phase 1 (smoothing factor
+    ``handoff_ema_alpha``, default 0.10 → half-life ~7 rollouts) rather
+    than the instant optimizer LR. This protects against a transient dip
+    on the final Phase-1 rollout locking in a bad cosine starting point.
+    If the EMA was never initialized (e.g. tests that bypass
+    ``_on_training_start``), the optimizer's instant LR is used as a
+    fallback. handoff_lr must be persisted across launcher restarts (via
+    the checkpoint sidecar) so a resumed run picks up the same cosine.
+    Pass the persisted value via the ``handoff_lr=`` constructor arg when
+    resuming.
 
     If a resumed run finds itself already in Phase 2 (``num_timesteps >=
     anneal_start_steps``) but no ``handoff_lr`` was passed in, the
@@ -74,6 +80,7 @@ class TwoPhaseLRCallback(BaseCallback):
         ema_alpha: float = 0.20,
         cooldown_rollouts: int = 7,
         handoff_lr: float | None = None,
+        handoff_ema_alpha: float = 0.10,
         verbose: int = 1,
     ):
         super().__init__(verbose)
@@ -93,6 +100,12 @@ class TwoPhaseLRCallback(BaseCallback):
         # KL the first rollout happens to log, which is exactly the chatter
         # the cooldown is meant to suppress.
         self._cooldown_remaining: int = cooldown_rollouts
+
+        # Smoothed LR over Phase 1, used to pick handoff_lr at the boundary.
+        # Initialized lazily in _on_training_start so a resume picks up from
+        # the optimizer's saved LR rather than the constructor's initial_lr.
+        self.handoff_ema_alpha = handoff_ema_alpha
+        self._lr_ema: float | None = None
 
         # Phase 2 state
         self._total_steps = total_steps
@@ -150,6 +163,13 @@ class TwoPhaseLRCallback(BaseCallback):
                     f"using optimizer LR {self._handoff_lr:.2e} as cosine start."
                 )
 
+        # Warm-start the LR EMA so a restart in Phase 1 doesn't pay a
+        # warmup tax: the EMA tracks the current LR rather than starting
+        # from zero / None and needing several rollouts to converge.
+        # Only relevant in Phase 1; Phase 2 never reads _lr_ema.
+        if self._lr_ema is None and self.phase(t) == 1:
+            self._lr_ema = self._current_lr
+
         # Set the initial LR for whatever phase we're starting in.
         self._apply_lr(t)
         if self.verbose >= 1:
@@ -180,22 +200,38 @@ class TwoPhaseLRCallback(BaseCallback):
     def _on_rollout_end(self) -> None:
         t = self.model.num_timesteps
 
-        # Detect Phase 1 → Phase 2 crossing. Capture the optimizer's current
-        # LR as handoff_lr — this is the value Phase 1 actually settled on
-        # (may differ slightly from _current_lr if SB3's _update_learning_rate
-        # smoothed it). Sidecar persistence happens via record_checkpoint,
-        # which reads this via the handoff_lr_fn passed to the checkpoint
-        # callback.
+        # Detect Phase 1 → Phase 2 crossing. Prefer the smoothed LR EMA
+        # built up during Phase 1; fall back to the optimizer's instant LR
+        # only if the EMA was never initialized (legacy / bypassed startup).
+        # Sidecar persistence happens via record_checkpoint, which reads
+        # this via the handoff_lr_fn passed to the checkpoint callback.
         if self.phase(t) == 2 and self._handoff_lr is None:
-            self._handoff_lr = self.model.policy.optimizer.param_groups[0]["lr"]
+            if self._lr_ema is not None:
+                self._handoff_lr = self._lr_ema
+                source = "lr_ema"
+            else:
+                self._handoff_lr = self.model.policy.optimizer.param_groups[0]["lr"]
+                source = "optimizer (EMA uninitialized)"
             if self.verbose >= 1:
                 print(
                     f"[TwoPhaseLR] Phase 1 → 2 at step {t:,}: "
-                    f"handoff_lr = {self._handoff_lr:.2e}, cosine target "
-                    f"{self._anneal_min_lr:.2e} at step {self._total_steps:,}"
+                    f"handoff_lr = {self._handoff_lr:.2e} ({source}), "
+                    f"cosine target {self._anneal_min_lr:.2e} at step "
+                    f"{self._total_steps:,}"
                 )
 
         if self.phase(t) == 1:
+            # Track an EMA of _current_lr so the Phase 1 → 2 handoff
+            # captures the trend rather than the final rollout's spot value.
+            # Updated *after* the crossing check above so the crossing
+            # itself uses the EMA from the last completed Phase 1 rollout.
+            if self._lr_ema is None:
+                self._lr_ema = self._current_lr
+            else:
+                self._lr_ema = (
+                    self.handoff_ema_alpha * self._current_lr
+                    + (1.0 - self.handoff_ema_alpha) * self._lr_ema
+                )
             self._adapt_lr_from_kl()
         else:
             lr = self._cosine_lr_at(t)

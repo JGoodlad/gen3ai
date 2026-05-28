@@ -165,6 +165,33 @@ def test_handoff_lr_captured_at_first_phase2_rollout():
     assert cb.handoff_lr == pytest.approx(4.5e-4)
 
 
+def test_handoff_lr_prefers_smoothed_ema_over_instant_optimizer():
+    """When the LR EMA has tracked Phase 1, the handoff uses the smoothed
+    value — protecting against a transient dip in the final Phase-1 rollout
+    locking in a bad cosine starting point."""
+    cb = _make_two_phase(initial_lr=3e-4, anneal_start_steps=40_000)
+    # Simulate many Phase-1 rollouts settling at ~4.5e-4: the EMA has
+    # converged to that value.
+    cb._lr_ema = 4.5e-4
+    # But the optimizer transiently dipped to 1e-5 on the very last rollout
+    # (e.g. a KL spike). Without smoothing, that would lock in a useless
+    # cosine. With smoothing, we use the EMA instead.
+    _attach_mock_model(cb, num_timesteps=40_001, optimizer_lr=1e-5)
+    _fire_two_phase(cb, kl=0.010)
+    assert cb.handoff_lr == pytest.approx(4.5e-4)
+
+
+def test_handoff_lr_falls_back_to_optimizer_when_ema_uninitialized():
+    """Tests that bypass _on_training_start leave _lr_ema at None — the
+    fallback path uses the optimizer's instant LR so legacy / mock setups
+    still work."""
+    cb = _make_two_phase(initial_lr=3e-4, anneal_start_steps=40_000)
+    assert cb._lr_ema is None  # never warm-started
+    _attach_mock_model(cb, num_timesteps=40_001, optimizer_lr=4.5e-4)
+    _fire_two_phase(cb, kl=0.010)
+    assert cb.handoff_lr == pytest.approx(4.5e-4)
+
+
 def test_handoff_lr_captured_once_only():
     """Subsequent Phase 2 rollouts do not overwrite the captured handoff_lr."""
     cb = _make_two_phase(initial_lr=3e-4, anneal_start_steps=40_000, total_steps=100_000)
