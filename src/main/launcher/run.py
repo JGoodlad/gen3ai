@@ -75,10 +75,16 @@ def _print_exit_summary(run_dir: "str | None", state: LauncherState) -> None:
     print("\n".join(lines), file=sys.stderr)
 
 
-def run(child_args: list, interval_hours: float, pin: bool = True, sync_to_main: bool = False, pin_hash_override: "str | None" = None) -> None:
+def run(child_args: list, interval_hours: float, pin: bool = True, sync_to_main: bool = False, pin_hash_override: "str | None" = None, grace_minutes: float = 20.0) -> None:
     interval_seconds = interval_hours * 3600
+    grace_seconds = max(0.0, grace_minutes * 60)
     session_start = time.time()
     child_env = _build_child_env()
+    # Tell the child its restart budget so it can stop cleanly at the next
+    # rollout boundary (GracefulRestartCallback). The launcher only hard-kills
+    # as a fallback once the child overruns the deadline by grace_seconds.
+    if interval_hours > 0:
+        child_env["LAUNCHER_RESTART_INTERVAL_SEC"] = str(interval_seconds)
     state = LauncherState(interval_hours=interval_hours)
     ui = LauncherUI()
 
@@ -172,6 +178,7 @@ def run(child_args: list, interval_hours: float, pin: bool = True, sync_to_main:
             state.deadline = deadline
 
             flags = _PollFlags()
+            deadline_announced = False
 
             while True:
                 live.update(ui.render(state.snapshot(), live.console.height))
@@ -179,15 +186,28 @@ def run(child_args: list, interval_hours: float, pin: bool = True, sync_to_main:
                 now = time.monotonic()
                 remaining = deadline - now
 
-                if not flags.sigterm_sent and remaining <= 0:
-                    state.add_event(f"⏰ {interval_hours:.1f}h elapsed — restarting child…")
+                # The child stops itself at the next rollout boundary
+                # (GracefulRestartCallback) once the interval elapses, so the
+                # launcher no longer SIGTERMs at the exact deadline. It only
+                # hard-kills as a fallback if the child overruns by grace_seconds
+                # (hung, or a pathologically long rollout/eval).
+                if interval_hours > 0 and not deadline_announced and remaining <= 0:
+                    state.add_event(
+                        f"⏳ {interval_hours:.1f}h elapsed — waiting for child to reach rollout boundary…"
+                    )
+                    deadline_announced = True
+
+                if not flags.sigterm_sent and remaining <= -grace_seconds and interval_hours > 0:
+                    state.add_event(
+                        f"⏰ Child overran by {grace_minutes:.0f}m past deadline — forcing restart"
+                    )
                     try:
                         os.kill(proc.pid, signal.SIGTERM)
                     except ProcessLookupError:
                         pass
                     flags.sigterm_sent = True
 
-                poll_timeout = min(0.5, max(0.01, remaining if remaining > 0 else 0.5))
+                poll_timeout = 0.5
                 try:
                     proc.wait(timeout=poll_timeout)
                     break

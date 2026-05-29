@@ -35,6 +35,16 @@ def main() -> None:
         help="Restart the training process every N hours (0 = run once)",
     )
     parser.add_argument(
+        "--restart-grace-minutes",
+        type=float,
+        default=20.0,
+        help=(
+            "Fallback window after a scheduled restart's deadline. The child normally "
+            "stops itself at the next rollout boundary; the launcher only force-kills if "
+            "the child overruns the deadline by this many minutes (hung / very long rollout)."
+        ),
+    )
+    parser.add_argument(
         "--no-pin",
         action="store_true",
         default=False,
@@ -80,6 +90,7 @@ def main() -> None:
             pin=not known.no_pin,
             sync_to_main=known.sync_to_main,
             pin_hash_override=known.pin_to_hash,
+            grace_minutes=known.restart_grace_minutes,
         )
     except KeyboardInterrupt:
         sys.exit(0)

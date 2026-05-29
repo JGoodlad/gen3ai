@@ -109,8 +109,11 @@ class LauncherUI:
         run_str = f"[cyan]run #{snap.restart_count + 1}[/cyan]"
         elapsed_str = f"[dim]{_elapsed_str(elapsed)} elapsed[/dim]"
         if snap.interval_hours > 0 and snap.deadline < float("inf"):
-            remaining = max(0.0, snap.deadline - now)
-            restart_str = f"[yellow]restart in {_elapsed_str(remaining)}[/yellow]"
+            remaining = snap.deadline - now
+            if remaining > 0:
+                restart_str = f"[yellow]restart in {_elapsed_str(remaining)}[/yellow]"
+            else:
+                restart_str = "[yellow]awaiting rollout boundary…[/yellow]"
         else:
             restart_str = "[dim]no restart[/dim]"
         row1.add_row(pid_str, run_str, elapsed_str, restart_str)

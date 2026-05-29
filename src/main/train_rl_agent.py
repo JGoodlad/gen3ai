@@ -47,6 +47,7 @@ from agents.inference.player import RLPlayer
 from utils.teambuilder import Gen3Teambuilder
 from utils.team_loader import TeamLoader
 from agents.training.eval_callback import PerOpponentEvalCallback, opponent_name
+from agents.training.graceful_restart_callback import GracefulRestartCallback
 from agents.training.snapshot_pool import SnapshotPool, heuristic_fraction
 from agents.training.selfplay_callback import SelfPlayCallback
 from agents.training.replay_recorder import ReplayCallback
@@ -640,7 +641,8 @@ async def main():
     checkpoint_callback._handoff_lr_fn = (
         (lambda: lr_callback.handoff_lr) if isinstance(lr_callback, TwoPhaseLRCallback) else None
     )
-    callbacks = [checkpoint_callback, replay_callback, lr_callback, MetricsExporterCallback(), _HparamLogCallback(args.ent_coef)]
+    graceful_restart_callback = GracefulRestartCallback()
+    callbacks = [checkpoint_callback, replay_callback, lr_callback, MetricsExporterCallback(), _HparamLogCallback(args.ent_coef), graceful_restart_callback]
     eval_callback = None
 
     if not args.debug:
@@ -843,6 +845,7 @@ async def main():
             )
             if not args.debug and eval_callback is not None:
                 eval_callback.abort_fn = _abort_fn
+            graceful_restart_callback.abort_fn = _abort_fn
 
             try:
                 model.learn(total_timesteps=args.steps, callback=callbacks, reset_num_timesteps=False, tb_log_name=tb_run_name)
@@ -918,6 +921,7 @@ async def main():
         )
         if not args.debug and eval_callback is not None:
             eval_callback.abort_fn = _abort_fn
+        graceful_restart_callback.abort_fn = _abort_fn
 
         try:
             if log_level >= LogLevel.DETAILED:

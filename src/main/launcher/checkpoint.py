@@ -88,6 +88,10 @@ def _strip_launcher_args(argv: list) -> list:
             i += 2
         elif argv[i].startswith("--restart-interval-hours="):
             i += 1
+        elif argv[i] == "--restart-grace-minutes":
+            i += 2
+        elif argv[i].startswith("--restart-grace-minutes="):
+            i += 1
         elif argv[i] == "--no-pin":
             i += 1
         elif argv[i] == "--sync-to-main":
