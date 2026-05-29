@@ -1,5 +1,6 @@
 """Checkpoint discovery and CLI argument manipulation for the launcher."""
 
+import argparse
 import glob
 import os
 import re
@@ -38,45 +39,68 @@ def find_latest_checkpoint(
     return max(zips, key=lambda p: (_step_key(p), os.path.getmtime(p)))
 
 
+class _SilentParser(argparse.ArgumentParser):
+    """ArgumentParser that raises instead of printing to stderr / sys.exit."""
+
+    def error(self, message):  # noqa: D102
+        raise ValueError(message)
+
+    def exit(self, status=0, message=None):  # noqa: D102
+        raise ValueError(message or "")
+
+
+def _peek_arg(args: list, name: str, type_=str):
+    """Read a single optional arg's value, accepting both '--x v' and '--x=v'.
+
+    Returns None when the arg is absent or its value fails type conversion.
+    Uses argparse so the launcher's view of a flag matches the child's.
+    """
+    parser = _SilentParser(add_help=False, allow_abbrev=False)
+    parser.add_argument(name, dest="value", type=type_, default=None)
+    try:
+        known, _ = parser.parse_known_args(args)
+    except ValueError:
+        return None
+    return known.value
+
+
+def _set_arg(args: list, name: str, value: str) -> list:
+    """Replace name's value in place; append '--name value' if absent.
+
+    Handles both the '--name value' and '--name=value' spellings so a flag is
+    never duplicated when the user passed the combined form.
+    """
+    out = []
+    i = 0
+    replaced = False
+    while i < len(args):
+        a = args[i]
+        if a == name:
+            out.extend([name, value])
+            replaced = True
+            i += 2
+        elif a.startswith(name + "="):
+            out.extend([name, value])
+            replaced = True
+            i += 1
+        else:
+            out.append(a)
+            i += 1
+    if not replaced:
+        out.extend([name, value])
+    return out
+
+
 def _find_model_arg(args: list) -> "str | None":
-    for i, a in enumerate(args):
-        if a == "--model" and i + 1 < len(args):
-            return args[i + 1]
-    return None
+    return _peek_arg(args, "--model")
 
 
 def _insert_or_replace_model_arg(args: list, checkpoint: str) -> list:
-    out = []
-    i = 0
-    replaced = False
-    while i < len(args):
-        if args[i] == "--model":
-            out.extend(["--model", checkpoint])
-            replaced = True
-            i += 2
-        else:
-            out.append(args[i])
-            i += 1
-    if not replaced:
-        out.extend(["--model", checkpoint])
-    return out
+    return _set_arg(args, "--model", checkpoint)
 
 
 def _insert_or_replace_run_dir_arg(args: list, run_dir: str) -> list:
-    out = []
-    i = 0
-    replaced = False
-    while i < len(args):
-        if args[i] == "--run-dir":
-            out.extend(["--run-dir", run_dir])
-            replaced = True
-            i += 2
-        else:
-            out.append(args[i])
-            i += 1
-    if not replaced:
-        out.extend(["--run-dir", run_dir])
-    return out
+    return _set_arg(args, "--run-dir", run_dir)
 
 
 def _strip_launcher_args(argv: list) -> list:

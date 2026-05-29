@@ -11,6 +11,8 @@ from main.launcher.checkpoint import (
     _find_model_arg,
     _insert_or_replace_model_arg,
     _insert_or_replace_run_dir_arg,
+    _peek_arg,
+    _set_arg,
     _strip_launcher_args,
 )
 from main.launcher.child import _TRAIN_SCRIPT, _SRC_DIR, _read_metrics_pipe

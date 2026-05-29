@@ -17,6 +17,7 @@ from main.launcher.checkpoint import (
     _find_model_arg,
     _insert_or_replace_model_arg,
     _insert_or_replace_run_dir_arg,
+    _peek_arg,
 )
 from main.launcher.child import _build_child_env, _launch_child, _TRAIN_SCRIPT, _SRC_DIR
 from main.launcher.input import _PollFlags, _dispatch_command, _read_keys, _setup_raw_input
@@ -33,18 +34,7 @@ from main.launcher.worktree import (
 
 
 def _find_ent_coef(args: list) -> "float | None":
-    for i, a in enumerate(args):
-        if a == "--ent-coef" and i + 1 < len(args):
-            try:
-                return float(args[i + 1])
-            except ValueError:
-                return None
-        if a.startswith("--ent-coef="):
-            try:
-                return float(a.split("=", 1)[1])
-            except ValueError:
-                return None
-    return None
+    return _peek_arg(args, "--ent-coef", type_=float)
 
 
 def _print_crash_log(log_lines: "list | None") -> None:

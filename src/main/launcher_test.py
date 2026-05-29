@@ -25,6 +25,7 @@ from main.launcher import (
     find_latest_checkpoint,
 )
 from main.launcher import LauncherState
+from main.launcher.run import _find_ent_coef
 
 
 # ── find_latest_checkpoint ───────────────────────────────────────────────────
@@ -129,6 +130,12 @@ class TestInsertOrReplaceModelArg:
         )
         assert result == ["--model", "new.zip", "--steps", "5000"]
 
+    def test_replaces_equals_form_without_duplicating(self):
+        result = _insert_or_replace_model_arg(
+            ["--model=old.zip", "--steps", "5000"], "new.zip"
+        )
+        assert result == ["--model", "new.zip", "--steps", "5000"]
+
     def test_empty_args(self):
         result = _insert_or_replace_model_arg([], "ckpt.zip")
         assert result == ["--model", "ckpt.zip"]
@@ -156,11 +163,30 @@ class TestFindModelArg:
     def test_finds_model(self):
         assert _find_model_arg(["--debug", "--model", "ckpt.zip"]) == "ckpt.zip"
 
+    def test_finds_model_equals_form(self):
+        assert _find_model_arg(["--debug", "--model=ckpt.zip"]) == "ckpt.zip"
+
     def test_returns_none_when_absent(self):
         assert _find_model_arg(["--debug", "--steps", "5000"]) is None
 
     def test_returns_none_on_empty(self):
         assert _find_model_arg([]) is None
+
+
+# ── _find_ent_coef ───────────────────────────────────────────────────────────
+
+class TestFindEntCoef:
+    def test_finds_space_form(self):
+        assert _find_ent_coef(["--ent-coef", "0.058"]) == 0.058
+
+    def test_finds_equals_form(self):
+        assert _find_ent_coef(["--ent-coef=0.058"]) == 0.058
+
+    def test_returns_none_when_absent(self):
+        assert _find_ent_coef(["--debug"]) is None
+
+    def test_returns_none_on_bad_value(self):
+        assert _find_ent_coef(["--ent-coef", "notafloat"]) is None
 
 
 # ── _read_checkpoint_git_hash ─────────────────────────────────────────────────
