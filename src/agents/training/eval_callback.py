@@ -223,6 +223,7 @@ class PerOpponentEvalCallback(BaseCallback):
         reward_means: dict[str, float] = {}
         ep_lens: dict[str, float] = {}
         tui_metrics: dict[str, float] = {}
+        eval_start = datetime.now()
 
         for name, opponent in self._opponents:
             games = eval_games_for(name, n_games)
@@ -259,6 +260,7 @@ class PerOpponentEvalCallback(BaseCallback):
 
             self._rl_player.reset_reward_tracking()
 
+        eval_duration_sec = (datetime.now() - eval_start).total_seconds()
         aggregate = sum(win_rates.values()) / len(win_rates) if win_rates else 0.0
         aggregate_reward = sum(reward_means.values()) / len(reward_means) if reward_means else 0.0
         win_rate_vs_bots = bot_mean(win_rates)
@@ -269,6 +271,7 @@ class PerOpponentEvalCallback(BaseCallback):
         self.logger.record("eval/mean_reward_mean", aggregate_reward)
         self.logger.record("eval/mean_reward_vs_bots", mean_reward_vs_bots)
         self.logger.record("eval/mean_ep_len_vs_bots", mean_ep_len_vs_bots)
+        self.logger.record("eval/duration_sec", eval_duration_sec)
         self.logger.dump(self.num_timesteps)
 
         # logger.dump() clears name_to_value before the next rollout, so eval metrics
@@ -278,12 +281,14 @@ class PerOpponentEvalCallback(BaseCallback):
         tui_metrics["eval/mean_reward_mean"] = aggregate_reward
         tui_metrics["eval/mean_reward_vs_bots"] = mean_reward_vs_bots
         tui_metrics["eval/mean_ep_len_vs_bots"] = mean_ep_len_vs_bots
+        tui_metrics["eval/duration_sec"] = eval_duration_sec
         tui_metrics["_step"] = self.num_timesteps
         send_metrics(tui_metrics)
 
         print(
             f"[EVAL] Aggregate: {aggregate * 100:.1f}%  "
-            f"(best so far: {self._best_aggregate_win_rate * 100:.1f}%)"
+            f"(best so far: {self._best_aggregate_win_rate * 100:.1f}%)  "
+            f"[took {eval_duration_sec:.0f}s]"
         )
 
         if self._model_dir:

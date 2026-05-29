@@ -192,6 +192,7 @@ class SelfPlayCallback(BaseCallback):
         reward_means: dict[str, float] = {}
         ep_lens: dict[str, float] = {}
         tui_metrics: dict[str, float] = {}
+        eval_start = datetime.now()
 
         # ── 1. Bot eval ────────────────────────────────────────────────────
         for name, opponent in self._bot_opponents:
@@ -255,8 +256,11 @@ class SelfPlayCallback(BaseCallback):
         tui_metrics["eval/win_rate_vs_bots"] = bot_aggregate
         tui_metrics["eval/mean_reward_vs_bots"] = mean_reward_vs_bots
         tui_metrics["eval/mean_ep_len_vs_bots"] = mean_ep_len_vs_bots
+        eval_duration_sec = (datetime.now() - eval_start).total_seconds()
+        self.logger.record("eval/duration_sec", eval_duration_sec)
         self.logger.dump(step)
 
+        tui_metrics["eval/duration_sec"] = eval_duration_sec
         tui_metrics["_step"] = step
         send_metrics(tui_metrics)
 
@@ -264,7 +268,8 @@ class SelfPlayCallback(BaseCallback):
             f"[SELFPLAY EVAL] Bots: {bot_aggregate * 100:.1f}%  "
             f"Pool: {win_rate_vs_pool * 100:.1f}%  "
             f"Monotonicity: {monotonicity:.2f}  "
-            f"SelfPlay fraction: {sf * 100:.0f}%"
+            f"SelfPlay fraction: {sf * 100:.0f}%  "
+            f"[took {eval_duration_sec:.0f}s]"
         )
 
         # ── 4. Persist eval metrics to metadata.json ───────────────────────

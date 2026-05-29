@@ -207,7 +207,7 @@ class LauncherUI:
                 ordered.append(k)
 
         # Split eval: aggregate summary vs per-opponent detail for the right column.
-        _EVAL_SUMMARY = frozenset({"eval/win_rate_mean", "eval/win_rate_vs_bots", "eval/win_rate_vs_pool", "eval/mean_reward_mean", "eval/mean_reward_vs_bots"})
+        _EVAL_SUMMARY = frozenset({"eval/win_rate_mean", "eval/win_rate_vs_bots", "eval/win_rate_vs_pool", "eval/mean_reward_mean", "eval/mean_reward_vs_bots", "eval/duration_sec"})
         per_opponent: list = []
         eval_summary: dict = {}
         by_section: dict = {}
@@ -304,7 +304,9 @@ class LauncherUI:
                 return "[dim]—[/dim]"
             t = (rw + 30) / 60  # -30 → 0, +30 → 1
             col = _gradient_color(t)
-            return f"[bold {col}]{_fmt_val(rw)}[/bold {col}]"
+            # Fixed 1-decimal precision to match the win-rate column (avoids the
+            # %.4g mixed precision: 41 vs 23.8 vs 25.71).
+            return f"[bold {col}]{rw:.1f}[/bold {col}]"
 
         t = Table(box=None, show_header=True, show_edge=False,
                   padding=(0, 2), header_style="dim")
@@ -312,8 +314,10 @@ class LauncherUI:
         t.add_column("win rate", justify="right")
         t.add_column("reward", justify="right")
 
-        # Section header row (no data columns)
-        t.add_row(f"[dim italic]eval{stale_badge}[/dim italic]", "", "")
+        # Section header row — show how long the last eval took (it pauses training).
+        dur = (eval_summary or {}).get("eval/duration_sec")
+        dur_str = f" · took {_elapsed_str(dur)}" if dur is not None else ""
+        t.add_row(f"[dim italic]eval{dur_str}{stale_badge}[/dim italic]", "", "")
 
         # Aggregate rows: "all" (includes Random), "vs Bots" (excludes Random), "vs Pool" (self-play only)
         if eval_summary:
