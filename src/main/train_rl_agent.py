@@ -63,7 +63,11 @@ from main.exit_codes import TrainExitCode
 from main.launcher.ipc import send_event, emit
 
 from poke_env.player import RandomPlayer, SimpleHeuristicsPlayer
-from agents.opponents import Gen3StallerPlayer, Gen3AggressivePlayer, Gen3SetupSweepPlayer
+from agents.opponents import (
+    Gen3StallerPlayer, Gen3AggressivePlayer, Gen3SetupSweepPlayer,
+    Gen3StallerV2Player, Gen3AggressiveV2Player, Gen3SetupSweepV2Player,
+    Gen3HeuristicV2Player,
+)
 from poke_env import AccountConfiguration, LocalhostServerConfiguration
 
 BATTLE_FORMAT = "gen3ou"
@@ -307,6 +311,8 @@ async def main():
                         help="AdamW weight decay (L2 regularisation). Default 1e-5 is conservative for PPO.")
 
     # --- Self-Play Flags ---
+    parser.add_argument("--use-v2-bots", "--use_v2_bots", dest="use_v2_bots", action="store_true", default=False,
+                        help="Add the V2 heuristic bots (Heuristic2, StallerV2, AggressiveV2, SetupSweepV2) to the training opponent pool and to eval")
     parser.add_argument("--self-play", action="store_true", default=False, help="Enable self-play snapshot pool as training opponents")
     parser.add_argument("--snapshot-dir", type=str, default=None, help="Pool directory (default: <run_dir>/snapshots)")
     parser.add_argument("--promote-threshold", type=float, default=0.65, help="Win rate vs. pool to trigger snapshot promotion")
@@ -348,6 +354,15 @@ async def main():
         Gen3AggressivePlayer,
         Gen3SetupSweepPlayer,
     ]
+    if args.use_v2_bots:
+        OPPONENT_CLASSES += [
+            Gen3HeuristicV2Player,
+            Gen3StallerV2Player,
+            Gen3AggressiveV2Player,
+            Gen3SetupSweepV2Player,
+        ]
+        print(f"[Opponents] --use-v2-bots: training pool = {len(OPPONENT_CLASSES)} bots "
+              f"({', '.join(opponent_name(c) for c in OPPONENT_CLASSES)})")
 
     def create_training_env_random(idx, stall_config=None, snapshot_path=None, device="auto"):
         def _init():
@@ -528,6 +543,19 @@ async def main():
                 max_concurrent_battles=args.eval_concurrency,
             )),
         ]
+        if args.use_v2_bots:
+            for _cls, _uname in [
+                (Gen3HeuristicV2Player, f"FinalHeur2{ts}"),
+                (Gen3StallerV2Player, f"FinalStallV2{ts}"),
+                (Gen3AggressiveV2Player, f"FinalAggrV2{ts}"),
+                (Gen3SetupSweepV2Player, f"FinalSetupV2{ts}"),
+            ]:
+                final_opponents.append((opponent_name(_cls), _cls(
+                    battle_format=BATTLE_FORMAT, team=opponent_teambuilder,
+                    server_configuration=LocalhostServerConfiguration,
+                    account_configuration=AccountConfiguration(_uname, "password"),
+                    max_concurrent_battles=args.eval_concurrency,
+                )))
 
         win_rates: dict[str, float] = {}
         for name, opponent in final_opponents:
@@ -649,6 +677,19 @@ async def main():
                 max_concurrent_battles=100,
             )),
         ]
+        if args.use_v2_bots:
+            for _cls, _uname in [
+                (Gen3HeuristicV2Player, f"CbHeur2{ts_cb}"),
+                (Gen3StallerV2Player, f"CbStallV2{ts_cb}"),
+                (Gen3AggressiveV2Player, f"CbAggrV2{ts_cb}"),
+                (Gen3SetupSweepV2Player, f"CbSetupV2{ts_cb}"),
+            ]:
+                eval_opponents.append((opponent_name(_cls), _cls(
+                    battle_format=BATTLE_FORMAT, team=opponent_teambuilder,
+                    server_configuration=LocalhostServerConfiguration,
+                    account_configuration=AccountConfiguration(_uname, "password"),
+                    max_concurrent_battles=100,
+                )))
         if args.self_play and _pool is not None:
             eval_callback = SelfPlayCallback(
                 pool=_pool,

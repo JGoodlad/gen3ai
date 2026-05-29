@@ -10,7 +10,11 @@ from poke_env.ps_client import LocalhostServerConfiguration, AccountConfiguratio
 
 from agents.inference.player import RLPlayer
 from agents.model.snapshot import record_eval_results
-from agents.opponents import Gen3StallerPlayer, Gen3AggressivePlayer, Gen3SetupSweepPlayer
+from agents.opponents import (
+    Gen3StallerPlayer, Gen3AggressivePlayer, Gen3SetupSweepPlayer,
+    Gen3StallerV2Player, Gen3AggressiveV2Player, Gen3SetupSweepV2Player,
+    Gen3HeuristicV2Player,
+)
 from agents.training.reward_tracker import RewardTrackingMixin
 from agents.training.reward_manager import Gen3RewardManager
 from main.launcher.ipc import send_metrics
@@ -24,6 +28,11 @@ _OPPONENT_NAMES: dict[type, str] = {
     Gen3StallerPlayer: "Staller",
     Gen3AggressivePlayer: "Aggressive",
     Gen3SetupSweepPlayer: "SetupSweep",
+    # V2 bots — names registered for TUI/TensorBoard; not yet in the eval rotation.
+    Gen3HeuristicV2Player: "Heuristic2",
+    Gen3StallerV2Player: "StallerV2",
+    Gen3AggressiveV2Player: "AggressiveV2",
+    Gen3SetupSweepV2Player: "SetupSweepV2",
 }
 
 
@@ -33,6 +42,21 @@ def opponent_name(player_cls: type) -> str:
 
 
 RANDOM_OPPONENT_NAME = opponent_name(RandomPlayer)
+
+# Per-opponent game caps. Eval blocks training (the eval thread is joined in
+# _on_step), so games-per-opponent is pure overhead. The narrow playstyle bots
+# need only a coarse win-rate, so cap them at 100; the heuristic generalists
+# (closest to real play, lower-variance signal worth more games) cap at 200.
+# Both are clamped to the schedule's count so early tiers (100 games) are unaffected.
+_EVAL_GAMES_CAP_DEFAULT = 100
+_EVAL_GAMES_CAP_HEURISTIC = 200
+_HEURISTIC_EVAL_NAMES = frozenset({"Heuristic", "Heuristic2"})
+
+
+def eval_games_for(name: str, scheduled_games: int) -> int:
+    """Capped per-opponent game count for the given opponent display name."""
+    cap = _EVAL_GAMES_CAP_HEURISTIC if name in _HEURISTIC_EVAL_NAMES else _EVAL_GAMES_CAP_DEFAULT
+    return min(scheduled_games, cap)
 
 
 def bot_mean(d: dict[str, float]) -> float:
@@ -66,16 +90,24 @@ def build_bot_eval_block(
 def eval_schedule(num_timesteps: int) -> tuple[int, int]:
     """Shared adaptive eval schedule: returns (freq_steps, n_games).
 
-    0–20M:  every 1M steps, 100 games
-    20–50M: every 2M steps, 200 games
-    50M+:   every 3M steps, 300 games
+    0–20M:    every 1M steps, 100 games
+    20–50M:   every 2M steps, 200 games
+    50–100M:  every 3M steps, 300 games
+    100M+:    every 4M steps, 300 games
+
+    `n_games` is the per-tier ceiling; the actual per-opponent count is then
+    clamped by `eval_games_for` (100 default / 200 heuristics). At 100M+ the
+    win-rate curves move slowly, so the looser 4M cadence trades negligible
+    resolution for ~25% less eval overhead.
     """
     if num_timesteps < 20_000_000:
         return 1_000_000, 100
     elif num_timesteps < 50_000_000:
         return 2_000_000, 200
-    else:
+    elif num_timesteps < 100_000_000:
         return 3_000_000, 300
+    else:
+        return 4_000_000, 300
 
 
 class EvalRLPlayer(RewardTrackingMixin, RLPlayer):
@@ -184,7 +216,8 @@ class PerOpponentEvalCallback(BaseCallback):
     async def _eval_all_opponents(self, n_games: int) -> None:
         print(
             f"\n[EVAL] Step {self.num_timesteps:,}: "
-            f"{len(self._opponents)} opponents × {n_games} games..."
+            f"{len(self._opponents)} opponents × ≤{n_games} games "
+            f"(cap {_EVAL_GAMES_CAP_DEFAULT}, heuristics {_EVAL_GAMES_CAP_HEURISTIC})..."
         )
         win_rates: dict[str, float] = {}
         reward_means: dict[str, float] = {}
@@ -192,13 +225,14 @@ class PerOpponentEvalCallback(BaseCallback):
         tui_metrics: dict[str, float] = {}
 
         for name, opponent in self._opponents:
+            games = eval_games_for(name, n_games)
             if self._rl_player.n_finished_battles > 0:
                 self._rl_player.reset_battles()
             if opponent.n_finished_battles > 0:
                 opponent.reset_battles()
 
             start = datetime.now()
-            await self._rl_player.battle_against(opponent, n_battles=n_games)
+            await self._rl_player.battle_against(opponent, n_battles=games)
             duration = datetime.now() - start
             # _battle_finished_callback has fired for every battle by this point
 

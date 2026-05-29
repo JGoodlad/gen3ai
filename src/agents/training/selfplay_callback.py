@@ -26,7 +26,7 @@ from poke_env.ps_client import LocalhostServerConfiguration, AccountConfiguratio
 
 from agents.inference.player import RLPlayer
 from agents.model.snapshot import record_eval_results
-from agents.training.eval_callback import EvalRLPlayer, _EVAL_CONCURRENCY, eval_schedule, RANDOM_OPPONENT_NAME, bot_mean, build_bot_eval_block
+from agents.training.eval_callback import EvalRLPlayer, _EVAL_CONCURRENCY, eval_schedule, eval_games_for, RANDOM_OPPONENT_NAME, bot_mean, build_bot_eval_block
 from agents.training.reward_manager import Gen3RewardManager
 from agents.training.reward_tracker import RewardTrackingMixin
 from agents.training.snapshot_pool import SnapshotPool, heuristic_fraction
@@ -184,8 +184,8 @@ class SelfPlayCallback(BaseCallback):
         pool_size = len(self._pool)
         print(
             f"\n[SELFPLAY EVAL] Step {step:,}: "
-            f"{len(self._bot_opponents)} bots + {min(pool_size, 5)} pool sentinels "
-            f"× {n_games} games each..."
+            f"{len(self._bot_opponents)} bots (≤{n_games} games, capped) + "
+            f"{min(pool_size, 5)} pool sentinels × {n_games} games each..."
         )
 
         win_rates: dict[str, float] = {}
@@ -195,7 +195,8 @@ class SelfPlayCallback(BaseCallback):
 
         # ── 1. Bot eval ────────────────────────────────────────────────────
         for name, opponent in self._bot_opponents:
-            wr, mean_reward, ep_len = await self._battle(self._rl_player, opponent, n_games, name)
+            games = eval_games_for(name, n_games)
+            wr, mean_reward, ep_len = await self._battle(self._rl_player, opponent, games, name)
             win_rates[name] = wr
             reward_means[name] = mean_reward
             ep_lens[name] = ep_len

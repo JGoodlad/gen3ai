@@ -197,6 +197,66 @@ known-impossible pairs never fire together. Examples:
 
 ---
 
+## 9. Batched inference for eval (and self-play snapshot opponents)
+
+**Where:** `src/agents/inference/player.py` — `RLPlayer._predict_best_action`
+(line ~107), driven by `EvalRLPlayer.choose_move` in
+`src/agents/training/eval_callback.py`.
+
+Eval is the single largest non-training cost in a run, and it is **pure
+overhead**: `PerOpponentEvalCallback._on_step` does `thread.start();
+thread.join()`, so the trainer is fully paused for the entire eval (no rollout
+collection, no updates) — see eval_callback.py:182-186. Self-play snapshot
+opponents (`RLPlayer` in the training env factory) run the same per-battle path.
+
+**Current behaviour:** each decision runs a **batch-1** forward pass —
+`_predict_best_action` encodes one battle's obs, does
+`np.expand_dims(obs, axis=0)`, transfers to GPU, and runs one
+`policy.get_distribution(...)` call. With `max_concurrent_battles=100` that is
+~100 separate GIL-serialized forward passes + `.to(device)` transfers per
+turn-round. Measured throughput (checkpoint_92095296, concurrency 100, contended
+with live training): **~140 agent-steps/sec**, ≈7× slower per step than training
+(~1000 fps), which batches all 64 envs into one forward pass.
+
+**Confirmed non-lever:** raising `max_concurrent_battles` does *not* help —
+50→104, 100→138, 200→118 steps/sec. 100 is the sweet spot; the bottleneck is the
+serialized batch-1 inference, not battle concurrency.
+
+**Idea:** collect all pending action requests across the in-flight battles into
+one tensor, run a single batched forward pass, and route argmax/sample results
+back per battle. poke-env already drives battles concurrently on one asyncio
+loop, so the requests naturally arrive interleaved — the work is a small
+batching layer in front of `_predict_best_action`.
+
+**Requirements / sketch:**
+- A request aggregator: each `choose_move` enqueues `(battle_tag, obs, mask)` and
+  awaits a future instead of running inference inline.
+- A flush trigger: run the batched forward pass when either (a) a short timer
+  elapses (e.g. ~2–5 ms) or (b) the queue reaches a size cap. Tune so a flush
+  gathers most of the ~100 concurrent battles without adding latency that idles
+  the GPU.
+- Batched forward: stack obs/masks → one `policy.get_distribution` call → apply
+  the `mask + (m-1)*1e9` logit masking per row → argmax (eval) or sample → set
+  each battle's future.
+- Must stay correct under `max_concurrent_battles` concurrency and reset cleanly
+  between opponents (`reset_battles()`); no cross-battle leakage of obs/mask rows.
+- Keep the existing single-battle path for `play.py` / interactive inference, or
+  make batch-size-1 a degenerate case of the batched path.
+
+**Expected payoff (ballpark, unverified):** ~2–4× faster eval (≈140 →
+~300–500 steps/sec). Not the theoretical ~100× of pure GPU batching, because the
+**per-battle observation encoding** (`embed_battle`: state encoder + turn-history,
+CPU/GIL-bound) and the **Showdown server round-trip latency** are floors that
+batching does not remove. Net effect: eval overhead at 100M+ (every 4M steps,
+~67 min at 1k fps, 9 capped opponents) would drop from ~5–7% toward ~3%.
+
+**Priority:** defer until self-play is running — self-play multiplies the number
+of `RLPlayer`-driven battles (snapshot opponents + eval), so the payoff grows
+once v4 Step 1 lands. Measure uncontended eval throughput first (training paused)
+to set the real baseline before investing.
+
+---
+
 ## Done — closed by this session
 
 - Cross-battle state contamination in `transition_fuzz` (`_prev_snapshot`
