@@ -247,3 +247,31 @@ def test_2c_prefers_damaging_event_move_id():
     check_outcome_matches_intent(
         REQ, _delta(our_move_id="stale", our_damaging_event=ev), MOVE_START + 0
     )
+
+
+def test_2c_non_strict_returns_message_instead_of_raising():
+    # The live training/replay path calls with strict=False: a mismatch must NOT
+    # raise (it would crash the run), it returns the message to log. This is the
+    # Gengar case from the run crash — pending action 9 (hypnosis) paired with a
+    # delta whose protocol move is thunderbolt across a gap=0 turn.
+    req = ["thunderbolt", "explosion", "willowisp", "hypnosis"]
+    msg = check_outcome_matches_intent(
+        req, _delta(our_move_id="thunderbolt"), MOVE_START + 3, strict=False
+    )
+    assert isinstance(msg, str) and "thunderbolt" in msg and "hypnosis" in msg
+
+
+def test_2c_non_strict_returns_none_when_aligned():
+    # No mismatch under strict=False returns None (nothing to log).
+    assert (
+        check_outcome_matches_intent(
+            REQ, _delta(our_move_id="thunderbolt"), MOVE_START + 0, strict=False
+        )
+        is None
+    )
+
+
+def test_2c_strict_default_still_raises():
+    # Default strict=True is unchanged so the unit-test assertions stay valid.
+    with pytest.raises(OrderingMismatchError):
+        check_outcome_matches_intent(REQ, _delta(our_move_id="icepunch"), MOVE_START + 0)

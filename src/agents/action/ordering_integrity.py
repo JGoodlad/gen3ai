@@ -123,8 +123,8 @@ def check_move_data_consistent(delta) -> None:
         )
 
 
-def check_outcome_matches_intent(prev_active_move_ids, delta, action) -> None:
-    """2c — outcome vs intent: the move the chosen action *index* maps to must
+def check_outcome_matches_intent(prev_active_move_ids, delta, action, *, strict=True):
+    """2c — outcome vs intent: the move the chosen action *index* maps to should
     match what the protocol says we ACTUALLY did, unless a legitimate
     interruption explains the difference.
 
@@ -132,18 +132,36 @@ def check_outcome_matches_intent(prev_active_move_ids, delta, action) -> None:
     decision time (``BattleContext.active_move_ids``).
     ``delta``: the resolved ``TurnDelta`` for that turn.
     ``action``: the discrete action index the model chose.
+    ``strict``: when True (the default, used by unit tests) a mismatch RAISES
+        ``OrderingMismatchError``. When False (used in the live training/replay
+        path) it returns the mismatch message string instead of raising, so the
+        caller can log a non-fatal advisory.
 
-    Skipped (legitimate divergence, not a mapping bug): episode start, forced
-    switches (replacement requests), and ``|cant|`` turns (sleep / paralysis /
-    flinch / freeze / recharge). Raises ``OrderingMismatchError`` on a genuine
-    action -> move scramble (we pressed X, the game did Y).
+    Returns ``None`` when intent and outcome agree (or a legitimate interruption
+    explains the difference); returns the mismatch message (``strict=False``) or
+    raises (``strict=True``) otherwise.
+
+    **This is a forensic check, not a data-correctness guard.** It compares the
+    model's *action* (its intent) against the *protocol-truth* move that fired.
+    Those two are paired by the recorder's per-turn cadence, which can legitimately
+    desync across poke-env "gap=0" turns (a faint or forced switch emits multiple
+    history records for one game turn, drifting the action↔delta pairing by one).
+    The data fed to the *model* is unaffected — ``our_move_id`` is sourced from the
+    protocol, not the action — so in production a mismatch is logged, never fatal.
+    Skipped (legitimate divergence): episode start, forced switches, ``|cant|``
+    turns, and move-callers (Sleep Talk / Metronome …).
     """
+    def _fail(msg):
+        if strict:
+            raise OrderingMismatchError(msg)
+        return msg
+
     if action is None or action < 0:
-        return
+        return None
     if getattr(delta, "phase_is_forced_switch", False):
-        return
+        return None
     if getattr(delta, "our_failed_to_move", False):
-        return  # we were prevented from acting — not a mapping error
+        return None  # we were prevented from acting — not a mapping error
 
     switched = getattr(delta, "our_switch_to", None) is not None
     ev = getattr(delta, "our_damaging_event", None)
@@ -155,13 +173,13 @@ def check_outcome_matches_intent(prev_active_move_ids, delta, action) -> None:
 
     # Gross action-KIND mismatch (intended a switch, moved — or vice versa).
     if is_switch and actual_move is not None and not switched:
-        raise OrderingMismatchError(
+        return _fail(
             f"Outcome/intent mismatch on turn {getattr(delta, 'turn', '?')}: chose a "
             f"SWITCH (action {action}) but the protocol shows we used move "
             f"'{actual_move}'. Action->order mapping may be scrambled."
         )
     if (is_move or is_struggle) and switched:
-        raise OrderingMismatchError(
+        return _fail(
             f"Outcome/intent mismatch: chose a MOVE (action {action}) but the protocol "
             f"shows we switched to '{delta.our_switch_to}'."
         )
@@ -173,17 +191,18 @@ def check_outcome_matches_intent(prev_active_move_ids, delta, action) -> None:
         intended = ids[idx] if idx < len(ids) else None
         # Move-callers (Sleep Talk, Metronome, …) fire a different move by design.
         if intended in CALLER_MOVES:
-            return
+            return None
         if intended and not _same_move(intended, actual_move):
-            raise OrderingMismatchError(
+            return _fail(
                 f"Outcome/intent mismatch: action {action} maps to move '{intended}' "
                 f"(request order {ids}), but the protocol shows we used '{actual_move}'. "
                 f"The action index resolved to a different move than fired."
             )
     if is_struggle and actual_move is not None and actual_move != "struggle":
-        raise OrderingMismatchError(
+        return _fail(
             f"Outcome/intent mismatch: chose Struggle but the protocol shows '{actual_move}'."
         )
+    return None
 
 
 def check_switch_ordering_alignment(battle: AbstractBattle, mask: np.ndarray) -> None:
