@@ -26,7 +26,7 @@ from poke_env.ps_client import LocalhostServerConfiguration, AccountConfiguratio
 
 from agents.inference.player import RLPlayer
 from agents.model.snapshot import record_eval_results
-from agents.training.eval_callback import EvalRLPlayer, _EVAL_CONCURRENCY, eval_schedule, eval_games_for, RANDOM_OPPONENT_NAME, bot_mean, build_bot_eval_block
+from agents.training.eval_callback import EvalRLPlayer, _EVAL_CONCURRENCY, eval_schedule, eval_games_for, RANDOM_OPPONENT_NAME, bot_mean, build_bot_eval_block, FIRST_EVAL_STEP
 from agents.training.reward_manager import Gen3RewardManager
 from agents.training.reward_tracker import RewardTrackingMixin
 from agents.training.snapshot_pool import SnapshotPool, heuristic_fraction
@@ -149,7 +149,9 @@ class SelfPlayCallback(BaseCallback):
         if self.num_timesteps == 0:
             return True
         freq, n_games = self._schedule()
-        if (self.num_timesteps // freq) > (self._last_eval_step // freq):
+        # One-shot early baseline eval, then fall through to the normal cadence.
+        baseline = self._last_eval_step == 0 and self.num_timesteps >= FIRST_EVAL_STEP
+        if baseline or (self.num_timesteps // freq) > (self._last_eval_step // freq):
             self._last_eval_step = self.num_timesteps
             thread = threading.Thread(
                 target=self._run_async_eval, args=(n_games,), daemon=True
