@@ -1,9 +1,10 @@
 """Export the Gen3 feature-extractor architecture for visualization.
 
-Produces an ONNX file you can drag-and-drop into https://netron.app to explore
-the network interactively (zoom into every Linear / MultiheadAttention / embedding,
-see tensor shapes on each edge). No Showdown server or checkpoint required — the
-graph topology is independent of the trained weights.
+Produces an ONNX file you can explore interactively in https://netron.app. By
+default, attention / FFN / transformer-layer sub-modules are grouped into named,
+collapsible blocks (double-click to expand) so the graph reads at a high level
+rather than as thousands of primitive ops; pass --flat for the raw op graph. No
+Showdown server or checkpoint required — graph topology is weight-independent.
 
 Usage:
     export PYTHONPATH=$PYTHONPATH:src
@@ -36,6 +37,39 @@ class _ExtractorWrapper(torch.nn.Module):
         return self.extractor({"observation": observation, "action_mask": action_mask})
 
 
+# nn.Module types collapsed into named, foldable blocks in the Netron graph, so
+# you see one "MultiheadAttention" / "Sequential" (FFN) / "TransformerEncoderLayer"
+# node instead of dozens of primitive ops. Kept focused: a broader set can trip
+# PyTorch's ONNX function-extraction pass on a model this complex.
+_GROUP_MODULES = (
+    torch.nn.TransformerEncoderLayer,
+    torch.nn.MultiheadAttention,
+    torch.nn.Sequential,
+)
+
+
+def _export_onnx(wrapper: torch.nn.Module, sample: tuple, out_path: str, grouped: bool) -> bool:
+    """Export to ONNX. When grouped, wrap sub-modules as named functions; fall back
+    to a flat graph if PyTorch's function-extraction pass errors. Returns whether the
+    written graph is grouped."""
+    common = dict(
+        input_names=["observation", "action_mask"],
+        output_names=["features"],
+        dynamic_axes={"observation": {0: "batch"}, "action_mask": {0: "batch"}, "features": {0: "batch"}},
+        opset_version=17,
+        do_constant_folding=True,
+    )
+    if grouped:
+        try:
+            torch.onnx.export(wrapper, sample, out_path,
+                              export_modules_as_functions=set(_GROUP_MODULES), **common)
+            return True
+        except Exception as e:  # function_extraction can hit internal asserts
+            print(f"[arch] grouped export failed ({type(e).__name__}); falling back to flat graph.")
+    torch.onnx.export(wrapper, sample, out_path, **common)
+    return False
+
+
 def build_extractor() -> tuple[Gen3FeaturesExtractor, spaces.Dict]:
     mappings = load_mappings()
     encoder = Gen3ObservationEncoder(mappings)
@@ -59,6 +93,9 @@ def main() -> None:
                     help="host the graph with Netron's built-in server (view in a browser, "
                          "no manual file-picking). Binds 0.0.0.0 so you can SSH-tunnel from a laptop.")
     ap.add_argument("--port", type=int, default=8082, help="port for --serve (default 8082)")
+    ap.add_argument("--flat", action="store_true",
+                    help="export every primitive op ungrouped (default groups attention / "
+                         "FFN / transformer-layer modules into collapsible Netron blocks)")
     args = ap.parse_args()
 
     extractor, obs_space = build_extractor()
@@ -71,16 +108,10 @@ def main() -> None:
 
     out_abs = os.path.abspath(args.out)
     os.makedirs(os.path.dirname(out_abs), exist_ok=True)
-    torch.onnx.export(
-        wrapper,
-        (dummy_obs, dummy_mask),
-        args.out,
-        input_names=["observation", "action_mask"],
-        output_names=["features"],
-        dynamic_axes={"observation": {0: "batch"}, "action_mask": {0: "batch"}, "features": {0: "batch"}},
-        opset_version=17,
-        do_constant_folding=True,
-    )
+    grouped = _export_onnx(wrapper, (dummy_obs, dummy_mask), args.out, grouped=not args.flat)
+    if grouped:
+        print("[arch] grouped: attention / FFN / transformer-layer blocks are collapsible "
+              "in Netron (double-click a node to expand). Use --flat for the raw op graph.")
 
     if args.serve:
         _serve(out_abs, args.port)
