@@ -47,7 +47,15 @@ MODEL_CONFIG_VERSION = 2
 #   88 → 108 (+12 from the wider cant onehot, +8 from outcome/crit); total obs
 #   dim shifts by N_HISTORY_TURNS × 20. Not weight-compatible with v4 — the
 #   history projection input width changed.
-ARCH_SIGNATURE = "gen3_move_outcome_v1"
+#
+# v6 (gen3_modular_v1): pure structural refactor — forward_internal decomposed
+#   into phase nn.Modules (Embeddings / ObsUnpack / PokemonEncoder /
+#   TeamTransformer / CLSPool / ProjectionAssembler). The math, dims, and outputs
+#   are byte-identical to v5, but state_dict keys are now phase-prefixed
+#   (e.g. move_network.* → pokemon_encoder.move_network.*, our_cls →
+#   cls_pool.our_cls). Old checkpoints are intentionally incompatible so they
+#   fail with a clean arch-family error instead of an SB3 strict-load KeyError.
+ARCH_SIGNATURE = "gen3_modular_v1"
 
 
 class ModelVersionError(Exception):

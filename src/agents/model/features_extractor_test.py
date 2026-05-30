@@ -65,17 +65,26 @@ def test_td_strategic_constants_consistent():
 
 def test_unified_transformer_modules_exist():
     model, _ = _make_model()
-    assert hasattr(model, "token_type_emb")
-    assert hasattr(model, "turn_history_pos_emb")
-    assert hasattr(model, "history_proj")
-    assert hasattr(model, "global_proj")
-    assert hasattr(model, "transformer_layers")
-    assert hasattr(model, "our_cls")
-    assert hasattr(model, "their_cls")
-    assert hasattr(model, "our_cls_attn")
-    assert hasattr(model, "their_cls_attn")
-    assert hasattr(model, "norm_pool_our")
-    assert hasattr(model, "norm_pool_their")
+    tt = model.team_transformer
+    assert hasattr(tt, "token_type_emb")
+    assert hasattr(tt, "turn_history_pos_emb")
+    assert hasattr(tt, "history_proj")
+    assert hasattr(tt, "global_proj")
+    assert hasattr(tt, "transformer_layers")
+    cp = model.cls_pool
+    assert hasattr(cp, "our_cls")
+    assert hasattr(cp, "their_cls")
+    assert hasattr(cp, "our_cls_attn")
+    assert hasattr(cp, "their_cls_attn")
+    assert hasattr(cp, "norm_pool_our")
+    assert hasattr(cp, "norm_pool_their")
+
+
+def test_phase_modules_exist():
+    """The decomposed pipeline exposes its phases as named sub-modules."""
+    model, _ = _make_model()
+    for phase in ("embeddings", "unpack", "pokemon_encoder", "team_transformer", "cls_pool", "assembler"):
+        assert hasattr(model, phase), f"phase module {phase!r} missing"
 
 
 def test_removed_modules_absent():
@@ -93,34 +102,36 @@ def test_removed_modules_absent():
 
 def test_token_type_embedding_shape():
     model, _ = _make_model()
-    assert model.token_type_emb.num_embeddings == NUM_TOKEN_TYPES
-    assert model.token_type_emb.embedding_dim == D_MODEL
+    assert model.team_transformer.token_type_emb.num_embeddings == NUM_TOKEN_TYPES
+    assert model.team_transformer.token_type_emb.embedding_dim == D_MODEL
 
 
 def test_turn_history_pos_emb_shape():
     model, _ = _make_model()
-    assert model.turn_history_pos_emb.num_embeddings == N_HISTORY_TURNS
-    assert model.turn_history_pos_emb.embedding_dim == D_MODEL
+    assert model.team_transformer.turn_history_pos_emb.num_embeddings == N_HISTORY_TURNS
+    assert model.team_transformer.turn_history_pos_emb.embedding_dim == D_MODEL
 
 
 def test_history_proj_shape():
     model, _ = _make_model()
-    assert model.history_proj.in_features == model._td_embed_dim
-    assert model.history_proj.out_features == D_MODEL
+    tt = model.team_transformer
+    assert tt.history_proj.in_features == tt._td_embed_dim
+    assert tt.history_proj.out_features == D_MODEL
 
 
 def test_global_proj_shape():
     model, layout = _make_model()
     active_ctx_dim = layout.get("active_context_dim", 22)
-    expected_in = 2 * active_ctx_dim + model._non_matchup_rest_dim
-    assert model.global_proj.in_features == expected_in
-    assert model.global_proj.out_features == D_MODEL
+    tt = model.team_transformer
+    expected_in = 2 * active_ctx_dim + tt._non_matchup_rest_dim
+    assert tt.global_proj.in_features == expected_in
+    assert tt.global_proj.out_features == D_MODEL
 
 
 def test_transformer_stack_shape():
     model, _ = _make_model()
-    assert len(model.transformer_layers) == TRANSFORMER_N_LAYERS
-    for layer in model.transformer_layers:
+    assert len(model.team_transformer.transformer_layers) == TRANSFORMER_N_LAYERS
+    for layer in model.team_transformer.transformer_layers:
         # nn.TransformerEncoderLayer exposes self_attn.embed_dim
         assert layer.self_attn.embed_dim == D_MODEL
         assert layer.self_attn.num_heads == TRANSFORMER_N_HEADS
@@ -130,15 +141,15 @@ def test_transformer_stack_shape():
 
 def test_cls_parameters_shape():
     model, _ = _make_model()
-    assert model.our_cls.shape == (1, 1, D_MODEL)
-    assert model.their_cls.shape == (1, 1, D_MODEL)
+    assert model.cls_pool.our_cls.shape == (1, 1, D_MODEL)
+    assert model.cls_pool.their_cls.shape == (1, 1, D_MODEL)
 
 
 def test_token_count_matches_design():
     """Total token sequence length = 2 * TEAM_SIZE + N_HISTORY_TURNS + 1 (global)."""
     from agents.observation.constants import TEAM_SIZE
     model, _ = _make_model()
-    assert model._total_tokens == 2 * TEAM_SIZE + N_HISTORY_TURNS + 1
+    assert model.team_transformer._total_tokens == 2 * TEAM_SIZE + N_HISTORY_TURNS + 1
 
 
 # ---------------------------------------------------------------------------
@@ -246,7 +257,7 @@ def test_history_pos_embedding_wired_in():
 
     with torch.no_grad():
         out_before = model.forward_internal({"observation": obs})
-        for p in model.turn_history_pos_emb.parameters():
+        for p in model.team_transformer.turn_history_pos_emb.parameters():
             p.zero_()
         out_after = model.forward_internal({"observation": obs})
     assert not torch.allclose(out_before, out_after)
@@ -262,7 +273,7 @@ def test_history_proj_wired_in():
 
     with torch.no_grad():
         out_before = model.forward_internal({"observation": obs})
-        for p in model.history_proj.parameters():
+        for p in model.team_transformer.history_proj.parameters():
             p.zero_()
         out_after = model.forward_internal({"observation": obs})
     assert not torch.allclose(out_before, out_after)
@@ -305,7 +316,7 @@ def test_transformer_layer_wired_in():
 
     with torch.no_grad():
         out_before = model.forward_internal({"observation": obs})
-        for p in model.transformer_layers[0].parameters():
+        for p in model.team_transformer.transformer_layers[0].parameters():
             p.zero_()
         out_after = model.forward_internal({"observation": obs})
     assert not torch.allclose(out_before, out_after)
@@ -320,13 +331,13 @@ def test_cls_pooling_wired_in():
 
     with torch.no_grad():
         out_before = model.forward_internal({"observation": obs})
-        for p in model.our_cls_attn.parameters():
+        for p in model.cls_pool.our_cls_attn.parameters():
             p.zero_()
-        for p in model.their_cls_attn.parameters():
+        for p in model.cls_pool.their_cls_attn.parameters():
             p.zero_()
         # The CLS parameter vectors themselves are nontrivially queried — zero them too.
-        model.our_cls.data.zero_()
-        model.their_cls.data.zero_()
+        model.cls_pool.our_cls.data.zero_()
+        model.cls_pool.their_cls.data.zero_()
         out_after = model.forward_internal({"observation": obs})
     assert not torch.allclose(out_before, out_after)
 

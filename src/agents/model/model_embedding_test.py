@@ -32,9 +32,9 @@ def test_model_full_embedding_forensics():
             captured_inputs[name] = input[0]
         return hook
 
-    # Hook into Move Network and Role Encoder
-    model.move_network[0].register_forward_hook(hook_fn("move_input"))
-    model.role_encoder[0].register_forward_hook(hook_fn("role_input"))
+    # Hook into Move Network and Role Encoder (now owned by the PokemonEncoder phase)
+    model.pokemon_encoder.move_network[0].register_forward_hook(hook_fn("move_input"))
+    model.pokemon_encoder.role_encoder[0].register_forward_hook(hook_fn("role_input"))
 
     # 3. Create a "Golden Observation" with known values
     obs = np.zeros((total_dim,), dtype=np.float32)
@@ -76,7 +76,7 @@ def test_model_full_embedding_forensics():
 
     # Compute move_input known and matchup indices from layout
     emb_dim = layout['move_embedding_dim'] + layout['type_embedding_dim']  # 32
-    remnant_dim = model.move_remnant_dim                                    # 6
+    remnant_dim = model.pokemon_encoder.move_remnant_dim                    # 6
     known_idx    = emb_dim + remnant_dim                                    # 38
     gl = layout.get('global_layout', {}); rl = layout.get('reactive_layout', {})
     ctx_dim = (1 + 1

@@ -300,27 +300,29 @@ Actor species resolution prefers `damaging_event.user_species` (protocol-truth) 
 
 ## Feature Extractor Architecture
 
-`Gen3FeaturesExtractor` in `src/agents/model/features_extractor.py`:
+`Gen3FeaturesExtractor` in `src/agents/model/features_extractor.py` is decomposed into
+named phase `nn.Module`s, each owning its layers, chained by a thin `forward_internal`
+orchestrator. Data flows:
 
-1. **Embedding lookups** — species (32), move (16), item (16), ability (16), type (16, shared for Pokémon types, move types, and TurnDelta move/type IDs)
-2. **Shared move processor** — Linear(58→64)→ReLU→Linear(64→32) per move slot; input includes move/type embeddings, power/secondary/recoil/category remnants, known flag, battle context, and per-move type matchup against all 6 opponents. Move validity from the previous turn's action mask is applied to the active Pokémon's slots only; bench slots always see all-ones.
-3. **Within-Pokémon move self-attention** — MHA(32, 2 heads) + LayerNorm residual across the 4 move slots of each Pokémon; lets the role encoder see "this mon has two physical attackers"
-4. **Role encoder** — Linear(263→256)→ReLU→Linear(256→128) per Pokémon; input is the full enriched Pokémon vector (245 dims) + broadcasted global context (16 dims: turn + weather + fainted + spikes + struggle + screens) + validity bits (switch_valid + struggle_from_prev). The 263 input dim is computed dynamically in `__init__` from layout fields — not hardcoded.
-5. **Pre-attention injection** — two signals are added to the active slots' role tokens before the attention paths run:
-   - *Active-context bias*: boosts + volatiles projected via `active_ctx_to_role` (Linear 23→64→128); bench slots unaffected (no boosts/volatiles in Gen 3)
-   - *TurnDelta conditioner*: effectiveness + move-order slice (10 dims) projected via `td_conditioner` (Linear 10→64→128); perspective-flipped for the opponent's active slot
-6. **Team-wide attention** — five `MultiheadAttention` paths with residuals:
-   - *Pressure*: our active ← their team; no fainted key-mask (fainted opp history is useful context)
-   - *Safety*: our team ← their active; fainted query slots zeroed
-   - *Synergy*: our team ← our team; fainted keys masked, fainted queries zeroed
-   - *Threat*: their team ← our active (post-Pressure); fainted query slots zeroed
-   - *Opp Synergy*: their team ← their team; fainted keys masked, fainted queries zeroed
-7. **Attention pool** — one learned query per side attends over the 6 role tokens (fainted key-masked) producing a single 128-dim pooled team token per side; replaces slot-order flatten for permutation equivariance
-8. **Turn-history attention** — all `N_HISTORY_TURNS` (10) raw TurnDelta vectors are embedded identically through the shared move/type tables (4 IDs → 4×16 embeddings + 35 scalars = 99-dim per slot), positional encodings added, one MHA self-attention pass applied, and the last (most-recent) position's output used as the 99-dim history-informed block for the projection
-9. **Pre-projection LayerNorm** — normalises the concatenated projection input to equalise per-block scales (embeddings, 0/1 validity bits, HP fractions, ±1 TurnDelta deltas)
-10. **Projection** — Linear(576→512)→ReLU; input is: our_pool(128) + their_pool(128) + our_active_refined(128) + active_ctx_enc(32×2) + global+scalars(29) + turn_delta_embedded(99)
+**`ObsUnpack` → `PokemonEncoder` → `TeamTransformer` → `CLSPool` → `ProjectionAssembler`**, then a root `pre_proj_norm` → `projection` → `ReLU` head.
 
-The projection input dimension (576) is discovered automatically via a dummy forward pass in `__init__`, so it stays correct when the architecture changes without any manual update.
+The embedding tables live in a shared `Embeddings` module and are passed as a forward
+argument to the phases that need them (Pokémon encoding and turn-history embedding), so
+they register exactly once. An immutable `ExtractorContext` dataclass produced by
+`ObsUnpack` carries the ~30 unpacked tensors to the downstream phases, keeping each
+phase's forward signature narrow. See `src/agents/model/CLAUDE.md` for the phase contract.
+
+1. **`Embeddings`** — shared tables: species (32), move (16), item (16), ability (16), type (16, shared for Pokémon types, move types, and TurnDelta move/type IDs). Owns the Hidden Power soft-type blend (`hp_soft_type`) and the per-slot TurnDelta embedder (`embed_delta_slot`).
+2. **`ObsUnpack`** (stateless) — peels the flat 2734-dim observation into the named tensors of `ExtractorContext`: per-Pokémon block + categorical IDs, the global/reactive feature slices, the matchup matrices, and (hoisted here) the active-slot indices + fainted key-masks used downstream.
+3. **`PokemonEncoder`** — embeds + stitches the enriched per-Pokémon vector; runs the **shared move processor** (Linear→ReLU→Linear, `MOVE_NET_HIDDEN`) over every move slot (input: move/type embeddings, remnants, known flag, battle context, per-move matchup ×6 + matchup-validity ×6, HP-candidate distribution, and prev-turn move validity), a **within-Pokémon move self-attention** (MHA 32-dim, 2 heads, + LayerNorm residual), then the **role encoder** (Linear→ReLU→Linear, `ROLE_ENCODER_HIDDEN`) → 12 × 128 role tokens.
+4. **`TeamTransformer`** — builds a 23-token sequence (6 our-team + 6 their-team role tokens + `N_HISTORY_TURNS`=10 history tokens + 1 global token), adds token-type and history-positional embeddings, and runs a `TRANSFORMER_N_LAYERS`-deep `nn.TransformerEncoderLayer` stack (d_model 128, `TRANSFORMER_N_HEADS` heads, FFN `TRANSFORMER_FFN_DIM`, post-LN) under a key-padding mask that masks fainted team slots and empty history slots. History tokens come from `embed_delta_slot`; the global token from the two active-contexts + non-matchup scalars. Returns the two refined team-token blocks.
+5. **`CLSPool`** — one learned CLS query per side cross-attends over its 6 post-transformer team tokens (fainted slots key-masked) → a 128-dim pooled team token per side (+ LayerNorm). Also extracts `our_active_refined` = the transformer output of our active slot.
+6. **`ProjectionAssembler`** — concatenates `our_pool(128) + their_pool(128) + our_active_refined(128) + active_ctx_enc(32) + opp_ctx_enc(32) + non_matchup_rest`, where `active_ctx_encoder` is Linear→ReLU→Linear (`ACTIVE_CTX_HIDDEN`) applied per side.
+7. **Root head** — `pre_proj_norm` (LayerNorm, equalises per-block scales) → `projection` (Linear) → `ReLU`.
+
+The projection input dimension is discovered automatically via a dummy forward pass in
+`__init__` (run through the assembled phases), so it stays correct when the architecture
+changes without any manual update.
 
 ---
 

@@ -23,7 +23,15 @@ import torch
 from gymnasium import spaces
 
 from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings
-from agents.model.features_extractor import Gen3FeaturesExtractor
+from agents.model.features_extractor import (
+    Gen3FeaturesExtractor,
+    ObsUnpack,
+    PokemonEncoder,
+    TeamTransformer,
+    CLSPool,
+    ProjectionAssembler,
+    Embeddings,
+)
 
 
 class _ExtractorWrapper(torch.nn.Module):
@@ -42,6 +50,14 @@ class _ExtractorWrapper(torch.nn.Module):
 # node instead of dozens of primitive ops. Kept focused: a broader set can trip
 # PyTorch's ONNX function-extraction pass on a model this complex.
 _GROUP_MODULES = (
+    # Phase modules — one collapsible Netron node per pipeline stage.
+    Embeddings,
+    ObsUnpack,
+    PokemonEncoder,
+    TeamTransformer,
+    CLSPool,
+    ProjectionAssembler,
+    # Leaf composites nested inside the phases.
     torch.nn.TransformerEncoderLayer,
     torch.nn.MultiheadAttention,
     torch.nn.Sequential,
