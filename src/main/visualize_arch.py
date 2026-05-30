@@ -108,20 +108,22 @@ def _serve(model_path: str, port: int) -> None:
     host = "0.0.0.0"
     netron.start(model_path, address=(host, port), browse=False)
 
-    fqdn = socket.getfqdn()
     hostname = socket.gethostname()
+    # A bare hostname is reachable from other LAN machines via mDNS as
+    # "<host>.local"; getfqdn() usually drops the suffix, so add it ourselves.
+    short = hostname.split(".")[0]
+    mdns = hostname if hostname.endswith(".local") else f"{short}.local"
     print()
     print("=" * 70)
     print(f"  Netron is serving the graph (bound 0.0.0.0:{port}).")
     print("=" * 70)
     print(f"  On this machine:        http://localhost:{port}")
-    print(f"  From another box (LAN):  http://{fqdn}:{port}")
-    print("                          (e.g. http://goodlad-desktop.local:%d)" % port)
+    print(f"  From another box (LAN):  http://{mdns}:{port}")
     print()
     print("  If the LAN URL is blocked, it's the firewall — allow the port:")
     print(f"      sudo ufw allow {port}/tcp")
     print("  Or fall back to an SSH tunnel, then browse http://localhost:%d:" % port)
-    print(f"      ssh -N -L {port}:localhost:{port} {hostname}")
+    print(f"      ssh -N -L {port}:localhost:{port} {mdns}")
     print()
     print("  Ctrl-C to stop the server.")
     print("=" * 70)
