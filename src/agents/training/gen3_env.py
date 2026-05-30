@@ -15,16 +15,24 @@ from agents.training.reward_function import RewardFunction
 from agents.training.battle_context import TurnDelta
 from agents.training.episode_tracker import EpisodeTracker
 from agents.training.stall import StallConfig, StallLogger
+from agents.battle.gen3_battle import Gen3Battle
 from utils.logging.levels import LogLevel
 
 
 class Gen3Env(SinglesEnv):
     def __init__(self, mappings, reward_fn: Optional[RewardFunction] = None,
                  log_level=LogLevel.QUIET, stall_config: Optional[StallConfig] = None,
-                 *args, **kwargs):
+                 *args, battle_class=Gen3Battle, **kwargs):
         self.log_level = log_level
         self._stall_logger = StallLogger(stall_config)
         super().__init__(*args, **kwargs)
+        # poke-env's PokeEnv builds its two _EnvPlayer agents internally without a
+        # battle_class seam. _battle_class is read per-battle at _create_battle time
+        # (no battle has started yet here), so setting it on the agents post-init
+        # makes every battle a Gen3Battle (event log + live_view) with zero edits to
+        # poke-env's env. The trainee (battle1) is what obs/reward/replay read.
+        self.agent1._battle_class = battle_class
+        self.agent2._battle_class = battle_class
         self.observation_encoder = get_observation_encoder(mappings)
 
         obs_dim = self.observation_encoder.dimension

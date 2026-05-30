@@ -415,9 +415,18 @@ layer is currently additive and obs/reward-neutral.
   so current-state and history come from two disjoint, separately-fuzzed sources that
   can't drift. Opponent fields are reveal-gated (unknown item → `None`, only revealed
   moves listed; `ability` is `None` unless disclosed or uniquely inferable from species).
-- **Injection seam:** `poke_env.player.Player.__init__` takes `battle_class=Battle`
-  (default); our players pass `battle_class=Gen3Battle`. This is the only edit to the
-  poke-env core besides the (unchanged) parser.
+- **Injection seam (wired into training):** `poke_env.player.Player.__init__` takes
+  `battle_class=Battle` (default, with a `None`-guard since `PokeEnv` threads a `None`
+  default to its `_EnvPlayer` agents). `Gen3Player` defaults `battle_class=Gen3Battle`
+  (so RL / eval / replay / stat-tracking players inherit it), and `Gen3Env` defaults it
+  too (both env agents track the log; the trainee `battle1` is what obs/reward/replay
+  read). These + the (unchanged) parser are the only edits to the poke-env core.
+- **Per-decision event window:** `Gen3Battle.event_cursor` + `events_since(cursor)` slice
+  the log by "since the agent was last asked to act" — the granularity `TurnDelta` needs,
+  which is NOT a protocol `|turn|N` boundary (a forced switch splits a turn into two
+  decision windows; a faint window spans a turn boundary). `events_for_turn(N)` remains
+  for protocol-turn slicing. Package re-exports are lazy (PEP 562 `__getattr__`) so
+  importing one submodule doesn't force-load the others (avoids an import cycle).
 
 **Verification:** unit tests in `src/agents/battle/*_test.py` (schema, registry audit,
 scripted parse + state-equivalence, TurnView fold). The spine is

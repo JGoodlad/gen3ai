@@ -4,6 +4,8 @@ from typing import Dict, Any, Optional
 from poke_env.player import Player
 from poke_env.player.battle_order import ForfeitBattleOrder
 
+from agents.battle.gen3_battle import Gen3Battle
+
 from agents.action.mapper import Gen3ActionMapper
 from agents.action.mask_generator import Gen3ActionMasker
 from agents.observation.turn_delta_encoder import TurnDeltaEncoder
@@ -13,11 +15,17 @@ from agents.model.features_extractor import N_HISTORY_TURNS
 
 
 class Gen3Player(Player):
-    """Base player: embeds battle state and maps actions using Gen 3 logic."""
+    """Base player: embeds battle state and maps actions using Gen 3 logic.
+
+    Defaults ``battle_class=Gen3Battle`` so every Gen3 player (RL, eval, replay,
+    stat-tracking) gets the revealed-order event log + ``live_view()`` for free.
+    Callers can still override (e.g. a plain-Battle baseline) via the kwarg.
+    """
 
     def __init__(self, observation_encoder=None, mappings=None,
-                 stall_config: Optional[StallConfig] = None, **kwargs):
-        super().__init__(**kwargs)
+                 stall_config: Optional[StallConfig] = None,
+                 battle_class=Gen3Battle, **kwargs):
+        super().__init__(battle_class=battle_class, **kwargs)
         self.observation_encoder = observation_encoder
         self.mappings = mappings
         self._stall_config = stall_config or StallConfig()

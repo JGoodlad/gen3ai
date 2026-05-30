@@ -96,6 +96,28 @@ class Gen3Battle(Battle):
             end = self._turn_start[min(later)]
         return self._events[start:end]
 
+    @property
+    def event_cursor(self) -> int:
+        """The seq of the *next* event to be recorded (== number of events so far).
+
+        A consumer captures this when it is asked for an input, then later calls
+        :meth:`events_since` with the saved value to get exactly the events that were
+        revealed in the window since — the right granularity for the per-decision
+        ``TurnDelta`` window (which is "since I was last asked to act", NOT a protocol
+        ``|turn|N`` boundary; a forced-switch can split a turn into two windows).
+        """
+        return self._seq
+
+    def events_since(self, cursor: int) -> List[BattleEvent]:
+        """All events revealed since ``cursor`` (a value previously read from
+        :attr:`event_cursor`), in order. ``events_since(0)`` is the whole log.
+
+        ``seq`` is assigned densely in append order, so this is an O(1) slice.
+        """
+        if cursor <= 0:
+            return list(self._events)
+        return self._events[cursor:]
+
     # ------------------------------------------------------------------ #
     # Parse-pass override: classify -> mutate (super) -> record event     #
     # ------------------------------------------------------------------ #

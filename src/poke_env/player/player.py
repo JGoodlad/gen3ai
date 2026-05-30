@@ -146,8 +146,10 @@ class Player(ABC):
         # gen3ai: which Battle subclass to instantiate for new (singles) battles.
         # Defaults to poke-env's Battle; our players pass Gen3Battle to get the
         # revealed-order event log for free. The doubles path always uses
-        # DoubleBattle (event sourcing is gen3ou singles only).
-        self._battle_class = battle_class
+        # DoubleBattle (event sourcing is gen3ou singles only). `or Battle` guards
+        # callers that pass battle_class=None explicitly (PokeEnv threads a None
+        # default down to its _EnvPlayer agents).
+        self._battle_class = battle_class or Battle
 
         if isinstance(team, Teambuilder):
             self._team = team
