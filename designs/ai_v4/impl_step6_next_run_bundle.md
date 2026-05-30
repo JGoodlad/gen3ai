@@ -261,6 +261,41 @@ non-terminating stalls.
 `reward_manager_test.py` gained/updated coverage for every changed term;
 `reward_invariants_e2e_test.py` was fixed for the new escalating/ramped model.
 
+### Measured impact (`run_20260529_212349` @ ~26M steps)
+
+Behavioural before/after from replay aggregation: **20 battles** (steps 24M + 26M)
+of this run vs **30 battles** of the v3 baseline (`_goldens/ai_v3_final_450m`, steps
+464–468M). The four targeted pathologies were measured directly from the per-turn
+`chosen` / `outcome` records, not from win rate (which isn't comparable here — this
+run is early and faces a *harder* expanded opponent pool: AggressiveV2, Heuristic2,
+SetupSweepV2, StallerV2).
+
+| Pathology | v3 baseline (450M) | this run (26M) | Verdict |
+|---|---|---|---|
+| **Wall-spam** — longest run of a *zero-damage* move repeated into a wall | **max 12** turns, 10% of battles ≥4 | **max 4**, 5% ≥4 | ✅ Substantially retired — the 12-turn Skarmory-Drillpeck-into-Curse-Snorlax marathon is gone |
+| **Non-terminating stalls** — max battle length | **132** turns; losses incl. 65 & 132 | **75** turns; losses ≤33 except one 70 | ✅ Fixed — `stall_tax` now fires earlier (turn 60 vs 125) and 3× as often (10→33 fires) |
+| **Switch oscillation** — A→B→A events | 0.9 / battle | 0.8 / battle | 🟡 Partial — `switch_bouncing_tax` is active (8 fires) but the behaviour is still sticky |
+| **Immune/futile-attack spam** | persistent | rare, penalised | ✅ Mostly retired — one residual case (Tyranitar Earthquake into Ground-immune Skarmory, 4 turns) still draws `futile_attack=-0.5` |
+
+**New terms confirmed firing** (reward breakdown over the 20 battles): uncapped
+`repetition_tax` (352), `stall_tax` (33), `futile_attack` (33), `matchup_penalty`
+(44), `pivot_damage` (29), `switch_bouncing_tax` (8), `dead_matchup_tax` (2).
+
+**Standout result:** stall matchups flipped from the v3 *weakness* to a *strength* —
+`win_rate_vs_StallerV2 = 0.686` is the **best** matchup in the pool at 26M, with
+`Staller = 0.645`, directly attributable to the earlier/ramped stall tax + dead-matchup
+pivot pressure.
+
+**Caveat — productive vs. pathological repetition.** A naive "same move repeated"
+count actually *rose* (8.6 → 9.1 mean longest run), because that conflates a sweeper
+correctly clicking Earthquake to KO through a team (good play) with wall-spam. Only the
+**zero-damage** variant is pathological, and that is the metric that dropped (12 → 4).
+The "did something productive" redefinition is what lets the tax tell these apart.
+
+**Open item:** switch oscillation is only partially addressed. If it has not tightened
+by ~80–100M, `switch_bouncing_tax` likely needs a steeper escalation step or a longer
+lookback window.
+
 ---
 
 ## Combined dimensions & versions (end of batch)
