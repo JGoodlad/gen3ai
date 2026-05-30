@@ -122,7 +122,8 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         # ------------------------------------------------------------------
         # Input: move_emb + type_emb + remnants + known(1) + context + matchups(TEAM_SIZE)
         #        + matchup_validity(TEAM_SIZE) + hp_probs(16) + validity(1)
-        # Remnants: power, secondary, recoil, category, current_pp, max_pp (known extracted separately)
+        # Remnants: power, secondary, recoil, category, current_pp, max_pp, accuracy, never_miss
+        #           (known extracted separately)
         # Context: HP(1) + turn(1) + weather + fainted + spikes
         # matchup_validity: per-opponent (move_known AND opp_species_known) bits — disambiguates
         #   "unknown matchup" (cell=0 because move/opp absent) from "real immunity" (cell=0 from 0×).
@@ -132,7 +133,8 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         _rem1 = _msl['type']['offset'] - _msl['power']['offset']              # power+secondary+recoil = 3
         _rem2 = _msl['known']['offset'] - (_msl['type']['offset'] + _msl['type']['dim'])  # category = 1
         _rem3 = (_msl['max_pp']['offset'] + _msl['max_pp']['dim']) - _msl['current_pp']['offset']  # pp = 2
-        self.move_remnant_dim = _rem1 + _rem2 + _rem3
+        _rem4 = (_msl['never_miss']['offset'] + _msl['never_miss']['dim']) - _msl['accuracy']['offset']  # accuracy+never_miss = 2
+        self.move_remnant_dim = _rem1 + _rem2 + _rem3 + _rem4
         _gl = layout['global_layout']
         _rl = layout['reactive_layout']
         _move_ctx_dim = (1 + 1                       # hp + turn
@@ -513,6 +515,7 @@ class Gen3FeaturesExtractor(torch.nn.Module):
             move_remnants.append(pokemon_part[:, :, slot_start + m_slot_layout['power']['offset'] : slot_start + m_slot_layout['type']['offset']])
             move_remnants.append(pokemon_part[:, :, slot_start + m_slot_layout['type']['offset'] + m_slot_layout['type']['dim'] : slot_start + _known_off])
             move_remnants.append(pokemon_part[:, :, slot_start + m_slot_layout['current_pp']['offset'] : slot_start + m_slot_layout['max_pp']['offset'] + m_slot_layout['max_pp']['dim']])
+            move_remnants.append(pokemon_part[:, :, slot_start + m_slot_layout['accuracy']['offset'] : slot_start + m_slot_layout['never_miss']['offset'] + m_slot_layout['never_miss']['dim']])
         all_move_remnants = torch.cat(move_remnants, dim=2)
 
         known_flags_tensors = []

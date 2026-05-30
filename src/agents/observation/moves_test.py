@@ -66,6 +66,61 @@ def test_moves_encoder_pp_empty_slot():
 
 
 # ---------------------------------------------------------------------------
+# Accuracy encoding
+# ---------------------------------------------------------------------------
+
+def test_moves_encoder_accuracy_can_miss():
+    """A move that can miss encodes accuracy/100 and never_miss = 0."""
+    mappings = load_mappings()
+    encoder = MovesEncoder(mappings["moves"])
+    mon = MagicMock()
+    mon.moves = {"hydropump": _make_move("hydropump", 8, 8)}  # 80% accuracy
+
+    vec = encoder.encode(mon, None)
+    assert vec[9] == pytest.approx(0.80)  # accuracy_norm
+    assert vec[10] == 0.0                 # never_miss flag
+
+
+def test_moves_encoder_never_miss():
+    """A never-miss move carries accuracy=100 in the mapping (→ 1.0 normalized)
+    plus the never_miss flag, so it encodes as [1.0, 1] — same scalar as a plain
+    100%-accuracy move, distinguished only by the bit."""
+    mappings = load_mappings()
+    encoder = MovesEncoder(mappings["moves"])
+    mon = MagicMock()
+    mon.moves = {"swift": _make_move("swift", 32, 32)}  # never_miss in mapping
+
+    vec = encoder.encode(mon, None)
+    assert vec[9] == pytest.approx(1.0)  # accuracy 100 / 100
+    assert vec[10] == 1.0                # never_miss flag set
+
+
+def test_moves_encoder_ohko_accuracy():
+    """OHKO moves keep their honest (equal-level) 30% accuracy and are NOT
+    flagged never-miss."""
+    mappings = load_mappings()
+    encoder = MovesEncoder(mappings["moves"])
+    mon = MagicMock()
+    mon.moves = {"fissure": _make_move("fissure", 8, 8)}  # 30% accuracy, ohko
+
+    vec = encoder.encode(mon, None)
+    assert vec[9] == pytest.approx(0.30)
+    assert vec[10] == 0.0
+
+
+def test_moves_encoder_accuracy_empty_slot():
+    """Empty move slot leaves accuracy dims zero (never_miss = 0, accuracy_norm = 0)."""
+    mappings = load_mappings()
+    encoder = MovesEncoder(mappings["moves"])
+    mon = MagicMock()
+    mon.moves = {"surf": _make_move("surf", 24, 24)}
+
+    vec = encoder.encode(mon, None)
+    assert vec[MOVE_SLOT_DIM + 9] == 0.0
+    assert vec[MOVE_SLOT_DIM + 10] == 0.0
+
+
+# ---------------------------------------------------------------------------
 # Hidden Power type/power encoding
 # ---------------------------------------------------------------------------
 

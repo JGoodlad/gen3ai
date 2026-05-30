@@ -6,7 +6,9 @@
         "basePower": 20,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "acid": {
         "name": "Acid",
@@ -15,7 +17,9 @@
         "basePower": 40,
         "target": "allAdjacentFoes",
         "hasSecondary": true,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "acidarmor": {
         "name": "Acid Armor",
@@ -24,7 +28,9 @@
         "basePower": 0,
         "target": "self",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": true
     },
     "aerialace": {
         "name": "Aerial Ace",
@@ -33,7 +39,9 @@
         "basePower": 60,
         "target": "any",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": true
     },
     "aeroblast": {
         "name": "Aeroblast",
@@ -42,7 +50,9 @@
         "basePower": 100,
         "target": "any",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 95,
+        "never_miss": false
     },
     "agility": {
         "name": "Agility",
@@ -51,7 +61,9 @@
         "basePower": 0,
         "target": "self",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": true
     },
     "aircutter": {
         "name": "Air Cutter",
@@ -60,7 +72,9 @@
         "basePower": 55,
         "target": "allAdjacentFoes",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 95,
+        "never_miss": false
     },
     "amnesia": {
         "name": "Amnesia",
@@ -69,7 +83,9 @@
         "basePower": 0,
         "target": "self",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": true
     },
     "ancientpower": {
         "name": "Ancient Power",
@@ -78,7 +94,9 @@
         "basePower": 60,
         "target": "normal",
         "hasSecondary": true,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "armthrust": {
         "name": "Arm Thrust",
@@ -87,7 +105,9 @@
         "basePower": 15,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "aromatherapy": {
         "name": "Aromatherapy",
@@ -96,7 +116,9 @@
         "basePower": 0,
         "target": "allyTeam",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": true
     },
     "assist": {
         "name": "Assist",
@@ -105,7 +127,9 @@
         "basePower": 0,
         "target": "self",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": true
     },
     "astonish": {
         "name": "Astonish",
@@ -114,7 +138,9 @@
         "basePower": 30,
         "target": "normal",
         "hasSecondary": true,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "attract": {
         "name": "Attract",
@@ -123,7 +149,9 @@
         "basePower": 0,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "aurorabeam": {
         "name": "Aurora Beam",
@@ -132,7 +160,9 @@
         "basePower": 65,
         "target": "normal",
         "hasSecondary": true,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "barrage": {
         "name": "Barrage",
@@ -141,7 +171,9 @@
         "basePower": 15,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 85,
+        "never_miss": false
     },
     "barrier": {
         "name": "Barrier",
@@ -150,7 +182,9 @@
         "basePower": 0,
         "target": "self",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": true
     },
     "batonpass": {
         "name": "Baton Pass",
@@ -159,7 +193,9 @@
         "basePower": 0,
         "target": "self",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": true
     },
     "beatup": {
         "name": "Beat Up",
@@ -168,7 +204,9 @@
         "basePower": 10,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "bellydrum": {
         "name": "Belly Drum",
@@ -177,7 +215,9 @@
         "basePower": 0,
         "target": "self",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": true
     },
     "bide": {
         "name": "Bide",
@@ -186,7 +226,9 @@
         "basePower": 0,
         "target": "self",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "bind": {
         "name": "Bind",
@@ -195,7 +237,9 @@
         "basePower": 15,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 75,
+        "never_miss": false
     },
     "bite": {
         "name": "Bite",
@@ -204,7 +248,9 @@
         "basePower": 60,
         "target": "normal",
         "hasSecondary": true,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "blastburn": {
         "name": "Blast Burn",
@@ -213,7 +259,9 @@
         "basePower": 150,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 90,
+        "never_miss": false
     },
     "blazekick": {
         "name": "Blaze Kick",
@@ -222,7 +270,9 @@
         "basePower": 85,
         "target": "normal",
         "hasSecondary": true,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 90,
+        "never_miss": false
     },
     "blizzard": {
         "name": "Blizzard",
@@ -231,7 +281,9 @@
         "basePower": 120,
         "target": "allAdjacentFoes",
         "hasSecondary": true,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 70,
+        "never_miss": false
     },
     "block": {
         "name": "Block",
@@ -240,7 +292,9 @@
         "basePower": 0,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": true
     },
     "bodyslam": {
         "name": "Body Slam",
@@ -249,7 +303,9 @@
         "basePower": 85,
         "target": "normal",
         "hasSecondary": true,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "boneclub": {
         "name": "Bone Club",
@@ -258,7 +314,9 @@
         "basePower": 65,
         "target": "normal",
         "hasSecondary": true,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 85,
+        "never_miss": false
     },
     "bonemerang": {
         "name": "Bonemerang",
@@ -267,7 +325,9 @@
         "basePower": 50,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 90,
+        "never_miss": false
     },
     "bonerush": {
         "name": "Bone Rush",
@@ -276,7 +336,9 @@
         "basePower": 25,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 80,
+        "never_miss": false
     },
     "bounce": {
         "name": "Bounce",
@@ -285,7 +347,9 @@
         "basePower": 85,
         "target": "any",
         "hasSecondary": true,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 85,
+        "never_miss": false
     },
     "brickbreak": {
         "name": "Brick Break",
@@ -294,7 +358,9 @@
         "basePower": 75,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "bubble": {
         "name": "Bubble",
@@ -303,7 +369,9 @@
         "basePower": 20,
         "target": "allAdjacentFoes",
         "hasSecondary": true,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "bubblebeam": {
         "name": "Bubble Beam",
@@ -312,7 +380,9 @@
         "basePower": 65,
         "target": "normal",
         "hasSecondary": true,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "bulkup": {
         "name": "Bulk Up",
@@ -321,7 +391,9 @@
         "basePower": 0,
         "target": "self",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": true
     },
     "bulletseed": {
         "name": "Bullet Seed",
@@ -330,7 +402,9 @@
         "basePower": 10,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "calmmind": {
         "name": "Calm Mind",
@@ -339,7 +413,9 @@
         "basePower": 0,
         "target": "self",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": true
     },
     "camouflage": {
         "name": "Camouflage",
@@ -348,7 +424,9 @@
         "basePower": 0,
         "target": "self",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": true
     },
     "charge": {
         "name": "Charge",
@@ -357,7 +435,9 @@
         "basePower": 0,
         "target": "self",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": true
     },
     "charm": {
         "name": "Charm",
@@ -366,7 +446,9 @@
         "basePower": 0,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "clamp": {
         "name": "Clamp",
@@ -375,7 +457,9 @@
         "basePower": 35,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 75,
+        "never_miss": false
     },
     "cometpunch": {
         "name": "Comet Punch",
@@ -384,7 +468,9 @@
         "basePower": 18,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 85,
+        "never_miss": false
     },
     "confuseray": {
         "name": "Confuse Ray",
@@ -393,7 +479,9 @@
         "basePower": 0,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "confusion": {
         "name": "Confusion",
@@ -402,7 +490,9 @@
         "basePower": 50,
         "target": "normal",
         "hasSecondary": true,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "constrict": {
         "name": "Constrict",
@@ -411,7 +501,9 @@
         "basePower": 10,
         "target": "normal",
         "hasSecondary": true,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "conversion": {
         "name": "Conversion",
@@ -420,7 +512,9 @@
         "basePower": 0,
         "target": "self",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": true
     },
     "conversion2": {
         "name": "Conversion 2",
@@ -429,7 +523,9 @@
         "basePower": 0,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": true
     },
     "cosmicpower": {
         "name": "Cosmic Power",
@@ -438,7 +534,9 @@
         "basePower": 0,
         "target": "self",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": true
     },
     "cottonspore": {
         "name": "Cotton Spore",
@@ -447,7 +545,9 @@
         "basePower": 0,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 85,
+        "never_miss": false
     },
     "counter": {
         "name": "Counter",
@@ -456,7 +556,9 @@
         "basePower": 0,
         "target": "scripted",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "covet": {
         "name": "Covet",
@@ -465,7 +567,9 @@
         "basePower": 40,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "crabhammer": {
         "name": "Crabhammer",
@@ -474,7 +578,9 @@
         "basePower": 90,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 85,
+        "never_miss": false
     },
     "crosschop": {
         "name": "Cross Chop",
@@ -483,7 +589,9 @@
         "basePower": 100,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 80,
+        "never_miss": false
     },
     "crunch": {
         "name": "Crunch",
@@ -492,7 +600,9 @@
         "basePower": 80,
         "target": "normal",
         "hasSecondary": true,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "crushclaw": {
         "name": "Crush Claw",
@@ -501,7 +611,9 @@
         "basePower": 75,
         "target": "normal",
         "hasSecondary": true,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 95,
+        "never_miss": false
     },
     "curse": {
         "name": "Curse",
@@ -510,7 +622,9 @@
         "basePower": 0,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": true
     },
     "cut": {
         "name": "Cut",
@@ -519,7 +633,9 @@
         "basePower": 50,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 95,
+        "never_miss": false
     },
     "defensecurl": {
         "name": "Defense Curl",
@@ -528,7 +644,9 @@
         "basePower": 0,
         "target": "self",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": true
     },
     "destinybond": {
         "name": "Destiny Bond",
@@ -537,7 +655,9 @@
         "basePower": 0,
         "target": "self",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": true
     },
     "detect": {
         "name": "Detect",
@@ -546,7 +666,9 @@
         "basePower": 0,
         "target": "self",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": true
     },
     "dig": {
         "name": "Dig",
@@ -555,7 +677,9 @@
         "basePower": 60,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "disable": {
         "name": "Disable",
@@ -564,7 +688,9 @@
         "basePower": 0,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 55,
+        "never_miss": false
     },
     "dive": {
         "name": "Dive",
@@ -573,7 +699,9 @@
         "basePower": 60,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "dizzypunch": {
         "name": "Dizzy Punch",
@@ -582,7 +710,9 @@
         "basePower": 70,
         "target": "normal",
         "hasSecondary": true,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "doomdesire": {
         "name": "Doom Desire",
@@ -591,7 +721,9 @@
         "basePower": 120,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 85,
+        "never_miss": false
     },
     "doubleedge": {
         "name": "Double-Edge",
@@ -600,7 +732,9 @@
         "basePower": 120,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": true
+        "hasRecoil": true,
+        "accuracy": 100,
+        "never_miss": false
     },
     "doublekick": {
         "name": "Double Kick",
@@ -609,7 +743,9 @@
         "basePower": 30,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "doubleslap": {
         "name": "Double Slap",
@@ -618,7 +754,9 @@
         "basePower": 15,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 85,
+        "never_miss": false
     },
     "doubleteam": {
         "name": "Double Team",
@@ -627,7 +765,9 @@
         "basePower": 0,
         "target": "self",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": true
     },
     "dragonbreath": {
         "name": "Dragon Breath",
@@ -636,7 +776,9 @@
         "basePower": 60,
         "target": "normal",
         "hasSecondary": true,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "dragonclaw": {
         "name": "Dragon Claw",
@@ -645,7 +787,9 @@
         "basePower": 80,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "dragondance": {
         "name": "Dragon Dance",
@@ -654,7 +798,9 @@
         "basePower": 0,
         "target": "self",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": true
     },
     "dragonrage": {
         "name": "Dragon Rage",
@@ -663,7 +809,9 @@
         "basePower": 0,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "dreameater": {
         "name": "Dream Eater",
@@ -672,7 +820,9 @@
         "basePower": 100,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "drillpeck": {
         "name": "Drill Peck",
@@ -681,7 +831,9 @@
         "basePower": 80,
         "target": "any",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "dynamicpunch": {
         "name": "Dynamic Punch",
@@ -690,7 +842,9 @@
         "basePower": 100,
         "target": "normal",
         "hasSecondary": true,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 50,
+        "never_miss": false
     },
     "earthquake": {
         "name": "Earthquake",
@@ -699,7 +853,9 @@
         "basePower": 100,
         "target": "allAdjacent",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "eggbomb": {
         "name": "Egg Bomb",
@@ -708,7 +864,9 @@
         "basePower": 100,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 75,
+        "never_miss": false
     },
     "ember": {
         "name": "Ember",
@@ -717,7 +875,9 @@
         "basePower": 40,
         "target": "normal",
         "hasSecondary": true,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "encore": {
         "name": "Encore",
@@ -726,7 +886,9 @@
         "basePower": 0,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "endeavor": {
         "name": "Endeavor",
@@ -735,7 +897,9 @@
         "basePower": 0,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "endure": {
         "name": "Endure",
@@ -744,7 +908,9 @@
         "basePower": 0,
         "target": "self",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": true
     },
     "eruption": {
         "name": "Eruption",
@@ -753,7 +919,9 @@
         "basePower": 150,
         "target": "allAdjacentFoes",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "explosion": {
         "name": "Explosion",
@@ -762,7 +930,9 @@
         "basePower": 250,
         "target": "allAdjacent",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "extrasensory": {
         "name": "Extrasensory",
@@ -771,7 +941,9 @@
         "basePower": 80,
         "target": "normal",
         "hasSecondary": true,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "extremespeed": {
         "name": "Extreme Speed",
@@ -780,7 +952,9 @@
         "basePower": 80,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "facade": {
         "name": "Facade",
@@ -789,7 +963,9 @@
         "basePower": 70,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "fakeout": {
         "name": "Fake Out",
@@ -798,7 +974,9 @@
         "basePower": 40,
         "target": "normal",
         "hasSecondary": true,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "faketears": {
         "name": "Fake Tears",
@@ -807,7 +985,9 @@
         "basePower": 0,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "falseswipe": {
         "name": "False Swipe",
@@ -816,7 +996,9 @@
         "basePower": 40,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "featherdance": {
         "name": "Feather Dance",
@@ -825,7 +1007,9 @@
         "basePower": 0,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "feintattack": {
         "name": "Feint Attack",
@@ -834,7 +1018,9 @@
         "basePower": 60,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": true
     },
     "fireblast": {
         "name": "Fire Blast",
@@ -843,7 +1029,9 @@
         "basePower": 120,
         "target": "normal",
         "hasSecondary": true,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 85,
+        "never_miss": false
     },
     "firepunch": {
         "name": "Fire Punch",
@@ -852,7 +1040,9 @@
         "basePower": 75,
         "target": "normal",
         "hasSecondary": true,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "firespin": {
         "name": "Fire Spin",
@@ -861,7 +1051,9 @@
         "basePower": 15,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 70,
+        "never_miss": false
     },
     "fissure": {
         "name": "Fissure",
@@ -870,7 +1062,9 @@
         "basePower": 0,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 30,
+        "never_miss": false
     },
     "flail": {
         "name": "Flail",
@@ -879,7 +1073,9 @@
         "basePower": 0,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "flamethrower": {
         "name": "Flamethrower",
@@ -888,7 +1084,9 @@
         "basePower": 95,
         "target": "normal",
         "hasSecondary": true,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "flamewheel": {
         "name": "Flame Wheel",
@@ -897,7 +1095,9 @@
         "basePower": 60,
         "target": "normal",
         "hasSecondary": true,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "flash": {
         "name": "Flash",
@@ -906,7 +1106,9 @@
         "basePower": 0,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 70,
+        "never_miss": false
     },
     "flatter": {
         "name": "Flatter",
@@ -915,7 +1117,9 @@
         "basePower": 0,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "fly": {
         "name": "Fly",
@@ -924,7 +1128,9 @@
         "basePower": 70,
         "target": "any",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 95,
+        "never_miss": false
     },
     "focusenergy": {
         "name": "Focus Energy",
@@ -933,7 +1139,9 @@
         "basePower": 0,
         "target": "self",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": true
     },
     "focuspunch": {
         "name": "Focus Punch",
@@ -942,7 +1150,9 @@
         "basePower": 150,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "followme": {
         "name": "Follow Me",
@@ -951,7 +1161,9 @@
         "basePower": 0,
         "target": "self",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": true
     },
     "foresight": {
         "name": "Foresight",
@@ -960,7 +1172,9 @@
         "basePower": 0,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "frenzyplant": {
         "name": "Frenzy Plant",
@@ -969,7 +1183,9 @@
         "basePower": 150,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 90,
+        "never_miss": false
     },
     "frustration": {
         "name": "Frustration",
@@ -978,7 +1194,9 @@
         "basePower": 0,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "furyattack": {
         "name": "Fury Attack",
@@ -987,7 +1205,9 @@
         "basePower": 15,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 85,
+        "never_miss": false
     },
     "furycutter": {
         "name": "Fury Cutter",
@@ -996,7 +1216,9 @@
         "basePower": 10,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 95,
+        "never_miss": false
     },
     "furyswipes": {
         "name": "Fury Swipes",
@@ -1005,7 +1227,9 @@
         "basePower": 18,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 80,
+        "never_miss": false
     },
     "futuresight": {
         "name": "Future Sight",
@@ -1014,7 +1238,9 @@
         "basePower": 80,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 90,
+        "never_miss": false
     },
     "gigadrain": {
         "name": "Giga Drain",
@@ -1023,7 +1249,9 @@
         "basePower": 60,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "glare": {
         "name": "Glare",
@@ -1032,7 +1260,9 @@
         "basePower": 0,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 75,
+        "never_miss": false
     },
     "grasswhistle": {
         "name": "Grass Whistle",
@@ -1041,7 +1271,9 @@
         "basePower": 0,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 55,
+        "never_miss": false
     },
     "growl": {
         "name": "Growl",
@@ -1050,7 +1282,9 @@
         "basePower": 0,
         "target": "allAdjacentFoes",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "growth": {
         "name": "Growth",
@@ -1059,7 +1293,9 @@
         "basePower": 0,
         "target": "self",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": true
     },
     "grudge": {
         "name": "Grudge",
@@ -1068,7 +1304,9 @@
         "basePower": 0,
         "target": "self",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": true
     },
     "guillotine": {
         "name": "Guillotine",
@@ -1077,7 +1315,9 @@
         "basePower": 0,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 30,
+        "never_miss": false
     },
     "gust": {
         "name": "Gust",
@@ -1086,7 +1326,9 @@
         "basePower": 40,
         "target": "any",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "hail": {
         "name": "Hail",
@@ -1095,7 +1337,9 @@
         "basePower": 0,
         "target": "all",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": true
     },
     "harden": {
         "name": "Harden",
@@ -1104,7 +1348,9 @@
         "basePower": 0,
         "target": "self",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": true
     },
     "haze": {
         "name": "Haze",
@@ -1113,7 +1359,9 @@
         "basePower": 0,
         "target": "all",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": true
     },
     "headbutt": {
         "name": "Headbutt",
@@ -1122,7 +1370,9 @@
         "basePower": 70,
         "target": "normal",
         "hasSecondary": true,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "healbell": {
         "name": "Heal Bell",
@@ -1131,7 +1381,9 @@
         "basePower": 0,
         "target": "allyTeam",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": true
     },
     "heatwave": {
         "name": "Heat Wave",
@@ -1140,7 +1392,9 @@
         "basePower": 100,
         "target": "allAdjacentFoes",
         "hasSecondary": true,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 90,
+        "never_miss": false
     },
     "helpinghand": {
         "name": "Helping Hand",
@@ -1149,7 +1403,9 @@
         "basePower": 0,
         "target": "adjacentAlly",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": true
     },
     "hiddenpower": {
         "name": "Hidden Power",
@@ -1158,7 +1414,9 @@
         "basePower": 0,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "hiddenpowerbug": {
         "name": "Hidden Power Bug",
@@ -1167,7 +1425,9 @@
         "basePower": 70,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "hiddenpowerdark": {
         "name": "Hidden Power Dark",
@@ -1176,7 +1436,9 @@
         "basePower": 70,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "hiddenpowerdragon": {
         "name": "Hidden Power Dragon",
@@ -1185,7 +1447,9 @@
         "basePower": 70,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "hiddenpowerelectric": {
         "name": "Hidden Power Electric",
@@ -1194,7 +1458,9 @@
         "basePower": 70,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "hiddenpowerfighting": {
         "name": "Hidden Power Fighting",
@@ -1203,7 +1469,9 @@
         "basePower": 70,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "hiddenpowerfire": {
         "name": "Hidden Power Fire",
@@ -1212,7 +1480,9 @@
         "basePower": 70,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "hiddenpowerflying": {
         "name": "Hidden Power Flying",
@@ -1221,7 +1491,9 @@
         "basePower": 70,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "hiddenpowerghost": {
         "name": "Hidden Power Ghost",
@@ -1230,7 +1502,9 @@
         "basePower": 70,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "hiddenpowergrass": {
         "name": "Hidden Power Grass",
@@ -1239,7 +1513,9 @@
         "basePower": 70,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "hiddenpowerground": {
         "name": "Hidden Power Ground",
@@ -1248,7 +1524,9 @@
         "basePower": 70,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "hiddenpowerice": {
         "name": "Hidden Power Ice",
@@ -1257,7 +1535,9 @@
         "basePower": 70,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "hiddenpowerpoison": {
         "name": "Hidden Power Poison",
@@ -1266,7 +1546,9 @@
         "basePower": 70,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "hiddenpowerpsychic": {
         "name": "Hidden Power Psychic",
@@ -1275,7 +1557,9 @@
         "basePower": 70,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "hiddenpowerrock": {
         "name": "Hidden Power Rock",
@@ -1284,7 +1568,9 @@
         "basePower": 70,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "hiddenpowersteel": {
         "name": "Hidden Power Steel",
@@ -1293,7 +1579,9 @@
         "basePower": 70,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "hiddenpowerwater": {
         "name": "Hidden Power Water",
@@ -1302,7 +1590,9 @@
         "basePower": 70,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "highjumpkick": {
         "name": "High Jump Kick",
@@ -1311,7 +1601,9 @@
         "basePower": 85,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 90,
+        "never_miss": false
     },
     "hornattack": {
         "name": "Horn Attack",
@@ -1320,7 +1612,9 @@
         "basePower": 65,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "horndrill": {
         "name": "Horn Drill",
@@ -1329,7 +1623,9 @@
         "basePower": 0,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 30,
+        "never_miss": false
     },
     "howl": {
         "name": "Howl",
@@ -1338,7 +1634,9 @@
         "basePower": 0,
         "target": "self",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": true
     },
     "hydrocannon": {
         "name": "Hydro Cannon",
@@ -1347,7 +1645,9 @@
         "basePower": 150,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 90,
+        "never_miss": false
     },
     "hydropump": {
         "name": "Hydro Pump",
@@ -1356,7 +1656,9 @@
         "basePower": 120,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 80,
+        "never_miss": false
     },
     "hyperbeam": {
         "name": "Hyper Beam",
@@ -1365,7 +1667,9 @@
         "basePower": 150,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 90,
+        "never_miss": false
     },
     "hyperfang": {
         "name": "Hyper Fang",
@@ -1374,7 +1678,9 @@
         "basePower": 80,
         "target": "normal",
         "hasSecondary": true,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 90,
+        "never_miss": false
     },
     "hypervoice": {
         "name": "Hyper Voice",
@@ -1383,7 +1689,9 @@
         "basePower": 90,
         "target": "allAdjacentFoes",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "hypnosis": {
         "name": "Hypnosis",
@@ -1392,7 +1700,9 @@
         "basePower": 0,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 60,
+        "never_miss": false
     },
     "iceball": {
         "name": "Ice Ball",
@@ -1401,7 +1711,9 @@
         "basePower": 30,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 90,
+        "never_miss": false
     },
     "icebeam": {
         "name": "Ice Beam",
@@ -1410,7 +1722,9 @@
         "basePower": 95,
         "target": "normal",
         "hasSecondary": true,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "icepunch": {
         "name": "Ice Punch",
@@ -1419,7 +1733,9 @@
         "basePower": 75,
         "target": "normal",
         "hasSecondary": true,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "iciclespear": {
         "name": "Icicle Spear",
@@ -1428,7 +1744,9 @@
         "basePower": 10,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "icywind": {
         "name": "Icy Wind",
@@ -1437,7 +1755,9 @@
         "basePower": 55,
         "target": "allAdjacentFoes",
         "hasSecondary": true,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 95,
+        "never_miss": false
     },
     "imprison": {
         "name": "Imprison",
@@ -1446,7 +1766,9 @@
         "basePower": 0,
         "target": "self",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": true
     },
     "ingrain": {
         "name": "Ingrain",
@@ -1455,7 +1777,9 @@
         "basePower": 0,
         "target": "self",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": true
     },
     "irondefense": {
         "name": "Iron Defense",
@@ -1464,7 +1788,9 @@
         "basePower": 0,
         "target": "self",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": true
     },
     "irontail": {
         "name": "Iron Tail",
@@ -1473,7 +1799,9 @@
         "basePower": 100,
         "target": "normal",
         "hasSecondary": true,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 75,
+        "never_miss": false
     },
     "jumpkick": {
         "name": "Jump Kick",
@@ -1482,7 +1810,9 @@
         "basePower": 70,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 95,
+        "never_miss": false
     },
     "karatechop": {
         "name": "Karate Chop",
@@ -1491,7 +1821,9 @@
         "basePower": 50,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "kinesis": {
         "name": "Kinesis",
@@ -1500,7 +1832,9 @@
         "basePower": 0,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 80,
+        "never_miss": false
     },
     "knockoff": {
         "name": "Knock Off",
@@ -1509,7 +1843,9 @@
         "basePower": 20,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "leafblade": {
         "name": "Leaf Blade",
@@ -1518,7 +1854,9 @@
         "basePower": 70,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "leechlife": {
         "name": "Leech Life",
@@ -1527,7 +1865,9 @@
         "basePower": 20,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "leechseed": {
         "name": "Leech Seed",
@@ -1536,7 +1876,9 @@
         "basePower": 0,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 90,
+        "never_miss": false
     },
     "leer": {
         "name": "Leer",
@@ -1545,7 +1887,9 @@
         "basePower": 0,
         "target": "allAdjacentFoes",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "lick": {
         "name": "Lick",
@@ -1554,7 +1898,9 @@
         "basePower": 20,
         "target": "normal",
         "hasSecondary": true,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "lightscreen": {
         "name": "Light Screen",
@@ -1563,7 +1909,9 @@
         "basePower": 0,
         "target": "allySide",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": true
     },
     "lockon": {
         "name": "Lock-On",
@@ -1572,7 +1920,9 @@
         "basePower": 0,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "lovelykiss": {
         "name": "Lovely Kiss",
@@ -1581,7 +1931,9 @@
         "basePower": 0,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 75,
+        "never_miss": false
     },
     "lowkick": {
         "name": "Low Kick",
@@ -1590,7 +1942,9 @@
         "basePower": 0,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "lusterpurge": {
         "name": "Luster Purge",
@@ -1599,7 +1953,9 @@
         "basePower": 70,
         "target": "normal",
         "hasSecondary": true,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "machpunch": {
         "name": "Mach Punch",
@@ -1608,7 +1964,9 @@
         "basePower": 40,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "magicalleaf": {
         "name": "Magical Leaf",
@@ -1617,7 +1975,9 @@
         "basePower": 60,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": true
     },
     "magiccoat": {
         "name": "Magic Coat",
@@ -1626,7 +1986,9 @@
         "basePower": 0,
         "target": "self",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": true
     },
     "magnitude": {
         "name": "Magnitude",
@@ -1635,7 +1997,9 @@
         "basePower": 0,
         "target": "allAdjacent",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "meanlook": {
         "name": "Mean Look",
@@ -1644,7 +2008,9 @@
         "basePower": 0,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": true
     },
     "meditate": {
         "name": "Meditate",
@@ -1653,7 +2019,9 @@
         "basePower": 0,
         "target": "self",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": true
     },
     "megadrain": {
         "name": "Mega Drain",
@@ -1662,7 +2030,9 @@
         "basePower": 40,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "megahorn": {
         "name": "Megahorn",
@@ -1671,7 +2041,9 @@
         "basePower": 120,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 85,
+        "never_miss": false
     },
     "megakick": {
         "name": "Mega Kick",
@@ -1680,7 +2052,9 @@
         "basePower": 120,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 75,
+        "never_miss": false
     },
     "megapunch": {
         "name": "Mega Punch",
@@ -1689,7 +2063,9 @@
         "basePower": 80,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 85,
+        "never_miss": false
     },
     "memento": {
         "name": "Memento",
@@ -1698,7 +2074,9 @@
         "basePower": 0,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": true
     },
     "metalclaw": {
         "name": "Metal Claw",
@@ -1707,7 +2085,9 @@
         "basePower": 50,
         "target": "normal",
         "hasSecondary": true,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 95,
+        "never_miss": false
     },
     "metalsound": {
         "name": "Metal Sound",
@@ -1716,7 +2096,9 @@
         "basePower": 0,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 85,
+        "never_miss": false
     },
     "meteormash": {
         "name": "Meteor Mash",
@@ -1725,7 +2107,9 @@
         "basePower": 100,
         "target": "normal",
         "hasSecondary": true,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 85,
+        "never_miss": false
     },
     "metronome": {
         "name": "Metronome",
@@ -1734,7 +2118,9 @@
         "basePower": 0,
         "target": "self",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": true
     },
     "milkdrink": {
         "name": "Milk Drink",
@@ -1743,7 +2129,9 @@
         "basePower": 0,
         "target": "self",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": true
     },
     "mimic": {
         "name": "Mimic",
@@ -1752,7 +2140,9 @@
         "basePower": 0,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": true
     },
     "mindreader": {
         "name": "Mind Reader",
@@ -1761,7 +2151,9 @@
         "basePower": 0,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "minimize": {
         "name": "Minimize",
@@ -1770,7 +2162,9 @@
         "basePower": 0,
         "target": "self",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": true
     },
     "mirrorcoat": {
         "name": "Mirror Coat",
@@ -1779,7 +2173,9 @@
         "basePower": 0,
         "target": "scripted",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "mirrormove": {
         "name": "Mirror Move",
@@ -1788,7 +2184,9 @@
         "basePower": 0,
         "target": "self",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": true
     },
     "mist": {
         "name": "Mist",
@@ -1797,7 +2195,9 @@
         "basePower": 0,
         "target": "allySide",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": true
     },
     "mistball": {
         "name": "Mist Ball",
@@ -1806,7 +2206,9 @@
         "basePower": 70,
         "target": "normal",
         "hasSecondary": true,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "moonlight": {
         "name": "Moonlight",
@@ -1815,7 +2217,9 @@
         "basePower": 0,
         "target": "self",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": true
     },
     "morningsun": {
         "name": "Morning Sun",
@@ -1824,7 +2228,9 @@
         "basePower": 0,
         "target": "self",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": true
     },
     "muddywater": {
         "name": "Muddy Water",
@@ -1833,7 +2239,9 @@
         "basePower": 95,
         "target": "allAdjacentFoes",
         "hasSecondary": true,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 85,
+        "never_miss": false
     },
     "mudshot": {
         "name": "Mud Shot",
@@ -1842,7 +2250,9 @@
         "basePower": 55,
         "target": "normal",
         "hasSecondary": true,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 95,
+        "never_miss": false
     },
     "mudslap": {
         "name": "Mud-Slap",
@@ -1851,7 +2261,9 @@
         "basePower": 20,
         "target": "normal",
         "hasSecondary": true,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "mudsport": {
         "name": "Mud Sport",
@@ -1860,7 +2272,9 @@
         "basePower": 0,
         "target": "all",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": true
     },
     "naturepower": {
         "name": "Nature Power",
@@ -1869,7 +2283,9 @@
         "basePower": 0,
         "target": "self",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 95,
+        "never_miss": false
     },
     "needlearm": {
         "name": "Needle Arm",
@@ -1878,7 +2294,9 @@
         "basePower": 60,
         "target": "normal",
         "hasSecondary": true,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "nightmare": {
         "name": "Nightmare",
@@ -1887,7 +2305,9 @@
         "basePower": 0,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": true
     },
     "nightshade": {
         "name": "Night Shade",
@@ -1896,7 +2316,9 @@
         "basePower": 0,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "octazooka": {
         "name": "Octazooka",
@@ -1905,7 +2327,9 @@
         "basePower": 65,
         "target": "normal",
         "hasSecondary": true,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 85,
+        "never_miss": false
     },
     "odorsleuth": {
         "name": "Odor Sleuth",
@@ -1914,7 +2338,9 @@
         "basePower": 0,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "outrage": {
         "name": "Outrage",
@@ -1923,7 +2349,9 @@
         "basePower": 90,
         "target": "randomNormal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "overheat": {
         "name": "Overheat",
@@ -1932,7 +2360,9 @@
         "basePower": 140,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 90,
+        "never_miss": false
     },
     "painsplit": {
         "name": "Pain Split",
@@ -1941,7 +2371,9 @@
         "basePower": 0,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": true
     },
     "payday": {
         "name": "Pay Day",
@@ -1950,7 +2382,9 @@
         "basePower": 40,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "peck": {
         "name": "Peck",
@@ -1959,7 +2393,9 @@
         "basePower": 35,
         "target": "any",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "perishsong": {
         "name": "Perish Song",
@@ -1968,7 +2404,9 @@
         "basePower": 0,
         "target": "all",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": true
     },
     "petaldance": {
         "name": "Petal Dance",
@@ -1977,7 +2415,9 @@
         "basePower": 70,
         "target": "randomNormal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "pinmissile": {
         "name": "Pin Missile",
@@ -1986,7 +2426,9 @@
         "basePower": 14,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 85,
+        "never_miss": false
     },
     "poisonfang": {
         "name": "Poison Fang",
@@ -1995,7 +2437,9 @@
         "basePower": 50,
         "target": "normal",
         "hasSecondary": true,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "poisongas": {
         "name": "Poison Gas",
@@ -2004,7 +2448,9 @@
         "basePower": 0,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 55,
+        "never_miss": false
     },
     "poisonpowder": {
         "name": "Poison Powder",
@@ -2013,7 +2459,9 @@
         "basePower": 0,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 75,
+        "never_miss": false
     },
     "poisonsting": {
         "name": "Poison Sting",
@@ -2022,7 +2470,9 @@
         "basePower": 15,
         "target": "normal",
         "hasSecondary": true,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "poisontail": {
         "name": "Poison Tail",
@@ -2031,7 +2481,9 @@
         "basePower": 50,
         "target": "normal",
         "hasSecondary": true,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "pound": {
         "name": "Pound",
@@ -2040,7 +2492,9 @@
         "basePower": 40,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "powdersnow": {
         "name": "Powder Snow",
@@ -2049,7 +2503,9 @@
         "basePower": 40,
         "target": "allAdjacentFoes",
         "hasSecondary": true,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "present": {
         "name": "Present",
@@ -2058,7 +2514,9 @@
         "basePower": 0,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 90,
+        "never_miss": false
     },
     "protect": {
         "name": "Protect",
@@ -2067,7 +2525,9 @@
         "basePower": 0,
         "target": "self",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": true
     },
     "psybeam": {
         "name": "Psybeam",
@@ -2076,7 +2536,9 @@
         "basePower": 65,
         "target": "normal",
         "hasSecondary": true,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "psychic": {
         "name": "Psychic",
@@ -2085,7 +2547,9 @@
         "basePower": 90,
         "target": "normal",
         "hasSecondary": true,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "psychoboost": {
         "name": "Psycho Boost",
@@ -2094,7 +2558,9 @@
         "basePower": 140,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 90,
+        "never_miss": false
     },
     "psychup": {
         "name": "Psych Up",
@@ -2103,7 +2569,9 @@
         "basePower": 0,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": true
     },
     "psywave": {
         "name": "Psywave",
@@ -2112,7 +2580,9 @@
         "basePower": 0,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 80,
+        "never_miss": false
     },
     "pursuit": {
         "name": "Pursuit",
@@ -2121,7 +2591,9 @@
         "basePower": 40,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "quickattack": {
         "name": "Quick Attack",
@@ -2130,7 +2602,9 @@
         "basePower": 40,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "rage": {
         "name": "Rage",
@@ -2139,7 +2613,9 @@
         "basePower": 20,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "raindance": {
         "name": "Rain Dance",
@@ -2148,7 +2624,9 @@
         "basePower": 0,
         "target": "all",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": true
     },
     "rapidspin": {
         "name": "Rapid Spin",
@@ -2157,7 +2635,9 @@
         "basePower": 20,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "razorleaf": {
         "name": "Razor Leaf",
@@ -2166,7 +2646,9 @@
         "basePower": 55,
         "target": "allAdjacentFoes",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 95,
+        "never_miss": false
     },
     "razorwind": {
         "name": "Razor Wind",
@@ -2175,7 +2657,9 @@
         "basePower": 80,
         "target": "allAdjacentFoes",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "recover": {
         "name": "Recover",
@@ -2184,7 +2668,9 @@
         "basePower": 0,
         "target": "self",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": true
     },
     "recycle": {
         "name": "Recycle",
@@ -2193,7 +2679,9 @@
         "basePower": 0,
         "target": "self",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": true
     },
     "reflect": {
         "name": "Reflect",
@@ -2202,7 +2690,9 @@
         "basePower": 0,
         "target": "allySide",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": true
     },
     "refresh": {
         "name": "Refresh",
@@ -2211,7 +2701,9 @@
         "basePower": 0,
         "target": "self",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": true
     },
     "rest": {
         "name": "Rest",
@@ -2220,7 +2712,9 @@
         "basePower": 0,
         "target": "self",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": true
     },
     "return": {
         "name": "Return",
@@ -2229,7 +2723,9 @@
         "basePower": 0,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "revenge": {
         "name": "Revenge",
@@ -2238,7 +2734,9 @@
         "basePower": 60,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "reversal": {
         "name": "Reversal",
@@ -2247,7 +2745,9 @@
         "basePower": 0,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "roar": {
         "name": "Roar",
@@ -2256,7 +2756,9 @@
         "basePower": 0,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "rockblast": {
         "name": "Rock Blast",
@@ -2265,7 +2767,9 @@
         "basePower": 25,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 80,
+        "never_miss": false
     },
     "rockslide": {
         "name": "Rock Slide",
@@ -2274,7 +2778,9 @@
         "basePower": 75,
         "target": "allAdjacentFoes",
         "hasSecondary": true,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 90,
+        "never_miss": false
     },
     "rocksmash": {
         "name": "Rock Smash",
@@ -2283,7 +2789,9 @@
         "basePower": 20,
         "target": "normal",
         "hasSecondary": true,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "rockthrow": {
         "name": "Rock Throw",
@@ -2292,7 +2800,9 @@
         "basePower": 50,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 90,
+        "never_miss": false
     },
     "rocktomb": {
         "name": "Rock Tomb",
@@ -2301,7 +2811,9 @@
         "basePower": 50,
         "target": "normal",
         "hasSecondary": true,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 80,
+        "never_miss": false
     },
     "roleplay": {
         "name": "Role Play",
@@ -2310,7 +2822,9 @@
         "basePower": 0,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": true
     },
     "rollingkick": {
         "name": "Rolling Kick",
@@ -2319,7 +2833,9 @@
         "basePower": 60,
         "target": "normal",
         "hasSecondary": true,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 85,
+        "never_miss": false
     },
     "rollout": {
         "name": "Rollout",
@@ -2328,7 +2844,9 @@
         "basePower": 30,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 90,
+        "never_miss": false
     },
     "sacredfire": {
         "name": "Sacred Fire",
@@ -2337,7 +2855,9 @@
         "basePower": 100,
         "target": "normal",
         "hasSecondary": true,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 95,
+        "never_miss": false
     },
     "safeguard": {
         "name": "Safeguard",
@@ -2346,7 +2866,9 @@
         "basePower": 0,
         "target": "allySide",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": true
     },
     "sandattack": {
         "name": "Sand Attack",
@@ -2355,7 +2877,9 @@
         "basePower": 0,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "sandstorm": {
         "name": "Sandstorm",
@@ -2364,7 +2888,9 @@
         "basePower": 0,
         "target": "all",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": true
     },
     "sandtomb": {
         "name": "Sand Tomb",
@@ -2373,7 +2899,9 @@
         "basePower": 15,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 70,
+        "never_miss": false
     },
     "scaryface": {
         "name": "Scary Face",
@@ -2382,7 +2910,9 @@
         "basePower": 0,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 90,
+        "never_miss": false
     },
     "scratch": {
         "name": "Scratch",
@@ -2391,7 +2921,9 @@
         "basePower": 40,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "screech": {
         "name": "Screech",
@@ -2400,7 +2932,9 @@
         "basePower": 0,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 85,
+        "never_miss": false
     },
     "secretpower": {
         "name": "Secret Power",
@@ -2409,7 +2943,9 @@
         "basePower": 70,
         "target": "normal",
         "hasSecondary": true,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "seismictoss": {
         "name": "Seismic Toss",
@@ -2418,7 +2954,9 @@
         "basePower": 0,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "selfdestruct": {
         "name": "Self-Destruct",
@@ -2427,7 +2965,9 @@
         "basePower": 200,
         "target": "allAdjacent",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "shadowball": {
         "name": "Shadow Ball",
@@ -2436,7 +2976,9 @@
         "basePower": 80,
         "target": "normal",
         "hasSecondary": true,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "shadowpunch": {
         "name": "Shadow Punch",
@@ -2445,7 +2987,9 @@
         "basePower": 60,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": true
     },
     "sharpen": {
         "name": "Sharpen",
@@ -2454,7 +2998,9 @@
         "basePower": 0,
         "target": "self",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": true
     },
     "sheercold": {
         "name": "Sheer Cold",
@@ -2463,7 +3009,9 @@
         "basePower": 0,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 30,
+        "never_miss": false
     },
     "shockwave": {
         "name": "Shock Wave",
@@ -2472,7 +3020,9 @@
         "basePower": 60,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": true
     },
     "signalbeam": {
         "name": "Signal Beam",
@@ -2481,7 +3031,9 @@
         "basePower": 75,
         "target": "normal",
         "hasSecondary": true,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "silverwind": {
         "name": "Silver Wind",
@@ -2490,7 +3042,9 @@
         "basePower": 60,
         "target": "normal",
         "hasSecondary": true,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "sing": {
         "name": "Sing",
@@ -2499,7 +3053,9 @@
         "basePower": 0,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 55,
+        "never_miss": false
     },
     "sketch": {
         "name": "Sketch",
@@ -2508,7 +3064,9 @@
         "basePower": 0,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": true
     },
     "skillswap": {
         "name": "Skill Swap",
@@ -2517,7 +3075,9 @@
         "basePower": 0,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": true
     },
     "skullbash": {
         "name": "Skull Bash",
@@ -2526,7 +3086,9 @@
         "basePower": 100,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "skyattack": {
         "name": "Sky Attack",
@@ -2535,7 +3097,9 @@
         "basePower": 140,
         "target": "any",
         "hasSecondary": true,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 90,
+        "never_miss": false
     },
     "skyuppercut": {
         "name": "Sky Uppercut",
@@ -2544,7 +3108,9 @@
         "basePower": 85,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 90,
+        "never_miss": false
     },
     "slackoff": {
         "name": "Slack Off",
@@ -2553,7 +3119,9 @@
         "basePower": 0,
         "target": "self",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": true
     },
     "slam": {
         "name": "Slam",
@@ -2562,7 +3130,9 @@
         "basePower": 80,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 75,
+        "never_miss": false
     },
     "slash": {
         "name": "Slash",
@@ -2571,7 +3141,9 @@
         "basePower": 70,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "sleeppowder": {
         "name": "Sleep Powder",
@@ -2580,7 +3152,9 @@
         "basePower": 0,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 75,
+        "never_miss": false
     },
     "sleeptalk": {
         "name": "Sleep Talk",
@@ -2589,7 +3163,9 @@
         "basePower": 0,
         "target": "self",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": true
     },
     "sludge": {
         "name": "Sludge",
@@ -2598,7 +3174,9 @@
         "basePower": 65,
         "target": "normal",
         "hasSecondary": true,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "sludgebomb": {
         "name": "Sludge Bomb",
@@ -2607,7 +3185,9 @@
         "basePower": 90,
         "target": "normal",
         "hasSecondary": true,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "smellingsalts": {
         "name": "Smelling Salts",
@@ -2616,7 +3196,9 @@
         "basePower": 60,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "smog": {
         "name": "Smog",
@@ -2625,7 +3207,9 @@
         "basePower": 20,
         "target": "normal",
         "hasSecondary": true,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 70,
+        "never_miss": false
     },
     "smokescreen": {
         "name": "Smokescreen",
@@ -2634,7 +3218,9 @@
         "basePower": 0,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "snatch": {
         "name": "Snatch",
@@ -2643,7 +3229,9 @@
         "basePower": 0,
         "target": "self",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": true
     },
     "snore": {
         "name": "Snore",
@@ -2652,7 +3240,9 @@
         "basePower": 40,
         "target": "normal",
         "hasSecondary": true,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "softboiled": {
         "name": "Soft-Boiled",
@@ -2661,7 +3251,9 @@
         "basePower": 0,
         "target": "self",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": true
     },
     "solarbeam": {
         "name": "Solar Beam",
@@ -2670,7 +3262,9 @@
         "basePower": 120,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "sonicboom": {
         "name": "Sonic Boom",
@@ -2679,7 +3273,9 @@
         "basePower": 0,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 90,
+        "never_miss": false
     },
     "spark": {
         "name": "Spark",
@@ -2688,7 +3284,9 @@
         "basePower": 65,
         "target": "normal",
         "hasSecondary": true,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "spiderweb": {
         "name": "Spider Web",
@@ -2697,7 +3295,9 @@
         "basePower": 0,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": true
     },
     "spikecannon": {
         "name": "Spike Cannon",
@@ -2706,7 +3306,9 @@
         "basePower": 20,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "spikes": {
         "name": "Spikes",
@@ -2715,7 +3317,9 @@
         "basePower": 0,
         "target": "foeSide",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": true
     },
     "spite": {
         "name": "Spite",
@@ -2724,7 +3328,9 @@
         "basePower": 0,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "spitup": {
         "name": "Spit Up",
@@ -2733,7 +3339,9 @@
         "basePower": 0,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "splash": {
         "name": "Splash",
@@ -2742,7 +3350,9 @@
         "basePower": 0,
         "target": "self",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": true
     },
     "spore": {
         "name": "Spore",
@@ -2751,7 +3361,9 @@
         "basePower": 0,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "steelwing": {
         "name": "Steel Wing",
@@ -2760,7 +3372,9 @@
         "basePower": 70,
         "target": "normal",
         "hasSecondary": true,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 90,
+        "never_miss": false
     },
     "stockpile": {
         "name": "Stockpile",
@@ -2769,7 +3383,9 @@
         "basePower": 0,
         "target": "self",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": true
     },
     "stomp": {
         "name": "Stomp",
@@ -2778,7 +3394,9 @@
         "basePower": 65,
         "target": "normal",
         "hasSecondary": true,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "strength": {
         "name": "Strength",
@@ -2787,7 +3405,9 @@
         "basePower": 80,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "stringshot": {
         "name": "String Shot",
@@ -2796,7 +3416,9 @@
         "basePower": 0,
         "target": "allAdjacentFoes",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 95,
+        "never_miss": false
     },
     "struggle": {
         "name": "Struggle",
@@ -2805,7 +3427,9 @@
         "basePower": 50,
         "target": "randomNormal",
         "hasSecondary": false,
-        "hasRecoil": true
+        "hasRecoil": true,
+        "accuracy": 100,
+        "never_miss": false
     },
     "stunspore": {
         "name": "Stun Spore",
@@ -2814,7 +3438,9 @@
         "basePower": 0,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 75,
+        "never_miss": false
     },
     "submission": {
         "name": "Submission",
@@ -2823,7 +3449,9 @@
         "basePower": 80,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": true
+        "hasRecoil": true,
+        "accuracy": 80,
+        "never_miss": false
     },
     "substitute": {
         "name": "Substitute",
@@ -2832,7 +3460,9 @@
         "basePower": 0,
         "target": "self",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": true
     },
     "sunnyday": {
         "name": "Sunny Day",
@@ -2841,7 +3471,9 @@
         "basePower": 0,
         "target": "all",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": true
     },
     "superfang": {
         "name": "Super Fang",
@@ -2850,7 +3482,9 @@
         "basePower": 0,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 90,
+        "never_miss": false
     },
     "superpower": {
         "name": "Superpower",
@@ -2859,7 +3493,9 @@
         "basePower": 120,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "supersonic": {
         "name": "Supersonic",
@@ -2868,7 +3504,9 @@
         "basePower": 0,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 55,
+        "never_miss": false
     },
     "surf": {
         "name": "Surf",
@@ -2877,7 +3515,9 @@
         "basePower": 95,
         "target": "allAdjacentFoes",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "swagger": {
         "name": "Swagger",
@@ -2886,7 +3526,9 @@
         "basePower": 0,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 90,
+        "never_miss": false
     },
     "swallow": {
         "name": "Swallow",
@@ -2895,7 +3537,9 @@
         "basePower": 0,
         "target": "self",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": true
     },
     "sweetkiss": {
         "name": "Sweet Kiss",
@@ -2904,7 +3548,9 @@
         "basePower": 0,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 75,
+        "never_miss": false
     },
     "sweetscent": {
         "name": "Sweet Scent",
@@ -2913,7 +3559,9 @@
         "basePower": 0,
         "target": "allAdjacentFoes",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "swift": {
         "name": "Swift",
@@ -2922,7 +3570,9 @@
         "basePower": 60,
         "target": "allAdjacentFoes",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": true
     },
     "swordsdance": {
         "name": "Swords Dance",
@@ -2931,7 +3581,9 @@
         "basePower": 0,
         "target": "self",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": true
     },
     "synthesis": {
         "name": "Synthesis",
@@ -2940,7 +3592,9 @@
         "basePower": 0,
         "target": "self",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": true
     },
     "tackle": {
         "name": "Tackle",
@@ -2949,7 +3603,9 @@
         "basePower": 35,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 95,
+        "never_miss": false
     },
     "tailglow": {
         "name": "Tail Glow",
@@ -2958,7 +3614,9 @@
         "basePower": 0,
         "target": "self",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": true
     },
     "tailwhip": {
         "name": "Tail Whip",
@@ -2967,7 +3625,9 @@
         "basePower": 0,
         "target": "allAdjacentFoes",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "takedown": {
         "name": "Take Down",
@@ -2976,7 +3636,9 @@
         "basePower": 90,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": true
+        "hasRecoil": true,
+        "accuracy": 85,
+        "never_miss": false
     },
     "taunt": {
         "name": "Taunt",
@@ -2985,7 +3647,9 @@
         "basePower": 0,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "teeterdance": {
         "name": "Teeter Dance",
@@ -2994,7 +3658,9 @@
         "basePower": 0,
         "target": "allAdjacent",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "teleport": {
         "name": "Teleport",
@@ -3003,7 +3669,9 @@
         "basePower": 0,
         "target": "self",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": true
     },
     "thief": {
         "name": "Thief",
@@ -3012,7 +3680,9 @@
         "basePower": 40,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "thrash": {
         "name": "Thrash",
@@ -3021,7 +3691,9 @@
         "basePower": 90,
         "target": "randomNormal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "thunder": {
         "name": "Thunder",
@@ -3030,7 +3702,9 @@
         "basePower": 120,
         "target": "normal",
         "hasSecondary": true,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 70,
+        "never_miss": false
     },
     "thunderbolt": {
         "name": "Thunderbolt",
@@ -3039,7 +3713,9 @@
         "basePower": 95,
         "target": "normal",
         "hasSecondary": true,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "thunderpunch": {
         "name": "Thunder Punch",
@@ -3048,7 +3724,9 @@
         "basePower": 75,
         "target": "normal",
         "hasSecondary": true,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "thundershock": {
         "name": "Thunder Shock",
@@ -3057,7 +3735,9 @@
         "basePower": 40,
         "target": "normal",
         "hasSecondary": true,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "thunderwave": {
         "name": "Thunder Wave",
@@ -3066,7 +3746,9 @@
         "basePower": 0,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "tickle": {
         "name": "Tickle",
@@ -3075,7 +3757,9 @@
         "basePower": 0,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "torment": {
         "name": "Torment",
@@ -3084,7 +3768,9 @@
         "basePower": 0,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "toxic": {
         "name": "Toxic",
@@ -3093,7 +3779,9 @@
         "basePower": 0,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 85,
+        "never_miss": false
     },
     "transform": {
         "name": "Transform",
@@ -3102,7 +3790,9 @@
         "basePower": 0,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": true
     },
     "triattack": {
         "name": "Tri Attack",
@@ -3111,7 +3801,9 @@
         "basePower": 80,
         "target": "normal",
         "hasSecondary": true,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "trick": {
         "name": "Trick",
@@ -3120,7 +3812,9 @@
         "basePower": 0,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "triplekick": {
         "name": "Triple Kick",
@@ -3129,7 +3823,9 @@
         "basePower": 10,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 90,
+        "never_miss": false
     },
     "twineedle": {
         "name": "Twineedle",
@@ -3138,7 +3834,9 @@
         "basePower": 25,
         "target": "normal",
         "hasSecondary": true,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "twister": {
         "name": "Twister",
@@ -3147,7 +3845,9 @@
         "basePower": 40,
         "target": "allAdjacentFoes",
         "hasSecondary": true,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "uproar": {
         "name": "Uproar",
@@ -3156,7 +3856,9 @@
         "basePower": 50,
         "target": "randomNormal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "vinewhip": {
         "name": "Vine Whip",
@@ -3165,7 +3867,9 @@
         "basePower": 35,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "visegrip": {
         "name": "Vise Grip",
@@ -3174,7 +3878,9 @@
         "basePower": 55,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "vitalthrow": {
         "name": "Vital Throw",
@@ -3183,7 +3889,9 @@
         "basePower": 70,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": true
     },
     "volttackle": {
         "name": "Volt Tackle",
@@ -3192,7 +3900,9 @@
         "basePower": 120,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": true
+        "hasRecoil": true,
+        "accuracy": 100,
+        "never_miss": false
     },
     "waterfall": {
         "name": "Waterfall",
@@ -3201,7 +3911,9 @@
         "basePower": 80,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "watergun": {
         "name": "Water Gun",
@@ -3210,7 +3922,9 @@
         "basePower": 40,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "waterpulse": {
         "name": "Water Pulse",
@@ -3219,7 +3933,9 @@
         "basePower": 60,
         "target": "any",
         "hasSecondary": true,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "watersport": {
         "name": "Water Sport",
@@ -3228,7 +3944,9 @@
         "basePower": 0,
         "target": "all",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": true
     },
     "waterspout": {
         "name": "Water Spout",
@@ -3237,7 +3955,9 @@
         "basePower": 150,
         "target": "allAdjacentFoes",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "weatherball": {
         "name": "Weather Ball",
@@ -3246,7 +3966,9 @@
         "basePower": 50,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "whirlpool": {
         "name": "Whirlpool",
@@ -3255,7 +3977,9 @@
         "basePower": 15,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 70,
+        "never_miss": false
     },
     "whirlwind": {
         "name": "Whirlwind",
@@ -3264,7 +3988,9 @@
         "basePower": 0,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "willowisp": {
         "name": "Will-O-Wisp",
@@ -3273,7 +3999,9 @@
         "basePower": 0,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 75,
+        "never_miss": false
     },
     "wingattack": {
         "name": "Wing Attack",
@@ -3282,7 +4010,9 @@
         "basePower": 60,
         "target": "any",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": false
     },
     "wish": {
         "name": "Wish",
@@ -3291,7 +4021,9 @@
         "basePower": 0,
         "target": "self",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": true
     },
     "withdraw": {
         "name": "Withdraw",
@@ -3300,7 +4032,9 @@
         "basePower": 0,
         "target": "self",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": true
     },
     "wrap": {
         "name": "Wrap",
@@ -3309,7 +4043,9 @@
         "basePower": 15,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 85,
+        "never_miss": false
     },
     "yawn": {
         "name": "Yawn",
@@ -3318,7 +4054,9 @@
         "basePower": 0,
         "target": "normal",
         "hasSecondary": false,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 100,
+        "never_miss": true
     },
     "zapcannon": {
         "name": "Zap Cannon",
@@ -3327,6 +4065,8 @@
         "basePower": 100,
         "target": "normal",
         "hasSecondary": true,
-        "hasRecoil": false
+        "hasRecoil": false,
+        "accuracy": 50,
+        "never_miss": false
     }
 }

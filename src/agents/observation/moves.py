@@ -92,6 +92,18 @@ class MovesEncoder(ObservationEncoder):
                 vec[base_idx + 7] = float(move.current_pp) / MAX_PP
                 vec[base_idx + 8] = float(move.max_pp) / MAX_PP
 
+                # 10-11. Accuracy normalized to [0, 1] (raw% / 100) plus a
+                # categorical never_miss bit. Never-miss moves carry accuracy=100 in
+                # the mapping, so they encode as [1.0, 1] while a genuine
+                # 100%-accuracy move encodes as [1.0, 0]: same scalar, distinguished
+                # only by the bit. A 100%-accuracy move can still miss into evasion
+                # (Double Team) or after Sand-Attack, whereas a never-miss move
+                # (Swift, Aerial Ace, all status/self moves) bypasses the
+                # accuracy/evasion check entirely — a kind difference, not a 1% one,
+                # so it gets its own bit rather than the "101" trick.
+                vec[base_idx + 9] = float(entry.get("accuracy", 100)) / 100.0
+                vec[base_idx + 10] = 1.0 if entry.get("never_miss") else 0.0
+
         return vec
 
     def get_layout(self) -> Dict[str, Any]:
@@ -106,7 +118,9 @@ class MovesEncoder(ObservationEncoder):
                 "category": {"offset": 5, "dim": 1},
                 "known": {"offset": 6, "dim": 1},
                 "current_pp": {"offset": 7, "dim": 1},
-                "max_pp": {"offset": 8, "dim": 1}
+                "max_pp": {"offset": 8, "dim": 1},
+                "accuracy": {"offset": 9, "dim": 1},
+                "never_miss": {"offset": 10, "dim": 1}
             }
         }
 
