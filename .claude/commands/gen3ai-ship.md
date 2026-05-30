@@ -65,6 +65,36 @@ git rebase origin/main
 Never use `git checkout --ours` or `--theirs` without first verifying the files are
 truly identical or that the discarded side has no intentional changes.
 
+### 4b. Review what the rebase pulled in — even on a *clean* rebase
+
+A clean rebase only means there were no **textual** conflicts. Concurrent commits can
+still make your change **semantically stale**: another commit may have shifted a shared
+dimension constant, bumped an architecture signature, or edited the same doc/test you
+touched — so your replayed change no longer agrees with the tree even though git merged
+it without complaint.
+
+Whenever the rebase replayed your work on top of new commits, before pushing:
+
+1. **List what landed:** `git log --oneline HEAD@{1}..origin/main`, then `git show <sha>`
+   (or `git diff HEAD@{1}..HEAD --stat`) to see what each new commit actually changed.
+2. **Cross-check against your change.** For each new commit, ask whether it touches
+   anything your change *depends on, shares, or documents*:
+   - shared constants / dims / layout (`MOVE_SLOT_DIM`, `TURN_DELTA_DIM`, obs dim,
+     `POKEMON_FULL_DIM`, `ARCH_SIGNATURE`, …)
+   - the same file, doc section, or test you edited — especially `CLAUDE.md` / `README`
+     dimension tables and `*_test.py` expected-dim assertions
+   - the same observation / architecture pipeline, even in a *different region* of it
+3. **Reconcile if needed.** If anything is now inconsistent, update your change so the
+   combined tree is correct and self-consistent. Recompute numbers (dims, totals, doc
+   tables) from the **live code**, not from memory or from your pre-rebase values — query
+   the encoder/constants directly. Fold the fix into the same commit with
+   `git commit --amend`, not a separate "fix rebase" commit.
+4. **Re-run the unit suite on the rebased tree** — passing in isolation before the rebase
+   is not proof the *combined* state is sound:
+   ```bash
+   export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 -m pytest src/ -m "not integration and not e2e" -q
+   ```
+
 ### 5. Push to remote main
 
 ```bash
