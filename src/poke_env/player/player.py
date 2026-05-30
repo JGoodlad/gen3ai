@@ -72,6 +72,7 @@ class Player(ABC):
         loop: asyncio.AbstractEventLoop = POKE_LOOP,
         team: Optional[Union[str, Teambuilder]] = None,
         strict_battle_tracking: bool = False,
+        battle_class: type[AbstractBattle] = Battle,
     ):
         """
         :param account_configuration: Player configuration. If empty, defaults to an
@@ -142,6 +143,11 @@ class Player(ABC):
         self._team: Optional[Teambuilder] = None
         self._current_packed_team: str | None = None
         self._strict_battle_tracking = strict_battle_tracking
+        # gen3ai: which Battle subclass to instantiate for new (singles) battles.
+        # Defaults to poke-env's Battle; our players pass Gen3Battle to get the
+        # revealed-order event log for free. The doubles path always uses
+        # DoubleBattle (event sourcing is gen3ou singles only).
+        self._battle_class = battle_class
 
         if isinstance(team, Teambuilder):
             self._team = team
@@ -207,7 +213,7 @@ class Player(ABC):
                         gen=gen,
                     )
                 else:
-                    battle = Battle(
+                    battle = self._battle_class(
                         battle_tag=battle_tag,
                         username=self.username,
                         logger=self.logger,

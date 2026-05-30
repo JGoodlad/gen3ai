@@ -93,6 +93,7 @@ export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable
 export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 src/agents/action/fuzz_e2e_test.py
 export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 src/agents/action/telemetry_e2e_test.py
 export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 src/agents/training/poke_env_gaps/transition_fuzz_e2e_test.py [n_battles]
+export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 src/agents/battle/event_log_fuzz_e2e_test.py [n_battles]
 ```
 
 ### What "fuzz test" means in this project
@@ -244,6 +245,7 @@ src/
     observation/     # Observation encoders (state_encoder, pokemon, moves, etc.)
     action/          # Action masking and mapping
     training/        # Callbacks and reward manager
+    battle/          # Event-sourced battle layer (Gen3Battle, BattleEvent log, TurnView)
   main/
     launcher/          # Restart loop + Rich TUI (preferred for long runs)
                      #   checkpoint.py, worktree.py, child.py, input.py,
@@ -375,6 +377,53 @@ Training requires JSON mapping files in `data/pokemon/`:
 - `gen3_abilities.json` — ability ID → `{num}`
 
 These are loaded at startup and will raise `FileNotFoundError` / `ValueError` if missing or empty.
+
+---
+
+## Event-Sourced Battle Layer (`src/agents/battle/`, ai_v4)
+
+poke-env is a **state tracker** — each `|...|` protocol line overwrites "current board"
+fields. RL/reward/replay need the opposite: *what happened, in order*. The event-sourced
+layer captures that without reimplementing poke-env (design:
+`designs/ai_v4/design_event_sourced_battle.md`). **Status: steps 1–2 implemented** (event
+log + completeness/conservation + ergonomic per-turn read model). The `TurnDelta`/reward
+fold onto it (step 5) is not done yet — nothing in training consumes the log yet, so this
+layer is currently additive and obs/reward-neutral.
+
+- **`Gen3Battle(Battle)`** (`gen3_battle.py`) — subclasses poke-env's singles `Battle`.
+  Its `parse_message` override classifies each line, calls `super().parse_message`
+  (state tracking is **verbatim** poke-env), then appends a `BattleEvent` with
+  attribution resolved **before** the line mutates state. State-equivalence with the
+  classic `Battle` is structural (every line still flows through `super()`).
+- **`BattleEvent` / `EventKind` / `MESSAGE_POLICY`** (`battle_event.py`) — the immutable,
+  ordered schema and the completeness registry. Every protocol keyword poke-env can emit
+  is classified `EVENT` / `STATE_ONLY` / `CONTROL` / `COSMETIC` / `UNSUPPORTED`; an
+  unclassified or non-gen3 keyword **raises** (a deliberate tripwire). The conservation
+  invariant (`Gen3Battle.assert_conservation()`) proves no line is silently dropped.
+- **`TurnView`** (`turn_view.py`) — the **history** read surface ("what happened, in
+  order"). Folds one turn's events into per-side intent (`move_id`, `switched`,
+  `cant_reason`/`cant_move`, `crit`/`missed`/`failed`, `effectiveness`, `damaging_move`,
+  `status_applied`/`status_cured`, `item_lost`/`item_gained`) + turn-level facts
+  (`move_order`, `we_moved_first`, `both_attacked`, `someone_fainted`,
+  `damage_on(species, side=…)`). This is what `TurnDelta` and the reward manager will
+  read once step 5 lands, replacing the diff-based heuristics.
+- **`LiveView` / `LiveSide` / `LivePokemon`** (`live_view.py`) — the **current-board** read
+  surface ("what is true now"), built via `battle.live_view()`. An immutable snapshot of
+  HP, status, boosts, revealed moves/item/ability, volatiles, hazards, weather, team
+  sizes/reveal counts — holding **only primitives, no past-turn state** and no reference
+  back to poke-env's `Pokemon`. A consumer literally cannot reach `last_move` through it,
+  so current-state and history come from two disjoint, separately-fuzzed sources that
+  can't drift. Opponent fields are reveal-gated (unknown item → `None`, only revealed
+  moves listed; `ability` is `None` unless disclosed or uniquely inferable from species).
+- **Injection seam:** `poke_env.player.Player.__init__` takes `battle_class=Battle`
+  (default); our players pass `battle_class=Gen3Battle`. This is the only edit to the
+  poke-env core besides the (unchanged) parser.
+
+**Verification:** unit tests in `src/agents/battle/*_test.py` (schema, registry audit,
+scripted parse + state-equivalence, TurnView fold). The spine is
+`event_log_fuzz_e2e_test.py` — real `gen3ou` battles where both players run `Gen3Battle`;
+it independently re-derives each turn from the intercepted raw protocol and asserts the
+event log matches, plus conservation + event-kind coverage.
 
 ---
 
