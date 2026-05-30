@@ -11,7 +11,7 @@ Usage:
     python3 src/main/visualize_arch.py --out /tmp/x.onnx
     python3 src/main/visualize_arch.py --torchview      # also emit a graphviz .gv source
 
-Then open https://netron.app and drop the .onnx file in.
+The script prints step-by-step instructions (with the absolute file path) on exit.
 """
 from __future__ import annotations
 
@@ -55,6 +55,10 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--out", default="models/_arch/gen3_arch.onnx")
     ap.add_argument("--torchview", action="store_true", help="also write a graphviz .gv source")
+    ap.add_argument("--serve", action="store_true",
+                    help="host the graph with Netron's built-in server (view in a browser, "
+                         "no manual file-picking). Binds 0.0.0.0 so you can SSH-tunnel from a laptop.")
+    ap.add_argument("--port", type=int, default=8082, help="port for --serve (default 8082)")
     args = ap.parse_args()
 
     extractor, obs_space = build_extractor()
@@ -65,7 +69,8 @@ def main() -> None:
     dummy_obs = torch.zeros(1, obs_dim, dtype=torch.float32)
     dummy_mask = torch.ones(1, 11, dtype=torch.float32)
 
-    os.makedirs(os.path.dirname(os.path.abspath(args.out)), exist_ok=True)
+    out_abs = os.path.abspath(args.out)
+    os.makedirs(os.path.dirname(out_abs), exist_ok=True)
     torch.onnx.export(
         wrapper,
         (dummy_obs, dummy_mask),
@@ -76,8 +81,56 @@ def main() -> None:
         opset_version=17,
         do_constant_folding=True,
     )
-    print(f"[arch] wrote ONNX -> {args.out}")
-    print("[arch] open https://netron.app and drag this file in.")
+
+    if args.serve:
+        _serve(out_abs, args.port)
+        return
+
+    print()
+    print("=" * 70)
+    print("  Architecture exported. To view it:")
+    print("=" * 70)
+    print("  Easiest (no file-picking): re-run with --serve and open the link")
+    print("  it prints. Otherwise, view the file manually:")
+    print("    1. Open  https://netron.app")
+    print("    2. Drag this file onto the page (or 'Open Model...'):")
+    print(f"         {out_abs}")
+    print("=" * 70)
+
+
+def _serve(model_path: str, port: int) -> None:
+    """Host the model with Netron's server so a browser link 'just works'."""
+    import socket
+    import time
+
+    import netron
+
+    host = "0.0.0.0"
+    netron.start(model_path, address=(host, port), browse=False)
+
+    fqdn = socket.getfqdn()
+    hostname = socket.gethostname()
+    print()
+    print("=" * 70)
+    print(f"  Netron is serving the graph (bound 0.0.0.0:{port}).")
+    print("=" * 70)
+    print(f"  On this machine:        http://localhost:{port}")
+    print(f"  From another box (LAN):  http://{fqdn}:{port}")
+    print("                          (e.g. http://goodlad-desktop.local:%d)" % port)
+    print()
+    print("  If the LAN URL is blocked, it's the firewall — allow the port:")
+    print(f"      sudo ufw allow {port}/tcp")
+    print("  Or fall back to an SSH tunnel, then browse http://localhost:%d:" % port)
+    print(f"      ssh -N -L {port}:localhost:{port} {hostname}")
+    print()
+    print("  Ctrl-C to stop the server.")
+    print("=" * 70)
+    try:
+        while True:
+            time.sleep(3600)
+    except KeyboardInterrupt:
+        netron.stop()
+        print("\n[arch] server stopped.")
 
     if args.torchview:
         from torchview import draw_graph
