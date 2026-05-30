@@ -291,6 +291,15 @@ async def main():
     parser.add_argument("--debug", action="store_true", help="Use DummyVecEnv (1 env) for debugging")
     parser.add_argument("--n-envs", type=int, default=32, help="Number of parallel environments")
     parser.add_argument("--device", type=str, default="auto", help="Device to use (cpu, cuda, or auto)")
+    parser.add_argument(
+        "--self-play-use-cpu",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="Load self-play opponent snapshots on CPU instead of the training device. "
+             "Default True: avoids one CUDA context per SubprocVecEnv worker (~300-600 MB each), "
+             "which would otherwise OOM the GPU at high --n-envs. Opponent inference is batch-1 "
+             "no_grad, so CPU is plenty fast. Pass --no-self-play-use-cpu to load them on --device.",
+    )
     parser.add_argument("--eval-battles", type=int, default=100, help="Battles per evaluation opponent")
     parser.add_argument("--eval-concurrency", type=int, default=100, help="Concurrent battles during evaluation")
     parser.add_argument("--seed", type=int, default=42, help="Random seed for reproducibility")
@@ -369,7 +378,7 @@ async def main():
         print(f"[Opponents] --use-v2-bots: training pool = {len(OPPONENT_CLASSES)} bots "
               f"({', '.join(opponent_name(c) for c in OPPONENT_CLASSES)})")
 
-    def create_training_env_random(idx, stall_config=None, snapshot_path=None, device="auto"):
+    def create_training_env_random(idx, stall_config=None, snapshot_path=None, opponent_device="auto"):
         def _init():
             try:
                 ts = datetime.now().strftime('%H%M%S')
@@ -391,7 +400,7 @@ async def main():
 
                 if snapshot_path is not None:
                     from sb3_contrib import MaskablePPO as _PPO
-                    pool_model = _PPO.load(snapshot_path, device=device)
+                    pool_model = _PPO.load(snapshot_path, device=opponent_device)
                     opponent = RLPlayer(
                         model=pool_model,
                         team=opponent_teambuilder,
@@ -482,6 +491,13 @@ async def main():
     else:
         _n_pool_envs = 0
 
+    opponent_device = "cpu" if args.self_play_use_cpu else args.device
+    if _n_pool_envs > 0:
+        emit(
+            f"🧠 [SELFPLAY] Opponent snapshots load on '{opponent_device}' "
+            f"({'CPU — avoids per-worker CUDA contexts' if args.self_play_use_cpu else 'training device'})"
+        )
+
     def _make_factories():
         factories = []
         pool_entries = []
@@ -491,7 +507,9 @@ async def main():
         for i in range(n_envs):
             snap = pool_entries[i] if i < len(pool_entries) else None
             factories.append(
-                create_training_env_random(i, stall_config=stall_cfg, snapshot_path=snap, device=args.device)
+                create_training_env_random(
+                    i, stall_config=stall_cfg, snapshot_path=snap, opponent_device=opponent_device
+                )
             )
         return factories
 
