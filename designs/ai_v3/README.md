@@ -9,11 +9,11 @@ flowchart TD
     OBS["Observation · 1309-dim float32"]
 
     OBS --> BASE["Base obs · 1103-dim"]
-    OBS --> PM["prev_mask · 11-dim\n(previous turn's action mask)"]
+    OBS --> PM["prev_mask · 11-dim\n(previous turn's action mask;\nmove bits reordered action→sorted-by-id\nin EpisodeTracker.prev_mask)"]
     OBS --> HIST["Turn history · 195-dim\n(5 × 39-dim TurnDelta, oldest first)"]
 
     PM --> SW["switch_mask [0:6]\nbench slot validity"]
-    PM --> MV["move_mask [6:10]\nmove slot validity"]
+    PM --> MV["move_mask [6:10]\nmove slot validity\n(sorted-by-id order, aligned to move embeddings)"]
     PM --> STR["struggle_mask [10]"]
 
     BASE --> TEAM["Pokémon vectors\n[B, 12, 62]  our + opp team"]
@@ -33,7 +33,7 @@ flowchart TD
 
     EMB --> MPIN
 
-    MV --> MPIN["Move Processor input · [B, 12, 4, 58]\nmove_emb·16 + type_emb·16\nremnants·6 + known·1\ncontext·12 + matchups·6 + validity·1\n(validity=active mon's mask; bench gets 1s)"]
+    MV --> MPIN["Move Processor input · [B, 12, 4, 58]\nmove_emb·16 + type_emb·16\nremnants·6 + known·1\ncontext·12 + matchups·6 + validity·1\n(validity=active mon's mask in SORTED move order;\nbench gets 1s)"]
     MATCH --> MPIN
     GLOBAL --> MPIN
 
@@ -101,6 +101,30 @@ flowchart TD
     LN --> PROJ["Projection\nLinear 576→512 → ReLU\n(576 auto-discovered via dummy forward in __init__)"]
     PROJ --> OUT["Features · [B, 512]\n→ policy head + value head"]
 ```
+
+## Ordering integrity (move-validity alignment)
+
+The feature extractor reads each mon's move slots in **sorted-by-id** order
+(`MovesEncoder` → `get_sorted_moves`), but the action mask / mapper index moves
+in **request order**. The per-move validity bit must therefore be reordered into
+sorted order before it reaches the move processor — otherwise the "is this move
+legal" bit lands on a *different* move's embedding (silent when all moves are
+legal, wrong on disabled / zero-PP / Taunt turns).
+
+- **Fix:** `EpisodeTracker.prev_mask` reorders the move bits action→sorted before
+  the obs is built (`reorder_move_bits_to_sorted` in
+  `agents/action/ordering_integrity.py`), validated in place.
+- **Always-on guards** (raise `OrderingMismatchError`, in training + inference):
+  - *sorted-validity correctness* — `assert_sorted_validity_correct` at
+    `prev_mask` construction.
+  - *team/switch alignment* — `check_switch_ordering_alignment` in `get_mask`
+    (mask/mapper team order == encoder `get_team_list` order).
+  - *outcome vs intent* — `check_outcome_matches_intent` at the live TurnDelta
+    site (`EpisodeTracker.build_delta`, `RewardTracker.complete_pending`): the
+    move the chosen action maps to must equal what the protocol says fired,
+    excepting `cant`/forced-switch turns.
+- Switches need no reorder: action index, switch-validity bit, and per-Pokémon
+  obs slot all share the single `list(battle.team.values())` ordering.
 
 ## Dimension Reference
 

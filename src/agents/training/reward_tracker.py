@@ -1,5 +1,6 @@
 import numpy as np
 
+from agents.action.ordering_integrity import check_outcome_matches_intent
 from agents.training.battle_context import BattleContext, TurnDelta
 from agents.training.reward_function import RewardFunction
 from agents.training.reward_manager import Gen3RewardManager
@@ -53,6 +54,9 @@ class RewardTracker:
         use them for its JSON outcome entry without re-computing.
         """
         delta = TurnDelta.build(self._pending_ctx, curr_ctx, self._pending_action)
+        check_outcome_matches_intent(
+            self._pending_ctx.active_move_ids, delta, self._pending_action
+        )
         self._reward_fn.record_action(self._pending_ctx, self._pending_action)
         reward = self._reward_fn.process_turn_reward(battle, delta)
         self._total_reward += reward

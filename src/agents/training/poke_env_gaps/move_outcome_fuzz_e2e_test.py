@@ -60,7 +60,7 @@ from agents.observation.turn_delta_encoder import (
     _CANT_TO_IDX,
     _normalize_cant_reason,
 )
-from agents.training.battle_context import BattleContext, TurnDelta
+from agents.training.battle_context import BattleContext, TurnDelta, SELF_KO_MOVES
 from agents.training.slot_registry import SlotRegistry
 from utils.teambuilder import Gen3Teambuilder
 
@@ -75,6 +75,62 @@ BATTLE_FORMAT = "gen3ou"
 #             Rock Slide (flinch), Hyper Beam (recharge), Slaking (Truant),
 #             Gengar Taunt (opp status-move lock)
 # ---------------------------------------------------------------------------
+
+EDGE_TEAM = """\
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+- Shadow Ball
+- Thunderbolt
+- Ice Punch
+- Explosion
+
+Cloyster @ Leftovers
+Ability: Shell Armor
+EVs: 252 HP / 4 Atk / 252 Def
+Bold Nature
+- Spikes
+- Surf
+- Ice Beam
+- Explosion
+
+Forretress @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 252 Atk / 4 Def
+Brave Nature
+- Spikes
+- Rapid Spin
+- Earthquake
+- Explosion
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 236 Atk / 20 Spe
+Adamant Nature
+- Meteor Mash
+- Earthquake
+- Explosion
+- Brick Break
+
+Jolteon @ Leftovers
+Ability: Volt Absorb
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+- Thunderbolt
+- Hidden Power Ice
+- Substitute
+- Baton Pass
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 252 HP / 40 Atk / 216 SpD
+Careful Nature
+- Rock Slide
+- Earthquake
+- Crunch
+- Fire Blast
+"""
 
 VARIANCE_TEAM = """\
 Slaking @ Choice Band
@@ -190,6 +246,12 @@ class ScenarioStats:
     fail_seen: int = 0
     hit_seen: int = 0
     cant_reasons_seen: set = field(default_factory=set)
+
+    # --- Faint / self-faint edge-case coverage + correctness ---
+    explosion_faint_seen: int = 0      # used Explosion/Self-Destruct then self-fainted
+    switch_death_seen: int = 0         # switched a mon in that fainted (e.g. to Spikes)
+    faint_before_acting_seen: int = 0  # KO'd before our move could fire
+    edge_mismatches: int = 0           # an edge case was MISREPRESENTED by the delta
 
     examples: list = field(default_factory=list)
 
@@ -338,26 +400,28 @@ class MoveOutcomeFuzzPlayer(Player):
         # === Layer 3: BattleContext vs TurnDelta ===
         # Outcome derivation: reconstruct expected category from ctx flags and
         # the move/switch/cant context exactly as TurnDelta._derive does.
-        def expect_outcome(move_used, missed, failed, suppressed):
-            if suppressed:
+        def expect_outcome(move_used, missed, failed, suppressed, connected):
+            if suppressed or not move_used:
                 return None
+            if connected:   # a damaging event resolved -> the move landed
+                return "hit"
             if missed:
                 return "miss"
             if failed:
                 return "fail"
-            if move_used:
-                return "hit"
-            return None
+            return "hit"
 
         exp_our_outcome = expect_outcome(
             delta.our_move_id is not None,
             curr_ctx.our_move_missed, curr_ctx.our_move_failed,
             delta.our_failed_to_move,
+            delta.our_damaging_event is not None or delta.our_move_id in SELF_KO_MOVES,
         )
         exp_opp_outcome = expect_outcome(
             delta.opp_move_id is not None,
             curr_ctx.opp_move_missed, curr_ctx.opp_move_failed,
             delta.opp_failed_to_move,
+            delta.opp_damaging_event is not None or delta.opp_move_id in SELF_KO_MOVES,
         )
         if delta.our_move_outcome != exp_our_outcome:
             s.layer3_mismatches += 1
@@ -375,6 +439,51 @@ class MoveOutcomeFuzzPlayer(Player):
             s.layer3_mismatches += 1
             s.record_example(3, {"check": "opp_move_crit", "turn": battle.turn,
                                  "ctx": curr_ctx.opp_move_crit, "delta": delta.opp_move_crit})
+
+        # === Faint / self-faint edge cases (protocol accuracy) ===
+        # 1) Go first + Explosion: the move LANDED before the self-faint, so it
+        #    must be attributed as a move that hit — not "nothing happened".
+        if delta.we_fainted and delta.our_move_id in ("explosion", "selfdestruct"):
+            s.explosion_faint_seen += 1
+            if delta.our_switch_to is not None or delta.our_move_outcome != "hit":
+                s.edge_mismatches += 1
+                s.record_example(3, {"check": "explosion_self_faint", "turn": battle.turn,
+                                     "our_move_id": delta.our_move_id,
+                                     "outcome": delta.our_move_outcome,
+                                     "switch_to": delta.our_switch_to})
+        # 2) Switch a mon in that dies (e.g. to Spikes): it's a SWITCH, no move —
+        #    our_switch_to set, our_move_id None, no outcome.
+        if delta.our_switch_to is not None and delta.we_fainted:
+            s.switch_death_seen += 1
+            if delta.our_move_id is not None or delta.our_move_outcome is not None:
+                s.edge_mismatches += 1
+                s.record_example(3, {"check": "switch_in_death", "turn": battle.turn,
+                                     "switch_to": delta.our_switch_to,
+                                     "our_move_id": delta.our_move_id,
+                                     "outcome": delta.our_move_outcome})
+        # 3) KO'd before acting: reason == "fainted", no move, no outcome.
+        if delta.our_cant_reason == "fainted":
+            s.faint_before_acting_seen += 1
+            if delta.our_move_id is not None or delta.our_move_outcome is not None:
+                s.edge_mismatches += 1
+                s.record_example(3, {"check": "faint_before_acting", "turn": battle.turn,
+                                     "our_move_id": delta.our_move_id,
+                                     "outcome": delta.our_move_outcome})
+        # --- Symmetric OPPONENT edge cases ---
+        if delta.opp_fainted and delta.opp_move_id in ("explosion", "selfdestruct"):
+            s.explosion_faint_seen += 1
+            if delta.opp_move_outcome != "hit":
+                s.edge_mismatches += 1
+                s.record_example(3, {"check": "opp_explosion_self_faint", "turn": battle.turn,
+                                     "opp_move_id": delta.opp_move_id,
+                                     "outcome": delta.opp_move_outcome})
+        if delta.opp_cant_reason == "fainted":
+            s.faint_before_acting_seen += 1
+            if delta.opp_move_id is not None or delta.opp_move_outcome is not None:
+                s.edge_mismatches += 1
+                s.record_example(3, {"check": "opp_faint_before_acting", "turn": battle.turn,
+                                     "opp_move_id": delta.opp_move_id,
+                                     "outcome": delta.opp_move_outcome})
 
         # === Layer 4: TurnDelta vs encoded vector ===
         enc = _get_encoder().encode(delta)
@@ -474,7 +583,8 @@ class MoveOutcomeFuzzPlayer(Player):
 # ---------------------------------------------------------------------------
 
 def print_report(s: ScenarioStats) -> None:
-    total = s.layer1_mismatches + s.layer2_mismatches + s.layer3_mismatches + s.layer4_mismatches
+    total = (s.layer1_mismatches + s.layer2_mismatches + s.layer3_mismatches
+             + s.layer4_mismatches + s.edge_mismatches)
     status = "PASS" if total == 0 else "FAIL"
     print(f"\n{'=' * 65}")
     print(f"SCENARIO: {s.name}  [{status}]")
@@ -484,12 +594,16 @@ def print_report(s: ScenarioStats) -> None:
     print(f"Layer 2 mismatches    : {s.layer2_mismatches}  (poke-env vs BattleContext)")
     print(f"Layer 3 mismatches    : {s.layer3_mismatches}  (BattleContext vs TurnDelta)")
     print(f"Layer 4 mismatches    : {s.layer4_mismatches}  (TurnDelta vs encoded vector)")
+    print(f"Edge mismatches       : {s.edge_mismatches}  (faint/self-faint misrepresented)")
     print(f"Coverage:")
     print(f"  hit seen            : {s.hit_seen}")
     print(f"  miss seen           : {s.miss_seen}")
     print(f"  fail seen           : {s.fail_seen}")
     print(f"  crit seen           : {s.crit_seen}")
     print(f"  cant reasons seen   : {sorted(s.cant_reasons_seen)}")
+    print(f"  explosion self-faint: {s.explosion_faint_seen}  (move landed, then self-KO)")
+    print(f"  switch-in death     : {s.switch_death_seen}  (e.g. died to Spikes)")
+    print(f"  faint before acting : {s.faint_before_acting_seen}  (KO'd first; reason='fainted')")
     if s.examples:
         print("Mismatch examples (up to 15):")
         for ex in s.examples:
@@ -527,28 +641,40 @@ async def main(n_battles: int = 60) -> None:
     ts = int(time.time()) % 100000
     print(f"Move-Outcome Fuzz Test — gen3ou — {n_battles} battles")
 
-    stats = await run_scenario("Variance", VARIANCE_TEAM, n_battles, ts)
-    print_report(stats)
+    variance = await run_scenario("Variance", VARIANCE_TEAM, n_battles, ts)
+    print_report(variance)
+    # Edge scenario: Explosion / Self-Destruct users + Spikes setters + a frail
+    # fast mon, so the faint/self-faint edge cases actually fire under random play.
+    edge = await run_scenario("FaintEdge", EDGE_TEAM, n_battles, ts)
+    print_report(edge)
 
-    total_mismatches = (
-        stats.layer1_mismatches + stats.layer2_mismatches
-        + stats.layer3_mismatches + stats.layer4_mismatches
+    all_stats = [variance, edge]
+    total_mismatches = sum(
+        s.layer1_mismatches + s.layer2_mismatches + s.layer3_mismatches
+        + s.layer4_mismatches + s.edge_mismatches for s in all_stats
     )
 
     coverage_issues = []
-    if stats.crit_seen == 0:
+    if sum(s.crit_seen for s in all_stats) == 0:
         coverage_issues.append("crit never seen")
-    if stats.miss_seen == 0:
+    if sum(s.miss_seen for s in all_stats) == 0:
         coverage_issues.append("miss never seen")
-    if stats.fail_seen == 0:
+    if sum(s.fail_seen for s in all_stats) == 0:
         coverage_issues.append("fail never seen")
-    if len(stats.cant_reasons_seen) < 2:
-        coverage_issues.append(f"only {len(stats.cant_reasons_seen)} distinct cant reasons "
-                               f"({sorted(stats.cant_reasons_seen)}); want >= 2")
+    all_cant = set().union(*(s.cant_reasons_seen for s in all_stats))
+    if len(all_cant) < 2:
+        coverage_issues.append(f"only {len(all_cant)} distinct cant reasons "
+                               f"({sorted(all_cant)}); want >= 2")
+    # Edge-case coverage (soft — report if a scenario never exercised them):
+    exp = sum(s.explosion_faint_seen for s in all_stats)
+    swd = sum(s.switch_death_seen for s in all_stats)
+    fba = sum(s.faint_before_acting_seen for s in all_stats)
+    print(f"\nEdge-case coverage across scenarios: explosion_self_faint={exp} "
+          f"switch_in_death={swd} faint_before_acting={fba}")
 
-    print(f"\n{'=' * 65}")
+    print(f"{'=' * 65}")
     if total_mismatches == 0 and not coverage_issues:
-        print("PASS — All four layers correct, coverage satisfied.")
+        print("PASS — All four layers correct, faint edge cases consistent, coverage satisfied.")
     else:
         print("FAIL:")
         if total_mismatches > 0:

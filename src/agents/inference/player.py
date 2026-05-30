@@ -115,9 +115,8 @@ class RLPlayer(Gen3Player):
         with torch.no_grad():
             obs_tensor = torch.as_tensor(obs_batched).to(self.model.device)
             mask_tensor = torch.as_tensor(mask_batched).to(self.model.device)
-            dist = self.model.policy.get_distribution(
-                {"observation": obs_tensor, "action_mask": mask_tensor}
-            )
+            policy_in = {"observation": obs_tensor, "action_mask": mask_tensor}
+            dist = self.model.policy.get_distribution(policy_in)
             logits = dist.distribution.logits
             masked_logits = logits + (mask_tensor - 1.0) * 1e9
 
@@ -127,11 +126,20 @@ class RLPlayer(Gen3Player):
                 idx = torch.argmax(masked_logits, dim=1).item()
 
             probs = torch.softmax(masked_logits, dim=1)[0].cpu().numpy()
+            value = float(self.model.policy.predict_values(policy_in)[0].item())
 
         if mask[idx] == 0:
             raise ValueError(f"Illegal action {idx} selected. Mask: {mask}")
 
         self._get_tracker(battle).advance(idx)
+        # Raw inputs/outputs for offline forensic replay (probe_replay.py). Kept as
+        # the last-prediction snapshot so callers that want it can read it without
+        # changing the (idx, probs, mask) return contract.
+        self._last_prediction = {
+            "obs": np.asarray(obs, dtype=np.float32),
+            "logits": logits[0].cpu().numpy(),
+            "value": value,
+        }
         return idx, probs, mask
 
     def choose_move(self, battle):

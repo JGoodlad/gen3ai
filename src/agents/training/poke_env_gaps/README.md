@@ -174,3 +174,56 @@ Scenarios:
 - **A — Explosion**: Gengar/Claydol/Metagross with Explosion — stresses the attacker-fainted gap
 - **B — Rest/Sleep Talk**: Suicune/Snorlax with Rest+Sleep Talk, Smeargle/Gengar with sleep inducers
 - **C — Hyper Beam**: Tyranitar/Regice with Hyper Beam — confirms recharge-turn `last_move` persistence
+- **D — Roar/Whirlwind**: phaze recovery via the DamagingMoveEvent
+
+---
+
+## Fuzz Coverage Map (what's validated, and what to expand)
+
+Two e2e fuzz tests run real `gen3ou` battles and validate the protocol →
+poke-env → `BattleContext` → `TurnDelta` → encoded-obs pipeline. The matching
+unit tests are `src/agents/training/move_attribution_test.py` (decision table)
+and the per-encoder `*_test.py` files (dim/layout).
+
+### `transition_fuzz_e2e_test.py` — move ATTRIBUTION (who used what)
+| Validated | Notes |
+|---|---|
+| `our_move_slot_unknown == 0` | every action index maps to a known move slot |
+| **Intent ↔ outcome** (our side) | the move the agent *pressed* equals the move the protocol says *fired*, with principled skips for **callers** (Sleep Talk/Metronome → the *called* move), **`\|cant\|`**, switch-out / two-turn charge, and **stale `last_move`** (no fresh `\|move\|` this turn). 0 real mismatches over ~30K turns. |
+| Opp `last_move` attribution | Explosion gap, recharge persistence, phaze recovery, cant persistence — all classified as expected vs anomaly |
+
+### `move_outcome_fuzz_e2e_test.py` — move OUTCOME (what happened)
+Four layers per turn (raw protocol → poke-env props → `BattleContext` → `TurnDelta` → encoded vector). FAILS on any mismatch **or** missing coverage. Validates, for **both sides**:
+| Validated | Notes |
+|---|---|
+| crit / miss / fail / hit / cant | outcome one-hot + crit bit, BattleContext vs TurnDelta vs encoding |
+| **Explosion / Self-Destruct self-faint** | the move *landed* before the self-KO → `move_id=explosion`, outcome = **hit**. A stale miss/fail flag is overridden: an SE/resisted/immune hit promotes a damaging event, and a *neutral* hit (no event) is covered by treating `SELF_KO_MOVES` as always-connected. (Edge: a Protect-blocked Explosion reads `hit` rather than `fail` — extremely rare, documented below.) |
+| **Switch-in death (e.g. Spikes)** | it's a *switch*, not a move → `switch_to` set, `move_id=None`, outcome `None` (a stale miss/fail flag does **not** leak) |
+| **KO'd before acting** | nothing fired → `move_id=None`, outcome `None`, `cant_reason="fainted"` (distinct from a voluntary switch and from `\|cant\|`) |
+| Edge cases run for opp too | `opp_explosion_self_faint`, `opp_faint_before_acting` |
+
+Run it: `python src/agents/training/poke_env_gaps/move_outcome_fuzz_e2e_test.py 40`
+(two teams: a variance team for crit/miss/fail/cant, and an Explosion+Spikes+frail
+"FaintEdge" team so the faint edge cases actually fire under random play).
+
+### Known gaps / to expand
+- **Effectiveness on delegated damaging moves**: `our_last_damaging_event` can lag
+  at a mon's *prior* damaging move when Sleep Talk calls a *different* damaging
+  move (the called move's effectiveness isn't promoted). We currently drop to the
+  "unknown" effectiveness sentinel via the alignment guard; a dedicated assertion
+  that the encoded effectiveness matches the *called* move's protocol effectiveness
+  would tighten this.
+- **Protect-blocked Self-Destruct/Explosion**: `SELF_KO_MOVES` are treated as
+  always-connected to recover the common neutral-hit case, so an Explosion that
+  is fully blocked by Protect (no damage, no event) reads `outcome=hit` instead
+  of `fail`. The `move_id` is still correct (not the critical "nothing happened"
+  misrepresentation); the outcome bit is a rare secondary inaccuracy.
+- **Non-damaging move then self-faint**: a status move used by a mon that then
+  faints isn't recoverable from the damaging event (active slot has shifted) — it
+  currently reads as `move_id=None`. Rare; not yet asserted.
+- **Multi-faint / double-KO turns** (e.g. our Explosion KOs both): only spot-checked.
+- **Baton Pass** chains: classified as a switch; the pass target attribution is not
+  separately validated.
+- The fuzz uses **random** action selection — it exercises legality and protocol
+  attribution, not strategic sequences. Coverage of rare interactions is
+  probabilistic; raise the battle count to harden.

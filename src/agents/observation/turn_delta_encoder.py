@@ -81,6 +81,7 @@ _CANT_REASONS = [
     "taunt", "disable", "imprison",               # move-lock effects
     "truant",                                     # Slaking loafing (ability)
     "nopp",                                       # out of PP
+    "fainted",                                    # KO'd before our move could fire
 ]
 _CANT_TO_IDX = {r: i for i, r in enumerate(_CANT_REASONS)}
 

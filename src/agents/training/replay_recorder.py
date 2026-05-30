@@ -39,7 +39,9 @@ class StatTrackingRLPlayer(RLPlayer):
             self._recorders[battle.battle_tag] = BattleRecorder(battle.battle_tag, self._reward_fn_factory)
 
         idx, probs, mask = self._predict_best_action(battle, stochastic=False)
-        self._recorders[battle.battle_tag].record(battle, idx, probs, mask)
+        self._recorders[battle.battle_tag].record(
+            battle, idx, probs, mask, state=getattr(self, "_last_prediction", None)
+        )
         return self.action_to_order(idx, battle)
 
 
@@ -139,6 +141,13 @@ class ReplayCallback(BaseCallback):
                         text,
                     )
                     f.write(text)
+
+                states = recorder.states_arrays()
+                if states:
+                    import numpy as _np
+                    _np.savez_compressed(
+                        os.path.join(step_dir, f"battle_{i + 1}_states.npz"), **states
+                    )
 
                 if i < len(html_files):
                     os.rename(

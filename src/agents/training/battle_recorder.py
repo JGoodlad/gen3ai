@@ -33,14 +33,25 @@ class BattleRecorder:
         self._invocations: list[dict] = []
         self._pending_entry: Optional[dict] = None
         self._tracker = RewardTracker(reward_fn_factory, self._our_slots, self._opp_slots)
+        # Optional raw model I/O per invocation, parallel to _invocations
+        # (obs/logits/value the model saw). Populated only when record() gets them;
+        # exported via states_arrays() for offline forensic replay.
+        self._states: list[dict] = []
 
     # ------------------------------------------------------------------
     # Public API
     # ------------------------------------------------------------------
 
-    def record(self, battle, action_idx: int, probs: np.ndarray, mask: np.ndarray) -> None:
-        """Record a model invocation. Call from choose_move() after prediction."""
+    def record(self, battle, action_idx: int, probs: np.ndarray, mask: np.ndarray,
+               state: Optional[dict] = None) -> None:
+        """Record a model invocation. Call from choose_move() after prediction.
+
+        `state` (optional): {"obs", "logits", "value"} as captured by
+        RLPlayer._predict_best_action — the raw model I/O for this turn. Stored
+        parallel to the invocation so a saved battle can be replayed exactly.
+        """
         curr_ctx = self._build_ctx(battle, mask)
+        self._states.append(state or {})
 
         if self._pending_entry is not None:
             prev_ctx = self._tracker.pending_ctx
@@ -82,6 +93,28 @@ class BattleRecorder:
 
         self._tracker.begin_turn(curr_ctx, action_idx)
         self._pending_entry = entry
+
+    def states_arrays(self) -> dict:
+        """Stack the per-invocation raw model I/O into npz-ready arrays, aligned
+        index-for-index with to_summary()['invocations']. Returns {} if states
+        were never captured. `has_state` flags which turns carry real data."""
+        if not any(self._states):
+            return {}
+        obs_dim = next(len(s["obs"]) for s in self._states if s)
+        n_act = next(len(s["logits"]) for s in self._states if s)
+        T = len(self._states)
+        obs = np.zeros((T, obs_dim), dtype=np.float32)
+        logits = np.zeros((T, n_act), dtype=np.float32)
+        values = np.zeros(T, dtype=np.float32)
+        has_state = np.zeros(T, dtype=np.int8)
+        for i, s in enumerate(self._states):
+            if not s:
+                continue
+            obs[i] = s["obs"]
+            logits[i] = s["logits"]
+            values[i] = s.get("value", 0.0)
+            has_state[i] = 1
+        return {"obs": obs, "logits": logits, "values": values, "has_state": has_state}
 
     def finalize(self, battle) -> None:
         """Complete the last pending invocation at battle end."""

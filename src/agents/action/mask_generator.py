@@ -1,6 +1,7 @@
 import numpy as np
 from poke_env.battle.abstract_battle import AbstractBattle
 from agents.action.constants import ACTION_SPACE_SIZE, SWITCH_END, MOVE_START, N_MOVE_SLOTS, STRUGGLE
+from agents.action.ordering_integrity import check_switch_ordering_alignment
 
 class Gen3ActionMasker:
     """
@@ -63,5 +64,11 @@ class Gen3ActionMasker:
         # Enabled only when the server forces it (all PP depleted).
         if any(m.id == "struggle" for m in battle.available_moves):
             mask[STRUGGLE] = 1
-                
+
+        # --- 4. Integrity: the model's team ordering must match the action space ---
+        # (Move-validity ordering is fixed + validated at prev_mask construction,
+        #  EpisodeTracker.prev_mask, where the action-order mask is reordered into
+        #  the sorted move order the feature extractor consumes.)
+        check_switch_ordering_alignment(battle, mask)
+
         return mask

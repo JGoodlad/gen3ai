@@ -6,6 +6,10 @@ import numpy as np
 
 from poke_env.battle.abstract_battle import DamagingMoveEvent
 
+from agents.action.ordering_integrity import (
+    reorder_move_bits_to_sorted,
+    assert_sorted_validity_correct,
+)
 from agents.training.battle_context import BattleContext, TurnDelta
 from agents.training.hidden_power_tracker import HiddenPowerTracker
 from agents.training.slot_registry import SlotRegistry
@@ -85,9 +89,23 @@ class EpisodeTracker:
 
     @property
     def prev_mask(self) -> np.ndarray:
-        """Action mask from the previous turn. All-ones if no previous turn recorded yet."""
+        """Previous turn's action mask, as an obs feature.
+
+        The MOVE bits are reordered from action/request order into sorted-by-id
+        order so they line up with the active mon's move slots in the feature
+        extractor (which reads moves via ``get_sorted_moves``). Without this the
+        validity bit for one move lands on a different move's embedding — silent
+        when all moves are legal, wrong on disabled/zero-PP turns. All-ones if no
+        previous turn recorded yet."""
         if len(self._history) >= 2:
-            return self._history[-2].mask.astype(np.float32)
+            prev_ctx = self._history[-2]
+            reordered = reorder_move_bits_to_sorted(
+                prev_ctx.mask.astype(np.float32), prev_ctx.active_move_ids
+            )
+            assert_sorted_validity_correct(
+                reordered, prev_ctx.mask, prev_ctx.active_move_ids
+            )
+            return reordered
         return np.ones(11, dtype=np.float32)
 
     def record(self, battle, mask: np.ndarray) -> BattleContext:

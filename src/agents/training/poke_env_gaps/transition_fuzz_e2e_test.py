@@ -342,6 +342,10 @@ class TurnSnapshot:
     opp_last_move_id: Optional[str]
     opp_all_last_move_ids: dict         # dict[str, str | None] — all opp mons' last_move
     opp_active_revealed_moves: frozenset
+    # Our active's protocol-truth move this turn (poke-env last_move; delegation-aware:
+    # Sleep Talk stores the CALLED move). Used to validate intent↔outcome alignment.
+    our_last_move_id: Optional[str] = None
+    our_last_cant_reason: Optional[str] = None  # set when our active was prevented from moving
     # Full damaging-move event from the just-ended turn (or None). Used to assert
     # the Explosion-gap closure: when opp fainted from Explosion/SD, the event
     # carries move_id="explosion" even though opp_active.last_move reads None.
@@ -354,6 +358,15 @@ class ScenarioStats:
     our_move_known: int = 0
     our_switch_known: int = 0
     our_move_slot_unknown: int = 0      # should always be 0
+    # Intent↔outcome alignment for OUR side: does the move the agent PRESSED
+    # (action index -> request slot) match the move the protocol says our active
+    # actually USED? This is the core input/output invariant.
+    our_intent_match: int = 0           # intended move == protocol move
+    our_intent_caller: int = 0          # skipped: Sleep Talk / Metronome / etc. (called move differs by design)
+    our_intent_cant: int = 0            # skipped: our active was prevented from moving (sleep/par/flinch/...)
+    our_intent_no_proto: int = 0        # skipped: protocol move unavailable (charging turn-1, switch-in, etc.)
+    our_intent_mismatch: int = 0        # REAL mismatch — pressed X, protocol fired Y (should be 0)
+    our_intent_mismatch_details: list = field(default_factory=list)
     opp_switch_known: int = 0
     opp_move_known: int = 0
     opp_move_unknown: int = 0
@@ -446,6 +459,9 @@ class TransitionFuzzPlayer(Player):
 
         opp_mon = battle.opponent_active_pokemon
         opp_last_move = opp_mon.last_move if opp_mon else None
+        our_mon = battle.active_pokemon
+        our_last_move = our_mon.last_move if our_mon else None
+        our_cant = getattr(our_mon, "last_cant_reason", None) if our_mon else None
 
         # Status as a plain string for easy comparison
         opp_status = None
@@ -483,6 +499,8 @@ class TransitionFuzzPlayer(Player):
             opp_all_last_move_ids=opp_all_last_move_ids,
             opp_active_revealed_moves=frozenset(opp_mon.moves.keys() if opp_mon else []),
             opp_last_damaging_move=battle.opp_last_damaging_move,
+            our_last_move_id=our_last_move.id if our_last_move else None,
+            our_last_cant_reason=our_cant,
         )
 
     def _analyze_transition(self, prev: TurnSnapshot, curr: TurnSnapshot, action: int):
@@ -502,6 +520,36 @@ class TransitionFuzzPlayer(Player):
                     "type": "our_move_slot_unknown",
                     "turn": curr.turn, "action": action,
                     "active_move_ids": prev.active_move_ids,
+                })
+            # --- Intent↔outcome: did the move we pressed fire? ---
+            from agents.action.ordering_integrity import CALLER_MOVES
+            intended = move_id
+            actual = curr.our_last_move_id
+            our_switched = prev.our_active != curr.our_active and curr.our_active != "NONE"
+            fresh = actual is not None and actual != prev.our_last_move_id
+            if curr.our_last_cant_reason:
+                s.our_intent_cant += 1
+            elif intended in CALLER_MOVES:
+                s.our_intent_caller += 1
+            elif our_switched or actual is None:
+                # forced out / two-turn charge / no protocol move to compare yet
+                s.our_intent_no_proto += 1
+            elif intended == actual:
+                s.our_intent_match += 1
+            elif not fresh:
+                # last_move persisted unchanged from the prior turn -> the move we
+                # pressed produced no fresh |move| event (failed / no-op / we
+                # fainted before acting). Stale, not a mapping error. Same nuance
+                # the opp side documents for |cant|/recharge persistence.
+                s.our_intent_no_proto += 1
+            else:
+                s.our_intent_mismatch += 1
+                s.our_intent_mismatch_details.append({
+                    "turn": curr.turn, "action": action,
+                    "intended": intended, "protocol_fired": actual,
+                    "prev_last_move": prev.our_last_move_id,
+                    "active_move_ids": prev.active_move_ids,
+                    "our_active": prev.our_active,
                 })
         else:
             s.our_move_known += 1  # struggle
@@ -660,6 +708,12 @@ def print_report(s: ScenarioStats) -> None:
     print(f"    Known move        : {_pct(s.our_move_known, t)}")
     print(f"    Known switch      : {_pct(s.our_switch_known, t)}")
     print(f"    Unknown slot [!]  : {_pct(s.our_move_slot_unknown, t)}  <- should be 0")
+    print(f"  Our intent↔outcome (pressed move == protocol move):")
+    print(f"    Match             : {s.our_intent_match}")
+    print(f"    Skipped (caller)  : {s.our_intent_caller}  (Sleep Talk/Metronome called a different move)")
+    print(f"    Skipped (cant)    : {s.our_intent_cant}  (prevented from moving)")
+    print(f"    Skipped (no proto): {s.our_intent_no_proto}  (switch-out / two-turn charge / turn-1)")
+    print(f"    MISMATCH [!]      : {s.our_intent_mismatch}  <- pressed X, fired Y; should be 0")
     print(f"  Opp action:")
     print(f"    Switch known      : {_pct(s.opp_switch_known, t)}")
     print(f"    Move known        : {_pct(s.opp_move_known, t)}")
@@ -806,9 +860,24 @@ async def main(n_battles: int = 50) -> None:
     # The phaze counters are informational (the legacy opp_all_last_move_ids
     # recovery is broken by switch_out clearing _is_last_used; the event-based
     # path is the supported route).
-    issues = total_our_unknown > 0 or total_true_anomaly > 0
+    total_intent_match = sum(s.our_intent_match for s in all_stats)
+    total_intent_mismatch = sum(s.our_intent_mismatch for s in all_stats)
+    total_intent_caller = sum(s.our_intent_caller for s in all_stats)
+    total_intent_cant = sum(s.our_intent_cant for s in all_stats)
+    print(f"Intent↔outcome (OUR side, across all scenarios):")
+    print(f"  match={total_intent_match}  caller-skip={total_intent_caller}  "
+          f"cant-skip={total_intent_cant}  MISMATCH={total_intent_mismatch}")
+    if total_intent_mismatch:
+        print(f"  MISMATCH details (pressed != fired):")
+        for s in all_stats:
+            for d in s.our_intent_mismatch_details[:10]:
+                print(f"    {s.name}: {d}")
+    print("=" * 65)
+
+    issues = (total_our_unknown > 0 or total_true_anomaly > 0
+              or total_intent_mismatch > 0)
     if not issues:
-        print("PASS — All transitions representable.")
+        print("PASS — All transitions representable; intent matches protocol outcome.")
         print("  Explosion gaps and cant-move cases are expected and classified correctly.")
         if total_phaze_fired > 0:
             print(f"  Phaze coverage: {total_phaze_fired} phaze turns observed across all scenarios"
@@ -821,7 +890,12 @@ async def main(n_battles: int = 50) -> None:
             print(f"  opp true anomalies    : {total_true_anomaly}  (should be 0)")
             print("  -> new move was revealed this turn but opp_last_move_id is None")
             print("  -> indicates a poke-env parsing gap for those move types")
+        if total_intent_mismatch:
+            print(f"  our_intent_mismatch   : {total_intent_mismatch}  (should be 0)")
+            print("  -> the action pressed mapped to a different move than the protocol fired")
     print("=" * 65)
+    if issues:
+        os._exit(1)
 
 
 if __name__ == "__main__":

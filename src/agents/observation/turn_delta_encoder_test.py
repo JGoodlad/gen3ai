@@ -91,7 +91,7 @@ def _delta(**kwargs):
 
 def test_dimension():
     assert _enc().dimension == TURN_DELTA_DIM
-    assert TURN_DELTA_DIM == 108
+    assert TURN_DELTA_DIM == 110  # +2 for the "fainted" cant reason (one per side)
 
 
 def test_empty_delta_is_all_zeros_except_opp_move_known():

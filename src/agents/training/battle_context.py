@@ -9,6 +9,50 @@ from agents.training.slot_registry import SlotRegistry
 from agents.gen3_mechanics import PHAZING_MOVES, BOOST_DIM, boosts_array
 
 
+# Moves whose user always faints and which always connect when used (a neutral
+# hit emits no effectiveness event, so the damaging-event "connected" signal would
+# miss them; an immune target DOES emit, so it's covered by the event either way).
+SELF_KO_MOVES = frozenset({"explosion", "selfdestruct"})
+
+
+def _moves_match(a: Optional[str], b: Optional[str]) -> bool:
+    """True if two move ids refer to the same move. Treats all Hidden Power
+    variants ('hiddenpower', 'hiddenpowerfire', …) as one move."""
+    if a == b:
+        return True
+    return bool(a and b and a.startswith("hiddenpower") and b.startswith("hiddenpower"))
+
+
+def _align_effectiveness(move_id, effectiveness, event):
+    """Keep a side's (effectiveness, damaging_event) only when they describe the
+    SAME move we recorded as having fired. They are turn-gated independently of
+    move_id and on same-turn forced-switch / faint double-records can lag at a
+    different move — feeding the wrong effectiveness/target would corrupt the obs
+    one-hot, the actor/target attribution, and the immune reward term. On
+    disagreement we drop to "unknown" (None) rather than serve wrong data.
+    Applied identically for our and opp sides."""
+    if (event is not None and move_id is not None
+            and not _moves_match(event.move_id, move_id)):
+        return None, None
+    return effectiveness, event
+
+
+def _ko_before_acting(*, fainted, switched_voluntarily, move_resolved,
+                      other_side_moved_first, cant_reason) -> bool:
+    """A side was KO'd BEFORE it could act: it fainted this turn, did not choose
+    to switch, no move of its own resolved (no damaging event / miss / fail), and
+    the OTHER side moved first (Gen 3: mover lands the KO before the slower mon's
+    turn). When True the side did NOTHING — its move_id must be None and its
+    "didn't move" reason is 'fainted'. Symmetric for both sides; only the
+    per-side inputs differ (our faint splits across two turns so we never
+    voluntarily switch on it; an opp faint folds the forced replacement into the
+    same delta, so its other_side_moved_first is our we_moved_first)."""
+    return bool(
+        fainted and not switched_voluntarily and not move_resolved
+        and other_side_moved_first is True and cant_reason is None
+    )
+
+
 def _resolve_target_hp_delta(
     event: Optional[DamagingMoveEvent],
     hp_delta: np.ndarray,
@@ -32,28 +76,36 @@ def _derive_move_outcome(
     missed: bool,
     failed: bool,
     suppressed: bool,
+    connected: bool = False,
 ) -> Optional[str]:
     """Collapse the per-side protocol outcome flags into one category.
 
     Returns "miss" / "fail" / "hit", or None when no move resolved.
 
     `suppressed` is True when the side was prevented from acting by a |cant|
-    (sleep/par/flinch/etc.) even though an action was selected — no move
-    resolved, so the outcome is None (the cant reason is carried separately).
-    Precedence is miss > fail > hit: a move that misses never also "hits", and
-    the protocol never emits both for one move. `move_used` is the fallback
-    positive signal (a move resolved without an explicit miss/fail emission →
-    it connected).
+    (sleep/par/flinch/etc.) — no move resolved, so the outcome is None (the cant
+    reason is carried separately).
+
+    The outcome describes a MOVE, so it is None unless a move was actually used
+    (`move_used`). The miss/fail flags are turn-gated and can leak onto a turn the
+    move did NOT have them — a no-move turn (a switch on the same game turn as an
+    earlier sub-turn move) or a self-faint move like Explosion. So:
+      - gate on `move_used` (a switch is never "miss"/"fail"), and
+      - `connected` (a damaging event resolved this turn) means the move DEALT
+        damage, i.e. it landed — that overrides a stale miss/fail flag (Explosion
+        can't both deal damage and "miss").
+    Precedence among real outcomes is miss > fail > hit; the protocol never emits
+    more than one for a single move.
     """
-    if suppressed:
+    if suppressed or not move_used:
         return None
+    if connected:
+        return "hit"
     if missed:
         return "miss"
     if failed:
         return "fail"
-    if move_used:
-        return "hit"
-    return None
+    return "hit"
 
 
 @dataclass
@@ -166,6 +218,15 @@ class BattleContext:
     our_last_damaging_event: Optional[DamagingMoveEvent] = None
     opp_last_damaging_event: Optional[DamagingMoveEvent] = None
 
+    # The move OUR active Pokémon actually used on the turn that just ended,
+    # from battle.active_pokemon.last_move — the mirror of opp_last_move_id.
+    # Protocol-truth and DELEGATION-AWARE: Sleep Talk stores the called move
+    # (e.g. "surf"), not "sleeptalk" (see opp_last_move_id notes). Used by
+    # TurnDelta.build() to set our_move_id from the protocol instead of the
+    # action index — immune to the action-bookkeeping desync on faint /
+    # forced-switch turns, and captures delegated moves first-class.
+    our_last_move_id: Optional[str] = None
+
     # Per-side move outcome flags for the turn that just ended, sourced from
     # AbstractBattle.our/opp_move_{crit,missed,failed} (each turn-gated on
     # turn-1). crit is orthogonal to miss/fail (a hit can crit); missed and
@@ -252,6 +313,9 @@ class BattleContext:
 
         opp_last_move = opp_mon.last_move if opp_mon else None
         opp_last_move_id = opp_last_move.id if opp_last_move else None
+        our_active_mon = battle.active_pokemon
+        our_last_move = our_active_mon.last_move if our_active_mon else None
+        our_last_move_id = our_last_move.id if our_last_move else None
         opp_active_revealed_moves = frozenset(opp_mon.moves.keys() if opp_mon else [])
         opp_all_last_move_ids: dict = {}
         for mon in battle.opponent_team.values():
@@ -293,6 +357,7 @@ class BattleContext:
             opp_last_effectiveness=battle.opp_last_effectiveness,
             our_last_damaging_event=battle.our_last_damaging_move,
             opp_last_damaging_event=battle.opp_last_damaging_move,
+            our_last_move_id=our_last_move_id,
             we_moved_first=battle.we_moved_first,
             our_team_order=tuple(m.species for m in battle.team.values()),
             our_move_crit=battle.our_move_crit,
@@ -464,6 +529,51 @@ class TurnDelta:
             our_switch_to = None
             our_move_id = "struggle"
 
+        # --- Protocol-truth override for our_move_id ---
+        # The action-derived id above is vulnerable to the action-bookkeeping
+        # desync (_last_action can be a different turn's action on faint /
+        # forced-switch cadence — confirmed mislabeling moves in training). The
+        # protocol is authoritative for the move OUR mon actually used; we take it
+        # from two turn-gated sources depending on whether the mon survived:
+        we_stayed_in = (
+            prev_ctx.our_active == curr_ctx.our_active
+            and curr_ctx.our_active != "NONE"
+        )
+        if curr_ctx.our_cant_reason is None:
+            if (our_switch_to is None and we_stayed_in
+                    and curr_ctx.our_last_move_id is not None):
+                # Survived: active_pokemon.last_move is the move we used — fresh
+                # and DELEGATION-AWARE (Sleep Talk / Metronome store the CALLED
+                # move, e.g. "surf"), so the delegated move becomes first-class.
+                our_move_id = curr_ctx.our_last_move_id
+            elif we_fainted and curr_ctx.our_last_damaging_event is not None:
+                # Used a (damaging) move and fainted THIS turn — active_pokemon now
+                # reads the replacement (last_move wrong) and the action is desynced.
+                # The turn-gated DamagingMoveEvent names the move the fainted mon
+                # actually used. This also corrects a move↔switch misclassification
+                # when the desynced action looked like a switch.
+                our_move_id = curr_ctx.our_last_damaging_event.move_id
+                our_switch_to = None
+
+        # --- Protocol-accuracy guards (shared with the opp side below) ---
+        # The action-derived id would misrepresent a KO'd-before-acting turn as
+        # "used the clicked move" (and the outcome as "hit"). _ko_before_acting
+        # reports the truth: nothing fired (move_id None, reason "fainted").
+        our_ko = _ko_before_acting(
+            fainted=we_fainted,
+            switched_voluntarily=our_switch_to is not None,
+            move_resolved=(curr_ctx.our_last_damaging_event is not None
+                           or curr_ctx.our_move_missed or curr_ctx.our_move_failed),
+            other_side_moved_first=(curr_ctx.we_moved_first is not True),  # opp first
+            cant_reason=curr_ctx.our_cant_reason,
+        )
+        if our_ko:
+            our_move_id = None
+        our_cant_reason = "fainted" if our_ko else curr_ctx.our_cant_reason
+        our_effectiveness, our_damaging_event = _align_effectiveness(
+            our_move_id, curr_ctx.our_last_effectiveness, curr_ctx.our_last_damaging_event,
+        )
+
         # --- Opponent action ---
         # opp_last_move_id in curr_ctx was read from battle.opponent_active_pokemon.last_move
         # AFTER the turn resolved. Guard against contamination from a newly switched-in
@@ -492,8 +602,30 @@ class TurnDelta:
             opp_move_id = curr_ctx.opp_last_move_id
             opp_move_known = opp_move_id is not None
 
-        our_failed_to_move = curr_ctx.our_cant_reason is not None
-        opp_failed_to_move = curr_ctx.opp_cant_reason is not None
+        # --- Same protocol-accuracy guards, opp side ---
+        # The faint-recovery above may have pulled a STALE prior move from
+        # opp_all_last_move_ids when the opp was KO'd before acting; correct it.
+        # (Per-side inputs differ: an opp faint folds the forced replacement into
+        # this delta, so its "switched_voluntarily" is only true off a faint, and
+        # "other side moved first" is OUR we_moved_first.)
+        opp_ko = _ko_before_acting(
+            fainted=opp_fainted,
+            switched_voluntarily=(opp_switch_to is not None and not opp_fainted),
+            move_resolved=(curr_ctx.opp_last_damaging_event is not None
+                           or curr_ctx.opp_move_missed or curr_ctx.opp_move_failed),
+            other_side_moved_first=(curr_ctx.we_moved_first is True),  # we went first
+            cant_reason=curr_ctx.opp_cant_reason,
+        )
+        if opp_ko:
+            opp_move_id = None
+            opp_move_known = True  # we positively know nothing fired
+        opp_cant_reason = "fainted" if opp_ko else curr_ctx.opp_cant_reason
+        opp_effectiveness, opp_damaging_event = _align_effectiveness(
+            opp_move_id, curr_ctx.opp_last_effectiveness, curr_ctx.opp_last_damaging_event,
+        )
+
+        our_failed_to_move = our_cant_reason is not None
+        opp_failed_to_move = opp_cant_reason is not None
 
         # Boost deltas: meaningful when the same mon stayed in; zeroed when switched
         # (the switch-in's boosts are its own baseline, not a change from the prev mon).
@@ -511,10 +643,10 @@ class TurnDelta:
         # newly-revealed opp mons resolve correctly. Returns None when no
         # damaging move fired or the target species isn't in the slot map.
         our_target_hp_delta = _resolve_target_hp_delta(
-            curr_ctx.opp_last_damaging_event, our_hp_delta, curr_ctx.our_slot_map
+            opp_damaging_event, our_hp_delta, curr_ctx.our_slot_map
         )
         opp_target_hp_delta = _resolve_target_hp_delta(
-            curr_ctx.our_last_damaging_event, opp_hp_delta, curr_ctx.opp_slot_map
+            our_damaging_event, opp_hp_delta, curr_ctx.opp_slot_map
         )
 
         # Per-side move outcome. `suppressed` covers the |cant| case where an
@@ -527,12 +659,14 @@ class TurnDelta:
             missed=curr_ctx.our_move_missed,
             failed=curr_ctx.our_move_failed,
             suppressed=our_failed_to_move,
+            connected=our_damaging_event is not None or our_move_id in SELF_KO_MOVES,
         )
         opp_move_outcome = _derive_move_outcome(
             move_used=opp_move_id is not None,
             missed=curr_ctx.opp_move_missed,
             failed=curr_ctx.opp_move_failed,
             suppressed=opp_failed_to_move,
+            connected=opp_damaging_event is not None or opp_move_id in SELF_KO_MOVES,
         )
 
         return cls(
@@ -548,16 +682,16 @@ class TurnDelta:
             we_fainted=we_fainted,
             opp_fainted=opp_fainted,
             our_failed_to_move=our_failed_to_move,
-            our_cant_reason=curr_ctx.our_cant_reason,
+            our_cant_reason=our_cant_reason,
             opp_failed_to_move=opp_failed_to_move,
-            opp_cant_reason=curr_ctx.opp_cant_reason,
+            opp_cant_reason=opp_cant_reason,
             our_boost_delta=our_boost_delta,
             opp_boost_delta=opp_boost_delta,
-            our_effectiveness=curr_ctx.our_last_effectiveness,
-            opp_effectiveness=curr_ctx.opp_last_effectiveness,
+            our_effectiveness=our_effectiveness,
+            opp_effectiveness=opp_effectiveness,
             we_moved_first=curr_ctx.we_moved_first,
-            our_damaging_event=curr_ctx.our_last_damaging_event,
-            opp_damaging_event=curr_ctx.opp_last_damaging_event,
+            our_damaging_event=our_damaging_event,
+            opp_damaging_event=opp_damaging_event,
             phase_is_forced_switch=(curr_ctx.phase == "forced_switch"),
             our_hp_after=curr_ctx.our_hp.copy(),
             opp_hp_after=curr_ctx.opp_hp.copy(),
