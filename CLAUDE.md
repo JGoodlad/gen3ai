@@ -135,7 +135,7 @@ A hang after `[STALL LOGGED]` or a crash before "Training complete" indicates a 
 - **Periodic restarts** — kills and relaunches the child every N hours to reclaim pymalloc fragmentation; the child saves a checkpoint on SIGTERM and the launcher picks it up automatically
 - **Worktree isolation** — at startup, creates a detached git worktree pinned to the current HEAD (or to the commit recorded in the checkpoint's `metadata.json` when resuming). Agent pushes to `main` never affect a running session
 - **Rich TUI** — live dashboard showing metrics, FPS, restart countdown; `l` for logs, `r` to restart now, `c` for forced checkpoint, `q` to quit cleanly
-- **Crash reporting** — child stdout/stderr is captured; on a non-zero exit the last 100 lines are dumped to the terminal after the TUI closes
+- **Crash reporting** — child stdout/stderr is streamed live to `<run_dir>/launcher_child.log` (complete even if the child hard-`os._exit`s, bypassing Python cleanup) and held in a 5000-line in-memory scrollback. On a non-zero exit the last 100 lines are dumped to the terminal after the TUI closes; on *every* exit (crash, complete, quit) the full log path is printed and the file is finalized (the in-memory buffer is flushed to it as a fallback if streaming never started)
 
 ### Exit codes (`src/main/exit_codes.py`)
 

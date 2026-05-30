@@ -30,7 +30,10 @@ class LauncherState:
     def __init__(self, interval_hours: float) -> None:
         self._lock = threading.Lock()
         self.interval_hours = interval_hours
-        self._log_lines: collections.deque = collections.deque(maxlen=500)
+        # Keep a deep scrollback so a multi-line child traceback (~25+ lines) is
+        # never pushed out of the live logs view or the on-exit dump by routine
+        # progress chatter. The full stream is also persisted to disk by child.py.
+        self._log_lines: collections.deque = collections.deque(maxlen=5000)
         self._events: list = []
         self._metrics: dict = {}
         self._metrics_step: int = 0

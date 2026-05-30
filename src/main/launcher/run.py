@@ -19,7 +19,7 @@ from main.launcher.checkpoint import (
     _insert_or_replace_run_dir_arg,
     _peek_arg,
 )
-from main.launcher.child import _build_child_env, _launch_child, _TRAIN_SCRIPT, _SRC_DIR
+from main.launcher.child import _build_child_env, _launch_child, child_log_path, _TRAIN_SCRIPT, _SRC_DIR
 from main.launcher.input import _PollFlags, _dispatch_command, _read_keys, _setup_raw_input
 from main.launcher.state import LauncherState
 from main.launcher.ui import LauncherUI
@@ -45,6 +45,31 @@ def _print_crash_log(log_lines: "list | None") -> None:
     for line in log_lines[-100:]:
         print(line, file=sys.stderr)
     print("──────────────────────────────────────────────────────────────", file=sys.stderr)
+
+
+def _dump_logs_on_exit(run_dir: "str | None", state: LauncherState) -> None:
+    """Finalize the persisted child log in the model dir and point the user to it.
+
+    The child stdout is streamed to ``<run_dir>/launcher_child.log`` live (child.py),
+    so on a normal or crash exit the file is already complete — here we just append a
+    session-end footer and print the path. As a safety net, if streaming never wrote
+    anything (run_dir resolved late, or the file couldn't be opened), we flush the
+    in-memory scrollback to the same file so the logs are never lost on exit.
+    """
+    path = child_log_path(run_dir)
+    if not path:
+        return
+    try:
+        snap = state.snapshot()
+        had_stream = os.path.exists(path) and os.path.getsize(path) > 0
+        os.makedirs(run_dir, exist_ok=True)
+        with open(path, "a", errors="replace") as f:
+            if not had_stream and snap.log_lines:
+                f.write("\n".join(snap.log_lines) + "\n")
+            f.write(f"===== session ended {time.strftime('%Y-%m-%d %H:%M:%S')} =====\n")
+        print(f"\n📄 Full child log: {path}", file=sys.stderr)
+    except Exception:
+        pass
 
 
 def _print_exit_summary(run_dir: "str | None", state: LauncherState) -> None:
@@ -145,6 +170,9 @@ def run(child_args: list, interval_hours: float, pin: bool = True, sync_to_main:
 
     _run_dir_box: list = [run_dir]
     atexit.register(lambda: _print_exit_summary(_run_dir_box[0], state))
+    # Persist the full child log to the model dir on every exit (crash, complete,
+    # quit). atexit runs LIFO, so this fires before the exit-summary print above.
+    atexit.register(lambda: _dump_logs_on_exit(_run_dir_box[0], state))
 
     with Live(refresh_per_second=2, screen=True) as live:
         while True:

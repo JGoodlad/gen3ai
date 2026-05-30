@@ -468,3 +468,67 @@ class TestExitCodes:
             with pytest.raises(SystemExit) as exc_info:
                 run(["--debug"], interval_hours=0, pin=False)
         assert exc_info.value.code == 42
+
+
+# ── Child-log persistence + deep scrollback ──────────────────────────────────
+class TestChildLogPersistence:
+    def test_deep_scrollback_retains_a_full_traceback(self):
+        # The buffer must hold far more than a single multi-line traceback so a
+        # crash dump isn't truncated by routine progress chatter.
+        state = LauncherState(interval_hours=0)
+        for i in range(4000):
+            state.add_log(f"line {i}")
+        lines = state.snapshot().log_lines
+        assert len(lines) > 500          # old cap was 500
+        assert lines[-1] == "line 3999"
+
+    def test_child_log_path_none_without_run_dir(self):
+        from main.launcher.child import child_log_path
+        assert child_log_path(None) is None
+        assert child_log_path("/models/run_x").endswith("launcher_child.log")
+
+    def test_stdout_reader_streams_to_disk(self, tmp_path):
+        # _read_child_stdout writes every line to the log file as it arrives, so a
+        # hard child crash still leaves a complete log behind.
+        from main.launcher.child import _read_child_stdout
+        state = LauncherState(interval_hours=0)
+        proc = MagicMock()
+        proc.stdout = iter([b"first line\n", b"Traceback (most recent call last):\n", b"  boom\n"])
+        log_path = tmp_path / "launcher_child.log"
+        with open(log_path, "a", buffering=1) as f:
+            _read_child_stdout(proc, state, f)
+        contents = log_path.read_text()
+        assert "first line" in contents
+        assert "Traceback (most recent call last):" in contents and "boom" in contents
+
+    def test_dump_on_exit_writes_buffer_when_stream_absent(self, tmp_path):
+        # Fallback path: if streaming never captured anything, the in-memory
+        # scrollback is flushed to the model dir on exit.
+        from main.launcher.run import _dump_logs_on_exit
+        state = LauncherState(interval_hours=0)
+        state.run_dir = str(tmp_path)
+        state.add_log("important crash detail")
+        _dump_logs_on_exit(str(tmp_path), state)
+        out = (tmp_path / "launcher_child.log").read_text()
+        assert "important crash detail" in out
+        assert "session ended" in out
+
+    def test_dump_on_exit_appends_footer_without_duplicating_stream(self, tmp_path):
+        # If streaming already wrote the log, the dump only appends a footer (it
+        # must NOT re-dump the in-memory buffer on top of the streamed content).
+        from main.launcher.run import _dump_logs_on_exit
+        log_path = tmp_path / "launcher_child.log"
+        log_path.write_text("streamed line A\nstreamed line B\n")
+        state = LauncherState(interval_hours=0)
+        state.run_dir = str(tmp_path)
+        state.add_log("buffer only line")
+        _dump_logs_on_exit(str(tmp_path), state)
+        out = log_path.read_text()
+        assert out.count("streamed line A") == 1
+        assert "buffer only line" not in out      # not re-dumped over the stream
+        assert "session ended" in out
+
+    def test_dump_on_exit_noop_without_run_dir(self):
+        from main.launcher.run import _dump_logs_on_exit
+        state = LauncherState(interval_hours=0)
+        _dump_logs_on_exit(None, state)   # must not raise

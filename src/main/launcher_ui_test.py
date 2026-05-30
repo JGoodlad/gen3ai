@@ -74,11 +74,15 @@ class TestLauncherState:
         assert "line2" not in snap.log_lines
 
     def test_log_lines_maxlen(self):
+        # Deep scrollback (5000) so a multi-line traceback isn't pushed out by
+        # routine progress chatter; the full stream is also persisted to disk.
         s = LauncherState(interval_hours=3.0)
-        for i in range(600):
+        for i in range(6000):
             s.add_log(f"line {i}")
         snap = s.snapshot()
-        assert len(snap.log_lines) == 500
+        assert len(snap.log_lines) == 5000
+        assert snap.log_lines[-1] == "line 5999"      # newest retained
+        assert snap.log_lines[0] == "line 1000"       # oldest within the window
 
     def test_events_capped_at_30(self):
         s = LauncherState(interval_hours=3.0)

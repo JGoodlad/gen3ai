@@ -44,17 +44,56 @@ def _read_metrics_pipe(fd_r: int, state: LauncherState) -> None:
         pass
 
 
-def _read_child_stdout(proc: subprocess.Popen, state: LauncherState) -> None:
+def child_log_path(run_dir: "str | None") -> "str | None":
+    """Path of the persisted child-output log for a run, or None if no run_dir."""
+    if not run_dir:
+        return None
+    return os.path.join(run_dir, "launcher_child.log")
+
+
+def _open_child_log(state: LauncherState):
+    """Open (append) the persistent child-output log in the run directory.
+
+    Streaming every line to disk as it arrives means a crash — even a hard
+    ``os._exit`` in the child that bypasses Python cleanup — still leaves a
+    complete log behind in the model directory. Returns None if there is no
+    run_dir yet or the file can't be opened (logging is best-effort, never fatal).
+    """
+    path = child_log_path(state.run_dir)
+    if not path:
+        return None
+    try:
+        os.makedirs(state.run_dir, exist_ok=True)
+        f = open(path, "a", buffering=1, errors="replace")  # line-buffered
+        f.write(f"\n===== child attached {time.strftime('%Y-%m-%d %H:%M:%S')} (pid {state.pid}) =====\n")
+        return f
+    except Exception:
+        return None
+
+
+def _read_child_stdout(proc: subprocess.Popen, state: LauncherState, log_file=None) -> None:
     try:
         for raw in proc.stdout:
             line = raw.decode(errors="replace").rstrip()
             state.add_log(line)
+            if log_file is not None:
+                try:
+                    log_file.write(line + "\n")
+                except Exception:
+                    pass
             if "[CHECKPOINT]" in line:
                 # Surface the save confirmation in the events panel too.
                 fname = line.split("→")[-1].strip() if "→" in line else line
                 state.add_event(f"💾 Checkpoint saved → {os.path.basename(fname)}")
     except Exception:
         pass
+    finally:
+        if log_file is not None:
+            try:
+                log_file.flush()
+                log_file.close()
+            except Exception:
+                pass
 
 
 def _launch_child(
@@ -80,7 +119,8 @@ def _launch_child(
     state.pid = proc.pid
     state.run_start = time.monotonic()
 
+    log_file = _open_child_log(state)
     threading.Thread(target=_read_metrics_pipe, args=(metrics_r, state), daemon=True).start()
-    threading.Thread(target=_read_child_stdout, args=(proc, state), daemon=True).start()
+    threading.Thread(target=_read_child_stdout, args=(proc, state, log_file), daemon=True).start()
 
     return proc
