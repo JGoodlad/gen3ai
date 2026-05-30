@@ -267,28 +267,30 @@ deps/
 
 ## Observation Vector
 
-The full observation is a **2414-dim float32 vector** (`Gen3ObservationEncoder.dimension`):
+The full observation is a **2734-dim float32 vector** (`Gen3ObservationEncoder.dimension`):
 
 | Block | Dims | Offset | Notes |
 |---|---|---|---|
-| Our team (6 × 80) | 480 | 0 | base encoder |
-| Opp team (6 × 80) | 480 | 480 | base encoder |
-| Active context ×2 | 46 | 960 | base encoder |
-| Global env | 13 | 1006 | base encoder |
-| Reactive + matchups | 300 | 1019 | base encoder |
-| Prev-turn action mask | 11 | 1523 | appended by `gen3_env.embed_battle()` |
-| Turn history (`N_HISTORY_TURNS` × 88) | 880 | 1534 | appended by `gen3_env.embed_battle()`; oldest first |
+| Our team (6 × 107) | 642 | 0 | base encoder |
+| Opp team (6 × 107) | 642 | 642 | base encoder |
+| Active context ×2 | 46 | 1284 | base encoder |
+| Global env | 13 | 1330 | base encoder |
+| Reactive + matchups | 300 | 1343 | base encoder |
+| Prev-turn action mask | 11 | 1643 | appended by `gen3_env.embed_battle()` |
+| Turn history (`N_HISTORY_TURNS` × 108) | 1080 | 1654 | appended by `gen3_env.embed_battle()`; oldest first (`N_HISTORY_TURNS = 10`) |
 
-Per-Pokémon slot (80 dims): species ID + 6 base stats, item ID + known + consumed, 2 type IDs, ability ID + known, 7-dim condition (status one-hot), 4 × 9-dim move slots, HP fraction, species_known flag, sleep_counter_norm, toxic_counter_norm, **spread block (18 dims)**, active flag. The item block is 3 dims: `[item_id, known, consumed]` — `consumed=1` when the item was spent this battle (Berry activated, Knock Off, Trick, etc.) and `item_id` retains the identity of the consumed item so the model knows what was lost. `species_known = 1.0` for all populated slots (own team and revealed opponent mons), `0.0` for unseen opponent slots. Sleep counter: `min(turns_slept, 4) / 4` (Gen 3 max 4 turns); toxic counter: `min(turns_poisoned, 8) / 8` (practical max before fainting with Leftovers).
+Per-Pokémon slot (107 dims): species ID + 6 base stats, item ID + known + consumed, 2 type IDs, ability ID + known, 7-dim condition (status one-hot), 4 × 11-dim move slots, HP fraction, species_known flag, sleep_counter_norm, toxic_counter_norm, **spread block (18 dims)**, **HP-candidate block (17 dims)**, active flag. The item block is 3 dims: `[item_id, known, consumed]` — `consumed=1` when the item was spent this battle (Berry activated, Knock Off, Trick, etc.) and `item_id` retains the identity of the consumed item so the model knows what was lost. `species_known = 1.0` for all populated slots (own team and revealed opponent mons), `0.0` for unseen opponent slots. Sleep counter: `min(turns_slept, 4) / 4` (Gen 3 max 4 turns); toxic counter: `min(turns_poisoned, 8) / 8` (practical max before fainting with Leftovers).
 
-Spread block (18 dims, appended at offset 61 within each slot): IVs ×6 each/31 + EVs ×6 each/252 + spread_known (1.0 own, 0.0 opp) + nature modifiers ×5 [atk, def, spa, spd, spe] as raw floats (0.9/1.0/1.1). Opponent slots have all 18 dims as zeros; `spread_known=0` distinguishes "unknown opponent" from "own Pokémon with 0 EVs".
+Move slot (11 dims, layout in `src/agents/observation/moves.py`): move ID, base power (/200), has_secondary, has_recoil, type ID, category (0=status, 1=physical, 2=special), known flag, current PP (/MAX_PP), max PP (/MAX_PP), accuracy (raw% / 100), never_miss bit. Accuracy is split into a continuous scalar plus a categorical bit: never-miss moves carry accuracy=100 in the mapping → encode as `[1.0, 1]`, while a genuine 100%-accuracy move is `[1.0, 0]` — same scalar, distinguished only by the bit. A 100%-accuracy move can still miss into evasion (Double Team) or after Sand-Attack; a never-miss move (Swift, Aerial Ace, all status/self moves) bypasses the accuracy/evasion check entirely.
+
+Spread block (18 dims, appended at offset 71 within each slot): IVs ×6 each/31 + EVs ×6 each/252 + spread_known (1.0 own, 0.0 opp) + nature modifiers ×5 [atk, def, spa, spd, spe] as raw floats (0.9/1.0/1.1). Opponent slots have all 18 dims as zeros; `spread_known=0` distinguishes "unknown opponent" from "own Pokémon with 0 EVs".
 
 Global env (13 dims): weather one-hot (6), spikes ×2 (2), log-turn (1), our reflect (1), our light screen (1), opp reflect (1), opp light screen (1).
 
-Each TurnDelta slot (88 dims, layout in `src/agents/observation/turn_delta_encoder.py`):
+Each TurnDelta slot (108 dims, layout in `src/agents/observation/turn_delta_encoder.py`; all offsets computed from named `OFFSET_*` / `*_DIM` constants — never hardcode indices):
 
-- **Base block (39 dims, indices 0–38)** — our/opp move features (5 each: raw move_id int, power_norm, has_secondary, has_recoil, raw type_id int), switched/failed flags, cant onehots (5 ea), summed HP deltas, faint flags, opp_move_known, effectiveness onehots (4 ea), move-order (2).
-- **Extended block (49 dims, indices 39–87, added in `gen3_unified_v2`)** — our/opp boost deltas (7 each, in BOOST_STATS order); `phase_is_forced_switch` (1, distinguishes half-turn replacement slots from full action-pair slots); our/opp `target_hp_delta` (1 each, HP delta on the named target of each side's damaging move); per-side **HP-level vectors** (6 each, end-of-turn HP for every team slot, giving the model the full HP trajectory across the window); our/opp **target_status onehots** (7 each, status of the named target AT MOVE-FIRE TIME — for Flash Fire-vs-frozen and sleep-talker reads); 6 raw species IDs — `our_actor` / `opp_actor` / `our_target` / `opp_target` / `our_switch_to` / `opp_switch_to` — embedded by the extractor through `species_embedding`.
+- **Base block (51 dims, indices 0–50)** — our/opp move features (5 each: raw move_id int, power_norm, has_secondary, has_recoil, raw type_id int), switched/failed flags, cant onehots (`CANT_DIM` = 11 ea: par/slp/frz/flinch/confusion/…), summed HP deltas, faint flags, opp_move_known, effectiveness onehots (4 ea), move-order (2).
+- **Extended block (57 dims, indices 51–107, added in `gen3_unified_v2`, extended in `gen3_move_outcome_v1`)** — our/opp boost deltas (7 each, in BOOST_STATS order); `phase_is_forced_switch` (1, distinguishes half-turn replacement slots from full action-pair slots); our/opp `target_hp_delta` (1 each, HP delta on the named target of each side's damaging move); per-side **HP-level vectors** (6 each, end-of-turn HP for every team slot, giving the model the full HP trajectory across the window); our/opp **target_status onehots** (7 each, status of the named target AT MOVE-FIRE TIME — for Flash Fire-vs-frozen and sleep-talker reads); our/opp **move-outcome onehots** (3 each: `[hit, miss, fail]`, all-zero when the side switched / was prevented by cant / used no move); our/opp **move-crit** (1 each, orthogonal to outcome — a hit slot may also have crit=1); 6 raw species IDs — `our_actor` / `opp_actor` / `our_target` / `opp_target` / `our_switch_to` / `opp_switch_to` — embedded by the extractor through `species_embedding`.
 
 The extractor embeds all `N_HISTORY_TURNS` slots identically through shared move (16) / type (16) / species (32) embedding tables: 4 raw move/type IDs → 4×16 + 6 raw species IDs → 6×32 + 78 pass-through scalars = 334-dim per slot. Positional encodings are added, one self-attention pass runs, and the last (most-recent) slot's output flows into the projection block. All zeros on the first turn of each episode.
 
@@ -314,7 +316,7 @@ Actor species resolution prefers `damaging_event.user_species` (protocol-truth) 
    - *Threat*: their team ← our active (post-Pressure); fainted query slots zeroed
    - *Opp Synergy*: their team ← their team; fainted keys masked, fainted queries zeroed
 7. **Attention pool** — one learned query per side attends over the 6 role tokens (fainted key-masked) producing a single 128-dim pooled team token per side; replaces slot-order flatten for permutation equivariance
-8. **Turn-history attention** — all `N_HISTORY_TURNS` (5) raw TurnDelta vectors are embedded identically through the shared move/type tables (4 IDs → 4×16 embeddings + 35 scalars = 99-dim per slot), positional encodings added, one MHA self-attention pass applied, and the last (most-recent) position's output used as the 99-dim history-informed block for the projection
+8. **Turn-history attention** — all `N_HISTORY_TURNS` (10) raw TurnDelta vectors are embedded identically through the shared move/type tables (4 IDs → 4×16 embeddings + 35 scalars = 99-dim per slot), positional encodings added, one MHA self-attention pass applied, and the last (most-recent) position's output used as the 99-dim history-informed block for the projection
 9. **Pre-projection LayerNorm** — normalises the concatenated projection input to equalise per-block scales (embeddings, 0/1 validity bits, HP fractions, ±1 TurnDelta deltas)
 10. **Projection** — Linear(576→512)→ReLU; input is: our_pool(128) + their_pool(128) + our_active_refined(128) + active_ctx_enc(32×2) + global+scalars(29) + turn_delta_embedded(99)
 
