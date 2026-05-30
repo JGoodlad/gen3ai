@@ -55,7 +55,17 @@ MODEL_CONFIG_VERSION = 2
 #   (e.g. move_network.* → pokemon_encoder.move_network.*, our_cls →
 #   cls_pool.our_cls). Old checkpoints are intentionally incompatible so they
 #   fail with a clean arch-family error instead of an SB3 strict-load KeyError.
-ARCH_SIGNATURE = "gen3_modular_v1"
+#
+# v7 (gen3_dual_value_v1): value-dedicated CLS readout (H4 / Option C). CLSPool
+#   gains a third learned query (`value_cls`) that attends over all 12 team
+#   tokens to produce a global value summary; ProjectionAssembler now emits a
+#   (pi_combined, vf_combined) pair, and the root extractor has a second
+#   projection head (`value_pre_norm` + `value_projection`). `forward` returns a
+#   (pi_features, vf_features) tuple consumed by the new
+#   `Gen3DualHeadMaskablePolicy`. The transformer body stays shared; only the
+#   readout + projection + critic mlp branch are now independent. New weights and
+#   a tuple-returning forward make this incompatible with v6 checkpoints.
+ARCH_SIGNATURE = "gen3_dual_value_v1"
 
 
 class ModelVersionError(Exception):

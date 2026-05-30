@@ -189,7 +189,7 @@ def test_clspool_active_refined_is_exact_gather():
         fainted_mask_opp=torch.zeros(B, TEAM_SIZE, dtype=torch.bool),
         our_active_idx=our_active_idx,
     )
-    _, _, our_active_refined = model.cls_pool(our_out, their_out, ctx)
+    _, _, our_active_refined, _ = model.cls_pool(our_out, their_out, ctx)
     expected = our_out[torch.arange(B), our_active_idx]
     assert torch.allclose(our_active_refined, expected)
 
@@ -208,11 +208,53 @@ def test_clspool_ignores_fainted_keyed_slot():
         our_active_idx=torch.tensor([0]),      # active slot 0, unmasked
     )
     their = torch.randn(B, TEAM_SIZE, D_MODEL)
-    pooled_a, _, _ = model.cls_pool(base, their, ctx)
+    pooled_a, _, _, _ = model.cls_pool(base, their, ctx)
     mutated = base.clone()
     mutated[0, 5] = torch.randn(D_MODEL)       # perturb only the masked slot
-    pooled_b, _, _ = model.cls_pool(mutated, their, ctx)
+    pooled_b, _, _, _ = model.cls_pool(mutated, their, ctx)
     assert torch.allclose(pooled_a, pooled_b, atol=1e-6)
+
+
+def test_clspool_value_pool_shape_and_masking():
+    """The value pool returns a [B, D_MODEL] summary and ignores fainted (key-masked)
+    slots on EITHER side — it attends over all 12 team tokens."""
+    model, _ = _make_model()
+    B = 1
+    our = torch.randn(B, TEAM_SIZE, D_MODEL)
+    their = torch.randn(B, TEAM_SIZE, D_MODEL)
+    fainted_ours = torch.zeros(B, TEAM_SIZE, dtype=torch.bool)
+    fainted_opp = torch.zeros(B, TEAM_SIZE, dtype=torch.bool)
+    fainted_opp[0, 3] = True                    # an opponent slot is fainted/masked
+    ctx = _dummy_ctx(
+        batch_size=B, device=torch.device("cpu"),
+        fainted_mask_ours=fainted_ours, fainted_mask_opp=fainted_opp,
+        our_active_idx=torch.tensor([0]),
+    )
+    _, _, _, value_a = model.cls_pool(our, their, ctx)
+    assert value_a.shape == (B, D_MODEL)
+    # Perturbing only the masked opponent slot must not move the value summary.
+    mutated = their.clone()
+    mutated[0, 3] = torch.randn(D_MODEL)
+    _, _, _, value_b = model.cls_pool(our, mutated, ctx)
+    assert torch.allclose(value_a, value_b, atol=1e-6)
+
+
+def test_clspool_value_query_is_wired():
+    """Zeroing the value_cls query must change the value pool — proves it's queried."""
+    model, _ = _make_model()
+    B = 1
+    our = torch.randn(B, TEAM_SIZE, D_MODEL)
+    their = torch.randn(B, TEAM_SIZE, D_MODEL)
+    ctx = _dummy_ctx(
+        batch_size=B, device=torch.device("cpu"),
+        fainted_mask_ours=torch.zeros(B, TEAM_SIZE, dtype=torch.bool),
+        fainted_mask_opp=torch.zeros(B, TEAM_SIZE, dtype=torch.bool),
+        our_active_idx=torch.tensor([0]),
+    )
+    _, _, _, value_before = model.cls_pool(our, their, ctx)
+    model.cls_pool.value_cls.data.zero_()
+    _, _, _, value_after = model.cls_pool(our, their, ctx)
+    assert not torch.allclose(value_before, value_after)
 
 
 # ---------------------------------------------------------------------------
@@ -226,14 +268,20 @@ def test_projection_assembler_width_and_passthrough():
     our_pool = torch.randn(B, D_MODEL)
     their_pool = torch.randn(B, D_MODEL)
     active = torch.randn(B, D_MODEL)
+    value_pool = torch.randn(B, D_MODEL)
     non_matchup = torch.randn(B, K)
     ctx = _dummy_ctx(
         our_ctx_raw=torch.randn(B, active_ctx_dim),
         opp_ctx_raw=torch.randn(B, active_ctx_dim),
         non_matchup_rest=non_matchup,
     )
-    combined = model.assembler(our_pool, their_pool, active, ctx)
-    expected_width = 3 * D_MODEL + 2 * ACTIVE_CTX_HIDDEN[1] + K
-    assert combined.shape == (B, expected_width)
-    # The non-matchup tail is concatenated verbatim.
-    assert torch.allclose(combined[:, -K:], non_matchup)
+    pi_combined, vf_combined = model.assembler(our_pool, their_pool, active, value_pool, ctx)
+    # Policy input: our/their pools + active + 2 encoded ctxs + non-matchup tail.
+    pi_width = 3 * D_MODEL + 2 * ACTIVE_CTX_HIDDEN[1] + K
+    # Value input: value pool + 2 encoded ctxs + non-matchup tail (no team pools / active).
+    vf_width = D_MODEL + 2 * ACTIVE_CTX_HIDDEN[1] + K
+    assert pi_combined.shape == (B, pi_width)
+    assert vf_combined.shape == (B, vf_width)
+    # The non-matchup tail is concatenated verbatim into both heads.
+    assert torch.allclose(pi_combined[:, -K:], non_matchup)
+    assert torch.allclose(vf_combined[:, -K:], non_matchup)

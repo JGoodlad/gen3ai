@@ -664,8 +664,16 @@ class TeamTransformer(torch.nn.Module):
 
 
 class CLSPool(torch.nn.Module):
-    """Per-side CLS cross-attention pool: one learned query attends over the 6 post-transformer
-    team tokens (fainted slots key-masked). Also extracts our active Pokémon's refined token."""
+    """Per-side CLS cross-attention pools plus a value-dedicated pool.
+
+    `our_cls`/`their_cls` each attend over their side's 6 post-transformer team tokens
+    (fainted slots key-masked) to produce the policy-facing team summaries, and we also
+    extract our active Pokémon's refined token. `value_cls` is a third learned query that
+    attends over ALL 12 team tokens (both sides) to produce a global "who's winning"
+    summary for the value head — a different aggregation than the policy's our-active-centric
+    view. History/global information has already flowed into the team tokens via the unified
+    transformer, so pooling over the 12 team tokens gives the value query a whole-board read.
+    """
 
     def __init__(self, layout: Dict[str, Any]):
         super().__init__()
@@ -676,8 +684,14 @@ class CLSPool(torch.nn.Module):
         self.norm_pool_our = torch.nn.LayerNorm(D_MODEL)
         self.norm_pool_their = torch.nn.LayerNorm(D_MODEL)
 
+        # Value-dedicated CLS pool (Option C): a separate readout for the critic so the
+        # shared body's representation is summarised through a value-specific lens.
+        self.value_cls = torch.nn.Parameter(torch.randn(1, 1, D_MODEL) * 0.02)
+        self.value_cls_attn = torch.nn.MultiheadAttention(embed_dim=D_MODEL, num_heads=TRANSFORMER_N_HEADS, batch_first=True)
+        self.norm_pool_value = torch.nn.LayerNorm(D_MODEL)
+
     def forward(self, our_team_out: torch.Tensor, their_team_out: torch.Tensor,
-                ctx: ExtractorContext) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+                ctx: ExtractorContext) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
         batch_size = ctx.batch_size
         our_cls_q   = self.our_cls.expand(batch_size, -1, -1)
         their_cls_q = self.their_cls.expand(batch_size, -1, -1)
@@ -690,12 +704,28 @@ class CLSPool(torch.nn.Module):
 
         batch_idx = torch.arange(batch_size, device=ctx.device)
         our_active_refined = our_team_out[batch_idx, ctx.our_active_idx]            # [B, 128]
-        return our_team_pooled, their_team_pooled, our_active_refined
+
+        # Value pool: one query over both teams' 12 tokens (fainted slots key-masked).
+        all_team_out = torch.cat([our_team_out, their_team_out], dim=1)             # [B, 12, 128]
+        all_fainted  = torch.cat([ctx.fainted_mask_ours, ctx.fainted_mask_opp], dim=1)  # [B, 12]
+        value_cls_q  = self.value_cls.expand(batch_size, -1, -1)
+        value_pool_out, _ = self.value_cls_attn(value_cls_q, all_team_out, all_team_out,
+                                                key_padding_mask=all_fainted)
+        value_pooled = self.norm_pool_value(value_pool_out).squeeze(1)              # [B, 128]
+
+        return our_team_pooled, their_team_pooled, our_active_refined, value_pooled
 
 
 class ProjectionAssembler(torch.nn.Module):
-    """Assembles the projection input: team pools + our active token + per-side encoded
-    active contexts + the non-matchup scalar tail."""
+    """Assembles the pre-projection inputs for BOTH heads.
+
+    Policy input: team pools + our active token + per-side encoded active contexts + the
+    non-matchup scalar tail (unchanged from the single-head design).
+    Value input: the value-dedicated pool + the same per-side encoded active contexts +
+    non-matchup scalar tail. The active-context encoder and the raw global scalars are
+    shared inputs (not the contested body representation), so reusing them for both heads
+    is parameter-efficient; the value head's distinct signal comes from `value_pooled`.
+    """
 
     def __init__(self, layout: Dict[str, Any]):
         super().__init__()
@@ -707,10 +737,11 @@ class ProjectionAssembler(torch.nn.Module):
         )
 
     def forward(self, our_team_pooled: torch.Tensor, their_team_pooled: torch.Tensor,
-                our_active_refined: torch.Tensor, ctx: ExtractorContext) -> torch.Tensor:
+                our_active_refined: torch.Tensor, value_pooled: torch.Tensor,
+                ctx: ExtractorContext) -> Tuple[torch.Tensor, torch.Tensor]:
         our_ctx_enc = self.active_ctx_encoder(ctx.our_ctx_raw)                      # [B, 32]
         opp_ctx_enc = self.active_ctx_encoder(ctx.opp_ctx_raw)                      # [B, 32]
-        return torch.cat([
+        pi_combined = torch.cat([
             our_team_pooled,
             their_team_pooled,
             our_active_refined,
@@ -718,6 +749,13 @@ class ProjectionAssembler(torch.nn.Module):
             opp_ctx_enc,
             ctx.non_matchup_rest,
         ], dim=1)
+        vf_combined = torch.cat([
+            value_pooled,
+            our_ctx_enc,
+            opp_ctx_enc,
+            ctx.non_matchup_rest,
+        ], dim=1)
+        return pi_combined, vf_combined
 
 
 class Gen3FeaturesExtractor(torch.nn.Module):
@@ -744,17 +782,25 @@ class Gen3FeaturesExtractor(torch.nn.Module):
 
         self.role_token_size = ROLE_TOKEN_SIZE
 
-        # Discover the projection-input dim via a dummy forward through the assembled phases.
+        # Discover the policy/value projection-input dims via a dummy forward through the
+        # assembled phases (the assembler returns a (pi_combined, vf_combined) pair).
         with torch.no_grad():
             dummy_obs = torch.zeros((1, layout['total_dim']))
-            sample_output = self.forward_internal({"observation": dummy_obs})
-            self.projection_input_dim = sample_output.shape[1]
+            pi_sample, vf_sample = self.forward_internal({"observation": dummy_obs})
+            self.projection_input_dim = pi_sample.shape[1]
+            self.value_projection_input_dim = vf_sample.shape[1]
 
-        # Projection head. Pre-projection LayerNorm equalises per-block scales.
-        self.pre_proj_norm = torch.nn.LayerNorm(self.projection_input_dim)
+        # Two projection heads, both → PROJECTION_DIM. Pre-projection LayerNorm equalises
+        # per-block scales. The value head reads the value-dedicated CLS pool (Option C):
+        # the transformer body is shared, but policy and value are summarised + projected
+        # through independent paths so the critic isn't fighting the actor over the readout.
         self.projection_dim = PROJECTION_DIM
+        self.pre_proj_norm = torch.nn.LayerNorm(self.projection_input_dim)
         self.projection = torch.nn.Linear(self.projection_input_dim, self.projection_dim)
+        self.value_pre_norm = torch.nn.LayerNorm(self.value_projection_input_dim)
+        self.value_projection = torch.nn.Linear(self.value_projection_input_dim, self.projection_dim)
         self.activation = torch.nn.ReLU()
+        # Both heads emit PROJECTION_DIM; SB3 sizes the shared mlp_extractor from this.
         self.features_dim = self.projection_dim
 
         if log_level >= LogLevel.PERIODIC and mappings:
@@ -784,17 +830,25 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         return locate_active_slot(active_flags)
 
     def forward_internal(self, obs):
-        """Build the combined feature vector (pre-projection) by chaining the phase modules."""
+        """Build the (pi_combined, vf_combined) pre-projection pair by chaining the phases."""
         ctx = self.unpack(obs)
         role_tokens = self.pokemon_encoder(ctx, self.embeddings)
         our_team_out, their_team_out = self.team_transformer(role_tokens, ctx, self.embeddings)
-        our_team_pooled, their_team_pooled, our_active_refined = self.cls_pool(
+        our_team_pooled, their_team_pooled, our_active_refined, value_pooled = self.cls_pool(
             our_team_out, their_team_out, ctx
         )
-        return self.assembler(our_team_pooled, their_team_pooled, our_active_refined, ctx)
+        return self.assembler(our_team_pooled, their_team_pooled, our_active_refined, value_pooled, ctx)
 
     def forward(self, obs):
-        combined = self.forward_internal(obs)
+        """Returns a (pi_features, vf_features) tuple — both [B, PROJECTION_DIM].
+
+        The consuming policy (`Gen3DualHeadMaskablePolicy`) unpacks the tuple and routes
+        each half to its own mlp_extractor branch. Standard SB3 policies expect a single
+        tensor, so this extractor MUST be paired with that custom policy.
+        """
+        pi_combined, vf_combined = self.forward_internal(obs)
         if self._debugger is not None:
             self._debugger.on_forward(obs["observation"])
-        return self.activation(self.projection(self.pre_proj_norm(combined)))
+        pi_features = self.activation(self.projection(self.pre_proj_norm(pi_combined)))
+        vf_features = self.activation(self.value_projection(self.value_pre_norm(vf_combined)))
+        return pi_features, vf_features

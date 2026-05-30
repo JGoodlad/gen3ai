@@ -160,8 +160,10 @@ def test_forward_output_shape():
     model, layout = _make_model()
     obs = _zero_obs(layout)
     with torch.no_grad():
-        out = model({"observation": obs})
-    assert out.shape == (1, model.features_dim)
+        pi_features, vf_features = model({"observation": obs})
+    # Dual-head extractor returns (policy, value) features, both PROJECTION_DIM-wide.
+    assert pi_features.shape == (1, model.features_dim)
+    assert vf_features.shape == (1, model.features_dim)
 
 
 def test_active_context_changes_output():
@@ -174,8 +176,8 @@ def test_active_context_changes_output():
     obs_ctx[0, ctx_start] = 1.0  # first dim of our active context
 
     with torch.no_grad():
-        out_zero = model.forward_internal({"observation": obs_zero})
-        out_ctx  = model.forward_internal({"observation": obs_ctx})
+        out_zero, _ = model.forward_internal({"observation": obs_zero})
+        out_ctx , _ = model.forward_internal({"observation": obs_ctx})
     assert not torch.allclose(out_zero, out_ctx)
 
 
@@ -189,8 +191,8 @@ def test_opp_active_context_changes_output():
     obs_ctx[0, ctx_start + active_ctx_dim] = 1.0
 
     with torch.no_grad():
-        out_zero = model.forward_internal({"observation": obs_zero})
-        out_ctx  = model.forward_internal({"observation": obs_ctx})
+        out_zero, _ = model.forward_internal({"observation": obs_zero})
+        out_ctx , _ = model.forward_internal({"observation": obs_ctx})
     assert not torch.allclose(out_zero, out_ctx)
 
 
@@ -212,8 +214,8 @@ def test_history_most_recent_slot_changes_output():
     obs_hist[0, last_slot_start] = 1.0
 
     with torch.no_grad():
-        out_zero = model.forward_internal({"observation": obs_zero})
-        out_hist = model.forward_internal({"observation": obs_hist})
+        out_zero, _ = model.forward_internal({"observation": obs_zero})
+        out_hist, _ = model.forward_internal({"observation": obs_hist})
     assert not torch.allclose(out_zero, out_hist)
 
 
@@ -226,8 +228,8 @@ def test_history_oldest_slot_changes_output():
     obs_hist[0, start] = 1.0
 
     with torch.no_grad():
-        out_zero = model.forward_internal({"observation": obs_zero})
-        out_hist = model.forward_internal({"observation": obs_hist})
+        out_zero, _ = model.forward_internal({"observation": obs_zero})
+        out_hist, _ = model.forward_internal({"observation": obs_hist})
     assert not torch.allclose(out_zero, out_hist)
 
 
@@ -242,8 +244,8 @@ def test_history_two_distinct_slots_produce_distinct_outputs():
     obs_b[0, start + TURN_DELTA_DIM] = 1.0
 
     with torch.no_grad():
-        out_a = model.forward_internal({"observation": obs_a})
-        out_b = model.forward_internal({"observation": obs_b})
+        out_a, _ = model.forward_internal({"observation": obs_a})
+        out_b, _ = model.forward_internal({"observation": obs_b})
     assert not torch.allclose(out_a, out_b)
 
 
@@ -256,10 +258,10 @@ def test_history_pos_embedding_wired_in():
     obs[0, start] = 1.0
 
     with torch.no_grad():
-        out_before = model.forward_internal({"observation": obs})
+        out_before, _ = model.forward_internal({"observation": obs})
         for p in model.team_transformer.turn_history_pos_emb.parameters():
             p.zero_()
-        out_after = model.forward_internal({"observation": obs})
+        out_after, _ = model.forward_internal({"observation": obs})
     assert not torch.allclose(out_before, out_after)
 
 
@@ -272,10 +274,10 @@ def test_history_proj_wired_in():
     obs[0, start + 10] = 0.5  # touch a scalar dim of a history slot
 
     with torch.no_grad():
-        out_before = model.forward_internal({"observation": obs})
+        out_before, _ = model.forward_internal({"observation": obs})
         for p in model.team_transformer.history_proj.parameters():
             p.zero_()
-        out_after = model.forward_internal({"observation": obs})
+        out_after, _ = model.forward_internal({"observation": obs})
     assert not torch.allclose(out_before, out_after)
 
 
@@ -295,8 +297,8 @@ def test_history_empty_slot_masking():
     obs_filled[0, start + 10] = 0.25
 
     with torch.no_grad():
-        out_zero = model.forward_internal({"observation": obs_zero})
-        out_filled = model.forward_internal({"observation": obs_filled})
+        out_zero, _ = model.forward_internal({"observation": obs_zero})
+        out_filled, _ = model.forward_internal({"observation": obs_filled})
     assert not torch.allclose(out_zero, out_filled)
 
 
@@ -315,10 +317,10 @@ def test_transformer_layer_wired_in():
     obs[0, _history_start(layout) + 10] = 0.3
 
     with torch.no_grad():
-        out_before = model.forward_internal({"observation": obs})
+        out_before, _ = model.forward_internal({"observation": obs})
         for p in model.team_transformer.transformer_layers[0].parameters():
             p.zero_()
-        out_after = model.forward_internal({"observation": obs})
+        out_after, _ = model.forward_internal({"observation": obs})
     assert not torch.allclose(out_before, out_after)
 
 
@@ -330,7 +332,7 @@ def test_cls_pooling_wired_in():
     obs[0, layout["parts"]["context"]["start"]] = 1.0
 
     with torch.no_grad():
-        out_before = model.forward_internal({"observation": obs})
+        out_before, _ = model.forward_internal({"observation": obs})
         for p in model.cls_pool.our_cls_attn.parameters():
             p.zero_()
         for p in model.cls_pool.their_cls_attn.parameters():
@@ -338,7 +340,7 @@ def test_cls_pooling_wired_in():
         # The CLS parameter vectors themselves are nontrivially queried — zero them too.
         model.cls_pool.our_cls.data.zero_()
         model.cls_pool.their_cls.data.zero_()
-        out_after = model.forward_internal({"observation": obs})
+        out_after, _ = model.forward_internal({"observation": obs})
     assert not torch.allclose(out_before, out_after)
 
 
@@ -415,8 +417,8 @@ def test_active_flag_detection_picks_marked_slot():
     obs_slot3 = populate(_zero_obs(layout), active_slot=3)
 
     with torch.no_grad():
-        out0 = model.forward_internal({"observation": obs_slot0})
-        out3 = model.forward_internal({"observation": obs_slot3})
+        out0, _ = model.forward_internal({"observation": obs_slot0})
+        out3, _ = model.forward_internal({"observation": obs_slot3})
 
     # Outputs must differ — different active flag changes per-slot inputs
     # (and so role tokens), and also changes which role token is extracted

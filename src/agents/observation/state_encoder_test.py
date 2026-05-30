@@ -58,6 +58,8 @@ def test_encoder_and_features_extractor_are_compatible():
         "action_mask": torch.ones(1, 11, dtype=torch.int8),
     }
     with torch.no_grad():
-        out = model(dummy_obs)
+        pi_features, vf_features = model(dummy_obs)
 
-    assert out.shape == (1, model.features_dim)
+    # Dual-head extractor: policy and value features, both PROJECTION_DIM-wide.
+    assert pi_features.shape == (1, model.features_dim)
+    assert vf_features.shape == (1, model.features_dim)

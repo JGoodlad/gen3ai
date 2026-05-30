@@ -304,7 +304,7 @@ Actor species resolution prefers `damaging_event.user_species` (protocol-truth) 
 named phase `nn.Module`s, each owning its layers, chained by a thin `forward_internal`
 orchestrator. Data flows:
 
-**`ObsUnpack` → `PokemonEncoder` → `TeamTransformer` → `CLSPool` → `ProjectionAssembler`**, then a root `pre_proj_norm` → `projection` → `ReLU` head.
+**`ObsUnpack` → `PokemonEncoder` → `TeamTransformer` → `CLSPool` → `ProjectionAssembler`**, then **two** root projection heads (policy + value), each `pre_proj_norm` → `projection` → `ReLU`. `forward` returns a `(pi_features, vf_features)` tuple — the transformer body is shared, but the actor and critic read it through independent CLS pools and projection heads (the **value-dedicated CLS readout**, H4 / Option C). This extractor is paired with `Gen3DualHeadMaskablePolicy` (`src/agents/model/policy.py`), which unpacks the tuple and routes each half to its own `mlp_extractor` branch; stock SB3 policies assume a single-tensor extractor and won't work.
 
 The embedding tables live in a shared `Embeddings` module and are passed as a forward
 argument to the phases that need them (Pokémon encoding and turn-history embedding), so
@@ -316,12 +316,12 @@ phase's forward signature narrow. See `src/agents/model/CLAUDE.md` for the phase
 2. **`ObsUnpack`** (stateless) — peels the flat 2734-dim observation into the named tensors of `ExtractorContext`: per-Pokémon block + categorical IDs, the global/reactive feature slices, the matchup matrices, and (hoisted here) the active-slot indices + fainted key-masks used downstream.
 3. **`PokemonEncoder`** — embeds + stitches the enriched per-Pokémon vector; runs the **shared move processor** (Linear→ReLU→Linear, `MOVE_NET_HIDDEN`) over every move slot (input: move/type embeddings, remnants, known flag, battle context, per-move matchup ×6 + matchup-validity ×6, HP-candidate distribution, and prev-turn move validity), a **within-Pokémon move self-attention** (MHA 32-dim, 2 heads, + LayerNorm residual), then the **role encoder** (Linear→ReLU→Linear, `ROLE_ENCODER_HIDDEN`) → 12 × 128 role tokens.
 4. **`TeamTransformer`** — builds a 23-token sequence (6 our-team + 6 their-team role tokens + `N_HISTORY_TURNS`=10 history tokens + 1 global token), adds token-type and history-positional embeddings, and runs a `TRANSFORMER_N_LAYERS`-deep `nn.TransformerEncoderLayer` stack (d_model 128, `TRANSFORMER_N_HEADS` heads, FFN `TRANSFORMER_FFN_DIM`, post-LN) under a key-padding mask that masks fainted team slots and empty history slots. History tokens come from `embed_delta_slot`; the global token from the two active-contexts + non-matchup scalars. Returns the two refined team-token blocks.
-5. **`CLSPool`** — one learned CLS query per side cross-attends over its 6 post-transformer team tokens (fainted slots key-masked) → a 128-dim pooled team token per side (+ LayerNorm). Also extracts `our_active_refined` = the transformer output of our active slot.
-6. **`ProjectionAssembler`** — concatenates `our_pool(128) + their_pool(128) + our_active_refined(128) + active_ctx_enc(32) + opp_ctx_enc(32) + non_matchup_rest`, where `active_ctx_encoder` is Linear→ReLU→Linear (`ACTIVE_CTX_HIDDEN`) applied per side.
-7. **Root head** — `pre_proj_norm` (LayerNorm, equalises per-block scales) → `projection` (Linear) → `ReLU`.
+5. **`CLSPool`** — one learned CLS query per side cross-attends over its 6 post-transformer team tokens (fainted slots key-masked) → a 128-dim pooled team token per side (+ LayerNorm). Also extracts `our_active_refined` = the transformer output of our active slot. A **third learned query, `value_cls`**, cross-attends over **all 12 team tokens** (both sides, fainted key-masked) → a 128-dim global `value_pooled` summary — a whole-board "who's winning" read for the critic, a different aggregation than the policy's our-active-centric pools.
+6. **`ProjectionAssembler`** — emits a `(pi_combined, vf_combined)` pair. Policy: `our_pool(128) + their_pool(128) + our_active_refined(128) + active_ctx_enc(32) + opp_ctx_enc(32) + non_matchup_rest`. Value: `value_pooled(128) + active_ctx_enc(32) + opp_ctx_enc(32) + non_matchup_rest`. `active_ctx_encoder` (Linear→ReLU→Linear, `ACTIVE_CTX_HIDDEN`) is shared by both heads — it encodes inputs, not the contested body representation.
+7. **Root heads** — two parallel `pre_proj_norm` (LayerNorm) → `projection` (Linear) → `ReLU` heads, one per `*_combined`, both emitting `PROJECTION_DIM`. SB3 sizes the shared `mlp_extractor` from `features_dim = PROJECTION_DIM`, then `Gen3DualHeadMaskablePolicy` feeds the policy half to `forward_actor` and the value half to `forward_critic`.
 
-The projection input dimension is discovered automatically via a dummy forward pass in
-`__init__` (run through the assembled phases), so it stays correct when the architecture
+Both projection input dimensions are discovered automatically via a dummy forward pass in
+`__init__` (run through the assembled phases), so they stay correct when the architecture
 changes without any manual update.
 
 ---

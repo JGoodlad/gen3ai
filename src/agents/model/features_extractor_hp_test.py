@@ -110,8 +110,8 @@ def test_hp_slot_detection_only_fires_on_canonical_move_num(extractor):
     x_hp     = {'observation': torch.tensor(obs)[None],     'action_mask': torch.ones(1, 11)}
     x_no_hp  = {'observation': torch.tensor(obs_no_hp)[None], 'action_mask': torch.ones(1, 11)}
     with torch.no_grad():
-        out_hp    = fe(x_hp)
-        out_no_hp = fe(x_no_hp)
+        out_hp, _    = fe(x_hp)
+        out_no_hp, _ = fe(x_no_hp)
     # Outputs must differ — the HP-num path engaged the soft type embedding.
     assert not torch.allclose(out_hp, out_no_hp)
 
@@ -150,8 +150,8 @@ def test_matchup_validity_distinguishes_unknown_from_immune(extractor):
     x_un  = {'observation': torch.tensor(obs_unrevealed)[None], 'action_mask': torch.ones(1, 11)}
     x_rev = {'observation': torch.tensor(obs_revealed)[None],   'action_mask': torch.ones(1, 11)}
     with torch.no_grad():
-        out_un  = fe(x_un)
-        out_rev = fe(x_rev)
+        out_un, _  = fe(x_un)
+        out_rev, _ = fe(x_rev)
     # Must differ — the validity bit feeds the move_network differently in the
     # two scenarios, which propagates to the projection output.
     assert not torch.allclose(out_un, out_rev)
@@ -180,6 +180,8 @@ def test_forward_runs_with_hp_probs_in_obs(extractor):
 
     x = {'observation': torch.tensor(obs)[None], 'action_mask': torch.ones(1, 11)}
     with torch.no_grad():
-        out = fe(x)
-    assert torch.isfinite(out).all()
-    assert out.shape == (1, 512)
+        pi_out, vf_out = fe(x)
+    assert torch.isfinite(pi_out).all()
+    assert torch.isfinite(vf_out).all()
+    assert pi_out.shape == (1, 512)
+    assert vf_out.shape == (1, 512)

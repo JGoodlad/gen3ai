@@ -40,6 +40,7 @@ from stable_baselines3.common.vec_env import DummyVecEnv, SubprocVecEnv
 from stable_baselines3.common.monitor import Monitor
 
 from agents.model.features_extractor import Gen3FeaturesExtractor, NET_ARCH
+from agents.model.policy import Gen3DualHeadMaskablePolicy
 from agents.model.model_version import ModelVersion, ModelVersionError
 from agents.model.snapshot import save_model_snapshot, load_model_snapshot, read_checkpoint_metadata, record_checkpoint
 from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings
@@ -179,12 +180,15 @@ def _run_roundtrip_test(model, layout: dict, policy_kwargs: dict, debug: bool = 
             "action_mask": torch.ones(1, 11, dtype=torch.int8, device=dev),
         }
         with torch.no_grad():
-            features = reloaded.policy.features_extractor(dummy_obs)
-        assert features.shape == (1, PROJECTION_DIM), (
-            f"Round-trip test: unexpected output shape {features.shape}, expected (1, {PROJECTION_DIM})"
+            pi_features, vf_features = reloaded.policy.features_extractor(dummy_obs)
+        assert pi_features.shape == (1, PROJECTION_DIM), (
+            f"Round-trip test: unexpected policy-feature shape {pi_features.shape}, expected (1, {PROJECTION_DIM})"
+        )
+        assert vf_features.shape == (1, PROJECTION_DIM), (
+            f"Round-trip test: unexpected value-feature shape {vf_features.shape}, expected (1, {PROJECTION_DIM})"
         )
         if debug:
-            print(f"[ModelVersion] Round-trip smoke test PASSED (output shape: {features.shape})")
+            print(f"[ModelVersion] Round-trip smoke test PASSED (pi+vf shape: {tuple(pi_features.shape)})")
     finally:
         shutil.rmtree(tmpdir, ignore_errors=True)
 
@@ -888,7 +892,7 @@ async def main():
             args.batch_size = total_rollout_size
 
         model = InstrumentedMaskablePPO(
-            "MultiInputPolicy",
+            Gen3DualHeadMaskablePolicy,
             env,
             verbose=1,
             learning_rate=args.lr,

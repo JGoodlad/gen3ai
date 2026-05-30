@@ -191,6 +191,7 @@ def _make_vec_env(total_dim: int) -> DummyVecEnv:
 
 def test_snapshot_save_load_roundtrip(layout, version, mappings):
     from agents.model.features_extractor import Gen3FeaturesExtractor, PROJECTION_DIM
+    from agents.model.policy import Gen3DualHeadMaskablePolicy
     from sb3_contrib import MaskablePPO
 
     total_dim = layout["total_dim"]
@@ -201,7 +202,7 @@ def test_snapshot_save_load_roundtrip(layout, version, mappings):
         "features_extractor_kwargs": {"layout": layout, "mappings": mappings},
         "net_arch": [512, 512],
     }
-    model = MaskablePPO("MultiInputPolicy", vec_env, policy_kwargs=full_policy_kwargs, verbose=0)
+    model = MaskablePPO(Gen3DualHeadMaskablePolicy, vec_env, policy_kwargs=full_policy_kwargs, verbose=0)
 
     def _dummy_obs(m):
         dev = next(m.parameters()).device
@@ -211,7 +212,7 @@ def test_snapshot_save_load_roundtrip(layout, version, mappings):
         }
 
     with torch.no_grad():
-        features_before = model.policy.features_extractor(_dummy_obs(model.policy))
+        pi_before, vf_before = model.policy.features_extractor(_dummy_obs(model.policy))
 
     with tempfile.TemporaryDirectory() as tmpdir:
         zip_path = os.path.join(tmpdir, "test_model")
@@ -225,11 +226,16 @@ def test_snapshot_save_load_roundtrip(layout, version, mappings):
         )
 
     with torch.no_grad():
-        features_after = loaded.policy.features_extractor(_dummy_obs(loaded.policy))
+        pi_after, vf_after = loaded.policy.features_extractor(_dummy_obs(loaded.policy))
 
-    assert features_before.shape == (1, PROJECTION_DIM)
-    assert torch.allclose(features_before, features_after, atol=1e-6), (
-        "Feature extractor output changed after save/load round-trip"
+    # Both heads of the dual-head extractor must reproduce exactly across save/load.
+    assert pi_before.shape == (1, PROJECTION_DIM)
+    assert vf_before.shape == (1, PROJECTION_DIM)
+    assert torch.allclose(pi_before, pi_after, atol=1e-6), (
+        "Policy feature output changed after save/load round-trip"
+    )
+    assert torch.allclose(vf_before, vf_after, atol=1e-6), (
+        "Value feature output changed after save/load round-trip"
     )
 
 

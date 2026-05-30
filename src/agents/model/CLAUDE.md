@@ -23,15 +23,27 @@ Embedding dims (`species_embedding_dim`, `move_embedding_dim`, etc.) live in `st
 `forward_internal` is decomposed into phase `nn.Module`s, chained by a thin orchestrator:
 
 `ObsUnpack` → `PokemonEncoder` → `TeamTransformer` → `CLSPool` → `ProjectionAssembler`,
-then the root `pre_proj_norm` → `projection` → `ReLU` head.
+then **two** root heads (`pre_proj_norm`/`projection` for policy, `value_pre_norm`/`value_projection`
+for value), each → `ReLU`.
+
+**Dual-head value readout (H4 / Option C).** The transformer body is shared, but the actor and
+critic read it through independent paths. `CLSPool` holds a third query `value_cls` that attends
+over all 12 team tokens to produce `value_pooled`; `ProjectionAssembler.forward` returns a
+`(pi_combined, vf_combined)` pair; and the root `forward` returns a `(pi_features, vf_features)`
+tuple. This extractor therefore **must** be paired with `Gen3DualHeadMaskablePolicy`
+(`policy.py`), which keeps `share_features_extractor=True` (one body) and overrides `forward` /
+`evaluate_actions` / `get_distribution` / `predict_values` to unpack the tuple and route each half
+to `mlp_extractor.forward_actor` / `forward_critic`. A stock SB3 policy expects a single-tensor
+extractor and will break. The startup `_run_roundtrip_test` and the snapshot/feature tests all
+unpack the tuple — keep that in mind when touching the extractor's return shape.
 
 Rules to preserve:
 
 - **Each phase owns its layers** (`move_network` lives under `pokemon_encoder`, `our_cls` under `cls_pool`, etc.). State_dict keys are therefore phase-prefixed.
 - **`Embeddings` is the sole owner of the 5 embedding tables + `hp_type_idx_map`.** It is passed as a **forward argument** to `PokemonEncoder` and `TeamTransformer` — never stored as a child attribute on them — so the tables register exactly once. (The root exposes read-only `@property` forwarders like `model.type_embedding` for convenience; those add no state_dict keys.)
 - **`ExtractorContext`** (frozen-by-convention dataclass) is the inter-phase contract: `ObsUnpack` produces it, downstream phases read from it. Add a field here rather than widening a phase's positional signature. Cross-phase values (active-slot indices, fainted masks, `hp_probs`) are computed once in `ObsUnpack` and carried on the context.
-- **Any change to the phase structure or forward math is a structural change → bump `ARCH_SIGNATURE`** in `model_version.py` (current: `gen3_modular_v1`). Pure decompositions still change state_dict keys, so old checkpoints must fail loudly.
-- Per-phase unit tests live in `phase_modules_test.py` — `CLSPool`/`ProjectionAssembler` are tested on a hand-built `ExtractorContext` (`_dummy_ctx`) without a full forward pass. Prefer adding precise phase-level tests there.
+- **Any change to the phase structure or forward math is a structural change → bump `ARCH_SIGNATURE`** in `model_version.py` (current: `gen3_dual_value_v1`). Pure decompositions still change state_dict keys, so old checkpoints must fail loudly.
+- Per-phase unit tests live in `phase_modules_test.py` — `CLSPool` (incl. the `value_cls` pool) and `ProjectionAssembler` (which returns `(pi_combined, vf_combined)`) are tested on a hand-built `ExtractorContext` (`_dummy_ctx`) without a full forward pass. Prefer adding precise phase-level tests there.
 
 ## Model versioning (`model_version.py`, `snapshot.py`)
 

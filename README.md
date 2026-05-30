@@ -214,21 +214,17 @@ TurnDelta block (29 dims): move/type IDs and metadata for both sides last turn, 
 
 ## Model Architecture (`Gen3FeaturesExtractor`)
 
-1. **Embedding lookups** — species (32-dim), move (16), item (16), ability (16), type (16, shared across Pokémon types, move types, and TurnDelta IDs)
-2. **Shared move processor** — Linear(58→64)→ReLU→Linear(64→32) per move slot; includes per-move type matchup against all 6 opponents
-3. **Within-Pokémon move self-attention** — MHA(32, 2 heads) + LayerNorm residual across the 4 move slots of each Pokémon
-4. **Role encoder** — Linear(260→256)→ReLU→Linear(256→128) per Pokémon, with broadcasted global context and validity bits
-5. **Team-wide attention** (five `MultiheadAttention` paths with residuals, fainted slots masked):
-   - *Pressure*: our active ← their team
-   - *Safety*: our team ← their active
-   - *Synergy*: our team ← our team
-   - *Threat*: their team ← our active
-   - *Opp Synergy*: their team ← their team
-6. **Attention pool** — one learned query per side attends over 6 role tokens → single 128-dim pooled team token per side
-7. **Pre-projection LayerNorm** — normalises concatenated inputs to equalise per-block scales
-8. **Projection** — Linear(562→512)→ReLU; input: our_pool + their_pool + our_active_refined + active_ctx_enc + global/scalars + turn_delta_embedded
+Decomposed into named phase modules: **`ObsUnpack` → `PokemonEncoder` → `TeamTransformer` → `CLSPool` → `ProjectionAssembler`**, then two root projection heads.
 
-The projection input dimension is discovered via a dummy forward pass at init — no magic constants.
+1. **Embedding lookups** — species (32-dim), move (16), item (16), ability (16), type (16, shared across Pokémon types, move types, and TurnDelta IDs)
+2. **Shared move processor** — Linear→ReLU→Linear per move slot; includes per-move type matchup against all 6 opponents
+3. **Within-Pokémon move self-attention** — MHA(32, 2 heads) + LayerNorm residual across the 4 move slots of each Pokémon
+4. **Role encoder** — Linear→ReLU→Linear per Pokémon → 12 × 128 role tokens, with broadcasted global context and validity bits
+5. **Unified transformer** — a 23-token sequence (6 our-team + 6 their-team role tokens + 10 turn-history tokens + 1 global token) with token-type and positional embeddings, run through a multi-layer `TransformerEncoder` under a fainted/empty key-padding mask. Replaces the old hand-crafted attention paths — every token attends to every other.
+6. **CLS pooling** — one learned query per side pools its 6 team tokens → a 128-dim team token per side; a **third `value_cls` query** pools all 12 team tokens → a global value summary for the critic.
+7. **Dual projection heads** — policy and value each get their own `pre_proj_norm` → `projection` → `ReLU`. `forward` returns a `(pi_features, vf_features)` tuple consumed by `Gen3DualHeadMaskablePolicy`, which routes each half to its own actor/critic MLP branch. The transformer body is shared; only the readout, projection, and critic MLP are independent (the **value-dedicated CLS readout**).
+
+Both projection input dimensions are discovered via a dummy forward pass at init — no magic constants.
 
 ---
 
