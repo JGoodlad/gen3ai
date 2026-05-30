@@ -200,14 +200,15 @@ class TestRewardManagerBasics(unittest.TestCase):
 
     def test_repetition_tax(self):
         # Use opp_hp_delta=-0.1 so the first attack "had effect", making the second use
-        # the effective-repeat scale (-0.02) rather than zero-effect scale (-0.05).
+        # the gentle effective-repeat step (-0.03) rather than the zero-effect step.
         self.manager.record_action(_ctx(turn=1), 6)
         r1 = self.manager.process_turn_reward(_battle(), _delta(opp_hp_delta=-0.1))
 
         self.manager.record_action(_ctx(turn=2), 6)  # same action
         r2 = self.manager.process_turn_reward(_battle(), _delta(opp_hp_delta=-0.1))
 
-        self.assertAlmostEqual(r2, r1 - 0.02, places=5)
+        # First repeat (n=1) at the normal step: -REPETITION_STEP * 1 = -0.03
+        self.assertAlmostEqual(r2, r1 - 0.03, places=5)
 
     def test_faint_reward(self):
         # With default opp_hp_val=1.0, faint_opp = 0.5 + 2.0*1.0 = 2.5
@@ -1072,26 +1073,46 @@ class TestRewardBreakdownToDict(unittest.TestCase):
 
 
 class TestStallTax(unittest.TestCase):
-    def _reward_at_turn(self, turn):
+    """Stall tax now starts EARLY (turn 60) and RAMPS with turns past the start."""
+
+    def _stall_tax_at_turn(self, turn):
         from agents.training.reward_manager import Gen3RewardManager
         rm = Gen3RewardManager()
         battle = _battle()
         battle.turn = turn
-        delta = _delta()
-        return rm.process_turn_reward(battle, delta)
+        rm.process_turn_reward(battle, _delta())
+        return rm._last_breakdown.stall_tax
 
-    def test_no_stall_tax_at_or_before_turn_125(self):
-        reward = self._reward_at_turn(125)
-        self.assertAlmostEqual(reward, 0.0, places=4)
+    def test_no_stall_tax_at_or_before_start_turn(self):
+        from agents.training.reward_manager import STALL_TAX_START_TURN
+        self.assertAlmostEqual(self._stall_tax_at_turn(STALL_TAX_START_TURN), 0.0, places=5)
 
-    def test_flat_stall_tax_just_after_threshold(self):
-        reward = self._reward_at_turn(126)
-        self.assertAlmostEqual(reward, -0.1, places=4)
+    def test_stall_tax_starts_earlier_than_old_threshold(self):
+        # Old threshold was 125 — confirm we now bite well before then.
+        self.assertLess(self._stall_tax_at_turn(80), 0.0)
 
-    def test_flat_stall_tax_is_constant_regardless_of_turn(self):
-        r126 = self._reward_at_turn(126)
-        r237 = self._reward_at_turn(237)
-        self.assertAlmostEqual(r126, r237, places=4)
+    def test_stall_tax_ramps_with_turn(self):
+        from agents.training.reward_manager import (
+            STALL_TAX_START_TURN, STALL_TAX_PER_TURN, STALL_TAX_RAMP_TURNS,
+        )
+        # rate = STALL_TAX_PER_TURN * (turn - start) / RAMP_TURNS
+        t = STALL_TAX_START_TURN + STALL_TAX_RAMP_TURNS  # ramp fraction = 1.0
+        self.assertAlmostEqual(self._stall_tax_at_turn(t), -STALL_TAX_PER_TURN, places=5)
+        # A later turn must cost strictly more (more negative).
+        self.assertLess(self._stall_tax_at_turn(t + STALL_TAX_RAMP_TURNS),
+                        self._stall_tax_at_turn(t))
+
+    def test_stall_tax_clamped_at_max(self):
+        from agents.training.reward_manager import STALL_TAX_MAX
+        # A very deep stall is clamped — never worse than -STALL_TAX_MAX per turn.
+        self.assertAlmostEqual(self._stall_tax_at_turn(2000), -STALL_TAX_MAX, places=5)
+
+    def test_stall_tax_grows_monotonically(self):
+        prev = 0.0
+        for turn in (61, 70, 90, 120, 160):
+            cur = self._stall_tax_at_turn(turn)
+            self.assertLessEqual(cur, prev + 1e-9)
+            prev = cur
 
 
 # ---------------------------------------------------------------------------
@@ -1138,7 +1159,7 @@ class TestFaintScaling(unittest.TestCase):
 
 
 class TestRepetitionTaxEscalation(unittest.TestCase):
-    """Repetition tax grows with consecutive repeats; zero-effect repeats cost more."""
+    """Repetition tax is LINEAR and UNCAPPED; zero-effect repeats cost much more."""
 
     def setUp(self):
         self.manager = Gen3RewardManager(log_level=LogLevel.QUIET)
@@ -1147,7 +1168,7 @@ class TestRepetitionTaxEscalation(unittest.TestCase):
         """Attack with action=6 n_times; return list of rewards.
 
         Default opp_hp_delta=-0.1 ensures each attack "had effect", keeping
-        _last_attack_had_effect=True so the effective-repeat scale applies.
+        _last_attack_had_effect=True so the gentle effective-repeat step applies.
         """
         rewards = []
         for _ in range(n_times):
@@ -1162,13 +1183,14 @@ class TestRepetitionTaxEscalation(unittest.TestCase):
 
     def test_second_use_gets_first_tax(self):
         r = self._repeat_attack(2)
-        # Second repeat at effective-repeat tier 1: -0.02
-        self.assertAlmostEqual(r[1] - r[0], -0.02, places=5)
+        # First repeat (n=1) at the normal step: -0.03
+        self.assertAlmostEqual(r[1] - r[0], -0.03, places=5)
 
-    def test_tax_escalates_on_third_use(self):
-        r = self._repeat_attack(3)
-        # Third repeat at effective-repeat tier 2: -0.05
-        self.assertAlmostEqual(r[2] - r[0], -0.05, places=5)
+    def test_tax_escalates_linearly(self):
+        r = self._repeat_attack(4)
+        bd_taxes = [-0.03, -0.06, -0.09]  # n = 1, 2, 3 at REPETITION_STEP=0.03
+        for i, expected in enumerate(bd_taxes, start=1):
+            self.assertAlmostEqual(r[i] - r[0], expected, places=5)
 
     def test_zero_effect_repeat_costs_more(self):
         # First use: action 6, opp took no damage (net 0)
@@ -1177,9 +1199,23 @@ class TestRepetitionTaxEscalation(unittest.TestCase):
         # Second use: same action, opp took no damage — zero-effect repeat
         self.manager.record_action(_ctx(), 6)
         r2 = self.manager.process_turn_reward(_battle(), _delta(opp_hp_delta=0.0))
-        # Effective-repeat first tier: -0.02; zero-effect first tier: -0.10
+        # Zero-effect first repeat (n=1): -REPETITION_ZERO_EFFECT_STEP * 1 = -0.15
         bd = self.manager._last_breakdown
-        self.assertAlmostEqual(bd.repetition_tax, -0.10, places=5)
+        self.assertAlmostEqual(bd.repetition_tax, -0.15, places=5)
+
+    def test_zero_effect_uncapped_long_spam(self):
+        # A long no-op spam keeps escalating well past the old -0.40 cap, down to the floor.
+        from agents.training.reward_manager import REPETITION_TAX_FLOOR
+        taxes = []
+        for _ in range(30):
+            self.manager.record_action(_ctx(), 6)
+            self.manager.process_turn_reward(_battle(), _delta(opp_hp_delta=0.0))
+            taxes.append(self.manager._last_breakdown.repetition_tax)
+        # By the 10th repeat the zero-effect tax is -0.15*10 = -1.5, far past the old cap.
+        self.assertLess(taxes[9], -1.0)
+        # And it never dips below the floor.
+        self.assertGreaterEqual(min(taxes), REPETITION_TAX_FLOOR - 1e-9)
+        self.assertAlmostEqual(min(taxes), REPETITION_TAX_FLOOR, places=5)
 
     def test_changing_action_resets_counter(self):
         self._repeat_attack(3)
@@ -1188,6 +1224,30 @@ class TestRepetitionTaxEscalation(unittest.TestCase):
         r = self.manager.process_turn_reward(_battle(), _delta())
         bd = self.manager._last_breakdown
         self.assertAlmostEqual(bd.repetition_tax, 0.0, places=5)
+
+    def test_capped_setup_routes_through_zero_effect_step(self):
+        # A boost move that still raises a stat is "productive" → gentle step on repeat.
+        # Once capped (no boost change), it flips to the steep zero-effect step.
+        bd_up = np.zeros(7, dtype=np.int8)
+        bd_up[2] = 1  # spa +1 — Calm Mind worked
+        bd_capped = np.zeros(7, dtype=np.int8)  # no change — at +6 cap
+
+        self.manager.record_action(_ctx(), 6)
+        self.manager.process_turn_reward(_battle(), _delta(our_move_id="calmmind", our_boost_delta=bd_up))
+        # Second productive Calm Mind: gentle step (n=1, -0.03)
+        self.manager.record_action(_ctx(), 6)
+        self.manager.process_turn_reward(_battle(), _delta(our_move_id="calmmind", our_boost_delta=bd_up))
+        self.assertAlmostEqual(self.manager._last_breakdown.repetition_tax, -0.03, places=5)
+        # Third Calm Mind is CAPPED (no boost). At record time had_effect is still True
+        # (set by turn 2's productive boost), so this repeat (n=2) uses the gentle step.
+        self.manager.record_action(_ctx(), 6)
+        self.manager.process_turn_reward(_battle(), _delta(our_move_id="calmmind", our_boost_delta=bd_capped))
+        self.assertAlmostEqual(self.manager._last_breakdown.repetition_tax, -0.06, places=5)
+        # Fourth Calm Mind: now had_effect is False (turn 3 was capped) → steep zero-effect
+        # step kicks in at n=3 → -0.15 * 3 = -0.45.
+        self.manager.record_action(_ctx(), 6)
+        self.manager.process_turn_reward(_battle(), _delta(our_move_id="calmmind", our_boost_delta=bd_capped))
+        self.assertAlmostEqual(self.manager._last_breakdown.repetition_tax, -0.15 * 3, places=5)
 
 
 class TestFutileSetup(unittest.TestCase):
@@ -1747,6 +1807,177 @@ class TestFinishingBlow(unittest.TestCase):
         d = _delta(opp_fainted=True, our_move_id=None, opp_hp_delta=-0.1)
         self.manager.process_turn_reward(battle, d)
         self.assertAlmostEqual(self.manager._last_breakdown.finishing_blow, 0.0, places=5)
+
+
+class TestBouncingTaxEscalation(unittest.TestCase):
+    """A→B→A→B oscillation pays an escalating bouncing tax (was flat -0.15)."""
+
+    def setUp(self):
+        self.manager = Gen3RewardManager(log_level=LogLevel.QUIET)
+
+    def _oscillate(self, turns=4):
+        """Run an A↔B oscillation and return the bouncing tax on each switch turn."""
+        taxes = []
+        # turn 1: A(pikachu) -> B(raichu): not a bounce (establishes _last_switched_from)
+        ctx = _ctx(turn=1, our_active="pikachu", slot_map={"pikachu": 0, "raichu": 1})
+        self.manager.record_action(ctx, 1)
+        self.manager.process_turn_reward(_battle(), _delta(our_switch_to="raichu"))
+        taxes.append(self.manager._last_breakdown.switch_bouncing_tax)
+        active, other = "raichu", "pikachu"
+        for i in range(1, turns):
+            turn = 1 + 2 * i  # space by 2 so spam_mult stays 1
+            slot = {active: 0, other: 1}
+            ctx = _ctx(turn=turn, our_active=active, slot_map=slot)
+            self.manager.record_action(ctx, 1)  # slot 1 = the mon we just left
+            self.manager.process_turn_reward(_battle(), _delta(our_switch_to=other))
+            taxes.append(self.manager._last_breakdown.switch_bouncing_tax)
+            active, other = other, active
+        return taxes
+
+    def test_first_switch_no_bounce(self):
+        taxes = self._oscillate(turns=1)
+        self.assertAlmostEqual(taxes[0], 0.0, places=5)
+
+    def test_bounce_escalates(self):
+        from agents.training.reward_manager import BOUNCING_TAX_STEP
+        taxes = self._oscillate(turns=4)
+        # taxes[0] is the establishing switch (no bounce). Bounces start at index 1.
+        self.assertAlmostEqual(taxes[0], 0.0, places=5)
+        self.assertAlmostEqual(taxes[1], BOUNCING_TAX_STEP * 1, places=5)
+        self.assertAlmostEqual(taxes[2], BOUNCING_TAX_STEP * 2, places=5)
+        self.assertAlmostEqual(taxes[3], BOUNCING_TAX_STEP * 3, places=5)
+
+    def test_bounce_floored(self):
+        from agents.training.reward_manager import BOUNCING_TAX_FLOOR
+        taxes = self._oscillate(turns=30)
+        self.assertGreaterEqual(min(taxes), BOUNCING_TAX_FLOOR - 1e-9)
+        self.assertAlmostEqual(min(taxes), BOUNCING_TAX_FLOOR, places=5)
+
+    def test_attack_resets_bounce_counter(self):
+        # A↔B twice, then a move, then bounce again — counter must restart at n=1.
+        ctx = _ctx(turn=1, our_active="pikachu", slot_map={"pikachu": 0, "raichu": 1})
+        self.manager.record_action(ctx, 1)
+        self.manager.process_turn_reward(_battle(), _delta(our_switch_to="raichu"))
+        ctx = _ctx(turn=3, our_active="raichu", slot_map={"raichu": 0, "pikachu": 1})
+        self.manager.record_action(ctx, 1)
+        self.manager.process_turn_reward(_battle(), _delta(our_switch_to="pikachu"))
+        self.assertAlmostEqual(self.manager._last_breakdown.switch_bouncing_tax, -0.15, places=5)
+        # An attack breaks the oscillation streak.
+        self.manager.record_action(_ctx(turn=4, our_active="pikachu"), 6)
+        self.manager.process_turn_reward(_battle(), _delta())
+        # Bounce again: counter restarts → -0.15, not -0.30.
+        ctx = _ctx(turn=5, our_active="pikachu", slot_map={"pikachu": 0, "raichu": 1})
+        self.manager.record_action(ctx, 1)
+        self.manager.process_turn_reward(_battle(), _delta(our_switch_to="raichu"))
+        # _last_switched_from is now "pikachu" (set when leaving pikachu on the move-turn?)
+        # No — only switches set _last_switched_from. After the move turn it's still
+        # "raichu" (from turn 3). Switching to raichu from pikachu == bounce, n restarts at 1.
+        self.assertAlmostEqual(self.manager._last_breakdown.switch_bouncing_tax, -0.15, places=5)
+
+
+class TestDeadMatchupTax(unittest.TestCase):
+    """Escalating tax for staying in when every damaging move is 0× vs the opp active."""
+
+    def setUp(self):
+        self.manager = Gen3RewardManager(log_level=LogLevel.QUIET)
+
+    def _stay_in(self, our_mon, opp_mon, move_id="thunderbolt"):
+        self.manager.record_action(_ctx(), 6)
+        battle = _battle(our_mon=our_mon, opp_mon=opp_mon)
+        self.manager.process_turn_reward(battle, _delta(our_move_id=move_id))
+        return self.manager._last_breakdown.dead_matchup_tax
+
+    def test_fires_when_all_moves_immune(self):
+        from agents.training.reward_manager import DEAD_MATCHUP_TAX_STEP
+        # Electric attacker vs Ground type: Thunderbolt is 0×.
+        our = _make_mon("ELECTRIC", moves=[("thunderbolt", "ELECTRIC", 95)])
+        opp = _make_mon("GROUND")
+        tax = self._stay_in(our, opp)
+        self.assertAlmostEqual(tax, DEAD_MATCHUP_TAX_STEP * 1, places=5)
+
+    def test_escalates_each_turn_stuck(self):
+        from agents.training.reward_manager import DEAD_MATCHUP_TAX_STEP
+        our = _make_mon("ELECTRIC", moves=[("thunderbolt", "ELECTRIC", 95)])
+        opp = _make_mon("GROUND")
+        for n in range(1, 5):
+            tax = self._stay_in(our, opp)
+            self.assertAlmostEqual(tax, DEAD_MATCHUP_TAX_STEP * n, places=5)
+
+    def test_no_tax_when_a_move_is_effective(self):
+        # Electric + Ice attacker vs Ground: Ice Beam is 2× → not a dead matchup.
+        our = _make_mon("ELECTRIC", moves=[("thunderbolt", "ELECTRIC", 95),
+                                           ("icebeam", "ICE", 95)])
+        opp = _make_mon("GROUND")
+        self.assertAlmostEqual(self._stay_in(our, opp, move_id="icebeam"), 0.0, places=5)
+
+    def test_no_tax_when_no_damaging_moves_revealed(self):
+        # A mon with only status moves can't be judged as "dead matchup spam".
+        our = _make_mon("NORMAL", moves=[("toxic", "POISON", 0)])
+        opp = _make_mon("GHOST")
+        self.assertAlmostEqual(self._stay_in(our, opp, move_id="toxic"), 0.0, places=5)
+
+    def test_switch_resets_counter(self):
+        from agents.training.reward_manager import DEAD_MATCHUP_TAX_STEP
+        our = _make_mon("ELECTRIC", moves=[("thunderbolt", "ELECTRIC", 95)])
+        opp = _make_mon("GROUND")
+        self._stay_in(our, opp)            # n=1
+        self._stay_in(our, opp)            # n=2
+        # Switch out — counter resets, no tax on the switch turn.
+        ctx = _ctx(our_active="pikachu", slot_map={"pikachu": 0, "raichu": 1})
+        self.manager.record_action(ctx, 1)
+        self.manager.process_turn_reward(_battle(), _delta(our_switch_to="raichu"))
+        self.assertAlmostEqual(self.manager._last_breakdown.dead_matchup_tax, 0.0, places=5)
+        # Next dead-matchup stay restarts at n=1.
+        self.assertAlmostEqual(self._stay_in(our, opp), DEAD_MATCHUP_TAX_STEP * 1, places=5)
+
+    def test_floored(self):
+        from agents.training.reward_manager import DEAD_MATCHUP_TAX_FLOOR
+        our = _make_mon("ELECTRIC", moves=[("thunderbolt", "ELECTRIC", 95)])
+        opp = _make_mon("GROUND")
+        last = 0.0
+        for _ in range(40):
+            last = self._stay_in(our, opp)
+        self.assertAlmostEqual(last, DEAD_MATCHUP_TAX_FLOOR, places=5)
+
+    def test_no_tax_on_switch_turn(self):
+        our = _make_mon("ELECTRIC", moves=[("thunderbolt", "ELECTRIC", 95)])
+        opp = _make_mon("GROUND")
+        ctx = _ctx(our_active="pikachu", slot_map={"pikachu": 0, "raichu": 1})
+        self.manager.record_action(ctx, 1)
+        battle = _battle(our_mon=our, opp_mon=opp)
+        self.manager.process_turn_reward(battle, _delta(our_switch_to="raichu"))
+        self.assertAlmostEqual(self.manager._last_breakdown.dead_matchup_tax, 0.0, places=5)
+
+    def test_pivot_strictly_beats_staying_in_dead_matchup(self):
+        """The core design goal: switching out must out-value staying after a few
+        turns of dead-matchup spam, with no HP swing to muddy the comparison."""
+        our = _make_mon("ELECTRIC", moves=[("thunderbolt", "ELECTRIC", 95)])
+        opp = _make_mon("GROUND")
+        # Stay in for several turns (escalating immune + dead-matchup + repetition taxes).
+        stay_rewards = []
+        for _ in range(4):
+            self.manager.record_action(_ctx(), 6)
+            r = self.manager.process_turn_reward(
+                _battle(our_mon=our, opp_mon=opp), _delta(our_move_id="thunderbolt"))
+            stay_rewards.append(r)
+        # Each successive stay is more negative (escalation).
+        self.assertLess(stay_rewards[-1], stay_rewards[0])
+        # A switch from the same trapped state yields a clearly positive subsidy instead.
+        mgr2 = Gen3RewardManager(log_level=LogLevel.QUIET)
+        ctx = _ctx(our_active="zapdos", slot_map={"zapdos": 0, "swampert": 1})
+        mgr2.record_action(ctx, 1)
+        switch_reward = mgr2.process_turn_reward(_battle(), _delta(our_switch_to="swampert"))
+        self.assertGreater(switch_reward, max(stay_rewards))
+
+
+class TestFutileImmunePenaltyRaised(unittest.TestCase):
+    """The flat immune penalty was raised from -0.25 to -0.5."""
+
+    def test_immune_penalty_value(self):
+        self.assertAlmostEqual(FUTILE_IMMUNE_PENALTY, -0.5, places=5)
+
+    def test_immune_penalty_harsher_than_futile_attack(self):
+        self.assertLess(FUTILE_IMMUNE_PENALTY, FUTILE_ATTACK_PENALTY)
 
 
 if __name__ == "__main__":

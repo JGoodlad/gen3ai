@@ -41,6 +41,7 @@ class RewardBreakdown:
 
     # Positional
     matchup_penalty: float = 0.0
+    dead_matchup_tax: float = 0.0  # escalating penalty for staying in a 0×-only matchup
 
     # Switch: subsidy (set by record_action before the turn)
     switch_base: float = 0.0       # flat per-voluntary-switch subsidy
@@ -76,7 +77,7 @@ class RewardBreakdown:
         ("switch", ("switch_base", "switch_bouncing_tax", "escape_threat_switch",
                     "pivot_protect", "pivot_status",
                     "pivot_damage", "se_switch", "sleep_out", "sleep_in")),
-        ("field",  ("spikes", "matchup_penalty", "status", "stall_tax")),
+        ("field",  ("spikes", "matchup_penalty", "dead_matchup_tax", "status", "stall_tax")),
     )
 
     @property
@@ -111,8 +112,17 @@ FAINT_HP_SCALE = 2.0   # scales faint cost/reward linearly with HP at time of fa
 HP_VALUE = 2.0
 VICTORY_VALUE = 30.0
 FINISHING_BLOW_BONUS = 0.5   # extra bonus for KO'ing with a damaging move
-STALL_TAX_START_TURN = 125
-STALL_TAX_PER_TURN = 0.1
+
+# Progressive stall tax: starts EARLY (turn 60, was 125) and RAMPS so a passive
+# 130-190 turn loop is strictly dominated by making progress. Per-turn cost grows
+# linearly with how far past the start turn we are, clamped at STALL_TAX_MAX so a
+# single turn can't dwarf a faint/HP swing. Cumulative over a very long game stays
+# well under VICTORY_VALUE=30 (≈10 over a 190-turn game) because the ramp is gentle
+# and most games end before the start turn.
+STALL_TAX_START_TURN = 60
+STALL_TAX_PER_TURN = 0.05      # base rate; multiplied by the ramp fraction below
+STALL_TAX_RAMP_TURNS = 20      # turns-past-start over which the rate ramps up by 1×
+STALL_TAX_MAX = 0.5            # per-turn clamp on the ramped stall tax
 STRUGGLE_LOOP_TAX = -0.5
 STRUGGLE_LOOP_THRESHOLD = 3
 
@@ -125,7 +135,9 @@ SPIKES_LAYER_BONUS = 0.5       # per layer added to opponent's side (credit assi
 SPIKES_WASTE_PENALTY = -0.2    # wasted turn using Spikes when 3 layers already up
 FAILED_ROAR_PENALTY = -0.2     # Roar used but opponent didn't switch
 FUTILE_ATTACK_PENALTY = -0.05  # attacking move used but opponent net gained HP (Leftovers > damage)
-FUTILE_IMMUNE_PENALTY = -0.25  # attacking into a type immunity (our_effectiveness == 0.0)
+FUTILE_IMMUNE_PENALTY = -0.5   # flat per-turn penalty for attacking into a type immunity
+                               # (our_effectiveness == 0.0). The ESCALATION on a repeated
+                               # immune attack comes from the zero-effect repetition tax below.
 ESCAPE_THREAT_BONUS = 0.25     # voluntarily switching out while opp has a revealed SE threat vs us
 MATCHUP_PENALTY = -0.15        # per turn we stay in while opp has a revealed SE move vs us
 PROTECT_SWITCH_BONUS = 0.10    # opponent used Protect/Detect/Endure on our switch turn
@@ -138,9 +150,32 @@ STATUS_WASTED_PENALTY = -0.3
 BOOST_UTILIZED_SCALE = 0.03        # reward = boost_stage * scale * damage_dealt
 EXPLOSION_BLOCK_BONUS = 1.0        # Ghost immune or Protect blocks opponent Explosion
 
-# Repetition tax escalation: index = consecutive_repeats - 1 (capped at 3)
-REPETITION_TAX_SCALE = (-0.02, -0.05, -0.10, -0.20)
-REPETITION_TAX_ZERO_EFFECT_SCALE = (-0.10, -0.20, -0.30, -0.40)
+# Repetition tax escalation — LINEAR and UNCAPPED (clamped only by the floor).
+# A 12-30 turn spam must be catastrophic, not a rounding error, so the cost grows
+# every consecutive turn instead of plateauing after the 4th repeat. The tax for the
+# n-th consecutive repeat is max(-STEP * n, FLOOR). A "no-op" repeat (the move did
+# nothing productive — no damage, no boost gained, no status landed, no hazard added)
+# uses the much steeper ZERO_EFFECT step so capped setup (Calm Mind past +6), capped
+# hazards (Spikes at 3), redundant status, Protect/Wish/Recover loops, and immune
+# attacks all bite hard and fast. A legitimately-productive repeat (still dealing
+# damage or still gaining a boost) only pays the gentle normal step.
+REPETITION_STEP = 0.03              # normal productive-attack repeat, per consecutive turn
+REPETITION_ZERO_EFFECT_STEP = 0.15  # no-op / immune / capped repeat — bites hard
+REPETITION_TAX_FLOOR = -3.0         # per-turn clamp so one turn can't dwarf win/loss
+
+# Switch-bouncing tax — ESCALATING (was a flat -0.15). A→B→A→B oscillation dodges the
+# move-repetition tax because the action index alternates, so it needs its own
+# escalating counter. The n-th consecutive bounce costs max(STEP * n, FLOOR).
+BOUNCING_TAX_STEP = -0.15
+BOUNCING_TAX_FLOOR = -2.0
+
+# Dead-matchup tax — fires when the active Pokémon has NO damaging move with >0×
+# effectiveness vs the opponent's active mon and we DID NOT switch out. This is the
+# "trapped, must pivot" signal: the matchup re-ranks moves but can't lift switches
+# above the collapsed "stay in and click" prior, so we make staying strictly worse
+# than pivoting and escalate it every turn we refuse to leave.
+DEAD_MATCHUP_TAX_STEP = -0.10
+DEAD_MATCHUP_TAX_FLOOR = -2.0
 
 BOOST_MOVES: frozenset[str] = frozenset({
     "calmmind", "dragondance", "swordsdance", "nastyplot",
@@ -191,6 +226,8 @@ class Gen3RewardManager:
         self._prev_opp_statused = 0
         self._last_switch_was_roared = False
         self._consecutive_attack_repeats: int = 0
+        self._consecutive_bounces: int = 0          # A→B→A→B oscillation depth
+        self._consecutive_dead_matchup_stays: int = 0  # turns stuck in a 0×-only matchup
         self._last_attack_had_effect: bool = True
         self._our_active_hp_before: float = 1.0
         self._opp_active_hp_before: float = 1.0
@@ -216,6 +253,8 @@ class Gen3RewardManager:
         self._prev_opp_statused = 0
         self._last_switch_was_roared = False
         self._consecutive_attack_repeats = 0
+        self._consecutive_bounces = 0
+        self._consecutive_dead_matchup_stays = 0
         self._last_attack_had_effect = True
         self._our_active_hp_before = 1.0
         self._opp_active_hp_before = 1.0
@@ -250,11 +289,15 @@ class Gen3RewardManager:
             # Attack or Struggle
             self.attack_count += 1
 
+            # A move breaks any switch-oscillation streak.
+            self._consecutive_bounces = 0
+
             if action == self._last_action_idx and action != -1:
                 self._consecutive_attack_repeats += 1
-                idx = min(self._consecutive_attack_repeats - 1, 3)
-                scale = REPETITION_TAX_ZERO_EFFECT_SCALE if not self._last_attack_had_effect else REPETITION_TAX_SCALE
-                repetition_tax = scale[idx]
+                n = self._consecutive_attack_repeats   # 1, 2, 3, ... (uncapped)
+                step = (REPETITION_ZERO_EFFECT_STEP if not self._last_attack_had_effect
+                        else REPETITION_STEP)
+                repetition_tax = max(-step * n, REPETITION_TAX_FLOOR)
                 self._pending_subsidy += repetition_tax
             else:
                 self._consecutive_attack_repeats = 0
@@ -280,14 +323,17 @@ class Gen3RewardManager:
             is_forced = ctx.phase == "forced_switch"
 
             if is_forced and has_live_active:
-                # Roar/Whirlwind: mon is alive but phazed out — no subsidy, skip bonuses
+                # Roar/Whirlwind: mon is alive but phazed out — no subsidy, skip bonuses.
+                # Phazing isn't voluntary oscillation, so it doesn't count as a bounce.
+                self._consecutive_bounces = 0
                 self._last_switch_was_roared = True
                 self.forced_switch_count += 1
                 self._last_switched_from = ctx.our_active
                 self._last_reward_metadata = {"type": "FORCED_ROAR"}
 
             elif is_forced:
-                # Post-faint replacement — no subsidy
+                # Post-faint replacement — no subsidy, not an oscillation
+                self._consecutive_bounces = 0
                 self.forced_switch_count += 1
                 self._last_reward_metadata = {"type": "FORCED_FAINT"}
 
@@ -299,8 +345,15 @@ class Gen3RewardManager:
                 if (target_species and
                         target_species == self._last_switched_from and
                         self._last_switched_from not in ("NULL", "NONE")):
-                    bouncing_tax = -0.15
+                    # Switching straight back to the mon we just left = a bounce.
+                    # Escalate with the oscillation depth so A↔B for 10-30 turns
+                    # becomes prohibitively expensive instead of a flat rounding error.
+                    self._consecutive_bounces += 1
+                    bouncing_tax = max(BOUNCING_TAX_STEP * self._consecutive_bounces,
+                                       BOUNCING_TAX_FLOOR)
                     self._pending_subsidy += bouncing_tax
+                else:
+                    self._consecutive_bounces = 0
 
                 spam_mult = 1.0 if (ctx.turn - self.last_switch_turn) > 1 else 0.0
                 subsidy = SWITCH_BASE_BONUS * spam_mult
@@ -532,6 +585,49 @@ class Gen3RewardManager:
             return 0.0  # we switched out — no staying-in penalty
         return MATCHUP_PENALTY if self._prev_opp_se_threat else 0.0
 
+    def _compute_dead_matchup_tax(self, delta: TurnDelta, battle) -> float:
+        """Escalating penalty for refusing to pivot out of a 0×-only matchup.
+
+        Fires when EVERY damaging move our active Pokémon has does 0× to the
+        opponent's active mon (e.g. an Electric attacker staring at a Ground type,
+        a Normal attacker into a Ghost) and we chose to stay in rather than switch.
+        The per-turn cost grows with how many consecutive turns we've stayed
+        trapped, so a switch — which resets the counter to zero — strictly
+        dominates clicking another useless move.
+
+        Resets (and charges nothing) whenever we switch, faint, lack a live
+        opponent, or have at least one >0× damaging move. Skips forced-switch
+        slots entirely (we had no move choice there). Requires at least one
+        revealed damaging move to judge — our own active mon's full moveset is
+        populated from the request, so this is reliable for the trainee's mon.
+        """
+        if delta.our_switch_to is not None or delta.we_fainted:
+            self._consecutive_dead_matchup_stays = 0
+            return 0.0
+        if delta.phase_is_forced_switch:
+            return 0.0
+
+        our_mon = battle.active_pokemon
+        opp_mon = battle.opponent_active_pokemon
+        if not our_mon or not opp_mon or opp_mon.fainted:
+            self._consecutive_dead_matchup_stays = 0
+            return 0.0
+
+        damaging = [m for m in our_mon.moves.values() if m.base_power > 0]
+        if not damaging:
+            self._consecutive_dead_matchup_stays = 0
+            return 0.0
+
+        best_mult = max(self._effective_multiplier(m.type, opp_mon) for m in damaging)
+        if best_mult > 0.0:
+            self._consecutive_dead_matchup_stays = 0
+            return 0.0
+
+        # Every damaging option is type-immune and we stayed in — escalate.
+        self._consecutive_dead_matchup_stays += 1
+        return max(DEAD_MATCHUP_TAX_STEP * self._consecutive_dead_matchup_stays,
+                   DEAD_MATCHUP_TAX_FLOOR)
+
     def _effective_multiplier(self, move_type, mon) -> float:
         return _effective_multiplier_fn(move_type, mon)
 
@@ -713,6 +809,8 @@ class Gen3RewardManager:
 
         # --- Positional: penalty for staying in against a known threat ---
         bd.matchup_penalty = self._compute_matchup_penalty(delta)
+        # Escalating penalty for refusing to pivot out of a 0×-only matchup.
+        bd.dead_matchup_tax = self._compute_dead_matchup_tax(delta, battle)
 
         # --- Switch rewards (see SWITCH_REWARDS.md for full breakdown) ---
         # Pivot, SE, and sleep-out are skipped when phazed — roar removes our
@@ -747,17 +845,31 @@ class Gen3RewardManager:
             bd.repetition_tax = meta.get("repetition_tax", 0.0)
             bd.struggle_tax = meta.get("struggle_loop_tax", 0.0)
 
-        # --- Flat stall tax: -0.1/turn after turn 125 ---
+        # --- Progressive stall tax: starts at turn 60 and RAMPS ---
+        # rate = STALL_TAX_PER_TURN * (turns past start / RAMP_TURNS), clamped at MAX.
+        # Gentle near the start so a slightly-long game is barely touched, but a
+        # 130-190 turn passive loop accumulates real pressure (≈10 total by turn 190).
         if battle.turn > STALL_TAX_START_TURN:
-            bd.stall_tax = -STALL_TAX_PER_TURN
+            ramp = (battle.turn - STALL_TAX_START_TURN) / STALL_TAX_RAMP_TURNS
+            bd.stall_tax = -min(STALL_TAX_PER_TURN * ramp, STALL_TAX_MAX)
 
         # Update end-of-turn snapshots for next turn's checks
         opp_mon = battle.opponent_active_pokemon
         self._prev_opp_boosts = dict(opp_mon.boosts) if opp_mon else {}
         self._update_opp_se_threat(battle)
 
-        # Track whether our last attack had any effect (for escalating repetition tax)
-        self._last_attack_had_effect = delta.opp_hp_delta.sum() < 0
+        # Track whether our last move did anything PRODUCTIVE this turn, for the
+        # escalating repetition tax. A move counts as effective if it dealt damage,
+        # gained us a stat boost, landed a status, or added a hazard layer. Capped
+        # setup (no boost change), capped hazards, redundant status, and immune/no-op
+        # attacks all flip this to False, routing the next repeat through the steeper
+        # ZERO_EFFECT step — that's how capped setup/hazards escalate.
+        self._last_attack_had_effect = (
+            float(delta.opp_hp_delta.sum()) < 0
+            or int(delta.our_boost_delta.sum()) > 0
+            or _d_opp_statused > 0
+            or bd.spikes > 0
+        )
 
         self._last_breakdown = bd
         reward = bd.total

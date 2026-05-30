@@ -71,15 +71,14 @@ from agents.training.reward_manager import (
     HP_VALUE,
     MATCHUP_PENALTY,
     PROTECT_SWITCH_BONUS,
-    REPETITION_TAX_SCALE,
-    REPETITION_TAX_ZERO_EFFECT_SCALE,
+    REPETITION_TAX_FLOOR,
     ROAR_BONUS,
     SE_SWITCH_BONUS,
     SETUP_LOW_HP_THRESHOLD,
     SLEEP_SWAP_BONUS,
     SPIKES_LAYER_BONUS,
     SPIKES_WASTE_PENALTY,
-    STALL_TAX_PER_TURN,
+    STALL_TAX_MAX,
     STALL_TAX_START_TURN,
     STATUS_BONUS,
     STATUS_IMMUNE_SWITCH_BONUS,
@@ -510,12 +509,11 @@ def _check_invariants(
         stats.fires_by_signal["repetition_tax"] += 1
         if bd.repetition_tax > 0:
             viol(f"repetition_tax={bd.repetition_tax:.4f} must be <= 0")
-        # Must be one of the configured tax values (either normal or zero-effect scale).
-        all_taxes = set(REPETITION_TAX_SCALE) | set(REPETITION_TAX_ZERO_EFFECT_SCALE)
-        if bd.repetition_tax not in all_taxes:
+        # Escalating + uncapped: any negative value down to the per-turn floor is legal.
+        if bd.repetition_tax < REPETITION_TAX_FLOOR - 1e-6:
             viol(
-                f"repetition_tax={bd.repetition_tax:.4f} not in configured "
-                f"scale {sorted(all_taxes)}"
+                f"repetition_tax={bd.repetition_tax:.4f} below floor "
+                f"{REPETITION_TAX_FLOOR}"
             )
 
     if bd.struggle_tax != 0.0:
@@ -536,11 +534,13 @@ def _check_invariants(
                 f"({6 * STATUS_BONUS})"
             )
 
-    # --- Stall tax: only fires after turn 125 ---
+    # --- Stall tax: ramped, only fires after STALL_TAX_START_TURN, clamped at MAX ---
     if bd.stall_tax != 0.0:
         stats.fires_by_signal["stall_tax"] += 1
-        if not _almost(bd.stall_tax, -STALL_TAX_PER_TURN):
-            viol(f"stall_tax={bd.stall_tax:.4f} != {-STALL_TAX_PER_TURN}")
+        if bd.stall_tax > 0:
+            viol(f"stall_tax={bd.stall_tax:.4f} must be <= 0")
+        if bd.stall_tax < -STALL_TAX_MAX - 1e-6:
+            viol(f"stall_tax={bd.stall_tax:.4f} below clamp {-STALL_TAX_MAX}")
         if battle.turn <= STALL_TAX_START_TURN:
             viol(
                 f"stall_tax fired at turn {battle.turn} <= "
