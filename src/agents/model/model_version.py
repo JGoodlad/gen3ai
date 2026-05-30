@@ -37,7 +37,17 @@ MODEL_CONFIG_VERSION = 2
 #   98 → 99, total obs dim 2426 → 2438. The role encoder picks up the
 #   dominance scalar as a passthrough float alongside the two ability
 #   embeddings.
-ARCH_SIGNATURE = "gen3_abilities_v2"
+#
+# v5 (gen3_move_outcome_v1): each turn-history TurnDelta slot gains move-outcome
+#   reporting — our/opp move-outcome onehots (hit/miss/fail, ×6), our/opp crit
+#   bits (×2), and the |cant| reason onehot widens 5 → 11 (recharge/taunt/
+#   disable/imprison/truant/nopp added, with "move:"/"ability:" prefix
+#   normalization). These are pass-through scalars routed through the existing
+#   history embedding, inserted before the species-ID tail. TURN_DELTA_DIM
+#   88 → 108 (+12 from the wider cant onehot, +8 from outcome/crit); total obs
+#   dim shifts by N_HISTORY_TURNS × 20. Not weight-compatible with v4 — the
+#   history projection input width changed.
+ARCH_SIGNATURE = "gen3_move_outcome_v1"
 
 
 class ModelVersionError(Exception):

@@ -89,6 +89,12 @@ encoded vector via `encoder.decode_to_dict()` and asserts every field
 matches the source `TurnDelta`. The decode method already exists for
 diagnostic purposes.
 
+**Partially addressed (Step 5):** `move_outcome_fuzz_e2e_test` now validates the
+move-outcome, crit, and cant-reason one-hots end-to-end at their named offsets,
+and effectiveness_fuzz's Layer 4 was migrated off magic indices. The remaining
+gap is the move-id embeddings / power / secondary-recoil flags / HP-level vectors
+— still unit-test-only.
+
 ---
 
 ## 4. State encoder per-slot consistency fuzz
@@ -285,3 +291,11 @@ to set the real baseline before investing.
 - Renamed `impl_step3_unified_transformer.md` → `impl_step4_unified_transformer.md`
   (was a duplicate-numbered step3; the unified transformer landed
   chronologically after damaging-event attribution).
+- **Step 5 — move-outcome reporting** (`impl_step5_move_outcome.md`): un-ignored
+  `-crit`/`-miss`/`-fail`/`-notarget`/`-nothing`, added attribute-by-current-mover
+  trackers + 6 turn-gated properties, per-side hit/miss/fail outcome one-hot +
+  crit bit in the TurnDelta slot, and widened the cant one-hot 5 → 11 with
+  prefix normalization. TurnDelta slot 88 → 108, obs dim 2438 → 2638,
+  `ARCH_SIGNATURE` → `gen3_move_outcome_v1`. New `move_outcome_fuzz_e2e_test`
+  (120 battles / 6876 turns, 0 mismatches across 4 layers). Base-block offsets
+  refactored to computed `OFFSET_*` constants.

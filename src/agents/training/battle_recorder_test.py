@@ -46,6 +46,12 @@ def _battle(our_mons, opp_mons, our_active, opp_active,
     b.our_last_damaging_move = None
     b.opp_last_damaging_move = None
     b.we_moved_first = None
+    b.our_move_crit = False
+    b.opp_move_crit = False
+    b.our_move_missed = False
+    b.opp_move_missed = False
+    b.our_move_failed = False
+    b.opp_move_failed = False
     return b
 
 

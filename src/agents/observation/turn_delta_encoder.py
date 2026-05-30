@@ -2,28 +2,43 @@
 Encodes a TurnDelta into a fixed-dim float32 vector that is appended to the
 per-turn observation, giving the feedforward model a one-turn memory.
 
-Output layout (88 dims total):
-  Indices 0-38  — original 39-dim block (unchanged positions):
+Output layout (TURN_DELTA_DIM dims total; all offsets are computed from the
+named OFFSET_* / *_DIM constants below — never hardcode indices):
+
+  Base block (indices 0 .. TURN_DELTA_BASE_DIM-1):
     our_move  (5): move_id (raw int as float), power_norm, has_secondary, has_recoil, type_id (raw int as float)
     opp_move  (5): same
-    scalars  (29): our_switched, opp_switched, our_failed_to_move, opp_failed_to_move,
-                   our_cant_onehot(5), opp_cant_onehot(5),
+    scalars:       our_switched, opp_switched, our_failed_to_move, opp_failed_to_move,
+                   our_cant_onehot(CANT_DIM), opp_cant_onehot(CANT_DIM),
                    our_hp_delta_sum, opp_hp_delta_sum, we_fainted, opp_fainted, opp_move_known,
                    our_effectiveness_onehot(4), opp_effectiveness_onehot(4),
                    move_order(2)
+    The cant onehot (CANT_DIM, currently 11) covers par/slp/frz/flinch/confusion/
+    recharge/taunt/disable/imprison/truant/nopp; the raw |cant| reason is prefix-
+    normalized ("move: Taunt" → "taunt") before lookup. Unknown reason → zeros.
 
-  Indices 39-87 — extended block (added in gen3_unified_v2):
+  Extended block (added in gen3_unified_v2, extended in gen3_move_outcome_v1):
     our_boost_delta (7), opp_boost_delta (7),
     phase_is_forced_switch (1),
     our_target_hp_delta (1), opp_target_hp_delta (1),
     our_hp_levels (6), opp_hp_levels (6),
     our_target_status_onehot (7), opp_target_status_onehot (7),
+    our_move_outcome_onehot (3, [hit, miss, fail]),
+    opp_move_outcome_onehot (3, [hit, miss, fail]),
+    our_move_crit (1), opp_move_crit (1),
     our_actor_species_id (1, raw int as float — embedded by extractor),
     opp_actor_species_id (1, raw int as float — embedded by extractor),
     our_target_species_id (1, raw int as float — embedded by extractor),
     opp_target_species_id (1, raw int as float — embedded by extractor),
     our_switch_to_species_id (1, raw int as float — embedded by extractor),
     opp_switch_to_species_id (1, raw int as float — embedded by extractor)
+
+  The six species IDs are the contiguous slot TAIL (features_extractor slices
+  them out for embedding); move-outcome + crit are pass-through scalars placed
+  immediately before them. Effectiveness one-hot (4): [immune, resisted, normal,
+  super-effective]. Move-outcome one-hot (3): [hit, miss, fail]; all-zeros when
+  the side switched / was prevented by |cant| / used no move. crit is orthogonal
+  to outcome — a "hit" slot may also have crit=1.
 
 target_status_onehot is the status of the named target species AT MOVE-FIRE
 TIME (sourced from DamagingMoveEvent.target_status, captured by the protocol
@@ -56,8 +71,40 @@ from agents.observation.types import TypeEncoder
 from agents.gen3_mechanics import BOOST_DIM
 from poke_env.battle.status import Status
 
-# Reason → one-hot index (unknown/other → all-zeros)
-_CANT_REASONS = ["par", "slp", "frz", "flinch", "confusion"]
+# |cant| reason → one-hot index (unknown/other → all-zeros). Showdown sends the
+# reason as event[3], sometimes with a "move: " / "ability: " / "item: " prefix
+# (e.g. "move: Taunt", "ability: Truant") — _normalize_cant_reason strips that
+# before lookup. Order is stable; do not reorder without bumping ARCH_SIGNATURE.
+_CANT_REASONS = [
+    "par", "slp", "frz", "flinch", "confusion",  # status / volatile
+    "recharge",                                   # Hyper Beam cooldown turn
+    "taunt", "disable", "imprison",               # move-lock effects
+    "truant",                                     # Slaking loafing (ability)
+    "nopp",                                       # out of PP
+]
+_CANT_TO_IDX = {r: i for i, r in enumerate(_CANT_REASONS)}
+
+
+def _normalize_cant_reason(reason):
+    """Normalize a raw |cant| reason string to its bare form for index lookup.
+
+    Strips a leading "move: " / "ability: " / "item: " qualifier and lowercases
+    so "move: Taunt" → "taunt", "ability: Truant" → "truant". Returns None
+    unchanged. Unknown reasons pass through normalized (→ all-zeros one-hot)."""
+    if reason is None:
+        return None
+    r = reason.strip().lower()
+    for prefix in ("move:", "ability:", "item:"):
+        if r.startswith(prefix):
+            r = r[len(prefix):].strip()
+            break
+    return r.replace(" ", "")
+
+
+# Move-outcome one-hot: the resolved fate of a side's move this turn. None (the
+# side switched, was prevented by |cant|, or used no identifiable move) → zeros.
+_OUTCOME_ORDER = ["hit", "miss", "fail"]
+_OUTCOME_TO_IDX = {o: i for i, o in enumerate(_OUTCOME_ORDER)}
 
 # Status one-hot index. None / no status → all-zeros (the natural sentinel).
 # Order is stable; do not reorder without bumping ARCH_SIGNATURE.
@@ -75,22 +122,35 @@ _STATUS_LABELS = [s.name for s in _STATUS_ORDER]
 STATUS_DIM = len(_STATUS_ORDER)  # 7
 
 MOVE_FEAT_DIM = 5   # per-move feature block
-CANT_DIM = 5        # one-hot over cant reasons
+CANT_DIM = len(_CANT_REASONS)  # one-hot over cant reasons (currently 11)
+OUTCOME_DIM = len(_OUTCOME_ORDER)  # one-hot over move outcomes (3: hit/miss/fail)
 EFF_DIM = 4         # one-hot: immune | resisted | normal | super-effective
 ORDER_DIM = 2       # binary: [we_first, opp_first]; all-zero = na / unknown
-SCALAR_DIM = 4 + CANT_DIM * 2 + 5 + EFF_DIM * 2 + ORDER_DIM  # 4+10+5+8+2 = 29
+SCALAR_DIM = 4 + CANT_DIM * 2 + 5 + EFF_DIM * 2 + ORDER_DIM
 
-# Original 39-dim block (kept at indices 0-38 for layout stability).
-TURN_DELTA_BASE_DIM = MOVE_FEAT_DIM * 2 + SCALAR_DIM  # 5+5+29 = 39
+# Base block (indices 0..TURN_DELTA_BASE_DIM-1).
+TURN_DELTA_BASE_DIM = MOVE_FEAT_DIM * 2 + SCALAR_DIM
 
-# Named offsets into the base block for the handful of positions that need
-# to be referenced from outside this module (tests, debug tooling). The base
-# block layout is otherwise implicit in encode() — most fields don't need a
-# named constant because nothing outside the encoder consumes them by index.
-OFFSET_OUR_MOVE_BLOCK       = 0                                        # 0  (5 dims)
-OFFSET_OPP_MOVE_BLOCK       = MOVE_FEAT_DIM                            # 5  (5 dims)
-OFFSET_OUR_HP_DELTA_SUM     = MOVE_FEAT_DIM * 2 + 4 + CANT_DIM * 2     # 24 — summed our hp delta scalar
-OFFSET_OPP_HP_DELTA_SUM     = OFFSET_OUR_HP_DELTA_SUM + 1              # 25
+# Named offsets into the base block. All computed from the dims above so they
+# stay correct when CANT_DIM changes (e.g. adding a cant reason). describe_vector
+# and the e2e fuzz tests reference these instead of magic indices.
+OFFSET_OUR_MOVE_BLOCK       = 0                                        # (5 dims)
+OFFSET_OPP_MOVE_BLOCK       = MOVE_FEAT_DIM                            # (5 dims)
+OFFSET_OUR_SWITCHED         = MOVE_FEAT_DIM * 2                        # +0
+OFFSET_OPP_SWITCHED         = OFFSET_OUR_SWITCHED + 1
+OFFSET_OUR_FAILED_TO_MOVE   = OFFSET_OPP_SWITCHED + 1
+OFFSET_OPP_FAILED_TO_MOVE   = OFFSET_OUR_FAILED_TO_MOVE + 1
+OFFSET_OUR_CANT             = OFFSET_OPP_FAILED_TO_MOVE + 1            # (CANT_DIM)
+OFFSET_OPP_CANT             = OFFSET_OUR_CANT + CANT_DIM               # (CANT_DIM)
+OFFSET_OUR_HP_DELTA_SUM     = OFFSET_OPP_CANT + CANT_DIM               # summed our hp delta scalar
+OFFSET_OPP_HP_DELTA_SUM     = OFFSET_OUR_HP_DELTA_SUM + 1
+OFFSET_WE_FAINTED           = OFFSET_OPP_HP_DELTA_SUM + 1
+OFFSET_OPP_FAINTED          = OFFSET_WE_FAINTED + 1
+OFFSET_OPP_MOVE_KNOWN       = OFFSET_OPP_FAINTED + 1
+OFFSET_OUR_EFF              = OFFSET_OPP_MOVE_KNOWN + 1                # (EFF_DIM)
+OFFSET_OPP_EFF              = OFFSET_OUR_EFF + EFF_DIM                 # (EFF_DIM)
+OFFSET_ORDER                = OFFSET_OPP_EFF + EFF_DIM                 # (ORDER_DIM)
+assert OFFSET_ORDER + ORDER_DIM == TURN_DELTA_BASE_DIM
 
 # Extended block (gen3_unified_v2 additions): boost deltas, phase flag,
 # target_hp_deltas, per-slot HP levels, target status onehots, six species IDs.
@@ -102,10 +162,12 @@ TURN_DELTA_EXT_DIM = (
     + 2                    # our/opp target_hp_delta
     + HP_LEVEL_DIM * 2     # 12 — per-slot HP levels for both sides
     + STATUS_DIM * 2       # 14 — target status onehots (at move-fire time)
+    + OUTCOME_DIM * 2      # 6 — our/opp move-outcome onehots (hit/miss/fail)
+    + 2                    # our/opp crit bit
     + SPECIES_ID_COUNT     # 6 — species IDs (embedded by extractor)
-)  # = 49
+)
 
-TURN_DELTA_DIM = TURN_DELTA_BASE_DIM + TURN_DELTA_EXT_DIM  # 39 + 49 = 88
+TURN_DELTA_DIM = TURN_DELTA_BASE_DIM + TURN_DELTA_EXT_DIM
 
 # Offsets into the slot vector for the extended block — used by the encoder
 # AND by features_extractor._embed_delta_slot to slice species IDs out for
@@ -117,22 +179,33 @@ OFFSET_OUR_TARGET_HP_DELTA  = OFFSET_PHASE_FORCED_SWITCH + 1                # 54
 OFFSET_OPP_TARGET_HP_DELTA  = OFFSET_OUR_TARGET_HP_DELTA + 1                # 55
 OFFSET_OUR_HP_LEVELS        = OFFSET_OPP_TARGET_HP_DELTA + 1                # 56
 OFFSET_OPP_HP_LEVELS        = OFFSET_OUR_HP_LEVELS + HP_LEVEL_DIM           # 62
-OFFSET_OUR_TARGET_STATUS    = OFFSET_OPP_HP_LEVELS + HP_LEVEL_DIM           # 68
-OFFSET_OPP_TARGET_STATUS    = OFFSET_OUR_TARGET_STATUS + STATUS_DIM         # 75
-OFFSET_OUR_ACTOR_SPECIES    = OFFSET_OPP_TARGET_STATUS + STATUS_DIM         # 82
-OFFSET_OPP_ACTOR_SPECIES    = OFFSET_OUR_ACTOR_SPECIES + 1                  # 83
-OFFSET_OUR_TARGET_SPECIES   = OFFSET_OPP_ACTOR_SPECIES + 1                  # 84
-OFFSET_OPP_TARGET_SPECIES   = OFFSET_OUR_TARGET_SPECIES + 1                 # 85
-OFFSET_OUR_SWITCH_TO_SPEC   = OFFSET_OPP_TARGET_SPECIES + 1                 # 86
-OFFSET_OPP_SWITCH_TO_SPEC   = OFFSET_OUR_SWITCH_TO_SPEC + 1                 # 87
+OFFSET_OUR_TARGET_STATUS    = OFFSET_OPP_HP_LEVELS + HP_LEVEL_DIM
+OFFSET_OPP_TARGET_STATUS    = OFFSET_OUR_TARGET_STATUS + STATUS_DIM
+# Move outcome + crit: inserted BEFORE the species IDs so the species block
+# stays the contiguous slot tail (features_extractor slices [OFFSET_OUR_ACTOR_
+# SPECIES : OFFSET_OPP_SWITCH_TO_SPEC+1]). These are pass-through scalars — the
+# extractor's `slot[:, 10:OFFSET_OUR_ACTOR_SPECIES]` slice picks them up with
+# no extractor change needed.
+OFFSET_OUR_MOVE_OUTCOME     = OFFSET_OPP_TARGET_STATUS + STATUS_DIM         # (OUTCOME_DIM)
+OFFSET_OPP_MOVE_OUTCOME     = OFFSET_OUR_MOVE_OUTCOME + OUTCOME_DIM         # (OUTCOME_DIM)
+OFFSET_OUR_CRIT             = OFFSET_OPP_MOVE_OUTCOME + OUTCOME_DIM         # 1
+OFFSET_OPP_CRIT             = OFFSET_OUR_CRIT + 1                           # 1
+OFFSET_OUR_ACTOR_SPECIES    = OFFSET_OPP_CRIT + 1
+OFFSET_OPP_ACTOR_SPECIES    = OFFSET_OUR_ACTOR_SPECIES + 1
+OFFSET_OUR_TARGET_SPECIES   = OFFSET_OPP_ACTOR_SPECIES + 1
+OFFSET_OPP_TARGET_SPECIES   = OFFSET_OUR_TARGET_SPECIES + 1
+OFFSET_OUR_SWITCH_TO_SPEC   = OFFSET_OPP_TARGET_SPECIES + 1
+OFFSET_OPP_SWITCH_TO_SPEC   = OFFSET_OUR_SWITCH_TO_SPEC + 1
+assert OFFSET_OPP_SWITCH_TO_SPEC + 1 == TURN_DELTA_DIM
 
 # Raw-int slot positions that the features_extractor looks up against an
 # embedding table. The 4 move/type IDs sit at fixed positions 0/4/5/9
 # (legacy base block); the 6 species IDs are contiguous at the slot tail
 # [OFFSET_OUR_ACTOR_SPECIES .. OFFSET_OPP_SWITCH_TO_SPEC]. Any future
-# embedded field added between species IDs would break the contiguity
-# assumption in features_extractor.py:_embed_delta_slot — append at the
-# tail instead.
+# embedded field MUST keep the species IDs as the contiguous tail — insert
+# non-embedded scalars BEFORE OFFSET_OUR_ACTOR_SPECIES (as move-outcome/crit
+# do), never after, or the contiguity + pass-through slices in
+# features_extractor.py:_embed_delta_slot break.
 
 
 class TurnDeltaEncoder:
@@ -249,11 +322,22 @@ class TurnDeltaEncoder:
 
     def _cant_onehot(self, reason: Optional[str]) -> np.ndarray:
         vec = np.zeros(CANT_DIM, dtype=np.float32)
-        if reason is not None:
-            try:
-                vec[_CANT_REASONS.index(reason)] = 1.0
-            except ValueError:
-                pass
+        norm = _normalize_cant_reason(reason)
+        if norm is not None:
+            idx = _CANT_TO_IDX.get(norm)
+            if idx is not None:
+                vec[idx] = 1.0
+        return vec
+
+    @staticmethod
+    def _outcome_onehot(outcome: Optional[str]) -> np.ndarray:
+        """3-dim one-hot over [hit, miss, fail]; all-zeros when outcome is None
+        (the side switched, was prevented by |cant|, or used no move)."""
+        vec = np.zeros(OUTCOME_DIM, dtype=np.float32)
+        if outcome is not None:
+            idx = _OUTCOME_TO_IDX.get(outcome)
+            if idx is not None:
+                vec[idx] = 1.0
         return vec
 
     @staticmethod
@@ -313,8 +397,9 @@ class TurnDeltaEncoder:
         return event.target_species
 
     def describe_vector(self, vec: np.ndarray) -> dict:
-        """Decode a TURN_DELTA_DIM-dim (currently 88) encoded TurnDelta vector
-        back to human-readable form."""
+        """Decode a TURN_DELTA_DIM-dim encoded TurnDelta vector back to
+        human-readable form. Base-block fields are read via the named OFFSET_*
+        constants so this stays correct when CANT_DIM (or any base dim) changes."""
         _CANT = _CANT_REASONS
         _EFF_LABELS = ["immune", "resisted", "normal", "super-effective"]
 
@@ -343,29 +428,33 @@ class TurnDeltaEncoder:
             num = int(raw)
             return self._num_to_species.get(num) if num > 0 else None
 
-        our_move = _move_dict(vec[0], vec[1], vec[2], vec[3], vec[4])
-        opp_move = _move_dict(vec[5], vec[6], vec[7], vec[8], vec[9])
+        our_move = _move_dict(vec[OFFSET_OUR_MOVE_BLOCK + 0], vec[OFFSET_OUR_MOVE_BLOCK + 1],
+                              vec[OFFSET_OUR_MOVE_BLOCK + 2], vec[OFFSET_OUR_MOVE_BLOCK + 3],
+                              vec[OFFSET_OUR_MOVE_BLOCK + 4])
+        opp_move = _move_dict(vec[OFFSET_OPP_MOVE_BLOCK + 0], vec[OFFSET_OPP_MOVE_BLOCK + 1],
+                              vec[OFFSET_OPP_MOVE_BLOCK + 2], vec[OFFSET_OPP_MOVE_BLOCK + 3],
+                              vec[OFFSET_OPP_MOVE_BLOCK + 4])
         order_label = None
-        if vec[37] > 0.5:
+        if vec[OFFSET_ORDER] > 0.5:
             order_label = "we_first"
-        elif vec[38] > 0.5:
+        elif vec[OFFSET_ORDER + 1] > 0.5:
             order_label = "opp_first"
         return {
             "our_move": our_move if (our_move["move_id"] > 0 or our_move["power"] > 0) else None,
             "opp_move": opp_move if (opp_move["move_id"] > 0 or opp_move["power"] > 0) else None,
-            "our_switched": bool(vec[10] > 0.5),
-            "opp_switched": bool(vec[11] > 0.5),
-            "our_failed": bool(vec[12] > 0.5),
-            "opp_failed": bool(vec[13] > 0.5),
-            "our_cant": _cant_label(vec[14:19]),
-            "opp_cant": _cant_label(vec[19:24]),
-            "our_hp_delta": float(vec[24]),
-            "opp_hp_delta": float(vec[25]),
-            "we_fainted": bool(vec[26] > 0.5),
-            "opp_fainted": bool(vec[27] > 0.5),
-            "opp_move_known": bool(vec[28] > 0.5),
-            "our_effectiveness": _onehot_label(vec[29:33], _EFF_LABELS),
-            "opp_effectiveness": _onehot_label(vec[33:37], _EFF_LABELS),
+            "our_switched": bool(vec[OFFSET_OUR_SWITCHED] > 0.5),
+            "opp_switched": bool(vec[OFFSET_OPP_SWITCHED] > 0.5),
+            "our_failed": bool(vec[OFFSET_OUR_FAILED_TO_MOVE] > 0.5),
+            "opp_failed": bool(vec[OFFSET_OPP_FAILED_TO_MOVE] > 0.5),
+            "our_cant": _cant_label(vec[OFFSET_OUR_CANT:OFFSET_OUR_CANT + CANT_DIM]),
+            "opp_cant": _cant_label(vec[OFFSET_OPP_CANT:OFFSET_OPP_CANT + CANT_DIM]),
+            "our_hp_delta": float(vec[OFFSET_OUR_HP_DELTA_SUM]),
+            "opp_hp_delta": float(vec[OFFSET_OPP_HP_DELTA_SUM]),
+            "we_fainted": bool(vec[OFFSET_WE_FAINTED] > 0.5),
+            "opp_fainted": bool(vec[OFFSET_OPP_FAINTED] > 0.5),
+            "opp_move_known": bool(vec[OFFSET_OPP_MOVE_KNOWN] > 0.5),
+            "our_effectiveness": _onehot_label(vec[OFFSET_OUR_EFF:OFFSET_OUR_EFF + EFF_DIM], _EFF_LABELS),
+            "opp_effectiveness": _onehot_label(vec[OFFSET_OPP_EFF:OFFSET_OPP_EFF + EFF_DIM], _EFF_LABELS),
             "move_order": order_label,
             "our_boost_delta": vec[OFFSET_OUR_BOOST_DELTA:OFFSET_OUR_BOOST_DELTA + BOOST_DIM].tolist(),
             "opp_boost_delta": vec[OFFSET_OPP_BOOST_DELTA:OFFSET_OPP_BOOST_DELTA + BOOST_DIM].tolist(),
@@ -380,6 +469,14 @@ class TurnDeltaEncoder:
             "opp_target_status": _onehot_label(
                 vec[OFFSET_OPP_TARGET_STATUS:OFFSET_OPP_TARGET_STATUS + STATUS_DIM], _STATUS_LABELS,
             ),
+            "our_move_outcome": _onehot_label(
+                vec[OFFSET_OUR_MOVE_OUTCOME:OFFSET_OUR_MOVE_OUTCOME + OUTCOME_DIM], _OUTCOME_ORDER,
+            ),
+            "opp_move_outcome": _onehot_label(
+                vec[OFFSET_OPP_MOVE_OUTCOME:OFFSET_OPP_MOVE_OUTCOME + OUTCOME_DIM], _OUTCOME_ORDER,
+            ),
+            "our_move_crit": bool(vec[OFFSET_OUR_CRIT] > 0.5),
+            "opp_move_crit": bool(vec[OFFSET_OPP_CRIT] > 0.5),
             "our_actor_species": _species_name(vec[OFFSET_OUR_ACTOR_SPECIES]),
             "opp_actor_species": _species_name(vec[OFFSET_OPP_ACTOR_SPECIES]),
             "our_target_species": _species_name(vec[OFFSET_OUR_TARGET_SPECIES]),
@@ -454,6 +551,14 @@ class TurnDeltaEncoder:
             delta.opp_hp_after.astype(np.float32),                     # 6
             self._status_onehot(our_target_status),                    # 7
             self._status_onehot(opp_target_status),                    # 7
+            # Move outcome + crit — pass-through scalars BEFORE the species IDs
+            # so the species block stays the contiguous slot tail.
+            self._outcome_onehot(delta.our_move_outcome),              # 3
+            self._outcome_onehot(delta.opp_move_outcome),              # 3
+            np.array([
+                float(delta.our_move_crit),
+                float(delta.opp_move_crit),
+            ], dtype=np.float32),                                       # 2
             np.array([
                 self._species_id(self._actor_species(delta, "our")),
                 self._species_id(self._actor_species(delta, "opp")),

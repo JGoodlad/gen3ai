@@ -4,6 +4,22 @@ from agents.observation.turn_delta_encoder import (
     TurnDeltaEncoder,
     TURN_DELTA_DIM,
     STATUS_DIM,
+    CANT_DIM,
+    OUTCOME_DIM,
+    OFFSET_OUR_SWITCHED,
+    OFFSET_OPP_SWITCHED,
+    OFFSET_OUR_FAILED_TO_MOVE,
+    OFFSET_OPP_FAILED_TO_MOVE,
+    OFFSET_OUR_CANT,
+    OFFSET_OPP_CANT,
+    OFFSET_OUR_HP_DELTA_SUM,
+    OFFSET_OPP_HP_DELTA_SUM,
+    OFFSET_WE_FAINTED,
+    OFFSET_OPP_FAINTED,
+    OFFSET_OPP_MOVE_KNOWN,
+    OFFSET_OUR_EFF,
+    OFFSET_OPP_EFF,
+    OFFSET_ORDER,
     OFFSET_OUR_BOOST_DELTA,
     OFFSET_OPP_BOOST_DELTA,
     OFFSET_PHASE_FORCED_SWITCH,
@@ -13,6 +29,10 @@ from agents.observation.turn_delta_encoder import (
     OFFSET_OPP_HP_LEVELS,
     OFFSET_OUR_TARGET_STATUS,
     OFFSET_OPP_TARGET_STATUS,
+    OFFSET_OUR_MOVE_OUTCOME,
+    OFFSET_OPP_MOVE_OUTCOME,
+    OFFSET_OUR_CRIT,
+    OFFSET_OPP_CRIT,
     OFFSET_OUR_ACTOR_SPECIES,
     OFFSET_OPP_ACTOR_SPECIES,
     OFFSET_OUR_TARGET_SPECIES,
@@ -71,7 +91,7 @@ def _delta(**kwargs):
 
 def test_dimension():
     assert _enc().dimension == TURN_DELTA_DIM
-    assert TURN_DELTA_DIM == 88
+    assert TURN_DELTA_DIM == 108
 
 
 def test_empty_delta_is_all_zeros_except_opp_move_known():
@@ -117,28 +137,45 @@ def test_switched_flag():
     enc = _enc()
     delta = _delta(our_switch_to="skarmory")
     vec = enc.encode(delta)
-    assert vec[10] == pytest.approx(1.0)   # our_switched at offset 10
-    assert vec[11] == pytest.approx(0.0)   # opp_switched
+    assert vec[OFFSET_OUR_SWITCHED] == pytest.approx(1.0)
+    assert vec[OFFSET_OPP_SWITCHED] == pytest.approx(0.0)
 
 
 def test_failed_to_move_flag():
     enc = _enc()
     delta = _delta(our_failed_to_move=True, our_cant_reason="par")
     vec = enc.encode(delta)
-    assert vec[12] == pytest.approx(1.0)   # our_failed_to_move at offset 12
-    assert vec[13] == pytest.approx(0.0)   # opp_failed_to_move
-    # our_cant_reason onehot: par=index 0, at offset 14
-    assert vec[14] == pytest.approx(1.0)
+    assert vec[OFFSET_OUR_FAILED_TO_MOVE] == pytest.approx(1.0)
+    assert vec[OFFSET_OPP_FAILED_TO_MOVE] == pytest.approx(0.0)
+    # our_cant_reason onehot: par = index 0
+    assert vec[OFFSET_OUR_CANT + 0] == pytest.approx(1.0)
 
 
 def test_opp_cant_reason_onehot():
     enc = _enc()
     delta = _delta(opp_failed_to_move=True, opp_cant_reason="flinch")
     vec = enc.encode(delta)
-    # opp_cant_onehot starts at offset 19 (14 + 5)
-    # flinch is index 3 in [par, slp, frz, flinch, confusion]
-    assert vec[19 + 3] == pytest.approx(1.0)
-    assert vec[19 + 0] == pytest.approx(0.0)
+    # flinch is index 3 in [par, slp, frz, flinch, confusion, ...]
+    assert vec[OFFSET_OPP_CANT + 3] == pytest.approx(1.0)
+    assert vec[OFFSET_OPP_CANT + 0] == pytest.approx(0.0)
+
+
+def test_cant_reason_prefix_normalized():
+    """Showdown's 'move: Taunt' / 'ability: Truant' must map to the bare index."""
+    enc = _enc()
+    # taunt is index 6 in the cant order
+    vec = enc.encode(_delta(our_failed_to_move=True, our_cant_reason="move: Taunt"))
+    assert vec[OFFSET_OUR_CANT + 6] == pytest.approx(1.0)
+    assert enc.describe_vector(vec)["our_cant"] == "taunt"
+    # truant is index 9, prefixed with 'ability: '
+    vec2 = enc.encode(_delta(opp_failed_to_move=True, opp_cant_reason="ability: Truant"))
+    assert vec2[OFFSET_OPP_CANT + 9] == pytest.approx(1.0)
+    # recharge (Hyper Beam) is a bare reason at index 5
+    vec3 = enc.encode(_delta(our_failed_to_move=True, our_cant_reason="recharge"))
+    assert vec3[OFFSET_OUR_CANT + 5] == pytest.approx(1.0)
+    # An unknown reason → all-zeros cant onehot (no crash).
+    vec4 = enc.encode(_delta(our_failed_to_move=True, our_cant_reason="move: Bogus"))
+    assert vec4[OFFSET_OUR_CANT:OFFSET_OUR_CANT + CANT_DIM].sum() == pytest.approx(0.0)
 
 
 def test_hp_delta():
@@ -149,28 +186,59 @@ def test_hp_delta():
     opp_hp[0] = -0.5   # opp took 50%
     delta = _delta(our_hp_delta=our_hp, opp_hp_delta=opp_hp)
     vec = enc.encode(delta)
-    # hp deltas at offset 24 and 25
-    assert vec[24] == pytest.approx(-0.3)
-    assert vec[25] == pytest.approx(-0.5)
+    assert vec[OFFSET_OUR_HP_DELTA_SUM] == pytest.approx(-0.3)
+    assert vec[OFFSET_OPP_HP_DELTA_SUM] == pytest.approx(-0.5)
 
 
 def test_faint_flags():
     enc = _enc()
     delta = _delta(opp_fainted=True)
     vec = enc.encode(delta)
-    assert vec[26] == pytest.approx(0.0)   # we_fainted
-    assert vec[27] == pytest.approx(1.0)   # opp_fainted
+    assert vec[OFFSET_WE_FAINTED] == pytest.approx(0.0)
+    assert vec[OFFSET_OPP_FAINTED] == pytest.approx(1.0)
 
 
 def test_opp_move_known_flag():
     enc = _enc()
     delta = _delta(opp_move_known=True)
     vec = enc.encode(delta)
-    assert vec[28] == pytest.approx(1.0)
+    assert vec[OFFSET_OPP_MOVE_KNOWN] == pytest.approx(1.0)
 
     delta2 = _delta(opp_move_known=False)
     vec2 = enc.encode(delta2)
-    assert vec2[28] == pytest.approx(0.0)
+    assert vec2[OFFSET_OPP_MOVE_KNOWN] == pytest.approx(0.0)
+
+
+def test_move_outcome_onehot():
+    enc = _enc()
+    # hit / miss / fail map to indices 0 / 1 / 2
+    vec = enc.encode(_delta(our_move_id="rockslide", our_move_outcome="hit",
+                            opp_move_id="surf", opp_move_outcome="miss"))
+    assert vec[OFFSET_OUR_MOVE_OUTCOME + 0] == pytest.approx(1.0)
+    assert vec[OFFSET_OPP_MOVE_OUTCOME + 1] == pytest.approx(1.0)
+    d = enc.describe_vector(vec)
+    assert d["our_move_outcome"] == "hit"
+    assert d["opp_move_outcome"] == "miss"
+
+    # fail
+    vec2 = enc.encode(_delta(our_move_id="rockslide", our_move_outcome="fail"))
+    assert vec2[OFFSET_OUR_MOVE_OUTCOME + 2] == pytest.approx(1.0)
+
+    # None → all-zeros outcome block
+    vec3 = enc.encode(_delta(our_switch_to="skarmory"))
+    blk = vec3[OFFSET_OUR_MOVE_OUTCOME:OFFSET_OUR_MOVE_OUTCOME + OUTCOME_DIM]
+    assert blk.sum() == pytest.approx(0.0)
+    assert enc.describe_vector(vec3)["our_move_outcome"] is None
+
+
+def test_crit_bits():
+    enc = _enc()
+    vec = enc.encode(_delta(our_move_id="rockslide", our_move_outcome="hit", our_move_crit=True))
+    assert vec[OFFSET_OUR_CRIT] == pytest.approx(1.0)
+    assert vec[OFFSET_OPP_CRIT] == pytest.approx(0.0)
+    d = enc.describe_vector(vec)
+    assert d["our_move_crit"] is True
+    assert d["opp_move_crit"] is False
 
 
 def test_unknown_move_id_gracefully_zeros():

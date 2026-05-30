@@ -27,6 +27,35 @@ def _resolve_target_hp_delta(
     return float(hp_delta[slot])
 
 
+def _derive_move_outcome(
+    move_used: bool,
+    missed: bool,
+    failed: bool,
+    suppressed: bool,
+) -> Optional[str]:
+    """Collapse the per-side protocol outcome flags into one category.
+
+    Returns "miss" / "fail" / "hit", or None when no move resolved.
+
+    `suppressed` is True when the side was prevented from acting by a |cant|
+    (sleep/par/flinch/etc.) even though an action was selected — no move
+    resolved, so the outcome is None (the cant reason is carried separately).
+    Precedence is miss > fail > hit: a move that misses never also "hits", and
+    the protocol never emits both for one move. `move_used` is the fallback
+    positive signal (a move resolved without an explicit miss/fail emission →
+    it connected).
+    """
+    if suppressed:
+        return None
+    if missed:
+        return "miss"
+    if failed:
+        return "fail"
+    if move_used:
+        return "hit"
+    return None
+
+
 @dataclass
 class BattleContext:
     """
@@ -136,6 +165,19 @@ class BattleContext:
     # our/opp_last_effectiveness (set together at the same protocol events).
     our_last_damaging_event: Optional[DamagingMoveEvent] = None
     opp_last_damaging_event: Optional[DamagingMoveEvent] = None
+
+    # Per-side move outcome flags for the turn that just ended, sourced from
+    # AbstractBattle.our/opp_move_{crit,missed,failed} (each turn-gated on
+    # turn-1). crit is orthogonal to miss/fail (a hit can crit); missed and
+    # failed are mutually exclusive in practice. All False when the side
+    # switched, was prevented from moving (|cant|), or used a move that simply
+    # connected. Derived into a single outcome category by TurnDelta.build.
+    our_move_crit: bool = False
+    opp_move_crit: bool = False
+    our_move_missed: bool = False
+    opp_move_missed: bool = False
+    our_move_failed: bool = False
+    opp_move_failed: bool = False
 
     def __post_init__(self):
         if self.mask.shape != (11,):
@@ -253,6 +295,12 @@ class BattleContext:
             opp_last_damaging_event=battle.opp_last_damaging_move,
             we_moved_first=battle.we_moved_first,
             our_team_order=tuple(m.species for m in battle.team.values()),
+            our_move_crit=battle.our_move_crit,
+            opp_move_crit=battle.opp_move_crit,
+            our_move_missed=battle.our_move_missed,
+            opp_move_missed=battle.opp_move_missed,
+            our_move_failed=battle.our_move_failed,
+            opp_move_failed=battle.opp_move_failed,
         )
 
 
@@ -343,6 +391,19 @@ class TurnDelta:
     # slot — gives the model "how hard the named target got hit."
     our_target_hp_delta: Optional[float] = None
     opp_target_hp_delta: Optional[float] = None
+
+    # Per-side move outcome for the turn, one of "hit" / "miss" / "fail", or
+    # None when the side switched, was prevented from moving (|cant| — covered
+    # by the separate cant one-hot), or used no identifiable move. "hit" means
+    # the move connected / did its thing (damage or status applied); "miss" =
+    # accuracy miss (|-miss|); "fail" = the move executed but did nothing
+    # (Protect on repeat, Substitute on existing sub, |-fail|/|-notarget|/
+    # |-nothing|). Derived in build() from the move/switch/cant context plus
+    # the curr_ctx outcome flags. crit is orthogonal — a "hit" may also crit.
+    our_move_outcome: Optional[str] = None
+    opp_move_outcome: Optional[str] = None
+    our_move_crit: bool = False
+    opp_move_crit: bool = False
 
     @property
     def opp_resolved_move_id(self) -> Optional[str]:
@@ -456,6 +517,24 @@ class TurnDelta:
             curr_ctx.our_last_damaging_event, opp_hp_delta, curr_ctx.opp_slot_map
         )
 
+        # Per-side move outcome. `suppressed` covers the |cant| case where an
+        # action was selected (our_move_id set) but no move resolved. For the
+        # opponent, opp_move_id is already None on a voluntary switch and is
+        # recovered on a faint-forced switch, so move_used alone is the right
+        # signal — no extra switch suppression needed.
+        our_move_outcome = _derive_move_outcome(
+            move_used=our_move_id is not None,
+            missed=curr_ctx.our_move_missed,
+            failed=curr_ctx.our_move_failed,
+            suppressed=our_failed_to_move,
+        )
+        opp_move_outcome = _derive_move_outcome(
+            move_used=opp_move_id is not None,
+            missed=curr_ctx.opp_move_missed,
+            failed=curr_ctx.opp_move_failed,
+            suppressed=opp_failed_to_move,
+        )
+
         return cls(
             our_move_id=our_move_id,
             our_switch_to=our_switch_to,
@@ -484,6 +563,10 @@ class TurnDelta:
             opp_hp_after=curr_ctx.opp_hp.copy(),
             our_target_hp_delta=our_target_hp_delta,
             opp_target_hp_delta=opp_target_hp_delta,
+            our_move_outcome=our_move_outcome,
+            opp_move_outcome=opp_move_outcome,
+            our_move_crit=curr_ctx.our_move_crit,
+            opp_move_crit=curr_ctx.opp_move_crit,
         )
 
     @classmethod
@@ -509,4 +592,8 @@ class TurnDelta:
             opp_hp_after=np.zeros(6, dtype=np.float32),
             our_target_hp_delta=None,
             opp_target_hp_delta=None,
+            our_move_outcome=None,
+            opp_move_outcome=None,
+            our_move_crit=False,
+            opp_move_crit=False,
         )

@@ -50,14 +50,14 @@ class AbstractBattle(ABC):
         "-burst",
         "-center",
         "-combine",
-        "-crit",
-        "-fail",
+        # NOTE: "-crit", "-fail", "-miss", "-notarget", "-nothing" are
+        # intentionally NOT ignored — they feed the per-side move-outcome /
+        # crit trackers (see the move-outcome handlers in parse_message and the
+        # our/opp_move_{crit,missed,failed} turn-gated properties). "crit" (the
+        # legacy no-prefix duplicate at the bottom of this set) stays ignored.
         "-fieldactivate",
         "-hint",
         "-hitcount",
-        "-miss",
-        "-notarget",
-        "-nothing",
         "-ohko",
         "-waiting",
         "-zbroken",
@@ -152,6 +152,13 @@ class AbstractBattle(ABC):
         "_pending_opp_damaging_move",
         "_we_moved_first",
         "_this_turn_move_sides",
+        "_current_move_user_side",
+        "_our_move_crit",
+        "_opp_move_crit",
+        "_our_move_missed",
+        "_opp_move_missed",
+        "_our_move_failed",
+        "_opp_move_failed",
         "_used_dynamax",
         "_used_mega_evolve",
         "_used_tera",
@@ -248,6 +255,23 @@ class AbstractBattle(ABC):
         self._pending_opp_damaging_move: Optional[Tuple[int, DamagingMoveEvent]] = None
         self._we_moved_first: Optional[tuple] = None  # (turn, bool)
         self._this_turn_move_sides: list = []  # order of "ours"/"opp" |move| events
+
+        # Move-outcome / crit tracking. Each |-crit|, |-miss|, |-fail|,
+        # |-notarget|, |-nothing| line is attributed to whichever side's move
+        # is CURRENTLY resolving — `_current_move_user_side`, set by the |move|
+        # line and reset each turn. This sidesteps the attacker-vs-defender
+        # ambiguity in the protocol (|-crit| names the defender, |-miss| names
+        # the source): all of these events fire during the attacker's own move
+        # resolution, so the current mover is always the right owner.
+        # Each per-side slot stores a (turn_set, True) tuple, turn-gated to
+        # `self._turn - 1` like the effectiveness/order fields; absence → False.
+        self._current_move_user_side: Optional[str] = None  # "ours" | "opp" | None
+        self._our_move_crit: Optional[tuple] = None
+        self._opp_move_crit: Optional[tuple] = None
+        self._our_move_missed: Optional[tuple] = None
+        self._opp_move_missed: Optional[tuple] = None
+        self._our_move_failed: Optional[tuple] = None
+        self._opp_move_failed: Optional[tuple] = None
 
         # Pokemon attributes
         self._team: Dict[str, Pokemon] = {}
@@ -654,10 +678,24 @@ class AbstractBattle(ABC):
             spread = False
             mon._dancing = False
 
+            # This move now "owns" any subsequent |-crit|/|-miss|/|-fail| lines
+            # until the next |move| (or end of turn). See _current_move_user_side.
+            self._current_move_user_side = (
+                "ours" if pokemon[:2] == self._player_role else "opp"
+            )
+
             for move_failed_suffix in ["[miss]", "[still]", "[notarget]"]:
                 if event[-1] == move_failed_suffix:
                     event = event[:-1]
                     failed = True
+                    # Older protocol variant: miss/notarget carried as a |move|
+                    # suffix instead of a standalone |-miss|/|-notarget| line.
+                    # Mirror it into the outcome trackers so detection is robust
+                    # to both formats.
+                    if move_failed_suffix == "[miss]":
+                        self._mark_move_outcome("missed")
+                    else:
+                        self._mark_move_outcome("failed")
 
             if event[-1] == "[notarget]":
                 event = event[:-1]
@@ -867,6 +905,19 @@ class AbstractBattle(ABC):
             pokemon = event[2]
             reason = event[3] if len(event) > 3 else None
             self.get_pokemon(pokemon).cant_move(reason)
+        elif event[1] == "-crit":
+            # |-crit|DEFENDER — attributed to the currently-resolving attacker
+            # (the move landed a critical hit), not the named defender.
+            self._mark_move_outcome("crit")
+        elif event[1] == "-miss":
+            # |-miss|SOURCE|TARGET — the resolving move missed.
+            self._mark_move_outcome("missed")
+        elif event[1] in ("-fail", "-notarget", "-nothing"):
+            # The resolving move failed to do anything: |-fail| (e.g. Substitute
+            # on an existing sub, Protect on repeat), |-notarget| (no target), or
+            # |-nothing| ("but nothing happened"). All fold into one "failed"
+            # outcome on the attacker's side.
+            self._mark_move_outcome("failed")
         elif event[1] == "turn":
             self.end_turn(int(event[2]))
         elif event[1] == "-heal":
@@ -1481,6 +1532,7 @@ class AbstractBattle(ABC):
         # remain set; BattleContext reads them via the properties below, which
         # gate on turn - 1 to ensure they came from the turn that just ended.
         self._this_turn_move_sides = []
+        self._current_move_user_side = None
         self.turn = turn
 
         for mon in self.all_active_pokemons:
@@ -1988,6 +2040,67 @@ class AbstractBattle(ABC):
         Only valid on the turn immediately after the relevant turn.
         """
         return self._last_turn_gated(self._we_moved_first)
+
+    def _mark_move_outcome(self, which: str) -> None:
+        """Flag a move outcome (`which` ∈ {"crit","missed","failed"}) for the
+        side whose move is currently resolving (`_current_move_user_side`).
+
+        No-op when no move is resolving (the event fired outside any |move|
+        context this turn). Stores (turn, True), turn-gated identically to the
+        effectiveness / move-order fields so a stale flag never leaks forward.
+        """
+        side = self._current_move_user_side
+        if side is None:
+            return
+        stamp = (self._turn, True)
+        if side == "ours":
+            if which == "crit":
+                self._our_move_crit = stamp
+            elif which == "missed":
+                self._our_move_missed = stamp
+            else:
+                self._our_move_failed = stamp
+        else:
+            if which == "crit":
+                self._opp_move_crit = stamp
+            elif which == "missed":
+                self._opp_move_missed = stamp
+            else:
+                self._opp_move_failed = stamp
+
+    def _turn_gated_bool(self, stored: Optional[tuple]) -> bool:
+        """True iff `stored` holds a flag set on the turn that just ended."""
+        return self._last_turn_gated(stored) is True
+
+    @property
+    def our_move_crit(self) -> bool:
+        """True if our move landed a critical hit last turn. Turn-gated."""
+        return self._turn_gated_bool(self._our_move_crit)
+
+    @property
+    def opp_move_crit(self) -> bool:
+        """True if the opponent's move landed a critical hit last turn."""
+        return self._turn_gated_bool(self._opp_move_crit)
+
+    @property
+    def our_move_missed(self) -> bool:
+        """True if our move missed last turn (|-miss| or |move| [miss] suffix)."""
+        return self._turn_gated_bool(self._our_move_missed)
+
+    @property
+    def opp_move_missed(self) -> bool:
+        """True if the opponent's move missed last turn."""
+        return self._turn_gated_bool(self._opp_move_missed)
+
+    @property
+    def our_move_failed(self) -> bool:
+        """True if our move failed last turn (|-fail|/|-notarget|/|-nothing|)."""
+        return self._turn_gated_bool(self._our_move_failed)
+
+    @property
+    def opp_move_failed(self) -> bool:
+        """True if the opponent's move failed last turn."""
+        return self._turn_gated_bool(self._opp_move_failed)
 
     @property
     def used_dynamax(self) -> bool:

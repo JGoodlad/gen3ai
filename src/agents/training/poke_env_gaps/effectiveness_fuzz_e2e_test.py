@@ -48,7 +48,10 @@ from poke_env.ps_client.server_configuration import LocalhostServerConfiguration
 from agents.action.mapper import Gen3ActionMapper
 from agents.action.mask_generator import Gen3ActionMasker
 from agents.observation.state_encoder import load_mappings
-from agents.observation.turn_delta_encoder import TurnDeltaEncoder, EFF_DIM, ORDER_DIM
+from agents.observation.turn_delta_encoder import (
+    TurnDeltaEncoder, EFF_DIM, ORDER_DIM,
+    OFFSET_OUR_EFF, OFFSET_OPP_EFF, OFFSET_ORDER,
+)
 from agents.training.battle_context import BattleContext, TurnDelta
 from agents.training.slot_registry import SlotRegistry
 from utils.teambuilder import Gen3Teambuilder
@@ -565,9 +568,11 @@ class EffectivenessFuzzPlayer(Player):
         encoder = _get_encoder()
         enc = encoder.encode(delta)
 
-        our_eff_vec = enc[29:33]
-        opp_eff_vec = enc[33:37]
-        order_vec = enc[37:39]
+        # Read via named offsets — the eff/order block shifts when CANT_DIM or
+        # any other base-block dim changes (e.g. gen3_move_outcome_v1).
+        our_eff_vec = enc[OFFSET_OUR_EFF:OFFSET_OUR_EFF + EFF_DIM]
+        opp_eff_vec = enc[OFFSET_OPP_EFF:OFFSET_OPP_EFF + EFF_DIM]
+        order_vec = enc[OFFSET_ORDER:OFFSET_ORDER + ORDER_DIM]
 
         expected_our_idx = _eff_to_category(delta.our_effectiveness)
         expected_opp_idx = _eff_to_category(delta.opp_effectiveness)

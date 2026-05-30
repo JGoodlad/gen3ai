@@ -6,6 +6,15 @@
 
 Architecture constants (embedding dims, layer sizes, etc.) are defined as module-level constants in `src/agents/model/features_extractor.py` — that is the single source of truth. When you change one, change it there and nowhere else. See [Model Versioning](#model-versioning).
 
+## Documentation Maintenance
+
+Keep docs in sync **automatically, as part of the same change** — no need to be asked:
+
+- **Every `CLAUDE.md`** (root, `src/agents/model/`, `designs/`, anywhere): always current. If a change makes one stale, fix it in the same pass.
+- **Every `README.md`** (including `designs/ai_v3/README.md`, the architecture digraph + dimension reference): always current. When you change dims, layout, obs/architecture, or anything a README documents, update it without being prompted.
+
+**Do NOT auto-update other docs under `designs/`** — `impl_step*.md`, `design_*.md`, `todo.md`, etc. are explicit-only. Touch them only when the user asks (directly or via `/gen3ai-update-design-docs`). The lone exception is `CLAUDE.md` files inside `designs/`, which follow the always-current rule above.
+
 ## Git Workflow
 
 This is a personal project — no pull requests needed. Work is pushed directly to `main`, but **all edits and commits must happen in a worktree or branch, never on the main checkout itself.**

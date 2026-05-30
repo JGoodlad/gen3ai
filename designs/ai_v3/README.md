@@ -138,38 +138,53 @@ flowchart TD
 
 The matchup matrix (288 of the 300 reactive dims) is consumed by the move processor only — it is **not** fed to the projection directly. The turn history block is appended by `gen3_env.embed_battle()`. All 5 slots are embedded identically and processed through self-attention; the last (most-recent) slot's output is used in the projection aggregation.
 
-## TurnDelta Block Layout (39 dims per slot)
+## TurnDelta Block Layout (108 dims per slot)
+
+> **Note:** the digraph above predates the ai_v4 unified transformer and the
+> TurnDelta expansions — slot count, embed dims, and the attention topology there
+> are stale. The table below is kept current because it is a self-contained
+> dimension reference. For the live architecture see `designs/ai_v4/`
+> (`impl_step4_unified_transformer.md`, `impl_step3_damaging_event_attribution.md`,
+> `impl_step5_move_outcome.md`) and the authoritative docstring in
+> `src/agents/observation/turn_delta_encoder.py`.
+
+**Base block (51 dims):**
 
 | Field | Dims | Notes |
 |---|---|---|
-| our_move_id | 1 | raw int (embedded → 16-dim in extractor) |
-| our_power_norm | 1 | basePower / 200 |
-| our_has_secondary | 1 | bool |
-| our_has_recoil | 1 | bool |
-| our_type_id | 1 | raw int (embedded → 16-dim in extractor) |
-| opp_move_id | 1 | raw int (embedded → 16-dim in extractor) |
-| opp_power_norm | 1 | |
-| opp_has_secondary | 1 | |
-| opp_has_recoil | 1 | |
-| opp_type_id | 1 | raw int (embedded → 16-dim in extractor) |
-| our_switched | 1 | bool |
-| opp_switched | 1 | bool |
-| our_failed_to_move | 1 | bool |
-| opp_failed_to_move | 1 | bool |
-| our_cant_reason | 5 | one-hot: par / slp / frz / flinch / confusion |
-| opp_cant_reason | 5 | same |
-| our_hp_delta | 1 | sum of our HP delta vector (negative = damage taken) |
-| opp_hp_delta | 1 | sum of opp HP delta vector |
-| we_fainted | 1 | bool |
-| opp_fainted | 1 | bool |
+| our_move (id, power, secondary, recoil, type) | 5 | id + type are raw ints (embedded → 16-dim each in extractor) |
+| opp_move (id, power, secondary, recoil, type) | 5 | same |
+| our_switched / opp_switched | 2 | bool |
+| our_failed_to_move / opp_failed_to_move | 2 | bool |
+| our_cant_reason | 11 | one-hot: par / slp / frz / flinch / confusion / recharge / taunt / disable / imprison / truant / nopp (prefix-normalized) |
+| opp_cant_reason | 11 | same |
+| our_hp_delta / opp_hp_delta | 2 | sum of each side's HP delta vector (negative = damage taken) |
+| we_fainted / opp_fainted | 2 | bool |
 | opp_move_known | 1 | False on Explosion gap or first active turn |
-| our_effectiveness | 4 | one-hot: immune / resisted / normal / super-effective |
-| opp_effectiveness | 4 | same |
+| our_effectiveness / opp_effectiveness | 4 + 4 | one-hot: immune / resisted / normal / super-effective |
 | move_order | 2 | [we_first, opp_first]; all-zero = na / both switched |
 
-After embedding in the extractor: 4 × 16-dim embeddings + 35 raw scalars = **99-dim** block per slot. The last slot's output (after self-attention) is fed into the projection aggregation.
+**Extended block (57 dims):**
 
-All zeros on the first turn of each episode (`TurnDelta.empty()`). See `src/agents/observation/turn_delta_encoder.py`.
+| Field | Dims | Notes |
+|---|---|---|
+| our_boost_delta / opp_boost_delta | 7 + 7 | stat-stage deltas (BOOST_STATS order) |
+| phase_is_forced_switch | 1 | half-turn replacement slot vs full action-pair slot |
+| our_target_hp_delta / opp_target_hp_delta | 1 + 1 | HP delta on the named target of each side's damaging move |
+| our_hp_levels / opp_hp_levels | 6 + 6 | end-of-turn HP for every team slot |
+| our_target_status / opp_target_status | 7 + 7 | one-hot status of the named target at move-fire time |
+| our_move_outcome / opp_move_outcome | 3 + 3 | one-hot: hit / miss / fail; all-zero = switch / cant / no move |
+| our_move_crit / opp_move_crit | 1 + 1 | bool; orthogonal to outcome (a hit may also crit) |
+| species IDs (our/opp × actor/target/switch_to) | 6 | raw ints, contiguous slot tail (embedded → 32-dim each) |
+
+The six species IDs are kept as the contiguous **tail** so the extractor can slice
+them for embedding; move-outcome + crit are pass-through scalars placed immediately
+before them. After embedding: 4 × 16-dim move/type + 6 × 32-dim species + 98 raw
+scalars = **354-dim** block per slot.
+
+All zeros on the first turn of each episode (`TurnDelta.empty()`). See
+`src/agents/observation/turn_delta_encoder.py` for the canonical layout (offsets
+are computed from `*_DIM` constants — never hardcode an index).
 
 ## Per-Pokémon Vector (62 dims)
 
