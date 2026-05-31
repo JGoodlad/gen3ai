@@ -124,6 +124,15 @@ load-stable signal — run on an otherwise-idle box for a clean baseline.
 confirm no meaningful regression** — that gate, the canonical baseline, and the
 load-stable regression criteria live in `src/agents/observation/CLAUDE.md`.
 
+For the **top-down** view — where a whole trainer turn's CPU goes (parse + obs + reward +
+mask + map + tracker), GPU-excluded and server-free — use `trainer_turn_benchmark.py`. It
+walks a real bridge battle, times every per-decision CPU stage `Gen3Env` runs (a random legal
+action stands in for the policy forward), and prints a stacked breakdown. Baseline: obs build
+≈ 88% of our CPU (`state_encoder.encode` ≈ 80%), parse ≈ 7%, reward ≈ 4%, everything else <1%.
+```bash
+export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 src/agents/training/trainer_turn_benchmark.py [--decisions 150] [--warmup 3] [--seed 0]
+```
+
 ### What "fuzz test" means in this project
 
 **Fuzz tests run real battles — by default in-process via the local BattleStream bridge (no server), or against a live server — and validate observations or behaviour against the actual protocol stream.** They are NOT deterministic scenario tests with fixed inputs.

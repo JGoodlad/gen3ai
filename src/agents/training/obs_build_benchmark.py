@@ -195,11 +195,10 @@ async def main(battles: int, profile_at_turn: int, reps: int, top: int, seed: in
           f"decision (≤{battles} battles, reps={reps}, top={top}, seed={seed})", flush=True)
     i = 0
     while bench.result is None and i < battles:
-        # Reused battle tags + poke-env retaining finished battles would collide; clear between
-        # single-battle runs so each gets a fresh battle (mirrors the fuzz harness).
-        bench._trackers.clear()
-        bench._battles.clear()
-        opp._battles.clear()
+        # The bridge assigns each battle a process-unique tag
+        # (local_battle_runner._BATTLE_SEQ), so repeated single-battle calls never collide
+        # on a reused tag — no per-call cleanup needed (and we stop at the first deep
+        # decision, so retained battles never accumulate enough to matter).
         await run_local_battles(bench, opp, 1)
         i += 1
 
