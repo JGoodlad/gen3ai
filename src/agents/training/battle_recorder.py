@@ -418,3 +418,42 @@ class BattleRecorder:
             if slot is not None:
                 opp_hp[slot] = mon.current_hp_fraction
         return our_hp, opp_hp
+
+
+def write_battle_record(out_prefix: str, recorder: "BattleRecorder", battle, step: int) -> None:
+    """Finalize a recorder and write its forensic trace to disk.
+
+    Writes ``<out_prefix>_summary.json`` (the human-readable per-invocation
+    summary) and, when raw model I/O was captured, ``<out_prefix>_states.npz``
+    (obs/logits/values aligned with the summary's invocations, for
+    ``probe_replay.py``). Shared by the replay recorder and the eval forensic
+    capture so the on-disk format stays identical.
+    """
+    import os
+    import re
+    import json
+
+    recorder.finalize(battle)
+    summary = recorder.to_summary(battle, step)
+
+    os.makedirs(os.path.dirname(out_prefix), exist_ok=True)
+    with open(f"{out_prefix}_summary.json", "w") as f:
+        text = json.dumps(summary, indent=2)
+        # Collapse the tiny leaf objects onto one line so a turn reads top-to-bottom.
+        text = re.sub(
+            r'\{\s*"prob":\s*"([^"]+)",\s*"valid":\s*(true|false)\s*\}',
+            r'{"prob": "\1", "valid": \2}', text,
+        )
+        text = re.sub(
+            r'\{\s*"species":\s*"([^"]+)",\s*"hp":\s*"([^"]+)"\s*\}',
+            r'{"species": "\1", "hp": "\2"}', text,
+        )
+        text = re.sub(
+            r'\{\s*"action":\s*"([^"]+)",\s*"hp_delta":\s*"([^"]+)"\s*\}',
+            r'{"action": "\1", "hp_delta": "\2"}', text,
+        )
+        f.write(text)
+
+    states = recorder.states_arrays()
+    if states:
+        np.savez_compressed(f"{out_prefix}_states.npz", **states)

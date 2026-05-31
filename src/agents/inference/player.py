@@ -174,7 +174,16 @@ class RLPlayer(Gen3Player):
         )
         self.model = model
 
-    def _predict_best_action(self, battle, stochastic=False):
+    def _predict_best_action(self, battle, stochastic=False, need_aux=True):
+        """Pick the best legal action for `battle`.
+
+        `need_aux` gates the work that ONLY the forensic recorder consumes:
+        the critic forward pass (`predict_values`), the softmax→CPU `probs`
+        transfer, and the `_last_prediction` snapshot. With `need_aux=False`
+        (eval / plain inference, which use only the chosen action) this skips a
+        whole second forward through the transformer body — roughly halving the
+        GPU work per decision — plus two GPU→CPU copies. `probs` is then None.
+        """
         obs_dict = self.embed_battle(battle)
         obs = obs_dict["observation"]
         mask = obs_dict["action_mask"]
@@ -195,26 +204,29 @@ class RLPlayer(Gen3Player):
             else:
                 idx = torch.argmax(masked_logits, dim=1).item()
 
-            probs = torch.softmax(masked_logits, dim=1)[0].cpu().numpy()
-            value = float(self.model.policy.predict_values(policy_in)[0].item())
+            probs = None
+            if need_aux:
+                probs = torch.softmax(masked_logits, dim=1)[0].cpu().numpy()
+                value = float(self.model.policy.predict_values(policy_in)[0].item())
 
         if mask[idx] == 0:
             raise ValueError(f"Illegal action {idx} selected. Mask: {mask}")
 
         self._get_tracker(battle).advance(idx)
-        # Raw inputs/outputs for offline forensic replay (probe_replay.py). Kept as
-        # the last-prediction snapshot so callers that want it can read it without
-        # changing the (idx, probs, mask) return contract.
-        self._last_prediction = {
-            "obs": np.asarray(obs, dtype=np.float32),
-            "logits": logits[0].cpu().numpy(),
-            "value": value,
-        }
+        if need_aux:
+            # Raw inputs/outputs for offline forensic replay (probe_replay.py). Kept
+            # as the last-prediction snapshot so callers that want it can read it
+            # without changing the (idx, probs, mask) return contract.
+            self._last_prediction = {
+                "obs": np.asarray(obs, dtype=np.float32),
+                "logits": logits[0].cpu().numpy(),
+                "value": value,
+            }
         return idx, probs, mask
 
     def choose_move(self, battle):
         forfeit = self._handle_stall(battle, "INFERENCE_STALL")
         if forfeit:
             return forfeit
-        idx, _, _ = self._predict_best_action(battle)
+        idx, _, _ = self._predict_best_action(battle, need_aux=False)
         return self.action_to_order(idx, battle)

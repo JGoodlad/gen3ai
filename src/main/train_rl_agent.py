@@ -51,7 +51,6 @@ from agents.training.eval_callback import PerOpponentEvalCallback, opponent_name
 from agents.training.graceful_restart_callback import GracefulRestartCallback
 from agents.training.snapshot_pool import SnapshotPool, heuristic_fraction
 from agents.training.selfplay_callback import SelfPlayCallback
-from agents.training.replay_recorder import ReplayCallback
 from agents.training.wrappers import MaskableAgentWrapper
 from agents.training.gen3_env import Gen3Env
 from agents.training.reward_manager import Gen3RewardManager
@@ -619,18 +618,6 @@ async def main():
         save_path=model_dir,
         name_prefix="checkpoint",
     )
-    
-    replay_callback = ReplayCallback(
-        model_dir=model_dir,
-        mappings=mappings,
-        trainee_teambuilder=trainee_teambuilder,
-        opponent_teambuilder=opponent_teambuilder,
-        save_freq=100000,
-        n_replays=10,
-        stall_config=stall_cfg,
-        reward_fn_factory=reward_factory,
-        server_config=server_config,
-    )
 
     # --lr must lie within [--min-lr, --max-lr]. This is the user-facing contract
     # for both pure-adaptive runs and TwoPhaseLR Phase 1 — KL adaptation reads
@@ -680,7 +667,7 @@ async def main():
         (lambda: lr_callback.handoff_lr) if isinstance(lr_callback, TwoPhaseLRCallback) else None
     )
     graceful_restart_callback = GracefulRestartCallback()
-    callbacks = [checkpoint_callback, replay_callback, lr_callback, MetricsExporterCallback(), _HparamLogCallback(args.ent_coef), graceful_restart_callback]
+    callbacks = [checkpoint_callback, lr_callback, MetricsExporterCallback(), _HparamLogCallback(args.ent_coef), graceful_restart_callback]
     eval_callback = None
 
     if not args.debug:

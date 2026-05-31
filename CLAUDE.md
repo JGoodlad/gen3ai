@@ -159,7 +159,6 @@ export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable
 What to look for:
 - `[ModelVersion] Round-trip smoke test PASSED` — serialization and reload are healthy (printed early, before training begins)
 - `🏁 Episode Finished` lines appearing throughout — episodes completing and resetting
-- `🎥 [REPLAY]` fires once early (step 1), then training continues — replay callback works
 - `[STALL LOGGED]` may appear if a 250-turn game occurs — should be followed by another `🏁 Episode Finished`, not a hang
 - `Win rate vs Random` and `Win rate vs Heuristic` printed at the end — evaluation ran
 
@@ -307,12 +306,12 @@ npm run stop -- 8001                                # kills the 8001 instance
 via the single constructor `localhost_server_configuration(port)` (in
 `poke_env.ps_client.server_configuration`) and threads it to **every** Showdown client —
 the training-env players (carried into the `SubprocVecEnv` spawn workers via the env-factory
-closures), eval, self-play, **and the replay recorder** (`ReplayCallback(server_config=…)`).
-Every player-creating callback takes a `server_config` param (defaulting to port 8000 for
-standalone use) and builds its players from it — never from a bare
-`LocalhostServerConfiguration` constant. `server_port_threading_test.py` is the regression
-guard: it fails if any of these callbacks hardcodes the default port instead of threading
-the configured one (the bug where replays connected to :8000 while training ran on :8001).
+closures), eval, and self-play. Every player-creating callback takes a `server_config` param
+(defaulting to port 8000 for standalone use) and builds its players from it — never from a
+bare `LocalhostServerConfiguration` constant. `server_port_threading_test.py` is the
+regression guard: it fails if any of these callbacks hardcodes the default port instead of
+threading the configured one (the original bug had the now-retired replay recorder connecting
+to :8000 while training ran on :8001; eval forensic traces inherit the same guard).
 There is no environment variable; the default is 8000. The launcher forwards
 `--showdown-port` verbatim (it strips only launcher-owned flags).
 

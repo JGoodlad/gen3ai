@@ -17,6 +17,7 @@ from agents.opponents import (
 )
 from agents.training.reward_tracker import RewardTrackingMixin
 from agents.training.reward_manager import Gen3RewardManager
+from agents.training.battle_recorder import BattleRecorder, write_battle_record
 from main.launcher.ipc import send_metrics
 
 BATTLE_FORMAT = "gen3ou"
@@ -34,6 +35,12 @@ def _per_opponent_concurrency(n_opponents: int) -> int:
     if n_opponents <= 0:
         return _EVAL_CONCURRENCY
     return max(16, _EVAL_TOTAL_CONCURRENCY // n_opponents)
+
+
+# Forensic-trace sample caps per opponent per eval cycle. Once both are filled the
+# remaining battles run the cheap fast path and only feed the win-rate count.
+_FORENSIC_LOSS_QUOTA = 10
+_FORENSIC_WIN_QUOTA = 5
 
 _OPPONENT_NAMES: dict[type, str] = {
     RandomPlayer: "Random",
@@ -124,19 +131,87 @@ def eval_schedule(num_timesteps: int) -> tuple[int, int]:
 
 
 class EvalRLPlayer(RewardTrackingMixin, RLPlayer):
-    """RLPlayer with per-battle reward tracking for eval metrics."""
+    """RLPlayer with per-battle reward tracking for eval metrics.
 
-    def __init__(self, *args, reward_fn_factory=Gen3RewardManager, **kwargs):
+    Optionally captures forensic traces (full per-decision model I/O → JSON +
+    .npz, the same format the replay recorder writes) for a bounded sample of
+    each cycle's battles: up to `win_quota` wins and `loss_quota` losses. The
+    quota is the whole point of the cheap-vs-heavy split — only battles being
+    captured pay the aux cost (`predict_values`, probs/`_last_prediction`); once
+    both quotas are filled every remaining battle runs the fast path and just
+    counts toward the win rate. Call `begin_forensic_cycle(dir, step)` before a
+    cycle to (re)arm capture; leave the dir None to disable forensics entirely.
+    """
+
+    def __init__(self, *args, reward_fn_factory=Gen3RewardManager,
+                 loss_quota=_FORENSIC_LOSS_QUOTA, win_quota=_FORENSIC_WIN_QUOTA, **kwargs):
         super().__init__(*args, **kwargs)
         self._init_reward_tracking(reward_fn_factory)
+        self._loss_quota = loss_quota
+        self._win_quota = win_quota
+        self._forensic_dir: str | None = None
+        self._forensic_step = 0
+        self._wins_kept = 0
+        self._losses_kept = 0
+        self._trace_idx = 0
+        self._recorders: dict[str, BattleRecorder] = {}
+
+    def begin_forensic_cycle(self, forensic_dir: str | None, step: int) -> None:
+        """Arm (or disable, if dir is None) forensic capture for one eval cycle."""
+        self._forensic_dir = forensic_dir
+        self._forensic_step = step
+        self._wins_kept = 0
+        self._losses_kept = 0
+        self._trace_idx = 0
+        self._recorders.clear()
+
+    @property
+    def _quota_open(self) -> bool:
+        """Whether either outcome still needs forensic samples this cycle."""
+        return self._forensic_dir is not None and (
+            self._wins_kept < self._win_quota or self._losses_kept < self._loss_quota
+        )
 
     def choose_move(self, battle):
         forfeit = self._handle_stall(battle, "EVAL_STALL")
         if forfeit:
             return forfeit
-        idx, _, mask = self._predict_best_action(battle, stochastic=False)
+        # Capture a battle in full only if we already started capturing it (so its
+        # trace stays whole even if the quota fills mid-battle) or the quota is still
+        # open when it begins. Everything else takes the fast path (need_aux=False).
+        capturing = battle.battle_tag in self._recorders or self._quota_open
+        idx, probs, mask = self._predict_best_action(
+            battle, stochastic=False, need_aux=capturing
+        )
         self._track_reward(battle, idx, mask)
+        if capturing:
+            rec = self._recorders.get(battle.battle_tag)
+            if rec is None:
+                rec = BattleRecorder(battle.battle_tag, self._reward_fn_factory)
+                self._recorders[battle.battle_tag] = rec
+            rec.record(battle, idx, probs, mask, state=getattr(self, "_last_prediction", None))
         return self.action_to_order(idx, battle)
+
+    def _battle_finished_callback(self, battle) -> None:
+        super()._battle_finished_callback(battle)  # reward finalize (mixin)
+        rec = self._recorders.pop(battle.battle_tag, None)
+        if rec is None:
+            return
+        # Persist this trace only if its outcome is one we still want a sample of;
+        # otherwise drop the buffered capture (we already have enough of that result).
+        if battle.won and self._wins_kept < self._win_quota:
+            outcome = "win"
+        elif battle.lost and self._losses_kept < self._loss_quota:
+            outcome = "loss"
+        else:
+            return
+        self._trace_idx += 1
+        prefix = os.path.join(self._forensic_dir, f"{outcome}_{self._trace_idx:03d}")
+        write_battle_record(prefix, rec, battle, self._forensic_step)
+        if outcome == "win":
+            self._wins_kept += 1
+        else:
+            self._losses_kept += 1
 
 
 class PerOpponentEvalCallback(BaseCallback):
@@ -256,6 +331,12 @@ class PerOpponentEvalCallback(BaseCallback):
             if opponent.n_finished_battles > 0:
                 opponent.reset_battles()
             rl.reset_reward_tracking()
+            # Arm forensic capture for this opponent this cycle (disabled if no model_dir).
+            forensic_dir = (
+                os.path.join(self._model_dir, "eval_traces", f"step_{self.num_timesteps}", name)
+                if self._model_dir else None
+            )
+            rl.begin_forensic_cycle(forensic_dir, self.num_timesteps)
 
             start = datetime.now()
             await rl.battle_against(opponent, n_battles=games)

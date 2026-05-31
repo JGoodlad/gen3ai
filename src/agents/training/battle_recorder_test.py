@@ -213,3 +213,56 @@ def test_forced_switch_opp_action_is_none():
 
     forced_outcome = rec._invocations[1]["outcome"]
     assert forced_outcome["opp"]["action"] == "none"
+
+
+# ── write_battle_record (shared forensic writer) ──────────────────────────────
+
+class _StubRecorder:
+    """Stand-in exposing only the surface write_battle_record touches."""
+    def __init__(self, summary, states):
+        self._summary = summary
+        self._states = states
+        self.finalized = False
+
+    def finalize(self, battle):
+        self.finalized = True
+
+    def to_summary(self, battle, step):
+        return dict(self._summary, step=step)
+
+    def states_arrays(self):
+        return self._states
+
+
+def test_write_battle_record_writes_json_and_npz(tmp_path):
+    import json
+    from agents.training.battle_recorder import write_battle_record
+
+    summary = {"meta": {"result": "WIN"},
+               "actions": {"thunderbolt": {"prob": "90.0%", "valid": True}}}
+    states = {"obs": np.zeros((2, 4), dtype=np.float32),
+              "logits": np.zeros((2, 11), dtype=np.float32)}
+    prefix = str(tmp_path / "sub" / "win_001")  # nested dir must be auto-created
+
+    write_battle_record(prefix, _StubRecorder(summary, states), object(), step=42)
+
+    with open(prefix + "_summary.json") as f:
+        text = f.read()
+    data = json.loads(text)
+    assert data["step"] == 42
+    # The leaf {"prob":..,"valid":..} object is collapsed onto one line.
+    assert '{"prob": "90.0%", "valid": true}' in text
+
+    npz = np.load(prefix + "_states.npz")
+    assert npz["obs"].shape == (2, 4)
+
+
+def test_write_battle_record_skips_npz_when_no_states(tmp_path):
+    import os
+    from agents.training.battle_recorder import write_battle_record
+
+    prefix = str(tmp_path / "loss_001")
+    write_battle_record(prefix, _StubRecorder({"meta": {}}, {}), object(), step=1)
+
+    assert os.path.exists(prefix + "_summary.json")
+    assert not os.path.exists(prefix + "_states.npz")

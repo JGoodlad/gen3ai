@@ -183,7 +183,7 @@ src/
                      #   active context, global env, reactive/matchups
     opponents/       # Scripted opponents: staller, aggressive, setup sweeper
     training/        # Gen3Env, reward manager, battle context, wrappers,
-                     #   stall detection, replay recorder
+                     #   stall detection, eval + forensic-trace capture
   main/
     launcher/          # Restart loop + Rich TUI (preferred entry point)
                      #   checkpoint.py, worktree.py, child.py, input.py,
