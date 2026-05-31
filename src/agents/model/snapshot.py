@@ -26,7 +26,8 @@ def save_model_snapshot(
 
     Does NOT call model.save() — the caller is responsible for the .zip file.
     Safe to call multiple times; files are overwritten in place.
-    Preserves any existing snapshot_history and evals in the metadata file.
+    Preserves any existing snapshot_history and the top-level `latest_eval` block
+    (so a checkpoint saved after an eval doesn't erase the eval results).
     """
     os.makedirs(model_dir, exist_ok=True)
 
@@ -37,13 +38,16 @@ def save_model_snapshot(
         import os as _os
         git_hash = _os.environ.get("LAUNCHER_GIT_HASH") or get_git_hash()
 
-    # Preserve snapshot_history accumulated by other writers.
+    # Preserve state accumulated by other writers (this rebuilds metadata from
+    # scratch, so anything not carried forward here is dropped).
     meta_path = os.path.join(model_dir, "metadata.json")
     existing_history = {}
+    existing_latest_eval = None
     if os.path.exists(meta_path):
         with open(meta_path) as f:
             existing = json.load(f)
             existing_history = existing.get("snapshot_history", {})
+            existing_latest_eval = existing.get("latest_eval")
 
     metadata = {
         "saved_at": datetime.now(timezone.utc).isoformat(),
@@ -59,15 +63,22 @@ def save_model_snapshot(
         metadata["current_epochs"] = current_epochs
     if existing_history:
         metadata["snapshot_history"] = existing_history
+    if existing_latest_eval is not None:
+        metadata["latest_eval"] = existing_latest_eval
     with open(meta_path, "w") as f:
         json.dump(metadata, f, indent=2)
 
 
 def record_eval_results(model_dir: str, step: int, metrics: dict) -> None:
-    """Attach eval results to the most recently-saved checkpoint in snapshot_history.
+    """Write the most recent eval to metadata.json as a top-level `latest_eval`.
 
-    If no checkpoint has been recorded yet, logs a warning and skips the write
-    rather than creating a top-level 'evals' key in an inconsistent location.
+    Stored at the TOP LEVEL (not nested under a checkpoint) and labeled by the
+    snapshot `step` it evaluated. This is robust to the subprocess-eval timing:
+    the eval is for a frozen snapshot and can finish AFTER a newer checkpoint is
+    saved (so it must not bind to "the latest checkpoint"), and an early eval can
+    land BEFORE any checkpoint exists. Always writes — never skipped for lack of a
+    checkpoint. `save_model_snapshot` carries this block forward across checkpoints;
+    `read_latest_eval_block` / the TUI-resume path read it back.
     """
     meta_path = os.path.join(model_dir, "metadata.json")
     meta = {}
@@ -75,18 +86,11 @@ def record_eval_results(model_dir: str, step: int, metrics: dict) -> None:
         with open(meta_path) as f:
             meta = json.load(f)
 
-    history = meta.get("snapshot_history", {})
-    latest = _latest_checkpoint(history)
-    if latest is None:
-        print("[EVAL] Warning: no checkpoint in snapshot_history yet; eval results not persisted.")
-        return
-
-    history[latest]["evals"] = {
+    meta["latest_eval"] = {
         **metrics,
         "step": step,
         "evaluated_at": datetime.now(timezone.utc).isoformat(),
     }
-    meta["snapshot_history"] = history
     with open(meta_path, "w") as f:
         json.dump(meta, f, indent=2)
 

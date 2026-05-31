@@ -190,6 +190,7 @@ src/
                      #   run.py, state.py, ui.py
     exit_codes.py      # TrainExitCode enum (COMPLETE/INTERRUPTED/CRASH)
     train_rl_agent.py  # Training script (also callable directly)
+    eval_worker.py     # Subprocess bot-eval worker (frozen snapshot, CPU; spawned by PerOpponentEvalCallback)
     play.py            # Battle / evaluation entry point
   poke_env/          # Forked poke-env library
   utils/             # Gen 3 utilities, team loader, teambuilder, logging

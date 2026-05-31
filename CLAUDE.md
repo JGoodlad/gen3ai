@@ -243,6 +243,46 @@ Omit `--model` to start a fresh run. Use `--debug` for a single env (DummyVecEnv
 
 Checkpoints are saved automatically. Models land in `models/run_<timestamp>/`.
 
+### Bot evaluation (subprocess, non-blocking)
+
+`PerOpponentEvalCallback` (non-self-play path) does **not** eval in-process. On each
+scheduled step it snapshots the live weights (`model.save`) and spawns `--eval-workers`
+(default 3) `main.eval_worker` subprocesses that **work-steal** opponents from a shared
+pool (atomic `O_EXCL` claim files — a worker that finishes a cheap opponent grabs the
+next, so uneven per-opponent cost self-balances), load the **frozen** snapshot, and play
+against the shared Showdown server **without pausing training**. Each opponent writes
+`result__<opponent>.json`; when all workers finish the parent merges them → TensorBoard +
+TUI + best-model (the winning snapshot is promoted by copy, not re-saved). Forensic traces
+land under `<run_dir>/eval_traces/step_<N>/<opponent>/`. The eval summary itself is
+written to `metadata.json` as a **top-level `latest_eval`** block (step-labeled, NOT
+nested under a checkpoint) — robust to the async timing (an eval can finish after a
+newer checkpoint, or before any checkpoint exists); `save_model_snapshot` carries it
+forward so a later checkpoint never erases it.
+
+The frozen snapshot makes parallel eval correct (a worker can't read mutating in-memory
+weights), and the fresh process returns all eval memory to the OS on exit (no fragmentation
+in the trainer). Behaviors:
+- A trigger that fires while the previous cycle still runs is **skipped** (logged) — on CPU
+  an eval can outlast its interval; cadence just goes sparser.
+- A worker crash is **logged-and-continued**, never fatal (its opponents are just missing
+  for that cycle).
+- **Graceful shutdown waits for eval to finish**: a scheduled restart is self-initiated by
+  `GracefulRestartCallback` at a rollout boundary and the launcher won't force-kill until the
+  child overruns the deadline by `--restart-grace-minutes` (20 min), so the drain budget is a
+  full `_ABORT_EVAL_DRAIN_SEC` (10 min) AFTER the checkpoint is saved — long enough for a CPU
+  eval to complete. Even the pathological forced-SIGTERM case (already overran → ~90s SIGKILL)
+  is safe: the checkpoint is saved first, only the in-flight eval can be lost.
+- **On resume the last eval is re-published to the TUI** from the resumed checkpoint's
+  `metadata.json`, so the eval panel isn't blank until the next cycle.
+
+| Flag | Default | Notes |
+|------|---------|-------|
+| `--eval-workers` | `3` | Eval subprocesses per cycle; work-steal opponents from a shared pool. Capped at the opponent count. |
+| `--eval-device` | `cpu` | Device for eval-worker inference. `cpu` decouples eval from the training GPU. |
+
+Eval concurrency in the worker is `_EVAL_SUBPROCESS_CONCURRENCY` (5/opponent) — low so
+the shared server isn't flooded while training also uses it.
+
 ---
 
 ## Playing / Evaluation
@@ -346,6 +386,7 @@ src/
                      #   run.py, state.py, ui.py
     exit_codes.py      # TrainExitCode enum (COMPLETE=0, INTERRUPTED=15, CRASH=1)
     train_rl_agent.py  # Training entry point (also callable directly)
+    eval_worker.py     # Subprocess bot-eval worker (frozen snapshot, CPU)
     play.py            # Battle / evaluation entry point
   poke_env/          # Forked poke-env library
   utils/

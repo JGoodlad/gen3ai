@@ -1,7 +1,10 @@
 import os
+import sys
+import time
+import json
+import shutil
 import asyncio
-import threading
-import traceback
+import subprocess
 from datetime import datetime
 
 from stable_baselines3.common.callbacks import BaseCallback
@@ -42,6 +45,12 @@ def _per_opponent_concurrency(n_opponents: int) -> int:
 _FORENSIC_LOSS_QUOTA = 10
 _FORENSIC_WIN_QUOTA = 5
 
+# Per-opponent in-flight battles in the subprocess eval worker. Eval now runs in a
+# separate CPU process (one Python thread does the forwards), so a handful of
+# concurrent battles already saturates it — keep it low so the shared Showdown
+# server isn't flooded while training is also using it.
+_EVAL_SUBPROCESS_CONCURRENCY = 5
+
 _OPPONENT_NAMES: dict[type, str] = {
     RandomPlayer: "Random",
     SimpleHeuristicsPlayer: "Heuristic",
@@ -63,11 +72,162 @@ def opponent_name(player_cls: type) -> str:
 
 RANDOM_OPPONENT_NAME = opponent_name(RandomPlayer)
 
-# Per-opponent game caps. Eval blocks training (the eval thread is joined in
-# _on_step), so games-per-opponent is pure overhead. The narrow playstyle bots
-# need only a coarse win-rate, so cap them at 100; the heuristic generalists
-# (closest to real play, lower-variance signal worth more games) cap at 200.
-# Both are clamped to the schedule's count so early tiers (100 games) are unaffected.
+# The canonical eval roster: (display name, player class, account prefix, is_v2).
+# Ordered; V2 bots only included when use_v2_bots is set. Single source of truth so
+# the in-process selfplay path, the subprocess worker, and the orchestrator agree.
+_EVAL_OPPONENT_SPECS: list[tuple[str, type, str, bool]] = [
+    ("Random", RandomPlayer, "CbRand", False),
+    ("Heuristic", SimpleHeuristicsPlayer, "CbHeur", False),
+    ("Staller", Gen3StallerPlayer, "CbStall", False),
+    ("Aggressive", Gen3AggressivePlayer, "CbAggr", False),
+    ("SetupSweep", Gen3SetupSweepPlayer, "CbSetup", False),
+    ("Heuristic2", Gen3HeuristicV2Player, "CbHeur2", True),
+    ("StallerV2", Gen3StallerV2Player, "CbStallV2", True),
+    ("AggressiveV2", Gen3AggressiveV2Player, "CbAggrV2", True),
+    ("SetupSweepV2", Gen3SetupSweepV2Player, "CbSetupV2", True),
+]
+
+
+def eval_opponent_names(use_v2_bots: bool) -> list[str]:
+    """Ordered display names of the eval roster for the given v2 setting."""
+    return [n for (n, _c, _p, is_v2) in _EVAL_OPPONENT_SPECS if use_v2_bots or not is_v2]
+
+
+def build_eval_opponents(server_config, teambuilder, names, tag=""):
+    """Construct the opponent players for `names`.
+
+    Each Player opens its own Showdown connection on construction, so build only
+    the names this caller actually needs. `tag` is appended to every account name
+    and MUST be unique per concurrently-live set — under work stealing a worker
+    builds a fresh set per claimed opponent, so the tag carries (cycle, worker,
+    claim) to avoid username collisions on the shared server.
+    """
+    by_name = {n: (cls, prefix) for (n, cls, prefix, _v2) in _EVAL_OPPONENT_SPECS}
+    out = []
+    for name in names:
+        cls, prefix = by_name[name]
+        out.append((name, cls(
+            battle_format=BATTLE_FORMAT, team=teambuilder,
+            server_configuration=server_config,
+            account_configuration=AccountConfiguration(f"{prefix}{tag}", "password"),
+            max_concurrent_battles=_EVAL_CONCURRENCY,  # opponent side high; RL side governs
+        )))
+    return out
+
+
+def build_eval_players(model, names, teambuilder, mappings, server_config, concurrency, tag=""):
+    """One EvalRLPlayer per opponent name, sharing the (frozen) model + teambuilder."""
+    return {
+        name: EvalRLPlayer(
+            model=model, team=teambuilder, battle_format=BATTLE_FORMAT,
+            server_configuration=server_config, mappings=mappings,
+            account_configuration=AccountConfiguration(f"RLEv{tag}{i}", "password"),
+            max_concurrent_battles=concurrency,
+        )
+        for i, name in enumerate(names)
+    }
+
+
+def claim_next_opponent(claim_dir: str, names: list[str]) -> str | None:
+    """Atomically claim the next unclaimed opponent from a shared pool (work stealing).
+
+    Each opponent is claimed by exactly one worker via an O_EXCL lock file — the
+    first worker to create `<claim_dir>/<name>.lock` owns that opponent; everyone
+    else gets FileExistsError and moves on. Returns the claimed name, or None when
+    every opponent in `names` is already claimed (this worker is done). Robust
+    across independent processes with no shared memory.
+    """
+    for name in names:
+        try:
+            fd = os.open(os.path.join(claim_dir, f"{name}.lock"),
+                         os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+            os.close(fd)
+            return name
+        except FileExistsError:
+            continue
+    return None
+
+
+def read_latest_eval_block(path: str | None) -> dict | None:
+    """Return the most recent eval block from a metadata.json, or None.
+
+    `record_eval_results` stores it at the top level as `latest_eval`
+    (build_bot_eval_block + step). Used to re-publish the last eval to the TUI
+    after a restart. Falls back to the legacy per-checkpoint
+    `snapshot_history[<ckpt>]["evals"]` layout for older metadata files.
+    """
+    if not path or not os.path.exists(path):
+        return None
+    try:
+        with open(path) as f:
+            meta = json.load(f)
+    except (OSError, ValueError):
+        return None
+    latest = meta.get("latest_eval")
+    if isinstance(latest, dict):
+        return latest
+    # Legacy fallback: evals nested under each checkpoint.
+    best = None
+    for entry in (meta.get("snapshot_history") or {}).values():
+        ev = entry.get("evals") if isinstance(entry, dict) else None
+        if isinstance(ev, dict) and (best is None or ev.get("step", -1) > best.get("step", -1)):
+            best = ev
+    return best
+
+
+def _mean_episode_length(player) -> float:
+    battles = [b for b in player._battles.values() if b.finished]
+    if not battles:
+        return 0.0
+    return sum(b.turn for b in battles) / len(battles)
+
+
+async def run_eval(players, opponents, n_games, model_dir, step) -> dict:
+    """Run the per-opponent eval gather and return raw metrics (no logging sinks).
+
+    `players` maps name -> EvalRLPlayer; `opponents` is a list of (name, player).
+    Returns dicts keyed by opponent name: win_rates / reward_means / ep_lens /
+    durations_sec. Forensic traces are written by the players as battles finish.
+    Pure compute + disk (traces) — safe to call from the eval worker process.
+    """
+    async def eval_one(name, opponent):
+        rl = players[name]
+        games = eval_games_for(name, n_games)
+        if rl.n_finished_battles > 0:
+            rl.reset_battles()
+        if opponent.n_finished_battles > 0:
+            opponent.reset_battles()
+        rl.reset_reward_tracking()
+        forensic_dir = (
+            os.path.join(model_dir, "eval_traces", f"step_{step}", name)
+            if model_dir else None
+        )
+        rl.begin_forensic_cycle(forensic_dir, step)
+
+        start = datetime.now()
+        await rl.battle_against(opponent, n_battles=games)
+        dur = (datetime.now() - start).total_seconds()
+
+        won = rl.n_won_battles
+        finished = rl.n_finished_battles
+        win_rate = won / finished if finished > 0 else 0.0
+        print(f"  vs {name}: {win_rate * 100:.1f}%  ({won}/{finished})  "
+              f"ep_len={_mean_episode_length(rl):.1f}  reward={rl.mean_episode_reward:.3f}  [{dur:.0f}s]")
+        return name, win_rate, rl.mean_episode_reward, _mean_episode_length(rl), dur
+
+    results = await asyncio.gather(*(eval_one(n, o) for n, o in opponents))
+    return {
+        "win_rates": {n: wr for n, wr, _, _, _ in results},
+        "reward_means": {n: mr for n, _, mr, _, _ in results},
+        "ep_lens": {n: el for n, _, _, el, _ in results},
+        "durations_sec": {n: d for n, _, _, _, d in results},
+    }
+
+# Per-opponent game caps. Eval now runs in a non-blocking subprocess, but on CPU
+# each game still costs wall-clock, so keep games-per-opponent bounded. The narrow
+# playstyle bots need only a coarse win-rate, so cap them at 100; the heuristic
+# generalists (closest to real play, lower-variance signal worth more games) cap at
+# 200. Both are clamped to the schedule's count so early tiers (100 games) are unaffected.
 _EVAL_GAMES_CAP_DEFAULT = 100
 _EVAL_GAMES_CAP_HEURISTIC = 200
 _HEURISTIC_EVAL_NAMES = frozenset({"Heuristic", "Heuristic2"})
@@ -214,46 +374,73 @@ class EvalRLPlayer(RewardTrackingMixin, RLPlayer):
             self._losses_kept += 1
 
 
+
+
 class PerOpponentEvalCallback(BaseCallback):
     """
-    Evaluates the RL agent against a fixed list of named opponents at regular
-    intervals during training, logging per-opponent win rates to TensorBoard
-    and saving the best model when the aggregate improves.
+    Evaluates the trained agent against the fixed bot roster on the adaptive
+    schedule (see `eval_schedule`), but does so in a **separate subprocess** with
+    a frozen weight snapshot, NON-BLOCKING:
 
-    Adaptive schedule (hardcoded):
-      0 – 20M steps:  every 1M steps,  100 games
-      20M – 50M steps: every 2M steps, 200 games
-      50M+ steps:     every 3M steps,  300 games
+    - On a trigger step, snapshot the live model to disk (`model.save`) and spawn
+      `n_workers` eval-worker processes that **work-steal** opponents from a shared
+      pool (atomic O_EXCL claim files) — a worker that finishes an opponent grabs
+      the next unclaimed one, so uneven per-opponent cost self-balances. Training
+      continues immediately; the workers run on their own CPU(s).
+    - On later steps, poll; when all workers finish, merge their per-opponent result
+      JSONs and record win-rate / reward / ep-len to TensorBoard + the TUI, append
+      to metadata.json, and promote the snapshot to best_model if it won.
+    - If a trigger fires while the previous cycle is still running, skip it
+      (logged) — on CPU an eval can outlast its interval; cadence just goes sparser.
+    - On graceful shutdown (training end OR a SIGTERM-driven restart) the callback
+      DRAINS the in-flight cycle so its results land before exit, never orphaned.
+    - On startup it re-publishes the most recent eval from metadata.json to the TUI,
+      so a resumed run shows the last known eval instead of a blank panel.
 
-    Opponents are constructed outside and passed in so their WebSocket
-    connections to the Showdown server persist across eval runs.
-    The RLPlayer is created lazily in _init_callback() once self.model is set.
+    The frozen snapshot is what makes parallel eval correct: a worker can't read
+    the trainer's mutating in-memory weights, so each cycle evaluates the model
+    exactly as it was at the snapshot step. Running in a fresh process also returns
+    all eval memory to the OS on exit, avoiding fragmentation in the trainer.
     """
+
+    # Wait for in-flight workers to finish on a graceful shutdown (10 min) — long
+    # enough to let a full CPU eval complete; the restart path's grace window
+    # (--restart-grace-minutes, 20 min default) comfortably covers it.
+    _DRAIN_TIMEOUT_SEC = 600
 
     def __init__(
         self,
-        opponents: list[tuple[str, object]],
-        trainee_teambuilder,
-        mappings,
-        best_model_save_path: str | None = None,
-        model_dir: str | None = None,
+        model_dir: str | None,
         server_config=LocalhostServerConfiguration,
+        *,
+        use_v2_bots: bool = False,
+        best_model_save_path: str | None = None,
+        n_workers: int = 3,
+        eval_device: str = "cpu",
+        eval_concurrency: int = _EVAL_SUBPROCESS_CONCURRENCY,
+        showdown_port: int | None = None,
+        resume_eval_metadata: str | None = None,
         verbose: int = 1,
     ):
         super().__init__(verbose)
-        self._opponents = opponents
-        self._trainee_teambuilder = trainee_teambuilder
-        self._mappings = mappings
-        self._server_config = server_config
-        self.best_model_save_path = best_model_save_path
         self._model_dir = model_dir
-        # One EvalRLPlayer per opponent, keyed by opponent display name, so all
-        # opponents can be evaluated concurrently with isolated win/reward counters.
-        self._rl_players: dict[str, RLPlayer] = {}
+        self._server_config = server_config
+        self._use_v2_bots = use_v2_bots
+        self.best_model_save_path = best_model_save_path
+        self._n_workers = max(1, n_workers)
+        self._eval_device = eval_device
+        self._eval_concurrency = eval_concurrency
+        self._showdown_port = showdown_port
+        # metadata.json of the checkpoint being resumed (if any) — read at startup so
+        # the TUI shows the last eval immediately after a restart.
+        self._resume_eval_metadata = resume_eval_metadata
         self._last_eval_step = 0
         self._best_aggregate_win_rate = -1.0
-        # Set by train_rl_agent after signal handlers are wired. Used as the
-        # single canonical abort path so eval crashes save a proper checkpoint.
+        # The in-flight eval cycle, or None. dict: step, names, procs[], snapshot, run_dir.
+        self._pending: dict | None = None
+        self._eval_root: str | None = None
+        # Set by train_rl_agent after signal handlers are wired (kept for parity with
+        # the old fail-fast path; the subprocess design logs-and-continues instead).
         self.abort_fn = None
 
     def _schedule(self) -> tuple[int, int]:
@@ -262,168 +449,255 @@ class PerOpponentEvalCallback(BaseCallback):
     def _init_callback(self) -> None:
         if self.best_model_save_path is not None:
             os.makedirs(self.best_model_save_path, exist_ok=True)
-        ts = datetime.now().strftime('%H%M%S')
-        per_conc = _per_opponent_concurrency(len(self._opponents))
-        # One dedicated player per opponent, persistent across eval runs. They share
-        # self.model (predicts serialize in the single eval-thread event loop) and the
-        # stateless trainee teambuilder (random.choice), so concurrent use is safe.
-        self._rl_players = {
-            name: EvalRLPlayer(
-                model=self.model,
-                team=self._trainee_teambuilder,
-                battle_format=BATTLE_FORMAT,
-                server_configuration=self._server_config,
-                mappings=self._mappings,
-                account_configuration=AccountConfiguration(f"RLEv{i}{ts}", "password"),
-                max_concurrent_battles=per_conc,
-            )
-            for i, (name, _opp) in enumerate(self._opponents)
-        }
+        if self._model_dir is not None:
+            self._eval_root = os.path.join(self._model_dir, ".eval_runs")
+            os.makedirs(self._eval_root, exist_ok=True)
+        # Resumed run: re-publish the last eval so the TUI panel isn't blank until
+        # the next cycle (which can be millions of steps away).
+        self._replay_last_eval_to_tui()
 
     def _on_step(self) -> bool:
+        if self._pending is not None and self._all_done(self._pending):
+            self._collect_pending()
         if self.num_timesteps == 0:
             return True
-        freq, n_games = self._schedule()
+        freq, _ = self._schedule()
         if (self.num_timesteps // freq) > (self._last_eval_step // freq):
             self._last_eval_step = self.num_timesteps
-            thread = threading.Thread(
-                target=self._run_async_eval, args=(n_games,), daemon=True
-            )
-            thread.start()
-            thread.join()
+            if self._pending is not None:
+                print(f"[EVAL] step {self.num_timesteps:,}: previous eval "
+                      f"(step {self._pending['step']:,}) still running — skipping this cycle")
+            else:
+                self._launch_eval()
         return True
 
-    def _run_async_eval(self, n_games: int) -> None:
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
+    # ------------------------------------------------------------------ launch
 
-        def exception_handler(loop, context):
-            msg = context.get("exception", context["message"])
-            print(f"\n[EVAL FATAL] Background eval failed: {msg}")
-            self._abort("eval fatal")
+    def _launch_eval(self) -> None:
+        if self._eval_root is None:
+            return  # no model_dir → nowhere to snapshot/collect; eval disabled
+        _, n_games = self._schedule()
+        step = self.num_timesteps
+        run_dir = os.path.join(self._eval_root, f"step_{step}")
+        claim_dir = os.path.join(run_dir, "claims")
+        os.makedirs(claim_dir, exist_ok=True)
 
-        loop.set_exception_handler(exception_handler)
-        try:
-            loop.run_until_complete(self._eval_all_opponents(n_games))
-        except Exception as e:
-            print(f"\n[EVAL CRASH] Step {self.num_timesteps}: {e}")
-            traceback.print_exc()
-            self._abort(f"eval crash at step {self.num_timesteps}")
-        finally:
-            loop.close()
+        snapshot_base = os.path.join(run_dir, "snapshot")
+        self.model.save(snapshot_base)  # SB3 appends .zip
+        snapshot_zip = snapshot_base + ".zip"
 
-    async def _eval_all_opponents(self, n_games: int) -> None:
-        print(
-            f"\n[EVAL] Step {self.num_timesteps:,}: "
-            f"{len(self._opponents)} opponents × ≤{n_games} games "
-            f"(cap {_EVAL_GAMES_CAP_DEFAULT}, heuristics {_EVAL_GAMES_CAP_HEURISTIC})..."
-        )
-        tui_metrics: dict[str, float] = {}
-        eval_start = datetime.now()
+        names = eval_opponent_names(self._use_v2_bots)
+        # Short per-cycle tag for unique account names (cycles are ≥1M steps apart).
+        cycle_tag = f"{step // 100 % 10000:04d}"
+        # Never spawn more workers than opponents to steal.
+        n_workers = max(1, min(self._n_workers, len(names)))
+        # Don't hand the worker the launcher's metrics pipe FD — only the parent
+        # (this process) publishes to the TUI; the FD number is invalid in the child.
+        worker_env = {k: v for k, v in os.environ.items() if k != "LAUNCHER_METRICS_FD"}
 
-        async def eval_one(name, opponent):
-            """Run one opponent's full battle set on its dedicated player."""
-            rl = self._rl_players[name]
-            games = eval_games_for(name, n_games)
-            # Players persist across eval runs — clear last run's battles/reward state.
-            if rl.n_finished_battles > 0:
-                rl.reset_battles()
-            if opponent.n_finished_battles > 0:
-                opponent.reset_battles()
-            rl.reset_reward_tracking()
-            # Arm forensic capture for this opponent this cycle (disabled if no model_dir).
-            forensic_dir = (
-                os.path.join(self._model_dir, "eval_traces", f"step_{self.num_timesteps}", name)
-                if self._model_dir else None
+        procs = []
+        for wid in range(n_workers):
+            cfg = {
+                "snapshot": snapshot_zip,
+                "port": self._showdown_port,
+                "model_dir": self._model_dir,
+                "step": step,
+                "n_games": n_games,
+                "opponent_pool": names,        # full pool; workers steal from it
+                "claim_dir": claim_dir,
+                "result_dir": run_dir,         # writes result__<opponent>.json here
+                "concurrency": self._eval_concurrency,
+                "device": self._eval_device,
+                "worker_id": wid,
+                "cycle_tag": cycle_tag,
+            }
+            cfg_path = os.path.join(run_dir, f"config_{wid}.json")
+            with open(cfg_path, "w") as f:
+                json.dump(cfg, f)
+            log_path = os.path.join(run_dir, f"worker_{wid}.log")
+            logf = open(log_path, "w")
+            proc = subprocess.Popen(
+                [sys.executable, "-m", "main.eval_worker", cfg_path],
+                stdout=logf, stderr=subprocess.STDOUT, env=worker_env,
             )
-            rl.begin_forensic_cycle(forensic_dir, self.num_timesteps)
+            procs.append({"proc": proc, "log": logf, "log_path": log_path})
 
-            start = datetime.now()
-            await rl.battle_against(opponent, n_battles=games)
-            duration = datetime.now() - start
-            # _battle_finished_callback has fired for every battle by this point.
+        self._pending = {"step": step, "names": names, "procs": procs,
+                         "snapshot": snapshot_zip, "run_dir": run_dir}
+        print(f"[EVAL] step {step:,}: spawned {n_workers} work-stealing worker(s) on "
+              f"{self._eval_device} ({len(names)} opponents, conc {self._eval_concurrency}) "
+              f"— non-blocking")
 
-            won = rl.n_won_battles
-            finished = rl.n_finished_battles
-            win_rate = won / finished if finished > 0 else 0.0
-            mean_reward = rl.mean_episode_reward
-            ep_len = self._mean_episode_length(rl)
-            print(
-                f"  vs {name}: {win_rate * 100:.1f}%  "
-                f"({won}/{finished})  ep_len={ep_len:.1f}  reward={mean_reward:.3f}  [{duration}]"
-            )
-            return name, win_rate, mean_reward, ep_len
+    # ------------------------------------------------------------------ collect
 
-        # All opponents play concurrently — each on its own player, so the per-opponent
-        # counters stay isolated. Inter-opponent overlap removes the serial-loop bubbles.
-        results = await asyncio.gather(
-            *(eval_one(name, opponent) for name, opponent in self._opponents)
-        )
+    @staticmethod
+    def _all_done(pending: dict) -> bool:
+        return all(w["proc"].poll() is not None for w in pending["procs"])
 
-        win_rates: dict[str, float] = {name: wr for name, wr, _, _ in results}
-        reward_means: dict[str, float] = {name: mr for name, _, mr, _ in results}
-        ep_lens: dict[str, float] = {name: el for name, _, _, el in results}
+    def _collect_pending(self) -> None:
+        pending = self._pending
+        self._pending = None
+        step = pending["step"]
+        run_dir = pending["run_dir"]
+
+        for w in pending["procs"]:
+            w["log"].close()
+        bad_exits = [w for w in pending["procs"] if w["proc"].returncode not in (0, None)]
+
+        # Work stealing writes one result__<opponent>.json per opponent, regardless
+        # of which worker ran it. Read every expected opponent; missing = a worker
+        # died mid-opponent (its claim lock blocks a retry) — log and carry on.
+        merged = {"win_rates": {}, "reward_means": {}, "ep_lens": {}, "durations_sec": {}}
+        missing = []
+        for name in pending["names"]:
+            rp = os.path.join(run_dir, f"result__{name}.json")
+            if not os.path.exists(rp):
+                missing.append(name)
+                continue
+            with open(rp) as f:
+                r = json.load(f)
+            merged["win_rates"][name] = r["win_rate"]
+            merged["reward_means"][name] = r["reward_mean"]
+            merged["ep_lens"][name] = r["ep_len"]
+            merged["durations_sec"][name] = r["duration_sec"]
+
+        if missing:
+            print(f"⚠️ [EVAL] step {step:,}: missing results for {missing} "
+                  f"(worker crash mid-opponent?) — see {run_dir}/worker_*.log")
+        for w in bad_exits:
+            print(f"⚠️ [EVAL] worker exited {w['proc'].returncode}; see {w['log_path']}")
+
+        if not merged["win_rates"]:
+            print(f"⚠️ [EVAL] step {step:,}: no results (all workers failed); skipping record")
+            self._cleanup(pending, keep_logs=True)
+            return
+
+        self._record(step, merged)
+        self._maybe_save_best(step, pending, merged["win_rates"])
+        self._cleanup(pending, keep_logs=bool(missing or bad_exits))
+
+    def _record(self, step: int, merged: dict) -> None:
+        win_rates = merged["win_rates"]
+        reward_means = merged["reward_means"]
+        ep_lens = merged["ep_lens"]
+        aggregate = sum(win_rates.values()) / len(win_rates)
+        aggregate_reward = sum(reward_means.values()) / len(reward_means) if reward_means else 0.0
+        wr_bots = bot_mean(win_rates)
+        rew_bots = bot_mean(reward_means)
+        eplen_bots = bot_mean(ep_lens)
+        total_dur = sum(merged["durations_sec"].values())
+
+        tui: dict[str, float] = {}
         for name in win_rates:
             self.logger.record(f"eval/win_rate_vs_{name}", win_rates[name])
-            self.logger.record(f"eval/mean_ep_len_vs_{name}", ep_lens[name])
-            self.logger.record(f"eval/mean_reward_vs_{name}", reward_means[name])
-            tui_metrics[f"eval/win_rate_vs_{name}"] = win_rates[name]
-            tui_metrics[f"eval/mean_ep_len_vs_{name}"] = ep_lens[name]
-            tui_metrics[f"eval/mean_reward_vs_{name}"] = reward_means[name]
-
-        eval_duration_sec = (datetime.now() - eval_start).total_seconds()
-        aggregate = sum(win_rates.values()) / len(win_rates) if win_rates else 0.0
-        aggregate_reward = sum(reward_means.values()) / len(reward_means) if reward_means else 0.0
-        win_rate_vs_bots = bot_mean(win_rates)
-        mean_reward_vs_bots = bot_mean(reward_means)
-        mean_ep_len_vs_bots = bot_mean(ep_lens)
+            self.logger.record(f"eval/mean_ep_len_vs_{name}", ep_lens.get(name, 0.0))
+            self.logger.record(f"eval/mean_reward_vs_{name}", reward_means.get(name, 0.0))
+            tui[f"eval/win_rate_vs_{name}"] = win_rates[name]
+            tui[f"eval/mean_ep_len_vs_{name}"] = ep_lens.get(name, 0.0)
+            tui[f"eval/mean_reward_vs_{name}"] = reward_means.get(name, 0.0)
         self.logger.record("eval/win_rate_mean", aggregate)
-        self.logger.record("eval/win_rate_vs_bots", win_rate_vs_bots)
+        self.logger.record("eval/win_rate_vs_bots", wr_bots)
         self.logger.record("eval/mean_reward_mean", aggregate_reward)
-        self.logger.record("eval/mean_reward_vs_bots", mean_reward_vs_bots)
-        self.logger.record("eval/mean_ep_len_vs_bots", mean_ep_len_vs_bots)
-        self.logger.record("eval/duration_sec", eval_duration_sec)
-        self.logger.dump(self.num_timesteps)
+        self.logger.record("eval/mean_reward_vs_bots", rew_bots)
+        self.logger.record("eval/mean_ep_len_vs_bots", eplen_bots)
+        self.logger.record("eval/duration_sec", total_dur)
+        # Record at the SNAPSHOT step so the eval curve aligns to when the model was
+        # frozen, not the (later) step at which the worker happened to finish.
+        self.logger.dump(step)
 
-        # logger.dump() clears name_to_value before the next rollout, so eval metrics
-        # never reach MetricsExporterCallback. Send them directly to the TUI pipe.
-        tui_metrics["eval/win_rate_mean"] = aggregate
-        tui_metrics["eval/win_rate_vs_bots"] = win_rate_vs_bots
-        tui_metrics["eval/mean_reward_mean"] = aggregate_reward
-        tui_metrics["eval/mean_reward_vs_bots"] = mean_reward_vs_bots
-        tui_metrics["eval/mean_ep_len_vs_bots"] = mean_ep_len_vs_bots
-        tui_metrics["eval/duration_sec"] = eval_duration_sec
-        tui_metrics["_step"] = self.num_timesteps
-        send_metrics(tui_metrics)
+        tui.update({
+            "eval/win_rate_mean": aggregate, "eval/win_rate_vs_bots": wr_bots,
+            "eval/mean_reward_mean": aggregate_reward, "eval/mean_reward_vs_bots": rew_bots,
+            "eval/mean_ep_len_vs_bots": eplen_bots, "eval/duration_sec": total_dur,
+            "_step": step,
+        })
+        send_metrics(tui)
 
-        print(
-            f"[EVAL] Aggregate: {aggregate * 100:.1f}%  "
-            f"(best so far: {self._best_aggregate_win_rate * 100:.1f}%)  "
-            f"[took {eval_duration_sec:.0f}s]"
-        )
+        print(f"[EVAL] step {step:,}: aggregate {aggregate * 100:.1f}% "
+              f"(best {self._best_aggregate_win_rate * 100:.1f}%)")
 
         if self._model_dir:
-            record_eval_results(
-                self._model_dir,
-                self.num_timesteps,
-                build_bot_eval_block(win_rates, reward_means, ep_lens),
-            )
+            record_eval_results(self._model_dir, step,
+                                build_bot_eval_block(win_rates, reward_means, ep_lens))
 
-        if aggregate > self._best_aggregate_win_rate:
-            self._best_aggregate_win_rate = aggregate
-            if self.best_model_save_path is not None:
-                self.model.save(os.path.join(self.best_model_save_path, "best_model"))
-                print(f"[EVAL] New best ({aggregate * 100:.1f}%) saved.")
+    def _maybe_save_best(self, step: int, pending: dict, win_rates: dict) -> None:
+        aggregate = sum(win_rates.values()) / len(win_rates)
+        if aggregate <= self._best_aggregate_win_rate:
+            return
+        self._best_aggregate_win_rate = aggregate
+        if self.best_model_save_path is not None:
+            # The frozen snapshot IS the best model — copy it rather than re-saving.
+            dst = os.path.join(self.best_model_save_path, "best_model.zip")
+            shutil.copy2(pending["snapshot"], dst)
+            print(f"[EVAL] new best ({aggregate * 100:.1f}%) saved to {dst}")
 
-    def _abort(self, reason: str) -> None:
-        """Delegate to the canonical abort path if wired; fall back to hard exit."""
-        if self.abort_fn is not None:
-            self.abort_fn(reason)
-        else:
-            os._exit(1)
+    def _cleanup(self, pending: dict, keep_logs: bool) -> None:
+        # Always drop the (large) weight snapshot; keep the run dir only if a worker
+        # failed so its log survives for debugging.
+        try:
+            if os.path.exists(pending["snapshot"]):
+                os.remove(pending["snapshot"])
+        except OSError:
+            pass
+        if not keep_logs:
+            shutil.rmtree(pending["run_dir"], ignore_errors=True)
 
-    def _mean_episode_length(self, player) -> float:
-        battles = [b for b in player._battles.values() if b.finished]
-        if not battles:
-            return 0.0
-        return sum(b.turn for b in battles) / len(battles)
+    def _on_training_end(self) -> None:
+        self.drain()
+
+    def drain(self, timeout: float | None = None) -> None:
+        """Block (up to `timeout` TOTAL seconds) for the in-flight eval cycle, then record it.
+
+        Called on graceful shutdown so an eval in flight is never orphaned and its
+        results land in metadata.json + the TUI. Both the normal training end and the
+        (self-initiated) scheduled restart wait the full `_DRAIN_TIMEOUT_SEC` (10 min)
+        so a CPU eval can finish — the restart's grace window (--restart-grace-minutes,
+        20 min) covers it, and the checkpoint is already saved first regardless.
+
+        `timeout` is a total budget across all workers (not per-worker), so several
+        hung workers can't stack past the deadline. Idempotent (no-op if nothing pending).
+        """
+        if self._pending is None:
+            return
+        budget = self._DRAIN_TIMEOUT_SEC if timeout is None else timeout
+        deadline = time.monotonic() + budget
+        print(f"[EVAL] graceful shutdown — waiting up to {budget:.0f}s for eval worker(s)...")
+        for w in self._pending["procs"]:
+            remaining = max(0.0, deadline - time.monotonic())
+            try:
+                w["proc"].wait(timeout=remaining)
+            except subprocess.TimeoutExpired:
+                w["proc"].kill()
+        self._collect_pending()
+
+    # ------------------------------------------------------------- TUI resume
+
+    def _replay_last_eval_to_tui(self) -> None:
+        """Re-publish the most recent persisted eval to the TUI on startup/resume."""
+        block = None
+        for path in (
+            os.path.join(self._model_dir, "metadata.json") if self._model_dir else None,
+            self._resume_eval_metadata,
+        ):
+            block = read_latest_eval_block(path) or block
+        if block is None:
+            return
+        opponents = block.get("opponents", {})
+        if not opponents:
+            return
+        tui: dict[str, float] = {}
+        for name, m in opponents.items():
+            tui[f"eval/win_rate_vs_{name}"] = m.get("win_rate", 0.0)
+            tui[f"eval/mean_ep_len_vs_{name}"] = m.get("mean_ep_len", 0.0)
+            tui[f"eval/mean_reward_vs_{name}"] = m.get("mean_reward", 0.0)
+        tui.update({
+            "eval/win_rate_mean": block.get("win_rate_mean", 0.0),
+            "eval/win_rate_vs_bots": block.get("win_rate_vs_bots", 0.0),
+            "eval/mean_reward_mean": block.get("mean_reward_mean", block.get("mean_reward_vs_bots", 0.0)),
+            "eval/mean_reward_vs_bots": block.get("mean_reward_vs_bots", 0.0),
+            "eval/mean_ep_len_vs_bots": block.get("mean_ep_len_vs_bots", 0.0),
+            "_step": block.get("step", 0),
+        })
+        send_metrics(tui)
+        print(f"[EVAL] resumed — re-published last eval (step {block.get('step', '?')}, "
+              f"{block.get('win_rate_mean', 0.0) * 100:.1f}% mean) to the TUI")

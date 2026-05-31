@@ -17,7 +17,9 @@ import inspect
 import pytest
 
 from poke_env.ps_client.server_configuration import localhost_server_configuration
-from agents.training.eval_callback import PerOpponentEvalCallback
+from agents.training.eval_callback import (
+    PerOpponentEvalCallback, build_eval_opponents, build_eval_players,
+)
 from agents.training.selfplay_callback import SelfPlayCallback
 
 
@@ -52,8 +54,10 @@ def _player_creation_sources(cls):
     return out
 
 
+# SelfPlayCallback still builds players in-process, so its player-creating methods
+# must thread the stored config. (PerOpponentEvalCallback no longer creates players —
+# the eval subprocess does, via the builder functions guarded below.)
 @pytest.mark.parametrize("cls, store_attr", [
-    (PerOpponentEvalCallback, "self._server_config"),
     (SelfPlayCallback, "self._server_config"),
 ])
 def test_player_creation_uses_stored_config_not_hardcoded_port(cls, store_attr):
@@ -70,3 +74,19 @@ def test_player_creation_uses_stored_config_not_hardcoded_port(cls, store_attr):
             f"{cls.__name__}.{name} passes server_configuration= but not from "
             f"{store_attr}; it must thread the configured port"
         )
+
+
+# The subprocess eval path builds players via these module functions, which take the
+# server_config as a parameter and must thread it (the worker rebuilds it from the
+# --showdown-port the trainer passes). Same anti-:8000-hardcode guard, function form.
+@pytest.mark.parametrize("fn", [build_eval_opponents, build_eval_players])
+def test_eval_builders_thread_server_config_param(fn):
+    sig = inspect.signature(fn)
+    assert "server_config" in sig.parameters, (
+        f"{fn.__name__} must take server_config so the eval worker can thread the port"
+    )
+    src = inspect.getsource(fn)
+    assert "server_configuration=server_config" in src, (
+        f"{fn.__name__} must build players from its server_config arg"
+    )
+    assert "server_configuration=LocalhostServerConfiguration" not in src

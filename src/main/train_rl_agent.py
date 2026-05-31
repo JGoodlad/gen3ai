@@ -47,7 +47,9 @@ from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappin
 from agents.inference.player import RLPlayer
 from utils.teambuilder import Gen3Teambuilder
 from utils.team_loader import TeamLoader
-from agents.training.eval_callback import PerOpponentEvalCallback, opponent_name
+from agents.training.eval_callback import (
+    PerOpponentEvalCallback, opponent_name, build_eval_opponents, eval_opponent_names,
+)
 from agents.training.graceful_restart_callback import GracefulRestartCallback
 from agents.training.snapshot_pool import SnapshotPool, heuristic_fraction
 from agents.training.selfplay_callback import SelfPlayCallback
@@ -194,13 +196,28 @@ def _run_roundtrip_test(model, layout: dict, policy_kwargs: dict, debug: bool = 
         shutil.rmtree(tmpdir, ignore_errors=True)
 
 
-def _setup_signal_handlers(model, model_dir, shutdown_event, version, current_lr_fn, current_epochs_fn, handoff_lr_fn=None):
+# Wait for an in-flight subprocess eval to FINISH on a graceful restart so its
+# results land before exit. A scheduled restart is self-initiated by
+# GracefulRestartCallback at a rollout boundary, and the launcher won't force-kill
+# until the child overruns the deadline by --restart-grace-minutes (20 min default),
+# so a 10-min drain fits. The checkpoint is saved first either way, so even the
+# pathological forced-SIGTERM case (child already overran → ~90s SIGKILL) is safe —
+# it only risks losing the in-flight eval, never the checkpoint.
+_ABORT_EVAL_DRAIN_SEC = 600.0
+
+
+def _setup_signal_handlers(model, model_dir, shutdown_event, version, current_lr_fn, current_epochs_fn, handoff_lr_fn=None, eval_drain_fn=None):
     """Wire SIGINT/SIGTERM/SIGUSR1. Returns the abort_training closure so it can
     be passed to eval callbacks as their canonical "die cleanly" path.
 
     ``handoff_lr_fn`` is optional; when present it returns the TwoPhaseLR
     callback's current handoff_lr (or None while still in Phase 1) so the
     cosine starting LR is persisted alongside the SIGTERM checkpoint.
+
+    ``eval_drain_fn`` is optional; when present it is called AFTER the checkpoint
+    is safely saved to wait (briefly, bounded) for an in-flight subprocess eval so
+    its results land before exit. Bounded so the child still exits inside the
+    launcher's SIGKILL grace — the checkpoint is already safe regardless.
     """
 
     def _handoff() -> "float | None":
@@ -228,6 +245,14 @@ def _setup_signal_handlers(model, model_dir, shutdown_event, version, current_lr
             print(f"[ABORT] Checkpoint saved → {path}.zip")
         except Exception as e:
             print(f"[ABORT] Save failed: {e}")
+        # Checkpoint is safe; now wait for any in-flight eval to FINISH so its results
+        # land in metadata.json before we exit (bounded by _ABORT_EVAL_DRAIN_SEC, which
+        # fits inside the scheduled-restart grace window).
+        if eval_drain_fn is not None:
+            try:
+                eval_drain_fn()
+            except Exception as e:
+                print(f"[ABORT] eval drain failed: {e}")
         os._exit(int(TrainExitCode.INTERRUPTED))
 
     def _forced_checkpoint(sig, frame):
@@ -332,6 +357,13 @@ async def main():
     # --- Self-Play Flags ---
     parser.add_argument("--use-v2-bots", "--use_v2_bots", dest="use_v2_bots", action="store_true", default=False,
                         help="Add the V2 heuristic bots (Heuristic2, StallerV2, AggressiveV2, SetupSweepV2) to the training opponent pool and to eval")
+    # --- Subprocess eval ---
+    parser.add_argument("--eval-workers", "--eval_workers", dest="eval_workers", type=int, default=3,
+                        help="Number of parallel eval-worker subprocesses per cycle. Workers work-steal "
+                             "opponents from a shared pool, so uneven per-opponent cost self-balances. "
+                             "Capped at the opponent count.")
+    parser.add_argument("--eval-device", "--eval_device", dest="eval_device", type=str, default="cpu",
+                        help="Device for the eval-worker subprocess inference (default cpu, to decouple from the training GPU).")
     parser.add_argument("--self-play", action="store_true", default=False, help="Enable self-play snapshot pool as training opponents")
     parser.add_argument("--snapshot-dir", type=str, default=None, help="Pool directory (default: <run_dir>/snapshots)")
     parser.add_argument("--promote-threshold", type=float, default=0.65, help="Win rate vs. pool to trigger snapshot promotion")
@@ -671,53 +703,14 @@ async def main():
     eval_callback = None
 
     if not args.debug:
-        ts_cb = datetime.now().strftime('%H%M%S')
-        eval_opponents = [
-            (opponent_name(RandomPlayer), RandomPlayer(
-                battle_format=BATTLE_FORMAT, team=opponent_teambuilder,
-                server_configuration=server_config,
-                account_configuration=AccountConfiguration(f"CbRand{ts_cb}", "password"),
-                max_concurrent_battles=100,
-            )),
-            (opponent_name(SimpleHeuristicsPlayer), SimpleHeuristicsPlayer(
-                battle_format=BATTLE_FORMAT, team=opponent_teambuilder,
-                server_configuration=server_config,
-                account_configuration=AccountConfiguration(f"CbHeur{ts_cb}", "password"),
-                max_concurrent_battles=100,
-            )),
-            (opponent_name(Gen3StallerPlayer), Gen3StallerPlayer(
-                battle_format=BATTLE_FORMAT, team=opponent_teambuilder,
-                server_configuration=server_config,
-                account_configuration=AccountConfiguration(f"CbStall{ts_cb}", "password"),
-                max_concurrent_battles=100,
-            )),
-            (opponent_name(Gen3AggressivePlayer), Gen3AggressivePlayer(
-                battle_format=BATTLE_FORMAT, team=opponent_teambuilder,
-                server_configuration=server_config,
-                account_configuration=AccountConfiguration(f"CbAggr{ts_cb}", "password"),
-                max_concurrent_battles=100,
-            )),
-            (opponent_name(Gen3SetupSweepPlayer), Gen3SetupSweepPlayer(
-                battle_format=BATTLE_FORMAT, team=opponent_teambuilder,
-                server_configuration=server_config,
-                account_configuration=AccountConfiguration(f"CbSetup{ts_cb}", "password"),
-                max_concurrent_battles=100,
-            )),
-        ]
-        if args.use_v2_bots:
-            for _cls, _uname in [
-                (Gen3HeuristicV2Player, f"CbHeur2{ts_cb}"),
-                (Gen3StallerV2Player, f"CbStallV2{ts_cb}"),
-                (Gen3AggressiveV2Player, f"CbAggrV2{ts_cb}"),
-                (Gen3SetupSweepV2Player, f"CbSetupV2{ts_cb}"),
-            ]:
-                eval_opponents.append((opponent_name(_cls), _cls(
-                    battle_format=BATTLE_FORMAT, team=opponent_teambuilder,
-                    server_configuration=server_config,
-                    account_configuration=AccountConfiguration(_uname, "password"),
-                    max_concurrent_battles=100,
-                )))
         if args.self_play and _pool is not None:
+            # Self-play still evaluates in-process against live bot players, so it
+            # needs the pre-built opponent list (one connection each).
+            ts_cb = datetime.now().strftime('%H%M%S')
+            eval_opponents = build_eval_opponents(
+                server_config, opponent_teambuilder,
+                eval_opponent_names(args.use_v2_bots), ts_cb,
+            )
             eval_callback = SelfPlayCallback(
                 pool=_pool,
                 bot_opponents=eval_opponents,
@@ -730,13 +723,26 @@ async def main():
                 server_config=server_config,
             )
         else:
+            # Bot eval runs in a frozen-snapshot subprocess (non-blocking, CPU). The
+            # worker rebuilds opponents/teambuilders/mappings itself from the data
+            # dir, so nothing live is constructed here.
+            # On resume, the last eval lives in the resumed checkpoint's metadata.json
+            # (a different dir from this fresh run) — point the callback at it so the
+            # TUI shows the most recent eval immediately.
+            _resume_meta = None
+            if args.model:
+                _ckpt_dir = args.model if os.path.isdir(args.model) else os.path.dirname(args.model)
+                if _ckpt_dir:
+                    _resume_meta = os.path.join(_ckpt_dir, "metadata.json")
             eval_callback = PerOpponentEvalCallback(
-                opponents=eval_opponents,
-                trainee_teambuilder=trainee_teambuilder,
-                mappings=mappings,
-                best_model_save_path=os.path.join(model_dir, "best_model"),
                 model_dir=model_dir,
                 server_config=server_config,
+                use_v2_bots=args.use_v2_bots,
+                best_model_save_path=os.path.join(model_dir, "best_model"),
+                n_workers=args.eval_workers,
+                eval_device=args.eval_device,
+                showdown_port=args.showdown_port,
+                resume_eval_metadata=_resume_meta,
             )
         callbacks.append(eval_callback)
 
@@ -869,6 +875,10 @@ async def main():
                     (lambda: lr_callback.handoff_lr)
                     if isinstance(lr_callback, TwoPhaseLRCallback) else None
                 ),
+                eval_drain_fn=(
+                    (lambda: eval_callback.drain(timeout=_ABORT_EVAL_DRAIN_SEC))
+                    if (eval_callback is not None and hasattr(eval_callback, "drain")) else None
+                ),
             )
             if not args.debug and eval_callback is not None:
                 eval_callback.abort_fn = _abort_fn
@@ -944,6 +954,10 @@ async def main():
             handoff_lr_fn=(
                 (lambda: lr_callback.handoff_lr)
                 if isinstance(lr_callback, TwoPhaseLRCallback) else None
+            ),
+            eval_drain_fn=(
+                (lambda: eval_callback.drain(timeout=_ABORT_EVAL_DRAIN_SEC))
+                if (eval_callback is not None and hasattr(eval_callback, "drain")) else None
             ),
         )
         if not args.debug and eval_callback is not None:
