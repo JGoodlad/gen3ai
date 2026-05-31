@@ -1,33 +1,30 @@
-"""
-Equivalence harness (design §8.3) for the Step-5 reward re-sourcing.
+"""Single-path reward-value regression (replaces the reward re-sourcing equivalence harness).
 
-Runs real gen3ou battles in-process via the local BattleStream bridge (no server)
-and, at every decision, computes the full ``RewardBreakdown`` TWICE from the SAME
-``(battle, delta)``:
+The reward manager now has ONE current-board source — ``battle.live_view()``, built once per
+``process_turn_reward`` and threaded to every helper — so the old live-vs-raw equivalence diff
+is moot (the ``_read_live`` dual path was retired). This harness keeps the coverage by running
+real gen3ou battles in-process via the local BattleStream bridge (no server) and, at every
+decision, recording the full ``RewardBreakdown`` and asserting it is STABLE:
 
-  * ``mgr_live``   — reads current-board facts through ``battle.live_view()``
-                     (``_read_live=True``, the new path).
-  * ``mgr_battle`` — reads the same facts from the raw poke-env ``battle``
-                     (``_read_live=False``, the old path).
+  * **finite** — no NaN / inf in any field;
+  * **self-consistent** — ``breakdown.total`` equals the sum of its fields; and
+  * **deterministic** — a second ``Gen3RewardManager`` driven with the identical
+    ``record_action`` / ``process_turn_reward`` sequence produces a byte-identical breakdown,
+    catching any hidden global state or non-determinism in the reward computation.
 
-Both managers receive identical ``record_action`` and ``process_turn_reward`` calls,
-so their internal state evolves in lockstep. Any per-field difference in the two
-``RewardBreakdown``s is a re-sourcing regression. This is the gate that justifies
-the migration: the partial re-source is value-neutral iff the diff rate is 0.
-
-What's re-sourced (the only fields that can possibly differ): the spikes layer
-count (``spikes`` / ``roar``), per-side status counts (``status`` / ``status_wasted``),
-the opp-active-boosts snapshot (feeds next-turn ``roar``), and the terminal flags
-(``win_loss``). Everything else is byte-identical because both managers share the
-same ``TurnDelta`` and the type/effectiveness helpers still read the raw battle.
+The deltas are folded from the event log (``TurnDelta.build_from_events`` over the
+``events_since`` window) — the production path. Per-field activation counts are reported so a
+"0 violations" run is trustworthy (it actually exercised the switch / status / spikes / etc.
+signals). On ANY violation: print the offending field + both values, then ``os._exit(1)``.
 
 Run directly (no server needed — runs via the local bridge):
     export PYTHONPATH=$PYTHONPATH:src
-    python src/agents/training/reward_resourcing_equivalence_fuzz_test.py [n_battles]
+    python src/agents/training/reward_value_regression_fuzz_test.py [n_battles]
 """
 
 import asyncio
 import dataclasses
+import math
 import os
 import sys
 import time
@@ -54,7 +51,7 @@ from utils.teambuilder import Gen3Teambuilder
 
 BATTLE_FORMAT = "gen3ou"
 
-# A deliberately broad team so random play exercises every re-sourced signal:
+# A deliberately broad team so random play exercises every reward signal:
 #   - Spikes / Roar          -> spikes-layer + roar reads
 #   - Will-O-Wisp/Toxic/T-Wave -> status-count reads
 #   - Calm Mind / Dragon Dance -> opp-active boosts snapshot
@@ -117,13 +114,12 @@ Adamant Nature
 
 
 class _BattleState:
-    """Per-battle pair of reward managers + the context/slot bookkeeping needed to
-    rebuild each turn's TurnDelta. Both managers are driven identically."""
+    """Per-battle pair of reward managers driven IDENTICALLY (determinism check) plus the
+    context/slot bookkeeping needed to fold each turn's TurnDelta from the event log."""
 
     def __init__(self):
-        self.mgr_live = Gen3RewardManager()           # _read_live=True (default)
-        self.mgr_battle = Gen3RewardManager()
-        self.mgr_battle._read_live = False             # reads the raw battle
+        self.mgr_a = Gen3RewardManager()
+        self.mgr_b = Gen3RewardManager()
         self.prev_ctx: Optional[BattleContext] = None
         self.last_action: Optional[int] = None
         self.prev_cursor: int = 0   # event_cursor when prev_ctx was latched
@@ -131,12 +127,15 @@ class _BattleState:
         self.opp_slots = SlotRegistry()
 
 
-class RewardEquivalencePlayer(Player):
+class RewardValueRegressionPlayer(Player):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.turns_compared = 0
-        self.field_diffs: Counter = Counter()
+        self.field_activations: Counter = Counter()
         self.violations: list[str] = []
+        self.reward_sum = 0.0
+        self.reward_min = math.inf
+        self.reward_max = -math.inf
         self._per_battle: dict[str, _BattleState] = {}
 
     def _get_state(self, battle) -> _BattleState:
@@ -145,32 +144,48 @@ class RewardEquivalencePlayer(Player):
             self._per_battle[tag] = _BattleState()
         return self._per_battle[tag]
 
-    def _compare_turn(self, battle, state: _BattleState, curr_ctx: BattleContext) -> None:
-        """Run BOTH managers on the same (battle, delta) and diff the breakdowns."""
+    def _fail(self, battle, msg: str) -> None:
+        self.violations.append(msg)
+        print(f"\n[REWARD REGRESSION] {msg}", flush=True)
+        traceback.print_stack()
+        os._exit(1)
+
+    def _check_turn(self, battle, state: _BattleState, curr_ctx: BattleContext) -> None:
         events = battle.events_since(state.prev_cursor)
         delta = TurnDelta.build_from_events(
             state.prev_ctx, curr_ctx, state.last_action, events
         )
-        state.mgr_live.process_turn_reward(battle, delta)
-        state.mgr_battle.process_turn_reward(battle, delta)
-        bl = state.mgr_live._last_breakdown
-        bb = state.mgr_battle._last_breakdown
+        state.mgr_a.process_turn_reward(battle, delta)
+        state.mgr_b.process_turn_reward(battle, delta)
+        ba = state.mgr_a._last_breakdown
+        bb = state.mgr_b._last_breakdown
         self.turns_compared += 1
-        for f in dataclasses.fields(bl):
-            a = float(getattr(bl, f.name))
+
+        total = 0.0
+        for f in dataclasses.fields(ba):
+            a = float(getattr(ba, f.name))
             b = float(getattr(bb, f.name))
-            if abs(a - b) > 1e-9:
-                self.field_diffs[f.name] += 1
-                msg = (
-                    f"Turn {battle.turn} [{battle.battle_tag}]: "
-                    f"{f.name} live={a:.6f} battle={b:.6f}"
-                )
-                self.violations.append(msg)
-                print(f"  [REWARD DIFF] {msg}", flush=True)
+            # finite
+            if not math.isfinite(a):
+                self._fail(battle, f"non-finite {f.name}={a} "
+                                   f"[{battle.battle_tag}] turn {battle.turn}")
+            # deterministic across two identically-driven managers
+            if a != b:
+                self._fail(battle, f"non-deterministic {f.name}: a={a:.9g} b={b:.9g} "
+                                   f"[{battle.battle_tag}] turn {battle.turn}")
+            if a != 0.0:
+                self.field_activations[f.name] += 1
+            total += a
+        # self-consistency: breakdown.total == sum of fields
+        if abs(ba.total - total) > 1e-9:
+            self._fail(battle, f"total {ba.total:.9g} != sum-of-fields {total:.9g} "
+                               f"[{battle.battle_tag}] turn {battle.turn}")
+        self.reward_sum += ba.total
+        self.reward_min = min(self.reward_min, ba.total)
+        self.reward_max = max(self.reward_max, ba.total)
 
     def _battle_finished_callback(self, battle) -> None:
-        """Compare the final (terminal) turn — win_loss only fires here — then
-        drop per-battle state. poke-env stops calling choose_move once finished."""
+        """Settle the final (terminal) turn — win_loss fires here — then drop per-battle state."""
         tag = battle.battle_tag
         state = self._per_battle.get(tag)
         if state is None or state.prev_ctx is None or state.last_action is None:
@@ -181,9 +196,9 @@ class RewardEquivalencePlayer(Player):
             curr_ctx = BattleContext.from_battle(
                 battle, mask, state.our_slots, state.opp_slots
             )
-            self._compare_turn(battle, state, curr_ctx)
+            self._check_turn(battle, state, curr_ctx)
         except Exception as e:  # pragma: no cover - diagnostic only
-            print(f"  [NOTICE] {tag}: final-turn compare skipped: {e}", flush=True)
+            print(f"  [NOTICE] {tag}: final-turn check skipped: {e}", flush=True)
         finally:
             self._per_battle.pop(tag, None)
 
@@ -196,15 +211,15 @@ class RewardEquivalencePlayer(Player):
             )
 
             if state.prev_ctx is not None and state.last_action is not None:
-                self._compare_turn(battle, state, curr_ctx)
+                self._check_turn(battle, state, curr_ctx)
 
             valid = np.where(mask == 1)[0]
             choice = int(np.random.choice(valid))
 
             if not battle.finished:
-                # Drive BOTH managers identically so their state stays in lockstep.
-                state.mgr_live.record_action(curr_ctx, choice)
-                state.mgr_battle.record_action(curr_ctx, choice)
+                # Drive BOTH managers identically so their internal state stays in lockstep.
+                state.mgr_a.record_action(curr_ctx, choice)
+                state.mgr_b.record_action(curr_ctx, choice)
                 state.prev_ctx = curr_ctx
                 state.last_action = choice
                 state.prev_cursor = battle.event_cursor
@@ -223,62 +238,57 @@ class RewardEquivalencePlayer(Player):
 async def main(n_battles: int = 30) -> None:
     ts = int(time.time()) % 100000
     print(
-        f"Reward Re-sourcing Equivalence Harness — gen3ou — {n_battles} battles",
+        f"Reward-Value Regression — gen3ou — {n_battles} battles "
+        f"(finite + self-consistent + deterministic)",
         flush=True,
     )
     tb = Gen3Teambuilder(MIXED_TEAM)
 
-    equiv = RewardEquivalencePlayer(
+    fuzz = RewardValueRegressionPlayer(
         battle_format=BATTLE_FORMAT,
         team=tb,
         # Reward manager reads battle.live_view() -> needs Gen3Battle (production parity).
         battle_class=Gen3Battle,
         server_configuration=LocalhostServerConfiguration,
         start_listening=False,
-        account_configuration=AccountConfiguration(f"REq{ts}p", "password"),
+        account_configuration=AccountConfiguration(f"RVr{ts}p", "password"),
         max_concurrent_battles=5,
     )
     opp = RandomPlayer(
         battle_format=BATTLE_FORMAT,
         team=tb,
+        battle_class=Gen3Battle,
         server_configuration=LocalhostServerConfiguration,
         start_listening=False,
-        account_configuration=AccountConfiguration(f"REq{ts}o", "password"),
+        account_configuration=AccountConfiguration(f"RVr{ts}o", "password"),
         max_concurrent_battles=5,
     )
 
-    await run_local_battles(equiv, opp, n_battles)
+    await run_local_battles(fuzz, opp, n_battles)
 
     print(f"\n{'=' * 60}", flush=True)
-    print("Reward Re-sourcing Equivalence Results", flush=True)
+    print("Reward-Value Regression Results", flush=True)
     print(f"{'=' * 60}", flush=True)
-    print(f"Turns compared    : {equiv.turns_compared}", flush=True)
-    total_diffs = sum(equiv.field_diffs.values())
-    rate = (total_diffs / equiv.turns_compared) if equiv.turns_compared else 0.0
-    print(f"Field diffs        : {total_diffs}", flush=True)
-    print(f"Diff rate          : {rate:.4%}", flush=True)
-    if equiv.field_diffs:
-        print("Per-field diffs:", flush=True)
-        for name, count in equiv.field_diffs.most_common():
-            print(f"  {name:<22} {count:5d}", flush=True)
+    print(f"Turns checked      : {fuzz.turns_compared}", flush=True)
+    print(f"Violations         : {len(fuzz.violations)}", flush=True)
+    if fuzz.turns_compared:
+        mean = fuzz.reward_sum / fuzz.turns_compared
+        print(f"Reward total/turn  : mean {mean:+.4f}  min {fuzz.reward_min:+.4f}  "
+              f"max {fuzz.reward_max:+.4f}", flush=True)
+    print("Field activations (non-zero turns):", flush=True)
+    for name, count in fuzz.field_activations.most_common():
+        print(f"  {name:<22} {count:5d}", flush=True)
 
-    if total_diffs:
-        print(
-            f"\nFAIL — {total_diffs} reward-breakdown diff(s) between live and "
-            f"battle sourcing. The re-source is NOT value-neutral.",
-            flush=True,
-        )
-        for v in equiv.violations[:20]:
-            print(f"  {v}", flush=True)
-        if len(equiv.violations) > 20:
-            print(f"  ... and {len(equiv.violations) - 20} more", flush=True)
+    ok = (not fuzz.violations) and fuzz.turns_compared > 0
+    if not fuzz.turns_compared:
+        print("\nNO TURNS CHECKED — are teams loading / the bridge built?", flush=True)
+    print(
+        "\nPASS — every reward breakdown finite, self-consistent, and deterministic."
+        if ok else "\nFAIL",
+        flush=True,
+    )
+    if not ok:
         sys.exit(1)
-    else:
-        print(
-            f"\nPASS — all {equiv.turns_compared} turns identical across both "
-            f"sources. Partial re-source is value-neutral.",
-            flush=True,
-        )
 
 
 if __name__ == "__main__":

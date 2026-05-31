@@ -673,7 +673,7 @@ class TestPivotStatus(unittest.TestCase):
         manager = Gen3RewardManager(log_level=LogLevel.QUIET)
         delta = _pivot_delta(move_id)
         battle = _pivot_battle(new_mon, _opp_with_status_move(move_id))
-        return sum(manager._compute_pivot_bonus(delta, battle))
+        return sum(manager._compute_pivot_bonus(delta, _live_view(battle)))
 
     def test_ground_immune_to_thunderwave(self):
         from agents.training.reward_manager import STATUS_IMMUNE_SWITCH_BONUS
@@ -718,20 +718,20 @@ class TestPivotStatus(unittest.TestCase):
 class TestPivotDamage(unittest.TestCase):
     """_pivot_damage_bonus: Signal A — actual move effectiveness comparison."""
 
+    # The LiveView path resolves the opp move's type/power from gen3_movedex (keyed by the
+    # REAL revealed move id), not a mock — so a test controls the move TYPE by picking a real
+    # damaging move of that type. (base_power only matters as >0 vs ==0; the bonus is purely
+    # effectiveness-based.)
+    _MOVE_BY_TYPE = {"FIRE": "flamethrower", "GROUND": "earthquake", "ICE": "icebeam"}
+
     def _run(self, new_mon, prev_mon, move_type_name, base_power=80):
-        from poke_env.battle.pokemon_type import PokemonType
         manager = Gen3RewardManager(log_level=LogLevel.QUIET)
-
-        move = MagicMock()
-        move.base_power = base_power
-        move.type = PokemonType[move_type_name.upper()]
-
+        move_id = self._MOVE_BY_TYPE[move_type_name.upper()]
         opp = MagicMock()
-        opp.moves = {"testmove": move}
-
-        delta = _pivot_delta("testmove")
+        opp.moves = {move_id: MagicMock()}   # only the revealed move_id matters (type via movedex)
+        delta = _pivot_delta(move_id)
         battle = _pivot_battle(new_mon, opp, prev_mon=prev_mon)
-        return sum(manager._compute_pivot_bonus(delta, battle))
+        return sum(manager._compute_pivot_bonus(delta, _live_view(battle)))
 
     def test_resist_improvement_earns_bonus(self):
         # Fire move: prev=Normal (1×), new=Water (0.5×) — improvement
@@ -822,7 +822,7 @@ class TestPivotDamage(unittest.TestCase):
         delta = _pivot_delta("flamethrower", opp_damaging_event=event)
         battle = _pivot_battle(new_mon, opp, prev_mon=_type_mon("NORMAL"))
         # prev=Normal (1× Fire), new (via event)=0.5 → improvement → +0.10
-        result = sum(manager._compute_pivot_bonus(delta, battle))
+        result = sum(manager._compute_pivot_bonus(delta, _live_view(battle)))
         self.assertAlmostEqual(result, 0.10, places=5)
 
     def test_event_move_id_overrides_stale_delta_move_id(self):
@@ -853,7 +853,7 @@ class TestPivotDamage(unittest.TestCase):
         delta = _pivot_delta("flamethrower", opp_damaging_event=event)
         battle = _pivot_battle(new_mon, opp, prev_mon=_type_mon("NORMAL"))
         # prev=Normal (1× Ground), new=Flying via event (0×) → +0.15
-        result = sum(manager._compute_pivot_bonus(delta, battle))
+        result = sum(manager._compute_pivot_bonus(delta, _live_view(battle)))
         self.assertAlmostEqual(result, 0.15, places=5)
 
 

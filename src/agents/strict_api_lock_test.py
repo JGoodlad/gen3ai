@@ -97,17 +97,6 @@ ALLOWLISTED_BATTLE_READS = frozenset({
     # poke-env mon being iterated, so it is intrinsically a raw-object check, not state we
     # could re-source from LiveView (which holds primitives, no Pokemon back-reference).
     ("observation/state_encoder.py", "opponent_active_pokemon"),
-
-    # training/reward_manager.py — the _read_live=False dual-path `else` fallback. In
-    # production `process_turn_reward` builds `live = battle.live_view()` and the helpers read
-    # through it; only the equivalence-harness path (_read_live=False, live=None) falls back to
-    # the raw battle, kept byte-identical so the harness can prove the two paths agree.
-    # `report_episode` also iterates opponent_team for the end-of-episode summary.
-    ("training/reward_manager.py", "active_pokemon"),
-    ("training/reward_manager.py", "opponent_active_pokemon"),
-    ("training/reward_manager.py", "team"),
-    ("training/reward_manager.py", "opponent_team"),
-    ("training/reward_manager.py", "opponent_side_conditions"),
 })
 
 

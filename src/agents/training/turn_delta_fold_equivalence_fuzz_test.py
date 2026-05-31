@@ -26,7 +26,7 @@ float-fraction subtractions — the harness flags a diff above ``_HP_FP_TOL`` as
 diffs" run is trustworthy AND the float behaviour is visible.
 
 Both deltas are ALSO run through ``Gen3RewardManager`` and every ``RewardBreakdown`` field is
-diffed (reusing the comparison style of ``reward_resourcing_equivalence_fuzz_test.py``).
+diffed (reusing the dataclass-field comparison style of the reward fuzz harnesses).
 
 Coverage counters track the corner paths (boosts / CLEARBOOST / switch / Pain-Split-SETHP /
 double-KO / multi-hit / cant) so a path that never fired is reported as a coverage hole.
