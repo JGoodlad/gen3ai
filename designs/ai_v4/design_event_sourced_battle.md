@@ -1,8 +1,80 @@
 # Design: Event-Sourced Battle (`Gen3Battle`)
 
-**Status:** Proposed — NOT implemented. Scope: Gen 3 OU **singles** only. This is a
-foundation piece (training, replay analysis, and v5 MCTS all benefit), so it is
-sequenced behind behavior-preserving refactors and an obs-equivalence proof.
+**Status:** **Steps 1–4 of §9 SHIPPED to main; Steps 5–6 remain.** Scope: Gen 3 OU
+**singles** only. This is a foundation piece (training, replay analysis, and v5 MCTS all
+benefit). The original sequencing held; the live-state observation was enriched well
+beyond the original "drop-in" framing (see Implementation Status below). The detailed
+execution handoff for the remaining work lives in
+`handoff_turn_delta_reward_replay.md`.
+
+---
+
+## Implementation Status (updated 2026-05-30)
+
+The migration was executed in shippable increments, each fuzz-gated. What follows is the
+record of what was built vs. what this doc originally proposed; the design body below is
+the original proposal, kept for context.
+
+### Shipped to `main`
+
+| Commit | Step(s) | What landed |
+|---|---|---|
+| `3e4de10` | §9.1–§9.2 | Event-sourced battle layer: `Gen3Battle(Battle)` (`src/agents/battle/`), the `BattleEvent`/`EventKind` schema, the `MESSAGE_POLICY` completeness registry with `assert_conservation()`, and `TurnView` (the per-turn fold). |
+| `c7ecc8d` | §9.3–§9.4 | `LiveView`/`LiveSide`/`LivePokemon` current-board read-model + `Gen3Battle` injection wired into training/eval/replay (`battle_class=Gen3Battle` default on `Gen3Player`/`Gen3Env`). Added the **per-decision window API** `event_cursor` / `events_since(cursor)`. |
+| `786127a` | §9.4 (extended) | **Full live-state observation** (`ARCH_SIGNATURE = gen3_live_state_v1`, obs dim 2734 → 2823). |
+
+### What changed vs. the original proposal
+
+1. **`Gen3Battle` is an additive subclass, not a `parse_message` handler refactor.**
+   §2/§9.1 proposed refactoring `AbstractBattle.parse_message` into per-type handlers.
+   Instead `Gen3Battle.parse_message` wraps `super()` (state tracking stays **verbatim**
+   poke-env) and records events around it. Same goal — one parser, two views,
+   pre-mutation attribution — with far less churn to the fork.
+
+2. **The observation became enrich-not-just-drop-in (a retrain, by design choice).** The
+   original framing kept obs values identical (shape-preserving). We instead **expanded**
+   the live-state obs because it was the higher-value move:
+   - **Active context 23 → 55:** the volatile block went from a hand-picked 9 to the
+     **full source-derived gen3 set** (`VOLATILE_DIM = 41`, `gen3_effects.py`),
+     recovering ~30 silently-dropped volatiles (Disable/Encore/Taunt/Destiny Bond/Curse/
+     Yawn/Flash Fire/partial-trap/…), with perish/stockpile **counters normalised**.
+   - **Global env 13 → 18:** weather is **event-sourced** with cause-aware permanence +
+     turns-remaining (ability weather permanent, move weather 5-turn countdown — read
+     from the `|-weather|…|[from] ability:` cause, never guessed); dead gen4+ weather
+     slot dropped; per-side **Safeguard + Mist** added.
+   - This bumped `ARCH_SIGNATURE` to `gen3_live_state_v1` — a deliberate retrain.
+
+3. **Crash-don't-drop is a load-bearing invariant, realised in two places.** §4's
+   "no silent drops" for the event log is mirrored in the obs encoders: `encode_volatiles`
+   / `normalize_cant_reason` (`gen3_effects.py`) **raise** on any volatile / `|cant|`
+   reason not in the source-derived allowlist. This tripwire caught `focuspunch`,
+   `struggle`, and `flashfire` as real gen3 volatiles during bring-up (the last only in
+   the live training smoke). Allowlists are re-derived from Showdown `moves.ts` **and**
+   `abilities.ts` ∩ the gen3 sets ∩ poke-env's `Effect` enum, checked by tests.
+
+4. **`MoveSource` / heuristic retirement is deferred to Step 4 (the TurnDelta fold), not
+   done yet** — see below.
+
+### Remaining work
+
+Tracked in detail in **`handoff_turn_delta_reward_replay.md`**. Summary:
+
+- **Step 4 — `TurnDelta` fold (retrain-class, the §6 work).** Fold `TurnDelta` from the
+  event log via `TurnView` over the `events_since` per-decision window (NOT
+  `events_for_turn`, which slices by protocol turn). Four requirements:
+  (1) **multi-KO + cause** — represent that several mons fainted in one window and *why*
+  (attack / hazard / weather / status / recoil / self-KO / Leech Seed); the cause exists
+  **only** in the event log, which is what forces the fold. (2) **phase** start-of-attack
+  vs extended/forced-switch continuation (`phase_is_forced_switch` already present).
+  (3) **attempted-action** capture — what we tried to pick, preserved even when it never
+  fired (flinch/frozen/cant). (4) **missing → 0**. This also wires the `CANT_DIM = 12`
+  one-hot (`gen3_effects.encode_cant_reason`) into the history block and **retires** the
+  diff heuristics (`_ko_before_acting`, `_align_effectiveness`, `opp_all_last_move_ids`
+  phaze recovery). Gated by the §8.3 equivalence harness + the event-log fuzz.
+- **Step 5 — reward manager** onto `TurnView` + `LiveView` (terminal win/loss stays on
+  the battle object). Retrain to measure (per project memory).
+- **Step 6 — replay recorder** lossless: record move ids, opponent moves, hit/miss/crit,
+  and faint→switch chains-with-cause from the event log.
 
 ---
 
