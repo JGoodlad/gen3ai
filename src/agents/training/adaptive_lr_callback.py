@@ -9,7 +9,7 @@ class TwoPhaseLRCallback(BaseCallback):
     Phase 1 (``num_timesteps < anneal_start_steps``):
         KL-driven adjustment identical to :class:`AdaptivePPOCallback` —
         an EMA of ``train/approx_kl`` nudges LR up/down by ``lr_factor``
-        whenever it leaves ``target_kl * (1 ± kl_tolerance)``. Bounded by
+        whenever it leaves ``[target_kl / kl_factor, target_kl * kl_factor]``. Bounded by
         ``[min_lr, max_lr]``.
 
     Phase 2 (``num_timesteps >= anneal_start_steps``):
@@ -49,7 +49,13 @@ class TwoPhaseLRCallback(BaseCallback):
         min_lr:             Phase 1 LR lower bound.
         max_lr:             Phase 1 LR upper bound. Defaults to ``2 × initial_lr``.
         target_kl:          Phase 1 KL setpoint.
-        kl_tolerance:       Phase 1 KL band as a fraction of ``target_kl``.
+        kl_factor:          Phase 1 KL band as a multiplicative factor around
+                            ``target_kl``: the no-op zone is
+                            ``[target_kl / kl_factor, target_kl * kl_factor]``.
+                            Default 2.0 (the skrl / RL Games ``KLAdaptive``
+                            convention) → with ``target_kl=0.01`` the band is
+                            [0.005, 0.02], matching the repo's documented safe
+                            range and the modern KL-adaptive-LR standard.
         lr_factor:          Phase 1 LR step (multiplicative).
         ema_alpha:          Phase 1 EMA smoothing on ``approx_kl``. With α=0.20
                             the EMA half-life is ~3 rollouts.
@@ -75,7 +81,7 @@ class TwoPhaseLRCallback(BaseCallback):
         min_lr: float = 1e-5,
         max_lr: float | None = None,
         target_kl: float = 0.01,
-        kl_tolerance: float = 0.3,
+        kl_factor: float = 2.0,
         lr_factor: float = 1.2,
         ema_alpha: float = 0.20,
         cooldown_rollouts: int = 7,
@@ -89,7 +95,7 @@ class TwoPhaseLRCallback(BaseCallback):
         self.min_lr = min_lr
         self.max_lr = max_lr if max_lr is not None else initial_lr * 2.0
         self.target_kl = target_kl
-        self.kl_tolerance = kl_tolerance
+        self.kl_factor = kl_factor
         self.lr_factor = lr_factor
         self.ema_alpha = ema_alpha
         self.cooldown_rollouts = cooldown_rollouts
@@ -264,8 +270,8 @@ class TwoPhaseLRCallback(BaseCallback):
             self._cooldown_remaining -= 1
             return
 
-        lo = self.target_kl * (1.0 - self.kl_tolerance)
-        hi = self.target_kl * (1.0 + self.kl_tolerance)
+        lo = self.target_kl / self.kl_factor
+        hi = self.target_kl * self.kl_factor
 
         if self._kl_ema > hi:
             new_lr = max(self._current_lr / self.lr_factor, self.min_lr)
@@ -296,7 +302,7 @@ class AdaptivePPOCallback(BaseCallback):
 
     Reads approx_kl logged after the previous train() call, folds it into an
     exponential moving average, and nudges the LR up or down to keep the EMA
-    inside [target_kl * (1 - tolerance), target_kl * (1 + tolerance)].
+    inside [target_kl / kl_factor, target_kl * kl_factor].
 
     Using an EMA means a single outlier rollout only nudges the average by
     `ema_alpha` of its distance, so sustained drift over several rollouts is
@@ -304,11 +310,13 @@ class AdaptivePPOCallback(BaseCallback):
 
     Args:
         initial_lr:         Starting LR (also the basis for max_lr default).
-        target_kl:          Desired approx_kl. Healthy Gen3OU range is
-                            0.005–0.015; default 0.01 centres the ±30% band
-                            at [0.007, 0.013].
-        kl_tolerance:       Fractional band around target before adjusting
-                            (0.3 = ±30%).
+        target_kl:          Desired approx_kl. Default 0.01 with the default
+                            ``kl_factor`` puts the no-op band at [0.005, 0.02] —
+                            the modern KL-adaptive-LR standard (skrl / RL Games
+                            ``KLAdaptive``) and this repo's documented safe range.
+        kl_factor:          Multiplicative band around target before adjusting:
+                            the no-op zone is ``[target_kl / kl_factor,
+                            target_kl * kl_factor]`` (2.0 = [target/2, target×2]).
         lr_factor:          Multiply/divide LR by this per adjustment.
         min_lr:             Hard lower bound on LR.
         max_lr:             Hard upper bound on LR. Defaults to 2× initial_lr.
@@ -326,7 +334,7 @@ class AdaptivePPOCallback(BaseCallback):
         self,
         initial_lr: float,
         target_kl: float = 0.01,
-        kl_tolerance: float = 0.3,
+        kl_factor: float = 2.0,
         lr_factor: float = 1.2,
         min_lr: float = 1e-5,
         max_lr: float | None = None,
@@ -337,7 +345,7 @@ class AdaptivePPOCallback(BaseCallback):
         super().__init__(verbose)
         self._current_lr = initial_lr
         self.target_kl = target_kl
-        self.kl_tolerance = kl_tolerance
+        self.kl_factor = kl_factor
         self.lr_factor = lr_factor
         self.min_lr = min_lr
         self.max_lr = max_lr if max_lr is not None else initial_lr * 2.0
@@ -371,8 +379,8 @@ class AdaptivePPOCallback(BaseCallback):
             self.logger.record("train/n_epochs", self.model.n_epochs)
             return
 
-        lo = self.target_kl * (1.0 - self.kl_tolerance)
-        hi = self.target_kl * (1.0 + self.kl_tolerance)
+        lo = self.target_kl / self.kl_factor
+        hi = self.target_kl * self.kl_factor
 
         if self._kl_ema > hi:
             new_lr = max(self._current_lr / self.lr_factor, self.min_lr)

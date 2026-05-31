@@ -119,8 +119,8 @@ def _fire_two_phase(cb, kl=None, num_timesteps=None):
 def test_phase1_lr_decreases_when_kl_too_high():
     cb = _make_two_phase(initial_lr=3e-4, max_lr=6e-4)
     _attach_mock_model(cb, num_timesteps=1000)
-    # ema_alpha=0.3, target=0.01, hi=0.013. kl=0.030 → first fire seeds ema at 0.030,
-    # which is well above hi → immediate drop by default lr_factor=1.2.
+    # ema_alpha=0.3, target=0.01, kl_factor=2.0 → hi=0.02. kl=0.030 → first fire
+    # seeds ema at 0.030, well above hi → immediate drop by default lr_factor=1.2.
     _fire_two_phase(cb, kl=0.030)
     assert cb.current_lr == pytest.approx(3e-4 / 1.2)
 
@@ -128,7 +128,7 @@ def test_phase1_lr_decreases_when_kl_too_high():
 def test_phase1_lr_increases_when_kl_too_low():
     cb = _make_two_phase(initial_lr=3e-4, max_lr=6e-4)
     _attach_mock_model(cb, num_timesteps=1000)
-    # kl=0.003 → below lo=0.007 → increase by default lr_factor=1.2.
+    # kl=0.003 → below lo=0.005 (target 0.01 / kl_factor 2.0) → increase by default lr_factor=1.2.
     _fire_two_phase(cb, kl=0.003)
     assert cb.current_lr == pytest.approx(3e-4 * 1.2)
 
@@ -250,7 +250,7 @@ def test_on_training_start_in_phase2_without_handoff_uses_optimizer():
 def _make_callback(
     initial_lr=3e-4,
     target_kl=0.015,
-    kl_tolerance=0.3,
+    kl_factor=2.0,
     lr_factor=1.5,
     min_lr=1e-5,
     max_lr=None,
@@ -260,10 +260,11 @@ def _make_callback(
 ):
     # Default cooldown_rollouts=0 — keeps the rollout-by-rollout tests below
     # exercising raw EMA/threshold logic. Dedicated cooldown tests opt in.
+    # target_kl=0.015, kl_factor=2.0 → no-op band [0.0075, 0.03].
     cb = AdaptivePPOCallback(
         initial_lr=initial_lr,
         target_kl=target_kl,
-        kl_tolerance=kl_tolerance,
+        kl_factor=kl_factor,
         lr_factor=lr_factor,
         min_lr=min_lr,
         max_lr=max_lr,
@@ -284,20 +285,20 @@ def _fire(cb, kl=None):
 
 
 def test_no_adjustment_when_kl_in_band():
-    cb = _make_callback(initial_lr=3e-4, target_kl=0.015, kl_tolerance=0.3)
-    _fire(cb, kl=0.015)  # exactly at target, inside band
+    cb = _make_callback(initial_lr=3e-4, target_kl=0.015, kl_factor=2.0)
+    _fire(cb, kl=0.015)  # exactly at target, inside band [0.0075, 0.03]
     assert cb.current_lr == pytest.approx(3e-4)
 
 
 def test_lr_decreases_when_kl_too_high():
-    cb = _make_callback(initial_lr=3e-4, target_kl=0.015, kl_tolerance=0.3, lr_factor=1.5)
-    _fire(cb, kl=0.022)  # above 0.015 * 1.3 = 0.0195
+    cb = _make_callback(initial_lr=3e-4, target_kl=0.015, kl_factor=2.0, lr_factor=1.5)
+    _fire(cb, kl=0.04)  # above hi = 0.015 * 2.0 = 0.03
     assert cb.current_lr == pytest.approx(3e-4 / 1.5)
 
 
 def test_lr_increases_when_kl_too_low():
-    cb = _make_callback(initial_lr=3e-4, target_kl=0.015, kl_tolerance=0.3, lr_factor=1.5)
-    _fire(cb, kl=0.009)  # below 0.015 * 0.7 = 0.0105
+    cb = _make_callback(initial_lr=3e-4, target_kl=0.015, kl_factor=2.0, lr_factor=1.5)
+    _fire(cb, kl=0.005)  # below lo = 0.015 / 2.0 = 0.0075
     assert cb.current_lr == pytest.approx(3e-4 * 1.5)
 
 
@@ -326,8 +327,8 @@ def test_lr_schedule_updated_on_model():
 
 def test_multiple_adjustments_accumulate():
     cb = _make_callback(initial_lr=3e-4, lr_factor=1.5)
-    _fire(cb, kl=0.022)  # 3e-4 → 2e-4
-    _fire(cb, kl=0.022)  # 2e-4 → ~1.33e-4
+    _fire(cb, kl=0.04)  # above hi=0.03: 3e-4 → 2e-4
+    _fire(cb, kl=0.04)  # 2e-4 → ~1.33e-4
     assert cb.current_lr == pytest.approx(3e-4 / 1.5 / 1.5)
 
 
@@ -345,7 +346,7 @@ def test_single_spike_does_not_trigger_after_warmup():
     for _ in range(5):
         _fire(cb, kl=0.015)
     assert cb.current_lr == pytest.approx(3e-4)
-    _fire(cb, kl=0.030)
+    _fire(cb, kl=0.05)  # one spike above hi=0.03 — EMA softens it, no fire
     assert cb.current_lr == pytest.approx(3e-4)
 
 
@@ -353,9 +354,9 @@ def test_sustained_high_kl_triggers_after_warmup():
     cb = _make_callback(initial_lr=3e-4, ema_alpha=0.3)
     for _ in range(5):
         _fire(cb, kl=0.015)
-    _fire(cb, kl=0.030)
+    _fire(cb, kl=0.05)
     assert cb.current_lr == pytest.approx(3e-4)
-    _fire(cb, kl=0.030)
+    _fire(cb, kl=0.05)
     assert cb.current_lr == pytest.approx(3e-4 / 1.5)
 
 
@@ -370,7 +371,7 @@ def test_ema_alpha_controls_smoothing_rate():
     cb = _make_callback(initial_lr=3e-4, ema_alpha=1.0)
     for _ in range(5):
         _fire(cb, kl=0.015)
-    _fire(cb, kl=0.030)
+    _fire(cb, kl=0.05)  # alpha=1.0: EMA jumps straight to 0.05 > hi=0.03 → fire ↓
     assert cb.current_lr == pytest.approx(3e-4 / 1.5)
 
 
@@ -385,14 +386,14 @@ def test_cooldown_blocks_consecutive_adjustments():
     cb = _make_callback(initial_lr=3e-4, lr_factor=1.5, ema_alpha=1.0, cooldown_rollouts=5)
     cb._cooldown_remaining = 0  # bypass startup cooldown; this test targets post-adjustment cooldown
     # alpha=1.0 means EMA tracks the raw value with no smoothing.
-    _fire(cb, kl=0.030)  # first fire: triggers ↓ and arms cooldown of 5
+    _fire(cb, kl=0.05)  # first fire: triggers ↓ (above hi=0.03) and arms cooldown of 5
     assert cb.current_lr == pytest.approx(3e-4 / 1.5)
     # The next 5 rollouts at the same high KL must be suppressed.
     for _ in range(5):
-        _fire(cb, kl=0.030)
+        _fire(cb, kl=0.05)
     assert cb.current_lr == pytest.approx(3e-4 / 1.5)
     # The 6th rollout after the first fire is allowed to adjust again.
-    _fire(cb, kl=0.030)
+    _fire(cb, kl=0.05)
     assert cb.current_lr == pytest.approx(3e-4 / 1.5 / 1.5)
 
 
@@ -401,13 +402,13 @@ def test_ema_still_updates_during_cooldown():
     reflects current KL, not stale pre-cooldown KL."""
     cb = _make_callback(initial_lr=3e-4, lr_factor=1.5, ema_alpha=0.5, cooldown_rollouts=3)
     cb._cooldown_remaining = 0  # bypass startup cooldown
-    _fire(cb, kl=0.030)  # seed EMA at 0.030, fire ↓
+    _fire(cb, kl=0.05)  # seed EMA at 0.05 (above hi=0.03), fire ↓
     assert cb.current_lr == pytest.approx(3e-4 / 1.5)
     # During cooldown: kl drops back into band. EMA should track.
     for _ in range(3):
         _fire(cb, kl=0.010)
     # EMA should now be close to 0.010, in band — next fire should NOT adjust.
-    assert cb._kl_ema == pytest.approx(0.5 * 0.010 + 0.5 * (0.5 * 0.010 + 0.5 * (0.5 * 0.010 + 0.5 * 0.030)))
+    assert cb._kl_ema == pytest.approx(0.5 * 0.010 + 0.5 * (0.5 * 0.010 + 0.5 * (0.5 * 0.010 + 0.5 * 0.05)))
     _fire(cb, kl=0.010)  # post-cooldown, EMA in band → no adjust
     assert cb.current_lr == pytest.approx(3e-4 / 1.5)
 
@@ -416,8 +417,8 @@ def test_cooldown_zero_means_no_gating():
     """cooldown_rollouts=0 keeps the old per-rollout behaviour for callers
     that want it (e.g. existing test fixtures)."""
     cb = _make_callback(initial_lr=3e-4, lr_factor=1.5, ema_alpha=1.0, cooldown_rollouts=0)
-    _fire(cb, kl=0.030)
-    _fire(cb, kl=0.030)
+    _fire(cb, kl=0.05)
+    _fire(cb, kl=0.05)
     assert cb.current_lr == pytest.approx(3e-4 / 1.5 / 1.5)
 
 
@@ -429,10 +430,10 @@ def test_cooldown_blocks_both_directions():
     assert cb.current_lr == pytest.approx(3e-4 * 1.5)
     # Cooldown should also block a ↓ fire, not just same-direction.
     for _ in range(3):
-        _fire(cb, kl=0.030)
+        _fire(cb, kl=0.05)
     assert cb.current_lr == pytest.approx(3e-4 * 1.5)
     # 4th rollout post-fire is unblocked → ↓ fires.
-    _fire(cb, kl=0.030)
+    _fire(cb, kl=0.05)
     assert cb.current_lr == pytest.approx(3e-4 * 1.5 / 1.5)
 
 
@@ -459,17 +460,17 @@ def test_startup_cooldown_blocks_first_adjustment():
     cb = _make_callback(initial_lr=3e-4, lr_factor=1.5, ema_alpha=1.0, cooldown_rollouts=5)
     # Even with extreme KL on the very first rollouts, no adjustment fires.
     for _ in range(5):
-        _fire(cb, kl=0.030)
+        _fire(cb, kl=0.05)
     assert cb.current_lr == pytest.approx(3e-4)
     # The 6th rollout is the first one allowed to adjust.
-    _fire(cb, kl=0.030)
+    _fire(cb, kl=0.05)
     assert cb.current_lr == pytest.approx(3e-4 / 1.5)
 
 
 def test_startup_cooldown_zero_means_immediate_fire():
     """cooldown_rollouts=0 disables both startup and post-adjustment gating."""
     cb = _make_callback(initial_lr=3e-4, lr_factor=1.5, ema_alpha=1.0, cooldown_rollouts=0)
-    _fire(cb, kl=0.030)
+    _fire(cb, kl=0.05)
     assert cb.current_lr == pytest.approx(3e-4 / 1.5)
 
 
@@ -478,7 +479,7 @@ def test_startup_cooldown_lets_ema_settle():
     decision uses the settled EMA, not the very first noisy KL."""
     cb = _make_callback(initial_lr=3e-4, lr_factor=1.5, ema_alpha=0.5, cooldown_rollouts=3)
     # Noisy spike on the first rollout, then KL settles into the in-band region.
-    _fire(cb, kl=0.030)  # would normally trigger ↓ — but cooldown blocks it
+    _fire(cb, kl=0.05)  # would normally trigger ↓ (above hi=0.03) — but cooldown blocks it
     _fire(cb, kl=0.010)
     _fire(cb, kl=0.010)
     assert cb.current_lr == pytest.approx(3e-4)  # untouched during startup

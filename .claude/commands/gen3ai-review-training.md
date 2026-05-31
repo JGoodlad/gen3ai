@@ -73,7 +73,7 @@ List any spikes, sudden drops, or discontinuities with approximate step counts w
 
 This is a Gen3OU Pokémon RL agent trained with PPO against a fixed pool of scripted opponents. Healthy training looks like:
 - Win rates vs non-random bots slowly climbing toward 70–80%
-- approx_kl staying in the 0.007–0.013 band
+- approx_kl staying in the 0.005–0.02 band (the LR controller's no-op zone: target_kl 0.01 × kl_factor 2.0)
 - ep_rew_mean trending upward over the full run
 - explained_variance above 0.75
 - ent_coef roughly stable (not needing to keep rising)
