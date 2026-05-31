@@ -8,6 +8,7 @@ import sys
 
 from main.launcher.checkpoint import (
     find_latest_checkpoint,
+    _apply_default_showdown_port,
     _find_model_arg,
     _insert_or_replace_model_arg,
     _insert_or_replace_run_dir_arg,
@@ -85,6 +86,10 @@ def main() -> None:
         parser.error("--pin-to-hash and --no-pin are mutually exclusive")
 
     child_args = _strip_launcher_args(sys.argv[1:])
+    # Launcher sessions are long-lived: default them to the dedicated training server
+    # (8001) so dev-server churn on 8000 can't drop every worker's connection mid-run.
+    # An explicit --showdown-port still wins.
+    child_args = _apply_default_showdown_port(child_args)
     try:
         run(
             child_args,

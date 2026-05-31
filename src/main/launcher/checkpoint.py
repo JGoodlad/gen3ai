@@ -91,6 +91,24 @@ def _set_arg(args: list, name: str, value: str) -> list:
     return out
 
 
+# The dedicated, stable training Showdown server. train_rl_agent.py defaults to the
+# shared dev server on 8000 when --showdown-port is omitted — fine for an ad-hoc run,
+# but a long launcher session pointed at 8000 dies whenever routine dev-server churn
+# (a restart, `npm run stop`) drops every worker's connection at once. The launcher
+# isolates training onto its own port by default.
+DEFAULT_TRAINING_SHOWDOWN_PORT = 8001
+
+
+def _apply_default_showdown_port(
+    args: list, default_port: int = DEFAULT_TRAINING_SHOWDOWN_PORT
+) -> list:
+    """Inject ``--showdown-port <default_port>`` into the child args when the user
+    didn't pass one. An explicit ``--showdown-port`` (any spelling) always wins."""
+    if _peek_arg(args, "--showdown-port", type_=int) is not None:
+        return args
+    return _set_arg(args, "--showdown-port", str(default_port))
+
+
 def _find_model_arg(args: list) -> "str | None":
     return _peek_arg(args, "--model")
 

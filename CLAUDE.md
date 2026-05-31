@@ -298,9 +298,19 @@ separate port and point the trainer at it with `--showdown-port`:
 
 ```bash
 npm run showdown -- 8001                            # server on 8001 (dev stays on 8000)
-... -m main.launcher --showdown-port 8001 ...       # launcher forwards the flag to the child
+... -m main.launcher ...                            # launcher DEFAULTS to :8001 (see below)
+... -m main.launcher --showdown-port 8123 ...       # explicit port still wins
 npm run stop -- 8001                                # kills the 8001 instance
 ```
+
+**The launcher defaults `--showdown-port` to 8001** (`DEFAULT_TRAINING_SHOWDOWN_PORT` in
+`launcher/checkpoint.py`, injected in `launcher/__init__.main()` via
+`_apply_default_showdown_port`) — a long launcher session must not ride on the shared dev
+server (8000), where a routine dev restart / `npm run stop` drops *every* worker's
+connection at once and the connection guard then crashes the whole run. An explicit
+`--showdown-port` (any spelling) always wins, and the resolved port is shown in the TUI
+events panel (`🔌 Showdown server :8001`). Note this default lives **only** in the launcher;
+`train_rl_agent.py` run directly still defaults to 8000 (ad-hoc runs against the dev server).
 
 `train_rl_agent.py --showdown-port <port>` builds **one** `ServerConfiguration` in `main()`
 via the single constructor `localhost_server_configuration(port)` (in
@@ -312,7 +322,8 @@ bare `LocalhostServerConfiguration` constant. `server_port_threading_test.py` is
 regression guard: it fails if any of these callbacks hardcodes the default port instead of
 threading the configured one (the original bug had the now-retired replay recorder connecting
 to :8000 while training ran on :8001; eval forensic traces inherit the same guard).
-There is no environment variable; the default is 8000. The launcher forwards
+There is no environment variable; `train_rl_agent.py`'s own default is 8000, but the
+launcher overrides it to 8001 (above) before forwarding. The launcher forwards
 `--showdown-port` verbatim (it strips only launcher-owned flags).
 
 ---

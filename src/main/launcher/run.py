@@ -159,6 +159,10 @@ def run(child_args: list, interval_hours: float, pin: bool = True, sync_to_main:
     else:
         state.add_event("🚀 Starting — single run (no restart)")
 
+    showdown_port = _peek_arg(child_args, "--showdown-port", type_=int)
+    if showdown_port is not None:
+        state.add_event(f"🔌 Showdown server :{showdown_port}")
+
     if pin:
         if pin_hash_override:
             state.add_event(
