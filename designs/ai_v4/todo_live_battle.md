@@ -1,11 +1,13 @@
-# TODO: Lock down battle access behind the strict read-model API (Phases 3–5)
+# TODO: Lock down battle access behind the strict read-model API
 
-**Status:** Phases 1–2 **implemented**. **Phase 3 is COMPLETE** — every consumer cluster
-(`observation/`, `action/`, `training/` incl. `reward_manager.py`, `inference/`) now reads
-through `StrictBattleView` / `LiveView` / `LegalActions`, verified value-neutral and
-perf-neutral (see "Wave 1 verification" below). **Phase 4** (the static no-raw-read guard +
-the `agents/enums.py` re-export seam) is the **next step**. **Phase 5** (true `LiveView`
-event-fold independence) is future.
+**Status:** Phases 1–4 are **implemented and locked**. **Phase 3 is COMPLETE** — every consumer
+cluster (`observation/`, `action/`, `training/` incl. `reward_manager.py`, `inference/`) reads
+through `StrictBattleView` / `LiveView` / `LegalActions`, verified value-neutral and perf-neutral
+(see "Wave 1 verification" below). **Phase 4 is COMPLETE** (Wave 2) — the four accepted value-enums
+flow through the **`agents.enums`** re-export seam (4a), and a static AST guard
+(`src/agents/strict_api_lock_test.py`) now fails CI on any new raw stateful `battle.<attr>` read or
+direct poke-env value-enum import in those clusters (4b, **the lock**). **Phase 5** (true `LiveView`
+event-fold independence) is the only remaining work.
 
 Full approved plan (read first): `~/.claude/plans/can-you-explore-what-nested-pebble.md`
 — it carries the complete dependency inventory and rationale this doc summarises.
@@ -153,32 +155,48 @@ value-neutral (equivalence harness 0-diff). See "Wave 1 verification" above for 
 
 ---
 
-## Phase 4 — enforce: enums seam + the static "no raw battle read" guard (NEXT)
+## Phase 4 — enforce: enums seam + the static "no raw battle read" guard — ✅ DONE (Wave 2)
 
-Two parts, the actual *lock* now that Phase 3 has removed the raw reads:
+Two parts, the actual *lock* now that Phase 3 has removed the raw reads.
 
-**4a — accepted-enums re-export seam.** Create `src/agents/enums.py` re-exporting ONLY
-`PokemonType`, `Status`, `MoveCategory`, `Weather` from poke_env (with `__all__` = exactly
-those four; `Effect` intentionally excluded — replaced by `observation/gen3_effects.py`).
-Sweep `src/agents/**` (excluding `battle/`, `enums.py`, `*_test.py`) to import those four from
-`agents.enums` instead of `poke_env` — a pure import-path change. Add `enums_test.py` asserting
-the accepted set so an accidental `Effect` re-export fails CI.
+**4a — accepted-enums re-export seam — ✅ DONE.** `src/agents/enums.py` re-exports ONLY
+`PokemonType`, `Status`, `MoveCategory`, `Weather` (`__all__` = exactly those four; `Effect`
+intentionally excluded — replaced by `observation/gen3_effects.py`). The members are the same
+objects poke-env uses (`agents.enums.PokemonType is poke_env….PokemonType`), so it is a pure
+import-path indirection. Every consumer under `src/agents/**` (outside `battle/`, `enums.py`,
+`*_test.py`) imports those four from `agents.enums` now; `src/agents/enums_test.py` pins the
+accepted set so an accidental `Effect` re-export fails CI.
 
-**4b — the guard.** Add a static test (sibling to the `_FORBIDDEN_HISTORY_FIELDS` philosophy in
-`live_view_test.py`) that **AST-walks** (not regex) our consumer modules under
-`observation/`, `action/`, `training/`, `inference/` and fails on:
-- `battle.<attr>` for the stateful attrs (`active_pokemon`, `opponent_active_pokemon`,
-  `available_moves`, `available_switches`, `last_request`, `team`, `opponent_team`, `weather`,
-  `side_conditions`, `force_switch`, `trapped`, `_player_role`), and
-- `from poke_env … import` of the four value-enums outside `agents/enums.py`.
+**4b — the guard — ✅ DONE.** `src/agents/strict_api_lock_test.py` **AST-walks** (not regex) the
+production consumer modules under `observation/`, `action/`, `training/`, `inference/` and fails
+CI on:
+- a raw stateful `battle.<attr>` read — the 13 temporal fields (`active_pokemon`,
+  `opponent_active_pokemon`, `available_moves`, `available_switches`, `last_request`, `team`,
+  `opponent_team`, `weather`, `side_conditions`, `opponent_side_conditions`, `force_switch`,
+  `trapped`, `_player_role`); meta scalars (`turn`/`battle_tag`/`finished`/`won`/`lost`/`wait`)
+  are **not** guarded — the strict view re-exposes them verbatim. A read is matched only when the
+  base is the `battle` identifier (so unrelated `.team`/`.weather` on other objects don't trip it).
+- a `from poke_env … import` of one of the four value-enums (must come from `agents.enums`).
 
-**Exclude** `battle/`, `*_test.py`, `action/serialize.py` (documented Choice→BattleOrder seam),
-`battle_context.py` (Step 4 retires it). **Allowlist** the documented intentional residual reads
-listed under "Wave 1 verification" (reactive hot-loop, state_encoder identity/error guard,
-mapper staleness guard, reward `_read_live` fallbacks + stall-tax/report_episode) — prefer
-small per-file/per-line allowlist entries over broad file exclusions so the guard still catches
-*new* raw reads in those files. A new raw read then fails CI — that is what makes the standard
-stick. Until 4b lands, the standard is convention-only.
+**Scope:** the walk skips test/fuzz/benchmark scaffolding (stem contains `test` or `benchmark` —
+this also catches `action/fuzz_test_unit.py`) and the two documented seams, `action/serialize.py`
+(the Choice→BattleOrder touch) and `training/battle_context.py` (Step 4 retires it).
+
+**Allowlist** — a small, per-`(file, attr)`, inline-commented set of the intended residual reads
+from "Wave 1 verification" (keyed by attribute, so a *new kind* of raw read in the same file still
+fails): `observation/reactive.py` + `observation/base.py` (the 288-cell effectiveness hot-loop and
+its `get_team_list` helper — typed-HP id only on the raw `Move`, enum-keyed loop, pinned by
+`alignment_test`; plus reactive's `live is None` unit-test fallback), `observation/state_encoder.py`
+(the `mon is battle.opponent_active_pokemon` identity check), and `training/reward_manager.py`
+(the `_read_live=False` equivalence-harness `else` fallback + `report_episode` opponent-team
+iteration). `base.py` was added beyond the original four-file list — it is the same intended seam
+feeding reactive's matrices, not incomplete migration. `test_allowlist_has_no_dead_entries` prunes
+stale entries; `test_walk_actually_covers_the_known_consumers` prevents a vacuous pass if an
+exclusion ever over-broadens.
+
+**Verified (Wave 2):** full unit suite **1201 passed / 2 skipped**; the lock's detectors confirmed
+to flag injected violations (not a vacuous pass); obs-build benchmark **~12.3k calls/encode** (no
+regression — the enum re-point is import-only).
 
 ---
 

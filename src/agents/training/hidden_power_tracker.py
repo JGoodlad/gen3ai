@@ -15,8 +15,8 @@ import json
 import os
 
 import numpy as np
-from poke_env.battle.pokemon_type import PokemonType
 
+from agents.enums import PokemonType
 from agents.gen3_mechanics import bucket_effectiveness, effective_multiplier
 from utils.git import get_repo_root
 

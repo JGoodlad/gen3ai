@@ -82,7 +82,7 @@ from agents.observation.gen3_effects import (
 )
 from agents.battle.turn_view import FAINT_CAUSE_DIM, FAINT_CAUSE_VOCAB
 from agents.gen3_mechanics import BOOST_DIM
-from poke_env.battle.status import Status
+from agents.enums import Status
 
 
 # Move-outcome one-hot: the resolved fate of a side's move this turn. None (the

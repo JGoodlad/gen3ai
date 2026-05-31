@@ -19,8 +19,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, Optional
 
-from poke_env.battle.move_category import MoveCategory
-from poke_env.battle.pokemon_type import PokemonType
+from agents.enums import MoveCategory, PokemonType
 
 # Resolve the data file relative to the repo root (src/agents/ -> repo root is parents[2])
 # so the dex loads regardless of the process CWD, not only from the repo root.

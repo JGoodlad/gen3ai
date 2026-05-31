@@ -790,7 +790,7 @@ class TurnDelta:
         from agents.battle.turn_view import (
             TurnView, FAINT_CAUSE_DIM, FAINT_CAUSE_VOCAB,
         )
-        from poke_env.battle.status import Status
+        from agents.enums import Status
         _cause_idx = {c: i for i, c in enumerate(FAINT_CAUSE_VOCAB)}
 
         # --- Attempted move (decoded before anything fires) ---

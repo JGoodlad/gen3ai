@@ -12,9 +12,9 @@ import functools
 
 import numpy as np
 from poke_env.battle.effect import Effect
-from poke_env.battle.pokemon_type import PokemonType
-from poke_env.battle.status import Status
 from poke_env.data import GenData
+
+from agents.enums import PokemonType, Status
 
 # ---------------------------------------------------------------------------
 # Type effectiveness

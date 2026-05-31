@@ -4,7 +4,7 @@ from .constants import MOVE_SLOT_DIM, MAX_PP
 from .types import TypeEncoder
 from agents import gen3_movedex
 from poke_env.battle.abstract_battle import AbstractBattle
-from poke_env.battle.move_category import MoveCategory
+from agents.enums import MoveCategory
 from typing import Any, List, Dict
 
 # Hidden Power's Pokémon ID. All 16 typed variants ("hiddenpowergrass" etc.)

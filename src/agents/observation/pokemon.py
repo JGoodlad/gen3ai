@@ -24,7 +24,7 @@ from .abilities import AbilitiesEncoder
 from .moves import MovesEncoder
 from poke_env.battle.abstract_battle import AbstractBattle
 from poke_env.battle.pokemon import Pokemon
-from poke_env.battle.status import Status
+from agents.enums import Status
 from typing import Any, Dict
 
 # Status → condition one-hot slot, in both the read-model's id form (LivePokemon.status,

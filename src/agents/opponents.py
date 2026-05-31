@@ -24,11 +24,11 @@ import random
 
 from poke_env.battle.battle import Battle
 from poke_env.battle.move import Move
-from poke_env.battle.move_category import MoveCategory
 from poke_env.battle.pokemon import Pokemon
-from poke_env.battle.status import Status
 from poke_env.player.battle_order import BattleOrder
 from poke_env.player.baselines import SimpleHeuristicsPlayer
+
+from agents.enums import MoveCategory, Status
 from poke_env.player.player import Player
 from agents.gen3_mechanics import (
     effective_multiplier,

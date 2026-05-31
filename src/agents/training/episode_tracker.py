@@ -6,7 +6,8 @@ from typing import TYPE_CHECKING, Optional
 import numpy as np
 
 from poke_env.battle.abstract_battle import DamagingMoveEvent
-from poke_env.battle.pokemon_type import PokemonType
+
+from agents.enums import PokemonType
 
 from agents.action.ordering_integrity import (
     reorder_move_bits_to_sorted,
@@ -17,7 +18,7 @@ from agents.training.hidden_power_tracker import HiddenPowerTracker
 from agents.training.slot_registry import SlotRegistry
 
 if TYPE_CHECKING:
-    from poke_env.battle.status import Status
+    from agents.enums import Status
 
     from agents.battle.live_view import LiveView
     from agents.observation.turn_delta_encoder import TurnDeltaEncoder

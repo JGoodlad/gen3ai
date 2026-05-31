@@ -4,7 +4,7 @@ import numpy as np
 from utils.logging.rate_limiter import RateLimitedLogger
 from utils.logging.levels import LogLevel
 from poke_env.battle.side_condition import SideCondition
-from poke_env.battle.status import Status
+from agents.enums import Status
 from agents.training.battle_context import BattleContext, TurnDelta
 from agents import gen3_movedex as _movedex
 from agents.gen3_mechanics import (
@@ -14,7 +14,7 @@ from agents.gen3_mechanics import (
     effective_multiplier_by_types as _effective_multiplier_by_types_fn,
     STATUS_MOVE_IMMUNITY as _STATUS_MOVE_IMMUNITY,
 )
-from poke_env.battle.pokemon_type import PokemonType as _PokemonType
+from agents.enums import PokemonType as _PokemonType
 
 
 def _ptype(name) -> "Optional[_PokemonType]":
