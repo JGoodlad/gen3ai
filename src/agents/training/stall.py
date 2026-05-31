@@ -36,15 +36,18 @@ class StallLogger:
             return
         self._logged = True
         try:
+            # Meta (tag/turn) is read through the strict boundary; save_replay stays a
+            # raw call — it is a poke-env method, not battle state, so it's an allowed seam.
+            view = battle.strict_view()
             os.makedirs(self._config.output_dir, exist_ok=True)
             ts = datetime.now().strftime("%Y%m%d_%H%M%S")
             suffix_str = f"_{suffix}" if suffix else ""
-            filename = f"stall_{battle.battle_tag}_{ts}{suffix_str}.html"
+            filename = f"stall_{view.battle_tag}_{ts}{suffix_str}.html"
             path = os.path.join(self._config.output_dir, filename)
             battle.save_replay(path)
             sys.stderr.write(
-                f"\n[STALL LOGGED] Battle {battle.battle_tag} lasted "
-                f"{battle.turn} turns. Replay saved to {path}\n"
+                f"\n[STALL LOGGED] Battle {view.battle_tag} lasted "
+                f"{view.turn} turns. Replay saved to {path}\n"
             )
             sys.stderr.flush()
         except Exception as e:

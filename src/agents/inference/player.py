@@ -93,22 +93,24 @@ class Gen3Player(Player):
     def _handle_stall(self, battle, suffix: str) -> Optional[ForfeitBattleOrder]:
         """Returns ForfeitBattleOrder if the battle exceeds the stall threshold, else None.
         Each battle gets its own StallLogger, so concurrent battles don't interfere."""
-        tag = battle.battle_tag
+        view = battle.strict_view()
+        tag = view.battle_tag
         if tag not in self._stall_loggers:
             self._stall_loggers[tag] = StallLogger(self._stall_config)
         stall_logger = self._stall_loggers[tag]
-        if battle.turn >= stall_logger.threshold:
+        if view.turn >= stall_logger.threshold:
             stall_logger.log_once(battle, suffix=suffix)
             return ForfeitBattleOrder()
         return None
 
     def _battle_finished_callback(self, battle) -> None:
         super()._battle_finished_callback(battle)
-        self._stall_loggers.pop(battle.battle_tag, None)
-        self._trackers.pop(battle.battle_tag, None)
+        tag = battle.strict_view().battle_tag
+        self._stall_loggers.pop(tag, None)
+        self._trackers.pop(tag, None)
 
     def _get_tracker(self, battle) -> EpisodeTracker:
-        tag = battle.battle_tag
+        tag = battle.strict_view().battle_tag
         if tag not in self._trackers:
             self._trackers[tag] = EpisodeTracker()
         return self._trackers[tag]
@@ -131,7 +133,7 @@ class Gen3Player(Player):
         legal = LegalActions.from_battle(battle)
         mask = Gen3ActionMasker.get_mask(battle, legal=legal).astype(np.int8)
         tracker = self._get_tracker(battle)
-        if not battle.finished and mask.sum() > 0:
+        if not battle.strict_view().finished and mask.sum() > 0:
             tracker.record(battle, mask, legal=legal)
 
         obs = self.observation_encoder.encode(

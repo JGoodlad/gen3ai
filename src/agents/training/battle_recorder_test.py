@@ -3,6 +3,8 @@ import pytest
 
 from agents.training.battle_recorder import BattleRecorder
 from agents.training.battle_context import BattleContext, TurnDelta
+from agents.battle.live_view import LiveView
+from agents.battle.strict_view import StrictBattleView
 
 
 class _FakeMon:
@@ -16,10 +18,24 @@ class _FakeMon:
         self.moves = {}
         self.status = None
         self.effects = {}
+        # Fields LiveView.from_battle / LivePokemon.from_pokemon read, so the
+        # recorder's strict-view path (battle.strict_view().live) works against a
+        # real LiveView built from these fakes.
+        self.revealed = True
+        self.ability = None
+        self.types = ()
+        self.boosts = {}
+        self.base_stats = {}
+        self.ivs = None
+        self.evs = None
+        self.nature = None
+        self.consumed_item = None
+        self.status_counter = 0
 
 
 class _Ns:
-    """Minimal namespace battle object — only the attributes BattleContext.from_battle needs."""
+    """Minimal namespace battle object — only the attributes BattleContext.from_battle
+    and LiveView.from_battle need."""
     pass
 
 
@@ -35,6 +51,7 @@ def _battle(our_mons, opp_mons, our_active, opp_active,
     b.force_switch = force_switch
     b.won = won
     b.lost = lost
+    b.finished = bool(won or lost)
     b.battle_tag = "battle-gen3ou-test"
     b.last_request = {"active": [{"moves": [{"id": m, "disabled": False} for m in move_ids]}]}
     # LegalActions.from_battle reads these (the recorder snapshots legality per record()).
@@ -54,6 +71,13 @@ def _battle(our_mons, opp_mons, our_active, opp_active,
     b.opp_move_missed = False
     b.our_move_failed = False
     b.opp_move_failed = False
+    # Fields LiveView.from_battle reads, plus the strict-view entry points the
+    # recorder now goes through (battle.strict_view().live / .legal / .won / …).
+    b._player_role = "p1"
+    b.side_conditions = {}
+    b.opponent_side_conditions = {}
+    b.live_view = lambda: LiveView.from_battle(b)
+    b.strict_view = lambda: StrictBattleView(b)
     return b
 
 

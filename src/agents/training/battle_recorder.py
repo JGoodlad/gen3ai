@@ -1,15 +1,13 @@
 from typing import Callable, Optional
 import numpy as np
 
-from agents.battle.live_view import LegalActions
+from agents.battle.live_view import LivePokemon, LiveView
 from agents.training.battle_context import BattleContext, TurnDelta
 from agents.training.reward_function import RewardFunction
 from agents.training.reward_tracker import RewardTracker
 from agents.training.slot_registry import SlotRegistry
 from agents.training.reward_manager import Gen3RewardManager
 from agents.gen3_mechanics import boosts_str as _boosts_str_fn
-from poke_env.battle.status import Status
-from poke_env.battle.effect import Effect
 
 
 class BattleRecorder:
@@ -51,18 +49,24 @@ class BattleRecorder:
         RLPlayer._predict_best_action — the raw model I/O for this turn. Stored
         parallel to the invocation so a saved battle can be replayed exactly.
         """
-        legal = LegalActions.from_battle(battle)
+        # Build the strict view ONCE; the recorder reads all current-board state
+        # through its LiveView (and legality through .legal) — never the raw battle.
+        # The raw `battle` is still passed to BattleContext/RewardTracker below, which
+        # own their poke-env reads behind their own boundaries.
+        view = battle.strict_view()
+        live = view.live
+        legal = view.legal
         curr_ctx = self._build_ctx(battle, mask, legal)
         self._states.append(state or {})
 
         if self._pending_entry is not None:
             prev_ctx = self._tracker.pending_ctx
             delta, reward = self._tracker.complete_pending(curr_ctx, battle)
-            self._fill_pending_outcome(prev_ctx, curr_ctx, delta, reward, battle)
+            self._fill_pending_outcome(prev_ctx, curr_ctx, delta, reward, live)
 
-        chosen = self._action_label(action_idx, battle, legal)
-        our_mon = battle.active_pokemon
-        opp_mon = battle.opponent_active_pokemon
+        chosen = self._action_label(action_idx, live, legal)
+        our_mon = live.ours.active
+        opp_mon = live.opp.active
         our_status = self._mon_display_status(our_mon)
         opp_status = self._mon_display_status(opp_mon)
         our_boosts = _boosts_str_fn(our_mon)
@@ -73,14 +77,14 @@ class BattleRecorder:
             our_section["status"] = our_status
         if our_boosts:
             our_section["boosts"] = our_boosts
-        our_section["bench"] = self._our_bench_summary(battle)
+        our_section["bench"] = self._our_bench_summary(live)
 
         opp_section: dict = {"species": curr_ctx.opp_active, "hp": self._opp_hp_pct(curr_ctx)}
         if opp_status:
             opp_section["status"] = opp_status
         if opp_boosts:
             opp_section["boosts"] = opp_boosts
-        opp_section["bench"] = self._opp_bench_summary(battle)
+        opp_section["bench"] = self._opp_bench_summary(live)
 
         entry = {
             "i": len(self._invocations) + 1,
@@ -90,7 +94,7 @@ class BattleRecorder:
             "our": our_section,
             "opp": opp_section,
             "outcome": None,
-            "actions": self._all_action_labels(battle, probs, mask, legal),
+            "actions": self._all_action_labels(live, probs, mask, legal),
         }
 
         self._tracker.begin_turn(curr_ctx, action_idx)
@@ -123,8 +127,10 @@ class BattleRecorder:
         if self._pending_entry is None:
             return
 
+        view = battle.strict_view()
+        live = view.live
         prev_ctx = self._tracker.pending_ctx
-        our_hp, opp_hp = self._terminal_hp(battle)
+        our_hp, opp_hp = self._terminal_hp(live)
         terminal_ctx, delta, reward = self._tracker.finalize(battle)
 
         # HP delta: for faint turns use the fainted mon's slot, not the forced switch-in.
@@ -136,18 +142,18 @@ class BattleRecorder:
         opp_delta = (opp_hp[opp_slot] - prev_ctx.opp_hp[opp_slot]) * 100
 
         events = []
-        final_our_fainted = sum(1 for m in battle.team.values() if m.fainted)
-        final_opp_fainted = sum(1 for m in battle.opponent_team.values() if m.fainted)
+        final_our_fainted = sum(1 for m in live.ours.mons if m.fainted)
+        final_opp_fainted = sum(1 for m in live.opp.mons if m.fainted)
         if final_our_fainted > prev_ctx.our_fainted_count:
             events.append(f"our:{prev_ctx.our_active}:fainted")
         if final_opp_fainted > prev_ctx.opp_fainted_count:
             events.append(f"opp:{prev_ctx.opp_active}:fainted")
 
-        self._append_status_events(events, prev_ctx, delta, battle)
+        self._append_status_events(events, prev_ctx, delta, live)
 
-        if battle.won:
+        if view.won:
             events.append("result:win")
-        elif battle.lost:
+        elif view.lost:
             events.append("result:loss")
         else:
             events.append("result:tie")
@@ -164,9 +170,11 @@ class BattleRecorder:
 
     def to_summary(self, battle, step: int) -> dict:
         """Export the full battle summary as a JSON-serializable dict."""
-        if battle.won:
+        view = battle.strict_view()
+        live = view.live
+        if view.won:
             result = "WIN"
-        elif battle.lost:
+        elif view.lost:
             result = "LOSS"
         else:
             result = "TIE"
@@ -176,7 +184,7 @@ class BattleRecorder:
                 "step": step,
                 "battle_id": self.battle_tag,
                 "result": result,
-                "turns": battle.turn,
+                "turns": view.turn,
                 "invocations": len(self._invocations),
             },
             "teams": {
@@ -184,18 +192,18 @@ class BattleRecorder:
                     {
                         "species": m.species,
                         "item": m.item or "none",
-                        "final_hp": f"{m.current_hp_fraction * 100:.0f}%",
+                        "final_hp": f"{m.hp_fraction * 100:.0f}%",
                         "fainted": m.fainted,
                     }
-                    for m in battle.team.values()
+                    for m in live.ours.mons
                 ],
                 "opponent": [
                     {
                         "species": m.species,
-                        "final_hp": f"{m.current_hp_fraction * 100:.0f}%",
+                        "final_hp": f"{m.hp_fraction * 100:.0f}%",
                         "fainted": m.fainted,
                     }
-                    for m in battle.opponent_team.values()
+                    for m in live.opp.mons
                 ],
             },
             "invocations": self._invocations,
@@ -208,8 +216,8 @@ class BattleRecorder:
     def _build_ctx(self, battle, mask: np.ndarray, legal=None) -> BattleContext:
         return BattleContext.from_battle(battle, mask, self._our_slots, self._opp_slots, legal)
 
-    def _action_label(self, action_idx: int, battle, legal) -> str:
-        team_list = list(battle.team.values())
+    def _action_label(self, action_idx: int, live: LiveView, legal) -> str:
+        team_list = live.ours.mons
         move_ids = list(legal.move_ids)
 
         if action_idx < 6:
@@ -219,8 +227,8 @@ class BattleRecorder:
             return move_ids[m] if m < len(move_ids) else f"move{m}"
         return "struggle"
 
-    def _all_action_labels(self, battle, probs: np.ndarray, mask: np.ndarray, legal) -> dict:
-        team_list = list(battle.team.values())
+    def _all_action_labels(self, live: LiveView, probs: np.ndarray, mask: np.ndarray, legal) -> dict:
+        team_list = live.ours.mons
         move_ids = list(legal.move_ids)
 
         result = {}
@@ -236,34 +244,35 @@ class BattleRecorder:
         return result
 
     @staticmethod
-    def _mon_display_status(mon) -> str | None:
-        """Rich status string including counters and volatiles.
+    def _mon_display_status(mon: LivePokemon | None) -> str | None:
+        """Rich status string including counters and volatiles, read from a
+        :class:`LivePokemon` (id-form status + ``{volatile_id: counter}``).
 
         Examples: "SLP(3)", "TOX(5)", "BRN", "PAR|TAUNT", "PERISH(2)|CONF"
         """
         if mon is None:
             return None
         parts = []
-        status = getattr(mon, "status", None)
-        ctr = getattr(mon, "status_counter", 0) or 0
-        effects = getattr(mon, "effects", {})
-        if status == Status.SLP:
+        status = mon.status  # id form: 'slp'/'tox'/'brn'/'par'/'frz'/'psn'/'fnt' or None
+        ctr = mon.status_counter or 0
+        vol = mon.volatiles  # {volatile_id: counter}
+        if status == "slp":
             parts.append(f"SLP({ctr})" if ctr else "SLP")
-        elif status == Status.TOX:
+        elif status == "tox":
             parts.append(f"TOX({ctr})" if ctr else "TOX")
         elif status is not None:
-            name_map = {Status.BRN: "BRN", Status.PAR: "PAR", Status.FRZ: "FRZ", Status.PSN: "PSN"}
+            name_map = {"brn": "BRN", "par": "PAR", "frz": "FRZ", "psn": "PSN"}
             if name := name_map.get(status):
                 parts.append(name)
         effect_names = {
-            Effect.TAUNT: "TAUNT", Effect.CONFUSION: "CONF", Effect.ENCORE: "ENCORE",
-            Effect.ATTRACT: "ATTRACT", Effect.DISABLE: "DISABLE", Effect.SUBSTITUTE: "SUB",
+            "taunt": "TAUNT", "confusion": "CONF", "encore": "ENCORE",
+            "attract": "ATTRACT", "disable": "DISABLE", "substitute": "SUB",
         }
-        for eff, name in effect_names.items():
-            if eff in effects:
+        for vid, name in effect_names.items():
+            if vid in vol:
                 parts.append(name)
-        for n, e in [(3, Effect.PERISH3), (2, Effect.PERISH2), (1, Effect.PERISH1), (0, Effect.PERISH0)]:
-            if e in effects:
+        for n, vid in [(3, "perish3"), (2, "perish2"), (1, "perish1"), (0, "perish0")]:
+            if vid in vol:
                 parts.append(f"PERISH({n})")
                 break
         return "|".join(parts) if parts else None
@@ -275,30 +284,21 @@ class BattleRecorder:
             return None
         return "|".join(sorted(p.split("(")[0] for p in status_str.split("|")))
 
-    def _our_bench_summary(self, battle) -> str:
-        active = battle.active_pokemon
-        parts = []
-        for mon in battle.team.values():
-            if active and mon.species == active.species:
-                continue
-            if mon.fainted:
-                parts.append(f"{mon.species}(faint)")
-            else:
-                pct = f"{mon.current_hp_fraction * 100:.0f}%"
-                status = self._mon_display_status(mon)
-                parts.append(f"{mon.species}({pct},{status})" if status else f"{mon.species}({pct})")
-        return ", ".join(parts)
+    def _our_bench_summary(self, live: LiveView) -> str:
+        return self._bench_summary(live.ours.active, live.ours.mons)
 
-    def _opp_bench_summary(self, battle) -> str:
-        active = battle.opponent_active_pokemon
+    def _opp_bench_summary(self, live: LiveView) -> str:
+        return self._bench_summary(live.opp.active, live.opp.mons)
+
+    def _bench_summary(self, active: LivePokemon | None, mons) -> str:
         parts = []
-        for mon in battle.opponent_team.values():
+        for mon in mons:
             if active and mon.species == active.species:
                 continue
             if mon.fainted:
                 parts.append(f"{mon.species}(faint)")
             else:
-                pct = f"{mon.current_hp_fraction * 100:.0f}%"
+                pct = f"{mon.hp_fraction * 100:.0f}%"
                 status = self._mon_display_status(mon)
                 parts.append(f"{mon.species}({pct},{status})" if status else f"{mon.species}({pct})")
         return ", ".join(parts)
@@ -315,16 +315,14 @@ class BattleRecorder:
         return f"{ctx.opp_hp[slot] * 100:.0f}%" if slot is not None else "?%"
 
     def _append_status_events(self, events: list, prev_ctx: BattleContext,
-                              delta: TurnDelta, battle) -> None:
+                              delta: TurnDelta, live: LiveView) -> None:
         """Append events for any status conditions newly applied this turn."""
         prev_our_status = self._pending_entry["our"].get("status")
         prev_opp_status = self._pending_entry["opp"].get("status")
 
         # Only track the mon that was active at decision time; skip if they fainted.
         if not delta.we_fainted:
-            our_mon = next(
-                (m for m in battle.team.values() if m.species == prev_ctx.our_active), None
-            )
+            our_mon = live.ours.get(prev_ctx.our_active)
             if our_mon:
                 new_status = self._mon_display_status(our_mon)
                 if self._status_key(new_status) != self._status_key(prev_our_status):
@@ -332,9 +330,7 @@ class BattleRecorder:
                         events.append(f"our:{prev_ctx.our_active}:{new_status}")
 
         if not delta.opp_fainted:
-            opp_mon = next(
-                (m for m in battle.opponent_team.values() if m.species == prev_ctx.opp_active), None
-            )
+            opp_mon = live.opp.get(prev_ctx.opp_active)
             if opp_mon:
                 new_status = self._mon_display_status(opp_mon)
                 if self._status_key(new_status) != self._status_key(prev_opp_status):
@@ -342,7 +338,7 @@ class BattleRecorder:
                         events.append(f"opp:{prev_ctx.opp_active}:{new_status}")
 
     def _fill_pending_outcome(self, prev_ctx: BattleContext, curr_ctx: BattleContext,
-                              delta: TurnDelta, reward: float, battle) -> None:
+                              delta: TurnDelta, reward: float, live: LiveView) -> None:
         """Build and commit the JSON outcome for the pending entry using already-computed delta/reward."""
         # Our action
         if delta.our_switch_to:
@@ -372,13 +368,11 @@ class BattleRecorder:
         elif opp_move_id is not None:
             they_action = opp_move_id
         else:
-            # Last fallback: opp's current active has a `last_move` from
-            # previous turns even though no event fired this turn (e.g. a
-            # |cant| turn that didn't reset last_move). Rare but preserves the
-            # legacy diagnostic when nothing else is available.
-            opp_mon = battle.opponent_active_pokemon
-            last_move = getattr(opp_mon, "last_move", None) if opp_mon else None
-            they_action = last_move.id if (last_move and hasattr(last_move, "id")) else "unknown"
+            # No protocol-confirmed (opp_resolved_move_id) or inferred (opp_move_id)
+            # move this window. The old fallback read poke-env's stale `last_move` —
+            # exactly the past-turn-field footgun this migration removes. History now
+            # comes from the event-log TurnDelta, so an empty window is just "unknown".
+            they_action = "unknown"
 
         # HP delta: for faint turns use the fainted mon's slot, not the forced switch-in.
         our_ref = prev_ctx.our_active if delta.we_fainted else (delta.our_switch_to or prev_ctx.our_active)
@@ -394,7 +388,7 @@ class BattleRecorder:
         if delta.opp_fainted:
             events.append(f"opp:{prev_ctx.opp_active}:fainted")
 
-        self._append_status_events(events, prev_ctx, delta, battle)
+        self._append_status_events(events, prev_ctx, delta, live)
 
         breakdown = getattr(self._tracker._reward_fn, "_last_breakdown", None)
         self._pending_entry["outcome"] = {
@@ -406,17 +400,17 @@ class BattleRecorder:
         self._invocations.append(self._pending_entry)
         self._pending_entry = None
 
-    def _terminal_hp(self, battle) -> tuple[np.ndarray, np.ndarray]:
+    def _terminal_hp(self, live: LiveView) -> tuple[np.ndarray, np.ndarray]:
         our_hp = np.zeros(6, dtype=np.float32)
-        for mon in battle.team.values():
+        for mon in live.ours.mons:
             slot = self._our_slots.get(mon.species)
             if slot is not None:
-                our_hp[slot] = mon.current_hp_fraction
+                our_hp[slot] = mon.hp_fraction
         opp_hp = np.zeros(6, dtype=np.float32)
-        for mon in battle.opponent_team.values():
+        for mon in live.opp.mons:
             slot = self._opp_slots.get(mon.species)
             if slot is not None:
-                opp_hp[slot] = mon.current_hp_fraction
+                opp_hp[slot] = mon.hp_fraction
         return our_hp, opp_hp
 
 

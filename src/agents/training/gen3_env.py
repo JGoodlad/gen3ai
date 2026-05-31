@@ -59,7 +59,7 @@ class Gen3Env(SinglesEnv):
         # Record FIRST so the tracker's HP-candidate state reflects the just-fired
         # HP (if any) before we encode the obs. The observation at turn N then
         # carries the narrowing from turns 1..N-1.
-        if battle is self.battle1 and not battle.finished:
+        if battle is self.battle1 and not battle.strict_view().finished:
             # Capture the server-authoritative legality snapshot ONCE this decision and
             # thread it to both the mask and the recorded context, so the mapper later
             # decodes the chosen action against the exact same immutable surface.
@@ -101,7 +101,7 @@ class Gen3Env(SinglesEnv):
         if isinstance(action, BattleOrder):
             return action
         if battle is self.battle1:
-            if battle.turn >= self._stall_logger.threshold:
+            if battle.strict_view().turn >= self._stall_logger.threshold:
                 self._stall_logger.log_once(battle, suffix="STALL")
                 return ForfeitBattleOrder()
             ctx = self._tracker.last_ctx

@@ -549,10 +549,18 @@ layer is currently additive and obs/reward-neutral.
   error naming the right accessor; the raw `Gen3Battle` is held privately and never
   returned. **The `action/` cluster is migrated** (Phase 3, partial): the masker/mapper read
   through `LegalActions` (built via `battle.strict_view().legal` / `from_battle`) and the
-  `_gen3_decision_context` stash is gone. The remaining `observation/` + `training/`
-  consumers are still pending — see `designs/ai_v4/todo_live_battle.md` (skips
+  `_gen3_decision_context` stash is gone. **The `training/` display / replay / control-flow
+  cluster is also migrated:** `gen3_env.py`, `inference/player.py`, and `training/stall.py`
+  read meta (`finished`/`turn`/`battle_tag`) through `battle.strict_view()` (stall keeps the
+  `battle.save_replay(...)` seam — a poke-env method, not state), and `battle_recorder.py`
+  builds the strict view once per record/finalize/summary call and reads current-board state
+  (active/team/`species`/`item`/`hp`/`fainted`/`status`/boosts, `won`/`lost`/`turn`) only
+  through its `LiveView` — the stale-`last_move` recorder fallback is dropped (history now
+  comes from the event-log `TurnDelta`). The remaining `observation/` + the reward/obs/tracker
+  `training/` consumers are still pending — see `designs/ai_v4/todo_live_battle.md` (skips
   `battle_context.py`, which Step 4's TurnDelta fold retires). Phases 1–2 are additive and
-  obs-neutral; the action migration is a pure re-sourcing (no `ARCH_SIGNATURE` bump).
+  obs-neutral; the action + training-display migrations are pure re-sourcing (no
+  `ARCH_SIGNATURE` bump — these are display/replay/control-flow only, behaviour-preserving).
 - **Injection seam (wired into training):** `poke_env.player.Player.__init__` takes
   `battle_class=Battle` (default, with a `None`-guard since `PokeEnv` threads a `None`
   default to its `_EnvPlayer` agents). `Gen3Player` defaults `battle_class=Gen3Battle`

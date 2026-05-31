@@ -7,6 +7,15 @@ from poke_env.player import Player
 from agents.inference.player import Gen3Player
 from agents.observation.state_encoder import load_mappings, Gen3ObservationEncoder
 from agents.training.stall import StallConfig, StallLogger
+from agents.battle.strict_view import StrictBattleView
+
+
+def _with_strict_view(battle):
+    """Give a mock battle a real StrictBattleView so the player's migrated meta reads
+    (battle.strict_view().turn / .battle_tag / .finished) pass straight through to the
+    mock's set fields — the boundary the code now goes through."""
+    battle.strict_view.return_value = StrictBattleView(battle)
+    return battle
 
 
 @contextmanager
@@ -48,7 +57,7 @@ def _stall_battle(tag, turn):
     battle = MagicMock()
     battle.battle_tag = tag
     battle.turn = turn
-    return battle
+    return _with_strict_view(battle)
 
 
 def _make_battle(encoder):
@@ -81,7 +90,7 @@ def _make_battle(encoder):
     battle.opp_last_damaging_move = None
     battle.we_moved_first = None
     battle.turn = 1
-    return battle
+    return _with_strict_view(battle)
 
 
 def test_embed_battle_output_dim_matches_encoder():
