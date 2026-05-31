@@ -20,9 +20,9 @@ Also checks that no encode call raises (catches surprise abilities missing
 from gen3_abilities.json) and that the dex-prior IDs always resolve through
 the ability_to_id mapping.
 
-Run directly (requires: npm run showdown):
+Run directly (no server needed; runs in-process via the local BattleStream bridge):
     export PYTHONPATH=$PYTHONPATH:src
-    python src/agents/training/poke_env_gaps/abilities_fuzz_e2e_test.py [n_battles]
+    python src/agents/training/poke_env_gaps/abilities_fuzz_test.py [n_battles]
 """
 from __future__ import annotations
 
@@ -50,6 +50,7 @@ from agents.observation.constants import (
 )
 from agents.observation.state_encoder import load_mappings
 from utils.teambuilder import Gen3Teambuilder
+from utils.bridge.local_battle_runner import run_local_battles
 
 BATTLE_FORMAT = "gen3ou"
 
@@ -447,19 +448,19 @@ async def run_scenario(name: str, team_str: str, n_battles: int, ts: int) -> Sce
         scenario_name=name,
         battle_format=BATTLE_FORMAT,
         team=tb,
-        server_configuration=LocalhostServerConfiguration,
+        server_configuration=LocalhostServerConfiguration, start_listening=False,
         account_configuration=AccountConfiguration(f"AFz{ts}{tag}", "password"),
         max_concurrent_battles=5,
     )
     opp = RandomPlayer(
         battle_format=BATTLE_FORMAT,
         team=tb,
-        server_configuration=LocalhostServerConfiguration,
+        server_configuration=LocalhostServerConfiguration, start_listening=False,
         account_configuration=AccountConfiguration(f"AFo{ts}{tag}", "password"),
         max_concurrent_battles=5,
     )
 
-    await fuzz.battle_against(opp, n_battles=n_battles)
+    await run_local_battles(fuzz, opp, n_battles)
     return fuzz.stats
 
 

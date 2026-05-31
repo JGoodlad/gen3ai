@@ -145,7 +145,7 @@ class BattleContext:
     # None if the opponent hasn't moved yet, switched in this snapshot's turn,
     # or the move cannot be identified (e.g. Explosion aftermath).
     #
-    # Known behaviors (confirmed by transition_fuzz_e2e_test.py):
+    # Known behaviors (confirmed by transition_fuzz_test.py):
     #   - Sleep Talk: when delegation succeeds, stores the delegated move (e.g. "surf").
     #     When delegation FAILS (all PP depleted), stores "sleeptalk" directly.
     #   - Recharge turns (Hyper Beam): persists as "hyperbeam" on the |cant|recharge turn.

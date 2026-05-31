@@ -14,9 +14,9 @@ Setup:
   - Opponent team: fixed mons each running a known HP type. The opponent player
     (HiddenPowerSpammer) biases toward choosing HP whenever available.
 
-Run (requires: npm run showdown):
+Run (no server needed; runs in-process via the local BattleStream bridge):
     export PYTHONPATH=$PYTHONPATH:src
-    python src/agents/training/hidden_power_tracker_fuzz_e2e_test.py [n_battles]
+    python src/agents/training/hidden_power_tracker_fuzz_test.py [n_battles]
 """
 import asyncio
 import os
@@ -34,6 +34,7 @@ from poke_env.ps_client.server_configuration import LocalhostServerConfiguration
 from agents.gen3_mechanics import bucket_effectiveness, effective_multiplier
 from agents.training.hidden_power_tracker import HiddenPowerTracker, HIDDEN_POWER_TYPE_ORDER
 from utils.teambuilder import Gen3Teambuilder
+from utils.bridge.local_battle_runner import run_local_battles
 
 
 @dataclass(frozen=True)
@@ -728,19 +729,19 @@ async def main(n_battles: int = 500) -> None:
     fuzz = HiddenPowerTrackerFuzzPlayer(
         battle_format=BATTLE_FORMAT,
         team=our_tb,
-        server_configuration=LocalhostServerConfiguration,
+        server_configuration=LocalhostServerConfiguration, start_listening=False,
         account_configuration=AccountConfiguration(f"HPFz{ts}", "password"),
         max_concurrent_battles=8,
     )
     opp = HiddenPowerSpammer(
         battle_format=BATTLE_FORMAT,
         team=opp_tb,
-        server_configuration=LocalhostServerConfiguration,
+        server_configuration=LocalhostServerConfiguration, start_listening=False,
         account_configuration=AccountConfiguration(f"HPFo{ts}", "password"),
         max_concurrent_battles=8,
     )
 
-    await fuzz.battle_against(opp, n_battles=n_battles)
+    await run_local_battles(fuzz, opp, n_battles)
 
     s = fuzz.stats
     print(f"\n{'=' * 65}")

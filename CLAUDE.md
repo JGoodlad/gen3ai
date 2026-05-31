@@ -74,8 +74,10 @@ Do **not** symlink the entire `deps/pokemon-showdown` directory — git treats t
 | Pattern | Requires | Marker |
 |---|---|---|
 | `*_test.py` | Nothing — pure unit tests with mocks | — |
-| `*_integration_test.py` | `deps/pokemon-showdown` Node bridge (no live server) | `@pytest.mark.integration` |
-| `*_e2e_test.py` | Live Showdown server on localhost:8000 | `@pytest.mark.e2e` (scripts only, run directly) |
+| `*_integration_test.py` | `deps/pokemon-showdown` Node bridge (no battles, no live server) | `@pytest.mark.integration` |
+| `*_fuzz_test.py` | `deps/pokemon-showdown` — runs **real battles in-process via the local BattleStream bridge** (`utils/bridge/local_battle_runner.py`); **no live server**. The default for fuzzing. | none — run directly as scripts (no `test_*` funcs, so `pytest` imports but collects nothing) |
+| `*_fuzz_e2e_test.py` | A **live Showdown server** — fuzz whose checks need real async-server timing (e.g. `effectiveness_fuzz_e2e_test`, whose TurnDelta-vs-BattleContext effectiveness window is decision-timing-sensitive) | run directly as scripts |
+| `*_e2e_test.py` | A **live Showdown server** on localhost:8000 | `@pytest.mark.e2e` (scripts only, run directly) |
 
 ### Unit tests only (default)
 ```bash
@@ -87,18 +89,27 @@ export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable
 export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 -m pytest src/ -q
 ```
 
-### E2E tests (run directly as scripts, require a running server)
+### Fuzz tests (`*_fuzz_test.py`, run directly as scripts)
+Run battles **in-process via the local BattleStream bridge — no `npm run showdown`
+needed** (`utils/bridge/local_battle_runner.py`):
+```bash
+export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 src/agents/action/fuzz_test.py [n_battles]
+export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 src/agents/training/poke_env_gaps/transition_fuzz_test.py [n_battles]
+export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 src/agents/battle/event_log_fuzz_test.py [n_battles]
+# also bridge-backed (no server): poke_env_gaps/{abilities,item_consumption,move_outcome}_fuzz_test.py
+#                                  and training/hidden_power_tracker_fuzz_test.py
+```
+
+### E2E tests (`*_e2e_test.py` / `*_fuzz_e2e_test.py`, require a live server)
 ```bash
 # Start server first: npm run showdown
-export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 src/agents/action/fuzz_e2e_test.py
 export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 src/agents/action/telemetry_e2e_test.py
-export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 src/agents/training/poke_env_gaps/transition_fuzz_e2e_test.py [n_battles]
-export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 src/agents/battle/event_log_fuzz_e2e_test.py [n_battles]
+export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 src/agents/training/poke_env_gaps/effectiveness_fuzz_e2e_test.py [n_battles]
 ```
 
 ### What "fuzz test" means in this project
 
-**Fuzz tests are E2E tests that run real battles against the live Showdown server and validate observations or behaviour against the actual protocol stream.** They are NOT deterministic scenario tests with fixed inputs.
+**Fuzz tests run real battles — by default in-process via the local BattleStream bridge (no server), or against a live server — and validate observations or behaviour against the actual protocol stream.** They are NOT deterministic scenario tests with fixed inputs.
 
 The canonical pattern (see `src/agents/training/poke_env_gaps/`):
 
@@ -107,7 +118,7 @@ The canonical pattern (see `src/agents/training/poke_env_gaps/`):
 3. In `choose_move()`, validate that the encoded observation vector matches what the archived protocol events say should be there.
 4. Run N random battles; any validation failure raises immediately with a detailed error.
 
-This catches poke-env parsing bugs and encoder gaps that unit tests with mocks cannot — the test exercises the real server → poke-env → encoder pipeline end to end. When asked to write a fuzz test, always follow this pattern rather than writing parametrized unit tests with hand-crafted mock objects.
+This catches poke-env parsing bugs and encoder gaps that unit tests with mocks cannot — the test exercises the Showdown sim → poke-env → encoder pipeline end to end (the bridge feeds the identical protocol stream the live server would). When asked to write a fuzz test, always follow this pattern rather than writing parametrized unit tests with hand-crafted mock objects.
 
 ---
 
@@ -482,7 +493,7 @@ layer is currently additive and obs/reward-neutral.
 **Verification:** unit tests in `src/agents/battle/*_test.py` (schema, registry audit,
 scripted parse + state-equivalence, TurnView fold, `live_view_test.py` for the current-board
 surface + widened fields, `strict_view_test.py` for the strict boundary + `LegalActions`
-extraction + the forbidden-access guard). The spine is `event_log_fuzz_e2e_test.py` — real
+extraction + the forbidden-access guard). The spine is `event_log_fuzz_test.py` — real
 `gen3ou` battles where both players run `Gen3Battle`; it independently re-derives each turn
 from the intercepted raw protocol and asserts the event log matches, plus conservation +
 event-kind coverage, the widened LiveView fields (spread/PP/consumed/counter/meta) per mon,

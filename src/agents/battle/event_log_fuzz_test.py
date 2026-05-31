@@ -1,6 +1,6 @@
 """Event-log fuzz — the verification spine for the event-sourced battle (design §7).
 
-Runs real ``gen3ou`` battles on the live Showdown server with both players backed by
+Runs real ``gen3ou`` battles in-process via the local BattleStream bridge with both players backed by
 :class:`Gen3Battle`, intercepts the **raw protocol** each player receives, and proves —
 per battle, per turn — that the captured event log matches an *independent* re-derivation
 from those raw lines. This is the canonical fuzz pattern (see
@@ -19,9 +19,9 @@ Coverage is asserted across the corpus: the rare event kinds (crit, miss, fail, 
 status, super-effective, immune/resisted) must each be exercised at least once, so a
 green run actually means something.
 
-Run directly (requires: npm run showdown):
+Run directly (no server needed; runs in-process via the local BattleStream bridge):
     export PYTHONPATH=$PYTHONPATH:src
-    python src/agents/battle/event_log_fuzz_e2e_test.py [n_battles]
+    python src/agents/battle/event_log_fuzz_test.py [n_battles]
 """
 
 from __future__ import annotations
@@ -45,6 +45,7 @@ from agents.observation.gen3_effects import encode_volatiles, normalize_cant_rea
 from agents.battle.turn_view import TurnView
 from utils.team_loader import TeamLoader
 from utils.teambuilder import Gen3Teambuilder
+from utils.bridge.local_battle_runner import run_local_battles
 
 BATTLE_FORMAT = "gen3ou"
 
@@ -595,7 +596,7 @@ async def main(n_battles: int = 40, max_seconds: "float | None" = None) -> None:
         battle_format=BATTLE_FORMAT,
         team=Gen3Teambuilder(pool),
         account_configuration=AccountConfiguration(f"ELz{ts}", "pw"),
-        server_configuration=LocalhostServerConfiguration,
+        server_configuration=LocalhostServerConfiguration, start_listening=False,
         max_concurrent_battles=5,
         battle_class=Gen3Battle,
     )
@@ -603,7 +604,7 @@ async def main(n_battles: int = 40, max_seconds: "float | None" = None) -> None:
         battle_format=BATTLE_FORMAT,
         team=Gen3Teambuilder(pool),
         account_configuration=AccountConfiguration(f"ELo{ts}", "pw"),
-        server_configuration=LocalhostServerConfiguration,
+        server_configuration=LocalhostServerConfiguration, start_listening=False,
         max_concurrent_battles=5,
     )
 
@@ -617,7 +618,7 @@ async def main(n_battles: int = 40, max_seconds: "float | None" = None) -> None:
         start = time.monotonic()
         chunk = 25
         while time.monotonic() - start < max_seconds:
-            await fuzz.battle_against(opp, n_battles=chunk)
+            await run_local_battles(fuzz, opp, chunk)
             elapsed = time.monotonic() - start
             print(
                 f"  …{fuzz.battles_checked} battles, {fuzz.decisions_checked} decisions "
@@ -630,7 +631,7 @@ async def main(n_battles: int = 40, max_seconds: "float | None" = None) -> None:
                 print("  ABORTING — error/mismatch detected", flush=True)
                 break
     else:
-        await fuzz.battle_against(opp, n_battles=n_battles)
+        await run_local_battles(fuzz, opp, n_battles)
 
     checked = fuzz.battles_checked
     mismatches = fuzz.mismatches

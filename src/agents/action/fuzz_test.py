@@ -15,6 +15,7 @@ from agents.action.mapper import Gen3ActionMapper
 from agents.action.mask_generator import Gen3ActionMasker
 from utils.team_loader.loader import TeamLoader
 from utils.teambuilder import Gen3Teambuilder
+from utils.bridge.local_battle_runner import run_local_battles
 
 class IntegrityFuzzPlayer(Player):
     """
@@ -98,7 +99,7 @@ async def run_fuzz_test(n_battles=20):
     player = IntegrityFuzzPlayer(
         battle_format="gen3ou",
         team=teambuilder,
-        server_configuration=LocalhostServerConfiguration,
+        server_configuration=LocalhostServerConfiguration, start_listening=False,
         account_configuration=AccountConfiguration(f"RLAgentFuzz{ts}", "password"),
         max_concurrent_battles=10
     )
@@ -106,13 +107,13 @@ async def run_fuzz_test(n_battles=20):
     opponent = RandomPlayer(
         battle_format="gen3ou",
         team=teambuilder,
-        server_configuration=LocalhostServerConfiguration,
+        server_configuration=LocalhostServerConfiguration, start_listening=False,
         account_configuration=AccountConfiguration(f"OppFuzz{ts}", "password"),
         max_concurrent_battles=10
     )
 
     start_time = asyncio.get_event_loop().time()
-    await player.battle_against(opponent, n_battles=n_battles)
+    await run_local_battles(player, opponent, n_battles)
     duration = asyncio.get_event_loop().time() - start_time
     
     print("\n" + "✅" * 20)

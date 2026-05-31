@@ -3,7 +3,7 @@ E2E move-outcome fuzz test (crit / miss / fail / cant).
 
 Validates the full protocol → poke-env → BattleContext → TurnDelta → encoder
 pipeline for the move-outcome reporting added in gen3_move_outcome_v1. Like
-effectiveness_fuzz_e2e_test, it checks four independent layers against the raw
+effectiveness_fuzz_test, it checks four independent layers against the raw
 Showdown protocol stream over many random battles:
 
   Layer 1 — raw |-crit|/|-miss|/|-fail|/|-notarget|/|-nothing|/|cant| lines vs
@@ -23,9 +23,9 @@ Coverage is asserted: the run FAILS if it never observed a crit, a miss, a
 fail, or at least two distinct cant reasons — a green run with zero coverage
 would validate nothing.
 
-Run directly (requires: npm run showdown):
+Run directly (no server needed; runs in-process via the local BattleStream bridge):
     export PYTHONPATH=$PYTHONPATH:src
-    python src/agents/training/poke_env_gaps/move_outcome_fuzz_e2e_test.py [n_battles]
+    python src/agents/training/poke_env_gaps/move_outcome_fuzz_test.py [n_battles]
 """
 
 import asyncio
@@ -66,6 +66,7 @@ from agents.observation.gen3_effects import (
 from agents.training.battle_context import BattleContext, TurnDelta, SELF_KO_MOVES
 from agents.training.slot_registry import SlotRegistry
 from utils.teambuilder import Gen3Teambuilder
+from utils.bridge.local_battle_runner import run_local_battles
 
 BATTLE_FORMAT = "gen3ou"
 
@@ -631,18 +632,18 @@ async def run_scenario(name: str, team_str: str, n_battles: int, ts: int) -> Sce
         scenario_name=name,
         battle_format=BATTLE_FORMAT,
         team=tb,
-        server_configuration=LocalhostServerConfiguration,
+        server_configuration=LocalhostServerConfiguration, start_listening=False,
         account_configuration=AccountConfiguration(f"MOf{ts}{tag}", "password"),
         max_concurrent_battles=5,
     )
     opp = RandomPlayer(
         battle_format=BATTLE_FORMAT,
         team=tb,
-        server_configuration=LocalhostServerConfiguration,
+        server_configuration=LocalhostServerConfiguration, start_listening=False,
         account_configuration=AccountConfiguration(f"MOo{ts}{tag}", "password"),
         max_concurrent_battles=5,
     )
-    await fuzz.battle_against(opp, n_battles=n_battles)
+    await run_local_battles(fuzz, opp, n_battles)
     return fuzz.stats
 
 

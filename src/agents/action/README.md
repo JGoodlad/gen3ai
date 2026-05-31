@@ -31,5 +31,5 @@ This prevents the subtle race condition where poke-env processes a background se
 | File | Type | What it covers |
 |---|---|---|
 | `fuzz_test_unit.py` | Unit (standalone script) | Simulates 2000 random battle states including forced switches, disabled moves, and mid-turn request changes; verifies the latch provides 100% protection |
-| `fuzz_e2e_test.py` | E2E (requires server) | Real battles vs RandomPlayer; asserts mask legality and that no server-rejected actions occur |
+| `fuzz_test.py` | Fuzz (local bridge, no server) | Real battles vs RandomPlayer via the in-process BattleStream bridge; asserts mask legality and that no sim-rejected actions occur |
 | `telemetry_e2e_test.py` | E2E (requires server) | Monitors for silent mid-decision state updates in live battles |

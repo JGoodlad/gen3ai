@@ -38,9 +38,9 @@ Classification of opp_last_move_id=None cases (not bugs):
   3. True anomaly      — revealed_moves GREW this turn but last_move is still None
                          (should be 0; indicates a poke-env parsing gap)
 
-Run directly (requires: npm run showdown):
+Run directly (no server needed; runs in-process via the local BattleStream bridge):
     export PYTHONPATH=$PYTHONPATH:src
-    python src/agents/training/poke_env_gaps/transition_fuzz_e2e_test.py [n_battles]
+    python src/agents/training/poke_env_gaps/transition_fuzz_test.py [n_battles]
 """
 
 import asyncio
@@ -62,6 +62,7 @@ from poke_env.ps_client.server_configuration import LocalhostServerConfiguration
 from agents.action.mapper import Gen3ActionMapper
 from agents.action.mask_generator import Gen3ActionMasker
 from utils.teambuilder import Gen3Teambuilder
+from utils.bridge.local_battle_runner import run_local_battles
 
 BATTLE_FORMAT = "gen3ou"
 
@@ -791,19 +792,19 @@ async def run_scenario(name: str, team_str: str, n_battles: int, ts: int) -> Sce
         scenario_name=name,
         battle_format=BATTLE_FORMAT,
         team=tb,
-        server_configuration=LocalhostServerConfiguration,
+        server_configuration=LocalhostServerConfiguration, start_listening=False,
         account_configuration=AccountConfiguration(f"TFz{ts}{tag}", "password"),
         max_concurrent_battles=5,
     )
     opp = RandomPlayer(
         battle_format=BATTLE_FORMAT,
         team=tb,
-        server_configuration=LocalhostServerConfiguration,
+        server_configuration=LocalhostServerConfiguration, start_listening=False,
         account_configuration=AccountConfiguration(f"TFo{ts}{tag}", "password"),
         max_concurrent_battles=5,
     )
 
-    await fuzz.battle_against(opp, n_battles=n_battles)
+    await run_local_battles(fuzz, opp, n_battles)
     return fuzz.stats
 
 

@@ -105,7 +105,7 @@ sees uncertainty for that turn but continues correctly.
 
 ## Fuzz Test Results Summary (50 battles × 3 scenarios, ~30K transitions)
 
-Run: `python src/agents/training/poke_env_gaps/transition_fuzz_e2e_test.py 50`
+Run: `python src/agents/training/poke_env_gaps/transition_fuzz_test.py 50`
 
 | Metric | A-Explosion | B-Rest/SleepTalk | C-HyperBeam | Total |
 |--------|------------|------------------|-------------|-------|
@@ -156,7 +156,7 @@ doing only if these moves become relevant in training.
 
 ## Running the Fuzz Test
 
-Requires a running Showdown server (`npm run showdown`) and the `pokemon-showdown` symlink:
+Runs battles **in-process via the local BattleStream bridge — no `npm run showdown`** (only the `deps/pokemon-showdown` `dist/` + `node_modules` symlinks from the root CLAUDE.md worktree setup):
 
 ```bash
 # One-time worktree setup
@@ -164,10 +164,10 @@ rmdir deps/pokemon-showdown && ln -s /home/goodlad/dev/gen3ai/deps/pokemon-showd
 
 # Run (30 battles per scenario ≈ 2 min)
 export PYTHONPATH=$PYTHONPATH:src
-python src/agents/training/poke_env_gaps/transition_fuzz_e2e_test.py 30
+python src/agents/training/poke_env_gaps/transition_fuzz_test.py 30
 
 # More thorough (50 battles ≈ 5 min)
-python src/agents/training/poke_env_gaps/transition_fuzz_e2e_test.py 50
+python src/agents/training/poke_env_gaps/transition_fuzz_test.py 50
 ```
 
 Scenarios:
@@ -185,14 +185,14 @@ poke-env → `BattleContext` → `TurnDelta` → encoded-obs pipeline. The match
 unit tests are `src/agents/training/move_attribution_test.py` (decision table)
 and the per-encoder `*_test.py` files (dim/layout).
 
-### `transition_fuzz_e2e_test.py` — move ATTRIBUTION (who used what)
+### `transition_fuzz_test.py` — move ATTRIBUTION (who used what)
 | Validated | Notes |
 |---|---|
 | `our_move_slot_unknown == 0` | every action index maps to a known move slot |
 | **Intent ↔ outcome** (our side) | the move the agent *pressed* equals the move the protocol says *fired*, with principled skips for **callers** (Sleep Talk/Metronome → the *called* move), **`\|cant\|`**, switch-out / two-turn charge, and **stale `last_move`** (no fresh `\|move\|` this turn). 0 real mismatches over ~30K turns. |
 | Opp `last_move` attribution | Explosion gap, recharge persistence, phaze recovery, cant persistence — all classified as expected vs anomaly |
 
-### `move_outcome_fuzz_e2e_test.py` — move OUTCOME (what happened)
+### `move_outcome_fuzz_test.py` — move OUTCOME (what happened)
 Four layers per turn (raw protocol → poke-env props → `BattleContext` → `TurnDelta` → encoded vector). FAILS on any mismatch **or** missing coverage. Validates, for **both sides**:
 | Validated | Notes |
 |---|---|
@@ -202,7 +202,7 @@ Four layers per turn (raw protocol → poke-env props → `BattleContext` → `T
 | **KO'd before acting** | nothing fired → `move_id=None`, outcome `None`, `cant_reason="fainted"` (distinct from a voluntary switch and from `\|cant\|`) |
 | Edge cases run for opp too | `opp_explosion_self_faint`, `opp_faint_before_acting` |
 
-Run it: `python src/agents/training/poke_env_gaps/move_outcome_fuzz_e2e_test.py 40`
+Run it: `python src/agents/training/poke_env_gaps/move_outcome_fuzz_test.py 40`
 (two teams: a variance team for crit/miss/fail/cant, and an Explosion+Spikes+frail
 "FaintEdge" team so the faint edge cases actually fire under random play).
 

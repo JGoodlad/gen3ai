@@ -21,9 +21,9 @@ Runs three targeted scenarios:
   C — Held items (Leftovers / Choice Band): items that are never consumed;
       verifies held encoding never spuriously sets consumed=1.
 
-Run directly (requires: npm run showdown):
+Run directly (no server needed; runs in-process via the local BattleStream bridge):
     export PYTHONPATH=$PYTHONPATH:src
-    python src/agents/training/poke_env_gaps/item_consumption_fuzz_e2e_test.py [n_battles]
+    python src/agents/training/poke_env_gaps/item_consumption_fuzz_test.py [n_battles]
 """
 
 import asyncio
@@ -47,6 +47,7 @@ from agents.observation.items import ItemsEncoder
 from agents.observation.state_encoder import load_mappings
 from agents.observation.constants import ITEM_ID_DIM, ITEM_KNOWN_DIM, ITEM_CONSUMED_DIM
 from utils.teambuilder import Gen3Teambuilder
+from utils.bridge.local_battle_runner import run_local_battles
 
 BATTLE_FORMAT = "gen3ou"
 
@@ -573,19 +574,19 @@ async def run_scenario(name: str, team_str: str, n_battles: int, ts: int) -> Sce
         scenario_name=name,
         battle_format=BATTLE_FORMAT,
         team=tb,
-        server_configuration=LocalhostServerConfiguration,
+        server_configuration=LocalhostServerConfiguration, start_listening=False,
         account_configuration=AccountConfiguration(f"IFz{ts}{tag}", "password"),
         max_concurrent_battles=5,
     )
     opp = RandomPlayer(
         battle_format=BATTLE_FORMAT,
         team=tb,
-        server_configuration=LocalhostServerConfiguration,
+        server_configuration=LocalhostServerConfiguration, start_listening=False,
         account_configuration=AccountConfiguration(f"IFo{ts}{tag}", "password"),
         max_concurrent_battles=5,
     )
 
-    await fuzz.battle_against(opp, n_battles=n_battles)
+    await run_local_battles(fuzz, opp, n_battles)
     return fuzz.stats
 
 
