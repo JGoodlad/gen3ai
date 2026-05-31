@@ -170,12 +170,22 @@ class Gen3ObservationEncoder(ObservationEncoder):
         """
         vec = np.zeros(self.base_dimension, dtype=np.float32)
 
-        # 1. Our Team — HP block written by PokemonEncoder using mon.moves (the
-        # poke-env raw_id patch preserves the type on each move).
+        # Build the current-board read-model ONCE per decision through the strict boundary
+        # (`battle.strict_view().live`) and thread it to every sub-encoder. Requires a
+        # Gen3Battle; a plain poke-env Battle / unit-test mock (no strict_view/live_view)
+        # falls back to None, and each sub-encoder then reads the raw object — byte-identical.
+        strict = battle.strict_view() if hasattr(battle, "strict_view") else None
+        if strict is not None:
+            live = strict.live
+        else:
+            live = battle.live_view() if hasattr(battle, "live_view") else None
+
+        # 1. Our Team — current-board per-mon facts read through the LiveView slot.
         our_team_list = self.get_team_list(battle, is_opponent=False)
         for i in range(TEAM_SIZE):
             mon = our_team_list[i] if i < len(our_team_list) else None
-            mon_vec = self.pokemon_encoder.encode(mon, battle, is_own=True)
+            live_mon = live.ours.get(mon.species) if (live is not None and mon is not None) else None
+            mon_vec = self.pokemon_encoder.encode(mon, battle, is_own=True, live_mon=live_mon)
             is_active = 1.0 if (mon and mon.active) else 0.0
 
             start = OFFSET_OUR_TEAM + (i * POKEMON_FULL_DIM)
@@ -187,6 +197,7 @@ class Gen3ObservationEncoder(ObservationEncoder):
 
         for i in range(TEAM_SIZE):
             mon = opponents[i] if i < len(opponents) else None
+            live_mon = live.opp.get(mon.species) if (live is not None and mon is not None) else None
             if hp_tracker is not None and mon is not None:
                 hp_probs = hp_tracker.get_probs(mon.species)
                 hp_known = hp_tracker.is_known(mon.species)
@@ -194,18 +205,16 @@ class Gen3ObservationEncoder(ObservationEncoder):
                 hp_probs = None
                 hp_known = False
             mon_vec = self.pokemon_encoder.encode(
-                mon, battle, is_own=False, hp_probs=hp_probs, hp_known=hp_known
+                mon, battle, is_own=False, hp_probs=hp_probs, hp_known=hp_known, live_mon=live_mon
             )
             is_active = 1.0 if (mon and mon is battle.opponent_active_pokemon) else 0.0
 
             start = OFFSET_OPP_TEAM + (i * POKEMON_FULL_DIM)
             vec[start : start + POKEMON_VECTOR_DIM] = mon_vec
             vec[start + POKEMON_VECTOR_DIM] = is_active
-            
-        # 3. Active Context + 4. Global Environment — sourced from the LiveView
-        # (current-board read-model folded from the event log). Requires a Gen3Battle;
-        # a plain poke-env Battle (no live_view) falls back to None active / no field.
-        live = battle.live_view() if hasattr(battle, "live_view") else None
+
+        # 3. Active Context + 4. Global Environment — sourced from the same LiveView
+        # (current-board read-model folded from the event log).
         our_active = live.ours.active if live else None
         opp_active = live.opp.active if live else None
         vec[OFFSET_CONTEXT : OFFSET_CONTEXT + ACTIVE_CONTEXT_DIM] = \
@@ -218,8 +227,10 @@ class Gen3ObservationEncoder(ObservationEncoder):
             vec[OFFSET_GLOBAL : OFFSET_GLOBAL + GLOBAL_ENV_DIM] = \
                 self.global_env_encoder.encode(live)
         
-        # 5. Reactive Features
-        vec[OFFSET_REACTIVE : OFFSET_REACTIVE + REACTIVE_DIM] = self.reactive_encoder.encode(battle, hp_tracker=hp_tracker)
+        # 5. Reactive Features — fainted counts + active-status read through the LiveView;
+        # the move-effectiveness matrices stay on the raw battle (see reactive.py).
+        vec[OFFSET_REACTIVE : OFFSET_REACTIVE + REACTIVE_DIM] = \
+            self.reactive_encoder.encode(battle, hp_tracker=hp_tracker, live=live)
         
         return vec
 

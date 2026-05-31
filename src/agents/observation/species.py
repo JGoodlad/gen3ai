@@ -20,26 +20,36 @@ class SpeciesEncoder(ObservationEncoder):
     def dimension(self) -> int:
         return 7
 
-    def encode(self, pokemon: Pokemon, battle: AbstractBattle = None) -> np.ndarray:
+    def encode(self, pokemon: Pokemon, battle: AbstractBattle = None, live_mon=None) -> np.ndarray:
+        """Encode species id + base stats.
+
+        ``live_mon`` is the :class:`~agents.battle.live_view.LivePokemon` current-board
+        snapshot for this slot; when supplied, species/base-stats are read through the
+        read-model instead of the raw poke-env ``Pokemon``. ``None`` (unit-test / plain-Battle
+        path) falls back to the raw ``pokemon`` — both expose ``.species`` / ``.base_stats``
+        with identical values, so the emitted vector is byte-identical either way.
+        """
         vec = np.zeros(self.dimension, dtype=np.float32)
-        if pokemon is None:
+        src = live_mon if live_mon is not None else pokemon
+        if src is None:
             return vec
-            
+
         # 1. Species ID (1)
-        species_id = str(pokemon.species)
+        species_id = str(src.species)
         if species_id not in self.mapping:
             raise ValueError(f"Unrecognized species: {species_id}. Update data/mappings/gen3_mapping.json")
-            
+
         entry = self.mapping.get(species_id, {})
         vec[0] = float(entry.get("num", 0))
-        
+
         # 2. Base Stats (6)
         # Order: HP, Atk, Def, SpA, SpD, Spe
         if "baseStats" in entry:
             stats = entry["baseStats"]
         else:
-            # Fallback for robustness during runtime
-            stats = pokemon.base_stats
+            # Fallback for robustness during runtime (LivePokemon.base_stats mirrors
+            # the raw mon's base_stats dict, so this stays byte-identical).
+            stats = src.base_stats
             
         vec[1] = stats.get("hp", 100) / 255.0
         vec[2] = stats.get("atk", 100) / 255.0

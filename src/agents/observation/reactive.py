@@ -116,8 +116,29 @@ class ReactiveEncoder(ObservationEncoder):
     def dimension(self) -> int:
         return REACTIVE_DIM
 
-    def encode(self, battle: AbstractBattle, hp_tracker=None) -> np.ndarray:
+    def encode(self, battle: AbstractBattle, hp_tracker=None, live=None) -> np.ndarray:
         """Encode the 300-dim reactive block.
+
+        live: optional :class:`~agents.battle.live_view.LiveView` snapshot for this
+        decision. When supplied, the structural reads — per-side fainted counts and the
+        active mon's status flag — are taken through the read-model; ``None`` (unit-test /
+        plain-Battle path) falls back to the raw battle, byte-identically.
+
+        **Why the effectiveness core stays on the raw battle.** The active-move loop and the
+        two 6×4×6 matchup matrices read moves off the raw poke-env ``Move`` objects
+        (``battle.available_moves`` / ``get_sorted_moves``) and the defender's
+        ``type_1``/``type_2``/``ability``/``status``. They are *not* migrated to the read-model
+        on purpose, for three independent reasons:
+          1. *Typed Hidden Power id.* Our own HP move keeps its typed id (``hiddenpowerfire``)
+             only on the raw ``Move`` object; the live request — and therefore ``LiveView`` /
+             ``LegalActions`` — re-keys it to bare ``hiddenpower``. Reading the move list off the
+             read-model would silently collapse own HP to Normal/tracker, changing the emitted
+             effectiveness. (See the matching note in ``pokemon.py``.)
+          2. *Hot path needs enums.* ``effective_multiplier_by_types`` is keyed on
+             ``PokemonType`` enums; ``LiveView`` exposes lowercased *strings*, so feeding it
+             would add a per-cell string→enum conversion to the #1 obs hot loop (288 cells).
+          3. *Pinned by the alignment test.* ``alignment_test`` asserts each matrix cell carries
+             its move's ``move.type`` effectiveness — i.e. the move-object type, not a dex lookup.
 
         hp_tracker: optional HiddenPowerTracker. When supplied, matchup scalars
         for bare "hiddenpower" move slots are replaced with the expected
@@ -135,13 +156,10 @@ class ReactiveEncoder(ObservationEncoder):
         if battle is None:
             return vec
 
-        # 1. Active Moves (Power and Multiplier)
+        # 1. Active Moves (Power and Multiplier) — see the docstring: kept on the raw battle
+        # so own Hidden Power retains its typed id and the hot loop stays enum-keyed.
         moves_base_power = np.zeros(4)
         moves_dmg_multiplier = np.ones(4)
-
-        mon_move_ids = []
-        if battle.active_pokemon:
-            mon_move_ids = [m.id for m in battle.active_pokemon.moves.values()]
 
         # Skip Struggle — it has a dedicated action (10) and a dedicated flag (vec[15]).
         # Filling the move slots with Struggle's stats would create a confusing alias
@@ -169,19 +187,30 @@ class ReactiveEncoder(ObservationEncoder):
         vec[0:4] = moves_base_power
         vec[4:8] = moves_dmg_multiplier
 
-        # 2. Fainted Counts
-        fainted_mon_team = len([mon for mon in battle.team.values() if mon.fainted]) / 6.0
-        fainted_mon_opponent = len([mon for mon in battle.opponent_team.values() if mon.fainted]) / 6.0
+        # 2. Fainted Counts — read through the LiveView (m.fainted) when available, else raw.
+        if live is not None:
+            fainted_mon_team = sum(1 for m in live.ours.mons if m.fainted) / 6.0
+            fainted_mon_opponent = sum(1 for m in live.opp.mons if m.fainted) / 6.0
+        else:
+            fainted_mon_team = len([mon for mon in battle.team.values() if mon.fainted]) / 6.0
+            fainted_mon_opponent = len([mon for mon in battle.opponent_team.values() if mon.fainted]) / 6.0
         vec[8] = fainted_mon_team
         vec[9] = fainted_mon_opponent
 
-        # 3. Status (HP and Spikes removed — available in per-Pokémon vector and global env)
-        vec[10] = 1.0 if battle.active_pokemon and battle.active_pokemon.status else 0.0
+        # 3. Status — active mon currently has a status condition (HP and Spikes removed —
+        # available in per-Pokémon vector and global env). Read through the LiveView's active
+        # slot when available; both paths resolve the active off battle.active_pokemon, so the
+        # truthiness is identical.
+        if live is not None:
+            active_live = live.ours.active
+            vec[10] = 1.0 if (active_live is not None and active_live.status) else 0.0
+        else:
+            vec[10] = 1.0 if battle.active_pokemon and battle.active_pokemon.status else 0.0
 
         # 4. Forced Struggle
         vec[11] = 1.0 if is_forced_struggle else 0.0
 
-        # --- Matchup Matrices ---
+        # --- Matchup Matrices (raw battle — see the docstring's three reasons) ---
         our_team = self.get_team_list(battle, is_opponent=False)
         their_team = self.get_team_list(battle, is_opponent=True)
 

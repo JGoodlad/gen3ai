@@ -27,38 +27,14 @@ from poke_env.battle.pokemon import Pokemon
 from poke_env.battle.status import Status
 from typing import Any, Dict
 
-# Imported lazily inside encode() to avoid a hard import cycle with the training package.
-_HP_TYPE_INDEX: "dict[str, int] | None" = None
-
-
-def _hp_type_index() -> "dict[str, int]":
-    """Lazy-built mapping from PokemonType.name (uppercase) → index in
-    HIDDEN_POWER_TYPE_ORDER. Used to translate a known HP type into its
-    one-hot slot in the 16-dim probability block."""
-    global _HP_TYPE_INDEX
-    if _HP_TYPE_INDEX is None:
-        from agents.training.hidden_power_tracker import HIDDEN_POWER_TYPE_ORDER
-        _HP_TYPE_INDEX = {t.name: i for i, t in enumerate(HIDDEN_POWER_TYPE_ORDER)}
-    return _HP_TYPE_INDEX
-
-
-def _own_hp_type_index(mon: Any) -> "int | None":
-    """If `mon` has a Hidden Power move with its type preserved (via the
-    poke-env raw_id fix), return the index in HIDDEN_POWER_TYPE_ORDER for that
-    type. Returns None if the mon has no HP, or only has bare "hiddenpower"
-    with no type info."""
-    for move_id, move in mon.moves.items():
-        if not move_id.startswith("hiddenpower"):
-            continue
-        if move_id == "hiddenpower":
-            continue  # type-less variant — opponent path, shouldn't reach here for own
-        type_name = getattr(move.type, "name", None)
-        if type_name is None:
-            continue
-        idx = _hp_type_index().get(type_name)
-        if idx is not None:
-            return idx
-    return None
+# Status → condition one-hot slot, in both the read-model's id form (LivePokemon.status,
+# e.g. "brn") and poke-env's Status enum (raw / unit-test fallback). Both map to the SAME
+# slot so the emitted vector is byte-identical regardless of which source is read.
+_STATUS_STR_IDX = {"brn": 1, "par": 2, "slp": 3, "frz": 4, "psn": 5, "tox": 6}
+_STATUS_ENUM_IDX = {
+    Status.BRN: 1, Status.PAR: 2, Status.SLP: 3,
+    Status.FRZ: 4, Status.PSN: 5, Status.TOX: 6,
+}
 
 class PokemonEncoder(ObservationEncoder):
     """
@@ -71,12 +47,15 @@ class PokemonEncoder(ObservationEncoder):
       - opponent unknown: hp_revealed=0, probs all zero
       - opponent narrowed (observed HP, types ruled out): hp_revealed=1, sparse probs
       - opponent ruled out (4 moves seen, none is HP): hp_revealed=1, all-zero probs
-      - our mon with HP: hp_revealed=1, one-hot at the known type
-      - our mon without HP: hp_revealed=1, all-zero probs
+      - our mon (HP or not): hp_revealed=1, all-zero probs
 
-    The four states are linearly separable by the (hp_revealed, probs.any()) pair,
-    so the model gets a clean signal that distinguishes "no information yet" from
-    "no HP possible."
+    Own mons always read hp_revealed=1 with all-zero probs. The own HP *type* is not
+    recoverable from the current-board read-model: in a live battle the server request
+    re-keys a typed Hidden Power under the bare ``"hiddenpower"`` id (the move's own typed
+    ``.id`` survives only on the raw poke-env ``Move`` object, which this boundary does not
+    expose). The previous `_own_hp_type_index` therefore resolved to None on every real
+    decision — the own type one-hot was already dead — so dropping it keeps the emitted
+    vector byte-identical while removing the last raw ``mon.moves`` read here.
     """
     
     _NATURE_STAT_ORDER = ("atk", "def", "spa", "spd", "spe")
@@ -100,12 +79,21 @@ class PokemonEncoder(ObservationEncoder):
         is_own: bool = False,
         hp_probs: "np.ndarray | None" = None,
         hp_known: bool = False,
+        live_mon=None,
     ) -> np.ndarray:
         """Encode a single Pokémon slot.
 
+        live_mon: the :class:`~agents.battle.live_view.LivePokemon` current-board snapshot
+        for this slot (built once per decision by ``state_encoder`` from ``battle.live_view``).
+        When supplied, the *current-board* per-mon facts read here — status, HP fraction,
+        status counter, spread (IVs/EVs/nature) and species/base-stats (via the species
+        sub-encoder) — come through the read-model instead of the raw poke-env ``Pokemon``.
+        ``None`` (unit-test / plain-Battle path) falls back to the raw ``mon``; both surfaces
+        carry the same values, so the emitted vector is byte-identical. The item / type /
+        ability / move sub-encoders are not part of this boundary and still read ``mon``.
+
         hp_probs: optional (16,) float32 from HiddenPowerTracker.get_probs(species)
-        for opponent mons. Ignored for own mons (we derive the one-hot ourselves
-        from mon.moves).
+        for opponent mons. Ignored for own mons.
         hp_known: for opponent mons, True when the tracker has made a determination
         — either narrowed via observation, or ruled out (4 moves revealed without HP).
         Ignored for own mons (always known).
@@ -113,44 +101,45 @@ class PokemonEncoder(ObservationEncoder):
         vec = np.zeros(self.dimension, dtype=np.float32)
         if mon is None:
             return vec
-            
-        # 1. Species (1 ID + 6 Stats)
-        species_vec = self.species_encoder.encode(mon, battle)
+
+        # 1. Species (1 ID + 6 Stats) — current-board read goes through LivePokemon
+        species_vec = self.species_encoder.encode(mon, battle, live_mon=live_mon)
         vec[POKEMON_SPECIES_OFFSET : POKEMON_SPECIES_OFFSET + len(species_vec)] = species_vec
-        
+
         # 2. Items (16 + 1)
         item_vec = self.items_encoder.encode(mon, battle)
         vec[POKEMON_ITEMS_OFFSET : POKEMON_ITEMS_OFFSET + len(item_vec)] = item_vec
-        
+
         # 3. Combined Types (8)
         type_vec = self.type_encoder.encode(mon, battle)
         vec[POKEMON_TYPES_OFFSET : POKEMON_TYPES_OFFSET + len(type_vec)] = type_vec
-        
+
         # 4. Abilities (3): [ability1_id, ability2_id, known_flag]
         # For unrevealed opp mons, ability1/2 hold the species' dex-possible
         # Gen 3 abilities (e.g. Snorlax = [Immunity, Thick Fat]); once revealed,
         # ability1 holds the actual ability and known flips to 1.
         ability_vec = self.abilities_encoder.encode(mon, battle)
         vec[POKEMON_ABILITIES_OFFSET : POKEMON_ABILITIES_OFFSET + len(ability_vec)] = ability_vec
-        
-        # 5. Condition (8)
+
+        # 5. Condition (8) — status one-hot, sourced from the read-model when available.
+        # `status` below is reused by the status-counter block (9); keep it as the raw
+        # source's value so both blocks agree.
         cursor = POKEMON_CONDITION_OFFSET
-        status = mon.status
-        if status:
-            status_map = {
-                Status.BRN: 1, Status.PAR: 2, Status.SLP: 3, 
-                Status.FRZ: 4, Status.PSN: 5, Status.TOX: 6
-            }
-            idx = status_map.get(status, 0)
-            if idx > 0:
-                vec[cursor + idx] = 1.0
-        
+        if live_mon is not None:
+            status_idx = _STATUS_STR_IDX.get(live_mon.status, 0)
+        else:
+            status_idx = _STATUS_ENUM_IDX.get(mon.status, 0)
+        if status_idx > 0:
+            vec[cursor + status_idx] = 1.0
+
         # 6. Moves (36)
         moves_vec = self.moves_encoder.encode(mon, battle)
         vec[POKEMON_MOVES_OFFSET : POKEMON_MOVES_OFFSET + len(moves_vec)] = moves_vec
-        
+
         # 7. HP (1)
-        vec[POKEMON_HP_OFFSET] = mon.current_hp_fraction
+        vec[POKEMON_HP_OFFSET] = (
+            live_mon.hp_fraction if live_mon is not None else mon.current_hp_fraction
+        )
 
         # 8. Species known (1) — always 1.0 for a real slot; 0.0 for absent slots
         # (the None path returned early above, so all populated slots hit this)
@@ -160,10 +149,16 @@ class PokemonEncoder(ObservationEncoder):
         # Gen 3 sleep: 1–4 turns. Sleep Talk/Snore increment the counter but the
         # increment is discarded on switch-out (engine oversight), so this is approximate.
         # Toxic: resets to 1 on switch-in; practical max ~8 turns before fainting.
-        status = mon.status
-        ctr = getattr(mon, "status_counter", 0) or 0
-        vec[POKEMON_COUNTER_OFFSET]     = min(ctr, 4) / 4.0 if status == Status.SLP else 0.0
-        vec[POKEMON_COUNTER_OFFSET + 1] = min(ctr, 8) / 8.0 if status == Status.TOX else 0.0
+        if live_mon is not None:
+            is_slp = live_mon.status == "slp"
+            is_tox = live_mon.status == "tox"
+            ctr = live_mon.status_counter
+        else:
+            is_slp = mon.status == Status.SLP
+            is_tox = mon.status == Status.TOX
+            ctr = getattr(mon, "status_counter", 0) or 0
+        vec[POKEMON_COUNTER_OFFSET]     = min(ctr, 4) / 4.0 if is_slp else 0.0
+        vec[POKEMON_COUNTER_OFFSET + 1] = min(ctr, 8) / 8.0 if is_tox else 0.0
 
         # 10. Spread block (18 dims): IVs (6) + EVs (6) + spread_known (1) + nature (5)
         # Own team: actual values from the teambuilder. Opponent: all zeros + spread_known=0
@@ -172,9 +167,17 @@ class PokemonEncoder(ObservationEncoder):
         # mon.ivs / mon.evs should always be non-None for own team after the poke_env fix
         # (TeambuilderPokemon defaults: ivs=[31]*6, evs=[0]*6). The None guards below are
         # defensive fallbacks in case the Pokemon was never passed through teambuilder init.
+        # LivePokemon mirrors mon.ivs/evs/nature (own side only, spread_known gated), so the
+        # read-model and raw paths produce the same spread block.
         if is_own:
-            ivs = mon.ivs  # list[int] | None: [HP, Atk, Def, SpA, SpD, Spe]
-            evs = mon.evs  # list[int] | None: [HP, Atk, Def, SpA, SpD, Spe]
+            if live_mon is not None:
+                ivs = live_mon.ivs       # tuple[int] | None: [HP, Atk, Def, SpA, SpD, Spe]
+                evs = live_mon.evs       # tuple[int] | None
+                nature_name = live_mon.nature
+            else:
+                ivs = mon.ivs            # list[int] | None
+                evs = mon.evs            # list[int] | None
+                nature_name = mon.nature  # str | None
             off = POKEMON_SPREAD_OFFSET
             # IVs: fallback to all-31 (competitive standard) rather than all-0
             # — encoding 0.0 for unknown IVs would be silently wrong
@@ -185,22 +188,20 @@ class PokemonEncoder(ObservationEncoder):
                 for j, ev in enumerate(evs):
                     vec[off + 6 + j] = ev / 252.0
             vec[off + 12] = 1.0  # spread_known flag
-            nature_name = mon.nature  # str | None; fallback to "serious" (all 1.0 modifiers)
+            # nature_name: str | None; fallback to "serious" (all 1.0 modifiers)
             nature_mods = self._natures.get(nature_name or "serious", {})
             for j, stat in enumerate(self._NATURE_STAT_ORDER):
                 vec[off + 13 + j] = float(nature_mods.get(stat, 1.0))
         # Opponent slots: all 18 dims remain 0.0 (spread_known=0 is the signal)
 
         # 11. Hidden Power candidate block (17 dims): hp_revealed (1) + 16 type probs.
-        # Own mons: state is always known (set hp_revealed=1.0). If the mon has HP,
-        # derive the type from the move object (preserved via the poke-env raw_id
-        # fix in Pokemon._update_from_teambuilder) and write a one-hot. Otherwise
-        # leave probs at zero — encoding "we know this mon definitively has no HP."
+        # Own mons: state is always known → hp_revealed=1.0, probs all zero. The own HP
+        # *type* is not recoverable from the read-model (the live request re-keys typed HP
+        # to bare "hiddenpower"; the typed id survives only on the raw Move object this
+        # boundary hides), and the former type one-hot resolved to None on every real
+        # decision — so leaving probs zero is byte-identical and drops the last mon.moves read.
         if is_own:
             vec[POKEMON_HP_REVEALED_OFFSET] = 1.0
-            idx = _own_hp_type_index(mon)
-            if idx is not None:
-                vec[POKEMON_HP_PROBS_OFFSET + idx] = 1.0
         elif hp_known:
             # Opponent: tracker has either narrowed (sparse probs) or ruled out
             # (probs all zero). Either way, set hp_revealed and copy the (possibly

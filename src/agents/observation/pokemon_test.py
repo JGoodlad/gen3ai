@@ -385,8 +385,16 @@ def _hp_move(move_id, type_name=None):
     return m
 
 
-def test_hp_block_own_with_hp_grass_writes_one_hot():
-    """Own mon carrying HP-Grass: hp_revealed=1, one-hot at Grass index."""
+def test_hp_block_own_with_hp_is_revealed_no_probs():
+    """Own mon carrying Hidden Power: hp_revealed=1, probs all zero.
+
+    The own HP *type* one-hot was removed in the LiveView access refactor: it relied on the
+    typed move id (``hiddenpowergrass``) surviving on the mon, but a live battle's server
+    request re-keys typed HP to bare ``hiddenpower`` (the typed id lives only on the raw Move
+    object, which the read-model deliberately does not expose). The old `_own_hp_type_index`
+    therefore resolved to None on every real decision — the one-hot was already dead in
+    production — so own HP now reads identically to own-without-HP. Verified byte-identical
+    over real battles by the obs equivalence harness."""
     encoder = _make_encoder()
     mon = _make_mon()
     mon.moves = {"hiddenpowergrass": _hp_move("hiddenpowergrass", "GRASS")}
@@ -394,23 +402,7 @@ def test_hp_block_own_with_hp_grass_writes_one_hot():
     vec = encoder.encode(mon, None, is_own=True)
     block = _hp_block(vec)
     assert block[0] == 1.0, "hp_revealed must be 1.0 for our own team"
-    assert block[1 + _HP_IDX["GRASS"]] == 1.0, "Grass slot must hold 1.0"
-    # Everything else in the 16-dim probability vector must be zero
-    other_mass = block[1:].sum() - 1.0
-    assert other_mass == pytest.approx(0.0), f"non-Grass slots leaked: {block[1:]}"
-
-
-def test_hp_block_own_with_hp_fire_writes_one_hot():
-    """Different type to confirm the helper isn't constant."""
-    encoder = _make_encoder()
-    mon = _make_mon()
-    mon.moves = {"hiddenpowerfire": _hp_move("hiddenpowerfire", "FIRE")}
-
-    vec = encoder.encode(mon, None, is_own=True)
-    block = _hp_block(vec)
-    assert block[0] == 1.0
-    assert block[1 + _HP_IDX["FIRE"]] == 1.0
-    assert block[1 + _HP_IDX["GRASS"]] == 0.0
+    assert np.all(block[1:] == 0.0), "own HP type one-hot is no longer written"
 
 
 def test_hp_block_own_without_hp_marks_no_hp():
@@ -486,9 +478,11 @@ def test_hp_block_opponent_ruled_out_zero_probs_with_flag():
 
 
 def test_hp_block_real_pokemon_with_hp_grass_end_to_end():
-    """End-to-end: a real Pokemon parsed from a team paste with Hidden Power
-    [Grass] must encode hp_revealed=1 + one-hot at Grass. Exercises the full
-    poke-env raw_id patch path."""
+    """End-to-end: a real Pokemon parsed from a team paste with Hidden Power [Grass] encodes
+    hp_revealed=1 with all-zero probs. The own HP type one-hot is no longer written (see
+    ``test_hp_block_own_with_hp_is_revealed_no_probs``): in a live battle the server request
+    re-keys typed HP to bare ``hiddenpower``, so the type was never recoverable on the real
+    obs path — the read-model refactor makes this explicit and stays byte-identical."""
     from poke_env.teambuilder.teambuilder import Teambuilder
     from poke_env.battle.pokemon import Pokemon
 
@@ -512,8 +506,4 @@ IVs: 2 Atk / 30 SpA
     block = _hp_block(vec)
 
     assert block[0] == 1.0, "hp_revealed must be 1.0"
-    assert block[1 + _HP_IDX["GRASS"]] == 1.0, (
-        "Grass one-hot must be set — confirms raw_id flows through poke-env"
-    )
-    # Total mass exactly 1.0 — pure one-hot
-    assert block[1:].sum() == pytest.approx(1.0)
+    assert np.all(block[1:] == 0.0), "own HP type one-hot is no longer written"
