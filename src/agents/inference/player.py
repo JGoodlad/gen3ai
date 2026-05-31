@@ -1,8 +1,19 @@
+import asyncio
 import numpy as np
 import torch
 from typing import Dict, Any, Optional
 from poke_env.player import Player
 from poke_env.player.battle_order import ForfeitBattleOrder
+
+
+class ShowdownConnectionError(RuntimeError):
+    """A Gen3 player could not log in to the Showdown server within the connect
+    deadline. Raised instead of hanging: poke-env's ``PSClient.listen()`` swallows
+    the underlying ``ConnectionRefused`` (it logs the exception and returns), which
+    leaves ``logged_in`` forever unset, so every ``await logged_in.wait()`` in
+    ``battle_against`` / ``accept_challenges`` would otherwise block indefinitely.
+    Surfacing it lets replay / eval / self-play FAIL FAST (crash → the launcher
+    detects and restarts) rather than silently stalling the whole training run."""
 
 from agents.battle.gen3_battle import Gen3Battle
 
@@ -32,6 +43,51 @@ class Gen3Player(Player):
         self._stall_loggers: dict[str, StallLogger] = {}
         self._trackers: dict[str, EpisodeTracker] = {}
         self._turn_delta_encoder: Optional[TurnDeltaEncoder] = None
+
+    async def _battle_against(self, *opponents, n_battles: int):
+        """FUNDAMENTAL connect-or-raise guard around poke-env's battle flow.
+
+        poke-env's ``listen()`` swallows a failed connection (it logs the exception
+        and returns), leaving every participant's ``logged_in`` event unset — so the
+        ``await logged_in.wait()`` inside the real ``_battle_against`` would hang
+        forever. We run on POKE_LOOP here (battle_against wrapped us via
+        handle_threaded_coroutines) and every client's ``logged_in`` / listen task
+        lives on POKE_LOOP, so we can convert a dead connection into a loud
+        :class:`ShowdownConnectionError` before delegating. Covers every participant
+        — including plain poke-env opponents — since we check their ``ps_client`` too."""
+        for participant in (self, *opponents):
+            await self._await_connected(participant.ps_client)
+        return await super()._battle_against(*opponents, n_battles=n_battles)
+
+    @staticmethod
+    async def _await_connected(client) -> None:
+        """Block until ``client`` is logged in, or raise the moment its listen() task
+        finishes WITHOUT logging in. This is DETERMINISTIC — no timeout guess: a
+        refused connection makes poke-env's listen() return immediately, and a
+        dead-but-open socket is closed by the websocket ping; both finish the listen
+        task. So 'listen task done && not logged in' is an exact signal that the
+        connection failed, which we surface instead of hanging on it forever."""
+        if client.logged_in.is_set():
+            return
+        listen_fut = getattr(client, "_listening_coroutine", None)
+        if listen_fut is None:
+            # No listening task ⇒ the client can never log in on its own. A battling
+            # player must listen; fail loudly rather than wait forever.
+            raise ShowdownConnectionError(
+                f"{client.websocket_url}: client has no listening task "
+                f"(start_listening=False?) — it can never log in."
+            )
+        while not client.logged_in.is_set():
+            if listen_fut.done():
+                err = None
+                if not listen_fut.cancelled():
+                    err = listen_fut.exception()  # usually None — listen() swallows it
+                raise ShowdownConnectionError(
+                    f"{client.websocket_url}: listen task exited without logging in — "
+                    f"Showdown server unreachable? "
+                    + (f"({err!r})" if err else "(poke-env swallowed the connection error)")
+                )
+            await asyncio.sleep(0.05)
 
     def _handle_stall(self, battle, suffix: str) -> Optional[ForfeitBattleOrder]:
         """Returns ForfeitBattleOrder if the battle exceeds the stall threshold, else None.

@@ -93,6 +93,12 @@ def _print_exit_summary(run_dir: "str | None", state: LauncherState) -> None:
 def run(child_args: list, interval_hours: float, pin: bool = True, sync_to_main: bool = False, pin_hash_override: "str | None" = None, grace_minutes: float = 20.0) -> None:
     interval_seconds = interval_hours * 3600
     grace_seconds = max(0.0, grace_minutes * 60)
+    # Fallback SIGKILL window: a hung child can't run its SIGTERM handler (its main
+    # thread is blocked in a C-level wait), so it never saves+exits. If it ignores a
+    # launcher-sent SIGTERM (deadline overrun / 'r' restart) for this long, SIGKILL it
+    # so the run can still recover from the last checkpoint. This is a hard kill grace,
+    # NOT a progress guess — "you've had 90 s to respond and didn't."
+    KILL_GRACE_SECONDS = 90.0
     session_start = time.time()
     child_env = _build_child_env()
     # Tell the child its restart budget so it can stop cleanly at the next
@@ -224,6 +230,23 @@ def run(child_args: list, interval_hours: float, pin: bool = True, sync_to_main:
                     except ProcessLookupError:
                         pass
                     flags.sigterm_sent = True
+                    flags.forced_restart = True
+                    flags.sigterm_at = now
+
+                # SIGKILL escalation: a hung child can't run its SIGTERM handler, so it
+                # never saves+exits. After KILL_GRACE_SECONDS, SIGKILL it so the run can
+                # actually recover (the forced_restart flag makes the loop restart from
+                # the last checkpoint despite the non-clean exit).
+                if (flags.sigterm_sent and not flags.sigkill_sent
+                        and now - flags.sigterm_at >= KILL_GRACE_SECONDS):
+                    state.add_event(
+                        f"💀 Child ignored SIGTERM for {KILL_GRACE_SECONDS:.0f}s — SIGKILL"
+                    )
+                    try:
+                        os.kill(proc.pid, signal.SIGKILL)
+                    except ProcessLookupError:
+                        pass
+                    flags.sigkill_sent = True
 
                 poll_timeout = 0.5
                 try:
@@ -244,6 +267,7 @@ def run(child_args: list, interval_hours: float, pin: bool = True, sync_to_main:
                                 except ProcessLookupError:
                                     pass
                                 flags.sigterm_sent = True
+                                flags.sigterm_at = time.monotonic()
                             state.view_mode = "dashboard"
                         elif ch in ("n", "d"):
                             state.view_mode = "dashboard"
@@ -261,20 +285,26 @@ def run(child_args: list, interval_hours: float, pin: bool = True, sync_to_main:
                 time.sleep(1)
                 sys.exit(0)
 
-            if rc != TrainExitCode.INTERRUPTED:
-                state.add_event(f"🛑 Child crashed (exit {rc}) — not restarting")
-                live.update(ui.render(state.snapshot(), live.console.height))
-                time.sleep(2)
-                atexit.register(_print_crash_log, state.snapshot().log_lines)
-                sys.exit(rc)
-
             if flags.quit_requested:
                 state.add_event("👋 Quit complete.")
                 live.update(ui.render(state.snapshot(), live.console.height))
                 time.sleep(1)
                 sys.exit(0)
 
-            if interval_hours <= 0 and not flags.restart_requested:
+            # An INTENDED restart — the user pressed 'r' (restart_requested) or the
+            # launcher force-killed a stalled/overran child (forced_restart) — recovers
+            # the run regardless of the exit code: a hung child ignores SIGTERM and is
+            # SIGKILL'd, so rc won't be the clean INTERRUPTED(15). Only a *self*-crash
+            # (neither intended) stops the launcher.
+            intended_restart = flags.forced_restart or flags.restart_requested
+            if not intended_restart and rc != TrainExitCode.INTERRUPTED:
+                state.add_event(f"🛑 Child crashed (exit {rc}) — not restarting")
+                live.update(ui.render(state.snapshot(), live.console.height))
+                time.sleep(2)
+                atexit.register(_print_crash_log, state.snapshot().log_lines)
+                sys.exit(rc)
+
+            if interval_hours <= 0 and not intended_restart:
                 sys.exit(0)
 
             checkpoint = find_latest_checkpoint("models", run_dir=run_dir, min_mtime=session_start)

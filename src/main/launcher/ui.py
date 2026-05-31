@@ -124,6 +124,11 @@ class LauncherUI:
         if snap.metrics_step:
             highlights.append(f"steps [bold]{snap.metrics_step:,}[/bold]")
         hl = "  │  ".join(highlights) if highlights else "[dim]waiting for first rollout…[/dim]"
+        # Stall indicator: surface a silent child BEFORE the watchdog fires, so the
+        # dashboard visibly "notices" instead of sitting forever on "waiting…".
+        idle = now - snap.last_activity_ts
+        if idle > 120:
+            hl += f"  │  [bold red]⚠ no child output for {_elapsed_str(idle)}[/bold red]"
 
         row2 = Table.grid(padding=(0, 1), expand=True)
         row2.add_column()

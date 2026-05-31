@@ -188,6 +188,7 @@ The checkpoint must have a `metadata.json` with a `git_hash` field (written auto
 | Flag | Default | Notes |
 |------|---------|-------|
 | `--restart-interval-hours` | `3.0` | Set to `0` for a single run with no restart |
+| `--restart-grace-minutes` | `20.0` | Force-kill window after a scheduled restart's deadline (child overran its rollout boundary). A child that ignores the SIGTERM is SIGKILL'd after a 90 s grace, and a launcher-forced kill restarts from the last checkpoint (not treated as a fatal crash). The dashboard shows `⚠ no child output for Nm` once the child has been silent > 2 min, so a stall is *visible* — but there is no auto-restart on stall (a connection failure crashes loudly via the `Gen3Player` connect guard, and other hangs are surfaced for investigation rather than guessed at with a timeout). |
 | `--no-pin` | off | Skip worktree creation; run from the current source tree |
 | `--sync-to-main` | off | When resuming from a checkpoint, pin the isolated worktree to the current HEAD instead of the checkpoint's original git hash. Use this to pick up UI or tooling fixes on `main` without discarding the checkpoint. |
 
@@ -261,11 +262,18 @@ npm run showdown -- 8001                            # server on 8001 (dev stays 
 npm run stop -- 8001                                # kills the 8001 instance
 ```
 
-`train_rl_agent.py --showdown-port <port>` builds one `ServerConfiguration` in `main()` and
-threads it to every Showdown client — the training-env players (carried into the
-`SubprocVecEnv` spawn workers via the env-factory closures), eval, and self-play. There is
-no environment variable; the default is 8000. The launcher forwards `--showdown-port`
-verbatim (it strips only launcher-owned flags).
+`train_rl_agent.py --showdown-port <port>` builds **one** `ServerConfiguration` in `main()`
+via the single constructor `localhost_server_configuration(port)` (in
+`poke_env.ps_client.server_configuration`) and threads it to **every** Showdown client —
+the training-env players (carried into the `SubprocVecEnv` spawn workers via the env-factory
+closures), eval, self-play, **and the replay recorder** (`ReplayCallback(server_config=…)`).
+Every player-creating callback takes a `server_config` param (defaulting to port 8000 for
+standalone use) and builds its players from it — never from a bare
+`LocalhostServerConfiguration` constant. `server_port_threading_test.py` is the regression
+guard: it fails if any of these callbacks hardcodes the default port instead of threading
+the configured one (the bug where replays connected to :8000 while training ran on :8001).
+There is no environment variable; the default is 8000. The launcher forwards
+`--showdown-port` verbatim (it strips only launcher-owned flags).
 
 ---
 

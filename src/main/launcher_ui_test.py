@@ -20,6 +20,7 @@ def _snap(**kwargs) -> LauncherSnapshot:
         metrics_step=0,
         metrics_ts=None,
         eval_metrics_ts=None,
+        last_activity_ts=time.monotonic(),
         log_lines=[],
         events=[],
         initial_git_hash="abc1234",
@@ -65,6 +66,23 @@ class TestLauncherState:
         s.update_metrics({"time/fps": 1200.0, "_step": 5000})
         snap = s.snapshot()
         assert "_step" not in snap.metrics
+
+    def test_any_child_output_marks_activity(self):
+        """The stall watchdog clock advances on ANY sign of life — stdout, event, or
+        metrics — so a hung child (none of these) is the only thing that goes stale."""
+        for action in (
+            lambda st: st.add_log("a line"),
+            lambda st: st.add_event("an event"),
+            lambda st: st.update_metrics({"time/fps": 1.0, "_step": 1}),
+            lambda st: st.mark_activity(),
+        ):
+            s = LauncherState(interval_hours=3.0)
+            # Backdate the clock, then perform the action; it must move forward.
+            s._last_activity_ts = time.monotonic() - 1000
+            before = s.last_activity_ts
+            action(s)
+            assert s.last_activity_ts > before
+            assert s.snapshot().last_activity_ts == pytest.approx(s.last_activity_ts)
 
     def test_snapshot_is_isolated_copy(self):
         s = LauncherState(interval_hours=3.0)
@@ -119,6 +137,24 @@ class TestLauncherUI:
         snap = _snap(view_mode="logs", log_lines=["line1", "line2", "line3"])
         result = ui.render(snap)
         assert result is not None
+
+    def test_dashboard_surfaces_stall_when_no_output(self):
+        """A silent child must visibly show a stall warning on the dashboard — the
+        whole point: the TUI 'notices' instead of sitting on 'waiting…' forever."""
+        from rich.console import Console
+        ui = LauncherUI()
+        con = Console(width=240)
+
+        with con.capture() as cap:
+            con.print(ui.render(_snap(last_activity_ts=time.monotonic())))
+        fresh_text = cap.get()
+
+        with con.capture() as cap:
+            con.print(ui.render(_snap(last_activity_ts=time.monotonic() - 600)))
+        stale_text = cap.get()
+
+        assert "no child output" not in fresh_text
+        assert "no child output" in stale_text
 
     def test_render_dispatches_all_view_modes(self):
         ui = LauncherUI()

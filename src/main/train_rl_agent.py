@@ -629,6 +629,7 @@ async def main():
         n_replays=10,
         stall_config=stall_cfg,
         reward_fn_factory=reward_factory,
+        server_config=server_config,
     )
 
     # --lr must lie within [--min-lr, --max-lr]. This is the user-facing contract

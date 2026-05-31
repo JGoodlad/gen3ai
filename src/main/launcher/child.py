@@ -118,6 +118,7 @@ def _launch_child(
 
     state.pid = proc.pid
     state.run_start = time.monotonic()
+    state.mark_activity()  # fresh stall-watchdog clock for the new child
 
     log_file = _open_child_log(state)
     threading.Thread(target=_read_metrics_pipe, args=(metrics_r, state), daemon=True).start()

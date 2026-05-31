@@ -19,6 +19,7 @@ class LauncherSnapshot:
     metrics_step: int
     metrics_ts: Optional[float]      # monotonic time of last rollout/train metrics update
     eval_metrics_ts: Optional[float] # monotonic time of last eval/* metrics update
+    last_activity_ts: float    # monotonic time of last ANY child output (log/event/metric)
     log_lines: list            # recent child stdout lines
     events: list               # launcher event strings (timestamped)
     initial_git_hash: Optional[str]
@@ -39,6 +40,11 @@ class LauncherState:
         self._metrics_step: int = 0
         self._metrics_ts: Optional[float] = None
         self._eval_metrics_ts: Optional[float] = None
+        # Monotonic timestamp of the LAST sign of life from the child — any stdout
+        # line, IPC event, or metrics update. The launcher's stall watchdog (run.py)
+        # restarts the child if this goes stale, catching a hung/deadlocked child
+        # that is alive (so proc.wait never returns) but making no progress.
+        self._last_activity_ts: float = time.monotonic()
         self.pid: Optional[int] = None
         self.run_start: float = time.monotonic()
         self.deadline: float = float("inf")
@@ -48,9 +54,21 @@ class LauncherState:
         self.run_dir: Optional[str] = None
         self.ent_coef: Optional[float] = None
 
+    def mark_activity(self) -> None:
+        """Record a sign of life from the child (resets the stall watchdog clock).
+        Called on the child's launch and on any stdout/event/metrics it produces."""
+        with self._lock:
+            self._last_activity_ts = time.monotonic()
+
+    @property
+    def last_activity_ts(self) -> float:
+        with self._lock:
+            return self._last_activity_ts
+
     def add_log(self, line: str) -> None:
         with self._lock:
             self._log_lines.append(line)
+            self._last_activity_ts = time.monotonic()
 
     def add_event(self, msg: str) -> None:
         ts = time.strftime("%H:%M:%S")
@@ -58,6 +76,7 @@ class LauncherState:
             self._events.append(f"[{ts}] {msg}")
             if len(self._events) > 30:
                 self._events = self._events[-30:]
+            self._last_activity_ts = time.monotonic()
 
     def update_metrics(self, payload: dict) -> None:
         step = int(payload.get("_step", 0))
@@ -67,6 +86,7 @@ class LauncherState:
             self._metrics.update(cleaned)
             self._metrics_step = step
             self._metrics_ts = now
+            self._last_activity_ts = now
             if any(k.startswith("eval/") for k in cleaned):
                 self._eval_metrics_ts = now
 
@@ -83,6 +103,7 @@ class LauncherState:
                 metrics_step=self._metrics_step,
                 metrics_ts=self._metrics_ts,
                 eval_metrics_ts=self._eval_metrics_ts,
+                last_activity_ts=self._last_activity_ts,
                 log_lines=list(self._log_lines),
                 events=list(self._events),
                 initial_git_hash=self.initial_git_hash,

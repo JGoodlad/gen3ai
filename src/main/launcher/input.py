@@ -17,6 +17,12 @@ class _PollFlags:
     sigterm_sent: bool = False
     quit_requested: bool = False
     restart_requested: bool = False
+    # Set when the LAUNCHER kills the child for stall/deadline (not a user quit or a
+    # self-crash) — the run must then restart from checkpoint regardless of the exit
+    # code (a hung child ignores SIGTERM and gets SIGKILL'd, so rc won't be INTERRUPTED).
+    forced_restart: bool = False
+    sigterm_at: float = 0.0   # monotonic time SIGTERM was sent (for SIGKILL escalation)
+    sigkill_sent: bool = False
 
 
 def _setup_raw_input() -> None:
@@ -82,6 +88,7 @@ def _dispatch_command(
             except ProcessLookupError:
                 pass
             flags.sigterm_sent = True
+            flags.sigterm_at = time.monotonic()  # arms the SIGKILL escalation
 
     elif ch == "c":
         try:

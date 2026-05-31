@@ -8,7 +8,11 @@ from typing import Callable
 from datetime import datetime
 from stable_baselines3.common.callbacks import BaseCallback
 from poke_env.player import SimpleHeuristicsPlayer
-from poke_env.ps_client import LocalhostServerConfiguration, AccountConfiguration
+from poke_env.ps_client import (
+    LocalhostServerConfiguration,
+    ServerConfiguration,
+    AccountConfiguration,
+)
 
 from agents.inference.player import RLPlayer
 from agents.training.battle_recorder import BattleRecorder
@@ -17,6 +21,13 @@ from agents.training.reward_manager import Gen3RewardManager
 from agents.training.stall import StallConfig
 
 BATTLE_FORMAT = "gen3ou"
+
+# Max wall-clock the training loop will block on a replay before abandoning it.
+# Replay records n_replays games on the training thread; if the Showdown server is
+# unreachable it would otherwise hang the run forever (see _on_step). 10 model-vs-
+# heuristic games complete well within this; the timeout is a safety bound, not a
+# normal path.
+REPLAY_JOIN_TIMEOUT_SEC = 300
 
 
 class StatTrackingRLPlayer(RLPlayer):
@@ -53,10 +64,16 @@ class ReplayCallback(BaseCallback):
 
     def __init__(self, model_dir, mappings, trainee_teambuilder, opponent_teambuilder,
                  save_freq=100000, n_replays=3, stall_config: StallConfig = None,
-                 reward_fn_factory: Callable[[], RewardFunction] = Gen3RewardManager, verbose=0):
+                 reward_fn_factory: Callable[[], RewardFunction] = Gen3RewardManager,
+                 server_config: ServerConfiguration = LocalhostServerConfiguration,
+                 verbose=0):
         super().__init__(verbose)
         self.model_dir = model_dir
         self.mappings = mappings
+        # The Showdown server the replay players connect to. Threaded from
+        # train_rl_agent's single `server_config` (built from --showdown-port) so
+        # replays hit the SAME server as training/eval — not a hardcoded :8000.
+        self.server_config = server_config
         self.trainee_teambuilder = trainee_teambuilder
         self.opponent_teambuilder = opponent_teambuilder
         self.save_freq = save_freq
@@ -85,7 +102,20 @@ class ReplayCallback(BaseCallback):
             print(f"\n🎥 [REPLAY] Step {self.num_timesteps}: Recording {self.n_replays} games to {step_dir}...")
             thread = threading.Thread(target=self._run_async_battles, args=(step_dir,), daemon=True)
             thread.start()
-            thread.join()
+            # BOUND the wait. Replay is a best-effort diagnostic on the SAME thread
+            # as training — if it hangs (e.g. the Showdown server is unreachable,
+            # poke-env's listen() swallows the ConnectionRefused and battle_against
+            # then waits forever for battles that never start), an unbounded join()
+            # would block the entire training loop indefinitely (the child looks
+            # alive to the launcher, so it only recovers via the multi-hour periodic
+            # restart). Abandon the daemon replay thread on timeout and keep training.
+            thread.join(timeout=REPLAY_JOIN_TIMEOUT_SEC)
+            if thread.is_alive():
+                print(
+                    f"⚠️ [REPLAY] still running after {REPLAY_JOIN_TIMEOUT_SEC}s "
+                    f"(Showdown server unreachable?) — abandoning this replay and "
+                    f"continuing training. The daemon thread exits with the process."
+                )
 
         return True
 
@@ -97,7 +127,7 @@ class ReplayCallback(BaseCallback):
                 model=self.model,
                 team=self.trainee_teambuilder,
                 battle_format=BATTLE_FORMAT,
-                server_configuration=LocalhostServerConfiguration,
+                server_configuration=self.server_config,
                 mappings=self.mappings,
                 stall_config=self.stall_config,
                 reward_fn_factory=self.reward_fn_factory,
@@ -108,7 +138,7 @@ class ReplayCallback(BaseCallback):
             opponent = SimpleHeuristicsPlayer(
                 battle_format=BATTLE_FORMAT,
                 team=self.opponent_teambuilder,
-                server_configuration=LocalhostServerConfiguration,
+                server_configuration=self.server_config,
                 account_configuration=AccountConfiguration(f"RepOpp{ts}", "password"),
             )
 
@@ -158,6 +188,12 @@ class ReplayCallback(BaseCallback):
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
 
+        # FAIL FAST: a replay error means something is wrong (a real bug, or — now that
+        # Gen3Player's connect guard raises ShowdownConnectionError instead of hanging —
+        # an unreachable server). Crash loudly so it's investigated, rather than burying
+        # it in a log line that's easy to miss. os._exit(1) is used because we're on a
+        # daemon side-thread (a normal raise wouldn't reach the main thread); the launcher
+        # then reports "Child crashed (exit 1)" and dumps the recent log.
         def exception_handler(loop, context):
             msg = context.get("exception", context["message"])
             print(f"\n🛑 [REPLAY FATAL] Background task failed: {msg}")

@@ -3,6 +3,7 @@ import pytest
 from unittest.mock import MagicMock, patch
 from contextlib import contextmanager
 from poke_env.player.battle_order import ForfeitBattleOrder
+from poke_env.player import Player
 from agents.inference.player import Gen3Player
 from agents.observation.state_encoder import load_mappings, Gen3ObservationEncoder
 from agents.training.stall import StallConfig, StallLogger
@@ -315,3 +316,95 @@ def test_embed_battle_tracker_accumulates_across_calls():
     tracker = player._get_tracker(battle)
     assert len(tracker._history) == 2
     assert len(tracker._actions) == 1
+
+
+# ---------------------------------------------------------------------------
+# Connect-or-raise guard: a dead connection must FAIL FAST, not hang.
+# ---------------------------------------------------------------------------
+def _make_test_player(name, connected, listen_done=None):
+    """A real Gen3Player subclass instance built WITHOUT Player.__init__ (no real
+    websocket), so super()._battle_against still resolves to Player._battle_against
+    while we control the connection state. Must be called inside a running loop so
+    the asyncio.Event binds to it.
+
+    listen_done: None  → no _listening_coroutine (start_listening=False case);
+                 True  → a *done* listen Future (listen() returned, the deterministic
+                         'connection failed' signal); False → a *pending* listen Future.
+    """
+    import asyncio
+    import concurrent.futures
+
+    class _TestPlayer(Gen3Player):
+        def __init__(self):  # deliberately skip Player.__init__ (no connection)
+            ev = asyncio.Event()
+            if connected:
+                ev.set()
+            fut = None
+            if listen_done is not None:
+                fut = concurrent.futures.Future()
+                if listen_done:
+                    fut.set_result(None)  # listen() returned without logging in
+            self.ps_client = type("C", (), {
+                "logged_in": ev,
+                "websocket_url": "ws://localhost:1/showdown/websocket",
+                "_listening_coroutine": fut,
+            })()
+
+        @property
+        def username(self):  # Player.username is read-only; stub it for the guard
+            return name
+
+        def choose_move(self, battle):  # abstract on Player; unused by the guard
+            raise NotImplementedError
+
+    return _TestPlayer()
+
+
+class TestConnectGuard:
+    def test_raises_when_listen_exits_without_login(self):
+        """The FUNDAMENTAL fix, DETERMINISTIC (no timeout): poke-env's listen()
+        swallows a failed connection and returns, leaving logged_in unset forever.
+        'listen task done && not logged in' is an exact failure signal → the guard
+        raises ShowdownConnectionError instead of hanging on logged_in.wait()."""
+        import asyncio
+        from agents.inference.player import ShowdownConnectionError
+
+        async def run():
+            me = _make_test_player("trainee", connected=False, listen_done=True)
+            opp = _make_test_player("opponent", connected=False, listen_done=True)
+            with pytest.raises(ShowdownConnectionError) as exc:
+                await me._battle_against(opp, n_battles=1)
+            assert "ws://localhost:1" in str(exc.value)
+            assert "listen task exited" in str(exc.value)
+
+        asyncio.run(asyncio.wait_for(run(), timeout=5))  # must resolve instantly, never hang
+
+    def test_raises_when_no_listening_task(self):
+        """A client with no listening task can never log in — fail loudly, don't wait."""
+        import asyncio
+        from agents.inference.player import ShowdownConnectionError
+
+        async def run():
+            me = _make_test_player("trainee", connected=False, listen_done=None)
+            with pytest.raises(ShowdownConnectionError) as exc:
+                await me._battle_against(n_battles=1)
+            assert "no listening task" in str(exc.value)
+
+        asyncio.run(asyncio.wait_for(run(), timeout=5))
+
+    def test_proceeds_when_logged_in(self):
+        """When all participants are logged in, the guard delegates to the real
+        _battle_against (stubbed) without raising."""
+        import asyncio
+        from unittest.mock import AsyncMock, patch
+
+        async def run():
+            me = _make_test_player("trainee", connected=True)
+            opp = _make_test_player("opponent", connected=True)
+            with patch.object(Player, "_battle_against",
+                              new=AsyncMock(return_value="ok")) as sup:
+                result = await me._battle_against(opp, n_battles=3)
+            assert result == "ok"
+            sup.assert_awaited_once()
+
+        asyncio.run(asyncio.wait_for(run(), timeout=5))
