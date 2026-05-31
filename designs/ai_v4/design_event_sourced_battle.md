@@ -1,6 +1,6 @@
 # Design: Event-Sourced Battle (`Gen3Battle`)
 
-**Status:** **Steps 1–4 of §9 SHIPPED to main; Steps 5–6 remain.** Scope: Gen 3 OU
+**Status:** **Steps 1–4 of §9 on the current branch (not yet shipped to main); Steps 5–6 remain.** Scope: Gen 3 OU
 **singles** only. This is a foundation piece (training, replay analysis, and v5 MCTS all
 benefit). The original sequencing held; the live-state observation was enriched well
 beyond the original "drop-in" framing (see Implementation Status below). The detailed
@@ -22,6 +22,7 @@ the original proposal, kept for context.
 | `3e4de10` | §9.1–§9.2 | Event-sourced battle layer: `Gen3Battle(Battle)` (`src/agents/battle/`), the `BattleEvent`/`EventKind` schema, the `MESSAGE_POLICY` completeness registry with `assert_conservation()`, and `TurnView` (the per-turn fold). |
 | `c7ecc8d` | §9.3–§9.4 | `LiveView`/`LiveSide`/`LivePokemon` current-board read-model + `Gen3Battle` injection wired into training/eval/replay (`battle_class=Gen3Battle` default on `Gen3Player`/`Gen3Env`). Added the **per-decision window API** `event_cursor` / `events_since(cursor)`. |
 | `786127a` | §9.4 (extended) | **Full live-state observation** (`ARCH_SIGNATURE = gen3_live_state_v1`, obs dim 2734 → 2823). |
+| (current branch) | §9.5 | **TurnDelta fold from event log** (`ARCH_SIGNATURE = gen3_turn_delta_v2`, obs dim 2823 → 2997). Faint-cause multi-hot + attempted-move, event-cursor window, cant vocab → gen3_effects, embedded-ID manifest (no hardcoded extractor positions), +2 volatiles (doomdesire/futuresight) caught by the smoke tripwire. |
 
 ### What changed vs. the original proposal
 

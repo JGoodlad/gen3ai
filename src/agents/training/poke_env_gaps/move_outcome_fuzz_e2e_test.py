@@ -57,8 +57,11 @@ from agents.observation.turn_delta_encoder import (
     OFFSET_OUR_CRIT,
     OFFSET_OPP_CRIT,
     _OUTCOME_TO_IDX,
-    _CANT_TO_IDX,
-    _normalize_cant_reason,
+)
+from agents.observation.gen3_effects import (
+    normalize_cant_reason as _normalize_cant_reason_ge,
+    UnknownCantReasonError,
+    _CANT_INDEX as _CANT_TO_IDX,
 )
 from agents.training.battle_context import BattleContext, TurnDelta, SELF_KO_MOVES
 from agents.training.slot_registry import SlotRegistry
@@ -515,7 +518,10 @@ class MoveOutcomeFuzzPlayer(Player):
             ("opp", OFFSET_OPP_CANT, delta.opp_cant_reason),
         ]:
             got = _onehot_idx(enc, off, CANT_DIM)
-            norm = _normalize_cant_reason(reason)
+            try:
+                norm = _normalize_cant_reason_ge(reason) if reason is not None else None
+            except UnknownCantReasonError:
+                norm = None
             want = _CANT_TO_IDX.get(norm) if norm is not None else None
             if got != want:
                 s.layer4_mismatches += 1
@@ -534,7 +540,10 @@ class MoveOutcomeFuzzPlayer(Player):
         if delta.our_move_crit or delta.opp_move_crit:
             s.crit_seen += 1
         for reason in (delta.our_cant_reason, delta.opp_cant_reason):
-            norm = _normalize_cant_reason(reason)
+            try:
+                norm = _normalize_cant_reason_ge(reason) if reason is not None else None
+            except UnknownCantReasonError:
+                norm = None
             if norm is not None and norm in _CANT_TO_IDX:
                 s.cant_reasons_seen.add(norm)
 

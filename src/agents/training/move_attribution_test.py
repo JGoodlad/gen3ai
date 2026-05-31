@@ -200,8 +200,10 @@ def test_ko_before_acting_is_nothing_happened():
     d = TurnDelta.build(prev, curr, MOVE0)
     assert d.our_move_id is None
     assert d.our_move_outcome is None
-    assert d.our_cant_reason == "fainted"
-    assert d.our_failed_to_move is True
+    # KO-before-acting: no protocol |cant| fired, so cant_reason is None.
+    # The faint is captured by we_fainted=True; the encoder zeroes the cant onehot.
+    assert d.our_cant_reason is None
+    assert d.our_failed_to_move is False
 
 
 def test_switch_in_death_is_a_switch_no_move():
@@ -249,7 +251,8 @@ def test_opp_ko_before_acting_is_nothing_happened():
     d = TurnDelta.build(prev, curr, MOVE0)
     assert d.opp_move_id is None
     assert d.opp_move_outcome is None
-    assert d.opp_cant_reason == "fainted"
+    # KO-before-acting: no |cant| fired, cant_reason is None (faint captured by opp_fainted).
+    assert d.opp_cant_reason is None
 
 
 def test_opp_attacked_then_fainted_keeps_move():

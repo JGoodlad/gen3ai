@@ -54,17 +54,53 @@ class UnknownCantReasonError(Exception):
 # partial-trap move; ``struggle`` is engine-set (out of PP); ``flashfire`` is the
 # Flash Fire ability's "absorbed a Fire move" boosted state — all confirmed by the e2e
 # fuzz. The derivation test asserts this stays a superset of the move+ability set.
-# NOTE: two-turn-move charge (Solar Beam / Fly / Dig) and Future Sight are NOT volatiles
-# in poke-env (tracked via ``mon.preparing`` / a slot condition) — they will be surfaced
-# by LiveView separately, not here.
+# NOTE: two-turn-move *charge* (Solar Beam / Fly / Dig) is NOT a volatile in poke-env
+# (tracked via ``mon.preparing``) — surfaced by LiveView separately, not here.
+# BUT Future Sight / Doom Desire ARE surfaced as volatiles ON THE USER: although they
+# mechanically use ``addSlotCondition(target, 'futuremove')``, both moves also emit
+# ``this.add('-start', source, 'Doom Desire' / 'move: Future Sight')`` (moves.ts), which
+# poke-env parses into ``Effect.DOOM_DESIRE`` / ``Effect.FUTURE_SIGHT`` on the user's
+# ``effects`` → ``LiveView.volatiles``. The static derivation scan (volatileStatus /
+# addVolatile) can't see the ``-start`` path, so they're classified here as binary
+# intentional-extras (like struggle / flashfire) — confirmed by the training smoke
+# crash-don't-drop tripwire. Encoded binary, consistent with the other turn-countable
+# volatiles (disable / encore / bide).
+#
+# ABILITY-ACTIVATION VOLATILES (the second class the fuzz surfaced). poke-env's
+# ``-activate`` / ``-start`` parse path calls ``start_effect(effect)`` for ANY
+# ``|-activate|mon|ability: X`` line (abstract_battle.py), so a gen3 ability that emits
+# ``this.add('-activate', pokemon, 'ability: X')`` when it fires (status-cure /
+# anti-status abilities) records ``Effect.X`` into ``mon.effects`` → ``LiveView.volatiles``.
+# These are NOT in the volatileStatus/addVolatile scan, so they are intentional-extras.
+# The full gen3 set (gen3_abilities.json ∩ self-emitting -activate/-start ∩ poke-env
+# Effect enum) is the eleven below; ``flashfire`` is handled separately (it's a persistent
+# boosted STATE — "absorbed a Fire move" — not a one-shot activation, so it keeps its own
+# slot in the binary list above). ``magmaarmor`` required adding ``Effect.MAGMA_ARMOR`` to
+# poke-env's enum (it previously mapped to ``Effect.UNKNOWN`` → id ``'unknown'``).
+#
+# COLLAPSED TO ONE SLOT (``ability_activated``): these eleven are anti-status / status-cure
+# ability activations (Immunity cured poison, Synchronize reflected a status, Oblivious
+# shrugged off attract, …). Their IDENTITY is now captured PERSISTENTLY in the per-mon
+# ability block — the ``-activate`` line reveals the ability and poke-env records it
+# (abstract_battle ``-activate`` handler → ``mon.ability`` → obs ability block flips
+# known=1 with the specific id). So a per-ability volatile slot would just duplicate the
+# ability block; we keep a single shared "an anti-status ability fired this window" bit
+# (mild tempo signal) instead of 11 redundant slots. Same collapse pattern as the trap
+# variants → ``partiallytrapped``. We still must CLASSIFY each id (crash-don't-drop), so
+# they all map to the one shared slot rather than being dropped.
+_ABILITY_ACTIVATION_VOLATILES: Tuple[str, ...] = (
+    "immunity", "insomnia", "limber", "magmaarmor", "oblivious", "owntempo",
+    "shedskin", "stickyhold", "suctioncups", "synchronize", "vitalspirit",
+)
+_ABILITY_ACTIVATED_SLOT = "ability_activated"
 _BINARY_VOLATILES: Tuple[str, ...] = (
     "attract", "bide", "charge", "confusion", "curse", "defensecurl",
-    "destinybond", "disable", "encore", "endure", "flashfire", "flinch",
-    "focusenergy", "focuspunch", "followme", "foresight", "grudge", "helpinghand",
-    "imprison", "ingrain", "leechseed", "lockedmove", "lockon", "magiccoat",
-    "minimize", "mustrecharge", "nightmare", "partiallytrapped", "protect",
-    "pursuit", "rage", "snatch", "struggle", "substitute", "taunt", "torment",
-    "trapped", "uproar", "yawn",
+    "destinybond", "disable", "doomdesire", "encore", "endure", "flashfire",
+    "flinch", "focusenergy", "focuspunch", "followme", "foresight", "futuresight",
+    "grudge", "helpinghand", "imprison", "ingrain", "leechseed", "lockedmove",
+    "lockon", "magiccoat", "minimize", "mustrecharge", "nightmare",
+    "partiallytrapped", "protect", "pursuit", "rage", "snatch", "struggle",
+    "substitute", "taunt", "torment", "trapped", "uproar", "yawn",
 )
 
 # Counter volatiles — every stage maps to the one normalised counter slot. poke-env
@@ -81,16 +117,21 @@ _TRAP_VARIANTS: Tuple[str, ...] = (
 )
 
 # Encoded slot layout (order is part of the obs layout — append-only is safe, reordering
-# is a retrain). Binary slots, then the two collapsed counter slots.
-VOLATILE_SLOTS: Tuple[str, ...] = _BINARY_VOLATILES + ("perish", "stockpile")
+# is a retrain). Binary slots, the single collapsed ability-activation slot, then the two
+# collapsed counter slots.
+VOLATILE_SLOTS: Tuple[str, ...] = (
+    _BINARY_VOLATILES + (_ABILITY_ACTIVATED_SLOT, "perish", "stockpile")
+)
 VOLATILE_DIM: int = len(VOLATILE_SLOTS)
 _SLOT_INDEX: Dict[str, int] = {name: i for i, name in enumerate(VOLATILE_SLOTS)}
 
 # id-form (as LiveView emits) -> (slot_name, value to write). Binary → 1.0; counters →
-# normalised level.
+# normalised level; ability activations → the one shared ability_activated slot.
 GEN3_VOLATILE_TO_SLOT: Dict[str, Tuple[str, float]] = {}
 for _v in _BINARY_VOLATILES:
     GEN3_VOLATILE_TO_SLOT[_v] = (_v, 1.0)
+for _v in _ABILITY_ACTIVATION_VOLATILES:
+    GEN3_VOLATILE_TO_SLOT[_v] = (_ABILITY_ACTIVATED_SLOT, 1.0)
 for _v in _TRAP_VARIANTS:
     GEN3_VOLATILE_TO_SLOT[_v] = ("partiallytrapped", 1.0)
 for _v, _lvl in _PERISH_LEVEL.items():

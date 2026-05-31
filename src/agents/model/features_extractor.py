@@ -16,12 +16,8 @@ from agents.observation.turn_delta_encoder import (
     TURN_DELTA_DIM,
     EFF_DIM,
     ORDER_DIM,
-    OFFSET_OUR_ACTOR_SPECIES,
-    OFFSET_OPP_ACTOR_SPECIES,
-    OFFSET_OUR_TARGET_SPECIES,
-    OFFSET_OPP_TARGET_SPECIES,
-    OFFSET_OUR_SWITCH_TO_SPEC,
-    OFFSET_OPP_SWITCH_TO_SPEC,
+    TURN_DELTA_EMBEDDED_IDS,
+    TURN_DELTA_SCALAR_OFFSETS,
 )
 from agents.action.constants import ACTION_SPACE_SIZE
 from utils.logging.levels import LogLevel
@@ -70,14 +66,18 @@ def locate_active_slot(active_flags: torch.Tensor) -> torch.Tensor:
 
 
 def turn_delta_embed_dim(layout: Dict[str, Any]) -> int:
-    """Width of one embedded TurnDelta slot: 4 move/type IDs + 6 species IDs replaced
-    by their embeddings, plus the remaining (TURN_DELTA_DIM - 10) pass-through scalars."""
-    return (
-        2 * layout['move_embedding_dim']
-        + 2 * layout['type_embedding_dim']
-        + 6 * layout['species_embedding_dim']
-        + TURN_DELTA_DIM - 10
-    )
+    """Width of one embedded TurnDelta slot, derived from the embedded-ID manifest.
+
+    Each entry in TURN_DELTA_EMBEDDED_IDS contributes its table's embedding dim;
+    every non-embedded slot position contributes 1 (pass-through scalar). No
+    hand-maintained counts — add an ID to the manifest and this updates itself."""
+    dim_by_kind = {
+        "move": layout['move_embedding_dim'],
+        "type": layout['type_embedding_dim'],
+        "species": layout['species_embedding_dim'],
+    }
+    embedded = sum(dim_by_kind[kind] for _, kind in TURN_DELTA_EMBEDDED_IDS)
+    return embedded + len(TURN_DELTA_SCALAR_OFFSETS)
 
 
 @dataclass(eq=False)
@@ -147,6 +147,25 @@ class Embeddings(torch.nn.Module):
 
         self._td_embed_dim = turn_delta_embed_dim(layout)
 
+        # Embedded-ID manifest (single source of truth, from turn_delta_encoder).
+        # Precompute, per embedding table, the LongTensor of slot positions that
+        # route to it (in manifest order), and the pass-through scalar positions.
+        # Registered as buffers so they move with .to(device) and never desync from
+        # the encoder layout. embed_delta_slot is then a pure table-driven gather.
+        _kind_to_table = {
+            "move": "move_embedding", "type": "type_embedding", "species": "species_embedding",
+        }
+        # Ordered list of (table_attr, position) following the manifest order, so the
+        # concatenation order of embedded outputs matches the manifest exactly.
+        self._td_embed_plan = tuple(
+            (_kind_to_table[kind], pos) for pos, kind in TURN_DELTA_EMBEDDED_IDS
+        )
+        self.register_buffer(
+            "_td_scalar_idx",
+            torch.tensor(TURN_DELTA_SCALAR_OFFSETS, dtype=torch.long),
+            persistent=False,  # derived from constants — not a learned/saved tensor
+        )
+
     def hp_soft_type(self, hp_probs: torch.Tensor) -> torch.Tensor:
         """[B, 12, 16] HP candidate-type distribution → [B, 12, type_emb] soft type embedding."""
         hp_type_rows = self.type_embedding(self.hp_type_idx_map)   # [16, type_emb]
@@ -155,40 +174,19 @@ class Embeddings(torch.nn.Module):
     def embed_delta_slot(self, slot: torch.Tensor) -> torch.Tensor:
         """Embed one [B, TURN_DELTA_DIM] raw TurnDelta vector → [B, _td_embed_dim].
 
-        The slot carries 4 raw move/type IDs (positions 0, 4, 5, 9) and 6 raw species IDs
-        (positions OFFSET_OUR_ACTOR_SPECIES..OFFSET_OPP_SWITCH_TO_SPEC, contiguous at the
-        tail of the slot). All ten positions get looked up against their embedding tables
-        and concatenated alongside the remaining scalar dims."""
-        move_embedding, type_embedding, species_embedding = (
-            self.move_embedding, self.type_embedding, self.species_embedding
-        )
-        m_our = slot[:, 0].long().clamp(0, move_embedding.num_embeddings - 1)
-        t_our = slot[:, 4].long().clamp(0, type_embedding.num_embeddings - 1)
-        m_opp = slot[:, 5].long().clamp(0, move_embedding.num_embeddings - 1)
-        t_opp = slot[:, 9].long().clamp(0, type_embedding.num_embeddings - 1)
-        # Species IDs are contiguous at the tail; slice once and clamp.
-        species_block = slot[:, OFFSET_OUR_ACTOR_SPECIES:OFFSET_OPP_SWITCH_TO_SPEC + 1].long()
-        species_block = species_block.clamp(0, species_embedding.num_embeddings - 1)
-        s_our_actor   = species_embedding(species_block[:, 0])
-        s_opp_actor   = species_embedding(species_block[:, 1])
-        s_our_target  = species_embedding(species_block[:, 2])
-        s_opp_target  = species_embedding(species_block[:, 3])
-        s_our_switch  = species_embedding(species_block[:, 4])
-        s_opp_switch  = species_embedding(species_block[:, 5])
-        # Pass-through scalars: everything that isn't a raw embedding ID.
-        # Positions 1-3, 6-8, 10..OFFSET_OUR_ACTOR_SPECIES.
-        scalars = torch.cat([
-            slot[:, 1:4],
-            slot[:, 6:9],
-            slot[:, 10:OFFSET_OUR_ACTOR_SPECIES],
-        ], dim=1)
-        return torch.cat([
-            move_embedding(m_our), type_embedding(t_our),
-            move_embedding(m_opp), type_embedding(t_opp),
-            s_our_actor, s_opp_actor, s_our_target, s_opp_target,
-            s_our_switch, s_opp_switch,
-            scalars,
-        ], dim=1)
+        Fully manifest-driven: TURN_DELTA_EMBEDDED_IDS (in turn_delta_encoder) declares
+        which slot positions carry raw embedding IDs and which table each routes to.
+        Every other position is a pass-through scalar. There are NO hardcoded positions
+        here — the encoder and extractor read the same manifest, so a raw id can never
+        silently leak through as a scalar."""
+        parts = []
+        for table_attr, pos in self._td_embed_plan:
+            table = getattr(self, table_attr)
+            idx = slot[:, pos].long().clamp(0, table.num_embeddings - 1)
+            parts.append(table(idx))
+        # Pass-through scalars, gathered in ascending-position order.
+        parts.append(slot.index_select(1, self._td_scalar_idx))
+        return torch.cat(parts, dim=1)
 
 
 class ObsUnpack(torch.nn.Module):

@@ -10,7 +10,16 @@ core training file blind. Start fresh with clean tooling.
 
 ---
 
-## 0. What is already shipped (main)
+## 0. What is complete (main + current branch)
+
+**Step 4 (TurnDelta fold) is COMPLETE on the current branch (not yet shipped to main).**
+Key changes: `turn_view.py` → `faint_details()` + `FAINT_CAUSE_VOCAB`; `battle_context.py` → `TurnDelta.build_from_events()` + faint-cause/attempted-move fields; `episode_tracker.py` → cursor tracking; `turn_delta_encoder.py` → gen3_effects cant (crash-don't-drop) + 127-dim layout + embedded-ID manifest; `features_extractor.py` → manifest-driven `embed_delta_slot` (no hardcoded positions); `gen3_effects.py` → +doomdesire/futuresight volatiles (smoke tripwire caught the gap); `ARCH_SIGNATURE = gen3_turn_delta_v2`; obs dim 2823 → 2997.
+
+Post-review simplifications (per design discussion): dropped `faint_count` from the obs (redundant with faint flags + cause popcount; kept on the dataclass for reward); dropped `attempted_switch_to` (a pressed switch always executes, so it always equalled `switch_to` — only attempted *move* carries signal). The faint multi-hot is per-side (the common multi-KO is the 2-sided Explosion case = 1 bit each; same-side double needs the rare Pursuit/Future-Sight-into-hazard window).
+
+Gates green: 1106 unit + 20 integration tests, smoke PASSED (round-trip + eval, 0 crash-don't-drop trips), event-log fuzz PASSED (40 battles, full-pool random teams + per-decision volatile/cant validation).
+
+## What was already shipped (main)
 
 The event-sourced battle layer + the full live-state observation are **on main**:
 

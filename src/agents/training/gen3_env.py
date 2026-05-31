@@ -68,7 +68,7 @@ class Gen3Env(SinglesEnv):
                 battle, hp_tracker=self._tracker.hidden_power_tracker
             )
             prev_mask = self._tracker.prev_mask
-            history_vecs = self._tracker.prev_N_delta_vecs(N_HISTORY_TURNS, self._turn_delta_encoder)
+            history_vecs = self._tracker.prev_N_delta_vecs(N_HISTORY_TURNS, self._turn_delta_encoder, battle=battle)
         else:
             obs = self.observation_encoder.encode(battle)
             prev_mask = np.ones(11, dtype=np.float32)
@@ -110,7 +110,7 @@ class Gen3Env(SinglesEnv):
 
     def calc_reward(self, battle):
         if battle is self.battle1:
-            return self.reward_manager.process_turn_reward(battle, self._tracker.build_delta())
+            return self.reward_manager.process_turn_reward(battle, self._tracker.build_delta(battle=battle))
         return self.reward_computing_helper(
             battle, fainted_value=2.0, hp_value=1.0, victory_value=30.0
         )

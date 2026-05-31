@@ -174,6 +174,7 @@ def _run_roundtrip_test(model, layout: dict, policy_kwargs: dict, debug: bool = 
             zip_path + ".zip",
             env=model.get_env(),
             current_version=version,
+            device=str(model.device),
         )
         dev = next(reloaded.policy.parameters()).device
         dummy_obs = {

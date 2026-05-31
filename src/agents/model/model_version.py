@@ -92,7 +92,37 @@ MODEL_CONFIG_VERSION = 2
 #   untouched). The obs spread block + LiveView read mon.ivs as before, now populated. Obs DIM
 #   is unchanged (still 2823) — only the spread VALUES change — but the meaning of those dims
 #   changes, so this is retrain-class: old checkpoints must not silently load.
-ARCH_SIGNATURE = "gen3_own_spread_v1"
+#
+# v10 (gen3_turn_delta_v2): TurnDelta is now folded from the event log (Step 4 of
+#   the event-sourced battle migration). New per-decision-window fields: an 8-dim
+#   faint-cause multi-hot per side (attack/hazard/weather/status/recoil/selfko/
+#   leechseed/other), and our_attempted_move_id (the move we pressed, preserved even
+#   when it never fired — freeze/sleep/flinch/cant/KO-before-act). attempted_switch_to
+#   is NOT encoded (a pressed switch always executes, so it == switch_to); faint counts
+#   live on the dataclass for reward but aren't encoded (redundant with the faint flags
+#   + cause popcount). The cant one-hot switches to the authoritative gen3_effects vocab
+#   (slp/frz/par/flinch/recharge/attract/disable/taunt/imprison/focuspunch/nopp/truant),
+#   crash-don't-drop. Volatiles added to the active-context block: doomdesire/futuresight
+#   (`-start` future-move volatiles) + the 11 gen3 ability-activation volatiles (Immunity/
+#   Synchronize/Oblivious/Insomnia/Limber/OwnTempo/ShedSkin/StickyHold/SuctionCups/
+#   VitalSpirit/MagmaArmor — poke-env's -activate path records them as effects; MagmaArmor
+#   required adding Effect.MAGMA_ARMOR to the fork's enum); the event-log fuzz's per-decision
+#   check + training smoke caught doomdesire/immunity. Ability activations now ALSO reveal
+#   the opponent's ability persistently (abstract_battle -activate handler sets mon.ability
+#   when None → per-mon ability block flips known=1), so the 11 ability-activation volatiles
+#   COLLAPSE to one shared `ability_activated` slot (identity is in the ability block; the
+#   volatile is just a hint to go look). VOLATILE_DIM 41 → 44. TurnDelta also folds STATUS
+#   TRANSITIONS from the event log: our/opp status_applied + status_cured (4 × 7-dim
+#   onehots) — the per-turn event (e.g. Lum Berry curing Toxic to enable a Dragon Dance),
+#   distinct from the current-status snapshot; the cause-identity stays in the item/ability
+#   block. Plus our/opp item-used BITS (2) marking an item was consumed/removed this window
+#   (just a bit — the WHICH is in the per-mon item block, parity with ability_activated).
+#   The embedded-ID positions are no longer hardcoded in the extractor: a single
+#   TURN_DELTA_EMBEDDED_IDS manifest (in turn_delta_encoder) drives both the encoder
+#   layout and features_extractor.embed_delta_slot (11 embedded IDs: 3 move + 2 type +
+#   6 species). TURN_DELTA_DIM = 157, obs dim 2823 → 3299. Builds on v9 (own-team spread
+#   backfill carries through). Not weight-compatible with v9.
+ARCH_SIGNATURE = "gen3_turn_delta_v2"
 
 
 class ModelVersionError(Exception):

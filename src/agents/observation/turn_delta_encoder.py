@@ -13,11 +13,11 @@ named OFFSET_* / *_DIM constants below — never hardcode indices):
                    our_hp_delta_sum, opp_hp_delta_sum, we_fainted, opp_fainted, opp_move_known,
                    our_effectiveness_onehot(4), opp_effectiveness_onehot(4),
                    move_order(2)
-    The cant onehot (CANT_DIM, currently 11) covers par/slp/frz/flinch/confusion/
-    recharge/taunt/disable/imprison/truant/nopp; the raw |cant| reason is prefix-
-    normalized ("move: Taunt" → "taunt") before lookup. Unknown reason → zeros.
+    The cant one-hot uses gen3_effects.CANT_DIM (12) and gen3_effects.encode_cant_reason.
+    Unknown/None → zeros (no crash). Reasons: slp/frz/par/flinch/recharge/attract/
+    disable/taunt/imprison/focuspunch/nopp/truant (source-derived from Showdown moves+abilities).
 
-  Extended block (added in gen3_unified_v2, extended in gen3_move_outcome_v1):
+  Extended block (gen3_unified_v2 + gen3_move_outcome_v1 + gen3_turn_delta_v2):
     our_boost_delta (7), opp_boost_delta (7),
     phase_is_forced_switch (1),
     our_target_hp_delta (1), opp_target_hp_delta (1),
@@ -26,39 +26,47 @@ named OFFSET_* / *_DIM constants below — never hardcode indices):
     our_move_outcome_onehot (3, [hit, miss, fail]),
     opp_move_outcome_onehot (3, [hit, miss, fail]),
     our_move_crit (1), opp_move_crit (1),
-    our_actor_species_id (1, raw int as float — embedded by extractor),
-    opp_actor_species_id (1, raw int as float — embedded by extractor),
-    our_target_species_id (1, raw int as float — embedded by extractor),
-    opp_target_species_id (1, raw int as float — embedded by extractor),
-    our_switch_to_species_id (1, raw int as float — embedded by extractor),
-    opp_switch_to_species_id (1, raw int as float — embedded by extractor)
+    --- gen3_turn_delta_v2 additions ---
+    our_faint_causes (FAINT_CAUSE_DIM=8, multi-hot),
+    opp_faint_causes (FAINT_CAUSE_DIM=8, multi-hot),
+    our_attempted_move_id (1, raw int — embedded by extractor via move_embedding),
+    --- species block (6 IDs, embedded by extractor per the manifest) ---
+    our_actor_species_id (1, raw int as float),
+    opp_actor_species_id (1, raw int as float),
+    our_target_species_id (1, raw int as float),
+    opp_target_species_id (1, raw int as float),
+    our_switch_to_species_id (1, raw int as float),
+    opp_switch_to_species_id (1, raw int as float)
 
-  The six species IDs are the contiguous slot TAIL (features_extractor slices
-  them out for embedding); move-outcome + crit are pass-through scalars placed
-  immediately before them. Effectiveness one-hot (4): [immune, resisted, normal,
-  super-effective]. Move-outcome one-hot (3): [hit, miss, fail]; all-zeros when
-  the side switched / was prevented by |cant| / used no move. crit is orthogonal
-  to outcome — a "hit" slot may also have crit=1.
+  Embedded-ID positions (move/type/species) are declared in TURN_DELTA_EMBEDDED_IDS
+  (the manifest) — the extractor reads it directly, so the species block no longer
+  needs to be a contiguous tail and there are no hardcoded positions in the extractor.
+  Effectiveness one-hot (4): [immune, resisted, normal, super-effective]. Move-outcome
+  one-hot (3): [hit, miss, fail]; all-zeros when the side switched / was prevented by
+  |cant| / used no move. crit is orthogonal.
 
-target_status_onehot is the status of the named target species AT MOVE-FIRE
-TIME (sourced from DamagingMoveEvent.target_status, captured by the protocol
-parser before the move's effects resolve). 7 status states (BRN, FNT, FRZ,
-PAR, PSN, SLP, TOX); all-zeros when the side didn't use a damaging move or
-the target had no status.
+  Dropped vs the first gen3_turn_delta_v2 draft: faint_count scalars (redundant with
+  we_fainted/opp_fainted + cause popcount) and attempted_switch_to (switches always
+  execute, so it always equalled switch_to — only attempted_MOVE carries signal, since
+  a move can be prevented by freeze/sleep/flinch/cant/KO-before-act).
 
-move_id, type_id, and species_id positions are stored as raw ints (float32 is
-exact for values < 2^24). The features_extractor routes them through
-move_embedding / type_embedding / species_embedding respectively.
+FAINT_CAUSE_DIM=8 vocab (attack/hazard/weather/status/recoil/selfko/leechseed/other):
+  Multi-hot — the rare 2-on-one-side window (Pursuit/Future-Sight into a low-HP mon on
+  hazards) can set 2 bits. All-zeros when no faint. our_faint_causes tracks our-side
+  faints; opp_faint_causes tracks theirs (the common Explosion double-KO is one bit each).
 
-Effectiveness one-hot (4 dims): [immune, resisted, normal, super-effective]
-  All zeros when the side switched or used a non-damaging move.
+target_status_onehot: status of the named target AT MOVE-FIRE TIME. 7 states
+  (BRN, FNT, FRZ, PAR, PSN, SLP, TOX); all-zeros when side didn't use a
+  damaging move or target had no status.
 
-Move-order (2 dims): [we_first, opp_first]
-  All zeros = na (one/both sides switched) or turn 0 (no previous turn).
+move_id, type_id, attempted_move_id, and species_id positions are raw ints
+(float32 exact for < 2^24). features_extractor routes them through the
+appropriate embedding tables.
 
-Actor species ID resolution: prefers damaging_event.user_species (protocol-
-truth), falls back to prev_active for non-damaging actions. 0 when no actor
-is identifiable (e.g. empty delta).
+Move-order (2 dims): [we_first, opp_first]; all-zeros = na / unknown.
+
+Actor species ID: prefers damaging_event.user_species (protocol-truth), falls
+back to prev_active for switches and non-damaging moves. 0 = unknown.
 
 Target species ID: from the OTHER side's damaging_event.target_species.
 0 when the other side didn't use a confirmed damaging move.
@@ -68,38 +76,13 @@ import numpy as np
 from typing import Optional
 from agents.training.battle_context import TurnDelta
 from agents.observation.types import TypeEncoder
+from agents.observation.gen3_effects import (
+    CANT_DIM,
+    encode_cant_reason,
+)
+from agents.battle.turn_view import FAINT_CAUSE_DIM, FAINT_CAUSE_VOCAB
 from agents.gen3_mechanics import BOOST_DIM
 from poke_env.battle.status import Status
-
-# |cant| reason → one-hot index (unknown/other → all-zeros). Showdown sends the
-# reason as event[3], sometimes with a "move: " / "ability: " / "item: " prefix
-# (e.g. "move: Taunt", "ability: Truant") — _normalize_cant_reason strips that
-# before lookup. Order is stable; do not reorder without bumping ARCH_SIGNATURE.
-_CANT_REASONS = [
-    "par", "slp", "frz", "flinch", "confusion",  # status / volatile
-    "recharge",                                   # Hyper Beam cooldown turn
-    "taunt", "disable", "imprison",               # move-lock effects
-    "truant",                                     # Slaking loafing (ability)
-    "nopp",                                       # out of PP
-    "fainted",                                    # KO'd before our move could fire
-]
-_CANT_TO_IDX = {r: i for i, r in enumerate(_CANT_REASONS)}
-
-
-def _normalize_cant_reason(reason):
-    """Normalize a raw |cant| reason string to its bare form for index lookup.
-
-    Strips a leading "move: " / "ability: " / "item: " qualifier and lowercases
-    so "move: Taunt" → "taunt", "ability: Truant" → "truant". Returns None
-    unchanged. Unknown reasons pass through normalized (→ all-zeros one-hot)."""
-    if reason is None:
-        return None
-    r = reason.strip().lower()
-    for prefix in ("move:", "ability:", "item:"):
-        if r.startswith(prefix):
-            r = r[len(prefix):].strip()
-            break
-    return r.replace(" ", "")
 
 
 # Move-outcome one-hot: the resolved fate of a side's move this turn. None (the
@@ -109,7 +92,7 @@ _OUTCOME_TO_IDX = {o: i for i, o in enumerate(_OUTCOME_ORDER)}
 
 # Status one-hot index. None / no status → all-zeros (the natural sentinel).
 # Order is stable; do not reorder without bumping ARCH_SIGNATURE.
-_STATUS_ORDER: tuple[Status, ...] = (
+_STATUS_ORDER: tuple = (
     Status.BRN,
     Status.FNT,
     Status.FRZ,
@@ -123,11 +106,12 @@ _STATUS_LABELS = [s.name for s in _STATUS_ORDER]
 STATUS_DIM = len(_STATUS_ORDER)  # 7
 
 MOVE_FEAT_DIM = 5   # per-move feature block
-CANT_DIM = len(_CANT_REASONS)  # one-hot over cant reasons (currently 11)
+# CANT_DIM is imported from gen3_effects (12 source-derived gen3 cant reasons).
 OUTCOME_DIM = len(_OUTCOME_ORDER)  # one-hot over move outcomes (3: hit/miss/fail)
 EFF_DIM = 4         # one-hot: immune | resisted | normal | super-effective
 ORDER_DIM = 2       # binary: [we_first, opp_first]; all-zero = na / unknown
 SCALAR_DIM = 4 + CANT_DIM * 2 + 5 + EFF_DIM * 2 + ORDER_DIM
+# FAINT_CAUSE_DIM is imported from turn_view (8 cause labels).
 
 # Base block (indices 0..TURN_DELTA_BASE_DIM-1).
 TURN_DELTA_BASE_DIM = MOVE_FEAT_DIM * 2 + SCALAR_DIM
@@ -153,8 +137,12 @@ OFFSET_OPP_EFF              = OFFSET_OUR_EFF + EFF_DIM                 # (EFF_DI
 OFFSET_ORDER                = OFFSET_OPP_EFF + EFF_DIM                 # (ORDER_DIM)
 assert OFFSET_ORDER + ORDER_DIM == TURN_DELTA_BASE_DIM
 
-# Extended block (gen3_unified_v2 additions): boost deltas, phase flag,
-# target_hp_deltas, per-slot HP levels, target status onehots, six species IDs.
+# Extended block:
+#   gen3_unified_v2: boost deltas, phase flag, target_hp_deltas, HP levels,
+#   gen3_move_outcome_v1: target status onehots, move-outcome, crit,
+#   gen3_turn_delta_v2: faint-cause multi-hots + attempted move id + status transitions.
+# (faint_count scalars dropped — redundant with we_fainted/opp_fainted + cause popcount;
+#  attempted_switch_to dropped — switches always execute, so it == switch_to always.)
 HP_LEVEL_DIM = 6
 SPECIES_ID_COUNT = 6  # our/opp × actor/target/switch_to
 TURN_DELTA_EXT_DIM = (
@@ -163,50 +151,93 @@ TURN_DELTA_EXT_DIM = (
     + 2                    # our/opp target_hp_delta
     + HP_LEVEL_DIM * 2     # 12 — per-slot HP levels for both sides
     + STATUS_DIM * 2       # 14 — target status onehots (at move-fire time)
-    + OUTCOME_DIM * 2      # 6 — our/opp move-outcome onehots (hit/miss/fail)
+    + OUTCOME_DIM * 2      # 6  — our/opp move-outcome onehots (hit/miss/fail)
     + 2                    # our/opp crit bit
-    + SPECIES_ID_COUNT     # 6 — species IDs (embedded by extractor)
+    + FAINT_CAUSE_DIM * 2  # 16 — our/opp faint-cause multi-hots
+    + STATUS_DIM * 4       # 28 — our/opp status APPLIED + CURED this window (transition)
+    + 2                    # our/opp item_used bit (resource event; identity in item block)
+    + 1                    # our_attempted_move_id (raw int — embedded by extractor)
+    + SPECIES_ID_COUNT     # 6  — species IDs (embedded by extractor)
 )
 
-TURN_DELTA_DIM = TURN_DELTA_BASE_DIM + TURN_DELTA_EXT_DIM
+TURN_DELTA_DIM = TURN_DELTA_BASE_DIM + TURN_DELTA_EXT_DIM  # 53 + 104 = 157
 
-# Offsets into the slot vector for the extended block — used by the encoder
-# AND by features_extractor._embed_delta_slot to slice species IDs out for
-# embedding. Keep in lockstep with the layout comment above.
-OFFSET_OUR_BOOST_DELTA      = TURN_DELTA_BASE_DIM                           # 39
-OFFSET_OPP_BOOST_DELTA      = OFFSET_OUR_BOOST_DELTA + BOOST_DIM            # 46
-OFFSET_PHASE_FORCED_SWITCH  = OFFSET_OPP_BOOST_DELTA + BOOST_DIM            # 53
-OFFSET_OUR_TARGET_HP_DELTA  = OFFSET_PHASE_FORCED_SWITCH + 1                # 54
-OFFSET_OPP_TARGET_HP_DELTA  = OFFSET_OUR_TARGET_HP_DELTA + 1                # 55
-OFFSET_OUR_HP_LEVELS        = OFFSET_OPP_TARGET_HP_DELTA + 1                # 56
-OFFSET_OPP_HP_LEVELS        = OFFSET_OUR_HP_LEVELS + HP_LEVEL_DIM           # 62
+# Offsets into the slot vector for the extended block. The embedded-ID positions
+# (move/type/species) are NOT hardcoded in the extractor — they're declared in the
+# TURN_DELTA_EMBEDDED_IDS manifest below, which both this encoder's layout and
+# features_extractor.embed_delta_slot consume. So the species block no longer needs
+# to be a contiguous tail; the manifest is the single source of truth.
+OFFSET_OUR_BOOST_DELTA      = TURN_DELTA_BASE_DIM
+OFFSET_OPP_BOOST_DELTA      = OFFSET_OUR_BOOST_DELTA + BOOST_DIM
+OFFSET_PHASE_FORCED_SWITCH  = OFFSET_OPP_BOOST_DELTA + BOOST_DIM
+OFFSET_OUR_TARGET_HP_DELTA  = OFFSET_PHASE_FORCED_SWITCH + 1
+OFFSET_OPP_TARGET_HP_DELTA  = OFFSET_OUR_TARGET_HP_DELTA + 1
+OFFSET_OUR_HP_LEVELS        = OFFSET_OPP_TARGET_HP_DELTA + 1
+OFFSET_OPP_HP_LEVELS        = OFFSET_OUR_HP_LEVELS + HP_LEVEL_DIM
 OFFSET_OUR_TARGET_STATUS    = OFFSET_OPP_HP_LEVELS + HP_LEVEL_DIM
 OFFSET_OPP_TARGET_STATUS    = OFFSET_OUR_TARGET_STATUS + STATUS_DIM
-# Move outcome + crit: inserted BEFORE the species IDs so the species block
-# stays the contiguous slot tail (features_extractor slices [OFFSET_OUR_ACTOR_
-# SPECIES : OFFSET_OPP_SWITCH_TO_SPEC+1]). These are pass-through scalars — the
-# extractor's `slot[:, 10:OFFSET_OUR_ACTOR_SPECIES]` slice picks them up with
-# no extractor change needed.
 OFFSET_OUR_MOVE_OUTCOME     = OFFSET_OPP_TARGET_STATUS + STATUS_DIM         # (OUTCOME_DIM)
-OFFSET_OPP_MOVE_OUTCOME     = OFFSET_OUR_MOVE_OUTCOME + OUTCOME_DIM         # (OUTCOME_DIM)
-OFFSET_OUR_CRIT             = OFFSET_OPP_MOVE_OUTCOME + OUTCOME_DIM         # 1
-OFFSET_OPP_CRIT             = OFFSET_OUR_CRIT + 1                           # 1
-OFFSET_OUR_ACTOR_SPECIES    = OFFSET_OPP_CRIT + 1
+OFFSET_OPP_MOVE_OUTCOME     = OFFSET_OUR_MOVE_OUTCOME + OUTCOME_DIM
+OFFSET_OUR_CRIT             = OFFSET_OPP_MOVE_OUTCOME + OUTCOME_DIM
+OFFSET_OPP_CRIT             = OFFSET_OUR_CRIT + 1
+# gen3_turn_delta_v2 additions.
+OFFSET_OUR_FAINT_CAUSES     = OFFSET_OPP_CRIT + 1                           # (FAINT_CAUSE_DIM)
+OFFSET_OPP_FAINT_CAUSES     = OFFSET_OUR_FAINT_CAUSES + FAINT_CAUSE_DIM     # (FAINT_CAUSE_DIM)
+# Status transitions this window (applied = gained, cured = lost), per side.
+OFFSET_OUR_STATUS_APPLIED   = OFFSET_OPP_FAINT_CAUSES + FAINT_CAUSE_DIM     # (STATUS_DIM)
+OFFSET_OUR_STATUS_CURED     = OFFSET_OUR_STATUS_APPLIED + STATUS_DIM        # (STATUS_DIM)
+OFFSET_OPP_STATUS_APPLIED   = OFFSET_OUR_STATUS_CURED + STATUS_DIM          # (STATUS_DIM)
+OFFSET_OPP_STATUS_CURED     = OFFSET_OPP_STATUS_APPLIED + STATUS_DIM        # (STATUS_DIM)
+# Item-used bits (this side's active lost/spent its item this window). Just a BIT —
+# the WHICH lives in the per-mon item block; this marks the resource event + timing.
+OFFSET_OUR_ITEM_USED        = OFFSET_OPP_STATUS_CURED + STATUS_DIM          # 1
+OFFSET_OPP_ITEM_USED        = OFFSET_OUR_ITEM_USED + 1                      # 1
+OFFSET_OUR_ATTEMPTED_MOVE   = OFFSET_OPP_ITEM_USED + 1                      # 1 (embedded move id)
+# Species block (6 IDs — embedded; positions declared in the manifest below).
+OFFSET_OUR_ACTOR_SPECIES    = OFFSET_OUR_ATTEMPTED_MOVE + 1
 OFFSET_OPP_ACTOR_SPECIES    = OFFSET_OUR_ACTOR_SPECIES + 1
 OFFSET_OUR_TARGET_SPECIES   = OFFSET_OPP_ACTOR_SPECIES + 1
 OFFSET_OPP_TARGET_SPECIES   = OFFSET_OUR_TARGET_SPECIES + 1
 OFFSET_OUR_SWITCH_TO_SPEC   = OFFSET_OPP_TARGET_SPECIES + 1
 OFFSET_OPP_SWITCH_TO_SPEC   = OFFSET_OUR_SWITCH_TO_SPEC + 1
-assert OFFSET_OPP_SWITCH_TO_SPEC + 1 == TURN_DELTA_DIM
+assert OFFSET_OPP_SWITCH_TO_SPEC + 1 == TURN_DELTA_DIM, (
+    f"Layout mismatch: last offset+1={OFFSET_OPP_SWITCH_TO_SPEC + 1} != TURN_DELTA_DIM={TURN_DELTA_DIM}"
+)
 
-# Raw-int slot positions that the features_extractor looks up against an
-# embedding table. The 4 move/type IDs sit at fixed positions 0/4/5/9
-# (legacy base block); the 6 species IDs are contiguous at the slot tail
-# [OFFSET_OUR_ACTOR_SPECIES .. OFFSET_OPP_SWITCH_TO_SPEC]. Any future
-# embedded field MUST keep the species IDs as the contiguous tail — insert
-# non-embedded scalars BEFORE OFFSET_OUR_ACTOR_SPECIES (as move-outcome/crit
-# do), never after, or the contiguity + pass-through slices in
-# features_extractor.py:_embed_delta_slot break.
+# --------------------------------------------------------------------------- #
+# Embedded-ID manifest — THE single source of truth for which slot positions
+# carry raw embedding IDs and which table each routes to. features_extractor's
+# embed_delta_slot consumes this list verbatim (gather → clamp → embed in this
+# order); every position NOT listed here is a pass-through scalar. Adding an
+# embedded ID is a ONE-LINE change here that both the encoder layout and the
+# extractor pick up — no hardcoded positions, no hand-maintained width formula,
+# and no silent "raw id flows through as a scalar" failure mode.
+#
+# Order matters: it fixes the concatenation order of the embedded outputs, so it
+# is part of the arch layout (reordering = retrain). Append new entries.
+# --------------------------------------------------------------------------- #
+TURN_DELTA_EMBEDDED_IDS: tuple = (
+    (OFFSET_OUR_MOVE_BLOCK + 0, "move"),   # our move id
+    (OFFSET_OUR_MOVE_BLOCK + 4, "type"),   # our move type
+    (OFFSET_OPP_MOVE_BLOCK + 0, "move"),   # opp move id
+    (OFFSET_OPP_MOVE_BLOCK + 4, "type"),   # opp move type
+    (OFFSET_OUR_ATTEMPTED_MOVE, "move"),   # our attempted move id
+    (OFFSET_OUR_ACTOR_SPECIES,  "species"),
+    (OFFSET_OPP_ACTOR_SPECIES,  "species"),
+    (OFFSET_OUR_TARGET_SPECIES, "species"),
+    (OFFSET_OPP_TARGET_SPECIES, "species"),
+    (OFFSET_OUR_SWITCH_TO_SPEC, "species"),
+    (OFFSET_OPP_SWITCH_TO_SPEC, "species"),
+)
+_EMBEDDED_POSITIONS = frozenset(pos for pos, _ in TURN_DELTA_EMBEDDED_IDS)
+assert len(_EMBEDDED_POSITIONS) == len(TURN_DELTA_EMBEDDED_IDS), (
+    "duplicate position in TURN_DELTA_EMBEDDED_IDS"
+)
+# Pass-through scalar positions: every slot index not in the embedded manifest,
+# ascending. embed_delta_slot index_selects these after the embedded outputs.
+TURN_DELTA_SCALAR_OFFSETS: tuple = tuple(
+    i for i in range(TURN_DELTA_DIM) if i not in _EMBEDDED_POSITIONS
+)
 
 
 class TurnDeltaEncoder:
@@ -297,6 +328,15 @@ class TurnDeltaEncoder:
             vec[4] = float(TypeEncoder.TYPE_TO_IDX.get(move_type, 0))
         return vec
 
+    def _move_id(self, move_id: Optional[str]) -> float:
+        """Raw move num (0 = no move / unknown). Used for single-dim embedded IDs."""
+        if move_id is None:
+            return 0.0
+        entry = self._moves.get(move_id)
+        if entry is None:
+            return 0.0
+        return float(entry.get("num", 0))
+
     def _effectiveness_onehot(self, mult: Optional[float]) -> np.ndarray:
         """4-dim one-hot over [immune, resisted, normal, super-effective]; zeros when None."""
         vec = np.zeros(EFF_DIM, dtype=np.float32)
@@ -321,14 +361,22 @@ class TurnDeltaEncoder:
             vec[1] = 1.0
         return vec
 
-    def _cant_onehot(self, reason: Optional[str]) -> np.ndarray:
-        vec = np.zeros(CANT_DIM, dtype=np.float32)
-        norm = _normalize_cant_reason(reason)
-        if norm is not None:
-            idx = _CANT_TO_IDX.get(norm)
-            if idx is not None:
-                vec[idx] = 1.0
-        return vec
+    @staticmethod
+    def _cant_onehot(reason: Optional[str]) -> np.ndarray:
+        """One-hot a cant reason using the gen3_effects authoritative vocab
+        (crash-don't-drop).
+
+        ``reason=None`` (side moved normally) → all-zeros. A non-None reason
+        outside the source-derived gen3 vocab **raises**
+        :class:`UnknownCantReasonError` — this encoder is the FIRST and ONLY
+        place a cant reason is validated against the vocab (``gen3_battle``
+        records the ``|cant|`` reason verbatim, without normalising), so the
+        tripwire must live here. The cant onehot has no "other" slot, so a
+        silent all-zeros fallback would be indistinguishable from "moved
+        normally" — exactly the silent drop the invariant forbids. An unknown
+        gen3 cant reason means the vocab is stale: add it to
+        ``gen3_effects.CANT_REASONS`` rather than swallowing it here."""
+        return encode_cant_reason(reason)
 
     @staticmethod
     def _outcome_onehot(outcome: Optional[str]) -> np.ndarray:
@@ -380,6 +428,15 @@ class TurnDeltaEncoder:
             return None
         return fallback
 
+    def _faint_cause_multihot(self, causes: np.ndarray) -> np.ndarray:
+        """Pass through the faint-cause multi-hot (already FAINT_CAUSE_DIM float32).
+
+        Returns zeros if the array is missing/wrong-shape (shouldn't happen in
+        normal operation but guards against empty() deltas in tests)."""
+        if causes is None or causes.shape != (FAINT_CAUSE_DIM,):
+            return np.zeros(FAINT_CAUSE_DIM, dtype=np.float32)
+        return causes.astype(np.float32)
+
     @staticmethod
     def _target_species(delta: TurnDelta, side: str) -> Optional[str]:
         """Pick the target species ON THIS side (the mon that got hit on this
@@ -401,7 +458,8 @@ class TurnDeltaEncoder:
         """Decode a TURN_DELTA_DIM-dim encoded TurnDelta vector back to
         human-readable form. Base-block fields are read via the named OFFSET_*
         constants so this stays correct when CANT_DIM (or any base dim) changes."""
-        _CANT = _CANT_REASONS
+        from agents.observation.gen3_effects import CANT_REASONS as _CANT_REASONS_GE
+        _CANT = list(_CANT_REASONS_GE)
         _EFF_LABELS = ["immune", "resisted", "normal", "super-effective"]
 
         def _cant_label(onehot):
@@ -484,6 +542,31 @@ class TurnDeltaEncoder:
             "opp_target_species": _species_name(vec[OFFSET_OPP_TARGET_SPECIES]),
             "our_switch_to_species": _species_name(vec[OFFSET_OUR_SWITCH_TO_SPEC]),
             "opp_switch_to_species": _species_name(vec[OFFSET_OPP_SWITCH_TO_SPEC]),
+            "our_faint_causes": [
+                FAINT_CAUSE_VOCAB[i]
+                for i in range(FAINT_CAUSE_DIM)
+                if vec[OFFSET_OUR_FAINT_CAUSES + i] > 0.5
+            ],
+            "opp_faint_causes": [
+                FAINT_CAUSE_VOCAB[i]
+                for i in range(FAINT_CAUSE_DIM)
+                if vec[OFFSET_OPP_FAINT_CAUSES + i] > 0.5
+            ],
+            "our_status_applied": _onehot_label(
+                vec[OFFSET_OUR_STATUS_APPLIED:OFFSET_OUR_STATUS_APPLIED + STATUS_DIM], _STATUS_LABELS,
+            ),
+            "our_status_cured": _onehot_label(
+                vec[OFFSET_OUR_STATUS_CURED:OFFSET_OUR_STATUS_CURED + STATUS_DIM], _STATUS_LABELS,
+            ),
+            "opp_status_applied": _onehot_label(
+                vec[OFFSET_OPP_STATUS_APPLIED:OFFSET_OPP_STATUS_APPLIED + STATUS_DIM], _STATUS_LABELS,
+            ),
+            "opp_status_cured": _onehot_label(
+                vec[OFFSET_OPP_STATUS_CURED:OFFSET_OPP_STATUS_CURED + STATUS_DIM], _STATUS_LABELS,
+            ),
+            "our_item_used": bool(vec[OFFSET_OUR_ITEM_USED] > 0.5),
+            "opp_item_used": bool(vec[OFFSET_OPP_ITEM_USED] > 0.5),
+            "our_attempted_move": self._num_to_name.get(int(vec[OFFSET_OUR_ATTEMPTED_MOVE])),
         }
 
     def encode(self, delta: TurnDelta) -> np.ndarray:
@@ -531,19 +614,13 @@ class TurnDeltaEncoder:
             if delta.our_damaging_event is not None else None
         )
 
-        # Extended block (gen3_unified_v2): kept contiguous and in the order
-        # documented at the top of this file. Species IDs are stored as raw
-        # ints (float32) for the extractor to look up via species_embedding.
+        # Extended block — order matches the OFFSET_* constants + the embedded-ID
+        # manifest above. Move/species IDs are stored as raw ints (float32); the
+        # extractor routes them through their embedding tables per the manifest.
         ext_block = np.concatenate([
             delta.our_boost_delta.astype(np.float32),                  # 7
             delta.opp_boost_delta.astype(np.float32),                  # 7
             np.array([float(delta.phase_is_forced_switch)], dtype=np.float32),  # 1
-            # `target_hp_delta` is coerced None → 0.0 here. The "no damaging
-            # event this turn" case and "event with exactly zero damage" case
-            # both encode as 0.0 — but the paired actor/target species IDs
-            # both become 0 in the no-event case, and the existing power_norm
-            # / effectiveness onehot are also zero, so the model has multiple
-            # signals to disambiguate. Not worth a separate validity bit.
             np.array([
                 float(delta.our_target_hp_delta) if delta.our_target_hp_delta is not None else 0.0,
                 float(delta.opp_target_hp_delta) if delta.opp_target_hp_delta is not None else 0.0,
@@ -552,14 +629,36 @@ class TurnDeltaEncoder:
             delta.opp_hp_after.astype(np.float32),                     # 6
             self._status_onehot(our_target_status),                    # 7
             self._status_onehot(opp_target_status),                    # 7
-            # Move outcome + crit — pass-through scalars BEFORE the species IDs
-            # so the species block stays the contiguous slot tail.
             self._outcome_onehot(delta.our_move_outcome),              # 3
             self._outcome_onehot(delta.opp_move_outcome),              # 3
             np.array([
                 float(delta.our_move_crit),
                 float(delta.opp_move_crit),
             ], dtype=np.float32),                                       # 2
+            # gen3_turn_delta_v2: faint-cause multi-hots + attempted move id.
+            # (faint_count scalars dropped — redundant with we_fainted + cause popcount.)
+            self._faint_cause_multihot(
+                getattr(delta, "our_faint_causes", None)               # 8
+            ),
+            self._faint_cause_multihot(
+                getattr(delta, "opp_faint_causes", None)               # 8
+            ),
+            # Status transitions this window (the EVENT — identity of the cause,
+            # item vs ability, lives in the per-mon block, not here).
+            self._status_onehot(getattr(delta, "our_status_applied", None)),  # 7
+            self._status_onehot(getattr(delta, "our_status_cured", None)),    # 7
+            self._status_onehot(getattr(delta, "opp_status_applied", None)),  # 7
+            self._status_onehot(getattr(delta, "opp_status_cured", None)),    # 7
+            # Item-used bits — resource event + timing; the WHICH is in the item block.
+            np.array([
+                float(getattr(delta, "our_item_lost", None) is not None),     # 1
+                float(getattr(delta, "opp_item_lost", None) is not None),     # 1
+            ], dtype=np.float32),
+            np.array([
+                self._move_id(getattr(delta, "our_attempted_move_id", None)),  # 1 embedded
+            ], dtype=np.float32),
+            # Species block (6 IDs — embedded by extractor via the manifest).
+            # attempted_switch_to dropped — switches always execute, so it == switch_to.
             np.array([
                 self._species_id(self._actor_species(delta, "our")),
                 self._species_id(self._actor_species(delta, "opp")),
@@ -569,6 +668,8 @@ class TurnDeltaEncoder:
                 self._species_id(delta.opp_switch_to),
             ], dtype=np.float32),                                       # 6
         ])
-        assert ext_block.shape[0] == TURN_DELTA_EXT_DIM
+        assert ext_block.shape[0] == TURN_DELTA_EXT_DIM, (
+            f"ext_block shape {ext_block.shape[0]} != TURN_DELTA_EXT_DIM {TURN_DELTA_EXT_DIM}"
+        )
 
         return np.concatenate([base_block, ext_block])

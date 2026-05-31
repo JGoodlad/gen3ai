@@ -113,6 +113,7 @@ class Effect(Enum):
     LOCKED_MOVE = auto()
     LOCK_ON = auto()
     MAGIC_COAT = auto()
+    MAGMA_ARMOR = auto()  # gen3 ability — emits |-activate|mon|ability: Magma Armor on thaw
     MAGMA_STORM = auto()
     MAGNET_RISE = auto()
     MAGNITUDE = auto()

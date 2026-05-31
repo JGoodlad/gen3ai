@@ -1077,6 +1077,21 @@ class AbstractBattle(ABC):
                 mon2 = self.get_pokemon(event[4].replace("[of] ", ""))
                 mon._item, mon2._item = mon2.item, mon.item
             elif target != "":  # ['', '-activate', '', 'move: Splash']
+                # An ability activating (e.g. |-activate|p1a: Snorlax|ability: Immunity)
+                # REVEALS that ability — record it persistently, not just as a transient
+                # effect, so the opponent's ability flips from unknown to known. Mirrors
+                # the -immune / -ability handlers. The holder is the [of] source if the
+                # line names one, else the activating target. Only set when currently
+                # unknown (don't clobber a known ability into temporary_ability).
+                if effect.startswith("ability: "):
+                    holder = target
+                    for tok in event[4:]:
+                        if tok.startswith("[of] "):
+                            holder = tok[len("[of] "):]
+                            break
+                    holder_mon = self.get_pokemon(holder)
+                    if holder_mon.ability is None:
+                        holder_mon.ability = effect[len("ability: "):]
                 self.get_pokemon(target).start_effect(effect)
         elif event[1] == "-status":
             pokemon, status = event[2:4]

@@ -91,7 +91,7 @@ def _delta(**kwargs):
 
 def test_dimension():
     assert _enc().dimension == TURN_DELTA_DIM
-    assert TURN_DELTA_DIM == 110  # +2 for the "fainted" cant reason (one per side)
+    assert TURN_DELTA_DIM == 157  # gen3_turn_delta_v2: + status onehots (4×7) + item-used bits (2)
 
 
 def test_empty_delta_is_all_zeros_except_opp_move_known():
@@ -147,8 +147,9 @@ def test_failed_to_move_flag():
     vec = enc.encode(delta)
     assert vec[OFFSET_OUR_FAILED_TO_MOVE] == pytest.approx(1.0)
     assert vec[OFFSET_OPP_FAILED_TO_MOVE] == pytest.approx(0.0)
-    # our_cant_reason onehot: par = index 0
-    assert vec[OFFSET_OUR_CANT + 0] == pytest.approx(1.0)
+    # our_cant_reason onehot: par = index 2 in gen3_effects.CANT_REASONS
+    # (slp=0, frz=1, par=2, flinch=3, ...)
+    assert vec[OFFSET_OUR_CANT + 2] == pytest.approx(1.0)
 
 
 def test_opp_cant_reason_onehot():
@@ -161,21 +162,34 @@ def test_opp_cant_reason_onehot():
 
 
 def test_cant_reason_prefix_normalized():
-    """Showdown's 'move: Taunt' / 'ability: Truant' must map to the bare index."""
+    """Showdown's 'move: Taunt' / 'ability: Truant' must map to the bare index.
+
+    Indices are from gen3_effects.CANT_REASONS:
+      slp=0, frz=1, par=2, flinch=3, recharge=4, attract=5, disable=6,
+      taunt=7, imprison=8, focuspunch=9, nopp=10, truant=11
+    """
     enc = _enc()
-    # taunt is index 6 in the cant order
+    # taunt is index 7 in gen3_effects.CANT_REASONS
     vec = enc.encode(_delta(our_failed_to_move=True, our_cant_reason="move: Taunt"))
-    assert vec[OFFSET_OUR_CANT + 6] == pytest.approx(1.0)
+    assert vec[OFFSET_OUR_CANT + 7] == pytest.approx(1.0)
     assert enc.describe_vector(vec)["our_cant"] == "taunt"
-    # truant is index 9, prefixed with 'ability: '
+    # truant is index 11, prefixed with 'ability: '
     vec2 = enc.encode(_delta(opp_failed_to_move=True, opp_cant_reason="ability: Truant"))
-    assert vec2[OFFSET_OPP_CANT + 9] == pytest.approx(1.0)
-    # recharge (Hyper Beam) is a bare reason at index 5
+    assert vec2[OFFSET_OPP_CANT + 11] == pytest.approx(1.0)
+    # recharge (Hyper Beam) is a bare reason at index 4
     vec3 = enc.encode(_delta(our_failed_to_move=True, our_cant_reason="recharge"))
-    assert vec3[OFFSET_OUR_CANT + 5] == pytest.approx(1.0)
-    # An unknown reason → all-zeros cant onehot (no crash).
-    vec4 = enc.encode(_delta(our_failed_to_move=True, our_cant_reason="move: Bogus"))
-    assert vec4[OFFSET_OUR_CANT:OFFSET_OUR_CANT + CANT_DIM].sum() == pytest.approx(0.0)
+    assert vec3[OFFSET_OUR_CANT + 4] == pytest.approx(1.0)
+
+
+def test_unknown_cant_reason_raises():
+    """Crash-don't-drop: a cant reason outside the gen3_effects vocab must RAISE,
+    not silently encode all-zeros (which is indistinguishable from 'moved
+    normally'). The encoder is the only validation point — gen3_battle records
+    the |cant| reason verbatim."""
+    from agents.observation.gen3_effects import UnknownCantReasonError
+    enc = _enc()
+    with pytest.raises(UnknownCantReasonError):
+        enc.encode(_delta(our_failed_to_move=True, our_cant_reason="move: Bogus"))
 
 
 def test_hp_delta():
@@ -485,3 +499,35 @@ def test_describe_vector_decodes_extended_fields():
     assert desc["our_boost_delta"][0] == pytest.approx(1.0)
     assert desc["our_hp_levels"][0] == pytest.approx(1.0)
     assert desc["our_hp_levels"][1] == pytest.approx(0.5)
+
+
+# ---------------------------------------------------------------------------
+# Embedded-ID manifest invariants (the layout-driven contract)
+# ---------------------------------------------------------------------------
+
+def test_embedded_manifest_partitions_the_slot():
+    """TURN_DELTA_EMBEDDED_IDS + TURN_DELTA_SCALAR_OFFSETS must EXACTLY partition
+    [0, TURN_DELTA_DIM): every position is either an embedded ID or a scalar,
+    never both, never neither. This is what guarantees a raw id can't silently
+    leak through as a scalar (or vice versa)."""
+    from agents.observation.turn_delta_encoder import (
+        TURN_DELTA_EMBEDDED_IDS, TURN_DELTA_SCALAR_OFFSETS, TURN_DELTA_DIM,
+    )
+    embedded = {pos for pos, _ in TURN_DELTA_EMBEDDED_IDS}
+    scalars = set(TURN_DELTA_SCALAR_OFFSETS)
+    # no overlap
+    assert embedded.isdisjoint(scalars)
+    # covers exactly the full slot
+    assert embedded | scalars == set(range(TURN_DELTA_DIM))
+    # no duplicate embedded positions
+    assert len(embedded) == len(TURN_DELTA_EMBEDDED_IDS)
+    # every kind is a known table
+    assert all(kind in ("move", "type", "species") for _, kind in TURN_DELTA_EMBEDDED_IDS)
+
+
+def test_embedded_manifest_positions_in_range():
+    from agents.observation.turn_delta_encoder import (
+        TURN_DELTA_EMBEDDED_IDS, TURN_DELTA_DIM,
+    )
+    for pos, _ in TURN_DELTA_EMBEDDED_IDS:
+        assert 0 <= pos < TURN_DELTA_DIM

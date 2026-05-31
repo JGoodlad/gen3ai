@@ -27,6 +27,60 @@ from typing import Dict, List, Optional, Sequence
 
 from agents.battle.battle_event import OPP, OURS, BattleEvent, EventKind
 
+# ---------------------------------------------------------------------------
+# Faint-cause vocabulary (Step 4)
+# ---------------------------------------------------------------------------
+# The cause of each KO in a decision window, derived from the [from] clause
+# of the lethal DAMAGE event. "other" is a catch-all for unrecognised sources
+# — crash-don't-drop is NOT applied here: a novel [from] string is annotated
+# "other" rather than raising, because it's an annotation gap, not a parser
+# error. The encoder encodes causes as a multi-hot so multiple KOs in one
+# window can contribute different bits.
+FAINT_CAUSE_VOCAB: tuple = (
+    "attack",    # KO'd by a direct move (no [from] clause on the lethal damage)
+    "hazard",    # Entry hazard (Spikes / Stealth Rock)
+    "weather",   # Residual weather damage (Sandstorm / Hail)
+    "status",    # Residual status damage (Burn / Poison / Toxic)
+    "recoil",    # Recoil damage
+    "selfko",    # User of Explosion / Selfdestruct kills themselves
+    "leechseed", # Leech Seed residual
+    "other",     # Any unclassified [from] source
+)
+FAINT_CAUSE_DIM: int = len(FAINT_CAUSE_VOCAB)  # 8
+_FAINT_CAUSE_TO_IDX: Dict[str, int] = {c: i for i, c in enumerate(FAINT_CAUSE_VOCAB)}
+
+# Self-KO moves: the user always faints (even on a miss/immune target in Gen 3
+# they still die), so a faint on the user's own side this turn is classified selfko.
+_SELF_KO_MOVES: frozenset = frozenset({"explosion", "selfdestruct"})
+
+
+@dataclass(frozen=True)
+class FaintDetail:
+    """Cause-annotated faint for one Pokémon in a decision window."""
+    species: str
+    side: str   # OURS or OPP
+    cause: str  # element of FAINT_CAUSE_VOCAB
+
+
+def _classify_faint_cause(from_clause: Optional[str], used_selfko: bool) -> str:
+    """Map a DAMAGE event's ``[from]`` clause + self-KO flag → faint cause label."""
+    if used_selfko:
+        return "selfko"
+    if from_clause is None:
+        return "attack"
+    fc = from_clause.strip().lower()
+    if fc == "spikes":
+        return "hazard"
+    if fc in ("sandstorm", "hail"):
+        return "weather"
+    if fc in ("psn", "tox", "brn", "burn"):
+        return "status"
+    if "recoil" in fc:
+        return "recoil"
+    if "leech seed" in fc or "leechseed" in fc:
+        return "leechseed"
+    return "other"
+
 
 @dataclass(frozen=True)
 class DamagingMove:
@@ -275,6 +329,41 @@ class TurnView:
         """Escape hatch: every event of ``kind`` this turn, in order. Lets a consumer
         reach any fact the typed accessors don't name without walking ``self.events``."""
         return [e for e in self.events if e.kind is kind]
+
+    def faint_details(self) -> List[FaintDetail]:
+        """Cause-annotated list of every faint in this decision window.
+
+        For each FAINT event the cause is derived from the most recent DAMAGE
+        event on the same (species, side) pair preceding the FAINT (the
+        ``[from]`` clause of that damage, stored as ``event.reason``). An
+        unrecognised ``[from]`` maps to ``"other"`` — crash-don't-drop is NOT
+        applied here because a novel source is an annotation gap, not a parser
+        error.
+
+        Self-KO (Explosion / Selfdestruct): if the fainting side used a self-KO
+        move this turn, that side's faint is classified ``"selfko"`` regardless
+        of the last damage reason.
+        """
+        # Build (species, side) → last DAMAGE [from] clause, in event order.
+        last_damage_reason: Dict[tuple, Optional[str]] = {}
+        for e in self.events:
+            if e.kind is EventKind.DAMAGE and e.actor_species and e.side:
+                last_damage_reason[(e.actor_species, e.side)] = e.reason
+
+        details: List[FaintDetail] = []
+        for e in self.events:
+            if e.kind is not EventKind.FAINT or not e.actor_species or not e.side:
+                continue
+            side_turn = self.ours if e.side == OURS else self.opp
+            used_selfko = (
+                side_turn.moved
+                and side_turn.move_id is not None
+                and side_turn.move_id in _SELF_KO_MOVES
+            )
+            from_clause = last_damage_reason.get((e.actor_species, e.side))
+            cause = _classify_faint_cause(from_clause, used_selfko)
+            details.append(FaintDetail(species=e.actor_species, side=e.side, cause=cause))
+        return details
 
     def __repr__(self) -> str:  # pragma: no cover - debug aid
         return (

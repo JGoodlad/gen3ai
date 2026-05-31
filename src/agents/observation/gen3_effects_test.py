@@ -86,6 +86,18 @@ def test_no_dead_volatile_slots_beyond_known_extras():
         "stockpile", "stockpile1", "stockpile2", "stockpile3",
         "wrap", "bind", "clamp", "whirlpool", "firespin", "sandtomb",
         "struggle",  # engine-set when out of usable moves; confirmed by e2e fuzz
+        # Future Sight / Doom Desire emit `-start` on the user (moves.ts) even though
+        # they mechanically use addSlotCondition — poke-env surfaces them as user
+        # volatiles. The volatileStatus/addVolatile scan can't see the `-start` path,
+        # so they're explicit extras. Confirmed by the training smoke tripwire.
+        "doomdesire", "futuresight",
+        # Ability-activation volatiles: gen3 abilities that emit `-activate`/`-start`
+        # with their own name → poke-env start_effect → mon.effects → LiveView. Not in
+        # the volatileStatus/addVolatile scan. `immunity` was caught by the 5m event-log
+        # fuzz; the rest are the full gen3 set (gen3_abilities ∩ self-emitting -activate
+        # ∩ Effect enum) added proactively. flashfire is in the binary list already.
+        "immunity", "insomnia", "limber", "magmaarmor", "oblivious", "owntempo",
+        "shedskin", "stickyhold", "suctioncups", "synchronize", "vitalspirit",
     }
     for vid in GEN3_VOLATILE_TO_SLOT:
         assert vid in derived or vid in intentional_extras, (
@@ -141,6 +153,34 @@ def test_focuspunch_and_struggle_have_slots():
     """The two engine-set volatiles the e2e fuzz caught must encode, not crash."""
     assert encode_volatiles(["focuspunch"]).sum() == 1.0
     assert encode_volatiles(["struggle"]).sum() == 1.0
+
+
+def test_future_move_volatiles_have_slots():
+    """Future Sight / Doom Desire surface as user volatiles via their `-start` line;
+    the training smoke crash-don't-drop tripwire caught doomdesire. Must encode binary."""
+    assert encode_volatiles(["doomdesire"])[VOLATILE_SLOTS.index("doomdesire")] == 1.0
+    assert encode_volatiles(["futuresight"])[VOLATILE_SLOTS.index("futuresight")] == 1.0
+    # paired with another volatile, both bits set, no crash
+    assert encode_volatiles(["futuresight", "leechseed"]).sum() == 2.0
+
+
+def test_ability_activation_volatiles_collapse_to_one_slot():
+    """gen3 ability-activation effects (Immunity / Synchronize / Oblivious / …) surface
+    as volatiles via poke-env's -activate path. `immunity` was caught by the 5m fuzz.
+    They all COLLAPSE to the single `ability_activated` slot — their identity is now
+    captured persistently in the per-mon ability block (the activation reveals the
+    ability), so a per-ability slot would just duplicate it."""
+    from agents.observation.gen3_effects import (
+        _ABILITY_ACTIVATION_VOLATILES, _ABILITY_ACTIVATED_SLOT,
+    )
+    slot_idx = VOLATILE_SLOTS.index(_ABILITY_ACTIVATED_SLOT)
+    for vid in _ABILITY_ACTIVATION_VOLATILES:
+        vec = encode_volatiles([vid])
+        assert vec[slot_idx] == 1.0, f"{vid} did not map to ability_activated"
+        assert vec.sum() == 1.0, f"{vid} set more than the one shared slot"
+    # No per-ability slot exists any more (collapsed)
+    assert "immunity" not in VOLATILE_SLOTS
+    assert "synchronize" not in VOLATILE_SLOTS
 
 
 # --------------------------------------------------------------------------- #

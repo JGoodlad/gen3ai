@@ -214,3 +214,129 @@ def test_multi_hit_damage_sums():
     assert v.damage_on("blissey", side=OPP) == pytest.approx(-0.36)
     assert v.ours.damaging_move is not None
     assert v.ours.outcome == "hit"
+
+
+# ---------------------------------------------------------------------------
+# faint_details() — cause classification (Step 4)
+# ---------------------------------------------------------------------------
+
+from agents.battle.turn_view import FAINT_CAUSE_VOCAB, FaintDetail  # noqa: E402
+
+
+def test_faint_cause_attack():
+    """A KO with no [from] clause → 'attack'."""
+    v = TurnView.from_events([
+        ev(EventKind.MOVE, side=OPP, actor="tyranitar", target="zapdos",
+           move_id="rockslide"),
+        ev(EventKind.DAMAGE, side=OURS, actor="zapdos", amount=-1.0),  # no reason
+        ev(EventKind.FAINT, side=OURS, actor="zapdos"),
+    ])
+    details = v.faint_details()
+    assert len(details) == 1
+    assert details[0] == FaintDetail(species="zapdos", side=OURS, cause="attack")
+
+
+def test_faint_cause_hazard_spikes():
+    """Spikes damage → 'hazard'."""
+    v = TurnView.from_events([
+        ev(EventKind.DAMAGE, side=OURS, actor="raichu", amount=-0.25, reason="Spikes"),
+        ev(EventKind.FAINT, side=OURS, actor="raichu"),
+    ])
+    details = v.faint_details()
+    assert len(details) == 1
+    assert details[0].cause == "hazard"
+
+
+def test_faint_cause_weather_sandstorm():
+    """Sandstorm residual → 'weather'."""
+    v = TurnView.from_events([
+        ev(EventKind.DAMAGE, side=OPP, actor="blissey", amount=-0.0625, reason="Sandstorm"),
+        ev(EventKind.FAINT, side=OPP, actor="blissey"),
+    ])
+    assert v.faint_details()[0].cause == "weather"
+
+
+def test_faint_cause_status_burn():
+    """Burn residual → 'status'."""
+    v = TurnView.from_events([
+        ev(EventKind.DAMAGE, side=OPP, actor="machamp", amount=-0.0625, reason="brn"),
+        ev(EventKind.FAINT, side=OPP, actor="machamp"),
+    ])
+    assert v.faint_details()[0].cause == "status"
+
+
+def test_faint_cause_recoil():
+    """Recoil damage → 'recoil'."""
+    v = TurnView.from_events([
+        ev(EventKind.MOVE, side=OURS, actor="dodrio", target="steelix", move_id="doubleedge"),
+        ev(EventKind.DAMAGE, side=OURS, actor="dodrio", amount=-0.25, reason="Recoil"),
+        ev(EventKind.FAINT, side=OURS, actor="dodrio"),
+    ])
+    assert v.faint_details()[0].cause == "recoil"
+
+
+def test_faint_cause_selfko_explosion():
+    """Explosion user faint → 'selfko' (overrides the no-[from] attack rule)."""
+    v = TurnView.from_events([
+        ev(EventKind.MOVE, side=OURS, actor="forretress", target="blissey",
+           move_id="explosion"),
+        ev(EventKind.DAMAGE, side=OPP, actor="blissey", amount=-1.0),
+        ev(EventKind.FAINT, side=OURS, actor="forretress"),  # user faint = selfko
+        ev(EventKind.FAINT, side=OPP, actor="blissey"),      # target faint = attack
+    ])
+    details = v.faint_details()
+    assert len(details) == 2
+    # The user faint on our side is selfko
+    our_faint = next(d for d in details if d.side == OURS)
+    opp_faint = next(d for d in details if d.side == OPP)
+    assert our_faint.cause == "selfko"
+    # The target faint (no [from] on their damage) is attack
+    assert opp_faint.cause == "attack"
+
+
+def test_faint_cause_leechseed():
+    """Leech Seed residual → 'leechseed'."""
+    v = TurnView.from_events([
+        ev(EventKind.DAMAGE, side=OURS, actor="celebi", amount=-0.125, reason="Leech Seed"),
+        ev(EventKind.FAINT, side=OURS, actor="celebi"),
+    ])
+    assert v.faint_details()[0].cause == "leechseed"
+
+
+def test_faint_cause_other_unrecognised():
+    """Unknown [from] clause → 'other' (no crash)."""
+    v = TurnView.from_events([
+        ev(EventKind.DAMAGE, side=OPP, actor="aggron", amount=-0.5, reason="Mystery Mechanic"),
+        ev(EventKind.FAINT, side=OPP, actor="aggron"),
+    ])
+    assert v.faint_details()[0].cause == "other"
+
+
+def test_faint_double_ko_different_causes():
+    """Two faints in one window with different causes both appear in faint_details."""
+    v = TurnView.from_events([
+        ev(EventKind.MOVE, side=OURS, actor="exploudier", target="blissey",
+           move_id="explosion"),
+        ev(EventKind.DAMAGE, side=OPP, actor="blissey", amount=-1.0),        # attack
+        ev(EventKind.FAINT, side=OURS, actor="exploudier"),                  # selfko
+        ev(EventKind.FAINT, side=OPP, actor="blissey"),                      # attack
+    ])
+    details = v.faint_details()
+    assert len(details) == 2
+    causes = {d.cause for d in details}
+    assert causes == {"selfko", "attack"}
+
+
+def test_no_faints_returns_empty():
+    """A normal trade (no faints) → empty faint_details list."""
+    v = TurnView.from_events([
+        ev(EventKind.MOVE, side=OURS, actor="zapdos", target="tyranitar", move_id="tbolt"),
+        ev(EventKind.DAMAGE, side=OPP, actor="tyranitar", amount=-0.4),
+    ])
+    assert v.faint_details() == []
+
+
+def test_all_faint_cause_vocab_covered():
+    """Every element of FAINT_CAUSE_VOCAB must be a string."""
+    assert all(isinstance(c, str) for c in FAINT_CAUSE_VOCAB)
+    assert len(FAINT_CAUSE_VOCAB) == 8

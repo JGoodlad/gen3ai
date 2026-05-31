@@ -76,7 +76,9 @@ class EpisodeTracker:
         self._opp_slots = SlotRegistry()
         self._history: list[BattleContext] = []
         self._actions: list[int] = []   # _actions[i] = action taken FROM _history[i]
+        self._cursors: list[int] = []   # _cursors[i] = event_cursor when _history[i] was built
         self._last_action: int = -1
+        self._last_cursor: int = 0      # event_cursor at the last record() call
         self._hidden_power_tracker = HiddenPowerTracker()
 
     @property
@@ -111,13 +113,19 @@ class EpisodeTracker:
     def record(self, battle, mask: np.ndarray) -> BattleContext:
         """Build and store a context snapshot for the current turn.
 
-        Also commits the pending _last_action as the action taken FROM the
-        previous context, so prev_N_delta_vecs() can reconstruct all N deltas.
-        Updates the HiddenPowerTracker BEFORE the env encodes the observation,
-        so the encoded obs includes the just-fired HP's narrowing.
+        Also commits the pending _last_action and event_cursor as the action
+        and window-start taken FROM the previous context, so prev_N_delta_vecs()
+        can reconstruct all N deltas. Updates the HiddenPowerTracker BEFORE the
+        env encodes the observation, so the encoded obs includes the just-fired
+        HP's narrowing.
         """
         if self._history:
             self._actions.append(self._last_action)
+            self._cursors.append(self._last_cursor)
+        # Capture cursor NOW (before we build the context snapshot) so it marks
+        # the start of the window for the NEXT decision — events emitted between
+        # this record() and the next one are the delta for this turn.
+        self._last_cursor = getattr(battle, "event_cursor", 0)
         ctx = BattleContext.from_battle(battle, mask, self._our_slots, self._opp_slots)
 
         self._maybe_observe_hidden_power(battle, ctx)
@@ -172,25 +180,52 @@ class EpisodeTracker:
         """Record the action chosen this turn, before the game steps forward."""
         self._last_action = action
 
-    def build_delta(self) -> TurnDelta:
-        """Diff between the last two turns. Returns an empty delta at episode start."""
+    def _get_events_for_window(self, battle, cursor: int) -> list:
+        """Return events from ``cursor`` to now using battle.events_since, or []."""
+        if battle is None or not hasattr(battle, "events_since"):
+            return []
+        return battle.events_since(cursor)
+
+    def build_delta(self, battle=None) -> TurnDelta:
+        """Diff between the last two turns. Returns an empty delta at episode start.
+
+        Pass ``battle`` (a Gen3Battle) to use the event-fold path (Step 4).
+        Without it the old snapshot-diff path is used as a fallback.
+        """
         if len(self._history) < 2:
             return TurnDelta.empty()
-        return TurnDelta.build(self._history[-2], self._history[-1], self._last_action)
+        prev_ctx = self._history[-2]
+        curr_ctx = self._history[-1]
+        if battle is not None and hasattr(battle, "events_since") and self._cursors:
+            cursor = self._cursors[-1]
+            events = self._get_events_for_window(battle, cursor)
+            return TurnDelta.build_from_events(prev_ctx, curr_ctx, self._last_action, events)
+        return TurnDelta.build(prev_ctx, curr_ctx, self._last_action)
 
-    def prev_N_delta_vecs(self, n: int, encoder: "TurnDeltaEncoder") -> np.ndarray:
+    def prev_N_delta_vecs(
+        self, n: int, encoder: "TurnDeltaEncoder", battle=None
+    ) -> np.ndarray:
         """Return (n, TURN_DELTA_DIM) array of encoded TurnDeltas, oldest-first.
 
         Index n-1 is the most recent delta (same data as build_delta()).
-        Turns not yet played are zero-padded.
+        Turns not yet played are zero-padded. Pass ``battle`` (Gen3Battle) to
+        use the event-fold path for all N slots.
         """
         result = np.zeros((n, encoder.dimension), dtype=np.float32)
+        use_events = battle is not None and hasattr(battle, "events_since")
         available = min(n, len(self._history) - 1, len(self._actions))
+        if use_events:
+            available = min(available, len(self._cursors))
         for i in range(available):
             action = self._actions[-1 - i]
             ctx_prev = self._history[-2 - i]
             ctx_curr = self._history[-1 - i]
-            delta = TurnDelta.build(ctx_prev, ctx_curr, action)
+            if use_events:
+                cursor = self._cursors[-1 - i]
+                events = self._get_events_for_window(battle, cursor)
+                delta = TurnDelta.build_from_events(ctx_prev, ctx_curr, action, events)
+            else:
+                delta = TurnDelta.build(ctx_prev, ctx_curr, action)
             result[n - 1 - i] = encoder.encode(delta)
         return result
 
@@ -199,5 +234,7 @@ class EpisodeTracker:
         self._opp_slots.reset()
         self._history.clear()
         self._actions.clear()
+        self._cursors.clear()
         self._last_action = -1
+        self._last_cursor = 0
         self._hidden_power_tracker.reset()

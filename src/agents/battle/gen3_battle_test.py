@@ -301,3 +301,64 @@ def test_unknown_keyword_raises():
     feed(g3, CANONICAL[:11])
     with pytest.raises(UnknownMessageType):
         g3.parse_message(["", "totallyboguskeyword", "p1a: Zappy"])
+
+
+# --------------------------------------------------------------------------- #
+# Ability reveal on -activate: an ability activating discloses it persistently. #
+# --------------------------------------------------------------------------- #
+def _setup_with_opp(cls):
+    """Battle with p1=us, p2=opp Snorlax active."""
+    b = make(cls)
+    feed(b, [
+        ["", "player", "p1", "p1user", "", ""],
+        ["", "player", "p2", "p2user", "", ""],
+        ["", "teamsize", "p1", "6"],
+        ["", "teamsize", "p2", "6"],
+        ["", "gametype", "singles"],
+        ["", "gen", "3"],
+        ["", "start"],
+        ["", "switch", "p1a: Zappy", "Zapdos, L100", "100/100"],
+        ["", "switch", "p2a: Snorlax", "Snorlax, L100, M", "100/100"],
+        ["", "turn", "1"],
+    ])
+    return b
+
+
+def test_ability_activation_reveals_opponent_ability():
+    """|-activate|opp|ability: Immunity reveals the opponent's ability (Immunity has
+    two possible abilities for Snorlax — Immunity / Thick Fat — so the activation
+    resolves the ambiguity). Previously this was dropped: only a transient volatile
+    fired, the persistent ability stayed unknown."""
+    g3 = _setup_with_opp(Gen3Battle)
+    opp = g3.opponent_active_pokemon
+    assert opp.ability is None, "ability should start unknown"
+    g3.parse_message(["", "-activate", "p2a: Snorlax", "ability: Immunity"])
+    assert opp.ability == "immunity", "ability not revealed by -activate"
+
+
+def test_ability_reveal_matches_classic_battle():
+    """The reveal lives in the base AbstractBattle handler, so classic Battle and
+    Gen3Battle agree (state-equivalence preserved)."""
+    classic = _setup_with_opp(Battle)
+    g3 = _setup_with_opp(Gen3Battle)
+    line = ["", "-activate", "p2a: Snorlax", "ability: Immunity"]
+    classic.parse_message(line)
+    g3.parse_message(line)
+    assert (
+        g3.opponent_active_pokemon.ability
+        == classic.opponent_active_pokemon.ability
+        == "immunity"
+    )
+
+
+def test_known_ability_not_clobbered_by_activation():
+    """When the ability is already known, a later activation must NOT overwrite it
+    into temporary_ability (which would mask the real ability)."""
+    g3 = _setup_with_opp(Gen3Battle)
+    opp = g3.opponent_active_pokemon
+    g3.parse_message(["", "-activate", "p2a: Snorlax", "ability: Immunity"])
+    assert opp.ability == "immunity"
+    # A second activation is a no-op (ability already known, no temp override)
+    g3.parse_message(["", "-activate", "p2a: Snorlax", "ability: Immunity"])
+    assert opp.ability == "immunity"
+    assert opp.temporary_ability is None

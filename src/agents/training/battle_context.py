@@ -470,6 +470,58 @@ class TurnDelta:
     our_move_crit: bool = False
     opp_move_crit: bool = False
 
+    # --- Step 4: multi-KO + cause ----------------------------------------
+    # Count of mons that fainted on each side in this decision window.
+    # (we_fainted / opp_fainted are kept as quick bool checks; these carry
+    # the exact count for multi-KO turns.)
+    our_faint_count: int = 0
+    opp_faint_count: int = 0
+
+    # Multi-hot over FAINT_CAUSE_VOCAB (8 dims). A turn with two faints of
+    # different causes will have two bits set. Zeros when no mon fainted.
+    # Shape: (FAINT_CAUSE_DIM,) float32.
+    our_faint_causes: np.ndarray = field(
+        default_factory=lambda: np.zeros(8, dtype=np.float32)
+    )
+    opp_faint_causes: np.ndarray = field(
+        default_factory=lambda: np.zeros(8, dtype=np.float32)
+    )
+
+    # --- Step 4: attempted action ----------------------------------------
+    # The move WE pressed, preserved even when it never fired (cant / frozen /
+    # KO-before-acting). Decoded from the raw action index against prev_ctx at
+    # build time, so it always reflects genuine intent. Only the MOVE is kept:
+    # a pressed switch always executes (switches aren't subject to freeze/sleep/
+    # flinch/cant and the mask gates legality), so an attempted_switch_to would
+    # always equal our_switch_to. Opp attempted action is not observable.
+    our_attempted_move_id: Optional[str] = None
+
+    # --- Status transitions THIS window (folded from the event log) ------
+    # The status each side's active GAINED (status_applied) or LOST
+    # (status_cured) this decision window — the *event*, distinct from the
+    # current-status snapshot in the per-mon block. Lets the history window
+    # carry temporal patterns the snapshot can't ("Tyranitar's Toxic was
+    # cured, then it Dragon Danced" — Lum-Berry-enabled setup). None when no
+    # status change on that side. Stored as poke-env Status enums (the encoder
+    # one-hots them). The CAUSE (item vs ability vs natural) is NOT stored
+    # here — it lives in the per-mon item/ability block (single source of
+    # truth); this is purely the transition.
+    our_status_applied: Optional["Status"] = None
+    our_status_cured: Optional["Status"] = None
+    opp_status_applied: Optional["Status"] = None
+    opp_status_cured: Optional["Status"] = None
+
+    # --- Item consumed/removed THIS window (folded from |-enditem|) -------
+    # The item id each side's active LOST this window (Berry eaten, Knock Off,
+    # Trick). Stored as the id string (reward/replay can use the identity); the
+    # ENCODER emits only a BIT ("an item was used") — the WHICH lives in the
+    # per-mon item block ([item_id, known, consumed=1]), so putting the id here
+    # too would duplicate it. The history just marks the resource event +
+    # timing; the per-mon block names it. Parity with ability_activated. None
+    # when no item was lost this window.
+    our_item_lost: Optional[str] = None
+    opp_item_lost: Optional[str] = None
+
     @property
     def opp_resolved_move_id(self) -> Optional[str]:
         """Opp's move id with protocol-truth preference.
@@ -569,7 +621,7 @@ class TurnDelta:
         )
         if our_ko:
             our_move_id = None
-        our_cant_reason = "fainted" if our_ko else curr_ctx.our_cant_reason
+        our_cant_reason = curr_ctx.our_cant_reason  # KO'd-before-acting → None, not "fainted"
         our_effectiveness, our_damaging_event = _align_effectiveness(
             our_move_id, curr_ctx.our_last_effectiveness, curr_ctx.our_last_damaging_event,
         )
@@ -619,7 +671,7 @@ class TurnDelta:
         if opp_ko:
             opp_move_id = None
             opp_move_known = True  # we positively know nothing fired
-        opp_cant_reason = "fainted" if opp_ko else curr_ctx.opp_cant_reason
+        opp_cant_reason = curr_ctx.opp_cant_reason  # KO'd-before-acting → None, not "fainted"
         opp_effectiveness, opp_damaging_event = _align_effectiveness(
             opp_move_id, curr_ctx.opp_last_effectiveness, curr_ctx.opp_last_damaging_event,
         )
@@ -701,6 +753,203 @@ class TurnDelta:
             opp_move_outcome=opp_move_outcome,
             our_move_crit=curr_ctx.our_move_crit,
             opp_move_crit=curr_ctx.opp_move_crit,
+        )
+
+    @classmethod
+    def build_from_events(
+        cls,
+        prev_ctx: "BattleContext",
+        curr_ctx: "BattleContext",
+        action: int,
+        events: list,
+    ) -> "TurnDelta":
+        """Build TurnDelta by folding the event log (Step 4 primary path).
+
+        ``events`` must be ``battle.events_since(cursor)`` — the per-decision
+        window (NOT ``events_for_turn``, which slices by protocol turn).
+        """
+        from agents.battle.battle_event import OURS, OPP  # noqa: F401
+        from agents.battle.turn_view import (
+            TurnView, FAINT_CAUSE_DIM, FAINT_CAUSE_VOCAB,
+        )
+        from poke_env.battle.status import Status
+        _cause_idx = {c: i for i, c in enumerate(FAINT_CAUSE_VOCAB)}
+
+        # --- Attempted move (decoded before anything fires) ---
+        # Only the move is kept — a pressed switch always executes, so it would
+        # always equal our_switch_to (see TurnDelta field doc). A pressed move,
+        # by contrast, may never fire (freeze/sleep/flinch/cant/KO-before-act).
+        if action < 6:
+            our_attempted_move_id: Optional[str] = None  # a switch — no attempted move
+        elif action < 10:
+            slot = action - 6
+            ids = prev_ctx.active_move_ids
+            our_attempted_move_id = ids[slot] if slot < len(ids) else None
+        else:
+            our_attempted_move_id = "struggle"
+
+        # HP deltas from snapshot (still the right source for continuous HP).
+        our_hp_delta = curr_ctx.our_hp - prev_ctx.our_hp
+        opp_hp_delta = curr_ctx.opp_hp - prev_ctx.opp_hp
+        for species, slot in curr_ctx.opp_slot_map.items():
+            if species not in prev_ctx.opp_slot_map and opp_hp_delta[slot] > 0:
+                opp_hp_delta[slot] = 0.0
+
+        empty_faint_causes = np.zeros(FAINT_CAUSE_DIM, dtype=np.float32)
+
+        if not events:
+            we_fainted = curr_ctx.our_fainted_count > prev_ctx.our_fainted_count
+            opp_fainted = curr_ctx.opp_fainted_count > prev_ctx.opp_fainted_count
+            return cls(
+                our_move_id=None, our_switch_to=None,
+                our_prev_active=prev_ctx.our_active,
+                opp_move_id=None, opp_switch_to=None,
+                opp_prev_active=prev_ctx.opp_active,
+                opp_move_known=False,
+                our_hp_delta=our_hp_delta, opp_hp_delta=opp_hp_delta,
+                we_fainted=we_fainted, opp_fainted=opp_fainted,
+                our_failed_to_move=False, our_cant_reason=None,
+                opp_failed_to_move=False, opp_cant_reason=None,
+                our_boost_delta=np.zeros(BOOST_DIM, dtype=np.int8),
+                opp_boost_delta=np.zeros(BOOST_DIM, dtype=np.int8),
+                our_effectiveness=None, opp_effectiveness=None,
+                we_moved_first=None,
+                phase_is_forced_switch=(curr_ctx.phase == "forced_switch"),
+                our_hp_after=curr_ctx.our_hp.copy(),
+                opp_hp_after=curr_ctx.opp_hp.copy(),
+                our_faint_count=int(we_fainted),
+                opp_faint_count=int(opp_fainted),
+                our_faint_causes=empty_faint_causes.copy(),
+                opp_faint_causes=empty_faint_causes.copy(),
+                our_attempted_move_id=our_attempted_move_id,
+            )
+
+        view = TurnView.from_events(events)
+        our = view.ours
+        opp = view.opp
+
+        # --- Move / switch from event log (delegation-aware) ---
+        our_move_id = our.move_id
+        our_switch_to = our.switched_to if our.switched else None
+        opp_move_id = opp.move_id
+        opp_switch_to = opp.switched_to if opp.switched else None
+        opp_move_known = opp.moved or opp.switched
+
+        # --- Cant reasons ---
+        our_cant_reason = our.cant_reason
+        opp_cant_reason = opp.cant_reason
+        our_failed_to_move = our_cant_reason is not None
+        opp_failed_to_move = opp_cant_reason is not None
+
+        # --- Status transitions (protocol id string → Status enum) ---
+        def _status(s):
+            return Status.__members__.get(s.upper()) if s else None
+        our_status_applied = _status(our.status_applied)
+        our_status_cured = _status(our.status_cured)
+        opp_status_applied = _status(opp.status_applied)
+        opp_status_cured = _status(opp.status_cured)
+
+        # --- Item consumed/removed this window (id kept; encoder emits a bit) ---
+        our_item_lost = our.item_lost
+        opp_item_lost = opp.item_lost
+
+        # --- Boost deltas ---
+        our_boost_delta = (
+            np.zeros(BOOST_DIM, dtype=np.int8) if our_switch_to is not None
+            else (curr_ctx.our_boosts - prev_ctx.our_boosts).astype(np.int8)
+        )
+        opp_boost_delta = (
+            np.zeros(BOOST_DIM, dtype=np.int8) if opp_switch_to is not None
+            else (curr_ctx.opp_boosts - prev_ctx.opp_boosts).astype(np.int8)
+        )
+
+        # --- Damaging events — convert TurnView.DamagingMove → DamagingMoveEvent ---
+        def _to_dme(dm):
+            if dm is None:
+                return None
+            ts_str = dm.target_status
+            target_status = Status.__members__.get(ts_str) if ts_str else None
+            return DamagingMoveEvent(
+                user_species=dm.user_species or "",
+                target_species=dm.target_species or "",
+                target_status=target_status,
+                move_id=dm.move_id or "",
+                effectiveness=dm.effectiveness if dm.effectiveness is not None else 1.0,
+            )
+
+        our_damaging_event = _to_dme(our.damaging_move)
+        opp_damaging_event = _to_dme(opp.damaging_move)
+
+        # --- Faint counts + causes ---
+        faints = view.faint_details()
+        our_faint_list = [f for f in faints if f.side == OURS]
+        opp_faint_list = [f for f in faints if f.side == OPP]
+        our_faint_count = len(our_faint_list)
+        opp_faint_count = len(opp_faint_list)
+
+        # Direct index (KeyError on miss) — every faint HAS a cause (no None
+        # sentinel), so a cause outside the vocab is a true silent drop. Both
+        # _classify_faint_cause and _cause_idx derive from FAINT_CAUSE_VOCAB, so
+        # this can only fire if a future edit desyncs them — which we WANT to crash.
+        our_faint_causes_arr = np.zeros(FAINT_CAUSE_DIM, dtype=np.float32)
+        for f in our_faint_list:
+            our_faint_causes_arr[_cause_idx[f.cause]] = 1.0
+
+        opp_faint_causes_arr = np.zeros(FAINT_CAUSE_DIM, dtype=np.float32)
+        for f in opp_faint_list:
+            opp_faint_causes_arr[_cause_idx[f.cause]] = 1.0
+
+        # --- Target HP deltas ---
+        our_target_hp_delta = _resolve_target_hp_delta(
+            opp_damaging_event, our_hp_delta, curr_ctx.our_slot_map
+        )
+        opp_target_hp_delta = _resolve_target_hp_delta(
+            our_damaging_event, opp_hp_delta, curr_ctx.opp_slot_map
+        )
+
+        return cls(
+            our_move_id=our_move_id,
+            our_switch_to=our_switch_to,
+            our_prev_active=prev_ctx.our_active,
+            opp_move_id=opp_move_id,
+            opp_switch_to=opp_switch_to,
+            opp_prev_active=prev_ctx.opp_active,
+            opp_move_known=opp_move_known,
+            our_hp_delta=our_hp_delta,
+            opp_hp_delta=opp_hp_delta,
+            we_fainted=our_faint_count > 0,
+            opp_fainted=opp_faint_count > 0,
+            our_failed_to_move=our_failed_to_move,
+            our_cant_reason=our_cant_reason,
+            opp_failed_to_move=opp_failed_to_move,
+            opp_cant_reason=opp_cant_reason,
+            our_boost_delta=our_boost_delta,
+            opp_boost_delta=opp_boost_delta,
+            our_effectiveness=our.effectiveness,
+            opp_effectiveness=opp.effectiveness,
+            we_moved_first=view.we_moved_first,
+            our_damaging_event=our_damaging_event,
+            opp_damaging_event=opp_damaging_event,
+            phase_is_forced_switch=(curr_ctx.phase == "forced_switch"),
+            our_hp_after=curr_ctx.our_hp.copy(),
+            opp_hp_after=curr_ctx.opp_hp.copy(),
+            our_target_hp_delta=our_target_hp_delta,
+            opp_target_hp_delta=opp_target_hp_delta,
+            our_move_outcome=our.outcome,
+            opp_move_outcome=opp.outcome,
+            our_move_crit=our.crit,
+            opp_move_crit=opp.crit,
+            our_faint_count=our_faint_count,
+            opp_faint_count=opp_faint_count,
+            our_faint_causes=our_faint_causes_arr,
+            opp_faint_causes=opp_faint_causes_arr,
+            our_attempted_move_id=our_attempted_move_id,
+            our_status_applied=our_status_applied,
+            our_status_cured=our_status_cured,
+            opp_status_applied=opp_status_applied,
+            opp_status_cured=opp_status_cured,
+            our_item_lost=our_item_lost,
+            opp_item_lost=opp_item_lost,
         )
 
     @classmethod

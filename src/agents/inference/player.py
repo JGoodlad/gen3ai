@@ -80,7 +80,7 @@ class Gen3Player(Player):
         )
 
         prev_mask = tracker.prev_mask
-        history_vecs = tracker.prev_N_delta_vecs(N_HISTORY_TURNS, self._turn_delta_encoder)
+        history_vecs = tracker.prev_N_delta_vecs(N_HISTORY_TURNS, self._turn_delta_encoder, battle=battle)
 
         return {
             "observation": np.concatenate([obs, prev_mask, history_vecs.flatten()]),

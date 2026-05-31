@@ -27,7 +27,6 @@ Run directly (requires: npm run showdown):
 from __future__ import annotations
 
 import asyncio
-import random
 import sys
 import time
 import traceback
@@ -365,6 +364,12 @@ class EventLogFuzzPlayer(Player):
         self.kinds_seen: Set[EventKind] = set()
         self.coverage: Set[str] = set()
         self.errors: List[str] = []
+        # Coverage of the crash-don't-drop allowlists — which volatiles / cant
+        # reasons were actually exercised across the run. Reported at the end so a
+        # human can SEE that rare states (Future Sight, partial-trap, Encore, …) got
+        # hit, and so a future allowlist gap shows up as a coverage miss, not luck.
+        self.volatiles_seen: Set[str] = set()
+        self.cant_reasons_seen: Set[str] = set()
 
     async def _handle_battle_message(self, split_messages):
         tag = split_messages[0][0].lstrip(">")
@@ -379,6 +384,9 @@ class EventLogFuzzPlayer(Player):
             self._validate_decision(battle)
         except Exception:  # never let validation crash the event loop
             self.errors.append(traceback.format_exc())
+        # Per-decision crash-don't-drop check — mirrors the TRAINING obs path, which
+        # encodes the live view on EVERY turn (see _check_live_state).
+        self._check_live_state(battle)
         return self.choose_random_move(battle)
 
     def _validate_decision(self, battle):
@@ -440,6 +448,26 @@ class EventLogFuzzPlayer(Player):
                         f"({lm.current_pp},{lm.max_pp}) != "
                         f"({rm.current_pp},{rm.max_pp})")
 
+    def _check_live_state(self, battle) -> None:
+        """Encode every live volatile at this decision (mirrors the TRAINING obs path,
+        which encodes the live view EVERY turn), recording coverage and any
+        crash-don't-drop gap into self.errors. validate_battle() only sees the FINAL
+        state, so a volatile that appears and resolves MID-battle (Future Sight /
+        Doom Desire pending for ~2 turns, Disable, Encore, partial-trap) would never
+        reach the final-state check — this per-decision surface caught `doomdesire`/
+        `immunity` that the battle-end check missed."""
+        try:
+            lv = battle.live_view()
+            for side in (lv.ours, lv.opp):
+                for mon in side.mons:
+                    if mon.volatiles:
+                        encode_volatiles(mon.volatiles)  # raises on an unclassified id
+                        self.volatiles_seen.update(mon.volatiles)
+        except Exception as exc:
+            self.errors.append(
+                f"[{battle.battle_tag}] per-decision live-state encode raised: {exc!r}"
+            )
+
     def _battle_finished_callback(self, battle):
         try:
             # stash the archived raw lines on the battle for validate_battle()
@@ -476,6 +504,18 @@ class EventLogFuzzPlayer(Player):
                 self.coverage.add("faint")
             elif e.kind in (EventKind.ITEM, EventKind.ENDITEM):
                 self.coverage.add("item")
+            elif e.kind is EventKind.CANT and e.reason is not None:
+                # Record the normalised cant reason for coverage. validate_battle
+                # already RAISES on an unknown reason, so a swallow here is safe —
+                # we only want the coverage signal, not a second tripwire.
+                try:
+                    self.cant_reasons_seen.add(normalize_cant_reason(e.reason))
+                except Exception:
+                    pass
+        # Volatile coverage is collected in id-form from the per-decision live view
+        # (_check_live_state) — the exact form encode_volatiles validates — so it is
+        # NOT re-collected here from VOLATILE_START (whose raw "move: Taunt" form
+        # would just add noise to the report).
 
         # Phase-1 widened-field coverage: confirm the new LiveView fields were actually
         # exercised on real play (not just present in the schema).
@@ -506,14 +546,20 @@ class EventLogFuzzPlayer(Player):
 _TEAM_POOL = None
 
 
-def _random_team() -> str:
+def _team_pool() -> list:
+    """The FULL gen3ou team pool (samples + others). Returning the whole list to
+    Gen3Teambuilder makes ``yield_team()`` re-roll a random team EVERY battle, so a
+    run of N battles exercises N different movesets — far broader volatile / cant /
+    effect coverage than reusing two fixed teams. This breadth is what surfaces rare
+    mid-battle volatiles (Future Sight / Doom Desire, partial-trap, Encore, …) that a
+    small fixed team would never reveal."""
     global _TEAM_POOL
     if _TEAM_POOL is None:
         loader = TeamLoader()
-        _TEAM_POOL = loader.get_sample_teams() or loader.get_all_teams()
+        _TEAM_POOL = loader.get_all_teams()
         if not _TEAM_POOL:
             raise RuntimeError("no gen3ou teams found under data/teams")
-    return random.choice(_TEAM_POOL)
+    return _TEAM_POOL
 
 
 REQUIRED_COVERAGE = {
@@ -542,9 +588,12 @@ async def main(n_battles: int = 40, max_seconds: "float | None" = None) -> None:
     # Proven recipe (mirrors the poke_env_gaps fuzz tests): our Gen3Battle-backed
     # validator challenges a RandomPlayer opponent. Passwords are set so the server
     # honours the usernames — guest logins race the challenge ("user not found").
+    # Both players draw a RANDOM team per battle from the full pool (yield_team
+    # re-rolls each game), so N battles cover N movesets — broad effect coverage.
+    pool = _team_pool()
     fuzz = EventLogFuzzPlayer(
         battle_format=BATTLE_FORMAT,
-        team=Gen3Teambuilder(_random_team()),
+        team=Gen3Teambuilder(pool),
         account_configuration=AccountConfiguration(f"ELz{ts}", "pw"),
         server_configuration=LocalhostServerConfiguration,
         max_concurrent_battles=5,
@@ -552,7 +601,7 @@ async def main(n_battles: int = 40, max_seconds: "float | None" = None) -> None:
     )
     opp = RandomPlayer(
         battle_format=BATTLE_FORMAT,
-        team=Gen3Teambuilder(_random_team()),
+        team=Gen3Teambuilder(pool),
         account_configuration=AccountConfiguration(f"ELo{ts}", "pw"),
         server_configuration=LocalhostServerConfiguration,
         max_concurrent_battles=5,
@@ -561,15 +610,25 @@ async def main(n_battles: int = 40, max_seconds: "float | None" = None) -> None:
     if max_seconds:
         # Time-budget mode: keep playing chunks of battles (one persistent validator,
         # accumulating coverage/mismatches) until the wall-clock budget is spent. Lets us
-        # run escalating soak tests (1m / 5m / 15m) to shake out rare edge cases.
-        start = time.time()
+        # run escalating soak tests (1m / 5m / 15m) to shake out rare edge cases. The run
+        # stops at a battle BOUNDARY (full summary printed) rather than being SIGKILL'd
+        # mid-battle by an external timeout. ABORT EARLY on the first error/mismatch so a
+        # real gap surfaces fast, not after 15m.
+        start = time.monotonic()
         chunk = 25
-        while time.time() - start < max_seconds:
+        while time.monotonic() - start < max_seconds:
             await fuzz.battle_against(opp, n_battles=chunk)
-            elapsed = time.time() - start
-            print(f"  … {fuzz.battles_checked} battles, {fuzz.decisions_checked} decisions, "
-                  f"{elapsed:.0f}/{max_seconds:.0f}s, {len(fuzz.mismatches)} mismatches, "
-                  f"{len(fuzz.errors)} errors", flush=True)
+            elapsed = time.monotonic() - start
+            print(
+                f"  …{fuzz.battles_checked} battles, {fuzz.decisions_checked} decisions "
+                f"| {elapsed:.0f}/{max_seconds:.0f}s "
+                f"| vol={len(fuzz.volatiles_seen)} cant={len(fuzz.cant_reasons_seen)} "
+                f"| mismatch={len(fuzz.mismatches)} err={len(fuzz.errors)}",
+                flush=True,
+            )
+            if fuzz.errors or fuzz.mismatches:
+                print("  ABORTING — error/mismatch detected", flush=True)
+                break
     else:
         await fuzz.battle_against(opp, n_battles=n_battles)
 
@@ -588,6 +647,8 @@ async def main(n_battles: int = 40, max_seconds: "float | None" = None) -> None:
     print(f"Phase-1 field coverage (reported): "
           f"{sorted(REPORTED_COVERAGE & coverage)} "
           f"(not seen: {sorted(REPORTED_COVERAGE - coverage)})")
+    print(f"Volatiles exercised ({len(fuzz.volatiles_seen)}): {sorted(fuzz.volatiles_seen)}")
+    print(f"Cant reasons exercised ({len(fuzz.cant_reasons_seen)}): {sorted(fuzz.cant_reasons_seen)}")
 
     missing_cov = REQUIRED_COVERAGE - coverage
     print("=" * 70)
@@ -622,10 +683,18 @@ async def main(n_battles: int = 40, max_seconds: "float | None" = None) -> None:
 if __name__ == "__main__":
     import argparse
 
+    # Positional arg is a battle count ("80") OR a duration ("1m", "5m", "15m");
+    # --seconds is the explicit wall-clock form and overrides a duration positional.
     p = argparse.ArgumentParser(description="Event-log / live-view e2e fuzz")
-    p.add_argument("n", nargs="?", type=int, default=40,
-                   help="number of battles (ignored when --seconds is given)")
+    p.add_argument("n", nargs="?", default="40",
+                   help="battle count (e.g. 80) or a duration (e.g. 1m, 5m, 15m)")
     p.add_argument("--seconds", type=float, default=None,
-                   help="run for this many wall-clock seconds instead of a fixed count")
+                   help="run for this many wall-clock seconds (overrides a duration arg)")
     args = p.parse_args()
-    asyncio.run(main(args.n, max_seconds=args.seconds))
+    max_seconds = args.seconds
+    n_battles = 40
+    if max_seconds is None and isinstance(args.n, str) and args.n.endswith("m"):
+        max_seconds = float(args.n[:-1]) * 60.0
+    elif max_seconds is None:
+        n_battles = int(args.n)
+    asyncio.run(main(n_battles=n_battles, max_seconds=max_seconds))
