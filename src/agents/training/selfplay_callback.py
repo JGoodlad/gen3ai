@@ -81,6 +81,7 @@ class SelfPlayCallback(BaseCallback):
         promote_threshold: float = 0.65,
         best_model_save_path: str | None = None,
         model_dir: str | None = None,
+        server_config=LocalhostServerConfiguration,
         verbose: int = 1,
     ):
         super().__init__(verbose)
@@ -89,6 +90,7 @@ class SelfPlayCallback(BaseCallback):
         self._trainee_teambuilder = trainee_teambuilder
         self._opp_teambuilder = opp_teambuilder
         self._mappings = mappings
+        self._server_config = server_config
         self._promote_threshold = promote_threshold
         self.best_model_save_path = best_model_save_path
         self._model_dir = model_dir
@@ -122,7 +124,7 @@ class SelfPlayCallback(BaseCallback):
             model=self.model,
             team=self._trainee_teambuilder,
             battle_format=BATTLE_FORMAT,
-            server_configuration=LocalhostServerConfiguration,
+            server_configuration=self._server_config,
             mappings=self._mappings,
             account_configuration=AccountConfiguration(f"SPCbEval{ts}", "password"),
             max_concurrent_battles=_EVAL_CONCURRENCY,
@@ -134,7 +136,7 @@ class SelfPlayCallback(BaseCallback):
                 model=self.model,  # placeholder; swapped before each sentinel eval
                 team=self._opp_teambuilder,
                 battle_format=BATTLE_FORMAT,
-                server_configuration=LocalhostServerConfiguration,
+                server_configuration=self._server_config,
                 mappings=self._mappings,
                 account_configuration=AccountConfiguration(f"PoolOpp{i}{ts}", "password"),
                 max_concurrent_battles=_EVAL_CONCURRENCY,

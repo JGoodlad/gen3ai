@@ -71,6 +71,7 @@ from agents.opponents import (
     Gen3HeuristicV2Player,
 )
 from poke_env import AccountConfiguration, LocalhostServerConfiguration
+from poke_env.ps_client.server_configuration import localhost_server_configuration
 
 BATTLE_FORMAT = "gen3ou"
 CLIP_RANGE_DEFAULT = 0.15
@@ -291,6 +292,10 @@ async def main():
     parser.add_argument("--debug", action="store_true", help="Use DummyVecEnv (1 env) for debugging")
     parser.add_argument("--n-envs", type=int, default=32, help="Number of parallel environments")
     parser.add_argument("--device", type=str, default="auto", help="Device to use (cpu, cuda, or auto)")
+    parser.add_argument("--showdown-port", type=int, default=None,
+                        help="Local Showdown server port (default 8000). Sets the port for the trainee, "
+                             "eval, and self-play clients. Start the server on the matching port, "
+                             "e.g. npm run showdown -- <port>.")
     parser.add_argument(
         "--self-play-use-cpu",
         action=argparse.BooleanOptionalAction,
@@ -333,6 +338,15 @@ async def main():
 
     args = parser.parse_args()
     log_level = LogLevel[args.log_level.upper()]
+
+    # One server config, built from --showdown-port and threaded to every Showdown client
+    # (training-env players in spawn workers, eval, and self-play). Default port: 8000.
+    server_config = (
+        LocalhostServerConfiguration
+        if args.showdown_port is None
+        else localhost_server_configuration(args.showdown_port)
+    )
+    emit(f"🔌 Showdown server: {server_config.websocket_url}")
 
     annealing_mode = args.anneal_lr_start_steps is not None
     if annealing_mode:
@@ -394,7 +408,7 @@ async def main():
                     log_level=env_log_level,
                     stall_config=stall_config,
                     reward_fn=reward_factory(log_level=env_log_level),
-                    server_configuration=LocalhostServerConfiguration,
+                    server_configuration=server_config,
                     account_configuration1=AccountConfiguration(env_username, "password"),
                 )
 
@@ -405,7 +419,7 @@ async def main():
                         model=pool_model,
                         team=opponent_teambuilder,
                         battle_format=BATTLE_FORMAT,
-                        server_configuration=LocalhostServerConfiguration,
+                        server_configuration=server_config,
                         account_configuration=AccountConfiguration(opp_username, "password"),
                     )
                 else:
@@ -413,7 +427,7 @@ async def main():
                     opponent = opponent_cls(
                         battle_format=BATTLE_FORMAT,
                         team=opponent_teambuilder,
-                        server_configuration=LocalhostServerConfiguration,
+                        server_configuration=server_config,
                         account_configuration=AccountConfiguration(opp_username, "password"),
                     )
 
@@ -528,7 +542,7 @@ async def main():
             model=model,
             team=trainee_teambuilder,
             battle_format=BATTLE_FORMAT,
-            server_configuration=LocalhostServerConfiguration,
+            server_configuration=server_config,
             mappings=mappings,
             account_configuration=AccountConfiguration(f"RLFinal{ts}", "password"),
             max_concurrent_battles=args.eval_concurrency,
@@ -537,31 +551,31 @@ async def main():
         final_opponents = [
             (opponent_name(RandomPlayer), RandomPlayer(
                 battle_format=BATTLE_FORMAT, team=opponent_teambuilder,
-                server_configuration=LocalhostServerConfiguration,
+                server_configuration=server_config,
                 account_configuration=AccountConfiguration(f"FinalRand{ts}", "password"),
                 max_concurrent_battles=args.eval_concurrency,
             )),
             (opponent_name(SimpleHeuristicsPlayer), SimpleHeuristicsPlayer(
                 battle_format=BATTLE_FORMAT, team=opponent_teambuilder,
-                server_configuration=LocalhostServerConfiguration,
+                server_configuration=server_config,
                 account_configuration=AccountConfiguration(f"FinalHeur{ts}", "password"),
                 max_concurrent_battles=args.eval_concurrency,
             )),
             (opponent_name(Gen3StallerPlayer), Gen3StallerPlayer(
                 battle_format=BATTLE_FORMAT, team=opponent_teambuilder,
-                server_configuration=LocalhostServerConfiguration,
+                server_configuration=server_config,
                 account_configuration=AccountConfiguration(f"FinalStall{ts}", "password"),
                 max_concurrent_battles=args.eval_concurrency,
             )),
             (opponent_name(Gen3AggressivePlayer), Gen3AggressivePlayer(
                 battle_format=BATTLE_FORMAT, team=opponent_teambuilder,
-                server_configuration=LocalhostServerConfiguration,
+                server_configuration=server_config,
                 account_configuration=AccountConfiguration(f"FinalAggr{ts}", "password"),
                 max_concurrent_battles=args.eval_concurrency,
             )),
             (opponent_name(Gen3SetupSweepPlayer), Gen3SetupSweepPlayer(
                 battle_format=BATTLE_FORMAT, team=opponent_teambuilder,
-                server_configuration=LocalhostServerConfiguration,
+                server_configuration=server_config,
                 account_configuration=AccountConfiguration(f"FinalSetup{ts}", "password"),
                 max_concurrent_battles=args.eval_concurrency,
             )),
@@ -575,7 +589,7 @@ async def main():
             ]:
                 final_opponents.append((opponent_name(_cls), _cls(
                     battle_format=BATTLE_FORMAT, team=opponent_teambuilder,
-                    server_configuration=LocalhostServerConfiguration,
+                    server_configuration=server_config,
                     account_configuration=AccountConfiguration(_uname, "password"),
                     max_concurrent_battles=args.eval_concurrency,
                 )))
@@ -672,31 +686,31 @@ async def main():
         eval_opponents = [
             (opponent_name(RandomPlayer), RandomPlayer(
                 battle_format=BATTLE_FORMAT, team=opponent_teambuilder,
-                server_configuration=LocalhostServerConfiguration,
+                server_configuration=server_config,
                 account_configuration=AccountConfiguration(f"CbRand{ts_cb}", "password"),
                 max_concurrent_battles=100,
             )),
             (opponent_name(SimpleHeuristicsPlayer), SimpleHeuristicsPlayer(
                 battle_format=BATTLE_FORMAT, team=opponent_teambuilder,
-                server_configuration=LocalhostServerConfiguration,
+                server_configuration=server_config,
                 account_configuration=AccountConfiguration(f"CbHeur{ts_cb}", "password"),
                 max_concurrent_battles=100,
             )),
             (opponent_name(Gen3StallerPlayer), Gen3StallerPlayer(
                 battle_format=BATTLE_FORMAT, team=opponent_teambuilder,
-                server_configuration=LocalhostServerConfiguration,
+                server_configuration=server_config,
                 account_configuration=AccountConfiguration(f"CbStall{ts_cb}", "password"),
                 max_concurrent_battles=100,
             )),
             (opponent_name(Gen3AggressivePlayer), Gen3AggressivePlayer(
                 battle_format=BATTLE_FORMAT, team=opponent_teambuilder,
-                server_configuration=LocalhostServerConfiguration,
+                server_configuration=server_config,
                 account_configuration=AccountConfiguration(f"CbAggr{ts_cb}", "password"),
                 max_concurrent_battles=100,
             )),
             (opponent_name(Gen3SetupSweepPlayer), Gen3SetupSweepPlayer(
                 battle_format=BATTLE_FORMAT, team=opponent_teambuilder,
-                server_configuration=LocalhostServerConfiguration,
+                server_configuration=server_config,
                 account_configuration=AccountConfiguration(f"CbSetup{ts_cb}", "password"),
                 max_concurrent_battles=100,
             )),
@@ -710,7 +724,7 @@ async def main():
             ]:
                 eval_opponents.append((opponent_name(_cls), _cls(
                     battle_format=BATTLE_FORMAT, team=opponent_teambuilder,
-                    server_configuration=LocalhostServerConfiguration,
+                    server_configuration=server_config,
                     account_configuration=AccountConfiguration(_uname, "password"),
                     max_concurrent_battles=100,
                 )))
@@ -724,6 +738,7 @@ async def main():
                 promote_threshold=args.promote_threshold,
                 best_model_save_path=os.path.join(model_dir, "best_model"),
                 model_dir=model_dir,
+                server_config=server_config,
             )
         else:
             eval_callback = PerOpponentEvalCallback(
@@ -732,6 +747,7 @@ async def main():
                 mappings=mappings,
                 best_model_save_path=os.path.join(model_dir, "best_model"),
                 model_dir=model_dir,
+                server_config=server_config,
             )
         callbacks.append(eval_callback)
 

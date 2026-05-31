@@ -42,14 +42,23 @@ Do **not** symlink the entire `deps/pokemon-showdown` directory — it breaks `g
 ## Showdown Server
 
 ```bash
-# Start (with performance flags)
-NODE_ENV=production node --turbo-fast-api-calls --max-old-space-size=6144 deps/pokemon-showdown/pokemon-showdown start --no-security
+# Start (with performance flags) — port is a positional argument (no --port flag)
+NODE_ENV=production node --turbo-fast-api-calls --max-old-space-size=6144 deps/pokemon-showdown/pokemon-showdown start --no-security 8000
+
+# Or via npm (defaults to 8000; append an explicit port with --)
+npm run showdown            # :8000
+npm run showdown -- 8001    # :8001
 
 # Stop cleanly (Ctrl+C orphans subprocesses — use this instead)
-npm run stop
+npm run stop                # stops :8000
+npm run stop -- 8001        # stops :8001
 ```
 
 The server runs on port 8000. Key config at `deps/pokemon-showdown/config/config.js` — subprocess counts (`simulator`, `network`) require a full restart; most other settings reload live.
+
+To run a training server alongside a development server on 8000, start it on a separate port
+(`npm run showdown -- 8001`) and point the trainer at it with `train_rl_agent.py --showdown-port 8001`
+(forwarded by the launcher). The default is 8000; there is no environment variable.
 
 ---
 

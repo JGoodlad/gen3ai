@@ -223,16 +223,38 @@ Requires the Showdown server to be running (see below).
 Start the local Pokémon Showdown instance:
 
 ```bash
-npm run showdown
+npm run showdown            # port 8000 (default)
+npm run showdown -- 8001    # explicit port
 ```
 
 Stop it:
 
 ```bash
-npm run stop
+npm run stop                # stops the :8000 instance
+npm run stop -- 8001        # stops the :8001 instance
 ```
 
-The server must be running for any battles (training or play). It binds to port 8000 by default.
+The server must be running for any battles (training or play). It binds to port 8000 by
+default. Pokémon Showdown has **no `--port` flag** — the port is a positional argument
+(`pokemon-showdown start [PORT]`); `npm run showdown -- 8001` forwards it (npm appends
+`-- <args>` to the script).
+
+### Separate training port
+
+To run training without clashing with a development server on 8000, start the server on a
+separate port and point the trainer at it with `--showdown-port`:
+
+```bash
+npm run showdown -- 8001                            # server on 8001 (dev stays on 8000)
+... -m main.launcher --showdown-port 8001 ...       # launcher forwards the flag to the child
+npm run stop -- 8001                                # kills the 8001 instance
+```
+
+`train_rl_agent.py --showdown-port <port>` builds one `ServerConfiguration` in `main()` and
+threads it to every Showdown client — the training-env players (carried into the
+`SubprocVecEnv` spawn workers via the env-factory closures), eval, and self-play. There is
+no environment variable; the default is 8000. The launcher forwards `--showdown-port`
+verbatim (it strips only launcher-owned flags).
 
 ---
 

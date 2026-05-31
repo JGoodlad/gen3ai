@@ -11,14 +11,22 @@ class ServerConfiguration(NamedTuple):
     authentication_url: str
 
 
-LocalhostServerConfiguration = ServerConfiguration(
-    "ws://localhost:8000/showdown/websocket",
-    "https://play.pokemonshowdown.com/action.php?",
-)
-"""Server configuration with localhost and smogon's authentication endpoint."""
+_SMOGON_AUTH_URL = "https://play.pokemonshowdown.com/action.php?"
+
+
+def localhost_server_configuration(port: int = 8000) -> ServerConfiguration:
+    """Build a localhost :class:`ServerConfiguration` for ``port`` (default 8000)."""
+    return ServerConfiguration(
+        f"ws://localhost:{port}/showdown/websocket",
+        _SMOGON_AUTH_URL,
+    )
+
+
+LocalhostServerConfiguration = localhost_server_configuration()
+"""Server configuration with localhost and smogon's authentication endpoint (port 8000)."""
 
 ShowdownServerConfiguration = ServerConfiguration(
     "wss://sim3.psim.us/showdown/websocket",
-    "https://play.pokemonshowdown.com/action.php?",
+    _SMOGON_AUTH_URL,
 )
 """Server configuration with smogon's server and authentication endpoint."""

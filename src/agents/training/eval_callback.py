@@ -158,12 +158,14 @@ class PerOpponentEvalCallback(BaseCallback):
         mappings,
         best_model_save_path: str | None = None,
         model_dir: str | None = None,
+        server_config=LocalhostServerConfiguration,
         verbose: int = 1,
     ):
         super().__init__(verbose)
         self._opponents = opponents
         self._trainee_teambuilder = trainee_teambuilder
         self._mappings = mappings
+        self._server_config = server_config
         self.best_model_save_path = best_model_save_path
         self._model_dir = model_dir
         self._rl_player: RLPlayer | None = None
@@ -184,7 +186,7 @@ class PerOpponentEvalCallback(BaseCallback):
             model=self.model,
             team=self._trainee_teambuilder,
             battle_format=BATTLE_FORMAT,
-            server_configuration=LocalhostServerConfiguration,
+            server_configuration=self._server_config,
             mappings=self._mappings,
             account_configuration=AccountConfiguration(f"RLCbEval{ts}", "password"),
             max_concurrent_battles=_EVAL_CONCURRENCY,

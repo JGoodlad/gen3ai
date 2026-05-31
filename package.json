@@ -4,7 +4,7 @@
   "description": "Gen 3 Pokémon AI Project",
   "scripts": {
     "showdown": "node deps/pokemon-showdown/pokemon-showdown start --no-security",
-    "stop": "lsof -t -i :8000 | xargs kill -9 || echo 'Server not running'",
+    "stop": "sh -c 'lsof -t -i :${1:-8000} | xargs kill -9 || echo \"Server not running\"' _",
     "test": "conda run -n gen3ai_stable env PYTHONPATH=src python3 -m pytest src/ -m 'not integration and not e2e' -q",
     "test-all": "conda run -n gen3ai_stable env PYTHONPATH=src python3 -m pytest src/ -q",
     "sync-teams": "conda run -n gen3ai_stable env PYTHONPATH=src python3 tools/sample_team_downloader/sync.py",
