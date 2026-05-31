@@ -122,7 +122,16 @@ MODEL_CONFIG_VERSION = 2
 #   layout and features_extractor.embed_delta_slot (11 embedded IDs: 3 move + 2 type +
 #   6 species). TURN_DELTA_DIM = 157, obs dim 2823 → 3299. Builds on v9 (own-team spread
 #   backfill carries through). Not weight-compatible with v9.
-ARCH_SIGNATURE = "gen3_turn_delta_v2"
+#
+# v11 (gen3_turn_delta_v3): turn-history window correctness fix. `prev_N_delta_vecs` was
+#   folding each of the N history slots over `events_since(cursor)` — i.e. that turn's
+#   cursor THROUGH NOW (no upper bound) — so every slot but the most-recent reported the
+#   *latest* turn's event-derived fields (move/outcome/boosts/status/faint-cause), and the
+#   per-step cost was O(N²). Now each slot folds exactly its own decision window
+#   (`events_between(cursors[-1-i], cursors[-i])`; end=None for the most-recent). Obs dim is
+#   unchanged (3299) — only the turn-history values change (older slots now carry their own
+#   turn) — so this is retrain-class, not weight-shape-incompatible.
+ARCH_SIGNATURE = "gen3_turn_delta_v3"
 
 
 class ModelVersionError(Exception):

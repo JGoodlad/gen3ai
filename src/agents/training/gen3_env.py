@@ -48,7 +48,7 @@ class Gen3Env(SinglesEnv):
         }
 
         self.reward_manager: RewardFunction = reward_fn or Gen3RewardManager(log_level=self.log_level)
-        self._tracker = EpisodeTracker()
+        self._tracker = EpisodeTracker(history_cap=N_HISTORY_TURNS)
         self._turn_delta_encoder = TurnDeltaEncoder(
             mappings.get("moves", {}),
             mappings.get("species", {}),

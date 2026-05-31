@@ -1,4 +1,5 @@
 from __future__ import annotations
+from collections import deque
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Optional
 
@@ -71,12 +72,21 @@ class EpisodeTracker:
     reconstructed for the N-turn history observation feature.
     """
 
-    def __init__(self):
+    def __init__(self, history_cap: Optional[int] = None):
+        """``history_cap`` = the N passed to :meth:`prev_N_delta_vecs` (i.e.
+        ``N_HISTORY_TURNS``). When set, the rolling history is bounded so a long game /
+        250-turn stall can't accumulate hundreds of ``BattleContext``s (each carrying
+        ``obs``+``mask``). ``prev_N_delta_vecs`` reaches ``_history[-2-i]`` (→ -(N+1)) and
+        ``_actions``/``_cursors[-1-i]`` (→ -N), so we keep N+1 contexts and N aux entries;
+        the ``len(actions)==len(cursors)==len(history)-1`` invariant is preserved by those
+        maxlens. ``None`` ⇒ unbounded (short-episode callers: inference, tests)."""
         self._our_slots = SlotRegistry()
         self._opp_slots = SlotRegistry()
-        self._history: list[BattleContext] = []
-        self._actions: list[int] = []   # _actions[i] = action taken FROM _history[i]
-        self._cursors: list[int] = []   # _cursors[i] = event_cursor when _history[i] was built
+        _hist_max = (history_cap + 1) if history_cap else None
+        _aux_max = history_cap if history_cap else None
+        self._history: "deque[BattleContext]" = deque(maxlen=_hist_max)
+        self._actions: "deque[int]" = deque(maxlen=_aux_max)   # _actions[i]=action FROM _history[i]
+        self._cursors: "deque[int]" = deque(maxlen=_aux_max)   # _cursors[i]=event_cursor at _history[i]
         self._last_action: int = -1
         self._last_cursor: int = 0      # event_cursor at the last record() call
         self._hidden_power_tracker = HiddenPowerTracker()
@@ -212,7 +222,7 @@ class EpisodeTracker:
         use the event-fold path for all N slots.
         """
         result = np.zeros((n, encoder.dimension), dtype=np.float32)
-        use_events = battle is not None and hasattr(battle, "events_since")
+        use_events = battle is not None and hasattr(battle, "events_between")
         available = min(n, len(self._history) - 1, len(self._actions))
         if use_events:
             available = min(available, len(self._cursors))
@@ -221,8 +231,14 @@ class EpisodeTracker:
             ctx_prev = self._history[-2 - i]
             ctx_curr = self._history[-1 - i]
             if use_events:
-                cursor = self._cursors[-1 - i]
-                events = self._get_events_for_window(battle, cursor)
+                # Bound this slot to its OWN decision window: [cursor_start, cursor_end).
+                # The most-recent slot (i=0) runs to "now" (end=None); each older slot
+                # ends where the next decision began. Without the upper bound the window
+                # would run that turn through now — O(N²) across the N slots, and the fold
+                # (which takes the last move) would make older slots report the latest turn.
+                start = self._cursors[-1 - i]
+                end = None if i == 0 else self._cursors[-i]
+                events = battle.events_between(start, end)
                 delta = TurnDelta.build_from_events(ctx_prev, ctx_curr, action, events)
             else:
                 delta = TurnDelta.build(ctx_prev, ctx_curr, action)

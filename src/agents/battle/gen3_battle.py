@@ -60,6 +60,12 @@ class Gen3Battle(Battle):
         # conservation bookkeeping
         self._policy_counts: Dict[Policy, int] = {p: 0 for p in Policy}
         self._lines_seen: int = 0
+        # Running weather state, folded incrementally as WEATHER events arrive (see
+        # _update_weather). Lets live_view() read weather in O(1) instead of re-scanning
+        # the whole event log per call (which was O(turns²) over a battle).
+        self._weather_id: Optional[str] = None
+        self._weather_permanent: bool = False
+        self._weather_start_turn: int = 0
 
     # ------------------------------------------------------------------ #
     # Public read API (consumed by TurnView / TurnDelta / reward / replay) #
@@ -130,6 +136,33 @@ class Gen3Battle(Battle):
             return list(self._events)
         return self._events[cursor:]
 
+    def events_between(self, start: int, end: Optional[int] = None) -> List[BattleEvent]:
+        """Events with seq in ``[start, end)`` (``end=None`` ⇒ to the current end of the
+        log). Unlike :meth:`events_since`, this UPPER-BOUNDS the window.
+
+        The per-decision window for a PAST turn is ``[cursor_k, cursor_{k+1})``; for the
+        most-recent turn pass ``end=None``. The turn-history feature folds each past slot
+        over its OWN window with this — ``events_since(start)`` would run that turn through
+        *now*, which both costs O(N²) across the N history slots and (because the fold
+        takes the last move) makes an older slot report the latest turn.
+        """
+        lo = max(0, start)
+        return self._events[lo:end]
+
+    def live_weather(self) -> "LiveWeather":
+        """The current :class:`LiveWeather`, from the incrementally-folded weather state
+        (O(1)). Identical to ``_fold_weather`` over the whole log, computed on append
+        instead of on read."""
+        from agents.battle.live_view import LiveWeather
+
+        if self._weather_id is None:
+            return LiveWeather(weather=None, is_permanent=False, turns_active=0)
+        return LiveWeather(
+            weather=self._weather_id,
+            is_permanent=self._weather_permanent,
+            turns_active=max(0, self.turn - self._weather_start_turn),
+        )
+
     # ------------------------------------------------------------------ #
     # Parse-pass override: classify -> mutate (super) -> record event     #
     # ------------------------------------------------------------------ #
@@ -160,6 +193,27 @@ class Gen3Battle(Battle):
         self._events.append(ev)
         self._seq += 1
         self._turn_start.setdefault(ev.turn, len(self._events) - 1)
+        if ev.kind is EventKind.WEATHER:
+            self._update_weather(ev)
+
+    def _update_weather(self, ev: BattleEvent) -> None:
+        """Fold one WEATHER event into the running weather state. Mirrors the per-event
+        branch logic of ``live_view._fold_weather`` exactly so the result is identical:
+        a bare/cause-tagged set updates the weather (ability cause ⇒ permanent) and resets
+        the start turn; ``[upkeep]`` continues without resetting; ``none`` clears."""
+        wid = ev.value.get("weather")
+        if wid in (None, "none"):
+            self._weather_id = None
+            self._weather_permanent = False
+            return
+        if "[upkeep]" in ev.raw:
+            if self._weather_id is None:  # upkeep seen without a prior set (mid-battle join)
+                self._weather_id = wid
+                self._weather_start_turn = ev.turn
+            return
+        self._weather_id = wid
+        self._weather_permanent = str(ev.value.get("from", "")).startswith("ability")
+        self._weather_start_turn = ev.turn
 
     # ------------------------------------------------------------------ #
     # Conservation invariant (design §4.3)                                #

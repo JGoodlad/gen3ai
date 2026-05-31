@@ -127,8 +127,75 @@ def test_actions_contain_correct_values():
         tracker.record(_mock_battle(t), np.ones(11, dtype=np.int8))
         tracker.advance(a)
     tracker.record(_mock_battle(len(actions)), np.ones(11, dtype=np.int8))
-    # _actions[i] is the action advance()d from history[i] (committed at i+1's record)
-    assert tracker._actions == actions
+    # _actions[i] is the action advance()d from history[i] (committed at i+1's record).
+    # _actions is a deque (bounded when a history_cap is set), so compare contents.
+    assert list(tracker._actions) == actions
+
+
+def test_history_slots_fold_their_own_window():
+    """Regression: prev_N_delta_vecs must fold each history slot over ITS OWN decision
+    window, not that turn through "now".
+
+    The bug: it fed `events_since(cursor)` (cursor → end of log, no upper bound) for every
+    slot, so the fold (which takes the LAST move) made every older slot report the latest
+    turn's move. Here turn 1 = Thunderbolt, turn 2 = Ice Beam: the most-recent history slot
+    must carry Ice Beam and the previous slot must carry Thunderbolt (not Ice Beam)."""
+    import logging
+    from agents.battle.gen3_battle import Gen3Battle
+    from agents.observation.turn_delta_encoder import OFFSET_OUR_MOVE_BLOCK
+
+    moves = load_mappings()["moves"]
+    tbolt = float(moves["thunderbolt"]["num"])
+    ibeam = float(moves["icebeam"]["num"])
+
+    def feed(b, lines):
+        for ln in lines:
+            b.parse_message(ln)
+
+    b = Gen3Battle("battle-gen3ou-window", "p1user", logging.getLogger("ep-win"), gen=3)
+    feed(b, [
+        ["", "player", "p1", "p1user", "", ""], ["", "player", "p2", "p2user", "", ""],
+        ["", "teamsize", "p1", "6"], ["", "teamsize", "p2", "6"], ["", "gen", "3"],
+        ["", "start"],
+        ["", "switch", "p1a: Zappy", "Zapdos, L100", "100/100"],
+        ["", "switch", "p2a: Tyra", "Tyranitar, L100, M", "100/100"], ["", "turn", "1"],
+    ])
+    enc = _make_encoder()
+    m = np.ones(11, dtype=np.int8)
+    tr = EpisodeTracker(history_cap=10)
+
+    tr.record(b, m); tr.advance(6)
+    feed(b, [
+        ["", "move", "p1a: Zappy", "Thunderbolt", "p2a: Tyra"], ["", "-damage", "p2a: Tyra", "70/100"],
+        ["", "move", "p2a: Tyra", "Rock Slide", "p1a: Zappy"], ["", "-damage", "p1a: Zappy", "80/100"],
+        ["", "turn", "2"],
+    ])
+    tr.record(b, m); tr.advance(7)
+    feed(b, [
+        ["", "move", "p1a: Zappy", "Ice Beam", "p2a: Tyra"], ["", "-damage", "p2a: Tyra", "45/100"],
+        ["", "move", "p2a: Tyra", "Earthquake", "p1a: Zappy"], ["", "-damage", "p1a: Zappy", "55/100"],
+        ["", "turn", "3"],
+    ])
+    tr.record(b, m)
+
+    vecs = tr.prev_N_delta_vecs(10, enc, battle=b)  # (10, TURN_DELTA_DIM), oldest-first
+    assert vecs.shape == (10, TURN_DELTA_DIM)
+    assert vecs[-1][OFFSET_OUR_MOVE_BLOCK] == pytest.approx(ibeam)   # most-recent turn
+    assert vecs[-2][OFFSET_OUR_MOVE_BLOCK] == pytest.approx(tbolt)   # its OWN turn, not Ice Beam
+    assert vecs[-2][OFFSET_OUR_MOVE_BLOCK] != vecs[-1][OFFSET_OUR_MOVE_BLOCK]
+
+
+def test_history_lists_are_bounded_by_cap():
+    """With a history_cap, the rolling history/action/cursor deques stay bounded across a
+    long episode (the 250-turn-stall memory guard), preserving len(actions)=len(history)-1."""
+    tracker = EpisodeTracker(history_cap=10)
+    for t in range(50):
+        tracker.record(_mock_battle(t), np.ones(11, dtype=np.int8))
+        tracker.advance(t % 11)
+    assert len(tracker._history) == 11           # N+1
+    assert len(tracker._actions) == 10           # N
+    assert len(tracker._cursors) == 10
+    assert len(tracker._actions) == len(tracker._history) - 1
 
 
 def test_reset_clears_actions():

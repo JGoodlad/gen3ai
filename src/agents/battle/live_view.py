@@ -316,7 +316,12 @@ class LiveView:
 
         # Weather is folded from our event log (cause-aware), not battle.weather —
         # which can be empty/lossy and carries no permanence info.
-        weather = _fold_weather(getattr(battle, "events", ()), battle.turn)
+        # Prefer the battle's incrementally-folded weather (O(1)); fall back to scanning
+        # the event log for a plain Battle that lacks the running state.
+        if hasattr(battle, "live_weather"):
+            weather = battle.live_weather()
+        else:
+            weather = _fold_weather(getattr(battle, "events", ()), battle.turn)
         return cls(
             turn=battle.turn,
             weather=weather,
