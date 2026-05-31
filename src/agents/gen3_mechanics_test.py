@@ -278,3 +278,58 @@ class TestMoveSets:
     def test_boost_stats_length(self):
         assert BOOST_DIM == 7
         assert len(BOOST_STATS) == 7
+
+
+# ---------------------------------------------------------------------------
+# Effectiveness fast-path parity (precomputed chart + lru_cache)
+#
+# Proves the matchup-encoder optimization (precomputed _CHART + memoized _eff_cached +
+# value-based effective_multiplier_by_types) is OBS-BYTE-IDENTICAL to the original
+# damage_multiplier-based path — i.e. no ARCH_SIGNATURE bump / retrain is needed.
+# ---------------------------------------------------------------------------
+
+def _reference_eff(move_type, type_1, type_2, ability, status):
+    """Replicates the pre-optimization effective_multiplier EXACTLY — type product taken
+    straight from PokemonType.damage_multiplier — as the oracle the fast path must match."""
+    from agents.gen3_mechanics import _type_chart
+    ab = (ability or "").lower()
+    base = move_type.damage_multiplier(type_1, type_2, type_chart=_type_chart)
+    if ab == "wonderguard":
+        return base if base > 1.0 else 0.0
+    if ab == "flashfire" and status == Status.FRZ:
+        return base
+    return base * ABILITY_TYPE_MULTIPLIER.get(ab, {}).get(move_type, 1.0)
+
+
+def test_effective_multiplier_by_types_matches_reference_exhaustively():
+    """Every (attacking type × defender type1 × defender type2 × ability × status) combo
+    must equal the damage_multiplier-based reference."""
+    from agents.gen3_mechanics import _REAL_TYPES, effective_multiplier_by_types
+    abilities = [None, "", "Levitate", "voltabsorb", "waterabsorb", "flashfire",
+                 "thickfat", "wonderguard", "intimidate"]
+    statuses = [None, Status.FRZ, Status.BRN]
+    checked = 0
+    for att in _REAL_TYPES:
+        for t1 in _REAL_TYPES:
+            for t2 in (None, *_REAL_TYPES):
+                for ability in abilities:
+                    for status in statuses:
+                        got = effective_multiplier_by_types(att, t1, t2, ability, status)
+                        exp = _reference_eff(att, t1, t2, ability, status)
+                        assert got == exp, (att, t1, t2, ability, status, got, exp)
+                        checked += 1
+    assert checked > 100_000  # exhaustive, not a token sample
+
+
+def test_effective_multiplier_object_wrapper_delegates():
+    """The object-based wrapper reads (type_1, type_2, ability, status) off the mon and
+    returns the same value as the value-based primitive (including the lowercase + the
+    Gen 3 Flash-Fire-while-frozen quirk)."""
+    from agents.gen3_mechanics import effective_multiplier_by_types
+    mon = _mon(type_1=PokemonType.WATER, type_2=PokemonType.FLYING, ability="intimidate")
+    assert effective_multiplier(PokemonType.ELECTRIC, mon) == 4.0  # 2× (Water) × 2× (Flying)
+    assert effective_multiplier(PokemonType.ELECTRIC, mon) == effective_multiplier_by_types(
+        PokemonType.ELECTRIC, PokemonType.WATER, PokemonType.FLYING, "intimidate", None)
+    # Flash Fire does NOT absorb while frozen → Fire-vs-Fire resists to 0.5×, not 0×.
+    frz = _mon(type_1=PokemonType.FIRE, ability="flashfire", status=Status.FRZ)
+    assert effective_multiplier(PokemonType.FIRE, frz) == 0.5

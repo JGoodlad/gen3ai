@@ -120,6 +120,10 @@ export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable
 Absolute ms scale with machine load; the component **ratios** and the cProfile ranking are the
 load-stable signal — run on an otherwise-idle box for a clean baseline.
 
+**Every change under `src/agents/observation/` must run this benchmark before/after and
+confirm no meaningful regression** — that gate, the canonical baseline, and the
+load-stable regression criteria live in `src/agents/observation/CLAUDE.md`.
+
 ### What "fuzz test" means in this project
 
 **Fuzz tests run real battles — by default in-process via the local BattleStream bridge (no server), or against a live server — and validate observations or behaviour against the actual protocol stream.** They are NOT deterministic scenario tests with fixed inputs.

@@ -8,6 +8,8 @@ instead of re-declaring these facts in individual files.
 """
 from __future__ import annotations
 
+import functools
+
 import numpy as np
 from poke_env.battle.effect import Effect
 from poke_env.battle.pokemon_type import PokemonType
@@ -37,6 +39,73 @@ ABILITY_TYPE_MULTIPLIER: dict[str, dict[PokemonType, float]] = {
 
 _type_chart = GenData.from_gen(3).type_chart
 
+# Types with no entry in the chart — attacking/defending as one of these is a no-op
+# (×1). Hoisted to a module constant so the hot path never reconstructs the set literal
+# `PokemonType.damage_multiplier` builds on every call.
+_NULL_TYPES: frozenset[PokemonType] = frozenset(
+    {PokemonType.THREE_QUESTION_MARKS, PokemonType.STELLAR}
+)
+_REAL_TYPES: tuple[PokemonType, ...] = tuple(t for t in PokemonType if t not in _NULL_TYPES)
+
+# Dense, PokemonType-keyed single-type effectiveness table, precomputed ONCE at import:
+#   _CHART[attacking_type][defending_type] == _type_chart[defending.name][attacking.name].
+# Indexing this avoids the per-call `.name` enum-attribute access, the set-literal
+# construction, and most of the enum hashing that dominated the matchup-encoder profile.
+_CHART: dict[PokemonType, dict[PokemonType, float]] = {
+    att: {deff: _type_chart[deff.name][att.name] for deff in _REAL_TYPES}
+    for att in _REAL_TYPES
+}
+
+
+@functools.lru_cache(maxsize=None)
+def _eff_cached(
+    move_type: PokemonType,
+    type_1: PokemonType,
+    type_2: PokemonType | None,
+    ability: str,
+    frozen: bool,
+) -> float:
+    """Pure, memoized effectiveness primitive. Keyed on the only things the result
+    depends on — attacking type, the defender's two types, its (lowercased) ability, and
+    whether it's frozen (the sole status that matters, for Flash Fire). The key space is
+    tiny (≤18 types² × a handful of abilities), so after warmup every matchup cell is a
+    dict lookup. Byte-identical to `PokemonType.damage_multiplier` × the ability modifier
+    for real types; an unknown/typeless type resolves to a neutral ×1 (every real-battle
+    input is a real PokemonType, so the fallback only ever fires for the null types and for
+    test mocks — never in production).
+    """
+    row = _CHART.get(move_type)
+    if row is None or type_1 in _NULL_TYPES:
+        base = 1.0
+    else:
+        base = row.get(type_1, 1.0)
+        if type_2 is not None:
+            base *= row.get(type_2, 1.0)
+    if ability == "wonderguard":
+        return base if base > 1.0 else 0.0
+    if ability == "flashfire" and frozen:
+        return base
+    return base * ABILITY_TYPE_MULTIPLIER.get(ability, {}).get(move_type, 1.0)
+
+
+def effective_multiplier_by_types(
+    move_type: PokemonType,
+    type_1: PokemonType,
+    type_2: PokemonType | None = None,
+    ability: str | None = None,
+    status: Status | None = None,
+) -> float:
+    """Value-based effectiveness — the cacheable core of `effective_multiplier`.
+
+    Use this when you already hold the defender's types/ability/status (e.g. the matchup
+    encoder hoists them out of its inner loop) so the hot path never touches a poke-env
+    `Pokemon` property. Normalizes the ability/status into the canonical cache key, then
+    defers to `_eff_cached`.
+    """
+    return _eff_cached(
+        move_type, type_1, type_2, (ability or "").lower(), status == Status.FRZ
+    )
+
 
 def effective_multiplier(move_type: PokemonType, mon) -> float:
     """Damage-type multiplier of move_type vs mon, including Gen 3 ability modifiers.
@@ -56,14 +125,17 @@ def effective_multiplier(move_type: PokemonType, mon) -> float:
 
     Wonder Guard (Shedinja): only super-effective moves do damage; everything else
     is fully absorbed. Returns the raw type-chart product for SE hits, else 0.
+
+    Thin object-based wrapper over `effective_multiplier_by_types`: reads the four
+    attributes the result depends on off `mon`, then defers to the memoized primitive.
     """
-    ability = (getattr(mon, "ability", None) or "").lower()
-    base = move_type.damage_multiplier(mon.type_1, mon.type_2, type_chart=_type_chart)
-    if ability == "wonderguard":
-        return base if base > 1.0 else 0.0
-    if ability == "flashfire" and getattr(mon, "status", None) == Status.FRZ:
-        return base
-    return base * ABILITY_TYPE_MULTIPLIER.get(ability, {}).get(move_type, 1.0)
+    return effective_multiplier_by_types(
+        move_type,
+        mon.type_1,
+        mon.type_2,
+        getattr(mon, "ability", None),
+        getattr(mon, "status", None),
+    )
 
 
 def bucket_effectiveness(mult: float) -> float:

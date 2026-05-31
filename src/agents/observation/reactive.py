@@ -3,24 +3,8 @@ from .base import ObservationEncoder
 from poke_env.battle.abstract_battle import AbstractBattle
 from poke_env.battle.side_condition import SideCondition
 from .constants import REACTIVE_DIM, TEAM_SIZE
-from agents.gen3_mechanics import effective_multiplier
+from agents.gen3_mechanics import effective_multiplier_by_types
 from typing import Any, Dict, List, Optional, Tuple
-
-
-class _AbilityOverrideMon:
-    """Lightweight wrapper that overrides `mon.ability` while passing through
-    `type_1`, `type_2`, `status`, and anything else `effective_multiplier`
-    reads. Used to compute expected effectiveness across an opponent's
-    unrevealed-ability prior distribution without mutating the live Pokémon.
-    """
-    __slots__ = ("_mon", "ability")
-
-    def __init__(self, mon, ability):
-        self._mon = mon
-        self.ability = ability or ""
-
-    def __getattr__(self, name):
-        return getattr(self._mon, name)
 
 
 def _resolve_ability_distribution(opp, ability_priors):
@@ -87,12 +71,21 @@ def _expected_multiplier(move, attacker, opp, hp_tracker, ability_priors) -> flo
     # Defender-side: enumerate possible abilities
     ability_dist = _resolve_ability_distribution(opp, ability_priors)
 
+    # Read the defender's type/status/ability ONCE here, then feed values to the memoized
+    # primitive. Previously each (type, ability) term wrapped `opp` in an _AbilityOverrideMon
+    # whose __getattr__ re-resolved type_1/type_2/status through poke-env per term — the
+    # proxy + property thrash dominated the matchup-encoder profile. `ability is None` is the
+    # "pass through unchanged" sentinel → use the defender's real ability.
+    d1, d2 = opp.type_1, opp.type_2
+    dstatus = getattr(opp, "status", None)
+    opp_ability = getattr(opp, "ability", None)
+
     # Joint expectation
     total = 0.0
     for move_type, p in type_dist:
         for ability, q in ability_dist:
-            target = opp if ability is None else _AbilityOverrideMon(opp, ability)
-            total += p * q * effective_multiplier(move_type, target)
+            ab = opp_ability if ability is None else ability
+            total += p * q * effective_multiplier_by_types(move_type, d1, d2, ab, dstatus)
     return total
 
 

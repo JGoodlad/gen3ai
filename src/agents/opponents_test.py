@@ -64,6 +64,21 @@ def _make_player(cls):
     return p
 
 
+@pytest.fixture(autouse=True)
+def _inject_mock_effectiveness(monkeypatch):
+    """`_make_move` injects a move's type effectiveness via
+    `move.type.damage_multiplier.return_value` (a MagicMock convention from when the real
+    `effective_multiplier` *called* that method). It now reads a precomputed type chart and
+    ignores the mock — and a MagicMock type isn't a chart key — so route the opponents
+    module's `effective_multiplier` back to the injected value. These are heuristic-SELECTION
+    tests; the chart math itself is covered exhaustively in gen3_mechanics_test.py.
+    """
+    def _eff(move_type, opp):
+        rv = getattr(getattr(move_type, "damage_multiplier", None), "return_value", None)
+        return rv if isinstance(rv, (int, float)) and not isinstance(rv, bool) else 1.0
+    monkeypatch.setattr("agents.opponents.effective_multiplier", _eff)
+
+
 # ---------------------------------------------------------------------------
 # Gen3StallerPlayer
 # ---------------------------------------------------------------------------

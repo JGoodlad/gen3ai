@@ -35,10 +35,30 @@ def create_mock_pokemon(species, moves_dict, active=False):
     mon.stats = {"hp": 100, "atk": 100, "def": 100, "spa": 100, "spd": 100, "spe": 100}
     return mon
 
-def test_move_and_team_alignment():
+def test_move_and_team_alignment(monkeypatch):
+    # The reactive matchup encoder now reads a precomputed type chart instead of calling
+    # `move.type.damage_multiplier(...)`, so the mock-injected effectiveness
+    # (`move.type.damage_multiplier.return_value`, see create_mock_move) no longer reaches it.
+    # This is an ALIGNMENT test (does matrix cell [our_mon, our_move, their_mon] carry the
+    # right move's value?), so route the effectiveness primitive back to the injected value;
+    # the chart math itself is covered exhaustively in gen3_mechanics_test.py.
     # 1. Setup mappings
     mappings = load_mappings()
     encoder = Gen3ObservationEncoder(mappings)
+
+    # Patch the EXACT module dict the reactive encoder reads (pytest can import this test
+    # under a different package path than the encoder's modules → a duplicate `reactive`
+    # module instance, so patching `agents.observation.reactive` by name would miss).
+    _calls = {"n": 0}
+
+    def _eff(move_type, type_1=None, type_2=None, ability=None, status=None):
+        _calls["n"] += 1
+        rv = getattr(getattr(move_type, "damage_multiplier", None), "return_value", None)
+        return rv if isinstance(rv, (int, float)) and not isinstance(rv, bool) else 1.0
+
+    monkeypatch.setitem(
+        encoder.reactive_encoder.encode.__func__.__globals__,
+        "effective_multiplier_by_types", _eff)
     
     # 2. Create a complex battle state
     battle = MagicMock(spec=AbstractBattle)
@@ -72,6 +92,7 @@ def test_move_and_team_alignment():
     
     # 3. Encode
     vector = encoder.encode(battle)
+    assert _calls["n"] > 0, "patched effectiveness primitive was never called — patch missed"
     
     # 4. Verify Move Embedding Order
     # Pokemon 0 (p1) moves start at OFFSET_OUR_TEAM + POKEMON_MOVES_OFFSET
