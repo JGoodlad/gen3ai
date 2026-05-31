@@ -45,9 +45,11 @@ Phase-4 guard allowlist):
 - `observation/state_encoder.py` — `mon is battle.opponent_active_pokemon` identity check +
   `battle.battle_tag`/`battle.wait` in the obs error guard.
 - `action/mapper.py` — `battle.turn` in the `assert_decision_current` staleness-guard error path.
-- `training/reward_manager.py` — the `_read_live=False` dual-path `else` fallbacks (the
-  equivalence harness proves they match the `live` path), plus `battle.turn` (stall tax) and
-  `report_episode` team iteration.
+- `training/reward_manager.py` — the `_read_live` dual-path is **retired** (impl_step8 §4 /
+  `26d3d1e`): `process_turn_reward` builds `live = battle.live_view()` once and every per-term
+  helper reads current-board state only through it, with no raw-`battle` fallback. reward_manager
+  has **zero guarded raw reads**; the only residual is `battle.turn` (stall-tax ramp + episode
+  report) and `report_episode` meta (`won`/`lost`).
 
 ---
 
