@@ -17,8 +17,13 @@ A decision flows through three stages. The first two are **poke-env-free**; only
 touches poke-env order types:
 
 1. **mask** — `Gen3ActionMasker.mask_from_legal(legal)` builds the 11-dim binary mask
-   purely from a `LegalActions` snapshot (no battle). `get_mask(battle, legal=…)` is a thin
-   wrapper that snapshots the legality surface and runs the team-ordering integrity guards.
+   purely from a `LegalActions` snapshot (no battle). `get_mask(battle, legal=…, live=…)` is a
+   thin wrapper that snapshots the legality surface and runs the team-ordering integrity
+   guards. The own-team roster those guards check is read through a `LiveView`
+   (`live.ours.mons`) — built from the battle by default, or passed in via `live=` to reuse
+   one already built this decision — so `action/` no longer reaches into the raw battle for
+   state (`mask_generator.py` / `ordering_integrity.py` read only `LegalActions` + `LiveView`;
+   `serialize.py` stays the lone Choice→`BattleOrder` poke-env seam).
 2. **decode** (pure) — `Gen3ActionMapper.action_to_choice(action_idx, legal) -> Choice`
    resolves an action index against the captured snapshot into a tagged, poke-env-free
    `Choice` (`choice.py`). Fully testable with a `LegalActions` stub — no battle object.

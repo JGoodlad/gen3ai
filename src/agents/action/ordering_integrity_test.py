@@ -22,8 +22,41 @@ from agents.action.ordering_integrity import (
     reorder_move_bits_to_sorted,
     assert_sorted_validity_correct,
 )
-from agents.battle.live_view import LegalActions
+from agents.battle.live_view import (
+    LegalActions, LiveView, LiveSide, LivePokemon, LiveMove, LiveWeather,
+)
 from agents.action.constants import MOVE_START
+
+
+_NO_WEATHER = LiveWeather(weather=None, is_permanent=False, turns_active=0)
+
+
+def _livemon(species, move_ids=(), active=False):
+    """A minimal LivePokemon carrying just the fields the integrity guards read
+    (species + revealed move ids)."""
+    return LivePokemon(
+        species=species, active=active, fainted=False, revealed=True,
+        hp_fraction=1.0, status=None, types=("ghost",),
+        moves=tuple(LiveMove(id=m, current_pp=16, max_pp=16) for m in sorted(move_ids)),
+        item=None, ability=None, boosts={}, volatiles={},
+    )
+
+
+def _live(active_move_ids=(), team_species=("gengar", "metagross", "starmie"),
+          active_species="gengar", turn=30):
+    """A LiveView whose ``ours.mons`` mirrors a ``_battle()`` team (same order), the
+    active mon carrying ``active_move_ids``. Drives the integrity checks + get_mask
+    through the LiveView boundary instead of a raw battle read."""
+    mons, active_obj = [], None
+    for s in team_species:
+        is_active = (s == active_species)
+        m = _livemon(s, active_move_ids if is_active else (), active=is_active)
+        mons.append(m)
+        if is_active:
+            active_obj = m
+    ours = LiveSide(team_size=len(mons), active=active_obj, mons=tuple(mons), side_conditions={})
+    opp = LiveSide(team_size=0, active=None, mons=(), side_conditions={})
+    return LiveView(turn=turn, weather=_NO_WEATHER, ours=ours, opp=opp)
 
 
 def _move(move_id):
@@ -86,12 +119,13 @@ def test_raw_mask_misalignment_is_detectable():
         ["thunderbolt", "willowisp", "icepunch", "taunt"],
         disabled_id="willowisp",
     )
+    live = _live(["thunderbolt", "willowisp", "icepunch", "taunt"])
     # get_mask returns the raw action-order mask.
-    raw_action_mask = Gen3ActionMasker.get_mask(battle)
+    raw_action_mask = Gen3ActionMasker.get_mask(battle, live=live)
     legal = LegalActions.from_battle(battle)
     # Applying that raw mask positionally to sorted slots IS a misapplication:
     with pytest.raises(OrderingMismatchError):
-        check_move_validity_alignment(battle, raw_action_mask, legal)
+        check_move_validity_alignment(live, raw_action_mask, legal)
 
 
 def test_reorder_puts_validity_on_the_right_sorted_slot():
@@ -132,10 +166,12 @@ def test_all_legal_reorder_is_identity_on_values():
 
 
 def test_switch_ordering_aligned_by_default():
-    """Our team uses list(battle.team.values()) everywhere -> aligned, no raise."""
+    """Our team uses list(battle.team.values()) order everywhere (mirrored by
+    live.ours.mons) -> aligned, no raise."""
     battle = _battle(["icepunch", "taunt", "thunderbolt", "willowisp"])
     legal = LegalActions.from_battle(battle)
-    check_switch_ordering_alignment(battle, np.ones(11, dtype=np.int8), legal)  # explicit
+    live = _live(["icepunch", "taunt", "thunderbolt", "willowisp"])
+    check_switch_ordering_alignment(live, np.ones(11, dtype=np.int8), legal)  # explicit
 
 
 def test_switch_ordering_mismatch_raises():
@@ -143,23 +179,24 @@ def test_switch_ordering_mismatch_raises():
     snapshot order, a switch action would target the wrong mon -> must raise."""
     battle = _battle(["icepunch", "taunt", "thunderbolt", "willowisp"])
     legal = LegalActions.from_battle(battle)  # capture switches at the original order
-    # Simulate drift: the encoder's live team order no longer matches the snapshot.
-    reordered = dict(reversed(list(battle.team.items())))
-    battle.team = reordered
+    # Simulate drift: the encoder's live team order (LiveView) no longer matches the
+    # snapshot's slot mapping (here, reversed).
+    live = _live(
+        active_move_ids=["icepunch", "taunt", "thunderbolt", "willowisp"],
+        team_species=("starmie", "metagross", "gengar"), active_species="gengar",
+    )
     with pytest.raises(OrderingMismatchError):
-        check_switch_ordering_alignment(battle, np.ones(11, dtype=np.int8), legal)
+        check_switch_ordering_alignment(live, np.ones(11, dtype=np.int8), legal)
 
 
 def test_check_is_noop_without_move_slots():
     """Defensive: a forced-switch snapshot (no move slots) -> nothing to compare, no raise."""
-    battle = MagicMock(spec=AbstractBattle)
-    battle.turn = 1
-    battle.active_pokemon = _pokemon("gengar", ["thunderbolt"], active=True)
+    live = _live(["thunderbolt"])
     forced_switch_legal = LegalActions(
         move_slots=(), switches=(), force_switch=True, trapped=False,
         maybe_trapped=False, wait=False, struggle=False, last_request=None,
     )
-    check_move_validity_alignment(battle, np.ones(11, dtype=np.int8), forced_switch_legal)
+    check_move_validity_alignment(live, np.ones(11, dtype=np.int8), forced_switch_legal)
 
 
 # --------------------------------------------------------------------------

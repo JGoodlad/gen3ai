@@ -18,10 +18,14 @@ These checks turn that whole class of bug into a loud, immediate
 validity. They are cheap (a few short-list comparisons) and run on every masked
 turn, in both training and inference.
 """
+from typing import TYPE_CHECKING
+
 import numpy as np
-from poke_env.battle.abstract_battle import AbstractBattle
 
 from agents.action.constants import MOVE_START, N_MOVE_SLOTS, SWITCH_END
+
+if TYPE_CHECKING:
+    from agents.battle.live_view import LiveView, LivePokemon
 
 
 class OrderingMismatchError(RuntimeError):
@@ -76,12 +80,20 @@ def assert_sorted_validity_correct(
             )
 
 
-def _sorted_move_ids(mon) -> list:
-    """Mirror exactly what ``MovesEncoder`` feeds the extractor: the mon's moves
-    sorted by id (``ObservationEncoder.get_sorted_moves``)."""
-    if mon is None or not getattr(mon, "moves", None):
+def _sorted_move_ids(mon: "LivePokemon") -> list:
+    """Mirror exactly what ``MovesEncoder`` feeds the extractor: the active mon's
+    move ids sorted by id (``ObservationEncoder.get_sorted_moves``).
+
+    ``mon`` is a :class:`~agents.battle.live_view.LivePokemon`; its ``move_ids`` are the
+    revealed move ids already sorted by id. For Hidden Power the LiveView carries the bare
+    ``"hiddenpower"`` id (the request / ``legal.move_ids`` form) rather than the typed
+    ``"hiddenpowerice"`` the encoder's ``Move`` object holds — but the *slot index* is
+    identical (every HP variant shares the ``hiddenpower`` prefix and a mon has at most one
+    HP, so its position among the other moves is the same either way), and the bare id is
+    exactly what ``legal.move_ids`` keys on, so the validity lookup matches the request."""
+    if mon is None or not mon.move_ids:
         return []
-    return [m.id for m in sorted(mon.moves.values(), key=lambda m: m.id)]
+    return sorted(mon.move_ids)
 
 
 # Moves that legitimately invoke a DIFFERENT move when used — the protocol then
@@ -123,30 +135,31 @@ def check_move_data_consistent(delta) -> None:
         )
 
 
-def check_switch_ordering_alignment(battle: AbstractBattle, mask: np.ndarray, legal) -> None:
+def check_switch_ordering_alignment(live: "LiveView", mask: np.ndarray, legal) -> None:
     """Assert the team ordering the mask/mapper used equals the ordering the
     feature extractor consumes, so switch action index *i*, switch-validity bit
     *i*, and per-Pokémon obs slot *i* all refer to the same Pokémon.
 
-    Unlike moves, our team has no sort step — every consumer uses
-    ``list(battle.team.values())`` (the encoder via
-    ``ObservationEncoder.get_team_list(is_opponent=False)``, the masker/mapper via
-    the ``LegalActions`` snapshot's slot-indexed switches). This check guarantees that
-    stays true: if the two ever diverge (a future reorder, or the team dict mutating
-    between snapshot and check) a switch could silently target the wrong mon, so we
-    crash instead. ``legal`` is the per-decision :class:`LegalActions`; each of its
-    switches names the species AND the team slot the action space maps it to.
+    Unlike moves, our team has no sort step — every consumer uses the
+    ``list(battle.team.values())`` order (the encoder via
+    ``ObservationEncoder.get_team_list(is_opponent=False)``, mirrored here by
+    ``live.ours.mons``; the masker/mapper via the ``LegalActions`` snapshot's
+    slot-indexed switches). This check guarantees that stays true: if the two ever
+    diverge (a future reorder, or the team mutating between snapshot and check) a switch
+    could silently target the wrong mon, so we crash instead. ``live`` is the
+    current-board :class:`LiveView`; ``legal`` is the per-decision :class:`LegalActions`,
+    each of whose switches names the species AND the team slot the action space maps it to.
     """
     if legal is None:
         return
     # The encoder's team order (what per-Pokémon slots + switch validity index).
-    encoder_team = [getattr(p, "species", None) for p in list(battle.team.values())]
+    encoder_team = [m.species for m in live.ours.mons]
     for sw in legal.switches:
         if sw.slot >= SWITCH_END or sw.slot >= len(encoder_team):
             continue
         if encoder_team[sw.slot] != sw.species:
             raise OrderingMismatchError(
-                f"Team/switch ordering mismatch on turn {getattr(battle, 'turn', '?')}: "
+                f"Team/switch ordering mismatch on turn {live.turn}: "
                 f"the action space maps switch slot {sw.slot} to '{sw.species}', but the "
                 f"feature extractor's per-Pokémon slot {sw.slot} is "
                 f"'{encoder_team[sw.slot]}'. Switch action {sw.slot} would target a "
@@ -154,14 +167,16 @@ def check_switch_ordering_alignment(battle: AbstractBattle, mask: np.ndarray, le
             )
 
 
-def check_move_validity_alignment(battle: AbstractBattle, mask: np.ndarray, legal) -> None:
+def check_move_validity_alignment(live: "LiveView", mask: np.ndarray, legal) -> None:
     """Assert the per-move legality the feature extractor applies (by sorted
     slot) equals the move's true legality from the action mask (by request slot).
 
-    Raises ``OrderingMismatchError`` on any disagreement. ``legal`` is the per-decision
-    :class:`LegalActions` snapshot whose ``move_ids`` are in request/action order.
+    Raises ``OrderingMismatchError`` on any disagreement. ``live`` is the current-board
+    :class:`LiveView` (the active mon is ``live.ours.active``); ``legal`` is the
+    per-decision :class:`LegalActions` snapshot whose ``move_ids`` are in request/action
+    order.
     """
-    active = getattr(battle, "active_pokemon", None)
+    active = live.ours.active if live is not None else None
     if active is None:
         return
     if legal is None:
@@ -189,7 +204,7 @@ def check_move_validity_alignment(battle: AbstractBattle, mask: np.ndarray, lega
         applied = int(mask[MOVE_START + k])
         if applied != true_legal:
             raise OrderingMismatchError(
-                f"Move-validity ordering mismatch on turn {getattr(battle, 'turn', '?')}: "
+                f"Move-validity ordering mismatch on turn {live.turn}: "
                 f"the model sees legality={applied} on sorted slot {k} ('{mid}'), "
                 f"but that move's true legality is {true_legal}. "
                 f"sorted_order={sorted_ids[:N_MOVE_SLOTS]} "

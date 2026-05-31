@@ -2,7 +2,7 @@ import numpy as np
 
 from agents.action.constants import ACTION_SPACE_SIZE, SWITCH_END, MOVE_START, N_MOVE_SLOTS, STRUGGLE
 from agents.action.ordering_integrity import check_switch_ordering_alignment
-from agents.battle.live_view import LegalActions
+from agents.battle.live_view import LegalActions, LiveView
 
 
 class Gen3ActionMasker:
@@ -51,23 +51,36 @@ class Gen3ActionMasker:
         return mask
 
     @staticmethod
-    def get_mask(battle, legal: LegalActions = None) -> np.ndarray:
+    def get_mask(battle, legal: LegalActions = None, live: LiveView = None) -> np.ndarray:
         """Build the action mask for ``battle``. STRICT MODE: crashes on ambiguity.
+
+        Reads only through the strict boundary — the server-authoritative
+        :class:`LegalActions` (legality + ``last_request``) and the current-board
+        :class:`LiveView` (the own-team roster the integrity guards check). No raw
+        ``battle.<attr>`` reads remain.
 
         The env / player pass the ``legal`` snapshot they captured this decision so the
         mask and the mapper share one immutable source; standalone callers omit it and a
-        fresh snapshot is taken here.
+        fresh snapshot is taken here. ``live`` is likewise optional: a caller that already
+        built a :class:`LiveView` this decision can pass it to avoid a second build,
+        otherwise one is built from ``battle`` (``LiveView.from_battle`` works on any
+        poke-env battle, ``Gen3Battle`` or plain ``Battle``).
         """
-        if not battle.last_request:
+        if legal is None:
+            legal = LegalActions.from_battle(battle)
+
+        if not legal.last_request:
             # We crash if we are asked to mask but have no request context.
             # This is a 'junk in junk out' prevention measure.
             raise RuntimeError("STRICT MODE FAILURE: No last_request found in battle. Cannot mask.")
 
-        if legal is None:
-            legal = LegalActions.from_battle(battle)
+        if live is None:
+            live = LiveView.from_battle(battle)
 
-        # Integrity Check: No duplicate species allowed (Gen 3 OU standard).
-        species_list = [p.species for p in battle.team.values()]
+        # Integrity Check: No duplicate species allowed (Gen 3 OU standard). The own-team
+        # roster is read through the LiveView boundary; ``live.ours.mons`` preserves the
+        # ``list(battle.team.values())`` order the encoder's get_team_list also uses.
+        species_list = [m.species for m in live.ours.mons]
         if len(species_list) != len(set(species_list)):
             raise RuntimeError(f"STRICT MODE FAILURE: Duplicate species detected in team: {species_list}")
 
@@ -77,6 +90,6 @@ class Gen3ActionMasker:
         # action index i, switch-validity bit i, and per-Pokémon obs slot i must all
         # refer to the same Pokémon. (Move-validity ordering is fixed + validated at
         # prev_mask construction, EpisodeTracker.prev_mask.)
-        check_switch_ordering_alignment(battle, mask, legal)
+        check_switch_ordering_alignment(live, mask, legal)
 
         return mask

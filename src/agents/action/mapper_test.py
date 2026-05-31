@@ -19,7 +19,9 @@ from agents.action.choice import Choice, ChoiceKind
 from agents.action.mask_generator import Gen3ActionMasker
 from agents.action.mapper import Gen3ActionMapper
 from agents.action.serialize import choice_to_order, order_to_action
-from agents.battle.live_view import LegalActions, LegalMove, LegalSwitch
+from agents.battle.live_view import (
+    LegalActions, LegalMove, LegalSwitch, LiveView, LiveSide, LivePokemon, LiveMove, LiveWeather,
+)
 from poke_env.battle.move import Move
 from poke_env.battle.pokemon import Pokemon
 from poke_env.player.battle_order import SingleBattleOrder
@@ -67,6 +69,28 @@ def _move(move_id: str):
     m = MagicMock(spec=Move)
     m.id = move_id
     return m
+
+
+def _live_team(species_list):
+    """A minimal LiveView whose ``ours.mons`` carry just the species — the only field
+    the masker's integrity guards read. Order mirrors list(battle.team.values()).
+    Passed to ``get_mask(..., live=...)`` so the unit mocks need not satisfy the full
+    ``LiveView.from_battle`` surface."""
+    mons = tuple(
+        LivePokemon(
+            species=s, active=(i == 0), fainted=False, revealed=True, hp_fraction=1.0,
+            status=None, types=("normal",), moves=(), item=None, ability=None,
+            boosts={}, volatiles={},
+        )
+        for i, s in enumerate(species_list)
+    )
+    ours = LiveSide(team_size=len(mons), active=(mons[0] if mons else None),
+                    mons=mons, side_conditions={})
+    opp = LiveSide(team_size=0, active=None, mons=(), side_conditions={})
+    return LiveView(
+        turn=1, weather=LiveWeather(weather=None, is_permanent=False, turns_active=0),
+        ours=ours, opp=opp,
+    )
 
 
 def _make_battle(
@@ -189,8 +213,14 @@ class TestMaskFromLegal:
 class TestGetMaskBattle:
 
     def test_no_last_request_raises(self):
+        # No request -> LegalActions.from_battle yields legal.last_request=None and the
+        # guard fires before any LiveView build (so the minimal stub needs no live view).
         battle = MagicMock()
         battle.last_request = None
+        battle.team = {}
+        battle.available_switches = []
+        battle.available_moves = []
+        battle.force_switch = battle.trapped = battle.maybe_trapped = battle.wait = False
         with pytest.raises(RuntimeError, match="No last_request"):
             Gen3ActionMasker.get_mask(battle)
 
@@ -203,8 +233,10 @@ class TestGetMaskBattle:
         battle.available_moves = [_move("surf")]
         battle.force_switch = battle.trapped = battle.maybe_trapped = battle.wait = False
         battle.last_request = {"active": [{"moves": [{"id": "surf", "disabled": False}]}], "turn": 1}
+        # The duplicate-species guard reads the own-team roster through the LiveView.
+        live = _live_team(["gengar", "gengar", "skarmory"])
         with pytest.raises(RuntimeError, match="Duplicate species"):
-            Gen3ActionMasker.get_mask(battle)
+            Gen3ActionMasker.get_mask(battle, live=live)
 
     def test_get_mask_switch_and_move_bits(self):
         battle, _, _ = _make_battle(
@@ -213,7 +245,8 @@ class TestGetMaskBattle:
             move_ids=["rockslide", "earthquake"],
             disabled_indices=[1],
         )
-        mask = Gen3ActionMasker.get_mask(battle)
+        live = _live_team(["tyranitar", "skarmory", "gengar"])
+        mask = Gen3ActionMasker.get_mask(battle, live=live)
         assert mask[:6].tolist() == [0, 1, 1, 0, 0, 0]
         assert mask[6:10].tolist() == [1, 0, 0, 0]
 
@@ -223,8 +256,14 @@ class TestGetMaskBattle:
         battle, _, _ = _make_battle(
             team_species=["tyranitar"], available_switch_indices=[], move_ids=["rockslide"],
         )
-        snap = _legal(move_slots=(_lm("rockslide"), _lm("earthquake")))
-        mask = Gen3ActionMasker.get_mask(battle, legal=snap)
+        # A real captured snapshot always carries its request (LegalActions.from_battle),
+        # which the no-request guard now reads from `legal` rather than the (drifted) battle.
+        snap = _legal(
+            move_slots=(_lm("rockslide"), _lm("earthquake")),
+            last_request={"active": [{"moves": [{"id": "rockslide"}, {"id": "earthquake"}]}]},
+        )
+        live = _live_team(["tyranitar"])
+        mask = Gen3ActionMasker.get_mask(battle, legal=snap, live=live)
         assert mask[6:10].tolist() == [1, 1, 0, 0]
 
 
@@ -251,7 +290,8 @@ class TestStruggleSingleSource:
             team_species=["tyranitar"], available_switch_indices=[], move_ids=["struggle"],
             struggle=True,
         )
-        mask = Gen3ActionMasker.get_mask(battle)
+        live = _live_team(["tyranitar"])
+        mask = Gen3ActionMasker.get_mask(battle, live=live)
         assert mask[MOVE_START:MOVE_END].tolist() == [0, 0, 0, 0], "no move slot for struggle"
         assert mask[STRUGGLE] == 1
 
