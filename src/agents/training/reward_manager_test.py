@@ -135,13 +135,23 @@ def _delta(
 
 
 class _LiveMonView:
-    """Stand-in for a LiveView ``LivePokemon`` exposing only the fields the
-    partial-re-source reads touch: ``status``, ``fainted``, ``boosts``."""
+    """Stand-in for a LiveView ``LivePokemon``. Mirrors the production ``LivePokemon``
+    for every field the (now fully re-sourced) reward reads touch — ``species``,
+    ``status`` (id-string), ``fainted``, ``boosts``, ``types`` (id-strings),
+    ``ability`` (id-string), ``move_ids`` — derived from the underlying poke-env mock
+    mon. Move power/type itself is resolved by the reward manager via ``gen3_movedex``
+    from ``move_ids``, exactly as production does, so the mock mons use real gen3 move
+    ids with their canonical types."""
 
-    def __init__(self, status=None, fainted=False, boosts=None):
+    def __init__(self, species=None, status=None, fainted=False, boosts=None,
+                 types=(), ability=None, move_ids=()):
+        self.species = species
         self.status = status
         self.fainted = fainted
         self.boosts = boosts if isinstance(boosts, dict) else {}
+        self.types = tuple(types)
+        self.ability = ability
+        self.move_ids = tuple(move_ids)
 
 
 class _LiveSideView:
@@ -149,6 +159,12 @@ class _LiveSideView:
         self.mons = tuple(mons)
         self.active = active
         self.side_conditions = side_conditions or {}
+
+    def get(self, species):
+        for m in self.mons:
+            if m.species == species:
+                return m
+        return None
 
 
 class _LiveViewStub:
@@ -160,40 +176,66 @@ class _LiveViewStub:
         self.finished = finished
 
 
+def _live_mon(m):
+    """Build a `_LiveMonView` mirroring `LivePokemon` from a poke-env mock mon. Non-real
+    attribute values (bare ``MagicMock`` placeholders the test never set) are coerced to
+    the LiveView's "unknown" forms (``None`` / empty) so they read like a real snapshot."""
+    if m is None:
+        return None
+    from poke_env.battle.pokemon_type import PokemonType
+    from poke_env.battle.status import Status
+
+    types = tuple(
+        t.name.lower()
+        for t in (getattr(m, "type_1", None), getattr(m, "type_2", None))
+        if isinstance(t, PokemonType)
+    )
+    status = getattr(m, "status", None)
+    status_id = status.name.lower() if isinstance(status, Status) else None
+    ability = getattr(m, "ability", None)
+    ability_id = ability if isinstance(ability, str) else None
+    moves = getattr(m, "moves", None)
+    move_ids = tuple(sorted(moves.keys())) if isinstance(moves, dict) else ()
+    fainted = getattr(m, "fainted", False)
+    fainted = bool(fainted) if not isinstance(fainted, MagicMock) else False
+    boosts = getattr(m, "boosts", None)
+    return _LiveMonView(
+        species=getattr(m, "species", None),
+        status=status_id,
+        fainted=fainted,
+        boosts=boosts if isinstance(boosts, dict) else {},
+        types=types,
+        ability=ability_id,
+        move_ids=move_ids,
+    )
+
+
 def _live_view(battle):
     """Build a LiveView-shaped stub from a mock battle's CURRENT state, mirroring
-    what ``battle.live_view()`` returns in production for the four partial-re-source
-    reads (opp spikes layers, per-side status counts, opp-active boosts, terminal
-    flags). Built LAZILY off the battle so a test that mutates ``battle.opponent_team``
-    after ``_battle()`` is reflected — exactly as the real LiveView reads live state.
+    what ``battle.live_view()`` returns in production. Built LAZILY off the battle so a
+    test that mutates ``battle.opponent_team`` after ``_battle()`` is reflected — exactly
+    as the real LiveView reads live state.
 
-    The type/effectiveness helpers (se_switch, pivot, dead_matchup, …) still read
-    the poke-env mock mons on the battle directly, not this view."""
-    def _fainted(m):
-        f = getattr(m, "fainted", False)
-        return bool(f) if not isinstance(f, MagicMock) else False
-
+    All current-board reward reads (terminal flags, spikes, status counts, opp boosts,
+    AND the type/effectiveness helpers — se_switch, pivot, dead_matchup, sleep, …) now go
+    through this view; the move power/type comes from ``gen3_movedex`` keyed by the mons'
+    revealed ``move_ids``."""
     def _mons(team):
-        return tuple(
-            _LiveMonView(status=getattr(m, "status", None), fainted=_fainted(m))
-            for m in (team or {}).values()
-        )
+        return tuple(_live_mon(m) for m in (team or {}).values())
 
     # SideCondition enum keys -> id-form string keys ("spikes"), mirroring LiveView.
     sc = {
         (k.name.lower() if hasattr(k, "name") else str(k)): v
         for k, v in (getattr(battle, "opponent_side_conditions", {}) or {}).items()
     }
-    opp_active_mon = getattr(battle, "opponent_active_pokemon", None)
-    opp_active = (
-        _LiveMonView(boosts=getattr(opp_active_mon, "boosts", {}))
-        if opp_active_mon is not None else None
-    )
     return _LiveViewStub(
-        ours=_LiveSideView(mons=_mons(getattr(battle, "team", {}))),
+        ours=_LiveSideView(
+            mons=_mons(getattr(battle, "team", {})),
+            active=_live_mon(getattr(battle, "active_pokemon", None)),
+        ),
         opp=_LiveSideView(
             mons=_mons(getattr(battle, "opponent_team", {})),
-            active=opp_active,
+            active=_live_mon(getattr(battle, "opponent_active_pokemon", None)),
             side_conditions=sc,
         ),
         won=battle.won, lost=battle.lost, finished=battle.finished,

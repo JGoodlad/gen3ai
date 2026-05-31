@@ -6,11 +6,28 @@ from utils.logging.levels import LogLevel
 from poke_env.battle.side_condition import SideCondition
 from poke_env.battle.status import Status
 from agents.training.battle_context import BattleContext, TurnDelta
+from agents import gen3_movedex as _movedex
 from agents.gen3_mechanics import (
     INVULNERABLE_MOVES as _INVULNERABLE_MOVES,
     is_status_move_immune as _is_status_move_immune,
     effective_multiplier as _effective_multiplier_fn,
+    effective_multiplier_by_types as _effective_multiplier_by_types_fn,
+    STATUS_MOVE_IMMUNITY as _STATUS_MOVE_IMMUNITY,
 )
+from poke_env.battle.pokemon_type import PokemonType as _PokemonType
+
+
+def _ptype(name) -> "Optional[_PokemonType]":
+    """LiveView type-id string (e.g. ``'fire'``) -> ``PokemonType`` enum — the primitive
+    the mechanics helpers key on. ``None`` passes through."""
+    return _PokemonType[name.upper()] if name else None
+
+
+def _status_enum(name) -> "Optional[Status]":
+    """LiveView status-id string (e.g. ``'slp'``) -> ``Status`` enum. ``None`` passes
+    through. Only ``FRZ`` actually changes an effectiveness result (Flash Fire), but we
+    convert faithfully so the LiveView path is byte-identical to the raw-battle path."""
+    return Status[name.upper()] if name else None
 
 @dataclass
 class RewardBreakdown:
@@ -440,17 +457,26 @@ class Gen3RewardManager:
         had_boosts = any(v > 0 for v in self._prev_opp_boosts.values())
         return ROAR_BONUS if (has_spikes or had_boosts) else 0.0
 
-    def _compute_se_switch_bonus(self, delta: TurnDelta, battle) -> float:
+    def _compute_se_switch_bonus(self, delta: TurnDelta, battle, live=None) -> float:
         """Reward switching in a mon that threatens the opponent with a SE move.
 
         First checks revealed moves for confirmed SE; if none are revealed yet,
         falls back to checking whether any of our mon's own types are SE vs the
         opponent (a reliable proxy for STAB moves in Gen 3 OU).
+
+        Current-board reads are dual-pathed: the LiveView ``LivePokemon`` (move
+        power/type via ``gen3_movedex``, effectiveness via the mechanics primitive)
+        when ``live`` is set, else the raw battle. The equivalence harness proves the
+        two are value-identical.
         """
         if delta.our_switch_to is None:
             return 0.0
-        our_mon = battle.active_pokemon
-        opp_mon = battle.opponent_active_pokemon
+        if live is not None:
+            our_mon = live.ours.active
+            opp_mon = live.opp.active
+        else:
+            our_mon = battle.active_pokemon
+            opp_mon = battle.opponent_active_pokemon
         if not our_mon or not opp_mon:
             return 0.0
 
@@ -466,6 +492,20 @@ class Gen3RewardManager:
         our_species = our_mon.species
         opp_species = opp_mon.species
         if self._last_opp_seen_by.get(our_species) == opp_species:
+            return 0.0
+
+        if live is not None:
+            # Confirmed SE via revealed move
+            for mid in our_mon.move_ids:
+                md = _movedex.get(mid)
+                if md is None or md.base_power <= 0:
+                    continue
+                if self._live_eff_mult(md.type, opp_mon) >= 2.0:
+                    return SE_SWITCH_BONUS
+            # Fallback: STAB type advantage (no moves revealed yet)
+            for t in our_mon.types:
+                if self._live_eff_mult(_ptype(t), opp_mon) >= 2.0:
+                    return SE_SWITCH_BONUS
             return 0.0
 
         # Confirmed SE via revealed move
@@ -505,13 +545,16 @@ class Gen3RewardManager:
     # process_turn_reward (it runs before the turn, not after).
     # =========================================================
 
-    def _compute_pivot_bonus(self, delta: TurnDelta, battle) -> tuple[float, float, float]:
+    def _compute_pivot_bonus(self, delta: TurnDelta, battle, live=None) -> tuple[float, float, float]:
         """Return (protect_bonus, status_bonus, damage_bonus) for this switch turn.
 
         Uses `delta.opp_resolved_move_id` — protocol-truth attribution when a
         damaging event is set, falling back to the inferred `delta.opp_move_id`
         for non-damaging moves (status, Roar, etc.). Avoids the stale-last_move
         class of bug that bit HP attribution.
+
+        The opp-move presence + power read is dual-pathed: the LiveView active mon's
+        revealed moves + ``gen3_movedex`` when ``live`` is set, else the raw battle.
         """
         opp_move_id = delta.opp_resolved_move_id
         if delta.opp_switch_to is not None or opp_move_id is None:
@@ -520,23 +563,38 @@ class Gen3RewardManager:
         if opp_move_id in _INVULNERABLE_MOVES:
             return (self._pivot_protect_bonus(), 0.0, 0.0)
 
-        opp_mon = battle.opponent_active_pokemon
-        if not opp_mon:
-            return (0.0, 0.0, 0.0)
-        opp_move = opp_mon.moves.get(opp_move_id)
-        if opp_move is None:
-            return (0.0, 0.0, 0.0)
+        if live is not None:
+            opp_mon = live.opp.active
+            if not opp_mon or opp_move_id not in opp_mon.move_ids:
+                return (0.0, 0.0, 0.0)
+            md = _movedex.get(opp_move_id)
+            base_power = md.base_power if md is not None else 0
+        else:
+            opp_mon = battle.opponent_active_pokemon
+            if not opp_mon:
+                return (0.0, 0.0, 0.0)
+            opp_move = opp_mon.moves.get(opp_move_id)
+            if opp_move is None:
+                return (0.0, 0.0, 0.0)
+            base_power = opp_move.base_power
 
-        if opp_move.base_power == 0:
-            return (0.0, self._pivot_status_bonus(opp_move_id, battle), 0.0)
-        return (0.0, 0.0, self._pivot_damage_bonus(opp_move, delta, battle))
+        if base_power == 0:
+            return (0.0, self._pivot_status_bonus(opp_move_id, battle, live), 0.0)
+        return (0.0, 0.0, self._pivot_damage_bonus(opp_move_id, delta, battle, live))
 
     def _pivot_protect_bonus(self) -> float:
         """Opponent used Protect/Detect/Endure — we repositioned for free."""
         return PROTECT_SWITCH_BONUS
 
-    def _pivot_status_bonus(self, opp_move_id: str, battle) -> float:
+    def _pivot_status_bonus(self, opp_move_id: str, battle, live=None) -> float:
         """Opponent used a status move our switch-in was immune to (type or already statused)."""
+        if live is not None:
+            new_mon = live.ours.active
+            if not new_mon:
+                return 0.0
+            if self._live_status_move_immune(opp_move_id, new_mon):
+                return STATUS_IMMUNE_SWITCH_BONUS
+            return 0.0
         new_mon = battle.active_pokemon
         if not new_mon:
             return 0.0
@@ -544,7 +602,7 @@ class Gen3RewardManager:
             return STATUS_IMMUNE_SWITCH_BONUS
         return 0.0
 
-    def _pivot_damage_bonus(self, opp_move, delta: TurnDelta, battle) -> float:
+    def _pivot_damage_bonus(self, opp_move_id, delta: TurnDelta, battle, live=None) -> float:
         """Opponent used a damaging move — bonus if it hit our new mon less than the old one.
 
         Signal A: comparison of actual type effectiveness vs old mon vs new mon.
@@ -558,7 +616,29 @@ class Gen3RewardManager:
         target (e.g. opp damaged prev_active before switch-in was on field).
         `mult_vs_old` always recomputes — the protocol can't tell us what the
         multiplier *would have been* if we hadn't switched.
+
+        Dual-pathed: the move type comes from ``gen3_movedex`` and the prev/new mons
+        from the LiveView when ``live`` is set, else from the raw battle.
         """
+        if live is not None:
+            new_mon = live.ours.active
+            if not new_mon:
+                return 0.0
+            prev_mon = live.ours.get(delta.our_prev_active)
+            if prev_mon is None:
+                return 0.0
+            md = _movedex.get(opp_move_id)
+            move_type = md.type if md is not None else None
+            opp_event = delta.opp_damaging_event
+            if opp_event is not None and opp_event.target_species == new_mon.species:
+                mult_vs_new = opp_event.effectiveness
+            else:
+                mult_vs_new = self._live_eff_mult(move_type, new_mon)
+            mult_vs_old = self._live_eff_mult(move_type, prev_mon)
+            if mult_vs_new < mult_vs_old:
+                return 0.15 if mult_vs_new == 0 else 0.10
+            return 0.0
+
         new_mon = battle.active_pokemon
         if not new_mon:
             return 0.0
@@ -567,6 +647,7 @@ class Gen3RewardManager:
         )
         if prev_mon is None:
             return 0.0
+        opp_move = battle.opponent_active_pokemon.moves.get(opp_move_id)
         opp_event = delta.opp_damaging_event
         if opp_event is not None and opp_event.target_species == new_mon.species:
             mult_vs_new = opp_event.effectiveness
@@ -577,22 +658,32 @@ class Gen3RewardManager:
             return 0.15 if mult_vs_new == 0 else 0.10
         return 0.0
 
-    def _compute_sleep_out_bonus(self, delta: TurnDelta, battle) -> float:
+    def _compute_sleep_out_bonus(self, delta: TurnDelta, battle, live=None) -> float:
         """Reward rotating a sleeping mon to the bench on a voluntary switch.
         Preserving a sleeping mon's PP/position has strategic value; post-faint
         replacements don't qualify since there's no choice involved."""
         if self._last_reward_metadata.get("type") != "VOLUNTARY":
             return 0.0
+        if live is not None:
+            prev = live.ours.get(delta.our_prev_active)
+            if prev is None:
+                return 0.0
+            return SLEEP_SWAP_BONUS if prev.status == "slp" else 0.0
         for mon in battle.team.values():
             if mon.species == delta.our_prev_active:
                 return SLEEP_SWAP_BONUS if mon.status == Status.SLP else 0.0
         return 0.0
 
-    def _compute_sleep_in_penalty(self, delta: TurnDelta, battle) -> float:
+    def _compute_sleep_in_penalty(self, delta: TurnDelta, battle, live=None) -> float:
         """Penalise sending in a sleeping mon — it can't act and wastes a slot.
         Applies to voluntary switches and post-faint replacements; skipped for roar
         since the phazer chose our slot, not us."""
         if self._last_switch_was_roared:
+            return 0.0
+        if live is not None:
+            our_mon = live.ours.active
+            if our_mon and our_mon.status == "slp":
+                return -SLEEP_SWAP_BONUS
             return 0.0
         our_mon = battle.active_pokemon
         if our_mon and our_mon.status == Status.SLP:
@@ -606,7 +697,7 @@ class Gen3RewardManager:
             return 0.0  # we switched out — no staying-in penalty
         return MATCHUP_PENALTY if self._prev_opp_se_threat else 0.0
 
-    def _compute_dead_matchup_tax(self, delta: TurnDelta, battle) -> float:
+    def _compute_dead_matchup_tax(self, delta: TurnDelta, battle, live=None) -> float:
         """Escalating penalty for refusing to pivot out of a 0×-only matchup.
 
         Fires when EVERY damaging move our active Pokémon has does 0× to the
@@ -628,18 +719,33 @@ class Gen3RewardManager:
         if delta.phase_is_forced_switch:
             return 0.0
 
-        our_mon = battle.active_pokemon
-        opp_mon = battle.opponent_active_pokemon
-        if not our_mon or not opp_mon or opp_mon.fainted:
-            self._consecutive_dead_matchup_stays = 0
-            return 0.0
+        if live is not None:
+            our_mon = live.ours.active
+            opp_mon = live.opp.active
+            if not our_mon or not opp_mon or opp_mon.fainted:
+                self._consecutive_dead_matchup_stays = 0
+                return 0.0
+            damaging = [
+                md for md in (_movedex.get(mid) for mid in our_mon.move_ids)
+                if md is not None and md.base_power > 0
+            ]
+            if not damaging:
+                self._consecutive_dead_matchup_stays = 0
+                return 0.0
+            best_mult = max(self._live_eff_mult(md.type, opp_mon) for md in damaging)
+        else:
+            our_mon = battle.active_pokemon
+            opp_mon = battle.opponent_active_pokemon
+            if not our_mon or not opp_mon or opp_mon.fainted:
+                self._consecutive_dead_matchup_stays = 0
+                return 0.0
 
-        damaging = [m for m in our_mon.moves.values() if m.base_power > 0]
-        if not damaging:
-            self._consecutive_dead_matchup_stays = 0
-            return 0.0
+            damaging = [m for m in our_mon.moves.values() if m.base_power > 0]
+            if not damaging:
+                self._consecutive_dead_matchup_stays = 0
+                return 0.0
 
-        best_mult = max(self._effective_multiplier(m.type, opp_mon) for m in damaging)
+            best_mult = max(self._effective_multiplier(m.type, opp_mon) for m in damaging)
         if best_mult > 0.0:
             self._consecutive_dead_matchup_stays = 0
             return 0.0
@@ -697,8 +803,41 @@ class Gen3RewardManager:
     def _effective_multiplier(self, move_type, mon) -> float:
         return _effective_multiplier_fn(move_type, mon)
 
-    def _update_opp_se_threat(self, battle) -> None:
+    def _live_eff_mult(self, move_type, live_mon) -> float:
+        """``effective_multiplier`` for a LiveView ``LivePokemon``, via the primitive
+        ``effective_multiplier_by_types`` (no poke-env ``Pokemon``). Byte-identical to
+        the raw-battle path: the LivePokemon carries the same types/ability/status the
+        raw ``mon`` would expose, just in id-string form."""
+        types = live_mon.types
+        t1 = _ptype(types[0]) if types else None
+        t2 = _ptype(types[1]) if len(types) > 1 else None
+        return _effective_multiplier_by_types_fn(
+            move_type, t1, t2, live_mon.ability, _status_enum(live_mon.status)
+        )
+
+    def _live_status_move_immune(self, move_id, live_mon) -> bool:
+        """``is_status_move_immune`` for a LiveView ``LivePokemon`` — type immunity to
+        the status the move inflicts, or the mon already carrying a status."""
+        immune_types = _STATUS_MOVE_IMMUNITY.get(move_id, frozenset())
+        mon_types = {_ptype(t) for t in live_mon.types}
+        return bool(immune_types & mon_types) or live_mon.status is not None
+
+    def _update_opp_se_threat(self, battle, live=None) -> None:
         """Snapshot whether opp active has a revealed SE move vs our active, for next turn."""
+        if live is not None:
+            our_mon = live.ours.active
+            opp_mon = live.opp.active
+            if not our_mon or not opp_mon:
+                self._prev_opp_se_threat = False
+                return
+            for mid in opp_mon.move_ids:
+                md = _movedex.get(mid)
+                if md is not None and md.base_power > 0:
+                    if self._live_eff_mult(md.type, our_mon) >= 2.0:
+                        self._prev_opp_se_threat = True
+                        return
+            self._prev_opp_se_threat = False
+            return
         our_mon = battle.active_pokemon
         opp_mon = battle.opponent_active_pokemon
         if not our_mon or not opp_mon:
@@ -723,7 +862,7 @@ class Gen3RewardManager:
             return SPIKES_WASTE_PENALTY
         return 0.0
 
-    def _compute_futile_attack_penalty(self, delta: TurnDelta, battle) -> float:
+    def _compute_futile_attack_penalty(self, delta: TurnDelta, battle, live=None) -> float:
         """Penalise attacking moves where the opponent's total HP went up or stayed even
         (Leftovers healed as much or more than we dealt). Skips status moves, switches,
         and cases where we failed to act or the opponent used Rest."""
@@ -739,9 +878,18 @@ class Gen3RewardManager:
         # the penalty on a normal turn where they didn't actually rest.
         if delta.opp_resolved_move_id == "rest":
             return 0.0  # opponent used Rest; large self-heal is expected
-        move = battle.active_pokemon.moves.get(delta.our_move_id) if battle.active_pokemon else None
-        if move is None or move.base_power == 0:
-            return 0.0  # status or utility move — handled by other signals
+        # Damaging-move gate: our move must be a revealed damaging move. Power comes
+        # from gen3_movedex (LiveView path) or the raw revealed Move (battle path).
+        if live is not None:
+            our_mon = live.ours.active
+            md = (_movedex.get(delta.our_move_id)
+                  if our_mon and delta.our_move_id in our_mon.move_ids else None)
+            if md is None or md.base_power == 0:
+                return 0.0  # status or utility move — handled by other signals
+        else:
+            move = battle.active_pokemon.moves.get(delta.our_move_id) if battle.active_pokemon else None
+            if move is None or move.base_power == 0:
+                return 0.0  # status or utility move — handled by other signals
         # Type immunity: 0 damage by definition — use the harder penalty.
         if delta.our_effectiveness == 0.0:
             return FUTILE_IMMUNE_PENALTY
@@ -785,18 +933,25 @@ class Gen3RewardManager:
             return 0.0  # status landed — no penalty
         return STATUS_WASTED_PENALTY
 
-    def _compute_boost_utilized(self, delta: TurnDelta, battle) -> float:
+    def _compute_boost_utilized(self, delta: TurnDelta, battle, live=None) -> float:
         """Reward attacking moves that leverage active stat boosts."""
         if delta.our_move_id is None or delta.our_switch_to is not None:
             return 0.0
         if delta.our_failed_to_move:
             return 0.0
-        mon = battle.active_pokemon
-        if not mon:
-            return 0.0
-        move = mon.moves.get(delta.our_move_id)
-        if move is None or move.base_power == 0:
-            return 0.0
+        if live is not None:
+            mon = live.ours.active
+            md = (_movedex.get(delta.our_move_id)
+                  if mon and delta.our_move_id in mon.move_ids else None)
+            if md is None or md.base_power == 0:
+                return 0.0
+        else:
+            mon = battle.active_pokemon
+            if not mon:
+                return 0.0
+            move = mon.moves.get(delta.our_move_id)
+            if move is None or move.base_power == 0:
+                return 0.0
         # Use the higher of atk (idx 0) or spa (idx 2) boost
         effective_boost = max(int(self._our_boosts_before[0]), int(self._our_boosts_before[2]))
         if effective_boost <= 0:
@@ -804,7 +959,7 @@ class Gen3RewardManager:
         damage_dealt = max(0.0, -float(delta.opp_hp_delta.sum()))
         return effective_boost * BOOST_UTILIZED_SCALE * damage_dealt
 
-    def _compute_finishing_blow_bonus(self, delta: TurnDelta, battle) -> float:
+    def _compute_finishing_blow_bonus(self, delta: TurnDelta, battle, live=None) -> float:
         """Extra bonus when a damaging move secures the KO."""
         if not delta.opp_fainted:
             return 0.0
@@ -812,6 +967,13 @@ class Gen3RewardManager:
             return 0.0
         if delta.our_failed_to_move:
             return 0.0
+        if live is not None:
+            mon = live.ours.active
+            md = (_movedex.get(delta.our_move_id)
+                  if mon and delta.our_move_id in mon.move_ids else None)
+            if md is None or md.base_power == 0:
+                return 0.0
+            return FINISHING_BLOW_BONUS
         mon = battle.active_pokemon
         if not mon:
             return 0.0
@@ -868,14 +1030,14 @@ class Gen3RewardManager:
             # don't double-count with an explosion penalty on top.
 
         # --- Finishing blow ---
-        bd.finishing_blow = self._compute_finishing_blow_bonus(delta, battle)
+        bd.finishing_blow = self._compute_finishing_blow_bonus(delta, battle, live)
 
         # --- Attack signals ---
         bd.roar = self._compute_roar_bonus(delta, battle, live)
-        bd.futile_attack = self._compute_futile_attack_penalty(delta, battle)
+        bd.futile_attack = self._compute_futile_attack_penalty(delta, battle, live)
         bd.futile_setup = self._compute_futile_setup_penalty(delta)
         bd.setup_low_hp = self._compute_setup_low_hp_penalty(delta)
-        bd.boost_utilized = self._compute_boost_utilized(delta, battle)
+        bd.boost_utilized = self._compute_boost_utilized(delta, battle, live)
 
         # --- Field control ---
         bd.spikes = self._compute_spikes_bonus(delta, battle, live)
@@ -883,22 +1045,26 @@ class Gen3RewardManager:
         # --- Positional: penalty for staying in against a known threat ---
         bd.matchup_penalty = self._compute_matchup_penalty(delta)
         # Escalating penalty for refusing to pivot out of a 0×-only matchup.
-        bd.dead_matchup_tax = self._compute_dead_matchup_tax(delta, battle)
+        bd.dead_matchup_tax = self._compute_dead_matchup_tax(delta, battle, live)
 
         # --- Switch rewards (see SWITCH_REWARDS.md for full breakdown) ---
         # Pivot, SE, and sleep-out are skipped when phazed — roar removes our
         # choice, so those signals don't apply.
         if delta.our_switch_to is not None:
             if not self._last_switch_was_roared:
-                bd.pivot_protect, bd.pivot_status, bd.pivot_damage = self._compute_pivot_bonus(delta, battle)
-                bd.se_switch = self._compute_se_switch_bonus(delta, battle)
-                bd.sleep_out = self._compute_sleep_out_bonus(delta, battle)
+                bd.pivot_protect, bd.pivot_status, bd.pivot_damage = self._compute_pivot_bonus(delta, battle, live)
+                bd.se_switch = self._compute_se_switch_bonus(delta, battle, live)
+                bd.sleep_out = self._compute_sleep_out_bonus(delta, battle, live)
                 # Update per-mon opponent tracker for future se_switch gating
-                our_mon_in = battle.active_pokemon
-                opp_mon_in = battle.opponent_active_pokemon
+                if live is not None:
+                    our_mon_in = live.ours.active
+                    opp_mon_in = live.opp.active
+                else:
+                    our_mon_in = battle.active_pokemon
+                    opp_mon_in = battle.opponent_active_pokemon
                 if our_mon_in and opp_mon_in and not opp_mon_in.fainted:
                     self._last_opp_seen_by[our_mon_in.species] = opp_mon_in.species
-            bd.sleep_in = self._compute_sleep_in_penalty(delta, battle)
+            bd.sleep_in = self._compute_sleep_in_penalty(delta, battle, live)
 
         # --- Status signals ---
         bd.status, _d_opp_statused = self._compute_status_reward(delta, battle, live)
@@ -927,7 +1093,7 @@ class Gen3RewardManager:
 
         # Update end-of-turn snapshots for next turn's checks
         self._prev_opp_boosts = self._opp_active_boosts(battle, live)
-        self._update_opp_se_threat(battle)
+        self._update_opp_se_threat(battle, live)
 
         # Track whether our last move did anything PRODUCTIVE this turn, for the
         # escalating repetition tax. A move counts as effective if it dealt damage,
