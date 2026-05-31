@@ -2,6 +2,7 @@ import numpy as np
 from .base import ObservationEncoder
 from .constants import MOVE_SLOT_DIM, MAX_PP
 from .types import TypeEncoder
+from agents import gen3_movedex
 from poke_env.battle.abstract_battle import AbstractBattle
 from poke_env.battle.move_category import MoveCategory
 from typing import Any, List, Dict
@@ -16,13 +17,15 @@ HIDDEN_POWER_MOVE_NUM = 237
 class MovesEncoder(ObservationEncoder):
     """
     Encodes move IDs and reveal status for 4 move slots.
-    Enriches with metadata from mappings (Power, Secondary, Recoil).
+
+    Move reference data (num / power / type / secondary / recoil / accuracy / never-miss)
+    is read from the ``gen3_movedex`` concept module — the single source of truth, built
+    from the same ``data/pokemon/gen3_moves.json`` this encoder used to be handed as a
+    dict. Category and PP still come from the live move object (poke-env), unchanged.
+    ``reverse_mapping`` (move num → name) is kept for ``describe_vector``.
     """
-    
-    def __init__(self, mapping=None, reverse_mapping=None):
-        if not mapping:
-            raise ValueError("MovesEncoder requires a non-empty mapping for enrichment!")
-        self.mapping = mapping
+
+    def __init__(self, reverse_mapping=None):
         self.reverse_mapping = reverse_mapping or {}
 
     @property
@@ -42,26 +45,29 @@ class MovesEncoder(ObservationEncoder):
                 move = moves[i]
                 move_id = move.id
                 
-                # Extract metadata from mapping
-                if move_id not in self.mapping:
+                # Reference metadata from the gen3 move dex (single source of truth).
+                md = gen3_movedex.get(move_id)
+                if md is None:
                     raise ValueError(f"Unrecognized move: {move_id}. Update data/pokemon/gen3_moves.json")
-                entry = self.mapping[move_id]
-                num = entry.get("num", 0)
-                secondary = 1.0 if entry.get("hasSecondary") else 0.0
-                recoil = 1.0 if entry.get("hasRecoil") else 0.0
+                num = md.num
+                secondary = 1.0 if md.has_secondary else 0.0
+                recoil = 1.0 if md.has_recoil else 0.0
 
                 if move_id == "hiddenpower":
                     # Bare "hiddenpower" id = type unknown (opponent before reveal).
                     # Our own HP arrives here as a typed variant (e.g. "hiddenpowergrass"),
-                    # routed through the else branch where the mapping entry supplies the
-                    # real type and 70bp. The mapping's bare-HP entry has basePower=0 and
-                    # type=Normal — neither correct — so we override here.
+                    # routed through the else branch where the dex supplies the real type
+                    # and 70bp. The dex's bare-HP entry has basePower=0 and type=Normal —
+                    # neither correct — so we override here.
                     power = 70
                     type_id = 0
                 else:
-                    power = entry.get("basePower", move.base_power)
-                    move_type = entry.get("type", "Normal").upper()
-                    type_id = TypeEncoder.TYPE_TO_IDX.get(move_type, 0)
+                    power = md.base_power
+                    # TYPE_TO_IDX keys typeless moves as "???" (Curse); PokemonType
+                    # spells that member THREE_QUESTION_MARKS — translate so the type
+                    # slot matches the data string the index was built from.
+                    type_name = "???" if md.type.name == "THREE_QUESTION_MARKS" else md.type.name
+                    type_id = TypeEncoder.TYPE_TO_IDX.get(type_name, 0)
                 
                 base_idx = i * MOVE_SLOT_DIM
                 # 1. Move ID
@@ -101,8 +107,8 @@ class MovesEncoder(ObservationEncoder):
                 # (Swift, Aerial Ace, all status/self moves) bypasses the
                 # accuracy/evasion check entirely — a kind difference, not a 1% one,
                 # so it gets its own bit rather than the "101" trick.
-                vec[base_idx + 9] = float(entry.get("accuracy", 100)) / 100.0
-                vec[base_idx + 10] = 1.0 if entry.get("never_miss") else 0.0
+                vec[base_idx + 9] = float(md.accuracy) / 100.0
+                vec[base_idx + 10] = 1.0 if md.never_miss else 0.0
 
         return vec
 

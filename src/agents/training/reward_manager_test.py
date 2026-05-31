@@ -134,6 +134,72 @@ def _delta(
     )
 
 
+class _LiveMonView:
+    """Stand-in for a LiveView ``LivePokemon`` exposing only the fields the
+    partial-re-source reads touch: ``status``, ``fainted``, ``boosts``."""
+
+    def __init__(self, status=None, fainted=False, boosts=None):
+        self.status = status
+        self.fainted = fainted
+        self.boosts = boosts if isinstance(boosts, dict) else {}
+
+
+class _LiveSideView:
+    def __init__(self, mons=(), active=None, side_conditions=None):
+        self.mons = tuple(mons)
+        self.active = active
+        self.side_conditions = side_conditions or {}
+
+
+class _LiveViewStub:
+    def __init__(self, ours, opp, won=False, lost=False, finished=False):
+        self.ours = ours
+        self.opp = opp
+        self.won = won
+        self.lost = lost
+        self.finished = finished
+
+
+def _live_view(battle):
+    """Build a LiveView-shaped stub from a mock battle's CURRENT state, mirroring
+    what ``battle.live_view()`` returns in production for the four partial-re-source
+    reads (opp spikes layers, per-side status counts, opp-active boosts, terminal
+    flags). Built LAZILY off the battle so a test that mutates ``battle.opponent_team``
+    after ``_battle()`` is reflected — exactly as the real LiveView reads live state.
+
+    The type/effectiveness helpers (se_switch, pivot, dead_matchup, …) still read
+    the poke-env mock mons on the battle directly, not this view."""
+    def _fainted(m):
+        f = getattr(m, "fainted", False)
+        return bool(f) if not isinstance(f, MagicMock) else False
+
+    def _mons(team):
+        return tuple(
+            _LiveMonView(status=getattr(m, "status", None), fainted=_fainted(m))
+            for m in (team or {}).values()
+        )
+
+    # SideCondition enum keys -> id-form string keys ("spikes"), mirroring LiveView.
+    sc = {
+        (k.name.lower() if hasattr(k, "name") else str(k)): v
+        for k, v in (getattr(battle, "opponent_side_conditions", {}) or {}).items()
+    }
+    opp_active_mon = getattr(battle, "opponent_active_pokemon", None)
+    opp_active = (
+        _LiveMonView(boosts=getattr(opp_active_mon, "boosts", {}))
+        if opp_active_mon is not None else None
+    )
+    return _LiveViewStub(
+        ours=_LiveSideView(mons=_mons(getattr(battle, "team", {}))),
+        opp=_LiveSideView(
+            mons=_mons(getattr(battle, "opponent_team", {})),
+            active=opp_active,
+            side_conditions=sc,
+        ),
+        won=battle.won, lost=battle.lost, finished=battle.finished,
+    )
+
+
 def _battle(won=False, lost=False, finished=False, opp_spikes=0,
             our_mon=None, opp_mon=None):
     battle = MagicMock()
@@ -149,6 +215,7 @@ def _battle(won=False, lost=False, finished=False, opp_spikes=0,
     battle.opponent_side_conditions = (
         {SideCondition.SPIKES: opp_spikes} if opp_spikes > 0 else {}
     )
+    battle.live_view = lambda: _live_view(battle)
     return battle
 
 

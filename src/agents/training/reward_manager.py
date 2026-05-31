@@ -207,6 +207,13 @@ class Gen3RewardManager:
     """
     def __init__(self, log_level: LogLevel = LogLevel.QUIET):
         self.log_level = log_level
+        # When True, current-board facts (spikes layers, team status counts,
+        # opp-active boosts, terminal flags) are re-sourced from battle.live_view()
+        # (the vetted LiveView read-model) instead of the raw poke-env battle.
+        # Flip to False for the equivalence harness
+        # (reward_resourcing_equivalence_fuzz_test.py), which diffs the two
+        # sources turn-by-turn to prove the re-sourcing is value-neutral.
+        self._read_live = True
         self.switch_count = 0
         self.forced_switch_count = 0
         self.attack_count = 0
@@ -338,45 +345,66 @@ class Gen3RewardManager:
                 self._last_reward_metadata = {"type": "FORCED_FAINT"}
 
             else:
-                # Voluntary switch — look up the target species via slot map
+                # Voluntary switch — INTENT only. The subsidy / bounce-tax / escape
+                # bonus and their cross-turn counters (switch_count, last_switch_turn,
+                # _last_switched_from, _consecutive_bounces) are NOT computed here: a
+                # pressed switch can silently fail to execute (poke-env "gap=0": the
+                # opponent faints on hazard entry the same window and our switch never
+                # realizes), and crediting/perturbing on the PRESS mis-attributes a
+                # reward to a turn that shows no switch. We stash the intent and settle
+                # it in _apply_switch_outcome() once delta.our_switch_to confirms the
+                # switch actually happened.
                 slot_to_species = {v: k for k, v in ctx.our_slot_map.items()}
                 target_species = slot_to_species.get(action)
-
-                if (target_species and
-                        target_species == self._last_switched_from and
-                        self._last_switched_from not in ("NULL", "NONE")):
-                    # Switching straight back to the mon we just left = a bounce.
-                    # Escalate with the oscillation depth so A↔B for 10-30 turns
-                    # becomes prohibitively expensive instead of a flat rounding error.
-                    self._consecutive_bounces += 1
-                    bouncing_tax = max(BOUNCING_TAX_STEP * self._consecutive_bounces,
-                                       BOUNCING_TAX_FLOOR)
-                    self._pending_subsidy += bouncing_tax
-                else:
-                    self._consecutive_bounces = 0
-
-                spam_mult = 1.0 if (ctx.turn - self.last_switch_turn) > 1 else 0.0
-                subsidy = SWITCH_BASE_BONUS * spam_mult
-                self._pending_subsidy += subsidy
-
-                escape_bonus = 0.0
-                if self._prev_opp_se_threat:
-                    escape_bonus = ESCAPE_THREAT_BONUS
-                    self._pending_subsidy += escape_bonus
-
-                self.switch_count += 1
-                self.last_switch_turn = ctx.turn
-                self._last_switched_from = ctx.our_active  # what we're switching away from
                 self._last_reward_metadata = {
                     "type": "VOLUNTARY",
-                    "spam_mult": spam_mult,
-                    "repetition_tax": 0.0,
-                    "bouncing_tax": bouncing_tax,
-                    "subsidy": subsidy,
-                    "escape_threat_switch": escape_bonus,
+                    "decision_turn": ctx.turn,
+                    "switch_from": ctx.our_active,   # mon we're leaving
+                    "target_species": target_species,
                 }
 
         self._last_action_idx = action
+
+    def _apply_switch_outcome(self, delta: TurnDelta, bd: "RewardBreakdown") -> None:
+        """Settle the voluntary-switch subsidy at OUTCOME time.
+
+        ``record_action`` recorded that the model PRESSED a voluntary switch (intent);
+        this fires only when the event-sourced ``delta`` confirms a switch actually
+        happened (``our_switch_to is not None``). On a poke-env "gap=0" no-op — the
+        press didn't execute because the opponent fainted on hazard entry the same
+        window — we credit nothing and leave the bounce/spam counters untouched, so a
+        phantom switch neither earns +0.5 nor perturbs future oscillation magnitudes.
+
+        For a realized switch the math + counter mutations are identical to the old
+        record_action path (same inputs: the intent-captured target / decision-turn /
+        switched-from mon, the persistent counters, and the pre-turn opp-SE-threat
+        snapshot which `_update_opp_se_threat` hasn't refreshed yet this turn)."""
+        meta = self._last_reward_metadata
+        if delta.our_switch_to is None:
+            return  # pressed a switch but it never executed — no credit, no counters
+
+        target = meta.get("target_species")
+        decision_turn = meta.get("decision_turn", -1)
+
+        # Bounce: switched straight back to the mon we just left. Escalates with the
+        # oscillation depth so A↔B for 10-30 turns is prohibitive, not a rounding error.
+        if (target and target == self._last_switched_from
+                and self._last_switched_from not in ("NULL", "NONE")):
+            self._consecutive_bounces += 1
+            bd.switch_bouncing_tax = max(
+                BOUNCING_TAX_STEP * self._consecutive_bounces, BOUNCING_TAX_FLOOR)
+        else:
+            self._consecutive_bounces = 0
+
+        spam_mult = 1.0 if (decision_turn - self.last_switch_turn) > 1 else 0.0
+        bd.switch_base = SWITCH_BASE_BONUS * spam_mult
+
+        if self._prev_opp_se_threat:
+            bd.escape_threat_switch = ESCAPE_THREAT_BONUS
+
+        self.switch_count += 1
+        self.last_switch_turn = decision_turn
+        self._last_switched_from = meta.get("switch_from", "NULL")
 
     def compute_base_reward(self, delta: TurnDelta, battle) -> float:
         """
@@ -401,14 +429,14 @@ class Gen3RewardManager:
 
         return reward
 
-    def _compute_roar_bonus(self, delta: TurnDelta, battle) -> float:
+    def _compute_roar_bonus(self, delta: TurnDelta, battle, live) -> float:
         """Reward Roar when it forces a switch AND spikes are up or opp had positive boosts.
         Penalise Roar when it fails to force any switch at all (wasted turn)."""
         if delta.our_move_id != "roar":
             return 0.0
         if delta.opp_switch_to is None:
             return FAILED_ROAR_PENALTY
-        has_spikes = battle.opponent_side_conditions.get(SideCondition.SPIKES, 0) > 0
+        has_spikes = self._opp_spikes(battle, live) > 0
         had_boosts = any(v > 0 for v in self._prev_opp_boosts.values())
         return ROAR_BONUS if (has_spikes or had_boosts) else 0.0
 
@@ -457,17 +485,10 @@ class Gen3RewardManager:
 
         return 0.0
 
-    def _compute_status_reward(self, delta: TurnDelta, battle) -> tuple[float, int]:
+    def _compute_status_reward(self, delta: TurnDelta, battle, live) -> tuple[float, int]:
         """One-time reward when the statused-mon count changes on either side.
         Returns (reward, d_opp) where d_opp is the delta in opponent statused count."""
-        our_statused = sum(
-            1 for mon in battle.team.values()
-            if mon.status is not None and not mon.fainted
-        )
-        opp_statused = sum(
-            1 for mon in battle.opponent_team.values()
-            if mon.status is not None and not mon.fainted
-        )
+        our_statused, opp_statused = self._statused_counts(battle, live)
         d_our = our_statused - self._prev_our_statused
         d_opp = opp_statused - self._prev_opp_statused
         self._prev_our_statused = our_statused
@@ -628,6 +649,51 @@ class Gen3RewardManager:
         return max(DEAD_MATCHUP_TAX_STEP * self._consecutive_dead_matchup_stays,
                    DEAD_MATCHUP_TAX_FLOOR)
 
+    # =========================================================
+    # CURRENT-BOARD ACCESSORS (event-sourced re-sourcing, Step 5)
+    #
+    # These read current-board facts through the vetted LiveView
+    # read-model (built once per turn in process_turn_reward) so
+    # the reward manager doesn't reach into the raw poke-env battle
+    # for "what is true now". When `live` is None (equivalence
+    # harness with _read_live=False) they fall back to the battle —
+    # the two paths are value-identical, which the harness proves.
+    # =========================================================
+
+    def _opp_spikes(self, battle, live) -> int:
+        """Spikes layers on the opponent's side (0-3)."""
+        if live is not None:
+            return live.opp.side_conditions.get("spikes", 0)
+        return battle.opponent_side_conditions.get(SideCondition.SPIKES, 0)
+
+    def _statused_counts(self, battle, live) -> tuple[int, int]:
+        """(our, opp) counts of non-fainted mons carrying a status condition."""
+        if live is not None:
+            our = sum(1 for m in live.ours.mons if m.status is not None and not m.fainted)
+            opp = sum(1 for m in live.opp.mons if m.status is not None and not m.fainted)
+            return our, opp
+        our = sum(
+            1 for mon in battle.team.values()
+            if mon.status is not None and not mon.fainted
+        )
+        opp = sum(
+            1 for mon in battle.opponent_team.values()
+            if mon.status is not None and not mon.fainted
+        )
+        return our, opp
+
+    def _opp_active_boosts(self, battle, live) -> dict:
+        """Opponent active mon's current stat-stage boosts ({} if none on field)."""
+        if live is not None:
+            return dict(live.opp.active.boosts) if live.opp.active else {}
+        opp_mon = battle.opponent_active_pokemon
+        return dict(opp_mon.boosts) if opp_mon else {}
+
+    def _terminal(self, battle, live) -> tuple:
+        """(won, lost, finished) — terminal battle flags."""
+        src = live if live is not None else battle
+        return src.won, src.lost, src.finished
+
     def _effective_multiplier(self, move_type, mon) -> float:
         return _effective_multiplier_fn(move_type, mon)
 
@@ -646,9 +712,9 @@ class Gen3RewardManager:
                     return
         self._prev_opp_se_threat = False
 
-    def _compute_spikes_bonus(self, delta: TurnDelta, battle) -> float:
+    def _compute_spikes_bonus(self, delta: TurnDelta, battle, live) -> float:
         """Reward each new spike layer added; penalise wasting a turn at layer cap."""
-        curr = battle.opponent_side_conditions.get(SideCondition.SPIKES, 0)
+        curr = self._opp_spikes(battle, live)
         new_layers = curr - self._prev_opp_spikes
         self._prev_opp_spikes = curr
         if new_layers > 0:
@@ -763,14 +829,21 @@ class Gen3RewardManager:
         """
         bd = RewardBreakdown()
 
+        # Current-board facts are read through the vetted LiveView read-model
+        # (built once per turn) rather than the raw poke-env battle. `live` is
+        # None only in the equivalence harness (_read_live=False), where the
+        # accessors fall back to the battle to prove the two are value-identical.
+        live = battle.live_view() if self._read_live else None
+
         # --- Base ---
         bd.hp_ours = float(delta.our_hp_delta.sum()) * HP_VALUE
         bd.hp_opp = -float(delta.opp_hp_delta.sum()) * HP_VALUE
         bd.faint_ours = -(FAINT_BASE + FAINT_HP_SCALE * self._our_active_hp_before) if delta.we_fainted else 0.0
         bd.faint_opp = (FAINT_BASE + FAINT_HP_SCALE * self._opp_active_hp_before) if delta.opp_fainted else 0.0
-        if battle.won:
+        won, lost, finished = self._terminal(battle, live)
+        if won:
             bd.win_loss = VICTORY_VALUE
-        elif battle.lost or battle.finished:
+        elif lost or finished:
             bd.win_loss = -VICTORY_VALUE
 
         base_reward = bd.hp_ours + bd.hp_opp + bd.faint_ours + bd.faint_opp + bd.win_loss
@@ -798,14 +871,14 @@ class Gen3RewardManager:
         bd.finishing_blow = self._compute_finishing_blow_bonus(delta, battle)
 
         # --- Attack signals ---
-        bd.roar = self._compute_roar_bonus(delta, battle)
+        bd.roar = self._compute_roar_bonus(delta, battle, live)
         bd.futile_attack = self._compute_futile_attack_penalty(delta, battle)
         bd.futile_setup = self._compute_futile_setup_penalty(delta)
         bd.setup_low_hp = self._compute_setup_low_hp_penalty(delta)
         bd.boost_utilized = self._compute_boost_utilized(delta, battle)
 
         # --- Field control ---
-        bd.spikes = self._compute_spikes_bonus(delta, battle)
+        bd.spikes = self._compute_spikes_bonus(delta, battle, live)
 
         # --- Positional: penalty for staying in against a known threat ---
         bd.matchup_penalty = self._compute_matchup_penalty(delta)
@@ -828,19 +901,18 @@ class Gen3RewardManager:
             bd.sleep_in = self._compute_sleep_in_penalty(delta, battle)
 
         # --- Status signals ---
-        bd.status, _d_opp_statused = self._compute_status_reward(delta, battle)
+        bd.status, _d_opp_statused = self._compute_status_reward(delta, battle, live)
         bd.status_wasted = self._compute_status_wasted_penalty(delta, _d_opp_statused)
 
-        # --- Subsidy / taxes (set by record_action before the turn) ---
-        # Consume _pending_subsidy to keep the existing handoff contract, then
-        # store the individual components in the breakdown from _last_reward_metadata.
+        # --- Subsidy / taxes ---
+        # Attack taxes are action-keyed (a pressed move/struggle reliably resolves or
+        # is |cant|), so record_action computes them. The switch subsidy is OUTCOME-keyed
+        # and settled here against delta.our_switch_to (see _apply_switch_outcome).
         if hasattr(self, "_pending_subsidy"):
             del self._pending_subsidy
         meta = self._last_reward_metadata
         if meta.get("type") == "VOLUNTARY":
-            bd.switch_base = meta.get("subsidy", 0.0)
-            bd.switch_bouncing_tax = meta.get("bouncing_tax", 0.0)
-            bd.escape_threat_switch = meta.get("escape_threat_switch", 0.0)
+            self._apply_switch_outcome(delta, bd)
         elif meta.get("type") == "ATTACK":
             bd.repetition_tax = meta.get("repetition_tax", 0.0)
             bd.struggle_tax = meta.get("struggle_loop_tax", 0.0)
@@ -854,8 +926,7 @@ class Gen3RewardManager:
             bd.stall_tax = -min(STALL_TAX_PER_TURN * ramp, STALL_TAX_MAX)
 
         # Update end-of-turn snapshots for next turn's checks
-        opp_mon = battle.opponent_active_pokemon
-        self._prev_opp_boosts = dict(opp_mon.boosts) if opp_mon else {}
+        self._prev_opp_boosts = self._opp_active_boosts(battle, live)
         self._update_opp_se_threat(battle)
 
         # Track whether our last move did anything PRODUCTIVE this turn, for the
@@ -883,10 +954,9 @@ class Gen3RewardManager:
             )
             if self.log_level >= LogLevel.DEBUG:
                 if meta.get("type") == "VOLUNTARY":
-                    print(f"    🔍 [DEEP TRACE] Type: VOLUNTARY SWITCH")
-                    print(f"       Spam mult: {meta['spam_mult']:.1f}")
-                    print(f"       Taxes: Repetition:{meta['repetition_tax']:.2f} | Bouncing:{meta['bouncing_tax']:.2f}")
-                    print(f"       Final Subsidy: {meta['subsidy']:.4f}")
+                    realized = "realized" if bd.switch_base or bd.switch_bouncing_tax or bd.escape_threat_switch else "no-op (pressed switch didn't execute)"
+                    print(f"    🔍 [DEEP TRACE] Type: VOLUNTARY SWITCH ({realized})")
+                    print(f"       Base:{bd.switch_base:+.2f} | Bouncing:{bd.switch_bouncing_tax:+.2f} | Escape:{bd.escape_threat_switch:+.2f}")
                 elif meta.get("type") == "ATTACK" and (bd.repetition_tax != 0 or bd.struggle_tax != 0):
                     print(f"    🔍 [DEEP TRACE] Type: ATTACK | Repetition Tax: {bd.repetition_tax:.2f} | Struggle Loop Tax: {bd.struggle_tax:.2f}")
                 elif meta.get("type") == "FORCED_FAINT":

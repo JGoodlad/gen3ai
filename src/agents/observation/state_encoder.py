@@ -122,7 +122,7 @@ class Gen3ObservationEncoder(ObservationEncoder):
             rev.get("abilities"),
             species_to_ability_priors=mappings.get("ability_priors", {}),
         )
-        self.moves_encoder = MovesEncoder(mappings.get("moves"), rev.get("moves"))
+        self.moves_encoder = MovesEncoder(rev.get("moves"))
         
         self.pokemon_encoder = PokemonEncoder(
             self.species_encoder,

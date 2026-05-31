@@ -9,11 +9,10 @@ which catches integration bugs (stale snapshots, mis-attribution from
 poke-env quirks, signal interactions) that mock-based tests miss.
 
 Architecture:
-  - One `Gen3RewardManager` + `EpisodeTracker` per battle — all per-battle
-    state is keyed by `battle.battle_tag`. The previous single-valued
-    fields silently destroyed each other's state under
-    `max_concurrent_battles>1`, masking signals and producing fake "all
-    clean" results (faint counters at 0 across 10 battles).
+  - One `Gen3RewardManager` per battle — all per-battle state is keyed by
+    `battle.battle_tag`. The previous single-valued fields silently destroyed
+    each other's state under `max_concurrent_battles>1`, masking signals and
+    producing fake "all clean" results (faint counters at 0 across 10 battles).
   - One `_BattleState` snapshot per turn that captures *exactly* what the
     reward manager observed at action time (HP, boosts, opp SE threat).
     This is what the invariants compare against.
@@ -57,8 +56,8 @@ from poke_env.ps_client.server_configuration import LocalhostServerConfiguration
 
 from agents.action.mapper import Gen3ActionMapper
 from agents.action.mask_generator import Gen3ActionMasker
+from agents.battle.gen3_battle import Gen3Battle
 from agents.training.battle_context import BattleContext, TurnDelta
-from agents.training.episode_tracker import EpisodeTracker
 from agents.training.reward_manager import (
     BOOST_MOVES,
     EXPLOSION_BLOCK_BONUS,
@@ -168,10 +167,19 @@ class _BattleState:
     action time. Kept SEPARATE from the reward manager so we can snapshot
     the exact preconditions the invariants reference without depending on
     the manager's internal layout."""
-    tracker: EpisodeTracker
     reward_fn: Gen3RewardManager
     prev_ctx: Optional[BattleContext] = None
     last_action: Optional[int] = None
+    # event_cursor read at the PREVIOUS decision — the start of the window
+    # whose delta we validate on the next turn. The reward delta is folded from
+    # events_since(prev_cursor) (the production path: EpisodeTracker.build_delta
+    # → TurnDelta.build_from_events), NOT the deprecated snapshot-diff
+    # TurnDelta.build. The two resolve our_switch_to differently: the event fold
+    # reads the real |switch| event (robust to a switch-in fainting in-window),
+    # while the snapshot diff nulls our_switch_to when the switch-in faints —
+    # which mis-fired switch_base/switch_bouncing_tax invariants against a
+    # delta that no longer reported the switch the model was credited for.
+    prev_cursor: int = 0
     # Snapshot what record_action() captured for use in invariants.
     our_active_hp_before: float = 1.0
     our_boosts_before: np.ndarray = field(
@@ -486,23 +494,28 @@ def _check_invariants(
         if not (active and active.status == Status.SLP):
             viol(f"sleep_in fired without sleeping active")
 
-    # --- Switch subsidy: switch_base only fires on voluntary switches ---
+    # --- Switch subsidy: only fires on a REALIZED voluntary switch (hard invariant) ---
+    # The reward manager settles the switch subsidy at OUTCOME time
+    # (_apply_switch_outcome, gated on delta.our_switch_to), so a pressed-but-unrealized
+    # switch — the poke-env "gap=0" case where the opponent faints on hazard entry the
+    # same window and our switch silently no-ops — earns nothing and perturbs no
+    # counters. switch_base / switch_bouncing_tax can therefore ONLY be non-zero when
+    # the event-fold confirms the switch; firing without one is a real regression.
     if bd.switch_base != 0.0:
         stats.fires_by_signal["switch_base"] += 1
         if delta.our_switch_to is None:
-            viol(f"switch_base={bd.switch_base:.4f} fired without a switch")
-        # The subsidy starts at SWITCH_BASE_BONUS but can be reduced to 0 by a
-        # spam_mult of 0 (rapid alternating switches). Range: [0, SWITCH_BASE_BONUS].
+            viol(f"switch_base={bd.switch_base:.4f} fired without a realized switch")
+        # Starts at SWITCH_BASE_BONUS, reducible to 0 by spam_mult=0 (rapid alternating
+        # switches). Range: [0, SWITCH_BASE_BONUS].
         if not (0.0 <= bd.switch_base <= SWITCH_BASE_BONUS):
             viol(f"switch_base={bd.switch_base:.4f} out of [0, {SWITCH_BASE_BONUS}]")
 
-    # --- Switch bouncing tax: <= 0, only on switch turns ---
     if bd.switch_bouncing_tax != 0.0:
         stats.fires_by_signal["switch_bouncing_tax"] += 1
+        if delta.our_switch_to is None:
+            viol(f"switch_bouncing_tax={bd.switch_bouncing_tax:.4f} fired without a realized switch")
         if bd.switch_bouncing_tax > 0:
             viol(f"switch_bouncing_tax={bd.switch_bouncing_tax:.4f} must be <= 0")
-        if delta.our_switch_to is None:
-            viol(f"switch_bouncing_tax fired without a switch")
 
     # --- Attack taxes: repetition / struggle ---
     if bd.repetition_tax != 0.0:
@@ -577,7 +590,6 @@ class RewardInvariantFuzzPlayer(Player):
         tag = battle.battle_tag
         if tag not in self._per_battle:
             self._per_battle[tag] = _BattleState(
-                tracker=EpisodeTracker(),
                 reward_fn=Gen3RewardManager(),
             )
         return self._per_battle[tag]
@@ -586,8 +598,19 @@ class RewardInvariantFuzzPlayer(Player):
         """Run one turn's reward computation + invariant check, given a fresh
         curr_ctx. Pulled out so the final-turn check (via
         _battle_finished_callback) can call the same path.
+
+        The delta is folded from the per-decision event window
+        (events_since(prev_cursor)) via TurnDelta.build_from_events — the SAME
+        path the trainee uses in production (EpisodeTracker.build_delta →
+        Gen3Env.calc_reward), so the harness validates the exact delta training
+        computes rather than the deprecated snapshot-diff TurnDelta.build. The
+        switch subsidy is settled at outcome time against this delta, so the
+        switch-subsidy invariant below is a hard check (no gap=0 tolerance).
         """
-        delta = TurnDelta.build(state.prev_ctx, curr_ctx, state.last_action)
+        events = battle.events_since(state.prev_cursor)
+        delta = TurnDelta.build_from_events(
+            state.prev_ctx, curr_ctx, state.last_action, events
+        )
         state.reward_fn.process_turn_reward(battle, delta)
         bd = state.reward_fn._last_breakdown
         _check_invariants(
@@ -636,6 +659,11 @@ class RewardInvariantFuzzPlayer(Player):
             state = self._get_state(battle)
             mask = Gen3ActionMasker.get_mask(battle)
 
+            # event_cursor at THIS decision point — the start of the window whose
+            # delta we'll validate next turn. Read before choosing, mirroring
+            # EpisodeTracker.record() which captures _last_cursor at record time.
+            cursor_now = battle.event_cursor
+
             # Build context with the persistent slot registries — this is
             # how slot maps stay consistent across turns.
             curr_ctx = BattleContext.from_battle(
@@ -671,6 +699,7 @@ class RewardInvariantFuzzPlayer(Player):
 
             state.prev_ctx = curr_ctx
             state.last_action = choice
+            state.prev_cursor = cursor_now
 
             return Gen3ActionMapper.action_to_order(choice, battle)
 
@@ -699,6 +728,9 @@ async def main(n_battles: int = 30) -> None:
     fuzz = RewardInvariantFuzzPlayer(
         battle_format=BATTLE_FORMAT,
         team=tb,
+        # The reward manager now reads current-board facts through battle.live_view(),
+        # which only Gen3Battle provides — match production so the e2e doesn't crash.
+        battle_class=Gen3Battle,
         server_configuration=LocalhostServerConfiguration,
         account_configuration=AccountConfiguration(f"RInv{ts}p", "password"),
         max_concurrent_battles=5,
