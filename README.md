@@ -201,23 +201,26 @@ tools/               # Data generation and team sync utilities
 
 ---
 
-## Observation Vector (1107-dim float32)
+## Observation Vector (3299-dim float32)
 
 | Block | Dims | Offset |
 |---|---|---|
-| Our team (6 × 59) | 354 | 0 |
-| Opp team (6 × 59) | 354 | 354 |
-| Active context ×2 | 46 | 708 |
-| Global env | 13 | 754 |
-| Reactive + matchups | 300 | 767 |
-| Prev-turn action mask | 11 | 1067 |
-| TurnDelta block | 29 | 1078 |
+| Our team (6 × 107) | 642 | 0 |
+| Opp team (6 × 107) | 642 | 642 |
+| Active context ×2 (boosts + full volatiles, `VOLATILE_DIM`=44) | 116 | 1284 |
+| Global env | 18 | 1400 |
+| Reactive + matchups | 300 | 1418 |
+| Prev-turn action mask | 11 | 1718 |
+| Turn history (`N_HISTORY_TURNS`=10 × 157) | 1570 | 1729 |
+| **Total** | **3299** | |
 
-Per-Pokémon slot (59 dims): species ID + 6 base stats, item ID + known, 2 type IDs, ability ID + known, 7-dim status one-hot, 4 × 9-dim move slots, HP fraction, species_known flag, active flag.
+Per-Pokémon slot (107 dims): species ID + 6 base stats, item block (id + known + consumed, 3), 2 type IDs, ability ID + known, 7-dim status one-hot, 4 × 11-dim move slots, HP fraction, species_known flag, sleep/toxic counters (2), **spread block (18: IVs ×6 + EVs ×6 + spread_known + nature ×5)**, **Hidden Power candidate block (17)**, active flag. Own-team IVs/EVs/nature are recovered from the declared team by the poke-env fork's `backfill_teambuilder_spread` (gen3ou has no team preview, so poke-env never attaches the spread); opponent spread is all-zero with `spread_known=0`.
 
-Global env (13 dims): weather one-hot (6), spikes ×2 (2), log-turn (1), our reflect (1), our light screen (1), opp reflect (1), opp light screen (1).
+Move slot (11 dims): move ID, base power (/200), has_secondary, has_recoil, type ID, category (status/physical/special), known flag, current PP, max PP, accuracy, never_miss bit.
 
-TurnDelta block (29 dims): move/type IDs and metadata for both sides last turn, switch flags, fail flags, cant one-hots, HP deltas, faint flags, opp_move_known. All zeros on the first turn of each episode.
+Global env (18 dims): weather block (7: one-hot + cause-aware permanence + turns-remaining), spikes ×2 (2), log-turn (1), per-side screens (8: Reflect / Light Screen / Safeguard / Mist × both sides).
+
+Turn history — `N_HISTORY_TURNS`=10 TurnDelta slots of 157 dims each, **folded from the event log** (`Gen3Battle.events_since(cursor)` per decision window). Each slot carries both sides' move/type/species IDs (embedded) + outcomes (hit/miss/fail/crit), cant one-hots, boost and HP deltas, faint flags + multi-hot faint causes, status applied/cured transitions, item-used bits, and the move we attempted (even if it never fired). All zeros on the first turn of each episode.
 
 ---
 
