@@ -13,7 +13,8 @@ from agents.action.ordering_integrity import (
     reorder_move_bits_to_sorted,
     assert_sorted_validity_correct,
 )
-from agents.training.battle_context import BattleContext, TurnDelta
+from agents.training.battle_snapshot import BattleContext
+from agents.training.turn_delta import TurnDelta
 from agents.training.hidden_power_tracker import HiddenPowerTracker
 from agents.training.slot_registry import SlotRegistry
 
@@ -232,39 +233,43 @@ class EpisodeTracker:
         return battle.events_since(cursor)
 
     def build_delta(self, battle=None) -> TurnDelta:
-        """Diff between the last two turns. Returns an empty delta at episode start.
+        """Fold the most-recent turn's TurnDelta from the event log. Returns an empty delta
+        at episode start.
 
-        Pass ``battle`` (a Gen3Battle) to use the event-fold path (Step 4).
-        Without it the old snapshot-diff path is used as a fallback.
+        ``battle`` (a Gen3Battle) supplies the event window via ``events_since``; the single
+        event-fold path (``TurnDelta.build_from_events``) is always used. A standalone caller
+        without an event log passes ``battle=None`` ⇒ an empty window, which folds the
+        current-board snapshot for HP (see ``build_from_events``).
         """
         if len(self._history) < 2:
             return TurnDelta.empty()
         prev_ctx = self._history[-2]
         curr_ctx = self._history[-1]
-        if battle is not None and hasattr(battle, "events_since") and self._cursors:
-            cursor = self._cursors[-1]
-            events = self._get_events_for_window(battle, cursor)
-            return TurnDelta.build_from_events(prev_ctx, curr_ctx, self._last_action, events)
-        return TurnDelta.build(prev_ctx, curr_ctx, self._last_action)
+        cursor = self._cursors[-1] if self._cursors else 0
+        events = self._get_events_for_window(battle, cursor)
+        return TurnDelta.build_from_events(prev_ctx, curr_ctx, self._last_action, events)
 
-    def _encode_delta_slot(self, i: int, encoder, battle, use_events) -> np.ndarray:
+    def _encode_delta_slot(self, i: int, encoder, battle) -> np.ndarray:
         """Encode the TurnDelta for history slot ``i`` (0 = most-recent), folded over its
         OWN bounded decision window: ``[cursors[-1-i] : cursors[-i])`` (``end=None`` ⇒ to
         "now" for the most-recent slot). The upper bound is what makes the slot represent
         its own turn and the per-step cost bounded; the most-recent slot's ``end=None``
         resolves to the same cursor that bounds it on the NEXT step, so a cached vector is
         bit-identical to recomputing it later — which is why the deque memoization is safe.
+
+        Always folds via ``build_from_events``. ``battle=None`` (or a battle without an event
+        log) ⇒ an empty window per slot — the standalone/test path.
         """
         action = self._actions[-1 - i]
         ctx_prev = self._history[-2 - i]
         ctx_curr = self._history[-1 - i]
-        if use_events:
+        if battle is not None and hasattr(battle, "events_between") and self._cursors:
             start = self._cursors[-1 - i]
             end = None if i == 0 else self._cursors[-i]
             events = battle.events_between(start, end)
-            delta = TurnDelta.build_from_events(ctx_prev, ctx_curr, action, events)
         else:
-            delta = TurnDelta.build(ctx_prev, ctx_curr, action)
+            events = []
+        delta = TurnDelta.build_from_events(ctx_prev, ctx_curr, action, events)
         return encoder.encode(delta)
 
     def prev_N_delta_vecs(
@@ -289,9 +294,10 @@ class EpisodeTracker:
             return result
 
         if not use_events:
-            # Fallback (no event log): recompute every slot, uncached.
+            # Standalone / no-event-log path: recompute every slot, uncached (each folds
+            # over an empty window — the current-board snapshot for HP).
             for i in range(available):
-                result[n - 1 - i] = self._encode_delta_slot(i, encoder, battle, use_events)
+                result[n - 1 - i] = self._encode_delta_slot(i, encoder, battle)
             return result
 
         # Event path: extend the deque by the newly-completed delta(s) only. Use the
@@ -301,14 +307,14 @@ class EpisodeTracker:
         if new == 1:
             # Common case: one turn finished since last call → encode just slot 0.
             self._hist_vec_cache.append(
-                self._encode_delta_slot(0, encoder, battle, use_events)
+                self._encode_delta_slot(0, encoder, battle)
             )
         elif new != 0:
             # Rare (calls skipped, or first call mid-episode): rebuild the kept tail.
             self._hist_vec_cache.clear()
             for i in range(available - 1, -1, -1):  # oldest-kept first → newest appended last
                 self._hist_vec_cache.append(
-                    self._encode_delta_slot(i, encoder, battle, use_events)
+                    self._encode_delta_slot(i, encoder, battle)
                 )
         self._n_cached_deltas = total_completed
 

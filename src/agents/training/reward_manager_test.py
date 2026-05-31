@@ -11,7 +11,8 @@ from agents.training.reward_manager import (
     FUTILE_SETUP_PENALTY, SETUP_LOW_HP_MAX_PENALTY, STATUS_WASTED_PENALTY,
     EXPLOSION_BLOCK_BONUS, FINISHING_BLOW_BONUS,
 )
-from agents.training.battle_context import BattleContext, TurnDelta
+from agents.training.battle_snapshot import BattleContext
+from agents.training.turn_delta import TurnDelta
 from poke_env.battle.abstract_battle import DamagingMoveEvent
 from utils.logging.levels import LogLevel
 

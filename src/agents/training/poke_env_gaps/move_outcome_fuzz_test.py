@@ -63,7 +63,8 @@ from agents.observation.gen3_effects import (
     UnknownCantReasonError,
     _CANT_INDEX as _CANT_TO_IDX,
 )
-from agents.training.battle_context import BattleContext, TurnDelta, SELF_KO_MOVES
+from agents.training.battle_snapshot import BattleContext
+from agents.training.turn_delta import TurnDelta, SELF_KO_MOVES
 from agents.training.slot_registry import SlotRegistry
 from utils.teambuilder import Gen3Teambuilder
 from utils.bridge.local_battle_runner import run_local_battles

@@ -129,7 +129,7 @@ def test_complete_pending_returns_delta_and_reward():
     fake_delta = MagicMock()
     with patch("agents.training.reward_tracker.TurnDelta") as mock_td, \
          patch("agents.training.reward_tracker.BattleContext"):
-        mock_td.build.return_value = fake_delta
+        mock_td.build_from_events.return_value = fake_delta
         delta, reward = tracker.complete_pending(_fake_ctx(), _fake_battle())
 
     assert delta is fake_delta
@@ -144,7 +144,7 @@ def test_finalize_returns_terminal_ctx_delta_reward():
     fake_delta = MagicMock()
     with patch("agents.training.reward_tracker.TurnDelta") as mock_td, \
          patch("agents.training.reward_tracker.BattleContext") as mock_bc:
-        mock_td.build.return_value = fake_delta
+        mock_td.build_from_events.return_value = fake_delta
         mock_bc.from_battle.return_value = fake_terminal
         terminal_ctx, delta, reward = tracker.finalize(_fake_battle())
 

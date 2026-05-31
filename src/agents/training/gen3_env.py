@@ -13,7 +13,7 @@ from agents.action.mapper import Gen3ActionMapper
 from agents.battle.live_view import LegalActions
 from agents.training.reward_manager import Gen3RewardManager
 from agents.training.reward_function import RewardFunction
-from agents.training.battle_context import TurnDelta
+from agents.training.turn_delta import TurnDelta
 from agents.training.episode_tracker import EpisodeTracker
 from agents.training.stall import StallConfig, StallLogger
 from agents.battle.gen3_battle import Gen3Battle

@@ -57,11 +57,15 @@ VALUE_ENUMS = frozenset({"PokemonType", "Status", "MoveCategory", "Weather"})
 #   * action/serialize.py — the one sanctioned Choice -> BattleOrder serialization touch
 #     (it reads battle.available_moves / available_switches to resolve a Choice to a
 #     poke-env order; a future fully-owned Player would re-derive this).
-#   * training/battle_context.py — the old diff-based heuristic reader being deleted by the
-#     Step-4 TurnDelta fold; migrating it to the strict view would be wasted work.
+#   * training/battle_snapshot.py — the per-decision decision-capture seam (BattleContext).
+#     It still reads poke-env directly for the fields the poke-env-gap fuzz tests probe
+#     (we_moved_first / our_move_crit / *_last_effectiveness) and for the Hidden-Power
+#     tracker's opp_last_damaging_event; a future fully-owned Player would re-derive these.
+#     (The old battle_context.py — the diff-based heuristic reader — was deleted by the
+#     Phase-5 TurnDelta event-fold; the heuristic TurnDelta.build it fed is gone.)
 EXCLUDED_RELPATHS = frozenset({
     "action/serialize.py",
-    "training/battle_context.py",
+    "training/battle_snapshot.py",
 })
 
 # Per-(relpath, attr) allowlist of KNOWN-LEGITIMATE residual raw reads. Each is an intended
@@ -222,4 +226,4 @@ def test_walk_actually_covers_the_known_consumers():
         assert expected in found, f"{expected} missing from the consumer walk — exclusions too broad?"
     # And the documented seams are genuinely excluded.
     assert "action/serialize.py" not in found
-    assert "training/battle_context.py" not in found
+    assert "training/battle_snapshot.py" not in found

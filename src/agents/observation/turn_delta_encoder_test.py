@@ -40,7 +40,7 @@ from agents.observation.turn_delta_encoder import (
     OFFSET_OUR_SWITCH_TO_SPEC,
     OFFSET_OPP_SWITCH_TO_SPEC,
 )
-from agents.training.battle_context import TurnDelta
+from agents.training.turn_delta import TurnDelta
 from poke_env.battle.abstract_battle import DamagingMoveEvent
 from poke_env.battle.status import Status
 

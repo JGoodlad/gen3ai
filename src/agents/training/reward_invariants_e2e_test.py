@@ -57,7 +57,8 @@ from poke_env.ps_client.server_configuration import LocalhostServerConfiguration
 from agents.action.mapper import Gen3ActionMapper
 from agents.action.mask_generator import Gen3ActionMasker
 from agents.battle.gen3_battle import Gen3Battle
-from agents.training.battle_context import BattleContext, TurnDelta
+from agents.training.battle_snapshot import BattleContext
+from agents.training.turn_delta import TurnDelta
 from agents.training.reward_manager import (
     BOOST_MOVES,
     EXPLOSION_BLOCK_BONUS,

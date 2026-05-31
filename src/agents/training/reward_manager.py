@@ -5,7 +5,8 @@ from utils.logging.rate_limiter import RateLimitedLogger
 from utils.logging.levels import LogLevel
 from poke_env.battle.side_condition import SideCondition
 from agents.enums import Status
-from agents.training.battle_context import BattleContext, TurnDelta
+from agents.training.battle_snapshot import BattleContext
+from agents.training.turn_delta import TurnDelta
 from agents import gen3_movedex as _movedex
 from agents.gen3_mechanics import (
     INVULNERABLE_MOVES as _INVULNERABLE_MOVES,

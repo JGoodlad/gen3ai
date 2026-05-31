@@ -2,9 +2,24 @@ import numpy as np
 import pytest
 
 from agents.training.battle_recorder import BattleRecorder
-from agents.training.battle_context import BattleContext, TurnDelta
+from agents.training.battle_snapshot import BattleContext
+from agents.training.turn_delta import TurnDelta
 from agents.battle.live_view import LiveView
 from agents.battle.strict_view import StrictBattleView
+from agents.battle.battle_event import BattleEvent, EventKind, OURS, OPP
+
+
+def _ev(kind, side, actor, turn=2, **value):
+    """Build a BattleEvent for a recorder test's injected event window."""
+    return BattleEvent(seq=0, turn=turn, kind=kind, side=side,
+                       actor_species=actor, value=value)
+
+
+def _with_events(b, events):
+    """Override a fake battle's empty event window with a crafted one (the recorder folds
+    the TurnDelta from ``events_since`` — in production this is the real Gen3Battle log)."""
+    b.events_since = lambda cursor: list(events)
+    return b
 
 
 class _FakeMon:
@@ -76,6 +91,10 @@ def _battle(our_mons, opp_mons, our_active, opp_active,
     b._player_role = "p1"
     b.side_conditions = {}
     b.opponent_side_conditions = {}
+    # Event-log surface the reward tracker folds the TurnDelta from (no real log in this
+    # unit fake → an empty window, which folds the current-board snapshot for HP).
+    b.event_cursor = 0
+    b.events_since = lambda cursor: []
     b.live_view = lambda: LiveView.from_battle(b)
     b.strict_view = lambda: StrictBattleView(b)
     return b
@@ -142,6 +161,11 @@ def test_hp_delta_on_switch():
     ttar2 = _FakeMon("tyranitar", 0.64)  # took Thunderbolt on switch-in
     opp2 = _FakeMon("opp_zapdos", 1.0)
     b2 = _battle([zapdos2, ttar2], [opp2], "tyranitar", "opp_zapdos", turn=2, move_ids=["rockslide"])
+    _with_events(b2, [
+        _ev(EventKind.SWITCH, OURS, "tyranitar", prev_active="zapdos"),
+        _ev(EventKind.MOVE, OPP, "opp_zapdos", move_id="thunderbolt", target_status=None),
+        _ev(EventKind.DAMAGE, OURS, "tyranitar", amount=-0.36, hp_before=1.0, hp_after=0.64),
+    ])
 
     rec = _rec()
     rec.record(b1, 1, _probs(), _mask(1))  # action 1 = switch to tyranitar (team slot 1)
@@ -168,6 +192,12 @@ def test_finalize_hp_delta_on_switch():
     opp_end = _FakeMon("opp_zapdos", 0.0, fainted=True)
     b_end = _battle([zapdos_end, ttar_end], [opp_end], "tyranitar", "opp_zapdos",
                     turn=2, won=True)
+    _with_events(b_end, [
+        _ev(EventKind.SWITCH, OURS, "tyranitar", prev_active="zapdos"),
+        _ev(EventKind.MOVE, OPP, "opp_zapdos", move_id="thunderbolt", target_status=None),
+        _ev(EventKind.DAMAGE, OURS, "tyranitar", amount=-0.36, hp_before=1.0, hp_after=0.64),
+        _ev(EventKind.FAINT, OPP, "opp_zapdos"),
+    ])
 
     rec = _rec()
     rec.record(b1, 1, _probs(), _mask(1))  # switch to tyranitar
@@ -192,6 +222,11 @@ def test_hp_delta_opp_switch():
     blissey2 = _FakeMon("blissey", 1.0)   # switched out, took no damage
     snorlax2 = _FakeMon("snorlax", 0.70)  # switched in, took Meteor Mash
     b2 = _battle([our2], [blissey2, snorlax2], "metagross", "snorlax", turn=2, move_ids=["meteormash"])
+    _with_events(b2, [
+        _ev(EventKind.SWITCH, OPP, "snorlax", prev_active="blissey"),
+        _ev(EventKind.MOVE, OURS, "metagross", move_id="meteormash", target_status=None),
+        _ev(EventKind.DAMAGE, OPP, "snorlax", amount=-0.30, hp_before=1.0, hp_after=0.70),
+    ])
 
     rec = _rec()
     rec.record(b1, 6, _probs(), _mask(6))  # we use a move

@@ -1,6 +1,7 @@
 import numpy as np
 
-from agents.training.battle_context import BattleContext, TurnDelta
+from agents.training.battle_snapshot import BattleContext
+from agents.training.turn_delta import TurnDelta
 from agents.training.reward_function import RewardFunction
 from agents.training.reward_manager import Gen3RewardManager
 from agents.training.slot_registry import SlotRegistry
@@ -27,6 +28,7 @@ class RewardTracker:
         self._opp_slots = opp_slots
         self._pending_ctx: BattleContext | None = None
         self._pending_action: int = -1
+        self._pending_cursor: int = 0   # event_cursor when the pending turn was latched
         self._total_reward: float = 0.0
 
     @property
@@ -41,18 +43,31 @@ class RewardTracker:
     def total_reward(self) -> float:
         return self._total_reward
 
-    def begin_turn(self, ctx: BattleContext, action_idx: int) -> None:
-        """Latch the current turn's pre-action state for deferred reward computation."""
+    def begin_turn(self, ctx: BattleContext, action_idx: int, cursor: int = 0) -> None:
+        """Latch the current turn's pre-action state for deferred reward computation.
+
+        ``cursor`` is ``battle.event_cursor`` at THIS decision — the start of the event
+        window the next ``complete_pending`` / ``finalize`` folds the TurnDelta from.
+        """
         self._pending_ctx = ctx
         self._pending_action = action_idx
+        self._pending_cursor = cursor
+
+    def _window(self, battle) -> list:
+        """The event window for the pending turn: everything since it was latched."""
+        fn = getattr(battle, "events_since", None)
+        return fn(self._pending_cursor) if fn is not None else []
 
     def complete_pending(self, curr_ctx: BattleContext, battle) -> tuple[TurnDelta, float]:
         """
         Settle the previous turn now that the next choose_move() has fired and curr_ctx
         reflects the post-battle state. Returns (delta, reward) so BattleRecorder can
-        use them for its JSON outcome entry without re-computing.
+        use them for its JSON outcome entry without re-computing. Folds the TurnDelta
+        from the event window (``events_since`` the pending cursor) — the production path.
         """
-        delta = TurnDelta.build(self._pending_ctx, curr_ctx, self._pending_action)
+        delta = TurnDelta.build_from_events(
+            self._pending_ctx, curr_ctx, self._pending_action, self._window(battle)
+        )
         self._reward_fn.record_action(self._pending_ctx, self._pending_action)
         reward = self._reward_fn.process_turn_reward(battle, delta)
         self._total_reward += reward
@@ -65,13 +80,16 @@ class RewardTracker:
         with all-zero mask (no valid moves). Returns (terminal_ctx, delta, reward) so
         BattleRecorder can build its terminal JSON entry.
         """
+        events = self._window(battle)
         terminal_ctx = BattleContext.from_battle(
             battle,
             np.zeros(11, dtype=np.float32),
             self._our_slots,
             self._opp_slots,
         )
-        delta = TurnDelta.build(self._pending_ctx, terminal_ctx, self._pending_action)
+        delta = TurnDelta.build_from_events(
+            self._pending_ctx, terminal_ctx, self._pending_action, events
+        )
         self._reward_fn.record_action(self._pending_ctx, self._pending_action)
         reward = self._reward_fn.process_turn_reward(battle, delta)
         self._total_reward += reward
@@ -109,7 +127,7 @@ class RewardTrackingMixin:
         )
         if tracker.has_pending:
             tracker.complete_pending(curr_ctx, battle)
-        tracker.begin_turn(curr_ctx, action_idx)
+        tracker.begin_turn(curr_ctx, action_idx, getattr(battle, "event_cursor", 0))
 
     def _battle_finished_callback(self, battle) -> None:
         """Override poke-env's no-op to finalize reward tracking when each battle ends."""

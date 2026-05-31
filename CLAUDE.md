@@ -523,10 +523,12 @@ These are loaded at startup and will raise `FileNotFoundError` / `ValueError` if
 poke-env is a **state tracker** — each `|...|` protocol line overwrites "current board"
 fields. RL/reward/replay need the opposite: *what happened, in order*. The event-sourced
 layer captures that without reimplementing poke-env (design:
-`designs/ai_v4/design_event_sourced_battle.md`). **Status: steps 1–2 implemented** (event
-log + completeness/conservation + ergonomic per-turn read model). The `TurnDelta`/reward
-fold onto it (step 5) is not done yet — nothing in training consumes the log yet, so this
-layer is currently additive and obs/reward-neutral.
+`designs/ai_v4/design_event_sourced_battle.md`). **Status: the event log + read models are
+live and CONSUMED in training.** The per-decision `TurnDelta` history block folds entirely
+from the log (`build_from_events`, see "Per-decision history fold (Phase 5)" below) and feeds
+the obs turn-history; the action masker/mapper and training display read the LiveView /
+LegalActions / TurnView surfaces. (The full reward-manager rewrite onto TurnView/LiveView is
+the separate, in-progress Step 5.)
 
 - **`Gen3Battle(Battle)`** (`gen3_battle.py`) — subclasses poke-env's singles `Battle`.
   Its `parse_message` override classifies each line, calls `super().parse_message`
@@ -543,8 +545,8 @@ layer is currently additive and obs/reward-neutral.
   `cant_reason`/`cant_move`, `crit`/`missed`/`failed`, `effectiveness`, `damaging_move`,
   `status_applied`/`status_cured`, `item_lost`/`item_gained`) + turn-level facts
   (`move_order`, `we_moved_first`, `both_attacked`, `someone_fainted`,
-  `damage_on(species, side=…)`). This is what `TurnDelta` and the reward manager will
-  read once step 5 lands, replacing the diff-based heuristics.
+  `damage_on(species, side=…)`). `TurnDelta.build_from_events` (`training/turn_delta.py`)
+  folds this on every production path — the diff-based detective is retired (see below).
 - **`LiveView` / `LiveSide` / `LivePokemon` / `LiveMove`** (`live_view.py`) — the
   **current-board** read surface ("what is true now"), built via `battle.live_view()`. An
   immutable snapshot of HP, status, boosts, revealed moves/item/ability, volatiles, hazards,
@@ -597,11 +599,33 @@ layer is currently additive and obs/reward-neutral.
   builds the strict view once per record/finalize/summary call and reads current-board state
   (active/team/`species`/`item`/`hp`/`fainted`/`status`/boosts, `won`/`lost`/`turn`) only
   through its `LiveView` — the stale-`last_move` recorder fallback is dropped (history now
-  comes from the event-log `TurnDelta`). The remaining `observation/` + the reward/obs/tracker
-  `training/` consumers are still pending — see `designs/ai_v4/todo_live_battle.md` (skips
-  `battle_context.py`, which Step 4's TurnDelta fold retires). Phases 1–2 are additive and
-  obs-neutral; the action + training-display migrations are pure re-sourcing (no
-  `ARCH_SIGNATURE` bump — these are display/replay/control-flow only, behaviour-preserving).
+  comes from the event-log `TurnDelta`). Phases 1–2 are additive and obs-neutral; the action
+  + training-display migrations are pure re-sourcing (no `ARCH_SIGNATURE` bump — these are
+  display/replay/control-flow only, behaviour-preserving).
+- **Per-decision history fold (Phase 5, DONE).** `TurnDelta` now folds **entirely** from the
+  event log + LiveView and lives in its own module **`training/turn_delta.py`** (relocated out
+  of the now-deleted `battle_context.py`). `build_from_events(prev, curr, action, events)` is
+  the **sole production builder** — wired into the training env, `episode_tracker.py`,
+  `reward_tracker.py`, and the forensic `battle_recorder.py`. What it folds from the event
+  stream: moves/switches/cant/effectiveness/faints+causes/status-transitions/item-lost/
+  outcome/crit/move-order, the **per-slot HP delta** (from each `DAMAGE/HEAL/SETHP`
+  `hp_after` + `FAINT`→0 — bit-identical to `curr_hp − prev_hp`, no float-sum noise; a self-KO
+  Explosion/Selfdestruct emits NO `-damage` on the user, so its HP→0 comes from the FAINT),
+  and the **target-HP** attribution. **Findings — what the event log canNOT fold
+  value-identically** (so these stay sourced from the LiveView-projected decision snapshot,
+  which is current-board, not poke-env-raw and not a heuristic reconstruction): the per-slot
+  **HP-after** (intrinsically current-board) and the **boost-stage delta** (`SETBOOST`/
+  `clearboost`/`invert`/`copy`/`swap` carry no realized stage amount in the event payload —
+  only an `op`). The per-decision snapshot itself relocated to **`training/battle_snapshot.py`**
+  (`BattleContext`, still the reward `record_action` / mapper / `prev_mask` source; it is the
+  documented seam exempted in `strict_api_lock_test`, inheriting `battle_context.py`'s status).
+  The legacy diff detective `TurnDelta.build` is **retired from every production path** and
+  marked legacy/test-only (retained for the poke-env-gap fuzz harnesses). Value-identity is
+  pinned by the 15-min `turn_delta_fold_equivalence_fuzz_test.py` (event-fold vs a frozen
+  snapshot-diff reference: 0 field diffs, 0 reward diffs over 150k+ decisions, all corner
+  paths covered). The remaining Phase-5 work is the `LiveView` **event-fold** itself
+  (side-condition counters / ability-item inference / type-change), tracked in
+  `designs/ai_v4/todo_live_battle.md`.
 - **Injection seam (wired into training):** `poke_env.player.Player.__init__` takes
   `battle_class=Battle` (default, with a `None`-guard since `PokeEnv` threads a `None`
   default to its `_EnvPlayer` agents). `Gen3Player` defaults `battle_class=Gen3Battle`

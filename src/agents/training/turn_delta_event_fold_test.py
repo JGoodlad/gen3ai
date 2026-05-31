@@ -23,7 +23,8 @@ from agents.observation.turn_delta_encoder import (
     OFFSET_OUR_ACTOR_SPECIES,
     FAINT_CAUSE_VOCAB as _ENC_CAUSE_VOCAB,
 )
-from agents.training.battle_context import BattleContext, TurnDelta
+from agents.training.battle_snapshot import BattleContext
+from agents.training.turn_delta import TurnDelta
 
 # ---------------------------------------------------------------------------
 # Helpers

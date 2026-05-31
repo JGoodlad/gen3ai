@@ -45,7 +45,8 @@ from poke_env.ps_client.server_configuration import LocalhostServerConfiguration
 from agents.action.mapper import Gen3ActionMapper
 from agents.action.mask_generator import Gen3ActionMasker
 from agents.battle.gen3_battle import Gen3Battle
-from agents.training.battle_context import BattleContext, TurnDelta
+from agents.training.battle_snapshot import BattleContext
+from agents.training.turn_delta import TurnDelta
 from agents.training.reward_manager import Gen3RewardManager
 from agents.training.slot_registry import SlotRegistry
 from utils.bridge.local_battle_runner import run_local_battles
@@ -125,6 +126,7 @@ class _BattleState:
         self.mgr_battle._read_live = False             # reads the raw battle
         self.prev_ctx: Optional[BattleContext] = None
         self.last_action: Optional[int] = None
+        self.prev_cursor: int = 0   # event_cursor when prev_ctx was latched
         self.our_slots = SlotRegistry()
         self.opp_slots = SlotRegistry()
 
@@ -145,7 +147,10 @@ class RewardEquivalencePlayer(Player):
 
     def _compare_turn(self, battle, state: _BattleState, curr_ctx: BattleContext) -> None:
         """Run BOTH managers on the same (battle, delta) and diff the breakdowns."""
-        delta = TurnDelta.build(state.prev_ctx, curr_ctx, state.last_action)
+        events = battle.events_since(state.prev_cursor)
+        delta = TurnDelta.build_from_events(
+            state.prev_ctx, curr_ctx, state.last_action, events
+        )
         state.mgr_live.process_turn_reward(battle, delta)
         state.mgr_battle.process_turn_reward(battle, delta)
         bl = state.mgr_live._last_breakdown
@@ -202,6 +207,7 @@ class RewardEquivalencePlayer(Player):
                 state.mgr_battle.record_action(curr_ctx, choice)
                 state.prev_ctx = curr_ctx
                 state.last_action = choice
+                state.prev_cursor = battle.event_cursor
 
             return Gen3ActionMapper.action_to_order(choice, battle)
 

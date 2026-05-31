@@ -74,7 +74,7 @@ Target species ID: from the OTHER side's damaging_event.target_species.
 from __future__ import annotations
 import numpy as np
 from typing import Optional
-from agents.training.battle_context import TurnDelta
+from agents.training.turn_delta import TurnDelta
 from agents.observation.types import TypeEncoder
 from agents.observation.gen3_effects import (
     CANT_DIM,

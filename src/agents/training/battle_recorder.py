@@ -2,7 +2,8 @@ from typing import Callable, Optional
 import numpy as np
 
 from agents.battle.live_view import LivePokemon, LiveView
-from agents.training.battle_context import BattleContext, TurnDelta
+from agents.training.battle_snapshot import BattleContext
+from agents.training.turn_delta import TurnDelta
 from agents.training.reward_function import RewardFunction
 from agents.training.reward_tracker import RewardTracker
 from agents.training.slot_registry import SlotRegistry
@@ -97,7 +98,7 @@ class BattleRecorder:
             "actions": self._all_action_labels(live, probs, mask, legal),
         }
 
-        self._tracker.begin_turn(curr_ctx, action_idx)
+        self._tracker.begin_turn(curr_ctx, action_idx, view.event_cursor)
         self._pending_entry = entry
 
     def states_arrays(self) -> dict:

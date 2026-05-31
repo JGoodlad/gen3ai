@@ -6,8 +6,10 @@ through `StrictBattleView` / `LiveView` / `LegalActions`, verified value-neutral
 (see "Wave 1 verification" below). **Phase 4 is COMPLETE** (Wave 2) — the four accepted value-enums
 flow through the **`agents.enums`** re-export seam (4a), and a static AST guard
 (`src/agents/strict_api_lock_test.py`) now fails CI on any new raw stateful `battle.<attr>` read or
-direct poke-env value-enum import in those clusters (4b, **the lock**). **Phase 5** (true `LiveView`
-event-fold independence) is the only remaining work.
+direct poke-env value-enum import in those clusters (4b, **the lock**). **Phase 5 — HISTORY fold
+is DONE** (`TurnDelta` now folds entirely from the event log + LiveView; `battle_context.py`
+deleted; see "Phase 5" below). The only remaining work is the **`LiveView` event-fold** itself
+(current-board independence).
 
 Full approved plan (read first): `~/.claude/plans/can-you-explore-what-nested-pebble.md`
 — it carries the complete dependency inventory and rationale this doc summarises.
@@ -200,7 +202,48 @@ regression — the enum re-point is import-only).
 
 ---
 
-## Phase 5 — true `LiveView` independence (FUTURE, not scheduled)
+## Phase 5
+
+### 5a — HISTORY fold (`TurnDelta`) — ✅ DONE
+
+`TurnDelta` now folds **entirely** from the event log + LiveView; the diff-based detective and
+the `BattleContext` snapshot-diff layer are gone. Concretely:
+
+- **Relocated.** `TurnDelta` → its own fold-only module **`training/turn_delta.py`**; the
+  per-decision snapshot `BattleContext` → **`training/battle_snapshot.py`**;
+  **`training/battle_context.py` deleted.** All ~20 importers updated (pure import-path change);
+  `strict_api_lock_test`'s documented-seam exclusion moved `battle_context.py` →
+  `battle_snapshot.py` (the snapshot still reads poke-env for the HP tracker's
+  `opp_last_damaging_event` + the poke-env-gap-fuzz-probed flags).
+- **One production path.** `build_from_events(prev, curr, action, events)` is the sole builder
+  on every production path — training env, `episode_tracker.py`, `reward_tracker.py` (migrated to
+  capture the per-decision event cursor), and the forensic `battle_recorder.py`. The legacy diff
+  detective `TurnDelta.build` is **retired from production** and marked legacy/test-only (kept for
+  the poke-env-gap fuzz harnesses + crafted-context unit tests).
+- **What folds from the log:** moves/switches/cant/effectiveness/faints+causes/status-transitions/
+  item-lost/outcome/crit/move-order, the **per-slot HP delta** (each `DAMAGE/HEAL/SETHP` `hp_after`
+  + `FAINT`→0 — bit-identical to `curr_hp − prev_hp`, no float-sum noise), and **target-HP**.
+- **Findings (surfaced, not papered over) — what the event log canNOT fold value-identically,**
+  so they stay sourced from the LiveView-projected decision snapshot (current-board, not
+  poke-env-raw, not heuristic):
+  - **HP magnitude needs care.** A per-event *amount-sum* is NOT value-identical: float
+    accumulation order differs from a single endpoint subtraction (~6e-8) and that flips the
+    discrete `opp_hp_delta.sum() >= 0` futile-attack reward threshold. Folding the **end HP** from
+    each event's `hp_after` (last wins) and subtracting `prev_hp` once is bit-exact instead.
+  - **Self-KO HP-incompleteness.** Explosion/Selfdestruct faints the user with NO `-damage` line
+    (only `|faint|`), so a pure damage fold misses its HP→0; the `FAINT` event supplies it.
+  - **Boost-stage delta is not event-foldable.** `SETBOOST` (Belly Drum), `clearboost`/`invert`/
+    `copy`/`swap` (Haze etc.) carry only an `op`, no realized stage amount — so the boost delta is
+    the LiveView stage diff. **HP-after** is likewise intrinsically current-board.
+- **Verified.** Dedicated 15-min bridge fuzz `training/turn_delta_fold_equivalence_fuzz_test.py`
+  (event-fold vs a frozen self-contained snapshot-diff reference, crash-on-first-divergence):
+  **0 field diffs, 0 reward-breakdown diffs over 158k decisions**, every corner path (boost /
+  CLEARBOOST / switch / Pain-Split-SETHP / double-KO / multi-hit / cant) covered. Plus
+  `turn_delta_hp_fold_test.py` (HP/target/boost/self-KO units), the full unit suite (1228 passed),
+  `reward_resourcing_equivalence` (0 diffs), `turn_history` 300 (mismatch 0), and the obs benchmark
+  (~12.25k calls/encode, ≤ baseline).
+
+### 5b — true `LiveView` independence (FUTURE, not scheduled)
 
 Replace the per-field copy in `LiveView.from_battle` with an **event-fold**, so poke-env's
 tracker is no longer the source of current-board state and we are genuinely decoupled. Most

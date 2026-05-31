@@ -94,7 +94,7 @@ class TurnHistoryFuzzPlayer(Player):
         res = np.zeros((n, self._enc.dimension), dtype=np.float32)
         avail = min(n, len(tr._history) - 1, len(tr._actions), len(tr._cursors))
         for i in range(avail):
-            res[n - 1 - i] = tr._encode_delta_slot(i, self._enc, battle, True)
+            res[n - 1 - i] = tr._encode_delta_slot(i, self._enc, battle)
         return res
 
     def choose_move(self, battle):

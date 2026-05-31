@@ -52,7 +52,8 @@ from agents.observation.turn_delta_encoder import (
     TurnDeltaEncoder, EFF_DIM, ORDER_DIM,
     OFFSET_OUR_EFF, OFFSET_OPP_EFF, OFFSET_ORDER,
 )
-from agents.training.battle_context import BattleContext, TurnDelta
+from agents.training.battle_snapshot import BattleContext
+from agents.training.turn_delta import TurnDelta
 from agents.training.slot_registry import SlotRegistry
 from utils.teambuilder import Gen3Teambuilder
 

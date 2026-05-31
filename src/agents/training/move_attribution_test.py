@@ -20,8 +20,9 @@ import pytest
 
 from poke_env.battle.abstract_battle import DamagingMoveEvent
 from agents.gen3_mechanics import BOOST_DIM
-from agents.training.battle_context import (
-    BattleContext, TurnDelta,
+from agents.training.battle_snapshot import BattleContext
+from agents.training.turn_delta import (
+    TurnDelta,
     _derive_move_outcome, _ko_before_acting, _align_effectiveness, _moves_match,
 )
 

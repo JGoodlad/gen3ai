@@ -1,15 +1,28 @@
+"""``TurnDelta`` — the per-decision HISTORY fold.
+
+"What happened since the agent was last asked to act", folded from the event log
+(``battle.events_since(cursor)`` → :class:`~agents.battle.turn_view.TurnView`) plus the
+current-board reads of two consecutive :class:`~agents.training.battle_snapshot.BattleContext`
+snapshots (HP-after, boosts, slot maps, phase, prev-active). The numeric per-turn quantities
+(per-slot HP deltas, target-HP, faint causes, status transitions, move outcome, effectiveness)
+come from the event log; the snapshot supplies only current-board values that are LiveView
+projections (never a diff-detective reconstruction).
+
+The field layout is FROZEN — it is consumed by ``turn_delta_encoder.py`` (the obs block) and
+the reward manager. Changing a field is retrain-class.
+"""
 from __future__ import annotations
 from dataclasses import dataclass, field
-from typing import Literal, Optional, TYPE_CHECKING
+from typing import Optional, TYPE_CHECKING
 import numpy as np
 
 from poke_env.battle.abstract_battle import DamagingMoveEvent
 
-from agents.training.slot_registry import SlotRegistry
-from agents.gen3_mechanics import PHAZING_MOVES, BOOST_DIM, boosts_array
+from agents.gen3_mechanics import PHAZING_MOVES, BOOST_DIM
 
 if TYPE_CHECKING:
-    from agents.battle.live_view import LegalActions
+    from agents.enums import Status
+    from agents.training.battle_snapshot import BattleContext
 
 
 # Moves whose user always faints and which always connect when used (a neutral
@@ -18,6 +31,19 @@ if TYPE_CHECKING:
 SELF_KO_MOVES = frozenset({"explosion", "selfdestruct"})
 
 
+# ---------------------------------------------------------------------------
+# LEGACY snapshot-diff detective — RETIRED FROM PRODUCTION (Phase-5 history fold).
+#
+# ``TurnDelta.build`` below and the four helpers in this block are the old "detective":
+# they reconstructed what happened by DIFFING two BattleContext snapshots with a pile of
+# heuristics (KO-before-acting, phaze recovery via ``opp_all_last_move_ids``, effectiveness
+# alignment, move-outcome derivation). The event-fold ``build_from_events`` replaced them on
+# EVERY production path (training env, reward tracker, episode tracker, forensic recorder).
+# They survive ONLY as test scaffolding: the poke-env-gap fuzz harnesses
+# (``poke_env_gaps/move_outcome_fuzz_test.py``, ``effectiveness_fuzz_e2e_test.py``) and a few
+# crafted-context unit tests validate BattleContext's snapshot-derived per-turn flags through
+# this path. Do not call them from production code.
+# ---------------------------------------------------------------------------
 def _moves_match(a: Optional[str], b: Optional[str]) -> bool:
     """True if two move ids refer to the same move. Treats all Hidden Power
     variants ('hiddenpower', 'hiddenpowerfire', …) as one move."""
@@ -74,6 +100,80 @@ def _resolve_target_hp_delta(
     return float(hp_delta[slot])
 
 
+def _fold_hp_deltas(
+    events: list,
+    our_slot_map: dict,
+    opp_slot_map: dict,
+    prev_our_hp: np.ndarray,
+    prev_opp_hp: np.ndarray,
+    prev_opp_slot_map: dict,
+) -> tuple[np.ndarray, np.ndarray]:
+    """Fold per-slot HP deltas from the event log — bit-identical to ``curr_hp − prev_hp``.
+
+    Each DAMAGE/HEAL/SETHP event carries the post-line HP FRACTION (``hp_after`` for
+    DAMAGE/HEAL, ``hp`` for SETHP — see ``gen3_battle._build_event``). The LAST such
+    event for a (side, species) in the window therefore holds that mon's HP at the
+    next decision — exactly the fraction the LiveView snapshot stores as ``curr_hp``.
+    So we fold a per-slot END HP from those ``hp_after`` values (last wins), default
+    each slot to ``prev_hp`` (no event ⇒ unchanged), and subtract ``prev_hp`` ONCE.
+
+    Why end-HP-then-subtract and NOT a sum of signed ``amount``s: a per-event-amount
+    SUM accumulates float rounding differently from the single endpoint subtraction
+    (~6e-8), which is enough to flip a discrete reward threshold (``opp_hp_delta.sum()
+    >= 0`` in the futile-attack penalty). Reading the last ``hp_after`` and casting it
+    to float32 reproduces ``curr_hp`` bit-for-bit, so ``end − prev_hp`` equals the
+    snapshot diff exactly — event-sourced AND value-identical.
+
+    FAINT-completeness (FINDING): a self-KO move (Explosion / Selfdestruct) faints the
+    user with **no** ``|-damage|`` line — only ``|faint|`` — so its HP→0 never appears
+    as an ``hp_after``. So a FAINT pins the slot's end HP to 0 (its true value), the
+    one HP fact the damage stream alone cannot supply.
+
+    Newly-revealed-opponent zeroing: a mon first revealed THIS window had
+    ``prev_hp = 0`` (the unrevealed sentinel), so the old snapshot path zeroed its
+    (necessarily-positive) delta as a spurious "gain". Reproduced by zeroing any opp
+    slot whose species was not in the previous slot map — lossless, since gen3 entry
+    hazards (Spikes ≤ 25%) can never KO a freshly-revealed mon from full.
+    """
+    from agents.battle.battle_event import OURS, OPP, EventKind
+    our_end = prev_our_hp.astype(np.float32, copy=True)
+    opp_end = prev_opp_hp.astype(np.float32, copy=True)
+    for e in events:
+        if e.kind in (EventKind.DAMAGE, EventKind.HEAL):
+            hp_after = e.value.get("hp_after")
+        elif e.kind is EventKind.SETHP:
+            hp_after = e.value.get("hp")
+        else:
+            continue
+        if hp_after is None:
+            continue
+        if e.side == OURS:
+            slot = our_slot_map.get(e.actor_species)
+            if slot is not None:
+                our_end[slot] = np.float32(hp_after)
+        elif e.side == OPP:
+            slot = opp_slot_map.get(e.actor_species)
+            if slot is not None:
+                opp_end[slot] = np.float32(hp_after)
+    for e in events:
+        if e.kind is not EventKind.FAINT or not e.actor_species or not e.side:
+            continue
+        if e.side == OURS:
+            slot = our_slot_map.get(e.actor_species)
+            if slot is not None:
+                our_end[slot] = np.float32(0.0)
+        elif e.side == OPP:
+            slot = opp_slot_map.get(e.actor_species)
+            if slot is not None:
+                opp_end[slot] = np.float32(0.0)
+    our_delta = our_end - prev_our_hp
+    opp_delta = opp_end - prev_opp_hp
+    for species, slot in opp_slot_map.items():
+        if species not in prev_opp_slot_map:
+            opp_delta[slot] = 0.0
+    return our_delta, opp_delta
+
+
 def _derive_move_outcome(
     move_used: bool,
     missed: bool,
@@ -109,282 +209,6 @@ def _derive_move_outcome(
     if failed:
         return "fail"
     return "hit"
-
-
-@dataclass
-class BattleContext:
-    """
-    Frozen per-turn snapshot of agent-relevant battle state.
-
-    Built once per turn in EpisodeTracker.record() and stored as self._last_ctx on the env.
-    Gives the reward function, action mapper, and callbacks a single stable source
-    of truth for what the model saw when it chose its action.
-    """
-    turn: int
-    phase: Literal["move_selection", "forced_switch"]
-    mask: np.ndarray            # (11,) int8 — valid actions this turn
-    our_slot_map: dict[str, int]   # species -> stable slot index 0-5
-    opp_slot_map: dict[str, int]   # species -> stable slot index 0-5
-
-    # Per-slot HP fractions (in slot_map order, zeros for unrevealed slots)
-    our_hp: np.ndarray          # (6,) float32
-    opp_hp: np.ndarray          # (6,) float32
-
-    # Active Pokémon species at the moment this context was built
-    our_active: str             # "NONE" if no active mon (between faints)
-    opp_active: str             # "NONE" if not yet revealed
-
-    # Fainted counts — used to detect new faints via delta
-    our_fainted_count: int
-    opp_fainted_count: int
-
-    # Move IDs in request-slot order (len 4, None for empty/missing slots).
-    # Used by TurnDelta.build() to resolve which move action indices 6-9 map to.
-    active_move_ids: list       # list[str | None]
-
-    # The move the opponent's active Pokémon used on the PREVIOUS turn, sourced
-    # from battle.opponent_active_pokemon.last_move (poke-env parses the Showdown
-    # |-move| protocol and sets Move._is_last_used on the correct move object).
-    # None if the opponent hasn't moved yet, switched in this snapshot's turn,
-    # or the move cannot be identified (e.g. Explosion aftermath).
-    #
-    # Known behaviors (confirmed by transition_fuzz_test.py):
-    #   - Sleep Talk: when delegation succeeds, stores the delegated move (e.g. "surf").
-    #     When delegation FAILS (all PP depleted), stores "sleeptalk" directly.
-    #   - Recharge turns (Hyper Beam): persists as "hyperbeam" on the |cant|recharge turn.
-    #   - |cant| turns (par, flinch, frz, sleep-no-talk): persists from the prior turn
-    #     IF the mon has already used a move; None if first active turn.
-    opp_last_move_id: str | None
-
-    # last_move snapshot for every revealed opponent Pokémon (not just the active one).
-    # Used by TurnDelta.build() to recover the phazed mon's move when Roar/Whirlwind fires:
-    # poke-env swaps the active slot to the new mon before we snapshot, so
-    # opp_last_move_id (which reads from the NEW active mon) would be None. The phazed mon
-    # still has last_move set in battle.opponent_team, captured here.
-    opp_all_last_move_ids: dict  # dict[str, str | None] — species → last_move_id
-
-    # All move IDs the opponent's current active Pokémon has revealed so far.
-    # Kept for potential use by the observation encoder and diagnostics.
-    opp_active_revealed_moves: frozenset  # frozenset[str]
-
-    # Cant-move reason for each side's active Pokémon, snapshotted after the turn resolves.
-    # Set by |cant| messages (paralysis, flinch, freeze, sleep-no-sleep-talk, confusion).
-    # Cleared by |move| messages (Pokemon.moved() resets _last_cant_reason to None).
-    # None means the mon moved normally this turn (or is a fresh switch-in with no history).
-    our_cant_reason: str | None
-    opp_cant_reason: str | None
-
-    # Stat stages for each side's active Pokémon in BOOST_STATS order
-    # (atk/def/spa/spd/spe/accuracy/evasion).  All zeros if mon is None or not yet revealed.
-    our_boosts: np.ndarray   # (7,) int8
-    opp_boosts: np.ndarray   # (7,) int8
-
-    # Effectiveness of the last damaging move used by each side (from the turn that
-    # just ended).  0.0=immune, 0.5=resisted, 1.0=neutral, 2.0=super-effective.
-    # None when the side switched, used a non-damaging move, or the battle just started.
-    # Sourced from AbstractBattle.our/opp_last_effectiveness, which gates on turn-1.
-    our_last_effectiveness: float | None
-    opp_last_effectiveness: float | None
-
-    # True = we executed our action before the opponent in the turn that just ended.
-    # None when one or both sides performed a normal switch (no move competition).
-    we_moved_first: bool | None
-
-    # Per-side set of fainted species — used to identify which specific mon
-    # newly fainted between two contexts (the count alone is ambiguous, e.g. for
-    # resolving the actual target of opponent Hidden Power when our side switched
-    # and the switch-in fainted in the same turn).
-    our_fainted_species: frozenset = field(default_factory=frozenset)  # frozenset[str]
-    opp_fainted_species: frozenset = field(default_factory=frozenset)  # frozenset[str]
-
-    # Per-mon status at this context's snapshot point. Used to evaluate Gen 3
-    # ability quirks that depend on status — currently the Flash Fire-vs-frozen
-    # interaction (a frozen target's Flash Fire does NOT block incoming Fire moves,
-    # and the move itself thaws the target). Without a historical snapshot we'd
-    # only see the post-thaw status and mis-evaluate the just-fired move.
-    our_team_status: dict = field(default_factory=dict)  # dict[str, Status | None]
-
-    # Species in battle.team iteration order — the same order the action mapper
-    # uses to interpret switch actions 0–5. Captured at snapshot time so a later
-    # TurnDelta can recover the INTENT of a switch action (which slot we picked)
-    # even if the switch-in later dies and forced-replacements cycle in more
-    # mons by the time the next snapshot is built. Without this, our_switch_to
-    # would point at the end-of-chain active mon rather than the mon we sent in.
-    our_team_order: tuple = field(default_factory=tuple)  # tuple[str, ...]
-
-    # Full per-side record of the last damaging move resolved last turn —
-    # carries user_species, target_species, target_status (at move-fire time),
-    # move_id, and effectiveness. Lets callers attribute moves directly without
-    # inferring "who fired / who got hit" from before/after snapshot diffs.
-    # None when the side didn't use a damaging move last turn. Mirrors
-    # our/opp_last_effectiveness (set together at the same protocol events).
-    our_last_damaging_event: Optional[DamagingMoveEvent] = None
-    opp_last_damaging_event: Optional[DamagingMoveEvent] = None
-
-    # The move OUR active Pokémon actually used on the turn that just ended,
-    # from battle.active_pokemon.last_move — the mirror of opp_last_move_id.
-    # Protocol-truth and DELEGATION-AWARE: Sleep Talk stores the called move
-    # (e.g. "surf"), not "sleeptalk" (see opp_last_move_id notes). Used by
-    # TurnDelta.build() to set our_move_id from the protocol instead of the
-    # action index — immune to the action-bookkeeping desync on faint /
-    # forced-switch turns, and captures delegated moves first-class.
-    our_last_move_id: Optional[str] = None
-
-    # Per-side move outcome flags for the turn that just ended, sourced from
-    # AbstractBattle.our/opp_move_{crit,missed,failed} (each turn-gated on
-    # turn-1). crit is orthogonal to miss/fail (a hit can crit); missed and
-    # failed are mutually exclusive in practice. All False when the side
-    # switched, was prevented from moving (|cant|), or used a move that simply
-    # connected. Derived into a single outcome category by TurnDelta.build.
-    our_move_crit: bool = False
-    opp_move_crit: bool = False
-    our_move_missed: bool = False
-    opp_move_missed: bool = False
-    our_move_failed: bool = False
-    opp_move_failed: bool = False
-
-    # The server-authoritative LegalActions snapshot captured at THIS decision — the
-    # immutable per-decision legality surface the masker built the mask from. Carried so
-    # the action mapper can decode the chosen action against the SAME snapshot the model
-    # saw, replacing the old battle._gen3_decision_context stash. None for fallback /
-    # standalone callers that didn't supply it (active_move_ids then reads last_request).
-    legal: Optional["LegalActions"] = None
-
-    def __post_init__(self):
-        if self.mask.shape != (11,):
-            raise RuntimeError(
-                f"BattleContext mask shape {self.mask.shape} != (11,) at turn {self.turn}"
-            )
-        if len(self.active_move_ids) != 4:
-            raise RuntimeError(
-                f"BattleContext active_move_ids length {len(self.active_move_ids)} != 4 at turn {self.turn}"
-            )
-        if self.our_boosts.shape != (BOOST_DIM,):
-            raise RuntimeError(
-                f"BattleContext our_boosts shape {self.our_boosts.shape} != ({BOOST_DIM},) at turn {self.turn}"
-            )
-        if self.opp_boosts.shape != (BOOST_DIM,):
-            raise RuntimeError(
-                f"BattleContext opp_boosts shape {self.opp_boosts.shape} != ({BOOST_DIM},) at turn {self.turn}"
-            )
-
-    @classmethod
-    def from_battle(
-        cls,
-        battle,
-        mask: np.ndarray,
-        our_slots: SlotRegistry,
-        opp_slots: SlotRegistry,
-        legal: Optional["LegalActions"] = None,
-    ) -> BattleContext:
-        """Build a context snapshot from a live battle, updating slot registries in place.
-
-        ``legal`` is the per-decision :class:`LegalActions` snapshot captured by the
-        caller (the masker built the mask from it). When supplied it is the source of
-        ``active_move_ids`` (request order, struggle excluded) AND is stored on the
-        context for the mapper. When omitted (standalone callers), ``active_move_ids``
-        falls back to reading the raw request.
-        """
-        for mon in battle.team.values():
-            our_slots.assign(mon.species)
-        for mon in battle.opponent_team.values():
-            opp_slots.assign(mon.species)
-
-        our_hp = np.zeros(6, dtype=np.float32)
-        for mon in battle.team.values():
-            slot = our_slots.get(mon.species)
-            if slot is not None:
-                our_hp[slot] = mon.current_hp_fraction
-
-        opp_hp = np.zeros(6, dtype=np.float32)
-        for mon in battle.opponent_team.values():
-            slot = opp_slots.get(mon.species)
-            if slot is not None:
-                opp_hp[slot] = mon.current_hp_fraction
-
-        our_active = (
-            battle.active_pokemon.species
-            if battle.active_pokemon and not battle.active_pokemon.fainted
-            else "NONE"
-        )
-        opp_mon = battle.opponent_active_pokemon
-        opp_active = opp_mon.species if opp_mon else "NONE"
-
-        # Build active_move_ids: 4-element list mirroring the masker's move-slot
-        # assignment. The per-decision LegalActions snapshot is the source of truth
-        # (request order, struggle already excluded) — identical to what the mask was
-        # built from. Without it (standalone callers), fall back to the raw request.
-        if legal is not None:
-            active_move_ids = (list(legal.move_ids) + [None, None, None, None])[:4]
-        else:
-            active_move_ids: list = [None, None, None, None]
-            try:
-                active_request = battle.last_request.get("active", [{}])[0]
-                request_moves = active_request.get("moves", [])
-                for i, move_data in enumerate(request_moves):
-                    if i < 4 and move_data.get("id") != "struggle":
-                        if not move_data.get("disabled", False):
-                            active_move_ids[i] = move_data.get("id")
-            except (AttributeError, IndexError, TypeError):
-                pass
-
-        opp_last_move = opp_mon.last_move if opp_mon else None
-        opp_last_move_id = opp_last_move.id if opp_last_move else None
-        our_active_mon = battle.active_pokemon
-        our_last_move = our_active_mon.last_move if our_active_mon else None
-        our_last_move_id = our_last_move.id if our_last_move else None
-        opp_active_revealed_moves = frozenset(opp_mon.moves.keys() if opp_mon else [])
-        opp_all_last_move_ids: dict = {}
-        for mon in battle.opponent_team.values():
-            lm = mon.last_move
-            opp_all_last_move_ids[mon.species] = lm.id if lm else None
-        our_cant_reason = (
-            battle.active_pokemon.last_cant_reason
-            if battle.active_pokemon else None
-        )
-        opp_cant_reason = opp_mon.last_cant_reason if opp_mon else None
-
-        our_boosts = boosts_array(battle.active_pokemon)
-        opp_boosts = boosts_array(opp_mon)
-
-        return cls(
-            turn=battle.turn,
-            phase="forced_switch" if battle.force_switch else "move_selection",
-            mask=mask,
-            our_slot_map=our_slots.snapshot(),
-            opp_slot_map=opp_slots.snapshot(),
-            our_hp=our_hp,
-            opp_hp=opp_hp,
-            our_active=our_active,
-            opp_active=opp_active,
-            our_fainted_count=sum(1 for m in battle.team.values() if m.fainted),
-            opp_fainted_count=sum(1 for m in battle.opponent_team.values() if m.fainted),
-            our_fainted_species=frozenset(m.species for m in battle.team.values() if m.fainted),
-            opp_fainted_species=frozenset(m.species for m in battle.opponent_team.values() if m.fainted),
-            our_team_status={m.species: m.status for m in battle.team.values()},
-            active_move_ids=active_move_ids,
-            opp_last_move_id=opp_last_move_id,
-            opp_all_last_move_ids=opp_all_last_move_ids,
-            opp_active_revealed_moves=opp_active_revealed_moves,
-            our_cant_reason=our_cant_reason,
-            opp_cant_reason=opp_cant_reason,
-            our_boosts=our_boosts,
-            opp_boosts=opp_boosts,
-            our_last_effectiveness=battle.our_last_effectiveness,
-            opp_last_effectiveness=battle.opp_last_effectiveness,
-            our_last_damaging_event=battle.our_last_damaging_move,
-            opp_last_damaging_event=battle.opp_last_damaging_move,
-            our_last_move_id=our_last_move_id,
-            we_moved_first=battle.we_moved_first,
-            our_team_order=tuple(m.species for m in battle.team.values()),
-            our_move_crit=battle.our_move_crit,
-            opp_move_crit=battle.opp_move_crit,
-            our_move_missed=battle.our_move_missed,
-            opp_move_missed=battle.opp_move_missed,
-            our_move_failed=battle.our_move_failed,
-            opp_move_failed=battle.opp_move_failed,
-            legal=legal,
-        )
 
 
 @dataclass
@@ -481,14 +305,13 @@ class TurnDelta:
     # the move connected / did its thing (damage or status applied); "miss" =
     # accuracy miss (|-miss|); "fail" = the move executed but did nothing
     # (Protect on repeat, Substitute on existing sub, |-fail|/|-notarget|/
-    # |-nothing|). Derived in build() from the move/switch/cant context plus
-    # the curr_ctx outcome flags. crit is orthogonal — a "hit" may also crit.
+    # |-nothing|). crit is orthogonal — a "hit" may also crit.
     our_move_outcome: Optional[str] = None
     opp_move_outcome: Optional[str] = None
     our_move_crit: bool = False
     opp_move_crit: bool = False
 
-    # --- Step 4: multi-KO + cause ----------------------------------------
+    # --- multi-KO + cause ------------------------------------------------
     # Count of mons that fainted on each side in this decision window.
     # (we_fainted / opp_fainted are kept as quick bool checks; these carry
     # the exact count for multi-KO turns.)
@@ -505,7 +328,7 @@ class TurnDelta:
         default_factory=lambda: np.zeros(8, dtype=np.float32)
     )
 
-    # --- Step 4: attempted action ----------------------------------------
+    # --- attempted action ------------------------------------------------
     # The move WE pressed, preserved even when it never fired (cant / frozen /
     # KO-before-acting). Decoded from the raw action index against prev_ctx at
     # build time, so it always reflects genuine intent. Only the MOVE is kept:
@@ -560,7 +383,15 @@ class TurnDelta:
         return self.opp_move_id
 
     @classmethod
-    def build(cls, prev_ctx: BattleContext, curr_ctx: BattleContext, action: int) -> TurnDelta:
+    def build(cls, prev_ctx: "BattleContext", curr_ctx: "BattleContext", action: int) -> "TurnDelta":
+        """LEGACY snapshot-diff detective — RETIRED FROM PRODUCTION; use ``build_from_events``.
+
+        Reconstructs the turn by diffing two ``BattleContext`` snapshots with heuristics
+        (see the LEGACY block at the top of this module). Retained only for the poke-env-gap
+        fuzz harnesses + crafted-context unit tests that validate BattleContext's
+        snapshot-derived per-turn flags. Every production caller folds the event log via
+        ``build_from_events`` instead.
+        """
         our_hp_delta = curr_ctx.our_hp - prev_ctx.our_hp
         opp_hp_delta = curr_ctx.opp_hp - prev_ctx.opp_hp
 
@@ -781,7 +612,7 @@ class TurnDelta:
         action: int,
         events: list,
     ) -> "TurnDelta":
-        """Build TurnDelta by folding the event log (Step 4 primary path).
+        """Build TurnDelta by folding the event log (the primary path).
 
         ``events`` must be ``battle.events_since(cursor)`` — the per-decision
         window (NOT ``events_for_turn``, which slices by protocol turn).
@@ -806,16 +637,27 @@ class TurnDelta:
         else:
             our_attempted_move_id = "struggle"
 
-        # HP deltas from snapshot (still the right source for continuous HP).
-        our_hp_delta = curr_ctx.our_hp - prev_ctx.our_hp
-        opp_hp_delta = curr_ctx.opp_hp - prev_ctx.opp_hp
-        for species, slot in curr_ctx.opp_slot_map.items():
-            if species not in prev_ctx.opp_slot_map and opp_hp_delta[slot] > 0:
-                opp_hp_delta[slot] = 0.0
+        # Per-slot HP deltas — FOLDED from the event log's DAMAGE/HEAL/SETHP + FAINT events
+        # (HP-complete; no poke-env Pokémon read), bit-identical to ``curr_hp − prev_hp``.
+        our_hp_delta, opp_hp_delta = _fold_hp_deltas(
+            events, curr_ctx.our_slot_map, curr_ctx.opp_slot_map,
+            prev_ctx.our_hp, prev_ctx.opp_hp, prev_ctx.opp_slot_map,
+        )
 
         empty_faint_causes = np.zeros(FAINT_CAUSE_DIM, dtype=np.float32)
 
         if not events:
+            # No event window: standalone / no-Gen3Battle callers, or a genuinely empty
+            # decision window. The event-fold above already yields all-zero HP here (no
+            # events ⇒ no change), but fall back to the current-board snapshot diff so the
+            # crafted-context unit tests (which inject HP with no event log) still surface
+            # their injected delta. In a real battle an empty window has no HP change, so
+            # this is identical to the fold's zeros — it is NOT a per-turn diff heuristic.
+            our_hp_delta = curr_ctx.our_hp - prev_ctx.our_hp
+            opp_hp_delta = curr_ctx.opp_hp - prev_ctx.opp_hp
+            for species, slot in curr_ctx.opp_slot_map.items():
+                if species not in prev_ctx.opp_slot_map and opp_hp_delta[slot] > 0:
+                    opp_hp_delta[slot] = 0.0
             we_fainted = curr_ctx.our_fainted_count > prev_ctx.our_fainted_count
             opp_fainted = curr_ctx.opp_fainted_count > prev_ctx.opp_fainted_count
             return cls(
@@ -871,7 +713,15 @@ class TurnDelta:
         our_item_lost = our.item_lost
         opp_item_lost = opp.item_lost
 
-        # --- Boost deltas ---
+        # --- Boost deltas (current-board LiveView stage diff, NOT an event-sum) ---
+        # FINDING: boost deltas cannot be value-identically folded from the event log.
+        # BOOST/UNBOOST carry a signed amount, but the realized stage clamps at ±6 (a +2
+        # Swords Dance at +5 nets +1, not +2) and CLEARBOOST/-invertboost/-copyboost/
+        # -swapboost/Belly-Drum SETBOOST carry only an ``op`` (no realized amount) — the
+        # log simply does not record the post-op stage values. So the exact, lossless
+        # source for the net stage change is the difference of the active mon's clamped
+        # stages at the two decision endpoints, read from the LiveView-equivalent
+        # snapshot boosts. Zeroed on switch (the switch-in's stages are its own baseline).
         our_boost_delta = (
             np.zeros(BOOST_DIM, dtype=np.int8) if our_switch_to is not None
             else (curr_ctx.our_boosts - prev_ctx.our_boosts).astype(np.int8)
@@ -971,7 +821,7 @@ class TurnDelta:
         )
 
     @classmethod
-    def empty(cls) -> TurnDelta:
+    def empty(cls) -> "TurnDelta":
         return cls(
             our_move_id=None, our_switch_to=None, our_prev_active="NULL",
             opp_move_id=None, opp_switch_to=None, opp_prev_active="NULL",

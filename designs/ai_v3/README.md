@@ -253,7 +253,8 @@ All 5 paths operate on role tokens that have already received the **active-conte
 | `src/agents/model/features_extractor.py` | Network definition |
 | `src/agents/observation/state_encoder.py` | Observation encoding; owns `base_dimension` (1103) and `dimension` (1309) |
 | `src/agents/observation/turn_delta_encoder.py` | TurnDelta → 39-dim float32 block (move/type IDs as raw ints) |
-| `src/agents/training/battle_context.py` | `BattleContext` snapshot + `TurnDelta` diff |
+| `src/agents/training/turn_delta.py` | `TurnDelta` — per-decision history fold (`build_from_events`) |
+| `src/agents/training/battle_snapshot.py` | `BattleContext` — per-decision current-board snapshot |
 | `src/agents/observation/constants.py` | Layout offsets and dimension constants |
 | `src/agents/observation/reactive.py` | Reactive block encoder; `get_layout()` drives reactive offsets in the network |
 | `designs/ai_v3/impl_step3_turn_transition_signal.md` | Design notes for TurnDelta + cant-move tracking |

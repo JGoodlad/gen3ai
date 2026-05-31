@@ -1,7 +1,8 @@
 from __future__ import annotations
 from typing import Protocol, runtime_checkable
 
-from agents.training.battle_context import BattleContext, TurnDelta
+from agents.training.battle_snapshot import BattleContext
+from agents.training.turn_delta import TurnDelta
 
 
 @runtime_checkable

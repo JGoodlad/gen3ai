@@ -8,8 +8,10 @@ confirmed these behaviors at scale.
 
 ## Background
 
-`TurnDelta` (in `battle_context.py`) exposes `opp_move_id` and `opp_move_known` to the
-reward function and, eventually, the observation encoder. Accuracy depends on
+`TurnDelta` (in `turn_delta.py`; the per-decision `BattleContext` snapshot it reads lives in
+`battle_snapshot.py`) exposes `opp_move_id` and `opp_move_known` to the reward function and the
+observation encoder. In production these fold from the event log (`build_from_events`); the
+legacy snapshot-diff `TurnDelta.build` these gap tests exercise reads
 `battle.opponent_active_pokemon.last_move`, which poke-env populates from the Showdown
 `|-move|` protocol.
 

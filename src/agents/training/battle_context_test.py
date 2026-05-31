@@ -1,7 +1,8 @@
 import pytest
 import numpy as np
 from unittest.mock import MagicMock
-from agents.training.battle_context import BattleContext, TurnDelta
+from agents.training.battle_snapshot import BattleContext
+from agents.training.turn_delta import TurnDelta
 from agents.training.slot_registry import SlotRegistry
 from agents.gen3_mechanics import BOOST_DIM, BOOST_STATS
 

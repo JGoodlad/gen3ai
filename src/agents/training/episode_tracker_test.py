@@ -9,7 +9,8 @@ import numpy as np
 import pytest
 from unittest.mock import MagicMock
 
-from agents.training.battle_context import BattleContext, TurnDelta
+from agents.training.battle_snapshot import BattleContext
+from agents.training.turn_delta import TurnDelta
 from agents.training.episode_tracker import EpisodeTracker
 from agents.action.mask_generator import Gen3ActionMasker
 from agents.battle.live_view import (
@@ -327,7 +328,7 @@ def test_history_cache_matches_recompute_and_encodes_once_per_turn():
         res = np.zeros((n, enc_r.dimension), dtype=np.float32)
         avail = min(n, len(tr._history) - 1, len(tr._actions), len(tr._cursors))
         for i in range(avail):
-            res[n - 1 - i] = tr._encode_delta_slot(i, enc_r, b, True)
+            res[n - 1 - i] = tr._encode_delta_slot(i, enc_r, b)
         return res
 
     b = battle()

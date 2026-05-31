@@ -11,7 +11,7 @@ The only poke-env touch — turning a :class:`~agents.action.choice.Choice` into
 player compose the two: validate the decision is current, decode to a ``Choice``, then
 serialize. There is no longer any ``battle._gen3_decision_context`` stash: the immutable
 ``LegalActions`` captured at observation time IS the per-decision snapshot, carried on the
-:class:`~agents.training.battle_context.BattleContext`.
+:class:`~agents.training.battle_snapshot.BattleContext`.
 
 Action space:
   0–5:  Switches (team slots 0–5)

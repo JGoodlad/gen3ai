@@ -82,11 +82,11 @@ def profile_obs_build(battle, tracker, obs_enc, td_enc, *, reps: int, top: int) 
                     tracker.prev_N_delta_vecs(N_HISTORY_TURNS, td_enc, battle=battle))
     enc_only = lambda: obs_enc.encode(battle, hp_tracker=hpt)
     # Per-decision turn-history cost WITH the deque cache: one delta encode (+ trivial stack).
-    hist_cached = lambda: tracker._encode_delta_slot(0, td_enc, battle, True)
+    hist_cached = lambda: tracker._encode_delta_slot(0, td_enc, battle)
     # What it cost BEFORE the cache: recompute every history slot from scratch each decision.
     def hist_recompute():
         for i in range(max(1, n_hist)):
-            tracker._encode_delta_slot(i, td_enc, battle, True)
+            tracker._encode_delta_slot(i, td_enc, battle)
     live_view = lambda: battle.live_view()
 
     for _ in range(10):  # warm caches / JIT-y bits
