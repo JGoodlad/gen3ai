@@ -87,17 +87,9 @@ def build_bot_eval_block(
     }
 
 
-# One-shot early baseline eval: the first eval fires once training crosses this
-# step count, before the normal adaptive cadence kicks in. Gives an early read on
-# the eval harness + a low baseline to measure improvement against, instead of
-# sitting blind until the first 1M-step boundary.
-FIRST_EVAL_STEP = 100_000
-
-
 def eval_schedule(num_timesteps: int) -> tuple[int, int]:
     """Shared adaptive eval schedule: returns (freq_steps, n_games).
 
-    First eval:  one-shot at FIRST_EVAL_STEP (100k), then:
     0–20M:    every 1M steps, 100 games
     20–50M:   every 2M steps, 200 games
     50–100M:  every 3M steps, 300 games
@@ -141,7 +133,6 @@ class PerOpponentEvalCallback(BaseCallback):
     and saving the best model when the aggregate improves.
 
     Adaptive schedule (hardcoded):
-      first eval:     one-shot at FIRST_EVAL_STEP (100k)
       0 – 20M steps:  every 1M steps,  100 games
       20M – 50M steps: every 2M steps, 200 games
       50M+ steps:     every 3M steps,  300 games
@@ -196,9 +187,7 @@ class PerOpponentEvalCallback(BaseCallback):
         if self.num_timesteps == 0:
             return True
         freq, n_games = self._schedule()
-        # One-shot early baseline eval, then fall through to the normal cadence.
-        baseline = self._last_eval_step == 0 and self.num_timesteps >= FIRST_EVAL_STEP
-        if baseline or (self.num_timesteps // freq) > (self._last_eval_step // freq):
+        if (self.num_timesteps // freq) > (self._last_eval_step // freq):
             self._last_eval_step = self.num_timesteps
             thread = threading.Thread(
                 target=self._run_async_eval, args=(n_games,), daemon=True

@@ -119,27 +119,9 @@ def test_no_eval_at_step_zero():
         mock_run.assert_not_called()
 
 
-def test_no_eval_before_baseline_threshold():
+def test_no_eval_before_first_freq_boundary():
     cb = _make_callback()
-    cb.num_timesteps = 50_000  # below FIRST_EVAL_STEP (100k)
-    with patch.object(cb, '_run_async_eval') as mock_run:
-        cb._on_step()
-        mock_run.assert_not_called()
-
-
-def test_baseline_eval_fires_at_first_threshold():
-    cb = _make_callback()
-    cb.num_timesteps = 100_000  # crosses FIRST_EVAL_STEP, _last_eval_step still 0
-    with patch.object(cb, '_run_async_eval') as mock_run:
-        cb._on_step()
-        mock_run.assert_called_once_with(100)
-    assert cb._last_eval_step == 100_000
-
-
-def test_baseline_eval_fires_only_once():
-    cb = _make_callback()
-    cb._last_eval_step = 100_000  # baseline already done
-    cb.num_timesteps = 200_000    # still inside the first 1M window
+    cb.num_timesteps = 500_000  # below the first 1M-step boundary
     with patch.object(cb, '_run_async_eval') as mock_run:
         cb._on_step()
         mock_run.assert_not_called()
