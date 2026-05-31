@@ -160,9 +160,9 @@ async def main(n_battles: int = 2000) -> None:
     )
 
     # Chunked so we can print progress and ABORT EARLY on the first CACHE divergence (the
-    # thing under test). A rare unrelated poke-env parse crash (e.g. its 6-mon get_pokemon
-    # cap firing on a tracking edge) aborts only that chunk's current battle — we catch it,
-    # count it as an infra-skip, and resume so a 10k–100k run isn't lost to one bad battle.
+    # thing under test). The try/except is a generic guard: a rare unrelated single-battle
+    # crash aborts only that chunk's current battle — we catch it, count it as an infra-skip,
+    # and resume so a 10k–100k run isn't lost to one bad battle.
     chunk = 25
     infra_skips = 0
     stuck = 0   # consecutive chunks with ZERO completed battles (genuinely-broken guard)
@@ -177,11 +177,11 @@ async def main(n_battles: int = 2000) -> None:
             if infra_skips <= 5:
                 print(f"  [infra-skip #{infra_skips}] {type(e).__name__}: {str(e)[:140]}",
                       flush=True)
-        # Between chunks no battle is in-flight. The bridge REUSES battle tags every
-        # run_local_battles call (battle-<fmt>-1…), and poke-env retains FINISHED battles by
-        # tag — so a reused tag returns the old 6-mon battle and the next battle's switches
-        # collide ("team already has 6 pokemons"). Drop finished battles + their trackers so
-        # each chunk's reused tags create fresh battles.
+        # Between chunks no battle is in-flight. The bridge now hands every battle a unique
+        # tag (utils/bridge/local_battle_runner._BATTLE_SEQ), so reused tags no longer return
+        # a stale full-team battle (the old "team already has 6 pokemons" crash). We still drop
+        # finished battles + their trackers each chunk to keep memory bounded over a 10k–100k
+        # run — poke-env otherwise retains every finished battle by tag forever.
         fuzz._trackers.clear()
         fuzz._battles.clear()
         opp._battles.clear()

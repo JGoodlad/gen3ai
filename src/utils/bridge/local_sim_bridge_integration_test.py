@@ -59,6 +59,49 @@ def test_local_battles_complete():
         assert battle.turn > 0
 
 
+@pytest.mark.integration
+def test_repeated_calls_use_unique_tags():
+    """Regression: calling ``run_local_battles`` repeatedly with the SAME players (the
+    chunked / time-budget fuzz pattern) must give every battle a unique tag.
+
+    A per-call ``battle-{fmt}-{index+1}`` scheme reused ``battle-{fmt}-1`` on every call.
+    poke-env's ``_create_battle`` then returned the *previous* battle's object for that
+    tag (it was still in ``player._battles``), so the new battle was parsed into an object
+    that already held a full 6-mon team — and the new battle's first ``|switch|`` of a
+    different species overflowed it: ``ValueError: p2's team already has 6 pokemons:
+    cannot add p2: Tyranitar to ...`` out of ``get_pokemon``. The fix (a process-global
+    battle counter) makes every tag unique, like a real server's room ids.
+    """
+    teams = _teams()
+
+    async def go():
+        p1 = RandomPlayer(
+            battle_format="gen3ou", team=Gen3Teambuilder(teams),
+            account_configuration=AccountConfiguration("LocBridgeChunkP1", None),
+            start_listening=False, start_timer_on_battle_start=False,
+        )
+        p2 = RandomPlayer(
+            battle_format="gen3ou", team=Gen3Teambuilder(teams),
+            account_configuration=AccountConfiguration("LocBridgeChunkP2", None),
+            start_listening=False, start_timer_on_battle_start=False,
+        )
+        # Three separate calls reusing the same players — pre-fix the 2nd call reused
+        # tag battle-gen3ou-1 and crashed (stale 6-mon team + a differing lead).
+        for _ in range(3):
+            await run_local_battles(p1, p2, 2)
+        return p1, p2
+
+    p1, p2 = asyncio.run(go())
+
+    # 6 distinct battles completed (no stale-battle reuse, no overflow crash).
+    assert p1.n_finished_battles == 6
+    assert p2.n_finished_battles == 6
+    # The core invariant: every battle got a unique tag (no collisions across calls).
+    assert len(p1._battles) == 6
+    assert len(set(p1._battles.keys())) == 6
+    assert all(b.finished for b in p1._battles.values())
+
+
 async def _drive_default(packed1: str, packed2: str, seed):
     """Drive one bridge battle answering every request with `default`; return the
     protocol stream split per side. The global p1-vs-p2 interleaving is a legit

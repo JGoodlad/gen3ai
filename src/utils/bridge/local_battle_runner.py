@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import asyncio
 import base64
+import itertools
 import json
 from pathlib import Path
 from typing import List, Optional
@@ -34,6 +35,21 @@ from utils.bridge.battle_stream_client import BattleStreamClient
 
 _BRIDGE_JS = str(Path(__file__).parent / "local_sim_bridge.js")
 _PER_BATTLE_TIMEOUT = 180.0  # generous; a fast in-process battle is seconds
+
+# Process-global, monotonically increasing battle number — mirrors how a real Showdown
+# server hands out a unique room id per battle. The tag MUST be unique across the whole
+# process, not just within one ``run_local_battles`` call: the same ``Player`` objects are
+# reused across calls (their ``_battles`` dict persists), and poke-env's ``_create_battle``
+# returns the *existing* battle for a tag it has already seen
+# (``player.py``: ``if battle_tag in self._battles: return self._battles[battle_tag]``).
+# When a chunked / time-budget fuzz loop calls ``run_local_battles`` repeatedly, a per-call
+# ``battle-{fmt}-{index+1}`` scheme reuses ``battle-{fmt}-1`` every chunk, so the *new*
+# battle is parsed into the *previous* battle's object — which already holds a full 6-mon
+# team. The new battle's first ``|switch|`` of a different species then overflows that team,
+# raising ``ValueError: <side>'s team already has 6 pokemons: cannot add ...`` from
+# ``get_pokemon``. A global counter makes every tag unique, so each battle always gets a
+# fresh object (single-call behaviour is unchanged — tags were already unique within a call).
+_BATTLE_SEQ = itertools.count(1)
 
 
 async def run_local_battles(
@@ -90,7 +106,9 @@ class _LocalBattleRunner:
         return client
 
     async def _one_battle(self, index: int) -> None:
-        tag = f"battle-{self.fmt}-{index + 1}"
+        # Unique across the whole process (see ``_BATTLE_SEQ`` above) — never reuse a tag,
+        # or poke-env hands back the prior battle's object for it and its team overflows.
+        tag = f"battle-{self.fmt}-{next(_BATTLE_SEQ)}"
         # get_next_team() yields a packed team AND sets player._current_packed_team,
         # which _create_battle reads. Sequential play makes that assignment safe.
         team1 = self.p1.get_next_team()
