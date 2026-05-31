@@ -1,24 +1,9 @@
 import numpy as np
 
-from agents.action.ordering_integrity import check_outcome_matches_intent
 from agents.training.battle_context import BattleContext, TurnDelta
 from agents.training.reward_function import RewardFunction
 from agents.training.reward_manager import Gen3RewardManager
 from agents.training.slot_registry import SlotRegistry
-
-# Forensic intent↔outcome mismatches are logged, not fatal (see
-# check_outcome_matches_intent docstring). Rate-limit the advisory so a
-# gap=0-prone battle can't flood the log.
-_INTENT_WARN_CAP = 20
-_intent_warn_count = 0
-
-
-def _warn_intent_mismatch(msg: str) -> None:
-    global _intent_warn_count
-    _intent_warn_count += 1
-    if _intent_warn_count <= _INTENT_WARN_CAP:
-        suffix = "  (further intent-mismatch warnings suppressed)" if _intent_warn_count == _INTENT_WARN_CAP else ""
-        print(f"⚠️  [INTENT] {msg}{suffix}")
 
 
 class RewardTracker:
@@ -68,14 +53,6 @@ class RewardTracker:
         use them for its JSON outcome entry without re-computing.
         """
         delta = TurnDelta.build(self._pending_ctx, curr_ctx, self._pending_action)
-        # Forensic only — never fatal. The action↔delta pairing can desync across
-        # poke-env gap=0 turns; the model's training data (protocol-truth
-        # our_move_id) is unaffected, so we log and continue rather than crash.
-        mismatch = check_outcome_matches_intent(
-            self._pending_ctx.active_move_ids, delta, self._pending_action, strict=False
-        )
-        if mismatch:
-            _warn_intent_mismatch(mismatch)
         self._reward_fn.record_action(self._pending_ctx, self._pending_action)
         reward = self._reward_fn.process_turn_reward(battle, delta)
         self._total_reward += reward

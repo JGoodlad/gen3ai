@@ -113,7 +113,7 @@ move/switch than the model selected:
 | File | Type | What it covers |
 |---|---|---|
 | `mapper_test.py` | Unit | Masker + pure `action_to_choice` (LegalActions STUB, no battle) + serialization + staleness guard + reverse map; struggle single-source regression |
-| `ordering_integrity_test.py` | Unit | Move/team ordering alignment (snapshot-driven) + outcome-vs-intent |
+| `ordering_integrity_test.py` | Unit | Move/team ordering alignment (snapshot-driven) |
 | `fuzz_test_unit.py` | Standalone script | Snapshot-immutability simulation: corrupt the request mid-decision, prove the captured snapshot decodes identically (replaces the old latch race sim) |
 | `fuzz_test.py` | Fuzz (local bridge, no server) | Real battles vs RandomPlayer; exhaustively decodes + serializes every legal action each turn |
 | `telemetry_e2e_test.py` | E2E (requires server) | Monitors for silent mid-decision state updates in live battles |

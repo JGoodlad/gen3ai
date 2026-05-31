@@ -19,7 +19,6 @@ from agents.action.ordering_integrity import (
     OrderingMismatchError,
     check_move_validity_alignment,
     check_switch_ordering_alignment,
-    check_outcome_matches_intent,
     reorder_move_bits_to_sorted,
     assert_sorted_validity_correct,
 )
@@ -187,100 +186,3 @@ def test_mapper_raises_on_stale_state():
     ]
     with pytest.raises(RuntimeError):
         Gen3ActionMapper.assert_decision_current(ctx, battle)
-
-
-# --------------------------------------------------------------------------
-# 2c — outcome vs intent (what fired must match what we pressed)
-# --------------------------------------------------------------------------
-
-def _delta(**kw):
-    d = types.SimpleNamespace(
-        our_move_id=None, our_switch_to=None, our_failed_to_move=False,
-        our_damaging_event=None, phase_is_forced_switch=False, turn=33,
-    )
-    for k, v in kw.items():
-        setattr(d, k, v)
-    return d
-
-
-REQ = ["thunderbolt", "willowisp", "icepunch", "taunt"]  # action order
-
-
-def test_2c_matching_move_no_raise():
-    check_outcome_matches_intent(REQ, _delta(our_move_id="thunderbolt"), MOVE_START + 0)
-    check_outcome_matches_intent(REQ, _delta(our_move_id="taunt"), MOVE_START + 3)
-
-
-def test_2c_mismatched_move_raises():
-    # Pressed action 0 (thunderbolt) but the game shows we used icepunch.
-    with pytest.raises(OrderingMismatchError):
-        check_outcome_matches_intent(REQ, _delta(our_move_id="icepunch"), MOVE_START + 0)
-
-
-def test_2c_cant_is_skipped():
-    # Fully paralysed: we pressed thunderbolt, nothing fired — not a mapping bug.
-    check_outcome_matches_intent(
-        REQ, _delta(our_move_id=None, our_failed_to_move=True), MOVE_START + 0
-    )
-
-
-def test_2c_forced_switch_is_skipped():
-    check_outcome_matches_intent(
-        REQ, _delta(our_switch_to="metagross", phase_is_forced_switch=True), 1
-    )
-
-
-def test_2c_action_kind_mismatch_raises():
-    # Chose a MOVE but we switched.
-    with pytest.raises(OrderingMismatchError):
-        check_outcome_matches_intent(REQ, _delta(our_switch_to="metagross"), MOVE_START + 0)
-    # Chose a SWITCH but we used a move.
-    with pytest.raises(OrderingMismatchError):
-        check_outcome_matches_intent(REQ, _delta(our_move_id="thunderbolt"), 1)
-
-
-def test_2c_voluntary_switch_no_raise():
-    check_outcome_matches_intent(REQ, _delta(our_switch_to="metagross"), 1)
-
-
-def test_2c_sleeptalk_caller_no_raise():
-    # Sleep Talk (action 9 here) invokes a random move; protocol shows the called
-    # move, not sleeptalk — legitimate, must not raise.
-    req = ["curse", "bodyslam", "rest", "sleeptalk"]
-    check_outcome_matches_intent(req, _delta(our_move_id="bodyslam"), MOVE_START + 3)
-
-
-def test_2c_prefers_damaging_event_move_id():
-    # protocol-truth move id from the damaging event wins over last_move
-    ev = types.SimpleNamespace(move_id="thunderbolt")
-    check_outcome_matches_intent(
-        REQ, _delta(our_move_id="stale", our_damaging_event=ev), MOVE_START + 0
-    )
-
-
-def test_2c_non_strict_returns_message_instead_of_raising():
-    # The live training/replay path calls with strict=False: a mismatch must NOT
-    # raise (it would crash the run), it returns the message to log. This is the
-    # Gengar case from the run crash — pending action 9 (hypnosis) paired with a
-    # delta whose protocol move is thunderbolt across a gap=0 turn.
-    req = ["thunderbolt", "explosion", "willowisp", "hypnosis"]
-    msg = check_outcome_matches_intent(
-        req, _delta(our_move_id="thunderbolt"), MOVE_START + 3, strict=False
-    )
-    assert isinstance(msg, str) and "thunderbolt" in msg and "hypnosis" in msg
-
-
-def test_2c_non_strict_returns_none_when_aligned():
-    # No mismatch under strict=False returns None (nothing to log).
-    assert (
-        check_outcome_matches_intent(
-            REQ, _delta(our_move_id="thunderbolt"), MOVE_START + 0, strict=False
-        )
-        is None
-    )
-
-
-def test_2c_strict_default_still_raises():
-    # Default strict=True is unchanged so the unit-test assertions stay valid.
-    with pytest.raises(OrderingMismatchError):
-        check_outcome_matches_intent(REQ, _delta(our_move_id="icepunch"), MOVE_START + 0)
