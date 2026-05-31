@@ -20,7 +20,20 @@ from agents.training.reward_manager import Gen3RewardManager
 from main.launcher.ipc import send_metrics
 
 BATTLE_FORMAT = "gen3ou"
+# Single-player concurrency ceiling (kept for SelfPlayCallback's one-player path).
 _EVAL_CONCURRENCY = 100
+# PerOpponentEvalCallback evaluates every opponent concurrently — one RLPlayer per
+# opponent, all gathered. Cap the AGGREGATE in-flight battles so N opponents don't
+# flood the server with N×100; the per-opponent ceiling is this budget split N ways
+# (floored at 16, which already saturates the single-threaded inference pipeline).
+_EVAL_TOTAL_CONCURRENCY = 200
+
+
+def _per_opponent_concurrency(n_opponents: int) -> int:
+    """Per-player concurrency so the aggregate stays near _EVAL_TOTAL_CONCURRENCY."""
+    if n_opponents <= 0:
+        return _EVAL_CONCURRENCY
+    return max(16, _EVAL_TOTAL_CONCURRENCY // n_opponents)
 
 _OPPONENT_NAMES: dict[type, str] = {
     RandomPlayer: "Random",
@@ -159,7 +172,9 @@ class PerOpponentEvalCallback(BaseCallback):
         self._server_config = server_config
         self.best_model_save_path = best_model_save_path
         self._model_dir = model_dir
-        self._rl_player: RLPlayer | None = None
+        # One EvalRLPlayer per opponent, keyed by opponent display name, so all
+        # opponents can be evaluated concurrently with isolated win/reward counters.
+        self._rl_players: dict[str, RLPlayer] = {}
         self._last_eval_step = 0
         self._best_aggregate_win_rate = -1.0
         # Set by train_rl_agent after signal handlers are wired. Used as the
@@ -173,15 +188,22 @@ class PerOpponentEvalCallback(BaseCallback):
         if self.best_model_save_path is not None:
             os.makedirs(self.best_model_save_path, exist_ok=True)
         ts = datetime.now().strftime('%H%M%S')
-        self._rl_player = EvalRLPlayer(
-            model=self.model,
-            team=self._trainee_teambuilder,
-            battle_format=BATTLE_FORMAT,
-            server_configuration=self._server_config,
-            mappings=self._mappings,
-            account_configuration=AccountConfiguration(f"RLCbEval{ts}", "password"),
-            max_concurrent_battles=_EVAL_CONCURRENCY,
-        )
+        per_conc = _per_opponent_concurrency(len(self._opponents))
+        # One dedicated player per opponent, persistent across eval runs. They share
+        # self.model (predicts serialize in the single eval-thread event loop) and the
+        # stateless trainee teambuilder (random.choice), so concurrent use is safe.
+        self._rl_players = {
+            name: EvalRLPlayer(
+                model=self.model,
+                team=self._trainee_teambuilder,
+                battle_format=BATTLE_FORMAT,
+                server_configuration=self._server_config,
+                mappings=self._mappings,
+                account_configuration=AccountConfiguration(f"RLEv{i}{ts}", "password"),
+                max_concurrent_battles=per_conc,
+            )
+            for i, (name, _opp) in enumerate(self._opponents)
+        }
 
     def _on_step(self) -> bool:
         if self.num_timesteps == 0:
@@ -221,46 +243,52 @@ class PerOpponentEvalCallback(BaseCallback):
             f"{len(self._opponents)} opponents × ≤{n_games} games "
             f"(cap {_EVAL_GAMES_CAP_DEFAULT}, heuristics {_EVAL_GAMES_CAP_HEURISTIC})..."
         )
-        win_rates: dict[str, float] = {}
-        reward_means: dict[str, float] = {}
-        ep_lens: dict[str, float] = {}
         tui_metrics: dict[str, float] = {}
         eval_start = datetime.now()
 
-        for name, opponent in self._opponents:
+        async def eval_one(name, opponent):
+            """Run one opponent's full battle set on its dedicated player."""
+            rl = self._rl_players[name]
             games = eval_games_for(name, n_games)
-            if self._rl_player.n_finished_battles > 0:
-                self._rl_player.reset_battles()
+            # Players persist across eval runs — clear last run's battles/reward state.
+            if rl.n_finished_battles > 0:
+                rl.reset_battles()
             if opponent.n_finished_battles > 0:
                 opponent.reset_battles()
+            rl.reset_reward_tracking()
 
             start = datetime.now()
-            await self._rl_player.battle_against(opponent, n_battles=games)
+            await rl.battle_against(opponent, n_battles=games)
             duration = datetime.now() - start
-            # _battle_finished_callback has fired for every battle by this point
+            # _battle_finished_callback has fired for every battle by this point.
 
-            won = self._rl_player.n_won_battles
-            finished = self._rl_player.n_finished_battles
+            won = rl.n_won_battles
+            finished = rl.n_finished_battles
             win_rate = won / finished if finished > 0 else 0.0
-            mean_reward = self._rl_player.mean_episode_reward
-            ep_len = self._mean_episode_length()
-            win_rates[name] = win_rate
-            reward_means[name] = mean_reward
-            ep_lens[name] = ep_len
-
+            mean_reward = rl.mean_episode_reward
+            ep_len = self._mean_episode_length(rl)
             print(
                 f"  vs {name}: {win_rate * 100:.1f}%  "
                 f"({won}/{finished})  ep_len={ep_len:.1f}  reward={mean_reward:.3f}  [{duration}]"
             )
-            self.logger.record(f"eval/win_rate_vs_{name}", win_rate)
-            self.logger.record(f"eval/mean_ep_len_vs_{name}", ep_len)
-            self.logger.record(f"eval/mean_reward_vs_{name}", mean_reward)
+            return name, win_rate, mean_reward, ep_len
 
-            tui_metrics[f"eval/win_rate_vs_{name}"] = win_rate
-            tui_metrics[f"eval/mean_ep_len_vs_{name}"] = ep_len
-            tui_metrics[f"eval/mean_reward_vs_{name}"] = mean_reward
+        # All opponents play concurrently — each on its own player, so the per-opponent
+        # counters stay isolated. Inter-opponent overlap removes the serial-loop bubbles.
+        results = await asyncio.gather(
+            *(eval_one(name, opponent) for name, opponent in self._opponents)
+        )
 
-            self._rl_player.reset_reward_tracking()
+        win_rates: dict[str, float] = {name: wr for name, wr, _, _ in results}
+        reward_means: dict[str, float] = {name: mr for name, _, mr, _ in results}
+        ep_lens: dict[str, float] = {name: el for name, _, _, el in results}
+        for name in win_rates:
+            self.logger.record(f"eval/win_rate_vs_{name}", win_rates[name])
+            self.logger.record(f"eval/mean_ep_len_vs_{name}", ep_lens[name])
+            self.logger.record(f"eval/mean_reward_vs_{name}", reward_means[name])
+            tui_metrics[f"eval/win_rate_vs_{name}"] = win_rates[name]
+            tui_metrics[f"eval/mean_ep_len_vs_{name}"] = ep_lens[name]
+            tui_metrics[f"eval/mean_reward_vs_{name}"] = reward_means[name]
 
         eval_duration_sec = (datetime.now() - eval_start).total_seconds()
         aggregate = sum(win_rates.values()) / len(win_rates) if win_rates else 0.0
@@ -313,8 +341,8 @@ class PerOpponentEvalCallback(BaseCallback):
         else:
             os._exit(1)
 
-    def _mean_episode_length(self) -> float:
-        battles = [b for b in self._rl_player._battles.values() if b.finished]
+    def _mean_episode_length(self, player) -> float:
+        battles = [b for b in player._battles.values() if b.finished]
         if not battles:
             return 0.0
         return sum(b.turn for b in battles) / len(battles)

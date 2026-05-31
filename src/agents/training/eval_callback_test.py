@@ -4,7 +4,10 @@ import pytest
 
 from poke_env.player import RandomPlayer, SimpleHeuristicsPlayer
 from agents.opponents import Gen3StallerPlayer
-from agents.training.eval_callback import PerOpponentEvalCallback, bot_mean, opponent_name, RANDOM_OPPONENT_NAME
+from agents.training.eval_callback import (
+    PerOpponentEvalCallback, bot_mean, opponent_name, RANDOM_OPPONENT_NAME,
+    _per_opponent_concurrency, _EVAL_TOTAL_CONCURRENCY, _EVAL_CONCURRENCY,
+)
 
 
 # ── bot_mean ─────────────────────────────────────────────────────────────────
@@ -47,6 +50,23 @@ def test_opponent_name_unknown_falls_back_to_class_name():
 
 def test_random_opponent_name_constant_matches_function():
     assert RANDOM_OPPONENT_NAME == opponent_name(RandomPlayer)
+
+
+# ── _per_opponent_concurrency ─────────────────────────────────────────────────
+
+def test_per_opponent_concurrency_splits_budget():
+    # Aggregate (n × per-player) stays at/below the total budget.
+    assert _per_opponent_concurrency(5) == _EVAL_TOTAL_CONCURRENCY // 5
+    assert _per_opponent_concurrency(9) * 9 <= _EVAL_TOTAL_CONCURRENCY + 9
+
+
+def test_per_opponent_concurrency_floored_at_16():
+    # Many opponents still get enough concurrency to saturate inference.
+    assert _per_opponent_concurrency(100) == 16
+
+
+def test_per_opponent_concurrency_zero_falls_back():
+    assert _per_opponent_concurrency(0) == _EVAL_CONCURRENCY
 
 
 def _make_callback(best_model_save_path=None):
