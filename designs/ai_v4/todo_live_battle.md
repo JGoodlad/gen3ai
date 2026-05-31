@@ -1,13 +1,49 @@
 # TODO: Lock down battle access behind the strict read-model API (Phases 3–5)
 
-**Status:** Phases 1–2 are **implemented**. Phase 3's **`action/` cluster is LANDED** (the
-masker/mapper now read through `LegalActions`; the `_gen3_decision_context` stash is retired;
-`action_to_order` is split into a pure `action_to_choice(legal) -> Choice` + a single
-`serialize.choice_to_order` adapter; struggle is single-sourced via `legal.struggle`). The
-remaining Phase 3 consumers (`observation/` + `training/`) and Phases 4–5 are **deferred**.
+**Status:** Phases 1–2 **implemented**. **Phase 3 is COMPLETE** — every consumer cluster
+(`observation/`, `action/`, `training/` incl. `reward_manager.py`, `inference/`) now reads
+through `StrictBattleView` / `LiveView` / `LegalActions`, verified value-neutral and
+perf-neutral (see "Wave 1 verification" below). **Phase 4** (the static no-raw-read guard +
+the `agents/enums.py` re-export seam) is the **next step**. **Phase 5** (true `LiveView`
+event-fold independence) is future.
 
 Full approved plan (read first): `~/.claude/plans/can-you-explore-what-nested-pebble.md`
 — it carries the complete dependency inventory and rationale this doc summarises.
+
+---
+
+## Wave 1 verification (Phase 3 complete) — 2026-05-31
+
+Phase 3 was executed as five file-disjoint tracks (observation / training control+replay /
+episode_tracker / action / reward), each gated by an existing value-neutrality harness so the
+migration could be proven to change *where* a value comes from, never *what* it is.
+
+**Landed commits:** observation `3418c26`; training control/replay `182b499` (+ `664f3a5`
+retired `replay_recorder.py` for quota-gated forensic traces); episode_tracker `8b41bb4`;
+action residual `0b23cd6`; reward activation logic `d56942d`.
+
+**Gates, all green (on `d56942d`):**
+
+| Gate | Result |
+|------|--------|
+| Unit suite (`-m "not integration and not e2e"`) | 1193 passed, 2 skipped |
+| Action fuzz (`action/fuzz_test.py`) | 50 battles, 3710 turns, integrity verified |
+| Reward equivalence (`reward_resourcing_equivalence_fuzz_test.py`) | 4778 turns, **0 field diffs** (live vs raw paths byte-identical) |
+| Obs byte-identity (`turn_history_fuzz_test.py`) | 8681 decisions, **mismatch=0** |
+| Obs-build perf (`obs_build_benchmark.py`) | **~12.3k calls/encode** (≤ ~12.8k baseline); `PokemonType.damage_multiplier` absent from the profile (chart not bypassed) — no regression |
+
+**Documented, intentional residual reads** (NOT incomplete migration — these become the
+Phase-4 guard allowlist):
+- `observation/reactive.py` — the 288-cell effectiveness hot-loop stays on the raw battle:
+  own Hidden Power keeps its *typed* id only on the raw `Move` (LiveView re-keys to bare
+  `hiddenpower`, which would change the emitted effectiveness); the loop needs `PokemonType`
+  enums not LiveView strings; pinned byte-for-byte by `alignment_test`.
+- `observation/state_encoder.py` — `mon is battle.opponent_active_pokemon` identity check +
+  `battle.battle_tag`/`battle.wait` in the obs error guard.
+- `action/mapper.py` — `battle.turn` in the `assert_decision_current` staleness-guard error path.
+- `training/reward_manager.py` — the `_read_live=False` dual-path `else` fallbacks (the
+  equivalence harness proves they match the `live` path), plus `battle.turn` (stall tax) and
+  `report_episode` team iteration.
 
 ---
 
@@ -74,73 +110,75 @@ under Phase 3.
 
 ---
 
-## Phase 3 — migrate consumers to the strict view (`action/` LANDED; rest DEFERRED)
+## Phase 3 — migrate consumers to the strict view ✅ COMPLETE
 
-Build `battle.strict_view()` once at the top of each decision and thread the strict view (or
-its `.live` / `.legal` pieces) to the sub-consumers, replacing every raw `battle.<attr>` /
-`Pokemon`-object read. Order smallest-blast-radius first; **run the unit suite + the relevant
-e2e fuzz after each cluster.**
+All consumers now build `battle.strict_view()` (or `battle.live_view()`) at the decision
+boundary and read state through `.live` / `.legal` rather than the raw battle. This was a pure
+*access* refactor — obs-neutral (vector byte-identical, no `ARCH_SIGNATURE` bump) and reward
+value-neutral (equivalence harness 0-diff). See "Wave 1 verification" above for the gates.
 
-**Obs-neutrality is the bar:** this is a pure *access* refactor. If migrating an encoder to a
-strict-view field changes any emitted value (e.g. PP or a stat now sourced differently), stop
-and treat it as a retrain-class change — bump `ARCH_SIGNATURE` per `CLAUDE.md`. The intent is
-that the diff changes *where* a value comes from, not *what* it is.
+### Consumer inventory (status)
 
-### Consumer inventory (raw reads to replace)
-
-1. **`observation/`** — `state_encoder.py` already builds `battle.live_view()`; have it build
-   the strict view once and thread `.live` (+ `.legal` where needed) to the sub-encoders.
-   - `pokemon.py` / `species.py` — `mon.base_stats`, `mon.ivs`, `mon.evs`, `mon.nature`,
-     `mon.status_counter` → `LivePokemon.{base_stats,ivs,evs,nature,spread_known,status_counter}`.
-   - `moves.py` / `reactive.py` — `mon.moves[*].current_pp/max_pp` → `LiveMove`; the
-     `get_sorted_moves` convention already matches `LivePokemon.moves` (sorted by id).
-   - `items.py` — `mon.item` / `mon.consumed_item` → `LivePokemon.{item,consumed_item}`.
-   - `types.py` / `abilities.py` / `active_context.py` / `global_env.py` — already consume
-     `LiveView` pieces; finish any residual raw reads.
-   - **HP / Hidden-Power note:** `pokemon.py`'s `_own_hp_type_index` reads `move.type` off the
-     poke-env `Move` object. `LiveMove` does **not** carry type today — either add a `type` (and
-     whatever else the HP path needs) to `LiveMove`/`LivePokemon` in a Phase-1-style widening
-     *before* migrating this path, or keep the HP-type derivation in `battle/` and expose the
-     result. Don't migrate `pokemon.py` until this field gap is closed.
-2. **`action/`** — ✅ **DONE.** `mask_generator.py`, `mapper.py`, `ordering_integrity.py`
-   no longer poke the raw battle for legality; they read the `LegalActions` snapshot
-   (`mask_from_legal(legal)`, `action_to_choice(action, legal)`, `check_*` take `legal`).
-   The `_gen3_decision_context` latch is **deleted**; its lockstep role is now played by the
-   immutable `LegalActions` captured at observation time and carried on the `BattleContext`
-   (`EpisodeTracker.record(battle, mask, legal)`), so mask and mapper share one source by
-   construction. `action_to_order` is split into the pure `action_to_choice(legal) -> Choice`
-   + the single `serialize.choice_to_order(choice, battle)` adapter; `assert_decision_current`
-   fail-loud-guards a mid-decision request shift. Struggle is single-sourced via
-   `legal.struggle` (filtered out of `move_slots`). Readers of the old stash
-   (`battle_context.py`, `battle_recorder.py`, `transition_fuzz_test.py`) were migrated to the
-   legality surface. Obs-neutral (no `ARCH_SIGNATURE` bump).
-3. **`training/`** — `gen3_env.py`, `replay_recorder.py` / `battle_recorder.py`,
-   `episode_tracker.py`, `reward_manager.py` / `reward_tracker.py`, `slot_registry.py` →
-   meta (`turn`/`battle_tag`/`finished`/`won`/`lost`) + `.live`. **SKIP `battle_context.py`**
-   — it is the old diff-based heuristic reader (`last_move`, `last_cant_reason`,
-   `force_switch`, `last_request`, boosts) that the deferred **Step 4 TurnDelta fold** retires
-   (`designs/ai_v4/handoff_turn_delta_reward_replay.md`). Migrating its heuristics to the
-   strict view is wasted work; let Step 4 delete it. Sequence: run this migration *after*
-   Step 4, or migrate everything *except* `battle_context.py` and let Step 4 finish it.
-4. **`inference/player.py`, `training/stall.py`** — meta passthroughs
-   (`turn`/`battle_tag`/`finished`/`won`/`lost`).
+1. **`observation/`** — ✅ **DONE** (`3418c26`). `state_encoder.py` builds the LiveView once
+   and threads `.live` / `live_mon` to the sub-encoders.
+   - `pokemon.py` / `species.py` — spread block + status_counter now from
+     `LivePokemon.{base_stats,ivs,evs,nature,spread_known,status_counter}`.
+   - `items.py` / `types.py` / `abilities.py` / `active_context.py` / `global_env.py` — all on
+     `LiveView` pieces.
+   - **HP / Hidden-Power resolution:** `_own_hp_type_index` was *removed* — it resolved to
+     `None` on every real decision (17208/17208; live battles re-key typed HP to bare
+     `hiddenpower`), so the one-hot was already dead. The effectiveness hot-loop in
+     `reactive.py` deliberately stays on the raw battle (typed-HP id + enum-keyed loop +
+     pinned by `alignment_test`) — see the residual-reads list above.
+2. **`action/`** — ✅ **DONE** (`021f2d3` + `0b23cd6`). `mask_generator.py`, `mapper.py`,
+   `ordering_integrity.py` read the `LegalActions` / `LiveView` snapshot
+   (`mask_from_legal(legal)`, `action_to_choice(action, legal)`, `_sorted_move_ids` uses
+   `LivePokemon.move_ids`, species-integrity check uses `live.ours.mons`). The
+   `_gen3_decision_context` latch is **deleted**; lockstep is the immutable `LegalActions`
+   captured at observation time and carried on the `BattleContext`. `action_to_order` is split
+   into the pure `action_to_choice(legal) -> Choice` + the single
+   `serialize.choice_to_order(choice, battle)` adapter; `assert_decision_current` fail-loud
+   guards a mid-decision request shift (the only residual `battle.turn` read, error-path only).
+   Struggle is single-sourced via `legal.struggle`.
+3. **`training/`** — ✅ **DONE** (`182b499`, `8b41bb4`, `d56942d`). `gen3_env.py`,
+   `battle_recorder.py`, `episode_tracker.py`, `stall.py` read meta + `.live` through the
+   strict view; `replay_recorder.py` was retired (`664f3a5`) in favour of quota-gated forensic
+   traces. `reward_manager.py` extends the `_read_live` dual-path to its per-term activation
+   logic (switch/pivot/attack signals), proven value-neutral by the equivalence harness; the
+   only remaining `battle.*` reads are the `_read_live=False` fallbacks + the acknowledged
+   stall-tax / `report_episode` residue. **`battle_context.py` was deliberately NOT migrated**
+   — it is the old diff-based heuristic reader that the deferred **Step 4 TurnDelta fold**
+   retires (`designs/ai_v4/handoff_turn_delta_reward_replay.md`); let Step 4 delete it.
+4. **`inference/player.py`** — ✅ **DONE.** Meta passthroughs via `strict_view()`.
 
 ---
 
-## Phase 4 — enforce: the static "no raw battle read" guard (DEFERRED)
+## Phase 4 — enforce: enums seam + the static "no raw battle read" guard (NEXT)
 
-This is the actual *lock*. Add a static test (sibling to the `_FORBIDDEN_HISTORY_FIELDS`
-philosophy in `live_view_test.py`) that scans our consumer modules — everything under
-`observation/`, `action/`, `training/`, `inference/` **except** the `battle/` package and
-`battle_context.py` (until Step 4 deletes it) — for direct raw access:
+Two parts, the actual *lock* now that Phase 3 has removed the raw reads:
 
-- `battle.<attr>` for the temporal/stateful attrs (`active_pokemon`, `available_moves`,
-  `last_request`, `team`, `weather`, …) outside `battle/`, and
-- `Pokemon`-object attribute reads (`.last_move`, `.ivs`, `.effects`, `.current_pp`, …).
+**4a — accepted-enums re-export seam.** Create `src/agents/enums.py` re-exporting ONLY
+`PokemonType`, `Status`, `MoveCategory`, `Weather` from poke_env (with `__all__` = exactly
+those four; `Effect` intentionally excluded — replaced by `observation/gen3_effects.py`).
+Sweep `src/agents/**` (excluding `battle/`, `enums.py`, `*_test.py`) to import those four from
+`agents.enums` instead of `poke_env` — a pure import-path change. Add `enums_test.py` asserting
+the accepted set so an accidental `Effect` re-export fails CI.
 
-AST-walk the modules (not a regex grep — too many false positives) and fail on any raw read,
-with an allowlist for the unavoidable seams. A new raw read then fails CI, which is what makes
-the standard stick. Until Phase 4 lands, the standard is convention-only.
+**4b — the guard.** Add a static test (sibling to the `_FORBIDDEN_HISTORY_FIELDS` philosophy in
+`live_view_test.py`) that **AST-walks** (not regex) our consumer modules under
+`observation/`, `action/`, `training/`, `inference/` and fails on:
+- `battle.<attr>` for the stateful attrs (`active_pokemon`, `opponent_active_pokemon`,
+  `available_moves`, `available_switches`, `last_request`, `team`, `opponent_team`, `weather`,
+  `side_conditions`, `force_switch`, `trapped`, `_player_role`), and
+- `from poke_env … import` of the four value-enums outside `agents/enums.py`.
+
+**Exclude** `battle/`, `*_test.py`, `action/serialize.py` (documented Choice→BattleOrder seam),
+`battle_context.py` (Step 4 retires it). **Allowlist** the documented intentional residual reads
+listed under "Wave 1 verification" (reactive hot-loop, state_encoder identity/error guard,
+mapper staleness guard, reward `_read_live` fallbacks + stall-tax/report_episode) — prefer
+small per-file/per-line allowlist entries over broad file exclusions so the guard still catches
+*new* raw reads in those files. A new raw read then fails CI — that is what makes the standard
+stick. Until 4b lands, the standard is convention-only.
 
 ---
 
