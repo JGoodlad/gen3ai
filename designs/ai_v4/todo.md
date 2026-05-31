@@ -8,7 +8,8 @@ require infrastructure changes beyond a localized fix.
 
 ## 1. Boost delta corruption on phaze-on-us
 
-**Where:** `src/agents/training/battle_context.py` — `TurnDelta.build` line ~370
+**Where:** `src/agents/training/battle_context.py` — boost-delta computation in
+both `TurnDelta.build` (~line 684) and `build_from_events` (~line 857).
 
 When opp uses Roar/Whirlwind on us, our active mon changes mid-turn but
 `delta.our_switch_to` stays `None` (we picked a move action, not a switch).
@@ -31,8 +32,8 @@ meaningless — comparing two different Pokémon's stat stages.
   but the delta reads zero — the penalty fires incorrectly. Semantic argument:
   losing the boost to phaze IS a wasted turn, but the penalty is mis-attributing
   the mechanism.
-- **TurnDelta encoder now emits boost_delta features** (Step 3 history
-  expansion, slot offsets 39–52). The model is no longer insulated — the
+- **TurnDelta encoder emits boost_delta features** (`OFFSET_OUR_BOOST_DELTA` /
+  `OFFSET_OPP_BOOST_DELTA`). The model is no longer insulated — the
   corrupted delta flows into the per-slot observation. Fix priority is
   higher than originally noted.
 
@@ -43,7 +44,12 @@ and `delta.our_switch_to is None`. Requires distinguishing BP (we phaze
 ourselves via move) from opp's Roar — could gate on `delta.our_move_id in
 PHAZING_MOVES` but that's our move, not theirs. The right signal is whether
 opp's move this turn was Roar/Whirlwind; that's `delta.opp_resolved_move_id in
-PHAZING_MOVES` after the recent migration.
+PHAZING_MOVES`, now available.
+
+**Status after the `gen3_turn_delta_v2` event-sourced fold (c2dbee6): still open.**
+The fold folds move attribution / outcome / status / item from the event log but
+still computes the boost delta by snapshot-diffing prev/curr boosts in *both*
+`build` and `build_from_events` — so the phaze-on-us corruption is unchanged.
 
 ---
 
@@ -71,12 +77,17 @@ at an effectiveness emission. Would require a new property on AbstractBattle:
 `opp_last_move_attempt` (any move, damaging or not) gated like the existing
 properties. Could share infrastructure with `_pending_opp_damaging_move`.
 
+**Partial (c2dbee6):** the fold added an **`our_attempted_move_id`** signal
+(`OFFSET_OUR_ATTEMPTED_MOVE`) that preserves the pressed move even when it never
+fired — but only for **our** side. The opponent-side non-damaging phaze recovery
+above is unchanged; `transition_fuzz` still reports `phaze_no_damaging_event`.
+
 ---
 
 ## 3. TurnDelta encoder full-vector consistency fuzz
 
-**Where:** `src/agents/observation/turn_delta_encoder.py` produces an
-88-dim vector per historical turn (post Step 3 history expansion).
+**Where:** `src/agents/observation/turn_delta_encoder.py` produces a
+**`TURN_DELTA_DIM = 157`**-dim vector per historical turn.
 
 Effectiveness_fuzz currently validates layers 1-5 around effectiveness, order,
 and the new DamagingMoveEvent. The encoder's OTHER features (move id
@@ -95,13 +106,20 @@ and effectiveness_fuzz's Layer 4 was migrated off magic indices. The remaining
 gap is the move-id embeddings / power / secondary-recoil flags / HP-level vectors
 — still unit-test-only.
 
+**Updated (c2dbee6, `gen3_turn_delta_v2`):** the fold grew the slot to 157 dims
+with new fields (faint-cause multi-hot, status applied/cured, item-used,
+attempted-move). `event_log_fuzz_e2e_test` validates the **event-log source** of
+these per turn, but a single full-vector `decode_to_dict()` round-trip asserting
+all 157 encoded dims against the source `TurnDelta` (the requested "Layer 6")
+still does not exist.
+
 ---
 
 ## 4. State encoder per-slot consistency fuzz
 
 **Where:** `src/agents/observation/state_encoder.py` produces the
-2414-dim full observation vector via `Gen3ObservationEncoder.encode()`
-(post Step 3 history expansion + Step 4 unified transformer).
+**3299-dim** full observation vector via `Gen3ObservationEncoder.encode()`
+(`EXPECTED_OBS_DIM = EXPECTED_BASE_DIM + 11 + N_HISTORY_TURNS × TURN_DELTA_DIM`).
 
 No e2e test verifies that the observation dims encode the live battle
 state correctly. Specifically:
@@ -299,3 +317,24 @@ to set the real baseline before investing.
   `ARCH_SIGNATURE` → `gen3_move_outcome_v1`. New `move_outcome_fuzz_e2e_test`
   (120 battles / 6876 turns, 0 mismatches across 4 layers). Base-block offsets
   refactored to computed `OFFSET_*` constants.
+- **Step 6 — next-run bundle** (`impl_step6_next_run_bundle.md`): six changes shipped
+  as one batch — move accuracy + never-miss bit, move-outcome reporting (Step 5),
+  modular extractor refactor, dual-head policy/value (value-dedicated CLS readout),
+  protocol-accurate move attribution, and a reward overhaul (anti-spam taxes + pivot
+  pressure). `ARCH_SIGNATURE` chain `gen3_move_outcome_v1 → gen3_modular_v1 →
+  gen3_dual_value_v1`.
+- **Event-sourced live-state observation** (`gen3_live_state_v1`): full live-board
+  obs sourced from the event log + `LiveView`; obs dim → 2823.
+- **Step — event-sourced TurnDelta fold** (commit `c2dbee6`, `gen3_turn_delta_v2`):
+  `TurnDelta` now folds from the per-decision `events_since` window via `TurnView`,
+  retiring the diff heuristics for move attribution/outcome. New per-window signals:
+  multi-KO faint-cause multi-hot, `our_attempted_move_id`, status applied/cured
+  transitions, item-used bit; cant one-hot moved to the authoritative `gen3_effects`
+  vocab (crash-don't-drop); embedded-ID positions are manifest-driven in the extractor.
+  TurnDelta slot → **157**, obs dim **2823 → 3299**, `ARCH_SIGNATURE` →
+  `gen3_turn_delta_v2`. (Boost delta is *not* folded — see open item 1.)
+- **Step 7 — KL-reactive LR band widening** (`impl_step7_adaptive_lr_kl_band.md`,
+  commit `e4c305d`): the adaptive-LR controller's no-op band widened
+  `[0.007, 0.013] → [0.005, 0.02]` by replacing symmetric `kl_tolerance` with the
+  `kl_factor = 2.0` convention (skrl / RL Games `KLAdaptive`). Training-infra only —
+  no obs/arch change.
