@@ -23,6 +23,7 @@ from poke_env.battle.battle import Battle
 from poke_env.battle.double_battle import DoubleBattle
 from poke_env.battle.pokemon import Pokemon
 from poke_env.concurrency import create_in_poke_loop
+from poke_env.exceptions import ShowdownException
 from poke_env.player.battle_order import (
     BattleOrder,
     DoubleBattleOrder,
@@ -40,36 +41,76 @@ from poke_env.teambuilder.teambuilder import Teambuilder
 ItemType = TypeVar("ItemType")
 ActionType = TypeVar("ActionType")
 
+_DISCONNECTED_MSG = (
+    "Showdown websocket dropped while waiting for battle state — connection lost. "
+    "Failing the step/reset loudly so the process exits instead of hanging forever."
+)
+
 
 class _AsyncQueue(Generic[ItemType]):
     queue: asyncio.Queue[ItemType]
 
-    def __init__(self, loop: asyncio.AbstractEventLoop, maxsize: int = 0):
+    def __init__(
+        self,
+        loop: asyncio.AbstractEventLoop,
+        maxsize: int = 0,
+        disconnected: Optional[asyncio.Event] = None,
+    ):
         self.queue = create_in_poke_loop(asyncio.Queue, loop, maxsize)
         self._loop = loop
+        # PSClient sets this when its websocket drops abnormally. A blocking get on
+        # this queue waits for a message that the now-dead listen() task can no longer
+        # deliver, so we race the get against this event and raise instead of hanging
+        # forever (the deterministic mid-battle-disconnect fix — no timeout guess).
+        self._disconnected = disconnected
 
     async def async_get(self) -> ItemType:
         return await self.queue.get()
 
     def get(self, timeout: Optional[float] = None) -> ItemType:
-        res = asyncio.run_coroutine_threadsafe(
-            asyncio.wait_for(self.async_get(), timeout), self._loop
-        )
+        res = asyncio.run_coroutine_threadsafe(self._get(timeout), self._loop)
         return res.result()
+
+    async def _get(self, timeout: Optional[float]) -> ItemType:
+        get_task = asyncio.ensure_future(self.async_get())
+        disc_task = (
+            asyncio.ensure_future(self._disconnected.wait())
+            if self._disconnected is not None
+            else None
+        )
+        waits = [get_task] + ([disc_task] if disc_task is not None else [])
+        done, pending = await asyncio.wait(
+            waits, timeout=timeout, return_when=asyncio.FIRST_COMPLETED
+        )
+        for p in pending:
+            p.cancel()
+        if get_task in done:
+            return get_task.result()
+        if disc_task is not None and disc_task in done:
+            raise ShowdownException(_DISCONNECTED_MSG)
+        # Neither completed ⇒ timed out (preserve the old wait_for semantics).
+        raise asyncio.TimeoutError()
 
     def race_get(self, *events: asyncio.Event) -> Optional[ItemType]:
         async def _race_get() -> Optional[ItemType]:
             get_task = asyncio.create_task(self.async_get())
             wait_tasks = [asyncio.create_task(e.wait()) for e in events]
+            disc_task = (
+                asyncio.create_task(self._disconnected.wait())
+                if self._disconnected is not None
+                else None
+            )
+            extra = [disc_task] if disc_task is not None else []
             done, pending = await asyncio.wait(
-                {get_task, *wait_tasks}, return_when=asyncio.FIRST_COMPLETED
+                {get_task, *wait_tasks, *extra}, return_when=asyncio.FIRST_COMPLETED
             )
             for p in pending:
                 p.cancel()
             if get_task in done:
                 return get_task.result()
-            else:
-                return None
+            if disc_task is not None and disc_task in done:
+                raise ShowdownException(_DISCONNECTED_MSG)
+            return None
 
         res = asyncio.run_coroutine_threadsafe(_race_get(), self._loop)
         return res.result()
@@ -97,8 +138,12 @@ class _EnvPlayer(Player):
                 "choose_on_teampreview arg was not set in environment - by default, teampreview decisions will be made randomly."
             )
         self._choose_on_teampreview = choose_on_teampreview or False
-        self.battle_queue = _AsyncQueue(self.ps_client.loop, maxsize=1)
-        self.order_queue = _AsyncQueue(self.ps_client.loop, maxsize=1)
+        self.battle_queue = _AsyncQueue(
+            self.ps_client.loop, maxsize=1, disconnected=self.ps_client._disconnected
+        )
+        self.order_queue = _AsyncQueue(
+            self.ps_client.loop, maxsize=1, disconnected=self.ps_client._disconnected
+        )
         self.battle: Optional[AbstractBattle] = None
 
     def choose_move(self, battle: AbstractBattle) -> Awaitable[BattleOrder]:

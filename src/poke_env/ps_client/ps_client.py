@@ -109,6 +109,11 @@ class PSClient:
 
         self.loop = loop
         self._logged_in: asyncio.Event = create_in_poke_loop(asyncio.Event, loop)
+        # Set when listen() exits ABNORMALLY (the websocket dropped — see listen()).
+        # The connection layer is the only thing that knows the socket is gone; it
+        # announces it here so a consumer blocked on an _AsyncQueue (env.step/reset)
+        # can fail loudly instead of hanging forever on a message that will never come.
+        self._disconnected: asyncio.Event = create_in_poke_loop(asyncio.Event, loop)
         self._sending_lock: asyncio.Lock = create_in_poke_loop(asyncio.Lock, loop)
 
         self.websocket: ClientConnection
@@ -302,9 +307,16 @@ class PSClient:
                 "Websocket connection with %s closed", self.websocket_url
             )
         except (asyncio.CancelledError, RuntimeError) as e:
+            # Intentional shutdown (task cancelled / loop closing) — NOT a crash.
             self.logger.critical("Listen interrupted by %s", e)
         except Exception as e:
+            # Abnormal drop (e.g. ConnectionClosedError "no close frame received or
+            # sent", ping timeout, server died). poke-env's only handling here is to
+            # log-and-return, leaving every awaiter parked on a queue this dead task
+            # was meant to feed. Announce the death so those waiters can raise instead
+            # of hanging forever — a clean ConnectionClosedOK (above) is NOT signalled.
             self.logger.exception(e)
+            self._disconnected.set()
 
     async def log_in(self, split_message: List[str]):
         """Log in with specified username and password.

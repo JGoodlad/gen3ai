@@ -124,8 +124,10 @@ class LauncherUI:
         if snap.metrics_step:
             highlights.append(f"steps [bold]{snap.metrics_step:,}[/bold]")
         hl = "  │  ".join(highlights) if highlights else "[dim]waiting for first rollout…[/dim]"
-        # Stall indicator: surface a silent child BEFORE the watchdog fires, so the
-        # dashboard visibly "notices" instead of sitting forever on "waiting…".
+        # Stall indicator: surface a silent child so the dashboard visibly "notices"
+        # instead of sitting forever on "waiting…". Purely visual — there is no
+        # launcher-side watchdog that acts on this (a dead connection crashes the
+        # child directly; see state.last_activity_ts and CLAUDE.md).
         idle = now - snap.last_activity_ts
         if idle > 120:
             hl += f"  │  [bold red]⚠ no child output for {_elapsed_str(idle)}[/bold red]"

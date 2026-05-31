@@ -41,9 +41,13 @@ class LauncherState:
         self._metrics_ts: Optional[float] = None
         self._eval_metrics_ts: Optional[float] = None
         # Monotonic timestamp of the LAST sign of life from the child — any stdout
-        # line, IPC event, or metrics update. The launcher's stall watchdog (run.py)
-        # restarts the child if this goes stale, catching a hung/deadlocked child
-        # that is alive (so proc.wait never returns) but making no progress.
+        # line, IPC event, or metrics update. Consumed by the dashboard (ui.py) to
+        # paint a `⚠ no child output for Nm` indicator when it goes stale. NOTE: this
+        # is purely *visual* — the launcher does NOT auto-restart on stall (see the
+        # `--restart-grace-minutes` note in CLAUDE.md). The case that used to hang
+        # invisibly — a mid-battle websocket drop — now crashes the child loudly via
+        # the `_AsyncQueue` disconnect guard (poke_env env.py), so proc.wait returns
+        # and the normal crash path closes the TUI; it no longer relies on this clock.
         self._last_activity_ts: float = time.monotonic()
         self.pid: Optional[int] = None
         self.run_start: float = time.monotonic()
@@ -55,7 +59,7 @@ class LauncherState:
         self.ent_coef: Optional[float] = None
 
     def mark_activity(self) -> None:
-        """Record a sign of life from the child (resets the stall watchdog clock).
+        """Record a sign of life from the child (resets the staleness-indicator clock).
         Called on the child's launch and on any stdout/event/metrics it produces."""
         with self._lock:
             self._last_activity_ts = time.monotonic()
