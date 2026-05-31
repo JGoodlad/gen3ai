@@ -258,6 +258,21 @@ Requires the Showdown server to be running (see below).
 
 ## Showdown Server
 
+> **⚠️ Never stop or restart the training Showdown server on port 8001.** A server started
+> manually from a bash shell on **port 8001** (`npm run showdown -- 8001`) is the dedicated
+> **training** server consumed by `main.launcher --showdown-port=8001`. Claude must NOT stop,
+> restart, SIGTERM/SIGKILL, or `npm run stop -- 8001` it — and must not bounce it as a side
+> effect of any other task — **unless the user explicitly asks in their current message.**
+> Killing it mid-run drops every poke-env websocket at once (`ConnectionClosedError: no close
+> frame received or sent` in `ps_client.listen`) and crashes training.
+>
+> **If Claude needs its own server, bind it to a unique port in the `9XXX` range** (e.g. 9001)
+> that no other agent/session uses — never 8000 (dev) or 8001 (training). Pass it through
+> (`npm run showdown -- 9001`, `--showdown-port=9001`). **Only ever kill the process on the
+> port you started** — never `npm run stop` (no arg → kills :8000), never `npm run stop --
+> 8001`, never a blanket node/showdown kill. Prefer the in-process bridge (no server) for
+> throwaway work entirely.
+
 Start the local Pokémon Showdown instance:
 
 ```bash
