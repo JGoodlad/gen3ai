@@ -10,6 +10,7 @@ from agents.observation.turn_delta_encoder import TurnDeltaEncoder
 from agents.model.features_extractor import N_HISTORY_TURNS
 from agents.action.mask_generator import Gen3ActionMasker
 from agents.action.mapper import Gen3ActionMapper
+from agents.battle.live_view import LegalActions
 from agents.training.reward_manager import Gen3RewardManager
 from agents.training.reward_function import RewardFunction
 from agents.training.battle_context import TurnDelta
@@ -59,9 +60,13 @@ class Gen3Env(SinglesEnv):
         # HP (if any) before we encode the obs. The observation at turn N then
         # carries the narrowing from turns 1..N-1.
         if battle is self.battle1 and not battle.finished:
-            mask = Gen3ActionMasker.get_mask(battle).astype(np.int8)
+            # Capture the server-authoritative legality snapshot ONCE this decision and
+            # thread it to both the mask and the recorded context, so the mapper later
+            # decodes the chosen action against the exact same immutable surface.
+            legal = LegalActions.from_battle(battle)
+            mask = Gen3ActionMasker.get_mask(battle, legal=legal).astype(np.int8)
             if mask.sum() > 0:
-                self._tracker.record(battle, mask)
+                self._tracker.record(battle, mask, legal=legal)
 
         if battle is self.battle1:
             obs = self.observation_encoder.encode(
@@ -100,11 +105,9 @@ class Gen3Env(SinglesEnv):
                 self._stall_logger.log_once(battle, suffix="STALL")
                 return ForfeitBattleOrder()
             ctx = self._tracker.last_ctx
+            Gen3ActionMapper.assert_decision_current(ctx, battle)
             return Gen3ActionMapper.action_to_order(
-                action=action,
-                battle=battle,
-                mask=ctx.mask if ctx is not None else None,
-                latched_turn=ctx.turn if ctx is not None else -1,
+                action, battle, legal=ctx.legal, mask=ctx.mask,
             )
         return super().action_to_order(action, battle)
 

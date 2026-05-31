@@ -1,6 +1,7 @@
 from typing import Callable, Optional
 import numpy as np
 
+from agents.battle.live_view import LegalActions
 from agents.training.battle_context import BattleContext, TurnDelta
 from agents.training.reward_function import RewardFunction
 from agents.training.reward_tracker import RewardTracker
@@ -50,7 +51,8 @@ class BattleRecorder:
         RLPlayer._predict_best_action — the raw model I/O for this turn. Stored
         parallel to the invocation so a saved battle can be replayed exactly.
         """
-        curr_ctx = self._build_ctx(battle, mask)
+        legal = LegalActions.from_battle(battle)
+        curr_ctx = self._build_ctx(battle, mask, legal)
         self._states.append(state or {})
 
         if self._pending_entry is not None:
@@ -58,7 +60,7 @@ class BattleRecorder:
             delta, reward = self._tracker.complete_pending(curr_ctx, battle)
             self._fill_pending_outcome(prev_ctx, curr_ctx, delta, reward, battle)
 
-        chosen = self._action_label(action_idx, battle)
+        chosen = self._action_label(action_idx, battle, legal)
         our_mon = battle.active_pokemon
         opp_mon = battle.opponent_active_pokemon
         our_status = self._mon_display_status(our_mon)
@@ -88,7 +90,7 @@ class BattleRecorder:
             "our": our_section,
             "opp": opp_section,
             "outcome": None,
-            "actions": self._all_action_labels(battle, probs, mask),
+            "actions": self._all_action_labels(battle, probs, mask, legal),
         }
 
         self._tracker.begin_turn(curr_ctx, action_idx)
@@ -203,17 +205,12 @@ class BattleRecorder:
     # Internal helpers
     # ------------------------------------------------------------------
 
-    def _build_ctx(self, battle, mask: np.ndarray) -> BattleContext:
-        return BattleContext.from_battle(battle, mask, self._our_slots, self._opp_slots)
+    def _build_ctx(self, battle, mask: np.ndarray, legal=None) -> BattleContext:
+        return BattleContext.from_battle(battle, mask, self._our_slots, self._opp_slots, legal)
 
-    def _latched(self, battle) -> dict:
-        """Return the decision context latched by Gen3ActionMasker, or empty dict."""
-        return getattr(battle, "_gen3_decision_context", {})
-
-    def _action_label(self, action_idx: int, battle) -> str:
-        ctx = self._latched(battle)
-        team_list = ctx.get("team_objects", list(battle.team.values()))
-        move_ids = ctx.get("move_ids", [])
+    def _action_label(self, action_idx: int, battle, legal) -> str:
+        team_list = list(battle.team.values())
+        move_ids = list(legal.move_ids)
 
         if action_idx < 6:
             return f"switch:{team_list[action_idx].species}" if action_idx < len(team_list) else f"switch:slot{action_idx}"
@@ -222,10 +219,9 @@ class BattleRecorder:
             return move_ids[m] if m < len(move_ids) else f"move{m}"
         return "struggle"
 
-    def _all_action_labels(self, battle, probs: np.ndarray, mask: np.ndarray) -> dict:
-        ctx = self._latched(battle)
-        team_list = ctx.get("team_objects", list(battle.team.values()))
-        move_ids = ctx.get("move_ids", [])
+    def _all_action_labels(self, battle, probs: np.ndarray, mask: np.ndarray, legal) -> dict:
+        team_list = list(battle.team.values())
+        move_ids = list(legal.move_ids)
 
         result = {}
         for i in range(11):

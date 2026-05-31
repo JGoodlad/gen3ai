@@ -1,74 +1,82 @@
 import numpy as np
-from poke_env.battle.abstract_battle import AbstractBattle
+
 from agents.action.constants import ACTION_SPACE_SIZE, SWITCH_END, MOVE_START, N_MOVE_SLOTS, STRUGGLE
 from agents.action.ordering_integrity import check_switch_ordering_alignment
+from agents.battle.live_view import LegalActions
+
 
 class Gen3ActionMasker:
     """
-    Handles the generation of 11-dimensional action masks for Gen 3 OU.
+    Generates 11-dimensional action masks for Gen 3 OU from the server-authoritative
+    :class:`~agents.battle.live_view.LegalActions` snapshot.
+
     Indices:
-    0-5: Switches (Team slots 1-6)
-    6-9: Moves (Slots 1-4)
-    10: Struggle (Dedicated)
+      0–5: Switches (team slots 0–5)
+      6–9: Moves (request slots 0–3)
+      10:  Struggle (single-sourced via ``legal.struggle`` — never a move slot)
+
+    The mask is built purely from ``LegalActions`` (:meth:`mask_from_legal`); the
+    battle-taking :meth:`get_mask` is a thin wrapper that snapshots the legal surface and
+    runs the team-ordering integrity guards. There is no longer a
+    ``battle._gen3_decision_context`` stash — the immutable ``LegalActions`` captured here
+    IS the per-decision snapshot, carried forward on the BattleContext to the mapper.
     """
-    
+
     @staticmethod
-    def get_mask(battle: AbstractBattle) -> np.ndarray:
+    def mask_from_legal(legal: LegalActions) -> np.ndarray:
+        """PURE: build the 11-dim binary mask from a :class:`LegalActions` snapshot
+        alone (no battle). Fully testable with a stub.
+
+        Struggle is already excluded from ``legal.move_slots`` (it is the
+        :attr:`~agents.battle.live_view.LegalActions.struggle` flag), so a struggle entry
+        can never set a move-slot bit — the single-source contract that prevents the
+        historical "struggle double-enabling" bug.
         """
-        Generates a binary mask where 1 is a valid action and 0 is invalid.
-        STRICT MODE: Only uses the server request. Crashes on ambiguity.
+        mask = np.zeros(ACTION_SPACE_SIZE, dtype=np.int8)
+
+        # 0–5: switches the server says we may make, by team slot.
+        for sw in legal.switches:
+            if sw.slot < SWITCH_END:
+                mask[sw.slot] = 1
+
+        # 6–9: request move slots that aren't disabled.
+        for i, m in enumerate(legal.move_slots):
+            if i < N_MOVE_SLOTS and not m.disabled:
+                mask[i + MOVE_START] = 1
+
+        # 10: struggle — enabled only when the server forces it (all PP gone).
+        if legal.struggle:
+            mask[STRUGGLE] = 1
+
+        return mask
+
+    @staticmethod
+    def get_mask(battle, legal: LegalActions = None) -> np.ndarray:
+        """Build the action mask for ``battle``. STRICT MODE: crashes on ambiguity.
+
+        The env / player pass the ``legal`` snapshot they captured this decision so the
+        mask and the mapper share one immutable source; standalone callers omit it and a
+        fresh snapshot is taken here.
         """
         if not battle.last_request:
             # We crash if we are asked to mask but have no request context.
             # This is a 'junk in junk out' prevention measure.
             raise RuntimeError("STRICT MODE FAILURE: No last_request found in battle. Cannot mask.")
 
-        mask = np.zeros(ACTION_SPACE_SIZE, dtype=np.int8)
+        if legal is None:
+            legal = LegalActions.from_battle(battle)
 
-        # --- 1. Switches (0-5) ---
-        team_list = list(battle.team.values())
-
-        # Integrity Check: No duplicate species allowed (Gen 3 OU standard)
-        species_list = [p.species for p in team_list]
+        # Integrity Check: No duplicate species allowed (Gen 3 OU standard).
+        species_list = [p.species for p in battle.team.values()]
         if len(species_list) != len(set(species_list)):
             raise RuntimeError(f"STRICT MODE FAILURE: Duplicate species detected in team: {species_list}")
 
-        for i, pokemon in enumerate(team_list):
-            if i < SWITCH_END:
-                # Use object equality check for maximum robustness
-                if pokemon in battle.available_switches:
-                    mask[i] = 1
+        mask = Gen3ActionMasker.mask_from_legal(legal)
 
-        # --- 2. Moves (6-9) ---
-        active_request = battle.last_request.get("active", [{}])[0]
-        request_moves = active_request.get("moves", [])
-
-        # --- Decision Context Latch ---
-        # Pin current move/team ordering onto the battle object so the mapper
-        # uses the identical mapping that produced this mask.
-        battle._gen3_decision_context = {
-            "turn": battle.turn,
-            "move_ids": [m.get("id") for m in request_moves],
-            "team_species": [p.species for p in team_list],
-            "team_objects": team_list,
-        }
-
-        # Map request move slots 0-3 to actions 6-9.
-        # Struggle is excluded here — it has a dedicated slot (STRUGGLE) below.
-        # This prevents the same move being enabled at two different indices.
-        for i, move_data in enumerate(request_moves):
-            if i < N_MOVE_SLOTS and not move_data.get("disabled", False) and move_data.get("id") != "struggle":
-                mask[i + MOVE_START] = 1
-
-        # --- 3. Struggle ---
-        # Enabled only when the server forces it (all PP depleted).
-        if any(m.id == "struggle" for m in battle.available_moves):
-            mask[STRUGGLE] = 1
-
-        # --- 4. Integrity: the model's team ordering must match the action space ---
-        # (Move-validity ordering is fixed + validated at prev_mask construction,
-        #  EpisodeTracker.prev_mask, where the action-order mask is reordered into
-        #  the sorted move order the feature extractor consumes.)
-        check_switch_ordering_alignment(battle, mask)
+        # Integrity: the model's team ordering must match the action space — switch
+        # action index i, switch-validity bit i, and per-Pokémon obs slot i must all
+        # refer to the same Pokémon. (Move-validity ordering is fixed + validated at
+        # prev_mask construction, EpisodeTracker.prev_mask.)
+        check_switch_ordering_alignment(battle, mask, legal)
 
         return mask

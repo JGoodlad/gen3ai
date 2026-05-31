@@ -61,6 +61,7 @@ from poke_env.ps_client.server_configuration import LocalhostServerConfiguration
 
 from agents.action.mapper import Gen3ActionMapper
 from agents.action.mask_generator import Gen3ActionMasker
+from agents.battle.live_view import LegalActions
 from utils.teambuilder import Gen3Teambuilder
 from utils.bridge.local_battle_runner import run_local_battles
 
@@ -448,15 +449,10 @@ class TransitionFuzzPlayer(Player):
         return await super()._handle_battle_message(split_messages)
 
     def _build_snapshot(self, battle) -> TurnSnapshot:
-        dec_ctx = getattr(battle, "_gen3_decision_context", None)
-        if dec_ctx and dec_ctx.get("turn") == battle.turn:
-            raw_ids = dec_ctx.get("move_ids", [])
-        elif battle.last_request:
-            active_req = battle.last_request.get("active", [{}])[0]
-            raw_ids = [m.get("id") for m in active_req.get("moves", [])]
-        else:
-            raw_ids = []
-        active_move_ids = (list(raw_ids) + [None, None, None, None])[:4]
+        # Source move-slot ordering from the server-authoritative LegalActions snapshot
+        # (request order, struggle excluded) — the same surface the masker/mapper use.
+        legal = LegalActions.from_battle(battle)
+        active_move_ids = (list(legal.move_ids) + [None, None, None, None])[:4]
 
         opp_mon = battle.opponent_active_pokemon
         opp_last_move = opp_mon.last_move if opp_mon else None

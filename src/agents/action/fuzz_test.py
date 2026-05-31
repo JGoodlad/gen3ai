@@ -13,6 +13,8 @@ from poke_env.player import Player, RandomPlayer
 from poke_env.ps_client.server_configuration import LocalhostServerConfiguration
 from agents.action.mapper import Gen3ActionMapper
 from agents.action.mask_generator import Gen3ActionMasker
+from agents.action.serialize import choice_to_order
+from agents.battle.live_view import LegalActions
 from utils.team_loader.loader import TeamLoader
 from utils.teambuilder import Gen3Teambuilder
 from utils.bridge.local_battle_runner import run_local_battles
@@ -32,8 +34,9 @@ class IntegrityFuzzPlayer(Player):
             if battle.turn == 1:
                 print(f"  [BATTLE START] {battle.battle_tag}")
             
-            # 1. Generate the mask using the hardened logic
-            mask = Gen3ActionMasker.get_mask(battle)
+            # 1. Snapshot the server-authoritative legality and build the mask from it.
+            legal = LegalActions.from_battle(battle)
+            mask = Gen3ActionMasker.get_mask(battle, legal=legal)
             self.total_turns_validated += 1
             
             if self.total_turns_validated % 100 == 0:
@@ -57,22 +60,20 @@ class IntegrityFuzzPlayer(Player):
 
             for idx in valid_indices:
                 try:
-                    # We pass the mask and latched turn to trigger the strict mapper validation
-                    order = Gen3ActionMapper.action_to_order(
-                        action=int(idx), 
-                        battle=battle, 
-                        mask=mask, 
-                        latched_turn=battle.turn
-                    )
+                    # Pure decode against the captured snapshot, then serialize — the
+                    # exact two-stage seam the env/player use.
+                    decoded = Gen3ActionMapper.action_to_choice(int(idx), legal)
+                    order = choice_to_order(decoded, battle)
                     if order is None:
                         raise RuntimeError(f"INTEGRITY FAILURE: Action {idx} returned None order!")
                 except Exception as e:
                     raise RuntimeError(f"INTEGRITY FAILURE: Action {idx} masked as valid but mapper failed: {e}")
 
             # 4. Stochastic Action Selection
-            # We pick a random valid action to drive the battle forward.
+            # We pick a random valid action to drive the battle forward (via the
+            # convenience that composes decode + serialize against the same snapshot).
             choice = np.random.choice(valid_indices)
-            return Gen3ActionMapper.action_to_order(int(choice), battle)
+            return Gen3ActionMapper.action_to_order(int(choice), battle, legal=legal, mask=mask)
 
         except Exception as e:
             print(f"\n🛑 [FUZZ TEST CRITICAL FAILURE] 🛑")

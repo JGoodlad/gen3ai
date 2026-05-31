@@ -11,6 +11,8 @@ from unittest.mock import MagicMock
 
 from agents.training.battle_context import BattleContext, TurnDelta
 from agents.training.episode_tracker import EpisodeTracker
+from agents.action.mask_generator import Gen3ActionMasker
+from agents.battle.live_view import LegalActions, LegalMove
 from agents.observation.turn_delta_encoder import (
     TurnDeltaEncoder,
     TURN_DELTA_DIM,
@@ -69,7 +71,6 @@ def _mock_battle(turn: int = 1) -> MagicMock:
     battle.opponent_active_pokemon = None
     battle.force_switch = False
     battle.turn = turn
-    battle._gen3_decision_context = None
     battle.last_request = None
     battle.our_last_effectiveness = None
     battle.opp_last_effectiveness = None
@@ -81,6 +82,71 @@ def _inject(tracker: EpisodeTracker, ctxs: list, actions: list) -> None:
     """Directly inject history and actions, bypassing from_battle()."""
     tracker._history.extend(ctxs)
     tracker._actions.extend(actions)
+
+
+def _lm(move_id, disabled=False):
+    return LegalMove(id=move_id, current_pp=16, max_pp=16, disabled=disabled, target="normal")
+
+
+def _legal(move_slots, struggle=False):
+    return LegalActions(
+        move_slots=tuple(move_slots), switches=(), force_switch=False, trapped=False,
+        maybe_trapped=False, wait=False, struggle=struggle, last_request=None,
+    )
+
+
+# ---------------------------------------------------------------------------
+# prev_mask (the "action mask as an obs FEATURE") — end-to-end through the new
+# legal-sourced active_move_ids. The MOVE bits must be reordered from
+# request/action order into sorted-by-id order (so the validity bit lands on the
+# same move the feature extractor reads at that slot). This is the path whose
+# source changed: active_move_ids now comes from legal.move_ids.
+# ---------------------------------------------------------------------------
+
+def test_prev_mask_reorders_disabled_bit_to_sorted_slot():
+    """A disabled move in non-sorted request order must have its 0 bit land on that
+    move's SORTED slot in prev_mask — sourced via legal.move_ids → active_move_ids."""
+    # request/action order: [thunderbolt, willowisp(DISABLED), icepunch, taunt]
+    legal = _legal([
+        _lm("thunderbolt"), _lm("willowisp", disabled=True), _lm("icepunch"), _lm("taunt"),
+    ])
+    mask = Gen3ActionMasker.mask_from_legal(legal)
+    assert mask[6:10].tolist() == [1, 0, 1, 1], "willowisp disabled → slot-7 bit clear"
+
+    tracker = EpisodeTracker()
+    tracker.record(_mock_battle(1), mask, legal=legal)   # becomes _history[-2]
+    tracker.record(_mock_battle(2), mask, legal=legal)   # becomes _history[-1]
+
+    # active order [thunderbolt, willowisp, icepunch, taunt] → sorted
+    # [icepunch, taunt, thunderbolt, willowisp]; reordered move bits should be
+    # [icepunch=1, taunt=1, thunderbolt=1, willowisp=0].
+    prev = tracker.prev_mask  # also runs assert_sorted_validity_correct internally
+    assert prev[6:10].tolist() == [1.0, 1.0, 1.0, 0.0]
+    assert prev[:6].tolist() == [0.0] * 6      # no switches in this legal
+    assert prev[10] == 0.0                     # no struggle
+
+
+def test_prev_mask_all_legal_is_all_ones():
+    legal = _legal([_lm("thunderbolt"), _lm("willowisp"), _lm("icepunch"), _lm("taunt")])
+    mask = Gen3ActionMasker.mask_from_legal(legal)
+    tracker = EpisodeTracker()
+    tracker.record(_mock_battle(1), mask, legal=legal)
+    tracker.record(_mock_battle(2), mask, legal=legal)
+    assert tracker.prev_mask[6:10].tolist() == [1.0, 1.0, 1.0, 1.0]
+
+
+def test_prev_mask_struggle_turn_has_no_move_bits():
+    """On a forced-struggle turn legal.move_ids is empty (struggle is the flag); the
+    move bits must stay clear and only the struggle bit carries through."""
+    legal = _legal([], struggle=True)
+    mask = Gen3ActionMasker.mask_from_legal(legal)
+    assert mask[6:10].tolist() == [0, 0, 0, 0] and mask[10] == 1
+    tracker = EpisodeTracker()
+    tracker.record(_mock_battle(1), mask, legal=legal)
+    tracker.record(_mock_battle(2), mask, legal=legal)
+    prev = tracker.prev_mask
+    assert prev[6:10].tolist() == [0.0, 0.0, 0.0, 0.0]
+    assert prev[10] == 1.0
 
 
 # ---------------------------------------------------------------------------

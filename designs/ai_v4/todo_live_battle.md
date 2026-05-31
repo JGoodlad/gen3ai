@@ -1,6 +1,10 @@
 # TODO: Lock down battle access behind the strict read-model API (Phases 3–5)
 
-**Status:** Phases 1–2 are **implemented** (this branch). Phases 3–5 below are **deferred**.
+**Status:** Phases 1–2 are **implemented**. Phase 3's **`action/` cluster is LANDED** (the
+masker/mapper now read through `LegalActions`; the `_gen3_decision_context` stash is retired;
+`action_to_order` is split into a pure `action_to_choice(legal) -> Choice` + a single
+`serialize.choice_to_order` adapter; struggle is single-sourced via `legal.struggle`). The
+remaining Phase 3 consumers (`observation/` + `training/`) and Phases 4–5 are **deferred**.
 
 Full approved plan (read first): `~/.claude/plans/can-you-explore-what-nested-pebble.md`
 — it carries the complete dependency inventory and rationale this doc summarises.
@@ -70,7 +74,7 @@ under Phase 3.
 
 ---
 
-## Phase 3 — migrate consumers to the strict view (DEFERRED)
+## Phase 3 — migrate consumers to the strict view (`action/` LANDED; rest DEFERRED)
 
 Build `battle.strict_view()` once at the top of each decision and thread the strict view (or
 its `.live` / `.legal` pieces) to the sub-consumers, replacing every raw `battle.<attr>` /
@@ -98,13 +102,18 @@ that the diff changes *where* a value comes from, not *what* it is.
      whatever else the HP path needs) to `LiveMove`/`LivePokemon` in a Phase-1-style widening
      *before* migrating this path, or keep the HP-type derivation in `battle/` and expose the
      result. Don't migrate `pokemon.py` until this field gap is closed.
-2. **`action/`** — `mask_generator.py`, `mapper.py`, `ordering_integrity.py` read
-   `battle.available_moves`, `battle.available_switches`, `battle.last_request`,
-   `battle.team`, `battle.turn`, plus the `_gen3_decision_context` latch. Migrate to
-   `.legal` (`move_ids`, `move_slots[*].disabled`, `switch_species`/`switch_slots`,
-   `force_switch`, `trapped`, `struggle`) + `.legal.last_request` for the request-echo
-   staleness check. The decision-context latch (`battle._gen3_decision_context`) keeps mask
-   and mapper in lockstep — preserve that contract through the migration.
+2. **`action/`** — ✅ **DONE.** `mask_generator.py`, `mapper.py`, `ordering_integrity.py`
+   no longer poke the raw battle for legality; they read the `LegalActions` snapshot
+   (`mask_from_legal(legal)`, `action_to_choice(action, legal)`, `check_*` take `legal`).
+   The `_gen3_decision_context` latch is **deleted**; its lockstep role is now played by the
+   immutable `LegalActions` captured at observation time and carried on the `BattleContext`
+   (`EpisodeTracker.record(battle, mask, legal)`), so mask and mapper share one source by
+   construction. `action_to_order` is split into the pure `action_to_choice(legal) -> Choice`
+   + the single `serialize.choice_to_order(choice, battle)` adapter; `assert_decision_current`
+   fail-loud-guards a mid-decision request shift. Struggle is single-sourced via
+   `legal.struggle` (filtered out of `move_slots`). Readers of the old stash
+   (`battle_context.py`, `battle_recorder.py`, `transition_fuzz_test.py`) were migrated to the
+   legality surface. Obs-neutral (no `ARCH_SIGNATURE` bump).
 3. **`training/`** — `gen3_env.py`, `replay_recorder.py` / `battle_recorder.py`,
    `episode_tracker.py`, `reward_manager.py` / `reward_tracker.py`, `slot_registry.py` →
    meta (`turn`/`battle_tag`/`finished`/`won`/`lost`) + `.live`. **SKIP `battle_context.py`**

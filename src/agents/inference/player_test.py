@@ -65,7 +65,12 @@ def _make_battle(encoder):
     battle.side_conditions = {}
     battle.opponent_side_conditions = {}
     battle.force_switch = False
-    battle._gen3_decision_context = None
+    # LegalActions.from_battle (called in embed_battle) reads these legality flags.
+    battle.available_switches = []
+    battle.available_moves = []
+    battle.trapped = False
+    battle.maybe_trapped = False
+    battle.wait = False
     battle.last_request = None
     battle.our_last_effectiveness = None
     battle.opp_last_effectiveness = None

@@ -1,12 +1,15 @@
 from __future__ import annotations
 from dataclasses import dataclass, field
-from typing import Literal, Optional
+from typing import Literal, Optional, TYPE_CHECKING
 import numpy as np
 
 from poke_env.battle.abstract_battle import DamagingMoveEvent
 
 from agents.training.slot_registry import SlotRegistry
 from agents.gen3_mechanics import PHAZING_MOVES, BOOST_DIM, boosts_array
+
+if TYPE_CHECKING:
+    from agents.battle.live_view import LegalActions
 
 
 # Moves whose user always faints and which always connect when used (a neutral
@@ -240,6 +243,13 @@ class BattleContext:
     our_move_failed: bool = False
     opp_move_failed: bool = False
 
+    # The server-authoritative LegalActions snapshot captured at THIS decision — the
+    # immutable per-decision legality surface the masker built the mask from. Carried so
+    # the action mapper can decode the chosen action against the SAME snapshot the model
+    # saw, replacing the old battle._gen3_decision_context stash. None for fallback /
+    # standalone callers that didn't supply it (active_move_ids then reads last_request).
+    legal: Optional["LegalActions"] = None
+
     def __post_init__(self):
         if self.mask.shape != (11,):
             raise RuntimeError(
@@ -265,8 +275,16 @@ class BattleContext:
         mask: np.ndarray,
         our_slots: SlotRegistry,
         opp_slots: SlotRegistry,
+        legal: Optional["LegalActions"] = None,
     ) -> BattleContext:
-        """Build a context snapshot from a live battle, updating slot registries in place."""
+        """Build a context snapshot from a live battle, updating slot registries in place.
+
+        ``legal`` is the per-decision :class:`LegalActions` snapshot captured by the
+        caller (the masker built the mask from it). When supplied it is the source of
+        ``active_move_ids`` (request order, struggle excluded) AND is stored on the
+        context for the mapper. When omitted (standalone callers), ``active_move_ids``
+        falls back to reading the raw request.
+        """
         for mon in battle.team.values():
             our_slots.assign(mon.species)
         for mon in battle.opponent_team.values():
@@ -292,13 +310,12 @@ class BattleContext:
         opp_mon = battle.opponent_active_pokemon
         opp_active = opp_mon.species if opp_mon else "NONE"
 
-        # Build active_move_ids: 4-element list mirroring the masker's move-slot assignment.
-        # Prefer _gen3_decision_context (latched by the masker) to guarantee slot ordering
-        # is identical to what the action mask was built from.
-        dec_ctx = getattr(battle, "_gen3_decision_context", None)
-        if dec_ctx and dec_ctx.get("turn") == battle.turn:
-            raw_ids = dec_ctx.get("move_ids", [])
-            active_move_ids = (list(raw_ids) + [None, None, None, None])[:4]
+        # Build active_move_ids: 4-element list mirroring the masker's move-slot
+        # assignment. The per-decision LegalActions snapshot is the source of truth
+        # (request order, struggle already excluded) — identical to what the mask was
+        # built from. Without it (standalone callers), fall back to the raw request.
+        if legal is not None:
+            active_move_ids = (list(legal.move_ids) + [None, None, None, None])[:4]
         else:
             active_move_ids: list = [None, None, None, None]
             try:
@@ -366,6 +383,7 @@ class BattleContext:
             opp_move_missed=battle.opp_move_missed,
             our_move_failed=battle.our_move_failed,
             opp_move_failed=battle.opp_move_failed,
+            legal=legal,
         )
 
 

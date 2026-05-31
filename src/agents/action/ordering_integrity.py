@@ -5,7 +5,7 @@ Background: the feature extractor reads each Pokémon's move slots in
 sorted-by-id order (``MovesEncoder`` -> ``get_sorted_moves``), and applies the
 previous-turn move-validity mask to those slots positionally. The action mask /
 mapper, however, index moves in *request order* (the order Pokémon Showdown sends
-them, pinned onto ``battle._gen3_decision_context['move_ids']`` by the masker).
+them, captured in the per-decision ``LegalActions`` snapshot's ``move_ids``).
 
 When those two orderings differ (i.e. the moveset isn't already alphabetical)
 the validity bit for action slot ``k`` lands on the embedding of a *different*
@@ -205,7 +205,7 @@ def check_outcome_matches_intent(prev_active_move_ids, delta, action, *, strict=
     return None
 
 
-def check_switch_ordering_alignment(battle: AbstractBattle, mask: np.ndarray) -> None:
+def check_switch_ordering_alignment(battle: AbstractBattle, mask: np.ndarray, legal) -> None:
     """Assert the team ordering the mask/mapper used equals the ordering the
     feature extractor consumes, so switch action index *i*, switch-validity bit
     *i*, and per-Pokémon obs slot *i* all refer to the same Pokémon.
@@ -213,42 +213,42 @@ def check_switch_ordering_alignment(battle: AbstractBattle, mask: np.ndarray) ->
     Unlike moves, our team has no sort step — every consumer uses
     ``list(battle.team.values())`` (the encoder via
     ``ObservationEncoder.get_team_list(is_opponent=False)``, the masker/mapper via
-    the pinned decision context). This check guarantees that stays true: if the
-    two ever diverge (a future reorder, or the team dict mutating mid-turn) a
-    switch could silently target the wrong mon, so we crash instead.
+    the ``LegalActions`` snapshot's slot-indexed switches). This check guarantees that
+    stays true: if the two ever diverge (a future reorder, or the team dict mutating
+    between snapshot and check) a switch could silently target the wrong mon, so we
+    crash instead. ``legal`` is the per-decision :class:`LegalActions`; each of its
+    switches names the species AND the team slot the action space maps it to.
     """
-    ctx = getattr(battle, "_gen3_decision_context", None)
-    if not ctx:
-        return
-    mask_team = ctx.get("team_species")
-    if not mask_team:
+    if legal is None:
         return
     # The encoder's team order (what per-Pokémon slots + switch validity index).
     encoder_team = [getattr(p, "species", None) for p in list(battle.team.values())]
-    n = min(len(mask_team), len(encoder_team), SWITCH_END)
-    if mask_team[:n] != encoder_team[:n]:
-        raise OrderingMismatchError(
-            f"Team/switch ordering mismatch on turn {getattr(battle, 'turn', '?')}: "
-            f"the action mask + mapper index switches as {mask_team[:n]}, but the "
-            f"feature extractor's per-Pokémon slots / switch-validity are ordered "
-            f"{encoder_team[:n]}. Switch action index i would target a different mon "
-            f"than the model evaluated at slot i."
-        )
+    for sw in legal.switches:
+        if sw.slot >= SWITCH_END or sw.slot >= len(encoder_team):
+            continue
+        if encoder_team[sw.slot] != sw.species:
+            raise OrderingMismatchError(
+                f"Team/switch ordering mismatch on turn {getattr(battle, 'turn', '?')}: "
+                f"the action space maps switch slot {sw.slot} to '{sw.species}', but the "
+                f"feature extractor's per-Pokémon slot {sw.slot} is "
+                f"'{encoder_team[sw.slot]}'. Switch action {sw.slot} would target a "
+                f"different mon than the model evaluated at that slot."
+            )
 
 
-def check_move_validity_alignment(battle: AbstractBattle, mask: np.ndarray) -> None:
+def check_move_validity_alignment(battle: AbstractBattle, mask: np.ndarray, legal) -> None:
     """Assert the per-move legality the feature extractor applies (by sorted
     slot) equals the move's true legality from the action mask (by request slot).
 
-    Raises ``OrderingMismatchError`` on any disagreement.
+    Raises ``OrderingMismatchError`` on any disagreement. ``legal`` is the per-decision
+    :class:`LegalActions` snapshot whose ``move_ids`` are in request/action order.
     """
     active = getattr(battle, "active_pokemon", None)
     if active is None:
         return
-    ctx = getattr(battle, "_gen3_decision_context", None)
-    if not ctx:
+    if legal is None:
         return
-    request_ids = ctx.get("move_ids") or []
+    request_ids = list(legal.move_ids)
     if not request_ids:
         return  # forced switch / forced struggle — no per-move slots in play
 

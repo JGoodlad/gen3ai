@@ -16,6 +16,7 @@ class ShowdownConnectionError(RuntimeError):
     detects and restarts) rather than silently stalling the whole training run."""
 
 from agents.battle.gen3_battle import Gen3Battle
+from agents.battle.live_view import LegalActions
 
 from agents.action.mapper import Gen3ActionMapper
 from agents.action.mask_generator import Gen3ActionMasker
@@ -125,11 +126,13 @@ class Gen3Player(Player):
             )
 
         # Record first so the tracker's HP candidates are up-to-date BEFORE
-        # we encode the obs (mirrors gen3_env.embed_battle ordering).
-        mask = Gen3ActionMasker.get_mask(battle).astype(np.int8)
+        # we encode the obs (mirrors gen3_env.embed_battle ordering). The legality
+        # snapshot is captured once and threaded to both the mask and the context.
+        legal = LegalActions.from_battle(battle)
+        mask = Gen3ActionMasker.get_mask(battle, legal=legal).astype(np.int8)
         tracker = self._get_tracker(battle)
         if not battle.finished and mask.sum() > 0:
-            tracker.record(battle, mask)
+            tracker.record(battle, mask, legal=legal)
 
         obs = self.observation_encoder.encode(
             battle, hp_tracker=tracker.hidden_power_tracker
@@ -144,8 +147,11 @@ class Gen3Player(Player):
         }
 
     def action_to_order(self, action_idx, battle):
-        Gen3ActionMapper.validate_context(battle)
-        return Gen3ActionMapper.action_to_order(action=action_idx, battle=battle)
+        ctx = self._get_tracker(battle).last_ctx
+        Gen3ActionMapper.assert_decision_current(ctx, battle)
+        return Gen3ActionMapper.action_to_order(
+            action_idx, battle, legal=ctx.legal, mask=ctx.mask,
+        )
 
 
 class RLPlayer(Gen3Player):

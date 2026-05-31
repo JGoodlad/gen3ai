@@ -37,10 +37,12 @@ def _battle(our_mons, opp_mons, our_active, opp_active,
     b.lost = lost
     b.battle_tag = "battle-gen3ou-test"
     b.last_request = {"active": [{"moves": [{"id": m, "disabled": False} for m in move_ids]}]}
-    b._gen3_decision_context = {
-        "team_objects": list(b.team.values()),
-        "move_ids": move_ids,
-    }
+    # LegalActions.from_battle reads these (the recorder snapshots legality per record()).
+    b.available_switches = []
+    b.available_moves = []
+    b.trapped = False
+    b.maybe_trapped = False
+    b.wait = False
     b.our_last_effectiveness = None
     b.opp_last_effectiveness = None
     b.our_last_damaging_move = None

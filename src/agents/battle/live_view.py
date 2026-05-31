@@ -377,12 +377,26 @@ class LegalSwitch:
 class LegalActions:
     """Immutable, server-authoritative snapshot of what is legal this decision.
 
-    Built with :meth:`from_battle` (or ``battle.strict_view().legal``). Every field comes
-    from poke-env's parsed ``|request|``, so it is the same ground truth the mask is built
-    from — no heuristics, no past-turn state.
+    Built with :meth:`from_battle` (or ``battle.strict_view().legal``).
+
+    **Hybrid sourcing — kept deliberately.** ``move_slots`` is *wire-truth*: it is read
+    straight from the parsed server request (``last_request['active'][0]['moves']``), so
+    which of the 4 move slots are legal — and their pp / disabled / target — is exactly what
+    Showdown sent. The legality *flags* (``switches`` / ``force_switch`` / ``trapped`` /
+    ``maybe_trapped`` / ``wait`` / ``struggle``), by contrast, are poke-env's *derived*
+    interpretation of that request (``available_switches`` / ``force_switch`` /
+    ``available_moves`` …). We keep them byte-identical rather than re-deriving from the raw
+    request: they are the second poke-env-interpreted seam (alongside Choice→BattleOrder
+    serialization) that a future fully-owned ``Player`` would re-derive — out of scope here.
+
+    **Struggle is the flag, never a move slot.** When all PP is gone the server sends a lone
+    ``struggle`` entry in the request moves; :meth:`from_battle` filters it out of
+    ``move_slots`` and surfaces it ONLY as the :attr:`struggle` flag. That single source of
+    truth is what removes the historical "struggle double-enabling" footgun where struggle
+    lived in both a move slot and the dedicated bit.
     """
 
-    move_slots: Tuple[LegalMove, ...]  # request 'active'[0]['moves'] order (slots 0–3)
+    move_slots: Tuple[LegalMove, ...]  # request 'active'[0]['moves'] order (slots 0–3), struggle excluded
     switches: Tuple[LegalSwitch, ...]  # bench mons we may switch to
     force_switch: bool  # the active mon must be replaced (it fainted / was phazed)
     trapped: bool  # cannot switch (Mean Look / Arena Trap / …)
@@ -410,6 +424,11 @@ class LegalActions:
         # During a force-switch the request carries no 'active' block; default to empty.
         active_block = (request.get("active") if request else None) or [{}]
         req_moves = active_block[0].get("moves", []) if active_block else []
+        # Normalize struggle OUT of the move slots — it is surfaced only via the
+        # `struggle` flag below (single source of truth). The server lists a lone
+        # `struggle` entry here when all PP is gone; keeping it in move_slots would
+        # re-introduce the two-representations footgun behind the historical
+        # "struggle double-enabling" mask bug.
         move_slots = tuple(
             LegalMove(
                 id=m.get("id", ""),
@@ -419,6 +438,7 @@ class LegalActions:
                 target=m.get("target"),
             )
             for m in req_moves
+            if m.get("id") != "struggle"
         )
 
         # Switch slots are indexed against the team ordering the action space uses

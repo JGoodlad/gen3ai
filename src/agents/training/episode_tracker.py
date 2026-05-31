@@ -130,7 +130,7 @@ class EpisodeTracker:
             return reordered
         return np.ones(11, dtype=np.float32)
 
-    def record(self, battle, mask: np.ndarray) -> BattleContext:
+    def record(self, battle, mask: np.ndarray, legal=None) -> BattleContext:
         """Build and store a context snapshot for the current turn.
 
         Also commits the pending _last_action and event_cursor as the action
@@ -138,6 +138,10 @@ class EpisodeTracker:
         can reconstruct all N deltas. Updates the HiddenPowerTracker BEFORE the
         env encodes the observation, so the encoded obs includes the just-fired
         HP's narrowing.
+
+        ``legal`` is the per-decision :class:`LegalActions` snapshot the masker built
+        the mask from; threaded onto the stored context so the action mapper decodes
+        against the same snapshot the model saw.
         """
         if self._history:
             self._actions.append(self._last_action)
@@ -147,7 +151,7 @@ class EpisodeTracker:
         # the start of the window for the NEXT decision — events emitted between
         # this record() and the next one are the delta for this turn.
         self._last_cursor = getattr(battle, "event_cursor", 0)
-        ctx = BattleContext.from_battle(battle, mask, self._our_slots, self._opp_slots)
+        ctx = BattleContext.from_battle(battle, mask, self._our_slots, self._opp_slots, legal)
 
         self._maybe_observe_hidden_power(battle, ctx)
         self._scan_opp_movesets_for_no_hp(battle)

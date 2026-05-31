@@ -310,7 +310,8 @@ src/
   agents/
     model/           # Gen3FeaturesExtractor (PyTorch feature extractor)
     observation/     # Observation encoders (state_encoder, pokemon, moves, etc.)
-    action/          # Action masking and mapping
+    action/          # Action mask + mapping via LegalActions: pure action_to_choice →
+                     #   Choice → serialize.choice_to_order (the one poke-env order touch)
     training/        # Callbacks and reward manager
     battle/          # Event-sourced battle layer (Gen3Battle, BattleEvent log, TurnView,
                      #   LiveView/LegalActions read-models, StrictBattleView boundary)
@@ -493,11 +494,24 @@ layer is currently additive and obs/reward-neutral.
   the meta `turn`/`battle_tag`/`finished`/`won`/`lost`.
 - **`LegalActions` / `LegalMove` / `LegalSwitch`** (`live_view.py`) — the
   **server-authoritative** legality surface, built via `LegalActions.from_battle(battle)`
-  (or `strict_view().legal`). Sourced from poke-env's already-parsed `|request|` fields
-  (`battle.py:parse_request`), not derived: per-slot `LegalMove(id, current_pp, max_pp,
-  disabled, target)`, `LegalSwitch(species, slot)` (slot = the team index the 11-dim action
-  space uses), `force_switch`/`trapped`/`maybe_trapped`/`wait`/`struggle`, and a read-only
-  (`MappingProxyType`) mirror of `last_request` for the masker's request-echo path.
+  (or `strict_view().legal`): per-slot `LegalMove(id, current_pp, max_pp, disabled, target)`,
+  `LegalSwitch(species, slot)` (slot = the team index the 11-dim action space uses),
+  `force_switch`/`trapped`/`maybe_trapped`/`wait`/`struggle`, and a read-only
+  (`MappingProxyType`) mirror of `last_request`. **Hybrid sourcing (kept deliberately):**
+  `move_slots` is **wire-truth** (straight from `last_request['active'][0]['moves']`), while
+  the legality *flags* (`switches`/`force_switch`/`trapped`/`maybe_trapped`/`wait`/`struggle`)
+  are poke-env's **derived** interpretation (`available_switches`/`force_switch`/
+  `available_moves`/…) — kept byte-identical and flagged as the second poke-env-interpreted
+  seam (alongside Choice→BattleOrder serialization) a future fully-owned `Player` would
+  re-derive. **Struggle is single-sourced:** `from_battle` filters the lone `struggle` entry
+  OUT of `move_slots` and surfaces it only as the `struggle` flag — so it can never set both a
+  move slot and bit 10 (the historical "struggle double-enabling" class). **The action
+  masker/mapper read through this:** `Gen3ActionMasker.mask_from_legal(legal)` builds the
+  mask, `Gen3ActionMapper.action_to_choice(action, legal)` is a pure decode to a poke-env-free
+  `Choice`, and `serialize.choice_to_order(choice, battle)` is the lone serialization touch.
+  The immutable snapshot captured at observation time (carried on the `BattleContext`) **is**
+  the per-decision source, retiring the old `battle._gen3_decision_context` stash;
+  `assert_decision_current` fail-loud-guards a mid-decision request shift.
 - **`StrictBattleView`** (`strict_view.py`) — the **strict boundary** our non-`battle/` code
   is meant to read through, built via `battle.strict_view()`. Exposes **only** `.live`
   (`LiveView`), `.turn_view(n)`/`.history` (`TurnView`), `.legal` (`LegalActions`),
@@ -508,9 +522,12 @@ layer is currently additive and obs/reward-neutral.
   `TurnView` accessor is `turn_view(n)` (mirrors `.live`→`LiveView`, `.history`→all
   `TurnView`s) to avoid the method-vs-property name clash. `__getattr__` raises a helpful
   error naming the right accessor; the raw `Gen3Battle` is held privately and never
-  returned. **Consumers are not yet migrated to it** — that's Phase 3 of
-  `designs/ai_v4/todo_live_battle.md` (skips `battle_context.py`, which Step 4's TurnDelta
-  fold retires). Phases 1–2 are additive and obs-neutral.
+  returned. **The `action/` cluster is migrated** (Phase 3, partial): the masker/mapper read
+  through `LegalActions` (built via `battle.strict_view().legal` / `from_battle`) and the
+  `_gen3_decision_context` stash is gone. The remaining `observation/` + `training/`
+  consumers are still pending — see `designs/ai_v4/todo_live_battle.md` (skips
+  `battle_context.py`, which Step 4's TurnDelta fold retires). Phases 1–2 are additive and
+  obs-neutral; the action migration is a pure re-sourcing (no `ARCH_SIGNATURE` bump).
 - **Injection seam (wired into training):** `poke_env.player.Player.__init__` takes
   `battle_class=Battle` (default, with a `None`-guard since `PokeEnv` threads a `None`
   default to its `_EnvPlayer` agents). `Gen3Player` defaults `battle_class=Gen3Battle`
@@ -545,7 +562,11 @@ Step 1 is complete. The pipeline is stable and all known correctness issues are 
 - `EpisodeTracker` — owns all per-episode mutable state; extension point for turn history
 - `StallConfig` / `StallLogger` — stall detection extracted, shared by env and inference
 - poke-env `env.py` — three lifecycle bugs fixed: stale battle queue, forfeit popup, stale `_choose_move()` hang
-- Action mask — struggle double-enabling fixed; mask correctness audited and tested
+- Action mask — struggle double-enabling fixed; mask correctness audited and tested. **Now
+  single-sourced through `LegalActions`** (ai_v4): struggle is the `legal.struggle` flag and
+  never a move slot (not inferable from a slot), which structurally prevents the
+  double-enabling class; `LegalActions` is hybrid (`move_slots` = wire-truth, the legality
+  flags = poke-env-derived, the latter a future owned-`Player` re-derivation seam)
 - `RLPlayer` / `StatTrackingRLPlayer` — exception-safe `choose_move()`, stall detection on inference
 
 **Ready for Step 2: Turn History + Action Mask as Features**

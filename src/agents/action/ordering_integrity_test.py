@@ -23,6 +23,7 @@ from agents.action.ordering_integrity import (
     reorder_move_bits_to_sorted,
     assert_sorted_validity_correct,
 )
+from agents.battle.live_view import LegalActions
 from agents.action.constants import MOVE_START
 
 
@@ -61,6 +62,11 @@ def _battle(active_move_ids, disabled_id=None, struggle=False):
     battle.available_moves = (
         [_move("struggle")] if struggle else list(active.moves.values())
     )
+    # LegalActions.from_battle reads these poke-env-derived legality flags.
+    battle.force_switch = False
+    battle.trapped = False
+    battle.maybe_trapped = False
+    battle.wait = False
     # last_request drives the mask: request order + disabled flags.
     battle.last_request = {
         "active": [{
@@ -81,11 +87,12 @@ def test_raw_mask_misalignment_is_detectable():
         ["thunderbolt", "willowisp", "icepunch", "taunt"],
         disabled_id="willowisp",
     )
-    # get_mask returns the raw action-order mask and pins the decision context.
+    # get_mask returns the raw action-order mask.
     raw_action_mask = Gen3ActionMasker.get_mask(battle)
+    legal = LegalActions.from_battle(battle)
     # Applying that raw mask positionally to sorted slots IS a misapplication:
     with pytest.raises(OrderingMismatchError):
-        check_move_validity_alignment(battle, raw_action_mask)
+        check_move_validity_alignment(battle, raw_action_mask, legal)
 
 
 def test_reorder_puts_validity_on_the_right_sorted_slot():
@@ -128,30 +135,32 @@ def test_all_legal_reorder_is_identity_on_values():
 def test_switch_ordering_aligned_by_default():
     """Our team uses list(battle.team.values()) everywhere -> aligned, no raise."""
     battle = _battle(["icepunch", "taunt", "thunderbolt", "willowisp"])
-    Gen3ActionMasker.get_mask(battle)  # pins decision context + checks
-    check_switch_ordering_alignment(battle, np.ones(11, dtype=np.int8))  # explicit
+    legal = LegalActions.from_battle(battle)
+    check_switch_ordering_alignment(battle, np.ones(11, dtype=np.int8), legal)  # explicit
 
 
 def test_switch_ordering_mismatch_raises():
-    """If the encoder's team order ever diverges from the mask/mapper's pinned
-    order, a switch action would target the wrong mon -> must raise."""
+    """If the encoder's team order ever diverges from the mask/mapper's captured
+    snapshot order, a switch action would target the wrong mon -> must raise."""
     battle = _battle(["icepunch", "taunt", "thunderbolt", "willowisp"])
-    Gen3ActionMasker.get_mask(battle)  # pins team_species in decision context
-    # Simulate drift: the encoder's live team order no longer matches the pin.
+    legal = LegalActions.from_battle(battle)  # capture switches at the original order
+    # Simulate drift: the encoder's live team order no longer matches the snapshot.
     reordered = dict(reversed(list(battle.team.items())))
     battle.team = reordered
     with pytest.raises(OrderingMismatchError):
-        check_switch_ordering_alignment(battle, np.ones(11, dtype=np.int8))
+        check_switch_ordering_alignment(battle, np.ones(11, dtype=np.int8), legal)
 
 
-def test_check_is_noop_without_decision_context():
-    """Defensive: no pinned decision context -> nothing to compare, no raise."""
+def test_check_is_noop_without_move_slots():
+    """Defensive: a forced-switch snapshot (no move slots) -> nothing to compare, no raise."""
     battle = MagicMock(spec=AbstractBattle)
     battle.turn = 1
     battle.active_pokemon = _pokemon("gengar", ["thunderbolt"], active=True)
-    # no _gen3_decision_context attribute
-    del battle._gen3_decision_context
-    check_move_validity_alignment(battle, np.ones(11, dtype=np.int8))
+    forced_switch_legal = LegalActions(
+        move_slots=(), switches=(), force_switch=True, trapped=False,
+        maybe_trapped=False, wait=False, struggle=False, last_request=None,
+    )
+    check_move_validity_alignment(battle, np.ones(11, dtype=np.int8), forced_switch_legal)
 
 
 # --------------------------------------------------------------------------
@@ -161,23 +170,23 @@ def test_check_is_noop_without_decision_context():
 def test_mapper_resolves_action_index_to_request_slot():
     """Action 6+k must execute request move k (the contract the model trains on)."""
     battle = _battle(["thunderbolt", "willowisp", "icepunch", "taunt"])
-    Gen3ActionMasker.get_mask(battle)  # pins decision context
     for k, expected in enumerate(["thunderbolt", "willowisp", "icepunch", "taunt"]):
         order = Gen3ActionMapper.action_to_order(MOVE_START + k, battle)
         assert order.order.id == expected
 
 
 def test_mapper_raises_on_stale_state():
-    """If the server move list changes after the mask was latched, acting is
-    refused rather than sending the wrong move (2b fail-loud)."""
+    """If the server move list changes after the snapshot was captured, acting is
+    refused rather than sending the wrong move (fail-loud)."""
     battle = _battle(["thunderbolt", "willowisp", "icepunch", "taunt"])
-    Gen3ActionMasker.get_mask(battle)  # latches move_ids
+    snap = LegalActions.from_battle(battle)
+    ctx = types.SimpleNamespace(turn=battle.turn, legal=snap, mask=np.ones(11, dtype=np.int8))
     # Server now reports a different move order:
     battle.last_request["active"][0]["moves"] = [
         {"id": m, "disabled": False} for m in ["surf", "icebeam", "thunderbolt", "taunt"]
     ]
     with pytest.raises(RuntimeError):
-        Gen3ActionMapper.action_to_order(MOVE_START, battle)
+        Gen3ActionMapper.assert_decision_current(ctx, battle)
 
 
 # --------------------------------------------------------------------------

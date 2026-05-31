@@ -398,14 +398,23 @@ class EventLogFuzzPlayer(Player):
         tag = battle.battle_tag
         self.decisions_checked += 1
 
-        # move-id echo: LegalActions must extract the request's active move slots verbatim
+        # move-id echo: LegalActions extracts the request's active move slots verbatim,
+        # EXCEPT the lone `struggle` entry — that is normalized OUT of move_slots and
+        # surfaced ONLY as the `struggle` flag (the single-source contract that prevents
+        # the "struggle double-enabling" bug; the flag itself is validated below). So the
+        # echo is against the request move ids with struggle filtered out.
         req = battle.last_request or {}
         active = req.get("active") or [{}]
-        req_move_ids = [m.get("id") for m in active[0].get("moves", [])]
+        req_move_ids = [m.get("id") for m in active[0].get("moves", []) if m.get("id") != "struggle"]
         if list(legal.move_ids) != req_move_ids:
             self.mismatches.append(
                 f"[{tag}] t{battle.turn} legal.move_ids {list(legal.move_ids)} "
-                f"!= request {req_move_ids}")
+                f"!= request (struggle-excluded) {req_move_ids}")
+        # Positive single-source guard: struggle must NEVER appear as a move slot.
+        if any(m.id == "struggle" for m in legal.move_slots):
+            self.mismatches.append(
+                f"[{tag}] t{battle.turn} struggle leaked into legal.move_slots "
+                f"{[m.id for m in legal.move_slots]} (it must be the flag only)")
 
         # switches: same species set as poke-env's available_switches (server-authoritative)
         avail = sorted(m.species for m in battle.available_switches)
