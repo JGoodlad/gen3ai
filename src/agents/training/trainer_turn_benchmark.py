@@ -38,10 +38,11 @@ from __future__ import annotations
 import argparse
 import asyncio
 import random
+import statistics
 import sys
 import time
 import traceback
-from typing import Dict
+from typing import Dict, List
 
 import numpy as np
 
@@ -53,6 +54,7 @@ from poke_env.ps_client.server_configuration import LocalhostServerConfiguration
 from agents.action.mapper import Gen3ActionMapper
 from agents.action.mask_generator import Gen3ActionMasker
 from agents.battle.gen3_battle import Gen3Battle
+from agents.battle.live_view import LegalActions
 from agents.model.features_extractor import N_HISTORY_TURNS
 from agents.observation.state_encoder import get_observation_encoder, load_mappings
 from agents.observation.turn_delta_encoder import TurnDeltaEncoder
@@ -118,6 +120,10 @@ class _TrainerTurnPlayer(Player):
         self.decisions = 0           # all decisions (incl. warmup), used for parse/dec
         self.measured = 0            # non-warmup decisions counted into stage stats
         self._warmup = warmup
+        # Robust per-decision distributions (ms), live decisions only:
+        self._cpu_samples: List[float] = []     # our CPU inside choose_move (excl. parse)
+        self._cycle_samples: List[float] = []    # full wall-clock between our decisions
+        self._last_enter: Dict[str, float] = {}  # last live choose_move entry, per battle tag
 
     def _state_for(self, tag: str):
         tr = self._trackers.get(tag)
@@ -135,24 +141,33 @@ class _TrainerTurnPlayer(Player):
             return self.choose_random_move(battle)
 
     def _choose_move_timed(self, battle):
-        tr, rm = self._state_for(battle.battle_tag)
+        tag = battle.battle_tag
+        enter = time.perf_counter()           # wall-clock at the top of our decision
+        tr, rm = self._state_for(tag)
         # Time stages only after warmup (lru_cache / encoder warm once globally); always
         # execute them so the tracker timeline + reward state stay consistent.
         live = self.decisions >= self._warmup
         a = self.acc
+        dec_cpu = [0.0]                        # our CPU summed across this decision's stages
 
         def timed(stage, fn):
             if not live:
                 return fn()
             t0 = time.perf_counter()
             r = fn()
-            a.add(stage, time.perf_counter() - t0)
+            dt = time.perf_counter() - t0
+            a.add(stage, dt)
+            dec_cpu[0] += dt
             return r
 
-        # --- obs build (Gen3Env.embed_battle) ---
-        mask = timed("obs: action mask", lambda: Gen3ActionMasker.get_mask(battle))
+        # --- obs build (Gen3Env.embed_battle): build the LegalActions snapshot ONCE and
+        # share it between the mask and the mapper, exactly as the env does (post-021f2d3). ---
+        def _legal_and_mask():
+            legal = LegalActions.from_battle(battle)
+            return legal, Gen3ActionMasker.get_mask(battle, legal=legal)
+        legal, mask = timed("obs: legal + mask", _legal_and_mask)
         if int(np.asarray(mask).sum()) == 0:
-            return self.choose_random_move(battle)  # forced wait — no decision to time
+            return self.choose_random_move(battle)  # forced wait — not a measured decision
         timed("obs: tracker.record", lambda: tr.record(battle, mask))
         timed("obs: state_encoder.encode",
               lambda: self.obs_enc.encode(battle, hp_tracker=tr.hidden_power_tracker))
@@ -167,7 +182,7 @@ class _TrainerTurnPlayer(Player):
         valid = [i for i, v in enumerate(np.asarray(mask)) if v]
         idx = random.choice(valid) if valid else 0
         order = timed("action map", lambda: Gen3ActionMapper.action_to_order(
-            action=idx, battle=battle, mask=mask, latched_turn=battle.turn))
+            idx, battle, legal=legal, mask=mask))
 
         def _book():
             tr.advance(idx)
@@ -177,6 +192,14 @@ class _TrainerTurnPlayer(Player):
         self.decisions += 1
         if live:
             self.measured += 1
+            self._cpu_samples.append(dec_cpu[0] * 1e3)
+            # Full per-decision wall-clock = entry-to-entry between consecutive LIVE decisions
+            # (skips warmup + forced-wait calls, which don't update _last_enter). Everything
+            # not in our CPU (sim advance, opponent move, parse, framework) lives in here.
+            prev = self._last_enter.get(tag)
+            if prev is not None:
+                self._cycle_samples.append((enter - prev) * 1e3)
+            self._last_enter[tag] = enter
         return order if order is not None else self.choose_random_move(battle)
 
     def _battle_finished_callback(self, battle):
@@ -188,12 +211,20 @@ class _TrainerTurnPlayer(Player):
 # Group leaf stages into the buckets a reader thinks in.
 _GROUPS = [
     ("parse + event-log fold", ["parse"]),
-    ("obs build", ["obs: action mask", "obs: tracker.record",
+    ("obs build", ["obs: legal + mask", "obs: tracker.record",
                    "obs: state_encoder.encode", "obs: turn-history (cached)"]),
     ("reward (TurnDelta fold)", ["reward: build_delta", "reward: process_turn_reward"]),
     ("action map", ["action map"]),
     ("tracker advance/record", ["tracker advance/record"]),
 ]
+
+
+def _p(xs: List[float], q: float) -> float:
+    """Percentile (q in [0,1]) of a sample list, robust to small N. 0.5 == median."""
+    if not xs:
+        return 0.0
+    s = sorted(xs)
+    return s[min(len(s) - 1, int(q * len(s)))]
 
 
 def _report(player: _TrainerTurnPlayer, battles: int) -> None:
@@ -205,13 +236,32 @@ def _report(player: _TrainerTurnPlayer, battles: int) -> None:
     leaf_ms["parse"] = parse_ms
     our_cpu = sum(leaf_ms.values())
 
+    cpu_med = statistics.median(player._cpu_samples) if player._cpu_samples else 0.0
+    our_cpu_med = cpu_med + parse_ms                      # add the (uniform) parse cost
+    cyc_med = statistics.median(player._cycle_samples) if player._cycle_samples else 0.0
+    wait_med = max(0.0, cyc_med - our_cpu_med)            # sim + opp + framework (bridge)
+    cpu_pct = (our_cpu_med / cyc_med * 100) if cyc_med else 0.0
+
     print("\n" + "=" * 78)
-    print(f"TRAINER-TURN CPU BREAKDOWN  (mean per decision over {player.measured} decisions, "
-          f"{battles} battles)")
-    print("CPU we own only — Node sim is a must-pay async subprocess (not counted); "
-          "the policy/value")
-    print("forward (GPU) is EXCLUDED (random legal action used). Shares are the load-stable signal.")
+    print(f"TRAINER-TURN PROFILE  ({player.measured} measured decisions, {battles} battles)")
+    print("Random legal action replaces the policy forward → NO model, NO GPU, NO server.")
     print("=" * 78)
+
+    # ---- Top-down: where does the wall-clock of one of OUR decisions go? ----
+    print("\n  PER-DECISION WALL-CLOCK  (median; bridge = ONE in-process battle):")
+    print(f"    full decision cycle          : {cyc_med:7.3f} ms   "
+          f"(p90 {_p(player._cycle_samples, 0.9):.3f})")
+    print(f"    └ our controllable CPU       : {our_cpu_med:7.3f} ms   "
+          f"({cpu_pct:.0f}% of the cycle; p90 {_p(player._cpu_samples, 0.9)+parse_ms:.3f})")
+    print(f"    └ sim + opp + framework      : {wait_med:7.3f} ms   "
+          f"({100 - cpu_pct:.0f}%)  [MUST-PAY]")
+    print("    CAVEAT: the bridge runs ONE battle in-process — its sim/framework wall is NOT")
+    print("            the 64-env networked training pipeline (no batching/parallelism/sockets,")
+    print("            no GPU sync). Trust OUR-CPU as representative; the wait fraction is")
+    print("            bridge-only and indicative. The real FPS verdict is training-side.")
+
+    # ---- Drill-down: where does OUR CPU go (the part we can optimize)? ----
+    print(f"\n  OUR-CPU STAGE BREAKDOWN  (mean per decision):")
     print(f"  {'stage':<32}{'mean':>10}{'% our-CPU':>12}{'calls/dec':>12}")
     print("  " + "-" * 64)
     for label, leaves in _GROUPS:
@@ -224,10 +274,11 @@ def _report(player: _TrainerTurnPlayer, battles: int) -> None:
                     cpd = a.count.get(l, 0) / measured
                     print(f"    └ {l:<28}{leaf_ms[l]:>8.3f}ms{'':>12}{cpd:>11.2f}")
     print("  " + "-" * 64)
-    print(f"  {'OUR CONTROLLABLE CPU / decision':<32}{our_cpu:>8.3f}ms")
+    print(f"  {'OUR CONTROLLABLE CPU / decision':<32}{our_cpu:>8.3f}ms  (mean)")
+    print(f"  {'  · median / p90':<32}{cpu_med + parse_ms:>8.3f} / "
+          f"{_p(player._cpu_samples, 0.9) + parse_ms:.3f} ms")
     print()
-    print("  [Node sim advance + bridge IPC : must-pay async subprocess — not our CPU]")
-    print("  [model forward (GPU)           : excluded — random legal action stands in]")
+    print("  [model forward (GPU): excluded — random legal action stands in]")
     print("  NOTE: absolute ms scale with machine load; trust the % shares + calls/dec.")
 
 
@@ -265,10 +316,10 @@ async def main(target_decisions: int, battle_cap: int, warmup: int, seed: int) -
 
 def _parse_args(argv):
     p = argparse.ArgumentParser(description="Top-down per-decision trainer-turn CPU profiler.")
-    p.add_argument("--decisions", type=int, default=150, dest="target_decisions",
-                   help="measured (post-warmup) decisions to accumulate (default 150)")
-    p.add_argument("--battle-cap", type=int, default=30,
-                   help="max battles to play while accumulating (default 30)")
+    p.add_argument("--decisions", type=int, default=400, dest="target_decisions",
+                   help="measured (post-warmup) decisions to accumulate (default 400)")
+    p.add_argument("--battle-cap", type=int, default=60,
+                   help="max battles to play while accumulating (default 60)")
     p.add_argument("--warmup", type=int, default=3,
                    help="decisions to skip before timing (cache/encoder warmup) (default 3)")
     p.add_argument("--seed", type=int, default=0, help="action-selection seed (default 0)")

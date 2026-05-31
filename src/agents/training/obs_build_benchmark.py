@@ -167,7 +167,7 @@ class _BenchmarkPlayer(Player):
         idx = random.choice(valid) if valid else 0
         tr.advance(idx)
         try:
-            return Gen3ActionMapper.action_to_order(idx, battle, mask, latched_turn=battle.turn)
+            return Gen3ActionMapper.action_to_order(idx, battle, mask=mask)
         except Exception:
             return self.choose_random_move(battle)
 
