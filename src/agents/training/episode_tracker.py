@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Optional
 import numpy as np
 
 from poke_env.battle.abstract_battle import DamagingMoveEvent
+from poke_env.battle.pokemon_type import PokemonType
 
 from agents.action.ordering_integrity import (
     reorder_move_bits_to_sorted,
@@ -16,10 +17,9 @@ from agents.training.hidden_power_tracker import HiddenPowerTracker
 from agents.training.slot_registry import SlotRegistry
 
 if TYPE_CHECKING:
-    from poke_env.battle.pokemon import Pokemon
-    from poke_env.battle.pokemon_type import PokemonType
     from poke_env.battle.status import Status
 
+    from agents.battle.live_view import LiveView
     from agents.observation.turn_delta_encoder import TurnDeltaEncoder
 
 
@@ -40,24 +40,32 @@ class _HpTargetMon:
     status: "Status | None"
 
 
-def _find_mon(battle, species: str) -> "Pokemon | None":
-    return next((m for m in battle.team.values() if m.species == species), None)
+def _wrap_hp_target(live: "LiveView", event: DamagingMoveEvent) -> Optional[_HpTargetMon]:
+    """Look up the target's current type/ability from the LiveView and overlay the
+    status captured at the moment HP fired.
 
+    The target of an opponent's Hidden Power is always one of OUR mons, so resolve it
+    against ``live.ours``. Returns None if the species can't be resolved (shouldn't
+    happen — every HP hit names a real teammate).
 
-def _wrap_hp_target(battle, event: DamagingMoveEvent) -> Optional[_HpTargetMon]:
-    """Look up the target's current type/ability from battle.team and overlay
-    the status captured at the moment HP fired.
-
-    Returns None if the target species can't be resolved (shouldn't happen for
-    our-side targets — every HP hit names a real teammate).
+    The defender's types are reconstructed from ``LivePokemon.types`` (current-board,
+    lowercased names) into the ``PokemonType`` enums ``effective_multiplier`` reads. This
+    is value-identical to the old ``mon.type_1``/``mon.type_2`` reads: poke-env defines all
+    three properties off the same ``_temporary_types`` / ``_type_1`` / ``_type_2`` state, so
+    ``types`` reconstructed to ``(type_1, type_2)`` equals the pair the properties return —
+    type-change (Conversion / Camouflage) cases included.
     """
-    live_mon = _find_mon(battle, event.target_species)
-    if live_mon is None:
+    live_mon = live.ours.get(event.target_species)
+    if live_mon is None or not live_mon.types:
         return None
+    type_1 = PokemonType[live_mon.types[0].upper()]
+    type_2 = (
+        PokemonType[live_mon.types[1].upper()] if len(live_mon.types) > 1 else None
+    )
     return _HpTargetMon(
         species=live_mon.species,
-        type_1=live_mon.type_1,
-        type_2=live_mon.type_2,
+        type_1=type_1,
+        type_2=type_2,
         ability=live_mon.ability,
         status=event.target_status,
     )
@@ -153,30 +161,39 @@ class EpisodeTracker:
         self._last_cursor = getattr(battle, "event_cursor", 0)
         ctx = BattleContext.from_battle(battle, mask, self._our_slots, self._opp_slots, legal)
 
-        self._maybe_observe_hidden_power(battle, ctx)
-        self._scan_opp_movesets_for_no_hp(battle)
+        # Current-board reads (the HP-candidate moveset scan + the HP-target type/ability
+        # lookup) go through our LiveView, never the raw poke-env Battle/Pokemon objects
+        # (ai_v4 Phase 3 — encapsulation behind the strict boundary).
+        live = battle.strict_view().live
+        self._maybe_observe_hidden_power(live, ctx)
+        self._scan_opp_movesets_for_no_hp(live)
 
         self._history.append(ctx)
         return ctx
 
-    def _scan_opp_movesets_for_no_hp(self, battle) -> None:
+    def _scan_opp_movesets_for_no_hp(self, live: "LiveView") -> None:
         """Mark any opponent species whose four moves are fully revealed and
         none is Hidden Power as definitively HP-less.
 
         This converts the previously ambiguous "all-zero HP probs" state into a
         positive signal (hp_revealed=1, probs all zero in the encoder).
-        Idempotent and cheap (~12 dict lookups per turn).
+        Idempotent and cheap (~12 lookups per turn).
+
+        Reads the opponent's revealed movesets off the current-board ``LiveView``
+        (``live.opp.mons`` / ``LivePokemon.move_ids``) rather than the raw
+        ``battle.opponent_team`` — value-identical, since ``move_ids`` is exactly the
+        revealed move-dict keys the old path iterated.
         """
-        for mon in battle.opponent_team.values():
-            if mon is None or not mon.species:
+        for mon in live.opp.mons:
+            if not mon.species:
                 continue
-            moves = mon.moves
-            if len(moves) >= 4 and not any(
-                k.startswith("hiddenpower") for k in moves
+            move_ids = mon.move_ids
+            if len(move_ids) >= 4 and not any(
+                mid.startswith("hiddenpower") for mid in move_ids
             ):
                 self._hidden_power_tracker.mark_no_hp(mon.species)
 
-    def _maybe_observe_hidden_power(self, battle, ctx: BattleContext) -> None:
+    def _maybe_observe_hidden_power(self, live: "LiveView", ctx: BattleContext) -> None:
         """Feed an HP observation to the tracker when opp's last damaging move
         was Hidden Power.
 
@@ -185,16 +202,18 @@ class EpisodeTracker:
         which is set by poke-env's protocol parser at the |move| line and
         finalized by the matching |-supereffective|/|-resisted|/|-immune|
         event. The event is turn-gated to the just-ended turn, so a stale HP
-        from earlier in the battle never leaks. No before/after inference,
-        no resolver, no edge cases for switches / Roar / phazing / faint
-        chains — the protocol stated the facts and we just record them.
+        from earlier in the battle never leaks. The target's current type/ability
+        (for the effectiveness filter) is resolved through the current-board
+        ``live`` view. No before/after inference, no resolver, no edge cases for
+        switches / Roar / phazing / faint chains — the protocol stated the facts
+        and we just record them.
         """
         if ctx.phase != "move_selection":
             return
         event = ctx.opp_last_damaging_event
         if event is None or event.move_id != "hiddenpower":
             return
-        target = _wrap_hp_target(battle, event)
+        target = _wrap_hp_target(live, event)
         if target is None:
             return
         self._hidden_power_tracker.observe(

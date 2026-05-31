@@ -12,7 +12,15 @@ from unittest.mock import MagicMock
 from agents.training.battle_context import BattleContext, TurnDelta
 from agents.training.episode_tracker import EpisodeTracker
 from agents.action.mask_generator import Gen3ActionMasker
-from agents.battle.live_view import LegalActions, LegalMove
+from agents.battle.live_view import (
+    LegalActions,
+    LegalMove,
+    LiveMove,
+    LivePokemon,
+    LiveSide,
+    LiveView,
+    LiveWeather,
+)
 from agents.observation.turn_delta_encoder import (
     TurnDeltaEncoder,
     TURN_DELTA_DIM,
@@ -62,8 +70,29 @@ def _make_ctx(turn: int = 0, our_hp0: float = 1.0) -> BattleContext:
     )
 
 
-def _mock_battle(turn: int = 1) -> MagicMock:
-    """Minimal battle mock compatible with BattleContext.from_battle()."""
+def _empty_side() -> LiveSide:
+    return LiveSide(team_size=0, active=None, mons=(), side_conditions={})
+
+
+def _live_view(opp_mons=()) -> LiveView:
+    """Real LiveView with the given LivePokemon on the opponent side (our side empty).
+
+    record() now reads current-board state through battle.strict_view().live, so the
+    mock must surface a real LiveView for the HP-candidate scan / HP-target lookup."""
+    return LiveView(
+        turn=1,
+        weather=LiveWeather(weather=None, is_permanent=False, turns_active=0),
+        ours=_empty_side(),
+        opp=LiveSide(
+            team_size=len(opp_mons), active=None, mons=tuple(opp_mons),
+            side_conditions={},
+        ),
+    )
+
+
+def _mock_battle(turn: int = 1, opp_live_mons=()) -> MagicMock:
+    """Minimal battle mock compatible with BattleContext.from_battle() and the
+    LiveView-backed current-board reads record() makes (battle.strict_view().live)."""
     battle = MagicMock()
     battle.team = {}
     battle.opponent_team = {}
@@ -75,6 +104,7 @@ def _mock_battle(turn: int = 1) -> MagicMock:
     battle.our_last_effectiveness = None
     battle.opp_last_effectiveness = None
     battle.we_moved_first = None
+    battle.strict_view.return_value.live = _live_view(opp_live_mons)
     return battle
 
 
@@ -521,21 +551,24 @@ def test_prev_N_delta_vecs_uses_stored_actions():
 # Hidden Power rule-out wiring (mark_no_hp on full moveset reveal)
 # ---------------------------------------------------------------------------
 
-def _opp_mon(species: str, move_ids: list[str]) -> MagicMock:
-    """Mock opponent mon with the given revealed moves dict-keyed by id."""
-    mon = MagicMock()
-    mon.species = species
-    mon.moves = {mid: MagicMock() for mid in move_ids}
-    return mon
+def _opp_live_mon(species: str, move_ids: list[str]) -> LivePokemon:
+    """Real opponent LivePokemon with the given revealed move ids — the current-board
+    form the scan now reads (live.opp.mons / LivePokemon.move_ids). Only the fields the
+    scan touches (species, move_ids) carry meaning; the rest are inert placeholders."""
+    moves = tuple(LiveMove(id=mid, current_pp=8, max_pp=8) for mid in sorted(move_ids))
+    return LivePokemon(
+        species=species, active=False, fainted=False, revealed=True,
+        hp_fraction=1.0, status=None, types=("normal",), moves=moves,
+        item=None, ability=None, boosts={}, volatiles={},
+    )
 
 
 def test_mark_no_hp_fires_when_four_moves_revealed_without_hp():
     """Opp with 4 non-HP moves revealed → tracker marks species ruled-out."""
     tracker = EpisodeTracker()
-    battle = _mock_battle(1)
-    battle.opponent_team = {
-        "p2: Snorlax": _opp_mon("snorlax", ["bodyslam", "earthquake", "rest", "curse"])
-    }
+    battle = _mock_battle(1, opp_live_mons=[
+        _opp_live_mon("snorlax", ["bodyslam", "earthquake", "rest", "curse"])
+    ])
     tracker.record(battle, np.ones(11, dtype=np.int8))
     assert tracker.hidden_power_tracker.is_known("snorlax") is True
     assert not tracker.hidden_power_tracker.get_probs("snorlax").any()
@@ -544,10 +577,9 @@ def test_mark_no_hp_fires_when_four_moves_revealed_without_hp():
 def test_mark_no_hp_does_not_fire_with_fewer_than_four_moves():
     """3 moves revealed → still uncertain whether HP is in slot 4. No mark yet."""
     tracker = EpisodeTracker()
-    battle = _mock_battle(1)
-    battle.opponent_team = {
-        "p2: Tauros": _opp_mon("tauros", ["bodyslam", "earthquake", "return"])
-    }
+    battle = _mock_battle(1, opp_live_mons=[
+        _opp_live_mon("tauros", ["bodyslam", "earthquake", "return"])
+    ])
     tracker.record(battle, np.ones(11, dtype=np.int8))
     assert tracker.hidden_power_tracker.is_known("tauros") is False
 
@@ -555,10 +587,9 @@ def test_mark_no_hp_does_not_fire_with_fewer_than_four_moves():
 def test_mark_no_hp_does_not_fire_when_hp_is_among_four_moves():
     """4 moves including HP → known via observation path, not ruled out."""
     tracker = EpisodeTracker()
-    battle = _mock_battle(1)
-    battle.opponent_team = {
-        "p2: Jolteon": _opp_mon("jolteon", ["thunderbolt", "shadowball", "substitute", "hiddenpower"])
-    }
+    battle = _mock_battle(1, opp_live_mons=[
+        _opp_live_mon("jolteon", ["thunderbolt", "shadowball", "substitute", "hiddenpower"])
+    ])
     tracker.record(battle, np.ones(11, dtype=np.int8))
     # is_known stays False here — we haven't OBSERVED HP fire yet, just seen
     # it sit in the moveset. Tracker only flips on observe() in that case.
@@ -568,10 +599,9 @@ def test_mark_no_hp_does_not_fire_when_hp_is_among_four_moves():
 def test_mark_no_hp_recognizes_typed_hp_variants():
     """If poke-env exposes the typed key 'hiddenpowergrass', that also blocks rule-out."""
     tracker = EpisodeTracker()
-    battle = _mock_battle(1)
-    battle.opponent_team = {
-        "p2: Celebi": _opp_mon("celebi", ["leechseed", "recover", "perishsong", "hiddenpowergrass"])
-    }
+    battle = _mock_battle(1, opp_live_mons=[
+        _opp_live_mon("celebi", ["leechseed", "recover", "perishsong", "hiddenpowergrass"])
+    ])
     tracker.record(battle, np.ones(11, dtype=np.int8))
     assert tracker.hidden_power_tracker.is_known("celebi") is False
 
@@ -579,16 +609,13 @@ def test_mark_no_hp_recognizes_typed_hp_variants():
 def test_mark_no_hp_persists_across_turns():
     """Once ruled out, the species stays ruled out for subsequent turns."""
     tracker = EpisodeTracker()
-    b1 = _mock_battle(1)
-    b1.opponent_team = {
-        "p2: Snorlax": _opp_mon("snorlax", ["bodyslam", "earthquake", "rest", "curse"])
-    }
+    moveset = ["bodyslam", "earthquake", "rest", "curse"]
+    b1 = _mock_battle(1, opp_live_mons=[_opp_live_mon("snorlax", moveset)])
     tracker.record(b1, np.ones(11, dtype=np.int8))
     assert tracker.hidden_power_tracker.is_known("snorlax") is True
 
-    b2 = _mock_battle(2)
-    # Snorlax still has the same moveset
-    b2.opponent_team = b1.opponent_team
+    # Snorlax still has the same moveset next turn.
+    b2 = _mock_battle(2, opp_live_mons=[_opp_live_mon("snorlax", moveset)])
     tracker.record(b2, np.ones(11, dtype=np.int8))
     assert tracker.hidden_power_tracker.is_known("snorlax") is True
 
@@ -596,10 +623,9 @@ def test_mark_no_hp_persists_across_turns():
 def test_reset_clears_rule_out_state():
     """EpisodeTracker.reset() must wipe the rule-out set via tracker.reset()."""
     tracker = EpisodeTracker()
-    battle = _mock_battle(1)
-    battle.opponent_team = {
-        "p2: Snorlax": _opp_mon("snorlax", ["bodyslam", "earthquake", "rest", "curse"])
-    }
+    battle = _mock_battle(1, opp_live_mons=[
+        _opp_live_mon("snorlax", ["bodyslam", "earthquake", "rest", "curse"])
+    ])
     tracker.record(battle, np.ones(11, dtype=np.int8))
     assert tracker.hidden_power_tracker.is_known("snorlax") is True
     tracker.reset()
