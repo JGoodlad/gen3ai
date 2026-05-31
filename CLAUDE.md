@@ -245,7 +245,8 @@ src/
     observation/     # Observation encoders (state_encoder, pokemon, moves, etc.)
     action/          # Action masking and mapping
     training/        # Callbacks and reward manager
-    battle/          # Event-sourced battle layer (Gen3Battle, BattleEvent log, TurnView)
+    battle/          # Event-sourced battle layer (Gen3Battle, BattleEvent log, TurnView,
+                     #   LiveView/LegalActions read-models, StrictBattleView boundary)
   main/
     launcher/          # Restart loop + Rich TUI (preferred for long runs)
                      #   checkpoint.py, worktree.py, child.py, input.py,
@@ -286,7 +287,7 @@ Per-Pokémon slot (107 dims): species ID + 6 base stats, item ID + known + consu
 
 Move slot (11 dims, layout in `src/agents/observation/moves.py`): move ID, base power (/200), has_secondary, has_recoil, type ID, category (0=status, 1=physical, 2=special), known flag, current PP (/MAX_PP), max PP (/MAX_PP), accuracy (raw% / 100), never_miss bit. Accuracy is split into a continuous scalar plus a categorical bit: never-miss moves carry accuracy=100 in the mapping → encode as `[1.0, 1]`, while a genuine 100%-accuracy move is `[1.0, 0]` — same scalar, distinguished only by the bit. A 100%-accuracy move can still miss into evasion (Double Team) or after Sand-Attack; a never-miss move (Swift, Aerial Ace, all status/self moves) bypasses the accuracy/evasion check entirely.
 
-Spread block (18 dims, appended at offset 71 within each slot): IVs ×6 each/31 + EVs ×6 each/252 + spread_known (1.0 own, 0.0 opp) + nature modifiers ×5 [atk, def, spa, spd, spe] as raw floats (0.9/1.0/1.1). Opponent slots have all 18 dims as zeros; `spread_known=0` distinguishes "unknown opponent" from "own Pokémon with 0 EVs".
+Spread block (18 dims, appended at offset 71 within each slot): IVs ×6 each/31 + EVs ×6 each/252 + spread_known (1.0 own, 0.0 opp) + nature modifiers ×5 [atk, def, spa, spd, spe] as raw floats (0.9/1.0/1.1). Opponent slots have all 18 dims as zeros; `spread_known=0` distinguishes "unknown opponent" from "own Pokémon with 0 EVs". Own-team `mon.ivs/evs/nature` are populated by the poke-env fork's **`backfill_teambuilder_spread`** (`Battle.parse_request`): gen3ou has no team preview, so `apply_teambuilder_team` never attaches the spread — the backfill matches the declared teambuilder team to the request-built team by species and fills in IVs/EVs/nature (spread only, never re-running `_update_from_teambuilder`). Without it this block emitted a constant fallback (all-31 IVs, 0 EVs, neutral nature) for every own mon.
 
 Global env (13 dims): weather one-hot (6), spikes ×2 (2), log-turn (1), our reflect (1), our light screen (1), opp reflect (1), opp light screen (1).
 
@@ -408,14 +409,39 @@ layer is currently additive and obs/reward-neutral.
   (`move_order`, `we_moved_first`, `both_attacked`, `someone_fainted`,
   `damage_on(species, side=…)`). This is what `TurnDelta` and the reward manager will
   read once step 5 lands, replacing the diff-based heuristics.
-- **`LiveView` / `LiveSide` / `LivePokemon`** (`live_view.py`) — the **current-board** read
-  surface ("what is true now"), built via `battle.live_view()`. An immutable snapshot of
-  HP, status, boosts, revealed moves/item/ability, volatiles, hazards, weather, team
-  sizes/reveal counts — holding **only primitives, no past-turn state** and no reference
-  back to poke-env's `Pokemon`. A consumer literally cannot reach `last_move` through it,
-  so current-state and history come from two disjoint, separately-fuzzed sources that
-  can't drift. Opponent fields are reveal-gated (unknown item → `None`, only revealed
+- **`LiveView` / `LiveSide` / `LivePokemon` / `LiveMove`** (`live_view.py`) — the
+  **current-board** read surface ("what is true now"), built via `battle.live_view()`. An
+  immutable snapshot of HP, status, boosts, revealed moves/item/ability, volatiles, hazards,
+  weather, team sizes/reveal counts — holding **only primitives, no past-turn state** and no
+  reference back to poke-env's `Pokemon`. A consumer literally cannot reach `last_move`
+  through it, so current-state and history come from two disjoint, separately-fuzzed sources
+  that can't drift. Opponent fields are reveal-gated (unknown item → `None`, only revealed
   moves listed; `ability` is `None` unless disclosed or uniquely inferable from species).
+  `LivePokemon` also carries the **spread block** (`base_stats` — public, both sides;
+  `ivs`/`evs`/`nature` — own side only, gated by `spread_known` mirroring the obs encoder),
+  `consumed_item` (id-form) and `status_counter`; `moves` is a tuple of `LiveMove(id,
+  current_pp, max_pp)` with a `move_ids` accessor for id-only call-sites. `LiveView` carries
+  the meta `turn`/`battle_tag`/`finished`/`won`/`lost`.
+- **`LegalActions` / `LegalMove` / `LegalSwitch`** (`live_view.py`) — the
+  **server-authoritative** legality surface, built via `LegalActions.from_battle(battle)`
+  (or `strict_view().legal`). Sourced from poke-env's already-parsed `|request|` fields
+  (`battle.py:parse_request`), not derived: per-slot `LegalMove(id, current_pp, max_pp,
+  disabled, target)`, `LegalSwitch(species, slot)` (slot = the team index the 11-dim action
+  space uses), `force_switch`/`trapped`/`maybe_trapped`/`wait`/`struggle`, and a read-only
+  (`MappingProxyType`) mirror of `last_request` for the masker's request-echo path.
+- **`StrictBattleView`** (`strict_view.py`) — the **strict boundary** our non-`battle/` code
+  is meant to read through, built via `battle.strict_view()`. Exposes **only** `.live`
+  (`LiveView`), `.turn_view(n)`/`.history` (`TurnView`), `.legal` (`LegalActions`),
+  `.events_since(cursor)`/`.event_cursor`, and scalar meta
+  (`turn`/`battle_tag`/`finished`/
+  `won`/`lost`). `turn` is the current-turn **int** — same name/meaning as `battle.turn` and
+  `LiveView.turn` so a consumer migrating off `battle.turn` is a drop-in; the per-turn
+  `TurnView` accessor is `turn_view(n)` (mirrors `.live`→`LiveView`, `.history`→all
+  `TurnView`s) to avoid the method-vs-property name clash. `__getattr__` raises a helpful
+  error naming the right accessor; the raw `Gen3Battle` is held privately and never
+  returned. **Consumers are not yet migrated to it** — that's Phase 3 of
+  `designs/ai_v4/todo_live_battle.md` (skips `battle_context.py`, which Step 4's TurnDelta
+  fold retires). Phases 1–2 are additive and obs-neutral.
 - **Injection seam (wired into training):** `poke_env.player.Player.__init__` takes
   `battle_class=Battle` (default, with a `None`-guard since `PokeEnv` threads a `None`
   default to its `_EnvPlayer` agents). `Gen3Player` defaults `battle_class=Gen3Battle`
@@ -430,10 +456,13 @@ layer is currently additive and obs/reward-neutral.
   importing one submodule doesn't force-load the others (avoids an import cycle).
 
 **Verification:** unit tests in `src/agents/battle/*_test.py` (schema, registry audit,
-scripted parse + state-equivalence, TurnView fold). The spine is
-`event_log_fuzz_e2e_test.py` — real `gen3ou` battles where both players run `Gen3Battle`;
-it independently re-derives each turn from the intercepted raw protocol and asserts the
-event log matches, plus conservation + event-kind coverage.
+scripted parse + state-equivalence, TurnView fold, `live_view_test.py` for the current-board
+surface + widened fields, `strict_view_test.py` for the strict boundary + `LegalActions`
+extraction + the forbidden-access guard). The spine is `event_log_fuzz_e2e_test.py` — real
+`gen3ou` battles where both players run `Gen3Battle`; it independently re-derives each turn
+from the intercepted raw protocol and asserts the event log matches, plus conservation +
+event-kind coverage, the widened LiveView fields (spread/PP/consumed/counter/meta) per mon,
+and the `LegalActions` legality surface against the live server request at every decision.
 
 ---
 

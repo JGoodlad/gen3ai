@@ -806,6 +806,23 @@ class Pokemon:
             for stat, val in zip(["hp", "atk", "def", "spa", "spd", "spe"], stats):
                 self._stats[stat] = val
 
+    def backfill_spread_from_teambuilder(self, tb: TeambuilderPokemon):
+        """Set IVs/EVs/nature from a teambuilder entry — and ONLY those — without touching
+        moves, item, ability or stats.
+
+        ``_update_from_teambuilder`` applies the full build as a *base layer* before the
+        request fills in details, but it only runs for team-preview formats (via
+        ``apply_teambuilder_team``). Formats with no team preview (e.g. gen 3) build the team
+        straight from the request, which never echoes the spread — so the IVs/EVs/nature would
+        stay ``None``. This backfills exactly that gap from the team we declared. Idempotent:
+        a no-op once the spread is known (so it never clobbers preview- or request-applied
+        data). Stats are intentionally left to the request, which carries the real values."""
+        if self._ivs is not None:
+            return
+        self._evs = tb.evs
+        self._ivs = tb.ivs
+        self._nature = tb.nature.lower() if tb.nature is not None else "serious"
+
     def was_illusioned(self, fields: Dict[Field, int]):
         self._current_hp = None
         self._max_hp = None

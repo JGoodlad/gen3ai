@@ -201,6 +201,74 @@ def validate_battle(battle: Gen3Battle) -> List[str]:
                     f"[{tag}] live_view hp {built.hp_fraction} != "
                     f"{raw.current_hp_fraction} for {raw.species}")
             assert not hasattr(built, "last_move")  # boundary: no history fields
+
+        # 1c-ii) Phase-1 widened fields — spread / PP / consumed-item / status-counter —
+        #        faithful to poke-env per mon, and the own/opp spread gate respected.
+        #        Within one side species are unique (gen3 OU), so match by species.
+        for side_lv, raw_team, is_own in (
+            (lv.ours, battle.team, True),
+            (lv.opp, battle.opponent_team, False),
+        ):
+            raw_by_species = {m.species: m for m in raw_team.values()}
+            for built in side_lv.mons:
+                raw = raw_by_species.get(built.species)
+                if raw is None:
+                    problems.append(f"[{tag}] live_view mon {built.species} not in raw team")
+                    continue
+                if built.base_stats != raw.base_stats:
+                    problems.append(
+                        f"[{tag}] {built.species} base_stats {built.base_stats} != "
+                        f"{raw.base_stats}")
+                # spread gate: own side carries ivs/evs/nature, opp does not
+                if built.spread_known != is_own:
+                    problems.append(
+                        f"[{tag}] {built.species} spread_known={built.spread_known} "
+                        f"but is_own={is_own}")
+                if not is_own and (built.ivs or built.evs or built.nature):
+                    problems.append(
+                        f"[{tag}] opp {built.species} leaked private spread "
+                        f"ivs={built.ivs} evs={built.evs} nature={built.nature}")
+                if is_own and raw.ivs is not None and built.ivs != tuple(raw.ivs):
+                    problems.append(
+                        f"[{tag}] {built.species} ivs {built.ivs} != {tuple(raw.ivs)}")
+                if is_own and raw.evs is not None and built.evs != tuple(raw.evs):
+                    problems.append(
+                        f"[{tag}] {built.species} evs {built.evs} != {tuple(raw.evs)}")
+                if is_own and built.nature != raw.nature:
+                    problems.append(
+                        f"[{tag}] {built.species} nature {built.nature} != {raw.nature}")
+                # consumed item (id-form) and status counter mirror poke-env
+                exp_consumed = to_id_str(raw.consumed_item) if raw.consumed_item else None
+                if built.consumed_item != exp_consumed:
+                    problems.append(
+                        f"[{tag}] {built.species} consumed_item {built.consumed_item} "
+                        f"!= {exp_consumed}")
+                if built.status_counter != int(raw.status_counter or 0):
+                    problems.append(
+                        f"[{tag}] {built.species} status_counter "
+                        f"{built.status_counter} != {raw.status_counter}")
+                # enriched moves: PP per slot faithful to poke-env's Move objects
+                for lm in built.moves:
+                    rm = raw.moves.get(lm.id)
+                    if rm is None:
+                        problems.append(
+                            f"[{tag}] {built.species} live move {lm.id} absent in raw")
+                        continue
+                    if (lm.current_pp, lm.max_pp) != (rm.current_pp, rm.max_pp):
+                        problems.append(
+                            f"[{tag}] {built.species} {lm.id} pp "
+                            f"({lm.current_pp},{lm.max_pp}) != "
+                            f"({rm.current_pp},{rm.max_pp})")
+
+        # 1c-iii) LiveView meta passthroughs mirror the battle's own accessors
+        if lv.battle_tag != battle.battle_tag:
+            problems.append(f"[{tag}] live_view battle_tag {lv.battle_tag} != {tag}")
+        if lv.finished != bool(battle.finished):
+            problems.append(f"[{tag}] live_view finished {lv.finished} != {battle.finished}")
+        if lv.won != battle.won or lv.lost != battle.lost:
+            problems.append(
+                f"[{tag}] live_view won/lost ({lv.won},{lv.lost}) != "
+                f"({battle.won},{battle.lost})")
         # 1d) crash-don't-drop allowlists — every volatile on every mon in the live
         #     view must encode (no silently-dropped state), and every |cant| reason in
         #     the log must be a known gen3 cause. encode_*/normalize_* RAISE on an
@@ -293,6 +361,7 @@ class EventLogFuzzPlayer(Player):
         self._raw: Dict[str, List[List[str]]] = defaultdict(list)
         self.mismatches: List[str] = []
         self.battles_checked = 0
+        self.decisions_checked = 0
         self.kinds_seen: Set[EventKind] = set()
         self.coverage: Set[str] = set()
         self.errors: List[str] = []
@@ -304,7 +373,72 @@ class EventLogFuzzPlayer(Player):
         await super()._handle_battle_message(split_messages)
 
     def choose_move(self, battle):
+        # Validate the strict-view legality surface against the live server request at
+        # the exact moment we're asked to act — the one place the request is authoritative.
+        try:
+            self._validate_decision(battle)
+        except Exception:  # never let validation crash the event loop
+            self.errors.append(traceback.format_exc())
         return self.choose_random_move(battle)
+
+    def _validate_decision(self, battle):
+        """Cross-check ``battle.strict_view().legal`` / ``.live`` against the raw,
+        server-parsed request fields for THIS decision."""
+        sv = battle.strict_view()
+        legal = sv.legal
+        tag = battle.battle_tag
+        self.decisions_checked += 1
+
+        # move-id echo: LegalActions must extract the request's active move slots verbatim
+        req = battle.last_request or {}
+        active = req.get("active") or [{}]
+        req_move_ids = [m.get("id") for m in active[0].get("moves", [])]
+        if list(legal.move_ids) != req_move_ids:
+            self.mismatches.append(
+                f"[{tag}] t{battle.turn} legal.move_ids {list(legal.move_ids)} "
+                f"!= request {req_move_ids}")
+
+        # switches: same species set as poke-env's available_switches (server-authoritative)
+        avail = sorted(m.species for m in battle.available_switches)
+        if sorted(legal.switch_species) != avail:
+            self.mismatches.append(
+                f"[{tag}] t{battle.turn} legal switches {sorted(legal.switch_species)} "
+                f"!= available {avail}")
+
+        # flags
+        for name, got, exp in (
+            ("force_switch", legal.force_switch, bool(battle.force_switch)),
+            ("trapped", legal.trapped, bool(battle.trapped)),
+            ("wait", legal.wait, bool(battle.wait)),
+            ("maybe_trapped", legal.maybe_trapped, bool(battle.maybe_trapped)),
+            ("struggle", legal.struggle,
+             any(m.id == "struggle" for m in battle.available_moves)),
+        ):
+            if got != exp:
+                self.mismatches.append(
+                    f"[{tag}] t{battle.turn} legal.{name} {got} != {exp}")
+            if exp and name in ("force_switch", "trapped", "maybe_trapped", "struggle"):
+                self.coverage.add(name)
+        if legal.switches:
+            self.coverage.add("legal_switch")
+
+        # live view builds and active-mon PP mirrors poke-env, mid-battle
+        live = sv.live
+        for built, raw in (
+            (live.ours.active, battle.active_pokemon),
+            (live.opp.active, battle.opponent_active_pokemon),
+        ):
+            if raw is None or built is None:
+                continue
+            for lm in built.moves:
+                rm = raw.moves.get(lm.id)
+                if rm is not None and (lm.current_pp, lm.max_pp) != (
+                    rm.current_pp, rm.max_pp
+                ):
+                    self.mismatches.append(
+                        f"[{tag}] t{battle.turn} {built.species} {lm.id} pp "
+                        f"({lm.current_pp},{lm.max_pp}) != "
+                        f"({rm.current_pp},{rm.max_pp})")
 
     def _battle_finished_callback(self, battle):
         try:
@@ -343,6 +477,28 @@ class EventLogFuzzPlayer(Player):
             elif e.kind in (EventKind.ITEM, EventKind.ENDITEM):
                 self.coverage.add("item")
 
+        # Phase-1 widened-field coverage: confirm the new LiveView fields were actually
+        # exercised on real play (not just present in the schema).
+        try:
+            lv = battle.live_view()
+            for side in (lv.ours, lv.opp):
+                for mon in side.mons:
+                    if mon.consumed_item:
+                        self.coverage.add("consumed_item")
+                    if mon.status_counter > 0:
+                        self.coverage.add("status_counter")
+                    if any(m.id.startswith("hiddenpower") for m in mon.moves):
+                        self.coverage.add("hp_move")
+                if side is lv.ours and side.active and side.active.spread_known:
+                    # the own-side spread GATE fired on a real mon (always, by construction)
+                    self.coverage.add("spread_known")
+                    # ...and whether it actually carried IV/EV/nature DATA (gen3ou has no
+                    # team preview, so this answers whether the spread block is populated)
+                    if side.active.ivs or side.active.evs or side.active.nature:
+                        self.coverage.add("spread_data")
+        except Exception:  # pragma: no cover - coverage probe must never crash the loop
+            pass
+
 
 # --------------------------------------------------------------------------- #
 # Runner                                                                        #
@@ -362,12 +518,26 @@ def _random_team() -> str:
 
 REQUIRED_COVERAGE = {
     "switch", "faint", "crit", "miss", "supereffective", "immune/resisted", "status",
+    # legality surface — both fire in essentially every real battle
+    "force_switch", "legal_switch", "spread_known",
+    # own-team spread DATA must actually reach LiveView every battle now that the poke-env
+    # backfill_teambuilder_spread fix populates mon.ivs/evs/nature from the declared team
+    # (gen3ou has no team preview). Before that fix this was never seen across 25k+ battles —
+    # its presence here is the end-to-end proof of the fix.
+    "spread_data",
+}
+
+# Exercised but rare/team-dependent — reported, not required (avoids spurious flakiness).
+REPORTED_COVERAGE = {
+    "consumed_item", "status_counter", "hp_move",
+    "trapped", "maybe_trapped", "struggle",
 }
 
 
-async def main(n_battles: int = 40) -> None:
+async def main(n_battles: int = 40, max_seconds: "float | None" = None) -> None:
     ts = int(time.time()) % 100000
-    print(f"Event-Log Fuzz — {BATTLE_FORMAT} — {n_battles} battles", flush=True)
+    mode = f"{max_seconds:.0f}s time budget" if max_seconds else f"{n_battles} battles"
+    print(f"Event-Log Fuzz — {BATTLE_FORMAT} — {mode}", flush=True)
 
     # Proven recipe (mirrors the poke_env_gaps fuzz tests): our Gen3Battle-backed
     # validator challenges a RandomPlayer opponent. Passwords are set so the server
@@ -387,7 +557,21 @@ async def main(n_battles: int = 40) -> None:
         server_configuration=LocalhostServerConfiguration,
         max_concurrent_battles=5,
     )
-    await fuzz.battle_against(opp, n_battles=n_battles)
+
+    if max_seconds:
+        # Time-budget mode: keep playing chunks of battles (one persistent validator,
+        # accumulating coverage/mismatches) until the wall-clock budget is spent. Lets us
+        # run escalating soak tests (1m / 5m / 15m) to shake out rare edge cases.
+        start = time.time()
+        chunk = 25
+        while time.time() - start < max_seconds:
+            await fuzz.battle_against(opp, n_battles=chunk)
+            elapsed = time.time() - start
+            print(f"  … {fuzz.battles_checked} battles, {fuzz.decisions_checked} decisions, "
+                  f"{elapsed:.0f}/{max_seconds:.0f}s, {len(fuzz.mismatches)} mismatches, "
+                  f"{len(fuzz.errors)} errors", flush=True)
+    else:
+        await fuzz.battle_against(opp, n_battles=n_battles)
 
     checked = fuzz.battles_checked
     mismatches = fuzz.mismatches
@@ -396,8 +580,14 @@ async def main(n_battles: int = 40) -> None:
     coverage = fuzz.coverage
 
     print(f"\nBattles validated : {checked}")
+    print(f"Decisions validated: {fuzz.decisions_checked} (strict-view legality surface)")
     print(f"Distinct EventKinds seen: {sorted(k.name for k in kinds)}")
     print(f"Coverage flags    : {sorted(coverage)}")
+    print(f"Phase-1 field coverage (required): "
+          f"{sorted(c for c in coverage if c in REQUIRED_COVERAGE)}")
+    print(f"Phase-1 field coverage (reported): "
+          f"{sorted(REPORTED_COVERAGE & coverage)} "
+          f"(not seen: {sorted(REPORTED_COVERAGE - coverage)})")
 
     missing_cov = REQUIRED_COVERAGE - coverage
     print("=" * 70)
@@ -430,5 +620,12 @@ async def main(n_battles: int = 40) -> None:
 
 
 if __name__ == "__main__":
-    n = int(sys.argv[1]) if len(sys.argv) > 1 else 40
-    asyncio.run(main(n))
+    import argparse
+
+    p = argparse.ArgumentParser(description="Event-log / live-view e2e fuzz")
+    p.add_argument("n", nargs="?", type=int, default=40,
+                   help="number of battles (ignored when --seconds is given)")
+    p.add_argument("--seconds", type=float, default=None,
+                   help="run for this many wall-clock seconds instead of a fixed count")
+    args = p.parse_args()
+    asyncio.run(main(args.n, max_seconds=args.seconds))

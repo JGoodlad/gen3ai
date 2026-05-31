@@ -35,7 +35,12 @@ _EXPORTS = {
     "LiveView": "live_view",
     "LiveSide": "live_view",
     "LivePokemon": "live_view",
+    "LiveMove": "live_view",
     "LiveWeather": "live_view",
+    "LegalActions": "live_view",
+    "LegalMove": "live_view",
+    "LegalSwitch": "live_view",
+    "StrictBattleView": "strict_view",
 }
 
 __all__ = list(_EXPORTS)
@@ -67,9 +72,14 @@ if TYPE_CHECKING:  # for static analysers / IDEs only — not executed at runtim
     )
     from agents.battle.gen3_battle import Gen3Battle  # noqa: F401
     from agents.battle.live_view import (  # noqa: F401
+        LegalActions,
+        LegalMove,
+        LegalSwitch,
+        LiveMove,
         LivePokemon,
         LiveSide,
         LiveView,
         LiveWeather,
     )
+    from agents.battle.strict_view import StrictBattleView  # noqa: F401
     from agents.battle.turn_view import TurnView  # noqa: F401

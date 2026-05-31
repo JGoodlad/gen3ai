@@ -76,6 +76,18 @@ class Gen3Battle(Battle):
 
         return LiveView.from_battle(self)
 
+    def strict_view(self) -> "StrictBattleView":
+        """The strict boundary object our non-``battle/`` code should read through.
+
+        Wraps this battle so consumers reach only the vetted surfaces — ``.live``
+        (:class:`LiveView`), ``.legal`` (:class:`LegalActions`), ``.turn(n)`` /
+        ``.history`` (:class:`TurnView`), and the event window — never the raw
+        ``Battle`` / ``Pokemon`` objects. See :class:`StrictBattleView`.
+        """
+        from agents.battle.strict_view import StrictBattleView
+
+        return StrictBattleView(self)
+
     @property
     def events(self) -> Sequence[BattleEvent]:
         """The whole-battle event log, in revealed order."""

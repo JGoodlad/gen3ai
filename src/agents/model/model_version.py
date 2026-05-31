@@ -79,7 +79,20 @@ MODEL_CONFIG_VERSION = 2
 #   extractor broadcasts into per-mon move context widens 6 → 7. Obs dim 2734 → 2823;
 #   the global-token / active-ctx projection input widths all shift. Not weight-
 #   compatible with v7.
-ARCH_SIGNATURE = "gen3_live_state_v1"
+#
+# v9 (gen3_own_spread_v1): the own-team spread block (per-mon IVs/EVs/nature, 18 dims ×6
+#   slots) now carries REAL data instead of constant fallbacks. gen3ou has no team preview,
+#   so poke-env's apply_teambuilder_team (which matches the empty team-preview list) never
+#   attached the spread, and own Pokemon.ivs/evs/nature stayed None — the spread block had
+#   been emitting a constant vector (IVs all-31, EVs all-0, neutral nature) for every own mon,
+#   i.e. zero signal. Fixed in the poke-env fork: Battle.parse_request now calls
+#   backfill_teambuilder_spread() after building the team from the request, matching the
+#   declared teambuilder team by species and filling in IVs/EVs/nature (spread only — it does
+#   not re-run the full _update_from_teambuilder, so request-derived moves/PP/stats are
+#   untouched). The obs spread block + LiveView read mon.ivs as before, now populated. Obs DIM
+#   is unchanged (still 2823) — only the spread VALUES change — but the meaning of those dims
+#   changes, so this is retrain-class: old checkpoints must not silently load.
+ARCH_SIGNATURE = "gen3_own_spread_v1"
 
 
 class ModelVersionError(Exception):

@@ -1472,6 +1472,31 @@ class AbstractBattle(ABC):
             )
             mon._update_from_teambuilder(teambuilder_mon)
 
+    def backfill_teambuilder_spread(self):
+        """Attach our own team's IVs/EVs/nature (the spread the battle protocol never echoes)
+        to the team built from the request.
+
+        ``apply_teambuilder_team`` only fills the spread in for team-preview formats — it
+        matches the teambuilder team against the *preview* list, which is empty in no-preview
+        formats (gen 3, etc.). There the team is built from the ``|request|``, which carries
+        final stats / moves / item / ability but NOT the underlying IV/EV/nature. We match
+        each declared mon to the built team by species (unique per side in singles) and
+        backfill the spread only — never re-running the full ``_update_from_teambuilder``,
+        which would clobber the request-derived moves/PP/stats. Idempotent and safe to call on
+        every request."""
+        if self._teambuilder_team is None:
+            return
+        by_species: Dict[str, Pokemon] = {}
+        for mon in self._team.values():
+            by_species.setdefault(to_id_str(mon.species), mon)
+        for tb in self._teambuilder_team:
+            raw = tb.species if tb.species else tb.nickname
+            if raw is None:
+                continue
+            mon = by_species.get(to_id_str(raw))
+            if mon is not None:
+                mon.backfill_spread_from_teambuilder(tb)
+
     def _update_team_from_request(
         self, side: Dict[str, Any], strict_battle_tracking: bool = False
     ):

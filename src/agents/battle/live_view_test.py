@@ -13,7 +13,7 @@ import logging
 import pytest
 
 from agents.battle.gen3_battle import Gen3Battle
-from agents.battle.live_view import LivePokemon, LiveView, LiveWeather
+from agents.battle.live_view import LiveMove, LivePokemon, LiveView, LiveWeather
 
 LOG = logging.getLogger("liveview-test")
 
@@ -124,7 +124,8 @@ def test_opponent_moves_are_only_revealed_ones():
     ])
     lv = b.live_view()
     # only the move it has actually used is known
-    assert lv.opp.active.moves == ("rockslide",)
+    assert lv.opp.active.move_ids == ("rockslide",)
+    assert lv.opp.active.moves[0].id == "rockslide"  # enriched slot carries PP too
 
 
 # ───────────────────────────── NO history (the boundary) ────────────────────
@@ -149,11 +150,16 @@ def test_livepokemon_has_no_history_fields(attr):
 
 
 def test_livepokemon_fields_are_exactly_the_minimal_set():
-    """Pin the field set so nobody silently grows LivePokemon into a state grab-bag."""
+    """Pin the field set so nobody silently grows LivePokemon into a state grab-bag.
+    The spread / consumed-item / status-counter fields are deliberate current-board
+    additions (Phase 1 of the strict-API plan) — still NO past-turn fields."""
     names = {f.name for f in dataclasses.fields(LivePokemon)}
     assert names == {
         "species", "active", "fainted", "revealed", "hp_fraction", "status",
         "types", "moves", "item", "ability", "boosts", "volatiles",
+        # spread block (own-side gated) + revealed consumed item + status counter
+        "base_stats", "ivs", "evs", "nature", "spread_known",
+        "consumed_item", "status_counter",
     }
 
 
@@ -193,6 +199,114 @@ def test_no_pokemon_backreference_leaks_history():
             f"LivePokemon.{f.name} is a {type(val)} — only primitives allowed so no "
             f"history can leak through a back-reference"
         )
+
+
+# ───────────────────── spread block (own-side gated) ───────────────────────
+def test_base_stats_known_for_both_sides():
+    """base_stats is a public dex fact — populated for our side AND the opponent once
+    the species is on the field, regardless of spread_known."""
+    b = _battle([["", "turn", "2"]])
+    lv = b.live_view()
+    for mon, raw in (
+        (lv.ours.active, b.active_pokemon),
+        (lv.opp.active, b.opponent_active_pokemon),
+    ):
+        assert set(mon.base_stats) == {"hp", "atk", "def", "spa", "spd", "spe"}
+        assert mon.base_stats == raw.base_stats  # faithful to poke-env's dex
+
+
+def test_spread_known_gates_private_fields():
+    """Our own mon carries IVs/EVs/nature (spread_known=True); the opponent's private
+    spread is None (spread_known=False) — mirrors the obs-encoder gating exactly."""
+    b = _battle([["", "turn", "2"]])
+    # Stamp the own mon's spread the way the teambuilder would (poke-env privates).
+    own = b.active_pokemon
+    own._ivs = [31, 31, 31, 31, 31, 31]
+    own._evs = [0, 0, 0, 252, 4, 252]
+    own._nature = "timid"
+    lv = b.live_view()
+
+    ours = lv.ours.active
+    assert ours.spread_known is True
+    assert ours.ivs == (31, 31, 31, 31, 31, 31)
+    assert ours.evs == (0, 0, 0, 252, 4, 252)
+    assert ours.nature == "timid"
+
+    opp = lv.opp.active
+    assert opp.spread_known is False
+    assert opp.ivs is None and opp.evs is None and opp.nature is None
+
+
+def test_spread_from_teambuilder_backfill():
+    """gen3ou has no team preview, so poke-env builds the team from the request (no spread).
+    `backfill_teambuilder_spread` then attaches the declared IVs/EVs/nature to our own mons,
+    and LiveView surfaces them. Here mon.ivs starts None until the backfill runs."""
+    from types import SimpleNamespace
+    b = _battle([["", "turn", "2"]])
+    assert b.active_pokemon.ivs is None  # no preview → poke-env left it unset
+    b._teambuilder_team = [SimpleNamespace(
+        species=None, nickname="Zapdos",
+        ivs=[31, 0, 31, 31, 31, 31], evs=[0, 0, 0, 252, 4, 252], nature="Timid")]
+    b.backfill_teambuilder_spread()   # poke-env applies the declared spread to mon.ivs etc.
+    ours = b.live_view().ours.active
+    assert ours.species == "zapdos"
+    assert ours.spread_known is True
+    assert ours.ivs == (31, 0, 31, 31, 31, 31)
+    assert ours.evs == (0, 0, 0, 252, 4, 252)
+    assert ours.nature == "timid"                # lowercased by poke-env
+    # the opponent's spread is unknown → still gated off
+    assert b.live_view().opp.active.spread_known is False
+
+
+# ───────────────────── enriched moves (PP per slot) ────────────────────────
+def test_moves_carry_pp_as_live_moves():
+    b = _battle([
+        ["", "move", "p1a: Zappy", "Thunderbolt", "p2a: Tyra"],
+        ["", "-damage", "p2a: Tyra", "60/100"],
+        ["", "turn", "2"],
+    ])
+    lv = b.live_view()
+    tbolt = next(m for m in lv.ours.active.moves if m.id == "thunderbolt")
+    assert isinstance(tbolt, LiveMove)
+    assert isinstance(tbolt.current_pp, int) and isinstance(tbolt.max_pp, int)
+    assert 0 <= tbolt.current_pp <= tbolt.max_pp
+    # faithful to poke-env's own Move object (we didn't reimplement PP tracking)
+    raw = b.active_pokemon.moves["thunderbolt"]
+    assert (tbolt.current_pp, tbolt.max_pp) == (raw.current_pp, raw.max_pp)
+
+
+# ───────────────── consumed item / status counter (current facts) ───────────
+def test_consumed_item_surfaces_after_enditem():
+    b = _battle([
+        ["", "-enditem", "p2a: Tyra", "Salac Berry", "[eat]"],
+        ["", "turn", "2"],
+    ])
+    opp = b.live_view().opp.active
+    assert opp.item is None  # held item gone
+    # id-form (normalised), matching `item` and the codebase convention — even though
+    # poke-env stores the raw protocol display name ("Salac Berry") on consumed_item.
+    assert opp.consumed_item == "salacberry"
+    from poke_env.data.normalize import to_id_str
+    assert opp.consumed_item == to_id_str(b.opponent_active_pokemon.consumed_item)
+
+
+def test_status_counter_mirrors_poke_env():
+    b = _battle([
+        ["", "-status", "p2a: Tyra", "tox"],
+        ["", "turn", "2"],
+    ])
+    opp = b.live_view().opp.active
+    assert isinstance(opp.status_counter, int)
+    assert opp.status_counter == b.opponent_active_pokemon.status_counter
+
+
+# ───────────────────────── LiveView meta passthroughs ──────────────────────
+def test_live_view_meta_fields():
+    b = _battle([["", "turn", "2"]])
+    lv = b.live_view()
+    assert lv.battle_tag == b.battle_tag == "battle-gen3ou-lv"
+    assert lv.finished is False
+    assert lv.won is None and lv.lost is None  # undecided mid-battle
 
 
 # --------------------------------------------------------------------------- #

@@ -106,6 +106,10 @@ class Battle(AbstractBattle):
                 self.player_role, self.teambuilder_team, self.teampreview_team
             )
         self._update_team_from_request(side, strict_battle_tracking)
+        # No-preview formats (gen 3, …) build the team straight from the request, which never
+        # echoes our own IVs/EVs/nature; apply_teambuilder_team above only covers the
+        # team-preview path. Backfill the declared spread now that the team exists.
+        self.backfill_teambuilder_spread()
 
         if "active" in request:
             active_request = request["active"][0]
