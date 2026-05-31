@@ -202,12 +202,21 @@ class Gen3ObservationEncoder(ObservationEncoder):
             vec[start : start + POKEMON_VECTOR_DIM] = mon_vec
             vec[start + POKEMON_VECTOR_DIM] = is_active
             
-        # 3. Active Context
-        vec[OFFSET_CONTEXT : OFFSET_CONTEXT + ACTIVE_CONTEXT_DIM] = self.active_context_encoder.encode(battle.active_pokemon, battle)
-        vec[OFFSET_CONTEXT + ACTIVE_CONTEXT_DIM : OFFSET_CONTEXT + (2 * ACTIVE_CONTEXT_DIM)] = self.active_context_encoder.encode(battle.opponent_active_pokemon, battle)
-        
+        # 3. Active Context + 4. Global Environment — sourced from the LiveView
+        # (current-board read-model folded from the event log). Requires a Gen3Battle;
+        # a plain poke-env Battle (no live_view) falls back to None active / no field.
+        live = battle.live_view() if hasattr(battle, "live_view") else None
+        our_active = live.ours.active if live else None
+        opp_active = live.opp.active if live else None
+        vec[OFFSET_CONTEXT : OFFSET_CONTEXT + ACTIVE_CONTEXT_DIM] = \
+            self.active_context_encoder.encode(our_active)
+        vec[OFFSET_CONTEXT + ACTIVE_CONTEXT_DIM : OFFSET_CONTEXT + (2 * ACTIVE_CONTEXT_DIM)] = \
+            self.active_context_encoder.encode(opp_active)
+
         # 4. Global Environment
-        vec[OFFSET_GLOBAL : OFFSET_GLOBAL + GLOBAL_ENV_DIM] = self.global_env_encoder.encode(battle)
+        if live is not None:
+            vec[OFFSET_GLOBAL : OFFSET_GLOBAL + GLOBAL_ENV_DIM] = \
+                self.global_env_encoder.encode(live)
         
         # 5. Reactive Features
         vec[OFFSET_REACTIVE : OFFSET_REACTIVE + REACTIVE_DIM] = self.reactive_encoder.encode(battle, hp_tracker=hp_tracker)

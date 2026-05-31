@@ -42,6 +42,7 @@ from poke_env.ps_client.server_configuration import LocalhostServerConfiguration
 
 from agents.battle.battle_event import EVENT_VALUE_KEYS, OPP, OURS, EventKind
 from agents.battle.gen3_battle import Gen3Battle
+from agents.observation.gen3_effects import encode_volatiles, normalize_cant_reason
 from agents.battle.turn_view import TurnView
 from utils.team_loader import TeamLoader
 from utils.teambuilder import Gen3Teambuilder
@@ -143,6 +144,22 @@ def _event_moves(events, side: str) -> List[str]:
     )
 
 
+def _raw_window_for_turn(raw, turn: int) -> str:
+    """The raw protocol lines belonging to game ``turn`` (between ``|turn|turn`` and the
+    next ``|turn|``), for self-debugging a mismatch. Lines before the first ``|turn|``
+    are turn 0."""
+    out, cur = [], 0
+    for msg in raw:
+        if len(msg) < 2:
+            continue
+        if msg[1] == "turn":
+            cur = int(msg[2])
+            continue
+        if cur == turn and msg[1] not in ("", "t:", ":"):
+            out.append("|".join(str(x) for x in msg))
+    return " ;; ".join(out)
+
+
 def validate_battle(battle: Gen3Battle) -> List[str]:
     """Return a list of mismatch strings ([] == perfect agreement)."""
     problems: List[str] = []
@@ -184,8 +201,18 @@ def validate_battle(battle: Gen3Battle) -> List[str]:
                     f"[{tag}] live_view hp {built.hp_fraction} != "
                     f"{raw.current_hp_fraction} for {raw.species}")
             assert not hasattr(built, "last_move")  # boundary: no history fields
+        # 1d) crash-don't-drop allowlists — every volatile on every mon in the live
+        #     view must encode (no silently-dropped state), and every |cant| reason in
+        #     the log must be a known gen3 cause. encode_*/normalize_* RAISE on an
+        #     unclassified value, so a gap here fails the battle loudly.
+        for side in (lv.ours, lv.opp):
+            for mon in side.mons:
+                encode_volatiles(mon.volatiles)  # raises UnknownVolatileError if gap
+        for e in battle.events:
+            if e.kind is EventKind.CANT and e.reason is not None:
+                normalize_cant_reason(e.reason)  # raises if unknown gen3 cause
     except Exception as exc:  # pragma: no cover - defensive
-        problems.append(f"[{tag}] live_view raised: {exc!r}")
+        problems.append(f"[{tag}] live_view/allowlist raised: {exc!r}")
 
     raw = battle._fuzz_raw  # archived by the player below
     indep = _rederive(raw, battle._player_role)
@@ -221,7 +248,7 @@ def validate_battle(battle: Gen3Battle) -> List[str]:
             if raw_executed != sv.move_id:
                 problems.append(
                     f"[{tag}] t{t} {s} executed move_id: raw={raw_executed} "
-                    f"log={sv.move_id}"
+                    f"log={sv.move_id} | RAW={_raw_window_for_turn(raw, t)}"
                 )
             # switched / dragged / fainted
             if (s in it.switched) != sv.switched:

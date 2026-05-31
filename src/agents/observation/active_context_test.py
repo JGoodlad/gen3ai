@@ -1,82 +1,73 @@
-import pytest
+"""ActiveContextEncoder tests — LiveView API (boosts + full gen3 volatile set)."""
+
 import numpy as np
-from unittest.mock import MagicMock
-from .active_context import ActiveContextEncoder
-from poke_env.battle.effect import Effect
 
-def test_active_context_boosts():
-    encoder = ActiveContextEncoder()
-    mon = MagicMock()
-    # Atk +2, Def -1
-    mon.boosts = {"atk": 2, "def": -1}
-    mon.effects = {}
-    
-    vec = encoder.encode(mon, None)
-    # [pos, neg] for each stat
-    assert vec[0] == pytest.approx(2/6) # Atk pos
-    assert vec[1] == 0.0             # Atk neg
-    assert vec[2] == 0.0             # Def pos
-    assert vec[3] == pytest.approx(1/6) # Def neg
-
-def test_active_context_volatiles():
-    encoder = ActiveContextEncoder()
-    mon = MagicMock()
-    mon.boosts = {}
-    mon.effects = {Effect.SUBSTITUTE: 1, Effect.TAUNT: 1}
-
-    vec = encoder.encode(mon, None)
-    # Volatiles start at index 14
-    # SUB is index 1, TAUNT is index 2
-    assert vec[14 + 1] == 1.0
-    assert vec[14 + 2] == 1.0
-    assert vec[14 + 0] == 0.0 # CONFUSION
+from agents.observation.active_context import ActiveContextEncoder
+from agents.observation.constants import ACTIVE_CONTEXT_DIM, BOOSTS_DIM
+from agents.observation.gen3_effects import VOLATILE_DIM, VOLATILE_SLOTS
+from agents.battle.live_view import LivePokemon
 
 
-def test_active_context_perish_song_scalar():
-    encoder = ActiveContextEncoder()
-    mon = MagicMock()
-    mon.boosts = {}
-    mon.effects = {Effect.PERISH3: 1}
-    vec = encoder.encode(mon, None)
-    assert vec[14 + 4] == pytest.approx(1.0)  # 3/3
-
-    mon.effects = {Effect.PERISH1: 1}
-    vec = encoder.encode(mon, None)
-    assert vec[14 + 4] == pytest.approx(1 / 3.0)
-
-    mon.effects = {}
-    vec = encoder.encode(mon, None)
-    assert vec[14 + 4] == 0.0
+def _mon(boosts=None, volatiles=None):
+    """Minimal LivePokemon carrying just the fields the encoder reads."""
+    return LivePokemon(
+        species="zapdos", active=True, fainted=False, revealed=True,
+        hp_fraction=1.0, status=None, types=("electric", "flying"),
+        moves=(), item=None, ability=None,
+        boosts=boosts or {}, volatiles=volatiles or {},
+    )
 
 
-def test_active_context_destiny_bond():
-    encoder = ActiveContextEncoder()
-    mon = MagicMock()
-    mon.boosts = {}
-    mon.effects = {Effect.DESTINY_BOND: 1}
-
-    vec = encoder.encode(mon, None)
-    # DBOND is index 8 in the volatile block (offset 14)
-    assert vec[14 + 8] == 1.0
-    # No other volatiles should fire (including perish at index 4)
-    for i in range(8):
-        assert vec[14 + i] == 0.0
+def test_dimension():
+    assert ActiveContextEncoder().dimension == ACTIVE_CONTEXT_DIM == BOOSTS_DIM + VOLATILE_DIM
 
 
-def test_active_context_destiny_bond_absent():
-    encoder = ActiveContextEncoder()
-    mon = MagicMock()
-    mon.boosts = {}
-    mon.effects = {Effect.SUBSTITUTE: 1}
-
-    vec = encoder.encode(mon, None)
-    assert vec[14 + 8] == 0.0  # DBOND bit is clear
+def test_empty_context_is_zeros():
+    assert ActiveContextEncoder().encode(None).sum() == 0.0
+    assert ActiveContextEncoder().encode(_mon()).sum() == 0.0
 
 
-def test_active_context_describe_vector_destiny_bond():
-    encoder = ActiveContextEncoder()
-    vec = np.zeros(encoder.dimension, dtype=np.float32)
-    vec[14 + 8] = 1.0  # DBOND bit
+def test_boosts_encoding():
+    vec = ActiveContextEncoder().encode(_mon(boosts={"atk": 2, "def": -1}))
+    assert vec[0] == 2 / 6.0 and vec[1] == 0.0   # atk +2
+    assert vec[2] == 0.0 and vec[3] == 1 / 6.0   # def -1
 
-    desc = encoder.describe_vector(vec)
-    assert "DBOND" in desc["volatiles"]
+
+def test_volatiles_full_set():
+    vec = ActiveContextEncoder().encode(_mon(volatiles={"leechseed": 0, "taunt": 0}))
+    off = BOOSTS_DIM
+    assert vec[off + VOLATILE_SLOTS.index("leechseed")] == 1.0
+    assert vec[off + VOLATILE_SLOTS.index("taunt")] == 1.0
+
+
+def test_confusion_volatile():
+    vec = ActiveContextEncoder().encode(_mon(volatiles={"confusion": 0}))
+    assert vec[BOOSTS_DIM + VOLATILE_SLOTS.index("confusion")] == 1.0
+
+
+def test_perish_counter_normalised():
+    vec = ActiveContextEncoder().encode(_mon(volatiles={"perish2": 0}))
+    # perish2 -> (2+1)/4 = 0.75 in the collapsed perish slot
+    assert vec[BOOSTS_DIM + VOLATILE_SLOTS.index("perish")] == 0.75
+
+
+def test_recovers_previously_dropped_volatiles():
+    """Disable/Encore/Destiny Bond/Curse/Yawn were silently dropped by the old 9-slot
+    encoder — they must now encode."""
+    for v in ("disable", "encore", "destinybond", "curse", "yawn"):
+        vec = ActiveContextEncoder().encode(_mon(volatiles={v: 0}))
+        assert vec[BOOSTS_DIM + VOLATILE_SLOTS.index(v)] == 1.0, v
+
+
+def test_flashfire_volatile_encodes():
+    """Flash Fire's ability-volatile (the gap the e2e fuzz caught) must encode."""
+    vec = ActiveContextEncoder().encode(_mon(volatiles={"flashfire": 0}))
+    assert vec[BOOSTS_DIM + VOLATILE_SLOTS.index("flashfire")] == 1.0
+
+
+def test_describe_vector_roundtrip():
+    enc = ActiveContextEncoder()
+    vec = enc.encode(_mon(boosts={"spe": 2}, volatiles={"substitute": 0}))
+    d = enc.describe_vector(vec)
+    assert d["boosts"] == {"spe": "+2"}
+    assert any("substitute" in s for s in d["volatiles"])

@@ -13,7 +13,7 @@ import logging
 import pytest
 
 from agents.battle.gen3_battle import Gen3Battle
-from agents.battle.live_view import LivePokemon, LiveView
+from agents.battle.live_view import LivePokemon, LiveView, LiveWeather
 
 LOG = logging.getLogger("liveview-test")
 
@@ -50,7 +50,9 @@ def test_mirrors_current_state():
     lv = b.live_view()
 
     assert lv.turn == 2
-    assert lv.weather == "sandstorm"
+    # bare |-weather|Sandstorm is move-sourced ⇒ finite, not permanent
+    assert lv.weather.weather == "sandstorm"
+    assert lv.weather.is_permanent is False
 
     opp = lv.opp.active
     assert opp.species == "tyranitar"
@@ -191,3 +193,54 @@ def test_no_pokemon_backreference_leaks_history():
             f"LivePokemon.{f.name} is a {type(val)} — only primitives allowed so no "
             f"history can leak through a back-reference"
         )
+
+
+# --------------------------------------------------------------------------- #
+# Weather — folded from the WEATHER event log (cause-aware), never guessed.    #
+# --------------------------------------------------------------------------- #
+def test_weather_move_sourced_is_finite():
+    b = _battle([["", "-weather", "RainDance"], ["", "turn", "2"]])
+    w = b.live_view().weather
+    assert w.weather == "raindance"
+    assert w.is_permanent is False
+    assert w.turns_active == 1          # set on turn 1, now turn 2
+    assert w.turns_remaining == 4       # gen3 move weather = 5 turns total
+
+
+def test_weather_ability_sourced_is_permanent():
+    b = _battle([
+        ["", "-weather", "Sandstorm", "[from] ability: Sand Stream", "[of] p1a: Tyra"],
+        ["", "turn", "2"], ["", "turn", "3"],
+    ])
+    w = b.live_view().weather
+    assert w.weather == "sandstorm"
+    assert w.is_permanent is True
+    assert w.turns_remaining is None    # permanent ⇒ no finite timer (honest None)
+
+
+def test_weather_upkeep_does_not_reset_timer():
+    b = _battle([
+        ["", "-weather", "RainDance"],            # set turn 1
+        ["", "turn", "2"],
+        ["", "-weather", "RainDance", "[upkeep]"],  # tick — must NOT reset start
+        ["", "turn", "3"],
+    ])
+    w = b.live_view().weather
+    assert w.turns_active == 2           # still measured from the turn-1 set
+    assert w.turns_remaining == 3
+
+
+def test_weather_cleared():
+    b = _battle([
+        ["", "-weather", "RainDance"], ["", "turn", "2"],
+        ["", "-weather", "none"], ["", "turn", "3"],
+    ])
+    w = b.live_view().weather
+    assert w.weather is None
+    assert w.turns_remaining is None
+
+
+def test_no_weather_is_empty_not_crash():
+    w = _battle([["", "turn", "2"]]).live_view().weather
+    assert isinstance(w, LiveWeather)
+    assert w.weather is None and w.is_permanent is False

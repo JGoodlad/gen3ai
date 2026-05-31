@@ -269,17 +269,18 @@ deps/
 
 ## Observation Vector
 
-The full observation is a **2734-dim float32 vector** (`Gen3ObservationEncoder.dimension`):
+The full observation is a **2823-dim float32 vector** (`Gen3ObservationEncoder.dimension`):
 
-| Block | Dims | Offset | Notes |
-|---|---|---|---|
-| Our team (6 × 107) | 642 | 0 | base encoder |
-| Opp team (6 × 107) | 642 | 642 | base encoder |
-| Active context ×2 | 46 | 1284 | base encoder |
-| Global env | 13 | 1330 | base encoder |
-| Reactive + matchups | 300 | 1343 | base encoder |
-| Prev-turn action mask | 11 | 1643 | appended by `gen3_env.embed_battle()` |
-| Turn history (`N_HISTORY_TURNS` × 108) | 1080 | 1654 | appended by `gen3_env.embed_battle()`; oldest first (`N_HISTORY_TURNS = 10`) |
+| Block | Dims | Offset |
+|---|---|---|
+| Our team (6 × 107) | 642 | 0 |
+| Opp team (6 × 107) | 642 | 642 |
+| Active context ×2 (boosts + full volatiles) | 110 | 1284 |
+| Global env | 18 | 1394 |
+| Reactive + matchups | 300 | 1412 |
+| Prev-turn action mask | 11 | 1712 |
+| Turn history (`N_HISTORY_TURNS` × 110) | 1100 | 1723 |
+| **Total** | **2823** | |
 
 Per-Pokémon slot (107 dims): species ID + 6 base stats, item ID + known + consumed, 2 type IDs, ability ID + known, 7-dim condition (status one-hot), 4 × 11-dim move slots, HP fraction, species_known flag, sleep_counter_norm, toxic_counter_norm, **spread block (18 dims)**, **HP-candidate block (17 dims)**, active flag. The item block is 3 dims: `[item_id, known, consumed]` — `consumed=1` when the item was spent this battle (Berry activated, Knock Off, Trick, etc.) and `item_id` retains the identity of the consumed item so the model knows what was lost. `species_known = 1.0` for all populated slots (own team and revealed opponent mons), `0.0` for unseen opponent slots. Sleep counter: `min(turns_slept, 4) / 4` (Gen 3 max 4 turns); toxic counter: `min(turns_poisoned, 8) / 8` (practical max before fainting with Leftovers).
 
@@ -315,7 +316,7 @@ they register exactly once. An immutable `ExtractorContext` dataclass produced b
 phase's forward signature narrow. See `src/agents/model/CLAUDE.md` for the phase contract.
 
 1. **`Embeddings`** — shared tables: species (32), move (16), item (16), ability (16), type (16, shared for Pokémon types, move types, and TurnDelta move/type IDs). Owns the Hidden Power soft-type blend (`hp_soft_type`) and the per-slot TurnDelta embedder (`embed_delta_slot`).
-2. **`ObsUnpack`** (stateless) — peels the flat 2734-dim observation into the named tensors of `ExtractorContext`: per-Pokémon block + categorical IDs, the global/reactive feature slices, the matchup matrices, and (hoisted here) the active-slot indices + fainted key-masks used downstream.
+2. **`ObsUnpack`** (stateless) — peels the flat 2823-dim observation into the named tensors of `ExtractorContext`: per-Pokémon block + categorical IDs, the global/reactive feature slices, the matchup matrices, and (hoisted here) the active-slot indices + fainted key-masks used downstream.
 3. **`PokemonEncoder`** — embeds + stitches the enriched per-Pokémon vector; runs the **shared move processor** (Linear→ReLU→Linear, `MOVE_NET_HIDDEN`) over every move slot (input: move/type embeddings, remnants, known flag, battle context, per-move matchup ×6 + matchup-validity ×6, HP-candidate distribution, and prev-turn move validity), a **within-Pokémon move self-attention** (MHA 32-dim, 2 heads, + LayerNorm residual), then the **role encoder** (Linear→ReLU→Linear, `ROLE_ENCODER_HIDDEN`) → 12 × 128 role tokens.
 4. **`TeamTransformer`** — builds a 23-token sequence (6 our-team + 6 their-team role tokens + `N_HISTORY_TURNS`=10 history tokens + 1 global token), adds token-type and history-positional embeddings, and runs a `TRANSFORMER_N_LAYERS`-deep `nn.TransformerEncoderLayer` stack (d_model 128, `TRANSFORMER_N_HEADS` heads, FFN `TRANSFORMER_FFN_DIM`, post-LN) under a key-padding mask that masks fainted team slots and empty history slots. History tokens come from `embed_delta_slot`; the global token from the two active-contexts + non-matchup scalars. Returns the two refined team-token blocks.
 5. **`CLSPool`** — one learned CLS query per side cross-attends over its 6 post-transformer team tokens (fainted slots key-masked) → a 128-dim pooled team token per side (+ LayerNorm). Also extracts `our_active_refined` = the transformer output of our active slot. A **third learned query, `value_cls`**, cross-attends over **all 12 team tokens** (both sides, fainted key-masked) → a 128-dim global `value_pooled` summary — a whole-board "who's winning" read for the critic, a different aggregation than the policy's our-active-centric pools.

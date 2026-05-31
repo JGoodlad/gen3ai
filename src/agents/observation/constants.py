@@ -17,7 +17,12 @@ STATS_DIM = 6 # HP, Atk, Def, SpA, SpD, Spe
 
 # Active Context Sub-dimensions (temporal block removed — was unimplemented)
 BOOSTS_DIM = 14
-VOLATILES_DIM = 9
+# Full gen3 volatile set (source-derived, crash-don't-drop). VOLATILES_DIM mirrors
+# gen3_effects.VOLATILE_DIM — defined there as the single source of truth so the obs
+# layout and the encoder can never disagree. (Was a hand-set 9 that dropped ~30 real
+# volatiles — Disable/Encore/Taunt/Destiny Bond/Curse/Yawn/traps/…)
+from agents.observation.gen3_effects import VOLATILE_DIM as _VOLATILE_DIM
+VOLATILES_DIM = _VOLATILE_DIM
 
 # Internal Pokémon Vector Offsets
 # Species: 7 (1 ID + 6 Stats)
@@ -56,11 +61,16 @@ POKEMON_HP_BLOCK_DIM = 17      # 1 hp_revealed flag + 16 candidate-type probs
 POKEMON_VECTOR_DIM = 106       # 71 + 18 (spread) + 17 (HP block)
 POKEMON_FULL_DIM = 107         # 106 + 1 (active flag appended by state_encoder)
 
-# Active context: boosts(14) + volatiles(9) = 23
-ACTIVE_CONTEXT_DIM = 23
+# Active context: boosts(14) + volatiles(VOLATILES_DIM)
+ACTIVE_CONTEXT_DIM = BOOSTS_DIM + VOLATILES_DIM
 
-# Global env: weather(6) + spikes(2) + turn(1) + our_reflect(1) + our_light_screen(1) + opp_reflect(1) + opp_light_screen(1) = 13
-GLOBAL_ENV_DIM = 13
+# Global env (event-sourced via LiveView, gen3ou-relevant only):
+#   weather one-hot (5: none/sun/rain/sand/hail — gen4+ slots dropped) +
+#   weather_permanent (1) + weather_turns_remaining (1) +
+#   spikes ×2 + log-turn (1) +
+#   per-side screens/safeguard/mist: reflect ×2 + light_screen ×2 + safeguard ×2 + mist ×2
+WEATHER_ONEHOT_DIM = 5
+GLOBAL_ENV_DIM = WEATHER_ONEHOT_DIM + 2 + 2 + 1 + 8  # = 18
 
 MATCHUP_DIM = 288 # (6*4*6) for Our vs Their + (6*4*6) for Their vs Our
 REACTIVE_DIM = 12 + MATCHUP_DIM  # 300 (removed duplicate hp+spikes: 4 dims)

@@ -68,7 +68,16 @@ class LivePokemon:
     item: Optional[str]  # revealed item id, else None (sentinel hidden)
     ability: Optional[str]  # known ability id, else None
     boosts: Mapping[str, int]  # current nonzero stat stages {stat: stage}
-    volatiles: Tuple[str, ...]  # current volatile/effect ids, sorted (Sub, Leech Seed…)
+    # current volatiles as {id: counter}. The counter is poke-env's per-effect int —
+    # turns-active for action-countable effects (Rage), 0 for the rest. We keep the
+    # FULL mapping, not just the id set, so graded "how long / how many" information is
+    # preserved for the encoder to normalise rather than flattened to a presence bit.
+    # (Most gen3 volatiles aren't action-countable, so their counter is 0; the genuinely
+    # graded states — Perish/Stockpile level — arrive via distinct ids perishN/stockpileN
+    # and are normalised in gen3_effects.encode_volatiles.) Dict keys preserve the old
+    # tuple ergonomics: ``"leechseed" in mon.volatiles`` and ``for v in mon.volatiles``
+    # still work.
+    volatiles: Mapping[str, int]
 
     def has_volatile(self, name: str) -> bool:
         """True if this mon currently has the named volatile, matched in Showdown id
@@ -93,7 +102,7 @@ class LivePokemon:
             item=item,
             ability=mon.ability,
             boosts={k: v for k, v in mon.boosts.items() if v},
-            volatiles=tuple(sorted(_id(e) for e in mon.effects)),
+            volatiles={_id(e): int(cnt) for e, cnt in mon.effects.items()},
         )
 
 
@@ -124,15 +133,73 @@ class LiveSide:
 
 
 @dataclass(frozen=True)
+class LiveWeather:
+    """Current weather, folded from the WEATHER event log — NOT guessed from active-mon
+    abilities. The protocol tells us the cause directly:
+
+    * ``|-weather|Sandstorm|[from] ability: Sand Stream`` → ability-sourced ⇒ permanent
+      (no timer in gen3) — ``is_permanent=True``.
+    * ``|-weather|RainDance`` (bare) → move-sourced ⇒ lasts 5 turns —
+      ``is_permanent=False``.
+    * ``|-weather|Sandstorm|[upkeep]`` → a per-turn tick (continues, doesn't reset).
+    * ``|-weather|none`` → cleared.
+    """
+
+    weather: Optional[str]  # 'sandstorm'/'raindance'/'sunnyday'/'hail' or None
+    is_permanent: bool  # True iff ability-sourced (no countdown)
+    turns_active: int  # turns since it was set (0 on the turn it was set)
+
+    @property
+    def turns_remaining(self) -> Optional[int]:
+        """Turns left for move-set weather (gen3: 5 total), or ``None`` when permanent
+        or absent — ``None`` is the honest 'no finite timer' signal, not a guess."""
+        if self.weather is None or self.is_permanent:
+            return None
+        return max(0, 5 - self.turns_active)
+
+
+_NO_WEATHER = LiveWeather(weather=None, is_permanent=False, turns_active=0)
+
+
+def _fold_weather(events, now_turn: int) -> LiveWeather:
+    """Derive current weather by folding WEATHER events in order. Single source of
+    truth = the protocol; we never inspect mon abilities to guess permanence."""
+    from agents.battle.battle_event import EventKind
+
+    weather: Optional[str] = None
+    is_permanent = False
+    start_turn = now_turn
+    for e in events:
+        if e.kind is not EventKind.WEATHER:
+            continue
+        wid = e.value.get("weather")
+        if wid in (None, "none"):
+            weather, is_permanent = None, False
+            continue
+        if "[upkeep]" in e.raw:
+            # a tick of the SAME weather — keep it (and its start turn) running
+            if weather is None:  # upkeep seen without a prior set (mid-battle join)
+                weather, start_turn = wid, e.turn
+            continue
+        # a fresh set: the cause decides permanence
+        weather = wid
+        is_permanent = str(e.value.get("from", "")).startswith("ability")
+        start_turn = e.turn
+    if weather is None:
+        return _NO_WEATHER
+    return LiveWeather(weather, is_permanent, max(0, now_turn - start_turn))
+
+
+@dataclass(frozen=True)
 class LiveView:
     """Immutable snapshot of the whole current board at one instant.
 
     Build with ``battle.live_view()``. Read ``ours`` / ``opp`` for per-side state and
-    the turn-level fields for weather. Carries no temporal information by design.
+    ``weather`` (a :class:`LiveWeather`) for field state. No temporal info by design.
     """
 
     turn: int
-    weather: Optional[str]
+    weather: LiveWeather
     ours: LiveSide
     opp: LiveSide
 
@@ -165,7 +232,9 @@ class LiveView:
                 },
             )
 
-        weather = next((_enum_name(w) for w in battle.weather), None)
+        # Weather is folded from our event log (cause-aware), not battle.weather —
+        # which can be empty/lossy and carries no permanence info.
+        weather = _fold_weather(getattr(battle, "events", ()), battle.turn)
         return cls(
             turn=battle.turn,
             weather=weather,

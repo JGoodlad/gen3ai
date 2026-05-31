@@ -65,7 +65,21 @@ MODEL_CONFIG_VERSION = 2
 #   `Gen3DualHeadMaskablePolicy`. The transformer body stays shared; only the
 #   readout + projection + critic mlp branch are now independent. New weights and
 #   a tuple-returning forward make this incompatible with v6 checkpoints.
-ARCH_SIGNATURE = "gen3_dual_value_v1"
+#
+# v8 (gen3_live_state_v1): the active-context + global-env blocks are re-sourced from
+#   the event-sourced LiveView and substantially enriched (retrain-class). Active
+#   context grows 23 → 55: the volatile block goes from a hand-picked 9 to the full
+#   source-derived gen3 set (VOLATILE_DIM=41, crash-don't-drop, perish/stockpile
+#   counters normalised) — recovering ~30 dropped volatiles (Disable/Encore/Taunt/
+#   Destiny Bond/Curse/Yawn/Flash Fire/partial-trap/…). Global env grows 13 → 18:
+#   weather is event-sourced with cause-aware permanence + turns-remaining (ability
+#   weather = permanent, move weather = 5-turn countdown — read from the |-weather|
+#   protocol, never guessed), the dead gen4+ weather slot is dropped, and per-side
+#   Safeguard + Mist are added alongside Reflect/Light Screen. The weather feature the
+#   extractor broadcasts into per-mon move context widens 6 → 7. Obs dim 2734 → 2823;
+#   the global-token / active-ctx projection input widths all shift. Not weight-
+#   compatible with v7.
+ARCH_SIGNATURE = "gen3_live_state_v1"
 
 
 class ModelVersionError(Exception):

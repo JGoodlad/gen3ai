@@ -6,8 +6,13 @@ from poke_env.battle.abstract_battle import AbstractBattle
 from unittest.mock import MagicMock
 from .state_encoder import Gen3ObservationEncoder, load_mappings
 
-EXPECTED_BASE_DIM = 1643  # 6*107 teams(×2) + 46 active_ctx + 13 global + 300 reactive
-EXPECTED_OBS_DIM = 2754  # base + 11-dim prev_mask + 10 * 110-dim TurnDelta history
+# Computed from live constants so they track architecture changes (no magic numbers).
+from agents.observation.constants import OFFSET_REACTIVE, REACTIVE_DIM
+from agents.model.features_extractor import N_HISTORY_TURNS
+from agents.observation.turn_delta_encoder import TURN_DELTA_DIM
+
+EXPECTED_BASE_DIM = OFFSET_REACTIVE + REACTIVE_DIM
+EXPECTED_OBS_DIM = EXPECTED_BASE_DIM + 11 + N_HISTORY_TURNS * TURN_DELTA_DIM
 
 
 def test_encoder_dimension():
