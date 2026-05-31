@@ -382,39 +382,72 @@ def test_active_flag_is_last_dim_of_hp_and_active_block():
 def test_active_flag_detection_picks_marked_slot():
     """
     With every own-team slot populated (HP > 0, spread filled — mimicking real
-    own-team encoding), set the active flag on slot 3 only and verify the
-    model's forward pass extracts a *different* `our_active_refined` than
-    when the active flag is on slot 0.
+    own-team encoding) and each slot carrying a DISTINCT species id, set the
+    active flag on slot 3 only and verify the model's forward pass produces a
+    *different* output than when the active flag is on slot 0.
 
     This is the second-order check: even when the post-spread layout has many
     nonzero per-slot dims that a stale-index lookup might pick up, the model
-    must still react to the actual active flag at the last position.
+    must still react to the actual active flag at the last position — it must
+    surface slot 3's content (vs slot 0's) through `our_active_refined`.
+
+    Why distinct species ids matter: if all six slots were byte-identical apart
+    from the flag position, the network is permutation-symmetric over them, so
+    "extract the active slot" yields the SAME vector whether the active slot is
+    0 or 3 (slot-0-of-config-0 == slot-3-of-config-3 by symmetry). The real
+    signal would then be exactly zero, not small-but-real, and the test could
+    only ever pass on float round-off. Giving each slot a unique species breaks
+    that symmetry so the active-slot readout genuinely changes — a clean,
+    deterministic ~1e-1 signal we can assert against a noise-floor threshold.
     """
     from agents.observation.constants import (
         POKEMON_FULL_DIM,
         POKEMON_SPREAD_OFFSET,
         POKEMON_SPREAD_DIM,
     )
+    # Determinism + robust signal separation. We (a) seed the model so init is
+    # fixed and (b) run the comparison in float64 so the real signal is cleanly
+    # separable from round-off, then assert against an explicit noise-floor
+    # threshold rather than `torch.allclose`'s relative tolerance.
+    #
+    # The original test used `not allclose(...)` with all six slots byte-identical
+    # apart from the flag. That made the network permutation-symmetric over the
+    # slots, so the active-slot readout was the SAME for active_slot=0 and =3 and
+    # the true diff was ~1e-15 (round-off) — the assertion only ever passed on the
+    # larger float32 noise (~1e-7) and was a flaky near-tie. Breaking the symmetry
+    # (distinct species per slot, above) restores a genuine, deterministic ~1e-1
+    # signal, comfortably ~14 orders of magnitude above the float64 noise floor.
+    torch.manual_seed(0)
     model, layout = _make_model()
     model.eval()
+    model.double()
     our_start = layout["parts"]["our_team"]["start"]
     hp_off = layout["pokemon"]["hp"]["offset"]
+    species_info = layout["pokemon"]["species"]
+    species_id_off = species_info["offset"] + species_info["layout"]["species_id"]["offset"]
     active_flag_off_within_slot = POKEMON_FULL_DIM - 1
 
+    def _zero_obs_double(layout):
+        return torch.zeros(1, layout["total_dim"], dtype=torch.float64)
+
     def populate(obs, active_slot: int):
-        # Fill every alive own-team slot identically (HP=1, spread filled),
-        # then set the active flag on the requested slot.
+        # Fill every alive own-team slot (HP=1, spread filled) and give each a
+        # DISTINCT species id so the slots are not permutation-symmetric, then
+        # set the active flag on the requested slot. The distinct species is what
+        # makes "extract the active slot" yield genuinely different content for
+        # active_slot=0 vs active_slot=3 (see the docstring).
         for i in range(6):
             slot = our_start + i * POKEMON_FULL_DIM
             obs[0, slot + hp_off] = 1.0
             obs[0, slot + hp_off + 1] = 1.0  # species_known
+            obs[0, slot + species_id_off] = float(10 + i)  # distinct species per slot
             for j in range(POKEMON_SPREAD_DIM):
                 obs[0, slot + POKEMON_SPREAD_OFFSET + j] = 0.5
         obs[0, our_start + active_slot * POKEMON_FULL_DIM + active_flag_off_within_slot] = 1.0
         return obs
 
-    obs_slot0 = populate(_zero_obs(layout), active_slot=0)
-    obs_slot3 = populate(_zero_obs(layout), active_slot=3)
+    obs_slot0 = populate(_zero_obs_double(layout), active_slot=0)
+    obs_slot3 = populate(_zero_obs_double(layout), active_slot=3)
 
     with torch.no_grad():
         out0, _ = model.forward_internal({"observation": obs_slot0})
@@ -422,7 +455,12 @@ def test_active_flag_detection_picks_marked_slot():
 
     # Outputs must differ — different active flag changes per-slot inputs
     # (and so role tokens), and also changes which role token is extracted
-    # as `our_active_refined`.
-    assert not torch.allclose(out0, out3), (
-        "Moving the active flag from slot 0 to slot 3 must change the forward output."
+    # as `our_active_refined`. Compare in double precision against a noise-floor
+    # threshold rather than `allclose`'s relative tolerance (which would be a
+    # flaky near-tie for this small-but-real signal).
+    max_diff = (out0 - out3).abs().max().item()
+    assert max_diff > 1e-9, (
+        "active flag had no effect on the forward output "
+        f"(max abs diff {max_diff:.2e}) — moving the active flag from slot 0 "
+        "to slot 3 must change the forward output."
     )
