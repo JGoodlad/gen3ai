@@ -207,7 +207,14 @@ class Gen3ObservationEncoder(ObservationEncoder):
             mon_vec = self.pokemon_encoder.encode(
                 mon, battle, is_own=False, hp_probs=hp_probs, hp_known=hp_known, live_mon=live_mon
             )
-            is_active = 1.0 if (mon and mon is battle.opponent_active_pokemon) else 0.0
+            # Active flag through the LiveView slot (LivePokemon.active is set at fold time
+            # from poke-env's opponent_active_pokemon accessor, so this is byte-identical to
+            # the old `mon is battle.opponent_active_pokemon` identity check). Fall back to the
+            # raw check only on the plain-Battle / unit-test path where there is no LiveView.
+            if live_mon is not None:
+                is_active = 1.0 if live_mon.active else 0.0
+            else:
+                is_active = 1.0 if (mon and mon is battle.opponent_active_pokemon) else 0.0
 
             start = OFFSET_OPP_TEAM + (i * POKEMON_FULL_DIM)
             vec[start : start + POKEMON_VECTOR_DIM] = mon_vec
