@@ -78,6 +78,7 @@ Do **not** symlink the entire `deps/pokemon-showdown` directory — git treats t
 | `*_fuzz_test.py` | `deps/pokemon-showdown` — runs **real battles in-process via the local BattleStream bridge** (`utils/bridge/local_battle_runner.py`); **no live server**. The default for fuzzing. | none — run directly as scripts (no `test_*` funcs, so `pytest` imports but collects nothing) |
 | `*_fuzz_e2e_test.py` | A **live Showdown server** — fuzz whose checks need real async-server timing (e.g. `effectiveness_fuzz_e2e_test`, whose TurnDelta-vs-BattleContext effectiveness window is decision-timing-sensitive) | run directly as scripts |
 | `*_e2e_test.py` | A **live Showdown server** on localhost:8000 | `@pytest.mark.e2e` (scripts only, run directly) |
+| `*_benchmark.py` | `deps/pokemon-showdown` bridge (no live server) — **performance profiling, not pass/fail**: plays a real battle in-process, then `cProfile`s a hot path | none — run directly as scripts (no `test_*` funcs → `pytest` collects nothing). Place in a dir with no stdlib-shadowing names (e.g. `training/`, not `observation/`) |
 
 ### Unit tests only (default)
 ```bash
@@ -106,6 +107,18 @@ export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable
 export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 src/agents/action/telemetry_e2e_test.py
 export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 src/agents/training/poke_env_gaps/effectiveness_fuzz_e2e_test.py [n_battles]
 ```
+
+### Benchmarks (`*_benchmark.py`, run directly as scripts)
+Profile a hot path on a real bridge battle (no server). `obs_build_benchmark.py` plays until a
+representative late-game decision, then reports a component wall-clock breakdown
+(`state_encoder.encode` vs deque-cached turn-history vs `live_view()`) plus a `cProfile`
+`tottime` ranking — use it to catch obs-pipeline regressions and confirm an optimization moved
+the bottleneck:
+```bash
+export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 src/agents/training/obs_build_benchmark.py [--turn 25] [--reps 400] [--top 22] [--battles 200] [--seed 0]
+```
+Absolute ms scale with machine load; the component **ratios** and the cProfile ranking are the
+load-stable signal — run on an otherwise-idle box for a clean baseline.
 
 ### What "fuzz test" means in this project
 

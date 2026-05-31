@@ -185,6 +185,72 @@ def test_history_slots_fold_their_own_window():
     assert vecs[-2][OFFSET_OUR_MOVE_BLOCK] != vecs[-1][OFFSET_OUR_MOVE_BLOCK]
 
 
+def test_history_cache_matches_recompute_and_encodes_once_per_turn():
+    """The deque-memoized prev_N_delta_vecs must be BIT-IDENTICAL to recomputing every slot
+    from scratch (even past the deque-drop point), while encoding only the newest delta each
+    step. Regression for the monotonic-counter bug: using len(history)-1 (which caps with the
+    bounded deque) made the cache miss new turns once dropping began."""
+    import logging
+    from agents.battle.gen3_battle import Gen3Battle
+
+    N = 10
+    moves = ["thunderbolt", "icebeam", "hiddenpowergrass", "roar", "rest",
+             "protect", "toxic", "spikes", "rockslide", "earthquake"]
+
+    def feed(b, lines):
+        for ln in lines:
+            b.parse_message(ln)
+
+    def battle():
+        b = Gen3Battle("battle-gen3ou-cache", "p1user", logging.getLogger("ep-cache"), gen=3)
+        feed(b, [
+            ["", "player", "p1", "p1user", "", ""], ["", "player", "p2", "p2user", "", ""],
+            ["", "teamsize", "p1", "6"], ["", "teamsize", "p2", "6"], ["", "gen", "3"],
+            ["", "start"],
+            ["", "switch", "p1a: Zappy", "Zapdos, L100", "100/100"],
+            ["", "switch", "p2a: Tyra", "Tyranitar, L100, M", "100/100"],
+        ])
+        return b
+
+    def play(b, t):
+        feed(b, [
+            ["", "turn", str(t)],
+            ["", "move", "p1a: Zappy", moves[t % len(moves)].title(), "p2a: Tyra"],
+            ["", "-damage", "p2a: Tyra", f"{max(5, 100 - t)}/100"],
+            ["", "move", "p2a: Tyra", "Rock Slide", "p1a: Zappy"],
+            ["", "-damage", "p1a: Zappy", f"{max(5, 100 - t)}/100"],
+        ])
+
+    # wrap the cached encoder to count encode() calls
+    enc_c = _make_encoder(); calls = [0]
+    _orig = enc_c.encode
+    enc_c.encode = lambda d: (calls.__setitem__(0, calls[0] + 1), _orig(d))[1]
+    enc_r = _make_encoder()  # uncached reference (separate, uncounted)
+
+    def recompute(tr, b, n):
+        res = np.zeros((n, enc_r.dimension), dtype=np.float32)
+        avail = min(n, len(tr._history) - 1, len(tr._actions), len(tr._cursors))
+        for i in range(avail):
+            res[n - 1 - i] = tr._encode_delta_slot(i, enc_r, b, True)
+        return res
+
+    b = battle()
+    trA = EpisodeTracker(history_cap=N)   # cached path
+    trB = EpisodeTracker(history_cap=N)   # uncached reference
+    m = np.ones(11, dtype=np.int8)
+    T = N + 8  # run PAST the deque-drop point
+    for t in range(1, T + 1):
+        trA.record(b, m); trA.advance((t % 4) + 6)
+        trB.record(b, m); trB.advance((t % 4) + 6)
+        cached = trA.prev_N_delta_vecs(N, enc_c, battle=b)
+        ref = recompute(trB, b, N)
+        assert np.array_equal(cached, ref), f"cache != recompute at turn {t}"
+        play(b, t)
+
+    # one encode per completed turn (T-1), not ~N per step
+    assert calls[0] == T - 1, f"expected {T - 1} encodes (one per turn), got {calls[0]}"
+
+
 def test_history_lists_are_bounded_by_cap():
     """With a history_cap, the rolling history/action/cursor deques stay bounded across a
     long episode (the 250-turn-stall memory guard), preserving len(actions)=len(history)-1."""

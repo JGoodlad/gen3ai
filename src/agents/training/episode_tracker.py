@@ -90,6 +90,16 @@ class EpisodeTracker:
         self._last_action: int = -1
         self._last_cursor: int = 0      # event_cursor at the last record() call
         self._hidden_power_tracker = HiddenPowerTracker()
+        # Memoized turn-history: encoded TurnDelta vectors, oldest-left/newest-right.
+        # A past turn's window is bounded and immutable (see prev_N_delta_vecs), so its
+        # encoded vector never changes — we encode only the NEWEST delta each step and
+        # reuse the rest, instead of re-folding+re-encoding all N slots every step.
+        self._hist_vec_cache: "deque[np.ndarray]" = deque(maxlen=_aux_max)
+        self._n_cached_deltas: int = 0   # total completed deltas the cache has encoded
+        # MONOTONIC count of completed turn transitions this episode. NOT len(_history)-1,
+        # which caps once the (bounded) history deque starts dropping — using the capped
+        # length would make the cache miss new turns and serve stale ones.
+        self._n_transitions: int = 0
 
     @property
     def hidden_power_tracker(self) -> HiddenPowerTracker:
@@ -132,6 +142,7 @@ class EpisodeTracker:
         if self._history:
             self._actions.append(self._last_action)
             self._cursors.append(self._last_cursor)
+            self._n_transitions += 1   # one more completed transition becomes available
         # Capture cursor NOW (before we build the context snapshot) so it marks
         # the start of the window for the NEXT decision — events emitted between
         # this record() and the next one are the delta for this turn.
@@ -212,37 +223,75 @@ class EpisodeTracker:
             return TurnDelta.build_from_events(prev_ctx, curr_ctx, self._last_action, events)
         return TurnDelta.build(prev_ctx, curr_ctx, self._last_action)
 
+    def _encode_delta_slot(self, i: int, encoder, battle, use_events) -> np.ndarray:
+        """Encode the TurnDelta for history slot ``i`` (0 = most-recent), folded over its
+        OWN bounded decision window: ``[cursors[-1-i] : cursors[-i])`` (``end=None`` ⇒ to
+        "now" for the most-recent slot). The upper bound is what makes the slot represent
+        its own turn and the per-step cost bounded; the most-recent slot's ``end=None``
+        resolves to the same cursor that bounds it on the NEXT step, so a cached vector is
+        bit-identical to recomputing it later — which is why the deque memoization is safe.
+        """
+        action = self._actions[-1 - i]
+        ctx_prev = self._history[-2 - i]
+        ctx_curr = self._history[-1 - i]
+        if use_events:
+            start = self._cursors[-1 - i]
+            end = None if i == 0 else self._cursors[-i]
+            events = battle.events_between(start, end)
+            delta = TurnDelta.build_from_events(ctx_prev, ctx_curr, action, events)
+        else:
+            delta = TurnDelta.build(ctx_prev, ctx_curr, action)
+        return encoder.encode(delta)
+
     def prev_N_delta_vecs(
         self, n: int, encoder: "TurnDeltaEncoder", battle=None
     ) -> np.ndarray:
         """Return (n, TURN_DELTA_DIM) array of encoded TurnDeltas, oldest-first.
 
-        Index n-1 is the most recent delta (same data as build_delta()).
-        Turns not yet played are zero-padded. Pass ``battle`` (Gen3Battle) to
-        use the event-fold path for all N slots.
+        Index n-1 is the most recent delta (same data as build_delta()). Turns not yet
+        played are zero-padded. Pass ``battle`` (Gen3Battle) to use the event-fold path.
+
+        Each past turn's bounded window is immutable, so on the event path we **encode only
+        the newly-completed delta(s) and reuse the cached rest** (deque memoization) — one
+        fold+encode per step instead of N. The output is identical to recomputing every
+        slot from scratch.
         """
         result = np.zeros((n, encoder.dimension), dtype=np.float32)
         use_events = battle is not None and hasattr(battle, "events_between")
         available = min(n, len(self._history) - 1, len(self._actions))
         if use_events:
             available = min(available, len(self._cursors))
-        for i in range(available):
-            action = self._actions[-1 - i]
-            ctx_prev = self._history[-2 - i]
-            ctx_curr = self._history[-1 - i]
-            if use_events:
-                # Bound this slot to its OWN decision window: [cursor_start, cursor_end).
-                # The most-recent slot (i=0) runs to "now" (end=None); each older slot
-                # ends where the next decision began. Without the upper bound the window
-                # would run that turn through now — O(N²) across the N slots, and the fold
-                # (which takes the last move) would make older slots report the latest turn.
-                start = self._cursors[-1 - i]
-                end = None if i == 0 else self._cursors[-i]
-                events = battle.events_between(start, end)
-                delta = TurnDelta.build_from_events(ctx_prev, ctx_curr, action, events)
-            else:
-                delta = TurnDelta.build(ctx_prev, ctx_curr, action)
-            result[n - 1 - i] = encoder.encode(delta)
+        if available <= 0:
+            return result
+
+        if not use_events:
+            # Fallback (no event log): recompute every slot, uncached.
+            for i in range(available):
+                result[n - 1 - i] = self._encode_delta_slot(i, encoder, battle, use_events)
+            return result
+
+        # Event path: extend the deque by the newly-completed delta(s) only. Use the
+        # MONOTONIC transition count (not len(_history)-1, which caps with the deque).
+        total_completed = self._n_transitions
+        new = total_completed - self._n_cached_deltas
+        if new == 1:
+            # Common case: one turn finished since last call → encode just slot 0.
+            self._hist_vec_cache.append(
+                self._encode_delta_slot(0, encoder, battle, use_events)
+            )
+        elif new != 0:
+            # Rare (calls skipped, or first call mid-episode): rebuild the kept tail.
+            self._hist_vec_cache.clear()
+            for i in range(available - 1, -1, -1):  # oldest-kept first → newest appended last
+                self._hist_vec_cache.append(
+                    self._encode_delta_slot(i, encoder, battle, use_events)
+                )
+        self._n_cached_deltas = total_completed
+
+        for k, vec in enumerate(reversed(self._hist_vec_cache)):  # newest first
+            if k >= n:
+                break
+            result[n - 1 - k] = vec
         return result
 
     def reset(self) -> None:
@@ -251,6 +300,9 @@ class EpisodeTracker:
         self._history.clear()
         self._actions.clear()
         self._cursors.clear()
+        self._hist_vec_cache.clear()
+        self._n_cached_deltas = 0
+        self._n_transitions = 0
         self._last_action = -1
         self._last_cursor = 0
         self._hidden_power_tracker.reset()
