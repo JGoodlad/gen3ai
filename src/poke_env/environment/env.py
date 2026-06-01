@@ -58,10 +58,11 @@ class _AsyncQueue(Generic[ItemType]):
     ):
         self.queue = create_in_poke_loop(asyncio.Queue, loop, maxsize)
         self._loop = loop
-        # PSClient sets this when its websocket drops abnormally. A blocking get on
-        # this queue waits for a message that the now-dead listen() task can no longer
-        # deliver, so we race the get against this event and raise instead of hanging
-        # forever (the deterministic mid-battle-disconnect fix — no timeout guess).
+        # PSClient sets this when its websocket closes for any reason it did not
+        # request (an abnormal drop OR a clean peer/server-initiated close). A blocking
+        # get on this queue waits for a message that the now-dead listen() task can no
+        # longer deliver, so we race the get against this event and raise instead of
+        # hanging forever (the deterministic mid-battle-disconnect fix — no timeout guess).
         self._disconnected = disconnected
 
     async def async_get(self) -> ItemType:

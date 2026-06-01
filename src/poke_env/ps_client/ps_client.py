@@ -109,11 +109,18 @@ class PSClient:
 
         self.loop = loop
         self._logged_in: asyncio.Event = create_in_poke_loop(asyncio.Event, loop)
-        # Set when listen() exits ABNORMALLY (the websocket dropped — see listen()).
-        # The connection layer is the only thing that knows the socket is gone; it
-        # announces it here so a consumer blocked on an _AsyncQueue (env.step/reset)
-        # can fail loudly instead of hanging forever on a message that will never come.
+        # Set when listen() exits for any reason WE did not request — an abnormal drop
+        # (ping timeout, server died, no close frame) OR a clean peer/server-initiated
+        # close (e.g. the server stopping). The connection layer is the only thing that
+        # knows the socket is gone; it announces it here so a consumer blocked on an
+        # _AsyncQueue (env.step/reset) fails loudly instead of hanging forever on a
+        # message that will never come.
         self._disconnected: asyncio.Event = create_in_poke_loop(asyncio.Event, loop)
+        # True once WE initiate the teardown (stop_listening) or the loop is cancelled,
+        # so listen()'s exit handler can tell an intentional close — exit clean, do NOT
+        # signal _disconnected — from a close we did not ask for. Terminating the
+        # connection on purpose is not an error.
+        self._closing: bool = False
         self._sending_lock: asyncio.Lock = create_in_poke_loop(asyncio.Lock, loop)
 
         self.websocket: ClientConnection
@@ -237,6 +244,9 @@ class PSClient:
             raise exception
 
     async def _stop_listening(self):
+        # We initiated this close — mark it so listen()'s exit handler treats it as a
+        # clean teardown (no _disconnected signal, no crash).
+        self._closing = True
         await self.websocket.close()
 
     async def change_avatar(self, avatar_name: Optional[str]):
@@ -307,16 +317,26 @@ class PSClient:
                 "Websocket connection with %s closed", self.websocket_url
             )
         except (asyncio.CancelledError, RuntimeError) as e:
-            # Intentional shutdown (task cancelled / loop closing) — NOT a crash.
+            # Loop teardown / task cancellation — an intentional shutdown, NOT a crash.
+            self._closing = True
             self.logger.critical("Listen interrupted by %s", e)
         except Exception as e:
             # Abnormal drop (e.g. ConnectionClosedError "no close frame received or
-            # sent", ping timeout, server died). poke-env's only handling here is to
-            # log-and-return, leaving every awaiter parked on a queue this dead task
-            # was meant to feed. Announce the death so those waiters can raise instead
-            # of hanging forever — a clean ConnectionClosedOK (above) is NOT signalled.
+            # sent", ping timeout, server died). Logged here; the finally announces it.
             self.logger.exception(e)
-            self._disconnected.set()
+        finally:
+            # listen() is exiting, so the message pump is dead: any consumer blocked on
+            # an _AsyncQueue.get() (env.step/reset) is waiting for a message that can
+            # never arrive. Wake them so they raise ShowdownException and the process
+            # exits (→ launcher restarts from checkpoint) instead of hanging forever.
+            # EXCEPT when the teardown is OURS — stop_listening(), or the loop
+            # cancellation above, sets _closing — because a clean self-requested close
+            # is expected and signalling it would turn a healthy exit into a spurious
+            # crash-restart. This is the case the old "clean ConnectionClosedOK is not
+            # signalled" rule protected; the flag keeps that protection while still
+            # catching a close we did NOT ask for (server stopped, peer dropped us).
+            if not self._closing:
+                self._disconnected.set()
 
     async def log_in(self, split_message: List[str]):
         """Log in with specified username and password.
