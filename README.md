@@ -93,7 +93,7 @@ export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable
 ```bash
 # Start the server first (npm run showdown), then:
 export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 src/agents/action/telemetry_e2e_test.py
-export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 src/agents/training/gen3_env_e2e_test.py
+export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 src/agents/training/reward_invariants_e2e_test.py
 ```
 
 ---
@@ -182,8 +182,9 @@ src/
     observation/     # Observation encoders: species, moves, items, abilities,
                      #   active context, global env, reactive/matchups
     opponents/       # Scripted opponents: staller, aggressive, setup sweeper
-    training/        # Gen3Env, reward manager, battle context, wrappers,
-                     #   stall detection, eval + forensic-trace capture
+    training/        # Gen3Env, reward manager, battle snapshot + event-sourced
+                     #   turn-delta fold, wrappers, stall detection,
+                     #   eval + forensic-trace capture, self-play snapshot pool
   main/
     launcher/          # Restart loop + Rich TUI (preferred entry point)
                      #   checkpoint.py, worktree.py, child.py, input.py,

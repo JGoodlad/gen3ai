@@ -37,12 +37,56 @@ to `mlp_extractor.forward_actor` / `forward_critic`. A stock SB3 policy expects 
 extractor and will break. The startup `_run_roundtrip_test` and the snapshot/feature tests all
 unpack the tuple — keep that in mind when touching the extractor's return shape.
 
+### Phase-by-phase data flow
+
+The embedding tables live in a shared `Embeddings` module passed as a forward argument to the
+phases that need them, so they register exactly once. An immutable `ExtractorContext` produced
+by `ObsUnpack` carries the ~30 unpacked tensors downstream, keeping each phase's signature
+narrow. Both projection input dims are auto-discovered via a dummy forward pass in `__init__`,
+so they stay correct when the architecture changes with no manual update.
+
+1. **`Embeddings`** — shared tables: species (32), move (16), item (16), ability (16), type (16,
+   shared for Pokémon types, move types, and TurnDelta move/type IDs). Owns the Hidden Power
+   soft-type blend (`hp_soft_type`) and the per-slot TurnDelta embedder (`embed_delta_slot`).
+2. **`ObsUnpack`** (stateless) — peels the flat 3321-dim observation into the named tensors of
+   `ExtractorContext`: per-Pokémon block + categorical IDs, the global/reactive feature slices,
+   the matchup matrices, and (hoisted here) the active-slot indices + fainted key-masks used
+   downstream.
+3. **`PokemonEncoder`** — embeds + stitches the enriched per-Pokémon vector; runs the **shared
+   move processor** (Linear→ReLU→Linear, `MOVE_NET_HIDDEN`) over every move slot (input:
+   move/type embeddings, remnants, known flag, battle context, per-move matchup ×6 +
+   matchup-validity ×6, HP-candidate distribution, and prev-turn move validity), a
+   **within-Pokémon move self-attention** (MHA 32-dim, 2 heads, + LayerNorm residual), then the
+   **role encoder** (Linear→ReLU→Linear, `ROLE_ENCODER_HIDDEN`) → 12 × 128 role tokens.
+4. **`TeamTransformer`** — builds a 23-token sequence (6 our-team + 6 their-team role tokens +
+   `N_HISTORY_TURNS`=10 history tokens + 1 global token), adds token-type and history-positional
+   embeddings, and runs a `TRANSFORMER_N_LAYERS`-deep `nn.TransformerEncoderLayer` stack (d_model
+   128, `TRANSFORMER_N_HEADS` heads, FFN `TRANSFORMER_FFN_DIM`, post-LN) under a key-padding mask
+   that masks fainted team slots and empty history slots. History tokens come from
+   `embed_delta_slot`; the global token from the two active-contexts + non-matchup scalars.
+   Returns the two refined team-token blocks.
+5. **`CLSPool`** — one learned CLS query per side cross-attends over its 6 post-transformer team
+   tokens (fainted slots key-masked) → a 128-dim pooled team token per side (+ LayerNorm). Also
+   extracts `our_active_refined` = the transformer output of our active slot. A **third learned
+   query, `value_cls`**, cross-attends over **all 12 team tokens** (both sides, fainted
+   key-masked) → a 128-dim global `value_pooled` summary — a whole-board "who's winning" read for
+   the critic, a different aggregation than the policy's our-active-centric pools.
+6. **`ProjectionAssembler`** — emits a `(pi_combined, vf_combined)` pair. Policy: `our_pool(128)
+   + their_pool(128) + our_active_refined(128) + active_ctx_enc(32) + opp_ctx_enc(32) +
+   non_matchup_rest`. Value: `value_pooled(128) + active_ctx_enc(32) + opp_ctx_enc(32) +
+   non_matchup_rest`. `active_ctx_encoder` (Linear→ReLU→Linear, `ACTIVE_CTX_HIDDEN`) is shared by
+   both heads — it encodes inputs, not the contested body representation.
+7. **Root heads** — two parallel `pre_proj_norm` (LayerNorm) → `projection` (Linear) → `ReLU`
+   heads, one per `*_combined`, both emitting `PROJECTION_DIM`. SB3 sizes the shared
+   `mlp_extractor` from `features_dim = PROJECTION_DIM`, then `Gen3DualHeadMaskablePolicy` feeds
+   the policy half to `forward_actor` and the value half to `forward_critic`.
+
 Rules to preserve:
 
 - **Each phase owns its layers** (`move_network` lives under `pokemon_encoder`, `our_cls` under `cls_pool`, etc.). State_dict keys are therefore phase-prefixed.
 - **`Embeddings` is the sole owner of the 5 embedding tables + `hp_type_idx_map`.** It is passed as a **forward argument** to `PokemonEncoder` and `TeamTransformer` — never stored as a child attribute on them — so the tables register exactly once. (The root exposes read-only `@property` forwarders like `model.type_embedding` for convenience; those add no state_dict keys.)
 - **`ExtractorContext`** (frozen-by-convention dataclass) is the inter-phase contract: `ObsUnpack` produces it, downstream phases read from it. Add a field here rather than widening a phase's positional signature. Cross-phase values (active-slot indices, fainted masks, `hp_probs`) are computed once in `ObsUnpack` and carried on the context.
-- **Any change to the phase structure or forward math is a structural change → bump `ARCH_SIGNATURE`** in `model_version.py` (current: `gen3_turn_delta_v2`). Pure decompositions still change state_dict keys, so old checkpoints must fail loudly. Re-sourcing or re-meaning an obs block (e.g. v9, where own IV/EV/nature went from constant fallbacks to real values via the poke-env `backfill_teambuilder_spread` fix; or v10, the event-sourced TurnDelta fold + status/item transition history) is likewise retrain-class even when individual dims are unchanged.
+- **Any change to the phase structure or forward math is a structural change → bump `ARCH_SIGNATURE`** in `model_version.py` (current: `gen3_trapping_signals_v1`). Pure decompositions still change state_dict keys, so old checkpoints must fail loudly. Re-sourcing or re-meaning an obs block (e.g. own IV/EV/nature going from constant fallbacks to real values via the poke-env `backfill_teambuilder_spread` fix; the event-sourced TurnDelta fold + status/item transition history; or routing the trapping signals — `trapped`/`maybe_trapped`/`attempted_switch_rejected` — into the obs) is likewise retrain-class even when individual dims are unchanged.
 - Per-phase unit tests live in `phase_modules_test.py` — `CLSPool` (incl. the `value_cls` pool) and `ProjectionAssembler` (which returns `(pi_combined, vf_combined)`) are tested on a hand-built `ExtractorContext` (`_dummy_ctx`) without a full forward pass. Prefer adding precise phase-level tests there.
 
 ## Model versioning (`model_version.py`, `snapshot.py`)
@@ -64,21 +108,15 @@ Every model save writes `model_config.json` + `metadata.json` alongside the `.zi
 
 A startup smoke test (`_run_roundtrip_test` in `train_rl_agent.py`) saves to a temp dir and reloads before every `model.learn()` call — catches serialization issues immediately.
 
-## Keep the architecture digraph in sync
+## Where the canonical architecture lives
 
-`designs/ai_v3/README.md` contains a Mermaid digraph and dimension reference table for the network.
+The live, maintained description of the extractor is **the "Phase-by-phase data flow" section
+above** plus the root `CLAUDE.md` "Feature Extractor Architecture" summary. Keep those two in
+sync when you change `features_extractor.py` — layers, dims, the token sequence, the CLS
+pooling, the turn-history embedding, or active-context routing.
 
-**Update it whenever you change `features_extractor.py`**, specifically:
-
-- Adding, removing, or resizing any layer (Linear dims, attention heads, embedding dims)
-- Changing what gets concatenated into move processor input, role encoder input, or the final aggregation
-- Changing the observation dimension (`base_dimension` or `dimension` in `state_encoder.py`) or `N_HISTORY_TURNS`
-- Changing the unified transformer (token count, layers, heads, FFN dim) or the CLS pooling
-- Changing the turn-history token embedding (slot count, embed dim) or the global-token composition
-- Changing how `prev_mask`, move validity, or active-context routing works
-
-> Note: the `designs/ai_v3` digraph predates the ai_v4 unified transformer and is stale on
-> attention topology; the live high-level pipeline is the phase-module summary in the root
-> `CLAUDE.md` "Feature Extractor Architecture" section.
-
-The digraph is the fastest way for a new contributor (or Claude) to understand data flow. A stale digraph is worse than none.
+> `designs/ai_v3/README.md` holds an old Mermaid digraph + dimension table. It is a **frozen
+> ai_v3 historical record** (1309-dim obs, the pre-unified-transformer attention paths) and is
+> **NOT maintained** — do not update it for current-arch changes. It carries a banner saying so.
+> If a fresh visual digraph of the ai_v4 arch is ever wanted, add a new one rather than editing
+> the frozen ai_v3 one.

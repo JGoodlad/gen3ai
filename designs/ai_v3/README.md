@@ -1,5 +1,13 @@
 # Gen3AI Network Architecture
 
+> ⚠️ **HISTORICAL — ai_v3 architecture, superseded by ai_v4.** This digraph and its dimension
+> reference describe the ai_v3 network (1309-dim obs, 5×39 turn history, the hand-crafted
+> Synergy-Attn / TurnDelta-Conditioner attention paths). ai_v4 replaced all of that with a
+> **unified transformer + dual-head** extractor (obs **3321**, 10×159 turn history,
+> `gen3_trapping_signals_v1`). It is kept as a frozen ai_v3 record, **not** maintained.
+> **For the current architecture, read the root `CLAUDE.md` → Feature Extractor Architecture
+> and `src/agents/model/CLAUDE.md` (the live phase-by-phase contract).**
+
 Feature extractor used by MaskablePPO. Takes a 1309-dim observation and produces 512-dim features for the policy and value heads.
 
 ## Data Flow Digraph

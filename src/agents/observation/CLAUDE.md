@@ -143,3 +143,113 @@ If your change is meant to be **value-neutral**, prove it: the effectiveness fas
 example, is pinned byte-for-byte by the exhaustive parity test in
 `src/agents/gen3_mechanics_test.py`. Obs-value changes are retrain-class → bump
 `ARCH_SIGNATURE`.
+
+---
+
+## Observation vector layout (per-block reference)
+
+The root `CLAUDE.md` carries the summary block table (block → dims → offset, total **3321**).
+This is the detailed per-block layout. All offsets are computed from named constants — never
+hardcode indices.
+
+**Per-Pokémon slot (107 dims):** species ID + 6 base stats, item ID + known + consumed, 2 type
+IDs, ability ID + known, 7-dim condition (status one-hot), 4 × 11-dim move slots, HP fraction,
+species_known flag, sleep_counter_norm, toxic_counter_norm, **spread block (18 dims)**,
+**HP-candidate block (17 dims)**, active flag. The item block is 3 dims:
+`[item_id, known, consumed]` — `consumed=1` when the item was spent this battle (Berry
+activated, Knock Off, Trick, etc.) and `item_id` retains the identity of the consumed item so
+the model knows what was lost. `species_known = 1.0` for all populated slots (own team and
+revealed opponent mons), `0.0` for unseen opponent slots. Sleep counter:
+`min(turns_slept, 4) / 4` (Gen 3 max 4 turns); toxic counter: `min(turns_poisoned, 8) / 8`
+(practical max before fainting with Leftovers).
+
+**Move slot (11 dims, layout in `moves.py`):** move ID, base power (/200), has_secondary,
+has_recoil, type ID, category (0=status, 1=physical, 2=special), known flag, current PP
+(/MAX_PP), max PP (/MAX_PP), accuracy (raw% / 100), never_miss bit. Accuracy is split into a
+continuous scalar plus a categorical bit: never-miss moves carry accuracy=100 in the mapping →
+encode as `[1.0, 1]`, while a genuine 100%-accuracy move is `[1.0, 0]` — same scalar,
+distinguished only by the bit. A 100%-accuracy move can still miss into evasion (Double Team)
+or after Sand-Attack; a never-miss move (Swift, Aerial Ace, all status/self moves) bypasses the
+accuracy/evasion check entirely.
+
+**Spread block (18 dims, appended at offset 71 within each slot):** IVs ×6 each/31 + EVs ×6
+each/252 + spread_known (1.0 own, 0.0 opp) + nature modifiers ×5 [atk, def, spa, spd, spe] as
+raw floats (0.9/1.0/1.1). Opponent slots have all 18 dims as zeros; `spread_known=0`
+distinguishes "unknown opponent" from "own Pokémon with 0 EVs". Own-team `mon.ivs/evs/nature`
+are populated by the poke-env fork's **`backfill_teambuilder_spread`** (`Battle.parse_request`):
+gen3ou has no team preview, so `apply_teambuilder_team` never attaches the spread — the backfill
+matches the declared teambuilder team to the request-built team by species and fills in
+IVs/EVs/nature (spread only, never re-running `_update_from_teambuilder`). Without it this block
+emitted a constant fallback (all-31 IVs, 0 EVs, neutral nature) for every own mon.
+
+**Global env (18 dims, layout in `global_env.py`):** weather block (7: one-hot + cause-aware
+permanence + turns-remaining), spikes ×2 (2), log-turn (1), per-side screens (8: Reflect /
+Light Screen / Safeguard / Mist × both sides).
+
+**Reactive block (302 dims, layout in `reactive.py`):** 14 scalar dims then the two 144-dim
+matchup matrices. Scalars: active-move power ×4 (/200) + active-move multiplier ×4 (/4),
+fainted counts ×2, active-status flag (1), `forced_struggle` (1), and the two
+**gen3_trapping_signals_v1** bits — `trapped` (1) and `maybe_trapped` (1) — sourced from the
+per-decision `LegalActions` snapshot (`legal.trapped` / `legal.maybe_trapped`), the same
+server-authoritative surface the mask is built from. They sit BEFORE the matchups so the
+feature extractor picks them up in `non_matchup_rest` automatically (it reads the matchup offset
+from the layout). `trapped` is redundant with the mask (switch bits already zeroed) but
+explicit; `maybe_trapped` is the high-value one — switches stay legal there, so it is the only
+way the model sees the trap risk before attempting a blind pivot.
+
+**TurnDelta slot (159 dims, layout in `turn_delta_encoder.py`):** all offsets computed from
+named `OFFSET_*` / `*_DIM` constants — never hardcode indices. TurnDelta is **folded from the
+event log** (`Gen3Battle.events_since(cursor)` per decision window; see
+`src/agents/battle/CLAUDE.md`) rather than diff-heuristics.
+
+- **Base block (53 dims, indices 0–52)** — our/opp move features (5 each: raw move_id int,
+  power_norm, has_secondary, has_recoil, raw type_id int), switched/failed flags, cant onehots
+  (`CANT_DIM` = 12 ea, from `gen3_effects.CANT_REASONS`:
+  slp/frz/par/flinch/recharge/attract/disable/taunt/imprison/focuspunch/nopp/truant —
+  source-derived, crash-don't-drop enforced in the encoder), summed HP deltas, faint flags,
+  opp_move_known, effectiveness onehots (4 ea), move-order (2).
+- **Extended block (106 dims, indices 53–158)** — our/opp boost deltas (7 each);
+  `phase_is_forced_switch` (1); our/opp `target_hp_delta` (1 each); per-side HP-level vectors
+  (6 each); our/opp target_status onehots (7 each, at move-fire time); our/opp move-outcome
+  onehots (3 each: `[hit, miss, fail]`); our/opp move-crit (1 each); **gen3_turn_delta_v2
+  additions**: `our_faint_causes`/`opp_faint_causes` (8 each, multi-hot over
+  `attack/hazard/weather/status/recoil/selfko/leechseed/other`); **status-transition onehots**
+  (4 × 7): `our/opp_status_applied` (status GAINED this window) + `our/opp_status_cured` (status
+  LOST this window); **item-used bits** (2): `our/opp_item_used` — a single bit per side marking
+  an item was consumed/removed this window (Berry/Knock Off/Trick). These (status transitions +
+  item-used) are the per-turn *events*; the cause-**identity** (which item, which ability) lives
+  in the per-mon item/ability block — the history carries the event, the block carries the what
+  (parity with the collapsed `ability_activated` volatile). `our_attempted_move_id` (1, raw int
+  embedded — the move we PRESSED, even if it never fired); **species block** (6 raw ints,
+  embedded): `our_actor`/`opp_actor`/`our_target`/`opp_target`/`our_switch_to`/`opp_switch_to`;
+  **gen3_trapping_signals_v1 additions**: `attempted_switch_rejected` (1 bit — the server
+  REFUSED a switch we chose this window, `|error|[Unavailable choice]`, i.e. we tried to pivot
+  and got trapped) + `our_attempted_switch_to` (1 raw int embedded — the mon we PRESSED a switch
+  to).
+
+`our_faint_causes` / `opp_faint_causes`: multi-hot — the rare 2-on-one-side window
+(Pursuit/Future-Sight into a low-HP mon on hazards) can set 2 bits; the common Explosion
+double-KO is one bit each side. Cause derived from the DAMAGE event's `[from]` clause
+immediately preceding the FAINT in the event log. All-zeros when no faint.
+`our_attempted_move_id`: decoded from the pressed action index at build time, preserved even
+when the move never fired (cant / frozen / KO-before-acting). `attempted_switch_rejected` /
+`our_attempted_switch_to` (gen3_trapping_signals_v1): the rejected-pivot history — folded from
+the out-of-band `CHOICE_REJECTED` event (`TurnView.attempted_rejected`). On a rejected pivot
+`our_switch_to` is the unknown sentinel (the switch never happened) while `attempted_switch_to`
+names the mon we tried to bring in; both are zero on every turn with no rejection. Opp attempted
+action is not observable. Faint *counts* are kept on the `TurnDelta` dataclass (for reward) but
+not encoded — redundant with the faint flags + cause popcount.
+
+**Embedded-ID manifest (the layout-driven contract):** which slot positions carry raw embedding
+IDs and which table each routes to is declared once in `TURN_DELTA_EMBEDDED_IDS` (in
+`turn_delta_encoder.py`). Both the encoder's layout and `Embeddings.embed_delta_slot` read it —
+there are **no hardcoded positions in the extractor** and the embed-width formula derives from
+the manifest, so a raw id can never silently leak through as a scalar. Adding an embedded ID is
+a one-line manifest change. Current manifest: 3 move IDs (our/opp/attempted) → 3×16, 2 type IDs
+→ 2×16, 7 species IDs (our/opp actor + our/opp target + our/opp switch_to + attempted_switch_to)
+→ 7×32 = 48 + 32 + 224 = 304 embedded dims + 147 pass-through scalars = 451-dim per slot.
+Positional encodings are added, one self-attention pass runs, and the last (most-recent) slot's
+output flows into the projection block. All zeros on the first turn of each episode. Actor
+species resolution prefers `damaging_event.user_species` (protocol-truth) and falls back to
+`prev_active` for switches and non-damaging moves; target species comes from the OTHER side's
+`damaging_event.target_species`. Species ID 0 is the unknown sentinel.

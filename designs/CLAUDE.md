@@ -21,12 +21,12 @@ To orient yourself:
 - When in doubt, ask: "is this an implementation doc for new code, or a record of what
   a running experiment does?"
 
-**Current state as of 2026-05:**
+**Current state as of 2026-05-31:**
 
 | What | Version | Notes |
 |------|---------|-------|
-| **Active training run** | **ai_v3 end** | ~350M steps, fixed bot pool (Random/Heuristic/Aggressive/Staller/SetupSweep), no self-play; AdamW and adaptive LR added recently |
-| **Code being changed** | **ai_v4 (closing out)** | Event-sourced battle layer / strict battle-API / observation richness / obs-build perf — landed across impl_step1–9. The one open ai_v4 tail is **pathology hunting** (eval-replay analysis). Self-play/league moved to ai_v5. |
+| **Active training run** | **ai_v4** | Fresh run started 2026-05-31 (`run_20260531_182804`, git `63220dd`, 300M-step target) on the v4 arch (`gen3_trapping_signals_v1`, obs 3321); fixed-bot eval pool — **pathology-hunting phase before self-play**. The long ai_v3 ~350M run is retired. |
+| **Code on main** | **ai_v4 (closed out)** | Event-sourced battle layer / strict battle-API / observation richness / obs-build perf — landed across impl_step1–9. Open tail: **pathology hunting** (eval-replay analysis). Self-play code has landed (`selfplay_callback.py`, `--self-play`) but is gated behind pathology cleanup; self-play/league as a chapter is ai_v5. |
 
 ---
 
@@ -68,8 +68,9 @@ fold (`impl_step8`), and strict-API completion + trapping signals + the ~2× obs
 (`impl_step9`). Net obs **3321-dim**, `ARCH_SIGNATURE = gen3_trapping_signals_v1`.
 
 **Open tail:** pathology hunting (eval-replay analysis); plus the one unscheduled strict-API
-sub-item, Phase 5b (true `LiveView` current-board event-fold — `todo_live_battle.md`). No model
-has trained on the v4 obs yet (the v3 run is on an older arch and won't load it).
+sub-item, Phase 5b (true `LiveView` current-board event-fold — `todo_live_battle.md`). The
+first v4-obs run is now live (the fresh fixed-bot run started 2026-05-31, see the state table
+above) — the retired v3 run was on an older arch that can't load the v4 obs.
 
 ### ai_v5
 Self-play / league play, then MCTS at inference + behavioural cloning from human replays.

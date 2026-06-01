@@ -161,8 +161,11 @@ doing only if these moves become relevant in training.
 Runs battles **in-process via the local BattleStream bridge — no `npm run showdown`** (only the `deps/pokemon-showdown` `dist/` + `node_modules` symlinks from the root CLAUDE.md worktree setup):
 
 ```bash
-# One-time worktree setup
-rmdir deps/pokemon-showdown && ln -s /home/goodlad/dev/gen3ai/deps/pokemon-showdown deps/pokemon-showdown
+# One-time worktree setup (per root CLAUDE.md — symlink the BUILD ARTIFACTS, never the whole
+# submodule dir, which breaks git status):
+git submodule update --init
+ln -s /home/goodlad/dev/gen3ai/deps/pokemon-showdown/dist         deps/pokemon-showdown/dist
+ln -s /home/goodlad/dev/gen3ai/deps/pokemon-showdown/node_modules deps/pokemon-showdown/node_modules
 
 # Run (30 battles per scenario ≈ 2 min)
 export PYTHONPATH=$PYTHONPATH:src
