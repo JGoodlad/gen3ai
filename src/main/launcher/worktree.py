@@ -14,52 +14,68 @@ def _git_hash() -> str:
     return get_git_hash(short=True)
 
 
-def _read_checkpoint_git_hash(model_path: str) -> "str | None":
-    """Read git_hash from the per-checkpoint sidecar or run-level metadata.json.
+def _load_json_dict(path: str) -> "dict | None":
+    """Load a JSON object from path, or None if missing/unreadable/not-an-object."""
+    if not os.path.exists(path):
+        return None
+    try:
+        with open(path) as f:
+            data = json.load(f)
+    except Exception:
+        return None
+    return data if isinstance(data, dict) else None
 
-    Prefers the sidecar (checkpoint_XXXX.json) because it's written at save time
-    by the child inside the pinned worktree. The run-level metadata.json can be
-    overwritten by later saves and may not reflect the checkpoint's actual hash.
+
+def _read_checkpoint_field(model_path: str, *, key: str, toplevel_key: str):
+    """Read a per-checkpoint field, most checkpoint-specific source first.
+
+    Resolution order:
+      1. the per-checkpoint sidecar (``checkpoint_XXXX.json`` beside the .zip),
+         written at save time by the child inside the pinned worktree;
+      2. this checkpoint's entry in metadata.json's ``snapshot_history``;
+      3. the run-level top-level value — the LAST resort, because metadata.json's
+         top-level fields are overwritten by every later save and so reflect the
+         most recent checkpoint, not necessarily the (possibly older) one being
+         resumed.
+
+    The sidecar and ``snapshot_history`` entries share one schema (see
+    ``_build_snapshot_entry`` in ``agents.model.snapshot``), so ``key`` reads both.
+    Only the run-level top-level field may use a different name (``toplevel_key``,
+    e.g. ``current_lr`` vs the per-checkpoint ``lr``).
     """
     abs_path = os.path.abspath(model_path)
-    # Per-checkpoint sidecar: replace .zip extension (or append .json)
-    sidecar = abs_path[:-4] + ".json" if abs_path.endswith(".zip") else abs_path + ".json"
-    if os.path.exists(sidecar):
-        try:
-            with open(sidecar) as f:
-                h = json.load(f).get("git_hash")
-            if h:
-                return h
-        except Exception:
-            pass
 
-    # Fall back to run-level metadata.json
-    run_dir = os.path.dirname(abs_path)
-    meta = os.path.join(run_dir, "metadata.json")
-    if os.path.exists(meta):
-        try:
-            with open(meta) as f:
-                return json.load(f).get("git_hash")
-        except Exception:
-            return None
-    return None
+    # 1. Per-checkpoint sidecar: replace .zip extension (or append .json).
+    sidecar = abs_path[:-4] + ".json" if abs_path.endswith(".zip") else abs_path + ".json"
+    side = _load_json_dict(sidecar)
+    if side is not None and side.get(key) is not None:
+        return side[key]
+
+    # 2./3. metadata.json: this checkpoint's history entry, then the top-level value.
+    meta = _load_json_dict(os.path.join(os.path.dirname(abs_path), "metadata.json"))
+    if meta is None:
+        return None
+    name = os.path.basename(abs_path)
+    if not name.endswith(".zip"):
+        name += ".zip"
+    entry = meta.get("snapshot_history", {}).get(name)
+    if isinstance(entry, dict) and entry.get(key) is not None:
+        return entry[key]
+    return meta.get(toplevel_key)
+
+
+def _read_checkpoint_git_hash(model_path: str) -> "str | None":
+    """git_hash of the resumed checkpoint (sidecar → snapshot_history → top-level)."""
+    return _read_checkpoint_field(model_path, key="git_hash", toplevel_key="git_hash")
 
 
 def _read_checkpoint_lr(model_path: str) -> "float | None":
-    """Read current_lr from the metadata.json saved alongside a checkpoint."""
-    candidates = [
-        os.path.dirname(os.path.abspath(model_path)),
-        os.path.abspath(model_path),
-    ]
-    for d in candidates:
-        meta = os.path.join(d, "metadata.json")
-        if os.path.exists(meta):
-            try:
-                with open(meta) as f:
-                    return json.load(f).get("current_lr")
-            except Exception:
-                return None
-    return None
+    """Current LR of the resumed checkpoint (sidecar → snapshot_history → top-level).
+
+    The sidecar/history store this under ``lr``; the run-level fallback uses the
+    legacy top-level ``current_lr`` key written by ``save_model_snapshot``.
+    """
+    return _read_checkpoint_field(model_path, key="lr", toplevel_key="current_lr")
 
 
 def _prune_stale_launcher_worktrees(repo_root: str) -> None:

@@ -108,6 +108,37 @@ def _latest_checkpoint(history: dict) -> str | None:
     return best_name
 
 
+def _build_snapshot_entry(
+    lr: float,
+    n_epochs: int,
+    hparams: Optional[dict] = None,
+    git_hash: Optional[str] = None,
+    handoff_lr: Optional[float] = None,
+) -> dict:
+    """Build the canonical per-checkpoint metadata dict.
+
+    Single source of truth for BOTH the per-checkpoint sidecar
+    (``write_checkpoint_metadata``) and the run-level ``snapshot_history`` entry
+    (``record_snapshot_in_history``), so the per-model summary and the history can
+    never drift apart.
+
+    The entry is the **union** of the two historical schemas — it carries both
+    naming conventions for the same values so no consumer keyed on either name
+    loses data:
+        ``lr`` / ``n_epochs``                 — snapshot_history convention
+        ``current_lr`` / ``current_epochs``   — original sidecar convention
+    All four (plus ``git_hash``) are assigned after the hparams are merged in, so
+    they always win over a colliding ``hparams`` key.
+    """
+    entry = dict(hparams) if hparams else {}
+    entry["lr"] = entry["current_lr"] = lr
+    entry["n_epochs"] = entry["current_epochs"] = n_epochs
+    entry["git_hash"] = git_hash or os.environ.get("LAUNCHER_GIT_HASH") or get_git_hash()
+    if handoff_lr is not None:
+        entry["handoff_lr"] = handoff_lr
+    return entry
+
+
 def record_snapshot_in_history(
     model_dir: str,
     checkpoint_name: str,
@@ -120,8 +151,9 @@ def record_snapshot_in_history(
     """Append or update a checkpoint entry in snapshot_history within metadata.json.
 
     checkpoint_name: basename of the checkpoint zip, e.g. 'checkpoint_50000000_steps.zip'.
-    Creates metadata.json if it doesn't exist yet (history-only file until the next
-    save_model_snapshot call fills in the rest of the fields).
+    The entry is built by ``_build_snapshot_entry`` — identical in shape to the
+    per-checkpoint sidecar. Creates metadata.json if it doesn't exist yet
+    (history-only file until the next save_model_snapshot call fills in the rest).
     """
     meta_path = os.path.join(model_dir, "metadata.json")
     meta = {}
@@ -129,13 +161,7 @@ def record_snapshot_in_history(
         with open(meta_path) as f:
             meta = json.load(f)
     history = meta.get("snapshot_history", {})
-    entry = {"lr": lr, "n_epochs": n_epochs}
-    if hparams:
-        entry.update(hparams)
-    entry["git_hash"] = git_hash or get_git_hash()
-    if handoff_lr is not None:
-        entry["handoff_lr"] = handoff_lr
-    history[checkpoint_name] = entry
+    history[checkpoint_name] = _build_snapshot_entry(lr, n_epochs, hparams, git_hash, handoff_lr)
     meta["snapshot_history"] = history
     with open(meta_path, "w") as f:
         json.dump(meta, f, indent=2)
@@ -184,28 +210,28 @@ def record_checkpoint(
 
 def write_checkpoint_metadata(
     checkpoint_path: str,
-    current_lr: float,
-    current_epochs: int,
+    lr: float,
+    n_epochs: int,
     hparams: Optional[dict] = None,
     git_hash: Optional[str] = None,
     handoff_lr: Optional[float] = None,
 ) -> None:
-    """Write lr/epochs (and optional hparams) alongside a checkpoint .zip.
+    """Write the per-checkpoint metadata sidecar alongside a checkpoint .zip.
 
-    checkpoint_path: full path to the .zip (with or without extension).
-    Metadata file lands at the same path with .zip replaced by .json.
+    The sidecar's schema is identical to a run-level ``snapshot_history`` entry —
+    both are built by ``_build_snapshot_entry``, which emits the union of both
+    naming conventions (lr/current_lr, n_epochs/current_epochs) plus git_hash,
+    optional handoff_lr and hparams — so the per-model summary mirrors the history
+    exactly and drops no field.
+
+    checkpoint_path: full path to the .zip (with or without extension). The sidecar
+    lands at the same path with .zip replaced by .json.
 
     handoff_lr: see ``record_checkpoint``.
     """
-    data = dict(hparams) if hparams else {}
-    data["current_lr"] = current_lr
-    data["current_epochs"] = current_epochs
-    import os as _os
-    data["git_hash"] = git_hash or _os.environ.get("LAUNCHER_GIT_HASH") or get_git_hash()
-    if handoff_lr is not None:
-        data["handoff_lr"] = handoff_lr
+    entry = _build_snapshot_entry(lr, n_epochs, hparams, git_hash, handoff_lr)
     with open(_checkpoint_metadata_path(checkpoint_path), "w") as f:
-        json.dump(data, f, indent=2)
+        json.dump(entry, f, indent=2)
 
 
 def read_checkpoint_metadata(checkpoint_path: str) -> dict:

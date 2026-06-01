@@ -254,9 +254,12 @@ def test_checkpoint_metadata_path_no_zip_extension():
 def test_write_and_read_checkpoint_metadata():
     with tempfile.TemporaryDirectory() as tmpdir:
         ckpt = os.path.join(tmpdir, "checkpoint_500000_steps.zip")
-        write_checkpoint_metadata(ckpt, current_lr=2.5e-5, current_epochs=7)
+        write_checkpoint_metadata(ckpt, lr=2.5e-5, n_epochs=7)
         result = read_checkpoint_metadata(ckpt)
+    # Union of both naming conventions — neither name is dropped.
+    assert result["lr"] == pytest.approx(2.5e-5)
     assert result["current_lr"] == pytest.approx(2.5e-5)
+    assert result["n_epochs"] == 7
     assert result["current_epochs"] == 7
 
 
@@ -270,10 +273,12 @@ def test_read_checkpoint_metadata_returns_empty_when_missing():
 def test_checkpoint_metadata_overwrites_on_second_write():
     with tempfile.TemporaryDirectory() as tmpdir:
         ckpt = os.path.join(tmpdir, "checkpoint_500000_steps.zip")
-        write_checkpoint_metadata(ckpt, current_lr=3e-4, current_epochs=10)
-        write_checkpoint_metadata(ckpt, current_lr=1e-5, current_epochs=4)
+        write_checkpoint_metadata(ckpt, lr=3e-4, n_epochs=10)
+        write_checkpoint_metadata(ckpt, lr=1e-5, n_epochs=4)
         result = read_checkpoint_metadata(ckpt)
+    assert result["lr"] == pytest.approx(1e-5)
     assert result["current_lr"] == pytest.approx(1e-5)
+    assert result["n_epochs"] == 4
     assert result["current_epochs"] == 4
 
 
@@ -281,12 +286,12 @@ def test_checkpoint_metadata_independent_per_checkpoint():
     with tempfile.TemporaryDirectory() as tmpdir:
         ckpt_50m = os.path.join(tmpdir, "checkpoint_50000000_steps.zip")
         ckpt_100m = os.path.join(tmpdir, "checkpoint_100000000_steps.zip")
-        write_checkpoint_metadata(ckpt_50m, current_lr=3e-4, current_epochs=10)
-        write_checkpoint_metadata(ckpt_100m, current_lr=8e-5, current_epochs=6)
+        write_checkpoint_metadata(ckpt_50m, lr=3e-4, n_epochs=10)
+        write_checkpoint_metadata(ckpt_100m, lr=8e-5, n_epochs=6)
         r50 = read_checkpoint_metadata(ckpt_50m)
         r100 = read_checkpoint_metadata(ckpt_100m)
-    assert r50["current_epochs"] == 10
-    assert r100["current_epochs"] == 6
+    assert r50["n_epochs"] == r50["current_epochs"] == 10
+    assert r100["n_epochs"] == r100["current_epochs"] == 6
 
 
 # ---------------------------------------------------------------------------
@@ -301,8 +306,11 @@ def test_record_snapshot_creates_history(version):
             meta = json.load(f)
     assert "snapshot_history" in meta
     entry = meta["snapshot_history"]["checkpoint_50000000_steps.zip"]
+    # History entries carry the same union of names as the per-checkpoint sidecar.
     assert entry["lr"] == pytest.approx(2.5e-4)
+    assert entry["current_lr"] == pytest.approx(2.5e-4)
     assert entry["n_epochs"] == 10
+    assert entry["current_epochs"] == 10
 
 
 def test_record_snapshot_accumulates_multiple_entries(version):
@@ -362,7 +370,7 @@ _SAMPLE_HPARAMS = {
 def test_write_checkpoint_metadata_includes_hparams():
     with tempfile.TemporaryDirectory() as tmpdir:
         ckpt = os.path.join(tmpdir, "checkpoint_500000_steps.zip")
-        write_checkpoint_metadata(ckpt, current_lr=2.5e-5, current_epochs=7, hparams=_SAMPLE_HPARAMS, git_hash="deadbeef")
+        write_checkpoint_metadata(ckpt, lr=2.5e-5, n_epochs=7, hparams=_SAMPLE_HPARAMS, git_hash="deadbeef")
         result = read_checkpoint_metadata(ckpt)
     for key, val in _SAMPLE_HPARAMS.items():
         assert result[key] == pytest.approx(val), f"hparams[{key!r}] not written correctly"
@@ -370,17 +378,19 @@ def test_write_checkpoint_metadata_includes_hparams():
 
 
 def test_write_checkpoint_metadata_lr_epochs_win_over_hparams():
-    """current_lr and current_epochs must not be clobbered by a conflicting hparams key."""
+    """Both lr/n_epochs naming conventions must beat conflicting hparams keys."""
     with tempfile.TemporaryDirectory() as tmpdir:
         ckpt = os.path.join(tmpdir, "checkpoint_500000_steps.zip")
         write_checkpoint_metadata(
             ckpt,
-            current_lr=1.23e-5,
-            current_epochs=9,
-            hparams={"current_lr": 999.0, "current_epochs": 999},
+            lr=1.23e-5,
+            n_epochs=9,
+            hparams={"lr": 999.0, "n_epochs": 999, "current_lr": 999.0, "current_epochs": 999},
         )
         result = read_checkpoint_metadata(ckpt)
+    assert result["lr"] == pytest.approx(1.23e-5)
     assert result["current_lr"] == pytest.approx(1.23e-5)
+    assert result["n_epochs"] == 9
     assert result["current_epochs"] == 9
 
 

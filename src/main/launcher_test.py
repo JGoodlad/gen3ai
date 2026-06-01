@@ -26,6 +26,7 @@ from main.launcher import (
 )
 from main.launcher import LauncherState
 from main.launcher.run import _find_ent_coef
+from main.launcher.worktree import _read_checkpoint_lr
 
 
 # ── find_latest_checkpoint ───────────────────────────────────────────────────
@@ -205,6 +206,58 @@ class TestReadCheckpointGitHash:
         (tmp_path / "metadata.json").write_text(json.dumps({"saved_at": "2026-01-01"}))
         result = _read_checkpoint_git_hash(str(tmp_path / "model.zip"))
         assert result is None
+
+    def test_sidecar_wins_over_metadata(self, tmp_path):
+        # Sidecar is written inside the pinned worktree at save time → authoritative.
+        (tmp_path / "checkpoint_500_steps.json").write_text(json.dumps({"git_hash": "sidecar"}))
+        (tmp_path / "metadata.json").write_text(json.dumps({"git_hash": "toplevel"}))
+        result = _read_checkpoint_git_hash(str(tmp_path / "checkpoint_500_steps.zip"))
+        assert result == "sidecar"
+
+    def test_snapshot_history_wins_over_toplevel(self, tmp_path):
+        # No sidecar: this checkpoint's history entry beats the top-level git_hash,
+        # which reflects the LATEST save, not this (older) checkpoint.
+        (tmp_path / "metadata.json").write_text(json.dumps({
+            "git_hash": "latest_save",
+            "snapshot_history": {
+                "checkpoint_500_steps.zip": {"git_hash": "this_ckpt"},
+            },
+        }))
+        result = _read_checkpoint_git_hash(str(tmp_path / "checkpoint_500_steps.zip"))
+        assert result == "this_ckpt"
+
+    def test_falls_back_to_toplevel_when_not_in_history(self, tmp_path):
+        (tmp_path / "metadata.json").write_text(json.dumps({
+            "git_hash": "latest_save",
+            "snapshot_history": {"checkpoint_999_steps.zip": {"git_hash": "other"}},
+        }))
+        result = _read_checkpoint_git_hash(str(tmp_path / "checkpoint_500_steps.zip"))
+        assert result == "latest_save"
+
+
+# ── _read_checkpoint_lr ───────────────────────────────────────────────────────
+
+class TestReadCheckpointLr:
+    def test_reads_lr_from_snapshot_history(self, tmp_path):
+        # History stores the per-checkpoint value under `lr`; top-level current_lr
+        # is the latest save and must NOT shadow an older resumed checkpoint.
+        (tmp_path / "metadata.json").write_text(json.dumps({
+            "current_lr": 9.9e-4,
+            "snapshot_history": {"checkpoint_500_steps.zip": {"lr": 2.5e-5}},
+        }))
+        result = _read_checkpoint_lr(str(tmp_path / "checkpoint_500_steps.zip"))
+        assert result == pytest.approx(2.5e-5)
+
+    def test_sidecar_lr_wins(self, tmp_path):
+        (tmp_path / "checkpoint_500_steps.json").write_text(json.dumps({"lr": 1e-5}))
+        (tmp_path / "metadata.json").write_text(json.dumps({"current_lr": 9.9e-4}))
+        result = _read_checkpoint_lr(str(tmp_path / "checkpoint_500_steps.zip"))
+        assert result == pytest.approx(1e-5)
+
+    def test_falls_back_to_toplevel_current_lr(self, tmp_path):
+        (tmp_path / "metadata.json").write_text(json.dumps({"current_lr": 9.9e-4}))
+        result = _read_checkpoint_lr(str(tmp_path / "checkpoint_500_steps.zip"))
+        assert result == pytest.approx(9.9e-4)
 
 
 # ── _strip_launcher_args ──────────────────────────────────────────────────────
