@@ -14,6 +14,43 @@ from typing import Any, List, Dict
 # through the weighted-type-embedding path.
 HIDDEN_POWER_MOVE_NUM = 237
 
+# Per-move-id cache of the encoded category scalar (0=status, 1=physical, 2=special).
+# poke-env's `Move.category` is a property that, for gen3, walks `move.entry` ->
+# `GenData.from_gen(3).moves[id]` and resolves the pre-split type-based category on every
+# read — the #1 tottime line in the obs profile (~199 `move.entry` calls/encode, since the
+# per-mon move encoder runs over ~48 slots/encode). The category is a *pure function of the
+# move id* within our fixed gen3 data (it never changes mid-battle), so we memoize the
+# already-computed scalar keyed by id and skip the property chain on every subsequent read.
+#
+# Byte-identity: the cached value IS the live `move.category`-derived scalar (computed the
+# first time each id is seen, exactly as before), NOT a re-derivation from gen3_movedex —
+# the dex's base_power<=0 => STATUS rule disagrees with poke-env for fixed-/variable-power
+# moves (Seismic Toss, Endeavor, Return, and bare "hiddenpower" all read PHYSICAL live but
+# STATUS in the dex), so only caching the live result stays identical.
+_CATEGORY_VAL_CACHE: Dict[str, float] = {}
+
+
+def _category_val(move) -> float:
+    """Encoded category scalar for a move, memoized by move id off the live category.
+
+    First read of an id resolves poke-env's `move.category` (the gen3 type-split property)
+    and caches the 0/1/2 scalar; later reads of the same id return it without touching the
+    `move.entry` / `GenData.from_gen` chain. Identical output to reading `move.category`
+    every time, because the category is invariant per id in our gen3 data."""
+    mid = move.id
+    val = _CATEGORY_VAL_CACHE.get(mid)
+    if val is None:
+        cat = move.category
+        if cat == MoveCategory.PHYSICAL:
+            val = 1.0
+        elif cat == MoveCategory.SPECIAL:
+            val = 2.0
+        else:
+            val = 0.0
+        _CATEGORY_VAL_CACHE[mid] = val
+    return val
+
+
 class MovesEncoder(ObservationEncoder):
     """
     Encodes move IDs and reveal status for 4 move slots.
@@ -80,13 +117,9 @@ class MovesEncoder(ObservationEncoder):
                 vec[base_idx + 3] = recoil
                 # 5. Type ID
                 vec[base_idx + 4] = float(type_id)
-                # 6. Category ID (0=Status, 1=Physical, 2=Special)
-                category_val = 0.0
-                if move.category == MoveCategory.PHYSICAL:
-                    category_val = 1.0
-                elif move.category == MoveCategory.SPECIAL:
-                    category_val = 2.0
-                vec[base_idx + 5] = category_val
+                # 6. Category ID (0=Status, 1=Physical, 2=Special) — memoized per move id
+                # off the live `move.category` (skips the per-read move.entry/GenData chain).
+                vec[base_idx + 5] = _category_val(move)
                 
                 # 7. Known Flag (Binary) - Now interleaved
                 vec[base_idx + 6] = 1.0

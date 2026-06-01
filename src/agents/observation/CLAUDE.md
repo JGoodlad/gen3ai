@@ -1,6 +1,6 @@
 # CLAUDE.md — Observation Encoder (`src/agents/observation/`)
 
-This directory builds the **3299-dim per-decision observation vector** (`Gen3ObservationEncoder.encode`).
+This directory builds the **3321-dim per-decision observation vector** (`Gen3ObservationEncoder.encode`).
 It runs once per agent decision across every training env, so it sits directly on the
 training-throughput (FPS) critical path. Two independent things can regress here, and they
 have **different** gates:
@@ -57,7 +57,7 @@ Judge by these load-independent metrics, in priority order:
 
 1. **Total function calls per encode** = `<N function calls>` line ÷ `--reps`. This is the
    single best regression detector — it does not move with machine load. Baseline ≈
-   **12.8k calls/encode** (5,131,601 / 400). A jump of **>10%** is a regression — investigate.
+   **6.36k calls/encode** (2,544,001 / 400). A jump of **>10%** is a regression — investigate.
 2. **cProfile `tottime` top-of-list structure.** A *new* function climbing into the top ~10,
    or a known hot function's **call count** ballooning, means you added work to a hot loop.
 3. **Component ratios** (`state_encoder.encode` vs cached turn-history vs `live_view`) and the
@@ -75,38 +75,43 @@ Captured with `--turn 25 --reps 400`. Paths shown repo-relative. Absolute ms omi
 headline on purpose (load-dependent); the **call counts and ordering are the contract**.
 
 ```
-PER-DECISION OBS BUILD BENCHMARK  (obs dim 3299, turn 25, history slots 10, opp mons w/ revealed moves 5/6)
+PER-DECISION OBS BUILD BENCHMARK  (obs dim 3321, turn 25, history slots 10, opp mons w/ revealed moves 5/6)
 
-  full per-decision obs build  :  ~0.8–2.2 ms   (LOAD-DEPENDENT — not a regression signal)
-    state_encoder.encode       :  ~92% of build
-    turn-history (cached, 1 enc):  ~3% of build   (recompute-all-10 is ~11–13x slower → deque cache working)
-    live_view() alone          :  ~8% of build
+  full per-decision obs build  :  ~0.5–1.2 ms   (LOAD-DEPENDENT — not a regression signal)
+    state_encoder.encode       :  ~79% of build
+    turn-history (cached, 1 enc):  ~6% of build   (recompute-all-10 is ~11–13x slower → deque cache working)
+    live_view() alone          :  ~15% of build
 
-  Total: ~5.13M function calls / 400 reps  ==>  ~12.8k calls per encode   <-- PRIMARY REGRESSION METRIC
+  Total: ~2.54M function calls / 400 reps  ==>  ~6.36k calls per encode   <-- PRIMARY REGRESSION METRIC
 
-  Top functions by tottime (the hot loop is the reactive matchup matrices):
+  Top functions by tottime (no single dominant hot loop — the matchup work is now spread thin):
    ncalls  tottime  cumtime  function
-    80800    0.154    0.791   agents/observation/reactive.py:_expected_multiplier   <-- #1 hot path
-   158400    0.132    0.195   poke_env/battle/move.py:entry                          (poke-env Move property)
-    80800    0.072    0.137   agents/gen3_mechanics.py:effective_multiplier_by_types (memoized; chart lookup)
-   171200    0.069    0.097   poke_env/battle/pokemon.py:ability
-      400    0.069    0.917   agents/observation/reactive.py:encode                  (cumtime ≈ whole matchup block)
-     4800    0.064    0.244   agents/observation/moves.py:encode
-    80800    0.055    0.139   agents/observation/reactive.py:_resolve_ability_distribution
-   257200    0.053    0.151   {builtins.getattr}
-     4800    0.049    0.406   agents/observation/pokemon.py:encode
-    93600    0.049    0.230   poke_env/battle/move.py:type
-   271200    0.047    0.067   enum.__hash__                                          (lru_cache key hashing)
-     4800    0.044    0.153   agents/battle/live_view.py:from_pokemon
+    80800    0.048    0.088   agents/gen3_mechanics.py:effective_multiplier_by_types (memoized; chart lookup)
+      400    0.046    0.261   agents/observation/reactive.py:encode                  (cumtime ≈ whole matchup block)
+     4800    0.036    0.101   agents/observation/moves.py:encode
+     4800    0.032    0.111   agents/battle/live_view.py:from_pokemon
+    42800    0.028    0.042   poke_env/battle/move.py:entry                          (poke-env Move property)
+    80800    0.028    0.116   agents/observation/reactive.py:_joint_expectation
+   238800    0.026    0.035   enum.__hash__                                          (lru_cache key hashing)
+     4800    0.025    0.189   agents/observation/pokemon.py:encode
+    26400    0.012    0.040   poke_env/battle/move.py:max_pp
+     4800    0.012    0.023   agents/observation/types.py:encode
+   264800    0.011    0.011   {builtins.len}
+      400    0.011    0.596   agents/observation/state_encoder.py:encode             (cumtime ≈ whole obs)
 ```
 
-**Reading it:** the reactive matchup encoder (`reactive.encode` → `_expected_multiplier`,
-288 cells = 2 × 6 mons × 4 moves × 6 mons) dominates. Type effectiveness is a memoized
-precomputed-chart lookup (`effective_multiplier_by_types` + `_eff_cached` in
-`gen3_mechanics.py`) — `PokemonType.damage_multiplier` must **not** reappear in this list
-(if it does, something bypassed the chart). The remaining cost is poke-env `Move`/`Pokemon`
-property reads (`move.entry`, `move.type`, `pokemon.ability`); the open follow-up is hoisting
-those out of the inner loop to team level.
+**Reading it:** there is **no single dominant hot loop** anymore — the matchup encoder's
+per-cell poke-env property reads were hoisted to team level (`reactive._defender_terms` /
+`_attacker_type_dist`, computed once per mon / per (attacker, move) instead of per cell), and
+the per-mon move category is memoized by id (`moves._category_val`), so `move.entry` dropped
+from ~158k to ~43k calls and `pokemon.ability` / `move.type` left the top list. Cost is now
+spread across `effective_multiplier_by_types` (the memoized chart lookup — the irreducible
+per-cell core), the matchup `encode` loop overhead itself, and the per-mon encoders. Type
+effectiveness must stay a memoized chart lookup (`effective_multiplier_by_types` + `_eff_cached`
+in `gen3_mechanics.py`) — `PokemonType.damage_multiplier` must **not** reappear here (if it
+does, something bypassed the chart). The matchup block (`reactive.encode`) and the per-mon
+`pokemon.encode` / `moves.encode` chain are the next-largest cumtime; `live_view.from_pokemon`
+(rebuilt ×12/encode) is shared with reward/replay, so it carries a wider blast radius.
 
 ---
 
@@ -117,8 +122,13 @@ those out of the inner loop to team level.
   read the mon's attributes once outside the loop. The object wrapper re-reads poke-env
   properties every call.
 - **Re-reading poke-env properties inside the inner loop.** `move.type`, `mon.type_1/2`,
-  `mon.ability` are properties that do real work (`move.entry`, `GenData.from_gen`); hoist
-  them above the loop.
+  `mon.ability`, `move.category` are properties that do real work (`move.entry`,
+  `GenData.from_gen`); hoist them above the loop. The matchup matrices already do this
+  (`reactive._defender_terms` / `_attacker_type_dist` read each mon / (attacker, move) once,
+  not per cell) and the per-mon move category is memoized by id (`moves._category_val` — a
+  process-global cache off the *live* `move.category`, NOT a `gen3_movedex` re-derivation,
+  which disagrees for fixed-power moves). Do not reintroduce a per-cell / per-slot property
+  read.
 - **Breaking the turn-history deque cache** (`EpisodeTracker.prev_N_delta_vecs`): if the
   benchmark's "recompute all 10" multiplier collapses toward 1×, you've reintroduced the
   per-step O(N) re-encode.

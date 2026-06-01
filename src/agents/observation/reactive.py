@@ -270,6 +270,19 @@ class ReactiveEncoder(ObservationEncoder):
         our_team = self.get_team_list(battle, is_opponent=False)
         their_team = self.get_team_list(battle, is_opponent=True)
 
+        # Hoist the per-defender reads (type_1/type_2/status/ability + the ability
+        # distribution) out of the inner cell loop: they are constant for a given mon
+        # across every attacker/move that targets it, so compute them ONCE per team
+        # mon instead of re-reading poke-env properties on all 144 cells per matrix.
+        our_terms = [
+            _defender_terms(m, self._ability_priors) if m is not None else None
+            for m in our_team
+        ]
+        their_terms = [
+            _defender_terms(m, self._ability_priors) if m is not None else None
+            for m in their_team
+        ]
+
         # 5. Our moves vs Their mons (144 dims)
         cursor = 14
         for i in range(TEAM_SIZE):
@@ -277,13 +290,13 @@ class ReactiveEncoder(ObservationEncoder):
             our_moves = self.get_sorted_moves(our_mon)
             for move_idx in range(4):
                 move = our_moves[move_idx] if move_idx < len(our_moves) else None
+                # type_dist is constant across the inner defender loop → hoist it.
+                type_dist = _attacker_type_dist(move, our_mon, hp_tracker) if move is not None else None
                 for j in range(TEAM_SIZE):
                     their_mon = their_team[j] if j < len(their_team) else None
                     if move and their_mon:
                         # Normalize by 4.0 to keep values in [0, 1] range for better MLP convergence
-                        vec[cursor] = _expected_multiplier(
-                            move, our_mon, their_mon, hp_tracker, self._ability_priors
-                        ) / 4.0
+                        vec[cursor] = _joint_expectation(type_dist, their_terms[j]) / 4.0
                     cursor += 1
 
         # 6. Their moves vs Our mons (144 dims)
@@ -292,13 +305,13 @@ class ReactiveEncoder(ObservationEncoder):
             their_moves = self.get_sorted_moves(their_mon)
             for move_idx in range(4):
                 move = their_moves[move_idx] if move_idx < len(their_moves) else None
+                # type_dist is constant across the inner defender loop → hoist it.
+                type_dist = _attacker_type_dist(move, their_mon, hp_tracker) if move is not None else None
                 for j in range(TEAM_SIZE):
                     our_mon = our_team[j] if j < len(our_team) else None
                     if move and our_mon:
                         # Normalize by 4.0 to keep values in [0, 1] range for better MLP convergence
-                        vec[cursor] = _expected_multiplier(
-                            move, their_mon, our_mon, hp_tracker, self._ability_priors
-                        ) / 4.0
+                        vec[cursor] = _joint_expectation(type_dist, our_terms[j]) / 4.0
                     cursor += 1
         
         return vec
