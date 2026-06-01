@@ -1,6 +1,6 @@
-# AI v5 — Step 5 (Baby Step): Showdown Sim Bridge
+# AI v6 — Step 5 (Baby Step): Showdown Sim Bridge
 
-The full MCTS design is in `designs/ai_v5/impl_step5_mcts.md`. This document
+The full MCTS design is in `designs/ai_v6/impl_step5_mcts.md`. This document
 describes the minimal first implementation: getting `sim_bridge.js` working and
 validated before touching any tree or rollout logic. Nothing here is throwaway —
 every later piece of Step 5 sits on top of this bridge.

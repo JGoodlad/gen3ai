@@ -1,12 +1,12 @@
 # Implementation: Step 2 — Per-Team Specialisation
 
-Fine-tune one model per top-3 team, starting from the v5 generalist checkpoint, with the
+Fine-tune one model per top-3 team, starting from the v6 generalist checkpoint, with the
 team fixed for the duration of training. The three runs are independent and can run in
 parallel.
 
 ## Motivation
 
-The v5 generalist spreads probability mass over all 32 teams. With a fixed team, the
+The v6 generalist spreads probability mass over all 32 teams. With a fixed team, the
 model can sharpen its understanding of the specific win conditions that team enables:
 a Spikes + Roar team needs Skarmory kept healthy for much longer than usual; a
 Trick Room team has a completely different speed-tier intuition than an offensive team.
@@ -25,13 +25,13 @@ starting configuration rather than the average across all 32.
 Pass the team file directly to `Gen3Teambuilder` as a single-entry pool. The env samples
 from this pool each episode — with only one entry, it always uses the same team.
 
-The opponent continues to draw from the full v4 league pool (PFSP-weighted), so the
+The opponent continues to draw from the full v5 league pool (PFSP-weighted), so the
 model learns to play the fixed team against the full range of opponents it will face on
 the ladder.
 
 ### Hyperparameters
 
-Start from the v5 MCTS checkpoint. Fine-tuning is a shorter run than generalist training:
+Start from the v6 MCTS checkpoint. Fine-tuning is a shorter run than generalist training:
 
 | Parameter | Value |
 |-----------|-------|
@@ -40,11 +40,11 @@ Start from the v5 MCTS checkpoint. Fine-tuning is a shorter run than generalist 
 | `n_envs` | 32 (half of generalist — fixed team reduces variance so fewer envs needed) |
 | `lr` | 1e-4 (lower than generalist — we are sharpening, not relearning) |
 | `ent_coef` | 0.01 (lower entropy target — specialisation should reduce breadth) |
-| `n_steps`, `batch_size`, `n_epochs` | Unchanged from v5 |
+| `n_steps`, `batch_size`, `n_epochs` | Unchanged from v6 |
 
 ### Opponent Sampling
 
-Use the v4 league pool with PFSP sampling (same as league training). The specialised
+Use the v5 league pool with PFSP sampling (same as league training). The specialised
 model should remain capable against all league members, not just the easiest ones.
 
 Optionally, after 5M steps, add the other two specialised team models (once they have

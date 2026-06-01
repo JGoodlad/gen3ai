@@ -72,11 +72,11 @@ sub-item, Phase 5b (true `LiveView` current-board event-fold — `todo_live_batt
 first v4-obs run is now live (the fresh fixed-bot run started 2026-05-31, see the state table
 above) — the retired v3 run was on an older arch that can't load the v4 obs.
 
-> **Folder-vs-content version drift (known).** The v4→v5 relocation bumped the *folder*
-> names but not the *content* — each `ai_vN/` folder's `todo.md` still titles itself "AI
-> v(N−1)" and cross-references `designs/ai_v(N−1)/`. The **folder name is canonical** (and
-> the state table above and these summaries follow it). The ai_v5 folder's own branding has
-> been corrected; v6/v7/v8 in-folder labels are still stale pending a cross-folder sweep.
+> **Folder name is canonical.** The v4→v5 relocation bumped the *folder* names; the in-folder
+> content branding (titles, `designs/ai_vX/` cross-refs, inline "vN" mentions) has since been
+> reconciled to match folder names across v5–v8. The state table above and these summaries
+> follow the folder names. (Older git history predating that reconciliation may still show the
+> pre-relocation labels.)
 
 ### ai_v5
 Self-play / league play. The agent trains against frozen copies of itself (snapshot pool,

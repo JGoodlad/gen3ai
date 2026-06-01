@@ -1,4 +1,4 @@
-# AI v4 — Replay Corpus, Team Prediction, and Ladder-Weighted Training
+# AI v6 — Replay Corpus, Team Prediction, and Ladder-Weighted Training
 
 Two systems with a shared data dependency: a replay scraper that builds a
 corpus of real ladder teams, and a hidden-team predictor that uses that corpus

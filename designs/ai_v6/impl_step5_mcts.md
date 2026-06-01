@@ -2,8 +2,8 @@
 
 This step adds Monte Carlo Tree Search on top of the trained policy and value networks,
 used at **inference time** as a policy improvement operator. The neural network is trained
-entirely via PPO self-play (v3/v4); MCTS is not used to generate training data — that
-comes later in v7 once the Rust sim makes it fast enough.
+entirely via PPO self-play (v3–v5); MCTS is not used to generate training data — that
+comes later in v8 once the Rust sim makes it fast enough.
 
 ---
 
@@ -11,31 +11,31 @@ comes later in v7 once the Rust sim makes it fast enough.
 
 | Version | MCTS role | Simulator | Rollouts/turn |
 |---------|-----------|-----------|---------------|
-| ai_v5 | Inference only (ladder, eval) | Node.js bridge (JS) | ~1 000 |
-| ai_v6 | Inference + very cheap training | Node.js bridge (JS) | ~20 per action in training |
-| ai_v7 | Full training-time MCTS | Rust sim via PyO3 | 50 000+ |
+| ai_v6 | Inference only (ladder, eval) | Node.js bridge (JS) | ~1 000 |
+| ai_v7 | Inference + very cheap training | Node.js bridge (JS) | ~20 per action in training |
+| ai_v8 | Full training-time MCTS | Rust sim via PyO3 | 50 000+ |
 
-v5 proves the approach and ships a working MCTS player. v6 integrates cheap MCTS into the
-training loop. v7 replaces the JS bridge with the Rust sim for a ~50× throughput leap.
+v6 proves the approach and ships a working MCTS player. v7 integrates cheap MCTS into the
+training loop. v8 replaces the JS bridge with the Rust sim for a ~50× throughput leap.
 
 ---
 
 ## Motivation
 
 The PPO policy selects actions by a single forward pass — it does not look ahead. Against
-strong opponents (the league agents from ai_v4, or humans on the ladder), short-horizon
+strong opponents (the league agents from ai_v5, or humans on the ladder), short-horizon
 planning matters: knowing that a predicted switch leads to a favourable matchup three turns
 later changes the current move choice. MCTS provides this lookahead by simulating
 trajectories through the game tree using the policy and value networks as heuristics,
 without requiring the agent to store an explicit model of multi-turn dynamics.
 
-**Why not use MCTS during training in v5?** Pokémon Showdown environment stepping is the
+**Why not use MCTS during training in v6?** Pokémon Showdown environment stepping is the
 bottleneck — each rollout takes ~10ms of env stepping vs. negligible GPU inference. Using
 MCTS to generate training data would reduce sample throughput by ~1000× (one rollout per
 training step instead of one step). With 150M training steps needed, this is not feasible
 with the JS bridge. The paper (Wang 2024) made this explicit: *"simulating the environment
 is very slow... generating gameplay using MCTS would not likely lead to enough samples for
-a neural network to converge."* The Rust sim in v7 changes this calculus.
+a neural network to converge."* The Rust sim in v8 changes this calculus.
 
 ---
 
@@ -66,7 +66,7 @@ With `K=3` and `max_depth=3`, a 6-action turn costs 18 rollouts — completely w
 | 10 | 3 | 60 rollouts | Better Q estimates, same depth |
 | 20 | 5 | 120 rollouts | ~1 s with 20 workers |
 
-Action sampling is the v5 baseline that goes to the ladder first. Full MCTS (Phase 2)
+Action sampling is the v6 baseline that goes to the ladder first. Full MCTS (Phase 2)
 is added incrementally and compared head-to-head against it.
 
 ---
@@ -278,7 +278,7 @@ At the start of each MCTS trajectory:
 3. Run the MCTS trajectory entirely in this fully-observed world.
 
 Different trajectories see different hypotheses, so Q and N are averaged over the
-distribution of plausible opponent teams. The team completion model (from ai_v4/v5 Step 4)
+distribution of plausible opponent teams. The team completion model (from ai_v6 Step 4)
 fills this role for Gen 3 OU.
 
 ---
@@ -391,7 +391,7 @@ logic is unchanged in both phases.
 8. **Time budget**: measure rollouts-per-second with 20 workers at the chosen `max_depth`.
    Target ≥ 100 rollouts/second (≥ 1000 rollouts in 10 s).
 
-9. **Win rate**: MCTSPlayer vs. the best league agent from ai_v4. MCTS should improve
+9. **Win rate**: MCTSPlayer vs. the best league agent from ai_v5. MCTS should improve
    win rate by ≥ 5 pp over the raw PPO policy at the same checkpoint.
 
 ---
@@ -407,16 +407,16 @@ Step 5 is complete when:
 
 ---
 
-## Post-v5 Directions → v6 and v7
+## Post-v6 Directions → v7 and v8
 
-**ai_v6 — Cheap MCTS in Training**:
+**ai_v7 — Cheap MCTS in Training**:
 The Node.js bridge is too slow for full MCTS during PPO data collection, but very shallow
-action sampling (`K=3`, `max_depth=1`) adds only ~30ms per decision. v6 integrates this
+action sampling (`K=3`, `max_depth=1`) adds only ~30ms per decision. v7 integrates this
 into the training loop so the model trains against better-quality action selections from
 both sides. This closes the gap between "policy trained on random actions" and "policy
 trained on MCTS actions" without waiting for the Rust sim.
 
-**ai_v7 — Rust Sim → Training-time MCTS at Scale**:
+**ai_v8 — Rust Sim → Training-time MCTS at Scale**:
 The Rust sim (PyO3, in-process) targets 50 000+ rollouts/turn — enough for deep MCTS
 during training data generation. With the Rust sim, PPO training can use full MCTS to
 select every training-time action, dramatically improving data quality. The final model

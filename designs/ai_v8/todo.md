@@ -1,6 +1,6 @@
-# AI v7 — Todo
+# AI v8 — Todo
 
-**"Rustifying" the battle simulator.** v7 replaces the Node.js MCTS bridge (ai_v5/v6)
+**"Rustifying" the battle simulator.** v7 replaces the Node.js MCTS bridge (ai_v6)
 with a Rust battle simulator called via PyO3. The Rust sim runs in-process with near-zero
 IPC overhead, enabling 50 000+ rollouts per turn rather than ~1 000 with the JS bridge.
 This throughput increase unlocks two capabilities that were impractical before:
@@ -23,9 +23,9 @@ at state construction time so every MCTS rollout knows exactly what it made up.
 
 | Version | Sim | Rollouts/turn (inference) | Training data |
 |---------|-----|--------------------------|---------------|
-| ai_v5 | Node.js bridge | ~1 000 | Raw policy |
-| ai_v6 | Node.js bridge | ~1 000 | K=3 action sampling (shallow) |
-| ai_v7 | Rust sim (PyO3) | 50 000+ | Full MCTS both sides |
+| ai_v6 | Node.js bridge | ~1 000 | Raw policy |
+| ai_v7 | Node.js bridge | ~1 000 | K=3 action sampling (shallow) |
+| ai_v8 | Rust sim (PyO3) | 50 000+ | Full MCTS both sides |
 
 ---
 
@@ -36,7 +36,7 @@ no server, no WebSocket, no `npm run showdown`. Just `require()` the already-com
 `dist/` and expose a newline-delimited JSON protocol over stdin/stdout. This is the
 oracle for all subsequent fuzz testing.
 
-See `designs/ai_v7/impl_step1_showdown_bridge.md`.
+See `designs/ai_v8/impl_step1_showdown_bridge.md`.
 
 **Deliverables:**
 - `src/utils/bridge/sim_battle.js` — persistent Node.js bridge
@@ -53,7 +53,7 @@ damage calc and basic turn resolution, expose via PyO3, and run the first fuzz
 comparison against the bridge. The fuzz harness is Python — it holds both handles
 (bridge subprocess + Rust via PyO3) and diffs their outputs.
 
-See `designs/ai_v7/impl_step2_rust_scaffold.md`.
+See `designs/ai_v8/impl_step2_rust_scaffold.md`.
 
 **Deliverables:**
 - `src/sim/` — Rust crate (`state.rs`, `prng.rs`, `damage.rs`, `turn.rs`, `python.rs`)
@@ -70,7 +70,7 @@ failures — no speculative implementation. Mechanic groups are largely independ
 after the damage formula is confirmed — parallel agents can tackle status, items,
 hazards, volatiles, weather, complex moves, and abilities concurrently.
 
-See `designs/ai_v7/impl_step3_gen3_mechanics.md`.
+See `designs/ai_v8/impl_step3_gen3_mechanics.md`.
 
 **Deliverables:**
 - `src/sim/src/turn.rs` — all mechanic implementations
@@ -91,12 +91,12 @@ both adapters produce identical observation vectors.
 
 ## Step 5 — MCTS with Rust Sim (Inference)
 
-Replace the ai_v5/v6 Node.js bridge with the Rust sim for inference-time MCTS.
+Replace the ai_v6 Node.js bridge with the Rust sim for inference-time MCTS.
 `fork()` becomes `rust_state.clone()` (a memcpy — no serialization, no IPC).
 Leaf evaluation is batched (accumulate K leaves → one network call, amortizing GPU
 round-trip latency). `SampledValues` makes all hidden-state guesses explicit.
 
-**Key changes vs ai_v5 MCTS:**
+**Key changes vs ai_v6 MCTS:**
 - `SimClient` → in-process `rust_state.clone()` (fork is free)
 - `step()` → `rust_sim.step_turn(state, p1, p2)` (no subprocess, no JSON)
 - Leaf batch size K replaces the per-turn neural-net call; tune to GPU latency
@@ -109,28 +109,28 @@ round-trip latency). `SampledValues` makes all hidden-state guesses explicit.
 
 Use the Rust sim to generate PPO training samples via full MCTS on both sides. Both
 the learning agent and its opponents select training-time actions by running N rollouts
-from the current state, replacing the raw policy or the shallow action sampling from v6.
+from the current state, replacing the raw policy or the shallow action sampling from v7.
 
 With the Rust sim, the overhead is ~5–10× vs. raw policy training (compared to ~1 000×
 with the JS bridge), making this feasible at large scale.
 
 **Training modes to benchmark:**
-- **Raw policy** (v5 baseline): single forward pass per decision
-- **Action sampling K=3** (v6): 3 rollouts per legal action, depth 1
-- **MCTS N=1 000** (v7): full tree search, depth 5, one-side (learning agent only)
-- **MCTS N=1 000 both sides** (v7): full tree search for both players in self-play
+- **Raw policy** (v6 baseline): single forward pass per decision
+- **Action sampling K=3** (v7): 3 rollouts per legal action, depth 1
+- **MCTS N=1 000** (v8): full tree search, depth 5, one-side (learning agent only)
+- **MCTS N=1 000 both sides** (v8): full tree search for both players in self-play
 
 Each mode produces different training data quality at different throughput costs.
-Measure win rate vs. v6 league after 15M steps per mode.
+Measure win rate vs. v7 league after 15M steps per mode.
 
 ### 6b — Evaluation + Tuning
 
-Benchmark rollout throughput vs. the ai_v5/v6 Node bridge. Ablate `max_depth` and leaf
-batch size K. Measure win rate vs. v6 league.
+Benchmark rollout throughput vs. the ai_v6 Node bridge. Ablate `max_depth` and leaf
+batch size K. Measure win rate vs. v7 league.
 
 **Targets:**
-- ≥ 50k rollouts/turn at inference (vs ~1k in ai_v5/v6)
-- Win rate ≥ v6 MCTS baseline with equal compute
+- ≥ 50k rollouts/turn at inference (vs ~1k in ai_v6)
+- Win rate ≥ v7 MCTS baseline with equal compute
 - Training throughput ≥ 50k steps/hour with MCTS-quality samples
 
 ---

@@ -3,7 +3,7 @@
 Improve the frozen embedding tables that the team completion model (Step 3/4) loads from
 the PPO checkpoint. Two options, sequenced by cost.
 
-See full design: `designs/ai_v5/design_ppo_embedding_improvements.md`
+See full design: `designs/ai_v6/design_ppo_embedding_improvements.md`
 
 ---
 

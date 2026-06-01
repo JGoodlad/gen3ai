@@ -1,4 +1,4 @@
-# AI v4 — Team Completion Model
+# AI v6 — Team Completion Model
 
 The agent currently has no model of what the opponent is carrying. During MCTS rollouts
 (and even without MCTS, for planning purposes), we need to sample plausible complete

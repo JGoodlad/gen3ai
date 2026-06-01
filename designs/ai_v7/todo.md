@@ -1,21 +1,21 @@
-# AI v6 — Todo
+# AI v7 — Todo
 
-The generalist trained in v3–v5 is a strong all-rounder. v6 has two goals: (1) identify
+The generalist trained in v3–v6 is a strong all-rounder. v7 has two goals: (1) identify
 the best teams and specialise a model per team, then take them to the ladder; (2) integrate
 cheap MCTS into the training loop so the final model trains against better-quality action
-selections on both sides — bridging toward v7's full training-time MCTS via the Rust sim.
+selections on both sides — bridging toward v8.s full training-time MCTS via the Rust sim.
 
 ---
 
 ## Step 1 — Team Evaluation
 
-Run the v5 MCTS agent through all 32 sample teams against the v4 league pool, measuring
-win rate per team. Select the top 3. See `designs/ai_v6/impl_step1_team_eval.md`.
+Run the v6 MCTS agent through all 32 sample teams against the v5 league pool, measuring
+win rate per team. Select the top 3. See `designs/ai_v7/impl_step1_team_eval.md`.
 
 **Design questions to resolve:**
 - **Games per team**: 200 gives ~±7% confidence interval at 50% win rate. Increase to
   500 if rankings are tight (within a few percent of each other).
-- **Opponent pool**: use the full v4 league (PFSP-weighted) or a fixed benchmark set
+- **Opponent pool**: use the full v5 league (PFSP-weighted) or a fixed benchmark set
   (e.g., best league snapshot + SimpleHeuristicsPlayer + MCTSPlayer)? Fixed benchmark is
   more reproducible; PFSP-weighted is more realistic.
 
@@ -23,11 +23,11 @@ win rate per team. Select the top 3. See `designs/ai_v6/impl_step1_team_eval.md`
 
 ## Step 2 — Per-Team Specialisation
 
-Fine-tune one model per top-3 team, starting from the v5 generalist checkpoint, with the
-team fixed for the duration. See `designs/ai_v6/impl_step2_specialisation.md`.
+Fine-tune one model per top-3 team, starting from the v6 generalist checkpoint, with the
+team fixed for the duration. See `designs/ai_v7/impl_step2_specialisation.md`.
 
 **Design questions to resolve:**
-- **Opponent distribution during fine-tuning**: league pool (as in v4 self-play) or the
+- **Opponent distribution during fine-tuning**: league pool (as in v5 self-play) or the
   other two specialised teams as additional opponents? The latter adds within-stable
   coverage but risks over-fitting to the stable matchups.
 - **Run length**: 10–15M steps per team. Start at 10M; extend if win rate is still rising.
@@ -40,7 +40,7 @@ team fixed for the duration. See `designs/ai_v6/impl_step2_specialisation.md`.
 
 Deploy each of the three specialised MCTS players on the real Showdown ladder. Track ELO
 per team and use the results to decide which team is the primary ladder entry.
-See `designs/ai_v6/impl_step3_ladder.md`.
+See `designs/ai_v7/impl_step3_ladder.md`.
 
 **Design questions to resolve:**
 - **Account strategy**: one account per team (clean ELO per team), or rotate teams on a
@@ -54,7 +54,7 @@ See `designs/ai_v6/impl_step3_ladder.md`.
 ## Step 4 — Cheap MCTS in Training
 
 Integrate shallow action sampling into the PPO self-play data collection loop. The Node.js
-bridge (from ai_v5 Step 5) is too slow for deep MCTS during training, but a very shallow
+bridge (from ai_v6 Step 5) is too slow for deep MCTS during training, but a very shallow
 sweep — `K=3` rollouts per legal action, `max_depth=1` — adds only ~30ms per decision and
 requires no changes to the bridge protocol.
 
@@ -83,11 +83,11 @@ positively when the model is later used with full MCTS at inference time.
   only for our agent and use the raw policy for the opponent.
 - **League opponent**: should league agents also use action sampling, or only the
   learning agent? League agents with sampling are harder opponents; without sampling they
-  are consistent with how they were evaluated in v5.
+  are consistent with how they were evaluated in v6.
 
-**Stopping criterion:** v6 Step 4 is complete when:
+**Stopping criterion:** v7 Step 4 is complete when:
 - Training with `K=3, max_depth=1` sampling runs without throughput regression > 2×
-- Win rate (v5 checkpoint evaluated with full MCTS) does not regress — the model trained
+- Win rate (v6 checkpoint evaluated with full MCTS) does not regress — the model trained
   with cheap MCTS should be at least as strong as the raw-policy baseline
 - Ladder ELO (with full MCTS at inference) is ≥ Step 3 baseline
 
@@ -95,7 +95,7 @@ positively when the model is later used with full MCTS at inference time.
 
 ## Future Work — Meta Alignment
 
-The current setup measures win rate against the v4 league, which is a proxy for ladder
+The current setup measures win rate against the v5 league, which is a proxy for ladder
 performance. The league may not reflect the real Gen 3 OU meta distribution — certain
 teams and strategies appear far more frequently on the ladder than in self-play.
 
@@ -109,15 +109,15 @@ ranking may shift significantly once the opponent distribution reflects real lad
 **Meta self-alignment**: continuously update the opponent pool during specialisation
 fine-tuning using replays collected from the ladder. The agent trains against what it
 actually encounters, closing the gap between league proxy and ladder reality. This is a
-training loop, not a one-shot evaluation — it requires the ladder daemon (v5 Step 1) to
+training loop, not a one-shot evaluation — it requires the ladder daemon (v6 Step 1) to
 run concurrently with fine-tuning.
 
 ---
 
-## Handoff to v7
+## Handoff to v8
 
-v6 ends with a strong specialised agent on the ladder and the infrastructure for cheap
-MCTS in training. v7 picks up here by replacing the Node.js bridge with a Rust sim
+v7 ends with a strong specialised agent on the ladder and the infrastructure for cheap
+MCTS in training. v8 picks up here by replacing the Node.js bridge with a Rust sim
 (PyO3, in-process), enabling:
 - 50 000+ rollouts/turn at inference (vs. ~1 000 with the JS bridge)
 - Full MCTS during training data generation (previously blocked by JS bridge throughput)

@@ -1,11 +1,11 @@
 # Implementation: Step 1 — Team Evaluation
 
-Run the v5 MCTS agent through all 32 sample teams, measure win rate per team against the
-v4 league pool, and select the top 3 for specialisation.
+Run the v6 MCTS agent through all 32 sample teams, measure win rate per team against the
+v5 league pool, and select the top 3 for specialisation.
 
 ## Motivation
 
-The v5 generalist trains with a random team each episode, so it learns to play well
+The v6 generalist trains with a random team each episode, so it learns to play well
 across the full distribution of 32 sample teams. But "well on average" hides real
 variance — some teams play to the agent's strengths (proactive switch decisions, Spikes
 pressure) and others expose its weaknesses (passive mons that benefit from more precise
@@ -22,8 +22,8 @@ This step requires no training — it is pure evaluation and takes a few hours.
 
 For each of the 32 sample teams, run `N_GAMES` (default 200) battles:
 
-- **Our agent**: v5 MCTS player, fixed to the team under evaluation
-- **Opponent**: drawn from the v4 league pool using PFSP sampling (same distribution
+- **Our agent**: v6 MCTS player, fixed to the team under evaluation
+- **Opponent**: drawn from the v5 league pool using PFSP sampling (same distribution
   used during league training), so the evaluation reflects the range of opponents the
   specialised model will face
 
@@ -90,7 +90,7 @@ Internally:
 3. Collect results and compute metrics.
 4. Write `results.json` and print a ranked table to stdout.
 
-The MCTS player is used for our side (`MCTSPlayer` from v5). League opponents use their
+The MCTS player is used for our side (`MCTSPlayer` from v6). League opponents use their
 own `RLPlayer` (inference only, no MCTS — they are the training-time opponents, not
 another MCTS agent).
 
@@ -121,7 +121,7 @@ collected into a shared list via `multiprocessing.Queue`.
 
 1. **Sanity check**: run 20 games with a known-strong team (e.g., the team the v3/v4
    agent was already informally tested with). Win rate should be ≥ 65% — if lower, the
-   v5 MCTS player may not be calibrated yet.
+   v6 MCTS player may not be calibrated yet.
 
 2. **Variance check**: run the same team twice with different random seeds. Win rates
    should be within 5% of each other. Larger variance indicates MCTS stochasticity is

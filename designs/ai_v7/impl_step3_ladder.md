@@ -35,7 +35,7 @@ these from env vars in `play_ladder.py`.
 All ladder traffic routes through `proxy.g5d.io` (the existing SSH tunnel — see
 `GCP_INFRASTRUCTURE.md`). Pass `--proxy socks5h://127.0.0.1:1080` to `play_ladder.py`.
 This prevents the home IP from being exposed to Showdown and keeps the tunnel consistent
-with the replay collector setup from v5 Step 1.
+with the replay collector setup from v6 Step 1.
 
 ---
 
@@ -85,9 +85,9 @@ games. This indicates the model has found its natural rating for that team.
 ## Replay Collection
 
 All ladder replays are saved to `replays/ladder/team_{a,b,c}/` in the same `.log` format
-as the v5 spectator daemon. These feed into:
+as the v6 spectator daemon. These feed into:
 
-1. **Team completion model updates** (v5 Step 3): ladder opponents run different teams
+1. **Team completion model updates** (v6 Step 3): ladder opponents run different teams
    from the league — more replays improve the completion model's prior over real
    ladder compositions.
 
@@ -136,7 +136,7 @@ point for future meta-alignment iterations.
    user page — IP should show the GCP VM's static IP, not the home IP).
 
 3. **Replay integrity**: after 10 games, verify that saved `.log` files parse cleanly
-   through `SpectatedBattle` (the same path the v5 daemon already exercises).
+   through `SpectatedBattle` (the same path the v6 daemon already exercises).
 
 ---
 
@@ -146,6 +146,6 @@ Step 3 is complete when all three teams have run 100+ ladder battles and ELOs ha
 stabilised. The primary entry team is identified. Replays are archived in
 `replays/ladder/` for future meta-alignment work.
 
-**This is the end of the v6 arc.** The agent is now on the ladder with a real ELO.
+**This is the end of the v7 arc.** The agent is now on the ladder with a real ELO.
 Future iterations (meta-alignment, ladder-weighted team selection) are documented in
-`designs/ai_v6/todo.md` under Future Work.
+`designs/ai_v7/todo.md` under Future Work.

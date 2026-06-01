@@ -118,7 +118,7 @@ of action-value encoding, degrading win rate. Start at 0.05 and monitor TensorBo
 
 ## Relationship to BC Pre-Training (Step 2)
 
-BC pre-training (Step 2 of ai_v5) is the most principled long-term solution: training
+BC pre-training (Step 2 of ai_v6) is the most principled long-term solution: training
 on human replay data forces embeddings to encode team composition through action imitation,
 not just reward. When Step 2 is complete, retrain team completion from the BC+RL
 checkpoint. The improvement from a BC-warm-started embedding is expected to substantially
