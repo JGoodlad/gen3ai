@@ -1,36 +1,51 @@
-# AI v4 — Todo
+# AI v5 — Todo
+
+Self-play / league play. The agent trains against frozen copies of itself (Step 1, **landed**),
+then against a structured league with exploiters (Step 2, **designed**). Reward annealing,
+league tooling, and a self-play pre-flight checklist are the supporting design docs.
+
+| Doc | State |
+|-----|-------|
+| `impl_step1_self_play.md` | ✓ built (code landed, not yet run — gated behind ai_v4 pathology hunting) |
+| `design_selfplay_preflight.md` | exit criterion + flip checklist for turning `--self-play` on |
+| `design_reward_annealing.md` | league prerequisite — three-tier shaping anneal |
+| `impl_step2_league_play.md` | forward design — two-pool stable, PFSP, Nash/RPP progress |
+| `design_league_tooling.md` | payoff-matrix runner, Nash/RPP metrics, inspector, descriptors |
 
 ---
 
-## Step 1 — Self-Play ✓ DONE
+## Step 1 — Self-Play ✓ DONE (code) — not yet run
 
 Train the agent against frozen copies of itself rather than against fixed heuristics.
 Introduces a snapshot pool, win-rate gating, heuristic fraction curriculum, and sentinel
-monotonicity to prevent strategy collapse. See `designs/ai_v4/impl_step1_self_play.md`.
+monotonicity to prevent strategy collapse. See `designs/ai_v5/impl_step1_self_play.md`.
+**Flipping it on** is gated by the pathology-hunting phase — exit criterion and checklist in
+`designs/ai_v5/design_selfplay_preflight.md`.
 
 ### Deferred / Deliberately Not Done
 
-**Hot-swap opponents mid-run** (low priority)
+**Hot-swap opponents mid-run** (now a Step 2 prerequisite)
 Currently, pool opponents refresh only at launcher restarts (~every 2.5h). A
-`_staged_opponent_path` mechanism in `Gen3Env.reset()` would allow the self-play callback
-to swap opponents between episodes without a restart, giving the agent fresher competition
-sooner after a new snapshot is promoted. Deferred until pool diversity becomes the
-bottleneck.
+`_staged_opponent_path` mechanism in `Gen3Env.reset()` would allow swapping opponents between
+episodes without a restart. Optional for Step 1; **required** for league play Option A (the
+exploiter/main alternation needs per-episode opponent swaps) — see
+`designs/ai_v5/impl_step2_league_play.md` → Training Coordination.
 
-**ELO tracking** (replaced — won't do in current form)
-The original design specified per-snapshot ELO ratings, `elo_state.json`, and Glicko-style
-updates. This was replaced by `win_rate_vs_bots` as the curriculum signal and
-`eval/win_rate_vs_pool` for promotion gating. Win rate is simpler, requires no per-snapshot
-state, and is directly interpretable. The ELO "plateau as completion signal" is replaced by
-watching `eval/win_rate_vs_bots` flatten near 85%.
+**ELO tracking** (resolved — Nash + Glicko-2, not plain ELO)
+For Step 1, `win_rate_vs_bots` (a *fixed* reference) is the progress signal — no per-snapshot
+state needed. For the league era, the opponent pool is non-stationary, so progress is measured
+by Nash **relative population performance** + `win_rate_vs_bots`, with **Glicko-2** (not plain
+ELO) as optional non-gating human-readable sugar. Plain ELO is rejected: it misleads under the
+non-transitive dynamics league play creates. See `designs/ai_v5/impl_step2_league_play.md`
+(Progress & diversity measurement) and `design_league_tooling.md` (metrics module).
 
-**Reward annealing** (deferred — needed before league play)
-The design specified `--reward-anneal-start` / `--reward-anneal-end` flags to gradually
-reduce shaping signals (switch subsidies, pivot bonuses, matchup penalties, etc.) toward
-zero as the agent matures. Two reasons this matters: (1) prevents reward hacking of shaping
-signals at the expense of winning; (2) the value head must estimate win probability, not
-shaped reward, for MCTS in v5. Must be implemented before league play begins. Trigger:
-`eval/win_rate_vs_bots` flat for ≥ 10M steps.
+**Reward annealing** (designed — needed before league play)
+Now specified in `designs/ai_v5/design_reward_annealing.md`: `--reward-anneal-start` /
+`--reward-anneal-end` flags drive a three-tier anneal — strategic priors (attack/switch/field
+shaping) → 0, outcome proxies (HP/faint/win_loss) kept, anti-degenerate taxes floored. Two
+reasons it matters: (1) prevents reward-hacking shaping at the expense of winning; (2) the value
+head must estimate win probability, not shaped reward, for MCTS in v6. Build before league play.
+Trigger: `eval/win_rate_vs_bots` flat for ≥ 10M steps.
 
 **Demotion threshold** (replaced by regression guard)
 The original design had a hard stop if `win_rate_vs_pool` dropped below 40%. This was
@@ -56,10 +71,19 @@ tracking if forgetting becomes a real failure mode.
 
 Extend self-play into a structured league with dedicated exploiter agents and prioritised
 opponent sampling. Exploiters find weaknesses in the Main Agent; the Main Agent must then
-generalise past those exploits. See `designs/ai_v4/impl_step2_league_play.md`.
+generalise past those exploits. See `designs/ai_v5/impl_step2_league_play.md`.
 
 **Prerequisites before starting Step 2:**
 - `eval/win_rate_vs_bots` flat for ≥ 10M steps (self-play curriculum saturated)
 - `eval/sentinel_monotonicity` ≥ 0.6 (pool is not cycling)
-- Reward annealing at least 50% complete (value head needs to learn win probability,
-  not shaped reward, for MCTS in v5)
+- Reward annealing at least 50% complete — `design_reward_annealing.md` (value head must
+  learn win probability, not shaped reward, for MCTS in v6)
+- Payoff-matrix runner + Nash/RPP metrics built — `design_league_tooling.md` (the league's
+  diversity-alarm thresholds are meaningless without the matrix)
+- Hot-swap opponent path in `Gen3Env` (Option A needs per-episode opponent swaps)
+
+**New code (see the two design docs):**
+- Two-pool `Stable` (recency + permanent), hardened promotion, PFSP sampler, exploiter
+  manager, `league_callback`, `train_league.py`
+- `payoff_matrix.py`, `league_metrics.py` (Nash/RPP/non-transitivity/Glicko-2),
+  `behavioral_descriptors.py`, `league_report.py`

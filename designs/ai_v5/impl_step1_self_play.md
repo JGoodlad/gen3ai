@@ -216,11 +216,17 @@ and all self-play code paths are completely dormant.
 See `todo.md` for a full list of features from the original design that were deferred or
 replaced. Key decisions:
 
-- **No ELO tracking**: win_rate_vs_bots serves as the curriculum signal and is simpler,
-  more interpretable, and does not require per-snapshot state. ELO adds complexity without
-  clear benefit at this stage.
+- **No ELO tracking**: `win_rate_vs_bots` (a *fixed* reference) is the curriculum signal —
+  simpler, more interpretable, and stateless. ELO adds nothing while the reference is fixed.
+  The league-era resolution (where the opponent pool becomes non-stationary, so a stationary
+  progress metric is needed) is Nash relative population performance + `win_rate_vs_bots`,
+  with Glicko-2 as optional non-gating sugar — see `impl_step2_league_play.md` and
+  `design_league_tooling.md`. Plain ELO is *not* used: it misleads under the non-transitive
+  dynamics league play creates.
 - **No demotion threshold**: replaced by the regression guard, which is softer (warning,
   not hard stop) and more actionable.
-- **No reward annealing**: deferred; will be addressed before league play begins.
+- **No reward annealing**: deferred to the league-play prerequisite — now designed in
+  `design_reward_annealing.md` (three-tier: anneal strategic priors to 0, keep outcome
+  proxies, floor anti-degenerate taxes). Trigger when `win_rate_vs_bots` is flat ≥ 10M steps.
 - **No hot-swap**: opponents swap at launcher restart (~2.5h). The `_staged_opponent_path`
   mechanism is documented as a future extension in `todo.md`.

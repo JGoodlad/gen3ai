@@ -72,23 +72,40 @@ sub-item, Phase 5b (true `LiveView` current-board event-fold — `todo_live_batt
 first v4-obs run is now live (the fresh fixed-bot run started 2026-05-31, see the state table
 above) — the retired v3 run was on an older arch that can't load the v4 obs.
 
+> **Folder-vs-content version drift (known).** The v4→v5 relocation bumped the *folder*
+> names but not the *content* — each `ai_vN/` folder's `todo.md` still titles itself "AI
+> v(N−1)" and cross-references `designs/ai_v(N−1)/`. The **folder name is canonical** (and
+> the state table above and these summaries follow it). The ai_v5 folder's own branding has
+> been corrected; v6/v7/v8 in-folder labels are still stale pending a cross-folder sweep.
+
 ### ai_v5
-Self-play / league play, then MCTS at inference + behavioural cloning from human replays.
-**Self-play and league** (relocated here from the original ai_v4 plan) lead the version: the
-agent trains against frozen copies of itself (snapshot pool, win-rate gating, sentinel
-monotonicity — Step 1), then league play with exploiters (Step 2). A prerequisite for league
-play is reward annealing ≥ 50% complete so the value head learns win probability. With that in
-place: BC pre-training from the (already-implemented) replay collection pipeline, then MCTS
-integration — Wang (2024) found MCTS gave 78.6% → 90.8% vs Heuristic, the biggest single
-untapped lever.
+Self-play / league play. The agent trains against frozen copies of itself (snapshot pool,
+win-rate gating, sentinel monotonicity — Step 1, **code landed, not yet run**), then league
+play with exploiters, PFSP, and a two-pool stable (Step 2, **forward design**). Prerequisites,
+both designed here: **reward annealing** (`design_reward_annealing.md`, so the value head
+learns win probability) and the **league tooling** (`design_league_tooling.md` — the
+payoff-matrix runner + Nash/RPP/diversity metrics). Progress is measured by `win_rate_vs_bots`
++ Nash relative population performance (not plain ELO). Relocated here from the original ai_v4
+plan.
 
 ### ai_v6
-Specialisation and ladder play. Train team-specific models from the v3–v5 generalist,
-then take them to the ranked ladder. Also integrates MCTS into the training loop.
+MCTS at inference + the world model that feeds it. Replay collection (**landed** — daemon
+running), behavioural cloning from human replays, the **team-completion model** (masked-slot
+prediction = the PIMC world-sampling step), the Node.js sim bridge, and MCTS itself
+(inference-time policy-improvement operator). Wang (2024) found MCTS gave 78.6% → 90.8% vs
+Heuristic — the biggest single untapped lever. Also: surgical checkpoint transfer and PPO
+embedding improvements.
 
 ### ai_v7
-Rust battle simulator (via PyO3). Replaces the Node.js MCTS bridge for ~50× more MCTS
-rollouts per turn. Pure performance work — game mechanics unchanged.
+Specialisation and ladder play. Evaluate the v6 MCTS generalist across the 32 sample teams,
+fine-tune a model per top team, and take them to the ranked Showdown ladder. Also integrates
+**cheap** MCTS (shallow K=3 action sampling, depth 1) into the training loop.
+
+### ai_v8
+Rust battle simulator (via PyO3). Replaces the Node.js MCTS bridge for ~50× more rollouts per
+turn — unlocking deep MCTS at inference and full MCTS during training-data generation. Game
+mechanics unchanged; built mechanic-by-mechanic and validated against the bridge via fuzz
+testing (10k battles, zero divergence).
 
 ---
 
