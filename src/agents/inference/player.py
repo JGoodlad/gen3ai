@@ -18,7 +18,7 @@ class ShowdownConnectionError(RuntimeError):
 from agents.battle.gen3_battle import Gen3Battle
 from agents.battle.live_view import LegalActions
 
-from agents.action.mapper import Gen3ActionMapper
+from agents.action.mapper import Gen3ActionMapper, StaleDecisionError
 from agents.action.mask_generator import Gen3ActionMasker
 from agents.observation.turn_delta_encoder import TurnDeltaEncoder
 from agents.training.episode_tracker import EpisodeTracker
@@ -164,7 +164,9 @@ class RLPlayer(Gen3Player):
     def __init__(self, model, team, battle_format, server_configuration,
                  mappings=None, account_configuration=None,
                  stall_config: Optional[StallConfig] = None,
-                 max_concurrent_battles=10, **kwargs):
+                 max_concurrent_battles=10,
+                 stochastic: bool = True, temperature: float = 1.0,
+                 strict_decision: bool = True, **kwargs):
         super().__init__(
             observation_encoder=None,
             mappings=mappings,
@@ -177,8 +179,26 @@ class RLPlayer(Gen3Player):
             **kwargs,
         )
         self.model = model
+        # Stochastic (temperature-sampled) by DEFAULT — opponents and ordinary play
+        # sample the policy's full action distribution (richer, less exploitable than
+        # always-greedy). Eval/measurement players pass stochastic=False explicitly so
+        # win_rate_vs_bots / win_rate_vs_pool stay stable, comparable control signals.
+        # `temperature` scales the sampling logits: 1.0 = the policy's own distribution,
+        # >1 flatter (more random), <1 sharper (toward argmax). Ignored when not stochastic.
+        self._stochastic = stochastic
+        self._temperature = temperature
+        # When False, tolerate a stale decision context (StaleDecisionError) by deferring
+        # to the default order instead of raising. Set False for self-play TRAINING
+        # opponents (polled on the training thread while POKE_LOOP mutates their battle);
+        # the trainee and eval stay strict (crash-over-corruption).
+        self._strict_decision = strict_decision
+        # Default-rate telemetry (read via the env wrapper for self-play opponents):
+        # total decision calls, total default deferrals, and the async-race subset.
+        self._n_decisions = 0
+        self._n_defaults = 0
+        self._n_stale_defaults = 0
 
-    def _predict_best_action(self, battle, stochastic=False, need_aux=True):
+    def _predict_best_action(self, battle, stochastic=False, need_aux=True, temperature=1.0):
         """Pick the best legal action for `battle`.
 
         `need_aux` gates the work that ONLY the forensic recorder consumes:
@@ -192,6 +212,14 @@ class RLPlayer(Gen3Player):
         obs = obs_dict["observation"]
         mask = obs_dict["action_mask"]
 
+        # No legal action this call — e.g. SingleAgentWrapper polls the opponent during
+        # the OTHER agent's forced-switch window, so this battle's request is momentarily
+        # empty. embed_battle() skips recording a decision context when the mask is all-zero,
+        # so acting would assert on a stale ctx. Signal 'no decision' (idx=None) → the caller
+        # defers to poke-env's default order, exactly as the heuristic opponents do.
+        if int(mask.sum()) == 0:
+            return None, None, mask
+
         obs_batched = np.expand_dims(obs, axis=0)
         mask_batched = np.expand_dims(mask, axis=0)
 
@@ -204,7 +232,11 @@ class RLPlayer(Gen3Player):
             masked_logits = logits + (mask_tensor - 1.0) * 1e9
 
             if stochastic:
-                idx = torch.distributions.Categorical(logits=masked_logits).sample().item()
+                # Temperature-scaled sampling. The -1e9 mask offset stays hugely
+                # negative after dividing by any positive temperature, so illegal
+                # actions remain masked regardless of T.
+                sample_logits = masked_logits / temperature if temperature != 1.0 else masked_logits
+                idx = torch.distributions.Categorical(logits=sample_logits).sample().item()
             else:
                 idx = torch.argmax(masked_logits, dim=1).item()
 
@@ -232,5 +264,18 @@ class RLPlayer(Gen3Player):
         forfeit = self._handle_stall(battle, "INFERENCE_STALL")
         if forfeit:
             return forfeit
-        idx, _, _ = self._predict_best_action(battle, need_aux=False)
-        return self.action_to_order(idx, battle)
+        self._n_decisions += 1
+        idx, _, _ = self._predict_best_action(
+            battle, stochastic=self._stochastic, need_aux=False, temperature=self._temperature
+        )
+        if idx is None:
+            self._n_defaults += 1
+            return self.choose_default_move()
+        try:
+            return self.action_to_order(idx, battle)
+        except StaleDecisionError:
+            if self._strict_decision:
+                raise
+            self._n_defaults += 1
+            self._n_stale_defaults += 1
+            return self.choose_default_move()

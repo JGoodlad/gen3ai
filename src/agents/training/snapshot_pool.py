@@ -193,6 +193,12 @@ class SnapshotPool:
     def _write(self, model: MaskablePPO, step: int, pinned: bool) -> SnapshotEntry:
         path = self.pool_dir / f"snapshot_{step:012d}.zip"
         model.save(str(path))
+        # Drop a shared model_config.json next to the snapshots so load_model_snapshot()
+        # — used by BOTH eval sentinels and the training-env opponents — performs a REAL
+        # architecture compatibility check instead of silently skipping it (every snapshot
+        # in a pool shares this run's current_version). Without it, a stale-arch snapshot
+        # would load with mismatched weights instead of a clean ModelVersionError.
+        (self.pool_dir / "model_config.json").write_text(self._current_version.to_json())
         entry = SnapshotEntry(path=path, step=step, pinned=pinned)
         # Replace any existing entry at this step (idempotent re-seed)
         self._entries = [e for e in self._entries if e.step != step]

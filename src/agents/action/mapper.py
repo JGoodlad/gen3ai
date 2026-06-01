@@ -32,6 +32,15 @@ if TYPE_CHECKING:
     from poke_env.player.battle_order import BattleOrder
 
 
+class StaleDecisionError(RuntimeError):
+    """The latched decision context no longer matches the live battle — poke-env
+    processed a background message and the request/turn shifted under us between
+    embed_battle() and action_to_order(). For the TRAINEE this is fatal (acting would
+    corrupt the training signal). A self-play OPPONENT, polled on the training thread
+    while POKE_LOOP mutates its battle, can hit this benignly and should defer to a
+    default order instead of crashing the whole run."""
+
+
 class Gen3ActionMapper:
     """Maps the 11-action discrete index to/from poke-env battle orders, through the
     server-authoritative :class:`LegalActions` snapshot."""
@@ -141,7 +150,7 @@ class Gen3ActionMapper:
                 "get_mask() / embed_battle() must run before action_to_order()."
             )
         if ctx.turn != battle.turn:
-            raise RuntimeError(
+            raise StaleDecisionError(
                 f"Decision context is from turn {ctx.turn} but current turn is "
                 f"{battle.turn}. get_mask() / embed_battle() must run before "
                 "action_to_order()."
@@ -150,7 +159,7 @@ class Gen3ActionMapper:
         if legal is not None:
             current = LegalActions.from_battle(battle).move_ids
             if tuple(legal.move_ids) != tuple(current):
-                raise RuntimeError(
+                raise StaleDecisionError(
                     f"Mid-decision state change at turn {battle.turn}: "
                     f"latched={list(legal.move_ids)}, server={list(current)}"
                 )

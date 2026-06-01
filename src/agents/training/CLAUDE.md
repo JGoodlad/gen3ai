@@ -62,6 +62,44 @@ in the trainer). Behaviors:
 Eval concurrency in the worker is `_EVAL_SUBPROCESS_CONCURRENCY` (5/opponent) — low so
 the shared server isn't flooded while training also uses it.
 
+## Self-play opponents (`--self-play`, gated behind pathology hunting)
+
+When `--self-play` is set, `SelfPlayCallback` replaces `PerOpponentEvalCallback` and the
+training opponents become frozen snapshots of the agent itself, drawn from a directory-backed
+`SnapshotPool` (`snapshot_pool.py`; state reconstructed from `<run_dir>/snapshots/` on every
+restart — no manifest). Design lives in `designs/ai_v5/`. Key behaviors:
+
+- **Opponents sample, they don't argmax.** Training opponents are built with `stochastic=True`
+  (now the `RLPlayer` default) so the learner trains against the policy's full action
+  distribution — a richer, less-exploitable signal than the greedy move. Temperature is
+  `--self-play-temp` (default `1.0` = the policy's own distribution; >1 flatter). **Eval and
+  measurement players stay greedy**: the measured trainee, the pool sentinels, and the bot-eval
+  players pass `stochastic=False` explicitly, so `win_rate_vs_bots` (curriculum) and
+  `win_rate_vs_pool` (promotion) remain stable, comparable control signals.
+- **Opponent snapshots are version-checked.** They load via `load_model_snapshot` (not a raw
+  `MaskablePPO.load`), and `SnapshotPool` writes a shared `model_config.json` next to its
+  snapshots, so an arch-mismatched snapshot fails with a clean `ModelVersionError` instead of
+  loading mismatched weights.
+- **The opponent tolerates a stale/no-decision; the trainee never does** (correctness seam).
+  `SingleAgentWrapper` polls the opponent's `choose_move` on the *training* thread while
+  POKE_LOOP mutates its battle, so it can read a racing or momentarily-empty request. The
+  opponent is built `strict_decision=False`: an all-zero mask returns `idx=None` and a
+  `StaleDecisionError` from `assert_decision_current` is caught — both defer to
+  `choose_default_move()`, exactly like the heuristic opponents. The **trainee stays strict**
+  (`gen3_env.py` calls `assert_decision_current` with no fallback → crash-over-corruption), so
+  its `(obs, action)` labels are never stale. The opponent is a frozen policy that contributes
+  **no** training labels, so an occasional default move is faithful environment dynamics, not
+  garbage-in. (`StaleDecisionError` lives in `agents/action/mapper.py`.)
+- **Self-play engages in the first process, not only after a restart.** The env is built before
+  the model exists (the model needs the env's spaces), so on the first self-play process
+  `_maybe_engage_self_play` seeds the pool from the loaded weights and rebuilds the env with
+  pool opponents (then `set_env`). The worker watchdog is started *after* this, just before
+  `learn()`. Later restarts find the pool already populated and skip the rebuild.
+- **`--debug --self-play` exercises the real path** (seed → pool eval → promotion) on a fast
+  eval cadence, so a CPU smoke against a `9XXX` server validates the wiring without disrupting
+  the `:8001` training server. `selfplay_opponent_fuzz_test.py` covers the opponent load + legal
+  play (both modes) + version check in-process via the local bridge (no server).
+
 ## Showdown port threading (the `server_config` seam)
 
 `train_rl_agent.py --showdown-port <port>` builds **one** `ServerConfiguration` in `main()`

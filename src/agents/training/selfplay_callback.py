@@ -82,9 +82,18 @@ class SelfPlayCallback(BaseCallback):
         best_model_save_path: str | None = None,
         model_dir: str | None = None,
         server_config=LocalhostServerConfiguration,
+        self_play_temp: float = 1.0,
+        debug: bool = False,
         verbose: int = 1,
     ):
         super().__init__(verbose)
+        # Sampling temperature for sentinel opponents — kept equal to the training
+        # opponents' --self-play-temp so eval opponents behave EXACTLY as in training.
+        self._self_play_temp = self_play_temp
+        # In --debug we run a tiny, fast eval cadence so a short CPU smoke
+        # actually exercises seed → pool eval → promotion (the real schedule's
+        # 1M-step floor never fires in a 20k-step smoke). Production is unaffected.
+        self._debug = debug
         self._pool = pool
         self._bot_opponents = bot_opponents
         self._trainee_teambuilder = trainee_teambuilder
@@ -128,6 +137,7 @@ class SelfPlayCallback(BaseCallback):
             mappings=self._mappings,
             account_configuration=AccountConfiguration(f"SPCbEval{ts}", "password"),
             max_concurrent_battles=_EVAL_CONCURRENCY,
+            stochastic=False,  # eval measures the GREEDY policy → stable win-rate signal
         )
 
         # Pre-create 5 pool opponent player slots. Models are swapped at eval time.
@@ -140,11 +150,20 @@ class SelfPlayCallback(BaseCallback):
                 mappings=self._mappings,
                 account_configuration=AccountConfiguration(f"PoolOpp{i}{ts}", "password"),
                 max_concurrent_battles=_EVAL_CONCURRENCY,
+                # Sentinels act EXACTLY as they do as TRAINING opponents (stochastic, same
+                # temperature, stale-tolerant), so win_rate_vs_pool measures the policy
+                # against the opponents it actually trains against — mirroring the heuristic
+                # bots, which use one player in both training and eval.
+                stochastic=True,
+                temperature=self._self_play_temp,
+                strict_decision=False,
             )
             for i in range(5)
         ]
 
     def _schedule(self) -> tuple[int, int]:
+        if self._debug:
+            return 4000, 3  # fast cadence for --debug --self-play smoke tests
         return eval_schedule(self.num_timesteps)
 
     def _on_step(self) -> bool:
@@ -260,6 +279,25 @@ class SelfPlayCallback(BaseCallback):
         tui_metrics["eval/mean_ep_len_vs_bots"] = mean_ep_len_vs_bots
         eval_duration_sec = (datetime.now() - eval_start).total_seconds()
         self.logger.record("eval/duration_sec", eval_duration_sec)
+
+        # Opponent default-rate telemetry: how often self-play TRAINING opponents defer to
+        # a default move — no-decision polls (benign) plus the async-race StaleDecision
+        # subset (the rate that decides whether a yield-and-retry is worth building). Only
+        # self-play workers have RLPlayer opponents; heuristic workers report zeros. Safe to
+        # query here: the training loop is paused at thread.join() for the duration of eval.
+        try:
+            _ostats = self.training_env.env_method("opponent_default_stats")
+            _dec = sum(s[0] for s in _ostats)
+            _deft = sum(s[1] for s in _ostats)
+            _stale = sum(s[2] for s in _ostats)
+            if _dec > 0:
+                self.logger.record("train/selfplay_opp_default_rate", _deft / _dec)
+                self.logger.record("train/selfplay_opp_stale_default_rate", _stale / _dec)
+                self.logger.record("train/selfplay_opp_decisions", float(_dec))
+                tui_metrics["train/selfplay_opp_stale_default_rate"] = _stale / _dec
+        except Exception as _e:
+            print(f"[SELFPLAY] opponent default-stat query failed (non-fatal): {_e}")
+
         self.logger.dump(step)
 
         tui_metrics["eval/duration_sec"] = eval_duration_sec

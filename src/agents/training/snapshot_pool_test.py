@@ -50,6 +50,9 @@ def test_heuristic_fraction_stays_in_bounds():
 def _make_pool(tmp_path, **kwargs) -> SnapshotPool:
     """Create a SnapshotPool with a mock ModelVersion (no real model loading)."""
     version = MagicMock()
+    # _write() now drops a shared model_config.json via version.to_json(); give the
+    # mock a real JSON string so write_text() gets a str, not a MagicMock.
+    version.to_json.return_value = "{}"
     with patch("agents.training.snapshot_pool.load_model_snapshot"):
         pool = SnapshotPool(pool_dir=tmp_path, current_version=version, **kwargs)
     return pool

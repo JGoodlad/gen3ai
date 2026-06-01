@@ -28,3 +28,14 @@ class MaskableAgentWrapper(SingleAgentWrapper):
 
     def action_masks(self):
         return self.env.action_masks()
+
+    def opponent_default_stats(self):
+        """(#decisions, #defaults, #stale-race-defaults) for the opponent — self-play
+        default-rate telemetry, read via VecEnv.env_method. Heuristic opponents lack these
+        counters, so they report zeros and don't pollute the rate."""
+        op = self.opponent
+        return (
+            getattr(op, "_n_decisions", 0),
+            getattr(op, "_n_defaults", 0),
+            getattr(op, "_n_stale_defaults", 0),
+        )

@@ -182,6 +182,7 @@ def build_eval_players(model, names, teambuilder, mappings, server_config, concu
             server_configuration=server_config, mappings=mappings,
             account_configuration=AccountConfiguration(f"RLEv{tag}{i}", "password"),
             max_concurrent_battles=concurrency,
+            stochastic=False,  # bot-eval measures the GREEDY policy
         )
         for i, name in enumerate(names)
     }
@@ -402,6 +403,8 @@ class EvalRLPlayer(RewardTrackingMixin, RLPlayer):
         idx, probs, mask = self._predict_best_action(
             battle, stochastic=False, need_aux=capturing
         )
+        if idx is None:
+            return self.choose_default_move()
         self._track_reward(battle, idx, mask)
         if capturing:
             rec = self._recorders.get(battle.battle_tag)

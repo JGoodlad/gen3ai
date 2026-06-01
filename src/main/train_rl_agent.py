@@ -378,6 +378,11 @@ async def main():
     parser.add_argument("--self-play", action="store_true", default=False, help="Enable self-play snapshot pool as training opponents")
     parser.add_argument("--snapshot-dir", type=str, default=None, help="Pool directory (default: <run_dir>/snapshots)")
     parser.add_argument("--promote-threshold", type=float, default=0.65, help="Win rate vs. pool to trigger snapshot promotion")
+    parser.add_argument("--self-play-temp", type=float, default=1.0,
+                        help="Sampling temperature for self-play TRAINING opponents (they sample, "
+                             "not argmax, so the learner faces the policy's full action distribution). "
+                             "1.0 = the policy's own distribution; >1 flatter/more random; lower → toward "
+                             "greedy. Eval opponents stay deterministic regardless.")
 
     args = parser.parse_args()
     log_level = LogLevel[args.log_level.upper()]
@@ -435,7 +440,7 @@ async def main():
         print(f"[Opponents] --use-v2-bots: training pool = {len(OPPONENT_CLASSES)} bots "
               f"({', '.join(opponent_name(c) for c in OPPONENT_CLASSES)})")
 
-    def create_training_env_random(idx, stall_config=None, snapshot_path=None, opponent_device="auto"):
+    def create_training_env_random(idx, stall_config=None, snapshot_path=None, opponent_device="auto", opponent_version=None):
         def _init():
             try:
                 ts = datetime.now().strftime('%H%M%S')
@@ -456,14 +461,27 @@ async def main():
                 )
 
                 if snapshot_path is not None:
-                    from sb3_contrib import MaskablePPO as _PPO
-                    pool_model = _PPO.load(snapshot_path, device=opponent_device)
+                    # Load via the version-checked path (same as eval sentinels) so an
+                    # arch-mismatched snapshot fails with a clean ModelVersionError rather
+                    # than loading garbage weights. The pool writes a model_config.json
+                    # alongside its snapshots, so this check is real (see snapshot_pool.py).
+                    pool_model = load_model_snapshot(
+                        snapshot_path, env=None,
+                        current_version=opponent_version, device=opponent_device,
+                    )
                     opponent = RLPlayer(
                         model=pool_model,
                         team=opponent_teambuilder,
                         battle_format=BATTLE_FORMAT,
                         server_configuration=server_config,
+                        mappings=mappings,
                         account_configuration=AccountConfiguration(opp_username, "password"),
+                        # Self-play opponents SAMPLE (temperature-scaled) rather than play
+                        # greedily, so the learner trains against the policy's full action
+                        # distribution — a richer, less exploitable signal. Eval stays argmax.
+                        stochastic=True,
+                        temperature=args.self_play_temp,
+                        strict_decision=False,  # opponent: defer to default on async-race stale ctx, don't crash training
                     )
                 else:
                     opponent_cls = random.choice(OPPONENT_CLASSES)
@@ -515,6 +533,7 @@ async def main():
     # Pool is created before envs so it can provide snapshot paths to env factories.
     # On launcher restart the pool directory already exists; _scan() restores state.
     _pool: SnapshotPool | None = None
+    _opp_version = None  # ModelVersion threaded into opponent snapshot loads (set when self-play on)
     if args.self_play:
         from pathlib import Path as _Path
         from agents.model.model_version import ModelVersion as _MV
@@ -530,6 +549,7 @@ async def main():
             "net_arch": _NA,
         }
         _cv = _MV.from_layout_and_policy_kwargs(_temp_ext_kwargs["layout"], _temp_policy_kwargs)
+        _opp_version = _cv
         _pool = SnapshotPool(
             pool_dir=_snapshot_dir,
             current_version=_cv,
@@ -544,7 +564,8 @@ async def main():
             f"heuristic_fraction={_hfrac:.0%} → {_n_pool_envs}/{n_envs} envs use pool opponents"
         )
         if args.self_play and _pool.is_empty():
-            emit("⚠️  [SELFPLAY] Pool dir exists but is empty — seeding will happen after model load")
+            emit("🌱 [SELFPLAY] Pool empty — will seed from the loaded weights and rebuild "
+                 "self-play envs right after model load (engages this process, not next restart)")
     else:
         _n_pool_envs = 0
 
@@ -565,16 +586,41 @@ async def main():
             snap = pool_entries[i] if i < len(pool_entries) else None
             factories.append(
                 create_training_env_random(
-                    i, stall_config=stall_cfg, snapshot_path=snap, opponent_device=opponent_device
+                    i, stall_config=stall_cfg, snapshot_path=snap,
+                    opponent_device=opponent_device, opponent_version=_opp_version,
                 )
             )
         return factories
 
     env_factories = _make_factories()
     env = EnvClass(env_factories)
-    start_subprocess_watchdog(env, label="train_env", shutdown_event=_shutdown_event)
-    # Note: env.seed() is deprecated in gymnasium VecEnv, use seed in reset or at init if supported.
-    # But for reproducibility, we pass it to PPO.
+    # NOTE: the subprocess watchdog is started LATER, just before model.learn() — nothing
+    # steps the env before then (model construction/load only reads its spaces), and a
+    # first-self-play-process rebuild (see _maybe_engage_self_play) closes this env, which
+    # would otherwise trip the watchdog's "worker died" guard.
+
+    def _maybe_engage_self_play(model, env):
+        """Seed the pool from the just-loaded weights and rebuild the training env so
+        self-play opponents engage in THIS process — not only after the next restart.
+
+        Runs only when --self-play is on AND the pool is empty (the first self-play
+        process). The env was built before the model existed (the model needs the env's
+        spaces), and the pool can only be seeded once the model exists — so we seed from
+        the in-memory weights (the loaded checkpoint, or fresh init) and rebuild the env
+        against the now-non-empty pool. On every later restart the pool already has
+        snapshots, so this is a no-op and no rebuild happens."""
+        nonlocal _n_pool_envs
+        if not (args.self_play and _pool is not None and _pool.is_empty()):
+            return env
+        _pool.seed(model)
+        _persisted = _pool.load_persisted_win_rate()
+        _n_pool_envs = max(1, int(round(n_envs * (1.0 - heuristic_fraction(_persisted)))))
+        emit(f"🌱 [SELFPLAY] Seeded pool from current weights → rebuilding "
+             f"{_n_pool_envs}/{n_envs} envs with self-play opponents (engages now)")
+        env.close()
+        new_env = EnvClass(_make_factories())
+        model.set_env(new_env)
+        return new_env
 
     async def evaluate_model_random(model):
         ts = datetime.now().strftime('%H%M%S')
@@ -589,6 +635,7 @@ async def main():
             mappings=mappings,
             account_configuration=AccountConfiguration(f"RLFinal{ts}", "password"),
             max_concurrent_battles=args.eval_concurrency,
+            stochastic=False,  # final eval = greedy policy
         )
 
         final_opponents = [
@@ -713,50 +760,55 @@ async def main():
     callbacks = [checkpoint_callback, lr_callback, MetricsExporterCallback(), _HparamLogCallback(args.ent_coef), graceful_restart_callback]
     eval_callback = None
 
-    if not args.debug:
-        if args.self_play and _pool is not None:
-            # Self-play still evaluates in-process against live bot players, so it
-            # needs the pre-built opponent list (one connection each).
-            ts_cb = datetime.now().strftime('%H%M%S')
-            eval_opponents = build_eval_opponents(
-                server_config, opponent_teambuilder,
-                eval_opponent_names(args.use_v2_bots), ts_cb,
-            )
-            eval_callback = SelfPlayCallback(
-                pool=_pool,
-                bot_opponents=eval_opponents,
-                trainee_teambuilder=trainee_teambuilder,
-                opp_teambuilder=opponent_teambuilder,
-                mappings=mappings,
-                promote_threshold=args.promote_threshold,
-                best_model_save_path=os.path.join(model_dir, "best_model"),
-                model_dir=model_dir,
-                server_config=server_config,
-            )
-        else:
-            # Bot eval runs in a frozen-snapshot subprocess (non-blocking, CPU). The
-            # worker rebuilds opponents/teambuilders/mappings itself from the data
-            # dir, so nothing live is constructed here.
-            # On resume, the last eval lives in the resumed checkpoint's metadata.json
-            # (a different dir from this fresh run) — point the callback at it so the
-            # TUI shows the most recent eval immediately.
-            _resume_meta = None
-            if args.model:
-                _ckpt_dir = args.model if os.path.isdir(args.model) else os.path.dirname(args.model)
-                if _ckpt_dir:
-                    _resume_meta = os.path.join(_ckpt_dir, "metadata.json")
-            eval_callback = PerOpponentEvalCallback(
-                model_dir=model_dir,
-                server_config=server_config,
-                use_v2_bots=args.use_v2_bots,
-                best_model_save_path=os.path.join(model_dir, "best_model"),
-                n_workers=args.eval_workers,
-                eval_device=args.eval_device,
-                showdown_port=args.showdown_port,
-                resume_eval_metadata=_resume_meta,
-                keep_eval_snapshots=args.keep_eval_snapshots,
-                keep_eval_trace_steps=args.keep_eval_trace_steps,
-            )
+    if args.self_play and _pool is not None:
+        # Self-play eval runs in-process against live bot players + pool sentinels, so it
+        # needs the pre-built opponent list (one connection each). It runs even under
+        # --debug (with a fast eval cadence) so a short CPU smoke against a 9XXX server
+        # actually exercises seed → pool eval → promotion — the path a non-self-play
+        # --debug run skips entirely.
+        ts_cb = datetime.now().strftime('%H%M%S')
+        eval_opponents = build_eval_opponents(
+            server_config, opponent_teambuilder,
+            eval_opponent_names(args.use_v2_bots), ts_cb,
+        )
+        eval_callback = SelfPlayCallback(
+            pool=_pool,
+            bot_opponents=eval_opponents,
+            trainee_teambuilder=trainee_teambuilder,
+            opp_teambuilder=opponent_teambuilder,
+            mappings=mappings,
+            promote_threshold=args.promote_threshold,
+            best_model_save_path=os.path.join(model_dir, "best_model"),
+            model_dir=model_dir,
+            server_config=server_config,
+            self_play_temp=args.self_play_temp,
+            debug=args.debug,
+        )
+        callbacks.append(eval_callback)
+    elif not args.debug:
+        # Bot eval runs in a frozen-snapshot subprocess (non-blocking, CPU). The
+        # worker rebuilds opponents/teambuilders/mappings itself from the data
+        # dir, so nothing live is constructed here.
+        # On resume, the last eval lives in the resumed checkpoint's metadata.json
+        # (a different dir from this fresh run) — point the callback at it so the
+        # TUI shows the most recent eval immediately.
+        _resume_meta = None
+        if args.model:
+            _ckpt_dir = args.model if os.path.isdir(args.model) else os.path.dirname(args.model)
+            if _ckpt_dir:
+                _resume_meta = os.path.join(_ckpt_dir, "metadata.json")
+        eval_callback = PerOpponentEvalCallback(
+            model_dir=model_dir,
+            server_config=server_config,
+            use_v2_bots=args.use_v2_bots,
+            best_model_save_path=os.path.join(model_dir, "best_model"),
+            n_workers=args.eval_workers,
+            eval_device=args.eval_device,
+            showdown_port=args.showdown_port,
+            resume_eval_metadata=_resume_meta,
+            keep_eval_snapshots=args.keep_eval_snapshots,
+            keep_eval_trace_steps=args.keep_eval_trace_steps,
+        )
         callbacks.append(eval_callback)
 
     if args.model:
@@ -893,9 +945,15 @@ async def main():
                     if (eval_callback is not None and hasattr(eval_callback, "drain")) else None
                 ),
             )
-            if not args.debug and eval_callback is not None:
+            if eval_callback is not None:
                 eval_callback.abort_fn = _abort_fn
             graceful_restart_callback.abort_fn = _abort_fn
+
+            # First self-play process: seed the pool from these weights and rebuild the
+            # env so self-play engages now. No-op on every later restart (pool non-empty).
+            # Then start the worker watchdog on the FINAL env, right before rollouts begin.
+            env = _maybe_engage_self_play(model, env)
+            start_subprocess_watchdog(env, label="train_env", shutdown_event=_shutdown_event)
 
             try:
                 model.learn(total_timesteps=args.steps, callback=callbacks, reset_num_timesteps=False, tb_log_name=tb_run_name)
@@ -973,9 +1031,15 @@ async def main():
                 if (eval_callback is not None and hasattr(eval_callback, "drain")) else None
             ),
         )
-        if not args.debug and eval_callback is not None:
+        if eval_callback is not None:
             eval_callback.abort_fn = _abort_fn
         graceful_restart_callback.abort_fn = _abort_fn
+
+        # First self-play process: seed the pool from these (fresh-init) weights and
+        # rebuild the env so self-play engages now. No-op on every later restart.
+        # Then start the worker watchdog on the FINAL env, right before rollouts begin.
+        env = _maybe_engage_self_play(model, env)
+        start_subprocess_watchdog(env, label="train_env", shutdown_event=_shutdown_event)
 
         try:
             if log_level >= LogLevel.DETAILED:
