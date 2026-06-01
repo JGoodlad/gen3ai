@@ -806,3 +806,28 @@ Requires a live Showdown server (`npm run showdown`).
 | `src/agents/observation/state_encoder.py` | Passes `mappings["ability_priors"]` to `ReactiveEncoder` at construction (mirrors the `AbilitiesEncoder` wiring) |
 | `src/agents/model/features_extractor.py` | `MOVE_NET_HIDDEN` 64→96; `hp_type_idx_map` buffer; weighted type embedding for HP slots; appended `hp_probs_per_slot` (16) + `matchup_validity` (6) to `move_network` input (58→80) |
 | `src/agents/model/features_extractor_hp_test.py` | **New** — 5 unit tests for the weighted embedding, validity mask, and forward smoke |
+
+---
+
+## Design rationale
+
+Folded from the retired forward-looking HP-inference design doc. Two choices the prose above
+states but doesn't fully justify:
+
+**Why the block lives on *both* sides' slots, not just the opponent's.** The role encoder uses
+**shared weights** across our 6 team slots and the opponent's 6. Adding the 17-dim HP block to
+opponent slots only would force the per-mon vectors to two different widths and so require two
+separate role encoders. Instead all 12 slots carry the block; for our own mons it is a one-hot
+at the (known) HP type (all-zero if the mon has no HP move), and the shared role encoder learns
+"these trailing dims are a confident one-hot for my team and a candidate distribution for the
+opponent." This keeps one encoder and one weight set.
+
+**Why no renormalization after each elimination.** Renormalizing would create discontinuities —
+the moment Ice is ruled out, a surviving Grass entry would jump `0.25 → 1.0`, a large input
+swing for a small change in knowledge. Keeping absolute prior weights produces a stable encoding
+the model can learn to read consistently; when exactly one non-zero entry remains, the matchup
+matrix uses that type directly, so the magnitude is irrelevant for the resolved-type case
+anyway. (The companion choice — priors over binary 1/0 flags — is covered under "Why prior
+probabilities, not binary flags" above: the prior carries the meta distribution before any
+observation, and an eliminated-but-surviving minority type keeps the signal that an unusual HP
+was chosen.)

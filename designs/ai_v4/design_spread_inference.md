@@ -1,11 +1,17 @@
 # Design: Spread Inference — IV/EV/Nature and Future Opponent Signals
 
+> **Status: Signal 1 SHIPPED** (own-team IV/EV/nature encoding — see
+> `impl_step1_spread_encoding.md`). **Signals 2–3 are FUTURE** (per-slot accumulated battle
+> statistics; auxiliary spread-prediction losses) — not yet implemented. This doc is kept as
+> the forward-looking design for those two.
+
 Make the PPO model's per-slot representations encode enough information about each
 Pokémon's spread that the team completion model (ai_v6 Steps 3–4) can predict EV tiers,
 nature, speed tier, and Hidden Power type from frozen role tokens.
 
-Three signals are planned. **Signal 1 is shipped.** Signals 2 and 3 are deferred —
-likely implemented after the unified transformer lands and self-play is running.
+Three signals are planned. **Signal 1 is shipped** (`impl_step1_spread_encoding.md`). Signals 2
+and 3 are deferred — likely implemented after the unified transformer lands and self-play is
+running.
 
 ---
 

@@ -8,8 +8,9 @@ opposite — *what happened, in order, between two states*.
 ``Gen3Battle`` (see ``gen3_battle.py``) captures that ordered stream into a list of
 :class:`BattleEvent` **in the same parse pass**, recording attribution *before* the
 line mutates state. This module owns the immutable schema and the message-policy
-registry that guarantees **every** protocol line is accounted for (see §4 of
-``designs/ai_v4/design_event_sourced_battle.md``).
+registry that guarantees **every** protocol line is accounted for (see the "Completeness"
+design rationale in
+``designs/ai_v4/impl_step8_strict_battle_api_and_turndelta_fold.md``).
 
 Design rules:
   * **Self-contained.** An event carries enough to be interpreted without re-reading

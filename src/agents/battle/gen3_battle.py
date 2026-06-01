@@ -1,6 +1,6 @@
 """``Gen3Battle`` — an event-aware Gen 3 OU singles battle.
 
-Architecture (design ``ai_v4/design_event_sourced_battle.md``):
+Architecture (as built: ``designs/ai_v4/impl_step8_strict_battle_api_and_turndelta_fold.md``):
 
     AbstractBattle  (poke-env fork base — state engine + dispatch)
        └── Battle   (classic singles — unchanged behaviour, upstream-clean)

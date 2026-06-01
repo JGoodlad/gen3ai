@@ -118,8 +118,9 @@ GAE advantages and is the direct prerequisite for the v5 MCTS value function.
 
 ### What changed
 
-This implements **Step 1** of `design_dedicated_value_head.md`: split *late*
-(decouple the readout, not the body), keep one body.
+This implements **Step 1** of the dedicated value-head design (split *late* — decouple the
+readout, not the body, keep one body; full staged plan + gating in the "Design rationale"
+section at the end of this doc).
 
 - **`value_cls` pool** — a third learned CLS query alongside `our_cls`/`their_cls`,
   added in `CLSPool`. It cross-attends over **both teams' 12 post-transformer
@@ -411,3 +412,47 @@ rapid-iteration project.
 | `src/agents/training/reward_invariants_e2e_test.py` | Fixed for the escalating/ramped model |
 
 *Section B (move outcome) files are listed in `impl_step5_move_outcome.md`.*
+
+---
+
+## Design rationale — the value head (Section D)
+
+Folded from the retired dedicated-value-head design doc. Section D shipped **Step 1** of a
+deliberately **staged** plan; the staging and the evidence-gates that decide whether to escalate
+are the rationale worth preserving (the problem statement + the v5/MCTS connection are already in
+Section D above).
+
+**The escalation ladder — try the cheap fix first.** The value underfit could be a *readout*
+problem (value needs a different aggregation of a sound board representation) or a
+*representation* problem (the shared body itself is the bottleneck). The plan attacks them in
+increasing cost so the cheap, high-likelihood fix is tried first:
+
+| Step | Change | Decouples | Cost |
+|------|--------|-----------|------|
+| **1** (shipped) | Value-dedicated CLS readout — one learned query pools the team tokens for value | the **readout** | ~+0.2M params, body runs once |
+| **2** (gated) | Per-head readout transformer — replace the single query with a multi-query Set-Transformer PMA block (`K_v` seed queries → LayerNorm-residual → FFN) so value can *reason* over the tokens, not just average them once | the **readout**, richer | moderate, body still shared |
+| fallback | `share_features_extractor=False` — two independent bodies | the **representation** | ~2× extractor cost |
+
+Steps 1–2 decouple *how value reads the tokens*, not *how the tokens are shaped* — the shared
+body still gets gradients from both losses. If value still underfits after Step 2, that is the
+diagnostic that the body itself is the bottleneck, and separate bodies are the documented
+fallback. Splitting *late* maximises shared representation learning while specialising the
+task-specific aggregation.
+
+**The asymmetry is the point — no `policy_cls`.** Action selection is anchored to a concrete
+token (`our_active_refined`, kept un-pooled); value is a global "who's winning" property with no
+single anchor, so only value gets a pooling query, and it attends over the whole board. A single
+policy summary token would blur exactly the focal signal the policy most needs.
+
+**Step 2 is gated on evidence — the success criteria that decide it:**
+
+- `value_loss` drops well below ~90 and/or `explained_variance` rises above ~0.85 → Step 1
+  worked; **Step 2 unnecessary.**
+- Value metrics barely move but win rates are flat → value was **reward-scale-bound, not
+  underfit** (the honest `gamma = 0.9999` / `HP_VALUE = 2` / `VICTORY_VALUE = 30` caveat in
+  Section D) → do **not** build Step 2; revisit reward scaling instead.
+- Value metrics improve but plateau below target → value needs *reasoning*, not just aggregation
+  → **proceed to Step 2.**
+
+This is why Step 2 (the per-head PMA readout) was intentionally **not** built in this bundle — it
+waits on the measured value-loss / explained-variance from a run on the Step-1 readout.

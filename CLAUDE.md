@@ -524,8 +524,8 @@ These are loaded at startup and will raise `FileNotFoundError` / `ValueError` if
 
 poke-env is a **state tracker** — each `|...|` protocol line overwrites "current board"
 fields. RL/reward/replay need the opposite: *what happened, in order*. The event-sourced
-layer captures that without reimplementing poke-env (design:
-`designs/ai_v4/design_event_sourced_battle.md`). **Status: the event log + read models are
+layer captures that without reimplementing poke-env (as-built record:
+`designs/ai_v4/impl_step8_strict_battle_api_and_turndelta_fold.md`). **Status: the event log + read models are
 live and CONSUMED in training.** The per-decision `TurnDelta` history block folds entirely
 from the log (`build_from_events`, see "Per-decision history fold (Phase 5)" below) and feeds
 the obs turn-history; the action masker/mapper and training display read the LiveView /

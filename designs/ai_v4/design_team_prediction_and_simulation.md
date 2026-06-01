@@ -92,7 +92,7 @@ Better unified transformer
 
 Three parallel improvements ship together. See the individual docs in this folder for full detail.
 
-### Unified Transformer (`design_unified_transformer.md`)
+### Unified Transformer (implemented — see `impl_step4_unified_transformer.md`)
 
 Replaces five hand-crafted attention paths (pressure, safety, synergy, threat, opp-synergy) and an isolated turn-history tower with a single transformer over 23 tokens:
 
@@ -111,7 +111,7 @@ Three signals added to the observation:
 2. **Opponent battle stats** (9 dims per opp slot): accumulated per-battle — cumulative damage received, physical/special hit counts, minimum HP%, passive healing observed, speed-tier fraction. These narrow the posterior over opponent spreads.
 3. **Auxiliary prediction losses**: `Gen3MaskablePPO` runs a second backward pass per PPO update predicting EV tier, nature, and spread archetype from the role tokens. Forces the embeddings to encode spread-predictive signal.
 
-### Hidden Power Type Inference (`design_hp_inference.md`)
+### Hidden Power Type Inference (implemented — see `impl_step2_hidden_power.md`)
 
 HP type is never transmitted by Showdown, but can be inferred from effectiveness observations (e.g., HP hits Starmie for "super effective" → must be Grass or Electric, not Ice). A 17-dim block per opponent slot encodes:
 
@@ -258,9 +258,9 @@ Steps are ordered by dependency. Each step unblocks the next.
 
 | Step | Doc | Dependency |
 |------|-----|------------|
-| 1. **Unified transformer** | `design_unified_transformer.md` | None — start here |
-| 2. **Spread inference** | `design_spread_inference_impl.md` | Can overlap with step 1 |
-| 3. **HP type inference** | `design_hp_inference.md` | Can overlap with steps 1–2 |
+| 1. **Unified transformer** ✅ | `impl_step4_unified_transformer.md` | None — start here |
+| 2. **Spread inference** (Signal 1 ✅) | `impl_step1_spread_encoding.md` / `design_spread_inference.md` (Signals 2–3) | Can overlap with step 1 |
+| 3. **HP type inference** ✅ | `impl_step2_hidden_power.md` | Can overlap with steps 1–2 |
 | 4. **Train new PPO checkpoint** | — | Requires steps 1–3 complete |
 | 5. **Replay collection daemon** | `ai_v6/impl_step1_replay_collection.md` | Can start any time |
 | 6. **Team completion model** | `ai_v6/impl_step3_team_completion.md` | Requires step 4 checkpoint |
@@ -277,11 +277,12 @@ Steps are ordered by dependency. Each step unblocks the next.
 
 All design detail lives in the docs listed below. This document is the map; those are the territory.
 
-**This folder (`designs/ai_v4/`)**:
-- `design_unified_transformer.md` — full transformer architecture, implementation checklist
-- `design_spread_inference.md` — IV/EV encoding, battle stat accumulation, aux losses
-- `design_spread_inference_impl.md` — file-by-file implementation guide for spread signals
-- `design_hp_inference.md` — HP type candidate mask, update logic, encoding
+**This folder (`designs/ai_v4/`)** — the Tier-1 designs below shipped; their as-built records
+are the `impl_step*` docs (the standalone design docs were folded in and retired):
+- `impl_step4_unified_transformer.md` — full transformer architecture, as built
+- `design_spread_inference.md` — IV/EV encoding (Signal 1 shipped, see `impl_step1`); battle-stat
+  accumulation + aux losses (Signals 2–3) remain future
+- `impl_step2_hidden_power.md` — HP type candidate mask, update logic, encoding, as built
 
 **`designs/ai_v6/`** (team completion + MCTS):
 - `design_team_completion_detail.md` — full team completion system design

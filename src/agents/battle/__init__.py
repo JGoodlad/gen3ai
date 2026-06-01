@@ -7,7 +7,7 @@ read surfaces — each a single source of truth for its concern:
   the revealed-order protocol event log.
 * :class:`LiveView` — the current board ("what is true now"), with no past-turn state.
 
-See ``designs/ai_v4/design_event_sourced_battle.md``.
+See ``designs/ai_v4/impl_step8_strict_battle_api_and_turndelta_fold.md``.
 
 Re-exports are **lazy** (PEP 562 ``__getattr__``): importing a single submodule
 (e.g. ``from agents.battle.gen3_battle import Gen3Battle``) must not force-import the

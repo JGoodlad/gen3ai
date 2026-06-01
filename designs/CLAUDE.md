@@ -26,7 +26,7 @@ To orient yourself:
 | What | Version | Notes |
 |------|---------|-------|
 | **Active training run** | **ai_v3 end** | ~350M steps, fixed bot pool (Random/Heuristic/Aggressive/Staller/SetupSweep), no self-play; AdamW and adaptive LR added recently |
-| **Code being changed** | **ai_v4** | Self-play not yet implemented — currently in prep (AdamW optimizer, adaptive KL, reward tuning); self-play is the next thing to add |
+| **Code being changed** | **ai_v4 (closing out)** | Event-sourced battle layer / strict battle-API / observation richness / obs-build perf — landed across impl_step1–9. The one open ai_v4 tail is **pathology hunting** (eval-replay analysis). Self-play/league moved to ai_v5. |
 
 ---
 
@@ -55,18 +55,31 @@ It reached ~70–75% vs Heuristic, limited by the fixed-bot ceiling — the poli
 entropy collapse (ent_coef rose 0.029→0.055) rather than improving further.
 
 ### ai_v4
-Self-play and league play. Agent trains against frozen copies of itself (snapshot pool,
-win-rate gating, sentinel monotonicity). Step 1 (self-play) is the current milestone —
-**not yet implemented**. Step 2 (league play with exploiters) follows after.
+Event-sourced battle layer, strict battle-API, observation richness, and obs-build
+performance. *(Originally planned as the self-play/league chapter; that work was deferred to
+ai_v5, and ai_v4 became the data-quality + encapsulation chapter that has to come first.)*
 
-**Prerequisite for league play:** reward annealing ≥ 50% complete so the value head learns
-win probability (needed for MCTS in v5).
+Key milestones in order (impl_step1–9): own-team IV/EV/nature spread (`impl_step1`), opponent
+Hidden Power type inference (`impl_step2`), damaging-event attribution (`impl_step3`), unified
+L=2 transformer feature extractor (`impl_step4`), move-outcome reporting (`impl_step5`), the
+next-run bundle — accuracy + modular extractor + dual-head value + reward overhaul
+(`impl_step6`), adaptive-LR KL band (`impl_step7`), strict battle-API + event-sourced TurnDelta
+fold (`impl_step8`), and strict-API completion + trapping signals + the ~2× obs-build perf pass
+(`impl_step9`). Net obs **3321-dim**, `ARCH_SIGNATURE = gen3_trapping_signals_v1`.
+
+**Open tail:** pathology hunting (eval-replay analysis); plus the one unscheduled strict-API
+sub-item, Phase 5b (true `LiveView` current-board event-fold — `todo_live_battle.md`). No model
+has trained on the v4 obs yet (the v3 run is on an older arch and won't load it).
 
 ### ai_v5
-MCTS at inference + behavioural cloning from human replays. Replay collection pipeline
-already implemented. BC pre-training (Step 2) and MCTS integration (Step 5) are the main
-goals. Wang (2024) found MCTS gave 78.6% → 90.8% vs Heuristic — this is the biggest
-single untapped lever.
+Self-play / league play, then MCTS at inference + behavioural cloning from human replays.
+**Self-play and league** (relocated here from the original ai_v4 plan) lead the version: the
+agent trains against frozen copies of itself (snapshot pool, win-rate gating, sentinel
+monotonicity — Step 1), then league play with exploiters (Step 2). A prerequisite for league
+play is reward annealing ≥ 50% complete so the value head learns win probability. With that in
+place: BC pre-training from the (already-implemented) replay collection pipeline, then MCTS
+integration — Wang (2024) found MCTS gave 78.6% → 90.8% vs Heuristic, the biggest single
+untapped lever.
 
 ### ai_v6
 Specialisation and ladder play. Train team-specific models from the v3–v5 generalist,

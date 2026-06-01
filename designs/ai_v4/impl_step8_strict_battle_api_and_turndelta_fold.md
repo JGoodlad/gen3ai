@@ -1,8 +1,9 @@
 # Implementation: Step 8 — Strict Battle-API + Event-Sourced TurnDelta Fold
 
-This step lands two tightly-related advances on the event-sourced battle layer
-(`design_event_sourced_battle.md`), plus the bug fix and doc resync that fell out of
-bringing them together. They shipped to `main` across three commits:
+This step lands two tightly-related advances on the event-sourced battle layer, plus the
+bug fix and doc resync that fell out of bringing them together. (The original forward-looking
+event-sourced-battle design has been retired; its load-bearing rationale is folded into the
+"Design rationale" section at the end of this doc.) They shipped to `main` across three commits:
 
 | Commit | Thread | What landed | Arch impact |
 |---|---|---|---|
@@ -147,7 +148,8 @@ surfaced two volatile classes the static `moves.ts` derivation can't see, both f
   `abstract_battle` `-activate` handler change) and the identity lives in the per-mon
   block. `Effect.MAGMA_ARMOR` was added to the fork enum.
 
-(See `c2dbee6`; full execution detail in `handoff_turn_delta_reward_replay.md`.)
+(See `c2dbee6`; the consumer-migration completion and the full event-fold that retired
+`battle_context.py` are recorded in `impl_step9_strict_api_perf_and_trapping.md`.)
 
 ---
 
@@ -169,9 +171,10 @@ per-Pokémon slot (107) carries the spread block (18, now real for own mons) + H
 block (17) + item consumed bit; full field-level layout is in the root `CLAUDE.md`
 "Observation Vector" section, which Thread D resynced.
 
-> Note: `design_event_sourced_battle.md`'s status table records the TurnDelta fold as
-> "obs 2823 → 2997" — that was a pre-final estimate; the shipped value is **3299**
-> (the design doc is forward-looking and explicit-edit-only, so it was left as-is).
+> Note: an early estimate for this fold circulated as "obs 2823 → 2997"; the shipped value
+> is **3299**. (This `3299` was itself later superseded — `gen3_turn_delta_v3` and then the
+> trapping-signals bump took the obs to **3321**; see
+> `impl_step9_strict_api_perf_and_trapping.md`.)
 
 ---
 
@@ -224,38 +227,77 @@ new, `turn_view_test.py`, `gen3_battle_test.py`, …), CLAUDE/README/design docs
 
 ---
 
-## Landed since this step
+## Landed since this step → see `impl_step9`
 
-The deferrals above were subsequently completed on `main` (Wave 1 + the event-fold +
-the reward re-source); recorded here so this doc isn't read as still-open:
+Every deferral named above was subsequently completed on `main` and is recorded in full in
+**`impl_step9_strict_api_perf_and_trapping.md`**: the strict-API Phases 3–4 consumer migration
++ `agents.enums` seam + `strict_api_lock_test.py` lock (`6f3c59f`), the TurnDelta full
+event-fold with `battle_context.py` deleted (`90739dd`), the reward `_read_live` retirement
+(`26d3d1e`), the legacy-builder extraction (`e1d9a94`), the ~2× obs-build performance pass
+(`63220dd` + the `lru_cache`/deque work), and the trapping signals (`2f29240`,
+`gen3_trapping_signals_v1`, obs 3321). The Step-6 "lossless replay" goal was met a different
+way — quota-gated eval forensic traces (`664f3a5`) replaced the retired `replay_recorder.py`.
+The only strict-API item still open is **Phase 5b — true `LiveView` current-board event-fold**
+(`todo_live_battle.md`); the only open ai_v4 tail is **pathology hunting** (`todo.md`).
 
-- **Strict battle-API Phases 3–4** — all consumers (`observation/`, `action/`, `training/`,
-  `inference/`) migrated to read through `StrictBattleView` / `LiveView` / `LegalActions`,
-  value-neutral (obs byte-identical, reward 0-diff). The `agents.enums` seam + the static
-  `strict_api_lock_test.py` no-raw-read guard landed as the lock (`6f3c59f`). Documented
-  inventory: `todo_live_battle.md`.
-- **TurnDelta full event-fold + `battle_context.py` deleted** (`90739dd`) — `TurnDelta` now
-  folds entirely from `events_since(cursor)` + LiveView (HP deltas, faints, **boosts** via
-  two-anchor, target-HP, cant, effectiveness, status/item transitions). The legacy
-  snapshot-diff `build()` and the whole `BattleContext` layer are gone; verified by
-  `turn_delta_fold_equivalence_fuzz_test.py` + `turn_delta_hp_fold_test.py`. (Closes the
-  "boost-delta not yet folded" / Layer-6 fuzz gaps noted above.)
-- **Reward re-sourced onto LiveView, `_read_live` dual-path retired** (`d56942d` →
-  `26d3d1e`): `process_turn_reward` builds `live = battle.live_view()` once and every
-  per-term helper reads only through it. reward_manager has **zero guarded raw reads**
-  (only `battle.turn` stall-tax + `report_episode` meta remain); the 5 reward allowlist
-  entries were removed. The moot equivalence harness became the single-path
-  `reward_value_regression_fuzz_test.py`.
+---
 
-## What's next
+## Design rationale
 
-- **Phase 5b — true `LiveView` independence**: event-fold the current-board snapshot itself
-  (side-condition counters, ability/item inference, type-change edge cases), so poke-env's
-  tracker is no longer the source of current state. The strict boundary makes this a
-  behind-the-API change with no consumer churn.
-- **Performance pass** — the reactive 288-cell matchup hot loop is ≈80% of obs-build CPU;
-  hoist per-mon reads, carry borrowed enums (+ `LiveMove.move_type`/`type_known`) on the
-  read-model so the loop is enum-native and read-model-sourced, then vectorize.
-- **Trapping signals** (`todo_trapping_signals.md`) — route `trapped` / `maybe_trapped` +
-  an `attempted_switch_rejected` history bit into the obs (retrain-class).
-- **Lossless replay recorder** from the event log (`handoff_turn_delta_reward_replay.md`).
+The forward-looking event-sourced-battle design is retired now that the work has shipped; the
+load-bearing rationale that doesn't live in the prose above is preserved here.
+
+### Enrich, don't reimplement (two views, one parser, one object)
+
+poke-env is a **state tracker** — every protocol line overwrites "current board" fields. RL,
+reward shaping, and replay need the opposite: *what happened, in order*. The design's core call
+was to add a **revealed-order event log** captured in the *same* parse pass, while keeping
+poke-env's state engine verbatim — explicitly **non-goal**: no second parser, no clean-room
+engine that re-derives state from events. As built, `Gen3Battle.parse_message` wraps
+`super().parse_message` (state tracking stays byte-for-byte poke-env) and records a
+`BattleEvent` around it, with attribution resolved **before** the line mutates state — the whole
+point, and why the gap=0 desync can't corrupt it. (This is lighter than the design's original
+"refactor `parse_message` into per-type handlers" sketch, same goal with far less fork churn.)
+
+### Completeness — crash-don't-drop is a tripwire, not graceful degradation
+
+The design's first-class requirement is **no silent line drops**. The `MESSAGE_POLICY` registry
+classifies every protocol keyword poke-env can emit as `EVENT` / `STATE_ONLY` / `CONTROL` /
+`COSMETIC` / `UNSUPPORTED`; an unclassified or non-gen3 keyword **raises**. This is deliberate:
+gen3ou's protocol surface is fixed and finite, so a `-mega` / `-zpower` / `-terastallize` line
+can never legitimately occur — if one does we are parsing the wrong format and any "state" we'd
+produce is garbage, so we stop loudly rather than fabricate. The **conservation invariant**
+(`assert_conservation`) proves every raw line lands in exactly one bucket. The same principle is
+mirrored in the obs encoders (`gen3_effects.encode_volatiles` / `normalize_cant_reason` raise on
+anything outside the source-derived allowlist) — the tripwire repeatedly earned its keep, catching
+`focuspunch` / `struggle` / `flashfire` and the `doomdesire` / `futuresight` future-move volatiles,
+the last only in the live training smoke. Lesson: volatiles come from BOTH `moves.ts` and
+`abilities.ts`, ∩ the gen3 sets ∩ poke-env's `Effect` enum.
+
+### The knowledge model — ground-truth vs revealed (the non-cheating invariant)
+
+Two orthogonal axes, and conflating them is how info-leak bugs happen: **ground truth** (what a
+mon *actually* has — known a-priori for our side from the `|request|`, or never for a ladder
+opponent) vs **revealed** (what the protocol has disclosed so far). The load-bearing invariant:
+the observation the model sees for the **opponent** must be built from the revealed view, never
+ground truth, even when we hold the team sheet — otherwise the policy learns to exploit hidden
+information and is useless on the real ladder. As built, this is realised **not** as a separate
+`BattleKnowledge`/`Fact` layer (the design's proposed module) but through the encoder's
+reveal-gating flags — `species_known` / `spread_known` / item-`known` / ability-`known`, with
+`LiveView` opponent fields `None` until disclosed — which are the knowledge model's single,
+principled home. (Replay analysis can still drive the encoder from a per-turn revealed view to
+reproduce what a player could legitimately see at turn k, with ground truth confined to a
+separate label-only path.)
+
+### Fuzzing is the verification spine
+
+The design specified a multi-fuzzer strategy over a shared corpus (live random gen3ou + sample-team
+replays + engineered edge teams forcing every `EventKind`): a **completeness** fuzz (conservation
++ no unclassified line), a **state-equivalence** fuzz (`Gen3Battle` vs classic `Battle` line-by-line,
+`max|Δ| = 0` — proves enrichment changed nothing), an **event-vs-protocol** fuzz (the log re-derived
+independently from raw protocol per decision), a **no-leak** fuzz (the revealed view never contains
+an un-revealed opponent fact), and **model-integration** drop-in/round-trip checks. The live spine
+`event_log_fuzz_e2e_test.py` is the realised core; the per-decision value-identity of the fold is
+pinned by `turn_delta_fold_equivalence_fuzz_test.py` (event-fold vs a frozen snapshot-diff
+reference, 0 diffs over 158k+ decisions). Every obs/reward-affecting change is gated by one of these
+before it is trusted.
