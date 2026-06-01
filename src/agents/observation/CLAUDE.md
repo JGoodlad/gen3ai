@@ -186,16 +186,48 @@ emitted a constant fallback (all-31 IVs, 0 EVs, neutral nature) for every own mo
 permanence + turns-remaining), spikes ×2 (2), log-turn (1), per-side screens (8: Reflect /
 Light Screen / Safeguard / Mist × both sides).
 
-**Reactive block (302 dims, layout in `reactive.py`):** 14 scalar dims then the two 144-dim
-matchup matrices. Scalars: active-move power ×4 (/200) + active-move multiplier ×4 (/4),
-fainted counts ×2, active-status flag (1), `forced_struggle` (1), and the two
-**gen3_trapping_signals_v1** bits — `trapped` (1) and `maybe_trapped` (1) — sourced from the
-per-decision `LegalActions` snapshot (`legal.trapped` / `legal.maybe_trapped`), the same
-server-authoritative surface the mask is built from. They sit BEFORE the matchups so the
-feature extractor picks them up in `non_matchup_rest` automatically (it reads the matchup offset
-from the layout). `trapped` is redundant with the mask (switch bits already zeroed) but
-explicit; `maybe_trapped` is the high-value one — switches stay legal there, so it is the only
-way the model sees the trap risk before attempting a blind pivot.
+**Reactive block (338 dims, layout in `reactive.py`):** 14 scalar dims, then the 36-dim
+**move-effect block** (`gen3_move_effects_v1`), then the two 144-dim matchup matrices
+(`our_matchups` now at offset 50, `their_matchups` at 194). Scalars: active-move power ×4 (/200)
++ active-move multiplier ×4 (/4), fainted counts ×2, active-status flag (1), `forced_struggle` (1),
+and the two **gen3_trapping_signals_v1** bits — `trapped` (1) and `maybe_trapped` (1) — sourced
+from the per-decision `LegalActions` snapshot (`legal.trapped` / `legal.maybe_trapped`), the same
+server-authoritative surface the mask is built from. They sit BEFORE the matchups so the feature
+extractor picks them up in `non_matchup_rest` automatically (it reads the matchup offset from the
+layout). `trapped` is redundant with the mask (switch bits already zeroed) but explicit;
+`maybe_trapped` is the high-value one — switches stay legal there, so it is the only way the model
+sees the trap risk before attempting a blind pivot.
+
+**Move-effect block (36 dims, `gen3_move_effects_v1`):** 4 move slots in **REQUEST order** (so
+feature slot *k* lines up with action logit 6+*k*) × 9 features each — `is_boost`, `is_heal`,
+`is_protect`, `is_phaze`, `is_hazard`, `inflicts_status`, `status_will_land`, `pp_fraction`,
+`status_will_land_known`. The
+only per-move signals that previously reached the policy head in action order were base power and
+the type multiplier, so for status/utility moves (power 0, neutral multiplier) every option looked
+identical at the head — the model could not tell a setup move from a heal from a wasted Toxic. The
+static flags come from the `gen3_data.moves` facade (`MoveData.is_boost/is_heal/...`), derived in
+the acquisition tool from the field **Showdown** keys each mechanic on (`flags.heal`,
+`volatileStatus`, `forceSwitch`, `sideCondition`, primary `status`, declarative self-positive
+boosts) PLUS a curated callback override for **Belly Drum** (its +6 Atk lives in an `onHit`
+callback, invisible declaratively); **Memento** is correctly excluded (foe-target negative boosts
++ self-faint). Resolved **live** in the encoder: **Curse**'s setup (only a self-boost for a
+non-Ghost user) and `status_will_land`. The latter is a **prior-weighted probability in [0,1]**
+(`gen3_mechanics.status_land_probability`), built the same "priors first, then confirmation"
+way the matchup cells handle abilities: it is 0 on a certain block (type immunity, already
+statused, Substitute — ability-independent), else `1 − P(ability blocks this status)` over the
+opponent's ability distribution (`_resolve_ability_distribution` — the Smogon prior for an
+unrevealed mon, collapsing to an exact 0/1 once the ability is revealed via `-immune [from]
+ability:`). So an unrevealed Snorlax reads ≈0.14 for Toxic (Immunity-dominated) instead of a naive
+1. The trailing **`status_will_land_known`** bit disambiguates prior from confirmed — the SAME
+routing the per-mon ability block uses for its `known` flag: 1 when the value rests on confirmed
+info (a type-certain hard block, or the opponent's ability is revealed via `_ability_revealed`,
+the exact predicate `AbilitiesEncoder` uses), 0 when it's still a Smogon-prior estimate a reveal
+could move. Without it the model couldn't tell a confirmed 0.0/1.0 from a prior one (a real
+discrepancy vs how abilities are routed; this closes it). Sits before the matchups → flows to BOTH
+the policy and value projection heads via
+`non_matchup_rest` (input widths auto-discovered). Garbage-in discipline: each static flag is
+sourced from Showdown's actual representation, never guessed from the move name — see
+`tools/pokemon_data_extractor/sync.py:build_moves`.
 
 **TurnDelta slot (159 dims, layout in `turn_delta_encoder.py`):** all offsets computed from
 named `OFFSET_*` / `*_DIM` constants — never hardcode indices. TurnDelta is **folded from the

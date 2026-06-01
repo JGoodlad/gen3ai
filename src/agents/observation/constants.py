@@ -73,14 +73,29 @@ WEATHER_ONEHOT_DIM = 5
 GLOBAL_ENV_DIM = WEATHER_ONEHOT_DIM + 2 + 2 + 1 + 8  # = 18
 
 MATCHUP_DIM = 288 # (6*4*6) for Our vs Their + (6*4*6) for Their vs Our
-# 14 scalar reactive dims precede the matchups: move power(4) + multiplier(4) +
+# 14 scalar reactive dims lead the block: move power(4) + multiplier(4) +
 # fainted(2) + active_status(1) + forced_struggle(1) + trapped(1) + maybe_trapped(1).
 # trapped/maybe_trapped are the gen3_trapping_signals_v1 additions (server-authoritative
-# legality surfaced as obs features). They sit BEFORE the matchups so the feature extractor
-# picks them up in `non_matchup_rest` automatically (matchup offset read from the layout).
-REACTIVE_DIM = 14 + MATCHUP_DIM  # 302 (removed duplicate hp+spikes: 4 dims)
+# legality surfaced as obs features).
+REACTIVE_SCALAR_DIM = 14
 
-# Top-level Offsets (Base dim = OFFSET_REACTIVE + REACTIVE_DIM = 1547)
+# gen3_move_effects_v1: action-aligned per-move EFFECT flags. For each of the 4
+# request-order move slots (so feature slot k lines up with action logit 6+k), 9
+# features: is_boost, is_heal, is_protect, is_phaze, is_hazard, inflicts_status,
+# status_will_land, pp_fraction, status_will_land_known. Status / utility moves are otherwise
+# indistinguishable at the policy head (base power 0 + neutral type multiplier for all of them),
+# so the model could not tell a setup move from a heal from a wasted Toxic. status_will_land is
+# a prior-weighted probability; status_will_land_known is the prior-vs-confirmed flag (routed
+# with the SAME predicate as the per-mon ability block's `known` bit — see reactive.py). These
+# sit AFTER the 14 scalars and BEFORE the matchups, so the extractor picks them up in
+# `non_matchup_rest` automatically (the matchup offset is read from the layout, never hardcoded).
+MOVE_EFFECT_FEATURES = 9
+MOVE_EFFECTS_DIM = 4 * MOVE_EFFECT_FEATURES                       # 36 (N_MOVE_SLOTS=4 × 9)
+REACTIVE_MATCHUP_OFFSET = REACTIVE_SCALAR_DIM + MOVE_EFFECTS_DIM  # 50
+
+REACTIVE_DIM = REACTIVE_SCALAR_DIM + MOVE_EFFECTS_DIM + MATCHUP_DIM  # 338
+
+# Top-level Offsets (Base dim = OFFSET_REACTIVE + REACTIVE_DIM = 1579)
 NUM_POKEMON = 12
 TEAM_SIZE = 6
 OFFSET_OUR_TEAM = 0

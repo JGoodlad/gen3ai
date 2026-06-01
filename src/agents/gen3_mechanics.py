@@ -192,6 +192,87 @@ def is_status_move_immune(move_id: str, mon) -> bool:
     return bool(immune_types & mon_types) or getattr(mon, "status", None) is not None
 
 
+# Gen-3 abilities that grant FULL immunity to a specific major status. Keyed by the
+# Showdown ability id → the status ids it blocks. Only abilities that *prevent the
+# status from applying* are listed — abilities that merely cure faster (Shed Skin) or
+# wake early (Early Bird) do NOT block and are excluded. Immunity (Snorlax) is the
+# OU-relevant one (blocks Toxic/poison); the rest are correctness for completeness.
+ABILITY_STATUS_IMMUNITY: dict[str, frozenset[str]] = {
+    "immunity":    frozenset({"psn", "tox"}),
+    "limber":      frozenset({"par"}),
+    "waterveil":   frozenset({"brn"}),
+    "insomnia":    frozenset({"slp"}),
+    "vitalspirit": frozenset({"slp"}),
+    "magmaarmor":  frozenset({"frz"}),
+}
+
+
+def _ability_revealed(mon) -> bool:
+    """Is ``mon``'s ability confirmed? The SAME predicate the per-Pokémon ability block uses
+    for its ``known`` flag (``AbilitiesEncoder``) and ``_resolve_ability_distribution``: a set
+    ability whose normalized id isn't poke-env's ``"unknownability"`` sentinel. Keeping one
+    predicate is what makes the reactive ``status_will_land_known`` bit consistent with the
+    ability block's ``known`` bit for the same opponent."""
+    ability = getattr(mon, "ability", None)
+    if not ability:
+        return False
+    return ability.lower().replace(" ", "").replace("_", "") != "unknownability"
+
+
+def status_land_estimate(
+    move_id: str, status_id: str | None, mon, ability_dist
+) -> tuple[float, bool]:
+    """``(probability, known)`` that a dedicated status move applies ``status_id`` to ``mon``.
+
+    ``probability`` ∈ [0,1] is the "priors first, confirmation collapses it" estimate — the same
+    spirit as the matchup encoder's ability-expectation (``_expected_multiplier``).
+    ``ability_dist`` is ``[(ability_id_or_None, prob), …]``: a singleton for a REVEALED ability,
+    the Smogon prior for an UNREVEALED opponent, or ``[(None, 1.0)]`` when we have no info.
+    Ability-INDEPENDENT certain blocks → 0.0 regardless of the distribution: type immunity
+    (``STATUS_MOVE_IMMUNITY``), already carrying a status (both via :func:`is_status_move_immune`),
+    and an active Substitute. Otherwise the result is ``1 − P(ability blocks it)`` — e.g. an
+    unrevealed Snorlax (Immunity 0.86 / Thick Fat 0.14) reads ≈0.14 for Toxic.
+
+    ``known`` is the prior-vs-confirmed flag, ROUTED CONSISTENTLY WITH THE ABILITY BLOCK: True
+    when the value rests on confirmed information — a type-certain hard block (immune / already
+    statused / Substitute, all always visible) OR the opponent's ability is revealed
+    (:func:`_ability_revealed`, the same predicate the ability ``known`` bit uses). False when
+    the value is a Smogon-prior estimate that a future ability reveal could move. So a fractional
+    probability always has ``known=False``; the 0.0/1.0 endpoints are disambiguated by this bit
+    exactly the way the ability block disambiguates a confirmed ability from a prior."""
+    if status_id is None or mon is None:
+        return 0.0, False
+    if is_status_move_immune(move_id, mon):  # type immunity OR already statused — certain
+        return 0.0, True
+    effects = getattr(mon, "effects", None) or {}
+    if Effect.SUBSTITUTE in effects:  # Sub blocks status — certain
+        return 0.0, True
+    block_mass = 0.0
+    for ability, p in (ability_dist or [(None, 1.0)]):
+        if ability is None:
+            continue
+        aid = ability.lower().replace(" ", "").replace("_", "")
+        if status_id in ABILITY_STATUS_IMMUNITY.get(aid, frozenset()):
+            block_mass += p
+    return max(0.0, 1.0 - block_mass), _ability_revealed(mon)
+
+
+def status_land_probability(move_id: str, status_id: str | None, mon, ability_dist) -> float:
+    """The probability half of :func:`status_land_estimate` (see it for the full contract)."""
+    return status_land_estimate(move_id, status_id, mon, ability_dist)[0]
+
+
+def status_move_lands(move_id: str, status_id: str | None, mon) -> bool:
+    """Server-truth bool: does this status land given ``mon``'s CURRENT (revealed) ability?
+    Equivalent to :func:`status_land_probability` with a singleton distribution drawn from
+    the live ``mon.ability`` (no priors) — the "confirmation" half of the priors-then-confirm
+    pattern. ``None`` status (a non-status move) → False; an unrevealed/unknown ability
+    contributes nothing (treated as non-immune)."""
+    ability = getattr(mon, "ability", None)
+    dist = [(ability, 1.0)] if ability else [(None, 1.0)]
+    return status_land_probability(move_id, status_id, mon, dist) > 0.0
+
+
 def mon_status_str(mon) -> str | None:
     """Permanent status + notable volatile effects as a compact string, or None.
 

@@ -8,7 +8,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "acid": {
         "name": "Acid",
@@ -19,7 +25,13 @@
         "hasSecondary": true,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "acidarmor": {
         "name": "Acid Armor",
@@ -30,7 +42,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": true
+        "never_miss": true,
+        "isBoost": true,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "aerialace": {
         "name": "Aerial Ace",
@@ -41,7 +59,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": true
+        "never_miss": true,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "aeroblast": {
         "name": "Aeroblast",
@@ -52,7 +76,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 95,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "agility": {
         "name": "Agility",
@@ -63,7 +93,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": true
+        "never_miss": true,
+        "isBoost": true,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "aircutter": {
         "name": "Air Cutter",
@@ -74,7 +110,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 95,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "amnesia": {
         "name": "Amnesia",
@@ -85,7 +127,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": true
+        "never_miss": true,
+        "isBoost": true,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "ancientpower": {
         "name": "Ancient Power",
@@ -96,7 +144,13 @@
         "hasSecondary": true,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "armthrust": {
         "name": "Arm Thrust",
@@ -107,7 +161,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "aromatherapy": {
         "name": "Aromatherapy",
@@ -118,7 +178,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": true
+        "never_miss": true,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "assist": {
         "name": "Assist",
@@ -129,7 +195,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": true
+        "never_miss": true,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "astonish": {
         "name": "Astonish",
@@ -140,7 +212,13 @@
         "hasSecondary": true,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "attract": {
         "name": "Attract",
@@ -151,7 +229,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "aurorabeam": {
         "name": "Aurora Beam",
@@ -162,7 +246,13 @@
         "hasSecondary": true,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "barrage": {
         "name": "Barrage",
@@ -173,7 +263,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 85,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "barrier": {
         "name": "Barrier",
@@ -184,7 +280,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": true
+        "never_miss": true,
+        "isBoost": true,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "batonpass": {
         "name": "Baton Pass",
@@ -195,7 +297,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": true
+        "never_miss": true,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "beatup": {
         "name": "Beat Up",
@@ -206,7 +314,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "bellydrum": {
         "name": "Belly Drum",
@@ -217,7 +331,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": true
+        "never_miss": true,
+        "isBoost": true,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "bide": {
         "name": "Bide",
@@ -228,7 +348,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "bind": {
         "name": "Bind",
@@ -239,7 +365,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 75,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "bite": {
         "name": "Bite",
@@ -250,7 +382,13 @@
         "hasSecondary": true,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "blastburn": {
         "name": "Blast Burn",
@@ -261,7 +399,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 90,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "blazekick": {
         "name": "Blaze Kick",
@@ -272,7 +416,13 @@
         "hasSecondary": true,
         "hasRecoil": false,
         "accuracy": 90,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "blizzard": {
         "name": "Blizzard",
@@ -283,7 +433,13 @@
         "hasSecondary": true,
         "hasRecoil": false,
         "accuracy": 70,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "block": {
         "name": "Block",
@@ -294,7 +450,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": true
+        "never_miss": true,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "bodyslam": {
         "name": "Body Slam",
@@ -305,7 +467,13 @@
         "hasSecondary": true,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "boneclub": {
         "name": "Bone Club",
@@ -316,7 +484,13 @@
         "hasSecondary": true,
         "hasRecoil": false,
         "accuracy": 85,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "bonemerang": {
         "name": "Bonemerang",
@@ -327,7 +501,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 90,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "bonerush": {
         "name": "Bone Rush",
@@ -338,7 +518,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 80,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "bounce": {
         "name": "Bounce",
@@ -349,7 +535,13 @@
         "hasSecondary": true,
         "hasRecoil": false,
         "accuracy": 85,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "brickbreak": {
         "name": "Brick Break",
@@ -360,7 +552,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "bubble": {
         "name": "Bubble",
@@ -371,7 +569,13 @@
         "hasSecondary": true,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "bubblebeam": {
         "name": "Bubble Beam",
@@ -382,7 +586,13 @@
         "hasSecondary": true,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "bulkup": {
         "name": "Bulk Up",
@@ -393,7 +603,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": true
+        "never_miss": true,
+        "isBoost": true,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "bulletseed": {
         "name": "Bullet Seed",
@@ -404,7 +620,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "calmmind": {
         "name": "Calm Mind",
@@ -415,7 +637,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": true
+        "never_miss": true,
+        "isBoost": true,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "camouflage": {
         "name": "Camouflage",
@@ -426,7 +654,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": true
+        "never_miss": true,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "charge": {
         "name": "Charge",
@@ -437,7 +671,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": true
+        "never_miss": true,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "charm": {
         "name": "Charm",
@@ -448,7 +688,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "clamp": {
         "name": "Clamp",
@@ -459,7 +705,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 75,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "cometpunch": {
         "name": "Comet Punch",
@@ -470,7 +722,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 85,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "confuseray": {
         "name": "Confuse Ray",
@@ -481,7 +739,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "confusion": {
         "name": "Confusion",
@@ -492,7 +756,13 @@
         "hasSecondary": true,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "constrict": {
         "name": "Constrict",
@@ -503,7 +773,13 @@
         "hasSecondary": true,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "conversion": {
         "name": "Conversion",
@@ -514,7 +790,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": true
+        "never_miss": true,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "conversion2": {
         "name": "Conversion 2",
@@ -525,7 +807,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": true
+        "never_miss": true,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "cosmicpower": {
         "name": "Cosmic Power",
@@ -536,7 +824,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": true
+        "never_miss": true,
+        "isBoost": true,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "cottonspore": {
         "name": "Cotton Spore",
@@ -547,7 +841,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 85,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "counter": {
         "name": "Counter",
@@ -558,7 +858,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "covet": {
         "name": "Covet",
@@ -569,7 +875,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "crabhammer": {
         "name": "Crabhammer",
@@ -580,7 +892,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 85,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "crosschop": {
         "name": "Cross Chop",
@@ -591,7 +909,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 80,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "crunch": {
         "name": "Crunch",
@@ -602,7 +926,13 @@
         "hasSecondary": true,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "crushclaw": {
         "name": "Crush Claw",
@@ -613,7 +943,13 @@
         "hasSecondary": true,
         "hasRecoil": false,
         "accuracy": 95,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "curse": {
         "name": "Curse",
@@ -624,7 +960,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": true
+        "never_miss": true,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "cut": {
         "name": "Cut",
@@ -635,7 +977,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 95,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "defensecurl": {
         "name": "Defense Curl",
@@ -646,7 +994,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": true
+        "never_miss": true,
+        "isBoost": true,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "destinybond": {
         "name": "Destiny Bond",
@@ -657,7 +1011,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": true
+        "never_miss": true,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "detect": {
         "name": "Detect",
@@ -668,7 +1028,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": true
+        "never_miss": true,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": true,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "dig": {
         "name": "Dig",
@@ -679,7 +1045,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "disable": {
         "name": "Disable",
@@ -690,7 +1062,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 55,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "dive": {
         "name": "Dive",
@@ -701,7 +1079,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "dizzypunch": {
         "name": "Dizzy Punch",
@@ -712,7 +1096,13 @@
         "hasSecondary": true,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "doomdesire": {
         "name": "Doom Desire",
@@ -723,7 +1113,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 85,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "doubleedge": {
         "name": "Double-Edge",
@@ -734,7 +1130,13 @@
         "hasSecondary": false,
         "hasRecoil": true,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "doublekick": {
         "name": "Double Kick",
@@ -745,7 +1147,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "doubleslap": {
         "name": "Double Slap",
@@ -756,7 +1164,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 85,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "doubleteam": {
         "name": "Double Team",
@@ -767,7 +1181,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": true
+        "never_miss": true,
+        "isBoost": true,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "dragonbreath": {
         "name": "Dragon Breath",
@@ -778,7 +1198,13 @@
         "hasSecondary": true,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "dragonclaw": {
         "name": "Dragon Claw",
@@ -789,7 +1215,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "dragondance": {
         "name": "Dragon Dance",
@@ -800,7 +1232,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": true
+        "never_miss": true,
+        "isBoost": true,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "dragonrage": {
         "name": "Dragon Rage",
@@ -811,7 +1249,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "dreameater": {
         "name": "Dream Eater",
@@ -822,7 +1266,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "drillpeck": {
         "name": "Drill Peck",
@@ -833,7 +1283,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "dynamicpunch": {
         "name": "Dynamic Punch",
@@ -844,7 +1300,13 @@
         "hasSecondary": true,
         "hasRecoil": false,
         "accuracy": 50,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "earthquake": {
         "name": "Earthquake",
@@ -855,7 +1317,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "eggbomb": {
         "name": "Egg Bomb",
@@ -866,7 +1334,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 75,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "ember": {
         "name": "Ember",
@@ -877,7 +1351,13 @@
         "hasSecondary": true,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "encore": {
         "name": "Encore",
@@ -888,7 +1368,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "endeavor": {
         "name": "Endeavor",
@@ -899,7 +1385,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "endure": {
         "name": "Endure",
@@ -910,7 +1402,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": true
+        "never_miss": true,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": true,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "eruption": {
         "name": "Eruption",
@@ -921,7 +1419,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "explosion": {
         "name": "Explosion",
@@ -932,7 +1436,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "extrasensory": {
         "name": "Extrasensory",
@@ -943,7 +1453,13 @@
         "hasSecondary": true,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "extremespeed": {
         "name": "Extreme Speed",
@@ -954,7 +1470,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "facade": {
         "name": "Facade",
@@ -965,7 +1487,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "fakeout": {
         "name": "Fake Out",
@@ -976,7 +1504,13 @@
         "hasSecondary": true,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "faketears": {
         "name": "Fake Tears",
@@ -987,7 +1521,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "falseswipe": {
         "name": "False Swipe",
@@ -998,7 +1538,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "featherdance": {
         "name": "Feather Dance",
@@ -1009,7 +1555,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "feintattack": {
         "name": "Feint Attack",
@@ -1020,7 +1572,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": true
+        "never_miss": true,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "fireblast": {
         "name": "Fire Blast",
@@ -1031,7 +1589,13 @@
         "hasSecondary": true,
         "hasRecoil": false,
         "accuracy": 85,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "firepunch": {
         "name": "Fire Punch",
@@ -1042,7 +1606,13 @@
         "hasSecondary": true,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "firespin": {
         "name": "Fire Spin",
@@ -1053,7 +1623,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 70,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "fissure": {
         "name": "Fissure",
@@ -1064,7 +1640,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 30,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "flail": {
         "name": "Flail",
@@ -1075,7 +1657,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "flamethrower": {
         "name": "Flamethrower",
@@ -1086,7 +1674,13 @@
         "hasSecondary": true,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "flamewheel": {
         "name": "Flame Wheel",
@@ -1097,7 +1691,13 @@
         "hasSecondary": true,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "flash": {
         "name": "Flash",
@@ -1108,7 +1708,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 70,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "flatter": {
         "name": "Flatter",
@@ -1119,7 +1725,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "fly": {
         "name": "Fly",
@@ -1130,7 +1742,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 95,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "focusenergy": {
         "name": "Focus Energy",
@@ -1141,7 +1759,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": true
+        "never_miss": true,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "focuspunch": {
         "name": "Focus Punch",
@@ -1152,7 +1776,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "followme": {
         "name": "Follow Me",
@@ -1163,7 +1793,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": true
+        "never_miss": true,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "foresight": {
         "name": "Foresight",
@@ -1174,7 +1810,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "frenzyplant": {
         "name": "Frenzy Plant",
@@ -1185,7 +1827,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 90,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "frustration": {
         "name": "Frustration",
@@ -1196,7 +1844,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "furyattack": {
         "name": "Fury Attack",
@@ -1207,7 +1861,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 85,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "furycutter": {
         "name": "Fury Cutter",
@@ -1218,7 +1878,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 95,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "furyswipes": {
         "name": "Fury Swipes",
@@ -1229,7 +1895,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 80,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "futuresight": {
         "name": "Future Sight",
@@ -1240,7 +1912,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 90,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "gigadrain": {
         "name": "Giga Drain",
@@ -1251,7 +1929,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "glare": {
         "name": "Glare",
@@ -1262,7 +1946,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 75,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": "par"
     },
     "grasswhistle": {
         "name": "Grass Whistle",
@@ -1273,7 +1963,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 55,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": "slp"
     },
     "growl": {
         "name": "Growl",
@@ -1284,7 +1980,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "growth": {
         "name": "Growth",
@@ -1295,7 +1997,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": true
+        "never_miss": true,
+        "isBoost": true,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "grudge": {
         "name": "Grudge",
@@ -1306,7 +2014,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": true
+        "never_miss": true,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "guillotine": {
         "name": "Guillotine",
@@ -1317,7 +2031,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 30,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "gust": {
         "name": "Gust",
@@ -1328,7 +2048,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "hail": {
         "name": "Hail",
@@ -1339,7 +2065,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": true
+        "never_miss": true,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "harden": {
         "name": "Harden",
@@ -1350,7 +2082,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": true
+        "never_miss": true,
+        "isBoost": true,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "haze": {
         "name": "Haze",
@@ -1361,7 +2099,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": true
+        "never_miss": true,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "headbutt": {
         "name": "Headbutt",
@@ -1372,7 +2116,13 @@
         "hasSecondary": true,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "healbell": {
         "name": "Heal Bell",
@@ -1383,7 +2133,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": true
+        "never_miss": true,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "heatwave": {
         "name": "Heat Wave",
@@ -1394,7 +2150,13 @@
         "hasSecondary": true,
         "hasRecoil": false,
         "accuracy": 90,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "helpinghand": {
         "name": "Helping Hand",
@@ -1405,7 +2167,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": true
+        "never_miss": true,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "hiddenpower": {
         "name": "Hidden Power",
@@ -1416,7 +2184,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "hiddenpowerbug": {
         "name": "Hidden Power Bug",
@@ -1427,7 +2201,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "hiddenpowerdark": {
         "name": "Hidden Power Dark",
@@ -1438,7 +2218,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "hiddenpowerdragon": {
         "name": "Hidden Power Dragon",
@@ -1449,7 +2235,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "hiddenpowerelectric": {
         "name": "Hidden Power Electric",
@@ -1460,7 +2252,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "hiddenpowerfighting": {
         "name": "Hidden Power Fighting",
@@ -1471,7 +2269,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "hiddenpowerfire": {
         "name": "Hidden Power Fire",
@@ -1482,7 +2286,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "hiddenpowerflying": {
         "name": "Hidden Power Flying",
@@ -1493,7 +2303,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "hiddenpowerghost": {
         "name": "Hidden Power Ghost",
@@ -1504,7 +2320,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "hiddenpowergrass": {
         "name": "Hidden Power Grass",
@@ -1515,7 +2337,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "hiddenpowerground": {
         "name": "Hidden Power Ground",
@@ -1526,7 +2354,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "hiddenpowerice": {
         "name": "Hidden Power Ice",
@@ -1537,7 +2371,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "hiddenpowerpoison": {
         "name": "Hidden Power Poison",
@@ -1548,7 +2388,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "hiddenpowerpsychic": {
         "name": "Hidden Power Psychic",
@@ -1559,7 +2405,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "hiddenpowerrock": {
         "name": "Hidden Power Rock",
@@ -1570,7 +2422,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "hiddenpowersteel": {
         "name": "Hidden Power Steel",
@@ -1581,7 +2439,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "hiddenpowerwater": {
         "name": "Hidden Power Water",
@@ -1592,7 +2456,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "highjumpkick": {
         "name": "High Jump Kick",
@@ -1603,7 +2473,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 90,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "hornattack": {
         "name": "Horn Attack",
@@ -1614,7 +2490,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "horndrill": {
         "name": "Horn Drill",
@@ -1625,7 +2507,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 30,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "howl": {
         "name": "Howl",
@@ -1636,7 +2524,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": true
+        "never_miss": true,
+        "isBoost": true,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "hydrocannon": {
         "name": "Hydro Cannon",
@@ -1647,7 +2541,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 90,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "hydropump": {
         "name": "Hydro Pump",
@@ -1658,7 +2558,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 80,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "hyperbeam": {
         "name": "Hyper Beam",
@@ -1669,7 +2575,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 90,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "hyperfang": {
         "name": "Hyper Fang",
@@ -1680,7 +2592,13 @@
         "hasSecondary": true,
         "hasRecoil": false,
         "accuracy": 90,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "hypervoice": {
         "name": "Hyper Voice",
@@ -1691,7 +2609,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "hypnosis": {
         "name": "Hypnosis",
@@ -1702,7 +2626,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 60,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": "slp"
     },
     "iceball": {
         "name": "Ice Ball",
@@ -1713,7 +2643,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 90,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "icebeam": {
         "name": "Ice Beam",
@@ -1724,7 +2660,13 @@
         "hasSecondary": true,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "icepunch": {
         "name": "Ice Punch",
@@ -1735,7 +2677,13 @@
         "hasSecondary": true,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "iciclespear": {
         "name": "Icicle Spear",
@@ -1746,7 +2694,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "icywind": {
         "name": "Icy Wind",
@@ -1757,7 +2711,13 @@
         "hasSecondary": true,
         "hasRecoil": false,
         "accuracy": 95,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "imprison": {
         "name": "Imprison",
@@ -1768,7 +2728,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": true
+        "never_miss": true,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "ingrain": {
         "name": "Ingrain",
@@ -1779,7 +2745,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": true
+        "never_miss": true,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "irondefense": {
         "name": "Iron Defense",
@@ -1790,7 +2762,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": true
+        "never_miss": true,
+        "isBoost": true,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "irontail": {
         "name": "Iron Tail",
@@ -1801,7 +2779,13 @@
         "hasSecondary": true,
         "hasRecoil": false,
         "accuracy": 75,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "jumpkick": {
         "name": "Jump Kick",
@@ -1812,7 +2796,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 95,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "karatechop": {
         "name": "Karate Chop",
@@ -1823,7 +2813,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "kinesis": {
         "name": "Kinesis",
@@ -1834,7 +2830,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 80,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "knockoff": {
         "name": "Knock Off",
@@ -1845,7 +2847,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "leafblade": {
         "name": "Leaf Blade",
@@ -1856,7 +2864,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "leechlife": {
         "name": "Leech Life",
@@ -1867,7 +2881,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "leechseed": {
         "name": "Leech Seed",
@@ -1878,7 +2898,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 90,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "leer": {
         "name": "Leer",
@@ -1889,7 +2915,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "lick": {
         "name": "Lick",
@@ -1900,7 +2932,13 @@
         "hasSecondary": true,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "lightscreen": {
         "name": "Light Screen",
@@ -1911,7 +2949,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": true
+        "never_miss": true,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "lockon": {
         "name": "Lock-On",
@@ -1922,7 +2966,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "lovelykiss": {
         "name": "Lovely Kiss",
@@ -1933,7 +2983,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 75,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": "slp"
     },
     "lowkick": {
         "name": "Low Kick",
@@ -1944,7 +3000,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "lusterpurge": {
         "name": "Luster Purge",
@@ -1955,7 +3017,13 @@
         "hasSecondary": true,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "machpunch": {
         "name": "Mach Punch",
@@ -1966,7 +3034,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "magicalleaf": {
         "name": "Magical Leaf",
@@ -1977,7 +3051,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": true
+        "never_miss": true,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "magiccoat": {
         "name": "Magic Coat",
@@ -1988,7 +3068,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": true
+        "never_miss": true,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "magnitude": {
         "name": "Magnitude",
@@ -1999,7 +3085,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "meanlook": {
         "name": "Mean Look",
@@ -2010,7 +3102,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": true
+        "never_miss": true,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "meditate": {
         "name": "Meditate",
@@ -2021,7 +3119,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": true
+        "never_miss": true,
+        "isBoost": true,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "megadrain": {
         "name": "Mega Drain",
@@ -2032,7 +3136,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "megahorn": {
         "name": "Megahorn",
@@ -2043,7 +3153,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 85,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "megakick": {
         "name": "Mega Kick",
@@ -2054,7 +3170,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 75,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "megapunch": {
         "name": "Mega Punch",
@@ -2065,7 +3187,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 85,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "memento": {
         "name": "Memento",
@@ -2076,7 +3204,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": true
+        "never_miss": true,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "metalclaw": {
         "name": "Metal Claw",
@@ -2087,7 +3221,13 @@
         "hasSecondary": true,
         "hasRecoil": false,
         "accuracy": 95,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "metalsound": {
         "name": "Metal Sound",
@@ -2098,7 +3238,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 85,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "meteormash": {
         "name": "Meteor Mash",
@@ -2109,7 +3255,13 @@
         "hasSecondary": true,
         "hasRecoil": false,
         "accuracy": 85,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "metronome": {
         "name": "Metronome",
@@ -2120,7 +3272,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": true
+        "never_miss": true,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "milkdrink": {
         "name": "Milk Drink",
@@ -2131,7 +3289,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": true
+        "never_miss": true,
+        "isBoost": false,
+        "isHeal": true,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "mimic": {
         "name": "Mimic",
@@ -2142,7 +3306,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": true
+        "never_miss": true,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "mindreader": {
         "name": "Mind Reader",
@@ -2153,7 +3323,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "minimize": {
         "name": "Minimize",
@@ -2164,7 +3340,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": true
+        "never_miss": true,
+        "isBoost": true,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "mirrorcoat": {
         "name": "Mirror Coat",
@@ -2175,7 +3357,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "mirrormove": {
         "name": "Mirror Move",
@@ -2186,7 +3374,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": true
+        "never_miss": true,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "mist": {
         "name": "Mist",
@@ -2197,7 +3391,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": true
+        "never_miss": true,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "mistball": {
         "name": "Mist Ball",
@@ -2208,7 +3408,13 @@
         "hasSecondary": true,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "moonlight": {
         "name": "Moonlight",
@@ -2219,7 +3425,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": true
+        "never_miss": true,
+        "isBoost": false,
+        "isHeal": true,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "morningsun": {
         "name": "Morning Sun",
@@ -2230,7 +3442,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": true
+        "never_miss": true,
+        "isBoost": false,
+        "isHeal": true,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "muddywater": {
         "name": "Muddy Water",
@@ -2241,7 +3459,13 @@
         "hasSecondary": true,
         "hasRecoil": false,
         "accuracy": 85,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "mudshot": {
         "name": "Mud Shot",
@@ -2252,7 +3476,13 @@
         "hasSecondary": true,
         "hasRecoil": false,
         "accuracy": 95,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "mudslap": {
         "name": "Mud-Slap",
@@ -2263,7 +3493,13 @@
         "hasSecondary": true,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "mudsport": {
         "name": "Mud Sport",
@@ -2274,7 +3510,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": true
+        "never_miss": true,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "naturepower": {
         "name": "Nature Power",
@@ -2285,7 +3527,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 95,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "needlearm": {
         "name": "Needle Arm",
@@ -2296,7 +3544,13 @@
         "hasSecondary": true,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "nightmare": {
         "name": "Nightmare",
@@ -2307,7 +3561,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": true
+        "never_miss": true,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "nightshade": {
         "name": "Night Shade",
@@ -2318,7 +3578,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "octazooka": {
         "name": "Octazooka",
@@ -2329,7 +3595,13 @@
         "hasSecondary": true,
         "hasRecoil": false,
         "accuracy": 85,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "odorsleuth": {
         "name": "Odor Sleuth",
@@ -2340,7 +3612,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "outrage": {
         "name": "Outrage",
@@ -2351,7 +3629,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "overheat": {
         "name": "Overheat",
@@ -2362,7 +3646,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 90,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "painsplit": {
         "name": "Pain Split",
@@ -2373,7 +3663,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": true
+        "never_miss": true,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "payday": {
         "name": "Pay Day",
@@ -2384,7 +3680,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "peck": {
         "name": "Peck",
@@ -2395,7 +3697,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "perishsong": {
         "name": "Perish Song",
@@ -2406,7 +3714,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": true
+        "never_miss": true,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "petaldance": {
         "name": "Petal Dance",
@@ -2417,7 +3731,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "pinmissile": {
         "name": "Pin Missile",
@@ -2428,7 +3748,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 85,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "poisonfang": {
         "name": "Poison Fang",
@@ -2439,7 +3765,13 @@
         "hasSecondary": true,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "poisongas": {
         "name": "Poison Gas",
@@ -2450,7 +3782,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 55,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": "psn"
     },
     "poisonpowder": {
         "name": "Poison Powder",
@@ -2461,7 +3799,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 75,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": "psn"
     },
     "poisonsting": {
         "name": "Poison Sting",
@@ -2472,7 +3816,13 @@
         "hasSecondary": true,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "poisontail": {
         "name": "Poison Tail",
@@ -2483,7 +3833,13 @@
         "hasSecondary": true,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "pound": {
         "name": "Pound",
@@ -2494,7 +3850,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "powdersnow": {
         "name": "Powder Snow",
@@ -2505,7 +3867,13 @@
         "hasSecondary": true,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "present": {
         "name": "Present",
@@ -2516,7 +3884,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 90,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "protect": {
         "name": "Protect",
@@ -2527,7 +3901,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": true
+        "never_miss": true,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": true,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "psybeam": {
         "name": "Psybeam",
@@ -2538,7 +3918,13 @@
         "hasSecondary": true,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "psychic": {
         "name": "Psychic",
@@ -2549,7 +3935,13 @@
         "hasSecondary": true,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "psychoboost": {
         "name": "Psycho Boost",
@@ -2560,7 +3952,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 90,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "psychup": {
         "name": "Psych Up",
@@ -2571,7 +3969,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": true
+        "never_miss": true,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "psywave": {
         "name": "Psywave",
@@ -2582,7 +3986,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 80,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "pursuit": {
         "name": "Pursuit",
@@ -2593,7 +4003,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "quickattack": {
         "name": "Quick Attack",
@@ -2604,7 +4020,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "rage": {
         "name": "Rage",
@@ -2615,7 +4037,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "raindance": {
         "name": "Rain Dance",
@@ -2626,7 +4054,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": true
+        "never_miss": true,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "rapidspin": {
         "name": "Rapid Spin",
@@ -2637,7 +4071,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "razorleaf": {
         "name": "Razor Leaf",
@@ -2648,7 +4088,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 95,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "razorwind": {
         "name": "Razor Wind",
@@ -2659,7 +4105,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "recover": {
         "name": "Recover",
@@ -2670,7 +4122,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": true
+        "never_miss": true,
+        "isBoost": false,
+        "isHeal": true,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "recycle": {
         "name": "Recycle",
@@ -2681,7 +4139,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": true
+        "never_miss": true,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "reflect": {
         "name": "Reflect",
@@ -2692,7 +4156,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": true
+        "never_miss": true,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "refresh": {
         "name": "Refresh",
@@ -2703,7 +4173,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": true
+        "never_miss": true,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "rest": {
         "name": "Rest",
@@ -2714,7 +4190,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": true
+        "never_miss": true,
+        "isBoost": false,
+        "isHeal": true,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "return": {
         "name": "Return",
@@ -2725,7 +4207,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "revenge": {
         "name": "Revenge",
@@ -2736,7 +4224,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "reversal": {
         "name": "Reversal",
@@ -2747,7 +4241,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "roar": {
         "name": "Roar",
@@ -2758,7 +4258,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": true,
+        "isHazard": false,
+        "status": null
     },
     "rockblast": {
         "name": "Rock Blast",
@@ -2769,7 +4275,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 80,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "rockslide": {
         "name": "Rock Slide",
@@ -2780,7 +4292,13 @@
         "hasSecondary": true,
         "hasRecoil": false,
         "accuracy": 90,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "rocksmash": {
         "name": "Rock Smash",
@@ -2791,7 +4309,13 @@
         "hasSecondary": true,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "rockthrow": {
         "name": "Rock Throw",
@@ -2802,7 +4326,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 90,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "rocktomb": {
         "name": "Rock Tomb",
@@ -2813,7 +4343,13 @@
         "hasSecondary": true,
         "hasRecoil": false,
         "accuracy": 80,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "roleplay": {
         "name": "Role Play",
@@ -2824,7 +4360,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": true
+        "never_miss": true,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "rollingkick": {
         "name": "Rolling Kick",
@@ -2835,7 +4377,13 @@
         "hasSecondary": true,
         "hasRecoil": false,
         "accuracy": 85,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "rollout": {
         "name": "Rollout",
@@ -2846,7 +4394,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 90,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "sacredfire": {
         "name": "Sacred Fire",
@@ -2857,7 +4411,13 @@
         "hasSecondary": true,
         "hasRecoil": false,
         "accuracy": 95,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "safeguard": {
         "name": "Safeguard",
@@ -2868,7 +4428,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": true
+        "never_miss": true,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "sandattack": {
         "name": "Sand Attack",
@@ -2879,7 +4445,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "sandstorm": {
         "name": "Sandstorm",
@@ -2890,7 +4462,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": true
+        "never_miss": true,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "sandtomb": {
         "name": "Sand Tomb",
@@ -2901,7 +4479,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 70,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "scaryface": {
         "name": "Scary Face",
@@ -2912,7 +4496,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 90,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "scratch": {
         "name": "Scratch",
@@ -2923,7 +4513,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "screech": {
         "name": "Screech",
@@ -2934,7 +4530,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 85,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "secretpower": {
         "name": "Secret Power",
@@ -2945,7 +4547,13 @@
         "hasSecondary": true,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "seismictoss": {
         "name": "Seismic Toss",
@@ -2956,7 +4564,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "selfdestruct": {
         "name": "Self-Destruct",
@@ -2967,7 +4581,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "shadowball": {
         "name": "Shadow Ball",
@@ -2978,7 +4598,13 @@
         "hasSecondary": true,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "shadowpunch": {
         "name": "Shadow Punch",
@@ -2989,7 +4615,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": true
+        "never_miss": true,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "sharpen": {
         "name": "Sharpen",
@@ -3000,7 +4632,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": true
+        "never_miss": true,
+        "isBoost": true,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "sheercold": {
         "name": "Sheer Cold",
@@ -3011,7 +4649,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 30,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "shockwave": {
         "name": "Shock Wave",
@@ -3022,7 +4666,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": true
+        "never_miss": true,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "signalbeam": {
         "name": "Signal Beam",
@@ -3033,7 +4683,13 @@
         "hasSecondary": true,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "silverwind": {
         "name": "Silver Wind",
@@ -3044,7 +4700,13 @@
         "hasSecondary": true,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "sing": {
         "name": "Sing",
@@ -3055,7 +4717,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 55,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": "slp"
     },
     "sketch": {
         "name": "Sketch",
@@ -3066,7 +4734,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": true
+        "never_miss": true,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "skillswap": {
         "name": "Skill Swap",
@@ -3077,7 +4751,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": true
+        "never_miss": true,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "skullbash": {
         "name": "Skull Bash",
@@ -3088,7 +4768,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "skyattack": {
         "name": "Sky Attack",
@@ -3099,7 +4785,13 @@
         "hasSecondary": true,
         "hasRecoil": false,
         "accuracy": 90,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "skyuppercut": {
         "name": "Sky Uppercut",
@@ -3110,7 +4802,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 90,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "slackoff": {
         "name": "Slack Off",
@@ -3121,7 +4819,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": true
+        "never_miss": true,
+        "isBoost": false,
+        "isHeal": true,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "slam": {
         "name": "Slam",
@@ -3132,7 +4836,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 75,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "slash": {
         "name": "Slash",
@@ -3143,7 +4853,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "sleeppowder": {
         "name": "Sleep Powder",
@@ -3154,7 +4870,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 75,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": "slp"
     },
     "sleeptalk": {
         "name": "Sleep Talk",
@@ -3165,7 +4887,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": true
+        "never_miss": true,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "sludge": {
         "name": "Sludge",
@@ -3176,7 +4904,13 @@
         "hasSecondary": true,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "sludgebomb": {
         "name": "Sludge Bomb",
@@ -3187,7 +4921,13 @@
         "hasSecondary": true,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "smellingsalts": {
         "name": "Smelling Salts",
@@ -3198,7 +4938,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "smog": {
         "name": "Smog",
@@ -3209,7 +4955,13 @@
         "hasSecondary": true,
         "hasRecoil": false,
         "accuracy": 70,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "smokescreen": {
         "name": "Smokescreen",
@@ -3220,7 +4972,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "snatch": {
         "name": "Snatch",
@@ -3231,7 +4989,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": true
+        "never_miss": true,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "snore": {
         "name": "Snore",
@@ -3242,7 +5006,13 @@
         "hasSecondary": true,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "softboiled": {
         "name": "Soft-Boiled",
@@ -3253,7 +5023,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": true
+        "never_miss": true,
+        "isBoost": false,
+        "isHeal": true,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "solarbeam": {
         "name": "Solar Beam",
@@ -3264,7 +5040,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "sonicboom": {
         "name": "Sonic Boom",
@@ -3275,7 +5057,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 90,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "spark": {
         "name": "Spark",
@@ -3286,7 +5074,13 @@
         "hasSecondary": true,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "spiderweb": {
         "name": "Spider Web",
@@ -3297,7 +5091,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": true
+        "never_miss": true,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "spikecannon": {
         "name": "Spike Cannon",
@@ -3308,7 +5108,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "spikes": {
         "name": "Spikes",
@@ -3319,7 +5125,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": true
+        "never_miss": true,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": true,
+        "status": null
     },
     "spite": {
         "name": "Spite",
@@ -3330,7 +5142,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "spitup": {
         "name": "Spit Up",
@@ -3341,7 +5159,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "splash": {
         "name": "Splash",
@@ -3352,7 +5176,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": true
+        "never_miss": true,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "spore": {
         "name": "Spore",
@@ -3363,7 +5193,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": "slp"
     },
     "steelwing": {
         "name": "Steel Wing",
@@ -3374,7 +5210,13 @@
         "hasSecondary": true,
         "hasRecoil": false,
         "accuracy": 90,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "stockpile": {
         "name": "Stockpile",
@@ -3385,7 +5227,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": true
+        "never_miss": true,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "stomp": {
         "name": "Stomp",
@@ -3396,7 +5244,13 @@
         "hasSecondary": true,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "strength": {
         "name": "Strength",
@@ -3407,7 +5261,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "stringshot": {
         "name": "String Shot",
@@ -3418,7 +5278,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 95,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "struggle": {
         "name": "Struggle",
@@ -3429,7 +5295,13 @@
         "hasSecondary": false,
         "hasRecoil": true,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "stunspore": {
         "name": "Stun Spore",
@@ -3440,7 +5312,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 75,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": "par"
     },
     "submission": {
         "name": "Submission",
@@ -3451,7 +5329,13 @@
         "hasSecondary": false,
         "hasRecoil": true,
         "accuracy": 80,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "substitute": {
         "name": "Substitute",
@@ -3462,7 +5346,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": true
+        "never_miss": true,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "sunnyday": {
         "name": "Sunny Day",
@@ -3473,7 +5363,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": true
+        "never_miss": true,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "superfang": {
         "name": "Super Fang",
@@ -3484,7 +5380,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 90,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "superpower": {
         "name": "Superpower",
@@ -3495,7 +5397,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "supersonic": {
         "name": "Supersonic",
@@ -3506,7 +5414,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 55,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "surf": {
         "name": "Surf",
@@ -3517,7 +5431,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "swagger": {
         "name": "Swagger",
@@ -3528,7 +5448,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 90,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "swallow": {
         "name": "Swallow",
@@ -3539,7 +5465,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": true
+        "never_miss": true,
+        "isBoost": false,
+        "isHeal": true,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "sweetkiss": {
         "name": "Sweet Kiss",
@@ -3550,7 +5482,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 75,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "sweetscent": {
         "name": "Sweet Scent",
@@ -3561,7 +5499,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "swift": {
         "name": "Swift",
@@ -3572,7 +5516,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": true
+        "never_miss": true,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "swordsdance": {
         "name": "Swords Dance",
@@ -3583,7 +5533,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": true
+        "never_miss": true,
+        "isBoost": true,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "synthesis": {
         "name": "Synthesis",
@@ -3594,7 +5550,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": true
+        "never_miss": true,
+        "isBoost": false,
+        "isHeal": true,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "tackle": {
         "name": "Tackle",
@@ -3605,7 +5567,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 95,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "tailglow": {
         "name": "Tail Glow",
@@ -3616,7 +5584,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": true
+        "never_miss": true,
+        "isBoost": true,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "tailwhip": {
         "name": "Tail Whip",
@@ -3627,7 +5601,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "takedown": {
         "name": "Take Down",
@@ -3638,7 +5618,13 @@
         "hasSecondary": false,
         "hasRecoil": true,
         "accuracy": 85,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "taunt": {
         "name": "Taunt",
@@ -3649,7 +5635,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "teeterdance": {
         "name": "Teeter Dance",
@@ -3660,7 +5652,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "teleport": {
         "name": "Teleport",
@@ -3671,7 +5669,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": true
+        "never_miss": true,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "thief": {
         "name": "Thief",
@@ -3682,7 +5686,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "thrash": {
         "name": "Thrash",
@@ -3693,7 +5703,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "thunder": {
         "name": "Thunder",
@@ -3704,7 +5720,13 @@
         "hasSecondary": true,
         "hasRecoil": false,
         "accuracy": 70,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "thunderbolt": {
         "name": "Thunderbolt",
@@ -3715,7 +5737,13 @@
         "hasSecondary": true,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "thunderpunch": {
         "name": "Thunder Punch",
@@ -3726,7 +5754,13 @@
         "hasSecondary": true,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "thundershock": {
         "name": "Thunder Shock",
@@ -3737,7 +5771,13 @@
         "hasSecondary": true,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "thunderwave": {
         "name": "Thunder Wave",
@@ -3748,7 +5788,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": "par"
     },
     "tickle": {
         "name": "Tickle",
@@ -3759,7 +5805,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "torment": {
         "name": "Torment",
@@ -3770,7 +5822,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "toxic": {
         "name": "Toxic",
@@ -3781,7 +5839,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 85,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": "tox"
     },
     "transform": {
         "name": "Transform",
@@ -3792,7 +5856,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": true
+        "never_miss": true,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "triattack": {
         "name": "Tri Attack",
@@ -3803,7 +5873,13 @@
         "hasSecondary": true,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "trick": {
         "name": "Trick",
@@ -3814,7 +5890,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "triplekick": {
         "name": "Triple Kick",
@@ -3825,7 +5907,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 90,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "twineedle": {
         "name": "Twineedle",
@@ -3836,7 +5924,13 @@
         "hasSecondary": true,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "twister": {
         "name": "Twister",
@@ -3847,7 +5941,13 @@
         "hasSecondary": true,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "uproar": {
         "name": "Uproar",
@@ -3858,7 +5958,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "vinewhip": {
         "name": "Vine Whip",
@@ -3869,7 +5975,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "visegrip": {
         "name": "Vise Grip",
@@ -3880,7 +5992,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "vitalthrow": {
         "name": "Vital Throw",
@@ -3891,7 +6009,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": true
+        "never_miss": true,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "volttackle": {
         "name": "Volt Tackle",
@@ -3902,7 +6026,13 @@
         "hasSecondary": false,
         "hasRecoil": true,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "waterfall": {
         "name": "Waterfall",
@@ -3913,7 +6043,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "watergun": {
         "name": "Water Gun",
@@ -3924,7 +6060,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "waterpulse": {
         "name": "Water Pulse",
@@ -3935,7 +6077,13 @@
         "hasSecondary": true,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "watersport": {
         "name": "Water Sport",
@@ -3946,7 +6094,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": true
+        "never_miss": true,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "waterspout": {
         "name": "Water Spout",
@@ -3957,7 +6111,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "weatherball": {
         "name": "Weather Ball",
@@ -3968,7 +6128,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "whirlpool": {
         "name": "Whirlpool",
@@ -3979,7 +6145,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 70,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "whirlwind": {
         "name": "Whirlwind",
@@ -3990,7 +6162,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": true,
+        "isHazard": false,
+        "status": null
     },
     "willowisp": {
         "name": "Will-O-Wisp",
@@ -4001,7 +6179,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 75,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": "brn"
     },
     "wingattack": {
         "name": "Wing Attack",
@@ -4012,7 +6196,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "wish": {
         "name": "Wish",
@@ -4023,7 +6213,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": true
+        "never_miss": true,
+        "isBoost": false,
+        "isHeal": true,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "withdraw": {
         "name": "Withdraw",
@@ -4034,7 +6230,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": true
+        "never_miss": true,
+        "isBoost": true,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "wrap": {
         "name": "Wrap",
@@ -4045,7 +6247,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 85,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "yawn": {
         "name": "Yawn",
@@ -4056,7 +6264,13 @@
         "hasSecondary": false,
         "hasRecoil": false,
         "accuracy": 100,
-        "never_miss": true
+        "never_miss": true,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     },
     "zapcannon": {
         "name": "Zap Cannon",
@@ -4067,6 +6281,12 @@
         "hasSecondary": true,
         "hasRecoil": false,
         "accuracy": 50,
-        "never_miss": false
+        "never_miss": false,
+        "isBoost": false,
+        "isHeal": false,
+        "isProtect": false,
+        "isPhaze": false,
+        "isHazard": false,
+        "status": null
     }
 }

@@ -119,3 +119,12 @@ Each version folder has:
 
 When writing a new `impl_step*.md`, match the existing docs in that folder exactly —
 heading levels, table style, and level of detail vary between versions.
+
+## Cross-version docs (designs/ root)
+
+- **`design_pathologies.md`** — living model-pathology register: *what's wrong → what we changed →
+  what we expect to be different next time*. **Review it before every retrain** and add a row after
+  each eval noting whether a fix's predicted change actually landed. Spans the pathology-hunting
+  effort (the ai_v4 tail) and the obs/reward fixes it motivates; currently records the
+  `run_20260531_182804` findings, the `gen3_move_effects_v1` move-effect obs fix, and the open
+  matchup-variance prior-vs-confirmed question.

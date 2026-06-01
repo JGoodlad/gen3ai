@@ -63,6 +63,21 @@ class MoveData:
     has_secondary: bool
     has_recoil: bool
 
+    # --- gen3_move_effects_v1: action-aligned effect classification ---
+    # Derived once in the acquisition tool from the field Showdown actually keys the
+    # mechanic on (declarative or, for Belly Drum, a curated callback override) — see
+    # tools/pokemon_data_extractor/sync.py:build_moves. These let the observation's
+    # reactive block tell a setup move from a heal from a wasted status at the policy
+    # head (where, for status moves, base_power=0 and the type multiplier are otherwise
+    # identical). NOTE: Curse's setup is type-conditional (non-Ghost user only), so
+    # `is_boost` is False here and the encoder resolves Curse live from the user's type.
+    is_boost: bool = False        # raises the USER'S own stats (setup); incl. Belly Drum
+    is_heal: bool = False         # restores the user's HP (flags.heal — incl. weather-heal/Rest/Wish)
+    is_protect: bool = False      # Protect / Detect / Endure (stalling volatile)
+    is_phaze: bool = False        # forces the foe to switch (Roar / Whirlwind)
+    is_hazard: bool = False       # sets an entry hazard (gen3: Spikes)
+    status_inflicted: Optional[str] = None  # major status this move's PURPOSE is to inflict, else None
+
     @property
     def is_damaging(self) -> bool:
         """A move deals direct damage iff it has base power. Mirrors the reward/obs convention
@@ -86,6 +101,12 @@ def _build(raw: Dict[str, dict]) -> Dict[str, MoveData]:
             never_miss=bool(v.get("never_miss", False)),
             has_secondary=bool(v.get("hasSecondary", False)),
             has_recoil=bool(v.get("hasRecoil", False)),
+            is_boost=bool(v.get("isBoost", False)),
+            is_heal=bool(v.get("isHeal", False)),
+            is_protect=bool(v.get("isProtect", False)),
+            is_phaze=bool(v.get("isPhaze", False)),
+            is_hazard=bool(v.get("isHazard", False)),
+            status_inflicted=v.get("status") or None,
         )
     return dex
 

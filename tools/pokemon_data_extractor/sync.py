@@ -132,6 +132,51 @@ def build_abilities(gen):
 # Moves
 # --------------------------------------------------------------------------- #
 
+# Major status conditions a status move can inflict (the move's PRIMARY `status`
+# field). Damaging moves carry status only as a `secondary` chance, which we do
+# NOT surface here — `inflicts_status` is about a move whose *purpose* is the status.
+_MAJOR_STATUSES = frozenset({"par", "brn", "psn", "tox", "slp", "frz"})
+
+# Entry-hazard side conditions (gen3 has only Spikes; later gens add Stealth Rock /
+# Toxic Spikes / Sticky Web — keyed by Showdown's `sideCondition` id).
+_HAZARD_SIDE_CONDITIONS = frozenset({"spikes", "stealthrock", "toxicspikes", "stickyweb"})
+
+# Protect-family "stalling" moves set one of these volatiles (Protect/Detect → protect,
+# Endure → endure). Detected by the `volatileStatus` field (declarative).
+_PROTECT_VOLATILES = frozenset({"protect", "endure"})
+
+# Moves whose self-boost is implemented ENTIRELY in a JavaScript `onHit` callback,
+# so it is INVISIBLE in the declarative fields the poke-env static JSON carries.
+# Determined by scanning deps/pokemon-showdown for gen3 Status moves that call
+# `this.boost(...)` with no declarative `boosts`/`self.boosts` — the only one is
+# Belly Drum (onHit: `this.boost({atk: 12}, target)` + directDamage half HP).
+# Curse is deliberately NOT here: its self-boost (non-Ghost user → {atk,def,spe})
+# is set conditionally on the user's type at onTryHit time, so it can only be
+# resolved live in the encoder, not as a static flag. Memento is NOT a self-boost
+# (its boosts target the FOE and the user faints) — excluded by the target=='self'
+# gate below. See tools/CLAUDE.md.
+_CALLBACK_SELF_BOOST = frozenset({"bellydrum"})
+
+
+def _has_self_positive_boost(entry):
+    """True iff the move declaratively raises one of the USER'S OWN stats (a setup
+    move). Covers the two declarative shapes — a top-level ``boosts`` on a
+    ``target: self`` move (Swords Dance, Calm Mind, Dragon Dance, Tail Glow, …) and a
+    ``self: {boosts: …}`` block (post-hit self-boosts) — requiring at least one
+    POSITIVE stage so foe-targeting debuffs (Memento's ``boosts:{atk:-2,spa:-2}`` on
+    ``target: normal``) and self-debuff drawbacks never count as setup."""
+    if entry.get("target") == "self":
+        boosts = entry.get("boosts")
+        if isinstance(boosts, dict) and any(v > 0 for v in boosts.values()):
+            return True
+    self_block = entry.get("self")
+    if isinstance(self_block, dict):
+        sb = self_block.get("boosts")
+        if isinstance(sb, dict) and any(v > 0 for v in sb.values()):
+            return True
+    return False
+
+
 def build_moves(gen):
     """Build the gen-N move map from the poke-env static move data.
 
@@ -142,6 +187,32 @@ def build_moves(gen):
     via `never_miss: true`. A 100%-accuracy move can still miss into evasion
     (Double Team) or after Sand-Attack; a never-miss move bypasses the
     accuracy/evasion check entirely — hence the dedicated bit.
+
+    Move-EFFECT classification (gen3_move_effects_v1) — the action-aligned per-move
+    effect flags the observation's reactive block surfaces so the policy head can
+    tell a setup move from a heal from a wasted status (all of which look identical
+    at the head otherwise: base power 0, neutral type multiplier). Showdown implements
+    effects through a mix of DECLARATIVE fields and JS CALLBACKS, so each flag is
+    derived from the field Showdown actually keys the mechanic on — not guessed from
+    the move name (garbage in, garbage out):
+      - `is_heal`     ← `flags.heal == 1`. Showdown tags every HP-restoring move with
+                        this flag (so Heal Block can key off it), INCLUDING the
+                        callback-only ones with no declarative `heal` amount
+                        (Moonlight/Synthesis/Morning Sun = weather-scaled, Rest, Wish,
+                        Swallow). It correctly EXCLUDES drain attacks (Giga Drain has
+                        `drain` but no `flags.heal`) and Leech Seed/Ingrain/Pain Split.
+      - `is_protect`  ← `volatileStatus ∈ {protect, endure}` (Protect/Detect/Endure).
+      - `is_phaze`    ← `forceSwitch` (Roar/Whirlwind).
+      - `is_hazard`   ← `sideCondition` is an entry hazard (gen3: Spikes).
+      - `inflicts_status` / `status` ← the move's PRIMARY `status` field, when it is a
+                        major status (par/brn/psn/tox/slp/frz). Secondary-chance status
+                        on damaging moves is intentionally ignored (the model sees those
+                        as damage; the status is incidental).
+      - `is_boost`    ← declarative self-positive boost (`_has_self_positive_boost`)
+                        OR a curated callback override (`_CALLBACK_SELF_BOOST` = Belly
+                        Drum, whose +6 Atk lives in an `onHit` callback). Curse is
+                        resolved LIVE in the encoder (its boost depends on the user's
+                        type), so it is NOT flagged here.
     """
     moves_path = _static("moves", f"gen{gen}moves.json")
     if not os.path.exists(moves_path):
@@ -158,6 +229,12 @@ def build_moves(gen):
         raw_accuracy = entry.get("accuracy")
         never_miss = raw_accuracy is True
 
+        flags = entry.get("flags") or {}
+        primary_status = entry.get("status")
+        if primary_status not in _MAJOR_STATUSES:
+            primary_status = None
+        side_condition = entry.get("sideCondition")
+
         moves_map[move_id] = {
             "name": entry.get("name"),
             "num": entry.get("num"),
@@ -168,6 +245,13 @@ def build_moves(gen):
             "hasRecoil": bool(entry.get("recoil")),
             "accuracy": 100 if never_miss else raw_accuracy,
             "never_miss": never_miss,
+            # --- gen3_move_effects_v1: action-aligned effect classification ---
+            "isBoost": _has_self_positive_boost(entry) or move_id in _CALLBACK_SELF_BOOST,
+            "isHeal": bool(flags.get("heal")),
+            "isProtect": entry.get("volatileStatus") in _PROTECT_VOLATILES,
+            "isPhaze": bool(entry.get("forceSwitch")),
+            "isHazard": side_condition in _HAZARD_SIDE_CONDITIONS,
+            "status": primary_status,  # major status this move INFLICTS, else null
         }
 
     return moves_map

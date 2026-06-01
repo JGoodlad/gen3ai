@@ -109,9 +109,9 @@ def test_move_and_team_alignment(monkeypatch):
             assert known_flag == 1.0, f"Move slot {i} should be known"
 
     # 5. Verify Reactive Matrix Alignment (Our Moves vs Their Team)
-    # The matrix starts at OFFSET_REACTIVE + our_matchups offset (14 after the
-    # gen3_trapping_signals_v1 trapped/maybe_trapped bits shifted it from 12). Derive it
-    # from the reactive layout so this stays correct if the scalar prefix changes again.
+    # The matrix starts at OFFSET_REACTIVE + our_matchups offset (46 = 14 scalars +
+    # the gen3_move_effects_v1 32-dim move-effects block). Derive it from the reactive
+    # layout so this stays correct if the scalar/effects prefix changes again.
     # Shape is (TEAM_SIZE, 4, TEAM_SIZE) -> (Our Mon, Our Move, Their Mon)
     from .reactive import ReactiveEncoder  # noqa: PLC0415
     matrix_start = OFFSET_REACTIVE + ReactiveEncoder().get_layout()["our_matchups"]["offset"]

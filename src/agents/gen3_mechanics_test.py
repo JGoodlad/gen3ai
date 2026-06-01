@@ -20,6 +20,10 @@ from agents.gen3_mechanics import (
     BOOST_DIM,
     effective_multiplier,
     is_status_move_immune,
+    status_move_lands,
+    status_land_probability,
+    status_land_estimate,
+    ABILITY_STATUS_IMMUNITY,
     mon_status_str,
     boosts_array,
     boosts_str,
@@ -333,3 +337,145 @@ def test_effective_multiplier_object_wrapper_delegates():
     # Flash Fire does NOT absorb while frozen → Fire-vs-Fire resists to 0.5×, not 0×.
     frz = _mon(type_1=PokemonType.FIRE, ability="flashfire", status=Status.FRZ)
     assert effective_multiplier(PokemonType.FIRE, frz) == 0.5
+
+
+# ---------------------------------------------------------------------------
+# status_move_lands (gen3_move_effects_v1) — does a dedicated status move apply?
+# ---------------------------------------------------------------------------
+
+class TestStatusMoveLands:
+    def test_none_status_returns_false(self):
+        # A non-status move (status_id None) never "lands a status".
+        assert status_move_lands("tackle", None, _mon()) is False
+
+    def test_lands_on_clean_target(self):
+        assert status_move_lands("toxic", "tox", _mon(PokemonType.NORMAL)) is True
+        assert status_move_lands("thunderwave", "par", _mon(PokemonType.NORMAL)) is True
+
+    def test_type_immune_blocks(self):
+        # Poison/Steel immune to Toxic; Ground immune to Thunder Wave; Fire immune to WoW.
+        assert status_move_lands("toxic", "tox", _mon(PokemonType.POISON)) is False
+        assert status_move_lands("toxic", "tox", _mon(PokemonType.STEEL)) is False
+        assert status_move_lands("thunderwave", "par", _mon(PokemonType.GROUND)) is False
+        assert status_move_lands("willowisp", "brn", _mon(PokemonType.FIRE)) is False
+
+    def test_already_statused_blocks(self):
+        assert status_move_lands("toxic", "tox", _mon(PokemonType.WATER, status=Status.BRN)) is False
+
+    def test_known_ability_immunity_blocks(self):
+        # Immunity (Snorlax) blocks poison/toxic; Limber blocks paralysis. poke-env reveals
+        # the ability after the first immune proc, so this engages from attempt 2 onward.
+        assert status_move_lands("toxic", "tox", _mon(PokemonType.NORMAL, ability="immunity")) is False
+        assert status_move_lands("thunderwave", "par", _mon(PokemonType.NORMAL, ability="limber")) is False
+
+    def test_unknown_ability_does_not_over_claim(self):
+        # Unrevealed ability ⇒ assume it lands (best guess) — never a false "whiff".
+        assert status_move_lands("toxic", "tox", _mon(PokemonType.NORMAL, ability=None)) is True
+        assert status_move_lands("toxic", "tox", _mon(PokemonType.NORMAL, ability="unknownability")) is True
+
+    def test_irrelevant_ability_does_not_block(self):
+        # An ability that doesn't grant status immunity leaves the status landing.
+        assert status_move_lands("toxic", "tox", _mon(PokemonType.NORMAL, ability="thickfat")) is True
+
+    def test_substitute_blocks(self):
+        assert status_move_lands(
+            "toxic", "tox", _mon(PokemonType.NORMAL, effects={Effect.SUBSTITUTE: 1})
+        ) is False
+
+    def test_ability_immunity_map_is_correct(self):
+        assert "tox" in ABILITY_STATUS_IMMUNITY["immunity"]
+        assert "psn" in ABILITY_STATUS_IMMUNITY["immunity"]
+        assert ABILITY_STATUS_IMMUNITY["limber"] == frozenset({"par"})
+
+
+# ---------------------------------------------------------------------------
+# status_land_probability (gen3_move_effects_v1) — priors first, then confirmation
+# ---------------------------------------------------------------------------
+
+class TestStatusLandProbability:
+    def test_unrevealed_uses_prior_mass(self):
+        # Unrevealed Snorlax: Immunity 0.86 (blocks tox) / Thick Fat 0.14 (doesn't) →
+        # P(Toxic lands) = 1 - 0.86 = 0.14.
+        mon = _mon(PokemonType.NORMAL, ability=None)
+        dist = [("immunity", 0.86), ("thickfat", 0.14)]
+        assert status_land_probability("toxic", "tox", mon, dist) == pytest.approx(0.14)
+
+    def test_revealed_blocking_ability_collapses_to_zero(self):
+        mon = _mon(PokemonType.NORMAL, ability="immunity")
+        assert status_land_probability("toxic", "tox", mon, [("immunity", 1.0)]) == 0.0
+
+    def test_revealed_nonblocking_ability_collapses_to_one(self):
+        mon = _mon(PokemonType.NORMAL, ability="thickfat")
+        assert status_land_probability("toxic", "tox", mon, [("thickfat", 1.0)]) == pytest.approx(1.0)
+
+    def test_no_info_distribution_lands(self):
+        # [(None, 1.0)] sentinel (no priors, ability unknown) → ability contributes nothing.
+        mon = _mon(PokemonType.NORMAL, ability=None)
+        assert status_land_probability("toxic", "tox", mon, [(None, 1.0)]) == pytest.approx(1.0)
+
+    def test_type_immunity_is_zero_regardless_of_priors(self):
+        # A Poison-type can't be Toxic'd no matter what its ability prior says.
+        mon = _mon(PokemonType.POISON, ability=None)
+        dist = [("levitate", 0.5), ("clearbody", 0.5)]  # neither blocks status
+        assert status_land_probability("toxic", "tox", mon, dist) == 0.0
+
+    def test_already_statused_is_zero(self):
+        mon = _mon(PokemonType.NORMAL, status=Status.BRN, ability=None)
+        assert status_land_probability("toxic", "tox", mon, [("thickfat", 1.0)]) == 0.0
+
+    def test_status_specific_immunity(self):
+        # Immunity blocks poison but NOT paralysis → Thunder Wave still lands on a
+        # (revealed-Immunity) Snorlax.
+        mon = _mon(PokemonType.NORMAL, ability="immunity")
+        assert status_land_probability("thunderwave", "par", mon, [("immunity", 1.0)]) == pytest.approx(1.0)
+
+    def test_bool_wrapper_matches_revealed_probability(self):
+        # status_move_lands is the singleton-from-live-ability special case.
+        immune = _mon(PokemonType.NORMAL, ability="immunity")
+        clean = _mon(PokemonType.NORMAL, ability=None)
+        assert status_move_lands("toxic", "tox", immune) is False
+        assert status_move_lands("toxic", "tox", clean) is True
+
+
+# ---------------------------------------------------------------------------
+# status_land_estimate — the (probability, known) pair; known mirrors abilities
+# ---------------------------------------------------------------------------
+
+class TestStatusLandEstimate:
+    def test_revealed_ability_is_known(self):
+        mon = _mon(PokemonType.NORMAL, ability="immunity")
+        prob, known = status_land_estimate("toxic", "tox", mon, [("immunity", 1.0)])
+        assert prob == 0.0 and known is True
+
+    def test_unrevealed_prior_is_not_known(self):
+        # The headline case: fractional value from a Smogon prior → known=False.
+        mon = _mon(PokemonType.NORMAL, ability=None)
+        prob, known = status_land_estimate("toxic", "tox", mon, [("immunity", 0.86), ("thickfat", 0.14)])
+        assert prob == pytest.approx(0.14) and known is False
+
+    def test_type_immunity_is_known_even_if_ability_unrevealed(self):
+        # A Steel type can't be Toxic'd regardless of ability — certain, so known=True.
+        mon = _mon(PokemonType.STEEL, ability=None)
+        prob, known = status_land_estimate("toxic", "tox", mon, [("immunity", 0.5), ("thickfat", 0.5)])
+        assert prob == 0.0 and known is True
+
+    def test_already_statused_and_substitute_are_known(self):
+        statused = _mon(PokemonType.NORMAL, status=Status.BRN, ability=None)
+        assert status_land_estimate("toxic", "tox", statused, [("immunity", 1.0)]) == (0.0, True)
+        subbed = _mon(PokemonType.NORMAL, ability=None, effects={Effect.SUBSTITUTE: 1})
+        assert status_land_estimate("toxic", "tox", subbed, [("thickfat", 1.0)]) == (0.0, True)
+
+    def test_unknownability_sentinel_is_not_known(self):
+        # Mirrors the ability block: "unknownability" counts as unrevealed → known=False.
+        mon = _mon(PokemonType.NORMAL, ability="unknownability")
+        prob, known = status_land_estimate("toxic", "tox", mon, [("immunity", 0.86), ("thickfat", 0.14)])
+        assert prob == pytest.approx(0.14) and known is False
+
+    def test_known_predicate_matches_ability_block(self):
+        # status_will_land_known uses the SAME reveal predicate as AbilitiesEncoder's `known`:
+        # set ability whose normalized id != "unknownability".
+        from agents.gen3_mechanics import _ability_revealed
+        assert _ability_revealed(_mon(ability="immunity")) is True
+        assert _ability_revealed(_mon(ability="Thick Fat")) is True   # normalized
+        assert _ability_revealed(_mon(ability=None)) is False
+        assert _ability_revealed(_mon(ability="unknownability")) is False

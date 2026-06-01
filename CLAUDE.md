@@ -362,7 +362,7 @@ tools/               # Acquisition layer (knows the 3 upstreams) — has CLAUDE.
 
 ## Observation Vector
 
-The full observation is a **3321-dim float32 vector** (`Gen3ObservationEncoder.dimension`):
+The full observation is a **3357-dim float32 vector** (`Gen3ObservationEncoder.dimension`):
 
 | Block | Dims | Offset |
 |---|---|---|
@@ -370,14 +370,16 @@ The full observation is a **3321-dim float32 vector** (`Gen3ObservationEncoder.d
 | Opp team (6 × 107) | 642 | 642 |
 | Active context ×2 (boosts + full volatiles, `VOLATILE_DIM`=44) | 116 | 1284 |
 | Global env | 18 | 1400 |
-| Reactive + matchups | 302 | 1418 |
-| Prev-turn action mask | 11 | 1720 |
-| Turn history (`N_HISTORY_TURNS` × 159) | 1590 | 1731 |
-| **Total** | **3321** | |
+| Reactive + move-effects + matchups | 338 | 1418 |
+| Prev-turn action mask | 11 | 1756 |
+| Turn history (`N_HISTORY_TURNS` × 159) | 1590 | 1767 |
+| **Total** | **3357** | |
 
 **The full per-block layout** — the 107-dim per-Pokémon slot, the 11-dim move slot, the 18-dim
-spread block, global env, the 302-dim reactive block, and the 159-dim TurnDelta slot (incl. the
-embedded-ID manifest) — lives in **`src/agents/observation/CLAUDE.md`**. Every offset is computed
+spread block, global env, the 338-dim reactive block (14 scalars + the 36-dim action-aligned
+move-effect block, 4 slots × 9 feats + 288 matchup, `gen3_move_effects_v1`), and the 159-dim
+TurnDelta slot (incl. the embedded-ID manifest) — lives in **`src/agents/observation/CLAUDE.md`**.
+Every offset is computed
 from named constants; never hardcode indices.
 
 ---
@@ -418,7 +420,7 @@ crashes in seconds rather than hours.
 The architecture-constant single source of truth is the module-level constants
 (`ROLE_TOKEN_SIZE`, `PROJECTION_DIM`, `MOVE_NET_HIDDEN`, `ROLE_ENCODER_HIDDEN`,
 `ACTIVE_CTX_HIDDEN`) at the top of `features_extractor.py`; `ARCH_SIGNATURE` /
-`MODEL_CONFIG_VERSION` live in `model_version.py` (current: `gen3_trapping_signals_v1`).
+`MODEL_CONFIG_VERSION` live in `model_version.py` (current: `gen3_move_effects_v1`).
 **The full versioning playbook — what to do when you change a dim vs add an optional feature vs
 make a structural change — is in `src/agents/model/CLAUDE.md`.**
 

@@ -153,7 +153,29 @@ MODEL_CONFIG_VERSION = 2
 #   item id -> item meaning is re-mapped for every item, so item embeddings learned under the old
 #   ids are semantically invalid. Re-meaning an obs block is retrain-class. Builds on
 #   gen3_trapping_signals_v1; not weight-compatible with it.
-ARCH_SIGNATURE = "gen3_item_num_fix_v1"
+#
+# gen3_move_effects_v1: action-aligned per-move EFFECT features in the reactive block. The only
+#   per-move signals that previously reached the policy head in REQUEST (action) order were base
+#   power and the type multiplier — so for status/utility moves (power 0, neutral multiplier) every
+#   option looked identical at the head, and the model could not tell a setup move from a heal from
+#   a wasted Toxic (it clicked immune Toxic into Poison-types for many turns). Now each of the 4
+#   request-order move slots carries 9 flags — is_boost, is_heal, is_protect, is_phaze, is_hazard,
+#   inflicts_status, status_will_land, pp_fraction, status_will_land_known. Static flags are derived
+#   in the acquisition tool
+#   from the field Showdown keys each mechanic on (flags.heal, volatileStatus, forceSwitch,
+#   sideCondition, primary `status`, declarative self-positive boosts) PLUS a curated callback
+#   override for Belly Drum (onHit-only boost); Curse's type-conditional setup is resolved live in
+#   the encoder. status_will_land is a PRIOR-WEIGHTED probability in [0,1] (priors first, then
+#   confirmation — same ability-distribution path as the matchup cells): 0 on a certain block
+#   (type immunity / already statused / Substitute), else 1 − P(ability blocks the status) over the
+#   opponent's Smogon ability prior, collapsing to 0/1 once the ability is revealed; the trailing
+#   status_will_land_known bit flags confirmed-vs-prior with the SAME predicate the per-mon ability
+#   block's `known` flag uses (revealed ability OR a type-certain hard block), so the policy can
+#   tell a confirmed outcome from a prior estimate — parity with how abilities are routed. The block
+#   sits before the matchups, so the extractor picks it up in non_matchup_rest → both policy and
+#   value projection input widths grow (auto-discovered). REACTIVE_DIM 302 → 338; obs dim 3321 → 3357.
+#   Builds on gen3_item_num_fix_v1; not weight-compatible with it.
+ARCH_SIGNATURE = "gen3_move_effects_v1"
 
 
 class ModelVersionError(Exception):

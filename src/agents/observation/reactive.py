@@ -2,8 +2,14 @@ import numpy as np
 from .base import ObservationEncoder
 from poke_env.battle.abstract_battle import AbstractBattle
 from poke_env.battle.side_condition import SideCondition
-from .constants import REACTIVE_DIM, TEAM_SIZE
-from agents.gen3_mechanics import effective_multiplier_by_types
+from .constants import (
+    REACTIVE_DIM, TEAM_SIZE,
+    REACTIVE_SCALAR_DIM, REACTIVE_MATCHUP_OFFSET,
+    MOVE_EFFECTS_DIM, MOVE_EFFECT_FEATURES,
+)
+from agents.enums import PokemonType
+from agents import gen3_data
+from agents.gen3_mechanics import effective_multiplier_by_types, status_land_estimate
 from typing import Any, Dict, List, Optional, Tuple
 
 
@@ -129,9 +135,15 @@ class ReactiveEncoder(ObservationEncoder):
     - Forced Struggle flag (1)
     - Trapped flag (1)        — server-authoritative `legal.trapped` (cannot switch)
     - Maybe-trapped flag (1)  — server-authoritative `legal.maybe_trapped` (opponent MIGHT trap)
+    - Move-effect flags (36)  — gen3_move_effects_v1: 4 request-order move slots × 9 flags
+      [is_boost, is_heal, is_protect, is_phaze, is_hazard, inflicts_status,
+      status_will_land, pp_fraction, status_will_land_known] so the policy head can tell a
+      setup move from a heal from a wasted status (otherwise indistinguishable: base power 0 +
+      neutral multiplier). status_will_land is a prior-weighted probability; the trailing
+      *_known bit flags confirmed-vs-prior, mirroring the ability block's `known` flag.
     - Matchup Matrix: Our moves vs Their mons (144)
     - Matchup Matrix: Their moves vs Our mons (144)
-    Total: 302 dims
+    Total: 338 dims
     (HP and Spikes removed — duplicated in per-Pokémon vector and global env respectively)
 
     The trapped / maybe_trapped bits (gen3_trapping_signals_v1) are sourced from the
@@ -159,7 +171,7 @@ class ReactiveEncoder(ObservationEncoder):
         return REACTIVE_DIM
 
     def encode(self, battle: AbstractBattle, hp_tracker=None, live=None, legal=None) -> np.ndarray:
-        """Encode the 302-dim reactive block.
+        """Encode the 338-dim reactive block.
 
         live: optional :class:`~agents.battle.live_view.LiveView` snapshot for this
         decision. When supplied, the structural reads — per-side fainted counts and the
@@ -207,8 +219,13 @@ class ReactiveEncoder(ObservationEncoder):
         # so own Hidden Power retains its typed id and the hot loop stays enum-keyed.
         moves_base_power = np.zeros(4)
         moves_dmg_multiplier = np.ones(4)
+        # gen3_move_effects_v1: per-move EFFECT flags, request-order (slot i ↔ action 6+i),
+        # so the policy head can tell a setup move from a heal from a wasted status. Static
+        # flags come from the data facade (MoveData); status_will_land and Curse's
+        # type-conditional setup are resolved LIVE here.
+        move_effects = np.zeros((4, MOVE_EFFECT_FEATURES), dtype=np.float32)
 
-        # Skip Struggle — it has a dedicated action (10) and a dedicated flag (vec[15]).
+        # Skip Struggle — it has a dedicated action (10) and a dedicated flag (vec[11]).
         # Filling the move slots with Struggle's stats would create a confusing alias
         # between slot 0 (action 6) and the Struggle action (10).
         is_forced_struggle = (
@@ -216,23 +233,56 @@ class ReactiveEncoder(ObservationEncoder):
             and battle.available_moves[0].id == "struggle"
         )
 
+        active = battle.active_pokemon
+        opp = battle.opponent_active_pokemon
+        # Curse is a setup move (+atk/+def/-spe) ONLY for a non-Ghost user; for a Ghost
+        # user it is a self-HP-cost trap. Resolve from the live user's type (the static
+        # MoveData.is_boost is False for Curse precisely because it is type-conditional).
+        user_is_ghost = active is not None and PokemonType.GHOST in (active.type_1, active.type_2)
+
         if not is_forced_struggle:
             for i, move in enumerate(battle.available_moves):
                 if i >= 4:
                     break
                 moves_base_power[i] = move.base_power / 200.0
-                if battle.opponent_active_pokemon is not None:
+                if opp is not None:
                     mult = _expected_multiplier(
-                        move,
-                        battle.active_pokemon,
-                        battle.opponent_active_pokemon,
-                        hp_tracker,
-                        self._ability_priors,
+                        move, active, opp, hp_tracker, self._ability_priors,
                     )
                     moves_dmg_multiplier[i] = mult / 4.0
 
+                eff = move_effects[i]
+                md = gen3_data.moves.get(move.id)
+                if md is not None:
+                    eff[0] = 1.0 if (md.is_boost or (move.id == "curse" and not user_is_ghost)) else 0.0
+                    eff[1] = 1.0 if md.is_heal else 0.0
+                    eff[2] = 1.0 if md.is_protect else 0.0
+                    eff[3] = 1.0 if md.is_phaze else 0.0
+                    eff[4] = 1.0 if md.is_hazard else 0.0
+                    if md.status_inflicted is not None:
+                        eff[5] = 1.0  # inflicts_status (it IS a status move)
+                        if opp is not None:
+                            # status_will_land (6): prior-weighted probability in [0,1] — priors
+                            # first (Smogon ability distribution for an unrevealed opp), then
+                            # collapses to 0/1 once the ability is revealed. Same ability-
+                            # distribution source the matchup cells use (`_resolve_ability_
+                            # distribution`). status_will_land_known (8): the prior-vs-confirmed
+                            # flag, routed with the SAME predicate as the per-mon ability block's
+                            # `known` bit (revealed ability OR a type-certain hard block) so the
+                            # model can tell a confirmed outcome from a Smogon-prior estimate —
+                            # parity with how abilities are routed.
+                            ability_dist = _resolve_ability_distribution(opp, self._ability_priors)
+                            eff[6], known = status_land_estimate(
+                                move.id, md.status_inflicted, opp, ability_dist
+                            )
+                            eff[8] = 1.0 if known else 0.0
+                # pp_fraction: this move's own remaining PP (depletion → Struggle awareness).
+                max_pp = getattr(move, "max_pp", 0) or 0
+                eff[7] = (move.current_pp / max_pp) if max_pp else 0.0
+
         vec[0:4] = moves_base_power
         vec[4:8] = moves_dmg_multiplier
+        vec[REACTIVE_SCALAR_DIM:REACTIVE_SCALAR_DIM + MOVE_EFFECTS_DIM] = move_effects.reshape(-1)
 
         # 2. Fainted Counts — read through the LiveView (m.fainted) when available, else raw.
         if live is not None:
@@ -283,8 +333,9 @@ class ReactiveEncoder(ObservationEncoder):
             for m in their_team
         ]
 
-        # 5. Our moves vs Their mons (144 dims)
-        cursor = 14
+        # 5. Our moves vs Their mons (144 dims). Matchups follow the 14 scalars + the
+        # 32-dim move-effects block, so they start at REACTIVE_MATCHUP_OFFSET (46).
+        cursor = REACTIVE_MATCHUP_OFFSET
         for i in range(TEAM_SIZE):
             our_mon = our_team[i] if i < len(our_team) else None
             our_moves = self.get_sorted_moves(our_mon)
@@ -317,6 +368,7 @@ class ReactiveEncoder(ObservationEncoder):
         return vec
 
     def get_layout(self) -> Dict[str, Any]:
+        mo = REACTIVE_MATCHUP_OFFSET  # 46 = 14 scalars + 32 move-effects
         return {
             "move_power": {"offset": 0, "dim": 4},
             "move_multiplier": {"offset": 4, "dim": 4},
@@ -325,14 +377,31 @@ class ReactiveEncoder(ObservationEncoder):
             "forced_struggle": {"offset": 11, "dim": 1},
             "trapped": {"offset": 12, "dim": 1},
             "maybe_trapped": {"offset": 13, "dim": 1},
-            "our_matchups": {"offset": 14, "dim": 144},
-            "their_matchups": {"offset": 158, "dim": 144}
+            # gen3_move_effects_v1: 4 move slots × MOVE_EFFECT_FEATURES (8), slot-major,
+            # request order. Per slot: [is_boost, is_heal, is_protect, is_phaze, is_hazard,
+            # inflicts_status, status_will_land, pp_fraction].
+            "move_effects": {"offset": REACTIVE_SCALAR_DIM, "dim": MOVE_EFFECTS_DIM,
+                             "per_slot": MOVE_EFFECT_FEATURES},
+            "our_matchups": {"offset": mo, "dim": 144},
+            "their_matchups": {"offset": mo + 144, "dim": 144},
         }
 
     def describe_vector(self, vector: np.ndarray) -> Dict[str, Any]:
         # Extract matrices and scale back up by 4.0 for human-readable display
-        our_m = vector[14:158].reshape(TEAM_SIZE, 4, TEAM_SIZE) * 4.0
-        their_m = vector[158:302].reshape(TEAM_SIZE, 4, TEAM_SIZE) * 4.0
+        mo = REACTIVE_MATCHUP_OFFSET
+        our_m = vector[mo:mo + 144].reshape(TEAM_SIZE, 4, TEAM_SIZE) * 4.0
+        their_m = vector[mo + 144:mo + 288].reshape(TEAM_SIZE, 4, TEAM_SIZE) * 4.0
+
+        # gen3_move_effects_v1: decode the 4×8 per-move effect block (slot-major).
+        eff = vector[REACTIVE_SCALAR_DIM:REACTIVE_SCALAR_DIM + MOVE_EFFECTS_DIM].reshape(4, MOVE_EFFECT_FEATURES)
+        eff_names = ["boost", "heal", "protect", "phaze", "hazard", "status",
+                     "status_lands", "pp", "status_known"]
+        # status_lands (6) and pp (7) are continuous in [0,1]; the rest are bits.
+        move_effects = [
+            {eff_names[f]: (round(float(eff[s, f]), 2) if f in (6, 7) else bool(eff[s, f]))
+             for f in range(MOVE_EFFECT_FEATURES)}
+            for s in range(4)
+        ]
 
         return {
             "fainted_our": int(vector[8] * 6),
@@ -341,6 +410,7 @@ class ReactiveEncoder(ObservationEncoder):
             "struggle": bool(vector[11]),
             "trapped": bool(vector[12]),
             "maybe_trapped": bool(vector[13]),
+            "move_effects": move_effects,
             "our_vs_their": our_m, # Full matrix for deeper trace
             "their_vs_our": their_m
         }
