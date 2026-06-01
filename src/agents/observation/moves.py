@@ -2,7 +2,7 @@ import numpy as np
 from .base import ObservationEncoder
 from .constants import MOVE_SLOT_DIM, MAX_PP
 from .types import TypeEncoder
-from agents import gen3_movedex
+from agents.gen3_data import moves as gen3_movedex
 from poke_env.battle.abstract_battle import AbstractBattle
 from agents.enums import MoveCategory
 from typing import Any, List, Dict

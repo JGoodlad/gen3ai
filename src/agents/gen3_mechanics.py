@@ -12,9 +12,9 @@ import functools
 
 import numpy as np
 from poke_env.battle.effect import Effect
-from poke_env.data import GenData
 
 from agents.enums import PokemonType, Status
+from agents.gen3_data import type_chart as _type_chart_data
 
 # ---------------------------------------------------------------------------
 # Type effectiveness
@@ -37,7 +37,11 @@ ABILITY_TYPE_MULTIPLIER: dict[str, dict[PokemonType, float]] = {
     "thickfat":    {PokemonType.ICE:      0.5, PokemonType.FIRE: 0.5},
 }
 
-_type_chart = GenData.from_gen(3).type_chart
+# Gen-3 type-effectiveness chart, owned by the project and reached through the gen3_data facade
+# (loaded once from data/pokemon/gen3_type_chart.json; derived from poke-env by
+# tools/pokemon_data_extractor). The dense _CHART below is built from it. Byte-identical to the
+# old GenData.from_gen(3).type_chart, so effectiveness is unchanged (pinned by gen3_mechanics_test).
+_type_chart = _type_chart_data.chart()
 
 # Types with no entry in the chart — attacking/defending as one of these is a no-op
 # (×1). Hoisted to a module constant so the hot path never reconstructs the set literal

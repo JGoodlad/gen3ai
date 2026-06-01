@@ -24,58 +24,29 @@ from .constants import (
 )
 from poke_env.battle.abstract_battle import AbstractBattle
 from typing import Dict, Any, List, Tuple
-import json
-import os
 from agents.action.mask_generator import Gen3ActionMasker
 from agents.observation.reactive import ReactiveEncoder as _ReactiveEncoder
 
 def load_mappings():
-    """Loads move, species, item, ability, and nature mappings with validation."""
-    mappings = {}
-    mapping_files = {
-        "species": "data/pokemon/gen3_species.json",
-        "moves": "data/pokemon/gen3_moves.json",
-        "abilities": "data/pokemon/gen3_abilities.json",
-        "items": "data/pokemon/gen3_items.json"
-    }
-    for key, path in mapping_files.items():
-        if not os.path.exists(path):
-            raise FileNotFoundError(f"CRITICAL: Mapping file missing: {path}. Run data generation script first!")
+    """Assemble the observation encoder's reference mappings from the ``gen3_data`` facade.
 
-        with open(path, "r") as f:
-            data = json.load(f)
-            if not data:
-                raise ValueError(f"CRITICAL: Mapping file is empty: {path}")
-            # Normalize data: Ensure every entry is a dict with a 'num' key
-            normalized = {}
-            for name, val in data.items():
-                if isinstance(val, dict):
-                    normalized[name] = val
-                else:
-                    normalized[name] = {"num": int(val)}
-            mappings[key] = normalized
-
-    # Load ability priors (Smogon Gen3 OU usage) — used for opp-unrevealed encoding.
-    # Format: {species_name: {ability_id: probability}}.
-    _ability_priors_path = "data/pokemon/gen3_ability_priors.json"
-    if not os.path.exists(_ability_priors_path):
-        raise FileNotFoundError(
-            f"CRITICAL: {_ability_priors_path} missing. Run "
-            "tools/smogon_stats_downloader/compute_priors.py first."
-        )
-    with open(_ability_priors_path, "r") as f:
-        mappings["ability_priors"] = json.load(f)
-
-    # Load natures from poke_env static data — used for spread encoding
-    _natures_path = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", "..", "poke_env", "data", "static", "natures.json"))
-    if not os.path.exists(_natures_path):
-        raise FileNotFoundError(f"CRITICAL: natures.json missing at {_natures_path}. poke_env static data may be corrupted.")
-    with open(_natures_path, "r") as f:
-        raw_natures = json.load(f)
-    # Keep only the stat multipliers (atk/def/spa/spd/spe); drop "num"
-    mappings["natures"] = {
-        name: {k: float(v) for k, v in entry.items() if k in ("atk", "def", "spa", "spd", "spe")}
-        for name, entry in raw_natures.items()
+    Each ``data/pokemon/`` file is parsed once by its concept module (``gen3_data.species``,
+    ``.moves``, ``.items``, ``.abilities``, ``.priors``, ``.natures``); this borrows their raw
+    dicts and inverts id→name reverse maps. The three upstreams (poke-env / Showdown / Smogon)
+    stay hidden behind the facade — this loader speaks only domain concepts, no file paths."""
+    from agents import gen3_data
+    mappings = {
+        # Reference dexes — the raw {id: {num, …}} dicts the sub-encoders read directly. A fresh
+        # outer dict per call (matching the previous loader's semantics); inner records are the
+        # shared, immutable-by-convention singletons.
+        "species": dict(gen3_data.species.raw()),
+        "moves": dict(gen3_data.moves.raw()),
+        "abilities": dict(gen3_data.abilities.raw()),
+        "items": dict(gen3_data.items.raw()),
+        # Smogon usage priors for opp-unrevealed ability encoding ({species: {ability_id: prob}}).
+        "ability_priors": gen3_data.priors.ability_raw(),
+        # Nature stat multipliers ({nature: {atk/def/spa/spd/spe: mult}}) for spread encoding.
+        "natures": gen3_data.natures.multipliers(),
     }
 
     # Pre-compute reverse mappings for IDs to names

@@ -126,7 +126,7 @@ does, something bypassed the chart). The matchup block (`reactive.encode`) and t
   `GenData.from_gen`); hoist them above the loop. The matchup matrices already do this
   (`reactive._defender_terms` / `_attacker_type_dist` read each mon / (attacker, move) once,
   not per cell) and the per-mon move category is memoized by id (`moves._category_val` — a
-  process-global cache off the *live* `move.category`, NOT a `gen3_movedex` re-derivation,
+  process-global cache off the *live* `move.category`, NOT a `gen3_data.moves` re-derivation,
   which disagrees for fixed-power moves). Do not reintroduce a per-cell / per-slot property
   read.
 - **Breaking the turn-history deque cache** (`EpisodeTracker.prev_N_delta_vecs`): if the

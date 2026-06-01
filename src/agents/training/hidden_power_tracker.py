@@ -12,13 +12,11 @@ matches the 16-dim block in the observation encoding.
 from __future__ import annotations
 
 import json
-import os
 
 import numpy as np
 
 from agents.enums import PokemonType
 from agents.gen3_mechanics import bucket_effectiveness, effective_multiplier
-from utils.git import get_repo_root
 
 # Fixed alphabetical order — index is canonical across tracker, encoder, and design doc
 HIDDEN_POWER_TYPE_ORDER: list[PokemonType] = [
@@ -64,13 +62,14 @@ class HiddenPowerTracker:
     ) -> None:
         if _priors is not None:
             self._priors: dict = _priors
-        else:
-            if priors_path is None:
-                priors_path = os.path.join(
-                    get_repo_root(), "data", "pokemon", "gen3_hidden_power_priors.json"
-                )
+        elif priors_path is not None:
             with open(priors_path) as f:
                 self._priors = json.load(f)
+        else:
+            # Default: the project's HP-type usage priors, via the gen3_data facade (parsed once
+            # and shared, instead of re-read from disk per episode).
+            from agents.gen3_data import priors as _gen3_priors
+            self._priors = _gen3_priors.hidden_power_raw()
         self._state: dict[str, np.ndarray] = {}
         # Species whose moveset has been fully revealed without Hidden Power —
         # we know definitively they cannot use HP this episode.

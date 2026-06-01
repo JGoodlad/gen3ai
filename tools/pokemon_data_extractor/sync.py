@@ -6,13 +6,20 @@ shipped in src/poke_env/data/static/ plus the Pokémon Showdown source tree in
 deps/pokemon-showdown/. This tool rebuilds them so the derivation is
 reproducible instead of a one-off hand edit.
 
-Currently extracts:
-  - abilities  -> data/pokemon/gen{N}_abilities.json
-  - moves      -> data/pokemon/gen{N}_moves.json   (includes `accuracy`)
+Extracts (one --datasets entry each; `all` rebuilds every file):
+  - abilities   -> data/pokemon/gen{N}_abilities.json   (pokedex + Showdown abilities.ts)
+  - moves       -> data/pokemon/gen{N}_moves.json        (poke-env static moves; incl. `accuracy`)
+  - species     -> data/pokemon/gen{N}_species.json      (poke-env pokedex; num + base stats)
+  - items       -> data/pokemon/gen{N}_items.json        (Showdown items.ts; name + num)
+  - type_chart  -> data/pokemon/gen{N}_type_chart.json   (GenData type chart; effectiveness)
+  - natures     -> data/pokemon/gen{N}_natures.json      (poke-env natures; stat multipliers)
+
+These are the runtime's source of truth (read via the `agents.gen3_data` facade); rebuilding
+here keeps the derivation reproducible instead of a one-off hand edit.
 
 Usage:
   python tools/pokemon_data_extractor/sync.py                 # all, gen 3, write files
-  python tools/pokemon_data_extractor/sync.py --datasets moves
+  python tools/pokemon_data_extractor/sync.py --datasets moves species
   python tools/pokemon_data_extractor/sync.py --gen 3 --stdout
 """
 
@@ -167,12 +174,137 @@ def build_moves(gen):
 
 
 # --------------------------------------------------------------------------- #
+# Species
+# --------------------------------------------------------------------------- #
+
+# Last species `num` belonging to each generation (national-dex order). Anything
+# above the target gen's ceiling did not exist yet and is filtered out.
+_GEN_MAX_SPECIES_NUM = {
+    1: 151, 2: 251, 3: 386, 4: 493, 5: 649, 6: 721, 7: 809, 8: 905, 9: 1025,
+}
+
+
+def build_species(gen):
+    """Build the gen-N species map (num + base stats) from the poke-env pokedex.
+
+    Only base forms are kept (one entry per species id); alternate forms (Megas,
+    Deoxys-Attack, etc.) share the base num and are skipped, mirroring how the
+    observation encoder keys species by their base id. Sorted by id so the file is
+    stable across regenerations."""
+    pokedex_path = _static("pokedex", f"gen{gen}pokedex.json")
+    if not os.path.exists(pokedex_path):
+        raise FileNotFoundError(f"Pokedex file not found: {pokedex_path}")
+
+    with open(pokedex_path, "r") as f:
+        dex = json.load(f)
+
+    max_num = _GEN_MAX_SPECIES_NUM.get(gen, 100000)
+    species_map = {}
+    for mon_id, mon in dex.items():
+        num = mon.get("num", 0)
+        if num <= 0 or num > max_num:  # CAP (<=0) or a later-gen species
+            continue
+        # Skip non-base forms (Megas etc.); they share the base num/base stats key.
+        base_species = mon.get("baseSpecies", mon_id)
+        if to_id_str(base_species) != mon_id:
+            continue
+
+        bs = mon.get("baseStats", {})
+        species_map[mon_id] = {
+            "baseStats": {k: bs[k] for k in ("atk", "def", "hp", "spa", "spd", "spe")},
+            "name": mon.get("name"),
+            "num": num,
+        }
+
+    return {sid: species_map[sid] for sid in sorted(species_map)}
+
+
+# --------------------------------------------------------------------------- #
+# Items
+# --------------------------------------------------------------------------- #
+
+def build_items(gen):
+    """Build the gen-N item map (name + num) from the Showdown items source.
+
+    Parses `deps/pokemon-showdown/data/items.ts` the same way `build_abilities`
+    parses `abilities.ts`: a per-item `\\titemid: {` block, then `name`, `num`, and
+    the introduction `gen`. Items introduced after the target generation are
+    filtered out. Sorted by id (like the other maps) for a stable file."""
+    items_path = os.path.join(REPO_ROOT, "deps", "pokemon-showdown", "data", "items.ts")
+    if not os.path.exists(items_path):
+        raise FileNotFoundError(f"Items source not found: {items_path}")
+
+    with open(items_path, "r") as f:
+        content = f.read()
+
+    items_map = {}
+    for match in re.finditer(r"^\t([a-z0-9]+):\s*\{", content, re.MULTILINE):
+        item_id = match.group(1)
+        block = content[match.start():match.start() + 5000]
+        name_match = re.search(r'name:\s*"([^"]+)"', block)
+        # The obs encodes items by the item-dex `num`. `\bnum:` is required so we match the item
+        # number and NOT `spritenum:` (the sprite index, which appears earlier in the block — e.g.
+        # Leftovers spritenum=242 vs the true num=234). Items with no positive item-dex num (e.g.
+        # Berserk Gene, a removed Gen-2 item) are dropped — they are not real gen-3 items. Cross-gen
+        # aliases legitimately share a num (Cheri/PRZCureBerry, Sitrus/GoldBerry, Silk Scarf/Pink
+        # Bow) — correct, they ARE the same item.
+        num_match = re.search(r"\bnum:\s*(\d+)", block)
+        gen_match = re.search(r"gen:\s*(\d+)", block)
+        if not (name_match and num_match):
+            continue
+        num = int(num_match.group(1))
+        if num <= 0:  # removed / non-item-dex entry — not a real gen-3 item
+            continue
+        item_gen = int(gen_match.group(1)) if gen_match else 0
+        if item_gen > gen:  # introduced in a later generation
+            continue
+        items_map[item_id] = {"name": name_match.group(1), "num": num}
+
+    return {iid: items_map[iid] for iid in sorted(items_map)}
+
+
+# --------------------------------------------------------------------------- #
+# Type chart  (effectiveness multipliers)
+# --------------------------------------------------------------------------- #
+
+def build_type_chart(gen):
+    """Dump the gen-N type-effectiveness chart so the runtime reads it from data/
+    instead of constructing it live from poke-env's `GenData` at import.
+
+    Emitted byte-for-byte as `GenData.from_gen(gen).type_chart` produces it
+    (`{DEFENDING_TYPE: {ATTACKING_TYPE: multiplier}}`, enum-name keys), so the
+    consumer (`gen3_mechanics._CHART`) is identical whether it loads this file or
+    the old `GenData` object — pinned by `gen3_mechanics_test.py`."""
+    from poke_env.data import GenData
+    return GenData.from_gen(gen).type_chart
+
+
+# --------------------------------------------------------------------------- #
+# Natures  (stat multipliers)
+# --------------------------------------------------------------------------- #
+
+def build_natures(gen):
+    """Copy the nature table (num + the five stat multipliers) out of poke-env's
+    static data so the runtime reads it from data/. Natures are gen-independent;
+    `gen` only names the output file for directory consistency."""
+    natures_path = _static("natures.json")
+    if not os.path.exists(natures_path):
+        raise FileNotFoundError(f"Natures source not found: {natures_path}")
+    with open(natures_path, "r") as f:
+        return json.load(f)
+
+
+# --------------------------------------------------------------------------- #
 # CLI
 # --------------------------------------------------------------------------- #
 
 _BUILDERS = {
     "abilities": ("gen{gen}_abilities.json", build_abilities),
     "moves": ("gen{gen}_moves.json", build_moves),
+    "species": ("gen{gen}_species.json", build_species),
+    "items": ("gen{gen}_items.json", build_items),
+    "type_chart": ("gen{gen}_type_chart.json", build_type_chart),
+    "natures": ("gen{gen}_natures.json", build_natures),
 }
 
 
@@ -182,7 +314,7 @@ def main(argv=None):
     parser.add_argument(
         "--datasets",
         nargs="+",
-        choices=["abilities", "moves", "all"],
+        choices=list(_BUILDERS) + ["all"],
         default=["all"],
         help="Which mappings to regenerate (default: all)",
     )

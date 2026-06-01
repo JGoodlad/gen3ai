@@ -2,8 +2,8 @@ import pytest
 from poke_env.battle.move_category import MoveCategory
 from poke_env.battle.pokemon_type import PokemonType
 
-from agents import gen3_movedex as movedex
-from agents.gen3_movedex import MoveData
+from agents.gen3_data import moves as movedex
+from agents.gen3_data.moves import MoveData
 
 
 def test_known_move_fields():

@@ -4223,7 +4223,7 @@
         "name": "Umbreon",
         "num": 197
     },
-    "unownquestion": {
+    "unown": {
         "baseStats": {
             "atk": 72,
             "def": 48,

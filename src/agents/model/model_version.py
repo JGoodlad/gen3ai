@@ -147,7 +147,13 @@ MODEL_CONFIG_VERSION = 2
 #   2 dims — an attempted_switch_rejected bit + the embedded attempted-switch species id
 #   (manifest entry #12). TURN_DELTA_DIM 157 -> 159. Obs dim 3299 -> 3321 (+2 reactive +
 #   N_HISTORY_TURNS x 2 history). Builds on v11. Not weight-compatible with v11.
-ARCH_SIGNATURE = "gen3_trapping_signals_v1"
+# gen3_item_num_fix_v1: the per-Pokémon item id is now the true item-dex `num` (from data/, via
+#   the gen3_data facade), not Showdown's `spritenum` as before. Obs dim unchanged (3321) and the
+#   item embedding table size is unchanged (max_items=600 still covers the new max, 499), but the
+#   item id -> item meaning is re-mapped for every item, so item embeddings learned under the old
+#   ids are semantically invalid. Re-meaning an obs block is retrain-class. Builds on
+#   gen3_trapping_signals_v1; not weight-compatible with it.
+ARCH_SIGNATURE = "gen3_item_num_fix_v1"
 
 
 class ModelVersionError(Exception):

@@ -20,6 +20,7 @@ Keep docs in sync **automatically, as part of the same change** — no need to b
 | Directory | Leaf covers |
 |---|---|
 | `src/agents/model/` | Feature-extractor phase contract, dual-head policy, architecture-constant rules, model versioning |
+| `src/agents/gen3_data/` | The data facade: concept modules over `data/`, the acquisition-vs-access split, how it threads into the encoders |
 | `src/agents/observation/` | Obs-build performance gate (mandatory benchmark) + the full per-block obs-vector layout |
 | `src/agents/battle/` | Event-sourced battle layer (Gen3Battle, BattleEvent log, LiveView/TurnView/LegalActions, StrictBattleView, TurnDelta fold) |
 | `src/agents/training/` | Bot-eval subprocess architecture + Showdown-port (`server_config`) threading |
@@ -325,6 +326,8 @@ the `server_port_threading_test.py` regression guard — is documented in
 src/
   agents/
     model/           # Gen3FeaturesExtractor (PyTorch feature extractor) — has CLAUDE.md
+    gen3_data/       # The data facade: concept modules (moves/species/items/abilities/natures/
+                     #   type_chart/priors) over data/ — single interface, poke-env-free — has CLAUDE.md
     observation/     # Observation encoders (state_encoder, pokemon, moves, etc.) — has CLAUDE.md
     action/          # Action mask + mapping via LegalActions: pure action_to_choice →
                      #   Choice → serialize.choice_to_order (the one poke-env order touch)
@@ -343,12 +346,16 @@ src/
   utils/
     git.py           # get_git_hash(), get_repo_root()
     (other utils)    # Hidden Power, teambuilder, team loader, logging
-data/
-  pokemon/           # JSON mappings: gen3_species, gen3_moves, gen3_items, gen3_abilities
+data/                # Source of truth — derived by tools/, read via agents.gen3_data
+  pokemon/           # species/moves/items/abilities/type_chart/natures + smogon stats & priors
   teams/             # Downloaded sample teams (gen3ou pool)
 models/              # Saved PPO checkpoints (run_<timestamp>/ subdirs)
 deps/
   pokemon-showdown/  # Git submodule — local Showdown server
+tools/               # Acquisition layer (knows the 3 upstreams) — has CLAUDE.md
+  pokemon_data_extractor/  # pokedex/Showdown/GenData -> data/pokemon/ reference files
+  smogon_stats_downloader/ # Smogon usage stats -> data/pokemon/ priors
+  sample_team_downloader/, others_team_downloader/  # -> data/teams/
 ```
 
 ---
@@ -419,13 +426,27 @@ make a structural change — is in `src/agents/model/CLAUDE.md`.**
 
 ## Data Dependencies
 
-Training requires JSON mapping files in `data/pokemon/`:
-- `gen3_species.json` — species ID → `{num, baseStats}`
-- `gen3_moves.json` — move ID → `{num, basePower, type, hasSecondary, hasRecoil}`
-- `gen3_items.json` — item ID → `{num}`
-- `gen3_abilities.json` — ability ID → `{num}`
+**`data/` is the single source of truth — the runtime reads only `data/`, never live from
+poke-env.** The split is **acquisition vs. access**: `tools/` (the only layer that knows the three
+upstreams — poke-env static data, the Showdown source tree, Smogon usage stats) *derives* and
+normalizes each file into `data/pokemon/`; the runtime reaches all of it through the
+**`agents.gen3_data` facade**, blind to provenance (see `src/agents/gen3_data/CLAUDE.md`).
 
-These are loaded at startup and will raise `FileNotFoundError` / `ValueError` if missing or empty.
+Reference data (deterministic) under `data/pokemon/`, all regenerable via
+`tools/pokemon_data_extractor/sync.py`:
+- `gen3_species.json` — species id → `{num, baseStats, name}`
+- `gen3_moves.json` — move id → `{num, basePower, type, accuracy, never_miss, hasSecondary, hasRecoil, …}`
+- `gen3_items.json` — item id → `{num, name}` (`num` is the item-dex number; cross-gen aliases share one num)
+- `gen3_abilities.json` — ability id → `{num, name}`
+- `gen3_type_chart.json` — `{DEF: {ATT: multiplier}}` effectiveness chart (was live `GenData`)
+- `gen3_natures.json` — nature → `{num, stat multipliers}` (was live `poke_env/.../natures.json`)
+
+Smogon-derived priors (probabilistic), via `tools/smogon_stats_downloader/`:
+- `gen3_smogon_stats.json` (raw aggregated stats) → `gen3_ability_priors.json`, `gen3_hidden_power_priors.json`
+
+All are loaded once (lazy singletons) and raise `FileNotFoundError` / `ValueError` if missing or
+empty. The data layer is poke-env-free; the only poke-env touches left in the battle layer are a
+parser sentinel (`GenData.UNKNOWN_ITEM`) and the `to_id_str` string util — neither is static data.
 
 ---
 
