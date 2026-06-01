@@ -1,11 +1,13 @@
 import os
+import re
 import sys
 import time
+import glob
 import json
 import shutil
 import asyncio
 import subprocess
-from datetime import datetime
+from datetime import datetime, timezone
 
 from stable_baselines3.common.callbacks import BaseCallback
 from poke_env.player import RandomPlayer, SimpleHeuristicsPlayer
@@ -22,8 +24,65 @@ from agents.training.reward_tracker import RewardTrackingMixin
 from agents.training.reward_manager import Gen3RewardManager
 from agents.training.battle_recorder import BattleRecorder, write_battle_record
 from main.launcher.ipc import send_metrics, send_event
+from utils.git import get_git_hash
 
 BATTLE_FORMAT = "gen3ou"
+
+EVAL_MANIFEST_NAME = "eval_manifest.json"
+EVAL_SNAPSHOT_NAME = "snapshot.zip"
+
+
+def _read_run_identity(model_dir: str) -> tuple:
+    """(git_hash, arch_signature, config_version) for this run, from its on-disk
+    model_config.json / metadata.json (written at run start), with a git fallback."""
+    arch_signature = config_version = git_hash = None
+    try:
+        with open(os.path.join(model_dir, "model_config.json")) as f:
+            cfg = json.load(f)
+        arch_signature = cfg.get("arch_signature")
+        config_version = cfg.get("config_version")
+    except (OSError, ValueError):
+        pass
+    try:
+        with open(os.path.join(model_dir, "metadata.json")) as f:
+            git_hash = json.load(f).get("git_hash")
+    except (OSError, ValueError):
+        pass
+    if not git_hash:
+        try:
+            git_hash = get_git_hash()
+        except Exception:  # noqa: BLE001 — identity is best-effort
+            git_hash = None
+    return git_hash, arch_signature, config_version
+
+
+def write_eval_manifest(model_dir: str, step: int, *, opponents, n_games: int,
+                        snapshot: "str | None" = None) -> dict:
+    """Write ``<model_dir>/eval_traces/step_<N>/eval_manifest.json`` — the per-cycle
+    record of *exactly which model* produced this cycle's forensic traces.
+
+    `snapshot` is the relative filename of the persisted weight snapshot
+    (``snapshot.zip``) when `--keep-eval-snapshots` retained it this cycle, else None;
+    the prober uses it to reload the bit-exact model, falling back to the nearest
+    persisted checkpoint when absent.
+    """
+    git_hash, arch_signature, config_version = _read_run_identity(model_dir)
+    d = os.path.join(model_dir, "eval_traces", f"step_{step}")
+    os.makedirs(d, exist_ok=True)
+    manifest = {
+        "step": step,
+        "num_timesteps": step,
+        "git_hash": git_hash,
+        "arch_signature": arch_signature,
+        "config_version": config_version,
+        "saved_at": datetime.now(timezone.utc).isoformat(),
+        "snapshot": snapshot,
+        "opponents": list(opponents),
+        "n_games": n_games,
+    }
+    with open(os.path.join(d, EVAL_MANIFEST_NAME), "w") as f:
+        json.dump(manifest, f, indent=2)
+    return manifest
 # Single-player concurrency ceiling (kept for SelfPlayCallback's one-player path).
 _EVAL_CONCURRENCY = 100
 # PerOpponentEvalCallback evaluates every opponent concurrently — one RLPlayer per
@@ -420,6 +479,8 @@ class PerOpponentEvalCallback(BaseCallback):
         eval_concurrency: int = _EVAL_SUBPROCESS_CONCURRENCY,
         showdown_port: int | None = None,
         resume_eval_metadata: str | None = None,
+        keep_eval_snapshots: int = 10,
+        keep_eval_trace_steps: int = 20,
         verbose: int = 1,
     ):
         super().__init__(verbose)
@@ -431,6 +492,14 @@ class PerOpponentEvalCallback(BaseCallback):
         self._eval_device = eval_device
         self._eval_concurrency = eval_concurrency
         self._showdown_port = showdown_port
+        # >0: persist the eval weight snapshot into eval_traces/step_<N>/snapshot.zip
+        # (keeping only the N most-recent) so the prober can reload the bit-exact model
+        # that produced a cycle's traces. 0 disables (traces still carry the manifest).
+        self._keep_eval_snapshots = max(0, keep_eval_snapshots)
+        # The trainer writes the forensic traces, so it grooms them: after each cycle
+        # keep only the N most-recent eval step dirs (0 = keep all). Older dirs are
+        # removed whole. `python -m main.prober.groom` is the manual fallback.
+        self._keep_eval_trace_steps = max(0, keep_eval_trace_steps)
         # metadata.json of the checkpoint being resumed (if any) — read at startup so
         # the TUI shows the last eval immediately after a restart.
         self._resume_eval_metadata = resume_eval_metadata
@@ -487,6 +556,10 @@ class PerOpponentEvalCallback(BaseCallback):
         snapshot_zip = snapshot_base + ".zip"
 
         names = eval_opponent_names(self._use_v2_bots)
+        # Record exactly which model produced this cycle's traces (the prober reads
+        # this to reload the right model). snapshot=None now; _persist_snapshot patches
+        # it to the retained filename on success when --keep-eval-snapshots is set.
+        write_eval_manifest(self._model_dir, step, opponents=names, n_games=n_games)
         # Short per-cycle tag for unique account names (cycles are ≥1M steps apart).
         cycle_tag = f"{step // 100 % 10000:04d}"
         # Never spawn more workers than opponents to steal.
@@ -577,6 +650,8 @@ class PerOpponentEvalCallback(BaseCallback):
 
         self._record(step, merged)
         self._maybe_save_best(step, pending, merged["win_rates"])
+        self._persist_snapshot(pending)
+        self._prune_eval_traces()   # trainer grooms the traces it writes
         self._cleanup(pending, keep_logs=bool(missing or bad_exits))
 
     def _record(self, step: int, merged: dict) -> None:
@@ -636,9 +711,70 @@ class PerOpponentEvalCallback(BaseCallback):
             shutil.copy2(pending["snapshot"], dst)
             print(f"[EVAL] new best ({aggregate * 100:.1f}%) saved to {dst}")
 
+    def _persist_snapshot(self, pending: dict) -> None:
+        """When --keep-eval-snapshots is set, copy the cycle's weight snapshot into
+        eval_traces/step_<N>/snapshot.zip (next to its traces) and patch the manifest
+        to point at it, then prune to the N most-recent. Lets the prober reload the
+        bit-exact model that produced these traces."""
+        if self._keep_eval_snapshots <= 0 or not self._model_dir:
+            return
+        step = pending["step"]
+        dst_dir = os.path.join(self._model_dir, "eval_traces", f"step_{step}")
+        os.makedirs(dst_dir, exist_ok=True)
+        try:
+            shutil.copy2(pending["snapshot"], os.path.join(dst_dir, EVAL_SNAPSHOT_NAME))
+        except OSError as e:
+            print(f"⚠️ [EVAL] could not persist snapshot for step {step:,}: {e}")
+            return
+        mpath = os.path.join(dst_dir, EVAL_MANIFEST_NAME)
+        try:
+            with open(mpath) as f:
+                m = json.load(f)
+            m["snapshot"] = EVAL_SNAPSHOT_NAME
+            with open(mpath, "w") as f:
+                json.dump(m, f, indent=2)
+        except (OSError, ValueError):
+            pass
+        self._prune_eval_snapshots()
+
+    def _prune_eval_snapshots(self) -> None:
+        """Keep only the N most-recent persisted eval snapshots (by step)."""
+        snaps = glob.glob(os.path.join(
+            self._model_dir, "eval_traces", "step_*", EVAL_SNAPSHOT_NAME))
+
+        def _stepof(p: str) -> int:
+            m = re.search(r"step_(\d+)", p)
+            return int(m.group(1)) if m else 0
+
+        for p in sorted(snaps, key=_stepof, reverse=True)[self._keep_eval_snapshots:]:
+            try:
+                os.remove(p)
+            except OSError:
+                pass
+
+    def _prune_eval_traces(self) -> None:
+        """Groom the traces the trainer just wrote: keep only the N most-recent eval
+        step dirs (by step), removing older ones whole. The current cycle's dir is the
+        newest, so it is never touched. `python -m main.prober.groom` is the manual
+        fallback for finished runs / deeper cleanup."""
+        if self._keep_eval_trace_steps <= 0 or not self._model_dir:
+            return
+        base = os.path.join(self._model_dir, "eval_traces")
+        if not os.path.isdir(base):
+            return
+        dirs = []
+        for name in os.listdir(base):
+            m = re.match(r"step_(\d+)$", name)
+            full = os.path.join(base, name)
+            if m and os.path.isdir(full):
+                dirs.append((int(m.group(1)), full))
+        for _step, path in sorted(dirs, reverse=True)[self._keep_eval_trace_steps:]:
+            shutil.rmtree(path, ignore_errors=True)
+
     def _cleanup(self, pending: dict, keep_logs: bool) -> None:
-        # Always drop the (large) weight snapshot; keep the run dir only if a worker
-        # failed so its log survives for debugging.
+        # Always drop the (large) transient run-dir snapshot; _persist_snapshot has
+        # already copied it into eval_traces/ when retention is on. Keep the run dir
+        # only if a worker failed, so its log survives for debugging.
         try:
             if os.path.exists(pending["snapshot"]):
                 os.remove(pending["snapshot"])

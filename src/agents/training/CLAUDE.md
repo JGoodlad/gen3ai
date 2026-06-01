@@ -17,7 +17,20 @@ next, so uneven per-opponent cost self-balances), load the **frozen** snapshot, 
 against the shared Showdown server **without pausing training**. Each opponent writes
 `result__<opponent>.json`; when all workers finish the parent merges them → TensorBoard +
 TUI + best-model (the winning snapshot is promoted by copy, not re-saved). Forensic traces
-land under `<run_dir>/eval_traces/step_<N>/<opponent>/`. The eval summary itself is
+land under `<run_dir>/eval_traces/step_<N>/<opponent>/`, alongside a per-cycle
+**`eval_manifest.json`** (`write_eval_manifest`) recording exactly which model produced them
+— `num_timesteps`, `git_hash` + `arch_signature` (read from the run's `metadata.json` /
+`model_config.json`), and a `snapshot` pointer. The eval snapshot is normally ephemeral
+(`model.save` → workers load → deleted in `_cleanup`) and the eval `step` rarely lines up with
+a persisted `checkpoint_<N>_steps.zip`, so the prober can't reload the *exact* weights unless
+they're retained: `--keep-eval-snapshots N` copies the snapshot into
+`eval_traces/step_<N>/snapshot.zip` (keeping the N most-recent) and points the manifest at it.
+The prober consumes the manifest to load the exact model, falling back to the nearest
+checkpoint. **The trainer grooms the traces it writes**: after each cycle
+`_prune_eval_traces` keeps only the `--keep-eval-trace-steps` (default 20) most-recent eval
+step dirs, and `_prune_eval_snapshots` keeps the `--keep-eval-snapshots` (default 10)
+most-recent snapshots — so `eval_traces/` stays bounded without any external task
+(`python -m main.prober.groom` is the manual fallback). The eval summary itself is
 written to `metadata.json` as a **top-level `latest_eval`** block (step-labeled, NOT
 nested under a checkpoint) — robust to the async timing (an eval can finish after a
 newer checkpoint, or before any checkpoint exists); `save_model_snapshot` carries it
@@ -43,6 +56,8 @@ in the trainer). Behaviors:
 |------|---------|-------|
 | `--eval-workers` | `3` | Eval subprocesses per cycle; work-steal opponents from a shared pool. Capped at the opponent count. |
 | `--eval-device` | `cpu` | Device for eval-worker inference. `cpu` decouples eval from the training GPU. |
+| `--keep-eval-snapshots` | `10` | Retain the N most-recent eval weight snapshots in `eval_traces/step_<N>/snapshot.zip` (~27MB each; default ≈270MB) for bit-exact prober replay. `0` writes the identity manifest only; the prober then loads the nearest persisted checkpoint. The trainer auto-prunes to this cap each cycle. |
+| `--keep-eval-trace-steps` | `20` | The trainer keeps only the N most-recent eval **step dirs** under `eval_traces/` after each cycle (`0` = keep all), so forensic data stays bounded. `python -m main.prober.groom` is the manual fallback. |
 
 Eval concurrency in the worker is `_EVAL_SUBPROCESS_CONCURRENCY` (5/opponent) — low so
 the shared server isn't flooded while training also uses it.

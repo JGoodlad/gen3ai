@@ -62,6 +62,7 @@ dependencies:
       - tabulate==0.10.0
       - tensorboard==2.20.0
       - tensorboard-data-server==0.7.2
+      - textual==8.2.7
       - torch==2.5.1+cu121
       - torchaudio==2.5.1+cu121
       - torchvision==0.20.1+cu121

@@ -1,0 +1,82 @@
+/* Prober-specific layout. Loaded after the shared theme.tcss (see app.py
+ * CSS_PATH). The three-region body: trace browser | invocation list | analysis. */
+
+#body {
+    height: 1fr;
+}
+
+/* sidebar & middle are fixed-width but drag-resizable via the PaneSplitter bars
+ * between them; #analysis is 1fr so it absorbs the slack. */
+#sidebar {
+    width: 36;
+}
+
+#middle {
+    width: 34;
+}
+
+#analysis {
+    width: 1fr;
+}
+
+#ckpt-badge {
+    height: auto;
+    padding: 0 1;
+    color: $text-muted;
+}
+
+#battle-header {
+    height: auto;
+    padding: 0 1;
+    color: $accent;
+    text-style: bold;
+}
+
+#trace-tree {
+    height: 1fr;
+}
+
+#invocation-list {
+    height: 1fr;
+}
+
+#analysis-scroll {
+    height: 1fr;
+}
+
+/* Sections stack in the scroll, so tables size to their rows rather than 1fr. */
+DataTable {
+    height: auto;
+    max-height: 24;
+}
+
+#board-field {
+    height: auto;
+    padding: 0 1 1 1;
+}
+
+#outcome-summary {
+    height: auto;
+    padding: 1 1 0 1;
+}
+
+#outcome-events {
+    height: auto;
+    padding: 0 1 1 1;
+}
+
+#board-summary {
+    height: auto;
+    padding: 1 1;
+}
+
+.board-label {
+    height: auto;
+    padding: 1 1 0 1;
+    color: $text-muted;
+    text-style: bold;
+}
+
+#board-our, #board-opp {
+    height: auto;
+}

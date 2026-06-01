@@ -1,0 +1,743 @@
+"""ProberApp — the Textual forensic-replay inspector.
+
+Layout: a trace browser (Tree) | an invocation list (ListView) | four analysis
+tabs (DataTables). Navigation is instant; the slow torch work — loading the
+checkpoint and running the per-invocation forward/backward passes — runs in
+``@work(thread=True)`` workers so the asyncio event loop (and the UI) never
+blocks. Workers compute and hand results back via ``call_from_thread``; widgets
+are only ever touched on the event loop.
+"""
+
+from __future__ import annotations
+
+import json
+import os
+
+import numpy as np
+from rich.text import Text
+from textual import events, work
+from textual.app import ComposeResult
+from textual.binding import Binding
+from textual.containers import Horizontal, Vertical, VerticalScroll
+from textual.widgets import (
+    Collapsible,
+    DataTable,
+    Label,
+    ListItem,
+    ListView,
+    Static,
+    Tree,
+)
+
+# Analysis sections (Collapsible id, title, toggle key) — multiple can be open at once.
+_SECTIONS = [
+    ("sec-board", "Board", "1"),
+    ("sec-faith", "Faithfulness", "2"),
+    ("sec-matchups", "Matchups", "3"),
+    ("sec-sweep", "Intervention", "4"),
+    ("sec-saliency", "Saliency", "5"),
+    ("sec-outcome", "Outcome", "6"),
+]
+_OPEN_BY_DEFAULT = {"sec-board", "sec-faith", "sec-outcome"}
+
+
+class NavTree(Tree):
+    """Tree with file-explorer left/right keys: right expands (then descends to the
+    first child), left collapses (then ascends to the parent)."""
+
+    BINDINGS = [
+        Binding("right", "expand_or_child", "Expand", show=False),
+        Binding("left", "collapse_or_parent", "Collapse", show=False),
+    ]
+
+    def action_expand_or_child(self) -> None:
+        node = self.cursor_node
+        if node is None:
+            return
+        if node.allow_expand and not node.is_expanded:
+            node.expand()
+        elif node.children:
+            self.move_cursor(node.children[0])
+
+    def action_collapse_or_parent(self) -> None:
+        node = self.cursor_node
+        if node is None:
+            return
+        if node.allow_expand and node.is_expanded:
+            node.collapse()
+        elif node.parent is not None:
+            self.move_cursor(node.parent)
+
+
+class PaneSplitter(Static):
+    """A 1-cell draggable divider; dragging resizes the pane to its left.
+
+    The right-most pane is `1fr` so it absorbs the slack as a fixed-width pane to
+    the splitter's left grows/shrinks."""
+
+    DEFAULT_CSS = """
+    PaneSplitter { width: 1; height: 1fr; background: $primary 20%; }
+    PaneSplitter:hover { background: $accent; }
+    """
+
+    def __init__(self, target: str, min_w: int = 14, max_w: int = 160, **kw) -> None:
+        super().__init__("", **kw)
+        self._target_sel = target
+        self._min, self._max = min_w, max_w
+        self._dragging = False
+        self._start_x = 0
+        self._start_w = 0
+
+    def on_mouse_down(self, event: events.MouseDown) -> None:
+        self._start_w = self.app.query_one(self._target_sel).region.width
+        self._start_x = event.screen_x
+        self._dragging = True
+        self.capture_mouse()
+        event.stop()
+
+    def on_mouse_move(self, event: events.MouseMove) -> None:
+        if not self._dragging:
+            return
+        w = self._start_w + (event.screen_x - self._start_x)
+        self.app.query_one(self._target_sel).styles.width = max(self._min, min(self._max, int(w)))
+        event.stop()
+
+    def on_mouse_up(self, event: events.MouseUp) -> None:
+        if self._dragging:
+            self._dragging = False
+            self.release_mouse()
+            event.stop()
+
+from main.prober.discovery import (
+    TIERS,
+    BattleTrace,
+    ModelChoice,
+    TraceTree,
+    build_trace_tree,
+    resolve_model_for_step,
+)
+from main.prober.engine import InvocationAnalysis, analyze_invocation, summary_flags
+from main.tui import THEME_PATH, Gen3App, gradient_color
+
+# Glyphs for the flags shown in the invocation list (switch is omitted — already
+# visible in the "switch:…" label). n/N jumps to the discrete, selective events
+# (faints, switches); "uncertain" is shown as a glyph but not jumped to — for a
+# low-confidence policy it's the norm, not a needle worth jumping to.
+_FLAG_GLYPH = {"uncertain": "?", "faint": "✗", "disagree": "≠"}
+_JUMP_FLAGS = ("faint", "switch")
+
+
+class ProberApp(Gen3App):
+    """Interactive inspector for saved forensic battle traces."""
+
+    CSS_PATH = [str(THEME_PATH), "prober.tcss"]
+    TITLE = "Gen3AI Prober"
+
+    BINDINGS = Gen3App.BINDINGS + [
+        ("j", "next_inv", "Next inv"),
+        ("k", "prev_inv", "Prev inv"),
+        ("n", "next_flagged", "Next flag"),
+        ("N", "prev_flagged", "Prev flag"),
+        ("f", "cycle_filter", "Filter"),
+        ("r", "reanalyze", "Re-analyze"),
+        ("m", "cycle_model", "Model tier"),
+        ("R", "reload_model", "Reload ckpt"),
+        Binding("1", "toggle_section('sec-board')", "Board", show=False),
+        Binding("2", "toggle_section('sec-faith')", "Faith", show=False),
+        Binding("3", "toggle_section('sec-matchups')", "Matchups", show=False),
+        Binding("4", "toggle_section('sec-sweep')", "Interv", show=False),
+        Binding("5", "toggle_section('sec-saliency')", "Saliency", show=False),
+        Binding("6", "toggle_section('sec-outcome')", "Outcome", show=False),
+    ]
+
+    def __init__(
+        self,
+        root: "str | None" = None,
+        ckpt_override: "str | None" = None,
+        preselect_inv: "int | None" = None,
+        injected_model=None,
+    ) -> None:
+        super().__init__()
+        self._root = root
+        self._ckpt_override = ckpt_override
+        self._preselect_inv = preselect_inv
+        self.sub_title = root or ""
+
+        self._tree_model: "TraceTree | None" = None
+        self._summary_cache: "dict[str, dict]" = {}
+        self._current_battle: "BattleTrace | None" = None
+        self._current_summary: "dict | None" = None
+        self._analyze_token = 0
+        self._pending_inv: "int | None" = None
+        self._flagged: "list[int]" = []          # invocation indices with a flag
+        self._battle_filter = "all"              # cycled by `f`: all/loss/win
+
+        # Per-battle model resolution. The model that re-runs a trace depends on the
+        # trace's eval step (exact snapshot → nearest checkpoint → most recent), so we
+        # resolve + (lazily) load per selected battle, caching loaded models by path.
+        self._tier = "auto"                       # cycled by `m` (auto/nearest/recent)
+        self._injected_model = injected_model     # tests: stand in for every path
+        self._model_cache: "dict[str, object]" = {}
+        self._model = None                        # currently active ProbeModel
+        self._active_path: "str | None" = None
+        self._current_choice: "ModelChoice | None" = None
+
+    @property
+    def _model_ready(self) -> bool:
+        return self._model is not None
+
+    # ------------------------------------------------------------------
+    # Composition
+    # ------------------------------------------------------------------
+
+    def compose_body(self) -> ComposeResult:
+        with Horizontal(id="body"):
+            with Vertical(id="sidebar"):
+                yield Static("⏳ no checkpoint", id="ckpt-badge")
+                tree: Tree = NavTree("traces", id="trace-tree")
+                tree.root.expand()
+                yield tree
+            yield PaneSplitter("#sidebar", id="split-sidebar")
+            with Vertical(id="middle"):
+                yield Static("select a battle", id="battle-header")
+                yield ListView(id="invocation-list")
+            yield PaneSplitter("#middle", id="split-middle")
+            with Vertical(id="analysis"):
+                # Collapsible sections (not exclusive tabs) so several can be open at
+                # once; toggle by clicking a title or pressing its number key (1–6).
+                with VerticalScroll(id="analysis-scroll"):
+                    with Collapsible(title="Board", collapsed=False, id="sec-board"):
+                        yield Static("", id="board-summary")
+                        yield Static("", id="board-field")
+                        yield Static("our team", classes="board-label")
+                        yield DataTable(id="board-our")
+                        yield Static("opp team (revealed)", classes="board-label")
+                        yield DataTable(id="board-opp")
+                    with Collapsible(title="Faithfulness", collapsed=False, id="sec-faith"):
+                        yield DataTable(id="faith-table")
+                    with Collapsible(title="Matchups", collapsed=True, id="sec-matchups"):
+                        yield DataTable(id="matchups-table")
+                    with Collapsible(title="Intervention", collapsed=True, id="sec-sweep"):
+                        yield DataTable(id="sweep-table")
+                    with Collapsible(title="Saliency", collapsed=True, id="sec-saliency"):
+                        yield DataTable(id="saliency-table")
+                    with Collapsible(title="Outcome", collapsed=False, id="sec-outcome"):
+                        yield Static("", id="outcome-summary")
+                        yield DataTable(id="reward-table")
+                        yield Static("", id="outcome-events")
+
+    def on_mount(self) -> None:
+        self.query_one("#faith-table", DataTable).add_columns("action", "valid", "recorded", "re-run")
+        self.query_one("#matchups-table", DataTable).add_columns("move", "×mult")
+        self.query_one("#sweep-table", DataTable).add_columns("×mult", "P(chosen)", "P(switches)")
+        self.query_one("#reward-table", DataTable).add_columns("reward component", "value")
+        self.query_one("#saliency-table", DataTable).add_columns("obs block", "|grad|/dim", "sum")
+        for tid in ("#board-our", "#board-opp"):
+            self.query_one(tid, DataTable).add_columns("pokémon", "hp", "status")
+
+        self._build_tree()
+        if self._injected_model is None:
+            self.query_one("#ckpt-badge", Static).update(
+                Text("select a battle to load its model", style="dim"))
+
+    # ------------------------------------------------------------------
+    # Trace tree
+    # ------------------------------------------------------------------
+
+    def _build_tree(self) -> None:
+        tree = self.query_one("#trace-tree", Tree)
+        tree.clear()
+        if not self._root:
+            tree.root.label = "no path given"
+            return
+        self._tree_model = build_trace_tree(self._root)
+        if self._tree_model.is_empty:
+            tree.root.label = "no traces found"
+            return
+        flt = self._battle_filter
+        shown = 0
+        for step in self._tree_model.steps:
+            step_node = tree.root.add(f"step {step.step:,}", expand=False)
+            for opp in step.opponents:
+                battles = [b for b in opp.battles if flt == "all" or b.outcome == flt]
+                if not battles:
+                    continue
+                opp_node = step_node.add(f"{opp.name} ({len(battles)})", expand=False)
+                for battle in battles:
+                    opp_node.add_leaf(battle.label, data=battle)
+                    shown += 1
+            if not step_node.children:
+                step_node.remove()
+        suffix = "" if flt == "all" else f" · {flt} only"
+        tree.root.label = f"traces ({shown}{suffix})"
+        # Surface the most recent step so there's something to click immediately.
+        if tree.root.children:
+            tree.root.children[-1].expand()
+
+    def on_tree_node_selected(self, event: Tree.NodeSelected) -> None:
+        battle = event.node.data
+        if isinstance(battle, BattleTrace):
+            self._select_battle(battle)
+
+    # ------------------------------------------------------------------
+    # Battle / invocation selection
+    # ------------------------------------------------------------------
+
+    def _load_summary(self, battle: BattleTrace) -> dict:
+        summ = self._summary_cache.get(battle.summary_path)
+        if summ is None:
+            with open(battle.summary_path) as f:
+                summ = json.load(f)
+            self._summary_cache[battle.summary_path] = summ
+        return summ
+
+    def _select_battle(self, battle: BattleTrace) -> None:
+        self._current_battle = battle
+        self._current_summary = self._load_summary(battle)
+        invs = self._current_summary["invocations"]
+        meta = self._current_summary.get("meta", {})
+        self.query_one("#battle-header", Static).update(
+            f"{battle.opponent} · {meta.get('result', '?')} · "
+            f"{meta.get('turns', '?')}t · {len(invs)} inv"
+        )
+        lv = self.query_one("#invocation-list", ListView)
+        lv.clear()
+        for inv in invs:
+            lv.append(ListItem(Label(self._inv_label(inv))))
+        self._flagged = [i for i, inv in enumerate(invs)
+                         if set(summary_flags(inv)) & set(_JUMP_FLAGS)]
+        # Resolve + ensure the right model for THIS trace's step before selecting an
+        # invocation (the model can differ per battle). If it must load, _analyze
+        # queues via _pending_inv and runs when the model is ready.
+        self._ensure_model_for(battle.step)
+        if invs:
+            target = 0
+            if self._preselect_inv is not None and 0 <= self._preselect_inv < len(invs):
+                target = self._preselect_inv
+                self._preselect_inv = None
+            # Setting the index fires ListView.Highlighted (index was None after
+            # clear()), which drives _analyze — so we don't call it here too.
+            lv.index = target
+
+    @staticmethod
+    def _inv_label(inv: dict) -> str:
+        phase = str(inv.get("phase", "")).replace("_selection", "")
+        glyphs = "".join(_FLAG_GLYPH.get(f, "") for f in summary_flags(inv))
+        tail = f"  {glyphs}" if glyphs else ""
+        return f"t{inv.get('turn', '?'):>3} {phase:<6} {inv.get('chosen', '')}{tail}"
+
+    def on_list_view_highlighted(self, event: ListView.Highlighted) -> None:
+        if event.list_view.id == "invocation-list" and event.list_view.index is not None:
+            self._analyze(event.list_view.index)
+
+    def action_next_inv(self) -> None:
+        self.query_one("#invocation-list", ListView).action_cursor_down()
+
+    def action_prev_inv(self) -> None:
+        self.query_one("#invocation-list", ListView).action_cursor_up()
+
+    def action_next_flagged(self) -> None:
+        self._jump_flagged(+1)
+
+    def action_prev_flagged(self) -> None:
+        self._jump_flagged(-1)
+
+    def _jump_flagged(self, direction: int) -> None:
+        """Move the invocation cursor to the next/prev flagged decision."""
+        if not self._flagged:
+            return
+        lv = self.query_one("#invocation-list", ListView)
+        cur = lv.index if lv.index is not None else -1
+        if direction > 0:
+            nxt = next((i for i in self._flagged if i > cur), self._flagged[0])
+        else:
+            nxt = next((i for i in reversed(self._flagged) if i < cur), self._flagged[-1])
+        lv.index = nxt
+
+    def action_cycle_filter(self) -> None:
+        """Cycle the battle-outcome filter (all → loss → win) and rebuild the tree."""
+        order = ("all", "loss", "win")
+        self._battle_filter = order[(order.index(self._battle_filter) + 1) % len(order)]
+        self._build_tree()
+
+    def action_toggle_section(self, sec_id: str) -> None:
+        """Open/close an analysis section (multiple can be open at once)."""
+        sec = self.query_one(f"#{sec_id}", Collapsible)
+        sec.collapsed = not sec.collapsed
+        if not sec.collapsed:
+            sec.scroll_visible()
+
+    def action_reanalyze(self) -> None:
+        lv = self.query_one("#invocation-list", ListView)
+        if lv.index is not None:
+            self._analyze(lv.index)
+
+    # ------------------------------------------------------------------
+    # Per-battle model resolution (exact → nearest → most recent)
+    # ------------------------------------------------------------------
+
+    def _ensure_model_for(self, step: int) -> None:
+        """Resolve and activate the model for an eval `step`, loading it if needed.
+
+        Updates the badge, then: injected (tests) → use it; cached → activate; else
+        kick a background load. Analysis for the current invocation runs once the
+        model is active (queued via _pending_inv while loading)."""
+        if self._tree_model is None:
+            return
+        choice = resolve_model_for_step(
+            self._tree_model, step, self._ckpt_override, self._tier)
+        self._current_choice = choice
+
+        if self._injected_model is not None:
+            self._model = self._injected_model
+            self._active_path = choice.path or "<injected>"
+            self._update_badge(choice, loading=False)
+            return
+
+        if choice.path is None:
+            self._model = None
+            self._active_path = None
+            self._update_badge(choice, loading=False)
+            return
+
+        if choice.path == self._active_path and self._model is not None:
+            self._update_badge(choice, loading=False)
+            return
+
+        cached = self._model_cache.get(choice.path)
+        if cached is not None:
+            self._model = cached
+            self._active_path = choice.path
+            self._update_badge(choice, loading=False)
+            return
+
+        # Must load — clear the active model so analysis queues until it's ready.
+        self._model = None
+        self._active_path = None
+        self._update_badge(choice, loading=True)
+        self._load_model_worker(choice.path)
+
+    def _update_badge(self, choice: ModelChoice, loading: bool) -> None:
+        m = choice.manifest or {}
+        git = (m.get("git_hash") or "")[:7]
+        arch = m.get("arch_signature") or ""
+        ident = "  ·  ".join(p for p in (f"git {git}" if git else "", arch) if p)
+        tier_style = {"exact": "bold green", "override": "bold cyan",
+                      "nearest": "yellow", "recent": "yellow", "none": "bold red"}.get(
+                          choice.tier, "white")
+        name = os.path.basename(choice.path) if choice.path else "—"
+        head = Text()
+        if loading:
+            head.append("⏳ ", style="yellow")
+        head.append(f"[{choice.tier}] ", style=tier_style)
+        head.append(f"{name}  ", style="bold")
+        head.append(choice.detail, style="dim")
+        if ident:
+            head.append(f"   trace: {ident}", style="dim")
+        self.query_one("#ckpt-badge", Static).update(head)
+
+    def action_cycle_model(self) -> None:
+        """Cycle the resolution preference (auto → nearest → recent) and reload."""
+        self._tier = TIERS[(TIERS.index(self._tier) + 1) % len(TIERS)]
+        if self._current_battle is not None:
+            self._ensure_model_for(self._current_battle.step)
+            lv = self.query_one("#invocation-list", ListView)
+            if self._model_ready and lv.index is not None:
+                self._analyze(lv.index)
+
+    def action_reload_model(self) -> None:
+        if self._active_path and self._active_path in self._model_cache:
+            del self._model_cache[self._active_path]
+        self._model = None
+        self._active_path = None
+        if self._current_battle is not None:
+            self._ensure_model_for(self._current_battle.step)
+
+    @work(thread=True, exclusive=True, group="load")
+    def _load_model_worker(self, ckpt_path: str) -> None:
+        from main.prober.model import ProbeModel
+
+        try:
+            model = ProbeModel.load(ckpt_path)
+        except Exception as e:  # noqa: BLE001 — surface load/arch errors in the UI
+            self.call_from_thread(self._on_model_error, ckpt_path, str(e))
+            return
+        self.call_from_thread(self._on_model_ready, ckpt_path, model)
+
+    def _on_model_ready(self, ckpt_path: str, model) -> None:
+        self._model_cache[ckpt_path] = model
+        # Only activate if this is still the path the current battle wants.
+        if self._current_choice is not None and self._current_choice.path == ckpt_path:
+            self._model = model
+            self._active_path = ckpt_path
+            self._update_badge(self._current_choice, loading=False)
+            if self._pending_inv is not None:
+                inv, self._pending_inv = self._pending_inv, None
+                self._analyze(inv)
+
+    def _on_model_error(self, ckpt_path: str, msg: str) -> None:
+        self.query_one("#ckpt-badge", Static).update(
+            Text(f"✗ load failed ({os.path.basename(ckpt_path)}): {msg}", style="bold red"))
+
+    # ------------------------------------------------------------------
+    # Analysis
+    # ------------------------------------------------------------------
+
+    def _analyze(self, inv_index: int) -> None:
+        if self._current_battle is None or self._current_summary is None:
+            return
+        if not self._model_ready:
+            self._pending_inv = inv_index
+            return
+        self._analyze_token += 1
+        self._set_analysis_status(f"computing inv {inv_index}…")
+        self._analyze_worker(self._current_battle, inv_index, self._analyze_token)
+
+    @work(thread=True, exclusive=True, group="analyze")
+    def _analyze_worker(self, battle: BattleTrace, inv_index: int, token: int) -> None:
+        try:
+            npz = self._load_npz(battle)
+            analysis = analyze_invocation(
+                self._model, self._load_summary(battle), npz, inv_index,
+                summary_path=battle.summary_path, npz_path=battle.npz_path,
+            )
+        except Exception as e:  # noqa: BLE001 — render analysis errors, don't crash
+            self.call_from_thread(self._on_analysis_error, str(e), token)
+            return
+        self.call_from_thread(self._render_analysis, analysis, token)
+
+    def _load_npz(self, battle: BattleTrace):
+        """Load the per-invocation obs eagerly into a dict so we never hold an open
+        npz handle while the user browses dozens of battles."""
+        if battle.npz_path is None:
+            return {}
+        with np.load(battle.npz_path) as z:
+            return {k: z[k] for k in z.files}
+
+    def _render_analysis(self, a: InvocationAnalysis, token: int) -> None:
+        if token != self._analyze_token:
+            return  # a newer selection superseded this result
+        self._set_analysis_status("")
+        if self._current_battle is not None:
+            meta = a.meta
+            self.query_one("#battle-header", Static).update(
+                f"{a.our_species} vs {a.opp_species} · {meta.result} · "
+                f"turn {a.turn} · inv {a.inv_index}/{meta.n_invocations}"
+            )
+        self._render_board(a)
+        self._render_faithfulness(a)
+        self._render_matchups(a)
+        self._render_sweep(a)
+        self._render_saliency(a)
+        self._render_outcome(a)
+
+    def _on_analysis_error(self, msg: str, token: int) -> None:
+        if token != self._analyze_token:
+            return
+        self._set_analysis_status(f"✗ {msg}")
+
+    def _set_analysis_status(self, msg: str) -> None:
+        # Reuse the battle header line as a transient status when analyzing.
+        if msg:
+            self.query_one("#battle-header", Static).update(Text(msg, style="yellow"))
+
+    # ---- per-panel renderers ----
+
+    def _render_board(self, a: InvocationAnalysis) -> None:
+        summ = self.query_one("#board-summary", Static)
+        our_t = self.query_one("#board-our", DataTable)
+        opp_t = self.query_one("#board-opp", DataTable)
+        our_t.clear()
+        opp_t.clear()
+        bd = a.board
+        if bd is None:
+            summ.update("")
+            return
+        line = Text()
+        _append_active(line, "▶ ", bd.ours)
+        line.append("   vs   ", style="dim")
+        _append_active(line, "", bd.opp)
+        if bd.ours.moves:
+            line.append("\nmoves: ", style="dim")
+            line.append(", ".join(bd.ours.moves))
+        if bd.ours.boosts or bd.opp.boosts:
+            line.append("\nboosts: ", style="dim")
+            line.append(f"ours {bd.ours.boosts or '—'}  ·  opp {bd.opp.boosts or '—'}",
+                        style="magenta")
+        summ.update(line)
+        self.query_one("#board-field", Static).update(_field_text(a.field))
+        self._fill_team(our_t, bd.ours)
+        self._fill_team(opp_t, bd.opp)
+
+    @staticmethod
+    def _fill_team(table: DataTable, side) -> None:
+        table.add_row(Text("▶ " + side.active_species, style="bold"),
+                      _hp_text(side.active_hp), side.status or "—")
+        for m in side.bench:
+            sp_style = "dim" if m.fainted else ""
+            hp = Text("faint", style="dim red") if m.fainted else _hp_text(m.hp)
+            table.add_row(Text(m.species, style=sp_style), hp, "—")
+
+    def _render_faithfulness(self, a: InvocationAnalysis) -> None:
+        t = self.query_one("#faith-table", DataTable)
+        t.clear()
+        if not a.actions:
+            t.add_row(_warn_cell(a), "", "", "")
+            return
+        for row in a.actions:
+            label = ("▶ " if row.is_chosen else "  ") + row.label
+            drift = abs(row.recorded - row.rerun)
+            rerun_col = gradient_color(max(0.0, 1.0 - drift * 10))  # green when faithful
+            style = "bold" if row.is_chosen else ("" if row.valid else "dim")
+            t.add_row(
+                Text(label, style=style),
+                Text("✓" if row.valid else "·", style=style or "dim"),
+                Text(f"{row.recorded * 100:5.1f}%", style=style),
+                Text(f"{row.rerun * 100:5.1f}%", style=rerun_col),
+            )
+
+    def _render_matchups(self, a: InvocationAnalysis) -> None:
+        t = self.query_one("#matchups-table", DataTable)
+        t.clear()
+        if a.matchups is None:
+            return
+        for label, mult in zip(a.matchups.move_labels, a.matchups.multipliers):
+            bar = "█" * int(round(mult / 4.0 * 12))
+            t.add_row(label, Text(f"{mult:4.2f}× {bar}", style=_mult_color(mult)))
+
+    def _render_sweep(self, a: InvocationAnalysis) -> None:
+        t = self.query_one("#sweep-table", DataTable)
+        t.clear()
+        if a.sweep is None or not a.sweep.applicable:
+            t.add_row(Text("chosen action is not a move", style="dim"), "", "")
+            return
+        for r in a.sweep.rows:
+            t.add_row(
+                f"{r.multiplier:.0f}×",
+                Text(f"{r.p_chosen * 100:5.1f}%", style=gradient_color(r.p_chosen)),
+                Text(f"{r.p_switches * 100:5.1f}%", style="dim"),
+            )
+
+    def _render_saliency(self, a: InvocationAnalysis) -> None:
+        t = self.query_one("#saliency-table", DataTable)
+        t.clear()
+        if a.saliency is None:
+            return
+        peak = max((b.total_abs for b in a.saliency.blocks), default=1.0) or 1.0
+        for b in a.saliency.blocks:
+            bar = "█" * int(round(b.total_abs / peak * 14))
+            t.add_row(b.name, f"{b.mean_abs:.4f}", Text(f"{b.total_abs:6.2f} {bar}", style="cyan"))
+
+    def _render_outcome(self, a: InvocationAnalysis) -> None:
+        # Value + model-agreement summary line(s).
+        summary = Text()
+        if a.value is not None:
+            v = a.value
+            summary.append(f"V(s) recorded {v.recorded:+.2f}", style="bold")
+            if v.rerun is not None:
+                summary.append(f"  ·  re-run {v.rerun:+.2f}", style="dim")
+            if v.delta is not None:
+                d_style = "green" if v.delta >= 0 else "red"
+                summary.append("  ·  ΔV ", style="dim")
+                summary.append(f"{v.delta:+.2f}", style=d_style)
+                summary.append(f" → {v.next_recorded:+.2f}", style="dim")
+            summary.append("\n")
+        agree_style = "green" if a.agrees else "bold red"
+        summary.append("model: ", style="dim")
+        summary.append(f"chosen={a.chosen}", style="bold")
+        if a.rerun_argmax is not None:
+            verdict = "agrees" if a.agrees else f"DISAGREES → {a.rerun_argmax}"
+            summary.append(f"  ·  re-run {verdict}", style=agree_style)
+        out = a.outcome or {}
+        our, opp = out.get("our") or {}, out.get("opp") or {}
+        if our or opp:
+            summary.append(
+                f"\nour: {our.get('action','?')} ({our.get('hp_delta','?')})"
+                f"   opp: {opp.get('action','?')} ({opp.get('hp_delta','?')})", style="dim")
+        self.query_one("#outcome-summary", Static).update(summary)
+
+        # Reward breakdown (total first, then the component strings).
+        rt = self.query_one("#reward-table", DataTable)
+        rt.clear()
+        reward = out.get("reward")
+        if isinstance(reward, dict):
+            total = reward.get("total")
+            if total is not None:
+                col = gradient_color(max(0.0, min(1.0, (float(total) + 3) / 6)))
+                rt.add_row(Text("total", style="bold"), Text(f"{float(total):+.4f}", style=col))
+            for k, val in reward.items():
+                if k != "total":
+                    rt.add_row(k, str(val))
+        elif reward is not None:
+            rt.add_row("total", f"{reward}")
+
+        events = out.get("events") or []
+        ev = self.query_one("#outcome-events", Static)
+        ev.update(Text("events: " + (", ".join(map(str, events)) if events else "—"),
+                       style="yellow" if events else "dim"))
+
+
+def _warn_cell(a: InvocationAnalysis):
+    msg = a.warnings[0] if a.warnings else "no analysis"
+    return Text(msg, style="yellow")
+
+
+def _mult_color(mult: float) -> str:
+    # 0× bad (red) … 4× great (green), centered on 1× neutral.
+    return gradient_color(min(1.0, mult / 4.0))
+
+
+def _hp_frac(hp: str) -> "float | None":
+    s = str(hp).strip()
+    if "faint" in s.lower():
+        return 0.0
+    if s.endswith("%"):
+        try:
+            return max(0.0, min(1.0, float(s[:-1]) / 100.0))
+        except ValueError:
+            return None
+    return None
+
+
+def _hp_text(hp: str) -> Text:
+    f = _hp_frac(hp)
+    return Text(str(hp), style=gradient_color(f) if f is not None else "dim")
+
+
+def _append_active(line: Text, prefix: str, side) -> None:
+    line.append(prefix, style="bold")
+    line.append(f"{side.active_species} ", style="bold")
+    line.append(_hp_text(side.active_hp))
+    if side.status:
+        line.append(f" {side.status}", style="yellow")
+    if side.boosts:
+        line.append(f" [{side.boosts}]", style="magenta")
+
+
+def _screens_str(field: dict, side: str) -> str:
+    names = [("reflect", "Reflect"), ("light_screen", "LightScreen"),
+             ("safeguard", "Safeguard"), ("mist", "Mist")]
+    on = [label for key, label in names if field.get(f"{side}_{key}")]
+    return ", ".join(on) if on else "—"
+
+
+def _field_text(field: "dict | None") -> Text:
+    """One-line field summary: weather, hazards (spikes), screens, turn."""
+    if not field:
+        return Text("field: —", style="dim")
+    t = Text()
+    weather = field.get("weather", "NONE")
+    t.append("weather: ", style="dim")
+    if weather and weather != "NONE":
+        turns = field.get("weather_turns_left")
+        suffix = " (∞)" if field.get("weather_permanent") else (f" ({turns:g} left)" if turns else "")
+        t.append(f"{weather}{suffix}", style="cyan")
+    else:
+        t.append("none", style="dim")
+    t.append("   spikes: ", style="dim")
+    t.append(f"our {field.get('our_spikes', 0)} / opp {field.get('opp_spikes', 0)}")
+    t.append("   screens: ", style="dim")
+    t.append(f"our {_screens_str(field, 'our')} | opp {_screens_str(field, 'opp')}")
+    if field.get("turn") is not None:
+        t.append(f"   turn {field['turn']:g}", style="dim")
+    return t

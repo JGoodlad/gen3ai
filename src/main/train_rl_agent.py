@@ -364,6 +364,17 @@ async def main():
                              "Capped at the opponent count.")
     parser.add_argument("--eval-device", "--eval_device", dest="eval_device", type=str, default="cpu",
                         help="Device for the eval-worker subprocess inference (default cpu, to decouple from the training GPU).")
+    parser.add_argument("--keep-eval-snapshots", "--keep_eval_snapshots", dest="keep_eval_snapshots",
+                        type=int, default=10,
+                        help="Retain the N most-recent eval weight snapshots in eval_traces/step_<N>/snapshot.zip "
+                             "so the prober can reload the bit-exact model that produced a cycle's traces "
+                             "(~27MB each; default 10 ≈ 270MB). 0 only writes the identity manifest; the prober "
+                             "then falls back to the nearest persisted checkpoint.")
+    parser.add_argument("--keep-eval-trace-steps", "--keep_eval_trace_steps", dest="keep_eval_trace_steps",
+                        type=int, default=20,
+                        help="The trainer grooms the forensic traces it writes: after each eval cycle it "
+                             "keeps only the N most-recent eval step dirs under eval_traces/ (0 = keep all). "
+                             "`python -m main.prober.groom` is the manual fallback for finished runs.")
     parser.add_argument("--self-play", action="store_true", default=False, help="Enable self-play snapshot pool as training opponents")
     parser.add_argument("--snapshot-dir", type=str, default=None, help="Pool directory (default: <run_dir>/snapshots)")
     parser.add_argument("--promote-threshold", type=float, default=0.65, help="Win rate vs. pool to trigger snapshot promotion")
@@ -743,6 +754,8 @@ async def main():
                 eval_device=args.eval_device,
                 showdown_port=args.showdown_port,
                 resume_eval_metadata=_resume_meta,
+                keep_eval_snapshots=args.keep_eval_snapshots,
+                keep_eval_trace_steps=args.keep_eval_trace_steps,
             )
         callbacks.append(eval_callback)
 

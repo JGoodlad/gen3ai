@@ -1,0 +1,35 @@
+/* Shared Gen3AI Textual theme.
+ *
+ * Loaded by every Gen3App via the absolute THEME_PATH (see app_base.py), so a
+ * subclass can append its own .tcss without losing these base rules. Keep this
+ * file to cross-app primitives (chrome, palette-driven borders); per-app layout
+ * belongs in that app's own .tcss (e.g. prober.tcss). */
+
+Screen {
+    background: $surface;
+}
+
+Header {
+    background: $panel;
+    color: $accent;
+    text-style: bold;
+}
+
+Footer {
+    background: $panel;
+}
+
+/* A panel-ish container convention shared across apps. */
+.gen3-panel {
+    border: round $primary 30%;
+    padding: 0 1;
+}
+
+.gen3-title {
+    color: $accent;
+    text-style: bold;
+}
+
+.gen3-dim {
+    color: $text-muted;
+}

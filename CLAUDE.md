@@ -25,6 +25,8 @@ Keep docs in sync **automatically, as part of the same change** — no need to b
 | `src/agents/battle/` | Event-sourced battle layer (Gen3Battle, BattleEvent log, LiveView/TurnView/LegalActions, StrictBattleView, TurnDelta fold) |
 | `src/agents/training/` | Bot-eval subprocess architecture + Showdown-port (`server_config`) threading |
 | `src/main/launcher/` | Launcher internals: restarts, crash reporting, exit codes, flags, port default |
+| `src/main/prober/` | Forensic-replay inspector (Textual TUI) + the pure probe engine `probe_replay.py` shares; trace discovery; worker-thread model |
+| `src/main/tui/` | Thin shared Textual base (`Gen3App`, theme, `gradient_color`) — the seam for a future launcher Textual port |
 | `designs/` | Which `ai_vN` folder is relevant; version map |
 
 ## Git Workflow
@@ -265,6 +267,31 @@ Requires the Showdown server to be running (see below).
 
 ---
 
+## Prober (forensic-replay inspector)
+
+An interactive Textual TUI that browses the `eval_traces` a run writes and
+analyzes each saved decision point (faithfulness, type matchups, an intervention
+sweep, gradient saliency). No server needed — it reads saved traces and a
+checkpoint. Point it at a run dir; it auto-discovers the trace tree and resolves
+the checkpoint (best_model → latest; override with `--ckpt`):
+
+```bash
+export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 -m main.prober models/run_<timestamp>
+```
+
+The same analysis is available headless for one invocation via the
+`probe_replay.py` CLI (`python -m main.probe_replay <ckpt> <summary.json>
+<states.npz> <inv>`); both share the pure engine in `src/main/prober/engine.py`.
+
+**For agents/scripts**, a JSON API + CLI (`ProbeSession` / `python -m
+main.prober.query list|overview|find|analyze`) exposes the same probing
+infrastructure programmatically — list/filter battles, scan a battle model-free,
+find decisions the model disagrees with, or deeply analyze one decision. Internals
+— engine/app split, the model-resolution ladder, Outcome panel, flags, and the
+agent API — are in `src/main/prober/CLAUDE.md`.
+
+---
+
 ## Showdown Server
 
 > **⚠️ Never stop or restart the training Showdown server on port 8001.** A server started
@@ -340,9 +367,13 @@ src/
     launcher/          # Restart loop + Rich TUI (preferred for long runs) — has CLAUDE.md
                      #   checkpoint.py, worktree.py, child.py, input.py,
                      #   run.py, state.py, ui.py
+    prober/            # Forensic-replay inspector (Textual TUI) — has CLAUDE.md
+                     #   engine.py (pure analysis), model.py, discovery.py, app.py
+    tui/               # Shared Textual base (Gen3App, theme, colors) — has CLAUDE.md
     exit_codes.py      # TrainExitCode enum (COMPLETE=0, INTERRUPTED=15, CRASH=1)
     train_rl_agent.py  # Training entry point (also callable directly)
     eval_worker.py     # Subprocess bot-eval worker (frozen snapshot, CPU)
+    probe_replay.py    # Forensic-replay CLI (thin wrapper over main.prober.engine)
     play.py            # Battle / evaluation entry point
   poke_env/          # Forked poke-env library
   utils/
