@@ -220,8 +220,13 @@ the `BattleContext` snapshot-diff layer are gone. Concretely:
 - **One production path.** `build_from_events(prev, curr, action, events)` is the sole builder
   on every production path — training env, `episode_tracker.py`, `reward_tracker.py` (migrated to
   capture the per-decision event cursor), and the forensic `battle_recorder.py`. The legacy diff
-  detective `TurnDelta.build` is **retired from production** and marked legacy/test-only (kept for
-  the poke-env-gap fuzz harnesses + crafted-context unit tests).
+  detective (formerly `TurnDelta.build`) is **retired from production** and has been **extracted
+  out of `turn_delta.py` into the test-support module `training/turn_delta_legacy.py`** as the
+  module-level `build_legacy` (with its four legacy-only helpers `_moves_match` /
+  `_align_effectiveness` / `_ko_before_acting` / `_derive_move_outcome`) — kept for the
+  poke-env-gap fuzz harnesses + crafted-context unit tests only, **not imported by any production
+  module**. The shared helpers `_fold_hp_deltas` / `_resolve_target_hp_delta` (also called by
+  `build_from_events`) stay in `turn_delta.py`, which now carries only the live fold path.
 - **What folds from the log:** moves/switches/cant/effectiveness/faints+causes/status-transitions/
   item-lost/outcome/crit/move-order, the **per-slot HP delta** (each `DAMAGE/HEAL/SETHP` `hp_after`
   + `FAINT`→0 — bit-identical to `curr_hp − prev_hp`, no float-sum noise), and **target-HP**.

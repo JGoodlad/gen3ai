@@ -54,6 +54,7 @@ from agents.observation.turn_delta_encoder import (
 )
 from agents.training.battle_snapshot import BattleContext
 from agents.training.turn_delta import TurnDelta
+from agents.training.turn_delta_legacy import build_legacy
 from agents.training.slot_registry import SlotRegistry
 from utils.teambuilder import Gen3Teambuilder
 
@@ -762,7 +763,7 @@ class EffectivenessFuzzPlayer(Player):
 
             if prev_ctx is not None and last_action is not None:
                 # Build TurnDelta for the turn that just completed
-                delta = TurnDelta.build(prev_ctx, curr_ctx, last_action)
+                delta = build_legacy(prev_ctx, curr_ctx, last_action)
                 self._validate_turn(battle, curr_ctx, delta)
 
             if battle.finished:

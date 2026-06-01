@@ -10,7 +10,7 @@ import pytest
 from unittest.mock import MagicMock
 
 from agents.training.battle_snapshot import BattleContext
-from agents.training.turn_delta import TurnDelta
+from agents.training.turn_delta_legacy import build_legacy
 from agents.training.episode_tracker import EpisodeTracker
 from agents.action.mask_generator import Gen3ActionMasker
 from agents.battle.live_view import (
@@ -465,8 +465,8 @@ def test_prev_N_delta_vecs_ordering_oldest_first():
     # Drive the offset from the encoder constant so a layout shift surfaces
     # in the error message instead of silently pointing at the wrong field.
     OUR_HP_DELTA_IDX = OFFSET_OUR_HP_DELTA_SUM
-    delta_oldest = TurnDelta.build(ctxs[0], ctxs[1], 0)
-    delta_newest = TurnDelta.build(ctxs[3], ctxs[4], 0)
+    delta_oldest = build_legacy(ctxs[0], ctxs[1], 0)
+    delta_newest = build_legacy(ctxs[3], ctxs[4], 0)
     oldest_encoded = encoder.encode(delta_oldest)
     newest_encoded = encoder.encode(delta_newest)
 

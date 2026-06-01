@@ -3,6 +3,7 @@ import numpy as np
 from unittest.mock import MagicMock
 from agents.training.battle_snapshot import BattleContext
 from agents.training.turn_delta import TurnDelta
+from agents.training.turn_delta_legacy import build_legacy
 from agents.training.slot_registry import SlotRegistry
 from agents.gen3_mechanics import BOOST_DIM, BOOST_STATS
 
@@ -146,7 +147,7 @@ def test_turn_delta_build_switch_action():
         our_team_order=("tyranitar", "skarmory", "blissey", "swampert", "lanturn", "snorlax"),
     )
     curr = _ctx(our_active="skarmory", opp_active="salamence")
-    delta = TurnDelta.build(prev, curr, action=1)  # action < 6 = switch
+    delta = build_legacy(prev, curr, action=1)  # action < 6 = switch
     assert delta.our_switch_to == "skarmory"
     assert delta.our_move_id is None
     assert delta.our_prev_active == "tyranitar"
@@ -166,18 +167,18 @@ def test_opp_resolved_move_id_prefers_event_then_falls_back():
     )
     prev = _ctx(our_team_order=("snorlax",))
     curr = _ctx()
-    # Inject the event via TurnDelta directly (build() pulls from curr_ctx).
+    # Inject the event via TurnDelta directly (build_legacy() pulls from curr_ctx).
     curr_with_event = _ctx(opp_last_damaging_event=event)
-    delta = TurnDelta.build(prev, curr_with_event, action=6)
+    delta = build_legacy(prev, curr_with_event, action=6)
     assert delta.opp_resolved_move_id == "hiddenpower"
 
     # 2. No event → use delta.opp_move_id.
     curr_no_event = _ctx(opp_last_move_id="roar")  # opp_last_damaging_event=None by default
-    delta_no_event = TurnDelta.build(prev, curr_no_event, action=6)
+    delta_no_event = build_legacy(prev, curr_no_event, action=6)
     assert delta_no_event.opp_resolved_move_id == "roar"
 
     # 3. Neither set → None.
-    delta_none = TurnDelta.build(prev, _ctx(), action=6)
+    delta_none = build_legacy(prev, _ctx(), action=6)
     assert delta_none.opp_resolved_move_id is None
 
 
@@ -196,14 +197,14 @@ def test_turn_delta_build_switch_action_uses_intent_not_end_state():
     # Turn N+1 snapshot: Swampert died to HP, Lanturn died to Spikes on switch-in,
     # Snorlax is the final replacement.
     curr = _ctx(our_active="snorlax")
-    delta = TurnDelta.build(prev, curr, action=3)
+    delta = build_legacy(prev, curr, action=3)
     assert delta.our_switch_to == "swampert"  # intent, not "snorlax" (end-state)
 
 
 def test_turn_delta_build_our_move_id():
     prev = _ctx(active_move_ids=["earthquake", "rockslide", "crunch", "fireblast"])
     curr = _ctx()
-    delta = TurnDelta.build(prev, curr, action=7)   # slot 1 → "rockslide"
+    delta = build_legacy(prev, curr, action=7)   # slot 1 → "rockslide"
     assert delta.our_move_id == "rockslide"
     assert delta.our_switch_to is None
 
@@ -211,14 +212,14 @@ def test_turn_delta_build_our_move_id():
 def test_turn_delta_build_our_move_id_first_slot():
     prev = _ctx(active_move_ids=["surf", "icebeam", None, None])
     curr = _ctx()
-    delta = TurnDelta.build(prev, curr, action=6)   # slot 0 → "surf"
+    delta = build_legacy(prev, curr, action=6)   # slot 0 → "surf"
     assert delta.our_move_id == "surf"
 
 
 def test_turn_delta_build_struggle():
     prev = _ctx(active_move_ids=[None, None, None, None])
     curr = _ctx()
-    delta = TurnDelta.build(prev, curr, action=10)
+    delta = build_legacy(prev, curr, action=10)
     assert delta.our_move_id == "struggle"
     assert delta.our_switch_to is None
 
@@ -227,7 +228,7 @@ def test_turn_delta_build_our_move_slot_missing_ids():
     # Slot 3 has None in active_move_ids (e.g. PP-depleted move).
     prev = _ctx(active_move_ids=["surf", "icebeam", "thunderbolt", None])
     curr = _ctx()
-    delta = TurnDelta.build(prev, curr, action=9)   # slot 3 — None move
+    delta = build_legacy(prev, curr, action=9)   # slot 3 — None move
     assert delta.our_move_id is None
 
 
@@ -238,7 +239,7 @@ def test_turn_delta_build_our_move_slot_missing_ids():
 def test_turn_delta_opp_move_known_from_last_move():
     prev = _ctx(opp_active="salamence")
     curr = _ctx(opp_active="salamence", opp_last_move_id="surf")
-    delta = TurnDelta.build(prev, curr, action=6)
+    delta = build_legacy(prev, curr, action=6)
     assert delta.opp_move_id == "surf"
     assert delta.opp_move_known is True
     assert delta.opp_switch_to is None
@@ -248,7 +249,7 @@ def test_turn_delta_opp_move_unknown_no_last_move():
     # Opponent attacked but last_move is None (e.g. Explosion aftermath)
     prev = _ctx(opp_active="electrode")
     curr = _ctx(opp_active="electrode", opp_last_move_id=None)
-    delta = TurnDelta.build(prev, curr, action=6)
+    delta = build_legacy(prev, curr, action=6)
     assert delta.opp_move_id is None
     assert delta.opp_move_known is False
 
@@ -256,7 +257,7 @@ def test_turn_delta_opp_move_unknown_no_last_move():
 def test_turn_delta_opp_switch_known():
     prev = _ctx(opp_active="salamence")
     curr = _ctx(opp_active="tyranitar", opp_last_move_id=None)
-    delta = TurnDelta.build(prev, curr, action=6)
+    delta = build_legacy(prev, curr, action=6)
     assert delta.opp_switch_to == "tyranitar"
     assert delta.opp_move_id is None
     assert delta.opp_move_known is True   # switch is always known
@@ -267,7 +268,7 @@ def test_turn_delta_opp_switch_ignores_last_move():
     # we must not use it as opp_move_id (the switch guard prevents contamination).
     prev = _ctx(opp_active="salamence")
     curr = _ctx(opp_active="gengar", opp_last_move_id="shadowball")  # gengar's prior last_move
-    delta = TurnDelta.build(prev, curr, action=6)
+    delta = build_legacy(prev, curr, action=6)
     assert delta.opp_switch_to == "gengar"
     assert delta.opp_move_id is None        # NOT "shadowball"
     assert delta.opp_move_known is True
@@ -277,7 +278,7 @@ def test_turn_delta_opp_switch_to_none_active():
     # Edge case: opp switches but new active is "NONE" (between faints, shouldn't normally occur)
     prev = _ctx(opp_active="salamence")
     curr = _ctx(opp_active="NONE")
-    delta = TurnDelta.build(prev, curr, action=6)
+    delta = build_legacy(prev, curr, action=6)
     assert delta.opp_switch_to is None
     assert delta.opp_move_known is True
 
@@ -299,7 +300,7 @@ def test_turn_delta_roar_captures_phazed_mon_move():
         opp_last_move_id=None,   # new active mon — never moved
         opp_all_last_move_ids={"salamence": "surf", "gengar": None},
     )
-    delta = TurnDelta.build(prev, curr, action=6)   # slot 0 → "roar"
+    delta = build_legacy(prev, curr, action=6)   # slot 0 → "roar"
     assert delta.our_move_id == "roar"
     assert delta.opp_move_id == "surf"              # recovered from phazed mon
     assert delta.opp_move_known is True
@@ -316,7 +317,7 @@ def test_turn_delta_whirlwind_captures_phazed_mon_move():
         opp_last_move_id=None,
         opp_all_last_move_ids={"zapdos": "thunderbolt", "raikou": None},
     )
-    delta = TurnDelta.build(prev, curr, action=6)   # slot 0 → "whirlwind"
+    delta = build_legacy(prev, curr, action=6)   # slot 0 → "whirlwind"
     assert delta.our_move_id == "whirlwind"
     assert delta.opp_move_id == "thunderbolt"
     assert delta.opp_switch_to == "raikou"
@@ -334,7 +335,7 @@ def test_turn_delta_roar_opp_hadnt_moved_before_phaze():
         opp_last_move_id=None,
         opp_all_last_move_ids={"salamence": None, "gengar": None},
     )
-    delta = TurnDelta.build(prev, curr, action=6)
+    delta = build_legacy(prev, curr, action=6)
     assert delta.our_move_id == "roar"
     assert delta.opp_move_id is None
     assert delta.opp_move_known is False   # genuinely unknown — they may have been unable to move
@@ -352,7 +353,7 @@ def test_turn_delta_voluntary_switch_not_treated_as_phaze():
         opp_last_move_id=None,
         opp_all_last_move_ids={"salamence": "outrage", "gengar": None},
     )
-    delta = TurnDelta.build(prev, curr, action=6)   # slot 0 → "surf" (not a phazing move)
+    delta = build_legacy(prev, curr, action=6)   # slot 0 → "surf" (not a phazing move)
     assert delta.our_move_id == "surf"
     assert delta.opp_move_id is None        # voluntary switch — move must not bleed through
     assert delta.opp_move_known is True     # switch is always known
@@ -368,7 +369,7 @@ def test_turn_delta_build_detects_faint():
                 our_hp=_hp(1.0, 1.0), opp_hp=_hp(1.0))
     curr = _ctx(our_fainted_count=1, opp_fainted_count=0,
                 our_hp=_hp(0.0, 1.0), opp_hp=_hp(0.5))
-    delta = TurnDelta.build(prev, curr, action=7)
+    delta = build_legacy(prev, curr, action=7)
     assert delta.we_fainted is True
     assert delta.opp_fainted is False
     assert delta.our_hp_delta[0] == pytest.approx(-1.0)
@@ -378,7 +379,7 @@ def test_turn_delta_build_detects_faint():
 def test_turn_delta_both_fainted():
     prev = _ctx(our_fainted_count=0, opp_fainted_count=0)
     curr = _ctx(our_fainted_count=1, opp_fainted_count=1)
-    delta = TurnDelta.build(prev, curr, action=6)
+    delta = build_legacy(prev, curr, action=6)
     assert delta.we_fainted is True
     assert delta.opp_fainted is True
 
@@ -398,7 +399,7 @@ def test_turn_delta_newly_revealed_opp_mon_hp_zeroed():
         opp_hp=_hp(0.0, 1.0, 0.0, 0.0, 0.0, 0.0),
         opp_fainted_count=1,
     )
-    delta = TurnDelta.build(prev, curr, action=6)
+    delta = build_legacy(prev, curr, action=6)
     assert delta.opp_hp_delta[0] == pytest.approx(-0.42)   # Swampert fainted — real delta
     assert delta.opp_hp_delta[1] == pytest.approx(0.0)     # Tyranitar revealed — zeroed
     assert delta.opp_hp_delta.sum() == pytest.approx(-0.42)
@@ -415,7 +416,7 @@ def test_turn_delta_previously_revealed_opp_hp_not_zeroed():
         opp_slot_map={"tyranitar": 0},
         opp_hp=_hp(0.50),
     )
-    delta = TurnDelta.build(prev, curr, action=6)
+    delta = build_legacy(prev, curr, action=6)
     assert delta.opp_hp_delta[0] == pytest.approx(-0.30)
 
 
@@ -427,7 +428,7 @@ def test_turn_delta_newly_revealed_at_partial_hp_zeroed():
         opp_slot_map={"starmie": 0},
         opp_hp=_hp(0.60),
     )
-    delta = TurnDelta.build(prev, curr, action=6)
+    delta = build_legacy(prev, curr, action=6)
     assert delta.opp_hp_delta[0] == pytest.approx(0.0)
 
 
@@ -477,7 +478,7 @@ def test_turn_delta_boost_delta_gain():
     # Swords Dance: our atk went from 0 to +2
     prev = _ctx(our_boosts=_boosts())
     curr = _ctx(our_boosts=_boosts(atk=2))
-    delta = TurnDelta.build(prev, curr, action=6)
+    delta = build_legacy(prev, curr, action=6)
     assert delta.our_boost_delta[BOOST_STATS.index("atk")] == 2
     assert delta.our_boost_delta.sum() == 2
 
@@ -486,7 +487,7 @@ def test_turn_delta_boost_delta_loss():
     # Opponent used Charm: our atk dropped from 0 to -2
     prev = _ctx(our_boosts=_boosts())
     curr = _ctx(our_boosts=_boosts(atk=-2))
-    delta = TurnDelta.build(prev, curr, action=6)
+    delta = build_legacy(prev, curr, action=6)
     assert delta.our_boost_delta[BOOST_STATS.index("atk")] == -2
 
 
@@ -494,7 +495,7 @@ def test_turn_delta_opp_boost_delta():
     # Opp used Calm Mind: their spa and spd both +1
     prev = _ctx(opp_boosts=_boosts())
     curr = _ctx(opp_boosts=_boosts(spa=1, spd=1))
-    delta = TurnDelta.build(prev, curr, action=6)
+    delta = build_legacy(prev, curr, action=6)
     assert delta.opp_boost_delta[BOOST_STATS.index("spa")] == 1
     assert delta.opp_boost_delta[BOOST_STATS.index("spd")] == 1
 
@@ -507,7 +508,7 @@ def test_turn_delta_boost_delta_zeroed_on_our_switch():
         our_team_order=("tyranitar", "skarmory"),
     )
     curr = _ctx(our_active="skarmory", our_boosts=_boosts())
-    delta = TurnDelta.build(prev, curr, action=1)  # action < 6 = switch
+    delta = build_legacy(prev, curr, action=1)  # action < 6 = switch
     np.testing.assert_array_equal(delta.our_boost_delta, np.zeros(BOOST_DIM, dtype=np.int8))
 
 
@@ -515,14 +516,14 @@ def test_turn_delta_boost_delta_zeroed_on_opp_switch():
     # Opp had +1 spa and voluntarily switched — delta should be zero.
     prev = _ctx(opp_active="gengar", opp_boosts=_boosts(spa=1))
     curr = _ctx(opp_active="starmie", opp_boosts=_boosts())
-    delta = TurnDelta.build(prev, curr, action=6)
+    delta = build_legacy(prev, curr, action=6)
     np.testing.assert_array_equal(delta.opp_boost_delta, np.zeros(BOOST_DIM, dtype=np.int8))
 
 
 def test_turn_delta_no_change_gives_zero_delta():
     prev = _ctx(our_boosts=_boosts(atk=1))
     curr = _ctx(our_boosts=_boosts(atk=1))
-    delta = TurnDelta.build(prev, curr, action=6)
+    delta = build_legacy(prev, curr, action=6)
     assert delta.our_boost_delta.sum() == 0
     assert delta.opp_move_known is False
     assert delta.our_move_id is None
@@ -536,7 +537,7 @@ def test_turn_delta_no_change_gives_zero_delta():
 def test_turn_delta_opp_failed_to_move_par():
     prev = _ctx(opp_active="salamence")
     curr = _ctx(opp_active="salamence", opp_cant_reason="par")
-    delta = TurnDelta.build(prev, curr, action=6)
+    delta = build_legacy(prev, curr, action=6)
     assert delta.opp_failed_to_move is True
     assert delta.opp_cant_reason == "par"
     assert delta.opp_move_id is None   # cant + no last_move = None
@@ -545,7 +546,7 @@ def test_turn_delta_opp_failed_to_move_par():
 def test_turn_delta_opp_failed_to_move_flinch():
     prev = _ctx(opp_active="salamence")
     curr = _ctx(opp_active="salamence", opp_cant_reason="flinch")
-    delta = TurnDelta.build(prev, curr, action=6)
+    delta = build_legacy(prev, curr, action=6)
     assert delta.opp_failed_to_move is True
     assert delta.opp_cant_reason == "flinch"
 
@@ -553,7 +554,7 @@ def test_turn_delta_opp_failed_to_move_flinch():
 def test_turn_delta_opp_moved_normally():
     prev = _ctx(opp_active="salamence")
     curr = _ctx(opp_active="salamence", opp_last_move_id="surf", opp_cant_reason=None)
-    delta = TurnDelta.build(prev, curr, action=6)
+    delta = build_legacy(prev, curr, action=6)
     assert delta.opp_failed_to_move is False
     assert delta.opp_cant_reason is None
     assert delta.opp_move_id == "surf"
@@ -562,7 +563,7 @@ def test_turn_delta_opp_moved_normally():
 def test_turn_delta_our_failed_to_move_slp():
     prev = _ctx()
     curr = _ctx(our_cant_reason="slp")
-    delta = TurnDelta.build(prev, curr, action=7)
+    delta = build_legacy(prev, curr, action=7)
     assert delta.our_failed_to_move is True
     assert delta.our_cant_reason == "slp"
 
@@ -581,7 +582,7 @@ def test_turn_delta_flinch_with_persisting_last_move():
     # With cant_reason, we can still detect the flinch.
     prev = _ctx(opp_active="salamence")
     curr = _ctx(opp_active="salamence", opp_last_move_id="earthquake", opp_cant_reason="flinch")
-    delta = TurnDelta.build(prev, curr, action=6)
+    delta = build_legacy(prev, curr, action=6)
     assert delta.opp_failed_to_move is True
     assert delta.opp_cant_reason == "flinch"
     assert delta.opp_move_id == "earthquake"   # persisted from prior turn

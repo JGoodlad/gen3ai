@@ -21,8 +21,8 @@ import pytest
 from poke_env.battle.abstract_battle import DamagingMoveEvent
 from agents.gen3_mechanics import BOOST_DIM
 from agents.training.battle_snapshot import BattleContext
-from agents.training.turn_delta import (
-    TurnDelta,
+from agents.training.turn_delta_legacy import (
+    build_legacy,
     _derive_move_outcome, _ko_before_acting, _align_effectiveness, _moves_match,
 )
 
@@ -133,7 +133,7 @@ def test_moves_match_hidden_power():
 
 
 # ===========================================================================
-# TurnDelta.build — our side
+# build_legacy — our side
 # ===========================================================================
 
 def test_stayed_in_uses_protocol_last_move_not_action():
@@ -141,7 +141,7 @@ def test_stayed_in_uses_protocol_last_move_not_action():
     # says earthquake actually fired -> trust the protocol.
     prev = _ctx(active_move_ids=["rockslide", "earthquake", "crunch", "fireblast"])
     curr = _ctx(our_last_move_id="earthquake")
-    d = TurnDelta.build(prev, curr, MOVE0)
+    d = build_legacy(prev, curr, MOVE0)
     assert d.our_move_id == "earthquake"
     assert d.our_move_outcome == "hit"
 
@@ -150,7 +150,7 @@ def test_delegated_move_is_first_class():
     # Sleep Talk (action) delegated to Surf — last_move stores the CALLED move.
     prev = _ctx(active_move_ids=["sleeptalk", "rest", "surf", "icebeam"])
     curr = _ctx(our_last_move_id="surf")
-    d = TurnDelta.build(prev, curr, MOVE0)
+    d = build_legacy(prev, curr, MOVE0)
     assert d.our_move_id == "surf"
 
 
@@ -161,7 +161,7 @@ def test_attacked_then_fainted_uses_damaging_event():
     curr = _ctx(our_active="NONE", our_fainted_count=1, our_last_move_id="brickbreak",
                 our_last_damaging_event=_event("explosion"), we_moved_first=True,
                 our_move_missed=True)  # stale miss flag — must be overridden by "connected"
-    d = TurnDelta.build(prev, curr, MOVE0)
+    d = build_legacy(prev, curr, MOVE0)
     assert d.our_move_id == "explosion"
     assert d.our_switch_to is None
     assert d.our_move_outcome == "hit"   # dealt damage -> hit, NOT miss
@@ -176,7 +176,7 @@ def test_neutral_explosion_no_event_is_hit():
     curr = _ctx(our_active="NONE", our_fainted_count=1, our_last_move_id="brickbreak",
                 our_last_damaging_event=None,          # neutral hit -> no event
                 we_moved_first=True, our_move_failed=True)  # stale fail flag
-    d = TurnDelta.build(prev, curr, MOVE0 + 2)  # action 2 -> explosion slot
+    d = build_legacy(prev, curr, MOVE0 + 2)  # action 2 -> explosion slot
     assert d.our_move_id == "explosion"
     assert d.our_move_outcome == "hit"
 
@@ -188,7 +188,7 @@ def test_opp_neutral_explosion_no_event_is_hit():
                 opp_all_last_move_ids={"gengar": "explosion"},
                 opp_last_damaging_event=None,          # neutral hit -> no event
                 we_moved_first=False, opp_move_failed=True)  # stale fail flag
-    d = TurnDelta.build(prev, curr, MOVE0)
+    d = build_legacy(prev, curr, MOVE0)
     assert d.opp_move_id == "explosion"
     assert d.opp_move_outcome == "hit"
 
@@ -198,7 +198,7 @@ def test_ko_before_acting_is_nothing_happened():
     prev = _ctx(active_move_ids=["thunderbolt", "icebeam", "rest", "sleeptalk"])
     curr = _ctx(our_active="NONE", our_fainted_count=1, we_moved_first=False,
                 our_last_damaging_event=None)
-    d = TurnDelta.build(prev, curr, MOVE0)
+    d = build_legacy(prev, curr, MOVE0)
     assert d.our_move_id is None
     assert d.our_move_outcome is None
     # KO-before-acting: no protocol |cant| fired, so cant_reason is None.
@@ -212,7 +212,7 @@ def test_switch_in_death_is_a_switch_no_move():
     # NOT make this read as a missed move.
     prev = _ctx(active_move_ids=["a", "b", "c", "d"], our_team_order=("tyranitar", "gengar"))
     curr = _ctx(our_active="NONE", our_fainted_count=1, our_move_missed=True)
-    d = TurnDelta.build(prev, curr, SW5 - 4)  # action 1 -> switch to team slot 1 (gengar)
+    d = build_legacy(prev, curr, SW5 - 4)  # action 1 -> switch to team slot 1 (gengar)
     assert d.our_switch_to == "gengar"
     assert d.our_move_id is None
     assert d.our_move_outcome is None
@@ -222,7 +222,7 @@ def test_effectiveness_dropped_when_event_disagrees():
     prev = _ctx(active_move_ids=["surf", "icebeam", "rest", "sleeptalk"])
     curr = _ctx(our_last_move_id="icebeam", our_last_effectiveness=2.0,
                 our_last_damaging_event=_event("surf"))  # stale event (different move)
-    d = TurnDelta.build(prev, curr, MOVE0 + 1)
+    d = build_legacy(prev, curr, MOVE0 + 1)
     assert d.our_move_id == "icebeam"
     assert d.our_effectiveness is None
     assert d.our_damaging_event is None
@@ -231,13 +231,13 @@ def test_effectiveness_dropped_when_event_disagrees():
 def test_cant_turn_outcome_is_none():
     prev = _ctx(active_move_ids=["thunderbolt", "x", "y", "z"])
     curr = _ctx(our_cant_reason="slp", our_last_move_id=None)
-    d = TurnDelta.build(prev, curr, MOVE0)
+    d = build_legacy(prev, curr, MOVE0)
     assert d.our_move_outcome is None
     assert d.our_cant_reason == "slp"
 
 
 # ===========================================================================
-# TurnDelta.build — opponent side (symmetric)
+# build_legacy — opponent side (symmetric)
 # ===========================================================================
 
 def test_opp_ko_before_acting_is_nothing_happened():
@@ -249,7 +249,7 @@ def test_opp_ko_before_acting_is_nothing_happened():
                 opp_all_last_move_ids={"salamence": "dragonclaw"},  # STALE prior move
                 we_moved_first=True,
                 opp_last_damaging_event=None)
-    d = TurnDelta.build(prev, curr, MOVE0)
+    d = build_legacy(prev, curr, MOVE0)
     assert d.opp_move_id is None
     assert d.opp_move_outcome is None
     # KO-before-acting: no |cant| fired, cant_reason is None (faint captured by opp_fainted).
@@ -263,7 +263,7 @@ def test_opp_attacked_then_fainted_keeps_move():
                 opp_all_last_move_ids={"gengar": "explosion"},
                 opp_last_damaging_event=_event("explosion", user="gengar", target="tyranitar"),
                 we_moved_first=False)
-    d = TurnDelta.build(prev, curr, MOVE0)
+    d = build_legacy(prev, curr, MOVE0)
     assert d.opp_move_id == "explosion"
     assert d.opp_move_outcome == "hit"
 
@@ -273,6 +273,6 @@ def test_opp_effectiveness_dropped_when_event_disagrees():
     curr = _ctx(opp_active="blissey", opp_last_move_id="icebeam",
                 opp_last_effectiveness=1.0,
                 opp_last_damaging_event=_event("seismictoss", user="blissey"))
-    d = TurnDelta.build(prev, curr, MOVE0)
+    d = build_legacy(prev, curr, MOVE0)
     assert d.opp_effectiveness is None
     assert d.opp_damaging_event is None

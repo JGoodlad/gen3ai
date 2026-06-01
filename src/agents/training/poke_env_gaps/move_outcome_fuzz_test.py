@@ -65,6 +65,7 @@ from agents.observation.gen3_effects import (
 )
 from agents.training.battle_snapshot import BattleContext
 from agents.training.turn_delta import TurnDelta, SELF_KO_MOVES
+from agents.training.turn_delta_legacy import build_legacy
 from agents.training.slot_registry import SlotRegistry
 from utils.teambuilder import Gen3Teambuilder
 from utils.bridge.local_battle_runner import run_local_battles
@@ -566,7 +567,7 @@ class MoveOutcomeFuzzPlayer(Player):
             prev_ctx = self._prev_ctx.get(battle_tag)
             last_action = self._last_action.get(battle_tag)
             if prev_ctx is not None and last_action is not None:
-                delta = TurnDelta.build(prev_ctx, curr_ctx, last_action)
+                delta = build_legacy(prev_ctx, curr_ctx, last_action)
                 self._validate_turn(battle, curr_ctx, delta)
 
             if battle.finished:
