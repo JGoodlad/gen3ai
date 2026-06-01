@@ -21,7 +21,7 @@ from agents.opponents import (
 from agents.training.reward_tracker import RewardTrackingMixin
 from agents.training.reward_manager import Gen3RewardManager
 from agents.training.battle_recorder import BattleRecorder, write_battle_record
-from main.launcher.ipc import send_metrics
+from main.launcher.ipc import send_metrics, send_event
 
 BATTLE_FORMAT = "gen3ou"
 # Single-player concurrency ceiling (kept for SelfPlayCallback's one-player path).
@@ -527,6 +527,8 @@ class PerOpponentEvalCallback(BaseCallback):
         print(f"[EVAL] step {step:,}: spawned {n_workers} work-stealing worker(s) on "
               f"{self._eval_device} ({len(names)} opponents, conc {self._eval_concurrency}) "
               f"— non-blocking")
+        send_event(f"🧪 Eval @ {step:,}: started "
+                   f"({len(names)} opponents, {n_workers} worker(s))")
 
     # ------------------------------------------------------------------ collect
 
@@ -569,6 +571,7 @@ class PerOpponentEvalCallback(BaseCallback):
 
         if not merged["win_rates"]:
             print(f"⚠️ [EVAL] step {step:,}: no results (all workers failed); skipping record")
+            send_event(f"⚠️ Eval @ {step:,}: failed (no results)")
             self._cleanup(pending, keep_logs=True)
             return
 
@@ -615,6 +618,8 @@ class PerOpponentEvalCallback(BaseCallback):
 
         print(f"[EVAL] step {step:,}: aggregate {aggregate * 100:.1f}% "
               f"(best {self._best_aggregate_win_rate * 100:.1f}%)")
+        send_event(f"🧪 Eval @ {step:,}: {aggregate * 100:.1f}% "
+                   f"(best {self._best_aggregate_win_rate * 100:.1f}%)")
 
         if self._model_dir:
             record_eval_results(self._model_dir, step,
