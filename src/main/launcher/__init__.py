@@ -48,6 +48,16 @@ def main() -> None:
         ),
     )
     parser.add_argument(
+        "--max-crash-restarts",
+        type=int,
+        default=3,
+        help=(
+            "Auto-restart from the last checkpoint when the child self-crashes, up to "
+            "this many consecutive rapid crashes (each < 10 min of launch) before giving "
+            "up. 0 = unlimited. A crash after sustained progress resets the counter."
+        ),
+    )
+    parser.add_argument(
         "--no-pin",
         action="store_true",
         default=False,
@@ -98,6 +108,7 @@ def main() -> None:
             sync_to_main=known.sync_to_main,
             pin_hash_override=known.pin_to_hash,
             grace_minutes=known.restart_grace_minutes,
+            max_crash_restarts=known.max_crash_restarts,
         )
     except KeyboardInterrupt:
         sys.exit(0)

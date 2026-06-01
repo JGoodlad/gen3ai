@@ -3,6 +3,7 @@
 import atexit
 import os
 import queue
+import secrets
 import signal
 import subprocess
 import sys
@@ -33,6 +34,17 @@ from main.launcher.worktree import (
 )
 
 
+# A self-crash sooner than this after (re)launch counts toward the consecutive
+# circuit-breaker. A child that crashes only after sustained progress is treated
+# as a recoverable transient (the counter resets) — the breaker exists to stop a
+# *deterministic* startup crash (bad checkpoint, import error) spinning forever.
+# Window must comfortably exceed startup cost: bringing up the SubprocVecEnv
+# workers + Showdown connections alone takes 3+ minutes, so a deterministic
+# startup crash often surfaces well past the 2-minute mark — too short a window
+# would misread it as "made progress" and never trip the breaker. 10 minutes.
+_FAST_CRASH_SECONDS = 600.0
+
+
 def _find_ent_coef(args: list) -> "float | None":
     return _peek_arg(args, "--ent-coef", type_=float)
 
@@ -45,6 +57,44 @@ def _print_crash_log(log_lines: "list | None") -> None:
     for line in log_lines[-100:]:
         print(line, file=sys.stderr)
     print("──────────────────────────────────────────────────────────────", file=sys.stderr)
+
+
+def _save_crash_log(run_dir: "str | None", state: LauncherState, rc: int) -> "str | None":
+    """Snapshot the crashed child's recent output to a unique
+    ``<run_dir>/crashes/restart_err_<token>.txt``.
+
+    ``launcher_child.log`` is reused (appended) across relaunches, so once the
+    launcher auto-restarts a crashed child the original traceback is buried under
+    the next session's output. This writes a standalone, never-overwritten copy of
+    the in-memory scrollback (deep enough to hold the full traceback) per crash so
+    it can be debugged later, collected under a ``crashes/`` subfolder of the run
+    dir so they don't clutter the checkpoint listing. ``<token>`` is a timestamp
+    plus a few random hex chars so back-to-back crashes never collide on a filename.
+    Best-effort: returns the path on success, ``None`` if there is no run_dir or the
+    write fails.
+    """
+    if not run_dir:
+        return None
+    snap = state.snapshot()
+    token = time.strftime("%Y%m%d_%H%M%S") + "_" + secrets.token_hex(3)
+    crashes_dir = os.path.join(run_dir, "crashes")
+    path = os.path.join(crashes_dir, f"restart_err_{token}.txt")
+    try:
+        os.makedirs(crashes_dir, exist_ok=True)
+        with open(path, "w", errors="replace") as f:
+            f.write("# Gen3AI launcher crash log\n")
+            f.write(f"# time     : {time.strftime('%Y-%m-%d %H:%M:%S')}\n")
+            f.write(f"# exit code: {rc}\n")
+            f.write(f"# pid      : {snap.pid}\n")
+            f.write(f"# git      : {snap.initial_git_hash}\n")
+            f.write(f"# run_dir  : {run_dir}\n")
+            f.write(f"# last step: {snap.metrics_step:,}\n")
+            f.write(f"# crash #  : {snap.crash_count}\n")
+            f.write("# " + "-" * 62 + "\n")
+            f.write("\n".join(snap.log_lines) + "\n")
+        return path
+    except Exception:
+        return None
 
 
 def _dump_logs_on_exit(run_dir: "str | None", state: LauncherState) -> None:
@@ -78,6 +128,8 @@ def _print_exit_summary(run_dir: "str | None", state: LauncherState) -> None:
     if run_dir:
         lines.append(f"  Run folder : {run_dir}")
     lines.append(f"  Restarts   : {snap.restart_count}")
+    if snap.crash_count:
+        lines.append(f"  Crashes    : {snap.crash_count} (auto-restarted from checkpoint)")
     if snap.metrics_step:
         lines.append(f"  Last step  : {snap.metrics_step:,}")
     if "rollout/ep_rew_mean" in snap.metrics:
@@ -90,7 +142,7 @@ def _print_exit_summary(run_dir: "str | None", state: LauncherState) -> None:
     print("\n".join(lines), file=sys.stderr)
 
 
-def run(child_args: list, interval_hours: float, pin: bool = True, sync_to_main: bool = False, pin_hash_override: "str | None" = None, grace_minutes: float = 20.0) -> None:
+def run(child_args: list, interval_hours: float, pin: bool = True, sync_to_main: bool = False, pin_hash_override: "str | None" = None, grace_minutes: float = 20.0, max_crash_restarts: int = 3) -> None:
     interval_seconds = interval_hours * 3600
     grace_seconds = max(0.0, grace_minutes * 60)
     # Fallback SIGKILL window: a hung child can't run its SIGTERM handler (its main
@@ -183,6 +235,11 @@ def run(child_args: list, interval_hours: float, pin: bool = True, sync_to_main:
     # Persist the full child log to the model dir on every exit (crash, complete,
     # quit). atexit runs LIFO, so this fires before the exit-summary print above.
     atexit.register(lambda: _dump_logs_on_exit(_run_dir_box[0], state))
+
+    # Number of consecutive *rapid* self-crashes since the last healthy run. Reset
+    # on any non-crash exit or a crash that came after sustained progress; drives the
+    # circuit-breaker that stops a deterministic crash loop (see _FAST_CRASH_SECONDS).
+    consecutive_fast_crashes = 0
 
     with Live(refresh_per_second=2, screen=True) as live:
         while True:
@@ -295,20 +352,43 @@ def run(child_args: list, interval_hours: float, pin: bool = True, sync_to_main:
                 time.sleep(1)
                 sys.exit(0)
 
-            # An INTENDED restart — the user pressed 'r' (restart_requested) or the
-            # launcher force-killed a stalled/overran child (forced_restart) — recovers
-            # the run regardless of the exit code: a hung child ignores SIGTERM and is
-            # SIGKILL'd, so rc won't be the clean INTERRUPTED(15). Only a *self*-crash
-            # (neither intended) stops the launcher.
+            # Classify the exit. An INTENDED restart — the user pressed 'r'
+            # (restart_requested) or the launcher force-killed a stalled/overran child
+            # (forced_restart) — recovers regardless of the exit code: a hung child
+            # ignores SIGTERM and is SIGKILL'd, so rc won't be the clean INTERRUPTED(15).
+            # A *self*-crash (unintended, non-INTERRUPTED exit) used to stop the
+            # launcher; it now auto-restarts from the last checkpoint after saving the
+            # traceback, guarded by a consecutive-rapid-crash circuit-breaker so a
+            # deterministic startup crash can't spin forever.
             intended_restart = flags.forced_restart or flags.restart_requested
-            if not intended_restart and rc != TrainExitCode.INTERRUPTED:
-                state.add_event(f"🛑 Child crashed (exit {rc}) — not restarting")
-                live.update(ui.render(state.snapshot(), live.console.height))
-                time.sleep(2)
-                atexit.register(_print_crash_log, state.snapshot().log_lines)
-                sys.exit(rc)
+            crashed = not intended_restart and rc != TrainExitCode.INTERRUPTED
 
-            if interval_hours <= 0 and not intended_restart:
+            if crashed:
+                state.crash_count += 1
+                err_path = _save_crash_log(run_dir, state, rc)
+                ran_for = time.monotonic() - state.run_start
+                if ran_for < _FAST_CRASH_SECONDS:
+                    consecutive_fast_crashes += 1
+                else:
+                    consecutive_fast_crashes = 0  # made progress → treat as transient
+                saved = (
+                    f" — saved {os.path.join('crashes', os.path.basename(err_path))}" if err_path
+                    else " — crash-log capture failed"
+                )
+                state.add_event(f"🛑 Child crashed (exit {rc}){saved} · crash #{state.crash_count}")
+                if max_crash_restarts > 0 and consecutive_fast_crashes >= max_crash_restarts:
+                    state.add_event(
+                        f"🛑 {consecutive_fast_crashes} rapid crashes in a row "
+                        f"(< {int(_FAST_CRASH_SECONDS / 60)}m each) — giving up"
+                    )
+                    live.update(ui.render(state.snapshot(), live.console.height))
+                    time.sleep(2)
+                    atexit.register(_print_crash_log, state.snapshot().log_lines)
+                    sys.exit(rc)
+            else:
+                consecutive_fast_crashes = 0
+
+            if interval_hours <= 0 and not intended_restart and not crashed:
                 sys.exit(0)
 
             checkpoint = find_latest_checkpoint("models", run_dir=run_dir, min_mtime=session_start)
@@ -316,12 +396,23 @@ def run(child_args: list, interval_hours: float, pin: bool = True, sync_to_main:
                 state.add_event("🛑 No checkpoint found under models/ — cannot restart")
                 live.update(ui.render(state.snapshot(), live.console.height))
                 time.sleep(2)
+                # A crash with nothing to resume from is genuinely fatal — propagate the
+                # child's exit code and dump its output, rather than masking it as exit 1.
+                if crashed:
+                    atexit.register(_print_crash_log, state.snapshot().log_lines)
+                    sys.exit(rc)
                 sys.exit(1)
 
             run_dir = os.path.dirname(os.path.abspath(checkpoint))
             _run_dir_box[0] = run_dir
             state.run_dir = run_dir
-            state.add_event(f"✅ Restarting from {os.path.basename(checkpoint)}")
+            if crashed:
+                state.add_event(
+                    f"♻️  Auto-restart #{state.restart_count + 1} after crash "
+                    f"from {os.path.basename(checkpoint)}"
+                )
+            else:
+                state.add_event(f"✅ Restarting from {os.path.basename(checkpoint)}")
             child_args = _insert_or_replace_model_arg(child_args, checkpoint)
             child_args = _insert_or_replace_run_dir_arg(child_args, run_dir)
             state.restart_count += 1

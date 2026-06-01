@@ -181,15 +181,17 @@ A hang after `[STALL LOGGED]` or a crash before "Training complete" indicates a 
 ## Launcher (preferred for long runs)
 
 `src/main/launcher/` wraps `train_rl_agent.py` with **periodic restarts** (reclaim pymalloc
-fragmentation; child saves a checkpoint on SIGTERM, launcher relaunches), **git-worktree
+fragmentation; child saves a checkpoint on SIGTERM, launcher relaunches), **crash auto-restart**
+(a self-crash relaunches from the last checkpoint after dumping a per-crash
+`<run_dir>/crashes/restart_err_<token>.txt`, with a `--max-crash-restarts` circuit-breaker), **git-worktree
 isolation** (agent pushes to `main` never affect a running session), a **Rich TUI** (metrics,
-FPS, restart countdown; `l` logs, `r` restart, `c` checkpoint, `q` quit), and **live crash-log
-streaming** to `<run_dir>/launcher_child.log`.
+FPS, restart countdown, a `↻ N restarts (M crash)` badge; `l` logs, `r` restart, `c` checkpoint,
+`q` quit), and **live crash-log streaming** to `<run_dir>/launcher_child.log`.
 
-**Internals — crash reporting, exit codes (`COMPLETE`/`INTERRUPTED`/`CRASH`), the full flag
-table (`--restart-interval-hours`, `--restart-grace-minutes`, `--no-pin`, `--sync-to-main`),
-the resume contract, and the `:8001` Showdown-port default — live in
-`src/main/launcher/CLAUDE.md`.**
+**Internals — crash reporting + auto-restart, exit codes (`COMPLETE`/`INTERRUPTED`/`CRASH`), the
+full flag table (`--restart-interval-hours`, `--restart-grace-minutes`, `--max-crash-restarts`,
+`--no-pin`, `--sync-to-main`), the resume contract, and the `:8001` Showdown-port default — live
+in `src/main/launcher/CLAUDE.md`.**
 
 ### Starting a fresh run via launcher
 ```bash

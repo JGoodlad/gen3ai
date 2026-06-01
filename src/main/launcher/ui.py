@@ -120,6 +120,7 @@ class LauncherUI:
 
         git = self._git_badge(snap)
         model_badge = self._model_badge(snap)
+        restart_badge = self._restart_badge(snap)
         highlights = []
         if snap.metrics_step:
             highlights.append(f"steps [bold]{snap.metrics_step:,}[/bold]")
@@ -132,9 +133,13 @@ class LauncherUI:
         if idle > 120:
             hl += f"  │  [bold red]⚠ no child output for {_elapsed_str(idle)}[/bold red]"
 
+        segments = [git, model_badge]
+        if restart_badge:
+            segments.append(restart_badge)
+        segments.append(hl)
         row2 = Table.grid(padding=(0, 1), expand=True)
         row2.add_column()
-        row2.add_row(f"  {git}  │  {model_badge}  │  {hl}")
+        row2.add_row("  " + "  │  ".join(segments))
 
         metrics_panel = self._render_metrics_table(snap.metrics, snap.metrics_ts, now, snap.eval_metrics_ts)
 
@@ -178,6 +183,19 @@ class LauncherUI:
         if not snap.run_dir:
             return "[dim]model: —[/dim]"
         return f"[magenta]🗂  {os.path.basename(snap.run_dir)}[/magenta]"
+
+    def _restart_badge(self, snap: LauncherSnapshot) -> "str | None":
+        """How many times the child has been relaunched, and how many of those were
+        crash recoveries. Returns None before anything has restarted so the badge
+        only appears once it's meaningful. Crashes turn it yellow as a flakiness cue."""
+        n = snap.restart_count
+        crashes = snap.crash_count
+        if not n and not crashes:
+            return None
+        word = "restart" if n == 1 else "restarts"
+        if crashes:
+            return f"[yellow]↻ {n} {word} ({crashes} crash)[/yellow]"
+        return f"[dim]↻ {n} {word}[/dim]"
 
     def _render_metrics_table(self, metrics: dict, metrics_ts, now: float, eval_metrics_ts=None):
         if not metrics:

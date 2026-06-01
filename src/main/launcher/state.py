@@ -12,7 +12,8 @@ class LauncherSnapshot:
     pid: Optional[int]
     run_start: float           # time.monotonic()
     deadline: float            # time.monotonic(), float("inf") if no restart
-    restart_count: int
+    restart_count: int         # total relaunches (scheduled + forced + crash recovery)
+    crash_count: int           # subset of restarts triggered by a child self-crash
     interval_hours: float
     view_mode: str             # "dashboard" | "logs" | "events" | "confirm_quit"
     metrics: dict              # {tag: float}
@@ -53,6 +54,10 @@ class LauncherState:
         self.run_start: float = time.monotonic()
         self.deadline: float = float("inf")
         self.restart_count: int = 0
+        # Subset of restarts caused by the child crashing on its own (unhandled
+        # exception / abnormal exit), as opposed to a scheduled or user restart.
+        # Surfaced in the dashboard so a flaky run is visible at a glance.
+        self.crash_count: int = 0
         self.view_mode: str = "dashboard"
         self.initial_git_hash: Optional[str] = None
         self.run_dir: Optional[str] = None
@@ -101,6 +106,7 @@ class LauncherState:
                 run_start=self.run_start,
                 deadline=self.deadline,
                 restart_count=self.restart_count,
+                crash_count=self.crash_count,
                 interval_hours=self.interval_hours,
                 view_mode=self.view_mode,
                 metrics=dict(self._metrics),

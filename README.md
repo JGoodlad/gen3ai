@@ -102,7 +102,7 @@ export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable
 
 ### Via launcher (recommended for long runs)
 
-The `launcher` package wraps the training script with periodic restarts to reclaim memory fragmentation, a Rich TUI dashboard, and **git worktree isolation** — it pins the child process to the exact commit at launch so agent pushes to `main` can't affect a running session.
+The `launcher` package wraps the training script with periodic restarts to reclaim memory fragmentation, **crash auto-restart** (a self-crash relaunches from the last checkpoint after saving a per-crash `crashes/restart_err_<token>.txt`, bounded by a `--max-crash-restarts` circuit-breaker), a Rich TUI dashboard, and **git worktree isolation** — it pins the child process to the exact commit at launch so agent pushes to `main` can't affect a running session.
 
 ```bash
 export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 -m main.launcher \
@@ -127,7 +127,7 @@ export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable
   --device cuda
 ```
 
-Key launcher flags: `--restart-interval-hours` (default 3, set 0 for one-shot), `--no-pin` (skip worktree isolation), `--sync-to-main` (when resuming, pin the worktree to the current HEAD instead of the checkpoint's original commit — useful for picking up UI/tooling fixes without discarding a checkpoint). All other flags pass through to `train_rl_agent.py`.
+Key launcher flags: `--restart-interval-hours` (default 3, set 0 for one-shot), `--max-crash-restarts` (default 3, consecutive rapid self-crashes to auto-restart through before giving up; 0 = unlimited), `--no-pin` (skip worktree isolation), `--sync-to-main` (when resuming, pin the worktree to the current HEAD instead of the checkpoint's original commit — useful for picking up UI/tooling fixes without discarding a checkpoint). All other flags pass through to `train_rl_agent.py`.
 
 **TUI keys:** `r` restart now · `c` force checkpoint · `q` quit cleanly · `l` logs · `d` dashboard
 

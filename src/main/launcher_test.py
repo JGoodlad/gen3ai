@@ -434,6 +434,33 @@ def _make_proc(returncode: int, pid: int = 99) -> MagicMock:
     return proc
 
 
+def _run_patches_procs(procs, checkpoint=None):
+    """Like _run_patches but spawns a *sequence* of child procs (Popen side_effect)
+    and stubs checkpoint discovery, so the crash-recovery restart loop can be driven
+    deterministically without a real filesystem or git."""
+    import queue as qmod
+    from contextlib import ExitStack
+    from unittest.mock import patch, MagicMock
+
+    stack = ExitStack()
+    stack.enter_context(patch("main.launcher.child.subprocess.Popen", side_effect=list(procs)))
+    stack.enter_context(patch("main.launcher.run._git_hash", return_value="abc1234"))
+    stack.enter_context(patch("main.launcher.child.threading.Thread"))
+    stack.enter_context(patch("main.launcher.run.queue.Queue", return_value=qmod.Queue()))
+    stack.enter_context(patch("main.launcher.child.os.pipe", return_value=(3, 4)))
+    stack.enter_context(patch("main.launcher.child.os.close"))
+    stack.enter_context(patch("main.launcher.run.os.makedirs"))
+    stack.enter_context(patch("main.launcher.run._setup_raw_input"))
+    stack.enter_context(patch("main.launcher.run._save_crash_log", return_value=None))
+    stack.enter_context(patch("main.launcher.run.find_latest_checkpoint", return_value=checkpoint))
+    stack.enter_context(patch("main.launcher.run.time.sleep"))
+    mock_live = MagicMock()
+    mock_live.__enter__ = MagicMock(return_value=MagicMock())
+    mock_live.__exit__ = MagicMock(return_value=False)
+    stack.enter_context(patch("main.launcher.run.Live", return_value=mock_live))
+    return stack
+
+
 class TestExitCodes:
     """Three-way TrainExitCode decode in the launcher main loop."""
 
@@ -468,6 +495,68 @@ class TestExitCodes:
             with pytest.raises(SystemExit) as exc_info:
                 run(["--debug"], interval_hours=0, pin=False)
         assert exc_info.value.code == 42
+
+
+class TestCrashAutoRestart:
+    """A self-crash now auto-restarts from the last checkpoint, with a circuit-breaker."""
+
+    def test_crash_auto_restarts_from_checkpoint(self, tmp_path):
+        """Crash → relaunch from the last checkpoint; a subsequent clean COMPLETE exits 0."""
+        from main.launcher import run
+        crash = _make_proc(TrainExitCode.CRASH)
+        done = _make_proc(TrainExitCode.COMPLETE)
+        ckpt = tmp_path / "checkpoint_1000_steps.zip"
+        ckpt.write_text("x")
+        with _run_patches_procs([crash, done], checkpoint=str(ckpt)):
+            with pytest.raises(SystemExit) as exc_info:
+                run(["--debug"], interval_hours=0, pin=False, max_crash_restarts=5)
+        assert exc_info.value.code == 0      # recovered, then completed
+        assert done.wait.called              # the post-crash child was actually launched
+
+    def test_crash_circuit_breaker_gives_up_after_rapid_crashes(self, tmp_path):
+        """Consecutive rapid crashes stop the launcher with the child's exit code."""
+        from main.launcher import run
+        c1 = _make_proc(TrainExitCode.CRASH)
+        c2 = _make_proc(TrainExitCode.CRASH)
+        ckpt = tmp_path / "checkpoint_1000_steps.zip"
+        ckpt.write_text("x")
+        with _run_patches_procs([c1, c2], checkpoint=str(ckpt)):
+            with pytest.raises(SystemExit) as exc_info:
+                run(["--debug"], interval_hours=0, pin=False, max_crash_restarts=2)
+        assert exc_info.value.code == TrainExitCode.CRASH
+        assert c2.wait.called                # it restarted once before giving up
+
+    def test_crash_without_checkpoint_propagates_child_code(self):
+        """A crash with nothing to resume from is fatal — propagate the child's code."""
+        from main.launcher import run
+        with _run_patches_procs([_make_proc(42)], checkpoint=None):
+            with pytest.raises(SystemExit) as exc_info:
+                run(["--debug"], interval_hours=0, pin=False, max_crash_restarts=5)
+        assert exc_info.value.code == 42
+
+
+class TestCrashLogSnapshot:
+    """_save_crash_log persists each crash's traceback to a unique file."""
+
+    def test_save_crash_log_writes_unique_traceback_file(self, tmp_path):
+        from main.launcher.run import _save_crash_log
+        state = LauncherState(interval_hours=0)
+        state.run_dir = str(tmp_path)
+        state.add_log("Traceback (most recent call last):")
+        state.add_log("RuntimeError: boom")
+        p1 = _save_crash_log(str(tmp_path), state, 1)
+        p2 = _save_crash_log(str(tmp_path), state, 1)
+        assert p1 and p2 and p1 != p2                       # unique token per crash
+        assert os.path.basename(p1).startswith("restart_err_") and p1.endswith(".txt")
+        assert os.path.basename(os.path.dirname(p1)) == "crashes"   # folded under crashes/
+        txt = open(p1).read()
+        assert "RuntimeError: boom" in txt                  # full traceback captured
+        assert "exit code: 1" in txt                        # header carries the exit code
+
+    def test_save_crash_log_noop_without_run_dir(self):
+        from main.launcher.run import _save_crash_log
+        state = LauncherState(interval_hours=0)
+        assert _save_crash_log(None, state, 1) is None
 
 
 # ── Child-log persistence + deep scrollback ──────────────────────────────────

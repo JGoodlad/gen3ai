@@ -14,6 +14,7 @@ def _snap(**kwargs) -> LauncherSnapshot:
         run_start=time.monotonic() - 100,
         deadline=float("inf"),
         restart_count=0,
+        crash_count=0,
         interval_hours=3.0,
         view_mode="dashboard",
         metrics={},
@@ -183,6 +184,27 @@ class TestLauncherUI:
         )
         result = ui.render(snap)
         assert result is not None
+
+    def test_restart_badge_hidden_before_first_restart(self):
+        from main.launcher.ui import LauncherUI
+        assert LauncherUI()._restart_badge(_snap(restart_count=0, crash_count=0)) is None
+
+    def test_restart_badge_shows_count_and_crashes(self):
+        """The dashboard must surface how many relaunches happened and how many were
+        crash recoveries — the whole point of the feature."""
+        from rich.console import Console
+        ui = LauncherUI()
+        con = Console(width=240)
+        with con.capture() as cap:
+            con.print(ui.render(_snap(restart_count=3, crash_count=1)))
+        text = cap.get()
+        assert "3 restarts" in text
+        assert "1 crash" in text
+
+    def test_restart_badge_singular_and_no_crash(self):
+        from main.launcher.ui import LauncherUI
+        badge = LauncherUI()._restart_badge(_snap(restart_count=1, crash_count=0))
+        assert "1 restart" in badge and "restarts" not in badge and "crash" not in badge
 
     def test_render_stale_metrics_badge(self):
         ui = LauncherUI()
