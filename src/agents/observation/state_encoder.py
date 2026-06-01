@@ -302,7 +302,7 @@ class Gen3ObservationEncoder(ObservationEncoder):
                 }
             },
             "pokemon": pokemon_layout,
-            "total_dim": self.dimension,    # base + 11 prev_mask + N * TURN_DELTA_DIM (157) turn_history
+            "total_dim": self.dimension,    # base + 11 prev_mask + N * TURN_DELTA_DIM (159) turn_history
             "base_dim": self.base_dimension, # raw encoder output without prev_mask or turn_history
             "prev_mask_dim": 11,
             "turn_delta_dim": _TD_DIM,
