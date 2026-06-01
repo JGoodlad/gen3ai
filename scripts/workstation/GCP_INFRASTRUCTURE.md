@@ -75,7 +75,7 @@ systemctl --user restart proxy-tunnel
 journalctl --user -u proxy-tunnel -f
 ```
 Service: `~/.config/systemd/user/proxy-tunnel.service`  
-Script: `scripts/proxy_tunnel.sh`
+Script: `scripts/workstation/proxy_tunnel.sh`
 
 **Using the proxy:**
 ```bash
@@ -121,7 +121,7 @@ systemctl --user restart workstation-tunnel
 journalctl --user -u workstation-tunnel -f
 ```
 Service: `~/.config/systemd/user/workstation-tunnel.service`  
-Script: `scripts/reverse_tunnel.sh`
+Script: `scripts/workstation/reverse_tunnel.sh`
 
 ---
 
@@ -267,5 +267,5 @@ ssh-keygen -R "[workstation.g5d.io]:2222"
 
 **Check current GCP IP:**
 ```bash
-./scripts/get_proxy_ip.sh
+./scripts/workstation/get_proxy_ip.sh
 ```
