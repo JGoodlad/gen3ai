@@ -73,6 +73,14 @@ class EventKind(IntEnum):
     SWAP = 33  # swap (Ally Switch-style; rare in singles)
     SETHP = 34  # -sethp absolute HP correction (Pain Split) — an event so the log is
     #            HP-complete on its own (the reward manager reads HP deltas from it)
+    CHOICE_REJECTED = 35  # |error|[Unavailable choice] — the server REFUSED our chosen
+    #            action (a switch we tried while trapped — Arena Trap / Shadow Tag / Magnet
+    #            Pull / Mean Look). OUT-OF-BAND: poke-env intercepts |error| in
+    #            Player._handle_battle_message *before* parse_message, so this never flows
+    #            through the normal parse pass. Gen3Battle.record_choice_rejected appends it
+    #            explicitly from a hook in that handler. It is NOT in EVENT_KIND / MESSAGE_POLICY
+    #            (those classify parse_message keywords); the per-decision TurnDelta window folds
+    #            it (TurnView.attempted_rejected) into the trap-reveal history signal.
     # Turn boundaries are NOT events: Gen3Battle indexes them in `_turn_start` for
     # O(1) per-turn slicing, keeping the stream free of synthetic markers consumers
     # would have to filter. (The design's earlier "TurnBoundary marker" idea was
@@ -177,6 +185,12 @@ EVENT_VALUE_KEYS: Dict[EventKind, frozenset] = {
     EventKind.FORMECHANGE: frozenset({"details"}),
     EventKind.SWAP: frozenset({"detail"}),
     EventKind.SETHP: frozenset({"hp"}),
+    # CHOICE_REJECTED carries an optional ``reason`` (the verbatim error text) but requires
+    # no key — the rejection itself is the fact, and the attempted slot is recovered at fold
+    # time from the action index (the wire never names it). An entry here keeps the
+    # event-log fuzz's schema check (which reads EVENT_VALUE_KEYS for every emitted event)
+    # explicit rather than relying on its frozenset() default.
+    EventKind.CHOICE_REJECTED: frozenset(),
 }
 
 

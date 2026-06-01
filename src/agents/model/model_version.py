@@ -131,7 +131,23 @@ MODEL_CONFIG_VERSION = 2
 #   (`events_between(cursors[-1-i], cursors[-i])`; end=None for the most-recent). Obs dim is
 #   unchanged (3299) — only the turn-history values change (older slots now carry their own
 #   turn) — so this is retrain-class, not weight-shape-incompatible.
-ARCH_SIGNATURE = "gen3_turn_delta_v3"
+#
+# v12 (gen3_trapping_signals_v1): route the three trapping signals into the model so it can
+#   learn the hidden-information trap read (Arena Trap / Shadow Tag / Magnet Pull / Mean Look).
+#   (1) + (2) two new reactive obs bits from the server-authoritative LegalActions snapshot —
+#   trapped (confirmed cannot switch; redundant with the mask but explicit) and maybe_trapped
+#   (the opponent MIGHT trap us; switches stay legal, so this is the only way the model can see
+#   the risk before attempting a blind pivot and eating a rejection). They sit before the
+#   matchups in the reactive block, so the extractor picks them up in non_matchup_rest;
+#   REACTIVE_DIM 300 -> 302. (3) the rejected pivot becomes a first-class history event: a new
+#   EventKind.CHOICE_REJECTED is recorded out-of-band (poke-env intercepts |error|[Unavailable
+#   choice] before parse_message, so a duck-typed hook in _handle_battle_message calls
+#   Gen3Battle.record_choice_rejected), TurnView folds it (attempted_rejected), TurnDelta gains
+#   attempted_switch_rejected + the restored attempted_switch_to, and each TurnDelta slot gains
+#   2 dims — an attempted_switch_rejected bit + the embedded attempted-switch species id
+#   (manifest entry #12). TURN_DELTA_DIM 157 -> 159. Obs dim 3299 -> 3321 (+2 reactive +
+#   N_HISTORY_TURNS x 2 history). Builds on v11. Not weight-compatible with v11.
+ARCH_SIGNATURE = "gen3_trapping_signals_v1"
 
 
 class ModelVersionError(Exception):

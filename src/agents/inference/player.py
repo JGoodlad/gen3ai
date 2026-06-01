@@ -136,8 +136,10 @@ class Gen3Player(Player):
         if not battle.strict_view().finished and mask.sum() > 0:
             tracker.record(battle, mask, legal=legal)
 
+        # Thread the same legality snapshot into the encoder for its trapped / maybe_trapped
+        # reactive bits (avoids a second LegalActions.from_battle this decision).
         obs = self.observation_encoder.encode(
-            battle, hp_tracker=tracker.hidden_power_tracker
+            battle, hp_tracker=tracker.hidden_power_tracker, legal=legal
         )
 
         prev_mask = tracker.prev_mask

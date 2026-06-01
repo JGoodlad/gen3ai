@@ -161,12 +161,20 @@ class Gen3ObservationEncoder(ObservationEncoder):
         from agents.model.features_extractor import N_HISTORY_TURNS
         return self.base_dimension + 11 + N_HISTORY_TURNS * TURN_DELTA_DIM
 
-    def encode(self, battle: AbstractBattle, hp_tracker=None) -> np.ndarray:
+    def encode(self, battle: AbstractBattle, hp_tracker=None, legal=None) -> np.ndarray:
         """Encode the full base observation vector.
 
         hp_tracker: optional HiddenPowerTracker whose per-species probability
         vectors are written into each opponent mon's 17-dim HP block. None
         leaves the blocks at zero (e.g. when called outside the training env).
+
+        legal: optional :class:`~agents.battle.live_view.LegalActions` snapshot for this
+        decision (the server-authoritative legality the mask is built from). It feeds the
+        reactive block's trapped / maybe_trapped obs bits. The env / inference players build
+        it once per decision and thread it here to avoid a second `from_battle`; when ``None``
+        it is derived from the strict view (so eval / battle2 / standalone callers still get
+        the bits), and on the plain-Battle / unit-test path (no strict_view) it stays None →
+        the two bits encode as 0.
         """
         vec = np.zeros(self.base_dimension, dtype=np.float32)
 
@@ -177,6 +185,8 @@ class Gen3ObservationEncoder(ObservationEncoder):
         strict = battle.strict_view() if hasattr(battle, "strict_view") else None
         if strict is not None:
             live = strict.live
+            if legal is None:
+                legal = strict.legal
         else:
             live = battle.live_view() if hasattr(battle, "live_view") else None
 
@@ -235,9 +245,10 @@ class Gen3ObservationEncoder(ObservationEncoder):
                 self.global_env_encoder.encode(live)
         
         # 5. Reactive Features — fainted counts + active-status read through the LiveView;
-        # the move-effectiveness matrices stay on the raw battle (see reactive.py).
+        # trapped / maybe_trapped from the LegalActions snapshot; the move-effectiveness
+        # matrices stay on the raw battle (see reactive.py).
         vec[OFFSET_REACTIVE : OFFSET_REACTIVE + REACTIVE_DIM] = \
-            self.reactive_encoder.encode(battle, hp_tracker=hp_tracker, live=live)
+            self.reactive_encoder.encode(battle, hp_tracker=hp_tracker, live=live, legal=legal)
         
         return vec
 

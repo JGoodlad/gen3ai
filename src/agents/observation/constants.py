@@ -73,7 +73,12 @@ WEATHER_ONEHOT_DIM = 5
 GLOBAL_ENV_DIM = WEATHER_ONEHOT_DIM + 2 + 2 + 1 + 8  # = 18
 
 MATCHUP_DIM = 288 # (6*4*6) for Our vs Their + (6*4*6) for Their vs Our
-REACTIVE_DIM = 12 + MATCHUP_DIM  # 300 (removed duplicate hp+spikes: 4 dims)
+# 14 scalar reactive dims precede the matchups: move power(4) + multiplier(4) +
+# fainted(2) + active_status(1) + forced_struggle(1) + trapped(1) + maybe_trapped(1).
+# trapped/maybe_trapped are the gen3_trapping_signals_v1 additions (server-authoritative
+# legality surfaced as obs features). They sit BEFORE the matchups so the feature extractor
+# picks them up in `non_matchup_rest` automatically (matchup offset read from the layout).
+REACTIVE_DIM = 14 + MATCHUP_DIM  # 302 (removed duplicate hp+spikes: 4 dims)
 
 # Top-level Offsets (Base dim = OFFSET_REACTIVE + REACTIVE_DIM = 1547)
 NUM_POKEMON = 12

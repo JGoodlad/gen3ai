@@ -119,6 +119,10 @@ class SideTurn:
     status_cured: Optional[str] = None  # status this side's active LOST this turn
     item_lost: Optional[str] = None  # item consumed/knocked off this turn (|-enditem|)
     item_gained: Optional[str] = None  # item revealed/gained this turn (|-item|)
+    attempted_rejected: bool = False  # an action this side chose was REFUSED by the server
+    #   this window (|error|[Unavailable choice] — a switch tried while trapped). Folded from
+    #   the out-of-band CHOICE_REJECTED event; only ever set on OUR side (the opponent's
+    #   rejections are not observable).
 
     @property
     def failed_to_move(self) -> bool:
@@ -214,6 +218,8 @@ class TurnView:
                 st.item_lost = e.item
             elif e.kind is EventKind.ITEM:
                 st.item_gained = e.item
+            elif e.kind is EventKind.CHOICE_REJECTED:
+                st.attempted_rejected = True
 
         if st.moved and move_events:
             primary = move_events[-1]

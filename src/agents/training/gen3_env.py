@@ -59,10 +59,12 @@ class Gen3Env(SinglesEnv):
         # Record FIRST so the tracker's HP-candidate state reflects the just-fired
         # HP (if any) before we encode the obs. The observation at turn N then
         # carries the narrowing from turns 1..N-1.
+        legal = None
         if battle is self.battle1 and not battle.strict_view().finished:
             # Capture the server-authoritative legality snapshot ONCE this decision and
-            # thread it to both the mask and the recorded context, so the mapper later
-            # decodes the chosen action against the exact same immutable surface.
+            # thread it to the mask, the recorded context, AND the obs encoder (its
+            # trapped / maybe_trapped reactive bits), so the mapper later decodes the chosen
+            # action against the exact same immutable surface and the encoder doesn't rebuild it.
             legal = LegalActions.from_battle(battle)
             mask = Gen3ActionMasker.get_mask(battle, legal=legal).astype(np.int8)
             if mask.sum() > 0:
@@ -70,7 +72,7 @@ class Gen3Env(SinglesEnv):
 
         if battle is self.battle1:
             obs = self.observation_encoder.encode(
-                battle, hp_tracker=self._tracker.hidden_power_tracker
+                battle, hp_tracker=self._tracker.hidden_power_tracker, legal=legal
             )
             prev_mask = self._tracker.prev_mask
             history_vecs = self._tracker.prev_N_delta_vecs(N_HISTORY_TURNS, self._turn_delta_encoder, battle=battle)

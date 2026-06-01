@@ -91,7 +91,7 @@ def _delta(**kwargs):
 
 def test_dimension():
     assert _enc().dimension == TURN_DELTA_DIM
-    assert TURN_DELTA_DIM == 157  # gen3_turn_delta_v2: + status onehots (4×7) + item-used bits (2)
+    assert TURN_DELTA_DIM == 159  # gen3_trapping_signals_v1: + attempted_switch_rejected bit + attempted-switch species id
 
 
 def test_empty_delta_is_all_zeros_except_opp_move_known():

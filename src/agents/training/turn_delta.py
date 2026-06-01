@@ -363,6 +363,19 @@ class TurnDelta:
     our_item_lost: Optional[str] = None
     opp_item_lost: Optional[str] = None
 
+    # --- Trapping: rejected switch (gen3_trapping_signals_v1) ------------
+    # ``attempted_switch_rejected``: the server REFUSED a switch we chose this window
+    # (|error|[Unavailable choice]) — we tried to pivot and were trapped (Arena Trap /
+    # Shadow Tag / Magnet Pull / Mean Look). Folded from the out-of-band CHOICE_REJECTED
+    # event (TurnView.ours.attempted_rejected). The "switches always execute" assumption that
+    # dropped attempted_switch_to is exactly false here. ``attempted_switch_to``: the species
+    # we PRESSED a switch to (intent), decoded from the action index — parity with
+    # ``our_attempted_move_id``; set whenever a switch was attempted, so on a rejected pivot it
+    # names the mon we tried to bring in (our_switch_to is None — the switch never happened).
+    # Only OUR side: the opponent's attempted action is not observable.
+    attempted_switch_rejected: bool = False
+    attempted_switch_to: Optional[str] = None
+
     @property
     def opp_resolved_move_id(self) -> Optional[str]:
         """Opp's move id with protocol-truth preference.
@@ -624,18 +637,28 @@ class TurnDelta:
         from agents.enums import Status
         _cause_idx = {c: i for i, c in enumerate(FAINT_CAUSE_VOCAB)}
 
-        # --- Attempted move (decoded before anything fires) ---
-        # Only the move is kept — a pressed switch always executes, so it would
-        # always equal our_switch_to (see TurnDelta field doc). A pressed move,
-        # by contrast, may never fire (freeze/sleep/flinch/cant/KO-before-act).
+        # --- Attempted action (decoded before anything fires) ---
+        # Both the attempted MOVE and the attempted SWITCH are captured as INTENT, so they
+        # survive when the action never executes. A pressed move can fail to fire
+        # (freeze/sleep/flinch/cant/KO-before-act); a pressed switch can be REFUSED by the
+        # server (trapped → |error|[Unavailable choice]) — the case that makes
+        # attempted_switch_to worth keeping (the "switches always execute" assumption is
+        # false here). On a successful switch attempted_switch_to == our_switch_to (redundant,
+        # parity with attempted_move == move_id on a normal move).
         if action < 6:
             our_attempted_move_id: Optional[str] = None  # a switch — no attempted move
+            our_attempted_switch_to: Optional[str] = (
+                prev_ctx.our_team_order[action]
+                if action < len(prev_ctx.our_team_order) else None
+            )
         elif action < 10:
             slot = action - 6
             ids = prev_ctx.active_move_ids
             our_attempted_move_id = ids[slot] if slot < len(ids) else None
+            our_attempted_switch_to = None
         else:
             our_attempted_move_id = "struggle"
+            our_attempted_switch_to = None
 
         # Per-slot HP deltas — FOLDED from the event log's DAMAGE/HEAL/SETHP + FAINT events
         # (HP-complete; no poke-env Pokémon read), bit-identical to ``curr_hp − prev_hp``.
@@ -682,6 +705,8 @@ class TurnDelta:
                 our_faint_causes=empty_faint_causes.copy(),
                 opp_faint_causes=empty_faint_causes.copy(),
                 our_attempted_move_id=our_attempted_move_id,
+                attempted_switch_rejected=False,  # no events ⇒ no rejection this window
+                attempted_switch_to=our_attempted_switch_to,
             )
 
         view = TurnView.from_events(events)
@@ -818,6 +843,8 @@ class TurnDelta:
             opp_status_cured=opp_status_cured,
             our_item_lost=our_item_lost,
             opp_item_lost=opp_item_lost,
+            attempted_switch_rejected=view.ours.attempted_rejected,
+            attempted_switch_to=our_attempted_switch_to,
         )
 
     @classmethod

@@ -207,7 +207,7 @@ tools/               # Data generation and team sync utilities
 
 ---
 
-## Observation Vector (3299-dim float32)
+## Observation Vector (3321-dim float32)
 
 | Block | Dims | Offset |
 |---|---|---|
@@ -215,10 +215,10 @@ tools/               # Data generation and team sync utilities
 | Opp team (6 × 107) | 642 | 642 |
 | Active context ×2 (boosts + full volatiles, `VOLATILE_DIM`=44) | 116 | 1284 |
 | Global env | 18 | 1400 |
-| Reactive + matchups | 300 | 1418 |
-| Prev-turn action mask | 11 | 1718 |
-| Turn history (`N_HISTORY_TURNS`=10 × 157) | 1570 | 1729 |
-| **Total** | **3299** | |
+| Reactive + matchups | 302 | 1418 |
+| Prev-turn action mask | 11 | 1720 |
+| Turn history (`N_HISTORY_TURNS`=10 × 159) | 1590 | 1731 |
+| **Total** | **3321** | |
 
 Per-Pokémon slot (107 dims): species ID + 6 base stats, item block (id + known + consumed, 3), 2 type IDs, ability ID + known, 7-dim status one-hot, 4 × 11-dim move slots, HP fraction, species_known flag, sleep/toxic counters (2), **spread block (18: IVs ×6 + EVs ×6 + spread_known + nature ×5)**, **Hidden Power candidate block (17)**, active flag. Own-team IVs/EVs/nature are recovered from the declared team by the poke-env fork's `backfill_teambuilder_spread` (gen3ou has no team preview, so poke-env never attaches the spread); opponent spread is all-zero with `spread_known=0`.
 
@@ -226,7 +226,9 @@ Move slot (11 dims): move ID, base power (/200), has_secondary, has_recoil, type
 
 Global env (18 dims): weather block (7: one-hot + cause-aware permanence + turns-remaining), spikes ×2 (2), log-turn (1), per-side screens (8: Reflect / Light Screen / Safeguard / Mist × both sides).
 
-Turn history — `N_HISTORY_TURNS`=10 TurnDelta slots of 157 dims each, **folded from the event log** (`Gen3Battle.events_since(cursor)` per decision window). Each slot carries both sides' move/type/species IDs (embedded) + outcomes (hit/miss/fail/crit), cant one-hots, boost and HP deltas, faint flags + multi-hot faint causes, status applied/cured transitions, item-used bits, and the move we attempted (even if it never fired). All zeros on the first turn of each episode.
+Reactive block (302 dims): 14 scalars (active-move power ×4 + multiplier ×4, fainted ×2, active-status, `forced_struggle`, **`trapped`**, **`maybe_trapped`**) then the two 144-dim matchup matrices. `trapped`/`maybe_trapped` (gen3_trapping_signals_v1) come from the server-authoritative `LegalActions` snapshot — `maybe_trapped` is the high-value one (switches stay legal, so it is the only way the model sees a possible Arena Trap / Shadow Tag / Magnet Pull before attempting a blind pivot).
+
+Turn history — `N_HISTORY_TURNS`=10 TurnDelta slots of 159 dims each, **folded from the event log** (`Gen3Battle.events_since(cursor)` per decision window). Each slot carries both sides' move/type/species IDs (embedded) + outcomes (hit/miss/fail/crit), cant one-hots, boost and HP deltas, faint flags + multi-hot faint causes, status applied/cured transitions, item-used bits, the move we attempted (even if it never fired), and — gen3_trapping_signals_v1 — an `attempted_switch_rejected` bit + the attempted-switch species id for a pivot the server refused while trapped. All zeros on the first turn of each episode.
 
 ---
 

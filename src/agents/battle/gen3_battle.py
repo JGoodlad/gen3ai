@@ -189,6 +189,37 @@ class Gen3Battle(Battle):
             for extra in self._move_suffix_events(split_message):
                 self._record(extra)
 
+    def record_choice_rejected(self, split_message: Sequence[str]) -> None:
+        """Append a :class:`~agents.battle.battle_event.EventKind.CHOICE_REJECTED` event.
+
+        Called OUT-OF-BAND from ``Player._handle_battle_message`` when the server returns
+        ``|error|[Unavailable choice]`` — i.e. it refused the action we just chose. That line
+        is intercepted by poke-env *before* ``parse_message`` (to set ``_trying_again`` and
+        re-prompt), so it never flows through the normal parse pass; this is the explicit hook
+        that makes the rejection a first-class, ordered event so the per-decision ``TurnDelta``
+        window can fold it into the trap-reveal history signal.
+
+        In gen3ou an unavailable choice means a switch we attempted while trapped (Arena Trap /
+        Shadow Tag / Magnet Pull / Mean Look). The trapped mon is still active (the board has
+        not advanced), so it is the actor; the attempted target slot is not on the wire and is
+        recovered at fold time from the action index.
+
+        Conservation is unaffected: this does NOT touch ``_lines_seen`` / ``_policy_counts``
+        (the line never reached ``parse_message`` and is absent from ``_replay_data``), so the
+        ``assert_conservation`` balance — lines_seen == replay_lines − terminals, bucket_sum ==
+        lines_seen — still holds. (``len(events)`` already exceeds the EVENT bucket via the
+        move-suffix synthetics, so no invariant ties them.)
+        """
+        reason = split_message[2] if len(split_message) > 2 else ""
+        ev = self._new(
+            EventKind.CHOICE_REJECTED,
+            tuple(split_message),
+            side=OURS,
+            actor=self._active_species(OURS),
+            value={"reason": reason},
+        )
+        self._record(ev)
+
     def _record(self, ev: BattleEvent) -> None:
         self._events.append(ev)
         self._seq += 1

@@ -332,6 +332,13 @@ class Player(ABC):
                 )
                 if split_message[2].startswith("[Unavailable choice]"):
                     self._trying_again.set()
+                    # gen3ai hook: surface the rejection to an event-aware battle so it
+                    # becomes a first-class log event (the trap-reveal signal a switch we
+                    # tried while trapped got refused). Duck-typed so poke-env stays generic
+                    # — a plain Battle has no such method and is untouched.
+                    record_rejection = getattr(battle, "record_choice_rejected", None)
+                    if record_rejection is not None:
+                        record_rejection(split_message)
                 elif split_message[2].startswith("[Invalid choice]"):
                     await self._handle_battle_request(battle, maybe_default_order=True)
                 else:

@@ -33,6 +33,67 @@ def _resolve_ability_distribution(opp, ability_priors):
     return [(None, 1.0)]
 
 
+def _attacker_type_dist(move, attacker, hp_tracker):
+    """Attacker-side type distribution for one (move, attacker) pair.
+
+    A singleton ``[(move.type, 1.0)]`` for typed moves (own typed Hidden Power and
+    every normal move); for a bare ``hiddenpower`` whose type is unrevealed, the
+    ``hp_tracker``'s 16-dim distribution narrowed by past observations. Constant
+    across every defender the move can hit, so the matchup encoder computes it once
+    per (attacker, move) and reuses it down the inner defender loop.
+    """
+    if (
+        move.id == "hiddenpower"
+        and hp_tracker is not None
+        and attacker is not None
+    ):
+        from agents.training.hidden_power_tracker import HIDDEN_POWER_TYPE_ORDER
+        probs = hp_tracker.get_probs(attacker.species)
+        if probs is not None and probs.sum() > 0:
+            return [
+                (HIDDEN_POWER_TYPE_ORDER[i], float(probs[i]))
+                for i in range(16) if probs[i] > 0
+            ]
+    return [(move.type, 1.0)]
+
+
+def _defender_terms(opp, ability_priors):
+    """Defender-side terms for one mon: ``(type_1, type_2, status, ability,
+    ability_dist)``.
+
+    These are constant for a given defender across every attacker/move that targets
+    it, so the matchup encoder computes them ONCE per team mon and reuses them for
+    all attacker-move combinations — instead of re-reading the poke-env
+    ``type_1``/``type_2``/``status``/``ability`` properties and rebuilding the
+    ability distribution on every one of the 144 matrix cells. `ability is None`
+    inside the distribution is the "pass through unchanged" sentinel → use the
+    defender's real ability.
+    """
+    ability_dist = _resolve_ability_distribution(opp, ability_priors)
+    d1, d2 = opp.type_1, opp.type_2
+    dstatus = getattr(opp, "status", None)
+    opp_ability = getattr(opp, "ability", None)
+    return d1, d2, dstatus, opp_ability, ability_dist
+
+
+def _joint_expectation(type_dist, terms) -> float:
+    """Joint effectiveness expectation over the attacker type distribution and the
+    defender ability distribution.
+
+    Byte-identical to the pre-hoist ``_expected_multiplier`` body: same iteration
+    order (types outer, abilities inner) and the same
+    ``p * q * effective_multiplier_by_types(...)`` accumulation. The memoized
+    primitive is read once per (type, ability) term.
+    """
+    d1, d2, dstatus, opp_ability, ability_dist = terms
+    total = 0.0
+    for move_type, p in type_dist:
+        for ability, q in ability_dist:
+            ab = opp_ability if ability is None else ability
+            total += p * q * effective_multiplier_by_types(move_type, d1, d2, ab, dstatus)
+    return total
+
+
 def _expected_multiplier(move, attacker, opp, hp_tracker, ability_priors) -> float:
     """Joint-expectation effectiveness handling two independent uncertainties:
 
@@ -46,47 +107,16 @@ def _expected_multiplier(move, attacker, opp, hp_tracker, ability_priors) -> flo
     distribution. The joint expectation is therefore identical to the plain
     `effective_multiplier(move.type, opp)` when nothing is uncertain.
 
-    Without `ability_priors` (no opp ability data available, e.g. evaluation
-    outside training), the defender path falls through to the live `mon.ability`
-    → preserves legacy behaviour for any caller that has never been wired up.
+    Thin single-cell wrapper over the hoistable primitives (`_attacker_type_dist` +
+    `_defender_terms` → `_joint_expectation`). The matchup matrices call those
+    directly so the per-defender / per-(attacker,move) reads happen once instead of
+    per cell; this wrapper is retained for the active-move slot loop and the unit
+    tests, which need the single-cell entry point.
     """
-    # Attacker-side: enumerate possible move types
-    if (
-        move.id == "hiddenpower"
-        and hp_tracker is not None
-        and attacker is not None
-    ):
-        from agents.training.hidden_power_tracker import HIDDEN_POWER_TYPE_ORDER
-        probs = hp_tracker.get_probs(attacker.species)
-        if probs is not None and probs.sum() > 0:
-            type_dist = [
-                (HIDDEN_POWER_TYPE_ORDER[i], float(probs[i]))
-                for i in range(16) if probs[i] > 0
-            ]
-        else:
-            type_dist = [(move.type, 1.0)]
-    else:
-        type_dist = [(move.type, 1.0)]
-
-    # Defender-side: enumerate possible abilities
-    ability_dist = _resolve_ability_distribution(opp, ability_priors)
-
-    # Read the defender's type/status/ability ONCE here, then feed values to the memoized
-    # primitive. Previously each (type, ability) term wrapped `opp` in an _AbilityOverrideMon
-    # whose __getattr__ re-resolved type_1/type_2/status through poke-env per term — the
-    # proxy + property thrash dominated the matchup-encoder profile. `ability is None` is the
-    # "pass through unchanged" sentinel → use the defender's real ability.
-    d1, d2 = opp.type_1, opp.type_2
-    dstatus = getattr(opp, "status", None)
-    opp_ability = getattr(opp, "ability", None)
-
-    # Joint expectation
-    total = 0.0
-    for move_type, p in type_dist:
-        for ability, q in ability_dist:
-            ab = opp_ability if ability is None else ability
-            total += p * q * effective_multiplier_by_types(move_type, d1, d2, ab, dstatus)
-    return total
+    return _joint_expectation(
+        _attacker_type_dist(move, attacker, hp_tracker),
+        _defender_terms(opp, ability_priors),
+    )
 
 
 class ReactiveEncoder(ObservationEncoder):
@@ -97,10 +127,22 @@ class ReactiveEncoder(ObservationEncoder):
     - Fainted counts (2)
     - Status flag (1)
     - Forced Struggle flag (1)
+    - Trapped flag (1)        — server-authoritative `legal.trapped` (cannot switch)
+    - Maybe-trapped flag (1)  — server-authoritative `legal.maybe_trapped` (opponent MIGHT trap)
     - Matchup Matrix: Our moves vs Their mons (144)
     - Matchup Matrix: Their moves vs Our mons (144)
-    Total: 300 dims
+    Total: 302 dims
     (HP and Spikes removed — duplicated in per-Pokémon vector and global env respectively)
+
+    The trapped / maybe_trapped bits (gen3_trapping_signals_v1) are sourced from the
+    per-decision :class:`~agents.battle.live_view.LegalActions` snapshot (``legal``), the same
+    server-authoritative surface the action mask is built from. ``trapped`` is redundant with
+    the mask (which already zeroes the switch bits), but giving the policy/value nets an
+    explicit feature beats forcing them to infer "can't switch" from masked logits.
+    ``maybe_trapped`` carries genuinely NEW information: the switch bits stay legal (correct —
+    we don't KNOW we're trapped), so without this bit the model attempts the pivot blind and
+    eats a server rejection; with it, it can learn "switching here is risky — the opponent
+    might be Dugtrio/Arena Trap" and weigh the pivot.
     """
     
     def __init__(self, ability_priors: Optional[Dict[str, Dict[str, float]]] = None):
@@ -116,13 +158,18 @@ class ReactiveEncoder(ObservationEncoder):
     def dimension(self) -> int:
         return REACTIVE_DIM
 
-    def encode(self, battle: AbstractBattle, hp_tracker=None, live=None) -> np.ndarray:
-        """Encode the 300-dim reactive block.
+    def encode(self, battle: AbstractBattle, hp_tracker=None, live=None, legal=None) -> np.ndarray:
+        """Encode the 302-dim reactive block.
 
         live: optional :class:`~agents.battle.live_view.LiveView` snapshot for this
         decision. When supplied, the structural reads — per-side fainted counts and the
         active mon's status flag — are taken through the read-model; ``None`` (unit-test /
         plain-Battle path) falls back to the raw battle, byte-identically.
+
+        legal: optional :class:`~agents.battle.live_view.LegalActions` snapshot for this
+        decision (server-authoritative legality, same surface the mask is built from). Its
+        ``trapped`` / ``maybe_trapped`` flags become two obs bits (vec[12], vec[13]). ``None``
+        (unit-test / plain-Battle path, or a caller that hasn't threaded it) leaves both at 0.
 
         **Why the effectiveness core stays on the raw battle.** The active-move loop and the
         two 6×4×6 matchup matrices read moves off the raw poke-env ``Move`` objects
@@ -210,12 +257,21 @@ class ReactiveEncoder(ObservationEncoder):
         # 4. Forced Struggle
         vec[11] = 1.0 if is_forced_struggle else 0.0
 
+        # 4b. Trapping signals (gen3_trapping_signals_v1) — server-authoritative legality.
+        # trapped: confirmed cannot switch (Mean Look / Arena Trap / Magnet Pull revealed) —
+        # redundant with the mask but an explicit feature. maybe_trapped: the opponent MIGHT
+        # be trapping us (switches still legal in the mask) — the highest-value bit, the only
+        # signal here the model has no other way to see.
+        if legal is not None:
+            vec[12] = 1.0 if legal.trapped else 0.0
+            vec[13] = 1.0 if legal.maybe_trapped else 0.0
+
         # --- Matchup Matrices (raw battle — see the docstring's three reasons) ---
         our_team = self.get_team_list(battle, is_opponent=False)
         their_team = self.get_team_list(battle, is_opponent=True)
 
         # 5. Our moves vs Their mons (144 dims)
-        cursor = 12
+        cursor = 14
         for i in range(TEAM_SIZE):
             our_mon = our_team[i] if i < len(our_team) else None
             our_moves = self.get_sorted_moves(our_mon)
@@ -254,20 +310,24 @@ class ReactiveEncoder(ObservationEncoder):
             "fainted": {"offset": 8, "dim": 2},
             "active_status": {"offset": 10, "dim": 1},
             "forced_struggle": {"offset": 11, "dim": 1},
-            "our_matchups": {"offset": 12, "dim": 144},
-            "their_matchups": {"offset": 156, "dim": 144}
+            "trapped": {"offset": 12, "dim": 1},
+            "maybe_trapped": {"offset": 13, "dim": 1},
+            "our_matchups": {"offset": 14, "dim": 144},
+            "their_matchups": {"offset": 158, "dim": 144}
         }
 
     def describe_vector(self, vector: np.ndarray) -> Dict[str, Any]:
         # Extract matrices and scale back up by 4.0 for human-readable display
-        our_m = vector[12:156].reshape(TEAM_SIZE, 4, TEAM_SIZE) * 4.0
-        their_m = vector[156:300].reshape(TEAM_SIZE, 4, TEAM_SIZE) * 4.0
-        
+        our_m = vector[14:158].reshape(TEAM_SIZE, 4, TEAM_SIZE) * 4.0
+        their_m = vector[158:302].reshape(TEAM_SIZE, 4, TEAM_SIZE) * 4.0
+
         return {
             "fainted_our": int(vector[8] * 6),
             "fainted_opp": int(vector[9] * 6),
             "active_move_mults": [f"{m*4.0:.1f}x" for m in vector[4:8].tolist()],
             "struggle": bool(vector[11]),
+            "trapped": bool(vector[12]),
+            "maybe_trapped": bool(vector[13]),
             "our_vs_their": our_m, # Full matrix for deeper trace
             "their_vs_our": their_m
         }

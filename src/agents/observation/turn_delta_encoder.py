@@ -36,7 +36,15 @@ named OFFSET_* / *_DIM constants below — never hardcode indices):
     our_target_species_id (1, raw int as float),
     opp_target_species_id (1, raw int as float),
     our_switch_to_species_id (1, raw int as float),
-    opp_switch_to_species_id (1, raw int as float)
+    opp_switch_to_species_id (1, raw int as float),
+    --- gen3_trapping_signals_v1 additions ---
+    attempted_switch_rejected (1, bit): the server REFUSED a switch we chose this window
+      (|error|[Unavailable choice] — we tried to pivot and got trapped). Folded from the
+      out-of-band CHOICE_REJECTED event. Zero on every turn with no rejection.
+    our_attempted_switch_to_species_id (1, raw int — embedded): the mon we PRESSED a switch
+      to (intent). On a rejected pivot, our_switch_to is 0 (the switch never happened) while
+      this names the mon we tried to bring in; on a successful switch it equals
+      our_switch_to_species_id. 0 (unknown sentinel) when we didn't press a switch.
 
   Embedded-ID positions (move/type/species) are declared in TURN_DELTA_EMBEDDED_IDS
   (the manifest) — the extractor reads it directly, so the species block no longer
@@ -158,9 +166,12 @@ TURN_DELTA_EXT_DIM = (
     + 2                    # our/opp item_used bit (resource event; identity in item block)
     + 1                    # our_attempted_move_id (raw int — embedded by extractor)
     + SPECIES_ID_COUNT     # 6  — species IDs (embedded by extractor)
+    # gen3_trapping_signals_v1: rejected-switch history.
+    + 1                    # attempted_switch_rejected bit
+    + 1                    # our_attempted_switch_to species id (embedded by extractor)
 )
 
-TURN_DELTA_DIM = TURN_DELTA_BASE_DIM + TURN_DELTA_EXT_DIM  # 53 + 104 = 157
+TURN_DELTA_DIM = TURN_DELTA_BASE_DIM + TURN_DELTA_EXT_DIM  # 53 + 106 = 159
 
 # Offsets into the slot vector for the extended block. The embedded-ID positions
 # (move/type/species) are NOT hardcoded in the extractor — they're declared in the
@@ -200,8 +211,11 @@ OFFSET_OUR_TARGET_SPECIES   = OFFSET_OPP_ACTOR_SPECIES + 1
 OFFSET_OPP_TARGET_SPECIES   = OFFSET_OUR_TARGET_SPECIES + 1
 OFFSET_OUR_SWITCH_TO_SPEC   = OFFSET_OPP_TARGET_SPECIES + 1
 OFFSET_OPP_SWITCH_TO_SPEC   = OFFSET_OUR_SWITCH_TO_SPEC + 1
-assert OFFSET_OPP_SWITCH_TO_SPEC + 1 == TURN_DELTA_DIM, (
-    f"Layout mismatch: last offset+1={OFFSET_OPP_SWITCH_TO_SPEC + 1} != TURN_DELTA_DIM={TURN_DELTA_DIM}"
+# gen3_trapping_signals_v1: rejected-switch history (append-only).
+OFFSET_ATTEMPTED_SWITCH_REJECTED = OFFSET_OPP_SWITCH_TO_SPEC + 1            # 1 scalar bit
+OFFSET_OUR_ATTEMPTED_SWITCH_SPEC = OFFSET_ATTEMPTED_SWITCH_REJECTED + 1     # 1 embedded species id
+assert OFFSET_OUR_ATTEMPTED_SWITCH_SPEC + 1 == TURN_DELTA_DIM, (
+    f"Layout mismatch: last offset+1={OFFSET_OUR_ATTEMPTED_SWITCH_SPEC + 1} != TURN_DELTA_DIM={TURN_DELTA_DIM}"
 )
 
 # --------------------------------------------------------------------------- #
@@ -228,6 +242,7 @@ TURN_DELTA_EMBEDDED_IDS: tuple = (
     (OFFSET_OPP_TARGET_SPECIES, "species"),
     (OFFSET_OUR_SWITCH_TO_SPEC, "species"),
     (OFFSET_OPP_SWITCH_TO_SPEC, "species"),
+    (OFFSET_OUR_ATTEMPTED_SWITCH_SPEC, "species"),  # gen3_trapping_signals_v1
 )
 _EMBEDDED_POSITIONS = frozenset(pos for pos, _ in TURN_DELTA_EMBEDDED_IDS)
 assert len(_EMBEDDED_POSITIONS) == len(TURN_DELTA_EMBEDDED_IDS), (
@@ -567,6 +582,8 @@ class TurnDeltaEncoder:
             "our_item_used": bool(vec[OFFSET_OUR_ITEM_USED] > 0.5),
             "opp_item_used": bool(vec[OFFSET_OPP_ITEM_USED] > 0.5),
             "our_attempted_move": self._num_to_name.get(int(vec[OFFSET_OUR_ATTEMPTED_MOVE])),
+            "attempted_switch_rejected": bool(vec[OFFSET_ATTEMPTED_SWITCH_REJECTED] > 0.5),
+            "our_attempted_switch_to_species": _species_name(vec[OFFSET_OUR_ATTEMPTED_SWITCH_SPEC]),
         }
 
     def encode(self, delta: TurnDelta) -> np.ndarray:
@@ -658,7 +675,6 @@ class TurnDeltaEncoder:
                 self._move_id(getattr(delta, "our_attempted_move_id", None)),  # 1 embedded
             ], dtype=np.float32),
             # Species block (6 IDs — embedded by extractor via the manifest).
-            # attempted_switch_to dropped — switches always execute, so it == switch_to.
             np.array([
                 self._species_id(self._actor_species(delta, "our")),
                 self._species_id(self._actor_species(delta, "opp")),
@@ -667,6 +683,16 @@ class TurnDeltaEncoder:
                 self._species_id(delta.our_switch_to),
                 self._species_id(delta.opp_switch_to),
             ], dtype=np.float32),                                       # 6
+            # gen3_trapping_signals_v1: rejected-switch history (bit + attempted-switch
+            # species id, embedded by the extractor per the manifest). On a rejected pivot
+            # our_switch_to is None (the switch never happened) but attempted_switch_to names
+            # the mon we tried to bring in.
+            np.array([
+                float(getattr(delta, "attempted_switch_rejected", False)),  # 1
+            ], dtype=np.float32),
+            np.array([
+                self._species_id(getattr(delta, "attempted_switch_to", None)),  # 1 embedded
+            ], dtype=np.float32),
         ])
         assert ext_block.shape[0] == TURN_DELTA_EXT_DIM, (
             f"ext_block shape {ext_block.shape[0]} != TURN_DELTA_EXT_DIM {TURN_DELTA_EXT_DIM}"
