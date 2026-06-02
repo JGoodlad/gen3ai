@@ -12,9 +12,11 @@ from poke_env.player.player import Player
 
 from utils import race_trace  # debug ring buffer (GEN3_RACE_TRACE); no-op when off
 
-# Opponent-poll settle (the self-play stale-decision race fix). Yields are cheap (µs); the
-# common case is already-settled → one re-check and return. The bound + timeout are backstops
-# against a pathological loop; the strict StaleDecisionError guard catches any residual.
+# Opponent-poll settle — a pre-drain that REDUCES the stale-decision race rate by draining
+# already-arrived POKE_LOOP messages before the opponent decides. It does NOT eliminate the race
+# (it can't drain a turn-resolution still in flight during the model forward), so the actual fix
+# is the opponent's bounded RE-DECIDE in RLPlayer.choose_move. Yields are cheap (µs); the common
+# case is already-settled → one re-check and return. Bound + timeout guard a pathological loop.
 _SETTLE_MAX_YIELDS = 64
 _SETTLE_TIMEOUT_S = 2.0
 
@@ -117,21 +119,20 @@ class SingleAgentWrapper(Env[Dict[str, Any], ActionType]):
         )
 
     def _settle_opponent_battle(self) -> None:
-        """Drain POKE_LOOP's pending message processing for the opponent's battle so the
-        opponent's snapshot→serialize can't race a background parse_request.
+        """Pre-drain POKE_LOOP's already-arrived messages for the opponent's battle before it
+        decides, to REDUCE (not eliminate) the stale-decision race rate.
 
-        Runs a coroutine ON POKE_LOOP that yields until the battle's decision signature is
-        stable across a yield (the server is waiting on our move, so once nothing changes
-        across a scheduler tick, nothing else will land before we act). We *yield* rather than
-        await the in-flight tasks directly: one of those tasks is the opponent player's own
-        ``_handle_battle_request`` coroutine, blocked awaiting the order we're about to
-        produce — awaiting it here would deadlock. Best-effort and bounded; if a message still
-        slips in, the strict ``StaleDecisionError`` guard crashes loudly (no garbage move).
+        Runs a coroutine ON POKE_LOOP that yields until the battle's decision signature is stable
+        across a yield. We *yield* rather than await the in-flight tasks directly: one of those
+        tasks is the opponent player's own ``_handle_battle_request`` coroutine, blocked awaiting
+        the order we're about to produce — awaiting it here would deadlock.
 
-        The settle is unconditional in production — there is no "disable" switch (that would be
-        a footgun on a correctness fix). Reproducing the race is a test concern: the fuzz catches
-        a settle regression by finding divergences that shouldn't exist, and to demonstrate the
-        crash on purpose, revert this method's call site (one line) and re-run."""
+        This cannot close the race on its own: a turn-resolution that is still *in flight* when
+        the settle runs gets parsed during the model forward (proven by the race trace). The
+        actual fix is the opponent's bounded RE-DECIDE in ``RLPlayer.choose_move`` — on a
+        ``StaleDecisionError`` it re-decides on the now-current request, since its decision is
+        internal to this step and must always return a valid order. The settle just trims how
+        often that re-decide is needed. Best-effort and bounded; unconditional in production."""
         battle = self.env.battle2
         client = getattr(self.env.agent2, "ps_client", None)
         loop = getattr(client, "loop", None)
@@ -152,7 +153,7 @@ class SingleAgentWrapper(Env[Dict[str, Any], ActionType]):
                 timeout=_SETTLE_TIMEOUT_S
             )
         except Exception:
-            # Best-effort settle; the strict StaleDecisionError guard is the backstop.
+            # Best-effort pre-drain; the opponent's re-decide (choose_move) is the real backstop.
             pass
 
     def reset(

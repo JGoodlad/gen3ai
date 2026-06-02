@@ -80,29 +80,34 @@ restart — no manifest). Design lives in `designs/ai_v5/`. Key behaviors:
   `MaskablePPO.load`), and `SnapshotPool` writes a shared `model_config.json` next to its
   snapshots, so an arch-mismatched snapshot fails with a clean `ModelVersionError` instead of
   loading mismatched weights.
-- **The opponent matches the trainee's strictness — a stale decision CRASHES** (crash-over-corruption).
-  `SingleAgentWrapper` polls the opponent's `choose_move` on the *training* thread while POKE_LOOP
-  mutates its battle, so the opponent can read a request whose captured snapshot (`ctx.legal`)
-  diverges from the live battle by serialize time — e.g. a faint flips the battle to a force-switch
-  (`available_moves` → `[]`), or a switch target leaves `available_switches`. That raises a
-  `StaleDecisionError` (from `assert_decision_current` / `action_to_order`), which **propagates and
-  crashes the worker**, exactly like the trainee (`gen3_env.py` asserts with no fallback → the
-  launcher restarts from the last checkpoint). It is **not** caught and deferred to
-  `choose_default_move()`: in self-play the opponent IS the trainee's training signal, so a garbage
-  default move would be gigo. (An all-zero mask still legitimately returns `idx=None` → a default;
-  that is "no legal action", not staleness.) The underlying race — the opponent's main-thread read
-  is **not** protected by POKE_LOOP's per-battle `asyncio` lock (which only serialises POKE_LOOP
-  coroutines, not the training thread) — is **prevented at the source** by
-  `SingleAgentWrapper._settle_opponent_battle`, which drains POKE_LOOP's in-flight `parse_request`
-  for the opponent's battle (yields until its decision signature is stable) **before** the poll;
-  the strict crash above is the backstop, and the comprehensive `assert_decision_current` (every
-  action axis: moves+disabled, switches+species, force_switch/trapped/maybe_trapped/wait/struggle)
-  is the detector. **Full context — mechanism, why it was hard, and the three-tier verification
-  (deterministic guard → single-env `--widen` fuzz → faithful `GEN3_FORCE_SELFPLAY` stress) — is
-  in `RACE_FUZZ_README.md`.** (`StaleDecisionError` lives in `agents/action/mapper.py`. The settle
-  is **unconditional** in production — no disable switch; the deterministic
-  `single_agent_wrapper_test.py` guards that `step` still calls it. `GEN3_FORCE_SELFPLAY` forces
-  100% self-play for the stress.)
+- **The opponent RE-DECIDES on a stale decision; the trainee crashes** — split by who *owns* the
+  decision. `SingleAgentWrapper` polls the opponent's `choose_move` on the *training* thread while
+  POKE_LOOP mutates its battle, so by serialize time the captured snapshot (`ctx.legal`) can diverge
+  from the live battle: POKE_LOOP parses an **in-flight turn-resolution during the model forward**,
+  advancing `battle.turn` one ahead of `ctx.turn` (proven by the race trace — mutual Arena-Trap
+  Dugtrios, the turn resolves mid-decision). `assert_decision_current` / `action_to_order` raise
+  `StaleDecisionError`; handling then splits:
+  - **Opponent** — its decision is *internal* to `step` (SB3 never sees it), so `RLPlayer.choose_move`
+    catches the error and **re-decides on the now-current request**, bounded (`_OPP_REDECIDE_MAX`),
+    with a valid default fallback only if the battle never settles. It must always return a valid
+    order: SB3 has **no failed-step path** (a raise kills the `SubprocVecEnv` worker → parent hangs →
+    worker-watchdog `os._exit`s → launcher restart). Each attempt's `embed_battle()` records its
+    would-be decision into the rolling turn-history, so `choose_move` snapshots the tracker before
+    the loop and `EpisodeTracker.restore()`s on a stale attempt — the superseded decision leaves
+    **no phantom turn** in the opponent's turn-history obs (only the committed one survives; guarded
+    by `redecide_rollback_fuzz_test.py` + `episode_tracker_test.py`).
+  - **Trainee** — its action is *SB3's*, computed outside `step` and not re-runnable mid-step, so a
+    stale trainee decision **crashes** (`gen3_env`, no fallback): acting on it would corrupt its
+    `(obs, action) → (reward, next_obs)` transition. Empirically it doesn't hit this — gated by the
+    env's `race_get` request-wait (17 h vs-bots + self-play, zero trainee staleness).
+  `_settle_opponent_battle` is a **pre-drain** that only trims how often the opponent re-decides — it
+  can't drain *in-flight* messages, which is why re-decide (not settle) is the fix. The comprehensive
+  `assert_decision_current` (every axis: moves+disabled, switches+species,
+  force_switch/trapped/maybe_trapped/wait/struggle) is the detector; `train/selfplay_opp_redecide_rate`
+  surfaces the resolved-race rate. **Full context — mechanism, the race trace, why it was hard, and the
+  verification tiers — is in `RACE_FUZZ_README.md`.** (`GEN3_FORCE_SELFPLAY` forces 100% self-play for
+  the stress; `GEN3_RACE_TRACE=1` dumps the per-battle cross-thread interleaving into the
+  `StaleDecisionError`. `StaleDecisionError` lives in `agents/action/mapper.py`.)
 - **Self-play engages in the first process, not only after a restart.** The env is built before
   the model exists (the model needs the env's spaces), so on the first self-play process
   `_maybe_engage_self_play` seeds the pool from the loaded weights and rebuilds the env with

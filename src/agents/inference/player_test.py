@@ -433,24 +433,49 @@ def _make_rl_opponent():
     p._temperature = 1.0
     p._n_decisions = 0
     p._n_defaults = 0
+    p._n_redecides = 0
     p._handle_stall = MagicMock(return_value=None)               # no stall forfeit
     p._predict_best_action = MagicMock(return_value=(3, None, None))  # a legal idx
+    p._tracker = MagicMock()                                     # snapshot()/restore() rollback spy
+    p._get_tracker = MagicMock(return_value=p._tracker)
     return p
 
 
-class TestStaleDecisionStrict:
-    """choose_move matches the TRAINEE's strictness: a stale decision context
-    (StaleDecisionError from action_to_order) PROPAGATES and crashes — it is NEVER deferred
-    to a default order. In self-play the opponent IS the trainee's training signal, so a
-    garbage default move would be gigo; we act on the real decision or we crash."""
+class TestStaleDecisionRedecide:
+    """choose_move RE-DECIDES on a stale decision (the live battle advanced under it during the
+    model forward) rather than crashing. The opponent's decision is internal to
+    SingleAgentWrapper.step, so it must always return a VALID order — SB3 has no failed-step
+    path, and a raise would kill the worker. The TRAINEE stays strict (gen3_env): its action
+    comes from SB3 and can't be re-run inside the step, so a stale trainee decision must crash
+    rather than corrupt its (obs, action) → (reward, next_obs) transition."""
 
-    def test_stale_decision_propagates_never_defaults(self):
+    def test_redecides_on_stale_then_succeeds(self):
         p = _make_rl_opponent()
-        p.action_to_order = MagicMock(side_effect=StaleDecisionError("mid-decision change"))
+        sentinel = object()
+        p.action_to_order = MagicMock(side_effect=[StaleDecisionError("turn advanced"), sentinel])
         p.choose_default_move = MagicMock()
-        with pytest.raises(StaleDecisionError):
-            RLPlayer.choose_move(p, MagicMock())
-        p.choose_default_move.assert_not_called()   # never silently substitutes a default
+        result = RLPlayer.choose_move(p, MagicMock())
+        assert result is sentinel               # re-decided on the now-current request
+        assert p._n_redecides == 1
+        # The superseded attempt's record() is rolled back so no phantom turn lingers in the
+        # opponent's turn-history obs: one snapshot for the decision, one restore for the stale try.
+        p._tracker.snapshot.assert_called_once()
+        p._tracker.restore.assert_called_once_with(p._tracker.snapshot.return_value)
+        p.choose_default_move.assert_not_called()   # the model's real move, NOT a default
+
+    def test_redecide_budget_exhausted_falls_back_to_valid_default(self):
+        from agents.inference.player import _OPP_REDECIDE_MAX
+        p = _make_rl_opponent()
+        p.action_to_order = MagicMock(side_effect=StaleDecisionError("never settles"))
+        default = object()
+        p.choose_default_move = MagicMock(return_value=default)
+        result = RLPlayer.choose_move(p, MagicMock())
+        assert result is default                # valid order — NEVER crashes the SB3 worker
+        assert p._n_redecides == _OPP_REDECIDE_MAX
+        # Every superseded attempt is rolled back, so an exhausted budget still leaves the
+        # tracker exactly at its pre-decision state (no accumulated phantom turns).
+        assert p._tracker.restore.call_count == _OPP_REDECIDE_MAX
+        p.choose_default_move.assert_called_once()
 
     def test_clean_decision_returns_order_unchanged(self):
         p = _make_rl_opponent()
@@ -459,4 +484,23 @@ class TestStaleDecisionStrict:
         p.choose_default_move = MagicMock()
         result = RLPlayer.choose_move(p, MagicMock())
         assert result is sentinel_order             # normal path — unchanged
+        assert p._n_redecides == 0
+        # A clean decision commits its record() — snapshot is taken, but never rolled back.
+        p._tracker.snapshot.assert_called_once()
+        p._tracker.restore.assert_not_called()
         p.choose_default_move.assert_not_called()
+
+    def test_no_legal_action_restores_then_defaults(self):
+        # idx=None (all-zero mask: polled during the other agent's forced-switch window).
+        # embed_battle() skips recording, but we still restore() defensively before defaulting,
+        # so any partial obs-build work (e.g. a memoized delta) never leaks into the history.
+        p = _make_rl_opponent()
+        p._predict_best_action = MagicMock(return_value=(None, None, None))
+        default = object()
+        p.choose_default_move = MagicMock(return_value=default)
+        p.action_to_order = MagicMock()
+        result = RLPlayer.choose_move(p, MagicMock())
+        assert result is default
+        assert p._n_redecides == 0
+        p.action_to_order.assert_not_called()       # idx None → never serializes a stale ctx
+        p._tracker.restore.assert_called_once()

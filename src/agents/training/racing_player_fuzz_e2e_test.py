@@ -79,9 +79,10 @@ class _RaceProbeOpponent(RLPlayer):
         try:
             return super().action_to_order(action_idx, battle)
         except StaleDecisionError:
-            # Diagnostic-only: the PRODUCTION opponent is strict and crashes here. The probe
-            # has already recorded the divergence above, so it defers to keep the run alive
-            # and collect every occurrence to report — this is the test harness, not training.
+            # Diagnostic-only: this probe measures raw snapshot-vs-live DIVERGENCE rate (recorded
+            # above), so it short-circuits to a default to keep the run alive and collect every
+            # occurrence. The PRODUCTION opponent instead RE-DECIDES on the now-current request
+            # (RLPlayer.choose_move) — see redecide_rollback_fuzz_test.py for that path.
             return self.choose_default_move()
 
 

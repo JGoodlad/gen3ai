@@ -19,15 +19,24 @@ and almost all of that was *understanding the shape*, not writing the fix.
   (usually a faint→force-switch) changes the request under it. The per-battle `asyncio` lock does
   **not** protect this: asyncio locks serialize *coroutines on the event loop*, not a *different
   thread*.
-- **Fix (defense in depth):**
-  1. **Prevent** — the wrapper drains POKE_LOOP's in-flight work for the opponent's battle before
-     polling it (`SingleAgentWrapper._settle_opponent_battle`).
-  2. **Detect** — `Gen3ActionMapper.assert_decision_current` compares **every** action-relevant
-     axis (moves incl. disabled, switches incl. species, force_switch, trapped, maybe_trapped,
-     wait, struggle).
-  3. **Backstop** — the opponent is **strict**: a stale decision **crashes** (crash-over-
-     corruption), exactly like the trainee. It never defers to a default move — in self-play the
-     opponent *is* the trainee's training signal, so a garbage default is garbage-in.
+- **Confirmed mechanism (race trace, `GEN3_RACE_TRACE=1`):** the kill isn't just "a parse lands in
+  the snapshot→serialize gap" — it's that POKE_LOOP parses an **in-flight turn-resolution *during the
+  model forward***, so by serialize time `battle.turn` is one *ahead* of `ctx.turn`. The trace caught
+  it: `EMBED battle.turn=2 → [Thread-2 RX: moves, |turn|3] → ASSERT ctx.turn=2 battle.turn=3`. Trigger
+  in the wild: both players are Arena-Trap Dugtrio → mutual trap → the turn resolves while the opponent
+  is still computing.
+- **Fix — split by who *owns* the decision (SB3 has no failed-step path):**
+  1. **Opponent re-decides (the fix).** Its decision is *internal* to `SingleAgentWrapper.step` — SB3
+     never sees it — so `RLPlayer.choose_move` catches the `StaleDecisionError` and **re-decides on
+     the now-current request** (bounded `_OPP_REDECIDE_MAX`; valid default only if it never settles).
+     A raise would kill the SB3 worker, so it must always return a valid order.
+  2. **Trainee crashes (unchanged).** Its action is *SB3's*, computed outside the step and not
+     re-runnable mid-step, so a stale trainee decision crashes — acting on it would corrupt its
+     `(obs, action) → (reward, next_obs)`. (It's gated by the env's `race_get` and doesn't hit this.)
+  3. **Detect** — `assert_decision_current` compares **every** action axis (moves incl. disabled,
+     switches incl. species, force_switch, trapped, maybe_trapped, wait, struggle).
+  4. **Pre-drain (optimization, not the fix)** — `_settle_opponent_battle` drains *already-arrived*
+     messages to trim the re-decide rate; it can't drain in-flight ones (hence re-decide is the fix).
 
 ---
 
@@ -115,9 +124,49 @@ opponent.choose_move(battle2)
 
 | Layer | Where | What |
 |---|---|---|
-| **Prevent** | `poke_env/environment/single_agent_wrapper.py` → `_settle_opponent_battle` | Before polling the opponent, run a coroutine on POKE_LOOP that **yields until the battle's decision signature is stable** across a scheduler tick (the server is waiting on our move, so once nothing changes, nothing else lands). Drains the in-flight `parse_request`. Bounded + best-effort. |
+| **Resolve** (the fix) | `agents/inference/player.py` → `choose_move` | On `StaleDecisionError` the opponent **RE-DECIDES** on the now-current request, bounded by `_OPP_REDECIDE_MAX`, falling back to a valid `choose_default_move()` only if the battle never settles. Its decision is internal to `SingleAgentWrapper.step` (SB3 never sees it), so it must always return a valid order — a raise would kill the worker. |
+| **No phantom** | `agents/training/episode_tracker.py` → `snapshot`/`restore`, called from `choose_move` | Each attempt's `embed_battle()` records its would-be decision into the rolling turn-history. `choose_move` snapshots before the loop and `restore()`s on a stale re-decide, so a superseded attempt leaves **no phantom turn** — only the committed decision survives in the opponent's obs. The snapshot captures exact deque contents (incl. an entry `maxlen` would drop), so the rollback is exact even deep in a long game. |
 | **Detect** | `agents/action/mapper.py` → `assert_decision_current` | Compares **every** action-relevant axis of the snapshot vs the live request (moves with `disabled`, switches with `species`, `force_switch`, `trapped`, `maybe_trapped`, `wait`, `struggle`). Any divergence → `StaleDecisionError`. `action_to_order` is the final backstop for the residual window before serialization. |
-| **Backstop** | `agents/inference/player.py` → `choose_move` | The opponent is **strict** — `StaleDecisionError` propagates and crashes the worker (launcher restarts from the last checkpoint). No tolerance path, no default-move substitution. |
+| **Pre-drain** (optimization) | `poke_env/environment/single_agent_wrapper.py` → `_settle_opponent_battle` | Before polling, yields on POKE_LOOP until the decision signature is stable, draining *already-arrived* messages to REDUCE how often the re-decide fires. It can't drain a turn-resolution still *in flight* during the model forward, so it's an optimization, **not** the fix (that's why the strict-crash version still crashed at 64-env scale). |
+| **Trainee** | `agents/training/gen3_env.py` | Stays **strict** — a stale trainee decision crashes (crash-over-corruption). See the next section for why this asymmetry is correct. |
+
+---
+
+## Why the trainee AND the opponent are both safe
+
+The race can fire for *either* decider, but the safe response differs — and the difference is
+principled, set by **who owns the decision**.
+
+**The opponent is safe because its decision is ours to retry.** The self-play opponent is polled
+*inside* `SingleAgentWrapper.step`; SB3 never sees this call. So when the battle advances under it
+we simply **re-decide on the now-current request** and return a valid order. Three properties make
+that airtight:
+- *Always valid.* The re-decide loops on the live request until `action_to_order` serializes
+  cleanly (bounded by `_OPP_REDECIDE_MAX`; a valid default if it never settles). SB3 has **no
+  failed-step path** — a raised exception kills the `SubprocVecEnv` worker — so "always returns a
+  valid order" is the contract, and the re-decide meets it.
+- *No corrupted learning.* The opponent is a frozen snapshot with no labels; nothing it does feeds
+  a gradient. Re-deciding can't corrupt a transition because there is no opponent transition.
+- *No corrupted observation.* The one thing it carries forward is its turn-history obs, and the
+  `snapshot`/`restore` rollback guarantees the superseded attempt's `record()` is undone — a
+  re-decide leaves the history exactly as a single clean decision would. Verified end-to-end: 244
+  forced re-decides → 0 phantom turns; with `restore` disabled, 178/178 decisions go phantom.
+
+**The trainee is safe because it never acts stale — and crashes rather than guess if it ever
+would.** The trainee's action comes from *SB3*, computed outside the env and handed back into
+`step`; it cannot be re-run mid-step, so it can't re-decide. Two layers keep it safe:
+- *It doesn't hit the race.* The env gates the trainee's decision on `race_get` — poke-env's own
+  request-wait — so by the time the trainee observes, its request has settled. Empirically: 17 h of
+  vs-bots + self-play, zero trainee staleness.
+- *If it ever did, it crashes — by design.* A stale trainee decision raises and takes the worker
+  down (launcher restarts from the last checkpoint). Acting on the stale snapshot would pair the
+  wrong action with the obs/reward and corrupt its `(obs, action) → (reward, next_obs)` transition,
+  poisoning the policy gradient. **Crash-over-corruption:** a restart costs minutes; a corrupted
+  transition silently degrades the model forever. The trainee is the one decider whose mistakes are
+  permanent, so it gets the strict path.
+
+In one line: **the opponent re-decides because it can and a crash would needlessly kill the worker;
+the trainee crashes because it can't re-decide and acting stale would poison learning.**
 
 ---
 
@@ -135,14 +184,30 @@ opponent.choose_move(battle2)
 > is the instant reliable check; tier 3 is the real-race confidence. There is no cheaper shortcut —
 > that rarity is the whole reason this was hard to pin down.
 
-### 1. Deterministic unit guard — *instant, no server*
-`agents/action/mapper_test.py::TestAssertDecisionDefensiveness` (+ `TestStaleDecisionStrict` in
-`agents/inference/player_test.py`). Injects each divergence axis (headlined by the exact
-faint→force-switch case) and asserts we raise; asserts the opponent crashes, never defaults. **If
-the guard is ever narrowed back toward "move-ids only", or tolerance returns, these go red.**
+### 1. Deterministic unit + rollback guards — *instant, no server*
+`agents/action/mapper_test.py::TestAssertDecisionDefensiveness` (injects each divergence axis,
+headlined by the exact faint→force-switch case, and asserts we raise) +
+`agents/inference/player_test.py::TestStaleDecisionRedecide` (the opponent re-decides on a stale
+attempt, rolls it back, exhausts to a valid default, and **never** crashes — SB3 has no failed-step
+path) + `agents/training/episode_tracker_test.py` snapshot/restore tests (the rollback undoes a
+record exactly, recovers a `maxlen`-dropped entry, and leaves no phantom turn). **If the detector
+is narrowed toward "move-ids only", or the rollback regresses, these go red.**
 ```bash
 pytest src/agents/action/mapper_test.py::TestAssertDecisionDefensiveness \
-       src/agents/inference/player_test.py::TestStaleDecisionStrict -q
+       src/agents/inference/player_test.py::TestStaleDecisionRedecide \
+       src/agents/training/episode_tracker_test.py -k "snapshot or restore or redecide or phantom" -q
+```
+
+### 1b. Re-decide rollback fuzz — *real battles, no server (~1–2 min)*
+`agents/training/redecide_rollback_fuzz_test.py`. Plays real bridge battles and **forces the
+re-decide path on every decision** (injects a one-shot `StaleDecisionError` before each serialize),
+asserting per-decision that the committed history grows by ≤ 1 transition — i.e. the rollback left
+no phantom turn — and that every battle still finishes (the re-decide always returns a valid order).
+`_n_transitions` (monotonic, never capped) is the load-bearing invariant, so the phantom is caught
+even when `len(_history)` has saturated at its cap. **Self-checking negative control:** disabling
+`EpisodeTracker.restore` flips it to 178/178 decisions phantom — the test is not vacuously green.
+```bash
+python src/agents/training/redecide_rollback_fuzz_test.py 8
 ```
 
 ### 2. Single-env race fuzz — *real path, lightweight (~5–15 min)*

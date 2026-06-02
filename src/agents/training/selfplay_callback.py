@@ -301,12 +301,12 @@ class SelfPlayCallback(BaseCallback):
             _ostats = self.training_env.env_method("opponent_default_stats")
             _dec = sum(s[0] for s in _ostats)
             _deft = sum(s[1] for s in _ostats)
-            _stale = sum(s[2] for s in _ostats)
+            _redec = sum(s[2] for s in _ostats)
             if _dec > 0:
                 self.logger.record("train/selfplay_opp_default_rate", _deft / _dec)
-                self.logger.record("train/selfplay_opp_stale_default_rate", _stale / _dec)
+                self.logger.record("train/selfplay_opp_redecide_rate", _redec / _dec)
                 self.logger.record("train/selfplay_opp_decisions", float(_dec))
-                tui_metrics["train/selfplay_opp_stale_default_rate"] = _stale / _dec
+                tui_metrics["train/selfplay_opp_redecide_rate"] = _redec / _dec
         except Exception as _e:
             print(f"[SELFPLAY] opponent default-stat query failed (non-fatal): {_e}")
 

@@ -18,12 +18,18 @@ class ShowdownConnectionError(RuntimeError):
 from agents.battle.gen3_battle import Gen3Battle
 from agents.battle.live_view import LegalActions
 
-from agents.action.mapper import Gen3ActionMapper
+from agents.action.mapper import Gen3ActionMapper, StaleDecisionError
 from agents.action.mask_generator import Gen3ActionMasker
 from agents.observation.turn_delta_encoder import TurnDeltaEncoder
 from agents.training.episode_tracker import EpisodeTracker
 from agents.training.stall import StallConfig, StallLogger
 from utils import race_trace  # debug ring buffer (GEN3_RACE_TRACE); no-op when off
+
+# Self-play opponent re-decide budget. When the live battle advances under the opponent's
+# decision (POKE_LOOP parses an in-flight turn-resolution during the model forward), the
+# opponent re-decides on the now-current request instead of raising — the server is waiting on
+# our move, so the battle settles within a couple of re-decides. See choose_move().
+_OPP_REDECIDE_MAX = 8
 from agents.model.features_extractor import N_HISTORY_TURNS
 
 
@@ -187,12 +193,13 @@ class RLPlayer(Gen3Player):
         # >1 flatter (more random), <1 sharper (toward argmax). Ignored when not stochastic.
         self._stochastic = stochastic
         self._temperature = temperature
-        # Default-rate telemetry (read via the env wrapper for self-play opponents):
-        # total decision calls and total default deferrals (idx None → no legal action).
-        # A stale decision context is NOT one of these — it crashes (see choose_move), the
-        # same crash-over-corruption strictness as the trainee.
+        # Telemetry (read via the env wrapper for self-play opponents): total decision calls,
+        # total default deferrals (idx None → no legal action, or re-decide budget exhausted),
+        # and total RE-DECIDES (the live battle advanced under a decision and we re-decided on
+        # the now-current request — the self-play stale-decision race, resolved not crashed).
         self._n_decisions = 0
         self._n_defaults = 0
+        self._n_redecides = 0
 
     def _predict_best_action(self, battle, stochastic=False, need_aux=True, temperature=1.0):
         """Pick the best legal action for `battle`.
@@ -265,15 +272,44 @@ class RLPlayer(Gen3Player):
         if forfeit:
             return forfeit
         self._n_decisions += 1
-        idx, _, _ = self._predict_best_action(
-            battle, stochastic=self._stochastic, need_aux=False, temperature=self._temperature
-        )
-        if idx is None:
-            self._n_defaults += 1
-            return self.choose_default_move()
-        # Crash-over-corruption — the SAME strictness as the trainee (gen3_env lets a
-        # StaleDecisionError from assert_decision_current / action_to_order propagate and
-        # crash). We do NOT catch it and defer to a default order: in self-play the opponent
-        # IS the trainee's training signal, so a garbage default move is gigo. We act on the
-        # real decision or we crash — the race gets fixed at the source, never tolerated here.
-        return self.action_to_order(idx, battle)
+        # The live battle can advance under us between embed_battle (the obs / legal snapshot)
+        # and action_to_order (the serialize): POKE_LOOP parses an in-flight turn-resolution
+        # during our model forward, so assert_decision_current sees battle.turn one ahead of
+        # ctx.turn (proven by the race trace — both Dugtrios mutually Arena-Trap, the turn
+        # resolves while the opponent computes). Our decision is INTERNAL to
+        # SingleAgentWrapper.step — SB3 never sees it — so we RE-DECIDE on the now-current
+        # request rather than raise (a raise kills the SB3 worker; SB3 has no failed-step path).
+        # Bounded: the server is waiting on our move, so the battle settles within a couple of
+        # re-decides. The TRAINEE cannot do this (its action is SB3's, computed outside the env)
+        # and stays strict in gen3_env — by design, since acting on a stale trainee snapshot
+        # would corrupt its (obs, action) → (reward, next_obs) transition.
+        #
+        # Each attempt's embed_battle() records its (would-be) decision into the tracker's
+        # rolling turn-history. On a stale re-decide we restore() the snapshot taken here, so a
+        # superseded attempt leaves no phantom turn behind — only the committed decision survives
+        # in the opponent's turn-history obs. (The trainee never re-decides, so it needs none.)
+        tracker = self._get_tracker(battle)
+        history_snapshot = tracker.snapshot()
+        for attempt in range(_OPP_REDECIDE_MAX):
+            idx, _, _ = self._predict_best_action(
+                battle, stochastic=self._stochastic, need_aux=False, temperature=self._temperature
+            )
+            if idx is None:
+                self._n_defaults += 1
+                tracker.restore(history_snapshot)
+                return self.choose_default_move()
+            try:
+                return self.action_to_order(idx, battle)
+            except StaleDecisionError:
+                self._n_redecides += 1
+                tracker.restore(history_snapshot)
+                race_trace.trace(
+                    getattr(battle, "battle_tag", ""),
+                    f"OPP-REDECIDE attempt={attempt + 1} battle.turn={getattr(battle, 'turn', '?')}",
+                )
+        # The battle never settled across the budget (pathological — the server kept advancing
+        # it under us). A valid default on the current state (the env re-requests next step)
+        # beats killing the worker; this branch is rare by construction.
+        self._n_defaults += 1
+        race_trace.trace(getattr(battle, "battle_tag", ""), "OPP-REDECIDE EXHAUSTED -> default")
+        return self.choose_default_move()

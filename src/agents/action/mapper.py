@@ -34,14 +34,19 @@ if TYPE_CHECKING:
 
 
 class StaleDecisionError(RuntimeError):
-    """The latched decision context no longer matches the live battle — poke-env processed a
-    background message and the request/turn shifted under us between embed_battle() and
-    action_to_order(). Both the TRAINEE and the self-play OPPONENT treat this as FATAL
-    (crash-over-corruption): acting on a stale snapshot would send the wrong order, and in
-    self-play the opponent IS the trainee's training signal, so a default-move substitution
-    would be garbage-in. The wrapper's pre-decision settle
-    (``single_agent_wrapper._settle_opponent_battle``) is what PREVENTS the race; this
-    exception is the strict backstop for anything that still slips through."""
+    """The latched decision context no longer matches the live battle — POKE_LOOP parsed a
+    background message (typically an in-flight turn-resolution during the model forward) and the
+    request/turn shifted under us between embed_battle() and action_to_order(). Acting on the
+    stale snapshot would send the wrong/obsolete order. Two handlers, by who owns the decision:
+
+    - **Self-play OPPONENT** (``RLPlayer.choose_move``) catches it and RE-DECIDES on the
+      now-current request. The opponent's decision is internal to ``SingleAgentWrapper.step`` —
+      SB3 never sees it — so it must always return a valid order (SB3 has no failed-step path).
+    - **TRAINEE** (``gen3_env``) lets it propagate and crash (crash-over-corruption). Its action
+      comes from SB3 and can't be re-run inside the step, so acting on a stale snapshot would
+      corrupt its ``(obs, action) → (reward, next_obs)`` transition.
+
+    Raised by ``assert_decision_current`` / ``action_to_order``."""
 
 
 class Gen3ActionMapper:
@@ -136,11 +141,11 @@ class Gen3ActionMapper:
         # live battle means the board diverged under us (POKE_LOOP applied a background
         # message: a switch target fainted, a move got disabled, a force-switch began…).
         # That is STALENESS, not corruption: raise StaleDecisionError so it surfaces as a
-        # mid-decision divergence — both the trainee and the self-play opponent crash on it
-        # (crash-over-corruption) rather than sending a wrong/garbage order. This is the
+        # mid-decision divergence — the self-play opponent RE-DECIDES on it, the trainee crashes
+        # (crash-over-corruption) — rather than sending a wrong/obsolete order. This is the
         # catch-all for every live-divergence axis, not just switches. With a fresh snapshot
         # (legal=None: fuzz / back-to-back) there is nothing to be stale against, so failures
-        # propagate as-is (crash-over-corruption preserved).
+        # propagate as-is.
         try:
             order = choice_to_order(choice, battle)
             round_trip = order_to_action(order, battle, legal=legal)
@@ -179,10 +184,10 @@ class Gen3ActionMapper:
         match the server's current move ordering AND switch availability. A divergence
         means poke-env processed a background message and the request shifted under us —
         acting on the stale snapshot would send the wrong move/switch, so we raise
-        ``StaleDecisionError`` instead (both the trainee and the self-play opponent crash on
-        it — crash-over-corruption). ``action_to_order`` is the backstop for the residual
-        window between this check and serialization: any live-vs-snapshot failure there is
-        reclassified as staleness too."""
+        ``StaleDecisionError`` instead (the self-play opponent re-decides on it; the trainee
+        crashes — see the StaleDecisionError docstring). ``action_to_order`` is the backstop for
+        the residual window between this check and serialization: any live-vs-snapshot failure
+        there is reclassified as staleness too."""
         tag = getattr(battle, "battle_tag", "")
         race_trace.trace(
             tag,
@@ -209,10 +214,10 @@ class Gen3ActionMapper:
             # snapshot and now — a faint flipping us to force-switch (the move-face: moves→[]),
             # a switch target leaving the bench or changing identity (the heracross switch-face),
             # a move getting disabled, or the request going to wait / struggle / trapped. Acting
-            # on the stale snapshot would send the wrong order, so we raise — crash-over-corruption
-            # for BOTH the trainee and the self-play opponent. (The wrapper's pre-decision settle
-            # in single_agent_wrapper._settle_opponent_battle PREVENTS the race; this is the
-            # strict detector for anything that still slips through.) Moves carry (id, disabled)
+            # on the stale snapshot would send the wrong order, so we raise — the self-play
+            # opponent RE-DECIDES on the now-current request (RLPlayer.choose_move), the trainee
+            # crashes (gen3_env). This is the detector; the opponent's re-decide is the resolver.
+            # Moves carry (id, disabled)
             # and switches carry (slot, species), so a same-length set whose CONTENTS changed is
             # caught too. action_to_order is the final backstop for the residual window between
             # this check and serialization.

@@ -631,3 +631,75 @@ def test_reset_clears_rule_out_state():
     assert tracker.hidden_power_tracker.is_known("snorlax") is True
     tracker.reset()
     assert tracker.hidden_power_tracker.is_known("snorlax") is False
+
+
+# ---------------------------------------------------------------------------
+# snapshot() / restore() — the rolling-history rollback that lets the self-play
+# opponent RE-DECIDE on a stale request without leaving a phantom turn in its
+# turn-history obs. (Driven by RLPlayer.choose_move; see player_test.py for the
+# control-flow wiring and the *_fuzz_test for the real-battle invariant.)
+# ---------------------------------------------------------------------------
+
+def _hist_state(tr):
+    """The full rolling-history state snapshot()/restore() are responsible for, in a
+    value-comparable form (BattleContexts compared by turn, arrays by contents)."""
+    return (
+        [c.turn for c in tr._history],
+        list(tr._actions),
+        list(tr._cursors),
+        [v.tolist() for v in tr._hist_vec_cache],
+        tr._n_transitions,
+        tr._last_cursor,
+        tr._last_action,
+    )
+
+
+def test_snapshot_then_restore_undoes_a_record_exactly():
+    legal = _legal([_lm("tackle"), _lm("growl")])
+    mask = Gen3ActionMasker.mask_from_legal(legal)
+    tr = EpisodeTracker(history_cap=8)
+    tr.record(_mock_battle(1), mask, legal=legal); tr.advance(6)
+    tr.record(_mock_battle(2), mask, legal=legal); tr.advance(7)
+    before = _hist_state(tr)
+    snap = tr.snapshot()
+    # A "stale" extra record — the would-be decision that gets superseded by a re-decide.
+    tr.record(_mock_battle(3), mask, legal=legal); tr.advance(8)
+    assert _hist_state(tr) != before        # the record really mutated history + scalars
+    tr.restore(snap)
+    assert _hist_state(tr) == before         # ... and restore undid every field exactly
+
+
+def test_restore_recovers_entry_maxlen_would_have_dropped():
+    # history_cap=2 → the aux deques (_actions/_cursors/_hist_vec_cache) hold maxlen=2.
+    # A surgical length-only rollback would lose the dropped-oldest entry; snapshotting the
+    # contents restores it exactly even at the cap.
+    tr = EpisodeTracker(history_cap=2)
+    tr._actions.extend([10, 11])
+    tr._cursors.extend([100, 110])
+    tr._hist_vec_cache.extend([np.array([1.0]), np.array([2.0])])
+    snap = tr.snapshot()
+    tr._actions.append(12); tr._cursors.append(120); tr._hist_vec_cache.append(np.array([3.0]))
+    assert list(tr._actions) == [11, 12]     # oldest (10) dropped by the bounded deque
+    tr.restore(snap)
+    assert list(tr._actions) == [10, 11]      # dropped entry recovered exactly
+    assert list(tr._cursors) == [100, 110]
+    assert [v.tolist() for v in tr._hist_vec_cache] == [[1.0], [2.0]]
+
+
+def test_redecide_pattern_leaves_no_phantom_turn():
+    """Mirror RLPlayer.choose_move's rollback: a stale attempt records then restores; only the
+    committed (re-decided) turn survives, so the rolling history grows by exactly one."""
+    legal = _legal([_lm("tackle"), _lm("growl")])
+    mask = Gen3ActionMasker.mask_from_legal(legal)
+    tr = EpisodeTracker(history_cap=8)
+    tr.record(_mock_battle(1), mask, legal=legal); tr.advance(6)
+    tr.record(_mock_battle(2), mask, legal=legal); tr.advance(7)
+    n0 = len(tr._history)
+    snap = tr.snapshot()
+    tr.record(_mock_battle(3), mask, legal=legal)   # stale attempt (turn 3) — superseded
+    tr.restore(snap)                                  # rolled back, no phantom
+    tr.record(_mock_battle(3), mask, legal=legal)   # the committed re-decided turn
+    tr.advance(8)
+    assert len(tr._history) == n0 + 1                 # exactly one new turn, not two
+    assert [c.turn for c in tr._history] == [1, 2, 3]
+    assert tr._n_transitions == 2                      # transitions 1→2 and 2→3 only

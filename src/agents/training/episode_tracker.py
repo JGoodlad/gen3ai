@@ -173,6 +173,51 @@ class EpisodeTracker:
         self._history.append(ctx)
         return ctx
 
+    # ------------------------------------------------------------------ #
+    # Rolling-history snapshot / restore — for the opponent's stale RE-DECIDE
+    # ------------------------------------------------------------------ #
+    def snapshot(self) -> tuple:
+        """Cheap shallow snapshot of the rolling-history state, taken before a self-play
+        opponent decides so a stale RE-DECIDE can roll the superseded attempt back out
+        (``RLPlayer.choose_move``). Without it, each re-decide would leave a phantom turn —
+        the record() of the decision that never happened — in the opponent's turn-history obs.
+
+        The bounded deques are short (≈``N_HISTORY_TURNS``) and ``BattleContext``s are immutable,
+        so snapshotting the deques as plain lists is cheap and *shares* (never clones) the
+        contexts. The ``HiddenPowerTracker`` and slot registries are deliberately NOT snapshotted:
+        their updates are of real protocol events and idempotent (probability narrowing /
+        stable slot ids), so a rolled-back attempt leaves them correct — re-observing the same
+        events on the retry is a no-op. The trainee never re-decides (a stale trainee decision
+        crashes), so only the opponent path uses this."""
+        return (
+            list(self._history),
+            list(self._actions),
+            list(self._cursors),
+            list(self._hist_vec_cache),
+            self._n_transitions,
+            self._last_cursor,
+            self._last_action,
+        )
+
+    def restore(self, snap: tuple) -> None:
+        """Restore the state captured by :meth:`snapshot`, undoing the ``record()`` (and any
+        memoized delta) that a stale, re-decided decision applied — so the committed
+        turn-history never keeps a phantom turn. Rebuilding each deque from its snapshot list
+        re-establishes the *exact* pre-attempt contents, including an entry ``maxlen`` would
+        have since dropped, so the rollback is exact even when a deque sat at its cap."""
+        history, actions, cursors, hist_vec, n_transitions, last_cursor, last_action = snap
+        self._history.clear()
+        self._history.extend(history)
+        self._actions.clear()
+        self._actions.extend(actions)
+        self._cursors.clear()
+        self._cursors.extend(cursors)
+        self._hist_vec_cache.clear()
+        self._hist_vec_cache.extend(hist_vec)
+        self._n_transitions = n_transitions
+        self._last_cursor = last_cursor
+        self._last_action = last_action
+
     def _scan_opp_movesets_for_no_hp(self, live: "LiveView") -> None:
         """Mark any opponent species whose four moves are fully revealed and
         none is Hidden Power as definitively HP-less.
