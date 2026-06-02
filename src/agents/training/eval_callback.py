@@ -313,6 +313,7 @@ def build_bot_eval_block(
     """Build the standard bot-eval metrics dict for metadata.json (opponents last)."""
     return {
         "win_rate_mean": sum(win_rates.values()) / len(win_rates) if win_rates else 0.0,
+        "mean_reward_mean": sum(reward_means.values()) / len(reward_means) if reward_means else 0.0,
         "win_rate_vs_bots": bot_mean(win_rates),
         "mean_reward_vs_bots": bot_mean(reward_means),
         "mean_ep_len_vs_bots": bot_mean(ep_lens),

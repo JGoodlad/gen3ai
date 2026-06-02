@@ -276,6 +276,19 @@ class SelfPlayCallback(BaseCallback):
         tui_metrics["eval/win_rate_vs_bots"] = bot_aggregate
         tui_metrics["eval/mean_reward_vs_bots"] = mean_reward_vs_bots
         tui_metrics["eval/mean_ep_len_vs_bots"] = mean_ep_len_vs_bots
+
+        # "all" aggregate — mean over ALL bots INCLUDING Random, defined exactly as
+        # PerOpponentEvalCallback._record so the TUI "all" row populates identically in
+        # both eval paths. The live push must carry these keys explicitly; without them
+        # the TUI's eval_summary.get() returns None and "all" renders as "—" (the
+        # metadata.json latest_eval block already carries win_rate_mean via
+        # build_bot_eval_block, but the live send_metrics push did not).
+        win_rate_mean = sum(win_rates.values()) / len(win_rates) if win_rates else 0.0
+        mean_reward_mean = sum(reward_means.values()) / len(reward_means) if reward_means else 0.0
+        self.logger.record("eval/win_rate_mean", win_rate_mean)
+        self.logger.record("eval/mean_reward_mean", mean_reward_mean)
+        tui_metrics["eval/win_rate_mean"] = win_rate_mean
+        tui_metrics["eval/mean_reward_mean"] = mean_reward_mean
         eval_duration_sec = (datetime.now() - eval_start).total_seconds()
         self.logger.record("eval/duration_sec", eval_duration_sec)
 
