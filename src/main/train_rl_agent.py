@@ -57,7 +57,7 @@ from agents.training.wrappers import MaskableAgentWrapper
 from agents.training.gen3_env import Gen3Env
 from agents.training.reward_manager import Gen3RewardManager
 from agents.training.stall import StallConfig
-from agents.training.watchdog import start_subprocess_watchdog
+from agents.training.watchdog import start_subprocess_watchdog, start_orphan_watchdog
 from agents.training.adaptive_lr_callback import AdaptivePPOCallback, TwoPhaseLRCallback
 from agents.training.instrumented_ppo import InstrumentedMaskablePPO
 from agents.training.metrics_exporter_callback import MetricsExporterCallback
@@ -409,6 +409,13 @@ async def main():
     # Automatically enable deep traces if --debug is set
     if args.debug:
         log_level = LogLevel.DEBUG
+        # A --debug smoke run is a short-lived child of the launching shell/agent and
+        # uses DummyVecEnv (no SubprocVecEnv worker watchdog). If its parent dies it gets
+        # orphaned, and a hung smoke (e.g. a vanished 9XXX server) then lingers for days as
+        # a zombie. Exit if reparented. Started here — before team/env/server setup — so a
+        # hang anywhere in startup is covered too. Real (launcher-managed) runs keep a live
+        # parent and are unaffected.
+        start_orphan_watchdog(label="debug-smoke")
 
     # Load all teams using the new TeamLoader
     loader = TeamLoader()

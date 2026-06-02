@@ -100,6 +100,24 @@ restart — no manifest). Design lives in `designs/ai_v5/`. Key behaviors:
   the `:8001` training server. `selfplay_opponent_fuzz_test.py` covers the opponent load + legal
   play (both modes) + version check in-process via the local bridge (no server).
 
+## Process liveness guards (`watchdog.py`)
+
+Two daemon-thread watchdogs keep a hung/abandoned run from lingering:
+
+- **`start_subprocess_watchdog`** — for the `SubprocVecEnv` path. A crashed worker leaves the
+  parent blocked on a pipe `recv` forever; this thread polls `processes` and `os._exit(1)`s the
+  moment a worker dies with a nonzero exitcode. Started *after* env construction (and, in
+  self-play, after `_maybe_engage_self_play` rebuilds the env), right before `learn()`. It is a
+  **no-op on the `--debug` DummyVecEnv path** (no worker processes to watch).
+- **`start_orphan_watchdog`** — for the `--debug` smoke path, which has no worker watchdog. A
+  smoke run is a child of the launching shell/agent; if that parent dies the run is orphaned
+  (PPID changes) and a hung smoke (e.g. a vanished `9XXX` server) would otherwise sit as a
+  multi-GB zombie indefinitely. This thread captures the launching PPID up front and `os._exit`s
+  when `os.getppid()` *changes* (by-change, not `== 1`, so PID-namespace subreapers count).
+  Started early in `main()` inside the `if args.debug:` block — before team/env/server setup —
+  so a startup hang is covered too. **Real launcher-managed runs keep a live parent and never
+  arm it.** Regression test: `watchdog_test.py` (subprocess-driven orphan + no-false-fire).
+
 ## Showdown port threading (the `server_config` seam)
 
 `train_rl_agent.py --showdown-port <port>` builds **one** `ServerConfiguration` in `main()`
