@@ -67,30 +67,40 @@ class UnknownCantReasonError(Exception):
 # volatiles (disable / encore / bide).
 #
 # ABILITY-ACTIVATION VOLATILES (the second class the fuzz surfaced). poke-env's
-# ``-activate`` / ``-start`` parse path calls ``start_effect(effect)`` for ANY
-# ``|-activate|mon|ability: X`` line (abstract_battle.py), so a gen3 ability that emits
-# ``this.add('-activate', pokemon, 'ability: X')`` when it fires (status-cure /
-# anti-status abilities) records ``Effect.X`` into ``mon.effects`` → ``LiveView.volatiles``.
-# These are NOT in the volatileStatus/addVolatile scan, so they are intentional-extras.
-# The full gen3 set (gen3_abilities.json ∩ self-emitting -activate/-start ∩ poke-env
-# Effect enum) is the eleven below; ``flashfire`` is handled separately (it's a persistent
-# boosted STATE — "absorbed a Fire move" — not a one-shot activation, so it keeps its own
-# slot in the binary list above). ``magmaarmor`` required adding ``Effect.MAGMA_ARMOR`` to
-# poke-env's enum (it previously mapped to ``Effect.UNKNOWN`` → id ``'unknown'``).
+# ``-activate`` parse path calls ``start_effect(effect)`` for ANY ``|-activate|mon|ability:
+# X`` line (abstract_battle.py ``-activate`` handler), so a gen3 ability that emits
+# ``this.add('-activate', mon, 'ability: X')`` when it fires (status-cure / anti-status
+# abilities) records ``Effect.X`` into ``mon.effects`` → ``LiveView.volatiles``.
 #
-# COLLAPSED TO ONE SLOT (``ability_activated``): these eleven are anti-status / status-cure
-# ability activations (Immunity cured poison, Synchronize reflected a status, Oblivious
-# shrugged off attract, …). Their IDENTITY is now captured PERSISTENTLY in the per-mon
-# ability block — the ``-activate`` line reveals the ability and poke-env records it
-# (abstract_battle ``-activate`` handler → ``mon.ability`` → obs ability block flips
-# known=1 with the specific id). So a per-ability volatile slot would just duplicate the
-# ability block; we keep a single shared "an anti-status ability fired this window" bit
-# (mild tempo signal) instead of 11 redundant slots. Same collapse pattern as the trap
-# variants → ``partiallytrapped``. We still must CLASSIFY each id (crash-don't-drop), so
-# they all map to the one shared slot rather than being dropped.
+# THIS SET IS SOURCE-DERIVED, AND THE TEST PROVES IT. It is exactly the gen3 abilities
+# (``gen3_abilities.json``) that **self-emit** ``this.add('-activate', mon, 'ability:
+# <self>')`` in ``abilities.ts``, intersected with poke-env's ``Effect`` enum. That scan
+# is the WHOLE class — it cannot be derived from the volatileStatus/addVolatile scan the
+# move volatiles use (these abilities set no volatileStatus; the ``-activate`` line is a
+# different poke-env code path), which is exactly why earlier curation kept whack-a-moling
+# (``immunity``, then ``magmaarmor``, then ``waterveil``). ``gen3_effects_test.py`` now
+# re-derives this set from ``abilities.ts`` (``_gen3_ability_activation_volatiles``) and
+# fails if the list below drifts from it — a future-added/renamed gen3 ability surfaces as
+# a CI failure, not a 6-hours-into-training crash. ``flashfire`` is deliberately NOT here:
+# it emits ``-start`` (a persistent "absorbed a Fire move" boosted STATE), not a one-shot
+# ``-activate``, so it keeps its own slot in the binary list above. ``magmaarmor`` once
+# required adding ``Effect.MAGMA_ARMOR`` to poke-env's enum; ``waterveil`` (Water Veil,
+# burn immunity) was already enum-present (``Effect.WATER_VEIL``) — only this list missed it.
+#
+# COLLAPSED TO ONE SLOT (``ability_activated``): every entry is an anti-status / status-cure
+# ability activation (Immunity cured poison, Synchronize reflected a status, Oblivious
+# shrugged off attract, Water Veil cured/blocked a burn, …). Their IDENTITY is now captured
+# PERSISTENTLY in the per-mon ability block — the ``-activate`` line reveals the ability and
+# poke-env records it (abstract_battle ``-activate`` handler → ``mon.ability`` → obs ability
+# block flips known=1 with the specific id). So a per-ability volatile slot would just
+# duplicate the ability block; we keep a single shared "an anti-status ability fired this
+# window" bit (mild tempo signal) instead of one redundant slot per ability. Same collapse
+# pattern as the trap variants → ``partiallytrapped``. We still must CLASSIFY each id
+# (crash-don't-drop), so they all map to the one shared slot rather than being dropped.
 _ABILITY_ACTIVATION_VOLATILES: Tuple[str, ...] = (
     "immunity", "insomnia", "limber", "magmaarmor", "oblivious", "owntempo",
     "shedskin", "stickyhold", "suctioncups", "synchronize", "vitalspirit",
+    "waterveil",
 )
 _ABILITY_ACTIVATED_SLOT = "ability_activated"
 _BINARY_VOLATILES: Tuple[str, ...] = (

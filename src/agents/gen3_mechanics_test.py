@@ -479,3 +479,101 @@ class TestStatusLandEstimate:
         assert _ability_revealed(_mon(ability="Thick Fat")) is True   # normalized
         assert _ability_revealed(_mon(ability=None)) is False
         assert _ability_revealed(_mon(ability="unknownability")) is False
+
+
+# ---------------------------------------------------------------------------
+# (B) Mechanics-side completeness — ABILITY_STATUS_IMMUNITY covers every gen3
+#     ability that grants full immunity to a MAJOR status, DERIVED FROM SOURCE.
+#     Pairs with the obs-side lockstep guard in gen3_effects_test.py
+#     (test_status_immunity_abilities_all_have_volatile_slot): together they keep this
+#     mechanics map and the volatile allowlist in lockstep, so a status-immunity ability
+#     can never live in one without the other — the waterveil crash, made impossible.
+# ---------------------------------------------------------------------------
+_MAJOR_STATUSES = frozenset({"slp", "brn", "frz", "par", "psn", "tox"})
+
+
+def _gen3_status_immunity_from_source():
+    """Derive ``{ability_id -> set(major status ids it fully blocks)}`` from Showdown
+    ``abilities.ts``, restricted to gen3 abilities (``data/pokemon/gen3_abilities.json``).
+
+    ``gen3_abilities.json`` carries only ``{num, name}`` — the status-blocking *semantics*
+    live in the Showdown source — so this is the genuine source of truth for the class. A
+    gen3 ability grants full immunity to a major status iff its body uses one of the two
+    prevention idioms keyed on that status:
+      * ``onSetStatus``: ``if (status.id !== 'X') return;`` — no-ops for other statuses,
+        blocks X (Immunity lists two: ``!== 'psn' && !== 'tox'``).
+      * ``onImmunity``: ``if (type === 'X') return false;`` — Magma Armor's freeze block.
+    Restricting to :data:`_MAJOR_STATUSES` cleanly drops the non-status immunities that share
+    the idiom — Oblivious (``attract``) and Sand Veil (``sandstorm``) — and the faster-cure
+    abilities never match (Shed Skin / Early Bird / Natural Cure *cure*, they don't *block*).
+    If poke-env/Showdown later makes a status-immunity ability gen3-legal, this fails until
+    :data:`ABILITY_STATUS_IMMUNITY` is re-derived to match."""
+    import json
+    import pathlib
+    import re
+
+    root = pathlib.Path(__file__).resolve().parents[2]
+    txt = (root / "deps/pokemon-showdown/data/abilities.ts").read_text(
+        encoding="utf-8", errors="replace"
+    )
+    gen3 = set(json.load(open(root / "data/pokemon/gen3_abilities.json")).keys())
+
+    def _callback_body(body: str, name: str) -> str:
+        """Brace-matched body of the ``name(...) { ... }`` callback within ``body`` (so a
+        status literal elsewhere in the ability can't leak into the scan), or ''."""
+        m = re.search(name + r"\s*\([^)]*\)\s*\{", body)
+        if not m:
+            return ""
+        start, depth = m.end() - 1, 0
+        for j in range(start, len(body)):
+            if body[j] == "{":
+                depth += 1
+            elif body[j] == "}":
+                depth -= 1
+                if depth == 0:
+                    return body[start:j + 1]
+        return body[start:]
+
+    keys = list(re.finditer(r"\n\t([a-z0-9]+): \{", txt))
+    derived: dict[str, set[str]] = {}
+    for i, k in enumerate(keys):
+        aid = k.group(1)
+        if aid not in gen3:
+            continue
+        body = txt[k.end():(keys[i + 1].start() if i + 1 < len(keys) else len(txt))]
+        blocked = set()
+        for m in re.finditer(
+            r"status\.id\s*!==\s*'([a-z]+)'", _callback_body(body, "onSetStatus")
+        ):
+            if m.group(1) in _MAJOR_STATUSES:
+                blocked.add(m.group(1))
+        for m in re.finditer(
+            r"type\s*===\s*'([a-z]+)'\s*\)\s*return false", _callback_body(body, "onImmunity")
+        ):
+            if m.group(1) in _MAJOR_STATUSES:
+                blocked.add(m.group(1))
+        if blocked:
+            derived[aid] = blocked
+    return derived
+
+
+@pytest.mark.integration  # needs deps/pokemon-showdown checked out
+def test_ability_status_immunity_covers_every_gen3_source_ability():
+    """ABILITY_STATUS_IMMUNITY must equal the source-derived gen3 status-immunity set —
+    keys AND blocked-status sets. EQUALITY, not just superset: a MISSING ability
+    under-claims a whiff (``status_will_land`` reads high when the status can't land) and,
+    for any ability that also activates, risks the volatile crash-don't-drop; an EXTRA
+    ability over-claims immunity. A newly-relevant gen3 status-immunity ability fails HERE,
+    in CI, instead of silently degrading the obs signal or crashing a run hours in."""
+    derived = _gen3_status_immunity_from_source()
+    assert derived, "source scan found no gen3 status-immunity abilities — the scan broke"
+    actual = {aid: set(s) for aid, s in ABILITY_STATUS_IMMUNITY.items()}
+    missing = {a: sorted(derived[a]) for a in derived if actual.get(a) != derived[a]}
+    extra = {a: sorted(actual[a]) for a in actual if a not in derived}
+    assert actual == derived, (
+        f"ABILITY_STATUS_IMMUNITY drifted from abilities.ts — re-derive it.\n"
+        f"  missing / wrong statuses : {missing}\n"
+        f"  extra (not in source)    : {extra}\n"
+        f"  source of truth          : "
+        f"{dict(sorted((a, sorted(s)) for a, s in derived.items()))}"
+    )
