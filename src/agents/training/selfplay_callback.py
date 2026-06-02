@@ -1,38 +1,55 @@
-"""Self-play callback: bot eval, pool eval, snapshot promotion.
+"""Self-play callback: non-blocking bot + pool eval with snapshot promotion.
 
-Runs on the same adaptive schedule as PerOpponentEvalCallback. On each eval:
-  1. Bot eval   — 100 games each vs. Heuristic/Staller/Aggressive/SetupSweep.
-                  Feeds heuristic_fraction(); win rate persisted for next run.
-  2. Pool eval  — 100 games each vs. up to 5 sentinel snapshots (evenly spaced,
-                  newest to oldest). Computes win_rate_vs_pool and the
-                  sentinel_monotonicity score for cycling detection.
-  3. Promotion  — if win_rate_vs_pool > promote_threshold, the current checkpoint
-                  is added to the pool as a permanent snapshot.
-  4. Metrics    — all results logged to TensorBoard and the launcher TUI.
+Mirrors ``PerOpponentEvalCallback``'s frozen-snapshot **subprocess** pattern so eval never
+pauses training, extended with pool sentinels + promotion. On the training thread, per
+cycle, it only freezes the live weights (`model.save`), picks the sentinels, spawns the
+workers, and — at collect — does one cheap `opponent_default_stats` IPC. Everything else
+(battles, sentinel model loads, inference) runs in the worker processes.
+
+  1. **Launch** (trigger step): `model.save` the live weights to disk and spawn
+     `--eval-workers` `main.eval_worker` subprocesses that **work-steal** BOTH the bot
+     roster AND up to 5 pool sentinels from one shared pool. Training continues immediately.
+  2. **Collect** (a later poll, when all workers finish): merge per-opponent +
+     per-sentinel results → ``win_rate_vs_bots`` / ``win_rate_vs_pool`` /
+     ``sentinel_monotonicity``; record to TensorBoard + the TUI + metadata.json; then
+       - persist ``win_rate_vs_bots`` (feeds ``heuristic_fraction`` next run),
+       - save best model (copy the frozen snapshot),
+       - **promote** the FROZEN snapshot into the pool if ``win_rate_vs_pool`` clears the
+         threshold (the live model has advanced since launch — promoting it would capture
+         the wrong weights).
+  3. **Drain**: graceful shutdown waits for the in-flight cycle and records it (`drain()`),
+     wired exactly like the bot path.
 
 Emits launcher events on promotion and bot-regression warnings (⚠️).
 """
 
 from __future__ import annotations
 
-import asyncio
 import os
-import threading
-import traceback
-from datetime import datetime
+import shutil
+import subprocess
+import time
 
 from stable_baselines3.common.callbacks import BaseCallback
-from poke_env.ps_client import LocalhostServerConfiguration, AccountConfiguration
+from poke_env.ps_client import LocalhostServerConfiguration
 
-from agents.inference.player import RLPlayer
 from agents.model.snapshot import record_eval_results
-from agents.training.eval_callback import EvalRLPlayer, _EVAL_CONCURRENCY, eval_schedule, eval_games_for, RANDOM_OPPONENT_NAME, bot_mean, build_bot_eval_block
-from agents.training.reward_manager import Gen3RewardManager
-from agents.training.reward_tracker import RewardTrackingMixin
+from agents.training.eval_callback import (
+    _EVAL_SUBPROCESS_CONCURRENCY,
+    RANDOM_OPPONENT_NAME,
+    bot_mean,
+    build_bot_eval_block,
+    eval_opponent_names,
+    eval_schedule,
+    merge_eval_results,
+    persist_eval_snapshot,
+    prune_eval_traces,
+    replay_last_eval_to_tui,
+    spawn_eval_workers,
+    write_eval_manifest,
+)
 from agents.training.snapshot_pool import SnapshotPool, heuristic_fraction
-from main.launcher.ipc import emit, send_metrics
-
-BATTLE_FORMAT = "gen3ou"
+from main.launcher.ipc import emit, send_event, send_metrics
 
 # Regression guard: warn if a bot the agent was beating well drops below this.
 _REGRESSION_WARN_THRESHOLD = 0.60
@@ -58,62 +75,77 @@ def _monotonicity_score(win_rates: list[float]) -> float:
 
 
 class SelfPlayCallback(BaseCallback):
-    """Combined bot + pool eval callback with snapshot promotion.
+    """Non-blocking bot + pool eval callback with snapshot promotion.
 
     Args:
         pool: The SnapshotPool to promote into and eval against.
-        bot_opponents: Pre-constructed list of (name, Player) pairs for bot eval.
-            Should include Heuristic, Staller, Aggressive, SetupSweep (not Random).
-        trainee_teambuilder: Teambuilder for the RL player.
-        opp_teambuilder: Teambuilder for pool opponent players.
-        mappings: Gen3 data mappings (lazy-loaded if None).
-        promote_threshold: win_rate_vs_pool threshold to trigger promotion (default 0.65).
-        best_model_save_path: Optional directory to save best model on aggregate improvement.
+        model_dir: Run directory (snapshot scratch under ``.eval_runs``, forensic traces,
+            metadata.json). None disables eval (nowhere to snapshot/collect).
+        server_config / showdown_port: threaded to the eval workers.
+        use_v2_bots: include the V2 bot roster.
+        best_model_save_path: directory to copy the best frozen snapshot into.
+        promote_threshold: ``win_rate_vs_pool`` threshold to trigger promotion.
+        self_play_temp: sampling temperature for the (stochastic) sentinel opponents —
+            kept equal to the training opponents' ``--self-play-temp`` so eval sentinels
+            behave EXACTLY as in training.
+        n_workers / eval_device / eval_concurrency: subprocess eval-pool knobs.
+        keep_eval_snapshots / keep_eval_trace_steps: forensic retention caps.
+        debug: tiny/fast eval cadence so a short CPU smoke exercises seed → pool eval →
+            promotion (the real schedule's 1M-step floor never fires in a 20k smoke).
     """
+
+    # Wait for in-flight workers on a graceful shutdown (10 min) — long enough for a full
+    # CPU eval; the restart grace window (--restart-grace-minutes, 20 min) covers it.
+    _DRAIN_TIMEOUT_SEC = 600
 
     def __init__(
         self,
         pool: SnapshotPool,
-        bot_opponents: list[tuple[str, object]],
-        trainee_teambuilder,
-        opp_teambuilder,
-        mappings,
-        promote_threshold: float = 0.65,
-        best_model_save_path: str | None = None,
+        *,
         model_dir: str | None = None,
         server_config=LocalhostServerConfiguration,
+        showdown_port: int | None = None,
+        use_v2_bots: bool = False,
+        best_model_save_path: str | None = None,
+        promote_threshold: float = 0.65,
         self_play_temp: float = 1.0,
+        n_workers: int = 3,
+        eval_device: str = "cpu",
+        eval_concurrency: int = _EVAL_SUBPROCESS_CONCURRENCY,
+        keep_eval_snapshots: int = 10,
+        keep_eval_trace_steps: int = 20,
+        resume_eval_metadata: str | None = None,
         debug: bool = False,
         verbose: int = 1,
     ):
         super().__init__(verbose)
-        # Sampling temperature for sentinel opponents — kept equal to the training
-        # opponents' --self-play-temp so eval opponents behave EXACTLY as in training.
-        self._self_play_temp = self_play_temp
-        # In --debug we run a tiny, fast eval cadence so a short CPU smoke
-        # actually exercises seed → pool eval → promotion (the real schedule's
-        # 1M-step floor never fires in a 20k-step smoke). Production is unaffected.
-        self._debug = debug
         self._pool = pool
-        self._bot_opponents = bot_opponents
-        self._trainee_teambuilder = trainee_teambuilder
-        self._opp_teambuilder = opp_teambuilder
-        self._mappings = mappings
-        self._server_config = server_config
-        self._promote_threshold = promote_threshold
-        self.best_model_save_path = best_model_save_path
         self._model_dir = model_dir
+        self._server_config = server_config
+        self._showdown_port = showdown_port
+        self._use_v2_bots = use_v2_bots
+        self.best_model_save_path = best_model_save_path
+        self._promote_threshold = promote_threshold
+        self._self_play_temp = self_play_temp
+        self._n_workers = max(1, n_workers)
+        self._eval_device = eval_device
+        self._eval_concurrency = eval_concurrency
+        self._keep_eval_snapshots = max(0, keep_eval_snapshots)
+        self._keep_eval_trace_steps = max(0, keep_eval_trace_steps)
+        self._resume_eval_metadata = resume_eval_metadata
+        self._debug = debug
 
-        self._rl_player: EvalRLPlayer | None = None
-        self._pool_opp_players: list[RLPlayer] = []
         self._last_eval_step = 0
         self._best_aggregate_win_rate = -1.0
-        # Set by train_rl_agent after signal handlers are wired.
+        # The in-flight eval cycle, or None.
+        self._pending: dict | None = None
+        self._eval_root: str | None = None
+        # Parent-side fatal errors only; worker crashes log-and-continue (bot-path parity).
         self.abort_fn = None
 
-        # Shared state: written by eval thread, read by env factory on next restart.
+        # Shared state: written by collect, read by env factory on next restart.
         self.win_rate_vs_bots: float = pool.load_persisted_win_rate()
-        self._bot_peak: dict[str, float] = {}  # resets each run; TensorBoard has history
+        self._bot_peak: dict[str, float] = {}      # resets each run; TensorBoard has history
         self._regression_active: set[str] = set()  # bots currently in warned state
 
     # ── SB3 lifecycle ──────────────────────────────────────────────────────
@@ -121,44 +153,15 @@ class SelfPlayCallback(BaseCallback):
     def _init_callback(self) -> None:
         if self.best_model_save_path:
             os.makedirs(self.best_model_save_path, exist_ok=True)
-
-        # Seed the pool if it's empty (fresh start or first --self-play run).
-        # Idempotent on subsequent launcher restarts — seed() skips if step-0 exists.
+        if self._model_dir is not None:
+            self._eval_root = os.path.join(self._model_dir, ".eval_runs")
+            os.makedirs(self._eval_root, exist_ok=True)
+        # Seed the pool if it's empty (fresh start). Idempotent across launcher restarts.
         if self._pool.is_empty():
             self._pool.seed(self.model)
-
-        ts = datetime.now().strftime("%H%M%S")
-
-        self._rl_player = EvalRLPlayer(
-            model=self.model,
-            team=self._trainee_teambuilder,
-            battle_format=BATTLE_FORMAT,
-            server_configuration=self._server_config,
-            mappings=self._mappings,
-            account_configuration=AccountConfiguration(f"SPCbEval{ts}", "password"),
-            max_concurrent_battles=_EVAL_CONCURRENCY,
-            stochastic=False,  # eval measures the GREEDY policy → stable win-rate signal
-        )
-
-        # Pre-create 5 pool opponent player slots. Models are swapped at eval time.
-        self._pool_opp_players = [
-            RLPlayer(
-                model=self.model,  # placeholder; swapped before each sentinel eval
-                team=self._opp_teambuilder,
-                battle_format=BATTLE_FORMAT,
-                server_configuration=self._server_config,
-                mappings=self._mappings,
-                account_configuration=AccountConfiguration(f"PoolOpp{i}{ts}", "password"),
-                max_concurrent_battles=_EVAL_CONCURRENCY,
-                # Sentinels act EXACTLY as they do as TRAINING opponents (stochastic, same
-                # temperature, strict), so win_rate_vs_pool measures the policy against the
-                # opponents it actually trains against — mirroring the heuristic bots, which
-                # use one player in both training and eval.
-                stochastic=True,
-                temperature=self._self_play_temp,
-            )
-            for i in range(5)
-        ]
+        # Resumed run: re-publish the last eval so the TUI panel isn't blank until the
+        # next cycle (which can be millions of steps away).
+        replay_last_eval_to_tui(self._model_dir, self._resume_eval_metadata)
 
     def _schedule(self) -> tuple[int, int]:
         if self._debug:
@@ -166,236 +169,296 @@ class SelfPlayCallback(BaseCallback):
         return eval_schedule(self.num_timesteps)
 
     def _on_step(self) -> bool:
+        if self._pending is not None and self._all_done(self._pending):
+            self._collect_pending()
         if self.num_timesteps == 0:
             return True
-        freq, n_games = self._schedule()
+        freq, _ = self._schedule()
         if (self.num_timesteps // freq) > (self._last_eval_step // freq):
             self._last_eval_step = self.num_timesteps
-            thread = threading.Thread(
-                target=self._run_async_eval, args=(n_games,), daemon=True
-            )
-            thread.start()
-            thread.join()
+            if self._pending is not None:
+                print(f"[SELFPLAY EVAL] step {self.num_timesteps:,}: previous eval "
+                      f"(step {self._pending['step']:,}) still running — skipping this cycle")
+            else:
+                self._launch_eval()
         return True
 
-    # ── Eval runner ────────────────────────────────────────────────────────
+    # ── Launch ───────────────────────────────────────────────────────────────
 
-    def _run_async_eval(self, n_games: int) -> None:
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
+    @staticmethod
+    def _all_done(pending: dict) -> bool:
+        return all(w["proc"].poll() is not None for w in pending["procs"])
 
-        def exception_handler(loop, context):
-            msg = context.get("exception", context["message"])
-            print(f"\n[SELFPLAY EVAL FATAL] {msg}")
-            self._abort("selfplay eval fatal")
-
-        loop.set_exception_handler(exception_handler)
-        try:
-            loop.run_until_complete(self._eval_all(n_games))
-        except Exception as e:
-            print(f"\n[SELFPLAY EVAL CRASH] Step {self.num_timesteps}: {e}")
-            traceback.print_exc()
-            self._abort(f"selfplay eval crash at step {self.num_timesteps}")
-        finally:
-            loop.close()
-
-    async def _eval_all(self, n_games: int) -> None:
+    def _launch_eval(self) -> None:
+        if self._eval_root is None:
+            return  # no model_dir → nowhere to snapshot/collect; eval disabled
+        _, n_games = self._schedule()
         step = self.num_timesteps
-        pool_size = len(self._pool)
-        print(
-            f"\n[SELFPLAY EVAL] Step {step:,}: "
-            f"{len(self._bot_opponents)} bots (≤{n_games} games, capped) + "
-            f"{min(pool_size, 5)} pool sentinels × {n_games} games each..."
-        )
+        run_dir = os.path.join(self._eval_root, f"step_{step}")
+        claim_dir = os.path.join(run_dir, "claims")
+        os.makedirs(claim_dir, exist_ok=True)
 
-        win_rates: dict[str, float] = {}
-        reward_means: dict[str, float] = {}
-        ep_lens: dict[str, float] = {}
-        tui_metrics: dict[str, float] = {}
-        eval_start = datetime.now()
+        snapshot_base = os.path.join(run_dir, "snapshot")
+        self.model.save(snapshot_base)  # freeze live weights; SB3 appends .zip
+        snapshot_zip = snapshot_base + ".zip"
 
-        # ── 1. Bot eval ────────────────────────────────────────────────────
-        for name, opponent in self._bot_opponents:
-            games = eval_games_for(name, n_games)
-            wr, mean_reward, ep_len = await self._battle(self._rl_player, opponent, games, name)
-            win_rates[name] = wr
-            reward_means[name] = mean_reward
-            ep_lens[name] = ep_len
-            self.logger.record(f"eval/win_rate_vs_{name}", wr)
-            self.logger.record(f"eval/mean_reward_vs_{name}", mean_reward)
-            self.logger.record(f"eval/mean_ep_len_vs_{name}", ep_len)
-            tui_metrics[f"eval/win_rate_vs_{name}"] = wr
+        bot_names = eval_opponent_names(self._use_v2_bots)
+        sentinel_entries = self._pool.sentinel_entries(n=5)
+        sentinels = [
+            {"label": f"sentinel_{i}", "path": str(e.path), "step": e.step}
+            for i, e in enumerate(sentinel_entries)
+        ]
+        sentinel_labels = [s["label"] for s in sentinels]
 
-        # Compute bot aggregates (exclude Random)
-        self.win_rate_vs_bots = bot_mean(win_rates)
-        mean_reward_vs_bots = bot_mean(reward_means)
-        mean_ep_len_vs_bots = bot_mean(ep_lens)
+        # Record exactly which model produced this cycle's traces (the prober reads this).
+        write_eval_manifest(self._model_dir, step,
+                            opponents=bot_names + sentinel_labels, n_games=n_games)
+        cycle_tag = f"{step // 100 % 10000:04d}"
+        n_items = len(bot_names) + len(sentinels)
+        n_workers = max(1, min(self._n_workers, n_items))
+        base_cfg = {
+            "snapshot": snapshot_zip,
+            "port": self._showdown_port,
+            "model_dir": self._model_dir,
+            "step": step,
+            "n_games": n_games,
+            "opponent_pool": bot_names,        # bots; workers steal from the combined pool
+            "sentinels": sentinels,            # pool snapshots to play (stochastic)
+            "self_play_temp": self._self_play_temp,
+            "claim_dir": claim_dir,
+            "result_dir": run_dir,             # writes result__<item>.json here
+            "concurrency": self._eval_concurrency,
+            "device": self._eval_device,
+            "cycle_tag": cycle_tag,
+        }
+        procs = spawn_eval_workers(run_dir, base_cfg, n_workers)
+
+        self._pending = {
+            "step": step, "bot_names": bot_names, "sentinels": sentinels,
+            "sentinel_entries": sentinel_entries, "procs": procs,
+            "snapshot": snapshot_zip, "run_dir": run_dir,
+        }
+        print(f"[SELFPLAY EVAL] step {step:,}: spawned {n_workers} work-stealing worker(s) on "
+              f"{self._eval_device} ({len(bot_names)} bots + {len(sentinels)} sentinels, "
+              f"conc {self._eval_concurrency}) — non-blocking")
+        send_event(f"🧪 Self-play eval @ {step:,}: started "
+                   f"({len(bot_names)} bots + {len(sentinels)} sentinels, {n_workers} worker(s))")
+
+    # ── Collect ────────────────────────────────────────────────────────────────
+
+    def _collect_pending(self) -> None:
+        pending = self._pending
+        self._pending = None
+        step = pending["step"]
+        run_dir = pending["run_dir"]
+        bot_names = pending["bot_names"]
+        sentinels = pending["sentinels"]
+        sentinel_entries = pending["sentinel_entries"]
+
+        for w in pending["procs"]:
+            w["log"].close()
+        bad_exits = [w for w in pending["procs"] if w["proc"].returncode not in (0, None)]
+
+        all_names = bot_names + [s["label"] for s in sentinels]
+        merged, missing = merge_eval_results(run_dir, all_names)
+
+        if missing:
+            print(f"⚠️ [SELFPLAY EVAL] step {step:,}: missing results for {missing} "
+                  f"(worker crash mid-item?) — see {run_dir}/worker_*.log")
+        for w in bad_exits:
+            print(f"⚠️ [SELFPLAY EVAL] worker exited {w['proc'].returncode}; see {w['log_path']}")
+
+        # Bot-only sub-dicts (sentinels are aggregated separately into win_rate_vs_pool).
+        wr = merged["win_rates"]
+        bot_wr = {n: wr[n] for n in bot_names if n in wr}
+        bot_rew = {n: merged["reward_means"][n] for n in bot_names if n in merged["reward_means"]}
+        bot_ep = {n: merged["ep_lens"][n] for n in bot_names if n in merged["ep_lens"]}
+
+        if not wr:
+            print(f"⚠️ [SELFPLAY EVAL] step {step:,}: no results (all workers failed); skipping record")
+            send_event(f"⚠️ Self-play eval @ {step:,}: failed (no results)")
+            self._cleanup(pending, keep_logs=True)
+            return
+
+        # Sentinel win rates in pool order (skip any whose worker died).
+        kept_sentinels: list[tuple[object, float]] = []  # (entry, win_rate)
+        for s, entry in zip(sentinels, sentinel_entries):
+            v = wr.get(s["label"])
+            if v is not None:
+                kept_sentinels.append((entry, v))
+        sentinel_win_rates = [v for _e, v in kept_sentinels]
+
+        tui: dict[str, float] = {}
+
+        # ── Bot metrics ──
+        for name in bot_names:
+            if name in bot_wr:
+                self.logger.record(f"eval/win_rate_vs_{name}", bot_wr[name])
+                self.logger.record(f"eval/mean_reward_vs_{name}", bot_rew.get(name, 0.0))
+                self.logger.record(f"eval/mean_ep_len_vs_{name}", bot_ep.get(name, 0.0))
+                tui[f"eval/win_rate_vs_{name}"] = bot_wr[name]
+
+        self.win_rate_vs_bots = bot_mean(bot_wr)
+        mean_reward_vs_bots = bot_mean(bot_rew)
+        mean_ep_len_vs_bots = bot_mean(bot_ep)
         self._pool.persist_win_rate(self.win_rate_vs_bots)
-        self._check_bot_regression(win_rates)
+        self._check_bot_regression(bot_wr)
 
-        # ── 2. Pool / sentinel eval ────────────────────────────────────────
-        sentinel_win_rates: list[float] = []
-        sentinels = self._pool.sentinel_entries(n=5)
-
-        for i, entry in enumerate(sentinels):
-            pool_model = self._pool.load_model(entry)
-            self._pool_opp_players[i].model = pool_model
-            opp = self._pool_opp_players[i]
-            label = f"sentinel_{i}"
-            wr, _, _ = await self._battle(self._rl_player, opp, n_games, label)
-            sentinel_win_rates.append(wr)
-            self.logger.record(f"eval/win_rate_vs_{label}", wr)
-            tui_metrics[f"eval/win_rate_vs_{label}"] = wr
+        # ── Pool / sentinel metrics ──
+        for i, v in enumerate(sentinel_win_rates):
+            self.logger.record(f"eval/win_rate_vs_sentinel_{i}", v)
+            tui[f"eval/win_rate_vs_sentinel_{i}"] = v
 
         win_rate_vs_pool = (
-            sum(sentinel_win_rates) / len(sentinel_win_rates)
-            if sentinel_win_rates else 0.0
+            sum(sentinel_win_rates) / len(sentinel_win_rates) if sentinel_win_rates else 0.0
         )
         monotonicity = _monotonicity_score(sentinel_win_rates) if len(sentinel_win_rates) >= 2 else 1.0
         self.logger.record("eval/win_rate_vs_pool", win_rate_vs_pool)
         self.logger.record("eval/sentinel_monotonicity", monotonicity)
-        tui_metrics["eval/win_rate_vs_pool"] = win_rate_vs_pool
-        tui_metrics["eval/sentinel_monotonicity"] = monotonicity
+        tui["eval/win_rate_vs_pool"] = win_rate_vs_pool
+        tui["eval/sentinel_monotonicity"] = monotonicity
 
-        if monotonicity < 0.6 and len(sentinels) >= 3:
+        if monotonicity < 0.6 and len(sentinel_win_rates) >= 3:
             emit(f"⚠️  [SELFPLAY] Cycling signal: sentinel_monotonicity={monotonicity:.2f} "
                  f"at step {step:,} — consider increasing max_snapshots")
 
-        # ── 3. Derived metrics (no extra battles) ──────────────────────────
+        # ── Derived metrics (no extra battles) ──
+        pool_size = len(self._pool)
         sf = 1.0 - heuristic_fraction(self.win_rate_vs_bots)
         self.logger.record("train/selfplay_fraction", sf)
-        self.logger.record("eval/pool_snapshot_count", pool_size)
-        tui_metrics["train/selfplay_fraction"] = sf
-        tui_metrics["eval/pool_snapshot_count"] = float(pool_size)
+        self.logger.record("eval/pool_snapshot_count", float(pool_size))
+        tui["train/selfplay_fraction"] = sf
+        tui["eval/pool_snapshot_count"] = float(pool_size)
 
-        # Overall aggregate (bots only — pool changes over time, bots are stable)
-        bot_aggregate = self.win_rate_vs_bots
-        self.logger.record("eval/win_rate_vs_bots", bot_aggregate)
+        self.logger.record("eval/win_rate_vs_bots", self.win_rate_vs_bots)
         self.logger.record("eval/mean_reward_vs_bots", mean_reward_vs_bots)
         self.logger.record("eval/mean_ep_len_vs_bots", mean_ep_len_vs_bots)
-        tui_metrics["eval/win_rate_vs_bots"] = bot_aggregate
-        tui_metrics["eval/mean_reward_vs_bots"] = mean_reward_vs_bots
-        tui_metrics["eval/mean_ep_len_vs_bots"] = mean_ep_len_vs_bots
+        tui["eval/win_rate_vs_bots"] = self.win_rate_vs_bots
+        tui["eval/mean_reward_vs_bots"] = mean_reward_vs_bots
+        tui["eval/mean_ep_len_vs_bots"] = mean_ep_len_vs_bots
 
-        # "all" aggregate — mean over ALL bots INCLUDING Random, defined exactly as
-        # PerOpponentEvalCallback._record so the TUI "all" row populates identically in
-        # both eval paths. The live push must carry these keys explicitly; without them
-        # the TUI's eval_summary.get() returns None and "all" renders as "—" (the
-        # metadata.json latest_eval block already carries win_rate_mean via
-        # build_bot_eval_block, but the live send_metrics push did not).
-        win_rate_mean = sum(win_rates.values()) / len(win_rates) if win_rates else 0.0
-        mean_reward_mean = sum(reward_means.values()) / len(reward_means) if reward_means else 0.0
+        # "all" aggregate — mean over ALL bots INCLUDING Random (matches
+        # PerOpponentEvalCallback._record so the TUI "all" row populates identically).
+        win_rate_mean = sum(bot_wr.values()) / len(bot_wr) if bot_wr else 0.0
+        mean_reward_mean = sum(bot_rew.values()) / len(bot_rew) if bot_rew else 0.0
         self.logger.record("eval/win_rate_mean", win_rate_mean)
         self.logger.record("eval/mean_reward_mean", mean_reward_mean)
-        tui_metrics["eval/win_rate_mean"] = win_rate_mean
-        tui_metrics["eval/mean_reward_mean"] = mean_reward_mean
-        eval_duration_sec = (datetime.now() - eval_start).total_seconds()
-        self.logger.record("eval/duration_sec", eval_duration_sec)
+        tui["eval/win_rate_mean"] = win_rate_mean
+        tui["eval/mean_reward_mean"] = mean_reward_mean
 
-        # Opponent default-rate telemetry: how often self-play TRAINING opponents defer to
-        # a default move — no-decision polls (benign) plus the async-race StaleDecision
-        # subset (the rate that decides whether a yield-and-retry is worth building). Only
-        # self-play workers have RLPlayer opponents; heuristic workers report zeros. Safe to
-        # query here: the training loop is paused at thread.join() for the duration of eval.
-        try:
-            _ostats = self.training_env.env_method("opponent_default_stats")
-            _dec = sum(s[0] for s in _ostats)
-            _deft = sum(s[1] for s in _ostats)
-            _redec = sum(s[2] for s in _ostats)
-            if _dec > 0:
-                self.logger.record("train/selfplay_opp_default_rate", _deft / _dec)
-                self.logger.record("train/selfplay_opp_redecide_rate", _redec / _dec)
-                self.logger.record("train/selfplay_opp_decisions", float(_dec))
-                tui_metrics["train/selfplay_opp_redecide_rate"] = _redec / _dec
-        except Exception as _e:
-            print(f"[SELFPLAY] opponent default-stat query failed (non-fatal): {_e}")
+        total_dur = sum(merged["durations_sec"].values())
+        self.logger.record("eval/duration_sec", total_dur)
+        tui["eval/duration_sec"] = total_dur
+
+        # Opponent default-rate telemetry — queried on THIS (training) thread; safe because
+        # env_method is an IPC round-trip to the SubprocVecEnv we own. Self-play workers
+        # report real numbers; heuristic workers report zeros.
+        self._record_opponent_default_stats(tui)
 
         self.logger.dump(step)
+        tui["_step"] = step
+        send_metrics(tui)
 
-        tui_metrics["eval/duration_sec"] = eval_duration_sec
-        tui_metrics["_step"] = step
-        send_metrics(tui_metrics)
+        print(f"[SELFPLAY EVAL] step {step:,}: Bots {self.win_rate_vs_bots * 100:.1f}%  "
+              f"Pool {win_rate_vs_pool * 100:.1f}%  Monotonicity {monotonicity:.2f}  "
+              f"SelfPlay {sf * 100:.0f}%  [{total_dur:.0f}s]")
+        send_event(f"🧪 Self-play eval @ {step:,}: bots {self.win_rate_vs_bots * 100:.1f}%, "
+                   f"pool {win_rate_vs_pool * 100:.1f}%")
 
-        print(
-            f"[SELFPLAY EVAL] Bots: {bot_aggregate * 100:.1f}%  "
-            f"Pool: {win_rate_vs_pool * 100:.1f}%  "
-            f"Monotonicity: {monotonicity:.2f}  "
-            f"SelfPlay fraction: {sf * 100:.0f}%  "
-            f"[took {eval_duration_sec:.0f}s]"
-        )
-
-        # ── 4. Persist eval metrics to metadata.json ───────────────────────
+        # ── Persist eval metrics to metadata.json (bot block + pool block) ──
         if self._model_dir:
-            block = build_bot_eval_block(win_rates, reward_means, ep_lens)
+            block = build_bot_eval_block(bot_wr, bot_rew, bot_ep)
             block["pool"] = {
                 "win_rate": win_rate_vs_pool,
                 "monotonicity": round(monotonicity, 3),
                 "sentinels": [
                     {
                         "step": entry.step,
-                        "win_rate": round(sentinel_win_rates[i], 4),
+                        "win_rate": round(v, 4),
                         "weight": round(self._pool.entry_weight(entry), 3),
                         "snapshot": entry.path.name,
                     }
-                    for i, entry in enumerate(sentinels)
+                    for entry, v in kept_sentinels
                 ],
             }
-            block["opponents"] = block.pop("opponents")
             record_eval_results(self._model_dir, step, block)
 
-        # ── 5. Best model save ─────────────────────────────────────────────
-        if bot_aggregate > self._best_aggregate_win_rate:
-            self._best_aggregate_win_rate = bot_aggregate
-            if self.best_model_save_path:
-                self.model.save(os.path.join(self.best_model_save_path, "best_model"))
-                print(f"[SELFPLAY EVAL] New best ({bot_aggregate * 100:.1f}%) saved.")
+        # ── Best model (copy the frozen snapshot) — based on bot win rate (excl. Random) ──
+        self._maybe_save_best(step, pending, self.win_rate_vs_bots)
 
-        # ── 5. Promotion decision ──────────────────────────────────────────
+        # ── Promotion — promote the FROZEN snapshot (the live model has since advanced) ──
         if win_rate_vs_pool > self._promote_threshold:
-            self._pool.add(self.model, step=step)
+            self._pool.add_from_path(pending["snapshot"], step)
             self.logger.record("train/selfplay_promoted_steps", float(step))
 
-    async def _battle(
-        self,
-        trainee: EvalRLPlayer,
-        opponent,
-        n_games: int,
-        label: str,
-    ) -> tuple[float, float, float]:
-        """Run n_games, reset both players, return (win_rate, mean_reward, mean_ep_len)."""
-        if trainee.n_finished_battles > 0:
-            trainee.reset_battles()
-        if opponent.n_finished_battles > 0:
-            opponent.reset_battles()
+        # Retain the bit-exact snapshot for the prober, groom traces, then drop the scratch.
+        persist_eval_snapshot(self._model_dir, step, pending["snapshot"], self._keep_eval_snapshots)
+        prune_eval_traces(self._model_dir, self._keep_eval_trace_steps)
+        self._cleanup(pending, keep_logs=bool(missing or bad_exits))
 
-        start = datetime.now()
-        await trainee.battle_against(opponent, n_battles=n_games)
-        duration = datetime.now() - start
+    def _record_opponent_default_stats(self, tui: dict) -> None:
+        """Query the live training envs' self-play opponent default/redecide counters."""
+        try:
+            ostats = self.training_env.env_method("opponent_default_stats")
+            dec = sum(s[0] for s in ostats)
+            deft = sum(s[1] for s in ostats)
+            redec = sum(s[2] for s in ostats)
+            if dec > 0:
+                self.logger.record("train/selfplay_opp_default_rate", deft / dec)
+                self.logger.record("train/selfplay_opp_redecide_rate", redec / dec)
+                self.logger.record("train/selfplay_opp_decisions", float(dec))
+                tui["train/selfplay_opp_redecide_rate"] = redec / dec
+        except Exception as e:  # noqa: BLE001 — telemetry must never break eval
+            print(f"[SELFPLAY] opponent default-stat query failed (non-fatal): {e}")
 
-        won = trainee.n_won_battles
-        finished = trainee.n_finished_battles
-        wr = won / finished if finished > 0 else 0.0
-        mean_reward = trainee.mean_episode_reward if hasattr(trainee, "mean_episode_reward") else 0.0
+    def _maybe_save_best(self, step: int, pending: dict, aggregate: float) -> None:
+        if aggregate <= self._best_aggregate_win_rate:
+            return
+        self._best_aggregate_win_rate = aggregate
+        if self.best_model_save_path is not None:
+            # The frozen snapshot IS the evaluated model — copy it rather than re-saving
+            # the (now-advanced) live model.
+            dst = os.path.join(self.best_model_save_path, "best_model.zip")
+            shutil.copy2(pending["snapshot"], dst)
+            print(f"[SELFPLAY EVAL] new best ({aggregate * 100:.1f}%) saved to {dst}")
 
-        ep_len = self._mean_episode_length(trainee)
-        print(
-            f"  vs {label}: {wr * 100:.1f}%  ({won}/{finished})  "
-            f"ep_len={ep_len:.1f}  reward={mean_reward:.3f}  [{duration}]"
-        )
-        if hasattr(trainee, "reset_reward_tracking"):
-            trainee.reset_reward_tracking()
-        return wr, mean_reward, ep_len
+    def _cleanup(self, pending: dict, keep_logs: bool) -> None:
+        # Drop the (large) transient run-dir snapshot; persist_eval_snapshot has already
+        # copied it into eval_traces/ when retention is on. Keep the run dir only if a
+        # worker failed, so its log survives for debugging.
+        try:
+            if os.path.exists(pending["snapshot"]):
+                os.remove(pending["snapshot"])
+        except OSError:
+            pass
+        if not keep_logs:
+            shutil.rmtree(pending["run_dir"], ignore_errors=True)
 
-    def _abort(self, reason: str) -> None:
-        """Delegate to the canonical abort path if wired; fall back to hard exit."""
-        if self.abort_fn is not None:
-            self.abort_fn(reason)
-        else:
-            os._exit(1)
+    # ── Graceful shutdown ──────────────────────────────────────────────────────
 
-    def _mean_episode_length(self, player) -> float:
-        battles = [b for b in player._battles.values() if b.finished]
-        return sum(b.turn for b in battles) / len(battles) if battles else 0.0
+    def _on_training_end(self) -> None:
+        self.drain()
+
+    def drain(self, timeout: float | None = None) -> None:
+        """Block (up to `timeout` TOTAL seconds) for the in-flight eval cycle, then record it.
+
+        Called on graceful shutdown so an eval in flight is never orphaned. Idempotent
+        (no-op if nothing pending). `timeout` is a total budget across all workers.
+        """
+        if self._pending is None:
+            return
+        budget = self._DRAIN_TIMEOUT_SEC if timeout is None else timeout
+        deadline = time.monotonic() + budget
+        print(f"[SELFPLAY EVAL] graceful shutdown — waiting up to {budget:.0f}s for eval worker(s)...")
+        for w in self._pending["procs"]:
+            remaining = max(0.0, deadline - time.monotonic())
+            try:
+                w["proc"].wait(timeout=remaining)
+            except subprocess.TimeoutExpired:
+                w["proc"].kill()
+        self._collect_pending()
+
+    # ── Bot regression guard ─────────────────────────────────────────────────
 
     def _check_bot_regression(self, win_rates: dict[str, float]) -> None:
         for name in (k for k in win_rates if k != RANDOM_OPPONENT_NAME):

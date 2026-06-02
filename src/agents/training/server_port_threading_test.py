@@ -21,6 +21,7 @@ from agents.training.eval_callback import (
     PerOpponentEvalCallback, build_eval_opponents, build_eval_players,
 )
 from agents.training.selfplay_callback import SelfPlayCallback
+from main.eval_worker import _eval_sentinel
 
 
 def test_single_constructor_overrides_port():
@@ -41,45 +42,30 @@ def test_callback_accepts_server_config_param(cls):
     )
 
 
-def _player_creation_sources(cls):
-    """Source of every method on cls that passes server_configuration= to a player."""
-    out = []
-    for name, fn in inspect.getmembers(cls, predicate=inspect.isfunction):
-        try:
-            src = inspect.getsource(fn)
-        except (OSError, TypeError):
-            continue
-        if "server_configuration=" in src:
-            out.append((name, src))
-    return out
+def test_callback_has_no_in_process_player_creation():
+    """Both eval callbacks now delegate ALL player creation to the eval subprocess
+    (frozen-snapshot, non-blocking) — neither constructs players in-process anymore.
+
+    This guards the new contract: if a future change re-adds an in-process
+    ``server_configuration=`` player on a callback, it would dodge the subprocess design
+    (and the work-stealing/port threading below) — fail loudly so it's reconsidered."""
+    for cls in (PerOpponentEvalCallback, SelfPlayCallback):
+        for name, fn in inspect.getmembers(cls, predicate=inspect.isfunction):
+            try:
+                src = inspect.getsource(fn)
+            except (OSError, TypeError):
+                continue
+            assert "server_configuration=" not in src, (
+                f"{cls.__name__}.{name} creates a player in-process; eval now runs in the "
+                f"subprocess worker (eval_worker) — route player creation there instead"
+            )
 
 
-# SelfPlayCallback still builds players in-process, so its player-creating methods
-# must thread the stored config. (PerOpponentEvalCallback no longer creates players —
-# the eval subprocess does, via the builder functions guarded below.)
-@pytest.mark.parametrize("cls, store_attr", [
-    (SelfPlayCallback, "self._server_config"),
-])
-def test_player_creation_uses_stored_config_not_hardcoded_port(cls, store_attr):
-    """Any method that creates a player must pass the STORED config, never a bare
-    LocalhostServerConfiguration (the :8000 hardcode that caused the replay bug)."""
-    creators = _player_creation_sources(cls)
-    assert creators, f"{cls.__name__}: no player-creation method found (test stale?)"
-    for name, src in creators:
-        assert "server_configuration=LocalhostServerConfiguration" not in src, (
-            f"{cls.__name__}.{name} hardcodes LocalhostServerConfiguration (:8000) "
-            f"instead of threading {store_attr} — won't respect --showdown-port"
-        )
-        assert store_attr in src, (
-            f"{cls.__name__}.{name} passes server_configuration= but not from "
-            f"{store_attr}; it must thread the configured port"
-        )
-
-
-# The subprocess eval path builds players via these module functions, which take the
-# server_config as a parameter and must thread it (the worker rebuilds it from the
-# --showdown-port the trainer passes). Same anti-:8000-hardcode guard, function form.
-@pytest.mark.parametrize("fn", [build_eval_opponents, build_eval_players])
+# The subprocess eval path builds players via these functions (build_eval_* for bots,
+# _eval_sentinel for pool sentinels), which take server_config as a parameter and must
+# thread it (the worker rebuilds it from the --showdown-port the trainer passes). Same
+# anti-:8000-hardcode guard, function form.
+@pytest.mark.parametrize("fn", [build_eval_opponents, build_eval_players, _eval_sentinel])
 def test_eval_builders_thread_server_config_param(fn):
     sig = inspect.signature(fn)
     assert "server_config" in sig.parameters, (

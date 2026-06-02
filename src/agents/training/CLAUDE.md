@@ -69,6 +69,29 @@ training opponents become frozen snapshots of the agent itself, drawn from a dir
 `SnapshotPool` (`snapshot_pool.py`; state reconstructed from `<run_dir>/snapshots/` on every
 restart — no manifest). Design lives in `designs/ai_v5/`. Key behaviors:
 
+- **Eval + promotion are NON-BLOCKING (frozen-snapshot subprocess), mirroring
+  `PerOpponentEvalCallback`.** Self-play eval no longer runs in-process on the training thread.
+  On a trigger step `SelfPlayCallback` freezes the live weights to disk (`model.save`) and
+  spawns `--eval-workers` `main.eval_worker` subprocesses that **work-steal BOTH the bot roster
+  AND up to 5 pool sentinels** from one shared pool (the worker's `_eval_sentinel` plays the
+  frozen trainee greedy vs each sentinel stochastic); training continues immediately. On a later
+  `_on_step` poll the parent merges per-opponent + per-sentinel results → `win_rate_vs_bots` /
+  `win_rate_vs_pool` / `sentinel_monotonicity`, records to TensorBoard + the TUI + metadata.json
+  (with the `pool` block), persists `win_rate_vs_bots` (feeds `heuristic_fraction` next run),
+  saves best by **copying** the frozen snapshot, and — if `win_rate_vs_pool > --promote-threshold`
+  — **promotes the FROZEN snapshot into the pool by file-copy** (`SnapshotPool.add_from_path`):
+  the live model has advanced since launch, so re-saving `self.model` would promote the wrong
+  weights. Sentinels load via `load_model_snapshot` against the pool's shared `model_config.json`
+  using `current_model_version(mappings)` — a stale-arch snapshot fails with `ModelVersionError`,
+  never loads silently. The **only** training-thread work per cycle is the `model.save` freeze +
+  one cheap `opponent_default_stats` IPC at collect; all battles / model loads / inference run in
+  the worker processes, and the trainer holds no live eval connections (the worker rebuilds
+  opponents/teambuilders/mappings itself). Skip-while-running, worker-crash-logged-and-continued,
+  graceful-shutdown `drain()`, and resume-republish all behave exactly as the bot path above. The
+  launch→poll→collect→drain mechanics are the **shared** `eval_callback.spawn_eval_workers` /
+  `merge_eval_results` / `persist_eval_snapshot` / `prune_eval_*` / `replay_last_eval_to_tui`
+  helpers, so the two non-blocking paths can't drift. `--debug --self-play` uses a fast eval
+  cadence (every 4k steps, 3 games) so a short CPU smoke exercises seed → pool eval → promotion.
 - **Opponents sample, they don't argmax.** Training opponents are built with `stochastic=True`
   (now the `RLPlayer` default) so the learner trains against the policy's full action
   distribution — a richer, less-exploitable signal than the greedy move. Temperature is

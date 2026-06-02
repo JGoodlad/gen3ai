@@ -14,11 +14,17 @@ parallel with training — the worker reads a static copy, not the mutating mode
 Config JSON keys: snapshot, port, model_dir, step, n_games, opponent_pool,
 claim_dir, result_dir, concurrency, device, worker_id, cycle_tag.
 
-Work stealing: all workers share `opponent_pool` + `claim_dir`; each repeatedly
-claims the next unclaimed opponent (atomic O_EXCL lock) and writes its result to
-`result_dir/result__<opponent>.json`, until the pool is exhausted. A worker that
-finishes a cheap opponent immediately grabs the next, so uneven per-opponent cost
-self-balances across the (default 3) workers.
+Optional self-play keys (absent → pure bot eval, byte-identical to before):
+  sentinels      — [{label, path, step}] pool snapshots to play as opponents
+  self_play_temp — sampling temperature for the (stochastic) sentinel opponents
+
+Work stealing: all workers share the claim universe (bot names + sentinel labels)
++ `claim_dir`; each repeatedly claims the next unclaimed item (atomic O_EXCL lock)
+and writes its result to `result_dir/result__<item>.json`, until the pool is
+exhausted. A worker that finishes a cheap item immediately grabs the next, so uneven
+per-item cost self-balances across the (default 3) workers. Bot items run the bot
+roster path; sentinel items play the frozen trainee (greedy) vs the pool snapshot
+(stochastic, version-checked on load).
 """
 import os
 
@@ -33,12 +39,15 @@ import asyncio
 import traceback
 
 from sb3_contrib import MaskablePPO
-from poke_env.ps_client import LocalhostServerConfiguration
+from poke_env.ps_client import LocalhostServerConfiguration, AccountConfiguration
 from poke_env.ps_client.server_configuration import localhost_server_configuration
 
+from agents.inference.player import RLPlayer
+from agents.model.snapshot import current_model_version, load_model_snapshot
 from agents.observation.state_encoder import load_mappings
 from agents.training.eval_callback import (
-    build_eval_opponents, build_eval_players, run_eval, claim_next_opponent,
+    BATTLE_FORMAT, EvalRLPlayer, build_eval_opponents, build_eval_players,
+    eval_one_matchup, run_eval, claim_next_opponent,
 )
 from utils.team_loader import TeamLoader
 from utils.teambuilder import Gen3Teambuilder
@@ -57,12 +66,25 @@ def _run(cfg: dict) -> None:
 
     port = cfg.get("port")
     server_config = localhost_server_configuration(port) if port else LocalhostServerConfiguration
+    concurrency = cfg["concurrency"]
+    device = cfg.get("device", "cpu")
+    n_games = cfg["n_games"]
+    model_dir = cfg.get("model_dir")
+    step = cfg["step"]
 
-    # Frozen weights — inference only, so the base algorithm + env=None is enough
+    # Frozen trainee weights — inference only, so the base algorithm + env=None is enough
     # (the policy class and its extractor kwargs are restored from the zip).
-    model = MaskablePPO.load(cfg["snapshot"], env=None, device=cfg.get("device", "cpu"))
+    model = MaskablePPO.load(cfg["snapshot"], env=None, device=device)
 
-    pool = cfg["opponent_pool"]
+    bot_names = cfg["opponent_pool"]
+    sentinels = cfg.get("sentinels") or []
+    sentinel_by_label = {s["label"]: s for s in sentinels}
+    self_play_temp = cfg.get("self_play_temp", 1.0)
+    # One combined work-steal universe: bot names + sentinel labels.
+    claim_universe = list(bot_names) + [s["label"] for s in sentinels]
+    # Build the CURRENT-code version once, only when there are sentinels to version-check.
+    current_version = current_model_version(mappings) if sentinels else None
+
     claim_dir = cfg["claim_dir"]
     result_dir = cfg["result_dir"]
     wid = cfg["worker_id"]
@@ -70,33 +92,79 @@ def _run(cfg: dict) -> None:
 
     claim_seq = 0
     while True:
-        name = claim_next_opponent(claim_dir, pool)
+        name = claim_next_opponent(claim_dir, claim_universe)
         if name is None:
-            break  # every opponent claimed by some worker → this one is done
+            break  # every item claimed by some worker → this one is done
         # Unique account suffix per (cycle, worker, claim) so the lingering
         # connection from a prior claim can't collide on the shared server.
         tag = f"{cycle_tag}{wid}{claim_seq}"
         claim_seq += 1
-        opponents = build_eval_opponents(server_config, opp_tb, [name], tag)
-        players = build_eval_players(
-            model, [name], trainee_tb, mappings, server_config, cfg["concurrency"], tag,
-        )
-        m = asyncio.run(run_eval(
-            players, opponents, cfg["n_games"], cfg.get("model_dir"), cfg["step"],
-        ))
-        result = {
-            "win_rate": m["win_rates"][name],
-            "reward_mean": m["reward_means"][name],
-            "ep_len": m["ep_lens"][name],
-            "duration_sec": m["durations_sec"][name],
-            "worker_id": wid,
-        }
+
+        if name in sentinel_by_label:
+            result = _eval_sentinel(
+                model, sentinel_by_label[name], current_version, trainee_tb, opp_tb,
+                mappings, server_config, concurrency, device, self_play_temp,
+                n_games, model_dir, step, tag,
+            )
+        else:
+            opponents = build_eval_opponents(server_config, opp_tb, [name], tag)
+            players = build_eval_players(
+                model, [name], trainee_tb, mappings, server_config, concurrency, tag,
+            )
+            m = asyncio.run(run_eval(players, opponents, n_games, model_dir, step))
+            result = {
+                "win_rate": m["win_rates"][name],
+                "reward_mean": m["reward_means"][name],
+                "ep_len": m["ep_lens"][name],
+                "duration_sec": m["durations_sec"][name],
+            }
+        result["worker_id"] = wid
         # Write atomically (tmp + rename) so the parent never reads a half-written file.
         out = os.path.join(result_dir, f"result__{name}.json")
         tmp = out + ".tmp"
         with open(tmp, "w") as f:
             json.dump(result, f)
         os.replace(tmp, out)
+
+
+def _eval_sentinel(model, spec, current_version, trainee_tb, opp_tb, mappings,
+                   server_config, concurrency, device, temperature,
+                   n_games, model_dir, step, tag) -> dict:
+    """Play the frozen trainee (greedy) vs one pool sentinel (stochastic) — one matchup.
+
+    The sentinel is loaded via ``load_model_snapshot`` against the pool's shared
+    ``model_config.json`` (a stale-arch snapshot fails with ``ModelVersionError`` rather
+    than loading mismatched weights). The trainee is an ``EvalRLPlayer`` so it tracks
+    reward + writes forensic traces, exactly like a bot matchup; the sentinel acts as it
+    does as a TRAINING opponent (stochastic at ``temperature``). Sentinels use the
+    scheduled ``n_games`` directly (not the bot per-opponent cap).
+    """
+    label = spec["label"]
+    sentinel_model = load_model_snapshot(
+        spec["path"], env=None, current_version=current_version, device=device,
+    )
+    trainee = EvalRLPlayer(
+        model=model, team=trainee_tb, battle_format=BATTLE_FORMAT,
+        server_configuration=server_config, mappings=mappings,
+        account_configuration=AccountConfiguration(f"SPtr{tag}", "password"),
+        max_concurrent_battles=concurrency,
+        stochastic=False,  # eval measures the GREEDY policy → stable win-rate signal
+    )
+    opponent = RLPlayer(
+        model=sentinel_model, team=opp_tb, battle_format=BATTLE_FORMAT,
+        server_configuration=server_config, mappings=mappings,
+        account_configuration=AccountConfiguration(f"SPse{tag}", "password"),
+        max_concurrent_battles=concurrency,
+        stochastic=True, temperature=temperature,
+    )
+    m = asyncio.run(eval_one_matchup(trainee, opponent, n_games, model_dir, step, label))
+    return {
+        "win_rate": m["win_rate"],
+        "reward_mean": m["reward_mean"],
+        "ep_len": m["ep_len"],
+        "duration_sec": m["duration_sec"],
+        "sentinel_step": spec.get("step"),
+    }
 
 
 def main() -> int:

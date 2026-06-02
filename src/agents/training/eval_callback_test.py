@@ -70,6 +70,64 @@ def test_per_opponent_concurrency_zero_falls_back():
     assert _per_opponent_concurrency(0) == _EVAL_CONCURRENCY
 
 
+# ── eval_one_matchup (shared single-matchup body) ─────────────────────────────
+
+def test_eval_one_matchup_returns_metrics_and_arms_forensics(tmp_path):
+    """Pins the contract the self-play worker relies on for sentinel matchups."""
+    import asyncio
+    from agents.training import eval_callback as ec
+
+    class _FakeBattle:
+        def __init__(self, finished, turn):
+            self.finished = finished
+            self.turn = turn
+
+    class _FakeTrainee:
+        def __init__(self):
+            self.n_finished_battles = 2          # nonzero → exercises reset_battles()
+            self.n_won_battles = 0
+            self.mean_episode_reward = 0.0
+            self._battles = {}
+            self.reset_battles_called = False
+            self.reset_reward_called = False
+            self.forensic = None
+
+        def reset_battles(self):
+            self.reset_battles_called = True
+
+        def reset_reward_tracking(self):
+            self.reset_reward_called = True
+
+        def begin_forensic_cycle(self, d, step):
+            self.forensic = (d, step)
+
+        async def battle_against(self, opp, n_battles):
+            self.n_finished_battles = n_battles
+            self.n_won_battles = 3
+            self.mean_episode_reward = 1.5
+            self._battles = {f"b{i}": _FakeBattle(True, 10) for i in range(n_battles)}
+
+    class _FakeOpp:
+        n_finished_battles = 0
+        def reset_battles(self):
+            pass
+
+    tr = _FakeTrainee()
+    m = asyncio.run(ec.eval_one_matchup(tr, _FakeOpp(), n_games=4,
+                                        model_dir=str(tmp_path), step=100, name="sentinel_0"))
+    assert m == {
+        "name": "sentinel_0",
+        "win_rate": pytest.approx(3 / 4),
+        "reward_mean": pytest.approx(1.5),
+        "ep_len": pytest.approx(10.0),
+        "duration_sec": m["duration_sec"],  # wall-clock, just assert presence
+    }
+    assert tr.reset_battles_called and tr.reset_reward_called
+    assert tr.forensic == (
+        os.path.join(str(tmp_path), "eval_traces", "step_100", "sentinel_0"), 100,
+    )
+
+
 def _make_callback(best_model_save_path=None, model_dir=None):
     cb = PerOpponentEvalCallback(
         model_dir=model_dir,

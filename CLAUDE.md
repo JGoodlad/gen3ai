@@ -252,8 +252,11 @@ Checkpoints are saved automatically. Models land in `models/run_<timestamp>/`.
 Bot eval runs in **frozen-snapshot subprocesses** (`--eval-workers`, default 3) that work-steal
 opponents from a shared pool and play the live server **without pausing training**; results
 merge into TensorBoard + TUI + best-model and land in `metadata.json` as a top-level
-`latest_eval` block. The full design (work-stealing, graceful-shutdown drain, resume
-re-publish, `--eval-workers` / `--eval-device`) is in `src/agents/training/CLAUDE.md`.
+`latest_eval` block. **`--self-play` eval shares this exact non-blocking pipeline** — the
+workers additionally work-steal the pool sentinels, and a winning cycle promotes its frozen
+snapshot into the pool by file-copy (`SnapshotPool.add_from_path`). The full design
+(work-stealing, graceful-shutdown drain, resume re-publish, sentinels + promotion,
+`--eval-workers` / `--eval-device`) is in `src/agents/training/CLAUDE.md`.
 
 ---
 

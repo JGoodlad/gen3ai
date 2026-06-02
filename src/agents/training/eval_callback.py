@@ -242,6 +242,47 @@ def _mean_episode_length(player) -> float:
     return sum(b.turn for b in battles) / len(battles)
 
 
+async def eval_one_matchup(trainee, opponent, n_games, model_dir, step, name) -> dict:
+    """Run ONE trainee-vs-opponent matchup; return its metrics + write forensic traces.
+
+    The shared per-matchup body behind both the bot-roster gather (`run_eval`) and the
+    self-play eval worker's per-sentinel matchups. `n_games` is the already-resolved game
+    count for THIS matchup — the caller applies `eval_games_for` for capped bot opponents,
+    and passes the scheduled count straight through for sentinels.
+
+    `trainee` is an `EvalRLPlayer` (reward tracking + forensic capture); `opponent` is any
+    poke-env Player. Pure compute + disk (traces) — safe inside the eval worker process.
+    Returns {name, win_rate, reward_mean, ep_len, duration_sec}.
+    """
+    if trainee.n_finished_battles > 0:
+        trainee.reset_battles()
+    if opponent.n_finished_battles > 0:
+        opponent.reset_battles()
+    trainee.reset_reward_tracking()
+    forensic_dir = (
+        os.path.join(model_dir, "eval_traces", f"step_{step}", name)
+        if model_dir else None
+    )
+    trainee.begin_forensic_cycle(forensic_dir, step)
+
+    start = datetime.now()
+    await trainee.battle_against(opponent, n_battles=n_games)
+    dur = (datetime.now() - start).total_seconds()
+
+    won = trainee.n_won_battles
+    finished = trainee.n_finished_battles
+    win_rate = won / finished if finished > 0 else 0.0
+    print(f"  vs {name}: {win_rate * 100:.1f}%  ({won}/{finished})  "
+          f"ep_len={_mean_episode_length(trainee):.1f}  reward={trainee.mean_episode_reward:.3f}  [{dur:.0f}s]")
+    return {
+        "name": name,
+        "win_rate": win_rate,
+        "reward_mean": trainee.mean_episode_reward,
+        "ep_len": _mean_episode_length(trainee),
+        "duration_sec": dur,
+    }
+
+
 async def run_eval(players, opponents, n_games, model_dir, step) -> dict:
     """Run the per-opponent eval gather and return raw metrics (no logging sinks).
 
@@ -251,37 +292,172 @@ async def run_eval(players, opponents, n_games, model_dir, step) -> dict:
     Pure compute + disk (traces) — safe to call from the eval worker process.
     """
     async def eval_one(name, opponent):
-        rl = players[name]
         games = eval_games_for(name, n_games)
-        if rl.n_finished_battles > 0:
-            rl.reset_battles()
-        if opponent.n_finished_battles > 0:
-            opponent.reset_battles()
-        rl.reset_reward_tracking()
-        forensic_dir = (
-            os.path.join(model_dir, "eval_traces", f"step_{step}", name)
-            if model_dir else None
-        )
-        rl.begin_forensic_cycle(forensic_dir, step)
-
-        start = datetime.now()
-        await rl.battle_against(opponent, n_battles=games)
-        dur = (datetime.now() - start).total_seconds()
-
-        won = rl.n_won_battles
-        finished = rl.n_finished_battles
-        win_rate = won / finished if finished > 0 else 0.0
-        print(f"  vs {name}: {win_rate * 100:.1f}%  ({won}/{finished})  "
-              f"ep_len={_mean_episode_length(rl):.1f}  reward={rl.mean_episode_reward:.3f}  [{dur:.0f}s]")
-        return name, win_rate, rl.mean_episode_reward, _mean_episode_length(rl), dur
+        return await eval_one_matchup(players[name], opponent, games, model_dir, step, name)
 
     results = await asyncio.gather(*(eval_one(n, o) for n, o in opponents))
     return {
-        "win_rates": {n: wr for n, wr, _, _, _ in results},
-        "reward_means": {n: mr for n, _, mr, _, _ in results},
-        "ep_lens": {n: el for n, _, _, el, _ in results},
-        "durations_sec": {n: d for n, _, _, _, d in results},
+        "win_rates": {m["name"]: m["win_rate"] for m in results},
+        "reward_means": {m["name"]: m["reward_mean"] for m in results},
+        "ep_lens": {m["name"]: m["ep_len"] for m in results},
+        "durations_sec": {m["name"]: m["duration_sec"] for m in results},
     }
+
+
+# ── Shared subprocess-eval mechanics (used by BOTH eval callbacks) ─────────────
+# These keep the bot-eval and self-play-eval cycles spawning / merging / grooming
+# identically, so the two non-blocking paths can't drift.
+
+def spawn_eval_workers(run_dir: str, base_cfg: dict, n_workers: int) -> list[dict]:
+    """Write one config_<wid>.json per worker and Popen ``python -m main.eval_worker`` on it.
+
+    ``base_cfg`` carries everything common to the workers (snapshot, port, opponent pool,
+    claim/result dirs, concurrency, device, cycle_tag, and — for self-play — the sentinel
+    specs); this only adds ``worker_id``. The launcher's metrics pipe FD is stripped from
+    the child env (only the parent publishes to the TUI; that FD number is invalid in the
+    child). Returns a list of ``{proc, log, log_path}``.
+    """
+    worker_env = {k: v for k, v in os.environ.items() if k != "LAUNCHER_METRICS_FD"}
+    procs = []
+    for wid in range(n_workers):
+        cfg = {**base_cfg, "worker_id": wid}
+        cfg_path = os.path.join(run_dir, f"config_{wid}.json")
+        with open(cfg_path, "w") as f:
+            json.dump(cfg, f)
+        log_path = os.path.join(run_dir, f"worker_{wid}.log")
+        logf = open(log_path, "w")
+        proc = subprocess.Popen(
+            [sys.executable, "-m", "main.eval_worker", cfg_path],
+            stdout=logf, stderr=subprocess.STDOUT, env=worker_env,
+        )
+        procs.append({"proc": proc, "log": logf, "log_path": log_path})
+    return procs
+
+
+def merge_eval_results(run_dir: str, names: list[str]) -> tuple[dict, list]:
+    """Read ``result__<name>.json`` for each expected opponent; return ``(merged, missing)``.
+
+    Work stealing writes one result file per opponent regardless of which worker ran it.
+    A missing file means a worker died mid-opponent (its claim lock blocks a retry) — the
+    caller logs it and carries on. Shared by both eval callbacks.
+    """
+    merged = {"win_rates": {}, "reward_means": {}, "ep_lens": {}, "durations_sec": {}}
+    missing = []
+    for name in names:
+        rp = os.path.join(run_dir, f"result__{name}.json")
+        if not os.path.exists(rp):
+            missing.append(name)
+            continue
+        with open(rp) as f:
+            r = json.load(f)
+        merged["win_rates"][name] = r["win_rate"]
+        merged["reward_means"][name] = r["reward_mean"]
+        merged["ep_lens"][name] = r["ep_len"]
+        merged["durations_sec"][name] = r["duration_sec"]
+    return merged, missing
+
+
+def prune_eval_traces(model_dir: str | None, keep_n: int) -> None:
+    """Keep only the N most-recent eval step dirs under ``<model_dir>/eval_traces``.
+
+    0 = keep all. Older dirs are removed whole; the current cycle's dir is the newest so
+    it is never touched. ``python -m main.prober.groom`` is the manual fallback.
+    """
+    if keep_n <= 0 or not model_dir:
+        return
+    base = os.path.join(model_dir, "eval_traces")
+    if not os.path.isdir(base):
+        return
+    dirs = []
+    for name in os.listdir(base):
+        m = re.match(r"step_(\d+)$", name)
+        full = os.path.join(base, name)
+        if m and os.path.isdir(full):
+            dirs.append((int(m.group(1)), full))
+    for _step, path in sorted(dirs, reverse=True)[keep_n:]:
+        shutil.rmtree(path, ignore_errors=True)
+
+
+def prune_eval_snapshots(model_dir: str | None, keep_n: int) -> None:
+    """Keep only the N most-recent persisted eval snapshots (``eval_traces/step_*/snapshot.zip``)."""
+    if keep_n <= 0 or not model_dir:
+        return
+    snaps = glob.glob(os.path.join(model_dir, "eval_traces", "step_*", EVAL_SNAPSHOT_NAME))
+
+    def _stepof(p: str) -> int:
+        m = re.search(r"step_(\d+)", p)
+        return int(m.group(1)) if m else 0
+
+    for p in sorted(snaps, key=_stepof, reverse=True)[keep_n:]:
+        try:
+            os.remove(p)
+        except OSError:
+            pass
+
+
+def persist_eval_snapshot(model_dir: str | None, step: int, snapshot_path: str, keep_n: int) -> None:
+    """Copy a cycle's weight snapshot into ``eval_traces/step_<N>/snapshot.zip`` (next to
+    its traces), patch that step's manifest to point at it, then prune to the N most-recent.
+
+    No-op when ``keep_n<=0`` (traces still carry the identity manifest). Lets the prober
+    reload the bit-exact model that produced a cycle's traces. Shared by both eval callbacks.
+    """
+    if keep_n <= 0 or not model_dir:
+        return
+    dst_dir = os.path.join(model_dir, "eval_traces", f"step_{step}")
+    os.makedirs(dst_dir, exist_ok=True)
+    try:
+        shutil.copy2(snapshot_path, os.path.join(dst_dir, EVAL_SNAPSHOT_NAME))
+    except OSError as e:
+        print(f"⚠️ [EVAL] could not persist snapshot for step {step:,}: {e}")
+        return
+    mpath = os.path.join(dst_dir, EVAL_MANIFEST_NAME)
+    try:
+        with open(mpath) as f:
+            m = json.load(f)
+        m["snapshot"] = EVAL_SNAPSHOT_NAME
+        with open(mpath, "w") as f:
+            json.dump(m, f, indent=2)
+    except (OSError, ValueError):
+        pass
+    prune_eval_snapshots(model_dir, keep_n)
+
+
+def replay_last_eval_to_tui(model_dir: str | None, resume_eval_metadata: str | None = None) -> None:
+    """Re-publish the most recent persisted eval to the TUI on startup/resume.
+
+    Reads ``latest_eval`` from this run's metadata.json (and the resumed checkpoint's, if
+    given), and pushes the per-opponent + aggregate win-rate/reward/ep-len keys so the eval
+    panel isn't blank until the next (possibly millions-of-steps-away) cycle. Shared by both
+    eval callbacks; sentinel rows aren't re-published (the pool differs run to run).
+    """
+    block = None
+    for path in (
+        os.path.join(model_dir, "metadata.json") if model_dir else None,
+        resume_eval_metadata,
+    ):
+        block = read_latest_eval_block(path) or block
+    if block is None:
+        return
+    opponents = block.get("opponents", {})
+    if not opponents:
+        return
+    tui: dict[str, float] = {}
+    for name, m in opponents.items():
+        tui[f"eval/win_rate_vs_{name}"] = m.get("win_rate", 0.0)
+        tui[f"eval/mean_ep_len_vs_{name}"] = m.get("mean_ep_len", 0.0)
+        tui[f"eval/mean_reward_vs_{name}"] = m.get("mean_reward", 0.0)
+    tui.update({
+        "eval/win_rate_mean": block.get("win_rate_mean", 0.0),
+        "eval/win_rate_vs_bots": block.get("win_rate_vs_bots", 0.0),
+        "eval/mean_reward_mean": block.get("mean_reward_mean", block.get("mean_reward_vs_bots", 0.0)),
+        "eval/mean_reward_vs_bots": block.get("mean_reward_vs_bots", 0.0),
+        "eval/mean_ep_len_vs_bots": block.get("mean_ep_len_vs_bots", 0.0),
+        "_step": block.get("step", 0),
+    })
+    send_metrics(tui)
+    print(f"[EVAL] resumed — re-published last eval (step {block.get('step', '?')}, "
+          f"{block.get('win_rate_mean', 0.0) * 100:.1f}% mean) to the TUI")
 
 # Per-opponent game caps. Eval now runs in a non-blocking subprocess, but on CPU
 # each game still costs wall-clock, so keep games-per-opponent bounded. The narrow
@@ -568,36 +744,20 @@ class PerOpponentEvalCallback(BaseCallback):
         cycle_tag = f"{step // 100 % 10000:04d}"
         # Never spawn more workers than opponents to steal.
         n_workers = max(1, min(self._n_workers, len(names)))
-        # Don't hand the worker the launcher's metrics pipe FD — only the parent
-        # (this process) publishes to the TUI; the FD number is invalid in the child.
-        worker_env = {k: v for k, v in os.environ.items() if k != "LAUNCHER_METRICS_FD"}
-
-        procs = []
-        for wid in range(n_workers):
-            cfg = {
-                "snapshot": snapshot_zip,
-                "port": self._showdown_port,
-                "model_dir": self._model_dir,
-                "step": step,
-                "n_games": n_games,
-                "opponent_pool": names,        # full pool; workers steal from it
-                "claim_dir": claim_dir,
-                "result_dir": run_dir,         # writes result__<opponent>.json here
-                "concurrency": self._eval_concurrency,
-                "device": self._eval_device,
-                "worker_id": wid,
-                "cycle_tag": cycle_tag,
-            }
-            cfg_path = os.path.join(run_dir, f"config_{wid}.json")
-            with open(cfg_path, "w") as f:
-                json.dump(cfg, f)
-            log_path = os.path.join(run_dir, f"worker_{wid}.log")
-            logf = open(log_path, "w")
-            proc = subprocess.Popen(
-                [sys.executable, "-m", "main.eval_worker", cfg_path],
-                stdout=logf, stderr=subprocess.STDOUT, env=worker_env,
-            )
-            procs.append({"proc": proc, "log": logf, "log_path": log_path})
+        base_cfg = {
+            "snapshot": snapshot_zip,
+            "port": self._showdown_port,
+            "model_dir": self._model_dir,
+            "step": step,
+            "n_games": n_games,
+            "opponent_pool": names,        # full pool; workers steal from it
+            "claim_dir": claim_dir,
+            "result_dir": run_dir,         # writes result__<opponent>.json here
+            "concurrency": self._eval_concurrency,
+            "device": self._eval_device,
+            "cycle_tag": cycle_tag,
+        }
+        procs = spawn_eval_workers(run_dir, base_cfg, n_workers)
 
         self._pending = {"step": step, "names": names, "procs": procs,
                          "snapshot": snapshot_zip, "run_dir": run_dir}
@@ -626,19 +786,7 @@ class PerOpponentEvalCallback(BaseCallback):
         # Work stealing writes one result__<opponent>.json per opponent, regardless
         # of which worker ran it. Read every expected opponent; missing = a worker
         # died mid-opponent (its claim lock blocks a retry) — log and carry on.
-        merged = {"win_rates": {}, "reward_means": {}, "ep_lens": {}, "durations_sec": {}}
-        missing = []
-        for name in pending["names"]:
-            rp = os.path.join(run_dir, f"result__{name}.json")
-            if not os.path.exists(rp):
-                missing.append(name)
-                continue
-            with open(rp) as f:
-                r = json.load(f)
-            merged["win_rates"][name] = r["win_rate"]
-            merged["reward_means"][name] = r["reward_mean"]
-            merged["ep_lens"][name] = r["ep_len"]
-            merged["durations_sec"][name] = r["duration_sec"]
+        merged, missing = merge_eval_results(run_dir, pending["names"])
 
         if missing:
             print(f"⚠️ [EVAL] step {step:,}: missing results for {missing} "
@@ -726,64 +874,14 @@ class PerOpponentEvalCallback(BaseCallback):
             print(f"[EVAL] new best ({aggregate * 100:.1f}%) saved to {dst}")
 
     def _persist_snapshot(self, pending: dict) -> None:
-        """When --keep-eval-snapshots is set, copy the cycle's weight snapshot into
-        eval_traces/step_<N>/snapshot.zip (next to its traces) and patch the manifest
-        to point at it, then prune to the N most-recent. Lets the prober reload the
-        bit-exact model that produced these traces."""
-        if self._keep_eval_snapshots <= 0 or not self._model_dir:
-            return
-        step = pending["step"]
-        dst_dir = os.path.join(self._model_dir, "eval_traces", f"step_{step}")
-        os.makedirs(dst_dir, exist_ok=True)
-        try:
-            shutil.copy2(pending["snapshot"], os.path.join(dst_dir, EVAL_SNAPSHOT_NAME))
-        except OSError as e:
-            print(f"⚠️ [EVAL] could not persist snapshot for step {step:,}: {e}")
-            return
-        mpath = os.path.join(dst_dir, EVAL_MANIFEST_NAME)
-        try:
-            with open(mpath) as f:
-                m = json.load(f)
-            m["snapshot"] = EVAL_SNAPSHOT_NAME
-            with open(mpath, "w") as f:
-                json.dump(m, f, indent=2)
-        except (OSError, ValueError):
-            pass
-        self._prune_eval_snapshots()
+        persist_eval_snapshot(self._model_dir, pending["step"], pending["snapshot"],
+                              self._keep_eval_snapshots)
 
     def _prune_eval_snapshots(self) -> None:
-        """Keep only the N most-recent persisted eval snapshots (by step)."""
-        snaps = glob.glob(os.path.join(
-            self._model_dir, "eval_traces", "step_*", EVAL_SNAPSHOT_NAME))
-
-        def _stepof(p: str) -> int:
-            m = re.search(r"step_(\d+)", p)
-            return int(m.group(1)) if m else 0
-
-        for p in sorted(snaps, key=_stepof, reverse=True)[self._keep_eval_snapshots:]:
-            try:
-                os.remove(p)
-            except OSError:
-                pass
+        prune_eval_snapshots(self._model_dir, self._keep_eval_snapshots)
 
     def _prune_eval_traces(self) -> None:
-        """Groom the traces the trainer just wrote: keep only the N most-recent eval
-        step dirs (by step), removing older ones whole. The current cycle's dir is the
-        newest, so it is never touched. `python -m main.prober.groom` is the manual
-        fallback for finished runs / deeper cleanup."""
-        if self._keep_eval_trace_steps <= 0 or not self._model_dir:
-            return
-        base = os.path.join(self._model_dir, "eval_traces")
-        if not os.path.isdir(base):
-            return
-        dirs = []
-        for name in os.listdir(base):
-            m = re.match(r"step_(\d+)$", name)
-            full = os.path.join(base, name)
-            if m and os.path.isdir(full):
-                dirs.append((int(m.group(1)), full))
-        for _step, path in sorted(dirs, reverse=True)[self._keep_eval_trace_steps:]:
-            shutil.rmtree(path, ignore_errors=True)
+        prune_eval_traces(self._model_dir, self._keep_eval_trace_steps)
 
     def _cleanup(self, pending: dict, keep_logs: bool) -> None:
         # Always drop the (large) transient run-dir snapshot; _persist_snapshot has
@@ -828,31 +926,4 @@ class PerOpponentEvalCallback(BaseCallback):
     # ------------------------------------------------------------- TUI resume
 
     def _replay_last_eval_to_tui(self) -> None:
-        """Re-publish the most recent persisted eval to the TUI on startup/resume."""
-        block = None
-        for path in (
-            os.path.join(self._model_dir, "metadata.json") if self._model_dir else None,
-            self._resume_eval_metadata,
-        ):
-            block = read_latest_eval_block(path) or block
-        if block is None:
-            return
-        opponents = block.get("opponents", {})
-        if not opponents:
-            return
-        tui: dict[str, float] = {}
-        for name, m in opponents.items():
-            tui[f"eval/win_rate_vs_{name}"] = m.get("win_rate", 0.0)
-            tui[f"eval/mean_ep_len_vs_{name}"] = m.get("mean_ep_len", 0.0)
-            tui[f"eval/mean_reward_vs_{name}"] = m.get("mean_reward", 0.0)
-        tui.update({
-            "eval/win_rate_mean": block.get("win_rate_mean", 0.0),
-            "eval/win_rate_vs_bots": block.get("win_rate_vs_bots", 0.0),
-            "eval/mean_reward_mean": block.get("mean_reward_mean", block.get("mean_reward_vs_bots", 0.0)),
-            "eval/mean_reward_vs_bots": block.get("mean_reward_vs_bots", 0.0),
-            "eval/mean_ep_len_vs_bots": block.get("mean_ep_len_vs_bots", 0.0),
-            "_step": block.get("step", 0),
-        })
-        send_metrics(tui)
-        print(f"[EVAL] resumed — re-published last eval (step {block.get('step', '?')}, "
-              f"{block.get('win_rate_mean', 0.0) * 100:.1f}% mean) to the TUI")
+        replay_last_eval_to_tui(self._model_dir, self._resume_eval_metadata)

@@ -48,7 +48,7 @@ from agents.inference.player import RLPlayer
 from utils.teambuilder import Gen3Teambuilder
 from utils.team_loader import TeamLoader
 from agents.training.eval_callback import (
-    PerOpponentEvalCallback, opponent_name, build_eval_opponents, eval_opponent_names,
+    PerOpponentEvalCallback, opponent_name,
 )
 from agents.training.graceful_restart_callback import GracefulRestartCallback
 from agents.training.snapshot_pool import SnapshotPool, heuristic_fraction
@@ -546,19 +546,10 @@ async def main():
     _opp_version = None  # ModelVersion threaded into opponent snapshot loads (set when self-play on)
     if args.self_play:
         from pathlib import Path as _Path
-        from agents.model.model_version import ModelVersion as _MV
-        from agents.model.features_extractor import Gen3FeaturesExtractor as _FE, NET_ARCH as _NA
-        from agents.observation.state_encoder import Gen3ObservationEncoder as _OE
+        from agents.model.snapshot import current_model_version as _current_model_version
 
         _snapshot_dir = _Path(args.snapshot_dir) if args.snapshot_dir else _Path(model_dir) / "snapshots"
-        _temp_enc = _OE(mappings)
-        _temp_ext_kwargs = _temp_enc.get_features_extractor_kwargs()
-        _temp_policy_kwargs = {
-            "features_extractor_class": _FE,
-            "features_extractor_kwargs": _temp_ext_kwargs,
-            "net_arch": _NA,
-        }
-        _cv = _MV.from_layout_and_policy_kwargs(_temp_ext_kwargs["layout"], _temp_policy_kwargs)
+        _cv = _current_model_version(mappings)
         _opp_version = _cv
         _pool = SnapshotPool(
             pool_dir=_snapshot_dir,
@@ -770,28 +761,36 @@ async def main():
     callbacks = [checkpoint_callback, lr_callback, MetricsExporterCallback(), _HparamLogCallback(args.ent_coef), graceful_restart_callback]
     eval_callback = None
 
+    # On resume, the last eval lives in the resumed checkpoint's metadata.json (a different
+    # dir from this fresh run) — point the eval callback at it so the TUI shows the most
+    # recent eval immediately instead of a blank panel until the next cycle.
+    _resume_meta = None
+    if args.model:
+        _ckpt_dir = args.model if os.path.isdir(args.model) else os.path.dirname(args.model)
+        if _ckpt_dir:
+            _resume_meta = os.path.join(_ckpt_dir, "metadata.json")
+
     if args.self_play and _pool is not None:
-        # Self-play eval runs in-process against live bot players + pool sentinels, so it
-        # needs the pre-built opponent list (one connection each). It runs even under
-        # --debug (with a fast eval cadence) so a short CPU smoke against a 9XXX server
-        # actually exercises seed → pool eval → promotion — the path a non-self-play
-        # --debug run skips entirely.
-        ts_cb = datetime.now().strftime('%H%M%S')
-        eval_opponents = build_eval_opponents(
-            server_config, opponent_teambuilder,
-            eval_opponent_names(args.use_v2_bots), ts_cb,
-        )
+        # Self-play eval mirrors the bot-eval frozen-snapshot SUBPROCESS pattern
+        # (non-blocking): the workers work-steal the bot roster AND up to 5 pool sentinels,
+        # play a frozen snapshot, and the parent collects + promotes on a later poll. The
+        # worker rebuilds opponents / teambuilders / mappings itself from the data dir, so
+        # nothing live is constructed here. It runs even under --debug (fast eval cadence)
+        # so a short CPU smoke against a 9XXX server exercises seed → pool eval → promotion.
         eval_callback = SelfPlayCallback(
             pool=_pool,
-            bot_opponents=eval_opponents,
-            trainee_teambuilder=trainee_teambuilder,
-            opp_teambuilder=opponent_teambuilder,
-            mappings=mappings,
-            promote_threshold=args.promote_threshold,
-            best_model_save_path=os.path.join(model_dir, "best_model"),
             model_dir=model_dir,
             server_config=server_config,
+            showdown_port=args.showdown_port,
+            use_v2_bots=args.use_v2_bots,
+            best_model_save_path=os.path.join(model_dir, "best_model"),
+            promote_threshold=args.promote_threshold,
             self_play_temp=args.self_play_temp,
+            n_workers=args.eval_workers,
+            eval_device=args.eval_device,
+            keep_eval_snapshots=args.keep_eval_snapshots,
+            keep_eval_trace_steps=args.keep_eval_trace_steps,
+            resume_eval_metadata=_resume_meta,
             debug=args.debug,
         )
         callbacks.append(eval_callback)
@@ -799,14 +798,6 @@ async def main():
         # Bot eval runs in a frozen-snapshot subprocess (non-blocking, CPU). The
         # worker rebuilds opponents/teambuilders/mappings itself from the data
         # dir, so nothing live is constructed here.
-        # On resume, the last eval lives in the resumed checkpoint's metadata.json
-        # (a different dir from this fresh run) — point the callback at it so the
-        # TUI shows the most recent eval immediately.
-        _resume_meta = None
-        if args.model:
-            _ckpt_dir = args.model if os.path.isdir(args.model) else os.path.dirname(args.model)
-            if _ckpt_dir:
-                _resume_meta = os.path.join(_ckpt_dir, "metadata.json")
         eval_callback = PerOpponentEvalCallback(
             model_dir=model_dir,
             server_config=server_config,

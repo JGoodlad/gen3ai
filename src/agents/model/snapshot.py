@@ -289,6 +289,31 @@ def load_model_snapshot(
     return InstrumentedMaskablePPO.load(zip_path, **kwargs)
 
 
+def current_model_version(mappings) -> ModelVersion:
+    """Build a ``ModelVersion`` reflecting the CURRENT code's architecture for ``mappings``.
+
+    Single source for the ``from_layout_and_policy_kwargs`` construction otherwise
+    repeated inline (train_rl_agent's self-play pool setup; the eval worker's sentinel
+    version check). Returns the ``current_version`` to pass to ``load_model_snapshot`` /
+    ``SnapshotPool`` so a stale-arch snapshot fails with a clean ``ModelVersionError``
+    instead of loading mismatched weights.
+
+    Imports are function-local to avoid an import cycle (state_encoder/features_extractor
+    pull in model code).
+    """
+    from agents.observation.state_encoder import Gen3ObservationEncoder
+    from agents.model.features_extractor import Gen3FeaturesExtractor, NET_ARCH
+
+    enc = Gen3ObservationEncoder(mappings)
+    ext_kwargs = enc.get_features_extractor_kwargs()
+    policy_kwargs = {
+        "features_extractor_class": Gen3FeaturesExtractor,
+        "features_extractor_kwargs": ext_kwargs,
+        "net_arch": NET_ARCH,
+    }
+    return ModelVersion.from_layout_and_policy_kwargs(ext_kwargs["layout"], policy_kwargs)
+
+
 def _resolve_paths(model_path: str) -> tuple[str, str]:
     """Return (zip_path, config_dir) for the given model_path.
 

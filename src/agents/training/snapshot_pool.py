@@ -8,6 +8,7 @@ Reconstructs on every __init__ so launcher restarts are transparent.
 from __future__ import annotations
 
 import random
+import shutil
 from collections import OrderedDict
 from dataclasses import dataclass
 from pathlib import Path
@@ -103,6 +104,33 @@ class SnapshotPool:
         ``max_snapshots`` after the addition.
         """
         entry = self._write(model, step=step, pinned=False)
+        self._evict()
+        emit(f"📦 [SELFPLAY] Snapshot promoted at step {step:,} → {entry.path.name} "
+             f"(pool size: {len(self._entries)})")
+        return entry
+
+    def add_from_path(self, src_zip: "str | Path", step: int) -> SnapshotEntry:
+        """Promote an already-saved snapshot file (frozen weights) as a new pool entry.
+
+        Like ``add()``, but COPIES an existing ``.zip`` instead of re-saving a live model.
+        The non-blocking self-play eval freezes the trainee's weights to disk at the
+        trigger step, then promotes THAT bit-exact snapshot after the (later) collect —
+        by which point the live model has advanced, so re-saving it would promote the
+        wrong weights. Evicts the oldest non-pinned entry if the pool would exceed
+        ``max_snapshots``.
+        """
+        src = Path(src_zip)
+        dst = self.pool_dir / f"snapshot_{step:012d}.zip"
+        if src.resolve() != dst.resolve():
+            shutil.copy2(src, dst)
+        # Shared arch tag next to the snapshots, so load_model_snapshot() does a REAL
+        # compatibility check (every snapshot in this pool shares current_version).
+        (self.pool_dir / "model_config.json").write_text(self._current_version.to_json())
+        entry = SnapshotEntry(path=dst, step=step, pinned=False)
+        # Replace any existing entry at this step (idempotent), keep sorted by step.
+        self._entries = [e for e in self._entries if e.step != step]
+        self._entries.append(entry)
+        self._entries.sort(key=lambda e: e.step)
         self._evict()
         emit(f"📦 [SELFPLAY] Snapshot promoted at step {step:,} → {entry.path.name} "
              f"(pool size: {len(self._entries)})")

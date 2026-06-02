@@ -147,6 +147,76 @@ def test_add_replaces_same_step(tmp_path):
     assert pool._entries[0].step == 500_000
 
 
+# ── add_from_path (promote a frozen snapshot file, not a live model) ─────────
+
+def _frozen_zip(tmp_path, name="frozen.zip", content=b"frozen-weights") -> Path:
+    p = tmp_path / name
+    p.write_bytes(content)
+    return p
+
+
+def test_add_from_path_copies_and_registers(tmp_path):
+    pool = _make_pool(tmp_path)
+    src = _frozen_zip(tmp_path)
+    entry = pool.add_from_path(src, step=1_000_000)
+    dst = tmp_path / "snapshot_000001000000.zip"
+    assert dst.exists()
+    assert dst.read_bytes() == b"frozen-weights"   # bit-exact copy of the frozen file
+    assert entry.step == 1_000_000 and entry.pinned is False
+    assert len(pool) == 1
+    # Shared arch tag dropped so load_model_snapshot does a REAL compatibility check.
+    assert (tmp_path / "model_config.json").exists()
+
+
+def test_add_from_path_does_not_mutate_source(tmp_path):
+    pool = _make_pool(tmp_path)
+    src = _frozen_zip(tmp_path)
+    pool.add_from_path(src, step=2_000_000)
+    assert src.exists()  # copy, not move — the trainer cleans up the scratch itself
+
+
+def test_add_from_path_evicts_oldest_unpinned(tmp_path):
+    pool = _make_pool(tmp_path, max_snapshots=3)
+    model = _fake_model(tmp_path)
+    pool.seed(model)  # step 0, pinned
+    pool.add_from_path(_frozen_zip(tmp_path, "a.zip"), step=1_000_000)
+    pool.add_from_path(_frozen_zip(tmp_path, "b.zip"), step=2_000_000)
+    pool.add_from_path(_frozen_zip(tmp_path, "c.zip"), step=3_000_000)  # over cap → evict 1M
+    steps = [e.step for e in pool._entries]
+    assert 0 in steps and 1_000_000 not in steps
+    assert {2_000_000, 3_000_000} <= set(steps)
+    # The evicted snapshot file is unlinked from disk.
+    assert not (tmp_path / "snapshot_000001000000.zip").exists()
+
+
+def test_add_from_path_never_evicts_pinned_seed(tmp_path):
+    pool = _make_pool(tmp_path, max_snapshots=2)
+    model = _fake_model(tmp_path)
+    pool.seed(model)
+    pool.add_from_path(_frozen_zip(tmp_path, "a.zip"), step=1_000_000)
+    pool.add_from_path(_frozen_zip(tmp_path, "b.zip"), step=2_000_000)  # evicts 1M, not seed
+    assert any(e.step == 0 and e.pinned for e in pool._entries)
+
+
+def test_add_from_path_idempotent_replaces_same_step(tmp_path):
+    pool = _make_pool(tmp_path)
+    pool.add_from_path(_frozen_zip(tmp_path, "a.zip", b"first"), step=500_000)
+    pool.add_from_path(_frozen_zip(tmp_path, "b.zip", b"second"), step=500_000)
+    assert len(pool) == 1
+    assert pool._entries[0].step == 500_000
+    assert (tmp_path / "snapshot_000000500000.zip").read_bytes() == b"second"
+
+
+def test_add_from_path_handles_src_equal_dst(tmp_path):
+    # Promoting a file that is already at the destination path must not error.
+    pool = _make_pool(tmp_path)
+    dst = tmp_path / "snapshot_000000750000.zip"
+    dst.write_bytes(b"already-here")
+    entry = pool.add_from_path(dst, step=750_000)
+    assert entry.path == dst and dst.read_bytes() == b"already-here"
+    assert len(pool) == 1
+
+
 # ── _scan (directory reconstruction) ────────────────────────────────────────
 
 def test_scan_reconstructs_from_disk(tmp_path):
