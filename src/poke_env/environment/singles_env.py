@@ -41,7 +41,7 @@ class SinglesEnv(PokeEnv[np.int64]):
         open_timeout: Optional[float] = 10.0,
         ping_interval: Optional[float] = 20.0,
         ping_timeout: Optional[float] = 20.0,
-        challenge_timeout: Optional[float] = 60.0,
+        challenge_timeout: Optional[float] = 120.0,
         team: Optional[Union[str, Teambuilder]] = None,
         choose_on_teampreview: bool = True,
         fake: bool = False,

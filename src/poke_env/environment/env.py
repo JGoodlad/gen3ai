@@ -223,7 +223,7 @@ class PokeEnv(ParallelEnv[str, Dict[str, Any], ActionType]):
         open_timeout: Optional[float] = 10.0,
         ping_interval: Optional[float] = 20.0,
         ping_timeout: Optional[float] = 20.0,
-        challenge_timeout: Optional[float] = 60.0,
+        challenge_timeout: Optional[float] = 120.0,
         team: Optional[Union[str, Teambuilder]] = None,
         choose_on_teampreview: bool | None = None,
         fake: bool = False,
@@ -270,7 +270,10 @@ class PokeEnv(ParallelEnv[str, Dict[str, Any], ActionType]):
             Increase only if timeouts occur during runtime).
             If None pings will never time out.
         :type ping_timeout: float, optional
-        :param challenge_timeout: How long to wait for agents to challenge.
+        :param challenge_timeout: How long to wait for agents to challenge (seconds).
+            Defaults to 120s: when many parallel envs connect at once, the Showdown
+            login/challenge handshake can be slow under the connection storm, and too
+            short a window crashes reset() with "Agent is not challenging".
             If None agent challenging will never time out.
         :type challenge_timeout: float, optional
         :param team: The team to use for formats requiring a team. Can be a showdown
