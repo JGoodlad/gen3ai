@@ -93,7 +93,7 @@ def _make_callback(tmp_path, *, pool=None, promote_threshold=0.65,
     # `training_env` is a read-only property reading model.get_env(); configure the env
     # there. opponent_default_stats telemetry: (decisions, defaults, redecides) per env.
     cb.model.get_env.return_value.env_method.return_value = [(100, 5, 2)]
-    cb.num_timesteps = 1_000_000
+    cb.num_timesteps = 2_000_000  # first eval boundary is now 2M
     return cb
 
 
@@ -190,9 +190,9 @@ def test_regression_re_arms_after_recovery(tmp_path):
 def test_schedule_uses_shared_function(tmp_path):
     cb = _make_callback(tmp_path)
     cb.num_timesteps = 5_000_000
-    assert cb._schedule() == (1_000_000, 100)
+    assert cb._schedule() == (2_000_000, 100)
     cb.num_timesteps = 25_000_000
-    assert cb._schedule() == (2_000_000, 200)
+    assert cb._schedule() == (3_500_000, 300)
 
 
 def test_schedule_debug_fast_cadence(tmp_path):
@@ -213,11 +213,11 @@ def test_no_eval_at_step_zero(tmp_path):
 def test_triggers_at_freq_boundary(tmp_path):
     cb = _make_callback(tmp_path)
     cb._init_callback()
-    cb.num_timesteps = 1_000_000
+    cb.num_timesteps = 2_000_000  # first eval boundary is now 2M
     with patch.object(cb, "_launch_eval") as mock_launch:
         cb._on_step()
         mock_launch.assert_called_once()
-    assert cb._last_eval_step == 1_000_000
+    assert cb._last_eval_step == 2_000_000
 
 
 def test_skips_launch_while_previous_eval_running(tmp_path):
@@ -246,17 +246,17 @@ def test_lifecycle_collect_records_promotes_and_saves_best(tmp_path, monkeypatch
                         _fake_selfplay_popen(ec, bot_win=0.8, sentinel_win=0.7))
 
     cb._on_step()                              # boundary → spawn workers (non-blocking)
-    assert cb._pending is not None and cb._pending["step"] == 1_000_000
+    assert cb._pending is not None and cb._pending["step"] == 2_000_000
     snapshot = cb._pending["snapshot"]
 
-    cb.num_timesteps = 1_000_001
+    cb.num_timesteps = 2_000_001
     cb._on_step()                              # all done → merge + record + promote + best
 
     assert cb._pending is None
     # Promotion: the FROZEN snapshot (not the live model) is added at the trigger step.
     pool.add_from_path.assert_called_once()
     assert pool.add_from_path.call_args[0][0] == snapshot
-    assert pool.add_from_path.call_args[0][1] == 1_000_000
+    assert pool.add_from_path.call_args[0][1] == 2_000_000
     # Best model is the COPIED frozen snapshot.
     assert (best_dir / "best_model.zip").exists()
     assert cb._best_aggregate_win_rate == pytest.approx(0.8)
@@ -284,7 +284,7 @@ def test_lifecycle_no_promotion_below_threshold(tmp_path, monkeypatch):
                         _fake_selfplay_popen(ec, bot_win=0.8, sentinel_win=0.50))
 
     cb._on_step()
-    cb.num_timesteps = 1_000_001
+    cb.num_timesteps = 2_000_001
     cb._on_step()
 
     assert cb._pending is None
@@ -304,7 +304,7 @@ def test_lifecycle_no_sentinels_handled(tmp_path, monkeypatch):
                         _fake_selfplay_popen(ec, bot_win=0.9, sentinel_win=0.4))
 
     cb._on_step()
-    cb.num_timesteps = 1_000_001
+    cb.num_timesteps = 2_000_001
     cb._on_step()
 
     assert cb._pending is None
@@ -329,7 +329,7 @@ def test_lifecycle_worker_failure_logs_and_continues(tmp_path, monkeypatch):
     monkeypatch.setattr(ec.subprocess, "Popen", lambda *a, **k: _FailProc())  # writes nothing
 
     cb._on_step()
-    cb.num_timesteps = 1_000_001
+    cb.num_timesteps = 2_000_001
     cb._on_step()                               # all workers failed → no record, no crash
 
     assert cb._pending is None

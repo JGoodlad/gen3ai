@@ -148,7 +148,7 @@ def test_schedule_early_phase():
     cb = _make_callback()
     cb.num_timesteps = 5_000_000
     freq, n_games = cb._schedule()
-    assert freq == 1_000_000
+    assert freq == 2_000_000
     assert n_games == 100
 
 
@@ -156,31 +156,39 @@ def test_schedule_mid_phase():
     cb = _make_callback()
     cb.num_timesteps = 30_000_000
     freq, n_games = cb._schedule()
-    assert freq == 2_000_000
-    assert n_games == 200
+    assert freq == 3_500_000
+    assert n_games == 300
 
 
 def test_schedule_late_phase():
     cb = _make_callback()
     cb.num_timesteps = 60_000_000
     freq, n_games = cb._schedule()
-    assert freq == 3_000_000
+    assert freq == 3_500_000
+    assert n_games == 300
+
+
+def test_schedule_very_late_phase():
+    cb = _make_callback()
+    cb.num_timesteps = 120_000_000
+    freq, n_games = cb._schedule()
+    assert freq == 5_000_000
     assert n_games == 300
 
 
 def test_schedule_boundary_20m():
     cb = _make_callback()
-    cb.num_timesteps = 20_000_000
+    cb.num_timesteps = 20_000_000  # 20M is NOT < 20M → falls in the 20–100M tier
     freq, n_games = cb._schedule()
-    assert freq == 2_000_000
-    assert n_games == 200
+    assert freq == 3_500_000
+    assert n_games == 300
 
 
-def test_schedule_boundary_50m():
+def test_schedule_boundary_100m():
     cb = _make_callback()
-    cb.num_timesteps = 50_000_000
+    cb.num_timesteps = 100_000_000  # 100M is NOT < 100M → falls in the 100M+ tier
     freq, n_games = cb._schedule()
-    assert freq == 3_000_000
+    assert freq == 5_000_000
     assert n_games == 300
 
 
@@ -204,7 +212,7 @@ def test_no_eval_before_first_freq_boundary():
 
 def test_triggers_at_early_freq():
     cb = _make_callback()
-    cb.num_timesteps = 1_000_000
+    cb.num_timesteps = 2_000_000  # first boundary is now 2M
     with patch.object(cb, '_launch_eval') as mock_run:
         cb._on_step()
         mock_run.assert_called_once()
@@ -250,10 +258,10 @@ def test_skips_launch_while_previous_eval_running():
 
 def test_updates_last_eval_step_on_trigger():
     cb = _make_callback()
-    cb.num_timesteps = 1_000_000
+    cb.num_timesteps = 2_000_000  # first boundary is now 2M
     with patch.object(cb, '_launch_eval'):
         cb._on_step()
-    assert cb._last_eval_step == 1_000_000
+    assert cb._last_eval_step == 2_000_000
 
 
 # --- Best model saving ---
@@ -386,14 +394,14 @@ def test_orchestrator_workstealing_collect_and_promote_best(tmp_path, monkeypatc
     cb.model = MagicMock()
     cb.model.save = lambda base: open(base + ".zip", "w").close()
     cb._logger = MagicMock()
-    cb.num_timesteps = 1_000_000
+    cb.num_timesteps = 2_000_000       # first eval boundary is now 2M
     cb._init_callback()
     monkeypatch.setattr(ec.subprocess, "Popen", _fake_worker_popen(ec, win=0.8))
 
     cb._on_step()                      # boundary → spawn work-stealing workers
-    assert cb._pending is not None and cb._pending["step"] == 1_000_000
+    assert cb._pending is not None and cb._pending["step"] == 2_000_000
 
-    cb.num_timesteps = 1_000_001
+    cb.num_timesteps = 2_000_001
     cb._on_step()                      # all done → merge per-opponent results + promote
 
     assert cb._pending is None
@@ -415,7 +423,7 @@ def test_orchestrator_worker_failure_logs_and_continues(tmp_path, monkeypatch):
     cb.model = MagicMock()
     cb.model.save = lambda base: open(base + ".zip", "w").close()
     cb._logger = MagicMock()
-    cb.num_timesteps = 1_000_000
+    cb.num_timesteps = 2_000_000       # first eval boundary is now 2M
     cb._init_callback()
 
     class _FailProc:
@@ -426,7 +434,7 @@ def test_orchestrator_worker_failure_logs_and_continues(tmp_path, monkeypatch):
     monkeypatch.setattr(ec.subprocess, "Popen", lambda *a, **k: _FailProc())  # no results written
 
     cb._on_step()
-    cb.num_timesteps = 1_000_001
+    cb.num_timesteps = 2_000_001
     cb._on_step()                      # all workers failed → no record, no crash
 
     assert cb._pending is None
@@ -445,7 +453,7 @@ def test_drain_waits_for_inflight_eval_then_collects(tmp_path, monkeypatch):
     cb.model = MagicMock()
     cb.model.save = lambda base: open(base + ".zip", "w").close()
     cb._logger = MagicMock()
-    cb.num_timesteps = 1_000_000
+    cb.num_timesteps = 2_000_000       # first eval boundary is now 2M
     cb._init_callback()
 
     waited = {"n": 0}

@@ -507,24 +507,22 @@ def build_bot_eval_block(
 def eval_schedule(num_timesteps: int) -> tuple[int, int]:
     """Shared adaptive eval schedule: returns (freq_steps, n_games).
 
-    0–20M:    every 1M steps, 100 games
-    20–50M:   every 2M steps, 200 games
-    50–100M:  every 3M steps, 300 games
-    100M+:    every 4M steps, 300 games
+    0–20M:    every 2M steps, 100 games
+    20–100M:  every 3.5M steps, 300 games
+    100M+:    every 5M steps, 300 games
 
     `n_games` is the per-tier ceiling; the actual per-opponent count is then
-    clamped by `eval_games_for` (100 default / 200 heuristics). At 100M+ the
-    win-rate curves move slowly, so the looser 4M cadence trades negligible
-    resolution for ~25% less eval overhead.
+    clamped by `eval_games_for` (100 default / 200 heuristics), so for bots the
+    300 ceiling reduces to ≤200 — it only sets the (unclamped) self-play sentinel
+    game count. The cadence widens as training matures and the win-rate curves move
+    more slowly, trading negligible resolution for less eval overhead.
     """
     if num_timesteps < 20_000_000:
-        return 1_000_000, 100
-    elif num_timesteps < 50_000_000:
-        return 2_000_000, 200
+        return 2_000_000, 100
     elif num_timesteps < 100_000_000:
-        return 3_000_000, 300
+        return 3_500_000, 300
     else:
-        return 4_000_000, 300
+        return 5_000_000, 300
 
 
 class EvalRLPlayer(RewardTrackingMixin, RLPlayer):
