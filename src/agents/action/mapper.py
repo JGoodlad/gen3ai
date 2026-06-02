@@ -33,12 +33,14 @@ if TYPE_CHECKING:
 
 
 class StaleDecisionError(RuntimeError):
-    """The latched decision context no longer matches the live battle — poke-env
-    processed a background message and the request/turn shifted under us between
-    embed_battle() and action_to_order(). For the TRAINEE this is fatal (acting would
-    corrupt the training signal). A self-play OPPONENT, polled on the training thread
-    while POKE_LOOP mutates its battle, can hit this benignly and should defer to a
-    default order instead of crashing the whole run."""
+    """The latched decision context no longer matches the live battle — poke-env processed a
+    background message and the request/turn shifted under us between embed_battle() and
+    action_to_order(). Both the TRAINEE and the self-play OPPONENT treat this as FATAL
+    (crash-over-corruption): acting on a stale snapshot would send the wrong order, and in
+    self-play the opponent IS the trainee's training signal, so a default-move substitution
+    would be garbage-in. The wrapper's pre-decision settle
+    (``single_agent_wrapper._settle_opponent_battle``) is what PREVENTS the race; this
+    exception is the strict backstop for anything that still slips through."""
 
 
 class Gen3ActionMapper:
@@ -115,6 +117,7 @@ class Gen3ActionMapper:
              equal what the model picked — proving the move/switch we're about to send
              Showdown is the very one the action selected (catches a serialization drift,
              e.g. a duplicate-id or Hidden-Power mis-resolution)."""
+        snapshot_provided = legal is not None
         if legal is None:
             legal = LegalActions.from_battle(battle)
         if mask is not None and mask[action_idx] == 0:
@@ -122,15 +125,46 @@ class Gen3ActionMapper:
                 f"Illegal action {action_idx}: the offered mask does not permit it. "
                 f"Mask: {mask}"
             )
+        # Decode is PURE over the captured snapshot. A failure here means the action is
+        # illegal in the snapshot ITSELF (a mask/legal inconsistency = real corruption),
+        # so it stays a fatal ValueError — never reclassified as staleness.
         choice = Gen3ActionMapper.action_to_choice(action_idx, legal)
-        order = choice_to_order(choice, battle)
-        round_trip = order_to_action(order, battle, legal=legal)
+        # Serialization + the round-trip read the LIVE battle. When a snapshot was
+        # supplied (the protected opponent/trainee path), action_to_choice already proved
+        # the action conforms to that snapshot — so ANY failure reifying it against the
+        # live battle means the board diverged under us (POKE_LOOP applied a background
+        # message: a switch target fainted, a move got disabled, a force-switch began…).
+        # That is STALENESS, not corruption: raise StaleDecisionError so it surfaces as a
+        # mid-decision divergence — both the trainee and the self-play opponent crash on it
+        # (crash-over-corruption) rather than sending a wrong/garbage order. This is the
+        # catch-all for every live-divergence axis, not just switches. With a fresh snapshot
+        # (legal=None: fuzz / back-to-back) there is nothing to be stale against, so failures
+        # propagate as-is (crash-over-corruption preserved).
+        try:
+            order = choice_to_order(choice, battle)
+            round_trip = order_to_action(order, battle, legal=legal)
+        except StaleDecisionError:
+            raise
+        except (ValueError, RuntimeError) as e:
+            if snapshot_provided:
+                raise StaleDecisionError(
+                    f"Live battle diverged from the decision snapshot while serializing "
+                    f"action {action_idx} ({choice}): {e}"
+                ) from e
+            raise
         if round_trip != action_idx:
-            raise RuntimeError(
+            msg = (
                 f"Action conformance violation: the model picked action {action_idx}, "
                 f"but the order we serialized back-maps to action {round_trip} "
-                f"(choice={choice}, order={order}). We would send Showdown a different "
-                f"move/switch than the model selected — refusing rather than mis-acting."
+                f"(choice={choice}, order={order})."
+            )
+            if snapshot_provided:
+                raise StaleDecisionError(
+                    msg + " The live battle diverged from the decision snapshot."
+                )
+            raise RuntimeError(
+                msg + " We would send Showdown a different move/switch than the model "
+                "selected — refusing rather than mis-acting."
             )
         return order
 
@@ -140,10 +174,14 @@ class Gen3ActionMapper:
     @staticmethod
     def assert_decision_current(ctx, battle) -> None:
         """Crash-over-corruption guard run before acting: the decision context must
-        exist, belong to the current turn, and its captured ``legal`` snapshot must
-        still match the server's current move ordering. A divergence means poke-env
-        processed a background message and the request shifted under us — acting on the
-        stale snapshot would send the wrong move, so we raise instead."""
+        exist, belong to the current turn, and its captured ``legal`` snapshot must still
+        match the server's current move ordering AND switch availability. A divergence
+        means poke-env processed a background message and the request shifted under us —
+        acting on the stale snapshot would send the wrong move/switch, so we raise
+        ``StaleDecisionError`` instead (both the trainee and the self-play opponent crash on
+        it — crash-over-corruption). ``action_to_order`` is the backstop for the residual
+        window between this check and serialization: any live-vs-snapshot failure there is
+        reclassified as staleness too."""
         if ctx is None:
             raise RuntimeError(
                 f"Decision context is missing at turn {getattr(battle, 'turn', '?')}. "
@@ -157,12 +195,38 @@ class Gen3ActionMapper:
             )
         legal = getattr(ctx, "legal", None)
         if legal is not None:
-            current = LegalActions.from_battle(battle).move_ids
-            if tuple(legal.move_ids) != tuple(current):
-                raise StaleDecisionError(
-                    f"Mid-decision state change at turn {battle.turn}: "
-                    f"latched={list(legal.move_ids)}, server={list(current)}"
-                )
+            current = LegalActions.from_battle(battle)
+            # Compare EVERY action-relevant axis of the captured snapshot against the live
+            # request. Any divergence means POKE_LOOP applied a background message between the
+            # snapshot and now — a faint flipping us to force-switch (the move-face: moves→[]),
+            # a switch target leaving the bench or changing identity (the heracross switch-face),
+            # a move getting disabled, or the request going to wait / struggle / trapped. Acting
+            # on the stale snapshot would send the wrong order, so we raise — crash-over-corruption
+            # for BOTH the trainee and the self-play opponent. (The wrapper's pre-decision settle
+            # in single_agent_wrapper._settle_opponent_battle PREVENTS the race; this is the
+            # strict detector for anything that still slips through.) Moves carry (id, disabled)
+            # and switches carry (slot, species), so a same-length set whose CONTENTS changed is
+            # caught too. action_to_order is the final backstop for the residual window between
+            # this check and serialization.
+            axes = (
+                ("moves",
+                 tuple((m.id, m.disabled) for m in legal.move_slots),
+                 tuple((m.id, m.disabled) for m in current.move_slots)),
+                ("switches",
+                 tuple((s.slot, s.species) for s in legal.switches),
+                 tuple((s.slot, s.species) for s in current.switches)),
+                ("force_switch", legal.force_switch, current.force_switch),
+                ("trapped", legal.trapped, current.trapped),
+                ("maybe_trapped", legal.maybe_trapped, current.maybe_trapped),
+                ("wait", legal.wait, current.wait),
+                ("struggle", legal.struggle, current.struggle),
+            )
+            for axis, latched, live in axes:
+                if latched != live:
+                    raise StaleDecisionError(
+                        f"Mid-decision state change at turn {battle.turn} [{axis}]: "
+                        f"latched={latched!r}, server={live!r}"
+                    )
 
     # ------------------------------------------------------------------ #
     # Reverse map (diagnostics / opponent labelling) — delegated to the adapter

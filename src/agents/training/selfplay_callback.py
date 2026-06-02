@@ -151,12 +151,11 @@ class SelfPlayCallback(BaseCallback):
                 account_configuration=AccountConfiguration(f"PoolOpp{i}{ts}", "password"),
                 max_concurrent_battles=_EVAL_CONCURRENCY,
                 # Sentinels act EXACTLY as they do as TRAINING opponents (stochastic, same
-                # temperature, stale-tolerant), so win_rate_vs_pool measures the policy
-                # against the opponents it actually trains against — mirroring the heuristic
-                # bots, which use one player in both training and eval.
+                # temperature, strict), so win_rate_vs_pool measures the policy against the
+                # opponents it actually trains against — mirroring the heuristic bots, which
+                # use one player in both training and eval.
                 stochastic=True,
                 temperature=self._self_play_temp,
-                strict_decision=False,
             )
             for i in range(5)
         ]

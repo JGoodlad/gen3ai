@@ -32,7 +32,17 @@ def heuristic_fraction(win_rate_vs_bots: float) -> float:
     Smoothstep interpolation from 0.80 (agent weak, needs bot guidance) to 0.10
     (agent dominant, mostly self-play with a floor to prevent forgetting basics).
     The ramp activates once win rate vs. strategic bots passes 50%.
+
+    ``GEN3_FORCE_SELFPLAY=1`` overrides this to 0% — EVERY training env uses a pool
+    (self-play) opponent. This is the faithful self-play stress mode: only the RLPlayer
+    self-play path exercises the snapshot→serialize decision the stale-decision race lives in
+    (heuristic bots never touch it), so a fresh run at the natural ~80% bots barely tests it.
+    Use it to reproduce the race and to verify the settle fix (see
+    ``single_agent_wrapper._settle_opponent_battle``).
     """
+    import os
+    if os.environ.get("GEN3_FORCE_SELFPLAY"):
+        return 0.0
     t = (win_rate_vs_bots - 0.50) / (0.85 - 0.50)
     t = max(0.0, min(1.0, t))
     t_smooth = t * t * (3.0 - 2.0 * t)

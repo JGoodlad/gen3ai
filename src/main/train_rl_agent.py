@@ -488,7 +488,10 @@ async def main():
                         # distribution — a richer, less exploitable signal. Eval stays argmax.
                         stochastic=True,
                         temperature=args.self_play_temp,
-                        strict_decision=False,  # opponent: defer to default on async-race stale ctx, don't crash training
+                        # Strict (crash-over-corruption): a stale decision context crashes the
+                        # worker exactly like the trainee. A self-play opponent's default move
+                        # would be garbage-in — it IS the trainee's training signal — so we
+                        # never tolerate staleness; the launcher restarts from the checkpoint.
                     )
                 else:
                     opponent_cls = random.choice(OPPONENT_CLASSES)

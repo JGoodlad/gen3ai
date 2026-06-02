@@ -17,7 +17,7 @@ from agents.action.constants import (
 )
 from agents.action.choice import Choice, ChoiceKind
 from agents.action.mask_generator import Gen3ActionMasker
-from agents.action.mapper import Gen3ActionMapper
+from agents.action.mapper import Gen3ActionMapper, StaleDecisionError
 from agents.action.serialize import choice_to_order, order_to_action
 from agents.battle.live_view import (
     LegalActions, LegalMove, LegalSwitch, LiveView, LiveSide, LivePokemon, LiveMove, LiveWeather,
@@ -493,6 +493,108 @@ class TestAssertDecisionCurrent:
         battle, _, _ = _make_battle(["tyranitar"], [], ["rockslide"], turn=3)
         ctx = _ctx(3, LegalActions.from_battle(battle))
         Gen3ActionMapper.assert_decision_current(ctx, battle)  # no raise
+
+    def test_mid_decision_switch_change_raises(self):
+        # A benched switch target that was legal when the snapshot was captured leaves
+        # available_switches (faints / is dragged out) before we act. The guard must flag
+        # this as staleness — exactly like a move-list change — so it crashes here (strict)
+        # rather than later in choice_to_order with a raw ValueError. (The heracross crash:
+        # the guard previously checked move_ids only and missed switch changes.)
+        battle, _, _ = _make_battle(["tyranitar", "skarmory", "gengar"], [1, 2], ["rockslide"], turn=3)
+        ctx = _ctx(3, LegalActions.from_battle(battle))
+        # Skarmory (slot 1) is no longer switchable on the live battle.
+        battle.available_switches = [battle.team["gengar"]]
+        with pytest.raises(StaleDecisionError, match="[Ss]witch"):
+            Gen3ActionMapper.assert_decision_current(ctx, battle)
+
+    def test_switch_set_unchanged_passes(self):
+        # Same legal switch set on the live battle as in the snapshot → no raise (guard
+        # must not be trigger-happy: only an actual divergence is staleness).
+        battle, _, _ = _make_battle(["tyranitar", "skarmory", "gengar"], [1, 2], ["rockslide"], turn=3)
+        ctx = _ctx(3, LegalActions.from_battle(battle))
+        Gen3ActionMapper.assert_decision_current(ctx, battle)  # no raise
+
+
+class TestAssertDecisionDefensiveness:
+    """REGRESSION GUARD for the self-play stale-decision race. assert_decision_current
+    compares EVERY action-relevant axis of the captured snapshot against the live request,
+    so any mid-decision divergence is caught as staleness (crash-over-corruption) instead of
+    silently sending a wrong order. If the guard is ever narrowed back toward "move ids only",
+    these fail. The headline (faint→force-switch, the move-face) is the exact divergence the
+    100%-self-play stress reproduced; the wrapper's pre-decision settle prevents it reaching
+    here, and this is the strict backstop."""
+
+    def test_faint_to_force_switch_is_stale(self):
+        # THE reproduction: the snapshot latched a normal move turn; the active faints and the
+        # live request flips to a force-switch (moves → [], force_switch True) before we
+        # serialize. Acting on the stale "pick a move" snapshot would send a move when the
+        # server demands a switch.
+        battle, _, _ = _make_battle(["tyranitar", "skarmory"], [1], ["rockslide", "earthquake"], turn=7)
+        ctx = _ctx(7, LegalActions.from_battle(battle))
+        battle.available_moves = []
+        battle.last_request["active"][0]["moves"] = []
+        battle.force_switch = True
+        with pytest.raises(StaleDecisionError):
+            Gen3ActionMapper.assert_decision_current(ctx, battle)
+
+    def test_move_disabled_under_us_is_stale(self):
+        # move_ids unchanged but a move got disabled (Encore / Disable from a background
+        # message): the (id, disabled) pair diverges. A move-ids-only check would miss this.
+        battle, _, _ = _make_battle(["tyranitar"], [], ["rockslide", "earthquake"], turn=4)
+        ctx = _ctx(4, LegalActions.from_battle(battle))
+        battle.last_request["active"][0]["moves"][0]["disabled"] = True
+        with pytest.raises(StaleDecisionError, match="moves"):
+            Gen3ActionMapper.assert_decision_current(ctx, battle)
+
+    @pytest.mark.parametrize("attr", ["force_switch", "trapped", "maybe_trapped", "wait"])
+    def test_request_flag_flip_is_stale(self, attr):
+        # Each request-derived flag flipping mid-decision means a new request landed under us
+        # — the decision is stale even when the move / switch sets still look the same.
+        battle, _, _ = _make_battle(["tyranitar", "skarmory"], [1], ["rockslide", "earthquake"], turn=5)
+        ctx = _ctx(5, LegalActions.from_battle(battle))
+        setattr(battle, attr, True)
+        with pytest.raises(StaleDecisionError, match=attr):
+            Gen3ActionMapper.assert_decision_current(ctx, battle)
+
+    def test_all_axes_unchanged_passes(self):
+        # Not trigger-happy: an identical live request must NOT raise.
+        battle, _, _ = _make_battle(["tyranitar", "skarmory"], [1], ["rockslide", "earthquake"], turn=5)
+        ctx = _ctx(5, LegalActions.from_battle(battle))
+        Gen3ActionMapper.assert_decision_current(ctx, battle)  # no raise
+
+
+class TestActionToOrderStaleness:
+    """A decision validated against a captured snapshot, then serialized against a LIVE
+    battle that has diverged, is STALENESS (tolerated) — not a fatal ValueError."""
+
+    def test_switch_desync_with_snapshot_raises_stale(self):
+        # Snapshot says slot 1 (skarmory) is switchable; the live battle lost it between
+        # decode and serialize. With a snapshot supplied (opponent/trainee path), this
+        # must surface as StaleDecisionError so the opponent defers — NOT a raw ValueError
+        # that crashes the whole run.
+        battle, _, _ = _make_battle(["tyranitar", "skarmory"], [1], ["rockslide"], turn=3)
+        snap = LegalActions.from_battle(battle)   # slot 1 legal in the snapshot
+        battle.available_switches = []            # live battle: skarmory gone
+        with pytest.raises(StaleDecisionError):
+            Gen3ActionMapper.action_to_order(1, battle, legal=snap)
+
+    def test_switch_desync_without_snapshot_stays_valueerror(self):
+        # No snapshot (fuzz / back-to-back path): there's nothing to be stale against, so a
+        # genuinely illegal switch stays a hard ValueError (crash-over-corruption preserved).
+        battle, _, _ = _make_battle(["tyranitar", "skarmory"], [], ["rockslide"], turn=3)
+        with pytest.raises(ValueError):
+            Gen3ActionMapper.action_to_order(1, battle)  # legal=None → fresh snapshot
+
+    def test_move_desync_with_snapshot_raises_stale(self):
+        # A DIFFERENT axis than switches: the chosen move vanishes from the live
+        # available_moves between decode and serialize. The catch-all must convert this
+        # too — proving the fix is axis-agnostic (any live-vs-snapshot divergence is
+        # staleness), not a switch-specific patch.
+        battle, _, avail = _make_battle(["tyranitar"], [], ["rockslide", "earthquake"], turn=3)
+        snap = LegalActions.from_battle(battle)   # both moves legal in the snapshot
+        battle.available_moves = [avail[1]]       # live battle: rockslide (slot 0) gone
+        with pytest.raises(StaleDecisionError):
+            Gen3ActionMapper.action_to_order(6, battle, legal=snap)  # action 6 = move slot 0
 
 
 # ===========================================================================

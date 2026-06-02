@@ -80,16 +80,29 @@ restart — no manifest). Design lives in `designs/ai_v5/`. Key behaviors:
   `MaskablePPO.load`), and `SnapshotPool` writes a shared `model_config.json` next to its
   snapshots, so an arch-mismatched snapshot fails with a clean `ModelVersionError` instead of
   loading mismatched weights.
-- **The opponent tolerates a stale/no-decision; the trainee never does** (correctness seam).
-  `SingleAgentWrapper` polls the opponent's `choose_move` on the *training* thread while
-  POKE_LOOP mutates its battle, so it can read a racing or momentarily-empty request. The
-  opponent is built `strict_decision=False`: an all-zero mask returns `idx=None` and a
-  `StaleDecisionError` from `assert_decision_current` is caught — both defer to
-  `choose_default_move()`, exactly like the heuristic opponents. The **trainee stays strict**
-  (`gen3_env.py` calls `assert_decision_current` with no fallback → crash-over-corruption), so
-  its `(obs, action)` labels are never stale. The opponent is a frozen policy that contributes
-  **no** training labels, so an occasional default move is faithful environment dynamics, not
-  garbage-in. (`StaleDecisionError` lives in `agents/action/mapper.py`.)
+- **The opponent matches the trainee's strictness — a stale decision CRASHES** (crash-over-corruption).
+  `SingleAgentWrapper` polls the opponent's `choose_move` on the *training* thread while POKE_LOOP
+  mutates its battle, so the opponent can read a request whose captured snapshot (`ctx.legal`)
+  diverges from the live battle by serialize time — e.g. a faint flips the battle to a force-switch
+  (`available_moves` → `[]`), or a switch target leaves `available_switches`. That raises a
+  `StaleDecisionError` (from `assert_decision_current` / `action_to_order`), which **propagates and
+  crashes the worker**, exactly like the trainee (`gen3_env.py` asserts with no fallback → the
+  launcher restarts from the last checkpoint). It is **not** caught and deferred to
+  `choose_default_move()`: in self-play the opponent IS the trainee's training signal, so a garbage
+  default move would be gigo. (An all-zero mask still legitimately returns `idx=None` → a default;
+  that is "no legal action", not staleness.) The underlying race — the opponent's main-thread read
+  is **not** protected by POKE_LOOP's per-battle `asyncio` lock (which only serialises POKE_LOOP
+  coroutines, not the training thread) — is **prevented at the source** by
+  `SingleAgentWrapper._settle_opponent_battle`, which drains POKE_LOOP's in-flight `parse_request`
+  for the opponent's battle (yields until its decision signature is stable) **before** the poll;
+  the strict crash above is the backstop, and the comprehensive `assert_decision_current` (every
+  action axis: moves+disabled, switches+species, force_switch/trapped/maybe_trapped/wait/struggle)
+  is the detector. **Full context — mechanism, why it was hard, and the three-tier verification
+  (deterministic guard → single-env `--widen` fuzz → faithful `GEN3_FORCE_SELFPLAY` stress) — is
+  in `RACE_FUZZ_README.md`.** (`StaleDecisionError` lives in `agents/action/mapper.py`. The settle
+  is **unconditional** in production — no disable switch; the deterministic
+  `single_agent_wrapper_test.py` guards that `step` still calls it. `GEN3_FORCE_SELFPLAY` forces
+  100% self-play for the stress.)
 - **Self-play engages in the first process, not only after a restart.** The env is built before
   the model exists (the model needs the env's spaces), so on the first self-play process
   `_maybe_engage_self_play` seeds the pool from the loaded weights and rebuilds the env with

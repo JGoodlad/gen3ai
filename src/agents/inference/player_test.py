@@ -4,7 +4,8 @@ from unittest.mock import MagicMock, patch
 from contextlib import contextmanager
 from poke_env.player.battle_order import ForfeitBattleOrder
 from poke_env.player import Player
-from agents.inference.player import Gen3Player
+from agents.inference.player import Gen3Player, RLPlayer
+from agents.action.mapper import StaleDecisionError
 from agents.observation.state_encoder import load_mappings, Gen3ObservationEncoder
 from agents.training.stall import StallConfig, StallLogger
 from agents.battle.strict_view import StrictBattleView
@@ -422,3 +423,40 @@ class TestConnectGuard:
             sup.assert_awaited_once()
 
         asyncio.run(asyncio.wait_for(run(), timeout=5))
+
+
+def _make_rl_opponent():
+    """An RLPlayer built WITHOUT Player.__init__ (no model, no server) — just enough
+    attributes to drive choose_move's decision path deterministically."""
+    p = RLPlayer.__new__(RLPlayer)
+    p._stochastic = False
+    p._temperature = 1.0
+    p._n_decisions = 0
+    p._n_defaults = 0
+    p._handle_stall = MagicMock(return_value=None)               # no stall forfeit
+    p._predict_best_action = MagicMock(return_value=(3, None, None))  # a legal idx
+    return p
+
+
+class TestStaleDecisionStrict:
+    """choose_move matches the TRAINEE's strictness: a stale decision context
+    (StaleDecisionError from action_to_order) PROPAGATES and crashes — it is NEVER deferred
+    to a default order. In self-play the opponent IS the trainee's training signal, so a
+    garbage default move would be gigo; we act on the real decision or we crash."""
+
+    def test_stale_decision_propagates_never_defaults(self):
+        p = _make_rl_opponent()
+        p.action_to_order = MagicMock(side_effect=StaleDecisionError("mid-decision change"))
+        p.choose_default_move = MagicMock()
+        with pytest.raises(StaleDecisionError):
+            RLPlayer.choose_move(p, MagicMock())
+        p.choose_default_move.assert_not_called()   # never silently substitutes a default
+
+    def test_clean_decision_returns_order_unchanged(self):
+        p = _make_rl_opponent()
+        sentinel_order = object()
+        p.action_to_order = MagicMock(return_value=sentinel_order)
+        p.choose_default_move = MagicMock()
+        result = RLPlayer.choose_move(p, MagicMock())
+        assert result is sentinel_order             # normal path — unchanged
+        p.choose_default_move.assert_not_called()

@@ -18,7 +18,7 @@ class ShowdownConnectionError(RuntimeError):
 from agents.battle.gen3_battle import Gen3Battle
 from agents.battle.live_view import LegalActions
 
-from agents.action.mapper import Gen3ActionMapper, StaleDecisionError
+from agents.action.mapper import Gen3ActionMapper
 from agents.action.mask_generator import Gen3ActionMasker
 from agents.observation.turn_delta_encoder import TurnDeltaEncoder
 from agents.training.episode_tracker import EpisodeTracker
@@ -165,8 +165,7 @@ class RLPlayer(Gen3Player):
                  mappings=None, account_configuration=None,
                  stall_config: Optional[StallConfig] = None,
                  max_concurrent_battles=10,
-                 stochastic: bool = True, temperature: float = 1.0,
-                 strict_decision: bool = True, **kwargs):
+                 stochastic: bool = True, temperature: float = 1.0, **kwargs):
         super().__init__(
             observation_encoder=None,
             mappings=mappings,
@@ -187,16 +186,12 @@ class RLPlayer(Gen3Player):
         # >1 flatter (more random), <1 sharper (toward argmax). Ignored when not stochastic.
         self._stochastic = stochastic
         self._temperature = temperature
-        # When False, tolerate a stale decision context (StaleDecisionError) by deferring
-        # to the default order instead of raising. Set False for self-play TRAINING
-        # opponents (polled on the training thread while POKE_LOOP mutates their battle);
-        # the trainee and eval stay strict (crash-over-corruption).
-        self._strict_decision = strict_decision
         # Default-rate telemetry (read via the env wrapper for self-play opponents):
-        # total decision calls, total default deferrals, and the async-race subset.
+        # total decision calls and total default deferrals (idx None → no legal action).
+        # A stale decision context is NOT one of these — it crashes (see choose_move), the
+        # same crash-over-corruption strictness as the trainee.
         self._n_decisions = 0
         self._n_defaults = 0
-        self._n_stale_defaults = 0
 
     def _predict_best_action(self, battle, stochastic=False, need_aux=True, temperature=1.0):
         """Pick the best legal action for `battle`.
@@ -271,11 +266,9 @@ class RLPlayer(Gen3Player):
         if idx is None:
             self._n_defaults += 1
             return self.choose_default_move()
-        try:
-            return self.action_to_order(idx, battle)
-        except StaleDecisionError:
-            if self._strict_decision:
-                raise
-            self._n_defaults += 1
-            self._n_stale_defaults += 1
-            return self.choose_default_move()
+        # Crash-over-corruption — the SAME strictness as the trainee (gen3_env lets a
+        # StaleDecisionError from assert_decision_current / action_to_order propagate and
+        # crash). We do NOT catch it and defer to a default order: in self-play the opponent
+        # IS the trainee's training signal, so a garbage default move is gigo. We act on the
+        # real decision or we crash — the race gets fixed at the source, never tolerated here.
+        return self.action_to_order(idx, battle)
