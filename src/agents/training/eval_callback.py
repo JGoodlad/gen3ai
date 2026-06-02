@@ -694,10 +694,20 @@ class PerOpponentEvalCallback(BaseCallback):
         })
         send_metrics(tui)
 
-        print(f"[EVAL] step {step:,}: aggregate {aggregate * 100:.1f}% "
-              f"(best {self._best_aggregate_win_rate * 100:.1f}%)")
-        send_event(f"🧪 Eval @ {step:,}: {aggregate * 100:.1f}% "
-                   f"(best {self._best_aggregate_win_rate * 100:.1f}%)")
+        # _maybe_save_best() updates _best_aggregate_win_rate AFTER this, so the value
+        # here is the prior best — surface a new best explicitly rather than printing a
+        # stale "best" that the current rate already beats. (-1.0 = no eval yet.)
+        prev_best = self._best_aggregate_win_rate
+        pct = aggregate * 100
+        if prev_best < 0.0:
+            summary = f"{pct:.1f}% (first eval)"
+        elif aggregate > prev_best:
+            summary = f"{pct:.1f}% 🏆 new best (+{(aggregate - prev_best) * 100:.1f}pts)"
+        else:
+            summary = (f"{pct:.1f}% (best {prev_best * 100:.1f}%, "
+                       f"-{(prev_best - aggregate) * 100:.1f}pts)")
+        print(f"[EVAL] step {step:,}: aggregate {summary}")
+        send_event(f"🧪 Eval @ {step:,}: {summary}")
 
         if self._model_dir:
             record_eval_results(self._model_dir, step,
