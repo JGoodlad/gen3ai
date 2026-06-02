@@ -124,6 +124,12 @@ class RewardBreakdown:
 
 FAINT_BASE = 0.5        # minimum faint penalty/reward at 0% HP
 FAINT_HP_SCALE = 2.0   # scales faint cost/reward linearly with HP at time of faint
+FAINT_MATERIAL_PENALTY = 0.75  # flat EXTRA cost (beyond the HP-scaled term) for losing one of OUR
+                               # mons. A faint removes a whole mon from a 6-mon team — its value
+                               # isn't just its current HP. ASYMMETRIC (faint_ours only, faint_opp
+                               # unchanged): it makes a healthy-for-healthy/low trade net-negative,
+                               # blunts Explosion-as-a-free-KO-button, and nudges the policy to
+                               # preserve mons (countering the all-or-nothing 6-0 dynamic). Tunable.
 HP_VALUE = 2.0
 VICTORY_VALUE = 30.0
 FINISHING_BLOW_BONUS = 0.5   # extra bonus for KO'ing with a damaging move
@@ -790,8 +796,18 @@ class Gen3RewardManager:
         return effective_boost * BOOST_UTILIZED_SCALE * damage_dealt
 
     def _compute_finishing_blow_bonus(self, delta: TurnDelta, live) -> float:
-        """Extra bonus when a damaging move secures the KO."""
+        """Extra bonus when a damaging move secures the KO.
+
+        Suppressed when our own mon faints the same turn (Explosion / Self-Destruct,
+        or any mutual KO). A kill that costs us our own mon is not a clean finishing
+        blow: without this guard a 1-for-1 *healthy* Explosion trade nets POSITIVE,
+        because the symmetric hp_ours/hp_opp and faint_ours/faint_opp terms cancel
+        and the +0.5 tips it over — teaching the policy to use Explosion as a free
+        KO button. The trade-cost side is handled by the faint_ours material penalty.
+        """
         if not delta.opp_fainted:
+            return 0.0
+        if delta.we_fainted:
             return 0.0
         if delta.our_move_id is None or delta.our_switch_to is not None:
             return 0.0
@@ -821,7 +837,8 @@ class Gen3RewardManager:
         # --- Base ---
         bd.hp_ours = float(delta.our_hp_delta.sum()) * HP_VALUE
         bd.hp_opp = -float(delta.opp_hp_delta.sum()) * HP_VALUE
-        bd.faint_ours = -(FAINT_BASE + FAINT_HP_SCALE * self._our_active_hp_before) if delta.we_fainted else 0.0
+        bd.faint_ours = -(FAINT_BASE + FAINT_HP_SCALE * self._our_active_hp_before
+                          + FAINT_MATERIAL_PENALTY) if delta.we_fainted else 0.0
         bd.faint_opp = (FAINT_BASE + FAINT_HP_SCALE * self._opp_active_hp_before) if delta.opp_fainted else 0.0
         won, lost, finished = self._terminal(live)
         if won:

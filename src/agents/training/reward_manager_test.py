@@ -7,7 +7,7 @@ from agents.training.reward_manager import (
     SWITCH_BASE_BONUS, SE_SWITCH_BONUS, MATCHUP_PENALTY,
     SPIKES_LAYER_BONUS, SPIKES_WASTE_PENALTY, FAILED_ROAR_PENALTY,
     FUTILE_ATTACK_PENALTY, FUTILE_IMMUNE_PENALTY, ESCAPE_THREAT_BONUS,
-    HP_VALUE, FAINT_BASE, FAINT_HP_SCALE, VICTORY_VALUE,
+    HP_VALUE, FAINT_BASE, FAINT_HP_SCALE, FAINT_MATERIAL_PENALTY, VICTORY_VALUE,
     FUTILE_SETUP_PENALTY, SETUP_LOW_HP_MAX_PENALTY, STATUS_WASTED_PENALTY,
     EXPLOSION_BLOCK_BONUS, FINISHING_BLOW_BONUS,
 )
@@ -1242,7 +1242,7 @@ class TestFaintScaling(unittest.TestCase):
 
     def test_full_hp_faint_costs_max(self):
         reward = self._faint_ours_reward(1.0)
-        self.assertAlmostEqual(reward, -(0.5 + 2.0 * 1.0), places=4)
+        self.assertAlmostEqual(reward, -(0.5 + 2.0 * 1.0 + FAINT_MATERIAL_PENALTY), places=4)
 
     def test_low_hp_faint_costs_less(self):
         r_low = self._faint_ours_reward(0.1)
@@ -1251,7 +1251,18 @@ class TestFaintScaling(unittest.TestCase):
 
     def test_near_zero_hp_faint_costs_minimum(self):
         reward = self._faint_ours_reward(0.0)
-        self.assertAlmostEqual(reward, -0.5, places=4)
+        self.assertAlmostEqual(reward, -(0.5 + FAINT_MATERIAL_PENALTY), places=4)
+
+    def test_faint_ours_carries_flat_material_penalty(self):
+        """Our faint costs the HP-scaled term PLUS a flat material penalty (asymmetric)."""
+        # The same-HP opp faint earns only the HP-scaled term (no material penalty).
+        our_faint_full = self._faint_ours_reward(1.0)
+        mgr = Gen3RewardManager(log_level=LogLevel.QUIET)
+        ctx = _ctx_with_boosts(opp_hp_val=1.0)
+        mgr.record_action(ctx, 6)
+        opp_faint_full = mgr.process_turn_reward(_battle(), _delta(opp_fainted=True))
+        # |faint_ours| exceeds faint_opp by exactly the material penalty at equal HP.
+        self.assertAlmostEqual(-our_faint_full - opp_faint_full, FAINT_MATERIAL_PENALTY, places=4)
 
     def test_faint_opp_full_hp_earns_max(self):
         ctx = _ctx_with_boosts(opp_hp_val=1.0)
@@ -1831,6 +1842,37 @@ class TestFinishingBlow(unittest.TestCase):
         our = _make_mon("GROUND", moves=[("earthquake", "GROUND", 100)])
         bd = self._do_attack_ko(our, opp_fainted=True, our_move_id="earthquake")
         self.assertAlmostEqual(bd.finishing_blow, FINISHING_BLOW_BONUS, places=5)
+
+    def test_no_bonus_on_self_faint_ko(self):
+        """opp_fainted=True but we ALSO faint (Explosion/Self-Destruct / mutual KO) →
+        finishing_blow == 0. A KO that costs us our own mon is not a clean finish."""
+        our = _make_mon("NORMAL", moves=[("explosion", "NORMAL", 250)])
+        self.manager.record_action(_ctx(turn=1), 6)
+        self.manager._opp_active_hp_before = 1.0
+        battle = _battle(our_mon=our, opp_mon=None)
+        d = _delta(opp_fainted=True, we_fainted=True, our_move_id="explosion",
+                   opp_hp_delta=-1.0)
+        self.manager.process_turn_reward(battle, d)
+        self.assertAlmostEqual(self.manager._last_breakdown.finishing_blow, 0.0, places=5)
+
+    def test_healthy_explosion_trade_is_net_negative(self):
+        """A 1-for-1 Explosion trade of two HEALTHY mons must net NEGATIVE.
+
+        Regression for the explosion-as-free-KO-button bug: the symmetric
+        hp_ours/hp_opp and faint_ours/faint_opp terms cancel, so before the fix
+        finishing_blow=+0.5 made a healthy 6-for-6 trade net +0.5. Now finishing_blow
+        is suppressed on self-faint AND faint_ours carries the material penalty, so a
+        healthy trade is clearly bad."""
+        mgr = Gen3RewardManager(log_level=LogLevel.QUIET)
+        our = _make_mon("NORMAL", moves=[("explosion", "NORMAL", 250)])
+        ctx = _ctx_with_boosts(our_hp_val=1.0, opp_hp_val=1.0)
+        mgr.record_action(ctx, 6)
+        battle = _battle(our_mon=our, opp_mon=None)
+        d = _delta(opp_fainted=True, we_fainted=True, our_move_id="explosion",
+                   our_hp_delta=-1.0, opp_hp_delta=-1.0)
+        total = mgr.process_turn_reward(battle, d)
+        self.assertLess(total, 0.0)
+        self.assertAlmostEqual(total, -FAINT_MATERIAL_PENALTY, places=4)
 
     def test_no_bonus_for_non_damaging_move_kill(self):
         """opp_fainted=True but move has base_power=0 → finishing_blow == 0."""

@@ -65,6 +65,7 @@ from agents.training.reward_manager import (
     FAILED_ROAR_PENALTY,
     FAINT_BASE,
     FAINT_HP_SCALE,
+    FAINT_MATERIAL_PENALTY,
     FINISHING_BLOW_BONUS,
     FUTILE_ATTACK_PENALTY,
     FUTILE_IMMUNE_PENALTY,
@@ -270,19 +271,21 @@ def _check_invariants(
         viol(f"hp_opp={bd.hp_opp:.4f} != expected {expected_hp_opp:.4f}")
 
     # --- Base: faint signs and magnitudes ---
-    # Formula: -(FAINT_BASE + FAINT_HP_SCALE * hp_before).
-    # Range is [-2.5, -0.5] INCLUSIVE on both ends: -2.5 fires when the mon
-    # fainted at full HP (Explosion/Self-Destruct, OHKO), -0.5 fires at 0%
-    # (already chip-damaged to 0 by something else and then a finishing hit).
+    # Formula: -(FAINT_BASE + FAINT_HP_SCALE * hp_before + FAINT_MATERIAL_PENALTY).
+    # The flat FAINT_MATERIAL_PENALTY is ASYMMETRIC (faint_ours only) — a faint
+    # removes a whole mon, worth more than its current HP. Range is [-3.25, -1.25]
+    # INCLUSIVE: -3.25 at full HP (Explosion/Self-Destruct, OHKO), -1.25 at 0%.
     if delta.we_fainted:
         stats.fires_by_signal["faint_ours"] += 1
-        if not (-2.5 <= bd.faint_ours <= -0.5):
-            viol(f"faint_ours={bd.faint_ours:.4f} out of [-2.5, -0.5]")
-        expected = -(FAINT_BASE + FAINT_HP_SCALE * state.our_active_hp_before)
+        if not (-3.25 <= bd.faint_ours <= -1.25):
+            viol(f"faint_ours={bd.faint_ours:.4f} out of [-3.25, -1.25]")
+        expected = -(FAINT_BASE + FAINT_HP_SCALE * state.our_active_hp_before
+                     + FAINT_MATERIAL_PENALTY)
         if not _almost(bd.faint_ours, expected, tol=1e-3):
             viol(
                 f"faint_ours={bd.faint_ours:.4f} != -(FAINT_BASE + FAINT_HP_SCALE * "
-                f"hp_before={state.our_active_hp_before:.3f}) = {expected:.4f}"
+                f"hp_before={state.our_active_hp_before:.3f} + FAINT_MATERIAL_PENALTY) "
+                f"= {expected:.4f}"
             )
     elif bd.faint_ours != 0.0:
         viol(f"faint_ours={bd.faint_ours:.4f} fired without we_fainted")
@@ -338,8 +341,11 @@ def _check_invariants(
         our_mon.moves.get(delta.our_move_id)
         if our_mon and delta.our_move_id else None
     )
+    # Suppressed on self-faint (Explosion/Self-Destruct / mutual KO): a kill that
+    # costs us our own mon is not a clean finishing blow.
     is_finishing_blow = (
         delta.opp_fainted
+        and not delta.we_fainted
         and delta.our_move_id is not None
         and delta.our_switch_to is None
         and not delta.our_failed_to_move
