@@ -6,6 +6,27 @@ import os
 import re
 
 
+# Directories that hold *.zip files which are NOT resumable training checkpoints:
+#   <run>/snapshots/snapshot_*.zip        self-play pool (the step-0 seed is written
+#                                         at startup, before any rollout)
+#   <run>/best_model/best_model.zip       best-by-eval export
+#   <run>/eval_traces/step_*/snapshot.zip retained eval snapshots
+# Resumable checkpoints live directly in the run dir (<run>/*_steps.zip, forced_*).
+# Returning a nested artifact would mis-derive run_dir — the caller takes
+# dirname(checkpoint), so run_dir would become e.g. <run>/snapshots, and the relaunched
+# child would then nest its own snapshots/ and write checkpoints into the pool. It would
+# also let a crash *before* the first real checkpoint silently "resume" from the step-0
+# seed instead of surfacing as the fatal no-checkpoint case it is.
+_ARTIFACT_DIRS = {"snapshots", "best_model", "eval_traces"}
+
+
+def _is_resumable_checkpoint(path: str, models_root: str) -> bool:
+    """True unless ``path`` lives under one of the non-checkpoint artifact dirs."""
+    rel = os.path.relpath(path, models_root)
+    dir_parts = rel.split(os.sep)[:-1]  # directories between models_root and the file
+    return _ARTIFACT_DIRS.isdisjoint(dir_parts)
+
+
 def find_latest_checkpoint(
     models_root: str,
     run_dir: "str | None" = None,
@@ -21,6 +42,7 @@ def find_latest_checkpoint(
                 return candidate
 
     zips = glob.glob(os.path.join(models_root, "**", "*.zip"), recursive=True)
+    zips = [p for p in zips if _is_resumable_checkpoint(p, models_root)]
     if min_mtime:
         zips = [p for p in zips if os.path.getmtime(p) >= min_mtime]
     if not zips:

@@ -21,7 +21,14 @@ how it works internally. Modules: `checkpoint.py`, `worktree.py`, `child.py`, `i
   counter. The window is deliberately well past the 3+ min it takes to bring up the SubprocVecEnv
   workers + Showdown connections, so a startup-time crash is still counted as "rapid" rather than
   misread as progress. If a crash has no checkpoint to resume from, it's fatal — the launcher
-  propagates the child's exit code rather than masking it. The dashboard shows a
+  propagates the child's exit code rather than masking it. "Checkpoint" here means a *real*
+  top-level run checkpoint (`<run>/*_steps.zip`, `forced_*`): `find_latest_checkpoint`
+  deliberately skips `*.zip` artifacts nested under `snapshots/` (the self-play pool — whose
+  step-0 seed is written at startup, *before* any rollout), `best_model/`, and `eval_traces/`.
+  Counting one would mis-derive `run_dir` to the artifact subdir (the caller takes
+  `dirname(checkpoint)` → `…/snapshots`, the wrong dir shown in the TUI 🗂 badge) and let a
+  startup crash silently "resume" from the freshly-initialised seed instead of failing loudly.
+  The dashboard shows a
   `↻ N restarts (M crash)` badge and the exit summary reports the crash count.
 - **Worktree isolation** — at startup, creates a detached git worktree pinned to the current
   HEAD (or to the commit recorded in the checkpoint's `metadata.json` when resuming). Agent

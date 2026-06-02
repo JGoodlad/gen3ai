@@ -117,6 +117,35 @@ class TestFindLatestCheckpoint:
         os.utime(str(old), (now - 100, now - 100))
         assert find_latest_checkpoint(str(tmp_path), min_mtime=now - 10) is None
 
+    def test_ignores_artifact_zips_when_no_real_checkpoint(self, tmp_path):
+        # A crash at startup, before any real checkpoint, leaves only non-resumable
+        # artifact zips: the self-play pool seed, the best-by-eval export, retained
+        # eval snapshots. find_latest_checkpoint must return None so the launcher
+        # surfaces the crash as the fatal no-checkpoint case — NOT "resume" from the
+        # step-0 seed (which mis-derived run_dir to .../snapshots in the TUI badge).
+        run = tmp_path / "run_x"
+        (run / "snapshots").mkdir(parents=True)
+        (run / "snapshots" / "snapshot_000000000000.zip").write_text("x")
+        (run / "best_model").mkdir()
+        (run / "best_model" / "best_model.zip").write_text("x")
+        (run / "eval_traces" / "step_10").mkdir(parents=True)
+        (run / "eval_traces" / "step_10" / "snapshot.zip").write_text("x")
+        assert find_latest_checkpoint(str(tmp_path)) is None
+        assert find_latest_checkpoint(str(tmp_path), run_dir=str(run)) is None
+
+    def test_real_checkpoint_not_shadowed_by_newer_artifact(self, tmp_path):
+        # The resumable checkpoint in the run dir wins even when a pool snapshot with a
+        # newer mtime sits in snapshots/ — the artifact must never shadow it.
+        run = tmp_path / "run_x"
+        ckpt = run / "checkpoint_1000_steps.zip"
+        ckpt.parent.mkdir(parents=True)
+        ckpt.write_text("x")
+        time.sleep(0.01)
+        snap = run / "snapshots" / "snapshot_000002000000.zip"
+        snap.parent.mkdir()
+        snap.write_text("x")  # newer mtime than the real checkpoint
+        assert find_latest_checkpoint(str(tmp_path)) == str(ckpt)
+
 
 # ── _insert_or_replace_model_arg ─────────────────────────────────────────────
 
