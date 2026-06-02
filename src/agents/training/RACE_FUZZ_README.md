@@ -126,6 +126,7 @@ opponent.choose_move(battle2)
 |---|---|---|
 | **Resolve** (the fix) | `agents/inference/player.py` → `choose_move` | On `StaleDecisionError` the opponent **RE-DECIDES** on the now-current request, bounded by `_OPP_REDECIDE_MAX`, falling back to a valid `choose_default_move()` only if the battle never settles. Its decision is internal to `SingleAgentWrapper.step` (SB3 never sees it), so it must always return a valid order — a raise would kill the worker. |
 | **No phantom** | `agents/training/episode_tracker.py` → `snapshot`/`restore`, called from `choose_move` | Each attempt's `embed_battle()` records its would-be decision into the rolling turn-history. `choose_move` snapshots before the loop and `restore()`s on a stale re-decide, so a superseded attempt leaves **no phantom turn** — only the committed decision survives in the opponent's obs. The snapshot captures exact deque contents (incl. an entry `maxlen` would drop), so the rollback is exact even deep in a long game. |
+| **Resolve (env boundary)** | `poke_env/environment/single_agent_wrapper.py` → `step` opponent poll | `choose_move`'s re-decide guards only up to the order it RETURNS. The wrapper then re-serializes that order via `self.env.order_to_action`, which re-reads the live battle **one more time** — a second, narrower window where the battle can finish or flip to wait/default-only under it (`ValueError: ... not in valid orders ['/choose default']`, the `restart_err_*_fa1fe3` crash). On that `ValueError` the opponent falls back to the **default order** instead of crashing the worker — same principle as the re-decide, since the default always serializes. |
 | **Detect** | `agents/action/mapper.py` → `assert_decision_current` | Compares **every** action-relevant axis of the snapshot vs the live request (moves with `disabled`, switches with `species`, `force_switch`, `trapped`, `maybe_trapped`, `wait`, `struggle`). Any divergence → `StaleDecisionError`. `action_to_order` is the final backstop for the residual window before serialization. |
 | **Pre-drain** (optimization) | `poke_env/environment/single_agent_wrapper.py` → `_settle_opponent_battle` | Before polling, yields on POKE_LOOP until the decision signature is stable, draining *already-arrived* messages to REDUCE how often the re-decide fires. It can't drain a turn-resolution still *in flight* during the model forward, so it's an optimization, **not** the fix (that's why the strict-crash version still crashed at 64-env scale). |
 | **Trainee** | `agents/training/gen3_env.py` | Stays **strict** — a stale trainee decision crashes (crash-over-corruption). See the next section for why this asymmetry is correct. |
@@ -141,10 +142,14 @@ principled, set by **who owns the decision**.
 *inside* `SingleAgentWrapper.step`; SB3 never sees this call. So when the battle advances under it
 we simply **re-decide on the now-current request** and return a valid order. Three properties make
 that airtight:
-- *Always valid.* The re-decide loops on the live request until `action_to_order` serializes
-  cleanly (bounded by `_OPP_REDECIDE_MAX`; a valid default if it never settles). SB3 has **no
-  failed-step path** — a raised exception kills the `SubprocVecEnv` worker — so "always returns a
-  valid order" is the contract, and the re-decide meets it.
+- *Always valid.* The opponent's order passes through **two** serialize points against the live
+  battle, and both tolerate the race. (1) Inside `choose_move`, the re-decide loops on the live
+  request until `action_to_order` serializes cleanly (bounded by `_OPP_REDECIDE_MAX`; a valid
+  default if it never settles). (2) The wrapper then re-serializes the returned order via
+  `order_to_action`, re-reading the battle once more — a narrower window where it can still go
+  stale (battle finished / flipped to wait); on the `ValueError` there the wrapper falls back to the
+  default order. SB3 has **no failed-step path** — a raised exception kills the `SubprocVecEnv`
+  worker — so "always returns a valid order" is the contract, and both points meet it.
 - *No corrupted learning.* The opponent is a frozen snapshot with no labels; nothing it does feeds
   a gradient. Re-deciding can't corrupt a transition because there is no opponent transition.
 - *No corrupted observation.* The one thing it carries forward is its turn-history obs, and the

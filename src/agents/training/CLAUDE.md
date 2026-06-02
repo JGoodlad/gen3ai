@@ -95,7 +95,12 @@ restart — no manifest). Design lives in `designs/ai_v5/`. Key behaviors:
     would-be decision into the rolling turn-history, so `choose_move` snapshots the tracker before
     the loop and `EpisodeTracker.restore()`s on a stale attempt — the superseded decision leaves
     **no phantom turn** in the opponent's turn-history obs (only the committed one survives; guarded
-    by `redecide_rollback_fuzz_test.py` + `episode_tracker_test.py`).
+    by `redecide_rollback_fuzz_test.py` + `episode_tracker_test.py`). The re-decide guards only up to
+    the order `choose_move` RETURNS; `SingleAgentWrapper.step` then re-serializes it via
+    `self.env.order_to_action`, re-reading the battle **one more time** — a second, narrower window
+    where it can finish/flip-to-wait under us (`ValueError ... not in valid orders ['/choose
+    default']`). On that the wrapper falls back to the default order rather than crash (guarded by
+    `single_agent_wrapper_test.py` + `order_to_action_race_fuzz_test.py`).
   - **Trainee** — its action is *SB3's*, computed outside `step` and not re-runnable mid-step, so a
     stale trainee decision **crashes** (`gen3_env`, no fallback): acting on it would corrupt its
     `(obs, action) → (reward, next_obs)` transition. Empirically it doesn't hit this — gated by the

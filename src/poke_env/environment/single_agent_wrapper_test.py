@@ -12,6 +12,7 @@ from poke_env.environment.single_agent_wrapper import (
     SingleAgentWrapper,
     _battle_decision_signature,
 )
+from poke_env.player.battle_order import DefaultBattleOrder
 
 
 def _mk_move(mid):
@@ -89,3 +90,76 @@ def test_step_settles_before_opponent_reads():
         f"settle must run before the opponent is polled; call order was {order}"
     )
     assert "poll" in order  # the opponent was actually polled (we exercised the real branch)
+
+
+# ---------------------------------------------------------------------------
+# Opponent order_to_action stale-race fallback — the window PAST choose_move's
+# re-decide: the order can go stale between choose_move and the env-level serialize
+# (battle finished / flipped to wait under it). The opponent must default, not crash
+# the worker. Guards against regressing the restart_err_*_fa1fe3 crash.
+# ---------------------------------------------------------------------------
+
+def _mk_wrapper_for_opp_poll(order_to_action_side_effect):
+    """A SingleAgentWrapper wired to drive the opponent-poll branch of step()
+    deterministically. ``order_to_action_side_effect`` (a list) controls what
+    env.order_to_action does on each call: an exception instance is raised, a value returned."""
+    w = SingleAgentWrapper.__new__(SingleAgentWrapper)
+    w._settle_opponent_battle = MagicMock()
+    w.env = MagicMock()
+    b2 = MagicMock()
+    b2.wait = False
+    b2.teampreview = False
+    w.env.battle2 = b2
+    w.env._fake = False
+    w.env._strict = True
+    w.env.agent1.username = "a1"
+    w.env.agent2.username = "a2"
+    w.env.order_to_action = MagicMock(side_effect=order_to_action_side_effect)
+    w.env.step.return_value = (
+        {"a1": {}}, {"a1": 0.0}, {"a1": False}, {"a1": False}, {"a1": {}},
+    )
+    w.opponent = MagicMock()
+    w.opponent.choose_move = MagicMock(return_value=object())  # a non-awaitable order
+    return w
+
+
+def test_opp_order_race_falls_back_to_default():
+    """The opponent's order goes stale between choose_move and the env-level serialize. The
+    wrapper must fall back to the default order, NOT propagate the ValueError (which would kill
+    the SubprocVecEnv worker → launcher restart)."""
+    sentinel_action = np.array([0])
+    w = _mk_wrapper_for_opp_poll(
+        [ValueError("order /choose switch Skarmory not in valid orders ['/choose default']!"),
+         sentinel_action]
+    )
+    w.opponent._n_redecides = 0
+
+    w.step(np.array([6]))  # must NOT raise
+
+    assert w.env.order_to_action.call_count == 2, "expected the opponent order + the default fallback"
+    fallback_order = w.env.order_to_action.call_args_list[1].args[0]
+    assert isinstance(fallback_order, DefaultBattleOrder), "fallback must serialize a default order"
+    assert w.opponent._n_redecides == 1, "the resolved race must be counted"
+
+
+def test_opp_order_race_with_bot_opponent_without_counter():
+    """A non-RL opponent (no ``_n_redecides``) hits the same race; the wrapper must still default
+    without an AttributeError on the missing counter."""
+    w = _mk_wrapper_for_opp_poll([ValueError("stale"), np.array([0])])
+    w.opponent = MagicMock(spec=["choose_move"])   # no _n_redecides attribute
+    w.opponent.choose_move = MagicMock(return_value=object())
+
+    w.step(np.array([6]))  # must NOT raise
+
+    assert w.env.order_to_action.call_count == 2
+
+
+def test_opp_clean_order_does_not_fall_back():
+    """The common path: a valid opponent order is serialized once, with no default fallback."""
+    w = _mk_wrapper_for_opp_poll([np.array([3])])
+    w.opponent._n_redecides = 0
+
+    w.step(np.array([6]))
+
+    assert w.env.order_to_action.call_count == 1, "a clean order must not trigger the fallback"
+    assert w.opponent._n_redecides == 0

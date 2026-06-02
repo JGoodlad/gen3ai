@@ -78,12 +78,35 @@ class SingleAgentWrapper(Env[Dict[str, Any], ActionType]):
         elif not self.env.battle2.teampreview:
             opp_order = self.opponent.choose_move(self.env.battle2)
             assert not isinstance(opp_order, Awaitable)
-            opp_action = self.env.order_to_action(
-                opp_order,
-                self.env.battle2,
-                fake=self.env._fake,
-                strict=self.env._strict,
-            )
+            try:
+                opp_action = self.env.order_to_action(
+                    opp_order,
+                    self.env.battle2,
+                    fake=self.env._fake,
+                    strict=self.env._strict,
+                )
+            except ValueError:
+                # Residual stale-decision race, one window PAST choose_move's own re-decide:
+                # POKE_LOOP parsed an in-flight message between choose_move producing this order
+                # and order_to_action re-reading the live battle, so the order no longer matches
+                # the request — typically the battle finished or flipped to a wait/default-only
+                # request mid-decision (e.g. the opponent's last mon fainted as it chose, leaving
+                # valid orders == ['/choose default']). choose_move's re-decide guards the window
+                # only up to the order it RETURNS; this env-level serialize re-reads the battle one
+                # more time and can still diverge. The opponent's decision is internal to step and
+                # SB3 has no failed-step path, so we fall back to the default order rather than
+                # crash the worker — same principle as the re-decide. (The trainee serializes
+                # strictly in gen3_env; only the opponent tolerates this.) Counts as a resolved
+                # race in selfplay_opp_redecide_rate when the opponent tracks it.
+                _n = getattr(self.opponent, "_n_redecides", None)
+                if _n is not None:
+                    self.opponent._n_redecides = _n + 1
+                opp_action = self.env.order_to_action(
+                    DefaultBattleOrder(),
+                    self.env.battle2,
+                    fake=self.env._fake,
+                    strict=self.env._strict,
+                )
         elif self.env.battle2.format is None or "vgc" not in self.env.battle2.format:
             raise NotImplementedError(
                 "Teampreview is only supported for VGC formats in SingleAgentWrapper."
