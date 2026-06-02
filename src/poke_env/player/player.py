@@ -13,6 +13,7 @@ from typing import Any, Awaitable, Dict, List, Optional, Union
 
 import orjson
 
+from utils import race_trace  # debug ring buffer (GEN3_RACE_TRACE); no-op when off
 from poke_env.battle.abstract_battle import AbstractBattle
 from poke_env.battle.battle import Battle
 from poke_env.battle.double_battle import DoubleBattle
@@ -284,6 +285,11 @@ class Player(ABC):
 
         should_request = False
         for split_message in split_messages[1:]:
+            if split_message:
+                race_trace.trace(
+                    getattr(battle, "battle_tag", ""),
+                    "RX " + "|".join(map(str, split_message[:6])),
+                )
             if not split_message:
                 continue
             elif len(split_message) == 1:

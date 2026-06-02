@@ -23,6 +23,7 @@ from agents.action.mask_generator import Gen3ActionMasker
 from agents.observation.turn_delta_encoder import TurnDeltaEncoder
 from agents.training.episode_tracker import EpisodeTracker
 from agents.training.stall import StallConfig, StallLogger
+from utils import race_trace  # debug ring buffer (GEN3_RACE_TRACE); no-op when off
 from agents.model.features_extractor import N_HISTORY_TURNS
 
 
@@ -204,6 +205,10 @@ class RLPlayer(Gen3Player):
         GPU work per decision — plus two GPU→CPU copies. `probs` is then None.
         """
         obs_dict = self.embed_battle(battle)
+        race_trace.trace(
+            getattr(battle, "battle_tag", ""),
+            f"EMBED(opp) battle.turn={getattr(battle, 'turn', '?')} mask_sum={int(obs_dict['action_mask'].sum())}",
+        )
         obs = obs_dict["observation"]
         mask = obs_dict["action_mask"]
 

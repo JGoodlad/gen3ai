@@ -10,6 +10,8 @@ from poke_env.environment.env import ActionType, PokeEnv
 from poke_env.player.battle_order import DefaultBattleOrder
 from poke_env.player.player import Player
 
+from utils import race_trace  # debug ring buffer (GEN3_RACE_TRACE); no-op when off
+
 # Opponent-poll settle (the self-play stale-decision race fix). Yields are cheap (µs); the
 # common case is already-settled → one re-check and return. The bound + timeout are backstops
 # against a pathological loop; the strict StaleDecisionError guard catches any residual.
@@ -59,6 +61,11 @@ class SingleAgentWrapper(Env[Dict[str, Any], ActionType]):
         # this one, so without this a faint→force-switch parse can land between the snapshot
         # and the serialize (the stale-decision race). See _settle_opponent_battle.
         self._settle_opponent_battle()
+        race_trace.trace(
+            getattr(self.env.battle2, "battle_tag", ""),
+            f"POLL-OPP post-settle battle.turn={getattr(self.env.battle2, 'turn', '?')} "
+            f"wait={self.env.battle2.wait} force_switch={getattr(self.env.battle2, 'force_switch', '?')}",
+        )
         if self.env.battle2.wait:
             opp_action = self.env.order_to_action(
                 DefaultBattleOrder(),

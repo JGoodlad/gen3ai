@@ -27,6 +27,7 @@ from agents.action.choice import Choice
 from agents.action.constants import SWITCH_END, MOVE_START, MOVE_END, STRUGGLE
 from agents.action.serialize import choice_to_order, order_to_action
 from agents.battle.live_view import LegalActions
+from utils import race_trace  # debug ring buffer (GEN3_RACE_TRACE); no-op when off
 
 if TYPE_CHECKING:
     from poke_env.player.battle_order import BattleOrder
@@ -182,16 +183,23 @@ class Gen3ActionMapper:
         it — crash-over-corruption). ``action_to_order`` is the backstop for the residual
         window between this check and serialization: any live-vs-snapshot failure there is
         reclassified as staleness too."""
+        tag = getattr(battle, "battle_tag", "")
+        race_trace.trace(
+            tag,
+            f"ASSERT ctx.turn={getattr(ctx, 'turn', None) if ctx is not None else None} "
+            f"battle.turn={getattr(battle, 'turn', '?')}",
+        )
         if ctx is None:
             raise RuntimeError(
                 f"Decision context is missing at turn {getattr(battle, 'turn', '?')}. "
                 "get_mask() / embed_battle() must run before action_to_order()."
+                + race_trace.dump(tag)
             )
         if ctx.turn != battle.turn:
             raise StaleDecisionError(
                 f"Decision context is from turn {ctx.turn} but current turn is "
                 f"{battle.turn}. get_mask() / embed_battle() must run before "
-                "action_to_order()."
+                "action_to_order()." + race_trace.dump(tag)
             )
         legal = getattr(ctx, "legal", None)
         if legal is not None:
@@ -225,7 +233,7 @@ class Gen3ActionMapper:
                 if latched != live:
                     raise StaleDecisionError(
                         f"Mid-decision state change at turn {battle.turn} [{axis}]: "
-                        f"latched={latched!r}, server={live!r}"
+                        f"latched={latched!r}, server={live!r}" + race_trace.dump(tag)
                     )
 
     # ------------------------------------------------------------------ #
