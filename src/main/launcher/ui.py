@@ -47,6 +47,7 @@ _METRIC_ORDER = [
     "eval/win_rate_vs_pool",
     "eval/mean_reward_mean",
     "eval/mean_reward_vs_bots",
+    "eval/mean_reward_vs_pool",
     "eval/win_rate_vs_random",
     "eval/win_rate_vs_heuristic",
     "eval/win_rate_vs_heuristic2",
@@ -235,7 +236,7 @@ class LauncherUI:
                 ordered.append(k)
 
         # Split eval: aggregate summary vs per-opponent detail for the right column.
-        _EVAL_SUMMARY = frozenset({"eval/win_rate_mean", "eval/win_rate_vs_bots", "eval/win_rate_vs_pool", "eval/mean_reward_mean", "eval/mean_reward_vs_bots", "eval/duration_sec"})
+        _EVAL_SUMMARY = frozenset({"eval/win_rate_mean", "eval/win_rate_vs_bots", "eval/win_rate_vs_pool", "eval/mean_reward_mean", "eval/mean_reward_vs_bots", "eval/mean_reward_vs_pool", "eval/duration_sec"})
         per_opponent: list = []
         eval_summary: dict = {}
         by_section: dict = {}
@@ -356,8 +357,9 @@ class LauncherUI:
             rw_bots = eval_summary.get("eval/mean_reward_vs_bots")
             t.add_row("  vs Bots", _wr_str(wr_bots), _rw_str(rw_bots))
             wr_pool = eval_summary.get("eval/win_rate_vs_pool")
+            rw_pool = eval_summary.get("eval/mean_reward_vs_pool")
             if wr_pool is not None:
-                t.add_row("  vs Pool", _wr_str(wr_pool), "")
+                t.add_row("  vs Pool", _wr_str(wr_pool), _rw_str(rw_pool))
             t.add_row("", "", "", end_section=True)
 
         def _row_label(opp: str) -> str:

@@ -354,9 +354,6 @@ async def main():
     parser.add_argument("--weight-decay", type=float, default=1e-5,
                         help="AdamW weight decay (L2 regularisation). Default 1e-5 is conservative for PPO.")
 
-    # --- Self-Play Flags ---
-    parser.add_argument("--use-v2-bots", "--use_v2_bots", dest="use_v2_bots", action="store_true", default=False,
-                        help="Add the V2 heuristic bots (Heuristic2, StallerV2, AggressiveV2, SetupSweepV2) to the training opponent pool and to eval")
     # --- Subprocess eval ---
     parser.add_argument("--eval-workers", "--eval_workers", dest="eval_workers", type=int, default=3,
                         help="Number of parallel eval-worker subprocesses per cycle. Workers work-steal "
@@ -431,23 +428,19 @@ async def main():
 
     mappings = load_mappings()
     
-    # Training heuristic opponents — ONE strong bot per archetype (not both v1 and v2 of
-    # each, which is redundant: StallerV2≈Staller). --use-v2-bots picks the stronger V2
-    # archetypes; legacy mode keeps v1. Random is NOT here (eval-only floor).
-    if args.use_v2_bots:
-        OPPONENT_CLASSES = [
-            Gen3HeuristicV2Player,
-            Gen3StallerV2Player,
-            Gen3AggressiveV2Player,
-            Gen3SetupSweepV2Player,
-        ]
-    else:
-        OPPONENT_CLASSES = [
-            SimpleHeuristicsPlayer,
-            Gen3StallerPlayer,
-            Gen3AggressivePlayer,
-            Gen3SetupSweepPlayer,
-        ]
+    # Training heuristic opponents — ALL eight archetype bots (both v1 and v2 of each).
+    # They play differently and the extra playstyle diversity is the point. Random is NOT
+    # here (it's the eval-only "is the model broken" floor).
+    OPPONENT_CLASSES = [
+        SimpleHeuristicsPlayer,
+        Gen3HeuristicV2Player,
+        Gen3StallerPlayer,
+        Gen3StallerV2Player,
+        Gen3AggressivePlayer,
+        Gen3AggressiveV2Player,
+        Gen3SetupSweepPlayer,
+        Gen3SetupSweepV2Player,
+    ]
     print(f"[Opponents] training pool = {len(OPPONENT_CLASSES)} bots "
           f"({', '.join(opponent_name(c) for c in OPPONENT_CLASSES)})")
 
@@ -654,19 +647,18 @@ async def main():
                 max_concurrent_battles=args.eval_concurrency,
             )),
         ]
-        if args.use_v2_bots:
-            for _cls, _uname in [
-                (Gen3HeuristicV2Player, f"FinalHeur2{ts}"),
-                (Gen3StallerV2Player, f"FinalStallV2{ts}"),
-                (Gen3AggressiveV2Player, f"FinalAggrV2{ts}"),
-                (Gen3SetupSweepV2Player, f"FinalSetupV2{ts}"),
-            ]:
-                final_opponents.append((opponent_name(_cls), _cls(
-                    battle_format=BATTLE_FORMAT, team=opponent_teambuilder,
-                    server_configuration=server_config,
-                    account_configuration=AccountConfiguration(_uname, "password"),
-                    max_concurrent_battles=args.eval_concurrency,
-                )))
+        for _cls, _uname in [
+            (Gen3HeuristicV2Player, f"FinalHeur2{ts}"),
+            (Gen3StallerV2Player, f"FinalStallV2{ts}"),
+            (Gen3AggressiveV2Player, f"FinalAggrV2{ts}"),
+            (Gen3SetupSweepV2Player, f"FinalSetupV2{ts}"),
+        ]:
+            final_opponents.append((opponent_name(_cls), _cls(
+                battle_format=BATTLE_FORMAT, team=opponent_teambuilder,
+                server_configuration=server_config,
+                account_configuration=AccountConfiguration(_uname, "password"),
+                max_concurrent_battles=args.eval_concurrency,
+            )))
 
         win_rates: dict[str, float] = {}
         for name, opponent in final_opponents:
@@ -765,7 +757,6 @@ async def main():
             model_dir=model_dir,
             server_config=server_config,
             showdown_port=args.showdown_port,
-            use_v2_bots=args.use_v2_bots,
             best_model_save_path=os.path.join(model_dir, "best_model"),
             promote_threshold=args.promote_threshold,
             self_play_temp=args.self_play_temp,
@@ -787,7 +778,6 @@ async def main():
         eval_callback = PerOpponentEvalCallback(
             model_dir=model_dir,
             server_config=server_config,
-            use_v2_bots=args.use_v2_bots,
             best_model_save_path=os.path.join(model_dir, "best_model"),
             n_workers=args.eval_workers,
             eval_device=args.eval_device,

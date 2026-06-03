@@ -116,9 +116,17 @@ _EVAL_SUBPROCESS_CONCURRENCY = 5
 # whatever results landed, and clears `_pending`. Without this a single hung worker
 # pins `_pending` forever and every later eval boundary is silently skipped — i.e. eval
 # never recovers for the rest of the run. Set generously above a healthy CPU cycle
-# (~6-10 min for the full roster incl. 300-game sentinels) so it never trips a slow-but-
-# -live eval; only a true hang reaches it.
+# (the full roster — all bots + sentinels at EVAL_GAMES each — runs well under this) so it
+# never trips a slow-but-live eval; only a true hang reaches it.
 _EVAL_CYCLE_TIMEOUT_SEC = 1800.0
+
+# Flat eval schedule — one cadence, one game count, applied uniformly to every bot
+# AND every self-play sentinel. No maturity tiers, no per-opponent caps: eval runs
+# non-blocking in a subprocess and skips a cycle whenever the previous one is still
+# running, so a heavier roster self-throttles (cadence just goes sparser) instead of
+# needing hand-tuned ceilings.
+EVAL_FREQ_STEPS = 2_000_000
+EVAL_GAMES = 100
 
 _OPPONENT_NAMES: dict[type, str] = {
     RandomPlayer: "random",
@@ -141,35 +149,31 @@ def opponent_name(player_cls: type) -> str:
 
 RANDOM_OPPONENT_NAME = opponent_name(RandomPlayer)
 
-# The canonical eval roster: (display name, player class, account prefix, is_v2).
-# Ordered; V2 bots only included when use_v2_bots is set. Single source of truth so
-# the in-process selfplay path, the subprocess worker, and the orchestrator agree.
-_EVAL_OPPONENT_SPECS: list[tuple[str, type, str, bool]] = [
-    ("random", RandomPlayer, "CbRand", False),
-    ("heuristic", SimpleHeuristicsPlayer, "CbHeur", False),
-    ("staller", Gen3StallerPlayer, "CbStall", False),
-    ("aggressive", Gen3AggressivePlayer, "CbAggr", False),
-    ("setup_sweep", Gen3SetupSweepPlayer, "CbSetup", False),
-    ("heuristic2", Gen3HeuristicV2Player, "CbHeur2", True),
-    ("staller_v2", Gen3StallerV2Player, "CbStallV2", True),
-    ("aggressive_v2", Gen3AggressiveV2Player, "CbAggrV2", True),
-    ("setup_sweep_v2", Gen3SetupSweepV2Player, "CbSetupV2", True),
+# The canonical eval roster: (display name, player class, account prefix). Every bot
+# plays — both the v1 and v2 of each archetype, since they play differently and the
+# extra diversity is the point. v1/v2 are paired for readable TUI/TensorBoard ordering.
+# Single source of truth so the in-process selfplay path, the subprocess worker, and the
+# orchestrator agree. Random leads (a cheap "is the model broken" floor; eval-only,
+# excluded from `win_rate_vs_bots`).
+_EVAL_OPPONENT_SPECS: list[tuple[str, type, str]] = [
+    ("random", RandomPlayer, "CbRand"),
+    ("heuristic", SimpleHeuristicsPlayer, "CbHeur"),
+    ("heuristic2", Gen3HeuristicV2Player, "CbHeur2"),
+    ("staller", Gen3StallerPlayer, "CbStall"),
+    ("staller_v2", Gen3StallerV2Player, "CbStallV2"),
+    ("aggressive", Gen3AggressivePlayer, "CbAggr"),
+    ("aggressive_v2", Gen3AggressiveV2Player, "CbAggrV2"),
+    ("setup_sweep", Gen3SetupSweepPlayer, "CbSetup"),
+    ("setup_sweep_v2", Gen3SetupSweepV2Player, "CbSetupV2"),
 ]
 
-
-# The eval roster is the STRONG, non-redundant set — one bot per archetype, not both v1
-# and v2 of each (StallerV2≈Staller etc.). `--use-v2-bots` selects the V2 archetypes (the
-# stronger versions; Heuristic2 is the hardest opponent); legacy mode keeps the v1 set.
-# Random is eval-only in BOTH (a cheap "is the model broken" floor; excluded from
-# `win_rate_vs_bots`). `_EVAL_OPPONENT_SPECS` keeps ALL entries so the worker can still
-# resolve any name; this just chooses which are actually evaluated/trained against.
-_V2_EVAL_ROSTER = ["random", "heuristic2", "staller_v2", "aggressive_v2", "setup_sweep_v2"]
-_V1_EVAL_ROSTER = ["random", "heuristic", "staller", "aggressive", "setup_sweep"]
+# Full roster, in spec order. Random first (the broken-model floor).
+_EVAL_ROSTER = [name for (name, _cls, _prefix) in _EVAL_OPPONENT_SPECS]
 
 
-def eval_opponent_names(use_v2_bots: bool) -> list[str]:
-    """Ordered display names of the eval roster for the given v2 setting."""
-    return list(_V2_EVAL_ROSTER if use_v2_bots else _V1_EVAL_ROSTER)
+def eval_opponent_names() -> list[str]:
+    """Ordered display names of the full eval roster (all bots + Random)."""
+    return list(_EVAL_ROSTER)
 
 
 def build_eval_opponents(server_config, teambuilder, names, tag=""):
@@ -181,7 +185,7 @@ def build_eval_opponents(server_config, teambuilder, names, tag=""):
     builds a fresh set per claimed opponent, so the tag carries (cycle, worker,
     claim) to avoid username collisions on the shared server.
     """
-    by_name = {n: (cls, prefix) for (n, cls, prefix, _v2) in _EVAL_OPPONENT_SPECS}
+    by_name = {n: (cls, prefix) for (n, cls, prefix) in _EVAL_OPPONENT_SPECS}
     out = []
     for name in names:
         cls, prefix = by_name[name]
@@ -266,9 +270,8 @@ async def eval_one_matchup(trainee, opponent, n_games, model_dir, step, name) ->
     """Run ONE trainee-vs-opponent matchup; return its metrics + write forensic traces.
 
     The shared per-matchup body behind both the bot-roster gather (`run_eval`) and the
-    self-play eval worker's per-sentinel matchups. `n_games` is the already-resolved game
-    count for THIS matchup — the caller applies `eval_games_for` for capped bot opponents,
-    and passes the scheduled count straight through for sentinels.
+    self-play eval worker's per-sentinel matchups. `n_games` is the flat per-opponent
+    game count (`EVAL_GAMES`) — the same for every bot and every sentinel.
 
     `trainee` is an `EvalRLPlayer` (reward tracking + forensic capture); `opponent` is any
     poke-env Player. Pure compute + disk (traces) — safe inside the eval worker process.
@@ -312,8 +315,7 @@ async def run_eval(players, opponents, n_games, model_dir, step) -> dict:
     Pure compute + disk (traces) — safe to call from the eval worker process.
     """
     async def eval_one(name, opponent):
-        games = eval_games_for(name, n_games)
-        return await eval_one_matchup(players[name], opponent, games, model_dir, step, name)
+        return await eval_one_matchup(players[name], opponent, n_games, model_dir, step, name)
 
     results = await asyncio.gather(*(eval_one(n, o) for n, o in opponents))
     return {
@@ -491,7 +493,14 @@ def replay_last_eval_to_tui(model_dir: str | None, resume_eval_metadata: str | N
     Reads ``latest_eval`` from this run's metadata.json (and the resumed checkpoint's, if
     given), and pushes the per-opponent + aggregate win-rate/reward/ep-len keys so the eval
     panel isn't blank until the next (possibly millions-of-steps-away) cycle. Shared by both
-    eval callbacks; sentinel rows aren't re-published (the pool differs run to run).
+    eval callbacks.
+
+    The self-play ``pool`` sub-block (aggregate + per-sentinel rows) is re-published too,
+    so the Pool/sentinel rows survive a restart exactly like the bot rows. This is safe even
+    though sentinels are positional and the pool slides: the pool only changes at an
+    eval-collect (seed/promote), which is also when the block is persisted — so the saved
+    rows match the pool that's reconstructed from ``snapshots/`` at restart. (Pre-seed evals
+    persist an empty ``sentinels`` list; those aren't re-published — nothing to show yet.)
     """
     block = None
     for path in (
@@ -517,9 +526,26 @@ def replay_last_eval_to_tui(model_dir: str | None, resume_eval_metadata: str | N
         "eval/mean_ep_len_vs_bots": block.get("mean_ep_len_vs_bots", 0.0),
         "_step": block.get("step", 0),
     })
+    # Self-play pool block: re-publish the aggregate + per-sentinel rows (newest→oldest,
+    # positional sentinel_<i>) using the saved step tags, mirroring the live collect path.
+    pool = block.get("pool")
+    if isinstance(pool, dict) and pool.get("sentinels"):
+        tui["eval/win_rate_vs_pool"] = pool.get("win_rate", 0.0)
+        tui["eval/mean_reward_vs_pool"] = pool.get("mean_reward", 0.0)
+        tui["eval/mean_ep_len_vs_pool"] = pool.get("mean_ep_len", 0.0)
+        tui["eval/sentinel_monotonicity"] = pool.get("monotonicity", 1.0)
+        if "snapshot_count" in pool:
+            tui["eval/pool_snapshot_count"] = float(pool["snapshot_count"])
+        for i, s in enumerate(pool["sentinels"]):
+            tui[f"eval/win_rate_vs_sentinel_{i}"] = s.get("win_rate", 0.0)
+            tui[f"eval/mean_reward_vs_sentinel_{i}"] = s.get("mean_reward", 0.0)
+            tui[f"eval/mean_ep_len_vs_sentinel_{i}"] = s.get("mean_ep_len", 0.0)
+            tui[f"eval/sentinel_step_{i}"] = float(s.get("step", 0))
     send_metrics(tui)
+    pool_note = (f", pool {pool['win_rate'] * 100:.1f}%"
+                 if isinstance(pool, dict) and pool.get("sentinels") else "")
     print(f"[EVAL] resumed — re-published last eval (step {block.get('step', '?')}, "
-          f"{block.get('win_rate_mean', 0.0) * 100:.1f}% mean) to the TUI")
+          f"{block.get('win_rate_mean', 0.0) * 100:.1f}% mean{pool_note}) to the TUI")
 
 
 def latest_recorded_eval_step(model_dir: str | None, resume_eval_metadata: str | None = None) -> int:
@@ -543,21 +569,6 @@ def latest_recorded_eval_step(model_dir: str | None, resume_eval_metadata: str |
         if blk:
             step = max(step, int(blk.get("step", 0)))
     return step
-
-# Per-opponent game caps. Eval now runs in a non-blocking subprocess, but on CPU
-# each game still costs wall-clock, so keep games-per-opponent bounded. The narrow
-# playstyle bots need only a coarse win-rate, so cap them at 100; the heuristic
-# generalists (closest to real play, lower-variance signal worth more games) cap at
-# 200. Both are clamped to the schedule's count so early tiers (100 games) are unaffected.
-_EVAL_GAMES_CAP_DEFAULT = 100
-_EVAL_GAMES_CAP_HEURISTIC = 200
-_HEURISTIC_EVAL_NAMES = frozenset({"heuristic", "heuristic2"})
-
-
-def eval_games_for(name: str, scheduled_games: int) -> int:
-    """Capped per-opponent game count for the given opponent display name."""
-    cap = _EVAL_GAMES_CAP_HEURISTIC if name in _HEURISTIC_EVAL_NAMES else _EVAL_GAMES_CAP_DEFAULT
-    return min(scheduled_games, cap)
 
 
 def bot_mean(d: dict[str, float]) -> float:
@@ -587,27 +598,6 @@ def build_bot_eval_block(
             for name in win_rates
         },
     }
-
-
-def eval_schedule(num_timesteps: int) -> tuple[int, int]:
-    """Shared adaptive eval schedule: returns (freq_steps, n_games).
-
-    0–20M:    every 2M steps, 100 games
-    20–100M:  every 3.5M steps, 300 games
-    100M+:    every 5M steps, 300 games
-
-    `n_games` is the per-tier ceiling; the actual per-opponent count is then
-    clamped by `eval_games_for` (100 default / 200 heuristics), so for bots the
-    300 ceiling reduces to ≤200 — it only sets the (unclamped) self-play sentinel
-    game count. The cadence widens as training matures and the win-rate curves move
-    more slowly, trading negligible resolution for less eval overhead.
-    """
-    if num_timesteps < 20_000_000:
-        return 2_000_000, 100
-    elif num_timesteps < 100_000_000:
-        return 3_500_000, 300
-    else:
-        return 5_000_000, 300
 
 
 class EvalRLPlayer(RewardTrackingMixin, RLPlayer):
@@ -700,8 +690,8 @@ class EvalRLPlayer(RewardTrackingMixin, RLPlayer):
 
 class PerOpponentEvalCallback(BaseCallback):
     """
-    Evaluates the trained agent against the fixed bot roster on the adaptive
-    schedule (see `eval_schedule`), but does so in a **separate subprocess** with
+    Evaluates the trained agent against the full bot roster on a flat schedule
+    (`EVAL_FREQ_STEPS` / `EVAL_GAMES`), but does so in a **separate subprocess** with
     a frozen weight snapshot, NON-BLOCKING:
 
     - On a trigger step, snapshot the live model to disk (`model.save`) and spawn
@@ -735,7 +725,6 @@ class PerOpponentEvalCallback(BaseCallback):
         model_dir: str | None,
         server_config=LocalhostServerConfiguration,
         *,
-        use_v2_bots: bool = False,
         best_model_save_path: str | None = None,
         n_workers: int = 3,
         eval_device: str = "cpu",
@@ -749,7 +738,6 @@ class PerOpponentEvalCallback(BaseCallback):
         super().__init__(verbose)
         self._model_dir = model_dir
         self._server_config = server_config
-        self._use_v2_bots = use_v2_bots
         self.best_model_save_path = best_model_save_path
         self._n_workers = max(1, n_workers)
         self._eval_device = eval_device
@@ -782,7 +770,7 @@ class PerOpponentEvalCallback(BaseCallback):
         self.abort_fn = None
 
     def _schedule(self) -> tuple[int, int]:
-        return eval_schedule(self.num_timesteps)
+        return EVAL_FREQ_STEPS, EVAL_GAMES
 
     def _init_callback(self) -> None:
         if self.best_model_save_path is not None:
@@ -831,7 +819,7 @@ class PerOpponentEvalCallback(BaseCallback):
         self.model.save(snapshot_base)  # SB3 appends .zip
         snapshot_zip = snapshot_base + ".zip"
 
-        names = eval_opponent_names(self._use_v2_bots)
+        names = eval_opponent_names()
         # Record exactly which model produced this cycle's traces (the prober reads
         # this to reload the right model). snapshot=None now; _persist_snapshot patches
         # it to the retained filename on success when --keep-eval-snapshots is set.

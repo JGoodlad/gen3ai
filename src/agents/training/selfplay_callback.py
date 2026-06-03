@@ -37,13 +37,14 @@ from agents.model.snapshot import record_eval_results
 from agents.training.eval_callback import (
     _EVAL_CYCLE_TIMEOUT_SEC,
     _EVAL_SUBPROCESS_CONCURRENCY,
+    EVAL_FREQ_STEPS,
+    EVAL_GAMES,
     RANDOM_OPPONENT_NAME,
     _b36,
     bot_mean,
     build_bot_eval_block,
     eval_opponent_names,
     eval_run_nonce,
-    eval_schedule,
     kill_eval_workers,
     latest_recorded_eval_step,
     merge_eval_results,
@@ -87,7 +88,6 @@ class SelfPlayCallback(BaseCallback):
         model_dir: Run directory (snapshot scratch under ``.eval_runs``, forensic traces,
             metadata.json). None disables eval (nowhere to snapshot/collect).
         server_config / showdown_port: threaded to the eval workers.
-        use_v2_bots: include the V2 bot roster.
         best_model_save_path: directory to copy the best frozen snapshot into.
         promote_threshold: ``win_rate_vs_pool`` threshold to trigger promotion.
         self_play_temp: sampling temperature for the (stochastic) sentinel opponents —
@@ -110,7 +110,6 @@ class SelfPlayCallback(BaseCallback):
         model_dir: str | None = None,
         server_config=LocalhostServerConfiguration,
         showdown_port: int | None = None,
-        use_v2_bots: bool = False,
         best_model_save_path: str | None = None,
         promote_threshold: float = 0.65,
         self_play_temp: float = 1.0,
@@ -128,7 +127,6 @@ class SelfPlayCallback(BaseCallback):
         self._model_dir = model_dir
         self._server_config = server_config
         self._showdown_port = showdown_port
-        self._use_v2_bots = use_v2_bots
         self.best_model_save_path = best_model_save_path
         self._promote_threshold = promote_threshold
         self._self_play_temp = self_play_temp
@@ -184,7 +182,7 @@ class SelfPlayCallback(BaseCallback):
     def _schedule(self) -> tuple[int, int]:
         if self._debug:
             return 4000, 3  # fast cadence for --debug --self-play smoke tests
-        return eval_schedule(self.num_timesteps)
+        return EVAL_FREQ_STEPS, EVAL_GAMES
 
     def _on_step(self) -> bool:
         if self._pending is not None:
@@ -224,7 +222,7 @@ class SelfPlayCallback(BaseCallback):
         self.model.save(snapshot_base)  # freeze live weights; SB3 appends .zip
         snapshot_zip = snapshot_base + ".zip"
 
-        bot_names = eval_opponent_names(self._use_v2_bots)
+        bot_names = eval_opponent_names()
         sentinel_entries = self._pool.sentinel_entries(n=5)
         sentinels = [
             {"label": f"sentinel_{i}", "path": str(e.path), "step": e.step}
@@ -367,18 +365,24 @@ class SelfPlayCallback(BaseCallback):
             # its step so the TUI can label the row "vs sentinel_0 (47.0M)".
             tui[f"eval/sentinel_step_{i}"] = float(entry.step)
 
+        sentinel_rewards = [rw for (_e, _l, _v, rw, _ep) in kept_sentinels]
         sentinel_ep_lens = [ep for (_e, _l, _v, _rw, ep) in kept_sentinels]
         win_rate_vs_pool = (
             sum(sentinel_win_rates) / len(sentinel_win_rates) if sentinel_win_rates else 0.0
+        )
+        mean_reward_vs_pool = (
+            sum(sentinel_rewards) / len(sentinel_rewards) if sentinel_rewards else 0.0
         )
         mean_ep_len_vs_pool = (
             sum(sentinel_ep_lens) / len(sentinel_ep_lens) if sentinel_ep_lens else 0.0
         )
         monotonicity = _monotonicity_score(sentinel_win_rates) if len(sentinel_win_rates) >= 2 else 1.0
         self.logger.record("eval/win_rate_vs_pool", win_rate_vs_pool)
+        self.logger.record("eval/mean_reward_vs_pool", mean_reward_vs_pool)
         self.logger.record("eval/mean_ep_len_vs_pool", mean_ep_len_vs_pool)
         self.logger.record("eval/sentinel_monotonicity", monotonicity)
         tui["eval/win_rate_vs_pool"] = win_rate_vs_pool
+        tui["eval/mean_reward_vs_pool"] = mean_reward_vs_pool
         tui["eval/mean_ep_len_vs_pool"] = mean_ep_len_vs_pool
         tui["eval/sentinel_monotonicity"] = monotonicity
 
@@ -447,8 +451,10 @@ class SelfPlayCallback(BaseCallback):
             block = build_bot_eval_block(bot_wr, bot_rew, bot_ep)
             block["pool"] = {
                 "win_rate": win_rate_vs_pool,
+                "mean_reward": mean_reward_vs_pool,
                 "mean_ep_len": mean_ep_len_vs_pool,
                 "monotonicity": round(monotonicity, 3),
+                "snapshot_count": pool_size,
                 "sentinels": [
                     {
                         "step": entry.step,

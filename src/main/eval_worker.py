@@ -136,8 +136,8 @@ def _eval_sentinel(model, spec, current_version, trainee_tb, opp_tb, mappings,
     ``model_config.json`` (a stale-arch snapshot fails with ``ModelVersionError`` rather
     than loading mismatched weights). The trainee is an ``EvalRLPlayer`` so it tracks
     reward + writes forensic traces, exactly like a bot matchup; the sentinel acts as it
-    does as a TRAINING opponent (stochastic at ``temperature``). Sentinels use the
-    scheduled ``n_games`` directly (not the bot per-opponent cap).
+    does as a TRAINING opponent (stochastic at ``temperature``). Every matchup — bot or
+    sentinel — plays the same flat ``n_games`` (``EVAL_GAMES``).
     """
     label = spec["label"]
     sentinel_model = load_model_snapshot(

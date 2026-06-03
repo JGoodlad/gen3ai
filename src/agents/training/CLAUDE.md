@@ -9,6 +9,20 @@ LiveView/TurnView/LegalActions read-models it consumes are documented in
 
 ## Bot evaluation (subprocess, non-blocking)
 
+**Flat schedule, full roster.** Eval fires every `EVAL_FREQ_STEPS` (2M steps) and plays
+`EVAL_GAMES` (100) games per opponent — one cadence, one game count, applied uniformly to
+every bot *and* every self-play sentinel (no maturity tiers, no per-opponent caps). The
+roster is the full set of eight archetype bots — both the v1 and v2 of each
+(`heuristic`/`heuristic2`, `staller`/`staller_v2`, `aggressive`/`aggressive_v2`,
+`setup_sweep`/`setup_sweep_v2`) — plus `random` as the eval-only "is-the-model-broken"
+floor (excluded from `win_rate_vs_bots`). All nine are the single source of truth in
+`_EVAL_OPPONENT_SPECS` / `eval_opponent_names()`, shared by the bot path, the self-play
+path, and the worker. There is no roster flag — every bot always plays, because they play
+differently and the playstyle diversity is the point. The flat numbers are safe precisely
+because eval is non-blocking and **skips a cycle while the previous one is still running**
+(below): a heavier roster self-throttles to a sparser cadence instead of needing tuned
+ceilings.
+
 `PerOpponentEvalCallback` (non-self-play path) does **not** eval in-process. On each
 scheduled step it snapshots the live weights (`model.save`) and spawns `--eval-workers`
 (default 3) `main.eval_worker` subprocesses that **work-steal** opponents from a shared
@@ -50,7 +64,14 @@ in the trainer). Behaviors:
   eval to complete. Even the pathological forced-SIGTERM case (already overran → ~90s SIGKILL)
   is safe: the checkpoint is saved first, only the in-flight eval can be lost.
 - **On resume the last eval is re-published to the TUI** from the resumed checkpoint's
-  `metadata.json`, so the eval panel isn't blank until the next cycle.
+  `metadata.json` (`replay_last_eval_to_tui`), so the eval panel isn't blank until the next
+  cycle. This covers the **self-play `pool` block too** — the aggregate (`win_rate_vs_pool`,
+  `mean_reward_vs_pool`, monotonicity, snapshot count) and every per-sentinel row are
+  re-published from the saved block, with the saved step tags, so Pool/sentinel rows survive
+  a restart exactly like the bot rows (no waiting a full cadence for fresh numbers). Safe
+  because the pool only changes at an eval-collect — the same moment the block is persisted —
+  so the saved rows match the pool reconstructed from `snapshots/`. A pre-seed eval persists an
+  empty `sentinels` list, which isn't re-published (nothing to show yet).
 
 | Flag | Default | Notes |
 |------|---------|-------|
@@ -118,10 +139,12 @@ restart — no manifest). Design lives in `designs/ai_v5/`. Key behaviors:
   *competent* model — never the random/weak step-0 seed of old. Nothing is pinned: the oldest
   snapshot (incl. the seed) ages out as the window slides past `max_snapshots`, so the floor
   stays a recent self; anti-forgetting is the heuristic floor, not a pinned seed.
-- **V2-only roster.** Training (`OPPONENT_CLASSES`) and eval (`eval_opponent_names`/
-  `_EVAL_OPPONENT_SPECS`) use one strong bot per archetype — `{Heuristic2, StallerV2,
-  AggressiveV2, SetupSweepV2}` under `--use-v2-bots` — not both v1 and v2 of each (redundant:
-  StallerV2≈Staller). `Random` is eval-only (a cheap "is the model broken" floor, excluded from
+- **Full roster (v1 + v2 of every archetype).** Training (`OPPONENT_CLASSES`) and eval
+  (`eval_opponent_names()` / `_EVAL_OPPONENT_SPECS`) both use all eight archetype bots —
+  `{Heuristic, Heuristic2, Staller, StallerV2, Aggressive, AggressiveV2, SetupSweep,
+  SetupSweepV2}` — because they play differently and the extra playstyle diversity is the
+  point. There is no roster flag; the same nine names (eight bots + `random`) feed every
+  path. `Random` is eval-only (a cheap "is the model broken" floor, excluded from
   `win_rate_vs_bots`); it is never a training opponent.
 - **Resume state in `summary.json`.** `SelfPlayCallback` writes
   `<snapshot_dir>/summary.json` each eval (`win_rate_vs_bots`, `self_play_fraction`,

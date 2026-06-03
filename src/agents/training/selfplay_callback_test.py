@@ -187,12 +187,13 @@ def test_regression_re_arms_after_recovery(tmp_path):
 
 # ── schedule / trigger ─────────────────────────────────────────────────────────
 
-def test_schedule_uses_shared_function(tmp_path):
+def test_schedule_is_flat(tmp_path):
+    # Flat cadence + game count at every step — same constants as the bot-eval path.
     cb = _make_callback(tmp_path)
     cb.num_timesteps = 5_000_000
     assert cb._schedule() == (2_000_000, 100)
     cb.num_timesteps = 25_000_000
-    assert cb._schedule() == (3_500_000, 300)
+    assert cb._schedule() == (2_000_000, 100)
 
 
 def test_schedule_debug_fast_cadence(tmp_path):
@@ -265,6 +266,7 @@ def test_lifecycle_collect_records_promotes_and_saves_best(tmp_path, monkeypatch
 
     recorded = {c.args[0] for c in cb.logger.record.call_args_list}
     assert "eval/win_rate_vs_pool" in recorded
+    assert "eval/mean_reward_vs_pool" in recorded           # pool reward aggregate (was missing → blank TUI cell)
     assert "eval/mean_ep_len_vs_pool" in recorded           # pool ep-len, mirrors mean_ep_len_vs_bots
     assert "eval/sentinel_monotonicity" in recorded
     assert "train/selfplay_fraction" in recorded
@@ -299,6 +301,8 @@ def test_collect_pushes_sentinel_reward_and_step_to_tui(tmp_path, monkeypatch):
     # Sentinel reward + step surfaced to the TUI...
     assert captured.get("eval/mean_reward_vs_sentinel_0") == pytest.approx(1.0)
     assert "eval/sentinel_step_0" in captured          # newest sentinel's checkpoint step
+    # ...the Pool aggregate reward is pushed (drives the "vs Pool" reward cell)...
+    assert "eval/mean_reward_vs_pool" in captured
     # ...and per-bot reward is pushed LIVE (not just win rate), so it isn't stale-from-resume.
     assert "eval/mean_reward_vs_heuristic" in captured
 

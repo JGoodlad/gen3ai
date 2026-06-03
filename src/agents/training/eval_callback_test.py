@@ -132,7 +132,6 @@ def _make_callback(best_model_save_path=None, model_dir=None):
     cb = PerOpponentEvalCallback(
         model_dir=model_dir,
         server_config=MagicMock(),
-        use_v2_bots=False,
         best_model_save_path=best_model_save_path,
     )
     cb.model = MagicMock()
@@ -144,52 +143,14 @@ def _make_callback(best_model_save_path=None, model_dir=None):
 
 # --- Schedule ---
 
-def test_schedule_early_phase():
+@pytest.mark.parametrize("step", [1_000_000, 30_000_000, 120_000_000])
+def test_schedule_is_flat_at_every_step(step):
+    # One cadence, one game count — no maturity tiers, no per-opponent caps.
     cb = _make_callback()
-    cb.num_timesteps = 5_000_000
+    cb.num_timesteps = step
     freq, n_games = cb._schedule()
     assert freq == 2_000_000
     assert n_games == 100
-
-
-def test_schedule_mid_phase():
-    cb = _make_callback()
-    cb.num_timesteps = 30_000_000
-    freq, n_games = cb._schedule()
-    assert freq == 3_500_000
-    assert n_games == 300
-
-
-def test_schedule_late_phase():
-    cb = _make_callback()
-    cb.num_timesteps = 60_000_000
-    freq, n_games = cb._schedule()
-    assert freq == 3_500_000
-    assert n_games == 300
-
-
-def test_schedule_very_late_phase():
-    cb = _make_callback()
-    cb.num_timesteps = 120_000_000
-    freq, n_games = cb._schedule()
-    assert freq == 5_000_000
-    assert n_games == 300
-
-
-def test_schedule_boundary_20m():
-    cb = _make_callback()
-    cb.num_timesteps = 20_000_000  # 20M is NOT < 20M → falls in the 20–100M tier
-    freq, n_games = cb._schedule()
-    assert freq == 3_500_000
-    assert n_games == 300
-
-
-def test_schedule_boundary_100m():
-    cb = _make_callback()
-    cb.num_timesteps = 100_000_000  # 100M is NOT < 100M → falls in the 100M+ tier
-    freq, n_games = cb._schedule()
-    assert freq == 5_000_000
-    assert n_games == 300
 
 
 # --- Trigger logic ---
@@ -204,33 +165,25 @@ def test_no_eval_at_step_zero():
 
 def test_no_eval_before_first_freq_boundary():
     cb = _make_callback()
-    cb.num_timesteps = 500_000  # below the first 1M-step boundary
+    cb.num_timesteps = 500_000  # below the first 2M-step boundary
     with patch.object(cb, '_launch_eval') as mock_run:
         cb._on_step()
         mock_run.assert_not_called()
 
 
-def test_triggers_at_early_freq():
+def test_triggers_at_first_boundary():
     cb = _make_callback()
-    cb.num_timesteps = 2_000_000  # first boundary is now 2M
+    cb.num_timesteps = 2_000_000  # first 2M boundary
     with patch.object(cb, '_launch_eval') as mock_run:
         cb._on_step()
         mock_run.assert_called_once()
 
 
-def test_triggers_at_mid_freq():
+def test_triggers_at_each_later_boundary():
+    # Flat 2M cadence: crossing any 2M boundary fires, regardless of training maturity.
     cb = _make_callback()
     cb._last_eval_step = 20_000_000
     cb.num_timesteps = 22_000_000
-    with patch.object(cb, '_launch_eval') as mock_run:
-        cb._on_step()
-        mock_run.assert_called_once()
-
-
-def test_triggers_at_late_freq():
-    cb = _make_callback()
-    cb._last_eval_step = 51_000_000
-    cb.num_timesteps = 54_000_000
     with patch.object(cb, '_launch_eval') as mock_run:
         cb._on_step()
         mock_run.assert_called_once()
@@ -293,16 +246,15 @@ from agents.training.eval_callback import (
 )
 
 
-def test_eval_opponent_names_v1_roster_by_default():
-    names = eval_opponent_names(False)
-    assert names == ["random", "heuristic", "staller", "aggressive", "setup_sweep"]
-
-
-def test_eval_opponent_names_v2_roster_when_enabled():
-    # Non-redundant V2 set: random (floor) + one strong bot per archetype — NOT both v1 and v2.
+def test_eval_opponent_names_is_full_roster():
+    # All eight archetype bots (both v1 and v2 of each) + Random as the eval-only floor.
     # snake_case names match _EVAL_OPPONENT_SPECS keys + the metric-key convention (1e50634).
-    assert eval_opponent_names(True) == [
-        "random", "heuristic2", "staller_v2", "aggressive_v2", "setup_sweep_v2"
+    assert eval_opponent_names() == [
+        "random",
+        "heuristic", "heuristic2",
+        "staller", "staller_v2",
+        "aggressive", "aggressive_v2",
+        "setup_sweep", "setup_sweep_v2",
     ]
 
 
@@ -392,7 +344,7 @@ def test_orchestrator_workstealing_collect_and_promote_best(tmp_path, monkeypatc
     best_dir = tmp_path / "best"
     cb = PerOpponentEvalCallback(
         model_dir=str(tmp_path), server_config=MagicMock(),
-        use_v2_bots=False, best_model_save_path=str(best_dir),
+        best_model_save_path=str(best_dir),
         n_workers=3, showdown_port=9999,
     )
     cb.model = MagicMock()
@@ -413,7 +365,7 @@ def test_orchestrator_workstealing_collect_and_promote_best(tmp_path, monkeypatc
     assert cb._best_aggregate_win_rate == pytest.approx(0.8)
     # Every opponent's win-rate made it into the recorded metrics.
     recorded = {c.args[0] for c in cb.logger.record.call_args_list}
-    for name in eval_opponent_names(False):
+    for name in eval_opponent_names():
         assert f"eval/win_rate_vs_{name}" in recorded
 
 
@@ -421,7 +373,7 @@ def test_orchestrator_worker_failure_logs_and_continues(tmp_path, monkeypatch):
     from agents.training import eval_callback as ec
     cb = PerOpponentEvalCallback(
         model_dir=str(tmp_path), server_config=MagicMock(),
-        use_v2_bots=False, best_model_save_path=str(tmp_path / "best"),
+        best_model_save_path=str(tmp_path / "best"),
         n_workers=2, showdown_port=9999,
     )
     cb.model = MagicMock()
@@ -451,7 +403,7 @@ def test_drain_waits_for_inflight_eval_then_collects(tmp_path, monkeypatch):
     from agents.training import eval_callback as ec
     cb = PerOpponentEvalCallback(
         model_dir=str(tmp_path), server_config=MagicMock(),
-        use_v2_bots=False, best_model_save_path=str(tmp_path / "best"),
+        best_model_save_path=str(tmp_path / "best"),
         n_workers=1, showdown_port=9999,
     )
     cb.model = MagicMock()
@@ -501,7 +453,7 @@ def test_eval_account_names_within_showdown_18_char_limit():
     from agents.training.eval_callback import eval_run_nonce, _b36, _EVAL_OPPONENT_SPECS
     cycle_tag = eval_run_nonce() + _b36(35, 1)          # nonce(3) + cycle(1) = 4
     tag = f"{cycle_tag}913"                              # pessimistic wid=9, claim_seq=13
-    for (_name, _cls, prefix, _v2) in _EVAL_OPPONENT_SPECS:
+    for (_name, _cls, prefix) in _EVAL_OPPONENT_SPECS:
         assert len(prefix + tag) <= 18, (prefix, prefix + tag)
     assert len(f"RLEv{tag}9") <= 18   # trainee player
     assert len(f"SPtr{tag}") <= 18    # self-play sentinel trainee
@@ -558,7 +510,7 @@ def _hung_proc_factory(killed):
 def test_watchdog_aborts_hung_cycle_and_collects_partial(tmp_path, monkeypatch):
     from agents.training import eval_callback as ec
     cb = PerOpponentEvalCallback(model_dir=str(tmp_path), server_config=MagicMock(),
-                                 use_v2_bots=False, best_model_save_path=str(tmp_path / "best"),
+                                 best_model_save_path=str(tmp_path / "best"),
                                  n_workers=2, showdown_port=9999)
     cb.model = MagicMock()
     cb.model.save = lambda b: open(b + ".zip", "w").close()
@@ -658,3 +610,63 @@ def test_replay_last_eval_publishes_to_tui_on_init(tmp_path, monkeypatch):
     assert sent.get("eval/win_rate_vs_random") == 0.7
     assert sent.get("eval/win_rate_mean") == 0.5
     assert sent.get("_step") == 200
+
+
+def test_replay_last_eval_republishes_pool_block(tmp_path, monkeypatch):
+    """Resume: the saved self-play pool block (aggregate + per-sentinel rows) is re-published,
+    so the Pool/sentinel rows aren't blank until the next cycle — parity with the bot rows."""
+    import json as _json
+    from agents.training.eval_callback import replay_last_eval_to_tui
+    from agents.training import eval_callback as ec
+    meta = {"latest_eval": {
+        "step": 300, "win_rate_mean": 0.6, "win_rate_vs_bots": 0.55,
+        "mean_reward_vs_bots": 5.0, "mean_ep_len_vs_bots": 20.0,
+        "opponents": {"random": {"win_rate": 0.9, "mean_reward": 30.0, "mean_ep_len": 15.0}},
+        "pool": {
+            "win_rate": 0.72, "mean_reward": 13.4, "mean_ep_len": 22.0,
+            "monotonicity": 0.4, "snapshot_count": 13,
+            "sentinels": [
+                {"step": 63_000_000, "win_rate": 0.657, "mean_reward": 8.7, "mean_ep_len": 21.0},
+                {"step": 0, "win_rate": 0.707, "mean_reward": 13.2, "mean_ep_len": 23.0},
+            ],
+        },
+    }}
+    (tmp_path / "metadata.json").write_text(_json.dumps(meta))
+
+    sent = {}
+    monkeypatch.setattr(ec, "send_metrics", lambda d: sent.update(d))
+    replay_last_eval_to_tui(str(tmp_path))
+
+    # Pool aggregate — including the reward that used to be missing.
+    assert sent.get("eval/win_rate_vs_pool") == 0.72
+    assert sent.get("eval/mean_reward_vs_pool") == 13.4
+    assert sent.get("eval/sentinel_monotonicity") == 0.4
+    assert sent.get("eval/pool_snapshot_count") == 13.0
+    # Per-sentinel rows, positional, with their saved step tags (seed = step 0).
+    assert sent.get("eval/win_rate_vs_sentinel_0") == 0.657
+    assert sent.get("eval/mean_reward_vs_sentinel_0") == 8.7
+    assert sent.get("eval/sentinel_step_0") == 63_000_000.0
+    assert sent.get("eval/sentinel_step_1") == 0.0
+
+
+def test_replay_skips_pool_block_when_unseeded(tmp_path, monkeypatch):
+    """A pre-seed eval persists an empty sentinels list — don't re-publish a misleading 'vs Pool 0%'."""
+    import json as _json
+    from agents.training.eval_callback import replay_last_eval_to_tui
+    from agents.training import eval_callback as ec
+    meta = {"latest_eval": {
+        "step": 100, "win_rate_mean": 0.3, "win_rate_vs_bots": 0.25,
+        "mean_reward_vs_bots": -2.0, "mean_ep_len_vs_bots": 18.0,
+        "opponents": {"random": {"win_rate": 0.5, "mean_reward": 0.0, "mean_ep_len": 12.0}},
+        "pool": {"win_rate": 0.0, "mean_reward": 0.0, "mean_ep_len": 0.0,
+                 "monotonicity": 1.0, "snapshot_count": 0, "sentinels": []},
+    }}
+    (tmp_path / "metadata.json").write_text(_json.dumps(meta))
+
+    sent = {}
+    monkeypatch.setattr(ec, "send_metrics", lambda d: sent.update(d))
+    replay_last_eval_to_tui(str(tmp_path))
+
+    assert "eval/win_rate_vs_pool" not in sent
+    assert "eval/win_rate_vs_sentinel_0" not in sent
+    assert sent.get("eval/win_rate_vs_random") == 0.5  # bot rows still re-published
