@@ -194,7 +194,7 @@ restart — no manifest). Design lives in `designs/ai_v5/`. Key behaviors:
   `assert_decision_current` (every axis: moves+disabled, switches+species,
   force_switch/trapped/maybe_trapped/wait/struggle) is the detector; `train/selfplay_opp_redecide_rate`
   surfaces the resolved-race rate. **Full context — mechanism, the race trace, why it was hard, and the
-  verification tiers — is in `RACE_FUZZ_README.md`.** (`GEN3_FORCE_SELFPLAY` forces 100% self-play for
+  verification tiers — is in `race_fuzz_README.md`.** (`GEN3_FORCE_SELFPLAY` forces 100% self-play for
   the stress; `GEN3_RACE_TRACE=1` dumps the per-battle cross-thread interleaving into the
   `StaleDecisionError` **and** into the `race_get` silent-stall crash — see below. `StaleDecisionError`
   lives in `agents/action/mapper.py`.)

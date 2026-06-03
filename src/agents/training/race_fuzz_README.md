@@ -5,6 +5,14 @@ pin down, how it's fixed, and the **layered verification systems** that reproduc
 the fix. If this class of bug ever resurfaces, start here — it took ~10 attempts the first time,
 and almost all of that was *understanding the shape*, not writing the fix.
 
+> **Related sibling bug — the force-switch request-delivery DEADLOCK.** A *different* concurrency
+> bug in the same env layer with the *same trigger* (mutual Arena-Trap Dugtrio): there
+> `_AsyncQueue.race_get` **strands a request the server already queued** (a stale `_trying_again`
+> event wins the race, or an orphaned `queue.get()` discards it) and the env hangs silently. If you
+> hit a self-play crash, check which face it is: a **`StaleDecisionError`** crash = the
+> stale-decision race (this doc); a **silent stall** caught by the `race_get` watchdog = the
+> deadlock, documented in `forceswitch_deadlock_fuzz_e2e_test.py`.
+
 ---
 
 ## TL;DR
