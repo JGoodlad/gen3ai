@@ -42,9 +42,19 @@ def test_sentinel_step_key_does_not_create_a_phantom_row():
 
 
 def test_sentinel_label_falls_back_without_step():
-    # No step metric yet (e.g. a resumed eval re-published from metadata) → plain label.
+    # No step metric at all (e.g. a resumed eval re-published from metadata) → plain label.
     labels, _wr, _rw = _eval_table({"eval/win_rate_vs_sentinel_0": 0.63})
     assert any(lab.strip() == "vs sentinel_0" for lab in labels), labels
+
+
+def test_sentinel_seed_label_for_step_zero():
+    # A step-0 sentinel (e.g. a seed) — step 0 is falsy, so it must still get a marker
+    # ("seed"), not be silently dropped by an `if step` test. Display is snake_case (1e50634).
+    labels, _wr, _rw = _eval_table({
+        "eval/win_rate_vs_sentinel_4": 0.667,
+        "eval/sentinel_step_4": 0.0,
+    })
+    assert any("sentinel_4 (seed)" in lab for lab in labels), labels
 
 
 def test_blank_row_between_bots_and_sentinels():

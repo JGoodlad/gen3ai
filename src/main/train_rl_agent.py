@@ -431,28 +431,33 @@ async def main():
 
     mappings = load_mappings()
     
-    OPPONENT_CLASSES = [
-        SimpleHeuristicsPlayer,
-        Gen3StallerPlayer,
-        Gen3AggressivePlayer,
-        Gen3SetupSweepPlayer,
-    ]
+    # Training heuristic opponents — ONE strong bot per archetype (not both v1 and v2 of
+    # each, which is redundant: StallerV2≈Staller). --use-v2-bots picks the stronger V2
+    # archetypes; legacy mode keeps v1. Random is NOT here (eval-only floor).
     if args.use_v2_bots:
-        OPPONENT_CLASSES += [
+        OPPONENT_CLASSES = [
             Gen3HeuristicV2Player,
             Gen3StallerV2Player,
             Gen3AggressiveV2Player,
             Gen3SetupSweepV2Player,
         ]
-        print(f"[Opponents] --use-v2-bots: training pool = {len(OPPONENT_CLASSES)} bots "
-              f"({', '.join(opponent_name(c) for c in OPPONENT_CLASSES)})")
+    else:
+        OPPONENT_CLASSES = [
+            SimpleHeuristicsPlayer,
+            Gen3StallerPlayer,
+            Gen3AggressivePlayer,
+            Gen3SetupSweepPlayer,
+        ]
+    print(f"[Opponents] training pool = {len(OPPONENT_CLASSES)} bots "
+          f"({', '.join(opponent_name(c) for c in OPPONENT_CLASSES)})")
 
-    def create_training_env_random(idx, stall_config=None, snapshot_path=None, opponent_device="auto", opponent_version=None):
+    def create_training_env_random(idx, stall_config=None, opponent_device="auto",
+                                   opponent_version=None, snapshot_dir=None,
+                                   self_play_fraction=0.0, self_play=False):
         def _init():
             try:
                 ts = datetime.now().strftime('%H%M%S')
                 env_username = f"RLAgent{idx}{ts}"
-                opp_username = f"Opponent{idx}{ts}"
 
                 env_log_level = log_level if idx == 0 else LogLevel.QUIET
 
@@ -467,42 +472,43 @@ async def main():
                     account_configuration1=AccountConfiguration(env_username, "password"),
                 )
 
-                if snapshot_path is not None:
-                    # Load via the version-checked path (same as eval sentinels) so an
-                    # arch-mismatched snapshot fails with a clean ModelVersionError rather
-                    # than loading garbage weights. The pool writes a model_config.json
-                    # alongside its snapshots, so this check is real (see snapshot_pool.py).
-                    pool_model = load_model_snapshot(
-                        snapshot_path, env=None,
-                        current_version=opponent_version, device=opponent_device,
-                    )
-                    opponent = RLPlayer(
-                        model=pool_model,
-                        team=opponent_teambuilder,
-                        battle_format=BATTLE_FORMAT,
+                # Opponents are pure DECISION FUNCTIONS over env.battle2 (env.agent1/agent2 do
+                # the networking), so build them start_listening=False — no idle connections,
+                # and we can hold several per env for live per-episode selection. The heuristic
+                # roster is always built; self-play adds a per-worker pool + one reusable pool
+                # RLPlayer whose .model is swapped per episode (see MaskableAgentWrapper).
+                heuristic_opponents = [
+                    cls(
+                        battle_format=BATTLE_FORMAT, team=opponent_teambuilder,
                         server_configuration=server_config,
-                        mappings=mappings,
-                        account_configuration=AccountConfiguration(opp_username, "password"),
-                        # Self-play opponents SAMPLE (temperature-scaled) rather than play
-                        # greedily, so the learner trains against the policy's full action
-                        # distribution — a richer, less exploitable signal. Eval stays argmax.
-                        stochastic=True,
-                        temperature=args.self_play_temp,
-                        # Strict (crash-over-corruption): a stale decision context crashes the
-                        # worker exactly like the trainee. A self-play opponent's default move
-                        # would be garbage-in — it IS the trainee's training signal — so we
-                        # never tolerate staleness; the launcher restarts from the checkpoint.
+                        account_configuration=AccountConfiguration(f"Opp{idx}h{i}{ts}", "password"),
+                        start_listening=False,
                     )
-                else:
-                    opponent_cls = random.choice(OPPONENT_CLASSES)
-                    opponent = opponent_cls(
-                        battle_format=BATTLE_FORMAT,
-                        team=opponent_teambuilder,
-                        server_configuration=server_config,
-                        account_configuration=AccountConfiguration(opp_username, "password"),
+                    for i, cls in enumerate(OPPONENT_CLASSES)
+                ]
+
+                pool = pool_player = None
+                if self_play and snapshot_dir is not None:
+                    pool = SnapshotPool(
+                        pool_dir=snapshot_dir, current_version=opponent_version,
+                        device=opponent_device,
+                    )
+                    # model=None placeholder — the wrapper swaps in a sampled snapshot before
+                    # ever using it. Stochastic + temperature so the learner trains against the
+                    # policy's full action distribution (richer, less exploitable than argmax).
+                    # Strict (crash-over-corruption) on a stale decision: the launcher restarts.
+                    pool_player = RLPlayer(
+                        model=None, team=opponent_teambuilder, battle_format=BATTLE_FORMAT,
+                        server_configuration=server_config, mappings=mappings,
+                        account_configuration=AccountConfiguration(f"Opp{idx}p{ts}", "password"),
+                        start_listening=False,
+                        stochastic=True, temperature=args.self_play_temp,
                     )
 
-                wrapped = MaskableAgentWrapper(env, opponent)
+                wrapped = MaskableAgentWrapper(
+                    env, heuristic_opponents=heuristic_opponents, pool=pool,
+                    pool_player=pool_player, self_play_fraction=self_play_fraction, rng_seed=idx,
+                )
 
                 # FORCE OVERRIDE: SingleAgentWrapper hardcodes 10 for gen3ou. We need 11.
                 # Also ensure it propagates our Dict observation space natively.
@@ -540,10 +546,15 @@ async def main():
     _shutdown_event = threading.Event()
 
     # --- Self-Play Pool Setup ---
-    # Pool is created before envs so it can provide snapshot paths to env factories.
-    # On launcher restart the pool directory already exists; _scan() restores state.
+    # The pool is a directory the env workers read off disk (each builds its own SnapshotPool).
+    # The heuristic-vs-pool split is NOT fixed per process anymore: every env picks its opponent
+    # per-episode from a LIVE self_play_fraction that the eval callback updates each eval (see
+    # MaskableAgentWrapper). The initial fraction comes from the persisted win rate (summary.json)
+    # so a resumed run starts at the right ramp level instead of cold-starting at 0%.
     _pool: SnapshotPool | None = None
     _opp_version = None  # ModelVersion threaded into opponent snapshot loads (set when self-play on)
+    _snapshot_dir = None
+    _initial_self_play_fraction = 0.0
     if args.self_play:
         from pathlib import Path as _Path
         from agents.model.snapshot import current_model_version as _current_model_version
@@ -551,77 +562,49 @@ async def main():
         _snapshot_dir = _Path(args.snapshot_dir) if args.snapshot_dir else _Path(model_dir) / "snapshots"
         _cv = _current_model_version(mappings)
         _opp_version = _cv
-        _pool = SnapshotPool(
-            pool_dir=_snapshot_dir,
-            current_version=_cv,
-            device=args.device,
-        )
+        _pool = SnapshotPool(pool_dir=_snapshot_dir, current_version=_cv, device=args.device)
         _persisted_wr = _pool.load_persisted_win_rate()
-        _hfrac = heuristic_fraction(_persisted_wr)
-        _n_pool_envs = 0 if _pool.is_empty() else max(1, int(round(n_envs * (1.0 - _hfrac))))
+        _initial_self_play_fraction = 1.0 - heuristic_fraction(_persisted_wr)
         emit(
-            f"🎮 [SELFPLAY] Pool has {len(_pool)} snapshots, "
-            f"win_rate_vs_bots={_persisted_wr:.2%}, "
-            f"heuristic_fraction={_hfrac:.0%} → {_n_pool_envs}/{n_envs} envs use pool opponents"
+            f"🎮 [SELFPLAY] Pool has {len(_pool)} snapshots, win_rate_vs_bots={_persisted_wr:.2%} "
+            f"→ self_play_fraction={_initial_self_play_fraction:.0%} (live, per-episode)"
         )
-        if args.self_play and _pool.is_empty():
-            emit("🌱 [SELFPLAY] Pool empty — will seed from the loaded weights and rebuild "
-                 "self-play envs right after model load (engages this process, not next restart)")
-    else:
-        _n_pool_envs = 0
 
     opponent_device = "cpu" if args.self_play_use_cpu else args.device
-    if _n_pool_envs > 0:
+    if args.self_play:
         emit(
             f"🧠 [SELFPLAY] Opponent snapshots load on '{opponent_device}' "
             f"({'CPU — avoids per-worker CUDA contexts' if args.self_play_use_cpu else 'training device'})"
         )
 
     def _make_factories():
-        factories = []
-        pool_entries = []
-        if _pool and not _pool.is_empty() and _n_pool_envs > 0:
-            for _ in range(_n_pool_envs):
-                pool_entries.append(str(_pool.sample().path))
-        for i in range(n_envs):
-            snap = pool_entries[i] if i < len(pool_entries) else None
-            factories.append(
-                create_training_env_random(
-                    i, stall_config=stall_cfg, snapshot_path=snap,
-                    opponent_device=opponent_device, opponent_version=_opp_version,
-                )
+        return [
+            create_training_env_random(
+                i, stall_config=stall_cfg, opponent_device=opponent_device,
+                opponent_version=_opp_version,
+                snapshot_dir=str(_snapshot_dir) if _snapshot_dir is not None else None,
+                self_play_fraction=_initial_self_play_fraction, self_play=args.self_play,
             )
-        return factories
+            for i in range(n_envs)
+        ]
 
     env_factories = _make_factories()
     env = EnvClass(env_factories)
-    # NOTE: the subprocess watchdog is started LATER, just before model.learn() — nothing
-    # steps the env before then (model construction/load only reads its spaces), and a
-    # first-self-play-process rebuild (see _maybe_engage_self_play) closes this env, which
-    # would otherwise trip the watchdog's "worker died" guard.
+    # NOTE: the subprocess watchdog is started LATER, just before model.learn() — nothing steps
+    # the env before then (model construction/load only reads its spaces).
 
-    def _maybe_engage_self_play(model, env):
-        """Seed the pool from the just-loaded weights and rebuild the training env so
-        self-play opponents engage in THIS process — not only after the next restart.
-
-        Runs only when --self-play is on AND the pool is empty (the first self-play
-        process). The env was built before the model existed (the model needs the env's
-        spaces), and the pool can only be seeded once the model exists — so we seed from
-        the in-memory weights (the loaded checkpoint, or fresh init) and rebuild the env
-        against the now-non-empty pool. On every later restart the pool already has
-        snapshots, so this is a no-op and no rebuild happens."""
-        nonlocal _n_pool_envs
-        if not (args.self_play and _pool is not None and _pool.is_empty()):
-            return env
-        _pool.seed(model)
-        _persisted = _pool.load_persisted_win_rate()
-        _n_pool_envs = max(1, int(round(n_envs * (1.0 - heuristic_fraction(_persisted)))))
-        emit(f"🌱 [SELFPLAY] Seeded pool from current weights → rebuilding "
-             f"{_n_pool_envs}/{n_envs} envs with self-play opponents (engages now)")
-        env.close()
-        new_env = EnvClass(_make_factories())
-        model.set_env(new_env)
-        return new_env
+    def _maybe_seed_pool(model):
+        """Seed the pool from the loaded weights iff self-play is active (fraction>0 → win rate
+        ≥ SELF_PLAY_START) AND the pool is empty — so the seed is captured from a *competent*
+        model, never random/weak. No env rebuild: the worker pools re-scan the dir on demand
+        (and lazily whenever they see it empty). The eval callback also seeds when the model
+        first crosses the threshold mid-run."""
+        if not (args.self_play and _pool is not None):
+            return
+        if _initial_self_play_fraction > 0 and _pool.is_empty():
+            _pool.seed(model)
+            emit(f"🌱 [SELFPLAY] Seeded pool from current weights "
+                 f"(win rate ≥ threshold → self_play_fraction={_initial_self_play_fraction:.0%})")
 
     async def evaluate_model_random(model):
         ts = datetime.now().strftime('%H%M%S')
@@ -953,10 +936,10 @@ async def main():
                 eval_callback.abort_fn = _abort_fn
             graceful_restart_callback.abort_fn = _abort_fn
 
-            # First self-play process: seed the pool from these weights and rebuild the
-            # env so self-play engages now. No-op on every later restart (pool non-empty).
-            # Then start the worker watchdog on the FINAL env, right before rollouts begin.
-            env = _maybe_engage_self_play(model, env)
+            # Seed the pool from these weights iff self-play is active and the pool is empty
+            # (no env rebuild — workers re-scan the dir on demand). No-op when below threshold
+            # or the pool already has snapshots. Then start the worker watchdog before rollouts.
+            _maybe_seed_pool(model)
             start_subprocess_watchdog(env, label="train_env", shutdown_event=_shutdown_event)
 
             try:
@@ -1039,10 +1022,9 @@ async def main():
             eval_callback.abort_fn = _abort_fn
         graceful_restart_callback.abort_fn = _abort_fn
 
-        # First self-play process: seed the pool from these (fresh-init) weights and
-        # rebuild the env so self-play engages now. No-op on every later restart.
-        # Then start the worker watchdog on the FINAL env, right before rollouts begin.
-        env = _maybe_engage_self_play(model, env)
+        # Seed the pool from these weights iff self-play is active and the pool is empty
+        # (no env rebuild — workers re-scan the dir on demand). Then start the worker watchdog.
+        _maybe_seed_pool(model)
         start_subprocess_watchdog(env, label="train_env", shutdown_event=_shutdown_event)
 
         try:

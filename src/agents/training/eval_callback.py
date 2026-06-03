@@ -157,9 +157,19 @@ _EVAL_OPPONENT_SPECS: list[tuple[str, type, str, bool]] = [
 ]
 
 
+# The eval roster is the STRONG, non-redundant set — one bot per archetype, not both v1
+# and v2 of each (StallerV2≈Staller etc.). `--use-v2-bots` selects the V2 archetypes (the
+# stronger versions; Heuristic2 is the hardest opponent); legacy mode keeps the v1 set.
+# Random is eval-only in BOTH (a cheap "is the model broken" floor; excluded from
+# `win_rate_vs_bots`). `_EVAL_OPPONENT_SPECS` keeps ALL entries so the worker can still
+# resolve any name; this just chooses which are actually evaluated/trained against.
+_V2_EVAL_ROSTER = ["random", "heuristic2", "staller_v2", "aggressive_v2", "setup_sweep_v2"]
+_V1_EVAL_ROSTER = ["random", "heuristic", "staller", "aggressive", "setup_sweep"]
+
+
 def eval_opponent_names(use_v2_bots: bool) -> list[str]:
     """Ordered display names of the eval roster for the given v2 setting."""
-    return [n for (n, _c, _p, is_v2) in _EVAL_OPPONENT_SPECS if use_v2_bots or not is_v2]
+    return list(_V2_EVAL_ROSTER if use_v2_bots else _V1_EVAL_ROSTER)
 
 
 def build_eval_opponents(server_config, teambuilder, names, tag=""):

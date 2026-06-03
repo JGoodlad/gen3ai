@@ -434,12 +434,89 @@ def test_fresh_run_with_no_metadata_evals_at_first_boundary(tmp_path):
         ml.assert_called_once()
 
 
-def test_init_seeds_empty_pool(tmp_path):
+def test_init_does_not_seed_pool(tmp_path):
+    # Seeding is GATED on competence (done by _maybe_seed_pool at startup / _collect_pending on
+    # crossing) — _init_callback must NOT seed, or a weak model would pin a near-random opponent.
     pool = _mock_pool()
     pool.is_empty.return_value = True
     cb = _make_callback(tmp_path, pool=pool)
     cb._init_callback()
-    pool.seed.assert_called_once_with(cb.model)
+    pool.seed.assert_not_called()
+
+
+def _env_method_calls(cb, name):
+    return [c for c in cb.model.get_env.return_value.env_method.call_args_list
+            if c.args and c.args[0] == name]
+
+
+def test_collect_pushes_live_self_play_target(tmp_path, monkeypatch):
+    from agents.training import eval_callback as ec
+    pool = _mock_pool(n_sentinels=3)
+    cb = _make_callback(tmp_path, pool=pool, promote_threshold=0.65)
+    cb._init_callback()
+    monkeypatch.setattr(ec.subprocess, "Popen",
+                        _fake_selfplay_popen(ec, bot_win=0.8, sentinel_win=0.7))
+    cb._on_step()
+    cb.num_timesteps = 2_000_001
+    cb._on_step()
+    # The live fraction (1 - heuristic_fraction(0.8) = 0.90) is pushed to the envs each eval.
+    pushes = _env_method_calls(cb, "set_self_play_target")
+    assert pushes, "expected a set_self_play_target env_method push"
+    frac, gen = pushes[-1].args[1], pushes[-1].args[2]
+    assert frac == pytest.approx(0.90, abs=1e-6)   # bot win 0.8 → 90% self-play
+    assert isinstance(gen, int)
+
+
+def test_collect_seeds_pool_when_crossing_threshold(tmp_path, monkeypatch):
+    from agents.training import eval_callback as ec
+    pool = _mock_pool(n_sentinels=0)          # empty pool → no sentinels yet
+    pool.is_empty.return_value = True
+    pool.sentinel_entries.return_value = []
+    cb = _make_callback(tmp_path, pool=pool)
+    cb._init_callback()
+    monkeypatch.setattr(ec.subprocess, "Popen",
+                        _fake_selfplay_popen(ec, bot_win=0.8, sentinel_win=0.0))
+    cb._on_step()
+    cb.num_timesteps = 2_000_001
+    cb._on_step()
+    # Win rate 0.8 ≥ threshold → fraction > 0 with an empty pool → seed from the frozen snapshot.
+    pool.add_from_path.assert_called_once()
+    assert pool.add_from_path.call_args[0][1] == 2_000_000   # at the trigger step
+
+
+def test_collect_does_not_seed_below_threshold(tmp_path, monkeypatch):
+    from agents.training import eval_callback as ec
+    pool = _mock_pool(n_sentinels=0)
+    pool.is_empty.return_value = True
+    pool.sentinel_entries.return_value = []
+    cb = _make_callback(tmp_path, pool=pool)
+    cb._init_callback()
+    # Bot win 0.40 < SELF_PLAY_START (0.55) → fraction 0 → no seed, push fraction 0.
+    monkeypatch.setattr(ec.subprocess, "Popen",
+                        _fake_selfplay_popen(ec, bot_win=0.40, sentinel_win=0.0))
+    cb._on_step()
+    cb.num_timesteps = 2_000_001
+    cb._on_step()
+    pool.add_from_path.assert_not_called()
+    pushes = _env_method_calls(cb, "set_self_play_target")
+    assert pushes and pushes[-1].args[1] == pytest.approx(0.0)
+
+
+def test_collect_persists_summary(tmp_path, monkeypatch):
+    from agents.training import eval_callback as ec
+    pool = _mock_pool(n_sentinels=3)
+    cb = _make_callback(tmp_path, pool=pool)
+    cb._init_callback()
+    monkeypatch.setattr(ec.subprocess, "Popen",
+                        _fake_selfplay_popen(ec, bot_win=0.8, sentinel_win=0.7))
+    cb._on_step()
+    cb.num_timesteps = 2_000_001
+    cb._on_step()
+    pool.persist_summary.assert_called()
+    kw = pool.persist_summary.call_args.kwargs
+    assert set(kw) >= {"win_rate_vs_bots", "self_play_fraction", "last_eval_step",
+                       "seeded", "pool_generation"}
+    assert kw["self_play_fraction"] == pytest.approx(0.90, abs=1e-6)
 
 
 # ── eval-cycle watchdog (the live-run failure: a hung sentinel wedged eval) ────

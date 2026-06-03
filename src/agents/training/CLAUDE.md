@@ -92,6 +92,40 @@ restart — no manifest). Design lives in `designs/ai_v5/`. Key behaviors:
   `merge_eval_results` / `persist_eval_snapshot` / `prune_eval_*` / `replay_last_eval_to_tui`
   helpers, so the two non-blocking paths can't drift. `--debug --self-play` uses a fast eval
   cadence (every 4k steps, 3 games) so a short CPU smoke exercises seed → pool eval → promotion.
+- **Curriculum: thresholded ramp + LIVE per-episode fraction.** `heuristic_fraction`
+  (`snapshot_pool.py`) is **0% self-play below `SELF_PLAY_START` (0.55)** — a weak model trains
+  100% vs bots, no cycles wasted on a useless self-opponent — then smoothsteps `0.55→0.80` up to
+  **90% self-play** (`HEURISTIC_FLOOR`=0.10 keeps a few % vs real bots for anti-forgetting).
+  Crucially the heuristic-vs-pool split is **no longer fixed per process**: every training env
+  picks its opponent **per episode** in `MaskableAgentWrapper.reset()` from a live
+  `self_play_fraction`, and `SelfPlayCallback` pushes the fresh fraction (+ a `pool_generation`)
+  to all envs via `training_env.env_method("set_self_play_target", …)` **after every eval**, so
+  the ratio tracks measured strength mid-run with no restart. The opponent is a pure decision
+  function over `env.battle2` (env.agent1/agent2 do the networking), so the per-episode swap is
+  free and safe — built `start_listening=False` (no idle connections), and the in-episode
+  stale-decision path is untouched. On a pool choice the env samples the *current* pool
+  (recency-weighted) and swaps the snapshot's model into a reusable pool `RLPlayer` (LRU-cached);
+  a `pool_generation` bump (after a seed/promote) makes the worker re-scan the pool dir, so new
+  promotions become training opponents immediately. (`_n_pool_envs` / the `_maybe_engage_self_play`
+  env-rebuild are gone.)
+- **Seeding is GATED on competence; the pool is a SLIDING WINDOW (nothing pinned).** The pool is
+  seeded only once win rate clears `SELF_PLAY_START` (at startup via `_maybe_seed_pool`, or the
+  moment it crosses mid-run in `_collect_pending`), so the first self-play opponent is a
+  *competent* model — never the random/weak step-0 seed of old. Nothing is pinned: the oldest
+  snapshot (incl. the seed) ages out as the window slides past `max_snapshots`, so the floor
+  stays a recent self; anti-forgetting is the heuristic floor, not a pinned seed.
+- **V2-only roster.** Training (`OPPONENT_CLASSES`) and eval (`eval_opponent_names`/
+  `_EVAL_OPPONENT_SPECS`) use one strong bot per archetype — `{Heuristic2, StallerV2,
+  AggressiveV2, SetupSweepV2}` under `--use-v2-bots` — not both v1 and v2 of each (redundant:
+  StallerV2≈Staller). `Random` is eval-only (a cheap "is the model broken" floor, excluded from
+  `win_rate_vs_bots`); it is never a training opponent.
+- **Resume state in `summary.json`.** `SelfPlayCallback` writes
+  `<snapshot_dir>/summary.json` each eval (`win_rate_vs_bots`, `self_play_fraction`,
+  `last_eval_step`, `seeded`, `pool_generation`) — `SnapshotPool.persist_summary`/`load_summary`.
+  Read at `train_rl_agent` setup → the initial `self_play_fraction` (so a strong resumed model
+  starts at the right ramp level, not the 0% cold-start) and the seed-gate decision. Distinct
+  from the prober's `eval_traces/*/summary.json`; the legacy `win_rate_vs_bots.txt` is still read
+  as a fallback.
 - **Opponents sample, they don't argmax.** Training opponents are built with `stochastic=True`
   (now the `RLPlayer` default) so the learner trains against the policy's full action
   distribution — a richer, less-exploitable signal than the greedy move. Temperature is
@@ -135,7 +169,21 @@ restart — no manifest). Design lives in `designs/ai_v5/`. Key behaviors:
   surfaces the resolved-race rate. **Full context — mechanism, the race trace, why it was hard, and the
   verification tiers — is in `RACE_FUZZ_README.md`.** (`GEN3_FORCE_SELFPLAY` forces 100% self-play for
   the stress; `GEN3_RACE_TRACE=1` dumps the per-battle cross-thread interleaving into the
-  `StaleDecisionError`. `StaleDecisionError` lives in `agents/action/mapper.py`.)
+  `StaleDecisionError` **and** into the `race_get` silent-stall crash — see below. `StaleDecisionError`
+  lives in `agents/action/mapper.py`.)
+  - **Silent-stall watchdog (`_AsyncQueue.race_get`, `env.py`).** A *different* failure from the
+    stale-decision race: a request (e.g. a force-switch after a faint) gets parsed onto the battle but
+    is **never delivered** to the env's `battle_queue` — `race_get` would then await forever (the
+    disconnect guard only fires on a socket CLOSE, not on silence), wedging the whole SubprocVecEnv on
+    one battle. So `race_get` bounds the wait by `_RACE_GET_TIMEOUT_S` (120 s, ~100× a normal step;
+    override with `GEN3_RACE_GET_TIMEOUT_S`) and, on a silent stall, **raises `ShowdownException`** —
+    a hard crash that propagates uncaught through the wrapper step chain to the SubprocVecEnv worker,
+    so SB3 discards the in-flight rollout (no fabricated transition reaches backprop) and the launcher
+    restarts from the last checkpoint. This is a watchdog that **crashes, never recovers in place** —
+    recovering would feed PPO a stale `(obs, action) → (reward, next_obs)`. With `GEN3_RACE_TRACE=1`
+    the wedged battle's interleaving is appended to the crash message via `race_trace.dump_recent()`
+    (wedged battle ordered last so its newest events survive the launcher's last-100-line crash-file
+    tail; the full trace is in `launcher_child.log`).
 - **Self-play engages in the first process, not only after a restart.** The env is built before
   the model exists (the model needs the env's spaces), so on the first self-play process
   `_maybe_engage_self_play` seeds the pool from the loaded weights and rebuilds the env with

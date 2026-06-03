@@ -27,27 +27,39 @@ class SnapshotEntry:
     pinned: bool = False  # pinned entries are never evicted
 
 
+# Self-play ramp anchors (win rate vs. strategic bots, Random excluded):
+#   < SELF_PLAY_START         → NO self-play (100% heuristics) — don't burn cycles on a weak
+#                               self-opponent before the model can reliably beat the bots.
+#   SELF_PLAY_START→FULL      → smoothstep ramp up.
+#   ≥ SELF_PLAY_FULL          → max self-play, keeping HEURISTIC_FLOOR vs bots (anti-forgetting).
+SELF_PLAY_START = 0.55
+SELF_PLAY_FULL = 0.80
+HEURISTIC_FLOOR = 0.10
+
+
 def heuristic_fraction(win_rate_vs_bots: float) -> float:
     """Fraction of training envs that use heuristic opponents (vs. pool snapshots).
 
-    Smoothstep interpolation from 0.80 (agent weak, needs bot guidance) to 0.10
-    (agent dominant, mostly self-play with a floor to prevent forgetting basics).
-    The ramp activates once win rate vs. strategic bots passes 50%.
+    1.0 (0% self-play) below ``SELF_PLAY_START``; smoothstep down to ``HEURISTIC_FLOOR``
+    (→ 90% self-play) as win rate climbs ``SELF_PLAY_START``→``SELF_PLAY_FULL``; flat
+    ``HEURISTIC_FLOOR`` above, so the agent always sees a few real bots (prevents forgetting
+    basics). Self-play is therefore *gated* on competence — a weak model trains entirely vs
+    bots, and self-play only engages (and the pool is only seeded) once win rate clears
+    ``SELF_PLAY_START``, so the seed is always captured from a competent model.
 
     ``GEN3_FORCE_SELFPLAY=1`` overrides this to 0% — EVERY training env uses a pool
     (self-play) opponent. This is the faithful self-play stress mode: only the RLPlayer
     self-play path exercises the snapshot→serialize decision the stale-decision race lives in
-    (heuristic bots never touch it), so a fresh run at the natural ~80% bots barely tests it.
-    Use it to reproduce the race and to verify the settle fix (see
-    ``single_agent_wrapper._settle_opponent_battle``).
+    (heuristic bots never touch it), so a fresh run barely tests it. Use it to reproduce the
+    race and to verify the settle fix (see ``single_agent_wrapper._settle_opponent_battle``).
     """
     import os
     if os.environ.get("GEN3_FORCE_SELFPLAY"):
         return 0.0
-    t = (win_rate_vs_bots - 0.50) / (0.85 - 0.50)
+    t = (win_rate_vs_bots - SELF_PLAY_START) / (SELF_PLAY_FULL - SELF_PLAY_START)
     t = max(0.0, min(1.0, t))
     t_smooth = t * t * (3.0 - 2.0 * t)
-    return 0.80 * (1.0 - t_smooth) + 0.10 * t_smooth
+    return 1.0 * (1.0 - t_smooth) + HEURISTIC_FLOOR * t_smooth
 
 
 class SnapshotPool:
@@ -56,11 +68,16 @@ class SnapshotPool:
     Filenames encode the training step: ``snapshot_<step:012d>.zip``.
     Sorted directory scan restores the pool on every startup — no JSON manifest.
 
-    The step-0 seed is always pinned and never evicted. All other entries are
-    evicted oldest-first when the pool exceeds ``max_snapshots``.
+    Nothing is pinned: the pool is a **sliding window** of the ``max_snapshots`` most
+    recent snapshots (oldest evicted first), so an old/weak seed ages out instead of
+    lingering as a trivially-easy floor. Anti-forgetting is handled by the heuristic floor
+    in ``heuristic_fraction`` (the agent always trains a few % vs real bots), not a pinned
+    seed. Seeding is gated on competence by the caller (only seed once win rate clears
+    ``SELF_PLAY_START``), so the seed is captured from a competent model.
     """
 
     _WIN_RATE_FILE = "win_rate_vs_bots.txt"
+    _SUMMARY_FILE = "summary.json"
 
     def __init__(
         self,
@@ -85,15 +102,16 @@ class SnapshotPool:
     # ── Pool population ────────────────────────────────────────────────────
 
     def seed(self, model: MaskablePPO) -> SnapshotEntry:
-        """Save the step-0 seed (pinned, never evicted).
+        """Save the step-0 seed (NOT pinned — it ages out as the window slides).
 
         Idempotent — safe to call on every startup; skips the write if the seed
-        zip already exists on disk.
+        zip already exists on disk. Gate the CALL on competence (only seed once win rate
+        clears ``SELF_PLAY_START``) so the seed is captured from a competent model.
         """
         existing = self._find_step(0)
         if existing:
             return existing
-        entry = self._write(model, step=0, pinned=True)
+        entry = self._write(model, step=0, pinned=False)
         emit(f"🌱 [SELFPLAY] Pool seeded at step 0 → {entry.path.name}")
         return entry
 
@@ -191,14 +209,54 @@ class SnapshotPool:
             self._model_cache[key] = loaded
         return self._model_cache[key]
 
-    # ── Win-rate persistence ───────────────────────────────────────────────
+    # ── Resume state persistence (summary.json) ────────────────────────────
+
+    def persist_summary(self, **fields) -> None:
+        """Merge ``fields`` into ``<pool_dir>/summary.json`` — the self-play resume state.
+
+        Keys we write each eval: ``win_rate_vs_bots``, ``self_play_fraction``,
+        ``last_eval_step``, ``seeded``, ``pool_generation``, ``updated_at``. A merge (not a
+        rewrite) so partial updates don't drop keys. Distinct from the prober's
+        ``eval_traces/*/summary.json``. Mirrors win_rate to the legacy ``.txt`` for any
+        in-flight reader.
+        """
+        import json
+        data = self.load_summary()
+        data.update(fields)
+        (self.pool_dir / self._SUMMARY_FILE).write_text(json.dumps(data, indent=2))
+        if "win_rate_vs_bots" in fields:
+            try:
+                (self.pool_dir / self._WIN_RATE_FILE).write_text(f"{float(fields['win_rate_vs_bots']):.6f}\n")
+            except (ValueError, TypeError):
+                pass
+
+    def load_summary(self) -> dict:
+        """Read ``summary.json`` (the resume state), or ``{}`` if missing/corrupt."""
+        import json
+        path = self.pool_dir / self._SUMMARY_FILE
+        if path.exists():
+            try:
+                return json.loads(path.read_text())
+            except (ValueError, OSError) as e:
+                print(f"[SELFPLAY] Warning: could not read {path}: {e} — ignoring")
+        return {}
 
     def persist_win_rate(self, win_rate: float) -> None:
-        """Write win_rate_vs_bots to disk so the next launcher restart picks it up."""
-        (self.pool_dir / self._WIN_RATE_FILE).write_text(f"{win_rate:.6f}\n")
+        """Back-compat shim — prefer ``persist_summary``. Records win_rate into summary.json."""
+        self.persist_summary(win_rate_vs_bots=float(win_rate))
 
     def load_persisted_win_rate(self) -> float:
-        """Read the last-persisted win rate, or 0.0 if not available."""
+        """Last-persisted win_rate_vs_bots (drives the ramp on resume), or 0.0.
+
+        Prefers ``summary.json``; falls back to the legacy ``win_rate_vs_bots.txt`` for runs
+        whose pool predates summary.json.
+        """
+        summary = self.load_summary()
+        if "win_rate_vs_bots" in summary:
+            try:
+                return float(summary["win_rate_vs_bots"])
+            except (ValueError, TypeError):
+                pass
         path = self.pool_dir / self._WIN_RATE_FILE
         if path.exists():
             try:
@@ -224,7 +282,9 @@ class SnapshotPool:
         for p in paths:
             try:
                 step = int(p.stem.split("_")[1])
-                self._entries.append(SnapshotEntry(path=p, step=step, pinned=(step == 0)))
+                # Nothing is pinned — the pool is a sliding window (oldest evicted first),
+                # so an old/weak seed ages out rather than lingering as a trivial floor.
+                self._entries.append(SnapshotEntry(path=p, step=step, pinned=False))
             except (IndexError, ValueError):
                 pass  # ignore malformed filenames
 

@@ -158,6 +158,9 @@ class SelfPlayCallback(BaseCallback):
         self.win_rate_vs_bots: float = pool.load_persisted_win_rate()
         self._bot_peak: dict[str, float] = {}      # resets each run; TensorBoard has history
         self._regression_active: set[str] = set()  # bots currently in warned state
+        # Pool generation — bumped whenever the pool changes (seed/promote); pushed to the env
+        # workers via env_method so they re-scan the pool dir and pick up new snapshots live.
+        self._pool_generation = 0
 
     # ── SB3 lifecycle ──────────────────────────────────────────────────────
 
@@ -167,9 +170,10 @@ class SelfPlayCallback(BaseCallback):
         if self._model_dir is not None:
             self._eval_root = os.path.join(self._model_dir, ".eval_runs")
             os.makedirs(self._eval_root, exist_ok=True)
-        # Seed the pool if it's empty (fresh start). Idempotent across launcher restarts.
-        if self._pool.is_empty():
-            self._pool.seed(self.model)
+        # NOTE: seeding is gated on competence (win rate ≥ SELF_PLAY_START) — it is NOT done
+        # here. train_rl_agent's _maybe_seed_pool seeds at startup if already competent, and
+        # _collect_pending seeds the moment the model first crosses the threshold mid-run. So a
+        # weak model never seeds a near-random opponent into the pool.
         # Resumed run: re-publish the last eval so the TUI panel isn't blank until the
         # next cycle (which can be millions of steps away).
         replay_last_eval_to_tui(self._model_dir, self._resume_eval_metadata)
@@ -382,9 +386,22 @@ class SelfPlayCallback(BaseCallback):
             emit(f"⚠️  [SELFPLAY] Cycling signal: sentinel_monotonicity={monotonicity:.2f} "
                  f"at step {step:,} — consider increasing max_snapshots")
 
+        # ── Live curriculum: seed-if-crossing-threshold, then push the fraction to the envs ──
+        # frac>0 ⇔ win rate ≥ SELF_PLAY_START. If we just crossed it with an empty pool, seed
+        # NOW from the frozen (competent) eval snapshot — so the first self-play opponent is a
+        # competent model, never random. Then push the live fraction + pool generation to every
+        # training env so the heuristic-vs-pool ratio tracks performance mid-run (no restart).
+        sf = 1.0 - heuristic_fraction(self.win_rate_vs_bots)
+        if sf > 0 and self._pool.is_empty():
+            self._pool.add_from_path(pending["snapshot"], step)
+            self._pool_generation += 1
+            emit(f"🌱 [SELFPLAY] Win rate cleared the threshold — seeded the pool from the "
+                 f"step {step:,} snapshot (self_play_fraction={sf:.0%})")
+        # The live fraction is pushed to the envs at the END of collect (after any promotion),
+        # so a same-cycle promotion's pool-generation bump reaches the workers immediately.
+
         # ── Derived metrics (no extra battles) ──
         pool_size = len(self._pool)
-        sf = 1.0 - heuristic_fraction(self.win_rate_vs_bots)
         self.logger.record("train/selfplay_fraction", sf)
         self.logger.record("eval/pool_snapshot_count", float(pool_size))
         tui["train/selfplay_fraction"] = sf
@@ -452,12 +469,35 @@ class SelfPlayCallback(BaseCallback):
         # ── Promotion — promote the FROZEN snapshot (the live model has since advanced) ──
         if win_rate_vs_pool > self._promote_threshold:
             self._pool.add_from_path(pending["snapshot"], step)
+            self._pool_generation += 1
             self.logger.record("train/selfplay_promoted_steps", float(step))
+
+        # ── Push the live curriculum target to every training env (after any seed/promote so
+        #    the pool-generation bump reaches the workers this cycle) + persist resume state ──
+        self._push_self_play_target(sf)
+        if self._model_dir or self._pool:
+            self._pool.persist_summary(
+                win_rate_vs_bots=self.win_rate_vs_bots,
+                self_play_fraction=sf,
+                last_eval_step=step,
+                seeded=not self._pool.is_empty(),
+                pool_generation=self._pool_generation,
+            )
 
         # Retain the bit-exact snapshot for the prober, groom traces, then drop the scratch.
         persist_eval_snapshot(self._model_dir, step, pending["snapshot"], self._keep_eval_snapshots)
         prune_eval_traces(self._model_dir, self._keep_eval_trace_steps)
         self._cleanup(pending, keep_logs=bool(missing or bad_exits))
+
+    def _push_self_play_target(self, fraction: float) -> None:
+        """Push the live (fraction, pool_generation) to every training env via env_method, so
+        the heuristic-vs-pool ratio tracks performance mid-run and workers re-scan the pool when
+        it changes. Safe on the training thread (IPC to the SubprocVecEnv we own); a heuristic
+        env (no set_self_play_target) or a transient failure is non-fatal."""
+        try:
+            self.training_env.env_method("set_self_play_target", float(fraction), self._pool_generation)
+        except Exception as e:  # noqa: BLE001 — telemetry/curriculum push must never break eval
+            print(f"[SELFPLAY] set_self_play_target push failed (non-fatal): {e}")
 
     def _record_opponent_default_stats(self, tui: dict) -> None:
         """Query the live training envs' self-play opponent default/redecide counters."""

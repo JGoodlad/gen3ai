@@ -293,13 +293,17 @@ from agents.training.eval_callback import (
 )
 
 
-def test_eval_opponent_names_excludes_v2_by_default():
+def test_eval_opponent_names_v1_roster_by_default():
     names = eval_opponent_names(False)
     assert names == ["random", "heuristic", "staller", "aggressive", "setup_sweep"]
 
 
-def test_eval_opponent_names_includes_v2_when_enabled():
-    assert len(eval_opponent_names(True)) == 9
+def test_eval_opponent_names_v2_roster_when_enabled():
+    # Non-redundant V2 set: random (floor) + one strong bot per archetype — NOT both v1 and v2.
+    # snake_case names match _EVAL_OPPONENT_SPECS keys + the metric-key convention (1e50634).
+    assert eval_opponent_names(True) == [
+        "random", "heuristic2", "staller_v2", "aggressive_v2", "setup_sweep_v2"
+    ]
 
 
 # ── work-stealing claim (atomic O_EXCL) ───────────────────────────────────────

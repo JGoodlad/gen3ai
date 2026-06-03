@@ -369,7 +369,10 @@ class LauncherUI:
             if opp.startswith("sentinel_"):
                 idx = opp[len("sentinel_"):]
                 step = metrics.get(f"eval/sentinel_step_{idx}")
-                return f"  vs {opp} ({step / 1e6:.1f}M)" if step else f"  vs {opp}"
+                if step is None:  # not 'if step' — step 0 (the seed) is falsy!
+                    return f"  vs {opp}"
+                tag = "seed" if step == 0 else f"{step / 1e6:.1f}M"
+                return f"  vs {opp} ({tag})"
             return f"  vs {opp}"
 
         # Random always first, remaining opponents in metric-order (from keys).

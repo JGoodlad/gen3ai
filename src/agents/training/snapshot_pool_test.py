@@ -10,30 +10,36 @@ from agents.training.snapshot_pool import SnapshotPool, SnapshotEntry, heuristic
 
 # ── heuristic_fraction ──────────────────────────────────────────────────────
 
-def test_heuristic_fraction_at_floor():
-    assert heuristic_fraction(0.0) == pytest.approx(0.80)
-
-
-def test_heuristic_fraction_below_ramp():
-    # Win rate at or below ramp start (0.50) returns ceiling (0.80)
-    assert heuristic_fraction(0.50) == pytest.approx(0.80)
+def test_heuristic_fraction_no_self_play_below_threshold():
+    # Below SELF_PLAY_START (0.55) → 100% heuristics (0% self-play): don't burn cycles
+    # on a weak self-opponent before the model can reliably beat the bots.
+    assert heuristic_fraction(0.0) == pytest.approx(1.0)
+    assert heuristic_fraction(0.40) == pytest.approx(1.0)
+    assert heuristic_fraction(0.55) == pytest.approx(1.0)
 
 
 def test_heuristic_fraction_at_ceiling():
-    # Win rate at or above ramp end (0.85) returns floor (0.10)
+    # At/above SELF_PLAY_FULL (0.80) → HEURISTIC_FLOOR 0.10 (90% self-play).
+    assert heuristic_fraction(0.80) == pytest.approx(0.10)
     assert heuristic_fraction(0.85) == pytest.approx(0.10)
     assert heuristic_fraction(1.0) == pytest.approx(0.10)
 
 
 def test_heuristic_fraction_midpoint():
-    # Smoothstep midpoint at t=0.5 → 3(0.5²) - 2(0.5³) = 0.5, so 0.80*0.5 + 0.10*0.5 = 0.45
-    mid_wr = 0.50 + (0.85 - 0.50) * 0.5
-    assert heuristic_fraction(mid_wr) == pytest.approx(0.45)
+    # Smoothstep midpoint (t=0.5 → 0.5): 1.0*0.5 + 0.10*0.5 = 0.55.
+    mid_wr = 0.55 + (0.80 - 0.55) * 0.5
+    assert heuristic_fraction(mid_wr) == pytest.approx(0.55)
+
+
+def test_heuristic_fraction_ramps_between_threshold_and_full():
+    # Strictly between START and FULL it's strictly inside (1.0, 0.10).
+    v = heuristic_fraction(0.65)
+    assert 0.10 < v < 1.0
 
 
 def test_heuristic_fraction_is_monotone_decreasing():
-    prev = 1.0
-    for wr in [0.0, 0.3, 0.5, 0.6, 0.7, 0.75, 0.85, 1.0]:
+    prev = 1.01
+    for wr in [0.0, 0.3, 0.55, 0.6, 0.7, 0.75, 0.80, 0.85, 1.0]:
         val = heuristic_fraction(wr)
         assert val <= prev + 1e-9
         prev = val
@@ -42,7 +48,7 @@ def test_heuristic_fraction_is_monotone_decreasing():
 def test_heuristic_fraction_stays_in_bounds():
     for wr in [x / 100 for x in range(0, 101)]:
         val = heuristic_fraction(wr)
-        assert 0.10 <= val <= 0.80
+        assert 0.10 <= val <= 1.0
 
 
 # ── SnapshotPool helpers ────────────────────────────────────────────────────
@@ -74,12 +80,12 @@ def _fake_model(tmp_path, name="model") -> MagicMock:
 
 # ── seed ────────────────────────────────────────────────────────────────────
 
-def test_seed_creates_step0_entry(tmp_path):
+def test_seed_creates_unpinned_step0_entry(tmp_path):
     pool = _make_pool(tmp_path)
     model = _fake_model(tmp_path)
     entry = pool.seed(model)
     assert entry.step == 0
-    assert entry.pinned is True
+    assert entry.pinned is False   # sliding window — the seed ages out, never pinned
     assert len(pool) == 1
 
 
@@ -114,28 +120,27 @@ def test_add_creates_entry(tmp_path):
     assert len(pool) == 2
 
 
-def test_evict_removes_oldest_unpinned(tmp_path):
+def test_evict_removes_oldest_sliding_window(tmp_path):
     pool = _make_pool(tmp_path, max_snapshots=3)
     model = _fake_model(tmp_path)
-    pool.seed(model)                    # step 0 (pinned)
-    pool.add(model, step=1_000_000)     # step 1M
-    pool.add(model, step=2_000_000)     # step 2M
-    # Pool is at max=3 now. Adding one more should evict step 1M (oldest unpinned).
+    pool.seed(model)                    # step 0 (the seed — NOT pinned)
+    pool.add(model, step=1_000_000)
+    pool.add(model, step=2_000_000)
+    # Pool is at max=3. Adding one more evicts the OLDEST (the step-0 seed) — sliding window.
     pool.add(model, step=3_000_000)
     steps = [e.step for e in pool._entries]
-    assert 1_000_000 not in steps
-    assert 0 in steps          # seed still present
-    assert 2_000_000 in steps
-    assert 3_000_000 in steps
+    assert 0 not in steps          # the old seed ages out
+    assert steps == [1_000_000, 2_000_000, 3_000_000]
 
 
-def test_evict_never_removes_pinned(tmp_path):
+def test_seed_ages_out_under_eviction(tmp_path):
+    # Nothing is pinned, so a low-cap pool drops the seed once newer snapshots arrive.
     pool = _make_pool(tmp_path, max_snapshots=2)
     model = _fake_model(tmp_path)
-    pool.seed(model)                # step 0 (pinned)
+    pool.seed(model)                # step 0 (the seed)
     pool.add(model, step=1_000_000)
-    pool.add(model, step=2_000_000)  # triggers eviction of step 1M
-    assert any(e.step == 0 for e in pool._entries)
+    pool.add(model, step=2_000_000)  # over cap → evict the oldest (the seed)
+    assert all(e.step != 0 for e in pool._entries)
 
 
 def test_add_replaces_same_step(tmp_path):
@@ -175,27 +180,18 @@ def test_add_from_path_does_not_mutate_source(tmp_path):
     assert src.exists()  # copy, not move — the trainer cleans up the scratch itself
 
 
-def test_add_from_path_evicts_oldest_unpinned(tmp_path):
+def test_add_from_path_evicts_oldest_sliding_window(tmp_path):
     pool = _make_pool(tmp_path, max_snapshots=3)
     model = _fake_model(tmp_path)
-    pool.seed(model)  # step 0, pinned
+    pool.seed(model)  # step 0 (the seed — not pinned)
     pool.add_from_path(_frozen_zip(tmp_path, "a.zip"), step=1_000_000)
     pool.add_from_path(_frozen_zip(tmp_path, "b.zip"), step=2_000_000)
-    pool.add_from_path(_frozen_zip(tmp_path, "c.zip"), step=3_000_000)  # over cap → evict 1M
+    pool.add_from_path(_frozen_zip(tmp_path, "c.zip"), step=3_000_000)  # over cap → evict oldest (seed)
     steps = [e.step for e in pool._entries]
-    assert 0 in steps and 1_000_000 not in steps
-    assert {2_000_000, 3_000_000} <= set(steps)
+    assert 0 not in steps                       # the seed ages out
+    assert steps == [1_000_000, 2_000_000, 3_000_000]
     # The evicted snapshot file is unlinked from disk.
-    assert not (tmp_path / "snapshot_000001000000.zip").exists()
-
-
-def test_add_from_path_never_evicts_pinned_seed(tmp_path):
-    pool = _make_pool(tmp_path, max_snapshots=2)
-    model = _fake_model(tmp_path)
-    pool.seed(model)
-    pool.add_from_path(_frozen_zip(tmp_path, "a.zip"), step=1_000_000)
-    pool.add_from_path(_frozen_zip(tmp_path, "b.zip"), step=2_000_000)  # evicts 1M, not seed
-    assert any(e.step == 0 and e.pinned for e in pool._entries)
+    assert not (tmp_path / "snapshot_000000000000.zip").exists()
 
 
 def test_add_from_path_idempotent_replaces_same_step(tmp_path):
@@ -232,16 +228,13 @@ def test_scan_reconstructs_from_disk(tmp_path):
     assert 1_000_000 in steps
 
 
-def test_scan_pins_step_zero(tmp_path):
+def test_scan_pins_nothing(tmp_path):
     pool = _make_pool(tmp_path)
     model = _fake_model(tmp_path)
     pool.seed(model)
     pool.add(model, step=1_000_000)
     pool2 = _make_pool(tmp_path)
-    seed = next(e for e in pool2._entries if e.step == 0)
-    assert seed.pinned is True
-    non_seed = next(e for e in pool2._entries if e.step != 0)
-    assert non_seed.pinned is False
+    assert all(not e.pinned for e in pool2._entries)   # sliding window — nothing pinned
 
 
 def test_scan_ignores_malformed_filenames(tmp_path):
@@ -345,5 +338,36 @@ def test_load_win_rate_returns_zero_on_corrupt_file(tmp_path):
     pool = _make_pool(tmp_path)
     (tmp_path / pool._WIN_RATE_FILE).write_text("not_a_number\n")
     assert pool.load_persisted_win_rate() == pytest.approx(0.0)
+
+
+# ── summary.json (resume state) ──────────────────────────────────────────────
+
+def test_persist_summary_merges_and_loads(tmp_path):
+    pool = _make_pool(tmp_path)
+    pool.persist_summary(win_rate_vs_bots=0.71, self_play_fraction=0.45, last_eval_step=49_000_000)
+    pool.persist_summary(pool_generation=3)            # merge, not overwrite
+    s = pool.load_summary()
+    assert s["win_rate_vs_bots"] == pytest.approx(0.71)
+    assert s["self_play_fraction"] == pytest.approx(0.45)
+    assert s["last_eval_step"] == 49_000_000
+    assert s["pool_generation"] == 3
+
+
+def test_summary_is_preferred_source_for_win_rate(tmp_path):
+    pool = _make_pool(tmp_path)
+    pool.persist_summary(win_rate_vs_bots=0.66)
+    assert pool.load_persisted_win_rate() == pytest.approx(0.66)
+
+
+def test_load_persisted_win_rate_falls_back_to_legacy_txt(tmp_path):
+    # A pool predating summary.json (only the .txt) still resumes at the right level.
+    pool = _make_pool(tmp_path)
+    (tmp_path / pool._WIN_RATE_FILE).write_text("0.620000\n")
+    assert pool.load_persisted_win_rate() == pytest.approx(0.62)
+
+
+def test_load_summary_missing_returns_empty(tmp_path):
+    pool = _make_pool(tmp_path)
+    assert pool.load_summary() == {}
 
 
