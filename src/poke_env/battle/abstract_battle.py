@@ -737,14 +737,11 @@ class AbstractBattle(ABC):
                     reveal = False
                 elif overridden_move in {"Grass Pledge", "Water Pledge", "Fire Pledge"}:
                     overridden_move = None
-                elif self.logger is not None:
-                    self.logger.warning(
-                        "Unmanaged [from] move message received - move %s in cleaned up "
-                        "message %s in battle %s turn %d",
-                        overridden_move,
-                        event,
-                        self.battle_tag,
-                        self.turn,
+                else:
+                    raise ValueError(
+                        f"Unhandled [from] move message - move {overridden_move!r} in "
+                        f"cleaned-up message {event} in battle {self.battle_tag} "
+                        f"turn {self.turn}"
                     )
 
             if event[-1] == "null":
@@ -761,16 +758,24 @@ class AbstractBattle(ABC):
                     reveal = False
                 elif revealed_ability == "Dancer":
                     return
-                elif self.logger is not None:
-                    self.logger.warning(
-                        "Unmanaged [from] ability: message received - ability %s in "
-                        "cleaned up message %s in battle %s turn %d",
-                        revealed_ability,
-                        event,
-                        self.battle_tag,
-                        self.turn,
+                else:
+                    raise ValueError(
+                        f"Unhandled [from] ability message - ability {revealed_ability!r} "
+                        f"in cleaned-up message {event} in battle {self.battle_tag} "
+                        f"turn {self.turn}"
                     )
-            if event[-1] == "[from] Magic Coat" or event[-1] == "[from] Mirror Move":
+            if event[-1] in {
+                "[from] Magic Coat",
+                "[from] Mirror Move",
+                "[from] Snatch",
+                "[from]Snatch",
+            }:
+                # The actor is shown "using" a move that is not its own: Magic Coat
+                # / Mirror Move bounce or reflect the original, and Snatch makes the
+                # snatcher execute the status move it stole. In every case the move
+                # must NOT be attributed to the actor's revealed moveset (reveal) and
+                # the actor's own last-used move must stay marked (use) — otherwise a
+                # Snatch Blissey would read as "knows Soft-Boiled/Calm Mind/...".
                 use = False
                 reveal = False
                 event = event[:-1]
@@ -794,13 +799,10 @@ class AbstractBattle(ABC):
                     "p2b:",
                 }:
                     pass
-                elif self.logger is not None:
-                    self.logger.warning(
-                        "Unmanaged move message format received - cleaned up message %s"
-                        " in battle %s turn %d",
-                        event,
-                        self.battle_tag,
-                        self.turn,
+                else:
+                    raise ValueError(
+                        f"Unhandled move message format - cleaned-up message {event} "
+                        f"in battle {self.battle_tag} turn {self.turn}"
                     )
             else:
                 pokemon, move, presumed_target = event[2:5]
@@ -808,13 +810,10 @@ class AbstractBattle(ABC):
                     presumed_target == ""
                 ):  # ['', 'move', 'p2a: 07ffb4c367', 'Teeter Dance', '', '[from] ability: Dancer']
                     pass
-                elif self.logger is not None:
-                    self.logger.warning(
-                        "Unmanaged move message format received - cleaned up message %s in "
-                        "battle %s turn %d",
-                        event,
-                        self.battle_tag,
-                        self.turn,
+                else:
+                    raise ValueError(
+                        f"Unhandled move message format - cleaned-up message {event} "
+                        f"in battle {self.battle_tag} turn {self.turn}"
                     )
 
             # Check if a silent-effect move has occurred (Minimize) and add the effect

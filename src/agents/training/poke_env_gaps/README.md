@@ -103,6 +103,32 @@ Because `reveal=False` → `move=None` → all `_is_last_used` flags cleared →
 After any of these fires: `opp_last_move_id = None`, `opp_move_known = False`. The model
 sees uncertainty for that turn but continues correctly.
 
+### 7. Snatch — the snatcher's STOLEN move (fixed) + the now-strict parser
+
+Snatch (priority +4) steals the target's self-targeting status move and makes the *snatcher*
+execute it. Showdown emits it as a move line the snatcher does not own:
+
+```
+|move|p2a: Blissey|Calm Mind|p2a: Blissey|[from] Snatch
+```
+
+`[from] Snatch` was in none of poke-env's stripped-tag lists, so the event fell through to the
+generic move-format branch: it (a) logged a per-occurrence "Unmanaged move message format
+received" warning (the visible spam) and (b) ran `moved(..., reveal=True)`, **adding the stolen
+move to the snatcher's revealed moveset** — which then leaked into the opponent's obs move slots
+(a Snatch Blissey read as "knows Calm Mind"). Fixed in `abstract_battle.py` by treating Snatch
+exactly like **Magic Coat / Mirror Move** (`use=False, reveal=False`, tag stripped): the actor
+reveals *Snatch* (logged on its own line), never the move it stole.
+
+Alongside the fix, the move-message handler is now **strict**: every previously-`logger.warning`
+"Unmanaged …" branch (unhandled `[from] move:` / `[from] ability:` override, and the two
+move-format fall-throughs) now **`raise ValueError`** instead — matching the existing
+`raise ValueError("Unhandled item message")` precedent in the same parser. The contract is
+crash-don't-drop: an unrecognised move message stops the run loudly (a real traceback) rather
+than silently spamming a warning and recording possibly-wrong state, so new gaps are caught and
+fixed instead of accumulating. `snatch_fuzz_test.py` exercises the Snatch path and doubles as
+the regression guard that the strict parser does not mis-fire on normal play.
+
 ---
 
 ## Fuzz Test Results Summary (50 battles × 3 scenarios, ~30K transitions)
@@ -210,6 +236,18 @@ Four layers per turn (raw protocol → poke-env props → `BattleContext` → `T
 Run it: `python src/agents/training/poke_env_gaps/move_outcome_fuzz_test.py 40`
 (two teams: a variance team for crit/miss/fail/cant, and an Explosion+Spikes+frail
 "FaintEdge" team so the faint edge cases actually fire under random play).
+
+### `snatch_fuzz_test.py` — Snatch parsing (stolen-move attribution + strict parser)
+Forcing players (a Snatch-user team vs a snatchable-setup team) make `[from] Snatch` lines fire
+reliably every setup turn while both sides attack on the others so battles terminate. Validates,
+against the raw protocol:
+| Validated | Notes |
+|---|---|
+| **No parse crash** | the bridge propagates a `parse_message` raise, so an unhandled `[from] Snatch` — or any newly-unhandled move message under the now-strict parser — crashes the run. A clean run proves both that Snatch is handled and that the strict change does not mis-fire. |
+| **Correct attribution** | for every observed snatch, the stolen move is NOT in the snatcher's revealed moveset (checked from the opponent's reveal-gated view — the one the obs encoder reads). The old `reveal=True` bug fails this; the test is sensitivity-checked against that regression. |
+| **Coverage** | FAILS if no Snatch was ever observed (≈ 12 snatches/battle in practice). |
+
+Run it: `python src/agents/training/poke_env_gaps/snatch_fuzz_test.py 20`
 
 ### Known gaps / to expand
 - **Effectiveness on delegated damaging moves**: `our_last_damaging_event` can lag

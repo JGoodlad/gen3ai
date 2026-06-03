@@ -111,7 +111,7 @@ needed** (`utils/bridge/local_battle_runner.py`):
 export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 src/agents/action/fuzz_test.py [n_battles]
 export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 src/agents/training/poke_env_gaps/transition_fuzz_test.py [n_battles]
 export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 src/agents/battle/event_log_fuzz_test.py [n_battles]
-# also bridge-backed (no server): poke_env_gaps/{abilities,item_consumption,move_outcome}_fuzz_test.py
+# also bridge-backed (no server): poke_env_gaps/{abilities,item_consumption,move_outcome,snatch}_fuzz_test.py
 #                                  and training/hidden_power_tracker_fuzz_test.py
 ```
 
