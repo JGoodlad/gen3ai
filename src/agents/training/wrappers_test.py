@@ -106,6 +106,24 @@ def test_generation_bump_triggers_pool_rescan():
     assert pool._scan.call_count == first + 1
 
 
+def test_pool_model_loaded_once_per_generation():
+    """FPS-regression guard: the ~27MB snapshot is (re)loaded once per generation, NOT every
+    episode. Per-episode load_model thrashed the workers (blocked in reset() on a 27MB
+    deserialize → CPU ~40%, FPS ~1400→~500). Within a generation the opponent must be reused."""
+    pool = _stub_pool(model="M")
+    pp = MagicMock(name="pool_player")
+    w, _ = _make_wrapper(fraction=1.0, pool=pool, pool_player=pp)
+    for _ in range(50):
+        w._select_episode_opponent()
+        assert w.opponent is pp           # always the pool, but...
+    pool.load_model.assert_called_once()  # ...one load across 50 same-generation episodes
+    # A new generation re-samples + loads exactly once more (not per episode).
+    w.set_self_play_target(1.0, generation=7)
+    for _ in range(50):
+        w._select_episode_opponent()
+    assert pool.load_model.call_count == 2
+
+
 # ── telemetry reads the persistent pool player ───────────────────────────────
 
 def test_opponent_default_stats_reads_pool_player():

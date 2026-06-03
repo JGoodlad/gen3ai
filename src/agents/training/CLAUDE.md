@@ -101,13 +101,17 @@ restart — no manifest). Design lives in `designs/ai_v5/`. Key behaviors:
   `self_play_fraction`, and `SelfPlayCallback` pushes the fresh fraction (+ a `pool_generation`)
   to all envs via `training_env.env_method("set_self_play_target", …)` **after every eval**, so
   the ratio tracks measured strength mid-run with no restart. The opponent is a pure decision
-  function over `env.battle2` (env.agent1/agent2 do the networking), so the per-episode swap is
-  free and safe — built `start_listening=False` (no idle connections), and the in-episode
-  stale-decision path is untouched. On a pool choice the env samples the *current* pool
-  (recency-weighted) and swaps the snapshot's model into a reusable pool `RLPlayer` (LRU-cached);
-  a `pool_generation` bump (after a seed/promote) makes the worker re-scan the pool dir, so new
-  promotions become training opponents immediately. (`_n_pool_envs` / the `_maybe_engage_self_play`
-  env-rebuild are gone.)
+  function over `env.battle2` (env.agent1/agent2 do the networking), so swapping it between
+  episodes is free and safe — built `start_listening=False` (no idle connections), and the
+  in-episode stale-decision path is untouched. The pool-vs-heuristic **coin flip is per-episode**
+  (so the live fraction is honored exactly), but the pool **snapshot is (re)sampled+loaded only
+  once per `pool_generation`**, NOT per episode: `load_model` deserializes a ~27MB MaskablePPO,
+  and doing it every episode against an N-deep pool (LRU `lru_cache_size`=3) thrashed the workers
+  — they blocked in `reset()` on the deserialize, dropping CPU to ~40% and FPS from ~1400 to ~500
+  (regression fixed in `_select_episode_opponent`). A `pool_generation` bump (after a seed/promote)
+  makes the worker re-scan + re-sample, so promotions become training opponents within a
+  generation; diversity comes from 48 envs sampling independently + rotating each generation, not
+  from per-episode churn. (`_n_pool_envs` / the `_maybe_engage_self_play` env-rebuild are gone.)
 - **Seeding is GATED on competence; the pool is a SLIDING WINDOW (nothing pinned).** The pool is
   seeded only once win rate clears `SELF_PLAY_START` (at startup via `_maybe_seed_pool`, or the
   moment it crosses mid-run in `_collect_pending`), so the first self-play opponent is a

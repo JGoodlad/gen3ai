@@ -19,10 +19,12 @@ class MaskableAgentWrapper(SingleAgentWrapper):
        pending decision, accumulating reward).
 
     3. Per-episode opponent selection (the self-play curriculum). The wrapper holds the heuristic
-       bot roster + one reusable pool ``RLPlayer`` (model swapped on demand) + a ``SnapshotPool``
-       handle. At reset(), with probability ``self_play_fraction`` it plays a pool snapshot
-       (sampled recency-weighted from the *current* pool); otherwise a random heuristic. The
-       opponent is a pure decision function over ``env.battle2`` (env.agent1/agent2 do all the
+       bot roster + one reusable pool ``RLPlayer`` + a ``SnapshotPool`` handle. At reset(), with
+       probability ``self_play_fraction`` it plays the pool, else a random heuristic — the coin
+       flip is per-episode so the live fraction is honored exactly. The pool *snapshot* itself is
+       (re)sampled+loaded only once per generation (see ``_select_episode_opponent`` — loading is
+       a ~27MB deserialize, too expensive to do per-episode), held in the reusable pool player.
+       The opponent is a pure decision function over ``env.battle2`` (env.agent1/agent2 do all the
        networking), so swapping it between episodes is free and safe — the in-episode
        stale-decision path (SingleAgentWrapper.step) is untouched.
 
@@ -50,6 +52,7 @@ class MaskableAgentWrapper(SingleAgentWrapper):
         self._self_play_fraction = float(self_play_fraction)
         self._target_generation = 0
         self._scanned_generation = -1   # -1 forces a pool re-scan on the first pool selection
+        self._has_pool_model = False    # a snapshot is loaded into the pool player (this gen)
         self._rng = random.Random(rng_seed)  # per-env seed → envs don't pick in lockstep
 
     def set_self_play_target(self, fraction: float, generation: int) -> None:
@@ -60,18 +63,30 @@ class MaskableAgentWrapper(SingleAgentWrapper):
         self._target_generation = int(generation)
 
     def _select_episode_opponent(self) -> None:
-        """Pick this episode's opponent from the live fraction. Pool → sample a snapshot and
-        swap it into the reusable pool player; else → a random heuristic."""
+        """Pick this episode's opponent from the live fraction. Pool → use the per-generation
+        snapshot held in the reusable pool player; else → a random heuristic.
+
+        The pool snapshot is (re)sampled+loaded ONLY when the trainer signals a new generation
+        (a seed or promotion — i.e. every eval), not every episode. ``load_model`` deserializes a
+        ~27MB MaskablePPO; doing it per-episode against an N-deep pool with a small LRU thrashed
+        the workers (they block in ``reset()`` on disk I/O → CPU ~40%, FPS ~1400→~500). Loading
+        once per generation restores the old "load once, reuse" throughput while keeping
+        diversity: 48 envs sample independently (≈ many distinct snapshots in flight at once) and
+        every env rotates to a fresh sample each generation. The per-episode pool-vs-heuristic
+        coin flip is unchanged, so the live ``self_play_fraction`` is still honored exactly."""
         if (self._pool is not None and self._pool_player is not None
                 and self._rng.random() < self._self_play_fraction):
-            # Re-scan to see new snapshots when the trainer signals a new generation, or while
-            # the pool still looks empty (e.g. just after the seed first crossed the threshold).
-            if self._target_generation != self._scanned_generation or self._pool.is_empty():
+            # Re-sample+load on a new generation, or until we first have a model loaded (the pool
+            # may still be empty right after the seed crosses the threshold). Steady state within
+            # a generation: neither branch runs → no scan, no load → the opponent is reused.
+            if self._target_generation != self._scanned_generation or not self._has_pool_model:
                 self._pool._scan()
-                self._scanned_generation = self._target_generation
-            if not self._pool.is_empty():
-                entry = self._pool.sample()
-                self._pool_player.model = self._pool.load_model(entry)  # LRU-cached in the pool
+                if not self._pool.is_empty():
+                    entry = self._pool.sample()
+                    self._pool_player.model = self._pool.load_model(entry)  # LRU-cached
+                    self._has_pool_model = True
+                    self._scanned_generation = self._target_generation
+            if self._has_pool_model:
                 self.opponent = self._pool_player
                 return
         self.opponent = self._rng.choice(self._heuristic_opponents)
