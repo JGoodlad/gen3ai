@@ -47,24 +47,24 @@ _METRIC_ORDER = [
     "eval/win_rate_vs_pool",
     "eval/mean_reward_mean",
     "eval/mean_reward_vs_bots",
-    "eval/win_rate_vs_Random",
-    "eval/win_rate_vs_Heuristic",
-    "eval/win_rate_vs_Heuristic2",
-    "eval/win_rate_vs_Staller",
-    "eval/win_rate_vs_StallerV2",
-    "eval/win_rate_vs_Aggressive",
-    "eval/win_rate_vs_AggressiveV2",
-    "eval/win_rate_vs_SetupSweep",
-    "eval/win_rate_vs_SetupSweepV2",
-    "eval/mean_reward_vs_Random",
-    "eval/mean_reward_vs_Heuristic",
-    "eval/mean_reward_vs_Heuristic2",
-    "eval/mean_reward_vs_Staller",
-    "eval/mean_reward_vs_StallerV2",
-    "eval/mean_reward_vs_Aggressive",
-    "eval/mean_reward_vs_AggressiveV2",
-    "eval/mean_reward_vs_SetupSweep",
-    "eval/mean_reward_vs_SetupSweepV2",
+    "eval/win_rate_vs_random",
+    "eval/win_rate_vs_heuristic",
+    "eval/win_rate_vs_heuristic2",
+    "eval/win_rate_vs_staller",
+    "eval/win_rate_vs_staller_v2",
+    "eval/win_rate_vs_aggressive",
+    "eval/win_rate_vs_aggressive_v2",
+    "eval/win_rate_vs_setup_sweep",
+    "eval/win_rate_vs_setup_sweep_v2",
+    "eval/mean_reward_vs_random",
+    "eval/mean_reward_vs_heuristic",
+    "eval/mean_reward_vs_heuristic2",
+    "eval/mean_reward_vs_staller",
+    "eval/mean_reward_vs_staller_v2",
+    "eval/mean_reward_vs_aggressive",
+    "eval/mean_reward_vs_aggressive_v2",
+    "eval/mean_reward_vs_setup_sweep",
+    "eval/mean_reward_vs_setup_sweep_v2",
     # Rollout
     "rollout/ep_len_mean",
     "rollout/ep_rew_mean",
@@ -362,21 +362,20 @@ class LauncherUI:
 
         def _row_label(opp: str) -> str:
             # sentinel_<i> is positional (newest→oldest) and maps to a different pool
-            # checkpoint each cycle — display it capitalised (to match the bot rows like
-            # "Random"/"SetupSweep") with its step (eval/sentinel_step_<i>) so it's clear
-            # which snapshot it is, e.g. "vs Sentinel_0 (47.0M)". The metric KEY stays the
-            # lowercase positional "sentinel_<i>" so the TensorBoard curve stays continuous.
+            # checkpoint each cycle — surface its step (eval/sentinel_step_<i>) so it's clear
+            # which snapshot it is, e.g. "vs sentinel_0 (47.0M)". Display stays lowercase to
+            # match the snake_case bot rows (random/setup_sweep), and the metric KEY is the
+            # same positional "sentinel_<i>" so the TensorBoard curve stays continuous.
             if opp.startswith("sentinel_"):
                 idx = opp[len("sentinel_"):]
-                disp = f"Sentinel_{idx}"
                 step = metrics.get(f"eval/sentinel_step_{idx}")
-                return f"  vs {disp} ({step / 1e6:.1f}M)" if step else f"  vs {disp}"
+                return f"  vs {opp} ({step / 1e6:.1f}M)" if step else f"  vs {opp}"
             return f"  vs {opp}"
 
         # Random always first, remaining opponents in metric-order (from keys).
-        if "Random" in order:
-            order.remove("Random")
-            order.insert(0, "Random")
+        if "random" in order:
+            order.remove("random")
+            order.insert(0, "random")
         rendered_any = False
         sentinel_sep_done = False
         for opp in order:

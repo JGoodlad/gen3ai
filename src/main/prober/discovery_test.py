@@ -27,8 +27,8 @@ def _make_run(tmp_path, with_npz=True):
     et = run / "eval_traces"
     # step 2000000 first written, but discovery must sort steps ascending
     layout = {
-        2000000: {"Heuristic": [("win", 1), ("loss", 2)], "Random": [("win", 1)]},
-        1000000: {"SetupSweep": [("loss", 3), ("win", 1)]},
+        2000000: {"heuristic": [("win", 1), ("loss", 2)], "random": [("win", 1)]},
+        1000000: {"setup_sweep": [("loss", 3), ("win", 1)]},
     }
     for step, opps in layout.items():
         for opp, battles in opps.items():
@@ -47,11 +47,11 @@ def test_run_dir_groups_and_sorts(tmp_path):
     assert tree.run_dir == os.path.abspath(str(run))
     # steps ascending
     assert [s.step for s in tree.steps] == [1000000, 2000000]
-    # opponents in roster order: Random before Heuristic
+    # opponents in roster order: random before heuristic
     step2 = next(s for s in tree.steps if s.step == 2000000)
-    assert [o.name for o in step2.opponents] == ["Random", "Heuristic"]
+    assert [o.name for o in step2.opponents] == ["random", "heuristic"]
     # battles sorted by outcome (win first) then index
-    heur = next(o for o in step2.opponents if o.name == "Heuristic")
+    heur = next(o for o in step2.opponents if o.name == "heuristic")
     assert [(b.outcome, b.index) for b in heur.battles] == [("win", 1), ("loss", 2)]
     assert heur.battles[0].npz_path is not None
 
@@ -71,11 +71,11 @@ def test_eval_traces_dir_input(tmp_path):
 
 def test_single_summary_input(tmp_path):
     run, et = _make_run(tmp_path)
-    one = str(et / "step_1000000" / "SetupSweep" / "win_001_summary.json")
+    one = str(et / "step_1000000" / "setup_sweep" / "win_001_summary.json")
     tree = build_trace_tree(one)
     battles = tree.all_battles()
     assert len(battles) == 1
-    assert battles[0].opponent == "SetupSweep" and battles[0].step == 1000000
+    assert battles[0].opponent == "setup_sweep" and battles[0].step == 1000000
     assert tree.run_dir == os.path.abspath(str(run))
 
 
@@ -111,7 +111,7 @@ def test_load_model_config(tmp_path):
 
 # --- model-resolution ladder -------------------------------------------------
 
-def _trace_at(run, step, opp="Random"):
+def _trace_at(run, step, opp="random"):
     p = run / "eval_traces" / f"step_{step}" / opp / "win_001_summary.json"
     _touch(str(p))
 

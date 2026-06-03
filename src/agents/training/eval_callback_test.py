@@ -14,11 +14,11 @@ from agents.training.eval_callback import (
 # ── bot_mean ─────────────────────────────────────────────────────────────────
 
 def test_bot_mean_excludes_random():
-    assert bot_mean({"Random": 0.9, "Heuristic": 0.4, "Staller": 0.6}) == pytest.approx(0.5)
+    assert bot_mean({"random": 0.9, "heuristic": 0.4, "staller": 0.6}) == pytest.approx(0.5)
 
 
 def test_bot_mean_all_random_returns_zero():
-    assert bot_mean({"Random": 0.9}) == pytest.approx(0.0)
+    assert bot_mean({"random": 0.9}) == pytest.approx(0.0)
 
 
 def test_bot_mean_empty_returns_zero():
@@ -26,21 +26,21 @@ def test_bot_mean_empty_returns_zero():
 
 
 def test_bot_mean_no_random_averages_all():
-    assert bot_mean({"Heuristic": 0.4, "Staller": 0.6}) == pytest.approx(0.5)
+    assert bot_mean({"heuristic": 0.4, "staller": 0.6}) == pytest.approx(0.5)
 
 
 # ── opponent_name ─────────────────────────────────────────────────────────────
 
 def test_opponent_name_random():
-    assert opponent_name(RandomPlayer) == "Random"
+    assert opponent_name(RandomPlayer) == "random"
 
 
 def test_opponent_name_heuristic():
-    assert opponent_name(SimpleHeuristicsPlayer) == "Heuristic"
+    assert opponent_name(SimpleHeuristicsPlayer) == "heuristic"
 
 
 def test_opponent_name_staller():
-    assert opponent_name(Gen3StallerPlayer) == "Staller"
+    assert opponent_name(Gen3StallerPlayer) == "staller"
 
 
 def test_opponent_name_unknown_falls_back_to_class_name():
@@ -295,7 +295,7 @@ from agents.training.eval_callback import (
 
 def test_eval_opponent_names_excludes_v2_by_default():
     names = eval_opponent_names(False)
-    assert names == ["Random", "Heuristic", "Staller", "Aggressive", "SetupSweep"]
+    assert names == ["random", "heuristic", "staller", "aggressive", "setup_sweep"]
 
 
 def test_eval_opponent_names_includes_v2_when_enabled():
@@ -332,7 +332,7 @@ def test_claim_next_opponent_no_double_claim_across_workers(tmp_path):
 def test_read_latest_eval_block_reads_top_level(tmp_path):
     import json as _json
     meta = {"latest_eval": {"step": 200, "win_rate_mean": 0.5,
-                            "opponents": {"Random": {"win_rate": 0.7}}}}
+                            "opponents": {"random": {"win_rate": 0.7}}}}
     p = tmp_path / "metadata.json"
     p.write_text(_json.dumps(meta))
     blk = read_latest_eval_block(str(p))
@@ -345,7 +345,7 @@ def test_read_latest_eval_block_legacy_per_checkpoint_fallback(tmp_path):
     meta = {"snapshot_history": {
         "checkpoint_100_steps.zip": {"evals": {"step": 100, "win_rate_mean": 0.3, "opponents": {}}},
         "checkpoint_200_steps.zip": {"evals": {"step": 200, "win_rate_mean": 0.5,
-                                               "opponents": {"Random": {"win_rate": 0.7}}}},
+                                               "opponents": {"random": {"win_rate": 0.7}}}},
     }}
     p = tmp_path / "metadata.json"
     p.write_text(_json.dumps(meta))
@@ -642,7 +642,7 @@ def test_replay_last_eval_publishes_to_tui_on_init(tmp_path, monkeypatch):
     meta = {"latest_eval": {
         "step": 200, "win_rate_mean": 0.5, "win_rate_vs_bots": 0.4,
         "mean_reward_vs_bots": -1.0, "mean_ep_len_vs_bots": 30.0,
-        "opponents": {"Random": {"win_rate": 0.7, "mean_reward": 0.1, "mean_ep_len": 25.0}},
+        "opponents": {"random": {"win_rate": 0.7, "mean_reward": 0.1, "mean_ep_len": 25.0}},
     }}
     (tmp_path / "metadata.json").write_text(_json.dumps(meta))
 
@@ -651,6 +651,6 @@ def test_replay_last_eval_publishes_to_tui_on_init(tmp_path, monkeypatch):
     cb = PerOpponentEvalCallback(model_dir=str(tmp_path), server_config=MagicMock())
     cb._init_callback()
 
-    assert sent.get("eval/win_rate_vs_Random") == 0.7
+    assert sent.get("eval/win_rate_vs_random") == 0.7
     assert sent.get("eval/win_rate_mean") == 0.5
     assert sent.get("_step") == 200

@@ -18,11 +18,11 @@ def _seed_run(tmp_path, git="abc123", arch="gen3_test_v1", cfgver=2):
 
 def test_manifest_records_identity(tmp_path):
     run = _seed_run(tmp_path)
-    m = write_eval_manifest(run, 8_000_000, opponents=["Random", "Heuristic"], n_games=100)
+    m = write_eval_manifest(run, 8_000_000, opponents=["random", "heuristic"], n_games=100)
     assert m["step"] == 8_000_000 and m["num_timesteps"] == 8_000_000
     assert m["git_hash"] == "abc123"
     assert m["arch_signature"] == "gen3_test_v1" and m["config_version"] == 2
-    assert m["opponents"] == ["Random", "Heuristic"] and m["n_games"] == 100
+    assert m["opponents"] == ["random", "heuristic"] and m["n_games"] == 100
     assert m["snapshot"] is None and m["saved_at"]
     # written to the right place
     path = os.path.join(run, "eval_traces", "step_8000000", "eval_manifest.json")
@@ -33,7 +33,7 @@ def test_manifest_records_identity(tmp_path):
 def test_prune_eval_traces_keeps_n_most_recent(tmp_path):
     run = tmp_path / "run"
     for s in (1, 2, 3, 4, 5):
-        d = run / "eval_traces" / f"step_{s}000000" / "Random"
+        d = run / "eval_traces" / f"step_{s}000000" / "random"
         os.makedirs(d, exist_ok=True)
         (d / "win_001_summary.json").write_text("{}")
     cb = PerOpponentEvalCallback(model_dir=str(run), keep_eval_trace_steps=2)

@@ -8,7 +8,7 @@ from main.prober.groom import groom_run
 def _make_run(tmp_path, steps=(1, 2, 3, 4, 5), snapshot_steps=(4, 5)):
     run = tmp_path / "run"
     for s in steps:
-        d = run / "eval_traces" / f"step_{s}000000" / "Random"
+        d = run / "eval_traces" / f"step_{s}000000" / "random"
         os.makedirs(d, exist_ok=True)
         (d / "win_001_summary.json").write_text("{}")
         (d / "win_001_states.npz").write_text("x" * 1000)
@@ -39,10 +39,10 @@ def test_apply_deletes_to_retention(tmp_path):
     assert not os.path.exists(os.path.join(run, "eval_traces", "step_1000000"))
     assert not os.path.exists(os.path.join(run, "eval_traces", "step_2000000"))
     # recent steps kept
-    assert os.path.exists(os.path.join(run, "eval_traces", "step_5000000", "Random"))
+    assert os.path.exists(os.path.join(run, "eval_traces", "step_5000000", "random"))
     # 4M snapshot dropped, its traces kept; 5M snapshot kept
     assert not os.path.exists(os.path.join(run, "eval_traces", "step_4000000", "snapshot.zip"))
-    assert os.path.exists(os.path.join(run, "eval_traces", "step_4000000", "Random"))
+    assert os.path.exists(os.path.join(run, "eval_traces", "step_4000000", "random"))
     assert os.path.exists(os.path.join(run, "eval_traces", "step_5000000", "snapshot.zip"))
 
 

@@ -20,8 +20,8 @@ from dataclasses import dataclass
 # Roster order mirrors the launcher's _METRIC_ORDER so the prober lists opponents
 # the same way the training dashboard does; unknown names fall after, alphabetically.
 _OPPONENT_ORDER = [
-    "Random", "Heuristic", "Heuristic2", "Staller", "StallerV2",
-    "Aggressive", "AggressiveV2", "SetupSweep", "SetupSweepV2",
+    "random", "heuristic", "heuristic2", "staller", "staller_v2",
+    "aggressive", "aggressive_v2", "setup_sweep", "setup_sweep_v2",
 ]
 _FNAME_RE = re.compile(r"^(win|loss)_(\d+)_summary\.json$")
 _STEP_RE = re.compile(r"step_(\d+)")

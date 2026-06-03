@@ -13,7 +13,7 @@ setup, boost preservation):
 
 Plus one smarter all-around generalist that improves on SimpleHeuristicsPlayer with
 KO awareness, Gen-3-ability-aware damage, and opportunistic status/recovery:
-  - Gen3HeuristicV2Player  (display name "Heuristic2")
+  - Gen3HeuristicV2Player  (display name "heuristic2")
 
 NOTE: the V2 classes are defined here but not yet wired into the training/eval
 rotation (OPPONENT_CLASSES / eval lists in train_rl_agent.py). Their display names
@@ -639,7 +639,7 @@ class Gen3SetupSweepV2Player(Player):
 
 
 # ---------------------------------------------------------------------------
-# Gen3HeuristicV2Player — the smarter all-around generalist ("Heuristic2")
+# Gen3HeuristicV2Player — the smarter all-around generalist ("heuristic2")
 # ---------------------------------------------------------------------------
 
 _KO_FINISH_THRESHOLD = 0.35   # at <=35% HP a strong hit likely finishes even if we're slower

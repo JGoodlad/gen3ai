@@ -18,8 +18,8 @@ def test_sentinel_row_label_shows_checkpoint_step():
         "eval/win_rate_vs_sentinel_0": 0.63,
         "eval/sentinel_step_0": 46_963_120.0,
     })
-    # Capitalised to match the bot rows (Random/SetupSweep/…), with the checkpoint step.
-    assert any("Sentinel_0 (47.0M)" in lab for lab in labels), labels
+    # Lowercase to match the snake_case bot rows (random/setup_sweep/…), with the checkpoint step.
+    assert any("sentinel_0 (47.0M)" in lab for lab in labels), labels
 
 
 def test_sentinel_reward_column_populated():
@@ -44,22 +44,22 @@ def test_sentinel_step_key_does_not_create_a_phantom_row():
 def test_sentinel_label_falls_back_without_step():
     # No step metric yet (e.g. a resumed eval re-published from metadata) → plain label.
     labels, _wr, _rw = _eval_table({"eval/win_rate_vs_sentinel_0": 0.63})
-    assert any(lab.strip() == "vs Sentinel_0" for lab in labels), labels
+    assert any(lab.strip() == "vs sentinel_0" for lab in labels), labels
 
 
 def test_blank_row_between_bots_and_sentinels():
     labels, _wr, _rw = _eval_table({
-        "eval/win_rate_vs_Random": 0.99,
-        "eval/win_rate_vs_SetupSweepV2": 0.65,
+        "eval/win_rate_vs_random": 0.99,
+        "eval/win_rate_vs_setup_sweep_v2": 0.65,
         "eval/win_rate_vs_sentinel_0": 0.63,
         "eval/sentinel_step_0": 1_000_000.0,
     })
-    sentinel_idx = next(i for i, lab in enumerate(labels) if "Sentinel_0" in lab)
+    sentinel_idx = next(i for i, lab in enumerate(labels) if "sentinel_0" in lab)
     assert labels[sentinel_idx - 1].strip() == "", labels   # divider precedes the sentinels
 
 
 def test_no_leading_blank_when_only_sentinels():
     # No bots this cycle → don't emit a stray blank row before the first sentinel.
     labels, _wr, _rw = _eval_table({"eval/win_rate_vs_sentinel_0": 0.63})
-    sentinel_idx = next(i for i, lab in enumerate(labels) if "Sentinel_0" in lab)
+    sentinel_idx = next(i for i, lab in enumerate(labels) if "sentinel_0" in lab)
     assert labels[sentinel_idx - 1].strip() != "", labels   # the eval header, not a blank

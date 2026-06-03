@@ -318,14 +318,18 @@ class SelfPlayCallback(BaseCallback):
             self._cleanup(pending, keep_logs=True)
             return
 
-        # Sentinel results in pool order (skip any whose worker died): (entry, label, win, reward).
+        # Sentinel results in pool order (skip any whose worker died): (entry, label, win, reward, ep_len).
         kept_sentinels: list[tuple] = []
         for s, entry in zip(sentinels, sentinel_entries):
             label = s["label"]
             v = wr.get(label)
             if v is not None:
-                kept_sentinels.append((entry, label, v, merged["reward_means"].get(label, 0.0)))
-        sentinel_win_rates = [v for (_e, _l, v, _rw) in kept_sentinels]
+                kept_sentinels.append((
+                    entry, label, v,
+                    merged["reward_means"].get(label, 0.0),
+                    merged["ep_lens"].get(label, 0.0),
+                ))
+        sentinel_win_rates = [v for (_e, _l, v, _rw, _ep) in kept_sentinels]
 
         tui: dict[str, float] = {}
 
@@ -346,24 +350,32 @@ class SelfPlayCallback(BaseCallback):
         self._pool.persist_win_rate(self.win_rate_vs_bots)
         self._check_bot_regression(bot_wr)
 
-        # ── Pool / sentinel metrics (win rate + reward; step → TUI row label) ──
-        for i, (entry, _label, v, rw) in enumerate(kept_sentinels):
+        # ── Pool / sentinel metrics (win rate + reward + ep_len; step → TUI row label) ──
+        for i, (entry, _label, v, rw, ep) in enumerate(kept_sentinels):
             self.logger.record(f"eval/win_rate_vs_sentinel_{i}", v)
             self.logger.record(f"eval/mean_reward_vs_sentinel_{i}", rw)
+            self.logger.record(f"eval/mean_ep_len_vs_sentinel_{i}", ep)
             tui[f"eval/win_rate_vs_sentinel_{i}"] = v
             tui[f"eval/mean_reward_vs_sentinel_{i}"] = rw
+            tui[f"eval/mean_ep_len_vs_sentinel_{i}"] = ep
             # sentinel_<i> is positional (newest→oldest) so its KEY stays stable for a
             # continuous TB curve, but it maps to a DIFFERENT checkpoint each cycle — surface
             # its step so the TUI can label the row "vs sentinel_0 (47.0M)".
             tui[f"eval/sentinel_step_{i}"] = float(entry.step)
 
+        sentinel_ep_lens = [ep for (_e, _l, _v, _rw, ep) in kept_sentinels]
         win_rate_vs_pool = (
             sum(sentinel_win_rates) / len(sentinel_win_rates) if sentinel_win_rates else 0.0
         )
+        mean_ep_len_vs_pool = (
+            sum(sentinel_ep_lens) / len(sentinel_ep_lens) if sentinel_ep_lens else 0.0
+        )
         monotonicity = _monotonicity_score(sentinel_win_rates) if len(sentinel_win_rates) >= 2 else 1.0
         self.logger.record("eval/win_rate_vs_pool", win_rate_vs_pool)
+        self.logger.record("eval/mean_ep_len_vs_pool", mean_ep_len_vs_pool)
         self.logger.record("eval/sentinel_monotonicity", monotonicity)
         tui["eval/win_rate_vs_pool"] = win_rate_vs_pool
+        tui["eval/mean_ep_len_vs_pool"] = mean_ep_len_vs_pool
         tui["eval/sentinel_monotonicity"] = monotonicity
 
         if monotonicity < 0.6 and len(sentinel_win_rates) >= 3:
@@ -418,16 +430,18 @@ class SelfPlayCallback(BaseCallback):
             block = build_bot_eval_block(bot_wr, bot_rew, bot_ep)
             block["pool"] = {
                 "win_rate": win_rate_vs_pool,
+                "mean_ep_len": mean_ep_len_vs_pool,
                 "monotonicity": round(monotonicity, 3),
                 "sentinels": [
                     {
                         "step": entry.step,
                         "win_rate": round(v, 4),
                         "mean_reward": round(rw, 4),
+                        "mean_ep_len": round(ep, 4),
                         "weight": round(self._pool.entry_weight(entry), 3),
                         "snapshot": entry.path.name,
                     }
-                    for entry, _label, v, rw in kept_sentinels
+                    for entry, _label, v, rw, ep in kept_sentinels
                 ],
             }
             record_eval_results(self._model_dir, step, block)

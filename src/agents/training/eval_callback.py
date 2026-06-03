@@ -121,16 +121,16 @@ _EVAL_SUBPROCESS_CONCURRENCY = 5
 _EVAL_CYCLE_TIMEOUT_SEC = 1800.0
 
 _OPPONENT_NAMES: dict[type, str] = {
-    RandomPlayer: "Random",
-    SimpleHeuristicsPlayer: "Heuristic",
-    Gen3StallerPlayer: "Staller",
-    Gen3AggressivePlayer: "Aggressive",
-    Gen3SetupSweepPlayer: "SetupSweep",
+    RandomPlayer: "random",
+    SimpleHeuristicsPlayer: "heuristic",
+    Gen3StallerPlayer: "staller",
+    Gen3AggressivePlayer: "aggressive",
+    Gen3SetupSweepPlayer: "setup_sweep",
     # V2 bots — names registered for TUI/TensorBoard; not yet in the eval rotation.
-    Gen3HeuristicV2Player: "Heuristic2",
-    Gen3StallerV2Player: "StallerV2",
-    Gen3AggressiveV2Player: "AggressiveV2",
-    Gen3SetupSweepV2Player: "SetupSweepV2",
+    Gen3HeuristicV2Player: "heuristic2",
+    Gen3StallerV2Player: "staller_v2",
+    Gen3AggressiveV2Player: "aggressive_v2",
+    Gen3SetupSweepV2Player: "setup_sweep_v2",
 }
 
 
@@ -145,15 +145,15 @@ RANDOM_OPPONENT_NAME = opponent_name(RandomPlayer)
 # Ordered; V2 bots only included when use_v2_bots is set. Single source of truth so
 # the in-process selfplay path, the subprocess worker, and the orchestrator agree.
 _EVAL_OPPONENT_SPECS: list[tuple[str, type, str, bool]] = [
-    ("Random", RandomPlayer, "CbRand", False),
-    ("Heuristic", SimpleHeuristicsPlayer, "CbHeur", False),
-    ("Staller", Gen3StallerPlayer, "CbStall", False),
-    ("Aggressive", Gen3AggressivePlayer, "CbAggr", False),
-    ("SetupSweep", Gen3SetupSweepPlayer, "CbSetup", False),
-    ("Heuristic2", Gen3HeuristicV2Player, "CbHeur2", True),
-    ("StallerV2", Gen3StallerV2Player, "CbStallV2", True),
-    ("AggressiveV2", Gen3AggressiveV2Player, "CbAggrV2", True),
-    ("SetupSweepV2", Gen3SetupSweepV2Player, "CbSetupV2", True),
+    ("random", RandomPlayer, "CbRand", False),
+    ("heuristic", SimpleHeuristicsPlayer, "CbHeur", False),
+    ("staller", Gen3StallerPlayer, "CbStall", False),
+    ("aggressive", Gen3AggressivePlayer, "CbAggr", False),
+    ("setup_sweep", Gen3SetupSweepPlayer, "CbSetup", False),
+    ("heuristic2", Gen3HeuristicV2Player, "CbHeur2", True),
+    ("staller_v2", Gen3StallerV2Player, "CbStallV2", True),
+    ("aggressive_v2", Gen3AggressiveV2Player, "CbAggrV2", True),
+    ("setup_sweep_v2", Gen3SetupSweepV2Player, "CbSetupV2", True),
 ]
 
 
@@ -541,7 +541,7 @@ def latest_recorded_eval_step(model_dir: str | None, resume_eval_metadata: str |
 # 200. Both are clamped to the schedule's count so early tiers (100 games) are unaffected.
 _EVAL_GAMES_CAP_DEFAULT = 100
 _EVAL_GAMES_CAP_HEURISTIC = 200
-_HEURISTIC_EVAL_NAMES = frozenset({"Heuristic", "Heuristic2"})
+_HEURISTIC_EVAL_NAMES = frozenset({"heuristic", "heuristic2"})
 
 
 def eval_games_for(name: str, scheduled_games: int) -> int:

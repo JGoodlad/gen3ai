@@ -130,58 +130,58 @@ def _fake_selfplay_popen(ec, bot_win=0.8, sentinel_win=0.7):
 def test_regression_no_warning_before_threshold(tmp_path):
     cb = _make_callback(tmp_path)
     with patch("agents.training.selfplay_callback.emit") as mock_emit:
-        cb._check_bot_regression({"Heuristic": 0.40})
+        cb._check_bot_regression({"heuristic": 0.40})
         mock_emit.assert_not_called()
 
 
 def test_regression_peak_recorded(tmp_path):
     cb = _make_callback(tmp_path)
-    cb._check_bot_regression({"Heuristic": 0.75})
-    assert cb._bot_peak["Heuristic"] == pytest.approx(0.75)
+    cb._check_bot_regression({"heuristic": 0.75})
+    assert cb._bot_peak["heuristic"] == pytest.approx(0.75)
 
 
 def test_regression_warning_fires_when_drop_below_threshold(tmp_path):
     cb = _make_callback(tmp_path)
-    cb._check_bot_regression({"Heuristic": 0.72})
+    cb._check_bot_regression({"heuristic": 0.72})
     with patch("agents.training.selfplay_callback.emit") as mock_emit:
-        cb._check_bot_regression({"Heuristic": 0.55})
+        cb._check_bot_regression({"heuristic": 0.55})
         assert mock_emit.call_count == 1
         assert "BOT_REGRESSION" in mock_emit.call_args[0][0]
 
 
 def test_regression_no_warning_if_still_above_threshold(tmp_path):
     cb = _make_callback(tmp_path)
-    cb._check_bot_regression({"Heuristic": 0.80})
+    cb._check_bot_regression({"heuristic": 0.80})
     with patch("agents.training.selfplay_callback.emit") as mock_emit:
-        cb._check_bot_regression({"Heuristic": 0.65})
+        cb._check_bot_regression({"heuristic": 0.65})
         mock_emit.assert_not_called()
 
 
 def test_regression_only_fires_for_named_bots(tmp_path):
     cb = _make_callback(tmp_path)
-    cb._check_bot_regression({"Random": 0.90})
+    cb._check_bot_regression({"random": 0.90})
     with patch("agents.training.selfplay_callback.emit") as mock_emit:
-        cb._check_bot_regression({"Random": 0.10})
+        cb._check_bot_regression({"random": 0.10})
         mock_emit.assert_not_called()
 
 
 def test_regression_fires_only_once_while_regressed(tmp_path):
     cb = _make_callback(tmp_path)
-    cb._check_bot_regression({"Heuristic": 0.75})
+    cb._check_bot_regression({"heuristic": 0.75})
     with patch("agents.training.selfplay_callback.emit") as mock_emit:
-        cb._check_bot_regression({"Heuristic": 0.50})
-        cb._check_bot_regression({"Heuristic": 0.45})
-        cb._check_bot_regression({"Heuristic": 0.40})
+        cb._check_bot_regression({"heuristic": 0.50})
+        cb._check_bot_regression({"heuristic": 0.45})
+        cb._check_bot_regression({"heuristic": 0.40})
         assert mock_emit.call_count == 1
 
 
 def test_regression_re_arms_after_recovery(tmp_path):
     cb = _make_callback(tmp_path)
-    cb._check_bot_regression({"Heuristic": 0.75})
+    cb._check_bot_regression({"heuristic": 0.75})
     with patch("agents.training.selfplay_callback.emit") as mock_emit:
-        cb._check_bot_regression({"Heuristic": 0.50})  # fires
-        cb._check_bot_regression({"Heuristic": 0.70})  # recovered → re-arm
-        cb._check_bot_regression({"Heuristic": 0.45})  # fires again
+        cb._check_bot_regression({"heuristic": 0.50})  # fires
+        cb._check_bot_regression({"heuristic": 0.70})  # recovered → re-arm
+        cb._check_bot_regression({"heuristic": 0.45})  # fires again
         assert mock_emit.call_count == 2
 
 
@@ -265,12 +265,15 @@ def test_lifecycle_collect_records_promotes_and_saves_best(tmp_path, monkeypatch
 
     recorded = {c.args[0] for c in cb.logger.record.call_args_list}
     assert "eval/win_rate_vs_pool" in recorded
+    assert "eval/mean_ep_len_vs_pool" in recorded           # pool ep-len, mirrors mean_ep_len_vs_bots
     assert "eval/sentinel_monotonicity" in recorded
     assert "train/selfplay_fraction" in recorded
     assert "eval/win_rate_vs_bots" in recorded
-    assert "eval/win_rate_vs_Heuristic" in recorded
+    assert "eval/mean_ep_len_vs_bots" in recorded
+    assert "eval/win_rate_vs_heuristic" in recorded
     assert "eval/win_rate_vs_sentinel_0" in recorded
     assert "eval/mean_reward_vs_sentinel_0" in recorded     # sentinel reward now recorded
+    assert "eval/mean_ep_len_vs_sentinel_0" in recorded     # per-sentinel ep-len now recorded
     assert "train/selfplay_promoted_steps" in recorded
     # opponent default-rate telemetry recorded from the (paused) training env.
     assert "train/selfplay_opp_redecide_rate" in recorded
@@ -297,7 +300,7 @@ def test_collect_pushes_sentinel_reward_and_step_to_tui(tmp_path, monkeypatch):
     assert captured.get("eval/mean_reward_vs_sentinel_0") == pytest.approx(1.0)
     assert "eval/sentinel_step_0" in captured          # newest sentinel's checkpoint step
     # ...and per-bot reward is pushed LIVE (not just win rate), so it isn't stale-from-resume.
-    assert "eval/mean_reward_vs_Heuristic" in captured
+    assert "eval/mean_reward_vs_heuristic" in captured
 
 
 def test_lifecycle_no_promotion_below_threshold(tmp_path, monkeypatch):

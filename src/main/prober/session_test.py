@@ -36,7 +36,7 @@ class _FakeModel:
 
 def _build_run(tmp_path):
     run = tmp_path / "run"
-    bd = run / "eval_traces" / "step_2000000" / "Staller"
+    bd = run / "eval_traces" / "step_2000000" / "staller"
     os.makedirs(bd, exist_ok=True)
     actions = {f"switch:m{i}": {"prob": "1.0%", "valid": True} for i in range(6)}
     actions.update({"thunderbolt": {"prob": "92.1%", "valid": True},
@@ -76,7 +76,7 @@ def test_battles_filter(tmp_path):
     sess = ProbeSession(run)
     assert len(sess.battles()) == 1
     assert sess.battles(outcome="loss") == []
-    assert sess.battles(opponent="Staller")[0]["step"] == 2000000
+    assert sess.battles(opponent="staller")[0]["step"] == 2000000
 
 
 def test_battle_overview_is_model_free(tmp_path):
@@ -125,7 +125,7 @@ def test_run_summary(tmp_path):
     assert step["step"] == 2000000
     assert step["identity"]["git_hash"] == "abc123"
     assert step["identity"]["snapshot_available"] is False
-    assert step["opponents"][0] == {"name": "Staller", "win": 1, "loss": 0, "battles": 1}
+    assert step["opponents"][0] == {"name": "staller", "win": 1, "loss": 0, "battles": 1}
     assert s["checkpoints"][0]["step"] == 3200000
 
 
@@ -166,7 +166,7 @@ def test_find_value_criteria_and_limit(tmp_path):
 
 def test_short_id_resolves(tmp_path):
     run, _ = _build_run(tmp_path)
-    ov = ProbeSession(run).battle_overview("step_2000000/Staller/win_001")
+    ov = ProbeSession(run).battle_overview("step_2000000/staller/win_001")
     assert ov["meta"]["step"] == 2000000
 
 

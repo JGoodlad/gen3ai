@@ -549,8 +549,8 @@ _SAMPLE_EVALS = {
     "mean_reward_vs_bots": 0.24,
     "mean_ep_len_vs_bots": 22.1,
     "opponents": {
-        "Random": {"win_rate": 0.95, "mean_reward": 0.82, "mean_ep_len": 14.3},
-        "Heuristic": {"win_rate": 0.72, "mean_reward": 0.23, "mean_ep_len": 22.1},
+        "random": {"win_rate": 0.95, "mean_reward": 0.82, "mean_ep_len": 14.3},
+        "heuristic": {"win_rate": 0.72, "mean_reward": 0.23, "mean_ep_len": 22.1},
     },
 }
 
@@ -565,7 +565,7 @@ def test_record_eval_results_writes_top_level_latest_eval():
     assert ev["step"] == 51_000_000
     assert "evaluated_at" in ev
     assert ev["win_rate_vs_bots"] == pytest.approx(0.74)
-    assert ev["opponents"]["Heuristic"]["win_rate"] == pytest.approx(0.72)
+    assert ev["opponents"]["heuristic"]["win_rate"] == pytest.approx(0.72)
     # Not bound to any checkpoint entry.
     assert "evals" not in meta["snapshot_history"]["checkpoint_50000000_steps.zip"]
 

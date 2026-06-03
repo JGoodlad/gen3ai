@@ -24,7 +24,7 @@ from utils.git import get_main_repo_root
 # Pinned tags — populate this list to add a "pinned" group as the first PNG,
 # containing hand-picked key charts regardless of their prefix.
 # Example:
-#   PINNED_TAGS = ["eval/win_rate_mean", "eval/win_rate_vs_Heuristic",
+#   PINNED_TAGS = ["eval/win_rate_mean", "eval/win_rate_vs_heuristic",
 #                  "rollout/ep_rew_mean"]
 # ---------------------------------------------------------------------------
 PINNED_TAGS: list[str] = []

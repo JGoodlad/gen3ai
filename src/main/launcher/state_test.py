@@ -12,14 +12,14 @@ def test_eval_push_replaces_section_dropping_stale_rows():
     # Cycle 1: 5 sentinels + an Aggressive bot.
     s.update_metrics({
         "eval/win_rate_mean": 0.70,
-        "eval/win_rate_vs_Aggressive": 0.80,
+        "eval/win_rate_vs_aggressive": 0.80,
         "eval/win_rate_vs_sentinel_0": 0.60,
         "eval/win_rate_vs_sentinel_4": 0.70,
         "eval/sentinel_step_4": 1_000_000.0,
         "_step": 1000,
     })
     m1 = s.snapshot().metrics
-    assert "eval/win_rate_vs_sentinel_4" in m1 and "eval/win_rate_vs_Aggressive" in m1
+    assert "eval/win_rate_vs_sentinel_4" in m1 and "eval/win_rate_vs_aggressive" in m1
 
     # Cycle 2: only 3 sentinels, and Aggressive's result went missing this cycle.
     s.update_metrics({
@@ -31,7 +31,7 @@ def test_eval_push_replaces_section_dropping_stale_rows():
     m2 = s.snapshot().metrics
     assert "eval/win_rate_vs_sentinel_4" not in m2     # evicted slot dropped
     assert "eval/sentinel_step_4" not in m2            # its step label dropped too
-    assert "eval/win_rate_vs_Aggressive" not in m2     # missing-result opponent dropped
+    assert "eval/win_rate_vs_aggressive" not in m2     # missing-result opponent dropped
     assert m2["eval/win_rate_vs_sentinel_0"] == 0.65   # surviving row refreshed
 
 
@@ -46,10 +46,10 @@ def test_training_metrics_survive_an_eval_push():
 
 def test_training_push_does_not_clear_eval_rows():
     s = _state()
-    s.update_metrics({"eval/win_rate_mean": 0.7, "eval/win_rate_vs_Random": 0.9, "_step": 1000})
+    s.update_metrics({"eval/win_rate_mean": 0.7, "eval/win_rate_vs_random": 0.9, "_step": 1000})
     s.update_metrics({"time/fps": 720.0, "_step": 1100})  # training push, no eval/* keys
     m = s.snapshot().metrics
-    assert m["eval/win_rate_vs_Random"] == 0.9   # eval persists across training pushes
+    assert m["eval/win_rate_vs_random"] == 0.9   # eval persists across training pushes
     assert m["time/fps"] == 720.0
 
 
