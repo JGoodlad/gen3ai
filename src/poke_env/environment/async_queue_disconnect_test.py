@@ -96,3 +96,38 @@ def test_no_disconnect_event_behaves_as_before():
     assert q.get(timeout=2.0) == "x"
     with pytest.raises(asyncio.TimeoutError):
         q.get(timeout=0.2)
+
+
+def test_race_get_crashes_on_silent_stall(monkeypatch):
+    """The wedged-battle case: no item arrives, the socket does NOT close, and the passed
+    event never fires (a force-switch parsed onto the battle but never delivered to the env).
+    race_get must raise ShowdownException — a HARD CRASH the launcher restarts from the last
+    checkpoint — never block forever (wedges the whole SubprocVecEnv) nor return None (which
+    would let step() reuse the stale battle and feed a fabricated transition to backprop)."""
+    monkeypatch.setattr("poke_env.environment.env._RACE_GET_TIMEOUT_S", 0.2)
+    disconnected = _new_event()
+    never_fires = _new_event()
+    q: _AsyncQueue = _AsyncQueue(POKE_LOOP, maxsize=1, disconnected=disconnected)
+    with pytest.raises(ShowdownException):
+        q.race_get(never_fires)
+
+
+def test_silent_stall_crash_carries_race_trace(monkeypatch):
+    """When GEN3_RACE_TRACE is on, the silent-stall crash message must carry the wedged
+    battle's cross-thread interleaving so the launcher's per-crash file is enough to root-cause
+    the deadlock (no live process needed)."""
+    from utils import race_trace
+
+    monkeypatch.setattr("poke_env.environment.env._RACE_GET_TIMEOUT_S", 0.2)
+    monkeypatch.setattr(race_trace, "ENABLED", True)
+    monkeypatch.setattr(race_trace, "_traces", {})
+    race_trace.trace("battle-gen3ou-wedged", "RX |request|forceSwitch never delivered")
+    disconnected = _new_event()
+    never_fires = _new_event()
+    q: _AsyncQueue = _AsyncQueue(POKE_LOOP, maxsize=1, disconnected=disconnected)
+    with pytest.raises(ShowdownException) as exc:
+        q.race_get(never_fires)
+    msg = str(exc.value)
+    assert "RACE TRACE" in msg
+    assert "battle-gen3ou-wedged" in msg
+    assert "never delivered" in msg

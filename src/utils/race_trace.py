@@ -22,6 +22,11 @@ from typing import Deque, Dict, Tuple
 ENABLED: bool = bool(os.environ.get("GEN3_RACE_TRACE"))
 
 _MAXLEN = 220  # ~10-20 turns of protocol + decision events per battle
+# Bound the number of per-battle rings retained. A long GEN3_RACE_TRACE run plays thousands of
+# battles (one new tag each), so without a cap _traces grows unboundedly. We only ever dump the
+# most-recently-active battle on a crash, so retaining a few hundred recent tags is plenty; the
+# oldest (finished, chronologically earliest) tag is evicted past this.
+_MAX_TAGS = 256
 _traces: Dict[str, "Deque[Tuple[int, str, str]]"] = {}
 _seq = 0
 _lock = threading.Lock()
@@ -38,6 +43,9 @@ def trace(tag: str, event: str) -> None:
         seq = _seq
         dq = _traces.get(tag)
         if dq is None:
+            if len(_traces) >= _MAX_TAGS:
+                # dict preserves insertion order → first key is the oldest battle (finished).
+                _traces.pop(next(iter(_traces)))
             dq = deque(maxlen=_MAXLEN)
             _traces[tag] = dq
         dq.append((seq, threading.current_thread().name, event))
@@ -55,3 +63,28 @@ def dump(tag: str) -> str:
         out.append(f"  {seq:>7} | {thr:<20.20} | {ev}")
     out.append("--- END RACE TRACE ---")
     return "\n".join(out)
+
+
+def dump_recent(n: int = 2) -> str:
+    """Format the ``n`` most-recently-active battles' rings, newest-active first. Used on a
+    crash path that doesn't know the wedged battle's tag (e.g. ``race_get``'s silent-stall guard,
+    which lives on the queue, not the player). A SubprocVecEnv worker hosts one battle at a time,
+    so the most-recently-active tag IS the wedged battle; ``n>1`` adds a little prior context."""
+    if not ENABLED:
+        return ""
+    with _lock:
+        # Rank tags by their newest seq (last appended). Don't call dump() under the lock —
+        # threading.Lock is non-reentrant and dump() would re-acquire it.
+        ranked = sorted(
+            _traces.items(),
+            key=lambda kv: (kv[1][-1][0] if kv[1] else 0),
+            reverse=True,
+        )
+        tags = [t for t, _ in ranked[:n]]
+    if not tags:
+        return "\n--- RACE TRACE: (none — GEN3_RACE_TRACE on but no battles traced) ---"
+    # Emit oldest-active first so the WEDGED (most-recently-active) battle's newest events land
+    # at the very END — the launcher's per-crash file keeps only the last ~100 lines of child
+    # output, so the wedge point must be last to survive that tail-capture. (launcher_child.log
+    # keeps the full message, including the older battle's context.)
+    return "".join(dump(t) for t in reversed(tags))

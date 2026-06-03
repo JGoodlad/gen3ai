@@ -3,6 +3,7 @@ For a black-box implementation consider using the module env_player.
 """
 
 import asyncio
+import os
 import time
 from abc import abstractmethod
 from concurrent.futures import Future
@@ -37,6 +38,7 @@ from poke_env.ps_client.server_configuration import (
     ServerConfiguration,
 )
 from poke_env.teambuilder.teambuilder import Teambuilder
+from utils import race_trace  # debug ring buffer (GEN3_RACE_TRACE); no-op when off
 
 ItemType = TypeVar("ItemType")
 ActionType = TypeVar("ActionType")
@@ -44,6 +46,20 @@ ActionType = TypeVar("ActionType")
 _DISCONNECTED_MSG = (
     "Showdown websocket dropped while waiting for battle state — connection lost. "
     "Failing the step/reset loudly so the process exits instead of hanging forever."
+)
+
+# A normal battle step/request returns in well under a second. If Showdown sends NO next
+# message AND does not close the connection — a SILENT stall (a lost frame, or a battle the
+# server stops advancing) — race_get would otherwise await forever: the disconnect guard only
+# fires on a CLOSE, not on silence. So race_get times out and fails loudly, turning an
+# unrecoverable multi-hour hang of the whole SubprocVecEnv (one stuck worker blocks step_wait)
+# into a worker crash the launcher restarts from the last checkpoint. Generous (~100x a normal
+# step) so it never trips a live-but-loaded server; only a genuine stall reaches it.
+_RACE_GET_TIMEOUT_S = float(os.environ.get("GEN3_RACE_GET_TIMEOUT_S", "120"))
+_SILENT_STALL_MSG = (
+    f"Showdown sent no battle message and did not disconnect within {_RACE_GET_TIMEOUT_S:.0f}s "
+    "— silent battle stall (lost frame / wedged battle). Failing the step/reset loudly so the "
+    "process exits and the launcher restarts from the checkpoint instead of hanging forever."
 )
 
 
@@ -103,15 +119,25 @@ class _AsyncQueue(Generic[ItemType]):
             )
             extra = [disc_task] if disc_task is not None else []
             done, pending = await asyncio.wait(
-                {get_task, *wait_tasks, *extra}, return_when=asyncio.FIRST_COMPLETED
+                {get_task, *wait_tasks, *extra},
+                return_when=asyncio.FIRST_COMPLETED,
+                timeout=_RACE_GET_TIMEOUT_S,
             )
             for p in pending:
                 p.cancel()
             if get_task in done:
                 return get_task.result()
             if disc_task is not None and disc_task in done:
-                raise ShowdownException(_DISCONNECTED_MSG)
-            return None
+                raise ShowdownException(_DISCONNECTED_MSG + race_trace.dump_recent())
+            # `done` empty ⇒ the timeout fired with NOTHING ready: the server went silent
+            # without disconnecting (a wedged battle — e.g. a force-switch request parsed onto
+            # the battle but never delivered to the env). Fail loudly so the launcher restarts,
+            # instead of hanging the whole SubprocVecEnv forever on this one battle. The
+            # race-trace dump (no-op unless GEN3_RACE_TRACE=1) lands the cross-thread
+            # interleaving of the wedged battle into the crash file for root-causing.
+            if not done:
+                raise ShowdownException(_SILENT_STALL_MSG + race_trace.dump_recent())
+            return None  # a passed event fired (e.g. force-switch) — caller's existing path
 
         res = asyncio.run_coroutine_threadsafe(_race_get(), self._loop)
         return res.result()
@@ -154,8 +180,18 @@ class _EnvPlayer(Player):
         if not self.battle or self.battle.finished:
             self.battle = battle
         assert self.battle.battle_tag == battle.battle_tag
+        # The env-side delivery handshake. If a request reaches here, it WAS dispatched (the
+        # opposite of the _wait swallow); the put makes it visible to the env's race_get. A
+        # crash dump that shows HANDLE-REQ for a force-switch but NO matching PUT-QUEUE pins the
+        # stranding to between dispatch and enqueue. No-op unless GEN3_RACE_TRACE.
+        race_trace.trace(
+            battle.battle_tag,
+            f"ENVPLAYER put on battle_queue (force_switch={getattr(battle, 'force_switch', '?')}, "
+            f"qsize={self.battle_queue.queue.qsize()})",
+        )
         await self.battle_queue.async_put(battle)
         order = await self.order_queue.async_get()
+        race_trace.trace(battle.battle_tag, "ENVPLAYER got order from order_queue")
         return order
 
     def teampreview(self, battle: AbstractBattle) -> Awaitable[str]:

@@ -364,8 +364,22 @@ class Player(ABC):
     async def _handle_battle_request(
         self, battle: AbstractBattle, maybe_default_order: bool = False
     ):
+        # Trace the dispatch DECISION (not just that a request arrived): which branch this
+        # request takes is exactly what root-causes the silent force-switch deadlock — a
+        # force-switch wrongly taking the `_wait` swallow-branch is parsed onto the battle but
+        # never delivered to the env's battle_queue, wedging race_get. No-op unless GEN3_RACE_TRACE.
+        race_trace.trace(
+            getattr(battle, "battle_tag", ""),
+            f"HANDLE-REQ enter wait={battle._wait} "
+            f"force_switch={getattr(battle, 'force_switch', '?')} "
+            f"teampreview={battle.teampreview} maybe_default={maybe_default_order}",
+        )
         if battle._wait:
             self._waiting.set()
+            race_trace.trace(
+                getattr(battle, "battle_tag", ""),
+                "HANDLE-REQ -> WAIT branch: set _waiting + return (NO dispatch to choose_move)",
+            )
             return
         if maybe_default_order and random.random() < self.DEFAULT_CHOICE_CHANCE:
             message = self.choose_default_move().message
