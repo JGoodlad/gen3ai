@@ -377,9 +377,16 @@ class LauncherUI:
         if "Random" in order:
             order.remove("Random")
             order.insert(0, "Random")
+        rendered_any = False
+        sentinel_sep_done = False
         for opp in order:
+            # Blank divider between the fixed bot roster and the (rotating) pool sentinels.
+            if opp.startswith("sentinel_") and rendered_any and not sentinel_sep_done:
+                t.add_row("", "", "")
+                sentinel_sep_done = True
             data = opponents[opp]
             t.add_row(_row_label(opp), _wr_str(data.get("win_rate")), _rw_str(data.get("reward")))
+            rendered_any = True
 
         return t
 

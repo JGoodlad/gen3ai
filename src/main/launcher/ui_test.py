@@ -45,3 +45,21 @@ def test_sentinel_label_falls_back_without_step():
     # No step metric yet (e.g. a resumed eval re-published from metadata) → plain label.
     labels, _wr, _rw = _eval_table({"eval/win_rate_vs_sentinel_0": 0.63})
     assert any(lab.strip() == "vs Sentinel_0" for lab in labels), labels
+
+
+def test_blank_row_between_bots_and_sentinels():
+    labels, _wr, _rw = _eval_table({
+        "eval/win_rate_vs_Random": 0.99,
+        "eval/win_rate_vs_SetupSweepV2": 0.65,
+        "eval/win_rate_vs_sentinel_0": 0.63,
+        "eval/sentinel_step_0": 1_000_000.0,
+    })
+    sentinel_idx = next(i for i, lab in enumerate(labels) if "Sentinel_0" in lab)
+    assert labels[sentinel_idx - 1].strip() == "", labels   # divider precedes the sentinels
+
+
+def test_no_leading_blank_when_only_sentinels():
+    # No bots this cycle → don't emit a stray blank row before the first sentinel.
+    labels, _wr, _rw = _eval_table({"eval/win_rate_vs_sentinel_0": 0.63})
+    sentinel_idx = next(i for i, lab in enumerate(labels) if "Sentinel_0" in lab)
+    assert labels[sentinel_idx - 1].strip() != "", labels   # the eval header, not a blank
