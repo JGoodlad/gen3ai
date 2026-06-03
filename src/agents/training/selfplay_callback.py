@@ -35,12 +35,16 @@ from poke_env.ps_client import LocalhostServerConfiguration
 
 from agents.model.snapshot import record_eval_results
 from agents.training.eval_callback import (
+    _EVAL_CYCLE_TIMEOUT_SEC,
     _EVAL_SUBPROCESS_CONCURRENCY,
     RANDOM_OPPONENT_NAME,
+    _b36,
     bot_mean,
     build_bot_eval_block,
     eval_opponent_names,
+    eval_run_nonce,
     eval_schedule,
+    kill_eval_workers,
     merge_eval_results,
     persist_eval_snapshot,
     prune_eval_traces,
@@ -140,6 +144,12 @@ class SelfPlayCallback(BaseCallback):
         # The in-flight eval cycle, or None.
         self._pending: dict | None = None
         self._eval_root: str | None = None
+        # Per-PROCESS account-name nonce (+ per-cycle counter) so two launcher restarts
+        # never reuse Showdown account names. The old step-derived tag collided across
+        # restarts (the resume re-eval always fires at the same step) and hung a worker on a
+        # lingering challenge — wedging self-play eval permanently (the hang pins _pending).
+        self._eval_run_nonce = eval_run_nonce()
+        self._eval_cycle = 0
         # Parent-side fatal errors only; worker crashes log-and-continue (bot-path parity).
         self.abort_fn = None
 
@@ -169,8 +179,12 @@ class SelfPlayCallback(BaseCallback):
         return eval_schedule(self.num_timesteps)
 
     def _on_step(self) -> bool:
-        if self._pending is not None and self._all_done(self._pending):
-            self._collect_pending()
+        if self._pending is not None:
+            now = time.monotonic()
+            if self._all_done(self._pending):
+                self._collect_pending()
+            elif now - self._pending.get("launched_at", now) > _EVAL_CYCLE_TIMEOUT_SEC:
+                self._abort_pending_cycle()   # hung worker → don't wedge eval forever
         if self.num_timesteps == 0:
             return True
         freq, _ = self._schedule()
@@ -213,7 +227,11 @@ class SelfPlayCallback(BaseCallback):
         # Record exactly which model produced this cycle's traces (the prober reads this).
         write_eval_manifest(self._model_dir, step,
                             opponents=bot_names + sentinel_labels, n_games=n_games)
-        cycle_tag = f"{step // 100 % 10000:04d}"
+        # Process-unique account tag (per-process nonce + per-cycle counter), NOT the step:
+        # the resume re-eval fires at the same step every restart, so a step tag collided
+        # across restarts and hung a worker on a lingering challenge (wedging eval forever).
+        self._eval_cycle += 1
+        cycle_tag = f"{self._eval_run_nonce}{_b36(self._eval_cycle, 1)}"
         n_items = len(bot_names) + len(sentinels)
         n_workers = max(1, min(self._n_workers, n_items))
         base_cfg = {
@@ -237,12 +255,28 @@ class SelfPlayCallback(BaseCallback):
             "step": step, "bot_names": bot_names, "sentinels": sentinels,
             "sentinel_entries": sentinel_entries, "procs": procs,
             "snapshot": snapshot_zip, "run_dir": run_dir,
+            "launched_at": time.monotonic(),
         }
         print(f"[SELFPLAY EVAL] step {step:,}: spawned {n_workers} work-stealing worker(s) on "
               f"{self._eval_device} ({len(bot_names)} bots + {len(sentinels)} sentinels, "
               f"conc {self._eval_concurrency}) — non-blocking")
         send_event(f"🧪 Self-play eval @ {step:,}: started "
                    f"({len(bot_names)} bots + {len(sentinels)} sentinels, {n_workers} worker(s))")
+
+    def _abort_pending_cycle(self) -> None:
+        """A cycle overran `_EVAL_CYCLE_TIMEOUT_SEC` → presumed hung (e.g. a Showdown battle
+        that never completes). Kill its workers and collect whatever results landed, clearing
+        `_pending` so eval resumes — a hung self-play eval otherwise pins `_pending` forever
+        and silently skips every later boundary."""
+        pending = self._pending
+        elapsed = time.monotonic() - pending["launched_at"]
+        print(f"⚠️ [SELFPLAY EVAL] step {pending['step']:,}: eval cycle hung "
+              f"({elapsed:.0f}s > {_EVAL_CYCLE_TIMEOUT_SEC:.0f}s) — killing workers, "
+              f"collecting partial results")
+        send_event(f"⚠️ Self-play eval @ {pending['step']:,}: hung — killed after "
+                   f"{elapsed:.0f}s, partial")
+        kill_eval_workers(pending["procs"])
+        self._collect_pending()
 
     # ── Collect ────────────────────────────────────────────────────────────────
 

@@ -482,6 +482,134 @@ def test_drain_waits_for_inflight_eval_then_collects(tmp_path, monkeypatch):
     assert cb.logger.record.called
 
 
+# ── process-unique eval account nonce / cycle_tag (the restart-collision fix) ──
+
+def test_eval_run_nonce_is_short_and_varies():
+    from agents.training.eval_callback import eval_run_nonce
+    a, b = eval_run_nonce(), eval_run_nonce()
+    assert len(a) == 3 and len(b) == 3
+    assert a != b  # per-process counter guarantees successive calls differ
+
+
+def test_eval_account_names_within_showdown_18_char_limit():
+    # The bug was account-name COLLISION; this guards the other constraint — that the
+    # process-unique tag still fits Showdown's 18-char username cap for every prefix.
+    from agents.training.eval_callback import eval_run_nonce, _b36, _EVAL_OPPONENT_SPECS
+    cycle_tag = eval_run_nonce() + _b36(35, 1)          # nonce(3) + cycle(1) = 4
+    tag = f"{cycle_tag}913"                              # pessimistic wid=9, claim_seq=13
+    for (_name, _cls, prefix, _v2) in _EVAL_OPPONENT_SPECS:
+        assert len(prefix + tag) <= 18, (prefix, prefix + tag)
+    assert len(f"RLEv{tag}9") <= 18   # trainee player
+    assert len(f"SPtr{tag}") <= 18    # self-play sentinel trainee
+    assert len(f"SPse{tag}") <= 18    # self-play sentinel opponent
+
+
+def test_cycle_tag_is_process_unique_not_step_derived(tmp_path, monkeypatch):
+    """cycle_tag must come from the per-process nonce + per-cycle counter, NOT the step —
+    the resume re-eval fires at the same step every restart, so a step tag collided."""
+    from agents.training import eval_callback as ec
+    cb = PerOpponentEvalCallback(model_dir=str(tmp_path), server_config=MagicMock(),
+                                 n_workers=1, showdown_port=9999)
+    cb.model = MagicMock()
+    cb.model.save = lambda b: open(b + ".zip", "w").close()
+    cb._logger = MagicMock()
+    cb._init_callback()
+
+    captured = []
+    monkeypatch.setattr(ec, "spawn_eval_workers",
+                        lambda run_dir, base_cfg, n: captured.append(base_cfg["cycle_tag"]) or [])
+
+    cb.num_timesteps = 2_000_000
+    cb._launch_eval()
+    cb._pending = None
+    cb.num_timesteps = 4_000_000
+    cb._launch_eval()
+
+    assert captured[0].startswith(cb._eval_run_nonce)   # carries the process nonce
+    assert captured[0] != captured[1]                   # per-cycle counter advances
+    # Two launches at the SAME step (the resume-collision scenario) still differ:
+    cb._pending = None
+    cb.num_timesteps = 2_000_000
+    cb._launch_eval()
+    assert captured[2] != captured[0]
+    # And it is NOT the old step-derived tag.
+    assert captured[0] != f"{2_000_000 // 100 % 10000:04d}"
+
+
+# ── eval-cycle watchdog (a hung worker must not wedge eval forever) ───────────
+
+def _hung_proc_factory(killed):
+    class _HungProc:
+        returncode = None
+        def poll(self):
+            return None                       # never finishes on its own
+        def kill(self):
+            self.returncode = -9
+            killed["n"] += 1
+        def wait(self, timeout=None):
+            return -9
+    return _HungProc
+
+
+def test_watchdog_aborts_hung_cycle_and_collects_partial(tmp_path, monkeypatch):
+    from agents.training import eval_callback as ec
+    cb = PerOpponentEvalCallback(model_dir=str(tmp_path), server_config=MagicMock(),
+                                 use_v2_bots=False, best_model_save_path=str(tmp_path / "best"),
+                                 n_workers=2, showdown_port=9999)
+    cb.model = MagicMock()
+    cb.model.save = lambda b: open(b + ".zip", "w").close()
+    cb._logger = MagicMock()
+    cb.num_timesteps = 2_000_000
+    cb._init_callback()
+
+    killed = {"n": 0}
+    HungProc = _hung_proc_factory(killed)
+
+    def fake_popen(argv, stdout=None, stderr=None, env=None):
+        import json as _json
+        cfg = _json.load(open(argv[-1]))
+        # Partial: only the first two opponents wrote results before the (simulated) hang.
+        for nm in cfg["opponent_pool"][:2]:
+            with open(os.path.join(cfg["result_dir"], f"result__{nm}.json"), "w") as f:
+                _json.dump({"win_rate": 0.5, "reward_mean": 0.0,
+                            "ep_len": 10.0, "duration_sec": 1.0}, f)
+        return HungProc()
+
+    monkeypatch.setattr(ec.subprocess, "Popen", fake_popen)
+
+    cb._on_step()                                 # launch; procs report poll()=None
+    assert cb._pending is not None
+    # Make the cycle look overdue, then step again → watchdog fires.
+    cb._pending["launched_at"] = ec.time.monotonic() - (ec._EVAL_CYCLE_TIMEOUT_SEC + 1)
+    cb.num_timesteps = 2_000_001                  # same freq bucket → no relaunch
+    cb._on_step()
+
+    assert killed["n"] >= 1                        # the hung workers were killed
+    assert cb._pending is None                     # cleared → eval can resume
+    assert cb.logger.record.called                 # partial results were still recorded
+
+
+def test_watchdog_leaves_a_fresh_cycle_running(tmp_path, monkeypatch):
+    from agents.training import eval_callback as ec
+    cb = PerOpponentEvalCallback(model_dir=str(tmp_path), server_config=MagicMock(),
+                                 n_workers=1, showdown_port=9999)
+    cb.model = MagicMock()
+    cb.model.save = lambda b: open(b + ".zip", "w").close()
+    cb._logger = MagicMock()
+    cb.num_timesteps = 2_000_000
+    cb._init_callback()
+
+    killed = {"n": 0}
+    HungProc = _hung_proc_factory(killed)
+    monkeypatch.setattr(ec.subprocess, "Popen", lambda *a, **k: HungProc())
+
+    cb._on_step()                                 # launch; launched_at = now
+    assert cb._pending is not None
+    cb.num_timesteps = 2_000_001
+    cb._on_step()                                 # not overdue → no abort
+    assert killed["n"] == 0 and cb._pending is not None
+
+
 def test_replay_last_eval_publishes_to_tui_on_init(tmp_path, monkeypatch):
     """Resume: _init_callback re-publishes the most recent eval to the TUI."""
     import json as _json

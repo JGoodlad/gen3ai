@@ -110,6 +110,16 @@ _FORENSIC_WIN_QUOTA = 5
 # server isn't flooded while training is also using it.
 _EVAL_SUBPROCESS_CONCURRENCY = 5
 
+# In-flight watchdog: if a cycle's workers don't all finish within this wall-clock
+# budget, the cycle is presumed HUNG (e.g. a Showdown battle that never completes —
+# a worker blocked on a websocket await), so the parent kills the workers, collects
+# whatever results landed, and clears `_pending`. Without this a single hung worker
+# pins `_pending` forever and every later eval boundary is silently skipped — i.e. eval
+# never recovers for the rest of the run. Set generously above a healthy CPU cycle
+# (~6-10 min for the full roster incl. 300-game sentinels) so it never trips a slow-but-
+# -live eval; only a true hang reaches it.
+_EVAL_CYCLE_TIMEOUT_SEC = 1800.0
+
 _OPPONENT_NAMES: dict[type, str] = {
     RandomPlayer: "Random",
     SimpleHeuristicsPlayer: "Heuristic",
@@ -307,6 +317,48 @@ async def run_eval(players, opponents, n_games, model_dir, step) -> dict:
 # ── Shared subprocess-eval mechanics (used by BOTH eval callbacks) ─────────────
 # These keep the bot-eval and self-play-eval cycles spawning / merging / grooming
 # identically, so the two non-blocking paths can't drift.
+
+_B36 = "0123456789abcdefghijklmnopqrstuvwxyz"
+_NONCE_COUNTER = 0
+
+
+def _b36(n: int, width: int) -> str:
+    """Fixed-width base-36 encoding of `abs(n)` (low digits; wraps at 36**width)."""
+    n = abs(int(n))
+    out = []
+    for _ in range(width):
+        out.append(_B36[n % 36])
+        n //= 36
+    return "".join(reversed(out))
+
+
+def eval_run_nonce() -> str:
+    """A short (3 base-36 char) per-PROCESS nonce for eval account names.
+
+    Eval account names are ``<prefix><cycle_tag><wid><claim_seq>``; ``cycle_tag`` used to
+    be ``step // 100 % 10000``, which is NOT unique across launcher restarts — the resume
+    re-eval always fires at ~the same step, so every restart reused the same account names
+    and collided with the previous (killed) process's lingering Showdown challenges
+    (``There's already a challenge between you and ...``) → the battle never starts and the
+    worker hangs forever. Mixing the pid + wall-clock (+ a process-global counter so
+    successive calls differ) makes the tag unique per process while staying ≤4 chars, so
+    the full account name comfortably fits Showdown's 18-char username cap.
+    """
+    global _NONCE_COUNTER
+    _NONCE_COUNTER += 1
+    return _b36(os.getpid() * 1_000_003 + int(time.time()) + _NONCE_COUNTER * 7919, 3)
+
+
+def kill_eval_workers(procs: list[dict], wait_timeout: float = 5.0) -> None:
+    """Kill any still-running eval workers and reap them (so none linger as zombies)."""
+    for w in procs:
+        if w["proc"].poll() is None:
+            w["proc"].kill()
+        try:
+            w["proc"].wait(timeout=wait_timeout)
+        except subprocess.TimeoutExpired:
+            pass
+
 
 def spawn_eval_workers(run_dir: str, base_cfg: dict, n_workers: int) -> list[dict]:
     """Write one config_<wid>.json per worker and Popen ``python -m main.eval_worker`` on it.
@@ -683,9 +735,15 @@ class PerOpponentEvalCallback(BaseCallback):
         self._resume_eval_metadata = resume_eval_metadata
         self._last_eval_step = 0
         self._best_aggregate_win_rate = -1.0
-        # The in-flight eval cycle, or None. dict: step, names, procs[], snapshot, run_dir.
+        # The in-flight eval cycle, or None. dict: step, names, procs[], snapshot, run_dir,
+        # launched_at.
         self._pending: dict | None = None
         self._eval_root: str | None = None
+        # Per-PROCESS account-name nonce (+ a per-cycle counter) so two launcher restarts
+        # never reuse Showdown account names — the step-derived tag collided across restarts
+        # and hung a worker on a lingering challenge.
+        self._eval_run_nonce = eval_run_nonce()
+        self._eval_cycle = 0
         # Set by train_rl_agent after signal handlers are wired (kept for parity with
         # the old fail-fast path; the subprocess design logs-and-continues instead).
         self.abort_fn = None
@@ -704,8 +762,12 @@ class PerOpponentEvalCallback(BaseCallback):
         self._replay_last_eval_to_tui()
 
     def _on_step(self) -> bool:
-        if self._pending is not None and self._all_done(self._pending):
-            self._collect_pending()
+        if self._pending is not None:
+            now = time.monotonic()
+            if self._all_done(self._pending):
+                self._collect_pending()
+            elif now - self._pending.get("launched_at", now) > _EVAL_CYCLE_TIMEOUT_SEC:
+                self._abort_pending_cycle()   # hung worker → don't wedge eval forever
         if self.num_timesteps == 0:
             return True
         freq, _ = self._schedule()
@@ -738,8 +800,11 @@ class PerOpponentEvalCallback(BaseCallback):
         # this to reload the right model). snapshot=None now; _persist_snapshot patches
         # it to the retained filename on success when --keep-eval-snapshots is set.
         write_eval_manifest(self._model_dir, step, opponents=names, n_games=n_games)
-        # Short per-cycle tag for unique account names (cycles are ≥1M steps apart).
-        cycle_tag = f"{step // 100 % 10000:04d}"
+        # Process-unique account tag (per-process nonce + per-cycle counter), NOT the step:
+        # the resume re-eval fires at the same step every restart, so a step tag collided
+        # across restarts and hung a worker on a lingering challenge.
+        self._eval_cycle += 1
+        cycle_tag = f"{self._eval_run_nonce}{_b36(self._eval_cycle, 1)}"
         # Never spawn more workers than opponents to steal.
         n_workers = max(1, min(self._n_workers, len(names)))
         base_cfg = {
@@ -758,12 +823,25 @@ class PerOpponentEvalCallback(BaseCallback):
         procs = spawn_eval_workers(run_dir, base_cfg, n_workers)
 
         self._pending = {"step": step, "names": names, "procs": procs,
-                         "snapshot": snapshot_zip, "run_dir": run_dir}
+                         "snapshot": snapshot_zip, "run_dir": run_dir,
+                         "launched_at": time.monotonic()}
         print(f"[EVAL] step {step:,}: spawned {n_workers} work-stealing worker(s) on "
               f"{self._eval_device} ({len(names)} opponents, conc {self._eval_concurrency}) "
               f"— non-blocking")
         send_event(f"🧪 Eval @ {step:,}: started "
                    f"({len(names)} opponents, {n_workers} worker(s))")
+
+    def _abort_pending_cycle(self) -> None:
+        """A cycle overran `_EVAL_CYCLE_TIMEOUT_SEC` → presumed hung. Kill its workers,
+        then collect whatever results landed (clears `_pending` so eval can resume)."""
+        pending = self._pending
+        elapsed = time.monotonic() - pending["launched_at"]
+        print(f"⚠️ [EVAL] step {pending['step']:,}: eval cycle hung "
+              f"({elapsed:.0f}s > {_EVAL_CYCLE_TIMEOUT_SEC:.0f}s) — killing workers, "
+              f"collecting partial results")
+        send_event(f"⚠️ Eval @ {pending['step']:,}: hung — killed after {elapsed:.0f}s, partial")
+        kill_eval_workers(pending["procs"])
+        self._collect_pending()
 
     # ------------------------------------------------------------------ collect
 

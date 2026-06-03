@@ -380,3 +380,66 @@ def test_init_seeds_empty_pool(tmp_path):
     cb = _make_callback(tmp_path, pool=pool)
     cb._init_callback()
     pool.seed.assert_called_once_with(cb.model)
+
+
+# ── eval-cycle watchdog (the live-run failure: a hung sentinel wedged eval) ────
+
+def test_cycle_tag_carries_process_nonce(tmp_path, monkeypatch):
+    # spawn_eval_workers is imported into the selfplay_callback namespace — patch it there
+    # (patching eval_callback's copy wouldn't intercept the call and would spawn real procs).
+    from agents.training import selfplay_callback as sp
+    cb = _make_callback(tmp_path)
+    cb._init_callback()
+    captured = []
+    monkeypatch.setattr(sp, "spawn_eval_workers",
+                        lambda run_dir, base_cfg, n: captured.append(base_cfg["cycle_tag"]) or [])
+    cb.num_timesteps = 2_000_000
+    cb._launch_eval()
+    assert captured[0].startswith(cb._eval_run_nonce)
+    # NOT the step-derived tag that collided across restarts.
+    assert captured[0] != f"{2_000_000 // 100 % 10000:04d}"
+
+
+def test_watchdog_aborts_hung_selfplay_cycle(tmp_path, monkeypatch):
+    """Reproduces the live wedge: bots finish but a sentinel hangs → without the watchdog
+    `_pending` is pinned forever. The watchdog kills + collects partial so eval resumes."""
+    from agents.training import eval_callback as ec
+    pool = _mock_pool(n_sentinels=3)
+    cb = _make_callback(tmp_path, pool=pool)
+    cb._init_callback()
+
+    killed = {"n": 0}
+
+    class _HungProc:
+        returncode = None
+        def poll(self):
+            return None
+        def kill(self):
+            self.returncode = -9
+            killed["n"] += 1
+        def wait(self, timeout=None):
+            return -9
+
+    def fake_popen(argv, stdout=None, stderr=None, env=None):
+        import json as _json
+        cfg = _json.load(open(argv[-1]))
+        # Bots finish; sentinels never report (the real hang was on a sentinel/opponent).
+        for nm in cfg["opponent_pool"]:
+            with open(os.path.join(cfg["result_dir"], f"result__{nm}.json"), "w") as f:
+                _json.dump({"win_rate": 0.7, "reward_mean": 1.0,
+                            "ep_len": 20.0, "duration_sec": 5.0}, f)
+        return _HungProc()
+
+    monkeypatch.setattr(ec.subprocess, "Popen", fake_popen)
+
+    cb._on_step()                                 # launch; procs hung (poll None)
+    assert cb._pending is not None
+    cb._pending["launched_at"] = ec.time.monotonic() - (ec._EVAL_CYCLE_TIMEOUT_SEC + 1)
+    cb.num_timesteps = 2_000_001
+    cb._on_step()                                 # watchdog → kill + collect partial
+
+    assert killed["n"] >= 1
+    assert cb._pending is None                     # unwedged
+    recorded = {c.args[0] for c in cb.logger.record.call_args_list}
+    assert "eval/win_rate_vs_bots" in recorded     # bot results recorded despite the hang
+    pool.add_from_path.assert_not_called()         # no pool win rate → no promotion
