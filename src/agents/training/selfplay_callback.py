@@ -314,23 +314,27 @@ class SelfPlayCallback(BaseCallback):
             self._cleanup(pending, keep_logs=True)
             return
 
-        # Sentinel win rates in pool order (skip any whose worker died).
-        kept_sentinels: list[tuple[object, float]] = []  # (entry, win_rate)
+        # Sentinel results in pool order (skip any whose worker died): (entry, label, win, reward).
+        kept_sentinels: list[tuple] = []
         for s, entry in zip(sentinels, sentinel_entries):
-            v = wr.get(s["label"])
+            label = s["label"]
+            v = wr.get(label)
             if v is not None:
-                kept_sentinels.append((entry, v))
-        sentinel_win_rates = [v for _e, v in kept_sentinels]
+                kept_sentinels.append((entry, label, v, merged["reward_means"].get(label, 0.0)))
+        sentinel_win_rates = [v for (_e, _l, v, _rw) in kept_sentinels]
 
         tui: dict[str, float] = {}
 
-        # ── Bot metrics ──
+        # ── Bot metrics (win rate + reward + ep_len, pushed LIVE like the bot-eval path —
+        # not just win rate, else the TUI reward column shows the prior eval seeded at resume) ──
         for name in bot_names:
             if name in bot_wr:
                 self.logger.record(f"eval/win_rate_vs_{name}", bot_wr[name])
                 self.logger.record(f"eval/mean_reward_vs_{name}", bot_rew.get(name, 0.0))
                 self.logger.record(f"eval/mean_ep_len_vs_{name}", bot_ep.get(name, 0.0))
                 tui[f"eval/win_rate_vs_{name}"] = bot_wr[name]
+                tui[f"eval/mean_reward_vs_{name}"] = bot_rew.get(name, 0.0)
+                tui[f"eval/mean_ep_len_vs_{name}"] = bot_ep.get(name, 0.0)
 
         self.win_rate_vs_bots = bot_mean(bot_wr)
         mean_reward_vs_bots = bot_mean(bot_rew)
@@ -338,10 +342,16 @@ class SelfPlayCallback(BaseCallback):
         self._pool.persist_win_rate(self.win_rate_vs_bots)
         self._check_bot_regression(bot_wr)
 
-        # ── Pool / sentinel metrics ──
-        for i, v in enumerate(sentinel_win_rates):
+        # ── Pool / sentinel metrics (win rate + reward; step → TUI row label) ──
+        for i, (entry, _label, v, rw) in enumerate(kept_sentinels):
             self.logger.record(f"eval/win_rate_vs_sentinel_{i}", v)
+            self.logger.record(f"eval/mean_reward_vs_sentinel_{i}", rw)
             tui[f"eval/win_rate_vs_sentinel_{i}"] = v
+            tui[f"eval/mean_reward_vs_sentinel_{i}"] = rw
+            # sentinel_<i> is positional (newest→oldest) so its KEY stays stable for a
+            # continuous TB curve, but it maps to a DIFFERENT checkpoint each cycle — surface
+            # its step so the TUI can label the row "vs sentinel_0 (47.0M)".
+            tui[f"eval/sentinel_step_{i}"] = float(entry.step)
 
         win_rate_vs_pool = (
             sum(sentinel_win_rates) / len(sentinel_win_rates) if sentinel_win_rates else 0.0
@@ -409,10 +419,11 @@ class SelfPlayCallback(BaseCallback):
                     {
                         "step": entry.step,
                         "win_rate": round(v, 4),
+                        "mean_reward": round(rw, 4),
                         "weight": round(self._pool.entry_weight(entry), 3),
                         "snapshot": entry.path.name,
                     }
-                    for entry, v in kept_sentinels
+                    for entry, _label, v, rw in kept_sentinels
                 ],
             }
             record_eval_results(self._model_dir, step, block)

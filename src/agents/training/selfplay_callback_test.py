@@ -270,9 +270,34 @@ def test_lifecycle_collect_records_promotes_and_saves_best(tmp_path, monkeypatch
     assert "eval/win_rate_vs_bots" in recorded
     assert "eval/win_rate_vs_Heuristic" in recorded
     assert "eval/win_rate_vs_sentinel_0" in recorded
+    assert "eval/mean_reward_vs_sentinel_0" in recorded     # sentinel reward now recorded
     assert "train/selfplay_promoted_steps" in recorded
     # opponent default-rate telemetry recorded from the (paused) training env.
     assert "train/selfplay_opp_redecide_rate" in recorded
+
+
+def test_collect_pushes_sentinel_reward_and_step_to_tui(tmp_path, monkeypatch):
+    """The TUI builds the reward column from eval/mean_reward_vs_<opp> and labels sentinels
+    from eval/sentinel_step_<i> — both must be pushed live (were missing → '—' / no step)."""
+    from agents.training import eval_callback as ec
+    from agents.training import selfplay_callback as sp
+    pool = _mock_pool(n_sentinels=3)
+    cb = _make_callback(tmp_path, pool=pool)
+    cb._init_callback()
+    captured: dict = {}
+    monkeypatch.setattr(sp, "send_metrics", lambda d: captured.update(d))
+    monkeypatch.setattr(ec.subprocess, "Popen",
+                        _fake_selfplay_popen(ec, bot_win=0.8, sentinel_win=0.7))
+
+    cb._on_step()
+    cb.num_timesteps = 2_000_001
+    cb._on_step()
+
+    # Sentinel reward + step surfaced to the TUI...
+    assert captured.get("eval/mean_reward_vs_sentinel_0") == pytest.approx(1.0)
+    assert "eval/sentinel_step_0" in captured          # newest sentinel's checkpoint step
+    # ...and per-bot reward is pushed LIVE (not just win rate), so it isn't stale-from-resume.
+    assert "eval/mean_reward_vs_Heuristic" in captured
 
 
 def test_lifecycle_no_promotion_below_threshold(tmp_path, monkeypatch):

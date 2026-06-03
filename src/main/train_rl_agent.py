@@ -786,7 +786,10 @@ async def main():
             best_model_save_path=os.path.join(model_dir, "best_model"),
             promote_threshold=args.promote_threshold,
             self_play_temp=args.self_play_temp,
-            n_workers=args.eval_workers,
+            # Self-play eval is ~2x the inference of bot eval — the 5 sentinel matchups run
+            # the model for BOTH players (trainee + sentinel), vs bot matchups where only the
+            # trainee infers. So double the work-stealing pool to keep wall-clock comparable.
+            n_workers=args.eval_workers * 2,
             eval_device=args.eval_device,
             keep_eval_snapshots=args.keep_eval_snapshots,
             keep_eval_trace_steps=args.keep_eval_trace_steps,

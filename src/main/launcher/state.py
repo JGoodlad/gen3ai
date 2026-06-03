@@ -91,12 +91,21 @@ class LauncherState:
         step = int(payload.get("_step", 0))
         cleaned = {k: v for k, v in payload.items() if k != "_step"}
         now = time.monotonic()
+        is_eval = any(k.startswith("eval/") for k in cleaned)
         with self._lock:
+            # An eval push carries the COMPLETE current cycle (every opponent + sentinel +
+            # aggregate it measured), so REPLACE the eval section rather than merge: any
+            # eval/* row not in this cycle — an evicted sentinel slot, or an opponent whose
+            # result went missing — drops out instead of lingering as a stale value. Training
+            # pushes carry no eval/* keys, so they leave the eval section untouched.
+            if is_eval:
+                self._metrics = {k: v for k, v in self._metrics.items()
+                                 if not k.startswith("eval/")}
             self._metrics.update(cleaned)
             self._metrics_step = step
             self._metrics_ts = now
             self._last_activity_ts = now
-            if any(k.startswith("eval/") for k in cleaned):
+            if is_eval:
                 self._eval_metrics_ts = now
 
     def snapshot(self) -> LauncherSnapshot:

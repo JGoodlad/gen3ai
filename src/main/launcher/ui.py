@@ -360,13 +360,26 @@ class LauncherUI:
                 t.add_row("  vs Pool", _wr_str(wr_pool), "")
             t.add_row("", "", "", end_section=True)
 
+        def _row_label(opp: str) -> str:
+            # sentinel_<i> is positional (newest→oldest) and maps to a different pool
+            # checkpoint each cycle — display it capitalised (to match the bot rows like
+            # "Random"/"SetupSweep") with its step (eval/sentinel_step_<i>) so it's clear
+            # which snapshot it is, e.g. "vs Sentinel_0 (47.0M)". The metric KEY stays the
+            # lowercase positional "sentinel_<i>" so the TensorBoard curve stays continuous.
+            if opp.startswith("sentinel_"):
+                idx = opp[len("sentinel_"):]
+                disp = f"Sentinel_{idx}"
+                step = metrics.get(f"eval/sentinel_step_{idx}")
+                return f"  vs {disp} ({step / 1e6:.1f}M)" if step else f"  vs {disp}"
+            return f"  vs {opp}"
+
         # Random always first, remaining opponents in metric-order (from keys).
         if "Random" in order:
             order.remove("Random")
             order.insert(0, "Random")
         for opp in order:
             data = opponents[opp]
-            t.add_row(f"  vs {opp}", _wr_str(data.get("win_rate")), _rw_str(data.get("reward")))
+            t.add_row(_row_label(opp), _wr_str(data.get("win_rate")), _rw_str(data.get("reward")))
 
         return t
 
