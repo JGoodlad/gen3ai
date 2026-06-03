@@ -80,6 +80,34 @@ def test_race_get_returns_none_on_unrelated_event():
     assert q.race_get(other) is None
 
 
+def test_race_get_prefers_queued_battle_over_stale_event():
+    """A real queued battle is authoritative and must NEVER be masked by an already-set (stale)
+    _waiting/_trying_again event. This is the mutual-Arena-Trap force-switch DEADLOCK fix
+    (crashes/restart_err_*_7f93c7.txt): a force-switch was delivered to the queue, but a stale
+    _trying_again (set by an earlier trapped-switch rejection, not yet cleared) won the
+    asyncio.wait race before the equally-ready queue.get ran, so race_get returned None — the env
+    marked the agent not-to-move and the request was stranded in the queue → silent stall.
+    With both the event set AND a battle queued, race_get must return the BATTLE, not None."""
+    disconnected = _new_event()
+    stale = _new_event()
+    q: _AsyncQueue = _AsyncQueue(POKE_LOOP, maxsize=1, disconnected=disconnected)
+    _set(stale)              # event already set and never cleared (the stale-event precondition)
+    q.put("forceSwitch")     # a real server request is sitting in the queue
+    assert q.race_get(stale) == "forceSwitch"   # battle wins over the stale event, not stranded
+
+
+def test_race_get_prefers_queued_battle_even_with_disconnect():
+    """Symmetry with the disconnect guard: a delivered request still wins over a simultaneous
+    stale event AND a disconnect — real queued state is consumed, never discarded."""
+    disconnected = _new_event()
+    stale = _new_event()
+    q: _AsyncQueue = _AsyncQueue(POKE_LOOP, maxsize=1, disconnected=disconnected)
+    q.put("forceSwitch")
+    _set(stale)
+    _set(disconnected)
+    assert q.race_get(stale) == "forceSwitch"
+
+
 def test_get_timeout_preserved():
     """With no item and no disconnect, get(timeout) still raises TimeoutError —
     the reset/challenge path relies on this."""

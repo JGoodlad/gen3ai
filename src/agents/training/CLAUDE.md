@@ -175,19 +175,37 @@ restart — no manifest). Design lives in `designs/ai_v5/`. Key behaviors:
   the stress; `GEN3_RACE_TRACE=1` dumps the per-battle cross-thread interleaving into the
   `StaleDecisionError` **and** into the `race_get` silent-stall crash — see below. `StaleDecisionError`
   lives in `agents/action/mapper.py`.)
-  - **Silent-stall watchdog (`_AsyncQueue.race_get`, `env.py`).** A *different* failure from the
-    stale-decision race: a request (e.g. a force-switch after a faint) gets parsed onto the battle but
-    is **never delivered** to the env's `battle_queue` — `race_get` would then await forever (the
-    disconnect guard only fires on a socket CLOSE, not on silence), wedging the whole SubprocVecEnv on
-    one battle. So `race_get` bounds the wait by `_RACE_GET_TIMEOUT_S` (120 s, ~100× a normal step;
-    override with `GEN3_RACE_GET_TIMEOUT_S`) and, on a silent stall, **raises `ShowdownException`** —
-    a hard crash that propagates uncaught through the wrapper step chain to the SubprocVecEnv worker,
-    so SB3 discards the in-flight rollout (no fabricated transition reaches backprop) and the launcher
-    restarts from the last checkpoint. This is a watchdog that **crashes, never recovers in place** —
-    recovering would feed PPO a stale `(obs, action) → (reward, next_obs)`. With `GEN3_RACE_TRACE=1`
-    the wedged battle's interleaving is appended to the crash message via `race_trace.dump_recent()`
-    (wedged battle ordered last so its newest events survive the launcher's last-100-line crash-file
-    tail; the full trace is in `launcher_child.log`).
+  - **Force-switch request-delivery deadlock (`_AsyncQueue.race_get`, `env.py`) — FIXED.** A
+    *different* failure from the stale-decision race, and a latent bug **inherited verbatim from
+    upstream poke-env 0.15.0**: `race_get` races a per-agent `queue.get()` against the
+    `_waiting`/`_trying_again` coordination events, and can drop a request the server already
+    delivered into the `battle_queue`. Two ways: **(1) stranding** — `asyncio.wait(FIRST_COMPLETED)`
+    returns the instant any waiter completes, so an already-set **stale** event wins before the
+    equally-ready `queue.get()` runs → `race_get` returns `None`, the agent is marked not-to-move,
+    and its request sits unread; **(2) orphan theft** — `race_get` `cancel()`s the pending
+    `queue.get()`, which a later `put` can resurrect to dequeue-and-discard the request.
+    `_trying_again` goes stale because `env.step` cleared it only on the `None` path, and a
+    re-request makes the battle non-`None`, skipping that clear. The trigger is the mutual
+    Arena-Trap Dugtrio self-play mirror (trapped-switch `[Unavailable choice]` → stale
+    `_trying_again`, then a faint → a `wait`+`forceSwitch` pair whose force-switch is stranded);
+    rare (~1/8600 battles), so it only surfaced once self-play was on. **Fix:** `race_get` now
+    `cancel()`s **and `await`s** the get to settle it (recovering its item, never orphaning it) and
+    **prefers a queued battle over a stale event**, and `env.step` clears `_trying_again` the moment
+    its agent receives a battle. Repro + regression guard: `forceswitch_deadlock_fuzz_e2e_test.py`
+    (needs a `9XXX` server; `--widen` surfaces the timing race); unit coverage of both failure modes
+    in `async_queue_disconnect_test.py`.
+  - **Silent-stall watchdog (now a should-never-fire backstop).** Independently of the fix above,
+    `race_get` bounds its wait by `_RACE_GET_TIMEOUT_S` (120 s, ~100× a normal step; override with
+    `GEN3_RACE_GET_TIMEOUT_S`) and on a silent stall **raises `ShowdownException`** — a hard crash
+    that propagates uncaught through the wrapper step chain to the SubprocVecEnv worker, so SB3
+    discards the in-flight rollout (no fabricated transition reaches backprop) and the launcher
+    restarts from the last checkpoint. It **crashes, never recovers in place** (recovering would feed
+    PPO a stale `(obs, action) → (reward, next_obs)`). With `GEN3_RACE_TRACE=1` the wedged battle's
+    interleaving is appended to the crash message via `race_trace.dump_recent()` (wedged battle
+    ordered last so its newest events survive the launcher's last-100-line crash-file tail; the full
+    trace is in `launcher_child.log`). `env.step` also emits `ENVSTEP` enter/race trace lines under
+    `GEN3_RACE_TRACE` for debugging this handshake. Kept as defense-in-depth against any future
+    request-delivery regression.
 - **Self-play engages in the first process, not only after a restart.** The env is built before
   the model exists (the model needs the env's spaces), so on the first self-play process
   `_maybe_engage_self_play` seeds the pool from the loaded weights and rebuilds the env with

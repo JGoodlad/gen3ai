@@ -123,21 +123,42 @@ class _AsyncQueue(Generic[ItemType]):
                 return_when=asyncio.FIRST_COMPLETED,
                 timeout=_RACE_GET_TIMEOUT_S,
             )
-            for p in pending:
-                p.cancel()
+            # The get winning is unambiguous: a real battle was delivered.
             if get_task in done:
+                for p in pending:
+                    p.cancel()
                 return get_task.result()
+            # An event/disconnect/timeout won with the get still pending. Cancel the OTHER waiters
+            # outright, but the get_task must be SETTLED, not merely cancelled: a bare
+            # `cancel()` can leave `queue.get()` alive long enough to be woken by a later
+            # `put_nowait`, where it dequeues and silently DISCARDS that battle (the asyncio.Queue
+            # cancellation hazard) — the request is gone but `qsize` still counts it, so the env
+            # wedges forever (the mutual-Arena-Trap force-switch deadlock,
+            # crashes/restart_err_*_7f93c7.txt). `cancel()` + `await` forces it to finish now: if
+            # it raced to completion first we keep its item (never drop a real battle); otherwise
+            # it is truly dead and can't steal one.
+            for p in pending:
+                if p is not get_task:
+                    p.cancel()
+            get_task.cancel()
+            try:
+                return await get_task
+            except asyncio.CancelledError:
+                pass
+            # get is settled-dead now. A real battle queued in the meantime is authoritative and
+            # must never be masked by a (possibly stale) `_waiting` / `_trying_again` event.
+            if not self.queue.empty():
+                return self.queue.get_nowait()
+            # No real battle is queued — now the event/disconnect/timeout semantics apply.
             if disc_task is not None and disc_task in done:
                 raise ShowdownException(_DISCONNECTED_MSG + race_trace.dump_recent())
-            # `done` empty ⇒ the timeout fired with NOTHING ready: the server went silent
-            # without disconnecting (a wedged battle — e.g. a force-switch request parsed onto
-            # the battle but never delivered to the env). Fail loudly so the launcher restarts,
-            # instead of hanging the whole SubprocVecEnv forever on this one battle. The
-            # race-trace dump (no-op unless GEN3_RACE_TRACE=1) lands the cross-thread
-            # interleaving of the wedged battle into the crash file for root-causing.
+            # `done` empty ⇒ the timeout fired with NOTHING ready: the server went silent without
+            # disconnecting (a genuinely wedged battle). Fail loudly so the launcher restarts
+            # instead of hanging the whole SubprocVecEnv forever. The race-trace dump (no-op
+            # unless GEN3_RACE_TRACE=1) lands the wedged battle's interleaving in the crash file.
             if not done:
                 raise ShowdownException(_SILENT_STALL_MSG + race_trace.dump_recent())
-            return None  # a passed event fired (e.g. force-switch) — caller's existing path
+            return None  # a passed event fired and no battle is queued — caller's not-to-move path
 
         res = asyncio.run_coroutine_threadsafe(_race_get(), self._loop)
         return res.result()
@@ -495,6 +516,12 @@ class PokeEnv(ParallelEnv[str, Dict[str, Any], ActionType]):
         assert self.battle2 is not None
         assert not self.battle1.finished
         assert not self.battle2.finished
+        if race_trace.ENABLED:
+            race_trace.trace(getattr(self.battle1, "battle_tag", ""), (
+                f"ENVSTEP enter a1_mv={self.agent1_to_move} a2_mv={self.agent2_to_move} "
+                f"a1_bq={self.agent1.battle_queue.queue.qsize()} "
+                f"a2_bq={self.agent2.battle_queue.queue.qsize()}"
+            ))
         agent1_forfeited = False
         if self.agent1_to_move:
             self.agent1_to_move = False
@@ -532,6 +559,25 @@ class PokeEnv(ParallelEnv[str, Dict[str, Any], ActionType]):
         )
         self.agent1_to_move = battle1 is not None
         self.agent2_to_move = battle2 is not None
+        if race_trace.ENABLED:
+            tag = getattr(self.battle1, "battle_tag", "")
+            race_trace.trace(tag, (
+                f"ENVSTEP race a1_mv={self.agent1_to_move} a2_mv={self.agent2_to_move} "
+                f"a1_bq={self.agent1.battle_queue.queue.qsize()} "
+                f"a2_bq={self.agent2.battle_queue.queue.qsize()} "
+                f"a1_wait={self.agent1._waiting.is_set()} a1_try={self.agent1._trying_again.is_set()} "
+                f"a2_wait={self.agent2._waiting.is_set()} a2_try={self.agent2._trying_again.is_set()}"
+            ))
+        # A `_trying_again` is a transient "this agent's order was rejected ([Unavailable choice]);
+        # a re-request is coming" signal. It is RESOLVED the instant that agent receives its next
+        # request — so clear it whenever the agent gets a battle. Without this it lingers (the
+        # re-request makes the battle non-None, so the None-path clear below is skipped) and later
+        # wins the cross-wired race_get against a freshly-queued force-switch, stranding it →
+        # silent stall (the mutual-Arena-Trap deadlock, crashes/restart_err_*_7f93c7.txt).
+        if battle1 is not None:
+            self.agent1._trying_again.clear()
+        if battle2 is not None:
+            self.agent2._trying_again.clear()
         if battle1 is None:
             self.agent1._waiting.clear()
             self.agent2._trying_again.clear()
