@@ -610,6 +610,31 @@ def test_watchdog_leaves_a_fresh_cycle_running(tmp_path, monkeypatch):
     assert killed["n"] == 0 and cb._pending is not None
 
 
+def test_latest_recorded_eval_step():
+    from agents.training.eval_callback import latest_recorded_eval_step
+    assert latest_recorded_eval_step(None, None) == 0
+
+
+def test_resume_restores_eval_step_no_immediate_re_eval(tmp_path):
+    """Bot path: a resume restores _last_eval_step from metadata so it doesn't re-eval the
+    same checkpoint immediately (it waits for the next cadence boundary)."""
+    import json
+    (tmp_path / "metadata.json").write_text(json.dumps(
+        {"latest_eval": {"step": 46_963_120, "win_rate_mean": 0.7, "opponents": {}}}))
+    cb = _make_callback(model_dir=str(tmp_path))
+    cb._init_callback()
+    assert cb._last_eval_step == 46_963_120
+
+    cb.num_timesteps = 46_963_136                 # same 3.5M bucket → no eval
+    with patch.object(cb, "_launch_eval") as ml:
+        cb._on_step()
+        ml.assert_not_called()
+    cb.num_timesteps = 49_500_000                 # next boundary → eval
+    with patch.object(cb, "_launch_eval") as ml:
+        cb._on_step()
+        ml.assert_called_once()
+
+
 def test_replay_last_eval_publishes_to_tui_on_init(tmp_path, monkeypatch):
     """Resume: _init_callback re-publishes the most recent eval to the TUI."""
     import json as _json

@@ -45,6 +45,7 @@ from agents.training.eval_callback import (
     eval_run_nonce,
     eval_schedule,
     kill_eval_workers,
+    latest_recorded_eval_step,
     merge_eval_results,
     persist_eval_snapshot,
     prune_eval_traces,
@@ -172,6 +173,9 @@ class SelfPlayCallback(BaseCallback):
         # Resumed run: re-publish the last eval so the TUI panel isn't blank until the
         # next cycle (which can be millions of steps away).
         replay_last_eval_to_tui(self._model_dir, self._resume_eval_metadata)
+        # Restore the last eval step so a resume doesn't re-eval the same checkpoint
+        # immediately (it waits for the next cadence boundary instead).
+        self._last_eval_step = latest_recorded_eval_step(self._model_dir, self._resume_eval_metadata)
 
     def _schedule(self) -> tuple[int, int]:
         if self._debug:

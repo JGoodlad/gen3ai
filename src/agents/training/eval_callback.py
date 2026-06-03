@@ -511,6 +511,29 @@ def replay_last_eval_to_tui(model_dir: str | None, resume_eval_metadata: str | N
     print(f"[EVAL] resumed — re-published last eval (step {block.get('step', '?')}, "
           f"{block.get('win_rate_mean', 0.0) * 100:.1f}% mean) to the TUI")
 
+
+def latest_recorded_eval_step(model_dir: str | None, resume_eval_metadata: str | None = None) -> int:
+    """The most recent eval step recorded in metadata (this run's + the resumed checkpoint's),
+    or 0 if none.
+
+    Used to restore ``_last_eval_step`` on startup so a RESUMED run doesn't immediately re-eval
+    the same checkpoint: ``_last_eval_step`` is in-memory and resets to 0 each process, and the
+    resumed step is far past a cadence boundary, so a fresh 0 would fire an eval on the first
+    step. Restoring the genuine last-eval step makes the cadence purely step-based — restarts
+    neither duplicate the eval nor starve it (frequent restarts still eval once the step crosses
+    the next boundary). The panel isn't left blank: ``replay_last_eval_to_tui`` re-publishes the
+    numbers regardless.
+    """
+    step = 0
+    for path in (
+        os.path.join(model_dir, "metadata.json") if model_dir else None,
+        resume_eval_metadata,
+    ):
+        blk = read_latest_eval_block(path)
+        if blk:
+            step = max(step, int(blk.get("step", 0)))
+    return step
+
 # Per-opponent game caps. Eval now runs in a non-blocking subprocess, but on CPU
 # each game still costs wall-clock, so keep games-per-opponent bounded. The narrow
 # playstyle bots need only a coarse win-rate, so cap them at 100; the heuristic
@@ -760,6 +783,9 @@ class PerOpponentEvalCallback(BaseCallback):
         # Resumed run: re-publish the last eval so the TUI panel isn't blank until
         # the next cycle (which can be millions of steps away).
         self._replay_last_eval_to_tui()
+        # Restore the last eval step so a resume doesn't re-eval the same checkpoint
+        # immediately (it waits for the next cadence boundary instead).
+        self._last_eval_step = latest_recorded_eval_step(self._model_dir, self._resume_eval_metadata)
 
     def _on_step(self) -> bool:
         if self._pending is not None:

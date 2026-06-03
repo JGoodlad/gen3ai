@@ -399,6 +399,38 @@ def test_drain_waits_for_inflight_then_collects(tmp_path, monkeypatch):
     assert cb.logger.record.called
 
 
+def test_resume_restores_eval_step_no_immediate_re_eval(tmp_path):
+    """A resume must NOT re-eval the same checkpoint right away — it restores the last eval
+    step from metadata and waits for the next cadence boundary."""
+    import json
+    (tmp_path / "metadata.json").write_text(json.dumps(
+        {"latest_eval": {"step": 46_963_120, "win_rate_mean": 0.7, "opponents": {}}}))
+    cb = _make_callback(tmp_path)
+    cb._init_callback()
+    assert cb._last_eval_step == 46_963_120          # restored, not 0
+
+    # Resume step in the SAME 3.5M bucket as the last eval → no immediate eval.
+    cb.num_timesteps = 46_963_136
+    with patch.object(cb, "_launch_eval") as ml:
+        cb._on_step()
+        ml.assert_not_called()
+    # Crossing the next boundary (49M) → eval fires normally.
+    cb.num_timesteps = 49_500_000
+    with patch.object(cb, "_launch_eval") as ml:
+        cb._on_step()
+        ml.assert_called_once()
+
+
+def test_fresh_run_with_no_metadata_evals_at_first_boundary(tmp_path):
+    cb = _make_callback(tmp_path)          # tmp_path has no metadata.json
+    cb._init_callback()
+    assert cb._last_eval_step == 0
+    cb.num_timesteps = 2_000_000
+    with patch.object(cb, "_launch_eval") as ml:
+        cb._on_step()
+        ml.assert_called_once()
+
+
 def test_init_seeds_empty_pool(tmp_path):
     pool = _mock_pool()
     pool.is_empty.return_value = True
