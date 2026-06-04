@@ -239,6 +239,21 @@ restart — no manifest). Design lives in `designs/ai_v5/`. Key behaviors:
   the `:8001` training server. `selfplay_opponent_fuzz_test.py` covers the opponent load + legal
   play (both modes) + version check in-process via the local bridge (no server).
 
+## Opponent distillation (`--distill-opponents`, off by default)
+
+Distils the frozen self-play opponents into a **cheaper network** (the opponent forward is ~70% of
+worker CPU) for faster rollouts — implemented in **`distill/` (has its own CLAUDE.md)**. The governing
+constraint is the per-step barrier: distillation is **all-or-nothing** (one full-opponent worker
+straggles and gates the batch), so the pool is only ever 100% distilled or 100% full. A single
+idempotent **reconcile loop** (`DistilledOpponentManager`, run by `SelfPlayCallback` each eval + on a
+throttle) keeps the on-disk distilled set in sync with the pool — **backfill on enable ≡ steady-state**,
+no-op when nothing's missing — spawning the `distill/worker.py` subprocess per snapshot (gate =
+fidelity + head-to-head). Distilled artifacts + their gate manifests live in `models/<run>/distilled/`
+(the manifest is the per-snapshot source of truth; `summary.json` gets only a re-publish block);
+cleanup is automatic via the reconcile's window-eviction. The env's `MaskableAgentWrapper` does the
+atomic full↔distilled opponent switch (`set_distill_active`). **Full design: `designs/ai_v5/distill_integration.md`
+(§8 all-or-nothing, §7 restart resilience); module map: `src/agents/training/distill/CLAUDE.md`.**
+
 ## Process liveness guards (`watchdog.py`)
 
 Two daemon-thread watchdogs keep a hung/abandoned run from lingering:

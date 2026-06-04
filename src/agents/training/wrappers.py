@@ -54,6 +54,11 @@ class MaskableAgentWrapper(SingleAgentWrapper):
         self._scanned_generation = -1   # -1 forces a pool re-scan on the first pool selection
         self._has_pool_model = False    # a snapshot is loaded into the pool player (this gen)
         self._rng = random.Random(rng_seed)  # per-env seed → envs don't pick in lockstep
+        # All-or-nothing distillation (distill_integration.md §8): when active, EVERY pool opponent
+        # is the cheap distilled variant (sampled from the deployable set); when not, all full.
+        self._distill_active = False
+        self._distill_steps: set[int] = set()
+        self._loaded_distilled = False  # whether the currently-loaded pool model is distilled
 
     def set_self_play_target(self, fraction: float, generation: int) -> None:
         """Live curriculum update (called via ``VecEnv.env_method`` after each eval): the
@@ -61,6 +66,13 @@ class MaskableAgentWrapper(SingleAgentWrapper):
         triggers a pool re-scan (to pick up newly seeded/promoted snapshots)."""
         self._self_play_fraction = float(fraction)
         self._target_generation = int(generation)
+
+    def set_distill_active(self, active: bool, steps=None) -> None:
+        """Pushed by the trainer's reconcile each eval (via ``env_method``): whether to use the
+        cheap distilled opponents pool-wide, and which snapshot steps are deployable (gate-passed).
+        All-or-nothing — ``active`` is true only when the *whole* deployable set is distilled."""
+        self._distill_active = bool(active)
+        self._distill_steps = set(steps or ())
 
     def _select_episode_opponent(self) -> None:
         """Pick this episode's opponent from the live fraction. Pool → use the per-generation
@@ -79,13 +91,26 @@ class MaskableAgentWrapper(SingleAgentWrapper):
             # Re-sample+load on a new generation, or until we first have a model loaded (the pool
             # may still be empty right after the seed crosses the threshold). Steady state within
             # a generation: neither branch runs → no scan, no load → the opponent is reused.
-            if self._target_generation != self._scanned_generation or not self._has_pool_model:
+            # Reload on a new generation, when no model is loaded yet, OR when the distilled/full
+            # mode flipped (the atomic all-or-nothing switch). Steady state within a generation:
+            # none fire → the opponent (distilled or full) is reused, preserving throughput.
+            if (self._target_generation != self._scanned_generation or not self._has_pool_model
+                    or self._distill_active != self._loaded_distilled):
                 self._pool._scan()
                 if not self._pool.is_empty():
-                    entry = self._pool.sample()
-                    self._pool_player.model = self._pool.load_model(entry)  # LRU-cached
-                    self._has_pool_model = True
-                    self._scanned_generation = self._target_generation
+                    if self._distill_active and self._distill_steps:
+                        entry = self._pool.sample_from(self._distill_steps)  # deployable distilled only
+                        if entry is not None:
+                            self._pool_player.model = self._pool.load_distilled_opponent(entry)
+                            self._has_pool_model = True
+                            self._loaded_distilled = True
+                            self._scanned_generation = self._target_generation
+                    if not (self._distill_active and self._loaded_distilled):
+                        entry = self._pool.sample()                          # full model
+                        self._pool_player.model = self._pool.load_model(entry)  # LRU-cached
+                        self._has_pool_model = True
+                        self._loaded_distilled = False
+                        self._scanned_generation = self._target_generation
             if self._has_pool_model:
                 self.opponent = self._pool_player
                 return

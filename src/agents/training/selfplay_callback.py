@@ -28,6 +28,7 @@ from __future__ import annotations
 import os
 import shutil
 import subprocess
+import sys
 import time
 
 from stable_baselines3.common.callbacks import BaseCallback
@@ -116,6 +117,8 @@ class SelfPlayCallback(BaseCallback):
         self_play_temp: float = 1.0,
         n_workers: int = 3,
         eval_device: str = "cpu",
+        distill_opponents: bool = False,
+        distill_device: str = "cpu",
         eval_concurrency: int = _EVAL_SUBPROCESS_CONCURRENCY,
         keep_eval_snapshots: int = 10,
         keep_eval_trace_steps: int = 20,
@@ -163,6 +166,28 @@ class SelfPlayCallback(BaseCallback):
         # workers via env_method so they re-scan the pool dir and pick up new snapshots live.
         self._pool_generation = 0
 
+        # ── Opponent distillation (all-or-nothing; distill_integration.md §8) ──
+        # One idempotent reconcile loop keeps the on-disk distilled set == the pool's snapshots:
+        # backfill on enable + steady-state are the same call; no-op when nothing's missing.
+        self._distill_device = distill_device
+        self._distill_mgr = None
+        self._last_distill_push = None
+        self._last_distill_reconcile = 0
+        self._distill_reconcile_interval = 4000 if debug else 100_000
+        if distill_opponents:
+            from agents.training.distill.manager import DistilledOpponentManager
+            self._distill_mgr = DistilledOpponentManager(
+                ready_steps_fn=self._pool.gate_passed_steps,
+                list_artifacts_fn=self._pool.distilled_artifact_steps,
+                run_distill_fn=self._spawn_distill,
+                poll_fn=self._poll_distill,
+                remove_fn=self._pool.remove_distilled,
+                recover_fn=self._pool.failed_distill_manifests,   # restart-safe escalation
+                max_concurrent=max(1, n_workers),
+            )
+            print("[DISTILL] opponent distillation ENABLED — all-or-nothing; "
+                  "the first reconcile backfills the pool, then steady-state.")
+
     # ── SB3 lifecycle ──────────────────────────────────────────────────────
 
     def _init_callback(self) -> None:
@@ -194,6 +219,12 @@ class SelfPlayCallback(BaseCallback):
                 self._collect_pending()
             elif now - self._pending.get("launched_at", now) > _EVAL_CYCLE_TIMEOUT_SEC:
                 self._abort_pending_cycle()   # hung worker → don't wedge eval forever
+        # Reconcile distilled opponents on a throttle (harvests finished jobs + flips the atomic
+        # full↔distilled switch promptly during backfill, without waiting for the next eval cycle).
+        if (self._distill_mgr is not None
+                and self.num_timesteps - self._last_distill_reconcile >= self._distill_reconcile_interval):
+            self._last_distill_reconcile = self.num_timesteps
+            self._reconcile_distill()
         if self.num_timesteps == 0:
             return True
         freq, _ = self._schedule()
@@ -485,6 +516,9 @@ class SelfPlayCallback(BaseCallback):
         # ── Push the live curriculum target to every training env (after any seed/promote so
         #    the pool-generation bump reaches the workers this cycle) + persist resume state ──
         self._push_self_play_target(sf)
+        # Reconcile distilled opponents now that any seed/promote bumped the generation: distill
+        # the new snapshot (steady-state) or, on first enable, the whole pool (backfill).
+        self._reconcile_distill()
         if self._model_dir or self._pool:
             self._pool.persist_summary(
                 win_rate_vs_bots=self.win_rate_vs_bots,
@@ -508,6 +542,82 @@ class SelfPlayCallback(BaseCallback):
             self.training_env.env_method("set_self_play_target", float(fraction), self._pool_generation)
         except Exception as e:  # noqa: BLE001 — telemetry/curriculum push must never break eval
             print(f"[SELFPLAY] set_self_play_target push failed (non-fatal): {e}")
+
+    # ── Opponent distillation reconcile (idempotent; distill_integration.md §8) ──────────────
+    def _reconcile_distill(self) -> None:
+        """One reconcile tick: make the on-disk distilled set match the pool, then push the atomic
+        all-or-nothing switch to the envs (only when it changed) and log the health metrics. No-op
+        when nothing is missing. Never fatal — distillation is strictly additive."""
+        if self._distill_mgr is None:
+            return
+        try:
+            self._pool._scan()
+            active = [e.step for e in self._pool._entries]
+            r = self._distill_mgr.reconcile(active)
+            key = (r.all_distilled, tuple(sorted(r.sampleable)))
+            if key != self._last_distill_push:
+                self._last_distill_push = key
+                try:
+                    self.training_env.env_method("set_distill_active", r.all_distilled, sorted(r.sampleable))
+                except Exception as e:  # noqa: BLE001
+                    print(f"[DISTILL] set_distill_active push failed (non-fatal): {e}")
+                # Persist a small re-publish block (the per-snapshot record lives in the manifests;
+                # this is the at-a-glance deployment state, merged into summary.json on change).
+                if self._model_dir:
+                    self._pool.persist_summary(distill={
+                        "all_distilled": r.all_distilled, "frac": round(r.frac_distilled, 3),
+                        "n_active": r.n_active, "n_ready": r.n_ready, "n_exhausted": r.n_exhausted,
+                        "deployed_steps": sorted(r.sampleable) if r.all_distilled else []})
+            self.logger.record("distill/frac_active_opponents_distilled", r.frac_distilled)
+            self.logger.record("distill/all_distilled", float(r.all_distilled))
+            self.logger.record("distill/n_running", r.n_running)
+            self.logger.record("distill/n_exhausted", r.n_exhausted)
+            self.logger.record("distill/n_ready", r.n_ready)
+            if r.spawned:
+                print(f"[DISTILL] reconcile: spawned {sorted(r.spawned)} "
+                      f"(active={r.n_active} ready={r.n_ready} running={r.n_running} "
+                      f"all_distilled={r.all_distilled})")
+        except Exception as e:  # noqa: BLE001 — reconcile must never break training
+            print(f"[DISTILL] reconcile failed (non-fatal): {e}")
+
+    def _spawn_distill(self, step: int, config: dict):
+        """Spawn the (async, GPU-ok) distill+gate subprocess for a snapshot. Returns (proc, step);
+        None if the snapshot isn't in the pool. Output streams to the run dir for forensics."""
+        import json as _json
+        import subprocess
+        entry = next((e for e in self._pool._entries if e.step == step), None)
+        if entry is None:
+            return None
+        cmd = [sys.executable, "-m", "agents.training.distill.worker",
+               "--snapshot", str(entry.path), "--step", str(step),
+               "--distilled-dir", str(self._pool.distilled_dir),
+               "--config", _json.dumps(config), "--device", self._distill_device]
+        env = dict(os.environ)
+        src = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+        env["PYTHONPATH"] = src + (":" + env["PYTHONPATH"] if env.get("PYTHONPATH") else "")
+        self._pool.distilled_dir.mkdir(parents=True, exist_ok=True)
+        # log lives in distilled/ so it's cleaned with the snapshot's other artifacts on eviction
+        log = open(self._pool.distilled_log(step), "w") if self._model_dir else subprocess.DEVNULL
+        proc = subprocess.Popen(cmd, env=env, stdout=log, stderr=subprocess.STDOUT)
+        return (proc, step)
+
+    def _poll_distill(self, handle):
+        """None = still running; dict = finished. A crash with no manifest reads as failed, so the
+        reconcile loop just re-triggers it next tick (idempotent + self-healing)."""
+        import json as _json
+        if handle is None:
+            return {"passed": False, "speedup": 0.0}
+        proc, step = handle
+        if proc.poll() is None:
+            return None
+        mf = self._pool.distilled_manifest(step)
+        if mf.exists():
+            try:
+                m = _json.loads(mf.read_text())
+                return {"passed": bool(m.get("passed")), "speedup": float(m.get("speedup") or 0.0)}
+            except (ValueError, OSError):
+                pass
+        return {"passed": False, "speedup": 0.0}
 
     def _record_opponent_default_stats(self, tui: dict) -> None:
         """Query the live training envs' self-play opponent default/redecide counters."""

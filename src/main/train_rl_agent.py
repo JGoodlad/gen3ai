@@ -416,6 +416,11 @@ async def main():
                              "keeps only the N most-recent eval step dirs under eval_traces/ (0 = keep all). "
                              "`python -m main.prober.groom` is the manual fallback for finished runs.")
     parser.add_argument("--self-play", action="store_true", default=False, help="Enable self-play snapshot pool as training opponents")
+    parser.add_argument("--distill-opponents", "--distill_opponents", dest="distill_opponents",
+                        action="store_true", default=False,
+                        help="Distill self-play opponents into a cheaper network for faster rollouts "
+                             "(all-or-nothing: backfill the whole pool on enable, then atomic switch; "
+                             "fail-closed gate + auto-revert). See designs/ai_v5/distill_integration.md.")
     parser.add_argument("--snapshot-dir", type=str, default=None, help="Pool directory (default: <run_dir>/snapshots)")
     parser.add_argument("--promote-threshold", type=float, default=0.65, help="Win rate vs. pool to trigger snapshot promotion")
     parser.add_argument("--self-play-temp", type=float, default=1.0,
@@ -540,6 +545,9 @@ async def main():
                         pool_dir=snapshot_dir, current_version=opponent_version,
                         device=opponent_device,
                     )
+                    # Distilled opponents are rebuilt from the obs layout on load (env-side).
+                    if getattr(args, "distill_opponents", False):
+                        pool.set_distill_layout(Gen3ObservationEncoder(mappings).get_layout())
                     # model=None placeholder — the wrapper swaps in a sampled snapshot before
                     # ever using it. Stochastic + temperature so the learner trains against the
                     # policy's full action distribution (richer, less exploitable than argmax).
@@ -610,6 +618,8 @@ async def main():
         _cv = _current_model_version(mappings)
         _opp_version = _cv
         _pool = SnapshotPool(pool_dir=_snapshot_dir, current_version=_cv, device=args.device)
+        if getattr(args, "distill_opponents", False):
+            _pool.set_distill_layout(Gen3ObservationEncoder(mappings).get_layout())
         _persisted_wr = _pool.load_persisted_win_rate()
         _initial_self_play_fraction = 1.0 - heuristic_fraction(_persisted_wr)
         emit(
@@ -836,6 +846,8 @@ async def main():
             # trainee infers. So double the work-stealing pool to keep wall-clock comparable.
             n_workers=args.eval_workers * 2,
             eval_device=args.eval_device,
+            distill_opponents=args.distill_opponents,
+            distill_device=args.eval_device,  # CPU by default → no GPU contention with training
             keep_eval_snapshots=args.keep_eval_snapshots,
             keep_eval_trace_steps=args.keep_eval_trace_steps,
             resume_eval_metadata=_resume_meta,

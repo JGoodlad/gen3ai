@@ -96,6 +96,8 @@ class SnapshotPool:
         self._cache_size = lru_cache_size
         self._entries: list[SnapshotEntry] = []
         self._model_cache: OrderedDict[str, MaskablePPO] = OrderedDict()
+        self._distilled_cache: OrderedDict[int, object] = OrderedDict()   # step -> DistilledOpponentModel
+        self._distill_layout: dict | None = None
         self.pool_dir.mkdir(parents=True, exist_ok=True)
         self._scan()
 
@@ -208,6 +210,108 @@ class SnapshotPool:
             )
             self._model_cache[key] = loaded
         return self._model_cache[key]
+
+    # ── Distilled-opponent variants (all-or-nothing; see distill_integration.md §8) ────────
+    # The distilled `.pt` + gate `.json` manifest live in `<pool>/distilled/` next to the
+    # snapshots, so they survive restarts (reconstructed by scanning the dir) and slide out with
+    # the window. The manager (reconcile loop) uses gate_passed_steps/distilled_artifact_steps/
+    # remove_distilled; the env loads the distilled adapter via load_distilled_opponent.
+    @property
+    def distilled_dir(self) -> Path:
+        # Sibling of snapshots/ in the run output dir (models/<run>/distilled/), next to
+        # best_model/ + eval_traces/ — not buried under snapshots/.
+        return self.pool_dir.parent / "distilled"
+
+    def distilled_pt(self, step: int) -> Path:
+        return self.distilled_dir / f"snapshot_{step:012d}.distilled.pt"
+
+    def distilled_manifest(self, step: int) -> Path:
+        return self.distilled_dir / f"snapshot_{step:012d}.distilled.json"
+
+    def set_distill_layout(self, layout: dict) -> None:
+        """Provide the obs layout so distilled students can be rebuilt on load (env-side)."""
+        self._distill_layout = layout
+
+    def gate_passed_steps(self) -> set[int]:
+        """Steps whose distilled variant exists AND passed the gate (manifest ``passed: true``)."""
+        import json
+        out: set[int] = set()
+        if not self.distilled_dir.exists():
+            return out
+        for mf in self.distilled_dir.glob("snapshot_*.distilled.json"):
+            try:
+                m = json.loads(mf.read_text())
+            except (ValueError, OSError):
+                continue
+            step = int(m.get("step", -1))
+            if m.get("passed") and step >= 0 and self.distilled_pt(step).exists():
+                out.add(step)
+        return out
+
+    def distilled_artifact_steps(self) -> set[int]:
+        """Every step with a distilled .pt on disk (passed or not) — for eviction cleanup."""
+        if not self.distilled_dir.exists():
+            return set()
+        return {int(p.name.split("_")[1].split(".")[0])
+                for p in self.distilled_dir.glob("snapshot_*.distilled.pt")}
+
+    def distilled_log(self, step: int) -> Path:
+        return self.distilled_dir / f"distill_{step:012d}.log"
+
+    def remove_distilled(self, step: int) -> None:
+        """Delete every artifact for a snapshot (.pt + manifest + log + any stale .tmp). Called by
+        the reconcile loop when the snapshot slides out of the pool window — so the distilled set
+        is bounded by the pool size with no separate GC."""
+        for p in (self.distilled_pt(step), self.distilled_manifest(step), self.distilled_log(step),
+                  Path(str(self.distilled_pt(step)) + ".tmp"),
+                  Path(str(self.distilled_manifest(step)) + ".tmp")):
+            p.unlink(missing_ok=True)
+        self._distilled_cache.pop(step, None)
+
+    def failed_distill_manifests(self) -> dict[int, dict]:
+        """{step: manifest} for distilled attempts that did NOT pass the gate — lets a restarted
+        manager recover its escalation state (which ladder rung was tried) from disk, so it doesn't
+        re-distill a known-unfit snapshot from scratch."""
+        import json
+        out: dict[int, dict] = {}
+        if not self.distilled_dir.exists():
+            return out
+        for mf in self.distilled_dir.glob("snapshot_*.distilled.json"):
+            try:
+                m = json.loads(mf.read_text())
+            except (ValueError, OSError):
+                continue
+            if not m.get("passed"):
+                out[int(m.get("step", -1))] = m
+        return out
+
+    def load_distilled_opponent(self, entry: SnapshotEntry):
+        """LRU-cached DistilledOpponentModel adapter for a snapshot (duck-typed like MaskablePPO
+        for RLPlayer). Requires ``set_distill_layout`` first."""
+        from agents.training.distill.student import load_distilled, DistilledOpponentModel
+        if self._distill_layout is None:
+            raise RuntimeError("set_distill_layout() must be called before load_distilled_opponent()")
+        step = entry.step
+        if step in self._distilled_cache:
+            self._distilled_cache.move_to_end(step)
+            return self._distilled_cache[step]
+        if len(self._distilled_cache) >= self._cache_size:
+            self._distilled_cache.popitem(last=False)
+        student = load_distilled(str(self.distilled_pt(step)), self._distill_layout, device=self._device)
+        adapter = DistilledOpponentModel(student, device=self._device)
+        self._distilled_cache[step] = adapter
+        return adapter
+
+    def sample_from(self, steps) -> "SnapshotEntry | None":
+        """Recency-weighted sample restricted to ``steps`` (the distilled-deployable set). None if
+        none of those steps are in the pool."""
+        allowed = [e for e in self._entries if e.step in set(steps)]
+        if not allowed:
+            return None
+        ss = [e.step for e in allowed]
+        span = max(ss[-1] - ss[0], 1)
+        weights = [1.0 + self.recency_weight * (e.step - ss[0]) / span for e in allowed]
+        return random.choices(allowed, weights=weights, k=1)[0]
 
     # ── Resume state persistence (summary.json) ────────────────────────────
 

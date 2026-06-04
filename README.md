@@ -152,6 +152,28 @@ Single environment with full trace logging — no 96-env overhead:
 export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 src/main/train_rl_agent.py --debug
 ```
 
+### Self-play opponent distillation (`--distill-opponents`)
+
+On a `--self-play` run you can distil the frozen pool opponents into a much cheaper network for
+faster rollouts — the opponent forward is ~70% of env-worker CPU, so a faithful ~4.7–6.4× cheaper
+opponent is roughly **+15–25% rollout throughput at near-zero quality cost**. Off by default; add
+the flag to a self-play launch (directly or via the launcher):
+
+```bash
+... src/main/train_rl_agent.py --self-play --distill-opponents ...
+```
+
+It is **all-or-nothing** — the per-step `SubprocVecEnv` barrier means a single worker on the full
+teacher straggles and gates the batch, so the pool is only ever 100% distilled or 100% full. An
+idempotent reconcile loop handles this with no modes: enabling it **backfills the whole pool** (incl.
+the sentinels) on the idle CPU, then **atomically switches** the pool to the cheap opponents; each new
+promotion is distilled *before* it becomes an opponent. A fail-closed **gate** (fidelity + a greedy
+head-to-head vs the teacher) validates each one, with capacity escalation + auto-revert on drift.
+Distilled networks + their gate manifests land in `models/<run>/distilled/` (auto-cleaned as the pool
+window slides); distilling runs in a non-blocking subprocess on `--eval-device` (CPU by default, no
+GPU contention). Full design + empirical results: `designs/ai_v5/distill_integration.md`; module map:
+`src/agents/training/distill/CLAUDE.md`.
+
 Checkpoints save to `models/run_<timestamp>/` automatically. TensorBoard logs always write to `./tensorboard/` in the repo root.
 
 ### TensorBoard
