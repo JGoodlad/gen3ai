@@ -48,3 +48,19 @@ def test_does_not_mutate_input():
     args = ["--steps", "100"]
     _apply_default_showdown_port(args)
     assert args == ["--steps", "100"]
+
+
+def test_bridge_mode_injects_no_port():
+    # --use-showdown-bridge connects to no server, so no default port is injected (a phantom
+    # :8001 would mislead the TUI / suggest a server is in use when none is).
+    out = _apply_default_showdown_port(["--use-showdown-bridge", "--steps", "100"])
+    assert _peek_arg(out, "--showdown-port", type_=int) is None
+    assert "--showdown-port" not in out
+
+
+def test_bridge_mode_keeps_explicit_port_but_it_is_inert():
+    # An explicit port alongside the bridge is left as-is (it's simply ignored at runtime —
+    # the bridge never connects), but we don't inject the default on top of it.
+    out = _apply_default_showdown_port(["--use-showdown-bridge", "--showdown-port", "9001"])
+    assert _peek_arg(out, "--showdown-port", type_=int) == 9001
+    assert out.count("--showdown-port") == 1

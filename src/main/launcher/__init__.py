@@ -98,7 +98,8 @@ def main() -> None:
     child_args = _strip_launcher_args(sys.argv[1:])
     # Launcher sessions are long-lived: default them to the dedicated training server
     # (8001) so dev-server churn on 8000 can't drop every worker's connection mid-run.
-    # An explicit --showdown-port still wins.
+    # An explicit --showdown-port still wins; --use-showdown-bridge needs no server so no
+    # default port is injected (both handled inside _apply_default_showdown_port).
     child_args = _apply_default_showdown_port(child_args)
     try:
         run(

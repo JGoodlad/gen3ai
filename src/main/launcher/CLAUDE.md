@@ -81,6 +81,13 @@ The launcher **defaults `--showdown-port` to 8001** (`DEFAULT_TRAINING_SHOWDOWN_
 where a routine dev `npm run stop` would drop every worker's connection at once and the
 connection guard would crash the run. An explicit `--showdown-port` (any spelling) always wins;
 the resolved port shows in the TUI events panel (`🔌 Showdown server :8001`). This default lives
-**only** here — `train_rl_agent.py` run directly still defaults to 8000. See the root
+**only** here — `train_rl_agent.py` run directly still defaults to 8000.
+
+**Bridge mode is port-free.** When `--use-showdown-bridge` is in the child args,
+`_apply_default_showdown_port` injects **no** default port and the events panel shows
+`🌉 Transport: in-process bridge (no Showdown server)` instead of a port — the bridge connects to
+no server at all (training AND eval run in-process), so any `--showdown-port` passed alongside it
+is inert (built into `server_config` but never connected to, so it can't even disturb the live
+:8001 server). Guarded by `default_port_test.py::test_bridge_mode_*`. See the root
 `CLAUDE.md` → Showdown Server, and the port-threading detail in
 `src/agents/training/CLAUDE.md`.

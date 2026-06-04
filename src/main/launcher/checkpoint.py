@@ -125,7 +125,12 @@ def _apply_default_showdown_port(
     args: list, default_port: int = DEFAULT_TRAINING_SHOWDOWN_PORT
 ) -> list:
     """Inject ``--showdown-port <default_port>`` into the child args when the user
-    didn't pass one. An explicit ``--showdown-port`` (any spelling) always wins."""
+    didn't pass one. An explicit ``--showdown-port`` (any spelling) always wins.
+
+    ``--use-showdown-bridge`` connects to no Showdown server at all (training AND eval run
+    in-process), so no default port is injected — a phantom port would only mislead the TUI."""
+    if "--use-showdown-bridge" in args:
+        return args
     if _peek_arg(args, "--showdown-port", type_=int) is not None:
         return args
     return _set_arg(args, "--showdown-port", str(default_port))
