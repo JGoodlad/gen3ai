@@ -60,6 +60,95 @@ def test_local_battles_complete():
 
 
 @pytest.mark.integration
+def test_concurrent_local_battles_complete():
+    """`concurrency>1` overlaps battles (each its own subprocess) but serializes each battle's
+    team→creation, mirroring the server. Every battle must still finish with a VALID own-team
+    (a 6-mon `_teambuilder_team`) — a corrupted/missing team would mean the shared
+    `_current_packed_team` raced, which the start-lock must prevent."""
+    teams = _teams()
+
+    async def go():
+        p1 = RandomPlayer(
+            battle_format="gen3ou", team=Gen3Teambuilder(teams),
+            account_configuration=AccountConfiguration("LocConcP1", None),
+            start_listening=False, start_timer_on_battle_start=False,
+        )
+        p2 = RandomPlayer(
+            battle_format="gen3ou", team=Gen3Teambuilder(teams),
+            account_configuration=AccountConfiguration("LocConcP2", None),
+            start_listening=False, start_timer_on_battle_start=False,
+        )
+        await run_local_battles(p1, p2, 12, concurrency=4)
+        return p1, p2
+
+    p1, p2 = asyncio.run(go())
+
+    assert p1.n_finished_battles == 12
+    assert p2.n_finished_battles == 12
+    assert len(p1._battles) == 12  # 12 distinct, uniquely-tagged battles ran concurrently
+    for battle in p1._battles.values():
+        assert battle.finished
+        assert battle.turn > 0
+        assert battle.player_role == "p1"
+        # Each battle's own-team was read under the start-lock → a full, valid team (no race).
+        assert battle._teambuilder_team is not None
+        assert len(battle._teambuilder_team) == 6
+
+
+class _IsolationProbe(RandomPlayer):
+    """A RandomPlayer that asserts the two concurrency-safety invariants eval relies on:
+
+    1. ``choose_move`` is ATOMIC — set a shared scratch attr, then (after the real decision)
+       check it's still ours. If a concurrent battle's ``choose_move`` ran mid-call it would
+       clobber it. (This is why per-decision ``self._`` state on the real model/bots is safe.)
+    2. PER-BATTLE state doesn't cross-contaminate — record each battle's turns keyed by tag;
+       each battle must see a monotonic-nondecreasing turn sequence (no other battle's turns).
+    """
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.seen: dict = {}
+        self._scratch = None
+
+    def choose_move(self, battle):
+        self._scratch = battle.battle_tag
+        order = super().choose_move(battle)
+        assert self._scratch == battle.battle_tag, "choose_move was interleaved mid-call!"
+        turns = self.seen.setdefault(battle.battle_tag, [])
+        assert not turns or battle.turn >= turns[-1], (
+            f"per-battle state cross-contaminated: {battle.battle_tag} went "
+            f"{turns[-1]} -> {battle.turn}"
+        )
+        turns.append(battle.turn)
+        return order
+
+
+@pytest.mark.integration
+def test_concurrent_per_battle_state_isolation():
+    """Concurrent battles on the SAME two players must not corrupt per-battle state — the exact
+    property the real eval (per-tag trackers / reward / forensic + atomic choose_move) depends on,
+    and that the server eval already relies on. Probe players fail loudly on any violation."""
+    teams = _teams()
+
+    async def go():
+        p1 = _IsolationProbe(
+            battle_format="gen3ou", team=Gen3Teambuilder(teams),
+            account_configuration=AccountConfiguration("IsoP1", None), start_listening=False,
+        )
+        p2 = _IsolationProbe(
+            battle_format="gen3ou", team=Gen3Teambuilder(teams),
+            account_configuration=AccountConfiguration("IsoP2", None), start_listening=False,
+        )
+        await run_local_battles(p1, p2, 10, concurrency=5)
+        return p1, p2
+
+    p1, p2 = asyncio.run(go())
+    # Each side tracked exactly its 10 battles, each a self-consistent monotonic turn sequence.
+    assert len(p1.seen) == 10 and len(p2.seen) == 10
+    assert all(len(turns) > 0 for turns in p1.seen.values())
+
+
+@pytest.mark.integration
 def test_repeated_calls_use_unique_tags():
     """Regression: calling ``run_local_battles`` repeatedly with the SAME players (the
     chunked / time-budget fuzz pattern) must give every battle a unique tag.

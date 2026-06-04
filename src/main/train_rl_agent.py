@@ -55,6 +55,8 @@ from agents.training.snapshot_pool import SnapshotPool, heuristic_fraction
 from agents.training.selfplay_callback import SelfPlayCallback
 from agents.training.wrappers import MaskableAgentWrapper
 from agents.training.gen3_env import Gen3Env
+from utils.bridge.bridge_session import attach_bridge_transport
+from utils.bridge.local_battle_runner import run_local_battles
 from agents.training.reward_manager import Gen3RewardManager
 from agents.training.stall import StallConfig
 from agents.training.watchdog import start_subprocess_watchdog, start_orphan_watchdog
@@ -350,6 +352,13 @@ async def main():
                         help="Local Showdown server port (default 8000). Sets the port for the trainee, "
                              "eval, and self-play clients. Start the server on the matching port, "
                              "e.g. npm run showdown -- <port>.")
+    parser.add_argument("--use-showdown-bridge", action="store_true", default=False,
+                        help="Use the in-process BattleStream bridge instead of a websocket "
+                             "Showdown server: each training env owns a local sim subprocess and "
+                             "eval/self-play play in-process via run_local_battles — no server, no "
+                             "port, no /challenge connection storm, deterministic delivery. Covers "
+                             "BOTH training AND eval, so a run needs no Showdown server at all. "
+                             "Default False (websocket).")
     parser.add_argument(
         "--self-play-use-cpu",
         action=argparse.BooleanOptionalAction,
@@ -425,7 +434,11 @@ async def main():
         if args.showdown_port is None
         else localhost_server_configuration(args.showdown_port)
     )
-    emit(f"🔌 Showdown server: {server_config.websocket_url}")
+    if args.use_showdown_bridge:
+        emit("🌉 Transport: in-process BattleStream bridge for BOTH training and eval "
+             "(no Showdown server needed — --showdown-port ignored)")
+    else:
+        emit(f"🔌 Showdown server: {server_config.websocket_url}")
 
     annealing_mode = args.anneal_lr_start_steps is not None
     if annealing_mode:
@@ -497,7 +510,14 @@ async def main():
                     reward_fn=reward_factory(log_level=env_log_level),
                     server_configuration=server_config,
                     account_configuration1=AccountConfiguration(env_username, "password"),
+                    # Bridge mode: don't open websockets — the in-process sim is the transport.
+                    start_listening=not args.use_showdown_bridge,
                 )
+                if args.use_showdown_bridge:
+                    # Swap the two _EnvPlayer agents' websocket transport for a local
+                    # BattleStream subprocess. Everything above the transport (obs, reward,
+                    # mask, wrappers) is unchanged — see utils/bridge/bridge_session.py.
+                    attach_bridge_transport(env, battle_format=BATTLE_FORMAT)
 
                 # Opponents are pure DECISION FUNCTIONS over env.battle2 (env.agent1/agent2 do
                 # the networking), so build them start_listening=False — no idle connections,
@@ -636,6 +656,9 @@ async def main():
     async def evaluate_model_random(model):
         ts = datetime.now().strftime('%H%M%S')
         n = args.eval_battles
+        # Bridge eval: build every player start_listening=False and play in-process via
+        # run_local_battles (no server). Same flag as training; lets --debug + bridge run serverless.
+        _eval_sl = not args.use_showdown_bridge
         print(f"\nFinal Evaluation (Session {ts}, Battles: {n}, Concurrency: {args.eval_concurrency})...")
 
         rl_player = RLPlayer(
@@ -647,6 +670,7 @@ async def main():
             account_configuration=AccountConfiguration(f"RLFinal{ts}", "password"),
             max_concurrent_battles=args.eval_concurrency,
             stochastic=False,  # final eval = greedy policy
+            start_listening=_eval_sl,
         )
 
         final_opponents = [
@@ -655,30 +679,35 @@ async def main():
                 server_configuration=server_config,
                 account_configuration=AccountConfiguration(f"FinalRand{ts}", "password"),
                 max_concurrent_battles=args.eval_concurrency,
+                start_listening=_eval_sl,
             )),
             (opponent_name(SimpleHeuristicsPlayer), SimpleHeuristicsPlayer(
                 battle_format=BATTLE_FORMAT, team=opponent_teambuilder,
                 server_configuration=server_config,
                 account_configuration=AccountConfiguration(f"FinalHeur{ts}", "password"),
                 max_concurrent_battles=args.eval_concurrency,
+                start_listening=_eval_sl,
             )),
             (opponent_name(Gen3StallerPlayer), Gen3StallerPlayer(
                 battle_format=BATTLE_FORMAT, team=opponent_teambuilder,
                 server_configuration=server_config,
                 account_configuration=AccountConfiguration(f"FinalStall{ts}", "password"),
                 max_concurrent_battles=args.eval_concurrency,
+                start_listening=_eval_sl,
             )),
             (opponent_name(Gen3AggressivePlayer), Gen3AggressivePlayer(
                 battle_format=BATTLE_FORMAT, team=opponent_teambuilder,
                 server_configuration=server_config,
                 account_configuration=AccountConfiguration(f"FinalAggr{ts}", "password"),
                 max_concurrent_battles=args.eval_concurrency,
+                start_listening=_eval_sl,
             )),
             (opponent_name(Gen3SetupSweepPlayer), Gen3SetupSweepPlayer(
                 battle_format=BATTLE_FORMAT, team=opponent_teambuilder,
                 server_configuration=server_config,
                 account_configuration=AccountConfiguration(f"FinalSetup{ts}", "password"),
                 max_concurrent_battles=args.eval_concurrency,
+                start_listening=_eval_sl,
             )),
         ]
         for _cls, _uname in [
@@ -692,6 +721,7 @@ async def main():
                 server_configuration=server_config,
                 account_configuration=AccountConfiguration(_uname, "password"),
                 max_concurrent_battles=args.eval_concurrency,
+                start_listening=_eval_sl,
             )))
 
         win_rates: dict[str, float] = {}
@@ -700,7 +730,13 @@ async def main():
                 rl_player.reset_battles()
             print(f"  vs {name} [{n} battles]...")
             start_time = datetime.now()
-            await rl_player.battle_against(opponent, n_battles=n)
+            if args.use_showdown_bridge:
+                # Overlap games like the server does; cap the Node-process fan-out (eval_concurrency
+                # defaults to 100, which would spawn 100 sim children).
+                await run_local_battles(rl_player, opponent, n,
+                                        concurrency=min(args.eval_concurrency, 8))
+            else:
+                await rl_player.battle_against(opponent, n_battles=n)
             duration = datetime.now() - start_time
             wr = rl_player.n_won_battles / rl_player.n_finished_battles
             win_rates[name] = wr
@@ -791,6 +827,7 @@ async def main():
             model_dir=model_dir,
             server_config=server_config,
             showdown_port=args.showdown_port,
+            use_showdown_bridge=args.use_showdown_bridge,
             best_model_save_path=os.path.join(model_dir, "best_model"),
             promote_threshold=args.promote_threshold,
             self_play_temp=args.self_play_temp,
@@ -816,6 +853,7 @@ async def main():
             n_workers=args.eval_workers,
             eval_device=args.eval_device,
             showdown_port=args.showdown_port,
+            use_showdown_bridge=args.use_showdown_bridge,
             resume_eval_metadata=_resume_meta,
             keep_eval_snapshots=args.keep_eval_snapshots,
             keep_eval_trace_steps=args.keep_eval_trace_steps,

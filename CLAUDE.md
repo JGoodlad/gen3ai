@@ -247,6 +247,48 @@ Omit `--model` to start a fresh run. Use `--debug` for a single env (DummyVecEnv
 
 Checkpoints are saved automatically. Models land in `models/run_<timestamp>/`.
 
+### In-process bridge transport (`--use-showdown-bridge`, opt-in)
+
+`--use-showdown-bridge` (default off) swaps **both training and eval** from a websocket
+Showdown server to an in-process `BattleStream` subprocess — no server, no port, no
+`/challenge` connection storm, deterministic delivery (poke-env issue #907). **A run needs no
+Showdown server at all.** It reuses the *entire* obs/reward/mask/wrapper stack unchanged:
+
+- **Training** — `attach_bridge_transport` (`src/utils/bridge/bridge_session.py`) swaps the two
+  `_EnvPlayer` agents' transport for a background-pumped bridge subprocess per env. The child is
+  **persistent by default** — one long-lived Node process reused across every episode (a fresh
+  `START` rebuilds a clean `BattleStream`), which kills the per-episode Node-spawn cost. A
+  single-env latency A/B (`bridge_vs_websocket_latency_benchmark.py`) measured ~13 ms/step
+  websocket → ~6 ms/step persistent bridge (~2.1×); spawn-per-battle was only ~11 ms/step, so the
+  reuse is the win. **But the 2.1× is single-env transport-only — at production `n_envs=64` the
+  measured end-to-end training-FPS gain is just ~5%** (bridge 1192 vs websocket 1140 fps, vs-bots,
+  CUDA), because oversubscription hides the per-step transport latency behind the SubprocVecEnv
+  barrier (the box is CPU-saturated; n_envs is not the FPS lever — see
+  `src/agents/training/CLAUDE.md` throughput notes). The bridge also started ~17% faster (no
+  `/challenge` connection storm) and ran steadier. **The case for the bridge is operational, not
+  FPS:** no server at all → no RAM-growth leak, no connection storm, no port tuning, deterministic.
+- **Eval / self-play eval / final eval** — the eval players (built `start_listening=False`) play
+  in-process via `run_local_battles` (the synchronous driver) instead of `battle_against`. Threaded
+  as a `use_showdown_bridge` config key through `PerOpponentEvalCallback` / `SelfPlayCallback` →
+  `eval_worker`. Eval games run **concurrently** on the bridge (`run_local_battles(concurrency=…)`,
+  `=_EVAL_SUBPROCESS_CONCURRENCY`), mirroring the server's `max_concurrent_battles`: each game is
+  its own sim subprocess, but the per-battle team→creation is serialized under a lock (like the
+  server's semaphore) so the shared `_current_packed_team` can't race. ~1.8× faster than sequential
+  for sim-bound matchups (more for model-bound ones); takes all eval load off the server.
+
+**Persistent-child lifecycle (measured + optimized):** a child's RSS is **flat** — ~189 MB fresh
+→ one-time ~+36 MB V8 warmup → ~229 MB with ~0 growth over thousands of battles
+(`bridge_heap_growth_benchmark.py`). A child plays only ~2150 battles in the launcher's 3h restart
+window, so the bridge does **not** reintroduce the server's RAM-creep and needs **no recycle within
+3h** — the 3h restart owns the lifecycle. `recycle_every` (default 5000) is a backstop that never
+fires under the launcher; it only caps marathon / no-launcher runs. A child that **dies** mid-run
+**crashes** the env (no in-place recovery → launcher restart; resuming risks a corrupted PPO
+transition).
+
+Default stays websocket (opt-in): the end-to-end training-FPS gain at scale is only ~5% (the win
+is operational — no server — not throughput). See `src/utils/bridge/README.md` and
+`designs/ai_v5/design_local_sim_bridge_transport.md`.
+
 ### Bot evaluation
 
 Bot eval runs in **frozen-snapshot subprocesses** (`--eval-workers`, default 3) that work-steal

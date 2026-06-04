@@ -24,6 +24,7 @@ from agents.training.reward_tracker import RewardTrackingMixin
 from agents.training.reward_manager import Gen3RewardManager
 from agents.training.battle_recorder import BattleRecorder, write_battle_record
 from main.launcher.ipc import send_metrics, send_event
+from utils.bridge.local_battle_runner import run_local_battles
 from utils.git import get_git_hash
 
 BATTLE_FORMAT = "gen3ou"
@@ -176,7 +177,7 @@ def eval_opponent_names() -> list[str]:
     return list(_EVAL_ROSTER)
 
 
-def build_eval_opponents(server_config, teambuilder, names, tag=""):
+def build_eval_opponents(server_config, teambuilder, names, tag="", *, start_listening=True):
     """Construct the opponent players for `names`.
 
     Each Player opens its own Showdown connection on construction, so build only
@@ -184,6 +185,9 @@ def build_eval_opponents(server_config, teambuilder, names, tag=""):
     and MUST be unique per concurrently-live set — under work stealing a worker
     builds a fresh set per claimed opponent, so the tag carries (cycle, worker,
     claim) to avoid username collisions on the shared server.
+
+    `start_listening=False` (bridge eval) opens no websocket — the in-process
+    `run_local_battles` driver supplies the transport instead.
     """
     by_name = {n: (cls, prefix) for (n, cls, prefix) in _EVAL_OPPONENT_SPECS}
     out = []
@@ -194,11 +198,13 @@ def build_eval_opponents(server_config, teambuilder, names, tag=""):
             server_configuration=server_config,
             account_configuration=AccountConfiguration(f"{prefix}{tag}", "password"),
             max_concurrent_battles=_EVAL_CONCURRENCY,  # opponent side high; RL side governs
+            start_listening=start_listening,
         )))
     return out
 
 
-def build_eval_players(model, names, teambuilder, mappings, server_config, concurrency, tag=""):
+def build_eval_players(model, names, teambuilder, mappings, server_config, concurrency,
+                       tag="", *, start_listening=True):
     """One EvalRLPlayer per opponent name, sharing the (frozen) model + teambuilder."""
     return {
         name: EvalRLPlayer(
@@ -207,6 +213,7 @@ def build_eval_players(model, names, teambuilder, mappings, server_config, concu
             account_configuration=AccountConfiguration(f"RLEv{tag}{i}", "password"),
             max_concurrent_battles=concurrency,
             stochastic=False,  # bot-eval measures the GREEDY policy
+            start_listening=start_listening,
         )
         for i, name in enumerate(names)
     }
@@ -266,7 +273,8 @@ def _mean_episode_length(player) -> float:
     return sum(b.turn for b in battles) / len(battles)
 
 
-async def eval_one_matchup(trainee, opponent, n_games, model_dir, step, name) -> dict:
+async def eval_one_matchup(trainee, opponent, n_games, model_dir, step, name,
+                           *, use_bridge=False, bridge_concurrency=1) -> dict:
     """Run ONE trainee-vs-opponent matchup; return its metrics + write forensic traces.
 
     The shared per-matchup body behind both the bot-roster gather (`run_eval`) and the
@@ -276,6 +284,12 @@ async def eval_one_matchup(trainee, opponent, n_games, model_dir, step, name) ->
     `trainee` is an `EvalRLPlayer` (reward tracking + forensic capture); `opponent` is any
     poke-env Player. Pure compute + disk (traces) — safe inside the eval worker process.
     Returns {name, win_rate, reward_mean, ep_len, duration_sec}.
+
+    `use_bridge=True` plays the games in-process via `run_local_battles` (no server) instead
+    of `battle_against`. Both players must have been built `start_listening=False`. Eval is a
+    pure synchronous-decision matchup (greedy trainee + bot/sentinel), so the in-process driver
+    is a faithful drop-in. `bridge_concurrency` (>1) overlaps that many games at once — matching
+    the server's `max_concurrent_battles` so the bridge isn't slower than the websocket path.
     """
     if trainee.n_finished_battles > 0:
         trainee.reset_battles()
@@ -289,7 +303,10 @@ async def eval_one_matchup(trainee, opponent, n_games, model_dir, step, name) ->
     trainee.begin_forensic_cycle(forensic_dir, step)
 
     start = datetime.now()
-    await trainee.battle_against(opponent, n_battles=n_games)
+    if use_bridge:
+        await run_local_battles(trainee, opponent, n_games, concurrency=bridge_concurrency)
+    else:
+        await trainee.battle_against(opponent, n_battles=n_games)
     dur = (datetime.now() - start).total_seconds()
 
     won = trainee.n_won_battles
@@ -306,7 +323,8 @@ async def eval_one_matchup(trainee, opponent, n_games, model_dir, step, name) ->
     }
 
 
-async def run_eval(players, opponents, n_games, model_dir, step) -> dict:
+async def run_eval(players, opponents, n_games, model_dir, step, *, use_bridge=False,
+                   bridge_concurrency=1) -> dict:
     """Run the per-opponent eval gather and return raw metrics (no logging sinks).
 
     `players` maps name -> EvalRLPlayer; `opponents` is a list of (name, player).
@@ -315,7 +333,8 @@ async def run_eval(players, opponents, n_games, model_dir, step) -> dict:
     Pure compute + disk (traces) — safe to call from the eval worker process.
     """
     async def eval_one(name, opponent):
-        return await eval_one_matchup(players[name], opponent, n_games, model_dir, step, name)
+        return await eval_one_matchup(players[name], opponent, n_games, model_dir, step, name,
+                                      use_bridge=use_bridge, bridge_concurrency=bridge_concurrency)
 
     results = await asyncio.gather(*(eval_one(n, o) for n, o in opponents))
     return {
@@ -730,6 +749,7 @@ class PerOpponentEvalCallback(BaseCallback):
         eval_device: str = "cpu",
         eval_concurrency: int = _EVAL_SUBPROCESS_CONCURRENCY,
         showdown_port: int | None = None,
+        use_showdown_bridge: bool = False,
         resume_eval_metadata: str | None = None,
         keep_eval_snapshots: int = 10,
         keep_eval_trace_steps: int = 20,
@@ -743,6 +763,8 @@ class PerOpponentEvalCallback(BaseCallback):
         self._eval_device = eval_device
         self._eval_concurrency = eval_concurrency
         self._showdown_port = showdown_port
+        # Bridge eval: workers play in-process via run_local_battles (no server connection).
+        self._use_showdown_bridge = use_showdown_bridge
         # >0: persist the eval weight snapshot into eval_traces/step_<N>/snapshot.zip
         # (keeping only the N most-recent) so the prober can reload the bit-exact model
         # that produced a cycle's traces. 0 disables (traces still carry the manifest).
@@ -834,6 +856,7 @@ class PerOpponentEvalCallback(BaseCallback):
         base_cfg = {
             "snapshot": snapshot_zip,
             "port": self._showdown_port,
+            "use_showdown_bridge": self._use_showdown_bridge,
             "model_dir": self._model_dir,
             "step": step,
             "n_games": n_games,

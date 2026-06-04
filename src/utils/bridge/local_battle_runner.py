@@ -59,15 +59,24 @@ async def run_local_battles(
     *,
     battle_format: Optional[str] = None,
     seed: Optional[List[int]] = None,
+    concurrency: int = 1,
 ) -> None:
     """Play ``n_battles`` between two players via the local sim bridge.
 
     ``player1`` is sim side p1, ``player2`` is p2. ``seed`` is an optional
     ``[s0,s1,s2,s3]`` Gen-5 PRNG seed for reproducible battles (note: teams must
     also be fixed for full determinism).
+
+    ``concurrency`` > 1 plays up to that many battles at once (each its own bridge
+    subprocess), mirroring poke-env's server ``battle_against``: the per-battle
+    *start* (``get_next_team`` → battle created) is serialized so the shared
+    ``player._current_packed_team`` can't be overwritten before ``_create_battle``
+    reads it, but battle *play* overlaps. ``concurrency == 1`` is the unchanged
+    sequential path. Don't set it above ~10 here — each concurrent battle is a Node
+    process; eval uses ``_EVAL_SUBPROCESS_CONCURRENCY`` (5).
     """
     runner = _LocalBattleRunner(player1, player2, battle_format or player1.format, seed)
-    await handle_threaded_coroutines(runner.run(n_battles), POKE_LOOP)
+    await handle_threaded_coroutines(runner.run(n_battles, concurrency), POKE_LOOP)
 
 
 class _LocalBattleRunner:
@@ -85,13 +94,29 @@ class _LocalBattleRunner:
         self.c1: Optional[BattleStreamClient] = None
         self.c2: Optional[BattleStreamClient] = None
 
-    async def run(self, n_battles: int) -> None:
+    async def run(self, n_battles: int, concurrency: int = 1) -> None:
         # Attach bridge transports (on POKE_LOOP). Players must have been built
         # with start_listening=False so no websocket was ever opened.
         self.c1 = self._attach(self.p1, "p1")
         self.c2 = self._attach(self.p2, "p2")
-        for i in range(n_battles):
-            await asyncio.wait_for(self._one_battle(i), timeout=_PER_BATTLE_TIMEOUT)
+        if concurrency <= 1:
+            # Unchanged sequential path — what all the fuzz suites exercise.
+            for i in range(n_battles):
+                await asyncio.wait_for(self._one_battle(i), timeout=_PER_BATTLE_TIMEOUT)
+            return
+        # Bounded-concurrency path. A single ``start_lock`` serializes each battle's team→creation
+        # critical section (released the instant both battle objects exist — see ``_one_battle``),
+        # exactly like the server's per-battle semaphore; the semaphore caps how many overlap.
+        start_lock = asyncio.Lock()
+        sem = asyncio.Semaphore(concurrency)
+
+        async def _guarded(i: int) -> None:
+            async with sem:
+                await asyncio.wait_for(
+                    self._one_battle(i, start_lock), timeout=_PER_BATTLE_TIMEOUT
+                )
+
+        await asyncio.gather(*(_guarded(i) for i in range(n_battles)))
 
     def _attach(self, player: Player, side: str) -> BattleStreamClient:
         client = BattleStreamClient(
@@ -105,14 +130,10 @@ class _LocalBattleRunner:
         player.ps_client = client
         return client
 
-    async def _one_battle(self, index: int) -> None:
+    async def _one_battle(self, index: int, start_lock=None) -> None:
         # Unique across the whole process (see ``_BATTLE_SEQ`` above) — never reuse a tag,
         # or poke-env hands back the prior battle's object for it and its team overflows.
         tag = f"battle-{self.fmt}-{next(_BATTLE_SEQ)}"
-        # get_next_team() yields a packed team AND sets player._current_packed_team,
-        # which _create_battle reads. Sequential play makes that assignment safe.
-        team1 = self.p1.get_next_team()
-        team2 = self.p2.get_next_team()
 
         proc = await asyncio.create_subprocess_exec(
             "node",
@@ -126,7 +147,25 @@ class _LocalBattleRunner:
         stderr_buf: List[bytes] = []
         stderr_task = asyncio.ensure_future(self._drain_stderr(proc, stderr_buf))
 
+        # Serialize the team→creation critical section under ``start_lock`` (concurrent path only).
+        # ``get_next_team`` sets the shared ``player._current_packed_team`` that ``_create_battle``
+        # reads; holding the lock until BOTH battle objects exist (released by ``_demux``) stops a
+        # concurrent battle from overwriting it first — exactly the server's semaphore behaviour.
+        locked = False
+
+        def _release_start() -> None:
+            nonlocal locked
+            if locked:
+                locked = False
+                start_lock.release()
+
         try:
+            if start_lock is not None:
+                await start_lock.acquire()
+                locked = True
+            # get_next_team() yields a packed team AND sets player._current_packed_team.
+            team1 = self.p1.get_next_team()
+            team2 = self.p2.get_next_team()
             start = {
                 "formatid": self.fmt,
                 "p1": {"name": self.p1.username, "team": team1},
@@ -137,15 +176,24 @@ class _LocalBattleRunner:
             proc.stdin.write((f"START {json.dumps(start)}\n").encode())
             await proc.stdin.drain()
 
-            await self._demux(proc, tag, stderr_buf)
+            await self._demux(
+                proc, tag, stderr_buf,
+                started_cb=(_release_start if start_lock is not None else None),
+            )
         finally:
+            _release_start()  # safety: release if the battle ended before both were created
             self.c1._procs.pop(tag, None)
             self.c2._procs.pop(tag, None)
             await self._teardown(proc, stderr_task)
 
-    async def _demux(self, proc, tag: str, stderr_buf: List[bytes]) -> None:
-        """Read framed side-chunks from the bridge and feed the right client."""
+    async def _demux(self, proc, tag: str, stderr_buf: List[bytes], started_cb=None) -> None:
+        """Read framed side-chunks from the bridge and feed the right client.
+
+        ``started_cb`` (concurrent path): called ONCE, the moment both players hold a battle object
+        for ``tag`` — i.e. both ``_create_battle`` calls have read the team — so the runner can let
+        the next battle's start proceed. ``None`` on the sequential path (no-op, unchanged)."""
         inited = {"p1": False, "p2": False}
+        started = False
         while True:
             line = await proc.stdout.readline()
             if not line:
@@ -161,6 +209,14 @@ class _LocalBattleRunner:
             client = self.c1 if side == "p1" else self.c2
             framed = self._frame(tag, side, chunk, inited)
             await client.feed(framed)
+            if (
+                started_cb is not None
+                and not started
+                and tag in self.p1._battles
+                and tag in self.p2._battles
+            ):
+                started = True
+                started_cb()
 
     @staticmethod
     def _frame(tag: str, side: str, chunk: str, inited: dict) -> str:

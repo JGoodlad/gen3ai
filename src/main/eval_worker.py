@@ -66,6 +66,9 @@ def _run(cfg: dict) -> None:
 
     port = cfg.get("port")
     server_config = localhost_server_configuration(port) if port else LocalhostServerConfiguration
+    # Bridge eval: play in-process via run_local_battles (no server). Players are built
+    # start_listening=False; server_config is then inert (the bridge supplies the transport).
+    use_bridge = cfg.get("use_showdown_bridge", False)
     concurrency = cfg["concurrency"]
     device = cfg.get("device", "cpu")
     n_games = cfg["n_games"]
@@ -104,14 +107,18 @@ def _run(cfg: dict) -> None:
             result = _eval_sentinel(
                 model, sentinel_by_label[name], current_version, trainee_tb, opp_tb,
                 mappings, server_config, concurrency, device, self_play_temp,
-                n_games, model_dir, step, tag,
+                n_games, model_dir, step, tag, use_bridge,
             )
         else:
-            opponents = build_eval_opponents(server_config, opp_tb, [name], tag)
+            opponents = build_eval_opponents(
+                server_config, opp_tb, [name], tag, start_listening=not use_bridge)
             players = build_eval_players(
                 model, [name], trainee_tb, mappings, server_config, concurrency, tag,
+                start_listening=not use_bridge,
             )
-            m = asyncio.run(run_eval(players, opponents, n_games, model_dir, step))
+            m = asyncio.run(run_eval(players, opponents, n_games, model_dir, step,
+                                     use_bridge=use_bridge,
+                                     bridge_concurrency=(concurrency if use_bridge else 1)))
             result = {
                 "win_rate": m["win_rates"][name],
                 "reward_mean": m["reward_means"][name],
@@ -129,7 +136,7 @@ def _run(cfg: dict) -> None:
 
 def _eval_sentinel(model, spec, current_version, trainee_tb, opp_tb, mappings,
                    server_config, concurrency, device, temperature,
-                   n_games, model_dir, step, tag) -> dict:
+                   n_games, model_dir, step, tag, use_bridge=False) -> dict:
     """Play the frozen trainee (greedy) vs one pool sentinel (stochastic) — one matchup.
 
     The sentinel is loaded via ``load_model_snapshot`` against the pool's shared
@@ -149,6 +156,7 @@ def _eval_sentinel(model, spec, current_version, trainee_tb, opp_tb, mappings,
         account_configuration=AccountConfiguration(f"SPtr{tag}", "password"),
         max_concurrent_battles=concurrency,
         stochastic=False,  # eval measures the GREEDY policy → stable win-rate signal
+        start_listening=not use_bridge,
     )
     opponent = RLPlayer(
         model=sentinel_model, team=opp_tb, battle_format=BATTLE_FORMAT,
@@ -156,8 +164,11 @@ def _eval_sentinel(model, spec, current_version, trainee_tb, opp_tb, mappings,
         account_configuration=AccountConfiguration(f"SPse{tag}", "password"),
         max_concurrent_battles=concurrency,
         stochastic=True, temperature=temperature,
+        start_listening=not use_bridge,
     )
-    m = asyncio.run(eval_one_matchup(trainee, opponent, n_games, model_dir, step, label))
+    m = asyncio.run(eval_one_matchup(trainee, opponent, n_games, model_dir, step, label,
+                                     use_bridge=use_bridge,
+                                     bridge_concurrency=(concurrency if use_bridge else 1)))
     return {
         "win_rate": m["win_rate"],
         "reward_mean": m["reward_mean"],

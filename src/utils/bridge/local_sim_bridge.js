@@ -11,10 +11,16 @@
 // is to feed poke-env the protocol stream.
 //
 // stdin (newline-delimited commands):
-//   START <json>   {formatid, seed?, p1:{name,team}, p2:{name,team}}
+//   START <json>   {formatid, seed?, persistent?, p1:{name,team}, p2:{name,team}}
 //   CHOOSE <side> <choice>   e.g.  CHOOSE p1 move 1   /   CHOOSE p2 switch 3
 //   FORCELOSE <side>         e.g.  FORCELOSE p1   (poke-env /forfeit path)
 //   END                      tear down and exit
+//
+// One battle per process by default. If a START carries `"persistent": true`, the
+// process stays ALIVE after a battle ends (emits `__END__` and resets) so the SAME
+// child can run a fresh battle on the next START — used by the RL env transport to
+// avoid a Node spawn per episode. Non-persistent behaviour is unchanged (exit on
+// battle end), so `run_local_battles` and the seed-repro test are unaffected.
 //
 // stdout (newline-delimited frames):
 //   p1 <base64(chunk)>   one protocol chunk p1 saw (may be multi-line)
@@ -33,6 +39,9 @@ const { BattleStream, getPlayerStreams } = require(path.join(psPath, 'dist/sim/b
 
 let streams = null;
 let endedSides = 0;
+// Sticky: once any START asks for it, the process survives battle ends and waits for
+// the next START instead of exiting.
+let persistent = false;
 
 function out(line) {
   process.stdout.write(line + '\n');
@@ -58,7 +67,14 @@ function pumpSide(side) {
       endedSides += 1;
       if (endedSides >= 2) {
         out('__END__');
-        process.exit(0);
+        if (persistent) {
+          // Reset for the next battle on the SAME process; the next START rebuilds
+          // a fresh BattleStream. (A fresh sim per START → no cross-battle state.)
+          streams = null;
+          endedSides = 0;
+        } else {
+          process.exit(0);
+        }
       }
     }
   })();
@@ -66,6 +82,7 @@ function pumpSide(side) {
 
 function handleStart(json) {
   const msg = JSON.parse(json);
+  if (msg.persistent) persistent = true;
   const stream = new BattleStream();
   streams = getPlayerStreams(stream);
   pumpSide('p1');

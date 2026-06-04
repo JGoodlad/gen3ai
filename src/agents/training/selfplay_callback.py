@@ -110,6 +110,7 @@ class SelfPlayCallback(BaseCallback):
         model_dir: str | None = None,
         server_config=LocalhostServerConfiguration,
         showdown_port: int | None = None,
+        use_showdown_bridge: bool = False,
         best_model_save_path: str | None = None,
         promote_threshold: float = 0.65,
         self_play_temp: float = 1.0,
@@ -127,6 +128,8 @@ class SelfPlayCallback(BaseCallback):
         self._model_dir = model_dir
         self._server_config = server_config
         self._showdown_port = showdown_port
+        # Bridge eval: workers play in-process via run_local_battles (no server connection).
+        self._use_showdown_bridge = use_showdown_bridge
         self.best_model_save_path = best_model_save_path
         self._promote_threshold = promote_threshold
         self._self_play_temp = self_play_temp
@@ -243,6 +246,7 @@ class SelfPlayCallback(BaseCallback):
         base_cfg = {
             "snapshot": snapshot_zip,
             "port": self._showdown_port,
+            "use_showdown_bridge": self._use_showdown_bridge,
             "model_dir": self._model_dir,
             "step": step,
             "n_games": n_games,
