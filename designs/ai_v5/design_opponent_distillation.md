@@ -226,16 +226,68 @@ promote(snapshot)  ──▶  distill_job(snapshot)            [separate process
 
 ---
 
-## 7. Risks & mitigations
+## 7. Guardrails — doing this robustly (fail-closed)
 
-| risk | mitigation |
+The distillation path must **never be able to silently degrade training.** It is strictly
+*additive*: its only job is to replace a verified-equivalent full opponent with a cheaper one, and
+on any doubt it falls back to the full model. A distilled opponent can only ever be *as good as or
+better-monitored than* the full model it replaces — never worse, because rejection/uncertainty
+keeps the full model. The mechanisms that enforce that:
+
+1. **Fail-closed gate — default is the full model.** A snapshot's training opponent is the full
+   model *unless* a distilled student has **passed** the acceptance gate (§5). Distillation can only
+   *upgrade* a passing snapshot to cheaper; it can never make an opponent worse than full, because
+   the failure mode is "keep full." No distilled student is ever used un-gated.
+2. **Anchor opponents — never 100% distilled.** A fixed floor (e.g. **≥ 20%** of training
+   opponents) always draws the *full* model, so even a subtly-degraded distilled pool can't fully
+   define the curriculum. The league/exploitability literature is explicit that robustness needs
+   ground-truth opponents in the mix.
+3. **Canary rollout, not a flip.** Never switch the whole pool at once. A newly-distilled student
+   enters as a *minority* of opponents for its snapshot; it earns a larger share only after the
+   downstream guards (below) stay green for K eval cycles. New ≠ trusted.
+4. **Continuous re-verification + auto-revert (the distribution-shift guard).** The gate is **not
+   one-shot.** Each `pool_generation`, re-run Tier-1 fidelity on *fresh* live-logged states for every
+   active distilled student; if fidelity has decayed past threshold (the trainee has moved on),
+   that snapshot **auto-reverts to its full model** and a re-distill is queued. This is the
+   operational form of the Ross–Bagnell on-distribution requirement — stale ≈ off-distribution ≈
+   compounding error.
+5. **Downstream kill-switch.** Wire the *existing* bot-regression guard (`⚠️ BOT_REGRESSION`),
+   `sentinel_monotonicity`, and `train/entropy` to an **automatic global revert**: if any regresses
+   past its floor *after* a distilled rollout, revert the whole pool to full opponents and alert.
+   The downstream signal is the principled gate (per the distillation literature — performance
+   parity, not fidelity), so it must drive *action*, not just a chart.
+6. **Fail-safe pipeline — never fatal.** The distill job is a non-blocking subprocess (like eval).
+   A crash / timeout / OOM is **logged-and-continued**; training proceeds on full opponents.
+   Distillation failing is a perf non-event, never a training outage. Mirrors the eval-worker
+   contract.
+7. **Provenance on every opponent.** Each `*.distilled.zip` carries a manifest (teacher snapshot,
+   distill step, #data-states, fidelity + behavioral numbers, `ARCH_SIGNATURE`, git hash), and the
+   worker records *which* opponent variant (full vs `distilled-vN`) each episode actually used — so
+   any anomaly is traceable to the exact opponent. A stale-arch student fails its version check
+   rather than loading silently.
+8. **Deterministic, fixed gate.** The acceptance eval uses a **fixed held-out state set + fixed
+   gauntlet seed** so the gate is comparable across snapshots and runs. A noisy gate would both leak
+   bad students and reject good ones.
+9. **Exploitability probe (stretch).** Beyond head-to-head, periodically train a cheap best-response
+   exploiter against the distilled student *and* against the teacher for a few hundred steps, and
+   compare how easily each is beaten. A distilled opponent that is **more exploitable than its
+   teacher is rejected** even if top-1/KL look fine — directly targeting the failure the league/PBT
+   work warns about.
+10. **Bounded blast radius.** Per-snapshot students mean a bad distill affects only opponents drawn
+    from that *one* snapshot (a minority at any moment), never the whole pool.
+
+**Failure modes these address:**
+
+| risk | covered by |
 |---|---|
-| **Distribution shift** — student diverges on states the improving trainee drives the opponent into | live-logging data (§4A) tracks it; sliding pool bounds exposure; re-distill on a cadence if gates drift |
-| **Diversity collapse** — distilled pool less varied than the real pool | per-snapshot students; soft KL preserves each opponent's distribution (vs hard BC) |
-| **Exploitability** — a weaker/peakier opponent the trainee overfits to beating | Tier-2 head-to-head (signed) + entropy-ratio gate; keep a fraction of *full-model* opponents in the mix as an anchor |
-| **It isn't worth it** — FPS gain too small for the complexity | Phase-3 A/B with a hard FPS-gain floor; if below floor, ship nothing |
-| **Staleness across generations** | gate re-runs per promotion; a stale `*.distilled.zip` fails its arch/version check rather than loading silently |
-| **Hot-path I/O from live logging** | ring buffer + async flush + 1-in-k sampling; or fall back to offline bridge generation (§4B) |
+| **Distribution shift** — student diverges as the trainee improves | (4) continuous re-verify + auto-revert; live-logging data (§4A); sliding pool bounds exposure |
+| **Diversity collapse** — distilled pool less varied than the real pool | (2) anchors; (10) per-snapshot students; soft KL preserves each distribution (vs hard BC) |
+| **Exploitability** — a weaker/peakier opponent the trainee overfits to | (9) exploitability probe; entropy-ratio gate; (2) full-model anchors |
+| **Silent downstream regression** | (5) kill-switch on `win_rate_vs_bots` / monotonicity / entropy |
+| **It isn't worth it** — FPS gain too small | Phase-3 A/B with a hard FPS-gain floor; if below floor, ship nothing |
+| **Staleness across generations** | (1)(7) gate re-runs per promotion; stale `*.distilled.zip` fails its version check |
+| **Pipeline failure** | (6) non-blocking, logged-and-continued, full-opponent fallback |
+| **Hot-path I/O from live logging** | ring buffer + async flush + 1-in-k sampling; or offline bridge generation (§4B) |
 
 ---
 
@@ -258,16 +310,63 @@ promote(snapshot)  ──▶  distill_job(snapshot)            [separate process
 
 ---
 
-## 9. Success criteria (watchlist)
+## 9. Observability — TensorBoard metrics & alerts
 
-| Signal | Good | Action if not |
+Distillation is invisible unless instrumented, and every guardrail in §7 (the gate, the canary, the
+auto-revert, the kill-switch) needs a **signal to act on**. Everything below lives under a
+`distill/` namespace, logged **each eval cycle**, per-snapshot where it makes sense **plus a pool
+aggregate** (so one bad student shows up even when the mean looks fine — always log the *worst*
+active student, not just the mean). These piggyback on `SelfPlayCallback`'s existing TensorBoard
+writer.
+
+**Fidelity — re-measured every generation on FRESH live-logged states (not the distill-time set):**
+- `distill/top1_agreement` (pool mean) · `distill/top1_agreement_min` (worst active student)
+- `distill/kl_teacher_student` (mean) · `distill/kl_p90`
+- `distill/entropy_ratio` — student/teacher entropy; the **exploitability leading indicator** (a
+  peaky student is the danger, §7-9)
+- `distill/top3_overlap`
+- `distill/fidelity_decay` — current top-1 **minus** top-1 at distill time; the drift detector that
+  *drives* the §7-4 auto-revert
+
+**Behavioral — the principled gate (from the eval workers):**
+- `distill/head_to_head_winrate` (vs teacher; **target ≈ 0.50**) — per snapshot + mean
+- `distill/gauntlet_winrate_delta` — (student vs bots) − (teacher vs bots)
+- `distill/exploitability_gap` — best-response WR vs student − vs teacher (if the §7-9 probe is built)
+
+**Speed — the actual payoff:**
+- `distill/opponent_forward_ms_full` vs `distill/opponent_forward_ms_distilled` · `distill/speedup`
+- `train/fps` (existing) — the headline; the whole point is this **rises**. Emit a TB *event marker*
+  on each rollout/revert so the FPS step-change is unmistakable.
+
+**Coverage / deployment state (so the canary + anchors are auditable):**
+- `distill/frac_opponents_distilled` — live share of opponents using a distilled net (vs the §7-2
+  anchor floor)
+- `distill/snapshots_distilled` · `distill/snapshots_rejected` · `distill/auto_reverts_total`
+- `distill/rejections_by_reason` — histogram: fidelity / head-to-head / exploitability
+
+**Pipeline health:**
+- `distill/job_duration_s` · `distill/job_failures_total` · `distill/data_states_collected` ·
+  `distill/vram_peak_mb` · `distill/last_distill_step`
+
+**Downstream safety — existing metrics, now wired to the §7-5 kill-switch:**
+- `eval/win_rate_vs_bots` · `eval/sentinel_monotonicity` · `train/entropy` — watched for regression
+  *after* a rollout; a breach auto-reverts the pool to full opponents.
+
+### Alerts & actions (the watchlist, with triggers)
+
+| Signal | Healthy | Trigger → action |
 |---|---|---|
-| student top-1 agreement | ≥ 0.92 | grow the student / more data; if still failing, the arch is too small |
-| head-to-head vs teacher | win rate 0.45–0.55 | re-distill; if persistently off, gate rejects → keep full snapshot |
-| Δ `win_rate_vs_bots` (distilled vs full opponents) | < 0.03 | opponent too weak/strong — reject |
-| opponent-forward CPU (py-spy) | ≥ 5× cheaper | student too big — slim further |
-| training-run FPS | materially up vs full-opponent baseline | if < ~15% gain, not worth it — stop |
-| `eval/sentinel_monotonicity` under distilled opponents | ≥ 0.6 | distilled pool may be collapsing diversity — anchor with full-model opponents |
+| `distill/head_to_head_winrate` | 0.45–0.55 | outside band → **gate rejects** (or auto-revert if live); keep full snapshot |
+| `distill/entropy_ratio` | 0.9–1.1 | < 0.9 (peaky/exploitable) → reject; re-distill at higher temp / more data |
+| `distill/top1_agreement_min` | ≥ 0.92 | below → grow student / more data; if persistent, arch too small |
+| `distill/fidelity_decay` | ≥ −0.03 | drop past −0.05 → **auto-revert that snapshot** + queue re-distill (drift) |
+| `distill/gauntlet_winrate_delta` | \|Δ\| < 0.03 | exceed → opponent too weak/strong → reject |
+| `distill/speedup` / `train/fps` | ≥ 5× / FPS materially up | FPS gain < ~15% → **not worth it, ship nothing** (§8 Phase-3) |
+| `distill/frac_opponents_distilled` | ≤ (1 − anchor floor) | at ceiling with guards green → widen canary; any guard red → freeze/roll back |
+| `eval/win_rate_vs_bots` (post-rollout) | no regression vs full baseline | drop > X → **kill-switch: global revert to full** + alert |
+| `eval/sentinel_monotonicity` | ≥ 0.6 | sustained drop → diversity collapse → revert / lower distilled share |
+| `train/entropy` | stable | collapsing under distilled opponents → revert + inspect |
+| `distill/job_failures_total` | flat | rising → pipeline broken, but **training is unaffected** (full-opponent fallback) — fix offline |
 
 ---
 
