@@ -1,4 +1,5 @@
 import torch
+from torch.utils.checkpoint import checkpoint
 import numpy as np
 from dataclasses import dataclass
 from gymnasium import spaces
@@ -583,6 +584,13 @@ class TeamTransformer(torch.nn.Module):
 
     def __init__(self, layout: Dict[str, Any]):
         super().__init__()
+        # Runtime-only memory/compute knob (NOT a weight or arch param — never enters
+        # model_config.json / the version check). When True, the encoder layers are run
+        # under gradient checkpointing during the backward-needing pass, trading one extra
+        # forward (on the otherwise-idle GPU) for ~5GB less activation VRAM. Bit-exact:
+        # dropout=0.0 and use_reentrant=False make the recompute identical. Toggled per run
+        # from --grad-checkpointing via _apply_grad_checkpointing(); a no-op under inference.
+        self.grad_checkpointing = False
         self.token_type_emb = torch.nn.Embedding(NUM_TOKEN_TYPES, D_MODEL)
 
         self._td_embed_dim = turn_delta_embed_dim(layout)
@@ -653,8 +661,20 @@ class TeamTransformer(torch.nn.Module):
             global_pad,
         ], dim=1)
 
+        # Gradient checkpointing only helps when a graph is being built for backward
+        # (the PPO update); under inference's no_grad it would be pure overhead, so gate on
+        # torch.is_grad_enabled(). use_reentrant=False is the correct variant here (handles
+        # non-grad inputs + autocast/RNG state); with dropout=0 the recompute is bit-exact.
+        use_ckpt = self.grad_checkpointing and torch.is_grad_enabled()
         for layer in self.transformer_layers:
-            tokens = layer(tokens, src_key_padding_mask=key_padding_mask)
+            if use_ckpt:
+                tokens = checkpoint(
+                    lambda t, _layer=layer: _layer(t, src_key_padding_mask=key_padding_mask),
+                    tokens,
+                    use_reentrant=False,
+                )
+            else:
+                tokens = layer(tokens, src_key_padding_mask=key_padding_mask)
 
         our_team_out   = tokens[:, self._our_token_slice, :]
         their_team_out = tokens[:, self._their_token_slice, :]

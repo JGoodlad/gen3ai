@@ -153,6 +153,27 @@ class _TrackingCheckpointCallback(CheckpointCallback):
         return result
 
 
+def _apply_grad_checkpointing(model, enabled: bool) -> None:
+    """Toggle gradient checkpointing on the live model's transformer body.
+
+    Runtime-only and bit-exact (dropout=0 + use_reentrant=False): it never enters the
+    saved checkpoint or the version check, so it is set fresh each run from
+    ``--grad-checkpointing`` regardless of what a resumed checkpoint was trained with.
+    Trades one extra transformer forward in the backward pass (on the otherwise-idle GPU)
+    for ~5GB less activation VRAM. A no-op under inference (no_grad).
+    """
+    if not enabled:
+        return
+    from agents.model.features_extractor import TeamTransformer
+    n = 0
+    for module in model.policy.modules():
+        if isinstance(module, TeamTransformer):
+            module.grad_checkpointing = True
+            n += 1
+    print(f"[GradCheckpoint] enabled on {n} transformer block(s) "
+          f"(bit-exact; trades idle-GPU compute for ~5GB activation VRAM)")
+
+
 def _run_roundtrip_test(model, layout: dict, policy_kwargs: dict, debug: bool = False) -> None:
     """Startup smoke test: save → reload → zero forward pass → assert output shape.
 
@@ -351,6 +372,11 @@ async def main():
     parser.add_argument("--clip-range", type=float, default=CLIP_RANGE_DEFAULT, help="PPO policy clip range (default 0.15)")
     parser.add_argument("--clip-range-vf", type=float, default=0.5, help="Value function clip range (None=disabled; thesis used 0.0184)")
     parser.add_argument("--n-steps", type=int, default=2048, help="Steps per environment per rollout")
+    parser.add_argument("--grad-checkpointing", "--grad_checkpointing", dest="grad_checkpointing",
+                        action="store_true", default=False,
+                        help="Gradient-checkpoint the transformer encoder layers during the PPO "
+                             "update (bit-exact; trades one extra forward on the idle GPU for "
+                             "~5GB less activation VRAM). Off by default; safe to toggle per run.")
     parser.add_argument("--weight-decay", type=float, default=1e-5,
                         help="AdamW weight decay (L2 regularisation). Default 1e-5 is conservative for PPO.")
 
@@ -907,6 +933,7 @@ async def main():
                 sys.exit(TrainExitCode.COMPLETE)
             print(f"Continuing Training (Steps: {remaining_steps:,} remaining of {args.steps:,}, LR: {resume_lr:.2e} ({lr_detail}))")
             _run_roundtrip_test(model, _load_extractor_kwargs["layout"], _load_policy_kwargs, debug=args.debug)
+            _apply_grad_checkpointing(model, args.grad_checkpointing)
             save_model_snapshot(model_dir, current_version, hparams=_model_hparams(model))
 
             _abort_fn = _setup_signal_handlers(
@@ -993,6 +1020,7 @@ async def main():
 
         version = ModelVersion.from_layout_and_policy_kwargs(extractor_kwargs["layout"], policy_kwargs)
         _run_roundtrip_test(model, extractor_kwargs["layout"], policy_kwargs, debug=args.debug)
+        _apply_grad_checkpointing(model, args.grad_checkpointing)
         save_model_snapshot(model_dir, version, hparams=_model_hparams(model))
 
         _abort_fn = _setup_signal_handlers(

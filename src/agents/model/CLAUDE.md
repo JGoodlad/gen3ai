@@ -64,7 +64,13 @@ so they stay correct when the architecture changes with no manual update.
    128, `TRANSFORMER_N_HEADS` heads, FFN `TRANSFORMER_FFN_DIM`, post-LN) under a key-padding mask
    that masks fainted team slots and empty history slots. History tokens come from
    `embed_delta_slot`; the global token from the two active-contexts + non-matchup scalars.
-   Returns the two refined team-token blocks.
+   Returns the two refined team-token blocks. **Optional gradient checkpointing**: a runtime
+   `grad_checkpointing` flag (set per run by `train_rl_agent.py --grad-checkpointing`, never
+   saved/version-checked) runs these encoder layers under `torch.utils.checkpoint(...,
+   use_reentrant=False)` during the backward-needing pass — **bit-exact** (dropout=0.0), trading
+   one extra forward on the otherwise-idle GPU for the layers' ~5 GB of activation VRAM at
+   batch 16384. A no-op under inference (gated on `torch.is_grad_enabled()`), so eval / the
+   self-play opponent forward pay nothing.
 5. **`CLSPool`** — one learned CLS query per side cross-attends over its 6 post-transformer team
    tokens (fainted slots key-masked) → a 128-dim pooled team token per side (+ LayerNorm). Also
    extracts `our_active_refined` = the transformer output of our active slot. A **third learned

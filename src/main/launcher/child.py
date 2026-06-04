@@ -22,6 +22,11 @@ def _build_child_env() -> dict:
     # threads and kills throughput.
     env["OMP_NUM_THREADS"] = "1"
     env["MKL_NUM_THREADS"] = "1"
+    # Use the CUDA caching allocator's expandable-segments mode so freed activation
+    # blocks (e.g. from gradient checkpointing, or between the rollout/update phases) are
+    # reusable rather than stranded by fragmentation — reclaims headroom on the 12GB card
+    # at no compute cost. setdefault so an explicit override always wins; no-op on CPU.
+    env.setdefault("PYTORCH_CUDA_ALLOC_CONF", "expandable_segments:True")
     return env
 
 
