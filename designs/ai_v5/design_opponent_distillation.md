@@ -352,6 +352,12 @@ writer.
 - `eval/win_rate_vs_bots` · `eval/sentinel_monotonicity` · `train/entropy` — watched for regression
   *after* a rollout; a breach auto-reverts the pool to full opponents.
 
+**Restart-safe.** All `distill/*` series log at `num_timesteps` (continuous curves across the
+launcher's periodic restarts under `reset_num_timesteps=False`), and the last distill state +
+rollout/revert markers **re-publish to the TUI/TB on resume** (via `replay_last_eval_to_tui`), so the
+panel is never blank after a restart. The deploy/canary/revert state persists in `summary.json`. Full
+restart-resilience contract: `distill_integration.md` §7.
+
 ### Alerts & actions (the watchlist, with triggers)
 
 | Signal | Healthy | Trigger → action |
