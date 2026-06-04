@@ -238,13 +238,19 @@ keeps the full model. The mechanisms that enforce that:
    model *unless* a distilled student has **passed** the acceptance gate (§5). Distillation can only
    *upgrade* a passing snapshot to cheaper; it can never make an opponent worse than full, because
    the failure mode is "keep full." No distilled student is ever used un-gated.
-2. **Anchor opponents — never 100% distilled.** A fixed floor (e.g. **≥ 20%** of training
-   opponents) always draws the *full* model, so even a subtly-degraded distilled pool can't fully
-   define the curriculum. The league/exploitability literature is explicit that robustness needs
-   ground-truth opponents in the mix.
-3. **Canary rollout, not a flip.** Never switch the whole pool at once. A newly-distilled student
-   enters as a *minority* of opponents for its snapshot; it earns a larger share only after the
-   downstream guards (below) stay green for K eval cycles. New ≠ trusted.
+2. **No live full-model anchors — distillation is all-or-nothing (SUPERSEDED guardrail).** An earlier
+   draft kept ≥20% of opponents on the full model as insurance. The per-step barrier makes that
+   *counter-productive*: one full-opponent worker is the straggler that gates the batch, so any full
+   anchors erase the speedup. Safety is instead the pre-deployment gate + drift-revert + the
+   independent full-model **bot-eval** (`win_rate_vs_bots`) as ground truth. Full mechanics:
+   `distill_integration.md` §8 (all-or-nothing, backfill, atomic switch).
+3. **Canary rollout, not a flip — *within* the all-or-nothing constraint.** You can't run a mixed
+   pool (it'd cost full price), so the "canary" is **temporal**: enable distillation, watch the
+   downstream guards (`win_rate_vs_bots`, monotonicity, entropy) for K cycles at 100%-distilled, and
+   keep the **pool-wide full-opponent revert** one flag away. A newly-promoted snapshot is
+   distilled *before* it becomes sampleable (it sits in `pending_distill`, covered by the existing
+   distilled members) — so the active set is never mixed; "new ≠ trusted" is enforced by gating
+   *entry to the active set* on a passed gate, not by a minority share.
 4. **Continuous re-verification + auto-revert (the distribution-shift guard).** The gate is **not
    one-shot.** Each `pool_generation`, re-run Tier-1 fidelity on *fresh* live-logged states for every
    active distilled student; if fidelity has decayed past threshold (the trainee has moved on),

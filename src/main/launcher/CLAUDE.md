@@ -9,7 +9,11 @@ how it works internally. Modules: `checkpoint.py`, `worktree.py`, `child.py`, `i
 
 - **Periodic restarts** — kills and relaunches the child every N hours to reclaim pymalloc
   fragmentation; the child saves a checkpoint on SIGTERM and the launcher picks it up
-  automatically.
+  automatically. The child also checkpoints on **SIGHUP** (`_setup_signal_handlers` routes it
+  to the same graceful path) — the child shares the launcher's session (`child.py` spawns it
+  without `start_new_session`), so closing the controlling terminal/tmux window SIGHUPs the
+  whole group; without that handler the child died mid-iteration with no checkpoint. Running
+  the launcher under `nohup` prevents the SIGHUP entirely; the handler is the in-code backstop.
 - **Crash auto-restart** — when the child *self-crashes* (unhandled exception → any
   non-`INTERRUPTED` exit), the launcher snapshots its output to a per-crash
   `<run_dir>/crashes/restart_err_<token>.txt` (a timestamp + random hex so back-to-back crashes

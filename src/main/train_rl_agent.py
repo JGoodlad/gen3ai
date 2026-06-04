@@ -228,7 +228,7 @@ _ABORT_EVAL_DRAIN_SEC = 600.0
 
 
 def _setup_signal_handlers(model, model_dir, shutdown_event, version, current_lr_fn, current_epochs_fn, handoff_lr_fn=None, eval_drain_fn=None):
-    """Wire SIGINT/SIGTERM/SIGUSR1. Returns the abort_training closure so it can
+    """Wire SIGINT/SIGTERM/SIGHUP/SIGUSR1. Returns the abort_training closure so it can
     be passed to eval callbacks as their canonical "die cleanly" path.
 
     ``handoff_lr_fn`` is optional; when present it returns the TwoPhaseLR
@@ -294,6 +294,14 @@ def _setup_signal_handlers(model, model_dir, shutdown_event, version, current_lr
 
     signal.signal(signal.SIGINT,  lambda sig, frame: abort_training("SIGINT received"))
     signal.signal(signal.SIGTERM, lambda sig, frame: abort_training("SIGTERM received"))
+    # SIGHUP = the controlling terminal/window closed. The launcher spawns the child in the
+    # SAME session (no start_new_session), so closing the tmux window SIGHUPs the whole group;
+    # without this handler the child died mid-iteration with NO checkpoint (lost ~1h once).
+    # Route it to the same graceful checkpoint-then-INTERRUPTED path as SIGTERM so an accidental
+    # window close costs nothing. (Running the launcher under `nohup` also prevents the SIGHUP;
+    # this is the in-code backstop for when it isn't.)
+    if hasattr(signal, "SIGHUP"):
+        signal.signal(signal.SIGHUP, lambda sig, frame: abort_training("SIGHUP received (terminal/window closed)"))
     signal.signal(signal.SIGUSR1, _forced_checkpoint)
     return abort_training
 

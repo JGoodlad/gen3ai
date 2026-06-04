@@ -107,12 +107,20 @@ So calibrate for **"faithful-ish and safe"**, not "perfect draw":
   more than it beats the teacher (the league-play failure mode).
 
 **Auto-revert (the live kill-switch):** during training, track the distilled opponent's live
-win-rate-vs-teacher (or vs the bot roster). If it **drifts below ~0.40** for a snapshot, revert that
-snapshot to the full teacher and queue a re-distill. The point estimate at 0.44 means the *revert*
-threshold (0.40), not the *accept* band edge (0.45), is the operative safety line.
+win-rate-vs-teacher (or vs the bot roster). If a snapshot **drifts below ~0.40**, **drop it from the
+active opponent set** (NOT "swap it for the full teacher" — that would re-introduce a slow straggler
+and kill the speedup; see §8) and queue a re-distill; the remaining distilled opponents cover the
+rotation. If *too many* drift (e.g. the pool can't stay majority-distilled), fall back **pool-wide**
+to full opponents (lose the speedup, stay safe) and alert. The point estimate at 0.44 means the
+*revert* threshold (0.40), not the *accept* band edge (0.45), is the operative safety line.
 
-**Anchor:** keep ≥20% of training opponents on the **full** model regardless, so even a fleet of
-slightly-weak distilled opponents can't fully define the curriculum.
+> **No live full-model "anchors."** An earlier draft proposed keeping ≥20% of opponents on the full
+> teacher as insurance. **That is wrong here** — under the per-step barrier a single full-opponent
+> worker is the straggler that gates the whole batch, so any full anchors erase the entire speedup
+> (§8). The curriculum's safety is instead: the **pre-deployment gate** (every distilled opponent is
+> validated faithful *before* it is ever sampled), **drift-revert**, and the **existing full-model
+> bot-eval** (`win_rate_vs_bots`, real bots / full weights, unaffected by distillation) as the
+> independent ground-truth that the policy isn't quietly degrading.
 
 The full metric set + alert→action wiring is in `design_opponent_distillation.md` §9; this section
 just sets the **numeric thresholds** to the measured reality.
@@ -193,3 +201,84 @@ into a proven pattern, not new machinery:
 Net: distilled opponents and their gate state survive a restart **as files**, an interrupted distill
 self-heals, metrics re-publish on resume, and the canary/revert state persists — **no new failure
 mode is introduced by the launcher's restart cadence.**
+
+---
+
+## 8. All-or-nothing: the per-step barrier makes distillation pool-wide
+
+**The governing constraint.** `SubprocVecEnv.step_wait` is a barrier — every rollout step runs at
+the speed of the *slowest* worker. The opponent forward is ~26% of a worker's step, so a worker on
+the **full** teacher is ~26% slower than one on a distilled opponent. Therefore **a single
+full-opponent worker gates the whole batch and erases the speedup.** Distillation only pays off when
+**every active training opponent is distilled** — it is *all-or-nothing per rollout step*, not a
+per-snapshot win you can accumulate gradually. (This is also why §4 has *no* live full-model anchors,
+and why drift-revert *drops* a snapshot rather than swapping in the full teacher.)
+
+**The invariant we enforce:** *a pool snapshot is sampleable as a training opponent only once its
+distilled variant exists and passed the gate.* The full model is **never** a live opponent in steady
+state. Concretely, the worker's opponent selection reads a per-`pool_generation` flag
+`all_distilled` = "every snapshot the envs can sample this generation has a gate-passed
+`distilled.pt`"; the env uses distilled opponents iff `all_distilled`, else the full models for *all*
+of them (the only states are **100% distilled** or **100% full** — never mixed).
+
+### Enabling on an ongoing run — the backfill ("catching up with the 5")
+
+When `--distill-opponents` flips on (or a run resumes with it set), the pool already holds N
+opponents (the recency window + the ≤5 sentinels). You asked the exact right question: you gain
+nothing until **all N** are distilled, because any undistilled one straggles. So the enable path is a
+**backfill**, run like a non-blocking eval cycle:
+
+1. Keep training at **full speed** with full opponents (`all_distilled=false`) — no speedup yet, no
+   harm.
+2. **Fan out N distill jobs in parallel** on the idle GPU (each ~minutes; 5 sentinels finish in one
+   wave). Each writes `distilled/S.pt` + a gate manifest.
+3. When **all N** have a gate-passed variant, flip `all_distilled=true` at the next generation
+   boundary — an **atomic** switch of the whole pool from full→distilled. *Now* the barrier drops and
+   FPS rises.
+
+So "catching up with the 5 sentinels" = the backfill distills all five before the switch; partial
+progress buys nothing (correctly — the design refuses to claim a speedup it can't deliver). Backfill
+state lives in `summary.json` (`distill_backfill_pending: [steps…]`) so a restart mid-backfill
+resumes it rather than restarting from zero.
+
+### Steady state — keep the pool always-100%-distilled
+
+- **New promotion → distill *before* it becomes an opponent.** On promotion, the snapshot enters a
+  `pending_distill` state and is **not yet sampleable**; the older distilled members cover the
+  rotation. When its gate-passed variant lands, it joins the active set. The active set is thus
+  *always* fully distilled — a new snapshot's influence is delayed by its distill time (minutes), the
+  price of never re-introducing a straggler.
+- **Pool eviction** of a snapshot also deletes its `distilled.pt` (the window slides as before).
+- **`all_distilled` is the single gate** the env reads; it is true only when *coverage is complete*,
+  so the system is never half-distilled (which would cost the full price for none of the benefit).
+
+### When is the student too small? — capacity escalation (and how we know)
+
+A distilled snapshot that **fails the gate** (h2h not faithful / `top1` or `fidelity` below
+threshold *after* distillation) is telling you the student is **too small to capture that snapshot's
+policy**. The response is automatic, per-snapshot:
+
+1. **Escalate.** Re-distill at the next student size in a fixed ladder (e.g. cheap-encoder hidden
+   `S → 1.5S → 2S`; head transformer 0→1 layer). Each step trades speedup for fidelity.
+2. **Stop when not worth it.** If even the largest ladder rung still fails the gate, OR the size
+   needed drops the speedup below a floor (say <2×), **don't distill that snapshot** — it stays in
+   `pending_distill` and is simply not sampled (the pool runs on the other distilled members). If
+   *no* size works for *enough* of the pool to keep it majority-distilled, the manager falls back
+   **pool-wide to full** (and logs why).
+3. **The health signals (TensorBoard, §9):**
+   - `distill/frac_active_opponents_distilled` — **must be 1.0** for any speedup; <1.0 means a
+     snapshot couldn't be captured and the pool is paying full price. This is *the* number that
+     answers "are they all using distillation."
+   - `distill/student_size` (the rung each snapshot needed) and `distill/gate_pass_rate` — if the
+     size required is **creeping up** or the pass-rate is **dropping**, the teacher has outgrown the
+     current student class (the "future robustness" prediction realized) → bump the **base** student
+     size for the whole pool, or accept that distillation's speedup is eroding toward the point where
+     it's not worth it.
+   - `distill/speedup_realized` (= 1.0 unless `all_distilled`) vs `distill/speedup_per_student`
+     (the inference speedup if it *were* all-distilled) — the gap is exactly the throughput left on
+     the table by un-capturable snapshots.
+
+So the answer to "how do I know when to grow the model" is: **the gate fails, or the size the gate
+*requires* is trending up faster than the snapshot promotion cadence.** Capacity is a per-snapshot
+ladder with a speedup floor, and `frac_active_opponents_distilled` is the one-glance health metric —
+because, by the barrier, anything less than 1.0 means you're getting nothing.
