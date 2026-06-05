@@ -26,7 +26,7 @@ Keep docs in sync **automatically, as part of the same change** — no need to b
 | `src/agents/training/` | Bot-eval subprocess architecture + Showdown-port (`server_config`) threading |
 | `src/main/launcher/` | Launcher internals: restarts, crash reporting, exit codes, flags, port default |
 | `src/main/prober/` | Forensic-replay inspector (Textual TUI) + the pure probe engine `probe_replay.py` shares; trace discovery; worker-thread model |
-| `src/main/tui/` | Thin shared Textual base (`Gen3App`, theme, `gradient_color`) — the seam for a future launcher Textual port |
+| `src/main/tui/` | Thin shared Textual base (`Gen3App`, theme, `gradient_color`) — shared by the prober + launcher UIs |
 | `designs/` | Which `ai_vN` folder is relevant; version map |
 
 ## Git Workflow
@@ -186,14 +186,21 @@ A hang after `[STALL LOGGED]` or a crash before "Training complete" indicates a 
 fragmentation; child saves a checkpoint on SIGTERM, launcher relaunches), **crash auto-restart**
 (a self-crash relaunches from the last checkpoint after dumping a per-crash
 `<run_dir>/crashes/restart_err_<token>.txt`, with a `--max-crash-restarts` circuit-breaker), **git-worktree
-isolation** (agent pushes to `main` never affect a running session), a **Rich TUI** (metrics,
-FPS, restart countdown, a `↻ N restarts (M crash)` badge; `l` logs, `r` restart, `c` checkpoint,
-`q` quit), and **live crash-log streaming** to `<run_dir>/launcher_child.log`.
+isolation** (agent pushes to `main` never affect a running session), a **Textual TUI** (metrics,
+FPS, restart countdown, a `↻ N restarts (M crash)` badge; `l` logs, `e` events, `d` dashboard,
+`r` restart, `c` checkpoint, `p` plots, `s` status, `q`/ctrl-c quit), and **live crash-log
+streaming** to `<run_dir>/launcher_child.log`.
 
-**Internals — crash reporting + auto-restart, exit codes (`COMPLETE`/`INTERRUPTED`/`CRASH`), the
-full flag table (`--restart-interval-hours`, `--restart-grace-minutes`, `--max-crash-restarts`,
-`--no-pin`, `--sync-to-main`), the resume contract, and the `:8001` Showdown-port default — live
-in `src/main/launcher/CLAUDE.md`.**
+The UI is **Textual** (built on the shared `src/main/tui/` base), launched with
+`python -m main.launcher …` (or the back-compat alias `python -m main.launcher.tui …`). A closed
+terminal (SIGHUP) or external `kill` (SIGTERM) is caught and turned into a clean,
+checkpoint-saving shutdown rather than a lost checkpoint.
+
+**Internals — how the UI reconciles the restart loop with Textual's event loop, the
+quit/ctrl-c/SIGHUP teardown, crash reporting + auto-restart, exit codes
+(`COMPLETE`/`INTERRUPTED`/`CRASH`), the full flag table (`--restart-interval-hours`,
+`--restart-grace-minutes`, `--max-crash-restarts`, `--no-pin`, `--sync-to-main`), the resume
+contract, and the `:8001` Showdown-port default — live in `src/main/launcher/CLAUDE.md`.**
 
 ### Starting a fresh run via launcher
 ```bash
@@ -222,6 +229,7 @@ export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable
 The checkpoint must carry a `metadata.json` with a `git_hash`; the launcher pins the isolated
 worktree to that commit so the resumed run uses the original code (override with
 `--sync-to-main`). All non-launcher flags are forwarded verbatim to `train_rl_agent.py`.
+`python -m main.launcher.tui …` is an alias for the same command.
 
 ---
 
@@ -424,9 +432,9 @@ src/
     battle/          # Event-sourced battle layer (Gen3Battle, BattleEvent log, TurnView,
                      #   LiveView/LegalActions read-models, StrictBattleView) — has CLAUDE.md
   main/
-    launcher/          # Restart loop + Rich TUI (preferred for long runs) — has CLAUDE.md
-                     #   checkpoint.py, worktree.py, child.py, input.py,
-                     #   run.py, state.py, ui.py
+    launcher/          # Restart loop + Textual TUI (preferred for long runs) — has CLAUDE.md
+                     #   core: checkpoint.py, worktree.py, child.py, input.py, state.py, ipc.py
+                     #   UI: app.py + launcher.tcss · run loop: run.py · format.py · tui.py (alias)
     prober/            # Forensic-replay inspector (Textual TUI) — has CLAUDE.md
                      #   engine.py (pure analysis), model.py, discovery.py, app.py
     tui/               # Shared Textual base (Gen3App, theme, colors) — has CLAUDE.md

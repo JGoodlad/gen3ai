@@ -1,10 +1,12 @@
-"""Keyboard input handling and command dispatch for the launcher."""
+"""Command dispatch for the launcher.
 
-import atexit
+The launcher's only UI is Textual, which feeds keystrokes through its key bindings (see
+``app.py``); this module just turns a dispatched command char into the right state mutation
+or child signal. ``_dispatch_command`` is shared with the supervisor in ``run.py``.
+"""
+
 import os
-import queue
 import signal
-import sys
 import threading
 import time
 from dataclasses import dataclass
@@ -23,51 +25,6 @@ class _PollFlags:
     forced_restart: bool = False
     sigterm_at: float = 0.0   # monotonic time SIGTERM was sent (for SIGKILL escalation)
     sigkill_sent: bool = False
-
-
-def _setup_raw_input() -> None:
-    """Switch stdin to cbreak (single-keypress, no echo). Restored via atexit.
-
-    Works in tmux — tmux provides a real pty for each pane so isatty() is True.
-    Falls back gracefully when stdin is a pipe (tests, CI, redirected input).
-    """
-    if not sys.stdin.isatty():
-        return
-    try:
-        import termios
-        import tty
-        fd = sys.stdin.fileno()
-        old = termios.tcgetattr(fd)
-        tty.setcbreak(fd)
-        atexit.register(_restore_tty, fd, old)
-    except Exception:
-        pass
-
-
-def _restore_tty(fd: int, old_settings) -> None:
-    try:
-        import termios
-        termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
-    except Exception:
-        pass
-
-
-def _read_keys(cmd_q: queue.Queue) -> None:
-    """Reads single chars from stdin into cmd_q. Tty mode is set by _setup_raw_input()."""
-    try:
-        if sys.stdin.isatty():
-            while True:
-                ch = sys.stdin.read(1)
-                if ch:
-                    cmd_q.put(ch.lower())
-        else:
-            # Piped stdin: take first char of each line.
-            for line in sys.stdin:
-                stripped = line.strip().lower()
-                if stripped:
-                    cmd_q.put(stripped[0])
-    except Exception:
-        pass
 
 
 def _dispatch_command(

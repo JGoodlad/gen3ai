@@ -2,8 +2,54 @@
 
 The launcher wraps `train_rl_agent.py` for long, unattended runs. **Invocation commands
 (start fresh / resume) live in the root `CLAUDE.md` → Launcher section** — this file documents
-how it works internally. Modules: `checkpoint.py`, `worktree.py`, `child.py`, `input.py`,
-`run.py`, `state.py`, `ui.py` (+ `__init__.py` `main()`).
+how it works internally. The UI is **Textual**, built on the shared `src/main/tui/` base.
+Modules: framework-agnostic core `checkpoint.py`, `worktree.py`, `child.py`, `input.py`,
+`state.py`, `ipc.py` + pure formatters `format.py`; the UI `app.py` + `launcher.tcss`; the run
+loop / supervisor `run.py`; entry points `__init__.main()` (`python -m main.launcher`) and the
+`tui.py` back-compat alias (`python -m main.launcher.tui`).
+
+> **History:** the launcher used to have a second **Rich** frontend (`ui.py` + a Rich `run()`
+> loop). It was removed once the Textual UI proved out — Textual is now the only UI. If you're
+> reading old commits/docs that mention "two frontends", that's why.
+
+## How the UI reconciles with Textual's event loop
+
+`run()` sets up the session (worktree pin, run dir, at-exit handlers) on the main thread, then
+drives a `LauncherApp` whose `@work(thread=True)` worker runs the supervisor loop **beside** the
+render loop. `LauncherState` (a lock-protected snapshot) is the bridge.
+
+- `_prepare_session()` (worktree pin + run-dir + initial events + at-exit handlers) runs on the
+  main thread **before** the screen opens — a pin failure `sys.exit`s with a clean message.
+- `LauncherApp` (a `Gen3App` subclass) renders from `state.snapshot()` on a `set_interval(0.5)`
+  timer. Input is split by latency sensitivity: **view navigation** (`l`/`e`/`d`, the `q` confirm
+  overlay, `n`/`y`, ctrl-c) is handled **app-locally** via the `view_mode` reactive — switching is
+  instant. **Child-control** keys (`r`/`c`/`p`/`s`) and the confirmed-quit sentinel `"__quit__"`
+  go to the supervisor's `cmd_q`, where `_supervise` handles them via `input._dispatch_command`
+  (latency there is irrelevant — they aren't view changes).
+- `_supervise()` runs in a `@work(thread=True)` worker, drives `LauncherState`, and **returns**
+  an exit code; it then asks the app to exit via `call_from_thread`. A render fault in the timer
+  is swallowed (surfaced once as an event) so a cosmetic bug can never crash the app — which, via
+  the child reap below, would otherwise kill the run.
+- **Quit / Ctrl-C:** `q` (or ctrl-c) opens a confirm overlay; `y` (or a second ctrl-c) pushes
+  `"__quit__"` → the supervisor SIGTERMs the child (which checkpoints on SIGTERM) and waits, then
+  the app exits. The on-screen "waiting for child to save…" event covers the wait; `_reap`
+  (`run()`'s `finally`) narrates it on stderr if the screen is already down.
+- **SIGHUP / SIGTERM (closed terminal / external kill):** the child stays in the launcher's
+  session (`child._launch_child`, no `start_new_session`), so a closed tmux/SSH terminal SIGHUPs
+  the whole group — and `train_rl_agent` now handles SIGHUP itself (checkpoints, like SIGTERM),
+  so it saves before exiting (see **What it provides** below). The app *also* installs asyncio
+  SIGHUP+SIGTERM handlers that route to the same clean `"__quit__"` save-and-exit path, so the
+  **launcher** tears down cleanly too rather than dying abruptly. Two complementary backstops →
+  a closed terminal never costs a checkpoint or orphans the run.
+- **No orphan child:** on any exit `run()`'s `finally` sets a `shutdown` Event and `_reap`s the
+  tracked child (SIGTERM → 10s grace → SIGKILL), narrating progress on stderr.
+- **Stdout discipline:** the child's stdout only reaches `state.add_log` + `launcher_child.log`
+  (never the terminal), and the launcher's own stderr prints fire via `atexit` after the screen
+  closes — so a stray `print()` never corrupts the Textual screen.
+
+Tests: `src/main/launcher_app_test.py` (Pilot render/keys/view/confirm/ctrl-c/signal + a
+deterministic `_supervise` exit-code/crash-restart/`_reap` suite), plus `launcher_test.py`
+(checkpoint/strip/dispatch/crash-log helpers) and `launcher/state_test.py`.
 
 ## What it provides
 
@@ -37,8 +83,10 @@ how it works internally. Modules: `checkpoint.py`, `worktree.py`, `child.py`, `i
 - **Worktree isolation** — at startup, creates a detached git worktree pinned to the current
   HEAD (or to the commit recorded in the checkpoint's `metadata.json` when resuming). Agent
   pushes to `main` never affect a running session.
-- **Rich TUI** — live dashboard showing metrics, FPS, restart countdown; `l` for logs, `r` to
-  restart now, `c` for forced checkpoint, `q` to quit cleanly.
+- **Textual TUI** — live dashboard showing metrics, FPS, restart countdown; `l` logs · `e`
+  events · `d` dashboard · `r` restart · `c` forced checkpoint · `p` plots · `s` status ·
+  `q`/ctrl-c → confirm → `y`/`n` quit. Built on the shared `src/main/tui/` base — see **How the
+  UI reconciles with Textual's event loop** above.
 - **Crash reporting** — child stdout/stderr is streamed live to `<run_dir>/launcher_child.log`
   (complete even if the child hard-`os._exit`s, bypassing Python cleanup) and held in a
   5000-line in-memory scrollback. On a non-zero exit the last 100 lines are dumped to the

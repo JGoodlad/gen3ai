@@ -1,9 +1,9 @@
 # CLAUDE.md — `src/main/tui/` (shared Textual base)
 
-A deliberately **thin** shared base for the project's Textual UIs. Today it has
-exactly one consumer — the prober (`src/main/prober/`). It exists now so a future
-**launcher Textual port** has a ready seam, without prematurely abstracting more
-than is genuinely shared.
+A deliberately **thin** shared base for the project's Textual UIs. It has **two
+consumers** — the prober (`src/main/prober/`) and the launcher's UI
+(`src/main/launcher/app.py`, run via `python -m main.launcher`). It stays minimal:
+only what both genuinely share.
 
 ## What's here
 
@@ -15,19 +15,17 @@ than is genuinely shared.
   subclass lives; the second resolves relative to the subclass module).
 - **`theme.tcss`**: the Gen3AI palette + cross-app layout primitives. Per-app
   layout belongs in that app's own `.tcss`, not here.
-- **`colors.py` — `gradient_color(t)`**: red→yellow→green hex, lifted verbatim
-  from `launcher/ui.py`'s `_gradient_color` so both UIs draw the same gradient
-  (launcher win-rate cells; prober faithfulness-drift cells). Plus the named
-  palette constants.
+- **`colors.py` — `gradient_color(t)`**: red→yellow→green hex used for both UIs'
+  gradient cells (launcher win-rate/reward cells; prober faithfulness-drift
+  cells). Plus the named palette constants.
 
 ## What is intentionally NOT shared
 
 The launcher's runtime — IPC, child subprocess, SIGTERM/restart, worktree
 pinning, the lock+snapshot `LauncherState` — is launcher-specific and stays in
-`src/main/launcher/`. It is also still **Rich**, not Textual; porting it is a
-separate, larger effort. When that port happens, the genuinely-shared pieces
-(an app base, the theme, the gradient helper, a key-hint footer) are already
-here; extend this package then, not before.
+`src/main/launcher/`. Its UI (`app.py`, the second consumer of this base) uses
+exactly the genuinely-shared pieces here (`Gen3App`, the theme, `gradient_color`,
+the key-hint `Footer`) and keeps its own runtime/loop in `src/main/launcher/run.py`.
 
 ## Tests
 

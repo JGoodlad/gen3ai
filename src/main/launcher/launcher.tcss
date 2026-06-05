@@ -1,0 +1,92 @@
+/* Launcher Textual layout. Loaded after the shared theme.tcss (see textual_app.py
+ * CSS_PATH). One ContentSwitcher with dashboard / logs / events / confirm_quit panes. */
+
+#views {
+    height: 1fr;
+}
+
+/* ── dashboard ── */
+#dashboard {
+    height: 1fr;
+}
+
+#topline {
+    height: auto;
+    padding: 1 1 0 1;
+}
+
+#badges {
+    height: auto;
+    padding: 0 1 1 1;
+}
+
+.section-label {
+    height: 1;
+    padding: 0 1;
+    color: $accent;
+    text-style: bold;
+}
+
+#metrics-row {
+    height: auto;
+    margin-bottom: 1;   /* a little breathing room before the Events section */
+}
+
+/* Two side-by-side tables echoing the Rich 11:10 split; sized to their rows so the
+ * events panel below gets the slack. */
+#metrics-left {
+    width: 1fr;
+    height: auto;
+    max-height: 22;
+    margin: 0 2 0 0;
+}
+
+#metrics-eval {
+    width: 1fr;
+    height: auto;
+    max-height: 22;
+}
+
+/* Flatten the metrics tables so they read as plain text on the dashboard (like Rich),
+ * not boxed widgets: kill the DataTable's $panel header bar, even-row striping, and the
+ * focus tint (the tables are also made non-focusable in on_mount). */
+#metrics-left, #metrics-eval {
+    background: transparent;
+}
+#metrics-left:focus, #metrics-eval:focus {
+    background-tint: $surface 0%;
+}
+#metrics-left > .datatable--header, #metrics-eval > .datatable--header {
+    background: transparent;
+    color: $text-muted;
+    text-style: none;
+}
+#metrics-left > .datatable--even-row, #metrics-eval > .datatable--even-row {
+    background: transparent;
+}
+
+#events-dash {
+    height: 1fr;
+    padding: 1 1 0 1;
+}
+
+/* ── logs / events full views (scrollable) ── */
+#logs, #events {
+    height: 1fr;
+}
+
+#logs-body, #events-body {
+    height: auto;
+    padding: 0 1;
+}
+
+/* ── confirm quit ── */
+#confirm_quit {
+    height: 1fr;
+}
+
+#confirm-body {
+    height: auto;
+    padding: 1 2;
+    border: round $error 60%;
+}

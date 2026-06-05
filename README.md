@@ -102,7 +102,7 @@ export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable
 
 ### Via launcher (recommended for long runs)
 
-The `launcher` package wraps the training script with periodic restarts to reclaim memory fragmentation, **crash auto-restart** (a self-crash relaunches from the last checkpoint after saving a per-crash `crashes/restart_err_<token>.txt`, bounded by a `--max-crash-restarts` circuit-breaker), a Rich TUI dashboard, and **git worktree isolation** — it pins the child process to the exact commit at launch so agent pushes to `main` can't affect a running session.
+The `launcher` package wraps the training script with periodic restarts to reclaim memory fragmentation, **crash auto-restart** (a self-crash relaunches from the last checkpoint after saving a per-crash `crashes/restart_err_<token>.txt`, bounded by a `--max-crash-restarts` circuit-breaker), a **Textual TUI dashboard** (built on the shared `src/main/tui/` base), and **git worktree isolation** — it pins the child process to the exact commit at launch so agent pushes to `main` can't affect a running session. A closed terminal (SIGHUP) or external `kill` is turned into a clean, checkpoint-saving shutdown.
 
 ```bash
 export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 -m main.launcher \
@@ -129,7 +129,9 @@ export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable
 
 Key launcher flags: `--restart-interval-hours` (default 3, set 0 for one-shot), `--max-crash-restarts` (default 3, consecutive rapid self-crashes to auto-restart through before giving up; 0 = unlimited), `--no-pin` (skip worktree isolation), `--sync-to-main` (when resuming, pin the worktree to the current HEAD instead of the checkpoint's original commit — useful for picking up UI/tooling fixes without discarding a checkpoint). All other flags pass through to `train_rl_agent.py`.
 
-**TUI keys:** `r` restart now · `c` force checkpoint · `q` quit cleanly · `l` logs · `d` dashboard
+`python -m main.launcher.tui …` is a back-compat alias for the same command.
+
+**TUI keys:** `l` logs · `e` events · `d` dashboard · `r` restart now · `c` force checkpoint · `p` plots · `s` status · `q` or Ctrl-C → confirm → `y`/`n` quit cleanly
 
 ### Direct (no restart loop)
 
@@ -208,7 +210,7 @@ src/
                      #   turn-delta fold, wrappers, stall detection,
                      #   eval + forensic-trace capture, self-play snapshot pool
   main/
-    launcher/          # Restart loop + Rich TUI (preferred entry point)
+    launcher/          # Restart loop + Textual TUI (preferred entry point)
                      #   checkpoint.py, worktree.py, child.py, input.py,
                      #   run.py, state.py, ui.py
     exit_codes.py      # TrainExitCode enum (COMPLETE/INTERRUPTED/CRASH)

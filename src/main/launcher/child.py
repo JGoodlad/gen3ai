@@ -112,6 +112,11 @@ def _launch_child(
     metrics_r, metrics_w = os.pipe()
     existing = child_env.get("PYTHONPATH", "")
     pythonpath = (src_dir + ":" + existing) if existing else src_dir
+    # The child stays in the launcher's session (no start_new_session): a closed
+    # tmux/SSH terminal SIGHUPs the whole group, and train_rl_agent now handles SIGHUP
+    # itself (checkpoints, like SIGTERM), so it saves before exiting. The launcher also
+    # installs its own SIGHUP/SIGTERM handler (app.py) so it tears down cleanly rather
+    # than dying abruptly — the two are complementary backstops.
     proc = subprocess.Popen(
         [_PYTHON, train_script] + child_args,
         env={**child_env, "LAUNCHER_METRICS_FD": str(metrics_w), "PYTHONPATH": pythonpath},
