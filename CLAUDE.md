@@ -297,6 +297,21 @@ Default stays websocket (opt-in): the end-to-end training-FPS gain at scale is o
 is operational — no server — not throughput). See `src/utils/bridge/README.md` and
 `designs/ai_v5/design_local_sim_bridge_transport.md`.
 
+### Non-barrier async rollout (`--async-rollout`, opt-in)
+
+Stock `SubprocVecEnv.step()` is a **barrier** — each step waits for the *slowest* of N env workers,
+so the latency-bound rollout (py-spy: ~86% wall, GPU ~86% idle) is straggler-gated and the policy
+forward never overlaps env stepping. `--async-rollout` swaps in `AsyncSubprocVecEnv` + an on-policy
+`collect_rollouts_async` (`src/agents/training/async_vec_env.py`) that keeps every worker
+continuously in-flight and forwards whichever envs are **ready**, filling each env's own buffer
+column. It stays **exactly on-policy** (PPO freezes the policy during collection — a scheduling
+change, not an APPO-style algorithm change). Masks ride natively in the Dict obs (`obs["action_mask"]`);
+`env_method` is drain-safe so the eval callback's mid-collection pushes don't desync.
+**Measured (bridge, GPU forward, steady-state FPS): +20% at n_envs=16 (=logical cores); +14% at the
+production `--n-envs 64` (1489→1695); `--async-rollout --n-envs 32` matches production `sync@64` FPS
+with half the envs** (≈half the RAM). Off by default (= stock `SubprocVecEnv`), ignored under
+`--debug`. Full design: `designs/ai_v5/design_async_rollout.md`.
+
 ### Bot evaluation
 
 Bot eval runs in **frozen-snapshot subprocesses** (`--eval-workers`, default 3) that work-steal

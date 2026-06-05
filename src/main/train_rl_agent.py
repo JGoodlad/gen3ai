@@ -62,6 +62,7 @@ from agents.training.stall import StallConfig
 from agents.training.watchdog import start_subprocess_watchdog, start_orphan_watchdog
 from agents.training.adaptive_lr_callback import AdaptivePPOCallback, TwoPhaseLRCallback
 from agents.training.instrumented_ppo import InstrumentedMaskablePPO
+from agents.training.async_vec_env import AsyncSubprocVecEnv
 from agents.training.metrics_exporter_callback import MetricsExporterCallback
 from utils.logging.levels import LogLevel
 from main.exit_codes import TrainExitCode
@@ -347,6 +348,14 @@ async def main():
     parser.add_argument("--steps", type=int, default=100000, help="Total training timesteps")
     parser.add_argument("--debug", action="store_true", help="Use DummyVecEnv (1 env) for debugging")
     parser.add_argument("--n-envs", type=int, default=32, help="Number of parallel environments")
+    parser.add_argument("--async-rollout", "--async_rollout", dest="async_rollout",
+                        action="store_true", default=False,
+                        help="Non-barrier async rollout collection: keep every env worker "
+                             "continuously in-flight and forward whichever are ready, instead of "
+                             "barriering on the slowest env each step (AsyncSubprocVecEnv + an "
+                             "on-policy async collect_rollouts that overlaps the GPU forward with "
+                             "CPU env-stepping). Off by default; ignored under --debug. With async, "
+                             "right-size --n-envs nearer the core count (16) rather than oversubscribing.")
     parser.add_argument("--device", type=str, default="auto", help="Device to use (cpu, cuda, or auto)")
     parser.add_argument("--showdown-port", type=int, default=None,
                         help="Local Showdown server port (default 8000). Sets the port for the trainee, "
@@ -594,9 +603,18 @@ async def main():
 
     # Running parallel environments
     n_envs = 1 if args.debug else args.n_envs
-    EnvClass = DummyVecEnv if args.debug else SubprocVecEnv
+    # --async-rollout swaps the barriered SubprocVecEnv for AsyncSubprocVecEnv (per-env in-flight
+    # stepping + drain-safe env_method). Only when not --debug (DummyVecEnv has one env, no barrier).
+    _async_rollout = args.async_rollout and not args.debug
+    if args.debug:
+        EnvClass = DummyVecEnv
+    elif _async_rollout:
+        EnvClass = AsyncSubprocVecEnv
+    else:
+        EnvClass = SubprocVecEnv
 
-    emit(f"⚙️ Initializing {n_envs} envs ({EnvClass.__name__})")
+    emit(f"⚙️ Initializing {n_envs} envs ({EnvClass.__name__})"
+         + (" — non-barrier async rollout" if _async_rollout else ""))
 
     _shutdown_event = threading.Event()
 
@@ -992,6 +1010,7 @@ async def main():
             print(f"Continuing Training (Steps: {remaining_steps:,} remaining of {args.steps:,}, LR: {resume_lr:.2e} ({lr_detail}))")
             _run_roundtrip_test(model, _load_extractor_kwargs["layout"], _load_policy_kwargs, debug=args.debug)
             _apply_grad_checkpointing(model, args.grad_checkpointing)
+            model._async_rollout = _async_rollout   # route collect_rollouts to the non-barrier path
             save_model_snapshot(model_dir, current_version, hparams=_model_hparams(model))
 
             _abort_fn = _setup_signal_handlers(
@@ -1079,6 +1098,7 @@ async def main():
         version = ModelVersion.from_layout_and_policy_kwargs(extractor_kwargs["layout"], policy_kwargs)
         _run_roundtrip_test(model, extractor_kwargs["layout"], policy_kwargs, debug=args.debug)
         _apply_grad_checkpointing(model, args.grad_checkpointing)
+        model._async_rollout = _async_rollout   # route collect_rollouts to the non-barrier path
         save_model_snapshot(model_dir, version, hparams=_model_hparams(model))
 
         _abort_fn = _setup_signal_handlers(

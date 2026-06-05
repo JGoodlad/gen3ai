@@ -32,6 +32,8 @@ from torch.nn import functional as F
 
 from sb3_contrib import MaskablePPO
 
+from agents.training.async_vec_env import AsyncSubprocVecEnv, collect_rollouts_async
+
 
 # SHA256 of inspect.getsource(MaskablePPO.train) at the time this file was
 # written. If sb3_contrib updates and this no longer matches, _verify_...
@@ -70,7 +72,20 @@ class InstrumentedMaskablePPO(MaskablePPO):
 
     Behaviour-identical to `MaskablePPO` except for the additional TensorBoard
     metric. See module docstring for drift-detection details.
+
+    Also dispatches rollout collection to the **non-barrier async collector** when
+    ``self._async_rollout`` is set and the env is an ``AsyncSubprocVecEnv`` (``--async-rollout``);
+    otherwise it is the unchanged stock ``MaskablePPO.collect_rollouts``.
     """
+
+    # Set by train_rl_agent after construction; opt-in (default off → stock sync collection).
+    _async_rollout: bool = False
+
+    def collect_rollouts(self, env, callback, rollout_buffer, n_rollout_steps, use_masking=True):
+        if self._async_rollout and isinstance(env, AsyncSubprocVecEnv):
+            return collect_rollouts_async(
+                self, env, callback, rollout_buffer, n_rollout_steps, use_masking)
+        return super().collect_rollouts(env, callback, rollout_buffer, n_rollout_steps, use_masking)
 
     def train(self) -> None:
         """

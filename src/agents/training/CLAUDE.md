@@ -266,6 +266,33 @@ as a `⚗ distilled 100%`/`⚗ distilling N%` badge + a `distill/*` metrics bloc
 footprint when off). **Full design: `designs/ai_v5/distill_integration.md`
 (§8 all-or-nothing, §7 restart resilience); module map: `src/agents/training/distill/CLAUDE.md`.**
 
+## Rollout collection: sync barrier vs `--async-rollout` (`async_vec_env.py`)
+
+The default `SubprocVecEnv.step()` is a **per-step barrier** — the trainer waits for the slowest of
+N env workers every step, so a slow battle turn / heavy opponent forward / oversubscription jitter
+stalls the whole batch and the GPU policy-forward never overlaps CPU env-stepping. `--async-rollout`
+swaps in **`AsyncSubprocVecEnv`** (per-env `send_step`/`poll_ready`/`recv_step` over the pipes +
+**drain-safe `env_method`** — the eval callback's `set_self_play_target`/`set_distill_active`/
+`opponent_default_stats` fire mid-collection, so the override stashes in-flight step results before
+any barrier RPC to avoid a pipe desync) and **`collect_rollouts_async`**, dispatched by
+`InstrumentedMaskablePPO.collect_rollouts` when `model._async_rollout` is set.
+
+The collector keeps every worker continuously in-flight, batch-forwards whichever envs are READY
+(dynamic batch), and writes each env's transition into **its own buffer column**
+(`MaskableDictRolloutBuffer`); collection ends when every column has `n_steps`. It is **exactly
+on-policy** — PPO freezes the policy during collection, so this is a *scheduling* change (overlap
+forward with stepping, drop the max-latency barrier), NOT an APPO-style algorithm change. Bookkeeping
+(`num_timesteps`, GH-#633 timeout bootstrap, `_update_info_buffer`, `_last_*` carry-over, per-column
+GAE) mirrors the stock loop exactly. The per-decision **mask rides in the Dict obs**
+(`obs["action_mask"]`, = `last_ctx.mask`), so no per-env `env_method` and no wrapper change.
+
+**Measured FPS (bridge, GPU forward, steady-state, heuristic opponents):** +20% at `--n-envs 16`;
+**+14% at the production `--n-envs 64` (1489→1695)**; `--async-rollout --n-envs 32` matches `sync@64`
+FPS with half the envs (≈half the env/bridge RAM). Off by default (stock `SubprocVecEnv`), ignored
+under `--debug`. Compounds with distillation (async attacks the barrier; distill attacks the per-step
+opponent CPU). Caveat: benchmarked with heuristic opponents — re-bench under `--self-play` for the
+production-regime number. Full design + benchmark table: `designs/ai_v5/design_async_rollout.md`.
+
 ## Process liveness guards (`watchdog.py`)
 
 Two daemon-thread watchdogs keep a hung/abandoned run from lingering:
