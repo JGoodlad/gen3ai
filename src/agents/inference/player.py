@@ -116,6 +116,25 @@ class Gen3Player(Player):
         self._stall_loggers.pop(tag, None)
         self._trackers.pop(tag, None)
 
+    def reset_battles(self) -> None:
+        """Clear poke-env's battle tracker AND our per-battle-tag caches.
+
+        ``_battle_finished_callback`` is the normal eviction point for ``_trackers`` /
+        ``_stall_loggers``, but it only fires for a *networked* player (one with a live
+        message loop). A self-play OPPONENT is built ``start_listening=False`` and used as
+        a pure decision function over the env's battle — it never receives that callback,
+        so without this override every battle would leave a permanent ``EpisodeTracker``
+        (+ its obs/turn-delta history) and ``StallLogger`` behind, keyed by the bridge's
+        per-battle-unique tag. The wrapper already calls ``reset_battles()`` on the
+        opponent every episode, so pruning here is the correct, cheap fix. We keep only
+        entries whose tag is still live in ``_battles`` (``super()`` empties it, so this
+        clears everything in the per-episode case, while staying safe for any caller that
+        resets with battles still in flight)."""
+        super().reset_battles()
+        live = set(self._battles)
+        self._trackers = {t: v for t, v in self._trackers.items() if t in live}
+        self._stall_loggers = {t: v for t, v in self._stall_loggers.items() if t in live}
+
     def _get_tracker(self, battle) -> EpisodeTracker:
         tag = battle.strict_view().battle_tag
         if tag not in self._trackers:
