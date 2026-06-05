@@ -22,10 +22,29 @@ def _fmt_val(v: float) -> str:
 
 
 def _fmt_metric(key: str, v: float) -> str:
-    """Format a metric value; win rates render as percentages."""
-    if "win_rate" in key:
+    """Format a metric value; win rates + distilled-fraction render as percentages, the
+    all-distilled flag as yes/no."""
+    if "win_rate" in key or key == "distill/frac_active_opponents_distilled":
         return f"{v * 100:.1f}%"
+    if key == "distill/all_distilled":
+        return "yes" if v >= 0.5 else "no"
     return _fmt_val(v)
+
+
+# Short, legible row labels for keys whose tail is verbose (otherwise the label is the
+# part after '/'). Keeps the dashboard's distill block readable.
+_METRIC_LABELS = {
+    "distill/all_distilled": "all distilled",
+    "distill/frac_active_opponents_distilled": "distilled",
+    "distill/n_ready": "ready",
+    "distill/n_running": "running",
+    "distill/n_exhausted": "exhausted",
+}
+
+
+def _metric_label(key: str) -> str:
+    """Display label for a metric row — a short override if known, else the part after '/'."""
+    return _METRIC_LABELS.get(key, key.partition("/")[2])
 
 
 # Preferred display order; any unlisted keys are appended alphabetically.
@@ -73,4 +92,10 @@ _METRIC_ORDER = [
     "train/n_updates",
     "train/policy_gradient_loss",
     "train/value_loss",
+    # Distillation (only present under --distill-opponents) — headline first.
+    "distill/all_distilled",
+    "distill/frac_active_opponents_distilled",
+    "distill/n_ready",
+    "distill/n_running",
+    "distill/n_exhausted",
 ]

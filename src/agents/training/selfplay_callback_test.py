@@ -13,8 +13,11 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from agents.training.snapshot_pool import SnapshotEntry
+from agents.training.distill.manager import ReconcileResult
 from agents.training.selfplay_callback import (
     _monotonicity_score,
+    _distill_step_tag,
+    _distill_job_event_text,
     SelfPlayCallback,
     _REGRESSION_WARN_THRESHOLD,
 )
@@ -539,6 +542,101 @@ def test_cycle_tag_carries_process_nonce(tmp_path, monkeypatch):
     assert captured[0].startswith(cb._eval_run_nonce)
     # NOT the step-derived tag that collided across restarts.
     assert captured[0] != f"{2_000_000 // 100 % 10000:04d}"
+
+
+# ── distillation: Events-panel text + reconcile emission ──────────────────────
+
+def test_distill_step_tag():
+    assert _distill_step_tag(0) == "seed"
+    assert _distill_step_tag(47_000_000) == "47.0M"
+
+
+def test_distill_job_event_text_variants():
+    deployed = _distill_job_event_text(
+        {"step": 12_000_000, "action": "deployed", "rung": 1, "n_rungs": 3,
+         "speedup": 4.0, "h2h": 0.5})
+    assert "Distilled 12.0M" in deployed and "h2h 0.50" in deployed and "4.0×" in deployed
+
+    escalated = _distill_job_event_text(
+        {"step": 8_000_000, "action": "escalated", "rung": 0, "next_rung": 1,
+         "n_rungs": 3, "h2h": 0.62})
+    assert "escalating to rung 2/3" in escalated and "h2h 0.62" in escalated
+
+    exhausted = _distill_job_event_text(
+        {"step": 0, "action": "exhausted", "rung": 2, "n_rungs": 3})
+    assert "exhausted" in exhausted and "seed" in exhausted
+
+    # unknown / missing action → no event (defensive)
+    assert _distill_job_event_text({"step": 1, "action": "??"}) is None
+
+
+def test_distill_job_event_text_handles_missing_h2h():
+    # h2h is None when the gate never ran the head-to-head (offline top1 < 0.80) — must not crash.
+    msg = _distill_job_event_text(
+        {"step": 5_000_000, "action": "escalated", "rung": 0, "next_rung": 1, "n_rungs": 3})
+    assert "low fidelity" in msg
+
+
+def test_reconcile_emits_lifecycle_events(tmp_path, monkeypatch):
+    """_reconcile_distill turns the manager's structured outcomes into Events-panel lines:
+    per-job gate result + the atomic full→100%-distilled switch + the backfill spawn."""
+    from agents.training import selfplay_callback as sp
+    cb = _make_callback(tmp_path)
+    cb._init_callback()
+    cb._pool._entries = []                     # active-step list comprehension in _reconcile_distill
+    rr = ReconcileResult(
+        all_distilled=True, use_full=False, frac_distilled=1.0,
+        n_active=2, n_ready=2, n_running=1, n_missing=0, n_exhausted=0,
+        spawned=[3_000_000], sampleable={1_000_000, 2_000_000},
+        harvested=[{"step": 47_000_000, "action": "deployed", "rung": 0, "n_rungs": 3,
+                    "speedup": 5.2, "h2h": 0.49, "passed": True}],
+    )
+    cb._distill_mgr = MagicMock()
+    cb._distill_mgr.reconcile.return_value = rr
+    cb._distill_deployed = False               # so the switch is a transition
+
+    events: list = []
+    monkeypatch.setattr(sp, "send_event", lambda m: events.append(m))
+    cb._reconcile_distill()
+
+    joined = "\n".join(events)
+    assert "Distilled 47.0M" in joined         # per-job gate event
+    assert "100% distilled" in joined          # atomic full→distilled switch
+    assert "Distilling 1 snapshot" in joined   # backfill spawn
+    assert cb._distill_deployed is True         # transition latched (won't re-fire next tick)
+    recorded = {c.args[0] for c in cb.logger.record.call_args_list}
+    assert "distill/all_distilled" in recorded
+    assert "distill/frac_active_opponents_distilled" in recorded
+
+
+def test_reconcile_revert_event_only_after_deploy(tmp_path, monkeypatch):
+    """A drop back to full narrates a revert ONLY if we were previously 100% distilled —
+    the cold start (None→False) must stay silent (no spurious 'reverted' on enable)."""
+    from agents.training import selfplay_callback as sp
+    cb = _make_callback(tmp_path)
+    cb._init_callback()
+    cb._pool._entries = []
+    rr = ReconcileResult(
+        all_distilled=False, use_full=True, frac_distilled=0.5,
+        n_active=2, n_ready=1, n_running=1, n_missing=1, n_exhausted=0,
+        spawned=[], sampleable={1_000_000, 2_000_000}, harvested=[],
+    )
+    cb._distill_mgr = MagicMock()
+    cb._distill_mgr.reconcile.return_value = rr
+
+    # cold start: None → False, no revert line
+    cb._distill_deployed = None
+    events: list = []
+    monkeypatch.setattr(sp, "send_event", lambda m: events.append(m))
+    cb._reconcile_distill()
+    assert not any("reverted" in e.lower() for e in events)
+
+    # after a real deploy: True → False narrates the revert (speedup lost)
+    cb._distill_deployed = True
+    cb._last_distill_push = None                # force the push branch again
+    events.clear()
+    cb._reconcile_distill()
+    assert any("reverted" in e.lower() for e in events)
 
 
 def test_watchdog_aborts_hung_selfplay_cycle(tmp_path, monkeypatch):

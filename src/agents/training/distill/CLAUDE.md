@@ -63,6 +63,19 @@ A gate **failure** means the student is too small for that snapshot → re-disti
 valid pool (`min_pool`), fall back **pool-wide to full**. The one-glance health metric is
 **`distill/frac_active_opponents_distilled`** — it must be 1.0 for any speedup.
 
+## Observability (TensorBoard + launcher TUI)
+
+`_reconcile_distill` records five `distill/*` scalars each tick — `frac_active_opponents_distilled`,
+`all_distilled`, `n_ready`, `n_running`, `n_exhausted` — to TensorBoard (and, via
+`MetricsExporterCallback`, to the launcher dashboard's metrics column). The **structured per-job
+outcomes** ride `ReconcileResult.harvested` (one entry per job that finished this tick: `step, action
+∈ {deployed,escalated,exhausted}, rung, speedup, h2h`); the callback formats each into a launcher
+**Events-panel** line (`_distill_job_event_text`, a pure function) and also narrates the atomic
+full↔100%-distilled **switch** and each backfill **spawn** via `send_event`. The launcher renders a
+`⚗ distilled 100%`/`⚗ distilling N%` headline badge from the metrics — see
+`src/main/launcher/CLAUDE.md` → Textual TUI. The manager stays pure (it emits data, not strings), so
+the harvested→event mapping is unit-tested in `manager_test.py` + `selfplay_callback_test.py`.
+
 ## On-disk layout (`models/<run>/distilled/`, sibling of `snapshots/`)
 
 `snapshot_<step:012d>.distilled.pt` (the cheap student) + `.distilled.json` (the **manifest** =

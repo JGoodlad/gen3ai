@@ -173,7 +173,10 @@ promotion is distilled *before* it becomes an opponent. A fail-closed **gate** (
 head-to-head vs the teacher) validates each one, with capacity escalation + auto-revert on drift.
 Distilled networks + their gate manifests land in `models/<run>/distilled/` (auto-cleaned as the pool
 window slides); distilling runs in a non-blocking subprocess on `--eval-device` (CPU by default, no
-GPU contention). Full design + empirical results: `designs/ai_v5/distill_integration.md`; module map:
+GPU contention). The launcher TUI surfaces it live: a `⚗ distilled 100%` (green = speedup active) /
+`⚗ distilling N%` (yellow = backfilling) badge, a `distill/*` metrics block, and Events-panel lines
+for each gate result + the atomic full↔distilled switch — all on TensorBoard too. Full design +
+empirical results: `designs/ai_v5/distill_integration.md`; module map:
 `src/agents/training/distill/CLAUDE.md`.
 
 Checkpoints save to `models/run_<timestamp>/` automatically. TensorBoard logs always write to `./tensorboard/` in the repo root.

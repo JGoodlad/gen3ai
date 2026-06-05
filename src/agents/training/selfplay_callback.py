@@ -81,6 +81,33 @@ def _monotonicity_score(win_rates: list[float]) -> float:
     return 2.0 * concordant / total - 1.0
 
 
+def _distill_step_tag(step: int) -> str:
+    """A snapshot's step as a compact label for the Events panel ('seed' / '47.0M')."""
+    return "seed" if step == 0 else f"{step / 1e6:.1f}M"
+
+
+def _distill_job_event_text(h: dict) -> "str | None":
+    """Pure formatter: one harvested distill job -> an Events-panel line (or None).
+
+    ``h`` is a ``ReconcileResult.harvested`` entry (manager.py): keys ``step, action,
+    rung, n_rungs, next_rung?, speedup, h2h``. Kept pure (no I/O) so it is unit-testable.
+    """
+    tag = _distill_step_tag(h["step"])
+    n = h.get("n_rungs", 1)
+    h2h = h.get("h2h")
+    speed = h.get("speedup") or 0.0
+    action = h.get("action")
+    if action == "deployed":
+        extra = f"h2h {h2h:.2f}, " if isinstance(h2h, (int, float)) else ""
+        return f"⚗ Distilled {tag} ✓ — {extra}{speed:.1f}× faster (rung {h.get('rung', 0) + 1}/{n})"
+    if action == "escalated":
+        reason = f"h2h {h2h:.2f}" if isinstance(h2h, (int, float)) else "low fidelity"
+        return f"⚗ Distill {tag} missed gate ({reason}) — escalating to rung {h.get('next_rung', 0) + 1}/{n}"
+    if action == "exhausted":
+        return f"⚗ Distill {tag} exhausted the ladder — kept as a full opponent"
+    return None
+
+
 class SelfPlayCallback(BaseCallback):
     """Non-blocking bot + pool eval callback with snapshot promotion.
 
@@ -172,6 +199,9 @@ class SelfPlayCallback(BaseCallback):
         self._distill_device = distill_device
         self._distill_mgr = None
         self._last_distill_push = None
+        # Tracks the live atomic all-or-nothing state so a transition (full↔100% distilled)
+        # fires exactly one Events-panel line. None = not yet known (no transition logged).
+        self._distill_deployed = None
         self._last_distill_reconcile = 0
         self._distill_reconcile_interval = 4000 if debug else 100_000
         if distill_opponents:
@@ -554,6 +584,13 @@ class SelfPlayCallback(BaseCallback):
             self._pool._scan()
             active = [e.step for e in self._pool._entries]
             r = self._distill_mgr.reconcile(active)
+
+            # ── Events panel: per-job gate results (deployed / escalated / exhausted) ──
+            for h in r.harvested:
+                msg = _distill_job_event_text(h)
+                if msg:
+                    send_event(msg)
+
             key = (r.all_distilled, tuple(sorted(r.sampleable)))
             if key != self._last_distill_push:
                 self._last_distill_push = key
@@ -568,12 +605,26 @@ class SelfPlayCallback(BaseCallback):
                         "all_distilled": r.all_distilled, "frac": round(r.frac_distilled, 3),
                         "n_active": r.n_active, "n_ready": r.n_ready, "n_exhausted": r.n_exhausted,
                         "deployed_steps": sorted(r.sampleable) if r.all_distilled else []})
+
+            # ── Events panel: the atomic all-or-nothing switch (the speedup is on iff all_distilled) ──
+            if r.all_distilled != self._distill_deployed:
+                if r.all_distilled:
+                    send_event(f"🚀 Opponents now 100% distilled ({r.n_ready} snapshots) — "
+                               f"rollout speedup ACTIVE")
+                elif self._distill_deployed:  # True/None→False: only narrate a real revert, not the cold start
+                    send_event(f"↩️ Opponents reverted to full models "
+                               f"({r.frac_distilled * 100:.0f}% distilled) — backfilling")
+                self._distill_deployed = r.all_distilled
+
             self.logger.record("distill/frac_active_opponents_distilled", r.frac_distilled)
             self.logger.record("distill/all_distilled", float(r.all_distilled))
             self.logger.record("distill/n_running", r.n_running)
             self.logger.record("distill/n_exhausted", r.n_exhausted)
             self.logger.record("distill/n_ready", r.n_ready)
             if r.spawned:
+                steps = ", ".join(_distill_step_tag(s) for s in sorted(r.spawned))
+                send_event(f"⚗ Distilling {len(r.spawned)} snapshot(s) [{steps}] "
+                           f"({r.n_running} running) — opponents stay full until all pass")
                 print(f"[DISTILL] reconcile: spawned {sorted(r.spawned)} "
                       f"(active={r.n_active} ready={r.n_ready} running={r.n_running} "
                       f"all_distilled={r.all_distilled})")
@@ -614,7 +665,9 @@ class SelfPlayCallback(BaseCallback):
         if mf.exists():
             try:
                 m = _json.loads(mf.read_text())
-                return {"passed": bool(m.get("passed")), "speedup": float(m.get("speedup") or 0.0)}
+                # h2h/top1 pass through to the Events panel (manager ignores them for gating).
+                return {"passed": bool(m.get("passed")), "speedup": float(m.get("speedup") or 0.0),
+                        "h2h": m.get("h2h"), "top1": m.get("top1")}
             except (ValueError, OSError):
                 pass
         return {"passed": False, "speedup": 0.0}

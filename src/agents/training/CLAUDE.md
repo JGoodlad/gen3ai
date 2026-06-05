@@ -251,7 +251,12 @@ no-op when nothing's missing — spawning the `distill/worker.py` subprocess per
 fidelity + head-to-head). Distilled artifacts + their gate manifests live in `models/<run>/distilled/`
 (the manifest is the per-snapshot source of truth; `summary.json` gets only a re-publish block);
 cleanup is automatic via the reconcile's window-eviction. The env's `MaskableAgentWrapper` does the
-atomic full↔distilled opponent switch (`set_distill_active`). **Full design: `designs/ai_v5/distill_integration.md`
+atomic full↔distilled opponent switch (`set_distill_active`). **Observability:** `_reconcile_distill`
+records five `distill/*` scalars (frac/all_distilled/ready/running/exhausted) to TensorBoard + the
+launcher dashboard, and emits launcher **Events** for each gate result (deployed/escalated/exhausted
+with h2h + speedup), the atomic full↔100%-distilled switch, and backfill spawns — surfaced in the TUI
+as a `⚗ distilled 100%`/`⚗ distilling N%` badge + a `distill/*` metrics block + Events lines (zero
+footprint when off). **Full design: `designs/ai_v5/distill_integration.md`
 (§8 all-or-nothing, §7 restart resilience); module map: `src/agents/training/distill/CLAUDE.md`.**
 
 ## Process liveness guards (`watchdog.py`)

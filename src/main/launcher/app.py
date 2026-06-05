@@ -33,7 +33,7 @@ from textual.widgets import ContentSwitcher, DataTable, Static
 
 from main.tui import Gen3App, THEME_PATH, gradient_color
 from main.launcher.state import LauncherState
-from main.launcher.format import _METRIC_ORDER, _elapsed_str, _fmt_metric
+from main.launcher.format import _METRIC_ORDER, _elapsed_str, _fmt_metric, _metric_label
 
 # Eval keys shown in the aggregate summary block (everything else under eval/ is treated
 # as per-opponent detail). Mirrors the local set in ui.py's _make_eval_table.
@@ -315,6 +315,9 @@ class LauncherApp(Gen3App):
             out.append(sep)
             out.append("ent_coef ", style="dim")
             out.append(f"{snap.ent_coef:g}", style="bold")
+        # Opponent-distillation headline (only present under --distill-opponents). The rollout
+        # speedup is all-or-nothing: green only when 100% distilled, yellow while backfilling.
+        out.append_text(self._distill_badge(snap.metrics))
         idle = now - snap.last_activity_ts
         if idle > 120:
             out.append(sep)
@@ -329,6 +332,27 @@ class LauncherApp(Gen3App):
         if crashes:
             return Text(f"↻ {n} {word} ({crashes} crash)", style="yellow")
         return Text(f"↻ {n} {word}", style="dim")
+
+    def _distill_badge(self, metrics: dict) -> Text:
+        """At-a-glance opponent-distillation state, or empty when distillation is off.
+
+        Distillation is all-or-nothing (the per-step barrier): the rollout speedup is active
+        ONLY at 100%, so the badge is green at all-distilled and yellow while backfilling. Empty
+        when no ``distill/*`` keys are present (i.e. ``--distill-opponents`` not enabled)."""
+        if "distill/all_distilled" not in metrics:
+            return Text()
+        out = Text("  │  ")
+        if metrics.get("distill/all_distilled", 0.0) >= 0.5:
+            out.append("⚗ distilled 100%", style="green")
+        else:
+            frac = metrics.get("distill/frac_active_opponents_distilled", 0.0)
+            n_run = int(metrics.get("distill/n_running", 0) or 0)
+            detail = f" ({n_run} running)" if n_run else ""
+            out.append(f"⚗ distilling {frac * 100:.0f}%{detail}", style="yellow")
+        n_exh = int(metrics.get("distill/n_exhausted", 0) or 0)
+        if n_exh:
+            out.append(f" · {n_exh} exhausted", style="dim")
+        return out
 
     def _render_metrics(self, snap, now: float) -> None:
         metrics = snap.metrics
@@ -385,7 +409,7 @@ class LauncherApp(Gen3App):
             left.add_row(Text(f"{sec}{badge}", style="dim italic"), "")
             first = False
             for key in keys:
-                name = key.partition("/")[2]
+                name = _metric_label(key)
                 left.add_row(
                     Text(f"  {name}", style="dim"),
                     Text(_fmt_metric(key, display[key]), style="bold", justify="right"),

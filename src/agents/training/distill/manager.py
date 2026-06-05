@@ -21,7 +21,7 @@ Pure logic via injected hooks (so it is unit-testable without subprocesses/bridg
   remove_fn(step)       -> None        delete a snapshot's distilled artifact
 """
 from __future__ import annotations
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any, Callable, Dict, List, Optional, Set
 
 # default capacity ladder (smallest first); the manager escalates a snapshot up this ladder
@@ -45,6 +45,10 @@ class ReconcileResult:
     n_exhausted: int           # active snapshots that can't be distilled within the ladder/floor
     spawned: List[int]         # steps a distill job was spawned for this tick
     sampleable: Set[int]       # the opponent steps the env should sample from this generation
+    # Jobs that FINISHED this tick (for the launcher Events panel). One dict per harvested job:
+    #   {step, passed, action: "deployed"|"escalated"|"exhausted", rung, n_rungs,
+    #    next_rung?, speedup, h2h, top1}. Empty on a no-op tick — pure data, the callback formats it.
+    harvested: List[Dict[str, Any]] = field(default_factory=list)
 
 
 class DistilledOpponentManager:
@@ -102,20 +106,28 @@ class DistilledOpponentManager:
         active: Set[int] = set(active_steps)
 
         # 1) harvest finished jobs -> ready (on disk) or escalate/exhaust
+        harvested: List[Dict[str, Any]] = []
         for step, handle in list(self._jobs.items()):
             res = self._poll(handle)
             if res is None:
                 continue                          # still running
             rung = self._job_rung.pop(step, 0)
             del self._jobs[step]
-            if res.get("passed") and res.get("speedup", 0.0) >= self.min_speedup:
+            passed = bool(res.get("passed")) and res.get("speedup", 0.0) >= self.min_speedup
+            rec = {"step": step, "passed": passed, "rung": rung, "n_rungs": len(self.ladder),
+                   "speedup": res.get("speedup"), "h2h": res.get("h2h"), "top1": res.get("top1")}
+            if passed:
                 self._next_rung.pop(step, None)   # success: its gate-passed .pt is now on disk
+                rec["action"] = "deployed"
             else:
                 nxt = rung + 1
                 if nxt < len(self.ladder):
                     self._next_rung[step] = nxt   # retry bigger next reconcile
+                    rec["action"], rec["next_rung"] = "escalated", nxt
                 else:
                     self._exhausted.add(step)     # ladder exhausted -> can't distill faithfully
+                    rec["action"] = "exhausted"
+            harvested.append(rec)
 
         ready = self._ready_steps() & active
         running = set(self._jobs)
@@ -152,5 +164,5 @@ class DistilledOpponentManager:
             all_distilled=all_distilled, use_full=use_full, frac_distilled=frac,
             n_active=len(active), n_ready=len(ready), n_running=len(self._jobs),
             n_missing=len(missing), n_exhausted=len(self._exhausted & active),
-            spawned=spawned, sampleable=sampleable,
+            spawned=spawned, sampleable=sampleable, harvested=harvested,
         )

@@ -86,7 +86,16 @@ deterministic `_supervise` exit-code/crash-restart/`_reap` suite), plus `launche
 - **Textual TUI** — live dashboard showing metrics, FPS, restart countdown; `l` logs · `e`
   events · `d` dashboard · `r` restart · `c` forced checkpoint · `p` plots · `s` status ·
   `q`/ctrl-c → confirm → `y`/`n` quit. Built on the shared `src/main/tui/` base — see **How the
-  UI reconciles with Textual's event loop** above.
+  UI reconciles with Textual's event loop** above. **Opponent distillation** (`--distill-opponents`)
+  surfaces in three places, all zero-footprint when off: a **badge-row headline** (`⚗ distilled 100%`
+  green = rollout speedup ACTIVE, vs `⚗ distilling N% (M running)` yellow = backfilling, since the
+  speedup is all-or-nothing — `app.py::_distill_badge`); the **`distill/*` metrics block** in the
+  left column (frac as a %, `all distilled` as yes/no, ready/running/exhausted counts — short labels
+  via `format._metric_label`); and the **Events panel**, which narrates each gate result (✓ deployed
+  with h2h + speedup / escalated a ladder rung / exhausted), the atomic full↔100%-distilled switch,
+  and each backfill spawn (`selfplay_callback._reconcile_distill` → `send_event`). The metrics ride
+  the normal `distill/*` logger scalars through `MetricsExporterCallback`; the events are emitted
+  straight to the IPC pipe.
 - **Crash reporting** — child stdout/stderr is streamed live to `<run_dir>/launcher_child.log`
   (complete even if the child hard-`os._exit`s, bypassing Python cleanup) and held in a
   5000-line in-memory scrollback. The on-disk log is a **disk ring buffer**

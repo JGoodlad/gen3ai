@@ -142,6 +142,61 @@ async def test_dashboard_metrics_tables_populated():
         assert "vs sentinel_1 (seed)" in ev
 
 
+def _with_distill(state: LauncherState, *, all_distilled: float, frac: float,
+                  running: float = 0.0, exhausted: float = 0.0) -> LauncherState:
+    """Merge a distill/* metrics block onto an existing state (non-eval → merges)."""
+    state.update_metrics({
+        "_step": 6_100_000,
+        "distill/all_distilled": all_distilled,
+        "distill/frac_active_opponents_distilled": frac,
+        "distill/n_ready": 5.0,
+        "distill/n_running": running,
+        "distill/n_exhausted": exhausted,
+    })
+    return state
+
+
+async def test_distill_badge_green_when_all_distilled():
+    state = _with_distill(_populated_state(), all_distilled=1.0, frac=1.0)
+    app = LauncherApp(state, queue.Queue())
+    async with app.run_test() as pilot:
+        await pilot.pause(); app._refresh(); await pilot.pause()
+        badges = _plain(app.query_one("#badges", Static))
+        assert "distilled 100%" in badges            # speedup ACTIVE headline
+
+
+async def test_distill_badge_yellow_while_backfilling():
+    state = _with_distill(_populated_state(), all_distilled=0.0, frac=0.6,
+                          running=2.0, exhausted=1.0)
+    app = LauncherApp(state, queue.Queue())
+    async with app.run_test() as pilot:
+        await pilot.pause(); app._refresh(); await pilot.pause()
+        badges = _plain(app.query_one("#badges", Static))
+        assert "distilling 60%" in badges
+        assert "2 running" in badges
+        assert "1 exhausted" in badges
+
+
+async def test_no_distill_badge_when_disabled():
+    # _populated_state has no distill/* keys → zero footprint (badge absent).
+    app = LauncherApp(_populated_state(), queue.Queue())
+    async with app.run_test() as pilot:
+        await pilot.pause(); app._refresh(); await pilot.pause()
+        badges = _plain(app.query_one("#badges", Static))
+        assert "distill" not in badges.lower()
+
+
+async def test_distill_metrics_block_renders_legibly():
+    state = _with_distill(_populated_state(), all_distilled=1.0, frac=1.0)
+    app = LauncherApp(state, queue.Queue())
+    async with app.run_test() as pilot:
+        await pilot.pause(); app._refresh(); await pilot.pause()
+        left = _table_text(app.query_one("#metrics-left", DataTable))
+        assert "distill" in left                      # the section header
+        assert "all distilled" in left and "yes" in left   # flag formatted, short label
+        assert "distilled" in left and "100.0%" in left    # frac as a percent
+
+
 async def test_eval_cells_use_gradient_color():
     app = LauncherApp(_populated_state(), queue.Queue())
     async with app.run_test() as pilot:

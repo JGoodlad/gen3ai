@@ -152,6 +152,42 @@ def test_concurrency_cap_respected():
     assert len(r.spawned) == 2 and r.n_running == 2
 
 
+def test_harvested_reports_deploy_and_is_empty_when_idle():
+    # The Events panel feeds off ReconcileResult.harvested — one entry per job that finished
+    # THIS tick, empty otherwise (so no spurious event lines on a steady no-op).
+    sim = Sim(); mgr = _mgr(sim, min_pool=1)
+    active = {1}
+    r = mgr.reconcile(active)                       # spawn rung 0; nothing finished yet
+    assert r.harvested == []
+    sim.finish(1, passed=True, speedup=4.0)
+    r = mgr.reconcile(active)                       # harvest -> deployed
+    assert [h["action"] for h in r.harvested] == ["deployed"]
+    assert r.harvested[0]["step"] == 1 and r.harvested[0]["passed"] and r.harvested[0]["speedup"] == 4.0
+    assert mgr.reconcile(active).harvested == []    # steady-state: no new events
+
+
+def test_harvested_reports_escalation_then_exhaustion():
+    sim = Sim(); mgr = _mgr(sim, min_pool=1)
+    active = {1}
+    actions: list = []
+    for _ in range(len(DEFAULT_LADDER) + 1):
+        r = mgr.reconcile(active)
+        actions += [h["action"] for h in r.harvested]
+        if 1 in mgr._jobs:
+            sim.finish(1, passed=False)            # fail at the current rung
+    assert actions.count("escalated") == len(DEFAULT_LADDER) - 1
+    assert actions.count("exhausted") == 1
+
+
+def test_harvested_escalation_carries_next_rung():
+    sim = Sim(); mgr = _mgr(sim, min_pool=1)
+    mgr.reconcile({1})                              # spawn rung 0
+    sim.finish(1, passed=False)
+    r = mgr.reconcile({1})                          # harvest fail -> escalate to rung 1
+    h = r.harvested[0]
+    assert h["action"] == "escalated" and h["next_rung"] == 1 and h["rung"] == 0 and not h["passed"]
+
+
 def test_recover_escalation_from_failed_manifests():
     # restart-safe: a manager rebuilt with failed manifests resumes the ladder instead of rung 0
     sim = Sim()
