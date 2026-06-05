@@ -56,22 +56,106 @@ def child_log_path(run_dir: "str | None") -> "str | None":
     return os.path.join(run_dir, "launcher_child.log")
 
 
-def _open_child_log(state: LauncherState):
-    """Open (append) the persistent child-output log in the run directory.
+# Cap the on-disk child log to a disk ring buffer. The in-memory scrollback (state.py's
+# deque) was already bounded, but the file was append-only and grew without limit across a
+# long multi-restart run (observed 1 GiB+). Keep the recent tail only.
+_CHILD_LOG_MAX_BYTES = 1024 * 1024   # ~1 MiB high-water mark
 
-    Streaming every line to disk as it arrives means a crash — even a hard
-    ``os._exit`` in the child that bypasses Python cleanup — still leaves a
-    complete log behind in the model directory. Returns None if there is no
-    run_dir yet or the file can't be opened (logging is best-effort, never fatal).
-    """
+
+class _CappedChildLog:
+    """Best-effort, size-capped append log for the child's stdout — a disk ring buffer.
+
+    Streams every line line-buffered, so a hard child ``os._exit`` (bypassing Python
+    cleanup) still leaves the recent output on disk. When the file passes ``max_bytes`` it
+    is rewritten keeping only the most recent ~half (aligned to a line boundary), so it
+    never grows unbounded. An already-oversized file (e.g. a legacy multi-GB log) is trimmed
+    on open. Used by a single reader thread, so no locking is needed."""
+
+    def __init__(self, path: str, max_bytes: int = _CHILD_LOG_MAX_BYTES) -> None:
+        self.path = path
+        self.max_bytes = max_bytes
+        self._trim()  # shrink a pre-existing oversized file before we start appending
+        self._f = open(path, "a", buffering=1, errors="replace")
+        self._size = self._disk_size()
+
+    def _disk_size(self) -> int:
+        try:
+            return os.path.getsize(self.path)
+        except OSError:
+            return 0
+
+    def write(self, s: str) -> None:
+        self._f.write(s)
+        self._size += len(s.encode("utf-8", "replace"))
+        if self._size >= self.max_bytes:
+            self._rotate_tail()
+
+    def _rotate_tail(self) -> None:
+        try:
+            self._f.flush()
+            self._f.close()
+        except Exception:
+            pass
+        self._trim()
+        try:
+            self._f = open(self.path, "a", buffering=1, errors="replace")
+        except Exception:
+            self._f = open(os.devnull, "a")
+        self._size = self._disk_size()
+
+    def _trim(self) -> None:
+        """Rewrite the file to keep only its last ~max_bytes/2 (drop a partial first line)."""
+        size = self._disk_size()
+        if size <= self.max_bytes:
+            return
+        keep = self.max_bytes // 2
+        try:
+            with open(self.path, "rb") as r:
+                r.seek(size - keep)
+                tail = r.read()
+            nl = tail.find(b"\n")
+            if nl != -1:
+                tail = tail[nl + 1:]
+            header = (
+                f"[ … older launcher_child.log lines trimmed — ring buffer ~"
+                f"{self.max_bytes // 1024} KiB … ]\n"
+            ).encode("utf-8", "replace")
+            with open(self.path, "wb") as w:
+                w.write(header)
+                w.write(tail)
+        except Exception:
+            pass
+
+    def flush(self) -> None:
+        try:
+            self._f.flush()
+        except Exception:
+            pass
+
+    def close(self) -> None:
+        try:
+            self._f.flush()
+            self._f.close()
+        except Exception:
+            pass
+
+
+def _open_child_log(state: LauncherState):
+    """Open the size-capped persistent child-output log in the run directory.
+
+    Streaming every line to disk as it arrives means a crash — even a hard ``os._exit`` in
+    the child that bypasses Python cleanup — still leaves the recent output behind. The log
+    is ring-buffered to ``_CHILD_LOG_MAX_BYTES`` (a pre-existing oversized file is trimmed on
+    open). Returns None if there is no run_dir yet or the file can't be opened (logging is
+    best-effort, never fatal)."""
     path = child_log_path(state.run_dir)
     if not path:
         return None
     try:
         os.makedirs(state.run_dir, exist_ok=True)
-        f = open(path, "a", buffering=1, errors="replace")  # line-buffered
-        f.write(f"\n===== child attached {time.strftime('%Y-%m-%d %H:%M:%S')} (pid {state.pid}) =====\n")
-        return f
+        log = _CappedChildLog(path)
+        log.write(f"\n===== child attached {time.strftime('%Y-%m-%d %H:%M:%S')} (pid {state.pid}) =====\n")
+        return log
     except Exception:
         return None
 

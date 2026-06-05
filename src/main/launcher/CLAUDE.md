@@ -89,10 +89,14 @@ deterministic `_supervise` exit-code/crash-restart/`_reap` suite), plus `launche
   UI reconciles with Textual's event loop** above.
 - **Crash reporting** — child stdout/stderr is streamed live to `<run_dir>/launcher_child.log`
   (complete even if the child hard-`os._exit`s, bypassing Python cleanup) and held in a
-  5000-line in-memory scrollback. On a non-zero exit the last 100 lines are dumped to the
-  terminal after the TUI closes; on *every* exit (crash, complete, quit) the full log path is
-  printed and the file is finalized (the in-memory buffer is flushed to it as a fallback if
-  streaming never started).
+  5000-line in-memory scrollback. The on-disk log is a **disk ring buffer**
+  (`child._CappedChildLog`, `_CHILD_LOG_MAX_BYTES` ≈ 1 MiB): it streams every line
+  line-buffered, but once the file passes the cap it's rewritten keeping only the recent
+  tail, and a pre-existing oversized file (e.g. a legacy multi-GB log) is trimmed on open —
+  so a long multi-restart run can't grow it without bound. On a non-zero exit the last 100
+  lines are dumped to the terminal after the TUI closes; on *every* exit (crash, complete,
+  quit) the full log path is printed and the file is finalized (the in-memory buffer is
+  flushed to it as a fallback if streaming never started).
 
 ## Exit codes (`src/main/exit_codes.py`)
 

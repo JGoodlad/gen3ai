@@ -506,6 +506,46 @@ class TestCrashLogSnapshot:
         assert _save_crash_log(None, state, 1) is None
 
 
+# ── On-disk child-log ring buffer ────────────────────────────────────────────
+class TestCappedChildLog:
+    """launcher_child.log is capped to a disk ring buffer (was unbounded → multi-GB)."""
+
+    def test_caps_growth_and_keeps_recent_tail(self, tmp_path):
+        from main.launcher.child import _CappedChildLog
+        p = str(tmp_path / "child.log")
+        log = _CappedChildLog(p, max_bytes=4000)
+        for i in range(3000):
+            log.write(f"line {i:05d} " + "x" * 30 + "\n")
+        log.close()
+        size = os.path.getsize(p)
+        assert size <= 4000, size                  # never exceeds the high-water mark
+        tail = open(p).read()
+        assert "line 02999" in tail                # most recent lines survive
+        assert "line 00000" not in tail            # oldest lines trimmed away
+        assert "trimmed" in tail                   # trim marker present
+
+    def test_trims_preexisting_oversized_file_on_open(self, tmp_path):
+        from main.launcher.child import _CappedChildLog
+        p = tmp_path / "child.log"
+        p.write_text("OLD\n" * 200_000 + "RECENT_MARKER\n")  # ~800 KB legacy file
+        assert p.stat().st_size > 500_000
+        log = _CappedChildLog(str(p), max_bytes=4000)
+        log.close()
+        assert p.stat().st_size <= 4000            # shrunk on open
+        assert "RECENT_MARKER" in p.read_text()    # tail preserved
+
+    def test_open_child_log_returns_capped_writer(self, tmp_path):
+        from main.launcher.child import _open_child_log, _CappedChildLog
+        st = LauncherState(interval_hours=0)
+        st.run_dir = str(tmp_path)
+        st.pid = 123
+        log = _open_child_log(st)
+        try:
+            assert isinstance(log, _CappedChildLog)
+        finally:
+            log.close()
+
+
 # ── Child-log persistence + deep scrollback ──────────────────────────────────
 class TestChildLogPersistence:
     def test_deep_scrollback_retains_a_full_traceback(self):
