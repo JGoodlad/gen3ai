@@ -87,8 +87,11 @@ in the trainer). Behaviors:
 | `--keep-eval-snapshots` | `10` | Retain the N most-recent eval weight snapshots in `eval_traces/step_<N>/snapshot.zip` (~27MB each; default ≈270MB) for bit-exact prober replay. `0` writes the identity manifest only; the prober then loads the nearest persisted checkpoint. The trainer auto-prunes to this cap each cycle. |
 | `--keep-eval-trace-steps` | `20` | The trainer keeps only the N most-recent eval **step dirs** under `eval_traces/` after each cycle (`0` = keep all), so forensic data stays bounded. `python -m main.prober.groom` is the manual fallback. |
 
-Eval concurrency in the worker is `_EVAL_SUBPROCESS_CONCURRENCY` (5/opponent) — low so
-the shared server isn't flooded while training also uses it.
+Each eval worker plays **one game at a time** (`_EVAL_SUBPROCESS_CONCURRENCY` = 1).
+Eval inference is single-threaded, so overlapping battles only adds CPU/server
+contention without parallelizing the forward — it measured slower, not faster.
+Cross-opponent parallelism comes solely from the `--eval-workers` (3) subprocesses
+work-stealing the pool.
 
 ## Self-play opponents (`--self-play`, gated behind pathology hunting)
 

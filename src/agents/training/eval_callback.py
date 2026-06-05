@@ -105,11 +105,14 @@ def _per_opponent_concurrency(n_opponents: int) -> int:
 _FORENSIC_LOSS_QUOTA = 10
 _FORENSIC_WIN_QUOTA = 5
 
-# Per-opponent in-flight battles in the subprocess eval worker. Eval now runs in a
-# separate CPU process (one Python thread does the forwards), so a handful of
-# concurrent battles already saturates it — keep it low so the shared Showdown
-# server isn't flooded while training is also using it.
-_EVAL_SUBPROCESS_CONCURRENCY = 5
+# Per-opponent in-flight battles in the subprocess eval worker. ONE game at a time.
+# Eval inference is single-threaded (one Python thread does every forward in this
+# process), so overlapping battles never parallelizes the bottleneck — it only piles
+# on contention: extra Node sim procs on the bridge / extra load on the shared
+# Showdown server, both fighting training's CPU-saturated env workers. Overlap
+# measured slower, not faster. Cross-opponent parallelism still comes from the
+# `--eval-workers` (3) subprocesses work-stealing the pool; each plays serially.
+_EVAL_SUBPROCESS_CONCURRENCY = 1
 
 # In-flight watchdog: if a cycle's workers don't all finish within this wall-clock
 # budget, the cycle is presumed HUNG (e.g. a Showdown battle that never completes —
