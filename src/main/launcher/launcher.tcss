@@ -32,19 +32,21 @@
     margin-bottom: 1;   /* a little breathing room before the Events section */
 }
 
-/* Two side-by-side tables echoing the Rich 11:10 split; sized to their rows so the
- * events panel below gets the slack. */
+/* Two side-by-side tables echoing the Rich 11:10 split; sized to their rows so the events
+ * panel below gets the slack. The dashboard is a read-only, view-whole panel, so the tables
+ * size to their full content and NEVER scroll — `overflow-y: hidden` kills the scrollbar (and
+ * the wheel-trapping it causes) that used to appear once a roster reached the old max-height. */
 #metrics-left {
     width: 1fr;
     height: auto;
-    max-height: 22;
     margin: 0 2 0 0;
+    overflow-y: hidden;
 }
 
 #metrics-eval {
     width: 1fr;
     height: auto;
-    max-height: 22;
+    overflow-y: hidden;
 }
 
 /* Flatten the metrics tables so they read as plain text on the dashboard (like Rich),

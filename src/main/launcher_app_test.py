@@ -197,6 +197,47 @@ async def test_distill_metrics_block_renders_legibly():
         assert "distilled" in left and "100.0%" in left    # frac as a percent
 
 
+async def test_metrics_tables_never_show_a_scrollbar():
+    """The dashboard tables size to content and never scroll — even a full self-play +
+    --distill-opponents roster (22-row left table, eval with 5 sentinels) must not trap the
+    wheel with a scrollbar."""
+    state = LauncherState(interval_hours=3.0)
+    state.pid = 1
+    metrics = {"_step": 76_888_064}
+    # left column: rollout/time/train (12 train keys) + distill → 22 rows
+    metrics.update({"rollout/ep_len_mean": 34.3, "rollout/ep_rew_mean": 3.1,
+                    "time/fps": 416.0, "time/total_timesteps": 76_888_064.0})
+    for k in ("approx_kl", "clip_fraction", "clip_range", "entropy_loss", "explained_variance",
+              "learning_rate", "loss", "n_updates", "policy_gradient_loss", "value_loss",
+              "clip_fraction_vf", "clip_range_vf"):
+        metrics[f"train/{k}"] = 0.5
+    metrics.update({"distill/all_distilled": 0, "distill/frac_active_opponents_distilled": 0.5})
+    # eval: aggregates + 9 bots + 5 sentinels
+    metrics.update({"eval/win_rate_mean": 0.78, "eval/mean_reward_mean": 20.0,
+                    "eval/win_rate_vs_bots": 0.76, "eval/mean_reward_vs_bots": 17.0,
+                    "eval/win_rate_vs_pool": 0.75, "eval/mean_reward_vs_pool": 18.4})
+    for b in ("random", "heuristic", "heuristic2", "staller", "staller_v2", "aggressive",
+              "aggressive_v2", "setup_sweep", "setup_sweep_v2"):
+        metrics[f"eval/win_rate_vs_{b}"] = 0.8
+        metrics[f"eval/mean_reward_vs_{b}"] = 15.0
+    for i in range(5):
+        metrics[f"eval/win_rate_vs_sentinel_{i}"] = 0.75
+        metrics[f"eval/mean_reward_vs_sentinel_{i}"] = 18.0
+        metrics[f"eval/sentinel_step_{i}"] = (74 - 10 * i) * 1_000_000
+    state.update_metrics(metrics)
+
+    app = LauncherApp(state, queue.Queue())
+    async with app.run_test(size=(160, 60)) as pilot:
+        await pilot.pause()
+        app._refresh()
+        await pilot.pause()
+        left = app.query_one("#metrics-left", DataTable)
+        ev = app.query_one("#metrics-eval", DataTable)
+        assert left.row_count >= 22                      # the roster that used to overflow
+        assert left.show_vertical_scrollbar is False     # no scrollbar to fight
+        assert ev.show_vertical_scrollbar is False
+
+
 async def test_eval_cells_use_gradient_color():
     app = LauncherApp(_populated_state(), queue.Queue())
     async with app.run_test() as pilot:
