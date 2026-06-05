@@ -628,3 +628,89 @@ def test_save_model_snapshot_no_top_level_evals_key(version):
         with open(os.path.join(tmpdir, "metadata.json")) as f:
             meta = json.load(f)
     assert "evals" not in meta
+
+
+# ---------------------------------------------------------------------------
+# Per-checkpoint latest_eval stamp (record_checkpoint snapshots the current
+# top-level latest_eval into the sidecar + snapshot_history at save time)
+# ---------------------------------------------------------------------------
+
+_SAMPLE_EVALS_WITH_POOL = {
+    **_SAMPLE_EVALS,
+    "pool": {
+        "win_rate": 0.61,
+        "mean_reward": 0.11,
+        "snapshot_count": 4,
+        "monotonicity": 0.83,
+        "sentinels": [
+            {"step": 40_000_000, "win_rate": 0.55, "snapshot": "snapshot_000040000000.zip"},
+            {"step": 50_000_000, "win_rate": 0.67, "snapshot": "snapshot_000050000000.zip"},
+        ],
+    },
+}
+
+
+def test_record_checkpoint_stamps_latest_eval_in_sidecar_and_history(version):
+    """After an eval, record_checkpoint embeds the eval+pool block in BOTH the
+    per-checkpoint sidecar and the snapshot_history entry under 'latest_eval'."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        save_model_snapshot(tmpdir, version, git_hash="abc")
+        record_eval_results(tmpdir, step=49_000_000, metrics=_SAMPLE_EVALS_WITH_POOL)
+
+        ckpt = os.path.join(tmpdir, "checkpoint_50000000_steps.zip")
+        record_checkpoint(tmpdir, ckpt, lr=3e-4, n_epochs=10, git_hash="cafe")
+
+        per_ckpt = read_checkpoint_metadata(ckpt)
+        with open(os.path.join(tmpdir, "metadata.json")) as f:
+            history_entry = json.load(f)["snapshot_history"]["checkpoint_50000000_steps.zip"]
+
+    for entry, where in ((per_ckpt, "sidecar"), (history_entry, "history")):
+        ev = entry["latest_eval"]
+        assert ev["step"] == 49_000_000, where
+        assert ev["win_rate_vs_bots"] == pytest.approx(0.74), where
+        assert ev["opponents"]["heuristic"]["win_rate"] == pytest.approx(0.72), where
+        # The pool-play results ride along verbatim.
+        assert ev["pool"]["win_rate"] == pytest.approx(0.61), where
+        assert ev["pool"]["sentinels"][1]["step"] == 50_000_000, where
+
+
+def test_record_checkpoint_no_eval_stamp_before_first_eval(version):
+    """A checkpoint saved before any eval has run carries no latest_eval key."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        save_model_snapshot(tmpdir, version, git_hash="abc")
+        ckpt = os.path.join(tmpdir, "checkpoint_50000000_steps.zip")
+        record_checkpoint(tmpdir, ckpt, lr=3e-4, n_epochs=10)
+
+        per_ckpt = read_checkpoint_metadata(ckpt)
+        with open(os.path.join(tmpdir, "metadata.json")) as f:
+            history_entry = json.load(f)["snapshot_history"]["checkpoint_50000000_steps.zip"]
+
+    assert "latest_eval" not in per_ckpt
+    assert "latest_eval" not in history_entry
+
+
+def test_record_checkpoint_eval_stamp_is_point_in_time(version):
+    """The stamp is the eval as-of save time: a later checkpoint catches a newer
+    eval, while the earlier checkpoint keeps the one it was saved with."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        save_model_snapshot(tmpdir, version, git_hash="abc")
+
+        record_eval_results(tmpdir, step=48_000_000, metrics={"win_rate_vs_bots": 0.50})
+        ckpt_a = os.path.join(tmpdir, "checkpoint_50000000_steps.zip")
+        record_checkpoint(tmpdir, ckpt_a, lr=3e-4, n_epochs=10)
+
+        record_eval_results(tmpdir, step=98_000_000, metrics={"win_rate_vs_bots": 0.80})
+        ckpt_b = os.path.join(tmpdir, "checkpoint_100000000_steps.zip")
+        record_checkpoint(tmpdir, ckpt_b, lr=2e-4, n_epochs=8)
+
+        # The earlier checkpoint's sidecar is frozen at its save-time eval.
+        sidecar_a = read_checkpoint_metadata(ckpt_a)
+        with open(os.path.join(tmpdir, "metadata.json")) as f:
+            meta = json.load(f)
+
+    hist = meta["snapshot_history"]
+    assert hist["checkpoint_50000000_steps.zip"]["latest_eval"]["step"] == 48_000_000
+    assert hist["checkpoint_100000000_steps.zip"]["latest_eval"]["step"] == 98_000_000
+    assert sidecar_a["latest_eval"]["win_rate_vs_bots"] == pytest.approx(0.50)
+    # The canonical top-level block still tracks the newest eval.
+    assert meta["latest_eval"]["step"] == 98_000_000

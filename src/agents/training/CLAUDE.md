@@ -48,7 +48,14 @@ most-recent snapshots — so `eval_traces/` stays bounded without any external t
 written to `metadata.json` as a **top-level `latest_eval`** block (step-labeled, NOT
 nested under a checkpoint) — robust to the async timing (an eval can finish after a
 newer checkpoint, or before any checkpoint exists); `save_model_snapshot` carries it
-forward so a later checkpoint never erases it.
+forward so a later checkpoint never erases it. That top-level block is the canonical,
+timing-robust record; **additionally, `record_checkpoint` stamps a point-in-time copy
+of the then-current `latest_eval` into each checkpoint's entry** (both the per-checkpoint
+sidecar `.json` and the run-level `snapshot_history` entry, under a `latest_eval` key) so
+each checkpoint carries the most-recent eval+pool stats as of when it was saved. The
+embedded block keeps its own `step`, so storing it under a possibly-newer checkpoint never
+mislabels which weights were measured (`snapshot._read_latest_eval` reads it; the union
+builder `_build_snapshot_entry` keeps sidecar + history in lockstep).
 
 The frozen snapshot makes parallel eval correct (a worker can't read mutating in-memory
 weights), and the fresh process returns all eval memory to the OS on exit (no fragmentation

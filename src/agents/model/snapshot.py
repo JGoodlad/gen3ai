@@ -114,6 +114,7 @@ def _build_snapshot_entry(
     hparams: Optional[dict] = None,
     git_hash: Optional[str] = None,
     handoff_lr: Optional[float] = None,
+    eval_block: Optional[dict] = None,
 ) -> dict:
     """Build the canonical per-checkpoint metadata dict.
 
@@ -129,6 +130,10 @@ def _build_snapshot_entry(
         ``current_lr`` / ``current_epochs``   — original sidecar convention
     All four (plus ``git_hash``) are assigned after the hparams are merged in, so
     they always win over a colliding ``hparams`` key.
+
+    ``eval_block`` — when present, the most-recent eval+pool stats known when the
+    checkpoint was saved, stamped under a ``"latest_eval"`` key (mirroring the
+    top-level block's name; see ``record_checkpoint``).
     """
     entry = dict(hparams) if hparams else {}
     entry["lr"] = entry["current_lr"] = lr
@@ -136,6 +141,8 @@ def _build_snapshot_entry(
     entry["git_hash"] = git_hash or os.environ.get("LAUNCHER_GIT_HASH") or get_git_hash()
     if handoff_lr is not None:
         entry["handoff_lr"] = handoff_lr
+    if eval_block:
+        entry["latest_eval"] = eval_block
     return entry
 
 
@@ -147,6 +154,7 @@ def record_snapshot_in_history(
     hparams: Optional[dict] = None,
     git_hash: Optional[str] = None,
     handoff_lr: Optional[float] = None,
+    eval_block: Optional[dict] = None,
 ) -> None:
     """Append or update a checkpoint entry in snapshot_history within metadata.json.
 
@@ -154,6 +162,8 @@ def record_snapshot_in_history(
     The entry is built by ``_build_snapshot_entry`` — identical in shape to the
     per-checkpoint sidecar. Creates metadata.json if it doesn't exist yet
     (history-only file until the next save_model_snapshot call fills in the rest).
+
+    eval_block: see ``record_checkpoint`` / ``_build_snapshot_entry``.
     """
     meta_path = os.path.join(model_dir, "metadata.json")
     meta = {}
@@ -161,7 +171,9 @@ def record_snapshot_in_history(
         with open(meta_path) as f:
             meta = json.load(f)
     history = meta.get("snapshot_history", {})
-    history[checkpoint_name] = _build_snapshot_entry(lr, n_epochs, hparams, git_hash, handoff_lr)
+    history[checkpoint_name] = _build_snapshot_entry(
+        lr, n_epochs, hparams, git_hash, handoff_lr, eval_block
+    )
     meta["snapshot_history"] = history
     with open(meta_path, "w") as f:
         json.dump(meta, f, indent=2)
@@ -184,8 +196,17 @@ def record_checkpoint(
     handoff_lr: Phase 1 → Phase 2 LR for TwoPhaseLRCallback. ``None`` while
     still in Phase 1; the float starting LR of the cosine once Phase 2 has
     begun. Persisted so launcher restarts reproduce the cosine.
+
+    Each checkpoint is also stamped (sidecar + snapshot_history) with the
+    most-recent eval+pool stats known when it was saved — the current top-level
+    ``latest_eval`` block (``_read_latest_eval``), under a ``"latest_eval"`` key.
+    The block keeps its own ``step`` (the snapshot it actually evaluated), so
+    storing it under a possibly-newer checkpoint never mislabels which weights were
+    measured; it is the per-checkpoint "latest eval as of this checkpoint" view.
+    The canonical, timing-robust record stays the top-level ``latest_eval``.
     """
     resolved_hash = git_hash or get_git_hash()
+    eval_block = _read_latest_eval(model_dir)
     write_checkpoint_metadata(
         checkpoint_path,
         lr,
@@ -193,6 +214,7 @@ def record_checkpoint(
         hparams=hparams,
         git_hash=resolved_hash,
         handoff_lr=handoff_lr,
+        eval_block=eval_block,
     )
     name = os.path.basename(checkpoint_path)
     if not name.endswith(".zip"):
@@ -205,6 +227,7 @@ def record_checkpoint(
         hparams=hparams,
         git_hash=resolved_hash,
         handoff_lr=handoff_lr,
+        eval_block=eval_block,
     )
 
 
@@ -215,23 +238,44 @@ def write_checkpoint_metadata(
     hparams: Optional[dict] = None,
     git_hash: Optional[str] = None,
     handoff_lr: Optional[float] = None,
+    eval_block: Optional[dict] = None,
 ) -> None:
     """Write the per-checkpoint metadata sidecar alongside a checkpoint .zip.
 
     The sidecar's schema is identical to a run-level ``snapshot_history`` entry —
     both are built by ``_build_snapshot_entry``, which emits the union of both
     naming conventions (lr/current_lr, n_epochs/current_epochs) plus git_hash,
-    optional handoff_lr and hparams — so the per-model summary mirrors the history
-    exactly and drops no field.
+    optional handoff_lr, hparams and the ``latest_eval`` stamp — so the per-model
+    summary mirrors the history exactly and drops no field.
 
     checkpoint_path: full path to the .zip (with or without extension). The sidecar
     lands at the same path with .zip replaced by .json.
 
-    handoff_lr: see ``record_checkpoint``.
+    handoff_lr / eval_block: see ``record_checkpoint``.
     """
-    entry = _build_snapshot_entry(lr, n_epochs, hparams, git_hash, handoff_lr)
+    entry = _build_snapshot_entry(lr, n_epochs, hparams, git_hash, handoff_lr, eval_block)
     with open(_checkpoint_metadata_path(checkpoint_path), "w") as f:
         json.dump(entry, f, indent=2)
+
+
+def _read_latest_eval(model_dir: str) -> Optional[dict]:
+    """Return the current top-level ``latest_eval`` block from ``<model_dir>/metadata.json``.
+
+    ``None`` if the file is missing/corrupt or no eval has run yet. Used by
+    ``record_checkpoint`` to stamp each checkpoint with the most-recent eval+pool
+    stats as of save time (see its docstring); a thin local reader so ``snapshot``
+    has no import dependency on the eval callbacks (which import from here).
+    """
+    meta_path = os.path.join(model_dir, "metadata.json")
+    if not os.path.exists(meta_path):
+        return None
+    try:
+        with open(meta_path) as f:
+            meta = json.load(f)
+    except (OSError, ValueError):
+        return None
+    block = meta.get("latest_eval")
+    return block if isinstance(block, dict) else None
 
 
 def read_checkpoint_metadata(checkpoint_path: str) -> dict:
