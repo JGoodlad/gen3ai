@@ -67,7 +67,10 @@
 
 #events-dash {
     height: 1fr;
-    padding: 1 1 0 1;
+    /* Hug the "Events" header (top padding 0) exactly like the metrics tables hug the
+     * "Metrics" header — so both sections have the same 1-blank-line gap above the header
+     * and zero gap below it. */
+    padding: 0 1 0 1;
 }
 
 /* ── logs / events full views (scrollable) ── */
