@@ -282,7 +282,7 @@ Showdown server at all.** It reuses the *entire* obs/reward/mask/wrapper stack u
   (`_EVAL_SUBPROCESS_CONCURRENCY` = 1, threaded to `run_local_battles(concurrency=…)` /
   `max_concurrent_battles`): eval inference is single-threaded, so overlapping battles only added
   CPU/server contention without parallelizing the forward (measured slower). Cross-opponent
-  parallelism comes from the `--eval-workers` (3) subprocesses work-stealing the pool; this takes
+  parallelism comes from the `--eval-workers` (5) subprocesses work-stealing the pool; this takes
   all eval load off the server. The `run_local_battles(concurrency=…)` overlap path still exists
   (integration-tested) but eval no longer uses it.
 
@@ -316,10 +316,11 @@ with half the envs** (≈half the RAM). Off by default (= stock `SubprocVecEnv`)
 
 ### Bot evaluation
 
-Bot eval runs in **frozen-snapshot subprocesses** (`--eval-workers`, default 3) that work-steal
+Bot eval runs in **frozen-snapshot subprocesses** (`--eval-workers`, default 5) that work-steal
 opponents from a shared pool and play the live server **without pausing training**; results
 merge into TensorBoard + TUI + best-model and land in `metadata.json` as a top-level
-`latest_eval` block. **`--self-play` eval shares this exact non-blocking pipeline** — the
+`latest_eval` block. **`--self-play` eval shares this exact non-blocking pipeline** (with the
+worker pool doubled to 10, since sentinel matchups infer for both players) — the
 workers additionally work-steal the pool sentinels, and a winning cycle promotes its frozen
 snapshot into the pool by file-copy (`SnapshotPool.add_from_path`). The full design
 (work-stealing, graceful-shutdown drain, resume re-publish, sentinels + promotion,

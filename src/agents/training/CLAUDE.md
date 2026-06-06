@@ -82,7 +82,7 @@ in the trainer). Behaviors:
 
 | Flag | Default | Notes |
 |------|---------|-------|
-| `--eval-workers` | `3` | Eval subprocesses per cycle; work-steal opponents from a shared pool. Capped at the opponent count. |
+| `--eval-workers` | `5` | Eval subprocesses per cycle; work-steal opponents from a shared pool. Capped at the opponent count. Self-play doubles this (→ `10`) since sentinel matchups run the model for both players. |
 | `--eval-device` | `cpu` | Device for eval-worker inference. `cpu` decouples eval from the training GPU. |
 | `--keep-eval-snapshots` | `10` | Retain the N most-recent eval weight snapshots in `eval_traces/step_<N>/snapshot.zip` (~27MB each; default ≈270MB) for bit-exact prober replay. `0` writes the identity manifest only; the prober then loads the nearest persisted checkpoint. The trainer auto-prunes to this cap each cycle. |
 | `--keep-eval-trace-steps` | `20` | The trainer keeps only the N most-recent eval **step dirs** under `eval_traces/` after each cycle (`0` = keep all), so forensic data stays bounded. `python -m main.prober.groom` is the manual fallback. |
@@ -106,7 +106,7 @@ cycle or two, where saturated win-rate / gate-pinned `win_rate_vs_pool` / wide-C
 Each eval worker plays **one game at a time** (`_EVAL_SUBPROCESS_CONCURRENCY` = 1).
 Eval inference is single-threaded, so overlapping battles only adds CPU/server
 contention without parallelizing the forward — it measured slower, not faster.
-Cross-opponent parallelism comes solely from the `--eval-workers` (3) subprocesses
+Cross-opponent parallelism comes solely from the `--eval-workers` (5) subprocesses
 work-stealing the pool.
 
 ## Self-play opponents (`--self-play`, gated behind pathology hunting)
@@ -119,8 +119,8 @@ restart — no manifest). Design lives in `designs/ai_v5/`. Key behaviors:
 - **Eval + promotion are NON-BLOCKING (frozen-snapshot subprocess), mirroring
   `PerOpponentEvalCallback`.** Self-play eval no longer runs in-process on the training thread.
   On a trigger step `SelfPlayCallback` freezes the live weights to disk (`model.save`) and
-  spawns `--eval-workers` `main.eval_worker` subprocesses that **work-steal BOTH the bot roster
-  AND up to 5 pool sentinels** from one shared pool (the worker's `_eval_sentinel` plays the
+  spawns `--eval-workers`×2 (default 10) `main.eval_worker` subprocesses that **work-steal BOTH
+  the bot roster AND up to 5 pool sentinels** from one shared pool (the worker's `_eval_sentinel` plays the
   frozen trainee greedy vs each sentinel stochastic); training continues immediately. On a later
   `_on_step` poll the parent merges per-opponent + per-sentinel results → `win_rate_vs_bots` /
   `win_rate_vs_pool` / `sentinel_monotonicity`, records to TensorBoard + the TUI + metadata.json

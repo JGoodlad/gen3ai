@@ -422,10 +422,11 @@ async def main():
                         help="AdamW weight decay (L2 regularisation). Default 1e-5 is conservative for PPO.")
 
     # --- Subprocess eval ---
-    parser.add_argument("--eval-workers", "--eval_workers", dest="eval_workers", type=int, default=3,
-                        help="Number of parallel eval-worker subprocesses per cycle. Workers work-steal "
-                             "opponents from a shared pool, so uneven per-opponent cost self-balances. "
-                             "Capped at the opponent count.")
+    parser.add_argument("--eval-workers", "--eval_workers", dest="eval_workers", type=int, default=5,
+                        help="Number of parallel eval-worker subprocesses per cycle (default 5 for bot "
+                             "eval; self-play doubles this to 10). Workers work-steal opponents from a "
+                             "shared pool, so uneven per-opponent cost self-balances. Capped at the "
+                             "opponent count.")
     parser.add_argument("--eval-device", "--eval_device", dest="eval_device", type=str, default="cpu",
                         help="Device for the eval-worker subprocess inference (default cpu, to decouple from the training GPU).")
     parser.add_argument("--keep-eval-snapshots", "--keep_eval_snapshots", dest="keep_eval_snapshots",
@@ -936,7 +937,8 @@ async def main():
             self_play_full_wr=_sp_full_wr,
             # Self-play eval is ~2x the inference of bot eval — the 5 sentinel matchups run
             # the model for BOTH players (trainee + sentinel), vs bot matchups where only the
-            # trainee infers. So double the work-stealing pool to keep wall-clock comparable.
+            # trainee infers. So double the work-stealing pool to keep wall-clock comparable
+            # (5 bot-eval workers → 10 here).
             n_workers=args.eval_workers * 2,
             eval_device=args.eval_device,
             distill_opponents=args.distill_opponents,
