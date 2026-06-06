@@ -67,8 +67,15 @@ by clicking a title or pressing its number key `1`–`6`) render purely from one
 revealed bench + our moveset from `engine.build_board`, model-free; plus a **field**
 line — weather/spikes/screens/turn decoded from the obs global block via
 `ProbeModel.describe_global`, so it needs captured state), **Faithfulness**
-(recorded vs re-run probs), **Matchups**, **Intervention**, **Saliency**, and
-**Outcome** — the last surfaces the critic's `V(s)` (recorded · re-run · ΔV → next),
+(recorded vs re-run probs), **Matchups** (our active move type-multipliers + an
+**incoming-threat** line decoded from `their_matchups` — `worst N×` / `revealed XX%`,
+or `BLANK` when the opponent's coverage is unrevealed, e.g. a just-switched-in mon),
+**Intervention**, **Saliency** (now incl. a `their_matchups(144)` block, so you can
+see whether the policy even *attends* to the incoming threat — typically ~100–1000×
+less than its own offense), and
+**Outcome** — the last surfaces the critic's `V(s)` (recorded · re-run · ΔV → next ·
+**TD δ** = `r + γV(s′) − V(s)`, the critic-surprise residual, in parity with the CLI's
+overview/analyze `td_residual`; γ from the run's `metadata.json`),
 whether the loaded model still picks the recorded action (agrees / DISAGREES → X),
 the per-step **reward breakdown** (`total` + components) and **events**.
 
@@ -99,6 +106,14 @@ loading uses the same exact→nearest→recent ladder (cached per process). A
   checkpoints, and γ. The natural first call.
 - `battles(outcome=, opponent=, step=)` — list/filter battles (each carries an
   `id` + `short_id`).
+- `scan(outcome=, opponent=, step=, metric=, limit=)` — **cross-battle, model-free
+  turning-point triage**: for every matching battle, its single worst decision
+  (`metric="value_drop"`, the most negative ΔV(s→s'), default; or
+  `"td_residual"`, the most negative critic surprise), ranked globally. Each row is
+  `{id, short_id, opponent, step, outcome, turns, worst:{inv, turn, chosen,
+  our_active, opp_active, delta_v, td_residual, reward_total, events, flags}}`. The
+  one-call form of "list losses → overview each → rank by the biggest drop" — the
+  usual first move of a loss sweep across a whole opponent/step. No model loaded.
 - `battle_overview(battle_id)` — **model-free digest**: per-decision rows
   (chosen, top prob, `our_active`/`opp_active` board summary, recorded V(s), **ΔV**,
   **TD residual** = critic surprise, reward total, events, flags) + a `notable`
@@ -110,32 +125,45 @@ loading uses the same exact→nearest→recent ladder (cached per process). A
   `high_value` (ranked by recorded V, model-free), or `disagree` (loads the
   model; chosen ≠ the model's argmax).
 - `analyze(battle_id, inv)` — full `InvocationAnalysis` as a dict (loads the
-  model); the value block gains a γ-discounted `td_residual`.
+  model); the value block gains a γ-discounted `td_residual`. Also carries a
+  `threats` block (model-free, decoded from `their_matchups`): `present`,
+  `revealed_frac` (how much of the opponent's coverage is even revealed),
+  `max_incoming` (worst incoming effectiveness ×4 anywhere on the board), and
+  `per_our_slot_max` (worst incoming vs each of our 6 team slots). A low
+  `revealed_frac` / `present=false` means the model has **no explicit incoming-threat
+  signal** for that opponent (its moves aren't revealed) and is pricing it from the
+  species embedding alone — the key tell for "could it even see the OHKO coming?".
 
 CLI mirror — prints JSON to stdout (and `{"error": …}` + exit 1 on failure, so an
 agent always gets parseable output). `--help` carries a worked example sequence:
 ```bash
 python -m main.prober.query summary  <run_dir>
 python -m main.prober.query list     <run_dir> --outcome loss --step 8000000
+python -m main.prober.query scan     <run_dir> --outcome loss --opponent X [--metric td_residual] [--limit K]
 python -m main.prober.query overview <battle_id>
 python -m main.prober.query find     <battle_id> value_drop --limit 5
 python -m main.prober.query analyze  <battle_id> <inv> [--ckpt PATH] [--tier auto|nearest|recent]
 ```
-**Investigation recipe:** `summary` → `list --outcome loss` → `overview` (read
-`notable.biggest_value_drops` / `faints`) → `find disagree` / `find value_drop` →
-`analyze` the worst turn. γ is read from the run's `metadata.json`.
+**Investigation recipe:** `summary` → `scan --outcome loss [--opponent X]` (the worst
+turn in *every* matching battle, ranked — model-free, fast) → `overview` the top
+battles (read `notable.biggest_value_drops` / `faints`) → `find disagree` /
+`find value_drop` → `analyze` the worst turn. γ is read from the run's
+`metadata.json`. (`scan` is the cross-battle generalization of a single battle's
+`notable.biggest_value_drops` — reach for it first when sweeping a whole opponent.)
 `ProbeSession(..., model_loader=fn)` injects a fake model in tests (no torch).
 
 ## Obs-offset dependence (regression-guarded)
 
-The engine reads three semantic obs regions by offset: the active-move type
+The engine reads four semantic obs regions by offset: the active-move type
 multipliers (`OFFSET_REACTIVE + move_multiplier`, currently dim 1422), the
-`our_matchups` block (`+ our_matchups`, currently 1468), and the turn-history span
-— all resolved at runtime from `Gen3ObservationEncoder.get_layout()`. **If the obs
-layout changes, these move automatically** (e.g. `gen3_move_effects_v1` inserted a
-block before `our_matchups`, shifting it), and `engine_test.py` pins the resolved
-values so a silent shift fails loudly. (Mirror note in
-`src/agents/observation/CLAUDE.md`.)
+`our_matchups` block (`+ our_matchups`, currently 1468), the **`their_matchups`**
+block (`+ their_matchups`, currently 1612 — the incoming-threat decode + saliency),
+and the turn-history span — all resolved at runtime from
+`Gen3ObservationEncoder.get_layout()`. **If the obs layout changes, these move
+automatically** (e.g. `gen3_move_effects_v1` inserted a block before `our_matchups`,
+shifting it), and `engine_test.py` pins the resolved values
+(`test_offsets_resolve_matches_layout`) so a silent shift fails loudly. (Mirror note
+in `src/agents/observation/CLAUDE.md`.)
 
 ## Worker-thread model (event-loop safety)
 

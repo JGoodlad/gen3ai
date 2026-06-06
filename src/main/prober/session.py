@@ -7,6 +7,7 @@ behaviour without the TUI. A typical investigation:
     sess = ProbeSession("models/run_.../")
     sess.run_summary()                       # orient: steps, opponents, win/loss, identity
     sess.battles(outcome="loss", step=8_000_000)   # pick battles to look at
+    sess.scan(outcome="loss", opponent="aggressive_v2")  # MODEL-FREE: worst turn PER battle, ranked
     sess.battle_overview(battle_id)          # MODEL-FREE digest: per-decision rows + `notable`
     sess.find(battle_id, "value_drop", limit=5)    # rank decisions by where V(s) cratered
     sess.find(battle_id, "disagree")         # decisions the loaded model disagrees with
@@ -214,6 +215,80 @@ class ProbeSession:
             hits = [i for i, inv in enumerate(summary["invocations"]) if criterion in summary_flags(inv)]
 
         return hits[:limit] if limit else hits
+
+    # -- cross-battle turning-point scan (model-free) -----------------------
+
+    def scan(self, *, outcome: "str | None" = None, opponent: "str | None" = None,
+             step: "int | None" = None, limit: "int | None" = None,
+             metric: str = "value_drop") -> "list[dict]":
+        """Cross-battle, MODEL-FREE turning-point scan. For every matching battle,
+        find its single worst decision and return them **ranked globally** — the
+        one-call version of "list losses → overview each → rank by the biggest
+        value drop", which is the recurring first move of any loss investigation.
+
+        ``metric`` ranks by ``value_drop`` (most negative ΔV(s→s'), the default) or
+        ``td_residual`` (most negative critic surprise δ = r + γV(s') − V(s)).
+        Filters mirror ``battles()``. No checkpoint is loaded, so this is fast even
+        across a whole run. Each row is ``{id, short_id, opponent, step, outcome,
+        turns, worst:{inv, turn, phase, chosen, our_active, opp_active, delta_v,
+        td_residual, reward_total, events, flags}}``.
+        """
+        if metric not in ("value_drop", "td_residual"):
+            raise ValueError(f"metric must be 'value_drop' or 'td_residual', got {metric!r}")
+        rows = []
+        for b in self.tree.all_battles():
+            if outcome and b.outcome != outcome:
+                continue
+            if opponent and b.opponent != opponent:
+                continue
+            if step is not None and b.step != step:
+                continue
+            tp = self._worst_turning_point(b, metric)
+            if tp is not None:
+                rows.append(tp)
+        key = "delta_v" if metric == "value_drop" else "td_residual"
+        rows.sort(key=lambda r: (r["worst"][key] if r["worst"][key] is not None else float("inf")))
+        return rows[:limit] if limit else rows
+
+    def _worst_turning_point(self, battle: BattleTrace, metric: str) -> "dict | None":
+        """The single worst decision in one battle by `metric` (model-free).
+        Boards are built only for the chosen invocation, so a scan stays cheap."""
+        summary = self._summary(battle)
+        invs = summary.get("invocations", [])
+        if not invs:
+            return None
+        values = self._values(battle)
+        best_i = best_score = best_dv = best_td = None
+        for i, inv in enumerate(invs):
+            v, v_next = self._v(values, i), self._v(values, i + 1)
+            dv = (v_next - v) if (v is not None and v_next is not None) else None
+            reward = (inv.get("outcome") or {}).get("reward")
+            rtotal = reward.get("total") if isinstance(reward, dict) else reward
+            td = self._td(rtotal, v, v_next)
+            score = dv if metric == "value_drop" else td
+            if score is None:
+                continue
+            if best_score is None or score < best_score:
+                best_i, best_score, best_dv, best_td = i, score, dv, td
+        if best_i is None:
+            return None
+        inv = invs[best_i]
+        board = build_board(inv)
+        reward = (inv.get("outcome") or {}).get("reward")
+        rtotal = reward.get("total") if isinstance(reward, dict) else reward
+        return {
+            "id": battle.summary_path, "short_id": _short_id(battle),
+            "opponent": battle.opponent, "step": battle.step, "outcome": battle.outcome,
+            "turns": (summary.get("meta") or {}).get("turns"),
+            "worst": {
+                "inv": best_i, "turn": inv.get("turn"), "phase": inv.get("phase"),
+                "chosen": inv.get("chosen", ""),
+                "our_active": _active_str(board.ours), "opp_active": _active_str(board.opp),
+                "delta_v": best_dv, "td_residual": best_td, "reward_total": rtotal,
+                "events": (inv.get("outcome") or {}).get("events") or [],
+                "flags": list(summary_flags(inv)),
+            },
+        }
 
     # -- internals -----------------------------------------------------------
 

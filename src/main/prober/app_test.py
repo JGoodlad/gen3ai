@@ -17,7 +17,7 @@ from main.prober.app import PaneSplitter, ProberApp
 from main.prober.model import ObsOffsets
 
 # Small synthetic obs layout (mirrors engine_test).
-_OFF = ObsOffsets(mm_off=10, om_off=20, active_block_dim=5,
+_OFF = ObsOffsets(mm_off=10, om_off=20, tm_off=164, active_block_dim=5,
                   turn_history_offset=200, turn_history_dim=10)
 _OBS_LEN = 256
 
@@ -211,7 +211,7 @@ async def test_select_battle_populates_panels(tmp_path):
         assert app.query_one("#matchups-table", DataTable).row_count == 4
         # chosen is a move → 4-point sweep
         assert app.query_one("#sweep-table", DataTable).row_count == 4
-        assert app.query_one("#saliency-table", DataTable).row_count == 4
+        assert app.query_one("#saliency-table", DataTable).row_count == 5  # +their_matchups block
 
 
 async def test_switch_decision_has_no_sweep(tmp_path):
@@ -289,10 +289,68 @@ async def test_outcome_panel_and_flags(tmp_path):
         assert app.query_one("#reward-table", DataTable).row_count >= 1
         summ = str(app.query_one("#outcome-summary", Static).render())
         assert "V(s)" in summ
+        assert "ΔV" in summ and "TD δ" in summ      # critic surprise surfaced for parity with the CLI
         # jump lands on the flagged invocation
         app.action_next_flagged()
         await pilot.pause()
         assert app.query_one("#invocation-list", ListView).index == 1
+
+
+async def test_outcome_td_residual_uses_run_gamma(tmp_path):
+    run = _write_rich_trace(tmp_path)
+    with open(os.path.join(run, "metadata.json"), "w") as f:
+        json.dump({"gamma": 0.9}, f)                # γ read from run metadata, like ProbeSession
+    app = ProberApp(root=run, injected_model=_FakeModel())
+    async with app.run_test() as pilot:
+        await pilot.pause()
+        assert app._gamma == 0.9
+        app._select_battle(app._tree_model.all_battles()[0])
+        await pilot.pause()
+        await app.workers.wait_for_complete()
+        await pilot.pause()
+        summ = str(app.query_one("#outcome-summary", Static).render())
+        # inv0: TD δ = r + γV(s') − V(s) = 1.2 + 0.9·(−1.0) − 2.0 = −1.70
+        assert "TD δ" in summ and "-1.70" in summ
+
+
+def _write_threat_trace(tmp_path):
+    """A trace whose obs is long enough to hold their_matchups, with a 4× incoming cell."""
+    run = tmp_path / "run"
+    bd = run / "eval_traces" / "step_1000" / "Test"
+    os.makedirs(bd, exist_ok=True)
+    actions = {f"switch:m{i}": {"prob": "1.0%", "valid": True} for i in range(6)}
+    actions.update({"thunderbolt": {"prob": "92.1%", "valid": True},
+                    "earthquake": {"prob": "2.8%", "valid": True},
+                    "move2": {"prob": "0.0%", "valid": False},
+                    "move3": {"prob": "0.0%", "valid": False},
+                    "struggle": {"prob": "0.0%", "valid": False}})
+    summary = {"meta": {"step": 1000, "result": "LOSS", "turns": 5, "invocations": 1},
+               "invocations": [{"i": 1, "turn": 3, "phase": "move_selection",
+                                "chosen": "thunderbolt", "our": {"species": "zapdos"},
+                                "opp": {"species": "claydol"}, "actions": actions}]}
+    with open(bd / "loss_006_summary.json", "w") as f:
+        json.dump(summary, f)
+    obs = np.zeros((1, 320), dtype=np.float32)         # ≥ tm_off(164)+144
+    block = np.zeros((6, 4, 6), dtype=np.float32)
+    block[1, 1, 2] = 4.0 / 4.0                          # a 4× incoming hit somewhere
+    obs[0, _OFF.tm_off:_OFF.tm_off + 144] = block.reshape(-1)
+    np.savez(bd / "loss_006_states.npz", obs=obs, has_state=np.array([1], dtype=np.int8))
+    return str(run)
+
+
+async def test_matchups_panel_shows_incoming_threat(tmp_path):
+    run = _write_threat_trace(tmp_path)
+    app = ProberApp(root=run, injected_model=_FakeModel())
+    async with app.run_test() as pilot:
+        await pilot.pause()
+        app._select_battle(app._tree_model.all_battles()[0])
+        await pilot.pause()
+        await app.workers.wait_for_complete()
+        await pilot.pause()
+        threat = str(app.query_one("#matchups-threat", Static).render())
+        assert "incoming" in threat and "4.00" in threat   # decoded worst incoming hit
+        # their_matchups is now its own saliency row
+        assert app.query_one("#saliency-table", DataTable).row_count == 5
 
 
 async def test_board_tab_populates(tmp_path):

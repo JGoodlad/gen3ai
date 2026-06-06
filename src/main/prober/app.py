@@ -119,6 +119,8 @@ from main.prober.discovery import (
 from main.prober.engine import InvocationAnalysis, analyze_invocation, summary_flags
 from main.tui import THEME_PATH, Gen3App, gradient_color
 
+_DEFAULT_GAMMA = 0.99   # used to compute the Outcome panel's TD residual when metadata.json is absent
+
 # Glyphs for the flags shown in the invocation list (switch is omitted — already
 # visible in the "switch:…" label). n/N jumps to the discrete, selective events
 # (faints, switches); "uncertain" is shown as a glyph but not jumped to — for a
@@ -175,6 +177,7 @@ class ProberApp(Gen3App):
         # Per-battle model resolution. The model that re-runs a trace depends on the
         # trace's eval step (exact snapshot → nearest checkpoint → most recent), so we
         # resolve + (lazily) load per selected battle, caching loaded models by path.
+        self._gamma = _DEFAULT_GAMMA              # set from run metadata in on_mount; for TD residual
         self._tier = "auto"                       # cycled by `m` (auto/nearest/recent)
         self._injected_model = injected_model     # tests: stand in for every path
         self._model_cache: "dict[str, object]" = {}
@@ -217,6 +220,7 @@ class ProberApp(Gen3App):
                         yield DataTable(id="faith-table")
                     with Collapsible(title="Matchups", collapsed=True, id="sec-matchups"):
                         yield DataTable(id="matchups-table")
+                        yield Static("", id="matchups-threat")
                     with Collapsible(title="Intervention", collapsed=True, id="sec-sweep"):
                         yield DataTable(id="sweep-table")
                     with Collapsible(title="Saliency", collapsed=True, id="sec-saliency"):
@@ -251,6 +255,7 @@ class ProberApp(Gen3App):
             tree.root.label = "no path given"
             return
         self._tree_model = build_trace_tree(self._root)
+        self._gamma = self._read_run_gamma(self._tree_model.run_dir)
         if self._tree_model.is_empty:
             tree.root.label = "no traces found"
             return
@@ -599,11 +604,25 @@ class ProberApp(Gen3App):
     def _render_matchups(self, a: InvocationAnalysis) -> None:
         t = self.query_one("#matchups-table", DataTable)
         t.clear()
-        if a.matchups is None:
+        if a.matchups is not None:
+            for label, mult in zip(a.matchups.move_labels, a.matchups.multipliers):
+                bar = "█" * int(round(mult / 4.0 * 12))
+                t.add_row(label, Text(f"{mult:4.2f}× {bar}", style=_mult_color(mult)))
+        # Incoming threat (opp → us), decoded from their_matchups. The key tell is
+        # `present`: it's blank for an opponent whose moves aren't revealed yet (a
+        # just-switched-in mon), so the policy is pricing it from priors alone.
+        threat = self.query_one("#matchups-threat", Static)
+        th = a.threats
+        if th is None:
+            threat.update("")
             return
-        for label, mult in zip(a.matchups.move_labels, a.matchups.multipliers):
-            bar = "█" * int(round(mult / 4.0 * 12))
-            t.add_row(label, Text(f"{mult:4.2f}× {bar}", style=_mult_color(mult)))
+        line = Text("incoming (opp→us): ", style="dim")
+        if not th.present:
+            line.append("BLANK — opp coverage unrevealed (priors only)", style="bold yellow")
+        else:
+            line.append(f"worst {th.max_incoming:.2f}×", style=_mult_color(th.max_incoming))
+            line.append(f"  ·  revealed {th.revealed_frac * 100:.0f}%", style="dim")
+        threat.update(line)
 
     def _render_sweep(self, a: InvocationAnalysis) -> None:
         t = self.query_one("#sweep-table", DataTable)
@@ -628,6 +647,17 @@ class ProberApp(Gen3App):
             bar = "█" * int(round(b.total_abs / peak * 14))
             t.add_row(b.name, f"{b.mean_abs:.4f}", Text(f"{b.total_abs:6.2f} {bar}", style="cyan"))
 
+    @staticmethod
+    def _read_run_gamma(run_dir: "str | None") -> float:
+        """γ from the run's metadata.json (same source as ProbeSession), for the TD residual."""
+        if not run_dir:
+            return _DEFAULT_GAMMA
+        try:
+            with open(os.path.join(run_dir, "metadata.json")) as f:
+                return float(json.load(f).get("gamma", _DEFAULT_GAMMA))
+        except (OSError, ValueError, TypeError):
+            return _DEFAULT_GAMMA
+
     def _render_outcome(self, a: InvocationAnalysis) -> None:
         # Value + model-agreement summary line(s).
         summary = Text()
@@ -641,6 +671,14 @@ class ProberApp(Gen3App):
                 summary.append("  ·  ΔV ", style="dim")
                 summary.append(f"{v.delta:+.2f}", style=d_style)
                 summary.append(f" → {v.next_recorded:+.2f}", style="dim")
+                # TD residual δ = r + γV(s') − V(s): how surprised the critic was. Parity with
+                # the CLI's overview/analyze td_residual (the decisive metric in loss forensics).
+                reward = (a.outcome or {}).get("reward")
+                rtotal = reward.get("total") if isinstance(reward, dict) else None
+                if rtotal is not None and v.next_recorded is not None:
+                    td = float(rtotal) + self._gamma * v.next_recorded - v.recorded
+                    summary.append("  ·  TD δ ", style="dim")
+                    summary.append(f"{td:+.2f}", style=("green" if td >= 0 else "red"))
             summary.append("\n")
         agree_style = "green" if a.agrees else "bold red"
         summary.append("model: ", style="dim")

@@ -6,6 +6,7 @@ failure, so an agent always gets parseable output). Mirrors ``ProbeSession``.
 A typical investigation:
     python -m main.prober.query summary  <run_dir>                         # orient
     python -m main.prober.query list     <run_dir> --outcome loss          # pick battles
+    python -m main.prober.query scan     <run_dir> --outcome loss --opponent X  # worst turn per battle, ranked
     python -m main.prober.query overview <summary.json>                    # model-free digest
     python -m main.prober.query find     <summary.json> value_drop --limit 5
     python -m main.prober.query find     <summary.json> disagree           # loads the model
@@ -30,6 +31,10 @@ examples:
 
   # 2. list the losses at a step, grab a battle id
   python -m main.prober.query list models/run_X --outcome loss --step 8000000
+
+  # 2b. cross-battle: the worst turn in EVERY loss vs an opponent, ranked (model-free)
+  python -m main.prober.query scan models/run_X --outcome loss --opponent aggressive_v2 --limit 10
+  python -m main.prober.query scan models/run_X --outcome loss --metric td_residual
 
   # 3. model-free per-decision digest of that battle (V(s), ΔV, TD, flags, `notable`)
   python -m main.prober.query overview <id>
@@ -60,6 +65,16 @@ def _build_parser() -> argparse.ArgumentParser:
     pl.add_argument("--opponent")
     pl.add_argument("--step", type=int)
 
+    psc = sub.add_parser(
+        "scan", help="cross-battle turning-point scan (model-free): worst ΔV/TD per battle, ranked")
+    psc.add_argument("root", help="run dir / eval_traces dir")
+    psc.add_argument("--outcome", choices=["win", "loss"])
+    psc.add_argument("--opponent")
+    psc.add_argument("--step", type=int)
+    psc.add_argument("--limit", type=int, default=None, help="cap the number of battles returned")
+    psc.add_argument("--metric", default="value_drop", choices=["value_drop", "td_residual"],
+                     help="rank by most-negative ΔV (default) or critic TD surprise")
+
     for name, helptext in (("overview", "model-free per-decision digest"),
                            ("find", "rank/list invocations matching a criterion"),
                            ("analyze", "full analysis of one decision")):
@@ -83,6 +98,10 @@ def _run(args) -> object:
     if args.cmd == "list":
         return ProbeSession(args.root).battles(
             outcome=args.outcome, opponent=args.opponent, step=args.step)
+    if args.cmd == "scan":
+        return ProbeSession(args.root).scan(
+            outcome=args.outcome, opponent=args.opponent, step=args.step,
+            limit=args.limit, metric=args.metric)
     sess = ProbeSession(args.battle, ckpt_override=args.ckpt, tier=args.tier)
     if args.cmd == "overview":
         return sess.battle_overview(args.battle)

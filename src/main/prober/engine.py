@@ -87,6 +87,30 @@ class Saliency:
     blocks: "tuple[SaliencyBlock, ...]"
 
 
+# The matchup matrices are 6×4×6 (opp/our mon × move slot × the other side) — mirrors
+# reactive.py's `their_matchups`/`our_matchups` 144-dim blocks.
+_TEAM_SIZE = 6
+_MATCHUP_DIM = _TEAM_SIZE * 4 * _TEAM_SIZE   # 144
+
+
+@dataclass(frozen=True)
+class ThreatView:
+    """Incoming type-effectiveness the OPPONENT threatens, decoded from the obs
+    `their_matchups` block (opp-mon × move-slot × our-mon, ×4-denormalised).
+
+    The decisive bit is `present`/`revealed_frac`: the block is **all-zeros for an
+    opponent mon whose moves are unrevealed** (`get_sorted_moves` reads only revealed
+    `mon.moves`), so a just-switched-in threat contributes *nothing* here — the policy
+    must price it from the species embedding alone. A low `revealed_frac` means the
+    model is flying on priors, not an explicit incoming-effectiveness signal. Note this
+    is *effectiveness*, not *damage* (no base-power / Atk·Def / HP) — an OHKO still has
+    to be inferred from this × the per-move power × per-mon stats elsewhere in the obs."""
+    present: bool                          # any nonzero incoming-effectiveness cell
+    revealed_frac: float                   # fraction of cells > 0 (how much opp coverage is revealed)
+    max_incoming: float                    # worst incoming effectiveness anywhere on the board (×4)
+    per_our_slot_max: "tuple[float, ...]"  # worst incoming effectiveness vs each of our 6 team slots (×4)
+
+
 @dataclass(frozen=True)
 class ValueView:
     """The critic's read on this state: recorded V(s), the loaded model's re-run
@@ -137,6 +161,7 @@ class InvocationAnalysis:
     matchups: "MatchupView | None"
     sweep: "InterventionSweep | None"
     saliency: "Saliency | None"
+    threats: "ThreatView | None"
     warnings: "tuple[str, ...]"
     # Outcome / value / disagreement (added for the Outcome panel + agent API).
     outcome: dict = field(default_factory=dict)   # raw {our, opp, reward, events}
@@ -301,11 +326,29 @@ def _saliency(model, obs: np.ndarray, mask: np.ndarray, chosen_idx: int, off) ->
     blocks = (
         block("active move_multipliers(4)", off.mm_off, off.mm_off + 4),
         block("our_matchups(144)", off.om_off, off.om_off + 144),
+        block("their_matchups(144)", off.tm_off, off.tm_off + 144),  # incoming-threat attention
         block("our active pokemon block(99)", 0, off.active_block_dim),
         block("turn-history block", off.turn_history_offset,
               off.turn_history_offset + off.turn_history_dim),
     )
     return Saliency(overall_mean_abs=float(g.mean()), blocks=blocks)
+
+
+def _threats(obs: np.ndarray, off) -> "ThreatView | None":
+    """Decode the opponent's incoming type-effectiveness from `their_matchups`.
+
+    Returns None if the obs is too short to hold the block (tiny synthetic test obs) —
+    so the engine never crashes on a malformed/old trace."""
+    seg = obs[off.tm_off:off.tm_off + _MATCHUP_DIM]
+    if seg.shape[0] != _MATCHUP_DIM:
+        return None
+    m = seg.reshape(_TEAM_SIZE, 4, _TEAM_SIZE) * 4.0   # [opp_mon, move_slot, our_mon], ×4-denormalised
+    return ThreatView(
+        present=bool((m > 0).any()),
+        revealed_frac=float((m > 0).mean()),
+        max_incoming=float(m.max()),
+        per_our_slot_max=tuple(float(m[:, :, j].max()) for j in range(_TEAM_SIZE)),
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -328,7 +371,8 @@ def analyze_invocation(model, summary: dict, npz, inv_index: int,
     if not _has_state(npz, inv_index):
         return InvocationAnalysis(
             **common, has_state=False, actions=(), matchups=None, sweep=None,
-            saliency=None, warnings=(f"invocation {inv_index} has no captured state",),
+            saliency=None, threats=None,
+            warnings=(f"invocation {inv_index} has no captured state",),
             outcome=outcome, flags=summary_flags(inv), board=board,
         )
 
@@ -342,6 +386,7 @@ def analyze_invocation(model, summary: dict, npz, inv_index: int,
     matchups = _matchups(obs, labels, model.offsets)
     sweep = _intervention_sweep(model, obs, mask, labels, chosen, model.offsets)
     saliency = _saliency(model, obs, mask, labels.index(chosen), model.offsets)
+    threats = _threats(obs, model.offsets)
 
     # Value: recorded V(s), the loaded model's re-run V(s), V at the next captured
     # decision, and ΔV. (A big ΔV is where the critic's expectation shifted.)
@@ -374,6 +419,6 @@ def analyze_invocation(model, summary: dict, npz, inv_index: int,
 
     return InvocationAnalysis(
         **common, has_state=True, actions=actions, matchups=matchups, sweep=sweep,
-        saliency=saliency, warnings=(), outcome=outcome, value=value,
+        saliency=saliency, threats=threats, warnings=(), outcome=outcome, value=value,
         rerun_argmax=rerun_argmax, agrees=agrees, flags=flags, board=board, field=field,
     )

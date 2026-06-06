@@ -231,8 +231,9 @@ sourced from Showdown's actual representation, never guessed from the move name 
 
 > **Downstream reader:** the prober engine (`src/main/prober/engine.py`) reads
 > `OFFSET_REACTIVE + move_multiplier` (active-move type mults), `+ our_matchups`,
-> and the turn-history span — resolved at runtime from `get_layout()`. If you
-> move these offsets, its pinned regression test (`prober/engine_test.py::
+> `+ their_matchups` (the incoming-threat decode + saliency block), and the
+> turn-history span — resolved at runtime from `get_layout()`. If you move these
+> offsets, its pinned regression test (`prober/engine_test.py::
 > test_offsets_resolve_matches_layout`) will fail; update the pinned values there.
 
 **TurnDelta slot (159 dims, layout in `turn_delta_encoder.py`):** all offsets computed from

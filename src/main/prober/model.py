@@ -30,7 +30,8 @@ class ObsOffsets:
     """
 
     mm_off: int            # active-move type multipliers (4 dims) vs current opp
-    om_off: int            # our_matchups block (144 dims)
+    om_off: int            # our_matchups block (144 dims): our moves' eff vs their mons
+    tm_off: int            # their_matchups block (144 dims): their moves' eff vs OUR mons (incoming threat)
     active_block_dim: int  # our active-pokemon block span [0:active_block_dim)
     turn_history_offset: int
     turn_history_dim: int  # n_history_turns * turn_delta_dim
@@ -44,6 +45,7 @@ class ObsOffsets:
         return cls(
             mm_off=C.OFFSET_REACTIVE + rl["move_multiplier"]["offset"],
             om_off=C.OFFSET_REACTIVE + rl["our_matchups"]["offset"],
+            tm_off=C.OFFSET_REACTIVE + rl["their_matchups"]["offset"],
             active_block_dim=99,  # the launcher CLI's "our active pokemon block(99)"
             turn_history_offset=lay["turn_history_offset"],
             turn_history_dim=lay["n_history_turns"] * lay["turn_delta_dim"],

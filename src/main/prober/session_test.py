@@ -12,7 +12,7 @@ from agents.action.constants import MOVE_START
 from main.prober.model import ObsOffsets
 from main.prober.session import ProbeSession
 
-_OFF = ObsOffsets(mm_off=10, om_off=20, active_block_dim=5,
+_OFF = ObsOffsets(mm_off=10, om_off=20, tm_off=164, active_block_dim=5,
                   turn_history_offset=200, turn_history_dim=10)
 _OBS_LEN = 256
 
@@ -168,6 +168,106 @@ def test_short_id_resolves(tmp_path):
     run, _ = _build_run(tmp_path)
     ov = ProbeSession(run).battle_overview("step_2000000/staller/win_001")
     assert ov["meta"]["step"] == 2000000
+
+
+def _write_battle(run, opponent, name, invs, values):
+    """Minimal trace pair (summary + npz with `values`) for scan tests (model-free)."""
+    bd = run / "eval_traces" / "step_2000000" / opponent
+    os.makedirs(bd, exist_ok=True)
+    outcome = name.split("_")[0]
+    summary = {"meta": {"step": 2000000, "result": outcome.upper(), "turns": len(invs),
+                        "invocations": len(invs)}, "invocations": invs}
+    with open(bd / f"{name}_summary.json", "w") as f:
+        json.dump(summary, f)
+    np.savez(bd / f"{name}_states.npz",
+             obs=np.zeros((len(invs), _OBS_LEN), dtype=np.float32),
+             has_state=np.ones(len(invs), dtype=np.int8),
+             values=np.array(values, dtype=np.float32))
+    if not os.path.exists(bd.parent / "eval_manifest.json"):
+        with open(bd.parent / "eval_manifest.json", "w") as f:
+            json.dump({"step": 2000000, "git_hash": "abc", "arch_signature": "x",
+                       "snapshot": None}, f)
+    with open(run / "metadata.json", "w") as f:
+        json.dump({"gamma": 0.95}, f)
+
+
+def _inv(turn, chosen, reward_total, *, faint=False, species=("zapdos", "jynx")):
+    return {"i": turn, "turn": turn, "phase": "move_selection", "chosen": chosen,
+            "our": {"species": species[0]}, "opp": {"species": species[1]},
+            "actions": {chosen: {"prob": "80.0%", "valid": True}},
+            "outcome": {"reward": {"total": reward_total},
+                        "events": (["opp:jynx:fainted"] if faint else [])}}
+
+
+def _build_scan_run(tmp_path):
+    """Two losses (distinct worst drops/TDs) + one win, for cross-battle scan."""
+    run = tmp_path / "run"
+    # loss_006: values 10→2→6  ⇒ worst ΔV -8 @inv0; r0=-1 ⇒ td0 = -1+0.95*2-10 = -9.10
+    _write_battle(run, "aggressive_v2", "loss_006",
+                  [_inv(1, "earthquake", -1.0), _inv(2, "switch:m0", 0.5, faint=True)],
+                  [10.0, 2.0, 6.0])
+    # loss_007: values 5→1 ⇒ worst ΔV -4 @inv0; r0=-10 ⇒ td0 = -10+0.95*1-5 = -14.05 (worst TD)
+    _write_battle(run, "aggressive_v2", "loss_007",
+                  [_inv(1, "fireblast", -10.0, faint=True)], [5.0, 1.0])
+    # a win — must be excluded by outcome="loss"
+    _write_battle(run, "heuristic", "win_001",
+                  [_inv(1, "thunderbolt", 0.5), _inv(2, "thunderbolt", 1.0)], [3.0, 8.0])
+    (run / "checkpoint_3200000_steps.zip").write_text("")
+    return str(run)
+
+
+def test_scan_ranks_worst_turning_point_per_battle(tmp_path):
+    run = _build_scan_run(tmp_path)
+    rows = ProbeSession(run).scan(outcome="loss")
+    assert [r["short_id"].split("/")[-1] for r in rows] == ["loss_006", "loss_007"]  # -8 before -4
+    w = rows[0]["worst"]
+    assert w["inv"] == 0 and abs(w["delta_v"] - (-8.0)) < 1e-9
+    assert abs(w["td_residual"] - (-1.0 + 0.95 * 2.0 - 10.0)) < 1e-9
+    assert w["chosen"] == "earthquake" and w["our_active"].startswith("zapdos")
+    assert rows[0]["opponent"] == "aggressive_v2" and rows[0]["turns"] == 2
+
+
+def test_scan_outcome_and_opponent_filters(tmp_path):
+    run = _build_scan_run(tmp_path)
+    sess = ProbeSession(run)
+    assert len(sess.scan(outcome="loss")) == 2          # the win is excluded
+    assert len(sess.scan()) == 3                          # unfiltered: all three battles
+    assert [r["short_id"].split("/")[-1] for r in sess.scan(outcome="win")] == ["win_001"]
+    assert all(r["opponent"] == "aggressive_v2"
+               for r in sess.scan(opponent="aggressive_v2"))
+
+
+def test_scan_metric_td_reorders(tmp_path):
+    run = _build_scan_run(tmp_path)
+    # by ΔV: loss_006(-8) first; by TD: loss_007(-14.05) first
+    by_dv = ProbeSession(run).scan(outcome="loss", metric="value_drop")
+    by_td = ProbeSession(run).scan(outcome="loss", metric="td_residual")
+    assert by_dv[0]["short_id"].endswith("loss_006")
+    assert by_td[0]["short_id"].endswith("loss_007")
+    assert abs(by_td[0]["worst"]["td_residual"] - (-10.0 + 0.95 * 1.0 - 5.0)) < 1e-9
+
+
+def test_scan_limit_and_bad_metric(tmp_path):
+    run = _build_scan_run(tmp_path)
+    assert len(ProbeSession(run).scan(outcome="loss", limit=1)) == 1
+    with pytest.raises(ValueError):
+        ProbeSession(run).scan(metric="nonsense")
+
+
+def test_cli_scan_emits_json(tmp_path):
+    import sys
+    import main.prober.query as q
+    run = _build_scan_run(tmp_path)
+    argv = sys.argv
+    sys.argv = ["query", "scan", run, "--outcome", "loss", "--metric", "td_residual", "--limit", "1"]
+    try:
+        buf = io.StringIO()
+        with redirect_stdout(buf):
+            q.main()
+    finally:
+        sys.argv = argv
+    parsed = json.loads(buf.getvalue())
+    assert len(parsed) == 1 and parsed[0]["short_id"].endswith("loss_007")
 
 
 def test_cli_error_envelope(tmp_path):

@@ -13,7 +13,7 @@ from main.prober.model import ObsOffsets
 
 # Small synthetic layout so the obs vector stays tiny.
 _OFF = ObsOffsets(
-    mm_off=10, om_off=20, active_block_dim=5,
+    mm_off=10, om_off=20, tm_off=164, active_block_dim=5,
     turn_history_offset=200, turn_history_dim=10,
 )
 _OBS_LEN = 256
@@ -126,11 +126,11 @@ def test_saliency_block_spans():
     a = analyze_invocation(model, _summary(), _npz(), 0)
     names = [b.name for b in a.saliency.blocks]
     assert names == [
-        "active move_multipliers(4)", "our_matchups(144)",
+        "active move_multipliers(4)", "our_matchups(144)", "their_matchups(144)",
         "our active pokemon block(99)", "turn-history block",
     ]
     # |grad| = [0,1,2,...]; active-pokemon block spans 0:5 → mean 2.0, sum 10.
-    active_block = a.saliency.blocks[2]
+    active_block = a.saliency.blocks[3]
     assert active_block.mean_abs == 2.0 and active_block.total_abs == 10.0
     assert a.saliency.overall_mean_abs == np.arange(_OBS_LEN).mean()
 
@@ -209,6 +209,34 @@ def test_analysis_carries_field_when_model_decodes():
     assert a.field == {"weather": "RAIN", "our_spikes": 1, "opp_spikes": 0, "turn": 8.0}
 
 
+def test_threats_decode_incoming():
+    """`their_matchups` → ThreatView: present / revealed_frac / max / per-our-slot."""
+    model = FakeProbeModel(_OFF)
+    obs = np.zeros((1, 320), dtype=np.float32)        # long enough to hold tm_off(164)+144
+    # their_matchups laid out [opp_mon, move_slot, our_mon] (6×4×6), stored /4.
+    block = np.zeros((6, 4, 6), dtype=np.float32)
+    block[0, 0, 2] = 2.0 / 4.0                          # opp mon0 move0 hits OUR slot2 for 2×
+    block[1, 1, 2] = 4.0 / 4.0                          # opp mon1 move1 hits OUR slot2 for 4× (worst)
+    obs[0, _OFF.tm_off:_OFF.tm_off + 144] = block.reshape(-1)
+    npz = {"obs": obs, "has_state": np.array([1], dtype=np.int8),
+           "values": np.array([1.0], dtype=np.float32)}
+    a = analyze_invocation(model, _summary(), npz, 0)
+    t = a.threats
+    assert t is not None and t.present is True
+    assert abs(t.max_incoming - 4.0) < 1e-6            # the 4× cell, ×4-denormalised
+    assert t.per_our_slot_max[2] == 4.0 and t.per_our_slot_max[0] == 0.0   # threat concentrated on slot2
+    assert 0.0 < t.revealed_frac < 0.05                # only 2 of 144 cells populated
+    # their_matchups is now its own saliency block
+    assert any(b.name == "their_matchups(144)" for b in a.saliency.blocks)
+
+
+def test_threats_none_when_block_absent():
+    """A too-short obs (no their_matchups room) yields threats=None, not a crash."""
+    model = FakeProbeModel(_OFF)
+    a = analyze_invocation(model, _summary(), _npz(), 0)   # _OBS_LEN=256 < tm_off+144
+    assert a.threats is None
+
+
 def test_offsets_resolve_matches_layout():
     """Regression guard: pin the obs offsets the engine depends on."""
     off = ObsOffsets.resolve()
@@ -216,6 +244,7 @@ def test_offsets_resolve_matches_layout():
     # the inline "# 1247" comments in observation/constants.py are stale).
     assert off.mm_off == 1422   # OFFSET_REACTIVE(1418) + move_multiplier(4)
     assert off.om_off == 1468   # OFFSET_REACTIVE(1418) + our_matchups(50, post gen3_move_effects_v1)
+    assert off.tm_off == 1612   # OFFSET_REACTIVE(1418) + their_matchups(194 = our_matchups 50 + 144)
     assert off.active_block_dim == 99
 
     from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings

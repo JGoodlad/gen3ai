@@ -369,9 +369,10 @@ The same analysis is available headless for one invocation via the
 <states.npz> <inv>`); both share the pure engine in `src/main/prober/engine.py`.
 
 **For agents/scripts**, a JSON API + CLI (`ProbeSession` / `python -m
-main.prober.query list|overview|find|analyze`) exposes the same probing
-infrastructure programmatically — list/filter battles, scan a battle model-free,
-find decisions the model disagrees with, or deeply analyze one decision. Internals
+main.prober.query summary|list|scan|overview|find|analyze`) exposes the same probing
+infrastructure programmatically — list/filter battles, **`scan` the worst turn in
+every loss across an opponent (model-free, ranked)**, digest one battle, find
+decisions the model disagrees with, or deeply analyze one decision. Internals
 — engine/app split, the model-resolution ladder, Outcome panel, flags, and the
 agent API — are in `src/main/prober/CLAUDE.md`.
 
