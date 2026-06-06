@@ -56,7 +56,9 @@ from agents.training.eval_callback import (
     spawn_eval_workers,
     write_eval_manifest,
 )
-from agents.training.snapshot_pool import SnapshotPool, heuristic_fraction
+from agents.training.snapshot_pool import (
+    SnapshotPool, heuristic_fraction, HEURISTIC_FLOOR, SELF_PLAY_START, SELF_PLAY_FULL,
+)
 from main.launcher.ipc import emit, send_event, send_metrics
 
 # Regression guard: warn if a bot the agent was beating well drops below this.
@@ -143,6 +145,9 @@ class SelfPlayCallback(BaseCallback):
         best_model_save_path: str | None = None,
         promote_threshold: float = 0.65,
         self_play_temp: float = 1.0,
+        heuristic_floor: float = HEURISTIC_FLOOR,
+        self_play_start_wr: float = SELF_PLAY_START,
+        self_play_full_wr: float = SELF_PLAY_FULL,
         n_workers: int = 3,
         eval_device: str = "cpu",
         distill_opponents: bool = False,
@@ -164,6 +169,14 @@ class SelfPlayCallback(BaseCallback):
         self.best_model_save_path = best_model_save_path
         self._promote_threshold = promote_threshold
         self._self_play_temp = self_play_temp
+        # Curriculum (transition + floor) — the live per-episode self_play_fraction the eval
+        # pushes is 1 - heuristic_fraction(win_rate, floor/start/full). Defaults = the module
+        # constants (original curve); raised floor / later `full` keeps the coverage-punishing
+        # bots in the TRAINING mix longer (#2). Threaded from --heuristic-floor /
+        # --self-play-start-wr / --self-play-full-wr.
+        self._heuristic_floor = heuristic_floor
+        self._self_play_start_wr = self_play_start_wr
+        self._self_play_full_wr = self_play_full_wr
         self._n_workers = max(1, n_workers)
         self._eval_device = eval_device
         self._eval_concurrency = eval_concurrency
@@ -320,6 +333,9 @@ class SelfPlayCallback(BaseCallback):
             "concurrency": self._eval_concurrency,
             "device": self._eval_device,
             "cycle_tag": cycle_tag,
+            # Run's discount → the recorder's δ uses the real γ; live td-residual tail matches
+            # the prober's offline _td at the same γ.
+            "gamma": float(self.model.gamma),
         }
         procs = spawn_eval_workers(run_dir, base_cfg, n_workers)
 
@@ -379,6 +395,8 @@ class SelfPlayCallback(BaseCallback):
         bot_wr = {n: wr[n] for n in bot_names if n in wr}
         bot_rew = {n: merged["reward_means"][n] for n in bot_names if n in merged["reward_means"]}
         bot_ep = {n: merged["ep_lens"][n] for n in bot_names if n in merged["ep_lens"]}
+        _td_tails = merged.get("td_resid_tails", {})
+        bot_td = {n: _td_tails[n] for n in bot_names if n in _td_tails}
 
         if not wr:
             print(f"⚠️ [SELFPLAY EVAL] step {step:,}: no results (all workers failed); skipping record")
@@ -388,6 +406,7 @@ class SelfPlayCallback(BaseCallback):
 
         # Sentinel results in pool order (skip any whose worker died): (entry, label, win, reward, ep_len).
         kept_sentinels: list[tuple] = []
+        kept_sentinel_tds: list = []  # parallel to kept_sentinels; None where no captured battles
         for s, entry in zip(sentinels, sentinel_entries):
             label = s["label"]
             v = wr.get(label)
@@ -397,6 +416,7 @@ class SelfPlayCallback(BaseCallback):
                     merged["reward_means"].get(label, 0.0),
                     merged["ep_lens"].get(label, 0.0),
                 ))
+                kept_sentinel_tds.append(_td_tails.get(label))
         sentinel_win_rates = [v for (_e, _l, v, _rw, _ep) in kept_sentinels]
 
         tui: dict[str, float] = {}
@@ -411,6 +431,14 @@ class SelfPlayCallback(BaseCallback):
                 tui[f"eval/win_rate_vs_{name}"] = bot_wr[name]
                 tui[f"eval/mean_reward_vs_{name}"] = bot_rew.get(name, 0.0)
                 tui[f"eval/mean_ep_len_vs_{name}"] = bot_ep.get(name, 0.0)
+                if name in bot_td:
+                    self.logger.record(f"eval/td_resid_tail_vs_{name}", bot_td[name])
+                    tui[f"eval/td_resid_tail_vs_{name}"] = bot_td[name]
+        # TD-residual tail headline over the bots (#4) — lower = critic more often blindsided.
+        td_tail_mean = sum(bot_td.values()) / len(bot_td) if bot_td else None
+        if td_tail_mean is not None:
+            self.logger.record("eval/td_resid_tail_mean", td_tail_mean)
+            tui["eval/td_resid_tail_mean"] = td_tail_mean
 
         self.win_rate_vs_bots = bot_mean(bot_wr)
         mean_reward_vs_bots = bot_mean(bot_rew)
@@ -430,9 +458,14 @@ class SelfPlayCallback(BaseCallback):
             # continuous TB curve, but it maps to a DIFFERENT checkpoint each cycle — surface
             # its step so the TUI can label the row "vs sentinel_0 (47.0M)".
             tui[f"eval/sentinel_step_{i}"] = float(entry.step)
+            td_i = kept_sentinel_tds[i]
+            if td_i is not None:
+                self.logger.record(f"eval/td_resid_tail_vs_sentinel_{i}", td_i)
+                tui[f"eval/td_resid_tail_vs_sentinel_{i}"] = td_i
 
         sentinel_rewards = [rw for (_e, _l, _v, rw, _ep) in kept_sentinels]
         sentinel_ep_lens = [ep for (_e, _l, _v, _rw, ep) in kept_sentinels]
+        sentinel_tds = [t for t in kept_sentinel_tds if t is not None]
         win_rate_vs_pool = (
             sum(sentinel_win_rates) / len(sentinel_win_rates) if sentinel_win_rates else 0.0
         )
@@ -443,6 +476,7 @@ class SelfPlayCallback(BaseCallback):
             sum(sentinel_ep_lens) / len(sentinel_ep_lens) if sentinel_ep_lens else 0.0
         )
         monotonicity = _monotonicity_score(sentinel_win_rates) if len(sentinel_win_rates) >= 2 else 1.0
+        td_resid_tail_vs_pool = sum(sentinel_tds) / len(sentinel_tds) if sentinel_tds else None
         self.logger.record("eval/win_rate_vs_pool", win_rate_vs_pool)
         self.logger.record("eval/mean_reward_vs_pool", mean_reward_vs_pool)
         self.logger.record("eval/mean_ep_len_vs_pool", mean_ep_len_vs_pool)
@@ -451,6 +485,9 @@ class SelfPlayCallback(BaseCallback):
         tui["eval/mean_reward_vs_pool"] = mean_reward_vs_pool
         tui["eval/mean_ep_len_vs_pool"] = mean_ep_len_vs_pool
         tui["eval/sentinel_monotonicity"] = monotonicity
+        if td_resid_tail_vs_pool is not None:
+            self.logger.record("eval/td_resid_tail_vs_pool", td_resid_tail_vs_pool)
+            tui["eval/td_resid_tail_vs_pool"] = td_resid_tail_vs_pool
 
         if monotonicity < 0.6 and len(sentinel_win_rates) >= 3:
             emit(f"⚠️  [SELFPLAY] Cycling signal: sentinel_monotonicity={monotonicity:.2f} "
@@ -461,7 +498,9 @@ class SelfPlayCallback(BaseCallback):
         # NOW from the frozen (competent) eval snapshot — so the first self-play opponent is a
         # competent model, never random. Then push the live fraction + pool generation to every
         # training env so the heuristic-vs-pool ratio tracks performance mid-run (no restart).
-        sf = 1.0 - heuristic_fraction(self.win_rate_vs_bots)
+        sf = 1.0 - heuristic_fraction(
+            self.win_rate_vs_bots, floor=self._heuristic_floor,
+            start=self._self_play_start_wr, full=self._self_play_full_wr)
         if sf > 0 and self._pool.is_empty():
             self._pool.add_from_path(pending["snapshot"], step)
             self._pool_generation += 1
@@ -508,7 +547,7 @@ class SelfPlayCallback(BaseCallback):
         elo_result = record_elo(
             self._model_dir, step, bot_wr,
             [{"step": e.step, "win_rate": v} for e, _l, v, _rw, _ep in kept_sentinels],
-            pending["n_games"], self.logger, tui,
+            pending["n_games"], self.logger, tui, bot_td_tails=bot_td,
         )
 
         self.logger.dump(step)
@@ -523,8 +562,8 @@ class SelfPlayCallback(BaseCallback):
 
         # ── Persist eval metrics to metadata.json (bot block + pool block) ──
         if self._model_dir:
-            block = build_bot_eval_block(bot_wr, bot_rew, bot_ep)
-            block["pool"] = {
+            block = build_bot_eval_block(bot_wr, bot_rew, bot_ep, bot_td)
+            pool_block = {
                 "win_rate": win_rate_vs_pool,
                 "mean_reward": mean_reward_vs_pool,
                 "mean_ep_len": mean_ep_len_vs_pool,
@@ -538,10 +577,14 @@ class SelfPlayCallback(BaseCallback):
                         "mean_ep_len": round(ep, 4),
                         "weight": round(self._pool.entry_weight(entry), 3),
                         "snapshot": entry.path.name,
+                        **({"td_resid_tail": round(td, 4)} if td is not None else {}),
                     }
-                    for entry, _label, v, rw, ep in kept_sentinels
+                    for (entry, _label, v, rw, ep), td in zip(kept_sentinels, kept_sentinel_tds)
                 ],
             }
+            if td_resid_tail_vs_pool is not None:
+                pool_block["td_resid_tail"] = td_resid_tail_vs_pool
+            block["pool"] = pool_block
             if elo_result:
                 block["elo"], block["elo_ci"] = elo_result
             record_eval_results(self._model_dir, step, block)

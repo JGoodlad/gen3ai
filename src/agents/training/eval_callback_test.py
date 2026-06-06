@@ -102,6 +102,9 @@ def test_eval_one_matchup_returns_metrics_and_arms_forensics(tmp_path):
         def begin_forensic_cycle(self, d, step):
             self.forensic = (d, step)
 
+        def td_tail(self):
+            return None   # no captured residuals in this stub → omitted from the result dict
+
         async def battle_against(self, opp, n_battles):
             self.n_finished_battles = n_battles
             self.n_won_battles = 3
@@ -121,6 +124,7 @@ def test_eval_one_matchup_returns_metrics_and_arms_forensics(tmp_path):
         "win_rate": pytest.approx(3 / 4),
         "reward_mean": pytest.approx(1.5),
         "ep_len": pytest.approx(10.0),
+        "td_resid_tail": None,              # stub captured no residuals → None
         "duration_sec": m["duration_sec"],  # wall-clock, just assert presence
     }
     assert tr.reset_battles_called and tr.reset_reward_called

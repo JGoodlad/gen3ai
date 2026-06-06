@@ -26,7 +26,8 @@ class BattleRecorder:
     SlotRegistries so BattleContext slot lookups stay consistent.
     """
 
-    def __init__(self, battle_tag: str, reward_fn_factory: Callable[[], RewardFunction] = Gen3RewardManager):
+    def __init__(self, battle_tag: str, reward_fn_factory: Callable[[], RewardFunction] = Gen3RewardManager,
+                 gamma: float = 0.99):
         self.battle_tag = battle_tag
         self._our_slots = SlotRegistry()
         self._opp_slots = SlotRegistry()
@@ -37,6 +38,15 @@ class BattleRecorder:
         # (obs/logits/value the model saw). Populated only when record() gets them;
         # exported via states_arrays() for offline forensic replay.
         self._states: list[dict] = []
+        # Per-decision TD residual δ(t) = r(t) + γ·V(s_{t+1}) − V(s_t) — the SAME formula the
+        # prober uses (main/prober/session.py::_td), the single source of truth. Computed live at
+        # the NEXT record() (when complete_pending finalizes reward(t) and the current state
+        # carries V(s_{t+1})), so the last decision yields no δ (no next state — matches the
+        # prober leaving td_residual(last)=None). The left tail of these is the "critic got
+        # blindsided" signal (#4) the eval cycle folds into eval/td_resid_tail_*.
+        self._gamma = float(gamma)
+        self._td_residuals: list[float] = []
+        self._prev_value: Optional[float] = None  # V(s_t) carried across decisions
 
     # ------------------------------------------------------------------
     # Public API
@@ -64,6 +74,12 @@ class BattleRecorder:
             prev_ctx = self._tracker.pending_ctx
             delta, reward = self._tracker.complete_pending(curr_ctx, battle)
             self._fill_pending_outcome(prev_ctx, curr_ctx, delta, reward, live)
+            # δ(prev) = r(prev) + γ·V(s_now) − V(s_prev): the critic's surprise on the just-closed
+            # transition. `reward` is the scalar total for it (== outcome.reward.total the prober
+            # reads); `_prev_value` is V(s_prev) stashed last call; this call's value is V(s_now).
+            v_next = (state or {}).get("value")
+            if self._prev_value is not None and v_next is not None and reward is not None:
+                self._td_residuals.append(reward + self._gamma * float(v_next) - self._prev_value)
 
         chosen = self._action_label(action_idx, live, legal)
         our_mon = live.ours.active
@@ -100,6 +116,16 @@ class BattleRecorder:
 
         self._tracker.begin_turn(curr_ctx, action_idx, view.event_cursor)
         self._pending_entry = entry
+        # Carry V(s_now) so the NEXT record() can close δ for this decision.
+        self._prev_value = (state or {}).get("value")
+
+    def td_residuals(self) -> list[float]:
+        """The per-decision TD residuals δ closed so far (one per non-terminal decision).
+
+        Empty when no value was captured (the cheap fast path) or fewer than two decisions ran.
+        The eval cycle pools these across an opponent's captured battles → a tail statistic
+        (``eval/td_resid_tail_*``). Read it BEFORE the recorder is discarded at battle end."""
+        return list(self._td_residuals)
 
     def states_arrays(self) -> dict:
         """Stack the per-invocation raw model I/O into npz-ready arrays, aligned

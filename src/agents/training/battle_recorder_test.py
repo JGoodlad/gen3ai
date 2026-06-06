@@ -107,6 +107,21 @@ class _ZeroReward:
     def report_episode(self, battle): pass
 
 
+class _SeqReward:
+    """Returns a fixed reward sequence — one per complete_pending/finalize — so a recorder
+    test can assert the TD-residual δ = r + γV(s') − V(s) against known numbers."""
+    def __init__(self, seq):
+        self._seq = list(seq)
+        self._i = 0
+    def reset(self): pass
+    def record_action(self, ctx, action): pass
+    def process_turn_reward(self, battle, delta):
+        r = self._seq[self._i]
+        self._i += 1
+        return r
+    def report_episode(self, battle): pass
+
+
 def _rec():
     return BattleRecorder("battle-gen3ou-test", reward_fn_factory=_ZeroReward)
 
@@ -272,6 +287,39 @@ def test_forced_switch_opp_action_is_none():
 
     forced_outcome = rec._invocations[1]["outcome"]
     assert forced_outcome["opp"]["action"] == "none"
+
+
+# ── TD-residual δ accumulation (#4) ───────────────────────────────────────────
+
+def _move_battle(turn):
+    return _battle([_FakeMon("zapdos", 1.0)], [_FakeMon("tyranitar", 1.0)],
+                   "zapdos", "tyranitar", turn=turn, move_ids=["thunderbolt"])
+
+
+def test_td_residuals_match_prober_formula():
+    """δ(t) = r(t) + γ·V(s_{t+1}) − V(s_t), closed at the NEXT record(); last decision yields no δ."""
+    gamma = 0.9
+    rewards = [2.0, -5.0]          # r0 (closed at 2nd record), r1 (closed at 3rd)
+    values = [1.0, 0.5, -3.0]      # V(s0), V(s1), V(s2)
+    rec = BattleRecorder("battle-gen3ou-test", reward_fn_factory=lambda: _SeqReward(rewards),
+                         gamma=gamma)
+    for t in range(3):
+        rec.record(_move_battle(t + 1), 6, _probs(), _mask(6),
+                   state={"value": values[t], "obs": np.zeros(4, np.float32),
+                          "logits": np.zeros(11, np.float32)})
+    expected = [
+        rewards[0] + gamma * values[1] - values[0],
+        rewards[1] + gamma * values[2] - values[1],
+    ]
+    assert rec.td_residuals() == pytest.approx(expected)
+
+
+def test_td_residuals_empty_without_captured_values():
+    """No state['value'] (the cheap fast path) → no residuals, never a spurious 0."""
+    rec = BattleRecorder("battle-gen3ou-test", reward_fn_factory=_ZeroReward, gamma=0.9)
+    for t in range(3):
+        rec.record(_move_battle(t + 1), 6, _probs(), _mask(6))
+    assert rec.td_residuals() == []
 
 
 # ── write_battle_record (shared forensic writer) ──────────────────────────────

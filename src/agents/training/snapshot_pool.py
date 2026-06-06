@@ -37,15 +37,23 @@ SELF_PLAY_FULL = 0.80
 HEURISTIC_FLOOR = 0.10
 
 
-def heuristic_fraction(win_rate_vs_bots: float) -> float:
-    """Fraction of training envs that use heuristic opponents (vs. pool snapshots).
+def heuristic_fraction(win_rate_vs_bots: float, *, floor: float = HEURISTIC_FLOOR,
+                       start: float = SELF_PLAY_START, full: float = SELF_PLAY_FULL) -> float:
+    """Fraction of training episodes that use heuristic (bot) opponents vs. pool snapshots.
 
-    1.0 (0% self-play) below ``SELF_PLAY_START``; smoothstep down to ``HEURISTIC_FLOOR``
-    (→ 90% self-play) as win rate climbs ``SELF_PLAY_START``→``SELF_PLAY_FULL``; flat
-    ``HEURISTIC_FLOOR`` above, so the agent always sees a few real bots (prevents forgetting
-    basics). Self-play is therefore *gated* on competence — a weak model trains entirely vs
-    bots, and self-play only engages (and the pool is only seeded) once win rate clears
-    ``SELF_PLAY_START``, so the seed is always captured from a competent model.
+    1.0 (0% self-play) below ``start``; smoothstep down to ``floor`` as win rate climbs
+    ``start``→``full``; flat ``floor`` above, so the agent always sees a few real bots
+    (prevents forgetting basics). Self-play is therefore *gated* on competence — a weak model
+    trains entirely vs bots, and self-play only engages (and the pool is only seeded) once win
+    rate clears ``start``, so the seed is always captured from a competent model.
+
+    The three anchors are **configurable** (defaults = the module constants
+    ``HEURISTIC_FLOOR`` / ``SELF_PLAY_START`` / ``SELF_PLAY_FULL``), threaded from
+    ``--heuristic-floor`` / ``--self-play-start-wr`` / ``--self-play-full-wr`` so a run can keep
+    the coverage-punishing bots in the training mix for longer (raise ``full`` to ramp slower,
+    raise ``floor`` to keep a bigger permanent bot slice). Passing the defaults reproduces the
+    original curriculum exactly. Called only in the trainer process (startup + each eval's live
+    push); env workers receive the computed fraction via ``env_method``.
 
     ``GEN3_FORCE_SELFPLAY=1`` overrides this to 0% — EVERY training env uses a pool
     (self-play) opponent. This is the faithful self-play stress mode: only the RLPlayer
@@ -56,10 +64,11 @@ def heuristic_fraction(win_rate_vs_bots: float) -> float:
     import os
     if os.environ.get("GEN3_FORCE_SELFPLAY"):
         return 0.0
-    t = (win_rate_vs_bots - SELF_PLAY_START) / (SELF_PLAY_FULL - SELF_PLAY_START)
+    span = max(full - start, 1e-9)  # guard a degenerate start==full config
+    t = (win_rate_vs_bots - start) / span
     t = max(0.0, min(1.0, t))
     t_smooth = t * t * (3.0 - 2.0 * t)
-    return 1.0 * (1.0 - t_smooth) + HEURISTIC_FLOOR * t_smooth
+    return 1.0 * (1.0 - t_smooth) + floor * t_smooth
 
 
 class SnapshotPool:

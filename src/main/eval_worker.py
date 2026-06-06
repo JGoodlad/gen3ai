@@ -83,6 +83,8 @@ def _run(cfg: dict) -> None:
     sentinels = cfg.get("sentinels") or []
     sentinel_by_label = {s["label"]: s for s in sentinels}
     self_play_temp = cfg.get("self_play_temp", 1.0)
+    # Run's discount for the recorder's TD-residual δ (#4); the parent passes model.gamma.
+    gamma = cfg.get("gamma", 0.99)
     # One combined work-steal universe: bot names + sentinel labels.
     claim_universe = list(bot_names) + [s["label"] for s in sentinels]
     # Build the CURRENT-code version once, only when there are sentinels to version-check.
@@ -107,14 +109,14 @@ def _run(cfg: dict) -> None:
             result = _eval_sentinel(
                 model, sentinel_by_label[name], current_version, trainee_tb, opp_tb,
                 mappings, server_config, concurrency, device, self_play_temp,
-                n_games, model_dir, step, tag, use_bridge,
+                n_games, model_dir, step, tag, use_bridge, gamma,
             )
         else:
             opponents = build_eval_opponents(
                 server_config, opp_tb, [name], tag, start_listening=not use_bridge)
             players = build_eval_players(
                 model, [name], trainee_tb, mappings, server_config, concurrency, tag,
-                start_listening=not use_bridge,
+                start_listening=not use_bridge, gamma=gamma,
             )
             m = asyncio.run(run_eval(players, opponents, n_games, model_dir, step,
                                      use_bridge=use_bridge,
@@ -125,6 +127,9 @@ def _run(cfg: dict) -> None:
                 "ep_len": m["ep_lens"][name],
                 "duration_sec": m["durations_sec"][name],
             }
+            # TD-residual tail (#4) — present only if this opponent had captured battles.
+            if name in m.get("td_resid_tails", {}):
+                result["td_resid_tail"] = m["td_resid_tails"][name]
         result["worker_id"] = wid
         # Write atomically (tmp + rename) so the parent never reads a half-written file.
         out = os.path.join(result_dir, f"result__{name}.json")
@@ -136,7 +141,7 @@ def _run(cfg: dict) -> None:
 
 def _eval_sentinel(model, spec, current_version, trainee_tb, opp_tb, mappings,
                    server_config, concurrency, device, temperature,
-                   n_games, model_dir, step, tag, use_bridge=False) -> dict:
+                   n_games, model_dir, step, tag, use_bridge=False, gamma=0.99) -> dict:
     """Play the frozen trainee (greedy) vs one pool sentinel (stochastic) — one matchup.
 
     The sentinel is loaded via ``load_model_snapshot`` against the pool's shared
@@ -157,6 +162,7 @@ def _eval_sentinel(model, spec, current_version, trainee_tb, opp_tb, mappings,
         max_concurrent_battles=concurrency,
         stochastic=False,  # eval measures the GREEDY policy → stable win-rate signal
         start_listening=not use_bridge,
+        gamma=gamma,
     )
     opponent = RLPlayer(
         model=sentinel_model, team=opp_tb, battle_format=BATTLE_FORMAT,
@@ -169,13 +175,16 @@ def _eval_sentinel(model, spec, current_version, trainee_tb, opp_tb, mappings,
     m = asyncio.run(eval_one_matchup(trainee, opponent, n_games, model_dir, step, label,
                                      use_bridge=use_bridge,
                                      bridge_concurrency=(concurrency if use_bridge else 1)))
-    return {
+    out = {
         "win_rate": m["win_rate"],
         "reward_mean": m["reward_mean"],
         "ep_len": m["ep_len"],
         "duration_sec": m["duration_sec"],
         "sentinel_step": spec.get("step"),
     }
+    if m.get("td_resid_tail") is not None:  # #4 — present only if captured battles ran
+        out["td_resid_tail"] = m["td_resid_tail"]
+    return out
 
 
 def main() -> int:

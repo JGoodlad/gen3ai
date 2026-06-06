@@ -105,6 +105,27 @@ def _per_opponent_concurrency(n_opponents: int) -> int:
 _FORENSIC_LOSS_QUOTA = 10
 _FORENSIC_WIN_QUOTA = 5
 
+# TD-residual tail metric (#4): the left tail of per-decision critic surprise
+# δ = r + γ·V(s') − V(s) (BattleRecorder, the prober's formula) pooled over an eval cycle's
+# CAPTURED battles. The headline scalar is the mean of the worst `TD_TAIL_FRAC` fraction (CVaR),
+# which isolates the value-cliffs the loss analysis flags (a mean over all turns washes them out;
+# a raw min is one-freak-turn noisy). Below `TD_TAIL_MIN_SAMPLES` residuals, report the single
+# most-negative one. Sign-meaningful in reward units: more negative = critic more often blindsided,
+# so a successful critic-coverage obs change should pull eval/td_resid_tail_mean UP toward 0.
+TD_TAIL_FRAC = 0.05
+TD_TAIL_MIN_SAMPLES = 20
+
+
+def td_tail(residuals, frac: float = TD_TAIL_FRAC, min_samples: int = TD_TAIL_MIN_SAMPLES):
+    """Lower-tail mean (CVaR@frac) of `residuals`; the single min if too few; None if empty."""
+    ds = sorted(float(r) for r in residuals)
+    if not ds:
+        return None
+    if len(ds) < min_samples:
+        return ds[0]
+    k = max(1, int(len(ds) * frac))
+    return sum(ds[:k]) / k
+
 # Per-opponent in-flight battles in the subprocess eval worker. ONE game at a time.
 # Eval inference is single-threaded (one Python thread does every forward in this
 # process), so overlapping battles never parallelizes the bottleneck — it only piles
@@ -138,7 +159,7 @@ _OPPONENT_NAMES: dict[type, str] = {
     Gen3StallerPlayer: "staller",
     Gen3AggressivePlayer: "aggressive",
     Gen3SetupSweepPlayer: "setup_sweep",
-    # V2 bots — names registered for TUI/TensorBoard; not yet in the eval rotation.
+    # V2 bots — in the full eval rotation (see _EVAL_OPPONENT_SPECS) and the training roster.
     Gen3HeuristicV2Player: "heuristic2",
     Gen3StallerV2Player: "staller_v2",
     Gen3AggressiveV2Player: "aggressive_v2",
@@ -207,7 +228,7 @@ def build_eval_opponents(server_config, teambuilder, names, tag="", *, start_lis
 
 
 def build_eval_players(model, names, teambuilder, mappings, server_config, concurrency,
-                       tag="", *, start_listening=True):
+                       tag="", *, start_listening=True, gamma: float = 0.99):
     """One EvalRLPlayer per opponent name, sharing the (frozen) model + teambuilder."""
     return {
         name: EvalRLPlayer(
@@ -217,6 +238,7 @@ def build_eval_players(model, names, teambuilder, mappings, server_config, concu
             max_concurrent_battles=concurrency,
             stochastic=False,  # bot-eval measures the GREEDY policy
             start_listening=start_listening,
+            gamma=gamma,
         )
         for i, name in enumerate(names)
     }
@@ -322,6 +344,7 @@ async def eval_one_matchup(trainee, opponent, n_games, model_dir, step, name,
         "win_rate": win_rate,
         "reward_mean": trainee.mean_episode_reward,
         "ep_len": _mean_episode_length(trainee),
+        "td_resid_tail": trainee.td_tail(),   # None when no captured battles → omitted downstream
         "duration_sec": dur,
     }
 
@@ -344,6 +367,9 @@ async def run_eval(players, opponents, n_games, model_dir, step, *, use_bridge=F
         "win_rates": {m["name"]: m["win_rate"] for m in results},
         "reward_means": {m["name"]: m["reward_mean"] for m in results},
         "ep_lens": {m["name"]: m["ep_len"] for m in results},
+        # Present only for opponents that produced residuals (captured battles) this cycle.
+        "td_resid_tails": {m["name"]: m["td_resid_tail"] for m in results
+                           if m.get("td_resid_tail") is not None},
         "durations_sec": {m["name"]: m["duration_sec"] for m in results},
     }
 
@@ -427,7 +453,8 @@ def merge_eval_results(run_dir: str, names: list[str]) -> tuple[dict, list]:
     A missing file means a worker died mid-opponent (its claim lock blocks a retry) — the
     caller logs it and carries on. Shared by both eval callbacks.
     """
-    merged = {"win_rates": {}, "reward_means": {}, "ep_lens": {}, "durations_sec": {}}
+    merged = {"win_rates": {}, "reward_means": {}, "ep_lens": {},
+              "td_resid_tails": {}, "durations_sec": {}}
     missing = []
     for name in names:
         rp = os.path.join(run_dir, f"result__{name}.json")
@@ -439,6 +466,9 @@ def merge_eval_results(run_dir: str, names: list[str]) -> tuple[dict, list]:
         merged["win_rates"][name] = r["win_rate"]
         merged["reward_means"][name] = r["reward_mean"]
         merged["ep_lens"][name] = r["ep_len"]
+        # Present only when the worker captured battles for this opponent (else key omitted).
+        if r.get("td_resid_tail") is not None:
+            merged["td_resid_tails"][name] = r["td_resid_tail"]
         merged["durations_sec"][name] = r["duration_sec"]
     return merged, missing
 
@@ -625,9 +655,16 @@ def build_bot_eval_block(
     win_rates: dict[str, float],
     reward_means: dict[str, float],
     ep_lens: dict[str, float],
+    td_resid_tails: "dict[str, float] | None" = None,
 ) -> dict:
-    """Build the standard bot-eval metrics dict for metadata.json (opponents last)."""
-    return {
+    """Build the standard bot-eval metrics dict for metadata.json (opponents last).
+
+    ``td_resid_tails`` (#4, optional) maps opponent → TD-residual tail (CVaR); when present a
+    ``td_resid_tail_mean`` headline (mean over the per-opponent tails) is added and each
+    opponent's own tail is folded into its ``opponents[name]`` entry. Omitted entirely when no
+    captured battles produced residuals, so the block is byte-identical to before when unused."""
+    td_resid_tails = td_resid_tails or {}
+    block = {
         "win_rate_mean": sum(win_rates.values()) / len(win_rates) if win_rates else 0.0,
         "mean_reward_mean": sum(reward_means.values()) / len(reward_means) if reward_means else 0.0,
         "win_rate_vs_bots": bot_mean(win_rates),
@@ -638,10 +675,14 @@ def build_bot_eval_block(
                 "win_rate": win_rates[name],
                 "mean_reward": reward_means[name],
                 "mean_ep_len": ep_lens[name],
+                **({"td_resid_tail": td_resid_tails[name]} if name in td_resid_tails else {}),
             }
             for name in win_rates
         },
     }
+    if td_resid_tails:
+        block["td_resid_tail_mean"] = sum(td_resid_tails.values()) / len(td_resid_tails)
+    return block
 
 
 def _record_opponent_elos(fit, bot_names, sentinels, tui):
@@ -664,7 +705,8 @@ def _record_opponent_elos(fit, bot_names, sentinels, tui):
             tui[f"eval/elo_vs_sentinel_{i}"] = round(sr[0])
 
 
-def record_elo(model_dir, step, bot_win_rates, sentinels, n_games, logger, tui):
+def record_elo(model_dir, step, bot_win_rates, sentinels, n_games, logger, tui,
+               bot_td_tails=None):
     """Append this cycle's results to ``eval_results.jsonl``, refit anchored Bradley-Terry
     ELO, and record ``eval/elo`` + ``eval/elo_ci`` to the SB3 logger + the TUI dict.
 
@@ -680,7 +722,8 @@ def record_elo(model_dir, step, bot_win_rates, sentinels, n_games, logger, tui):
         from agents.model.snapshot import append_eval_result_row
         from agents.training import elo as elo_mod
 
-        append_eval_result_row(model_dir, step, n_games, bot_win_rates, sentinels)
+        append_eval_result_row(model_dir, step, n_games, bot_win_rates, sentinels,
+                               bot_td_tails=bot_td_tails)
         # Refits the WHOLE accumulated ladder to read this snapshot's rating. Cheap at the
         # expected scale (tens of snapshots → ms); wrapped best-effort so it can never break eval.
         fit = elo_mod.fit_from_run(model_dir, source="log")
@@ -715,10 +758,11 @@ class EvalRLPlayer(RewardTrackingMixin, RLPlayer):
     cycle to (re)arm capture; leave the dir None to disable forensics entirely.
     """
 
-    def __init__(self, *args, reward_fn_factory=Gen3RewardManager,
+    def __init__(self, *args, reward_fn_factory=Gen3RewardManager, gamma: float = 0.99,
                  loss_quota=_FORENSIC_LOSS_QUOTA, win_quota=_FORENSIC_WIN_QUOTA, **kwargs):
         super().__init__(*args, **kwargs)
         self._init_reward_tracking(reward_fn_factory)
+        self._gamma = float(gamma)
         self._loss_quota = loss_quota
         self._win_quota = win_quota
         self._forensic_dir: str | None = None
@@ -727,6 +771,9 @@ class EvalRLPlayer(RewardTrackingMixin, RLPlayer):
         self._losses_kept = 0
         self._trace_idx = 0
         self._recorders: dict[str, BattleRecorder] = {}
+        # δ residuals pooled across THIS matchup's captured battles (one EvalRLPlayer per
+        # opponent), folded into a tail statistic at collect via td_tail(). Reset each cycle.
+        self._td_pool: list[float] = []
 
     def begin_forensic_cycle(self, forensic_dir: str | None, step: int) -> None:
         """Arm (or disable, if dir is None) forensic capture for one eval cycle."""
@@ -736,6 +783,13 @@ class EvalRLPlayer(RewardTrackingMixin, RLPlayer):
         self._losses_kept = 0
         self._trace_idx = 0
         self._recorders.clear()
+        self._td_pool = []
+
+    def td_tail(self):
+        """Lower-tail (CVaR) of this matchup's per-decision critic surprise, or None if no
+        captured battles produced residuals this cycle. The eval cycle records it as
+        eval/td_resid_tail_vs_<opponent>."""
+        return td_tail(self._td_pool)
 
     @property
     def _quota_open(self) -> bool:
@@ -761,7 +815,7 @@ class EvalRLPlayer(RewardTrackingMixin, RLPlayer):
         if capturing:
             rec = self._recorders.get(battle.battle_tag)
             if rec is None:
-                rec = BattleRecorder(battle.battle_tag, self._reward_fn_factory)
+                rec = BattleRecorder(battle.battle_tag, self._reward_fn_factory, gamma=self._gamma)
                 self._recorders[battle.battle_tag] = rec
             rec.record(battle, idx, probs, mask, state=getattr(self, "_last_prediction", None))
         return self.action_to_order(idx, battle)
@@ -771,6 +825,9 @@ class EvalRLPlayer(RewardTrackingMixin, RLPlayer):
         rec = self._recorders.pop(battle.battle_tag, None)
         if rec is None:
             return
+        # Harvest δ from EVERY captured battle (even one whose trace we drop below for quota) —
+        # the tail metric wants signal from all the V(s) we paid for, not just the persisted sample.
+        self._td_pool.extend(rec.td_residuals())
         # Persist this trace only if its outcome is one we still want a sample of;
         # otherwise drop the buffered capture (we already have enough of that result).
         if battle.won and self._wins_kept < self._win_quota:
@@ -949,6 +1006,9 @@ class PerOpponentEvalCallback(BaseCallback):
             "concurrency": self._eval_concurrency,
             "device": self._eval_device,
             "cycle_tag": cycle_tag,
+            # Run's discount → the recorder's δ uses the real γ (not the 0.99 fallback), so the
+            # live td-residual tail matches the prober's offline _td at the same γ.
+            "gamma": float(self.model.gamma),
         }
         procs = spawn_eval_workers(run_dir, base_cfg, n_workers)
 
@@ -1016,6 +1076,7 @@ class PerOpponentEvalCallback(BaseCallback):
         win_rates = merged["win_rates"]
         reward_means = merged["reward_means"]
         ep_lens = merged["ep_lens"]
+        td_tails = merged.get("td_resid_tails", {})
         aggregate = sum(win_rates.values()) / len(win_rates)
         aggregate_reward = sum(reward_means.values()) / len(reward_means) if reward_means else 0.0
         wr_bots = bot_mean(win_rates)
@@ -1031,17 +1092,27 @@ class PerOpponentEvalCallback(BaseCallback):
             tui[f"eval/win_rate_vs_{name}"] = win_rates[name]
             tui[f"eval/mean_ep_len_vs_{name}"] = ep_lens.get(name, 0.0)
             tui[f"eval/mean_reward_vs_{name}"] = reward_means.get(name, 0.0)
+            if name in td_tails:
+                self.logger.record(f"eval/td_resid_tail_vs_{name}", td_tails[name])
+                tui[f"eval/td_resid_tail_vs_{name}"] = td_tails[name]
         self.logger.record("eval/win_rate_mean", aggregate)
         self.logger.record("eval/win_rate_vs_bots", wr_bots)
         self.logger.record("eval/mean_reward_mean", aggregate_reward)
         self.logger.record("eval/mean_reward_vs_bots", rew_bots)
         self.logger.record("eval/mean_ep_len_vs_bots", eplen_bots)
         self.logger.record("eval/duration_sec", total_dur)
+        # TD-residual tail headline (#4): mean of the per-opponent tails (a mean-of-CVaRs). Only
+        # recorded when captured battles produced residuals — lower/more-negative = critic more
+        # often blindsided; the leading indicator for the critic-coverage obs work.
+        td_tail_mean = sum(td_tails.values()) / len(td_tails) if td_tails else None
+        if td_tail_mean is not None:
+            self.logger.record("eval/td_resid_tail_mean", td_tail_mean)
+            tui["eval/td_resid_tail_mean"] = td_tail_mean
         # Anchored-BT ELO from the accumulated results (appends this cycle's row first).
         # win_rates carries every opponent incl. random (a valid bot anchor); no sentinels
         # on the bot-only path.
         elo_result = record_elo(self._model_dir, step, win_rates, [], n_games,
-                                self.logger, tui)
+                                self.logger, tui, bot_td_tails=td_tails)
         # Record at the SNAPSHOT step so the eval curve aligns to when the model was
         # frozen, not the (later) step at which the worker happened to finish.
         self.logger.dump(step)
@@ -1070,7 +1141,7 @@ class PerOpponentEvalCallback(BaseCallback):
         send_event(f"🧪 Eval @ {step:,}: {summary}")
 
         if self._model_dir:
-            block = build_bot_eval_block(win_rates, reward_means, ep_lens)
+            block = build_bot_eval_block(win_rates, reward_means, ep_lens, td_tails)
             if elo_result:
                 block["elo"], block["elo_ci"] = elo_result
             record_eval_results(self._model_dir, step, block)

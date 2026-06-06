@@ -38,7 +38,8 @@ class MaskableAgentWrapper(SingleAgentWrapper):
     """
 
     def __init__(self, env, opponent=None, *, heuristic_opponents=None, pool=None,
-                 pool_player=None, self_play_fraction=0.0, rng_seed=0):
+                 pool_player=None, self_play_fraction=0.0, rng_seed=0,
+                 heuristic_weights=None):
         # Back-compat: a single positional `opponent` (legacy / tests) becomes a 1-bot roster.
         roster = list(heuristic_opponents) if heuristic_opponents else (
             [opponent] if opponent is not None else [])
@@ -47,6 +48,21 @@ class MaskableAgentWrapper(SingleAgentWrapper):
                 "MaskableAgentWrapper needs an `opponent` or a `heuristic_opponents` roster")
         super().__init__(env, roster[0])
         self._heuristic_opponents = roster
+        # Per-bot sampling weights aligned index-for-index to `roster`, biasing WHICH heuristic
+        # an episode draws (e.g. the coverage-punishing aggressive_v2/heuristic2). None → uniform
+        # (the original behavior, byte-for-byte). Validated at construction so a misaligned vector
+        # fails loudly here, never silently per-episode. Applies only to the heuristic branch of
+        # _select_episode_opponent; the pool-vs-heuristic fraction and pool sampling are untouched.
+        if heuristic_weights is None:
+            self._heuristic_weights = None
+        else:
+            w = [float(x) for x in heuristic_weights]
+            if len(w) != len(roster):
+                raise ValueError(
+                    f"heuristic_weights len {len(w)} != heuristic roster len {len(roster)}")
+            if any(x < 0 for x in w) or sum(w) <= 0:
+                raise ValueError("heuristic_weights must be non-negative with a positive sum")
+            self._heuristic_weights = w
         self._pool = pool
         self._pool_player = pool_player
         self._self_play_fraction = float(self_play_fraction)
@@ -114,7 +130,13 @@ class MaskableAgentWrapper(SingleAgentWrapper):
             if self._has_pool_model:
                 self.opponent = self._pool_player
                 return
-        self.opponent = self._rng.choice(self._heuristic_opponents)
+        # Heuristic branch (also the fallthrough when the pool isn't seeded yet): weighted pick
+        # toward the configured bots, else uniform.
+        if self._heuristic_weights is None:
+            self.opponent = self._rng.choice(self._heuristic_opponents)
+        else:
+            self.opponent = self._rng.choices(
+                self._heuristic_opponents, weights=self._heuristic_weights, k=1)[0]
 
     def reset(self, *, seed=None, options=None):
         self._select_episode_opponent()

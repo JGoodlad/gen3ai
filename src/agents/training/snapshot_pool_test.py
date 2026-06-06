@@ -51,6 +51,38 @@ def test_heuristic_fraction_stays_in_bounds():
         assert 0.10 <= val <= 1.0
 
 
+# ── configurable transition + floor (#2) ─────────────────────────────────────
+
+def test_heuristic_fraction_custom_floor():
+    # Raised floor → more bot episodes forever once saturated; default unchanged.
+    assert heuristic_fraction(1.0, floor=0.25) == pytest.approx(0.25)
+    assert heuristic_fraction(0.90, floor=0.25) == pytest.approx(0.25)
+    assert heuristic_fraction(1.0) == pytest.approx(0.10)   # default untouched
+
+
+def test_heuristic_fraction_custom_start_full_shift_ramp():
+    # A later `full` means the ramp hasn't bottomed out yet at the old ceiling (0.80):
+    # the curve stays bot-heavier for longer.
+    later = heuristic_fraction(0.80, start=0.60, full=0.95, floor=0.25)
+    assert later > 0.25                       # not yet saturated to the floor
+    assert heuristic_fraction(0.95, start=0.60, full=0.95, floor=0.25) == pytest.approx(0.25)
+    assert heuristic_fraction(0.55, start=0.60, full=0.95) == pytest.approx(1.0)  # below start
+
+
+def test_heuristic_fraction_defaults_match_constants():
+    # Passing the module constants explicitly reproduces the no-arg curve exactly.
+    from agents.training.snapshot_pool import HEURISTIC_FLOOR, SELF_PLAY_START, SELF_PLAY_FULL
+    for wr in [0.0, 0.5, 0.55, 0.675, 0.8, 1.0]:
+        assert heuristic_fraction(wr) == pytest.approx(
+            heuristic_fraction(wr, floor=HEURISTIC_FLOOR, start=SELF_PLAY_START, full=SELF_PLAY_FULL))
+
+
+def test_heuristic_fraction_degenerate_start_equals_full():
+    # start==full must not divide by zero; it becomes a step at the threshold.
+    assert heuristic_fraction(0.50, start=0.70, full=0.70, floor=0.10) == pytest.approx(1.0)
+    assert heuristic_fraction(0.80, start=0.70, full=0.70, floor=0.10) == pytest.approx(0.10)
+
+
 # ── SnapshotPool helpers ────────────────────────────────────────────────────
 
 def _make_pool(tmp_path, **kwargs) -> SnapshotPool:

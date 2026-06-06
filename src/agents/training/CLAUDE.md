@@ -87,6 +87,22 @@ in the trainer). Behaviors:
 | `--keep-eval-snapshots` | `10` | Retain the N most-recent eval weight snapshots in `eval_traces/step_<N>/snapshot.zip` (~27MB each; default ≈270MB) for bit-exact prober replay. `0` writes the identity manifest only; the prober then loads the nearest persisted checkpoint. The trainer auto-prunes to this cap each cycle. |
 | `--keep-eval-trace-steps` | `20` | The trainer keeps only the N most-recent eval **step dirs** under `eval_traces/` after each cycle (`0` = keep all), so forensic data stays bounded. `python -m main.prober.groom` is the manual fallback. |
 
+**TD-residual tail metric (`eval/td_resid_tail_*`).** Each cycle also folds a **left-tail
+statistic of the per-decision critic surprise** δ(t) = r(t) + γ·V(s_{t+1}) − V(s_t) — the same
+formula the prober uses (`main/prober/session.py::_td`, the single source of truth). `BattleRecorder`
+accumulates δ live (one-step delayed backfill, closing each transition at the next `record()` when
+the reward is finalized and V(s′) is known; the last decision has no δ). It costs **zero extra GPU**:
+δ is computed only over the battles eval already captures forensically (where `need_aux=True` already
+paid for V(s)), pooled per opponent (one `EvalRLPlayer` per matchup → `td_tail()`), and folded as a
+**CVaR@5%** (mean of the worst 5%, `TD_TAIL_FRAC`; single min below `TD_TAIL_MIN_SAMPLES`=20). It
+rides the exact win-rate plumbing — worker `result__<name>.json` → `merge_eval_results` →
+`eval/td_resid_tail_vs_<opponent>` + `eval/td_resid_tail_mean` (TB + TUI), the `metadata.json`
+`latest_eval` block (per-opponent + pool aggregate), and the append-only `eval_results.jsonl`. The
+run's `model.gamma` is threaded into the worker (`base_cfg["gamma"]`) so the live δ matches the
+prober's offline recompute (guarded by `td_residual_parity_fuzz_test.py`). More-negative = the critic
+got blindsided more often — the **leading indicator for the critic-coverage obs work** (it moves in a
+cycle or two, where saturated win-rate / gate-pinned `win_rate_vs_pool` / wide-CI ELO don't).
+
 Each eval worker plays **one game at a time** (`_EVAL_SUBPROCESS_CONCURRENCY` = 1).
 Eval inference is single-threaded, so overlapping battles only adds CPU/server
 contention without parallelizing the forward — it measured slower, not faster.
@@ -126,7 +142,15 @@ restart — no manifest). Design lives in `designs/ai_v5/`. Key behaviors:
 - **Curriculum: thresholded ramp + LIVE per-episode fraction.** `heuristic_fraction`
   (`snapshot_pool.py`) is **0% self-play below `SELF_PLAY_START` (0.55)** — a weak model trains
   100% vs bots, no cycles wasted on a useless self-opponent — then smoothsteps `0.55→0.80` up to
-  **90% self-play** (`HEURISTIC_FLOOR`=0.10 keeps a few % vs real bots for anti-forgetting).
+  **90% self-play** (`HEURISTIC_FLOOR`=0.10 keeps a few % vs real bots for anti-forgetting). The
+  three anchors are **configurable** — `--heuristic-floor` / `--self-play-start-wr` /
+  `--self-play-full-wr` (defaults = the constants) thread through both the startup fraction and the
+  live push, so a run can keep the coverage-punishing bots in the mix longer (raise `full` to ramp
+  slower, raise `floor` for a bigger permanent bot slice). `--bot-weights name=w,…` additionally
+  biases WHICH heuristic each episode draws (e.g. `aggressive_v2=3,heuristic2=3` → ~3× emphasis on
+  the loss-analysis-flagged coverage bots; unlisted bots stay 1.0, omitted → uniform) — the weighted
+  pick lives in `MaskableAgentWrapper._select_episode_opponent`, an O(1) in-memory `rng.choices`
+  with zero per-step cost. All three default to the original behavior, so an unset run is unchanged.
   Crucially the heuristic-vs-pool split is **no longer fixed per process**: every training env
   picks its opponent **per episode** in `MaskableAgentWrapper.reset()` from a live
   `self_play_fraction`, and `SelfPlayCallback` pushes the fresh fraction (+ a `pool_generation`)

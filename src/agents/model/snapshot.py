@@ -101,6 +101,7 @@ def append_eval_result_row(
     n_games: int,
     bot_win_rates: dict,
     sentinels: "list[dict] | None" = None,
+    bot_td_tails: "dict | None" = None,
 ) -> None:
     """Append one eval cycle's pairwise win-records to ``<model_dir>/eval_results.jsonl``.
 
@@ -125,6 +126,10 @@ def append_eval_result_row(
                 for s in (sentinels or [])
             ],
         }
+        # #4 — per-bot TD-residual tail history (append-only, restart-safe). Optional sibling of
+        # `bots`; omitted when no captured battles produced residuals, so old rows stay identical.
+        if bot_td_tails:
+            row["td_resid_tails"] = {k: float(v) for k, v in bot_td_tails.items()}
         with open(os.path.join(model_dir, "eval_results.jsonl"), "a") as f:
             f.write(json.dumps(row) + "\n")
     except (OSError, ValueError, KeyError, TypeError) as e:

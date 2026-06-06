@@ -51,7 +51,9 @@ from agents.training.eval_callback import (
     PerOpponentEvalCallback, opponent_name,
 )
 from agents.training.graceful_restart_callback import GracefulRestartCallback
-from agents.training.snapshot_pool import SnapshotPool, heuristic_fraction
+from agents.training.snapshot_pool import (
+    SnapshotPool, heuristic_fraction, HEURISTIC_FLOOR, SELF_PLAY_START, SELF_PLAY_FULL,
+)
 from agents.training.selfplay_callback import SelfPlayCallback
 from agents.training.wrappers import MaskableAgentWrapper
 from agents.training.gen3_env import Gen3Env
@@ -450,6 +452,25 @@ async def main():
                              "not argmax, so the learner faces the policy's full action distribution). "
                              "1.0 = the policy's own distribution; >1 flatter/more random; lower → toward "
                              "greedy. Eval opponents stay deterministic regardless.")
+    # ── Bot-mix curriculum (#2): keep the coverage-punishing bots in the TRAINING mix ──
+    parser.add_argument("--bot-weights", "--bot_weights", dest="bot_weights", type=str, default=None,
+                        help="Bias the per-episode HEURISTIC opponent pick toward chosen archetypes, "
+                             "e.g. 'aggressive_v2=3,heuristic2=3'. Unlisted bots default to weight 1.0. "
+                             "Names: heuristic, heuristic2, staller, staller_v2, aggressive, aggressive_v2, "
+                             "setup_sweep, setup_sweep_v2. Omitted → uniform (current behavior). Only biases "
+                             "WHICH heuristic an episode draws; the pool-vs-heuristic fraction is unaffected.")
+    parser.add_argument("--heuristic-floor", "--heuristic_floor", dest="heuristic_floor",
+                        type=float, default=None,
+                        help="Minimum fraction of training episodes vs real bots once self-play saturates "
+                             f"(default {HEURISTIC_FLOOR:g}). Raise it (e.g. 0.25) to keep a bigger permanent "
+                             "bot slice so the coverage blindspot keeps getting exercised under self-play.")
+    parser.add_argument("--self-play-start-wr", "--self_play_start_wr", dest="self_play_start_wr",
+                        type=float, default=None,
+                        help=f"win_rate_vs_bots at which self-play begins to ramp in (default {SELF_PLAY_START:g}).")
+    parser.add_argument("--self-play-full-wr", "--self_play_full_wr", dest="self_play_full_wr",
+                        type=float, default=None,
+                        help=f"win_rate_vs_bots at which self-play reaches the floor (default {SELF_PLAY_FULL:g}); "
+                             "raise it to ramp slower / stay bot-heavier for longer.")
 
     args = parser.parse_args()
     log_level = LogLevel[args.log_level.upper()]
@@ -518,9 +539,42 @@ async def main():
     print(f"[Opponents] training pool = {len(OPPONENT_CLASSES)} bots "
           f"({', '.join(opponent_name(c) for c in OPPONENT_CLASSES)})")
 
+    # Resolve --bot-weights (name=weight) into a roster-aligned vector (unlisted → 1.0). None →
+    # uniform (current behavior, byte-for-byte). Validated here so a typo fails fast at startup.
+    _bot_weight_vec = None
+    if args.bot_weights:
+        _overrides = {}
+        for tok in args.bot_weights.split(","):
+            if not tok.strip():
+                continue
+            name, sep, val = tok.partition("=")
+            if not sep:
+                print(f"[Opponents] ERROR: --bot-weights token '{tok}' is not name=weight")
+                sys.exit(1)
+            _overrides[name.strip()] = float(val)
+        _valid = {opponent_name(c) for c in OPPONENT_CLASSES}
+        _bad = set(_overrides) - _valid
+        if _bad:
+            print(f"[Opponents] ERROR: unknown --bot-weights names {sorted(_bad)} "
+                  f"(valid: {sorted(_valid)})")
+            sys.exit(1)
+        _bot_weight_vec = [_overrides.get(opponent_name(c), 1.0) for c in OPPONENT_CLASSES]
+        print(f"[Opponents] heuristic weights = "
+              f"{ {opponent_name(c): w for c, w in zip(OPPONENT_CLASSES, _bot_weight_vec)} }")
+
+    # Curriculum (transition + floor) effective values: CLI override or the module defaults.
+    _heuristic_floor = args.heuristic_floor if args.heuristic_floor is not None else HEURISTIC_FLOOR
+    _sp_start_wr = args.self_play_start_wr if args.self_play_start_wr is not None else SELF_PLAY_START
+    _sp_full_wr = args.self_play_full_wr if args.self_play_full_wr is not None else SELF_PLAY_FULL
+    if (_heuristic_floor, _sp_start_wr, _sp_full_wr) != (HEURISTIC_FLOOR, SELF_PLAY_START, SELF_PLAY_FULL):
+        print(f"[Opponents] self-play curriculum: start_wr={_sp_start_wr:g} full_wr={_sp_full_wr:g} "
+              f"heuristic_floor={_heuristic_floor:g} "
+              f"(defaults {SELF_PLAY_START:g}/{SELF_PLAY_FULL:g}/{HEURISTIC_FLOOR:g})")
+
     def create_training_env_random(idx, stall_config=None, opponent_device="auto",
                                    opponent_version=None, snapshot_dir=None,
-                                   self_play_fraction=0.0, self_play=False):
+                                   self_play_fraction=0.0, self_play=False,
+                                   heuristic_weights=None):
         def _init():
             try:
                 ts = datetime.now().strftime('%H%M%S')
@@ -585,6 +639,7 @@ async def main():
                 wrapped = MaskableAgentWrapper(
                     env, heuristic_opponents=heuristic_opponents, pool=pool,
                     pool_player=pool_player, self_play_fraction=self_play_fraction, rng_seed=idx,
+                    heuristic_weights=heuristic_weights,
                 )
 
                 # FORCE OVERRIDE: SingleAgentWrapper hardcodes 10 for gen3ou. We need 11.
@@ -652,7 +707,8 @@ async def main():
         if getattr(args, "distill_opponents", False):
             _pool.set_distill_layout(Gen3ObservationEncoder(mappings).get_layout())
         _persisted_wr = _pool.load_persisted_win_rate()
-        _initial_self_play_fraction = 1.0 - heuristic_fraction(_persisted_wr)
+        _initial_self_play_fraction = 1.0 - heuristic_fraction(
+            _persisted_wr, floor=_heuristic_floor, start=_sp_start_wr, full=_sp_full_wr)
         emit(
             f"🎮 [SELFPLAY] Pool has {len(_pool)} snapshots, win_rate_vs_bots={_persisted_wr:.2%} "
             f"→ self_play_fraction={_initial_self_play_fraction:.0%} (live, per-episode)"
@@ -672,6 +728,7 @@ async def main():
                 opponent_version=_opp_version,
                 snapshot_dir=str(_snapshot_dir) if _snapshot_dir is not None else None,
                 self_play_fraction=_initial_self_play_fraction, self_play=args.self_play,
+                heuristic_weights=_bot_weight_vec,
             )
             for i in range(n_envs)
         ]
@@ -872,6 +929,11 @@ async def main():
             best_model_save_path=os.path.join(model_dir, "best_model"),
             promote_threshold=args.promote_threshold,
             self_play_temp=args.self_play_temp,
+            # Curriculum knobs (#2): the live per-episode fraction the callback pushes each eval
+            # uses these, matching the env's initial fraction computed above.
+            heuristic_floor=_heuristic_floor,
+            self_play_start_wr=_sp_start_wr,
+            self_play_full_wr=_sp_full_wr,
             # Self-play eval is ~2x the inference of bot eval — the 5 sentinel matchups run
             # the model for BOTH players (trainee + sentinel), vs bot matchups where only the
             # trainee infers. So double the work-stealing pool to keep wall-clock comparable.

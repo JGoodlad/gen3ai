@@ -18,11 +18,12 @@ def _stub_env():
     return env
 
 
-def _make_wrapper(*, fraction=0.0, pool=None, pool_player=None, n_heuristics=2, rng_seed=0):
+def _make_wrapper(*, fraction=0.0, pool=None, pool_player=None, n_heuristics=2, rng_seed=0,
+                  heuristic_weights=None):
     heuristics = [MagicMock(name=f"heur{i}") for i in range(n_heuristics)]
     w = MaskableAgentWrapper(
         _stub_env(), heuristic_opponents=heuristics, pool=pool, pool_player=pool_player,
-        self_play_fraction=fraction, rng_seed=rng_seed,
+        self_play_fraction=fraction, rng_seed=rng_seed, heuristic_weights=heuristic_weights,
     )
     return w, heuristics
 
@@ -137,3 +138,50 @@ def test_opponent_default_stats_reads_pool_player():
 def test_opponent_default_stats_zero_without_pool_player():
     w, _ = _make_wrapper(fraction=0.0, pool=None, pool_player=None)
     assert w.opponent_default_stats() == (0, 0, 0)
+
+
+# ── #2: weighted heuristic pick (--bot-weights) ──────────────────────────────
+
+def test_bot_weights_none_is_uniform():
+    """No weights → every heuristic appears over many draws (the original uniform behavior)."""
+    w, heuristics = _make_wrapper(fraction=0.0, n_heuristics=4, rng_seed=1)
+    assert w._heuristic_weights is None
+    seen = set()
+    for _ in range(500):
+        w._select_episode_opponent()
+        seen.add(id(w.opponent))
+    assert seen == {id(h) for h in heuristics}   # all four picked at least once
+
+
+def test_bot_weights_bias_distribution():
+    """weights=[3,1] → the 3-weighted heuristic is drawn ~3x as often (seeded RNG, tolerant)."""
+    w, heuristics = _make_wrapper(fraction=0.0, n_heuristics=2, rng_seed=7,
+                                  heuristic_weights=[3, 1])
+    counts = {id(heuristics[0]): 0, id(heuristics[1]): 0}
+    N = 8000
+    for _ in range(N):
+        w._select_episode_opponent()
+        counts[id(w.opponent)] += 1
+    share0 = counts[id(heuristics[0])] / N
+    assert share0 == pytest.approx(0.75, abs=0.03)   # 3/(3+1)
+
+
+def test_bot_weights_length_mismatch_raises():
+    with pytest.raises(ValueError):
+        _make_wrapper(n_heuristics=3, heuristic_weights=[1, 1])   # 2 != 3
+
+
+def test_bot_weights_negative_or_zero_sum_raises():
+    with pytest.raises(ValueError):
+        _make_wrapper(n_heuristics=2, heuristic_weights=[1, -1])
+    with pytest.raises(ValueError):
+        _make_wrapper(n_heuristics=2, heuristic_weights=[0, 0])
+
+
+def test_bot_weights_ignored_on_pool_branch():
+    """Weights bias only the heuristic branch — a pool episode still plays the pool player."""
+    pool = _stub_pool(model="M")
+    pp = MagicMock(name="pool_player")
+    w, _ = _make_wrapper(fraction=1.0, pool=pool, pool_player=pp, heuristic_weights=[5, 1])
+    w._select_episode_opponent()
+    assert w.opponent is pp
