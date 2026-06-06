@@ -251,9 +251,21 @@ def _rows_from_tensorboard(run_dir: str, n_games: int = 100) -> list[EvalRow]:
         from tensorboard.backend.event_processing.event_accumulator import EventAccumulator
     except ImportError:
         return []
-    # eval scalars are logged via the SB3 logger → events files somewhere under run_dir.
-    event_files = glob.glob(os.path.join(run_dir, "**", "events.out.tfevents.*"),
-                            recursive=True)
+    # SB3 writes the TB logs to a SEPARATE `<repo>/tensorboard/*<timestamp>*/` dir, NOT under the
+    # run dir — resolve it via the project's helper (the same one the launcher's plots use).
+    event_files: list[str] = []
+    try:
+        from utils.plot_tb import find_tb_dir_for_run
+        tb_dir = find_tb_dir_for_run(run_dir)
+        if tb_dir:
+            event_files = glob.glob(os.path.join(tb_dir, "**", "events.out.tfevents.*"),
+                                    recursive=True)
+    except Exception:  # noqa: BLE001 — resolver is best-effort; fall back to the run dir
+        pass
+    if not event_files:
+        # Fallback: globbing under run_dir itself (covers run_dir already BEING a tb dir).
+        event_files = glob.glob(os.path.join(run_dir, "**", "events.out.tfevents.*"),
+                                recursive=True)
     if not event_files:
         return []
     # Bot roster names (so we can tell bot edges apart from the aggregate keys).
