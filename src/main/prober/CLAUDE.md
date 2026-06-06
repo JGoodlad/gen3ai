@@ -156,8 +156,8 @@ battles (read `notable.biggest_value_drops` / `faints`) → `find disagree` /
 
 The engine reads four semantic obs regions by offset: the active-move type
 multipliers (`OFFSET_REACTIVE + move_multiplier`, currently dim 1422), the
-`our_matchups` block (`+ our_matchups`, currently 1468), the **`their_matchups`**
-block (`+ their_matchups`, currently 1612 — the incoming-threat decode + saliency),
+`our_matchups` block (`+ our_matchups`, currently 1501), the **`their_matchups`**
+block (`+ their_matchups`, currently 1645 — the incoming-threat decode + saliency),
 and the turn-history span — all resolved at runtime from
 `Gen3ObservationEncoder.get_layout()`. **If the obs layout changes, these move
 automatically** (e.g. `gen3_move_effects_v1` inserted a block before `our_matchups`,

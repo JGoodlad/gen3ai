@@ -111,7 +111,7 @@ needed** (`utils/bridge/local_battle_runner.py`):
 export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 src/agents/action/fuzz_test.py [n_battles]
 export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 src/agents/training/poke_env_gaps/transition_fuzz_test.py [n_battles]
 export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 src/agents/battle/event_log_fuzz_test.py [n_battles]
-# also bridge-backed (no server): poke_env_gaps/{abilities,item_consumption,move_outcome,snatch}_fuzz_test.py
+# also bridge-backed (no server): poke_env_gaps/{abilities,item_consumption,move_outcome,snatch,incoming_damage}_fuzz_test.py
 #                                  and training/hidden_power_tracker_fuzz_test.py
 ```
 
@@ -499,7 +499,7 @@ tools/               # Acquisition layer (knows the 3 upstreams) — has CLAUDE.
 
 ## Observation Vector
 
-The full observation is a **3357-dim float32 vector** (`Gen3ObservationEncoder.dimension`):
+The full observation is a **3390-dim float32 vector** (`Gen3ObservationEncoder.dimension`):
 
 | Block | Dims | Offset |
 |---|---|---|
@@ -507,14 +507,16 @@ The full observation is a **3357-dim float32 vector** (`Gen3ObservationEncoder.d
 | Opp team (6 × 107) | 642 | 642 |
 | Active context ×2 (boosts + full volatiles, `VOLATILE_DIM`=44) | 116 | 1284 |
 | Global env | 18 | 1400 |
-| Reactive + move-effects + matchups | 338 | 1418 |
-| Prev-turn action mask | 11 | 1756 |
-| Turn history (`N_HISTORY_TURNS` × 159) | 1590 | 1767 |
-| **Total** | **3357** | |
+| Reactive + move-effects + **incoming-damage** + matchups | 371 | 1418 |
+| Prev-turn action mask | 11 | 1789 |
+| Turn history (`N_HISTORY_TURNS` × 159) | 1590 | 1800 |
+| **Total** | **3390** | |
 
 **The full per-block layout** — the 107-dim per-Pokémon slot, the 11-dim move slot, the 18-dim
-spread block, global env, the 338-dim reactive block (14 scalars + the 36-dim action-aligned
-move-effect block, 4 slots × 9 feats + 288 matchup, `gen3_move_effects_v1`), and the 159-dim
+spread block, global env, the 371-dim reactive block (14 scalars + the 36-dim action-aligned
+move-effect block, 4 slots × 9 feats + the **33-dim incoming-damage / OHKO belief block**
+[`gen3_incoming_damage_v1`: per our mon, phys/spec expected-damage + mode-max P(KO) + P(outspeed),
+then 3 opp recovery scalars] + 288 matchup), and the 159-dim
 TurnDelta slot (incl. the embedded-ID manifest) — lives in **`src/agents/observation/CLAUDE.md`**.
 Every offset is computed
 from named constants; never hardcode indices.
@@ -557,7 +559,7 @@ crashes in seconds rather than hours.
 The architecture-constant single source of truth is the module-level constants
 (`ROLE_TOKEN_SIZE`, `PROJECTION_DIM`, `MOVE_NET_HIDDEN`, `ROLE_ENCODER_HIDDEN`,
 `ACTIVE_CTX_HIDDEN`) at the top of `features_extractor.py`; `ARCH_SIGNATURE` /
-`MODEL_CONFIG_VERSION` live in `model_version.py` (current: `gen3_move_effects_v1`).
+`MODEL_CONFIG_VERSION` live in `model_version.py` (current: `gen3_incoming_damage_v1`).
 **The full versioning playbook — what to do when you change a dim vs add an optional feature vs
 make a structural change — is in `src/agents/model/CLAUDE.md`.**
 

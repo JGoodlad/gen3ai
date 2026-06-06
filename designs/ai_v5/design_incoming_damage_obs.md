@@ -1,6 +1,30 @@
 # Design — Incoming-Damage / OHKO Belief Observation (ai_v5)
 
-> **Status: design complete, build GATED (2026-06-05).** Verdict from a zero-retrain falsifier +
+> **IMPLEMENTED 2026-06-06 (gated green; under adversarial review).** Built end-to-end: priors
+> (`gen3_{move,spread,item}_priors.json` + `gen3_data.priors` accessors + `stat_distribution`), the
+> belief math (`observation/incoming_damage.py`), the battle-integration loop + obs wiring
+> (`observation/reactive.py`, block at reactive offset 50 → both heads via `non_matchup_rest`),
+> `ARCH_SIGNATURE = gen3_incoming_damage_v1`, obs dim **3357 → 3390**. Gates passed: 1818 unit tests
+> + new belief/priors/integration tests; obs-build benchmark **+7.7% calls/encode** (under the 10%
+> gate, after per-species `lru_cache`); golden-obs fixture regenerated + parity passes; model
+> roundtrip PASSED; `--debug` smoke ran the full pipeline (episodes complete, eval ran, model
+> save/load). Docs updated (root/observation/model/prober CLAUDE.md). v1 scope per §11 + the
+> §5.3b speed-as-probability + §6.4; deferred to v2: Super Fang/Counter/OHKO candidates, CB
+> worst-case channel, per-mon-token placement, the calibration fuzz (needs the trained model = Gate 2).
+> **Not committed yet** — pending the review's verdict + your go-ahead.
+>
+> **RE-MEASURE 2026-06-06 → GO.** The gating no-vf-clip run trained 122M→158M (`clip_range_vf` off
+> from ~128M, confirmed: clip tags stop logging; EV stayed ~0.88, value_loss 178→97, win_rate_mean
+> 0.772→0.799 — un-clip was live + safe but only an average-fit gain). Within-run before/after on the
+> falsifier: the **unpriced-incoming-KO cliffs PERSISTED** — cliff rate 10.0%→8.6% (−14% only), and the
+> decisive-turning-point structure is essentially unchanged (clipped 55.3% addressable / 65% incoming /
+> 88% blank vs un-clipped 53.8% / 63% / 85%). The cheap critic-first fix did **not** solve the
+> tail-blindness → **build the scoped Phase-1 feature** (§5/§7/§11), folding in the recovery
+> `cures_status` scalar from `design_stall_recovery_obs.md` ([[project_stall_recovery_analysis]]).
+> Binding caveats still apply: the policy-side under-switching means the retrain must move the *policy*,
+> not just the critic — Gate 2 (saliency floor + CRITIC_BLINDSPOT drop + a switch-rate check) decides.
+>
+> Status: design complete, build GATED (2026-06-05). Verdict from a zero-retrain falsifier +
 > adversarial verification: **CONDITIONAL-GO (medium confidence)** — the critic is provably tail-blind
 > to unpriced incoming hits at ~half of decisive loss turning points (the *necessary* condition), but
 > the binding gap is **policy-side under-switching** + whether a retrained model attends to the feature
@@ -176,6 +200,18 @@ immune_bit=1`, and the **immune bit gates the channel** (never feed `log(0)`); a
 (Levitate on an unrevealed Claydol) → multiply that candidate's P(KO) by `(1 − P(immune-ability))`,
 not a binary zero. (Gen3's `+2`/floor terms break exact log-linearity for *small* hits; negligible for
 KO-relevant damage.)
+
+### 5.3b Speed — as a PROBABILITY, not a bit (v1, per owner 2026-06-06)
+
+The opponent's Speed is hidden (nature + EVs vary per set), so a binary "we outspeed" is wrong. Per
+our mon, emit **`P(outspeed) = P(their_spe < our_spe) + ½·P(tie)`** ∈ [0,1], marginalised over the
+opponent active's Speed **distribution** from the spread priors (each usage spread → a concrete Spe
+stat at L100/IV31, weighted by usage), with **observed** boosts + paralysis (gen3 par = ×0.25) folded
+in on both sides; our Speed is exact. The probability *is* the uncertainty (≈0.5 = set-dependent,
+≈0.95 = near-certain). Feed it as a per-our-mon scalar alongside the P(KO) pair and let the model
+relate "fast + OHKO = dead before I act" (don't pre-multiply). Reuses the Phase-0 spread priors.
+*v1 approximation gap:* Swift Swim / Chlorophyll ability-speed-doubling in weather (marginalise over
+the ability prior) deferred to v2; gen3 has no Choice Scarf, so item-speed is a non-issue.
 
 ### 5.4 Feature layout & placement
 

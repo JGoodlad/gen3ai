@@ -1,16 +1,17 @@
 import numpy as np
 from .base import ObservationEncoder
 from poke_env.battle.abstract_battle import AbstractBattle
-from poke_env.battle.side_condition import SideCondition
 from .constants import (
     REACTIVE_DIM, TEAM_SIZE,
     REACTIVE_SCALAR_DIM, REACTIVE_MATCHUP_OFFSET,
     MOVE_EFFECTS_DIM, MOVE_EFFECT_FEATURES,
+    INCOMING_DMG_DIM, INCOMING_DMG_OFFSET,
 )
 from agents.enums import PokemonType
 from agents import gen3_data
 from agents.gen3_mechanics import effective_multiplier_by_types, status_land_estimate
-from typing import Any, Dict, List, Optional, Tuple
+from agents.observation.incoming_damage_encoder import encode_block as encode_incoming_block
+from typing import Any, Dict, List, Optional
 
 
 def _resolve_ability_distribution(opp, ability_priors):
@@ -333,8 +334,14 @@ class ReactiveEncoder(ObservationEncoder):
             for m in their_team
         ]
 
-        # 5. Our moves vs Their mons (144 dims). Matchups follow the 14 scalars + the
-        # 32-dim move-effects block, so they start at REACTIVE_MATCHUP_OFFSET (46).
+        # 4c. Incoming-damage / OHKO belief block (incoming_damage_v1) — per our mon, the
+        # opponent active's KO/chip/outspeed threat under the hidden-set belief. Sits before the
+        # matchups so the extractor routes it through non_matchup_rest to both heads.
+        vec[INCOMING_DMG_OFFSET:INCOMING_DMG_OFFSET + INCOMING_DMG_DIM] = \
+            encode_incoming_block(battle, our_team, live)
+
+        # 5. Our moves vs Their mons (144 dims), starting at REACTIVE_MATCHUP_OFFSET (after the
+        # 14 scalars + 36 move-effects + the incoming-damage block).
         cursor = REACTIVE_MATCHUP_OFFSET
         for i in range(TEAM_SIZE):
             our_mon = our_team[i] if i < len(our_team) else None
@@ -382,6 +389,10 @@ class ReactiveEncoder(ObservationEncoder):
             # inflicts_status, status_will_land, pp_fraction].
             "move_effects": {"offset": REACTIVE_SCALAR_DIM, "dim": MOVE_EFFECTS_DIM,
                              "per_slot": MOVE_EFFECT_FEATURES},
+            # incoming_damage_v1: per-mon [phys_expdmg, spec_expdmg, phys_pko, spec_pko,
+            # p_outspeed] × TEAM_SIZE, then [recovery_rate, cures_status, recovery_known].
+            "incoming_damage": {"offset": INCOMING_DMG_OFFSET, "dim": INCOMING_DMG_DIM,
+                                "per_mon": 5, "recovery": 3},
             "our_matchups": {"offset": mo, "dim": 144},
             "their_matchups": {"offset": mo + 144, "dim": 144},
         }

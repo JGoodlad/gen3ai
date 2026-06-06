@@ -16,11 +16,14 @@ Run:
   PYTHONPATH=<worktree>/src python3 designs/ai_v5/falsifier_cliff_attribution.py
 """
 from __future__ import annotations
-import glob, json, os
+import glob, json, os, sys
 import numpy as np
 
-RUN = "/home/goodlad/dev/gen3ai/models/run_20260601_193826"
-SNAP_STEPS = [122000011, 120000001, 118000001, 116000024, 114000008]
+RUN = os.environ.get("FALSIFIER_RUN", "/home/goodlad/dev/gen3ai/models/run_20260601_193826")
+# Optional argv: MIN_STEP MAX_STEP — restrict to a training era (e.g. clipped vs un-clipped).
+_A = [a for a in sys.argv[1:] if a.lstrip("-").isdigit()]
+MIN_STEP = int(_A[0]) if len(_A) > 0 else 0
+MAX_STEP = int(_A[1]) if len(_A) > 1 else 10**12
 TM_OFF, TM_DIM = 1612, 144          # their_matchups (verified live)
 CLIFF = -8.0                         # delta_v threshold for "a cliff"
 BIG_HIT = -33.0                      # our hp_delta% counted as a big incoming hit
@@ -43,8 +46,14 @@ def base_move(action: str) -> str:
 
 def battles(outcome):
     out = []
-    for step in SNAP_STEPS:
-        for f in glob.glob(f"{RUN}/eval_traces/step_{step}/*/{outcome}_*_summary.json"):
+    for d in sorted(glob.glob(f"{RUN}/eval_traces/step_*")):
+        try:
+            step = int(d.split("step_")[1])
+        except (IndexError, ValueError):
+            continue
+        if not (MIN_STEP <= step <= MAX_STEP):
+            continue
+        for f in glob.glob(f"{d}/*/{outcome}_*_summary.json"):
             npz = f.replace("_summary.json", "_states.npz")
             if os.path.exists(npz): out.append((f, npz))
     return out

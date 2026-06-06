@@ -48,7 +48,7 @@ so they stay correct when the architecture changes with no manual update.
 1. **`Embeddings`** — shared tables: species (32), move (16), item (16), ability (16), type (16,
    shared for Pokémon types, move types, and TurnDelta move/type IDs). Owns the Hidden Power
    soft-type blend (`hp_soft_type`) and the per-slot TurnDelta embedder (`embed_delta_slot`).
-2. **`ObsUnpack`** (stateless) — peels the flat 3321-dim observation into the named tensors of
+2. **`ObsUnpack`** (stateless) — peels the flat 3390-dim observation into the named tensors of
    `ExtractorContext`: per-Pokémon block + categorical IDs, the global/reactive feature slices,
    the matchup matrices, and (hoisted here) the active-slot indices + fainted key-masks used
    downstream.
@@ -92,7 +92,7 @@ Rules to preserve:
 - **Each phase owns its layers** (`move_network` lives under `pokemon_encoder`, `our_cls` under `cls_pool`, etc.). State_dict keys are therefore phase-prefixed.
 - **`Embeddings` is the sole owner of the 5 embedding tables + `hp_type_idx_map`.** It is passed as a **forward argument** to `PokemonEncoder` and `TeamTransformer` — never stored as a child attribute on them — so the tables register exactly once. (The root exposes read-only `@property` forwarders like `model.type_embedding` for convenience; those add no state_dict keys.)
 - **`ExtractorContext`** (frozen-by-convention dataclass) is the inter-phase contract: `ObsUnpack` produces it, downstream phases read from it. Add a field here rather than widening a phase's positional signature. Cross-phase values (active-slot indices, fainted masks, `hp_probs`) are computed once in `ObsUnpack` and carried on the context.
-- **Any change to the phase structure or forward math is a structural change → bump `ARCH_SIGNATURE`** in `model_version.py` (current: `gen3_move_effects_v1`). Pure decompositions still change state_dict keys, so old checkpoints must fail loudly. Re-sourcing or re-meaning an obs block (e.g. own IV/EV/nature going from constant fallbacks to real values via the poke-env `backfill_teambuilder_spread` fix; the event-sourced TurnDelta fold + status/item transition history; routing the trapping signals — `trapped`/`maybe_trapped`/`attempted_switch_rejected` — into the obs; or the action-aligned per-move effect block — `gen3_move_effects_v1`) is likewise retrain-class even when individual dims are unchanged.
+- **Any change to the phase structure or forward math is a structural change → bump `ARCH_SIGNATURE`** in `model_version.py` (current: `gen3_incoming_damage_v1`). Pure decompositions still change state_dict keys, so old checkpoints must fail loudly. Re-sourcing or re-meaning an obs block (e.g. own IV/EV/nature going from constant fallbacks to real values via the poke-env `backfill_teambuilder_spread` fix; the event-sourced TurnDelta fold + status/item transition history; routing the trapping signals — `trapped`/`maybe_trapped`/`attempted_switch_rejected` — into the obs; the action-aligned per-move effect block — `gen3_move_effects_v1`; or the per-our-mon incoming-damage / OHKO belief block — `gen3_incoming_damage_v1`) is likewise retrain-class even when individual dims are unchanged.
 - Per-phase unit tests live in `phase_modules_test.py` — `CLSPool` (incl. the `value_cls` pool) and `ProjectionAssembler` (which returns `(pi_combined, vf_combined)`) are tested on a hand-built `ExtractorContext` (`_dummy_ctx`) without a full forward pass. Prefer adding precise phase-level tests there.
 
 ## Model versioning (`model_version.py`, `snapshot.py`)

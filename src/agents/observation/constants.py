@@ -91,13 +91,29 @@ REACTIVE_SCALAR_DIM = 14
 # `non_matchup_rest` automatically (the matchup offset is read from the layout, never hardcoded).
 MOVE_EFFECT_FEATURES = 9
 MOVE_EFFECTS_DIM = 4 * MOVE_EFFECT_FEATURES                       # 36 (N_MOVE_SLOTS=4 × 9)
-REACTIVE_MATCHUP_OFFSET = REACTIVE_SCALAR_DIM + MOVE_EFFECTS_DIM  # 50
 
-REACTIVE_DIM = REACTIVE_SCALAR_DIM + MOVE_EFFECTS_DIM + MATCHUP_DIM  # 338
-
-# Top-level Offsets (Base dim = OFFSET_REACTIVE + REACTIVE_DIM = 1579)
 NUM_POKEMON = 12
 TEAM_SIZE = 6
+
+# incoming_damage_v1: per-our-mon incoming-KO BELIEF (opp active → our active + 5 bench). Per mon
+# INCOMING_PER_MON features [phys_expdmg_frac, spec_expdmg_frac, phys_pko, spec_pko, p_outspeed],
+# then INCOMING_RECOVERY_DIM opp-active scalars [recovery_rate, cures_status(P rest),
+# recovery_known]. PER_MON / RECOVERY are owned by incoming_damage.py (the math core that emits the
+# block) and imported here so the layout and the encoder can never disagree — same pattern as
+# VOLATILE_DIM above. Sits AFTER move-effects and BEFORE the matchups, so the feature extractor
+# picks the whole block up in `non_matchup_rest` (→ both heads + global token) automatically — the
+# matchup offset is read from get_layout(), never hardcoded.
+from agents.observation.incoming_damage import (
+    PER_MON as INCOMING_PER_MON, RECOVERY as INCOMING_RECOVERY_DIM,
+)
+INCOMING_DMG_DIM = TEAM_SIZE * INCOMING_PER_MON + INCOMING_RECOVERY_DIM  # 33
+INCOMING_DMG_OFFSET = REACTIVE_SCALAR_DIM + MOVE_EFFECTS_DIM             # 50 (within the reactive block)
+
+REACTIVE_MATCHUP_OFFSET = REACTIVE_SCALAR_DIM + MOVE_EFFECTS_DIM + INCOMING_DMG_DIM  # 83
+
+REACTIVE_DIM = REACTIVE_SCALAR_DIM + MOVE_EFFECTS_DIM + INCOMING_DMG_DIM + MATCHUP_DIM  # 371
+
+# Top-level Offsets (Base dim = OFFSET_REACTIVE + REACTIVE_DIM = 1579)
 OFFSET_OUR_TEAM = 0
 OFFSET_OPP_TEAM = 6 * POKEMON_FULL_DIM                     # 594
 OFFSET_CONTEXT = 2 * OFFSET_OPP_TEAM                       # 1188

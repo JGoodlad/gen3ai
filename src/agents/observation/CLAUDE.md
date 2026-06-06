@@ -1,6 +1,6 @@
 # CLAUDE.md — Observation Encoder (`src/agents/observation/`)
 
-This directory builds the **3321-dim per-decision observation vector** (`Gen3ObservationEncoder.encode`).
+This directory builds the **3390-dim per-decision observation vector** (`Gen3ObservationEncoder.encode`).
 It runs once per agent decision across every training env, so it sits directly on the
 training-throughput (FPS) critical path. Two independent things can regress here, and they
 have **different** gates:
@@ -57,7 +57,9 @@ Judge by these load-independent metrics, in priority order:
 
 1. **Total function calls per encode** = `<N function calls>` line ÷ `--reps`. This is the
    single best regression detector — it does not move with machine load. Baseline ≈
-   **6.36k calls/encode** (2,544,001 / 400). A jump of **>10%** is a regression — investigate.
+   **~6.85k calls/encode** (≈2,740,801 / 400, post `gen3_incoming_damage_v1` — was 6.36k before the
+   incoming-damage belief block; that feature is a justified +7.7%, the new reference). A jump of
+   **>10%** above this is a regression — investigate.
 2. **cProfile `tottime` top-of-list structure.** A *new* function climbing into the top ~10,
    or a known hot function's **call count** ballooning, means you added work to a hot loop.
 3. **Component ratios** (`state_encoder.encode` vs cached turn-history vs `live_view`) and the
@@ -75,14 +77,16 @@ Captured with `--turn 25 --reps 400`. Paths shown repo-relative. Absolute ms omi
 headline on purpose (load-dependent); the **call counts and ordering are the contract**.
 
 ```
-PER-DECISION OBS BUILD BENCHMARK  (obs dim 3321, turn 25, history slots 10, opp mons w/ revealed moves 5/6)
+PER-DECISION OBS BUILD BENCHMARK  (obs dim 3390, turn 25, history slots 10, opp mons w/ revealed moves 5/6)
 
   full per-decision obs build  :  ~0.5–1.2 ms   (LOAD-DEPENDENT — not a regression signal)
     state_encoder.encode       :  ~79% of build
     turn-history (cached, 1 enc):  ~6% of build   (recompute-all-10 is ~11–13x slower → deque cache working)
     live_view() alone          :  ~15% of build
 
-  Total: ~2.54M function calls / 400 reps  ==>  ~6.36k calls per encode   <-- PRIMARY REGRESSION METRIC
+  Total: ~2.74M function calls / 400 reps  ==>  ~6.85k calls per encode   <-- PRIMARY REGRESSION METRIC
+  (the +0.49k vs the pre-feature 6.36k is the gen3_incoming_damage_v1 belief loop; per-species
+   candidate/stat work is lru_cached, so only the per-defender damage/outspeed math is per-decision)
 
   Top functions by tottime (no single dominant hot loop — the matchup work is now spread thin):
    ncalls  tottime  cumtime  function
@@ -148,7 +152,7 @@ example, is pinned byte-for-byte by the exhaustive parity test in
 
 ## Observation vector layout (per-block reference)
 
-The root `CLAUDE.md` carries the summary block table (block → dims → offset, total **3321**).
+The root `CLAUDE.md` carries the summary block table (block → dims → offset, total **3390**).
 This is the detailed per-block layout. All offsets are computed from named constants — never
 hardcode indices.
 
@@ -186,9 +190,10 @@ emitted a constant fallback (all-31 IVs, 0 EVs, neutral nature) for every own mo
 permanence + turns-remaining), spikes ×2 (2), log-turn (1), per-side screens (8: Reflect /
 Light Screen / Safeguard / Mist × both sides).
 
-**Reactive block (338 dims, layout in `reactive.py`):** 14 scalar dims, then the 36-dim
-**move-effect block** (`gen3_move_effects_v1`), then the two 144-dim matchup matrices
-(`our_matchups` now at offset 50, `their_matchups` at 194). Scalars: active-move power ×4 (/200)
+**Reactive block (371 dims, layout in `reactive.py`):** 14 scalar dims, then the 36-dim
+**move-effect block** (`gen3_move_effects_v1`), then the **33-dim incoming-damage / OHKO belief
+block** (`gen3_incoming_damage_v1`, at offset 50 — see below), then the two 144-dim matchup matrices
+(`our_matchups` now at offset 83, `their_matchups` at 227). Scalars: active-move power ×4 (/200)
 + active-move multiplier ×4 (/4), fainted counts ×2, active-status flag (1), `forced_struggle` (1),
 and the two **gen3_trapping_signals_v1** bits — `trapped` (1) and `maybe_trapped` (1) — sourced
 from the per-decision `LegalActions` snapshot (`legal.trapped` / `legal.maybe_trapped`), the same
@@ -228,6 +233,28 @@ the policy and value projection heads via
 `non_matchup_rest` (input widths auto-discovered). Garbage-in discipline: each static flag is
 sourced from Showdown's actual representation, never guessed from the move name — see
 `tools/pokemon_data_extractor/sync.py:build_moves`.
+
+**Incoming-damage / OHKO belief block (33 dims, `gen3_incoming_damage_v1`, at reactive offset 50,
+before the matchups → routed to both heads via `non_matchup_rest`):** the opponent active's threat to
+*us* as a calibrated belief, not a calc. Per our 6 team mons (slot-aligned): `[phys_expdmg_frac,
+spec_expdmg_frac, phys_pko, spec_pko, p_outspeed]` (5 × 6 = 30), then 3 opp-active recovery scalars
+`[recovery_rate, cures_status(P rest), recovery_known]`. P(KO)/expected-damage are the §6.1 belief —
+**max over `revealed ∪ usage-prior` candidate moves** of `P(move in set) · P(KO|move)`, routed by gen3
+**TYPE-category** (Bug/Rock/Ground/… physical, the rest special), using the gen3 damage formula with a
+**fixed-damage branch** (Seismic Toss/Night Shade/Dragon Rage/Sonic Boom carry constant damage despite
+the dex STATUS tag; respect type immunity — 0× vs Ghost), the gen3 **Explosion/Self-Destruct Def-halve**
+and **Sandstorm ×1.5 SpD for Rock defenders** (special channel), Reflect/Light-Screen/Substitute/burn/
+weather modifiers, the opponent's offensive-tail Atk/SpA from `priors.stat_distribution`, and a
+closed-form roll→P(KO). `p_outspeed` is `P(our_spe > opp_spe)` over the opp Speed *distribution* (the
+hidden nature/EV) with observed boosts/paralysis. **Two modules, deep split:** the pure, poke-env-free
+math core (formula, roll→P(KO), P(outspeed), the `Candidate`/`Defender`/`AttackerThreat` beliefs,
+`compute_team_block`) is `incoming_damage.py`; the battle→belief extraction is
+`incoming_damage_encoder.py` behind the single `encode_block(battle, our_team, live)` entry — it owns
+the *only* poke-env / facade reads (revealed ∪ usage-prior candidates, offensive-stat distributions),
+with per-species `lru_cache` on candidates + stats so only the per-defender damage math is per-decision.
+`reactive.py` just calls `encode_block`. Priors: `gen3_{move,spread,item}_priors.json` via
+`gen3_data.priors`. Belief-not-calc → validated by calibration, not byte-exactness; the obs golden
+fixture still pins the vector byte-for-byte.
 
 > **Downstream reader:** the prober engine (`src/main/prober/engine.py`) reads
 > `OFFSET_REACTIVE + move_multiplier` (active-move type mults), `+ our_matchups`,

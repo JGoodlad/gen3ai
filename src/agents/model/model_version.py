@@ -175,7 +175,15 @@ MODEL_CONFIG_VERSION = 2
 #   sits before the matchups, so the extractor picks it up in non_matchup_rest → both policy and
 #   value projection input widths grow (auto-discovered). REACTIVE_DIM 302 → 338; obs dim 3321 → 3357.
 #   Builds on gen3_item_num_fix_v1; not weight-compatible with it.
-ARCH_SIGNATURE = "gen3_move_effects_v1"
+# gen3_incoming_damage_v1: per-our-mon INCOMING-DAMAGE / OHKO BELIEF block (incoming_damage.py +
+#   gen3_{move,spread,item}_priors): for the opp active vs each of our 6 mons, the phys/spec
+#   expected-damage-fraction + mode-max P(KO) (gen3 damage formula + fixed-damage branch
+#   [Seismic Toss/Night Shade/…] + Reflect/Screen/Sub/burn/weather modifiers + roll→P(KO), over the
+#   usage-prior belief: revealed∪prior moves, offensive-tail stat) + P(outspeed) over the Speed
+#   distribution, then 3 opp recovery scalars (Suicune-Rest discriminator). Sits after move-effects,
+#   before the matchups → flows to both heads via non_matchup_rest (auto-discovered widths).
+#   REACTIVE_DIM 338 → 371; obs dim 3357 → 3390. Builds on gen3_move_effects_v1; not weight-compatible.
+ARCH_SIGNATURE = "gen3_incoming_damage_v1"
 
 
 class ModelVersionError(Exception):

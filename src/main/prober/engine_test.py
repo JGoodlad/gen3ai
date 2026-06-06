@@ -243,8 +243,8 @@ def test_offsets_resolve_matches_layout():
     # OFFSET_REACTIVE resolves to 1418 at runtime (root CLAUDE.md obs table;
     # the inline "# 1247" comments in observation/constants.py are stale).
     assert off.mm_off == 1422   # OFFSET_REACTIVE(1418) + move_multiplier(4)
-    assert off.om_off == 1468   # OFFSET_REACTIVE(1418) + our_matchups(50, post gen3_move_effects_v1)
-    assert off.tm_off == 1612   # OFFSET_REACTIVE(1418) + their_matchups(194 = our_matchups 50 + 144)
+    assert off.om_off == 1501   # OFFSET_REACTIVE(1418) + our_matchups(83, post gen3_incoming_damage_v1)
+    assert off.tm_off == 1645   # OFFSET_REACTIVE(1418) + their_matchups(227 = our_matchups 83 + 144)
     assert off.active_block_dim == 99
 
     from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings

@@ -48,6 +48,14 @@ ABILITIES_PATH  = "data/pokemon/gen3_abilities.json"
 POKEDEX_PATH    = "src/poke_env/data/static/pokedex/gen3pokedex.json"
 HP_OUTPUT_PATH      = "data/pokemon/gen3_hidden_power_priors.json"
 ABILITY_OUTPUT_PATH = "data/pokemon/gen3_ability_priors.json"
+MOVE_OUTPUT_PATH    = "data/pokemon/gen3_move_priors.json"
+SPREAD_OUTPUT_PATH  = "data/pokemon/gen3_spread_priors.json"
+ITEM_OUTPUT_PATH    = "data/pokemon/gen3_item_priors.json"
+
+# Cap on spreads kept per species (sorted by usage). The Smogon tail is noise;
+# the top ~25 cover the meaningful nature/EV modes (the facade derives Atk/SpA/Spe
+# stat distributions from these for the incoming-damage / outspeed beliefs).
+SPREAD_TOP_K = 25
 
 # Canonical 16 hidden power types — alphabetical, matches HIDDEN_POWER_TYPE_ORDER
 HIDDEN_POWER_TYPES = frozenset([
@@ -216,6 +224,91 @@ def compute_ability_priors(
 
 
 # ---------------------------------------------------------------------------
+# Move / Item / Spread priors (for the incoming-damage + outspeed beliefs)
+# ---------------------------------------------------------------------------
+
+def _raw_count(sp_data: dict) -> float:
+    """Weighted total sets sampled for a species (denominator for P(in set))."""
+    return float(sp_data.get("Raw count") or sp_data.get("usage") or 0.0)
+
+
+def compute_move_priors(chaos: dict, species_lookup: dict) -> dict:
+    """{species: {move_id: P(move in set)}} = Moves[m] / Raw count.
+
+    NOT normalized to 1 — a set runs ~4 moves, so the values sum to ~4. This is
+    exactly P(the species' set contains move m), the quantity the §6.1 slot-
+    accounting needs (revealed → 1, else this prior over the remaining slots)."""
+    out: dict[str, dict[str, float]] = {}
+    for sp_name, sp_data in chaos["data"].items():
+        sp_key = sp_name.lower()
+        if sp_key not in species_lookup:
+            continue
+        raw = _raw_count(sp_data)
+        moves = sp_data.get("Moves", {})
+        if raw <= 0 or not moves:
+            continue
+        d: dict[str, float] = {}
+        for mv, usage in moves.items():
+            mid = _to_id(mv)
+            if not mid or mid == "nomove" or usage <= 0:
+                continue
+            d[mid] = min(1.0, usage / raw)
+        if d:
+            out[sp_key] = d
+    return out
+
+
+def compute_item_priors(chaos: dict, species_lookup: dict) -> dict:
+    """{species: {item_id: P(item)}} normalized over observed items (sum→1).
+
+    'nothing' (no item) is kept — it's informative (rules out Choice Band, the
+    never-revealed item the §6.3 worst-case channel must infer)."""
+    out: dict[str, dict[str, float]] = {}
+    for sp_name, sp_data in chaos["data"].items():
+        sp_key = sp_name.lower()
+        if sp_key not in species_lookup:
+            continue
+        items = sp_data.get("Items", {})
+        tot = sum(v for v in items.values() if v > 0)
+        if tot <= 0:
+            continue
+        d = {_to_id(it): usage / tot for it, usage in items.items() if usage > 0 and _to_id(it)}
+        if d:
+            out[sp_key] = d
+    return out
+
+
+def compute_spread_priors(chaos: dict, species_lookup: dict, top_k: int = SPREAD_TOP_K) -> dict:
+    """{species: [[nature, [hp,atk,def,spa,spd,spe], weight], ...]} — top-K raw spreads,
+    weights renormalized to sum→1. Raw nature/EV spreads (provenance-clean); the
+    gen3_data facade derives the Atk/SpA/Spe **stat distributions** (L100, IV31, nature
+    applied) used by the incoming-damage magnitude + P(outspeed) beliefs."""
+    out: dict[str, list] = {}
+    for sp_name, sp_data in chaos["data"].items():
+        sp_key = sp_name.lower()
+        if sp_key not in species_lookup:
+            continue
+        parsed = []
+        for key, usage in sp_data.get("Spreads", {}).items():
+            if usage <= 0 or ":" not in key:
+                continue
+            nature, evstr = key.split(":", 1)
+            try:
+                evs = [int(x) for x in evstr.split("/")]
+            except ValueError:
+                continue
+            if len(evs) == 6:
+                parsed.append((nature, evs, float(usage)))
+        if not parsed:
+            continue
+        parsed.sort(key=lambda t: -t[2])
+        parsed = parsed[:top_k]
+        tot = sum(t[2] for t in parsed)
+        out[sp_key] = [[nat, evs, w / tot] for nat, evs, w in parsed]
+    return out
+
+
+# ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
 
@@ -278,6 +371,30 @@ def main() -> int:
         items = sorted(p.items(), key=lambda kv: -kv[1])
         line = ", ".join(f"{a}={v:.2%}" for a, v in items)
         print(f"  {sp:<12} {line}")
+
+    # --- Move / Item / Spread priors (incoming-damage + outspeed beliefs) ---
+    move_priors = compute_move_priors(chaos, species)
+    _write(MOVE_OUTPUT_PATH, move_priors)
+    print(f"\nMove priors: {len(move_priors)} species → {MOVE_OUTPUT_PATH}")
+
+    item_priors = compute_item_priors(chaos, species)
+    _write(ITEM_OUTPUT_PATH, item_priors)
+    print(f"Item priors: {len(item_priors)} species → {ITEM_OUTPUT_PATH}")
+
+    spread_priors = compute_spread_priors(chaos, species)
+    _write(SPREAD_OUTPUT_PATH, spread_priors)
+    print(f"Spread priors: {len(spread_priors)} species → {SPREAD_OUTPUT_PATH}")
+
+    print("\nSpot check (move/item/spread):")
+    for sp in ("tyranitar", "salamence", "suicune", "blissey"):
+        mv = sorted(move_priors.get(sp, {}).items(), key=lambda kv: -kv[1])[:5]
+        it = sorted(item_priors.get(sp, {}).items(), key=lambda kv: -kv[1])[:3]
+        spr = spread_priors.get(sp, [])
+        print(f"  {sp}:")
+        print(f"     moves: " + ", ".join(f"{m}={p:.0%}" for m, p in mv))
+        print(f"     items: " + ", ".join(f"{i}={p:.0%}" for i, p in it)
+              + f"   (choiceband={item_priors.get(sp, {}).get('choiceband', 0):.0%})")
+        print(f"     top spreads: " + "; ".join(f"{n} {ev} w={w:.0%}" for n, ev, w in spr[:3]))
 
     return 0
 
