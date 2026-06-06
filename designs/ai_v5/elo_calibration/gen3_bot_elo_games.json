@@ -1,0 +1,269 @@
+{
+  "git_hash": "1081a8e03d685bce42d89ab11caf58f7281cb623",
+  "names": [
+    "random",
+    "heuristic",
+    "heuristic2",
+    "staller",
+    "staller_v2",
+    "aggressive",
+    "aggressive_v2",
+    "setup_sweep",
+    "setup_sweep_v2"
+  ],
+  "pairs": {
+    "heuristic|random": {
+      "a": "heuristic",
+      "b": "random",
+      "wins_a": 2640,
+      "wins_b": 49,
+      "games": 2700
+    },
+    "heuristic2|random": {
+      "a": "heuristic2",
+      "b": "random",
+      "wins_a": 2626,
+      "wins_b": 63,
+      "games": 2700
+    },
+    "random|staller": {
+      "a": "random",
+      "b": "staller",
+      "wins_a": 95,
+      "wins_b": 2577,
+      "games": 2700
+    },
+    "random|staller_v2": {
+      "a": "random",
+      "b": "staller_v2",
+      "wins_a": 194,
+      "wins_b": 2491,
+      "games": 2700
+    },
+    "aggressive|random": {
+      "a": "aggressive",
+      "b": "random",
+      "wins_a": 2591,
+      "wins_b": 75,
+      "games": 2700
+    },
+    "aggressive_v2|random": {
+      "a": "aggressive_v2",
+      "b": "random",
+      "wins_a": 2635,
+      "wins_b": 54,
+      "games": 2700
+    },
+    "random|setup_sweep": {
+      "a": "random",
+      "b": "setup_sweep",
+      "wins_a": 53,
+      "wins_b": 2633,
+      "games": 2700
+    },
+    "random|setup_sweep_v2": {
+      "a": "random",
+      "b": "setup_sweep_v2",
+      "wins_a": 72,
+      "wins_b": 2621,
+      "games": 2700
+    },
+    "heuristic|heuristic2": {
+      "a": "heuristic",
+      "b": "heuristic2",
+      "wins_a": 1093,
+      "wins_b": 1516,
+      "games": 2700
+    },
+    "heuristic|staller": {
+      "a": "heuristic",
+      "b": "staller",
+      "wins_a": 1379,
+      "wins_b": 1152,
+      "games": 2700
+    },
+    "heuristic|staller_v2": {
+      "a": "heuristic",
+      "b": "staller_v2",
+      "wins_a": 1425,
+      "wins_b": 1213,
+      "games": 2700
+    },
+    "aggressive|heuristic": {
+      "a": "aggressive",
+      "b": "heuristic",
+      "wins_a": 1115,
+      "wins_b": 1400,
+      "games": 2700
+    },
+    "aggressive_v2|heuristic": {
+      "a": "aggressive_v2",
+      "b": "heuristic",
+      "wins_a": 1504,
+      "wins_b": 1094,
+      "games": 2700
+    },
+    "heuristic|setup_sweep": {
+      "a": "heuristic",
+      "b": "setup_sweep",
+      "wins_a": 1213,
+      "wins_b": 1286,
+      "games": 2650
+    },
+    "heuristic|setup_sweep_v2": {
+      "a": "heuristic",
+      "b": "setup_sweep_v2",
+      "wins_a": 1170,
+      "wins_b": 1377,
+      "games": 2650
+    },
+    "heuristic2|staller": {
+      "a": "heuristic2",
+      "b": "staller",
+      "wins_a": 1529,
+      "wins_b": 1019,
+      "games": 2650
+    },
+    "heuristic2|staller_v2": {
+      "a": "heuristic2",
+      "b": "staller_v2",
+      "wins_a": 1716,
+      "wins_b": 905,
+      "games": 2650
+    },
+    "aggressive|heuristic2": {
+      "a": "aggressive",
+      "b": "heuristic2",
+      "wins_a": 853,
+      "wins_b": 1709,
+      "games": 2650
+    },
+    "aggressive_v2|heuristic2": {
+      "a": "aggressive_v2",
+      "b": "heuristic2",
+      "wins_a": 1310,
+      "wins_b": 1282,
+      "games": 2650
+    },
+    "heuristic2|setup_sweep": {
+      "a": "heuristic2",
+      "b": "setup_sweep",
+      "wins_a": 1463,
+      "wins_b": 1104,
+      "games": 2650
+    },
+    "heuristic2|setup_sweep_v2": {
+      "a": "heuristic2",
+      "b": "setup_sweep_v2",
+      "wins_a": 1232,
+      "wins_b": 1078,
+      "games": 2350
+    },
+    "staller|staller_v2": {
+      "a": "staller",
+      "b": "staller_v2",
+      "wins_a": 970,
+      "wins_b": 967,
+      "games": 2000
+    },
+    "aggressive|staller": {
+      "a": "aggressive",
+      "b": "staller",
+      "wins_a": 816,
+      "wins_b": 1041,
+      "games": 2000
+    },
+    "aggressive_v2|staller": {
+      "a": "aggressive_v2",
+      "b": "staller",
+      "wins_a": 1155,
+      "wins_b": 743,
+      "games": 2000
+    },
+    "setup_sweep|staller": {
+      "a": "setup_sweep",
+      "b": "staller",
+      "wins_a": 1071,
+      "wins_b": 843,
+      "games": 2000
+    },
+    "setup_sweep_v2|staller": {
+      "a": "setup_sweep_v2",
+      "b": "staller",
+      "wins_a": 1146,
+      "wins_b": 769,
+      "games": 2000
+    },
+    "aggressive|staller_v2": {
+      "a": "aggressive",
+      "b": "staller_v2",
+      "wins_a": 867,
+      "wins_b": 1087,
+      "games": 2000
+    },
+    "aggressive_v2|staller_v2": {
+      "a": "aggressive_v2",
+      "b": "staller_v2",
+      "wins_a": 1219,
+      "wins_b": 755,
+      "games": 2000
+    },
+    "setup_sweep|staller_v2": {
+      "a": "setup_sweep",
+      "b": "staller_v2",
+      "wins_a": 1069,
+      "wins_b": 878,
+      "games": 2000
+    },
+    "setup_sweep_v2|staller_v2": {
+      "a": "setup_sweep_v2",
+      "b": "staller_v2",
+      "wins_a": 1163,
+      "wins_b": 804,
+      "games": 2000
+    },
+    "aggressive|aggressive_v2": {
+      "a": "aggressive",
+      "b": "aggressive_v2",
+      "wins_a": 658,
+      "wins_b": 1251,
+      "games": 2000
+    },
+    "aggressive|setup_sweep": {
+      "a": "aggressive",
+      "b": "setup_sweep",
+      "wins_a": 750,
+      "wins_b": 1110,
+      "games": 2000
+    },
+    "aggressive|setup_sweep_v2": {
+      "a": "aggressive",
+      "b": "setup_sweep_v2",
+      "wins_a": 712,
+      "wins_b": 1200,
+      "games": 2000
+    },
+    "aggressive_v2|setup_sweep": {
+      "a": "aggressive_v2",
+      "b": "setup_sweep",
+      "wins_a": 1082,
+      "wins_b": 835,
+      "games": 2000
+    },
+    "aggressive_v2|setup_sweep_v2": {
+      "a": "aggressive_v2",
+      "b": "setup_sweep_v2",
+      "wins_a": 1064,
+      "wins_b": 883,
+      "games": 2000
+    },
+    "setup_sweep|setup_sweep_v2": {
+      "a": "setup_sweep",
+      "b": "setup_sweep_v2",
+      "wins_a": 900,
+      "wins_b": 1011,
+      "games": 2000
+    }
+  },
+  "updated_at": "2026-06-06T02:52:15.918217+00:00"
+}

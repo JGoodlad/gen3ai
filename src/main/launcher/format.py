@@ -23,7 +23,11 @@ def _fmt_val(v: float) -> str:
 
 def _fmt_metric(key: str, v: float) -> str:
     """Format a metric value; win rates + distilled-fraction render as percentages, the
-    all-distilled flag as yes/no."""
+    all-distilled flag as yes/no, ELO as a whole rating + its CI as ±points."""
+    if key == "eval/elo":
+        return f"{v:.0f}"
+    if key == "eval/elo_ci":
+        return f"±{v:.0f}"
     if "win_rate" in key or key == "distill/frac_active_opponents_distilled":
         return f"{v * 100:.1f}%"
     if key == "distill/all_distilled":
@@ -34,6 +38,8 @@ def _fmt_metric(key: str, v: float) -> str:
 # Short, legible row labels for keys whose tail is verbose (otherwise the label is the
 # part after '/'). Keeps the dashboard's distill block readable.
 _METRIC_LABELS = {
+    "eval/elo": "ELO",
+    "eval/elo_ci": "ELO 95% CI",
     "distill/all_distilled": "all distilled",
     "distill/frac_active_opponents_distilled": "distilled",
     "distill/n_ready": "ready",
@@ -49,8 +55,11 @@ def _metric_label(key: str) -> str:
 
 # Preferred display order; any unlisted keys are appended alphabetically.
 _METRIC_ORDER = [
-    # Eval — aggregate first, then per-opponent win rates, then per-opponent rewards.
+    # Eval — ELO headline first (anchored Bradley-Terry skill rating + its 95% CI), then
+    # aggregate win rates, then per-opponent win rates, then per-opponent rewards.
     # Episode lengths fall alphabetically after (less actionable).
+    "eval/elo",
+    "eval/elo_ci",
     "eval/win_rate_mean",
     "eval/win_rate_vs_bots",
     "eval/win_rate_vs_pool",

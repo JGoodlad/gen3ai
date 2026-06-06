@@ -548,6 +548,11 @@ def replay_last_eval_to_tui(model_dir: str | None, resume_eval_metadata: str | N
         "eval/mean_ep_len_vs_bots": block.get("mean_ep_len_vs_bots", 0.0),
         "_step": block.get("step", 0),
     })
+    # Skill rating (ELO) — re-publish so the 🏅 badge shows immediately on resume instead of
+    # blanking until the next (possibly millions-of-steps-away) eval cycle.
+    if "elo" in block:
+        tui["eval/elo"] = block["elo"]
+        tui["eval/elo_ci"] = block.get("elo_ci", 0.0)
     # Self-play pool block: re-publish the aggregate + per-sentinel rows (newest→oldest,
     # positional sentinel_<i>) using the saved step tags, mirroring the live collect path.
     pool = block.get("pool")
@@ -620,6 +625,41 @@ def build_bot_eval_block(
             for name in win_rates
         },
     }
+
+
+def record_elo(model_dir, step, bot_win_rates, sentinels, n_games, logger, tui):
+    """Append this cycle's results to ``eval_results.jsonl``, refit anchored Bradley-Terry
+    ELO, and record ``eval/elo`` + ``eval/elo_ci`` to the SB3 logger + the TUI dict.
+
+    Shared by BOTH eval callbacks so the bot-only and self-play paths surface ELO
+    identically. ``sentinels`` is ``[{"step", "win_rate"}, …]`` (``[]`` on the bot path).
+    Returns ``(elo, ci_halfwidth)`` for the current snapshot, or ``None``. The live number
+    is the best estimate from data SO FAR (batch-BT is global, so early points retro-adjust
+    as more cycles land); ``python -m main.elo`` re-fits canonically offline. Best-effort —
+    never raises into the eval path. The import is lazy to avoid any import cycle."""
+    if not model_dir:
+        return None
+    try:
+        from agents.model.snapshot import append_eval_result_row
+        from agents.training import elo as elo_mod
+
+        append_eval_result_row(model_dir, step, n_games, bot_win_rates, sentinels)
+        # Refits the WHOLE accumulated ladder to read this snapshot's rating. Cheap at the
+        # expected scale (tens of snapshots → ms); wrapped best-effort so it can never break eval.
+        fit = elo_mod.fit_from_run(model_dir, source="log")
+        rating = fit.rating_for_step(step)
+        if rating is None:
+            return None
+        elo_val, se = rating
+        ci = elo_mod.ci95(se)
+        logger.record("eval/elo", elo_val)
+        logger.record("eval/elo_ci", ci)
+        tui["eval/elo"] = elo_val
+        tui["eval/elo_ci"] = ci
+        return elo_val, ci
+    except Exception as e:  # noqa: BLE001 — ELO is telemetry; never break eval
+        print(f"⚠️ [ELO] live rating failed at step {step}: {e}")
+        return None
 
 
 class EvalRLPlayer(RewardTrackingMixin, RLPlayer):
@@ -873,7 +913,7 @@ class PerOpponentEvalCallback(BaseCallback):
         procs = spawn_eval_workers(run_dir, base_cfg, n_workers)
 
         self._pending = {"step": step, "names": names, "procs": procs,
-                         "snapshot": snapshot_zip, "run_dir": run_dir,
+                         "snapshot": snapshot_zip, "run_dir": run_dir, "n_games": n_games,
                          "launched_at": time.monotonic()}
         print(f"[EVAL] step {step:,}: spawned {n_workers} work-stealing worker(s) on "
               f"{self._eval_device} ({len(names)} opponents, conc {self._eval_concurrency}) "
@@ -926,13 +966,13 @@ class PerOpponentEvalCallback(BaseCallback):
             self._cleanup(pending, keep_logs=True)
             return
 
-        self._record(step, merged)
+        self._record(step, merged, pending["n_games"])
         self._maybe_save_best(step, pending, merged["win_rates"])
         self._persist_snapshot(pending)
         self._prune_eval_traces()   # trainer grooms the traces it writes
         self._cleanup(pending, keep_logs=bool(missing or bad_exits))
 
-    def _record(self, step: int, merged: dict) -> None:
+    def _record(self, step: int, merged: dict, n_games: int = EVAL_GAMES) -> None:
         win_rates = merged["win_rates"]
         reward_means = merged["reward_means"]
         ep_lens = merged["ep_lens"]
@@ -957,6 +997,11 @@ class PerOpponentEvalCallback(BaseCallback):
         self.logger.record("eval/mean_reward_vs_bots", rew_bots)
         self.logger.record("eval/mean_ep_len_vs_bots", eplen_bots)
         self.logger.record("eval/duration_sec", total_dur)
+        # Anchored-BT ELO from the accumulated results (appends this cycle's row first).
+        # win_rates carries every opponent incl. random (a valid bot anchor); no sentinels
+        # on the bot-only path.
+        elo_result = record_elo(self._model_dir, step, win_rates, [], n_games,
+                                self.logger, tui)
         # Record at the SNAPSHOT step so the eval curve aligns to when the model was
         # frozen, not the (later) step at which the worker happened to finish.
         self.logger.dump(step)
@@ -985,8 +1030,10 @@ class PerOpponentEvalCallback(BaseCallback):
         send_event(f"🧪 Eval @ {step:,}: {summary}")
 
         if self._model_dir:
-            record_eval_results(self._model_dir, step,
-                                build_bot_eval_block(win_rates, reward_means, ep_lens))
+            block = build_bot_eval_block(win_rates, reward_means, ep_lens)
+            if elo_result:
+                block["elo"], block["elo_ci"] = elo_result
+            record_eval_results(self._model_dir, step, block)
 
     def _maybe_save_best(self, step: int, pending: dict, win_rates: dict) -> None:
         aggregate = sum(win_rates.values()) / len(win_rates)

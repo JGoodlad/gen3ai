@@ -47,6 +47,7 @@ from agents.training.eval_callback import (
     eval_opponent_names,
     eval_run_nonce,
     kill_eval_workers,
+    record_elo,
     latest_recorded_eval_step,
     merge_eval_results,
     persist_eval_snapshot,
@@ -325,7 +326,7 @@ class SelfPlayCallback(BaseCallback):
         self._pending = {
             "step": step, "bot_names": bot_names, "sentinels": sentinels,
             "sentinel_entries": sentinel_entries, "procs": procs,
-            "snapshot": snapshot_zip, "run_dir": run_dir,
+            "snapshot": snapshot_zip, "run_dir": run_dir, "n_games": n_games,
             "launched_at": time.monotonic(),
         }
         print(f"[SELFPLAY EVAL] step {step:,}: spawned {n_workers} work-stealing worker(s) on "
@@ -501,6 +502,15 @@ class SelfPlayCallback(BaseCallback):
         # report real numbers; heuristic workers report zeros.
         self._record_opponent_default_stats(tui)
 
+        # Anchored-BT ELO over the accumulated results (appends this cycle's row first).
+        # bot_wr carries every bot incl. random (the anchor); sentinels are the pool
+        # snapshots the trainee just played, keyed by their training step.
+        elo_result = record_elo(
+            self._model_dir, step, bot_wr,
+            [{"step": e.step, "win_rate": v} for e, _l, v, _rw, _ep in kept_sentinels],
+            pending["n_games"], self.logger, tui,
+        )
+
         self.logger.dump(step)
         tui["_step"] = step
         send_metrics(tui)
@@ -532,6 +542,8 @@ class SelfPlayCallback(BaseCallback):
                     for entry, _label, v, rw, ep in kept_sentinels
                 ],
             }
+            if elo_result:
+                block["elo"], block["elo_ci"] = elo_result
             record_eval_results(self._model_dir, step, block)
 
         # ── Best model (copy the frozen snapshot) — based on bot win rate (excl. Random) ──

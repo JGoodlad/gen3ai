@@ -38,6 +38,8 @@ from main.launcher.format import _METRIC_ORDER, _elapsed_str, _fmt_metric, _metr
 # Eval keys shown in the aggregate summary block (everything else under eval/ is treated
 # as per-opponent detail). Mirrors the local set in ui.py's _make_eval_table.
 _EVAL_SUMMARY = frozenset({
+    "eval/elo",
+    "eval/elo_ci",
     "eval/win_rate_mean",
     "eval/win_rate_vs_bots",
     "eval/win_rate_vs_pool",
@@ -315,6 +317,8 @@ class LauncherApp(Gen3App):
             out.append(sep)
             out.append("ent_coef ", style="dim")
             out.append(f"{snap.ent_coef:g}", style="bold")
+        # ELO headline — the absolute skill rating (only present once an eval cycle has run).
+        out.append_text(self._elo_badge(snap.metrics))
         # Opponent-distillation headline (only present under --distill-opponents). The rollout
         # speedup is all-or-nothing: green only when 100% distilled, yellow while backfilling.
         out.append_text(self._distill_badge(snap.metrics))
@@ -332,6 +336,20 @@ class LauncherApp(Gen3App):
         if crashes:
             return Text(f"↻ {n} {word} ({crashes} crash)", style="yellow")
         return Text(f"↻ {n} {word}", style="dim")
+
+    def _elo_badge(self, metrics: dict) -> Text:
+        """At-a-glance anchored-BT skill rating (``🏅 ELO 1532 ±40``), or empty until the
+        first eval cycle has produced ``eval/elo``. This is THE 'is it going well?' headline
+        during self-play pool play — unlike ``win_rate_vs_pool`` (pinned near 50% by the
+        promotion gate), the anchored ELO genuinely rises as the model gets stronger."""
+        if "eval/elo" not in metrics:
+            return Text()
+        out = Text("  │  ")
+        out.append(f"🏅 ELO {metrics['eval/elo']:.0f}", style="bold cyan")
+        ci = metrics.get("eval/elo_ci")
+        if ci:
+            out.append(f" ±{ci:.0f}", style="dim")
+        return out
 
     def _distill_badge(self, metrics: dict) -> Text:
         """At-a-glance opponent-distillation state, or empty when distillation is off.

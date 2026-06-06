@@ -86,7 +86,13 @@ deterministic `_supervise` exit-code/crash-restart/`_reap` suite), plus `launche
 - **Textual TUI** — live dashboard showing metrics, FPS, restart countdown; `l` logs · `e`
   events · `d` dashboard · `r` restart · `c` forced checkpoint · `p` plots · `s` status ·
   `q`/ctrl-c → confirm → `y`/`n` quit. Built on the shared `src/main/tui/` base — see **How the
-  UI reconciles with Textual's event loop** above. **Opponent distillation** (`--distill-opponents`)
+  UI reconciles with Textual's event loop** above. **Skill rating (ELO)** surfaces as a
+  badge-row headline `🏅 ELO 1532 ±40` (`app.py::_elo_badge`, cyan; present once the first eval
+  cycle has produced `eval/elo`) plus an `ELO` / `ELO 95% CI` summary row in the eval block
+  (`format._EVAL_SUMMARY`/`_METRIC_LABELS`/`_fmt_metric`). This is the at-a-glance "is it going
+  well?" number during self-play pool play — anchored Bradley-Terry over the fixed bots, so it
+  rises with strength even while `win_rate_vs_pool` sits pinned near 50% (see
+  `src/agents/training/CLAUDE.md` → ELO / skill rating). **Opponent distillation** (`--distill-opponents`)
   surfaces in three places, all zero-footprint when off: a **badge-row headline** (`⚗ distilled 100%`
   green = rollout speedup ACTIVE, vs `⚗ distilling N% (M running)` yellow = backfilling, since the
   speedup is all-or-nothing — `app.py::_distill_badge`); the **`distill/*` metrics block** in the

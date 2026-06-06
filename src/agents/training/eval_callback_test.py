@@ -621,6 +621,7 @@ def test_replay_last_eval_republishes_pool_block(tmp_path, monkeypatch):
     meta = {"latest_eval": {
         "step": 300, "win_rate_mean": 0.6, "win_rate_vs_bots": 0.55,
         "mean_reward_vs_bots": 5.0, "mean_ep_len_vs_bots": 20.0,
+        "elo": 1532.4, "elo_ci": 41.0,
         "opponents": {"random": {"win_rate": 0.9, "mean_reward": 30.0, "mean_ep_len": 15.0}},
         "pool": {
             "win_rate": 0.72, "mean_reward": 13.4, "mean_ep_len": 22.0,
@@ -647,6 +648,9 @@ def test_replay_last_eval_republishes_pool_block(tmp_path, monkeypatch):
     assert sent.get("eval/mean_reward_vs_sentinel_0") == 8.7
     assert sent.get("eval/sentinel_step_0") == 63_000_000.0
     assert sent.get("eval/sentinel_step_1") == 0.0
+    # Skill rating re-published on resume so the 🏅 badge isn't blank until the next cycle.
+    assert sent.get("eval/elo") == 1532.4
+    assert sent.get("eval/elo_ci") == 41.0
 
 
 def test_replay_skips_pool_block_when_unseeded(tmp_path, monkeypatch):

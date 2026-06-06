@@ -249,6 +249,62 @@ restart — no manifest). Design lives in `designs/ai_v5/`. Key behaviors:
   the `:8001` training server. `selfplay_opponent_fuzz_test.py` covers the opponent load + legal
   play (both modes) + version check in-process via the local bridge (no server).
 
+## ELO / skill rating (`elo.py`, `bot_elo_calibration.py`, `main.elo`)
+
+Once training is mostly self-play **pool play**, win-rate stops being legible: the promotion
+gate only promotes when `win_rate_vs_pool > promote_threshold` and the pool is a *sliding window
+of recent selves*, so `win_rate_vs_pool` is a treadmill pinned near 50-65% **by construction** —
+it cannot trend up however much the model improves; `win_rate_vs_bots` saturates near 100%. The
+ELO subsystem gives a single **absolute** number that genuinely rises with skill, anchored to the
+fixed bots.
+
+- **No new battles.** Every eval cycle already plays the trainee (greedy) vs all 9 bots and vs
+  up to 5 pool sentinels, `EVAL_GAMES` each — a full tournament-matrix row. `record_elo`
+  (`eval_callback.py`, shared by BOTH callbacks) appends that row to an **append-only
+  `<run>/eval_results.jsonl`** (`snapshot.append_eval_result_row`) — the canonical, restart-safe
+  source of truth, distinct from the overwritten `metadata.json:latest_eval`.
+- **The model = anchored Bradley-Terry** (`elo.fit_elo`): `P(i beats j)=σ((Rᵢ−Rⱼ)·ln10/400)`,
+  fit in **batch** by penalized MLE (weak Gaussian prior keeps 100-0 records finite), SE from the
+  inverse Hessian. Each bot is a player `bot:<name>`, each snapshot `snap:<step>` — a snapshot is
+  the SAME player whether it appears as a cycle's trainee or later as a sentinel (unified by
+  step), which links the whole ladder. Batch-BT (not online K-factor Elo) is drift-free and
+  re-runnable; the fit is a few Newton steps over ~tens of players. **Not Glicko-2**: its
+  volatility models skill drift, but snapshots are *frozen* — the drift is the *sequence* of
+  snapshots (the ELO-vs-step curve); the per-player uncertainty (Glicko's valuable part) is the
+  Hessian SE.
+- **Anchor = a precomputed bot-vs-bot round-robin.** `python -m agents.training.bot_elo_calibration`
+  plays all 36 bot pairs toward `--target-games` (default 5000) **in-process via the bridge — no
+  server** (safe alongside a live run; it does use CPU — throttle with `--concurrency`), fits BT
+  (`elo.fit_pairwise`, `random` pinned at `base`=1000), and writes the anchor. **Artifact split:**
+  the immutable bot anchor (ratings, SEs, the 9×9 win-matrix, a non-transitivity `fit_quality`) is
+  the only runtime input, so it lives in **`data/gen3_bot_elo_anchors.json`**; the raw game-count
+  **store** (resume state) and the **heatmap** PNG are calibration provenance/viz, so they live with
+  the ELO design work under **`designs/ai_v5/elo_calibration/`** (override with `--games-store` /
+  `--heatmap`). The
+  live/offline fits then **pin all 9 bots** to those high-confidence ratings and fit only
+  snapshots — so a snapshot is well-grounded from its first cycle, and because the anchor is
+  identical across runs, **snapshot ELOs are comparable run-to-run**. **Regenerate when bot logic
+  changes** (the json records `git_hash` + date). Graceful fallback when the file is absent:
+  `random` pinned at `base`, other bots float (rank/trend preserved, scale not cross-run-stable).
+  Bots build once and are reused across pairs (`reset_battles` between) — building warms the data
+  singletons (~4.5 s each), so per-pair rebuilds dominated cost; the full 5000-game job is a
+  many-hour, run-overnight one-time cost.
+- **Live (each eval cycle).** `record_elo` refits and records `eval/elo` + `eval/elo_ci` (95% CI
+  half-width) to TensorBoard + the TUI dict, and stamps `elo`/`elo_ci` into `metadata.json:
+  latest_eval` (so the resume-republish path shows ELO immediately after a restart). The launcher
+  surfaces a `🏅 ELO 1532 ±40` badge (`app.py::_elo_badge`) + an ELO summary row. The live number
+  is the best estimate from data SO FAR (batch-BT is global → early points retro-adjust); the
+  offline CLI re-fits canonically.
+- **Offline (`python -m main.elo <run_dir>`).** Loads results (`--source auto|log|tb|meta` —
+  `tb` **backfills an already-running run straight from TensorBoard, zero training change**), fits,
+  and prints a ranked ladder + writes `elo_ratings.json` + an Elo-vs-step `elo_curve.png` (CI band
+  + bot anchor lines). `--out` defaults to `<run>/elo/`; point elsewhere to analyze a LIVE run
+  without writing into it.
+- **Caveat (acceptable, noted in code):** trainee is greedy, sentinels stochastic@temp, so a
+  snapshot's rating slightly blends greedy/stochastic strength — a uniform shift that preserves
+  the trend. Tests: `elo_test.py` (synthetic-ladder recovery, anchoring, perfect-score, loaders,
+  `fit_pairwise`).
+
 ## Opponent distillation (`--distill-opponents`, off by default)
 
 Distils the frozen self-play opponents into a **cheaper network** (the opponent forward is ~70% of

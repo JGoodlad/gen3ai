@@ -95,6 +95,42 @@ def record_eval_results(model_dir: str, step: int, metrics: dict) -> None:
         json.dump(meta, f, indent=2)
 
 
+def append_eval_result_row(
+    model_dir: str,
+    step: int,
+    n_games: int,
+    bot_win_rates: dict,
+    sentinels: "list[dict] | None" = None,
+) -> None:
+    """Append one eval cycle's pairwise win-records to ``<model_dir>/eval_results.jsonl``.
+
+    This is the **append-only source of truth** for the ELO / skill-rating fit
+    (``agents.training.elo``): each line is the full tournament-matrix row a cycle already
+    produced — the trainee (frozen at ``step``) vs every bot and every pool sentinel,
+    ``n_games`` each. Append-only (one line per cycle) so it survives launcher restarts,
+    unlike the overwritten top-level ``metadata.json:latest_eval``. ``bot_win_rates`` maps
+    bot name → trainee win rate; ``sentinels`` is ``[{"step": int, "win_rate": float}, …]``
+    (empty/omitted on the non-self-play bot-only path).
+
+    Best-effort: never raise into the eval path — a failed append must not break eval.
+    """
+    try:
+        row = {
+            "step": int(step),
+            "n_games": int(n_games),
+            "evaluated_at": datetime.now(timezone.utc).isoformat(),
+            "bots": {k: float(v) for k, v in bot_win_rates.items()},
+            "sentinels": [
+                {"step": int(s["step"]), "win_rate": float(s["win_rate"])}
+                for s in (sentinels or [])
+            ],
+        }
+        with open(os.path.join(model_dir, "eval_results.jsonl"), "a") as f:
+            f.write(json.dumps(row) + "\n")
+    except (OSError, ValueError, KeyError, TypeError) as e:
+        print(f"⚠️ [ELO] failed to append eval_results.jsonl row at step {step}: {e}")
+
+
 def _latest_checkpoint(history: dict) -> str | None:
     """Return the checkpoint name with the highest step number, or None."""
     best_name, best_step = None, -1

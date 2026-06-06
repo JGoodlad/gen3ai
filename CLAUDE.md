@@ -325,6 +325,20 @@ snapshot into the pool by file-copy (`SnapshotPool.add_from_path`). The full des
 (work-stealing, graceful-shutdown drain, resume re-publish, sentinels + promotion,
 `--eval-workers` / `--eval-device`) is in `src/agents/training/CLAUDE.md`.
 
+### ELO / skill rating
+
+Under self-play pool play, `win_rate_vs_pool` is pinned near 50% by the promotion gate (a
+sliding window of recent selves) and `win_rate_vs_bots` saturates — so neither tracks real
+progress. The **ELO subsystem** fits an **anchored Bradley-Terry** rating over the win-records
+every eval cycle already produces (trainee vs the 9 fixed bots + pool sentinels — no new
+battles), giving one absolute number that rises with skill. Each cycle appends a row to an
+append-only `<run>/eval_results.jsonl` and records a live `eval/elo` (+CI) to TensorBoard + a
+`🏅 ELO` TUI badge. The fixed bots are the anchor; `python -m agents.training.bot_elo_calibration`
+plays a one-time bot-vs-bot round-robin (bridge, no server) → `data/gen3_bot_elo_anchors.json`,
+making snapshot ELOs **comparable across runs**. Offline: `python -m main.elo <run_dir>` prints a
+ladder and plots an Elo-vs-step curve (and can backfill a running run from TensorBoard with
+`--source tb`). Full design: `src/agents/training/CLAUDE.md` → ELO / skill rating.
+
 ### Opponent distillation (`--distill-opponents`)
 
 On a `--self-play` run, distil the frozen pool opponents into a **cheaper network** for faster
@@ -447,6 +461,7 @@ src/
     action/          # Action mask + mapping via LegalActions: pure action_to_choice →
                      #   Choice → serialize.choice_to_order (the one poke-env order touch)
     training/        # Callbacks, reward manager, eval pipeline — has CLAUDE.md
+                     #   elo.py (Bradley-Terry skill rating), bot_elo_calibration.py (anchor round-robin)
     battle/          # Event-sourced battle layer (Gen3Battle, BattleEvent log, TurnView,
                      #   LiveView/LegalActions read-models, StrictBattleView) — has CLAUDE.md
   main/
@@ -460,6 +475,7 @@ src/
     train_rl_agent.py  # Training entry point (also callable directly)
     eval_worker.py     # Subprocess bot-eval worker (frozen snapshot, CPU)
     probe_replay.py    # Forensic-replay CLI (thin wrapper over main.prober.engine)
+    elo.py             # Offline ELO analyzer CLI (ladder + Elo-vs-step curve)
     play.py            # Battle / evaluation entry point
   poke_env/          # Forked poke-env library
   utils/
@@ -468,6 +484,7 @@ src/
 data/                # Source of truth — derived by tools/, read via agents.gen3_data
   pokemon/           # species/moves/items/abilities/type_chart/natures + smogon stats & priors
   teams/             # Downloaded sample teams (gen3ou pool)
+  gen3_bot_elo_anchors.json  # Fixed bot ELO anchors (bot_elo_calibration.py round-robin); optional
 models/              # Saved PPO checkpoints (run_<timestamp>/ subdirs)
 deps/
   pokemon-showdown/  # Git submodule — local Showdown server
