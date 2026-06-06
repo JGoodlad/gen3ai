@@ -85,6 +85,8 @@ def _run(cfg: dict) -> None:
     self_play_temp = cfg.get("self_play_temp", 1.0)
     # Run's discount for the recorder's TD-residual δ (#4); the parent passes model.gamma.
     gamma = cfg.get("gamma", 0.99)
+    # Eval the pool sentinels greedy (best-vs-best) instead of stochastic when set.
+    sentinel_greedy = cfg.get("eval_sentinel_greedy", False)
     # One combined work-steal universe: bot names + sentinel labels.
     claim_universe = list(bot_names) + [s["label"] for s in sentinels]
     # Build the CURRENT-code version once, only when there are sentinels to version-check.
@@ -109,7 +111,7 @@ def _run(cfg: dict) -> None:
             result = _eval_sentinel(
                 model, sentinel_by_label[name], current_version, trainee_tb, opp_tb,
                 mappings, server_config, concurrency, device, self_play_temp,
-                n_games, model_dir, step, tag, use_bridge, gamma,
+                n_games, model_dir, step, tag, use_bridge, gamma, sentinel_greedy,
             )
         else:
             opponents = build_eval_opponents(
@@ -141,15 +143,18 @@ def _run(cfg: dict) -> None:
 
 def _eval_sentinel(model, spec, current_version, trainee_tb, opp_tb, mappings,
                    server_config, concurrency, device, temperature,
-                   n_games, model_dir, step, tag, use_bridge=False, gamma=0.99) -> dict:
-    """Play the frozen trainee (greedy) vs one pool sentinel (stochastic) — one matchup.
+                   n_games, model_dir, step, tag, use_bridge=False, gamma=0.99,
+                   sentinel_greedy=False) -> dict:
+    """Play the frozen trainee (greedy) vs one pool sentinel — one matchup.
 
     The sentinel is loaded via ``load_model_snapshot`` against the pool's shared
     ``model_config.json`` (a stale-arch snapshot fails with ``ModelVersionError`` rather
     than loading mismatched weights). The trainee is an ``EvalRLPlayer`` so it tracks
-    reward + writes forensic traces, exactly like a bot matchup; the sentinel acts as it
-    does as a TRAINING opponent (stochastic at ``temperature``). Every matchup — bot or
-    sentinel — plays the same flat ``n_games`` (``EVAL_GAMES``).
+    reward + writes forensic traces, exactly like a bot matchup. By default the sentinel
+    is **stochastic** (at ``temperature``), mirroring how it behaves as a TRAINING opponent;
+    with ``sentinel_greedy`` it plays **argmax** instead, so the matchup is greedy-vs-greedy
+    (best-vs-best) and ``win_rate_vs_pool`` / the snapshot ELO carry no temperature handicap.
+    Every matchup — bot or sentinel — plays the same flat ``n_games`` (``EVAL_GAMES``).
     """
     label = spec["label"]
     sentinel_model = load_model_snapshot(
@@ -169,7 +174,9 @@ def _eval_sentinel(model, spec, current_version, trainee_tb, opp_tb, mappings,
         server_configuration=server_config, mappings=mappings,
         account_configuration=AccountConfiguration(f"SPse{tag}", "password"),
         max_concurrent_battles=concurrency,
-        stochastic=True, temperature=temperature,
+        # Greedy-vs-greedy (best-vs-best) when sentinel_greedy, else stochastic@temperature
+        # (the training-opponent regime). temperature is ignored when not stochastic.
+        stochastic=not sentinel_greedy, temperature=temperature,
         start_listening=not use_bridge,
     )
     m = asyncio.run(eval_one_matchup(trainee, opponent, n_games, model_dir, step, label,

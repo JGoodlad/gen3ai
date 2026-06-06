@@ -145,6 +145,7 @@ class SelfPlayCallback(BaseCallback):
         best_model_save_path: str | None = None,
         promote_threshold: float = 0.65,
         self_play_temp: float = 1.0,
+        eval_sentinel_greedy: bool = False,
         heuristic_floor: float = HEURISTIC_FLOOR,
         self_play_start_wr: float = SELF_PLAY_START,
         self_play_full_wr: float = SELF_PLAY_FULL,
@@ -169,6 +170,10 @@ class SelfPlayCallback(BaseCallback):
         self.best_model_save_path = best_model_save_path
         self._promote_threshold = promote_threshold
         self._self_play_temp = self_play_temp
+        # Eval the pool sentinels greedy (best-vs-best) instead of stochastic — removes the
+        # greedy-trainee-vs-stochastic-sentinel handicap so win_rate_vs_pool / snapshot ELO are
+        # honest. Eval-only; the TRAINING opponents (built in the env factory) stay stochastic.
+        self._eval_sentinel_greedy = eval_sentinel_greedy
         # Curriculum (transition + floor) — the live per-episode self_play_fraction the eval
         # pushes is 1 - heuristic_fraction(win_rate, floor/start/full). Defaults = the module
         # constants (original curve); raised floor / later `full` keeps the coverage-punishing
@@ -326,8 +331,9 @@ class SelfPlayCallback(BaseCallback):
             "step": step,
             "n_games": n_games,
             "opponent_pool": bot_names,        # bots; workers steal from the combined pool
-            "sentinels": sentinels,            # pool snapshots to play (stochastic)
+            "sentinels": sentinels,            # pool snapshots to play (stochastic, or greedy below)
             "self_play_temp": self._self_play_temp,
+            "eval_sentinel_greedy": self._eval_sentinel_greedy,
             "claim_dir": claim_dir,
             "result_dir": run_dir,             # writes result__<item>.json here
             "concurrency": self._eval_concurrency,

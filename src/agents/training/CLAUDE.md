@@ -190,10 +190,18 @@ restart — no manifest). Design lives in `designs/ai_v5/`. Key behaviors:
 - **Opponents sample, they don't argmax.** Training opponents are built with `stochastic=True`
   (now the `RLPlayer` default) so the learner trains against the policy's full action
   distribution — a richer, less-exploitable signal than the greedy move. Temperature is
-  `--self-play-temp` (default `1.0` = the policy's own distribution; >1 flatter). **Eval and
-  measurement players stay greedy**: the measured trainee, the pool sentinels, and the bot-eval
-  players pass `stochastic=False` explicitly, so `win_rate_vs_bots` (curriculum) and
-  `win_rate_vs_pool` (promotion) remain stable, comparable control signals.
+  `--self-play-temp` (default `1.0` = the policy's own distribution; >1 flatter). **The measured
+  trainee is always greedy** (`stochastic=False`) — that's what gives `win_rate_vs_bots`
+  (curriculum) and `win_rate_vs_pool` (promotion) a stable, comparable control signal. The bots
+  are deterministic rule-based players. The **pool sentinels default to stochastic@`--self-play-temp`**
+  (mirroring how they act as training opponents) — so a sentinel matchup is greedy-trainee vs
+  stochastic-sentinel, a deliberate asymmetry that inflates `win_rate_vs_pool` by a ~constant
+  temperature handicap (≈15–20 pts; the [ELO caveat](#elo--skill-rating) below). **`--eval-sentinel-greedy`
+  makes the sentinels greedy too** (`_eval_sentinel` builds the opponent `stochastic=False`), so the
+  matchup is best-vs-best and `win_rate_vs_pool` / the snapshot ELO reflect real skill (≈50% vs a
+  recent self, ramping with sentinel age). It's eval-only — TRAINING opponents stay stochastic — and
+  it auto-lowers `--promote-threshold` to `0.55` (else the handicap-free pool win rate never clears
+  the 0.65 gate and the pool freezes). Default off so the live metric stays continuous until opted in.
 - **Opponent snapshots are version-checked.** They load via `load_model_snapshot` (not a raw
   `MaskablePPO.load`), and `SnapshotPool` writes a shared `model_config.json` next to its
   snapshots, so an arch-mismatched snapshot fails with a clean `ModelVersionError` instead of
@@ -331,10 +339,14 @@ fixed bots.
   and prints a ranked ladder + writes `elo_ratings.json` + an Elo-vs-step `elo_curve.png` (CI band
   + bot anchor lines). `--out` defaults to `<run>/elo/`; point elsewhere to analyze a LIVE run
   without writing into it.
-- **Caveat (acceptable, noted in code):** trainee is greedy, sentinels stochastic@temp, so a
-  snapshot's rating slightly blends greedy/stochastic strength — a uniform shift that preserves
-  the trend. Tests: `elo_test.py` (synthetic-ladder recovery, anchoring, perfect-score, loaders,
-  `fit_pairwise`).
+- **Caveat (acceptable, noted in code):** by default the trainee is greedy but the sentinels are
+  stochastic@temp, so a snapshot's rating blends greedy strength (when it's the cycle's trainee)
+  with stochastic strength (when it's a later sentinel) — a roughly uniform shift that preserves the
+  trend, but it does mean the same snapshot is scored in two regimes. **`--eval-sentinel-greedy`
+  removes this** — sentinels play greedy too, so every snapshot is scored greedy in both roles and
+  the ELO ladder is internally consistent (at the cost of a one-time scale shift vs prior cycles;
+  the bot-anchored scale is preserved since trainee-vs-bot records are unchanged). Tests:
+  `elo_test.py` (synthetic-ladder recovery, anchoring, perfect-score, loaders, `fit_pairwise`).
 
 ## Opponent distillation (`--distill-opponents`, off by default)
 

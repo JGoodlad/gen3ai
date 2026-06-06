@@ -447,7 +447,20 @@ async def main():
                              "(all-or-nothing: backfill the whole pool on enable, then atomic switch; "
                              "fail-closed gate + auto-revert). See designs/ai_v5/distill_integration.md.")
     parser.add_argument("--snapshot-dir", type=str, default=None, help="Pool directory (default: <run_dir>/snapshots)")
-    parser.add_argument("--promote-threshold", type=float, default=0.65, help="Win rate vs. pool to trigger snapshot promotion")
+    parser.add_argument("--promote-threshold", type=float, default=None,
+                        help="Win rate vs. pool to trigger snapshot promotion. Default 0.65 with "
+                             "stochastic sentinels; auto-lowered to 0.55 under --eval-sentinel-greedy "
+                             "(greedy-vs-greedy removes the temperature handicap, so a genuinely-ahead "
+                             "trainee wins the pool by a smaller margin — 0.65 would freeze the pool). "
+                             "An explicit value always wins.")
+    parser.add_argument("--eval-sentinel-greedy", "--eval_sentinel_greedy", dest="eval_sentinel_greedy",
+                        action="store_true", default=False,
+                        help="Eval the self-play pool sentinels GREEDY (argmax) instead of stochastic. "
+                             "Removes the greedy-trainee-vs-stochastic-sentinel handicap so win_rate_vs_pool "
+                             "/ snapshot ELO reflect real best-vs-best skill (≈50%% vs a recent self, ramping "
+                             "with sentinel age) instead of a flat temperature offset. Eval-only — TRAINING "
+                             "opponents stay stochastic. Metric discontinuity vs prior cycles; pair with the "
+                             "auto-lowered --promote-threshold (0.55).")
     parser.add_argument("--self-play-temp", type=float, default=1.0,
                         help="Sampling temperature for self-play TRAINING opponents (they sample, "
                              "not argmax, so the learner faces the policy's full action distribution). "
@@ -571,6 +584,15 @@ async def main():
         print(f"[Opponents] self-play curriculum: start_wr={_sp_start_wr:g} full_wr={_sp_full_wr:g} "
               f"heuristic_floor={_heuristic_floor:g} "
               f"(defaults {SELF_PLAY_START:g}/{SELF_PLAY_FULL:g}/{HEURISTIC_FLOOR:g})")
+
+    # Promotion gate: regime-aware default — 0.55 under greedy sentinels (the temperature handicap
+    # is gone, so a genuinely-ahead trainee wins the pool by a smaller margin and 0.65 would freeze
+    # the pool), else the original 0.65. An explicit --promote-threshold always wins.
+    _promote_threshold = (args.promote_threshold if args.promote_threshold is not None
+                          else (0.55 if args.eval_sentinel_greedy else 0.65))
+    if args.eval_sentinel_greedy:
+        print(f"[Opponents] eval sentinels GREEDY (best-vs-best pool/ELO signal) — "
+              f"promote_threshold={_promote_threshold:g}")
 
     def create_training_env_random(idx, stall_config=None, opponent_device="auto",
                                    opponent_version=None, snapshot_dir=None,
@@ -928,8 +950,11 @@ async def main():
             showdown_port=args.showdown_port,
             use_showdown_bridge=args.use_showdown_bridge,
             best_model_save_path=os.path.join(model_dir, "best_model"),
-            promote_threshold=args.promote_threshold,
+            promote_threshold=_promote_threshold,
             self_play_temp=args.self_play_temp,
+            # Greedy-vs-greedy pool eval (best-vs-best signal); default off keeps the live run's
+            # win_rate_vs_pool / ELO continuous until opted in.
+            eval_sentinel_greedy=args.eval_sentinel_greedy,
             # Curriculum knobs (#2): the live per-episode fraction the callback pushes each eval
             # uses these, matching the env's initial fraction computed above.
             heuristic_floor=_heuristic_floor,
