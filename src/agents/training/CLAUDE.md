@@ -291,7 +291,10 @@ fixed bots.
   many-hour, run-overnight one-time cost.
 - **Live (each eval cycle).** `record_elo` refits and records `eval/elo` + `eval/elo_ci` (95% CI
   half-width) to TensorBoard + the TUI dict, and stamps `elo`/`elo_ci` into `metadata.json:
-  latest_eval` (so the resume-republish path shows ELO immediately after a restart). The launcher
+  latest_eval` (so the resume-republish path shows ELO immediately after a restart — and if a
+  resumed checkpoint predates the `elo` field, `replay_last_eval_to_tui` **computes** it from the
+  saved block's win rates via `elo.elo_from_eval_block`, so the badge never blanks for a full
+  cadence). The launcher
   surfaces a `🏅 ELO 1532 ±40` badge (`app.py::_elo_badge`) + an ELO summary row. The live number
   is the best estimate from data SO FAR (batch-BT is global → early points retro-adjust); the
   offline CLI re-fits canonically.

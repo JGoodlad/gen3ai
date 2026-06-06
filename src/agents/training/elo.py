@@ -199,6 +199,22 @@ def _rows_from_log(run_dir: str) -> list[EvalRow]:
     return [by_step[s] for s in sorted(by_step)]
 
 
+def _row_from_block(block: dict, n_games: int = 100) -> "EvalRow | None":
+    """Build one EvalRow from a metadata ``latest_eval`` block — its ``opponents`` (bot win
+    rates) + optional ``pool.sentinels``. Shared by the metadata loader and the resume-republish
+    ELO compute. Returns None if the block has no ``step``."""
+    step = block.get("step")
+    if step is None:
+        return None
+    bots = {name: float(d["win_rate"])
+            for name, d in (block.get("opponents") or {}).items()
+            if isinstance(d, dict) and "win_rate" in d}
+    sentinels = [(int(s["step"]), float(s["win_rate"]))
+                 for s in ((block.get("pool") or {}).get("sentinels") or [])
+                 if "step" in s and "win_rate" in s]
+    return EvalRow(int(step), n_games, bots, sentinels)
+
+
 def _rows_from_metadata(run_dir: str, n_games: int = 100) -> list[EvalRow]:
     """Reconstruct rows from ``metadata.json`` — the top-level ``latest_eval`` plus every
     per-checkpoint ``snapshot_history[*].latest_eval`` (sparse, but survives even when the
@@ -220,16 +236,9 @@ def _rows_from_metadata(run_dir: str, n_games: int = 100) -> list[EvalRow]:
             blocks.append(entry["latest_eval"])
     by_step: dict[int, EvalRow] = {}
     for blk in blocks:
-        step = blk.get("step")
-        if step is None:
-            continue
-        bots = {name: float(d["win_rate"])
-                for name, d in (blk.get("opponents") or {}).items()
-                if isinstance(d, dict) and "win_rate" in d}
-        sentinels = [(int(s["step"]), float(s["win_rate"]))
-                     for s in ((blk.get("pool") or {}).get("sentinels") or [])
-                     if "step" in s and "win_rate" in s]
-        by_step[int(step)] = EvalRow(int(step), n_games, bots, sentinels)
+        row = _row_from_block(blk, n_games)
+        if row is not None:
+            by_step[row.step] = row
     return [by_step[s] for s in sorted(by_step)]
 
 
@@ -578,6 +587,21 @@ def _sigmoid(z: float) -> float:
         return 1.0 / (1.0 + math.exp(-z))
     e = math.exp(z)
     return e / (1.0 + e)
+
+
+def elo_from_eval_block(block: dict, anchors_path: str = BOT_ANCHORS_PATH,
+                        n_games: int = 100) -> tuple[float, float] | None:
+    """Compute ``(elo, se)`` for the snapshot a single ``latest_eval`` block describes — fit from
+    its own win rates (vs bots + sentinels) anchored to the bots. Lets the resume-republish show
+    ELO immediately even when the saved block predates the ``elo`` field (e.g. resuming a
+    checkpoint saved before this feature). Returns None without usable bot win rates."""
+    row = _row_from_block(block, n_games)
+    if row is None or not row.bots:
+        return None
+    anchors = load_bot_anchors(anchors_path)
+    pin = anchors["ratings"] if anchors else None
+    base = float(anchors["base"]) if anchors and "base" in anchors else DEFAULT_BASE
+    return fit_elo([row], pin_ratings=pin, base=base).rating_for_step(row.step)
 
 
 def fit_from_run(run_dir: str, source: str = "auto",

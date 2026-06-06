@@ -160,6 +160,26 @@ def test_snapshot_step_roundtrip():
     assert snapshot_step(snap_key(12_345_678)) == 12_345_678
 
 
+def test_elo_from_eval_block():
+    # A single metadata `latest_eval` block (no `elo` field) → compute (elo, se) from its win
+    # rates. This is the resume-republish path for a checkpoint saved before the elo field.
+    block = {
+        "step": 5_000_000,
+        "opponents": {"random": {"win_rate": 0.99}, "heuristic": {"win_rate": 0.8},
+                      "staller": {"win_rate": 0.75}},
+        "pool": {"sentinels": [{"step": 1_000_000, "win_rate": 0.6}]},
+    }
+    # Force the no-anchor fallback so the test doesn't depend on the committed anchor file.
+    r = elo.elo_from_eval_block(block, anchors_path="/tmp/__no_such_anchor__.json")
+    assert r is not None
+    e, se = r
+    assert math.isfinite(e) and se >= 0
+    assert e > 1000.0  # beats random handily → above the base anchor
+    # Degenerate blocks → None (no usable bot data / no step).
+    assert elo.elo_from_eval_block({"step": 1, "opponents": {}}) is None
+    assert elo.elo_from_eval_block({"opponents": {"random": {"win_rate": 0.5}}}) is None
+
+
 def test_anchored_fit_is_translation_equivariant():
     # Shifting ALL bot anchors by a constant C shifts every snapshot by C (pairwise win rates
     # are unchanged), and the fit must stay finite — this is the regression guard for the

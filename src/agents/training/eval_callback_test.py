@@ -1,4 +1,5 @@
 import os
+import math
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -651,6 +652,34 @@ def test_replay_last_eval_republishes_pool_block(tmp_path, monkeypatch):
     # Skill rating re-published on resume so the 🏅 badge isn't blank until the next cycle.
     assert sent.get("eval/elo") == 1532.4
     assert sent.get("eval/elo_ci") == 41.0
+
+
+def test_replay_computes_elo_when_block_predates_field(tmp_path, monkeypatch):
+    """Resuming a checkpoint saved BEFORE the elo field: the block has no `elo`, but the
+    republish computes it from the block's win rates so the 🏅 badge isn't blank for a full
+    cadence. (Robust to the anchor file's presence — value just shifts scale.)"""
+    import json as _json
+    from agents.training.eval_callback import replay_last_eval_to_tui
+    from agents.training import eval_callback as ec
+    meta = {"latest_eval": {  # NOTE: no "elo"/"elo_ci" — a pre-feature checkpoint
+        "step": 128_000_010, "win_rate_mean": 0.6, "win_rate_vs_bots": 0.55,
+        "mean_reward_vs_bots": 5.0, "mean_ep_len_vs_bots": 20.0,
+        "opponents": {n: {"win_rate": w, "mean_reward": 0.0, "mean_ep_len": 15.0}
+                      for n, w in [("random", 0.99), ("heuristic", 0.77), ("staller", 0.78)]},
+        "pool": {"win_rate": 0.71, "mean_reward": 14.0, "mean_ep_len": 22.0,
+                 "monotonicity": 0.8, "snapshot_count": 20,
+                 "sentinels": [{"step": 126_000_000, "win_rate": 0.71, "mean_reward": 14.0,
+                                "mean_ep_len": 21.0}]},
+    }}
+    (tmp_path / "metadata.json").write_text(_json.dumps(meta))
+
+    sent = {}
+    monkeypatch.setattr(ec, "send_metrics", lambda d: sent.update(d))
+    replay_last_eval_to_tui(str(tmp_path))
+
+    assert "eval/elo" in sent and math.isfinite(sent["eval/elo"])
+    assert sent["eval/elo"] > 1000.0          # a strong model is well above the base
+    assert sent.get("eval/elo_ci", -1) >= 0   # CI computed (Z95 * SE)
 
 
 def test_replay_skips_pool_block_when_unseeded(tmp_path, monkeypatch):

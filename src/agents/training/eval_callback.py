@@ -549,10 +549,21 @@ def replay_last_eval_to_tui(model_dir: str | None, resume_eval_metadata: str | N
         "_step": block.get("step", 0),
     })
     # Skill rating (ELO) — re-publish so the 🏅 badge shows immediately on resume instead of
-    # blanking until the next (possibly millions-of-steps-away) eval cycle.
+    # blanking until the next (possibly millions-of-steps-away) eval cycle. If the saved block
+    # predates the `elo` field (e.g. resuming a checkpoint from before this feature), COMPUTE it
+    # from the block's own win rates so it still shows. Best-effort — never break the republish.
     if "elo" in block:
         tui["eval/elo"] = block["elo"]
         tui["eval/elo_ci"] = block.get("elo_ci", 0.0)
+    else:
+        try:
+            from agents.training import elo as elo_mod
+            rating = elo_mod.elo_from_eval_block(block)
+            if rating is not None:
+                tui["eval/elo"] = rating[0]
+                tui["eval/elo_ci"] = elo_mod.ci95(rating[1])
+        except Exception as e:  # noqa: BLE001 — telemetry; never break resume
+            print(f"⚠️ [ELO] resume-republish compute failed: {e}")
     # Self-play pool block: re-publish the aggregate + per-sentinel rows (newest→oldest,
     # positional sentinel_<i>) using the saved step tags, mirroring the live collect path.
     pool = block.get("pool")

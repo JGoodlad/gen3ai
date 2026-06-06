@@ -144,7 +144,10 @@ imports into the callbacks *and* the CLI — one fit implementation, two consume
   (`_insert_or_replace_run_dir_arg`), so `eval_results.jsonl` **accumulates continuously** — the
   ladder doesn't reset every 3h. And `replay_last_eval_to_tui` re-publishes `eval/elo` from the
   resumed `metadata.json` on startup, so the 🏅 badge shows immediately instead of blanking until
-  the next cycle.
+  the next cycle. If the resumed checkpoint predates the `elo` field (e.g. a checkpoint saved
+  before this feature landed), the republish **computes** ELO from the block's own win rates
+  (`elo.elo_from_eval_block` — a single-cycle anchored fit), so the badge still shows on the very
+  first restart onto ELO-enabled code rather than waiting a full eval cadence.
 
 ---
 
