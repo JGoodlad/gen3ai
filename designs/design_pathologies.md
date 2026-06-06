@@ -183,3 +183,48 @@ B/C vs D from evidence.
 
 **Success signal for the whole program:** close games start appearing (3-2 / 2-1 outcomes), the
 voluntary-switch rate rises, and the V2-setup/staller win rates close the gap to their V1 versions.
+
+---
+
+## 6. Fix implemented (2026-06-06) — critic tail-blindness: incoming-damage belief (`gen3_incoming_damage_v1`)
+
+**New source.** This entry is from a *later* run than §1's: forensics on `run_20260601_193826`
+(122M, self-play; `models/run_20260601_193826/LOSS_ANALYSIS_2026-06-05.md`). It makes the **value-side
+of P-0/P-4 concrete**: the policy loses by **one or two mispriced catastrophic decisions per game** —
+the critic sits at strongly positive V, the actor commits, then an opponent answer it never priced
+lands and V crashes −10..−59. Three faces of one root: (1) the obs had *effectiveness* (`2×`), never
+the **OHKO threshold** (`power·A/Def·eff·STAB·roll ≥ HP`); (2) `their_matchups` is built from
+*revealed* moves only → **blank exactly on a just-switched-in mon** (the Claydol case, 89% coverage
+blank); (3) the incoming lane was **barely attended** (saliency ≈0.0018 vs own-offense ≈0.47).
+
+**Gating sequence (so we didn't over-build).** The cheap critic-first lever was tried first — a
+**no-vf-clip** run (122M→158M). It did **not** dissolve the tail-blindness: within-run on the
+zero-retrain falsifier the unpriced-incoming-KO cliffs **persisted** (cliff rate 10.0%→8.6%, −14%
+only; decisive-turning-point structure essentially unchanged). That residual was the clean GO.
+
+**What changed.** A 33-dim **incoming-KO belief block** (per our mon: phys/spec expected-chip +
+mode-max P(KO) + P(outspeed); then opp recovery scalars), routed via `non_matchup_rest` to both heads.
+A calibrated *belief* under hidden info (revealed ∪ Smogon-usage candidates; offensive-stat
+distribution → tail P(KO) + mean chip; closed-form 16-roll P(KO); P(outspeed) over the Speed
+distribution), gen3-faithful for KO-relevant hits (incl. the review-found Explosion/Self-Destruct
+Def-halve, which is gen≤4; the review's Sandstorm-SpD claim was a gen4 mechanic and was dropped).
+obs **3357 → 3390**, `ARCH_SIGNATURE` `gen3_move_effects_v1` →
+**`gen3_incoming_damage_v1`**. Full as-built: `designs/ai_v5/impl_step4_incoming_damage_obs.md`;
+design + go/no-go: `designs/ai_v5/design_incoming_damage_obs.md`.
+
+**What we expect to be different next time (verify against the next eval — this is Gate 2, NOT yet
+confirmed).** This is a **necessary-but-not-sufficient** fix — the binding gap is policy-side
+under-switching, so a critic-side obs feature only helps if the retrained model both *attends* to it
+and the policy *acts*:
+1. The incoming block's **saliency rises ≥10–50×** from ~0.002 (else the lane is still dead).
+2. The **CRITIC_BLINDSPOT turning-point count drops** on a fresh forensics pass (fewer
+   optimistic-V → unpriced-incoming-KO cliffs).
+3. **Secondary:** voluntary-switch rate into a flagged-lethal matchup rises (the policy *acting* on
+   the new valuation) — the true test, and the one most at risk from chronic under-switching.
+
+If saliency rises but switching doesn't, the residual is policy-side (P-2) and needs the reward
+rebalance / self-play, not more obs. If the cliffs collapse and switching rises, the fix worked.
+
+**Roadmap slot.** This is the **value-side** complement to the P0/P-2/P-4 levers in §5 — it fixes the
+*valuation* (the info gap), while P2 (reward rebalance) + P0 (self-play) must fix the *action*
+(under-switching). Judge it by the three signals above, not headline win rate.

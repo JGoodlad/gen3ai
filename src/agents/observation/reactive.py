@@ -375,7 +375,7 @@ class ReactiveEncoder(ObservationEncoder):
         return vec
 
     def get_layout(self) -> Dict[str, Any]:
-        mo = REACTIVE_MATCHUP_OFFSET  # 46 = 14 scalars + 32 move-effects
+        mo = REACTIVE_MATCHUP_OFFSET  # 83 = 14 scalars + 36 move-effects + 33 incoming-damage
         return {
             "move_power": {"offset": 0, "dim": 4},
             "move_multiplier": {"offset": 4, "dim": 4},
@@ -384,9 +384,9 @@ class ReactiveEncoder(ObservationEncoder):
             "forced_struggle": {"offset": 11, "dim": 1},
             "trapped": {"offset": 12, "dim": 1},
             "maybe_trapped": {"offset": 13, "dim": 1},
-            # gen3_move_effects_v1: 4 move slots × MOVE_EFFECT_FEATURES (8), slot-major,
+            # gen3_move_effects_v1: 4 move slots × MOVE_EFFECT_FEATURES (9), slot-major,
             # request order. Per slot: [is_boost, is_heal, is_protect, is_phaze, is_hazard,
-            # inflicts_status, status_will_land, pp_fraction].
+            # inflicts_status, status_will_land, pp_fraction, status_will_land_known].
             "move_effects": {"offset": REACTIVE_SCALAR_DIM, "dim": MOVE_EFFECTS_DIM,
                              "per_slot": MOVE_EFFECT_FEATURES},
             # incoming_damage_v1: per-mon [phys_expdmg, spec_expdmg, phys_pko, spec_pko,

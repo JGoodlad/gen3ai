@@ -1,12 +1,17 @@
 """Compute per-species prior probability distributions from aggregated Smogon stats.
 
-Produces two files in one pass — both keyed by lowercase species name:
+Produces five files in one pass — all keyed by lowercase species name:
 
   data/pokemon/gen3_hidden_power_priors.json
     {species: {hp_type: probability}}   # 16 type buckets, omitted if usage=0
 
   data/pokemon/gen3_ability_priors.json
     {species: {ability_id: probability}}
+
+  data/pokemon/gen3_move_priors.json     {species: {move_id: P(move in set)}}    # NOT sum-1
+  data/pokemon/gen3_spread_priors.json   {species: [[nature, [hp,atk,def,spa,spd,spe], weight], …]}
+  data/pokemon/gen3_item_priors.json     {species: {item_id: P(item)}}           # sum-1
+    # the latter three feed the incoming-damage / OHKO belief (gen3_incoming_damage_v1)
 
 Ability priors are *anchored to the Showdown pokedex* as the ground truth for
 what abilities each species CAN have in Gen 3. Smogon usage weights the

@@ -243,8 +243,8 @@ spec_expdmg_frac, phys_pko, spec_pko, p_outspeed]` (5 × 6 = 30), then 3 opp-act
 **TYPE-category** (Bug/Rock/Ground/… physical, the rest special), using the gen3 damage formula with a
 **fixed-damage branch** (Seismic Toss/Night Shade/Dragon Rage/Sonic Boom carry constant damage despite
 the dex STATUS tag; respect type immunity — 0× vs Ghost), the gen3 **Explosion/Self-Destruct Def-halve**
-and **Sandstorm ×1.5 SpD for Rock defenders** (special channel), Reflect/Light-Screen/Substitute/burn/
-weather modifiers, the opponent's offensive-tail Atk/SpA from `priors.stat_distribution`, and a
+(gen≤4), Reflect/Light-Screen/Substitute/burn/weather modifiers, the opponent's offensive-tail Atk/SpA
+from `priors.stat_distribution`, and a
 closed-form roll→P(KO). `p_outspeed` is `P(our_spe > opp_spe)` over the opp Speed *distribution* (the
 hidden nature/EV) with observed boosts/paralysis. **Two modules, deep split:** the pure, poke-env-free
 math core (formula, roll→P(KO), P(outspeed), the `Candidate`/`Defender`/`AttackerThreat` beliefs,

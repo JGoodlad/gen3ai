@@ -132,9 +132,11 @@ def test_explosion_halves_defense():
     assert boom[1] > plain[1]       # … and strictly more expected chip
 
 
-def test_sandstorm_boosts_rock_spd():
-    # Special hit vs a Rock-type under Sandstorm reads LESS damage than in clear weather (the
-    # ×1.5 SpD). Tyranitar (Rock/Dark) on the special channel.
+def test_gen3_sandstorm_has_no_spd_boost():
+    # Gen-3 Sandstorm gives Rock-types NO SpD boost — the ×1.5 is a gen4+ mechanic the Showdown
+    # gen3 mod explicitly nulls (`data/mods/gen3/conditions.ts`: onModifySpD undefined). Sandstorm
+    # also has no BP effect, so a special hit on a Rock defender reads IDENTICALLY with/without sand.
+    # Regression guard against re-introducing the gen4 boost (a review once did).
     ttar = inc.Defender(def_stat=256, spd_stat=236, hp_remaining=341, hp_max=341, spe=236,
                         type1=PT.ROCK, type2=PT.DARK, ability=None, status=None)
     surf = [inc.Candidate(PT.WATER, 95, 1.0)]
@@ -144,16 +146,7 @@ def test_sandstorm_boosts_rock_spd():
     sand = inc._channel_threat(surf, ttar, 350.0, 320.0,
                                a=_mence_threat(types=(PT.WATER,), weather="Sandstorm"),
                                screen=False, is_phys=False)
-    assert sand[1] < clear[1]       # sand-boosted SpD → less expected damage
-    # the SpD boost is special-only: a physical hit ignores it
-    phys = [inc.Candidate(PT.GROUND, 100, 1.0)]
-    pclear = inc._channel_threat(phys, ttar, 350.0, 320.0,
-                                 a=_mence_threat(types=(PT.GROUND,), weather=None),
-                                 screen=False, is_phys=True)
-    psand = inc._channel_threat(phys, ttar, 350.0, 320.0,
-                                a=_mence_threat(types=(PT.GROUND,), weather="Sandstorm"),
-                                screen=False, is_phys=True)
-    assert psand[1] == pclear[1]
+    assert sand == clear        # no SpD boost + no BP change → identical belief
 
 
 def test_paralysis_status_enum_folds_into_outspeed():

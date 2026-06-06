@@ -2,7 +2,7 @@
 
 We do **not** compute "the damage"; we compute a calibrated **belief about being KO'd** under hidden
 opponent info (move / spread / item unknown). This module is the perf-light, deterministic core:
-the Gen-3 damage formula (incl. the Explosion Def-halve + Sandstorm SpD mechanics), the roll→P(KO)
+the Gen-3 damage formula (incl. the gen≤4 Explosion/Self-Destruct Def-halve), the roll→P(KO)
 closed form, and P(outspeed) over a Speed distribution. Battle-state integration — reading our team
 + the opp active + field and building the ``Candidate`` / ``Defender`` / ``AttackerThreat`` beliefs —
 lives in ``incoming_damage_encoder.py`` and calls these.
@@ -55,7 +55,10 @@ _BOOST_STAGES = {  # standard gen3 stat-stage multipliers (atk/spa/spe share thi
     -6: 2 / 8, -5: 2 / 7, -4: 2 / 6, -3: 2 / 5, -2: 2 / 4, -1: 2 / 3,
     0: 1.0, 1: 3 / 2, 2: 4 / 2, 3: 5 / 2, 4: 6 / 2, 5: 7 / 2, 6: 8 / 2,
 }
-_SANDSTORM_SPD_MULT = 1.5   # gen3 Sandstorm gives Rock-types ×1.5 SpD
+# NOTE: gen3 Sandstorm gives Rock-types NO SpD boost — the ×1.5 is a gen4+ mechanic. The Showdown
+# gen3 mod explicitly nulls it (`data/mods/gen3/conditions.ts`: `onModifySpD: undefined`), so we do
+# NOT apply it here. Sandstorm has no BP effect either; its only combat effect is residual chip,
+# which is folded into HP elsewhere, not the per-hit damage belief.
 
 
 def type_is_physical(ptype: PokemonType) -> bool:
@@ -214,7 +217,7 @@ class AttackerThreat:
 
 def weather_damage_mult(move_type: PokemonType, weather: Optional[str]) -> float:
     """Gen-3 weather BP modifier: rain ×1.5 Water/×0.5 Fire; sun ×1.5 Fire/×0.5 Water.
-    (Sandstorm has no BP effect — its Rock-type SpD boost is applied in ``_channel_threat``.)"""
+    (Sandstorm has no BP effect, and gen3 gives Rock-types no SpD boost — that's a gen4+ mechanic.)"""
     if not weather:
         return 1.0
     w = weather.lower()
@@ -225,10 +228,6 @@ def weather_damage_mult(move_type: PokemonType, weather: Optional[str]) -> float
     return 1.0
 
 
-def _is_sandstorm(weather: Optional[str]) -> bool:
-    return weather is not None and "sand" in weather.lower()
-
-
 def _channel_threat(cands, d: Defender, atk_tail: float, atk_mean: float, *,
                     a: AttackerThreat, screen: bool, is_phys: bool) -> Tuple[float, float]:
     """(pko, expdmg_frac) = max over a channel's candidates of p_in_set·(KO prob / dmg fraction)."""
@@ -236,9 +235,6 @@ def _channel_threat(cands, d: Defender, atk_tail: float, atk_mean: float, *,
         return 0.0, 0.0
     defense = d.def_stat if is_phys else d.spd_stat
     defense = max(1, int(defense * boost_mult(d.boost_def if is_phys else d.boost_spd)))
-    # Gen-3 Sandstorm gives Rock-types ×1.5 SpD (special channel only — no effect on Def).
-    if not is_phys and _is_sandstorm(a.weather) and PokemonType.ROCK in (d.type1, d.type2):
-        defense = max(1, int(defense * _SANDSTORM_SPD_MULT))
     best_pko = best_exp = 0.0
     for c in cands:
         eff = effective_multiplier_by_types(c.move_type, d.type1, d.type2, d.ability, d.status)

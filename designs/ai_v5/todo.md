@@ -11,6 +11,8 @@ league tooling, and a self-play pre-flight checklist are the supporting design d
 | `design_reward_annealing.md` | league prerequisite — three-tier shaping anneal |
 | `impl_step2_league_play.md` | forward design — two-pool stable, PFSP, Nash/RPP progress |
 | `design_league_tooling.md` | payoff-matrix runner, Nash/RPP metrics, inspector, descriptors |
+| `impl_step3_elo_skill_rating.md` | ✓ built & shipped — anchored Bradley-Terry skill rating (the absolute progress signal pool win-rate can't give) |
+| `impl_step4_incoming_damage_obs.md` | ✓ built & shipped — incoming-damage / OHKO belief obs block (`gen3_incoming_damage_v1`); the critic-tail-blindness pathology fix (Gate-2 efficacy pending a retrain). See `todo_pathologies.md` row F + `design_pathologies.md`. |
 
 ---
 

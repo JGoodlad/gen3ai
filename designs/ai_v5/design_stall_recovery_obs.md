@@ -306,9 +306,11 @@ type-eff, avg roll — already implemented). **Two correctness gaps must be fixe
   PR, with a unit test (Seismic Toss vs Blissey ⇒ ~0.14, not 0). **Phase 1 is BLOCKED on this branch
   being in the codebase** — do not merge the recovery obs without it (see §10 dependency).
 - **(b) Modifiers that flip the race** are knowable from our board and belong in the calc: Reflect/
-  Light Screen (our screens are in `global_env`), Sandstorm SpD×1.5 for Rock walls, Burn ×0.5
-  physical. **v1 ships the type-eff + STAB + roll already in the helper** and treats screens/weather as
-  a Phase-2 refinement.
+  Light Screen (our screens are in `global_env`), Burn ×0.5 physical. **v1 ships the type-eff + STAB +
+  roll already in the helper** and treats screens/weather as a Phase-2 refinement. **NB:** do *not*
+  add a Sandstorm SpD×1.5 for Rock walls — that is a **gen4+** mechanic; gen3 sandstorm has no SpD
+  boost (the Showdown gen3 mod nulls `onModifySpD`), confirmed when it was tried-then-removed in the
+  incoming-damage build (`impl_step4_incoming_damage_obs.md`).
 - **(b′) Leftovers double-count guard (concrete).** `_estimate_damage_fraction` computes the fraction
   off `defender.current_hp_fraction` (`opponents.py:186`) and applies **no item/Leftovers logic** —
   verified. So Leftovers enters the belief **exactly once**, via `opp_recovery_rate` (§6.1). The rule:
