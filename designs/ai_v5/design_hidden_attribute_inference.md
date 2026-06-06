@@ -17,11 +17,14 @@
 > — banned in gen3ou as of ~2026-06 (deps/teams not yet re-scraped; see §5 caveat) — which removes
 > the only stochastic turn-order confounder and turns the speed update into clean elimination.
 >
-> **Recommended order:** System A (build now) → System B (next). System B carries its own
-> **observation-evidence scalar** (the former "System C", folded in — §4.7) so the model can tell a
-> *confirmed speed tie* from an *unobserved* opponent. Each system is retrain-class (ARCH bump +
-> golden-fixture regen + the obs-build benchmark gate); total obs footprint is **+2 trailing scalars**
-> (CB belief + speed-evidence) plus an in-place sharpening of the existing `p_outspeed`.
+> **Build order (one then the other; ONE architecture flip):** ship `ChoiceBandTracker` then
+> `SpeedBelief` as **standalone, fully-fuzzed, no-op modules the obs encoder never reads**, then a
+> single **flip commit** does all the obs wiring + the `ARCH_SIGNATURE` bump + golden regen at once —
+> so no retrain-class change lands until *both* are ready (§7; proof = golden-obs parity stays green
+> pre-flip). Total obs footprint at the flip: **+2 trailing scalars** (`p_cb_live` +
+> `opp_speed_evidence`, 3390 → 3392) plus an in-place sharpening of `p_outspeed`. System B carries its
+> own observation-evidence scalar (the former "System C", §4.7) so the model can tell a *confirmed
+> speed tie* from an *unobserved* opponent.
 
 ---
 
@@ -72,11 +75,19 @@ folded into `TurnView.we_moved_first`). None of these are greenfield.
 
 ### 3.1 What proves a mon is NOT Choice Band (Gen 3, Showdown sim)
 
-- **(HARD) Item already revealed as anything else.** Items are mutually exclusive (one held item).
-  Any reveal — Leftovers/Sitrus passive heal, Berry/Power-Herb consumption (`-enditem` →
-  `consumed_item`), Trick/Knock-Off/Thief/Frisk — sets `mon.item` / `mon.consumed_item`, both already
-  read by `ItemsEncoder`. Check **both** (the consumed-Berry case is special-cased in poke-env's heal
-  handler, `abstract_battle.py:471-476`, but `consumed_item` is still set).
+- **(HARD) Item revealed as anything else.** Items are mutually exclusive (one held item). Passive
+  reveals — Leftovers/Sitrus heal, Berry/Power-Herb consumption (`-enditem` → `consumed_item`),
+  Frisk — set `mon.item` / `mon.consumed_item` (both read by `ItemsEncoder`). Check **both** (the
+  consumed-Berry case is special-cased in poke-env's heal handler, `abstract_battle.py:471-476`, but
+  `consumed_item` is still set). Any non-CB reveal ⇒ `p_cb = 0`.
+- **(SPECIAL — bidirectional) Item *changes hands* mid-battle.** **Thief / Knock Off** steal or
+  remove the held item (the opponent becomes itemless or its item is now known ⇒ not CB ⇒ `p_cb = 0`);
+  **Trick / Switcheroo** *swap* items, which can **hand the opponent Choice Band** (its item is now
+  *known to be CB* ⇒ `p_cb = 1`, and it becomes Choice-locked) or swap its CB away. So the belief is
+  **not purely monotone-down** — re-derive `p_cb` from the *currently observed* item on every item
+  event; never cache the first reveal. (Verify each move's exact Gen-3 semantics against
+  `data/mods/gen3/` — e.g. gen3 Knock Off removes the item for the battle; Thief requires the
+  attacker to be itemless.)
 - **(HARD) Used ≥2 distinct moves in one uninterrupted stint.** In the Showdown sim, CB locks the
   holder into its first move via the `choicelock` volatile (`data/conditions.ts:324-348`) until it
   switches; selecting a second distinct move is impossible under any Choice item. **CB is the only
@@ -113,15 +124,24 @@ folded into `TurnView.we_moved_first`). None of these are greenfield.
 Mirrors `HiddenPowerTracker` exactly:
 
 - **State:** `dict[opp_species → p_cb: float]`, seeded lazily from `priors.items(species).get('choiceband', 0.0)`;
-  plus a `dict[opp_species → set[move_id]]` of distinct **selected** moves since that mon's last
+  plus a `dict[opp_species → set[move_id]]` of distinct **selected** move-ids since that mon's last
   switch-in.
-- **Narrowing** (in `EpisodeTracker.record()`, the slot where `_maybe_observe_hidden_power` runs):
-  set `p_cb = 0.0` on any of — (a) `mon.item` revealed to a non-CB id, (b) `mon.consumed_item` set,
-  (c) the distinct-move set reaching size 2. Reset the distinct-move set on the opponent's
-  `SWITCH` / `DRAG`. Pure monotone-down elimination ⇒ idempotent ⇒ excluded from snapshot/restore
-  (inherits the HP property).
-- **Accessors:** `p_cb(species)` (prior if unobserved, 0.0 if eliminated), `is_known(species)`
-  (eliminated **or** item revealed), `reset()`.
+- **Update** (in `EpisodeTracker.record()`, the slot where `_maybe_observe_hidden_power` runs) —
+  re-derive `p_cb` each decision as a deterministic function of *currently observed* state: `0.0` if
+  the distinct-selected-move set has reached size 2 **or** the mon holds/consumed a non-CB item;
+  `1.0` if the mon is *known* to hold Choice Band (e.g. Trick handed it over); else the prior. Reset
+  the move set on the opponent's `SWITCH` / `DRAG`. **Count SELECTED moves only:** exclude
+  **delegated** moves (Sleep Talk / Metronome — the mon selected Sleep Talk, not the called move;
+  gate on `from_move`/`called_via`) and **Struggle** (forced on 0 PP, not a real second selection).
+  Encore *masks* variety (forces a repeat) but can never cause a false elimination — we only ever set
+  `p_cb` from observed facts, never assert CB from one move.
+- **Idempotent, not monotone.** `p_cb` is re-derived from the observed item + the
+  monotone-within-a-stint move set each decision (not ratcheted one-way), so re-running `record()` on
+  the same events is a no-op ⇒ still **excluded from snapshot/restore** — but for a *different* reason
+  than HP (idempotent re-derivation, not monotone elimination), which matters because **Trick can
+  raise `p_cb`**.
+- **Accessors:** `p_cb(species)`, `is_known(species)` (move-eliminated **or** item revealed/known),
+  `reset()`.
 
 ### 3.4 Obs representation — one scalar, provide-vs-learn
 
@@ -140,11 +160,17 @@ touch SpA).
 ### 3.5 Validation
 
 A bridge fuzz test (`choice_band_tracker_fuzz_test.py`) with fixed opponent teams of **known** items
-(some CB, some not), forcing varied move usage. Assert: (1) **invariant** — `p_cb` is monotone
-non-increasing and hits 0 exactly when an elimination condition is observed; (2) **ground truth** —
-a true-CB mon's `p_cb` never wrongly reaches 0; a non-CB mon's reaches 0 once it reveals its item or
-its second distinct move; (3) **protocol cross-check** — each elimination corroborated by an archived
-`|-item|` / `|-enditem|` / second `|move|` line.
+(CB + Leftovers/Lum/Salac/Trick users) plus a random full-pool sweep, run at **escalating time
+budgets — 1m (dev), 5m (pre-merge), 20m (pre-ship, zero violations required)**. Edge cases that must
+each fire (the run reports how many times): a CB mon locked into one move (`p_cb` never wrongly 0); a
+CB mon whose **first move is a status move** (not eliminated); a non-CB mon revealed via Leftovers/
+Berry (→0, check **both** `item` and `consumed_item`); **2 distinct moves in one stint** (→0) vs **2
+across a switch** (counter resets, not eliminated); **Sleep Talk → Roar** delegation (the called move
+is not a second selection → must NOT eliminate); **Struggle** (excluded); **Encore** (masks, never
+false-eliminates); **item changes hands** — Thief/Knock Off (→ itemless → 0), **Trick handing the mon
+Choice Band (→ `p_cb` rises to 1)**, Trick swapping CB away (→0). Assert: `p_cb` matches the
+ground-truth item/lock state at every decision, and every change is corroborated by an archived
+`|-item|` / `|-enditem|` / second-`|move|` line.
 
 ---
 
@@ -215,12 +241,20 @@ correctly with no special casing. Same-effect residual order feeds the identical
 
 Skip a turn (no update) when the order is not clean speed evidence:
 
-- **Unequal move priority** — needs a **move-priority table** (lives in `gen3_data`/mechanics, not the
-  battle layer). Gate move-order comparisons to equal-priority turns; treat Pursuit-on-a-switching
-  target as its own case (skip).
-- `we_moved_first is None` (one/both switched) — fall back to the residual signal if available.
-- Residual: compare **only within the same effect bucket** (both Leftovers, or both taking sand);
-  ignore cross-type order.
+- **Different priority brackets.** The gate is **equal *bracket*, not "no priority move"**: two +1
+  Quick Attacks (or any two moves of the same priority) *is* valid speed evidence; only a *mismatch*
+  is a skip. Needs a **move-priority table** (Gen-3 OU movepool, in `gen3_data`/mechanics).
+- **Delegation uses the EXECUTED move's priority.** A called move (Sleep Talk / Metronome) carries
+  the priority of what it *called*, not of Sleep Talk. **Sleep Talk → Roar (−6)** vs our normal move
+  is a bracket *mismatch* → skip — the same Sleep-Talk-+-Roar case that stresses the CB tracker. Read
+  the priority of the move that actually executed.
+- **Full paralysis** (the mon is fully paralysed and does not move) → no order → skip. (Active
+  paralysis that still moves: fold the ×0.25 into effective speed, don't skip.)
+- **Pursuit on a switching target** (special pre-switch priority) → skip.
+- `we_moved_first is None` (one/both switched, neither moved) → fall back to the residual signal.
+- **Residual: same effect bucket only** (both Leftovers, or both taking sand) — ignore cross-type
+  order (sand always precedes Leftovers by *effect*, not speed). A sand-immune defender
+  (Rock/Ground/Steel takes no sand chip) gives no sand comparison → skip.
 
 That's the whole gate list in Gen 3 with QC out — materially shorter than the multi-gen case.
 
@@ -278,13 +312,20 @@ combination.
 
 ### 4.9 Validation
 
-A bridge fuzz test (`speed_belief_tracker_fuzz_test.py`) with fixed opponent teams of **known**
-Speed spreads (`GROUND_TRUTH` dict). Assert: (1) **invariant** — after each observe, the true speed
-bin is never eliminated and the surviving set is consistent with every observed order; (2) **ground
-truth** at battle end — the posterior concentrates on the true bin (or a tie-class containing it);
-(3) **protocol cross-check** — each update corroborated by the archived move-order / residual lines;
-(4) **evidence monotonicity** — `opp_speed_evidence` is non-decreasing within a stint, reads high for
-a hard-pinned speed, and ~0 for an unobserved opponent.
+A bridge fuzz test (`speed_belief_tracker_fuzz_test.py`) with fixed opponent teams of **known** Speed
+spreads (`GROUND_TRUTH` dict) plus a random sweep, run at **escalating budgets — 1m / 5m / 20m** (the
+20m tier must hit zero violations). Edge cases that must each fire: equal-priority exchange (narrows);
+**two same-priority moves** (valid evidence — not skipped); **Sleep Talk → Roar** and other
+priority-bracket mismatches (skipped); **full paralysis** (skipped) and active paralysis (×0.25
+folded); **boosts** folded (Agility / Dragon Dance, incl. Baton-Passed boosts on the receiver);
+**residual-only** turns (double-switch / both-status: Leftovers-vs-Leftovers and sand-vs-sand only,
+sand-immune → skip); **speed ties** (the tie bin survives — no over-elimination). Assert: (1) the
+**true speed bin is NEVER eliminated** under any confounder (monotone elimination ⇒ errors are
+permanent — the load-bearing check); (2) the posterior concentrates on the true bin (or its
+tie-class) and `p_outspeed` moves toward truth; (3) each update is corroborated by the archived
+move-order / residual protocol lines; (4) `opp_speed_evidence` is non-decreasing within a stint, high
+when pinned, ~0 when unobserved. Plus graceful degradation: a stray Quick Claw holder
+(out-of-distribution until teams re-scrape) must not corrupt a bin (soft-floor knob, default 0).
 
 ---
 
@@ -299,6 +340,7 @@ a hard-pinned speed, and ~0 for an unobserved opponent.
 | Exact speed ties are **randomly shuffled** each turn → no stable order | ✅ confirmed | `battle.ts:455` `prng.shuffle` |
 | **Choice Band is the only Choice item** in Gen 3 (Scarf/Specs are `gen: 4`) | ✅ confirmed | item dex `gen` fields |
 | CB **locks into the first move** (sim) until switch; the first move **can be a status move** | ✅ confirmed | `data/conditions.ts:324-348` `choicelock` |
+| **Thief/Knock Off** remove/steal an item; **Trick/Switcheroo** *swap* it (can **hand over** Choice Band) → item-belief is bidirectional | ⚠️ verify per-move | `data/mods/gen3/moves.ts` (thief/knockoff/trick/switcheroo) |
 | One item per mon (mutual exclusion) | ✅ trivially | item system |
 | **No Trick Room / Tailwind / Custap** in Gen 3 (all gen4+) → fewer speed confounders | ✅ confirmed | gen-gated; absent from gen3 mod |
 
@@ -326,10 +368,13 @@ heads via `non_matchup_rest`. Minimal footprint:
 | + System A (`p_cb_live`) | 5 | 4 | 34 | 3391 |
 | + System B (sharpen `p_outspeed` in place **+** `opp_speed_evidence`) | 5 | 5 | 35 | 3392 |
 
-- **Retrain-class** each: bump `ARCH_SIGNATURE` (`model_version.py`, currently
-  `gen3_incoming_damage_v1`), regenerate `golden_obs_fixture.json`, pass the **obs-build benchmark**
-  (<10% calls/encode, `observation/CLAUDE.md`). `PER_MON` / `RECOVERY` stay the single source of
-  truth in `incoming_damage.py`, imported by `constants.py`.
+- **One combined retrain-class flip, deferred until both trackers are ready (§7).** The obs vector,
+  `INCOMING_DMG_DIM`, `ARCH_SIGNATURE`, and `golden_obs_fixture.json` change **only** in the final
+  flip commit that adds *both* scalars at once (`gen3_incoming_damage_v1 → gen3_belief_trackers_v1`,
+  obs 3390 → 3392, regenerate the golden fixture, pass the **obs-build benchmark** <10% calls/encode,
+  `observation/CLAUDE.md`). The table rows above are each system's *contribution*, not sequential dim
+  bumps. `PER_MON` / `RECOVERY` stay the single source of truth in `incoming_damage.py`, imported by
+  `constants.py`.
 - **Per-decision cost is cheap and off the hot path:** the narrowing runs in `record()` (per
   decision, but not in the obs encode loop); the encoder read is a dict-get + a reuse of the existing
   `p_outspeed` marginalisation. Per-species static work (`priors.items`, `stat_distribution`) stays
@@ -338,18 +383,34 @@ heads via `non_matchup_rest`. Minimal footprint:
 
 ---
 
-## 7. Phasing & recommended order
+## 7. Phasing — build sequentially, flip the architecture once
 
-1. **System A — CB elimination (build now).** Highest value-to-effort, no hard dependency: the prior
-   is already built/exposed, two of three eliminations are free, and gen3's single-Choice-item fact
-   removes all ambiguity. Only new state is the reset-on-switch distinct-move counter. One ARCH bump,
-   +1 scalar.
-2. **System B — speed inference (next).** High value (sharpens the OHKO/revenge-kill belief the loss
-   analyses flag). Effort L: a `SpeedBelief` tracker + a move-priority table + the (now short)
-   confounder gate. With QC out the update is clean elimination. Carries its own **+1
-   `opp_speed_evidence` scalar** (the former System C — §4.7/§4.8) so the net can read a confirmed
-   speed tie vs an unobserved opponent. Sharpen + scalar = +1 dim, one ARCH bump. Sequence after A so
-   the simpler belief lands first.
+Build the two trackers **one then the other**, but keep every pre-flip step a **no-op on the
+observation / architecture** so nothing lands a retrain-class change or invalidates a running
+checkpoint until *both* are ready. The mechanism is **structural, not a runtime flag** (a flag that
+conditionally changes the obs dim is error-prone): each tracker ships as a **standalone module the
+obs encoder never imports**, fully fuzz-tested in isolation — the fuzz player instantiates the tracker
+and feeds it the real battle's events, exactly as `hidden_power_tracker_fuzz_test.py` does, so it does
+**not** need the tracker wired into the obs. The single flip commit then does all the obs wiring + the
+ARCH bump at once.
+
+1. **Step 1 — `ChoiceBandTracker` (no-op).** The tracker class + its CB logic + full unit and
+   escalating fuzz tests. Not owned by `EpisodeTracker`, not read by the encoder, obs untouched.
+   **No-op proof:** `golden_obs_fixture.json` parity passes **unchanged** (nothing the encoder reads
+   changed). Shippable on its own.
+2. **Step 2 — `SpeedBelief` + the move-priority table (no-op).** Same shape: standalone class + table
+   + tests, not wired in. Golden parity again passes unchanged. Shippable on its own.
+3. **Step 3 — the flip (the ONE retrain-class commit).** Own both trackers in `EpisodeTracker`
+   (field + property + `reset()` + the `record()` update + snapshot exclusion); thread both into the
+   encoder; write `p_cb_live` + `opp_speed_evidence` and sharpen `p_outspeed` in place; bump
+   `INCOMING_RECOVERY_DIM 3 → 5` / `INCOMING_DMG_DIM 33 → 35` (obs 3390 → 3392); bump
+   `ARCH_SIGNATURE`; **regenerate the golden fixture**; run all gates incl. an **integration** fuzz
+   that now exercises both trackers live through the real obs pipeline; update docs. The only step
+   that needs a retrain.
+
+Why this order: System A is the simpler belief (CB elimination), so it lands and is verified first;
+System B (priority table + confounder gating) is the harder one. Folding both into one flip costs
+**one** retrain instead of two, since they share the incoming-damage block seam.
 
 ---
 
@@ -357,6 +418,12 @@ heads via `non_matchup_rest`. Minimal footprint:
 
 - **Sim-vs-cartridge CB lock (A).** The 2-distinct-moves tell is a Showdown-sim fact; document it in
   the tracker to prevent a "this is wrong for gen3" deletion.
+- **Item swaps break strict monotonicity (A).** Trick/Switcheroo can *hand* a mon Choice Band, so
+  `p_cb` can rise, not only fall. Re-derive `p_cb` from the currently-observed item every decision
+  (idempotent); never ratchet it down once. The fuzz's Trick-adds-CB case guards this.
+- **No-op staging is verified by the golden fixture (§7).** Steps 1–2 must leave
+  `golden_obs_fixture.json` parity passing **without** regenerating it — the mechanical proof they
+  changed nothing the encoder reads. If parity breaks before the flip, something got wired in early.
 - **Move-priority table (B)** is load-bearing — a wrong priority misclassifies a turn as
   equal-priority and corrupts the belief for the rest of the battle. Must be exhaustive for gen3 OU
   movepools and validated by the fuzz test.
