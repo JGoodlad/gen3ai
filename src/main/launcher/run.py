@@ -58,10 +58,6 @@ from main.launcher.worktree import (
 _FAST_CRASH_SECONDS = 600.0
 
 
-def _find_ent_coef(args: list) -> "float | None":
-    return _peek_arg(args, "--ent-coef", type_=float)
-
-
 def _print_crash_log(log_lines: "list | None") -> None:
     """Dump captured child output to stderr after the screen has closed."""
     if not log_lines:
@@ -221,7 +217,6 @@ def _prepare_session(
         child_args = _insert_or_replace_run_dir_arg(child_args, run_dir)
 
     state.run_dir = run_dir
-    state.ent_coef = _find_ent_coef(child_args)
 
     if interval_hours > 0:
         state.add_event(f"🚀 Starting — restart every {interval_hours:.1f}h")

@@ -25,7 +25,6 @@ from main.launcher import (
     find_latest_checkpoint,
 )
 from main.launcher import LauncherState
-from main.launcher.run import _find_ent_coef
 from main.launcher.worktree import _read_checkpoint_lr
 
 
@@ -201,22 +200,6 @@ class TestFindModelArg:
 
     def test_returns_none_on_empty(self):
         assert _find_model_arg([]) is None
-
-
-# ── _find_ent_coef ───────────────────────────────────────────────────────────
-
-class TestFindEntCoef:
-    def test_finds_space_form(self):
-        assert _find_ent_coef(["--ent-coef", "0.058"]) == 0.058
-
-    def test_finds_equals_form(self):
-        assert _find_ent_coef(["--ent-coef=0.058"]) == 0.058
-
-    def test_returns_none_when_absent(self):
-        assert _find_ent_coef(["--debug"]) is None
-
-    def test_returns_none_on_bad_value(self):
-        assert _find_ent_coef(["--ent-coef", "notafloat"]) is None
 
 
 # ── _read_checkpoint_git_hash ─────────────────────────────────────────────────

@@ -291,13 +291,17 @@ fixed bots.
   many-hour, run-overnight one-time cost.
 - **Live (each eval cycle).** `record_elo` refits and records `eval/elo` + `eval/elo_ci` (95% CI
   half-width) to TensorBoard + the TUI dict, and stamps `elo`/`elo_ci` into `metadata.json:
-  latest_eval` (so the resume-republish path shows ELO immediately after a restart — and if a
-  resumed checkpoint predates the `elo` field, `replay_last_eval_to_tui` **computes** it from the
-  saved block's win rates via `elo.elo_from_eval_block`, so the badge never blanks for a full
-  cadence). The launcher
-  surfaces a `🏅 ELO 1532 ±40` badge (`app.py::_elo_badge`) + an ELO summary row. The live number
-  is the best estimate from data SO FAR (batch-BT is global → early points retro-adjust); the
-  offline CLI re-fits canonically.
+  latest_eval` (so the resume-republish path shows ELO immediately after a restart — the saved
+  headline is authoritative; and if a resumed checkpoint predates the `elo` field,
+  `replay_last_eval_to_tui` **fits** the saved block's win rates via `elo.fit_from_block` to recover
+  both the headline and each opponent's ELO, so the badge never blanks for a full cadence). The
+  launcher
+  surfaces a `🏅 ELO 1532 ±40` badge (`app.py::_elo_badge`) + an `elo` column in the eval panel:
+  the model's rating on the `all` row, and each opponent's anchored ELO on its row
+  (`_record_opponent_elos` records `eval/elo_vs_<bot>` + positional `eval/elo_vs_sentinel_<i>` to
+  the TUI). The live number is the best estimate from data SO FAR (batch-BT is global → early
+  points retro-adjust; the single-cycle per-sentinel ELO is rough — only the trainee is
+  bot-anchored each cycle); the offline CLI re-fits canonically over the full per-snapshot history.
 - **Offline (`python -m main.elo <run_dir>`).** Loads results (`--source auto|log|tb|meta` —
   `tb` **backfills an already-running run straight from TensorBoard, zero training change**), fits,
   and prints a ranked ladder + writes `elo_ratings.json` + an Elo-vs-step `elo_curve.png` (CI band

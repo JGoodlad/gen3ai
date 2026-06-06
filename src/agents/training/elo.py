@@ -601,19 +601,30 @@ def _sigmoid(z: float) -> float:
     return e / (1.0 + e)
 
 
-def elo_from_eval_block(block: dict, anchors_path: str = BOT_ANCHORS_PATH,
-                        n_games: int = 100) -> tuple[float, float] | None:
-    """Compute ``(elo, se)`` for the snapshot a single ``latest_eval`` block describes — fit from
-    its own win rates (vs bots + sentinels) anchored to the bots. Lets the resume-republish show
-    ELO immediately even when the saved block predates the ``elo`` field (e.g. resuming a
-    checkpoint saved before this feature). Returns None without usable bot win rates."""
+def fit_from_block(block: dict, anchors_path: str = BOT_ANCHORS_PATH,
+                   n_games: int = 100) -> "EloFit | None":
+    """Fit a single ``latest_eval`` block — its trainee snapshot vs its bots + sentinels,
+    anchored to the bots. Returns the full ``EloFit`` so callers can read the trainee AND every
+    opponent's rating (e.g. the resume-republish per-opponent ELO). None without bot win rates."""
     row = _row_from_block(block, n_games)
     if row is None or not row.bots:
         return None
     anchors = load_bot_anchors(anchors_path)
     pin = anchors["ratings"] if anchors else None
     base = float(anchors["base"]) if anchors and "base" in anchors else DEFAULT_BASE
-    return fit_elo([row], pin_ratings=pin, base=base).rating_for_step(row.step)
+    return fit_elo([row], pin_ratings=pin, base=base)
+
+
+def elo_from_eval_block(block: dict, anchors_path: str = BOT_ANCHORS_PATH,
+                        n_games: int = 100) -> tuple[float, float] | None:
+    """Compute ``(elo, se)`` for the snapshot a single ``latest_eval`` block describes — anchored
+    to the bots. Lets the resume-republish show ELO immediately even when the saved block predates
+    the ``elo`` field. Returns None without usable bot win rates."""
+    fit = fit_from_block(block, anchors_path, n_games)
+    step = block.get("step")
+    if fit is None or step is None:
+        return None
+    return fit.rating_for_step(int(step))
 
 
 def fit_from_run(run_dir: str, source: str = "auto",

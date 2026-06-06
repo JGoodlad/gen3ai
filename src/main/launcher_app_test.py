@@ -51,7 +51,6 @@ def _populated_state() -> LauncherState:
     state.run_dir = "models/run_20260601_193826"
     state.restart_count = 2
     state.crash_count = 1
-    state.ent_coef = 0.02
     state.deadline = time.monotonic() + 3600  # ~1h to restart
     state.update_metrics({
         "_step": 6029312,
@@ -116,7 +115,7 @@ async def test_dashboard_renders_topline_and_badges():
         assert "run_20260601_193826" in badges   # model dir basename
         assert "2 restarts (1 crash)" in badges  # restart badge w/ crash
         assert "6,029,312" in badges             # steps
-        assert "ent_coef" in badges and "0.02" in badges
+        assert "ent_coef" not in badges          # ent_coef badge removed from the topline
 
 
 async def test_dashboard_metrics_tables_populated():

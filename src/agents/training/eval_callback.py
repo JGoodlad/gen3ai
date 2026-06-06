@@ -548,22 +548,6 @@ def replay_last_eval_to_tui(model_dir: str | None, resume_eval_metadata: str | N
         "eval/mean_ep_len_vs_bots": block.get("mean_ep_len_vs_bots", 0.0),
         "_step": block.get("step", 0),
     })
-    # Skill rating (ELO) — re-publish so the 🏅 badge shows immediately on resume instead of
-    # blanking until the next (possibly millions-of-steps-away) eval cycle. If the saved block
-    # predates the `elo` field (e.g. resuming a checkpoint from before this feature), COMPUTE it
-    # from the block's own win rates so it still shows. Best-effort — never break the republish.
-    if "elo" in block:
-        tui["eval/elo"] = block["elo"]
-        tui["eval/elo_ci"] = block.get("elo_ci", 0.0)
-    else:
-        try:
-            from agents.training import elo as elo_mod
-            rating = elo_mod.elo_from_eval_block(block)
-            if rating is not None:
-                tui["eval/elo"] = rating[0]
-                tui["eval/elo_ci"] = elo_mod.ci95(rating[1])
-        except Exception as e:  # noqa: BLE001 — telemetry; never break resume
-            print(f"⚠️ [ELO] resume-republish compute failed: {e}")
     # Self-play pool block: re-publish the aggregate + per-sentinel rows (newest→oldest,
     # positional sentinel_<i>) using the saved step tags, mirroring the live collect path.
     pool = block.get("pool")
@@ -579,6 +563,28 @@ def replay_last_eval_to_tui(model_dir: str | None, resume_eval_metadata: str | N
             tui[f"eval/mean_reward_vs_sentinel_{i}"] = s.get("mean_reward", 0.0)
             tui[f"eval/mean_ep_len_vs_sentinel_{i}"] = s.get("mean_ep_len", 0.0)
             tui[f"eval/sentinel_step_{i}"] = float(s.get("step", 0))
+
+    # Skill rating (ELO) — re-publish so the 🏅 badge + per-opponent ELO show immediately on
+    # resume instead of blanking until the next (possibly millions-of-steps-away) eval cycle.
+    # The saved HEADLINE elo is authoritative — set it FIRST so a fit failure below can never
+    # drop it. Then fit the block (best-effort) to (a) compute the headline if the block predates
+    # the `elo` field, and (b) recover each opponent's ELO for the panel.
+    if "elo" in block:
+        tui["eval/elo"] = block["elo"]
+        tui["eval/elo_ci"] = block.get("elo_ci", 0.0)
+    try:
+        from agents.training import elo as elo_mod
+        efit = elo_mod.fit_from_block(block)
+        if efit is not None:
+            if "elo" not in block:
+                tr = efit.rating_for_step(int(block.get("step", 0)))
+                if tr is not None:
+                    tui["eval/elo"] = tr[0]
+                    tui["eval/elo_ci"] = elo_mod.ci95(tr[1])
+            sentinels = pool.get("sentinels", []) if isinstance(pool, dict) else []
+            _record_opponent_elos(efit, opponents, sentinels, tui)
+    except Exception as e:  # noqa: BLE001 — telemetry; never break resume
+        print(f"⚠️ [ELO] resume-republish compute failed: {e}")
     send_metrics(tui)
     pool_note = (f", pool {pool['win_rate'] * 100:.1f}%"
                  if isinstance(pool, dict) and pool.get("sentinels") else "")
@@ -638,6 +644,26 @@ def build_bot_eval_block(
     }
 
 
+def _record_opponent_elos(fit, bot_names, sentinels, tui):
+    """Write per-opponent ELO into the TUI dict: each bot's anchored rating (``eval/elo_vs_<name>``)
+    + each sentinel's rating positionally (``eval/elo_vs_sentinel_<i>``, matching the win-rate
+    rows). Shared by the live ``record_elo`` and the resume republish so keys/format match. The
+    single-cycle sentinel rating is anchored only via the (greedy) trainee, so it's a rough
+    estimate — the offline `python -m main.elo` fit (full per-snapshot history) is canonical."""
+    bot_r = fit.bot_ratings()
+    for name in bot_names:
+        br = bot_r.get(name)
+        if br is not None:
+            tui[f"eval/elo_vs_{name}"] = round(br[0])
+    for i, s in enumerate(sentinels):
+        step = s.get("step") if isinstance(s, dict) else None
+        if step is None:
+            continue
+        sr = fit.rating_for_step(int(step))
+        if sr is not None:
+            tui[f"eval/elo_vs_sentinel_{i}"] = round(sr[0])
+
+
 def record_elo(model_dir, step, bot_win_rates, sentinels, n_games, logger, tui):
     """Append this cycle's results to ``eval_results.jsonl``, refit anchored Bradley-Terry
     ELO, and record ``eval/elo`` + ``eval/elo_ci`` to the SB3 logger + the TUI dict.
@@ -667,6 +693,9 @@ def record_elo(model_dir, step, bot_win_rates, sentinels, n_games, logger, tui):
         logger.record("eval/elo_ci", ci)
         tui["eval/elo"] = elo_val
         tui["eval/elo_ci"] = ci
+        # Per-opponent ELO for the eval panel: each bot's anchored rating + each sentinel's
+        # rating (positional, matching the win-rate rows). TUI-only (no per-opponent TB clutter).
+        _record_opponent_elos(fit, bot_win_rates, sentinels, tui)
         return elo_val, ci
     except Exception as e:  # noqa: BLE001 — ELO is telemetry; never break eval
         print(f"⚠️ [ELO] live rating failed at step {step}: {e}")

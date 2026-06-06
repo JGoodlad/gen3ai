@@ -17,7 +17,7 @@ from main.launcher.checkpoint import (
 )
 from main.launcher.child import _TRAIN_SCRIPT, _SRC_DIR, _read_metrics_pipe
 from main.launcher.input import _PollFlags, _dispatch_command
-from main.launcher.run import main, run, _find_ent_coef
+from main.launcher.run import main, run
 from main.launcher.state import LauncherSnapshot, LauncherState
 from main.launcher.worktree import _git_hash, _read_checkpoint_git_hash, get_git_hash
 

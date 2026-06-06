@@ -680,6 +680,10 @@ def test_replay_computes_elo_when_block_predates_field(tmp_path, monkeypatch):
     assert "eval/elo" in sent and math.isfinite(sent["eval/elo"])
     assert sent["eval/elo"] > 1000.0          # a strong model is well above the base
     assert sent.get("eval/elo_ci", -1) >= 0   # CI computed (Z95 * SE)
+    # Per-opponent ELO for the eval panel: each bot + each (positional) sentinel.
+    assert "eval/elo_vs_random" in sent and math.isfinite(sent["eval/elo_vs_random"])
+    assert "eval/elo_vs_heuristic" in sent
+    assert "eval/elo_vs_sentinel_0" in sent and math.isfinite(sent["eval/elo_vs_sentinel_0"])
 
 
 def test_replay_skips_pool_block_when_unseeded(tmp_path, monkeypatch):

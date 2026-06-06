@@ -128,7 +128,7 @@ class LauncherApp(Gen3App):
         ev = self.query_one("#metrics-eval", DataTable)
         ev.cursor_type = "none"
         ev.can_focus = False
-        ev.add_columns("", "win rate", "reward")
+        ev.add_columns("", "win rate", "reward", "elo")
 
         self.set_interval(0.5, self._refresh)   # 2 Hz ≈ Rich's refresh_per_second=2
         self._refresh()
@@ -312,11 +312,6 @@ class LauncherApp(Gen3App):
             out.append(f"{snap.metrics_step:,}", style="bold")
         else:
             out.append("waiting for first rollout…", style="dim")
-        # ent_coef (the entropy coefficient passed via --ent-coef), when known.
-        if snap.ent_coef is not None:
-            out.append(sep)
-            out.append("ent_coef ", style="dim")
-            out.append(f"{snap.ent_coef:g}", style="bold")
         # ELO headline — the absolute skill rating (only present once an eval cycle has run).
         out.append_text(self._elo_badge(snap.metrics))
         # Opponent-distillation headline (only present under --distill-opponents). The rollout
@@ -471,20 +466,31 @@ class LauncherApp(Gen3App):
             t = (rw + 30) / 60  # -30 → 0, +30 → 1
             return Text(f"{rw:.1f}", style=f"bold {gradient_color(t)}")
 
+        def _opp_elo(opp: str):
+            # Each opponent's anchored ELO (eval/elo_vs_<opp>): bots are their fixed anchor; each
+            # sentinel its rating this cycle. "" when not present (e.g. pre-fit, or no anchor).
+            v = metrics.get(f"eval/elo_vs_{opp}")
+            return Text(f"{v:.0f}", style="cyan") if v is not None else ""
+
         dur = eval_summary.get("eval/duration_sec")
         dur_str = f" · took {_elapsed_str(dur)}" if dur is not None else ""
-        table.add_row(Text(f"eval{dur_str}{stale_badge}", style="dim italic"), "", "")
+        table.add_row(Text(f"eval{dur_str}{stale_badge}", style="dim italic"), "", "", "")
 
         if eval_summary:
+            # The model's own ELO (with ±CI) sits on the "all" aggregate row.
+            te = eval_summary.get("eval/elo")
+            ci = eval_summary.get("eval/elo_ci")
+            te_cell = "" if te is None else Text(
+                f"{te:.0f}" + (f" ±{ci:.0f}" if ci else ""), style="bold cyan")
             table.add_row("  all", _wr(eval_summary.get("eval/win_rate_mean")),
-                          _rw(eval_summary.get("eval/mean_reward_mean")))
+                          _rw(eval_summary.get("eval/mean_reward_mean")), te_cell)
             table.add_row("  vs Bots", _wr(eval_summary.get("eval/win_rate_vs_bots")),
-                          _rw(eval_summary.get("eval/mean_reward_vs_bots")))
+                          _rw(eval_summary.get("eval/mean_reward_vs_bots")), "")
             wr_pool = eval_summary.get("eval/win_rate_vs_pool")
             if wr_pool is not None:
                 table.add_row("  vs Pool", _wr(wr_pool),
-                              _rw(eval_summary.get("eval/mean_reward_vs_pool")))
-            table.add_row("", "", "")
+                              _rw(eval_summary.get("eval/mean_reward_vs_pool")), "")
+            table.add_row("", "", "", "")
 
         def _row_label(opp: str) -> str:
             # sentinel_<i> is positional (newest→oldest) and maps to a different pool
@@ -509,10 +515,11 @@ class LauncherApp(Gen3App):
         for opp in order:
             # Blank divider between the fixed bot roster and the (rotating) pool sentinels.
             if opp.startswith("sentinel_") and rendered_any and not sentinel_sep_done:
-                table.add_row("", "", "")
+                table.add_row("", "", "", "")
                 sentinel_sep_done = True
             data = opponents[opp]
-            table.add_row(_row_label(opp), _wr(data.get("win_rate")), _rw(data.get("reward")))
+            table.add_row(_row_label(opp), _wr(data.get("win_rate")),
+                          _rw(data.get("reward")), _opp_elo(opp))
             rendered_any = True
 
     def _render_logs(self, snap) -> None:
