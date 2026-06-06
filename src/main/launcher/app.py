@@ -47,6 +47,7 @@ _EVAL_SUMMARY = frozenset({
     "eval/mean_reward_vs_bots",
     "eval/mean_reward_vs_pool",
     "eval/duration_sec",
+    "eval/n_workers",
 })
 
 # View ids — the app owns its own view state (the `view_mode` reactive), independent of the
@@ -472,8 +473,12 @@ class LauncherApp(Gen3App):
             v = metrics.get(f"eval/elo_vs_{opp}")
             return Text(f"{v:.0f}", style="cyan") if v is not None else ""
 
+        # duration_sec is the SUM of per-opponent battle time; the work runs across
+        # eval/n_workers subprocesses, so divide to get the (approx) per-worker wall-clock
+        # and show it as raw seconds — the summed MM:SS clock was unintuitively inflated.
         dur = eval_summary.get("eval/duration_sec")
-        dur_str = f" · took {_elapsed_str(dur)}" if dur is not None else ""
+        n_workers = eval_summary.get("eval/n_workers") or 1
+        dur_str = f" · took {int(dur / n_workers)}s" if dur is not None else ""
         table.add_row(Text(f"eval{dur_str}{stale_badge}", style="dim italic"), "", "", "")
 
         if eval_summary:

@@ -1066,13 +1066,14 @@ class PerOpponentEvalCallback(BaseCallback):
             self._cleanup(pending, keep_logs=True)
             return
 
-        self._record(step, merged, pending["n_games"])
+        self._record(step, merged, pending["n_games"], n_workers=len(pending["procs"]))
         self._maybe_save_best(step, pending, merged["win_rates"])
         self._persist_snapshot(pending)
         self._prune_eval_traces()   # trainer grooms the traces it writes
         self._cleanup(pending, keep_logs=bool(missing or bad_exits))
 
-    def _record(self, step: int, merged: dict, n_games: int = EVAL_GAMES) -> None:
+    def _record(self, step: int, merged: dict, n_games: int = EVAL_GAMES,
+                n_workers: int = 1) -> None:
         win_rates = merged["win_rates"]
         reward_means = merged["reward_means"]
         ep_lens = merged["ep_lens"]
@@ -1121,6 +1122,9 @@ class PerOpponentEvalCallback(BaseCallback):
             "eval/win_rate_mean": aggregate, "eval/win_rate_vs_bots": wr_bots,
             "eval/mean_reward_mean": aggregate_reward, "eval/mean_reward_vs_bots": rew_bots,
             "eval/mean_ep_len_vs_bots": eplen_bots, "eval/duration_sec": total_dur,
+            # Worker count so the TUI can show per-worker wall-clock (duration_sec is the
+            # SUM of per-opponent durations; the pool runs them across n_workers subprocesses).
+            "eval/n_workers": float(max(1, n_workers)),
             "_step": step,
         })
         send_metrics(tui)

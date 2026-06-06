@@ -541,6 +541,9 @@ class SelfPlayCallback(BaseCallback):
         total_dur = sum(merged["durations_sec"].values())
         self.logger.record("eval/duration_sec", total_dur)
         tui["eval/duration_sec"] = total_dur
+        # Worker count so the TUI can show per-worker wall-clock (duration_sec is the SUM of
+        # per-opponent durations; the pool runs them across n_workers subprocesses).
+        tui["eval/n_workers"] = float(max(1, len(pending["procs"])))
 
         # Opponent default-rate telemetry — queried on THIS (training) thread; safe because
         # env_method is an IPC round-trip to the SubprocVecEnv we own. Self-play workers

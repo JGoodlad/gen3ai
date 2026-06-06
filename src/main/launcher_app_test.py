@@ -67,6 +67,7 @@ def _populated_state() -> LauncherState:
         "eval/win_rate_vs_pool": 0.52,
         "eval/mean_reward_vs_pool": 3.1,
         "eval/duration_sec": 233.0,
+        "eval/n_workers": 5.0,   # took = duration_sec / n_workers (per-worker wall-clock)
         # snake_case opponent keys (as emitted post the eval refactor on main).
         "eval/win_rate_vs_random": 0.96,
         "eval/mean_reward_vs_random": 25.3,
@@ -133,7 +134,7 @@ async def test_dashboard_metrics_tables_populated():
         assert "vs random" in ev                  # snake_case opponent name
         assert "96.0%" in ev                      # win rate as percent
         assert "25.3" in ev                       # reward, fixed 1-decimal
-        assert "took" in ev                       # eval duration in the header row
+        assert "took 46s" in ev                   # raw per-worker seconds: int(233.0 / 5)
         # vs Pool now shows BOTH win rate and reward (mirrors ui.py)
         assert "vs Pool" in ev and "52.0%" in ev and "3.1" in ev
         # pool sentinels labeled with their snapshot step (seed for step 0)
