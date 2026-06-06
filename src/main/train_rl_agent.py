@@ -81,6 +81,19 @@ BATTLE_FORMAT = "gen3ou"
 CLIP_RANGE_DEFAULT = 0.15
 
 
+def optional_float(s: str) -> float | None:
+    """argparse `type=` converter for an optional float (`float | None`).
+
+    Returns `None` for the sentinels `none`/`null`/`""` (case-insensitive),
+    otherwise parses a float. A bad value raises `ValueError`, which argparse
+    turns into a clean usage error. Used by `--clip-range-vf` so `none`
+    disables value-function clipping (SB3 branches on `clip_range_vf is None`).
+    """
+    if s.strip().lower() in ("none", "null", ""):
+        return None
+    return float(s)
+
+
 def _model_hparams(model) -> dict:
     clip_range_vf = float(model.clip_range_vf(1.0)) if model.clip_range_vf is not None else -1.0
     opt = model.policy.optimizer
@@ -396,7 +409,7 @@ async def main():
                              "Separate from --min-lr used by AdaptivePPO.")
     parser.add_argument("--ent-coef", type=float, default=0.02, help="Entropy coefficient (exploration bonus)")
     parser.add_argument("--clip-range", type=float, default=CLIP_RANGE_DEFAULT, help="PPO policy clip range (default 0.15)")
-    parser.add_argument("--clip-range-vf", type=float, default=0.5, help="Value function clip range (None=disabled; thesis used 0.0184)")
+    parser.add_argument("--clip-range-vf", type=optional_float, default=0.5, help="Value function clip range; pass 'none' to disable clipping (thesis used 0.0184)")
     parser.add_argument("--n-steps", type=int, default=2048, help="Steps per environment per rollout")
     parser.add_argument("--grad-checkpointing", "--grad_checkpointing", dest="grad_checkpointing",
                         action="store_true", default=False,
@@ -997,7 +1010,9 @@ async def main():
             send_event(f"▶️ Resuming at LR {resume_lr:.2e}, epochs {args.n_epochs} (checkpoint LR={saved_lr:.2e})")
         model.n_epochs = args.n_epochs
         model.clip_range = lambda _: args.clip_range
-        model.clip_range_vf = lambda _: args.clip_range_vf
+        # None must stay a bare None (disabled), not `lambda _: None` — SB3 / the
+        # instrumented update branch on `clip_range_vf is None`, and a callable is not None.
+        model.clip_range_vf = None if args.clip_range_vf is None else (lambda _: args.clip_range_vf)
 
         if args.eval_only:
             await evaluate_model_random(model)
