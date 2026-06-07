@@ -71,6 +71,7 @@ def test_model_version_all_fields_present(version):
         "move_net_hidden", "role_encoder_hidden", "active_ctx_hidden",
         "n_history_turns",
         "net_arch",
+        "vf_coef",
     ]
     for field in expected_fields:
         assert field in data, f"Missing field in serialized ModelVersion: {field}"
@@ -139,6 +140,37 @@ def test_check_compatible_n_history_turns_mismatch(version):
     with pytest.raises(ModelVersionError) as exc_info:
         version.check_compatible(saved_v1)
     assert "n_history_turns" in str(exc_info.value)
+
+
+# ---------------------------------------------------------------------------
+# vf_coef — resume-only value-meaning check (NOT part of check_compatible)
+# ---------------------------------------------------------------------------
+
+def test_check_compatible_ignores_vf_coef(version):
+    """vf_coef is a training-loss coefficient, not a weight-shape field — check_compatible
+    (which gates EVERY load, incl. frozen eval/pool/distill opponents) must ignore it."""
+    differing = dataclasses.replace(version, vf_coef=version.vf_coef + 0.25)
+    version.check_compatible(differing)  # must NOT raise
+
+
+def test_check_vf_coef_match_does_not_raise(version):
+    saved = dataclasses.replace(version, vf_coef=0.3)
+    saved.check_vf_coef(0.3)  # must not raise
+
+
+def test_check_vf_coef_mismatch_raises(version):
+    saved = dataclasses.replace(version, vf_coef=0.3)
+    with pytest.raises(ModelVersionError) as exc_info:
+        saved.check_vf_coef(0.5)
+    msg = str(exc_info.value)
+    assert "vf_coef" in msg
+    assert "0.3" in msg and "0.5" in msg
+
+
+def test_check_vf_coef_tolerates_float_repr(version):
+    """Equality is within tolerance, so a JSON round-trip of the same value passes."""
+    saved = dataclasses.replace(version, vf_coef=0.1 + 0.2)  # 0.30000000000000004
+    saved.check_vf_coef(0.3)  # must not raise
 
 
 # ---------------------------------------------------------------------------
@@ -237,6 +269,45 @@ def test_snapshot_save_load_roundtrip(layout, version, mappings):
     assert torch.allclose(vf_before, vf_after, atol=1e-6), (
         "Value feature output changed after save/load round-trip"
     )
+
+
+def test_load_model_snapshot_enforce_vf_coef(layout, mappings):
+    """load_model_snapshot(enforce_vf_coef=...) is the resume guard: it must FATAL when the
+    saved config's vf_coef differs, and load cleanly when it matches. Frozen-snapshot loads
+    (enforce_vf_coef=None) must ignore vf_coef entirely."""
+    from agents.model.features_extractor import Gen3FeaturesExtractor
+    from agents.model.policy import Gen3DualHeadMaskablePolicy
+    from sb3_contrib import MaskablePPO
+
+    total_dim = layout["total_dim"]
+    vec_env = _make_vec_env(total_dim)
+    full_policy_kwargs = {
+        "features_extractor_class": Gen3FeaturesExtractor,
+        "features_extractor_kwargs": {"layout": layout, "mappings": mappings},
+        "net_arch": [512, 512],
+    }
+    model = MaskablePPO(Gen3DualHeadMaskablePolicy, vec_env, policy_kwargs=full_policy_kwargs, verbose=0)
+
+    # The run was started with vf_coef=0.3 → that is what model_config.json records.
+    saved_version = ModelVersion.from_layout_and_policy_kwargs(layout, {"net_arch": [512, 512]}, vf_coef=0.3)
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        zip_path = os.path.join(tmpdir, "test_model")
+        model.save(zip_path)
+        save_model_snapshot(tmpdir, saved_version, git_hash="test")
+
+        # Resuming with a different vf_coef is a hard error (before the model even loads).
+        with pytest.raises(ModelVersionError) as exc_info:
+            load_model_snapshot(zip_path + ".zip", env=vec_env, current_version=saved_version,
+                                enforce_vf_coef=0.5)
+        assert "vf_coef" in str(exc_info.value)
+
+        # Matching value loads fine.
+        load_model_snapshot(zip_path + ".zip", env=vec_env, current_version=saved_version,
+                            enforce_vf_coef=0.3)
+
+        # Frozen-snapshot load (no enforcement) ignores vf_coef even when it would differ.
+        load_model_snapshot(zip_path + ".zip", env=vec_env, current_version=saved_version)
 
 
 # ---------------------------------------------------------------------------
@@ -485,6 +556,55 @@ def test_migrate_v1_adds_n_history_turns_with_default_1():
     result = _migrate_config(data)
     assert result["config_version"] == MODEL_CONFIG_VERSION
     assert result["n_history_turns"] == 1
+
+
+def test_migrate_v2_adds_vf_coef_default():
+    """v2 configs predate the vf_coef flag — migration must inject the SB3 default 0.5
+    (the value every pre-flag run was trained with) and bump to the current version."""
+    data = {
+        "config_version": 2,
+        "arch_signature": ARCH_SIGNATURE,
+        "species_embedding_dim": 32, "max_species": 400,
+        "move_embedding_dim": 16, "max_moves": 400,
+        "item_embedding_dim": 16, "max_items": 600,
+        "ability_embedding_dim": 16, "max_abilities": 100,
+        "type_embedding_dim": 16, "max_types": 20,
+        "total_dim": 1000, "active_context_dim": 22,
+        "role_token_size": 128, "projection_dim": 512,
+        "move_net_hidden": [64, 32],
+        "role_encoder_hidden": [256, 128],
+        "active_ctx_hidden": [64, 32],
+        "n_history_turns": 10,
+        "net_arch": [512, 512],
+    }
+    result = _migrate_config(data)
+    assert result["config_version"] == MODEL_CONFIG_VERSION
+    assert result["vf_coef"] == pytest.approx(0.5)
+    # The migrated dict must construct a valid ModelVersion (no unexpected keys).
+    ModelVersion(**result)
+
+
+def test_migrate_does_not_overwrite_existing_vf_coef():
+    """A config that already carries vf_coef must keep its value through migration."""
+    data = {
+        "config_version": 2,
+        "arch_signature": ARCH_SIGNATURE,
+        "species_embedding_dim": 32, "max_species": 400,
+        "move_embedding_dim": 16, "max_moves": 400,
+        "item_embedding_dim": 16, "max_items": 600,
+        "ability_embedding_dim": 16, "max_abilities": 100,
+        "type_embedding_dim": 16, "max_types": 20,
+        "total_dim": 1000, "active_context_dim": 22,
+        "role_token_size": 128, "projection_dim": 512,
+        "move_net_hidden": [64, 32],
+        "role_encoder_hidden": [256, 128],
+        "active_ctx_hidden": [64, 32],
+        "n_history_turns": 10,
+        "net_arch": [512, 512],
+        "vf_coef": 0.25,
+    }
+    result = _migrate_config(data)
+    assert result["vf_coef"] == pytest.approx(0.25)
 
 
 def test_migrate_v1_does_not_overwrite_existing_n_history_turns():

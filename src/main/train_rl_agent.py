@@ -203,7 +203,9 @@ def _run_roundtrip_test(model, layout: dict, policy_kwargs: dict, debug: bool = 
     import numpy as np
     from agents.model.features_extractor import PROJECTION_DIM
 
-    version = ModelVersion.from_layout_and_policy_kwargs(layout, policy_kwargs)
+    version = ModelVersion.from_layout_and_policy_kwargs(
+        layout, policy_kwargs, vf_coef=float(model.vf_coef)
+    )
     total_dim = layout["total_dim"]
     tmpdir = tempfile.mkdtemp(prefix="roundtrip_")
     try:
@@ -410,6 +412,11 @@ async def main():
                         help="LR floor for annealing (required with --anneal-lr-start-steps). "
                              "Separate from --min-lr used by AdaptivePPO.")
     parser.add_argument("--ent-coef", type=float, default=0.02, help="Entropy coefficient (exploration bonus)")
+    parser.add_argument("--vf-coef", "--vf_coef", dest="vf_coef", type=float, default=0.5,
+                        help="PPO value-loss coefficient (default 0.5, the SB3 default). Fixed for a "
+                             "run's lifetime: it is recorded in model_config.json and resuming with a "
+                             "different value is a FATAL error (it silently rescales the value head's "
+                             "gradient on the shared trunk — tune it on a fresh run). See grad/value_share.")
     parser.add_argument("--clip-range", type=float, default=CLIP_RANGE_DEFAULT, help="PPO policy clip range (default 0.15)")
     parser.add_argument("--clip-range-vf", type=optional_float, default=0.5, help="Value function clip range; pass 'none' to disable clipping (thesis used 0.0184)")
     parser.add_argument("--n-steps", type=int, default=2048, help="Steps per environment per rollout")
@@ -1014,7 +1021,7 @@ async def main():
             "net_arch": NET_ARCH,
         }
         current_version = ModelVersion.from_layout_and_policy_kwargs(
-            _load_extractor_kwargs["layout"], _load_policy_kwargs
+            _load_extractor_kwargs["layout"], _load_policy_kwargs, vf_coef=args.vf_coef
         )
 
         print(f"Loading existing model from {model_path}")
@@ -1025,11 +1032,13 @@ async def main():
                 current_version=current_version,
                 device=args.device,
                 tensorboard_log=tensorboard_dir,
+                enforce_vf_coef=args.vf_coef,  # FATAL if the run was started with a different vf_coef
             )
         except ModelVersionError as e:
             print(f"\n[ModelVersion] FATAL: {e}")
             os._exit(1)
         model.ent_coef = args.ent_coef
+        model.vf_coef = args.vf_coef  # == the saved value (enforced above); set explicitly for parity
         model.gae_lambda = 0.80
         # Resume-path LR setup. Phase determines whether we read from the
         # optimizer (Phase 1, KL-driven) or compute the cosine (Phase 2).
@@ -1193,13 +1202,16 @@ async def main():
             clip_range=args.clip_range,
             clip_range_vf=args.clip_range_vf,
             ent_coef=args.ent_coef,
+            vf_coef=args.vf_coef,
             device=args.device,
             seed=args.seed,
             tensorboard_log=tensorboard_dir,
             policy_kwargs=policy_kwargs
         )
 
-        version = ModelVersion.from_layout_and_policy_kwargs(extractor_kwargs["layout"], policy_kwargs)
+        version = ModelVersion.from_layout_and_policy_kwargs(
+            extractor_kwargs["layout"], policy_kwargs, vf_coef=args.vf_coef
+        )
         _run_roundtrip_test(model, extractor_kwargs["layout"], policy_kwargs, debug=args.debug)
         _apply_grad_checkpointing(model, args.grad_checkpointing)
         model._async_rollout = _async_rollout   # route collect_rollouts to the non-barrier path

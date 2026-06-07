@@ -552,7 +552,11 @@ Every model save writes two files alongside the `.zip`:
 
 `load_model_snapshot()` in `src/agents/model/snapshot.py` checks these before calling
 `MaskablePPO.load()`. A mismatch causes a hard `[ModelVersion] FATAL` error at startup, not a
-silent wrong-output bug later. `_run_roundtrip_test()` in `train_rl_agent.py` runs automatically
+silent wrong-output bug later. `model_config.json` additionally records `vf_coef` (`--vf-coef`,
+the PPO value-loss coefficient): it is **fixed for a run's lifetime**, so resuming with a
+different value is a FATAL error — enforced resume-only (frozen eval/pool/distill opponents are
+exempt, since vf_coef doesn't affect a forward pass). See `src/agents/model/CLAUDE.md` →
+resume-immutable training hparams. `_run_roundtrip_test()` in `train_rl_agent.py` runs automatically
 before every `model.learn()` (save → reload → zero forward pass), so serialization breakage
 crashes in seconds rather than hours.
 

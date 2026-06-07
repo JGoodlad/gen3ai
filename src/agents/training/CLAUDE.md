@@ -414,8 +414,10 @@ while `train/explained_variance` races ahead. `InstrumentedMaskablePPO.train()` 
   is the single source of truth), which **excludes** `cls_pool` (head-private `our_cls`/`their_cls`/
   `value_cls` queries) and both projection heads — only *truly contested* params count.
   - `grad/value_share` = `‖g_value‖ / (‖g_value‖+‖g_policy‖)` (~0.5 balanced, →1 value swamps).
-    Weighted by the live `vf_coef`/`ent_coef`, so it is the **tuning target**: dial `vf_coef` so it
-    sits near ~0.5.
+    Weighted by the live `vf_coef`/`ent_coef`, so it is the **tuning target**: dial `vf_coef`
+    (`--vf-coef`, default 0.5) so it sits near ~0.5. `vf_coef` is **fixed per run** — recorded in
+    `model_config.json` and FATAL to change on resume (it rescales this very gradient mid-run); tune
+    it on a fresh run. See `src/agents/model/CLAUDE.md` → resume-immutable training hparams.
   - `grad/policy_value_cosine` — scale-invariant (hence `vf_coef`-independent) structural-conflict
     signal: <0 ⟹ the heads pull the trunk in opposing directions.
   - `grad/policy_norm_shared` / `grad/value_norm_shared` — the weighted norms, for absolute context.

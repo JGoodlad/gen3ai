@@ -112,6 +112,19 @@ Every model save writes `model_config.json` + `metadata.json` alongside the `.zi
 1. Change `ARCH_SIGNATURE` in `model_version.py` (e.g. `"gen3_attn_v1"` → `"gen3_lstm_v1"`)
 2. Old models get a clear arch-family error on load
 
+**Resume-immutable training hparams (value-meaning, NOT weight-shape).** A hyperparameter can
+be wrong-to-change-mid-run without changing any weight shape — `vf_coef` (`--vf-coef`) is the
+first: it rescales the value head's gradient on the shared trunk, so a forgotten/typo'd flag on
+resume would silently drift training. These are recorded on `ModelVersion` (→ `model_config.json`)
+but **deliberately excluded from `check_compatible`** — that gates EVERY load, including the frozen
+eval / self-play-pool / distill opponents, where the forward is identical regardless of the value
+and a false rejection would break league play. Instead they get a dedicated check
+(`ModelVersion.check_vf_coef`) invoked **only on the training-resume path** via
+`load_model_snapshot(..., enforce_vf_coef=…)`; `train_rl_agent.py` FATALs on mismatch exactly like
+an arch error. To add another such hparam, follow the optional-feature playbook above (field +
+`MODEL_CONFIG_VERSION` bump + `_migrate_config` default) **plus** a dedicated `check_*` + an
+`enforce_*` opt-in on `load_model_snapshot`, and leave it out of `_WEIGHT_FIELDS`.
+
 A startup smoke test (`_run_roundtrip_test` in `train_rl_agent.py`) saves to a temp dir and reloads before every `model.learn()` call — catches serialization issues immediately.
 
 ## Where the canonical architecture lives

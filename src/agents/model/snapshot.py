@@ -340,6 +340,7 @@ def load_model_snapshot(
     current_version: ModelVersion,
     device: str = "auto",
     tensorboard_log: Optional[str] = None,
+    enforce_vf_coef: Optional[float] = None,
 ) -> MaskablePPO:
     """Load a model with a compatibility check against the current architecture.
 
@@ -350,9 +351,15 @@ def load_model_snapshot(
         current_version: ModelVersion reflecting current code; checked against saved config.
         device:          Passed to InstrumentedMaskablePPO.load().
         tensorboard_log: Passed to InstrumentedMaskablePPO.load().
+        enforce_vf_coef: TRAINING-RESUME ONLY. When set, the saved config's vf_coef must
+                         match this value or a ModelVersionError is raised — vf_coef is fixed
+                         for a run's lifetime. Left None on every frozen-snapshot load (eval
+                         sentinels, self-play pool opponents, distill teacher, the roundtrip
+                         smoke), where the value-loss coefficient is irrelevant to the forward.
 
     Raises:
-        ModelVersionError:  If saved config is incompatible with current_version.
+        ModelVersionError:  If saved config is incompatible with current_version, or (when
+                            enforce_vf_coef is set) its vf_coef differs.
         FileNotFoundError:  If no .zip can be found at the resolved path.
     """
     zip_path, config_dir = _resolve_paths(model_path)
@@ -361,6 +368,8 @@ def load_model_snapshot(
     if os.path.exists(config_path):
         saved_version = ModelVersion.from_json_file(config_path)
         current_version.check_compatible(saved_version)
+        if enforce_vf_coef is not None:
+            saved_version.check_vf_coef(enforce_vf_coef)
     else:
         print(
             f"[ModelVersion] WARNING: No model_config.json found at {config_dir!r}. "

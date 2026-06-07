@@ -1,12 +1,21 @@
 from __future__ import annotations
 
 import json
+import math
 from dataclasses import dataclass, asdict
 from typing import Any, Dict, List
 
 # Bump this whenever the ModelVersion schema changes (fields added/renamed/removed).
 # Also add a migration case in _migrate_config().
-MODEL_CONFIG_VERSION = 2
+#
+# v3: added `vf_coef` — the PPO value-loss coefficient, recorded so a training resume
+#   with a different `--vf-coef` is a hard error (changing the value head's gradient
+#   scale mid-run is a silent training change). It is NOT weight-shape-relevant, so it
+#   is deliberately EXCLUDED from check_compatible()'s universal load-check (which gates
+#   frozen eval / self-play-pool / distill opponents too, where vf_coef is irrelevant);
+#   it is enforced only on the training-resume path via check_vf_coef(). Old configs
+#   migrate to the SB3 default 0.5 (= the value every pre-flag run was trained with).
+MODEL_CONFIG_VERSION = 3
 
 # Change this when the neural architecture changes structurally in a way that makes
 # weights from a different signature incompatible (e.g. adding LSTM, replacing attention).
@@ -221,11 +230,19 @@ class ModelVersion:
     # From policy_kwargs in train_rl_agent.py
     net_arch: List[int]
 
+    # PPO value-loss coefficient (`--vf-coef`). Recorded for resume-immutability
+    # (check_vf_coef), NOT a weight-shape field — see MODEL_CONFIG_VERSION v3 note and
+    # its exclusion from _WEIGHT_FIELDS in check_compatible(). Defaults to the SB3 default
+    # so versions built for a weight-shape-only check (current_model_version, the roundtrip
+    # test) need not supply it.
+    vf_coef: float = 0.5
+
     @classmethod
     def from_layout_and_policy_kwargs(
         cls,
         layout: Dict[str, Any],
         policy_kwargs: Dict[str, Any],
+        vf_coef: float = 0.5,
     ) -> ModelVersion:
         from agents.model.features_extractor import (
             ROLE_TOKEN_SIZE,
@@ -258,6 +275,7 @@ class ModelVersion:
             active_ctx_hidden=list(ACTIVE_CTX_HIDDEN),
             n_history_turns=N_HISTORY_TURNS,
             net_arch=list(policy_kwargs.get("net_arch", NET_ARCH)),
+            vf_coef=vf_coef,
         )
 
     def to_json(self) -> str:
@@ -310,6 +328,29 @@ class ModelVersion:
                 "Fix: restore matching constants, or start a fresh training run."
             )
 
+    def check_vf_coef(self, requested: float) -> None:
+        """Raise ModelVersionError if `requested` (the resume `--vf-coef`) differs from this
+        saved config's vf_coef.
+
+        Call as: saved_version.check_vf_coef(args.vf_coef).
+
+        vf_coef is a training-loss coefficient, not a weight-shape concern, so it is
+        deliberately NOT part of check_compatible() — that gates EVERY checkpoint load,
+        including the frozen eval / self-play-pool / distill opponents, where vf_coef is
+        irrelevant (the forward pass is identical regardless of it). This check is invoked
+        ONLY on the training-resume path: silently changing the value head's gradient scale
+        mid-run would let a forgotten/typo'd flag drift training, so a resume with a
+        different value is a hard error rather than a quiet change.
+        """
+        if not math.isclose(self.vf_coef, requested, rel_tol=1e-9, abs_tol=1e-12):
+            raise ModelVersionError(
+                f"vf_coef mismatch: saved={self.vf_coef!r}, requested={requested!r}.\n"
+                "The PPO value-loss coefficient is fixed for the lifetime of a run — changing it on "
+                "resume silently alters the value head's gradient scale.\n"
+                f"Fix: resume with --vf-coef {self.vf_coef!r}, or start a fresh training run to use "
+                f"{requested!r}."
+            )
+
 
 def _migrate_config(data: dict) -> dict:
     """Apply incremental forward-migrations to bring an old config up to the current schema."""
@@ -318,4 +359,8 @@ def _migrate_config(data: dict) -> dict:
         # v2: added n_history_turns. Old models used a single TurnDelta (N=1).
         data.setdefault("n_history_turns", 1)
         data["config_version"] = 2
+    if version < 3:
+        # v3: added vf_coef. Every pre-flag run trained with the SB3 default 0.5.
+        data.setdefault("vf_coef", 0.5)
+        data["config_version"] = 3
     return data
