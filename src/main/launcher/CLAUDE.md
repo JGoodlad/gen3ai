@@ -105,7 +105,8 @@ deterministic `_supervise` exit-code/crash-restart/`_reap` suite), plus `launche
   the normal `distill/*` logger scalars through `MetricsExporterCallback`; the events are emitted
   straight to the IPC pipe.
   **Gradient-balance + value-scale diagnostics** (always on) show up in the left metrics column as a
-  `grad/*` block (`value share`, `policy-value cos`, policy/value grad-norms) plus `train/return_*`,
+  `grad/*` block (`value share`, `log val/pol grad` = the non-saturating `log10(‖g_v‖/‖g_p‖)` ratio,
+  `policy-value cos`, policy/value grad-norms) plus `train/return_*`,
   `train/value_pred_std`, and `train/grad_norm` — the direct value-vs-policy shared-trunk pressure
   gauge for tuning `vf_coef` / preparing PopArt (computed in `agents/training/grad_balance.py`; see
   `src/agents/training/CLAUDE.md`). They need no new launcher wiring: they ride the same generic

@@ -418,6 +418,11 @@ while `train/explained_variance` races ahead. `InstrumentedMaskablePPO.train()` 
     (`--vf-coef`, default 0.5) so it sits near ~0.5. `vf_coef` is **fixed per run** — recorded in
     `model_config.json` and FATAL to change on resume (it rescales this very gradient mid-run); tune
     it on a fresh run. See `src/agents/model/CLAUDE.md` → resume-immutable training hparams.
+  - `grad/value_policy_logratio` = `log10(‖g_value‖/‖g_policy‖)` — the **same** imbalance as
+    `value_share` but on a *linear, non-saturating* scale (0 = balanced, >0 = value dominates, e.g.
+    ≈+1.8 at a 66:1 swamp). Prefer it for **watching a fix land**: `value_share` is pinned near 1 in
+    the swamped regime (0.985 / 0.99 / 0.995 are 66× / 99× / 199× but look alike), so PopArt /
+    a `vf_coef` change crawls there while the log-ratio moves linearly toward 0.
   - `grad/policy_value_cosine` — scale-invariant (hence `vf_coef`-independent) structural-conflict
     signal: <0 ⟹ the heads pull the trunk in opposing directions.
   - `grad/policy_norm_shared` / `grad/value_norm_shared` — the weighted norms, for absolute context.

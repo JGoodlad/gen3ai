@@ -10,7 +10,9 @@ a number instead of inferred indirectly from ``approx_kl`` / ``clip_fraction``.
 Two probes, both cheap and both run once per ``train()`` call:
 
 * :func:`grad_balance_metrics` — the value-vs-policy *pull* on the shared trunk (the pressure
-  gauge). ``value_share`` ~0.5 = balanced, →1 = value swamps the trunk; ``policy_value_cosine``
+  gauge). ``value_share`` ~0.5 = balanced, →1 = value swamps the trunk; ``value_policy_logratio``
+  is the same imbalance on a linear, non-saturating log scale (0 = balanced, >0 = value dominates)
+  so a fix landing is *visible* where ``value_share`` sits pinned near 1; ``policy_value_cosine``
   <0 = the heads drag the trunk in opposing directions (structural conflict, ``vf_coef``-free).
 * :func:`value_scale_metrics` — the return / value-prediction *scale* (PopArt prep). These are
   exactly the ``(μ, σ)`` an adaptive return normalizer tracks; watch them to SEE the value scale
@@ -90,12 +92,15 @@ def grad_balance_metrics(
     ``value_term = vf_coef*value_loss`` — so the reported norms are the *actual* pull each head
     exerts on the trunk at the current coefficients. ``value_share`` therefore scales with
     ``vf_coef`` (that is what makes it a tuning target: dial ``vf_coef`` so ``value_share`` sits
-    near ~0.5). Cosine is scale-invariant, so it is the ``vf_coef``-independent structural-
-    conflict signal (<0 ⟹ the heads pull the trunk in opposing directions).
+    near ~0.5). ``value_policy_logratio`` = ``log10(‖g_value‖/‖g_policy‖)`` is the same imbalance
+    in a *linear*, non-saturating form (0.0 = balanced, >0 = value dominates) — the legible gauge
+    for watching a fix land where ``value_share`` is pinned near 1. Cosine is scale-invariant, so
+    it is the ``vf_coef``-independent structural-conflict signal (<0 ⟹ the heads pull the trunk in
+    opposing directions).
 
-    Returns ``{grad/value_share, grad/policy_value_cosine, grad/policy_norm_shared,
-    grad/value_norm_shared}``. **Must be called while the graph is alive** (before
-    ``loss.backward()``).
+    Returns ``{grad/value_share, grad/value_policy_logratio, grad/policy_value_cosine,
+    grad/policy_norm_shared, grad/value_norm_shared}``. **Must be called while the graph is alive**
+    (before ``loss.backward()``).
     """
     g_pi = _flat_grads(policy_term, shared_params)
     g_vf = _flat_grads(value_term, shared_params)
@@ -103,10 +108,20 @@ def grad_balance_metrics(
     n_vf = float(g_vf.norm())
     cosine = float((g_pi @ g_vf).item() / (n_pi * n_vf)) if n_pi > 0.0 and n_vf > 0.0 else 0.0
     total = n_pi + n_vf
+    # log10 of the value/policy pull ratio. ``value_share`` saturates near 1 when the value head
+    # dominates (0.985 vs 0.99 vs 0.995 all look alike but are 66× / 99× / 199×), so it barely
+    # moves while a fix lands; the log-ratio is *linear* in the imbalance (now ≈ +1.8 at ~66:1,
+    # 0.0 = balanced, <0 = policy dominates), making it the legible gauge for watching PopArt /
+    # a vf_coef change pull the trunk back toward balance. Guarded 0.0 when either norm is zero
+    # (a unit-test detached-graph artifact; in real training both are strictly positive) — same
+    # convention as ``cosine``; note 0.0 here doubles as the "balanced" value, which is fine since
+    # the no-signal case never occurs live.
+    logratio = float(np.log10(n_vf / n_pi)) if n_pi > 0.0 and n_vf > 0.0 else 0.0
     return {
         "grad/policy_norm_shared": n_pi,
         "grad/value_norm_shared": n_vf,
         "grad/value_share": (n_vf / total) if total > 0.0 else 0.0,
+        "grad/value_policy_logratio": logratio,
         "grad/policy_value_cosine": cosine,
     }
 

@@ -57,6 +57,7 @@ _METRIC_LABELS = {
     "distill/n_exhausted": "exhausted",
     # Gradient balance (shared-trunk value-vs-policy pull) — tune vf_coef / PopArt to these.
     "grad/value_share": "value share",
+    "grad/value_policy_logratio": "log val/pol grad",
     "grad/policy_value_cosine": "policy-value cos",
     "grad/policy_norm_shared": "policy grad-norm",
     "grad/value_norm_shared": "value grad-norm",
@@ -124,8 +125,12 @@ _METRIC_ORDER = [
     "train/return_abs_max",
     "train/value_pred_std",
     # Gradient balance: value-vs-policy pull on the SHARED trunk. value_share ~0.5 = balanced,
-    # →1 = value swamps the trunk; policy_value_cosine <0 = the heads conflict. (See grad_balance.py.)
+    # →1 = value swamps the trunk; value_policy_logratio = log10(‖g_v‖/‖g_p‖) is the same imbalance
+    # on a linear non-saturating scale (0 = balanced, >0 = value dominates) — the legible gauge for
+    # watching a PopArt / vf_coef fix land; policy_value_cosine <0 = the heads conflict.
+    # (See grad_balance.py.)
     "grad/value_share",
+    "grad/value_policy_logratio",
     "grad/policy_value_cosine",
     "grad/policy_norm_shared",
     "grad/value_norm_shared",

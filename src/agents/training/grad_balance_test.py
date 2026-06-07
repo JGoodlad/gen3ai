@@ -66,13 +66,21 @@ def test_grad_balance_ranges_and_keys():
     value_term = vf_head(h).pow(2).mean()
     m = grad_balance_metrics(policy_term, value_term, list(trunk.parameters()))
     assert set(m) == {
-        "grad/value_share", "grad/policy_value_cosine",
+        "grad/value_share", "grad/value_policy_logratio", "grad/policy_value_cosine",
         "grad/policy_norm_shared", "grad/value_norm_shared",
     }
     assert 0.0 <= m["grad/value_share"] <= 1.0
     assert -1.0 <= m["grad/policy_value_cosine"] <= 1.0
     assert m["grad/policy_norm_shared"] > 0.0
     assert m["grad/value_norm_shared"] > 0.0
+    # log-ratio is consistent with value_share: both say the same side dominates.
+    import math
+    assert math.isclose(
+        m["grad/value_policy_logratio"],
+        math.log10(m["grad/value_norm_shared"] / m["grad/policy_norm_shared"]),
+        rel_tol=1e-6,
+    )
+    assert (m["grad/value_policy_logratio"] > 0.0) == (m["grad/value_share"] > 0.5)
 
 
 def test_grad_balance_identical_terms_are_aligned_and_balanced():
@@ -82,6 +90,7 @@ def test_grad_balance_identical_terms_are_aligned_and_balanced():
     # Same gradient on both sides → perfectly aligned, exactly balanced.
     assert abs(m["grad/policy_value_cosine"] - 1.0) < 1e-5
     assert abs(m["grad/value_share"] - 0.5) < 1e-5
+    assert abs(m["grad/value_policy_logratio"] - 0.0) < 1e-5  # ratio 1 → log10 = 0
 
 
 def test_grad_balance_value_detached_has_zero_share():
@@ -93,6 +102,7 @@ def test_grad_balance_value_detached_has_zero_share():
     assert m["grad/value_norm_shared"] == 0.0
     assert m["grad/value_share"] == 0.0
     assert m["grad/policy_value_cosine"] == 0.0  # guarded zero-norm cosine
+    assert m["grad/value_policy_logratio"] == 0.0  # guarded zero-norm log-ratio
 
 
 def test_grad_balance_probe_is_read_only():
