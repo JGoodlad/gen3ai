@@ -45,6 +45,11 @@ _METRIC_LABELS = {
     "distill/n_ready": "ready",
     "distill/n_running": "running",
     "distill/n_exhausted": "exhausted",
+    # Gradient balance (shared-trunk value-vs-policy pull) — tune vf_coef / PopArt to these.
+    "grad/value_share": "value share",
+    "grad/policy_value_cosine": "policy-value cos",
+    "grad/policy_norm_shared": "policy grad-norm",
+    "grad/value_norm_shared": "value grad-norm",
 }
 
 
@@ -101,6 +106,19 @@ _METRIC_ORDER = [
     "train/n_updates",
     "train/policy_gradient_loss",
     "train/value_loss",
+    "train/grad_norm",
+    # Value-scale (PopArt prep): the (μ, σ) + tail an adaptive return normalizer would track,
+    # and the value head's actual output spread. Watch for non-stationary scale drift.
+    "train/return_mean",
+    "train/return_std",
+    "train/return_abs_max",
+    "train/value_pred_std",
+    # Gradient balance: value-vs-policy pull on the SHARED trunk. value_share ~0.5 = balanced,
+    # →1 = value swamps the trunk; policy_value_cosine <0 = the heads conflict. (See grad_balance.py.)
+    "grad/value_share",
+    "grad/policy_value_cosine",
+    "grad/policy_norm_shared",
+    "grad/value_norm_shared",
     # Distillation (only present under --distill-opponents) — headline first.
     "distill/all_distilled",
     "distill/frac_active_opponents_distilled",

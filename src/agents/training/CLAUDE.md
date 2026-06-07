@@ -395,6 +395,45 @@ under `--debug`. Compounds with distillation (async attacks the barrier; distill
 opponent CPU). Caveat: benchmarked with heuristic opponents — re-bench under `--self-play` for the
 production-regime number. Full design + benchmark table: `designs/ai_v5/design_async_rollout.md`.
 
+## Gradient-balance + value-scale diagnostics (`grad_balance.py`)
+
+The dual-head extractor shares ONE transformer trunk between the policy and value heads
+(`src/agents/model/CLAUDE.md`); both losses' gradients compete there. When the value loss
+dominates (large / unclipped, big-return scale) it **swamps the trunk** and the policy barely
+updates — visible before only *indirectly* as suppressed `train/approx_kl` + `train/clip_fraction`
+while `train/explained_variance` races ahead. `InstrumentedMaskablePPO.train()` now measures it
+**directly** via the pure helpers in `grad_balance.py` (no SB3 / logging coupling → unit-tested in
+`grad_balance_test.py`), recorded once per `train()` call through the standard logger → TensorBoard
+**and** the launcher TUI (the new scalars ride the generic `MetricsExporterCallback` →
+`ipc.send_metrics` path with zero extra wiring; ordering/labels live in `launcher/format.py`).
+
+- **Gradient balance — the value-vs-policy *pull* on the shared trunk.** Sampled on the first
+  minibatch (graph alive) by two **read-only** `autograd.grad` probes (`retain_graph=True`, so the
+  real `loss.backward()` is unaffected) against the shared-trunk params. "Shared" =
+  `SHARED_TRUNK_PHASES = {embeddings, pokemon_encoder, team_transformer, assembler}` (the allow-list
+  is the single source of truth), which **excludes** `cls_pool` (head-private `our_cls`/`their_cls`/
+  `value_cls` queries) and both projection heads — only *truly contested* params count.
+  - `grad/value_share` = `‖g_value‖ / (‖g_value‖+‖g_policy‖)` (~0.5 balanced, →1 value swamps).
+    Weighted by the live `vf_coef`/`ent_coef`, so it is the **tuning target**: dial `vf_coef` so it
+    sits near ~0.5.
+  - `grad/policy_value_cosine` — scale-invariant (hence `vf_coef`-independent) structural-conflict
+    signal: <0 ⟹ the heads pull the trunk in opposing directions.
+  - `grad/policy_norm_shared` / `grad/value_norm_shared` — the weighted norms, for absolute context.
+- **Value scale — PopArt prep.** From the full rollout buffer: `train/return_mean` / `train/return_std`
+  / `train/return_abs_max` (exactly the `(μ, σ)` + tail an adaptive return normalizer / PopArt's ART
+  half tracks) and `train/value_pred_std` (the value head's actual output spread). Watch these to SEE
+  the non-stationary value-scale drift (reward annealing / policy improvement) that a static `vf_coef`
+  cannot follow. Plus `train/grad_norm` (pre-clip total grad norm, mean over minibatches → grad-clip
+  activity).
+
+Cost: **2 extra partial backward passes on ONE minibatch per `train()` call** (negligible vs the
+`n_epochs × n_minibatches` the loop already runs) + trivial NumPy stats. The probe is a **no-op**
+(records nothing) when `shared_trunk_parameters` finds no matching modules (a non-Gen3 policy). **Why
+it exists:** to prepare for **reducing `vf_coef`** and **adding return normalization (PopArt)** — both
+target the value→trunk pressure, which can now be tuned to a number instead of inferred. (The
+`+INSTRUMENTATION` markers in `instrumented_ppo.py` flag the added lines; the upstream-drift hash check
+is unaffected since it hashes only `sb3_contrib.MaskablePPO.train`.)
+
 ## Process liveness guards (`watchdog.py`)
 
 Two daemon-thread watchdogs keep a hung/abandoned run from lingering:

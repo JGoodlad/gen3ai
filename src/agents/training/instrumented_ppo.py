@@ -33,6 +33,11 @@ from torch.nn import functional as F
 from sb3_contrib import MaskablePPO
 
 from agents.training.async_vec_env import AsyncSubprocVecEnv, collect_rollouts_async
+from agents.training.grad_balance import (
+    grad_balance_metrics,
+    shared_trunk_parameters,
+    value_scale_metrics,
+)
 
 
 # SHA256 of inspect.getsource(MaskablePPO.train) at the time this file was
@@ -112,6 +117,14 @@ class InstrumentedMaskablePPO(MaskablePPO):
 
         continue_training = True
 
+        # +INSTRUMENTATION: gradient-balance + value-scale diagnostics (grad_balance.py).
+        # The dual-head extractor shares one trunk; both losses' gradients compete there. We
+        # sample that pull ONCE per train() call (first minibatch) so vf_coef / return
+        # normalization (PopArt) can be tuned to a number rather than inferred from KL.
+        shared_trunk = shared_trunk_parameters(self.policy.features_extractor)
+        grad_balance: dict[str, float] = {}
+        grad_norms: list[float] = []  # pre-clip total grad norm (shows grad-clip activity)
+
         # train for n_epochs epochs
         for epoch in range(self.n_epochs):
             approx_kl_divs = []
@@ -176,6 +189,17 @@ class InstrumentedMaskablePPO(MaskablePPO):
 
                 loss = policy_loss + self.ent_coef * entropy_loss + self.vf_coef * value_loss
 
+                # +INSTRUMENTATION: sample the shared-trunk gradient balance on the first
+                # minibatch (graph alive here; the probe uses read-only autograd.grad with
+                # retain_graph, so loss.backward() below is unaffected). Skipped when the
+                # extractor exposes no shared-trunk params (non-Gen3 policy).
+                if shared_trunk and not grad_balance:
+                    grad_balance = grad_balance_metrics(
+                        policy_loss + self.ent_coef * entropy_loss,
+                        self.vf_coef * value_loss,
+                        shared_trunk,
+                    )
+
                 # Calculate approximate form of reverse KL Divergence for early stopping
                 # see issue #417: https://github.com/DLR-RM/stable-baselines3/issues/417
                 # and discussion in PR #419: https://github.com/DLR-RM/stable-baselines3/pull/419
@@ -195,7 +219,9 @@ class InstrumentedMaskablePPO(MaskablePPO):
                 self.policy.optimizer.zero_grad()
                 loss.backward()
                 # Clip grad norm
-                th.nn.utils.clip_grad_norm_(self.policy.parameters(), self.max_grad_norm)
+                grad_norms.append(float(  # +INSTRUMENTATION: pre-clip total grad norm
+                    th.nn.utils.clip_grad_norm_(self.policy.parameters(), self.max_grad_norm)
+                ))
                 self.policy.optimizer.step()
 
             self._n_updates += 1
@@ -218,3 +244,15 @@ class InstrumentedMaskablePPO(MaskablePPO):
             # +INSTRUMENTATION: average fraction of value updates that hit the clip bound
             if vf_clip_fractions:
                 self.logger.record("train/clip_fraction_vf", float(np.mean(vf_clip_fractions)))
+
+        # +INSTRUMENTATION: gradient-balance + value-scale diagnostics. These prepare for
+        # reducing vf_coef and adding return normalization (PopArt) — see grad_balance.py and
+        # src/agents/training/CLAUDE.md. All ride the standard logger → TensorBoard + launcher TUI.
+        for _key, _val in grad_balance.items():
+            self.logger.record(_key, _val)
+        for _key, _val in value_scale_metrics(
+            self.rollout_buffer.returns, self.rollout_buffer.values
+        ).items():
+            self.logger.record(_key, _val)
+        if grad_norms:
+            self.logger.record("train/grad_norm", float(np.mean(grad_norms)))

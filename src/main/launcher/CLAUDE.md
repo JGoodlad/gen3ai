@@ -104,6 +104,13 @@ deterministic `_supervise` exit-code/crash-restart/`_reap` suite), plus `launche
   and each backfill spawn (`selfplay_callback._reconcile_distill` → `send_event`). The metrics ride
   the normal `distill/*` logger scalars through `MetricsExporterCallback`; the events are emitted
   straight to the IPC pipe.
+  **Gradient-balance + value-scale diagnostics** (always on) show up in the left metrics column as a
+  `grad/*` block (`value share`, `policy-value cos`, policy/value grad-norms) plus `train/return_*`,
+  `train/value_pred_std`, and `train/grad_norm` — the direct value-vs-policy shared-trunk pressure
+  gauge for tuning `vf_coef` / preparing PopArt (computed in `agents/training/grad_balance.py`; see
+  `src/agents/training/CLAUDE.md`). They need no new launcher wiring: they ride the same generic
+  `MetricsExporterCallback` scalar path and auto-route by their `grad/` / `train/` section prefix;
+  only their display order + short labels are declared in `format.py`.
 - **Crash reporting** — child stdout/stderr is streamed live to `<run_dir>/launcher_child.log`
   (complete even if the child hard-`os._exit`s, bypassing Python cleanup) and held in a
   5000-line in-memory scrollback. The on-disk log is a **disk ring buffer**
