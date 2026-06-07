@@ -112,6 +112,31 @@ class ThreatView:
 
 
 @dataclass(frozen=True)
+class IncomingBeliefView:
+    """The opponent active's incoming-damage / OHKO **belief** vs our team, decoded from the
+    `incoming_damage` obs block (incoming_damage_v1).
+
+    Where ThreatView is raw type-*effectiveness* (no power/Atk/Def/HP), this is the calibrated
+    P(KO) / expected-chip belief the feature was added to provide — it already prices base-power ×
+    Atk·Def × HP × the damage roll. So it is the direct lens on "did the critic-tail-blindness obs
+    gap get filled": at a value cliff, ``active_pko`` near 1.0 means the obs DID contain the OHKO
+    signal (any remaining mistake is downstream policy/critic usage, not a missing input); a low
+    ``active_pko`` where the active then faints to a direct hit means the BELIEF itself is
+    mis-calibrated (an encoder bug to chase). Per our 6 slots the block holds
+    ``[phys_exp, spec_exp, phys_pko, spec_pko, p_outspeed]``; ``*_pko`` here is ``max(phys,spec)``.
+    ``active_*`` pull our on-field mon's slot (located via its per-mon active flag)."""
+    present: bool                          # any nonzero KO/chip belief on the board
+    max_pko: float                         # worst P(KO) across our team (max(phys,spec) per slot)
+    active_pko: "float | None"             # max(phys,spec) P(KO) for our ACTIVE slot
+    active_exp: "float | None"             # max(phys,spec) expected-damage-fraction, active slot
+    active_outspeed: "float | None"        # P(our active outspeeds the opp), [0,1]
+    per_slot_pko: "tuple[float, ...]"      # max(phys,spec) P(KO) per our team slot
+    recovery_rate: float                   # opp recovery-move belief (Suicune-Rest discriminator)
+    cures_status: float                    # P(opp Rest) — cures its own status clock
+    recovery_known: float                  # 1.0 once a recovery move is revealed
+
+
+@dataclass(frozen=True)
 class ValueView:
     """The critic's read on this state: recorded V(s), the loaded model's re-run
     V(s) (critic faithfulness), V at the next captured decision, and ΔV (how the
@@ -161,7 +186,9 @@ class InvocationAnalysis:
     matchups: "MatchupView | None"
     sweep: "InterventionSweep | None"
     saliency: "Saliency | None"
+    value_saliency: "Saliency | None"          # |d V(s)/d obs| per block (critic lens)
     threats: "ThreatView | None"
+    incoming: "IncomingBeliefView | None"      # the P(KO)/chip belief block (incoming_damage_v1)
     warnings: "tuple[str, ...]"
     # Outcome / value / disagreement (added for the Outcome panel + agent API).
     outcome: dict = field(default_factory=dict)   # raw {our, opp, reward, events}
@@ -316,22 +343,45 @@ def _intervention_sweep(model, obs: np.ndarray, mask: np.ndarray, labels: list,
     return InterventionSweep(chosen, slot, baseline_switches, tuple(rows))
 
 
-def _saliency(model, obs: np.ndarray, mask: np.ndarray, chosen_idx: int, off) -> Saliency:
-    g = model.logit_grad(obs, mask, chosen_idx)
-
+def _saliency_from_grad(g: np.ndarray, off) -> Saliency:
+    """Aggregate a per-dim gradient into the named obs blocks. Shared by the policy-logit
+    saliency and the critic value saliency so both report the SAME regions (incl. the new
+    `incoming_damage` block) — the only difference is which head's gradient is fed in."""
     def block(name: str, lo: int, hi: int) -> SaliencyBlock:
         seg = g[lo:hi]
         return SaliencyBlock(name=name, mean_abs=float(seg.mean()), total_abs=float(seg.sum()))
 
-    blocks = (
+    blocks = [
         block("active move_multipliers(4)", off.mm_off, off.mm_off + 4),
         block("our_matchups(144)", off.om_off, off.om_off + 144),
-        block("their_matchups(144)", off.tm_off, off.tm_off + 144),  # incoming-threat attention
+        block("their_matchups(144)", off.tm_off, off.tm_off + 144),  # raw incoming type-effectiveness
+    ]
+    if off.incoming_dim > 0:  # incoming-damage / OHKO belief block (incoming_damage_v1)
+        blocks.append(block(f"incoming_damage({off.incoming_dim})",
+                            off.incoming_off, off.incoming_off + off.incoming_dim))
+    blocks += [
         block("our active pokemon block(99)", 0, off.active_block_dim),
         block("turn-history block", off.turn_history_offset,
               off.turn_history_offset + off.turn_history_dim),
-    )
-    return Saliency(overall_mean_abs=float(g.mean()), blocks=blocks)
+    ]
+    return Saliency(overall_mean_abs=float(g.mean()), blocks=tuple(blocks))
+
+
+def _saliency(model, obs: np.ndarray, mask: np.ndarray, chosen_idx: int, off) -> Saliency:
+    """Policy saliency: |d logit(chosen) / d obs| aggregated per block (what the ACTOR reads)."""
+    return _saliency_from_grad(model.logit_grad(obs, mask, chosen_idx), off)
+
+
+def _value_saliency(model, obs: np.ndarray, mask: np.ndarray, off) -> "Saliency | None":
+    """Critic saliency: |d V(s) / d obs| aggregated per block (what the VALUE head reads) — the
+    relevant lens for OHKO tail-blindness. None when the model can't expose a value gradient."""
+    vg = getattr(model, "value_grad", None)
+    if vg is None:
+        return None
+    try:
+        return _saliency_from_grad(vg(obs, mask), off)
+    except Exception:  # noqa: BLE001 — value-grad is best-effort (stub models / odd heads)
+        return None
 
 
 def _threats(obs: np.ndarray, off) -> "ThreatView | None":
@@ -348,6 +398,56 @@ def _threats(obs: np.ndarray, off) -> "ThreatView | None":
         revealed_frac=float((m > 0).mean()),
         max_incoming=float(m.max()),
         per_our_slot_max=tuple(float(m[:, :, j].max()) for j in range(_TEAM_SIZE)),
+    )
+
+
+def _active_slot(obs: np.ndarray, off) -> "int | None":
+    """Our on-field mon's team-slot index, read from the per-mon active flag (the last dim of each
+    `pokemon_full_dim`-wide our-team block). The incoming-damage block is slot-aligned to the same
+    team list, so this index selects the active mon's belief. None if no flag is set / obs too short."""
+    stride = off.pokemon_full_dim
+    best = None
+    best_v = 0.5
+    for i in range(_TEAM_SIZE):
+        idx = i * stride + stride - 1
+        if idx < obs.shape[0] and float(obs[idx]) > best_v:
+            best_v, best = float(obs[idx]), i
+    return best
+
+
+def decode_incoming_belief(obs: np.ndarray, off) -> "IncomingBeliefView | None":
+    """Decode the incoming-damage / OHKO belief block (incoming_damage_v1) from a raw obs vector.
+
+    Pure + model-free (reads the saved obs the trace recorded), so it is exact for the model that
+    produced the trace and is reusable by both `analyze_invocation` and the model-free `scan`.
+    Returns None when the block isn't present (dim 0, or a too-short synthetic obs)."""
+    if off.incoming_dim <= 0:
+        return None
+    seg = obs[off.incoming_off:off.incoming_off + off.incoming_dim]
+    if seg.shape[0] != off.incoming_dim:
+        return None
+    pm, rec_dim = off.incoming_per_mon, off.incoming_recovery
+    n_slots = (off.incoming_dim - rec_dim) // pm
+    per_slot_pko, per_slot_exp, outspeeds = [], [], []
+    for i in range(n_slots):
+        b = i * pm
+        phys_exp, spec_exp, phys_pko, spec_pko, outspeed = (float(x) for x in seg[b:b + pm])
+        per_slot_pko.append(max(phys_pko, spec_pko))
+        per_slot_exp.append(max(phys_exp, spec_exp))
+        outspeeds.append(outspeed)
+    rec = seg[n_slots * pm:]
+    a = _active_slot(obs, off)
+    in_range = a is not None and a < n_slots
+    return IncomingBeliefView(
+        present=bool(any(v > 0 for v in per_slot_pko) or any(v > 0 for v in per_slot_exp)),
+        max_pko=max(per_slot_pko) if per_slot_pko else 0.0,
+        active_pko=per_slot_pko[a] if in_range else None,
+        active_exp=per_slot_exp[a] if in_range else None,
+        active_outspeed=outspeeds[a] if in_range else None,
+        per_slot_pko=tuple(per_slot_pko),
+        recovery_rate=float(rec[0]) if rec.shape[0] > 0 else 0.0,
+        cures_status=float(rec[1]) if rec.shape[0] > 1 else 0.0,
+        recovery_known=float(rec[2]) if rec.shape[0] > 2 else 0.0,
     )
 
 
@@ -371,7 +471,7 @@ def analyze_invocation(model, summary: dict, npz, inv_index: int,
     if not _has_state(npz, inv_index):
         return InvocationAnalysis(
             **common, has_state=False, actions=(), matchups=None, sweep=None,
-            saliency=None, threats=None,
+            saliency=None, value_saliency=None, threats=None, incoming=None,
             warnings=(f"invocation {inv_index} has no captured state",),
             outcome=outcome, flags=summary_flags(inv), board=board,
         )
@@ -386,7 +486,9 @@ def analyze_invocation(model, summary: dict, npz, inv_index: int,
     matchups = _matchups(obs, labels, model.offsets)
     sweep = _intervention_sweep(model, obs, mask, labels, chosen, model.offsets)
     saliency = _saliency(model, obs, mask, labels.index(chosen), model.offsets)
+    value_saliency = _value_saliency(model, obs, mask, model.offsets)
     threats = _threats(obs, model.offsets)
+    incoming = decode_incoming_belief(obs, model.offsets)
 
     # Value: recorded V(s), the loaded model's re-run V(s), V at the next captured
     # decision, and ΔV. (A big ΔV is where the critic's expectation shifted.)
@@ -419,6 +521,7 @@ def analyze_invocation(model, summary: dict, npz, inv_index: int,
 
     return InvocationAnalysis(
         **common, has_state=True, actions=actions, matchups=matchups, sweep=sweep,
-        saliency=saliency, threats=threats, warnings=(), outcome=outcome, value=value,
+        saliency=saliency, value_saliency=value_saliency, threats=threats, incoming=incoming,
+        warnings=(), outcome=outcome, value=value,
         rerun_argmax=rerun_argmax, agrees=agrees, flags=flags, board=board, field=field,
     )

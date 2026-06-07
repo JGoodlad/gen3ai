@@ -67,12 +67,16 @@ by clicking a title or pressing its number key `1`–`6`) render purely from one
 revealed bench + our moveset from `engine.build_board`, model-free; plus a **field**
 line — weather/spikes/screens/turn decoded from the obs global block via
 `ProbeModel.describe_global`, so it needs captured state), **Faithfulness**
-(recorded vs re-run probs), **Matchups** (our active move type-multipliers + an
-**incoming-threat** line decoded from `their_matchups` — `worst N×` / `revealed XX%`,
-or `BLANK` when the opponent's coverage is unrevealed, e.g. a just-switched-in mon),
-**Intervention**, **Saliency** (now incl. a `their_matchups(144)` block, so you can
-see whether the policy even *attends* to the incoming threat — typically ~100–1000×
-less than its own offense), and
+(recorded vs re-run probs), **Matchups** (our active move type-multipliers + two incoming lines: an
+**incoming eff** line decoded from `their_matchups` — `worst N×` / `revealed XX%`, or
+`BLANK` when the opponent's coverage is unrevealed; and an **incoming P(KO)** line
+decoded from the `incoming_damage` belief block — `active NN%` (our on-field mon's KO
+belief) · `outspd NN%` · `worst-on-team NN%` · opp-recovery — the calibrated
+DAMAGE belief, not raw effectiveness),
+**Intervention**, **Saliency** (two heads: `π` policy-logit blocks AND `V` critic
+value-gradient blocks, each incl. `their_matchups(144)` and `incoming_damage(33)`, so
+you can see whether the **value** head — where OHKO tail-blindness lives — actually
+reads the belief block vs the rest), and
 **Outcome** — the last surfaces the critic's `V(s)` (recorded · re-run · ΔV → next ·
 **TD δ** = `r + γV(s′) − V(s)`, the critic-surprise residual, in parity with the CLI's
 overview/analyze `td_residual`; γ from the run's `metadata.json`),
@@ -111,9 +115,15 @@ loading uses the same exact→nearest→recent ladder (cached per process). A
   (`metric="value_drop"`, the most negative ΔV(s→s'), default; or
   `"td_residual"`, the most negative critic surprise), ranked globally. Each row is
   `{id, short_id, opponent, step, outcome, turns, worst:{inv, turn, chosen,
-  our_active, opp_active, delta_v, td_residual, reward_total, events, flags}}`. The
-  one-call form of "list losses → overview each → rank by the biggest drop" — the
-  usual first move of a loss sweep across a whole opponent/step. No model loaded.
+  our_active, opp_active, delta_v, td_residual, reward_total, events, flags,
+  incoming_active_pko, incoming_max_pko, incoming_active_outspeed}}`. The
+  `incoming_*` fields decode the incoming-damage / OHKO **belief** the obs HELD at
+  that cliff (model-free, from the saved obs — see `decode_incoming_belief`): the
+  decisive A/B for "did the feature fill the obs gap" — a high `incoming_active_pko`
+  at a value cliff means the OHKO WAS in the obs (any remaining error is downstream
+  policy/critic usage); a low one where our active then faints means the belief is
+  mis-calibrated (an encoder gap). The one-call form of "list losses → overview each
+  → rank by the biggest drop" — the usual first move of a loss sweep. No model loaded.
 - `battle_overview(battle_id)` — **model-free digest**: per-decision rows
   (chosen, top prob, `our_active`/`opp_active` board summary, recorded V(s), **ΔV**,
   **TD residual** = critic surprise, reward total, events, flags) + a `notable`
@@ -125,14 +135,25 @@ loading uses the same exact→nearest→recent ladder (cached per process). A
   `high_value` (ranked by recorded V, model-free), or `disagree` (loads the
   model; chosen ≠ the model's argmax).
 - `analyze(battle_id, inv)` — full `InvocationAnalysis` as a dict (loads the
-  model); the value block gains a γ-discounted `td_residual`. Also carries a
-  `threats` block (model-free, decoded from `their_matchups`): `present`,
-  `revealed_frac` (how much of the opponent's coverage is even revealed),
-  `max_incoming` (worst incoming effectiveness ×4 anywhere on the board), and
-  `per_our_slot_max` (worst incoming vs each of our 6 team slots). A low
-  `revealed_frac` / `present=false` means the model has **no explicit incoming-threat
-  signal** for that opponent (its moves aren't revealed) and is pricing it from the
-  species embedding alone — the key tell for "could it even see the OHKO coming?".
+  model); the value block gains a γ-discounted `td_residual`. Carries two
+  incoming-threat decodes — **distinguish them**:
+  - `threats` (model-free, from `their_matchups`): raw type-*effectiveness* —
+    `present`, `revealed_frac` (how much opp coverage is revealed), `max_incoming`
+    (worst eff ×4 on the board), `per_our_slot_max`. Effectiveness only — no
+    power/Atk/Def/HP, so an OHKO still has to be inferred from it.
+  - `incoming` (model-free, from the `incoming_damage` block, `incoming_damage_v1`):
+    the calibrated P(KO) / expected-chip **belief** that already prices base-power ×
+    Atk·Def × HP × roll — `present`, `max_pko` (worst P(KO) across our team),
+    `active_pko` / `active_exp` / `active_outspeed` (our on-field mon, slot found via
+    its per-mon active flag), `per_slot_pko`, and the opp recovery scalars
+    (`recovery_rate` / `cures_status` / `recovery_known`). This is the direct lens on
+    "did the critic-tail-blindness obs gap get filled."
+  Plus `value_saliency` — the **critic** lens: `|d V(s)/d obs|` aggregated into the
+  SAME named blocks as the policy `saliency`, so you can see whether the VALUE head
+  (where OHKO tail-blindness lives) actually reads `incoming_damage(33)` vs the rest.
+  (On run_20260606 the critic's per-dim value-saliency on `incoming_damage` ran ~5×
+  the overall mean, vs ~0.3× for the old `their_matchups` — the critic strongly uses
+  the new belief.)
 
 CLI mirror — prints JSON to stdout (and `{"error": …}` + exit 1 on failure, so an
 agent always gets parseable output). `--help` carries a worked example sequence:
@@ -154,14 +175,17 @@ battles (read `notable.biggest_value_drops` / `faints`) → `find disagree` /
 
 ## Obs-offset dependence (regression-guarded)
 
-The engine reads four semantic obs regions by offset: the active-move type
+The engine reads five semantic obs regions by offset: the active-move type
 multipliers (`OFFSET_REACTIVE + move_multiplier`, currently dim 1422), the
 `our_matchups` block (`+ our_matchups`, currently 1501), the **`their_matchups`**
-block (`+ their_matchups`, currently 1645 — the incoming-threat decode + saliency),
-and the turn-history span — all resolved at runtime from
+block (`+ their_matchups`, currently 1645 — the raw-effectiveness decode + saliency),
+the **`incoming_damage`** block (`+ incoming_damage`, currently 1468, dim 33 — the
+P(KO)/chip belief decode + critic/policy saliency; per-mon active flag read via
+`pokemon_full_dim`), and the turn-history span — all resolved at runtime from
 `Gen3ObservationEncoder.get_layout()`. **If the obs layout changes, these move
 automatically** (e.g. `gen3_move_effects_v1` inserted a block before `our_matchups`,
-shifting it), and `engine_test.py` pins the resolved values
+shifting it; `gen3_incoming_damage_v1` inserted the 33-dim belief block at reactive
+offset 50), and `engine_test.py` pins the resolved values
 (`test_offsets_resolve_matches_layout`) so a silent shift fails loudly. (Mirror note
 in `src/agents/observation/CLAUDE.md`.)
 

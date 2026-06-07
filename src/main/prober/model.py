@@ -35,6 +35,15 @@ class ObsOffsets:
     active_block_dim: int  # our active-pokemon block span [0:active_block_dim)
     turn_history_offset: int
     turn_history_dim: int  # n_history_turns * turn_delta_dim
+    # incoming-damage / OHKO belief block (incoming_damage_v1): per-our-slot P(KO)/expected-chip/
+    # P(outspeed) + opp recovery scalars — the calibrated DAMAGE belief (vs ThreatView's raw
+    # type-effectiveness). Defaults keep the synthetic-test ObsOffsets construction valid; a real
+    # `resolve()`/`from_encoder()` always fills them, and the decoder no-ops when dim==0.
+    incoming_off: int = 0
+    incoming_dim: int = 0
+    incoming_per_mon: int = 5
+    incoming_recovery: int = 3
+    pokemon_full_dim: int = 107   # per-our-mon obs block width (active flag = its last dim)
 
     @classmethod
     def from_encoder(cls, enc) -> "ObsOffsets":
@@ -42,6 +51,7 @@ class ObsOffsets:
 
         lay = enc.get_layout()
         rl = lay["reactive_layout"]
+        inc = rl.get("incoming_damage", {})
         return cls(
             mm_off=C.OFFSET_REACTIVE + rl["move_multiplier"]["offset"],
             om_off=C.OFFSET_REACTIVE + rl["our_matchups"]["offset"],
@@ -49,6 +59,11 @@ class ObsOffsets:
             active_block_dim=99,  # the launcher CLI's "our active pokemon block(99)"
             turn_history_offset=lay["turn_history_offset"],
             turn_history_dim=lay["n_history_turns"] * lay["turn_delta_dim"],
+            incoming_off=C.OFFSET_REACTIVE + inc.get("offset", 0) if inc else 0,
+            incoming_dim=inc.get("dim", 0),
+            incoming_per_mon=inc.get("per_mon", 5),
+            incoming_recovery=inc.get("recovery", 3),
+            pokemon_full_dim=C.POKEMON_FULL_DIM,
         )
 
     @classmethod
@@ -134,4 +149,18 @@ class ProbeModel:
         mt = torch.as_tensor(mask).unsqueeze(0)
         d = self._policy.get_distribution({"observation": ot, "action_mask": mt})
         d.distribution.logits[0, action_idx].backward()
+        return ot.grad[0].abs().numpy()
+
+    def value_grad(self, obs: np.ndarray, mask: np.ndarray) -> np.ndarray:
+        """Return |d V(s) / d obs| as a per-dim array — the CRITIC's input sensitivity.
+
+        The policy-logit saliency (``logit_grad``) shows what the actor reads; this shows what the
+        VALUE head reads, which is the relevant lens for critic tail-blindness (does the critic's
+        V(s) actually move with the incoming-damage / OHKO belief block?)."""
+        import torch
+
+        ot = torch.as_tensor(obs).unsqueeze(0).requires_grad_(True)
+        mt = torch.as_tensor(mask).unsqueeze(0)
+        v = self._policy.predict_values({"observation": ot, "action_mask": mt})
+        v.reshape(-1)[0].backward()
         return ot.grad[0].abs().numpy()

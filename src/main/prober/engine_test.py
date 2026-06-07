@@ -43,6 +43,9 @@ class FakeProbeModel:
     def value(self, obs, mask):
         return 3.14  # deterministic critic re-run
 
+    def value_grad(self, obs, mask):
+        return np.ones(len(obs), dtype=np.float64)  # uniform critic |grad| → mean_abs == 1 per block
+
     def describe_global(self, obs):
         return {"weather": "RAIN", "our_spikes": 1, "opp_spikes": 0, "turn": 8.0}
 
@@ -246,8 +249,70 @@ def test_offsets_resolve_matches_layout():
     assert off.om_off == 1501   # OFFSET_REACTIVE(1418) + our_matchups(83, post gen3_incoming_damage_v1)
     assert off.tm_off == 1645   # OFFSET_REACTIVE(1418) + their_matchups(227 = our_matchups 83 + 144)
     assert off.active_block_dim == 99
+    # incoming-damage / OHKO belief block (incoming_damage_v1): reactive offset 50 → 1468, dim 33.
+    assert off.incoming_off == 1468   # OFFSET_REACTIVE(1418) + incoming_damage(50)
+    assert off.incoming_dim == 33     # 6*5 per-mon + 3 recovery
+    assert off.incoming_per_mon == 5 and off.incoming_recovery == 3
+    assert off.pokemon_full_dim == 107
 
     from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings
     lay = Gen3ObservationEncoder(load_mappings()).get_layout()
     assert off.turn_history_offset == lay["turn_history_offset"]
     assert off.turn_history_dim == lay["n_history_turns"] * lay["turn_delta_dim"]
+
+
+# A synthetic layout WITH the incoming-damage block, for the belief-decode tests. Active flag is
+# the last dim of each pokemon_full_dim(8)-wide our-mon block; our slot 1 is active (idx 1*8+7=15).
+_OFF_INC = ObsOffsets(
+    mm_off=10, om_off=20, tm_off=200, active_block_dim=5,
+    turn_history_offset=400, turn_history_dim=10,
+    incoming_off=350, incoming_dim=33, incoming_per_mon=5, incoming_recovery=3,
+    pokemon_full_dim=8,
+)
+
+
+def _obs_with_belief(active_slot=1, pko=0.9, exp=0.7, outspeed=0.25):
+    """Build a synthetic obs carrying an incoming-damage block (active slot's special channel hot)
+    and the per-mon active flag set for ``active_slot``."""
+    obs = np.zeros((1, 512), dtype=np.float32)
+    obs[0, active_slot * 8 + 7] = 1.0                       # active flag on our slot `active_slot`
+    base = 350 + active_slot * 5
+    obs[0, base + 1] = exp                                   # spec_exp
+    obs[0, base + 3] = pko                                   # spec_pko
+    obs[0, base + 4] = outspeed                              # p_outspeed
+    obs[0, 350 + 30:350 + 33] = (0.35, 0.35, 1.0)           # recovery scalars
+    return obs
+
+
+def test_incoming_belief_decode_active_slot():
+    """`incoming_damage` block → IncomingBeliefView: active slot resolved from the per-mon active
+    flag, P(KO)=max(phys,spec), recovery scalars at the tail."""
+    model = FakeProbeModel(_OFF_INC)
+    obs = _obs_with_belief(active_slot=1, pko=0.9, exp=0.7, outspeed=0.25)
+    npz = {"obs": obs, "has_state": np.array([1], dtype=np.int8),
+           "values": np.array([1.0], dtype=np.float32)}
+    a = analyze_invocation(model, _summary(), npz, 0)
+    inc = a.incoming
+    assert inc is not None and inc.present is True
+    assert abs(inc.active_pko - 0.9) < 1e-6                  # active slot's spec_pko
+    assert abs(inc.active_exp - 0.7) < 1e-6
+    assert abs(inc.active_outspeed - 0.25) < 1e-6
+    assert abs(inc.max_pko - 0.9) < 1e-6
+    assert inc.per_slot_pko[1] == inc.active_pko and inc.per_slot_pko[0] == 0.0
+    assert abs(inc.recovery_rate - 0.35) < 1e-6 and abs(inc.cures_status - 0.35) < 1e-6
+    assert inc.recovery_known == 1.0
+    # the block is now a named saliency region for BOTH heads
+    assert any(b.name == "incoming_damage(33)" for b in a.saliency.blocks)
+    assert a.value_saliency is not None
+    assert any(b.name == "incoming_damage(33)" for b in a.value_saliency.blocks)
+
+
+def test_incoming_belief_none_when_block_absent():
+    """The default _OFF has incoming_dim=0 → no belief decoded, no incoming saliency block, no crash.
+    value_saliency is still None there because the default FakeProbeModel path is unaffected."""
+    model = FakeProbeModel(_OFF)
+    npz = {"obs": np.zeros((1, _OBS_LEN), dtype=np.float32),
+           "has_state": np.array([1], dtype=np.int8), "values": np.array([1.0], dtype=np.float32)}
+    a = analyze_invocation(model, _summary(), npz, 0)
+    assert a.incoming is None
+    assert not any(b.name.startswith("incoming_damage") for b in a.saliency.blocks)

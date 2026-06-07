@@ -353,6 +353,70 @@ async def test_matchups_panel_shows_incoming_threat(tmp_path):
         assert app.query_one("#saliency-table", DataTable).row_count == 5
 
 
+# A synthetic layout WITH the incoming-damage belief block + a model exposing value_grad,
+# so the belief line + the critic (V) saliency rows render. Active flag = last dim of each
+# pokemon_full_dim(8) our-mon block; slot 1 is active (idx 1*8+7=15).
+_OFF_INC = ObsOffsets(
+    mm_off=10, om_off=20, tm_off=164, active_block_dim=5,
+    turn_history_offset=300, turn_history_dim=10,
+    incoming_off=350, incoming_dim=33, incoming_per_mon=5, incoming_recovery=3,
+    pokemon_full_dim=8,
+)
+
+
+class _FakeModelInc(_FakeModel):
+    def __init__(self):
+        super().__init__()
+        self.offsets = _OFF_INC
+
+    def value_grad(self, obs, mask):
+        return np.ones(len(obs), dtype=np.float64)   # uniform critic |grad| → renders V rows
+
+
+def _write_belief_trace(tmp_path):
+    """A trace whose obs carries an incoming-damage belief (active slot 1, spec P(KO)=0.9)."""
+    run = tmp_path / "run"
+    bd = run / "eval_traces" / "step_1000" / "Test"
+    os.makedirs(bd, exist_ok=True)
+    actions = {f"switch:m{i}": {"prob": "1.0%", "valid": True} for i in range(6)}
+    actions.update({"thunderbolt": {"prob": "92.1%", "valid": True},
+                    "earthquake": {"prob": "2.8%", "valid": True},
+                    "move2": {"prob": "0.0%", "valid": False},
+                    "move3": {"prob": "0.0%", "valid": False},
+                    "struggle": {"prob": "0.0%", "valid": False}})
+    summary = {"meta": {"step": 1000, "result": "LOSS", "turns": 5, "invocations": 1},
+               "invocations": [{"i": 1, "turn": 3, "phase": "move_selection",
+                                "chosen": "thunderbolt", "our": {"species": "zapdos"},
+                                "opp": {"species": "salamence"}, "actions": actions}]}
+    with open(bd / "loss_006_summary.json", "w") as f:
+        json.dump(summary, f)
+    obs = np.zeros((1, 512), dtype=np.float32)
+    obs[0, 1 * 8 + 7] = 1.0                              # active flag on our slot 1
+    obs[0, 350 + 1 * 5 + 3] = 0.9                        # slot1 spec_pko
+    obs[0, 350 + 1 * 5 + 4] = 0.3                        # slot1 p_outspeed
+    np.savez(bd / "loss_006_states.npz", obs=obs, has_state=np.array([1], dtype=np.int8))
+    return str(run)
+
+
+async def test_matchups_and_saliency_show_incoming_belief(tmp_path):
+    run = _write_belief_trace(tmp_path)
+    app = ProberApp(root=run, injected_model=_FakeModelInc())
+    async with app.run_test() as pilot:
+        await pilot.pause()
+        app._select_battle(app._tree_model.all_battles()[0])
+        await pilot.pause()
+        await app.workers.wait_for_complete()
+        await pilot.pause()
+        # Matchups panel surfaces the calibrated P(KO) belief for our active slot.
+        threat = str(app.query_one("#matchups-threat", Static).render())
+        assert "incoming P(KO)" in threat and "active 90%" in threat
+        # Saliency table shows BOTH heads (π policy + V critic), incl. the incoming_damage block.
+        sal = app.query_one("#saliency-table", DataTable)
+        labels = [str(sal.get_row_at(r)[0]) for r in range(sal.row_count)]
+        assert any(l.startswith("π ") for l in labels) and any(l.startswith("V ") for l in labels)
+        assert any("incoming_damage" in l and l.startswith("V ") for l in labels)
+
+
 async def test_board_tab_populates(tmp_path):
     run = _write_rich_trace(tmp_path)
     app = ProberApp(root=run, injected_model=_FakeModel())

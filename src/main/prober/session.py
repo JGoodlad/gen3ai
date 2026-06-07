@@ -34,7 +34,9 @@ from main.prober.discovery import (
     list_checkpoints,
     resolve_model_for_step,
 )
-from main.prober.engine import analyze_invocation, build_board, parse_pct, summary_flags
+from main.prober.engine import (
+    analyze_invocation, build_board, decode_incoming_belief, parse_pct, summary_flags,
+)
 
 
 def _active_str(side) -> str:
@@ -257,7 +259,8 @@ class ProbeSession:
         invs = summary.get("invocations", [])
         if not invs:
             return None
-        values = self._values(battle)
+        npz = self._npz(battle)
+        values = npz.get("values")
         best_i = best_score = best_dv = best_td = None
         for i, inv in enumerate(invs):
             v, v_next = self._v(values, i), self._v(values, i + 1)
@@ -276,19 +279,56 @@ class ProbeSession:
         board = build_board(inv)
         reward = (inv.get("outcome") or {}).get("reward")
         rtotal = reward.get("total") if isinstance(reward, dict) else reward
+        worst = {
+            "inv": best_i, "turn": inv.get("turn"), "phase": inv.get("phase"),
+            "chosen": inv.get("chosen", ""),
+            "our_active": _active_str(board.ours), "opp_active": _active_str(board.opp),
+            "delta_v": best_dv, "td_residual": best_td, "reward_total": rtotal,
+            "events": (inv.get("outcome") or {}).get("events") or [],
+            "flags": list(summary_flags(inv)),
+        }
+        # Decode the incoming-damage / OHKO belief the obs HELD at this cliff (model-free, from the
+        # saved obs). The decisive A/B for "did the feature fill the obs gap": a high active_pko at
+        # a value cliff means the OHKO WAS in the obs (remaining error is downstream usage); a low
+        # one where our active then faints means the belief is mis-calibrated.
+        belief = self._belief_at(npz, best_i)
+        if belief is not None:
+            worst["incoming_active_pko"] = belief.active_pko
+            worst["incoming_max_pko"] = belief.max_pko
+            worst["incoming_active_outspeed"] = belief.active_outspeed
         return {
             "id": battle.summary_path, "short_id": _short_id(battle),
             "opponent": battle.opponent, "step": battle.step, "outcome": battle.outcome,
             "turns": (summary.get("meta") or {}).get("turns"),
-            "worst": {
-                "inv": best_i, "turn": inv.get("turn"), "phase": inv.get("phase"),
-                "chosen": inv.get("chosen", ""),
-                "our_active": _active_str(board.ours), "opp_active": _active_str(board.opp),
-                "delta_v": best_dv, "td_residual": best_td, "reward_total": rtotal,
-                "events": (inv.get("outcome") or {}).get("events") or [],
-                "flags": list(summary_flags(inv)),
-            },
+            "worst": worst,
         }
+
+    def _obs_offsets(self):
+        """Lazily resolve the obs-block offsets once (builds the encoder; model-free). Cached on the
+        session. None if resolution fails, so the belief decode degrades gracefully."""
+        off = getattr(self, "_offsets_cache", "unset")
+        if off == "unset":
+            try:
+                from main.prober.model import ObsOffsets
+                off = ObsOffsets.resolve()
+            except Exception:  # noqa: BLE001 — belief decode is best-effort
+                off = None
+            self._offsets_cache = off
+        return off
+
+    def _belief_at(self, npz: dict, i: int):
+        """The decoded incoming-damage belief at decision ``i`` (or None — no obs / no captured
+        state for that decision / offsets unresolvable)."""
+        obs_arr = npz.get("obs")
+        if obs_arr is None or i >= len(obs_arr):
+            return None
+        hs = npz.get("has_state")
+        if hs is not None and i < len(hs) and not bool(hs[i]):
+            return None
+        off = self._obs_offsets()
+        if off is None:
+            return None
+        return decode_incoming_belief(obs_arr[i].astype(np.float32), off)
 
     # -- internals -----------------------------------------------------------
 

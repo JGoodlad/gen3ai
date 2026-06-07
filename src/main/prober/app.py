@@ -613,16 +613,34 @@ class ProberApp(Gen3App):
         # just-switched-in mon), so the policy is pricing it from priors alone.
         threat = self.query_one("#matchups-threat", Static)
         th = a.threats
+        lines = Text()
         if th is None:
-            threat.update("")
-            return
-        line = Text("incoming (opp→us): ", style="dim")
-        if not th.present:
-            line.append("BLANK — opp coverage unrevealed (priors only)", style="bold yellow")
+            lines.append("incoming eff (opp→us): ", style="dim")
+            lines.append("n/a", style="dim")
         else:
-            line.append(f"worst {th.max_incoming:.2f}×", style=_mult_color(th.max_incoming))
-            line.append(f"  ·  revealed {th.revealed_frac * 100:.0f}%", style="dim")
-        threat.update(line)
+            lines.append("incoming eff (opp→us): ", style="dim")
+            if not th.present:
+                lines.append("BLANK — opp coverage unrevealed (priors only)", style="bold yellow")
+            else:
+                lines.append(f"worst {th.max_incoming:.2f}×", style=_mult_color(th.max_incoming))
+                lines.append(f"  ·  revealed {th.revealed_frac * 100:.0f}%", style="dim")
+        # The calibrated P(KO) belief (incoming_damage_v1) — prices power×Atk·Def×HP×roll, unlike
+        # the raw-effectiveness line above. active_pko near 1.0 = obs says our on-field mon is
+        # likely KO'd this turn; pair it with outspeed (are we even slower) and max_pko (worst on
+        # the board) to read "should it switch?".
+        inc = a.incoming
+        if inc is not None:
+            lines.append("\nincoming P(KO): ", style="dim")
+            if inc.active_pko is None:
+                lines.append("n/a", style="dim")
+            else:
+                lines.append(f"active {inc.active_pko * 100:.0f}%", style=gradient_color(inc.active_pko))
+                lines.append(f"  ·  outspd {inc.active_outspeed * 100:.0f}%", style="dim")
+                lines.append(f"  ·  worst-on-team {inc.max_pko * 100:.0f}%", style="dim")
+            if inc.recovery_known or inc.recovery_rate > 0:
+                lines.append(f"  ·  opp-recovery {inc.recovery_rate * 100:.0f}%"
+                             + ("✓" if inc.recovery_known else "?"), style="dim")
+        threat.update(lines)
 
     def _render_sweep(self, a: InvocationAnalysis) -> None:
         t = self.query_one("#sweep-table", DataTable)
@@ -640,12 +658,18 @@ class ProberApp(Gen3App):
     def _render_saliency(self, a: InvocationAnalysis) -> None:
         t = self.query_one("#saliency-table", DataTable)
         t.clear()
-        if a.saliency is None:
-            return
-        peak = max((b.total_abs for b in a.saliency.blocks), default=1.0) or 1.0
-        for b in a.saliency.blocks:
-            bar = "█" * int(round(b.total_abs / peak * 14))
-            t.add_row(b.name, f"{b.mean_abs:.4f}", Text(f"{b.total_abs:6.2f} {bar}", style="cyan"))
+        # Two heads: π = policy logit saliency (what the ACTOR reads), V = critic value
+        # saliency (what the VALUE head reads — the lens for OHKO tail-blindness). Each group is
+        # normalized to its OWN peak so the bars compare blocks within a head. Watch the
+        # incoming_damage block's V row vs its peers — that's "does the critic use the belief?".
+        for tag, sal, style in (("π", a.saliency, "cyan"), ("V", a.value_saliency, "magenta")):
+            if sal is None:
+                continue
+            peak = max((b.total_abs for b in sal.blocks), default=1.0) or 1.0
+            for b in sal.blocks:
+                bar = "█" * int(round(b.total_abs / peak * 14))
+                t.add_row(f"{tag} {b.name}", f"{b.mean_abs:.4f}",
+                          Text(f"{b.total_abs:6.2f} {bar}", style=style))
 
     @staticmethod
     def _read_run_gamma(run_dir: "str | None") -> float:
