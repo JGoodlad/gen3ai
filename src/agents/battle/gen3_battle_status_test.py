@@ -155,7 +155,8 @@ def test_fall_asleep_then_sleep_talk_then_wake_and_move():
     # turn 2: asleep — Sleep Talk delegates to Earthquake while still sleeping
     for line in [
         ["", "move", "p1a: Mine", "Sleep Talk", "p1a: Mine"],
-        ["", "move", "p1a: Mine", "Earthquake", "p2a: Theirs", "[from]move: Sleep Talk"],
+        # BARE `[from] <MoveName>` — the real bundled-gen3 wire form (not modern `[from]move:`).
+        ["", "move", "p1a: Mine", "Earthquake", "p2a: Theirs", "[from] Sleep Talk"],
         ["", "-damage", "p2a: Theirs", "40/100"],
         ["", "turn", "3"],
     ]:

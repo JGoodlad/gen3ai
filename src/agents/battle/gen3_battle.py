@@ -39,6 +39,7 @@ from agents.battle.battle_event import (
     EventKind,
     Policy,
     classify,
+    from_clause_move_source,
 )
 
 
@@ -340,14 +341,21 @@ class Gen3Battle(Battle):
         return out
 
     @staticmethod
-    def _delegated_from(split_message: Sequence[str]) -> Optional[str]:
-        """Return the delegating move (Sleep Talk / Metronome / …) if the line
-        carries a ``[from] move: X`` / ``[from]move: X`` suffix, else None."""
-        for tok in split_message[3:]:
-            t = tok.strip()
-            if t.startswith(("[from] move:", "[from]move:")):
-                return to_id_str(t.split(":", 1)[-1])
-        return None
+    def _delegated_from(split_message: Sequence[str], executed_id: str) -> Optional[str]:
+        """Return the move that CALLED this one (Sleep Talk / Metronome / Snatch / …), or None for
+        a free selection.
+
+        Built on the shared :func:`~agents.battle.battle_event.from_clause_move_source` wire parser,
+        so the bundled-gen3 BARE ``[from] <MoveName>`` form and the modern ``[from]move: <MoveName>``
+        form are both handled in ONE place (they previously diverged — only the modern form was
+        recognised, so gen3 Sleep Talk delegation was silently dropped). A ``[from]`` naming the
+        SAME move (Pursuit-on-switch's self-tag ``[from] Pursuit``) or the ``lockedmove``
+        continuation marker (Outrage / two-turn releases) is the mon running its own move, NOT a
+        delegation."""
+        src = from_clause_move_source(split_message[3:])
+        if src is None or src == executed_id or src == "lockedmove":
+            return None
+        return src
 
     # ------------------------------------------------------------------ #
     # Pre-mutation capture (only the facts the line is about to overwrite) #
@@ -434,7 +442,7 @@ class Gen3Battle(Battle):
             # We deliberately do NOT read `mon.last_move.id`: that is poke-env's
             # mutable "current state", and across a delegation sequence
             #   |move|Snorlax|Sleep Talk
-            #   |move|Snorlax|Earthquake|[from]move: Sleep Talk
+            #   |move|Snorlax|Earthquake|[from] Sleep Talk   (bundled-gen3 BARE form, no `move:`)
             # it can still point at the delegating move (Sleep Talk) when the second
             # line resolves — so reading it mislabels the executed move. Each |move|
             # line names its own move, so sm[3] is both protocol-true and free of any
@@ -451,7 +459,7 @@ class Gen3Battle(Battle):
                 "move_id": move_id,
                 "target_status": pre.get("target_status"),
             }
-            delegated = self._delegated_from(sm)
+            delegated = self._delegated_from(sm, move_id)
             if delegated:
                 value["from_move"] = delegated
             return self._from_ident(

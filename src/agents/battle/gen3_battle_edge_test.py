@@ -127,7 +127,10 @@ def test_sleep_talk_delegation():
         ["", "turn", "1"],
         ["", "-status", "p1a: Snorlax", "slp"],
         ["", "move", "p1a: Snorlax", "Sleep Talk", "p1a: Snorlax"],
-        ["", "move", "p1a: Snorlax", "Earthquake", "p2a: Ttar", "[from]move: Sleep Talk"],
+        # The bundled gen3 sim emits the called move as a BARE `[from] <MoveName>` (no `move:`
+        # prefix) — the REAL wire form. This was previously written as the modern `[from]move:`
+        # form the gen3 sim never produces, which hid a from_move-extraction gap in _delegated_from.
+        ["", "move", "p1a: Snorlax", "Earthquake", "p2a: Ttar", "[from] Sleep Talk"],
         ["", "-damage", "p2a: Ttar", "60/100"],
         ["", "turn", "2"],
     ])

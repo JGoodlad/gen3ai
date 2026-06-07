@@ -28,11 +28,52 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from enum import IntEnum
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, Optional, Sequence, Tuple
+
+from poke_env.data.normalize import to_id_str
 
 # Side labels, matching poke-env's internal `_current_move_user_side`.
 OURS = "ours"
 OPP = "opp"
+
+
+def from_clause_move_source(tokens: Sequence[str]) -> Optional[str]:
+    """The id of the MOVE named by a ``|move|`` line's ``[from]`` clause — the move that *called* or
+    *redirected* this one (Sleep Talk / Metronome / Mirror Move / Snatch / Magic Coat …) — or
+    ``None`` when there is no move-call ``[from]``.
+
+    **Single source of truth for the move-call wire format.** Showdown's gen3 ``[from]`` forms are
+    inconsistent, which is exactly the trap that hid a bug:
+
+      * **item / ability causes are PREFIXED** — ``[from] item: Leftovers`` / ``[from] ability:
+        Sand Stream`` — and are NOT move calls (returns ``None``).
+      * **move calls are BARE in the bundled gen3 sim** — ``[from] Sleep Talk`` (no ``move:``
+        prefix), whereas modern Showdown writes ``[from]move: Sleep Talk``. Both are accepted.
+
+    The returned source may EQUAL the executed move (Pursuit hitting a switching target tags its own
+    line ``[from] Pursuit``) or be a non-move continuation marker (``[from] lockedmove`` for
+    Outrage / two-turn releases). This primitive does NOT interpret those — it only parses the wire
+    clause; each caller decides what a same-move / marker source means (see ``Gen3Battle.
+    _delegated_from`` for the delegator reading and ``ChoiceBandTracker._is_delegated`` for the
+    free-selection reading). Keeping the parse in one place stops the two readers from drifting.
+
+    ``tokens`` is the move line's fields (``split_message`` or an event's ``raw``); only ``[from]``
+    tokens are inspected, so passing the whole line is fine.
+    """
+    for tok in tokens:
+        t = str(tok).strip()
+        if not t.startswith("[from]"):
+            continue
+        src = t[len("[from]"):].strip()
+        low = src.lower()
+        if low.startswith(("item:", "ability:")):
+            continue  # an item/ability cause, not a move call
+        if low.startswith("move:"):
+            src = src.split(":", 1)[-1].strip()
+        sid = to_id_str(src)
+        if sid:
+            return sid
+    return None
 
 
 class EventKind(IntEnum):

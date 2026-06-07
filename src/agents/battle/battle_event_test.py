@@ -20,7 +20,52 @@ from agents.battle.battle_event import (
     UnknownMessageType,
     UnsupportedMessageType,
     classify,
+    from_clause_move_source,
 )
+
+
+# ---------------------------------------------------------------------------
+# from_clause_move_source — the shared move-call wire parser (one source of truth for
+# both Gen3Battle._delegated_from and ChoiceBandTracker._is_delegated)
+# ---------------------------------------------------------------------------
+
+def _move_line(*tokens):
+    return ("", "move", "p1a: Mon", *tokens)
+
+
+def test_from_clause_move_source_gen3_bare_form():
+    """Bundled-gen3 BARE form: `[from] Sleep Talk` (no `move:` prefix) — the form the live sim
+    actually emits, and the one the old `[from]move:`-only parser silently dropped."""
+    assert from_clause_move_source(_move_line("Earthquake", "p2a: X", "[from] Sleep Talk")) == "sleeptalk"
+
+
+def test_from_clause_move_source_modern_form():
+    """Modern Showdown form `[from]move: Sleep Talk` is also accepted (forward-compatible)."""
+    assert from_clause_move_source(_move_line("Earthquake", "p2a: X", "[from]move: Sleep Talk")) == "sleeptalk"
+    assert from_clause_move_source(_move_line("Earthquake", "p2a: X", "[from] move: Sleep Talk")) == "sleeptalk"
+
+
+def test_from_clause_move_source_self_tag_returns_self():
+    """Pursuit hitting a switching target tags its OWN line `[from] Pursuit`; the source is the
+    move itself (callers treat same-move as a free selection, not a delegation)."""
+    assert from_clause_move_source(_move_line("Pursuit", "p2a: X", "[from] Pursuit")) == "pursuit"
+
+
+def test_from_clause_move_source_lockedmove_marker():
+    """A two-turn / Outrage continuation marker is returned verbatim (a non-move id the caller
+    recognises), not silently dropped."""
+    assert from_clause_move_source(_move_line("Solar Beam", "p2a: X", "[from] lockedmove")) == "lockedmove"
+
+
+def test_from_clause_move_source_item_ability_are_not_move_calls():
+    """`[from] item:` / `[from] ability:` are causes, NOT move calls → None."""
+    assert from_clause_move_source(("", "move", "p1a: Mon", "Tackle", "p2a: X", "[from] item: Leftovers")) is None
+    assert from_clause_move_source(("", "move", "p1a: Mon", "Tackle", "p2a: X", "[from] ability: Sand Stream")) is None
+
+
+def test_from_clause_move_source_none_when_no_from():
+    """A plain move line (a free selection) has no `[from]` → None."""
+    assert from_clause_move_source(_move_line("Earthquake", "p2a: X")) is None
 
 
 # --------------------------------------------------------------------------- #
