@@ -142,6 +142,17 @@ async def test_dashboard_metrics_tables_populated():
         assert "vs sentinel_1 (seed)" in ev
 
 
+def test_secs_str_switches_to_minutes_past_600s():
+    from main.launcher.format import _secs_str
+    assert _secs_str(0) == "0s"
+    assert _secs_str(94) == "94s"
+    assert _secs_str(600) == "600s"          # boundary: still raw seconds
+    assert _secs_str(601) == "10m1s"         # just past → XmYs
+    assert _secs_str(1949) == "32m29s"
+    assert _secs_str(660) == "11m0s"         # exact minute keeps the trailing 0s
+    assert _secs_str(-5) == "0s"             # clamped
+
+
 def _with_distill(state: LauncherState, *, all_distilled: float, frac: float,
                   running: float = 0.0, exhausted: float = 0.0) -> LauncherState:
     """Merge a distill/* metrics block onto an existing state (non-eval → merges)."""

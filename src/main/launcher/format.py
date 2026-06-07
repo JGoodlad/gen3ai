@@ -12,6 +12,16 @@ def _elapsed_str(seconds: float) -> str:
     return f"{h}:{m:02d}:{s:02d}" if h else f"{m:02d}:{s:02d}"
 
 
+def _secs_str(seconds: float) -> str:
+    """A bare ``Ns`` second-count, switching to ``XmYs`` once past 600 s (10 min) so long
+    staleness/duration spans (``took …``, ``… ago``) stay legible instead of a huge raw count."""
+    s = int(max(0, seconds))
+    if s > 600:
+        m, rem = divmod(s, 60)
+        return f"{m}m{rem}s"
+    return f"{s}s"
+
+
 def _fmt_val(v: float) -> str:
     """4 significant figures; comma-separated integers for large whole numbers."""
     if isinstance(v, float) and v == int(v) and abs(v) >= 1000:

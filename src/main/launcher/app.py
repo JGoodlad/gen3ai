@@ -33,7 +33,9 @@ from textual.widgets import ContentSwitcher, DataTable, Static
 
 from main.tui import Gen3App, THEME_PATH, gradient_color
 from main.launcher.state import LauncherState
-from main.launcher.format import _METRIC_ORDER, _elapsed_str, _fmt_metric, _metric_label
+from main.launcher.format import (
+    _METRIC_ORDER, _elapsed_str, _fmt_metric, _metric_label, _secs_str,
+)
 
 # Eval keys shown in the aggregate summary block (everything else under eval/ is treated
 # as per-opponent detail). Mirrors the local set in ui.py's _make_eval_table.
@@ -407,7 +409,7 @@ class LauncherApp(Gen3App):
 
         stale_badge = ""
         if snap.metrics_ts is not None and (now - snap.metrics_ts) > 60:
-            stale_badge = f" ({int(now - snap.metrics_ts)}s ago)"
+            stale_badge = f" ({_secs_str(now - snap.metrics_ts)} ago)"
 
         # ── left column: rollout / time / train (+ any other non-eval sections) ──
         fixed = {"rollout", "eval", "train", "time"}
@@ -434,7 +436,7 @@ class LauncherApp(Gen3App):
         # ── right column: eval aggregates + per-opponent ──
         eval_stale = ""
         if snap.eval_metrics_ts is not None and (now - snap.eval_metrics_ts) > 60:
-            eval_stale = f" ({int(now - snap.eval_metrics_ts)}s ago)"
+            eval_stale = f" ({_secs_str(now - snap.eval_metrics_ts)} ago)"
         self._fill_eval(right, per_opponent, display, eval_summary, eval_stale)
 
     def _fill_eval(self, table: DataTable, keys: list, metrics: dict,
@@ -475,10 +477,10 @@ class LauncherApp(Gen3App):
 
         # duration_sec is the SUM of per-opponent battle time; the work runs across
         # eval/n_workers subprocesses, so divide to get the (approx) per-worker wall-clock
-        # and show it as raw seconds — the summed MM:SS clock was unintuitively inflated.
+        # and show it as seconds (XmYs once past 600s) — the summed MM:SS clock was inflated.
         dur = eval_summary.get("eval/duration_sec")
         n_workers = eval_summary.get("eval/n_workers") or 1
-        dur_str = f" · took {int(dur / n_workers)}s" if dur is not None else ""
+        dur_str = f" · took {_secs_str(dur / n_workers)}" if dur is not None else ""
         table.add_row(Text(f"eval{dur_str}{stale_badge}", style="dim italic"), "", "", "")
 
         if eval_summary:
