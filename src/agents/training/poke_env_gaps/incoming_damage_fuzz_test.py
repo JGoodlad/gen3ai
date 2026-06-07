@@ -47,6 +47,7 @@ from agents.observation.constants import (
     INCOMING_DMG_DIM, INCOMING_PER_MON, INCOMING_RECOVERY_DIM, TEAM_SIZE,
 )
 from agents.observation.incoming_damage_encoder import encode_block
+from agents.battle.live_view import LiveView
 from utils.team_loader import TeamLoader
 from utils.teambuilder import Gen3Teambuilder
 from utils.bridge.local_battle_runner import run_local_battles
@@ -96,9 +97,14 @@ class IncomingDmgFuzzPlayer(Player):
     def _validate_turn(self, battle) -> None:
         s = self.stats
         s.n_turns += 1
+        # The belief now reads the LiveView read-model (not the raw battle); build it from this
+        # plain poke-env battle exactly as the env's strict_view does. our_team stays
+        # battle.team.values() order, which is identical to live.ours.mons order (the block's slot
+        # alignment), so the per-slot invariant checks below still line up with the block.
         our_team = list(battle.team.values())
         try:
-            block = encode_block(battle, our_team, live=None)
+            live = LiveView.from_battle(battle)
+            block = encode_block(live)
         except Exception as e:  # invariant 1
             s.encode_raises += 1
             s.record({"check": "encode_raised", "turn": battle.turn, "error": str(e)})

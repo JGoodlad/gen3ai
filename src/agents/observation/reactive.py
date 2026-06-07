@@ -334,11 +334,12 @@ class ReactiveEncoder(ObservationEncoder):
             for m in their_team
         ]
 
-        # 4c. Incoming-damage / OHKO belief block (incoming_damage_v1) — per our mon, the
+        # 4c. Incoming-damage / OHKO belief block (incoming_damage_v2) — per our mon, the
         # opponent active's KO/chip/outspeed threat under the hidden-set belief. Sits before the
-        # matchups so the extractor routes it through non_matchup_rest to both heads.
+        # matchups so the extractor routes it through non_matchup_rest to both heads. Sourced from
+        # the LiveView read-model; the HP tracker is threaded for the revealed-HP typed expansion.
         vec[INCOMING_DMG_OFFSET:INCOMING_DMG_OFFSET + INCOMING_DMG_DIM] = \
-            encode_incoming_block(battle, our_team, live, hp_tracker=hp_tracker)
+            encode_incoming_block(live, hp_tracker=hp_tracker)
 
         # 5. Our moves vs Their mons (144 dims), starting at REACTIVE_MATCHUP_OFFSET (after the
         # 14 scalars + 36 move-effects + the incoming-damage block).

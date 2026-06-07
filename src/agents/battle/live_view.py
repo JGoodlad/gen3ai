@@ -118,6 +118,17 @@ class LivePokemon:
     consumed_item: Optional[str] = None
     status_counter: int = 0
 
+    # ---- computed stats + integer HP (current-board facts) ----
+    # ``stats`` is poke-env's EV/IV/nature-applied stat dict ({atk,def,spa,spd,spe}) — the REAL
+    # battle stats, not the dex ``base_stats``. Populated for our own mons (we know the spread);
+    # an opponent's are mostly ``None`` until inferable, so ``stats``/``current_hp`` are own-side
+    # reliable. ``current_hp``/``max_hp`` are the integer HP poke-env tracks (exact for our mons;
+    # an opponent's HP is %-based). The incoming-damage belief reads def/spd/spe + integer HP from
+    # here so it never touches the raw ``Pokemon`` — keeping the obs+reward belief on the read-model.
+    stats: Mapping[str, int] = field(default_factory=dict)
+    current_hp: Optional[int] = None
+    max_hp: Optional[int] = None
+
     @property
     def move_ids(self) -> Tuple[str, ...]:
         """Just the revealed move ids, sorted — the terse accessor for id-only call-sites
@@ -178,6 +189,9 @@ class LivePokemon:
             spread_known=bool(is_own),
             consumed_item=consumed_item,
             status_counter=int(getattr(mon, "status_counter", 0) or 0),
+            stats=dict(mon.stats) if getattr(mon, "stats", None) else {},
+            current_hp=(int(mon.current_hp) if getattr(mon, "current_hp", None) is not None else None),
+            max_hp=(int(mon.max_hp) if getattr(mon, "max_hp", None) is not None else None),
         )
 
 

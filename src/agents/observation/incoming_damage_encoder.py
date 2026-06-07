@@ -1,15 +1,19 @@
-"""Battle → incoming-damage belief block (the glue over the pure ``incoming_damage`` math core).
+"""LiveView → incoming-damage belief block (the glue over the pure ``incoming_damage`` math core).
 
-Single public entry point: :func:`encode_block`. It reads the live battle (our team, the opponent
-active, the field via the :class:`~agents.battle.live_view.LiveView` read-model), turns the hidden
-opponent set into a ``Candidate`` / ``AttackerThreat`` belief (revealed moves ∪ Smogon-usage priors;
-offensive stats as a usage distribution), and folds the per-defender KO/chip/outspeed belief through
-``incoming_damage.compute_team_block``. Everything else here is private.
+Single public entry point: :func:`encode_block`. It reads the current board **only** through the
+vetted :class:`~agents.battle.live_view.LiveView` read-model (no raw poke-env battle), turns the
+hidden opponent set into a ``Candidate`` / ``AttackerThreat`` belief (revealed moves ∪ Smogon-usage
+priors; offensive stats as a usage distribution), and folds the per-defender KO/chip/outspeed belief
+through ``incoming_damage.compute_team_block``. Everything else here is private.
 
 The math is deliberately kept poke-env-free in ``incoming_damage.py``; this module owns the *only*
-poke-env / data-facade reads. Per-species static reads (the usage stat distribution and the prior
-candidate moves) are ``lru_cache``d — they can't change mid-battle — which is what keeps the block
-inside the obs-build benchmark budget.
+data-facade reads (the usage stat distribution + prior candidate moves), all of them per-species and
+``lru_cache``d — which is what keeps the block inside the obs-build benchmark budget. Sourcing the
+board from ``LiveView`` (primitives) instead of the raw battle keeps the whole obs+reward belief on
+the strict-API read-model: the SAME ``LiveView`` already built per decision feeds both the obs path
+(``reactive.py``) and the reward-shaping path (``reward_manager.py`` PBRS), with no duplicate raw
+reads. ``hp_tracker`` (optional) types a revealed Hidden Power from its observation-narrowed prior;
+the obs path threads it, the reward path passes None (falls back to the Smogon HP-type prior).
 
 Design: `designs/ai_v5/design_incoming_damage_obs.md`.
 """
@@ -21,7 +25,7 @@ from typing import List, Optional, Tuple
 import numpy as np
 
 from agents import gen3_data
-from agents.enums import Status
+from agents.enums import PokemonType, Status
 from agents.gen3_mechanics import RECOVERY_MOVES
 from agents.observation import incoming_damage as inc
 from agents.observation.constants import TEAM_SIZE
@@ -60,6 +64,20 @@ _HIDDEN_POWER = "hiddenpower"
 _HIDDEN_POWER_FALLBACK_BP = 60    # if a typed dex variant is somehow missing, price HP at ~60 BP
 _HP_TYPE_MIN_P = 0.02             # drop negligible HP-type mass (a usage prior has a long ~0 tail);
                                   # keeps the expansion to the few real coverage types (perf)
+
+
+def _ptype(name: Optional[str]) -> Optional[PokemonType]:
+    """LiveView type-id string (e.g. ``'fire'``) → ``PokemonType`` enum (None passes through).
+    Inverse of LiveView's ``_enum_name`` (``PokemonType.FIRE`` ↔ ``'fire'``), so the belief sees the
+    exact same enum the raw-``mon.type_1`` path used — byte-identical."""
+    return PokemonType[name.upper()] if name else None
+
+
+def _pstatus(name: Optional[str]) -> Optional[Status]:
+    """LiveView status-id string (e.g. ``'par'``) → ``Status`` enum (None passes through). Only FRZ
+    changes an effectiveness result (Flash Fire) and PAR folds into P(outspeed); the rest are inert
+    to the belief but converted for consistency."""
+    return Status[name.upper()] if name else None
 
 
 @functools.lru_cache(maxsize=None)
@@ -159,14 +177,15 @@ def _hidden_power_candidates(species: str, hp_tracker, p_total: float) -> list:
     return out
 
 
-def _candidates(opp_active, species: str, hp_tracker=None) -> Tuple[list, list]:
+def _candidates(revealed_move_ids, species: str, hp_tracker=None) -> Tuple[list, list]:
     """Physical / special candidate moves vs us = revealed (P=1, per decision) ∪ cached prior
     moves. Fixed-damage moves (Seismic Toss/…) carry constant damage despite the dex STATUS tag; a
     revealed bare ``hiddenpower`` is expanded into per-type candidates (its type is hidden, so it
-    reads 0 BP in the dex) via the HP tracker / prior."""
+    reads 0 BP in the dex) via the HP tracker / prior. The belief takes the max over candidates, so
+    the revealed/prior order does not affect the output."""
     phys: list = []
     spec: list = []
-    for mid in (getattr(opp_active, "moves", {}) or {}):
+    for mid in revealed_move_ids:
         if mid == _HIDDEN_POWER:   # revealed but un-typed → expand into per-type candidates
             for cand in _hidden_power_candidates(species, hp_tracker, 1.0):
                 (phys if inc.type_is_physical(cand.move_type) else spec).append(cand)
@@ -179,88 +198,91 @@ def _candidates(opp_active, species: str, hp_tracker=None) -> Tuple[list, list]:
     return phys + list(pp), spec + list(sp)
 
 
-def _attacker_threat(opp_active, live, hp_tracker=None) -> Optional[inc.AttackerThreat]:
+def _attacker_threat(live, hp_tracker=None) -> Optional[inc.AttackerThreat]:
     """The opponent active as a belief (None if there is no opp active / no species yet): types
     known, offensive stats as usage tail+mean (boost folded in), candidate moves split by channel,
-    plus our screens / the weather (via the LiveView read-model) and the recovery scalars.
+    plus our screens / the weather, all from the LiveView read-model, and the recovery scalars.
     ``hp_tracker`` (optional) types a revealed Hidden Power from its narrowed distribution."""
-    if opp_active is None:
+    opp = live.opp.active
+    if opp is None:
         return None
-    species = getattr(opp_active, "species", None)
+    species = opp.species
     if not species:
         return None
-    boosts = getattr(opp_active, "boosts", {}) or {}
+    boosts = opp.boosts or {}
     atk_b, spa_b = inc.boost_mult(boosts.get("atk", 0)), inc.boost_mult(boosts.get("spa", 0))
     atk_tail, atk_mean, _ = _offensive_stat(species, "atk")
     spa_tail, spa_mean, _ = _offensive_stat(species, "spa")
     _, _, spe_dist = _offensive_stat(species, "spe")
-    phys, spec = _candidates(opp_active, species, hp_tracker)
+    revealed_ids = opp.move_ids
+    phys, spec = _candidates(revealed_ids, species, hp_tracker)
 
     # Recovery scalars (Suicune-Rest discriminator): revealed move → certain; else its usage prior.
     prior_mv = gen3_data.priors.moves(species)
-    revealed = set(getattr(opp_active, "moves", {}) or {})
+    revealed = set(revealed_ids)
     rate = min(1.0, sum(1.0 if rm in revealed else prior_mv.get(rm, 0.0) for rm in RECOVERY_MOVES))
     cures = 1.0 if _REST in revealed else prior_mv.get(_REST, 0.0)
     known = 1.0 if revealed & RECOVERY_MOVES else 0.0
 
-    # Field via the read-model (LiveView) — our screens + weather (strict-API boundary; global_env
-    # reads screens/weather the same way). None on the plain-battle / unit-test path → no screens /
-    # no weather (a small, safe over-pessimism in that rare path).
-    reflect = lscreen = False
-    weather = None
-    if live is not None:
-        oursc = getattr(live.ours, "side_conditions", {}) or {}
-        reflect = "reflect" in oursc
-        lscreen = "light_screen" in oursc
-        lw = getattr(live, "weather", None)
-        weather = getattr(lw, "weather", None) if lw is not None else None
+    # Field via the read-model — our screens + the weather. None on the no-LiveView path.
+    oursc = live.ours.side_conditions or {}
+    reflect = "reflect" in oursc
+    lscreen = "light_screen" in oursc
+    lw = getattr(live, "weather", None)
+    weather = getattr(lw, "weather", None) if lw is not None else None
 
-    opp_types = tuple(t for t in (opp_active.type_1, opp_active.type_2) if t is not None)
-    status = getattr(opp_active, "status", None)
+    opp_types = tuple(t for t in (_ptype(opp.types[0]) if opp.types else None,
+                                  _ptype(opp.types[1]) if len(opp.types) > 1 else None)
+                      if t is not None)
+    status = opp.status
     return inc.AttackerThreat(
         types=opp_types,
         atk_tail=atk_tail * atk_b, atk_mean=atk_mean * atk_b,
         spa_tail=spa_tail * spa_b, spa_mean=spa_mean * spa_b,
         spe_dist=spe_dist, boost_spe=int(boosts.get("spe", 0)),
-        para=(status == Status.PAR), burn=(status == Status.BRN),
+        para=(status == "par"), burn=(status == "brn"),
         phys=phys, spec=spec, our_reflect=reflect, our_light_screen=lscreen, weather=weather,
         recovery_rate=rate, cures_status=float(cures), recovery_known=known,
     )
 
 
-def _defender(mon, active_mon) -> Optional[inc.Defender]:
-    """One of our mons as an exact ``Defender`` (None if absent / fainted / stats not yet known).
-    ``status`` stays the raw :class:`~agents.enums.Status` enum; ``has_sub`` is only set for the
-    active mon (a Substitute eats the incoming hit, so a benched mon can't be 'behind' one)."""
-    if mon is None or getattr(mon, "fainted", False):
+def _defender(lm) -> Optional[inc.Defender]:
+    """One of our mons as an exact ``Defender`` (None if absent / fainted / stats not yet known),
+    built from its :class:`~agents.battle.live_view.LivePokemon`. ``status`` is converted to the raw
+    :class:`~agents.enums.Status` enum; ``has_sub`` is only set for the active mon (a Substitute eats
+    the incoming hit, so a benched mon can't be 'behind' one)."""
+    if lm is None or lm.fainted:
         return None
-    stats = getattr(mon, "stats", None) or {}
+    stats = lm.stats or {}
     d, sd, spe = stats.get("def"), stats.get("spd"), stats.get("spe")
-    hp, hpx = getattr(mon, "current_hp", None), getattr(mon, "max_hp", None)
+    hp, hpx = lm.current_hp, lm.max_hp
     if not (d and sd and spe and hp and hpx):
         return None
-    boosts = getattr(mon, "boosts", {}) or {}
-    has_sub = mon is active_mon and any(
-        getattr(e, "name", "") == "SUBSTITUTE" for e in (getattr(mon, "effects", {}) or {}))
+    boosts = lm.boosts or {}
+    has_sub = lm.active and lm.has_volatile("substitute")
     return inc.Defender(
         def_stat=int(d), spd_stat=int(sd), hp_remaining=int(hp), hp_max=int(hpx), spe=int(spe),
-        type1=mon.type_1, type2=mon.type_2, ability=getattr(mon, "ability", None),
-        status=getattr(mon, "status", None), boost_def=int(boosts.get("def", 0)),
+        type1=_ptype(lm.types[0]) if lm.types else None,
+        type2=_ptype(lm.types[1]) if len(lm.types) > 1 else None,
+        ability=lm.ability,
+        status=_pstatus(lm.status), boost_def=int(boosts.get("def", 0)),
         boost_spd=int(boosts.get("spd", 0)), boost_spe=int(boosts.get("spe", 0)), has_sub=has_sub,
     )
 
 
-def encode_block(battle, our_team: List, live=None, hp_tracker=None) -> np.ndarray:
-    """The incoming-damage / OHKO belief block (incoming_damage_v1) for one decision.
+def encode_block(live, hp_tracker=None) -> np.ndarray:
+    """The incoming-damage / OHKO belief block (incoming_damage_v2) for one decision, from the
+    :class:`~agents.battle.live_view.LiveView` read-model.
 
-    Per our mon (slot-aligned to the team): the opponent active's phys/spec expected-chip + P(KO) +
-    P(outspeed) under the hidden-set belief, then 3 opp-active recovery scalars. Defensive: any
-    missing field (no opp active, opp not in priors, our mon without stats) degrades to zeros for
-    that piece. ``live`` (LiveView) supplies our screens + the weather via the strict-API boundary;
-    ``hp_tracker`` (optional) types a revealed Hidden Power from its observation-narrowed prior.
-    """
-    threat = _attacker_threat(getattr(battle, "opponent_active_pokemon", None), live, hp_tracker)
-    active = getattr(battle, "active_pokemon", None)
-    defenders = [_defender(our_team[i] if i < len(our_team) else None, active)
-                 for i in range(TEAM_SIZE)]
+    Per our mon (slot-aligned to ``live.ours.mons``, which mirrors ``get_team_list`` order): the
+    opponent active's phys/spec expected-chip + P(KO) + P(outspeed) under the hidden-set belief, then
+    3 opp-active recovery scalars. Defensive: ``live`` is None / no opp active / our mon without
+    stats degrades to zeros for that piece. ``hp_tracker`` (optional) types a revealed Hidden Power
+    from its observation-narrowed prior (obs path threads it; the reward PBRS passes None → the
+    Smogon HP-type prior)."""
+    if live is None:
+        return np.zeros(TEAM_SIZE * inc.PER_MON + inc.RECOVERY, dtype=np.float32)
+    threat = _attacker_threat(live, hp_tracker)
+    mons = live.ours.mons
+    defenders = [_defender(mons[i]) if i < len(mons) else None for i in range(TEAM_SIZE)]
     return inc.compute_team_block(defenders, threat, TEAM_SIZE)

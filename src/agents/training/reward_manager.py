@@ -13,6 +13,11 @@ from agents.gen3_mechanics import (
     STATUS_MOVE_IMMUNITY as _STATUS_MOVE_IMMUNITY,
 )
 from agents.enums import PokemonType as _PokemonType
+from agents.observation.incoming_damage_encoder import encode_block as _encode_incoming_block
+from agents.observation.constants import (
+    TEAM_SIZE as _TEAM_SIZE,
+    INCOMING_PER_MON as _INCOMING_PER_MON,
+)
 
 
 def _ptype(name) -> "Optional[_PokemonType]":
@@ -83,6 +88,12 @@ class RewardBreakdown:
     # Progressive stall tax
     stall_tax: float = 0.0
 
+    # Belief-based switch shaping (design_reward_switching.md): potential-based reward shaping
+    # over the incoming-KO belief — a credit-assignment bridge that brings the avoided-faint
+    # benefit forward to the switch decision. Policy-invariant (Ng 1999), so it cannot change the
+    # optimal policy; it only reshapes where credit lands. NEVER touches the ±30 terminal.
+    pbrs_material: float = 0.0
+
     # Groups ordered by how frequently they produce non-zero values.
     # Each group's fields are listed in the order they should appear in the string.
     _GROUPS: ClassVar[tuple] = (
@@ -93,6 +104,7 @@ class RewardBreakdown:
                     "pivot_protect", "pivot_status",
                     "pivot_damage", "se_switch", "sleep_out", "sleep_in")),
         ("field",  ("spikes", "matchup_penalty", "dead_matchup_tax", "status", "stall_tax")),
+        ("shaping", ("pbrs_material",)),
     )
 
     @property
@@ -159,8 +171,24 @@ FUTILE_ATTACK_PENALTY = -0.05  # attacking move used but opponent net gained HP 
 FUTILE_IMMUNE_PENALTY = -0.5   # flat per-turn penalty for attacking into a type immunity
                                # (our_effectiveness == 0.0). The ESCALATION on a repeated
                                # immune attack comes from the zero-effect repetition tax below.
-ESCAPE_THREAT_BONUS = 0.25     # voluntarily switching out while opp has a revealed SE threat vs us
-MATCHUP_PENALTY = -0.15        # per turn we stay in while opp has a revealed SE move vs us
+ESCAPE_THREAT_BONUS = 0.25     # voluntarily switching out while opp threatens us (revealed SE OR belief)
+MATCHUP_PENALTY = -0.15        # per turn we stay in while opp threatens us (revealed SE OR belief)
+
+# --- Belief-based switch shaping (design_reward_switching.md) ---
+# Fix for the confirmed under-switch pathology: the policy switches LESS as the incoming-KO belief
+# rises (the obs has the signal + the critic reads it, but the reward never pushed switching for the
+# damage-magnitude / unrevealed / prior-based threats — only revealed-SE). Two parts:
+#  (A) re-gate ESCAPE_THREAT_BONUS / MATCHUP_PENALTY on the incoming-KO belief (OR-ed with the old
+#      revealed-SE gate), so they fire on the threats they used to miss; and
+#  (B) potential-based reward shaping (Ng 1999) over the belief — policy-invariant, bridges the
+#      credit-assignment gap by bringing the avoided-faint benefit forward to the switch decision.
+# NEVER touches the ±30 terminal: PBRS uses Phi(terminal)=0, contributing only a policy-invariant
+# constant to the return.
+PBRS_RISK_WEIGHT = 2.0         # potential weight; a full-HP mon at certain imminent KO ≈ -2.0 in Phi
+                              # (between FAINT_MATERIAL_PENALTY 0.75 and the full faint cost ~-3.25)
+PBRS_GAMMA = 0.9999           # MUST equal the PPO gamma (train_rl_agent default) for policy-invariance
+SWITCH_RISK_THRESHOLD = 0.5   # belief P(KO)·(1-P(outspeed)) above which the active mon counts as
+                              # "threatened" for the escape/stay re-gate
 PROTECT_SWITCH_BONUS = 0.10    # opponent used Protect/Detect/Endure on our switch turn
 STATUS_IMMUNE_SWITCH_BONUS = 0.10  # our switch-in was immune to their status move
 
@@ -255,6 +283,10 @@ class Gen3RewardManager:
         self._our_boosts_before: np.ndarray = np.zeros(7, dtype=np.int8)
         self._last_opp_seen_by: dict[str, str] = {}
         # maps our_species → opp_species when this mon last switched in (voluntary, not roared)
+        # Belief-based switch shaping: Phi(s) at the previous turn's end (None at episode start → the
+        # first transition adds no shaping), and last turn's active incoming-KO risk for the re-gate.
+        self._prev_phi: Optional[float] = None
+        self._prev_active_ko_risk: float = 0.0
 
     def reset(self):
         self.switch_count = 0
@@ -281,6 +313,8 @@ class Gen3RewardManager:
         self._opp_active_hp_before = 1.0
         self._our_boosts_before = np.zeros(7, dtype=np.int8)
         self._last_opp_seen_by = {}
+        self._prev_phi = None
+        self._prev_active_ko_risk = 0.0
 
     def record_action(self, ctx: BattleContext, action: int) -> None:
         """
@@ -413,7 +447,7 @@ class Gen3RewardManager:
         spam_mult = 1.0 if (decision_turn - self.last_switch_turn) > 1 else 0.0
         bd.switch_base = SWITCH_BASE_BONUS * spam_mult
 
-        if self._prev_opp_se_threat:
+        if self._prev_opp_se_threat or self._prev_active_ko_risk >= SWITCH_RISK_THRESHOLD:
             bd.escape_threat_switch = ESCAPE_THREAT_BONUS
 
         self.switch_count += 1
@@ -590,11 +624,14 @@ class Gen3RewardManager:
         return 0.0
 
     def _compute_matchup_penalty(self, delta: TurnDelta) -> float:
-        """Per-turn penalty for staying in while the opp had a revealed SE move vs us last turn.
-        Uses last-turn's snapshot so we only penalise for threats known at decision time."""
+        """Per-turn penalty for staying in while the opp threatened us last turn — a revealed SE
+        move OR the incoming-KO belief (P(KO)·(1-outspeed) ≥ threshold). Uses last-turn's snapshot
+        so we only penalise for threats known at decision time. The belief OR-gate lights this up
+        for the damage-magnitude / unrevealed / prior-based threats the revealed-SE gate misses."""
         if delta.our_switch_to is not None:
             return 0.0  # we switched out — no staying-in penalty
-        return MATCHUP_PENALTY if self._prev_opp_se_threat else 0.0
+        threatened = self._prev_opp_se_threat or self._prev_active_ko_risk >= SWITCH_RISK_THRESHOLD
+        return MATCHUP_PENALTY if threatened else 0.0
 
     def _compute_dead_matchup_tax(self, delta: TurnDelta, live) -> float:
         """Escalating penalty for refusing to pivot out of a 0×-only matchup.
@@ -700,6 +737,38 @@ class Gen3RewardManager:
                     self._prev_opp_se_threat = True
                     return
         self._prev_opp_se_threat = False
+
+    def _belief_potential_and_risk(self, live) -> tuple[float, float]:
+        """The incoming-KO belief potential Φ(s) and the active mon's imminent KO-risk, both from
+        the LiveView read-model (one belief encode, no raw battle).
+
+        Φ = PBRS_RISK_WEIGHT · ( Σ_alive hp_frac  −  hp_active · risk_active ), where
+        risk_active = max(phys_pko, spec_pko)·(1 − P(outspeed)) for the on-field mon. This is
+        **expected surviving material**: a benched mon counts its full HP (it isn't hit this turn);
+        the active mon is discounted by its imminent KO chance. So switching a doomed active to the
+        bench RAISES Φ (its HP stops being discounted) → positive shaping AT the switch decision,
+        while a faint never raises Φ (it removes a positive contribution). Φ is a pure function of
+        the board state → policy-invariant under PBRS. The second return is risk_active for the
+        escape/stay re-gate snapshot."""
+        block = _encode_incoming_block(live)
+        mons = live.ours.mons
+        total_hp = 0.0
+        active_imminent = 0.0
+        active_risk = 0.0
+        for i, lm in enumerate(mons[:_TEAM_SIZE]):
+            if lm is None or lm.fainted:
+                continue
+            hp = float(lm.hp_fraction)
+            total_hp += hp
+            if lm.active:
+                base = i * _INCOMING_PER_MON
+                pko = max(float(block[base + 2]), float(block[base + 3]))
+                outspeed = float(block[base + 4])
+                active_risk = pko * (1.0 - outspeed)
+                active_imminent = hp * active_risk
+        phi = PBRS_RISK_WEIGHT * (total_hp - active_imminent)
+        phi = max(0.0, min(phi, PBRS_RISK_WEIGHT * _TEAM_SIZE))
+        return phi, active_risk
 
     def _compute_spikes_bonus(self, delta: TurnDelta, live) -> float:
         """Reward each new spike layer added; penalise wasting a turn at layer cap."""
@@ -928,6 +997,18 @@ class Gen3RewardManager:
         # Update end-of-turn snapshots for next turn's checks
         self._prev_opp_boosts = self._opp_active_boosts(live)
         self._update_opp_se_threat(live)
+
+        # Belief-based switch shaping (design_reward_switching.md). One belief encode yields Phi(s')
+        # (the potential at this turn's end = the state the model sees next decision) and the active
+        # incoming-KO risk snapshot for next turn's escape/stay re-gate. PBRS reward = γ·Phi(s')−Phi(s);
+        # Phi(terminal)=0 so the ±30 win/loss is NEVER altered. prev_phi is None on the episode's first
+        # turn, so that transition adds no shaping (standard PBRS init).
+        phi_next, active_risk_next = self._belief_potential_and_risk(live)
+        is_terminal = won or lost or finished
+        if self._prev_phi is not None:
+            bd.pbrs_material = PBRS_GAMMA * (0.0 if is_terminal else phi_next) - self._prev_phi
+        self._prev_phi = 0.0 if is_terminal else phi_next
+        self._prev_active_ko_risk = 0.0 if is_terminal else active_risk_next
 
         # Track whether our last move did anything PRODUCTIVE this turn, for the
         # escalating repetition tax. A move counts as effective if it dealt damage,

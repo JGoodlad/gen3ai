@@ -1,6 +1,7 @@
 import dataclasses
 import unittest
-from unittest.mock import MagicMock
+from types import SimpleNamespace
+from unittest.mock import MagicMock, patch
 import numpy as np
 from agents.training.reward_manager import (
     Gen3RewardManager,
@@ -10,7 +11,9 @@ from agents.training.reward_manager import (
     HP_VALUE, FAINT_BASE, FAINT_HP_SCALE, FAINT_MATERIAL_PENALTY, VICTORY_VALUE,
     FUTILE_SETUP_PENALTY, SETUP_LOW_HP_MAX_PENALTY, STATUS_WASTED_PENALTY,
     EXPLOSION_BLOCK_BONUS, FINISHING_BLOW_BONUS,
+    PBRS_RISK_WEIGHT, SWITCH_RISK_THRESHOLD,
 )
+from agents.observation.constants import INCOMING_PER_MON
 from agents.training.battle_snapshot import BattleContext
 from agents.training.turn_delta import TurnDelta
 from poke_env.battle.abstract_battle import DamagingMoveEvent
@@ -2130,6 +2133,82 @@ class TestFutileImmunePenaltyRaised(unittest.TestCase):
 
     def test_immune_penalty_harsher_than_futile_attack(self):
         self.assertLess(FUTILE_IMMUNE_PENALTY, FUTILE_ATTACK_PENALTY)
+
+
+def _fake_lp(hp_fraction, active=False, fainted=False):
+    """Minimal LivePokemon stand-in carrying only the fields _belief_potential_and_risk reads."""
+    return SimpleNamespace(hp_fraction=hp_fraction, active=active, fainted=fainted)
+
+
+def _fake_live(mons):
+    return SimpleNamespace(ours=SimpleNamespace(mons=tuple(mons)))
+
+
+def _belief_block(slot_pko, n=6):
+    """An incoming-damage block where ``slot_pko`` = {slot: (pko, outspeed)} sets that slot's
+    spec_pko + outspeed; all else zero. Matches the [phys_exp, spec_exp, phys_pko, spec_pko,
+    p_outspeed] per-mon layout."""
+    blk = np.zeros(n * INCOMING_PER_MON + 3, dtype=np.float32)
+    for i, (pko, outspd) in slot_pko.items():
+        blk[i * INCOMING_PER_MON + 3] = pko
+        blk[i * INCOMING_PER_MON + 4] = outspd
+    return blk
+
+
+class TestPbrsSwitchShaping(unittest.TestCase):
+    """Guard tests for the belief-based switch shaping (design_reward_switching.md). They pin the
+    potential's three required properties + the re-gate, with the belief block mocked so the Φ
+    math is tested in isolation."""
+
+    def _phi(self, rm, mons, block):
+        with patch("agents.training.reward_manager._encode_incoming_block", return_value=block):
+            return rm._belief_potential_and_risk(_fake_live(mons))
+
+    def test_active_gating_rewards_switching_doomed_mon(self):
+        """Φ RISES when a doomed mon is moved off the field (the credit-assignment bridge). Same
+        belief block (slot 0 is a certain-KO mon); only the active flag moves — isolating the
+        active-gating: only the ACTIVE mon's KO-risk discounts its material."""
+        rm = Gen3RewardManager()
+        block = _belief_block({0: (1.0, 0.0)})           # slot 0: P(KO)=1, slower → risk 1.0
+        doomed_active = [_fake_lp(1.0, active=(i == 0)) for i in range(6)]
+        phi_doomed, risk = self._phi(rm, doomed_active, block)
+        safe_active = [_fake_lp(1.0, active=(i == 1)) for i in range(6)]   # doomed mon now benched
+        phi_safe, _ = self._phi(rm, safe_active, block)
+        self.assertAlmostEqual(risk, 1.0, places=6)
+        self.assertGreater(phi_safe, phi_doomed)
+        self.assertAlmostEqual(phi_doomed, PBRS_RISK_WEIGHT * 5.0, places=5)   # W·(6 − 1·1)
+        self.assertAlmostEqual(phi_safe, PBRS_RISK_WEIGHT * 6.0, places=5)     # W·(6 − 0)
+
+    def test_faint_never_raises_phi(self):
+        """An isolated our-mon faint must NOT increase Φ — kills the reward-for-fainting hazard."""
+        rm = Gen3RewardManager()
+        block = _belief_block({0: (1.0, 0.0)})
+        alive = [_fake_lp(1.0, active=(i == 0)) for i in range(6)]
+        phi_before, _ = self._phi(rm, alive, block)
+        faint5 = [_fake_lp(1.0, active=(i == 0), fainted=(i == 5)) for i in range(6)]
+        phi_after, _ = self._phi(rm, faint5, block)
+        self.assertLessEqual(phi_after, phi_before)
+        self.assertAlmostEqual(phi_before, PBRS_RISK_WEIGHT * 5.0, places=5)
+        self.assertAlmostEqual(phi_after, PBRS_RISK_WEIGHT * 4.0, places=5)    # lost 1 HP-unit
+
+    def test_phi_nonnegative_and_bounded(self):
+        rm = Gen3RewardManager()
+        block = _belief_block({i: (1.0, 0.0) for i in range(6)})  # only the active mon discounts
+        mons = [_fake_lp(1.0, active=(i == 0)) for i in range(6)]
+        phi, _ = self._phi(rm, mons, block)
+        self.assertGreaterEqual(phi, 0.0)
+        self.assertLessEqual(phi, PBRS_RISK_WEIGHT * 6.0)
+
+    def test_belief_regate_fires_matchup_penalty_with_no_revealed_se(self):
+        """The escape/stay re-gate fires on the incoming-KO belief even when the OLD revealed-SE
+        gate is silent — the fix for the 71% dark majority."""
+        rm = Gen3RewardManager()
+        rm._prev_opp_se_threat = False                    # the revealed-SE gate is OFF
+        delta = SimpleNamespace(our_switch_to=None)
+        rm._prev_active_ko_risk = SWITCH_RISK_THRESHOLD + 0.1
+        self.assertEqual(rm._compute_matchup_penalty(delta), MATCHUP_PENALTY)
+        rm._prev_active_ko_risk = SWITCH_RISK_THRESHOLD - 0.1
+        self.assertEqual(rm._compute_matchup_penalty(delta), 0.0)
 
 
 if __name__ == "__main__":

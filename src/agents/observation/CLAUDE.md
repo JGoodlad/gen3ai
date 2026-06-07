@@ -263,21 +263,23 @@ P(KO)<0.25). v2 (1) de-timids P(KO) — the **crit term** + the **raised offensi
 the KO flag on near-OHKOs while expected-damage re-normalises to the MEAN (∝ `atk_mean`), so the chip
 belief is unchanged; and (2) widens the candidate set so the killing move isn't silently absent — a
 **revealed bare `hiddenpower`** (dex BP 0) expands into per-type candidates (~70 BP, typed from the **HP
-tracker**'s observation-narrowed distribution / Smogon HP prior — the tracker is now threaded into
+tracker**'s observation-narrowed distribution / Smogon HP prior — the tracker is threaded into
 `encode_block`), Return/Frustration are priced, and the prior **floor/cap widen (0.12→0.05, 4→6 per
 channel)** so a low-usage super-effective coverage move survives into the pool (the per-defender max over
 `p_in_set·P(KO)` is the real type-effectiveness gate, so extra low-usage candidates only ever surface a
 genuine SE threat — they can't inflate a neutral one). **Two modules, deep split:** the pure, poke-env-free
 math core (formula, roll→P(KO) + crit, P(outspeed), the `Candidate`/`Defender`/`AttackerThreat` beliefs,
-`compute_team_block`) is `incoming_damage.py`; the battle→belief extraction is
-`incoming_damage_encoder.py` behind the single `encode_block(battle, our_team, live, hp_tracker)` entry —
-it owns
-the *only* poke-env / facade reads (revealed ∪ usage-prior candidates, HP typing, offensive-stat
-distributions), with per-species `lru_cache` on candidates + stats so only the per-defender damage math
-(and the rare revealed-HP expansion) is per-decision.
-`reactive.py` just calls `encode_block`. Priors: `gen3_{move,spread,item,hidden_power}_priors.json` via
-`gen3_data.priors`. Belief-not-calc → validated by calibration, not byte-exactness; the obs golden
-fixture still pins the vector byte-for-byte.
+`compute_team_block`) is `incoming_damage.py`; the board→belief extraction is `incoming_damage_encoder.py`
+behind the single **`encode_block(live, hp_tracker)`** entry — it reads the current board **only through
+the `LiveView` read-model** (no raw poke-env battle; `LivePokemon` carries the EV-computed `stats` +
+integer `current_hp`/`max_hp` the belief needs), so the SAME `LiveView` built per decision feeds both the
+obs path here AND the reward-shaping path (`reward_manager.py` PBRS) — one strict-API source, no
+duplicate raw reads. Its only data reads are the per-species usage candidates + HP typing + offensive-stat
+distributions, `lru_cache`d so only the per-defender damage math (and the rare revealed-HP expansion) is
+per-decision. `reactive.py` passes `live` + the HP tracker; the reward PBRS passes `live` only (HP typing
+falls back to the Smogon prior). Priors: `gen3_{move,spread,item,hidden_power}_priors.json` via
+`gen3_data.priors`. Belief-not-calc → validated by calibration; the obs golden fixture pins the vector
+byte-for-byte (the LiveView migration is value-neutral — golden parity holds against the v2 fixture).
 
 > **Downstream reader:** the prober engine (`src/main/prober/engine.py`) reads
 > `OFFSET_REACTIVE + move_multiplier` (active-move type mults), `+ our_matchups`,

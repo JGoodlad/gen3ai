@@ -152,7 +152,9 @@ def test_livepokemon_has_no_history_fields(attr):
 def test_livepokemon_fields_are_exactly_the_minimal_set():
     """Pin the field set so nobody silently grows LivePokemon into a state grab-bag.
     The spread / consumed-item / status-counter fields are deliberate current-board
-    additions (Phase 1 of the strict-API plan) — still NO past-turn fields."""
+    additions (Phase 1 of the strict-API plan), and stats / current_hp / max_hp are the
+    incoming-damage belief's current-board inputs (EV-computed stats + integer HP, so the
+    obs+reward belief reads the read-model instead of the raw Pokemon) — still NO past-turn fields."""
     names = {f.name for f in dataclasses.fields(LivePokemon)}
     assert names == {
         "species", "active", "fainted", "revealed", "hp_fraction", "status",
@@ -160,6 +162,8 @@ def test_livepokemon_fields_are_exactly_the_minimal_set():
         # spread block (own-side gated) + revealed consumed item + status counter
         "base_stats", "ivs", "evs", "nature", "spread_known",
         "consumed_item", "status_counter",
+        # incoming-damage belief inputs: EV-computed stats + integer HP (current-board facts)
+        "stats", "current_hp", "max_hp",
     }
 
 

@@ -155,3 +155,37 @@ When `_last_switch_was_roared = True` (set in `record_action` when
 - Sleep-out bonus → skipped
 - Sleep-in penalty → still fires (we still sent in the replacement)
 - Switch subsidy → `0.0` (not a voluntary switch)
+
+---
+
+## Belief-based switch shaping (`design_reward_switching.md`)
+
+Fixes the confirmed **under-switch** pathology: the policy switched *less* as the incoming-KO belief
+rose (the obs has the signal + the critic reads it, but the reward only pushed switching for a
+**revealed super-effective** move — `_update_opp_se_threat`, the same narrow signal the old obs had —
+so it was silent for the ~71% of high-P(KO) deaths with no revealed SE move). Two parts, always on:
+
+### (A) Belief re-gate of escape / stay
+
+`_belief_potential_and_risk` snapshots the active mon's incoming KO-risk each turn:
+`_prev_active_ko_risk = max(phys_pko, spec_pko)·(1 − P(outspeed))` (from the incoming-damage belief).
+`escape_threat_switch` (`_apply_switch_outcome`) and `matchup_penalty` (`_compute_matchup_penalty`)
+now fire on `_prev_opp_se_threat` **OR** `_prev_active_ko_risk ≥ SWITCH_RISK_THRESHOLD` (0.5) — so the
+existing ±0.25 / −0.15 terms light up for the damage-magnitude / unrevealed / prior-based threats the
+revealed-SE gate missed. Magnitudes unchanged.
+
+### (B) Potential-based reward shaping (`pbrs_material`)
+
+`pbrs_material = PBRS_GAMMA·Φ(s′) − Φ(s)` (Ng 1999 — **policy-invariant**: telescopes, can't change
+the optimal policy or be farmed). `Φ(s) = PBRS_RISK_WEIGHT·( Σ_alive hp_frac − hp_active·risk_active )`
+— **expected surviving material**: a benched mon counts its full HP (it isn't hit this turn); the
+active mon is discounted by its imminent KO chance. So switching a doomed active to the bench RAISES Φ
+(its HP stops being discounted) → positive shaping **at the switch decision** (the credit-assignment
+bridge), while a faint never raises Φ. Computed once per turn from the `LiveView` (the same belief
+`encode_block(live)` the obs uses — no raw battle). `Φ(terminal)=0`, so the **±30 win/loss terminal is
+never touched**; `_prev_phi` is cleared in `reset()` (first transition adds no shaping).
+
+Guard tests (`reward_manager_test.py::TestPbrsSwitchShaping`): active-gating rewards switching a doomed
+mon; a faint never raises Φ; Φ bounded; the re-gate fires with no revealed SE. Retrain-class (reward
+values change) but **no ARCH bump** — checkpoints still load; measure via the prober
+switch-prob-vs-P(KO) re-check (success = the curve un-inverts).

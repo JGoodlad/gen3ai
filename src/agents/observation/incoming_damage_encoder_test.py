@@ -2,8 +2,8 @@
 
 The pure belief MATH is pinned in incoming_damage_test.py; this pins the candidate-building glue:
 the FIX-2 widenings (Return/Frustration pricing, Hidden Power typed expansion, the broadened
-floor/cap so super-effective coverage survives). Uses real gen3_data (species/moves/priors) with
-tiny duck-typed opponents — no battle, no torch.
+floor/cap so super-effective coverage survives). Uses real gen3_data (species/moves/priors) and the
+revealed move-id list `_candidates` takes (the belief is now sourced from LiveView) — no battle, no torch.
 """
 from types import SimpleNamespace as NS
 
@@ -14,7 +14,7 @@ from agents.training.hidden_power_tracker import HiddenPowerTracker
 
 
 def _channels(opp_moves, species, hp_tracker=None):
-    return enc._candidates(NS(moves={m: object() for m in opp_moves}), species, hp_tracker)
+    return enc._candidates(list(opp_moves), species, hp_tracker)
 
 
 def test_return_and_frustration_priced():

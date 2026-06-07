@@ -40,9 +40,12 @@ lock) + the `src/agents/enums.py` re-export seam. The one remaining open item is
   moves listed; `ability` is `None` unless disclosed or uniquely inferable from species).
   `LivePokemon` also carries the **spread block** (`base_stats` — public, both sides;
   `ivs`/`evs`/`nature` — own side only, gated by `spread_known` mirroring the obs encoder),
-  `consumed_item` (id-form) and `status_counter`; `moves` is a tuple of `LiveMove(id,
-  current_pp, max_pp)` with a `move_ids` accessor for id-only call-sites. `LiveView` carries
-  the meta `turn`/`battle_tag`/`finished`/`won`/`lost`.
+  `consumed_item` (id-form), `status_counter`, and the **incoming-damage belief inputs**
+  (`stats` — the EV/IV/nature-computed {atk,def,spa,spd,spe}; integer `current_hp`/`max_hp` —
+  own-side reliable, opp HP is %-based), so the incoming-KO belief reads the read-model instead
+  of the raw `Pokemon` (shared by the obs `encode_block(live)` and the reward PBRS shaping);
+  `moves` is a tuple of `LiveMove(id, current_pp, max_pp)` with a `move_ids` accessor for id-only
+  call-sites. `LiveView` carries the meta `turn`/`battle_tag`/`finished`/`won`/`lost`.
 - **`LegalActions` / `LegalMove` / `LegalSwitch`** (`live_view.py`) — the
   **server-authoritative** legality surface, built via `LegalActions.from_battle(battle)`
   (or `strict_view().legal`): per-slot `LegalMove(id, current_pp, max_pp, disabled, target)`,
