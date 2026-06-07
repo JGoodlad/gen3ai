@@ -3,7 +3,9 @@
 We do **not** compute "the damage"; we compute a calibrated **belief about being KO'd** under hidden
 opponent info (move / spread / item unknown). This module is the perf-light, deterministic core:
 the Gen-3 damage formula (incl. the gen≤4 Explosion/Self-Destruct Def-halve), the roll→P(KO)
-closed form, and P(outspeed) over a Speed distribution. Battle-state integration — reading our team
+closed form blended with a gen3 critical-hit tail term (``_CRIT_P``: a crit does ×2 and ignores
+screens, so a move that only KOs on a crit reads a calibrated ~6% instead of P(KO)~0), and
+P(outspeed) over a Speed distribution. Battle-state integration — reading our team
 + the opp active + field and building the ``Candidate`` / ``Defender`` / ``AttackerThreat`` beliefs —
 lives in ``incoming_damage_encoder.py`` and calls these.
 
@@ -49,6 +51,12 @@ FIXED_DAMAGE: dict[str, int] = {
     "seismictoss": 100, "nightshade": 100,   # level-100 fixed
     "dragonrage": 40, "sonicboom": 20,        # constant
 }
+
+# Gen-3 base critical-hit rate (most moves; high-crit-ratio moves are higher, not modelled). A crit
+# does ×2 damage and IGNORES screens (Reflect/Light Screen). Folded into P(KO) as a small tail term
+# so a hit that only KOs on a crit surfaces a calibrated ~6% KO risk instead of reading P(KO)~0.
+# Set to 0.0 to disable the crit term (recovers the pre-crit belief — used by the A/B calibration probe).
+_CRIT_P = 1.0 / 16.0
 
 _PARA_SPEED = 0.25      # gen3 paralysis quarters Speed
 _BOOST_STAGES = {  # standard gen3 stat-stage multipliers (atk/spa/spe share this table)
@@ -230,7 +238,13 @@ def weather_damage_mult(move_type: PokemonType, weather: Optional[str]) -> float
 
 def _channel_threat(cands, d: Defender, atk_tail: float, atk_mean: float, *,
                     a: AttackerThreat, screen: bool, is_phys: bool) -> Tuple[float, float]:
-    """(pko, expdmg_frac) = max over a channel's candidates of p_in_set·(KO prob / dmg fraction)."""
+    """(pko, expdmg_frac) = max over a channel's candidates of p_in_set·(KO prob / dmg fraction).
+
+    P(KO) blends the no-crit roll integration with a ``_CRIT_P`` crit branch (×2, screen-ignoring);
+    expected-damage stays the mean-stat chip (no crit term — the chip belief is already calibrated;
+    only the KO flag was too timid). The KO magnitude rides ``atk_tail`` (the offensive-stat tail),
+    so raising that quantile lifts P(KO) on near-OHKOs while leaving expected-damage (∝ ``atk_mean``)
+    unchanged."""
     if not cands or d.hp_max <= 0:
         return 0.0, 0.0
     defense = d.def_stat if is_phys else d.spd_stat
@@ -252,6 +266,14 @@ def _channel_threat(cands, d: Defender, atk_tail: float, atk_mean: float, *,
             dmax = gen3_damage_max(c.power, int(atk_tail), cdef, stab=stab, type_eff=eff,
                                    screen=screen, weather=w, burned=burned)
             pko = p_ko(dmax, d.hp_remaining)
+            if _CRIT_P > 0.0:
+                # gen3 crit: ×2 damage and IGNORES screens (so compute it screen-free, then double).
+                # Burn still applies; we keep the (boosted) Def — a defender at +Def being OHKO'd is
+                # rare, so this stays a calibrated tail term, not a worst-case calc. Blending the
+                # crit branch lifts a move that only KOs on a crit out of the P(KO)~0 floor.
+                dmax_crit = 2 * gen3_damage_max(c.power, int(atk_tail), cdef, stab=stab, type_eff=eff,
+                                                screen=False, weather=w, burned=burned)
+                pko = (1.0 - _CRIT_P) * pko + _CRIT_P * p_ko(dmax_crit, d.hp_remaining)
             # expected dmg ≈ the max-roll damage scaled by the mean/tail stat ratio × mean roll
             # (damage is ~linear in Atk; avoids a second full calc on the obs hot path).
             ratio = (atk_mean / atk_tail) if atk_tail > 0 else 1.0

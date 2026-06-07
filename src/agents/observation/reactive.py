@@ -338,7 +338,7 @@ class ReactiveEncoder(ObservationEncoder):
         # opponent active's KO/chip/outspeed threat under the hidden-set belief. Sits before the
         # matchups so the extractor routes it through non_matchup_rest to both heads.
         vec[INCOMING_DMG_OFFSET:INCOMING_DMG_OFFSET + INCOMING_DMG_DIM] = \
-            encode_incoming_block(battle, our_team, live)
+            encode_incoming_block(battle, our_team, live, hp_tracker=hp_tracker)
 
         # 5. Our moves vs Their mons (144 dims), starting at REACTIVE_MATCHUP_OFFSET (after the
         # 14 scalars + 36 move-effects + the incoming-damage block).

@@ -58,7 +58,11 @@ Judge by these load-independent metrics, in priority order:
 1. **Total function calls per encode** = `<N function calls>` line ÷ `--reps`. This is the
    single best regression detector — it does not move with machine load. Baseline ≈
    **~6.85k calls/encode** (≈2,740,801 / 400, post `gen3_incoming_damage_v1` — was 6.36k before the
-   incoming-damage belief block; that feature is a justified +7.7%, the new reference). A jump of
+   incoming-damage belief block; that feature is a justified +7.7%, the new reference). The
+   `gen3_incoming_damage_v2` belief recalibration (crit term + wider candidate set: revealed-HP
+   typed expansion, Return/Frustration, the 0.12→0.05 floor + 4→6 cap) added a further justified
+   **~6.6%** on top (measured same-session before/after on the seed-0 battle) — so expect ≈7.3k on
+   this reference machine; always judge by a same-session before/after, not the absolute. A jump of
    **>10%** above this is a regression — investigate.
 2. **cProfile `tottime` top-of-list structure.** A *new* function climbing into the top ~10,
    or a known hot function's **call count** ballooning, means you added work to a hot loop.
@@ -86,7 +90,11 @@ PER-DECISION OBS BUILD BENCHMARK  (obs dim 3390, turn 25, history slots 10, opp 
 
   Total: ~2.74M function calls / 400 reps  ==>  ~6.85k calls per encode   <-- PRIMARY REGRESSION METRIC
   (the +0.49k vs the pre-feature 6.36k is the gen3_incoming_damage_v1 belief loop; per-species
-   candidate/stat work is lru_cached, so only the per-defender damage/outspeed math is per-decision)
+   candidate/stat work is lru_cached, so only the per-defender damage/outspeed math is per-decision.
+   gen3_incoming_damage_v2 adds ~+6.6% on top: the crit term doubles the per-candidate damage calc and
+   the wider candidate pool fills more (defender, channel) pairs — _channel_threat goes ~10→12 calls/
+   encode. Still no single dominant hot loop; the revealed-HP typed expansion is NOT lru_cached (it
+   tracks the per-episode HP tracker) but only fires when a bare hiddenpower is revealed.)
 
   Top functions by tottime (no single dominant hot loop — the matchup work is now spread thin):
    ncalls  tottime  cumtime  function
@@ -192,7 +200,7 @@ Light Screen / Safeguard / Mist × both sides).
 
 **Reactive block (371 dims, layout in `reactive.py`):** 14 scalar dims, then the 36-dim
 **move-effect block** (`gen3_move_effects_v1`), then the **33-dim incoming-damage / OHKO belief
-block** (`gen3_incoming_damage_v1`, at offset 50 — see below), then the two 144-dim matchup matrices
+block** (`gen3_incoming_damage_v2`, at offset 50 — see below), then the two 144-dim matchup matrices
 (`our_matchups` now at offset 83, `their_matchups` at 227). Scalars: active-move power ×4 (/200)
 + active-move multiplier ×4 (/4), fainted counts ×2, active-status flag (1), `forced_struggle` (1),
 and the two **gen3_trapping_signals_v1** bits — `trapped` (1) and `maybe_trapped` (1) — sourced
@@ -234,7 +242,7 @@ the policy and value projection heads via
 sourced from Showdown's actual representation, never guessed from the move name — see
 `tools/pokemon_data_extractor/sync.py:build_moves`.
 
-**Incoming-damage / OHKO belief block (33 dims, `gen3_incoming_damage_v1`, at reactive offset 50,
+**Incoming-damage / OHKO belief block (33 dims, `gen3_incoming_damage_v2`, at reactive offset 50,
 before the matchups → routed to both heads via `non_matchup_rest`):** the opponent active's threat to
 *us* as a calibrated belief, not a calc. Per our 6 team mons (slot-aligned): `[phys_expdmg_frac,
 spec_expdmg_frac, phys_pko, spec_pko, p_outspeed]` (5 × 6 = 30), then 3 opp-active recovery scalars
@@ -242,17 +250,32 @@ spec_expdmg_frac, phys_pko, spec_pko, p_outspeed]` (5 × 6 = 30), then 3 opp-act
 **max over `revealed ∪ usage-prior` candidate moves** of `P(move in set) · P(KO|move)`, routed by gen3
 **TYPE-category** (Bug/Rock/Ground/… physical, the rest special), using the gen3 damage formula with a
 **fixed-damage branch** (Seismic Toss/Night Shade/Dragon Rage/Sonic Boom carry constant damage despite
-the dex STATUS tag; respect type immunity — 0× vs Ghost), the gen3 **Explosion/Self-Destruct Def-halve**
-(gen≤4), Reflect/Light-Screen/Substitute/burn/weather modifiers, the opponent's offensive-tail Atk/SpA
-from `priors.stat_distribution`, and a
-closed-form roll→P(KO). `p_outspeed` is `P(our_spe > opp_spe)` over the opp Speed *distribution* (the
-hidden nature/EV) with observed boosts/paralysis. **Two modules, deep split:** the pure, poke-env-free
-math core (formula, roll→P(KO), P(outspeed), the `Candidate`/`Defender`/`AttackerThreat` beliefs,
+the dex STATUS tag; respect type immunity — 0× vs Ghost), a **variable-power branch** (Return/Frustration
+read BP 0 in the dex → priced at 102), the gen3 **Explosion/Self-Destruct Def-halve**
+(gen≤4), Reflect/Light-Screen/Substitute/burn/weather modifiers, the opponent's offensive-stat tail
+(the **0.95 max-EV+ percentile**, `priors.stat_distribution`), and a closed-form roll→P(KO) **blended
+with a gen3 crit term** (`_CRIT_P`=1/16, ×2, screen-ignoring). `p_outspeed` is `P(our_spe > opp_spe)`
+over the opp Speed *distribution* (the
+hidden nature/EV) with observed boosts/paralysis. **v2 belief-VALUE recalibration** (same 33 dims, same
+obs dim — values only, so retrain-class not weight-shape): the v1 belief was too timid on the near-OHKO
+tail and silently zeroed missing coverage (run_20260606_204351: 17% of direct-hit deaths read
+P(KO)<0.25). v2 (1) de-timids P(KO) — the **crit term** + the **raised offensive tail (0.85→0.95)** lift
+the KO flag on near-OHKOs while expected-damage re-normalises to the MEAN (∝ `atk_mean`), so the chip
+belief is unchanged; and (2) widens the candidate set so the killing move isn't silently absent — a
+**revealed bare `hiddenpower`** (dex BP 0) expands into per-type candidates (~70 BP, typed from the **HP
+tracker**'s observation-narrowed distribution / Smogon HP prior — the tracker is now threaded into
+`encode_block`), Return/Frustration are priced, and the prior **floor/cap widen (0.12→0.05, 4→6 per
+channel)** so a low-usage super-effective coverage move survives into the pool (the per-defender max over
+`p_in_set·P(KO)` is the real type-effectiveness gate, so extra low-usage candidates only ever surface a
+genuine SE threat — they can't inflate a neutral one). **Two modules, deep split:** the pure, poke-env-free
+math core (formula, roll→P(KO) + crit, P(outspeed), the `Candidate`/`Defender`/`AttackerThreat` beliefs,
 `compute_team_block`) is `incoming_damage.py`; the battle→belief extraction is
-`incoming_damage_encoder.py` behind the single `encode_block(battle, our_team, live)` entry — it owns
-the *only* poke-env / facade reads (revealed ∪ usage-prior candidates, offensive-stat distributions),
-with per-species `lru_cache` on candidates + stats so only the per-defender damage math is per-decision.
-`reactive.py` just calls `encode_block`. Priors: `gen3_{move,spread,item}_priors.json` via
+`incoming_damage_encoder.py` behind the single `encode_block(battle, our_team, live, hp_tracker)` entry —
+it owns
+the *only* poke-env / facade reads (revealed ∪ usage-prior candidates, HP typing, offensive-stat
+distributions), with per-species `lru_cache` on candidates + stats so only the per-defender damage math
+(and the rare revealed-HP expansion) is per-decision.
+`reactive.py` just calls `encode_block`. Priors: `gen3_{move,spread,item,hidden_power}_priors.json` via
 `gen3_data.priors`. Belief-not-calc → validated by calibration, not byte-exactness; the obs golden
 fixture still pins the vector byte-for-byte.
 

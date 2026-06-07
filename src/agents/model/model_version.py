@@ -192,7 +192,22 @@ MODEL_CONFIG_VERSION = 3
 #   distribution, then 3 opp recovery scalars (Suicune-Rest discriminator). Sits after move-effects,
 #   before the matchups → flows to both heads via non_matchup_rest (auto-discovered widths).
 #   REACTIVE_DIM 338 → 371; obs dim 3357 → 3390. Builds on gen3_move_effects_v1; not weight-compatible.
-ARCH_SIGNATURE = "gen3_incoming_damage_v1"
+# gen3_incoming_damage_v2: re-calibrates the incoming-damage / OHKO belief VALUES (same 33-dim block,
+#   same obs dim 3390 — only the numbers change, so it's retrain-class, not weight-shape). Two
+#   complementary belief-value fixes for the calibration tail found on run_20260606_204351 (17% of
+#   direct-hit deaths read P(KO)<0.25): (1) P(KO) was too timid on near-OHKOs — the offensive-stat
+#   tail percentile is raised 0.85→0.95 (the KO magnitude rides the tail; expected-damage
+#   re-normalises to the mean, so the chip belief is unchanged) AND a gen3 critical-hit term
+#   (_CRIT_P=1/16, ×2, screen-ignoring) is folded into P(KO), so a hit that only KOs on a strong set
+#   or a crit reads a calibrated risk instead of ~0; (2) the candidate set is widened so the killing
+#   move is no longer silently absent — a revealed bare Hidden Power (dex BP 0) expands into per-type
+#   candidates (~70 BP, typed from the HP tracker's narrowed distribution / Smogon HP prior),
+#   variable-power Return/Frustration (dex BP 0) are priced at 102 BP, and the prior floor/cap widen
+#   (0.12→0.05, 4→6 per channel) so a low-usage super-effective coverage move survives into the pool
+#   (the per-defender max over p_in_set·P(KO) is the real type-effectiveness gate). The HP tracker is
+#   now threaded into the incoming-damage encoder. Not weight-compatible with v1 (the belief values a
+#   reload would read are different → old critic readings of the block are invalid).
+ARCH_SIGNATURE = "gen3_incoming_damage_v2"
 
 
 class ModelVersionError(Exception):

@@ -515,7 +515,8 @@ The full observation is a **3390-dim float32 vector** (`Gen3ObservationEncoder.d
 **The full per-block layout** — the 107-dim per-Pokémon slot, the 11-dim move slot, the 18-dim
 spread block, global env, the 371-dim reactive block (14 scalars + the 36-dim action-aligned
 move-effect block, 4 slots × 9 feats + the **33-dim incoming-damage / OHKO belief block**
-[`gen3_incoming_damage_v1`: per our mon, phys/spec expected-damage + mode-max P(KO) + P(outspeed),
+[`gen3_incoming_damage_v2`: per our mon, phys/spec expected-damage + mode-max P(KO) (incl. a gen3
+crit term + a high offensive-stat tail, so near-OHKOs aren't priced as P(KO)~0) + P(outspeed),
 then 3 opp recovery scalars] + 288 matchup), and the 159-dim
 TurnDelta slot (incl. the embedded-ID manifest) — lives in **`src/agents/observation/CLAUDE.md`**.
 Every offset is computed
@@ -563,7 +564,7 @@ crashes in seconds rather than hours.
 The architecture-constant single source of truth is the module-level constants
 (`ROLE_TOKEN_SIZE`, `PROJECTION_DIM`, `MOVE_NET_HIDDEN`, `ROLE_ENCODER_HIDDEN`,
 `ACTIVE_CTX_HIDDEN`) at the top of `features_extractor.py`; `ARCH_SIGNATURE` /
-`MODEL_CONFIG_VERSION` live in `model_version.py` (current: `gen3_incoming_damage_v1`).
+`MODEL_CONFIG_VERSION` live in `model_version.py` (current: `gen3_incoming_damage_v2`).
 **The full versioning playbook — what to do when you change a dim vs add an optional feature vs
 make a structural change — is in `src/agents/model/CLAUDE.md`.**
 

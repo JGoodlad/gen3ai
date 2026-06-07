@@ -68,9 +68,65 @@ def test_compute_block_flags_rock_slide_on_flyer():
     assert phys_exp > 0.0
     assert outspeed == 1.0          # spe 300 > opp 280
     assert blk.shape[0] == 6 * inc.PER_MON + inc.RECOVERY
-    # a FULL-HP Zapdos: Rock Slide is only a 2HKO → phys_pko should be 0 there (chip still real)
+    # a FULL-HP Zapdos: Rock Slide is only a 2HKO on a normal roll, so phys_pko collapses to just the
+    # small crit-chance tail (1/16 × the 0.5 prior = 0.03125) — far below the chipped-HP KO chance,
+    # but no longer a flat 0 (a crit Rock Slide DOES OHKO full-HP Zapdos). Chip stays real.
     full = inc.compute_team_block([_zapdos(hp_remaining=290)], _mence_threat(), n_slots=6)
-    assert full[2] == 0.0 and full[0] > 0.0
+    assert 0.0 < full[2] < 0.1 and full[2] < phys_pko and full[0] > 0.0
+
+
+def test_crit_blend_lifts_only_crit_ohko():
+    # A move whose normal max roll can't OHKO (dmax 191 < 300 HP) but a crit (×2 = 382) does. The
+    # gen3 crit branch lifts P(KO) from a flat 0 to ~1/16 — the calibrated "dies only to a crit"
+    # tail that previously read P(KO)~0. Normal-type vs the Dragon/Flying default threat → no STAB.
+    d = inc.Defender(def_stat=200, spd_stat=200, hp_remaining=300, hp_max=300, spe=100,
+                     type1=PT.WATER, type2=None, ability=None, status=None)
+    a = _mence_threat()
+    cand = [inc.Candidate(PT.NORMAL, 150, 1.0)]
+    pko, _ = inc._channel_threat(cand, d, 300.0, 280.0, a=a, screen=False, is_phys=True)
+    assert abs(pko - inc._CRIT_P) < 1e-6
+    # disabling the crit term recovers the pre-crit P(KO) = 0 (the A/B-probe / legacy behaviour)
+    saved = inc._CRIT_P
+    inc._CRIT_P = 0.0
+    try:
+        pko0, _ = inc._channel_threat(cand, d, 300.0, 280.0, a=a, screen=False, is_phys=True)
+    finally:
+        inc._CRIT_P = saved
+    assert pko0 == 0.0
+    # a clean OHKO (huge power) reads 1.0 with or without the crit term
+    big, _ = inc._channel_threat([inc.Candidate(PT.NORMAL, 300, 1.0)], d, 300.0, 280.0,
+                                 a=a, screen=False, is_phys=True)
+    assert big == 1.0
+
+
+def test_higher_atk_tail_lifts_pko_not_exp():
+    # The FIX-1 lever: P(KO) rides the offensive TAIL stat, expected-damage rides the MEAN (it
+    # re-normalises by mean/tail). So raising the tail (modelling a stronger attacking set) lifts
+    # P(KO) on a near-OHKO WITHOUT inflating the chip belief — the property that lets us raise the
+    # tail quantile to de-timid the KO flag while keeping the common-case chip calibrated.
+    d = inc.Defender(def_stat=200, spd_stat=200, hp_remaining=300, hp_max=300, spe=100,
+                     type1=PT.WATER, type2=None, ability=None, status=None)
+    a = _mence_threat()
+    cand = [inc.Candidate(PT.NORMAL, 200, 1.0)]   # NORMAL vs Dragon/Flying default → no STAB
+    pko_lo, exp_lo = inc._channel_threat(cand, d, 300.0, 300.0, a=a, screen=False, is_phys=True)
+    pko_hi, exp_hi = inc._channel_threat(cand, d, 400.0, 300.0, a=a, screen=False, is_phys=True)
+    assert pko_hi > pko_lo                 # higher tail → less timid P(KO)
+    assert abs(exp_hi - exp_lo) < 0.02     # expected-damage ≈ unchanged (tracks the held mean)
+
+
+def test_crit_ignores_screen():
+    # gen3 crit ignores Reflect/Light Screen: under a screen the no-crit damage halves, but the crit
+    # branch is computed screen-free, so P(KO) under a screen is STRICTLY higher than it would be if
+    # the crit also halved (regression guard for the screen=False crit computation).
+    d = inc.Defender(def_stat=200, spd_stat=200, hp_remaining=300, hp_max=300, spe=100,
+                     type1=PT.WATER, type2=None, ability=None, status=None)
+    a = _mence_threat()
+    cand = [inc.Candidate(PT.NORMAL, 240, 1.0)]
+    no_screen, _ = inc._channel_threat(cand, d, 320.0, 300.0, a=a, screen=False, is_phys=True)
+    screen, _ = inc._channel_threat(cand, d, 320.0, 300.0, a=a, screen=True, is_phys=True)
+    # screen halves the no-crit roll (no_screen P(KO) ~0.53 → screen drops the roll part to 0) but
+    # the crit tail is screen-free and survives → screen P(KO) is the crit chance, still > 0.
+    assert no_screen > screen > 0.0
 
 
 def test_fixed_damage_respects_immunity():

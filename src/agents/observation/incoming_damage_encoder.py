@@ -26,10 +26,16 @@ from agents.gen3_mechanics import RECOVERY_MOVES
 from agents.observation import incoming_damage as inc
 from agents.observation.constants import TEAM_SIZE
 
-# Smogon-usage prior knobs for the unrevealed-slot candidate moves.
-_PRIOR_MOVE_MIN_P = 0.12          # drop prior moves below this P(in set) — usage noise, not a threat
-_MAX_CANDIDATES_PER_CHANNEL = 4   # cap per phys/spec channel (a set runs ≤4 attacking moves)
-_OFFENSIVE_TAIL_Q = 0.85          # worst-case offensive-stat percentile (the 252-EV+ tail)
+# Smogon-usage prior knobs for the unrevealed-slot candidate moves. The floor is deliberately LOW
+# and the cap generous so a low-usage but super-effective coverage move (e.g. a 4× Hidden Power)
+# survives into the pool — the real "is this a threat vs THIS defender" gate is the per-defender max
+# over p_in_set·P(KO|move) in incoming_damage._channel_threat (P(KO) embeds type effectiveness), so
+# extra low-usage candidates only ever surface a genuine SE threat; they can't inflate a neutral one.
+_PRIOR_MOVE_MIN_P = 0.05          # drop prior moves below this P(in set) — usage noise, not a threat
+_MAX_CANDIDATES_PER_CHANNEL = 6   # cap per phys/spec channel (covers STAB + the popular coverage)
+_OFFENSIVE_TAIL_Q = 0.95          # offensive-stat tail percentile for the KO magnitude (the max-EV+
+                                  # tail; expected-damage re-normalises to the mean, so raising this
+                                  # lifts P(KO) on near-OHKOs WITHOUT inflating the chip belief)
 _FALLBACK_BASE = 80               # neutral base stat when a species has no dex entry
 _FALLBACK_EV = 252                # the no-prior fallback assumes a max-invested neutral spread
 
@@ -40,6 +46,20 @@ _REST = "rest"
 # Explosion / Self-Destruct halve the target's Def in Gen 3 — the math core prices this off a
 # per-Candidate flag, so the move-id → flag classification lives here (the core stays id-agnostic).
 _HALVE_DEF_MOVES = frozenset({"explosion", "selfdestruct"})
+
+# Variable-power moves that read base_power 0 in the dex (power is computed live from happiness):
+# Return/Frustration cap at 102 BP, and a maxed-happiness Return is the STAB workhorse of many
+# physical sets — without a power they were silently dropped (a "no threat" that can OHKO). Priced
+# at the competitive max; the full damage formula (Atk/Def/type/STAB/roll) still applies.
+_VARIABLE_POWER: dict[str, int] = {"return": 102, "frustration": 102}
+
+# The bare (un-typed) Hidden Power id. poke-env reveals HP as this generic id (the type is inferred
+# from observed effectiveness), and it reads base_power 0 → was dropped. We expand it into per-type
+# candidates (priced from the typed dex variants, ~70 BP) so HP Ice/Grass/etc. coverage is visible.
+_HIDDEN_POWER = "hiddenpower"
+_HIDDEN_POWER_FALLBACK_BP = 60    # if a typed dex variant is somehow missing, price HP at ~60 BP
+_HP_TYPE_MIN_P = 0.02             # drop negligible HP-type mass (a usage prior has a long ~0 tail);
+                                  # keeps the expansion to the few real coverage types (perf)
 
 
 @functools.lru_cache(maxsize=None)
@@ -59,15 +79,19 @@ def _offensive_stat(species: str, stat: str) -> Tuple[float, float, tuple]:
 
 
 def _is_damaging(mid: str, md) -> bool:
-    """Does move ``mid`` deal damage we should price? A positive-BP move or a fixed-damage move
-    (Seismic Toss/… read 0 BP in the dex but hit for a constant)."""
-    return md is not None and ((md.base_power or 0) > 0 or mid in inc.FIXED_DAMAGE)
+    """Does move ``mid`` deal damage we should price? A positive-BP move, a fixed-damage move
+    (Seismic Toss/… read 0 BP in the dex but hit for a constant), or a variable-power move
+    (Return/Frustration, also 0 BP in the dex)."""
+    return md is not None and ((md.base_power or 0) > 0 or mid in inc.FIXED_DAMAGE
+                               or mid in _VARIABLE_POWER)
 
 
 def _make_candidate(mid: str, md, p_in_set: float) -> inc.Candidate:
-    """Build a :class:`incoming_damage.Candidate` for move ``mid`` at probability ``p_in_set``."""
+    """Build a :class:`incoming_damage.Candidate` for move ``mid`` at probability ``p_in_set``.
+    Variable-power moves (Return/Frustration) substitute their competitive-max BP for the dex 0."""
+    power = _VARIABLE_POWER.get(mid, int(md.base_power or 0))
     return inc.Candidate(
-        md.type, int(md.base_power or 0), float(p_in_set),
+        md.type, power, float(p_in_set),
         fixed_dmg=inc.FIXED_DAMAGE.get(mid),
         halves_defense=(mid in _HALVE_DEF_MOVES),
     )
@@ -98,12 +122,55 @@ def _prior_candidates(species: str) -> Tuple[tuple, tuple]:
     return tuple(phys), tuple(spec)
 
 
-def _candidates(opp_active, species: str) -> Tuple[list, list]:
+def _hp_type_dist(species: str, hp_tracker) -> dict:
+    """``{type_name: P(HP type)}`` for a revealed Hidden Power on ``species`` — the tracker's
+    observation-narrowed distribution if it has one (the per-episode signal: e.g. a 2× HP Ice on a
+    Dragon already rules out the non-Ice types), else the species' Smogon HP-type prior. Normalised
+    to sum 1 (HP IS in the set when revealed; only the type is uncertain)."""
+    dist: dict = {}
+    if hp_tracker is not None and species:
+        probs = hp_tracker.get_probs(species)
+        if probs is not None and getattr(probs, "sum", lambda: 0.0)() > 0:
+            from agents.training.hidden_power_tracker import HIDDEN_POWER_TYPE_ORDER
+            dist = {HIDDEN_POWER_TYPE_ORDER[i].name.lower(): float(probs[i])
+                    for i in range(len(HIDDEN_POWER_TYPE_ORDER)) if probs[i] > 0}
+    if not dist:
+        dist = {k: float(v) for k, v in gen3_data.priors.hidden_power(species).items()}
+    total = sum(dist.values())
+    return {k: v / total for k, v in dist.items()} if total > 0 else {}
+
+
+def _hidden_power_candidates(species: str, hp_tracker, p_total: float) -> list:
+    """Expand a Hidden Power of total set-probability ``p_total`` into per-type ``Candidate``s.
+    Each is priced from its typed dex variant (``hiddenpower<type>``, ~70 BP, correct gen3 category)
+    at ``p_total · P(type)``, so a revealed bare ``hiddenpower`` (dex BP 0 → previously dropped)
+    makes its Ice/Grass/Fighting coverage visible. The per-defender max in ``_channel_threat`` then
+    surfaces whichever HP type is super-effective vs each of our mons."""
+    out: list = []
+    for type_name, prob in _hp_type_dist(species, hp_tracker).items():
+        if prob < _HP_TYPE_MIN_P:
+            continue
+        mid = _HIDDEN_POWER + type_name
+        md = gen3_data.moves.get(mid)
+        if md is None:
+            continue
+        power = int(md.base_power or 0) or _HIDDEN_POWER_FALLBACK_BP
+        out.append(inc.Candidate(md.type, power, float(p_total * prob)))
+    return out
+
+
+def _candidates(opp_active, species: str, hp_tracker=None) -> Tuple[list, list]:
     """Physical / special candidate moves vs us = revealed (P=1, per decision) ∪ cached prior
-    moves. Fixed-damage moves (Seismic Toss/…) carry constant damage despite the dex STATUS tag."""
+    moves. Fixed-damage moves (Seismic Toss/…) carry constant damage despite the dex STATUS tag; a
+    revealed bare ``hiddenpower`` is expanded into per-type candidates (its type is hidden, so it
+    reads 0 BP in the dex) via the HP tracker / prior."""
     phys: list = []
     spec: list = []
     for mid in (getattr(opp_active, "moves", {}) or {}):
+        if mid == _HIDDEN_POWER:   # revealed but un-typed → expand into per-type candidates
+            for cand in _hidden_power_candidates(species, hp_tracker, 1.0):
+                (phys if inc.type_is_physical(cand.move_type) else spec).append(cand)
+            continue
         md = gen3_data.moves.get(mid)
         if _is_damaging(mid, md):
             cand = _make_candidate(mid, md, 1.0)
@@ -112,10 +179,11 @@ def _candidates(opp_active, species: str) -> Tuple[list, list]:
     return phys + list(pp), spec + list(sp)
 
 
-def _attacker_threat(opp_active, live) -> Optional[inc.AttackerThreat]:
+def _attacker_threat(opp_active, live, hp_tracker=None) -> Optional[inc.AttackerThreat]:
     """The opponent active as a belief (None if there is no opp active / no species yet): types
     known, offensive stats as usage tail+mean (boost folded in), candidate moves split by channel,
-    plus our screens / the weather (via the LiveView read-model) and the recovery scalars."""
+    plus our screens / the weather (via the LiveView read-model) and the recovery scalars.
+    ``hp_tracker`` (optional) types a revealed Hidden Power from its narrowed distribution."""
     if opp_active is None:
         return None
     species = getattr(opp_active, "species", None)
@@ -126,7 +194,7 @@ def _attacker_threat(opp_active, live) -> Optional[inc.AttackerThreat]:
     atk_tail, atk_mean, _ = _offensive_stat(species, "atk")
     spa_tail, spa_mean, _ = _offensive_stat(species, "spa")
     _, _, spe_dist = _offensive_stat(species, "spe")
-    phys, spec = _candidates(opp_active, species)
+    phys, spec = _candidates(opp_active, species, hp_tracker)
 
     # Recovery scalars (Suicune-Rest discriminator): revealed move → certain; else its usage prior.
     prior_mv = gen3_data.priors.moves(species)
@@ -182,15 +250,16 @@ def _defender(mon, active_mon) -> Optional[inc.Defender]:
     )
 
 
-def encode_block(battle, our_team: List, live=None) -> np.ndarray:
+def encode_block(battle, our_team: List, live=None, hp_tracker=None) -> np.ndarray:
     """The incoming-damage / OHKO belief block (incoming_damage_v1) for one decision.
 
     Per our mon (slot-aligned to the team): the opponent active's phys/spec expected-chip + P(KO) +
     P(outspeed) under the hidden-set belief, then 3 opp-active recovery scalars. Defensive: any
     missing field (no opp active, opp not in priors, our mon without stats) degrades to zeros for
-    that piece. ``live`` (LiveView) supplies our screens + the weather via the strict-API boundary.
+    that piece. ``live`` (LiveView) supplies our screens + the weather via the strict-API boundary;
+    ``hp_tracker`` (optional) types a revealed Hidden Power from its observation-narrowed prior.
     """
-    threat = _attacker_threat(getattr(battle, "opponent_active_pokemon", None), live)
+    threat = _attacker_threat(getattr(battle, "opponent_active_pokemon", None), live, hp_tracker)
     active = getattr(battle, "active_pokemon", None)
     defenders = [_defender(our_team[i] if i < len(our_team) else None, active)
                  for i in range(TEAM_SIZE)]
