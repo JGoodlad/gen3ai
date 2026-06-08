@@ -56,11 +56,26 @@ precedent = `HiddenPowerTracker`). It is updated at `record()`/`embed_battle` ti
 — poke-env runs `embed_battle` before `calc_reward`), and read by BOTH the obs encoder (`value()` →
 the `vec[14]` scalar) and the reward (`last_penalty` → `no_progress_tax`), so **obs and reward key on
 one value**. The ternary predicate per decision window: PROGRESS (our-attributed damage ≥3% / status
-landed / hazard layer / forced opp commit → reset), DENIED (miss / Protect-block / cant / productive
-heal → freeze), NO_OP (deliberate wheel-spin → increment + charge, gated off on forced-switch windows
-and when no switch is legal). The env (`gen3_env.py`) folds the delta once at embed time, updates the
-clock, caches it for `calc_reward` (no double fold), and wires `reward_manager.progress_clock =
-tracker.progress_clock`.
+landed / hazard layer / forced opp commit / **an our-owned residual — Toxic/poison/burn or Leech
+Seed/Curse/Nightmare — chipping the opp NET-down** → reset), DENIED (freeze), NO_OP (deliberate
+wheel-spin → increment + charge, gated off on forced-switch windows and when no switch is legal).
+DENIED splits two ways (`_denial_kind`): **exogenous** (miss / Protect-block / cant) is ALWAYS frozen;
+a **productive heal** is frozen only for `HEAL_FREEZE_GRACE`=2 consecutive windows — a SUSTAINED heal
+with no progress (the self-play mirror heal-war) then falls through to NO_OP and CHARGES, so the
+250-turn stall finally registers. The residual-PROGRESS branch is what keeps a *winning* Toxic/Leech
+defensive stall from being taxed (the discriminator is the opp net-losing HP; a heal-war where they
+out-heal the tick still charges) — validated end-to-end by `progress_clock_fuzz_test.py` (bridge, real
+battles: a winning-residual window is never charged). The env (`gen3_env.py`) folds the delta once at
+embed time, updates the clock, caches it for `calc_reward` (no double fold), and wires
+`reward_manager.progress_clock = tracker.progress_clock`.
+
+**Anti-stall terminal (`--draw-penalty`, default −30.0 = byte-unchanged).** The trainee FORFEITS a
+stalled battle at the turn cap (`gen3_env` `ForfeitBattleOrder` at turn ≥ `StallConfig.threshold`), so
+a 250-turn stall ends as a forfeit-**loss** (`lost=True`), NOT a tie. The terminal therefore detects a
+timeout by **`live.turn >= _TIMEOUT_TURN_CAP`** (synced to `StallConfig.threshold`), not by won/lost:
+`if won: +30; elif finished: draw_penalty if timed_out else −30`. Set `--draw-penalty -35` to make a
+stall-to-cap strictly worse than a clean loss (cancels the γ=0.9999 discount pull of delaying an
+inevitable −30). Resume-immutable, value-checked (`MODEL_CONFIG_VERSION 6→7`, `check_reward_config`).
 
 **Staged rollout (`RewardConfig.bias_redesign`, `--bias-redesign`, default OFF).** OFF = the
 **single-variable default run**: today's anti-spam taxes + roar/status/spikes, so the ONLY reward

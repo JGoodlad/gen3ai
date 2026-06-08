@@ -127,11 +127,13 @@ an arch error. To add another such hparam, follow the optional-feature playbook 
 
 The **reward-config** hparams are the same kind, bundled into one check: `bias_additivity`
 (`--bias-additivity`), `mat_alive_weight` (`--mat-alive-weight`), `bias_redesign` (`--bias-redesign`),
-and `switch_bias_weight` (`--switch-bias-weight`, the belief-risk stay-into-KO BIAS lever, v5) are all
-recorded on `ModelVersion` and enforced on resume by **`check_reward_config`** (FATAL on drift, since
-they silently shift the reward/objective), excluded from `check_compatible`. They are reward-VALUE
-changes — **no `ARCH_SIGNATURE` bump** (the network/obs are unchanged) — so a fresh run is needed to
-measure them but old checkpoints don't fail an arch check. Current `MODEL_CONFIG_VERSION` = **6**.
+`switch_bias_weight` (`--switch-bias-weight`, the belief-risk stay-into-KO BIAS lever, v5), and
+`draw_penalty` (`--draw-penalty`, the DRAW/250-turn-timeout terminal, v7 — default −30.0 = a tie scores
+as a decisive loss; set lower to make a stall-to-cap strictly worse) are all recorded on `ModelVersion`
+and enforced on resume by **`check_reward_config`** (FATAL on drift, since they silently shift the
+reward/objective), excluded from `check_compatible`. They are reward-VALUE changes — **no
+`ARCH_SIGNATURE` bump** (the network/obs are unchanged) — so a fresh run is needed to measure them but
+old checkpoints don't fail an arch check. Current `MODEL_CONFIG_VERSION` = **7**.
 
 **Feature toggle that changes the value-head STRUCTURE (e.g. `use_popart`, v6).** Distinct from the
 value-meaning hparams above: PopArt adds normalized output + `mu/sigma` buffers, so a mismatch breaks

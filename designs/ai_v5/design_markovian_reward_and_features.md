@@ -564,6 +564,31 @@ increase (closes Spikes-at-3-reset); setup → excluded (closes the setup-loop).
 intrinsically un-spammable (status caps at one application, hazards at 3 layers, damage must be real),
 so no "cap how often a type can reset" machinery is needed.
 
+> **AS-BUILT 2026-06-08 (commit `d7aa983`, the anti-stall fix; see [[project_anti_stall_fix]]).** The
+> `ai_v5_5_popart_N_0607` run exposed that with `--bias-redesign` OFF the clock charged nothing (obs
+> scalar only) and the actual reward stalls were **self-play mirror Recover/Rest heal-wars** to the
+> 250-turn cap — which the predicate above does NOT catch, two ways. Two changes were made:
+> - **PROGRESS gains a 5th branch (v): an OUR-OWNED residual chipping the opp NET-down.** If the opp
+>   active carries a residual WE applied (Toxic / poison / burn status, or Leech Seed / Curse /
+>   Nightmare volatile) and `delta.opp_hp_delta.sum() ≤ −PROGRESS_DMG_EPS`, the window is PROGRESS. This
+>   is **not** the rejected "net opp HP" chip-reset hack (§4.1.1 [RT-2-blocker]): that hack credited
+>   *exogenous* passive chip (Sandstorm/being-Leeched); this credits only an *our-attributed* residual
+>   **on the opponent**, draining them — a deferred form of "our move advanced the game." It is what
+>   prevents a *winning* Toxic/Leech defensive stall from being taxed (a real win-con vs stallers).
+> - **DENIED for a productive heal is now streak-capped, not permanent.** `_is_denied` → `_denial_kind`
+>   returns `exogenous` (miss/Protect-block/cant → ALWAYS freeze) vs `heal` (a productive heal). A heal
+>   is frozen only for `HEAL_FREEZE_GRACE`=2 consecutive windows; a SUSTAINED heal-war then falls through
+>   to NO_OP and charges. So §4.1.2's "productive Recover/Wish → FREEZE" holds for a one-off defensive
+>   heal but a mutual heal-war (where Φ_mat telescopes to ~0 and prices nothing) is now charged. Branch
+>   (v) takes priority, so a *winning* residual-stall stays free. Validated on real bridge battles by
+>   `progress_clock_fuzz_test.py` (109 winning-residual windows, 0 charged).
+>
+> Also shipped alongside: **`--draw-penalty`** (default −30.0). The cap is a forfeit-LOSS not a tie
+> (`ForfeitBattleOrder` → `lost=True`), so the `win_loss` terminal (row 5 of §3's table — previously
+> "UNCHANGED, out of scope") now reads `if won: +30; elif finished: draw_penalty if turn≥cap else −30`.
+> The ±30 win/decisive-loss is still untouched; only a TIMEOUT is re-priced, to make a stall-to-cap
+> strictly worse than a clean loss. `MODEL_CONFIG_VERSION 6→7`, resume-immutable.
+
 #### 4.1.1 DENIED — a missed / blocked / prevented attempt FREEZES the clock (does not increment)
 
 A `NO_OP` (increment + charge) must be a **deliberate** failure to advance — a choice the agent could
