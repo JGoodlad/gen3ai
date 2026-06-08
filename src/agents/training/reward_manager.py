@@ -146,6 +146,12 @@ class RewardBreakdown:
     # (RENAMED from the mis-named `pbrs_material`). Policy-invariant; NEVER touches the ±30 terminal.
     pbrs_belief: float = 0.0
 
+    # Non-damaging-tempo-status PBRS Φ_status (design §2.7 / §7.4): the standing value of an opponent
+    # held in par/slp/frz that Φ_mat can't price. = γ·Φ_status(s′) − Φ_status(s), Φ_status(terminal)=0,
+    # telescopes to 0 (policy-invariant). Non-zero ONLY under bias_redesign (the default count-diff
+    # status BIAS already carries the standing value; folding it there would double-count).
+    pbrs_status: float = 0.0
+
     # BIAS-class accumulate-refund (design §1.2): the −(1−λ)·Δacc per-turn refund that dials the
     # BIAS class from fully additive (λ=1, refund≡0, byte-identical to today) toward fully
     # telescoping (λ=0). NOT a reward term — the fold's output; excluded from the registry.
@@ -159,6 +165,7 @@ class RewardBreakdown:
         "win_loss": RewardClass.TERMINAL,
         "pbrs_material": RewardClass.PBRS,
         "pbrs_belief": RewardClass.PBRS,
+        "pbrs_status": RewardClass.PBRS,
         # everything else is BIAS:
         "explosion": RewardClass.BIAS, "explosion_block": RewardClass.BIAS,
         "finishing_blow": RewardClass.BIAS, "roar": RewardClass.BIAS,
@@ -187,7 +194,7 @@ class RewardBreakdown:
                     "pivot_damage", "se_switch", "sleep_out", "sleep_in")),
         ("field",  ("spikes", "futile_spikes", "matchup_penalty", "dead_matchup_tax",
                     "stay_risk_tax", "status", "stall_tax", "no_progress_tax")),
-        ("shaping", ("pbrs_belief", "bias_refund")),
+        ("shaping", ("pbrs_belief", "pbrs_status", "bias_refund")),
     )
 
     @classmethod
@@ -254,6 +261,21 @@ STRUGGLE_LOOP_THRESHOLD = 3
 
 SWITCH_BASE_BONUS = 0.5        # flat per-voluntary-switch bonus
 STATUS_BONUS = 0.3             # reward for inflicting status; penalty for receiving
+
+# --- Φ_status: a non-damaging-tempo-status potential (design §2.7 / §7.4 hedge). Toxic/burn/poison's
+#     value is the HP chip → already in Φ_mat; paralysis / sleep / freeze are NON-damaging tempo
+#     ("the opponent loses turns") whose value Φ_mat can't see. Under bias_redesign the status BIAS is
+#     the per-window TRANSITION event (fires on the status flip only), so the STANDING value of a held
+#     tempo-status vanished — Φ_status restores it as a telescoping (policy-invariant) potential:
+#     Φ_status(s) = STATUS_TEMPO_WEIGHT · (opp_tempo_statused − our_tempo_statused), over non-fainted
+#     mons. Nobody is statused at s_0 → Φ_status(s_0)=0, and Φ_status(terminal)=0 → net episode
+#     contribution telescopes to 0 (no objective bias; the small per-application event-BIAS nudge is the
+#     §7.4 standing-hedge). Gated on bias_redesign (the default count-diff status BIAS already pays the
+#     standing value → folding it there would double-count). Uniform over the three types — do NOT
+#     weight by type (that bakes strategy; design §2.7). ---
+STATUS_TEMPO_WEIGHT = 0.3      # per non-damaging-statused mon (par/slp/frz); the §7.4-guard knob
+_TEMPO_STATUSES = frozenset({"par", "slp", "frz"})  # non-damaging tempo statuses Φ_mat can't price
+
 ROAR_BONUS = 0.2               # reward for Roar when spikes on opp side or opp had positive boosts
 SE_SWITCH_BONUS = 0.2          # reward for switching in a mon with a SE damaging move vs opp active
 SLEEP_SWAP_BONUS = 0.25        # reward for rotating a sleeping mon out; penalty for rotating one in
@@ -410,6 +432,7 @@ class Gen3RewardManager:
         # running BIAS accumulator for the bias-additivity refund (design §1.2).
         self._prev_phi_belief: Optional[float] = None   # incoming-KO belief PBRS (was _prev_phi)
         self._prev_phi_mat: Optional[float] = None       # material PBRS Φ_mat (design §2)
+        self._prev_phi_status: Optional[float] = None    # non-damaging-tempo status PBRS (design §2.7)
         self._prev_active_ko_risk: float = 0.0
         self._prev_safe_pivot: bool = False              # did a safe bench pivot exist at decision time
         self._cur_can_switch: bool = True                # was a switch LEGAL at this decision (mask) —
@@ -443,6 +466,7 @@ class Gen3RewardManager:
         self._last_opp_seen_by = {}
         self._prev_phi_belief = None
         self._prev_phi_mat = None
+        self._prev_phi_status = None
         self._prev_active_ko_risk = 0.0
         self._prev_safe_pivot = False
         self._cur_can_switch = True
@@ -580,8 +604,15 @@ class Gen3RewardManager:
         else:
             self._consecutive_bounces = 0
 
-        spam_mult = 1.0 if (decision_turn - self.last_switch_turn) > 1 else 0.0
-        bd.switch_base = SWITCH_BASE_BONUS * spam_mult
+        # Under the redesign the no-progress clock handles switch-spam (an A↔B bounce burns tempo →
+        # the clock climbs), so switch_base is a clean flat per-voluntary-switch bias — drop the
+        # hidden `last_switch_turn` spam-gate (design §3 #18). The default run keeps the spam-gate
+        # (no clock penalty there to discourage back-to-back switches).
+        if self.config.bias_redesign:
+            bd.switch_base = SWITCH_BASE_BONUS
+        else:
+            spam_mult = 1.0 if (decision_turn - self.last_switch_turn) > 1 else 0.0
+            bd.switch_base = SWITCH_BASE_BONUS * spam_mult
 
         if self._prev_opp_se_threat or self._prev_active_ko_risk >= SWITCH_RISK_THRESHOLD:
             bd.escape_threat_switch = ESCAPE_THREAT_BONUS
@@ -603,7 +634,14 @@ class Gen3RewardManager:
 
     def _compute_roar_bonus(self, delta: TurnDelta, live) -> float:
         """Reward Roar when it forces a switch AND spikes are up or opp had positive boosts.
-        Penalise Roar when it fails to force any switch at all (wasted turn)."""
+        Penalise Roar when it fails to force any switch at all (wasted turn).
+
+        Markovian note (design §3 #9 — resolved, no reframe needed): `_prev_opp_boosts` is the opp's
+        boosts as of THIS decision (= the opp active-context boosts the model saw in its obs when it
+        pressed Roar) — the very boosts the Roar then phazed away. So the term is already
+        Markovian-recoverable. There is no cleaner obs source at reward time: by the time the reward
+        runs the opp has been phazed and `live` shows the reset board, so the relevant pre-Roar boosts
+        live only in the decision-time snapshot. Same value either way → kept unchanged."""
         if delta.our_move_id != "roar":
             return 0.0
         if delta.opp_switch_to is None:
@@ -635,11 +673,13 @@ class Gen3RewardManager:
         if opp_mon.fainted:
             return 0.0
 
-        # Gate: only fire if the opponent has switched since this mon was last in.
-        # Same matchup without opponent switching = bonus already spent for this matchup.
+        # Gate: only fire if the opponent has switched since this mon was last in (same matchup
+        # without an opp switch = bonus already spent). The redesign DROPS this gate (design §3 #25):
+        # it keys on the hidden `_last_opp_seen_by` map; the SE-threat fact is in the matchup obs, so
+        # the bonus is a clean per-(s,a) bias. The default run keeps the gate (avoids re-paying it).
         our_species = our_mon.species
         opp_species = opp_mon.species
-        if self._last_opp_seen_by.get(our_species) == opp_species:
+        if not self.config.bias_redesign and self._last_opp_seen_by.get(our_species) == opp_species:
             return 0.0
 
         # Confirmed SE via revealed move
@@ -656,12 +696,23 @@ class Gen3RewardManager:
         return 0.0
 
     def _compute_status_reward(self, delta: TurnDelta, live) -> tuple[float, int]:
-        """One-time reward when the statused-mon count changes on either side.
-        Returns (reward, d_opp) where d_opp is the delta in opponent statused count."""
+        """One-time reward when a status changes on either side. Returns (reward, d_opp) where
+        ``d_opp > 0`` marks "opp GAINED a status this window" (for the status_wasted check).
+
+        Two forms, selected by ``bias_redesign``:
+          * default  — the count diff vs the hidden ``_prev_*_statused`` snapshot (today's behavior).
+          * redesign — the Markovian reframe (design §3 #29): key on the per-window TRANSITION EVENTS
+            (``status_applied`` / ``status_cured``, folded by TurnDelta and present in the obs history)
+            rather than a stored prev-count. ``+`` on a status landing on opp / a self-cure; ``−`` on
+            us being statused / the opp curing (e.g. Rest), with no dependence on internal state."""
         our_statused, opp_statused = self._statused_counts(live)
-        d_our = our_statused - self._prev_our_statused
-        d_opp = opp_statused - self._prev_opp_statused
-        self._prev_our_statused = our_statused
+        if self.config.bias_redesign:
+            d_our = (1 if delta.our_status_applied else 0) - (1 if delta.our_status_cured else 0)
+            d_opp = (1 if delta.opp_status_applied else 0) - (1 if delta.opp_status_cured else 0)
+        else:
+            d_our = our_statused - self._prev_our_statused
+            d_opp = opp_statused - self._prev_opp_statused
+        self._prev_our_statused = our_statused      # kept current for the (resume-immutable) default path
         self._prev_opp_statused = opp_statused
         return (d_opp - d_our) * STATUS_BONUS, d_opp
 
@@ -985,6 +1036,25 @@ class Gen3RewardManager:
         bound = MAT_HP_WEIGHT * _TEAM_SIZE + alive_w * _TEAM_SIZE
         return max(-bound, min(phi, bound))
 
+    def _compute_phi_status(self, live) -> float:
+        """The non-damaging-tempo status potential Φ_status(s) (design §2.7), from the LiveView.
+
+        Φ_status = STATUS_TEMPO_WEIGHT · (opp_tempo_statused − our_tempo_statused), counting
+        non-fainted mons carrying par / slp / frz (the tempo statuses Φ_mat can't price — Toxic /
+        burn / poison's value is the HP chip, already in Φ_mat). Unknown opp bench mons carry no
+        status → contribute 0, so Φ_status(s_0)=0 (nobody statused at start) → telescopes to zero net
+        with Φ_status(terminal)=0. Sign mirrors Φ_mat: an opponent we put to sleep RAISES Φ (good for
+        us); us getting paralysed LOWERS it. A pure function of the board status set → policy-invariant.
+        """
+        our = live.ours
+        if not our.mons:                       # mock/standalone guard (mirrors _compute_phi_mat)
+            return 0.0
+        our_tempo = sum(1 for m in our.mons[:_TEAM_SIZE]
+                        if not m.fainted and m.status in _TEMPO_STATUSES)
+        opp_tempo = sum(1 for m in live.opp.mons[:_TEAM_SIZE]
+                        if not m.fainted and m.status in _TEMPO_STATUSES)
+        return STATUS_TEMPO_WEIGHT * (opp_tempo - our_tempo)
+
     def _compute_spikes_bonus(self, delta: TurnDelta, live) -> tuple[float, float]:
         """Return (layer_bonus, futile_waste). The layer-added credit is the BIAS term `spikes`
         (its telescoping form is Φ_hazard, reached at bias_additivity→0 — design §2.6); the
@@ -1136,6 +1206,17 @@ class Gen3RewardManager:
         self._prev_active_ko_risk = 0.0 if is_terminal else active_risk_next
         self._prev_safe_pivot = (not is_terminal) and (min_bench_pko_next <= SAFE_PIVOT_PKO_MAX)
 
+    def _fold_status_pbrs(self, bd: "RewardBreakdown", live, is_terminal: bool) -> None:
+        """Non-damaging-tempo status PBRS Φ_status (design §2.7 / §7.4 hedge) → ``bd.pbrs_status``.
+        Gated on ``bias_redesign``: in the default run the count-diff status BIAS already pays the
+        standing value, so folding Φ_status there would double-count (and ``pbrs_status`` stays 0,
+        ``_prev_phi_status`` stays None → byte-identical default). Under the event-form redesign the
+        standing value was dropped — this restores it as a telescoping, policy-invariant potential."""
+        if not self.config.bias_redesign:
+            return
+        bd.pbrs_status, self._prev_phi_status = self._pbrs_step(
+            self._prev_phi_status, self._compute_phi_status(live), is_terminal)
+
     def _apply_progress_clock(self, bd: "RewardBreakdown") -> None:
         """Read the shared ProgressClock's stashed penalty into ``bd.no_progress_tax`` and suppress
         the escalating anti-spam family it SUBSUMES (design §3.1) — gated on ``bias_redesign``. In the
@@ -1262,6 +1343,9 @@ class Gen3RewardManager:
 
         # --- Belief PBRS (design_reward_switching.md) → pbrs_belief + the re-gate risk snapshot ---
         self._fold_belief_pbrs(bd, live, is_terminal)
+
+        # --- Non-damaging-tempo status PBRS Φ_status (design §2.7) → pbrs_status (bias_redesign only) ---
+        self._fold_status_pbrs(bd, live, is_terminal)
 
         # Track whether our last move did anything PRODUCTIVE this turn, for the
         # escalating repetition tax. A move counts as effective if it dealt damage,

@@ -13,16 +13,17 @@ The reward (`Gen3RewardManager`) is organised as a **registry of class-tagged te
 (design `designs/ai_v5/design_markovian_reward_and_features.md`). Every `RewardBreakdown` field is one
 entry in `RewardBreakdown._REGISTRY` mapping name → `RewardClass`. The **BIAS class is folded
 generically** off the registry (`_fold_bias_refund` sums `registry_fields(BIAS)`); TERMINAL and the
-two PBRS terms are **explicit named folds** (`_fold_material_pbrs` / `_fold_belief_pbrs`) because each
-PBRS term carries its own `_prev_phi_*` telescoping state a generic loop can't hold — `process_turn_reward`
-reads as a short phase sequence over these helpers:
+three PBRS terms are **explicit named folds** (`_fold_material_pbrs` / `_fold_belief_pbrs` /
+`_fold_status_pbrs`) because each PBRS term carries its own `_prev_phi_*` telescoping state a generic
+loop can't hold — `process_turn_reward` reads as a short phase sequence over these helpers:
 
 - **TERMINAL** (`win_loss`, the ±30) — emitted as-is; never shaped/flag-affected. Out of scope.
 - **PBRS** (always telescoping, objective-neutral; `Φ(terminal)=0`): `pbrs_material` (the material
-  potential **Φ_mat**, design §2) and `pbrs_belief` (the shipped incoming-KO belief PBRS — RENAMED from
-  the mis-named `pbrs_material`). The field holds `γ·Φ(s′)−Φ(s)`; `PBRS_GAMMA` MUST == the PPO gamma
-  (asserted in `train_rl_agent.py` after the model is built — the manager is built first, in the env
-  factory, so it can't assert in `__init__`).
+  potential **Φ_mat**, design §2), `pbrs_belief` (the shipped incoming-KO belief PBRS — RENAMED from
+  the mis-named `pbrs_material`), and `pbrs_status` (the non-damaging-tempo status potential **Φ_status**,
+  design §2.7 — `bias_redesign`-gated, see below). The field holds `γ·Φ(s′)−Φ(s)`; `PBRS_GAMMA` MUST ==
+  the PPO gamma (asserted in `train_rl_agent.py` after the model is built — the manager is built first,
+  in the env factory, so it can't assert in `__init__`).
 - **BIAS** (everything else) — additive shaping whose additive↔telescoping mix is set by
   `--bias-additivity` λ∈[0,1] (`RewardConfig.bias_additivity`, default 1.0). Implemented as
   **accumulate-and-refund**: each BIAS term emits its current per-turn value; the manager accumulates
@@ -37,6 +38,17 @@ faint_ours/faint_opp` base spine — material no longer banks the lead, so every
 −30 (the clutch-vs-dominant fix). The old asymmetric `−0.75 FAINT_MATERIAL_PENALTY` is REMOVED (folded
 into `MAT_ALIVE_WEIGHT=1.25`, a state potential, not a bias). The `+2.0` explosion literal is deleted
 (survive-Explosion credit rides Φ_mat); `explosion_block` is kept.
+
+**Φ_status** (`_compute_phi_status` / `_fold_status_pbrs`, `pbrs_status`) = `STATUS_TEMPO_WEIGHT·(opp_tempo
+_statused − our_tempo_statused)` over **non-fainted par/slp/frz mons only** (`_TEMPO_STATUSES`). It
+restores the *standing* value of a held non-damaging status that the event-form `status` reframe drops —
+sleep/freeze/para "lose the opponent turns", value `Φ_mat` can't see (Toxic/burn/poison value is the chip
+→ already in `Φ_mat`, so they're excluded to avoid a double-bridge). Nobody is statused at `s_0` →
+`Φ_status(s_0)=0`, `Φ_status(terminal)=0` → it telescopes to **zero net** (policy-invariant dense signal,
+not a net bias). **Gated on `bias_redesign`** (the default count-diff `status` BIAS already pays the
+standing value → folding `Φ_status` there double-counts; OFF → `pbrs_status≡0`, `_prev_phi_status` stays
+None, byte-identical default). It adds **no** resume-immutable field — it rides the existing
+`bias_redesign` flag (design §2.7 / §7.4 hedge).
 
 **The no-progress clock** (`ProgressClock`, `progress_clock.py`) is an episode-scoped
 `turns_since_progress` counter **owned by `EpisodeTracker`** (NOT LiveView — it is cross-turn state;
@@ -58,7 +70,8 @@ clock charge is active. The `turns_since_progress` OBS scalar is present EITHER 
 tracks it), so both arms share one architecture and can A/B by resume. `--bias-additivity` /
 `--mat-alive-weight` / `--bias-redesign` are resume-immutable, value-checked by
 `ModelVersion.check_reward_config` (the same machinery as `--vf-coef`). Tests: `reward_redesign_test.py`
-(registry coverage, Φ_mat telescoping + terminal-zeroing, bias no-op + parameterized blend, the full
+(registry coverage, Φ_mat telescoping + terminal-zeroing, **Φ_status non-damaging-only + gated-off-default
++ telescopes-to-zero**, bias no-op + parameterized blend, the bias_redesign reframes, the full
 ProgressClock predicate), plus the updated `reward_manager_test.py`.
 
 **Belief-risk-scaled switch BIAS lever (`--switch-bias-weight`, default 0.0 = OFF).** The shipped

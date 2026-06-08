@@ -10,7 +10,7 @@ import numpy as np
 
 from agents.training.reward_manager import (
     Gen3RewardManager, RewardConfig, RewardClass, RewardBreakdown,
-    MAT_HP_WEIGHT, MAT_ALIVE_WEIGHT, PBRS_GAMMA, VICTORY_VALUE,
+    MAT_HP_WEIGHT, MAT_ALIVE_WEIGHT, STATUS_TEMPO_WEIGHT, PBRS_GAMMA, VICTORY_VALUE,
     SWITCH_RISK_THRESHOLD, SAFE_PIVOT_PKO_MAX, STAY_RISK_TAX_FLOOR, ESCAPE_RISK_FRACTION,
 )
 from agents.training.progress_clock import ProgressClock, PROGRESS_CLOCK_CAP, PROGRESS_DMG_EPS
@@ -77,6 +77,7 @@ def _delta(**kw):
         opp_target_hp_delta=None, our_move_outcome=None, our_failed_to_move=False,
         our_cant_reason=None, opp_status_applied=None, opp_resolved_move_id=None,
         phase_is_forced_switch=False, our_status_applied=None,
+        our_status_cured=None, opp_status_cured=None,
     )
     base.update(kw)
     return SimpleNamespace(**base)
@@ -120,7 +121,8 @@ class TestRewardRegistry(unittest.TestCase):
     def test_class_membership_matches_design(self):
         bd = RewardBreakdown()
         self.assertEqual(set(bd.registry_fields(RewardClass.TERMINAL)), {"win_loss"})
-        self.assertEqual(set(bd.registry_fields(RewardClass.PBRS)), {"pbrs_material", "pbrs_belief"})
+        self.assertEqual(set(bd.registry_fields(RewardClass.PBRS)),
+                         {"pbrs_material", "pbrs_belief", "pbrs_status"})
         # Everything else is BIAS.
         self.assertIn("no_progress_tax", bd.registry_fields(RewardClass.BIAS))
         self.assertIn("roar", bd.registry_fields(RewardClass.BIAS))
@@ -194,6 +196,87 @@ class TestMaterialPBRS(unittest.TestCase):
         self.assertAlmostEqual(bd.pbrs_material, -prev, places=6)   # = γ·0 − prev
         self.assertLess(abs(bd.pbrs_material), 1.0)                  # small, not +19.5
         self.assertAlmostEqual(bd.win_loss, VICTORY_VALUE, places=6)
+
+
+# --------------------------------------------------------------------------- #
+class TestStatusPBRS(unittest.TestCase):
+    """Φ_status (design §2.7 / §7.4): the non-damaging-tempo standing potential. Restores the
+    standing value the event-form status BIAS drops — gated on bias_redesign, telescoping, net-zero."""
+
+    @staticmethod
+    def _set_status(live, side, idx, status):
+        """Set `status` on the idx-th mon of `live.<side>` ('ours'/'opp'). The _Side tuple is
+        immutable but each _Mon is mutable."""
+        getattr(live, side).mons[idx].status = status
+
+    def test_phi_status_zero_when_nobody_statused(self):
+        m = Gen3RewardManager()
+        self.assertAlmostEqual(m._compute_phi_status(_full_team_live()), 0.0, places=6)
+
+    def test_phi_status_counts_non_damaging_only(self):
+        """par/slp/frz move Φ_status; tox/brn/psn do NOT (their value is the HP chip → Φ_mat)."""
+        m = Gen3RewardManager()
+        for dmg in ("tox", "brn", "psn"):
+            live = _full_team_live()
+            self._set_status(live, "opp", 0, dmg)
+            self.assertAlmostEqual(m._compute_phi_status(live), 0.0, places=6,
+                                   msg=f"{dmg} must not move Φ_status (it is in Φ_mat)")
+        for tempo in ("par", "slp", "frz"):
+            live = _full_team_live()
+            self._set_status(live, "opp", 0, tempo)
+            self.assertAlmostEqual(m._compute_phi_status(live), STATUS_TEMPO_WEIGHT, places=6,
+                                   msg=f"{tempo} must raise Φ_status by one weight")
+
+    def test_phi_status_side_symmetry(self):
+        """opp statused → +weight (good for us); our statused → −weight."""
+        m = Gen3RewardManager()
+        opp_live = _full_team_live(); self._set_status(opp_live, "opp", 0, "slp")
+        our_live = _full_team_live(); self._set_status(our_live, "ours", 0, "par")
+        self.assertAlmostEqual(m._compute_phi_status(opp_live), +STATUS_TEMPO_WEIGHT, places=6)
+        self.assertAlmostEqual(m._compute_phi_status(our_live), -STATUS_TEMPO_WEIGHT, places=6)
+
+    def test_fold_gated_off_by_default(self):
+        """Default run (redesign OFF): pbrs_status ≡ 0 and _prev_phi_status stays None even with a
+        sleeping opp mon → byte-identical to before Φ_status existed."""
+        m = Gen3RewardManager()   # default: bias_redesign False
+        live1 = _full_team_live()
+        m.process_turn_reward(_Battle(live1, turn=1), _delta())
+        live2 = _full_team_live(); self._set_status(live2, "opp", 0, "slp")
+        m.process_turn_reward(_Battle(live2, turn=2), _delta())
+        self.assertEqual(m._last_breakdown.pbrs_status, 0.0)
+        self.assertIsNone(m._prev_phi_status)
+
+    def test_fold_active_under_redesign_application_and_cure(self):
+        """Under redesign: an opp falling asleep RAISES Φ → +pbrs_status; the subsequent cure (wake)
+        DROPS Φ → −pbrs_status. A held status pays ≈0 (γ≈1)."""
+        m = Gen3RewardManager(config=RewardConfig(bias_redesign=True))
+        m.process_turn_reward(_Battle(_full_team_live(), turn=1), _delta())  # prev=0
+        sleep_live = _full_team_live(); self._set_status(sleep_live, "opp", 0, "slp")
+        m.process_turn_reward(_Battle(sleep_live, turn=2), _delta())          # apply
+        applied = m._last_breakdown.pbrs_status
+        self.assertGreater(applied, 0.0)
+        self.assertAlmostEqual(applied, PBRS_GAMMA * STATUS_TEMPO_WEIGHT, places=6)
+        held_live = _full_team_live(); self._set_status(held_live, "opp", 0, "slp")
+        m.process_turn_reward(_Battle(held_live, turn=3), _delta())           # held
+        self.assertLess(abs(m._last_breakdown.pbrs_status), 1e-3)             # ≈0 (γ−1)·w
+        m.process_turn_reward(_Battle(_full_team_live(), turn=4), _delta())   # cured
+        self.assertLess(m._last_breakdown.pbrs_status, 0.0)
+
+    def test_telescopes_to_zero_net(self):
+        """Status applied then cured before a terminal that starts & ends with nobody statused →
+        the UNDISCOUNTED sum of pbrs_status ≈ −Φ_status(s_0) = 0 (modulo the bounded γ residual)."""
+        m = Gen3RewardManager(config=RewardConfig(bias_redesign=True))
+        s1 = _full_team_live()
+        s2 = _full_team_live(); self._set_status(s2, "opp", 0, "frz")
+        s3 = _full_team_live(); self._set_status(s3, "opp", 0, "frz")
+        s4 = _full_team_live()                                                # thawed (cured)
+        s5 = _Live([1.0] * 6, [0.0] * 6, won=True, finished=True)            # win (terminal)
+        total = 0.0
+        for i, live in enumerate((s1, s2, s3, s4, s5)):
+            m.process_turn_reward(_Battle(live, turn=i + 1), _delta())
+            total += m._last_breakdown.pbrs_status
+        resid = abs(PBRS_GAMMA - 1.0) * 5 * STATUS_TEMPO_WEIGHT + 1e-6
+        self.assertAlmostEqual(total, 0.0, delta=resid)
 
 
 # --------------------------------------------------------------------------- #
@@ -513,6 +596,55 @@ class TestSwitchBias(unittest.TestCase):
         # terminal zeroes the snapshot (no shaping carried past the game end)
         m._fold_belief_pbrs(bd, _full_team_live(), is_terminal=True)
         self.assertFalse(m._prev_safe_pivot)
+
+
+# --------------------------------------------------------------------------- #
+class TestBiasRedesignReframes(unittest.TestCase):
+    """The obs-keyed reframes that activate ONLY under bias_redesign (design §3 #18/#25/#29). The
+    default run (redesign OFF) keeps today's hidden-state behavior (byte-identical) — pinned by the
+    legacy TestSwitchSubsidy / TestSeSwitchBonus / TestStatus suites running at the default config."""
+
+    def _mgr(self, redesign):
+        return Gen3RewardManager(config=RewardConfig(bias_redesign=redesign))
+
+    # --- status (#29): transition events under redesign, count diff by default ---
+    def test_status_redesign_keys_on_transition_events(self):
+        from agents.enums import Status
+        live = _full_team_live()   # mock snapshot shows nobody statused
+        # opp GAINED a status this window (the event) → + even though the count snapshot is 0.
+        reward, d_opp = self._mgr(True)._compute_status_reward(_delta(opp_status_applied=Status.TOX), live)
+        self.assertGreater(reward, 0.0)
+        self.assertGreater(d_opp, 0)
+        # opp CURED a status (e.g. Rest) → − (we lost the pressure).
+        reward_c, _ = self._mgr(True)._compute_status_reward(_delta(opp_status_cured=Status.TOX), live)
+        self.assertLess(reward_c, 0.0)
+
+    def test_status_default_keys_on_count_diff(self):
+        statused = _full_team_live()
+        statused.opp.mons[0].status = "tox"   # a statused opp mon, no transition event in the delta
+        reward, d_opp = self._mgr(False)._compute_status_reward(_delta(), statused)
+        self.assertGreater(reward, 0.0)   # count diff (0→1) drives it; events would have given 0
+        self.assertEqual(d_opp, 1)
+
+    # --- switch_base (#18): flat under redesign, spam-gated by default ---
+    def _settle_switch(self, m, decision_turn, last_switch_turn):
+        m._last_reward_metadata = {"type": "VOLUNTARY", "decision_turn": decision_turn,
+                                   "switch_from": "zapdos", "target_species": "tyranitar"}
+        m._last_switched_from = "snorlax"   # != target → not a bounce
+        m.last_switch_turn = last_switch_turn
+        bd = RewardBreakdown()
+        m._apply_switch_outcome(_delta(our_switch_to="tyranitar"), bd)
+        return bd
+
+    def test_switch_base_flat_under_redesign(self):
+        from agents.training.reward_manager import SWITCH_BASE_BONUS
+        # Back-to-back switch (decision 5, last 4): the clock handles spam, so switch_base is flat.
+        bd = self._settle_switch(self._mgr(True), decision_turn=5, last_switch_turn=4)
+        self.assertAlmostEqual(bd.switch_base, SWITCH_BASE_BONUS, places=6)
+
+    def test_switch_base_spam_gated_by_default(self):
+        bd = self._settle_switch(self._mgr(False), decision_turn=5, last_switch_turn=4)
+        self.assertAlmostEqual(bd.switch_base, 0.0, places=6)   # back-to-back → spam-gated to 0
 
 
 class TestPbrsGammaInvariant(unittest.TestCase):

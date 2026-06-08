@@ -42,7 +42,7 @@ The full bias redesign is implemented but **gated behind `RewardConfig.bias_rede
 | Material | `Φ_mat` PBRS (always-on, the clutch-fix) | same |
 | Anti-spam family (`repetition`/`bouncing`/`dead_matchup`/`struggle` taxes) | **active, as today** | **suppressed** — the clock subsumes them |
 | `no_progress_tax` | **0** (clock tracks the obs scalar only) | charged (`−no_progress_penalty` per gated no-op) |
-| `roar`/`status`/`se_switch`/`switch_base` reframes | as today | (deferred — see Deviations) |
+| `switch_base`/`se_switch`/`status` reframes | as today (hidden-state forms) | **obs-keyed forms** (gated, §below) |
 
 So at the default the **only** reward-behavior change vs the live baseline is `Φ_mat`. Crucially the
 `turns_since_progress` obs scalar is present in **both** arms (the clock always tracks it), so the
@@ -120,11 +120,11 @@ stalls the offense-centric clock can't see): `START_TURN` 60→100, `PER_TURN` 0
 `RewardBreakdown._REGISTRY` is the single source of truth (field → `RewardClass`); a coverage test
 pins it 1:1 against the dataclass fields (only `bias_refund`, the fold mechanism, is excluded) and a
 second test pins `_GROUPS` (the to_dict display buckets) against it. The fold drives **BIAS
-generically** (`_fold_bias_refund` sums `registry_fields(BIAS)`); TERMINAL + the two PBRS terms are
-**explicit named folds** (`_fold_material_pbrs` / `_fold_belief_pbrs`) because each PBRS term carries
-its own `_prev_phi_*` telescoping state a generic loop can't hold. `process_turn_reward` reads as a
-phase sequence over these helpers; the telescoping math (`γ·Φ′−Φ` + the `Φ(terminal)=0` zeroing — the
-§2.3 dominant-win footgun) lives in **one** `_pbrs_step` helper.
+generically** (`_fold_bias_refund` sums `registry_fields(BIAS)`); TERMINAL + the three PBRS terms are
+**explicit named folds** (`_fold_material_pbrs` / `_fold_belief_pbrs` / `_fold_status_pbrs`) because each
+PBRS term carries its own `_prev_phi_*` telescoping state a generic loop can't hold. `process_turn_reward`
+reads as a phase sequence over these helpers; the telescoping math (`γ·Φ′−Φ` + the `Φ(terminal)=0`
+zeroing — the §2.3 dominant-win footgun) lives in **one** `_pbrs_step` helper.
 
 ---
 
@@ -133,12 +133,27 @@ phase sequence over these helpers; the telescoping math (`γ·Φ′−Φ` + the 
 - **Staging via `bias_redesign`** (above) — the design described the staging conceptually (§1.3); the
   implementation made it a single resume-immutable flag and made the obs scalar arch-shared so the
   arms are resume-compatible. This is the cleanest realization of the "single-variable first run".
-- **Deferred reframes (no default-run effect).** The Markovian-purity reframes that remove hidden
-  `self._prev_*` state — `roar` (§3 #9, drop `_prev_opp_boosts`), `status` (#29, the transition-event
-  reframe), `se_switch` (#25, drop the `_last_opp_seen_by` gate), `switch_base` (#18, drop the
-  `last_switch_turn` spam-gate) — are **not yet built**. They don't change the default run (today's
-  terms still fire) and are clean follow-ons; the `Φ_hazard`/`Φ_status` telescoping forms (§2.6–2.7)
-  likewise activate only at `bias_additivity → 0`, which is a later A/B arm.
+- **Obs-keyed reframes — BUILT, gated on `bias_redesign`.** The Markovian-purity reframes that key on
+  obs-present quantities instead of hidden `self._prev_*`/`_last_*` state ship gated, so the default
+  run stays byte-identical: `switch_base` (#18) drops its `last_switch_turn` spam-gate → a flat
+  per-voluntary-switch bias (the clock handles spam); `se_switch` (#25) drops its `_last_opp_seen_by`
+  once-per-matchup gate (the SE-threat fact is in the matchup obs); `status` (#29) keys on the
+  TurnDelta transition events (`status_applied`/`status_cured`) — `+` on landing a status / a self-cure,
+  `−` on being statused / the opp curing (e.g. Rest) — instead of the `_prev_*_statused` count diff.
+  **`roar` (#9) needed no change:** `_prev_opp_boosts` is the decision-time opp-boosts the model saw
+  in its obs (the boosts the Roar phazed away); at reward time `live` shows the reset board, so the
+  snapshot is the only — and already obs-recoverable — source.
+- **`Φ_status` — BUILT as a third always-on-style PBRS (non-damaging only), gated on `bias_redesign`.**
+  The event-form `status` reframe drops the *standing* value of a held non-damaging status (par/slp/frz —
+  tempo, not in `Φ_mat`); `Φ_status` (`_compute_phi_status` / `_fold_status_pbrs`, `pbrs_status`) =
+  `STATUS_TEMPO_WEIGHT·(opp_tempo_statused − our_tempo_statused)` restores it as a telescoping
+  (`Φ_status(s_0)=0`, terminal-zeroed → net-zero, policy-invariant) potential. It is **gated on
+  `bias_redesign`** (the default count-diff `status` BIAS already pays the standing value → double-count
+  otherwise) and covers **non-damaging statuses only** (Toxic/burn/poison ride `Φ_mat`'s chip → disjoint,
+  no double-bridge). It adds **no** resume-immutable field (rides `bias_redesign`). This is the §2.7 /
+  §7.4 hedge shipped pre-emptively as a potential. NB: the design's *other* §2.6–2.7 telescoping form,
+  `Φ_hazard` (spikes), still activates only at `bias_additivity → 0` (a later A/B arm) — it was not
+  separately built.
 - **`MODEL_CONFIG_VERSION` not `ARCH` for the reward hparams.** `bias_additivity` / `mat_alive_weight`
   / `bias_redesign` are value-meaning (resume-immutable) but NOT weight-shape — recorded on
   `ModelVersion` and enforced via `check_reward_config` on the training-resume path only (the
@@ -170,8 +185,8 @@ generic immutable-hparam registry. Two deliberate couplings (`_is_progress` vs `
 
 | Gate | Result |
 |---|---|
-| Full unit suite (`not integration and not e2e`) | **1920 passed**, 2 skipped (1919 pre-change + 1 new `_GROUPS`-pin test) |
-| New reward-redesign tests (`reward_redesign_test.py`, NEW) | registry coverage, `Φ_mat` telescoping + terminal-zeroing (the 6-0-win-must-not-bonus guard), bias λ=1 byte-no-op + parameterized blend (λ∈{0,0.5,1}), the full ProgressClock predicate (miss/heal/prevented freeze, our-attributed dmg, forced-switch + trapped gates) — all pass |
+| Full unit suite (`not integration and not e2e`) | **1930 passed**, 2 skipped (1919 baseline + the `_GROUPS`-pin + 4 reframe tests + 6 `Φ_status` tests) |
+| New reward-redesign tests (`reward_redesign_test.py`, NEW) | registry coverage, `Φ_mat` telescoping + terminal-zeroing (the 6-0-win-must-not-bonus guard), **`Φ_status` (non-damaging-only, gated-off-by-default, side-symmetry, application/cure fold, telescopes-to-zero)**, bias λ=1 byte-no-op + parameterized blend (λ∈{0,0.5,1}), the bias_redesign reframes, the full ProgressClock predicate (miss/heal/prevented freeze, our-attributed dmg, forced-switch + trapped gates) — all pass |
 | Golden-obs parity (byte-exact) | fixture regenerated (**3391**-dim, 991 decisions) → passes (deterministic) |
 | obs-build benchmark | **~7,173 calls/encode** — *below* the ~7.3k `gen3_incoming_damage_v2` reference (the clock scalar is one `math.log` + one array write); well under the 10% gate |
 | Model roundtrip + `--debug` smoke (bridge, GPU + CPU `--bias-redesign`) | `[ModelVersion] Round-trip smoke test PASSED`; episodes complete; no NaN; `model_config.json` records `arch=gen3_markovian_progress_v1` / `total_dim=3391` / `config_version=4` / the reward hparams |
@@ -179,7 +194,7 @@ generic immutable-hparam registry. Two deliberate couplings (`_is_progress` vs `
 
 **Not built (deferred):** the efficacy gate (post-retrain: clutch-conversion ↑, useless-turn-rate ↓,
 ELO non-regressed — pre-registered in design §7.4); the offline reward-replay falsifier over
-`eval_traces` (design §7.1a); the deferred reframes (above). The full `learn()`→eval "Training complete"
+`eval_traces` (design §7.1a). The full `learn()`→eval "Training complete"
 literal wasn't captured (GPU saturated by the live run; CPU+bridge too slow for the smoke timeout) — but
 round-trip + training-entry are confirmed and the PPO update math is unchanged (just +1 auto-discovered
 obs dim).
@@ -191,8 +206,8 @@ obs dim).
 | File | Change |
 |---|---|
 | `agents/training/progress_clock.py` | **NEW** — the `ProgressClock` (ternary predicate, `value()`, `last_penalty`) |
-| `agents/training/reward_redesign_test.py` | **NEW** — registry / `Φ_mat` / bias-additivity / ProgressClock tests |
-| `agents/training/reward_manager.py` | registry + `RewardClass`/`RewardConfig`; `Φ_mat`; bias-refund; `pbrs_material`→`pbrs_belief` rename; the `_fold_*`/`_pbrs_step`/`_log_turn` helpers; `Φ_mat`/clock constants; gentle `stall_tax` |
+| `agents/training/reward_redesign_test.py` | **NEW** — registry / `Φ_mat` / `Φ_status` / bias-additivity / ProgressClock / reframe tests |
+| `agents/training/reward_manager.py` | registry + `RewardClass`/`RewardConfig`; `Φ_mat`; **`Φ_status` (`_compute_phi_status`/`_fold_status_pbrs`, `pbrs_status`, `STATUS_TEMPO_WEIGHT`/`_TEMPO_STATUSES`)**; bias-refund; `pbrs_material`→`pbrs_belief` rename; the `_fold_*`/`_pbrs_step`/`_log_turn` helpers; `Φ_mat`/clock constants; gentle `stall_tax` |
 | `agents/training/episode_tracker.py` | owns the `ProgressClock`; `update_progress_clock()` helper |
 | `agents/training/gen3_env.py` | clock wiring (penalty from config) + the `_pending_delta` fold-reuse cache |
 | `agents/inference/player.py` | clock wiring in `embed_battle` (eval / self-play / play parity) |
@@ -214,9 +229,13 @@ obs dim).
 - **Train it.** The first run is the single-variable `Φ_mat` clutch-fix (`bias_redesign` OFF); judge by
   the design §7.4 pre-registration (clutch-conversion ↑, useless-turn-rate ↓, ELO non-regressed — a
   PBRS-only ELO regression is a bug signal, not an outcome).
-- **A/B arms** (later, by resume — same arch): `--bias-redesign` (clock + anti-spam collapse);
-  `--bias-additivity < 1` (telescope the biases / the `Φ_hazard`/`Φ_status` no-double-count forms).
-- **Build the deferred reframes** (roar/status/se_switch/switch_base) + the offline reward-replay
-  falsifier (design §7.1a) before relying on the bias-redesign arm.
+- **A/B arms** (later, by resume — same arch): `--bias-redesign` (clock + anti-spam collapse + the
+  Markovian-purity reframes + the `Φ_status` standing-tempo potential); `--bias-additivity < 1`
+  (telescope the biases / the `Φ_hazard` no-double-count form).
+- **The Markovian-purity reframes are built** (roar/status/se_switch/switch_base) **plus `Φ_status`**
+  (the non-damaging-tempo standing potential that restores what the event-form `status` drops), all
+  gated on `bias_redesign` so the default run stays byte-identical. On the first `bias_redesign` run,
+  watch the §7.4 guard (status-application rate must not collapse). Still future: the offline
+  reward-replay falsifier (design §7.1a) to confirm the bias-redesign arm before relying on it.
 - **Pair with `--use-popart`** (design §6.3) — `Φ_mat`'s declared-team formulation already makes
   `Φ_mat(s_0)≈0`, but the value-scale guards (`grad/value_share`) decide.

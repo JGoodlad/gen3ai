@@ -20,12 +20,27 @@ commit `7483dd1`), `design_incoming_damage_obs.md` (the belief block, `gen3_inco
 > the anti-spam collapse, and the spikes/status telescoping are **gated behind
 > `RewardConfig.bias_redesign` (`--bias-redesign`, default OFF)** — so the only reward-behavior change
 > vs the live baseline is `Φ_mat`. The obs scalar is present in both arms (one architecture).
-> **Deferred** (Markovian-purity polish, no default-run effect): the `roar`/`status` `_prev_*`→
-> current-obs reframes and the `se_switch`/`switch_base` hidden-gate drops (§3 #9/#18/#25/#29).
-> A post-implementation **code-review pass** consolidated the duplicated PBRS telescoping + the
-> clock-wiring and removed dead constants — details in the impl-step doc. **Verification:** 1920 unit
-> tests, obs benchmark (no regression), golden regenerated + parity, `--debug` smoke round-trip
-> PASSED. Resume-immutable reward hparams are `ModelVersion`-value-checked (`MODEL_CONFIG_VERSION` 3→4).
+> **The bias redesign is now feature-COMPLETE:** the obs-keyed reframes (§3 #18/#25/#29) ship gated
+> on `bias_redesign` — `switch_base` drops its `last_switch_turn` spam-gate (the clock handles spam),
+> `se_switch` drops its `_last_opp_seen_by` once-per-matchup gate, and `status` keys on the TurnDelta
+> transition events (`status_applied`/`status_cured`) instead of the `_prev_*_statused` count diff.
+> `roar` (§3 #9) needed no change — `_prev_opp_boosts` is the decision-time opp-boosts the model saw
+> in its obs (the boosts the Roar phazed away), so it is already Markovian-recoverable. A
+> post-implementation **code-review pass** consolidated the duplicated PBRS telescoping + the
+> clock-wiring and removed dead constants — details in the impl-step doc.
+>
+> **Φ_status built (§2.7 / §7.4 hedge).** The event-form `status` reframe drops the STANDING value of a
+> held *non-damaging* status (par/slp/frz — sleep/freeze/para "lose the opponent turns"; their value is
+> NOT in `Φ_mat`, unlike the Toxic/burn/poison chip). That standing signal is restored as a third
+> **always-on-style PBRS** `Φ_status` (`_compute_phi_status`/`_fold_status_pbrs`, `pbrs_status` field)
+> = `STATUS_TEMPO_WEIGHT·(opp_tempo_statused − our_tempo_statused)`, telescoping (`Φ_status(s_0)=0`,
+> `Φ_status(terminal)=0` → net-zero, policy-invariant). It is **gated on `bias_redesign`** (the default
+> count-diff status BIAS already pays the standing value → folding it there would double-count); the
+> small per-application event-BIAS nudge that remains is exactly §7.4's standing-hedge. It covers
+> *non-damaging statuses only* — disjoint from `Φ_mat` (no double-count). **Verification:** 1930 unit
+> tests, obs benchmark (no regression — reward-only, no obs/ARCH change), golden parity, `--debug` smoke
+> round-trip PASSED. Resume-immutable reward hparams are `ModelVersion`-value-checked
+> (`MODEL_CONFIG_VERSION` 3→4); `Φ_status` adds no new resume-immutable field (it rides `bias_redesign`).
 
 > **Hard scope constraint (user):** `VICTORY_VALUE = 30` (the ±30 terminal) is **out of scope and
 > untouched.** Both PBRS potentials use the absorbing convention `Φ(terminal) = 0`, so shaping
@@ -398,6 +413,18 @@ tempo-status value (the agent under-using Thunder Wave / sleep until it experien
 it does, the tempo signal was too weak — restore a small standing bias for the **non-damaging** statuses
 specifically (the same shape as the `FAINT_MATERIAL_PENALTY`-removal faint-rate guard). This is the only
 part of the status conversion that is judgment, not mechanics.
+
+> **As-built (2026-06-07):** the hedge is shipped *pre-emptively* as a third PBRS potential rather than
+> waiting for a measured collapse — `Φ_status(s) = STATUS_TEMPO_WEIGHT · (opp_tempo_statused −
+> our_tempo_statused)` over **par/slp/frz only** (`_compute_phi_status` / `_fold_status_pbrs`,
+> `pbrs_status` field), folded `γ·Φ(s′)−Φ(s)` with `Φ(terminal)=0`. Because nobody is statused at `s_0`
+> it telescopes to **zero net** — a policy-invariant dense *standing* signal, NOT the net bias the
+> prose above floats (which would change the optimum). It is **gated on `bias_redesign`** (the default
+> count-diff `status` already carries the standing value; folding `Φ_status` there double-counts) and
+> covers non-damaging statuses **only** (Toxic/burn/poison value is the chip → already in `Φ_mat`). The
+> residual per-application event-BIAS nudge under `bias_redesign` *is* the small standing bias this
+> hedge calls for; `Φ_status` adds the dense learning signal on top. So the standing tempo-status value
+> no longer "leans on the one-shot application event" — it telescopes properly while the status holds.
 
 **The dividing line, restated in registry terms:** value eventually realized materially (HP / win) wants
 a **telescoping (potential) treatment** — *always-on* for `Φ_mat` / `Φ_belief` (the **PBRS class**), and
@@ -1080,12 +1107,14 @@ the two PBRS fields, `--use-popart` if paired), episodes finish, no NaN, the gam
    (`--mat-alive-weight`), value-checked by `ModelVersion` like `--pbrs-risk-weight` / `--vf-coef`.
 4. **`se_switch` gate (§3, #25):** drop the once-per-matchup gate and fold the offensive-threat tilt into
    `pivot_damage`, vs keep a flat `se_switch`. Recommend fold (avoids the `_last_opp_seen_by` residual).
-4b. **`status` PBRS — tempo-status weight/guard (§2.7):** `Φ_status` is **adopted** (the inflict/receive
-   credit is a material bridge, same as hazards). The only open part is the heterogeneity: paralysis /
-   sleep / freeze are non-damaging tempo, only diffusely material, so `Φ_status` bridges a noisier signal
-   for them than for Toxic/burn. The open decision is purely the **hedge** — pre-register
-   status-application-rate-must-not-collapse (§7.4); if it does, restore a small standing bias for the
-   non-damaging statuses only. Mechanics are settled; this is the one judgment call.
+4b. **`status` PBRS — tempo-status weight/guard (§2.7): BUILT.** `Φ_status` is **adopted and shipped** as
+   a non-damaging-only (par/slp/frz) telescoping potential, gated on `bias_redesign` (`_compute_phi_status`
+   / `_fold_status_pbrs`, `pbrs_status`). The heterogeneity is handled by *scope*: it covers only the
+   non-damaging tempo statuses (Toxic/burn/poison ride `Φ_mat`'s chip), so there is no noisy double-bridge.
+   The hedge was shipped pre-emptively as the potential itself (net-zero, policy-invariant) rather than as
+   a measured-collapse fallback; the residual per-application event nudge is the small standing bias §7.4
+   floats. The pre-registered guard (status-application-rate-must-not-collapse, §7.4) still stands as the
+   *measurement* check on the first `bias_redesign` run. Mechanics settled.
 5. **Wish/Future-Sight (§5.3):** gated on fork support (presence + turns-until certain; amount only if
    resolvable) + FPS headroom. Deferrable — does not gate the Markovian-reward work.
 6. **PopArt pairing (§6.3):** recommend `--use-popart` for this run; not strictly required given
