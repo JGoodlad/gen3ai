@@ -23,6 +23,8 @@ import torch as th
 from sb3_contrib.common.maskable.distributions import MaskableDistribution
 from sb3_contrib.common.maskable.policies import MaskableMultiInputActorCriticPolicy
 
+from agents.model.popart import PopArtNormalizer
+
 
 class Gen3DualHeadMaskablePolicy(MaskableMultiInputActorCriticPolicy):
     """Maskable actor-critic policy whose features extractor yields a (pi, vf) tuple.
@@ -32,7 +34,26 @@ class Gen3DualHeadMaskablePolicy(MaskableMultiInputActorCriticPolicy):
     below unpacks that tuple and feeds ``mlp_extractor.forward_actor`` / ``forward_critic``
     the appropriate half. Everything else (action distribution, value net, masking) is
     inherited unchanged.
+
+    **PopArt (opt-in via ``use_popart=True`` in ``policy_kwargs``).** When enabled, the value head
+    (``value_net``) outputs *normalized* values and a :class:`~agents.model.popart.PopArtNormalizer`
+    de-normalizes every value site below, so callers (GAE / advantages / bootstrapping) always see
+    real-unit values while the PPO loss trains in normalized space (see
+    ``agents/training/instrumented_ppo.py``). The normalizer is built **after** ``super().__init__``
+    (which builds ``value_net``); its ``(mu, sigma)`` buffers ride the policy state_dict, so they
+    save/restore across checkpoints. ``use_popart`` is version-checked (``ModelVersion``) — it cannot
+    be toggled on a resumed model.
     """
+
+    def __init__(self, *args, use_popart: bool = False, **kwargs):
+        # super().__init__ builds value_net (SB3 _build); the normalizer wraps it afterwards.
+        super().__init__(*args, **kwargs)
+        self.popart = PopArtNormalizer() if use_popart else None
+
+    def _denorm(self, values: th.Tensor) -> th.Tensor:
+        """Map the value head's (possibly normalized) output to a real-unit value. Identity when
+        PopArt is disabled, so the real-unit GAE / advantage path is unchanged."""
+        return self.popart.denormalize(values) if self.popart is not None else values
 
     def forward(
         self,
@@ -43,7 +64,7 @@ class Gen3DualHeadMaskablePolicy(MaskableMultiInputActorCriticPolicy):
         pi_features, vf_features = self.extract_features(obs)
         latent_pi = self.mlp_extractor.forward_actor(pi_features)
         latent_vf = self.mlp_extractor.forward_critic(vf_features)
-        values = self.value_net(latent_vf)
+        values = self._denorm(self.value_net(latent_vf))
         distribution = self._get_action_dist_from_latent(latent_pi)
         if action_masks is not None:
             distribution.apply_masking(action_masks)
@@ -65,7 +86,7 @@ class Gen3DualHeadMaskablePolicy(MaskableMultiInputActorCriticPolicy):
         if action_masks is not None:
             distribution.apply_masking(action_masks)
         log_prob = distribution.log_prob(actions)
-        values = self.value_net(latent_vf)
+        values = self._denorm(self.value_net(latent_vf))
         return values, log_prob, distribution.entropy()
 
     def get_distribution(
@@ -81,4 +102,4 @@ class Gen3DualHeadMaskablePolicy(MaskableMultiInputActorCriticPolicy):
     def predict_values(self, obs) -> th.Tensor:
         _, vf_features = self.extract_features(obs)
         latent_vf = self.mlp_extractor.forward_critic(vf_features)
-        return self.value_net(latent_vf)
+        return self._denorm(self.value_net(latent_vf))

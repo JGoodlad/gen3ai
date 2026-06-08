@@ -125,6 +125,15 @@ class InstrumentedMaskablePPO(MaskablePPO):
         grad_balance: dict[str, float] = {}
         grad_norms: list[float] = []  # pre-clip total grad norm (shows grad-clip activity)
 
+        # +PopArt: advance the value-target normalizer once per train() (before the epochs) from
+        # this rollout's returns; update() also POP-rescales value_net so its de-normalized outputs
+        # are preserved. The value loss below then trains in normalized space. No-op when disabled.
+        popart = getattr(self.policy, "popart", None)
+        if popart is not None:
+            popart.update(
+                th.as_tensor(self.rollout_buffer.returns, device=self.device), self.policy.value_net
+            )
+
         # train for n_epochs epochs
         for epoch in range(self.n_epochs):
             approx_kl_divs = []
@@ -160,9 +169,16 @@ class InstrumentedMaskablePPO(MaskablePPO):
                 clip_fraction = th.mean((th.abs(ratio - 1) > clip_range).float()).item()
                 clip_fractions.append(clip_fraction)
 
-                if self.clip_range_vf is None:
+                if popart is not None:
+                    # +PopArt: value loss in NORMALIZED space (both target and prediction scaled by
+                    # the running mu/sigma) → O(1) gradient, no longer swamping the shared trunk.
+                    # Mutually exclusive with vf-clipping (enforced at startup).
+                    value_loss = F.mse_loss(
+                        popart.normalize(rollout_data.returns), popart.normalize(values)
+                    )
+                elif self.clip_range_vf is None:
                     # No clipping
-                    values_pred = values
+                    value_loss = F.mse_loss(rollout_data.returns, values)
                 else:
                     # Clip the different between old and new value
                     # NOTE: this depends on the reward scaling
@@ -174,8 +190,7 @@ class InstrumentedMaskablePPO(MaskablePPO):
                         (th.abs(values - rollout_data.old_values) > clip_range_vf).float()
                     ).item()
                     vf_clip_fractions.append(vf_clip_fraction)
-                # Value loss using the TD(gae_lambda) target
-                value_loss = F.mse_loss(rollout_data.returns, values_pred)
+                    value_loss = F.mse_loss(rollout_data.returns, values_pred)
                 value_losses.append(value_loss.item())
 
                 # Entropy loss favor exploration
@@ -256,3 +271,12 @@ class InstrumentedMaskablePPO(MaskablePPO):
             self.logger.record(_key, _val)
         if grad_norms:
             self.logger.record("train/grad_norm", float(np.mean(grad_norms)))
+
+        # +PopArt diagnostics: mu/sigma should TRACK train/return_mean/return_std (the running
+        # normalizer estimate); value_weight_norm watches the POP rescale stay bounded (an explosion
+        # signals a degenerate sigma / broken preservation). With PopArt on, train/value_loss is the
+        # NORMALIZED loss (≈O(1)) and grad/value_share should fall toward ~0.4.
+        if popart is not None:
+            self.logger.record("popart/mu", float(self.policy.popart.mu))
+            self.logger.record("popart/sigma", float(self.policy.popart.sigma))
+            self.logger.record("popart/value_weight_norm", float(self.policy.value_net.weight.norm()))

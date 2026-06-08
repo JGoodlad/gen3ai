@@ -523,6 +523,24 @@ target the value→trunk pressure, which can now be tuned to a number instead of
 `+INSTRUMENTATION` markers in `instrumented_ppo.py` flag the added lines; the upstream-drift hash check
 is unaffected since it hashes only `sb3_contrib.MaskablePPO.train`.)
 
+## PopArt value-target normalization (`--use-popart`)
+
+The fix for the swamping the diagnostics above reveal. `train()` reads `self.popart =
+getattr(self.policy, "popart", None)` (built by the policy when `--use-popart`; see
+`src/agents/model/CLAUDE.md` → PopArt for the math + version-checking). When present: once per
+`train()` (before the epochs) `popart.update(self.rollout_buffer.returns, self.policy.value_net)`
+advances the running `(mu, sigma)` **and** POP-rescales `value_net`; the value loss then becomes
+`MSE(popart.normalize(returns), popart.normalize(values))` — the **normalized**-space loss, so the
+value gradient into the shared trunk drops by ≈`sigma²` and stops swamping the policy. The policy's
+value sites de-normalize, so `rollout_buffer.values` / GAE / advantages stay real-unit — the policy
+path is untouched. **`--use-popart` requires an explicit `--clip-range-vf none`** (errors otherwise —
+self-documenting config; clipping is unnecessary with value normalization, and would clip in
+un-normalized units). New diagnostics ride the same generic metrics path:
+`popart/mu`, `popart/sigma` (watch them track `train/return_mean`/`return_std`),
+`popart/value_weight_norm` (POP keeps it bounded). Under PopArt `train/value_loss` is the normalized
+loss (≈O(1)) and `grad/value_share` should fall from ≈1.0 toward ~0.4 — the live confirmation it
+worked.
+
 ## Process liveness guards (`watchdog.py`)
 
 Two daemon-thread watchdogs keep a hung/abandoned run from lingering:

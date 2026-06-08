@@ -500,6 +500,12 @@ async def main():
                         "rides --bias-additivity (λ=1 additive vs λ=0 telescoping A/B). Resume-immutable.")
     parser.add_argument("--clip-range", type=float, default=CLIP_RANGE_DEFAULT, help="PPO policy clip range (default 0.15)")
     parser.add_argument("--clip-range-vf", type=optional_float, default=0.5, help="Value function clip range; pass 'none' to disable clipping (thesis used 0.0184)")
+    parser.add_argument("--use-popart", "--use_popart", dest="use_popart", action=BoolFlag, default=False,
+                        help="Enable PopArt value-target normalization (adaptive (mu,sigma) on the "
+                             "value head; keeps the value gradient O(1) so it stops swamping the "
+                             "shared trunk). Requires an explicit --clip-range-vf none (value "
+                             "clipping is unnecessary with normalization). Version-checked: cannot "
+                             "be toggled on a resumed model.")
     parser.add_argument("--n-steps", type=int, default=2048, help="Steps per environment per rollout")
     parser.add_argument("--grad-checkpointing", "--grad_checkpointing", dest="grad_checkpointing",
                         action=BoolFlag, default=False,
@@ -575,6 +581,17 @@ async def main():
                              "raise it to ramp slower / stay bot-heavier for longer.")
 
     args = parser.parse_args()
+    if args.use_popart and args.clip_range_vf is not None:
+        # Require value clipping to be EXPLICITLY off with PopArt — a self-documenting config (the
+        # command shows '--clip-range-vf none') beats a silent override. PopArt normalizes the
+        # value targets, so clipping is unnecessary; and because the value head returns
+        # de-normalized values an active clip would clip in UN-normalized units (clip_range_vf vs
+        # sigma) and cripple the critic.
+        parser.error(
+            "--use-popart requires an explicit '--clip-range-vf none' (it defaults to 0.5). PopArt "
+            "normalizes the value targets so value clipping is unnecessary — and an active clip "
+            "would clip in un-normalized units and cripple the critic. Pass --clip-range-vf none."
+        )
     log_level = LogLevel[args.log_level.upper()]
 
     # One server config, built from --showdown-port and threaded to every Showdown client
@@ -1112,6 +1129,7 @@ async def main():
             "features_extractor_class": Gen3FeaturesExtractor,
             "features_extractor_kwargs": _load_extractor_kwargs,
             "net_arch": NET_ARCH,
+            "use_popart": args.use_popart,  # version-checked vs the saved model_config.json
         }
         current_version = ModelVersion.from_layout_and_policy_kwargs(
             _load_extractor_kwargs["layout"], _load_policy_kwargs, vf_coef=args.vf_coef,
@@ -1279,6 +1297,7 @@ async def main():
             "net_arch": [512, 512],
             "optimizer_class": torch.optim.AdamW,
             "optimizer_kwargs": {"weight_decay": args.weight_decay, "eps": 1e-5},
+            "use_popart": args.use_popart,  # builds the PopArtNormalizer in the policy; recorded in model_config.json
         }
         
         # --- Model Initialization ---

@@ -28,7 +28,12 @@ from typing import Any, Dict, List
 #   for the under-switch pathology; design_reward_switching.md §7). Same resume-immutable VALUE-meaning
 #   treatment as the v4 reward hparams (folded into check_reward_config, excluded from
 #   check_compatible). Old configs migrate to 0.0 (OFF = the lever absent, behavior unchanged).
-MODEL_CONFIG_VERSION = 5
+#
+# v6: added `use_popart` (PopArt value-target normalization toggle). Unlike the v3-v5 VALUE-meaning
+#   hparams, PopArt changes the value head's STRUCTURE (normalized output + mu/sigma buffers), so it
+#   is enforced in check_compatible() (gates EVERY load), not the resume-only path. Old configs
+#   default False (no PopArt).
+MODEL_CONFIG_VERSION = 6
 
 # Change this when the neural architecture changes structurally in a way that makes
 # weights from a different signature incompatible (e.g. adding LSTM, replacing attention).
@@ -282,6 +287,11 @@ class ModelVersion:
     bias_redesign: bool = False
     switch_bias_weight: float = 0.0   # v5: belief-risk-scaled stay-into-KO BIAS lever (default OFF)
 
+    # v6 feature toggle (value-checked, not weight-shape): PopArt value-target normalization. The
+    # value head's parameterization + buffers differ when on, so it cannot be toggled on a resume.
+    # Defaulted (must follow the defaulted fields above) so weight-shape-only callers need not supply it.
+    use_popart: bool = False
+
     @classmethod
     def from_layout_and_policy_kwargs(
         cls,
@@ -326,6 +336,7 @@ class ModelVersion:
             mat_alive_weight=float(getattr(reward_config, "mat_alive_weight", 1.25)),
             bias_redesign=bool(getattr(reward_config, "bias_redesign", False)),
             switch_bias_weight=float(getattr(reward_config, "switch_bias_weight", 0.0)),
+            use_popart=bool(policy_kwargs.get("use_popart", False)),
         )
 
     def to_json(self) -> str:
@@ -376,6 +387,18 @@ class ModelVersion:
                 "Model weight-shape mismatch — cannot load saved model with current architecture.\n"
                 "Mismatched fields:\n" + "\n".join(mismatches) + "\n\n"
                 "Fix: restore matching constants, or start a fresh training run."
+            )
+
+        # Feature toggle — value-checked (not weight-shape) but STRUCTURAL: PopArt adds value-head
+        # buffers + normalized output, so loading a use_popart mismatch breaks the state_dict on
+        # EVERY load. Unlike vf_coef / reward-config (value-meaning, resume-only) it lives here in
+        # check_compatible (gates eval / pool / distill loads too), with a dedicated message.
+        if self.use_popart != saved.use_popart:
+            raise ModelVersionError(
+                f"PopArt mismatch: saved={saved.use_popart}, current={self.use_popart}.\n"
+                "PopArt changes the value head's parameterization (normalized output + running "
+                "mu/sigma buffers), so it cannot be toggled on a resumed model.\n"
+                "Resume with the matching --use-popart setting, or start a fresh training run."
             )
 
     def check_vf_coef(self, requested: float) -> None:
@@ -449,4 +472,8 @@ def _migrate_config(data: dict) -> dict:
         # v5: added the switch-bias lever. Pre-flag runs had it absent (OFF).
         data.setdefault("switch_bias_weight", 0.0)
         data["config_version"] = 5
+    if version < 6:
+        # v6: added use_popart. Old models did not use PopArt value normalization.
+        data.setdefault("use_popart", False)
+        data["config_version"] = 6
     return data

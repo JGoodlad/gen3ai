@@ -61,6 +61,10 @@ _METRIC_LABELS = {
     "grad/policy_value_cosine": "policy-value cos",
     "grad/policy_norm_shared": "policy grad-norm",
     "grad/value_norm_shared": "value grad-norm",
+    # PopArt value-target normalizer (--use-popart).
+    "popart/mu": "value mu",
+    "popart/sigma": "value sigma",
+    "popart/value_weight_norm": "value head |W|",
 }
 
 
@@ -134,6 +138,11 @@ _METRIC_ORDER = [
     "grad/policy_value_cosine",
     "grad/policy_norm_shared",
     "grad/value_norm_shared",
+    # PopArt (only present under --use-popart): running value-target (mu, sigma) — should track
+    # train/return_mean & return_std — and the POP-rescaled value-head weight norm (stays bounded).
+    "popart/mu",
+    "popart/sigma",
+    "popart/value_weight_norm",
     # Distillation (only present under --distill-opponents) — headline first.
     "distill/all_distilled",
     "distill/frac_active_opponents_distilled",

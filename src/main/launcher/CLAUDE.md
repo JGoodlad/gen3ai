@@ -121,7 +121,7 @@ deterministic `_supervise` exit-code/crash-restart/`_reap` suite), plus `launche
   gauge for tuning `vf_coef` / preparing PopArt (computed in `agents/training/grad_balance.py`; see
   `src/agents/training/CLAUDE.md`). They need no new launcher wiring: they ride the same generic
   `MetricsExporterCallback` scalar path and auto-route by their `grad/` / `train/` section prefix;
-  only their display order + short labels are declared in `format.py`.
+  only their display order + short labels are declared in `format.py`. Under **`--use-popart`** a `popart/*` block also appears (`value mu`, `value sigma`, `value head |W|` — the value-target normalizer state; same generic path), and `grad/value_share` should be seen falling toward ~0.4.
 - **Crash reporting** — child stdout/stderr is streamed live to `<run_dir>/launcher_child.log`
   (complete even if the child hard-`os._exit`s, bypassing Python cleanup) and held in a
   5000-line in-memory scrollback. The on-disk log is a **disk ring buffer**

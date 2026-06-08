@@ -131,9 +131,53 @@ and `switch_bias_weight` (`--switch-bias-weight`, the belief-risk stay-into-KO B
 recorded on `ModelVersion` and enforced on resume by **`check_reward_config`** (FATAL on drift, since
 they silently shift the reward/objective), excluded from `check_compatible`. They are reward-VALUE
 changes — **no `ARCH_SIGNATURE` bump** (the network/obs are unchanged) — so a fresh run is needed to
-measure them but old checkpoints don't fail an arch check. Current `MODEL_CONFIG_VERSION` = **5**.
+measure them but old checkpoints don't fail an arch check. Current `MODEL_CONFIG_VERSION` = **6**.
+
+**Feature toggle that changes the value-head STRUCTURE (e.g. `use_popart`, v6).** Distinct from the
+value-meaning hparams above: PopArt adds normalized output + `mu/sigma` buffers, so a mismatch breaks
+the state_dict on EVERY load (eval / pool / distill included). So it goes in **`check_compatible`**
+(not a resume-only `check_*`) with a dedicated, tailored message (NOT `_WEIGHT_FIELDS`, whose message
+is about shapes), plus the bool field + `MODEL_CONFIG_VERSION` bump + a `_migrate_config`
+`setdefault(...)` default. It lands in `model_config.json` via `to_json`; a resume that flips it fails
+loudly. The litmus test: **value-meaning → resume-only `check_*`; structural → `check_compatible`.**
 
 A startup smoke test (`_run_roundtrip_test` in `train_rl_agent.py`) saves to a temp dir and reloads before every `model.learn()` call — catches serialization issues immediately.
+
+## PopArt value-target normalization (`popart.py`, `--use-popart`)
+
+Opt-in (default off). The dual-head extractor shares one trunk; with γ≈0.9999 the returns run to
+±hundreds, so the value MSE gradient **swamps** the shared trunk and the policy under-updates
+(diagnosed by `grad/value_share`≈1, see `src/agents/training/CLAUDE.md`). PopArt fixes the value
+*scale* adaptively: `PopArtNormalizer` keeps running `(mu, sigma)` of the value targets, the value
+head outputs **normalized** values, and the PPO loss trains in normalized space — so the value
+gradient stays O(1). The **POP** half rescales `value_net`'s weight+bias on every stats update so the
+**de-normalized** prediction is unchanged (`W'=(σ_old/σ_new)·W`, `b'=(σ_old·b+μ_old−μ_new)/σ_new`),
+making the stats update a no-op on the value function (no corruption — the failure mode of naive
+running-std normalization). Pure/torch-only → unit-tested in `popart_test.py` (load-bearing test:
+**POP invariance**, de-normalized outputs identical across a stats update).
+
+- **Policy integration** (`policy.py`): `__init__` takes `use_popart` (from `policy_kwargs`) and
+  builds `self.popart` **after** `super().__init__` (which builds `value_net`); the 3 value sites
+  (`forward`/`evaluate_actions`/`predict_values`) wrap the output in `self._denorm(...)` so GAE /
+  advantages / bootstrapping always see **real-unit** values. `popart` is `None` when off (identity
+  `_denorm`). The `(mu, sigma)` buffers ride the policy state_dict → save/restore for free.
+- **PPO loop** (`instrumented_ppo.py`): once per `train()` (before the epochs) `popart.update(returns,
+  value_net)` advances the stats + POPs; the value loss becomes `MSE(normalize(returns),
+  normalize(values))`. **`--use-popart` requires an explicit `--clip-range-vf none`** (errors
+  otherwise — a self-documenting config beats a silent override): clipping is unnecessary with value
+  normalization (the literature finds it little/negative regardless), and since the value sites
+  return *de-normalized* values an active clip would clip in un-normalized units (`clip_range_vf` vs
+  σ) and cripple the critic.
+- **Version-checked**: `ModelVersion.use_popart` is recorded in `model_config.json` (config v3) and
+  `check_compatible` raises a dedicated error if a resume toggles it — the value head's
+  parameterization differs, so it can't be flipped mid-run.
+- **Diagnostics** (TB + TUI): `popart/mu` & `popart/sigma` (should track `train/return_mean` &
+  `train/return_std`), `popart/value_weight_norm` (POP keeps it bounded). With PopArt on,
+  `train/value_loss` is the *normalized* loss (≈O(1)) and `grad/value_share` should fall toward ~0.4.
+- `_DEFAULT_BETA` (EMA decay, 0.1) and `_SIGMA_FLOOR` (1e-2) are module constants in `popart.py`
+  (the only flag is on/off). The POP rescale changes `value_net` outside the optimizer; momentum
+  staleness is negligible because `σ_old/σ_new ≈ 1` each call (optimizer state intentionally not
+  rescaled — the standard PopArt approximation).
 
 ## Where the canonical architecture lives
 
