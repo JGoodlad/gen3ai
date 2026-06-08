@@ -17,17 +17,6 @@ for d in [root_dir, src_dir, main_dir]:
     if d not in sys.path:
         sys.path.insert(0, d)
 
-# Use the git repo root (cwd-based) so TB logs always land in the main repo,
-# even when the launcher pins this script to a tmp worktree.
-try:
-    import subprocess as _sp
-    _repo_root = _sp.check_output(
-        ["git", "rev-parse", "--show-toplevel"], text=True, stderr=_sp.DEVNULL
-    ).strip()
-except Exception:
-    _repo_root = root_dir
-tensorboard_dir = os.path.join(_repo_root, "tensorboard")
-
 import asyncio
 import json
 import random
@@ -170,6 +159,26 @@ def _write_latest_txt(model_dir: str, basename: str) -> None:
     with open(tmp, "w") as f:
         f.write(basename + "\n")
     os.replace(tmp, latest)
+
+
+def _attach_run_tb_logger(model, model_dir: str) -> str:
+    """Route SB3's logger to ``<model_dir>/tb/`` (stdout + tensorboard).
+
+    SB3's ``learn(tb_log_name=...)`` always appends a ``_<N>`` run-id, so it can't
+    write a bare ``tb/`` dir. Configuring the logger ourselves and ``set_logger``-ing
+    it bypasses that (``_custom_logger`` makes ``learn`` skip its own logger setup),
+    landing the run's TensorBoard data inside its own model dir — co-located with the
+    checkpoints (NOT a separate top-level ``tensorboard/`` tree). The path is
+    cwd-relative via ``model_dir``, the same basis the checkpoints use, so it lands in
+    the main repo even under the launcher's worktree pin; and promoting a run to a
+    golden (``mv models/run_X models/_goldens/<name>``) carries its curves along. Point
+    ``tensorboard --logdir models`` to see every run + golden, each named by its dir.
+    """
+    from stable_baselines3.common.logger import configure as _sb3_configure
+    tb_dir = os.path.join(model_dir, "tb")
+    fmts = ["stdout", "tensorboard"] if model.verbose >= 1 else ["tensorboard"]
+    model.set_logger(_sb3_configure(tb_dir, fmts))
+    return tb_dir
 
 
 class _HparamLogCallback(BaseCallback):
@@ -763,7 +772,8 @@ async def main():
         model_dir = f"models/run_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
 
     os.makedirs(model_dir, exist_ok=True)
-    tb_run_name = f"MPPO_{os.path.basename(model_dir)}"
+    # Full CLI namespace (JSON-safe) → persisted into metadata.json for run provenance.
+    cli_args = json.loads(json.dumps(vars(args), default=str))
     if not args.run_dir:
         with open(os.path.join(model_dir, "command.txt"), "w") as f:
             f.write(" ".join(sys.argv))
@@ -1115,7 +1125,6 @@ async def main():
                 env=env,
                 current_version=current_version,
                 device=args.device,
-                tensorboard_log=tensorboard_dir,
                 enforce_vf_coef=args.vf_coef,  # FATAL if the run was started with a different vf_coef
                 enforce_reward_config=reward_config,  # FATAL if bias_additivity/mat_alive_weight/redesign drift
             )
@@ -1209,7 +1218,7 @@ async def main():
             _run_roundtrip_test(model, _load_extractor_kwargs["layout"], _load_policy_kwargs, debug=args.debug)
             _apply_grad_checkpointing(model, args.grad_checkpointing)
             model._async_rollout = _async_rollout   # route collect_rollouts to the non-barrier path
-            save_model_snapshot(model_dir, current_version, hparams=_model_hparams(model))
+            save_model_snapshot(model_dir, current_version, hparams=_model_hparams(model), cli_args=cli_args)
 
             _abort_fn = _setup_signal_handlers(
                 model, model_dir, _shutdown_event, current_version,
@@ -1234,8 +1243,9 @@ async def main():
             _maybe_seed_pool(model)
             start_subprocess_watchdog(env, label="train_env", shutdown_event=_shutdown_event)
 
+            _attach_run_tb_logger(model, model_dir)  # TB → <model_dir>/tb/ (resumes append to it)
             try:
-                model.learn(total_timesteps=args.steps, callback=callbacks, reset_num_timesteps=False, tb_log_name=tb_run_name)
+                model.learn(total_timesteps=args.steps, callback=callbacks, reset_num_timesteps=False)
             except Exception as e:
                 print(f"Training interrupted by exception: {e}")
                 final_path = os.path.join(model_dir, "final_model_exception")
@@ -1245,11 +1255,11 @@ async def main():
             final_path = os.path.join(model_dir, "final_model")
             model.save(final_path)
             _write_latest_txt(model_dir, "final_model.zip")
-            save_model_snapshot(os.path.dirname(final_path), current_version, hparams=_model_hparams(model))
+            save_model_snapshot(os.path.dirname(final_path), current_version, hparams=_model_hparams(model), cli_args=cli_args)
             print(f"Training complete. Model saved to {final_path}")
             best_model_dir = os.path.join(model_dir, "best_model")
             if os.path.isdir(best_model_dir):
-                save_model_snapshot(best_model_dir, current_version, hparams=_model_hparams(model))
+                save_model_snapshot(best_model_dir, current_version, hparams=_model_hparams(model), cli_args=cli_args)
             await evaluate_model_random(model)
     else:
         print(f"Starting NEW Training (Parallel x{n_envs}, Batch: {args.batch_size}, Epochs: {args.n_epochs})")
@@ -1290,7 +1300,6 @@ async def main():
             vf_coef=args.vf_coef,
             device=args.device,
             seed=args.seed,
-            tensorboard_log=tensorboard_dir,
             policy_kwargs=policy_kwargs
         )
 
@@ -1309,7 +1318,7 @@ async def main():
         _run_roundtrip_test(model, extractor_kwargs["layout"], policy_kwargs, debug=args.debug)
         _apply_grad_checkpointing(model, args.grad_checkpointing)
         model._async_rollout = _async_rollout   # route collect_rollouts to the non-barrier path
-        save_model_snapshot(model_dir, version, hparams=_model_hparams(model))
+        save_model_snapshot(model_dir, version, hparams=_model_hparams(model), cli_args=cli_args)
 
         _abort_fn = _setup_signal_handlers(
             model, model_dir, _shutdown_event, version,
@@ -1333,11 +1342,12 @@ async def main():
         _maybe_seed_pool(model)
         start_subprocess_watchdog(env, label="train_env", shutdown_event=_shutdown_event)
 
+        _attach_run_tb_logger(model, model_dir)  # TB → <model_dir>/tb/
         try:
             if log_level >= LogLevel.DETAILED:
                 from sb3_contrib.common.maskable.utils import is_masking_supported
                 print(f"✅ [DEBUG] Masking supported for env: {is_masking_supported(env)}")
-            model.learn(total_timesteps=args.steps, callback=callbacks, reset_num_timesteps=False, tb_log_name=tb_run_name)
+            model.learn(total_timesteps=args.steps, callback=callbacks, reset_num_timesteps=False)
         except Exception as e:
             print("\n" + "🛑" * 30)
             print(f"🛑 TRAINING CRASHED: {e}")
@@ -1350,11 +1360,11 @@ async def main():
         _write_latest_txt(model_dir, "final_model.zip")
         _final_handoff = lr_callback.handoff_lr if isinstance(lr_callback, TwoPhaseLRCallback) else None
         record_checkpoint(model_dir, final_path + ".zip", adaptive_ppo_callback.current_lr, model.n_epochs, hparams=_model_hparams(model), handoff_lr=_final_handoff)
-        save_model_snapshot(os.path.dirname(final_path), version, hparams=_model_hparams(model))
+        save_model_snapshot(os.path.dirname(final_path), version, hparams=_model_hparams(model), cli_args=cli_args)
         print(f"Training complete. Model saved to {final_path}")
         best_model_dir = os.path.join(model_dir, "best_model")
         if os.path.isdir(best_model_dir):
-            save_model_snapshot(best_model_dir, version, hparams=_model_hparams(model))
+            save_model_snapshot(best_model_dir, version, hparams=_model_hparams(model), cli_args=cli_args)
         await evaluate_model_random(model)
 
 if __name__ == "__main__":

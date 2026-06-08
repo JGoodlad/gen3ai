@@ -216,7 +216,7 @@ TensorBoard is exposed publicly via Cloudflare Tunnel at **https://tensorboard.g
 
 Make sure TensorBoard is running on the desktop first:
 ```bash
-tensorboard --logdir runs/
+tensorboard --logdir models/   # recursively finds every models/*/tb/ (runs + _goldens)
 ```
 
 The tunnel daemon runs as a systemd user service and starts automatically on login:

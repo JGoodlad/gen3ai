@@ -179,11 +179,21 @@ for each gate result + the atomic full↔distilled switch — all on TensorBoard
 empirical results: `designs/ai_v5/distill_integration.md`; module map:
 `src/agents/training/distill/CLAUDE.md`.
 
-Checkpoints save to `models/run_<timestamp>/` automatically. TensorBoard logs always write to `./tensorboard/` in the repo root.
+Checkpoints save to `models/run_<timestamp>/` automatically, and that run's TensorBoard logs
+live alongside them at `models/run_<timestamp>/tb/` (co-located, so a run is self-contained —
+promoting it to a golden carries its curves along). The cwd-relative path lands in the main repo
+even under the launcher's worktree pin.
 
 ### TensorBoard
+Point `--logdir` at `models/` — TensorBoard recursively discovers every `models/*/tb/` (live runs
+**and** `_goldens/`), each shown under its directory name, so current runs and reference goldens
+compare side by side:
 ```bash
-cd ~/dev/gen3ai && /home/goodlad/miniconda3/envs/gen3ai_stable/bin/tensorboard --logdir ./tensorboard/ --host 0.0.0.0 --port 6006
+cd ~/dev/gen3ai && /home/goodlad/miniconda3/envs/gen3ai_stable/bin/tensorboard --logdir ./models/ --host 0.0.0.0 --port 6006
+```
+For a curated, nicely-named subset, use `--logdir_spec`:
+```bash
+tensorboard --logdir_spec current:models/run_20260607_102632/tb,v3:models/_goldens/ai_v3_final_450m_step_05_26/tb
 ```
 
 ---
@@ -225,8 +235,9 @@ src/
 data/
   pokemon/           # JSON mappings: gen3_species, gen3_moves, gen3_items, gen3_abilities
   teams/             # ADV OU sample teams pool
-models/              # Saved PPO checkpoints (run_<timestamp>/ subdirs)
-tensorboard/         # Training logs (always written here from any worktree)
+models/              # Saved PPO checkpoints (run_<timestamp>/ subdirs); each holds its
+                     #   own tb/ (TensorBoard logs) + _goldens/ (kept reference runs)
+tensorboard/         # Legacy top-level TB tree (pre-move runs only; train_team_completion.py)
 deps/
   pokemon-showdown/  # Git submodule — local Showdown server
 designs/             # Architecture design docs

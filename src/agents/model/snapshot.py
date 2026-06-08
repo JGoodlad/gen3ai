@@ -21,6 +21,7 @@ def save_model_snapshot(
     current_lr: Optional[float] = None,
     current_epochs: Optional[int] = None,
     hparams: Optional[dict] = None,
+    cli_args: Optional[dict] = None,
 ) -> None:
     """Write model_config.json and metadata.json into model_dir.
 
@@ -28,6 +29,11 @@ def save_model_snapshot(
     Safe to call multiple times; files are overwritten in place.
     Preserves any existing snapshot_history and the top-level `latest_eval` block
     (so a checkpoint saved after an eval doesn't erase the eval results).
+
+    Run provenance — `cli_args` (the full argparse namespace) and `launcher_command`
+    (read from the `LAUNCHER_COMMAND` env the launcher sets) are recorded and carried
+    forward across the many overwriting saves, so the exact invocation survives on every
+    run, including launcher-managed ones (which don't write a `command.txt`).
     """
     os.makedirs(model_dir, exist_ok=True)
 
@@ -43,11 +49,15 @@ def save_model_snapshot(
     meta_path = os.path.join(model_dir, "metadata.json")
     existing_history = {}
     existing_latest_eval = None
+    existing_cli_args = None
+    existing_launcher_command = None
     if os.path.exists(meta_path):
         with open(meta_path) as f:
             existing = json.load(f)
             existing_history = existing.get("snapshot_history", {})
             existing_latest_eval = existing.get("latest_eval")
+            existing_cli_args = existing.get("cli_args")
+            existing_launcher_command = existing.get("launcher_command")
 
     metadata = {
         "saved_at": datetime.now(timezone.utc).isoformat(),
@@ -61,6 +71,14 @@ def save_model_snapshot(
         metadata["current_lr"] = current_lr
     if current_epochs is not None:
         metadata["current_epochs"] = current_epochs
+    # Run provenance (carried forward like snapshot_history / latest_eval): the full CLI
+    # namespace and the launcher's own invocation (the latter from the env it sets).
+    cli = cli_args if cli_args is not None else existing_cli_args
+    if cli is not None:
+        metadata["cli_args"] = cli
+    launcher_command = os.environ.get("LAUNCHER_COMMAND") or existing_launcher_command
+    if launcher_command:
+        metadata["launcher_command"] = launcher_command
     if existing_history:
         metadata["snapshot_history"] = existing_history
     if existing_latest_eval is not None:

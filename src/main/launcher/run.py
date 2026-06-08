@@ -175,6 +175,9 @@ def _prepare_session(
     interval_seconds = interval_hours * 3600
     grace_seconds = max(0.0, grace_minutes * 60)
     child_env = _build_child_env()
+    # Record the launcher's own invocation so the child can persist it into metadata.json
+    # (launcher-managed runs write no command.txt). Carried across restarts via ctx.child_env.
+    child_env["LAUNCHER_COMMAND"] = " ".join(sys.argv)
     if interval_hours > 0:
         child_env["LAUNCHER_RESTART_INTERVAL_SEC"] = str(interval_seconds)
 

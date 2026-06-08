@@ -6,7 +6,7 @@ Usage:
     python src/utils/plot_run.py models/run_20260521_091605/
 
     # Explicit tensorboard dir (outputs to ./tb_imgs/)
-    python src/utils/plot_run.py --tb tensorboard/MPPO_run_20260521_091605_0/
+    python src/utils/plot_run.py --tb models/run_20260521_091605/tb/
 
     # Auto-find the most recent run dir
     python src/utils/plot_run.py --latest

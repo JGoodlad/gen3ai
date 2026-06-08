@@ -251,8 +251,9 @@ def _rows_from_tensorboard(run_dir: str, n_games: int = 100) -> list[EvalRow]:
         from tensorboard.backend.event_processing.event_accumulator import EventAccumulator
     except ImportError:
         return []
-    # SB3 writes the TB logs to a SEPARATE `<repo>/tensorboard/*<timestamp>*/` dir, NOT under the
-    # run dir — resolve it via the project's helper (the same one the launcher's plots use).
+    # TB logs live under the run dir at `<run_dir>/tb/` (legacy runs: the old top-level
+    # `<repo>/tensorboard/*<timestamp>*/` tree) — resolve via the project's helper (the same
+    # one the launcher's plots use); the run_dir glob below also catches `<run_dir>/tb/`.
     event_files: list[str] = []
     try:
         from utils.plot_tb import find_tb_dir_for_run

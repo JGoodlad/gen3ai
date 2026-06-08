@@ -52,13 +52,23 @@ _plot_lock = threading.Lock()
 # ---------------------------------------------------------------------------
 
 def find_tb_dir_for_run(run_dir: str) -> str | None:
-    """Derive the tensorboard directory from a model run directory.
+    """Return a run/golden directory's TensorBoard dir, or None.
 
-    Extracts the timestamp from ``models/run_YYYYMMDD_HHMMSS`` and globs
-    ``<repo>/tensorboard/*<timestamp>*/`` for a match.
+    TB logs live *inside* the run dir at ``<run_dir>/tb/`` (co-located with the
+    checkpoints, written by ``train_rl_agent._attach_run_tb_logger``). This works for
+    any dir name — ``models/run_<ts>`` and a renamed ``models/_goldens/<name>`` alike,
+    so the prober / plot / ELO tooling all work pointed at a golden.
 
-    Returns the first match (most recently modified if several), or None.
+    Legacy fallback: a run whose TB predates the move (it's only in the old top-level
+    ``tensorboard/`` tree) is still resolved by globbing
+    ``<repo>/tensorboard/*<timestamp>*/`` off the ``run_<ts>`` name. Only reached when
+    there is no ``<run_dir>/tb/`` (i.e. an already-finished pre-move run).
     """
+    tb_dir = os.path.join(run_dir, "tb")
+    if os.path.isdir(tb_dir):
+        return tb_dir
+
+    # --- legacy fallback: old top-level tensorboard/ tree, matched by run_ timestamp ---
     run_name = os.path.basename(run_dir.rstrip("/\\"))
     if not run_name.startswith("run_"):
         return None
