@@ -97,6 +97,55 @@ def optional_float(s: str) -> float | None:
     return float(s)
 
 
+_BOOL_TRUE = ("true", "t", "yes", "y", "1", "on")
+_BOOL_FALSE = ("false", "f", "no", "n", "0", "off")
+
+
+def str2bool(s: str) -> bool:
+    """Parse a human boolean: true/false, yes/no, 1/0, on/off (case-insensitive)."""
+    v = s.strip().lower()
+    if v in _BOOL_TRUE:
+        return True
+    if v in _BOOL_FALSE:
+        return False
+    raise argparse.ArgumentTypeError(
+        f"expected a boolean ({'/'.join(_BOOL_TRUE)} or {'/'.join(_BOOL_FALSE)}), got {s!r}")
+
+
+class BoolFlag(argparse.Action):
+    """Boolean flag accepting BOTH the bare/`--no-` form AND an explicit value.
+
+    Registers a generated `--no-<flag>` for every `--<flag>` (like
+    argparse.BooleanOptionalAction) but ALSO takes an optional value:
+        --foo               -> True
+        --no-foo            -> False
+        --foo true | false  -> parsed (also yes/no, 1/0, on/off; --foo=false too)
+    Passing a value to the negation (`--no-foo true`) is a usage error.
+    """
+
+    def __init__(self, option_strings, dest, default=False, required=False, help=None):
+        opts, self._negatives = [], set()
+        for opt in option_strings:
+            opts.append(opt)
+            if opt.startswith("--"):
+                neg = "--no-" + opt[2:]
+                opts.append(neg)
+                self._negatives.add(neg)
+        super().__init__(option_strings=opts, dest=dest, nargs="?", default=default,
+                         required=required, help=help, metavar="{true,false}")
+
+    def __call__(self, parser, namespace, values, option_string=None):
+        if option_string in self._negatives:
+            if values is not None:
+                raise argparse.ArgumentError(
+                    self, f"{option_string} is a negation and does not take a value")
+            setattr(namespace, self.dest, False)
+        elif values is None:            # bare `--foo`
+            setattr(namespace, self.dest, True)
+        else:                           # `--foo <value>` / `--foo=<value>`
+            setattr(namespace, self.dest, str2bool(values))
+
+
 def _model_hparams(model) -> dict:
     clip_range_vf = float(model.clip_range_vf(1.0)) if model.clip_range_vf is not None else -1.0
     opt = model.policy.optimizer
@@ -362,12 +411,12 @@ async def main():
     # --- Operational Flags ---
     parser.add_argument("--model", type=str, help="Path to existing model to load")
     parser.add_argument("--run-dir", type=str, help="Run folder to write checkpoints into (set by launcher on resume)")
-    parser.add_argument("--eval-only", action="store_true", help="Skip training and only evaluate")
+    parser.add_argument("--eval-only", action=BoolFlag, default=False, help="Skip training and only evaluate")
     parser.add_argument("--steps", type=int, default=100000, help="Total training timesteps")
-    parser.add_argument("--debug", action="store_true", help="Use DummyVecEnv (1 env) for debugging")
+    parser.add_argument("--debug", action=BoolFlag, default=False, help="Use DummyVecEnv (1 env) for debugging")
     parser.add_argument("--n-envs", type=int, default=32, help="Number of parallel environments")
     parser.add_argument("--async-rollout", "--async_rollout", dest="async_rollout",
-                        action="store_true", default=False,
+                        action=BoolFlag, default=False,
                         help="Non-barrier async rollout collection: keep every env worker "
                              "continuously in-flight and forward whichever are ready, instead of "
                              "barriering on the slowest env each step (AsyncSubprocVecEnv + an "
@@ -379,7 +428,7 @@ async def main():
                         help="Local Showdown server port (default 8000). Sets the port for the trainee, "
                              "eval, and self-play clients. Start the server on the matching port, "
                              "e.g. npm run showdown -- <port>.")
-    parser.add_argument("--use-showdown-bridge", action="store_true", default=False,
+    parser.add_argument("--use-showdown-bridge", action=BoolFlag, default=False,
                         help="Use the in-process BattleStream bridge instead of a websocket "
                              "Showdown server: each training env owns a local sim subprocess and "
                              "eval/self-play play in-process via run_local_battles — no server, no "
@@ -388,7 +437,7 @@ async def main():
                              "Default False (websocket).")
     parser.add_argument(
         "--self-play-use-cpu",
-        action=argparse.BooleanOptionalAction,
+        action=BoolFlag,
         default=True,
         help="Load self-play opponent snapshots on CPU instead of the training device. "
              "Default True: avoids one CUDA context per SubprocVecEnv worker (~300-600 MB each), "
@@ -429,10 +478,11 @@ async def main():
     parser.add_argument("--no-progress-penalty", "--no_progress_penalty", dest="no_progress_penalty",
                         type=float, default=0.15, help="Flat per-no-progress-window penalty magnitude "
                         "(default 0.15; only charged when --bias-redesign).")
-    parser.add_argument("--bias-redesign", "--bias_redesign", dest="bias_redesign", action="store_true",
+    parser.add_argument("--bias-redesign", "--bias_redesign", dest="bias_redesign", action=BoolFlag,
                         default=False, help="Enable the staged BIAS redesign: the no-progress clock "
                         "replaces the anti-spam taxes + the obs-keyed reframes apply. Default OFF = the "
-                        "single-variable run (material clutch-fix only). Resume-immutable.")
+                        "single-variable run (material clutch-fix only). Pass --no-bias-redesign (or "
+                        "--bias-redesign false) to set it off explicitly. Resume-immutable.")
     parser.add_argument("--switch-bias-weight", "--switch_bias_weight", dest="switch_bias_weight",
                         type=float, default=0.0, help="Belief-risk-scaled stay-into-KO BIAS lever for "
                         "the under-switch pathology (design_reward_switching.md §7). 0.0 = OFF "
@@ -443,7 +493,7 @@ async def main():
     parser.add_argument("--clip-range-vf", type=optional_float, default=0.5, help="Value function clip range; pass 'none' to disable clipping (thesis used 0.0184)")
     parser.add_argument("--n-steps", type=int, default=2048, help="Steps per environment per rollout")
     parser.add_argument("--grad-checkpointing", "--grad_checkpointing", dest="grad_checkpointing",
-                        action="store_true", default=False,
+                        action=BoolFlag, default=False,
                         help="Gradient-checkpoint the transformer encoder layers during the PPO "
                              "update (bit-exact; trades one extra forward on the idle GPU for "
                              "~5GB less activation VRAM). Off by default; safe to toggle per run.")
@@ -469,9 +519,9 @@ async def main():
                         help="The trainer grooms the forensic traces it writes: after each eval cycle it "
                              "keeps only the N most-recent eval step dirs under eval_traces/ (0 = keep all). "
                              "`python -m main.prober.groom` is the manual fallback for finished runs.")
-    parser.add_argument("--self-play", action="store_true", default=False, help="Enable self-play snapshot pool as training opponents")
+    parser.add_argument("--self-play", action=BoolFlag, default=False, help="Enable self-play snapshot pool as training opponents")
     parser.add_argument("--distill-opponents", "--distill_opponents", dest="distill_opponents",
-                        action="store_true", default=False,
+                        action=BoolFlag, default=False,
                         help="Distill self-play opponents into a cheaper network for faster rollouts "
                              "(all-or-nothing: backfill the whole pool on enable, then atomic switch; "
                              "fail-closed gate + auto-revert). See designs/ai_v5/distill_integration.md.")
@@ -483,7 +533,7 @@ async def main():
                              "trainee wins the pool by a smaller margin — 0.65 would freeze the pool). "
                              "An explicit value always wins.")
     parser.add_argument("--eval-sentinel-greedy", "--eval_sentinel_greedy", dest="eval_sentinel_greedy",
-                        action="store_true", default=False,
+                        action=BoolFlag, default=False,
                         help="Eval the self-play pool sentinels GREEDY (argmax) instead of stochastic. "
                              "Removes the greedy-trainee-vs-stochastic-sentinel handicap so win_rate_vs_pool "
                              "/ snapshot ELO reflect real best-vs-best skill (≈50%% vs a recent self, ramping "
