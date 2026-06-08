@@ -279,13 +279,13 @@ Showdown server at all.** It reuses the *entire* obs/reward/mask/wrapper stack u
 - **Eval / self-play eval / final eval** — the eval players (built `start_listening=False`) play
   in-process via `run_local_battles` (the synchronous driver) instead of `battle_against`. Threaded
   as a `use_showdown_bridge` config key through `PerOpponentEvalCallback` / `SelfPlayCallback` →
-  `eval_worker`. Each eval worker plays its opponents **one game at a time**
-  (`_EVAL_SUBPROCESS_CONCURRENCY` = 1, threaded to `run_local_battles(concurrency=…)` /
-  `max_concurrent_battles`): eval inference is single-threaded, so overlapping battles only added
-  CPU/server contention without parallelizing the forward (measured slower). Cross-opponent
-  parallelism comes from the `--eval-workers` (5) subprocesses work-stealing the pool; this takes
-  all eval load off the server. The `run_local_battles(concurrency=…)` overlap path still exists
-  (integration-tested) but eval no longer uses it.
+  `eval_worker`. Each eval worker plays its opponents **one game at a time by default**
+  (`--eval-concurrency-per-worker`, default `1`; threaded to `run_local_battles(concurrency=…)` /
+  `max_concurrent_battles`). Overlapping battles within an opponent is single-thread asyncio
+  latency-hiding, **not multi-core** — it nets negative under training contention (the old default's
+  "measured slower"), but ~2× decisions/sec on spare cores (idle box / cycle tail); see
+  `src/agents/training/CLAUDE.md` → intra-worker concurrency. Cross-opponent parallelism comes from the
+  `--eval-workers` (5) subprocesses work-stealing the pool; this takes all eval load off the server.
 
 **Persistent-child lifecycle (measured + optimized):** a child's RSS is **flat** — ~189 MB fresh
 → one-time ~+36 MB V8 warmup → ~229 MB with ~0 growth over thousands of battles

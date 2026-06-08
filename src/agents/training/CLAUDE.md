@@ -181,6 +181,7 @@ in the trainer). Behaviors:
 |------|---------|-------|
 | `--eval-workers` | `5` | Eval subprocesses per cycle; work-steal opponents from a shared pool. Capped at the opponent count. Self-play doubles this (→ `10`) since sentinel matchups run the model for both players. |
 | `--eval-device` | `cpu` | Device for eval-worker inference. `cpu` decouples eval from the training GPU. |
+| `--eval-concurrency-per-worker` | `1` | Battles each worker overlaps **within** its claimed opponent (single-thread asyncio latency-hiding — NOT multi-core). `1` = today's sequential play. Threaded to the constructor's `eval_concurrency` → `cfg["concurrency"]` → `run_local_battles(concurrency=)` (bridge) / the player's `max_concurrent_battles` (websocket). See the concurrency note below. |
 | `--keep-eval-snapshots` | `10` | Retain the N most-recent eval weight snapshots in `eval_traces/step_<N>/snapshot.zip` (~27MB each; default ≈270MB) for bit-exact prober replay. `0` writes the identity manifest only; the prober then loads the nearest persisted checkpoint. The trainer auto-prunes to this cap each cycle. |
 | `--keep-eval-trace-steps` | `20` | The trainer keeps only the N most-recent eval **step dirs** under `eval_traces/` after each cycle (`0` = keep all), so forensic data stays bounded. `python -m main.prober.groom` is the manual fallback. |
 
@@ -200,11 +201,22 @@ prober's offline recompute (guarded by `td_residual_parity_fuzz_test.py`). More-
 got blindsided more often — the **leading indicator for the critic-coverage obs work** (it moves in a
 cycle or two, where saturated win-rate / gate-pinned `win_rate_vs_pool` / wide-CI ELO don't).
 
-Each eval worker plays **one game at a time** (`_EVAL_SUBPROCESS_CONCURRENCY` = 1).
-Eval inference is single-threaded, so overlapping battles only adds CPU/server
-contention without parallelizing the forward — it measured slower, not faster.
-Cross-opponent parallelism comes solely from the `--eval-workers` (5) subprocesses
-work-stealing the pool.
+**Intra-worker concurrency (`--eval-concurrency-per-worker`, default `1` = sequential).** Each
+worker overlaps up to N battles **within** its claimed opponent. This is **single-thread asyncio
+latency-hiding, NOT multi-core** — everything (the obs build + PyTorch forward in `choose_move`, the
+bridge/server I/O) runs on the one `POKE_LOOP` thread with BLAS pinned (`OMP/MKL=1`), so concurrency
+only overlaps the time a worker is *blocked* on the bridge subprocess / websocket round-trip with
+another battle's forward. The ceiling is **one core of compute**: a single-core bridge benchmark
+(`/tmp/eval_concurrency_bench.py`, NN trainee vs bot and vs NN sentinel) measured ~**2.0× decisions/sec
+at conc=3** on spare cores (plateau ~3; bot eval ≈2.0×, the heavier NN-vs-NN ≈1.8×) — i.e. about half
+the per-decision wall-time at conc=1 was bridge I/O wait. **The old `_EVAL_SUBPROCESS_CONCURRENCY` = 1
+default and its "measured slower" note were the *saturated* regime** (eval contending with training's
+64 env workers for already-full cores — there the extra event-loop overhead nets negative); on **spare
+cores (idle box / the cycle tail)** it's a clean ~2×. So the live gain runs between 1× and 2×
+depending on how saturated the box is during the eval window; default stays `1` (opt-in). It does
+**not** use idle cores at the tail — that needs *process-level* sharding (chunk one opponent across
+workers); concurrency stacks multiplicatively on top of that (≈`2 × #shards`). Cross-opponent
+parallelism is still the `--eval-workers` (5) subprocesses work-stealing the pool.
 
 ## Self-play opponents (`--self-play`, gated behind pathology hunting)
 

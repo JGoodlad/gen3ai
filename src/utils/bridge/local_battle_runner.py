@@ -73,8 +73,9 @@ async def run_local_battles(
     ``player._current_packed_team`` can't be overwritten before ``_create_battle``
     reads it, but battle *play* overlaps. ``concurrency == 1`` is the unchanged
     sequential path. Don't set it above ~10 here — each concurrent battle is a Node
-    process. (Eval runs serially — ``_EVAL_SUBPROCESS_CONCURRENCY`` is 1; only the
-    integration tests exercise concurrency > 1.)
+    process. (Eval runs serially by default — ``_EVAL_SUBPROCESS_CONCURRENCY`` is 1 — but
+    ``--eval-concurrency-per-worker`` raises it for latency-hiding; integration tests also
+    exercise concurrency > 1.)
     """
     runner = _LocalBattleRunner(player1, player2, battle_format or player1.format, seed)
     await handle_threaded_coroutines(runner.run(n_battles, concurrency), POKE_LOOP)

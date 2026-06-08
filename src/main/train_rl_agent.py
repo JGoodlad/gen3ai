@@ -38,7 +38,7 @@ from agents.inference.player import RLPlayer
 from utils.teambuilder import Gen3Teambuilder
 from utils.team_loader import TeamLoader
 from agents.training.eval_callback import (
-    PerOpponentEvalCallback, opponent_name,
+    PerOpponentEvalCallback, opponent_name, _EVAL_SUBPROCESS_CONCURRENCY,
 )
 from agents.training.graceful_restart_callback import GracefulRestartCallback
 from agents.training.snapshot_pool import (
@@ -529,6 +529,13 @@ async def main():
                              "opponent count.")
     parser.add_argument("--eval-device", "--eval_device", dest="eval_device", type=str, default="cpu",
                         help="Device for the eval-worker subprocess inference (default cpu, to decouple from the training GPU).")
+    parser.add_argument("--eval-concurrency-per-worker", "--eval_concurrency_per_worker",
+                        dest="eval_concurrency_per_worker", type=int, default=_EVAL_SUBPROCESS_CONCURRENCY,
+                        help="Battles each eval worker overlaps at once within its claimed opponent (default 1 = "
+                             "sequential). Single-thread asyncio latency-hiding (not multi-core): overlaps the "
+                             "bridge/server I/O wait with other battles' forwards. A single-core bridge benchmark "
+                             "measured ~2x decisions/sec at 3 on spare cores (less under live training contention); "
+                             "the plateau is ~3. Cross-opponent parallelism is still --eval-workers.")
     parser.add_argument("--keep-eval-snapshots", "--keep_eval_snapshots", dest="keep_eval_snapshots",
                         type=int, default=10,
                         help="Retain the N most-recent eval weight snapshots in eval_traces/step_<N>/snapshot.zip "
@@ -1188,6 +1195,7 @@ async def main():
             # (5 bot-eval workers → 10 here).
             n_workers=args.eval_workers * 2,
             eval_device=args.eval_device,
+            eval_concurrency=args.eval_concurrency_per_worker,
             distill_opponents=args.distill_opponents,
             distill_device=args.eval_device,  # CPU by default → no GPU contention with training
             keep_eval_snapshots=args.keep_eval_snapshots,
@@ -1208,6 +1216,7 @@ async def main():
             best_model_save_path=os.path.join(model_dir, "best_model"),
             n_workers=args.eval_workers,
             eval_device=args.eval_device,
+            eval_concurrency=args.eval_concurrency_per_worker,
             showdown_port=args.showdown_port,
             use_showdown_bridge=args.use_showdown_bridge,
             resume_eval_metadata=_resume_meta,
