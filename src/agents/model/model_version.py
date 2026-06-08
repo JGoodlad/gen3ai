@@ -23,7 +23,12 @@ from typing import Any, Dict, List
 #   mid-run silently shifts the reward) but NOT weight-shape — enforced only on the training-resume
 #   path via check_reward_config(), excluded from check_compatible(). Old configs migrate to the
 #   defaults (the single-variable run: 1.0 / 1.25 / False).
-MODEL_CONFIG_VERSION = 4
+#
+# v5: added `switch_bias_weight` (--switch-bias-weight, the belief-risk-scaled stay-into-KO BIAS lever
+#   for the under-switch pathology; design_reward_switching.md §7). Same resume-immutable VALUE-meaning
+#   treatment as the v4 reward hparams (folded into check_reward_config, excluded from
+#   check_compatible). Old configs migrate to 0.0 (OFF = the lever absent, behavior unchanged).
+MODEL_CONFIG_VERSION = 5
 
 # Change this when the neural architecture changes structurally in a way that makes
 # weights from a different signature incompatible (e.g. adding LSTM, replacing attention).
@@ -275,6 +280,7 @@ class ModelVersion:
     bias_additivity: float = 1.0
     mat_alive_weight: float = 1.25
     bias_redesign: bool = False
+    switch_bias_weight: float = 0.0   # v5: belief-risk-scaled stay-into-KO BIAS lever (default OFF)
 
     @classmethod
     def from_layout_and_policy_kwargs(
@@ -319,6 +325,7 @@ class ModelVersion:
             bias_additivity=float(getattr(reward_config, "bias_additivity", 1.0)),
             mat_alive_weight=float(getattr(reward_config, "mat_alive_weight", 1.25)),
             bias_redesign=bool(getattr(reward_config, "bias_redesign", False)),
+            switch_bias_weight=float(getattr(reward_config, "switch_bias_weight", 0.0)),
         )
 
     def to_json(self) -> str:
@@ -403,6 +410,7 @@ class ModelVersion:
         req_ba = float(getattr(reward_config, "bias_additivity", 1.0))
         req_maw = float(getattr(reward_config, "mat_alive_weight", 1.25))
         req_br = bool(getattr(reward_config, "bias_redesign", False))
+        req_sbw = float(getattr(reward_config, "switch_bias_weight", 0.0))
         problems = []
         if not math.isclose(self.bias_additivity, req_ba, rel_tol=1e-9, abs_tol=1e-12):
             problems.append(f"  bias_additivity: saved={self.bias_additivity!r}, requested={req_ba!r}")
@@ -410,6 +418,8 @@ class ModelVersion:
             problems.append(f"  mat_alive_weight: saved={self.mat_alive_weight!r}, requested={req_maw!r}")
         if self.bias_redesign != req_br:
             problems.append(f"  bias_redesign: saved={self.bias_redesign!r}, requested={req_br!r}")
+        if not math.isclose(self.switch_bias_weight, req_sbw, rel_tol=1e-9, abs_tol=1e-12):
+            problems.append(f"  switch_bias_weight: saved={self.switch_bias_weight!r}, requested={req_sbw!r}")
         if problems:
             raise ModelVersionError(
                 "Reward-config mismatch on resume — these hparams are fixed for a run's lifetime "
@@ -435,4 +445,8 @@ def _migrate_config(data: dict) -> dict:
         data.setdefault("mat_alive_weight", 1.25)
         data.setdefault("bias_redesign", False)
         data["config_version"] = 4
+    if version < 5:
+        # v5: added the switch-bias lever. Pre-flag runs had it absent (OFF).
+        data.setdefault("switch_bias_weight", 0.0)
+        data["config_version"] = 5
     return data

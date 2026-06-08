@@ -11,6 +11,7 @@ import numpy as np
 from agents.training.reward_manager import (
     Gen3RewardManager, RewardConfig, RewardClass, RewardBreakdown,
     MAT_HP_WEIGHT, MAT_ALIVE_WEIGHT, PBRS_GAMMA, VICTORY_VALUE,
+    SWITCH_RISK_THRESHOLD, SAFE_PIVOT_PKO_MAX, STAY_RISK_TAX_FLOOR, ESCAPE_RISK_FRACTION,
 )
 from agents.training.progress_clock import ProgressClock, PROGRESS_CLOCK_CAP, PROGRESS_DMG_EPS
 
@@ -367,6 +368,153 @@ class TestProgressClock(unittest.TestCase):
 
 
 # --------------------------------------------------------------------------- #
+class TestSwitchBias(unittest.TestCase):
+    """The belief-risk-scaled switch BIAS lever (design_reward_switching.md §6) — the under-switch
+    fix that `pbrs_belief` (policy-invariant) can't be. Tests the gates + scaling directly off the
+    decision-time snapshots (`_prev_active_ko_risk` / `_prev_safe_pivot`), which is what the fold sets."""
+
+    def _mgr(self, weight):
+        return Gen3RewardManager(config=RewardConfig(switch_bias_weight=weight))
+
+    def _armed(self, weight, risk=0.7, safe=True):
+        """A manager with the decision-time threat snapshot pre-set (as the fold would)."""
+        m = self._mgr(weight)
+        m._prev_active_ko_risk = risk
+        m._prev_safe_pivot = safe
+        return m
+
+    # --- stay-into-KO tax -------------------------------------------------- #
+    def test_off_by_default(self):
+        """switch_bias_weight=0.0 (default) → no tax even in a maximal-danger state (single-variable)."""
+        m = self._armed(0.0, risk=1.0, safe=True)
+        self.assertEqual(m._compute_stay_risk_tax(_delta(our_switch_to=None)), 0.0)
+
+    def test_stay_tax_fires_scaled_by_risk(self):
+        m = self._armed(1.5, risk=0.7, safe=True)
+        self.assertAlmostEqual(m._compute_stay_risk_tax(_delta(our_switch_to=None)), -1.5 * 0.7, places=6)
+
+    def test_stay_tax_clamped_at_floor(self):
+        m = self._armed(3.0, risk=1.0, safe=True)   # -3.0 would exceed the floor
+        self.assertAlmostEqual(m._compute_stay_risk_tax(_delta(our_switch_to=None)),
+                               STAY_RISK_TAX_FLOOR, places=6)
+
+    def test_no_tax_without_safe_pivot(self):
+        """A forced stay (no bench-in would survive) is NEVER taxed — the key false-positive guard."""
+        m = self._armed(1.5, risk=0.9, safe=False)
+        self.assertEqual(m._compute_stay_risk_tax(_delta(our_switch_to=None)), 0.0)
+
+    def test_no_tax_below_risk_threshold(self):
+        m = self._armed(1.5, risk=SWITCH_RISK_THRESHOLD - 0.01, safe=True)
+        self.assertEqual(m._compute_stay_risk_tax(_delta(our_switch_to=None)), 0.0)
+
+    def test_no_tax_when_we_switched(self):
+        m = self._armed(1.5, risk=0.9, safe=True)
+        self.assertEqual(m._compute_stay_risk_tax(_delta(our_switch_to=2)), 0.0)
+
+    def test_no_tax_when_we_kod_them(self):
+        """If our move KO'd the opp, staying WON the exchange — not a misplay, no tax."""
+        m = self._armed(1.5, risk=0.9, safe=True)
+        self.assertEqual(m._compute_stay_risk_tax(_delta(our_switch_to=None, opp_fainted=True)), 0.0)
+
+    def test_no_tax_when_trapped(self):
+        """The key false-positive guard: a TRAPPED stay (no legal switch this decision) is NOT taxed,
+        even with a 'safe' bench it can't reach."""
+        m = self._armed(1.5, risk=0.95, safe=True)
+        m._cur_can_switch = False                       # mask had no legal switch (Arena Trap etc.)
+        self.assertEqual(m._compute_stay_risk_tax(_delta(our_switch_to=None)), 0.0)
+
+    def test_no_tax_on_rng_fizzle(self):
+        """A flinch / full-para / sleep / freeze (our_failed_to_move) is not a deliberate stay."""
+        m = self._armed(1.5, risk=0.95, safe=True)
+        self.assertEqual(m._compute_stay_risk_tax(_delta(our_switch_to=None, our_failed_to_move=True)), 0.0)
+
+    def test_tax_fires_on_stay_and_die(self):
+        """Staying-and-fainting is the TARGET pathology — it must be taxed (not exempted)."""
+        m = self._armed(1.5, risk=0.95, safe=True)
+        self.assertAlmostEqual(
+            m._compute_stay_risk_tax(_delta(our_switch_to=None, we_fainted=True)), -1.5 * 0.95, places=6)
+
+    # --- escape reward ----------------------------------------------------- #
+    def test_escape_bonus_fires_scaled_and_asymmetric(self):
+        m = self._armed(1.5, risk=0.8, safe=True)
+        m._last_reward_metadata = {"type": "VOLUNTARY", "target_species": "x",
+                                   "decision_turn": 5, "switch_from": "y"}
+        m.last_switch_turn = 0
+        m._last_switched_from = "NULL"
+        bd = RewardBreakdown()
+        m._apply_switch_outcome(_delta(our_switch_to=2), bd)
+        self.assertAlmostEqual(bd.escape_risk_bonus, 1.5 * ESCAPE_RISK_FRACTION * 0.8, places=6)
+        # asymmetric: the escape reward is strictly smaller than the equivalent stay-tax magnitude
+        self.assertLess(bd.escape_risk_bonus, 1.5 * 0.8)
+
+    def test_escape_bonus_needs_safe_pivot(self):
+        """Reward escaping TO safety, not sacrificing a fresh mon into the same threat (kills the
+        no-safe-pivot rotation farm)."""
+        m = self._armed(1.5, risk=0.8, safe=False)      # high risk but NO safe pivot
+        m._last_reward_metadata = {"type": "VOLUNTARY", "target_species": "x",
+                                   "decision_turn": 5, "switch_from": "y"}
+        m.last_switch_turn = 0
+        m._last_switched_from = "NULL"
+        bd = RewardBreakdown()
+        m._apply_switch_outcome(_delta(our_switch_to=2), bd)
+        self.assertEqual(bd.escape_risk_bonus, 0.0)
+
+    def test_escape_bonus_off_by_default(self):
+        m = self._armed(0.0, risk=0.8, safe=True)
+        m._last_reward_metadata = {"type": "VOLUNTARY", "target_species": "x",
+                                   "decision_turn": 5, "switch_from": "y"}
+        m.last_switch_turn = 0
+        m._last_switched_from = "NULL"
+        bd = RewardBreakdown()
+        m._apply_switch_outcome(_delta(our_switch_to=2), bd)
+        self.assertEqual(bd.escape_risk_bonus, 0.0)
+
+    def test_escape_bonus_needs_high_risk(self):
+        m = self._armed(1.5, risk=SWITCH_RISK_THRESHOLD - 0.01, safe=True)
+        m._last_reward_metadata = {"type": "VOLUNTARY", "target_species": "x",
+                                   "decision_turn": 5, "switch_from": "y"}
+        m.last_switch_turn = 0
+        m._last_switched_from = "NULL"
+        bd = RewardBreakdown()
+        m._apply_switch_outcome(_delta(our_switch_to=2), bd)
+        self.assertEqual(bd.escape_risk_bonus, 0.0)
+
+    # --- class membership + plumbing -------------------------------------- #
+    def test_new_fields_are_bias_class(self):
+        bd = RewardBreakdown()
+        self.assertIn("stay_risk_tax", bd.registry_fields(RewardClass.BIAS))
+        self.assertIn("escape_risk_bonus", bd.registry_fields(RewardClass.BIAS))
+
+    def test_stay_tax_flows_through_process_turn_reward(self):
+        """End-to-end through the full fold (not just the helper): a high-risk stay with a safe pivot
+        lands a nonzero stay_risk_tax in the breakdown and in the summed reward."""
+        m = self._mgr(1.5)
+        m._prev_active_ko_risk = 0.9          # decision-time snapshot, as the prior turn's fold sets
+        m._prev_safe_pivot = True
+        m._last_reward_metadata = {"type": "ATTACK"}   # a stay (move), not a switch
+        m.process_turn_reward(_Battle(_full_team_live(), turn=3),
+                              _delta(our_switch_to=None, our_move_id="thunderbolt"))
+        bd = m._last_breakdown
+        self.assertAlmostEqual(bd.stay_risk_tax, -1.5 * 0.9, places=6)
+        self.assertLess(bd.total, 0.0)        # the tax pulls the (otherwise ~0) turn negative
+
+    def test_belief_potential_returns_safe_pivot_signal(self):
+        """The fold's source: _belief_potential_and_risk now returns the 3rd value (min bench P(KO))."""
+        m = self._mgr(1.5)
+        out = m._belief_potential_and_risk(_full_team_live())
+        self.assertEqual(len(out), 3)   # (phi, active_risk, min_bench_pko)
+
+    def test_fold_belief_pbrs_sets_safe_pivot_snapshot(self):
+        """_fold_belief_pbrs must populate _prev_safe_pivot (so the next turn's stay-tax can gate)."""
+        m = self._mgr(1.5)
+        bd = RewardBreakdown()
+        m._fold_belief_pbrs(bd, _full_team_live(), is_terminal=False)
+        self.assertIsInstance(m._prev_safe_pivot, bool)
+        # terminal zeroes the snapshot (no shaping carried past the game end)
+        m._fold_belief_pbrs(bd, _full_team_live(), is_terminal=True)
+        self.assertFalse(m._prev_safe_pivot)
+
+
 class TestPbrsGammaInvariant(unittest.TestCase):
     def test_pbrs_gamma_default_matches_ppo(self):
         # The train_rl_agent assert pins PBRS_GAMMA == model.gamma (0.9999) at build time.

@@ -174,6 +174,41 @@ def test_check_vf_coef_tolerates_float_repr(version):
 
 
 # ---------------------------------------------------------------------------
+# check_reward_config — resume-only value-meaning check (NOT part of check_compatible)
+# ---------------------------------------------------------------------------
+def _reward_cfg(**kw):
+    from agents.training.reward_manager import RewardConfig
+    return RewardConfig(**kw)
+
+
+def test_check_reward_config_match_does_not_raise(version):
+    saved = dataclasses.replace(version, bias_additivity=0.5, mat_alive_weight=1.25,
+                                bias_redesign=False, switch_bias_weight=1.5)
+    saved.check_reward_config(_reward_cfg(bias_additivity=0.5, mat_alive_weight=1.25,
+                                          bias_redesign=False, switch_bias_weight=1.5))  # no raise
+
+
+def test_check_reward_config_switch_bias_weight_mismatch_raises(version):
+    """switch_bias_weight is resume-immutable (it changes the objective) — a drift must FATAL."""
+    saved = dataclasses.replace(version, switch_bias_weight=1.5)
+    with pytest.raises(ModelVersionError) as exc_info:
+        saved.check_reward_config(_reward_cfg(switch_bias_weight=0.0))
+    assert "switch_bias_weight" in str(exc_info.value)
+
+
+def test_check_reward_config_default_off_matches(version):
+    """A fresh default run (lever OFF) matches a default-OFF saved config."""
+    dataclasses.replace(version, switch_bias_weight=0.0).check_reward_config(_reward_cfg())  # no raise
+
+
+def test_check_compatible_ignores_switch_bias_weight(version):
+    """Like vf_coef, switch_bias_weight is value-meaning, NOT weight-shape — frozen eval / pool /
+    distill loads (which go through check_compatible) must accept any value."""
+    differing = dataclasses.replace(version, switch_bias_weight=version.switch_bias_weight + 1.0)
+    version.check_compatible(differing)  # must not raise
+
+
+# ---------------------------------------------------------------------------
 # save_model_snapshot
 # ---------------------------------------------------------------------------
 

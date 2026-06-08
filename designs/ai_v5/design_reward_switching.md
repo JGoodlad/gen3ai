@@ -189,3 +189,74 @@ policy-invariant. The right minimal fix if FPS or the PBRS Φ subtlety rules out
    firing path).
 5. **Scope of this run:** implement (A)+(B) together; sub-flags retained for the 3-arm A/B.
 6. **`VICTORY_VALUE = 30`:** OUT OF SCOPE — unchanged (see the §3 scope constraint).
+
+---
+
+## 7. Revision — PBRS → BIAS: the actual under-switch lever (2026-06-07)
+
+**The §3(B) PBRS belief shaping did NOT fix under-switching — verified, then corrected here.**
+
+### 7.1 The null result
+The first full run carrying §3 (`run_20260607_102632`, gen3_incoming_damage_v2 + the belief PBRS
+`pbrs_belief` + the §3(A) re-gate, fresh, ~28M) was adversarially probed (15-agent workflow, V1
+control = `run_20260606_204351`). Over **18.5k decoded decisions** the switch-probability mass STILL
+inverts vs the incoming belief: ~0.22 at P(KO)<0.2, peaking ~0.36 mid-range, **collapsing to ~0.19 at
+P(KO)≥0.8** (the largest, most-dangerous bin). Stay-and-die among P(KO)≥0.6 + legal-switch decisions =
+**61% (new) vs 61% (V1)** — statistically indistinguishable. The shaping terms *fire*; they just don't
+move behaviour.
+
+**Root cause (the design miss).** §3(B) is **potential-based** (`pbrs_belief = γ·Φ(s′) − Φ(s)`,
+Φ(terminal)=0). PBRS is **objective-neutral by construction** — its episode sum telescopes to
+−Φ(s₀), a constant independent of the policy's actions — so it provably **cannot change the optimal
+policy** (Ng 1999). It bridges credit assignment but cannot overpower a *converged* wrong preference.
+The §3(A) re-gated event biases (`matchup_penalty=−0.15`, `escape_threat_switch=+0.25`) *can* tilt the
+objective, but they are flat and far too small to flip the argmax against the converged "stay-and-
+click" prior. **To change the behaviour we need a BIAS that scales with the danger and is large enough
+to re-rank stay vs switch.** (This is the same "PBRS aids credit, BIAS changes the objective" dividing
+line as `design_markovian_reward_and_features.md` — which deliberately kept `pbrs_belief` in PBRS; this
+section revisits that on the strength of the null result.)
+
+### 7.2 The fix — two belief-risk-scaled BIAS terms (`switch_bias_weight`, default OFF)
+Built on the landed reward **registry** (TERMINAL/PBRS/**BIAS** + `--bias-additivity`). `pbrs_belief`
+is **kept** (a free credit-assignment aid); the behavioural pull comes from two new **BIAS-class**
+fields, gated by `RewardConfig.switch_bias_weight` (`--switch-bias-weight`, **default 0.0 = OFF → the
+default single-variable run is byte-unchanged**):
+
+- **`stay_risk_tax` = max(−w·risk_active, −2.0)** — charged when we STAYED into a high imminent-KO spot
+  that we could have escaped. `risk_active = max(phys_pko,spec_pko)·(1−P(outspeed))` from the belief
+  block (the same snapshot the §3(A) re-gate uses). Unlike `pbrs_belief` it is **non-telescoping and
+  action-conditioned** → it lowers the value of the *stay* action in exactly the states the policy
+  mis-stays, re-ranking the argmax.
+- **`escape_risk_bonus` = w·0.5·risk_active** — reward for escaping such a spot **to a safe pivot**
+  (asymmetric `ESCAPE_RISK_FRACTION=0.5` < the tax, so there is no positive surface to bounce-farm).
+
+### 7.3 Gating (the adversarial-review hardening)
+A red-team pass tightened the gates so the lever shapes the *choice*, not noise:
+- **Never tax a TRAPPED stay** — `record_action` snapshots decision-time switch legality from the
+  server-authoritative `ctx.mask[:SWITCH_END]` into `_cur_can_switch`; the tax requires it. (Fixes the
+  highest-severity finding: without it the tax fires hardest on Arena-Trap/Magnet-Pull states, where
+  the high P(KO) + a safe bench it can't reach maximally correlate the noise with the signal.)
+- **Safe-pivot gate (both terms).** A stay is only taxed, and an escape only rewarded, when a
+  non-fainted bench mon reads incoming P(KO) ≤ `SAFE_PIVOT_PKO_MAX=0.35` (`_prev_safe_pivot`, snapshot
+  in `_fold_belief_pbrs`). Bench risk uses **raw** P(KO) (a switch-in always eats the turn's hit; speed
+  can't save it that turn), vs the active's outspeed-discounted risk. This makes a forced stay (no
+  surviving pivot) never taxed, and stops the escape bonus from rewarding a *sacrifice* into the same
+  threat (which also closes the 3-mon rotation farm).
+- **Not a misplay / not RNG.** No tax when our move KO'd the opp (`opp_fainted` → staying won the
+  exchange) or when the move fizzled (`our_failed_to_move`: flinch/full-para/sleep/freeze — mirrors the
+  progress-clock FREEZE). Staying-and-**fainting** IS taxed (the target pathology).
+- **Timing.** Both snapshots are end-of-turn (from the post-turn board = next turn's decision board)
+  and read in `process_turn_reward` *before* `_fold_belief_pbrs` overwrites them; `_cur_can_switch` is
+  this-decision (set in `record_action`). All three describe the same decision the policy made.
+
+### 7.4 Causal A/B (why BIAS-class matters)
+Because both fields are BIAS-class, `--bias-additivity` λ also dials them: **λ=1** = full additive bias
+(the experiment), **λ=0** = accumulate-refund telescopes them to ~0 = policy-invariant (≈ the §3(B)
+null). So a fixed `--switch-bias-weight` with **λ=1 vs λ=0** isolates whether it is the *objective
+tilt* (not merely the magnitude or the obs) that moves under-switching — the clean test §3(B) lacked.
+
+### 7.5 Recommended run
+Fresh run, `--switch-bias-weight 1.5 --bias-additivity 1.0`; success = the P(KO)≥0.8 switch-mass no
+longer below the low bin, and stay-and-die@(P(KO)≥0.6,legal-switch) falls well under 61%, **without** a
+pivot-spam regression (watch the switch rate + `train/selfplay_opp_redecide_rate`). Resume-immutable,
+value-checked (`ModelVersion.check_reward_config`, `MODEL_CONFIG_VERSION=5`). As-built: **impl_step6**.

@@ -433,6 +433,12 @@ async def main():
                         default=False, help="Enable the staged BIAS redesign: the no-progress clock "
                         "replaces the anti-spam taxes + the obs-keyed reframes apply. Default OFF = the "
                         "single-variable run (material clutch-fix only). Resume-immutable.")
+    parser.add_argument("--switch-bias-weight", "--switch_bias_weight", dest="switch_bias_weight",
+                        type=float, default=0.0, help="Belief-risk-scaled stay-into-KO BIAS lever for "
+                        "the under-switch pathology (design_reward_switching.md §7). 0.0 = OFF "
+                        "(default; behavior unchanged). >0 taxes staying in a high-P(KO) spot when a "
+                        "safe pivot exists (−w·risk) + rewards escaping it. BIAS-class, so it also "
+                        "rides --bias-additivity (λ=1 additive vs λ=0 telescoping A/B). Resume-immutable.")
     parser.add_argument("--clip-range", type=float, default=CLIP_RANGE_DEFAULT, help="PPO policy clip range (default 0.15)")
     parser.add_argument("--clip-range-vf", type=optional_float, default=0.5, help="Value function clip range; pass 'none' to disable clipping (thesis used 0.0184)")
     parser.add_argument("--n-steps", type=int, default=2048, help="Steps per environment per rollout")
@@ -722,6 +728,7 @@ async def main():
         no_progress_penalty=args.no_progress_penalty,
         gamma=0.9999,   # == InstrumentedMaskablePPO(gamma=0.9999); asserted == model.gamma below
         bias_redesign=args.bias_redesign,
+        switch_bias_weight=args.switch_bias_weight,
     )
     reward_factory = functools.partial(Gen3RewardManager, config=reward_config)
 

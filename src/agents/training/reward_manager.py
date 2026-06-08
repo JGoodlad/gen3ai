@@ -5,6 +5,7 @@ import numpy as np
 from utils.logging.rate_limiter import RateLimitedLogger
 from utils.logging.levels import LogLevel
 from agents.enums import Status
+from agents.action.constants import SWITCH_END as _SWITCH_END
 from agents.training.battle_snapshot import BattleContext
 from agents.training.turn_delta import TurnDelta
 from agents.gen3_data import moves as _movedex
@@ -60,6 +61,11 @@ class RewardConfig:
     bias_additivity: float = 1.0
     mat_alive_weight: float = 1.25
     no_progress_penalty: float = 0.15
+    # Belief-risk-scaled switch BIAS lever (design_reward_switching.md §7). 0.0 = OFF (default →
+    # byte-unchanged run). >0 enables the risk-scaled stay-tax (−w·active_risk, safe-pivot-gated) +
+    # escape reward (+w·ESCAPE_RISK_FRACTION·active_risk). The behavioral fix for under-switching the
+    # policy-invariant pbrs_belief can't provide. Per-run constant, resume-immutable.
+    switch_bias_weight: float = 0.0
     gamma: float = 0.9999
     # Staged BIAS redesign (design §1.3). OFF → the default single-variable run: today's anti-spam
     # taxes (repetition/bouncing/dead-matchup/struggle) + today's roar/status/spikes, so the ONLY
@@ -102,6 +108,8 @@ class RewardBreakdown:
     # Positional
     matchup_penalty: float = 0.0
     dead_matchup_tax: float = 0.0  # escalating penalty for staying in a 0×-only matchup
+    stay_risk_tax: float = 0.0     # belief-risk-scaled penalty for staying into a high P(KO) when a
+                                   # safe pivot exists (the under-switch lever; --switch-bias-weight)
 
     # Switch: subsidy (set by record_action before the turn)
     switch_base: float = 0.0       # flat per-voluntary-switch subsidy
@@ -117,6 +125,8 @@ class RewardBreakdown:
     # Switch: offensive threat
     se_switch: float = 0.0         # our switch-in has a SE move vs opponent active
     escape_threat_switch: float = 0.0  # switched out while opp had a revealed SE threat vs us
+    escape_risk_bonus: float = 0.0     # belief-risk-scaled reward for escaping a high-P(KO) spot
+                                       # (the under-switch lever; --switch-bias-weight)
 
     # Switch: sleep rotation
     sleep_out: float = 0.0         # rotated a sleeping mon to bench
@@ -156,7 +166,8 @@ class RewardBreakdown:
         "setup_low_hp": RewardClass.BIAS, "boost_utilized": RewardClass.BIAS,
         "status_wasted": RewardClass.BIAS, "spikes": RewardClass.BIAS,
         "futile_spikes": RewardClass.BIAS, "matchup_penalty": RewardClass.BIAS,
-        "dead_matchup_tax": RewardClass.BIAS, "switch_base": RewardClass.BIAS,
+        "dead_matchup_tax": RewardClass.BIAS, "stay_risk_tax": RewardClass.BIAS,
+        "escape_risk_bonus": RewardClass.BIAS, "switch_base": RewardClass.BIAS,
         "switch_bouncing_tax": RewardClass.BIAS, "repetition_tax": RewardClass.BIAS,
         "struggle_tax": RewardClass.BIAS, "pivot_protect": RewardClass.BIAS,
         "pivot_status": RewardClass.BIAS, "pivot_damage": RewardClass.BIAS,
@@ -172,10 +183,10 @@ class RewardBreakdown:
         ("attack", ("roar", "futile_attack", "futile_setup", "setup_low_hp",
                     "boost_utilized", "status_wasted", "repetition_tax", "struggle_tax")),
         ("switch", ("switch_base", "switch_bouncing_tax", "escape_threat_switch",
-                    "pivot_protect", "pivot_status",
+                    "escape_risk_bonus", "pivot_protect", "pivot_status",
                     "pivot_damage", "se_switch", "sleep_out", "sleep_in")),
         ("field",  ("spikes", "futile_spikes", "matchup_penalty", "dead_matchup_tax",
-                    "status", "stall_tax", "no_progress_tax")),
+                    "stay_risk_tax", "status", "stall_tax", "no_progress_tax")),
         ("shaping", ("pbrs_belief", "bias_refund")),
     )
 
@@ -271,6 +282,25 @@ PBRS_RISK_WEIGHT = 2.0         # potential weight; a full-HP mon at certain immi
 PBRS_GAMMA = 0.9999           # MUST equal the PPO gamma (train_rl_agent default) for policy-invariance
 SWITCH_RISK_THRESHOLD = 0.5   # belief P(KO)·(1-P(outspeed)) above which the active mon counts as
                               # "threatened" for the escape/stay re-gate
+
+# --- Belief-risk-scaled switch BIAS (the "stay-into-KO" lever; design_reward_switching.md §7) ---
+# The shipped `pbrs_belief` is policy-INVARIANT (a potential difference telescoping to −Φ(s_0)), so it
+# CANNOT move a converged under-switch preference — verified on run_20260607_102632: switch-mass still
+# inverts vs P(KO) and the stay-and-die rate is unchanged vs the V1 control. These two BIAS-class terms
+# DO change the objective: a stay-tax that prices staying in a high imminent-KO spot when a safer pivot
+# exists, and a symmetric (smaller) escape reward, both SCALED by the calibrated incoming-KO belief.
+# Gated by RewardConfig.switch_bias_weight (default 0.0 = OFF → the default single-variable run is
+# byte-unchanged). Being BIAS-class, they also ride --bias-additivity, so a λ=1 vs λ=0 A/B on a fixed
+# weight isolates whether it is the *bias* (objective tilt), not merely the magnitude, that helps.
+SAFE_PIVOT_PKO_MAX = 0.35      # a non-fainted bench mon whose incoming P(KO) ≤ this is a viable "safe
+                              # pivot": the stay-tax fires ONLY when one exists, so a forced stay
+                              # (no bench, or every bench-in also dies) is never penalised. Bench risk
+                              # uses RAW P(KO) (a switch-in always eats the turn's hit; speed can't save
+                              # it that turn), unlike the active's outspeed-discounted risk.
+STAY_RISK_TAX_FLOOR = -2.0     # per-turn clamp so one stay-tax can't dwarf the faint (~-3.25) / ±30
+ESCAPE_RISK_FRACTION = 0.5     # escape reward = weight·fraction·risk_escaped — deliberately ASYMMETRIC
+                              # (< the stay-tax) so there is no positive-reward surface to bounce-farm
+                              # (the escalating switch_bouncing_tax + Φ_mat HP loss also guard it)
 PROTECT_SWITCH_BONUS = 0.10    # opponent used Protect/Detect/Endure on our switch turn
 STATUS_IMMUNE_SWITCH_BONUS = 0.10  # our switch-in was immune to their status move
 
@@ -381,6 +411,9 @@ class Gen3RewardManager:
         self._prev_phi_belief: Optional[float] = None   # incoming-KO belief PBRS (was _prev_phi)
         self._prev_phi_mat: Optional[float] = None       # material PBRS Φ_mat (design §2)
         self._prev_active_ko_risk: float = 0.0
+        self._prev_safe_pivot: bool = False              # did a safe bench pivot exist at decision time
+        self._cur_can_switch: bool = True                # was a switch LEGAL at this decision (mask) —
+                                                         # gates the stay-tax so a trapped stay isn't taxed
         self._bias_acc: float = 0.0                      # Σ BIAS-class contributions this episode
 
     def reset(self):
@@ -411,6 +444,8 @@ class Gen3RewardManager:
         self._prev_phi_belief = None
         self._prev_phi_mat = None
         self._prev_active_ko_risk = 0.0
+        self._prev_safe_pivot = False
+        self._cur_can_switch = True
         self._bias_acc = 0.0
 
     def record_action(self, ctx: BattleContext, action: int) -> None:
@@ -423,6 +458,10 @@ class Gen3RewardManager:
         """
         self._pending_subsidy = 0.0
         self._last_switch_was_roared = False
+        # Decision-time switch legality (server-authoritative mask: switch slots are [0, SWITCH_END)).
+        # Snapshotted here, at THIS decision, so the stay-tax never fires when we were TRAPPED — even
+        # on the turn a trap is first applied (the mask already reflects it before any reject event).
+        self._cur_can_switch = bool(np.any(ctx.mask[:_SWITCH_END]))
 
         # Snapshot HP and boosts at decision time for use in process_turn_reward
         our_slot = ctx.our_slot_map.get(ctx.our_active, 0)
@@ -546,6 +585,17 @@ class Gen3RewardManager:
 
         if self._prev_opp_se_threat or self._prev_active_ko_risk >= SWITCH_RISK_THRESHOLD:
             bd.escape_threat_switch = ESCAPE_THREAT_BONUS
+
+        # Belief-risk-scaled escape reward (the under-switch lever; OFF unless --switch-bias-weight>0):
+        # reward leaving a high imminent-KO spot FOR A SAFE PIVOT, scaled by the risk escaped. Gated on
+        # `_prev_safe_pivot` (symmetry with the stay-tax) so we reward escaping TO safety — NOT
+        # sacrificing a fresh mon into the same threat — which also removes the no-safe-pivot rotation
+        # farm. Asymmetric (< the stay-tax via ESCAPE_RISK_FRACTION) so there's no surface to bounce-farm
+        # (the escalating switch_bouncing_tax + Φ_mat HP loss are the other brakes).
+        if (self.config.switch_bias_weight > 0.0 and self._prev_safe_pivot
+                and self._prev_active_ko_risk >= SWITCH_RISK_THRESHOLD):
+            bd.escape_risk_bonus = (
+                self.config.switch_bias_weight * ESCAPE_RISK_FRACTION * self._prev_active_ko_risk)
 
         self.switch_count += 1
         self.last_switch_turn = decision_turn
@@ -730,6 +780,32 @@ class Gen3RewardManager:
         threatened = self._prev_opp_se_threat or self._prev_active_ko_risk >= SWITCH_RISK_THRESHOLD
         return MATCHUP_PENALTY if threatened else 0.0
 
+    def _compute_stay_risk_tax(self, delta: TurnDelta) -> float:
+        """Belief-risk-scaled penalty for STAYING into a high imminent-KO spot when a safe pivot was
+        available (the under-switch lever; design_reward_switching.md §7). OFF unless
+        ``switch_bias_weight > 0``. Keyed entirely on DECISION-TIME snapshots
+        (``_prev_active_ko_risk`` / ``_prev_safe_pivot``, set at the end of last turn from the board
+        the policy then acted on), so it prices the choice the policy actually made.
+
+        Fires only when ALL hold: a switch was LEGAL this decision (``_cur_can_switch`` — never tax a
+        TRAPPED stay, the key false-positive guard); we did NOT switch (``our_switch_to is None``); the
+        move did NOT fizzle to RNG (``not our_failed_to_move`` — flinch / full-para / sleep / freeze is
+        not a deliberate stay, mirroring the progress-clock's FREEZE); the chosen move did NOT KO the
+        opponent (``not opp_fainted`` — then staying won the exchange, not a misplay); the decision-time
+        KO-risk was high (``>= SWITCH_RISK_THRESHOLD``); and a safe bench pivot existed
+        (``_prev_safe_pivot``). Staying-and-fainting IS included (the exact pathology). Tax scales with
+        the risk, clamped at ``STAY_RISK_TAX_FLOOR``. Unlike ``pbrs_belief`` (policy-invariant) this is
+        an additive BIAS → it changes the objective the actor optimises, which is the point."""
+        w = self.config.switch_bias_weight
+        if w <= 0.0:
+            return 0.0
+        if (delta.our_switch_to is not None or delta.opp_fainted
+                or delta.our_failed_to_move or not self._cur_can_switch):
+            return 0.0
+        if self._prev_active_ko_risk < SWITCH_RISK_THRESHOLD or not self._prev_safe_pivot:
+            return 0.0
+        return max(-w * self._prev_active_ko_risk, STAY_RISK_TAX_FLOOR)
+
     def _compute_dead_matchup_tax(self, delta: TurnDelta, live) -> float:
         """Escalating penalty for refusing to pivot out of a 0×-only matchup.
 
@@ -835,9 +911,10 @@ class Gen3RewardManager:
                     return
         self._prev_opp_se_threat = False
 
-    def _belief_potential_and_risk(self, live) -> tuple[float, float]:
-        """The incoming-KO belief potential Φ(s) and the active mon's imminent KO-risk, both from
-        the LiveView read-model (one belief encode, no raw battle).
+    def _belief_potential_and_risk(self, live) -> tuple[float, float, float]:
+        """The incoming-KO belief potential Φ(s), the active mon's imminent KO-risk, and the safest
+        bench mon's incoming P(KO) — all from the LiveView read-model (one belief encode, no raw
+        battle).
 
         Φ = PBRS_RISK_WEIGHT · ( Σ_alive hp_frac  −  hp_active · risk_active ), where
         risk_active = max(phys_pko, spec_pko)·(1 − P(outspeed)) for the on-field mon. This is
@@ -845,27 +922,35 @@ class Gen3RewardManager:
         the active mon is discounted by its imminent KO chance. So switching a doomed active to the
         bench RAISES Φ (its HP stops being discounted) → positive shaping AT the switch decision,
         while a faint never raises Φ (it removes a positive contribution). Φ is a pure function of
-        the board state → policy-invariant under PBRS. The second return is risk_active for the
-        escape/stay re-gate snapshot."""
+        the board state → policy-invariant under PBRS.
+
+        Returns ``(phi, active_risk, min_bench_pko)``. ``active_risk`` is the outspeed-discounted
+        KO-risk snapshot for the escape/stay re-gate. ``min_bench_pko`` is the LOWEST RAW incoming
+        P(KO) across our non-fainted bench mons (1.0 if none) — raw, not outspeed-discounted, because
+        a switch-in always eats the turn's hit (speed can't save it that turn). It feeds the
+        safe-pivot gate of the belief-risk stay-tax (a stay is only taxed when a pivot would survive)."""
         block = _encode_incoming_block(live)
         mons = live.ours.mons
         total_hp = 0.0
         active_imminent = 0.0
         active_risk = 0.0
+        min_bench_pko = 1.0
         for i, lm in enumerate(mons[:_TEAM_SIZE]):
             if lm is None or lm.fainted:
                 continue
             hp = float(lm.hp_fraction)
             total_hp += hp
+            base = i * _INCOMING_PER_MON
+            pko = max(float(block[base + 2]), float(block[base + 3]))
             if lm.active:
-                base = i * _INCOMING_PER_MON
-                pko = max(float(block[base + 2]), float(block[base + 3]))
                 outspeed = float(block[base + 4])
                 active_risk = pko * (1.0 - outspeed)
                 active_imminent = hp * active_risk
+            elif hp > 0.0:   # a real, switchable bench mon (guard a 0-HP-not-yet-fainted false "safe")
+                min_bench_pko = min(min_bench_pko, pko)
         phi = PBRS_RISK_WEIGHT * (total_hp - active_imminent)
         phi = max(0.0, min(phi, PBRS_RISK_WEIGHT * _TEAM_SIZE))
-        return phi, active_risk
+        return phi, active_risk, min_bench_pko
 
     def _compute_phi_mat(self, live) -> float:
         """The material potential Φ_mat(s) (design §2.2), from the LiveView read-model.
@@ -1043,11 +1128,13 @@ class Gen3RewardManager:
 
     def _fold_belief_pbrs(self, bd: "RewardBreakdown", live, is_terminal: bool) -> None:
         """Incoming-KO belief PBRS (design_reward_switching.md) → ``bd.pbrs_belief``; also snapshots
-        the active KO-risk for next turn's escape/stay re-gate."""
-        phi_belief_next, active_risk_next = self._belief_potential_and_risk(live)
+        the active KO-risk AND whether a safe bench pivot exists for next turn's escape/stay re-gate
+        (both keyed at decision time — read by `_compute_stay_risk_tax` / `_apply_switch_outcome`)."""
+        phi_belief_next, active_risk_next, min_bench_pko_next = self._belief_potential_and_risk(live)
         bd.pbrs_belief, self._prev_phi_belief = self._pbrs_step(
             self._prev_phi_belief, phi_belief_next, is_terminal)
         self._prev_active_ko_risk = 0.0 if is_terminal else active_risk_next
+        self._prev_safe_pivot = (not is_terminal) and (min_bench_pko_next <= SAFE_PIVOT_PKO_MAX)
 
     def _apply_progress_clock(self, bd: "RewardBreakdown") -> None:
         """Read the shared ProgressClock's stashed penalty into ``bd.no_progress_tax`` and suppress
@@ -1122,6 +1209,8 @@ class Gen3RewardManager:
 
         # --- Positional: penalty for staying in against a known threat ---
         bd.matchup_penalty = self._compute_matchup_penalty(delta)
+        # Belief-risk-scaled stay-into-KO tax (the under-switch lever; OFF unless --switch-bias-weight>0).
+        bd.stay_risk_tax = self._compute_stay_risk_tax(delta)
         # Escalating penalty for refusing to pivot out of a 0×-only matchup.
         bd.dead_matchup_tax = self._compute_dead_matchup_tax(delta, live)
 

@@ -125,6 +125,14 @@ an arch error. To add another such hparam, follow the optional-feature playbook 
 `MODEL_CONFIG_VERSION` bump + `_migrate_config` default) **plus** a dedicated `check_*` + an
 `enforce_*` opt-in on `load_model_snapshot`, and leave it out of `_WEIGHT_FIELDS`.
 
+The **reward-config** hparams are the same kind, bundled into one check: `bias_additivity`
+(`--bias-additivity`), `mat_alive_weight` (`--mat-alive-weight`), `bias_redesign` (`--bias-redesign`),
+and `switch_bias_weight` (`--switch-bias-weight`, the belief-risk stay-into-KO BIAS lever, v5) are all
+recorded on `ModelVersion` and enforced on resume by **`check_reward_config`** (FATAL on drift, since
+they silently shift the reward/objective), excluded from `check_compatible`. They are reward-VALUE
+changes — **no `ARCH_SIGNATURE` bump** (the network/obs are unchanged) — so a fresh run is needed to
+measure them but old checkpoints don't fail an arch check. Current `MODEL_CONFIG_VERSION` = **5**.
+
 A startup smoke test (`_run_roundtrip_test` in `train_rl_agent.py`) saves to a temp dir and reloads before every `model.learn()` call — catches serialization issues immediately.
 
 ## Where the canonical architecture lives

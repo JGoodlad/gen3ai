@@ -61,6 +61,21 @@ tracks it), so both arms share one architecture and can A/B by resume. `--bias-a
 (registry coverage, Φ_mat telescoping + terminal-zeroing, bias no-op + parameterized blend, the full
 ProgressClock predicate), plus the updated `reward_manager_test.py`.
 
+**Belief-risk-scaled switch BIAS lever (`--switch-bias-weight`, default 0.0 = OFF).** The shipped
+`pbrs_belief` is policy-INVARIANT (a telescoping potential) so it can't move a *converged* under-switch
+preference — verified on `run_20260607_102632`: switch-mass still inverts vs P(KO), stay-and-die ≈ 61%
+== the V1 control. The fix (`design_reward_switching.md §7`, `impl_step6`) adds two **BIAS-class** terms
+that *do* tilt the objective: `stay_risk_tax = max(−w·risk, −2.0)` for STAYING into a high imminent-KO
+spot a safe pivot could escape, and `escape_risk_bonus = w·0.5·risk` for escaping it (asymmetric < the
+tax → no farm). `risk = max(phys_pko,spec_pko)·(1−P(outspeed))` from the incoming belief. Hardened gates
+(red-teamed): never tax a **trapped** stay (`_cur_can_switch` from the decision-time `ctx.mask`), an RNG
+fizzle (`our_failed_to_move`), a KO'ing stay (`opp_fainted`), or a forced stay (a `_prev_safe_pivot`
+bench mon with raw P(KO) ≤ `SAFE_PIVOT_PKO_MAX`=0.35 must exist; the escape bonus needs it too). Snapshots
+are decision-time (set end of last turn / in `record_action`), read before `_fold_belief_pbrs` overwrites
+them. **Reward-only — no obs/arch change** (ARCH unchanged; `MODEL_CONFIG_VERSION 4→5`), resume-immutable
+(`check_reward_config`). Being BIAS-class it rides `--bias-additivity`, so a fixed weight at **λ=1 vs λ=0**
+is the causal A/B for "is it the objective tilt that helps." Tests: `reward_redesign_test.py::TestSwitchBias`.
+
 ## Bot evaluation (subprocess, non-blocking)
 
 **Flat schedule, full roster.** Eval fires every `EVAL_FREQ_STEPS` (2M steps) and plays

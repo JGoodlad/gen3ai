@@ -2102,7 +2102,8 @@ class TestPbrsSwitchShaping(unittest.TestCase):
 
     def _phi(self, rm, mons, block):
         with patch("agents.training.reward_manager._encode_incoming_block", return_value=block):
-            return rm._belief_potential_and_risk(_fake_live(mons))
+            phi, risk, _min_bench_pko = rm._belief_potential_and_risk(_fake_live(mons))
+            return phi, risk
 
     def test_active_gating_rewards_switching_doomed_mon(self):
         """Φ RISES when a doomed mon is moved off the field (the credit-assignment bridge). Same
