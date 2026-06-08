@@ -16,7 +16,7 @@ from agents.model.model_version import (
     ModelVersionError,
     _migrate_config,
 )
-from agents.model.snapshot import save_model_snapshot, load_model_snapshot, write_checkpoint_metadata, read_checkpoint_metadata, record_snapshot_in_history, record_checkpoint, record_eval_results, _checkpoint_metadata_path, _latest_checkpoint
+from agents.model.snapshot import save_model_snapshot, load_model_snapshot, load_foreign_opponent, write_checkpoint_metadata, read_checkpoint_metadata, record_snapshot_in_history, record_checkpoint, record_eval_results, _checkpoint_metadata_path, _latest_checkpoint
 from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings
 
 
@@ -226,6 +226,127 @@ def test_check_compatible_ignores_draw_penalty(version):
     (which go through check_compatible) must accept any value."""
     differing = dataclasses.replace(version, draw_penalty=version.draw_penalty - 5.0)
     version.check_compatible(differing)  # must not raise
+
+
+# ---------------------------------------------------------------------------
+# check_opponent_compatible — the stable-opponent gate (obs-family only)
+# ---------------------------------------------------------------------------
+
+def test_check_opponent_compatible_same_arch(version):
+    """A foreign opponent sharing the current arch_signature loads — the common case."""
+    version.check_opponent_compatible(dataclasses.replace(version))  # must not raise
+
+
+def test_check_opponent_compatible_arch_mismatch_raises(version):
+    """A different arch_signature = different observation family → loud refusal (startup FATAL)."""
+    foreign = dataclasses.replace(version, arch_signature="gen3_some_other_arch_v1")
+    with pytest.raises(ModelVersionError) as exc_info:
+        version.check_opponent_compatible(foreign)
+    msg = str(exc_info.value)
+    assert "gen3_some_other_arch_v1" in msg
+    assert "observation layout" in msg
+
+
+def test_check_opponent_compatible_ignores_popart(version):
+    """use_popart only affects the value head, which an opponent never reads — must NOT gate.
+    (This is the key difference from check_compatible, which DOES reject a use_popart mismatch.)"""
+    popart_on = dataclasses.replace(version, use_popart=not version.use_popart)
+    version.check_opponent_compatible(popart_on)  # must not raise
+    # Sanity: check_compatible (the trainee/pool gate) WOULD reject the same mismatch.
+    with pytest.raises(ModelVersionError):
+        version.check_compatible(popart_on)
+
+
+def test_check_opponent_compatible_ignores_vf_coef_and_reward(version):
+    """vf_coef / reward-config are value-meaning training hparams, irrelevant to an opponent forward."""
+    differing = dataclasses.replace(
+        version, vf_coef=version.vf_coef + 0.25,
+        bias_additivity=0.0, switch_bias_weight=version.switch_bias_weight + 1.0,
+    )
+    version.check_opponent_compatible(differing)  # must not raise
+
+
+def test_check_opponent_compatible_total_dim_mismatch_raises(version):
+    """Defensive: a hand-edited config with the same arch but a different total_dim is rejected
+    (feeding the opponent a wrong-width obs would be a silent-garbage bug)."""
+    foreign = dataclasses.replace(version, total_dim=version.total_dim + 1)
+    with pytest.raises(ModelVersionError) as exc_info:
+        version.check_opponent_compatible(foreign)
+    assert "total_dim" in str(exc_info.value)
+
+
+# ---------------------------------------------------------------------------
+# load_foreign_opponent — full save → load of a cross-run opponent
+# ---------------------------------------------------------------------------
+
+def _build_and_save_model(tmpdir, layout, mappings, version, *, name="opp_model"):
+    """Build a real MaskablePPO, save its .zip + the given version's model_config.json."""
+    from agents.model.features_extractor import Gen3FeaturesExtractor
+    from agents.model.policy import Gen3DualHeadMaskablePolicy
+    from sb3_contrib import MaskablePPO
+
+    vec_env = _make_vec_env(layout["total_dim"])
+    full_policy_kwargs = {
+        "features_extractor_class": Gen3FeaturesExtractor,
+        "features_extractor_kwargs": {"layout": layout, "mappings": mappings},
+        "net_arch": [512, 512],
+    }
+    model = MaskablePPO(Gen3DualHeadMaskablePolicy, vec_env, policy_kwargs=full_policy_kwargs, verbose=0)
+    zip_path = os.path.join(tmpdir, name)
+    model.save(zip_path)
+    save_model_snapshot(tmpdir, version, git_hash="opp")
+    return zip_path + ".zip"
+
+
+def test_load_foreign_opponent_same_arch_loads_and_predicts(layout, version, mappings):
+    """A same-arch foreign model loads inference-only and produces a usable action distribution
+    WITHOUT ever calling check_compatible against the live trainee."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        zip_path = _build_and_save_model(tmpdir, layout, mappings, version)
+        model, foreign = load_foreign_opponent(zip_path, current_version=version, device="cpu")
+
+    assert foreign.arch_signature == version.arch_signature
+    total_dim = layout["total_dim"]
+    obs = {
+        "observation": torch.zeros(1, total_dim),
+        "action_mask": torch.ones(1, 11, dtype=torch.int8),
+    }
+    with torch.no_grad():
+        dist = model.policy.get_distribution(obs)
+    assert dist.distribution.logits.shape == (1, 11)
+
+
+def test_load_foreign_opponent_arch_mismatch_raises(layout, version, mappings):
+    """A foreign model whose model_config.json carries a different arch_signature is refused."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        foreign_version = dataclasses.replace(version, arch_signature="gen3_old_arch_v1")
+        zip_path = _build_and_save_model(tmpdir, layout, mappings, foreign_version)
+        with pytest.raises(ModelVersionError) as exc_info:
+            load_foreign_opponent(zip_path, current_version=version, device="cpu")
+    assert "gen3_old_arch_v1" in str(exc_info.value)
+
+
+def test_load_foreign_opponent_missing_config_raises(layout, version, mappings):
+    """No sibling model_config.json → refuse to load blind (provenance is required)."""
+    from agents.model.features_extractor import Gen3FeaturesExtractor
+    from agents.model.policy import Gen3DualHeadMaskablePolicy
+    from sb3_contrib import MaskablePPO
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        vec_env = _make_vec_env(layout["total_dim"])
+        model = MaskablePPO(
+            Gen3DualHeadMaskablePolicy, vec_env, verbose=0,
+            policy_kwargs={
+                "features_extractor_class": Gen3FeaturesExtractor,
+                "features_extractor_kwargs": {"layout": layout, "mappings": mappings},
+                "net_arch": [512, 512],
+            },
+        )
+        zip_path = os.path.join(tmpdir, "no_config_model")
+        model.save(zip_path)  # NOTE: no save_model_snapshot → no model_config.json
+        with pytest.raises(FileNotFoundError) as exc_info:
+            load_foreign_opponent(zip_path + ".zip", current_version=version, device="cpu")
+    assert "model_config.json" in str(exc_info.value)
 
 
 # ---------------------------------------------------------------------------

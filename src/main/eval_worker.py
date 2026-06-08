@@ -15,8 +15,10 @@ Config JSON keys: snapshot, port, model_dir, step, n_games, opponent_pool,
 claim_dir, result_dir, concurrency, device, worker_id, cycle_tag.
 
 Optional self-play keys (absent → pure bot eval, byte-identical to before):
-  sentinels      — [{label, path, step}] pool snapshots to play as opponents
-  self_play_temp — sampling temperature for the (stochastic) sentinel opponents
+  sentinels       — [{label, path, step}] pool snapshots to play as opponents
+  self_play_temp  — sampling temperature for the (stochastic) sentinel opponents
+  fixed_opponents — [{label, path, config_path}] stable cross-run opponents (ext_<label>), played
+                    GREEDY via _eval_fixed (loaded by load_foreign_opponent, arch-gated only)
 
 Work stealing: all workers share the claim universe (bot names + sentinel labels)
 + `claim_dir`; each repeatedly claims the next unclaimed item (atomic O_EXCL lock)
@@ -43,7 +45,7 @@ from poke_env.ps_client import LocalhostServerConfiguration, AccountConfiguratio
 from poke_env.ps_client.server_configuration import localhost_server_configuration
 
 from agents.inference.player import RLPlayer
-from agents.model.snapshot import current_model_version, load_model_snapshot
+from agents.model.snapshot import current_model_version, load_model_snapshot, load_foreign_opponent
 from agents.observation.state_encoder import load_mappings
 from agents.training.eval_callback import (
     BATTLE_FORMAT, EvalRLPlayer, build_eval_opponents, build_eval_players,
@@ -82,15 +84,20 @@ def _run(cfg: dict) -> None:
     bot_names = cfg["opponent_pool"]
     sentinels = cfg.get("sentinels") or []
     sentinel_by_label = {s["label"]: s for s in sentinels}
+    # Stable cross-run opponents (ext_<label>): foreign frozen models played as a fixed yardstick.
+    fixed_opponents = cfg.get("fixed_opponents") or []
+    fixed_by_label = {f["label"]: f for f in fixed_opponents}
     self_play_temp = cfg.get("self_play_temp", 1.0)
     # Run's discount for the recorder's TD-residual δ (#4); the parent passes model.gamma.
     gamma = cfg.get("gamma", 0.99)
     # Eval the pool sentinels greedy (best-vs-best) instead of stochastic when set.
     sentinel_greedy = cfg.get("eval_sentinel_greedy", False)
-    # One combined work-steal universe: bot names + sentinel labels.
-    claim_universe = list(bot_names) + [s["label"] for s in sentinels]
-    # Build the CURRENT-code version once, only when there are sentinels to version-check.
-    current_version = current_model_version(mappings) if sentinels else None
+    # One combined work-steal universe: bot names + sentinel labels + stable-opponent labels.
+    claim_universe = list(bot_names) + [s["label"] for s in sentinels] \
+        + [f["label"] for f in fixed_opponents]
+    # Build the CURRENT-code version once, for any load that needs an arch check (sentinels via
+    # check_compatible, stable opponents via check_opponent_compatible).
+    current_version = current_model_version(mappings) if (sentinels or fixed_opponents) else None
 
     claim_dir = cfg["claim_dir"]
     result_dir = cfg["result_dir"]
@@ -112,6 +119,12 @@ def _run(cfg: dict) -> None:
                 model, sentinel_by_label[name], current_version, trainee_tb, opp_tb,
                 mappings, server_config, concurrency, device, self_play_temp,
                 n_games, model_dir, step, tag, use_bridge, gamma, sentinel_greedy,
+            )
+        elif name in fixed_by_label:
+            result = _eval_fixed(
+                model, fixed_by_label[name], current_version, trainee_tb, opp_tb,
+                mappings, server_config, concurrency, device,
+                n_games, model_dir, step, tag, use_bridge, gamma,
             )
         else:
             opponents = build_eval_opponents(
@@ -141,6 +154,43 @@ def _run(cfg: dict) -> None:
         os.replace(tmp, out)
 
 
+def _eval_trainee_vs_model(model, opp_model, label, trainee_tb, opp_tb, mappings, server_config,
+                           concurrency, n_games, model_dir, step, tag, *, trainee_prefix,
+                           opp_prefix, opp_stochastic, opp_temperature,
+                           use_bridge=False, gamma=0.99) -> dict:
+    """Play the frozen trainee (GREEDY) vs one already-loaded opponent model — one matchup.
+
+    The shared core of the pool-sentinel and stable-opponent eval paths: those two differ ONLY in
+    how the opponent model is loaded (``load_model_snapshot`` vs ``load_foreign_opponent``) and the
+    opponent's action regime. The trainee is an ``EvalRLPlayer`` so it tracks reward + writes
+    forensic traces, exactly like a bot matchup; it is always greedy (a stable win-rate signal).
+    Returns the standard result dict — the caller adds any extras (e.g. the sentinel step)."""
+    trainee = EvalRLPlayer(
+        model=model, team=trainee_tb, battle_format=BATTLE_FORMAT,
+        server_configuration=server_config, mappings=mappings,
+        account_configuration=AccountConfiguration(f"{trainee_prefix}{tag}", "password"),
+        max_concurrent_battles=concurrency,
+        stochastic=False,  # eval measures the GREEDY policy → stable win-rate signal
+        start_listening=not use_bridge, gamma=gamma,
+    )
+    opponent = RLPlayer(
+        model=opp_model, team=opp_tb, battle_format=BATTLE_FORMAT,
+        server_configuration=server_config, mappings=mappings,
+        account_configuration=AccountConfiguration(f"{opp_prefix}{tag}", "password"),
+        max_concurrent_battles=concurrency,
+        stochastic=opp_stochastic, temperature=opp_temperature,
+        start_listening=not use_bridge,
+    )
+    m = asyncio.run(eval_one_matchup(trainee, opponent, n_games, model_dir, step, label,
+                                     use_bridge=use_bridge,
+                                     bridge_concurrency=(concurrency if use_bridge else 1)))
+    out = {"win_rate": m["win_rate"], "reward_mean": m["reward_mean"],
+           "ep_len": m["ep_len"], "duration_sec": m["duration_sec"]}
+    if m.get("td_resid_tail") is not None:  # #4 — present only if captured battles ran
+        out["td_resid_tail"] = m["td_resid_tail"]
+    return out
+
+
 def _eval_sentinel(model, spec, current_version, trainee_tb, opp_tb, mappings,
                    server_config, concurrency, device, temperature,
                    n_games, model_dir, step, tag, use_bridge=False, gamma=0.99,
@@ -148,50 +198,44 @@ def _eval_sentinel(model, spec, current_version, trainee_tb, opp_tb, mappings,
     """Play the frozen trainee (greedy) vs one pool sentinel — one matchup.
 
     The sentinel is loaded via ``load_model_snapshot`` against the pool's shared
-    ``model_config.json`` (a stale-arch snapshot fails with ``ModelVersionError`` rather
-    than loading mismatched weights). The trainee is an ``EvalRLPlayer`` so it tracks
-    reward + writes forensic traces, exactly like a bot matchup. By default the sentinel
-    is **stochastic** (at ``temperature``), mirroring how it behaves as a TRAINING opponent;
-    with ``sentinel_greedy`` it plays **argmax** instead, so the matchup is greedy-vs-greedy
-    (best-vs-best) and ``win_rate_vs_pool`` / the snapshot ELO carry no temperature handicap.
-    Every matchup — bot or sentinel — plays the same flat ``n_games`` (``EVAL_GAMES``).
+    ``model_config.json`` (a stale-arch snapshot fails with ``ModelVersionError``). By default it
+    is **stochastic** (at ``temperature``), mirroring how it behaves as a TRAINING opponent; with
+    ``sentinel_greedy`` it plays **argmax**, so the matchup is greedy-vs-greedy and
+    ``win_rate_vs_pool`` / the snapshot ELO carry no temperature handicap.
     """
-    label = spec["label"]
     sentinel_model = load_model_snapshot(
-        spec["path"], env=None, current_version=current_version, device=device,
-    )
-    trainee = EvalRLPlayer(
-        model=model, team=trainee_tb, battle_format=BATTLE_FORMAT,
-        server_configuration=server_config, mappings=mappings,
-        account_configuration=AccountConfiguration(f"SPtr{tag}", "password"),
-        max_concurrent_battles=concurrency,
-        stochastic=False,  # eval measures the GREEDY policy → stable win-rate signal
-        start_listening=not use_bridge,
-        gamma=gamma,
-    )
-    opponent = RLPlayer(
-        model=sentinel_model, team=opp_tb, battle_format=BATTLE_FORMAT,
-        server_configuration=server_config, mappings=mappings,
-        account_configuration=AccountConfiguration(f"SPse{tag}", "password"),
-        max_concurrent_battles=concurrency,
-        # Greedy-vs-greedy (best-vs-best) when sentinel_greedy, else stochastic@temperature
-        # (the training-opponent regime). temperature is ignored when not stochastic.
-        stochastic=not sentinel_greedy, temperature=temperature,
-        start_listening=not use_bridge,
-    )
-    m = asyncio.run(eval_one_matchup(trainee, opponent, n_games, model_dir, step, label,
-                                     use_bridge=use_bridge,
-                                     bridge_concurrency=(concurrency if use_bridge else 1)))
-    out = {
-        "win_rate": m["win_rate"],
-        "reward_mean": m["reward_mean"],
-        "ep_len": m["ep_len"],
-        "duration_sec": m["duration_sec"],
-        "sentinel_step": spec.get("step"),
-    }
-    if m.get("td_resid_tail") is not None:  # #4 — present only if captured battles ran
-        out["td_resid_tail"] = m["td_resid_tail"]
+        spec["path"], env=None, current_version=current_version, device=device)
+    out = _eval_trainee_vs_model(
+        model, sentinel_model, spec["label"], trainee_tb, opp_tb, mappings, server_config,
+        concurrency, n_games, model_dir, step, tag,
+        trainee_prefix="SPtr", opp_prefix="SPse",
+        opp_stochastic=not sentinel_greedy, opp_temperature=temperature,
+        use_bridge=use_bridge, gamma=gamma)
+    out["sentinel_step"] = spec.get("step")
     return out
+
+
+def _eval_fixed(model, spec, current_version, trainee_tb, opp_tb, mappings,
+                server_config, concurrency, device, n_games, model_dir, step, tag,
+                use_bridge=False, gamma=0.99) -> dict:
+    """Play the frozen trainee (greedy) vs one STABLE cross-run opponent — one matchup.
+
+    Like ``_eval_sentinel`` but the opponent is a foreign frozen model from another run, loaded via
+    ``load_foreign_opponent`` (gated on the OBSERVATION FAMILY only — same ``arch_signature`` — not
+    the full ``check_compatible`` the pool sentinels use). In EVAL the opponent plays **greedy
+    (temp 0)** — a fixed, deterministic yardstick gives the cleanest win-rate signal (during
+    TRAINING the same opponent plays stochastic, to be less exploitable). ``ext_`` results are kept
+    out of ``win_rate_vs_bots`` / the ELO fit by the parent callback.
+    """
+    opp_model, _foreign = load_foreign_opponent(
+        spec["path"], current_version=current_version, device=device,
+        config_path=spec.get("config_path"))
+    return _eval_trainee_vs_model(
+        model, opp_model, spec["label"], trainee_tb, opp_tb, mappings, server_config,
+        concurrency, n_games, model_dir, step, tag,
+        trainee_prefix="SOtr", opp_prefix="SOop",
+        opp_stochastic=False, opp_temperature=1.0,  # eval = greedy (temp 0) → clean yardstick
+        use_bridge=use_bridge, gamma=gamma)
 
 
 def main() -> int:

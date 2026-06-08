@@ -378,6 +378,79 @@ restart — no manifest). Design lives in `designs/ai_v5/`. Key behaviors:
   the `:8001` training server. `selfplay_opponent_fuzz_test.py` covers the opponent load + legal
   play (both modes) + version check in-process via the local bridge (no server).
 
+## Stable (cross-run) opponents (`--stable-opponents`, `fixed_opponent_pool.py`)
+
+Load a frozen model from **another, already-finished run** as a **fixed opponent** — measured
+against in eval AND (under `--self-play`) played against in training. Design:
+`designs/ai_v5/design_stable_opponents.md`.
+
+**Training-mix participation (Stage 2) — "tossed in like a sentinel, becomes a bot when mastered":**
+a stable opponent rides the *existing* pool-vs-heuristic split in `MaskableAgentWrapper`
+(`wrappers.py`), no new source-model abstraction:
+- **CHALLENGE bucket** (the self-play pool branch, competence-gated by `self_play_fraction`): the
+  pool gets the BULK; un-mastered stable opponents share a **capped minority slice**
+  (`STABLE_CHALLENGE_SHARE` = 0.20 in `wrappers.py`), so a single fixed opponent can never dominate
+  training (multiple un-mastered ones SHARE the 20%, so the total stays bounded). It only enters the
+  mix once the model clears `SELF_PLAY_START` (a weak model trains on bots first), and only under
+  `--self-play` (without it, stable opponents are eval-only — a startup NOTE says so).
+- **FLOOR bucket** (the heuristic-bot branch): once the trainee **masters** it
+  (`win_rate_vs_ext_<run>` ≥ `--stable-opponent-mastered-wr`, default `0.80`, for
+  `_MASTERY_CONFIRM_CYCLES`=2 consecutive cycles — a noise guard since the irreversible flip is
+  one-way), it "becomes another bot" — moved to the always-on coverage floor (weighted like an
+  unlisted bot). The eval callback tracks a **monotonic** mastered set + a per-label streak counter,
+  recomputed each cycle (→ resume-safe), and pushes it via `env_method("set_stable_mastered", …)`,
+  exactly like `set_self_play_target`. **Resume note:** the mastered set lives only in callback
+  memory, so after a launcher restart a previously-mastered opponent reverts to the challenge bucket
+  until the first post-restart eval re-confirms it (self-healing; bounded by the eval cadence).
+- The stable-opponent players are **built once per worker** (`load_foreign_opponent` in the env
+  factory), so no per-episode reload; each plays **stochastic** at `--stable-opponent-temp` in
+  TRAINING but **greedy (temp 0)** in EVAL (a clean yardstick).
+- **Distillation interaction:** under `--distill-opponents` the pool flips to 100% cheap distilled
+  models (all-or-nothing — one full-model worker straggles and gates the per-step barrier). A full
+  foreign stable opponent would re-introduce that straggler, so stable opponents drop OUT of the
+  training mix entirely while distill is active (eval-only that period); they re-enter when distill
+  is off. (`_pick_challenge_opponent` / `_pick_floor_opponent` gate on `self._distill_active`.)
+
+- **CLI:** simplest form is just the run dir — `--stable-opponents models/ai_v5_5_popart_N_0607`;
+  the opponent is **labelled by the run-dir name** (`ext_ai_v5_5_popart_N_0607`, derived
+  `best_model`/`snapshots`-aware so a direct `…/best_model/best_model.zip` path still yields the run
+  name, not `best_model`). Optional per-entry suffixes: `@<step>` (a specific checkpoint; default
+  `best_model`), `:<name>` (rename). **Per-opponent weights (`=<weight>`) are rejected** with a clear
+  message (not supported). Knobs: `--stable-opponent-temp` (default 1.0 — the *training* play
+  temperature; eval is always greedy) and `--stable-opponent-mastered-wr` (default 0.80 — the
+  challenge→floor flip). Parsed + resolved at startup by `fixed_opponent_pool.resolve_stable_opponents`.
+- **Compatibility = the OBSERVATION FAMILY only** (two axes: obs family vs model family — see the
+  design §3). The gate is **same `arch_signature`** (`ModelVersion.check_opponent_compatible`,
+  the obs-family proxy); a mismatch is a **startup FATAL** (`[StableOpponent] FATAL` →
+  `TrainExitCode.FATAL_CONFIG`, surfaced to the TUI, no restart). Loaded inference-only via
+  `snapshot.load_foreign_opponent` (`env=None`), which **skips `check_compatible`** — so
+  `use_popart`/`vf_coef`/reward differences (irrelevant to an opponent's forward, which never reads
+  the value head) don't block it. The example `models/ai_v5_5_popart_N_0607` shares HEAD's arch, so
+  it loads despite being PopArt-on.
+- **Label namespace `ext_<run>`** — underscore separator (NOT `ext:`) so the emitted metric tags are
+  **uniform** with the rest (`eval/win_rate_vs_ext_<run>`, like `eval/win_rate_vs_sentinel_0`), no
+  colons in TensorBoard. `is_external` (`startswith("ext_")`) keeps them out of the bot aggregates.
+  Both eval callbacks (`PerOpponentEvalCallback` + `SelfPlayCallback`) add the `ext_` labels to the
+  work-steal universe + `base_cfg["fixed_opponents"]`; the worker's `_eval_fixed` (`eval_worker.py`)
+  plays the **greedy trainee vs the stochastic stable opponent**.
+- **Metric set (deliberate, uniform across both callbacks):** per opponent —
+  `eval/win_rate_vs_ext_<run>`, `eval/mean_reward_vs_ext_<run>`, `eval/mean_ep_len_vs_ext_<run>`;
+  plus `eval/win_rate_vs_external` ONLY for a mini-league (2+ — with one it duplicates its row; it's
+  an `_EVAL_SUMMARY` "vs External" row, not a fake per-opponent row); plus a `metadata.json:latest_eval`
+  `externals` block. **NOT emitted for ext:** `td_resid_tail` (a bot/sentinel critic-coverage
+  diagnostic) and ELO (display-only). Kept **OUT of** `win_rate_vs_bots` (`bot_mean` excludes them),
+  `win_rate_vs_pool`, the best-model aggregate, the `td_resid_tail_mean` headline, and the ELO fit.
+  The TUI renders each by its run name with an `(ext)` tag.
+- **`best_model/` is self-contained.** Saving the best model now also copies the run's
+  `model_config.json` into `best_model/` (`copy_run_config_to_best_model`, called from both eval
+  callbacks' best-save), so `best_model/{best_model.zip,model_config.json}` are co-located — the
+  unified place a stable-opponent consumer looks first (resolution falls back to the run dir / parent
+  for older runs). Backfilled for existing `models/*/best_model/` dirs.
+- **Tests:** `fixed_opponent_pool_test.py` (parse + resolve + the arch FATAL gate),
+  `snapshot_test.py::*opponent*/*foreign*` (the loader + `check_opponent_compatible`), and the
+  end-to-end `stable_opponent_fuzz_test.py` (bridge, no server — resolve + arch FATAL + foreign
+  load + legal stochastic play).
+
 ## ELO / skill rating (`elo.py`, `bot_elo_calibration.py`, `main.elo`)
 
 Once training is mostly self-play **pool play**, win-rate stops being legible: the promotion

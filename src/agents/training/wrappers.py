@@ -2,6 +2,12 @@ import random
 
 from poke_env.environment.single_agent_wrapper import SingleAgentWrapper
 
+# Stable cross-run opponents are a CAPPED minority of the self-play (challenge) bucket — the pool
+# keeps the bulk, so no single fixed opponent can dominate training. Multiple un-mastered stable
+# opponents SHARE this slice (so the total stable share stays ≤ this regardless of count). Mastered
+# ones leave the challenge bucket entirely for the floor.
+STABLE_CHALLENGE_SHARE = 0.20
+
 
 class MaskableAgentWrapper(SingleAgentWrapper):
     """
@@ -39,7 +45,8 @@ class MaskableAgentWrapper(SingleAgentWrapper):
 
     def __init__(self, env, opponent=None, *, heuristic_opponents=None, pool=None,
                  pool_player=None, self_play_fraction=0.0, rng_seed=0,
-                 heuristic_weights=None):
+                 heuristic_weights=None, stable_players=None, stable_labels=None,
+                 stable_challenge_share=STABLE_CHALLENGE_SHARE):
         # Back-compat: a single positional `opponent` (legacy / tests) becomes a 1-bot roster.
         roster = list(heuristic_opponents) if heuristic_opponents else (
             [opponent] if opponent is not None else [])
@@ -65,6 +72,14 @@ class MaskableAgentWrapper(SingleAgentWrapper):
             self._heuristic_weights = w
         self._pool = pool
         self._pool_player = pool_player
+        # Stable cross-run opponents (already-loaded RLPlayers + their labels): UN-mastered ones are
+        # peers of the pool in the CHALLENGE bucket ("tossed in like another sentinel"); once the
+        # trainee MASTERS one (pushed via set_stable_mastered) it joins the FLOOR bucket alongside
+        # the bots ("becomes another bot"). Built once per worker, so no per-episode reload.
+        self._stable_players = list(stable_players) if stable_players else []
+        self._stable_labels = list(stable_labels) if stable_labels else []
+        self._stable_mastered = {lab: False for lab in self._stable_labels}
+        self._stable_challenge_share = float(stable_challenge_share)
         self._self_play_fraction = float(self_play_fraction)
         self._target_generation = 0
         self._scanned_generation = -1   # -1 forces a pool re-scan on the first pool selection
@@ -90,53 +105,102 @@ class MaskableAgentWrapper(SingleAgentWrapper):
         self._distill_active = bool(active)
         self._distill_steps = set(steps or ())
 
-    def _select_episode_opponent(self) -> None:
-        """Pick this episode's opponent from the live fraction. Pool → use the per-generation
-        snapshot held in the reusable pool player; else → a random heuristic.
+    def set_stable_mastered(self, mastered_labels) -> None:
+        """Pushed by the eval callback each cycle (via ``env_method``): the labels of stable
+        cross-run opponents the trainee has MASTERED (win_rate ≥ threshold). A mastered opponent
+        moves from the CHALLENGE bucket (peer of the pool) to the FLOOR bucket (peer of the bots) —
+        it "becomes another bot", kept for coverage but no longer a thing to master. The callback's
+        set only grows, so this is monotonic (no flapping on eval noise) and resume-safe (recomputed
+        from eval each cycle — no stored env state)."""
+        s = set(mastered_labels or ())
+        self._stable_mastered = {lab: (lab in s) for lab in self._stable_labels}
 
-        The pool snapshot is (re)sampled+loaded ONLY when the trainer signals a new generation
-        (a seed or promotion — i.e. every eval), not every episode. ``load_model`` deserializes a
-        ~27MB MaskablePPO; doing it per-episode against an N-deep pool with a small LRU thrashed
-        the workers (they block in ``reset()`` on disk I/O → CPU ~40%, FPS ~1400→~500). Loading
-        once per generation restores the old "load once, reuse" throughput while keeping
-        diversity: 48 envs sample independently (≈ many distinct snapshots in flight at once) and
-        every env rotates to a fresh sample each generation. The per-episode pool-vs-heuristic
-        coin flip is unchanged, so the live ``self_play_fraction`` is still honored exactly."""
-        if (self._pool is not None and self._pool_player is not None
-                and self._rng.random() < self._self_play_fraction):
-            # Re-sample+load on a new generation, or until we first have a model loaded (the pool
-            # may still be empty right after the seed crosses the threshold). Steady state within
-            # a generation: neither branch runs → no scan, no load → the opponent is reused.
-            # Reload on a new generation, when no model is loaded yet, OR when the distilled/full
-            # mode flipped (the atomic all-or-nothing switch). Steady state within a generation:
-            # none fire → the opponent (distilled or full) is reused, preserving throughput.
-            if (self._target_generation != self._scanned_generation or not self._has_pool_model
-                    or self._distill_active != self._loaded_distilled):
-                self._pool._scan()
-                if not self._pool.is_empty():
-                    if self._distill_active and self._distill_steps:
-                        entry = self._pool.sample_from(self._distill_steps)  # deployable distilled only
-                        if entry is not None:
-                            self._pool_player.model = self._pool.load_distilled_opponent(entry)
-                            self._has_pool_model = True
-                            self._loaded_distilled = True
-                            self._scanned_generation = self._target_generation
-                    if not (self._distill_active and self._loaded_distilled):
-                        entry = self._pool.sample()                          # full model
-                        self._pool_player.model = self._pool.load_model(entry)  # LRU-cached
+    def _ensure_pool_model(self) -> bool:
+        """Load/refresh the per-generation pool snapshot into the reusable pool player; return True
+        if a pool model is ready.
+
+        The snapshot is (re)sampled+loaded ONLY when the trainer signals a new generation (a seed or
+        promotion — i.e. every eval), the first time a model is needed, or when the distilled/full
+        mode flips (the atomic all-or-nothing switch) — NOT per episode. ``load_model`` deserializes
+        a ~27MB MaskablePPO; doing it per-episode against an N-deep pool with a small LRU thrashed
+        the workers (they block in ``reset()`` on disk I/O → CPU ~40%, FPS ~1400→~500). Loading once
+        per generation restores the "load once, reuse" throughput while keeping diversity: the envs
+        sample independently and every env rotates to a fresh sample each generation."""
+        if self._pool is None or self._pool_player is None:
+            return False
+        if (self._target_generation != self._scanned_generation or not self._has_pool_model
+                or self._distill_active != self._loaded_distilled):
+            self._pool._scan()
+            if not self._pool.is_empty():
+                if self._distill_active and self._distill_steps:
+                    entry = self._pool.sample_from(self._distill_steps)  # deployable distilled only
+                    if entry is not None:
+                        self._pool_player.model = self._pool.load_distilled_opponent(entry)
                         self._has_pool_model = True
-                        self._loaded_distilled = False
+                        self._loaded_distilled = True
                         self._scanned_generation = self._target_generation
-            if self._has_pool_model:
-                self.opponent = self._pool_player
-                return
-        # Heuristic branch (also the fallthrough when the pool isn't seeded yet): weighted pick
-        # toward the configured bots, else uniform.
+                if not (self._distill_active and self._loaded_distilled):
+                    entry = self._pool.sample()                          # full model
+                    self._pool_player.model = self._pool.load_model(entry)  # LRU-cached
+                    self._has_pool_model = True
+                    self._loaded_distilled = False
+                    self._scanned_generation = self._target_generation
+        return self._has_pool_model
+
+    def _stable_in(self, mastered: bool) -> list:
+        """The stable-opponent players whose mastery state matches ``mastered``."""
+        return [p for p, lab in zip(self._stable_players, self._stable_labels)
+                if self._stable_mastered.get(lab, False) == mastered]
+
+    def _pick_floor_opponent(self):
+        """The always-on coverage bucket: the heuristic bot roster + any MASTERED stable opponents
+        (each weighted like an unlisted bot, 1.0). Honors ``--bot-weights`` for the bots. Stable
+        opponents are excluded while distillation is active (see ``_pick_challenge_opponent``)."""
+        mastered = [] if self._distill_active else self._stable_in(mastered=True)
+        candidates = self._heuristic_opponents + mastered
         if self._heuristic_weights is None:
-            self.opponent = self._rng.choice(self._heuristic_opponents)
-        else:
-            self.opponent = self._rng.choices(
-                self._heuristic_opponents, weights=self._heuristic_weights, k=1)[0]
+            return self._rng.choice(candidates)
+        weights = self._heuristic_weights + [1.0] * len(mastered)
+        return self._rng.choices(candidates, weights=weights, k=1)[0]
+
+    def _pick_challenge_opponent(self):
+        """The CHALLENGE bucket — what the model is actively trying to master. The self-play pool
+        gets the BULK; any UN-mastered stable cross-run opponents share a CAPPED minority slice
+        (``_stable_challenge_share``, default 20%), so a single fixed opponent can never dominate
+        training. Returns ``None`` if neither has a ready opponent (→ fall through to the floor).
+
+        While **distillation is active** the pool is 100% cheap distilled models (all-or-nothing,
+        since one full-model worker straggles and gates the per-step ``SubprocVecEnv`` barrier). A
+        FULL foreign stable opponent would re-introduce exactly that straggler, so stable opponents
+        drop OUT of the training mix entirely while distill is on (they stay eval-only that period);
+        the pool gets the whole challenge bucket."""
+        stable = [] if self._distill_active else self._stable_in(mastered=False)
+        pool_ready = self._ensure_pool_model()
+        if stable and pool_ready:
+            if self._rng.random() < self._stable_challenge_share:
+                return self._rng.choice(stable)       # the capped stable slice
+            return self._pool_player                  # the bulk → the pool
+        if pool_ready:
+            return self._pool_player
+        if stable:
+            return self._rng.choice(stable)           # no pool seeded yet → stable IS the challenge
+        return None
+
+    def _select_episode_opponent(self) -> None:
+        """Pick this episode's opponent.
+
+        CHALLENGE bucket (competence-gated by ``self_play_fraction``, ``_pick_challenge_opponent``) =
+        the self-play pool (the bulk) + a capped minority of un-mastered stable opponents. FLOOR
+        bucket (always-on coverage) = the heuristic bots + any MASTERED stable opponents. The
+        per-episode coin flip honors the live ``self_play_fraction`` exactly; the pool snapshot is
+        loaded once per generation (``_ensure_pool_model``), not per episode."""
+        if self._rng.random() < self._self_play_fraction:
+            opp = self._pick_challenge_opponent()
+            if opp is not None:
+                self.opponent = opp
+                return
+        # Floor bucket — also the fallthrough when the challenge bucket has no ready opponent.
+        self.opponent = self._pick_floor_opponent()
 
     def reset(self, *, seed=None, options=None):
         self._select_episode_opponent()

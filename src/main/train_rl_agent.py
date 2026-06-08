@@ -45,7 +45,7 @@ from agents.training.snapshot_pool import (
     SnapshotPool, heuristic_fraction, HEURISTIC_FLOOR, SELF_PLAY_START, SELF_PLAY_FULL,
 )
 from agents.training.selfplay_callback import SelfPlayCallback
-from agents.training.wrappers import MaskableAgentWrapper
+from agents.training.wrappers import MaskableAgentWrapper, STABLE_CHALLENGE_SHARE
 from agents.training.gen3_env import Gen3Env
 from utils.bridge.bridge_session import attach_bridge_transport
 from utils.bridge.local_battle_runner import run_local_battles
@@ -585,6 +585,38 @@ async def main():
                         type=float, default=None,
                         help=f"win_rate_vs_bots at which self-play reaches the floor (default {SELF_PLAY_FULL:g}); "
                              "raise it to ramp slower / stay bot-heavier for longer.")
+    # ── Stable (cross-run) opponents: load a model from ANOTHER run as a fixed opponent ──
+    parser.add_argument("--stable-opponents", "--stable_opponents", dest="stable_opponents",
+                        type=str, default=None,
+                        help="Foreign model(s) from ANOTHER run to use as fixed eval opponents, "
+                             "comma-separated. Simplest form is just the run dir: "
+                             "'models/ai_v5_5_popart_N_0607' — the opponent is then labelled by that "
+                             "dir name (ai_v5_5_popart_N_0607). Optional per-entry suffixes: "
+                             "'@<step>' picks a specific checkpoint (default: best_model); "
+                             "':<name>' renames it. (Per-opponent weights are NOT supported yet — "
+                             "they only matter for the training mix, which is Stage 2.) Each model "
+                             "must share this run's arch_signature (= observation layout) — a "
+                             "mismatch is a startup FATAL surfaced to the TUI. Default None (off).")
+    parser.add_argument("--stable-opponent-temp", "--stable_opponent_temp", dest="stable_opponent_temp",
+                        type=float, default=1.0,
+                        help="TRAINING-mix play temperature for stable opponents (default 1.0 = the "
+                             "policy's own distribution). Stochastic (not greedy) so a fixed opponent "
+                             "is a moving target — harder to over-exploit. (In EVAL they always play "
+                             "greedy/temp-0 for a clean win-rate yardstick.)")
+    parser.add_argument("--stable-opponent-mastered-wr", "--stable_opponent_mastered_wr",
+                        dest="stable_opponent_mastered_wr", type=float, default=0.80,
+                        help="Win rate at which a stable opponent is considered MASTERED and moves "
+                             "from the challenge bucket (played alongside the self-play pool) to the "
+                             "coverage floor (played alongside the bots) — it 'becomes another bot'. "
+                             "Default 0.80. One-way per run. Only active under --self-play.")
+    parser.add_argument("--stable-opponent-selfplay-share", "--stable_opponent_selfplay_share",
+                        dest="stable_opponent_selfplay_share", type=float,
+                        default=STABLE_CHALLENGE_SHARE,
+                        help="Fraction of SELF-PLAY (challenge) episodes spent vs stable opponents — "
+                             "the rest go to the self-play pool. Caps how much a fixed opponent "
+                             "occupies training so a single one can't dominate; multiple un-mastered "
+                             f"stable opponents SHARE this slice. Default {STABLE_CHALLENGE_SHARE:g}. "
+                             "Only active under --self-play.")
 
     args = parser.parse_args()
     if args.use_popart and args.clip_range_vf is not None:
@@ -598,6 +630,8 @@ async def main():
             "normalizes the value targets so value clipping is unnecessary — and an active clip "
             "would clip in un-normalized units and cripple the critic. Pass --clip-range-vf none."
         )
+    if not 0.0 <= args.stable_opponent_selfplay_share <= 1.0:
+        parser.error("--stable-opponent-selfplay-share must be a fraction in [0, 1]")
     log_level = LogLevel[args.log_level.upper()]
 
     # One server config, built from --showdown-port and threaded to every Showdown client
@@ -687,6 +721,41 @@ async def main():
         print(f"[Opponents] heuristic weights = "
               f"{ {opponent_name(c): w for c, w in zip(OPPONENT_CLASSES, _bot_weight_vec)} }")
 
+    # Resolve + VALIDATE --stable-opponents (cross-run fixed opponents) at startup. Each foreign
+    # model must share THIS run's arch_signature (= observation layout) — a mismatch is a
+    # NON-RECOVERABLE config error: exit FATAL_CONFIG so the launcher gives up immediately (the
+    # same path a checkpoint arch mismatch takes) and the TUI shows the fatal, instead of
+    # auto-restarting into the identical failure.
+    _fixed_opponents = []
+    if args.stable_opponents:
+        from agents.training.fixed_opponent_pool import resolve_stable_opponents
+        from agents.model.snapshot import (
+            current_model_version as _current_model_version, load_foreign_opponent)
+        _cv_stable = _current_model_version(mappings)
+        try:
+            _fixed_opponents = resolve_stable_opponents(
+                args.stable_opponents, _cv_stable, default_temperature=args.stable_opponent_temp,
+            )
+            # Validate the WEIGHTS actually load here in the main process (resolve only reads the
+            # config). A valid config + corrupt/unreadable zip would otherwise pass the gate and
+            # crash every env worker → crash-restart loop. Load once on CPU and discard.
+            for _e in _fixed_opponents:
+                load_foreign_opponent(_e.zip_path, current_version=_cv_stable, device="cpu",
+                                      config_path=_e.config_path)
+        except (ModelVersionError, FileNotFoundError, ValueError) as e:
+            print(f"\n[StableOpponent] FATAL: {e}")
+            sys.stdout.flush()  # os._exit() skips buffer flushing — make sure the reason reaches the log
+            os._exit(int(TrainExitCode.FATAL_CONFIG))
+        except Exception as e:  # noqa: BLE001 — a corrupt/unreadable foreign weights zip
+            print(f"\n[StableOpponent] FATAL: failed to load stable opponent weights: {e}")
+            sys.stdout.flush()
+            os._exit(int(TrainExitCode.FATAL_CONFIG))
+        print(f"[Opponents] {len(_fixed_opponents)} stable opponent(s): "
+              + ", ".join(e.label for e in _fixed_opponents))
+        if not args.self_play:
+            print("[Opponents] NOTE: stable opponents join the TRAINING mix only under --self-play "
+                  "(they ride the challenge/pool bucket). Without it they are EVAL-only.")
+
     # Curriculum (transition + floor) effective values: CLI override or the module defaults.
     _heuristic_floor = args.heuristic_floor if args.heuristic_floor is not None else HEURISTIC_FLOOR
     _sp_start_wr = args.self_play_start_wr if args.self_play_start_wr is not None else SELF_PLAY_START
@@ -708,7 +777,7 @@ async def main():
     def create_training_env_random(idx, stall_config=None, opponent_device="auto",
                                    opponent_version=None, snapshot_dir=None,
                                    self_play_fraction=0.0, self_play=False,
-                                   heuristic_weights=None):
+                                   heuristic_weights=None, stable_opponents=None):
         def _init():
             try:
                 ts = datetime.now().strftime('%H%M%S')
@@ -770,10 +839,34 @@ async def main():
                         stochastic=True, temperature=args.self_play_temp,
                     )
 
+                # Stable cross-run opponents — one reusable RLPlayer each, loaded ONCE per worker
+                # (foreign models don't change, so no per-episode reload). They join the TRAINING
+                # mix only under self-play (the challenge/pool bucket); each plays stochastically at
+                # its temperature (harder to over-exploit). Un-mastered → challenge peer of the pool;
+                # mastered (pushed via set_stable_mastered) → floor peer of the bots.
+                stable_players, stable_labels = [], []
+                if self_play and stable_opponents:
+                    from agents.model.snapshot import load_foreign_opponent
+                    for e in stable_opponents:
+                        opp_model, _ = load_foreign_opponent(
+                            e.zip_path, current_version=opponent_version,
+                            device=opponent_device, config_path=e.config_path)
+                        stable_players.append(RLPlayer(
+                            model=opp_model, team=opponent_teambuilder, battle_format=BATTLE_FORMAT,
+                            server_configuration=server_config, mappings=mappings,
+                            account_configuration=AccountConfiguration(
+                                f"Opp{idx}s{len(stable_players)}{ts}", "password"),
+                            start_listening=False,
+                            stochastic=True, temperature=e.temperature,
+                        ))
+                        stable_labels.append(e.label)
+
                 wrapped = MaskableAgentWrapper(
                     env, heuristic_opponents=heuristic_opponents, pool=pool,
                     pool_player=pool_player, self_play_fraction=self_play_fraction, rng_seed=idx,
                     heuristic_weights=heuristic_weights,
+                    stable_players=stable_players, stable_labels=stable_labels,
+                    stable_challenge_share=args.stable_opponent_selfplay_share,
                 )
 
                 # FORCE OVERRIDE: SingleAgentWrapper hardcodes 10 for gen3ou. We need 11.
@@ -876,6 +969,7 @@ async def main():
                 snapshot_dir=str(_snapshot_dir) if _snapshot_dir is not None else None,
                 self_play_fraction=_initial_self_play_fraction, self_play=args.self_play,
                 heuristic_weights=_bot_weight_vec,
+                stable_opponents=_fixed_opponents,
             )
             for i in range(n_envs)
         ]
@@ -1095,6 +1189,8 @@ async def main():
             keep_eval_snapshots=args.keep_eval_snapshots,
             keep_eval_trace_steps=args.keep_eval_trace_steps,
             resume_eval_metadata=_resume_meta,
+            fixed_opponents=_fixed_opponents,
+            stable_opponent_mastered_wr=args.stable_opponent_mastered_wr,
             debug=args.debug,
         )
         callbacks.append(eval_callback)
@@ -1113,6 +1209,7 @@ async def main():
             resume_eval_metadata=_resume_meta,
             keep_eval_snapshots=args.keep_eval_snapshots,
             keep_eval_trace_steps=args.keep_eval_trace_steps,
+            fixed_opponents=_fixed_opponents,
         )
         callbacks.append(eval_callback)
 
@@ -1155,6 +1252,7 @@ async def main():
             )
         except ModelVersionError as e:
             print(f"\n[ModelVersion] FATAL: {e}")
+            sys.stdout.flush()  # os._exit() skips buffer flushing — make sure the reason reaches the log
             # Non-recoverable: an arch-family / vf_coef / reward-config mismatch fails the
             # SAME way on every retry. Exit with FATAL_CONFIG so the launcher gives up
             # immediately instead of auto-restarting into the identical error.

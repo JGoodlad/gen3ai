@@ -45,6 +45,7 @@ _EVAL_SUMMARY = frozenset({
     "eval/win_rate_mean",
     "eval/win_rate_vs_bots",
     "eval/win_rate_vs_pool",
+    "eval/win_rate_vs_external",   # mini-league avg over stable opponents (only emitted for 2+)
     "eval/mean_reward_mean",
     "eval/mean_reward_vs_bots",
     "eval/mean_reward_vs_pool",
@@ -497,6 +498,9 @@ class LauncherApp(Gen3App):
             if wr_pool is not None:
                 table.add_row("  vs Pool", _wr(wr_pool),
                               _rw(eval_summary.get("eval/mean_reward_vs_pool")), "")
+            wr_ext = eval_summary.get("eval/win_rate_vs_external")
+            if wr_ext is not None:  # only present for a mini-league (2+ stable opponents)
+                table.add_row("  vs External", _wr(wr_ext), "", "")
             table.add_row("", "", "", "")
 
         def _row_label(opp: str) -> str:
@@ -511,6 +515,10 @@ class LauncherApp(Gen3App):
                     return f"  vs {opp}"
                 tag = "seed" if step == 0 else f"{step / 1e6:.1f}M"
                 return f"  vs {opp} ({tag})"
+            # Stable cross-run opponent (ext_<run_name>) — show its RUN NAME, not the ext_ prefix
+            # (the namespace is internal). E.g. "vs ai_v5_5_popart_N_0607 (ext)".
+            if opp.startswith("ext_"):
+                return f"  vs {opp[len('ext_'):]} (ext)"
             return f"  vs {opp}"
 
         # Random always first, remaining opponents in metric-order.
@@ -519,11 +527,16 @@ class LauncherApp(Gen3App):
             order.insert(0, "random")
         rendered_any = False
         sentinel_sep_done = False
+        ext_sep_done = False
         for opp in order:
             # Blank divider between the fixed bot roster and the (rotating) pool sentinels.
             if opp.startswith("sentinel_") and rendered_any and not sentinel_sep_done:
                 table.add_row("", "", "", "")
                 sentinel_sep_done = True
+            # Blank divider before the stable cross-run opponents (ext_<run_name>).
+            if opp.startswith("ext_") and rendered_any and not ext_sep_done:
+                table.add_row("", "", "", "")
+                ext_sep_done = True
             data = opponents[opp]
             table.add_row(_row_label(opp), _wr(data.get("win_rate")),
                           _rw(data.get("reward")), _opp_elo(opp))

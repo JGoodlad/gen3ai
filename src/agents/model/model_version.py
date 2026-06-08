@@ -410,6 +410,45 @@ class ModelVersion:
                 "Resume with the matching --use-popart setting, or start a fresh training run."
             )
 
+    def check_opponent_compatible(self, foreign: "ModelVersion") -> None:
+        """Gate for loading a frozen model from ANOTHER run as an inference-only OPPONENT
+        (a "stable opponent"). Call as: ``current_version.check_opponent_compatible(foreign)``.
+
+        A stable opponent is a pure ``observation -> action`` function: it consumes the obs the
+        LIVE encoder produces and emits an action index that crosses into the shared battle. So the
+        ONLY axis that must match is the OBSERVATION FAMILY — and ``arch_signature`` is the proxy
+        for it: any obs-layout/meaning change bumps the signature, so equal signatures guarantee the
+        same obs layout. (It ALSO bumps on pure network-structure refactors, making this stricter
+        than strictly necessary — but in a safe direction, and same-arch ⟹ identical net sizes, so
+        the foreign zip rebuilds its extractor at shapes matching its own weights with no further
+        check needed. If an obs-identical-but-model-refactored opponent is ever wanted, split a
+        dedicated ``obs_signature`` out of ``arch_signature`` and gate on that instead.)
+
+        Deliberately DISTINCT from ``check_compatible`` (which gates the trainee's own resume + the
+        self-play pool/sentinels, where every ``_WEIGHT_FIELD`` AND ``use_popart`` must match): an
+        opponent never shares weights with the trainee and never reads its value head, so
+        ``use_popart`` / ``vf_coef`` / the reward-config hparams are all irrelevant to its forward
+        and are deliberately NOT checked here.
+        """
+        if self.arch_signature != foreign.arch_signature:
+            raise ModelVersionError(
+                f"Stable opponent architecture-family mismatch: "
+                f"opponent='{foreign.arch_signature}', current='{self.arch_signature}'.\n"
+                "A stable opponent must share the live run's arch_signature — i.e. the SAME "
+                "observation layout (a different signature means the live encoder cannot feed it).\n"
+                "Use an opponent trained at the current architecture, or start the new run at the "
+                "opponent's architecture."
+            )
+        # Defensive: same arch_signature already implies these match, but a hand-edited config
+        # could lie — and feeding the opponent a wrong-width obs would be a silent-garbage bug.
+        for field in ("total_dim", "active_context_dim"):
+            cur, opp = getattr(self, field), getattr(foreign, field)
+            if cur != opp:
+                raise ModelVersionError(
+                    f"Stable opponent {field} mismatch: opponent={opp}, current={cur} "
+                    "(arch_signature matched — the opponent's model_config.json looks hand-edited)."
+                )
+
     def check_vf_coef(self, requested: float) -> None:
         """Raise ModelVersionError if `requested` (the resume `--vf-coef`) differs from this
         saved config's vf_coef.

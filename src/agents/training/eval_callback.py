@@ -15,6 +15,7 @@ from poke_env.ps_client import LocalhostServerConfiguration, AccountConfiguratio
 
 from agents.inference.player import RLPlayer
 from agents.model.snapshot import record_eval_results
+from agents.training.fixed_opponent_pool import is_external
 from agents.opponents import (
     Gen3StallerPlayer, Gen3AggressivePlayer, Gen3SetupSweepPlayer,
     Gen3StallerV2Player, Gen3AggressiveV2Player, Gen3SetupSweepV2Player,
@@ -645,10 +646,63 @@ def latest_recorded_eval_step(model_dir: str | None, resume_eval_metadata: str |
     return step
 
 
+def copy_run_config_to_best_model(model_dir: "str | None", best_model_dir: "str | None") -> None:
+    """Copy the run-level ``model_config.json`` into ``best_model/`` whenever the best model is
+    saved, so ``best_model/`` is a SELF-CONTAINED snapshot (weights + arch sidecar in one dir).
+
+    This is the unified place a stable-opponent consumer (or any loader) looks first:
+    ``best_model/best_model.zip`` + ``best_model/model_config.json`` co-located, no parent search
+    needed. Best-effort — never raise into the eval/best-save path."""
+    if not model_dir or not best_model_dir:
+        return
+    src = os.path.join(model_dir, "model_config.json")
+    if not os.path.exists(src):
+        return
+    try:
+        os.makedirs(best_model_dir, exist_ok=True)
+        shutil.copy2(src, os.path.join(best_model_dir, "model_config.json"))
+    except OSError as e:
+        print(f"⚠️ [EVAL] could not copy model_config.json into best_model/: {e}")
+
+
 def bot_mean(d: dict[str, float]) -> float:
-    """Average of values across non-Random opponents."""
-    vals = [v for k, v in d.items() if k != RANDOM_OPPONENT_NAME]
+    """Average of values across the scripted BOTS only — excludes Random (the broken-model
+    floor) AND any stable cross-run opponents (``ext_...``, a separate yardstick kept out of
+    ``win_rate_vs_bots`` so it never moves the self-play curriculum or the bot aggregate)."""
+    vals = [v for k, v in d.items() if k != RANDOM_OPPONENT_NAME and not is_external(k)]
     return sum(vals) / len(vals) if vals else 0.0
+
+
+def record_per_opponent(logger, tui: dict, names, win_rates: dict,
+                        reward_means: dict, ep_lens: dict) -> None:
+    """Record ``eval/{win_rate,mean_reward,mean_ep_len}_vs_<name>`` (TB logger + the TUI dict) for
+    each ``name`` present in ``win_rates``. The shared per-opponent recorder for BOTH eval callbacks
+    (bots + stable opponents); pool sentinels are positional (``sentinel_<i>``) and recorded apart."""
+    for name in names:
+        if name not in win_rates:
+            continue
+        for metric, value in (("win_rate", win_rates[name]),
+                              ("mean_reward", reward_means.get(name, 0.0)),
+                              ("mean_ep_len", ep_lens.get(name, 0.0))):
+            key = f"eval/{metric}_vs_{name}"
+            logger.record(key, value)
+            tui[key] = value
+
+
+def external_aggregate(ext_wr: dict) -> "float | None":
+    """Mean win rate over stable cross-run opponents — only meaningful (and only emitted) for a
+    mini-league (2+); with a single one it would just duplicate that opponent's own row."""
+    return sum(ext_wr.values()) / len(ext_wr) if len(ext_wr) > 1 else None
+
+
+def build_externals_block(ext_labels, win_rates: dict, reward_means: dict, ep_lens: dict) -> dict:
+    """The ``metadata.json:latest_eval`` ``externals`` sub-block for stable opponents (display-only)."""
+    return {
+        lab: {"win_rate": win_rates[lab],
+              "mean_reward": reward_means.get(lab, 0.0),
+              "mean_ep_len": ep_lens.get(lab, 0.0)}
+        for lab in ext_labels
+    }
 
 
 def build_bot_eval_block(
@@ -893,11 +947,15 @@ class PerOpponentEvalCallback(BaseCallback):
         resume_eval_metadata: str | None = None,
         keep_eval_snapshots: int = 10,
         keep_eval_trace_steps: int = 20,
+        fixed_opponents: "list | None" = None,
         verbose: int = 1,
     ):
         super().__init__(verbose)
         self._model_dir = model_dir
         self._server_config = server_config
+        # Stable cross-run opponents (FixedOpponentEntry list) — played as an extra ext_ eval
+        # matchup each cycle, kept out of win_rate_vs_bots / the ELO fit.
+        self._fixed_opponents = list(fixed_opponents or [])
         self.best_model_save_path = best_model_save_path
         self._n_workers = max(1, n_workers)
         self._eval_device = eval_device
@@ -981,7 +1039,9 @@ class PerOpponentEvalCallback(BaseCallback):
         self.model.save(snapshot_base)  # SB3 appends .zip
         snapshot_zip = snapshot_base + ".zip"
 
-        names = eval_opponent_names()
+        # Full work-steal universe = the bot roster + any stable cross-run opponents (ext_<label>).
+        fixed_cfgs = [e.to_cfg() for e in self._fixed_opponents]
+        names = eval_opponent_names() + [f["label"] for f in fixed_cfgs]
         # Record exactly which model produced this cycle's traces (the prober reads
         # this to reload the right model). snapshot=None now; _persist_snapshot patches
         # it to the retained filename on success when --keep-eval-snapshots is set.
@@ -1000,7 +1060,8 @@ class PerOpponentEvalCallback(BaseCallback):
             "model_dir": self._model_dir,
             "step": step,
             "n_games": n_games,
-            "opponent_pool": names,        # full pool; workers steal from it
+            "opponent_pool": eval_opponent_names(),  # the bot roster (workers steal from the universe)
+            "fixed_opponents": fixed_cfgs,            # stable cross-run opponents (ext_<label>)
             "claim_dir": claim_dir,
             "result_dir": run_dir,         # writes result__<opponent>.json here
             "concurrency": self._eval_concurrency,
@@ -1078,42 +1139,50 @@ class PerOpponentEvalCallback(BaseCallback):
         reward_means = merged["reward_means"]
         ep_lens = merged["ep_lens"]
         td_tails = merged.get("td_resid_tails", {})
-        aggregate = sum(win_rates.values()) / len(win_rates)
-        aggregate_reward = sum(reward_means.values()) / len(reward_means) if reward_means else 0.0
+        # Stable cross-run opponents (ext_<label>) are a SEPARATE yardstick: per-opponent metrics
+        # are recorded (the loop below), but they are kept OUT of the bot aggregate / best-model
+        # signal / ELO fit so they never move the curriculum (bot_mean already excludes them).
+        bot_wr = {k: v for k, v in win_rates.items() if not is_external(k)}
+        ext_wr = {k: v for k, v in win_rates.items() if is_external(k)}
+        bot_td_tails = {k: v for k, v in td_tails.items() if not is_external(k)}
+        aggregate = sum(bot_wr.values()) / len(bot_wr) if bot_wr else 0.0
+        bot_rewards = {k: v for k, v in reward_means.items() if not is_external(k)}
+        aggregate_reward = sum(bot_rewards.values()) / len(bot_rewards) if bot_rewards else 0.0
         wr_bots = bot_mean(win_rates)
         rew_bots = bot_mean(reward_means)
         eplen_bots = bot_mean(ep_lens)
+        wr_external = external_aggregate(ext_wr)
         total_dur = sum(merged["durations_sec"].values())
 
         tui: dict[str, float] = {}
-        for name in win_rates:
-            self.logger.record(f"eval/win_rate_vs_{name}", win_rates[name])
-            self.logger.record(f"eval/mean_ep_len_vs_{name}", ep_lens.get(name, 0.0))
-            self.logger.record(f"eval/mean_reward_vs_{name}", reward_means.get(name, 0.0))
-            tui[f"eval/win_rate_vs_{name}"] = win_rates[name]
-            tui[f"eval/mean_ep_len_vs_{name}"] = ep_lens.get(name, 0.0)
-            tui[f"eval/mean_reward_vs_{name}"] = reward_means.get(name, 0.0)
-            if name in td_tails:
-                self.logger.record(f"eval/td_resid_tail_vs_{name}", td_tails[name])
-                tui[f"eval/td_resid_tail_vs_{name}"] = td_tails[name]
+        # Per-opponent win/reward/ep_len for every opponent incl. stable ones (shared recorder).
+        record_per_opponent(self.logger, tui, win_rates, win_rates, reward_means, ep_lens)
+        # TD-residual tail is a BOT/sentinel critic-coverage diagnostic — NOT emitted for stable
+        # opponents (a display-only yardstick; uniform with the self-play path, which omits it too).
+        for name in bot_td_tails:
+            self.logger.record(f"eval/td_resid_tail_vs_{name}", bot_td_tails[name])
+            tui[f"eval/td_resid_tail_vs_{name}"] = bot_td_tails[name]
         self.logger.record("eval/win_rate_mean", aggregate)
         self.logger.record("eval/win_rate_vs_bots", wr_bots)
         self.logger.record("eval/mean_reward_mean", aggregate_reward)
         self.logger.record("eval/mean_reward_vs_bots", rew_bots)
         self.logger.record("eval/mean_ep_len_vs_bots", eplen_bots)
+        if wr_external is not None:
+            self.logger.record("eval/win_rate_vs_external", wr_external)
+            tui["eval/win_rate_vs_external"] = wr_external
         self.logger.record("eval/duration_sec", total_dur)
         # TD-residual tail headline (#4): mean of the per-opponent tails (a mean-of-CVaRs). Only
         # recorded when captured battles produced residuals — lower/more-negative = critic more
         # often blindsided; the leading indicator for the critic-coverage obs work.
-        td_tail_mean = sum(td_tails.values()) / len(td_tails) if td_tails else None
+        td_tail_mean = sum(bot_td_tails.values()) / len(bot_td_tails) if bot_td_tails else None
         if td_tail_mean is not None:
             self.logger.record("eval/td_resid_tail_mean", td_tail_mean)
             tui["eval/td_resid_tail_mean"] = td_tail_mean
         # Anchored-BT ELO from the accumulated results (appends this cycle's row first).
-        # win_rates carries every opponent incl. random (a valid bot anchor); no sentinels
-        # on the bot-only path.
-        elo_result = record_elo(self._model_dir, step, win_rates, [], n_games,
-                                self.logger, tui, bot_td_tails=td_tails)
+        # bot_wr carries every BOT incl. random (a valid anchor); ext_ opponents are display-only
+        # (out of the fit); no sentinels on the bot-only path.
+        elo_result = record_elo(self._model_dir, step, bot_wr, [], n_games,
+                                self.logger, tui, bot_td_tails=bot_td_tails)
         # Record at the SNAPSHOT step so the eval curve aligns to when the model was
         # frozen, not the (later) step at which the worker happened to finish.
         self.logger.dump(step)
@@ -1145,13 +1214,25 @@ class PerOpponentEvalCallback(BaseCallback):
         send_event(f"🧪 Eval @ {step:,}: {summary}")
 
         if self._model_dir:
-            block = build_bot_eval_block(win_rates, reward_means, ep_lens, td_tails)
+            # Bot-only dicts so the block's win_rate_mean / mean_reward_mean agree with each other
+            # and with the live TB values (ext_ is recorded separately in `externals` below).
+            block = build_bot_eval_block(bot_wr, bot_rewards, ep_lens, bot_td_tails)
             if elo_result:
                 block["elo"], block["elo_ci"] = elo_result
+            if ext_wr:
+                # Stable cross-run opponents — recorded as a separate yardstick (display-only).
+                block["externals"] = build_externals_block(ext_wr, win_rates, reward_means, ep_lens)
+                if wr_external is not None:  # only the multi-opponent aggregate
+                    block["win_rate_vs_external"] = wr_external
             record_eval_results(self._model_dir, step, block)
 
     def _maybe_save_best(self, step: int, pending: dict, win_rates: dict) -> None:
-        aggregate = sum(win_rates.values()) / len(win_rates)
+        # Best-model is chosen on the BOTS (+ random), not the stable cross-run opponents — an
+        # ext_ yardstick must never drive checkpoint selection.
+        bot_wr = {k: v for k, v in win_rates.items() if not is_external(k)}
+        if not bot_wr:
+            return
+        aggregate = sum(bot_wr.values()) / len(bot_wr)
         if aggregate <= self._best_aggregate_win_rate:
             return
         self._best_aggregate_win_rate = aggregate
@@ -1159,6 +1240,7 @@ class PerOpponentEvalCallback(BaseCallback):
             # The frozen snapshot IS the best model — copy it rather than re-saving.
             dst = os.path.join(self.best_model_save_path, "best_model.zip")
             shutil.copy2(pending["snapshot"], dst)
+            copy_run_config_to_best_model(self._model_dir, self.best_model_save_path)
             print(f"[EVAL] new best ({aggregate * 100:.1f}%) saved to {dst}")
 
     def _persist_snapshot(self, pending: dict) -> None:

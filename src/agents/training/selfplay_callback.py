@@ -44,10 +44,14 @@ from agents.training.eval_callback import (
     _b36,
     bot_mean,
     build_bot_eval_block,
+    build_externals_block,
+    copy_run_config_to_best_model,
     eval_opponent_names,
     eval_run_nonce,
+    external_aggregate,
     kill_eval_workers,
     record_elo,
+    record_per_opponent,
     latest_recorded_eval_step,
     merge_eval_results,
     persist_eval_snapshot,
@@ -60,6 +64,12 @@ from agents.training.snapshot_pool import (
     SnapshotPool, heuristic_fraction, HEURISTIC_FLOOR, SELF_PLAY_START, SELF_PLAY_FULL,
 )
 from main.launcher.ipc import emit, send_event, send_metrics
+
+# Consecutive eval cycles a stable opponent's win_rate must stay ≥ the mastery threshold before the
+# (one-way) challenge→floor flip. At EVAL_GAMES=100 the win-rate 1σ band is ±0.04, so a single noisy
+# cycle near the threshold could otherwise permanently demote an opponent the trainee hasn't really
+# mastered — a 2-cycle confirm guards against that.
+_MASTERY_CONFIRM_CYCLES = 2
 
 # Regression guard: warn if a bot the agent was beating well drops below this.
 _REGRESSION_WARN_THRESHOLD = 0.60
@@ -157,11 +167,20 @@ class SelfPlayCallback(BaseCallback):
         keep_eval_snapshots: int = 10,
         keep_eval_trace_steps: int = 20,
         resume_eval_metadata: str | None = None,
+        fixed_opponents: "list | None" = None,
+        stable_opponent_mastered_wr: float = 0.80,
         debug: bool = False,
         verbose: int = 1,
     ):
         super().__init__(verbose)
         self._pool = pool
+        # Stable cross-run opponents (FixedOpponentEntry list) — an extra ext_ eval matchup each
+        # cycle, kept out of win_rate_vs_bots / win_rate_vs_pool / the ELO fit / promotion. In the
+        # TRAINING mix they are challenge opponents until mastered, then floor (see _push_stable_mastered).
+        self._fixed_opponents = list(fixed_opponents or [])
+        self._stable_opponent_mastered_wr = float(stable_opponent_mastered_wr)
+        self._stable_mastered: set[str] = set()  # labels mastered this run (monotonic)
+        self._stable_mastery_streak: dict[str, int] = {}  # consecutive ≥-threshold cycles per label
         self._model_dir = model_dir
         self._server_config = server_config
         self._showdown_port = showdown_port
@@ -312,16 +331,19 @@ class SelfPlayCallback(BaseCallback):
             for i, e in enumerate(sentinel_entries)
         ]
         sentinel_labels = [s["label"] for s in sentinels]
+        # Stable cross-run opponents (ext_<label>) — an extra fixed yardstick alongside the pool.
+        fixed_cfgs = [e.to_cfg() for e in self._fixed_opponents]
+        fixed_labels = [f["label"] for f in fixed_cfgs]
 
         # Record exactly which model produced this cycle's traces (the prober reads this).
         write_eval_manifest(self._model_dir, step,
-                            opponents=bot_names + sentinel_labels, n_games=n_games)
+                            opponents=bot_names + sentinel_labels + fixed_labels, n_games=n_games)
         # Process-unique account tag (per-process nonce + per-cycle counter), NOT the step:
         # the resume re-eval fires at the same step every restart, so a step tag collided
         # across restarts and hung a worker on a lingering challenge (wedging eval forever).
         self._eval_cycle += 1
         cycle_tag = f"{self._eval_run_nonce}{_b36(self._eval_cycle, 1)}"
-        n_items = len(bot_names) + len(sentinels)
+        n_items = len(bot_names) + len(sentinels) + len(fixed_cfgs)
         n_workers = max(1, min(self._n_workers, n_items))
         base_cfg = {
             "snapshot": snapshot_zip,
@@ -332,6 +354,7 @@ class SelfPlayCallback(BaseCallback):
             "n_games": n_games,
             "opponent_pool": bot_names,        # bots; workers steal from the combined pool
             "sentinels": sentinels,            # pool snapshots to play (stochastic, or greedy below)
+            "fixed_opponents": fixed_cfgs,     # stable cross-run opponents (ext_<label>)
             "self_play_temp": self._self_play_temp,
             "eval_sentinel_greedy": self._eval_sentinel_greedy,
             "claim_dir": claim_dir,
@@ -347,6 +370,7 @@ class SelfPlayCallback(BaseCallback):
 
         self._pending = {
             "step": step, "bot_names": bot_names, "sentinels": sentinels,
+            "fixed_labels": fixed_labels,
             "sentinel_entries": sentinel_entries, "procs": procs,
             "snapshot": snapshot_zip, "run_dir": run_dir, "n_games": n_games,
             "launched_at": time.monotonic(),
@@ -382,12 +406,13 @@ class SelfPlayCallback(BaseCallback):
         bot_names = pending["bot_names"]
         sentinels = pending["sentinels"]
         sentinel_entries = pending["sentinel_entries"]
+        fixed_labels = pending.get("fixed_labels", [])
 
         for w in pending["procs"]:
             w["log"].close()
         bad_exits = [w for w in pending["procs"] if w["proc"].returncode not in (0, None)]
 
-        all_names = bot_names + [s["label"] for s in sentinels]
+        all_names = bot_names + [s["label"] for s in sentinels] + fixed_labels
         merged, missing = merge_eval_results(run_dir, all_names)
 
         if missing:
@@ -429,17 +454,11 @@ class SelfPlayCallback(BaseCallback):
 
         # ── Bot metrics (win rate + reward + ep_len, pushed LIVE like the bot-eval path —
         # not just win rate, else the TUI reward column shows the prior eval seeded at resume) ──
+        record_per_opponent(self.logger, tui, bot_names, bot_wr, bot_rew, bot_ep)
         for name in bot_names:
-            if name in bot_wr:
-                self.logger.record(f"eval/win_rate_vs_{name}", bot_wr[name])
-                self.logger.record(f"eval/mean_reward_vs_{name}", bot_rew.get(name, 0.0))
-                self.logger.record(f"eval/mean_ep_len_vs_{name}", bot_ep.get(name, 0.0))
-                tui[f"eval/win_rate_vs_{name}"] = bot_wr[name]
-                tui[f"eval/mean_reward_vs_{name}"] = bot_rew.get(name, 0.0)
-                tui[f"eval/mean_ep_len_vs_{name}"] = bot_ep.get(name, 0.0)
-                if name in bot_td:
-                    self.logger.record(f"eval/td_resid_tail_vs_{name}", bot_td[name])
-                    tui[f"eval/td_resid_tail_vs_{name}"] = bot_td[name]
+            if name in bot_td:
+                self.logger.record(f"eval/td_resid_tail_vs_{name}", bot_td[name])
+                tui[f"eval/td_resid_tail_vs_{name}"] = bot_td[name]
         # TD-residual tail headline over the bots (#4) — lower = critic more often blindsided.
         td_tail_mean = sum(bot_td.values()) / len(bot_td) if bot_td else None
         if td_tail_mean is not None:
@@ -538,6 +557,16 @@ class SelfPlayCallback(BaseCallback):
         tui["eval/win_rate_mean"] = win_rate_mean
         tui["eval/mean_reward_mean"] = mean_reward_mean
 
+        # ── Stable cross-run opponents (ext_<label>) — a separate fixed yardstick, kept OUT of
+        # win_rate_vs_bots / win_rate_vs_pool / the ELO fit / promotion (recorded for display) ──
+        ext_wr = {lab: wr[lab] for lab in fixed_labels if lab in wr}
+        record_per_opponent(self.logger, tui, fixed_labels, wr,
+                            merged["reward_means"], merged["ep_lens"])
+        win_rate_vs_external = external_aggregate(ext_wr)
+        if win_rate_vs_external is not None:  # only the mini-league (2+) aggregate
+            self.logger.record("eval/win_rate_vs_external", win_rate_vs_external)
+            tui["eval/win_rate_vs_external"] = win_rate_vs_external
+
         total_dur = sum(merged["durations_sec"].values())
         self.logger.record("eval/duration_sec", total_dur)
         tui["eval/duration_sec"] = total_dur
@@ -594,6 +623,11 @@ class SelfPlayCallback(BaseCallback):
             if td_resid_tail_vs_pool is not None:
                 pool_block["td_resid_tail"] = td_resid_tail_vs_pool
             block["pool"] = pool_block
+            if ext_wr:
+                block["externals"] = build_externals_block(
+                    ext_wr, wr, merged["reward_means"], merged["ep_lens"])
+                if win_rate_vs_external is not None:  # only the mini-league (2+) aggregate
+                    block["win_rate_vs_external"] = win_rate_vs_external
             if elo_result:
                 block["elo"], block["elo_ci"] = elo_result
             record_eval_results(self._model_dir, step, block)
@@ -610,6 +644,8 @@ class SelfPlayCallback(BaseCallback):
         # ── Push the live curriculum target to every training env (after any seed/promote so
         #    the pool-generation bump reaches the workers this cycle) + persist resume state ──
         self._push_self_play_target(sf)
+        # A stable opponent the trainee has now mastered "becomes another bot" in every training env.
+        self._push_stable_mastered(ext_wr)
         # Reconcile distilled opponents now that any seed/promote bumped the generation: distill
         # the new snapshot (steady-state) or, on first enable, the whole pool (backfill).
         self._reconcile_distill()
@@ -636,6 +672,36 @@ class SelfPlayCallback(BaseCallback):
             self.training_env.env_method("set_self_play_target", float(fraction), self._pool_generation)
         except Exception as e:  # noqa: BLE001 — telemetry/curriculum push must never break eval
             print(f"[SELFPLAY] set_self_play_target push failed (non-fatal): {e}")
+
+    def _push_stable_mastered(self, ext_wr: dict) -> None:
+        """Mark any stable opponent whose win_rate has cleared ``--stable-opponent-mastered-wr`` for
+        ``_MASTERY_CONFIRM_CYCLES`` consecutive cycles as MASTERED, and push the (monotonic,
+        only-grows) set to every training env so a mastered opponent moves from the challenge bucket
+        to the floor ("becomes another bot"). The N-cycle confirm guards against eval-noise flapping
+        an irreversible flip; once confirmed it's one-way. Recomputed from eval each cycle →
+        resume-safe (the streak just re-warms after a restart). No-op without stable opponents;
+        non-fatal like the curriculum push."""
+        if not self._fixed_opponents:
+            return
+        newly = []
+        for lab, wr in ext_wr.items():
+            if lab in self._stable_mastered:
+                continue
+            if wr >= self._stable_opponent_mastered_wr:
+                self._stable_mastery_streak[lab] = self._stable_mastery_streak.get(lab, 0) + 1
+                if self._stable_mastery_streak[lab] >= _MASTERY_CONFIRM_CYCLES:
+                    self._stable_mastered.add(lab)
+                    newly.append(lab)
+            else:
+                self._stable_mastery_streak[lab] = 0  # a below-threshold cycle resets the streak
+        if newly:
+            emit(f"🎓 [SELFPLAY] Mastered stable opponent(s) {sorted(newly)} (win_rate ≥ "
+                 f"{self._stable_opponent_mastered_wr:.0%} for {_MASTERY_CONFIRM_CYCLES} cycles) — "
+                 "now a coverage-floor opponent")
+        try:
+            self.training_env.env_method("set_stable_mastered", sorted(self._stable_mastered))
+        except Exception as e:  # noqa: BLE001 — must never break eval
+            print(f"[SELFPLAY] set_stable_mastered push failed (non-fatal): {e}")
 
     # ── Opponent distillation reconcile (idempotent; distill_integration.md §8) ──────────────
     def _reconcile_distill(self) -> None:
@@ -760,6 +826,7 @@ class SelfPlayCallback(BaseCallback):
             # the (now-advanced) live model.
             dst = os.path.join(self.best_model_save_path, "best_model.zip")
             shutil.copy2(pending["snapshot"], dst)
+            copy_run_config_to_best_model(self._model_dir, self.best_model_save_path)
             print(f"[SELFPLAY EVAL] new best ({aggregate * 100:.1f}%) saved to {dst}")
 
     def _cleanup(self, pending: dict, keep_logs: bool) -> None:

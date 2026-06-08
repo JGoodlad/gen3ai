@@ -19,6 +19,7 @@ from agents.training.selfplay_callback import (
     _distill_step_tag,
     _distill_job_event_text,
     SelfPlayCallback,
+    _MASTERY_CONFIRM_CYCLES,
     _REGRESSION_WARN_THRESHOLD,
 )
 
@@ -682,3 +683,34 @@ def test_watchdog_aborts_hung_selfplay_cycle(tmp_path, monkeypatch):
     recorded = {c.args[0] for c in cb.logger.record.call_args_list}
     assert "eval/win_rate_vs_bots" in recorded     # bot results recorded despite the hang
     pool.add_from_path.assert_not_called()         # no pool win rate → no promotion
+
+
+# ── stable-opponent mastery: N-cycle confirm (eval-noise guard) ───────────────
+
+def test_stable_mastery_requires_consecutive_cycles(tmp_path):
+    """A single ≥-threshold cycle must NOT master (the flip is irreversible, so guard eval noise);
+    only _MASTERY_CONFIRM_CYCLES consecutive cycles confirm it."""
+    cb = _make_callback(tmp_path)
+    cb._fixed_opponents = [object()]            # non-empty guard (content unused by the push)
+    cb._stable_opponent_mastered_wr = 0.80
+    lab = "ext_run"
+    for _ in range(_MASTERY_CONFIRM_CYCLES - 1):
+        cb._push_stable_mastered({lab: 0.85})
+        assert lab not in cb._stable_mastered   # not yet — still warming the streak
+    cb._push_stable_mastered({lab: 0.85})
+    assert lab in cb._stable_mastered           # confirmed → mastered (one-way from here)
+
+
+def test_stable_mastery_streak_resets_on_dip(tmp_path):
+    """A below-threshold cycle resets the streak — a transient spike can't accumulate toward mastery."""
+    cb = _make_callback(tmp_path)
+    cb._fixed_opponents = [object()]
+    cb._stable_opponent_mastered_wr = 0.80
+    lab = "ext_run"
+    cb._push_stable_mastered({lab: 0.85})       # streak 1
+    cb._push_stable_mastered({lab: 0.50})       # dip → reset to 0
+    for _ in range(_MASTERY_CONFIRM_CYCLES - 1):
+        cb._push_stable_mastered({lab: 0.85})
+        assert lab not in cb._stable_mastered   # streak restarted after the dip
+    cb._push_stable_mastered({lab: 0.85})
+    assert lab in cb._stable_mastered

@@ -404,6 +404,65 @@ def load_model_snapshot(
     return InstrumentedMaskablePPO.load(zip_path, **kwargs)
 
 
+def load_foreign_opponent(
+    model_path: str,
+    current_version: ModelVersion,
+    device: str = "cpu",
+    config_path: Optional[str] = None,
+) -> "tuple[MaskablePPO, ModelVersion]":
+    """Load a frozen model from ANOTHER run as an inference-only OPPONENT ("stable opponent").
+
+    Unlike ``load_model_snapshot`` — which checks the saved config against the LIVE trainee via
+    ``check_compatible`` (a hard FATAL on any ``_WEIGHT_FIELD`` / ``use_popart`` mismatch) — a stable
+    cross-run opponent is validated for OBSERVATION-FAMILY compatibility ONLY
+    (``ModelVersion.check_opponent_compatible`` = same ``arch_signature``): it never shares weights
+    with the trainee and never reads its value head, so ``use_popart`` / ``vf_coef`` / reward-config
+    are irrelevant to its forward. Loaded with ``env=None`` (no optimizer, and SB3 skips
+    ``check_for_correct_spaces``) for inference only — the opponent builds its own obs via the live
+    ``Gen3ObservationEncoder`` and calls ``model.policy.get_distribution``.
+
+    Args:
+        model_path:      Path to the opponent's ``.zip`` (with or without extension), or a directory
+                         containing ``final_model.zip`` / ``best_model.zip``.
+        current_version: ModelVersion reflecting the CURRENT run's code (``current_model_version``);
+                         the opponent's ``arch_signature`` must equal it.
+        device:          Passed to ``InstrumentedMaskablePPO.load`` (default ``"cpu"`` — an opponent
+                         forward is cheap and decouples from the training GPU).
+        config_path:     Explicit path to the opponent's ``model_config.json``. When ``None``,
+                         it is searched next to the zip then in the parent dir (so a
+                         ``best_model/best_model.zip`` finds the run-level config). The resolver
+                         in ``agents.training.fixed_opponent_pool`` passes it explicitly.
+
+    Returns:
+        ``(model, foreign_version)`` — the loaded model and its parsed ``ModelVersion``.
+
+    Raises:
+        ModelVersionError:  if the opponent's ``arch_signature`` (observation family) differs from
+                            ``current_version`` — surfaced by the caller as a startup FATAL.
+        FileNotFoundError:  if no ``.zip`` resolves, or the sibling ``model_config.json`` is missing
+                            (provenance is REQUIRED — never silently load a foreign model blind).
+    """
+    zip_path, config_dir = _resolve_paths(model_path)
+
+    if config_path is None:
+        for d in (config_dir, os.path.dirname(config_dir)):
+            cand = os.path.join(d, "model_config.json")
+            if os.path.exists(cand):
+                config_path = cand
+                break
+    if config_path is None or not os.path.exists(config_path):
+        raise FileNotFoundError(
+            f"Stable opponent at {zip_path!r} has no model_config.json (looked next to it in "
+            f"{config_dir!r} and its parent). A stable opponent must carry its architecture "
+            "provenance so its observation-family compatibility can be verified; refusing to "
+            "load it blind."
+        )
+    foreign_version = ModelVersion.from_json_file(config_path)
+    current_version.check_opponent_compatible(foreign_version)
+
+    return InstrumentedMaskablePPO.load(zip_path, env=None, device=device), foreign_version
+
+
 def current_model_version(mappings) -> ModelVersion:
     """Build a ``ModelVersion`` reflecting the CURRENT code's architecture for ``mappings``.
 

@@ -60,9 +60,9 @@ _FAST_CRASH_SECONDS = 600.0
 
 # Substrings in the child's output that mark a deterministic, non-recoverable startup
 # failure — restarting would hit the exact same error every time. The dedicated
-# FATAL_CONFIG exit code is the primary signal; this is a defensive fallback for a FATAL
-# that escaped as a generic exit 1 (e.g. a future fatal path that doesn't set the code).
-_FATAL_CONFIG_SIGNATURES = ("[ModelVersion] FATAL",)
+# FATAL_CONFIG exit code is the primary signal; matching one of these ALSO surfaces the
+# specific reason line(s) in the Events panel (vs the generic exit-code-only fallback).
+_FATAL_CONFIG_SIGNATURES = ("[ModelVersion] FATAL", "[StableOpponent] FATAL")
 
 
 def _fatal_config_reason(rc: int, log_lines: "list | None") -> "list | None":

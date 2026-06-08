@@ -7,7 +7,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from agents.training.wrappers import MaskableAgentWrapper
+from agents.training.wrappers import MaskableAgentWrapper, STABLE_CHALLENGE_SHARE
 
 
 def _stub_env():
@@ -19,13 +19,18 @@ def _stub_env():
 
 
 def _make_wrapper(*, fraction=0.0, pool=None, pool_player=None, n_heuristics=2, rng_seed=0,
-                  heuristic_weights=None):
+                  heuristic_weights=None, stable_players=None, stable_labels=None):
     heuristics = [MagicMock(name=f"heur{i}") for i in range(n_heuristics)]
     w = MaskableAgentWrapper(
         _stub_env(), heuristic_opponents=heuristics, pool=pool, pool_player=pool_player,
         self_play_fraction=fraction, rng_seed=rng_seed, heuristic_weights=heuristic_weights,
+        stable_players=stable_players, stable_labels=stable_labels,
     )
     return w, heuristics
+
+
+def _stable(n):
+    return ([MagicMock(name=f"stable{i}") for i in range(n)], [f"ext_run{i}" for i in range(n)])
 
 
 def _stub_pool(empty=False, model="MODEL_X"):
@@ -185,3 +190,114 @@ def test_bot_weights_ignored_on_pool_branch():
     w, _ = _make_wrapper(fraction=1.0, pool=pool, pool_player=pp, heuristic_weights=[5, 1])
     w._select_episode_opponent()
     assert w.opponent is pp
+
+
+# ── stable cross-run opponents: challenge until mastered, then floor ──────────
+
+def test_unmastered_stable_is_a_challenge_peer_without_a_pool():
+    """fraction=1 (challenge), empty pool, 1 un-mastered stable → the stable opponent plays — it's
+    a challenge candidate in its own right, not gated on a seeded pool."""
+    sp, sl = _stable(1)
+    w, _ = _make_wrapper(fraction=1.0, pool=_stub_pool(empty=True), pool_player=MagicMock(),
+                         stable_players=sp, stable_labels=sl)
+    w._select_episode_opponent()
+    assert w.opponent is sp[0]
+
+
+def test_unmastered_stable_is_a_capped_minority_of_challenge():
+    """fraction=1 with a seeded pool + 1 un-mastered stable → the stable opponent plays, but only a
+    CAPPED minority (~STABLE_CHALLENGE_SHARE) of challenge episodes; the pool gets the bulk. A
+    single fixed opponent must never dominate training."""
+    pool = _stub_pool(model="M")
+    pp = MagicMock(name="pool_player")
+    sp, sl = _stable(1)
+    w, _ = _make_wrapper(fraction=1.0, pool=pool, pool_player=pp,
+                         stable_players=sp, stable_labels=sl, rng_seed=7)
+    N, n_stable = 8000, 0
+    for _ in range(N):
+        w._select_episode_opponent()
+        if w.opponent is sp[0]:
+            n_stable += 1
+    assert n_stable / N == pytest.approx(STABLE_CHALLENGE_SHARE, abs=0.03)   # ~20%, not ~50%
+
+
+def test_two_unmastered_stable_share_the_capped_slice():
+    """Multiple un-mastered stable opponents SHARE the cap — total stable share stays ≤ the cap
+    (each ~cap/2), so adding opponents never grows the stable footprint."""
+    pool = _stub_pool(model="M")
+    pp = MagicMock(name="pool_player")
+    sp, sl = _stable(2)
+    w, _ = _make_wrapper(fraction=1.0, pool=pool, pool_player=pp,
+                         stable_players=sp, stable_labels=sl, rng_seed=2)
+    N, n_stable = 8000, 0
+    for _ in range(N):
+        w._select_episode_opponent()
+        if w.opponent in sp:
+            n_stable += 1
+    assert n_stable / N == pytest.approx(STABLE_CHALLENGE_SHARE, abs=0.03)   # total still ~20%
+
+
+def test_unmastered_stable_not_in_floor():
+    """fraction=0 (floor only) → an UN-mastered stable opponent never plays (challenge-only)."""
+    sp, sl = _stable(1)
+    w, heuristics = _make_wrapper(fraction=0.0, stable_players=sp, stable_labels=sl)
+    for _ in range(100):
+        w._select_episode_opponent()
+        assert w.opponent in heuristics
+
+
+def test_mastered_stable_leaves_challenge_and_joins_floor():
+    """Once mastered: it LEAVES the challenge bucket (fraction=1 plays only the pool) and JOINS the
+    floor (fraction=0 plays it alongside the bots) — it "becomes another bot"."""
+    pool = _stub_pool(model="M")
+    pp = MagicMock(name="pool_player")
+    sp, sl = _stable(1)
+    w, heuristics = _make_wrapper(fraction=1.0, pool=pool, pool_player=pp,
+                                  stable_players=sp, stable_labels=sl, rng_seed=1)
+    w.set_stable_mastered(sl)
+
+    for _ in range(50):                       # challenge bucket: mastered stable is excluded
+        w._select_episode_opponent()
+        assert w.opponent is pp
+
+    w.set_self_play_target(0.0, generation=0)  # floor only
+    seen = set()
+    for _ in range(300):
+        w._select_episode_opponent()
+        assert w.opponent in heuristics or w.opponent is sp[0]
+        seen.add(id(w.opponent))
+    assert id(sp[0]) in seen                   # the mastered opponent now plays as a floor peer
+
+
+def test_set_stable_mastered_reflects_the_pushed_set():
+    sp, sl = _stable(2)
+    w, _ = _make_wrapper(stable_players=sp, stable_labels=sl)
+    assert w._stable_mastered == {"ext_run0": False, "ext_run1": False}
+    w.set_stable_mastered(["ext_run1"])
+    assert w._stable_mastered == {"ext_run0": False, "ext_run1": True}
+
+
+def test_stable_excluded_from_challenge_while_distilling():
+    """Under distillation the pool is 100% cheap distilled — a FULL stable opponent would gate the
+    per-step barrier, so it drops out of the challenge bucket entirely (pool only)."""
+    pool = _stub_pool(model="M")
+    pp = MagicMock(name="pool_player")
+    sp, sl = _stable(1)
+    w, _ = _make_wrapper(fraction=1.0, pool=pool, pool_player=pp,
+                         stable_players=sp, stable_labels=sl, rng_seed=4)
+    w.set_distill_active(True, steps=[])     # distill on → full pool, stable exempt
+    for _ in range(100):
+        w._select_episode_opponent()
+        assert w.opponent is pp              # never the (full) stable opponent while distilling
+
+
+def test_mastered_stable_excluded_from_floor_while_distilling():
+    """A MASTERED stable opponent is a floor peer normally, but is also a full model — so distill
+    excludes it from the floor too (it's eval-only while distilling)."""
+    sp, sl = _stable(1)
+    w, heuristics = _make_wrapper(fraction=0.0, stable_players=sp, stable_labels=sl)
+    w.set_stable_mastered(sl)
+    w.set_distill_active(True, steps=[])
+    for _ in range(100):
+        w._select_episode_opponent()
+        assert w.opponent in heuristics      # mastered stable excluded from the floor under distill
