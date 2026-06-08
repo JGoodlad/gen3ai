@@ -1,8 +1,11 @@
 # Design — Stable (cross-run, possibly-foreign-arch) opponents
 
-**Status:** design (not implemented). Forward-looking; explicit-only doc.
+**Status: BUILT & SHIPPED** (commit `6969631`). This is the forward design + rationale; the
+**authoritative as-built record is `impl_step8_stable_opponents.md`**. The body below is preserved as
+the design reasoning — read the AS-BUILT DELTAS block immediately below for where the shipped code
+intentionally differs from it.
 **Goal:** load a frozen model from a *different, already-finished* run (e.g.
-`models/ai_v5_5_popart_N_0607`) and use it as a **fixed opponent** in a future training run — on
+`models/ai_v5_5_popart_50m_0607`) and use it as a **fixed opponent** in a future training run — on
 **both** the eval-yardstick side and the training-opponent mix — without corrupting the live
 trainee's strict architecture/resume validation.
 **Relates to:** `design_league_tooling.md` (a stable opponent is a `role:"external"` league
@@ -15,6 +18,33 @@ member), `design_opponent_distillation.md` / `distill_integration.md` (the
 dominated stable opponent "becomes another bot" by ageing into the coverage floor, which generalizes
 the *whole* opponent curriculum into one floor/challenge source model (see §4). Opponents play
 **stochastic** (not greedy) while in the challenge bucket.
+
+---
+
+## AS-BUILT DELTAS (where the shipped code differs from this forward design)
+
+The shipped implementation chose the **minimal** path the user asked for ("toss it in like another
+sentinel"). Authoritative detail: `impl_step8_stable_opponents.md`. Key deltas vs the body below:
+
+1. **Eval regime is GREEDY (temp 0), not stochastic.** Only the *training* copy plays stochastic at
+   `--stable-opponent-temp` (default 1.0); the *eval* copy is greedy for a clean yardstick. (The
+   header line above + §4/§9's "stochastic everywhere" framing is superseded.)
+2. **The training mix rode the EXISTING pool-vs-heuristic split — the §4 floor/challenge source-model
+   refactor + `--coverage-floor` rename were NOT built.** Instead: an un-mastered stable opponent is a
+   **capped minority** of the existing self-play (challenge) bucket — `--stable-opponent-selfplay-share`
+   (default 0.20 = `STABLE_CHALLENGE_SHARE` in `wrappers.py`), multiple stable opponents *share* the
+   cap; a mastered one joins the existing heuristic (floor) branch. `heuristic_fraction` is unchanged.
+3. **Mastery uses a 2-cycle confirm** (`_MASTERY_CONFIRM_CYCLES`=2, one-way) — the §4 "light 2-cycle
+   confirm" hedge was implemented.
+4. **Label namespace is `ext_` (underscore), not `ext:`** — uniform TB tags (`eval/win_rate_vs_ext_<run>`).
+5. **Per-opponent `=weight` is REJECTED** (not a reserved field) — the global cap flag replaces it.
+6. **Distillation interaction built**: stable opponents drop OUT of the training mix while distilling
+   (a full foreign model would gate the all-or-nothing barrier) — §2's exemption requirement, honored.
+7. **No source-side `stable_opponent_passport` / shared `data/gen3_external_opponents.json` were built**
+   (§8/§10) — ELO is display-only, so only the consumer-side `metadata.json:latest_eval.externals`
+   block + `cli_args` carry provenance. **No `MODEL_CONFIG_VERSION` bump** (no `ModelVersion` fields
+   added). A startup **load-smoke** of each foreign zip (corrupt-zip → clean FATAL) and a self-contained
+   `best_model/` (config sidecar copied in) were added beyond the original design.
 
 ---
 
