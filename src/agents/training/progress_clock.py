@@ -32,6 +32,14 @@ PROGRESS_DMG_EPS = 0.03    # our-attributed damage floor (3% of a bar) — above
 PROGRESS_CLOCK_CAP = 10    # turns_since_progress clamp (obs scalar + penalty)
 _LOG_DENOM = math.log(1.0 + PROGRESS_CLOCK_CAP)
 
+# A productive defensive heal is DENIED (frozen, no charge) for this many CONSECUTIVE heal windows —
+# a one-off heal answering incoming pressure is free. Beyond it, sustained healing with no offensive
+# progress is a heal-war (the 250-turn mirror-stall failure mode): the freeze lifts and each further
+# heal becomes a charged NO_OP, so both the obs clock and the reward finally register the stall. A
+# WINNING residual-stall (our Toxic/Leech chipping the opp down) is caught by `_is_progress` first,
+# so it resets the streak and is never charged — only a true no-net-progress heal-war is.
+HEAL_FREEZE_GRACE = 2
+
 
 class ProgressClock:
     """Episode-scoped ``turns_since_progress`` counter. Owned by ``EpisodeTracker``; read by the obs
@@ -46,11 +54,13 @@ class ProgressClock:
         # update() stays an obs-side call that needs no reward param.
         self.no_progress_penalty: float = no_progress_penalty
         self._prev_spikes: int = 0
+        self._heal_streak: int = 0   # consecutive productive-heal windows (for HEAL_FREEZE_GRACE)
 
     def reset(self) -> None:
         self.n = 0
         self.last_penalty = 0.0
         self._prev_spikes = 0
+        self._heal_streak = 0
 
     def value(self) -> float:
         """The obs scalar: log-saturated ``turns_since_progress`` ∈ [0,1] (same form as the global
@@ -72,14 +82,30 @@ class ProgressClock:
         if self._is_progress(delta, live, prev_spikes, opp_spikes_now):
             self.n = 0
             self.last_penalty = 0.0
+            self._heal_streak = 0
             return
 
-        if self._is_denied(delta):
-            # Attempted progress denied by RNG/opponent, or a productive defensive action a Φ prices.
-            self.last_penalty = 0.0   # FREEZE — neither increment nor reset.
+        kind = self._denial_kind(delta)
+        if kind == "exogenous":
+            # A genuine attempt denied by RNG / the opponent (cant / miss / Protect-block) — not a
+            # stall. FREEZE — neither increment nor charge. (Leaves _heal_streak intact so a heal-war
+            # interrupted by one miss still accumulates.)
+            self.last_penalty = 0.0
             return
+        if kind == "heal":
+            # A productive defensive heal. Free for the first HEAL_FREEZE_GRACE consecutive windows
+            # (answering pressure, priced by Φ_mat); a SUSTAINED heal with no offensive progress is a
+            # heal-war → fall through to the NO_OP charge below (do NOT reset the streak, so it keeps
+            # charging every subsequent heal turn).
+            self._heal_streak += 1
+            if self._heal_streak <= HEAL_FREEZE_GRACE:
+                self.last_penalty = 0.0
+                return
+        else:
+            self._heal_streak = 0   # a non-heal no-op breaks any heal-war run
 
-        # NO_OP: a deliberate wheel-spin → increment + charge, unless trapped with no switch.
+        # NO_OP (deliberate wheel-spin) or a sustained heal-war → increment + charge, unless trapped
+        # with no switch (helplessness must not be punished).
         self.n = min(self.n + 1, PROGRESS_CLOCK_CAP)
         switch_legal = legal is not None and len(getattr(legal, "switches", ()) or ()) > 0
         self.last_penalty = (-abs(self.no_progress_penalty)) if switch_legal else 0.0
@@ -108,25 +134,51 @@ class ProgressClock:
         # (iv) we forced an opp commit (phaze / forced opp switch).
         if getattr(delta, "opp_switch_to", None) is not None:
             return True
+        # (v) an our-OWNED residual (Toxic/poison/burn status, or Leech Seed / Curse / Nightmare) is
+        #     chipping the opp DOWN this window — a slow-damage win condition IS progress even when
+        #     our move dealt no direct damage, so a WINNING residual-stall (e.g. Recover-while-Toxic-
+        #     ticks) is never charged. Gated on the opp NET-losing HP, so a heal-war where recovery
+        #     out-paces the chip (opp HP flat/up) is NOT credited and still charges (HEAL_FREEZE_GRACE).
+        #     Status/volatiles on the OPP are our-applied in 1v1 (we never poison/seed ourselves onto
+        #     them), so the residual is unambiguously ours; weather is excluded (not per-mon, ambiguous).
+        if live is not None and getattr(live, "opp", None) is not None:
+            opp_mon = live.opp.active
+            if opp_mon is not None:
+                status = getattr(opp_mon, "status", None)
+                vols = getattr(opp_mon, "volatiles", None) or ()
+                owned_residual = (status in ("tox", "psn", "brn")
+                                  or "leechseed" in vols or "curse" in vols or "nightmare" in vols)
+                if owned_residual:
+                    try:
+                        opp_net = float(delta.opp_hp_delta.sum())
+                    except (AttributeError, TypeError):   # mock delta without a real hp array
+                        opp_net = 0.0
+                    if opp_net <= -PROGRESS_DMG_EPS:
+                        return True
         return False
 
     @staticmethod
-    def _is_denied(delta) -> bool:
-        # Our chosen move was PREVENTED (cant: para/sleep/freeze/flinch/focuspunch) — exogenous.
+    def _denial_kind(delta) -> "Optional[str]":
+        """Classify a non-progress window:
+          * ``"exogenous"`` — a genuine attempt denied by RNG / the opponent (cant: para/sleep/freeze/
+            flinch/focuspunch; accuracy miss; Protect/Detect block). NEVER a stall → always frozen.
+          * ``"heal"`` — a productive defensive heal move that restored real HP (Φ_mat prices the first
+            few; a SUSTAINED run is a heal-war → charged past HEAL_FREEZE_GRACE).
+          * ``None`` — a deliberate, obs-knowable wheel-spin → NO_OP (increment + charge)."""
+        # Our chosen move was PREVENTED (cant) — exogenous.
         if getattr(delta, "our_failed_to_move", False):
-            return True
+            return "exogenous"
         outcome = getattr(delta, "our_move_outcome", None)
         # Accuracy MISS — the agent made a good attempt; RNG denied it.
         if outcome == "miss":
-            return True
+            return "exogenous"
         # BLOCKED by the opponent's Protect/Detect/Endure (their choice denied our attempt). An
         # immune attack (|-immune|, our_effectiveness==0) is NOT denied — it's a deterministic NO_OP.
         if outcome == "fail":
             opp_mv = getattr(delta, "opp_resolved_move_id", None)
             if opp_mv in _INVULNERABLE_MOVES:
-                return True
-        # Productive DEFENSIVE action: a heal move that restored real HP (Φ_mat already prices it),
-        # so the clock stays out — neither stall nor offense (design §4.1.2).
+                return "exogenous"
+        # Productive DEFENSIVE heal: a heal move that restored real HP (design §4.1.2).
         mid = getattr(delta, "our_move_id", None)
         if mid is not None:
             try:
@@ -136,5 +188,5 @@ class ProgressClock:
             if healed:
                 md = _movedex.get(mid)
                 if md is not None and getattr(md, "is_heal", False):
-                    return True
-        return False
+                    return "heal"
+        return None

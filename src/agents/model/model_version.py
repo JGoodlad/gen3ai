@@ -33,7 +33,12 @@ from typing import Any, Dict, List
 #   hparams, PopArt changes the value head's STRUCTURE (normalized output + mu/sigma buffers), so it
 #   is enforced in check_compatible() (gates EVERY load), not the resume-only path. Old configs
 #   default False (no PopArt).
-MODEL_CONFIG_VERSION = 6
+#
+# v7: added `draw_penalty` (--draw-penalty, the terminal reward for a DRAW / 250-turn timeout). Same
+#   resume-immutable VALUE-meaning treatment as the v4-v5 reward hparams (folded into
+#   check_reward_config, excluded from check_compatible). Old configs migrate to -30.0 (== a decisive
+#   loss = the prior behavior, where a tie scored -VICTORY_VALUE).
+MODEL_CONFIG_VERSION = 7
 
 # Change this when the neural architecture changes structurally in a way that makes
 # weights from a different signature incompatible (e.g. adding LSTM, replacing attention).
@@ -286,6 +291,9 @@ class ModelVersion:
     mat_alive_weight: float = 1.25
     bias_redesign: bool = False
     switch_bias_weight: float = 0.0   # v5: belief-risk-scaled stay-into-KO BIAS lever (default OFF)
+    # v7: terminal reward for a DRAW / 250-turn timeout. -30.0 = the prior behavior (tie == decisive
+    # loss). Resume-immutable VALUE-meaning (check_reward_config), excluded from the weight-shape check.
+    draw_penalty: float = -30.0
 
     # v6 feature toggle (value-checked, not weight-shape): PopArt value-target normalization. The
     # value head's parameterization + buffers differ when on, so it cannot be toggled on a resume.
@@ -336,6 +344,7 @@ class ModelVersion:
             mat_alive_weight=float(getattr(reward_config, "mat_alive_weight", 1.25)),
             bias_redesign=bool(getattr(reward_config, "bias_redesign", False)),
             switch_bias_weight=float(getattr(reward_config, "switch_bias_weight", 0.0)),
+            draw_penalty=float(getattr(reward_config, "draw_penalty", -30.0)),
             use_popart=bool(policy_kwargs.get("use_popart", False)),
         )
 
@@ -434,6 +443,7 @@ class ModelVersion:
         req_maw = float(getattr(reward_config, "mat_alive_weight", 1.25))
         req_br = bool(getattr(reward_config, "bias_redesign", False))
         req_sbw = float(getattr(reward_config, "switch_bias_weight", 0.0))
+        req_dp = float(getattr(reward_config, "draw_penalty", -30.0))
         problems = []
         if not math.isclose(self.bias_additivity, req_ba, rel_tol=1e-9, abs_tol=1e-12):
             problems.append(f"  bias_additivity: saved={self.bias_additivity!r}, requested={req_ba!r}")
@@ -443,6 +453,8 @@ class ModelVersion:
             problems.append(f"  bias_redesign: saved={self.bias_redesign!r}, requested={req_br!r}")
         if not math.isclose(self.switch_bias_weight, req_sbw, rel_tol=1e-9, abs_tol=1e-12):
             problems.append(f"  switch_bias_weight: saved={self.switch_bias_weight!r}, requested={req_sbw!r}")
+        if not math.isclose(self.draw_penalty, req_dp, rel_tol=1e-9, abs_tol=1e-12):
+            problems.append(f"  draw_penalty: saved={self.draw_penalty!r}, requested={req_dp!r}")
         if problems:
             raise ModelVersionError(
                 "Reward-config mismatch on resume — these hparams are fixed for a run's lifetime "
@@ -476,4 +488,8 @@ def _migrate_config(data: dict) -> dict:
         # v6: added use_popart. Old models did not use PopArt value normalization.
         data.setdefault("use_popart", False)
         data["config_version"] = 6
+    if version < 7:
+        # v7: added draw_penalty. Old runs scored a tie/timeout as a decisive loss (-VICTORY_VALUE).
+        data.setdefault("draw_penalty", -30.0)
+        data["config_version"] = 7
     return data

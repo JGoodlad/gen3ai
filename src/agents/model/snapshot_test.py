@@ -208,6 +208,26 @@ def test_check_compatible_ignores_switch_bias_weight(version):
     version.check_compatible(differing)  # must not raise
 
 
+def test_check_reward_config_draw_penalty_mismatch_raises(version):
+    """draw_penalty is resume-immutable (it changes the terminal reward) — a drift must FATAL."""
+    saved = dataclasses.replace(version, draw_penalty=-35.0)
+    with pytest.raises(ModelVersionError) as exc_info:
+        saved.check_reward_config(_reward_cfg(draw_penalty=-30.0))
+    assert "draw_penalty" in str(exc_info.value)
+
+
+def test_check_reward_config_draw_penalty_default_matches(version):
+    """A fresh default run (draw_penalty -30) matches a default saved config (no raise)."""
+    dataclasses.replace(version, draw_penalty=-30.0).check_reward_config(_reward_cfg())
+
+
+def test_check_compatible_ignores_draw_penalty(version):
+    """draw_penalty is value-meaning, NOT weight-shape — frozen eval / pool / distill loads
+    (which go through check_compatible) must accept any value."""
+    differing = dataclasses.replace(version, draw_penalty=version.draw_penalty - 5.0)
+    version.check_compatible(differing)  # must not raise
+
+
 # ---------------------------------------------------------------------------
 # save_model_snapshot
 # ---------------------------------------------------------------------------
@@ -616,6 +636,18 @@ def test_migrate_v2_adds_vf_coef_default():
     assert result["config_version"] == MODEL_CONFIG_VERSION
     assert result["vf_coef"] == pytest.approx(0.5)
     # The migrated dict must construct a valid ModelVersion (no unexpected keys).
+    ModelVersion(**result)
+
+
+def test_migrate_v6_adds_draw_penalty_default(version):
+    """Pre-v7 configs lack draw_penalty — migration injects -30.0 (== the prior tie==loss behavior)
+    and bumps to the current version. The migrated dict must construct a valid ModelVersion."""
+    data = json.loads(version.to_json())
+    data.pop("draw_penalty", None)
+    data["config_version"] = 6
+    result = _migrate_config(data)
+    assert result["config_version"] == MODEL_CONFIG_VERSION
+    assert result["draw_penalty"] == pytest.approx(-30.0)
     ModelVersion(**result)
 
 

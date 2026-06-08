@@ -12,8 +12,11 @@ from agents.training.reward_manager import (
     Gen3RewardManager, RewardConfig, RewardClass, RewardBreakdown,
     MAT_HP_WEIGHT, MAT_ALIVE_WEIGHT, STATUS_TEMPO_WEIGHT, PBRS_GAMMA, VICTORY_VALUE,
     SWITCH_RISK_THRESHOLD, SAFE_PIVOT_PKO_MAX, STAY_RISK_TAX_FLOOR, ESCAPE_RISK_FRACTION,
+    _TIMEOUT_TURN_CAP,
 )
-from agents.training.progress_clock import ProgressClock, PROGRESS_CLOCK_CAP, PROGRESS_DMG_EPS
+from agents.training.progress_clock import (
+    ProgressClock, PROGRESS_CLOCK_CAP, PROGRESS_DMG_EPS, HEAL_FREEZE_GRACE,
+)
 
 
 # --------------------------------------------------------------------------- #
@@ -27,6 +30,7 @@ class _Mon:
         self.species = species
         self.active = active
         self.status = None
+        self.volatiles = {}
         self.types = ()
         self.move_ids = ()
         self.boosts = {}
@@ -58,6 +62,8 @@ class _Battle:
     def __init__(self, live, turn=1):
         self._live = live
         self.turn = turn
+        live.turn = turn   # mirror the real LiveView (its .turn comes from battle.turn) — the
+                           # terminal block reads live.turn to detect the stall TIMEOUT (turn>=cap).
         self.won = live.won
         self.lost = live.lost
         self.finished = live.finished
@@ -448,6 +454,113 @@ class TestProgressClock(unittest.TestCase):
                  _full_team_live(), _Legal(switches=[]))   # no legal switch
         self.assertEqual(c.n, 2)
         self.assertEqual(c.last_penalty, 0.0)   # not charged
+
+    # --- heal-war fix (HEAL_FREEZE_GRACE): a sustained no-progress heal-war must eventually charge ---
+    def test_sustained_heal_war_charges_after_grace(self):
+        """A one-off defensive heal is free, but a SUSTAINED heal with no progress (the mirror
+        stall-war) charges once past HEAL_FREEZE_GRACE — both the obs clock and the penalty engage."""
+        c = self._clock()
+        our_hp = np.zeros(6, dtype=np.float32); our_hp[0] = 0.5   # Recover restored 50% each turn
+        live = _full_team_live()                                  # opp full HP, no residual
+        for _ in range(HEAL_FREEZE_GRACE):                        # first GRACE heals: frozen
+            c.update(_delta(our_move_id="recover", our_hp_delta=our_hp), live, _Legal(switches=[1]))
+            self.assertEqual(c.last_penalty, 0.0)
+        self.assertEqual(c.n, 0)                                  # clock idle while frozen
+        c.update(_delta(our_move_id="recover", our_hp_delta=our_hp), live, _Legal(switches=[1]))
+        self.assertEqual(c.n, 1)                                  # GRACE+1-th heal: clock + charge engage
+        self.assertAlmostEqual(c.last_penalty, -0.15, places=6)
+
+    def test_sustained_heal_war_not_charged_when_trapped(self):
+        """Even past the grace, a heal-war with NO legal switch is not charged (helplessness)."""
+        c = self._clock()
+        our_hp = np.zeros(6, dtype=np.float32); our_hp[0] = 0.5
+        for _ in range(HEAL_FREEZE_GRACE + 2):
+            c.update(_delta(our_move_id="recover", our_hp_delta=our_hp),
+                     _full_team_live(), _Legal(switches=[]))      # trapped
+        self.assertEqual(c.last_penalty, 0.0)
+
+    def test_winning_residual_stall_stays_progress(self):
+        """A Recover while OUR Toxic ticks the opp DOWN is PROGRESS (a slow-damage win) — never
+        charged even when sustained, unlike a no-net-progress heal-war (part-1 guard)."""
+        c = self._clock(); c.n = 4
+        live = _full_team_live()
+        live.opp.active.status = "tox"                            # our-owned residual on the opp
+        opp_hp = np.zeros(6, dtype=np.float32); opp_hp[0] = -0.0625   # opp ticked DOWN this window
+        our_hp = np.zeros(6, dtype=np.float32); our_hp[0] = 0.5       # we Recovered
+        for _ in range(5):                                        # sustained — a plain heal-war would charge
+            c.update(_delta(our_move_id="recover", our_hp_delta=our_hp, opp_hp_delta=opp_hp),
+                     live, _Legal(switches=[1]))
+            self.assertEqual(c.last_penalty, 0.0)                 # PROGRESS, never charged
+            self.assertEqual(c.n, 0)                              # reset every window
+
+    def test_residual_present_but_opp_outheals_still_charges(self):
+        """Toxic on the opp but the opp out-heals the tick (opp HP NOT net-down) is a true stall, not
+        a win → still charges past the grace. The discriminator is the opp NET-losing HP."""
+        c = self._clock()
+        live = _full_team_live(); live.opp.active.status = "tox"
+        our_hp = np.zeros(6, dtype=np.float32); our_hp[0] = 0.5
+        for _ in range(HEAL_FREEZE_GRACE + 1):                    # opp_hp_delta defaults to 0 (out-healed)
+            c.update(_delta(our_move_id="recover", our_hp_delta=our_hp), live, _Legal(switches=[1]))
+        self.assertAlmostEqual(c.last_penalty, -0.15, places=6)
+
+    def test_heal_streak_resets_on_progress(self):
+        """A real-progress window between heals resets the streak, so the next heal is free again."""
+        c = self._clock()
+        our_hp = np.zeros(6, dtype=np.float32); our_hp[0] = 0.5
+        live = _full_team_live()
+        for _ in range(HEAL_FREEZE_GRACE + 1):                    # push past grace → charging
+            c.update(_delta(our_move_id="recover", our_hp_delta=our_hp), live, _Legal(switches=[1]))
+        self.assertLess(c.last_penalty, 0.0)
+        c.update(_delta(our_damaging_event=object(), opp_target_hp_delta=-0.3),
+                 live, _Legal(switches=[1]))                      # progress → resets streak
+        self.assertEqual(c.n, 0)
+        c.update(_delta(our_move_id="recover", our_hp_delta=our_hp), live, _Legal(switches=[1]))
+        self.assertEqual(c.last_penalty, 0.0)                     # next heal free again
+
+    def test_exogenous_denial_never_charges_even_sustained(self):
+        """Misses/cant are exogenous (RNG/opponent) — always frozen, no streak cap (only heals charge)."""
+        c = self._clock()
+        for _ in range(HEAL_FREEZE_GRACE + 3):
+            c.update(_delta(our_move_id="fireblast", our_move_outcome="miss"),
+                     _full_team_live(), _Legal(switches=[1]))
+            self.assertEqual(c.last_penalty, 0.0)
+
+
+# --------------------------------------------------------------------------- #
+class TestDrawPenalty(unittest.TestCase):
+    """The DRAW / 250-turn-timeout terminal (draw_penalty). The trainee FORFEITS at the turn cap, so
+    the timeout is detected by turn>=cap (not won/lost) and can be scored worse than a clean loss."""
+
+    def _mgr(self, draw_penalty=-30.0):
+        return Gen3RewardManager(config=RewardConfig(draw_penalty=draw_penalty))
+
+    def _seed(self, m):
+        m.process_turn_reward(_Battle(_full_team_live(), turn=1), _delta())   # set _prev_phi_mat
+
+    def test_timeout_uses_draw_penalty(self):
+        m = self._mgr(draw_penalty=-35.0); self._seed(m)
+        live = _full_team_live(lost=True, finished=True)          # forfeit at the cap
+        m.process_turn_reward(_Battle(live, turn=_TIMEOUT_TURN_CAP), _delta())
+        self.assertAlmostEqual(m._last_breakdown.win_loss, -35.0, places=6)
+
+    def test_decisive_loss_before_cap_unaffected(self):
+        m = self._mgr(draw_penalty=-35.0); self._seed(m)
+        live = _full_team_live(our_alive=0, opp_alive=3, lost=True, finished=True)
+        m.process_turn_reward(_Battle(live, turn=40), _delta(we_fainted=True))   # lost well before cap
+        self.assertAlmostEqual(m._last_breakdown.win_loss, -VICTORY_VALUE, places=6)
+
+    def test_win_unaffected(self):
+        m = self._mgr(draw_penalty=-35.0); self._seed(m)
+        live = _full_team_live(our_alive=3, opp_alive=0, won=True, finished=True)
+        m.process_turn_reward(_Battle(live, turn=_TIMEOUT_TURN_CAP), _delta(opp_fainted=True))
+        self.assertAlmostEqual(m._last_breakdown.win_loss, VICTORY_VALUE, places=6)
+
+    def test_default_draw_penalty_equals_loss_value(self):
+        """Default -30 == prior behavior: a timeout scores identically to a decisive loss (byte-unchanged)."""
+        m = self._mgr(); self._seed(m)                            # default -30
+        live = _full_team_live(lost=True, finished=True)
+        m.process_turn_reward(_Battle(live, turn=_TIMEOUT_TURN_CAP), _delta())
+        self.assertAlmostEqual(m._last_breakdown.win_loss, -VICTORY_VALUE, places=6)
 
 
 # --------------------------------------------------------------------------- #

@@ -498,6 +498,12 @@ async def main():
                         "(default; behavior unchanged). >0 taxes staying in a high-P(KO) spot when a "
                         "safe pivot exists (−w·risk) + rewards escaping it. BIAS-class, so it also "
                         "rides --bias-additivity (λ=1 additive vs λ=0 telescoping A/B). Resume-immutable.")
+    parser.add_argument("--draw-penalty", "--draw_penalty", dest="draw_penalty", type=float,
+                        default=-30.0, help="Terminal reward for a DRAW / 250-turn timeout (no "
+                        "winner). Default -30.0 = same as a decisive loss (behavior unchanged). Set "
+                        "more negative (e.g. -35) to make stalling to the turn cap strictly worse "
+                        "than losing cleanly — discourages no-progress stall-wars. A decisive loss "
+                        "stays -30. Resume-immutable (recorded + value-checked in model_config.json).")
     parser.add_argument("--clip-range", type=float, default=CLIP_RANGE_DEFAULT, help="PPO policy clip range (default 0.15)")
     parser.add_argument("--clip-range-vf", type=optional_float, default=0.5, help="Value function clip range; pass 'none' to disable clipping (thesis used 0.0184)")
     parser.add_argument("--use-popart", "--use_popart", dest="use_popart", action=BoolFlag, default=False,
@@ -806,6 +812,7 @@ async def main():
         gamma=0.9999,   # == InstrumentedMaskablePPO(gamma=0.9999); asserted == model.gamma below
         bias_redesign=args.bias_redesign,
         switch_bias_weight=args.switch_bias_weight,
+        draw_penalty=args.draw_penalty,
     )
     reward_factory = functools.partial(Gen3RewardManager, config=reward_config)
 

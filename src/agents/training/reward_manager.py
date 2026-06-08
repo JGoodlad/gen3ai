@@ -8,6 +8,7 @@ from agents.enums import Status
 from agents.action.constants import SWITCH_END as _SWITCH_END
 from agents.training.battle_snapshot import BattleContext
 from agents.training.turn_delta import TurnDelta
+from agents.training.stall import StallConfig as _StallConfig
 from agents.gen3_data import moves as _movedex
 from agents.gen3_mechanics import (
     INVULNERABLE_MOVES as _INVULNERABLE_MOVES,
@@ -74,6 +75,12 @@ class RewardConfig:
     # turns_since_progress OBS scalar is present either way (the clock always tracks it); only the
     # PENALTY + the reframes are gated, so both arms share one architecture (and can A/B by resume).
     bias_redesign: bool = False
+    # Terminal reward for a DRAW / 250-turn timeout (no winner). -30.0 = the prior behavior (a tie was
+    # scored identically to a decisive loss). Set MORE negative (e.g. -35) to make stalling to the turn
+    # cap strictly worse than losing cleanly — removes the discount-driven micro-incentive to delay an
+    # inevitable loss and discourages no-progress stall-wars. A decisive loss stays -VICTORY_VALUE.
+    # Per-run constant, resume-immutable (recorded in model_config.json, value-checked).
+    draw_penalty: float = -30.0
 
 
 @dataclass
@@ -234,6 +241,11 @@ class RewardBreakdown:
 HP_VALUE = 2.0
 VICTORY_VALUE = 30.0
 FINISHING_BLOW_BONUS = 0.5   # extra bonus for KO'ing with a damaging move
+
+# The turn at which gen3_env forfeits a stalled battle (ForfeitBattleOrder). A terminal at/after this
+# turn is a no-progress TIMEOUT (the trainee hit the cap), scored with RewardConfig.draw_penalty —
+# kept in sync with the env's stall cap so the reward's timeout test matches where the env forfeits.
+_TIMEOUT_TURN_CAP = _StallConfig().threshold
 
 # --- Material PBRS Φ_mat (design §2). Φ_mat = MAT_HP_WEIGHT·(Σ our_hp − Σ opp_hp)
 #     + MAT_ALIVE_WEIGHT·(n_alive_ours − n_alive_opp), over the DECLARED team size (unrevealed opp
@@ -1257,8 +1269,14 @@ class Gen3RewardManager:
         won, lost, finished = self._terminal(live)
         if won:
             bd.win_loss = VICTORY_VALUE
-        elif lost or finished:
-            bd.win_loss = -VICTORY_VALUE
+        elif finished:
+            # Non-win terminal. A no-progress STALL ends with the trainee FORFEITING at the turn cap
+            # (gen3_env issues ForfeitBattleOrder at turn>=cap → lost=True, turn>=cap) — NOT a tie — so
+            # the timeout is detected by the turn count, not by won/lost. A timeout takes draw_penalty
+            # (set < -VICTORY_VALUE to make a stall strictly worse than a clean loss); a DECISIVE loss
+            # (or rare pre-cap tie) before the cap stays -VICTORY_VALUE.
+            timed_out = live.turn >= _TIMEOUT_TURN_CAP
+            bd.win_loss = self.config.draw_penalty if timed_out else -VICTORY_VALUE
         is_terminal = won or lost or finished
 
         # --- Material PBRS Φ_mat (design §2): replaces the unconditional hp/faint base spine ---
