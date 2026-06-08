@@ -15,7 +15,15 @@ from typing import Any, Dict, List
 #   frozen eval / self-play-pool / distill opponents too, where vf_coef is irrelevant);
 #   it is enforced only on the training-resume path via check_vf_coef(). Old configs
 #   migrate to the SB3 default 0.5 (= the value every pre-flag run was trained with).
-MODEL_CONFIG_VERSION = 3
+#
+# v4: added the reward-config hparams — `bias_additivity` (--bias-additivity, the per-run
+#   BIAS additive↔telescoping knob), `mat_alive_weight` (--mat-alive-weight, the material-PBRS
+#   per-mon-alive weight), and `bias_redesign` (--bias-redesign, the staged no-progress-clock +
+#   reframe enable). Like vf_coef, these are resume-immutable VALUE-meaning hparams (changing them
+#   mid-run silently shifts the reward) but NOT weight-shape — enforced only on the training-resume
+#   path via check_reward_config(), excluded from check_compatible(). Old configs migrate to the
+#   defaults (the single-variable run: 1.0 / 1.25 / False).
+MODEL_CONFIG_VERSION = 4
 
 # Change this when the neural architecture changes structurally in a way that makes
 # weights from a different signature incompatible (e.g. adding LSTM, replacing attention).
@@ -207,7 +215,17 @@ MODEL_CONFIG_VERSION = 3
 #   (the per-defender max over p_in_set·P(KO) is the real type-effectiveness gate). The HP tracker is
 #   now threaded into the incoming-damage encoder. Not weight-compatible with v1 (the belief values a
 #   reload would read are different → old critic readings of the block are invalid).
-ARCH_SIGNATURE = "gen3_incoming_damage_v2"
+# gen3_markovian_progress_v1: adds the turns_since_progress reactive scalar (vec[14]) — the
+#   log-saturated no-progress clock (design_markovian_reward_and_features.md §5.1), an
+#   EpisodeTracker-owned cross-turn counter threaded into encode() like the HP tracker.
+#   REACTIVE_SCALAR_DIM 14 → 15 → REACTIVE_DIM 371 → 372, obs dim 3390 → 3391. The scalar is
+#   present in every run (the clock always tracks it for the obs); the no-progress PENALTY +
+#   the obs-keyed reward reframes are gated on the reward's bias_redesign flag, so the
+#   single-variable material-clutch-fix run and the bias-redesign run share one architecture.
+#   The reward redesign also folds the material spine into a PBRS Φ_mat and renames the belief
+#   PBRS field (pbrs_material → pbrs_belief); those are reward-VALUE changes (retrain-class) that
+#   need no further arch bump. Not weight-compatible with gen3_incoming_damage_v2 (obs dim +1).
+ARCH_SIGNATURE = "gen3_markovian_progress_v1"
 
 
 class ModelVersionError(Exception):
@@ -252,12 +270,19 @@ class ModelVersion:
     # test) need not supply it.
     vf_coef: float = 0.5
 
+    # Reward-config hparams (v4) — resume-immutable VALUE-meaning, NOT weight-shape. Default = the
+    # single-variable run (material clutch-fix only; BIAS additive). Enforced via check_reward_config.
+    bias_additivity: float = 1.0
+    mat_alive_weight: float = 1.25
+    bias_redesign: bool = False
+
     @classmethod
     def from_layout_and_policy_kwargs(
         cls,
         layout: Dict[str, Any],
         policy_kwargs: Dict[str, Any],
         vf_coef: float = 0.5,
+        reward_config=None,
     ) -> ModelVersion:
         from agents.model.features_extractor import (
             ROLE_TOKEN_SIZE,
@@ -291,6 +316,9 @@ class ModelVersion:
             n_history_turns=N_HISTORY_TURNS,
             net_arch=list(policy_kwargs.get("net_arch", NET_ARCH)),
             vf_coef=vf_coef,
+            bias_additivity=float(getattr(reward_config, "bias_additivity", 1.0)),
+            mat_alive_weight=float(getattr(reward_config, "mat_alive_weight", 1.25)),
+            bias_redesign=bool(getattr(reward_config, "bias_redesign", False)),
         )
 
     def to_json(self) -> str:
@@ -366,6 +394,29 @@ class ModelVersion:
                 f"{requested!r}."
             )
 
+    def check_reward_config(self, reward_config) -> None:
+        """Raise ModelVersionError if the resume `reward_config` differs from this saved config's
+        reward hparams (bias_additivity / mat_alive_weight / bias_redesign). Like check_vf_coef:
+        these are VALUE-meaning (changing them mid-run silently shifts the reward), NOT weight-shape,
+        so they are enforced ONLY on the training-resume path and excluded from check_compatible().
+        Call as: saved_version.check_reward_config(args_reward_config)."""
+        req_ba = float(getattr(reward_config, "bias_additivity", 1.0))
+        req_maw = float(getattr(reward_config, "mat_alive_weight", 1.25))
+        req_br = bool(getattr(reward_config, "bias_redesign", False))
+        problems = []
+        if not math.isclose(self.bias_additivity, req_ba, rel_tol=1e-9, abs_tol=1e-12):
+            problems.append(f"  bias_additivity: saved={self.bias_additivity!r}, requested={req_ba!r}")
+        if not math.isclose(self.mat_alive_weight, req_maw, rel_tol=1e-9, abs_tol=1e-12):
+            problems.append(f"  mat_alive_weight: saved={self.mat_alive_weight!r}, requested={req_maw!r}")
+        if self.bias_redesign != req_br:
+            problems.append(f"  bias_redesign: saved={self.bias_redesign!r}, requested={req_br!r}")
+        if problems:
+            raise ModelVersionError(
+                "Reward-config mismatch on resume — these hparams are fixed for a run's lifetime "
+                "(changing them silently shifts the reward / objective):\n" + "\n".join(problems) +
+                "\n\nFix: resume with the saved values, or start a fresh run."
+            )
+
 
 def _migrate_config(data: dict) -> dict:
     """Apply incremental forward-migrations to bring an old config up to the current schema."""
@@ -378,4 +429,10 @@ def _migrate_config(data: dict) -> dict:
         # v3: added vf_coef. Every pre-flag run trained with the SB3 default 0.5.
         data.setdefault("vf_coef", 0.5)
         data["config_version"] = 3
+    if version < 4:
+        # v4: added reward-config hparams. Pre-flag runs used the single-variable defaults.
+        data.setdefault("bias_additivity", 1.0)
+        data.setdefault("mat_alive_weight", 1.25)
+        data.setdefault("bias_redesign", False)
+        data["config_version"] = 4
     return data

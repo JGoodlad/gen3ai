@@ -7,6 +7,60 @@ LiveView/TurnView/LegalActions read-models it consumes are documented in
 `src/agents/battle/CLAUDE.md`. The obs-build performance gate is in
 `src/agents/observation/CLAUDE.md`.
 
+## Reward redesign — registry + PBRS + the no-progress clock (`reward_manager.py`, `progress_clock.py`)
+
+The reward (`Gen3RewardManager`) is organised as a **registry of class-tagged terms**
+(design `designs/ai_v5/design_markovian_reward_and_features.md`). Every `RewardBreakdown` field is one
+entry in `RewardBreakdown._REGISTRY` mapping name → `RewardClass`. The **BIAS class is folded
+generically** off the registry (`_fold_bias_refund` sums `registry_fields(BIAS)`); TERMINAL and the
+two PBRS terms are **explicit named folds** (`_fold_material_pbrs` / `_fold_belief_pbrs`) because each
+PBRS term carries its own `_prev_phi_*` telescoping state a generic loop can't hold — `process_turn_reward`
+reads as a short phase sequence over these helpers:
+
+- **TERMINAL** (`win_loss`, the ±30) — emitted as-is; never shaped/flag-affected. Out of scope.
+- **PBRS** (always telescoping, objective-neutral; `Φ(terminal)=0`): `pbrs_material` (the material
+  potential **Φ_mat**, design §2) and `pbrs_belief` (the shipped incoming-KO belief PBRS — RENAMED from
+  the mis-named `pbrs_material`). The field holds `γ·Φ(s′)−Φ(s)`; `PBRS_GAMMA` MUST == the PPO gamma
+  (asserted in `train_rl_agent.py` after the model is built — the manager is built first, in the env
+  factory, so it can't assert in `__init__`).
+- **BIAS** (everything else) — additive shaping whose additive↔telescoping mix is set by
+  `--bias-additivity` λ∈[0,1] (`RewardConfig.bias_additivity`, default 1.0). Implemented as
+  **accumulate-and-refund**: each BIAS term emits its current per-turn value; the manager accumulates
+  `_bias_acc` and emits `bias_refund = −(1−λ)·Δacc` (the low-variance accumulator-potential spread). At
+  **λ=1 the refund is identically 0** → byte-identical to the old additive biases (the no-op the
+  registry-coverage / no-op-equivalence tests pin).
+
+**Φ_mat** (`_compute_phi_mat`) = `MAT_HP_WEIGHT·(Σ our_hp − Σ opp_hp) + MAT_ALIVE_WEIGHT·(n_alive_ours
+− n_alive_opp)`, over the **declared team size** (unrevealed opp mons = full-HP-alive → `Φ_mat(s_0)≈0`,
+no opp-reveal jumps, no start-state variance). It REPLACES the old unconditional `hp_ours/hp_opp/
+faint_ours/faint_opp` base spine — material no longer banks the lead, so every win returns +30 / loss
+−30 (the clutch-vs-dominant fix). The old asymmetric `−0.75 FAINT_MATERIAL_PENALTY` is REMOVED (folded
+into `MAT_ALIVE_WEIGHT=1.25`, a state potential, not a bias). The `+2.0` explosion literal is deleted
+(survive-Explosion credit rides Φ_mat); `explosion_block` is kept.
+
+**The no-progress clock** (`ProgressClock`, `progress_clock.py`) is an episode-scoped
+`turns_since_progress` counter **owned by `EpisodeTracker`** (NOT LiveView — it is cross-turn state;
+precedent = `HiddenPowerTracker`). It is updated at `record()`/`embed_battle` time (so the obs is fresh
+— poke-env runs `embed_battle` before `calc_reward`), and read by BOTH the obs encoder (`value()` →
+the `vec[14]` scalar) and the reward (`last_penalty` → `no_progress_tax`), so **obs and reward key on
+one value**. The ternary predicate per decision window: PROGRESS (our-attributed damage ≥3% / status
+landed / hazard layer / forced opp commit → reset), DENIED (miss / Protect-block / cant / productive
+heal → freeze), NO_OP (deliberate wheel-spin → increment + charge, gated off on forced-switch windows
+and when no switch is legal). The env (`gen3_env.py`) folds the delta once at embed time, updates the
+clock, caches it for `calc_reward` (no double fold), and wires `reward_manager.progress_clock =
+tracker.progress_clock`.
+
+**Staged rollout (`RewardConfig.bias_redesign`, `--bias-redesign`, default OFF).** OFF = the
+**single-variable default run**: today's anti-spam taxes + roar/status/spikes, so the ONLY reward
+change vs the live baseline is the material clutch-fix (clean attribution). ON = the no-progress clock
+SUBSUMES the escalating anti-spam family (repetition/bouncing/dead-matchup/struggle suppressed) and the
+clock charge is active. The `turns_since_progress` OBS scalar is present EITHER way (the clock always
+tracks it), so both arms share one architecture and can A/B by resume. `--bias-additivity` /
+`--mat-alive-weight` / `--bias-redesign` are resume-immutable, value-checked by
+`ModelVersion.check_reward_config` (the same machinery as `--vf-coef`). Tests: `reward_redesign_test.py`
+(registry coverage, Φ_mat telescoping + terminal-zeroing, bias no-op + parameterized blend, the full
+ProgressClock predicate), plus the updated `reward_manager_test.py`.
+
 ## Bot evaluation (subprocess, non-blocking)
 
 **Flat schedule, full roster.** Eval fires every `EVAL_FREQ_STEPS` (2M steps) and plays

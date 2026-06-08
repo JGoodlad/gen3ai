@@ -50,6 +50,15 @@ class Gen3Env(SinglesEnv):
 
         self.reward_manager: RewardFunction = reward_fn or Gen3RewardManager(log_level=self.log_level)
         self._tracker = EpisodeTracker(history_cap=N_HISTORY_TURNS)
+        # Share ONE ProgressClock between obs and reward (design §5.1): the tracker owns it (updated
+        # at embed time so the obs is fresh); the reward READS its stashed last_penalty. Set the
+        # clock's per-run penalty magnitude once from the reward config (single source of truth).
+        if hasattr(self.reward_manager, "progress_clock"):
+            self.reward_manager.progress_clock = self._tracker.progress_clock
+            cfg = getattr(self.reward_manager, "config", None)
+            if cfg is not None:
+                self._tracker.progress_clock.no_progress_penalty = cfg.no_progress_penalty
+        self._pending_delta = None   # delta folded once at embed time, reused by calc_reward
         self._turn_delta_encoder = TurnDeltaEncoder(
             mappings.get("moves", {}),
             mappings.get("species", {}),
@@ -60,6 +69,10 @@ class Gen3Env(SinglesEnv):
         # HP (if any) before we encode the obs. The observation at turn N then
         # carries the narrowing from turns 1..N-1.
         legal = None
+        if battle is self.battle1:
+            # Clear any prior cached delta so a non-recording embed (terminal / no legal action)
+            # forces calc_reward to re-fold rather than reuse a stale window.
+            self._pending_delta = None
         if battle is self.battle1 and not battle.strict_view().finished:
             # Capture the server-authoritative legality snapshot ONCE this decision and
             # thread it to the mask, the recorded context, AND the obs encoder (its
@@ -69,10 +82,14 @@ class Gen3Env(SinglesEnv):
             mask = Gen3ActionMasker.get_mask(battle, legal=legal).astype(np.int8)
             if mask.sum() > 0:
                 self._tracker.record(battle, mask, legal=legal)
+                # Advance the shared ProgressClock for the JUST-COMPLETED window BEFORE encode reads
+                # it (design §5.1). Cache the returned delta so calc_reward reuses it (no double fold).
+                self._pending_delta = self._tracker.update_progress_clock(battle, legal)
 
         if battle is self.battle1:
             obs = self.observation_encoder.encode(
-                battle, hp_tracker=self._tracker.hidden_power_tracker, legal=legal
+                battle, hp_tracker=self._tracker.hidden_power_tracker, legal=legal,
+                progress_clock=self._tracker.progress_clock,
             )
             prev_mask = self._tracker.prev_mask
             history_vecs = self._tracker.prev_N_delta_vecs(N_HISTORY_TURNS, self._turn_delta_encoder, battle=battle)
@@ -115,7 +132,11 @@ class Gen3Env(SinglesEnv):
 
     def calc_reward(self, battle):
         if battle is self.battle1:
-            return self.reward_manager.process_turn_reward(battle, self._tracker.build_delta(battle=battle))
+            # Reuse the delta embed_battle already folded for the ProgressClock (same window); fall
+            # back to a fresh fold if embed didn't run (e.g. terminal with no decision recorded).
+            delta = self._pending_delta if self._pending_delta is not None else self._tracker.build_delta(battle=battle)
+            self._pending_delta = None
+            return self.reward_manager.process_turn_reward(battle, delta)
         return self.reward_computing_helper(
             battle, fainted_value=2.0, hp_value=1.0, victory_value=30.0
         )

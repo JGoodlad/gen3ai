@@ -132,12 +132,17 @@ class Gen3ObservationEncoder(ObservationEncoder):
         from agents.model.features_extractor import N_HISTORY_TURNS
         return self.base_dimension + 11 + N_HISTORY_TURNS * TURN_DELTA_DIM
 
-    def encode(self, battle: AbstractBattle, hp_tracker=None, legal=None) -> np.ndarray:
+    def encode(self, battle: AbstractBattle, hp_tracker=None, legal=None,
+               progress_clock=None) -> np.ndarray:
         """Encode the full base observation vector.
 
         hp_tracker: optional HiddenPowerTracker whose per-species probability
         vectors are written into each opponent mon's 17-dim HP block. None
         leaves the blocks at zero (e.g. when called outside the training env).
+
+        progress_clock: optional EpisodeTracker-owned ProgressClock (design §5.1) whose
+        log-saturated turns_since_progress scalar is written into the reactive block
+        (vec[14]). None (inference / unit-test path) leaves it 0.
 
         legal: optional :class:`~agents.battle.live_view.LegalActions` snapshot for this
         decision (the server-authoritative legality the mask is built from). It feeds the
@@ -219,7 +224,8 @@ class Gen3ObservationEncoder(ObservationEncoder):
         # trapped / maybe_trapped from the LegalActions snapshot; the move-effectiveness
         # matrices stay on the raw battle (see reactive.py).
         vec[OFFSET_REACTIVE : OFFSET_REACTIVE + REACTIVE_DIM] = \
-            self.reactive_encoder.encode(battle, hp_tracker=hp_tracker, live=live, legal=legal)
+            self.reactive_encoder.encode(battle, hp_tracker=hp_tracker, live=live, legal=legal,
+                                         progress_clock=progress_clock)
         
         return vec
 

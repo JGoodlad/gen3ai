@@ -245,12 +245,12 @@ def test_offsets_resolve_matches_layout():
     off = ObsOffsets.resolve()
     # OFFSET_REACTIVE resolves to 1418 at runtime (root CLAUDE.md obs table;
     # the inline "# 1247" comments in observation/constants.py are stale).
-    assert off.mm_off == 1422   # OFFSET_REACTIVE(1418) + move_multiplier(4)
-    assert off.om_off == 1501   # OFFSET_REACTIVE(1418) + our_matchups(83, post gen3_incoming_damage_v1)
-    assert off.tm_off == 1645   # OFFSET_REACTIVE(1418) + their_matchups(227 = our_matchups 83 + 144)
+    assert off.mm_off == 1422   # OFFSET_REACTIVE(1418) + move_multiplier(4) — unchanged (before vec[14])
+    assert off.om_off == 1502   # OFFSET_REACTIVE(1418) + our_matchups(84, post gen3_markovian_progress_v1)
+    assert off.tm_off == 1646   # OFFSET_REACTIVE(1418) + their_matchups(228 = our_matchups 84 + 144)
     assert off.active_block_dim == 99
-    # incoming-damage / OHKO belief block (incoming_damage_v1): reactive offset 50 → 1468, dim 33.
-    assert off.incoming_off == 1468   # OFFSET_REACTIVE(1418) + incoming_damage(50)
+    # incoming-damage / OHKO belief block: reactive offset 51 (post turns_since_progress vec[14]) → 1469.
+    assert off.incoming_off == 1469   # OFFSET_REACTIVE(1418) + incoming_damage(51)
     assert off.incoming_dim == 33     # 6*5 per-mon + 3 recovery
     assert off.incoming_per_mon == 5 and off.incoming_recovery == 3
     assert off.pokemon_full_dim == 107

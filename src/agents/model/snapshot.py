@@ -341,6 +341,7 @@ def load_model_snapshot(
     device: str = "auto",
     tensorboard_log: Optional[str] = None,
     enforce_vf_coef: Optional[float] = None,
+    enforce_reward_config=None,
 ) -> MaskablePPO:
     """Load a model with a compatibility check against the current architecture.
 
@@ -370,6 +371,8 @@ def load_model_snapshot(
         current_version.check_compatible(saved_version)
         if enforce_vf_coef is not None:
             saved_version.check_vf_coef(enforce_vf_coef)
+        if enforce_reward_config is not None:
+            saved_version.check_reward_config(enforce_reward_config)
     else:
         print(
             f"[ModelVersion] WARNING: No model_config.json found at {config_dir!r}. "

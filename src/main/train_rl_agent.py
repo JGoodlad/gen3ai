@@ -1,5 +1,6 @@
 import multiprocessing
 import traceback
+import functools
 try:
     multiprocessing.set_start_method('spawn', force=True)
 except RuntimeError:
@@ -417,6 +418,21 @@ async def main():
                              "run's lifetime: it is recorded in model_config.json and resuming with a "
                              "different value is a FATAL error (it silently rescales the value head's "
                              "gradient on the shared trunk — tune it on a fresh run). See grad/value_share.")
+    # --- Reward config (design_markovian_reward_and_features.md). Resume-immutable, value-checked. ---
+    parser.add_argument("--bias-additivity", "--bias_additivity", dest="bias_additivity", type=float,
+                        default=1.0, help="BIAS-class additive↔telescoping knob λ∈[0,1] (default 1.0 = "
+                        "fully additive, byte-identical to today's biases). 0.0 = fully telescoping "
+                        "(pure PBRS hint). Per-run constant (NOT annealed). Resume-immutable.")
+    parser.add_argument("--mat-alive-weight", "--mat_alive_weight", dest="mat_alive_weight", type=float,
+                        default=1.25, help="Material PBRS Φ_mat per-mon-alive weight (default 1.25). "
+                        "Resume-immutable.")
+    parser.add_argument("--no-progress-penalty", "--no_progress_penalty", dest="no_progress_penalty",
+                        type=float, default=0.15, help="Flat per-no-progress-window penalty magnitude "
+                        "(default 0.15; only charged when --bias-redesign).")
+    parser.add_argument("--bias-redesign", "--bias_redesign", dest="bias_redesign", action="store_true",
+                        default=False, help="Enable the staged BIAS redesign: the no-progress clock "
+                        "replaces the anti-spam taxes + the obs-keyed reframes apply. Default OFF = the "
+                        "single-variable run (material clutch-fix only). Resume-immutable.")
     parser.add_argument("--clip-range", type=float, default=CLIP_RANGE_DEFAULT, help="PPO policy clip range (default 0.15)")
     parser.add_argument("--clip-range-vf", type=optional_float, default=0.5, help="Value function clip range; pass 'none' to disable clipping (thesis used 0.0184)")
     parser.add_argument("--n-steps", type=int, default=2048, help="Steps per environment per rollout")
@@ -697,7 +713,17 @@ async def main():
             f.write(" ".join(sys.argv))
         
     stall_cfg = StallConfig(output_dir=os.path.join(model_dir, "stalls"))
-    reward_factory = Gen3RewardManager
+    # Per-run reward config (design §1). gamma MUST == the PPO gamma (asserted post-build below); the
+    # factory passes it to every env's reward manager. Default = the single-variable run.
+    from agents.training.reward_manager import RewardConfig
+    reward_config = RewardConfig(
+        bias_additivity=args.bias_additivity,
+        mat_alive_weight=args.mat_alive_weight,
+        no_progress_penalty=args.no_progress_penalty,
+        gamma=0.9999,   # == InstrumentedMaskablePPO(gamma=0.9999); asserted == model.gamma below
+        bias_redesign=args.bias_redesign,
+    )
+    reward_factory = functools.partial(Gen3RewardManager, config=reward_config)
 
     # Running parallel environments
     n_envs = 1 if args.debug else args.n_envs
@@ -1021,7 +1047,8 @@ async def main():
             "net_arch": NET_ARCH,
         }
         current_version = ModelVersion.from_layout_and_policy_kwargs(
-            _load_extractor_kwargs["layout"], _load_policy_kwargs, vf_coef=args.vf_coef
+            _load_extractor_kwargs["layout"], _load_policy_kwargs, vf_coef=args.vf_coef,
+            reward_config=reward_config,
         )
 
         print(f"Loading existing model from {model_path}")
@@ -1033,6 +1060,7 @@ async def main():
                 device=args.device,
                 tensorboard_log=tensorboard_dir,
                 enforce_vf_coef=args.vf_coef,  # FATAL if the run was started with a different vf_coef
+                enforce_reward_config=reward_config,  # FATAL if bias_additivity/mat_alive_weight/redesign drift
             )
         except ModelVersionError as e:
             print(f"\n[ModelVersion] FATAL: {e}")
@@ -1210,7 +1238,16 @@ async def main():
         )
 
         version = ModelVersion.from_layout_and_policy_kwargs(
-            extractor_kwargs["layout"], policy_kwargs, vf_coef=args.vf_coef
+            extractor_kwargs["layout"], policy_kwargs, vf_coef=args.vf_coef,
+            reward_config=reward_config,
+        )
+        # PBRS_GAMMA must equal the PPO gamma for both potentials to be policy-invariant (design §7.1).
+        # The reward manager is built before the model (in the env factory), so assert here where both
+        # exist. A non-default --gamma would silently break PBRS — make it a fast startup crash.
+        from agents.training.reward_manager import PBRS_GAMMA as _PBRS_GAMMA
+        assert abs(_PBRS_GAMMA - float(model.gamma)) < 1e-12 and abs(reward_config.gamma - float(model.gamma)) < 1e-12, (
+            f"PBRS_GAMMA ({_PBRS_GAMMA}) / reward_config.gamma ({reward_config.gamma}) must equal "
+            f"model.gamma ({model.gamma}) — PBRS is only policy-invariant when they match."
         )
         _run_roundtrip_test(model, extractor_kwargs["layout"], policy_kwargs, debug=args.debug)
         _apply_grad_checkpointing(model, args.grad_checkpointing)

@@ -4,11 +4,11 @@ from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 import numpy as np
 from agents.training.reward_manager import (
-    Gen3RewardManager,
+    Gen3RewardManager, RewardConfig, RewardClass, RewardBreakdown,
     SWITCH_BASE_BONUS, SE_SWITCH_BONUS, MATCHUP_PENALTY,
     SPIKES_LAYER_BONUS, SPIKES_WASTE_PENALTY, FAILED_ROAR_PENALTY,
     FUTILE_ATTACK_PENALTY, FUTILE_IMMUNE_PENALTY, ESCAPE_THREAT_BONUS,
-    HP_VALUE, FAINT_BASE, FAINT_HP_SCALE, FAINT_MATERIAL_PENALTY, VICTORY_VALUE,
+    HP_VALUE, VICTORY_VALUE, MAT_HP_WEIGHT, MAT_ALIVE_WEIGHT,
     FUTILE_SETUP_PENALTY, SETUP_LOW_HP_MAX_PENALTY, STATUS_WASTED_PENALTY,
     EXPLOSION_BLOCK_BONUS, FINISHING_BLOW_BONUS,
     PBRS_RISK_WEIGHT, SWITCH_RISK_THRESHOLD,
@@ -148,7 +148,7 @@ class _LiveMonView:
     ids with their canonical types."""
 
     def __init__(self, species=None, status=None, fainted=False, boosts=None,
-                 types=(), ability=None, move_ids=()):
+                 types=(), ability=None, move_ids=(), hp_fraction=1.0):
         self.species = species
         self.status = status
         self.fainted = fainted
@@ -156,6 +156,7 @@ class _LiveMonView:
         self.types = tuple(types)
         self.ability = ability
         self.move_ids = tuple(move_ids)
+        self.hp_fraction = hp_fraction   # for Φ_mat (material PBRS); mocks default to full HP
 
 
 class _LiveSideView:
@@ -323,22 +324,14 @@ class TestRewardManagerBasics(unittest.TestCase):
         # First repeat (n=1) at the normal step: -REPETITION_STEP * 1 = -0.03
         self.assertAlmostEqual(r2, r1 - 0.03, places=5)
 
-    def test_faint_reward(self):
-        # With default opp_hp_val=1.0, faint_opp = 0.5 + 2.0*1.0 = 2.5
-        ctx = _ctx_with_boosts(opp_hp_val=1.0)
-        self.manager.record_action(ctx, 6)
-        reward = self.manager.process_turn_reward(_battle(), _delta(opp_fainted=True))
-        self.assertAlmostEqual(reward, 0.5 + 2.0 * 1.0, places=5)
+    # NOTE: the old hp/faint base spine (test_faint_reward / test_hp_delta_reward) is GONE —
+    # material is now the always-on PBRS Φ_mat (design §2). It is exercised by the empty-team mock
+    # as a neutral 0 (the guard in _compute_phi_mat), and tested directly in TestMaterialPBRS below.
 
     def test_win_reward(self):
         self.manager.record_action(_ctx(turn=1), 6)
         reward = self.manager.process_turn_reward(_battle(won=True, finished=True), _delta())
         self.assertAlmostEqual(reward, VICTORY_VALUE, places=5)
-
-    def test_hp_delta_reward(self):
-        self.manager.record_action(_ctx(turn=1), 6)
-        reward = self.manager.process_turn_reward(_battle(), _delta(our_hp_delta=-0.5))
-        self.assertAlmostEqual(reward, -0.5 * HP_VALUE, places=5)
 
 
 class TestSwitchSubsidy(unittest.TestCase):
@@ -916,7 +909,9 @@ class TestFutileAttack(unittest.TestCase):
             we_moved_first=None,
         )
         reward = self.manager.process_turn_reward(battle, delta)
-        expected = -0.05 * HP_VALUE + FUTILE_ATTACK_PENALTY
+        # Material (the opp's net heal) is now Φ_mat (= neutral 0 in the empty-team mock); only the
+        # futile_attack bias remains in the total.
+        expected = FUTILE_ATTACK_PENALTY
         self.assertAlmostEqual(reward, expected, places=4)
 
     def test_futile_attack_penalty_skips_status_moves(self):
@@ -1101,7 +1096,9 @@ class TestOriginalScenario(unittest.TestCase):
 
         reward = manager.process_turn_reward(battle, delta)
 
-        expected = (-0.28 * HP_VALUE) + SWITCH_BASE_BONUS + SE_SWITCH_BONUS
+        # The HP delta (-0.28×HP_VALUE) is now Φ_mat (= neutral 0 in the empty-team mock); the switch
+        # quality signals (subsidy + SE bonus) are the bias terms that remain.
+        expected = SWITCH_BASE_BONUS + SE_SWITCH_BONUS
         self.assertAlmostEqual(reward, expected, places=4)
         self.assertGreater(reward, 0.0, "should be positive: ttar switch is correct")
 
@@ -1122,28 +1119,24 @@ class TestRewardBreakdownToDict(unittest.TestCase):
         d = bd.to_dict()
         self.assertEqual(list(d.keys()), ["total"])
 
-    def test_base_group_appears_for_hp_delta(self):
-        from agents.training.reward_manager import RewardBreakdown
-        bd = RewardBreakdown(hp_ours=-0.64, hp_opp=0.20)
+    def test_base_group_appears_for_material(self):
+        # Material is now the single PBRS field pbrs_material (in the base group).
+        bd = RewardBreakdown(pbrs_material=-0.64)
         d = bd.to_dict()
         self.assertIn("base", d)
         self.assertNotIn("attack", d)
         self.assertNotIn("switch", d)
         self.assertNotIn("field", d)
-        self.assertIn("hp_ours=-0.64", d["base"])
-        self.assertIn("hp_opp=+0.2", d["base"])
+        self.assertIn("pbrs_material=-0.64", d["base"])
 
     def test_attack_group_appears_for_roar(self):
-        from agents.training.reward_manager import RewardBreakdown
-        bd = RewardBreakdown(hp_ours=-0.1, roar=0.2)
+        bd = RewardBreakdown(pbrs_material=-0.1, roar=0.2)
         d = bd.to_dict()
         self.assertIn("attack", d)
         self.assertIn("roar=+0.2", d["attack"])
-        # base also fires since hp_ours != 0
-        self.assertIn("base", d)
+        self.assertIn("base", d)   # base also fires since pbrs_material != 0
 
     def test_switch_group_contains_multiple_signals(self):
-        from agents.training.reward_manager import RewardBreakdown
         bd = RewardBreakdown(switch_base=0.5, se_switch=0.2, pivot_damage=0.1)
         d = bd.to_dict()
         self.assertIn("switch", d)
@@ -1152,37 +1145,30 @@ class TestRewardBreakdownToDict(unittest.TestCase):
         self.assertIn("pivot_damage=+0.1", d["switch"])
 
     def test_field_group_contains_stall_tax(self):
-        from agents.training.reward_manager import RewardBreakdown
-        bd = RewardBreakdown(hp_ours=-0.05, stall_tax=-1.5)
+        bd = RewardBreakdown(pbrs_material=-0.05, stall_tax=-1.5)
         d = bd.to_dict()
         self.assertIn("field", d)
         self.assertIn("stall_tax=-1.5", d["field"])
 
     def test_group_ordering_is_base_attack_switch_field(self):
-        from agents.training.reward_manager import RewardBreakdown
-        bd = RewardBreakdown(
-            hp_ours=-0.1, roar=0.2, switch_base=0.5, stall_tax=-0.5,
-        )
+        bd = RewardBreakdown(pbrs_material=-0.1, roar=0.2, switch_base=0.5, stall_tax=-0.5)
         d = bd.to_dict()
         keys = [k for k in d.keys() if k != "total"]
         self.assertEqual(keys, ["base", "attack", "switch", "field"])
 
     def test_zero_fields_within_group_are_omitted(self):
-        from agents.training.reward_manager import RewardBreakdown
-        # Only faint_opp set in base group; hp_ours/hp_opp/win_loss etc should not appear
-        bd = RewardBreakdown(faint_opp=2.0)
+        bd = RewardBreakdown(finishing_blow=0.5)
         d = bd.to_dict()
-        self.assertIn("faint_opp=+2", d["base"])
-        self.assertNotIn("hp_ours", d["base"])
-        self.assertNotIn("hp_opp", d["base"])
+        self.assertIn("finishing_blow=+0.5", d["base"])
+        self.assertNotIn("pbrs_material", d["base"])
+        self.assertNotIn("win_loss", d["base"])
 
     def test_win_scenario(self):
-        from agents.training.reward_manager import RewardBreakdown
-        bd = RewardBreakdown(hp_opp=-0.3, faint_opp=2.0, win_loss=30.0)
+        bd = RewardBreakdown(pbrs_material=-0.3, win_loss=30.0)
         d = bd.to_dict()
-        self.assertAlmostEqual(d["total"], 31.7, places=4)
+        self.assertAlmostEqual(d["total"], 29.7, places=4)
         self.assertIn("win_loss=+30", d["base"])
-        self.assertIn("faint_opp=+2", d["base"])
+        self.assertIn("pbrs_material=-0.3", d["base"])
 
 
 class TestStallTax(unittest.TestCase):
@@ -1200,9 +1186,10 @@ class TestStallTax(unittest.TestCase):
         from agents.training.reward_manager import STALL_TAX_START_TURN
         self.assertAlmostEqual(self._stall_tax_at_turn(STALL_TAX_START_TURN), 0.0, places=5)
 
-    def test_stall_tax_starts_earlier_than_old_threshold(self):
-        # Old threshold was 125 — confirm we now bite well before then.
-        self.assertLess(self._stall_tax_at_turn(80), 0.0)
+    def test_stall_tax_starts_before_old_125_threshold(self):
+        # Re-tuned GENTLE (design §4.3): starts at turn 100 (was 60), still well before old 125.
+        self.assertAlmostEqual(self._stall_tax_at_turn(90), 0.0, places=5)   # before the new start
+        self.assertLess(self._stall_tax_at_turn(110), 0.0)                    # biting by turn 110
 
     def test_stall_tax_ramps_with_turn(self):
         from agents.training.reward_manager import (
@@ -1232,54 +1219,8 @@ class TestStallTax(unittest.TestCase):
 # New test classes for reward improvements
 # ---------------------------------------------------------------------------
 
-class TestFaintScaling(unittest.TestCase):
-    """faint_ours and faint_opp scale with HP at time of faint."""
-
-    def setUp(self):
-        self.manager = Gen3RewardManager(log_level=LogLevel.QUIET)
-
-    def _faint_ours_reward(self, hp_before: float) -> float:
-        ctx = _ctx_with_boosts(our_hp_val=hp_before)
-        self.manager.record_action(ctx, 6)
-        return self.manager.process_turn_reward(_battle(), _delta(we_fainted=True))
-
-    def test_full_hp_faint_costs_max(self):
-        reward = self._faint_ours_reward(1.0)
-        self.assertAlmostEqual(reward, -(0.5 + 2.0 * 1.0 + FAINT_MATERIAL_PENALTY), places=4)
-
-    def test_low_hp_faint_costs_less(self):
-        r_low = self._faint_ours_reward(0.1)
-        r_full = self._faint_ours_reward(1.0)
-        self.assertGreater(r_low, r_full)
-
-    def test_near_zero_hp_faint_costs_minimum(self):
-        reward = self._faint_ours_reward(0.0)
-        self.assertAlmostEqual(reward, -(0.5 + FAINT_MATERIAL_PENALTY), places=4)
-
-    def test_faint_ours_carries_flat_material_penalty(self):
-        """Our faint costs the HP-scaled term PLUS a flat material penalty (asymmetric)."""
-        # The same-HP opp faint earns only the HP-scaled term (no material penalty).
-        our_faint_full = self._faint_ours_reward(1.0)
-        mgr = Gen3RewardManager(log_level=LogLevel.QUIET)
-        ctx = _ctx_with_boosts(opp_hp_val=1.0)
-        mgr.record_action(ctx, 6)
-        opp_faint_full = mgr.process_turn_reward(_battle(), _delta(opp_fainted=True))
-        # |faint_ours| exceeds faint_opp by exactly the material penalty at equal HP.
-        self.assertAlmostEqual(-our_faint_full - opp_faint_full, FAINT_MATERIAL_PENALTY, places=4)
-
-    def test_faint_opp_full_hp_earns_max(self):
-        ctx = _ctx_with_boosts(opp_hp_val=1.0)
-        self.manager.record_action(ctx, 6)
-        reward = self.manager.process_turn_reward(_battle(), _delta(opp_fainted=True))
-        self.assertAlmostEqual(reward, 0.5 + 2.0 * 1.0, places=4)
-
-    def test_faint_opp_low_hp_earns_less(self):
-        def _opp_faint(hp):
-            mgr = Gen3RewardManager(log_level=LogLevel.QUIET)
-            ctx = _ctx_with_boosts(opp_hp_val=hp)
-            mgr.record_action(ctx, 6)
-            return mgr.process_turn_reward(_battle(), _delta(opp_fainted=True))
-        self.assertGreater(_opp_faint(1.0), _opp_faint(0.1))
+# TestFaintScaling DELETED — faint_ours/faint_opp + FAINT_MATERIAL_PENALTY are gone; material is now
+# the always-on PBRS Φ_mat (design §2), tested in TestMaterialPBRS / pbrs_redesign_test.py.
 
 
 class TestRepetitionTaxEscalation(unittest.TestCase):
@@ -1302,8 +1243,9 @@ class TestRepetitionTaxEscalation(unittest.TestCase):
 
     def test_first_use_no_tax(self):
         r = self._repeat_attack(1)
-        # First use: hp_opp = -(-0.1)*HP_VALUE = +0.2
-        self.assertAlmostEqual(r[0], -(-0.1) * HP_VALUE, places=5)
+        # First use: no repetition tax, and material (the -0.1 opp HP) is now Φ_mat (neutral 0 in
+        # the empty-team mock) → the first attack's total is 0.
+        self.assertAlmostEqual(r[0], 0.0, places=5)
 
     def test_second_use_gets_first_tax(self):
         r = self._repeat_attack(2)
@@ -1572,11 +1514,12 @@ class TestExplosionReward(unittest.TestCase):
                    opp_damaging_event=_explosion_event())
         self.manager.process_turn_reward(battle, d)
         bd = self.manager._last_breakdown
-        self.assertAlmostEqual(bd.explosion, 0.0, places=5)  # no victim penalty
-        self.assertLess(bd.faint_ours, 0.0)  # faint_ours still fires
+        self.assertAlmostEqual(bd.explosion, 0.0, places=5)  # literal deleted; Φ_mat prices the trade
 
-    def test_bonus_when_we_survive_explosion(self):
-        """When opponent Explodes and we survive (took damage), explosion=+2."""
+    def test_survive_explosion_no_literal_bonus(self):
+        """The +2.0 explosion literal is DELETED (design §2.5) — the survive-the-Explosion credit is
+        now carried by Φ_mat (opp lost a mon, we lost none). bd.explosion stays 0; block bonus still
+        fires only on a no-damage block."""
         self.manager.record_action(_ctx(), 6)
         battle = self._make_exploder_battle()
         d = _delta(opp_fainted=True, we_fainted=False, opp_prev_active="gengar",
@@ -1584,11 +1527,12 @@ class TestExplosionReward(unittest.TestCase):
                    opp_damaging_event=_explosion_event())
         self.manager.process_turn_reward(battle, d)
         bd = self.manager._last_breakdown
-        self.assertAlmostEqual(bd.explosion, 2.0, places=5)
+        self.assertAlmostEqual(bd.explosion, 0.0, places=5)        # literal gone
         self.assertAlmostEqual(bd.explosion_block, 0.0, places=5)  # took damage, no block bonus
 
     def test_block_bonus_when_ghost_or_protect_immune(self):
-        """When opponent Explodes and we take 0 damage (Ghost/Protect), block bonus fires."""
+        """When opponent Explodes and we take 0 damage (Ghost/Protect), block bonus still fires
+        (kept inside the same `not we_fainted` gate — design §2.5)."""
         self.manager.record_action(_ctx(), 6)
         battle = self._make_exploder_battle()
         d = _delta(opp_fainted=True, we_fainted=False, opp_prev_active="gengar",
@@ -1596,7 +1540,7 @@ class TestExplosionReward(unittest.TestCase):
                    opp_damaging_event=_explosion_event())
         self.manager.process_turn_reward(battle, d)
         bd = self.manager._last_breakdown
-        self.assertAlmostEqual(bd.explosion, 2.0, places=5)
+        self.assertAlmostEqual(bd.explosion, 0.0, places=5)
         self.assertAlmostEqual(bd.explosion_block, EXPLOSION_BLOCK_BONUS, places=5)
 
     def test_explosion_not_triggered_without_event(self):
@@ -1622,7 +1566,7 @@ class TestExplosionReward(unittest.TestCase):
                    opp_damaging_event=_explosion_event(effectiveness=0.0))
         self.manager.process_turn_reward(battle, d)
         bd = self.manager._last_breakdown
-        self.assertAlmostEqual(bd.explosion, 2.0, places=5)
+        self.assertAlmostEqual(bd.explosion, 0.0, places=5)  # literal deleted (design §2.5)
         self.assertAlmostEqual(bd.explosion_block, EXPLOSION_BLOCK_BONUS, places=5)
 
 
@@ -1858,14 +1802,12 @@ class TestFinishingBlow(unittest.TestCase):
         self.manager.process_turn_reward(battle, d)
         self.assertAlmostEqual(self.manager._last_breakdown.finishing_blow, 0.0, places=5)
 
-    def test_healthy_explosion_trade_is_net_negative(self):
-        """A 1-for-1 Explosion trade of two HEALTHY mons must net NEGATIVE.
-
-        Regression for the explosion-as-free-KO-button bug: the symmetric
-        hp_ours/hp_opp and faint_ours/faint_opp terms cancel, so before the fix
-        finishing_blow=+0.5 made a healthy 6-for-6 trade net +0.5. Now finishing_blow
-        is suppressed on self-faint AND faint_ours carries the material penalty, so a
-        healthy trade is clearly bad."""
+    def test_healthy_explosion_trade_is_not_positive(self):
+        """A 1-for-1 Explosion trade of two HEALTHY mons must NOT net positive (the
+        explosion-as-free-KO-button anti-exploit). Under the redesign the trade is materially
+        NEUTRAL via Φ_mat (both sides lose one alive mon + its HP → ΔΦ_mat=0), and finishing_blow
+        is suppressed on self-faint, so the +0.5 cannot tip it positive. (The empty-team mock reads
+        Φ_mat as the neutral 0; the full Φ_mat economics are in TestMaterialPBRS.)"""
         mgr = Gen3RewardManager(log_level=LogLevel.QUIET)
         our = _make_mon("NORMAL", moves=[("explosion", "NORMAL", 250)])
         ctx = _ctx_with_boosts(our_hp_val=1.0, opp_hp_val=1.0)
@@ -1874,8 +1816,8 @@ class TestFinishingBlow(unittest.TestCase):
         d = _delta(opp_fainted=True, we_fainted=True, our_move_id="explosion",
                    our_hp_delta=-1.0, opp_hp_delta=-1.0)
         total = mgr.process_turn_reward(battle, d)
-        self.assertLess(total, 0.0)
-        self.assertAlmostEqual(total, -FAINT_MATERIAL_PENALTY, places=4)
+        self.assertLessEqual(total, 1e-9)
+        self.assertAlmostEqual(mgr._last_breakdown.finishing_blow, 0.0, places=5)  # suppressed on self-faint
 
     def test_no_bonus_for_non_damaging_move_kill(self):
         """opp_fainted=True but move has base_power=0 → finishing_blow == 0."""
@@ -1937,20 +1879,18 @@ class TestFinishingBlow(unittest.TestCase):
                                 opp_hp_before=1.0)
         self.assertAlmostEqual(bd.finishing_blow, FINISHING_BLOW_BONUS, places=5)
 
-    def test_stacks_correctly_with_faint_opp(self):
-        """Both faint_opp and finishing_blow fire together on a damaging-move KO."""
+    def test_finishing_blow_fires_on_damaging_ko(self):
+        """finishing_blow fires on a damaging-move KO (faint_opp is GONE — the opp-faint material
+        credit is now carried by Φ_mat). The empty-team mock reads Φ_mat as neutral 0, so the total
+        here is exactly the finishing_blow bonus."""
         our = _make_mon("GROUND", moves=[("earthquake", "GROUND", 100)])
         self.manager.record_action(_ctx(turn=1), 6)
-        self.manager._opp_active_hp_before = 0.12
         battle = _battle(our_mon=our, opp_mon=None)
         d = _delta(opp_fainted=True, our_move_id="earthquake", opp_hp_delta=-0.1)
         self.manager.process_turn_reward(battle, d)
         bd = self.manager._last_breakdown
-        expected_faint_opp = FAINT_BASE + FAINT_HP_SCALE * 0.12   # 0.5 + 2.0*0.12 = 0.74
-        self.assertAlmostEqual(bd.faint_opp, expected_faint_opp, places=5)
         self.assertAlmostEqual(bd.finishing_blow, FINISHING_BLOW_BONUS, places=5)
-        # Both contribute — total must be at least their sum
-        self.assertGreaterEqual(bd.total, expected_faint_opp + FINISHING_BLOW_BONUS)
+        self.assertAlmostEqual(bd.total, FINISHING_BLOW_BONUS, places=5)
 
     def test_no_bonus_when_move_id_is_none(self):
         """finishing_blow is 0 when our_move_id is None (e.g. nothing acted this turn)."""

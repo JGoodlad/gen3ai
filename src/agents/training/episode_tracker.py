@@ -16,6 +16,7 @@ from agents.action.ordering_integrity import (
 from agents.training.battle_snapshot import BattleContext
 from agents.training.turn_delta import TurnDelta
 from agents.training.hidden_power_tracker import HiddenPowerTracker
+from agents.training.progress_clock import ProgressClock
 from agents.training.slot_registry import SlotRegistry
 
 if TYPE_CHECKING:
@@ -100,6 +101,9 @@ class EpisodeTracker:
         self._last_action: int = -1
         self._last_cursor: int = 0      # event_cursor at the last record() call
         self._hidden_power_tracker = HiddenPowerTracker()
+        # Episode-scoped no-progress counter (design §5.1). Updated at record()/embed time so the
+        # obs is fresh; read by BOTH the obs encoder (value()) and the reward (last_penalty).
+        self._progress_clock = ProgressClock()
         # Memoized turn-history: encoded TurnDelta vectors, oldest-left/newest-right.
         # A past turn's window is bounded and immutable (see prev_N_delta_vecs), so its
         # encoded vector never changes — we encode only the NEWEST delta each step and
@@ -114,6 +118,10 @@ class EpisodeTracker:
     @property
     def hidden_power_tracker(self) -> HiddenPowerTracker:
         return self._hidden_power_tracker
+
+    @property
+    def progress_clock(self) -> ProgressClock:
+        return self._progress_clock
 
     @property
     def last_ctx(self) -> Optional[BattleContext]:
@@ -294,6 +302,21 @@ class EpisodeTracker:
         events = self._get_events_for_window(battle, cursor)
         return TurnDelta.build_from_events(prev_ctx, curr_ctx, self._last_action, events)
 
+    def update_progress_clock(self, battle, legal) -> TurnDelta:
+        """Fold the just-completed window's delta and advance the shared ``ProgressClock``, so the obs
+        scalar (``value()``) and the reward's no-progress penalty (``last_penalty``) key on ONE value.
+
+        Call from ``embed_battle`` AFTER :meth:`record`, BEFORE ``encode`` — poke-env runs
+        ``embed_battle`` before ``calc_reward``, so updating here (not at reward time) keeps the obs
+        fresh. Returns the folded delta so the caller can reuse it (the env caches it for
+        ``calc_reward``, avoiding a second fold). The penalty magnitude lives on the clock itself
+        (set once from the reward config), so this stays an obs-side call with no reward param.
+        Single home for the 3-step protocol the env + inference players both need (no copy-paste).
+        """
+        delta = self.build_delta(battle=battle)
+        self._progress_clock.update(delta, battle.strict_view().live, legal)
+        return delta
+
     def _encode_delta_slot(self, i: int, encoder, battle) -> np.ndarray:
         """Encode the TurnDelta for history slot ``i`` (0 = most-recent), folded over its
         OWN bounded decision window: ``[cursors[-1-i] : cursors[-i])`` (``end=None`` ⇒ to
@@ -381,3 +404,4 @@ class EpisodeTracker:
         self._last_action = -1
         self._last_cursor = 0
         self._hidden_power_tracker.reset()
+        self._progress_clock.reset()

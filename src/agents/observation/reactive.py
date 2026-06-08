@@ -171,8 +171,9 @@ class ReactiveEncoder(ObservationEncoder):
     def dimension(self) -> int:
         return REACTIVE_DIM
 
-    def encode(self, battle: AbstractBattle, hp_tracker=None, live=None, legal=None) -> np.ndarray:
-        """Encode the 338-dim reactive block.
+    def encode(self, battle: AbstractBattle, hp_tracker=None, live=None, legal=None,
+               progress_clock=None) -> np.ndarray:
+        """Encode the reactive block.
 
         live: optional :class:`~agents.battle.live_view.LiveView` snapshot for this
         decision. When supplied, the structural reads — per-side fainted counts and the
@@ -317,6 +318,14 @@ class ReactiveEncoder(ObservationEncoder):
             vec[12] = 1.0 if legal.trapped else 0.0
             vec[13] = 1.0 if legal.maybe_trapped else 0.0
 
+        # 4d. turns_since_progress (gen3_markovian_progress_v1, vec[14]) — the log-saturated
+        # no-progress clock (design §5.1). Sourced from the EpisodeTracker-owned ProgressClock
+        # (NOT LiveView — it is cross-turn state), threaded in like the HP tracker; None on the
+        # plain-Battle / unit-test path leaves it 0. The reward's no_progress_tax keys on the SAME
+        # clock instance, so obs and reward share one value.
+        if progress_clock is not None:
+            vec[14] = float(progress_clock.value())
+
         # --- Matchup Matrices (raw battle — see the docstring's three reasons) ---
         our_team = self.get_team_list(battle, is_opponent=False)
         their_team = self.get_team_list(battle, is_opponent=True)
@@ -376,7 +385,7 @@ class ReactiveEncoder(ObservationEncoder):
         return vec
 
     def get_layout(self) -> Dict[str, Any]:
-        mo = REACTIVE_MATCHUP_OFFSET  # 83 = 14 scalars + 36 move-effects + 33 incoming-damage
+        mo = REACTIVE_MATCHUP_OFFSET  # 84 = 15 scalars + 36 move-effects + 33 incoming-damage
         return {
             "move_power": {"offset": 0, "dim": 4},
             "move_multiplier": {"offset": 4, "dim": 4},
@@ -385,6 +394,7 @@ class ReactiveEncoder(ObservationEncoder):
             "forced_struggle": {"offset": 11, "dim": 1},
             "trapped": {"offset": 12, "dim": 1},
             "maybe_trapped": {"offset": 13, "dim": 1},
+            "turns_since_progress": {"offset": 14, "dim": 1},  # gen3_markovian_progress_v1
             # gen3_move_effects_v1: 4 move slots × MOVE_EFFECT_FEATURES (9), slot-major,
             # request order. Per slot: [is_boost, is_heal, is_protect, is_phaze, is_hazard,
             # inflicts_status, status_will_land, pp_fraction, status_will_land_known].

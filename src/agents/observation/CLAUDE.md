@@ -1,6 +1,6 @@
 # CLAUDE.md — Observation Encoder (`src/agents/observation/`)
 
-This directory builds the **3390-dim per-decision observation vector** (`Gen3ObservationEncoder.encode`).
+This directory builds the **3391-dim per-decision observation vector** (`Gen3ObservationEncoder.encode`).
 It runs once per agent decision across every training env, so it sits directly on the
 training-throughput (FPS) critical path. Two independent things can regress here, and they
 have **different** gates:
@@ -81,7 +81,7 @@ Captured with `--turn 25 --reps 400`. Paths shown repo-relative. Absolute ms omi
 headline on purpose (load-dependent); the **call counts and ordering are the contract**.
 
 ```
-PER-DECISION OBS BUILD BENCHMARK  (obs dim 3390, turn 25, history slots 10, opp mons w/ revealed moves 5/6)
+PER-DECISION OBS BUILD BENCHMARK  (obs dim 3391, turn 25, history slots 10, opp mons w/ revealed moves 5/6)
 
   full per-decision obs build  :  ~0.5–1.2 ms   (LOAD-DEPENDENT — not a regression signal)
     state_encoder.encode       :  ~79% of build
@@ -160,7 +160,7 @@ example, is pinned byte-for-byte by the exhaustive parity test in
 
 ## Observation vector layout (per-block reference)
 
-The root `CLAUDE.md` carries the summary block table (block → dims → offset, total **3390**).
+The root `CLAUDE.md` carries the summary block table (block → dims → offset, total **3391**).
 This is the detailed per-block layout. All offsets are computed from named constants — never
 hardcode indices.
 
@@ -198,18 +198,22 @@ emitted a constant fallback (all-31 IVs, 0 EVs, neutral nature) for every own mo
 permanence + turns-remaining), spikes ×2 (2), log-turn (1), per-side screens (8: Reflect /
 Light Screen / Safeguard / Mist × both sides).
 
-**Reactive block (371 dims, layout in `reactive.py`):** 14 scalar dims, then the 36-dim
+**Reactive block (372 dims, layout in `reactive.py`):** 15 scalar dims, then the 36-dim
 **move-effect block** (`gen3_move_effects_v1`), then the **33-dim incoming-damage / OHKO belief
-block** (`gen3_incoming_damage_v2`, at offset 50 — see below), then the two 144-dim matchup matrices
-(`our_matchups` now at offset 83, `their_matchups` at 227). Scalars: active-move power ×4 (/200)
+block** (`gen3_incoming_damage_v2`, at offset 51 — see below), then the two 144-dim matchup matrices
+(`our_matchups` now at offset 84, `their_matchups` at 228). Scalars: active-move power ×4 (/200)
 + active-move multiplier ×4 (/4), fainted counts ×2, active-status flag (1), `forced_struggle` (1),
-and the two **gen3_trapping_signals_v1** bits — `trapped` (1) and `maybe_trapped` (1) — sourced
-from the per-decision `LegalActions` snapshot (`legal.trapped` / `legal.maybe_trapped`), the same
-server-authoritative surface the mask is built from. They sit BEFORE the matchups so the feature
-extractor picks them up in `non_matchup_rest` automatically (it reads the matchup offset from the
-layout). `trapped` is redundant with the mask (switch bits already zeroed) but explicit;
-`maybe_trapped` is the high-value one — switches stay legal there, so it is the only way the model
-sees the trap risk before attempting a blind pivot.
+the two **gen3_trapping_signals_v1** bits — `trapped` (1) and `maybe_trapped` (1) — and the
+**gen3_markovian_progress_v1** scalar `turns_since_progress` (1, `vec[14]`). All are sourced
+server-authoritatively: trapped/maybe_trapped from the per-decision `LegalActions` snapshot
+(`legal.trapped` / `legal.maybe_trapped`); `turns_since_progress` is the log-saturated no-progress
+clock (`log(1+min(n,10))/log(11)`), sourced from the **EpisodeTracker-owned `ProgressClock`** (NOT
+LiveView — it is cross-turn state), threaded into `encode()` like the HP tracker. The reward's
+`no_progress_tax` keys on the SAME clock instance (one value, obs==reward-key). They sit BEFORE the
+matchups so the extractor picks them up in `non_matchup_rest` automatically (it reads the matchup
+offset from the layout). `trapped` is redundant with the mask but explicit; `maybe_trapped` is the
+high-value trap-risk bit; `turns_since_progress` lets the model state-condition on the anti-stall
+penalty it's about to be charged.
 
 **Move-effect block (36 dims, `gen3_move_effects_v1`):** 4 move slots in **REQUEST order** (so
 feature slot *k* lines up with action logit 6+*k*) × 9 features each — `is_boost`, `is_heal`,

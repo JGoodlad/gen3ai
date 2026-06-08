@@ -1,6 +1,9 @@
 # Design — Markovian / PBRS reward redesign + feature-encoder enrichment
 
-**Status:** design (not implemented). Forward-looking; explicit-only doc.
+**Status:** **BUILT** (`ARCH_SIGNATURE = gen3_markovian_progress_v1`, obs 3390→3391; not yet trained).
+Forward-looking design; explicit-only doc. The **as-built record** — what landed, the staging that
+keeps the default run single-variable, what's deferred, and the code-review refactor pass — is
+**`impl_step5_markovian_reward_and_progress_clock.md`** (and the implementation-status note below).
 **Goal:** make **every** reward term either **PBRS** (objective-neutral) or **Markovian-w.r.t.-the-
 observation** (a clean, obs-keyed bias), and enrich the feature encoder so every Markovian term keys
 on something the model can actually observe.
@@ -8,6 +11,21 @@ on something the model can actually observe.
 commit `7483dd1`), `design_incoming_damage_obs.md` (the belief block, `gen3_incoming_damage_v2`),
 `project_popart` (return normalization).
 **Replaces the need for:** `design_reward_annealing.md` for the shaping half (see §6.2).
+
+> **Implementation status (as-built, 2026-06-07).** Shipped the full machinery: the reward **registry**
+> (TERMINAL/PBRS/BIAS), the **material PBRS `Φ_mat`** (always-on, declared-team — the clutch-fix),
+> the **`--bias-additivity` accumulate-refund** (λ=1 byte-no-op), and the **no-progress clock** (the
+> `turns_since_progress` obs scalar at `vec[14]` + the `no_progress_tax` term, sharing one
+> `EpisodeTracker`-owned counter). **The default run is single-variable:** the no-progress PENALTY,
+> the anti-spam collapse, and the spikes/status telescoping are **gated behind
+> `RewardConfig.bias_redesign` (`--bias-redesign`, default OFF)** — so the only reward-behavior change
+> vs the live baseline is `Φ_mat`. The obs scalar is present in both arms (one architecture).
+> **Deferred** (Markovian-purity polish, no default-run effect): the `roar`/`status` `_prev_*`→
+> current-obs reframes and the `se_switch`/`switch_base` hidden-gate drops (§3 #9/#18/#25/#29).
+> A post-implementation **code-review pass** consolidated the duplicated PBRS telescoping + the
+> clock-wiring and removed dead constants — details in the impl-step doc. **Verification:** 1920 unit
+> tests, obs benchmark (no regression), golden regenerated + parity, `--debug` smoke round-trip
+> PASSED. Resume-immutable reward hparams are `ModelVersion`-value-checked (`MODEL_CONFIG_VERSION` 3→4).
 
 > **Hard scope constraint (user):** `VICTORY_VALUE = 30` (the ±30 terminal) is **out of scope and
 > untouched.** Both PBRS potentials use the absorbing convention `Φ(terminal) = 0`, so shaping

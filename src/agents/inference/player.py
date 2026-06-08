@@ -161,11 +161,16 @@ class Gen3Player(Player):
         tracker = self._get_tracker(battle)
         if not battle.strict_view().finished and mask.sum() > 0:
             tracker.record(battle, mask, legal=legal)
+            # Advance the ProgressClock for the just-completed window BEFORE encode reads it (same
+            # helper gen3_env uses), so the turns_since_progress obs scalar matches what the model saw
+            # during TRAINING — without this, eval / self-play opponents / play.py would always read 0.
+            tracker.update_progress_clock(battle, legal)
 
         # Thread the same legality snapshot into the encoder for its trapped / maybe_trapped
         # reactive bits (avoids a second LegalActions.from_battle this decision).
         obs = self.observation_encoder.encode(
-            battle, hp_tracker=tracker.hidden_power_tracker, legal=legal
+            battle, hp_tracker=tracker.hidden_power_tracker, legal=legal,
+            progress_clock=tracker.progress_clock,
         )
 
         prev_mask = tracker.prev_mask

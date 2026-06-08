@@ -1,4 +1,5 @@
-from dataclasses import dataclass, fields
+from dataclasses import dataclass, field, fields
+from enum import Enum
 from typing import ClassVar, Optional
 import numpy as np
 from utils.logging.rate_limiter import RateLimitedLogger
@@ -32,6 +33,43 @@ def _status_enum(name) -> "Optional[Status]":
     convert faithfully so the LiveView path is byte-identical to the raw-battle path."""
     return Status[name.upper()] if name else None
 
+class RewardClass(Enum):
+    """The three reward classes (design_markovian_reward_and_features.md §1.1). The fold
+    loop applies one treatment per class — no per-term special-casing:
+
+    * TERMINAL — the ±30 win/loss. Emitted as-is; never shaped/blended/flag-affected.
+    * PBRS     — pure potential hints, ALWAYS telescoping (Φ(terminal)=0), objective-neutral
+                 regardless of any flag. The field already holds γ·Φ(s′) − Φ(s).
+    * BIAS     — soft shaping whose additive↔telescoping mix is set by `--bias-additivity`
+                 (accumulate-and-refund). The field holds the additive per-turn value.
+    """
+    TERMINAL = "terminal"
+    PBRS = "pbrs"
+    BIAS = "bias"
+
+
+@dataclass
+class RewardConfig:
+    """Per-run reward configuration (resume-immutable; recorded in model_config.json).
+
+    `bias_additivity` (λ ∈ [0,1], default 1.0) sets how much the BIAS class biases the
+    objective: 1.0 = fully additive (byte-identical to today), 0.0 = fully telescoping
+    (pure PBRS hint), λ = blend (episode contribution λ·acc). It is a per-run CONSTANT,
+    NOT annealed within a run. `gamma` MUST equal the PPO gamma (asserted in train_rl_agent).
+    """
+    bias_additivity: float = 1.0
+    mat_alive_weight: float = 1.25
+    no_progress_penalty: float = 0.15
+    gamma: float = 0.9999
+    # Staged BIAS redesign (design §1.3). OFF → the default single-variable run: today's anti-spam
+    # taxes (repetition/bouncing/dead-matchup/struggle) + today's roar/status/spikes, so the ONLY
+    # reward-behavior change vs the live baseline is the material clutch-fix. ON → the redesign: the
+    # no-progress clock replaces the anti-spam family, and the obs-keyed reframes apply. The
+    # turns_since_progress OBS scalar is present either way (the clock always tracks it); only the
+    # PENALTY + the reframes are gated, so both arms share one architecture (and can A/B by resume).
+    bias_redesign: bool = False
+
+
 @dataclass
 class RewardBreakdown:
     """Per-component reward breakdown for a single turn. Stored on Gen3RewardManager
@@ -39,12 +77,14 @@ class RewardBreakdown:
     from to_dict() so the JSON stays compact."""
 
     # Base outcome
-    hp_ours: float = 0.0           # our HP delta * HP_VALUE (negative = damage taken)
-    hp_opp: float = 0.0            # opp HP delta * HP_VALUE (positive = damage dealt)
-    faint_ours: float = 0.0
-    faint_opp: float = 0.0
-    win_loss: float = 0.0
-    explosion: float = 0.0         # bonus/penalty for opponent self-KO via Explosion/Selfdestruct
+    win_loss: float = 0.0          # TERMINAL — the ±30 win/loss (out of scope; never shaped)
+    # Material PBRS Φ_mat (design §2): HP/faint/margin folded into ONE always-on potential
+    # (declared-team material), so material no longer banks the lead — every win returns +30,
+    # every loss −30. = γ·Φ_mat(s′) − Φ_mat(s), Φ_mat(terminal)=0. Replaces the old unconditional
+    # hp_ours/hp_opp/faint_ours/faint_opp base spine (the clutch-vs-dominant fix).
+    pbrs_material: float = 0.0
+    explosion: float = 0.0         # vestigial: the survive-Explosion credit is now carried by Φ_mat
+                                   # (opp lost a mon); the old +2.0 literal is deleted (design §2.5)
     explosion_block: float = 0.0   # Ghost immune or Protect blocked opponent Explosion
     finishing_blow: float = 0.0    # damaging move secured the KO
 
@@ -84,42 +124,81 @@ class RewardBreakdown:
 
     # Status signals
     status: float = 0.0
+    futile_spikes: float = 0.0     # wasted Spikes at the 3-layer cap (design §2.6 — split out of `spikes`)
 
-    # Progressive stall tax
+    # Progressive stall tax (kept GENTLE — the progress clock can't see defensive stalls, §4.3)
     stall_tax: float = 0.0
+    # Anti-no-progress clock (design §4): one Markovian penalty collapsing the anti-spam family.
+    # Charged per no-progress window; obs-keyed on turns_since_progress.
+    no_progress_tax: float = 0.0
 
-    # Belief-based switch shaping (design_reward_switching.md): potential-based reward shaping
-    # over the incoming-KO belief — a credit-assignment bridge that brings the avoided-faint
-    # benefit forward to the switch decision. Policy-invariant (Ng 1999), so it cannot change the
-    # optimal policy; it only reshapes where credit lands. NEVER touches the ±30 terminal.
-    pbrs_material: float = 0.0
+    # Belief-based switch shaping (design_reward_switching.md): PBRS over the incoming-KO belief
+    # (RENAMED from the mis-named `pbrs_material`). Policy-invariant; NEVER touches the ±30 terminal.
+    pbrs_belief: float = 0.0
 
-    # Groups ordered by how frequently they produce non-zero values.
-    # Each group's fields are listed in the order they should appear in the string.
+    # BIAS-class accumulate-refund (design §1.2): the −(1−λ)·Δacc per-turn refund that dials the
+    # BIAS class from fully additive (λ=1, refund≡0, byte-identical to today) toward fully
+    # telescoping (λ=0). NOT a reward term — the fold's output; excluded from the registry.
+    bias_refund: float = 0.0
+
+    # ---- The reward registry (design §1.1): field name → class. Single source of truth that
+    # drives the fold (one treatment per class, no per-term special-casing) AND the breakdown.
+    # PBRS fields already hold γ·Φ(s′)−Φ(s); BIAS fields hold the additive per-turn value;
+    # `bias_refund` is the fold mechanism, not a term (excluded). Coverage is exhaustive + 1:1. ----
+    _REGISTRY: ClassVar[dict] = {
+        "win_loss": RewardClass.TERMINAL,
+        "pbrs_material": RewardClass.PBRS,
+        "pbrs_belief": RewardClass.PBRS,
+        # everything else is BIAS:
+        "explosion": RewardClass.BIAS, "explosion_block": RewardClass.BIAS,
+        "finishing_blow": RewardClass.BIAS, "roar": RewardClass.BIAS,
+        "futile_attack": RewardClass.BIAS, "futile_setup": RewardClass.BIAS,
+        "setup_low_hp": RewardClass.BIAS, "boost_utilized": RewardClass.BIAS,
+        "status_wasted": RewardClass.BIAS, "spikes": RewardClass.BIAS,
+        "futile_spikes": RewardClass.BIAS, "matchup_penalty": RewardClass.BIAS,
+        "dead_matchup_tax": RewardClass.BIAS, "switch_base": RewardClass.BIAS,
+        "switch_bouncing_tax": RewardClass.BIAS, "repetition_tax": RewardClass.BIAS,
+        "struggle_tax": RewardClass.BIAS, "pivot_protect": RewardClass.BIAS,
+        "pivot_status": RewardClass.BIAS, "pivot_damage": RewardClass.BIAS,
+        "se_switch": RewardClass.BIAS, "escape_threat_switch": RewardClass.BIAS,
+        "sleep_out": RewardClass.BIAS, "sleep_in": RewardClass.BIAS,
+        "status": RewardClass.BIAS, "stall_tax": RewardClass.BIAS,
+        "no_progress_tax": RewardClass.BIAS,
+    }
+
+    # Groups ordered by how frequently they produce non-zero values (for the compact string only).
     _GROUPS: ClassVar[tuple] = (
-        ("base",   ("hp_ours", "hp_opp", "faint_ours", "faint_opp", "win_loss", "explosion", "explosion_block", "finishing_blow")),
+        ("base",   ("win_loss", "pbrs_material", "explosion", "explosion_block", "finishing_blow")),
         ("attack", ("roar", "futile_attack", "futile_setup", "setup_low_hp",
                     "boost_utilized", "status_wasted", "repetition_tax", "struggle_tax")),
         ("switch", ("switch_base", "switch_bouncing_tax", "escape_threat_switch",
                     "pivot_protect", "pivot_status",
                     "pivot_damage", "se_switch", "sleep_out", "sleep_in")),
-        ("field",  ("spikes", "matchup_penalty", "dead_matchup_tax", "status", "stall_tax")),
-        ("shaping", ("pbrs_material",)),
+        ("field",  ("spikes", "futile_spikes", "matchup_penalty", "dead_matchup_tax",
+                    "status", "stall_tax", "no_progress_tax")),
+        ("shaping", ("pbrs_belief", "bias_refund")),
     )
+
+    @classmethod
+    def registry_fields(cls, reward_class: "RewardClass") -> tuple:
+        """The breakdown fields belonging to ``reward_class`` (the registry is the source of truth)."""
+        return tuple(name for name, c in cls._REGISTRY.items() if c is reward_class)
 
     @property
     def total(self) -> float:
-        return sum(getattr(self, f.name) for f in fields(self))
+        """Sum every registry term + the bias_refund mechanism. Equivalent to summing all
+        dataclass float fields (the registry covers them 1:1, `bias_refund` is summed too)."""
+        return sum(getattr(self, f.name) for f in fields(self)
+                   if isinstance(getattr(self, f.name), float))
 
     def to_dict(self) -> dict:
         """Grouped, compact JSON dict.
 
-        Each category (base/attack/switch/field) becomes a single string of
-        'key=±value' pairs for non-zero fields. Empty categories are omitted.
-        'total' is always present.
+        Each category becomes a single string of 'key=±value' pairs for non-zero fields.
+        Empty categories are omitted. 'total' is always present.
 
         Example:
-            {'total': 0.06, 'base': 'hp_ours=-0.64 hp_opp=+0.20',
+            {'total': 0.06, 'base': 'pbrs_material=-0.44',
              'switch': 'switch_base=+0.50 se_switch=+0.20 pivot_damage=+0.10'}
         """
         result: dict = {"total": round(self.total, 4)}
@@ -134,28 +213,31 @@ class RewardBreakdown:
         return result
 
 
-FAINT_BASE = 0.5        # minimum faint penalty/reward at 0% HP
-FAINT_HP_SCALE = 2.0   # scales faint cost/reward linearly with HP at time of faint
-FAINT_MATERIAL_PENALTY = 0.75  # flat EXTRA cost (beyond the HP-scaled term) for losing one of OUR
-                               # mons. A faint removes a whole mon from a 6-mon team — its value
-                               # isn't just its current HP. ASYMMETRIC (faint_ours only, faint_opp
-                               # unchanged): it makes a healthy-for-healthy/low trade net-negative,
-                               # blunts Explosion-as-a-free-KO-button, and nudges the policy to
-                               # preserve mons (countering the all-or-nothing 6-0 dynamic). Tunable.
 HP_VALUE = 2.0
 VICTORY_VALUE = 30.0
 FINISHING_BLOW_BONUS = 0.5   # extra bonus for KO'ing with a damaging move
 
-# Progressive stall tax: starts EARLY (turn 60, was 125) and RAMPS so a passive
-# 130-190 turn loop is strictly dominated by making progress. Per-turn cost grows
-# linearly with how far past the start turn we are, clamped at STALL_TAX_MAX so a
-# single turn can't dwarf a faint/HP swing. Cumulative over a very long game stays
-# well under VICTORY_VALUE=30 (≈10 over a 190-turn game) because the ramp is gentle
-# and most games end before the start turn.
-STALL_TAX_START_TURN = 60
-STALL_TAX_PER_TURN = 0.05      # base rate; multiplied by the ramp fraction below
-STALL_TAX_RAMP_TURNS = 20      # turns-past-start over which the rate ramps up by 1×
-STALL_TAX_MAX = 0.5            # per-turn clamp on the ramped stall tax
+# --- Material PBRS Φ_mat (design §2). Φ_mat = MAT_HP_WEIGHT·(Σ our_hp − Σ opp_hp)
+#     + MAT_ALIVE_WEIGHT·(n_alive_ours − n_alive_opp), over the DECLARED team size (unrevealed opp
+#     mons count as full-HP-alive → Φ_mat(s_0)≈0, no opp-reveal jumps, no start-state variance).
+#     Φ_mat(terminal)=0 → telescopes to −Φ_mat(s_0) → every win returns +30, every loss −30. ---
+MAT_HP_WEIGHT = HP_VALUE          # 2.0 — reproduces the old hp_ours/hp_opp per-turn density exactly
+MAT_ALIVE_WEIGHT = 1.25           # = old FAINT_BASE(0.5)+FAINT_MATERIAL_PENALTY(0.75): matches the old
+                                  # non-HP immediate faint magnitude (stated invariant, design §2.4). The
+                                  # old −0.75 preservation BIAS is REMOVED — the +30 + Φ_mat's dense
+                                  # material density teach preservation without an objective bias.
+
+# --- BIAS-additivity (design §1.2). PBRS_GAMMA already == the PPO gamma (asserted in train_rl_agent).
+# The no-progress penalty magnitude lives on RewardConfig.no_progress_penalty (single source of truth);
+# the turns_since_progress cap lives on progress_clock.PROGRESS_CLOCK_CAP (the obs + clock owner). ---
+
+# Progressive stall tax — kept GENTLE (design §4.3): the progress clock is offense-centric and cannot
+# see DEFENSIVE stalls (heal/Protect wars), so a soft absolute-turn term covers them. Re-tuned to a
+# ~−10 ceiling (was an integral of −21.3). Starts later + ramps slower than the old version.
+STALL_TAX_START_TURN = 100      # was 60 — push the soft pressure later so a normal mid-length game pays ~0
+STALL_TAX_PER_TURN = 0.02       # base rate; multiplied by the ramp fraction below (was 0.05)
+STALL_TAX_RAMP_TURNS = 40       # turns-past-start over which the rate ramps up by 1× (was 20)
+STALL_TAX_MAX = 0.15            # per-turn clamp (was 0.5) — keeps the cumulative ~−10 to the 250 forfeit
 STRUGGLE_LOOP_TAX = -0.5
 STRUGGLE_LOOP_THRESHOLD = 3
 
@@ -254,8 +336,15 @@ class Gen3RewardManager:
     Satisfies the RewardFunction protocol. Must only be called for the trainee's
     battle — the env gates this at the call site.
     """
-    def __init__(self, log_level: LogLevel = LogLevel.QUIET):
+    def __init__(self, log_level: LogLevel = LogLevel.QUIET,
+                 config: Optional[RewardConfig] = None, progress_clock=None):
         self.log_level = log_level
+        # Per-run reward config (bias_additivity / mat_alive_weight / no_progress_penalty / gamma).
+        # Default = the single-variable run (λ=1 bias additive, material always-on).
+        self.config = config or RewardConfig()
+        # The shared ProgressClock (owned by EpisodeTracker, updated at embed/record time). The reward
+        # READS it for the no-progress penalty; obs and reward thus key on ONE value (design §5.1).
+        self.progress_clock = progress_clock
         self.switch_count = 0
         self.forced_switch_count = 0
         self.attack_count = 0
@@ -269,7 +358,10 @@ class Gen3RewardManager:
         self._consecutive_struggle = 0
         self.struggle_turns = 0
         self._prev_opp_boosts: dict = {}    # opp active boosts after last turn (for Roar check)
-        self._prev_opp_spikes: int = 0      # opp spikes layers after last turn (for Spikes bonus)
+        # opp spikes layers after last turn (for the Spikes bonus delta). NOTE: ProgressClock keeps
+        # its OWN `_prev_spikes` for the hazard-progress check — two copies of the same fact, kept
+        # coherent because both read the single per-turn LiveView (the clock at embed, this at fold).
+        self._prev_opp_spikes: int = 0
         self._prev_opp_se_threat: bool = False  # did opp have a revealed SE move vs us last turn
         self._prev_our_statused = 0
         self._prev_opp_statused = 0
@@ -283,10 +375,13 @@ class Gen3RewardManager:
         self._our_boosts_before: np.ndarray = np.zeros(7, dtype=np.int8)
         self._last_opp_seen_by: dict[str, str] = {}
         # maps our_species → opp_species when this mon last switched in (voluntary, not roared)
-        # Belief-based switch shaping: Phi(s) at the previous turn's end (None at episode start → the
-        # first transition adds no shaping), and last turn's active incoming-KO risk for the re-gate.
-        self._prev_phi: Optional[float] = None
+        # PBRS state: Φ(s) at the previous window's end per potential (None at episode start → the
+        # first transition adds no shaping), the belief re-gate's active KO-risk snapshot, and the
+        # running BIAS accumulator for the bias-additivity refund (design §1.2).
+        self._prev_phi_belief: Optional[float] = None   # incoming-KO belief PBRS (was _prev_phi)
+        self._prev_phi_mat: Optional[float] = None       # material PBRS Φ_mat (design §2)
         self._prev_active_ko_risk: float = 0.0
+        self._bias_acc: float = 0.0                      # Σ BIAS-class contributions this episode
 
     def reset(self):
         self.switch_count = 0
@@ -313,8 +408,10 @@ class Gen3RewardManager:
         self._opp_active_hp_before = 1.0
         self._our_boosts_before = np.zeros(7, dtype=np.int8)
         self._last_opp_seen_by = {}
-        self._prev_phi = None
+        self._prev_phi_belief = None
+        self._prev_phi_mat = None
         self._prev_active_ko_risk = 0.0
+        self._bias_acc = 0.0
 
     def record_action(self, ctx: BattleContext, action: int) -> None:
         """
@@ -770,16 +867,51 @@ class Gen3RewardManager:
         phi = max(0.0, min(phi, PBRS_RISK_WEIGHT * _TEAM_SIZE))
         return phi, active_risk
 
-    def _compute_spikes_bonus(self, delta: TurnDelta, live) -> float:
-        """Reward each new spike layer added; penalise wasting a turn at layer cap."""
+    def _compute_phi_mat(self, live) -> float:
+        """The material potential Φ_mat(s) (design §2.2), from the LiveView read-model.
+
+        Φ_mat = MAT_HP_WEIGHT·(Σ our_hp_frac − Σ opp_hp_frac) + MAT_ALIVE_WEIGHT·(n_alive_ours −
+        n_alive_opp), summed over the **declared team size** — unrevealed opponent mons count as
+        full-HP-alive. So Φ_mat(s_0)≈0 (6−6 HP, 6−6 alive), there are no opp-reveal discontinuities
+        (the opp sum only ever decreases from a 6.0 baseline), and the per-episode telescoping
+        constant −Φ_mat(s_0)≈0 with near-zero cross-episode variance. A pure function of the board
+        (HP + alive set) → policy-invariant under PBRS.
+        """
+        our = live.ours
+        opp = live.opp
+        # No known mons → neutral (production always has all 6 from turn 1; this guards mock/standalone
+        # paths where the team list is empty, so Φ_mat doesn't read a degenerate 0-vs-6 state).
+        if not our.mons:
+            return 0.0
+        # Our team is fully known: sum HP over the (≤6) known mons, alive = non-fainted.
+        our_hp = sum(float(m.hp_fraction) for m in our.mons[:_TEAM_SIZE] if not m.fainted)
+        our_alive = sum(1 for m in our.mons[:_TEAM_SIZE] if not m.fainted)
+        # Opp: revealed mons carry their real HP/alive; unrevealed declared slots count full-HP-alive.
+        opp_team_size = getattr(opp, "team_size", None) or _TEAM_SIZE
+        opp_team_size = min(int(opp_team_size), _TEAM_SIZE)
+        opp_revealed = list(opp.mons[:_TEAM_SIZE])
+        opp_hp = sum(float(m.hp_fraction) for m in opp_revealed if not m.fainted)
+        opp_alive = sum(1 for m in opp_revealed if not m.fainted)
+        n_unrevealed = max(0, opp_team_size - len(opp_revealed))
+        opp_hp += n_unrevealed * 1.0     # unrevealed → full HP
+        opp_alive += n_unrevealed        # unrevealed → alive
+        alive_w = self.config.mat_alive_weight
+        phi = MAT_HP_WEIGHT * (our_hp - opp_hp) + alive_w * (our_alive - opp_alive)
+        bound = MAT_HP_WEIGHT * _TEAM_SIZE + alive_w * _TEAM_SIZE
+        return max(-bound, min(phi, bound))
+
+    def _compute_spikes_bonus(self, delta: TurnDelta, live) -> tuple[float, float]:
+        """Return (layer_bonus, futile_waste). The layer-added credit is the BIAS term `spikes`
+        (its telescoping form is Φ_hazard, reached at bias_additivity→0 — design §2.6); the
+        wasted-Spikes-at-cap penalty is split out into the Markovian `futile_spikes` term."""
         curr = self._opp_spikes(live)
         new_layers = curr - self._prev_opp_spikes
         self._prev_opp_spikes = curr
         if new_layers > 0:
-            return new_layers * SPIKES_LAYER_BONUS
+            return new_layers * SPIKES_LAYER_BONUS, 0.0
         if delta.our_move_id == "spikes" and curr == 3:
-            return SPIKES_WASTE_PENALTY
-        return 0.0
+            return 0.0, SPIKES_WASTE_PENALTY
+        return 0.0, 0.0
 
     def _compute_futile_attack_penalty(self, delta: TurnDelta, live) -> float:
         """Penalise attacking moves where the opponent's total HP went up or stayed even
@@ -889,6 +1021,56 @@ class Gen3RewardManager:
             return 0.0
         return FINISHING_BLOW_BONUS
 
+    # =========================================================
+    # PBRS / clock / bias-refund FOLDS — the per-class treatment process_turn_reward applies.
+    # Kept as named one-purpose methods so the orchestrator reads as a phase sequence and the
+    # telescoping math (the §2.3 dominant-win footgun) lives in ONE place.
+    # =========================================================
+    @staticmethod
+    def _pbrs_step(prev: Optional[float], phi_next: float, is_terminal: bool) -> tuple[float, float]:
+        """One PBRS shaping step: F = γ·Φ(s′) − Φ(s), with the absorbing ``Φ(terminal)=0`` convention
+        and the standard ``prev is None`` first-window skip. Returns ``(shaped, new_prev)``. The
+        terminal-zeroing lives HERE once, so a new potential can't forget it (design §2.3)."""
+        phi = 0.0 if is_terminal else phi_next
+        shaped = (PBRS_GAMMA * phi - prev) if prev is not None else 0.0
+        return shaped, phi
+
+    def _fold_material_pbrs(self, bd: "RewardBreakdown", live, is_terminal: bool) -> None:
+        """Material PBRS Φ_mat (design §2) → ``bd.pbrs_material``. Replaces the old unconditional
+        hp/faint base spine; telescopes to −Φ_mat(s_0) → every win +30, every loss −30."""
+        bd.pbrs_material, self._prev_phi_mat = self._pbrs_step(
+            self._prev_phi_mat, self._compute_phi_mat(live), is_terminal)
+
+    def _fold_belief_pbrs(self, bd: "RewardBreakdown", live, is_terminal: bool) -> None:
+        """Incoming-KO belief PBRS (design_reward_switching.md) → ``bd.pbrs_belief``; also snapshots
+        the active KO-risk for next turn's escape/stay re-gate."""
+        phi_belief_next, active_risk_next = self._belief_potential_and_risk(live)
+        bd.pbrs_belief, self._prev_phi_belief = self._pbrs_step(
+            self._prev_phi_belief, phi_belief_next, is_terminal)
+        self._prev_active_ko_risk = 0.0 if is_terminal else active_risk_next
+
+    def _apply_progress_clock(self, bd: "RewardBreakdown") -> None:
+        """Read the shared ProgressClock's stashed penalty into ``bd.no_progress_tax`` and suppress
+        the escalating anti-spam family it SUBSUMES (design §3.1) — gated on ``bias_redesign``. In the
+        default single-variable run the clock only tracks the obs scalar (no penalty, taxes intact)."""
+        if not (self.config.bias_redesign and self.progress_clock is not None):
+            return
+        bd.no_progress_tax = float(getattr(self.progress_clock, "last_penalty", 0.0))
+        bd.repetition_tax = bd.struggle_tax = bd.switch_bouncing_tax = bd.dead_matchup_tax = 0.0
+
+    def _fold_bias_refund(self, bd: "RewardBreakdown") -> None:
+        """BIAS-additivity accumulate-and-refund (design §1.2): emit −(1−λ)·Δacc into
+        ``bd.bias_refund`` so the BIAS class's net episode contribution is λ·acc. At λ=1 the refund
+        is identically 0 → byte-identical to the additive biases. Call LAST, after every BIAS field
+        (incl. the clock read + anti-spam suppression) is finalised."""
+        lam = self.config.bias_additivity
+        if lam >= 1.0:
+            return
+        bias_sum = sum(getattr(bd, name) for name in bd.registry_fields(RewardClass.BIAS))
+        new_acc = self._bias_acc + bias_sum
+        bd.bias_refund = -(1.0 - lam) * (PBRS_GAMMA * new_acc - self._bias_acc)
+        self._bias_acc = new_acc
+
     def process_turn_reward(self, battle, delta: TurnDelta) -> float:
         """Computes the full reward for a completed turn from the TurnDelta.
 
@@ -903,38 +1085,27 @@ class Gen3RewardManager:
         # reaches into the raw poke-env battle for "what is true now".
         live = battle.live_view()
 
-        # --- Base ---
-        bd.hp_ours = float(delta.our_hp_delta.sum()) * HP_VALUE
-        bd.hp_opp = -float(delta.opp_hp_delta.sum()) * HP_VALUE
-        bd.faint_ours = -(FAINT_BASE + FAINT_HP_SCALE * self._our_active_hp_before
-                          + FAINT_MATERIAL_PENALTY) if delta.we_fainted else 0.0
-        bd.faint_opp = (FAINT_BASE + FAINT_HP_SCALE * self._opp_active_hp_before) if delta.opp_fainted else 0.0
+        # --- TERMINAL: the ±30 win/loss (out of scope; never shaped) ---
         won, lost, finished = self._terminal(live)
         if won:
             bd.win_loss = VICTORY_VALUE
         elif lost or finished:
             bd.win_loss = -VICTORY_VALUE
+        is_terminal = won or lost or finished
 
-        base_reward = bd.hp_ours + bd.hp_opp + bd.faint_ours + bd.faint_opp + bd.win_loss
+        # --- Material PBRS Φ_mat (design §2): replaces the unconditional hp/faint base spine ---
+        self._fold_material_pbrs(bd, live, is_terminal)
 
         # --- Explosion / self-destruct ---
-        # Read the damaging event directly: the protocol's |move|<user>|Explosion|
-        # is captured at parse time, before |faint| arrives and the active slot
-        # advances to a switch-in. The old `for mon in opponent_team … move_ids &
-        # {explosion, selfdestruct}` scan misfires for any opp mon that has
-        # Explosion in their revealed moveset — including turns they used
-        # something else. The event is per-turn-confirmed attribution.
+        # The survive-the-Explosion credit is now carried by Φ_mat (opp lost a mon, we lost nothing),
+        # so the old +2.0 literal is DELETED (design §2.5). The explosion_block bonus (no-sold the
+        # Explosion via immunity / 0 damage) is KEPT — it lives inside the same `not we_fainted` gate.
         opp_event = delta.opp_damaging_event
         if opp_event is not None and opp_event.move_id in ("explosion", "selfdestruct"):
             if not delta.we_fainted:
-                # Opponent used Explosion/SD but we survived — strategic win
-                bd.explosion = 2.0
-                # Extra bonus if we took 0 damage (Ghost immune, Protect, or
-                # the event's effectiveness reported 0× directly)
                 if delta.our_hp_delta.sum() == 0.0 or opp_event.effectiveness == 0.0:
                     bd.explosion_block = EXPLOSION_BLOCK_BONUS
-            # When we_fainted: faint_ours already penalises the loss;
-            # don't double-count with an explosion penalty on top.
+            # When we_fainted: Φ_mat already prices the mon loss; no extra penalty.
 
         # --- Finishing blow ---
         bd.finishing_blow = self._compute_finishing_blow_bonus(delta, live)
@@ -947,7 +1118,7 @@ class Gen3RewardManager:
         bd.boost_utilized = self._compute_boost_utilized(delta, live)
 
         # --- Field control ---
-        bd.spikes = self._compute_spikes_bonus(delta, live)
+        bd.spikes, bd.futile_spikes = self._compute_spikes_bonus(delta, live)
 
         # --- Positional: penalty for staying in against a known threat ---
         bd.matchup_penalty = self._compute_matchup_penalty(delta)
@@ -986,29 +1157,22 @@ class Gen3RewardManager:
             bd.repetition_tax = meta.get("repetition_tax", 0.0)
             bd.struggle_tax = meta.get("struggle_loop_tax", 0.0)
 
-        # --- Progressive stall tax: starts at turn 60 and RAMPS ---
-        # rate = STALL_TAX_PER_TURN * (turns past start / RAMP_TURNS), clamped at MAX.
-        # Gentle near the start so a slightly-long game is barely touched, but a
-        # 130-190 turn passive loop accumulates real pressure (≈10 total by turn 190).
+        # --- Progressive stall tax — kept GENTLE (design §4.3): the progress clock is offense-centric
+        # and can't see defensive stalls, so a soft absolute-turn term covers them. ~−10 to turn 250.
         if battle.turn > STALL_TAX_START_TURN:
             ramp = (battle.turn - STALL_TAX_START_TURN) / STALL_TAX_RAMP_TURNS
             bd.stall_tax = -min(STALL_TAX_PER_TURN * ramp, STALL_TAX_MAX)
+
+        # --- No-progress clock: read the stashed penalty + suppress the anti-spam family it subsumes
+        # (design §4 / §3.1). Gated on bias_redesign; in the default run the clock only feeds the obs.
+        self._apply_progress_clock(bd)
 
         # Update end-of-turn snapshots for next turn's checks
         self._prev_opp_boosts = self._opp_active_boosts(live)
         self._update_opp_se_threat(live)
 
-        # Belief-based switch shaping (design_reward_switching.md). One belief encode yields Phi(s')
-        # (the potential at this turn's end = the state the model sees next decision) and the active
-        # incoming-KO risk snapshot for next turn's escape/stay re-gate. PBRS reward = γ·Phi(s')−Phi(s);
-        # Phi(terminal)=0 so the ±30 win/loss is NEVER altered. prev_phi is None on the episode's first
-        # turn, so that transition adds no shaping (standard PBRS init).
-        phi_next, active_risk_next = self._belief_potential_and_risk(live)
-        is_terminal = won or lost or finished
-        if self._prev_phi is not None:
-            bd.pbrs_material = PBRS_GAMMA * (0.0 if is_terminal else phi_next) - self._prev_phi
-        self._prev_phi = 0.0 if is_terminal else phi_next
-        self._prev_active_ko_risk = 0.0 if is_terminal else active_risk_next
+        # --- Belief PBRS (design_reward_switching.md) → pbrs_belief + the re-gate risk snapshot ---
+        self._fold_belief_pbrs(bd, live, is_terminal)
 
         # Track whether our last move did anything PRODUCTIVE this turn, for the
         # escalating repetition tax. A move counts as effective if it dealt damage,
@@ -1023,29 +1187,37 @@ class Gen3RewardManager:
             or bd.spikes > 0
         )
 
+        # --- BIAS-additivity accumulate-and-refund (design §1.2) — LAST, after every BIAS field ---
+        self._fold_bias_refund(bd)
+
         self._last_breakdown = bd
         reward = bd.total
         self.total_reward += reward
-
-        if self.log_level >= LogLevel.DETAILED and self.logger.should_log():
-            subsidy_val = bd.switch_base + bd.switch_bouncing_tax + bd.repetition_tax + bd.struggle_tax
-            self.logger.log(
-                f"  [REWARD] Turn {battle.turn} | Base: {base_reward:+.4f} | Subsidy: {subsidy_val:+.2f} | Won: {battle.won}\n",
-                force=True
-            )
-            if self.log_level >= LogLevel.DEBUG:
-                if meta.get("type") == "VOLUNTARY":
-                    realized = "realized" if bd.switch_base or bd.switch_bouncing_tax or bd.escape_threat_switch else "no-op (pressed switch didn't execute)"
-                    print(f"    🔍 [DEEP TRACE] Type: VOLUNTARY SWITCH ({realized})")
-                    print(f"       Base:{bd.switch_base:+.2f} | Bouncing:{bd.switch_bouncing_tax:+.2f} | Escape:{bd.escape_threat_switch:+.2f}")
-                elif meta.get("type") == "ATTACK" and (bd.repetition_tax != 0 or bd.struggle_tax != 0):
-                    print(f"    🔍 [DEEP TRACE] Type: ATTACK | Repetition Tax: {bd.repetition_tax:.2f} | Struggle Loop Tax: {bd.struggle_tax:.2f}")
-                elif meta.get("type") == "FORCED_FAINT":
-                    print(f"    🔍 [DEEP TRACE] Type: FORCED SWITCH (post-faint, no subsidy)")
-                elif meta.get("type") == "FORCED_ROAR":
-                    print(f"    🔍 [DEEP TRACE] Type: FORCED SWITCH (roar/whirlwind, no bonuses)")
-
+        self._log_turn(bd, battle, meta)
         return reward
+
+    def _log_turn(self, bd: "RewardBreakdown", battle, meta: dict) -> None:
+        """DETAILED/DEBUG per-turn trace (no effect on the reward) — split out of process_turn_reward."""
+        if not (self.log_level >= LogLevel.DETAILED and self.logger.should_log()):
+            return
+        base_reward = bd.win_loss + bd.pbrs_material
+        subsidy_val = bd.switch_base + bd.switch_bouncing_tax + bd.repetition_tax + bd.struggle_tax
+        self.logger.log(
+            f"  [REWARD] Turn {battle.turn} | Base: {base_reward:+.4f} | Subsidy: {subsidy_val:+.2f} | Won: {battle.won}\n",
+            force=True
+        )
+        if self.log_level < LogLevel.DEBUG:
+            return
+        if meta.get("type") == "VOLUNTARY":
+            realized = "realized" if bd.switch_base or bd.switch_bouncing_tax or bd.escape_threat_switch else "no-op (pressed switch didn't execute)"
+            print(f"    🔍 [DEEP TRACE] Type: VOLUNTARY SWITCH ({realized})")
+            print(f"       Base:{bd.switch_base:+.2f} | Bouncing:{bd.switch_bouncing_tax:+.2f} | Escape:{bd.escape_threat_switch:+.2f}")
+        elif meta.get("type") == "ATTACK" and (bd.repetition_tax != 0 or bd.struggle_tax != 0):
+            print(f"    🔍 [DEEP TRACE] Type: ATTACK | Repetition Tax: {bd.repetition_tax:.2f} | Struggle Loop Tax: {bd.struggle_tax:.2f}")
+        elif meta.get("type") == "FORCED_FAINT":
+            print(f"    🔍 [DEEP TRACE] Type: FORCED SWITCH (post-faint, no subsidy)")
+        elif meta.get("type") == "FORCED_ROAR":
+            print(f"    🔍 [DEEP TRACE] Type: FORCED SWITCH (roar/whirlwind, no bonuses)")
 
     def report_episode(self, battle):
         if self.log_level < LogLevel.PERIODIC or self.total_reward == 0:

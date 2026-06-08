@@ -73,11 +73,13 @@ WEATHER_ONEHOT_DIM = 5
 GLOBAL_ENV_DIM = WEATHER_ONEHOT_DIM + 2 + 2 + 1 + 8  # = 18
 
 MATCHUP_DIM = 288 # (6*4*6) for Our vs Their + (6*4*6) for Their vs Our
-# 14 scalar reactive dims lead the block: move power(4) + multiplier(4) +
-# fainted(2) + active_status(1) + forced_struggle(1) + trapped(1) + maybe_trapped(1).
-# trapped/maybe_trapped are the gen3_trapping_signals_v1 additions (server-authoritative
-# legality surfaced as obs features).
-REACTIVE_SCALAR_DIM = 14
+# 15 scalar reactive dims lead the block: move power(4) + multiplier(4) +
+# fainted(2) + active_status(1) + forced_struggle(1) + trapped(1) + maybe_trapped(1) +
+# turns_since_progress(1). trapped/maybe_trapped are the gen3_trapping_signals_v1 additions;
+# turns_since_progress (vec[14], gen3_markovian_progress_v1) is the log-saturated no-progress clock
+# (design §5.1) — an EpisodeTracker-owned cross-turn counter (NOT LiveView), threaded into encode()
+# like the HP tracker, so obs and the no-progress reward key on ONE value.
+REACTIVE_SCALAR_DIM = 15
 
 # gen3_move_effects_v1: action-aligned per-move EFFECT flags. For each of the 4
 # request-order move slots (so feature slot k lines up with action logit 6+k), 9
@@ -107,18 +109,19 @@ from agents.observation.incoming_damage import (
     PER_MON as INCOMING_PER_MON, RECOVERY as INCOMING_RECOVERY_DIM,
 )
 INCOMING_DMG_DIM = TEAM_SIZE * INCOMING_PER_MON + INCOMING_RECOVERY_DIM  # 33
-INCOMING_DMG_OFFSET = REACTIVE_SCALAR_DIM + MOVE_EFFECTS_DIM             # 50 (within the reactive block)
+INCOMING_DMG_OFFSET = REACTIVE_SCALAR_DIM + MOVE_EFFECTS_DIM             # 51 (within the reactive block)
 
-REACTIVE_MATCHUP_OFFSET = REACTIVE_SCALAR_DIM + MOVE_EFFECTS_DIM + INCOMING_DMG_DIM  # 83
+REACTIVE_MATCHUP_OFFSET = REACTIVE_SCALAR_DIM + MOVE_EFFECTS_DIM + INCOMING_DMG_DIM  # 84
 
-REACTIVE_DIM = REACTIVE_SCALAR_DIM + MOVE_EFFECTS_DIM + INCOMING_DMG_DIM + MATCHUP_DIM  # 371
+REACTIVE_DIM = REACTIVE_SCALAR_DIM + MOVE_EFFECTS_DIM + INCOMING_DMG_DIM + MATCHUP_DIM  # 372
 
-# Top-level Offsets (Base dim = OFFSET_REACTIVE + REACTIVE_DIM = 1579)
+# Top-level Offsets — all derived from the named constants (only the constants are load-bearing;
+# these comments are the post-gen3_markovian_progress_v1 values: base dim = 1790, full obs = 3391).
 OFFSET_OUR_TEAM = 0
-OFFSET_OPP_TEAM = 6 * POKEMON_FULL_DIM                     # 594
-OFFSET_CONTEXT = 2 * OFFSET_OPP_TEAM                       # 1188
-OFFSET_GLOBAL = OFFSET_CONTEXT + (2 * ACTIVE_CONTEXT_DIM)  # 1234
-OFFSET_REACTIVE = OFFSET_GLOBAL + GLOBAL_ENV_DIM            # 1247
+OFFSET_OPP_TEAM = 6 * POKEMON_FULL_DIM                     # 642
+OFFSET_CONTEXT = 2 * OFFSET_OPP_TEAM                       # 1284
+OFFSET_GLOBAL = OFFSET_CONTEXT + (2 * ACTIVE_CONTEXT_DIM)  # 1400
+OFFSET_REACTIVE = OFFSET_GLOBAL + GLOBAL_ENV_DIM            # 1418
 
 # Max values for normalization
 MAX_TURNS = 250

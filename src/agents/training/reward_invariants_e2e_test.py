@@ -63,9 +63,8 @@ from agents.training.reward_manager import (
     BOOST_MOVES,
     EXPLOSION_BLOCK_BONUS,
     FAILED_ROAR_PENALTY,
-    FAINT_BASE,
-    FAINT_HP_SCALE,
-    FAINT_MATERIAL_PENALTY,
+    MAT_HP_WEIGHT,
+    MAT_ALIVE_WEIGHT,
     FINISHING_BLOW_BONUS,
     FUTILE_ATTACK_PENALTY,
     FUTILE_IMMUNE_PENALTY,
@@ -262,40 +261,14 @@ def _check_invariants(
                 f"with event.effectiveness={opp_event.effectiveness}"
             )
 
-    # --- Base: hp_ours / hp_opp are deterministic functions of delta ---
-    expected_hp_ours = float(delta.our_hp_delta.sum()) * HP_VALUE
-    if not _almost(bd.hp_ours, expected_hp_ours):
-        viol(f"hp_ours={bd.hp_ours:.4f} != expected {expected_hp_ours:.4f}")
-    expected_hp_opp = -float(delta.opp_hp_delta.sum()) * HP_VALUE
-    if not _almost(bd.hp_opp, expected_hp_opp):
-        viol(f"hp_opp={bd.hp_opp:.4f} != expected {expected_hp_opp:.4f}")
-
-    # --- Base: faint signs and magnitudes ---
-    # Formula: -(FAINT_BASE + FAINT_HP_SCALE * hp_before + FAINT_MATERIAL_PENALTY).
-    # The flat FAINT_MATERIAL_PENALTY is ASYMMETRIC (faint_ours only) — a faint
-    # removes a whole mon, worth more than its current HP. Range is [-3.25, -1.25]
-    # INCLUSIVE: -3.25 at full HP (Explosion/Self-Destruct, OHKO), -1.25 at 0%.
-    if delta.we_fainted:
-        stats.fires_by_signal["faint_ours"] += 1
-        if not (-3.25 <= bd.faint_ours <= -1.25):
-            viol(f"faint_ours={bd.faint_ours:.4f} out of [-3.25, -1.25]")
-        expected = -(FAINT_BASE + FAINT_HP_SCALE * state.our_active_hp_before
-                     + FAINT_MATERIAL_PENALTY)
-        if not _almost(bd.faint_ours, expected, tol=1e-3):
-            viol(
-                f"faint_ours={bd.faint_ours:.4f} != -(FAINT_BASE + FAINT_HP_SCALE * "
-                f"hp_before={state.our_active_hp_before:.3f} + FAINT_MATERIAL_PENALTY) "
-                f"= {expected:.4f}"
-            )
-    elif bd.faint_ours != 0.0:
-        viol(f"faint_ours={bd.faint_ours:.4f} fired without we_fainted")
-
-    if delta.opp_fainted:
-        stats.fires_by_signal["faint_opp"] += 1
-        if not (0.5 <= bd.faint_opp <= 2.5):
-            viol(f"faint_opp={bd.faint_opp:.4f} out of [0.5, 2.5]")
-    elif bd.faint_opp != 0.0:
-        viol(f"faint_opp={bd.faint_opp:.4f} fired without opp_fainted")
+    # --- Material PBRS Φ_mat (design §2): the old hp_ours/hp_opp/faint_ours/faint_opp base spine is
+    # GONE — material is now one always-on PBRS term, bd.pbrs_material = γ·Φ_mat(s′)−Φ_mat(s). It is
+    # bounded by the Φ_mat range (|ΔΦ_mat| ≤ 2·(MAT_HP_WEIGHT·6 + MAT_ALIVE_WEIGHT·6)) and is 0 on the
+    # first window of an episode (prev_phi None). Telescoping/clutch-fix is checked by the dedicated
+    # PBRS tests; here we just bound it. ---
+    _phi_bound = 2.0 * (MAT_HP_WEIGHT * 6 + MAT_ALIVE_WEIGHT * 6)
+    if not (-_phi_bound - 1e-6 <= bd.pbrs_material <= _phi_bound + 1e-6):
+        viol(f"pbrs_material={bd.pbrs_material:.4f} out of [±{_phi_bound:.2f}]")
 
     # --- Base: win_loss only on terminal states ---
     if battle.won:
@@ -309,16 +282,16 @@ def _check_invariants(
     elif bd.win_loss != 0.0:
         viol(f"win_loss={bd.win_loss:.4f} fired without terminal state")
 
-    # --- Base: explosion / explosion_block (event-driven) ---
+    # --- explosion_block (event-driven). The +2.0 explosion LITERAL is deleted (design §2.5) —
+    # bd.explosion is always 0; the survive-Explosion credit rides Φ_mat. Only the block bonus (no
+    # damage / 0× immunity) remains, inside the `not we_fainted` gate. ---
     opp_event = delta.opp_damaging_event
     is_opp_explosion = (
         opp_event is not None and opp_event.move_id in ("explosion", "selfdestruct")
     )
+    if bd.explosion != 0.0:
+        viol(f"explosion={bd.explosion:.4f} — the literal is deleted; must always be 0")
     if is_opp_explosion and not delta.we_fainted:
-        stats.fires_by_signal["explosion"] += 1
-        if not _almost(bd.explosion, 2.0):
-            viol(f"explosion={bd.explosion:.4f} != 2.0 on opp Explosion+we_survived")
-        # block fires when no damage or eff==0
         block_expected = (
             float(delta.our_hp_delta.sum()) == 0.0 or opp_event.effectiveness == 0.0
         )
@@ -329,11 +302,8 @@ def _check_invariants(
                     f"explosion_block={bd.explosion_block:.4f} != "
                     f"{EXPLOSION_BLOCK_BONUS} on blocked Explosion"
                 )
-    else:
-        if bd.explosion != 0.0:
-            viol(f"explosion={bd.explosion:.4f} fired without opp Explosion+survive")
-        if bd.explosion_block != 0.0:
-            viol(f"explosion_block={bd.explosion_block:.4f} fired without Explosion block")
+    elif bd.explosion_block != 0.0:
+        viol(f"explosion_block={bd.explosion_block:.4f} fired without Explosion block")
 
     # --- Base: finishing_blow ---
     our_mon = battle.active_pokemon
