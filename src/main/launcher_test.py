@@ -19,6 +19,7 @@ from main.launcher import (
     _find_model_arg,
     _insert_or_replace_model_arg,
     _insert_or_replace_run_dir_arg,
+    _resolve_fresh_run_dir,
     _read_checkpoint_git_hash,
     _read_metrics_pipe,
     _strip_launcher_args,
@@ -184,6 +185,28 @@ class TestInsertOrReplaceRunDirArg:
     def test_empty_args(self):
         result = _insert_or_replace_run_dir_arg([], "/models/run_x")
         assert result == ["--run-dir", "/models/run_x"]
+
+
+# ── _resolve_fresh_run_dir ───────────────────────────────────────────────────
+
+class TestResolveFreshRunDir:
+    TS = "20260608_120000"
+
+    def test_mints_timestamped_dir_when_no_run_dir(self):
+        assert _resolve_fresh_run_dir(["--debug"], self.TS) == "models/run_20260608_120000"
+
+    def test_honours_user_run_dir(self):
+        args = ["--debug", "--run-dir", "models/ai_v5_6_stable_N_0608"]
+        assert _resolve_fresh_run_dir(args, self.TS) == "models/ai_v5_6_stable_N_0608"
+
+    def test_strips_trailing_slash(self):
+        # The user's invocation passes the folder with a trailing slash.
+        args = ["--run-dir", "models/ai_v5_6_stable_N_0608/"]
+        assert _resolve_fresh_run_dir(args, self.TS) == "models/ai_v5_6_stable_N_0608"
+
+    def test_honours_equals_form(self):
+        args = ["--run-dir=models/my_run"]
+        assert _resolve_fresh_run_dir(args, self.TS) == "models/my_run"
 
 
 # ── _find_model_arg ──────────────────────────────────────────────────────────

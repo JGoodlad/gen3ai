@@ -30,6 +30,7 @@ from main.launcher.checkpoint import (
     _insert_or_replace_model_arg,
     _insert_or_replace_run_dir_arg,
     _peek_arg,
+    _resolve_fresh_run_dir,
     _strip_launcher_args,
 )
 from main.launcher.child import (
@@ -238,8 +239,7 @@ def _prepare_session(
 
     existing_model = _find_model_arg(child_args)
     if not existing_model:
-        ts = time.strftime("%Y%m%d_%H%M%S")
-        run_dir = os.path.join("models", f"run_{ts}")
+        run_dir = _resolve_fresh_run_dir(child_args, time.strftime("%Y%m%d_%H%M%S"))
         os.makedirs(run_dir, exist_ok=True)
         child_args = _insert_or_replace_run_dir_arg(child_args, run_dir)
     else:

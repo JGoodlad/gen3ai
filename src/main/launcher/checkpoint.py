@@ -148,6 +148,19 @@ def _insert_or_replace_run_dir_arg(args: list, run_dir: str) -> list:
     return _set_arg(args, "--run-dir", run_dir)
 
 
+def _resolve_fresh_run_dir(args: list, timestamp: str) -> str:
+    """Run dir for a fresh (no --model) launcher run.
+
+    Honour a user-supplied ``--run-dir`` verbatim (normalized) — the folder the run should
+    write into; only mint a timestamped ``models/run_<timestamp>`` when none was given. Without
+    the ``--run-dir`` branch the launcher always overwrote the user's folder with a fresh
+    timestamp, so the TUI 🗂 badge and every checkpoint landed in the wrong place."""
+    user_run_dir = _peek_arg(args, "--run-dir")
+    if user_run_dir:
+        return os.path.normpath(user_run_dir)
+    return os.path.join("models", f"run_{timestamp}")
+
+
 def _strip_launcher_args(argv: list) -> list:
     """Strip launcher-only flags so they are not forwarded to train_rl_agent.py."""
     out = []
