@@ -80,6 +80,16 @@ deterministic `_supervise` exit-code/crash-restart/`_reap` suite), plus `launche
   startup crash silently "resume" from the freshly-initialised seed instead of failing loudly.
   The dashboard shows a
   `↻ N restarts (M crash)` badge and the exit summary reports the crash count.
+- **Non-recoverable config errors don't loop** — a checkpoint arch-family mismatch (or a resume
+  `vf_coef`/reward-config drift) fails the *same* way on every retry, so auto-restarting just burns
+  the circuit-breaker and hides the cause behind the logs. `train_rl_agent.py` exits these with a
+  dedicated `FATAL_CONFIG` (3) code (raised for any `ModelVersionError`); `_supervise` classifies
+  them via `_fatal_config_reason(rc, log_lines)` — the exit code is the primary signal, plus a
+  defensive scan for a `[ModelVersion] FATAL` line in the captured output (catches a FATAL that
+  escaped as a generic exit 1). On a match it saves the crash log, prints the FATAL reason straight
+  into the **Events panel** (`🛑 Fatal config error — will NOT restart`, then the reason lines), and
+  returns immediately — no restart, no checkpoint discovery — so the fix is on-screen, not buried in
+  `crashes/restart_err_*.txt`.
 - **Worktree isolation** — at startup, creates a detached git worktree pinned to the current
   HEAD (or to the commit recorded in the checkpoint's `metadata.json` when resuming). Agent
   pushes to `main` never affect a running session.
@@ -130,6 +140,7 @@ deterministic `_supervise` exit-code/crash-restart/`_reap` suite), plus `launche
 | 0 | `COMPLETE` | All steps done — launcher stops |
 | 15 | `INTERRUPTED` | SIGTERM received, checkpoint saved — launcher restarts |
 | 1 | `CRASH` | Unhandled exception — launcher saves `crashes/restart_err_<token>.txt` and auto-restarts from the last checkpoint (up to `--max-crash-restarts` consecutive rapid crashes, then gives up; any non-enum exit code is treated the same way). A crash with no checkpoint to resume from is fatal: the child's exit code is propagated and the crash log printed. |
+| 3 | `FATAL_CONFIG` | **Non-recoverable** config/architecture error — `train_rl_agent.py` raises it for a `ModelVersionError` (checkpoint arch-family mismatch, or a resume `vf_coef`/reward-config drift). Restarting would hit the *identical* error every time, so the launcher does **not** restart: it saves the crash log, surfaces the reason on-screen, and gives up immediately (returning this code) instead of looping until the crash circuit-breaker trips. See **Crash auto-restart**. |
 
 ## Flags
 

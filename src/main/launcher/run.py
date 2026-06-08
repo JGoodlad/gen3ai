@@ -58,6 +58,33 @@ from main.launcher.worktree import (
 _FAST_CRASH_SECONDS = 600.0
 
 
+# Substrings in the child's output that mark a deterministic, non-recoverable startup
+# failure — restarting would hit the exact same error every time. The dedicated
+# FATAL_CONFIG exit code is the primary signal; this is a defensive fallback for a FATAL
+# that escaped as a generic exit 1 (e.g. a future fatal path that doesn't set the code).
+_FATAL_CONFIG_SIGNATURES = ("[ModelVersion] FATAL",)
+
+
+def _fatal_config_reason(rc: int, log_lines: "list | None") -> "list | None":
+    """If this exit is a non-recoverable config/architecture error, return a short list of
+    human-readable reason lines (so the launcher gives up instead of auto-restarting into
+    the identical failure); otherwise return None.
+
+    Two signals, either sufficient: the dedicated ``FATAL_CONFIG`` exit code the child
+    raises for a ``ModelVersionError`` (arch-family / vf_coef / reward-config mismatch), or
+    a known FATAL signature in the captured output (defensive — catches a FATAL that came
+    out as a generic exit 1)."""
+    lines = list(log_lines or [])
+    for i, line in enumerate(lines):
+        if any(sig in line for sig in _FATAL_CONFIG_SIGNATURES):
+            # The FATAL line + a couple of following explanatory lines (the
+            # ModelVersionError message spans 2-3 lines: what mismatched + the fix).
+            return [s for s in (l.strip() for l in lines[i : i + 3]) if s]
+    if rc == int(TrainExitCode.FATAL_CONFIG):
+        return ["non-recoverable configuration error (see crash log)"]
+    return None
+
+
 def _print_crash_log(log_lines: "list | None") -> None:
     """Dump captured child output to stderr after the screen has closed."""
     if not log_lines:
@@ -421,6 +448,26 @@ def _supervise(
             _tick()
             time.sleep(1)
             return 0
+
+        # A non-recoverable config/architecture error (checkpoint arch-family mismatch,
+        # vf_coef / reward-config drift): restarting would deterministically hit the SAME
+        # error, so give up immediately with the reason on-screen rather than burning the
+        # crash circuit-breaker and forcing the user to open the logs to find out why.
+        fatal_reason = _fatal_config_reason(rc, state.snapshot().log_lines)
+        if fatal_reason:
+            state.crash_count += 1
+            err_path = _save_crash_log(run_dir, state, rc)
+            saved = (
+                f" — saved {os.path.join('crashes', os.path.basename(err_path))}" if err_path
+                else ""
+            )
+            state.add_event(f"🛑 Fatal config error — will NOT restart{saved}")
+            for line in fatal_reason:
+                state.add_event(f"   {line}")
+            _tick()
+            time.sleep(2)
+            atexit.register(_print_crash_log, state.snapshot().log_lines)
+            return rc
 
         # An INTENDED restart (user 'r' or launcher force-kill) recovers regardless of the
         # exit code; a self-crash (unintended non-INTERRUPTED exit) auto-restarts from the

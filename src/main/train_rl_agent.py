@@ -1130,7 +1130,10 @@ async def main():
             )
         except ModelVersionError as e:
             print(f"\n[ModelVersion] FATAL: {e}")
-            os._exit(1)
+            # Non-recoverable: an arch-family / vf_coef / reward-config mismatch fails the
+            # SAME way on every retry. Exit with FATAL_CONFIG so the launcher gives up
+            # immediately instead of auto-restarting into the identical error.
+            os._exit(int(TrainExitCode.FATAL_CONFIG))
         model.ent_coef = args.ent_coef
         model.vf_coef = args.vf_coef  # == the saved value (enforced above); set explicitly for parity
         model.gae_lambda = 0.80

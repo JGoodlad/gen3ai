@@ -198,7 +198,8 @@ checkpoint-saving shutdown rather than a lost checkpoint.
 
 **Internals — how the UI reconciles the restart loop with Textual's event loop, the
 quit/ctrl-c/SIGHUP teardown, crash reporting + auto-restart, exit codes
-(`COMPLETE`/`INTERRUPTED`/`CRASH`), the full flag table (`--restart-interval-hours`,
+(`COMPLETE`/`INTERRUPTED`/`CRASH`/`FATAL_CONFIG` — the last gives up without restarting on an
+arch/config mismatch instead of looping), the full flag table (`--restart-interval-hours`,
 `--restart-grace-minutes`, `--max-crash-restarts`, `--no-pin`, `--sync-to-main`), the resume
 contract, and the `:8001` Showdown-port default — live in `src/main/launcher/CLAUDE.md`.**
 
@@ -472,7 +473,7 @@ src/
     prober/            # Forensic-replay inspector (Textual TUI) — has CLAUDE.md
                      #   engine.py (pure analysis), model.py, discovery.py, app.py
     tui/               # Shared Textual base (Gen3App, theme, colors) — has CLAUDE.md
-    exit_codes.py      # TrainExitCode enum (COMPLETE=0, INTERRUPTED=15, CRASH=1)
+    exit_codes.py      # TrainExitCode enum (COMPLETE=0, INTERRUPTED=15, CRASH=1, FATAL_CONFIG=3)
     train_rl_agent.py  # Training entry point (also callable directly)
     eval_worker.py     # Subprocess bot-eval worker (frozen snapshot, CPU)
     probe_replay.py    # Forensic-replay CLI (thin wrapper over main.prober.engine)

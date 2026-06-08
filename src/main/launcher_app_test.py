@@ -22,7 +22,13 @@ from unittest.mock import MagicMock, call, patch
 from textual.widgets import ContentSwitcher, DataTable, Static
 
 from main.exit_codes import TrainExitCode
-from main.launcher.run import _SessionCtx, _prepare_session, _reap, _supervise
+from main.launcher.run import (
+    _SessionCtx,
+    _fatal_config_reason,
+    _prepare_session,
+    _reap,
+    _supervise,
+)
 from main.launcher.state import LauncherState
 from main.launcher.app import LauncherApp
 
@@ -487,6 +493,9 @@ def _supervise_patches(procs, checkpoint=None):
     stack.enter_context(patch("main.launcher.run.find_latest_checkpoint", return_value=checkpoint))
     stack.enter_context(patch("main.launcher.run._save_crash_log", return_value=None))
     stack.enter_context(patch("main.launcher.run.time.sleep"))
+    # The give-up paths register an at-exit crash-log dump; suppress it so a test that
+    # injects log lines doesn't leak the child output to the test runner's stderr.
+    stack.enter_context(patch("main.launcher.run.atexit.register"))
     return stack
 
 
@@ -534,6 +543,73 @@ class TestSuperviseCrashRestart:
         code = _supervise_once(_ctx(tmp_path), [c1, c2], checkpoint=str(ckpt), max_crash_restarts=2)
         assert code == TrainExitCode.CRASH
         assert c2.wait.called  # restarted once before giving up
+
+
+class TestSuperviseFatalConfig:
+    """A non-recoverable config/arch error (ModelVersionError → FATAL_CONFIG, or a
+    ``[ModelVersion] FATAL`` signature in the captured output) must NOT auto-restart —
+    restarting would hit the identical error. The launcher gives up immediately, even
+    when a checkpoint is available (a normal crash WOULD restart from it)."""
+
+    def test_fatal_config_exit_code_does_not_restart(self, tmp_path):
+        ckpt = tmp_path / "checkpoint_1000_steps.zip"
+        ckpt.write_text("x")
+        fatal = _make_proc(TrainExitCode.FATAL_CONFIG)
+        nxt = _make_proc(TrainExitCode.COMPLETE)  # must never be reached
+        code = _supervise_once(
+            _ctx(tmp_path), [fatal, nxt], checkpoint=str(ckpt), max_crash_restarts=5
+        )
+        assert code == TrainExitCode.FATAL_CONFIG
+        assert not nxt.wait.called  # gave up — no second child launched
+
+    def test_fatal_signature_in_log_does_not_restart(self, tmp_path):
+        ckpt = tmp_path / "checkpoint_1000_steps.zip"
+        ckpt.write_text("x")
+        # A generic crash exit (1), but the captured output carries the FATAL signature —
+        # the defensive fallback should still classify it as non-recoverable.
+        crash = _make_proc(TrainExitCode.CRASH)
+        nxt = _make_proc(TrainExitCode.COMPLETE)
+        state = LauncherState(interval_hours=0)
+        state.add_log("[ModelVersion] FATAL: Architecture family mismatch: saved='a', current='b'.")
+        with _supervise_patches([crash, nxt], checkpoint=str(ckpt)):
+            code = _supervise(
+                state, queue.Queue(), _ctx(tmp_path),
+                interval_hours=0, grace_minutes=20.0, max_crash_restarts=5,
+            )
+        assert code == TrainExitCode.CRASH
+        assert not nxt.wait.called
+
+    def test_ordinary_crash_still_restarts(self, tmp_path):
+        """Guard: a plain crash with no fatal signal keeps the existing auto-restart."""
+        ckpt = tmp_path / "checkpoint_1000_steps.zip"
+        ckpt.write_text("x")
+        crash = _make_proc(TrainExitCode.CRASH)
+        done = _make_proc(TrainExitCode.COMPLETE)
+        code = _supervise_once(
+            _ctx(tmp_path), [crash, done], checkpoint=str(ckpt), max_crash_restarts=5
+        )
+        assert code == 0
+        assert done.wait.called
+
+
+class TestFatalConfigReason:
+    """Unit-test the pure classifier directly."""
+
+    def test_exit_code_alone_is_sufficient(self):
+        assert _fatal_config_reason(int(TrainExitCode.FATAL_CONFIG), []) is not None
+
+    def test_signature_alone_is_sufficient(self):
+        reason = _fatal_config_reason(
+            int(TrainExitCode.CRASH),
+            ["progress chatter", "[ModelVersion] FATAL: vf_coef mismatch", "Fix: resume with ..."],
+        )
+        assert reason is not None
+        assert reason[0].startswith("[ModelVersion] FATAL")
+        assert "Fix:" in reason[-1]  # grabs following explanatory lines too
+
+    def test_ordinary_crash_is_none(self):
+        assert _fatal_config_reason(int(TrainExitCode.CRASH), ["normal traceback line"]) is None
+        assert _fatal_config_reason(int(TrainExitCode.INTERRUPTED), None) is None
 
 
 class TestSuperviseConfirmQuit:
