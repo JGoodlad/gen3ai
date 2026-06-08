@@ -928,6 +928,11 @@ structural, not a deferral:
 
 ### 6.3 PopArt pairing **[RT-6]**
 
+> **PopArt is now BUILT & shipped** (`impl_step7_popart.md`, commit `0f97e9d`): `--use-popart` adds
+> van-Hasselt value-target normalization (config v6, **no arch change**, requires `--clip-range-vf
+> none`). This section's recommendation is therefore actionable — run this design with `--use-popart`,
+> and watch `grad/value_share` fall (≈1.0 → ~0.4) + `popart/sigma` track `train/return_std`.
+
 The `−Φ_total(s_0)` constant lands in the **value-loss target** (per-batch advantage normalization
 cancels it in the *advantage*, but the value head regresses the *unnormalized return*). The declared-team
 `Φ_mat` (§2.2) makes `Φ_mat(s_0) ≈ 0` with near-zero variance, minimizing this. Still, because the new
