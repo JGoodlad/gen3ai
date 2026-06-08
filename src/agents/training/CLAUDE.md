@@ -405,6 +405,10 @@ a stable opponent rides the *existing* pool-vs-heuristic split in `MaskableAgent
 - The stable-opponent players are **built once per worker** (`load_foreign_opponent` in the env
   factory), so no per-episode reload; each plays **stochastic** at `--stable-opponent-temp` in
   TRAINING but **greedy (temp 0)** in EVAL (a clean yardstick).
+- **Surfaced in the launcher Events panel** (via `emit`, like the `[SELFPLAY]` startup lines): a
+  `🎯 [STABLE] N cross-run opponent(s): ext_<run> — eval greedy; training ≤<share> of self-play until
+  mastered (win_rate ≥ <wr>)` line at startup, and each eval-summary event gains a `stable <pct>%`
+  field. (Per-opponent `eval/win_rate_vs_ext_<run>` also rides the normal eval Metrics table.)
 - **Distillation interaction:** under `--distill-opponents` the pool flips to 100% cheap distilled
   models (all-or-nothing — one full-model worker straggles and gates the per-step barrier). A full
   foreign stable opponent would re-introduce that straggler, so stable opponents drop OUT of the
@@ -437,15 +441,25 @@ a stable opponent rides the *existing* pool-vs-heuristic split in `MaskableAgent
   `eval/win_rate_vs_ext_<run>`, `eval/mean_reward_vs_ext_<run>`, `eval/mean_ep_len_vs_ext_<run>`;
   plus `eval/win_rate_vs_external` ONLY for a mini-league (2+ — with one it duplicates its row; it's
   an `_EVAL_SUMMARY` "vs External" row, not a fake per-opponent row); plus a `metadata.json:latest_eval`
-  `externals` block. **NOT emitted for ext:** `td_resid_tail` (a bot/sentinel critic-coverage
-  diagnostic) and ELO (display-only). Kept **OUT of** `win_rate_vs_bots` (`bot_mean` excludes them),
-  `win_rate_vs_pool`, the best-model aggregate, the `td_resid_tail_mean` headline, and the ELO fit.
+  `externals` block. Kept **OUT of** `win_rate_vs_bots` (`bot_mean` excludes them), `win_rate_vs_pool`,
+  the best-model aggregate, the `td_resid_tail_mean` headline, and **the ELO FIT itself** (no ladder
+  distortion). **NOT emitted for ext:** `td_resid_tail` (a bot/sentinel critic-coverage diagnostic).
   The TUI renders each by its run name with an `(ext)` tag.
-- **`best_model/` is self-contained.** Saving the best model now also copies the run's
-  `model_config.json` into `best_model/` (`copy_run_config_to_best_model`, called from both eval
-  callbacks' best-save), so `best_model/{best_model.zip,model_config.json}` are co-located — the
-  unified place a stable-opponent consumer looks first (resolution falls back to the run dir / parent
-  for older runs). Backfilled for existing `models/*/best_model/` dirs.
+- **ELO shown in the eval table** (`record_external_elos`): the elo column for an `ext_` row PREFERS
+  the opponent's **own recorded ELO** — read at startup from its `best_model.json` sidecar (or run
+  `metadata.json`) `latest_eval.elo` into `FixedOpponentEntry.source_elo` (`_read_source_elo`). It's a
+  well-fit, bot-anchored rating (cross-run-comparable since the bot anchors are stable) — e.g. 1902 for
+  `ai_v5_5_popart_50m_0607`. **Fallback** (`external_elo`) when the opponent carries no recorded ELO:
+  invert the BT win prob from the trainee's live rating + win rate (`R_opp = R_trainee −
+  (400/ln10)·logit(wr)`, clamped ≈±676) — a rough single-edge estimate. Recorded as
+  `eval/elo_vs_ext_<run>`; the opponent is NEVER a player in the fit itself (no ladder distortion).
+- **`best_model/` is self-contained.** Saving the best model copies the run's `model_config.json` AND
+  writes a `best_model.json` sidecar (`copy_run_config_to_best_model` + `write_best_model_sidecar`,
+  both called from both eval callbacks' best-save). `best_model.json` reuses
+  `snapshot.write_checkpoint_metadata` (the per-checkpoint sidecar code) so it carries the
+  `latest_eval` block **incl. the run's ELO** —
+  `best_model/{best_model.zip,model_config.json,best_model.json}` co-located (arch gate + carried ELO,
+  no parent search). Backfilled for existing `models/*/best_model/` dirs.
 - **Tests:** `fixed_opponent_pool_test.py` (parse + resolve + the arch FATAL gate),
   `snapshot_test.py::*opponent*/*foreign*` (the loader + `check_opponent_compatible`), and the
   end-to-end `stable_opponent_fuzz_test.py` (bridge, no server — resolve + arch FATAL + foreign

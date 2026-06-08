@@ -25,7 +25,13 @@ startup **FATAL_CONFIG** (no restart loop). Resolution + validation happen once 
 **`agents.training.fixed_opponent_pool`** module. In **eval** the opponent plays **greedy (temp 0)** —
 a clean, deterministic yardstick — recorded under the reserved **`ext_<run>`** label namespace
 (`eval/win_rate_vs_ext_<run>` + a `win_rate_vs_external` aggregate for a mini-league), kept **out of**
-`win_rate_vs_bots` / `win_rate_vs_pool` / the best-model aggregate / the ELO fit. Under **`--self-play`**
+`win_rate_vs_bots` / `win_rate_vs_pool` / the best-model aggregate / **the ELO fit** (no ladder
+distortion). The eval table's elo column for an `ext_` row IS filled (`record_external_elos`),
+preferring the opponent's **own recorded ELO** (read at startup from its `best_model.json` sidecar /
+run `metadata.json` `latest_eval.elo` → `FixedOpponentEntry.source_elo` — a well-fit, bot-anchored,
+cross-run-comparable rating, e.g. 1902 for ai_v5_5), and only falling back to a **trainee-derived
+ballpark** (`external_elo`: `R_opp = R_trainee − (400/ln10)·logit(win_rate)`, clamped) when no recorded
+ELO exists. Display-only either way. Under **`--self-play`**
 the opponent also enters the *training* mix by riding the **existing pool-vs-heuristic split** in
 `MaskableAgentWrapper` (no new source-model abstraction): un-mastered → a **capped minority**
 (`STABLE_CHALLENGE_SHARE`=0.20) of the self-play/challenge bucket (the pool keeps the bulk; multiple
@@ -71,18 +77,24 @@ relaxation to admit an obs-identical-but-model-refactored opponent would split a
 
 - **Eval** (any run): greedy matchup → `eval/win_rate_vs_ext_<run>` (+ reward/ep_len; `win_rate_vs_external`
   only for ≥2). `metadata.json:latest_eval` gains an `externals` block. **Not** in `win_rate_vs_bots`,
-  `win_rate_vs_pool`, best-model, ELO, or the `td_resid_tail` diagnostic. Worker: `eval_worker._eval_fixed`.
+  `win_rate_vs_pool`, best-model, the **ELO fit**, or the `td_resid_tail` diagnostic — but the elo
+  column IS shown (display-only): the opponent's **own recorded ELO** (`source_elo`) when available,
+  else a trainee-derived ballpark (`external_elo`). Worker: `eval_worker._eval_fixed`.
 - **Training** (only `--self-play`; a startup NOTE says so otherwise): competence-gated by
   `self_play_fraction` (a weak model trains on bots first); un-mastered = ≤20% of self-play; mastered →
   floor. Stable players are **built once per worker** (`load_foreign_opponent` in the env factory) — no
   per-episode reload — and are leak-safe via the same `reset_battles`-on-active-opponent path as the pool
   player. Mastery is pushed via `env_method("set_stable_mastered", …)` (drain-safe under `--async-rollout`).
-- **`best_model/` is self-contained**: each best-save also copies the run's `model_config.json` into
-  `best_model/` (`copy_run_config_to_best_model`), the unified place a consumer looks first; backfilled
-  for existing runs.
+- **`best_model/` is self-contained**: each best-save copies the run's `model_config.json` AND writes a
+  `best_model.json` sidecar (`copy_run_config_to_best_model` + `write_best_model_sidecar`, the latter
+  reusing `snapshot.write_checkpoint_metadata` so it carries `latest_eval` incl. the run's ELO).
+  `best_model/{best_model.zip,model_config.json,best_model.json}` co-located — the unified place a
+  consumer reads the arch gate + the carried ELO. Backfilled for existing runs.
 - **Resume**: the mastered set lives in callback memory (not persisted), so after a launcher restart a
   previously-mastered opponent reverts to the challenge bucket until the first post-restart eval
   re-confirms it (self-healing; bounded by the eval cadence).
+- **Launcher Events panel**: a `🎯 [STABLE] …` startup line (via `emit`, mirroring the `[SELFPLAY]`
+  startup lines — `emit` print()s standalone), plus a `stable <pct>%` field on each eval-summary event.
 
 ## Review (§7) — 4-dimension adversarial pass, 9 confirmed findings all fixed
 
@@ -120,5 +132,6 @@ DRY helpers extracted along the way: `eval_worker._eval_trainee_vs_model` (share
 
 The `obs_signature` split (admit an obs-identical-but-model-refactored opponent); any
 genuinely-different-obs opponent (a foreign encoder / pinned-commit move-server — see
-`design_stable_opponents.md §3`); carrying a stable opponent's ELO across runs as an anchor (ELO stays
-display-only); per-opponent training weights.
+`design_stable_opponents.md §3`); carrying a stable opponent's ELO across runs as a real fit **anchor**
+(the shown ELO is instead a display-only ballpark inverted from the trainee's rating — `external_elo`);
+per-opponent training weights.

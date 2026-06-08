@@ -1,4 +1,5 @@
 import dataclasses
+import json
 import os
 import tempfile
 
@@ -186,3 +187,44 @@ def test_copy_run_config_to_best_model(version):
     with tempfile.TemporaryDirectory() as tmp:
         copy_run_config_to_best_model(tmp, os.path.join(tmp, "best_model"))  # no run config → silent
     copy_run_config_to_best_model(None, None)  # None args → silent
+
+
+# ── source_elo: the opponent's OWN recorded ELO (best_model.json sidecar / metadata fallback) ──
+
+def _write_run_colocated(tmp, version, *, name, sidecar_elo=None, run_meta_elo=None):
+    """A run dir with the config CO-LOCATED in best_model/ (the real backfilled layout), optionally
+    with a best_model/best_model.json sidecar and/or a run-level metadata.json carrying an elo."""
+    run = os.path.join(tmp, name)
+    bm = os.path.join(run, "best_model")
+    os.makedirs(bm)
+    open(os.path.join(bm, "best_model.zip"), "w").close()
+    with open(os.path.join(bm, "model_config.json"), "w") as f:
+        f.write(version.to_json())
+    if sidecar_elo is not None:
+        with open(os.path.join(bm, "best_model.json"), "w") as f:
+            json.dump({"lr": 1e-4, "latest_eval": {"elo": sidecar_elo}}, f)
+    if run_meta_elo is not None:
+        with open(os.path.join(run, "metadata.json"), "w") as f:
+            json.dump({"latest_eval": {"elo": run_meta_elo}}, f)
+    return run
+
+
+def test_source_elo_prefers_best_model_sidecar(version):
+    with tempfile.TemporaryDirectory() as tmp:
+        run = _write_run_colocated(tmp, version, name="r", sidecar_elo=1850.0, run_meta_elo=1700.0)
+        e = resolve_stable_opponents(run, version)[0]
+    assert e.source_elo == pytest.approx(1850.0)   # best_model.json wins over run-level metadata
+
+
+def test_source_elo_falls_back_to_run_metadata(version):
+    with tempfile.TemporaryDirectory() as tmp:
+        run = _write_run_colocated(tmp, version, name="r", sidecar_elo=None, run_meta_elo=1700.0)
+        e = resolve_stable_opponents(run, version)[0]
+    assert e.source_elo == pytest.approx(1700.0)
+
+
+def test_source_elo_none_when_absent(version):
+    with tempfile.TemporaryDirectory() as tmp:
+        run = _write_run_colocated(tmp, version, name="r")   # no elo anywhere
+        e = resolve_stable_opponents(run, version)[0]
+    assert e.source_elo is None

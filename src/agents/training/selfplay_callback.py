@@ -46,11 +46,13 @@ from agents.training.eval_callback import (
     build_bot_eval_block,
     build_externals_block,
     copy_run_config_to_best_model,
+    write_best_model_sidecar,
     eval_opponent_names,
     eval_run_nonce,
     external_aggregate,
     kill_eval_workers,
     record_elo,
+    record_external_elos,
     record_per_opponent,
     latest_recorded_eval_step,
     merge_eval_results,
@@ -587,16 +589,25 @@ class SelfPlayCallback(BaseCallback):
             [{"step": e.step, "win_rate": v} for e, _l, v, _rw, _ep in kept_sentinels],
             pending["n_games"], self.logger, tui, bot_td_tails=bot_td,
         )
+        # ELO for each stable opponent (display-only, out of the fit) → fills the eval table's elo
+        # column for the ext_ rows: its OWN recorded ELO when available, else a trainee-derived ballpark.
+        if ext_wr:
+            record_external_elos(self.logger, tui, elo_result[0] if elo_result else None, ext_wr,
+                                 {e.label: e.source_elo for e in self._fixed_opponents})
 
         self.logger.dump(step)
         tui["_step"] = step
         send_metrics(tui)
 
+        # Stable cross-run opponent(s) win-rate suffix for the eval headlines (avg over ext_, "" if none).
+        _stable_suffix = (f"  Stable {sum(ext_wr.values()) / len(ext_wr) * 100:.1f}%"
+                          if ext_wr else "")
         print(f"[SELFPLAY EVAL] step {step:,}: Bots {self.win_rate_vs_bots * 100:.1f}%  "
-              f"Pool {win_rate_vs_pool * 100:.1f}%  Monotonicity {monotonicity:.2f}  "
+              f"Pool {win_rate_vs_pool * 100:.1f}%{_stable_suffix}  Monotonicity {monotonicity:.2f}  "
               f"SelfPlay {sf * 100:.0f}%  [{total_dur:.0f}s]")
         send_event(f"🧪 Self-play eval @ {step:,}: bots {self.win_rate_vs_bots * 100:.1f}%, "
-                   f"pool {win_rate_vs_pool * 100:.1f}%")
+                   f"pool {win_rate_vs_pool * 100:.1f}%"
+                   + (f", stable {sum(ext_wr.values()) / len(ext_wr) * 100:.1f}%" if ext_wr else ""))
 
         # ── Persist eval metrics to metadata.json (bot block + pool block) ──
         if self._model_dir:
@@ -826,7 +837,8 @@ class SelfPlayCallback(BaseCallback):
             # the (now-advanced) live model.
             dst = os.path.join(self.best_model_save_path, "best_model.zip")
             shutil.copy2(pending["snapshot"], dst)
-            copy_run_config_to_best_model(self._model_dir, self.best_model_save_path)
+            copy_run_config_to_best_model(self._model_dir, self.best_model_save_path)  # model_config.json
+            write_best_model_sidecar(self._model_dir, dst, self.model)                 # best_model.json (+ELO)
             print(f"[SELFPLAY EVAL] new best ({aggregate * 100:.1f}%) saved to {dst}")
 
     def _cleanup(self, pending: dict, keep_logs: bool) -> None:

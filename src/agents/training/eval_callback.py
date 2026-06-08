@@ -1,6 +1,7 @@
 import os
 import re
 import sys
+import math
 import time
 import glob
 import json
@@ -647,12 +648,10 @@ def latest_recorded_eval_step(model_dir: str | None, resume_eval_metadata: str |
 
 
 def copy_run_config_to_best_model(model_dir: "str | None", best_model_dir: "str | None") -> None:
-    """Copy the run-level ``model_config.json`` into ``best_model/`` whenever the best model is
-    saved, so ``best_model/`` is a SELF-CONTAINED snapshot (weights + arch sidecar in one dir).
-
-    This is the unified place a stable-opponent consumer (or any loader) looks first:
-    ``best_model/best_model.zip`` + ``best_model/model_config.json`` co-located, no parent search
-    needed. Best-effort — never raise into the eval/best-save path."""
+    """Copy the run-level ``model_config.json`` into ``best_model/`` whenever the best model is saved,
+    so ``best_model/`` is a SELF-CONTAINED snapshot (weights + arch sidecar in one dir) — the unified
+    place a stable-opponent consumer looks first for the arch gate. (The eval/ELO sidecar is the
+    separate ``best_model.json`` written by ``write_best_model_sidecar``.) Best-effort."""
     if not model_dir or not best_model_dir:
         return
     src = os.path.join(model_dir, "model_config.json")
@@ -663,6 +662,23 @@ def copy_run_config_to_best_model(model_dir: "str | None", best_model_dir: "str 
         shutil.copy2(src, os.path.join(best_model_dir, "model_config.json"))
     except OSError as e:
         print(f"⚠️ [EVAL] could not copy model_config.json into best_model/: {e}")
+
+
+def write_best_model_sidecar(model_dir: "str | None", best_zip_path: str, model) -> None:
+    """Write ``best_model/best_model.json`` — the per-checkpoint-style sidecar for the best snapshot,
+    REUSING ``snapshot.write_checkpoint_metadata`` (which writes ``<zip − .zip>.json``). It carries
+    the current ``latest_eval`` block — **including the run's ELO** — so ``best_model/`` is a
+    self-contained, ELO-bearing snapshot a stable-opponent consumer can read directly (no parent
+    search). Best-effort — never raise into the best-save path."""
+    if not model_dir:
+        return
+    try:
+        from agents.model.snapshot import write_checkpoint_metadata, _read_latest_eval
+        lr = float(model.policy.optimizer.param_groups[0]["lr"])
+        write_checkpoint_metadata(best_zip_path, lr=lr, n_epochs=int(model.n_epochs),
+                                  git_hash=get_git_hash(), eval_block=_read_latest_eval(model_dir))
+    except Exception as e:  # noqa: BLE001 — best-effort sidecar; must NEVER break the best-save path
+        print(f"⚠️ [EVAL] could not write best_model.json sidecar: {e}")
 
 
 def bot_mean(d: dict[str, float]) -> float:
@@ -693,6 +709,41 @@ def external_aggregate(ext_wr: dict) -> "float | None":
     """Mean win rate over stable cross-run opponents — only meaningful (and only emitted) for a
     mini-league (2+); with a single one it would just duplicate that opponent's own row."""
     return sum(ext_wr.values()) / len(ext_wr) if len(ext_wr) > 1 else None
+
+
+def external_elo(trainee_elo: float, win_rate: float) -> float:
+    """A BALLPARK ELO for a stable cross-run opponent: invert the Bradley-Terry win probability from
+    the trainee's (bot-anchored) rating and the trainee's win rate vs it —
+    ``R_opp = R_trainee − (400/ln10)·logit(win_rate)``. A single-edge estimate (rough), but on the
+    SAME bot-anchored scale as the rest of the eval ladder, so it's a meaningful ballpark. The stable
+    opponent is deliberately NOT a player in the BT fit itself (no ladder distortion) — this is a
+    display-only derivation. ``win_rate`` is clamped to keep the logit finite (a 100-game eval can't
+    resolve a rate past ~±0.05 of the bounds anyway), capping the gap at ≈±676 ELO."""
+    p = min(max(win_rate, 0.02), 0.98)
+    return trainee_elo - (400.0 / math.log(10.0)) * math.log(p / (1.0 - p))
+
+
+def record_external_elos(logger, tui: dict, trainee_elo: "float | None", ext_wr: dict,
+                         source_elos: "dict | None" = None) -> None:
+    """Record ``eval/elo_vs_<label>`` (display-only) for each stable opponent, so the eval table's
+    elo column is populated for the ``ext_`` rows (the TUI reads ``eval/elo_vs_<opp>``).
+
+    Prefers the opponent's **own recorded ELO** (``source_elos[label]`` — read from its run's
+    ``metadata.json:latest_eval.elo``; a well-fit, bot-anchored rating). Falls back to a single-edge
+    **ballpark** inverted from the live trainee rating + win rate (``external_elo``) only when the
+    opponent carries no recorded ELO. ``trainee_elo`` may be ``None`` (no fit yet) — a carried ELO is
+    still shown; a fallback-only opponent is skipped that cycle."""
+    source_elos = source_elos or {}
+    for lab, wr in ext_wr.items():
+        carried = source_elos.get(lab)
+        if carried is not None:
+            e = round(carried)
+        elif trainee_elo is not None:
+            e = round(external_elo(trainee_elo, wr))
+        else:
+            continue  # no recorded ELO and no trainee rating yet → nothing to show this cycle
+        logger.record(f"eval/elo_vs_{lab}", e)
+        tui[f"eval/elo_vs_{lab}"] = e
 
 
 def build_externals_block(ext_labels, win_rates: dict, reward_means: dict, ep_lens: dict) -> dict:
@@ -1179,10 +1230,15 @@ class PerOpponentEvalCallback(BaseCallback):
             self.logger.record("eval/td_resid_tail_mean", td_tail_mean)
             tui["eval/td_resid_tail_mean"] = td_tail_mean
         # Anchored-BT ELO from the accumulated results (appends this cycle's row first).
-        # bot_wr carries every BOT incl. random (a valid anchor); ext_ opponents are display-only
-        # (out of the fit); no sentinels on the bot-only path.
+        # bot_wr carries every BOT incl. random (a valid anchor); ext_ opponents are kept OUT of the
+        # fit (no ladder distortion); no sentinels on the bot-only path.
         elo_result = record_elo(self._model_dir, step, bot_wr, [], n_games,
                                 self.logger, tui, bot_td_tails=bot_td_tails)
+        # ELO for each stable opponent (display-only) → fills the eval table's elo column for the
+        # ext_ rows: its OWN recorded ELO when available, else a ballpark from the trainee's rating.
+        if ext_wr:
+            record_external_elos(self.logger, tui, elo_result[0] if elo_result else None, ext_wr,
+                                 {e.label: e.source_elo for e in self._fixed_opponents})
         # Record at the SNAPSHOT step so the eval curve aligns to when the model was
         # frozen, not the (later) step at which the worker happened to finish.
         self.logger.dump(step)
@@ -1240,7 +1296,8 @@ class PerOpponentEvalCallback(BaseCallback):
             # The frozen snapshot IS the best model — copy it rather than re-saving.
             dst = os.path.join(self.best_model_save_path, "best_model.zip")
             shutil.copy2(pending["snapshot"], dst)
-            copy_run_config_to_best_model(self._model_dir, self.best_model_save_path)
+            copy_run_config_to_best_model(self._model_dir, self.best_model_save_path)  # model_config.json
+            write_best_model_sidecar(self._model_dir, dst, self.model)                 # best_model.json (+ELO)
             print(f"[EVAL] new best ({aggregate * 100:.1f}%) saved to {dst}")
 
     def _persist_snapshot(self, pending: dict) -> None:

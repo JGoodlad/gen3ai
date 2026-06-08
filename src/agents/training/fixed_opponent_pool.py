@@ -12,6 +12,7 @@ and the floor/challenge sampling lifecycle (Stage 2) layer on top of ``FixedOppo
 """
 from __future__ import annotations
 
+import json
 import os
 from dataclasses import dataclass
 
@@ -40,6 +41,7 @@ class FixedOpponentEntry:
     config_path: str    # absolute path to its model_config.json (provenance + arch gate)
     arch_signature: str
     temperature: float = 1.0  # TRAINING-mix play temperature (eval plays greedy regardless)
+    source_elo: "float | None" = None  # the opponent's OWN recorded ELO (its run's metadata.json), if any
 
     def to_cfg(self) -> dict:
         """The subset threaded to an eval worker via ``base_cfg['fixed_opponents']`` (eval plays the
@@ -184,5 +186,27 @@ def resolve_stable_opponents(
         entries.append(FixedOpponentEntry(
             label=label, zip_path=zip_path, config_path=config_path,
             arch_signature=foreign.arch_signature, temperature=default_temperature,
+            source_elo=_read_source_elo(config_path),
         ))
     return entries
+
+
+def _read_source_elo(config_path: str) -> "float | None":
+    """The stable opponent's OWN recorded ELO (``latest_eval.elo``) — a well-fit, bot-anchored rating,
+    far better than a single-edge live estimate, and directly comparable since the bot anchors are
+    cross-run-stable. Read from the co-located **``best_model.json``** sidecar first (the self-contained
+    location ``write_best_model_sidecar`` produces), then ``metadata.json`` next to the config, then the
+    run dir / parent (older runs keep it only at the run level). Best-effort → ``None`` if none found."""
+    d = os.path.dirname(config_path)
+    for cand in (os.path.join(d, "best_model.json"),               # the co-located best-model sidecar
+                 os.path.join(d, "metadata.json"),                 # best_model/ metadata (if any)
+                 os.path.join(os.path.dirname(d), "metadata.json")):  # run-level metadata (old runs)
+        if not os.path.isfile(cand):
+            continue
+        try:
+            elo = json.load(open(cand)).get("latest_eval", {}).get("elo")
+        except (OSError, ValueError, TypeError, AttributeError):
+            continue
+        if isinstance(elo, (int, float)):
+            return float(elo)
+    return None

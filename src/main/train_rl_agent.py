@@ -750,11 +750,15 @@ async def main():
             print(f"\n[StableOpponent] FATAL: failed to load stable opponent weights: {e}")
             sys.stdout.flush()
             os._exit(int(TrainExitCode.FATAL_CONFIG))
-        print(f"[Opponents] {len(_fixed_opponents)} stable opponent(s): "
-              + ", ".join(e.label for e in _fixed_opponents))
-        if not args.self_play:
-            print("[Opponents] NOTE: stable opponents join the TRAINING mix only under --self-play "
-                  "(they ride the challenge/pool bucket). Without it they are EVAL-only.")
+        # emit() → the launcher Events panel (like the [SELFPLAY] startup lines); print()s standalone.
+        _stable_labels = ", ".join(e.label for e in _fixed_opponents)
+        if args.self_play:
+            emit(f"🎯 [STABLE] {len(_fixed_opponents)} cross-run opponent(s): {_stable_labels} — "
+                 f"eval greedy; training ≤{args.stable_opponent_selfplay_share:.0%} of self-play until "
+                 f"mastered (win_rate ≥ {args.stable_opponent_mastered_wr:.0%})")
+        else:
+            emit(f"🎯 [STABLE] {len(_fixed_opponents)} cross-run opponent(s): {_stable_labels} — "
+                 "EVAL-ONLY (no --self-play, so they don't join the training mix)")
 
     # Curriculum (transition + floor) effective values: CLI override or the module defaults.
     _heuristic_floor = args.heuristic_floor if args.heuristic_floor is not None else HEURISTIC_FLOOR

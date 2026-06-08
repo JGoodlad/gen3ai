@@ -8,8 +8,77 @@ from poke_env.player import RandomPlayer, SimpleHeuristicsPlayer
 from agents.opponents import Gen3StallerPlayer
 from agents.training.eval_callback import (
     PerOpponentEvalCallback, bot_mean, opponent_name, RANDOM_OPPONENT_NAME,
+    external_elo, record_external_elos,
     _per_opponent_concurrency, _EVAL_TOTAL_CONCURRENCY, _EVAL_CONCURRENCY,
 )
+from unittest.mock import MagicMock
+
+
+# ── external_elo — display-only ballpark from the trainee's bot-anchored rating ──
+
+def test_external_elo_even_winrate_equals_trainee():
+    assert external_elo(1500.0, 0.5) == pytest.approx(1500.0)
+
+
+def test_external_elo_stronger_opponent_when_trainee_loses():
+    # Trainee wins only 25% → the opponent is rated ABOVE the trainee.
+    assert external_elo(1500.0, 0.25) > 1500.0
+
+
+def test_external_elo_weaker_opponent_when_trainee_wins():
+    assert external_elo(1500.0, 0.75) < 1500.0
+
+
+def test_external_elo_symmetric_about_even():
+    # logit is odd around 0.5, so equal-distance win rates give equal-and-opposite gaps.
+    hi = external_elo(1500.0, 0.80) - 1500.0
+    lo = external_elo(1500.0, 0.20) - 1500.0
+    assert hi == pytest.approx(-lo)
+
+
+def test_external_elo_clamps_extremes_finite():
+    # 0% / 100% would be ±inf un-clamped; clamped to a finite ≈±676 gap.
+    assert external_elo(1500.0, 0.0) == pytest.approx(1500.0 + 676, abs=2)
+    assert external_elo(1500.0, 1.0) == pytest.approx(1500.0 - 676, abs=2)
+
+
+def test_record_external_elos_writes_per_opponent_keys():
+    logger, tui = MagicMock(), {}
+    record_external_elos(logger, tui, 1500.0, {"ext_run_a": 0.5, "ext_run_b": 0.25})
+    assert tui["eval/elo_vs_ext_run_a"] == 1500           # even → trainee rating
+    assert tui["eval/elo_vs_ext_run_b"] > 1500            # losing → stronger
+    recorded = {c.args[0] for c in logger.record.call_args_list}
+    assert "eval/elo_vs_ext_run_a" in recorded and "eval/elo_vs_ext_run_b" in recorded
+
+
+def test_record_external_elos_prefers_recorded_over_ballpark():
+    """A carried source ELO wins over the trainee-derived ballpark; it's shown even with no trainee
+    rating (None), while a fallback-only opponent is skipped when there's no rating yet."""
+    logger, tui = MagicMock(), {}
+    record_external_elos(logger, tui, None, {"ext_carried": 0.9, "ext_fallback": 0.9},
+                         source_elos={"ext_carried": 1888.0})
+    assert tui["eval/elo_vs_ext_carried"] == 1888         # recorded ELO used verbatim
+    assert "eval/elo_vs_ext_fallback" not in tui          # no carried ELO + no trainee rating → skipped
+
+
+# ── write_best_model_sidecar (best_model.json, reusing the checkpoint-sidecar code) ──
+
+def test_write_best_model_sidecar_includes_elo(tmp_path):
+    from agents.training.eval_callback import write_best_model_sidecar
+    from agents.model.snapshot import record_eval_results, read_checkpoint_metadata
+    model_dir = str(tmp_path)
+    best = os.path.join(model_dir, "best_model")
+    os.makedirs(best)
+    record_eval_results(model_dir, step=100, metrics={"elo": 1888.0, "win_rate_vs_bots": 0.8})
+    best_zip = os.path.join(best, "best_model.zip")
+    open(best_zip, "w").close()
+    model = MagicMock(n_epochs=7)
+    model.policy.optimizer.param_groups = [{"lr": 1e-4}]
+    write_best_model_sidecar(model_dir, best_zip, model)
+    sidecar = read_checkpoint_metadata(best_zip)          # reads <best_zip − .zip>.json = best_model.json
+    assert os.path.exists(os.path.join(best, "best_model.json"))
+    assert sidecar["latest_eval"]["elo"] == pytest.approx(1888.0)
+    assert sidecar["lr"] == pytest.approx(1e-4) and sidecar["n_epochs"] == 7
 
 
 # ── bot_mean ─────────────────────────────────────────────────────────────────
