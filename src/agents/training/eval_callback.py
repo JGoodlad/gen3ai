@@ -23,7 +23,6 @@ from agents.opponents import (
     Gen3HeuristicV2Player,
 )
 from agents.training.reward_tracker import RewardTrackingMixin
-from agents.training.reward_manager import Gen3RewardManager
 from agents.training.battle_recorder import BattleRecorder, write_battle_record
 from main.launcher.ipc import send_metrics, send_event
 from utils.bridge.local_battle_runner import run_local_battles
@@ -230,8 +229,10 @@ def build_eval_opponents(server_config, teambuilder, names, tag="", *, start_lis
 
 
 def build_eval_players(model, names, teambuilder, mappings, server_config, concurrency,
-                       tag="", *, start_listening=True, gamma: float = 0.99):
-    """One EvalRLPlayer per opponent name, sharing the (frozen) model + teambuilder."""
+                       tag="", *, start_listening=True, gamma: float = 0.99, reward_fn_factory):
+    """One EvalRLPlayer per opponent name, sharing the (frozen) model + teambuilder. ``reward_fn_factory``
+    is REQUIRED — pass ``functools.partial(Gen3RewardManager, config=RewardConfig.from_dict(...))`` so
+    eval measures the run's actual reward, not a default one."""
     return {
         name: EvalRLPlayer(
             model=model, team=teambuilder, battle_format=BATTLE_FORMAT,
@@ -240,7 +241,7 @@ def build_eval_players(model, names, teambuilder, mappings, server_config, concu
             max_concurrent_battles=concurrency,
             stochastic=False,  # bot-eval measures the GREEDY policy
             start_listening=start_listening,
-            gamma=gamma,
+            gamma=gamma, reward_fn_factory=reward_fn_factory,
         )
         for i, name in enumerate(names)
     }
@@ -863,8 +864,12 @@ class EvalRLPlayer(RewardTrackingMixin, RLPlayer):
     cycle to (re)arm capture; leave the dir None to disable forensics entirely.
     """
 
-    def __init__(self, *args, reward_fn_factory=Gen3RewardManager, gamma: float = 0.99,
+    def __init__(self, *args, reward_fn_factory, gamma: float = 0.99,
                  loss_quota=_FORENSIC_LOSS_QUOTA, win_quota=_FORENSIC_WIN_QUOTA, **kwargs):
+        # reward_fn_factory is REQUIRED (no silent default): eval MUST measure with the run's actual
+        # RewardConfig, not a bare Gen3RewardManager() — a default here once silently scored eval with
+        # bias_redesign=False (the old anti-spam reward), making the eval reward meaningless. Callers
+        # build it from RewardConfig.from_dict(<model_dir>/model_config.json). See build_eval_players.
         super().__init__(*args, **kwargs)
         self._init_reward_tracking(reward_fn_factory)
         self._gamma = float(gamma)

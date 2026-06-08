@@ -38,6 +38,7 @@ os.environ.setdefault("MKL_NUM_THREADS", "1")
 import sys
 import json
 import asyncio
+import functools
 import traceback
 
 from sb3_contrib import MaskablePPO
@@ -51,6 +52,7 @@ from agents.training.eval_callback import (
     BATTLE_FORMAT, EvalRLPlayer, build_eval_opponents, build_eval_players,
     eval_one_matchup, run_eval, claim_next_opponent,
 )
+from agents.training.reward_manager import Gen3RewardManager, RewardConfig
 from utils.team_loader import TeamLoader
 from utils.teambuilder import Gen3Teambuilder
 
@@ -80,6 +82,20 @@ def _run(cfg: dict) -> None:
     # Frozen trainee weights — inference only, so the base algorithm + env=None is enough
     # (the policy class and its extractor kwargs are restored from the zip).
     model = MaskablePPO.load(cfg["snapshot"], env=None, device=device)
+
+    # The trainee's reward factory — built from the RUN's model_config.json (the single source of
+    # truth the version check already records), so eval MEASURES with the same reward the policy was
+    # TRAINED with (bias_redesign / draw_penalty / …). Threaded to every EvalRLPlayer below; a bare
+    # default here once silently scored eval with the wrong (bias_redesign=False) reward.
+    _reward_cfg = {}
+    if model_dir:
+        try:
+            with open(os.path.join(model_dir, "model_config.json")) as _f:
+                _reward_cfg = json.load(_f)
+        except (OSError, ValueError):
+            _reward_cfg = {}
+    reward_factory = functools.partial(Gen3RewardManager,
+                                       config=RewardConfig.from_dict(_reward_cfg))
 
     bot_names = cfg["opponent_pool"]
     sentinels = cfg.get("sentinels") or []
@@ -119,19 +135,21 @@ def _run(cfg: dict) -> None:
                 model, sentinel_by_label[name], current_version, trainee_tb, opp_tb,
                 mappings, server_config, concurrency, device, self_play_temp,
                 n_games, model_dir, step, tag, use_bridge, gamma, sentinel_greedy,
+                reward_factory=reward_factory,
             )
         elif name in fixed_by_label:
             result = _eval_fixed(
                 model, fixed_by_label[name], current_version, trainee_tb, opp_tb,
                 mappings, server_config, concurrency, device,
                 n_games, model_dir, step, tag, use_bridge, gamma,
+                reward_factory=reward_factory,
             )
         else:
             opponents = build_eval_opponents(
                 server_config, opp_tb, [name], tag, start_listening=not use_bridge)
             players = build_eval_players(
                 model, [name], trainee_tb, mappings, server_config, concurrency, tag,
-                start_listening=not use_bridge, gamma=gamma,
+                start_listening=not use_bridge, gamma=gamma, reward_fn_factory=reward_factory,
             )
             m = asyncio.run(run_eval(players, opponents, n_games, model_dir, step,
                                      use_bridge=use_bridge,
@@ -156,7 +174,7 @@ def _run(cfg: dict) -> None:
 
 def _eval_trainee_vs_model(model, opp_model, label, trainee_tb, opp_tb, mappings, server_config,
                            concurrency, n_games, model_dir, step, tag, *, trainee_prefix,
-                           opp_prefix, opp_stochastic, opp_temperature,
+                           opp_prefix, opp_stochastic, opp_temperature, reward_factory,
                            use_bridge=False, gamma=0.99) -> dict:
     """Play the frozen trainee (GREEDY) vs one already-loaded opponent model — one matchup.
 
@@ -171,7 +189,7 @@ def _eval_trainee_vs_model(model, opp_model, label, trainee_tb, opp_tb, mappings
         account_configuration=AccountConfiguration(f"{trainee_prefix}{tag}", "password"),
         max_concurrent_battles=concurrency,
         stochastic=False,  # eval measures the GREEDY policy → stable win-rate signal
-        start_listening=not use_bridge, gamma=gamma,
+        start_listening=not use_bridge, gamma=gamma, reward_fn_factory=reward_factory,
     )
     opponent = RLPlayer(
         model=opp_model, team=opp_tb, battle_format=BATTLE_FORMAT,
@@ -194,7 +212,7 @@ def _eval_trainee_vs_model(model, opp_model, label, trainee_tb, opp_tb, mappings
 def _eval_sentinel(model, spec, current_version, trainee_tb, opp_tb, mappings,
                    server_config, concurrency, device, temperature,
                    n_games, model_dir, step, tag, use_bridge=False, gamma=0.99,
-                   sentinel_greedy=False) -> dict:
+                   sentinel_greedy=False, *, reward_factory) -> dict:
     """Play the frozen trainee (greedy) vs one pool sentinel — one matchup.
 
     The sentinel is loaded via ``load_model_snapshot`` against the pool's shared
@@ -210,14 +228,14 @@ def _eval_sentinel(model, spec, current_version, trainee_tb, opp_tb, mappings,
         concurrency, n_games, model_dir, step, tag,
         trainee_prefix="SPtr", opp_prefix="SPse",
         opp_stochastic=not sentinel_greedy, opp_temperature=temperature,
-        use_bridge=use_bridge, gamma=gamma)
+        reward_factory=reward_factory, use_bridge=use_bridge, gamma=gamma)
     out["sentinel_step"] = spec.get("step")
     return out
 
 
 def _eval_fixed(model, spec, current_version, trainee_tb, opp_tb, mappings,
                 server_config, concurrency, device, n_games, model_dir, step, tag,
-                use_bridge=False, gamma=0.99) -> dict:
+                use_bridge=False, gamma=0.99, *, reward_factory) -> dict:
     """Play the frozen trainee (greedy) vs one STABLE cross-run opponent — one matchup.
 
     Like ``_eval_sentinel`` but the opponent is a foreign frozen model from another run, loaded via
@@ -235,7 +253,7 @@ def _eval_fixed(model, spec, current_version, trainee_tb, opp_tb, mappings,
         concurrency, n_games, model_dir, step, tag,
         trainee_prefix="SOtr", opp_prefix="SOop",
         opp_stochastic=False, opp_temperature=1.0,  # eval = greedy (temp 0) → clean yardstick
-        use_bridge=use_bridge, gamma=gamma)
+        reward_factory=reward_factory, use_bridge=use_bridge, gamma=gamma)
 
 
 def main() -> int:

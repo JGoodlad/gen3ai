@@ -909,15 +909,9 @@ async def main():
     # Per-run reward config (design §1). gamma MUST == the PPO gamma (asserted post-build below); the
     # factory passes it to every env's reward manager. Default = the single-variable run.
     from agents.training.reward_manager import RewardConfig
-    reward_config = RewardConfig(
-        bias_additivity=args.bias_additivity,
-        mat_alive_weight=args.mat_alive_weight,
-        no_progress_penalty=args.no_progress_penalty,
-        gamma=0.9999,   # == InstrumentedMaskablePPO(gamma=0.9999); asserted == model.gamma below
-        bias_redesign=args.bias_redesign,
-        switch_bias_weight=args.switch_bias_weight,
-        draw_penalty=args.draw_penalty,
-    )
+    # Single construction site (gamma == InstrumentedMaskablePPO(gamma=0.9999), asserted below). Every
+    # reward CLI flag flows in by name → training, eval, and the version record all use ONE config.
+    reward_config = RewardConfig.from_args(args)
     reward_factory = functools.partial(Gen3RewardManager, config=reward_config)
 
     # Running parallel environments

@@ -35,7 +35,7 @@ def _run_eval_sentinel(monkeypatch, sentinel_greedy):
         trainee_tb=MagicMock(), opp_tb=MagicMock(), mappings=None,
         server_config=MagicMock(), concurrency=1, device="cpu", temperature=0.7,
         n_games=2, model_dir=None, step=1000, tag="t", use_bridge=False, gamma=0.99,
-        sentinel_greedy=sentinel_greedy,
+        sentinel_greedy=sentinel_greedy, reward_factory=MagicMock(name="reward_factory"),
     )
     return captured, out
 
@@ -71,5 +71,6 @@ def test_eval_sentinel_greedy_defaults_off(monkeypatch):
         MagicMock(), {"label": "s", "path": "p", "step": 1}, None,
         MagicMock(), MagicMock(), None, MagicMock(), 1, "cpu", 1.0,
         2, None, 1, "t",   # no use_bridge/gamma/sentinel_greedy → all default
+        reward_factory=MagicMock(name="reward_factory"),
     )
     assert captured["s"] is True

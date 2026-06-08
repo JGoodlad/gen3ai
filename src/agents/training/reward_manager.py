@@ -82,6 +82,29 @@ class RewardConfig:
     # Per-run constant, resume-immutable (recorded in model_config.json, value-checked).
     draw_penalty: float = -30.0
 
+    # --- single source of truth: build once, flow everywhere (training + eval + version record) ---
+    # Adding a reward flag = add the field above + a matching `--field-name` CLI arg. `from_args`
+    # picks it up (no hand-threading), `from_dict` reconstructs it for eval/resume, and the eval
+    # reward then automatically matches what the policy was trained with. This DRY-ness exists because
+    # a hand-threaded field was once silently MISSED on the eval path (eval measured the wrong reward).
+    @classmethod
+    def from_args(cls, args) -> "RewardConfig":
+        """THE construction site from parsed CLI args. Every field whose name matches a CLI dest is
+        pulled from ``args``; ``gamma`` is the fixed PPO discount (0.9999, asserted == model.gamma)."""
+        vals = {f.name: getattr(args, f.name)
+                for f in fields(cls) if f.name != "gamma" and hasattr(args, f.name)}
+        vals["gamma"] = 0.9999
+        return cls(**vals)
+
+    @classmethod
+    def from_dict(cls, d: "dict | None") -> "RewardConfig":
+        """Reconstruct from a ``model_config.json`` dict — the helper EVERY snapshot-loading consumer
+        (eval workers, resume) uses so the reward the policy was TRAINED with is the reward used to
+        MEASURE it. Unknown keys (arch fields / use_popart / …) are ignored; any reward field absent
+        from an older config falls back to its dataclass default."""
+        known = {f.name for f in fields(cls)}
+        return cls(**{k: v for k, v in (d or {}).items() if k in known})
+
 
 @dataclass
 class RewardBreakdown:
@@ -616,18 +639,28 @@ class Gen3RewardManager:
         else:
             self._consecutive_bounces = 0
 
-        # Under the redesign the no-progress clock handles switch-spam (an A↔B bounce burns tempo →
-        # the clock climbs), so switch_base is a clean flat per-voluntary-switch bias — drop the
-        # hidden `last_switch_turn` spam-gate (design §3 #18). The default run keeps the spam-gate
-        # (no clock penalty there to discourage back-to-back switches).
-        if self.config.bias_redesign:
-            bd.switch_base = SWITCH_BASE_BONUS
-        else:
-            spam_mult = 1.0 if (decision_turn - self.last_switch_turn) > 1 else 0.0
-            bd.switch_base = SWITCH_BASE_BONUS * spam_mult
+        # Spam-gate: a BACK-TO-BACK switch (we also switched last turn) earns no flat switch subsidy.
+        # Gated in BOTH arms. (ai_v5_6 regression fix: the redesign previously DROPPED this gate on the
+        # assumption the no-progress clock subsumed switch-spam — it does NOT. The clock's flat −0.15
+        # is dwarfed by the per-switch reframes [se_switch+escape+pivot ≈ +0.5–0.95/switch], so a
+        # bounce-farm policy collected them every turn, never attacked, timed out, and lost even to
+        # random. See `progress_clock_fuzz_test` / the switch-farm guard in reward_redesign_test.)
+        spam_mult = 1.0 if (decision_turn - self.last_switch_turn) > 1 else 0.0
+        bd.switch_base = SWITCH_BASE_BONUS * spam_mult
 
         if self._prev_opp_se_threat or self._prev_active_ko_risk >= SWITCH_RISK_THRESHOLD:
             bd.escape_threat_switch = ESCAPE_THREAT_BONUS
+
+        if self.config.bias_redesign and spam_mult == 0.0:
+            # Under the redesign the anti-spam family is suppressed (subsumed by the clock), so the
+            # switch reframes need their OWN bounce brake: a back-to-back switch zeros the WHOLE
+            # per-switch reward family (se_switch / escape / pivot_* were folded earlier this turn in
+            # process_turn_reward). Cycle-AGNOSTIC — it kills an A↔B 2-cycle AND an A→B→C N-cycle alike
+            # (every-turn switching → no reward from ANY switch term), which the 2-cycle-only
+            # switch_bouncing_tax misses. switch_count/last_switch_turn updates below still run.
+            bd.escape_threat_switch = 0.0
+            bd.se_switch = 0.0
+            bd.pivot_protect = bd.pivot_status = bd.pivot_damage = 0.0
 
         # Belief-risk-scaled escape reward (the under-switch lever; OFF unless --switch-bias-weight>0):
         # reward leaving a high imminent-KO spot FOR A SAFE PIVOT, scaled by the risk escaped. Gated on
@@ -1232,11 +1265,16 @@ class Gen3RewardManager:
     def _apply_progress_clock(self, bd: "RewardBreakdown") -> None:
         """Read the shared ProgressClock's stashed penalty into ``bd.no_progress_tax`` and suppress
         the escalating anti-spam family it SUBSUMES (design §3.1) — gated on ``bias_redesign``. In the
-        default single-variable run the clock only tracks the obs scalar (no penalty, taxes intact)."""
+        default single-variable run the clock only tracks the obs scalar (no penalty, taxes intact).
+
+        ``switch_bouncing_tax`` is **deliberately NOT suppressed** (ai_v5_6 regression): the flat
+        no-progress charge (−0.15) does not out-weigh the per-switch reframes, so the escalating
+        2-cycle bounce tax is kept as a real negative brake alongside the spam-gate in
+        `_apply_switch_outcome`. The clock still subsumes repetition / struggle / dead-matchup."""
         if not (self.config.bias_redesign and self.progress_clock is not None):
             return
         bd.no_progress_tax = float(getattr(self.progress_clock, "last_penalty", 0.0))
-        bd.repetition_tax = bd.struggle_tax = bd.switch_bouncing_tax = bd.dead_matchup_tax = 0.0
+        bd.repetition_tax = bd.struggle_tax = bd.dead_matchup_tax = 0.0
 
     def _fold_bias_refund(self, bd: "RewardBreakdown") -> None:
         """BIAS-additivity accumulate-and-refund (design §1.2): emit −(1−λ)·Δacc into

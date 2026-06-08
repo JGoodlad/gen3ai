@@ -739,25 +739,66 @@ class TestBiasRedesignReframes(unittest.TestCase):
         self.assertGreater(reward, 0.0)   # count diff (0→1) drives it; events would have given 0
         self.assertEqual(d_opp, 1)
 
-    # --- switch_base (#18): flat under redesign, spam-gated by default ---
-    def _settle_switch(self, m, decision_turn, last_switch_turn):
+    # --- switch anti-bounce (#18 + the ai_v5_6 bounce-farm regression fix) ---
+    def _settle_switch(self, m, decision_turn, last_switch_turn, family=None):
         m._last_reward_metadata = {"type": "VOLUNTARY", "decision_turn": decision_turn,
                                    "switch_from": "zapdos", "target_species": "tyranitar"}
-        m._last_switched_from = "snorlax"   # != target → not a bounce
+        m._last_switched_from = "snorlax"   # != target → not a 2-cycle bounce
         m.last_switch_turn = last_switch_turn
         bd = RewardBreakdown()
+        if family:   # pre-set the rewards process_turn_reward folds BEFORE _apply_switch_outcome
+            bd.se_switch, bd.pivot_protect, bd.pivot_status, bd.pivot_damage = family
         m._apply_switch_outcome(_delta(our_switch_to="tyranitar"), bd)
         return bd
 
-    def test_switch_base_flat_under_redesign(self):
+    def test_switch_base_spam_gated_under_redesign(self):
+        """ai_v5_6 fix: switch_base is now spam-gated under the redesign too (was flat = the bug). A
+        back-to-back switch (decision 5, last 4) → 0; a switch after committing (>1-turn gap) → full."""
         from agents.training.reward_manager import SWITCH_BASE_BONUS
-        # Back-to-back switch (decision 5, last 4): the clock handles spam, so switch_base is flat.
-        bd = self._settle_switch(self._mgr(True), decision_turn=5, last_switch_turn=4)
-        self.assertAlmostEqual(bd.switch_base, SWITCH_BASE_BONUS, places=6)
+        self.assertAlmostEqual(self._settle_switch(self._mgr(True), 5, 4).switch_base, 0.0, places=6)
+        self.assertAlmostEqual(self._settle_switch(self._mgr(True), 5, 2).switch_base,
+                               SWITCH_BASE_BONUS, places=6)
 
     def test_switch_base_spam_gated_by_default(self):
         bd = self._settle_switch(self._mgr(False), decision_turn=5, last_switch_turn=4)
         self.assertAlmostEqual(bd.switch_base, 0.0, places=6)   # back-to-back → spam-gated to 0
+
+    def test_bounce_farm_zeros_whole_switch_family_under_redesign(self):
+        """THE ai_v5_6 regression guard: a BACK-TO-BACK switch must collect NOTHING from any switch
+        reward (switch_base / se_switch / escape / pivot_*) under the redesign, so an every-turn
+        bounce-farm (any cycle length) is unprofitable. (Real run lost to random at 94% switches.)"""
+        m = self._mgr(True)
+        m._prev_opp_se_threat = True   # would otherwise fire escape_threat_switch
+        bd = self._settle_switch(m, decision_turn=5, last_switch_turn=4,
+                                 family=(0.2, 0.1, 0.1, 0.1))   # se_switch + pivots pre-folded
+        self.assertEqual(
+            (bd.switch_base, bd.se_switch, bd.escape_threat_switch,
+             bd.pivot_protect, bd.pivot_status, bd.pivot_damage),
+            (0.0, 0.0, 0.0, 0.0, 0.0, 0.0))
+
+    def test_legit_switch_keeps_family_under_redesign(self):
+        """The gate only nukes back-to-back farming — a switch after committing (>1-turn gap) keeps
+        the full switch-reward family, so legitimate pivoting is unaffected."""
+        m = self._mgr(True)
+        m._prev_opp_se_threat = True
+        bd = self._settle_switch(m, decision_turn=5, last_switch_turn=2,   # 3-turn gap
+                                 family=(0.2, 0.1, 0.1, 0.1))
+        self.assertGreater(bd.switch_base, 0.0)
+        self.assertEqual(bd.se_switch, 0.2)               # untouched
+        self.assertEqual(bd.pivot_damage, 0.1)            # untouched
+        self.assertGreater(bd.escape_threat_switch, 0.0)  # paid (threat present, not back-to-back)
+
+    def test_switch_bouncing_tax_survives_clock_under_redesign(self):
+        """The escalating 2-cycle bounce tax is NOT suppressed by the no-progress clock (it stays a
+        real negative brake); repetition / struggle / dead-matchup ARE still subsumed."""
+        from agents.training.progress_clock import ProgressClock
+        m = self._mgr(True); m.progress_clock = ProgressClock()
+        bd = RewardBreakdown()
+        bd.switch_bouncing_tax = -1.5; bd.repetition_tax = -0.2; bd.dead_matchup_tax = -0.3
+        m._apply_progress_clock(bd)
+        self.assertEqual(bd.switch_bouncing_tax, -1.5)   # KEPT (the fix)
+        self.assertEqual(bd.repetition_tax, 0.0)         # subsumed
+        self.assertEqual(bd.dead_matchup_tax, 0.0)       # subsumed
 
 
 class TestPbrsGammaInvariant(unittest.TestCase):
@@ -765,6 +806,55 @@ class TestPbrsGammaInvariant(unittest.TestCase):
         # The train_rl_agent assert pins PBRS_GAMMA == model.gamma (0.9999) at build time.
         self.assertAlmostEqual(PBRS_GAMMA, 0.9999, places=9)
         self.assertAlmostEqual(RewardConfig().gamma, PBRS_GAMMA, places=9)
+
+
+class TestRewardConfigSingleSource(unittest.TestCase):
+    """RewardConfig is the single source of truth: `from_args` builds it ONCE from the CLI, `from_dict`
+    reconstructs it from model_config.json for eval/resume. So adding a reward flag (field + matching
+    CLI arg) flows everywhere with no hand-threading — the gap that once let eval silently measure with
+    a default (bias_redesign=False) reward (the ai_v5_6 mismeasurement)."""
+
+    def test_from_args_pulls_every_field_by_name(self):
+        from types import SimpleNamespace
+        args = SimpleNamespace(bias_additivity=0.5, mat_alive_weight=1.4, no_progress_penalty=0.3,
+                               switch_bias_weight=2.0, bias_redesign=True, draw_penalty=-35.0,
+                               unrelated="ignored")
+        rc = RewardConfig.from_args(args)
+        self.assertEqual((rc.bias_additivity, rc.mat_alive_weight, rc.no_progress_penalty,
+                          rc.switch_bias_weight, rc.bias_redesign, rc.draw_penalty),
+                         (0.5, 1.4, 0.3, 2.0, True, -35.0))
+        self.assertAlmostEqual(rc.gamma, 0.9999)   # fixed PPO discount, never from args
+
+    def test_from_args_defaults_match_explicit(self):
+        from types import SimpleNamespace
+        args = SimpleNamespace(bias_additivity=1.0, mat_alive_weight=1.25, no_progress_penalty=0.15,
+                               switch_bias_weight=0.0, bias_redesign=False, draw_penalty=-30.0)
+        self.assertEqual(RewardConfig.from_args(args), RewardConfig())
+
+    def test_from_dict_round_trips(self):
+        from dataclasses import asdict
+        rc = RewardConfig(bias_redesign=True, draw_penalty=-35.0, no_progress_penalty=0.25,
+                          switch_bias_weight=1.5, bias_additivity=0.5)
+        self.assertEqual(RewardConfig.from_dict(asdict(rc)), rc)
+
+    def test_from_dict_ignores_unknown_and_defaults_missing(self):
+        # a real model_config.json carries arch fields + use_popart (ignored), and may PREDATE a
+        # reward field (defaulted) — reconstruction must never KeyError on a stray/missing key.
+        rc = RewardConfig.from_dict({"bias_redesign": True, "arch_signature": "x", "use_popart": True})
+        self.assertTrue(rc.bias_redesign)
+        self.assertEqual(rc.draw_penalty, RewardConfig().draw_penalty)   # absent → default
+        self.assertEqual(RewardConfig.from_dict(None), RewardConfig())   # None → all defaults
+
+    def test_eval_player_and_builder_require_reward_factory(self):
+        """No silent default: a missing reward factory must be a loud TypeError, not a default reward
+        config — that default is exactly what mismeasured eval. (Signature guard; no heavy construction.)"""
+        import inspect
+        from agents.training.eval_callback import EvalRLPlayer, build_eval_players
+        for fn, pname in ((EvalRLPlayer.__init__, "reward_fn_factory"),
+                          (build_eval_players, "reward_fn_factory")):
+            p = inspect.signature(fn).parameters[pname]
+            self.assertIs(p.default, inspect.Parameter.empty,
+                          f"{fn.__qualname__}.{pname} must be REQUIRED (no silent default)")
 
 
 if __name__ == "__main__":
