@@ -341,7 +341,23 @@ class _StubRecorder:
         return self._states
 
 
-def test_write_battle_record_writes_json_and_npz(tmp_path):
+class _ReplayBattle:
+    """Battle stub exposing only `save_replay` — the raw poke-env seam
+    write_battle_record calls to emit the browser-watchable HTML."""
+    def __init__(self, raises: bool = False):
+        self._raises = raises
+        self.saved_to = None
+
+    def save_replay(self, path):
+        if self._raises:
+            raise RuntimeError("no replay log")
+        self.saved_to = str(path)
+        with open(path, "w") as f:
+            f.write("<!DOCTYPE html><title>replay</title>")
+
+
+def test_write_battle_record_writes_json_npz_and_replay(tmp_path):
+    import os
     import json
     from agents.training.battle_recorder import write_battle_record
 
@@ -350,8 +366,9 @@ def test_write_battle_record_writes_json_and_npz(tmp_path):
     states = {"obs": np.zeros((2, 4), dtype=np.float32),
               "logits": np.zeros((2, 11), dtype=np.float32)}
     prefix = str(tmp_path / "sub" / "win_001")  # nested dir must be auto-created
+    battle = _ReplayBattle()
 
-    write_battle_record(prefix, _StubRecorder(summary, states), object(), step=42)
+    write_battle_record(prefix, _StubRecorder(summary, states), battle, step=42)
 
     with open(prefix + "_summary.json") as f:
         text = f.read()
@@ -363,13 +380,37 @@ def test_write_battle_record_writes_json_and_npz(tmp_path):
     npz = np.load(prefix + "_states.npz")
     assert npz["obs"].shape == (2, 4)
 
+    # The human-watchable replay is co-located with the forensic dump.
+    assert battle.saved_to == prefix + "_replay.html"
+    assert os.path.exists(prefix + "_replay.html")
+
 
 def test_write_battle_record_skips_npz_when_no_states(tmp_path):
     import os
     from agents.training.battle_recorder import write_battle_record
 
     prefix = str(tmp_path / "loss_001")
-    write_battle_record(prefix, _StubRecorder({"meta": {}}, {}), object(), step=1)
+    write_battle_record(prefix, _StubRecorder({"meta": {}}, {}), _ReplayBattle(), step=1)
 
     assert os.path.exists(prefix + "_summary.json")
     assert not os.path.exists(prefix + "_states.npz")
+    # Replay HTML is written even on the no-states (cheap) path.
+    assert os.path.exists(prefix + "_replay.html")
+
+
+def test_write_battle_record_replay_failure_keeps_forensic_trace(tmp_path):
+    """A save_replay error must never cost us the forensic dump already written."""
+    import os
+    from agents.training.battle_recorder import write_battle_record
+
+    prefix = str(tmp_path / "loss_002")
+    states = {"obs": np.zeros((1, 4), dtype=np.float32),
+              "logits": np.zeros((1, 11), dtype=np.float32)}
+
+    # Must not raise even though save_replay does.
+    write_battle_record(prefix, _StubRecorder({"meta": {}}, states),
+                        _ReplayBattle(raises=True), step=7)
+
+    assert os.path.exists(prefix + "_summary.json")
+    assert os.path.exists(prefix + "_states.npz")
+    assert not os.path.exists(prefix + "_replay.html")

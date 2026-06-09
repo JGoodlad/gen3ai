@@ -36,6 +36,9 @@ the single source of truth — change the analysis once, both surfaces follow.
   JSON/npz — lazy-loaded on selection, so opening a 1000+-battle run is instant).
   It also reads each cycle's `eval_manifest.json` (model identity). The model to
   re-run a trace through is chosen **per battle** by `resolve_model_for_step`.
+  Each battle's `*_summary.json` / `*_states.npz` has a sibling
+  `*_replay.html` (`write_battle_record`) — a browser-watchable Showdown replay
+  the prober ignores but a human can open directly.
 - **`app.py`** — `ProberApp(Gen3App)`: trace `Tree` | invocation `ListView` |
   four analysis `DataTable`s in a `TabbedContent`.
 

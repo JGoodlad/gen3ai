@@ -128,7 +128,14 @@ next, so uneven per-opponent cost self-balances), load the **frozen** snapshot, 
 against the shared Showdown server **without pausing training**. Each opponent writes
 `result__<opponent>.json`; when all workers finish the parent merges them → TensorBoard +
 TUI + best-model (the winning snapshot is promoted by copy, not re-saved). Forensic traces
-land under `<run_dir>/eval_traces/step_<N>/<opponent>/`, alongside a per-cycle
+land under `<run_dir>/eval_traces/step_<N>/<opponent>/` as a per-captured-battle triple
+(`write_battle_record`, `battle_recorder.py`): `<outcome>_NNN_summary.json` (the
+human-readable per-decision dump) + `<outcome>_NNN_states.npz` (raw obs/logits/values for the
+prober) + **`<outcome>_NNN_replay.html`** — a self-contained, **browser-watchable** Showdown
+replay of that battle (poke-env `save_replay` over the accumulated protocol stream). The first
+two are prober-only; the HTML lets a human just open the game in a browser (no checkout, no
+prober) — the only watchable replay for *non-stall* eval battles (stall games still get their
+own `stalls/*.html`). All three sit alongside a per-cycle
 **`eval_manifest.json`** (`write_eval_manifest`) recording exactly which model produced them
 — `num_timesteps`, `git_hash` + `arch_signature` (read from the run's `metadata.json` /
 `model_config.json`), and a `snapshot` pointer. The eval snapshot is normally ephemeral

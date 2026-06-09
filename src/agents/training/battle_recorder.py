@@ -444,15 +444,21 @@ class BattleRecorder:
 def write_battle_record(out_prefix: str, recorder: "BattleRecorder", battle, step: int) -> None:
     """Finalize a recorder and write its forensic trace to disk.
 
-    Writes ``<out_prefix>_summary.json`` (the human-readable per-invocation
-    summary) and, when raw model I/O was captured, ``<out_prefix>_states.npz``
-    (obs/logits/values aligned with the summary's invocations, for
-    ``probe_replay.py``). Shared by the replay recorder and the eval forensic
-    capture so the on-disk format stays identical.
+    Writes three co-located artifacts for the same battle:
+
+    * ``<out_prefix>_summary.json`` — the human-readable per-invocation summary.
+    * ``<out_prefix>_states.npz`` — obs/logits/values aligned with the summary's
+      invocations (only when raw model I/O was captured), for ``probe_replay.py``.
+    * ``<out_prefix>_replay.html`` — a self-contained, **browser-watchable** Showdown
+      replay of the battle. The two files above are prober-only forensic dumps; this
+      one lets a human (no checkout, no prober) just open the game in a browser.
+
+    Shared by the eval forensic capture so the on-disk format stays identical.
     """
     import os
     import re
     import json
+    import sys
 
     recorder.finalize(battle)
     summary = recorder.to_summary(battle, step)
@@ -478,3 +484,14 @@ def write_battle_record(out_prefix: str, recorder: "BattleRecorder", battle, ste
     states = recorder.states_arrays()
     if states:
         np.savez_compressed(f"{out_prefix}_states.npz", **states)
+
+    # Human-watchable replay alongside the forensic dump. `save_replay` is a poke-env
+    # method (renders the accumulated protocol stream — `_replay_data`, populated on every
+    # parsed line regardless of the fast/heavy path — into a standalone HTML page), NOT
+    # battle state, so it's an allowed raw seam, same as stall.py. Guarded so a replay
+    # failure never costs us the forensic trace we already wrote.
+    try:
+        battle.save_replay(f"{out_prefix}_replay.html")
+    except Exception as e:
+        sys.stderr.write(f"Failed to save replay HTML for {out_prefix}: {e}\n")
+        sys.stderr.flush()
