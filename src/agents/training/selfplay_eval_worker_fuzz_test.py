@@ -1,7 +1,7 @@
 """Self-play EVAL-WORKER fuzz test — bridge-backed, no live server.
 
 End-to-end guard for the NON-BLOCKING self-play eval worker's sentinel path
-(``main.eval_worker._eval_sentinel``), which mocked unit tests can't cover. It plays
+(``main.eval_worker._play_unit`` (SENTINEL branch)), which mocked unit tests can't cover. It plays
 REAL battles in-process via the local BattleStream bridge (same mechanism as the other
 ``*_fuzz_test.py`` files) and validates the worker's exact construction:
 
@@ -13,7 +13,7 @@ REAL battles in-process via the local BattleStream bridge (same mechanism as the
      A deliberately-incompatible version is rejected with ``ModelVersionError``.
 
   2. **Trainee (greedy) vs sentinel (stochastic) play legal battles.** The matchup is built
-     exactly as ``_eval_sentinel`` builds it — an ``EvalRLPlayer`` trainee
+     exactly as ``_play_unit`` builds it — an ``EvalRLPlayer`` trainee
      (``stochastic=False``) vs an ``RLPlayer`` sentinel (``stochastic=True``, temperature).
      ``_predict_best_action`` raises on an illegal action, so "all N battles finished"
      proves no illegal action was ever selected. The trainee tracks reward + a win rate.
@@ -180,7 +180,7 @@ def _load_like_worker(mappings, td: Path):
 
 
 async def _play(trainee_model, sentinel_model, teams, n_battles: int, ts: int):
-    """Build the matchup exactly as eval_worker._eval_sentinel does, then run it on the bridge."""
+    """Build the matchup exactly as eval_worker._play_unit does, then run it on the bridge."""
     trainee = _RecordingTrainee(
         model=trainee_model, team=Gen3Teambuilder(teams), battle_format=BATTLE_FORMAT,
         server_configuration=LocalhostServerConfiguration, start_listening=False,
@@ -226,7 +226,7 @@ async def main(n_battles: int = 8) -> None:
         if bad:
             fails.append(f"{label}: out-of-range action indices {set(bad)}")
 
-    # Win-rate computation (what _eval_sentinel returns) must be well-formed.
+    # Win-rate computation (what the sentinel shard produces) must be well-formed.
     finished = trainee.n_finished_battles
     win_rate = trainee.n_won_battles / finished if finished else 0.0
     if not (0.0 <= win_rate <= 1.0):

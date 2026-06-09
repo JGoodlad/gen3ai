@@ -317,15 +317,22 @@ with half the envs** (≈half the RAM). Off by default (= stock `SubprocVecEnv`)
 
 ### Bot evaluation
 
-Bot eval runs in **frozen-snapshot subprocesses** (`--eval-workers`, default 5) that work-steal
-opponents from a shared pool and play the live server **without pausing training**; results
-merge into TensorBoard + TUI + best-model and land in `metadata.json` as a top-level
-`latest_eval` block. **`--self-play` eval shares this exact non-blocking pipeline** (with the
-worker pool doubled to 10, since sentinel matchups infer for both players) — the
-workers additionally work-steal the pool sentinels, and a winning cycle promotes its frozen
-snapshot into the pool by file-copy (`SnapshotPool.add_from_path`). The full design
-(work-stealing, graceful-shutdown drain, resume re-publish, sentinels + promotion,
-`--eval-workers` / `--eval-device`) is in `src/agents/training/CLAUDE.md`.
+Bot eval runs in **frozen-snapshot subprocesses** (`--eval-workers`, default 5) that
+**work-steal at battle granularity** from a shared pool and play the live server (or the bridge)
+**without pausing training**; results merge into TensorBoard + TUI + best-model and land in
+`metadata.json` as a top-level `latest_eval` block. Each opponent's `EVAL_GAMES` are split into
+**shard units** (`--eval-shard-games`, default 25 → 4 shards/opponent) so any idle worker drains a
+straggler's remaining games instead of one worker grinding a whole opponent — the long eval tail
+collapses to one shard. The mechanism lives in the well-encapsulated **`eval_sharding/` package**
+(deep `ShardedEvalPool` interface; aggregation is **exact** — Σwon/Σfinished etc., raw δ pooled then
+one CVaR), with a documented **`rating.py` seam** (`MatchRecord` / `RatingModel` / `BradleyTerryRating`)
+ready for a future Glicko-2/TrueSkill without touching the live ELO path. **`--self-play` eval shares
+this exact non-blocking pipeline** (with the worker pool doubled to 10, since sentinel matchups infer
+for both players) — the workers additionally work-steal the pool sentinels' shards, and a winning
+cycle promotes its frozen snapshot into the pool by file-copy (`SnapshotPool.add_from_path`). The full
+design (battle-level work-stealing, exact aggregation, graceful-shutdown drain, resume re-publish,
+sentinels + promotion, `--eval-workers` / `--eval-shard-games` / `--eval-device`) is in
+`src/agents/training/CLAUDE.md`.
 
 ### ELO / skill rating
 
@@ -464,6 +471,7 @@ src/
                      #   Choice → serialize.choice_to_order (the one poke-env order touch)
     training/        # Callbacks, reward manager, eval pipeline — has CLAUDE.md
                      #   elo.py (Bradley-Terry skill rating), bot_elo_calibration.py (anchor round-robin)
+                     #   eval_sharding/ (battle-level work-stealing pkg), rating.py (Glicko-ready seam)
     battle/          # Event-sourced battle layer (Gen3Battle, BattleEvent log, TurnView,
                      #   LiveView/LegalActions read-models, StrictBattleView) — has CLAUDE.md
   main/
@@ -475,7 +483,7 @@ src/
     tui/               # Shared Textual base (Gen3App, theme, colors) — has CLAUDE.md
     exit_codes.py      # TrainExitCode enum (COMPLETE=0, INTERRUPTED=15, CRASH=1, FATAL_CONFIG=3)
     train_rl_agent.py  # Training entry point (also callable directly)
-    eval_worker.py     # Subprocess bot-eval worker (frozen snapshot, CPU)
+    eval_worker.py     # Subprocess eval worker (frozen snapshot, CPU) — work-steals shard units
     probe_replay.py    # Forensic-replay CLI (thin wrapper over main.prober.engine)
     elo.py             # Offline ELO analyzer CLI (ladder + Elo-vs-step curve)
     play.py            # Battle / evaluation entry point

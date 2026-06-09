@@ -21,7 +21,7 @@ from agents.training.eval_callback import (
     PerOpponentEvalCallback, build_eval_opponents, build_eval_players,
 )
 from agents.training.selfplay_callback import SelfPlayCallback
-from main.eval_worker import _eval_sentinel, _eval_fixed, _eval_trainee_vs_model
+from main.eval_worker import _play_unit
 
 
 def test_single_constructor_overrides_port():
@@ -61,11 +61,11 @@ def test_callback_has_no_in_process_player_creation():
             )
 
 
-# The subprocess eval path builds players via these functions (build_eval_* for bots,
-# _eval_trainee_vs_model for the trainee-vs-model matchup shared by pool sentinels + stable
-# opponents), which take server_config as a parameter and must thread it (the worker rebuilds it
-# from the --showdown-port the trainer passes). Same anti-:8000-hardcode guard, function form.
-@pytest.mark.parametrize("fn", [build_eval_opponents, build_eval_players, _eval_trainee_vs_model])
+# The subprocess eval path builds players via these functions: build_eval_* for the trainee + bot
+# opponents, and _play_unit (eval_worker) for the per-shard matchup — which additionally builds the
+# pool-sentinel / stable-opponent RLPlayer. All take server_config and must thread it (the worker
+# rebuilds it from the --showdown-port the trainer passes). Same anti-:8000-hardcode guard.
+@pytest.mark.parametrize("fn", [build_eval_opponents, build_eval_players, _play_unit])
 def test_eval_builders_thread_server_config_param(fn):
     sig = inspect.signature(fn)
     assert "server_config" in sig.parameters, (
@@ -76,14 +76,3 @@ def test_eval_builders_thread_server_config_param(fn):
         f"{fn.__name__} must build players from its server_config arg"
     )
     assert "server_configuration=LocalhostServerConfiguration" not in src
-
-
-# _eval_sentinel / _eval_fixed don't build players directly (they delegate to
-# _eval_trainee_vs_model) — but they must still ACCEPT + thread server_config through to it.
-@pytest.mark.parametrize("fn", [_eval_sentinel, _eval_fixed])
-def test_eval_matchup_wrappers_thread_server_config(fn):
-    assert "server_config" in inspect.signature(fn).parameters, (
-        f"{fn.__name__} must take server_config to thread it to _eval_trainee_vs_model"
-    )
-    src = inspect.getsource(fn)
-    assert "server_config" in src and "LocalhostServerConfiguration" not in src

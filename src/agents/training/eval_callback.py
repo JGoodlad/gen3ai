@@ -6,7 +6,6 @@ import time
 import glob
 import json
 import shutil
-import asyncio
 import subprocess
 from datetime import datetime, timezone
 
@@ -28,7 +27,6 @@ from agents.opponents import (
 from agents.training.reward_tracker import RewardTrackingMixin
 from agents.training.battle_recorder import BattleRecorder, write_battle_record
 from main.launcher.ipc import send_metrics, send_event
-from utils.bridge.local_battle_runner import run_local_battles
 from utils.git import get_git_hash
 
 BATTLE_FORMAT = "gen3ou"
@@ -116,19 +114,14 @@ _FORENSIC_WIN_QUOTA = 5
 # a raw min is one-freak-turn noisy). Below `TD_TAIL_MIN_SAMPLES` residuals, report the single
 # most-negative one. Sign-meaningful in reward units: more negative = critic more often blindsided,
 # so a successful critic-coverage obs change should pull eval/td_resid_tail_mean UP toward 0.
-TD_TAIL_FRAC = 0.05
-TD_TAIL_MIN_SAMPLES = 20
-
-
-def td_tail(residuals, frac: float = TD_TAIL_FRAC, min_samples: int = TD_TAIL_MIN_SAMPLES):
-    """Lower-tail mean (CVaR@frac) of `residuals`; the single min if too few; None if empty."""
-    ds = sorted(float(r) for r in residuals)
-    if not ds:
-        return None
-    if len(ds) < min_samples:
-        return ds[0]
-    k = max(1, int(len(ds) * frac))
-    return sum(ds[:k]) / k
+#
+# `td_tail` + its constants now live in `eval_sharding.results` (the aggregation layer that owns
+# the pooled computation under battle-level work-stealing); re-exported here so the recorder, the
+# worker, the prober-parity test, and this module's callers keep their existing import site.
+from agents.training.eval_sharding import (  # noqa: E402,F401
+    td_tail, TD_TAIL_FRAC, TD_TAIL_MIN_SAMPLES, ShardedEvalPool, PLAN_NAME,
+    EvalItem, BOT, FIXED,
+)
 
 # Per-opponent in-flight battles in the subprocess eval worker. ONE game at a time.
 # Eval inference is single-threaded (one Python thread does every forward in this
@@ -156,6 +149,15 @@ _EVAL_CYCLE_TIMEOUT_SEC = 1800.0
 # needing hand-tuned ceilings.
 EVAL_FREQ_STEPS = 2_000_000
 EVAL_GAMES = 100
+
+# Battle-level work-stealing: each opponent's EVAL_GAMES games are split into shard units of
+# (at most) this many games, so any idle worker can drain a straggler's remaining games instead of
+# one worker grinding a whole opponent alone. Smaller → finer tail collapse but more player builds
+# (and, on the websocket transport, more connection churn — the bridge is preferred for fine
+# shards). `>= EVAL_GAMES` ⇒ one shard per opponent == the original opponent-level behaviour.
+# Default 25 → 4 shards/opponent: a ~4x shorter tail at modest cost. Tunable via
+# `--eval-shard-games`.
+EVAL_SHARD_GAMES = 25
 
 _OPPONENT_NAMES: dict[type, str] = {
     RandomPlayer: "random",
@@ -250,26 +252,6 @@ def build_eval_players(model, names, teambuilder, mappings, server_config, concu
     }
 
 
-def claim_next_opponent(claim_dir: str, names: list[str]) -> str | None:
-    """Atomically claim the next unclaimed opponent from a shared pool (work stealing).
-
-    Each opponent is claimed by exactly one worker via an O_EXCL lock file — the
-    first worker to create `<claim_dir>/<name>.lock` owns that opponent; everyone
-    else gets FileExistsError and moves on. Returns the claimed name, or None when
-    every opponent in `names` is already claimed (this worker is done). Robust
-    across independent processes with no shared memory.
-    """
-    for name in names:
-        try:
-            fd = os.open(os.path.join(claim_dir, f"{name}.lock"),
-                         os.O_CREAT | os.O_EXCL | os.O_WRONLY)
-            os.close(fd)
-            return name
-        except FileExistsError:
-            continue
-    return None
-
-
 def read_latest_eval_block(path: str | None) -> dict | None:
     """Return the most recent eval block from a metadata.json, or None.
 
@@ -297,87 +279,13 @@ def read_latest_eval_block(path: str | None) -> dict | None:
     return best
 
 
-def _mean_episode_length(player) -> float:
-    battles = [b for b in player._battles.values() if b.finished]
-    if not battles:
-        return 0.0
-    return sum(b.turn for b in battles) / len(battles)
-
-
-async def eval_one_matchup(trainee, opponent, n_games, model_dir, step, name,
-                           *, use_bridge=False, bridge_concurrency=1) -> dict:
-    """Run ONE trainee-vs-opponent matchup; return its metrics + write forensic traces.
-
-    The shared per-matchup body behind both the bot-roster gather (`run_eval`) and the
-    self-play eval worker's per-sentinel matchups. `n_games` is the flat per-opponent
-    game count (`EVAL_GAMES`) — the same for every bot and every sentinel.
-
-    `trainee` is an `EvalRLPlayer` (reward tracking + forensic capture); `opponent` is any
-    poke-env Player. Pure compute + disk (traces) — safe inside the eval worker process.
-    Returns {name, win_rate, reward_mean, ep_len, duration_sec}.
-
-    `use_bridge=True` plays the games in-process via `run_local_battles` (no server) instead
-    of `battle_against`. Both players must have been built `start_listening=False`. Eval is a
-    pure synchronous-decision matchup (greedy trainee + bot/sentinel), so the in-process driver
-    is a faithful drop-in. `bridge_concurrency` (>1) overlaps that many games at once — matching
-    the server's `max_concurrent_battles` so the bridge isn't slower than the websocket path.
-    """
-    if trainee.n_finished_battles > 0:
-        trainee.reset_battles()
-    if opponent.n_finished_battles > 0:
-        opponent.reset_battles()
-    trainee.reset_reward_tracking()
-    forensic_dir = (
-        os.path.join(model_dir, "eval_traces", f"step_{step}", name)
-        if model_dir else None
-    )
-    trainee.begin_forensic_cycle(forensic_dir, step)
-
-    start = datetime.now()
-    if use_bridge:
-        await run_local_battles(trainee, opponent, n_games, concurrency=bridge_concurrency)
-    else:
-        await trainee.battle_against(opponent, n_battles=n_games)
-    dur = (datetime.now() - start).total_seconds()
-
-    won = trainee.n_won_battles
-    finished = trainee.n_finished_battles
-    win_rate = won / finished if finished > 0 else 0.0
-    print(f"  vs {name}: {win_rate * 100:.1f}%  ({won}/{finished})  "
-          f"ep_len={_mean_episode_length(trainee):.1f}  reward={trainee.mean_episode_reward:.3f}  [{dur:.0f}s]")
-    return {
-        "name": name,
-        "win_rate": win_rate,
-        "reward_mean": trainee.mean_episode_reward,
-        "ep_len": _mean_episode_length(trainee),
-        "td_resid_tail": trainee.td_tail(),   # None when no captured battles → omitted downstream
-        "duration_sec": dur,
-    }
-
-
-async def run_eval(players, opponents, n_games, model_dir, step, *, use_bridge=False,
-                   bridge_concurrency=1) -> dict:
-    """Run the per-opponent eval gather and return raw metrics (no logging sinks).
-
-    `players` maps name -> EvalRLPlayer; `opponents` is a list of (name, player).
-    Returns dicts keyed by opponent name: win_rates / reward_means / ep_lens /
-    durations_sec. Forensic traces are written by the players as battles finish.
-    Pure compute + disk (traces) — safe to call from the eval worker process.
-    """
-    async def eval_one(name, opponent):
-        return await eval_one_matchup(players[name], opponent, n_games, model_dir, step, name,
-                                      use_bridge=use_bridge, bridge_concurrency=bridge_concurrency)
-
-    results = await asyncio.gather(*(eval_one(n, o) for n, o in opponents))
-    return {
-        "win_rates": {m["name"]: m["win_rate"] for m in results},
-        "reward_means": {m["name"]: m["reward_mean"] for m in results},
-        "ep_lens": {m["name"]: m["ep_len"] for m in results},
-        # Present only for opponents that produced residuals (captured battles) this cycle.
-        "td_resid_tails": {m["name"]: m["td_resid_tail"] for m in results
-                           if m.get("td_resid_tail") is not None},
-        "durations_sec": {m["name"]: m["duration_sec"] for m in results},
-    }
+def episode_length_sum(player) -> float:
+    """Σ of turn counts over this player's finished battles (the additive numerator a sharded eval
+    pools — the parent recovers the mean as Σturns / Σn_finished). Denominator is the FINISHED-battle
+    count (poke-env ``n_finished_battles``), distinct from the reward count (``n_reward_episodes``) —
+    see ``ShardResult`` / ``aggregate``. Reads ``_battles`` directly (the convention this file + its
+    test fakes use)."""
+    return float(sum(b.turn for b in player._battles.values() if b.finished))
 
 
 # ── Shared subprocess-eval mechanics (used by BOTH eval callbacks) ─────────────
@@ -453,29 +361,36 @@ def spawn_eval_workers(run_dir: str, base_cfg: dict, n_workers: int) -> list[dic
 
 
 def merge_eval_results(run_dir: str, names: list[str]) -> tuple[dict, list]:
-    """Read ``result__<name>.json`` for each expected opponent; return ``(merged, missing)``.
+    """Pool the cycle's shard results into the per-opponent ``merged`` dict + the fully-missing names.
 
-    Work stealing writes one result file per opponent regardless of which worker ran it.
-    A missing file means a worker died mid-opponent (its claim lock blocks a retry) — the
-    caller logs it and carries on. Shared by both eval callbacks.
+    Battle-level work-stealing writes one ``shard__<unit_id>.json`` per played shard (an opponent
+    is split into chunks any idle worker can drain). This reads the cycle's ``plan.json`` — the
+    launcher writes it before spawning workers, so it is the single source of truth for which
+    shards each opponent expects — groups the shards by opponent and aggregates **exactly**
+    (Σwon/Σfinished for win_rate; count-weighted reward/ep_len; raw δ pooled then ONE CVaR, since a
+    CVaR can't be averaged). The returned ``merged`` is shape-compatible with every downstream
+    consumer (record_per_opponent / build_bot_eval_block / record_elo / the pool & externals
+    blocks) and additionally carries ``counts`` (exact W/L per opponent — the rating-fidelity
+    record) and ``coverage``. ``missing`` = names with ZERO shards present (a whole opponent lost
+    to a worker crash), logged by the caller exactly as a missing opponent always was. Shared by
+    both eval callbacks. (Per-cycle ``run_dir`` is wiped at cleanup, so no shard/lock ever leaks
+    across cycles.)
     """
-    merged = {"win_rates": {}, "reward_means": {}, "ep_lens": {},
-              "td_resid_tails": {}, "durations_sec": {}}
-    missing = []
-    for name in names:
-        rp = os.path.join(run_dir, f"result__{name}.json")
-        if not os.path.exists(rp):
-            missing.append(name)
-            continue
-        with open(rp) as f:
-            r = json.load(f)
-        merged["win_rates"][name] = r["win_rate"]
-        merged["reward_means"][name] = r["reward_mean"]
-        merged["ep_lens"][name] = r["ep_len"]
-        # Present only when the worker captured battles for this opponent (else key omitted).
-        if r.get("td_resid_tail") is not None:
-            merged["td_resid_tails"][name] = r["td_resid_tail"]
-        merged["durations_sec"][name] = r["duration_sec"]
+    empty = {"win_rates": {}, "reward_means": {}, "ep_lens": {},
+             "td_resid_tails": {}, "durations_sec": {}, "counts": {}, "coverage": {}}
+    if not os.path.exists(os.path.join(run_dir, PLAN_NAME)):
+        return empty, list(names)  # no plan written (shouldn't happen live) → nothing to merge
+    merged_all, missing_all = ShardedEvalPool.from_plan(run_dir).collect(run_dir)
+    wanted = set(names)
+    merged = {block: {k: v for k, v in vals.items() if k in wanted}
+              for block, vals in merged_all.items()}
+    missing = [n for n in names if n in set(missing_all)]
+    # Partial coverage (some-but-not-all shards of an opponent reported) → it was measured over
+    # fewer games; surface it so a crashed shard doesn't silently degrade win-rate / ELO unnoticed.
+    partial = {k: c for k, c in merged.get("coverage", {}).items() if c < 1.0}
+    if partial:
+        worst = ", ".join(f"{k} {c * 100:.0f}%" for k, c in sorted(partial.items(), key=lambda x: x[1]))
+        print(f"⚠️ [EVAL] partial shard coverage (worker crash mid-opponent): {worst}")
     return merged, missing
 
 
@@ -815,7 +730,7 @@ def _record_opponent_elos(fit, bot_names, sentinels, tui):
 
 
 def record_elo(model_dir, step, bot_win_rates, sentinels, n_games, logger, tui,
-               bot_td_tails=None):
+               bot_td_tails=None, bot_counts=None):
     """Append this cycle's results to ``eval_results.jsonl``, refit anchored Bradley-Terry
     ELO, and record ``eval/elo`` + ``eval/elo_ci`` to the SB3 logger + the TUI dict.
 
@@ -832,7 +747,7 @@ def record_elo(model_dir, step, bot_win_rates, sentinels, n_games, logger, tui,
         from agents.training import elo as elo_mod
 
         append_eval_result_row(model_dir, step, n_games, bot_win_rates, sentinels,
-                               bot_td_tails=bot_td_tails)
+                               bot_td_tails=bot_td_tails, bot_counts=bot_counts)
         # Refits the WHOLE accumulated ladder to read this snapshot's rating. Cheap at the
         # expected scale (tens of snapshots → ms); wrapped best-effort so it can never break eval.
         fit = elo_mod.fit_from_run(model_dir, source="log")
@@ -880,6 +795,7 @@ class EvalRLPlayer(RewardTrackingMixin, RLPlayer):
         self._win_quota = win_quota
         self._forensic_dir: str | None = None
         self._forensic_step = 0
+        self._trace_tag = ""
         self._wins_kept = 0
         self._losses_kept = 0
         self._trace_idx = 0
@@ -888,10 +804,25 @@ class EvalRLPlayer(RewardTrackingMixin, RLPlayer):
         # opponent), folded into a tail statistic at collect via td_tail(). Reset each cycle.
         self._td_pool: list[float] = []
 
-    def begin_forensic_cycle(self, forensic_dir: str | None, step: int) -> None:
-        """Arm (or disable, if dir is None) forensic capture for one eval cycle."""
+    def begin_forensic_cycle(self, forensic_dir: str | None, step: int, *,
+                             trace_tag: str = "", win_quota: int | None = None,
+                             loss_quota: int | None = None) -> None:
+        """Arm (or disable, if dir is None) forensic capture for one eval cycle / shard.
+
+        ``trace_tag`` namespaces this player's persisted trace filenames. Under battle-level
+        work-stealing several shard units of the SAME opponent write into the same
+        ``eval_traces/step_<N>/<opponent>/`` dir, each from a fresh player whose ``_trace_idx``
+        restarts at 0 — so without a per-shard tag the files (``win_001`` …) would collide and
+        overwrite. ``win_quota`` / ``loss_quota`` override the per-cycle defaults so a sharded
+        opponent's per-unit quota can be scaled down (≈ global ÷ shard_count) to keep the total
+        traces per opponent bounded."""
         self._forensic_dir = forensic_dir
         self._forensic_step = step
+        self._trace_tag = trace_tag
+        if win_quota is not None:
+            self._win_quota = win_quota
+        if loss_quota is not None:
+            self._loss_quota = loss_quota
         self._wins_kept = 0
         self._losses_kept = 0
         self._trace_idx = 0
@@ -903,6 +834,12 @@ class EvalRLPlayer(RewardTrackingMixin, RLPlayer):
         captured battles produced residuals this cycle. The eval cycle records it as
         eval/td_resid_tail_vs_<opponent>."""
         return td_tail(self._td_pool)
+
+    def td_residuals(self) -> list[float]:
+        """The raw per-decision δ samples pooled this matchup (a COPY). A sharded eval ships these
+        from each shard and pools them in the parent before the single CVaR — a CVaR cannot be
+        averaged across shards, so the raw samples (not a per-shard tail) are the unit of exchange."""
+        return list(self._td_pool)
 
     @property
     def _quota_open(self) -> bool:
@@ -950,7 +887,9 @@ class EvalRLPlayer(RewardTrackingMixin, RLPlayer):
         else:
             return
         self._trace_idx += 1
-        prefix = os.path.join(self._forensic_dir, f"{outcome}_{self._trace_idx:03d}")
+        # `_trace_tag` namespaces the file so concurrent shard units of the same opponent (each a
+        # fresh player with _trace_idx restarting at 0, all writing this one dir) never collide.
+        prefix = os.path.join(self._forensic_dir, f"{outcome}_{self._trace_tag}{self._trace_idx:03d}")
         write_battle_record(prefix, rec, battle, self._forensic_step)
         if outcome == "win":
             self._wins_kept += 1
@@ -1001,6 +940,7 @@ class PerOpponentEvalCallback(BaseCallback):
         n_workers: int = 3,
         eval_device: str = "cpu",
         eval_concurrency: int = _EVAL_SUBPROCESS_CONCURRENCY,
+        eval_shard_games: int = EVAL_SHARD_GAMES,
         showdown_port: int | None = None,
         use_showdown_bridge: bool = False,
         resume_eval_metadata: str | None = None,
@@ -1021,6 +961,8 @@ class PerOpponentEvalCallback(BaseCallback):
         self._n_workers = max(1, n_workers)
         self._eval_device = eval_device
         self._eval_concurrency = eval_concurrency
+        # Games per work-steal shard unit (battle-level work-stealing); see EVAL_SHARD_GAMES.
+        self._eval_shard_games = max(1, eval_shard_games)
         self._showdown_port = showdown_port
         # Bridge eval: workers play in-process via run_local_battles (no server connection).
         self._use_showdown_bridge = use_showdown_bridge
@@ -1097,6 +1039,9 @@ class PerOpponentEvalCallback(BaseCallback):
         _, n_games = self._schedule()
         step = self.num_timesteps
         run_dir = os.path.join(self._eval_root, f"step_{step}")
+        # Clear any crash-leftover from a prior run at this step (the same step re-evals on resume),
+        # so no stale plan/shard/lock files from an aborted cycle are mistaken for this one's.
+        shutil.rmtree(run_dir, ignore_errors=True)
         claim_dir = os.path.join(run_dir, "claims")
         os.makedirs(claim_dir, exist_ok=True)
 
@@ -1104,9 +1049,16 @@ class PerOpponentEvalCallback(BaseCallback):
         self.model.save(snapshot_base)  # SB3 appends .zip
         snapshot_zip = snapshot_base + ".zip"
 
-        # Full work-steal universe = the bot roster + any stable cross-run opponents (ext_<label>).
+        # Full work-steal universe = the bot roster + any stable cross-run opponents (ext_<label>),
+        # each an EvalItem the pool splits into shard units. The plan.json (written below) is the
+        # single source of truth for the items + shard split — workers and collect read it.
         fixed_cfgs = [e.to_cfg() for e in self._fixed_opponents]
-        names = eval_opponent_names() + [f["label"] for f in fixed_cfgs]
+        items = [EvalItem(name, BOT, n_games) for name in eval_opponent_names()]
+        items += [EvalItem(f["label"], FIXED, n_games, path=f["path"],
+                           config_path=f.get("config_path")) for f in fixed_cfgs]
+        names = [it.key for it in items]
+        pool = ShardedEvalPool(items, self._eval_shard_games, step=step)
+        pool.write_plan(run_dir)
         # Record exactly which model produced this cycle's traces (the prober reads
         # this to reload the right model). snapshot=None now; _persist_snapshot patches
         # it to the retained filename on success when --keep-eval-snapshots is set.
@@ -1116,19 +1068,17 @@ class PerOpponentEvalCallback(BaseCallback):
         # across restarts and hung a worker on a lingering challenge.
         self._eval_cycle += 1
         cycle_tag = f"{self._eval_run_nonce}{_b36(self._eval_cycle, 1)}"
-        # Never spawn more workers than opponents to steal.
-        n_workers = max(1, min(self._n_workers, len(names)))
+        # Cap by UNITS, not opponents — sharding gives many more units than opponents, so the full
+        # worker pool can help drain the tail (the whole point).
+        n_workers = max(1, min(self._n_workers, pool.n_units))
         base_cfg = {
             "snapshot": snapshot_zip,
             "port": self._showdown_port,
             "use_showdown_bridge": self._use_showdown_bridge,
             "model_dir": self._model_dir,
             "step": step,
-            "n_games": n_games,
-            "opponent_pool": eval_opponent_names(),  # the bot roster (workers steal from the universe)
-            "fixed_opponents": fixed_cfgs,            # stable cross-run opponents (ext_<label>)
             "claim_dir": claim_dir,
-            "result_dir": run_dir,         # writes result__<opponent>.json here
+            "result_dir": run_dir,         # plan.json lives here; workers write shard__<unit>.json
             "concurrency": self._eval_concurrency,
             "device": self._eval_device,
             "cycle_tag": cycle_tag,
@@ -1142,10 +1092,10 @@ class PerOpponentEvalCallback(BaseCallback):
                          "snapshot": snapshot_zip, "run_dir": run_dir, "n_games": n_games,
                          "launched_at": time.monotonic()}
         print(f"[EVAL] step {step:,}: spawned {n_workers} work-stealing worker(s) on "
-              f"{self._eval_device} ({len(names)} opponents, conc {self._eval_concurrency}) "
-              f"— non-blocking")
+              f"{self._eval_device} ({len(names)} opponents, {pool.n_units} shard units, "
+              f"conc {self._eval_concurrency}) — non-blocking")
         send_event(f"🧪 Eval @ {step:,}: started "
-                   f"({len(names)} opponents, {n_workers} worker(s))")
+                   f"({len(names)} opponents, {pool.n_units} units, {n_workers} worker(s))")
 
     def _abort_pending_cycle(self) -> None:
         """A cycle overran `_EVAL_CYCLE_TIMEOUT_SEC` → presumed hung. Kill its workers,
@@ -1175,9 +1125,9 @@ class PerOpponentEvalCallback(BaseCallback):
             w["log"].close()
         bad_exits = [w for w in pending["procs"] if w["proc"].returncode not in (0, None)]
 
-        # Work stealing writes one result__<opponent>.json per opponent, regardless
-        # of which worker ran it. Read every expected opponent; missing = a worker
-        # died mid-opponent (its claim lock blocks a retry) — log and carry on.
+        # Battle-level work stealing writes one shard__<unit_id>.json per played shard; the parent
+        # pools an opponent's shards back exactly. Missing = a name with ZERO shards (a worker died
+        # holding every one of its claims) — log and carry on; partial coverage is warned inside.
         merged, missing = merge_eval_results(run_dir, pending["names"])
 
         if missing:
@@ -1247,8 +1197,9 @@ class PerOpponentEvalCallback(BaseCallback):
         # Anchored-BT ELO from the accumulated results (appends this cycle's row first).
         # bot_wr carries every BOT incl. random (a valid anchor); ext_ opponents are kept OUT of the
         # fit (no ladder distortion); no sentinels on the bot-only path.
+        bot_counts = {k: merged["counts"][k] for k in bot_wr if k in merged.get("counts", {})}
         elo_result = record_elo(self._model_dir, step, bot_wr, [], n_games,
-                                self.logger, tui, bot_td_tails=bot_td_tails)
+                                self.logger, tui, bot_td_tails=bot_td_tails, bot_counts=bot_counts)
         # ELO for each stable opponent (display-only) → fills the eval table's elo column for the
         # ext_ rows: its OWN recorded ELO when available, else a ballpark from the trainee's rating.
         if ext_wr:

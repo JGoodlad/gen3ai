@@ -140,68 +140,6 @@ def test_per_opponent_concurrency_zero_falls_back():
     assert _per_opponent_concurrency(0) == _EVAL_CONCURRENCY
 
 
-# ── eval_one_matchup (shared single-matchup body) ─────────────────────────────
-
-def test_eval_one_matchup_returns_metrics_and_arms_forensics(tmp_path):
-    """Pins the contract the self-play worker relies on for sentinel matchups."""
-    import asyncio
-    from agents.training import eval_callback as ec
-
-    class _FakeBattle:
-        def __init__(self, finished, turn):
-            self.finished = finished
-            self.turn = turn
-
-    class _FakeTrainee:
-        def __init__(self):
-            self.n_finished_battles = 2          # nonzero → exercises reset_battles()
-            self.n_won_battles = 0
-            self.mean_episode_reward = 0.0
-            self._battles = {}
-            self.reset_battles_called = False
-            self.reset_reward_called = False
-            self.forensic = None
-
-        def reset_battles(self):
-            self.reset_battles_called = True
-
-        def reset_reward_tracking(self):
-            self.reset_reward_called = True
-
-        def begin_forensic_cycle(self, d, step):
-            self.forensic = (d, step)
-
-        def td_tail(self):
-            return None   # no captured residuals in this stub → omitted from the result dict
-
-        async def battle_against(self, opp, n_battles):
-            self.n_finished_battles = n_battles
-            self.n_won_battles = 3
-            self.mean_episode_reward = 1.5
-            self._battles = {f"b{i}": _FakeBattle(True, 10) for i in range(n_battles)}
-
-    class _FakeOpp:
-        n_finished_battles = 0
-        def reset_battles(self):
-            pass
-
-    tr = _FakeTrainee()
-    m = asyncio.run(ec.eval_one_matchup(tr, _FakeOpp(), n_games=4,
-                                        model_dir=str(tmp_path), step=100, name="sentinel_0"))
-    assert m == {
-        "name": "sentinel_0",
-        "win_rate": pytest.approx(3 / 4),
-        "reward_mean": pytest.approx(1.5),
-        "ep_len": pytest.approx(10.0),
-        "td_resid_tail": None,              # stub captured no residuals → None
-        "duration_sec": m["duration_sec"],  # wall-clock, just assert presence
-    }
-    assert tr.reset_battles_called and tr.reset_reward_called
-    assert tr.forensic == (
-        os.path.join(str(tmp_path), "eval_traces", "step_100", "sentinel_0"), 100,
-    )
-
-
 def _make_callback(best_model_save_path=None, model_dir=None):
     cb = PerOpponentEvalCallback(
         model_dir=model_dir,
@@ -316,7 +254,7 @@ def test_does_not_save_when_aggregate_does_not_improve(tmp_path):
 # ── roster ────────────────────────────────────────────────────────────────────
 
 from agents.training.eval_callback import (
-    eval_opponent_names, claim_next_opponent, read_latest_eval_block,
+    eval_opponent_names, read_latest_eval_block,
 )
 
 
@@ -330,31 +268,6 @@ def test_eval_opponent_names_is_full_roster():
         "aggressive", "aggressive_v2",
         "setup_sweep", "setup_sweep_v2",
     ]
-
-
-# ── work-stealing claim (atomic O_EXCL) ───────────────────────────────────────
-
-def test_claim_next_opponent_claims_each_exactly_once(tmp_path):
-    names = ["a", "b", "c"]
-    claimed = []
-    while (n := claim_next_opponent(str(tmp_path), names)) is not None:
-        claimed.append(n)
-    assert sorted(claimed) == names              # every opponent claimed
-    assert len(claimed) == len(set(claimed))     # none twice
-    assert claim_next_opponent(str(tmp_path), names) is None  # pool exhausted
-
-
-def test_claim_next_opponent_no_double_claim_across_workers(tmp_path):
-    cd = str(tmp_path)
-    names = ["a", "b", "c", "d"]
-    # Two "workers" interleave their claims; no opponent may be handed out twice.
-    a1 = claim_next_opponent(cd, names)
-    b1 = claim_next_opponent(cd, names)
-    a2 = claim_next_opponent(cd, names)
-    b2 = claim_next_opponent(cd, names)
-    got = [x for x in (a1, b1, a2, b2) if x]
-    assert sorted(got) == names
-    assert claim_next_opponent(cd, names) is None
 
 
 # ── read_latest_eval_block (TUI resume source) ────────────────────────────────
@@ -390,9 +303,25 @@ def test_read_latest_eval_block_missing_or_empty():
 
 # ── orchestrator: work-stealing launch → collect → best-model (stubbed Popen) ──
 
+def _publish_fake_shards(cfg, *, win=0.8, reward=1.0, ep_len=20.0, only=None, skip=()):
+    """Mimic the real eval_worker: read the cycle plan, claim every shard UNIT, and publish a
+    raw ShardResult for it (round(win·shard_games) wins). `only` restricts to a set of item keys
+    and `skip` excludes some — both simulate partial coverage (a crashed/hung opponent)."""
+    from agents.training.eval_sharding import ShardedEvalPool, ShardResult
+    pool = ShardedEvalPool.from_plan(cfg["result_dir"])
+    while (unit := pool.claim_next(cfg["claim_dir"])) is not None:
+        if unit.item_key in skip or (only is not None and unit.item_key not in only):
+            continue
+        n = unit.n_games
+        pool.publish(cfg["result_dir"], ShardResult(
+            unit_id=unit.unit_id, item_key=unit.item_key, worker_id=cfg["worker_id"],
+            n_won=round(win * n), n_finished=n, sum_reward=reward * n, n_episodes=n,
+            sum_ep_len=ep_len * n, duration_sec=5.0, td_residuals=[]))
+
+
 def _fake_worker_popen(ec, win=0.8):
-    """A fake Popen whose 'worker' work-steals from the claim dir and writes
-    per-opponent result files, exactly like the real eval_worker."""
+    """A fake Popen whose 'worker' work-steals shard units from the plan and publishes
+    per-shard results, exactly like the real eval_worker."""
     class _FakeProc:
         returncode = 0
         def poll(self): return 0
@@ -400,15 +329,7 @@ def _fake_worker_popen(ec, win=0.8):
 
     def fake_popen(argv, stdout=None, stderr=None, env=None):
         import json as _json
-        cfg = _json.load(open(argv[-1]))
-        while True:
-            name = ec.claim_next_opponent(cfg["claim_dir"], cfg["opponent_pool"])
-            if name is None:
-                break
-            out = os.path.join(cfg["result_dir"], f"result__{name}.json")
-            with open(out, "w") as f:
-                _json.dump({"win_rate": win, "reward_mean": 1.0,
-                            "ep_len": 20.0, "duration_sec": 5.0}, f)
+        _publish_fake_shards(_json.load(open(argv[-1])), win=win)
         return _FakeProc()
     return fake_popen
 
@@ -495,11 +416,7 @@ def test_drain_waits_for_inflight_eval_then_collects(tmp_path, monkeypatch):
 
     def fake_popen(argv, stdout=None, stderr=None, env=None):
         import json as _json
-        cfg = _json.load(open(argv[-1]))
-        for nm in cfg["opponent_pool"]:        # results are ready on disk
-            with open(os.path.join(cfg["result_dir"], f"result__{nm}.json"), "w") as f:
-                _json.dump({"win_rate": 0.5, "reward_mean": 0.0,
-                            "ep_len": 10.0, "duration_sec": 1.0}, f)
+        _publish_fake_shards(_json.load(open(argv[-1])), win=0.5, reward=0.0, ep_len=10.0)
         return _SlowProc()
 
     monkeypatch.setattr(ec.subprocess, "Popen", fake_popen)
@@ -598,11 +515,9 @@ def test_watchdog_aborts_hung_cycle_and_collects_partial(tmp_path, monkeypatch):
     def fake_popen(argv, stdout=None, stderr=None, env=None):
         import json as _json
         cfg = _json.load(open(argv[-1]))
-        # Partial: only the first two opponents wrote results before the (simulated) hang.
-        for nm in cfg["opponent_pool"][:2]:
-            with open(os.path.join(cfg["result_dir"], f"result__{nm}.json"), "w") as f:
-                _json.dump({"win_rate": 0.5, "reward_mean": 0.0,
-                            "ep_len": 10.0, "duration_sec": 1.0}, f)
+        # Partial: only the first two opponents reported before the (simulated) hang.
+        _publish_fake_shards(cfg, win=0.5, reward=0.0, ep_len=10.0,
+                             only=set(eval_opponent_names()[:2]))
         return HungProc()
 
     monkeypatch.setattr(ec.subprocess, "Popen", fake_popen)

@@ -40,6 +40,7 @@ from agents.training.eval_callback import (
     _EVAL_SUBPROCESS_CONCURRENCY,
     EVAL_FREQ_STEPS,
     EVAL_GAMES,
+    EVAL_SHARD_GAMES,
     RANDOM_OPPONENT_NAME,
     _b36,
     bot_mean,
@@ -65,6 +66,7 @@ from agents.training.eval_callback import (
 from agents.training.artifact_retention import (
     prune_run_artifacts, KEEP_STALLS_DEFAULT, KEEP_CRASHES_DEFAULT,
 )
+from agents.training.eval_sharding import EvalItem, ShardedEvalPool, BOT, SENTINEL, FIXED
 from agents.training.snapshot_pool import (
     SnapshotPool, heuristic_fraction, HEURISTIC_FLOOR, SELF_PLAY_START, SELF_PLAY_FULL,
 )
@@ -169,6 +171,7 @@ class SelfPlayCallback(BaseCallback):
         distill_opponents: bool = False,
         distill_device: str = "cpu",
         eval_concurrency: int = _EVAL_SUBPROCESS_CONCURRENCY,
+        eval_shard_games: int = EVAL_SHARD_GAMES,
         keep_eval_snapshots: int = 10,
         keep_eval_trace_steps: int = 20,
         keep_stalls: int = KEEP_STALLS_DEFAULT,
@@ -211,6 +214,8 @@ class SelfPlayCallback(BaseCallback):
         self._n_workers = max(1, n_workers)
         self._eval_device = eval_device
         self._eval_concurrency = eval_concurrency
+        # Games per work-steal shard unit (battle-level work-stealing); see EVAL_SHARD_GAMES.
+        self._eval_shard_games = max(1, eval_shard_games)
         self._keep_eval_snapshots = max(0, keep_eval_snapshots)
         self._keep_eval_trace_steps = max(0, keep_eval_trace_steps)
         # Bound the per-run stalls/ + crashes/ dirs each cycle (0 = keep all).
@@ -327,6 +332,9 @@ class SelfPlayCallback(BaseCallback):
         _, n_games = self._schedule()
         step = self.num_timesteps
         run_dir = os.path.join(self._eval_root, f"step_{step}")
+        # Clear any crash-leftover from a prior run at this step (re-evals on resume) so no stale
+        # plan/shard/lock files from an aborted cycle are mistaken for this one's.
+        shutil.rmtree(run_dir, ignore_errors=True)
         claim_dir = os.path.join(run_dir, "claims")
         os.makedirs(claim_dir, exist_ok=True)
 
@@ -345,6 +353,16 @@ class SelfPlayCallback(BaseCallback):
         fixed_cfgs = [e.to_cfg() for e in self._fixed_opponents]
         fixed_labels = [f["label"] for f in fixed_cfgs]
 
+        # The combined work-steal universe as EvalItems (bots + pool sentinels + ext_ fixed), each
+        # split into shard units. plan.json (written below) is the single source of truth.
+        items = [EvalItem(name, BOT, n_games) for name in bot_names]
+        items += [EvalItem(s["label"], SENTINEL, n_games, path=s["path"], step=s["step"])
+                  for s in sentinels]
+        items += [EvalItem(f["label"], FIXED, n_games, path=f["path"],
+                           config_path=f.get("config_path")) for f in fixed_cfgs]
+        pool = ShardedEvalPool(items, self._eval_shard_games, step=step)
+        pool.write_plan(run_dir)
+
         # Record exactly which model produced this cycle's traces (the prober reads this).
         write_eval_manifest(self._model_dir, step,
                             opponents=bot_names + sentinel_labels + fixed_labels, n_games=n_games)
@@ -353,22 +371,19 @@ class SelfPlayCallback(BaseCallback):
         # across restarts and hung a worker on a lingering challenge (wedging eval forever).
         self._eval_cycle += 1
         cycle_tag = f"{self._eval_run_nonce}{_b36(self._eval_cycle, 1)}"
-        n_items = len(bot_names) + len(sentinels) + len(fixed_cfgs)
-        n_workers = max(1, min(self._n_workers, n_items))
+        # Cap by UNITS, not opponents — sharding yields many more units, so the full pool can drain
+        # the tail (sentinel matchups infer for both players, so the pool is doubled upstream).
+        n_workers = max(1, min(self._n_workers, pool.n_units))
         base_cfg = {
             "snapshot": snapshot_zip,
             "port": self._showdown_port,
             "use_showdown_bridge": self._use_showdown_bridge,
             "model_dir": self._model_dir,
             "step": step,
-            "n_games": n_games,
-            "opponent_pool": bot_names,        # bots; workers steal from the combined pool
-            "sentinels": sentinels,            # pool snapshots to play (stochastic, or greedy below)
-            "fixed_opponents": fixed_cfgs,     # stable cross-run opponents (ext_<label>)
             "self_play_temp": self._self_play_temp,
             "eval_sentinel_greedy": self._eval_sentinel_greedy,
             "claim_dir": claim_dir,
-            "result_dir": run_dir,             # writes result__<item>.json here
+            "result_dir": run_dir,             # plan.json lives here; workers write shard__<unit>.json
             "concurrency": self._eval_concurrency,
             "device": self._eval_device,
             "cycle_tag": cycle_tag,
@@ -387,9 +402,10 @@ class SelfPlayCallback(BaseCallback):
         }
         print(f"[SELFPLAY EVAL] step {step:,}: spawned {n_workers} work-stealing worker(s) on "
               f"{self._eval_device} ({len(bot_names)} bots + {len(sentinels)} sentinels, "
-              f"conc {self._eval_concurrency}) — non-blocking")
+              f"{pool.n_units} shard units, conc {self._eval_concurrency}) — non-blocking")
         send_event(f"🧪 Self-play eval @ {step:,}: started "
-                   f"({len(bot_names)} bots + {len(sentinels)} sentinels, {n_workers} worker(s))")
+                   f"({len(bot_names)} bots + {len(sentinels)} sentinels, "
+                   f"{pool.n_units} units, {n_workers} worker(s))")
 
     def _abort_pending_cycle(self) -> None:
         """A cycle overran `_EVAL_CYCLE_TIMEOUT_SEC` → presumed hung (e.g. a Showdown battle
@@ -592,10 +608,11 @@ class SelfPlayCallback(BaseCallback):
         # Anchored-BT ELO over the accumulated results (appends this cycle's row first).
         # bot_wr carries every bot incl. random (the anchor); sentinels are the pool
         # snapshots the trainee just played, keyed by their training step.
+        bot_counts = {n: merged["counts"][n] for n in bot_wr if n in merged.get("counts", {})}
         elo_result = record_elo(
             self._model_dir, step, bot_wr,
             [{"step": e.step, "win_rate": v} for e, _l, v, _rw, _ep in kept_sentinels],
-            pending["n_games"], self.logger, tui, bot_td_tails=bot_td,
+            pending["n_games"], self.logger, tui, bot_td_tails=bot_td, bot_counts=bot_counts,
         )
         # ELO for each stable opponent (display-only, out of the fit) → fills the eval table's elo
         # column for the ext_ rows: its OWN recorded ELO when available, else a trainee-derived ballpark.

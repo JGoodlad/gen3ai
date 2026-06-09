@@ -122,20 +122,26 @@ ceilings.
 
 `PerOpponentEvalCallback` (non-self-play path) does **not** eval in-process. On each
 scheduled step it snapshots the live weights (`model.save`) and spawns `--eval-workers`
-(default 3) `main.eval_worker` subprocesses that **work-steal** opponents from a shared
-pool (atomic `O_EXCL` claim files — a worker that finishes a cheap opponent grabs the
-next, so uneven per-opponent cost self-balances), load the **frozen** snapshot, and play
-against the shared Showdown server **without pausing training**. Each opponent writes
-`result__<opponent>.json`; when all workers finish the parent merges them → TensorBoard +
-TUI + best-model (the winning snapshot is promoted by copy, not re-saved). Forensic traces
-land under `<run_dir>/eval_traces/step_<N>/<opponent>/` as a per-captured-battle triple
-(`write_battle_record`, `battle_recorder.py`): `<outcome>_NNN_summary.json` (the
-human-readable per-decision dump) + `<outcome>_NNN_states.npz` (raw obs/logits/values for the
-prober) + **`<outcome>_NNN_replay.html`** — a self-contained, **browser-watchable** Showdown
-replay of that battle (poke-env `save_replay` over the accumulated protocol stream). The first
-two are prober-only; the HTML lets a human just open the game in a browser (no checkout, no
-prober) — the only watchable replay for *non-stall* eval battles (stall games still get their
-own `stalls/*.html`). All three sit alongside a per-cycle
+(default 3) `main.eval_worker` subprocesses that **work-steal at battle granularity** from a
+shared pool, load the **frozen** snapshot, and play against the shared Showdown server (or the
+in-process bridge) **without pausing training**. Each opponent's `EVAL_GAMES` are split into
+**shard units** of `--eval-shard-games` (default 25 → 4 shards/opponent); a worker claims units
+(atomic `O_EXCL` lock per `unit_id`), plays them, and publishes one `shard__<unit_id>.json` of
+**raw** counts; the parent pools an opponent's shards back into one **exact** result. This is the
+long-tail fix — when fewer opponents remain than workers, the straggler's remaining games spread
+across idle workers instead of one worker grinding a whole opponent alone (workers are capped by
+unit count, not opponent count). The whole mechanism lives in the **`eval_sharding/` package**
+(below); when all workers finish the parent merges → TensorBoard + TUI + best-model (the winning
+snapshot is promoted by copy, not re-saved). Forensic traces land under
+`<run_dir>/eval_traces/step_<N>/<opponent>/` as a per-captured-battle triple (`write_battle_record`,
+`battle_recorder.py`): `<outcome>_s<shard>_NNN_summary.json` (the human-readable per-decision dump) +
+`<outcome>_s<shard>_NNN_states.npz` (raw obs/logits/values for the prober) +
+**`<outcome>_s<shard>_NNN_replay.html`** — a self-contained, **browser-watchable** Showdown replay of
+that battle (poke-env `save_replay` over the accumulated protocol stream). The first two are
+prober-only; the HTML lets a human just open the game in a browser (no checkout, no prober) — the
+only watchable replay for *non-stall* eval battles (stall games still get their own `stalls/*.html`).
+The `s<shard>_` prefix namespaces the files so concurrent shards of one opponent never collide. All
+three sit alongside a per-cycle
 **`eval_manifest.json`** (`write_eval_manifest`) recording exactly which model produced them
 — `num_timesteps`, `git_hash` + `arch_signature` (read from the run's `metadata.json` /
 `model_config.json`), and a `snapshot` pointer. The eval snapshot is normally ephemeral
@@ -193,7 +199,8 @@ in the trainer). Behaviors:
 
 | Flag | Default | Notes |
 |------|---------|-------|
-| `--eval-workers` | `5` | Eval subprocesses per cycle; work-steal opponents from a shared pool. Capped at the opponent count. Self-play doubles this (→ `10`) since sentinel matchups run the model for both players. |
+| `--eval-workers` | `5` | Eval subprocesses per cycle; work-steal **shard units** from a shared pool. Capped at the unit count (≈ opponents × shards-per-opponent, so sharding lets the full pool help). Self-play doubles this (→ `10`) since sentinel matchups run the model for both players. |
+| `--eval-shard-games` | `25` | Games per work-steal **shard unit** (battle-level work-stealing). Each opponent's `EVAL_GAMES` split into chunks any idle worker drains → the long tail collapses to one shard (≈4-shards-per-opponent default = ~4× shorter tail). Smaller = finer tail collapse but more player builds / (on websocket) more connection churn — the bridge is preferred for fine shards. `>= EVAL_GAMES` ⇒ one shard/opponent = the original opponent-level behaviour. Aggregation is exact (Σwon/Σfinished etc.); see the package below. |
 | `--eval-device` | `cpu` | Device for eval-worker inference. `cpu` decouples eval from the training GPU. |
 | `--eval-concurrency-per-worker` | `1` | Battles each worker overlaps **within** its claimed opponent (single-thread asyncio latency-hiding — NOT multi-core). `1` = today's sequential play. Threaded to the constructor's `eval_concurrency` → `cfg["concurrency"]` → `run_local_battles(concurrency=)` (bridge) / the player's `max_concurrent_battles` (websocket). See the concurrency note below. |
 | `--keep-eval-snapshots` | `10` | Retain the N most-recent eval weight snapshots in `eval_traces/step_<N>/snapshot.zip` (~27MB each; default ≈270MB) for bit-exact prober replay. `0` writes the identity manifest only; the prober then loads the nearest persisted checkpoint. The trainer auto-prunes to this cap each cycle. |
@@ -209,7 +216,7 @@ the reward is finalized and V(s′) is known; the last decision has no δ). It c
 δ is computed only over the battles eval already captures forensically (where `need_aux=True` already
 paid for V(s)), pooled per opponent (one `EvalRLPlayer` per matchup → `td_tail()`), and folded as a
 **CVaR@5%** (mean of the worst 5%, `TD_TAIL_FRAC`; single min below `TD_TAIL_MIN_SAMPLES`=20). It
-rides the exact win-rate plumbing — worker `result__<name>.json` → `merge_eval_results` →
+rides the exact win-rate plumbing — worker `shard__<unit_id>.json` (raw δ pooled across shards) → `merge_eval_results` →
 `eval/td_resid_tail_vs_<opponent>` + `eval/td_resid_tail_mean` (TB + TUI), the `metadata.json`
 `latest_eval` block (per-opponent + pool aggregate), and the append-only `eval_results.jsonl`. The
 run's `model.gamma` is threaded into the worker (`base_cfg["gamma"]`) so the live δ matches the
@@ -234,6 +241,59 @@ depending on how saturated the box is during the eval window; default stays `1` 
 workers); concurrency stacks multiplicatively on top of that (≈`2 × #shards`). Cross-opponent
 parallelism is still the `--eval-workers` (5) subprocesses work-stealing the pool.
 
+### Battle-level work-stealing (`eval_sharding/` package)
+
+The *process-level* tail fix above is the `eval_sharding/` package — a small, deeply-encapsulated
+unit with a narrow interface (4 focused files, no mega-file):
+
+- **`units.py`** — `EvalItem` (one opponent the parent declares) + `ShardUnit` (a chunk of its
+  games) + `plan_units(items, shard_games)`, a **pure** partition: split each item's games into
+  ≤`shard_games` chunks (Σshards == n_games exactly), ordered LPT-ish (cost-descending items, shards
+  round-robined) so every opponent starts early and the expensive ones lead.
+- **`results.py`** — `ShardResult` (raw additive metrics: won/finished, reward+turn sums, the raw δ
+  list — never a reduced ratio) + `aggregate`, which pools an opponent's shards back **exactly**:
+  win_rate=Σwon/Σfinished, reward/ep_len count-weighted, and the TD tail by **pooling raw δ then one
+  `td_tail`** (a CVaR can't be averaged). `td_tail` + its constants live here (the single source of
+  truth; `eval_callback` re-exports them, so the dependency is one-way `eval_callback → eval_sharding`).
+- **`pool.py`** — `ShardedEvalPool`, the deep coordinator. Parent: `write_plan(run_dir)` →
+  `collect(result_dir)`. Worker: `from_plan(run_dir)` → `claim_next(claim_dir)` / `publish(...)`. It
+  hides every filesystem mechanic; the worker never touches a lock file, the parent never touches a
+  shard file. The plan (`plan.json`, items + shard_games) is the **single source of truth** both
+  sides read — neither reconstructs the universe independently, so they can't drift.
+- **`merge_eval_results`** is now a thin delegate to `ShardedEvalPool.collect` returning the same
+  `merged` shape every downstream consumer already reads (record_per_opponent / build_bot_eval_block
+  / record_elo / pool & externals blocks are **untouched**), plus additive `counts` (exact W/L) and
+  `coverage` siblings.
+
+**Exactness caveat (documented, by design):** win_rate / reward / ep_len are exact regardless of
+`shard_games`. `td_resid_tail`'s *aggregation* is exact (pool the raw δ, compute the CVaR once), but
+the *captured-battle sample* it's computed over shifts slightly with the shard count — the forensic
+capture quota is per-unit (scaled `max(1, ⌈quota/shards⌉)`), so which battles contribute δ depends on
+the split. It's a sampled diagnostic either way. Forensic trace files are namespaced by a per-unit
+`trace_tag` (`{outcome}_s{shard}_{idx}`) so concurrent shards of one opponent don't collide in the
+shared `eval_traces/step_<N>/<opponent>/` dir. Per-cycle `run_dir` is wiped at cleanup (and cleared
+at launch), so no lock/shard/plan ever leaks across cycles. Sentinel/fixed opponent models are cached
+per worker by path (immutable within a cycle → safe; the version check rides the first load) so a
+fine split doesn't pay an N× 27MB deserialize. Worker rewrite: `eval_worker._play_unit` (one fresh
+trainee + opponent per unit → independent measurement) + a per-worker model cache; tests:
+`eval_sharding_test.py` (partition + aggregation-exactness property + claim-once + coverage),
+`eval_sharding_fuzz_test.py` (real bridge battles through the real worker → exact pooled result).
+
+### Rating-model seam (`rating.py`) — extensibility for Glicko-2 / TrueSkill
+
+The live skill rating is anchored Bradley-Terry (`elo.py`), a *global batch* fit. `rating.py` is the
+**ready drop-in point** for a different model without re-plumbing: `MatchRecord` (exact counts +
+draws + `period_id` + optional opponent priors — the union BT, Glicko-2 and TrueSkill all need),
+`RatingResult`, a `RatingModel` **batch** protocol, and `BradleyTerryRating` — a thin adapter over
+`elo.fit_pairwise` whose ratings+SE are **byte-identical** to the live fit (pinned by `rating_test.py`).
+`eval_rows_to_match_records` bridges the existing `EvalRow` history. The live `record_elo` path is
+**deliberately unchanged** (zero risk): the seam exists and is tested, but routing through it buys
+nothing until a new model is actually wanted — and Glicko-2 is *sequential* (period-by-period RD
+carry-forward), so it needs the `SequentialRatingModel` sibling sketched in the module footer, not the
+batch `fit`. Data fidelity is already in place: `eval_results.jsonl` now carries exact per-opponent
+`counts` (additive, backward-compatible), so a future Glicko backfill has an exact ladder even under
+partial shard coverage (where `win_rate × n_games` would be ambiguous).
+
 ## Self-play opponents (`--self-play`, gated behind pathology hunting)
 
 When `--self-play` is set, `SelfPlayCallback` replaces `PerOpponentEvalCallback` and the
@@ -245,8 +305,9 @@ restart — no manifest). Design lives in `designs/ai_v5/`. Key behaviors:
   `PerOpponentEvalCallback`.** Self-play eval no longer runs in-process on the training thread.
   On a trigger step `SelfPlayCallback` freezes the live weights to disk (`model.save`) and
   spawns `--eval-workers`×2 (default 10) `main.eval_worker` subprocesses that **work-steal BOTH
-  the bot roster AND up to 5 pool sentinels** from one shared pool (the worker's `_eval_sentinel` plays the
-  frozen trainee greedy vs each sentinel stochastic); training continues immediately. On a later
+  the bot roster AND up to 5 pool sentinels** (all split into shard units) from one shared pool (the
+  worker's `_play_unit` SENTINEL branch plays the frozen trainee greedy vs each sentinel stochastic);
+  training continues immediately. On a later
   `_on_step` poll the parent merges per-opponent + per-sentinel results → `win_rate_vs_bots` /
   `win_rate_vs_pool` / `sentinel_monotonicity`, records to TensorBoard + the TUI + metadata.json
   (with the `pool` block), persists `win_rate_vs_bots` (feeds `heuristic_fraction` next run),
@@ -322,7 +383,7 @@ restart — no manifest). Design lives in `designs/ai_v5/`. Key behaviors:
   (mirroring how they act as training opponents) — so a sentinel matchup is greedy-trainee vs
   stochastic-sentinel, a deliberate asymmetry that inflates `win_rate_vs_pool` by a ~constant
   temperature handicap (≈15–20 pts; the [ELO caveat](#elo--skill-rating) below). **`--eval-sentinel-greedy`
-  makes the sentinels greedy too** (`_eval_sentinel` builds the opponent `stochastic=False`), so the
+  makes the sentinels greedy too** (`_play_unit` builds the sentinel opponent `stochastic=False`), so the
   matchup is best-vs-best and `win_rate_vs_pool` / the snapshot ELO reflect real skill (≈50% vs a
   recent self, ramping with sentinel age). It's eval-only — TRAINING opponents stay stochastic — and
   it auto-lowers `--promote-threshold` to `0.55` (else the handicap-free pool win rate never clears
@@ -462,9 +523,9 @@ a stable opponent rides the *existing* pool-vs-heuristic split in `MaskableAgent
 - **Label namespace `ext_<run>`** — underscore separator (NOT `ext:`) so the emitted metric tags are
   **uniform** with the rest (`eval/win_rate_vs_ext_<run>`, like `eval/win_rate_vs_sentinel_0`), no
   colons in TensorBoard. `is_external` (`startswith("ext_")`) keeps them out of the bot aggregates.
-  Both eval callbacks (`PerOpponentEvalCallback` + `SelfPlayCallback`) add the `ext_` labels to the
-  work-steal universe + `base_cfg["fixed_opponents"]`; the worker's `_eval_fixed` (`eval_worker.py`)
-  plays the **greedy trainee vs the stochastic stable opponent**.
+  Both eval callbacks (`PerOpponentEvalCallback` + `SelfPlayCallback`) add the `ext_` labels as
+  `FIXED` `EvalItem`s (so they shard + ride the same plan); the worker's `_play_unit` FIXED branch
+  (`eval_worker.py`) plays the **greedy trainee vs the greedy stable opponent** (a clean yardstick).
 - **Metric set (deliberate, uniform across both callbacks):** per opponent —
   `eval/win_rate_vs_ext_<run>`, `eval/mean_reward_vs_ext_<run>`, `eval/mean_ep_len_vs_ext_<run>`;
   plus `eval/win_rate_vs_external` ONLY for a mini-league (2+ — with one it duplicates its row; it's

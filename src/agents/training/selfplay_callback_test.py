@@ -101,9 +101,28 @@ def _make_callback(tmp_path, *, pool=None, promote_threshold=0.65,
     return cb
 
 
+def _publish_fake_selfplay_shards(cfg, *, bot_win=0.8, sentinel_win=0.7, fixed_win=0.5,
+                                  reward=1.0, ep_len=20.0, kinds=None):
+    """Mimic the real eval_worker: read the cycle plan, claim every shard UNIT, and publish a raw
+    ShardResult (win rate keyed by kind). ``kinds`` restricts which kinds get a result — units of
+    other kinds are still claimed (locked) but left unreported, simulating a hang on those (e.g.
+    sentinels)."""
+    from agents.training.eval_sharding import ShardedEvalPool, ShardResult, BOT, SENTINEL, FIXED
+    wins = {BOT: bot_win, SENTINEL: sentinel_win, FIXED: fixed_win}
+    pool = ShardedEvalPool.from_plan(cfg["result_dir"])
+    while (unit := pool.claim_next(cfg["claim_dir"])) is not None:
+        if kinds is not None and unit.kind not in kinds:
+            continue
+        n = unit.n_games
+        pool.publish(cfg["result_dir"], ShardResult(
+            unit_id=unit.unit_id, item_key=unit.item_key, worker_id=cfg["worker_id"],
+            n_won=round(wins[unit.kind] * n), n_finished=n, sum_reward=reward * n, n_episodes=n,
+            sum_ep_len=ep_len * n, duration_sec=5.0, td_residuals=[]))
+
+
 def _fake_selfplay_popen(ec, bot_win=0.8, sentinel_win=0.7):
-    """Fake Popen whose 'worker' work-steals BOTH bots and sentinels from the claim dir
-    and writes per-item result files, exactly like the real eval_worker."""
+    """Fake Popen whose 'worker' work-steals BOTH bots and sentinels (as shard units) from the
+    plan and publishes per-shard results, exactly like the real eval_worker."""
     class _FakeProc:
         returncode = 0
         def poll(self):
@@ -113,18 +132,8 @@ def _fake_selfplay_popen(ec, bot_win=0.8, sentinel_win=0.7):
 
     def fake_popen(argv, stdout=None, stderr=None, env=None):
         import json as _json
-        cfg = _json.load(open(argv[-1]))
-        sentinel_labels = {s["label"] for s in cfg.get("sentinels", [])}
-        universe = list(cfg["opponent_pool"]) + list(sentinel_labels)
-        while True:
-            name = ec.claim_next_opponent(cfg["claim_dir"], universe)
-            if name is None:
-                break
-            win = sentinel_win if name in sentinel_labels else bot_win
-            out = os.path.join(cfg["result_dir"], f"result__{name}.json")
-            with open(out, "w") as f:
-                _json.dump({"win_rate": win, "reward_mean": 1.0,
-                            "ep_len": 20.0, "duration_sec": 5.0}, f)
+        _publish_fake_selfplay_shards(_json.load(open(argv[-1])),
+                                      bot_win=bot_win, sentinel_win=sentinel_win)
         return _FakeProc()
     return fake_popen
 
@@ -392,12 +401,8 @@ def test_drain_waits_for_inflight_then_collects(tmp_path, monkeypatch):
 
     def fake_popen(argv, stdout=None, stderr=None, env=None):
         import json as _json
-        cfg = _json.load(open(argv[-1]))
-        sentinel_labels = {s["label"] for s in cfg.get("sentinels", [])}
-        for nm in list(cfg["opponent_pool"]) + list(sentinel_labels):
-            with open(os.path.join(cfg["result_dir"], f"result__{nm}.json"), "w") as f:
-                _json.dump({"win_rate": 0.5, "reward_mean": 0.0,
-                            "ep_len": 10.0, "duration_sec": 1.0}, f)
+        _publish_fake_selfplay_shards(_json.load(open(argv[-1])),
+                                      bot_win=0.5, sentinel_win=0.5, reward=0.0, ep_len=10.0)
         return _SlowProc()
 
     monkeypatch.setattr(ec.subprocess, "Popen", fake_popen)
@@ -662,12 +667,9 @@ def test_watchdog_aborts_hung_selfplay_cycle(tmp_path, monkeypatch):
 
     def fake_popen(argv, stdout=None, stderr=None, env=None):
         import json as _json
-        cfg = _json.load(open(argv[-1]))
+        from agents.training.eval_sharding import BOT
         # Bots finish; sentinels never report (the real hang was on a sentinel/opponent).
-        for nm in cfg["opponent_pool"]:
-            with open(os.path.join(cfg["result_dir"], f"result__{nm}.json"), "w") as f:
-                _json.dump({"win_rate": 0.7, "reward_mean": 1.0,
-                            "ep_len": 20.0, "duration_sec": 5.0}, f)
+        _publish_fake_selfplay_shards(_json.load(open(argv[-1])), bot_win=0.7, kinds={BOT})
         return _HungProc()
 
     monkeypatch.setattr(ec.subprocess, "Popen", fake_popen)

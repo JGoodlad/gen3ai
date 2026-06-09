@@ -145,6 +145,17 @@ class RewardTrackingMixin:
             return 0.0
         return sum(self._episode_rewards.values()) / len(self._episode_rewards)
 
+    @property
+    def episode_reward_sum(self) -> float:
+        """Σ of per-battle total rewards this matchup — the additive numerator a sharded eval
+        pools across workers (parent recovers the mean as Σreward / Σn_episodes, exactly)."""
+        return sum(self._episode_rewards.values())
+
+    @property
+    def n_reward_episodes(self) -> int:
+        """Count of finished battles that contributed a reward (the pooling denominator)."""
+        return len(self._episode_rewards)
+
     def reset_reward_tracking(self) -> None:
         self._reward_trackers.clear()
         self._episode_rewards.clear()

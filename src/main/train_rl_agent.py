@@ -38,7 +38,7 @@ from agents.inference.player import RLPlayer
 from utils.teambuilder import Gen3Teambuilder
 from utils.team_loader import TeamLoader
 from agents.training.eval_callback import (
-    PerOpponentEvalCallback, opponent_name, _EVAL_SUBPROCESS_CONCURRENCY,
+    PerOpponentEvalCallback, opponent_name, _EVAL_SUBPROCESS_CONCURRENCY, EVAL_SHARD_GAMES,
 )
 from agents.training.graceful_restart_callback import GracefulRestartCallback
 from agents.training.snapshot_pool import (
@@ -536,6 +536,15 @@ async def main():
                              "bridge/server I/O wait with other battles' forwards. A single-core bridge benchmark "
                              "measured ~2x decisions/sec at 3 on spare cores (less under live training contention); "
                              "the plateau is ~3. Cross-opponent parallelism is still --eval-workers.")
+    parser.add_argument("--eval-shard-games", "--eval_shard_games",
+                        dest="eval_shard_games", type=int, default=EVAL_SHARD_GAMES,
+                        help="Games per work-steal shard unit (battle-level work-stealing, default 25 → ~4 shards "
+                             "per opponent). Each opponent's eval games split into chunks any idle worker can drain, "
+                             "so one straggler no longer pins a whole opponent on a single worker — the long tail "
+                             "collapses to one shard. Smaller = finer tail collapse but more player builds / (on "
+                             "websocket) more connection churn; the in-process bridge (--use-showdown-bridge) is "
+                             "preferred for fine shards. >= the per-opponent game count disables sharding (one shard "
+                             "per opponent = the original opponent-level behaviour).")
     parser.add_argument("--keep-eval-snapshots", "--keep_eval_snapshots", dest="keep_eval_snapshots",
                         type=int, default=10,
                         help="Retain the N most-recent eval weight snapshots in eval_traces/step_<N>/snapshot.zip "
@@ -1197,6 +1206,7 @@ async def main():
             n_workers=args.eval_workers * 2,
             eval_device=args.eval_device,
             eval_concurrency=args.eval_concurrency_per_worker,
+            eval_shard_games=args.eval_shard_games,
             distill_opponents=args.distill_opponents,
             distill_device=args.eval_device,  # CPU by default → no GPU contention with training
             keep_eval_snapshots=args.keep_eval_snapshots,
@@ -1220,6 +1230,7 @@ async def main():
             n_workers=args.eval_workers,
             eval_device=args.eval_device,
             eval_concurrency=args.eval_concurrency_per_worker,
+            eval_shard_games=args.eval_shard_games,
             showdown_port=args.showdown_port,
             use_showdown_bridge=args.use_showdown_bridge,
             resume_eval_metadata=_resume_meta,

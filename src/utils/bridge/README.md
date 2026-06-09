@@ -86,11 +86,12 @@ and `bridge_session_integration_test.py` (a real `Gen3Env` plays full episodes o
 
 **Eval rides the same flag, via the *synchronous* driver, not `BridgeSession`.** Eval is a pure
 synchronous-decision matchup (a greedy trainee vs a bot/sentinel — no SB3-supplied action), so it
-doesn't need the inversion-of-control machinery: `eval_one_matchup` just calls `run_local_battles`
-instead of `battle_against` when `use_showdown_bridge` is set (players built `start_listening=False`).
-The flag threads as a `use_showdown_bridge` config key through `PerOpponentEvalCallback` /
-`SelfPlayCallback` → `eval_worker`, plus the end-of-training `evaluate_model_random`. So
-`--use-showdown-bridge` makes a whole run — training **and** eval — need no Showdown server.
+doesn't need the inversion-of-control machinery: the eval worker's `_play_unit` just calls
+`run_local_battles` instead of `battle_against` when `use_showdown_bridge` is set (players built
+`start_listening=False`). The flag threads as a `use_showdown_bridge` config key through
+`PerOpponentEvalCallback` / `SelfPlayCallback` → `eval_worker`, plus the end-of-training
+`evaluate_model_random`. So `--use-showdown-bridge` makes a whole run — training **and** eval —
+need no Showdown server.
 
 ## Why use a Bridge?
 - **Serverless**: No need to start or manage a Pokémon Showdown server process.

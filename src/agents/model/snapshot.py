@@ -120,6 +120,7 @@ def append_eval_result_row(
     bot_win_rates: dict,
     sentinels: "list[dict] | None" = None,
     bot_td_tails: "dict | None" = None,
+    bot_counts: "dict | None" = None,
 ) -> None:
     """Append one eval cycle's pairwise win-records to ``<model_dir>/eval_results.jsonl``.
 
@@ -130,6 +131,14 @@ def append_eval_result_row(
     unlike the overwritten top-level ``metadata.json:latest_eval``. ``bot_win_rates`` maps
     bot name → trainee win rate; ``sentinels`` is ``[{"step": int, "win_rate": float}, …]``
     (empty/omitted on the non-self-play bot-only path).
+
+    ``bot_counts`` (optional) maps bot name → ``(n_won, n_finished)`` — the EXACT win/loss
+    record. Recovering counts from ``win_rate * n_games`` is exact only at full coverage; under
+    battle-level work-stealing a crashed shard makes an opponent's win_rate ride over fewer games
+    than ``n_games``, so the exact counts are the fidelity-preserving record. Written as the
+    additive sibling ``counts`` ({name: [n_won, n_finished]}); old readers ignore it, and it is
+    what a future Glicko-2 / TrueSkill backfill (``agents.training.rating``) consumes for an exact
+    ladder. Omitted when not supplied, so existing rows/readers stay byte-identical.
 
     Best-effort: never raise into the eval path — a failed append must not break eval.
     """
@@ -148,6 +157,9 @@ def append_eval_result_row(
         # `bots`; omitted when no captured battles produced residuals, so old rows stay identical.
         if bot_td_tails:
             row["td_resid_tails"] = {k: float(v) for k, v in bot_td_tails.items()}
+        # Exact per-opponent W/L (the rating-fidelity record; see docstring). Optional, additive.
+        if bot_counts:
+            row["counts"] = {k: [int(c[0]), int(c[1])] for k, c in bot_counts.items()}
         with open(os.path.join(model_dir, "eval_results.jsonl"), "a") as f:
             f.write(json.dumps(row) + "\n")
     except (OSError, ValueError, KeyError, TypeError) as e:
