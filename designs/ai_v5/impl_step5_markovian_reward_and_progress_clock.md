@@ -6,12 +6,14 @@ material spine stops biasing the optimum toward dominant-over-clutch wins. Targe
 clutch-vs-dominant return skew (clutch win +26 vs dominant +47, a faint costing −5.82 even in *won*
 games) and gives the anti-spam family a single obs-keyed counter the model can state-condition on.
 
-> **Status: BUILT** (`ARCH_SIGNATURE = gen3_markovian_progress_v1`, obs 3390 → 3391), **not yet
-> trained.** This is an as-built record. The forward design (the two axes, the §9 adversarial-review
-> ledger, the rejected alternatives) is `design_markovian_reward_and_features.md`; **this doc records
-> what landed, the staging that keeps the default run a single-variable change, where it deviated
-> from the plan, and the post-implementation code-review refactor pass.** The post-retrain efficacy
-> gate (clutch-conversion ↑ / useless-turn-rate ↓ / ELO non-regressed) is pending a training run.
+> **Status: BUILT + TRAINED (both arms); the `bias_redesign=ON` arm regressed on its first run and was
+> fixed.** (`ARCH_SIGNATURE = gen3_markovian_progress_v1`, obs 3390 → 3391.) The `bias_redesign=OFF`
+> single-variable arm ran as `ai_v5_5_popart` (PopArt validated, under-switching improved — see
+> [[project_popart]]). The `bias_redesign=ON` arm ran as `ai_v5_6` and **lost to random** (a
+> switch-bounce farm) with a meaningless eval reward; both were root-caused and fixed —
+> see **"First `bias_redesign=ON` run (`ai_v5_6`) — regressions found + fixed"** below. The forward
+> design (the two axes, the §9 adversarial-review ledger, rejected alternatives) is
+> `design_markovian_reward_and_features.md` (its two AS-BUILT 2026-06-08 notes record the same fixes).
 
 ---
 
@@ -40,9 +42,10 @@ The full bias redesign is implemented but **gated behind `RewardConfig.bias_rede
 | | `bias_redesign = OFF` (default) | `bias_redesign = ON` |
 |---|---|---|
 | Material | `Φ_mat` PBRS (always-on, the clutch-fix) | same |
-| Anti-spam family (`repetition`/`bouncing`/`dead_matchup`/`struggle` taxes) | **active, as today** | **suppressed** — the clock subsumes them |
+| Anti-spam family (`repetition`/`dead_matchup`/`struggle` taxes) | **active, as today** | **suppressed** — the clock subsumes them |
+| `switch_bouncing_tax` | **active** | **KEPT active** (as-built fix: the clock does NOT subsume *switch*-spam — `ai_v5_6` bounce-farmed) |
 | `no_progress_tax` | **0** (clock tracks the obs scalar only) | charged (`−no_progress_penalty` per gated no-op) |
-| `switch_base`/`se_switch`/`status` reframes | as today (hidden-state forms) | **obs-keyed forms** (gated, §below) |
+| `switch_base`/`se_switch`/`status` reframes | as today (hidden-state forms) | **obs-keyed forms** — but the `switch_base` **spam-gate is KEPT** + a back-to-back switch zeros the whole switch family (as-built fix) |
 
 So at the default the **only** reward-behavior change vs the live baseline is `Φ_mat`. Crucially the
 `turns_since_progress` obs scalar is present in **both** arms (the clock always tracks it), so the
@@ -221,6 +224,46 @@ obs dim).
 | `agents/training/reward_manager_test.py`, `reward_invariants_e2e_test.py` | updated for the removed base spine + the new fields |
 | `src/main/prober/engine_test.py` | offset pins re-pinned (om/tm 1502/1646, incoming 1469) |
 | docs | root + `observation/` + `training/` `CLAUDE.md`; the forward design doc's as-built note |
+
+---
+
+## First `bias_redesign=ON` run (`ai_v5_6`) — regressions found + fixed
+
+The staging worked as intended for the OFF arm (`ai_v5_5_popart`: clean `Φ_mat` clutch-fix, PopArt
+validated, under-switching improved). Turning `bias_redesign` **ON for the first time** exposed three
+problems — two design assumptions that were falsified, plus a latent infra bug. All fixed; the design
+doc carries the full as-built detail in its two **AS-BUILT 2026-06-08** notes.
+
+1. **The no-progress charge was a no-op in the OFF arm → stalls ran free (commit `d7aa983`).** With
+   `--no-bias-redesign`, `_apply_progress_clock` early-returns, so the clock only fed the obs scalar and
+   charged 0 — and `ai_v5_5` produced 2247 **self-play mirror Recover/Rest heal-wars** to the 250-turn
+   cap. Even with the charge ON, the `DENIED` freeze (productive heal) let a *mutual* heal-war run
+   uncharged. **Fix:** a 5th PROGRESS branch (our-owned residual chipping the opp net-down → a *winning*
+   Toxic/Leech stall is never taxed) + a `HEAL_FREEZE_GRACE` streak cap (a *sustained* heal-war charges)
+   + a new **`--draw-penalty`** terminal (the cap is a forfeit-LOSS, so a timeout is detected by
+   `turn ≥ cap` and can be priced worse than a clean loss). `MODEL_CONFIG_VERSION 6→7`. Guarded by
+   `progress_clock_fuzz_test.py`.
+
+2. **Switch-bounce farm — §3 #18/#19 falsified (commit `cf043dc`).** The ON arm **lost to random** (94%
+   switches, ELO ~516): the per-switch reframes (`se_switch`+`escape`+`switch_base` ≈ +0.95/switch) dwarf
+   the clock's flat −0.15, so dropping the `switch_base` spam-gate (#18) and declaring `switch_bouncing_tax`
+   "subsumed by the clock" (#19) made bouncing net-positive. **Fix:** `switch_base` spam-gated in both arms;
+   under `bias_redesign` a back-to-back switch zeros the **whole** switch-reward family (cycle-agnostic);
+   `switch_bouncing_tax` is **no longer suppressed**. #18/#19 are as-built **reversed** — the clock
+   subsumes repetition/struggle/dead-matchup but **not** *switch*-spam.
+
+3. **Silent eval mismeasurement → single-source `RewardConfig` (commit `cf043dc`).** Eval scored with a
+   DEFAULT `RewardConfig()` (`bias_redesign=False`), so the `ai_v5_6` eval reward was meaningless (~−108,
+   the old escalating bounce tax the policy never trained against). A hand-threaded config was silently
+   missed on the eval path — hidden until now because every prior run used the defaults. **Fix:**
+   `RewardConfig.from_args` (single construction) + `from_dict` (single reconstruction from
+   `model_config.json`); the eval worker builds the reward factory once from `model_config.json` and
+   threads it to every `EvalRLPlayer`; `EvalRLPlayer`/`build_eval_players` now **require**
+   `reward_fn_factory` (a missing config is a loud error). Adding a reward flag is now 2 places, not ~8.
+
+**Net:** the ON arm is now safe to run. Re-run is a fresh `--bias-redesign --draw-penalty -35`; judge by
+the §7.4 pre-registration below (and the new guards: stall count ↓, switch-bounce absent, win-rate vs
+`staller`/`staller_v2` not dropped).
 
 ---
 

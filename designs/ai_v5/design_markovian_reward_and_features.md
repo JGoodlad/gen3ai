@@ -589,6 +589,28 @@ so no "cap how often a type can reset" machinery is needed.
 > The ±30 win/decisive-loss is still untouched; only a TIMEOUT is re-priced, to make a stall-to-cap
 > strictly worse than a clean loss. `MODEL_CONFIG_VERSION 6→7`, resume-immutable.
 
+> **AS-BUILT 2026-06-08 (commit `cf043dc`) — the FIRST `--bias-redesign` ON run (`ai_v5_6`) regressed;
+> two fixes.** It lost to *random* (94% switches, ELO ~516). Root cause = **§3 #18/#19 were falsified.**
+> - **Switch-bounce farm (§3 #18/#19 reversed).** Row 18 dropped the `switch_base` spam-gate and row 19
+>   declared `switch_bouncing_tax` "subsumed by the clock — add a bounce feature only if A/B shows a
+>   residual exploit." The A/B (`ai_v5_6`) **showed exactly that exploit:** the per-switch reframes
+>   (`se_switch` 0.2 + `escape_threat_switch` 0.25 + `switch_base` 0.5 ≈ **+0.95/switch**) dwarf the
+>   clock's flat **−0.15**, so back-to-back switching nets ~+0.8/turn — the policy bounce-farmed (A↔B and
+>   A→B→C alike) and timed out. **Fix** (`_apply_switch_outcome`): `switch_base` is spam-gated in BOTH
+>   arms again, and under `bias_redesign` a **back-to-back switch zeros the WHOLE per-switch family**
+>   (`switch_base`/`se_switch`/`escape_threat_switch`/`pivot_*`) — cycle-agnostic. `_apply_progress_clock`
+>   **no longer suppresses `switch_bouncing_tax`** (it still subsumes repetition/struggle/dead-matchup).
+>   Net per bounce: +1.10 → −0.15; a committed pivot still pays +1.10. So rows 18 (keep the spam-gate) and
+>   19 (keep the bounce tax) are **as-built REVERSED** — the clock does NOT subsume *switch*-spam.
+> - **Silent eval mismeasurement → single-source `RewardConfig`.** Eval scored the policy with a DEFAULT
+>   `RewardConfig()` (`bias_redesign=False`, `draw=−30`), not the run's reward — a hand-threaded config
+>   silently missed on the eval path (it stayed hidden because every prior run had those defaults). Rooted
+>   out: `RewardConfig.from_args` (the single construction site) + `from_dict` (single reconstruction from
+>   `model_config.json`); the eval worker builds the trainee reward factory ONCE from `model_config.json`
+>   and threads it to every `EvalRLPlayer`; `EvalRLPlayer`/`build_eval_players` now **require**
+>   `reward_fn_factory` (a missing config is a loud `TypeError`, not a silent default). Adding a reward
+>   flag is now **2 places** (the `RewardConfig` field + a matching `--field-name` CLI arg), not ~8.
+
 #### 4.1.1 DENIED — a missed / blocked / prevented attempt FREEZES the clock (does not increment)
 
 A `NO_OP` (increment + charge) must be a **deliberate** failure to advance — a choice the agent could
