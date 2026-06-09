@@ -17,6 +17,9 @@ from poke_env.ps_client import LocalhostServerConfiguration, AccountConfiguratio
 from agents.inference.player import RLPlayer
 from agents.model.snapshot import record_eval_results
 from agents.training.fixed_opponent_pool import is_external
+from agents.training.artifact_retention import (
+    prune_run_artifacts, KEEP_STALLS_DEFAULT, KEEP_CRASHES_DEFAULT,
+)
 from agents.opponents import (
     Gen3StallerPlayer, Gen3AggressivePlayer, Gen3SetupSweepPlayer,
     Gen3StallerV2Player, Gen3AggressiveV2Player, Gen3SetupSweepV2Player,
@@ -1003,6 +1006,8 @@ class PerOpponentEvalCallback(BaseCallback):
         resume_eval_metadata: str | None = None,
         keep_eval_snapshots: int = 10,
         keep_eval_trace_steps: int = 20,
+        keep_stalls: int = KEEP_STALLS_DEFAULT,
+        keep_crashes: int = KEEP_CRASHES_DEFAULT,
         fixed_opponents: "list | None" = None,
         verbose: int = 1,
     ):
@@ -1027,6 +1032,10 @@ class PerOpponentEvalCallback(BaseCallback):
         # keep only the N most-recent eval step dirs (0 = keep all). Older dirs are
         # removed whole. `python -m main.prober.groom` is the manual fallback.
         self._keep_eval_trace_steps = max(0, keep_eval_trace_steps)
+        # Bound the per-run debug-artifact dirs each cycle too: keep the N most-recent
+        # stalls/*.html + crashes/*.txt (0 = keep all). See artifact_retention.py.
+        self._keep_stalls = max(0, keep_stalls)
+        self._keep_crashes = max(0, keep_crashes)
         # metadata.json of the checkpoint being resumed (if any) — read at startup so
         # the TUI shows the last eval immediately after a restart.
         self._resume_eval_metadata = resume_eval_metadata
@@ -1187,6 +1196,7 @@ class PerOpponentEvalCallback(BaseCallback):
         self._maybe_save_best(step, pending, merged["win_rates"])
         self._persist_snapshot(pending)
         self._prune_eval_traces()   # trainer grooms the traces it writes
+        self._prune_run_artifacts()  # …and bounds its stalls/ + crashes/ dirs
         self._cleanup(pending, keep_logs=bool(missing or bad_exits))
 
     def _record(self, step: int, merged: dict, n_games: int = EVAL_GAMES,
@@ -1314,6 +1324,9 @@ class PerOpponentEvalCallback(BaseCallback):
 
     def _prune_eval_traces(self) -> None:
         prune_eval_traces(self._model_dir, self._keep_eval_trace_steps)
+
+    def _prune_run_artifacts(self) -> None:
+        prune_run_artifacts(self._model_dir, self._keep_stalls, self._keep_crashes)
 
     def _cleanup(self, pending: dict, keep_logs: bool) -> None:
         # Always drop the (large) transient run-dir snapshot; _persist_snapshot has

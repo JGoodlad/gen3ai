@@ -62,6 +62,9 @@ from agents.training.eval_callback import (
     spawn_eval_workers,
     write_eval_manifest,
 )
+from agents.training.artifact_retention import (
+    prune_run_artifacts, KEEP_STALLS_DEFAULT, KEEP_CRASHES_DEFAULT,
+)
 from agents.training.snapshot_pool import (
     SnapshotPool, heuristic_fraction, HEURISTIC_FLOOR, SELF_PLAY_START, SELF_PLAY_FULL,
 )
@@ -168,6 +171,8 @@ class SelfPlayCallback(BaseCallback):
         eval_concurrency: int = _EVAL_SUBPROCESS_CONCURRENCY,
         keep_eval_snapshots: int = 10,
         keep_eval_trace_steps: int = 20,
+        keep_stalls: int = KEEP_STALLS_DEFAULT,
+        keep_crashes: int = KEEP_CRASHES_DEFAULT,
         resume_eval_metadata: str | None = None,
         fixed_opponents: "list | None" = None,
         stable_opponent_mastered_wr: float = 0.80,
@@ -208,6 +213,9 @@ class SelfPlayCallback(BaseCallback):
         self._eval_concurrency = eval_concurrency
         self._keep_eval_snapshots = max(0, keep_eval_snapshots)
         self._keep_eval_trace_steps = max(0, keep_eval_trace_steps)
+        # Bound the per-run stalls/ + crashes/ dirs each cycle (0 = keep all).
+        self._keep_stalls = max(0, keep_stalls)
+        self._keep_crashes = max(0, keep_crashes)
         self._resume_eval_metadata = resume_eval_metadata
         self._debug = debug
 
@@ -672,6 +680,7 @@ class SelfPlayCallback(BaseCallback):
         # Retain the bit-exact snapshot for the prober, groom traces, then drop the scratch.
         persist_eval_snapshot(self._model_dir, step, pending["snapshot"], self._keep_eval_snapshots)
         prune_eval_traces(self._model_dir, self._keep_eval_trace_steps)
+        prune_run_artifacts(self._model_dir, self._keep_stalls, self._keep_crashes)  # bound stalls/ + crashes/
         self._cleanup(pending, keep_logs=bool(missing or bad_exits))
 
     def _push_self_play_target(self, fraction: float) -> None:

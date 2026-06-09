@@ -148,7 +148,14 @@ checkpoint. **The trainer grooms the traces it writes**: after each cycle
 `_prune_eval_traces` keeps only the `--keep-eval-trace-steps` (default 20) most-recent eval
 step dirs, and `_prune_eval_snapshots` keeps the `--keep-eval-snapshots` (default 10)
 most-recent snapshots — so `eval_traces/` stays bounded without any external task
-(`python -m main.prober.groom` is the manual fallback). The eval summary itself is
+(`python -m main.prober.groom` is the manual fallback). **The same cycle also bounds the run's
+two append-only debug dirs** via `_prune_run_artifacts` (`artifact_retention.py`, a dedicated
+module — not bolted onto this busy callback): keep the `--keep-stalls` (default 50) most-recent
+`stalls/stall_*.html` replays and the `--keep-crashes` (default 10) most-recent
+`crashes/restart_err_*.txt` launcher diagnostics, newest-by-mtime, `0` = keep all. Same
+producer-grooms-its-own-data contract; `python -m agents.training.artifact_retention <run_dir |
+models_dir> [--apply]` is the manual fallback (dry-run by default; sweeps every run under a
+`models/` tree). The eval summary itself is
 written to `metadata.json` as a **top-level `latest_eval`** block (step-labeled, NOT
 nested under a checkpoint) — robust to the async timing (an eval can finish after a
 newer checkpoint, or before any checkpoint exists); `save_model_snapshot` carries it
@@ -191,6 +198,8 @@ in the trainer). Behaviors:
 | `--eval-concurrency-per-worker` | `1` | Battles each worker overlaps **within** its claimed opponent (single-thread asyncio latency-hiding — NOT multi-core). `1` = today's sequential play. Threaded to the constructor's `eval_concurrency` → `cfg["concurrency"]` → `run_local_battles(concurrency=)` (bridge) / the player's `max_concurrent_battles` (websocket). See the concurrency note below. |
 | `--keep-eval-snapshots` | `10` | Retain the N most-recent eval weight snapshots in `eval_traces/step_<N>/snapshot.zip` (~27MB each; default ≈270MB) for bit-exact prober replay. `0` writes the identity manifest only; the prober then loads the nearest persisted checkpoint. The trainer auto-prunes to this cap each cycle. |
 | `--keep-eval-trace-steps` | `20` | The trainer keeps only the N most-recent eval **step dirs** under `eval_traces/` after each cycle (`0` = keep all), so forensic data stays bounded. `python -m main.prober.groom` is the manual fallback. |
+| `--keep-stalls` | `50` | Each cycle keep only the N most-recent `stalls/stall_*.html` replays (`0` = keep all). A self-play run writes thousands (~80 KB each); this caps the dir. `artifact_retention.py`; CLI fallback `python -m agents.training.artifact_retention`. |
+| `--keep-crashes` | `10` | Each cycle keep only the N most-recent `crashes/restart_err_*.txt` launcher diagnostics (`0` = keep all). Same module/CLI as `--keep-stalls`. |
 
 **TD-residual tail metric (`eval/td_resid_tail_*`).** Each cycle also folds a **left-tail
 statistic of the per-decision critic surprise** δ(t) = r(t) + γ·V(s_{t+1}) − V(s_t) — the same

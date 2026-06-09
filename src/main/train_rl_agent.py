@@ -547,6 +547,13 @@ async def main():
                         help="The trainer grooms the forensic traces it writes: after each eval cycle it "
                              "keeps only the N most-recent eval step dirs under eval_traces/ (0 = keep all). "
                              "`python -m main.prober.groom` is the manual fallback for finished runs.")
+    parser.add_argument("--keep-stalls", "--keep_stalls", dest="keep_stalls", type=int, default=50,
+                        help="Bound the run's stalls/ dir: each eval cycle keep only the N most-recent "
+                             "stall_*.html replays (0 = keep all). `python -m agents.training.artifact_retention` "
+                             "is the manual fallback / cross-run sweep.")
+    parser.add_argument("--keep-crashes", "--keep_crashes", dest="keep_crashes", type=int, default=10,
+                        help="Bound the run's crashes/ dir: each eval cycle keep only the N most-recent "
+                             "launcher restart_err_*.txt files (0 = keep all).")
     parser.add_argument("--self-play", action=BoolFlag, default=False, help="Enable self-play snapshot pool as training opponents")
     parser.add_argument("--distill-opponents", "--distill_opponents", dest="distill_opponents",
                         action=BoolFlag, default=False,
@@ -1194,6 +1201,8 @@ async def main():
             distill_device=args.eval_device,  # CPU by default → no GPU contention with training
             keep_eval_snapshots=args.keep_eval_snapshots,
             keep_eval_trace_steps=args.keep_eval_trace_steps,
+            keep_stalls=args.keep_stalls,
+            keep_crashes=args.keep_crashes,
             resume_eval_metadata=_resume_meta,
             fixed_opponents=_fixed_opponents,
             stable_opponent_mastered_wr=args.stable_opponent_mastered_wr,
@@ -1216,6 +1225,8 @@ async def main():
             resume_eval_metadata=_resume_meta,
             keep_eval_snapshots=args.keep_eval_snapshots,
             keep_eval_trace_steps=args.keep_eval_trace_steps,
+            keep_stalls=args.keep_stalls,
+            keep_crashes=args.keep_crashes,
             fixed_opponents=_fixed_opponents,
         )
         callbacks.append(eval_callback)
