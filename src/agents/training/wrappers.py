@@ -158,6 +158,9 @@ class MaskableAgentWrapper(SingleAgentWrapper):
         opponents are excluded while distillation is active (see ``_pick_challenge_opponent``)."""
         mastered = [] if self._distill_active else self._stable_in(mastered=True)
         candidates = self._heuristic_opponents + mastered
+        # This floor weighting (Σ bot weights, +1.0 per mastered stable) — like the whole selection
+        # split here — is mirrored for REPORTING by SelfPlayCallback._opponent_mix_fractions; keep
+        # the two in sync (pinned by wrappers_test.py::test_mix_fractions_match_actual_sampling).
         if self._heuristic_weights is None:
             return self._rng.choice(candidates)
         weights = self._heuristic_weights + [1.0] * len(mastered)

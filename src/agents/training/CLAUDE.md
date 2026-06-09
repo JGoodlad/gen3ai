@@ -353,6 +353,27 @@ restart — no manifest). Design lives in `designs/ai_v5/`. Key behaviors:
   makes the worker re-scan + re-sample, so promotions become training opponents within a
   generation; diversity comes from 48 envs sampling independently + rotating each generation, not
   from per-episode churn. (`_n_pool_envs` / the `_maybe_engage_self_play` env-rebuild are gone.)
+- **Opponent-mix reporting (`train/selfplay_fraction` / `train/stable_fraction` /
+  `train/nonbot_fraction`).** The curriculum coin `sf` (`1 − heuristic_fraction(win_rate)`) pushed to
+  the envs and persisted to `summary.json` is the **challenge-ENTRY** probability (= pool +
+  un-mastered stable, *when* the challenge pick returns non-None) — NOT the pool share. So the
+  reported metrics are derived separately by `SelfPlayCallback._opponent_mix_fractions(sf, pool_ready)`,
+  a pure mirror of `MaskableAgentWrapper._select_episode_opponent` (it does **not** change selection).
+  The four mutually-exclusive opponent types (bot / pool / un-mastered-stable / mastered-stable) sum
+  to 1; the metrics report **`train/selfplay_fraction` = P(pool)** (REPOINTED — it used to log `sf`),
+  **`train/stable_fraction` = P(any stable)** (un-mastered in the challenge **+** mastered in the
+  weighted floor — a mastered stable "becomes a bot" so it's NOT in `sf`), and **`train/nonbot_fraction`
+  = pool + stable** (= 1 − bot; bot is left implicit). `nonbot` is independent of the stable challenge
+  share (it cancels); the per-bucket split needs three **reporting-only** inputs threaded into the
+  callback from `train_rl_agent` (the capped `stable_challenge_share`, the `--bot-weights` vector, and
+  `len(OPPONENT_CLASSES)` — the floor roster, which excludes eval-only `random`). Distillation drops
+  both stable buckets (`_distill_deployed`, last-reconcile state → a same-cycle flip lags ≤1 cycle).
+  With no stable opponents these reduce to `selfplay_fraction = nonbot = sf·P`, `stable = 0`.
+  `_opponent_mix_fractions` is a hand-written **mirror** of the wrapper's selection, so the anti-drift
+  guard is `wrappers_test.py::test_mix_fractions_match_actual_sampling`: it runs the REAL
+  `_select_episode_opponent` thousands of times and asserts the empirical pool/stable shares match
+  the analytic fractions (the per-case `selfplay_callback_test.py::test_opponent_mix_*` pin the math
+  itself). A future selection change that isn't mirrored fails that cross-check.
 - **Seeding is GATED on competence; the pool is a SLIDING WINDOW (nothing pinned).** The pool is
   seeded only once win rate clears `SELF_PLAY_START` (at startup via `_maybe_seed_pool`, or the
   moment it crosses mid-run in `_collect_pending`), so the first self-play opponent is a
@@ -488,9 +509,15 @@ a stable opponent rides the *existing* pool-vs-heuristic split in `MaskableAgent
   one-way), it "becomes another bot" — moved to the always-on coverage floor (weighted like an
   unlisted bot). The eval callback tracks a **monotonic** mastered set + a per-label streak counter,
   recomputed each cycle (→ resume-safe), and pushes it via `env_method("set_stable_mastered", …)`,
-  exactly like `set_self_play_target`. **Resume note:** the mastered set lives only in callback
+  exactly like `set_self_play_target`. The recompute+push runs **early** in `_collect_pending` (with
+  the training-mix telemetry below), so this cycle's challenge↔floor flips show up in both the pushed
+  env state and the reported fractions. **Resume note:** the mastered set lives only in callback
   memory, so after a launcher restart a previously-mastered opponent reverts to the challenge bucket
   until the first post-restart eval re-confirms it (self-healing; bounded by the eval cadence).
+- **Training-mix share is reported, not just eval win rate.** The stable opponents' actual slice of
+  the training mix shows up in `train/stable_fraction` (challenge un-mastered + floor mastered), with
+  `train/selfplay_fraction` (pool) and `train/nonbot_fraction` (their sum); see the Curriculum
+  subsection's **Opponent-mix reporting** bullet above for the exact decomposition.
 - The stable-opponent players are **built once per worker** (`load_foreign_opponent` in the env
   factory), so no per-episode reload; each plays **stochastic** at `--stable-opponent-temp` in
   TRAINING but **greedy (temp 0)** in EVAL (a clean yardstick).

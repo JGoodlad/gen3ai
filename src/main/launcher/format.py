@@ -50,6 +50,10 @@ def _fmt_metric(key: str, v: float) -> str:
 _METRIC_LABELS = {
     "eval/elo": "ELO",
     "eval/elo_ci": "ELO 95% CI",
+    # Opponent-mix curriculum telemetry (the INTENDED per-episode opponent probabilities).
+    "train/selfplay_fraction": "pool frac",
+    "train/stable_fraction": "stable frac",
+    "train/nonbot_fraction": "nonbot frac",
     "distill/all_distilled": "all distilled",
     "distill/frac_active_opponents_distilled": "distilled",
     "distill/n_ready": "ready",
@@ -128,6 +132,12 @@ _METRIC_ORDER = [
     "train/return_std",
     "train/return_abs_max",
     "train/value_pred_std",
+    # Opponent-mix curriculum telemetry (self-play only): the INTENDED per-episode opponent
+    # probabilities — pool (self-play) share, stable cross-run share, and their sum (non-bot;
+    # bot = 1 − nonbot). selfplay_fraction is POOL-only, NOT the curriculum coin pushed to envs.
+    "train/nonbot_fraction",
+    "train/selfplay_fraction",
+    "train/stable_fraction",
     # Gradient balance: value-vs-policy pull on the SHARED trunk. value_share ~0.5 = balanced,
     # →1 = value swamps the trunk; value_policy_logratio = log10(‖g_v‖/‖g_p‖) is the same imbalance
     # on a linear non-saturating scale (0 = balanced, >0 = value dominates) — the legible gauge for

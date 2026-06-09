@@ -301,3 +301,57 @@ def test_mastered_stable_excluded_from_floor_while_distilling():
     for _ in range(100):
         w._select_episode_opponent()
         assert w.opponent in heuristics      # mastered stable excluded from the floor under distill
+
+
+# ── cross-check: the reporting mirror matches the ACTUAL selection sampling ────
+# SelfPlayCallback._opponent_mix_fractions and its per-case unit tests are both hand-derived from
+# the SAME model of the rules below — so neither catches the two implementations DRIFTING. This
+# runs the REAL _select_episode_opponent many times and asserts its empirical pool/stable shares
+# match the analytic fractions: the one guard that fails if a future change to selection here isn't
+# mirrored in the reporting (or vice-versa). Seeded → deterministic, not flaky.
+
+def test_mix_fractions_match_actual_sampling():
+    from types import SimpleNamespace
+    from agents.training.selfplay_callback import SelfPlayCallback
+
+    # (label, sf, pool_empty, n_stable, mastered_labels, distill)
+    configs = [
+        ("pool-only",            0.9, False, 0, [],           False),
+        ("unmastered-caps",      0.9, False, 1, [],           False),
+        ("no-pool-unmastered",   0.6, True,  1, [],           False),
+        ("mastered-in-floor",    0.8, False, 1, ["ext_run0"], False),
+        ("distill-drops-stable", 0.9, False, 2, ["ext_run0"], True),
+    ]
+    N = 8000
+    for label, sf, pool_empty, n_stable, mastered, distill in configs:
+        stable_players, stable_labels = _stable(n_stable)
+        pool_player = MagicMock(name="pool")
+        w, heuristics = _make_wrapper(
+            fraction=sf, pool=_stub_pool(empty=pool_empty), pool_player=pool_player,
+            n_heuristics=2, rng_seed=7,
+            stable_players=stable_players or None, stable_labels=stable_labels or None)
+        w.set_stable_mastered(mastered)
+        if distill:
+            w.set_distill_active(True, steps={0})
+
+        counts = {"pool": 0, "stable": 0, "bot": 0}
+        for _ in range(N):
+            w._select_episode_opponent()
+            o = w.opponent
+            counts["pool" if o is pool_player
+                   else "stable" if o in stable_players
+                   else "bot"] += 1
+
+        # The reporting mirror, configured to the SAME state (called unbound on a stub `self`).
+        mirror = SimpleNamespace(
+            _fixed_opponents=[SimpleNamespace(label=lab) for lab in stable_labels],
+            _stable_mastered=set(mastered),
+            _distill_deployed=distill,
+            _stable_challenge_share=STABLE_CHALLENGE_SHARE,
+            _bot_weight_vec=None,
+            _floor_roster_count=len(heuristics),
+        )
+        sp, st, nb = SelfPlayCallback._opponent_mix_fractions(mirror, sf, pool_ready=not pool_empty)
+        assert counts["pool"] / N == pytest.approx(sp, abs=0.03), label
+        assert counts["stable"] / N == pytest.approx(st, abs=0.03), label
+        assert (counts["pool"] + counts["stable"]) / N == pytest.approx(nb, abs=0.03), label

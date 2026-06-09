@@ -1216,6 +1216,13 @@ async def main():
             resume_eval_metadata=_resume_meta,
             fixed_opponents=_fixed_opponents,
             stable_opponent_mastered_wr=args.stable_opponent_mastered_wr,
+            # Reporting-only: lets the callback REPORT the exact per-episode opponent-mix fractions
+            # (train/selfplay_fraction = pool, train/stable_fraction, train/nonbot_fraction) the env
+            # wrapper's selection implies — no change to selection. The capped stable challenge share,
+            # the bot-weight vector, and the floor bot-roster size all live only in the wrapper / here.
+            stable_challenge_share=args.stable_opponent_selfplay_share,
+            bot_weight_vec=_bot_weight_vec,
+            floor_roster_count=len(OPPONENT_CLASSES),
             debug=args.debug,
         )
         callbacks.append(eval_callback)

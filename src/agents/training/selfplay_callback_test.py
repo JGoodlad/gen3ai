@@ -282,7 +282,9 @@ def test_lifecycle_collect_records_promotes_and_saves_best(tmp_path, monkeypatch
     assert "eval/mean_reward_vs_pool" in recorded           # pool reward aggregate (was missing → blank TUI cell)
     assert "eval/mean_ep_len_vs_pool" in recorded           # pool ep-len, mirrors mean_ep_len_vs_bots
     assert "eval/sentinel_monotonicity" in recorded
-    assert "train/selfplay_fraction" in recorded
+    assert "train/selfplay_fraction" in recorded   # repointed: POOL-only share, not the curriculum coin
+    assert "train/stable_fraction" in recorded
+    assert "train/nonbot_fraction" in recorded
     assert "eval/win_rate_vs_bots" in recorded
     assert "eval/mean_ep_len_vs_bots" in recorded
     assert "eval/win_rate_vs_heuristic" in recorded
@@ -685,6 +687,90 @@ def test_watchdog_aborts_hung_selfplay_cycle(tmp_path, monkeypatch):
     recorded = {c.args[0] for c in cb.logger.record.call_args_list}
     assert "eval/win_rate_vs_bots" in recorded     # bot results recorded despite the hang
     pool.add_from_path.assert_not_called()         # no pool win rate → no promotion
+
+
+# ── opponent-mix reporting fractions (pool / stable / nonbot) — pure, no battles ──
+# These mirror MaskableAgentWrapper._select_episode_opponent (wrappers.py) for REPORTING only.
+
+def _fo(label):
+    """A stand-in FixedOpponentEntry — the fraction helper reads only `.label`."""
+    from types import SimpleNamespace
+    return SimpleNamespace(label=label)
+
+
+def test_opponent_mix_no_stable_pool_only(tmp_path):
+    """No stable opponents: train/selfplay_fraction = POOL share = sf·P (NOT the curriculum coin)."""
+    cb = _make_callback(tmp_path)
+    cb._fixed_opponents = []
+    cb._floor_roster_count = 8
+    # Pool seeded → pool takes the whole challenge: pool=sf, stable=0, nonbot=sf.
+    assert cb._opponent_mix_fractions(0.9, pool_ready=True) == pytest.approx((0.9, 0.0, 0.9))
+    # Pool NOT seeded → challenge returns None, all mass falls to the bot floor: pool=stable=nonbot=0.
+    assert cb._opponent_mix_fractions(0.9, pool_ready=False) == pytest.approx((0.0, 0.0, 0.0))
+
+
+def test_opponent_mix_unmastered_stable_caps_challenge(tmp_path):
+    """An un-mastered stable opponent peels the capped share s off the pool's challenge bulk."""
+    cb = _make_callback(tmp_path)
+    cb._fixed_opponents = [_fo("ext_run")]
+    cb._stable_mastered = set()
+    cb._stable_challenge_share = 0.2
+    cb._floor_roster_count = 8
+    sp, st, nb = cb._opponent_mix_fractions(0.9, pool_ready=True)
+    assert sp == pytest.approx(0.9 * 0.8)   # pool = sf·(1−s)
+    assert st == pytest.approx(0.9 * 0.2)   # un-mastered stable = sf·s (challenge side)
+    assert nb == pytest.approx(0.9)         # nonbot = sf (s cancels); bot = 0.1
+
+
+def test_opponent_mix_unmastered_stable_no_pool_takes_whole_challenge(tmp_path):
+    """Pool not seeded but un-mastered stable exists → stable IS the whole challenge (no s cap)."""
+    cb = _make_callback(tmp_path)
+    cb._fixed_opponents = [_fo("ext_run")]
+    cb._stable_mastered = set()
+    cb._floor_roster_count = 8
+    sp, st, nb = cb._opponent_mix_fractions(0.6, pool_ready=False)
+    assert (sp, st, nb) == pytest.approx((0.0, 0.6, 0.6))
+
+
+def test_opponent_mix_mastered_stable_lives_in_weighted_floor(tmp_path):
+    """A MASTERED stable opponent leaves the challenge for the WEIGHTED floor (it 'becomes a bot'),
+    so it adds to stable_fraction via the floor — and nonbot != sf as a result."""
+    cb = _make_callback(tmp_path)
+    cb._fixed_opponents = [_fo("ext_run")]
+    cb._stable_mastered = {"ext_run"}
+    cb._bot_weight_vec = None                # uniform bots
+    cb._floor_roster_count = 8
+    cb._stable_challenge_share = 0.2
+    sp, st, nb = cb._opponent_mix_fractions(0.9, pool_ready=True)
+    assert sp == pytest.approx(0.9)              # challenge = 100% pool (no un-mastered stable)
+    assert st == pytest.approx(0.1 * (1 / 9))    # floor 0.1 over 8 bots + 1 mastered → 1/9 slice
+    assert nb == pytest.approx(0.9 + 0.1 / 9)    # > sf — the mastered-stable floor mass
+
+
+def test_opponent_mix_weighted_floor(tmp_path):
+    """--bot-weights changes W_h, so the mastered-stable floor slice is k_m/(W_h+k_m)."""
+    cb = _make_callback(tmp_path)
+    cb._fixed_opponents = [_fo("ext_run")]
+    cb._stable_mastered = {"ext_run"}
+    cb._bot_weight_vec = [3.0, 1.0]          # W_h = 4
+    cb._floor_roster_count = 2
+    sp, st, nb = cb._opponent_mix_fractions(0.5, pool_ready=True)
+    assert sp == pytest.approx(0.5)
+    assert st == pytest.approx(0.5 * (1 / 5))    # floor 0.5 over W_h=4 + k_m=1
+    assert nb == pytest.approx(0.5 + 0.5 / 5)
+
+
+def test_opponent_mix_distill_drops_stable(tmp_path):
+    """Under all-or-nothing distillation, stable opponents drop OUT of the training mix entirely
+    (both the challenge slice and the floor mastered ones), so the pool reclaims the challenge."""
+    cb = _make_callback(tmp_path)
+    cb._fixed_opponents = [_fo("ext_a"), _fo("ext_b")]
+    cb._stable_mastered = {"ext_b"}          # one mastered (floor), one not (challenge)
+    cb._stable_challenge_share = 0.2
+    cb._floor_roster_count = 8
+    cb._distill_deployed = True
+    sp, st, nb = cb._opponent_mix_fractions(0.9, pool_ready=True)
+    assert (sp, st, nb) == pytest.approx((0.9, 0.0, 0.9))
 
 
 # ── stable-opponent mastery: N-cycle confirm (eval-noise guard) ───────────────

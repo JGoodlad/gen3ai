@@ -70,6 +70,7 @@ from agents.training.eval_sharding import EvalItem, ShardedEvalPool, BOT, SENTIN
 from agents.training.snapshot_pool import (
     SnapshotPool, heuristic_fraction, HEURISTIC_FLOOR, SELF_PLAY_START, SELF_PLAY_FULL,
 )
+from agents.training.wrappers import STABLE_CHALLENGE_SHARE  # default for the reporting-only share
 from main.launcher.ipc import emit, send_event, send_metrics
 
 # Consecutive eval cycles a stable opponent's win_rate must stay ≥ the mastery threshold before the
@@ -179,6 +180,9 @@ class SelfPlayCallback(BaseCallback):
         resume_eval_metadata: str | None = None,
         fixed_opponents: "list | None" = None,
         stable_opponent_mastered_wr: float = 0.80,
+        stable_challenge_share: float = STABLE_CHALLENGE_SHARE,
+        bot_weight_vec: "list | None" = None,
+        floor_roster_count: int = 0,
         debug: bool = False,
         verbose: int = 1,
     ):
@@ -191,6 +195,15 @@ class SelfPlayCallback(BaseCallback):
         self._stable_opponent_mastered_wr = float(stable_opponent_mastered_wr)
         self._stable_mastered: set[str] = set()  # labels mastered this run (monotonic)
         self._stable_mastery_streak: dict[str, int] = {}  # consecutive ≥-threshold cycles per label
+        # Reporting-only inputs for the per-episode opponent-mix fractions (train/selfplay_fraction
+        # = pool share, train/stable_fraction, train/nonbot_fraction). They let the callback REPORT
+        # the exact split MaskableAgentWrapper._select_episode_opponent (wrappers.py) implies WITHOUT
+        # touching it: the capped stable challenge share, the bot sampling-weight vector (None =
+        # uniform), and the floor bot-roster size (len(OPPONENT_CLASSES) — excludes eval-only
+        # `random`, so it's NOT len(bot_names)). See _opponent_mix_fractions.
+        self._stable_challenge_share = float(stable_challenge_share)
+        self._bot_weight_vec = list(bot_weight_vec) if bot_weight_vec else None
+        self._floor_roster_count = int(floor_roster_count)
         self._model_dir = model_dir
         self._server_config = server_config
         self._showdown_port = showdown_port
@@ -560,11 +573,26 @@ class SelfPlayCallback(BaseCallback):
         # The live fraction is pushed to the envs at the END of collect (after any promotion),
         # so a same-cycle promotion's pool-generation bump reaches the workers immediately.
 
-        # ── Derived metrics (no extra battles) ──
+        # ── Training-mix telemetry (no extra battles): the INTENDED per-episode opponent
+        #    probabilities the curriculum implies, mirroring wrappers.py selection. Stable-opponent
+        #    mastery is recomputed + pushed to the envs HERE (not at end-of-collect) so this cycle's
+        #    challenge↔floor flips are reflected in BOTH the pushed env state and these fractions;
+        #    ext_wr is reused for the per-opponent block below. ──
         pool_size = len(self._pool)
-        self.logger.record("train/selfplay_fraction", sf)
+        ext_wr = {lab: wr[lab] for lab in fixed_labels if lab in wr}
+        self._push_stable_mastered(ext_wr)   # monotonic mastered-set update + env push
+        self_play_frac, stable_frac, nonbot_frac = self._opponent_mix_fractions(sf, pool_size > 0)
+        # train/selfplay_fraction is now the POOL-only share P(pool) — NOT the curriculum coin `sf`
+        # (= challenge-entry = pool + un-mastered stable), which is still what's pushed to the envs
+        # (set_self_play_target) and persisted to summary.json. stable = P(any stable, challenge OR
+        # floor); nonbot = pool + stable (= 1 − bot). See _opponent_mix_fractions.
+        self.logger.record("train/selfplay_fraction", self_play_frac)
+        self.logger.record("train/stable_fraction", stable_frac)
+        self.logger.record("train/nonbot_fraction", nonbot_frac)
         self.logger.record("eval/pool_snapshot_count", float(pool_size))
-        tui["train/selfplay_fraction"] = sf
+        tui["train/selfplay_fraction"] = self_play_frac
+        tui["train/stable_fraction"] = stable_frac
+        tui["train/nonbot_fraction"] = nonbot_frac
         tui["eval/pool_snapshot_count"] = float(pool_size)
 
         self.logger.record("eval/win_rate_vs_bots", self.win_rate_vs_bots)
@@ -584,8 +612,8 @@ class SelfPlayCallback(BaseCallback):
         tui["eval/mean_reward_mean"] = mean_reward_mean
 
         # ── Stable cross-run opponents (ext_<label>) — a separate fixed yardstick, kept OUT of
-        # win_rate_vs_bots / win_rate_vs_pool / the ELO fit / promotion (recorded for display) ──
-        ext_wr = {lab: wr[lab] for lab in fixed_labels if lab in wr}
+        # win_rate_vs_bots / win_rate_vs_pool / the ELO fit / promotion (recorded for display).
+        # ext_wr + the mastered-set push were computed above with the training-mix telemetry. ──
         record_per_opponent(self.logger, tui, fixed_labels, wr,
                             merged["reward_means"], merged["ep_lens"])
         win_rate_vs_external = external_aggregate(ext_wr)
@@ -680,8 +708,8 @@ class SelfPlayCallback(BaseCallback):
         # ── Push the live curriculum target to every training env (after any seed/promote so
         #    the pool-generation bump reaches the workers this cycle) + persist resume state ──
         self._push_self_play_target(sf)
-        # A stable opponent the trainee has now mastered "becomes another bot" in every training env.
-        self._push_stable_mastered(ext_wr)
+        # (Stable-opponent mastery — the challenge→floor "becomes another bot" flip — was recomputed
+        #  + pushed to every training env earlier, with the training-mix telemetry.)
         # Reconcile distilled opponents now that any seed/promote bumped the generation: distill
         # the new snapshot (steady-state) or, on first enable, the whole pool (backfill).
         self._reconcile_distill()
@@ -739,6 +767,54 @@ class SelfPlayCallback(BaseCallback):
             self.training_env.env_method("set_stable_mastered", sorted(self._stable_mastered))
         except Exception as e:  # noqa: BLE001 — must never break eval
             print(f"[SELFPLAY] set_stable_mastered push failed (non-fatal): {e}")
+
+    def _opponent_mix_fractions(self, sf: float, pool_ready: bool) -> "tuple[float, float, float]":
+        """The INTENDED per-episode opponent-mix probabilities the curriculum implies, for REPORTING
+        only — a faithful mirror of ``MaskableAgentWrapper._select_episode_opponent`` (wrappers.py),
+        which it does NOT change. Returns ``(self_play, stable, nonbot)`` = P(pool), P(any stable),
+        and their sum (= 1 − P(bot)).
+
+        Four mutually-exclusive opponent TYPES sum to 1 (verified): heuristic bot, self-play POOL,
+        UN-mastered stable (challenge), MASTERED stable (floor). With ``sf`` = the live challenge-
+        entry coin, ``s`` = the capped stable challenge share, ``U`` = an un-mastered stable exists,
+        ``k_m`` = #mastered stable in the floor, ``W_h`` = Σ bot weights, and ``FLOOR`` = the rest:
+
+          - CHALLENGE (prob ``sf``): the pool gets the bulk and an un-mastered stable the capped
+            slice ``s`` — but ONLY when a pool snapshot AND an un-mastered stable both exist; else
+            whichever is present takes the whole challenge, and if neither does the challenge falls
+            through to the floor (so FLOOR is NOT simply ``1−sf``).
+          - FLOOR (the rest): bots + mastered stable, by a WEIGHTED pick (mastered each weight 1.0).
+
+        ``train/selfplay_fraction`` reports the POOL share (P(pool)) — strictly ≤ ``sf``. Distillation
+        being active drops BOTH stable buckets (a full foreign opponent would straggle the
+        all-or-nothing barrier); ``self._distill_deployed`` here is the last reconcile's state, so a
+        same-cycle distill flip is reflected at most one cycle late."""
+        sf = max(0.0, min(1.0, float(sf)))
+        distill = bool(self._distill_deployed)
+        n_mastered = sum(1 for e in self._fixed_opponents
+                         if getattr(e, "label", None) in self._stable_mastered)
+        has_unmastered = (len(self._fixed_opponents) - n_mastered) > 0 and not distill
+        k_m = n_mastered if not distill else 0
+        s = self._stable_challenge_share
+
+        # CHALLENGE bucket (entered with prob sf).
+        if pool_ready and has_unmastered:
+            p_pool, p_unmastered = sf * (1.0 - s), sf * s
+        elif pool_ready:
+            p_pool, p_unmastered = sf, 0.0
+        elif has_unmastered:
+            p_pool, p_unmastered = 0.0, sf          # un-mastered stable IS the whole challenge (no cap)
+        else:
+            p_pool, p_unmastered = 0.0, 0.0         # challenge returns None → all mass falls to floor
+
+        # FLOOR bucket: everything not consumed by a non-None challenge pick, split by weight.
+        floor_mass = (1.0 - sf) + (0.0 if (pool_ready or has_unmastered) else sf)
+        w_h = sum(self._bot_weight_vec) if self._bot_weight_vec else float(self._floor_roster_count)
+        p_mastered = floor_mass * (k_m / (w_h + k_m)) if (w_h + k_m) > 0 else 0.0
+
+        self_play = p_pool
+        stable = p_unmastered + p_mastered
+        return self_play, stable, self_play + stable
 
     # ── Opponent distillation reconcile (idempotent; distill_integration.md §8) ──────────────
     def _reconcile_distill(self) -> None:
