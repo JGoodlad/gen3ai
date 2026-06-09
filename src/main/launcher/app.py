@@ -23,6 +23,7 @@ from __future__ import annotations
 import os
 import time
 
+from rich.cells import cell_len
 from rich.text import Text
 from textual import work
 from textual.app import ComposeResult
@@ -56,6 +57,35 @@ _EVAL_SUMMARY = frozenset({
 # View ids — the app owns its own view state (the `view_mode` reactive), independent of the
 # supervisor; these match the ContentSwitcher child ids.
 _VIEWS = ("dashboard", "logs", "events", "confirm_quit")
+
+# Hanging-indent for wrapped event lines. Events are "[HH:MM:SS] <msg>"; len("[HH:MM:SS] ")==11,
+# so continuation lines padded to 11 columns sit under the message (the emoji) rather than flowing
+# back to column 0 — a long event reads as one indented block.
+_EVENT_HANG_INDENT = 11
+
+
+def _wrap_hanging(line: str, width: int, indent: int = _EVENT_HANG_INDENT) -> str:
+    """Soft-wrap one line to ``width`` display cells with a hanging indent: every continuation
+    line is padded to ``indent`` columns. Cell-aware (an emoji is 2 cells, not 1) so the wrap
+    points match what the ``Static`` will actually render — we insert the newlines ourselves and
+    let Textual render them verbatim. Returns ``line`` unchanged when it already fits, when the
+    region is too narrow to indent usefully, or before first layout (``width`` 0)."""
+    if width <= indent + 8 or cell_len(line) <= width:
+        return line
+    pad = " " * indent
+    out: list = []
+    cur, cur_w = "", 0
+    for word in line.split(" "):
+        ww = cell_len(word)
+        if not cur:
+            cur, cur_w = word, ww
+        elif cur_w + 1 + ww <= width:          # +1 for the joining space
+            cur, cur_w = f"{cur} {word}", cur_w + 1 + ww
+        else:
+            out.append(cur)
+            cur, cur_w = pad + word, indent + ww
+    out.append(cur)
+    return "\n".join(out)
 
 
 class LauncherApp(Gen3App):
@@ -286,8 +316,9 @@ class LauncherApp(Gen3App):
         self._render_metrics(snap, now)
 
         evt = Text()
+        width = self.query_one("#events-dash", Static).content_size.width
         for ev in snap.events[-10:]:
-            evt.append(ev + "\n", style="dim")
+            evt.append(_wrap_hanging(ev, width) + "\n", style="dim")
         if not snap.events:
             evt.append("No events yet.", style="dim")
         self.query_one("#events-dash", Static).update(evt)
@@ -563,8 +594,9 @@ class LauncherApp(Gen3App):
 
     def _render_events(self, snap) -> None:
         text = Text()
+        width = self.query_one("#events-body", Static).content_size.width
         for ev in snap.events[-200:]:
-            text.append(ev + "\n", style="dim")
+            text.append(_wrap_hanging(ev, width) + "\n", style="dim")
         if not snap.events:
             text.append("No events yet.", style="dim")
         self.query_one("#events-body", Static).update(text)

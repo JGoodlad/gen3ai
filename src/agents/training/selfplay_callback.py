@@ -706,7 +706,7 @@ class SelfPlayCallback(BaseCallback):
             else:
                 self._stable_mastery_streak[lab] = 0  # a below-threshold cycle resets the streak
         if newly:
-            emit(f"🎓 [SELFPLAY] Mastered stable opponent(s) {sorted(newly)} (win_rate ≥ "
+            emit(f"🏇 [SELFPLAY] Mastered stable opponent(s) {sorted(newly)} (win_rate ≥ "
                  f"{self._stable_opponent_mastered_wr:.0%} for {_MASTERY_CONFIRM_CYCLES} cycles) — "
                  "now a coverage-floor opponent")
         try:

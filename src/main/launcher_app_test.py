@@ -30,7 +30,7 @@ from main.launcher.run import (
     _supervise,
 )
 from main.launcher.state import LauncherState
-from main.launcher.app import LauncherApp
+from main.launcher.app import LauncherApp, _EVENT_HANG_INDENT, _wrap_hanging
 
 
 # ── helpers ──────────────────────────────────────────────────────────────────
@@ -92,6 +92,27 @@ def _populated_state() -> LauncherState:
     state.add_event("🚀 Starting — restart every 3.0h")
     state.add_event("✅ Child PID 1686225 started")
     return state
+
+
+# ── _wrap_hanging (event soft-wrap with hanging indent) ─────────────────────────
+
+def test_wrap_hanging_indents_continuation_and_never_overflows():
+    from rich.cells import cell_len
+    # Emoji in the body: cell-aware wrapping must hold (🐴 is 2 cells, not 1).
+    ev = ("[16:52:08] 🐴 [STABLE] 1 cross-run opponent(s): ext_ai_v5_5_popart_50m_0607 — "
+          "eval greedy; training ≤20% of self-play until mastered (win_rate ≥ 80%)")
+    lines = _wrap_hanging(ev, 90).split("\n")
+    assert len(lines) > 1                                   # it actually wrapped
+    assert all(cell_len(ln) <= 90 for ln in lines)         # no rendered line overflows
+    assert all(ln.startswith(" " * _EVENT_HANG_INDENT) for ln in lines[1:])  # hanging indent
+    assert lines[0] == ev[:len(lines[0])]                  # first line is the prefix, unindented
+
+
+def test_wrap_hanging_noop_when_fitting_or_unlaid_out():
+    ev = "[16:52:08] 🐴 [STABLE] short"
+    assert _wrap_hanging(ev, 400) == ev    # already fits → unchanged (no inserted newlines)
+    assert _wrap_hanging(ev, 0) == ev      # width 0 (before first layout) → unchanged
+    assert _wrap_hanging(ev, 12) == ev     # too narrow to indent usefully → unchanged
 
 
 # ── Pilot: rendering parity ────────────────────────────────────────────────────

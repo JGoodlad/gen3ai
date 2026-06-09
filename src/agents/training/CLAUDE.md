@@ -418,9 +418,9 @@ a stable opponent rides the *existing* pool-vs-heuristic split in `MaskableAgent
   factory), so no per-episode reload; each plays **stochastic** at `--stable-opponent-temp` in
   TRAINING but **greedy (temp 0)** in EVAL (a clean yardstick).
 - **Surfaced in the launcher Events panel** (via `emit`, like the `[SELFPLAY]` startup lines): a
-  `🎯 [STABLE] N cross-run opponent(s): ext_<run> — eval greedy; training ≤<share> of self-play until
-  mastered (win_rate ≥ <wr>)` line at startup, and each eval-summary event gains a `stable <pct>%`
-  field. (Per-opponent `eval/win_rate_vs_ext_<run>` also rides the normal eval Metrics table.)
+  `🐴 [STABLE] N cross-run opponent(s): ext_<run> — eval greedy; training ≤<share> of self-play until
+  mastered (win_rate ≥ <wr>)` line at startup (and a `🏇 [SELFPLAY] Mastered stable opponent(s) …`
+  line on the challenge→floor flip), and each eval-summary event gains a `stable <pct>%` field. (Per-opponent `eval/win_rate_vs_ext_<run>` also rides the normal eval Metrics table.)
 - **Distillation interaction:** under `--distill-opponents` the pool flips to 100% cheap distilled
   models (all-or-nothing — one full-model worker straggles and gates the per-step barrier). A full
   foreign stable opponent would re-introduce that straggler, so stable opponents drop OUT of the

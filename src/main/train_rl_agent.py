@@ -760,11 +760,11 @@ async def main():
         # emit() → the launcher Events panel (like the [SELFPLAY] startup lines); print()s standalone.
         _stable_labels = ", ".join(e.label for e in _fixed_opponents)
         if args.self_play:
-            emit(f"🎯 [STABLE] {len(_fixed_opponents)} cross-run opponent(s): {_stable_labels} — "
+            emit(f"🐴 [STABLE] {len(_fixed_opponents)} cross-run opponent(s): {_stable_labels} — "
                  f"eval greedy; training ≤{args.stable_opponent_selfplay_share:.0%} of self-play until "
                  f"mastered (win_rate ≥ {args.stable_opponent_mastered_wr:.0%})")
         else:
-            emit(f"🎯 [STABLE] {len(_fixed_opponents)} cross-run opponent(s): {_stable_labels} — "
+            emit(f"🐴 [STABLE] {len(_fixed_opponents)} cross-run opponent(s): {_stable_labels} — "
                  "EVAL-ONLY (no --self-play, so they don't join the training mix)")
 
     # Curriculum (transition + floor) effective values: CLI override or the module defaults.
