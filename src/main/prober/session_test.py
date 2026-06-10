@@ -300,3 +300,253 @@ def test_cli_overview_emits_json(tmp_path):
         sys.argv = argv
     parsed = json.loads(buf.getvalue())
     assert parsed["meta"]["step"] == 2000000 and len(parsed["invocations"]) == 2
+
+
+# --- triage (loss attribution orchestration) -------------------------------
+
+def _loss_inv(turn, chosen, *, hp, hp_delta):
+    """One decision carrying our active HP + the resolved HP delta (so faint / v_at categorize).
+    No belief block in the test obs → active_pko is None, so only the model-free categories fire."""
+    return {"i": turn, "turn": turn, "phase": "move_selection", "chosen": chosen,
+            "our": {"species": "zapdos", "hp": f"{hp * 100:.0f}%"},
+            "opp": {"species": "jynx"},
+            "actions": {chosen: {"prob": "80.0%", "valid": True}},
+            "outcome": {"reward": {"total": -1.0},
+                        "our": {"hp_delta": f"{hp_delta * 100:+.0f}%"}, "events": []}}
+
+
+def _build_triage_run(tmp_path):
+    """Four losses spanning the model-free buckets across a bot + a non-bot opponent, plus an
+    eval_results.jsonl so only the bot opponents are rating-weighted."""
+    run = tmp_path / "run"
+    # heuristic (a bot): a critic_blindspot (V>0 then craters) + a greedy_setup
+    _write_battle(run, "heuristic", "loss_001",
+                  [_loss_inv(1, "thunderbolt", hp=0.8, hp_delta=-0.1)], [5.0, -10.0])
+    _write_battle(run, "heuristic", "loss_002",
+                  [_loss_inv(1, "dragondance", hp=0.9, hp_delta=-0.1)], [5.0, -10.0])
+    # aggressive (a bot): an attrition_death (mon died, no belief block → not surprise/ignored)
+    _write_battle(run, "aggressive", "loss_003",
+                  [_loss_inv(1, "earthquake", hp=0.5, hp_delta=-0.5)], [5.0, -10.0])
+    # sentinel_0 (NOT a bot — absent from eval_results): a positional_grind (V<0, no death)
+    _write_battle(run, "sentinel_0", "loss_004",
+                  [_loss_inv(1, "protect", hp=0.8, hp_delta=-0.1)], [-5.0, -12.0])
+    with open(run / "eval_results.jsonl", "w") as f:
+        f.write(json.dumps({"step": 2000000, "bots": {"heuristic": 0.8, "aggressive": 0.7}}) + "\n")
+    (run / "checkpoint_3200000_steps.zip").write_text("")
+    return str(run)
+
+
+def test_triage_categorizes_and_ranks_by_recoverable(tmp_path):
+    run = _build_triage_run(tmp_path)
+    out = ProbeSession(run).triage()
+    assert out["step"] == 2000000 and out["n_losses_analyzed"] == 4
+    assert out["n_bot_opponents"] == 2                          # heuristic + aggressive only
+    cats = {c["category"]: c for c in out["categories"]}
+    assert set(cats) == {"critic_blindspot", "greedy_setup", "attrition_death", "positional_grind"}
+    # attrition_death (1 of 1 aggressive losses, loss_rate 0.30) outranks the heuristic buckets
+    # (1 of 2 losses, loss_rate 0.20): 0.30·1·/2 = 15% vs 0.20·0.5/2 = 5%.
+    assert out["categories"][0]["category"] == "attrition_death"
+    assert abs(cats["attrition_death"]["est_recoverable_winrate_pct"] - 15.0) < 1e-6
+    assert abs(cats["critic_blindspot"]["est_recoverable_winrate_pct"] - 5.0) < 1e-6
+    # sentinel loss is counted in the share but NOT rating-weighted (no bot win-rate for it)
+    assert cats["positional_grind"]["est_recoverable_winrate_pct"] == 0.0
+    assert cats["positional_grind"]["by_opponent"] == {"sentinel_0": 1}
+
+
+def test_triage_opponent_filter_and_levers(tmp_path):
+    run = _build_triage_run(tmp_path)
+    out = ProbeSession(run).triage(opponent="heuristic")
+    cats = {c["category"] for c in out["categories"]}
+    assert cats == {"critic_blindspot", "greedy_setup"} and out["n_losses_analyzed"] == 2
+    # every category carries a concrete lever + examples (the actionable output)
+    for c in out["categories"]:
+        assert c["lever"] and c["examples"]
+
+
+def test_triage_no_eval_results_falls_back_to_volume(tmp_path):
+    run = _build_triage_run(tmp_path)
+    os.remove(os.path.join(run, "eval_results.jsonl"))           # no bot win-rates available
+    out = ProbeSession(run).triage()
+    assert out["n_bot_opponents"] == 0
+    assert all(c["est_recoverable_winrate_pct"] == 0.0 for c in out["categories"])
+    # ranked by raw loss volume; the fallback is announced in the metric + a caveat
+    counts = [c["n"] for c in out["categories"]]
+    assert counts == sorted(counts, reverse=True)
+    assert "raw loss volume" in out["ranking_metric"].lower() or "raw" in out["ranking_metric"].lower()
+    assert any("bot win-rates" in cav.lower() for cav in out["caveats"])
+
+
+def test_triage_empty_run_is_graceful(tmp_path):
+    run = tmp_path / "empty"
+    (run / "eval_traces").mkdir(parents=True)
+    out = ProbeSession(str(run)).triage()
+    assert out["n_losses_analyzed"] == 0 and out["categories"] == []
+
+
+def test_cli_triage_emits_json(tmp_path):
+    import sys
+    import main.prober.query as q
+    run = _build_triage_run(tmp_path)
+    argv = sys.argv
+    sys.argv = ["query", "triage", run]
+    try:
+        buf = io.StringIO()
+        with redirect_stdout(buf):
+            q.main()
+    finally:
+        sys.argv = argv
+    parsed = json.loads(buf.getvalue())
+    assert parsed["categories"][0]["category"] == "attrition_death"
+    assert parsed["n_bot_opponents"] == 2
+
+
+# --- representation probe (orchestration end-to-end, fake model) ------------
+
+# Real Gen3 base speeds (the is_faster label): zapdos 100, blissey 55 (gap 45 = easy),
+# tyranitar 61, swampert 60 (gap 1 = contested). Cycle 4 matchups so labels + both groups appear.
+_PROBE_MATCHUPS = [("zapdos", "blissey", 1), ("blissey", "zapdos", 0),
+                   ("tyranitar", "swampert", 1), ("swampert", "tyranitar", 0)]
+_PROBE_OBS_LEN = 64
+
+
+class _FakeFeatureModel:
+    """Returns vf features whose dim 0 IS the label signal baked into obs[0] — so a probe on vf
+    must recover the label (and a probe on noise must not). Mirrors ProbeModel.features' contract."""
+    def features(self, obs, mask):
+        v = np.asarray(obs, dtype=np.float64)[:16].copy()
+        return {"vf": v, "pi": v}
+
+
+def _fake_choice():
+    from main.prober.discovery import ModelChoice
+    return ModelChoice("ckpt.zip", "recent", "fake", None, 2000000)
+
+
+_FAKE_CHOICE = _fake_choice()
+
+
+def _build_probe_run(tmp_path, n_per_battle=18, n_battles=3):
+    run = tmp_path / "run"
+    rng = np.random.default_rng(0)
+    for bi in range(n_battles):
+        invs, obs = [], []
+        for k in range(n_per_battle):
+            ours, opp, label = _PROBE_MATCHUPS[(bi * n_per_battle + k) % len(_PROBE_MATCHUPS)]
+            invs.append({
+                "i": k, "turn": k + 1, "phase": "move_selection", "chosen": "tackle",
+                "our": {"species": ours, "hp": "80%"}, "opp": {"species": opp},
+                "actions": {"tackle": {"prob": "80.0%", "valid": True}},
+                "outcome": {"reward": {"total": -1.0}, "our": {"hp_delta": "-20%"}, "events": []}})
+            row = rng.standard_normal(_PROBE_OBS_LEN) * 0.3
+            row[0] = (3.0 if label == 1 else -3.0) + 0.2 * rng.standard_normal()   # label baked in
+            obs.append(row)
+        bd = run / "eval_traces" / "step_2000000" / f"opp{bi}"
+        os.makedirs(bd, exist_ok=True)
+        with open(bd / f"loss_{bi:03d}_summary.json", "w") as f:
+            json.dump({"meta": {"step": 2000000, "result": "LOSS", "turns": n_per_battle,
+                                "invocations": n_per_battle},
+                       "teams": {"ours": [], "opponent": []}, "invocations": invs}, f)
+        np.savez(bd / f"loss_{bi:03d}_states.npz",
+                 obs=np.array(obs, dtype=np.float32),
+                 logits=np.zeros((n_per_battle, 11), dtype=np.float32),
+                 values=np.zeros(n_per_battle, dtype=np.float32),
+                 has_state=np.ones(n_per_battle, dtype=np.int8))
+        if not os.path.exists(bd.parent / "eval_manifest.json"):
+            with open(bd.parent / "eval_manifest.json", "w") as f:
+                json.dump({"step": 2000000, "git_hash": "abc", "arch_signature": "x",
+                           "snapshot": None}, f)
+    with open(run / "metadata.json", "w") as f:
+        json.dump({"gamma": 0.99}, f)
+    (run / "checkpoint_2000000_steps.zip").write_text("")   # for path resolution; loader is faked
+    return str(run)
+
+
+def test_probe_recovers_label_from_representation(tmp_path):
+    run = _build_probe_run(tmp_path)
+    sess = ProbeSession(run, model_loader=lambda p: _FakeFeatureModel())
+    out = sess.probe("is_faster", max_decisions=200)
+    assert out["target"] == "is_faster" and out["task"] == "classification"
+    assert out["n_decisions"] >= 40
+    rep = out["representation_probe"]["overall"]
+    assert rep["accuracy"] > 0.9 and rep["auc"] > 0.95     # the baked-in signal is recovered
+    # both groups appear (easy = zapdos/blissey, contested = ttar/swampert)
+    assert set(out["representation_probe"]["by_group"]) == {"easy", "contested"}
+    # synthetic 64-dim obs → the live-offset belief decode finds nothing → no provided baseline
+    assert out["provided_feature_baseline"] is None
+
+
+def test_probe_noise_features_do_not_recover(tmp_path):
+    run = _build_probe_run(tmp_path)
+
+    class _NoiseModel:
+        def features(self, obs, mask):
+            r = np.random.default_rng(int(abs(obs[1] * 1e6)) % (2**32)).standard_normal(16)
+            return {"vf": r, "pi": r}                       # features independent of the label
+
+    out = ProbeSession(run, model_loader=lambda p: _NoiseModel()).probe("is_faster", max_decisions=200)
+    assert abs(out["representation_probe"]["overall"]["lift"]) < 0.15   # no signal → ~baseline
+
+
+def test_probe_unknown_target_and_too_few(tmp_path):
+    run = _build_probe_run(tmp_path, n_per_battle=4, n_battles=1)
+    sess = ProbeSession(run, model_loader=lambda p: _FakeFeatureModel())
+    with pytest.raises(ValueError):
+        sess.probe("not_a_target")
+    out = sess.probe("is_faster")                            # only 4 decisions → graceful error
+    assert "error" in out and out["n_decisions"] < 30
+
+
+class _FakeGradModel:
+    """Fake exposing the grad/dist surface history_saliency needs. Policy grad concentrates on the
+    first two history slots; value grad is flat across history — so the per-slot breakdown is checkable."""
+    offsets = ObsOffsets(mm_off=0, om_off=0, tm_off=0, active_block_dim=5,
+                         turn_history_offset=40, turn_history_dim=20, turn_delta_dim=4)  # 5 slots × 4
+
+    def action_dist(self, obs, mask):
+        n = len(mask)
+        return np.ones(n) / n, np.zeros(n)
+
+    def logit_grad(self, obs, mask, idx):
+        g = np.zeros(_PROBE_OBS_LEN)
+        g[40:44] = 1.0          # history slot 0 high
+        g[44:48] = 0.5          # slot 1 medium; slots 2-4 zero
+        return g
+
+    def value_grad(self, obs, mask):
+        g = np.zeros(_PROBE_OBS_LEN)
+        g[40:60] = 0.2          # flat across all 5 history slots
+        return g
+
+
+def test_history_saliency_per_slot_breakdown(tmp_path):
+    run = _build_probe_run(tmp_path)
+    out = ProbeSession(run, model_loader=lambda p: _FakeGradModel()).history_saliency(max_decisions=50)
+    assert out["n_history_turns"] == 5 and out["n_decisions"] >= 40
+    sl = out["slots"]
+    # policy: slot0 > slot1 > slots2-4 (which are exactly 0)
+    assert sl[0]["policy_saliency_norm"] > sl[1]["policy_saliency_norm"] > 0
+    assert sl[2]["policy_saliency_norm"] == 0.0 and sl[4]["policy_saliency_norm"] == 0.0
+    # value: flat across slots
+    assert sl[0]["value_saliency_norm"] == sl[4]["value_saliency_norm"] > 0
+
+
+def test_cli_probe_emits_json(tmp_path):
+    import sys
+    import main.prober.query as q
+    import main.prober.session as sess_mod
+    run = _build_probe_run(tmp_path)
+    # Patch ProbeModel.load (the CLI builds its own session) to the fake feature model.
+    orig = sess_mod.ProbeSession._model_for
+    sess_mod.ProbeSession._model_for = lambda self, b: (_FakeFeatureModel(), _FAKE_CHOICE)
+    argv = sys.argv
+    sys.argv = ["query", "probe", run, "is_faster", "--max-decisions", "200"]
+    try:
+        buf = io.StringIO()
+        with redirect_stdout(buf):
+            q.main()
+    finally:
+        sys.argv = argv
+        sess_mod.ProbeSession._model_for = orig
+    parsed = json.loads(buf.getvalue())
+    assert parsed["target"] == "is_faster"
+    assert parsed["representation_probe"]["overall"]["accuracy"] > 0.9

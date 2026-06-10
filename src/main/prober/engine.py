@@ -374,6 +374,20 @@ def _saliency_from_grad(g: np.ndarray, off) -> Saliency:
     return Saliency(overall_mean_abs=float(g.mean()), blocks=tuple(blocks))
 
 
+def history_slot_saliency(g: np.ndarray, off) -> "list[float]":
+    """Per-turn-slot mean|grad| within the turn-history block — splits the one 'turn-history block'
+    saliency into its N_HISTORY_TURNS TurnDelta slots, so we can see whether the OLDER turns carry
+    little signal (a candidate to shorten N_HISTORY_TURNS and reclaim obs/attention compute). ``g``
+    is an already-abs per-dim gradient (policy-logit or value). Slot i is the i-th TurnDelta in obs
+    order; the transformer's positional embedding learns recency, so the caller labels recent/old."""
+    td = getattr(off, "turn_delta_dim", 0) or 0
+    if off.turn_history_dim <= 0 or td <= 0:
+        return []
+    base = off.turn_history_offset
+    n = off.turn_history_dim // td
+    return [float(g[base + i * td: base + (i + 1) * td].mean()) for i in range(n)]
+
+
 def _saliency(model, obs: np.ndarray, mask: np.ndarray, chosen_idx: int, off) -> Saliency:
     """Policy saliency: |d logit(chosen) / d obs| aggregated per block (what the ACTOR reads)."""
     return _saliency_from_grad(model.logit_grad(obs, mask, chosen_idx), off)
@@ -552,3 +566,271 @@ def analyze_invocation(model, summary: dict, npz, inv_index: int,
         warnings=(), outcome=outcome, value=value,
         rerun_argmax=rerun_argmax, agrees=agrees, flags=flags, board=board, field=field,
     )
+
+
+# ---------------------------------------------------------------------------
+# Loss attribution — categorize the DECISIVE turning point of a loss into a
+# fixed taxonomy, so a whole run's losses can be RANKED by which lever (obs /
+# reward / self-play / critic / upstream) would recover the most rating.
+# ---------------------------------------------------------------------------
+# The taxonomy is the single place to extend: add one `_Cat` entry (a name, the
+# LEVER it implicates, a one-line blurb, and a predicate over the feature dict).
+# `attribute_turning_point` assigns the FIRST matching category (ordered
+# most-diagnostic-first), so the buckets are non-overlapping by construction.
+#
+# A feature dict (built model-free by ProbeSession._turning_point_features from
+# the saved summary + npz at the worst-ΔV decision) carries:
+#   turns:int|None  is_switch:bool  is_setup:bool  our_hp:float|None
+#   our_hp_delta:float|None  faint:bool  active_pko:float|None
+#   active_outspeed:float|None  max_pko:float|None  n_healthy_bench:int
+#   min_other_pko:float|None  delta_v:float|None  td:float|None  v_at:float|None
+# Every field is optional-tolerant: a predicate must treat None as "unknown"
+# (never assume), so a trace missing the belief block still categorizes (it
+# just falls through to a coarser bucket) rather than crashing.
+
+STALL_NEAR_CAP = 220          # a loss at/near the 250-turn forfeit cap = a no-progress timeout, not combat
+BELIEF_FIRED_PKO = 0.6        # active_pko at/above this = the OHKO belief WARNED of the threat
+BELIEF_UNDERREAD_PKO = 0.3    # active_pko below this on a healthy-mon death = the belief MISSED it
+HEALTHY_HP = 0.6              # our active counts as "healthy" (a real mon thrown away) above this HP
+FAINTED_HP = 0.02            # our active's PRE-decision HP at/below this = already fainted (forced replacement)
+CRITIC_CONFIDENT_V = 0.0     # V(s)>this at a value-cliff = the critic rated the position WINNING (sign-based, scale-invariant)
+
+# Common gen3 boosting/setup moves — used at the decisive turn = "set up into a threat" (greedy).
+SETUP_MOVES = frozenset({
+    "dragondance", "swordsdance", "calmmind", "nastyplot", "bulkup", "curse", "agility",
+    "irondefense", "amnesia", "growth", "meditate", "sharpen", "acidarmor", "barrier",
+    "cosmicpower", "bellydrum", "tailglow", "rockpolish", "shellsmash", "workup",
+})
+
+
+@dataclass(frozen=True)
+class _Cat:
+    name: str
+    lever: str          # which system axis a fix would touch (the prioritization output)
+    blurb: str
+    test: "callable"    # (feat) -> bool
+
+
+def _f(feat, k):
+    """feat[k] or None — tolerant of missing keys."""
+    return feat.get(k)
+
+
+# Ordered most-specific / most-diagnostic first. First match wins. The death buckets
+# (surprise / ignored / doomed / attrition) are split to separate the LEVERS: a death the
+# belief UNDER-read is an OBS gap; a death the belief FIRED on (we had a pivot, didn't take it)
+# is a POLICY/REWARD gap; a death with no pivot left is UPSTREAM; the rest is attrition.
+LOSS_TAXONOMY = (
+    _Cat("stall_timeout", "self-play / stall reward (Φ-price heal moves in the mirror)",
+         "lost at/near the 250-turn cap — a no-progress timeout, not a combat loss",
+         lambda f: (_f(f, "turns") or 0) >= STALL_NEAR_CAP),
+
+    _Cat("post_faint_replacement",
+         "MEASUREMENT/UPSTREAM (worst-ΔV is a forced post-faint pick — the causal turn is earlier; re-scan turn N-1)",
+         "our active had ALREADY fainted — this is a forced replacement, not the decision that lost the mon",
+         lambda f: _f(f, "our_hp") is not None and f["our_hp"] <= FAINTED_HP),
+
+    _Cat("surprise_ohko", "obs (surprise-OHKO coverage — price unrevealed/just-switched threats)",
+         "a HEALTHY mon DIED but the incoming belief UNDER-READ it (unseen / just-switched attacker)",
+         lambda f: _f(f, "faint")
+                   and (_f(f, "our_hp") is None or f["our_hp"] >= HEALTHY_HP)
+                   and _f(f, "active_pko") is not None and f["active_pko"] < BELIEF_UNDERREAD_PKO),
+
+    _Cat("ignored_threat_death",
+         "reward/policy (belief FIRED but the policy didn't switch out — the under-switch / doomed_stay target)",
+         "the incoming belief FIRED (high P(KO)) and we had a healthy pivot, yet our mon DIED (stayed or pivoted into it)",
+         lambda f: _f(f, "faint")
+                   and _f(f, "active_pko") is not None and f["active_pko"] >= BELIEF_FIRED_PKO
+                   and (_f(f, "n_healthy_bench") or 0) >= 1),
+
+    _Cat("doomed_already", "UPSTREAM (the loss was decided earlier — sequencing/material, look back)",
+         "the belief fired high but NO healthy mon left to switch to — the position was already lost",
+         lambda f: _f(f, "faint")
+                   and _f(f, "active_pko") is not None and f["active_pko"] >= BELIEF_FIRED_PKO
+                   and (_f(f, "n_healthy_bench") or 0) == 0),
+
+    _Cat("greedy_setup", "reward/critic (anti-greedy: setup-into-threat + critic tail-blindness)",
+         "the decisive move was a SETUP/boost move that got punished",
+         lambda f: bool(_f(f, "is_setup"))),
+
+    _Cat("attrition_death", "obs/critic (chip / partial-belief death — a worn-down mon died, belief only partly fired)",
+         "our mon DIED with the belief only PARTLY fired (mid P(KO)) or already chipped below healthy — attrition, not a clean surprise",
+         lambda f: bool(_f(f, "faint"))),
+
+    _Cat("critic_blindspot", "critic capacity / obs (the critic rated the position WINNING then it craters — confident-wrong: more value capacity / a missing obs feature)",
+         "no death this turn, but the critic had V(s)>0 (thought we were WINNING) right before the value cratered — a confident-wrong critic miss",
+         lambda f: not _f(f, "faint") and _f(f, "v_at") is not None and f["v_at"] > CRITIC_CONFIDENT_V),
+
+    _Cat("positional_grind", "UPSTREAM / material (the critic already knew it was losing — a slow positional / material loss, not a critic miss)",
+         "no death this turn and the critic ALREADY had V(s)≤0 (it knew it was losing) — a gradual positional / material grind",
+         lambda f: not _f(f, "faint")),
+
+    _Cat("other", "unattributed (drill in with analyze)", "did not match a known failure pattern",
+         lambda f: True),
+)
+
+
+def attribute_turning_point(feat: dict) -> dict:
+    """Assign one loss's decisive turning point to the FIRST matching taxonomy bucket.
+
+    Returns ``{category, lever, blurb}``. Pure + total (the final ``other`` rule matches
+    anything), so it never raises on a partial feature dict."""
+    for cat in LOSS_TAXONOMY:
+        try:
+            if cat.test(feat):
+                return {"category": cat.name, "lever": cat.lever, "blurb": cat.blurb}
+        except Exception:  # noqa: BLE001 — a predicate must never crash the scan; treat as no-match
+            continue
+    return {"category": "other", "lever": LOSS_TAXONOMY[-1].lever, "blurb": LOSS_TAXONOMY[-1].blurb}
+
+
+# ---------------------------------------------------------------------------
+# Representation probing — fit a small LINEAR probe on the model's INTERNAL
+# activations to predict a derived game quantity (is-faster, damage-taken,
+# faint-soon). The decisive test of "is X already in the representation": if a
+# linear probe recovers X from the trunk embedding, the model HAS computed it
+# (so handing X over as a feature is redundant); if a linear probe CAN'T, X is
+# an EXTRACTION gap — a real obs lever (per the provide-vs-learn rule, "let it
+# learn" has hit this small net's capacity wall for X, so provide it).
+#
+# Pure numpy (no sklearn). Standardized ridge (regression) / logistic
+# (classification) with k-fold OUT-OF-FOLD predictions, scored overall AND per
+# group — so we see whether the representation knows X on the HARD/contested
+# cases, not just on average (a model can encode speed on an obvious matchup yet
+# fail the Leftovers/Sandstorm-timing inference exactly where it's decision-relevant).
+# ---------------------------------------------------------------------------
+
+def _kfold_indices(n: int, k: int, seed: int) -> "list[np.ndarray]":
+    """k interleaved test folds over a seeded permutation (deterministic)."""
+    perm = np.random.default_rng(seed).permutation(n)
+    return [perm[i::k] for i in range(min(k, n))]
+
+
+def _standardize(train: np.ndarray, test: np.ndarray) -> "tuple[np.ndarray, np.ndarray]":
+    mu = train.mean(0)
+    sd = train.std(0)
+    sd = np.where(sd < 1e-8, 1.0, sd)
+    return (train - mu) / sd, (test - mu) / sd
+
+
+def _ridge_fit(X: np.ndarray, y: np.ndarray, l2: float) -> np.ndarray:
+    d = X.shape[1]
+    return np.linalg.solve(X.T @ X + l2 * np.eye(d), X.T @ y)
+
+
+def _sigmoid(z: np.ndarray) -> np.ndarray:
+    return 1.0 / (1.0 + np.exp(-np.clip(z, -30.0, 30.0)))
+
+
+def _logistic_fit(X: np.ndarray, y: np.ndarray, l2: float,
+                  iters: int = 400, lr: float = 0.5) -> "tuple[np.ndarray, float]":
+    """L2-regularized logistic regression by full-batch gradient descent on
+    standardized inputs (robust + dependency-free; converges in a few hundred steps)."""
+    n, d = X.shape
+    w = np.zeros(d)
+    b = 0.0
+    with np.errstate(over="ignore", invalid="ignore"):
+        for _ in range(iters):
+            p = _sigmoid(X @ w + b)
+            g = p - y
+            w_new = w - lr * (X.T @ g / n + l2 * w / n)
+            b -= lr * g.mean()
+            if not np.isfinite(w_new).all():    # a weak-l2 grid point diverged — keep the last finite w
+                break
+            w = w_new
+    return w, b
+
+
+def _auc(y: np.ndarray, p: np.ndarray) -> float:
+    """Rank-based ROC AUC (Mann–Whitney); nan if a class is absent."""
+    pos, neg = p[y == 1], p[y == 0]
+    if len(pos) == 0 or len(neg) == 0:
+        return float("nan")
+    allp = np.concatenate([pos, neg])
+    ranks = allp.argsort().argsort().astype(float) + 1.0  # average-ish ranks (ties rare on floats)
+    r_pos = ranks[:len(pos)].sum()
+    return float((r_pos - len(pos) * (len(pos) + 1) / 2) / (len(pos) * len(neg)))
+
+
+_L2_GRID = (0.1, 1.0, 10.0, 100.0, 1000.0)
+
+
+def _oof_predict(X, y, task, l2, folds, seed) -> np.ndarray:
+    """Out-of-fold predictions for one l2 (every row scored by a model that didn't see it)."""
+    n = len(y)
+    oof = np.full(n, np.nan)
+    for te in _kfold_indices(n, folds, seed):
+        tr = np.setdiff1d(np.arange(n), te)
+        if len(tr) < 2:
+            continue
+        Xtr, Xte = _standardize(X[tr], X[te])
+        if task == "classification":
+            w, b = _logistic_fit(Xtr, y[tr], l2)
+            oof[te] = _sigmoid(Xte @ w + b)
+        else:
+            yc = y[tr].mean()
+            oof[te] = Xte @ _ridge_fit(Xtr, y[tr] - yc, l2) + yc
+    return oof
+
+
+def _selection_score(y, oof, task) -> float:
+    """The scalar used to pick l2: AUC (classification) / R² (regression), over the usable rows."""
+    ok = ~np.isnan(oof)
+    yy, pp = y[ok], oof[ok]
+    if len(yy) < 5:
+        return -np.inf
+    if task == "classification":
+        a = _auc(yy, pp)
+        return a if not np.isnan(a) else -np.inf
+    ss_tot = float(((yy - yy.mean()) ** 2).sum())
+    return 1.0 - float(((yy - pp) ** 2).sum()) / ss_tot if ss_tot > 0 else -np.inf
+
+
+def fit_probe(X, y, task: str, groups=None, seed: int = 0, folds: int = 5, l2=None) -> dict:
+    """Fit a cross-validated linear probe and score its OUT-OF-FOLD predictions.
+
+    ``task='classification'`` → logistic, reports accuracy / AUC / base_rate / lift (accuracy −
+    majority-class). ``task='regression'`` → ridge, reports r2 / rmse. ``groups`` (per-sample
+    labels) adds a per-group breakdown — the easy-vs-contested contrast is the real signal.
+
+    ``l2=None`` (default) **auto-tunes** the ridge/logistic penalty over a grid by the OOF
+    selection score — essential because the activation probe is high-dim (≈512) and a fixed weak
+    penalty overfits when d≈n (negative OOF R²). Both the representation probe and the 1-D provided
+    baseline get the SAME grid, so the comparison stays fair. Pure; no torch, no sklearn. ``overall``
+    is None when n is too small."""
+    X = np.asarray(X, dtype=float)
+    y = np.asarray(y, dtype=float)
+    n = len(y)
+    grid = (float(l2),) if l2 is not None else _L2_GRID
+    chosen_l2, oof = grid[0], np.full(n, np.nan)
+    if n >= folds:
+        best = -np.inf
+        for cand in grid:
+            cand_oof = _oof_predict(X, y, task, cand, folds, seed)
+            score = _selection_score(y, cand_oof, task)
+            if score > best:
+                best, chosen_l2, oof = score, cand, cand_oof
+
+    def _metrics(mask) -> "dict | None":
+        yy, pp = y[mask], oof[mask]
+        ok = ~np.isnan(pp)
+        yy, pp = yy[ok], pp[ok]
+        if len(yy) < 5:
+            return None
+        if task == "classification":
+            base = float(max(yy.mean(), 1.0 - yy.mean()))
+            acc = float(((pp >= 0.5).astype(float) == yy).mean())
+            return {"n": int(len(yy)), "accuracy": round(acc, 4), "auc": round(_auc(yy, pp), 4),
+                    "base_rate": round(base, 4), "lift": round(acc - base, 4),
+                    "pos_rate": round(float(yy.mean()), 4)}
+        ss_res = float(((yy - pp) ** 2).sum())
+        ss_tot = float(((yy - yy.mean()) ** 2).sum())
+        return {"n": int(len(yy)), "r2": round(1.0 - ss_res / ss_tot, 4) if ss_tot > 0 else None,
+                "rmse": round(float(np.sqrt(ss_res / len(yy))), 4),
+                "target_std": round(float(yy.std()), 4)}
+
+    out = {"task": task, "n": n, "l2": chosen_l2, "overall": _metrics(np.ones(n, dtype=bool))}
+    if groups is not None:
+        g = np.asarray(groups)
+        out["by_group"] = {str(k): _metrics(g == k) for k in sorted({str(v) for v in g.tolist()})}
+    return out

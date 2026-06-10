@@ -35,6 +35,7 @@ class ObsOffsets:
     active_block_dim: int  # our active-pokemon block span [0:active_block_dim)
     turn_history_offset: int
     turn_history_dim: int  # n_history_turns * turn_delta_dim
+    turn_delta_dim: int = 0  # one TurnDelta slot's width — slices turn_history into per-turn saliency
     # incoming-damage / OHKO belief block (incoming_damage_v1): per-our-slot P(KO)/expected-chip/
     # P(outspeed) + opp recovery scalars — the calibrated DAMAGE belief (vs ThreatView's raw
     # type-effectiveness). Defaults keep the synthetic-test ObsOffsets construction valid; a real
@@ -61,6 +62,7 @@ class ObsOffsets:
             active_block_dim=99,  # the launcher CLI's "our active pokemon block(99)"
             turn_history_offset=lay["turn_history_offset"],
             turn_history_dim=lay["n_history_turns"] * lay["turn_delta_dim"],
+            turn_delta_dim=lay["turn_delta_dim"],
             incoming_off=C.OFFSET_REACTIVE + inc.get("offset", 0) if inc else 0,
             incoming_dim=inc.get("dim", 0),
             incoming_per_mon=inc.get("per_mon", 5),
@@ -153,6 +155,22 @@ class ProbeModel:
         d = self._policy.get_distribution({"observation": ot, "action_mask": mt})
         d.distribution.logits[0, action_idx].backward()
         return ot.grad[0].abs().numpy()
+
+    def features(self, obs: np.ndarray, mask: np.ndarray) -> "dict[str, np.ndarray]":
+        """The model's INTERNAL post-projection features — what the policy/value MLPs read.
+
+        Returns ``{'pi': [PROJECTION_DIM], 'vf': [PROJECTION_DIM]}``. This is the probe boundary:
+        a linear probe on these activations tells us whether a derived quantity (is-faster,
+        damage, faint-soon) is ALREADY in the representation. The feature extractor reads only
+        ``obs['observation']`` (never ``action_mask``), so the mask is inert here — but we pass
+        the real one for parity with the distribution/value paths."""
+        import torch
+
+        ot = torch.as_tensor(obs).unsqueeze(0)
+        mt = torch.as_tensor(mask).unsqueeze(0)
+        with torch.no_grad():
+            pi, vf = self._policy.extract_features({"observation": ot, "action_mask": mt})
+        return {"pi": pi[0].detach().numpy(), "vf": vf[0].detach().numpy()}
 
     def value_grad(self, obs: np.ndarray, mask: np.ndarray) -> np.ndarray:
         """Return |d V(s) / d obs| as a per-dim array — the CRITIC's input sensitivity.

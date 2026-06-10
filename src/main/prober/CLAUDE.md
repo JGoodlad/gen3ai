@@ -108,6 +108,48 @@ loading uses the same exact→nearest→recent ladder (cached per process). A
 `battle_id` is the trace's `*_summary.json` path **or** a short
 `step_<N>/<Opponent>/<outcome>_<idx>` id.
 
+- `triage(step=, opponent=)` — **rank the failure LEVERS across a whole run**
+  (model-free; the natural first call when the question is "what do we fix next").
+  Categorizes every loss's single worst-ΔV turning point into a fixed taxonomy
+  (`engine.LOSS_TAXONOMY` — the one place to extend), then ranks the categories by
+  `est_recoverable_winrate_pct` = mean over the fixed-**bot** opponents of
+  `loss_rate(opp) × category_share(opp)` (an upper bound: assumes fixing the lever
+  flips that loss). Each category carries the **lever** it implicates (obs / reward /
+  policy / critic-capacity / upstream / measurement), a blurb, `by_opponent`, and
+  worst-turn `examples`. The taxonomy splits the deaths by the signal that names the
+  lever: belief **under-read** a healthy death = OBS (`surprise_ohko`); belief
+  **fired** + a pivot existed but the mon died = REWARD/POLICY (`ignored_threat_death`,
+  the under-switch target); no pivot left = UPSTREAM (`doomed_already`); already
+  fainted = a forced replacement, look one turn back (`post_faint_replacement`). The
+  no-death value craters split on the critic's **pre-cliff value sign** (scale-invariant):
+  V(s)>0 = the critic thought it was WINNING then craters = `critic_blindspot` (CRITIC
+  CAPACITY / a missing obs feature — the "more value capacity / transformer layers"
+  lever); V(s)≤0 = it already knew = `positional_grind` (upstream/material). Reads the
+  true per-opponent win-rates from `eval_results.jsonl` (falls back to ranking by raw
+  loss volume, announced in the metric + a caveat, when absent). Carries explicit
+  `caveats` (loss-weighted sampling; one-cause-per-loss; bot-only rating weight).
+- `probe(target, step=, opponent=, which=, max_decisions=)` — **representation
+  probe**: fit a cross-validated LINEAR probe on the model's INTERNAL activations
+  (`which='vf'` value-head / `'pi'` policy-head post-projection features, via
+  `ProbeModel.features`) to recover a derived quantity, and compare it to a
+  baseline probe on the raw obs/belief feature we ALREADY provide. The decisive
+  "is this info already in the representation, or should we hand it over" test: a
+  linear probe recovering X ⇒ the model computed X (a new feature is redundant); a
+  probe that can't ⇒ an extraction gap (a real obs lever — "let it learn" hit this
+  small net's capacity wall for X). Targets (`engine`-free label/group logic in
+  `session._PROBE_TARGETS`): **`is_faster`** (true base-speed order vs the provided
+  `active_outspeed`; contested = close speeds where Leftovers/Sandstorm-timing
+  inference matters), **`damage_taken`** (HP fraction lost this turn vs `active_exp`;
+  contested = the `active_pko` 0.1–0.9 coinflip band where a p50/p90 spread would
+  help), **`faint_soon`** (imminent faint vs `active_pko`; grouped by whether the
+  belief flagged it). Every result splits **overall vs by-group** (the easy-vs-hard
+  contrast is the signal) and reports the representation probe AND the provided-feature
+  baseline. The probe stats (`engine.fit_probe`) are pure numpy — standardized
+  ridge/logistic, k-fold OUT-OF-FOLD predictions, **auto-tuned l2** over a grid
+  (essential at d≈512: a fixed weak penalty overfits to a negative OOF R²). One
+  checkpoint load per call (step → one model). Measured @70M: `is_faster` rep
+  AUC 0.94 on contested vs the provided feature's 0.75 (the model already infers
+  speed — not a feature gap).
 - `run_summary()` — **orient** (model-free): steps, per-step model identity
   (git/arch/snapshot-available), opponents with win/loss tallies, persisted
   checkpoints, and γ. The natural first call.
@@ -161,6 +203,8 @@ loading uses the same exact→nearest→recent ladder (cached per process). A
 CLI mirror — prints JSON to stdout (and `{"error": …}` + exit 1 on failure, so an
 agent always gets parseable output). `--help` carries a worked example sequence:
 ```bash
+python -m main.prober.query triage   <run_dir> [--step N] [--opponent X]
+python -m main.prober.query probe    <run_dir> <is_faster|damage_taken|faint_soon> [--which vf|pi] [--step N] [--max-decisions K]
 python -m main.prober.query summary  <run_dir>
 python -m main.prober.query list     <run_dir> --outcome loss --step 8000000
 python -m main.prober.query scan     <run_dir> --outcome loss --opponent X [--metric td_residual] [--limit K]
@@ -168,12 +212,13 @@ python -m main.prober.query overview <battle_id>
 python -m main.prober.query find     <battle_id> value_drop --limit 5
 python -m main.prober.query analyze  <battle_id> <inv> [--ckpt PATH] [--tier auto|nearest|recent]
 ```
-**Investigation recipe:** `summary` → `scan --outcome loss [--opponent X]` (the worst
-turn in *every* matching battle, ranked — model-free, fast) → `overview` the top
-battles (read `notable.biggest_value_drops` / `faints`) → `find disagree` /
-`find value_drop` → `analyze` the worst turn. γ is read from the run's
-`metadata.json`. (`scan` is the cross-battle generalization of a single battle's
-`notable.biggest_value_drops` — reach for it first when sweeping a whole opponent.)
+**Investigation recipe:** `triage` (which LEVER recovers the most rating — start here
+for "what next") → `summary` → `scan --outcome loss [--opponent X]` (the worst turn in
+*every* matching battle, ranked — model-free, fast) → `overview` the top battles (read
+`notable.biggest_value_drops` / `faints`) → `find disagree` / `find value_drop` →
+`analyze` the worst turn. γ is read from the run's `metadata.json`. (`triage` aggregates
+`scan`'s per-battle worst turns into ranked failure CATEGORIES; `scan` is the
+cross-battle generalization of a single battle's `notable.biggest_value_drops`.)
 `ProbeSession(..., model_loader=fn)` injects a fake model in tests (no torch).
 
 ## Obs-offset dependence (regression-guarded)
@@ -243,9 +288,14 @@ different retention, or a one-off deep clean.
 
 ## Tests
 
-`engine_test.py` (pure, FakeProbeModel + offset regression), `discovery_test.py`
-(tmp_path trees, checkpoint precedence), `app_test.py` (Textual `run_test` Pilot
-with an injected fake model — never loads a real checkpoint, so it stays fast):
+`engine_test.py` (pure, FakeProbeModel + offset regression, + the loss-attribution
+taxonomy and the `fit_probe` stats as pure cases — decodable-vs-noise,
+regression, too-few-graceful), `session_test.py` (tmp_path traces for the agent
+API incl. `triage` orchestration / recoverable-ranking / no-eval-results fallback,
+and `probe` end-to-end with a fake feature-model — label recovery, noise→baseline,
+unknown-target, CLI), `discovery_test.py` (tmp_path trees, checkpoint precedence), `app_test.py`
+(Textual `run_test` Pilot with an injected fake model — never loads a real checkpoint,
+so it stays fast):
 
 ```bash
 export PYTHONPATH=$PYTHONPATH:src && python3 -m pytest src/main/prober -q

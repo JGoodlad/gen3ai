@@ -352,3 +352,122 @@ def test_incoming_belief_none_when_block_absent():
     assert a.incoming is None
     assert not any(b.name.startswith("incoming_damage") for b in a.saliency.blocks)
 
+
+# --- loss attribution taxonomy (pure, model-free) --------------------------
+
+def _cat(**feat):
+    """attribute_turning_point over a feature dict with sensible neutral defaults — so a test
+    sets ONLY the discriminating fields and trusts the rest not to trip an earlier rule."""
+    from main.prober.engine import attribute_turning_point
+    base = {"turns": 50, "is_switch": False, "is_setup": False, "our_hp": 0.8,
+            "our_hp_delta": 0.0, "faint": False, "active_pko": 0.1, "active_outspeed": 1.0,
+            "max_pko": 0.1, "n_healthy_bench": 3, "min_other_pko": 0.0, "delta_v": -10.0,
+            "td": -10.0, "v_at": 5.0}
+    base.update(feat)
+    return attribute_turning_point(base)["category"]
+
+
+def test_taxonomy_stall_timeout_wins_first():
+    assert _cat(turns=240, faint=True, active_pko=1.0) == "stall_timeout"
+
+
+def test_taxonomy_post_faint_replacement_before_combat():
+    # our active already fainted (hp≈0) → a forced replacement, not the combat decision that lost it.
+    assert _cat(our_hp=0.0, faint=True, is_switch=True, active_pko=0.0) == "post_faint_replacement"
+
+
+def test_taxonomy_surprise_ohko_is_obs_underread():
+    # healthy mon DIED, belief UNDER-read it → obs lever.
+    assert _cat(faint=True, our_hp=0.9, active_pko=0.1) == "surprise_ohko"
+
+
+def test_taxonomy_ignored_threat_death_belief_fired_with_pivot():
+    # belief FIRED, healthy pivot available, mon died anyway → reward/policy lever.
+    # Outspeed is irrelevant now (the old gate wrongly excluded outspeed deaths).
+    assert _cat(faint=True, our_hp=0.4, active_pko=0.95, active_outspeed=1.0,
+                n_healthy_bench=2) == "ignored_threat_death"
+
+
+def test_taxonomy_doomed_already_no_pivot_left():
+    assert _cat(faint=True, active_pko=0.95, n_healthy_bench=0) == "doomed_already"
+
+
+def test_taxonomy_greedy_setup_before_attrition():
+    # a setup move punished — but only when it's not a clearer death pattern (no pivot/belief fired).
+    assert _cat(is_setup=True, faint=False, active_pko=0.2) == "greedy_setup"
+
+
+def test_taxonomy_attrition_death_partial_belief():
+    # a worn-down mon died with the belief only partly fired (mid pko) → attrition.
+    assert _cat(faint=True, our_hp=0.45, active_pko=0.4, n_healthy_bench=2) == "attrition_death"
+
+
+def test_taxonomy_critic_blindspot_vs_positional_grind_split_on_v():
+    # No death; the split is purely the critic's pre-cliff value sign (scale-invariant).
+    assert _cat(faint=False, v_at=8.0) == "critic_blindspot"      # thought it was WINNING
+    assert _cat(faint=False, v_at=-8.0) == "positional_grind"     # already knew it was losing
+    assert _cat(faint=False, v_at=None) == "positional_grind"     # unknown V → not a blindspot claim
+
+
+def test_taxonomy_total_on_empty_dict():
+    # Every predicate is None-tolerant: a feature dict missing everything still categorizes.
+    from main.prober.engine import attribute_turning_point
+    out = attribute_turning_point({})
+    assert out["category"] in {"positional_grind", "other"} and out["lever"]
+
+
+# --- representation probe (pure stats) -------------------------------------
+
+def test_fit_probe_recovers_decodable_classification():
+    from main.prober.engine import fit_probe
+    rng = np.random.default_rng(0)
+    X = rng.standard_normal((400, 16))
+    w = rng.standard_normal(16)
+    y = (X @ w > np.median(X @ w)).astype(float)
+    r = fit_probe(X, y, "classification", groups=np.where(X[:, 0] > 0, "easy", "hard"), seed=0)
+    assert r["overall"]["accuracy"] > 0.85 and r["overall"]["auc"] > 0.9
+    assert r["overall"]["lift"] > 0.3                      # well above the majority baseline
+    assert set(r["by_group"]) == {"easy", "hard"} and all(r["by_group"].values())
+
+
+def test_fit_probe_noise_label_collapses_to_baseline():
+    from main.prober.engine import fit_probe
+    rng = np.random.default_rng(1)
+    X = rng.standard_normal((400, 16))
+    y = (rng.standard_normal(400) > 0).astype(float)     # label independent of X
+    r = fit_probe(X, y, "classification", seed=0)
+    assert abs(r["overall"]["lift"]) < 0.08               # no real signal → ~majority baseline
+    assert 0.4 < r["overall"]["auc"] < 0.6                # AUC ~0.5
+
+
+def test_fit_probe_regression_decodable_vs_noise():
+    from main.prober.engine import fit_probe
+    rng = np.random.default_rng(2)
+    X = rng.standard_normal((400, 12))
+    w = rng.standard_normal(12)
+    good = fit_probe(X, X @ w + 0.1 * rng.standard_normal(400), "regression", seed=0)
+    noise = fit_probe(X, rng.standard_normal(400), "regression", seed=0)
+    assert good["overall"]["r2"] > 0.9
+    assert noise["overall"]["r2"] < 0.1                   # mean-predictor R² ≈ 0 on noise
+
+
+def test_fit_probe_too_few_samples_is_graceful():
+    from main.prober.engine import fit_probe
+    r = fit_probe(np.zeros((4, 3)), np.array([0.0, 1, 0, 1]), "classification", seed=0)
+    assert r["overall"] is None and r["n"] == 4          # <5 usable → None, no crash
+
+
+def test_history_slot_saliency_splits_block():
+    from main.prober.engine import history_slot_saliency
+    off = ObsOffsets(mm_off=0, om_off=0, tm_off=0, active_block_dim=5,
+                     turn_history_offset=10, turn_history_dim=12, turn_delta_dim=3)  # 4 slots × 3
+    g = np.zeros(40)
+    g[10:13] = 1.0          # slot 0 high
+    g[19:22] = 0.6          # slot 3 (10 + 3*3) medium
+    s = history_slot_saliency(g, off)
+    assert len(s) == 4
+    assert s[0] == 1.0 and abs(s[3] - 0.6) < 1e-9 and s[1] == 0.0 and s[2] == 0.0
+    # no turn_delta_dim → can't split → empty (graceful)
+    off0 = ObsOffsets(mm_off=0, om_off=0, tm_off=0, active_block_dim=5,
+                      turn_history_offset=10, turn_history_dim=12)
+    assert history_slot_saliency(g, off0) == []
