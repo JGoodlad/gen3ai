@@ -29,8 +29,16 @@ _PHYSICAL_TYPES = frozenset({
     PokemonType.FLYING, PokemonType.BUG, PokemonType.ROCK, PokemonType.GHOST, PokemonType.STEEL,
 })
 
-# Per-mon output width: [phys_expdmg, spec_expdmg, phys_pko, spec_pko, p_outspeed]
-PER_MON = 5
+# Per-mon output width (gen3_incoming_crit_split):
+#   [phys_expdmg, spec_expdmg, phys_pko_nocrit, spec_pko_nocrit, phys_crit_delta, spec_crit_delta,
+#    p_outspeed, threat_revealed]
+# P(KO) is the modal no-crit line; the crit risk is exposed as the DELTA (pko_crit − pko_nocrit ∈
+# [0, _CRIT_P]) rather than the near-redundant absolute crit-inclusive line — the crit "tax" is its
+# own decorrelated feature a small net can read (crit-inclusive = nocrit + tiny tail, ≤6% apart, gets
+# buried after standardization). The model prices the modal outcome and treats crit as a priced tail.
+# ``threat_revealed`` is the provenance of the dominant KO threat (1.0 = a revealed move, <1.0 = a
+# usage-prior guess; 0.0 when no candidate can KO — read it jointly with the pko channels).
+PER_MON = 8
 # Trailing opp-active scalars: [recovery_rate, cures_status(P rest), recovery_known]
 RECOVERY = 3
 _MEAN_ROLL = 0.925   # mean of the 16 damage rolls (85..100)/100
@@ -237,26 +245,30 @@ def weather_damage_mult(move_type: PokemonType, weather: Optional[str]) -> float
 
 
 def _channel_threat(cands, d: Defender, atk_tail: float, atk_mean: float, *,
-                    a: AttackerThreat, screen: bool, is_phys: bool) -> Tuple[float, float]:
-    """(pko, expdmg_frac) = max over a channel's candidates of p_in_set·(KO prob / dmg fraction).
+                    a: AttackerThreat, screen: bool, is_phys: bool) -> Tuple[float, float, float, float]:
+    """(pko_nocrit, pko_crit, expdmg_frac, revealed) = max over a channel's candidates of
+    p_in_set·(KO prob / dmg fraction), plus the provenance of the dominant threat.
 
-    P(KO) blends the no-crit roll integration with a ``_CRIT_P`` crit branch (×2, screen-ignoring);
-    expected-damage stays the mean-stat chip (no crit term — the chip belief is already calibrated;
-    only the KO flag was too timid). The KO magnitude rides ``atk_tail`` (the offensive-stat tail),
-    so raising that quantile lifts P(KO) on near-OHKOs while leaving expected-damage (∝ ``atk_mean``)
-    unchanged."""
+    The KO prob is SPLIT into two channels the policy/critic see separately (gen3_incoming_crit_split):
+    ``pko_nocrit`` is the modal-line roll integration (what happens if you DON'T get crit — the
+    outcome you plan around); ``pko_crit`` additionally blends the ``_CRIT_P`` crit branch (×2,
+    screen-ignoring) — the rare tail you hope to dodge. Their gap is the crit risk, made explicit so
+    the model can price the modal line without over-weighting the coinflip. Expected-damage stays the
+    mean-stat chip (no crit term). ``revealed`` is the ``p_in_set`` of the dominant (crit-weighted)
+    threat: 1.0 = a REVEALED move (we KNOW), <1.0 = a usage-prior GUESS (the provenance / how-much-
+    are-we-guessing signal). The KO magnitude rides ``atk_tail``; expected-damage rides ``atk_mean``."""
     if not cands or d.hp_max <= 0:
-        return 0.0, 0.0
+        return 0.0, 0.0, 0.0, 0.0
     defense = d.def_stat if is_phys else d.spd_stat
     defense = max(1, int(defense * boost_mult(d.boost_def if is_phys else d.boost_spd)))
-    best_pko = best_exp = 0.0
+    best_nc = best_cr = best_exp = best_revealed = 0.0
     for c in cands:
         eff = effective_multiplier_by_types(c.move_type, d.type1, d.type2, d.ability, d.status)
         if eff <= 0.0:                      # immune (incl. Seismic Toss vs Ghost)
             continue
         stab = c.move_type in a.types
         if c.fixed_dmg is not None:         # fixed damage: ignores Atk/Def/roll, respects immunity
-            pko = 1.0 if c.fixed_dmg >= d.hp_remaining else 0.0
+            pko_nc = pko_cr = 1.0 if c.fixed_dmg >= d.hp_remaining else 0.0
             exp = c.fixed_dmg / d.hp_max
         else:
             # Explosion / Self-Destruct halve the target's Def in the Gen-3 calc.
@@ -265,7 +277,8 @@ def _channel_threat(cands, d: Defender, atk_tail: float, atk_mean: float, *,
             burned = a.burn and is_phys
             dmax = gen3_damage_max(c.power, int(atk_tail), cdef, stab=stab, type_eff=eff,
                                    screen=screen, weather=w, burned=burned)
-            pko = p_ko(dmax, d.hp_remaining)
+            pko_nc = p_ko(dmax, d.hp_remaining)
+            pko_cr = pko_nc
             if _CRIT_P > 0.0:
                 # gen3 crit: ×2 damage and IGNORES screens (so compute it screen-free, then double).
                 # Burn still applies; we keep the (boosted) Def — a defender at +Def being OHKO'd is
@@ -273,20 +286,24 @@ def _channel_threat(cands, d: Defender, atk_tail: float, atk_mean: float, *,
                 # crit branch lifts a move that only KOs on a crit out of the P(KO)~0 floor.
                 dmax_crit = 2 * gen3_damage_max(c.power, int(atk_tail), cdef, stab=stab, type_eff=eff,
                                                 screen=False, weather=w, burned=burned)
-                pko = (1.0 - _CRIT_P) * pko + _CRIT_P * p_ko(dmax_crit, d.hp_remaining)
+                pko_cr = (1.0 - _CRIT_P) * pko_nc + _CRIT_P * p_ko(dmax_crit, d.hp_remaining)
             # expected dmg ≈ the max-roll damage scaled by the mean/tail stat ratio × mean roll
             # (damage is ~linear in Atk; avoids a second full calc on the obs hot path).
             ratio = (atk_mean / atk_tail) if atk_tail > 0 else 1.0
             exp = (dmax * ratio * _MEAN_ROLL) / d.hp_max
-        best_pko = max(best_pko, c.p_in_set * pko)
+        w_cr = c.p_in_set * pko_cr
+        if w_cr > best_cr:                  # the dominant threat owns the provenance scalar
+            best_cr, best_revealed = w_cr, c.p_in_set
+        best_nc = max(best_nc, c.p_in_set * pko_nc)
         best_exp = max(best_exp, c.p_in_set * min(1.5, exp))
-    return best_pko, best_exp
+    return best_nc, best_cr, best_exp, best_revealed
 
 
 def compute_team_block(defenders: List[Defender], attacker: Optional[AttackerThreat],
                        n_slots: int) -> np.ndarray:
     """The incoming-KO belief block: per our mon (slot-aligned to the team), the phys/spec
-    expected-damage-fraction + mode-max P(KO) + P(outspeed); then the 3 recovery scalars.
+    expected-damage-fraction + the modal no-crit P(KO) + the crit-risk DELTA per channel + P(outspeed)
+    + the dominant threat's revealed-provenance; then the 3 recovery scalars.
 
     Width = ``n_slots * PER_MON + RECOVERY``. All zeros when there is no opponent active (forced
     switch / battle start). A defender behind a Substitute can't be KO'd this turn → its KO/dmg
@@ -298,18 +315,24 @@ def compute_team_block(defenders: List[Defender], attacker: Optional[AttackerThr
         if d is None:
             continue
         if d.has_sub:
-            phys_pko = spec_pko = phys_exp = spec_exp = 0.0
+            phys_nc = phys_cr = spec_nc = spec_cr = phys_exp = spec_exp = revealed = 0.0
         else:
-            phys_pko, phys_exp = _channel_threat(attacker.phys, d, attacker.atk_tail,
-                                                  attacker.atk_mean, a=attacker,
-                                                  screen=attacker.our_reflect, is_phys=True)
-            spec_pko, spec_exp = _channel_threat(attacker.spec, d, attacker.spa_tail,
-                                                 attacker.spa_mean, a=attacker,
-                                                 screen=attacker.our_light_screen, is_phys=False)
+            phys_nc, phys_cr, phys_exp, phys_rev = _channel_threat(
+                attacker.phys, d, attacker.atk_tail, attacker.atk_mean, a=attacker,
+                screen=attacker.our_reflect, is_phys=True)
+            spec_nc, spec_cr, spec_exp, spec_rev = _channel_threat(
+                attacker.spec, d, attacker.spa_tail, attacker.spa_mean, a=attacker,
+                screen=attacker.our_light_screen, is_phys=False)
+            revealed = phys_rev if phys_cr >= spec_cr else spec_rev   # provenance of the dominant channel
         outspeed = p_outspeed(d.spe, attacker.spe_dist, our_boost=d.boost_spe,
                               opp_boost=attacker.boost_spe,
                               our_para=(d.status == Status.PAR), opp_para=attacker.para)
+        # Expose the crit RISK as the delta (crit-inclusive − no-crit ∈ [0, _CRIT_P]) — a decorrelated
+        # "crit tax" feature, not the near-redundant absolute crit-inclusive line.
+        phys_crit_delta = max(0.0, phys_cr - phys_nc)
+        spec_crit_delta = max(0.0, spec_cr - spec_nc)
         base = i * PER_MON
-        out[base:base + PER_MON] = (phys_exp, spec_exp, phys_pko, spec_pko, outspeed)
+        out[base:base + PER_MON] = (phys_exp, spec_exp, phys_nc, spec_nc,
+                                    phys_crit_delta, spec_crit_delta, outspeed, revealed)
     out[n_slots * PER_MON:] = (attacker.recovery_rate, attacker.cures_status, attacker.recovery_known)
     return out

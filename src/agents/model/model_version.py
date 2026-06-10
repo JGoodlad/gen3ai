@@ -240,7 +240,19 @@ MODEL_CONFIG_VERSION = 7
 #   The reward redesign also folds the material spine into a PBRS Φ_mat and renames the belief
 #   PBRS field (pbrs_material → pbrs_belief); those are reward-VALUE changes (retrain-class) that
 #   need no further arch bump. Not weight-compatible with gen3_incoming_damage_v2 (obs dim +1).
-ARCH_SIGNATURE = "gen3_markovian_progress_v1"
+# gen3_incoming_crit_split_v1: SPLITS the incoming-damage belief's P(KO) into a modal no-crit line +
+#   a per-channel crit-risk DELTA (crit-inclusive − no-crit ∈ [0, _CRIT_P]), and adds a per-mon
+#   threat-PROVENANCE scalar (the dominant KO threat's p_in_set: 1.0 = a REVEALED move, <1.0 = a
+#   usage-prior GUESS, 0.0 = no candidate can KO). Motivation: the model over-weighted uncontrollable
+#   crit RNG (it should optimise EXPECTED value over the modal line, with crit as a priced tail) and had
+#   no signal for how much of a threat is KNOWN vs guessed — both validated as gaps by the
+#   representation-probe harness (the rep barely encodes damage spread). The crit risk is exposed as the
+#   DELTA (not the near-redundant absolute crit-inclusive line, which is ≤6% above no-crit and gets
+#   buried after standardization). INCOMING_PER_MON 5 → 8 → INCOMING_DMG_DIM 33 → 51 → REACTIVE_DIM
+#   372 → 390, obs dim 3391 → 3409. Crit was ALREADY computed (folded into P(KO) since v2); this unblends
+#   it as a delta + adds provenance, so the underlying numbers are unchanged — but the block layout/width
+#   differ, so it is not weight-compatible with gen3_markovian_progress_v1.
+ARCH_SIGNATURE = "gen3_incoming_crit_split_v1"
 
 
 class ModelVersionError(Exception):

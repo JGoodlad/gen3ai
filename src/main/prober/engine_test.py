@@ -246,13 +246,13 @@ def test_offsets_resolve_matches_layout():
     # OFFSET_REACTIVE resolves to 1418 at runtime (root CLAUDE.md obs table;
     # the inline "# 1247" comments in observation/constants.py are stale).
     assert off.mm_off == 1422   # OFFSET_REACTIVE(1418) + move_multiplier(4) — unchanged (before vec[14])
-    assert off.om_off == 1502   # OFFSET_REACTIVE(1418) + our_matchups(84, post gen3_markovian_progress_v1)
-    assert off.tm_off == 1646   # OFFSET_REACTIVE(1418) + their_matchups(228 = our_matchups 84 + 144)
+    assert off.om_off == 1520   # OFFSET_REACTIVE(1418) + matchup_offset(102 = scalar 15 + move_eff 36 + incoming 51)
+    assert off.tm_off == 1664   # om_off + our_matchups(144)
     assert off.active_block_dim == 99
     # incoming-damage / OHKO belief block: reactive offset 51 (post turns_since_progress vec[14]) → 1469.
-    assert off.incoming_off == 1469   # OFFSET_REACTIVE(1418) + incoming_damage(51)
-    assert off.incoming_dim == 33     # 6*5 per-mon + 3 recovery
-    assert off.incoming_per_mon == 5 and off.incoming_recovery == 3
+    assert off.incoming_off == 1469   # OFFSET_REACTIVE(1418) + incoming_damage offset(51 = scalar 15 + move_eff 36)
+    assert off.incoming_dim == 51     # gen3_incoming_crit_split: 6*8 per-mon + 3 recovery
+    assert off.incoming_per_mon == 8 and off.incoming_recovery == 3
     assert off.pokemon_full_dim == 107
 
     from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings
@@ -307,6 +307,41 @@ def test_incoming_belief_decode_active_slot():
     assert any(b.name == "incoming_damage(33)" for b in a.value_saliency.blocks)
 
 
+# The live crit-split layout: per_mon=8, dim=51, total_dim set so the length guard is exercised.
+_OFF_INC8 = ObsOffsets(
+    mm_off=10, om_off=20, tm_off=200, active_block_dim=5,
+    turn_history_offset=400, turn_history_dim=10,
+    incoming_off=300, incoming_dim=51, incoming_per_mon=8, incoming_recovery=3,
+    pokemon_full_dim=8, total_dim=512,
+)
+
+
+def test_incoming_belief_decode_crit_split_8field():
+    """The crit-split 8-field layout decodes: active_pko = RECONSTRUCTED crit-inclusive (nocrit+delta),
+    active_pko_nocrit = the modal line (≤ active_pko), threat_revealed = the provenance scalar; and a
+    wrong-length (old/foreign-arch) obs is REFUSED by the total_dim guard."""
+    from main.prober.engine import decode_incoming_belief
+    obs = np.zeros(512, dtype=np.float32)
+    obs[1 * 8 + 7] = 1.0                          # active flag → our slot 1
+    base = 300 + 1 * 8                            # incoming_off + slot 1 * per_mon
+    obs[base + 0] = 0.7                           # phys_exp
+    obs[base + 2] = 0.5                           # phys_pko_nocrit (modal line)
+    obs[base + 4] = 0.06                          # phys_crit_delta (the crit tax)
+    obs[base + 6] = 0.25                          # p_outspeed
+    obs[base + 7] = 0.8                           # threat_revealed (a 0.8-prior guess)
+    obs[300 + 6 * 8: 300 + 6 * 8 + 3] = (0.35, 0.35, 1.0)   # recovery scalars at the block tail
+    bel = decode_incoming_belief(obs, _OFF_INC8)
+    assert bel is not None and bel.present
+    assert abs(bel.active_pko - 0.56) < 1e-6          # crit-inclusive = nocrit 0.5 + delta 0.06
+    assert abs(bel.active_pko_nocrit - 0.5) < 1e-6    # the modal line
+    assert bel.active_pko_nocrit <= bel.active_pko
+    assert abs(bel.threat_revealed - 0.8) < 1e-6
+    assert abs(bel.active_exp - 0.7) < 1e-6
+    assert abs(bel.max_pko - 0.56) < 1e-6
+    # the total_dim guard refuses a wrong-length (archived old-arch) obs rather than mis-slicing it
+    assert decode_incoming_belief(np.zeros(400, dtype=np.float32), _OFF_INC8) is None
+
+
 def test_incoming_belief_none_when_block_absent():
     """The default _OFF has incoming_dim=0 → no belief decoded, no incoming saliency block, no crash.
     value_saliency is still None there because the default FakeProbeModel path is unaffected."""
@@ -316,3 +351,4 @@ def test_incoming_belief_none_when_block_absent():
     a = analyze_invocation(model, _summary(), npz, 0)
     assert a.incoming is None
     assert not any(b.name.startswith("incoming_damage") for b in a.saliency.blocks)
+

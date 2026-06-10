@@ -63,16 +63,23 @@ def _mence_threat(**kw):
 
 def test_compute_block_flags_rock_slide_on_flyer():
     blk = inc.compute_team_block([_zapdos()], _mence_threat(), n_slots=6)
-    phys_exp, spec_exp, phys_pko, spec_pko, outspeed = blk[:inc.PER_MON]
-    assert phys_pko > 0.0          # Rock Slide 2× on a chipped Flyer → real KO chance (×0.5 prior)
+    # crit-split per-mon: [phys_exp, spec_exp, phys_pko_nc, spec_pko_nc, phys_crit_delta,
+    #                      spec_crit_delta, outspeed, threat_revealed]
+    (phys_exp, spec_exp, phys_pko_nc, spec_pko_nc,
+     phys_crit_delta, spec_crit_delta, outspeed, revealed) = blk[:inc.PER_MON]
+    assert phys_pko_nc > 0.0        # Rock Slide 2× on a chipped Flyer → real KO chance on the MODAL line
+    assert 0.0 <= phys_crit_delta <= inc._CRIT_P + 1e-6   # crit adds at most _CRIT_P on top
     assert phys_exp > 0.0
     assert outspeed == 1.0          # spe 300 > opp 280
+    assert revealed == 0.5          # provenance: this Rock Slide is a 0.5-prior GUESS, not a revealed move
     assert blk.shape[0] == 6 * inc.PER_MON + inc.RECOVERY
-    # a FULL-HP Zapdos: Rock Slide is only a 2HKO on a normal roll, so phys_pko collapses to just the
-    # small crit-chance tail (1/16 × the 0.5 prior = 0.03125) — far below the chipped-HP KO chance,
-    # but no longer a flat 0 (a crit Rock Slide DOES OHKO full-HP Zapdos). Chip stays real.
+    # a FULL-HP Zapdos: Rock Slide is only a 2HKO on a normal roll, so the no-crit P(KO) is a flat 0
+    # and the entire KO chance lives in the CRIT DELTA (1/16 × the 0.5 prior = 0.03125) — "dies only
+    # to a crit" is now its own decorrelated feature, not buried under a near-redundant absolute line.
     full = inc.compute_team_block([_zapdos(hp_remaining=290)], _mence_threat(), n_slots=6)
-    assert 0.0 < full[2] < 0.1 and full[2] < phys_pko and full[0] > 0.0
+    assert full[2] == 0.0                                  # no-crit P(KO): a 2HKO on a normal roll
+    assert 0.0 < full[4] < 0.1                             # crit DELTA: the crit tail only
+    assert full[0] > 0.0                                   # chip belief still real
 
 
 def test_crit_blend_lifts_only_crit_ohko():
@@ -83,20 +90,35 @@ def test_crit_blend_lifts_only_crit_ohko():
                      type1=PT.WATER, type2=None, ability=None, status=None)
     a = _mence_threat()
     cand = [inc.Candidate(PT.NORMAL, 150, 1.0)]
-    pko, _ = inc._channel_threat(cand, d, 300.0, 280.0, a=a, screen=False, is_phys=True)
-    assert abs(pko - inc._CRIT_P) < 1e-6
-    # disabling the crit term recovers the pre-crit P(KO) = 0 (the A/B-probe / legacy behaviour)
+    pko_nc, pko_cr, _, _ = inc._channel_threat(cand, d, 300.0, 280.0, a=a, screen=False, is_phys=True)
+    assert pko_nc == 0.0                      # the modal no-crit line can't OHKO (dmax 191 < 300)
+    assert abs(pko_cr - inc._CRIT_P) < 1e-6   # crit-inclusive = exactly the crit-chance tail
+    # disabling the crit term collapses the crit-inclusive line back onto the no-crit (legacy A/B)
     saved = inc._CRIT_P
     inc._CRIT_P = 0.0
     try:
-        pko0, _ = inc._channel_threat(cand, d, 300.0, 280.0, a=a, screen=False, is_phys=True)
+        nc0, cr0, _, _ = inc._channel_threat(cand, d, 300.0, 280.0, a=a, screen=False, is_phys=True)
     finally:
         inc._CRIT_P = saved
-    assert pko0 == 0.0
-    # a clean OHKO (huge power) reads 1.0 with or without the crit term
-    big, _ = inc._channel_threat([inc.Candidate(PT.NORMAL, 300, 1.0)], d, 300.0, 280.0,
-                                 a=a, screen=False, is_phys=True)
-    assert big == 1.0
+    assert nc0 == 0.0 and cr0 == 0.0
+    # a clean OHKO (huge power) reads 1.0 on BOTH lines
+    nc_big, cr_big, _, _ = inc._channel_threat([inc.Candidate(PT.NORMAL, 300, 1.0)], d, 300.0, 280.0,
+                                               a=a, screen=False, is_phys=True)
+    assert nc_big == 1.0 and cr_big == 1.0
+
+
+def test_threat_provenance_revealed_vs_guess():
+    # gen3_incoming_crit_split: the per-mon `threat_revealed` scalar carries the dominant threat's
+    # p_in_set — 1.0 for a REVEALED move (we KNOW), <1.0 for a usage-prior GUESS. The block puts it
+    # at the per-mon index 7.
+    d = _zapdos()
+    revealed_thr = _mence_threat(phys=[inc.Candidate(PT.ROCK, 75, 1.0)], spec=[])   # p_in_set 1.0 = revealed
+    guess_thr = _mence_threat(phys=[inc.Candidate(PT.ROCK, 75, 0.3)], spec=[])       # p_in_set 0.3 = prior guess
+    rev = inc.compute_team_block([d], revealed_thr, n_slots=6)
+    gss = inc.compute_team_block([d], guess_thr, n_slots=6)
+    assert rev[7] == 1.0                       # a revealed Rock Slide → certain provenance
+    assert abs(gss[7] - 0.3) < 1e-6            # a 0.3-prior guess → the model knows it's guessing
+    assert rev[2] > gss[2] > 0.0              # the (no-crit) P(KO) magnitude scales with p_in_set too
 
 
 def test_higher_atk_tail_lifts_pko_not_exp():
@@ -108,8 +130,8 @@ def test_higher_atk_tail_lifts_pko_not_exp():
                      type1=PT.WATER, type2=None, ability=None, status=None)
     a = _mence_threat()
     cand = [inc.Candidate(PT.NORMAL, 200, 1.0)]   # NORMAL vs Dragon/Flying default → no STAB
-    pko_lo, exp_lo = inc._channel_threat(cand, d, 300.0, 300.0, a=a, screen=False, is_phys=True)
-    pko_hi, exp_hi = inc._channel_threat(cand, d, 400.0, 300.0, a=a, screen=False, is_phys=True)
+    _, pko_lo, exp_lo, _ = inc._channel_threat(cand, d, 300.0, 300.0, a=a, screen=False, is_phys=True)
+    _, pko_hi, exp_hi, _ = inc._channel_threat(cand, d, 400.0, 300.0, a=a, screen=False, is_phys=True)
     assert pko_hi > pko_lo                 # higher tail → less timid P(KO)
     assert abs(exp_hi - exp_lo) < 0.02     # expected-damage ≈ unchanged (tracks the held mean)
 
@@ -122,8 +144,8 @@ def test_crit_ignores_screen():
                      type1=PT.WATER, type2=None, ability=None, status=None)
     a = _mence_threat()
     cand = [inc.Candidate(PT.NORMAL, 240, 1.0)]
-    no_screen, _ = inc._channel_threat(cand, d, 320.0, 300.0, a=a, screen=False, is_phys=True)
-    screen, _ = inc._channel_threat(cand, d, 320.0, 300.0, a=a, screen=True, is_phys=True)
+    _, no_screen, _, _ = inc._channel_threat(cand, d, 320.0, 300.0, a=a, screen=False, is_phys=True)
+    _, screen, _, _ = inc._channel_threat(cand, d, 320.0, 300.0, a=a, screen=True, is_phys=True)
     # screen halves the no-crit roll (no_screen P(KO) ~0.53 → screen drops the roll part to 0) but
     # the crit tail is screen-free and survives → screen P(KO) is the crit chance, still > 0.
     assert no_screen > screen > 0.0
@@ -214,5 +236,5 @@ def test_paralysis_status_enum_folds_into_outspeed():
     thr = _mence_threat(spe_dist=[(280, 1.0)])
     healthy = inc.compute_team_block([fast], thr, n_slots=6)
     slowed = inc.compute_team_block([para], thr, n_slots=6)
-    assert healthy[4] == 1.0        # 300 > 280 → always first
-    assert slowed[4] == 0.0         # 300×0.25 = 75 < 280 → never first
+    assert healthy[6] == 1.0        # outspeed at idx 6 (crit-split layout): 300 > 280 → always first
+    assert slowed[6] == 0.0         # 300×0.25 = 75 < 280 → never first

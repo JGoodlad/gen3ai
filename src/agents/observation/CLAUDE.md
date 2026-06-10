@@ -1,6 +1,6 @@
 # CLAUDE.md — Observation Encoder (`src/agents/observation/`)
 
-This directory builds the **3391-dim per-decision observation vector** (`Gen3ObservationEncoder.encode`).
+This directory builds the **3409-dim per-decision observation vector** (`Gen3ObservationEncoder.encode`).
 It runs once per agent decision across every training env, so it sits directly on the
 training-throughput (FPS) critical path. Two independent things can regress here, and they
 have **different** gates:
@@ -160,7 +160,7 @@ example, is pinned byte-for-byte by the exhaustive parity test in
 
 ## Observation vector layout (per-block reference)
 
-The root `CLAUDE.md` carries the summary block table (block → dims → offset, total **3391**).
+The root `CLAUDE.md` carries the summary block table (block → dims → offset, total **3409**).
 This is the detailed per-block layout. All offsets are computed from named constants — never
 hardcode indices.
 
@@ -198,10 +198,10 @@ emitted a constant fallback (all-31 IVs, 0 EVs, neutral nature) for every own mo
 permanence + turns-remaining), spikes ×2 (2), log-turn (1), per-side screens (8: Reflect /
 Light Screen / Safeguard / Mist × both sides).
 
-**Reactive block (372 dims, layout in `reactive.py`):** 15 scalar dims, then the 36-dim
-**move-effect block** (`gen3_move_effects_v1`), then the **33-dim incoming-damage / OHKO belief
-block** (`gen3_incoming_damage_v2`, at offset 51 — see below), then the two 144-dim matchup matrices
-(`our_matchups` now at offset 84, `their_matchups` at 228). Scalars: active-move power ×4 (/200)
+**Reactive block (390 dims, layout in `reactive.py`):** 15 scalar dims, then the 36-dim
+**move-effect block** (`gen3_move_effects_v1`), then the **51-dim incoming-damage / OHKO belief
+block** (`gen3_incoming_crit_split_v1`, at offset 51 — see below), then the two 144-dim matchup matrices
+(`our_matchups` now at offset 102, `their_matchups` at 246). Scalars: active-move power ×4 (/200)
 + active-move multiplier ×4 (/4), fainted counts ×2, active-status flag (1), `forced_struggle` (1),
 the two **gen3_trapping_signals_v1** bits — `trapped` (1) and `maybe_trapped` (1) — and the
 **gen3_markovian_progress_v1** scalar `turns_since_progress` (1, `vec[14]`). All are sourced
@@ -246,11 +246,23 @@ the policy and value projection heads via
 sourced from Showdown's actual representation, never guessed from the move name — see
 `tools/pokemon_data_extractor/sync.py:build_moves`.
 
-**Incoming-damage / OHKO belief block (33 dims, `gen3_incoming_damage_v2`, at reactive offset 50,
+**Incoming-damage / OHKO belief block (51 dims, `gen3_incoming_crit_split_v1`, at reactive offset 51,
 before the matchups → routed to both heads via `non_matchup_rest`):** the opponent active's threat to
 *us* as a calibrated belief, not a calc. Per our 6 team mons (slot-aligned): `[phys_expdmg_frac,
-spec_expdmg_frac, phys_pko, spec_pko, p_outspeed]` (5 × 6 = 30), then 3 opp-active recovery scalars
-`[recovery_rate, cures_status(P rest), recovery_known]`. P(KO)/expected-damage are the §6.1 belief —
+spec_expdmg_frac, phys_pko_nocrit, spec_pko_nocrit, phys_crit_delta, spec_crit_delta, p_outspeed,
+threat_revealed]` (8 × 6 = 48), then 3 opp-active recovery scalars
+`[recovery_rate, cures_status(P rest), recovery_known]`. **`gen3_incoming_crit_split_v1` (PER_MON 5→8,
+block 33→51, obs 3391→3409):** P(KO) is the modal `*_pko_nocrit` (the roll integration with NO crit —
+the outcome you plan around); the crit risk is exposed as the **DELTA** `*_crit_delta`
+(crit-inclusive − no-crit ∈ [0, `_CRIT_P`]) rather than the near-redundant absolute crit-inclusive line
+(which equals nocrit + a ≤6% tail and is buried after standardization). The delta is the explicit crit
+"tax" — a decorrelated feature a small net can read — so the policy/critic price the modal line without
+over-weighting uncontrollable crit RNG (the prober's representation probe flagged the damage SPREAD as
+under-encoded, and the plateau diagnosis showed RNG-driven critic craters; the prober reconstructs
+crit-inclusive = nocrit + delta to preserve the loss-taxonomy meaning). `threat_revealed` is the
+dominant KO threat's `p_in_set` provenance: **1.0 = a revealed move (we KNOW), <1.0 = a usage-prior
+GUESS, 0.0 = no candidate can KO** (read jointly with the pko channels) — the "how much are we guessing"
+signal (provide-the-fact, not bake-the-prior). P(KO)/expected-damage are the §6.1 belief —
 **max over `revealed ∪ usage-prior` candidate moves** of `P(move in set) · P(KO|move)`, routed by gen3
 **TYPE-category** (Bug/Rock/Ground/… physical, the rest special), using the gen3 damage formula with a
 **fixed-damage branch** (Seismic Toss/Night Shade/Dragon Rage/Sonic Boom carry constant damage despite

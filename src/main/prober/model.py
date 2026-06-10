@@ -44,6 +44,8 @@ class ObsOffsets:
     incoming_per_mon: int = 5
     incoming_recovery: int = 3
     pokemon_full_dim: int = 107   # per-our-mon obs block width (active flag = its last dim)
+    total_dim: int = 0            # the current encoder's full obs dim — a guard so a wrong-length
+    #                               (e.g. archived old-arch) trace is REFUSED, not silently mis-sliced
 
     @classmethod
     def from_encoder(cls, enc) -> "ObsOffsets":
@@ -64,6 +66,7 @@ class ObsOffsets:
             incoming_per_mon=inc.get("per_mon", 5),
             incoming_recovery=inc.get("recovery", 3),
             pokemon_full_dim=C.POKEMON_FULL_DIM,
+            total_dim=lay.get("total_dim", 0),
         )
 
     @classmethod

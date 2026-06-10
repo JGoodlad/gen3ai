@@ -508,7 +508,7 @@ tools/               # Acquisition layer (knows the 3 upstreams) — has CLAUDE.
 
 ## Observation Vector
 
-The full observation is a **3391-dim float32 vector** (`Gen3ObservationEncoder.dimension`):
+The full observation is a **3409-dim float32 vector** (`Gen3ObservationEncoder.dimension`):
 
 | Block | Dims | Offset |
 |---|---|---|
@@ -516,19 +516,22 @@ The full observation is a **3391-dim float32 vector** (`Gen3ObservationEncoder.d
 | Opp team (6 × 107) | 642 | 642 |
 | Active context ×2 (boosts + full volatiles, `VOLATILE_DIM`=44) | 116 | 1284 |
 | Global env | 18 | 1400 |
-| Reactive + move-effects + **incoming-damage** + **turns_since_progress** + matchups | 372 | 1418 |
-| Prev-turn action mask | 11 | 1790 |
-| Turn history (`N_HISTORY_TURNS` × 159) | 1590 | 1801 |
-| **Total** | **3391** | |
+| Reactive + move-effects + **incoming-damage** + **turns_since_progress** + matchups | 390 | 1418 |
+| Prev-turn action mask | 11 | 1808 |
+| Turn history (`N_HISTORY_TURNS` × 159) | 1590 | 1819 |
+| **Total** | **3409** | |
 
 **The full per-block layout** — the 107-dim per-Pokémon slot, the 11-dim move slot, the 18-dim
-spread block, global env, the 372-dim reactive block (**15 scalars** — the 14 prior + the new
+spread block, global env, the 390-dim reactive block (**15 scalars** — the 14 prior + the new
 log-saturated **`turns_since_progress`** no-progress clock at `vec[14]`, `gen3_markovian_progress_v1`;
 the no-progress reward keys on the SAME EpisodeTracker-owned counter — + the 36-dim action-aligned
-move-effect block, 4 slots × 9 feats + the **33-dim incoming-damage / OHKO belief block**
-[`gen3_incoming_damage_v2`: per our mon, phys/spec expected-damage + mode-max P(KO) (incl. a gen3
-crit term + a high offensive-stat tail, so near-OHKOs aren't priced as P(KO)~0) + P(outspeed),
-then 3 opp recovery scalars] + 288 matchup), and the 159-dim
+move-effect block, 4 slots × 9 feats + the **51-dim incoming-damage / OHKO belief block**
+[`gen3_incoming_crit_split_v1`: per our mon, phys/spec expected-damage + the modal **no-crit** P(KO) +
+the **crit-risk DELTA** per channel (crit-inclusive − no-crit ∈ [0, _CRIT_P] — a decorrelated "crit
+tax" feature, so the model prices the modal line without over-weighting the coinflip) + P(outspeed) +
+a **threat-provenance** scalar (1.0 = a revealed move, <1 = a usage-prior guess; 0.0 = no KO threat —
+the "how much are we guessing" signal), then 3 opp recovery scalars] +
+288 matchup), and the 159-dim
 TurnDelta slot (incl. the embedded-ID manifest) — lives in **`src/agents/observation/CLAUDE.md`**.
 Every offset is computed
 from named constants; never hardcode indices.
@@ -575,7 +578,7 @@ crashes in seconds rather than hours.
 The architecture-constant single source of truth is the module-level constants
 (`ROLE_TOKEN_SIZE`, `PROJECTION_DIM`, `MOVE_NET_HIDDEN`, `ROLE_ENCODER_HIDDEN`,
 `ACTIVE_CTX_HIDDEN`) at the top of `features_extractor.py`; `ARCH_SIGNATURE` /
-`MODEL_CONFIG_VERSION` live in `model_version.py` (current: `gen3_markovian_progress_v1`).
+`MODEL_CONFIG_VERSION` live in `model_version.py` (current: `gen3_incoming_crit_split_v1`).
 **The full versioning playbook — what to do when you change a dim vs add an optional feature vs
 make a structural change — is in `src/agents/model/CLAUDE.md`.**
 

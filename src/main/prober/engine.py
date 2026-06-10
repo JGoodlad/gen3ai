@@ -122,18 +122,25 @@ class IncomingBeliefView:
     gap get filled": at a value cliff, ``active_pko`` near 1.0 means the obs DID contain the OHKO
     signal (any remaining mistake is downstream policy/critic usage, not a missing input); a low
     ``active_pko`` where the active then faints to a direct hit means the BELIEF itself is
-    mis-calibrated (an encoder bug to chase). Per our 6 slots the block holds
-    ``[phys_exp, spec_exp, phys_pko, spec_pko, p_outspeed]``; ``*_pko`` here is ``max(phys,spec)``.
+    mis-calibrated (an encoder bug to chase). Per our 6 slots the crit-split block holds
+    ``[phys_exp, spec_exp, phys_pko_nocrit, spec_pko_nocrit, phys_crit_delta, spec_crit_delta,
+    p_outspeed, threat_revealed]`` (the crit risk is the DELTA, pko_crit − pko_nocrit). ``active_pko``
+    is the RECONSTRUCTED crit-inclusive ``max(nocrit+delta)`` (preserving the old meaning),
+    ``active_pko_nocrit`` the modal line, and ``threat_revealed`` the dominant KO threat's provenance
+    (1.0 revealed / <1 prior-guess / 0.0 when no candidate can KO). Explicit 5-field ObsOffsets decode
+    with ``active_pko_nocrit``/``threat_revealed`` = None.
     ``active_*`` pull our on-field mon's slot (located via its per-mon active flag)."""
     present: bool                          # any nonzero KO/chip belief on the board
-    max_pko: float                         # worst P(KO) across our team (max(phys,spec) per slot)
-    active_pko: "float | None"             # max(phys,spec) P(KO) for our ACTIVE slot
+    max_pko: float                         # worst P(KO) across our team (crit-incl. max(phys,spec) per slot)
+    active_pko: "float | None"             # crit-inclusive max(phys,spec) P(KO) for our ACTIVE slot
     active_exp: "float | None"             # max(phys,spec) expected-damage-fraction, active slot
     active_outspeed: "float | None"        # P(our active outspeeds the opp), [0,1]
-    per_slot_pko: "tuple[float, ...]"      # max(phys,spec) P(KO) per our team slot
+    per_slot_pko: "tuple[float, ...]"      # crit-inclusive max(phys,spec) P(KO) per our team slot
     recovery_rate: float                   # opp recovery-move belief (Suicune-Rest discriminator)
     cures_status: float                    # P(opp Rest) — cures its own status clock
     recovery_known: float                  # 1.0 once a recovery move is revealed
+    active_pko_nocrit: "float | None" = None   # modal-line (no-crit) P(KO), active slot — None on old traces
+    threat_revealed: "float | None" = None     # dominant-threat provenance, active slot — None on old traces
 
 
 @dataclass(frozen=True)
@@ -416,28 +423,46 @@ def _active_slot(obs: np.ndarray, off) -> "int | None":
 
 
 def decode_incoming_belief(obs: np.ndarray, off) -> "IncomingBeliefView | None":
-    """Decode the incoming-damage / OHKO belief block (incoming_damage_v1) from a raw obs vector.
+    """Decode the incoming-damage / OHKO belief block from a raw obs vector.
 
     Pure + model-free (reads the saved obs the trace recorded), so it is exact for the model that
     produced the trace and is reusable by both `analyze_invocation` and the model-free `scan`.
-    Returns None when the block isn't present (dim 0, or a too-short synthetic obs)."""
+
+    ``off`` (the obs offsets) is resolved from the CURRENT encoder, so it is only valid for traces of
+    the current arch. A trace whose obs length differs (e.g. an archived old-arch run) would be
+    **mis-sliced** by these offsets — so we REFUSE it (return None) on a length mismatch rather than
+    silently decoding garbage. ``pm>=8`` is the crit-split layout (the live arch); the ``pm==5`` branch
+    serves explicit/synthetic 5-field ObsOffsets (tests) — it is NOT a path for archived old-arch traces
+    (``resolve()`` always yields the current 8-field offsets, and the length guard rejects the old obs).
+    Returns None when the block is absent (dim 0) or the obs length doesn't match the current arch."""
     if off.incoming_dim <= 0:
         return None
+    if getattr(off, "total_dim", 0) and obs.shape[0] != off.total_dim:
+        return None   # wrong-length trace (old/foreign arch) — refuse, don't mis-slice
     seg = obs[off.incoming_off:off.incoming_off + off.incoming_dim]
     if seg.shape[0] != off.incoming_dim:
         return None
     pm, rec_dim = off.incoming_per_mon, off.incoming_recovery
     n_slots = (off.incoming_dim - rec_dim) // pm
-    per_slot_pko, per_slot_exp, outspeeds = [], [], []
+    per_slot_pko, per_slot_exp, outspeeds, per_slot_nc, reveals = [], [], [], [], []
     for i in range(n_slots):
         b = i * pm
-        phys_exp, spec_exp, phys_pko, spec_pko, outspeed = (float(x) for x in seg[b:b + pm])
-        per_slot_pko.append(max(phys_pko, spec_pko))
+        if pm >= 8:   # crit-split: phys/spec exp, phys/spec pko_nocrit, phys/spec CRIT_DELTA, outspeed, revealed
+            phys_exp, spec_exp, phys_nc, spec_nc, phys_d, spec_d, outspeed, revealed = (
+                float(x) for x in seg[b:b + 8])
+            # reconstruct the crit-inclusive P(KO) (= nocrit + delta) so active_pko keeps its meaning
+            per_slot_pko.append(max(phys_nc + phys_d, spec_nc + spec_d))
+            per_slot_nc.append(max(phys_nc, spec_nc))
+            reveals.append(revealed)
+        else:         # explicit/synthetic 5-field: phys_exp, spec_exp, phys_pko, spec_pko, outspeed
+            phys_exp, spec_exp, phys_pko, spec_pko, outspeed = (float(x) for x in seg[b:b + 5])
+            per_slot_pko.append(max(phys_pko, spec_pko))
         per_slot_exp.append(max(phys_exp, spec_exp))
         outspeeds.append(outspeed)
     rec = seg[n_slots * pm:]
     a = _active_slot(obs, off)
     in_range = a is not None and a < n_slots
+    split = pm >= 8
     return IncomingBeliefView(
         present=bool(any(v > 0 for v in per_slot_pko) or any(v > 0 for v in per_slot_exp)),
         max_pko=max(per_slot_pko) if per_slot_pko else 0.0,
@@ -448,6 +473,8 @@ def decode_incoming_belief(obs: np.ndarray, off) -> "IncomingBeliefView | None":
         recovery_rate=float(rec[0]) if rec.shape[0] > 0 else 0.0,
         cures_status=float(rec[1]) if rec.shape[0] > 1 else 0.0,
         recovery_known=float(rec[2]) if rec.shape[0] > 2 else 0.0,
+        active_pko_nocrit=(per_slot_nc[a] if (split and in_range) else None),
+        threat_revealed=(reveals[a] if (split and in_range) else None),
     )
 
 

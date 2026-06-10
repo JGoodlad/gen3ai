@@ -97,23 +97,26 @@ MOVE_EFFECTS_DIM = 4 * MOVE_EFFECT_FEATURES                       # 36 (N_MOVE_S
 NUM_POKEMON = 12
 TEAM_SIZE = 6
 
-# incoming_damage_v1: per-our-mon incoming-KO BELIEF (opp active → our active + 5 bench). Per mon
-# INCOMING_PER_MON features [phys_expdmg_frac, spec_expdmg_frac, phys_pko, spec_pko, p_outspeed],
+# incoming_damage (gen3_incoming_crit_split): per-our-mon incoming-KO BELIEF (opp active → our
+# active + 5 bench). Per mon INCOMING_PER_MON features [phys_expdmg_frac, spec_expdmg_frac,
+# phys_pko_nocrit, spec_pko_nocrit, phys_crit_delta, spec_crit_delta, p_outspeed, threat_revealed],
 # then INCOMING_RECOVERY_DIM opp-active scalars [recovery_rate, cures_status(P rest),
-# recovery_known]. PER_MON / RECOVERY are owned by incoming_damage.py (the math core that emits the
-# block) and imported here so the layout and the encoder can never disagree — same pattern as
-# VOLATILE_DIM above. Sits AFTER move-effects and BEFORE the matchups, so the feature extractor
-# picks the whole block up in `non_matchup_rest` (→ both heads + global token) automatically — the
-# matchup offset is read from get_layout(), never hardcoded.
+# recovery_known]. P(KO) is the modal no-crit line; the crit risk is the DELTA (crit-inclusive −
+# no-crit ∈ [0, _CRIT_P]) — a decorrelated "crit tax" feature, not the near-redundant absolute crit
+# line. Plus a provenance scalar (revealed move vs usage-prior guess). PER_MON / RECOVERY are owned by incoming_damage.py
+# (the math core that emits the block) and imported here so the layout and the encoder can never
+# disagree — same pattern as VOLATILE_DIM above. Sits AFTER move-effects and BEFORE the matchups, so
+# the feature extractor picks the whole block up in `non_matchup_rest` (→ both heads + global token)
+# automatically — the matchup offset is read from get_layout(), never hardcoded.
 from agents.observation.incoming_damage import (
     PER_MON as INCOMING_PER_MON, RECOVERY as INCOMING_RECOVERY_DIM,
 )
-INCOMING_DMG_DIM = TEAM_SIZE * INCOMING_PER_MON + INCOMING_RECOVERY_DIM  # 33
+INCOMING_DMG_DIM = TEAM_SIZE * INCOMING_PER_MON + INCOMING_RECOVERY_DIM  # 51
 INCOMING_DMG_OFFSET = REACTIVE_SCALAR_DIM + MOVE_EFFECTS_DIM             # 51 (within the reactive block)
 
-REACTIVE_MATCHUP_OFFSET = REACTIVE_SCALAR_DIM + MOVE_EFFECTS_DIM + INCOMING_DMG_DIM  # 84
+REACTIVE_MATCHUP_OFFSET = REACTIVE_SCALAR_DIM + MOVE_EFFECTS_DIM + INCOMING_DMG_DIM  # 102
 
-REACTIVE_DIM = REACTIVE_SCALAR_DIM + MOVE_EFFECTS_DIM + INCOMING_DMG_DIM + MATCHUP_DIM  # 372
+REACTIVE_DIM = REACTIVE_SCALAR_DIM + MOVE_EFFECTS_DIM + INCOMING_DMG_DIM + MATCHUP_DIM  # 390
 
 # Top-level Offsets — all derived from the named constants (only the constants are load-bearing;
 # these comments are the post-gen3_markovian_progress_v1 values: base dim = 1790, full obs = 3391).

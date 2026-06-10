@@ -5,7 +5,7 @@ from .constants import (
     REACTIVE_DIM, TEAM_SIZE,
     REACTIVE_SCALAR_DIM, REACTIVE_MATCHUP_OFFSET,
     MOVE_EFFECTS_DIM, MOVE_EFFECT_FEATURES,
-    INCOMING_DMG_DIM, INCOMING_DMG_OFFSET,
+    INCOMING_DMG_DIM, INCOMING_DMG_OFFSET, INCOMING_PER_MON, INCOMING_RECOVERY_DIM,
 )
 from agents.enums import PokemonType
 from agents import gen3_data
@@ -385,7 +385,7 @@ class ReactiveEncoder(ObservationEncoder):
         return vec
 
     def get_layout(self) -> Dict[str, Any]:
-        mo = REACTIVE_MATCHUP_OFFSET  # 84 = 15 scalars + 36 move-effects + 33 incoming-damage
+        mo = REACTIVE_MATCHUP_OFFSET  # 102 = 15 scalars + 36 move-effects + 51 incoming-damage
         return {
             "move_power": {"offset": 0, "dim": 4},
             "move_multiplier": {"offset": 4, "dim": 4},
@@ -400,10 +400,11 @@ class ReactiveEncoder(ObservationEncoder):
             # inflicts_status, status_will_land, pp_fraction, status_will_land_known].
             "move_effects": {"offset": REACTIVE_SCALAR_DIM, "dim": MOVE_EFFECTS_DIM,
                              "per_slot": MOVE_EFFECT_FEATURES},
-            # incoming_damage_v1: per-mon [phys_expdmg, spec_expdmg, phys_pko, spec_pko,
-            # p_outspeed] × TEAM_SIZE, then [recovery_rate, cures_status, recovery_known].
+            # incoming_damage (gen3_incoming_crit_split): per-mon [phys_expdmg, spec_expdmg,
+            # phys_pko_nocrit, spec_pko_nocrit, phys_crit_delta, spec_crit_delta, p_outspeed,
+            # threat_revealed] × TEAM_SIZE, then [recovery_rate, cures_status, recovery_known].
             "incoming_damage": {"offset": INCOMING_DMG_OFFSET, "dim": INCOMING_DMG_DIM,
-                                "per_mon": 5, "recovery": 3},
+                                "per_mon": INCOMING_PER_MON, "recovery": INCOMING_RECOVERY_DIM},
             "our_matchups": {"offset": mo, "dim": 144},
             "their_matchups": {"offset": mo + 144, "dim": 144},
         }
