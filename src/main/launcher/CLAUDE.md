@@ -99,7 +99,11 @@ deterministic `_supervise` exit-code/crash-restart/`_reap` suite), plus `launche
   pushes to `main` never affect a running session.
 - **Textual TUI** — live dashboard showing metrics, FPS, restart countdown; `l` logs · `e`
   events · `d` dashboard · `r` restart · `c` forced checkpoint · `p` plots · `s` status ·
-  `q`/ctrl-c → confirm → `y`/`n` quit. Built on the shared `src/main/tui/` base — see **How the
+  `q`/ctrl-c → confirm → `y`/`n` quit · `v` copy mode (inherited from `Gen3App`) freezes the
+  2 Hz refresh + hands the mouse back to the terminal for native select-and-copy, same key
+  resumes — the **portable** copy path (works on Terminal.app); `super+c` (⌘C) also copies the
+  Textual selection on terminals that forward ⌘C + honour OSC 52. See `src/main/tui/CLAUDE.md`
+  → Copying text. Built on the shared `src/main/tui/` base — see **How the
   UI reconciles with Textual's event loop** above. **Skill rating (ELO)** surfaces as a
   badge-row headline `🏅 ELO 1532 ±40` (`app.py::_elo_badge`, cyan) AND inside the eval panel: the
   table has a dedicated **`elo` column** — the model's own rating (±CI) on the `all` row, and each

@@ -188,7 +188,9 @@ fragmentation; child saves a checkpoint on SIGTERM, launcher relaunches), **cras
 `<run_dir>/crashes/restart_err_<token>.txt`, with a `--max-crash-restarts` circuit-breaker), **git-worktree
 isolation** (agent pushes to `main` never affect a running session), a **Textual TUI** (metrics,
 FPS, restart countdown, a `↻ N restarts (M crash)` badge; `l` logs, `e` events, `d` dashboard,
-`r` restart, `c` checkpoint, `p` plots, `s` status, `q`/ctrl-c quit), and **live crash-log
+`r` restart, `c` checkpoint, `p` plots, `s` status, `q`/ctrl-c quit, `v` copy mode
+[freeze + native terminal select-and-copy — the portable copy path, works on Terminal.app]),
+and **live crash-log
 streaming** to `<run_dir>/launcher_child.log`.
 
 The UI is **Textual** (built on the shared `src/main/tui/` base), launched with

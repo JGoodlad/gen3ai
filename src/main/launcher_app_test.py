@@ -368,6 +368,44 @@ async def test_q_opens_confirm_locally_does_not_quit_or_route():
         assert q.empty()                                     # nothing sent to the supervisor yet
 
 
+async def test_super_c_copy_inherited_not_shadowed():
+    """⌘C (super+c) is the base Gen3App copy binding — the launcher's fresh BINDINGS
+    (incl. ctrl+c → quit-confirm) must not shadow it or route it to the supervisor."""
+    q = queue.Queue()
+    app = LauncherApp(LauncherState(interval_hours=3.0), q)
+    async with app.run_test() as pilot:
+        await pilot.pause()
+        await pilot.press("super+c")
+        await pilot.pause()
+        assert app.is_running                                # NOT quit
+        assert app.view_mode == "dashboard"                  # NOT the confirm overlay
+        assert q.empty()                                     # NOT routed to the supervisor
+
+
+async def test_copy_mode_pauses_refresh_timer_and_is_not_routed():
+    """`v` (inherited from Gen3App) enters copy mode: it pauses the 2 Hz refresh timer so a
+    repaint can't wipe a terminal selection, and is handled app-locally (not sent to cmd_q)."""
+    q = queue.Queue()
+    app = LauncherApp(LauncherState(interval_hours=3.0), q)
+    async with app.run_test() as pilot:
+        await pilot.pause()
+        assert app._refresh_timer is not None
+        assert app._refresh_timer._active.is_set()    # ticking before copy mode
+
+        await pilot.press("v")
+        await pilot.pause()
+        assert app.copy_mode is True
+        assert not app._refresh_timer._active.is_set()  # frozen so the selection holds
+        assert app.is_running
+        assert q.empty()                                # app-local, never routed
+
+        await pilot.press("v")
+        await pilot.pause()
+        assert app.copy_mode is False
+        assert app._refresh_timer._active.is_set()      # ticking again
+        assert q.empty()
+
+
 async def test_confirm_cancel_and_confirm_paths():
     q = queue.Queue()
     app = LauncherApp(LauncherState(interval_hours=3.0), q)

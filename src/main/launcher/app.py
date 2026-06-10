@@ -133,6 +133,7 @@ class LauncherApp(Gen3App):
         self.supervisor = supervisor   # callable() run in a worker thread; None in tests
         self.exit_code = 0
         self._render_error_seen = False
+        self._refresh_timer = None     # the 2 Hz live-refresh Timer; paused in copy mode
 
     # ── layout ────────────────────────────────────────────────────────────────
     def compose_body(self) -> ComposeResult:
@@ -164,7 +165,7 @@ class LauncherApp(Gen3App):
         ev.can_focus = False
         ev.add_columns("", "win rate", "reward", "elo")
 
-        self.set_interval(0.5, self._refresh)   # 2 Hz ≈ Rich's refresh_per_second=2
+        self._refresh_timer = self.set_interval(0.5, self._refresh)   # 2 Hz ≈ Rich's refresh_per_second=2
         self._refresh()
 
         if self.supervisor is not None:
@@ -265,6 +266,16 @@ class LauncherApp(Gen3App):
         if self.view_mode == "confirm_quit":
             return
         self._cmd_q.put(ch)
+
+    # ── copy mode: freeze the 2 Hz live refresh so a repaint can't wipe a selection ──
+    def _pause_live_updates(self) -> None:
+        if self._refresh_timer is not None:
+            self._refresh_timer.pause()
+
+    def _resume_live_updates(self) -> None:
+        if self._refresh_timer is not None:
+            self._refresh_timer.resume()
+            self._refresh()   # immediate catch-up so resuming isn't a 0.5 s blank beat
 
     # ── render (event-loop only) ─────────────────────────────────────────────────
     def _refresh(self) -> None:

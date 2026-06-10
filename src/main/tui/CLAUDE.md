@@ -8,7 +8,8 @@ only what both genuinely share.
 ## What's here
 
 - **`app_base.py` — `Gen3App(App)`**: shared chrome (`Header` + `Footer`), the
-  `q` quit binding, and the shared theme loaded via the absolute `THEME_PATH`.
+  `q` quit binding, two copy paths (`super+c` and `v` copy mode — see **Copying
+  text** below), and the shared theme loaded via the absolute `THEME_PATH`.
   Subclasses implement `compose_body()` (the chrome wraps it) and append their
   own `.tcss` with `CSS_PATH = [str(THEME_PATH), "my_app.tcss"]` (the first entry
   is absolute so it resolves to *this* package's theme regardless of where the
@@ -18,6 +19,27 @@ only what both genuinely share.
 - **`colors.py` — `gradient_color(t)`**: red→yellow→green hex used for both UIs'
   gradient cells (launcher win-rate/reward cells; prober faithfulness-drift
   cells). Plus the named palette constants.
+
+## Copying text
+
+A Textual app puts the terminal in application mode with mouse tracking on, so the
+terminal never sees a click-drag and its native select-and-copy never fires. Two
+shared paths, both in `Gen3App` (inherited by the launcher + prober):
+
+- **`super+c` → `screen.copy_text`** — macOS ⌘C copying the Textual-native mouse
+  selection. Needs a terminal that **forwards ⌘C** (kitty keyboard protocol) **and**
+  honours **OSC 52** (the clipboard-write escape): kitty, Ghostty, WezTerm, iTerm2.
+  Dead on **Terminal.app**, which does neither — the keystroke never reaches the app
+  and the clipboard write is ignored.
+- **`v` → copy mode** (`action_toggle_copy_mode` / `copy_mode` reactive) — the
+  **portable** path that works even on Terminal.app, because it uses zero app/clipboard
+  escapes. It calls the driver's `_disable_mouse_support()` (mouse handed back to the
+  terminal → native click-drag selection returns) and **freezes live updates** via the
+  `_pause_live_updates()` / `_resume_live_updates()` hooks (so a 2 Hz repaint can't wipe
+  the selection mid-drag). You then select + copy with the **terminal's own** mechanism
+  (e.g. ⌘C in Terminal.app); the same `v` resumes. The base hooks are no-ops (static
+  apps like the prober need no freeze); the launcher overrides them to pause/resume its
+  `set_interval(0.5, …)` refresh `Timer`.
 
 ## What is intentionally NOT shared
 
@@ -29,7 +51,11 @@ the key-hint `Footer`) and keeps its own runtime/loop in `src/main/launcher/run.
 
 ## Tests
 
-`base_test.py` — `gradient_color` endpoints + a `Gen3App` mount smoke test.
+`base_test.py` — `gradient_color` endpoints, a `Gen3App` mount smoke test, the
+`super+c` copy binding (present + harmless with no selection), and `v` copy mode
+(toggles + drives the freeze hooks). `launcher_app_test.py` additionally guards that
+the launcher's fresh `BINDINGS` don't shadow `super+c`, and that `v` pauses the real
+refresh `Timer` (and is handled app-locally, not routed to the supervisor).
 
 ```bash
 export PYTHONPATH=$PYTHONPATH:src && python3 -m pytest src/main/tui -q
