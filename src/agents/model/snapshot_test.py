@@ -257,6 +257,28 @@ def test_check_opponent_compatible_ignores_popart(version):
         version.check_compatible(popart_on)
 
 
+def test_check_compatible_rejects_attend_unrevealed_mismatch(version):
+    """attend_unrevealed_opponents changes the forward mask the policy trained under, so
+    check_compatible (resume + pool/sentinel/distill gate) must reject a mismatch — like use_popart."""
+    flipped = dataclasses.replace(
+        version, attend_unrevealed_opponents=not version.attend_unrevealed_opponents)
+    with pytest.raises(ModelVersionError) as exc_info:
+        version.check_compatible(flipped)
+    assert "attend_unrevealed_opponents" in str(exc_info.value)
+
+
+def test_attend_unrevealed_read_from_features_extractor_kwargs(layout):
+    """from_layout_and_policy_kwargs sources the flag from policy_kwargs.features_extractor_kwargs
+    (where SB3 forwards it to the extractor), not a top-level key."""
+    pk = {"net_arch": [512, 512],
+          "features_extractor_kwargs": {"attend_unrevealed_opponents": True}}
+    v = ModelVersion.from_layout_and_policy_kwargs(layout, pk)
+    assert v.attend_unrevealed_opponents is True
+    # Absent → False (baseline).
+    v_default = ModelVersion.from_layout_and_policy_kwargs(layout, {"net_arch": [512, 512]})
+    assert v_default.attend_unrevealed_opponents is False
+
+
 def test_check_opponent_compatible_ignores_vf_coef_and_reward(version):
     """vf_coef / reward-config are value-meaning training hparams, irrelevant to an opponent forward."""
     differing = dataclasses.replace(
@@ -314,6 +336,46 @@ def test_load_foreign_opponent_same_arch_loads_and_predicts(layout, version, map
     with torch.no_grad():
         dist = model.policy.get_distribution(obs)
     assert dist.distribution.logits.shape == (1, 11)
+
+
+def test_attend_unrevealed_flag_survives_save_load_and_drives_mask(layout, mappings):
+    """e2e: --attend-unrevealed-opponents must (a) be recorded in model_config.json AND (b) survive
+    SB3 save/load back into the rebuilt ObsUnpack and actually change the forward mask. Guards the
+    config↔forward coupling the version check exists to protect: a refactor that dropped the flag
+    from the serialized features_extractor_kwargs would silently revert the forward to the masked
+    baseline while model_config.json still read True — and every in-process unit test (which builds
+    Gen3FeaturesExtractor directly) would still pass. The two sides are wired independently in
+    train_rl_agent.py (config from from_layout_and_policy_kwargs; forward from SB3 serializing the
+    same kwarg into the zip), so they must be pinned together here."""
+    from agents.model.features_extractor import Gen3FeaturesExtractor
+    from agents.model.policy import Gen3DualHeadMaskablePolicy
+    from agents.model.phase_modules_test import _opp_three_slot_obs
+    from sb3_contrib import MaskablePPO
+
+    extractor_kwargs = {"layout": layout, "mappings": mappings,
+                        "attend_unrevealed_opponents": True}
+    policy_kwargs = {"features_extractor_class": Gen3FeaturesExtractor,
+                     "features_extractor_kwargs": extractor_kwargs, "net_arch": [512, 512]}
+    with tempfile.TemporaryDirectory() as tmpdir:
+        model = MaskablePPO(Gen3DualHeadMaskablePolicy, _make_vec_env(layout["total_dim"]),
+                            policy_kwargs=policy_kwargs, verbose=0, device="cpu")
+        model.save(os.path.join(tmpdir, "flagged"))
+        # (a) config side: model_config.json records the SAME flag the policy was built with.
+        save_model_snapshot(tmpdir, ModelVersion.from_layout_and_policy_kwargs(layout, policy_kwargs),
+                            git_hash="flagtest")
+        saved_cfg = ModelVersion.from_json_file(os.path.join(tmpdir, "model_config.json"))
+        assert saved_cfg.attend_unrevealed_opponents is True and saved_cfg.config_version == 8
+        del model
+        loaded = MaskablePPO.load(os.path.join(tmpdir, "flagged.zip"), device="cpu")
+
+    # (b) forward side: the flag round-tripped into the rebuilt extractor...
+    ext = loaded.policy.features_extractor
+    assert ext.attend_unrevealed_opponents is True
+    assert ext.unpack.attend_unrevealed_opponents is True
+    # ...and it actually drives the mask — unrevealed opp slot attendable, revealed-fainted masked.
+    ctx = ext.unpack({"observation": _opp_three_slot_obs(layout)})
+    assert bool(ctx.fainted_mask_opp[0, 2]) is False   # unrevealed — attendable after reload
+    assert bool(ctx.fainted_mask_opp[0, 1]) is True    # revealed-fainted — still masked
 
 
 def test_load_foreign_opponent_arch_mismatch_raises(layout, version, mappings):
@@ -769,6 +831,18 @@ def test_migrate_v6_adds_draw_penalty_default(version):
     result = _migrate_config(data)
     assert result["config_version"] == MODEL_CONFIG_VERSION
     assert result["draw_penalty"] == pytest.approx(-30.0)
+    ModelVersion(**result)
+
+
+def test_migrate_v7_adds_attend_unrevealed_opponents_default(version):
+    """Pre-v8 configs lack attend_unrevealed_opponents — migration injects False (baseline masking)
+    and bumps to the current version. The migrated dict must construct a valid ModelVersion."""
+    data = json.loads(version.to_json())
+    data.pop("attend_unrevealed_opponents", None)
+    data["config_version"] = 7
+    result = _migrate_config(data)
+    assert result["config_version"] == MODEL_CONFIG_VERSION
+    assert result["attend_unrevealed_opponents"] is False
     ModelVersion(**result)
 
 

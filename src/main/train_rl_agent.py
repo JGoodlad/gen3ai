@@ -512,6 +512,13 @@ async def main():
                              "shared trunk). Requires an explicit --clip-range-vf none (value "
                              "clipping is unnecessary with normalization). Version-checked: cannot "
                              "be toggled on a resumed model.")
+    parser.add_argument("--attend-unrevealed-opponents", "--attend_unrevealed_opponents",
+                        dest="attend_unrevealed_opponents", action=BoolFlag, default=False,
+                        help="Keep the opponent's still-hidden party (unrevealed mons — Gen 3 has no "
+                             "team preview) ATTENDABLE in the transformer instead of key-masking them "
+                             "identically to fainted mons. Lets the body reason about the hidden team. "
+                             "No weight-shape change; version-checked, so it cannot be toggled on a "
+                             "resumed model. Off by default (clean A/B baseline).")
     parser.add_argument("--n-steps", type=int, default=2048, help="Steps per environment per rollout")
     parser.add_argument("--grad-checkpointing", "--grad_checkpointing", dest="grad_checkpointing",
                         action=BoolFlag, default=False,
@@ -1265,6 +1272,10 @@ async def main():
         # Build the current-code version for compatibility check
         _load_encoder = Gen3ObservationEncoder(mappings)
         _load_extractor_kwargs = _load_encoder.get_features_extractor_kwargs()
+        # Behavioral mask toggle — version-checked vs the saved model_config.json. The resumed
+        # policy is rebuilt from the zip's own kwargs, so this only feeds current_version: a
+        # resume with a different value FATALs rather than silently ignoring the flag.
+        _load_extractor_kwargs["attend_unrevealed_opponents"] = args.attend_unrevealed_opponents
         _load_policy_kwargs = {
             "features_extractor_class": Gen3FeaturesExtractor,
             "features_extractor_kwargs": _load_extractor_kwargs,
@@ -1431,7 +1442,10 @@ async def main():
         temp_encoder = Gen3ObservationEncoder(mappings)
         extractor_kwargs = temp_encoder.get_features_extractor_kwargs()
         extractor_kwargs["log_level"] = log_level
-        
+        # Unmask the opponent's still-hidden party (default off). SB3 forwards this to
+        # Gen3FeaturesExtractor; from_layout_and_policy_kwargs records it in model_config.json.
+        extractor_kwargs["attend_unrevealed_opponents"] = args.attend_unrevealed_opponents
+
         policy_kwargs = {
             "features_extractor_class": Gen3FeaturesExtractor,
             "features_extractor_kwargs": extractor_kwargs,

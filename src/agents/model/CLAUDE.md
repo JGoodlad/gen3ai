@@ -133,7 +133,7 @@ as a decisive loss; set lower to make a stall-to-cap strictly worse) are all rec
 and enforced on resume by **`check_reward_config`** (FATAL on drift, since they silently shift the
 reward/objective), excluded from `check_compatible`. They are reward-VALUE changes — **no
 `ARCH_SIGNATURE` bump** (the network/obs are unchanged) — so a fresh run is needed to measure them but
-old checkpoints don't fail an arch check. Current `MODEL_CONFIG_VERSION` = **7**.
+old checkpoints don't fail an arch check. Current `MODEL_CONFIG_VERSION` = **8**.
 
 **Feature toggle that changes the value-head STRUCTURE (e.g. `use_popart`, v6).** Distinct from the
 value-meaning hparams above: PopArt adds normalized output + `mu/sigma` buffers, so a mismatch breaks
@@ -142,6 +142,21 @@ the state_dict on EVERY load (eval / pool / distill included). So it goes in **`
 is about shapes), plus the bool field + `MODEL_CONFIG_VERSION` bump + a `_migrate_config`
 `setdefault(...)` default. It lands in `model_config.json` via `to_json`; a resume that flips it fails
 loudly. The litmus test: **value-meaning → resume-only `check_*`; structural → `check_compatible`.**
+
+**Behavioral toggle that changes the FORWARD pass but not the state_dict (e.g.
+`attend_unrevealed_opponents`, v8).** A third category: `--attend-unrevealed-opponents` keeps the
+opponent's still-hidden party (unrevealed mons — Gen 3 has no team preview, so unseen slots arrive as
+all-zero `species_known=0, hp=0` placeholders) **attendable** in the transformer instead of
+key-masking them identically to revealed-fainted mons. It flips a single line in `ObsUnpack.forward`
+(`fainted_mask_opp &= species_known>0.5` when on), threaded via `Gen3FeaturesExtractor(…,
+attend_unrevealed_opponents)` ← `features_extractor_kwargs`. The weights are **identical shape** (no
+`_WEIGHT_FIELDS` change, no `ARCH_SIGNATURE` bump, no obs-layout change) — but the mask the policy AND
+value trained under differs, so a mid-run flip would feed a different forward. Like PopArt it lives in
+**`check_compatible`** (dedicated message); unlike PopArt the state_dict is byte-identical either way,
+so it is NOT a loadability concern — just a train/eval-consistency one. Refined litmus test:
+**value-meaning → resume-only `check_*`; structural OR forward-behavior → `check_compatible`.** Off by
+default (clean A/B baseline). The active opp is always revealed + force-unmasked, so even with every
+bench slot attendable no key-padding row is all-True (no attention NaN).
 
 A startup smoke test (`_run_roundtrip_test` in `train_rl_agent.py`) saves to a temp dir and reloads before every `model.learn()` call — catches serialization issues immediately.
 

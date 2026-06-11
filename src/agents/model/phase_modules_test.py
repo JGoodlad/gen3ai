@@ -29,11 +29,12 @@ from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappin
 from agents.action.constants import ACTION_SPACE_SIZE
 
 
-def _make_model():
+def _make_model(attend_unrevealed_opponents: bool = False):
     mappings = load_mappings()
     layout = Gen3ObservationEncoder(mappings).get_layout()
     obs_space = gym.spaces.Box(low=0.0, high=1.0, shape=(layout["total_dim"],), dtype=np.float32)
-    model = Gen3FeaturesExtractor(obs_space, layout=layout, mappings=mappings)
+    model = Gen3FeaturesExtractor(obs_space, layout=layout, mappings=mappings,
+                                  attend_unrevealed_opponents=attend_unrevealed_opponents)
     model.eval()
     return model, layout
 
@@ -108,6 +109,62 @@ def test_obsunpack_active_idx_and_fainted_mask():
     # Active slot is never masked; an HP=0 bench slot is fainted.
     assert bool(ctx.fainted_mask_ours[0, 2]) is False
     assert bool(ctx.fainted_mask_ours[0, 0]) is True
+
+
+def _opp_three_slot_obs(layout):
+    """Obs with opp slot 0 = revealed active, slot 1 = revealed-fainted (species_known=1, hp=0),
+    slot 2 = unrevealed (all-zero → species_known=0, hp=0). Slots 3-5 stay unrevealed too."""
+    from agents.observation.constants import POKEMON_SPECIES_KNOWN_OFFSET
+    opp_start = layout["parts"]["opp_team"]["start"]
+    hp_off = layout["pokemon"]["hp"]["offset"]
+    obs = _zeros(layout)
+    base0 = opp_start + 0 * POKEMON_FULL_DIM
+    obs[0, base0 + (POKEMON_FULL_DIM - 1)] = 1.0   # active flag on opp slot 0
+    obs[0, base0 + hp_off] = 0.8                   # alive
+    obs[0, base0 + POKEMON_SPECIES_KNOWN_OFFSET] = 1.0
+    base1 = opp_start + 1 * POKEMON_FULL_DIM
+    obs[0, base1 + POKEMON_SPECIES_KNOWN_OFFSET] = 1.0  # revealed but hp stays 0 → fainted
+    return obs
+
+
+def test_unrevealed_opp_masked_by_default():
+    """Baseline: an unrevealed opp slot (species_known=0, hp=0) is key-masked exactly like a
+    revealed-fainted one — the species_known bit is discarded by the mask."""
+    model, layout = _make_model()  # attend_unrevealed_opponents=False
+    ctx = model.unpack({"observation": _opp_three_slot_obs(layout)})
+    assert bool(ctx.fainted_mask_opp[0, 0]) is False   # active — never masked
+    assert bool(ctx.fainted_mask_opp[0, 1]) is True    # revealed-fainted — masked
+    assert bool(ctx.fainted_mask_opp[0, 2]) is True    # unrevealed — masked (baseline)
+    assert ctx.fainted_mask_opp[0, 3:].all().item() is True  # other unrevealed slots masked
+
+
+def test_unrevealed_opp_attendable_when_flag_on():
+    """Flag on: unrevealed opp slots (species_known=0) stay ATTENDABLE; only revealed-fainted
+    slots (species_known=1, hp=0) remain masked. Active is always unmasked."""
+    model, layout = _make_model(attend_unrevealed_opponents=True)
+    ctx = model.unpack({"observation": _opp_three_slot_obs(layout)})
+    assert bool(ctx.fainted_mask_opp[0, 0]) is False   # active — never masked
+    assert bool(ctx.fainted_mask_opp[0, 1]) is True    # revealed-fainted — STILL masked
+    assert bool(ctx.fainted_mask_opp[0, 2]) is False   # unrevealed — now attendable
+    assert ctx.fainted_mask_opp[0, 3:].any().item() is False  # all unrevealed slots attendable
+
+
+def test_unrevealed_flag_active_force_unmask_prevents_nan_row():
+    """No-attention-NaN invariant (v8): the opp ACTIVE slot is force-unmasked even when it is itself
+    revealed-fainted (hp=0). On an all-revealed-fainted board with the flag ON, EVERY slot satisfies
+    `hp==0 & species_known>0.5` — so the force-unmask of the active slot is the ONLY thing keeping the
+    key-padding row from being all-True (which would NaN nn.MultiheadAttention). Both assertions are
+    load-bearing on that force-unmask line; without it slot 0 stays masked and the whole row is True."""
+    from agents.observation.constants import POKEMON_SPECIES_KNOWN_OFFSET
+    model, layout = _make_model(attend_unrevealed_opponents=True)
+    opp_start = layout["parts"]["opp_team"]["start"]
+    obs = _zeros(layout)
+    for i in range(TEAM_SIZE):                          # all 6 opp slots revealed + fainted (hp stays 0)
+        obs[0, opp_start + i * POKEMON_FULL_DIM + POKEMON_SPECIES_KNOWN_OFFSET] = 1.0
+    obs[0, opp_start + 0 * POKEMON_FULL_DIM + (POKEMON_FULL_DIM - 1)] = 1.0   # slot 0 = active
+    ctx = model.unpack({"observation": obs})
+    assert bool(ctx.fainted_mask_opp[0, 0]) is False        # active force-unmasked despite hp==0
+    assert ctx.fainted_mask_opp[0].all().item() is False    # ⇒ no all-True row ⇒ no attention NaN
 
 
 # ---------------------------------------------------------------------------

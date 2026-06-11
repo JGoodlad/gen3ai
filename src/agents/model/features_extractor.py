@@ -195,9 +195,14 @@ class ObsUnpack(torch.nn.Module):
     (`ExtractorContext`). This is the bulk of the gather/slice plumbing; isolating it
     makes the rest of the pipeline read at the tensor level."""
 
-    def __init__(self, layout: Dict[str, Any]):
+    def __init__(self, layout: Dict[str, Any], attend_unrevealed_opponents: bool = False):
         super().__init__()
         self.layout = layout
+        # When True, UNREVEALED opp slots (species_known==0, hp filled as 0 — Gen 3 has no
+        # team preview, so unseen party mons arrive here as all-zero placeholders) stay
+        # ATTENDABLE in the transformer instead of being key-masked identically to fainted
+        # mons. Lets the body reason about the still-hidden enemy team. Off = baseline.
+        self.attend_unrevealed_opponents = attend_unrevealed_opponents
 
     def forward(self, obs: Dict[str, torch.Tensor]) -> ExtractorContext:
         layout = self.layout
@@ -305,6 +310,12 @@ class ObsUnpack(torch.nn.Module):
         fainted_mask_ours = (hp_and_active[:, 0:TEAM_SIZE, 0] == 0)
         fainted_mask_ours[batch_idx, our_active_idx] = False
         fainted_mask_opp = (hp_and_active[:, TEAM_SIZE:2 * TEAM_SIZE, 0] == 0)
+        if self.attend_unrevealed_opponents:
+            # Keep UNREVEALED opp slots attendable: only REVEALED-then-fainted mons
+            # (species_known==1 AND hp==0) stay masked. species_known==0 slots are the
+            # opponent's still-hidden party — let the transformer attend to them.
+            species_known_opp = pokemon_part[:, TEAM_SIZE:2 * TEAM_SIZE, POKEMON_SPECIES_KNOWN_OFFSET]
+            fainted_mask_opp = fainted_mask_opp & (species_known_opp > 0.5)
         fainted_mask_opp[batch_idx, opp_active_local] = False
 
         # Active contexts + non-matchup scalar tail (transformer global token + projection).
@@ -784,15 +795,19 @@ class Gen3FeaturesExtractor(torch.nn.Module):
     `src/agents/model/CLAUDE.md` for the phase-module contract."""
 
     def __init__(self, observation_space: spaces.Dict, layout: Optional[Dict[str, Any]] = None,
-                 mappings: Optional[Dict[str, Any]] = None, log_level: LogLevel = LogLevel.QUIET):
+                 mappings: Optional[Dict[str, Any]] = None, log_level: LogLevel = LogLevel.QUIET,
+                 attend_unrevealed_opponents: bool = False):
         super().__init__()
         self.layout = layout
         self.mappings = mappings
         self.log_level = log_level
+        # Behavioral toggle (no weight-shape change): unmask the opponent's still-hidden
+        # party so the transformer attends to it. Version-checked, not in ARCH_SIGNATURE.
+        self.attend_unrevealed_opponents = attend_unrevealed_opponents
 
         # Phase modules (constructed before the dummy forward below).
         self.embeddings = Embeddings(layout)
-        self.unpack = ObsUnpack(layout)
+        self.unpack = ObsUnpack(layout, attend_unrevealed_opponents=attend_unrevealed_opponents)
         self.pokemon_encoder = PokemonEncoder(layout)
         self.team_transformer = TeamTransformer(layout)
         self.cls_pool = CLSPool(layout)

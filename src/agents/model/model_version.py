@@ -38,7 +38,13 @@ from typing import Any, Dict, List
 #   resume-immutable VALUE-meaning treatment as the v4-v5 reward hparams (folded into
 #   check_reward_config, excluded from check_compatible). Old configs migrate to -30.0 (== a decisive
 #   loss = the prior behavior, where a tie scored -VICTORY_VALUE).
-MODEL_CONFIG_VERSION = 7
+#
+# v8: added `attend_unrevealed_opponents` (--attend-unrevealed-opponents). A BEHAVIORAL toggle that
+#   keeps the opponent's still-hidden party attendable in the transformer instead of key-masking it.
+#   Like v6/use_popart it changes the forward pass (the mask, policy AND value) rather than a reward
+#   meaning, so it is enforced in check_compatible(); but unlike PopArt it leaves the state_dict
+#   identical (no weight-shape / ARCH_SIGNATURE change). Old configs default False (baseline masking).
+MODEL_CONFIG_VERSION = 8
 
 # Change this when the neural architecture changes structurally in a way that makes
 # weights from a different signature incompatible (e.g. adding LSTM, replacing attention).
@@ -312,6 +318,13 @@ class ModelVersion:
     # Defaulted (must follow the defaulted fields above) so weight-shape-only callers need not supply it.
     use_popart: bool = False
 
+    # v8 behavioral toggle (value-checked, not weight-shape): keep the opponent's still-hidden party
+    # ATTENDABLE in the transformer instead of key-masking unrevealed slots like fainted mons. Changes
+    # the forward-pass mask (policy AND value), not any weight shape or the obs layout, so it lives in
+    # config_version (not ARCH_SIGNATURE) and is checked in check_compatible — resuming with a
+    # different value would silently change the masking the policy trained under.
+    attend_unrevealed_opponents: bool = False
+
     @classmethod
     def from_layout_and_policy_kwargs(
         cls,
@@ -358,6 +371,10 @@ class ModelVersion:
             switch_bias_weight=float(getattr(reward_config, "switch_bias_weight", 0.0)),
             draw_penalty=float(getattr(reward_config, "draw_penalty", -30.0)),
             use_popart=bool(policy_kwargs.get("use_popart", False)),
+            attend_unrevealed_opponents=bool(
+                policy_kwargs.get("features_extractor_kwargs", {}).get(
+                    "attend_unrevealed_opponents", False)
+            ),
         )
 
     def to_json(self) -> str:
@@ -420,6 +437,20 @@ class ModelVersion:
                 "PopArt changes the value head's parameterization (normalized output + running "
                 "mu/sigma buffers), so it cannot be toggled on a resumed model.\n"
                 "Resume with the matching --use-popart setting, or start a fresh training run."
+            )
+
+        # Behavioral toggle — value-checked (not weight-shape): unmasking the opponent's hidden
+        # party changes the transformer's key_padding_mask (policy AND value forward). The state_dict
+        # is identical either way, but a resume that flips it would feed the policy a different mask
+        # than it trained under. Lives here (gates resume) with a dedicated message; same-run
+        # pool/sentinel/distill snapshots carry the same value so they pass trivially.
+        if self.attend_unrevealed_opponents != saved.attend_unrevealed_opponents:
+            raise ModelVersionError(
+                f"attend_unrevealed_opponents mismatch: saved={saved.attend_unrevealed_opponents}, "
+                f"current={self.attend_unrevealed_opponents}.\n"
+                "Unmasking the opponent's hidden party changes the transformer mask the policy was "
+                "trained under, so it cannot be toggled on a resumed model.\n"
+                "Resume with the matching --attend-unrevealed-opponents setting, or start a fresh run."
             )
 
     def check_opponent_compatible(self, foreign: "ModelVersion") -> None:
@@ -543,4 +574,8 @@ def _migrate_config(data: dict) -> dict:
         # v7: added draw_penalty. Old runs scored a tie/timeout as a decisive loss (-VICTORY_VALUE).
         data.setdefault("draw_penalty", -30.0)
         data["config_version"] = 7
+    if version < 8:
+        # v8: added attend_unrevealed_opponents. Old models key-masked unrevealed opp slots.
+        data.setdefault("attend_unrevealed_opponents", False)
+        data["config_version"] = 8
     return data
