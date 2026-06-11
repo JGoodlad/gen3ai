@@ -14,6 +14,60 @@ from src.utils.bridge.team_validator import validate_teams_locally
 DEFAULT_URL = "https://pokepast.es/aed6c2ad0c5c2593"
 DEFAULT_OUTPUT_DIR = "data/teams/others/yak_attack"
 
+
+def _strip_mon_prefix(name: str) -> str:
+    """Some PokePaste dumps (e.g. Yak Attack) name a team once PER POKÉMON as
+    ``"<Mon>/<Team Name>"`` — six headers, one shared 6-mon team text. When we collapse those
+    duplicate headers into a single entry we strip the leading ``"<Mon>/"`` so the kept name is
+    the real team name (``"Cloy Aero"``, not ``"Aerodactyl/Cloy Aero"``)."""
+    return name.split("/", 1)[1].strip() if "/" in name else name
+
+
+def collapse_duplicate_teams(rows: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """Collapse manifest rows that point at the SAME team into ONE row — the
+    one-entry-per-team contract every other source already satisfies.
+
+    A dump that lists a team once per Pokémon (the Yak Attack bug) otherwise inflates that team's
+    uniform training/eval draw weight 6–12×: ``team_loader`` appends the file text once per
+    ENTRY, so 174 real teams became 1056 pool slots and ~66% of every episode's team draw. Keyed
+    by ``id`` (== the team-text hash == the on-disk filename), so the collapse is exact regardless
+    of how the dump was authored. Order-preserving; the first occurrence wins for
+    ``file``/``format``/``id``/``source``. ``valid`` = AND over the group (a team is kept only if
+    every one of its headers validated — conservative; in the real data validity never differs
+    WITHIN a group, so this also equals "any"). ``errors`` = order-preserving union. Idempotent:
+    an already-collapsed manifest passes through unchanged."""
+    groups: Dict[str, List[Dict[str, Any]]] = {}
+    order: List[str] = []
+    for row in rows:
+        rid = row["id"]
+        if rid not in groups:
+            groups[rid] = []
+            order.append(rid)
+        groups[rid].append(row)
+
+    collapsed: List[Dict[str, Any]] = []
+    for rid in order:
+        grp = groups[rid]
+        first = grp[0]
+        errors: List[str] = []
+        for row in grp:
+            for err in row.get("errors", []) or []:
+                if err not in errors:
+                    errors.append(err)
+        collapsed.append({
+            "id": rid,
+            # strip the per-mon prefix only when the team recurred under multiple headers, so a
+            # normal single-occurrence team whose name legitimately contains "/" is kept verbatim
+            "name": _strip_mon_prefix(first["name"]) if len(grp) > 1 else first["name"],
+            "format": first.get("format"),
+            "valid": all(row.get("valid", False) for row in grp),
+            "errors": errors,
+            "file": first["file"],
+            "source": first.get("source"),
+        })
+    return collapsed
+
+
 def sync_dump(urls: List[str], output_dir: str, format_id: str = "gen3ou", validate: bool = True, append: bool = False):
     """Fetches, parses, and validates PokePaste team dumps."""
     if not os.path.exists(output_dir):
@@ -137,10 +191,20 @@ def sync_dump(urls: List[str], output_dir: str, format_id: str = "gen3ou", valid
             existing_ids.add(team_id)
         
         print(f"Synced {len(team_data)} new teams. {valid_count} valid, {invalid_count} invalid")
-        
+
+    # ROOT FIX: a dump that names a team once per Pokémon (the Yak Attack format) yields one
+    # manifest row PER MON pointing at the SAME file. The team loader appends the file once per
+    # row, so those teams get 6–12× the uniform draw weight of every one-row source. Collapse to
+    # one entry per distinct team (== per file) so the manifest can't reproduce that inflation.
+    n_rows = len(all_teams_metadata)
+    all_teams_metadata = collapse_duplicate_teams(all_teams_metadata)
+    if len(all_teams_metadata) != n_rows:
+        print(f"Collapsed {n_rows} per-header rows -> {len(all_teams_metadata)} distinct teams "
+              f"(one entry per team; prevents per-Pokémon draw-weight inflation)")
+
     with open(metadata_path, 'w') as f:
         json.dump(all_teams_metadata, f, indent=2)
-    
+
     print(f"\nFinal Summary: {len(all_teams_metadata)} total teams in {output_dir}")
     print(f"Metadata index saved to {metadata_path}")
 

@@ -40,6 +40,29 @@ Notes that bite:
 - Gen filtering uses per-gen `num` ceilings (`_GEN_MAX_*`) so post-gen-3 abilities/species/items
   are excluded.
 
+## Team downloaders — one manifest entry per team
+
+`sample_team_downloader/sync.py` and `others_team_downloader/sync.py` each write a per-folder
+`teams.json` manifest (`{id, name, format, valid, errors, file, source}` rows) next to the `.txt`
+team files. **The invariant every manifest must hold: one entry per distinct team (== per `id` ==
+per `.txt` file).** The runtime `TeamLoader` (`src/utils/team_loader/`) appends a team's text once
+per **entry**, then draws uniformly — so a duplicated entry silently multiplies that team's
+training/eval draw weight.
+
+This bit us once: the Yak Attack PokePaste dump names a team once **per Pokémon**
+(`"<Mon>/<Team Name>"`, six headers sharing one 6-mon text → one id/file), and the generator didn't
+dedupe, so `others/yak_attack/teams.json` had 1122 rows over 185 files (174 valid). That made
+yak_attack ~66% of **every** training and eval team draw (pool 1601 over 719 unique). Fix
+(`gen3_team_pool_dedupe`): `others_team_downloader/sync.py::collapse_duplicate_teams` collapses rows
+by `id` before writing (name strips the `"<Mon>/"` prefix, `valid` = AND over the group, `errors` =
+union, idempotent), so a re-run can't reproduce it; the deduped pool is **719 unique teams (32
+sample + 687 others)**. `TeamLoader._load_teams` also dedupes by resolved file path as
+defense-in-depth (loud warning if a manifest references a file twice). Guards:
+`src/utils/team_loader/team_manifest_test.py` (data-contract: one-entry-per-file over all manifests
++ collapse-fn units) and `loader_test.py` (synthetic per-mon dedupe + the 32/687/719 count pin). A
+changed team pool is a **data-distribution change** (training *and* eval) — land it at a clean
+retrain boundary, never mid-A/B.
+
 ## Reproducibility is tested
 
 `src/agents/gen3_data/extractor_parity_test.py` re-runs the builders and asserts they reproduce

@@ -18,6 +18,12 @@ class TeamLoader:
             print(f"Warning: Base directory {self.base_dir} does not exist.")
             return
 
+        # Defense-in-depth against a malformed manifest that references the same file more than
+        # once (the per-Pokémon Yak Attack bug — fixed at the acquisition layer in
+        # tools/others_team_downloader, but a manifest is just data and the next bad one should be
+        # LOUD, not silently inflate one team's draw weight). Dedupe by resolved file path, keep
+        # first occurrence; the acquisition-layer collapse is the real fix.
+        seen = set()
         for root, dirs, files in os.walk(self.base_dir):
             if "teams.json" in files:
                 json_path = os.path.join(root, "teams.json")
@@ -27,32 +33,41 @@ class TeamLoader:
                 except Exception as e:
                     print(f"Error loading {json_path}: {e}")
                     continue
-                    
+
+                manifest_dups = 0
                 for entry in meta:
                     # Skip invalid teams if the metadata flag is present
                     if entry.get("valid") is False:
                         continue
-                        
+
                     rel_file_path = entry.get("file")
                     if not rel_file_path:
                         continue
-                    
+
                     # Resolve path: entry['file'] is relative to 'data/'
                     # e.g., 'teams/sample/abc.txt' -> 'data/teams/sample/abc.txt'
                     full_path = os.path.join("data", rel_file_path)
-                    
+
                     if not os.path.exists(full_path):
                         # Fallback for other potential path structures
                         full_path = os.path.join(self.base_dir, os.path.basename(rel_file_path))
                         if not os.path.exists(full_path):
                             # Try absolute or direct relative
                             full_path = rel_file_path
-                    
+
                     try:
                         if os.path.exists(full_path):
+                            resolved = os.path.realpath(full_path)
+                            if resolved in seen:
+                                # Same file already loaded — a manifest referencing it twice
+                                # would otherwise over-weight this team. Skip the duplicate.
+                                manifest_dups += 1
+                                continue
+                            seen.add(resolved)
+
                             with open(full_path, "r") as f:
                                 team_text = f.read().strip()
-                                
+
                             # Categorize based on the folder structure
                             if "sample" in root:
                                 self.sample_teams.append(team_text)
@@ -62,6 +77,12 @@ class TeamLoader:
                             print(f"Warning: Team file not found: {rel_file_path} (resolved to {full_path})")
                     except Exception as e:
                         print(f"Error reading {full_path}: {e}")
+
+                if manifest_dups:
+                    print(f"Warning: {json_path} references {manifest_dups} duplicate team "
+                          f"file(s) (same file listed more than once) — skipped to avoid "
+                          f"inflating those teams' draw weight. Re-run the acquisition tool "
+                          f"(tools/others_team_downloader) to collapse the manifest.")
 
     def get_sample_teams(self):
         """Returns only the curated sample teams."""

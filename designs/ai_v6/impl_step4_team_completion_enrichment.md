@@ -15,7 +15,7 @@ Three gaps remain after Step 3:
 
 **1. Partial move coverage.** Replays reveal only the moves actually used in a game — on
 average 1.82 moves per Pokémon. The model is trained against noisy labels (unrevealed
-moves are treated as 0, but many are actually in the moveset). The 39 curated teams in
+moves are treated as 0, but many are actually in the moveset). The ~719 curated teams in
 `data/teams/` have all 4 moves fully specified; mixing them in eliminates label noise for
 those records, improving the move head.
 
@@ -37,7 +37,7 @@ types. The model should distinguish them.
 | Source | Records | Completeness |
 |--------|---------|--------------|
 | Ladder replays (`data/replay_teams.jsonl`) | 37,940 | Species always known; moves/items partial; ability/HP type unknown |
-| Curated teams (`data/teams/sample/`, `data/teams/others/`) | ~78 (39 teams × 2 players equiv) | All fields complete: 4 moves, item, ability, HP type |
+| Curated teams (`data/teams/sample/`, `data/teams/others/`) | ~719 (32 sample + 687 others, one record per team) | All fields complete: 4 moves, item, ability, HP type |
 
 Curated team records are weighted up during loss computation to compensate for their small
 share of the total data. Because they have complete ground truth, every loss term fires on
@@ -210,7 +210,7 @@ python -m main.train_team_completion \
 
 ## Verification
 
-1. **Parser sanity** — run `team_parser.py` on the 39 curated files; confirm all 6 Pokémon
+1. **Parser sanity** — run `team_parser.py` on the ~719 curated files; confirm all 6 Pokémon
    per team are parsed with 4 moves, item, ability, and `hp_type` where applicable.
    Spot-check: Zapdos should have `hp_type="ice"` or `hp_type="grass"` depending on the team.
 

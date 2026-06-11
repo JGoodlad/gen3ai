@@ -242,7 +242,8 @@ data/ → gen3_data`):
   from `Spreads`; `P(item) = Items[i]/Σ Items`.
 - Coverage floor: `RawCount < ~5000` → base-stat-lean fallback with a wide band.
 - **Distribution shift (must do):** the agent never plays the ladder — training/eval/self-play draw
-  from ~39 curated `data/teams/`. **Derive/validate priors against that pool**, and run the §7
+  from ~719 curated `data/teams/` (32 sample + 687 others, one entry per team after the per-mon
+  manifest dedupe). **Derive/validate priors against that pool**, and run the §7
   calibration fuzz on bridge battles from it.
 - Teams-corpus joint-set mining (777 teams, ~21 sets/species avg) is a **v2-only** refinement where a
   species has ≥N real sets.
