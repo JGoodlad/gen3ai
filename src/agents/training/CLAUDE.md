@@ -759,6 +759,24 @@ un-normalized units). New diagnostics ride the same generic metrics path:
 loss (≈O(1)) and `grad/value_share` should fall from ≈1.0 toward ~0.4 — the live confirmation it
 worked.
 
+## Tail-weighted value loss (`--value-tail-weight`)
+
+A probe-driven critic-tail lever (off by default). A representation probe found the critic's TD-residual
+tail is fat and barely anticipated (the V-tail crater the `eval/td_resid_tail` CVaR@5% already tracks),
+so `InstrumentedMaskablePPO._value_loss_from_se` replaces the plain `F.mse_loss` at all **three** value
+sites (PopArt-normalized / unclipped / clipped) with a **CVaR blend**:
+`value_loss = (1−β)·MSE + β·mean(worst _VALUE_TAIL_FRAC=10% squared errors)`, computed in whichever
+space the branch uses (NORMALIZED under PopArt, so the tail selection matches the loss scale). At **β=0
+it is `se.mean()`, byte-identical to `F.mse_loss`** (the default no-op). β>0 makes the critic prioritise
+the big over-claim misses it under-prices; it is **symmetric in error sign**, so V stays an unbiased
+mean estimate and the GAE advantages the policy reads are unaffected — a weighting change, not a new
+target. The hparam is set on the model after construction (like `_async_rollout`), **resume-immutable**
+(recorded in `model_config.json`, FATAL to change on resume via `ModelVersion.check_value_tail_weight`,
+`MODEL_CONFIG_VERSION` v11; excluded from `check_compatible` since a frozen opponent never runs the value
+loss), and **not weight-shape** (no `ARCH_SIGNATURE` bump). Pairs with the v10 `--value-active-readout`
+value-head fix (`src/agents/model/CLAUDE.md`); validate both by watching `eval/td_resid_tail` fall.
+Tests: `instrumented_ppo_test.py` (β=0 == MSE, β>0 == the exact blend).
+
 ## Process liveness guards (`watchdog.py`)
 
 Two daemon-thread watchdogs keep a hung/abandoned run from lingering:

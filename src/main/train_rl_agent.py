@@ -263,7 +263,8 @@ def _run_roundtrip_test(model, layout: dict, policy_kwargs: dict, debug: bool = 
     from agents.model.features_extractor import PROJECTION_DIM
 
     version = ModelVersion.from_layout_and_policy_kwargs(
-        layout, policy_kwargs, vf_coef=float(model.vf_coef)
+        layout, policy_kwargs, vf_coef=float(model.vf_coef),
+        value_tail_weight=float(getattr(model, "value_tail_weight", 0.0)),
     )
     total_dim = layout["total_dim"]
     tmpdir = tempfile.mkdtemp(prefix="roundtrip_")
@@ -476,6 +477,14 @@ async def main():
                              "run's lifetime: it is recorded in model_config.json and resuming with a "
                              "different value is a FATAL error (it silently rescales the value head's "
                              "gradient on the shared trunk — tune it on a fresh run). See grad/value_share.")
+    parser.add_argument("--value-tail-weight", "--value_tail_weight", dest="value_tail_weight",
+                        type=float, default=0.0,
+                        help="Tail-weighted value loss β∈[0,1] (default 0.0 = plain MSE, byte-identical). "
+                             ">0 blends in the CVaR of the worst ~10%% value misses: (1-β)·MSE + β·CVaR, "
+                             "so the critic prioritises the big over-claim craters it under-prices (a "
+                             "probe found VF→incoming-KO AUC 0.79 vs the policy's 0.90). Symmetric in "
+                             "error sign → V stays unbiased (GAE advantages unaffected). Watch "
+                             "eval/td_resid_tail fall. Resume-immutable (recorded + FATAL to change).")
     # --- Reward config (design_markovian_reward_and_features.md). Resume-immutable, value-checked. ---
     parser.add_argument("--bias-additivity", "--bias_additivity", dest="bias_additivity", type=float,
                         default=1.0, help="BIAS-class additive↔telescoping knob λ∈[0,1] (default 1.0 = "
@@ -519,6 +528,24 @@ async def main():
                              "identically to fainted mons. Lets the body reason about the hidden team. "
                              "No weight-shape change; version-checked, so it cannot be toggled on a "
                              "resumed model. Off by default (clean A/B baseline).")
+    parser.add_argument("--opp-belief-cls-k", "--opp_belief_cls_k", dest="opp_belief_cls_k",
+                        type=int, default=0,
+                        help="Hidden-opponent belief: number of distinct learned query tokens (DETR "
+                             "object-query style) that summarise the unrevealed opp party and feed both "
+                             "heads. 0 = OFF (default, baseline arch). 1 = a single 'hidden-opponent CLS' "
+                             "set-summary; >1 = N distinct per-slot queries that coordinate + specialise. "
+                             "k>0 REQUIRES --attend-unrevealed-opponents (else the queries read a board "
+                             "with the hidden mons masked out) and is a weight-shape change (version-"
+                             "checked, cannot change on a resume). NOTE: without a dedicated aux objective "
+                             "(B3 — species-ID / BYOL) the RL gradient only weakly shapes these queries.")
+    parser.add_argument("--value-active-readout", "--value_active_readout", dest="value_active_readout",
+                        action=BoolFlag, default=False,
+                        help="Route the active mon's refined token (our_active_refined) into the VALUE "
+                             "head's projection. The dual-head value readout pools the whole board but "
+                             "DROPS the active-mon view the policy head keeps — a probe found the critic "
+                             "predicts an incoming self-KO at AUC 0.79 vs the policy's 0.90, under-pricing "
+                             "the V-tail. Widens the value projection by D_MODEL (weight-shape, version-"
+                             "checked, cannot change on a resume). Off by default (clean A/B baseline).")
     parser.add_argument("--n-steps", type=int, default=2048, help="Steps per environment per rollout")
     parser.add_argument("--grad-checkpointing", "--grad_checkpointing", dest="grad_checkpointing",
                         action=BoolFlag, default=False,
@@ -662,6 +689,17 @@ async def main():
         )
     if not 0.0 <= args.stable_opponent_selfplay_share <= 1.0:
         parser.error("--stable-opponent-selfplay-share must be a fraction in [0, 1]")
+    if args.opp_belief_cls_k < 0:
+        parser.error("--opp-belief-cls-k must be >= 0 (0 = off)")
+    if args.opp_belief_cls_k > 0 and not args.attend_unrevealed_opponents:
+        # The belief queries read the (now-attendable) unrevealed opp slots; with the unmask flag off
+        # those slots are key-masked, so the belief would summarise a board with the hidden mons
+        # deleted. Fail fast with a self-documenting command rather than building an incoherent model.
+        parser.error(
+            "--opp-belief-cls-k > 0 requires --attend-unrevealed-opponents — the hidden-opponent belief "
+            "queries read the unrevealed opp slots, which are key-masked unless the unmask flag is on. "
+            "Add --attend-unrevealed-opponents (or set --opp-belief-cls-k 0)."
+        )
     log_level = LogLevel[args.log_level.upper()]
 
     # One server config, built from --showdown-port and threaded to every Showdown client
@@ -1276,6 +1314,8 @@ async def main():
         # policy is rebuilt from the zip's own kwargs, so this only feeds current_version: a
         # resume with a different value FATALs rather than silently ignoring the flag.
         _load_extractor_kwargs["attend_unrevealed_opponents"] = args.attend_unrevealed_opponents
+        _load_extractor_kwargs["opp_belief_cls_k"] = args.opp_belief_cls_k
+        _load_extractor_kwargs["value_active_readout"] = args.value_active_readout
         _load_policy_kwargs = {
             "features_extractor_class": Gen3FeaturesExtractor,
             "features_extractor_kwargs": _load_extractor_kwargs,
@@ -1284,7 +1324,7 @@ async def main():
         }
         current_version = ModelVersion.from_layout_and_policy_kwargs(
             _load_extractor_kwargs["layout"], _load_policy_kwargs, vf_coef=args.vf_coef,
-            reward_config=reward_config,
+            reward_config=reward_config, value_tail_weight=args.value_tail_weight,
         )
 
         print(f"Loading existing model from {model_path}")
@@ -1296,6 +1336,7 @@ async def main():
                 device=args.device,
                 enforce_vf_coef=args.vf_coef,  # FATAL if the run was started with a different vf_coef
                 enforce_reward_config=reward_config,  # FATAL if bias_additivity/mat_alive_weight/redesign drift
+                enforce_value_tail_weight=args.value_tail_weight,  # FATAL if the value-loss tail weight drifts
             )
         except ModelVersionError as e:
             print(f"\n[ModelVersion] FATAL: {e}")
@@ -1305,6 +1346,7 @@ async def main():
             # immediately instead of auto-restarting into the identical error.
             os._exit(int(TrainExitCode.FATAL_CONFIG))
         model.ent_coef = args.ent_coef
+        model.value_tail_weight = args.value_tail_weight  # == saved (enforced above); set for the loop
         model.vf_coef = args.vf_coef  # == the saved value (enforced above); set explicitly for parity
         model.gae_lambda = 0.80
         # Resume-path LR setup. Phase determines whether we read from the
@@ -1445,6 +1487,11 @@ async def main():
         # Unmask the opponent's still-hidden party (default off). SB3 forwards this to
         # Gen3FeaturesExtractor; from_layout_and_policy_kwargs records it in model_config.json.
         extractor_kwargs["attend_unrevealed_opponents"] = args.attend_unrevealed_opponents
+        # Hidden-opponent belief (k=0 = off; k>0 requires the unmask flag, validated above). SB3 forwards
+        # this to Gen3FeaturesExtractor; from_layout_and_policy_kwargs records it in model_config.json.
+        extractor_kwargs["opp_belief_cls_k"] = args.opp_belief_cls_k
+        # Value-head active readout (default off): routes our_active_refined into the value projection.
+        extractor_kwargs["value_active_readout"] = args.value_active_readout
 
         policy_kwargs = {
             "features_extractor_class": Gen3FeaturesExtractor,
@@ -1480,9 +1527,10 @@ async def main():
             policy_kwargs=policy_kwargs
         )
 
+        model.value_tail_weight = args.value_tail_weight   # tail-weighted value loss (0.0 = plain MSE)
         version = ModelVersion.from_layout_and_policy_kwargs(
             extractor_kwargs["layout"], policy_kwargs, vf_coef=args.vf_coef,
-            reward_config=reward_config,
+            reward_config=reward_config, value_tail_weight=args.value_tail_weight,
         )
         # PBRS_GAMMA must equal the PPO gamma for both potentials to be policy-invariant (design §7.1).
         # The reward manager is built before the model (in the env factory), so assert here where both

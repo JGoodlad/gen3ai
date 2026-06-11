@@ -116,6 +116,10 @@ class ExtractorContext:
     opp_active_local: torch.Tensor
     fainted_mask_ours: torch.Tensor
     fainted_mask_opp: torch.Tensor
+    # Combined 12-token key-mask (= cat[ours, opp]), single-sourced here so the value-CLS pool and
+    # the hidden-opp belief share ONE mask — they rely on the same "both actives force-unmasked ⇒ no
+    # all-True row" NaN-safety invariant, which must not be able to drift between two call sites.
+    all_fainted: torch.Tensor
     # Transformer / projection inputs.
     turn_history_raw: torch.Tensor
     our_ctx_raw: torch.Tensor
@@ -317,6 +321,9 @@ class ObsUnpack(torch.nn.Module):
             species_known_opp = pokemon_part[:, TEAM_SIZE:2 * TEAM_SIZE, POKEMON_SPECIES_KNOWN_OFFSET]
             fainted_mask_opp = fainted_mask_opp & (species_known_opp > 0.5)
         fainted_mask_opp[batch_idx, opp_active_local] = False
+        # Combined 12-token key-mask, single-sourced (both actives are now force-unmasked, so it can
+        # never be all-True per row — the NaN-safety invariant the value-CLS pool + belief both rely on).
+        all_fainted = torch.cat([fainted_mask_ours, fainted_mask_opp], dim=1)
 
         # Active contexts + non-matchup scalar tail (transformer global token + projection).
         active_ctx_dim = layout['active_context_dim']
@@ -336,6 +343,7 @@ class ObsUnpack(torch.nn.Module):
             spikes_feature=spikes_feature, struggle_feature=struggle_feature, screen_feature=screen_feature,
             our_active_idx=our_active_idx, opp_active_local=opp_active_local,
             fainted_mask_ours=fainted_mask_ours, fainted_mask_opp=fainted_mask_opp,
+            all_fainted=all_fainted,
             turn_history_raw=turn_history_raw,
             our_ctx_raw=our_ctx_raw, opp_ctx_raw=opp_ctx_raw, non_matchup_rest=non_matchup_rest,
         )
@@ -736,13 +744,66 @@ class CLSPool(torch.nn.Module):
 
         # Value pool: one query over both teams' 12 tokens (fainted slots key-masked).
         all_team_out = torch.cat([our_team_out, their_team_out], dim=1)             # [B, 12, 128]
-        all_fainted  = torch.cat([ctx.fainted_mask_ours, ctx.fainted_mask_opp], dim=1)  # [B, 12]
         value_cls_q  = self.value_cls.expand(batch_size, -1, -1)
         value_pool_out, _ = self.value_cls_attn(value_cls_q, all_team_out, all_team_out,
-                                                key_padding_mask=all_fainted)
+                                                key_padding_mask=ctx.all_fainted)
         value_pooled = self.norm_pool_value(value_pool_out).squeeze(1)              # [B, 128]
 
         return our_team_pooled, their_team_pooled, our_active_refined, value_pooled
+
+
+class HiddenOppBeliefPool(torch.nn.Module):
+    """Hidden-opponent belief: K distinct learned query tokens (DETR object-query / Slot-Attention
+    style) that read the post-transformer team tokens and summarise the belief over the opponent's
+    still-hidden party.
+
+    Why this exists: once the unrevealed opp slots are unmasked (`attend_unrevealed_opponents`), the
+    N unknown slots are *identical* (zeros + `species_known=0`); a permutation-equivariant transformer
+    is forced to map identical inputs to identical outputs, so they collapse to one representation —
+    the model can know "there are unknowns" but can't represent "slot A leans physical sweeper, slot B
+    leans special wall". K learned queries are non-identical *by construction* (independent init), so
+    they break that symmetry and can specialise.
+
+    - **K=1** is a single "hidden-opponent CLS" — a set-summary of the whole unrevealed remainder
+      (sibling to `our_cls`/`their_cls`/`value_cls`), holding a multimodal belief implicitly without
+      ever materialising a phantom mean-mon.
+    - **K>1** gives distinct per-slot queries that **coordinate** (the decoder's self-attention lets
+      them attend to each other — "board is rock-leaning → I, the 2nd slot, lean rock too" = overload)
+      and **read the board** (cross-attention to the 12 team tokens). For K=1 the self-attention is a
+      benign near-identity.
+
+    Output `[B, K*D_MODEL]` is concatenated into BOTH the policy and value projection inputs. Hard
+    requires `attend_unrevealed_opponents`: with the hidden slots masked there is nothing for the
+    belief to summarise. Untrained-capacity caveat: without a dedicated objective (B3 — species-ID /
+    BYOL) the RL gradient only weakly shapes these queries; this module is the *structure* those
+    objectives later attach to. See `designs/ai_v5/design_offense_and_opponent_belief.md` §B2."""
+
+    def __init__(self, k: int):
+        super().__init__()
+        if k < 1:
+            raise ValueError(f"HiddenOppBeliefPool needs k >= 1, got {k}")
+        self.k = k
+        # K distinct learned queries — non-identical by construction (independent init) so they do
+        # not collapse the way identical zero-slots would. Same 0.02 init scale as the CLSPool queries.
+        self.queries = torch.nn.Parameter(torch.randn(1, k, D_MODEL) * 0.02)
+        # DETR-style decoder block: query self-attention (coordinate) → cross-attention to the 12
+        # team tokens (read the board) → FFN. dropout=0.0 / post-LN match the encoder stack.
+        self.decoder = torch.nn.TransformerDecoderLayer(
+            d_model=D_MODEL, nhead=TRANSFORMER_N_HEADS, dim_feedforward=TRANSFORMER_FFN_DIM,
+            dropout=0.0, activation="relu", batch_first=True, norm_first=False,
+        )
+        self.norm = torch.nn.LayerNorm(D_MODEL)
+
+    def forward(self, all_team_out: torch.Tensor, all_fainted: torch.Tensor,
+                batch_size: int) -> torch.Tensor:
+        """all_team_out [B, 12, D_MODEL], all_fainted [B, 12] bool key-mask → [B, K*D_MODEL].
+
+        `all_fainted` always has >=2 False entries (our + opp active are force-unmasked in
+        ObsUnpack), so no memory row is fully masked → no attention NaN."""
+        queries = self.queries.expand(batch_size, -1, -1)                         # [B, K, D_MODEL]
+        belief = self.decoder(queries, all_team_out, memory_key_padding_mask=all_fainted)
+        belief = self.norm(belief)                                                # [B, K, D_MODEL]
+        return belief.reshape(batch_size, self.k * D_MODEL)                       # [B, K*D_MODEL]
 
 
 class ProjectionAssembler(torch.nn.Module):
@@ -756,7 +817,7 @@ class ProjectionAssembler(torch.nn.Module):
     is parameter-efficient; the value head's distinct signal comes from `value_pooled`.
     """
 
-    def __init__(self, layout: Dict[str, Any]):
+    def __init__(self, layout: Dict[str, Any], value_active_readout: bool = False):
         super().__init__()
         active_ctx_dim = layout['active_context_dim']
         self.active_ctx_encoder = torch.nn.Sequential(
@@ -764,39 +825,50 @@ class ProjectionAssembler(torch.nn.Module):
             torch.nn.ReLU(),
             torch.nn.Linear(ACTIVE_CTX_HIDDEN[0], ACTIVE_CTX_HIDDEN[1]),
         )
+        # When True, the value head ALSO reads our_active_refined (the active mon's refined token).
+        # The dual-head (Option C) value readout pools the whole board (value_pooled) but DROPS the
+        # active-mon view the policy head keeps — a probe on a real checkpoint found the value rep
+        # predicts an incoming self-KO at AUC 0.79 vs the policy rep's 0.90 (and ≈ the raw-obs-linear
+        # 0.77, i.e. the critic isn't using the trunk's nonlinear KO reasoning). A critic blind to
+        # incoming KOs over-values pre-KO states → the V-tail crater. Off by default (clean A/B).
+        self.value_active_readout = value_active_readout
 
     def forward(self, our_team_pooled: torch.Tensor, their_team_pooled: torch.Tensor,
                 our_active_refined: torch.Tensor, value_pooled: torch.Tensor,
-                ctx: ExtractorContext) -> Tuple[torch.Tensor, torch.Tensor]:
+                ctx: ExtractorContext,
+                hidden_opp_belief: Optional[torch.Tensor] = None) -> Tuple[torch.Tensor, torch.Tensor]:
         our_ctx_enc = self.active_ctx_encoder(ctx.our_ctx_raw)                      # [B, 32]
         opp_ctx_enc = self.active_ctx_encoder(ctx.opp_ctx_raw)                      # [B, 32]
-        pi_combined = torch.cat([
-            our_team_pooled,
-            their_team_pooled,
-            our_active_refined,
-            our_ctx_enc,
-            opp_ctx_enc,
-            ctx.non_matchup_rest,
-        ], dim=1)
-        vf_combined = torch.cat([
-            value_pooled,
-            our_ctx_enc,
-            opp_ctx_enc,
-            ctx.non_matchup_rest,
-        ], dim=1)
+        pi_parts = [our_team_pooled, their_team_pooled, our_active_refined,
+                    our_ctx_enc, opp_ctx_enc, ctx.non_matchup_rest]
+        vf_parts = [value_pooled, our_ctx_enc, opp_ctx_enc, ctx.non_matchup_rest]
+        # Give the critic the active-mon readout it structurally lacked (see __init__): routes the
+        # trunk's nonlinear incoming-KO/threat reasoning into the value head so it can price the tail.
+        if self.value_active_readout:
+            vf_parts.append(our_active_refined)
+        # Hidden-opponent belief (flag-guarded; None when off) feeds BOTH heads — the policy reads
+        # the threat over the hidden team, the value reads its winning-ness. Appended last so the
+        # off-by-default block layout is unchanged (the dummy forward auto-sizes the projections).
+        if hidden_opp_belief is not None:
+            pi_parts.append(hidden_opp_belief)
+            vf_parts.append(hidden_opp_belief)
+        pi_combined = torch.cat(pi_parts, dim=1)
+        vf_combined = torch.cat(vf_parts, dim=1)
         return pi_combined, vf_combined
 
 
 class Gen3FeaturesExtractor(torch.nn.Module):
     """Orchestrates the phase modules. Data flow:
-        ObsUnpack → PokemonEncoder → TeamTransformer → CLSPool → ProjectionAssembler
-    then a final pre-projection LayerNorm + Linear + ReLU head. The embedding tables live
-    in `self.embeddings` (shared) and are passed into the phases that need them. See
-    `src/agents/model/CLAUDE.md` for the phase-module contract."""
+        ObsUnpack → PokemonEncoder → TeamTransformer → CLSPool → [HiddenOppBeliefPool?] → ProjectionAssembler
+    then a final pre-projection LayerNorm + Linear + ReLU head. `HiddenOppBeliefPool` is built only
+    when `--opp-belief-cls-k > 0` (else `None`); when present its belief feeds both projection heads. The
+    embedding tables live in `self.embeddings` (shared) and are passed into the phases that need them.
+    See `src/agents/model/CLAUDE.md` for the phase-module contract."""
 
     def __init__(self, observation_space: spaces.Dict, layout: Optional[Dict[str, Any]] = None,
                  mappings: Optional[Dict[str, Any]] = None, log_level: LogLevel = LogLevel.QUIET,
-                 attend_unrevealed_opponents: bool = False):
+                 attend_unrevealed_opponents: bool = False, opp_belief_cls_k: int = 0,
+                 value_active_readout: bool = False):
         super().__init__()
         self.layout = layout
         self.mappings = mappings
@@ -804,6 +876,20 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         # Behavioral toggle (no weight-shape change): unmask the opponent's still-hidden
         # party so the transformer attends to it. Version-checked, not in ARCH_SIGNATURE.
         self.attend_unrevealed_opponents = attend_unrevealed_opponents
+        # Hidden-opponent belief: opp_belief_cls_k = number of learned belief query tokens.
+        # 0 = OFF (no module, baseline arch — reproduces it byte-for-byte, so no ARCH_SIGNATURE bump);
+        # k>0 builds HiddenOppBeliefPool(k) and widens both projection inputs by k*D_MODEL (a
+        # WEIGHT-SHAPE change, version-checked like use_popart). k>0 hard-requires the unmask flag:
+        # with the hidden slots masked the belief queries would read a board with them deleted.
+        if opp_belief_cls_k < 0:
+            raise ValueError(f"opp_belief_cls_k must be >= 0 (0 = off), got {opp_belief_cls_k}")
+        self.opp_belief_cls_k = opp_belief_cls_k
+        if opp_belief_cls_k > 0 and not attend_unrevealed_opponents:
+            raise ValueError(
+                "opp_belief_cls_k > 0 requires attend_unrevealed_opponents=True — the hidden-opponent "
+                "belief queries read the unrevealed opp slots, which are key-masked out unless the "
+                "unmask flag is on. Enable --attend-unrevealed-opponents, or set --opp-belief-cls-k 0."
+            )
 
         # Phase modules (constructed before the dummy forward below).
         self.embeddings = Embeddings(layout)
@@ -811,7 +897,11 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         self.pokemon_encoder = PokemonEncoder(layout)
         self.team_transformer = TeamTransformer(layout)
         self.cls_pool = CLSPool(layout)
-        self.assembler = ProjectionAssembler(layout)
+        self.hidden_opp_belief = HiddenOppBeliefPool(opp_belief_cls_k) if opp_belief_cls_k > 0 else None
+        # Value-head active readout (weight-shape via flag): adds our_active_refined (D_MODEL) to the
+        # value projection. OFF reproduces the baseline value head byte-for-byte (no ARCH_SIGNATURE bump).
+        self.value_active_readout = value_active_readout
+        self.assembler = ProjectionAssembler(layout, value_active_readout=value_active_readout)
 
         self.role_token_size = ROLE_TOKEN_SIZE
 
@@ -870,7 +960,15 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         our_team_pooled, their_team_pooled, our_active_refined, value_pooled = self.cls_pool(
             our_team_out, their_team_out, ctx
         )
-        return self.assembler(our_team_pooled, their_team_pooled, our_active_refined, value_pooled, ctx)
+        belief = None
+        if self.hidden_opp_belief is not None:
+            # Same 12-token memory + the single-sourced ctx.all_fainted key-mask the value CLS pools
+            # over (all_team_out is a forward activation, cheap to recompute; the MASK carries the
+            # NaN-safety invariant and is single-sourced on the context).
+            all_team_out = torch.cat([our_team_out, their_team_out], dim=1)                 # [B, 12, D]
+            belief = self.hidden_opp_belief(all_team_out, ctx.all_fainted, ctx.batch_size)
+        return self.assembler(our_team_pooled, their_team_pooled, our_active_refined, value_pooled,
+                              ctx, belief)
 
     def forward(self, obs):
         """Returns a (pi_features, vf_features) tuple — both [B, PROJECTION_DIM].

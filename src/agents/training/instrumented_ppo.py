@@ -47,6 +47,11 @@ _EXPECTED_UPSTREAM_TRAIN_HASH = (
     "79500464b6a71d5adcfdf10028df56fbaf72b7754952e760f9e377610b9cf809"
 )
 
+# Fraction of each minibatch that forms the "tail" for the tail-weighted value loss — the worst
+# _VALUE_TAIL_FRAC by squared value error (the V-tail craters the critic under-prices). 0.1 = worst
+# 10%; loosely tracks the eval/td_resid_tail CVaR@5% diagnostic the loss is meant to pull down.
+_VALUE_TAIL_FRAC = 0.1
+
 
 def _verify_upstream_unchanged() -> None:
     """Fail-loud at import time if the upstream `MaskablePPO.train()` source
@@ -85,6 +90,29 @@ class InstrumentedMaskablePPO(MaskablePPO):
 
     # Set by train_rl_agent after construction; opt-in (default off → stock sync collection).
     _async_rollout: bool = False
+
+    # Set by train_rl_agent after construction (like _async_rollout); resume-immutable (recorded +
+    # version-checked). 0.0 = plain MSE value loss (byte-identical to upstream). >0 blends in the CVaR
+    # of the worst value misses — see _value_loss_from_se.
+    value_tail_weight: float = 0.0
+
+    def _value_loss_from_se(self, se: "th.Tensor") -> "th.Tensor":
+        """Tail-weighted value loss from per-sample squared errors `se` (in whatever space the branch
+        uses — NORMALIZED under PopArt, so the tail selection is on the same scale the loss trains in).
+
+        value_tail_weight == 0 → plain `se.mean()`, byte-identical to `F.mse_loss`. >0 → blend
+        `(1-w)·MSE + w·CVaR`, where CVaR = mean of the worst `_VALUE_TAIL_FRAC` squared errors — it
+        upweights the big value misses (the V-tail craters a probe found the critic under-prices)
+        WITHOUT biasing the mean (symmetric in error sign), so the de-normalized V the GAE advantages
+        read stays unbiased. A scheduling/weighting change, not a new target."""
+        mse = se.mean()
+        w = self.value_tail_weight
+        if w <= 0.0:
+            return mse
+        flat = se.reshape(-1)
+        k = max(1, int(_VALUE_TAIL_FRAC * flat.numel()))
+        tail = th.topk(flat, k).values.mean()   # mean of the worst-k squared errors (CVaR)
+        return (1.0 - w) * mse + w * tail
 
     def collect_rollouts(self, env, callback, rollout_buffer, n_rollout_steps, use_masking=True):
         if self._async_rollout and isinstance(env, AsyncSubprocVecEnv):
@@ -173,12 +201,13 @@ class InstrumentedMaskablePPO(MaskablePPO):
                     # +PopArt: value loss in NORMALIZED space (both target and prediction scaled by
                     # the running mu/sigma) → O(1) gradient, no longer swamping the shared trunk.
                     # Mutually exclusive with vf-clipping (enforced at startup).
-                    value_loss = F.mse_loss(
-                        popart.normalize(rollout_data.returns), popart.normalize(values)
+                    # +TAIL: per-sample SE in normalized space → _value_loss_from_se (w=0 ⇒ MSE).
+                    value_loss = self._value_loss_from_se(
+                        (popart.normalize(rollout_data.returns) - popart.normalize(values)) ** 2
                     )
                 elif self.clip_range_vf is None:
                     # No clipping
-                    value_loss = F.mse_loss(rollout_data.returns, values)
+                    value_loss = self._value_loss_from_se((rollout_data.returns - values) ** 2)
                 else:
                     # Clip the different between old and new value
                     # NOTE: this depends on the reward scaling
@@ -190,7 +219,8 @@ class InstrumentedMaskablePPO(MaskablePPO):
                         (th.abs(values - rollout_data.old_values) > clip_range_vf).float()
                     ).item()
                     vf_clip_fractions.append(vf_clip_fraction)
-                    value_loss = F.mse_loss(rollout_data.returns, values_pred)
+                    # +TAIL: per-sample SE on the clipped prediction → _value_loss_from_se.
+                    value_loss = self._value_loss_from_se((rollout_data.returns - values_pred) ** 2)
                 value_losses.append(value_loss.item())
 
                 # Entropy loss favor exploration

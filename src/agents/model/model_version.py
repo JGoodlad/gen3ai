@@ -44,7 +44,27 @@ from typing import Any, Dict, List
 #   Like v6/use_popart it changes the forward pass (the mask, policy AND value) rather than a reward
 #   meaning, so it is enforced in check_compatible(); but unlike PopArt it leaves the state_dict
 #   identical (no weight-shape / ARCH_SIGNATURE change). Old configs default False (baseline masking).
-MODEL_CONFIG_VERSION = 8
+#
+# v9: added `opp_belief_cls_k` (--opp-belief-cls-k). A STRUCTURAL toggle: k distinct learned query
+#   tokens (HiddenOppBeliefPool) summarise the unrevealed opp party and feed both heads. 0 = off; k>0
+#   changes the state_dict (adds the module + widens both projection Linears by k*D_MODEL). Like
+#   v6/use_popart it is enforced in check_compatible() — but as a plain int every distinct value (incl.
+#   0↔N) is a weight-shape mismatch, so a single unconditional compare gates it. OFF (k=0) reproduces the
+#   baseline arch byte-for-byte → NO ARCH_SIGNATURE bump. k>0 requires attend_unrevealed_opponents
+#   (enforced at extractor build). Old configs default to 0.
+#
+# v10: added `value_active_readout` (--value-active-readout). A STRUCTURAL toggle: route the active
+#   mon's refined token into the VALUE projection (the dual-head readout drops it; a probe found the
+#   critic predicts an incoming self-KO at AUC 0.79 vs the policy's 0.90). ON widens the value
+#   projection by D_MODEL; like v6/use_popart it is enforced in check_compatible(). OFF reproduces the
+#   baseline value head byte-for-byte → NO ARCH_SIGNATURE bump. Old configs default False.
+#
+# v11: added `value_tail_weight` (--value-tail-weight). A resume-immutable VALUE-meaning hparam (like
+#   vf_coef, NOT weight-shape): the tail-weighted value-loss β (CVaR-blend of the worst value misses).
+#   0.0 = plain MSE. Enforced ONLY on the training-resume path via check_value_tail_weight, EXCLUDED
+#   from check_compatible (a frozen opponent's forward never runs the value loss). No ARCH_SIGNATURE
+#   bump (network/obs unchanged). Old configs migrate to 0.0.
+MODEL_CONFIG_VERSION = 11
 
 # Change this when the neural architecture changes structurally in a way that makes
 # weights from a different signature incompatible (e.g. adding LSTM, replacing attention).
@@ -325,6 +345,29 @@ class ModelVersion:
     # different value would silently change the masking the policy trained under.
     attend_unrevealed_opponents: bool = False
 
+    # v9 structural toggle (weight-shape): hidden-opponent belief — `opp_belief_cls_k` distinct learned
+    # query tokens (HiddenOppBeliefPool) that summarise the unrevealed opp party and feed both heads.
+    # 0 = OFF (no module; reproduces the baseline arch byte-for-byte). k>0 ADDS the module + grows both
+    # projection inputs by k*D_MODEL, so like use_popart it is gated in check_compatible — but as a plain
+    # int every distinct value (incl. 0↔N) is a weight-shape mismatch, so NO conditional and NO
+    # ARCH_SIGNATURE bump. k>0 requires attend_unrevealed_opponents (enforced at extractor-build time).
+    opp_belief_cls_k: int = 0
+
+    # v10 structural toggle (weight-shape): route our_active_refined (the active mon's refined token)
+    # into the VALUE projection. The dual-head value readout (value_pooled) drops the active-mon view
+    # the policy keeps; a probe found the critic predicts an incoming self-KO at AUC 0.79 vs the
+    # policy's 0.90, which under-prices the V-tail. ON widens the value projection by D_MODEL; OFF
+    # reproduces the baseline value head byte-for-byte, so like use_popart it lives in check_compatible
+    # WITHOUT an ARCH_SIGNATURE bump.
+    value_active_readout: bool = False
+
+    # v11 resume-immutable VALUE-meaning hparam (like vf_coef — NOT weight-shape): tail-weighted value
+    # loss β. 0.0 = plain MSE; >0 blends the CVaR of the worst value misses into the loss. Changing it
+    # mid-run silently shifts the value objective, so it is enforced ONLY on the training-resume path
+    # via check_value_tail_weight (excluded from check_compatible, which gates frozen eval/pool/distill
+    # opponents whose forward never touches it). Defaulted so weight-shape-only callers need not supply it.
+    value_tail_weight: float = 0.0
+
     @classmethod
     def from_layout_and_policy_kwargs(
         cls,
@@ -332,6 +375,7 @@ class ModelVersion:
         policy_kwargs: Dict[str, Any],
         vf_coef: float = 0.5,
         reward_config=None,
+        value_tail_weight: float = 0.0,
     ) -> ModelVersion:
         from agents.model.features_extractor import (
             ROLE_TOKEN_SIZE,
@@ -375,6 +419,13 @@ class ModelVersion:
                 policy_kwargs.get("features_extractor_kwargs", {}).get(
                     "attend_unrevealed_opponents", False)
             ),
+            opp_belief_cls_k=int(
+                policy_kwargs.get("features_extractor_kwargs", {}).get("opp_belief_cls_k", 0)
+            ),
+            value_active_readout=bool(
+                policy_kwargs.get("features_extractor_kwargs", {}).get("value_active_readout", False)
+            ),
+            value_tail_weight=float(value_tail_weight),
         )
 
     def to_json(self) -> str:
@@ -453,6 +504,29 @@ class ModelVersion:
                 "Resume with the matching --attend-unrevealed-opponents setting, or start a fresh run."
             )
 
+        # Structural toggle — like use_popart it changes the state_dict (k>0 adds HiddenOppBeliefPool +
+        # widens both projection Linears by k*D_MODEL), so a mismatch breaks the load. As a plain int,
+        # EVERY distinct value is a weight-shape change (incl. 0↔N = adding/removing the module), so one
+        # unconditional comparison gates it — no separate on/off field.
+        if self.opp_belief_cls_k != saved.opp_belief_cls_k:
+            raise ModelVersionError(
+                f"opp_belief_cls_k mismatch: saved={saved.opp_belief_cls_k}, current={self.opp_belief_cls_k}.\n"
+                "The number of hidden-opponent belief query tokens (0 = off) sets the projection width, "
+                "so it is a weight-shape parameter and cannot change on an existing model.\n"
+                f"Resume with --opp-belief-cls-k {saved.opp_belief_cls_k}, or start a fresh training run."
+            )
+
+        # Structural toggle — adds our_active_refined to the value projection (widens it by D_MODEL), so
+        # a mismatch breaks the value head's state_dict. Like use_popart it gates EVERY load.
+        if self.value_active_readout != saved.value_active_readout:
+            raise ModelVersionError(
+                f"value_active_readout mismatch: saved={saved.value_active_readout}, "
+                f"current={self.value_active_readout}.\n"
+                "Routing the active-mon readout into the value head widens the value projection, so it "
+                "changes the state_dict and cannot be toggled on an existing model.\n"
+                "Resume with the matching --value-active-readout setting, or start a fresh training run."
+            )
+
     def check_opponent_compatible(self, foreign: "ModelVersion") -> None:
         """Gate for loading a frozen model from ANOTHER run as an inference-only OPPONENT
         (a "stable opponent"). Call as: ``current_version.check_opponent_compatible(foreign)``.
@@ -513,6 +587,22 @@ class ModelVersion:
                 "resume silently alters the value head's gradient scale.\n"
                 f"Fix: resume with --vf-coef {self.vf_coef!r}, or start a fresh training run to use "
                 f"{requested!r}."
+            )
+
+    def check_value_tail_weight(self, requested: float) -> None:
+        """Raise ModelVersionError if `requested` (the resume `--value-tail-weight`) differs from this
+        saved config's value_tail_weight. Call as: saved_version.check_value_tail_weight(args...).
+
+        Same treatment as check_vf_coef: a value-loss hparam (the CVaR-blend weight), not weight-shape,
+        so it is EXCLUDED from check_compatible (frozen eval/pool/distill opponents never run the value
+        loss) and enforced ONLY on the training-resume path. Changing it mid-run silently reshapes the
+        value objective (how hard the critic chases its tail), so a drift is a hard error."""
+        if not math.isclose(self.value_tail_weight, requested, rel_tol=1e-9, abs_tol=1e-12):
+            raise ModelVersionError(
+                f"value_tail_weight mismatch: saved={self.value_tail_weight!r}, requested={requested!r}.\n"
+                "The tail-weighted value-loss β is fixed for a run's lifetime — changing it on resume "
+                "silently reshapes the value objective.\n"
+                f"Fix: resume with --value-tail-weight {self.value_tail_weight!r}, or start a fresh run."
             )
 
     def check_reward_config(self, reward_config) -> None:
@@ -578,4 +668,17 @@ def _migrate_config(data: dict) -> dict:
         # v8: added attend_unrevealed_opponents. Old models key-masked unrevealed opp slots.
         data.setdefault("attend_unrevealed_opponents", False)
         data["config_version"] = 8
+    if version < 9:
+        # v9: added the hidden-opponent belief toggle (k=0 = no belief module). Old models had none.
+        data.setdefault("opp_belief_cls_k", 0)
+        data.pop("opp_belief_cls", None)  # never shipped; drop the interim bool if a dev config has it
+        data["config_version"] = 9
+    if version < 10:
+        # v10: added value_active_readout. Old models' value head did not read the active-mon token.
+        data.setdefault("value_active_readout", False)
+        data["config_version"] = 10
+    if version < 11:
+        # v11: added value_tail_weight. Old runs used a plain MSE value loss (β=0).
+        data.setdefault("value_tail_weight", 0.0)
+        data["config_version"] = 11
     return data

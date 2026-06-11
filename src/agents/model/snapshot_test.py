@@ -173,6 +173,30 @@ def test_check_vf_coef_tolerates_float_repr(version):
     saved.check_vf_coef(0.3)  # must not raise
 
 
+def test_check_value_tail_weight_match_and_mismatch(version):
+    """② value_tail_weight is resume-immutable (like vf_coef): a matching resume passes, a drift FATALs."""
+    saved = dataclasses.replace(version, value_tail_weight=0.3)
+    saved.check_value_tail_weight(0.3)               # must not raise
+    with pytest.raises(ModelVersionError) as exc_info:
+        saved.check_value_tail_weight(0.0)
+    assert "value_tail_weight" in str(exc_info.value)
+
+
+def test_check_compatible_ignores_value_tail_weight(version):
+    """value_tail_weight is a value-loss hparam, not weight-shape → check_compatible (which gates frozen
+    eval/pool/distill opponents) must IGNORE it, exactly like vf_coef."""
+    differing = dataclasses.replace(version, value_tail_weight=version.value_tail_weight + 0.5)
+    version.check_compatible(differing)  # must NOT raise
+
+
+def test_value_tail_weight_recorded_and_config_version(layout):
+    pk = {"net_arch": [512, 512]}
+    v = ModelVersion.from_layout_and_policy_kwargs(layout, pk, value_tail_weight=0.4)
+    assert v.value_tail_weight == 0.4 and v.config_version == MODEL_CONFIG_VERSION
+    v0 = ModelVersion.from_layout_and_policy_kwargs(layout, pk)
+    assert v0.value_tail_weight == 0.0   # default = plain MSE
+
+
 # ---------------------------------------------------------------------------
 # check_reward_config — resume-only value-meaning check (NOT part of check_compatible)
 # ---------------------------------------------------------------------------
@@ -279,6 +303,121 @@ def test_attend_unrevealed_read_from_features_extractor_kwargs(layout):
     assert v_default.attend_unrevealed_opponents is False
 
 
+def test_check_compatible_rejects_opp_belief_cls_k_on_off_mismatch(version):
+    """k=0↔k>0 adds/removes the belief module + widens both projections — a weight-shape change, so
+    check_compatible must reject it (one unconditional compare, like use_popart)."""
+    on = dataclasses.replace(version, opp_belief_cls_k=2)
+    with pytest.raises(ModelVersionError) as exc_info:
+        version.check_compatible(on)   # version has k=0 (default)
+    assert "opp_belief_cls_k" in str(exc_info.value)
+
+
+def test_check_compatible_rejects_opp_belief_cls_k_value_mismatch(version):
+    """k=3 vs k=5 is a different projection width → FATAL (both on, different K)."""
+    on3 = dataclasses.replace(version, opp_belief_cls_k=3)
+    on5 = dataclasses.replace(version, opp_belief_cls_k=5)
+    with pytest.raises(ModelVersionError) as exc_info:
+        on3.check_compatible(on5)
+    assert "opp_belief_cls_k" in str(exc_info.value)
+
+
+def test_check_compatible_accepts_matching_opp_belief_cls_k(version):
+    """Same k (incl. the k=0 baseline) must load — no false rejection."""
+    version.check_compatible(dataclasses.replace(version))            # k=0 vs k=0
+    on4 = dataclasses.replace(version, opp_belief_cls_k=4)
+    on4.check_compatible(dataclasses.replace(on4))                    # k=4 vs k=4
+
+
+def test_opp_belief_cls_k_read_from_features_extractor_kwargs(layout):
+    """opp_belief_cls_k sources from features_extractor_kwargs (SB3 forwards it to the extractor);
+    absent → 0 (off, the baseline)."""
+    pk = {"net_arch": [512, 512],
+          "features_extractor_kwargs": {"opp_belief_cls_k": 4}}
+    v = ModelVersion.from_layout_and_policy_kwargs(layout, pk)
+    assert v.opp_belief_cls_k == 4
+    v_default = ModelVersion.from_layout_and_policy_kwargs(layout, {"net_arch": [512, 512]})
+    assert v_default.opp_belief_cls_k == 0
+
+
+def test_check_compatible_rejects_value_active_readout_mismatch(version):
+    """① value_active_readout widens the value projection → a weight-shape change check_compatible
+    must reject (like use_popart)."""
+    flipped = dataclasses.replace(version, value_active_readout=not version.value_active_readout)
+    with pytest.raises(ModelVersionError) as exc_info:
+        version.check_compatible(flipped)
+    assert "value_active_readout" in str(exc_info.value)
+
+
+def test_value_active_readout_read_from_features_extractor_kwargs(layout):
+    """① value_active_readout sources from features_extractor_kwargs; absent → False."""
+    pk = {"net_arch": [512, 512], "features_extractor_kwargs": {"value_active_readout": True}}
+    v = ModelVersion.from_layout_and_policy_kwargs(layout, pk)
+    assert v.value_active_readout is True and v.config_version == MODEL_CONFIG_VERSION
+    v_default = ModelVersion.from_layout_and_policy_kwargs(layout, {"net_arch": [512, 512]})
+    assert v_default.value_active_readout is False
+
+
+def test_migrate_v9_adds_value_active_readout_default(version):
+    """Pre-v10 configs lack value_active_readout — migration injects False and bumps the version."""
+    data = json.loads(version.to_json())
+    data.pop("value_active_readout", None)
+    data.pop("value_tail_weight", None)
+    data["config_version"] = 9
+    result = _migrate_config(data)
+    assert result["config_version"] == MODEL_CONFIG_VERSION
+    assert result["value_active_readout"] is False
+    ModelVersion(**result)
+
+
+def test_migrate_v10_adds_value_tail_weight_default(version):
+    """Pre-v11 configs lack value_tail_weight — migration injects 0.0 (plain MSE) and bumps the version."""
+    data = json.loads(version.to_json())
+    data.pop("value_tail_weight", None)
+    data["config_version"] = 10
+    result = _migrate_config(data)
+    assert result["config_version"] == MODEL_CONFIG_VERSION
+    assert result["value_tail_weight"] == 0.0
+    ModelVersion(**result)
+
+
+def test_opp_belief_cls_survives_save_load_and_rebuilds_module(layout, mappings):
+    """e2e: --opp-belief-cls-k must be recorded in model_config.json AND survive SB3 save/load,
+    rebuilding HiddenOppBeliefPool at the same k (the projection widths must match the saved weights).
+    Guards the config↔weights coupling: a refactor that dropped the flag from the serialized kwargs
+    would rebuild a baseline-width extractor and FAIL the state_dict load — this pins it loudly."""
+    from agents.model.features_extractor import Gen3FeaturesExtractor, D_MODEL
+    from agents.model.policy import Gen3DualHeadMaskablePolicy
+    from sb3_contrib import MaskablePPO
+
+    ek = {"layout": layout, "mappings": mappings,
+          "attend_unrevealed_opponents": True, "opp_belief_cls_k": 3}
+    pk = {"features_extractor_class": Gen3FeaturesExtractor,
+          "features_extractor_kwargs": ek, "net_arch": [512, 512]}
+    with tempfile.TemporaryDirectory() as tmpdir:
+        model = MaskablePPO(Gen3DualHeadMaskablePolicy, _make_vec_env(layout["total_dim"]),
+                            policy_kwargs=pk, verbose=0, device="cpu")
+        model.save(os.path.join(tmpdir, "belief"))
+        save_model_snapshot(tmpdir, ModelVersion.from_layout_and_policy_kwargs(layout, pk), git_hash="b")
+        saved_cfg = ModelVersion.from_json_file(os.path.join(tmpdir, "model_config.json"))
+        assert saved_cfg.opp_belief_cls_k == 3
+        del model
+        loaded = MaskablePPO.load(os.path.join(tmpdir, "belief.zip"), device="cpu")
+
+    ext = loaded.policy.features_extractor
+    assert ext.opp_belief_cls_k == 3 and ext.hidden_opp_belief is not None and ext.hidden_opp_belief.k == 3
+    # The reloaded projection Linears must have rebuilt at the belief-augmented width (k*D_MODEL wider
+    # than baseline) to match the saved weights — proven by the state_dict load succeeding + a finite
+    # forward below; a dropped flag would rebuild a narrower extractor and raise on load.
+    assert ext.projection.in_features == ext.projection_input_dim
+    obs = {"observation": torch.zeros(2, layout["total_dim"]),
+           "action_mask": torch.ones(2, 11, dtype=torch.int8)}
+    with torch.no_grad():
+        dist = loaded.policy.get_distribution(obs)
+        val = loaded.policy.predict_values(obs)
+    assert dist.distribution.logits.shape == (2, 11) and val.shape == (2, 1)
+    assert torch.isfinite(val).all()
+
+
 def test_check_opponent_compatible_ignores_vf_coef_and_reward(version):
     """vf_coef / reward-config are value-meaning training hparams, irrelevant to an opponent forward."""
     differing = dataclasses.replace(
@@ -364,7 +503,8 @@ def test_attend_unrevealed_flag_survives_save_load_and_drives_mask(layout, mappi
         save_model_snapshot(tmpdir, ModelVersion.from_layout_and_policy_kwargs(layout, policy_kwargs),
                             git_hash="flagtest")
         saved_cfg = ModelVersion.from_json_file(os.path.join(tmpdir, "model_config.json"))
-        assert saved_cfg.attend_unrevealed_opponents is True and saved_cfg.config_version == 8
+        assert saved_cfg.attend_unrevealed_opponents is True
+        assert saved_cfg.config_version == MODEL_CONFIG_VERSION
         del model
         loaded = MaskablePPO.load(os.path.join(tmpdir, "flagged.zip"), device="cpu")
 
@@ -839,11 +979,36 @@ def test_migrate_v7_adds_attend_unrevealed_opponents_default(version):
     and bumps to the current version. The migrated dict must construct a valid ModelVersion."""
     data = json.loads(version.to_json())
     data.pop("attend_unrevealed_opponents", None)
+    data.pop("opp_belief_cls_k", None)
     data["config_version"] = 7
     result = _migrate_config(data)
     assert result["config_version"] == MODEL_CONFIG_VERSION
     assert result["attend_unrevealed_opponents"] is False
     ModelVersion(**result)
+
+
+def test_migrate_v8_adds_opp_belief_cls_k_default(version):
+    """Pre-v9 configs lack the hidden-opponent belief toggle — migration injects k=0 (no belief
+    module) and bumps to the current version. The migrated dict must build a valid ModelVersion."""
+    data = json.loads(version.to_json())
+    data.pop("opp_belief_cls_k", None)
+    data["config_version"] = 8
+    result = _migrate_config(data)
+    assert result["config_version"] == MODEL_CONFIG_VERSION
+    assert result["opp_belief_cls_k"] == 0
+    ModelVersion(**result)
+
+
+def test_migrate_v8_drops_interim_opp_belief_cls_bool(version):
+    """A dev config from the interim two-field design (opp_belief_cls bool) must have the bool
+    DROPPED by migration so it doesn't break ModelVersion(**result) (no such field any more)."""
+    data = json.loads(version.to_json())
+    data["opp_belief_cls"] = True          # interim field that never shipped
+    data.pop("opp_belief_cls_k", None)
+    data["config_version"] = 8
+    result = _migrate_config(data)
+    assert "opp_belief_cls" not in result and result["opp_belief_cls_k"] == 0
+    ModelVersion(**result)                 # must not raise on an unexpected kwarg
 
 
 def test_migrate_does_not_overwrite_existing_vf_coef():

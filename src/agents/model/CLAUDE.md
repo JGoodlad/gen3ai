@@ -77,11 +77,18 @@ so they stay correct when the architecture changes with no manual update.
    query, `value_cls`**, cross-attends over **all 12 team tokens** (both sides, fainted
    key-masked) → a 128-dim global `value_pooled` summary — a whole-board "who's winning" read for
    the critic, a different aggregation than the policy's our-active-centric pools.
+5b. **`HiddenOppBeliefPool`** *(optional — built only when `--opp-belief-cls-k > 0`)* — **k** distinct
+   learned query tokens run through a `TransformerDecoderLayer` (self-attention among the queries to
+   coordinate + cross-attention to the 12 team tokens under the single-sourced `ctx.all_fainted`
+   key-mask) → a `[B, k·D_MODEL]` hidden-opponent belief. `None` when `k=0`. See the v9 toggle note
+   under *Model versioning* and `designs/ai_v5/design_offense_and_opponent_belief.md` §B2.
 6. **`ProjectionAssembler`** — emits a `(pi_combined, vf_combined)` pair. Policy: `our_pool(128)
    + their_pool(128) + our_active_refined(128) + active_ctx_enc(32) + opp_ctx_enc(32) +
    non_matchup_rest`. Value: `value_pooled(128) + active_ctx_enc(32) + opp_ctx_enc(32) +
-   non_matchup_rest`. `active_ctx_encoder` (Linear→ReLU→Linear, `ACTIVE_CTX_HIDDEN`) is shared by
-   both heads — it encodes inputs, not the contested body representation.
+   non_matchup_rest`. When the hidden-opponent belief is on, its `[B, K·D_MODEL]` is appended to
+   **both** (last), widening each projection input by `k·D_MODEL`. `active_ctx_encoder`
+   (Linear→ReLU→Linear, `ACTIVE_CTX_HIDDEN`) is shared by both heads — it encodes inputs, not the
+   contested body representation.
 7. **Root heads** — two parallel `pre_proj_norm` (LayerNorm) → `projection` (Linear) → `ReLU`
    heads, one per `*_combined`, both emitting `PROJECTION_DIM`. SB3 sizes the shared
    `mlp_extractor` from `features_dim = PROJECTION_DIM`, then `Gen3DualHeadMaskablePolicy` feeds
@@ -133,7 +140,25 @@ as a decisive loss; set lower to make a stall-to-cap strictly worse) are all rec
 and enforced on resume by **`check_reward_config`** (FATAL on drift, since they silently shift the
 reward/objective), excluded from `check_compatible`. They are reward-VALUE changes — **no
 `ARCH_SIGNATURE` bump** (the network/obs are unchanged) — so a fresh run is needed to measure them but
-old checkpoints don't fail an arch check. Current `MODEL_CONFIG_VERSION` = **8**.
+old checkpoints don't fail an arch check. Current `MODEL_CONFIG_VERSION` = **11**.
+
+**Two probe-driven V-tail levers (v10 structural, v11 resume-immutable).** A representation probe on a
+real checkpoint found the **value head is partly blind to incoming KOs the policy head sees**
+(VF→"our active faints this turn" AUC **0.79** vs PI→ **0.90**, ≈ the raw-obs-linear 0.77 — i.e. the
+critic isn't using the trunk's nonlinear KO reasoning), and the **TD-residual tail is fat + barely
+anticipated** (r²≈0.08). Two targeted fixes, both flag-guarded default-off (clean A/B), both with the
+existing `eval/td_resid_tail` as the before/after metric:
+- **v10 `value_active_readout`** (`--value-active-readout`) — STRUCTURAL toggle: the dual-head value
+  readout pools the whole board (`value_pooled`) but DROPS `our_active_refined`, the active-mon token
+  the policy reads. This routes it into the value projection (widening it by `D_MODEL`, value head
+  only — policy untouched). Versioned like `use_popart`: `check_compatible`, no `ARCH_SIGNATURE` bump
+  (OFF = baseline value head byte-for-byte). `ProjectionAssembler(value_active_readout=…)`.
+- **v11 `value_tail_weight`** (`--value-tail-weight` β) — resume-immutable VALUE-meaning hparam (like
+  `vf_coef`, NOT weight-shape): the value loss becomes `(1-β)·MSE + β·CVaR(worst ~10% squared errors)`
+  in `instrumented_ppo._value_loss_from_se`, so the critic prioritises the big over-claim craters.
+  β=0 = plain MSE (byte-identical). Symmetric in error sign → V stays unbiased (GAE advantages
+  unaffected). Enforced ONLY on resume via `check_value_tail_weight` (excluded from `check_compatible`
+  — a frozen opponent never runs the value loss); no `ARCH_SIGNATURE` bump.
 
 **Feature toggle that changes the value-head STRUCTURE (e.g. `use_popart`, v6).** Distinct from the
 value-meaning hparams above: PopArt adds normalized output + `mu/sigma` buffers, so a mismatch breaks
@@ -157,6 +182,26 @@ so it is NOT a loadability concern — just a train/eval-consistency one. Refine
 **value-meaning → resume-only `check_*`; structural OR forward-behavior → `check_compatible`.** Off by
 default (clean A/B baseline). The active opp is always revealed + force-unmasked, so even with every
 bench slot attendable no key-padding row is all-True (no attention NaN).
+
+**Structural toggle that changes the state_dict via a flag (e.g. `opp_belief_cls_k`, v9).** The
+hidden-opponent belief (`--opp-belief-cls-k`) adds the `HiddenOppBeliefPool` module — **k** distinct
+learned query tokens (DETR object-query style) that read the 12 post-transformer team tokens and
+summarise the belief over the opponent's still-hidden party, feeding **both** projection heads (so both
+projection inputs widen by `k·D_MODEL`). **One int flag, `k=0` = off** (the cleaner surface — `k=0` is
+literally the baseline state, so there's no separate on/off bool). Same versioning class as `use_popart`
+(a flag that changes the state_dict): recorded on `ModelVersion`, gated in **`check_compatible`** with a
+dedicated message, `MODEL_CONFIG_VERSION` bump + a `_migrate_config` `setdefault(0)`. Because it's a
+plain int, **every distinct value (including `0↔N`, i.e. adding/removing the module) is a weight-shape
+mismatch**, so a *single unconditional* compare gates it — no on/off conditional. **No `ARCH_SIGNATURE`
+bump** — `k=0` builds no module and reproduces the baseline arch byte-for-byte (auto-discovered
+projection dims stay identical), so existing checkpoints still load. It **hard-requires
+`attend_unrevealed_opponents`** when `k>0` (enforced both at the CLI via `parser.error` and in
+`Gen3FeaturesExtractor.__init__` via `ValueError`): with the hidden slots masked the queries would read
+a board with the hidden mons deleted. `k=1` is a single "hidden-opponent CLS" set-summary; `k>1` gives
+distinct per-slot queries that coordinate (decoder self-attention) and specialise. **Caveat (by
+design):** without a dedicated objective (B3 — species-ID / BYOL aux head) the RL gradient only weakly
+shapes these queries; this is the *structure* those objectives later attach to. Full rationale:
+`designs/ai_v5/design_offense_and_opponent_belief.md` §B2.
 
 A startup smoke test (`_run_roundtrip_test` in `train_rl_agent.py`) saves to a temp dir and reloads before every `model.learn()` call — catches serialization issues immediately.
 

@@ -15,6 +15,7 @@ from agents.model.features_extractor import (
     Gen3FeaturesExtractor,
     ExtractorContext,
     Embeddings,
+    HiddenOppBeliefPool,
     locate_active_slot,
     turn_delta_embed_dim,
     ROLE_TOKEN_SIZE,
@@ -22,6 +23,7 @@ from agents.model.features_extractor import (
     ACTIVE_CTX_HIDDEN,
     N_HISTORY_TURNS,
 )
+import pytest
 from agents.observation.constants import POKEMON_FULL_DIM, TEAM_SIZE
 from agents.observation.moves import HIDDEN_POWER_MOVE_NUM
 from agents.observation.turn_delta_encoder import TURN_DELTA_DIM
@@ -29,12 +31,11 @@ from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappin
 from agents.action.constants import ACTION_SPACE_SIZE
 
 
-def _make_model(attend_unrevealed_opponents: bool = False):
+def _make_model(**extractor_kwargs):
     mappings = load_mappings()
     layout = Gen3ObservationEncoder(mappings).get_layout()
     obs_space = gym.spaces.Box(low=0.0, high=1.0, shape=(layout["total_dim"],), dtype=np.float32)
-    model = Gen3FeaturesExtractor(obs_space, layout=layout, mappings=mappings,
-                                  attend_unrevealed_opponents=attend_unrevealed_opponents)
+    model = Gen3FeaturesExtractor(obs_space, layout=layout, mappings=mappings, **extractor_kwargs)
     model.eval()
     return model, layout
 
@@ -48,6 +49,11 @@ def _dummy_ctx(**overrides) -> ExtractorContext:
     Lets CLSPool/ProjectionAssembler be tested without a real observation."""
     vals = {f.name: None for f in dataclasses.fields(ExtractorContext)}
     vals.update(overrides)
+    # Derive the combined key-mask the value-CLS pool reads, exactly as ObsUnpack does, so callers
+    # that set only the per-side masks still exercise the real masking path.
+    if vals.get("all_fainted") is None and vals.get("fainted_mask_ours") is not None \
+            and vals.get("fainted_mask_opp") is not None:
+        vals["all_fainted"] = torch.cat([vals["fainted_mask_ours"], vals["fainted_mask_opp"]], dim=1)
     return ExtractorContext(**vals)
 
 
@@ -165,6 +171,107 @@ def test_unrevealed_flag_active_force_unmask_prevents_nan_row():
     ctx = model.unpack({"observation": obs})
     assert bool(ctx.fainted_mask_opp[0, 0]) is False        # active force-unmasked despite hp==0
     assert ctx.fainted_mask_opp[0].all().item() is False    # ⇒ no all-True row ⇒ no attention NaN
+
+
+# ---------------------------------------------------------------------------
+# HiddenOppBeliefPool — opponent-belief CLS / K query tokens (B2)
+# ---------------------------------------------------------------------------
+
+def _all_team_and_mask(B, n_masked_per_side=3):
+    """[B, 12, D_MODEL] team memory + a [B, 12] key-mask with the two actives (slots 0, TEAM_SIZE)
+    always unmasked — the force-unmask invariant ObsUnpack guarantees."""
+    all_team_out = torch.randn(B, 2 * TEAM_SIZE, D_MODEL)
+    all_fainted = torch.zeros(B, 2 * TEAM_SIZE, dtype=torch.bool)
+    for s in range(1, 1 + n_masked_per_side):                 # mask some of our + opp bench
+        all_fainted[:, s] = True
+        all_fainted[:, TEAM_SIZE + s] = True
+    return all_team_out, all_fainted
+
+
+@pytest.mark.parametrize("k", [1, 4])
+def test_hidden_opp_belief_pool_shape_and_finite(k):
+    pool = HiddenOppBeliefPool(k).eval()
+    B = 3
+    all_team_out, all_fainted = _all_team_and_mask(B)
+    out = pool(all_team_out, all_fainted, B)
+    assert out.shape == (B, k * D_MODEL)
+    assert torch.isfinite(out).all()
+
+
+def test_hidden_opp_belief_queries_are_distinct():
+    """The whole point of K queries (vs identical zero-slots): they are non-identical BY
+    CONSTRUCTION, so they can break the permutation-symmetry collapse."""
+    pool = HiddenOppBeliefPool(4)
+    q = pool.queries[0]                                       # [4, D_MODEL]
+    for i in range(4):
+        for j in range(i + 1, 4):
+            assert not torch.allclose(q[i], q[j])
+
+
+def test_hidden_opp_belief_no_nan_when_only_actives_unmasked():
+    """The genuine NaN-risk board: every bench slot masked, only the two actives open. The pool
+    must stay finite (memory_key_padding_mask never all-True per row)."""
+    pool = HiddenOppBeliefPool(2).eval()
+    B = 2
+    all_team_out = torch.randn(B, 2 * TEAM_SIZE, D_MODEL)
+    all_fainted = torch.ones(B, 2 * TEAM_SIZE, dtype=torch.bool)
+    all_fainted[:, 0] = False                                 # our active
+    all_fainted[:, TEAM_SIZE] = False                         # opp active
+    out = pool(all_team_out, all_fainted, B)
+    assert torch.isfinite(out).all()
+
+
+def test_hidden_opp_belief_pool_rejects_bad_k():
+    with pytest.raises(ValueError, match="k >= 1"):
+        HiddenOppBeliefPool(0)
+
+
+def test_opp_belief_cls_k_zero_is_baseline():
+    """k=0 (default): no belief module, baseline projection dims — the current state."""
+    base, _ = _make_model()
+    assert base.opp_belief_cls_k == 0 and base.hidden_opp_belief is None
+    assert "hidden_opp_belief.queries" not in dict(base.named_parameters())
+
+
+@pytest.mark.parametrize("k", [1, 4])
+def test_opp_belief_cls_k_grows_projection_by_k_times_dmodel(k):
+    base, _ = _make_model()
+    on, _ = _make_model(attend_unrevealed_opponents=True, opp_belief_cls_k=k)
+    assert on.hidden_opp_belief is not None and on.hidden_opp_belief.k == k
+    # Belief feeds BOTH heads, so both projection inputs grow by exactly k*D_MODEL.
+    assert on.projection_input_dim == base.projection_input_dim + k * D_MODEL
+    assert on.value_projection_input_dim == base.value_projection_input_dim + k * D_MODEL
+
+
+def test_opp_belief_cls_k_requires_unmask():
+    """k>0 reads the unrevealed opp slots; with the unmask flag off those slots are key-masked, so
+    building the belief is incoherent → hard error at construction."""
+    with pytest.raises(ValueError, match="attend_unrevealed_opponents"):
+        _make_model(attend_unrevealed_opponents=False, opp_belief_cls_k=1)
+
+
+def test_opp_belief_cls_k_negative_rejected():
+    with pytest.raises(ValueError, match="opp_belief_cls_k must be >= 0"):
+        _make_model(attend_unrevealed_opponents=True, opp_belief_cls_k=-1)
+
+
+def test_opp_belief_cls_k_forward_finite_both_heads():
+    on, layout = _make_model(attend_unrevealed_opponents=True, opp_belief_cls_k=3)
+    pi, vf = on({"observation": _zeros(layout)})
+    assert pi.shape[0] == 1 and vf.shape[0] == 1
+    assert torch.isfinite(pi).all() and torch.isfinite(vf).all()
+
+
+def test_value_active_readout_grows_value_head_only():
+    """① value_active_readout routes our_active_refined into the VALUE projection only: the value
+    input widens by exactly D_MODEL, the policy input is UNCHANGED (it already had the token)."""
+    base, _ = _make_model()
+    on, layout = _make_model(value_active_readout=True)
+    assert on.value_active_readout is True and on.hidden_opp_belief is None
+    assert on.value_projection_input_dim == base.value_projection_input_dim + D_MODEL
+    assert on.projection_input_dim == base.projection_input_dim   # policy head untouched
+    pi, vf = on({"observation": _zeros(layout)})
+    assert torch.isfinite(pi).all() and torch.isfinite(vf).all()
 
 
 # ---------------------------------------------------------------------------
