@@ -133,6 +133,16 @@ guarantee — materialized obs == the live `states.npz` rows **bit-for-bit** —
 `agents/training/obs_roundtrip_fuzz_test.py`; replay/re-roll invariants by
 `reconstruction_fuzz_test.py`; the registry by `reconstruction_test.py`.
 
+**Reading the teams for review** — `record.team_details(side)` / `decode_packed_team(packed)`
+is THE one decode home (moves, EVs, IVs, nature, item, ability, level; omission-defaults
+applied; ids resolved through the sim's alias table — a pool export can say `wisp`, everything
+downstream speaks `willowisp`). It delegates to poke-env's `parse_packed_team`, never a
+reimplementation, and is validated **field-by-field against the sim's own `Teams.unpack` over
+the ENTIRE team pool** by `packed_team_decode_integration_test.py` (719 teams / 4314 mons —
+which caught the alias case on its first run). Replay/re-roll never decode at all: the packed
+strings go back to the sim verbatim, so counterfactuals always run with the true hidden details
+(exact Hidden Power types, speed stats, damage ranges).
+
 ## Why use a Bridge?
 - **Serverless**: No need to start or manage a Pokémon Showdown server process.
 - **No contention**: Each call/battle is fully isolated — no shared server lifecycle, no

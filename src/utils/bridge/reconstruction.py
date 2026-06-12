@@ -63,6 +63,75 @@ _DRIVER_JS = str(Path(__file__).parent / "replay_driver.js")
 RECORD_VERSION = 1
 RECON_SUFFIX = "_reconstruction.json"
 
+_STAT_ORDER = ("hp", "atk", "def", "spa", "spd", "spe")
+
+# Sim alias table ({alias_id: canonical display name}, e.g. wisp → Will-O-Wisp),
+# dumped lazily once per process. None = not loaded yet; {} = bridge unavailable.
+_ALIAS_CACHE: Optional[Dict[str, str]] = None
+_ALIAS_DUMP_JS = (
+    "const a=require(process.argv[1]+'/dist/data/aliases');"
+    "process.stdout.write(JSON.stringify(a.Aliases));"
+)
+_PS_PATH = str(Path(__file__).parents[3] / "deps" / "pokemon-showdown")
+
+
+def _sim_aliases() -> Dict[str, str]:
+    """The sim's own id-alias table, cached per process. Pool packed strings can
+    carry alias ids (a team export wrote "Wisp"); ``Teams.unpack`` resolves them,
+    so a review decode must too or its ids won't join with anything else in the
+    system (protocol/obs/summary all speak canonical ids). Falls back to ``{}``
+    when node / the sim dist is unavailable (pure-unit environments) — the
+    integration sweep validates the resolved decode against the sim itself."""
+    global _ALIAS_CACHE
+    if _ALIAS_CACHE is None:
+        try:
+            proc = subprocess.run(["node", "-e", _ALIAS_DUMP_JS, _PS_PATH],
+                                  capture_output=True, timeout=30)
+            _ALIAS_CACHE = json.loads(proc.stdout.decode()) if proc.returncode == 0 else {}
+        except (OSError, ValueError, subprocess.SubprocessError):
+            _ALIAS_CACHE = {}
+    return _ALIAS_CACHE
+
+
+def decode_packed_team(packed: str) -> List[dict]:
+    """THE one place a packed team string is decoded for review tooling.
+
+    Returns one dict per mon: ``{species, item, ability, moves, nature,
+    evs: {hp..spe}, ivs: {hp..spe}, gender, level}`` with the packed format's
+    omission-defaults applied (empty EV field = all 0, empty IV field = all 31,
+    level omitted = 100) and ids resolved through the sim's alias table (a pool
+    string can say ``wisp``; everything downstream speaks ``willowisp``).
+    Delegates to poke-env's ``parse_packed_team`` — the same parser the live
+    battle path uses — never a reimplementation; validated field-by-field
+    against the sim's own ``Teams.unpack`` over the ENTIRE team pool by
+    ``packed_team_decode_integration_test.py``. Replay/re-roll deliberately do
+    NOT use this: they feed the packed string back to the sim verbatim.
+    """
+    from poke_env.data.normalize import to_id_str
+    from poke_env.teambuilder.teambuilder import Teambuilder
+
+    aliases = _sim_aliases()
+
+    def rid(raw: str) -> str:
+        i = to_id_str(raw)
+        return to_id_str(aliases[i]) if i in aliases else i
+
+    out = []
+    for mon in Teambuilder.parse_packed_team(packed):
+        out.append({
+            "species": rid(mon.species or mon.nickname),
+            "item": rid(mon.item) if mon.item else "",
+            "ability": rid(mon.ability) if mon.ability else "",
+            "moves": [rid(m) for m in mon.moves],
+            "nature": to_id_str(mon.nature) if mon.nature else "",
+            "evs": dict(zip(_STAT_ORDER, (int(v) for v in mon.evs))),
+            "ivs": dict(zip(_STAT_ORDER, (int(v) for v in mon.ivs))),
+            "gender": mon.gender or "",
+            "level": int(mon.level or 100),
+        })
+    return out
+
+
 # ---------------------------------------------------------------------------
 # The record
 # ---------------------------------------------------------------------------
@@ -102,6 +171,12 @@ class ReconstructionRecord:
 
     def packed_team(self, side: str) -> str:
         return self.players()[side]["team"]
+
+    def team_details(self, side: str) -> List[dict]:
+        """``side``'s FULL team decoded for review (moves, EVs, IVs, nature,
+        item, ability, level — see :func:`decode_packed_team`). Referee-view
+        data: fine for analysis/reports, must never feed the obs pipeline."""
+        return decode_packed_team(self.packed_team(side))
 
     def side_of(self, username: str) -> str:
         """Which sim side (``p1``/``p2``) the player named ``username`` held."""

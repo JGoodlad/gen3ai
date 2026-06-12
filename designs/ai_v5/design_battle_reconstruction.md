@@ -1,10 +1,11 @@
-# Battle Reconstruction Layer (Phase 0) — as-built
+# Battle Reconstruction Layer (Phase 0) — design
 
-**Status: BUILT + validated (2026-06-11).** The probe-agnostic observability /
+**Status: BUILT + SHIPPED (`0f30c2e`, 2026-06-11).** The probe-agnostic observability /
 replayability foundation for counterfactual battle analysis. Phase 1 (the
-luck-vs-mistake falsifier, or any other consumer: distributional-critic
-validation, policy what-ifs, search) builds ON this; nothing probe-specific is
-baked in here.
+luck-vs-mistake falsifier — `design_falsifier_phase1.md`, or any other consumer:
+distributional-critic validation, policy what-ifs, search) builds ON this; nothing
+probe-specific is baked in here. **As-built record (files, gates, module map):
+`impl_step9_battle_reconstruction_and_falsifier.md`.**
 
 ## What it gives us
 

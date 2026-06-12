@@ -9,10 +9,17 @@ from utils.bridge import reconstruction
 from utils.bridge.reconstruction import (
     RECON_SUFFIX,
     ReconstructionRecord,
+    decode_packed_team,
     offer_record,
     pop_record,
     register_trace_prefix,
 )
+
+
+# Minimal REAL packed mons (12 pipe-fields each) so team decode paths work on
+# the fixture record too.
+_PACKED1 = "Zapdos||leftovers|pressure|thunderbolt,hiddenpowerice,substitute,batonpass|Timid|4,,,252,,252||,2,,30,,|||"
+_PACKED2 = "Skarmory||leftovers|keeneye|spikes,drillpeck,protect,roar|Careful|252,,,,252,4|||||"
 
 
 def _raw(tag_hint: str = "x") -> dict:
@@ -23,8 +30,8 @@ def _raw(tag_hint: str = "x") -> dict:
         "prng_seed": "sodium,abcdef0123456789",
         "input_log": [
             '>start {"formatid":"gen3ou","seed":"sodium,abcdef0123456789"}',
-            '>player p1 {"name":"Alice","team":"PACKED1"}',
-            '>player p2 {"name":"Bob","team":"PACKED2"}',
+            f'>player p1 {{"name":"Alice","team":"{_PACKED1}"}}',
+            f'>player p2 {{"name":"Bob","team":"{_PACKED2}"}}',
             ">p1 move thunderbolt",
             ">p2 move surf",
         ],
@@ -59,9 +66,9 @@ def test_record_derived_views():
     assert rec.start_options()["seed"] == "sodium,abcdef0123456789"
     players = rec.players()
     assert players["p1"]["name"] == "Alice"
-    assert players["p2"]["team"] == "PACKED2"
+    assert players["p2"]["team"] == _PACKED2
     assert rec.username("p2") == "Bob"
-    assert rec.packed_team("p1") == "PACKED1"
+    assert rec.packed_team("p1") == _PACKED1
     assert rec.side_of("Bob") == "p2"
     with pytest.raises(KeyError):
         rec.side_of("Mallory")
@@ -72,6 +79,64 @@ def test_record_without_start_line_raises():
     raw["input_log"] = [l for l in raw["input_log"] if not l.startswith(">start")]
     with pytest.raises(ValueError):
         ReconstructionRecord.from_dict(raw).start_options()
+
+
+def test_decode_packed_team_fields_and_omission_defaults(monkeypatch):
+    """Pins the packed format's omission conventions: empty IV field = all 31,
+    a PARTIAL field (",0,,,,") fills blanks with 31, empty EV field = all 0,
+    omitted level = 100. The full-pool sim cross-check lives in
+    packed_team_decode_integration_test.py; this is the cheap shape guard."""
+    monkeypatch.setattr(reconstruction, "_ALIAS_CACHE", {})  # pure unit: no node
+    packed = (
+        "Jirachi||leftovers|serenegrace|calmmind,icepunch,thunderbolt,hiddenpowerfighting"
+        "|Quiet|252,,68,140,,48||,,30,30,30,30|||"
+        "]Celebi||leftovers|naturalcure|leechseed,recover,psychic,calmmind"
+        "|Bold|252,,220,,,36||,0,,,,|||"
+        "]Snorlax||leftovers|immunity|bodyslam,earthquake,selfdestruct,shadowball"
+        "|Adamant||||||"
+    )
+    mons = decode_packed_team(packed)
+    assert [m["species"] for m in mons] == ["jirachi", "celebi", "snorlax"]
+
+    jirachi = mons[0]
+    assert jirachi["moves"] == ["calmmind", "icepunch", "thunderbolt", "hiddenpowerfighting"]
+    assert jirachi["item"] == "leftovers" and jirachi["ability"] == "serenegrace"
+    assert jirachi["nature"] == "quiet" and jirachi["level"] == 100
+    assert jirachi["evs"] == {"hp": 252, "atk": 0, "def": 68, "spa": 140, "spd": 0, "spe": 48}
+    # partial IVs ",,30,30,30,30" → blanks (hp, atk) default to 31
+    assert jirachi["ivs"] == {"hp": 31, "atk": 31, "def": 30, "spa": 30, "spd": 30, "spe": 30}
+
+    celebi = mons[1]
+    assert celebi["ivs"]["atk"] == 0   # the explicit 0 survives
+    assert all(celebi["ivs"][s] == 31 for s in ("hp", "def", "spa", "spd", "spe"))
+
+    snorlax = mons[2]
+    assert snorlax["evs"] == {s: 0 for s in ("hp", "atk", "def", "spa", "spd", "spe")}
+    assert snorlax["ivs"] == {s: 31 for s in ("hp", "atk", "def", "spa", "spd", "spe")}
+
+
+def test_decode_resolves_sim_aliases(monkeypatch):
+    """A pool packed string can carry a sim ALIAS id (a team export wrote
+    "Wisp"); the decode must emit the canonical id everything else in the
+    system speaks — caught live by the full-pool sweep (team 548's Gengar)."""
+    monkeypatch.setattr(reconstruction, "_ALIAS_CACHE", {"wisp": "Will-O-Wisp"})
+    packed = ("Gengar||leftovers|levitate|wisp,icepunch,firepunch,explosion"
+              "|Timid|252,,,,,252|||||")
+    (gengar,) = decode_packed_team(packed)
+    assert gengar["moves"] == ["willowisp", "icepunch", "firepunch", "explosion"]
+
+
+def test_team_details_decodes_the_recorded_side(monkeypatch):
+    monkeypatch.setattr(reconstruction, "_ALIAS_CACHE", {})  # pure unit: no node
+    rec = ReconstructionRecord.from_dict(_raw())
+    details = rec.team_details("p2")
+    assert details == decode_packed_team(_PACKED2)
+    assert details[0]["species"] == "skarmory"
+    assert details[0]["moves"] == ["spikes", "drillpeck", "protect", "roar"]
+    # p1's Zapdos carries the gen3 HP-Ice IV spread — the omniscient detail the
+    # one-sided obs never sees but review tooling can now read.
+    zapdos = rec.team_details("p1")[0]
+    assert zapdos["ivs"]["atk"] == 2 and zapdos["ivs"]["spa"] == 30
 
 
 # ---------------------------------------------------------------------------

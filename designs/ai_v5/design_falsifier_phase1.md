@@ -1,11 +1,12 @@
-# Dice-Attribution Falsifier (Phase 1) — as-built
+# Dice-Attribution Falsifier (Phase 1) — design
 
-**Status: BUILT + validated (2026-06-11).** The first consumer of the Phase-0
+**Status: BUILT + SHIPPED (`2236b76`, 2026-06-11).** The first consumer of the Phase-0
 battle-reconstruction layer (`design_battle_reconstruction.md`): per decision in
 a recorded battle, separate **luck** (the dice broke bad) from **reducible
 mistake** (a better action existed). Lives in the prober ecosystem:
 `src/main/prober/falsifier.py` + `ProbeSession.falsify` +
-`python -m main.prober.query falsify`.
+`python -m main.prober.query falsify`. **As-built record (files, gates, module
+map): `impl_step9_battle_reconstruction_and_falsifier.md`.**
 
 ## Why (the question it answers)
 
