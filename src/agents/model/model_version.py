@@ -64,7 +64,15 @@ from typing import Any, Dict, List
 #   0.0 = plain MSE. Enforced ONLY on the training-resume path via check_value_tail_weight, EXCLUDED
 #   from check_compatible (a frozen opponent's forward never runs the value loss). No ARCH_SIGNATURE
 #   bump (network/obs unchanged). Old configs migrate to 0.0.
-MODEL_CONFIG_VERSION = 11
+#
+# v12: added `self_ko_hp_penalty` (--self-ko-hp-penalty). A resume-immutable VALUE-meaning reward
+#   hparam (like draw_penalty): a decision-time-HP-scaled penalty (−w·hp) for self-KOing a mon via
+#   Explosion/Self-Destruct. The symmetric material PBRS prices a healthy 1-for-1 trade at ~0, so the
+#   critic learns to value a full-HP self-KO POSITIVELY and the policy throws away healthy mons; this
+#   restores a negative signal (scaled by HP, so legitimate low-HP sac-for-KO is spared). 0.0 = OFF.
+#   Enforced via check_reward_config, EXCLUDED from check_compatible. No ARCH_SIGNATURE bump. Old
+#   configs migrate to 0.0.
+MODEL_CONFIG_VERSION = 12
 
 # Change this when the neural architecture changes structurally in a way that makes
 # weights from a different signature incompatible (e.g. adding LSTM, replacing attention).
@@ -368,6 +376,12 @@ class ModelVersion:
     # opponents whose forward never touches it). Defaulted so weight-shape-only callers need not supply it.
     value_tail_weight: float = 0.0
 
+    # v12 resume-immutable VALUE-meaning reward hparam (like draw_penalty — NOT weight-shape): the
+    # decision-time-HP-scaled self-KO penalty weight (−w·hp on Explosion/Self-Destruct + we_fainted).
+    # 0.0 = OFF (byte-identical). Enforced via check_reward_config; excluded from check_compatible.
+    # Defaulted so weight-shape-only callers need not supply it.
+    self_ko_hp_penalty: float = 0.0
+
     @classmethod
     def from_layout_and_policy_kwargs(
         cls,
@@ -414,6 +428,7 @@ class ModelVersion:
             bias_redesign=bool(getattr(reward_config, "bias_redesign", False)),
             switch_bias_weight=float(getattr(reward_config, "switch_bias_weight", 0.0)),
             draw_penalty=float(getattr(reward_config, "draw_penalty", -30.0)),
+            self_ko_hp_penalty=float(getattr(reward_config, "self_ko_hp_penalty", 0.0)),
             use_popart=bool(policy_kwargs.get("use_popart", False)),
             attend_unrevealed_opponents=bool(
                 policy_kwargs.get("features_extractor_kwargs", {}).get(
@@ -616,6 +631,7 @@ class ModelVersion:
         req_br = bool(getattr(reward_config, "bias_redesign", False))
         req_sbw = float(getattr(reward_config, "switch_bias_weight", 0.0))
         req_dp = float(getattr(reward_config, "draw_penalty", -30.0))
+        req_skp = float(getattr(reward_config, "self_ko_hp_penalty", 0.0))
         problems = []
         if not math.isclose(self.bias_additivity, req_ba, rel_tol=1e-9, abs_tol=1e-12):
             problems.append(f"  bias_additivity: saved={self.bias_additivity!r}, requested={req_ba!r}")
@@ -627,6 +643,8 @@ class ModelVersion:
             problems.append(f"  switch_bias_weight: saved={self.switch_bias_weight!r}, requested={req_sbw!r}")
         if not math.isclose(self.draw_penalty, req_dp, rel_tol=1e-9, abs_tol=1e-12):
             problems.append(f"  draw_penalty: saved={self.draw_penalty!r}, requested={req_dp!r}")
+        if not math.isclose(self.self_ko_hp_penalty, req_skp, rel_tol=1e-9, abs_tol=1e-12):
+            problems.append(f"  self_ko_hp_penalty: saved={self.self_ko_hp_penalty!r}, requested={req_skp!r}")
         if problems:
             raise ModelVersionError(
                 "Reward-config mismatch on resume — these hparams are fixed for a run's lifetime "
@@ -681,4 +699,9 @@ def _migrate_config(data: dict) -> dict:
         # v11: added value_tail_weight. Old runs used a plain MSE value loss (β=0).
         data.setdefault("value_tail_weight", 0.0)
         data["config_version"] = 11
+    if version < 12:
+        # v12: added self_ko_hp_penalty. Old runs had no self-KO penalty (the symmetric material PBRS
+        # priced a healthy Explosion/Self-Destruct trade at ~0).
+        data.setdefault("self_ko_hp_penalty", 0.0)
+        data["config_version"] = 12
     return data

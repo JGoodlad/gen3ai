@@ -104,6 +104,26 @@ them. **Reward-only — no obs/arch change** (ARCH unchanged; `MODEL_CONFIG_VERS
 (`check_reward_config`). Being BIAS-class it rides `--bias-additivity`, so a fixed weight at **λ=1 vs λ=0**
 is the causal A/B for "is it the objective tilt that helps." Tests: `reward_redesign_test.py::TestSwitchBias`.
 
+**HP-scaled self-KO penalty (`--self-ko-hp-penalty`, default 0.0 = OFF).** A grounded floor-leak fix
+(2026-06-12 forensics on ai_v5_11): the policy confidently (median P≈0.5) explodes **healthy** mons —
+~38% of all Explosion/Self-Destruct selections are at ≥80% HP (incl. turn-1 full-HP Metagross),
+human-obvious blunders that cost ~0.95 mon. Mechanism (ruled out reward+exploration first): the
+**reward is correct** (a healthy non-trade Explosion scores ≈−2.7; the finishing-blow mis-credit is
+already guarded), but Φ_mat is **symmetric for a 1-for-1 trade** (our −hp/−alive cancels theirs → ~0),
+so on the 77%-of-the-time trade the critic learns to value the post-self-KO board POSITIVELY
+(measured `dV ≈ +2.9`), which **neutralizes the −2.7 reward in the PPO advantage** (`r+γV′ ≈ +1.5`, 74%
+≥0) and the policy never un-learns it. (It is NOT `value_active_readout`/① — the no-① baseline explodes
+just as much.) The fix is a **BIAS-class** term `−w·(our active HP fraction at decision time)` charged
+when our mon self-KOs (`our_move_id ∈ SELF_KO_MOVES` + `we_fainted` + not `our_failed_to_move`), using
+the `_our_active_hp_before` snapshot from `record_action`. Scaling by HP **spares the legitimate low-HP
+"explode a dying mon for a KO"** (≈0 penalty). A static pre-check showed `w≈2.5` flips the healthy-trade
+advantage negative; in a retrain the critic's over-valuation also drops as the TD target sharpens.
+Reward-only — no obs/arch change (no `ARCH_SIGNATURE` bump; `MODEL_CONFIG_VERSION 11→12`),
+resume-immutable (`check_reward_config`). **Validate by watching `win_rate_vs_bots` (82%→~95% target)
+and the healthy-explosion rate fall.** Tests: `reward_redesign_test.py::TestSelfKoPenalty` (unit) +
+`self_ko_penalty_fuzz_test.py` (bridge — real Explosion turns net exactly `−w·hp`, 0 elsewhere, OFF
+byte-unchanged).
+
 ## Bot evaluation (subprocess, non-blocking)
 
 **Flat schedule, full roster.** Eval fires every `EVAL_FREQ_STEPS` (2M steps) and plays

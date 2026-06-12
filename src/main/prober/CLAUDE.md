@@ -285,6 +285,15 @@ loading uses the same exact→nearest→recent ladder (cached per process). A
   re-roll → policy-rollout → return PIT** (the true distributional-critic validator,
   deferred — needs a mid-game rollout primitive). Reads the `caveats`; this is the cheap
   aggregate proxy, knowingly confounded on a quota-captured sample.
+- `decision_table(steps=, opponents=, outcomes=, categories=, max_battles=)` — a complementary
+  MODEL-FREE per-decision FORENSIC TABLE (`forensics.py`): one row per captured decision with `cat`
+  (`move_category`: selfko/recovery/setup/stall/status/switch/attack_or_other), our/opp species+HP,
+  policy `conf` (`softmax(logits)[chosen]` — learned vs exploration-tail), `reward`, critic `dV`
+  (`V[i+1]−V[i]`, the self-KO over-valuation signal), incoming-KO `pko` belief, faint flags, outcome.
+  The single source for the softmax/dV/`decode_incoming_belief` plumbing every behavioural-hypothesis
+  check reuses (the shipped self-KO finding used the `selfko` `dV_med`). Distinct from `falsify_scan`
+  (the luck/mistake bracket) — this is the raw per-decision table. `move_category` /
+  `decision_table_digest` are pure (unit-tested). See `designs/research_state/` for the hypothesis ledger.
 
 CLI mirror — prints JSON to stdout (and `{"error": …}` + exit 1 on failure, so an
 agent always gets parseable output). `--help` carries a worked example sequence:
@@ -300,6 +309,7 @@ python -m main.prober.query analyze  <battle_id> <inv> [--ckpt PATH] [--tier aut
 python -m main.prober.query falsify  <battle_id> [--inv N]... [--worst K] [--seeds N] [--alts K] [--followup random|default]
 python -m main.prober.query falsify-scan <run_dir> [--outcome loss|win] [--opponent X] [--step N] [--limit K] [--worst K] [--seeds N] [--alts K] [--concurrency N]
 python -m main.prober.query calibration  <run_dir> [--step N] [--opponent X] [--limit K] [--worst K] [--seeds N] [--concurrency N] [--bins N] [--overvalue-tau F]
+python -m main.prober.query decision-table <run_dir> [--step N]... [--opponent X]... [--outcome loss] [--cat selfko]... [--out t.jsonl] [--limit K]
 ```
 **Investigation recipe:** `triage` (which LEVER recovers the most rating — start here
 for "what next") → `summary` → `scan --outcome loss [--opponent X]` (the worst turn in
@@ -401,6 +411,8 @@ concurrency-order-independence — plus the `calibration` pure helpers
 and the unattributed-split integration: over-valued vs lost via the reliability gap,
 + the selection-confound diagnostics), `discovery_test.py` (tmp_path trees, checkpoint
 precedence, **sharded `<outcome>_s<shard>_<idx>` parsing → distinct index**),
+`forensics_test.py` (pure `move_category` + `build_decision_table`/`decision_table_digest` over a
+hand-written tmp trace via a fake session — no torch, no bridge),
 `falsifier_test.py` (pure: margin/percentile/paired-stats/verdict
 matrix, seed determinism, δ-anchor selection incl. the forced-switch remap, and
 the `anchor_deltas` δ-map) + `falsifier_integration_test.py` (`@integration`,

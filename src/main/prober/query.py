@@ -192,6 +192,20 @@ def _build_parser() -> argparse.ArgumentParser:
     pca.add_argument("--bins", type=int, default=10, help="reliability-curve V-bins (default 10)")
     pca.add_argument("--overvalue-tau", type=float, default=5.0,
                      help="reliability-gap (return units) above which a crater is critic_overvalued")
+
+    pdt = sub.add_parser(
+        "decision-table", help="per-decision forensic export (move-cat / policy conf / reward / "
+                               "critic dV / incoming-KO belief) over a run — the consolidated plumbing")
+    pdt.add_argument("root", help="run dir / eval_traces dir / summary.json")
+    pdt.add_argument("--step", type=int, action="append", help="filter to this step (repeatable)")
+    pdt.add_argument("--opponent", action="append", help="filter to this opponent (repeatable)")
+    pdt.add_argument("--outcome", choices=["win", "loss"], action="append", help="filter (repeatable)")
+    pdt.add_argument("--cat", action="append",
+                     help="filter to a move category (selfko/recovery/setup/stall/status/switch/attack_or_other)")
+    pdt.add_argument("--max-battles", type=int, default=None, help="cap battles scanned")
+    pdt.add_argument("--out", default=None, help="write the FULL table as JSONL to this path")
+    pdt.add_argument("--limit", type=int, default=None,
+                     help="print the first N full rows (default: a per-category digest)")
     return p
 
 
@@ -231,6 +245,20 @@ def _run(args) -> object:
             limit=args.limit, worst=args.worst, n_seeds=args.seeds, n_alts=args.alts,
             followup=args.followup, concurrency=args.concurrency,
             n_bins=args.bins, overvalue_tau=args.overvalue_tau)
+    if args.cmd == "decision-table":
+        from main.prober import forensics
+        rows = ProbeSession(args.root).decision_table(
+            steps=args.step, opponents=args.opponent, outcomes=args.outcome,
+            categories=args.cat, max_battles=args.max_battles)
+        if args.out:
+            with open(args.out, "w") as f:
+                for r in rows:
+                    f.write(json.dumps(r) + "\n")
+            return {"wrote": args.out, "n_rows": len(rows),
+                    "digest": forensics.decision_table_digest(rows)}
+        if args.limit is not None:
+            return rows[:args.limit]
+        return forensics.decision_table_digest(rows)
     sess = ProbeSession(args.battle, ckpt_override=args.ckpt, tier=args.tier)
     if args.cmd == "overview":
         return sess.battle_overview(args.battle)

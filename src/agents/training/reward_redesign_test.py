@@ -857,5 +857,70 @@ class TestRewardConfigSingleSource(unittest.TestCase):
                           f"{fn.__qualname__}.{pname} must be REQUIRED (no silent default)")
 
 
+class TestSelfKoPenalty(unittest.TestCase):
+    """The HP-scaled self-KO penalty (--self-ko-hp-penalty): −w·hp when our mon self-KOs, OFF by
+    default, gated on actually-fainted + actually-executed, and untouched for non-self-KO moves."""
+
+    def _mgr(self, weight, hp_before=1.0):
+        m = Gen3RewardManager(config=RewardConfig(self_ko_hp_penalty=weight))
+        m._our_active_hp_before = hp_before
+        return m
+
+    def test_off_by_default_is_zero(self):
+        """w=0.0 (default) → no penalty even on a healthy self-KO (byte-unchanged)."""
+        m = self._mgr(0.0, hp_before=1.0)
+        self.assertEqual(
+            m._compute_self_ko_penalty(_delta(our_move_id="explosion", we_fainted=True)), 0.0)
+
+    def test_healthy_self_ko_charges_full_weight(self):
+        """A full-HP Explosion that faints us → −w·1.0 (the blunder this lever targets)."""
+        m = self._mgr(2.5, hp_before=1.0)
+        self.assertAlmostEqual(
+            m._compute_self_ko_penalty(_delta(our_move_id="explosion", we_fainted=True)),
+            -2.5, places=6)
+
+    def test_low_hp_self_ko_is_scaled_down(self):
+        """A dying-mon Self-Destruct (10% HP) is the legitimate sac-for-KO → only −w·0.1."""
+        m = self._mgr(2.5, hp_before=0.1)
+        self.assertAlmostEqual(
+            m._compute_self_ko_penalty(_delta(our_move_id="selfdestruct", we_fainted=True)),
+            -0.25, places=6)
+
+    def test_survived_explosion_no_penalty(self):
+        """Blocked / immune Explosion (we did NOT faint) threw nothing away → no penalty."""
+        m = self._mgr(2.5, hp_before=1.0)
+        self.assertEqual(
+            m._compute_self_ko_penalty(_delta(our_move_id="explosion", we_fainted=False)), 0.0)
+
+    def test_failed_to_move_no_penalty(self):
+        """KO'd before our Explosion fired (our_failed_to_move) → the faint wasn't our self-KO."""
+        m = self._mgr(2.5, hp_before=1.0)
+        self.assertEqual(
+            m._compute_self_ko_penalty(
+                _delta(our_move_id="explosion", we_fainted=True, our_failed_to_move=True)), 0.0)
+
+    def test_non_self_ko_move_no_penalty(self):
+        """Fainting to a normal attack while holding a non-self-KO move → no penalty."""
+        m = self._mgr(2.5, hp_before=1.0)
+        self.assertEqual(
+            m._compute_self_ko_penalty(_delta(our_move_id="earthquake", we_fainted=True)), 0.0)
+
+    def test_post_self_ko_forced_switch_window_no_double_charge(self):
+        """The forced-switch follow-up window after a self-KO has our_move_id=None — the penalty must
+        NOT fire there, so one self-KO is charged exactly once (no double-charge across the window)."""
+        m = self._mgr(2.5, hp_before=1.0)
+        self.assertEqual(
+            m._compute_self_ko_penalty(_delta(our_move_id=None, we_fainted=True)), 0.0)
+
+    def test_hp_clamped_to_unit_interval(self):
+        """A stray >1 or <0 HP snapshot can't blow the penalty past [−w, 0]."""
+        self.assertAlmostEqual(
+            self._mgr(2.0, hp_before=1.5)._compute_self_ko_penalty(
+                _delta(our_move_id="explosion", we_fainted=True)), -2.0, places=6)
+        self.assertEqual(
+            self._mgr(2.0, hp_before=-0.3)._compute_self_ko_penalty(
+                _delta(our_move_id="explosion", we_fainted=True)), 0.0)
+
+
 if __name__ == "__main__":
     unittest.main()

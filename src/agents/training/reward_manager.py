@@ -7,7 +7,7 @@ from utils.logging.levels import LogLevel
 from agents.enums import Status
 from agents.action.constants import SWITCH_END as _SWITCH_END
 from agents.training.battle_snapshot import BattleContext
-from agents.training.turn_delta import TurnDelta
+from agents.training.turn_delta import SELF_KO_MOVES, TurnDelta
 from agents.training.stall import StallConfig as _StallConfig
 from agents.gen3_data import moves as _movedex
 from agents.gen3_mechanics import (
@@ -81,6 +81,14 @@ class RewardConfig:
     # inevitable loss and discourages no-progress stall-wars. A decisive loss stays -VICTORY_VALUE.
     # Per-run constant, resume-immutable (recorded in model_config.json, value-checked).
     draw_penalty: float = -30.0
+    # Decision-time-HP-scaled self-KO penalty weight. 0.0 = OFF (default → byte-unchanged). >0 charges
+    # −w·(our active HP fraction at decision time) when our mon self-KOs (Explosion / Self-Destruct +
+    # we_fainted). The symmetric material PBRS prices a healthy 1-for-1 trade at ~0, so the critic
+    # learns to value a full-HP self-KO POSITIVELY (measured dV ≈ +2.9, PPO advantage ≈ +1.5 on
+    # ≥80%-HP self-KOs) → the policy throws away healthy mons (turn-1 full-HP Explosion). Scaling by HP
+    # spares the legitimate low-HP "explode a dying mon to secure a KO" play. Per-run constant,
+    # resume-immutable (recorded in model_config.json, value-checked via check_reward_config).
+    self_ko_hp_penalty: float = 0.0
 
     # --- single source of truth: build once, flow everywhere (training + eval + version record) ---
     # Adding a reward flag = add the field above + a matching `--field-name` CLI arg. `from_args`
@@ -123,6 +131,8 @@ class RewardBreakdown:
                                    # (opp lost a mon); the old +2.0 literal is deleted (design §2.5)
     explosion_block: float = 0.0   # Ghost immune or Protect blocked opponent Explosion
     finishing_blow: float = 0.0    # damaging move secured the KO
+    self_ko_penalty: float = 0.0   # HP-scaled penalty for self-KOing a (healthy) mon — Explosion/
+                                   # Self-Destruct throws away its future value (--self-ko-hp-penalty)
 
     # Attack signals
     roar: float = 0.0
@@ -198,7 +208,8 @@ class RewardBreakdown:
         "pbrs_status": RewardClass.PBRS,
         # everything else is BIAS:
         "explosion": RewardClass.BIAS, "explosion_block": RewardClass.BIAS,
-        "finishing_blow": RewardClass.BIAS, "roar": RewardClass.BIAS,
+        "finishing_blow": RewardClass.BIAS, "self_ko_penalty": RewardClass.BIAS,
+        "roar": RewardClass.BIAS,
         "futile_attack": RewardClass.BIAS, "futile_setup": RewardClass.BIAS,
         "setup_low_hp": RewardClass.BIAS, "boost_utilized": RewardClass.BIAS,
         "status_wasted": RewardClass.BIAS, "spikes": RewardClass.BIAS,
@@ -216,7 +227,8 @@ class RewardBreakdown:
 
     # Groups ordered by how frequently they produce non-zero values (for the compact string only).
     _GROUPS: ClassVar[tuple] = (
-        ("base",   ("win_loss", "pbrs_material", "explosion", "explosion_block", "finishing_blow")),
+        ("base",   ("win_loss", "pbrs_material", "explosion", "explosion_block", "finishing_blow",
+                    "self_ko_penalty")),
         ("attack", ("roar", "futile_attack", "futile_setup", "setup_low_hp",
                     "boost_utilized", "status_wasted", "repetition_tax", "struggle_tax")),
         ("switch", ("switch_base", "switch_bouncing_tax", "escape_threat_switch",
@@ -1221,6 +1233,27 @@ class Gen3RewardManager:
             return 0.0
         return FINISHING_BLOW_BONUS
 
+    def _compute_self_ko_penalty(self, delta: TurnDelta) -> float:
+        """HP-scaled penalty for throwing away a mon via a self-KO move (Explosion / Self-Destruct).
+
+        The symmetric material PBRS prices a 1-for-1 *healthy* self-KO trade at ~0, so the critic
+        learns to value a full-HP self-KO POSITIVELY (measured dV ≈ +2.9 → PPO advantage ≈ +1.5 on
+        ≥80%-HP self-KOs) and the policy explodes healthy mons (turn-1 full-HP Metagross). The penalty
+        ``−w · (our active HP fraction at decision time)`` restores a negative signal the critic can't
+        smear, while scaling by HP spares the legitimate low-HP "explode a dying mon to secure a KO"
+        play (≈0 penalty). OFF (w=0.0) by default → byte-unchanged.
+
+        Gated on ``we_fainted`` (the self-KO actually cost us the mon — a blocked/failed Explosion that
+        survives loses nothing) and ``not our_failed_to_move`` (we executed the self-KO, weren't merely
+        KO'd first while holding the move). ``_our_active_hp_before`` is the decision-time HP snapshot
+        set in ``record_action`` (the value squandered)."""
+        w = self.config.self_ko_hp_penalty
+        if (w <= 0.0 or not delta.we_fainted or delta.our_failed_to_move
+                or delta.our_move_id not in SELF_KO_MOVES):
+            return 0.0
+        hp_frac = min(1.0, max(0.0, self._our_active_hp_before))
+        return -w * hp_frac
+
     # =========================================================
     # PBRS / clock / bias-refund FOLDS — the per-class treatment process_turn_reward applies.
     # Kept as named one-purpose methods so the orchestrator reads as a phase sequence and the
@@ -1329,7 +1362,12 @@ class Gen3RewardManager:
             if not delta.we_fainted:
                 if delta.our_hp_delta.sum() == 0.0 or opp_event.effectiveness == 0.0:
                     bd.explosion_block = EXPLOSION_BLOCK_BONUS
-            # When we_fainted: Φ_mat already prices the mon loss; no extra penalty.
+            # When we_fainted: Φ_mat already prices the mon loss; the symmetric trade undervalues it
+            # (see _compute_self_ko_penalty) — the HP-scaled penalty below corrects it (default OFF).
+
+        # --- Self-KO penalty (HP-scaled): Φ_mat prices a healthy 1-for-1 self-KO trade at ~0, so the
+        # critic learns to like throwing away a healthy mon. OFF unless --self-ko-hp-penalty > 0. ---
+        bd.self_ko_penalty = self._compute_self_ko_penalty(delta)
 
         # --- Finishing blow ---
         bd.finishing_blow = self._compute_finishing_blow_bonus(delta, live)

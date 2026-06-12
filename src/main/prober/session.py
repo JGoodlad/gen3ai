@@ -377,6 +377,19 @@ class ProbeSession:
             })
         return out
 
+    # -- consolidated forensic exports (forensics.py) -----------------------
+
+    def decision_table(self, *, steps=None, opponents=None, outcomes=None,
+                       categories=None, max_battles=None) -> "list[dict]":
+        """MODEL-FREE per-decision forensic table over the matching battles (one row each:
+        move-category, our/opp species+HP, policy ``conf``, ``reward``, critic ``dV``,
+        incoming-KO ``pko`` belief, faint flags, outcome). The single source for the
+        softmax/dV/belief-decode plumbing every behavioural-hypothesis check reuses."""
+        from main.prober import forensics
+        return forensics.build_decision_table(
+            self, steps=steps, opponents=opponents, outcomes=outcomes,
+            categories=categories, max_battles=max_battles)
+
     # -- model-free battle digest -------------------------------------------
 
     def battle_overview(self, battle_id: str) -> dict:

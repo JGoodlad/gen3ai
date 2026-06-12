@@ -136,11 +136,14 @@ The **reward-config** hparams are the same kind, bundled into one check: `bias_a
 (`--bias-additivity`), `mat_alive_weight` (`--mat-alive-weight`), `bias_redesign` (`--bias-redesign`),
 `switch_bias_weight` (`--switch-bias-weight`, the belief-risk stay-into-KO BIAS lever, v5), and
 `draw_penalty` (`--draw-penalty`, the DRAW/250-turn-timeout terminal, v7 — default −30.0 = a tie scores
-as a decisive loss; set lower to make a stall-to-cap strictly worse) are all recorded on `ModelVersion`
+as a decisive loss; set lower to make a stall-to-cap strictly worse), and `self_ko_hp_penalty`
+(`--self-ko-hp-penalty`, the HP-scaled self-KO penalty, v12 — default 0.0 = OFF; >0 charges −w·hp when
+our mon self-KOs via Explosion/Self-Destruct, since the symmetric material PBRS prices a healthy 1-for-1
+trade at ~0 and the critic then over-values it) are all recorded on `ModelVersion`
 and enforced on resume by **`check_reward_config`** (FATAL on drift, since they silently shift the
 reward/objective), excluded from `check_compatible`. They are reward-VALUE changes — **no
 `ARCH_SIGNATURE` bump** (the network/obs are unchanged) — so a fresh run is needed to measure them but
-old checkpoints don't fail an arch check. Current `MODEL_CONFIG_VERSION` = **11**.
+old checkpoints don't fail an arch check. Current `MODEL_CONFIG_VERSION` = **12**.
 
 **Two probe-driven V-tail levers (v10 structural, v11 resume-immutable).** A representation probe on a
 real checkpoint found the **value head is partly blind to incoming KOs the policy head sees**

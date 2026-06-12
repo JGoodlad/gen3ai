@@ -522,6 +522,15 @@ async def main():
                         "more negative (e.g. -35) to make stalling to the turn cap strictly worse "
                         "than losing cleanly — discourages no-progress stall-wars. A decisive loss "
                         "stays -30. Resume-immutable (recorded + value-checked in model_config.json).")
+    parser.add_argument("--self-ko-hp-penalty", "--self_ko_hp_penalty", dest="self_ko_hp_penalty",
+                        type=float, default=0.0,
+                        help="Decision-time-HP-scaled penalty (-w*hp) for self-KOing a mon via "
+                        "Explosion/Self-Destruct. Default 0.0 = OFF (behavior unchanged). The symmetric "
+                        "material PBRS prices a healthy 1-for-1 trade at ~0, so the critic learns to "
+                        "value a full-HP self-KO positively and the policy throws away healthy mons "
+                        "(measured: ~38%% of explosions are on >=80%%-HP mons). >0 (e.g. 2.5) charges "
+                        "the squandered HP, sparing legitimate low-HP sac-for-KO. Resume-immutable "
+                        "(recorded + value-checked in model_config.json).")
     parser.add_argument("--clip-range", type=float, default=CLIP_RANGE_DEFAULT, help="PPO policy clip range (default 0.15)")
     parser.add_argument("--clip-range-vf", type=optional_float, default=0.5, help="Value function clip range; pass 'none' to disable clipping (thesis used 0.0184)")
     parser.add_argument("--use-popart", "--use_popart", dest="use_popart", action=BoolFlag, default=False,
