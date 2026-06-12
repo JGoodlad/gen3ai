@@ -396,6 +396,29 @@ class ProbeSession:
 
     # -- cross-battle turning-point scan (model-free) -----------------------
 
+    def falsify(self, battle_id: str, *, invs=None, worst: int = 3,
+                n_seeds: int = 40, n_alts: int = 3, followup: str = "random") -> dict:
+        """Dice attribution (luck vs reducible mistake) for a battle's worst — or
+        explicitly chosen — decisions, by RE-ROLLING the real turns through the
+        reconstruction layer (fix-both luck percentile + paired alternative-action
+        sweep on a material margin). Model-free (no checkpoint); requires the
+        trace's ``*_reconstruction.json`` sibling, which only bridge-eval traces
+        written by the reconstruction layer carry."""
+        from main.prober.falsifier import falsify_battle
+        from utils.bridge.reconstruction import ReconstructionRecord
+
+        b = self._battle(battle_id)
+        recon_path = b.summary_path[: -len("_summary.json")] + "_reconstruction.json"
+        if not os.path.exists(recon_path):
+            raise FileNotFoundError(
+                f"no reconstruction record next to this trace ({recon_path}) — "
+                "the battle predates the reconstruction layer or ran websocket "
+                "eval; only bridge-eval traces carry the falsifier's replay data")
+        record = ReconstructionRecord.load(recon_path)
+        return falsify_battle(record, self._summary(b), self._npz(b),
+                              invs=invs, worst=worst, gamma=self._gamma,
+                              n_seeds=n_seeds, n_alts=n_alts, followup=followup)
+
     def scan(self, *, outcome: "str | None" = None, opponent: "str | None" = None,
              step: "int | None" = None, limit: "int | None" = None,
              metric: str = "value_drop") -> "list[dict]":

@@ -13,6 +13,7 @@ A typical investigation:
     python -m main.prober.query find     <summary.json> value_drop --limit 5
     python -m main.prober.query find     <summary.json> disagree           # loads the model
     python -m main.prober.query analyze  <summary.json> <inv> [--tier nearest]
+    python -m main.prober.query falsify  <summary.json> [--inv N] [--seeds 40]  # luck vs mistake (re-rolls)
 
 ``<summary.json>`` is a battle id from list/summary output (the ``id`` field).
 """
@@ -55,13 +56,19 @@ examples:
 
   # 5. full forensic analysis of one decision (loads exact→nearest→recent model)
   python -m main.prober.query analyze <id> 7 --tier nearest
+
+  # 6. dice attribution: were the worst decisions of this loss LUCK or a MISTAKE?
+  #    (re-rolls the real turns via the reconstruction layer — bridge-eval traces only)
+  python -m main.prober.query falsify <id>                       # worst 3 decisions by δ
+  python -m main.prober.query falsify <id> --inv 7 --seeds 60    # one chosen decision
 """
 
 
 def _build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
         prog="python -m main.prober.query",
-        description="JSON probing CLI for agents (triage/probe/summary/list/scan/overview/find/analyze).",
+        description="JSON probing CLI for agents "
+                    "(triage/probe/summary/list/scan/overview/find/analyze/falsify).",
         epilog=_EXAMPLES, formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     sub = p.add_subparsers(dest="cmd", required=True)
@@ -121,6 +128,19 @@ def _build_parser() -> argparse.ArgumentParser:
             sp.add_argument("inv", type=int, help="invocation index")
         sp.add_argument("--ckpt", default=None, help="checkpoint override (else exact→nearest→recent)")
         sp.add_argument("--tier", default="auto", choices=["auto", "nearest", "recent"])
+
+    pfa = sub.add_parser(
+        "falsify", help="dice attribution: luck-vs-mistake for a battle's worst decisions "
+                        "(re-rolls the real turns; bridge-eval traces with *_reconstruction.json only)")
+    pfa.add_argument("battle", help="a battle id (the *_summary.json path from list/summary)")
+    pfa.add_argument("--inv", type=int, action="append",
+                     help="falsify this invocation (repeatable; default: --worst by δ)")
+    pfa.add_argument("--worst", type=int, default=3,
+                     help="anchor the N most-negative-δ move decisions (default 3)")
+    pfa.add_argument("--seeds", type=int, default=40, help="re-roll seeds per arm (default 40)")
+    pfa.add_argument("--alts", type=int, default=3, help="alternative actions to test (default 3)")
+    pfa.add_argument("--followup", default="random", choices=["random", "default"],
+                     help="policy for NEW mid-turn decisions in re-rolled timelines")
     return p
 
 
@@ -145,6 +165,10 @@ def _run(args) -> object:
     if args.cmd == "history-saliency":
         return ProbeSession(args.root).history_saliency(
             step=args.step, opponent=args.opponent, max_decisions=args.max_decisions)
+    if args.cmd == "falsify":
+        return ProbeSession(args.battle).falsify(
+            args.battle, invs=args.inv, worst=args.worst,
+            n_seeds=args.seeds, n_alts=args.alts, followup=args.followup)
     sess = ProbeSession(args.battle, ckpt_override=args.ckpt, tier=args.tier)
     if args.cmd == "overview":
         return sess.battle_overview(args.battle)

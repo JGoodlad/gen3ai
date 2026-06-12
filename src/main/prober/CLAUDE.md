@@ -202,6 +202,28 @@ loading uses the same exact→nearest→recent ladder (cached per process). A
   (On run_20260606 the critic's per-dim value-saliency on `incoming_damage` ran ~5×
   the overall mean, vs ~0.3× for the old `their_matchups` — the critic strongly uses
   the new belief.)
+- `falsify(battle_id, invs=, worst=, n_seeds=, n_alts=, followup=)` — **dice
+  attribution** (`falsifier.py`): was a loss decision LUCK or a reducible MISTAKE?
+  RE-ROLLS the real turn via the battle-reconstruction layer
+  (`utils/bridge/reconstruction.py`): fix-both-actions under N fresh PRNG seeds →
+  where does the REALIZED outcome (the special `"original"` seed — no PRNG swap,
+  exact recorded follow-ups) sit in the dice distribution (`luck_percentile`);
+  plus a **paired** alternative-action sweep (top-k legal alts by saved logits,
+  SAME seeds = common random numbers, mapped to sim choices by the real action
+  mapper via `obs_materializer.map_actions_at`) → `paired_advantage` ± SE per alt.
+  Both axes score an omniscient **material margin** (`alive diff + hp-frac diff` —
+  referee-side analysis; the one-sided wall constrains the encoder, not analysis).
+  Verdicts `LUCK`/`MISTAKE`/`MIXED`/`NEUTRAL` (thresholds in `falsifier.py`,
+  echoed in the output). Default anchors = the `worst` most-negative-δ
+  `move_selection` decisions on distinct turns (a forced-switch crater attributes
+  to its turn's move decision — re-rolls anchor at start-of-turn rounds only).
+  Model-free (no checkpoint). **Requires the trace's `*_reconstruction.json`
+  sibling** (bridge-eval traces written by the reconstruction layer; older /
+  websocket traces raise with that explanation). Alternatives the sim refuses
+  (maybe-trapped) are detected from the `[Unavailable choice]` error in the
+  one-sided suffix and excluded from the verdict when mostly refused.
+  ~1–2 s per arm at 40 seeds (fresh Node replay per seed); a decision with 3
+  alts ≈ 5–10 s.
 
 CLI mirror — prints JSON to stdout (and `{"error": …}` + exit 1 on failure, so an
 agent always gets parseable output). `--help` carries a worked example sequence:
@@ -214,12 +236,15 @@ python -m main.prober.query scan     <run_dir> --outcome loss --opponent X [--me
 python -m main.prober.query overview <battle_id>
 python -m main.prober.query find     <battle_id> value_drop --limit 5
 python -m main.prober.query analyze  <battle_id> <inv> [--ckpt PATH] [--tier auto|nearest|recent]
+python -m main.prober.query falsify  <battle_id> [--inv N]... [--worst K] [--seeds N] [--alts K] [--followup random|default]
 ```
 **Investigation recipe:** `triage` (which LEVER recovers the most rating — start here
 for "what next") → `summary` → `scan --outcome loss [--opponent X]` (the worst turn in
 *every* matching battle, ranked — model-free, fast) → `overview` the top battles (read
 `notable.biggest_value_drops` / `faints`) → `find disagree` / `find value_drop` →
-`analyze` the worst turn. γ is read from the run's `metadata.json`. (`triage` aggregates
+`analyze` the worst turn → `falsify` it (was that crater dice or a reducible
+mistake — separates irreducible aleatoric variance from real policy errors).
+γ is read from the run's `metadata.json`. (`triage` aggregates
 `scan`'s per-battle worst turns into ranked failure CATEGORIES; `scan` is the
 cross-battle generalization of a single battle's `notable.biggest_value_drops`.)
 `ProbeSession(..., model_loader=fn)` injects a fake model in tests (no torch).
@@ -296,7 +321,11 @@ taxonomy and the `fit_probe` stats as pure cases — decodable-vs-noise,
 regression, too-few-graceful), `session_test.py` (tmp_path traces for the agent
 API incl. `triage` orchestration / recoverable-ranking / no-eval-results fallback,
 and `probe` end-to-end with a fake feature-model — label recovery, noise→baseline,
-unknown-target, CLI), `discovery_test.py` (tmp_path trees, checkpoint precedence), `app_test.py`
+unknown-target, CLI), `discovery_test.py` (tmp_path trees, checkpoint precedence),
+`falsifier_test.py` (pure: margin/percentile/paired-stats/verdict matrix, seed
+determinism, δ-anchor selection incl. the forced-switch remap) +
+`falsifier_integration_test.py` (`@integration`, real bridge battle → full
+falsify pipeline, determinism re-run), `app_test.py`
 (Textual `run_test` Pilot with an injected fake model — never loads a real checkpoint,
 so it stays fast):
 

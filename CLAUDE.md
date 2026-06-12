@@ -396,10 +396,14 @@ The same analysis is available headless for one invocation via the
 <states.npz> <inv>`); both share the pure engine in `src/main/prober/engine.py`.
 
 **For agents/scripts**, a JSON API + CLI (`ProbeSession` / `python -m
-main.prober.query summary|list|scan|overview|find|analyze`) exposes the same probing
+main.prober.query summary|list|scan|overview|find|analyze|falsify`) exposes the same probing
 infrastructure programmatically — list/filter battles, **`scan` the worst turn in
 every loss across an opponent (model-free, ranked)**, digest one battle, find
-decisions the model disagrees with, or deeply analyze one decision. Internals
+decisions the model disagrees with, deeply analyze one decision, or **`falsify`
+a battle's worst decisions: luck-vs-mistake dice attribution by RE-ROLLING the
+real turns** (fix-both luck percentile + paired alternative-action sweep via the
+battle-reconstruction layer; bridge-eval traces with a `*_reconstruction.json`
+sibling only). Internals
 — engine/app split, the model-resolution ladder, Outcome panel, flags, and the
 agent API — are in `src/main/prober/CLAUDE.md`.
 

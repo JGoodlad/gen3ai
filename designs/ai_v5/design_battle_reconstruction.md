@@ -122,7 +122,9 @@ materialize_decisions(chunks, username=…, packed_team=…, side=…, actions=�
 
 - The falsifier itself: fix-both vs re-sample policy, what to measure
   (P(outcome), V-distribution vs dice distribution), seed counts, which
-  decisions to sample.
+  decisions to sample. **→ BUILT 2026-06-11: `design_falsifier_phase1.md`**
+  (which also added the `"original"` seed + recorded-queue driver semantics and
+  the materializer's `map_actions_at`/`stop_after_decision`).
 - The 3-way determinization (dice vs hidden-team-uncertainty vs critic-bias) —
   needs team-pool sampling for the opponent's unseen set; out of scope.
 - Websocket-eval capture (needs a server-side hook; bridge eval is the

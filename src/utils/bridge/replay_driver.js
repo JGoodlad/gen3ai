@@ -6,7 +6,8 @@
 //
 // request:
 //   { mode: "replay",  record: {format_id, prng_seed, input_log, commands} }
-//   { mode: "reroll",  record: ..., turn: T, seeds: ["a,b,c,d"|"sodium,<hex>", ...],
+//   { mode: "reroll",  record: ..., turn: T,
+//     seeds: ["a,b,c,d"|"sodium,<hex>"|"original", ...],   // "original" = NO PRNG swap
 //     p1_action: "recorded"|"random"|"<explicit choice>", p2_action: ...,
 //     followup: "random"|"default" }
 //
@@ -245,15 +246,56 @@ function recordedTurnChoices(record, from) {
   return out;
 }
 
-// Resolve ONE whole turn (start-of-turn choices + any follow-up rounds a
-// mid-turn faint forces), answering each side's first request from its
-// configured source and every later request from the follow-up policy.
-// Returns the choices actually written per side. Bounded; marks `stuck` if the
-// turn cannot settle (pathological — surfaced, not hidden).
-async function resolveTurn(sess, sourceChoice, followup, rng, log) {
+// Per-side QUEUES of the remaining recorded commands (capped). The "recorded"
+// action source pulls successive entries until the side's round-1 choice is
+// ACCEPTED — so a live refused-then-corrected sequence (the maybe-trapped
+// probe) replays faithfully under a fresh seed too: the pre-turn state is
+// identical, the first attempt refuses identically, the recorded correction
+// follows. Entries beyond the accepted one are never consumed (follow-up
+// rounds in a re-rolled timeline are NEW decisions → the followup policy).
+function recordedQueues(record, from, cap) {
+  const out = { p1: [], p2: [] };
+  for (let i = from; i < record.commands.length; i++) {
+    const [side, payload] = record.commands[i];
+    if (side === 'forcelose') break;
+    if (out[side].length < (cap || 8)) out[side].push(payload);
+  }
+  return out;
+}
+
+// Resolve turn T EXACTLY as the original battle did: feed the remaining
+// recorded commands verbatim (original interleaving, original follow-ups)
+// until the turn advances or the battle ends. Used for the special seed
+// "original" with both sides recorded — the realized line, scored through the
+// same outcome pipeline as the re-rolls so margins are directly comparable.
+async function resolveTurnExact(sess, record, fromIdx) {
   const b = sess.stream.battle;
   const startTurn = b.turn;
-  const first = { p1: true, p2: true };
+  const used = { p1: [], p2: [] };
+  let i = fromIdx;
+  while (i < record.commands.length && !b.ended && b.turn === startTurn) {
+    const [side, payload] = record.commands[i];
+    writeCmd(sess, record.commands[i]);
+    if (side !== 'forcelose') used[side].push(payload);
+    i += 1;
+  }
+  await tick();
+  return { used, stuck: !b.ended && b.turn === startTurn };
+}
+
+// Resolve ONE whole turn (start-of-turn choices + any follow-up rounds a
+// mid-turn faint forces). Routing invariant: within one turn a side gets at
+// most ONE 'move' request — a refused choice re-asks as 'move' again, while
+// every mid-turn follow-up (a forced switch after a faint) asks as 'switch'.
+// So a 'move' request draws from the side's configured SOURCE and anything
+// else from the follow-up policy. A "recorded" source is a queue — a refusal
+// pulls the next recorded command, mirroring the live refused-then-corrected
+// sequence; an explicit/random source is single-shot, so a refusal falls to
+// the follow-up policy (callers detect it from the |error| line in the side's
+// suffix chunks). Bounded; marks `stuck` if the turn cannot settle.
+async function resolveTurn(sess, sourceChoice, followup, rng) {
+  const b = sess.stream.battle;
+  const startTurn = b.turn;
   const used = { p1: [], p2: [] };
   let guard = 0;
   let stuck = false;
@@ -264,11 +306,7 @@ async function resolveTurn(sess, sourceChoice, followup, rng, log) {
       const side = SIDES[i];
       const s = b.sides[i];
       if (!s.activeRequest || s.activeRequest.wait || s.isChoiceDone()) continue;
-      let c = null;
-      if (first[side]) {
-        first[side] = false;
-        c = sourceChoice(side, i);
-      }
+      let c = s.requestState === 'move' ? sourceChoice(side, i) : null;
       if (c === null) c = followupChoice(b, i, followup, rng);
       if (c === null) continue;
       used[side].push(c);
@@ -336,24 +374,42 @@ async function runReroll(req) {
   for (const seed of seeds) {
     const sess = buildSession();
     try {
-      buildToTurn(sess, record, T);
+      const fromIdx = buildToTurn(sess, record, T);
       await tick();
       const b = sess.stream.battle;
       const logStart = b.log.length;
-      // THE SWAP: every die the sim rolls from here routes through the new PRNG.
-      b.prng = new PRNG(seed);
+      // The special seed "original" keeps the battle's own mid-game PRNG state
+      // (no swap) — with both sides recorded that reproduces the REALIZED turn
+      // exactly (recorded follow-ups included), scored through the same outcome
+      // pipeline as the re-rolls so margins are directly comparable. With a
+      // non-recorded action it answers "same dice stream, different action"
+      // (common-random-numbers against the realized line).
+      const isOriginal = seed === 'original';
+      if (!isOriginal) {
+        // THE SWAP: every die the sim rolls from here routes through the new PRNG.
+        b.prng = new PRNG(seed);
+      }
       const rng = auxRngFromSeed(seed);
-      const sourceChoice = (side, i) => {
-        const spec = actionSpec[side];
-        if (spec === 'recorded') return recorded[side];   // may be null → follow-up
-        if (spec === 'random') return randomChoice(b, i, rng);
-        return spec;                                       // explicit choice string
-      };
-      const { used, stuck } = await resolveTurn(sess, sourceChoice, followup, rng);
+      let resolved;
+      if (isOriginal && actionSpec.p1 === 'recorded' && actionSpec.p2 === 'recorded') {
+        resolved = await resolveTurnExact(sess, record, fromIdx);
+      } else {
+        const queues = recordedQueues(record, fromIdx);
+        const singleShot = { p1: false, p2: false };
+        const sourceChoice = (side, i) => {
+          const spec = actionSpec[side];
+          if (spec === 'recorded') return queues[side].length ? queues[side].shift() : null;
+          if (singleShot[side]) return null;   // refused explicit/random → follow-up
+          singleShot[side] = true;
+          if (spec === 'random') return randomChoice(b, i, rng);
+          return spec;                          // explicit choice string
+        };
+        resolved = await resolveTurn(sess, sourceChoice, followup, rng);
+      }
       rerolls.push({
         seed,
-        choices_used: used,
-        outcome: outcomeOf(b, stuck ? { stuck: true } : null),
+        choices_used: resolved.used,
+        outcome: outcomeOf(b, resolved.stuck ? { stuck: true } : null),
         turn_log: b.log.slice(logStart),
         p1_chunks: sess.chunks.p1.slice(prefixCounts.p1),
         p2_chunks: sess.chunks.p2.slice(prefixCounts.p2),

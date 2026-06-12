@@ -315,8 +315,14 @@ def reroll_turn(
     recorded answer — which distribution to use is a consumer choice.
 
     ``seeds`` entries are sim PRNG seeds: ``"a,b,c,d"`` (gen-5 int quadruple) or
-    ``"sodium,<hex>"``. ``seeds=()`` just reconstructs (no re-rolls) — useful for
-    reading the decision point's pre-state/requests/prefix protocol.
+    ``"sodium,<hex>"`` — plus the special value ``"original"``, which keeps the
+    battle's own mid-game PRNG state (no swap). With both actions ``recorded``,
+    ``"original"`` reproduces the REALIZED turn exactly (recorded follow-ups
+    included), scored through the same outcome pipeline as the re-rolls so its
+    margin is directly comparable; with a different action it answers "same
+    dice stream, different action". ``seeds=()`` just reconstructs (no
+    re-rolls) — useful for reading the decision point's pre-state/requests/
+    prefix protocol.
 
     Everything omniscient in the result (``pre_state``, ``outcome``,
     ``turn_log``) is for ground-truth analysis only; obs materialization must use

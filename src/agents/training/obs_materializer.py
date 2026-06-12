@@ -89,6 +89,13 @@ class MaterializedTrace:
     # True when every materialized row had its action provided (full-history
     # faithfulness); False when the replay stopped one row past the last action.
     actions_complete: bool
+    # When map_actions_at=i was requested: {action_idx: sim choice string} for
+    # every LEGAL action at decision i, produced by the REAL action mapper
+    # (Gen3ActionMapper via action_to_order) against the replayed battle state —
+    # e.g. {6: "move icebeam", 2: "switch skarmory"}. None otherwise. This is
+    # how a counterfactual consumer turns "alternative action index" into the
+    # choice string reroll_turn needs, with zero mapping reimplementation.
+    action_choices: Optional[dict] = None
 
 
 class _ReplayObsPlayer(Gen3Player):
@@ -96,11 +103,21 @@ class _ReplayObsPlayer(Gen3Player):
     decision instead of running a policy. Orders it returns go nowhere (the
     ``BattleStreamClient`` has no live bridge process registered)."""
 
-    def __init__(self, *, replay_actions: Sequence[int], **kwargs):
+    def __init__(self, *, replay_actions: Sequence[int],
+                 map_actions_at: Optional[int] = None,
+                 stop_after_decision: Optional[int] = None, **kwargs):
         super().__init__(**kwargs)
         self._replay_actions = [int(a) for a in replay_actions]
         self._materialized: List[MaterializedDecision] = []
         self._actions_exhausted = False
+        self._map_actions_at = map_actions_at
+        self._stop_after = stop_after_decision
+        self._stopped = False
+        self.action_choices: Optional[dict] = None
+
+    @property
+    def done(self) -> bool:
+        return self._actions_exhausted or self._stopped
 
     def choose_move(self, battle):
         # Mirror EvalRLPlayer.choose_move → RLPlayer._predict_best_action (see
@@ -108,7 +125,7 @@ class _ReplayObsPlayer(Gen3Player):
         forfeit = self._handle_stall(battle, "REPLAY_STALL")
         if forfeit:
             return forfeit
-        if self._actions_exhausted:
+        if self.done:
             return self.choose_default_move()
         obs_dict = self.embed_battle(battle)
         mask = obs_dict["action_mask"]
@@ -122,12 +139,22 @@ class _ReplayObsPlayer(Gen3Player):
                 turn=battle.strict_view().turn,
             )
         )
+        if i == self._map_actions_at:
+            # Map every legal action through the REAL mapper at this exact
+            # decision state — the choice strings a counterfactual re-roll
+            # feeds back to the sim. Read-only (the mapper is pure).
+            self.action_choices = {
+                int(idx): self.action_to_order(int(idx), battle).message[len("/choose "):]
+                for idx in np.flatnonzero(mask)
+            }
         if i < len(self._replay_actions):
             self._get_tracker(battle).advance(self._replay_actions[i])
         else:
             # This row is still faithful (an obs depends on PRIOR actions only);
             # anything past it would fold an unknown action into the history.
             self._actions_exhausted = True
+        if self._stop_after is not None and i >= self._stop_after:
+            self._stopped = True
         return self.choose_default_move()
 
 
@@ -142,6 +169,8 @@ def materialize_decisions(
     battle_tag: Optional[str] = None,
     mappings=None,
     stall_config: Optional[StallConfig] = None,
+    map_actions_at: Optional[int] = None,
+    stop_after_decision: Optional[int] = None,
 ) -> MaterializedTrace:
     """Replay one side's protocol ``chunks`` through the real obs pipeline.
 
@@ -152,6 +181,12 @@ def materialize_decisions(
     username must match so poke-env resolves the player's role. ``actions`` are
     the live action indices (``states.npz["actions"]``) consumed one per
     materialized decision.
+
+    ``map_actions_at=i`` additionally returns, in ``.action_choices``, the
+    legal action-index → sim-choice-string mapping at decision ``i`` (via the
+    real action mapper) — what a counterfactual consumer feeds ``reroll_turn``.
+    ``stop_after_decision=i`` stops the replay once row ``i`` is materialized
+    (cheap when only a prefix is needed).
     """
     global _TAG_SEQ
     _TAG_SEQ += 1
@@ -159,6 +194,8 @@ def materialize_decisions(
 
     player = _ReplayObsPlayer(
         replay_actions=actions,
+        map_actions_at=map_actions_at,
+        stop_after_decision=stop_after_decision,
         mappings=mappings,
         stall_config=stall_config,
         battle_format=battle_format,
@@ -190,7 +227,7 @@ def materialize_decisions(
             # Awaited fully per chunk — the exact sequential-deterministic
             # delivery the eval bridge path (`run_local_battles._demux`) uses.
             await client.feed(header + chunk)
-            if player._actions_exhausted:
+            if player.done:
                 break
 
     # The player's asyncio primitives live on POKE_LOOP (poke-env's background
@@ -207,6 +244,7 @@ def materialize_decisions(
     return MaterializedTrace(
         decisions=list(player._materialized),
         actions_complete=not player._actions_exhausted,
+        action_choices=player.action_choices,
     )
 
 
@@ -217,6 +255,8 @@ def materialize_from_record(
     actions: Sequence[int] = (),
     mappings=None,
     stall_config: Optional[StallConfig] = None,
+    map_actions_at: Optional[int] = None,
+    stop_after_decision: Optional[int] = None,
 ) -> MaterializedTrace:
     """Convenience: replay the full recorded battle and materialize ``username``'s
     one-sided obs at every decision. ``username`` defaults to the record's
@@ -238,4 +278,6 @@ def materialize_from_record(
         battle_tag=record.battle_tag,
         mappings=mappings,
         stall_config=stall_config,
+        map_actions_at=map_actions_at,
+        stop_after_decision=stop_after_decision,
     )
