@@ -191,6 +191,16 @@ in the trainer). Behaviors:
   an eval can outlast its interval; cadence just goes sparser.
 - A worker crash is **logged-and-continued**, never fatal (its opponents are just missing
   for that cycle).
+- **An operator can force an off-cadence eval** from the launcher's `f` button (confirm →
+  SIGUSR2). The signal handler (`train_rl_agent._setup_signal_handlers`) only flags a
+  process-global `request_forced_eval()`; whichever eval callback is active CONSUMES it on its
+  next `_on_step` (the shared `eval_callback._ForcedEvalMixin._maybe_force_eval`, mixed into BOTH
+  callbacks so the path can't drift) and launches a cycle immediately. A request that arrives
+  while a cycle is already in flight is **rejected** and reported to the launcher Events panel —
+  the same skip-while-running rule as the normal cadence. The forced launch consumes the current
+  cadence bucket (`_last_eval_step = num_timesteps`) so the schedule check can't double-launch the
+  same step; the next boundary still fires normally. Tests: `eval_callback_test.py` /
+  `selfplay_callback_test.py` (`test_force_eval_*`).
 - **Graceful shutdown waits for eval to finish**: a scheduled restart is self-initiated by
   `GracefulRestartCallback` at a rollout boundary and the launcher won't force-kill until the
   child overruns the deadline by `--restart-grace-minutes` (20 min), so the drain budget is a

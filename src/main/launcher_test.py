@@ -445,6 +445,22 @@ class TestDispatchCommand:
         snap = state.snapshot()
         assert any("already exited" in e for e in snap.events)
 
+    def test_f_sends_sigusr2(self):
+        _, state, _, sent = self._dispatch("f")
+        assert signal.SIGUSR2 in sent
+        snap = state.snapshot()
+        assert any("Force-eval signal sent" in e for e in snap.events)
+
+    def test_f_handles_dead_child(self):
+        proc = MagicMock()
+        proc.pid = 99999
+        state = LauncherState(interval_hours=3.0)
+        flags = _PollFlags()
+        with patch("main.launcher.input.os.kill", side_effect=ProcessLookupError):
+            _dispatch_command("f", proc, state, flags, float("inf"), 3.0)
+        snap = state.snapshot()
+        assert any("already exited" in e for e in snap.events)
+
     def test_q_from_dashboard_enters_confirm_quit(self):
         _, state, flags, sent = self._dispatch("q")
         assert state.view_mode == "confirm_quit"

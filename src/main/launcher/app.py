@@ -3,13 +3,13 @@
 ``LauncherApp`` is a thin renderer: a ``set_interval`` timer reads ``state.snapshot()`` and
 repaints widgets. Input is split by latency sensitivity:
 
-  * **View navigation** (``l``/``e``/``d``, the ``q`` confirm overlay, ``n``/``y``) is handled
-    **app-locally** on the event loop via the ``view_mode`` reactive — switching is instant,
-    not round-tripped through the worker thread.
-  * **Child-control** commands (``r`` restart, ``c`` checkpoint, ``p`` plots, ``s`` status) and
-    the confirmed-quit sentinel (``__quit__``) go to the supervisor's ``cmd_q``; latency there
-    is irrelevant (they aren't view changes), and ``_supervise`` handles them via
-    ``input._dispatch_command``.
+  * **View navigation** (``l``/``e``/``d``, the ``q`` quit + ``f`` force-eval confirm overlays,
+    ``n``/``y``) is handled **app-locally** on the event loop via the ``view_mode`` reactive —
+    switching is instant, not round-tripped through the worker thread.
+  * **Child-control** commands (``r`` restart, ``c`` checkpoint, ``p`` plots, ``s`` status, plus
+    the confirmed force-eval ``f``) and the confirmed-quit sentinel (``__quit__``) go to the
+    supervisor's ``cmd_q``; latency there is irrelevant (they aren't view changes), and
+    ``_supervise`` handles them via ``input._dispatch_command``.
 
 The blocking child-supervision loop runs in a ``@work(thread=True)`` worker (``run.run()``
 wires it in); it drives ``LauncherState`` and never touches widgets.
@@ -56,7 +56,7 @@ _EVAL_SUMMARY = frozenset({
 
 # View ids — the app owns its own view state (the `view_mode` reactive), independent of the
 # supervisor; these match the ContentSwitcher child ids.
-_VIEWS = ("dashboard", "logs", "events", "confirm_quit")
+_VIEWS = ("dashboard", "logs", "events", "confirm_quit", "confirm_force_eval")
 
 # Hanging-indent for wrapped event lines. Events are "[HH:MM:SS] <msg>"; len("[HH:MM:SS] ")==11,
 # so continuation lines padded to 11 columns sit under the message (the emoji) rather than flowing
@@ -100,7 +100,8 @@ class LauncherApp(Gen3App):
     ENABLE_COMMAND_PALETTE = False
 
     # Header sub-title per view (Rich puts the view name in its panel title).
-    _SUBTITLES = {"dashboard": "", "logs": "LOGS", "events": "EVENTS", "confirm_quit": "CONFIRM QUIT"}
+    _SUBTITLES = {"dashboard": "", "logs": "LOGS", "events": "EVENTS",
+                  "confirm_quit": "CONFIRM QUIT", "confirm_force_eval": "FORCE EVAL?"}
 
     # App-owned view state. init=False so the watcher doesn't fire before #views mounts
     # (ContentSwitcher's initial="dashboard" already shows the right pane on startup).
@@ -116,6 +117,7 @@ class LauncherApp(Gen3App):
         Binding("c", "checkpoint", "Checkpoint"),
         Binding("p", "plots", "Plots"),
         Binding("s", "status", "Status"),
+        Binding("f", "force_eval", "Force eval"),
         Binding("q", "request_quit", "Quit"),
         Binding("y", "confirm_yes", "Yes", show=False),
         Binding("n", "cancel_quit", "No", show=False),
@@ -153,6 +155,8 @@ class LauncherApp(Gen3App):
                 yield Static(id="events-body")
             with Vertical(id="confirm_quit"):
                 yield Static(id="confirm-body")
+            with Vertical(id="confirm_force_eval"):
+                yield Static(id="confirm-force-eval-body")
 
     def on_mount(self) -> None:
         left = self.query_one("#metrics-left", DataTable)
@@ -218,16 +222,29 @@ class LauncherApp(Gen3App):
         dashboard-only confirm)."""
         self.view_mode = "confirm_quit"
 
+    def action_force_eval(self) -> None:
+        """`f` opens the force-eval confirm overlay. Inert while the quit confirm is up (that
+        overlay is modal — a pending quit shouldn't be derailed into an eval)."""
+        if self.view_mode != "confirm_quit":
+            self.view_mode = "confirm_force_eval"
+
     def action_cancel_quit(self) -> None:
-        """`n` cancels the confirm overlay; inert elsewhere."""
-        if self.view_mode == "confirm_quit":
+        """`n` cancels whichever confirm overlay is up (quit or force-eval); inert elsewhere."""
+        if self.view_mode in ("confirm_quit", "confirm_force_eval"):
             self.view_mode = "dashboard"
 
     def action_confirm_yes(self) -> None:
-        """`y` confirms quit: tell the supervisor to SIGTERM+save the child, return to the
-        dashboard so the 'waiting for child to save…' event is visible. Inert elsewhere."""
+        """`y` confirms the active overlay, then returns to the dashboard:
+          * quit → tell the supervisor to SIGTERM+save the child (the 'waiting for child to
+            save…' event is then visible);
+          * force-eval → route the ``f`` control char to the supervisor (→ SIGUSR2 → the child
+            runs an off-cadence eval, or rejects it if one is already running).
+        Inert in any non-confirm view."""
         if self.view_mode == "confirm_quit":
             self._cmd_q.put("__quit__")
+            self.view_mode = "dashboard"
+        elif self.view_mode == "confirm_force_eval":
+            self._cmd_q.put("f")
             self.view_mode = "dashboard"
 
     def action_ctrl_c(self) -> None:
@@ -262,8 +279,9 @@ class LauncherApp(Gen3App):
         self._control("s")
 
     def _control(self, ch: str) -> None:
-        # Ignore control keys while the confirm overlay is up — it behaves modally.
-        if self.view_mode == "confirm_quit":
+        # Ignore control keys while a confirm overlay (quit or force-eval) is up — they
+        # behave modally, so a stray r/c/p/s can't fire mid-decision.
+        if self.view_mode in ("confirm_quit", "confirm_force_eval"):
             return
         self._cmd_q.put(ch)
 
@@ -291,6 +309,7 @@ class LauncherApp(Gen3App):
             self._render_logs(snap)
             self._render_events(snap)
             self._render_confirm(snap)
+            self._render_force_eval_confirm(snap)
         except Exception as e:  # noqa: BLE001 — see above; never let a render fault crash the app
             if not self._render_error_seen:
                 self._render_error_seen = True
@@ -622,3 +641,13 @@ class LauncherApp(Gen3App):
         )
         body.append("  [y] confirm quit (or Ctrl-C)    [n] cancel", style="bold")
         self.query_one("#confirm-body", Static).update(body)
+
+    def _render_force_eval_confirm(self, snap) -> None:
+        body = Text()
+        body.append(
+            "\n  Force an off-schedule eval cycle to run now.\n"
+            "  If an eval is already running, the request is rejected.\n\n",
+            style="dim",
+        )
+        body.append("  [y] run eval now    [n] cancel", style="bold")
+        self.query_one("#confirm-force-eval-body", Static).update(body)

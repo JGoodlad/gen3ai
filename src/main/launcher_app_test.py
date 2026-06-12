@@ -121,7 +121,7 @@ async def test_skeleton_mounts_all_views():
     app = LauncherApp(LauncherState(interval_hours=3.0), queue.Queue())
     async with app.run_test() as pilot:
         await pilot.pause()
-        for vid in ("dashboard", "logs", "events", "confirm_quit"):
+        for vid in ("dashboard", "logs", "events", "confirm_quit", "confirm_force_eval"):
             assert app.query_one(f"#{vid}") is not None
         assert app.query_one("#metrics-left", DataTable) is not None
         assert app.query_one("#metrics-eval", DataTable) is not None
@@ -423,6 +423,58 @@ async def test_confirm_cancel_and_confirm_paths():
         assert app.view_mode == "dashboard"
         assert q.get_nowait() == "__quit__"
         assert q.empty()
+
+
+async def test_force_eval_confirm_flow():
+    """`f` opens the force-eval confirm overlay app-locally; `y` routes the `f` control char
+    to the supervisor (→ SIGUSR2); `n` cancels without routing."""
+    q = queue.Queue()
+    app = LauncherApp(LauncherState(interval_hours=3.0), q)
+    async with app.run_test() as pilot:
+        await pilot.pause()
+        await pilot.press("f")
+        assert app.is_running                                # not a control key yet — overlay only
+        assert app.view_mode == "confirm_force_eval"
+        assert app.query_one("#views", ContentSwitcher).current == "confirm_force_eval"
+        assert q.empty()                                     # nothing routed until confirmed
+        # cancel with `n`
+        await pilot.press("n")
+        assert app.view_mode == "dashboard"
+        assert q.empty()
+        # confirm with `y` → routes the "f" control char + back to dashboard
+        await pilot.press("f")
+        await pilot.press("y")
+        assert app.view_mode == "dashboard"
+        assert q.get_nowait() == "f"
+        assert q.empty()
+
+
+async def test_force_eval_does_not_interrupt_quit_confirm():
+    """`f` is inert while the quit confirm is up — a pending quit must not be derailed."""
+    q = queue.Queue()
+    app = LauncherApp(LauncherState(interval_hours=3.0), q)
+    async with app.run_test() as pilot:
+        await pilot.pause()
+        await pilot.press("q")
+        assert app.view_mode == "confirm_quit"
+        await pilot.press("f")
+        assert app.view_mode == "confirm_quit"               # NOT switched to force-eval
+        assert q.empty()
+
+
+async def test_control_keys_modal_during_force_eval_confirm():
+    """The force-eval confirm overlay is modal: a stray control key (r/c/p/s) must not route
+    to the supervisor mid-decision (parity with the quit confirm)."""
+    q = queue.Queue()
+    app = LauncherApp(LauncherState(interval_hours=3.0), q)
+    async with app.run_test() as pilot:
+        await pilot.pause()
+        await pilot.press("f")
+        assert app.view_mode == "confirm_force_eval"
+        for key in ("r", "c", "p", "s"):
+            await pilot.press(key)
+        assert app.view_mode == "confirm_force_eval"         # still on the overlay
+        assert q.empty()                                     # nothing routed
 
 
 async def test_ctrl_c_first_confirms_second_quits():

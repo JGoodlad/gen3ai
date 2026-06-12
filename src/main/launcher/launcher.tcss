@@ -1,5 +1,6 @@
 /* Launcher Textual layout. Loaded after the shared theme.tcss (see textual_app.py
- * CSS_PATH). One ContentSwitcher with dashboard / logs / events / confirm_quit panes. */
+ * CSS_PATH). One ContentSwitcher with dashboard / logs / events / confirm_quit /
+ * confirm_force_eval panes. */
 
 #views {
     height: 1fr;
@@ -94,4 +95,15 @@
     height: auto;
     padding: 1 2;
     border: round $error 60%;
+}
+
+/* ── force-eval confirm ── (not destructive → accent border, not the $error red) */
+#confirm_force_eval {
+    height: 1fr;
+}
+
+#confirm-force-eval-body {
+    height: auto;
+    padding: 1 2;
+    border: round $accent 60%;
 }

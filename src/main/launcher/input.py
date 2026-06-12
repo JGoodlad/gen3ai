@@ -54,6 +54,16 @@ def _dispatch_command(
         except ProcessLookupError:
             state.add_event("💾 Child already exited")
 
+    elif ch == "f":
+        # Force an off-cadence eval cycle. The child decides accept-vs-reject (it owns the
+        # authoritative "eval already running" state) and reports the outcome back via the
+        # event pipe — so this just sends the signal.
+        try:
+            os.kill(proc.pid, signal.SIGUSR2)
+            state.add_event("⚡ Force-eval signal sent")
+        except ProcessLookupError:
+            state.add_event("⚡ Child already exited")
+
     elif ch == "q":
         if state.view_mode == "dashboard":
             state.view_mode = "confirm_quit"

@@ -38,6 +38,7 @@ from agents.model.snapshot import record_eval_results
 from agents.training.eval_callback import (
     _EVAL_CYCLE_TIMEOUT_SEC,
     _EVAL_SUBPROCESS_CONCURRENCY,
+    _ForcedEvalMixin,
     EVAL_FREQ_STEPS,
     EVAL_GAMES,
     EVAL_SHARD_GAMES,
@@ -129,7 +130,7 @@ def _distill_job_event_text(h: dict) -> "str | None":
     return None
 
 
-class SelfPlayCallback(BaseCallback):
+class SelfPlayCallback(_ForcedEvalMixin, BaseCallback):
     """Non-blocking bot + pool eval callback with snapshot promotion.
 
     Args:
@@ -323,6 +324,7 @@ class SelfPlayCallback(BaseCallback):
             self._reconcile_distill()
         if self.num_timesteps == 0:
             return True
+        self._maybe_force_eval()   # launcher "force eval" button (SIGUSR2); rejects if running
         freq, _ = self._schedule()
         if (self.num_timesteps // freq) > (self._last_eval_step // freq):
             self._last_eval_step = self.num_timesteps

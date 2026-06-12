@@ -6,6 +6,7 @@ import time
 import glob
 import json
 import shutil
+import threading
 import subprocess
 from datetime import datetime, timezone
 
@@ -906,9 +907,69 @@ class EvalRLPlayer(RewardTrackingMixin, RLPlayer):
             self._losses_kept += 1
 
 
+# ── Force-an-eval-now request channel (the launcher "force eval" button) ──────
+# The launcher TUI's `f` key (confirm → SIGUSR2) lets an operator trigger an
+# off-cadence eval cycle. The SIGUSR2 handler (train_rl_agent._setup_signal_handlers)
+# runs in signal context, so it does the minimum — flip this process-global Event;
+# whichever eval callback is active CONSUMES it once on its next `_on_step`. A request
+# that arrives while a cycle is already in flight is REJECTED (reported to the launcher
+# Events panel), mirroring the normal cadence's skip-while-running rule.
+_force_eval_event = threading.Event()
 
 
-class PerOpponentEvalCallback(BaseCallback):
+def request_forced_eval() -> None:
+    """Ask the active eval callback to launch an eval cycle at its next training step.
+
+    Async-signal-safe (``Event.set`` only briefly takes an internal lock and never
+    allocates), so it is callable straight from the SIGUSR2 handler. Idempotent:
+    stacking N requests before the next ``_on_step`` collapses to a single launch —
+    we never want a queue of forced cycles."""
+    _force_eval_event.set()
+
+
+def consume_forced_eval_request() -> bool:
+    """Check-and-clear the forced-eval request; ``True`` iff one was pending.
+
+    The only setter is the signal handler and the only consumer is the single training
+    thread, so the check-then-clear is race-free in practice (a signal landing in the
+    gap is simply caught on the next step)."""
+    if _force_eval_event.is_set():
+        _force_eval_event.clear()
+        return True
+    return False
+
+
+class _ForcedEvalMixin:
+    """Shared 'force an eval cycle now' handling for BOTH eval callbacks.
+
+    Mixed into ``PerOpponentEvalCallback`` and ``SelfPlayCallback`` (which otherwise
+    share only ``BaseCallback``) so the force path can't drift between them. Each calls
+    ``_maybe_force_eval`` from its ``_on_step``; the mixin reads the duck-typed eval
+    state both classes expose (``_eval_root`` / ``_pending`` / ``_last_eval_step`` /
+    ``num_timesteps``) and drives the subclass's own ``_launch_eval``."""
+
+    def _maybe_force_eval(self) -> None:
+        """If a forced-eval request is pending, launch an off-cadence cycle now — or
+        REJECT it (reported to the launcher Events panel) when one is already running."""
+        if not consume_forced_eval_request():
+            return
+        if getattr(self, "_eval_root", None) is None:
+            send_event("⚡ Force-eval ignored — eval is disabled (no run dir)")
+            return
+        if self._pending is not None:
+            send_event(
+                "⏳ Force-eval rejected — an eval cycle is already running "
+                f"(step {self._pending['step']:,})"
+            )
+            return
+        send_event(f"⚡ Force-eval — launching an eval cycle now (step {self.num_timesteps:,})")
+        # Consume the current cadence bucket too, so the regular schedule check below
+        # can't double-launch this same step (the next boundary still fires normally).
+        self._last_eval_step = self.num_timesteps
+        self._launch_eval()
+
+
+class PerOpponentEvalCallback(_ForcedEvalMixin, BaseCallback):
     """
     Evaluates the trained agent against the full bot roster on a flat schedule
     (`EVAL_FREQ_STEPS` / `EVAL_GAMES`), but does so in a **separate subprocess** with
@@ -1030,6 +1091,7 @@ class PerOpponentEvalCallback(BaseCallback):
                 self._abort_pending_cycle()   # hung worker → don't wedge eval forever
         if self.num_timesteps == 0:
             return True
+        self._maybe_force_eval()   # launcher "force eval" button (SIGUSR2); rejects if running
         freq, _ = self._schedule()
         if (self.num_timesteps // freq) > (self._last_eval_step // freq):
             self._last_eval_step = self.num_timesteps

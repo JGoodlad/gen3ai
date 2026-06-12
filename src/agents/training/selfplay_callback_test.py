@@ -12,6 +12,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
+from agents.training import eval_callback as ec
 from agents.training.snapshot_pool import SnapshotEntry
 from agents.training.distill.manager import ReconcileResult
 from agents.training.selfplay_callback import (
@@ -22,6 +23,15 @@ from agents.training.selfplay_callback import (
     _MASTERY_CONFIRM_CYCLES,
     _REGRESSION_WARN_THRESHOLD,
 )
+
+
+@pytest.fixture(autouse=True)
+def _isolate_force_eval_event():
+    """The forced-eval request is a module-global Event; clear it around every test so a
+    request set by one test can never leak into the next (they share one process)."""
+    ec._force_eval_event.clear()
+    yield
+    ec._force_eval_event.clear()
 
 
 # ── _monotonicity_score ──────────────────────────────────────────────────────
@@ -244,6 +254,34 @@ def test_skips_launch_while_previous_eval_running(tmp_path):
         cb._on_step()
         mock_launch.assert_not_called()  # previous cycle still running → skip
     assert cb._last_eval_step == 2_000_000  # boundary consumed
+
+
+# ── force-eval (launcher button → SIGUSR2) shares the eval_callback mixin ───────
+
+def test_force_eval_launches_off_cadence_when_idle(tmp_path):
+    cb = _make_callback(tmp_path)
+    cb._init_callback()                # populates _eval_root
+    cb.num_timesteps = 1_234_567       # off a 2M cadence boundary → only the request can launch
+    ec.request_forced_eval()           # event isolation: _isolate_force_eval_event (autouse)
+    with patch.object(cb, "_launch_eval") as mock_launch, \
+         patch("agents.training.eval_callback.send_event"):
+        cb._on_step()
+        mock_launch.assert_called_once()
+    assert cb._last_eval_step == 1_234_567
+
+
+def test_force_eval_rejected_while_running(tmp_path):
+    cb = _make_callback(tmp_path)
+    cb._init_callback()
+    cb.num_timesteps = 1_234_567
+    cb._pending = {"step": 1_000_000,
+                   "procs": [{"proc": MagicMock(**{"poll.return_value": None})}]}
+    ec.request_forced_eval()           # event isolation: _isolate_force_eval_event (autouse)
+    with patch.object(cb, "_launch_eval") as mock_launch, \
+         patch("agents.training.eval_callback.send_event") as mock_event:
+        cb._on_step()
+        mock_launch.assert_not_called()
+    assert any("rejected" in str(c.args[0]).lower() for c in mock_event.call_args_list)
 
 
 # ── full lifecycle: launch → collect → promote / best ─────────────────────────

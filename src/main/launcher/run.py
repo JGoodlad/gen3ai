@@ -414,9 +414,10 @@ def _supervise(
             except subprocess.TimeoutExpired:
                 pass
 
-            # The Textual app handles view navigation + the confirm overlay itself (instant,
-            # event-loop); it only sends us child-control chars (r/c/p/s via _dispatch_command)
-            # and the "__quit__" sentinel once the user has confirmed quit.
+            # The Textual app handles view navigation + the confirm overlays itself (instant,
+            # event-loop); it only sends us child-control chars (r/c/p/s/f via _dispatch_command,
+            # `f` arriving only after its own confirm) and the "__quit__" sentinel once the user
+            # has confirmed quit.
             while not cmd_q.empty():
                 ch = cmd_q.get_nowait()
                 if ch == "__quit__":

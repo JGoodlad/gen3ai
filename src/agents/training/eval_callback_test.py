@@ -6,12 +6,22 @@ import pytest
 
 from poke_env.player import RandomPlayer, SimpleHeuristicsPlayer
 from agents.opponents import Gen3StallerPlayer
+import agents.training.eval_callback as eval_callback
 from agents.training.eval_callback import (
     PerOpponentEvalCallback, bot_mean, opponent_name, RANDOM_OPPONENT_NAME,
-    external_elo, record_external_elos,
+    external_elo, record_external_elos, request_forced_eval, consume_forced_eval_request,
     _per_opponent_concurrency, _EVAL_TOTAL_CONCURRENCY, _EVAL_CONCURRENCY,
 )
 from unittest.mock import MagicMock
+
+
+@pytest.fixture(autouse=True)
+def _isolate_force_eval_event():
+    """The forced-eval request is a module-global Event; clear it around every test so a
+    request set by one test can never leak into the next (they share one process)."""
+    eval_callback._force_eval_event.clear()
+    yield
+    eval_callback._force_eval_event.clear()
 
 
 # ── external_elo — display-only ballpark from the trainee's bot-anchored rating ──
@@ -227,6 +237,68 @@ def test_updates_last_eval_step_on_trigger():
     with patch.object(cb, '_launch_eval'):
         cb._on_step()
     assert cb._last_eval_step == 2_000_000
+
+
+# --- Force-eval (launcher "force eval" button → SIGUSR2 → request_forced_eval) ---
+
+def _make_forceable_callback():
+    """A callback mid-run, OFF a cadence boundary, with eval enabled — so a launch can only
+    come from the forced request, never the schedule."""
+    cb = _make_callback()
+    cb._eval_root = "/tmp/eval_root"   # non-None → eval enabled (a forced cycle may launch)
+    cb.num_timesteps = 1_234_567       # mid-run, between 2M cadence boundaries
+    return cb                          # event isolation: _isolate_force_eval_event (autouse)
+
+
+def test_force_eval_launches_off_cadence_when_idle():
+    cb = _make_forceable_callback()
+    request_forced_eval()
+    with patch.object(cb, "_launch_eval") as mock_launch, \
+         patch("agents.training.eval_callback.send_event"):
+        cb._on_step()
+        mock_launch.assert_called_once()     # off-cadence launch, purely from the request
+    assert cb._last_eval_step == 1_234_567   # current cadence bucket consumed (no double-launch)
+    assert not consume_forced_eval_request()  # the request was cleared
+
+
+def test_force_eval_rejected_while_a_cycle_is_running():
+    cb = _make_forceable_callback()
+    cb._pending = {"step": 1_000_000,
+                   "procs": [{"proc": MagicMock(**{"poll.return_value": None})}]}
+    request_forced_eval()
+    with patch.object(cb, "_launch_eval") as mock_launch, \
+         patch("agents.training.eval_callback.send_event") as mock_event:
+        cb._on_step()
+        mock_launch.assert_not_called()      # already running → reject, don't launch
+    assert any("rejected" in str(c.args[0]).lower() for c in mock_event.call_args_list)
+
+
+def test_force_eval_request_persists_until_first_real_step():
+    # A request flagged before the first rollout (num_timesteps == 0) must NOT be dropped —
+    # it should fire on the first real step instead.
+    cb = _make_forceable_callback()
+    cb.num_timesteps = 0
+    request_forced_eval()
+    with patch.object(cb, "_launch_eval") as mock_launch:
+        cb._on_step()                        # step 0 → not consumed yet
+        mock_launch.assert_not_called()
+    cb.num_timesteps = 100
+    with patch.object(cb, "_launch_eval") as mock_launch, \
+         patch("agents.training.eval_callback.send_event"):
+        cb._on_step()                        # first real step → fires
+        mock_launch.assert_called_once()
+
+
+def test_force_eval_ignored_when_eval_disabled():
+    cb = _make_forceable_callback()
+    cb._eval_root = None                     # no run dir → eval disabled
+    request_forced_eval()
+    with patch.object(cb, "_launch_eval") as mock_launch, \
+         patch("agents.training.eval_callback.send_event") as mock_event:
+        cb._on_step()
+        mock_launch.assert_not_called()
+    assert any("disabled" in str(c.args[0]).lower() for c in mock_event.call_args_list)
+    assert not consume_forced_eval_request()  # still consumed (cleared), just not acted on
 
 
 # --- Best model saving ---

@@ -38,7 +38,8 @@ from agents.inference.player import RLPlayer
 from utils.teambuilder import Gen3Teambuilder
 from utils.team_loader import TeamLoader
 from agents.training.eval_callback import (
-    PerOpponentEvalCallback, opponent_name, _EVAL_SUBPROCESS_CONCURRENCY, EVAL_SHARD_GAMES,
+    PerOpponentEvalCallback, opponent_name, request_forced_eval,
+    _EVAL_SUBPROCESS_CONCURRENCY, EVAL_SHARD_GAMES,
 )
 from agents.training.graceful_restart_callback import GracefulRestartCallback
 from agents.training.snapshot_pool import (
@@ -308,8 +309,8 @@ _ABORT_EVAL_DRAIN_SEC = 600.0
 
 
 def _setup_signal_handlers(model, model_dir, shutdown_event, version, current_lr_fn, current_epochs_fn, handoff_lr_fn=None, eval_drain_fn=None):
-    """Wire SIGINT/SIGTERM/SIGHUP/SIGUSR1. Returns the abort_training closure so it can
-    be passed to eval callbacks as their canonical "die cleanly" path.
+    """Wire SIGINT/SIGTERM/SIGHUP/SIGUSR1/SIGUSR2. Returns the abort_training closure so it
+    can be passed to eval callbacks as their canonical "die cleanly" path.
 
     ``handoff_lr_fn`` is optional; when present it returns the TwoPhaseLR
     callback's current handoff_lr (or None while still in Phase 1) so the
@@ -372,6 +373,12 @@ def _setup_signal_handlers(model, model_dir, shutdown_event, version, current_lr
         )
         print(f"\n💾 [CHECKPOINT] Forced save → {ckpt}.zip")
 
+    def _forced_eval(sig, frame):
+        # Signal context: just flag the request (request_forced_eval is async-signal-safe).
+        # The active eval callback picks it up on its next _on_step — and REJECTS it if a
+        # cycle is already running. Driven by the launcher's "force eval" button (SIGUSR2).
+        request_forced_eval()
+
     signal.signal(signal.SIGINT,  lambda sig, frame: abort_training("SIGINT received"))
     signal.signal(signal.SIGTERM, lambda sig, frame: abort_training("SIGTERM received"))
     # SIGHUP = the controlling terminal/window closed. The launcher spawns the child in the
@@ -383,6 +390,8 @@ def _setup_signal_handlers(model, model_dir, shutdown_event, version, current_lr
     if hasattr(signal, "SIGHUP"):
         signal.signal(signal.SIGHUP, lambda sig, frame: abort_training("SIGHUP received (terminal/window closed)"))
     signal.signal(signal.SIGUSR1, _forced_checkpoint)
+    # SIGUSR2 = the launcher's "force eval" button — run an off-cadence eval cycle now.
+    signal.signal(signal.SIGUSR2, _forced_eval)
     return abort_training
 
 

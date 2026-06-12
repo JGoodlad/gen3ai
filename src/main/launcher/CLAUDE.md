@@ -27,9 +27,17 @@ render loop. `LauncherState` (a lock-protected snapshot) is the bridge.
 - `LauncherApp` (a `Gen3App` subclass) renders from `state.snapshot()` on a `set_interval(0.5)`
   timer. Input is split by latency sensitivity: **view navigation** (`l`/`e`/`d`, the `q` confirm
   overlay, `n`/`y`, ctrl-c) is handled **app-locally** via the `view_mode` reactive — switching is
-  instant. **Child-control** keys (`r`/`c`/`p`/`s`) and the confirmed-quit sentinel `"__quit__"`
-  go to the supervisor's `cmd_q`, where `_supervise` handles them via `input._dispatch_command`
-  (latency there is irrelevant — they aren't view changes).
+  instant. **Child-control** keys (`r`/`c`/`p`/`s`, plus the confirmed force-eval `f`) and the
+  confirmed-quit sentinel `"__quit__"` go to the supervisor's `cmd_q`, where `_supervise` handles
+  them via `input._dispatch_command` (latency there is irrelevant — they aren't view changes).
+- **Force eval (`f`):** like `q`, the keypress is app-local — it opens a `confirm_force_eval`
+  overlay rather than acting immediately. `y` then routes the `f` control char to `cmd_q` →
+  `_dispatch_command` sends the child **SIGUSR2**; `train_rl_agent`'s handler flags a
+  `request_forced_eval()` that the active eval callback consumes on its next `_on_step` to launch
+  an off-cadence eval cycle. **The accept-vs-reject decision is the child's** (it owns the
+  authoritative "eval already running" state, `_pending`): a request that lands mid-cycle is
+  REJECTED and reported back to the Events panel, mirroring the normal cadence's skip-while-running
+  rule. See `src/agents/training/CLAUDE.md` → Bot evaluation.
 - `_supervise()` runs in a `@work(thread=True)` worker, drives `LauncherState`, and **returns**
   an exit code; it then asks the app to exit via `call_from_thread`. A render fault in the timer
   is swallowed (surfaced once as an event) so a cosmetic bug can never crash the app — which, via
@@ -99,7 +107,8 @@ deterministic `_supervise` exit-code/crash-restart/`_reap` suite), plus `launche
   pushes to `main` never affect a running session.
 - **Textual TUI** — live dashboard showing metrics, FPS, restart countdown; `l` logs · `e`
   events · `d` dashboard · `r` restart · `c` forced checkpoint · `p` plots · `s` status ·
-  `q`/ctrl-c → confirm → `y`/`n` quit · `v` copy mode (inherited from `Gen3App`) freezes the
+  `f` force eval → confirm → `y`/`n` (off-cadence eval cycle; child rejects if one is already
+  running) · `q`/ctrl-c → confirm → `y`/`n` quit · `v` copy mode (inherited from `Gen3App`) freezes the
   2 Hz refresh + hands the mouse back to the terminal for native select-and-copy, same key
   resumes — the **portable** copy path (works on Terminal.app); `super+c` (⌘C) also copies the
   Textual selection on terminals that forward ⌘C + honour OSC 52. See `src/main/tui/CLAUDE.md`
