@@ -397,14 +397,21 @@ The same analysis is available headless for one invocation via the
 <states.npz> <inv>`); both share the pure engine in `src/main/prober/engine.py`.
 
 **For agents/scripts**, a JSON API + CLI (`ProbeSession` / `python -m
-main.prober.query summary|list|scan|overview|find|analyze|falsify`) exposes the same probing
-infrastructure programmatically — list/filter battles, **`scan` the worst turn in
+main.prober.query summary|list|scan|overview|find|analyze|falsify|falsify-scan|calibration`) exposes
+the same probing infrastructure programmatically — list/filter battles, **`scan` the worst turn in
 every loss across an opponent (model-free, ranked)**, digest one battle, find
-decisions the model disagrees with, deeply analyze one decision, or **`falsify`
+decisions the model disagrees with, deeply analyze one decision, **`falsify`
 a battle's worst decisions: luck-vs-mistake dice attribution by RE-ROLLING the
 real turns** (fix-both luck percentile + paired alternative-action sweep via the
 battle-reconstruction layer; bridge-eval traces with a `*_reconstruction.json`
-sibling only). Internals
+sibling only), or **`falsify-scan` a whole run: aggregate that split
+across every loss into a CRATER-FRACTION BRACKET** (|δ|-weighted — `aleatoric`=LUCK /
+`unattributed`=NEUTRAL residual / proven `policy_reducible`=MISTAKE; an input to the
+distributional-critic decision where `critic_headroom_upper_bound` = LUCK+NEUTRAL is an
+explicit UPPER BOUND with `caveats`, not a measurement), or **`calibration` to split that
+`unattributed` bucket** into `critic_overvalued` vs `lost_position` via recorded V(s) vs realized
+return G(s) — a selection-aware reliability curve that self-diagnoses the eval-quota confound
+(`bias_on_wins`/`bias_on_losses`). Internals
 — engine/app split, the model-resolution ladder, Outcome panel, flags, and the
 agent API — are in `src/main/prober/CLAUDE.md`.
 

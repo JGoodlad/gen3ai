@@ -34,6 +34,10 @@ the single source of truth — change the analysis once, both surfaces follow.
   dir, an `eval_traces` dir, or a single `*_summary.json`, and groups
   step → opponent → battle by **parsing path strings only** (never opens the
   JSON/npz — lazy-loaded on selection, so opening a 1000+-battle run is instant).
+  `_FNAME_RE` matches BOTH `<outcome>_<idx>` and the work-stealing eval's
+  shard-namespaced `<outcome>_s<shard>_<idx>` (the shard folds into `index` so two
+  shards' same-idx traces stay distinct; un-sharded `loss_001` is unchanged). Without
+  this the whole prober was blind to every sharded-eval run (outcome parsed as `?`).
   It also reads each cycle's `eval_manifest.json` (model identity). The model to
   re-run a trace through is chosen **per battle** by `resolve_model_for_step`.
   Each battle's `*_summary.json` / `*_states.npz` has a sibling
@@ -223,7 +227,64 @@ loading uses the same exact→nearest→recent ladder (cached per process). A
   (maybe-trapped) are detected from the `[Unavailable choice]` error in the
   one-sided suffix and excluded from the verdict when mostly refused.
   ~1–2 s per arm at 40 seeds (fresh Node replay per seed); a decision with 3
-  alts ≈ 5–10 s.
+  alts ≈ 5–10 s. Each falsified decision is annotated with `anchor_delta` — the
+  TD-residual δ that selected it — the one source of truth `falsify_scan` weights
+  craters by (`falsifier.anchor_deltas`, which `select_anchors` now ranks over).
+- `falsify_scan(outcome="loss", opponent=, step=, limit=20, worst=2, n_seeds=32,
+  n_alts=2, followup=, concurrency=1)` — the **RUN-LEVEL** generalization of
+  `falsify`, an **input to** the distributional-critic decision (it *brackets* the
+  headroom, it does not measure it — **read `caveats`**). Falsifies the worst δ-craters
+  of every matching battle (default losses) that carries a `*_reconstruction.json`
+  sibling, then aggregates the per-decision verdicts **weighted by crater magnitude
+  (|anchor δ|)** into four levers — a **measurement-time attribution at one frozen
+  checkpoint, NOT independent root causes**: **`LUCK` → `aleatoric`** (the chosen
+  line's realized outcome sat in the dice bad-tail — reducible *only* by a
+  risk-SENSITIVE policy avoiding a lower-variance line, which today's risk-neutral
+  PPO/this scan don't have/test), **`NEUTRAL` → `unattributed`** (a real crater the
+  sweep pinned on NEITHER luck NOR a better action — **NOT proven critic error**;
+  "not bad-tail luck" = a TYPICAL outcome, equally a genuinely-lost position;
+  splitting it needs the model-based V(s)-vs-return calibration probe, *not run here*),
+  **`MISTAKE` → `policy_reducible`** (a top-k alt provably beat the chosen action —
+  the **only proven** leg; but actor-critic coupled, so a better critic still reduces
+  these over training), **`MIXED`** (both). `gate.critic_headroom_upper_bound` =
+  LUCK + NEUTRAL share is an **UPPER BOUND** — it can only inflate as the shallow
+  mean-only alt-sweep (top-`n_alts` by logit · single re-rolled turn · `followup`
+  mid-turn) fails to *prove* a mistake (mass falls into LUCK/NEUTRAL), and it folds
+  in the unproven `unattributed` leg. Both **`weighted_shares` (|δ|) and `count_shares`**
+  are reported — a large gap means a few big ambiguous craters dominate (anchors are
+  pre-selected by worst δ). `dominant_lever` is `None` on an empty scan or a near-tie
+  (within 0.05). A **`caveats`** list (mirroring `triage`/`probe`) carries all of the
+  above in the data. `coverage` reports `n_matched` / `n_with_record` / `n_falsified`
+  / `n_capped_by_limit` / `n_skipped_no_record` / `n_battle_errors` / `n_decision_errors`
+  (nothing **silently dropped**). Weighting falls back to count-based
+  (`weighting="uniform_fallback"`, announced) when every δ≈0 (e.g. placeholder values);
+  `"none"` on an empty scan. Model-free. `concurrency` > 1 falsifies battles in
+  parallel (each re-roll spawns Node → raise it only on an **idle** box; it contends
+  with a live training run). The coarser defaults (worst=2, 32 seeds) keep a 20-loss
+  scan to a few minutes — the run-level statistic gets its power from MANY decisions,
+  not deep per-decision seeds. `include_decisions=True` adds each battle's full
+  per-decision list to its row (the calibration probe reads it).
+- `calibration(outcome="loss", step=, opponent=, limit=20, worst=2, n_seeds=32,
+  n_alts=2, concurrency=8, n_bins=10, overvalue_tau=5.0)` — resolve `falsify_scan`'s
+  **unattributed** (NEUTRAL) bucket into **`critic_overvalued`** (epistemic — a
+  better/distributional critic helps) vs **`lost_position`** (the critic was right),
+  by comparing the RECORDED value V(s) to the REALIZED discounted return G(s) =
+  `Σ γ^k r_{t+k}` (the MC value target). **Model-free** (uses recorded V — no
+  checkpoint); the falsify pass that finds the unattributed craters runs at
+  `concurrency` (default 8). **Selection-aware (the crux):** a loss-conditioned V−G
+  is biased positive *by construction* (losses are the below-V tail of any critic),
+  so the baseline is a **reliability curve over BOTH wins and losses, binned by V**
+  (`_reliability_curve`/`_calibration_stats`/`_reliability_gap_at`, pure + unit-tested);
+  a crater is `critic_overvalued` only if the critic SYSTEMATICALLY over-values at its
+  V-level (reliability `gap` > `overvalue_tau`). **The output self-diagnoses the
+  remaining confound**: `overall_calibration.bias_on_wins` (<0) / `bias_on_losses`
+  (>0) is the CALIBRATED-critic signature, and `captured_win_fraction` ≠ the true win
+  rate (eval QUOTA over-captures losses), so the unconditional bias and the reliability
+  gaps are SELECTION-SKEWED — `critic_mean_reducible_upper_bound` is a LOOSE upper bound
+  until reweighted to the true win rate, or replaced by the selection-free **gold-standard
+  re-roll → policy-rollout → return PIT** (the true distributional-critic validator,
+  deferred — needs a mid-game rollout primitive). Reads the `caveats`; this is the cheap
+  aggregate proxy, knowingly confounded on a quota-captured sample.
 
 CLI mirror — prints JSON to stdout (and `{"error": …}` + exit 1 on failure, so an
 agent always gets parseable output). `--help` carries a worked example sequence:
@@ -237,13 +298,25 @@ python -m main.prober.query overview <battle_id>
 python -m main.prober.query find     <battle_id> value_drop --limit 5
 python -m main.prober.query analyze  <battle_id> <inv> [--ckpt PATH] [--tier auto|nearest|recent]
 python -m main.prober.query falsify  <battle_id> [--inv N]... [--worst K] [--seeds N] [--alts K] [--followup random|default]
+python -m main.prober.query falsify-scan <run_dir> [--outcome loss|win] [--opponent X] [--step N] [--limit K] [--worst K] [--seeds N] [--alts K] [--concurrency N]
+python -m main.prober.query calibration  <run_dir> [--step N] [--opponent X] [--limit K] [--worst K] [--seeds N] [--concurrency N] [--bins N] [--overvalue-tau F]
 ```
 **Investigation recipe:** `triage` (which LEVER recovers the most rating — start here
 for "what next") → `summary` → `scan --outcome loss [--opponent X]` (the worst turn in
 *every* matching battle, ranked — model-free, fast) → `overview` the top battles (read
 `notable.biggest_value_drops` / `faints`) → `find disagree` / `find value_drop` →
 `analyze` the worst turn → `falsify` it (was that crater dice or a reducible
-mistake — separates irreducible aleatoric variance from real policy errors).
+mistake — separates irreducible aleatoric variance from real policy errors) →
+`falsify-scan` the whole run (aggregate that split across every loss into the
+**crater-fraction bracket** — `aleatoric` [LUCK] · `unattributed` [NEUTRAL, the
+residual the shallow sweep couldn't pin] · proven `policy_reducible` [MISTAKE];
+`critic_headroom_upper_bound` = LUCK+NEUTRAL is an **upper bound**, not a
+measurement — read its `caveats`) → `calibration` to split the `unattributed`
+bucket (`critic_overvalued` vs `lost_position`) via recorded V(s) vs realized
+return G(s) — **selection-aware** (reliability over wins+losses) and
+self-diagnosing (`bias_on_wins`/`bias_on_losses`/`captured_win_fraction` expose the
+eval-quota selection skew; on a quota-captured sample it is knowingly confounded,
+so its number is a loose upper bound pending true-WR reweighting or the rollout-PIT).
 γ is read from the run's `metadata.json`. (`triage` aggregates
 `scan`'s per-battle worst turns into ranked failure CATEGORIES; `scan` is the
 cross-battle generalization of a single battle's `notable.biggest_value_drops`.)
@@ -320,12 +393,19 @@ different retention, or a one-off deep clean.
 taxonomy and the `fit_probe` stats as pure cases — decodable-vs-noise,
 regression, too-few-graceful), `session_test.py` (tmp_path traces for the agent
 API incl. `triage` orchestration / recoverable-ranking / no-eval-results fallback,
-and `probe` end-to-end with a fake feature-model — label recovery, noise→baseline,
-unknown-target, CLI), `discovery_test.py` (tmp_path trees, checkpoint precedence),
-`falsifier_test.py` (pure: margin/percentile/paired-stats/verdict matrix, seed
-determinism, δ-anchor selection incl. the forced-switch remap) +
-`falsifier_integration_test.py` (`@integration`, real bridge battle → full
-falsify pipeline, determinism re-run), `app_test.py`
+`probe` end-to-end with a fake feature-model — label recovery, noise→baseline,
+unknown-target, CLI — the `falsify_scan` aggregation with a monkeypatched
+falsifier: coverage accounting, |δ|-weighted shares, the uniform-fallback, and
+concurrency-order-independence — plus the `calibration` pure helpers
+(`_discounted_returns`/`_reliability_curve`/`_reliability_gap_at`/`_calibration_stats`)
+and the unattributed-split integration: over-valued vs lost via the reliability gap,
++ the selection-confound diagnostics), `discovery_test.py` (tmp_path trees, checkpoint
+precedence, **sharded `<outcome>_s<shard>_<idx>` parsing → distinct index**),
+`falsifier_test.py` (pure: margin/percentile/paired-stats/verdict
+matrix, seed determinism, δ-anchor selection incl. the forced-switch remap, and
+the `anchor_deltas` δ-map) + `falsifier_integration_test.py` (`@integration`,
+real bridge battle → full falsify pipeline, determinism re-run, and the run-level
+`falsify_scan` over a recorded discoverable tree), `app_test.py`
 (Textual `run_test` Pilot with an injected fake model — never loads a real checkpoint,
 so it stays fast):
 

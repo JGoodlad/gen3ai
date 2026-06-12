@@ -767,3 +767,24 @@ def test_replay_skips_pool_block_when_unseeded(tmp_path, monkeypatch):
     assert "eval/win_rate_vs_pool" not in sent
     assert "eval/win_rate_vs_sentinel_0" not in sent
     assert sent.get("eval/win_rate_vs_random") == 0.5  # bot rows still re-published
+
+
+def test_trace_naming_contract():
+    """The prober's `discovery` must parse exactly the filename stems the eval writer
+    produces — the contract that silently drifted when sharding added the `s<shard>_`
+    infix (every sharded trace then parsed as outcome '?', blinding the whole prober).
+    Pins producer (`trace_filename_stem`) → consumer (`discovery._parse_trace`)."""
+    from main.prober.discovery import _parse_trace
+    from agents.training.eval_callback import trace_filename_stem
+
+    def parse(tag, idx=5):
+        stem = trace_filename_stem("loss", tag, idx)
+        return _parse_trace(f"/run/eval_traces/step_100/heuristic/{stem}_summary.json")
+
+    # the two tag forms eval emits: "" (un-sharded) and f"s{shard}_" (eval_worker:135)
+    for tag in ("", "s0_", "s3_"):
+        t = parse(tag)
+        assert t.outcome == "loss", f"discovery failed to parse producer stem for tag {tag!r}"
+        assert t.opponent == "heuristic"
+    assert parse("").index == 5                       # un-sharded index unchanged
+    assert parse("s1_").index != parse("s3_").index   # two shards' same idx stay DISTINCT

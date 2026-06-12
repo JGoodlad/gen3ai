@@ -550,3 +550,294 @@ def test_cli_probe_emits_json(tmp_path):
     parsed = json.loads(buf.getvalue())
     assert parsed["target"] == "is_faster"
     assert parsed["representation_probe"]["overall"]["accuracy"] > 0.9
+
+
+# ---------------------------------------------------------------------------
+# falsify_scan — RUN-LEVEL luck-vs-mistake aggregation (monkeypatched falsifier:
+# the Node re-roll is exercised by falsifier_integration_test; here we pin the
+# aggregation MATH and the coverage accounting).
+# ---------------------------------------------------------------------------
+
+def _fake_falsify_battle(record, summary, npz, *, worst, gamma, n_seeds, n_alts, followup):
+    """Stand-in for falsifier.falsify_battle: build canned decisions from a
+    `_fake_verdicts` spec planted in the summary (so each test battle's verdicts
+    + crater δ are exact and deterministic). `_fake_raise` makes it raise (the
+    battle-error path); `_fake_decision_errors` injects per-decision errors."""
+    if summary.get("_fake_raise"):
+        raise RuntimeError("node died")
+    spec = summary.get("_fake_verdicts", [])[:worst]
+    decisions = []
+    for i, (verdict, delta) in enumerate(spec):
+        decisions.append({
+            "inv": i, "turn": i + 1, "verdict": verdict, "anchor_delta": delta,
+            "luck_percentile": 0.1 if verdict in ("LUCK", "MIXED") else 0.5,
+            "best_alternative": "switch:x" if verdict in ("MISTAKE", "MIXED") else None,
+        })
+    counts = {}
+    for d in decisions:
+        counts[d["verdict"]] = counts.get(d["verdict"], 0) + 1
+    errs = [{"inv": 99, "error": "boom"} for _ in range(summary.get("_fake_decision_errors", 0))]
+    return {"battle": getattr(record, "battle_tag", "tag"),
+            "result": summary["meta"]["result"], "trainee_side": "p1",
+            "anchors": [d["inv"] for d in decisions], "decisions": decisions,
+            "verdict_counts": counts, "errors": errs, "thresholds": {}}
+
+
+def _write_falsify_battle(run, opponent, name, fake_verdicts, *, recon=True,
+                          raise_on=False, decision_errors=0, values=None,
+                          rewards=None, gamma=0.99):
+    """A trace whose summary carries a `_fake_verdicts` spec; optionally with a
+    loadable reconstruction stub sibling (the gate the scan checks). `values` /
+    `rewards` set the npz value head + per-decision reward (the calibration probe
+    reads recorded V(s) vs the realized return G(s))."""
+    bd = run / "eval_traces" / "step_2000000" / opponent
+    os.makedirs(bd, exist_ok=True)
+    outcome = name.split("_")[0]
+    n = max(1, len(fake_verdicts))
+    rew = rewards if rewards is not None else [0.0] * n
+    invs = [_inv(i + 1, "move", rew[i]) for i in range(n)]
+    summary = {"meta": {"step": 2000000, "result": outcome.upper(), "turns": n,
+                        "invocations": n}, "invocations": invs,
+               "_fake_verdicts": fake_verdicts}
+    if raise_on:
+        summary["_fake_raise"] = True
+    if decision_errors:
+        summary["_fake_decision_errors"] = decision_errors
+    with open(bd / f"{name}_summary.json", "w") as f:
+        json.dump(summary, f)
+    np.savez(bd / f"{name}_states.npz",
+             obs=np.zeros((n, _OBS_LEN), dtype=np.float32),
+             has_state=np.ones(n, dtype=np.int8),
+             values=np.array(values if values is not None else [0.0] * n, dtype=np.float32))
+    if recon:
+        with open(bd / f"{name}_reconstruction.json", "w") as f:
+            json.dump({"format_id": "gen3ou", "prng_seed": "1,2,3,4",
+                       "input_log": [], "commands": []}, f)
+    with open(run / "metadata.json", "w") as f:
+        json.dump({"gamma": gamma}, f)
+
+
+def _build_falsify_scan_run(tmp_path):
+    run = tmp_path / "run"
+    _write_falsify_battle(run, "aggressive_v2", "loss_000",
+                          [("LUCK", -9.0), ("NEUTRAL", -3.0)])
+    _write_falsify_battle(run, "aggressive_v2", "loss_001",
+                          [("MISTAKE", -5.0), ("LUCK", -1.0)])
+    _write_falsify_battle(run, "heuristic", "win_000",
+                          [("MISTAKE", -8.0)])                       # excluded by outcome=loss
+    _write_falsify_battle(run, "heuristic", "loss_002",
+                          [("MISTAKE", -7.0)], recon=False)          # no record → skipped
+    (run / "checkpoint_3200000_steps.zip").write_text("")
+    return str(run)
+
+
+def test_falsify_scan_aggregates_delta_weighted(tmp_path, monkeypatch):
+    monkeypatch.setattr("main.prober.falsifier.falsify_battle", _fake_falsify_battle)
+    out = ProbeSession(_build_falsify_scan_run(tmp_path)).falsify_scan(outcome="loss")
+
+    cov = out["coverage"]
+    assert cov["n_matched"] == 3            # loss_000, loss_001, loss_002 (wins excluded)
+    assert cov["n_with_record"] == 2        # loss_002 has no reconstruction sibling
+    assert cov["n_falsified"] == 2
+    assert cov["n_skipped_no_record"] == 1
+    assert cov["skipped_no_record_sample"] and "loss_002" in cov["skipped_no_record_sample"][0]
+    assert cov["n_decisions"] == 4
+
+    assert out["verdict_counts"] == {"LUCK": 2, "NEUTRAL": 1, "MISTAKE": 1, "MIXED": 0}
+    assert out["weighting"] == "delta"
+    s = out["weighted_shares"]              # weights: LUCK 9+1=10, NEUTRAL 3, MISTAKE 5 → 18
+    assert abs(s["LUCK"] - 10 / 18) < 1e-4   # shares are rounded to 4 dp for clean JSON
+    assert abs(s["NEUTRAL"] - 3 / 18) < 1e-4
+    assert abs(s["MISTAKE"] - 5 / 18) < 1e-4
+    # count_shares differ from |δ|-weighted (the |δ|-concentration the caveats warn about)
+    assert abs(out["count_shares"]["LUCK"] - 0.5) < 1e-4
+    # the headroom is an explicit UPPER BOUND (LUCK + NEUTRAL = aleatoric + unattributed)
+    assert abs(out["gate"]["critic_headroom_upper_bound"] - 13 / 18) < 1e-4
+    assert abs(out["gate"]["aleatoric"] - 10 / 18) < 1e-4
+    assert abs(out["gate"]["policy_reducible"] - 5 / 18) < 1e-4
+    assert out["dominant_lever"] == {"verdict": "LUCK", "lever": "aleatoric"}
+    assert out["caveats"] and any("UPPER BOUND" in c for c in out["caveats"])
+    # per-battle worst_decision picks the larger |δ|
+    row = next(r for r in out["battles"] if r["short_id"].endswith("loss_000"))
+    assert row["worst_decision"]["verdict"] == "LUCK" and row["worst_decision"]["anchor_delta"] == -9.0
+
+
+def test_falsify_scan_uniform_fallback_when_no_delta(tmp_path, monkeypatch):
+    monkeypatch.setattr("main.prober.falsifier.falsify_battle", _fake_falsify_battle)
+    run = tmp_path / "run"
+    _write_falsify_battle(run, "aggressive_v2", "loss_000", [("LUCK", 0.0), ("MISTAKE", 0.0)])
+    out = ProbeSession(str(run)).falsify_scan(outcome="loss")
+    assert out["weighting"] == "uniform_fallback"   # every δ ~0 → count-based shares, announced
+    assert all(v == 0.0 for v in out["weighted_shares"].values())   # the |δ| weighting collapsed
+    assert abs(out["count_shares"]["LUCK"] - 0.5) < 1e-6
+    assert abs(out["gate"]["aleatoric"] - 0.5) < 1e-6                # gate falls back to counts
+    assert out["dominant_lever"] is None                            # a 50/50 is not a dominant lever
+
+
+def test_falsify_scan_limit_caps_and_reports(tmp_path, monkeypatch):
+    monkeypatch.setattr("main.prober.falsifier.falsify_battle", _fake_falsify_battle)
+    out = ProbeSession(_build_falsify_scan_run(tmp_path)).falsify_scan(outcome="loss", limit=1)
+    assert out["coverage"]["n_falsified"] == 1
+    assert out["coverage"]["n_capped_by_limit"] == 1   # the 2nd record exists but was capped (not silent)
+
+
+def test_falsify_scan_concurrency_is_order_independent(tmp_path, monkeypatch):
+    monkeypatch.setattr("main.prober.falsifier.falsify_battle", _fake_falsify_battle)
+    run = _build_falsify_scan_run(tmp_path)
+    seq = ProbeSession(run).falsify_scan(outcome="loss", concurrency=1)
+    par = ProbeSession(run).falsify_scan(outcome="loss", concurrency=4)
+    assert seq["weighted_shares"] == par["weighted_shares"]
+    assert seq["verdict_counts"] == par["verdict_counts"]
+    assert seq["gate"] == par["gate"]
+
+
+def test_falsify_scan_battle_error_is_isolated(tmp_path, monkeypatch):
+    monkeypatch.setattr("main.prober.falsifier.falsify_battle", _fake_falsify_battle)
+    run = tmp_path / "run"
+    _write_falsify_battle(run, "aggressive_v2", "loss_000", [("LUCK", -9.0)])
+    _write_falsify_battle(run, "aggressive_v2", "loss_001", [("MISTAKE", -5.0)], raise_on=True)
+    out = ProbeSession(str(run)).falsify_scan(outcome="loss")
+    assert out["coverage"]["n_battle_errors"] == 1
+    assert out["coverage"]["n_falsified"] == 1            # the survivor is still aggregated
+    err = out["errors"][0]
+    assert err["battle"].endswith("loss_001") and "RuntimeError" in err["error"]
+    assert abs(out["gate"]["aleatoric"] - 1.0) < 1e-9     # only the surviving LUCK decision
+
+
+def test_falsify_scan_none_weighting_on_empty(tmp_path, monkeypatch):
+    monkeypatch.setattr("main.prober.falsifier.falsify_battle", _fake_falsify_battle)
+    run = tmp_path / "run"
+    _write_falsify_battle(run, "aggressive_v2", "loss_000", [("LUCK", -9.0)], recon=False)
+    out = ProbeSession(str(run)).falsify_scan(outcome="loss")
+    assert out["weighting"] == "none"                     # no records yet → nothing falsifiable
+    assert out["dominant_lever"] is None
+    assert out["gate"]["critic_headroom_upper_bound"] == 0.0
+    assert out["coverage"]["n_skipped_no_record"] == 1 and out["coverage"]["n_decisions"] == 0
+    json.dumps(out)                                       # the empty-scan contract is JSON-serializable
+
+
+def test_falsify_scan_decision_errors_counted(tmp_path, monkeypatch):
+    monkeypatch.setattr("main.prober.falsifier.falsify_battle", _fake_falsify_battle)
+    run = tmp_path / "run"
+    _write_falsify_battle(run, "aggressive_v2", "loss_000", [("LUCK", -9.0)], decision_errors=2)
+    out = ProbeSession(str(run)).falsify_scan(outcome="loss")
+    assert out["coverage"]["n_decision_errors"] == 2      # a dropped decision is counted, not swallowed
+    assert out["coverage"]["n_falsified"] == 1 and out["coverage"]["n_decisions"] == 1
+
+
+def test_cli_falsify_scan_emits_json(tmp_path, monkeypatch):
+    import sys
+    import main.prober.query as q
+    monkeypatch.setattr("main.prober.falsifier.falsify_battle", _fake_falsify_battle)
+    run = _build_falsify_scan_run(tmp_path)
+    argv = sys.argv
+    sys.argv = ["query", "falsify-scan", run, "--outcome", "loss", "--limit", "5"]
+    try:
+        buf = io.StringIO()
+        with redirect_stdout(buf):
+            q.main()
+    finally:
+        sys.argv = argv
+    parsed = json.loads(buf.getvalue())
+    assert parsed["coverage"]["n_falsified"] == 2
+    assert parsed["gate"]["critic_headroom_upper_bound"] > 0
+    assert parsed["dominant_lever"]["lever"] == "aleatoric"
+
+
+# ---------------------------------------------------------------------------
+# calibration — recorded V(s) vs realized return G(s); split `unattributed`
+# (NEUTRAL) craters into critic_overvalued vs lost_position (selection-aware).
+# ---------------------------------------------------------------------------
+
+def test_discounted_returns():
+    from main.prober.session import _discounted_returns
+    assert _discounted_returns([1.0, 2.0, 3.0], 1.0) == [6.0, 5.0, 3.0]
+    g = _discounted_returns([1.0, 2.0, 3.0], 0.5)
+    assert g[2] == 3.0 and abs(g[1] - 3.5) < 1e-9 and abs(g[0] - 2.75) < 1e-9
+    assert _discounted_returns([None, 4.0], 1.0) == [4.0, 4.0]      # a None reward counts as 0
+
+
+def test_reliability_curve_and_gap():
+    from main.prober.session import _reliability_curve, _reliability_gap_at
+    # high-V states realize 0 (over-valued by 10); low-V realize their value (gap 0)
+    bins = _reliability_curve([10, 10, 10, -10, -10, -10], [0, 0, 0, -10, -10, -10], 2)
+    assert len(bins) == 2
+    assert abs(bins[0]["gap"]) < 1e-9 and abs(bins[1]["gap"] - 10.0) < 1e-9   # ascending by V
+    assert abs(_reliability_gap_at(bins, 10.0) - 10.0) < 1e-9    # inside the high bin
+    assert abs(_reliability_gap_at(bins, -10.0)) < 1e-9          # inside the low bin
+    assert abs(_reliability_gap_at(bins, 999.0) - 10.0) < 1e-9   # clamps to nearest (high)
+    assert _reliability_gap_at([], 5.0) is None
+
+
+def test_calibration_stats():
+    from main.prober.session import _calibration_stats
+    s = _calibration_stats([10, 10, -10, -10], [0, 0, -10, -10])
+    assert s["n"] == 4
+    assert abs(s["bias"] - 5.0) < 1e-9 and abs(s["mae"] - 5.0) < 1e-9   # E[V-G]=(10+10+0+0)/4
+    assert _calibration_stats([], [])["n"] == 0
+
+
+def _build_calibration_run(tmp_path):
+    """Reliability curve (decoupled from the craters for clean bins): high-V (10)
+    states realize ~0 (the critic over-values them by 10); low-V (-10) states
+    realize -10 (calibrated). Two 1-decision crater battles: a NEUTRAL at V=10 →
+    critic_overvalued, a NEUTRAL at V=-10 → lost_position."""
+    run = tmp_path / "run"
+    # reliability backbone (recon=False ⇒ never falsified, pure (V,G) points)
+    _write_falsify_battle(run, "heuristic", "win_000", [("NA", 0.0)] * 4,
+                          recon=False, values=[10.0] * 4, rewards=[0.0] * 4, gamma=1.0)
+    _write_falsify_battle(run, "heuristic", "loss_000", [("NA", 0.0)] * 4,
+                          recon=False, values=[-10.0] * 4, rewards=[0.0, 0.0, 0.0, -10.0], gamma=1.0)
+    # crater battles (recon=True ⇒ falsified); 1 decision each so they don't unbalance the bins
+    _write_falsify_battle(run, "heuristic", "loss_001", [("NEUTRAL", -8.0)],
+                          values=[10.0], rewards=[0.0], gamma=1.0)        # high-V crater → overvalued
+    _write_falsify_battle(run, "heuristic", "loss_002", [("NEUTRAL", -4.0)],
+                          values=[-10.0], rewards=[-10.0], gamma=1.0)     # low-V crater → lost
+    (run / "checkpoint_3200000_steps.zip").write_text("")
+    return str(run)
+
+
+def test_calibration_splits_unattributed(tmp_path, monkeypatch):
+    monkeypatch.setattr("main.prober.falsifier.falsify_battle", _fake_falsify_battle)
+    out = ProbeSession(_build_calibration_run(tmp_path)).calibration(
+        outcome="loss", n_bins=2, overvalue_tau=5.0)
+
+    # reliability curve (over wins+losses): a calibrated low-V bin and an over-valued high-V bin
+    bins = out["reliability_curve"]
+    assert len(bins) == 2
+    assert abs(bins[0]["gap"]) < 1e-6 and abs(bins[1]["gap"] - 10.0) < 1e-6
+    assert abs(out["overall_calibration"]["bias"] - 5.0) < 1e-6   # 5×10 + 5×0 over 10 decisions
+    # the selection-confound diagnostics are surfaced (per-outcome bias + captured mix)
+    oc = out["overall_calibration"]
+    assert oc["bias_on_wins"] is not None and oc["bias_on_losses"] is not None
+    assert 0.0 <= oc["captured_win_fraction"] <= 1.0
+
+    # the unattributed (NEUTRAL) split: V=10 crater (δ-8) over-valued, V=-10 crater (δ-4) lost
+    res = out["unattributed_resolution"]
+    assert res["n_unattributed_craters"] == 2
+    assert abs(res["overvalued_share_of_unattributed"] - 8 / 12) < 1e-3   # |δ| 8 of (8+4)
+    buckets = {e["bucket"] for e in res["examples"]}
+    assert buckets == {"critic_overvalued", "lost_position"}
+
+    # gate: both falsified craters are NEUTRAL (unattributed=1.0); ~2/3 of it is critic-reducible
+    assert abs(out["gate"]["unattributed"] - 1.0) < 1e-3
+    assert abs(out["gate"]["critic_mean_reducible_upper_bound"] - 8 / 12) < 1e-3
+    assert out["caveats"] and any("UPPER BOUND" in c for c in out["caveats"])
+
+
+def test_cli_calibration_emits_json(tmp_path, monkeypatch):
+    import sys
+    import main.prober.query as q
+    monkeypatch.setattr("main.prober.falsifier.falsify_battle", _fake_falsify_battle)
+    run = _build_calibration_run(tmp_path)
+    argv = sys.argv
+    sys.argv = ["query", "calibration", run, "--outcome", "loss", "--bins", "2", "--concurrency", "1"]
+    try:
+        buf = io.StringIO()
+        with redirect_stdout(buf):
+            q.main()
+    finally:
+        sys.argv = argv
+    parsed = json.loads(buf.getvalue())
+    assert parsed["gate"]["critic_mean_reducible_upper_bound"] > 0
+    assert parsed["unattributed_resolution"]["n_unattributed_craters"] == 2

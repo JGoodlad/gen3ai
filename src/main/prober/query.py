@@ -14,6 +14,8 @@ A typical investigation:
     python -m main.prober.query find     <summary.json> disagree           # loads the model
     python -m main.prober.query analyze  <summary.json> <inv> [--tier nearest]
     python -m main.prober.query falsify  <summary.json> [--inv N] [--seeds 40]  # luck vs mistake (re-rolls)
+    python -m main.prober.query falsify-scan <run_dir> [--opponent X]            # RUN-LEVEL reducible-vs-aleatoric
+    python -m main.prober.query calibration  <run_dir> [--step N]                # split `unattributed`: critic vs lost
 
 ``<summary.json>`` is a battle id from list/summary output (the ``id`` field).
 """
@@ -61,14 +63,24 @@ examples:
   #    (re-rolls the real turns via the reconstruction layer — bridge-eval traces only)
   python -m main.prober.query falsify <id>                       # worst 3 decisions by δ
   python -m main.prober.query falsify <id> --inv 7 --seeds 60    # one chosen decision
+
+  # 7. RUN-LEVEL: aggregate luck-vs-mistake over every loss → a crater-fraction BRACKET
+  #    (aleatoric [LUCK] / unattributed [NEUTRAL residual] / proven policy_reducible [MISTAKE];
+  #    critic_headroom_upper_bound = LUCK+NEUTRAL is an UPPER BOUND — read its caveats)
+  python -m main.prober.query falsify-scan models/run_X                       # all losses
+  python -m main.prober.query falsify-scan models/run_X --opponent aggressive_v2 --concurrency 4
+
+  # 8. CALIBRATION: resolve falsify-scan's `unattributed` craters into critic_overvalued
+  #    (epistemic) vs lost_position, via recorded V(s) vs realized return G(s) — selection-aware
+  python -m main.prober.query calibration models/run_X --step 30000000 --concurrency 8
 """
 
 
 def _build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
         prog="python -m main.prober.query",
-        description="JSON probing CLI for agents "
-                    "(triage/probe/summary/list/scan/overview/find/analyze/falsify).",
+        description="JSON probing CLI for agents (triage/probe/summary/list/scan/history-saliency/"
+                    "overview/find/analyze/falsify/falsify-scan/calibration).",
         epilog=_EXAMPLES, formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     sub = p.add_subparsers(dest="cmd", required=True)
@@ -141,6 +153,45 @@ def _build_parser() -> argparse.ArgumentParser:
     pfa.add_argument("--alts", type=int, default=3, help="alternative actions to test (default 3)")
     pfa.add_argument("--followup", default="random", choices=["random", "default"],
                      help="policy for NEW mid-turn decisions in re-rolled timelines")
+
+    pfs = sub.add_parser(
+        "falsify-scan", help="RUN-LEVEL luck-vs-mistake attribution: falsify every loss's worst "
+                             "craters into a crater-fraction BRACKET (aleatoric/unattributed/"
+                             "proven-policy; critic_headroom_upper_bound is an UPPER BOUND — read "
+                             "caveats). Input to the distributional-critic decision; bridge-eval only")
+    pfs.add_argument("root", help="run dir / eval_traces dir")
+    pfs.add_argument("--outcome", default="loss", choices=["win", "loss"],
+                     help="which battles to falsify (default loss — craters live in losses)")
+    pfs.add_argument("--opponent")
+    pfs.add_argument("--step", type=int)
+    pfs.add_argument("--limit", type=int, default=20, help="max battles to falsify (default 20)")
+    pfs.add_argument("--worst", type=int, default=2,
+                     help="worst-δ decisions falsified per battle (default 2)")
+    pfs.add_argument("--seeds", type=int, default=32, help="re-roll seeds per arm (default 32)")
+    pfs.add_argument("--alts", type=int, default=2, help="alternative actions per decision (default 2)")
+    pfs.add_argument("--followup", default="random", choices=["random", "default"])
+    pfs.add_argument("--concurrency", type=int, default=1,
+                     help="battles falsified in parallel (default 1). Each re-roll spawns Node, so "
+                          "raise this only on an IDLE box — it contends with a live training run.")
+
+    pca = sub.add_parser(
+        "calibration", help="critic CALIBRATION: split falsify_scan's `unattributed` craters into "
+                            "critic_overvalued (epistemic) vs lost_position via recorded V(s) vs "
+                            "realized return G(s) — a selection-aware reliability curve. Model-free")
+    pca.add_argument("root", help="run dir / eval_traces dir")
+    pca.add_argument("--outcome", default="loss", choices=["win", "loss"])
+    pca.add_argument("--opponent")
+    pca.add_argument("--step", type=int)
+    pca.add_argument("--limit", type=int, default=20, help="max loss battles to falsify (default 20)")
+    pca.add_argument("--worst", type=int, default=2)
+    pca.add_argument("--seeds", type=int, default=32)
+    pca.add_argument("--alts", type=int, default=2)
+    pca.add_argument("--followup", default="random", choices=["random", "default"])
+    pca.add_argument("--concurrency", type=int, default=8,
+                     help="re-roll parallelism for the falsify pass (default 8; lower on a busy box)")
+    pca.add_argument("--bins", type=int, default=10, help="reliability-curve V-bins (default 10)")
+    pca.add_argument("--overvalue-tau", type=float, default=5.0,
+                     help="reliability-gap (return units) above which a crater is critic_overvalued")
     return p
 
 
@@ -169,6 +220,17 @@ def _run(args) -> object:
         return ProbeSession(args.battle).falsify(
             args.battle, invs=args.inv, worst=args.worst,
             n_seeds=args.seeds, n_alts=args.alts, followup=args.followup)
+    if args.cmd == "falsify-scan":
+        return ProbeSession(args.root).falsify_scan(
+            outcome=args.outcome, opponent=args.opponent, step=args.step,
+            limit=args.limit, worst=args.worst, n_seeds=args.seeds,
+            n_alts=args.alts, followup=args.followup, concurrency=args.concurrency)
+    if args.cmd == "calibration":
+        return ProbeSession(args.root).calibration(
+            outcome=args.outcome, opponent=args.opponent, step=args.step,
+            limit=args.limit, worst=args.worst, n_seeds=args.seeds, n_alts=args.alts,
+            followup=args.followup, concurrency=args.concurrency,
+            n_bins=args.bins, overvalue_tau=args.overvalue_tau)
     sess = ProbeSession(args.battle, ckpt_override=args.ckpt, tier=args.tier)
     if args.cmd == "overview":
         return sess.battle_overview(args.battle)

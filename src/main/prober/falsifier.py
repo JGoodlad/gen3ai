@@ -51,6 +51,7 @@ from __future__ import annotations
 
 import hashlib
 import math
+import subprocess
 from typing import Dict, List, Optional, Sequence
 
 import numpy as np
@@ -282,10 +283,14 @@ def _label_of(inv: dict, action_idx: int) -> Optional[str]:
 # Battle-level falsification (anchor selection + loop)
 # ---------------------------------------------------------------------------
 
-def select_anchors(summary: dict, npz: dict, *, gamma: float, worst: int) -> List[int]:
-    """The ``worst`` most-negative-δ ``move_selection`` decisions on distinct
-    turns (δ = r + γV(s′) − V(s) — the prober's formula). A forced-switch
-    crater attributes to its turn's move decision (the re-rollable anchor)."""
+def anchor_deltas(summary: dict, npz: dict, *, gamma: float) -> Dict[int, float]:
+    """Map each turn's ``move_selection`` anchor inv → the **worst** TD-residual δ
+    attributed to its turn (δ = r + γV(s′) − V(s) — the prober's formula). A
+    forced-switch crater attributes to its turn's move decision (the re-rollable
+    anchor). This δ both **ranks** anchors (:func:`select_anchors`) and, surfaced
+    onto each falsified decision, **weights** it in the run-level
+    ``falsify_scan`` — one source of truth so the ranking and the magnitude
+    weighting can never disagree."""
     invs = summary.get("invocations", [])
     values = npz.get("values")
     if values is None or not len(invs):
@@ -307,6 +312,13 @@ def select_anchors(summary: dict, npz: dict, *, gamma: float, worst: int) -> Lis
             continue
         if anchor not in scored or td < scored[anchor]:
             scored[anchor] = td
+    return scored
+
+
+def select_anchors(summary: dict, npz: dict, *, gamma: float, worst: int) -> List[int]:
+    """The ``worst`` most-negative-δ ``move_selection`` decisions on distinct
+    turns. A thin ranking over :func:`anchor_deltas`."""
+    scored = anchor_deltas(summary, npz, gamma=gamma)
     return sorted(scored, key=scored.get)[:max(1, worst)]
 
 
@@ -325,13 +337,24 @@ def falsify_battle(
 ) -> dict:
     """Falsify the chosen (or worst-δ) decisions of one battle."""
     anchors = list(invs) if invs else select_anchors(summary, npz, gamma=gamma, worst=worst)
+    try:
+        scored = anchor_deltas(summary, npz, gamma=gamma)   # {} weight when values are absent
+    except ValueError:
+        scored = {}
     decisions, errors = [], []
     for inv_index in anchors:
         try:
-            decisions.append(falsify_decision(
+            d = falsify_decision(
                 record, summary, npz, int(inv_index),
-                n_seeds=n_seeds, n_alts=n_alts, followup=followup, mappings=mappings))
-        except (ValueError, RuntimeError, IndexError) as e:
+                n_seeds=n_seeds, n_alts=n_alts, followup=followup, mappings=mappings)
+            # Surface the TD-residual δ that selected (and now weights) this anchor —
+            # one source of truth for falsify_scan's crater-magnitude weighting.
+            d["anchor_delta"] = round(scored[int(inv_index)], 4) if int(inv_index) in scored else None
+            decisions.append(d)
+        except (ValueError, RuntimeError, IndexError, subprocess.TimeoutExpired) as e:
+            # A wedged Node re-roll (TimeoutExpired) becomes a recorded decision-error
+            # like a node crash (RuntimeError) — it must not discard the battle's other
+            # already-falsified decisions.
             errors.append({"inv": int(inv_index), "error": str(e)})
     counts: Dict[str, int] = {}
     for d in decisions:

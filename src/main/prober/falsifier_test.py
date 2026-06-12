@@ -155,6 +155,36 @@ def test_select_anchors_requires_values():
         select_anchors(_summary_with([_inv(1, "move_selection", 0.0)]), {}, gamma=1.0, worst=1)
 
 
+def test_anchor_deltas_maps_worst_delta_per_anchor():
+    # The δ MAP (not just the ranking) is what falsify_scan weights craters by.
+    invs = [
+        _inv(1, "move_selection", 0.0),   # δ = 0
+        _inv(2, "move_selection", -4.0),  # δ = -4
+        _inv(3, "move_selection", -1.0),  # δ = -1
+        _inv(4, "move_selection", 0.0),   # last inv: no next value → absent
+    ]
+    npz = {"values": np.array([5.0, 5.0, 5.0, 5.0], dtype=np.float32)}
+    deltas = falsifier.anchor_deltas(_summary_with(invs), npz, gamma=1.0)
+    assert deltas == {0: 0.0, 1: -4.0, 2: -1.0}
+    # select_anchors is exactly the ranking over this map.
+    assert select_anchors(_summary_with(invs), npz, gamma=1.0, worst=2) == [1, 2]
+
+
+def test_anchor_deltas_forced_switch_folds_worst_into_turn_move():
+    # The crater is on turn 2's forced-switch inv; its δ must fold into turn 2's
+    # move anchor (inv1) as the WORST δ of the turn — so the scan weights the
+    # re-rollable anchor by the true crater magnitude.
+    invs = [
+        _inv(1, "move_selection", 0.0),
+        _inv(2, "move_selection", 0.0),   # δ = 0
+        _inv(2, "forced_switch", -6.0),   # the crater (same turn)
+        _inv(3, "move_selection", 0.0),
+    ]
+    npz = {"values": np.array([1.0, 1.0, 1.0, 1.0], dtype=np.float32)}
+    deltas = falsifier.anchor_deltas(_summary_with(invs), npz, gamma=1.0)
+    assert deltas[1] == -6.0 and 2 not in deltas
+
+
 # ---------------------------------------------------------------------------
 # falsify_decision argument guards (no re-roll spawned)
 # ---------------------------------------------------------------------------

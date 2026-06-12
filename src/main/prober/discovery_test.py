@@ -56,6 +56,20 @@ def test_run_dir_groups_and_sorts(tmp_path):
     assert heur.battles[0].npz_path is not None
 
 
+def test_sharded_filenames_parse_outcome_and_stay_distinct(tmp_path):
+    """The work-stealing eval names traces `<outcome>_s<shard>_<idx>`; discovery
+    must parse the outcome (not fall to '?') and keep two shards' same-idx traces
+    distinct (unique index → unique short_id / sort key)."""
+    et = tmp_path / "run" / "eval_traces"
+    for fn in ("loss_s1_005", "loss_s3_005", "win_s0_002", "loss_012"):
+        _touch(str(et / "step_30000000" / "aggressive" / f"{fn}_summary.json"))
+    battles = build_trace_tree(str(et)).all_battles()
+    assert {b.outcome for b in battles} == {"loss", "win"}        # parsed, NOT "?"
+    losses = sorted(b.index for b in battles if b.outcome == "loss")
+    assert losses == [12, 1005, 3005]   # un-sharded idx unchanged (shard 0); shard folded into index
+    assert len(set(losses)) == 3                                  # the two same-idx shards stay distinct
+
+
 def test_missing_npz_tolerated(tmp_path):
     run, _ = _make_run(tmp_path, with_npz=False)
     tree = build_trace_tree(str(run))

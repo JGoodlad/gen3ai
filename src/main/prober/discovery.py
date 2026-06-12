@@ -23,7 +23,10 @@ _OPPONENT_ORDER = [
     "random", "heuristic", "heuristic2", "staller", "staller_v2",
     "aggressive", "aggressive_v2", "setup_sweep", "setup_sweep_v2",
 ]
-_FNAME_RE = re.compile(r"^(win|loss)_(\d+)_summary\.json$")
+# Eval writes either `<outcome>_<idx>` (un-sharded) or `<outcome>_s<shard>_<idx>`
+# (the work-stealing eval's per-shard namespacing, `agents.training.eval_callback`'s
+# `{outcome}_s{shard}_{idx}` trace_tag). Match both; the `s<shard>_` infix is optional.
+_FNAME_RE = re.compile(r"^(win|loss)_(?:s(\d+)_)?(\d+)_summary\.json$")
 _STEP_RE = re.compile(r"step_(\d+)")
 # Filenames the eval writes (contract with agents.training.eval_callback —
 # duplicated here so the prober doesn't import the heavy training module).
@@ -110,7 +113,12 @@ def _parse_trace(summary_path: str) -> BattleTrace:
     base = os.path.basename(summary_path)
     m = _FNAME_RE.match(base)
     if m:
-        outcome, index = m.group(1), int(m.group(2))
+        # Fold the shard into `index` so two shards' same-idx traces (loss_s1_005 /
+        # loss_s3_005) stay DISTINCT (unique short_id / sort key). Un-sharded files
+        # have shard 0 → index == idx, byte-identical to the pre-shard behaviour.
+        outcome = m.group(1)
+        shard = int(m.group(2)) if m.group(2) else 0
+        index = shard * 1000 + int(m.group(3))
     else:
         outcome, index = "?", 0
     step_m = _STEP_RE.search(summary_path)

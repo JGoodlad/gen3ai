@@ -37,6 +37,19 @@ EVAL_MANIFEST_NAME = "eval_manifest.json"
 EVAL_SNAPSHOT_NAME = "snapshot.zip"
 
 
+def trace_filename_stem(outcome: str, trace_tag: str, idx: int) -> str:
+    """The forensic-trace filename stem ``<outcome>_<trace_tag><idx>`` (no suffix).
+
+    THE single source of the naming contract the prober's `discovery._FNAME_RE`
+    must invert. ``trace_tag`` is the work-stealing eval's per-shard namespace
+    (``""`` un-sharded, or ``f"s{shard}_"`` from `eval_worker`). When sharding was
+    added this stem grew an ``s<shard>_`` infix the prober's regex didn't match, so
+    every sharded-eval trace parsed as outcome ``"?"`` and the WHOLE prober went
+    blind — `eval_callback_test.test_trace_naming_contract` now pins that
+    `discovery` parses exactly what this returns, so the two can't drift again."""
+    return f"{outcome}_{trace_tag}{idx:03d}"
+
+
 def _read_run_identity(model_dir: str) -> tuple:
     """(git_hash, arch_signature, config_version) for this run, from its on-disk
     model_config.json / metadata.json (written at run start), with a git fallback."""
@@ -891,7 +904,9 @@ class EvalRLPlayer(RewardTrackingMixin, RLPlayer):
         self._trace_idx += 1
         # `_trace_tag` namespaces the file so concurrent shard units of the same opponent (each a
         # fresh player with _trace_idx restarting at 0, all writing this one dir) never collide.
-        prefix = os.path.join(self._forensic_dir, f"{outcome}_{self._trace_tag}{self._trace_idx:03d}")
+        # `trace_filename_stem` is the single source of the naming contract the prober inverts.
+        prefix = os.path.join(self._forensic_dir,
+                              trace_filename_stem(outcome, self._trace_tag, self._trace_idx))
         write_battle_record(prefix, rec, battle, self._forensic_step)
         # Bridge battles also have a full-information reconstruction record (seed + both
         # teams + command log, captured at the bridge layer). Registering this trace's

@@ -142,6 +142,12 @@ that battle (poke-env `save_replay` over the accumulated protocol stream). The f
 prober-only; the HTML lets a human just open the game in a browser (no checkout, no prober) — the
 only watchable replay for *non-stall* eval battles (stall games still get their own `stalls/*.html`).
 The `s<shard>_` prefix namespaces the files so concurrent shards of one opponent never collide.
+The filename stem is built by the single helper **`trace_filename_stem(outcome, trace_tag, idx)`**
+(`<outcome>_<trace_tag><idx:03d>`) — the **one source of the naming contract** the prober's
+`discovery._FNAME_RE` must invert. (When sharding added the `s<shard>_` infix, the prober's regex
+didn't follow → every sharded trace parsed as outcome `"?"` and the **whole prober went blind**;
+`eval_callback_test.test_trace_naming_contract` now pins that `discovery` parses exactly what
+`trace_filename_stem` emits, so the producer↔consumer pair can't silently drift again.)
 On `--use-showdown-bridge` runs each trace also gets a fourth sibling,
 `…_NNN_reconstruction.json` — the battle's **full-information reconstruction record** (resolved
 PRNG seed + both packed teams + the raw command log), captured at the bridge layer and joined to
