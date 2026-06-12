@@ -38,7 +38,10 @@ the single source of truth — change the analysis once, both surfaces follow.
   re-run a trace through is chosen **per battle** by `resolve_model_for_step`.
   Each battle's `*_summary.json` / `*_states.npz` has a sibling
   `*_replay.html` (`write_battle_record`) — a browser-watchable Showdown replay
-  the prober ignores but a human can open directly.
+  the prober ignores but a human can open directly. Bridge-eval traces add a
+  fourth sibling, `*_reconstruction.json` — the battle's full-information
+  replay/re-roll record (`utils/bridge/reconstruction.py`) — which the prober
+  also ignores today (a future counterfactual probe consumes it).
 - **`app.py`** — `ProberApp(Gen3App)`: trace `Tree` | invocation `ListView` |
   four analysis `DataTable`s in a `TabbedContent`.
 

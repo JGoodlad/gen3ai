@@ -38,6 +38,11 @@ class BattleRecorder:
         # (obs/logits/value the model saw). Populated only when record() gets them;
         # exported via states_arrays() for offline forensic replay.
         self._states: list[dict] = []
+        # The chosen action index per invocation (agent-side, always available).
+        # Exported in states_arrays() so an offline replay can re-advance the
+        # turn-history tracker with the exact actions the live player took —
+        # required for bit-faithful obs materialization (obs_materializer.py).
+        self._actions_taken: list[int] = []
         # Per-decision TD residual δ(t) = r(t) + γ·V(s_{t+1}) − V(s_t) — the SAME formula the
         # prober uses (main/prober/session.py::_td), the single source of truth. Computed live at
         # the NEXT record() (when complete_pending finalizes reward(t) and the current state
@@ -69,6 +74,7 @@ class BattleRecorder:
         legal = view.legal
         curr_ctx = self._build_ctx(battle, mask, legal)
         self._states.append(state or {})
+        self._actions_taken.append(int(action_idx))
 
         if self._pending_entry is not None:
             prev_ctx = self._tracker.pending_ctx
@@ -130,7 +136,10 @@ class BattleRecorder:
     def states_arrays(self) -> dict:
         """Stack the per-invocation raw model I/O into npz-ready arrays, aligned
         index-for-index with to_summary()['invocations']. Returns {} if states
-        were never captured. `has_state` flags which turns carry real data."""
+        were never captured. `has_state` flags which turns carry real data.
+        `actions` is the chosen action index per invocation (always real data —
+        it's the agent-side input an offline obs replay needs to re-advance the
+        turn-history tracker; see obs_materializer.py)."""
         if not any(self._states):
             return {}
         obs_dim = next(len(s["obs"]) for s in self._states if s)
@@ -147,7 +156,9 @@ class BattleRecorder:
             logits[i] = s["logits"]
             values[i] = s.get("value", 0.0)
             has_state[i] = 1
-        return {"obs": obs, "logits": logits, "values": values, "has_state": has_state}
+        actions = np.asarray(self._actions_taken, dtype=np.int16)
+        return {"obs": obs, "logits": logits, "values": values, "has_state": has_state,
+                "actions": actions}
 
     def finalize(self, battle) -> None:
         """Complete the last pending invocation at battle end."""

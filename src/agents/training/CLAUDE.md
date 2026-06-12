@@ -135,12 +135,22 @@ unit count, not opponent count). The whole mechanism lives in the **`eval_shardi
 snapshot is promoted by copy, not re-saved). Forensic traces land under
 `<run_dir>/eval_traces/step_<N>/<opponent>/` as a per-captured-battle triple (`write_battle_record`,
 `battle_recorder.py`): `<outcome>_s<shard>_NNN_summary.json` (the human-readable per-decision dump) +
-`<outcome>_s<shard>_NNN_states.npz` (raw obs/logits/values for the prober) +
+`<outcome>_s<shard>_NNN_states.npz` (raw obs/logits/values **+ the chosen `actions`** for the prober
+and offline obs replay) +
 **`<outcome>_s<shard>_NNN_replay.html`** — a self-contained, **browser-watchable** Showdown replay of
 that battle (poke-env `save_replay` over the accumulated protocol stream). The first two are
 prober-only; the HTML lets a human just open the game in a browser (no checkout, no prober) — the
 only watchable replay for *non-stall* eval battles (stall games still get their own `stalls/*.html`).
-The `s<shard>_` prefix namespaces the files so concurrent shards of one opponent never collide. All
+The `s<shard>_` prefix namespaces the files so concurrent shards of one opponent never collide.
+On `--use-showdown-bridge` runs each trace also gets a fourth sibling,
+`…_NNN_reconstruction.json` — the battle's **full-information reconstruction record** (resolved
+PRNG seed + both packed teams + the raw command log), captured at the bridge layer and joined to
+the trace by battle tag (`utils/bridge/reconstruction.py`). It makes the battle fully replayable
+and turn-re-rollable offline (`replay_battle` / `reroll_turn`), and
+`agents.training.obs_materializer` can rebuild the trainee's one-sided obs from it bit-for-bit
+(guarded by `obs_roundtrip_fuzz_test.py`). It is referee-view data in a **separate artifact** on
+purpose — nothing in the obs/training path reads it (the one-sided/omniscient wall; see the bridge
+README). Websocket eval simply doesn't produce it (degrades gracefully). All
 three sit alongside a per-cycle
 **`eval_manifest.json`** (`write_eval_manifest`) recording exactly which model produced them
 — `num_timesteps`, `git_hash` + `arch_signature` (read from the run's `metadata.json` /

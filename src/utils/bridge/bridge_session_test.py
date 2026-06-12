@@ -67,3 +67,24 @@ def test_attach_intercepts_battle_start_and_stashes_session():
         assert env.agent1.battle_against == session._battle_against
     finally:
         env.close()
+
+
+def test_dispatch_routes_recon_to_single_slot_not_clients():
+    """A ``__RECON__`` frame (full-information record) must never be fed to a
+    player client — it lands in the single-slot ``last_recon`` stash. A
+    regression here either crashes the reader (parsed as a side chunk) or, far
+    worse, leaks referee-view data into a player's one-sided message stream."""
+    env = _bridge_env(4)
+    try:
+        session = env._bridge_session
+        session._tag = "battle-gen3ou-recontest"
+
+        def _boom(*a, **k):  # any feed attempt = the wall was breached
+            raise AssertionError("__RECON__ frame was fed to a player client")
+
+        session.c1.feed = _boom
+        session.c2.feed = _boom
+        session._dispatch("__RECON__ eyJ2IjogMX0=")  # b64 of {"v": 1}
+        assert session.last_recon == ("battle-gen3ou-recontest", "eyJ2IjogMX0=")
+    finally:
+        env.close()

@@ -163,6 +163,9 @@ class BridgeSession:
         # battle's ``__END__`` before sending the next START. A slow child (descheduled under load,
         # node GC) shows up here — the prime suspect for an outlier-slow episode. Cheap to record.
         self._last_end_wait_s: float = 0.0
+        # Latest battle's reconstruction record as (battle_tag, base64-json), overwritten every
+        # episode. Single-slot + undecoded on purpose — see _dispatch's __RECON__ branch.
+        self.last_recon: Optional[tuple] = None
 
     def attach(self) -> "BridgeSession":
         self.c1 = self._make_client(self.a1, "p1")
@@ -376,6 +379,15 @@ class BridgeSession:
         if text.startswith("__ERR__"):
             msg = base64.b64decode(text[len("__ERR__ ") :]).decode("utf-8")
             raise RuntimeError(f"local_sim_bridge error: {msg}")
+        if text.startswith("__RECON__"):
+            # Full-information reconstruction record (referee view) — NEVER fed to a
+            # player/client. Training persists no forensic traces, so this is kept as
+            # a SINGLE-SLOT raw stash (latest episode only, ~tens of KB, undecoded):
+            # routing it into the bounded reconstruction registry instead would pin
+            # up to 64 full records in every env worker for nothing. Tools that want
+            # a training episode's record can read (tag, b64) and decode on demand.
+            self.last_recon = (self._tag, text[len("__RECON__ "):])
+            return
         side, b64 = text.split(" ", 1)
         chunk = base64.b64decode(b64).decode("utf-8")
         client = self.c1 if side == "p1" else self.c2

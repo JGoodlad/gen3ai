@@ -26,6 +26,7 @@ from agents.opponents import (
 )
 from agents.training.reward_tracker import RewardTrackingMixin
 from agents.training.battle_recorder import BattleRecorder, write_battle_record
+from utils.bridge.reconstruction import register_trace_prefix
 from main.launcher.ipc import send_metrics, send_event
 from utils.git import get_git_hash
 
@@ -891,6 +892,14 @@ class EvalRLPlayer(RewardTrackingMixin, RLPlayer):
         # fresh player with _trace_idx restarting at 0, all writing this one dir) never collide.
         prefix = os.path.join(self._forensic_dir, f"{outcome}_{self._trace_tag}{self._trace_idx:03d}")
         write_battle_record(prefix, rec, battle, self._forensic_step)
+        # Bridge battles also have a full-information reconstruction record (seed + both
+        # teams + command log, captured at the bridge layer). Registering this trace's
+        # prefix lets the registry join the two and persist it as the SEPARATE
+        # `<prefix>_reconstruction.json` artifact — deliberately not part of the
+        # summary/states the obs pipeline reads (the one-sided/omniscient wall).
+        # Websocket eval never produces a record, so the registration just evicts.
+        register_trace_prefix(battle.battle_tag, prefix,
+                              extra={"trainee_username": self.username})
         if outcome == "win":
             self._wins_kept += 1
         else:

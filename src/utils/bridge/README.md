@@ -93,6 +93,46 @@ doesn't need the inversion-of-control machinery: the eval worker's `_play_unit` 
 `evaluate_model_random`. So `--use-showdown-bridge` makes a whole run — training **and** eval —
 need no Showdown server.
 
+### Battle reconstruction (capture + offline replay / re-roll)
+
+Every bridge battle is **fully reconstructable**. At battle end the child emits a
+`__RECON__ <b64 json>` frame (just before `__END__`) carrying the full-information
+reconstruction record: the **resolved** PRNG seed (the sim mints a fresh random one per battle
+when none is passed — eval is reproducible-after-the-fact without pinning a seed), both packed
+teams, the sim's own `inputLog`, and the raw `commands` the child processed. The raw command log
+is kept *in addition to* `inputLog` because the sim logs only **committed** choices — a refused
+`[Unavailable choice]` maybe-trapped probe never reaches `inputLog`, but its `|error|` +
+re-request round *is* part of the protocol the agent saw, and replaying the raw commands
+regenerates it exactly.
+
+`reconstruction.py` owns the layer:
+
+- **Capture join** — the `__RECON__` frame arrives *after* the `|win|` chunks (when the eval
+  forensic trace is already written), so the two sides meet in a bounded registry keyed by battle
+  tag: the demux calls `offer_record`, the forensic writer calls `register_trace_prefix`, and
+  whichever lands second writes `<prefix>_reconstruction.json` next to the trace. (`BridgeSession`
+  instead keeps a single-slot `last_recon` — training persists no traces.)
+- **`replay_battle(record)`** — re-runs the battle verbatim (`replay_driver.js`, batch
+  JSON-over-stdio, no server) and returns the regenerated per-side protocol chunks +
+  the final omniscient outcome. Byte-identical to the live streams modulo `|t:|` wall-clock
+  lines (state/obs-invisible; in poke-env's `MESSAGES_TO_IGNORE`).
+- **`reroll_turn(record, t, seeds=…)`** — reconstructs to the start of turn `t`, then resolves
+  that one turn under each fresh seed by swapping `battle.prng` in place (every die routes
+  through it). Each side's start-of-turn action source is independently `recorded` / `random` /
+  an explicit choice string; mid-turn follow-ups in re-rolled timelines (forced switches that the
+  original timeline may not contain) use a configurable `followup` policy. ~10–30 ms per re-roll
+  (full prefix rebuild per seed; a `State.serializeBattle` clone would be ~2–3× cheaper if ever
+  needed).
+
+**The one-sided / omniscient wall (hard rule).** The record holds the opponent's team and the
+dice — referee-view data. It exists only at this bridge layer and in the separate
+`*_reconstruction.json` artifact; the obs pipeline never reads it. Offline obs come from
+`agents.training.obs_materializer`, which is fed **only the per-side chunks** these primitives
+regenerate and replays them through the real encoder (rebuilding tracker state). The round-trip
+guarantee — materialized obs == the live `states.npz` rows **bit-for-bit** — is enforced by
+`agents/training/obs_roundtrip_fuzz_test.py`; replay/re-roll invariants by
+`reconstruction_fuzz_test.py`; the registry by `reconstruction_test.py`.
+
 ## Why use a Bridge?
 - **Serverless**: No need to start or manage a Pokémon Showdown server process.
 - **No contention**: Each call/battle is fully isolated — no shared server lifecycle, no

@@ -111,8 +111,10 @@ needed** (`utils/bridge/local_battle_runner.py`):
 export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 src/agents/action/fuzz_test.py [n_battles]
 export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 src/agents/training/poke_env_gaps/transition_fuzz_test.py [n_battles]
 export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 src/agents/battle/event_log_fuzz_test.py [n_battles]
-# also bridge-backed (no server): poke_env_gaps/{abilities,item_consumption,move_outcome,snatch,incoming_damage}_fuzz_test.py
-#                                  and training/hidden_power_tracker_fuzz_test.py
+# also bridge-backed (no server): poke_env_gaps/{abilities,item_consumption,move_outcome,snatch,incoming_damage}_fuzz_test.py,
+#                                  training/hidden_power_tracker_fuzz_test.py,
+#                                  utils/bridge/reconstruction_fuzz_test.py (battle replay/re-roll invariants),
+#                                  and training/obs_roundtrip_fuzz_test.py (offline obs == live obs, bit-for-bit)
 ```
 
 ### E2E tests (`*_e2e_test.py` / `*_fuzz_e2e_test.py`, require a live server)

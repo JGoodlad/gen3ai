@@ -217,6 +217,8 @@ async def _drive_default(packed1: str, packed2: str, seed):
         if text == "__END__":
             break
         assert not text.startswith("__ERR__"), base64.b64decode(text[8:]).decode()
+        if text.startswith("__RECON__"):
+            continue  # the battle's reconstruction record — not a side chunk
         side, b64 = text.split(" ", 1)
         chunk = base64.b64decode(b64).decode("utf-8")
         by_side[side].append(chunk)

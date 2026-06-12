@@ -25,12 +25,30 @@
 // stdout (newline-delimited frames):
 //   p1 <base64(chunk)>   one protocol chunk p1 saw (may be multi-line)
 //   p2 <base64(chunk)>   one protocol chunk p2 saw
+//   __RECON__ <base64(json)>  the battle's reconstruction record (see below),
+//                             emitted once per battle, just before __END__
 //   __END__              battle over, both side streams closed
 //   __ERR__ <base64(msg)>  fatal error
 //
 // Base64 per chunk because protocol text contains \n, |, and arbitrary JSON in
 // |request| — one stdout line == exactly one side-tagged chunk, unambiguous to
 // demux on the Python side.
+//
+// Reconstruction record (__RECON__): everything needed to rebuild the battle
+// bit-for-bit offline — {v, format_id, prng_seed, input_log, commands}.
+//   input_log = battle.inputLog: the sim's own normalized record (>start with the
+//     RESOLVED seed, >player with both packed teams, every COMMITTED choice).
+//     State-faithful: replaying it reproduces every board state.
+//   commands  = the raw choice lines this child processed, in order, INCLUDING
+//     attempts the sim refused (an "[Unavailable choice]" maybe-trapped probe is
+//     refused, never committed, so it is absent from input_log — but its |error|
+//     + re-request round IS part of the per-side protocol the agent saw).
+//     Protocol-faithful: replaying >start + >player from input_log, then these
+//     commands, regenerates BYTE-IDENTICAL per-side streams (verified).
+// This is FULL-INFORMATION (referee-view) data: both teams + the seed. It must
+// only ever be persisted as a separate artifact at the bridge layer — never fed
+// into the one-sided observation pipeline (the project's hard one-sided/omniscient
+// wall; see utils/bridge/reconstruction.py).
 'use strict';
 
 const path = require('path');
@@ -38,6 +56,10 @@ const psPath = path.resolve(__dirname, '../../../deps/pokemon-showdown');
 const { BattleStream, getPlayerStreams } = require(path.join(psPath, 'dist/sim/battle-stream'));
 
 let streams = null;
+let rawStream = null;     // the underlying BattleStream — for inputLog/prngSeed at end
+let formatId = null;
+let cmdLog = [];          // raw [side, choice] / ['forcelose', side] lines, in processing order
+let reconEmitted = false;
 let endedSides = 0;
 // Sticky: once any START asks for it, the process survives battle ends and waits for
 // the next START instead of exiting.
@@ -55,6 +77,26 @@ function fail(msg) {
   out('__ERR__ ' + Buffer.from(String(msg), 'utf8').toString('base64'));
 }
 
+// Emit the battle's reconstruction record (once). Best-effort: a capture failure
+// must never cost the battle itself, so any error is swallowed silently — the
+// Python side degrades gracefully when no __RECON__ arrives.
+function emitRecon() {
+  if (reconEmitted) return;
+  reconEmitted = true;
+  try {
+    const b = rawStream && rawStream.battle;
+    if (!b || !b.inputLog) return;
+    const record = {
+      v: 1,
+      format_id: formatId,
+      prng_seed: b.prngSeed,
+      input_log: b.inputLog,
+      commands: cmdLog,
+    };
+    out('__RECON__ ' + Buffer.from(JSON.stringify(record), 'utf8').toString('base64'));
+  } catch (e) { /* never break the battle for the record */ }
+}
+
 function pumpSide(side) {
   (async () => {
     try {
@@ -66,11 +108,13 @@ function pumpSide(side) {
     } finally {
       endedSides += 1;
       if (endedSides >= 2) {
+        emitRecon();
         out('__END__');
         if (persistent) {
           // Reset for the next battle on the SAME process; the next START rebuilds
           // a fresh BattleStream. (A fresh sim per START → no cross-battle state.)
           streams = null;
+          rawStream = null;
           endedSides = 0;
         } else {
           process.exit(0);
@@ -85,6 +129,10 @@ function handleStart(json) {
   if (msg.persistent) persistent = true;
   const stream = new BattleStream();
   streams = getPlayerStreams(stream);
+  rawStream = stream;
+  formatId = msg.formatid;
+  cmdLog = [];
+  reconEmitted = false;
   pumpSide('p1');
   pumpSide('p2');
 
@@ -109,11 +157,17 @@ function handleLine(line) {
       const s2 = rest.indexOf(' ');
       const side = s2 === -1 ? rest : rest.slice(0, s2);
       const choice = s2 === -1 ? '' : rest.slice(s2 + 1);
-      if (streams && streams[side]) streams[side].write(choice);
+      if (streams && streams[side]) {
+        cmdLog.push([side, choice]);
+        streams[side].write(choice);
+      }
       break;
     }
     case 'FORCELOSE':
-      if (streams) streams.omniscient.write(`>forcelose ${rest.trim()}`);
+      if (streams) {
+        cmdLog.push(['forcelose', rest.trim()]);
+        streams.omniscient.write(`>forcelose ${rest.trim()}`);
+      }
       break;
     case 'END':
       process.exit(0);

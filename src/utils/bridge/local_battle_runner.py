@@ -32,6 +32,7 @@ from poke_env.player.player import Player
 from poke_env.teambuilder.teambuilder import Teambuilder
 
 from utils.bridge.battle_stream_client import BattleStreamClient
+from utils.bridge import reconstruction
 
 _BRIDGE_JS = str(Path(__file__).parent / "local_sim_bridge.js")
 _PER_BATTLE_TIMEOUT = 180.0  # generous; a fast in-process battle is seconds
@@ -206,6 +207,13 @@ class _LocalBattleRunner:
             if text.startswith("__ERR__"):
                 msg = base64.b64decode(text[len("__ERR__ "):]).decode("utf-8")
                 raise RuntimeError(f"local_sim_bridge error: {msg}")
+            if text.startswith("__RECON__"):
+                # The battle's full-information reconstruction record (referee view:
+                # seed + both teams + command log). It goes ONLY to the bridge-layer
+                # registry — never to a player/client — keyed by the battle tag so
+                # the forensic trace writer can join it (see reconstruction.py).
+                self._offer_recon(tag, text)
+                continue
             side, b64 = text.split(" ", 1)
             chunk = base64.b64decode(b64).decode("utf-8")
             client = self.c1 if side == "p1" else self.c2
@@ -219,6 +227,17 @@ class _LocalBattleRunner:
             ):
                 started = True
                 started_cb()
+
+    @staticmethod
+    def _offer_recon(tag: str, text: str) -> None:
+        """Decode a ``__RECON__`` frame and offer it to the reconstruction registry.
+        Best-effort: a malformed record must never cost the battle."""
+        try:
+            raw = json.loads(base64.b64decode(text[len("__RECON__ "):]).decode("utf-8"))
+            reconstruction.offer_record(tag, raw)
+        except Exception as e:  # noqa: BLE001 — capture is telemetry, the battle is not
+            import sys
+            sys.stderr.write(f"[bridge] failed to capture reconstruction for {tag}: {e}\n")
 
     @staticmethod
     def _frame(tag: str, side: str, chunk: str, inited: dict) -> str:
