@@ -478,14 +478,33 @@ def load_foreign_opponent(
     return InstrumentedMaskablePPO.load(zip_path, env=None, device=device), foreign_version
 
 
-def current_model_version(mappings) -> ModelVersion:
-    """Build a ``ModelVersion`` reflecting the CURRENT code's architecture for ``mappings``.
+def current_model_version(
+    mappings,
+    *,
+    attend_unrevealed_opponents: bool = False,
+    opp_belief_cls_k: int = 0,
+    opp_belief_slots: bool = False,
+    value_active_readout: bool = False,
+    use_popart: bool = False,
+    opp_belief_aux_coef: float = 0.0,
+    vf_coef: float = 0.5,
+    reward_config=None,
+    value_tail_weight: float = 0.0,
+) -> ModelVersion:
+    """Build a ``ModelVersion`` reflecting the CURRENT RUN's architecture for ``mappings``.
 
     Single source for the ``from_layout_and_policy_kwargs`` construction otherwise
     repeated inline (train_rl_agent's self-play pool setup; the eval worker's sentinel
     version check). Returns the ``current_version`` to pass to ``load_model_snapshot`` /
     ``SnapshotPool`` so a stale-arch snapshot fails with a clean ``ModelVersionError``
     instead of loading mismatched weights.
+
+    **The architecture TOGGLES must be passed in.** They default off (the encoder's
+    ``get_features_extractor_kwargs`` carries no CLI toggles), but a run that enables any of them
+    (e.g. ``--opp-belief-aux-coef>0`` → ``opp_belief_slots``, ``--use-popart``,
+    ``--attend-unrevealed-opponents``) MUST thread its real values here — otherwise the gate compares
+    a toggle-OFF "current" version against the run's own toggle-ON snapshots and FATALs on every
+    pool/eval/distill load it is meant to protect.
 
     Imports are function-local to avoid an import cycle (state_encoder/features_extractor
     pull in model code).
@@ -495,12 +514,36 @@ def current_model_version(mappings) -> ModelVersion:
 
     enc = Gen3ObservationEncoder(mappings)
     ext_kwargs = enc.get_features_extractor_kwargs()
+    ext_kwargs["attend_unrevealed_opponents"] = attend_unrevealed_opponents
+    ext_kwargs["opp_belief_cls_k"] = opp_belief_cls_k
+    ext_kwargs["opp_belief_slots"] = opp_belief_slots
+    ext_kwargs["value_active_readout"] = value_active_readout
     policy_kwargs = {
         "features_extractor_class": Gen3FeaturesExtractor,
         "features_extractor_kwargs": ext_kwargs,
         "net_arch": NET_ARCH,
+        "use_popart": use_popart,
     }
-    return ModelVersion.from_layout_and_policy_kwargs(ext_kwargs["layout"], policy_kwargs)
+    return ModelVersion.from_layout_and_policy_kwargs(
+        ext_kwargs["layout"], policy_kwargs, vf_coef=vf_coef, reward_config=reward_config,
+        value_tail_weight=value_tail_weight, opp_belief_aux_coef=opp_belief_aux_coef,
+    )
+
+
+def arch_toggles_from_model(model) -> dict:
+    """Extract THIS run's architecture TOGGLES from a live model, JSON-serializable for a worker
+    subprocess's cfg. The eval/self-play workers run in separate processes and rebuild a
+    ``current_model_version`` to gate sentinel/foreign snapshot loads; without the run's real toggles
+    that gate is toggle-OFF and FATALs on the run's own belief-ON / popart / attend-unrevealed
+    snapshots. Pass this dict through the worker cfg and splat it into ``current_model_version``."""
+    fe = model.policy.features_extractor
+    return {
+        "attend_unrevealed_opponents": bool(getattr(fe, "attend_unrevealed_opponents", False)),
+        "opp_belief_cls_k": int(getattr(fe, "opp_belief_cls_k", 0)),
+        "opp_belief_slots": bool(getattr(fe, "opp_belief_slots", False)),
+        "value_active_readout": bool(getattr(fe, "value_active_readout", False)),
+        "use_popart": getattr(model.policy, "popart", None) is not None,
+    }
 
 
 def _resolve_paths(model_path: str) -> tuple[str, str]:

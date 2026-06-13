@@ -128,15 +128,19 @@ def main(argv=None):
     ap.add_argument("--ent-hi", type=float, default=1.1)
     args = ap.parse_args(argv)
     config = json.loads(args.config)
+    # The run's arch toggles ride in `config` but are NOT student-capacity params — pop them out
+    # BEFORE `config` reaches distill_snapshot (which does DistilledStudent(layout, **config)).
+    arch_toggles = config.pop("arch_toggles", {})
     tag = f"{args.step % 100000}"
 
     mappings = load_mappings()
     enc = Gen3ObservationEncoder(mappings)
     ek = enc.get_features_extractor_kwargs()
     layout = ek["layout"]
-    version = ModelVersion.from_layout_and_policy_kwargs(
-        layout, {"features_extractor_class": Gen3FeaturesExtractor,
-                 "features_extractor_kwargs": ek, "net_arch": NET_ARCH})
+    # Gate the teacher load against THIS run's arch (belief-ON / popart / …), threaded via config —
+    # else a belief-ON distill run FATALs on its own (belief-ON) pool teacher (check_compatible).
+    from agents.model.snapshot import current_model_version
+    version = current_model_version(mappings, **arch_toggles)
     teacher = load_model_snapshot(args.snapshot, env=None, current_version=version, device=args.device)
     teacher.policy.set_training_mode(False)
 

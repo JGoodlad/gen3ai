@@ -34,7 +34,7 @@ import time
 from stable_baselines3.common.callbacks import BaseCallback
 from poke_env.ps_client import LocalhostServerConfiguration
 
-from agents.model.snapshot import record_eval_results
+from agents.model.snapshot import record_eval_results, arch_toggles_from_model
 from agents.training.eval_callback import (
     _EVAL_CYCLE_TIMEOUT_SEC,
     _EVAL_SUBPROCESS_CONCURRENCY,
@@ -405,6 +405,10 @@ class SelfPlayCallback(_ForcedEvalMixin, BaseCallback):
             # Run's discount → the recorder's δ uses the real γ; live td-residual tail matches
             # the prober's offline _td at the same γ.
             "gamma": float(self.model.gamma),
+            # This run's arch toggles → the worker's current_model_version gates SENTINEL snapshots
+            # (loaded via check_compatible) against the RUN's real arch; without it a belief-ON / popart
+            # self-play run FATALs on its own sentinels (current_version would default toggle-OFF).
+            "arch_toggles": arch_toggles_from_model(self.model),
         }
         procs = spawn_eval_workers(run_dir, base_cfg, n_workers)
 
@@ -884,10 +888,13 @@ class SelfPlayCallback(_ForcedEvalMixin, BaseCallback):
         entry = next((e for e in self._pool._entries if e.step == step), None)
         if entry is None:
             return None
+        # Thread the run's arch toggles so the worker's teacher-load version gate matches the run's
+        # real arch (a belief-ON / popart distill run would FATAL on its own belief-ON teacher else).
+        worker_config = {**config, "arch_toggles": arch_toggles_from_model(self.model)}
         cmd = [sys.executable, "-m", "agents.training.distill.worker",
                "--snapshot", str(entry.path), "--step", str(step),
                "--distilled-dir", str(self._pool.distilled_dir),
-               "--config", _json.dumps(config), "--device", self._distill_device]
+               "--config", _json.dumps(worker_config), "--device", self._distill_device]
         env = dict(os.environ)
         src = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
         env["PYTHONPATH"] = src + (":" + env["PYTHONPATH"] if env.get("PYTHONPATH") else "")

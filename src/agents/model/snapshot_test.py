@@ -1390,3 +1390,50 @@ def test_record_checkpoint_eval_stamp_is_point_in_time(version):
     assert sidecar_a["latest_eval"]["win_rate_vs_bots"] == pytest.approx(0.50)
     # The canonical top-level block still tracks the newest eval.
     assert meta["latest_eval"]["step"] == 98_000_000
+
+
+def test_current_model_version_threads_belief_toggle(mappings):
+    """The eval/self-play worker gate must reflect the RUN's belief toggle, else a belief-ON run
+    FATALs on its own sentinels. current_model_version(opp_belief_slots=True) must say True."""
+    from agents.model.snapshot import current_model_version
+    assert current_model_version(mappings).opp_belief_slots is False          # default off
+    on = current_model_version(mappings, opp_belief_slots=True, attend_unrevealed_opponents=True,
+                               opp_belief_aux_coef=0.2)
+    assert on.opp_belief_slots is True
+    assert on.attend_unrevealed_opponents is True
+    # a belief-ON "current" version is compatible with a belief-ON saved version (no FATAL)…
+    on.check_compatible(on)
+    # …and a toggle-OFF current version is NOT (the bug this fix prevents)
+    off = current_model_version(mappings)
+    import pytest as _pytest
+    with _pytest.raises(Exception):
+        off.check_compatible(on)
+
+
+def test_arch_toggles_from_model_extracts_flags():
+    """arch_toggles_from_model reads the live model's toggles for the worker cfg."""
+    from agents.model.snapshot import arch_toggles_from_model
+    import types
+    fe = types.SimpleNamespace(attend_unrevealed_opponents=True, opp_belief_cls_k=0,
+                               opp_belief_slots=True, value_active_readout=False)
+    model = types.SimpleNamespace(policy=types.SimpleNamespace(features_extractor=fe, popart=object()))
+    t = arch_toggles_from_model(model)
+    assert t["opp_belief_slots"] is True and t["attend_unrevealed_opponents"] is True
+    assert t["use_popart"] is True and t["value_active_readout"] is False
+
+
+def test_belief_works_for_selfplay_and_stable_play(mappings):
+    """The belief arch must interoperate in BOTH opponent modes:
+    - SELF-PLAY: a belief-ON snapshot (the trainee's own sentinel) loads against a belief-ON current
+      version (check_compatible — the full gate, which DOES compare opp_belief_slots).
+    - STABLE PLAY: a belief-OFF FOREIGN opponent (from another run) loads against a belief-ON run —
+      the opponent gate (check_opponent_compatible) keys ONLY on arch_signature (the obs family), and
+      belief does NOT bump arch_signature, so mixed belief settings interoperate either direction."""
+    from agents.model.snapshot import current_model_version
+    belief_on = current_model_version(mappings, opp_belief_slots=True, attend_unrevealed_opponents=True)
+    belief_off = current_model_version(mappings)
+    belief_on.check_compatible(belief_on)                 # self-play: ON trainee vs its ON sentinels
+    assert belief_on.arch_signature == belief_off.arch_signature   # belief does NOT change the obs family
+    assert belief_on.total_dim == belief_off.total_dim             # obs["observation"] interface unchanged
+    belief_on.check_opponent_compatible(belief_off)      # stable: a belief-OFF opponent in a belief-ON run
+    belief_off.check_opponent_compatible(belief_on)      # …and a belief-ON opponent in a belief-OFF run

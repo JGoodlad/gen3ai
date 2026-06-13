@@ -94,7 +94,17 @@ from typing import Any, Dict, List
 #   stall tilt as the single acknowledged BIAS. Same resume-immutable VALUE-meaning treatment
 #   (check_reward_config), EXCLUDED from check_compatible, NO ARCH_SIGNATURE bump. Old configs migrate to
 #   stall_pbrs=False (== the prior behavior).
-MODEL_CONFIG_VERSION = 15
+#
+# v16: added `opp_belief_slots` (the hidden-opponent BELIEF-AUX arch toggle) + `opp_belief_aux_coef`
+#   (its training-only loss weight). opp_belief_slots is STRUCTURAL like opp_belief_cls_k / use_popart:
+#   ON fills the un-revealed opp team slots with distinct learned unknown-mon tokens (refined in-lineup
+#   by the transformer) and builds a BeliefHead emitting species/moves aux logits — a state_dict change,
+#   so it is gated in check_compatible() with a dedicated bool compare. Requires attend_unrevealed_opponents
+#   (enforced at extractor build). OFF reproduces the baseline arch byte-for-byte → NO ARCH_SIGNATURE bump.
+#   opp_belief_aux_coef is a TRAINING-ONLY coefficient (like ent_coef): it scales the aux loss, affects no
+#   forward pass, so it is recorded for provenance but NOT version-locked (NOT in check_compatible / any
+#   check_*; a resume may change it freely). Old configs migrate to opp_belief_slots=False / coef=0.0.
+MODEL_CONFIG_VERSION = 16
 
 # Change this when the neural architecture changes structurally in a way that makes
 # weights from a different signature incompatible (e.g. adding LSTM, replacing attention).
@@ -414,6 +424,17 @@ class ModelVersion:
     # Defaulted so weight-shape-only callers need not supply it.
     self_ko_hp_penalty: float = 0.0
 
+    # v16 STRUCTURAL toggle (weight-shape via the BeliefHead + unknown-slot params): the in-place
+    # hidden-opponent BELIEF AUX. ON fills un-revealed opp slots with distinct learned unknown-mon
+    # tokens + builds a BeliefHead (species/moves aux logits) — a state_dict change, gated in
+    # check_compatible like opp_belief_cls_k. OFF = baseline arch byte-for-byte (NO ARCH_SIGNATURE
+    # bump). Requires attend_unrevealed_opponents (enforced at extractor build).
+    opp_belief_slots: bool = False
+    # v16 TRAINING-ONLY loss coefficient (like ent_coef — NOT weight-shape, NOT a resume FATAL): the
+    # aux-loss weight on the belief CE+BCE. Affects only the loss magnitude, not the forward, so it is
+    # recorded for provenance but EXCLUDED from check_compatible AND has no dedicated check_*. 0.0 = off.
+    opp_belief_aux_coef: float = 0.0
+
     @classmethod
     def from_layout_and_policy_kwargs(
         cls,
@@ -422,6 +443,7 @@ class ModelVersion:
         vf_coef: float = 0.5,
         reward_config=None,
         value_tail_weight: float = 0.0,
+        opp_belief_aux_coef: float = 0.0,
     ) -> ModelVersion:
         from agents.model.features_extractor import (
             ROLE_TOKEN_SIZE,
@@ -477,7 +499,11 @@ class ModelVersion:
             value_active_readout=bool(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("value_active_readout", False)
             ),
+            opp_belief_slots=bool(
+                policy_kwargs.get("features_extractor_kwargs", {}).get("opp_belief_slots", False)
+            ),
             value_tail_weight=float(value_tail_weight),
+            opp_belief_aux_coef=float(opp_belief_aux_coef),
         )
 
     def to_json(self) -> str:
@@ -577,6 +603,17 @@ class ModelVersion:
                 "Routing the active-mon readout into the value head widens the value projection, so it "
                 "changes the state_dict and cannot be toggled on an existing model.\n"
                 "Resume with the matching --value-active-readout setting, or start a fresh training run."
+            )
+
+        # Structural toggle — ON adds the BeliefHead + per-slot unknown-mon embeddings to the
+        # state_dict (the in-place hidden-opponent belief). Like use_popart it gates EVERY load; the
+        # training-only opp_belief_aux_coef is deliberately NOT checked (it touches no forward pass).
+        if self.opp_belief_slots != saved.opp_belief_slots:
+            raise ModelVersionError(
+                f"opp_belief_slots mismatch: saved={saved.opp_belief_slots}, current={self.opp_belief_slots}.\n"
+                "The hidden-opponent belief-aux module (learned unknown-mon slot tokens + BeliefHead) "
+                "changes the state_dict, so it cannot be toggled on an existing model.\n"
+                "Resume with the matching --opp-belief-aux-coef setting, or start a fresh training run."
             )
 
     def check_opponent_compatible(self, foreign: "ModelVersion") -> None:
@@ -770,4 +807,10 @@ def _migrate_config(data: dict) -> dict:
         # v15: added the `stall_pbrs` companion switch (off = prior behavior).
         data.setdefault("stall_pbrs", False)
         data["config_version"] = 15
+    if version < 16:
+        # v16: added the in-place hidden-opponent belief-aux toggle (off) + its training-only loss
+        # coefficient (0.0). Old models had neither module nor aux loss.
+        data.setdefault("opp_belief_slots", False)
+        data.setdefault("opp_belief_aux_coef", 0.0)
+        data["config_version"] = 16
     return data

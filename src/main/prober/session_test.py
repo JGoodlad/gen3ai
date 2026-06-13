@@ -841,3 +841,36 @@ def test_cli_calibration_emits_json(tmp_path, monkeypatch):
     parsed = json.loads(buf.getvalue())
     assert parsed["gate"]["critic_mean_reducible_upper_bound"] > 0
     assert parsed["unattributed_resolution"]["n_unattributed_craters"] == 2
+
+
+# --- opponent-intent probe helpers + switch-vs-info (added with the finer falsifiers) ---
+from main.prober.session import _opp_move_id, _opp_status_move_label  # noqa: E402
+
+
+def test_opp_move_id_parsing():
+    assert _opp_move_id({"opp_action": "thunderbolt"}) == "thunderbolt"
+    assert _opp_move_id({"opp_action": "seismictoss → phazed"}) == "seismictoss"  # strip resolution suffix
+    assert _opp_move_id({"opp_action": "switched_to:skarmory"}) is None            # switch, not a move
+    assert _opp_move_id({"opp_action": "swampert_sent_in"}) is None                # forced replacement
+    assert _opp_move_id({"opp_action": "none"}) is None
+    assert _opp_move_id({"opp_action": None}) is None
+
+
+def test_opp_status_move_label():
+    assert _opp_status_move_label({"opp_action": "toxic"}) == 1.0        # status
+    assert _opp_status_move_label({"opp_action": "spikes"}) == 1.0       # hazard / status
+    assert _opp_status_move_label({"opp_action": "thunderbolt"}) == 0.0  # damaging attack
+    assert _opp_status_move_label({"opp_action": "seismictoss"}) == 0.0  # fixed-damage ATTACK, not status
+    assert _opp_status_move_label({"opp_action": "switched_to:x"}) is None
+
+
+def test_revealed_opp_count_handles_comma_inside_parens():
+    # 'salamence(64%,TOX)' is ONE mon — counting '(' is robust to the comma in the HP/status field.
+    inv = {"opp": {"species": "metagross",
+                   "bench": "salamence(64%,TOX), skarmory(faint), swampert(82%,TOX), blissey(52%)"}}
+    assert ProbeSession._revealed_opp_count(inv) == 5           # 1 active + 4 bench
+    assert ProbeSession._revealed_opp_count({"opp": {"species": "x", "bench": ""}}) == 1
+    assert ProbeSession._revealed_opp_count({"opp": {}}) is None
+    # never exceeds a full team of 6
+    big = {"opp": {"species": "x", "bench": "a(1%) b(1%) c(1%) d(1%) e(1%) f(1%) g(1%)"}}
+    assert ProbeSession._revealed_opp_count(big) == 6

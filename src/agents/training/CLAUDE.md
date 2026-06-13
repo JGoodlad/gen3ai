@@ -885,6 +885,54 @@ loss), and **not weight-shape** (no `ARCH_SIGNATURE` bump). Pairs with the v10 `
 value-head fix (`src/agents/model/CLAUDE.md`); validate both by watching `eval/td_resid_tail` fall.
 Tests: `instrumented_ppo_test.py` (β=0 == MSE, β>0 == the exact blend).
 
+## Hidden-opponent belief aux loss (`--opp-belief-aux-coef`)
+
+The training half of the in-place belief feature (model side in `src/agents/model/CLAUDE.md` →
+`BeliefSlots`/`BeliefHead`, v16). Off by default. Two pieces live here:
+- **Labels (`gen3_env.py`).** When `emit_belief_labels` (set from `--opp-belief-aux-coef>0`), `step()`
+  and `reset()` merge two PRIVILEGED int64 Dict-obs keys into the trainee obs: `belief_species[6]`
+  and `belief_moves[6,4]` — the opponent's still-hidden mons (species/move NUMs), sourced from
+  `battle2.team` (agent2's own full team). The believed-slot mask is read **straight from the obs
+  vector's per-slot `species_known`** (the SAME signal `BeliefSlots` keys its injection on) — single
+  source of truth, so the label's believed slots can never diverge from where the model fills
+  unknown-mon tokens. The pure builder is `agents.observation.belief_labels`. These keys are
+  **training-only** (eval/self-play/inference never declare/need them) and read ONLY by the loss — the
+  model forward reads only `obs["observation"]`, so the omniscient labels can't leak. **Fail-loud:**
+  `_belief_labels` raises if the obs `species_known` is not leading-contiguous (a broken encoder
+  packing invariant), rather than mis-slotting supervision.
+- **Loss (`instrumented_ppo.py` `_belief_aux_loss`).** `train()` reads the per-minibatch stashed
+  logits (`policy.features_extractor.last_belief_logits`, set by the `evaluate_actions` forward) + the
+  label keys, and folds `opp_belief_aux_coef·(species_CE + moves_weight·moves_BCE)` into the loss.
+  **Order-invariant (Hungarian / DETR):** the k believed-slot predictions are matched to the k hidden
+  mons by per-sample min-CE-cost assignment (k! perms enumerated, vectorised per distinct k), so the
+  anonymous slot tokens collectively cover the hidden SET rather than each chasing a reveal-shifting
+  fixed target. Perf: species log-softmax on the GATHERED believed slots (not full `[B,6,S]`); moves
+  BCE skipped when `moves_weight==0`; accuracy/P-R diagnostics under `no_grad`. **Fail-loud:** an
+  out-of-vocab label id (impossible on real Gen-3 nums) RAISES — corrupt num pipeline, not a silent
+  drop. Returns `None` on an empty (zero-believed) minibatch to avoid NaN-poisoning.
+- **Metrics (`train/belief_*`).** Headline `species_acc` + `species_acc_above_chance` (anchored to
+  `1/n_species`); `moves_precision`/`moves_recall` (the opaque BCE alone can't tell if the ~4 true
+  moves rank high); `coverage` (fraction of decisions with ≥1 believed slot) + `k_mean` (so acc is
+  interpretable — k=1 vs k=5 differ); `species_ce`, `moves_bce`, `aux_loss`. **Balance:** the
+  shared-trunk grad-balance probe (`grad_balance.py`) reports `grad/belief_share` (‖g_aux‖ / total
+  trunk pull) + `grad/belief_policy_cosine` — the principled "is the aux DOMINATING / fighting the
+  policy" signal. **Tuning is empirical:** start `--opp-belief-aux-coef` small (0.1–0.3) so
+  `belief_share` lands ~5–15%; confirm `species_acc_above_chance` climbs in warmup; if the policy
+  degrades (`train/approx_kl` spikes, `entropy` collapses, `explained_variance` drops) while
+  `belief_share` is high, the aux is fighting the actor → lower the coef. `--opp-belief-moves-weight`
+  balances CE vs BCE (species dominates at 1.0). Both coefs are **training-only** (like `ent_coef`,
+  NOT version-locked); the `opp_belief_slots` arch toggle they imply IS version-checked, and
+  `--opp-belief-aux-coef` is **read back from the saved config on a flagless resume** (so a launcher
+  restart preserves belief-ON instead of FATALing).
+- **Tests.** Unit: `belief_aux_loss_test.py` (Hungarian order-invariance + min-cost-matching, empty
+  guard, grad, fail-loud out-of-vocab, perf fast-path), `agents/observation/belief_labels_test.py`,
+  `agents/model/belief_slots_test.py` (incl. end-to-end gradient flow through the stash to the belief
+  params + shared trunk). **Fuzz** (real bridge battles, no server):
+  `poke_env_gaps/belief_labels_fuzz_test.py` validates the emitted labels against the ACTUAL opponent
+  team, the single-source mask invariant, the moves-⊆-moveset invariant, and the no-leak width check
+  over thousands of live decisions:
+  `python src/agents/training/poke_env_gaps/belief_labels_fuzz_test.py [n_battles]`.
+
 ## Process liveness guards (`watchdog.py`)
 
 Two daemon-thread watchdogs keep a hung/abandoned run from lingering:

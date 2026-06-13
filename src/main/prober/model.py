@@ -136,6 +136,23 @@ class ProbeModel:
         probs = torch.softmax(masked, 1)[0].detach().numpy()
         return probs, lg[0].detach().numpy()
 
+    def action_probs_batch(self, obs: np.ndarray, masks: np.ndarray) -> np.ndarray:
+        """Masked-softmax action probs for a BATCH of (obs, mask). Shape (N, 11).
+
+        One transformer forward over N decisions instead of N single-row passes — the
+        right call for offline sweeps (e.g. the human-agreement probe) where thousands of
+        saved/reconstructed states are scored against a frozen policy."""
+        import torch
+
+        ot = torch.as_tensor(np.asarray(obs, dtype=np.float32))
+        mt = torch.as_tensor(np.asarray(masks))
+        with torch.no_grad():
+            d = self._policy.get_distribution({"observation": ot, "action_mask": mt})
+            lg = d.distribution.logits
+            masked = torch.where(mt.bool(), lg, torch.full_like(lg, -1e8))
+            probs = torch.softmax(masked, 1).cpu().numpy()
+        return probs
+
     def value(self, obs: np.ndarray, mask: np.ndarray) -> float:
         """The critic's V(s) for a single obs/mask (dual-head policy value path)."""
         import torch

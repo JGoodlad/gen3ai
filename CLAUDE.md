@@ -112,6 +112,7 @@ export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable
 export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 src/agents/training/poke_env_gaps/transition_fuzz_test.py [n_battles]
 export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 src/agents/battle/event_log_fuzz_test.py [n_battles]
 # also bridge-backed (no server): poke_env_gaps/{abilities,item_consumption,move_outcome,snatch,incoming_damage}_fuzz_test.py,
+#                                  poke_env_gaps/belief_labels_fuzz_test.py (hidden-opp belief labels == actual opp team + no-leak),
 #                                  training/hidden_power_tracker_fuzz_test.py,
 #                                  utils/bridge/reconstruction_fuzz_test.py (battle replay/re-roll invariants),
 #                                  and training/obs_roundtrip_fuzz_test.py (offline obs == live obs, bit-for-bit)
@@ -559,8 +560,13 @@ from named constants; never hardcode indices.
 `Gen3FeaturesExtractor` in `src/agents/model/features_extractor.py` is decomposed into named
 phase `nn.Module`s chained by a thin orchestrator:
 
-**`ObsUnpack` → `PokemonEncoder` → `TeamTransformer` → `CLSPool` → `ProjectionAssembler`**, then
-**two** root projection heads (policy + value), each `pre_proj_norm` → `projection` → `ReLU`.
+**`ObsUnpack` → `PokemonEncoder` → `[BeliefSlots?]` → `TeamTransformer` → `CLSPool` → `[BeliefHead?]` →
+`ProjectionAssembler`**, then **two** root projection heads (policy + value), each
+`pre_proj_norm` → `projection` → `ReLU`. The two bracketed phases exist only under the
+hidden-opponent **belief aux** (`--opp-belief-aux-coef>0`): `BeliefSlots` fills the un-revealed
+opponent team slots with distinct learned unknown-mon tokens (refined in-lineup by the transformer so
+both heads attend over the imagined mons), and `BeliefHead` aux-supervises those refined tokens to
+predict each hidden mon's species + moves (privileged labels, training-only, never in the forward).
 `forward` returns a `(pi_features, vf_features)` tuple — the transformer body is shared, but the
 actor and critic read it through independent CLS pools and projection heads (the
 **value-dedicated CLS readout**, H4 / Option C). It must be paired with
@@ -594,7 +600,10 @@ crashes in seconds rather than hours.
 The architecture-constant single source of truth is the module-level constants
 (`ROLE_TOKEN_SIZE`, `PROJECTION_DIM`, `MOVE_NET_HIDDEN`, `ROLE_ENCODER_HIDDEN`,
 `ACTIVE_CTX_HIDDEN`) at the top of `features_extractor.py`; `ARCH_SIGNATURE` /
-`MODEL_CONFIG_VERSION` live in `model_version.py` (current: `gen3_incoming_crit_split_v1`).
+`MODEL_CONFIG_VERSION` live in `model_version.py` (current `ARCH_SIGNATURE`:
+`gen3_incoming_crit_split_v1`; current `MODEL_CONFIG_VERSION`: **16** — v16 added the in-place
+hidden-opponent belief-aux toggle `opp_belief_slots` + its training-only coefficient
+`opp_belief_aux_coef`, no `ARCH_SIGNATURE` bump since OFF is byte-identical).
 **The full versioning playbook — what to do when you change a dim vs add an optional feature vs
 make a structural change — is in `src/agents/model/CLAUDE.md`.**
 

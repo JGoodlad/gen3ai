@@ -15,7 +15,7 @@ from poke_env.player import RandomPlayer, SimpleHeuristicsPlayer
 from poke_env.ps_client import LocalhostServerConfiguration, AccountConfiguration
 
 from agents.inference.player import RLPlayer
-from agents.model.snapshot import record_eval_results
+from agents.model.snapshot import record_eval_results, arch_toggles_from_model
 from agents.training.fixed_opponent_pool import is_external
 from agents.training.artifact_retention import (
     prune_run_artifacts, KEEP_STALLS_DEFAULT, KEEP_CRASHES_DEFAULT,
@@ -1171,6 +1171,10 @@ class PerOpponentEvalCallback(_ForcedEvalMixin, BaseCallback):
             # Run's discount → the recorder's δ uses the real γ (not the 0.99 fallback), so the
             # live td-residual tail matches the prober's offline _td at the same γ.
             "gamma": float(self.model.gamma),
+            # This run's arch toggles → the worker's current_model_version gates sentinel/foreign
+            # snapshots against the RUN's real arch (belief-ON / popart / …), not a toggle-OFF default
+            # that would FATAL on the run's own belief-ON sentinels.
+            "arch_toggles": arch_toggles_from_model(self.model),
         }
         procs = spawn_eval_workers(run_dir, base_cfg, n_workers)
 

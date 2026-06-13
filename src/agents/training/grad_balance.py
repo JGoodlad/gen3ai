@@ -84,6 +84,7 @@ def grad_balance_metrics(
     policy_term: th.Tensor,
     value_term: th.Tensor,
     shared_params: Sequence[nn.Parameter],
+    aux_term: "th.Tensor | None" = None,
 ) -> Dict[str, float]:
     """Value-vs-policy gradient competition on the shared trunk.
 
@@ -117,13 +118,30 @@ def grad_balance_metrics(
     # convention as ``cosine``; note 0.0 here doubles as the "balanced" value, which is fine since
     # the no-signal case never occurs live.
     logratio = float(np.log10(n_vf / n_pi)) if n_pi > 0.0 and n_vf > 0.0 else 0.0
-    return {
+    out = {
         "grad/policy_norm_shared": n_pi,
         "grad/value_norm_shared": n_vf,
         "grad/value_share": (n_vf / total) if total > 0.0 else 0.0,
         "grad/value_policy_logratio": logratio,
         "grad/policy_value_cosine": cosine,
     }
+    # Belief-aux pull on the SAME shared trunk (the in-place belief tokens flow through the team
+    # transformer, so the aux writes the same params). ``belief_share`` = ‖g_aux‖ / (‖g_pi‖+‖g_vf‖+
+    # ‖g_aux‖) is the principled "is the aux DOMINATING the trunk" signal (watch it sit ~5-15%; a
+    # spike toward ~1 with a degrading policy = the aux is fighting the actor → lower
+    # ``opp_belief_aux_coef``). ``belief_policy_cosine`` <0 ⟹ the aux pulls the trunk against the
+    # policy. ``aux_term`` is the WEIGHTED contribution (opp_belief_aux_coef·aux) exactly as it enters
+    # the loss, so the share scales with the coef — that is what makes it the tuning target.
+    if aux_term is not None:
+        g_aux = _flat_grads(aux_term, shared_params)
+        n_aux = float(g_aux.norm())
+        total3 = n_pi + n_vf + n_aux
+        out["grad/belief_norm_shared"] = n_aux
+        out["grad/belief_share"] = (n_aux / total3) if total3 > 0.0 else 0.0
+        out["grad/belief_policy_cosine"] = (
+            float((g_aux @ g_pi).item() / (n_aux * n_pi)) if n_aux > 0.0 and n_pi > 0.0 else 0.0
+        )
+    return out
 
 
 def value_scale_metrics(returns, values) -> Dict[str, float]:

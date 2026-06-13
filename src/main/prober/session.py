@@ -139,6 +139,40 @@ def _opp_switch_label(ctx):
     return 1.0 if a.startswith("switched_to") else 0.0
 
 
+# Fixed-damage moves carry basePower 0 in the data but DO deal damage — they are attacks,
+# not status moves (Seismic Toss / Night Shade / etc.). Exclude them from the status proxy.
+_FIXED_DAMAGE_MOVES = frozenset({
+    "seismictoss", "nightshade", "psywave", "sonicboom", "dragonrage",
+    "superfang", "counter", "mirrorcoat", "endeavor", "bide",
+})
+
+
+def _opp_move_id(ctx):
+    """The opponent's MOVE id this turn (normalized), or None if the action was a switch /
+    forced replacement / none / unknown. Strips the '→ …' resolution suffix
+    (e.g. 'seismictoss → phazed')."""
+    a = ctx.get("opp_action")
+    if not a or a in ("none", "unknown") or a.startswith("switched_to") or "_sent_in" in a:
+        return None
+    mid = a.split("→")[0].strip()
+    return mid or None
+
+
+def _opp_status_move_label(ctx):
+    """Among turns the opponent used a MOVE: was it a STATUS (non-damaging) move vs an attack?
+    A finer opponent-anticipation target than 'will they switch' — tests whether the rep
+    predicts the opp's intent (set-up/utility vs damage). basePower-0 proxy, minus the
+    fixed-damage attacks. None on switch/forced/no-move turns or unknown move ids."""
+    from agents import gen3_data
+    mid = _opp_move_id(ctx)
+    if mid is None or mid in _FIXED_DAMAGE_MOVES:
+        return None if mid is None else 0.0
+    rec = gen3_data.moves.raw().get(mid)
+    if rec is None:
+        return None
+    return 1.0 if int(rec.get("basePower", 0)) == 0 else 0.0
+
+
 def _prov(ctx, attr):
     bel = ctx["belief"]
     return getattr(bel, attr, None) if bel is not None else None
@@ -303,6 +337,25 @@ _PROBE_TARGETS = {
         "caveat": ("no provided baseline (we give the model no opp-switch feature); voluntary switches "
                    "are ~10% of decisions, so read AUC, not accuracy. Pokémon is simultaneous-move, so "
                    "perfect prediction is impossible — but well-above-chance is the bar for 'it models the opp'."),
+    },
+    "opp_status_move": {
+        "task": "classification", "label": _opp_status_move_label, "group": lambda c: "all",
+        "provided": lambda c: None, "provided_name": None,
+        "tests": ("among turns the opponent uses a MOVE, does the representation anticipate a STATUS "
+                  "(set-up / utility) move vs an attack — a finer opponent-intent prediction than "
+                  "will-they-switch (the 'what will they do if they attack' dimension)."),
+        "how_to_read": ("rep AUC well above 0.5 = the model already anticipates the opp's move INTENT "
+                        "(status-vs-attack) → that dimension of an opponent-action head is redundant. "
+                        "rep AUC ≈ 0.5 = the rep does NOT anticipate move intent → an un-falsified "
+                        "'what will they do' sub-lever worth a targeted feature/head."),
+        "caveat": ("conditioned on move turns only (switches/forced excluded); status moves are a "
+                   "minority, so read AUC not accuracy. Simultaneous-move ⇒ perfect prediction "
+                   "impossible. ⚠️ LEAK: the obs already encodes each REVEALED opp move's category "
+                   "flag (moves.py status/phys/spec, in the opp-team block that flows into the trunk), "
+                   "so when a mon's only revealed moves are status this decodes a feature we ALREADY "
+                   "hand the model — the AUC measures input re-presentation, NOT anticipation. Use as "
+                   "a diagnostic, NOT as a falsifier (unlike opp_switches, which has no provided feature "
+                   "and predicts a genuinely-hidden simultaneous choice)."),
     },
 }
 
@@ -1340,6 +1393,123 @@ class ProbeSession:
             "tests": spec["tests"], "how_to_read": spec["how_to_read"], "caveat": spec["caveat"],
             "representation_probe": rep,
             "provided_feature": spec["provided_name"], "provided_feature_baseline": prov_report,
+        }
+
+    @staticmethod
+    def _revealed_opp_count(inv: dict) -> "int | None":
+        """How many opponent mons we'd SEEN by this decision = active + revealed bench
+        (the trace's opp.bench string, e.g. 'tyranitar(100%), salamence(50%)'). This is the
+        information-level signal for the switch-vs-uncertainty hypothesis."""
+        opp = inv.get("opp") or {}
+        if not opp.get("species"):
+            return None
+        # Each bench mon is rendered 'species(hp%[,STATUS])' — one '(' apiece. Counting '('
+        # is robust to the comma INSIDE the HP/status field (e.g. 'salamence(64%,TOX)'),
+        # which a naive comma-split over-counts.
+        bench = opp.get("bench") or ""
+        n_bench = bench.count("(")
+        return min(6, 1 + n_bench)
+
+    def switch_vs_info(self, *, step: "int | None" = None, opponent: "str | None" = None,
+                       outcome: "str | None" = None, max_battles: int = 400) -> dict:
+        """MODEL-FREE behavioural probe: does OUR policy switch more when it knows LESS about the
+        opponent? For every VOLUNTARY decision (phase != forced_switch) it records whether we
+        switched and how many opp mons we'd revealed (1–6), then reports the voluntary switch-rate
+        by revealed-count bucket + a correlation, plus the double-switch rate (we switch right after
+        the opp switched, and we switch on consecutive own decisions). Reads traces only — no model.
+
+        Hypothesis (user): low information ⇒ higher switch-rate (scout/pivot under uncertainty). A
+        rising switch-rate as revealed-count FALLS confirms the policy's switching is
+        information-sensitive; a flat curve says it is information-blind."""
+        battles = self.tree.all_battles()
+        if step is None:
+            steps = sorted({b.step for b in battles})
+            step = steps[-1] if steps else None
+        battles = [b for b in battles
+                   if (step is None or b.step == step)
+                   and (not opponent or b.opponent == opponent)
+                   and (not outcome or b.outcome == outcome)]
+
+        by_count: dict = {}          # revealed_count -> [n_decisions, n_switch]
+        n_vol = n_switch = 0
+        dbl_after_opp_switch = opp_switch_opportunities = 0
+        consec_switch = consec_pairs = 0
+        xs, ys = [], []              # (revealed_count, switched) for correlation
+        used = 0
+        for b in battles:
+            if used >= max_battles:
+                break
+            summary = self._summary(b)
+            invs = summary.get("invocations", [])
+            prev_switch = None
+            prev_opp_switched = None
+            saw = False
+            for inv in invs:
+                if inv.get("phase") == "forced_switch":
+                    prev_switch = None  # a forced replacement breaks the voluntary chain
+                    prev_opp_switched = None
+                    continue
+                chosen = inv.get("chosen") or ""
+                switched = 1 if str(chosen).startswith("switch") else 0
+                rc = self._revealed_opp_count(inv)
+                if rc is None:
+                    continue
+                saw = True
+                n_vol += 1
+                n_switch += switched
+                by_count.setdefault(rc, [0, 0])
+                by_count[rc][0] += 1
+                by_count[rc][1] += switched
+                xs.append(float(rc))
+                ys.append(float(switched))
+                # double-switch signals
+                if prev_opp_switched is not None:
+                    opp_switch_opportunities += 1 if prev_opp_switched else 0
+                    if prev_opp_switched and switched:
+                        dbl_after_opp_switch += 1
+                if prev_switch is not None:
+                    consec_pairs += 1
+                    if prev_switch and switched:
+                        consec_switch += 1
+                prev_switch = switched
+                a = ((inv.get("outcome") or {}).get("opp") or {}).get("action") or ""
+                prev_opp_switched = a.startswith("switched_to")
+            if saw:
+                used += 1
+
+        def _rate(pair):
+            return round(pair[1] / pair[0], 4) if pair[0] else None
+        corr = None
+        if len(xs) >= 30:
+            xv, yv = np.asarray(xs), np.asarray(ys)
+            if xv.std() > 0 and yv.std() > 0:
+                corr = round(float(np.corrcoef(xv, yv)[0, 1]), 4)
+        return {
+            "run_dir": self.run_dir, "step": step, "opponent": opponent, "outcome": outcome,
+            "n_voluntary_decisions": n_vol,
+            "overall_voluntary_switch_rate": round(n_switch / n_vol, 4) if n_vol else None,
+            "switch_rate_by_revealed_opp_count": {
+                str(k): {"n": by_count[k][0], "switch_rate": _rate(by_count[k])}
+                for k in sorted(by_count)
+            },
+            "corr_revealed_count_vs_switch": corr,
+            "hypothesis": ("user: switch MORE when we know LESS → expect switch_rate to FALL as "
+                           "revealed_opp_count RISES, i.e. a NEGATIVE correlation. ⚠️ The raw "
+                           "correlation here is a CONFOUNDED NULL: revealed_opp_count is monotone "
+                           "with game progress, so opportunity (mons-alive/trapped) and threat-info "
+                           "push switch-rate in OPPOSITE directions vs the count (a Simpson erasure). "
+                           "A ~0 corr does NOT mean information-blind — see double_switch below, where "
+                           "switch-rate jumps 2.5× the turn after the opp switches (the policy clearly "
+                           "DOES condition on opponent action). To test information-sensitivity "
+                           "properly, regress switch ~ revealed_count + turn + mons_alive (forced/"
+                           "trapped excluded) and read the PARTIAL coefficient, or condition on the "
+                           "incoming-P(KO) threat belief within fixed (turn, mons-alive) cells."),
+            "double_switch": {
+                "rate_after_opp_switch": _rate([opp_switch_opportunities, dbl_after_opp_switch]),
+                "n_after_opp_switch_opportunities": opp_switch_opportunities,
+                "consecutive_own_switch_rate": _rate([consec_pairs, consec_switch]),
+                "n_consecutive_decision_pairs": consec_pairs,
+            },
         }
 
     def history_saliency(self, *, step: "int | None" = None, opponent: "str | None" = None,

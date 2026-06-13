@@ -23,6 +23,7 @@ If upstream changes (e.g. after a `pip install -U sb3_contrib`):
 
 import hashlib
 import inspect
+import itertools
 
 import numpy as np
 import torch as th
@@ -96,6 +97,135 @@ class InstrumentedMaskablePPO(MaskablePPO):
     # of the worst value misses — see _value_loss_from_se.
     value_tail_weight: float = 0.0
 
+    # Set by train_rl_agent after construction (like value_tail_weight). The hidden-opponent belief
+    # aux-loss coefficient: opp_belief_aux_coef * (species_CE + moves_weight·moves_BCE) over the
+    # believed opp slots is added to each minibatch loss. 0.0 = OFF (no aux term, byte-identical loss).
+    # A TRAINING hparam (affects the loss only, never a forward pass) → NOT version-locked / NOT in
+    # check_compatible (treat like ent_coef; a frozen eval/pool/distill opponent never runs train()).
+    # Class default 0.0 so a smoke/test/frozen-opponent path that never sets it reads a safe no-op.
+    opp_belief_aux_coef: float = 0.0
+    # Relative weight of the moves multi-label BCE vs the species CE inside the aux term. Both are now
+    # on a per-believed-slot scale (CE per slot ≈ log S; BCE = mean over the M move classes per slot),
+    # so the species term dominates by default (moves is the weaker secondary signal); raise this to
+    # up-weight move prediction. Training-only, like the coef.
+    opp_belief_moves_weight: float = 1.0
+
+    @staticmethod
+    def _belief_aux_loss(bl, sp_labels, mv_labels, moves_weight: float = 1.0):
+        """Order-invariant (Hungarian / DETR-style) hidden-opponent belief aux loss.
+
+        bl = {"species": [B,6,S], "moves": [B,6,M]} (the stashed BeliefHead logits); sp_labels [B,6]
+        and mv_labels [B,6,4] are the privileged int labels (-1 = revealed/pad). The k believed-slot
+        predictions of each sample are matched to its k hidden-mon targets by **per-sample min-cost
+        assignment** (so the anonymous slot tokens collectively cover the hidden SET instead of each
+        chasing a reveal-shifting fixed slot↔mon target), then species cross-entropy + moves
+        multi-label BCE are taken over the matched pairs. The matching is exact: for k ≤ TEAM_SIZE the
+        k! permutations are enumerated and the min-CE-cost one chosen (vectorised per distinct k — no
+        per-sample Python loop, no scipy).
+
+        Perf: the species log-softmax is taken on the GATHERED believed slots ([n,k,S]) not the full
+        [B,6,S] (the non-believed slots are never read); the moves branch is skipped entirely when
+        moves_weight==0; accuracy + moves P/R are diagnostics computed under no_grad.
+
+        Returns (aux_tensor, metrics_dict) or None when nothing to score (belief off / labels absent /
+        a minibatch with zero believed slots — the None guard keeps an empty minibatch from
+        NaN-poisoning the loss). FAILS LOUD on an out-of-vocab label id (impossible on real data → a
+        corrupt embedding-num pipeline), rather than silently dropping it. Pure + static so it
+        unit-tests without a full PPO."""
+        if bl is None or sp_labels is None or mv_labels is None:
+            return None
+        sp_logits = bl["species"]
+        mv_logits = bl["moves"]
+        device = sp_logits.device
+        sp_labels = sp_labels.long().to(device)
+        mv_labels = mv_labels.long().to(device)
+        n_species = sp_logits.shape[-1]
+        n_moves = mv_logits.shape[-1]
+        believed = sp_labels >= 0                                                  # [B, 6] (-1 = not scored)
+        counts = believed.sum(1)                                                   # [B] k per sample
+        if int(counts.sum()) == 0:
+            return None
+        # FAIL LOUD: a believed label id must fit the vocab. Every real Gen-3 species/move num is well
+        # inside max=400, so a violation means the label↔embedding num space is corrupt — crash, don't
+        # silently filter and train on a hole. (-1 pads were already excluded by `believed`.) A SINGLE
+        # host-sync on the happy path (the per-element max()/message only run on the failure path).
+        sp_believed = sp_labels[believed]
+        mv_believed = mv_labels[believed]
+        sp_bad = (sp_believed >= n_species).any()
+        mv_bad = (mv_believed >= n_moves).any() if mv_believed.numel() else sp_bad.new_zeros(())
+        if bool(sp_bad | mv_bad):
+            raise ValueError(
+                f"belief label out of vocab: species max {int(sp_believed.max())} (n_species {n_species}) / "
+                f"move max {int(mv_believed.max()) if mv_believed.numel() else -1} (n_moves {n_moves}) — "
+                "the embedding-num pipeline is corrupt (real Gen-3 nums are all < 400)."
+            )
+        do_moves = moves_weight != 0.0
+        ce_terms, bce_terms = [], []
+        n_correct = th.zeros((), device=device)
+        n_slots = 0
+        mv_tp = mv_pred_pos = mv_true_pos = 0  # moves precision/recall accumulators (diagnostic)
+        # Group samples by their believed-slot count k; within a group every cost matrix is k×k so the
+        # whole group is matched with one vectorised permutation-enumeration.
+        for k in range(1, sp_labels.shape[1] + 1):
+            sel = (counts == k).nonzero(as_tuple=True)[0]                          # samples with k believed
+            if sel.numel() == 0:
+                continue
+            n = sel.numel()
+            slot_idx = believed[sel].nonzero(as_tuple=False)[:, 1].view(n, k)      # [n, k] believed positions
+            rows = sel.view(n, 1).expand(n, k)                                     # [n, k] sample indices
+            pred_logp = th.log_softmax(sp_logits[rows, slot_idx], dim=-1)          # [n, k, S] softmax on gathered
+            tgt_sp = sp_labels[rows, slot_idx]                                     # [n, k] target species
+            # cost[a,i,j] = CE of predicting believed-slot i's logits at target j = -logp[a,i,tgt[a,j]]
+            cost = -th.gather(pred_logp, 2, tgt_sp[:, None, :].expand(n, k, k))    # [n, k, k]
+            perms = th.tensor(list(itertools.permutations(range(k))), dtype=th.long, device=device)  # [P,k]
+            ii = th.arange(k, device=device).view(1, k).expand(perms.shape[0], k)
+            best_perm = perms[cost[:, ii, perms].sum(-1).argmin(1)]               # [n, k] min-cost assignment
+            matched_sp = th.gather(tgt_sp, 1, best_perm)                           # [n, k] matched species target
+            ce_terms.append((-th.gather(pred_logp, 2, matched_sp[:, :, None]).squeeze(-1)).reshape(-1))
+            with th.no_grad():
+                n_correct = n_correct + (pred_logp.argmax(-1) == matched_sp).sum()
+            n_slots += n * k
+            if do_moves:
+                matched_label_slot = th.gather(slot_idx, 1, best_perm)             # [n, k] matched label slot
+                mv_pred = mv_logits[rows, slot_idx]                                # [n, k, M] predictions
+                mv_ids = mv_labels[rows, matched_label_slot]                      # [n, k, 4] matched move ids
+                mvalid = mv_ids >= 0                                               # [n, k, 4] (pad excluded)
+                multi_hot = th.zeros_like(mv_pred)                                 # [n, k, M]
+                if bool(mvalid.any()):
+                    aa, kk, _ = mvalid.nonzero(as_tuple=True)
+                    multi_hot[aa, kk, mv_ids[mvalid]] = 1.0
+                # per-slot BCE = mean over the M move classes (same per-slot scale as the per-slot CE),
+                # but ONLY for slots with ≥1 labeled move — a slot whose moves are all-pad (unknown
+                # moveset) must NOT be supervised toward "predict no moves" (all-negative).
+                slot_has_moves = mvalid.any(-1)                                    # [n, k]
+                per_slot_bce = F.binary_cross_entropy_with_logits(
+                    mv_pred, multi_hot, reduction="none").mean(-1)                 # [n, k]
+                bce_terms.append(per_slot_bce[slot_has_moves].reshape(-1))
+                with th.no_grad():
+                    pred_present = mv_pred > 0.0                                   # sigmoid>0.5 ⇒ predicted present
+                    mv_tp += int((pred_present & multi_hot.bool()).sum())
+                    mv_pred_pos += int(pred_present.sum())
+                    mv_true_pos += int(multi_hot.sum())
+        ce = th.cat(ce_terms).mean()
+        bce_cat = th.cat(bce_terms) if bce_terms else th.zeros(0, device=device)
+        # numel guard: every believed slot could have an unknown moveset (all-pad) → no BCE terms → 0
+        # (not NaN). In practice hidden mons have mapped moves so this is the degenerate edge.
+        bce = bce_cat.mean() if bce_cat.numel() else th.zeros((), device=device)
+        aux = ce + moves_weight * bce
+        n_samples = int((counts > 0).sum())
+        acc = float((n_correct.float() / max(1, n_slots)).item())
+        metrics = {
+            "species_ce": float(ce.item()),
+            "moves_bce": float(bce.item()),
+            "species_acc": acc,
+            "species_acc_above_chance": acc - 1.0 / n_species,
+            "moves_precision": (mv_tp / mv_pred_pos) if mv_pred_pos else 0.0,
+            "moves_recall": (mv_tp / mv_true_pos) if mv_true_pos else 0.0,
+            "k_mean": n_slots / max(1, n_samples),
+            "coverage": n_samples / sp_labels.shape[0],
+        }
+        return aux, metrics
+
     def _value_loss_from_se(self, se: "th.Tensor") -> "th.Tensor":
         """Tail-weighted value loss from per-sample squared errors `se` (in whatever space the branch
         uses — NORMALIZED under PopArt, so the tail selection is on the same scale the loss trains in).
@@ -142,6 +272,9 @@ class InstrumentedMaskablePPO(MaskablePPO):
         pg_losses, value_losses = [], []
         clip_fractions = []
         vf_clip_fractions: list[float] = []  # +INSTRUMENTATION
+        belief_metrics: dict[str, list[float]] = {}  # +BELIEF: per-minibatch aux diagnostics (dict of lists)
+        # Compute once: the aux path is fully skipped when off → loss stays byte-identical to upstream.
+        belief_aux_on = self.opp_belief_aux_coef > 0.0
 
         continue_training = True
 
@@ -234,15 +367,39 @@ class InstrumentedMaskablePPO(MaskablePPO):
 
                 loss = policy_loss + self.ent_coef * entropy_loss + self.vf_coef * value_loss
 
+                # +BELIEF: hidden-opponent belief aux loss. evaluate_actions(rollout_data.observations,
+                # …) ran the extractor forward just above, stashing per-slot logits for THIS minibatch;
+                # the privileged labels ride the same obs dict (training-only keys). Masked to the
+                # believed slots, folded in at opp_belief_aux_coef. OFF → skipped (loss byte-identical).
+                belief_aux_term = None  # the WEIGHTED aux contribution, for the grad-balance probe
+                if belief_aux_on:
+                    aux_out = self._belief_aux_loss(
+                        self.policy.features_extractor.last_belief_logits,
+                        rollout_data.observations.get("belief_species"),
+                        rollout_data.observations.get("belief_moves"),
+                        moves_weight=self.opp_belief_moves_weight,
+                    )
+                    if aux_out is not None:
+                        aux, belief_m = aux_out
+                        belief_aux_term = self.opp_belief_aux_coef * aux
+                        loss = loss + belief_aux_term
+                        belief_m["aux_loss"] = float(aux.item())
+                        for _bk, _bv in belief_m.items():
+                            belief_metrics.setdefault(_bk, []).append(float(_bv))
+
                 # +INSTRUMENTATION: sample the shared-trunk gradient balance on the first
                 # minibatch (graph alive here; the probe uses read-only autograd.grad with
                 # retain_graph, so loss.backward() below is unaffected). Skipped when the
                 # extractor exposes no shared-trunk params (non-Gen3 policy).
-                if shared_trunk and not grad_balance:
+                # Sample once per train(). When belief is ON, wait for a minibatch that actually HAS
+                # believed slots (belief_aux_term set) so grad/belief_share isn't silently dropped for
+                # the call; when belief is OFF, sample on the first minibatch as before.
+                if shared_trunk and not grad_balance and (not belief_aux_on or belief_aux_term is not None):
                     grad_balance = grad_balance_metrics(
                         policy_loss + self.ent_coef * entropy_loss,
                         self.vf_coef * value_loss,
                         shared_trunk,
+                        aux_term=belief_aux_term,  # belief grad-share on the shared trunk (None = off)
                     )
 
                 # Calculate approximate form of reverse KL Divergence for early stopping
@@ -301,6 +458,13 @@ class InstrumentedMaskablePPO(MaskablePPO):
             self.logger.record(_key, _val)
         if grad_norms:
             self.logger.record("train/grad_norm", float(np.mean(grad_norms)))
+
+        # +BELIEF: hidden-opponent belief-aux diagnostics (only when the aux is on AND some minibatch
+        # had believed slots). belief_species_acc is the headline: top-1 accuracy of predicting a
+        # hidden mon's species — rises as the model learns to anticipate the un-revealed party.
+        if belief_metrics:
+            for _bk, _bvals in belief_metrics.items():
+                self.logger.record(f"train/belief_{_bk}", float(np.mean(_bvals)))
 
         # +PopArt diagnostics: mu/sigma should TRACK train/return_mean/return_std (the running
         # normalizer estimate); value_weight_norm watches the POP rescale stay bounded (an explosion

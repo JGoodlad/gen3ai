@@ -11,6 +11,14 @@ have **different** gates:
 2. **Observation *build performance*** — if a change makes `encode` slower, training FPS
    drops for the entire run. **This file governs that gate.**
 
+> **Off-hot-path exception — `belief_labels.py`.** This module (the pure builder of the
+> hidden-opponent belief-aux labels) lives here for cohesion with the obs layer but is **NOT called
+> by `encode`** — `Gen3Env.step/reset` invoke it only when `--opp-belief-aux-coef>0`, to emit the
+> privileged training-only `belief_species`/`belief_moves` Dict keys (see
+> `src/agents/training/CLAUDE.md`). So it adds **zero** cost to the default obs build (benchmark
+> confirmed: `state_encoder.encode` unchanged, `belief_labels` absent from the profile). Changes to
+> `encode` itself still trip the gate below.
+
 ---
 
 ## MANDATORY: run the obs-build benchmark on every change to this directory

@@ -116,6 +116,11 @@ class ExtractorContext:
     opp_active_local: torch.Tensor
     fainted_mask_ours: torch.Tensor
     fainted_mask_opp: torch.Tensor
+    # Per-opp-slot "still hidden" mask [B, 6]: True where species_known==0 (Gen 3 has no team
+    # preview, so these are the opponent's un-revealed party mons). Single-sourced here so the
+    # in-place belief-slot injection (BeliefSlots) and any future consumer agree on which slots
+    # are believed vs revealed. Always computed (cheap); only consumed when belief is enabled.
+    opp_believed_mask: torch.Tensor
     # Combined 12-token key-mask (= cat[ours, opp]), single-sourced here so the value-CLS pool and
     # the hidden-opp belief share ONE mask — they rely on the same "both actives force-unmasked ⇒ no
     # all-True row" NaN-safety invariant, which must not be able to drift between two call sites.
@@ -314,11 +319,14 @@ class ObsUnpack(torch.nn.Module):
         fainted_mask_ours = (hp_and_active[:, 0:TEAM_SIZE, 0] == 0)
         fainted_mask_ours[batch_idx, our_active_idx] = False
         fainted_mask_opp = (hp_and_active[:, TEAM_SIZE:2 * TEAM_SIZE, 0] == 0)
+        # Per-opp-slot "still hidden" mask, single-sourced for both the attendability mask below
+        # and the in-place belief-slot injection. species_known==0 ⇒ the opponent's un-revealed party.
+        species_known_opp = pokemon_part[:, TEAM_SIZE:2 * TEAM_SIZE, POKEMON_SPECIES_KNOWN_OFFSET]
+        opp_believed_mask = species_known_opp < 0.5                                   # [B, 6] bool
         if self.attend_unrevealed_opponents:
             # Keep UNREVEALED opp slots attendable: only REVEALED-then-fainted mons
             # (species_known==1 AND hp==0) stay masked. species_known==0 slots are the
             # opponent's still-hidden party — let the transformer attend to them.
-            species_known_opp = pokemon_part[:, TEAM_SIZE:2 * TEAM_SIZE, POKEMON_SPECIES_KNOWN_OFFSET]
             fainted_mask_opp = fainted_mask_opp & (species_known_opp > 0.5)
         fainted_mask_opp[batch_idx, opp_active_local] = False
         # Combined 12-token key-mask, single-sourced (both actives are now force-unmasked, so it can
@@ -343,6 +351,7 @@ class ObsUnpack(torch.nn.Module):
             spikes_feature=spikes_feature, struggle_feature=struggle_feature, screen_feature=screen_feature,
             our_active_idx=our_active_idx, opp_active_local=opp_active_local,
             fainted_mask_ours=fainted_mask_ours, fainted_mask_opp=fainted_mask_opp,
+            opp_believed_mask=opp_believed_mask,
             all_fainted=all_fainted,
             turn_history_raw=turn_history_raw,
             our_ctx_raw=our_ctx_raw, opp_ctx_raw=opp_ctx_raw, non_matchup_rest=non_matchup_rest,
@@ -806,6 +815,72 @@ class HiddenOppBeliefPool(torch.nn.Module):
         return belief.reshape(batch_size, self.k * D_MODEL)                       # [B, K*D_MODEL]
 
 
+class BeliefSlots(torch.nn.Module):
+    """In-place hidden-opponent belief (the live design — supersedes the side-pool `HiddenOppBeliefPool`).
+
+    Instead of summarising the hidden party into K side query tokens (a readout), this REPLACES the
+    opponent's un-revealed team slots — which arrive at the encoder as all-zero placeholders (Gen 3
+    has no team preview) — with K=TEAM_SIZE **distinct learned "unknown-mon" embeddings**, one per opp
+    slot position. The believed mons then sit *in the lineup* and are refined by the SAME 12-token
+    `TeamTransformer` and attended over by every downstream readout (`their_cls`, `value_cls`, the
+    policy reasoning) — "the model thinks about the hidden mons in latent space" rather than reading a
+    side summary.
+
+    Why distinct per-slot params: a permutation-equivariant transformer maps identical inputs to
+    identical outputs, so identical zero-slots collapse to one representation (the model can know
+    "there are unknowns" but not "slot A leans physical sweeper, slot B special wall"). Independent
+    init breaks that symmetry so the slots can specialise — the same trick `HiddenOppBeliefPool` used,
+    done in-place. The refined believed tokens are supervised by `BeliefHead` (species + moves),
+    which is what makes a slot actually *mean* a Skarmory-shaped wall instead of a generic blob.
+
+    Requires `attend_unrevealed_opponents` (else the believed slots are key-masked out of the
+    transformer and never refined). Off ⇒ this module is not built and the opp slots stay zeros
+    (baseline arch, byte-for-byte). See `designs/ai_v5/design_offense_and_opponent_belief.md`."""
+
+    def __init__(self):
+        super().__init__()
+        # One distinct learned token per opponent team-slot position. Same 0.02 init scale as the
+        # CLS / belief queries. Slot position is the canonical order the aux labels are matched in.
+        self.unknown_slot_emb = torch.nn.Parameter(torch.randn(TEAM_SIZE, D_MODEL) * 0.02)
+
+    def forward(self, role_tokens: torch.Tensor, opp_believed_mask: torch.Tensor) -> torch.Tensor:
+        """role_tokens [B, 12, D], opp_believed_mask [B, 6] bool → role_tokens with believed opp
+        slots replaced by their learned unknown-token. Revealed (and revealed-then-fainted) opp slots
+        keep their encoded token unchanged."""
+        batch_size = role_tokens.shape[0]
+        our_tokens = role_tokens[:, :TEAM_SIZE, :]
+        opp_tokens = role_tokens[:, TEAM_SIZE:, :]                                    # [B, 6, D]
+        unknown = self.unknown_slot_emb.unsqueeze(0).expand(batch_size, -1, -1)       # [B, 6, D]
+        opp_tokens = torch.where(opp_believed_mask.unsqueeze(-1), unknown, opp_tokens)
+        return torch.cat([our_tokens, opp_tokens], dim=1)
+
+
+class BeliefHead(torch.nn.Module):
+    """Auxiliary supervision for the in-place belief slots (the missing "B3" objective).
+
+    Reads the post-transformer opponent team tokens and predicts, per slot, what the hidden mon IS:
+    its **species** (cross-entropy) and its **moves** (multi-label BCE). Labels come free from the
+    self-play env (it knows the opponent's full team); the loss (computed in `instrumented_ppo`)
+    scores ONLY the believed slots, in `BeliefSlots`' canonical slot order. Role is implicit: a
+    predicted species routes through the model's existing species/stat/type embeddings, which already
+    encode wall-vs-sweeper — so "think Skarmory" supplies the role.
+
+    Returns a dict of logits so a later BYOL/latent-matching target (regress the real hidden mon's
+    encoded token) can be added as another key without touching the call sites — the agreed clean
+    escalation path off the species+moves v1."""
+
+    def __init__(self, n_species: int, n_moves: int):
+        super().__init__()
+        self.norm = torch.nn.LayerNorm(D_MODEL)
+        self.species_head = torch.nn.Linear(D_MODEL, n_species)
+        self.moves_head = torch.nn.Linear(D_MODEL, n_moves)
+
+    def forward(self, their_team_out: torch.Tensor) -> Dict[str, torch.Tensor]:
+        """their_team_out [B, 6, D] → {"species": [B, 6, n_species], "moves": [B, 6, n_moves]}."""
+        h = self.norm(their_team_out)
+        return {"species": self.species_head(h), "moves": self.moves_head(h)}
+
+
 class ProjectionAssembler(torch.nn.Module):
     """Assembles the pre-projection inputs for BOTH heads.
 
@@ -868,7 +943,7 @@ class Gen3FeaturesExtractor(torch.nn.Module):
     def __init__(self, observation_space: spaces.Dict, layout: Optional[Dict[str, Any]] = None,
                  mappings: Optional[Dict[str, Any]] = None, log_level: LogLevel = LogLevel.QUIET,
                  attend_unrevealed_opponents: bool = False, opp_belief_cls_k: int = 0,
-                 value_active_readout: bool = False):
+                 value_active_readout: bool = False, opp_belief_slots: bool = False):
         super().__init__()
         self.layout = layout
         self.mappings = mappings
@@ -898,6 +973,26 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         self.team_transformer = TeamTransformer(layout)
         self.cls_pool = CLSPool(layout)
         self.hidden_opp_belief = HiddenOppBeliefPool(opp_belief_cls_k) if opp_belief_cls_k > 0 else None
+        # In-place hidden-opponent belief (the live design): distinct learned unknown-mon tokens fill
+        # the un-revealed opp slots + a species/moves aux head supervises them. OFF reproduces the
+        # baseline arch byte-for-byte (no module, opp slots stay zeros). k>0 the side-pool and this are
+        # independent flags; the in-place path supersedes the pool. Hard-requires the unmask flag:
+        # masked believed slots would never be refined by the transformer.
+        self.opp_belief_slots = opp_belief_slots
+        if opp_belief_slots and not attend_unrevealed_opponents:
+            raise ValueError(
+                "opp_belief_slots=True requires attend_unrevealed_opponents=True — the in-place "
+                "belief tokens fill the un-revealed opp slots, which are key-masked out of the "
+                "transformer unless the unmask flag is on. Enable --attend-unrevealed-opponents."
+            )
+        self.belief_slots = BeliefSlots() if opp_belief_slots else None
+        self.belief_head = (
+            BeliefHead(layout['max_species'], layout['max_moves']) if opp_belief_slots else None
+        )
+        # Stashed each forward when belief is on (the species/moves logits dict, or None); read by
+        # the vendored PPO train loop to add the aux loss. Carries grad — read+used in the same
+        # backward graph as the forward that produced it (per minibatch). See instrumented_ppo.
+        self.last_belief_logits: Optional[Dict[str, torch.Tensor]] = None
         # Value-head active readout (weight-shape via flag): adds our_active_refined (D_MODEL) to the
         # value projection. OFF reproduces the baseline value head byte-for-byte (no ARCH_SIGNATURE bump).
         self.value_active_readout = value_active_readout
@@ -956,7 +1051,17 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         """Build the (pi_combined, vf_combined) pre-projection pair by chaining the phases."""
         ctx = self.unpack(obs)
         role_tokens = self.pokemon_encoder(ctx, self.embeddings)
+        # In-place hidden-opponent belief: replace the un-revealed opp slots with distinct learned
+        # unknown-mon tokens BEFORE the transformer, so the body refines them and every readout
+        # attends over them as party members (flag-guarded; None ⇒ baseline zeros).
+        if self.belief_slots is not None:
+            role_tokens = self.belief_slots(role_tokens, ctx.opp_believed_mask)
         our_team_out, their_team_out = self.team_transformer(role_tokens, ctx, self.embeddings)
+        # Aux belief logits over the refined opp tokens — stashed for the PPO aux loss, NOT fed back
+        # into the policy/value path (labels would leak). None when belief is off.
+        self.last_belief_logits = (
+            self.belief_head(their_team_out) if self.belief_head is not None else None
+        )
         our_team_pooled, their_team_pooled, our_active_refined, value_pooled = self.cls_pool(
             our_team_out, their_team_out, ctx
         )

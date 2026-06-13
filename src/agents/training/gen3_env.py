@@ -5,7 +5,16 @@ from typing import Optional
 from poke_env.environment.singles_env import SinglesEnv
 from poke_env.player.battle_order import BattleOrder, ForfeitBattleOrder
 
+from poke_env.data.normalize import to_id_str
+
 from agents.observation.state_encoder import get_observation_encoder
+from agents.observation.base import ObservationEncoder
+from agents.observation.constants import (
+    TEAM_SIZE, OFFSET_OPP_TEAM, POKEMON_FULL_DIM, POKEMON_SPECIES_KNOWN_OFFSET,
+)
+from agents.observation.belief_labels import (
+    build_belief_labels, zero_belief_labels, BELIEF_MOVE_SLOTS,
+)
 from agents.observation.turn_delta_encoder import TurnDeltaEncoder
 from agents.model.features_extractor import N_HISTORY_TURNS
 from agents.action.mask_generator import Gen3ActionMasker
@@ -23,7 +32,7 @@ from utils.logging.levels import LogLevel
 class Gen3Env(SinglesEnv):
     def __init__(self, mappings, reward_fn: Optional[RewardFunction] = None,
                  log_level=LogLevel.QUIET, stall_config: Optional[StallConfig] = None,
-                 *args, battle_class=Gen3Battle, **kwargs):
+                 *args, battle_class=Gen3Battle, emit_belief_labels: bool = False, **kwargs):
         self.log_level = log_level
         self._stall_logger = StallLogger(stall_config)
         super().__init__(*args, **kwargs)
@@ -39,10 +48,29 @@ class Gen3Env(SinglesEnv):
         obs_dim = self.observation_encoder.dimension
         self.vector_space = spaces.Box(low=-np.inf, high=np.inf, shape=(obs_dim,), dtype=np.float32)
         self.action_space = spaces.Discrete(11)
-        self.observation_space = spaces.Dict({
+        # Hidden-opponent belief AUX labels (TRAINING-ONLY): when on, the obs Dict carries two
+        # PRIVILEGED int64 keys (the opponent's still-hidden mons) consumed ONLY by the PPO aux loss.
+        # The model forward reads only obs["observation"], so they never leak into the acting path;
+        # eval/self-play/inference run with this off and never declare/need them. Single source of the
+        # enable flag is --opp-belief-aux-coef>0 (threaded as emit_belief_labels from train_rl_agent).
+        self._emit_belief_labels = emit_belief_labels
+        # Precompute id -> embedding-NUM maps once (keyed by gen3_data species/move id) for the labeller.
+        self._species_num = {sid: rec["num"] for sid, rec in mappings.get("species", {}).items() if "num" in rec}
+        self._move_num = {mid: rec["num"] for mid, rec in mappings.get("moves", {}).items() if "num" in rec}
+        base_obs = {
             "observation": self.vector_space,
-            "action_mask": spaces.Box(0, 1, shape=(11,), dtype=np.int8)
-        })
+            "action_mask": spaces.Box(0, 1, shape=(11,), dtype=np.int8),
+        }
+        if self._emit_belief_labels:
+            _imax = np.iinfo(np.int64).max
+            # low=-1 keeps the PAD / not-scored sentinel in-space; Box(int64) (NOT Discrete, which
+            # rejects -1 and the rollout buffer special-cases it).
+            base_obs["belief_species"] = spaces.Box(low=-1, high=_imax, shape=(TEAM_SIZE,), dtype=np.int64)
+            base_obs["belief_moves"] = spaces.Box(low=-1, high=_imax, shape=(TEAM_SIZE, BELIEF_MOVE_SLOTS), dtype=np.int64)
+        # SB3 reads the SINGULAR observation_space (threaded as the VecEnv space); the PLURAL
+        # observation_spaces is intercepted + rewrapped by PokeEnv.__setattr__ (it would drop the
+        # belief keys) and is not the SB3-facing space, so it can stay minimal.
+        self.observation_space = spaces.Dict(base_obs)
         self.observation_spaces = {
             self.agent1.username: self.observation_space,
             self.agent2.username: self.observation_space
@@ -116,6 +144,49 @@ class Gen3Env(SinglesEnv):
             return self._tracker.last_ctx.mask
         return Gen3ActionMasker.get_mask(battle).astype(np.int8)
 
+    def _belief_labels(self, obs_vec) -> dict:
+        """Build the privileged hidden-opponent belief labels for the trainee's CURRENT decision.
+
+        Source of truth for the opponent's FULL team is `battle2.team` — agent2's OWN battle view, so
+        it knows all six of its mons (the trainee's `battle1.opponent_team` only holds the revealed
+        ones). The believed-slot mask is read DIRECTLY from `obs_vec` — the SAME per-slot `species_known`
+        the model's `BeliefSlots` keys its injection on — so the label's believed slots can NEVER diverge
+        from where the model fills unknown-mon tokens (single source of truth, not a second derivation).
+        Returns {"belief_species": int64[6], "belief_moves": int64[6,4]}; all-PAD until both battles
+        exist (early reset / pre-team)."""
+        b1 = getattr(self, "battle1", None)
+        b2 = getattr(self, "battle2", None)
+        if b1 is None or b2 is None:
+            bs, bm = zero_belief_labels()
+            return {"belief_species": bs, "belief_moves": bm}
+        # Per-opp-slot species_known straight from the obs the model reads (NOT re-derived from a count).
+        species_known = [
+            float(obs_vec[OFFSET_OPP_TEAM + i * POKEMON_FULL_DIM + POKEMON_SPECIES_KNOWN_OFFSET])
+            for i in range(TEAM_SIZE)
+        ]
+        # FAIL LOUD on a broken structural invariant: revealed opp slots MUST be a leading-contiguous
+        # block (the encoder packs revealed-first, believed trailing). A gap means the encoder's slot
+        # packing changed and the label↔BeliefSlots alignment is silently corrupt — crash rather than
+        # train the belief head on mis-slotted supervision. (A legit data edge — a hidden mon whose
+        # name doesn't map — is handled gracefully inside build_belief_labels; this is structural.)
+        n_known = sum(1 for s in species_known if s >= 0.5)
+        if any(species_known[i] >= 0.5 for i in range(n_known, TEAM_SIZE)):
+            raise RuntimeError(
+                f"belief labels: opp species_known {species_known} is not leading-contiguous — the "
+                "encoder's revealed-first opp-slot packing changed, breaking the believed-slot "
+                "alignment with the model's BeliefSlots. Fix the slot order or the label builder."
+            )
+        revealed = [m for m in ObservationEncoder.get_team_list(b1, is_opponent=True) if m is not None]
+        revealed_species = [m.species for m in revealed]
+        full = list(b2.team.values())
+        team_species = [m.species for m in full]
+        team_moves = [[mv.id for mv in m.moves.values()] for m in full]
+        bs, bm = build_belief_labels(
+            team_species, team_moves, revealed_species, species_known,
+            self._species_num, self._move_num, to_id_str,
+        )
+        return {"belief_species": bs, "belief_moves": bm}
+
     def action_to_order(self, action, battle, **kwargs):
         if isinstance(action, BattleOrder):
             return action
@@ -148,7 +219,12 @@ class Gen3Env(SinglesEnv):
             if battle is self.battle1 and self._tracker.last_ctx is not None:
                 self._tracker.advance(trainee_idx)
                 self.reward_manager.record_action(self._tracker.last_ctx, trainee_idx)
-            return super().step(action)
+            out = super().step(action)
+            if self._emit_belief_labels:
+                agent_obs = out[0].get(self.agent1.username)
+                if agent_obs is not None:
+                    agent_obs.update(self._belief_labels(agent_obs["observation"]))
+            return out
         except Exception as e:
             import traceback
             print(f"ERROR IN STEP: {e}")
@@ -163,7 +239,14 @@ class Gen3Env(SinglesEnv):
                 self.agent1.save_replays = None
             self.reward_manager.reset()
             self._stall_logger.reset()
-            return super().reset(*args, **kwargs)
+            out = super().reset(*args, **kwargs)
+            if self._emit_belief_labels:
+                obs, info = out
+                agent_obs = obs.get(self.agent1.username)
+                if agent_obs is not None:
+                    agent_obs.update(self._belief_labels(agent_obs["observation"]))
+                return obs, info
+            return out
         except Exception as e:
             import traceback
             print(f"ERROR IN RESET: {e}")

@@ -136,6 +136,39 @@ class BoolFlag(argparse.Action):
             setattr(namespace, self.dest, str2bool(values))
 
 
+def _load_saved_version(model_path: str):
+    """Best-effort read of a checkpoint's saved ModelVersion (its model_config.json).
+
+    Returns the ModelVersion, or **None** when the config is missing/unreadable — so a caller can
+    distinguish "could not determine" from a real value (rather than silently fail-safe to a default
+    and then FATAL at the version check). Used to let a flagless resume INHERIT every version-checked
+    structural toggle (use_popart / value_active_readout / opp_belief_cls_k / attend_unrevealed_opponents)
+    + the belief coef, so the documented `--model … --steps …` resume works uniformly."""
+    try:
+        from agents.model.snapshot import _resolve_paths
+        from agents.model.model_version import ModelVersion
+        _, cfg_dir = _resolve_paths(model_path)
+        cfg = os.path.join(cfg_dir, "model_config.json")
+        if os.path.exists(cfg):
+            return ModelVersion.from_json_file(cfg)
+    except Exception as e:
+        print(f"[Resume] WARNING: could not read saved model_config.json from {model_path}: {e}")
+    return None
+
+
+def _run_arch_toggles(args) -> dict:
+    """The architecture TOGGLES of THIS run, for current_model_version so the version gate compares
+    like-for-like against the run's own (toggle-ON) pool/stable-opponent snapshots. Without these, a
+    belief-ON / popart / attend-unrevealed run would FATAL on every snapshot it is meant to protect."""
+    return dict(
+        attend_unrevealed_opponents=args.attend_unrevealed_opponents,
+        opp_belief_cls_k=args.opp_belief_cls_k,
+        opp_belief_slots=(args.opp_belief_aux_coef > 0.0),
+        value_active_readout=args.value_active_readout,
+        use_popart=args.use_popart,
+    )
+
+
 def _model_hparams(model) -> dict:
     clip_range_vf = float(model.clip_range_vf(1.0)) if model.clip_range_vf is not None else -1.0
     opt = model.policy.optimizer
@@ -144,6 +177,7 @@ def _model_hparams(model) -> dict:
         "gae_lambda": model.gae_lambda,
         "ent_coef": float(model.ent_coef),
         "vf_coef": float(model.vf_coef),
+        "opp_belief_aux_coef": float(getattr(model, "opp_belief_aux_coef", 0.0)),
         "batch_size": model.batch_size,
         "n_steps": model.n_steps,
         "clip_range": float(model.clip_range(1.0)),
@@ -266,6 +300,7 @@ def _run_roundtrip_test(model, layout: dict, policy_kwargs: dict, debug: bool = 
     version = ModelVersion.from_layout_and_policy_kwargs(
         layout, policy_kwargs, vf_coef=float(model.vf_coef),
         value_tail_weight=float(getattr(model, "value_tail_weight", 0.0)),
+        opp_belief_aux_coef=float(getattr(model, "opp_belief_aux_coef", 0.0)),
     )
     total_dim = layout["total_dim"]
     tmpdir = tempfile.mkdtemp(prefix="roundtrip_")
@@ -561,21 +596,21 @@ async def main():
                         "immutable, value-checked.")
     parser.add_argument("--clip-range", type=float, default=CLIP_RANGE_DEFAULT, help="PPO policy clip range (default 0.15)")
     parser.add_argument("--clip-range-vf", type=optional_float, default=0.5, help="Value function clip range; pass 'none' to disable clipping (thesis used 0.0184)")
-    parser.add_argument("--use-popart", "--use_popart", dest="use_popart", action=BoolFlag, default=False,
+    parser.add_argument("--use-popart", "--use_popart", dest="use_popart", action=BoolFlag, default=None,
                         help="Enable PopArt value-target normalization (adaptive (mu,sigma) on the "
                              "value head; keeps the value gradient O(1) so it stops swamping the "
                              "shared trunk). Requires an explicit --clip-range-vf none (value "
                              "clipping is unnecessary with normalization). Version-checked: cannot "
                              "be toggled on a resumed model.")
     parser.add_argument("--attend-unrevealed-opponents", "--attend_unrevealed_opponents",
-                        dest="attend_unrevealed_opponents", action=BoolFlag, default=False,
+                        dest="attend_unrevealed_opponents", action=BoolFlag, default=None,
                         help="Keep the opponent's still-hidden party (unrevealed mons — Gen 3 has no "
                              "team preview) ATTENDABLE in the transformer instead of key-masking them "
                              "identically to fainted mons. Lets the body reason about the hidden team. "
                              "No weight-shape change; version-checked, so it cannot be toggled on a "
                              "resumed model. Off by default (clean A/B baseline).")
     parser.add_argument("--opp-belief-cls-k", "--opp_belief_cls_k", dest="opp_belief_cls_k",
-                        type=int, default=0,
+                        type=int, default=None,
                         help="Hidden-opponent belief: number of distinct learned query tokens (DETR "
                              "object-query style) that summarise the unrevealed opp party and feed both "
                              "heads. 0 = OFF (default, baseline arch). 1 = a single 'hidden-opponent CLS' "
@@ -584,8 +619,24 @@ async def main():
                              "with the hidden mons masked out) and is a weight-shape change (version-"
                              "checked, cannot change on a resume). NOTE: without a dedicated aux objective "
                              "(B3 — species-ID / BYOL) the RL gradient only weakly shapes these queries.")
+    parser.add_argument("--opp-belief-aux-coef", "--opp_belief_aux_coef",
+                        dest="opp_belief_aux_coef", type=float, default=None,
+                        help="In-place hidden-opponent BELIEF AUX (the B3 objective). 0.0 = OFF (default). "
+                             ">0 turns ON opp_belief_slots (fills the un-revealed opp team slots with "
+                             "distinct learned unknown-mon tokens refined in-lineup by the transformer + a "
+                             "BeliefHead) and AUTO-FORCES --attend-unrevealed-opponents, and adds "
+                             "coef*(species_CE + moves_BCE) over the believed slots to the PPO loss. The "
+                             "slot module is weight-shape (version-checked); the coef itself is a "
+                             "TRAINING-only hparam like --ent-coef (NOT resume-locked). The privileged "
+                             "belief obs labels exist only when >0.")
+    parser.add_argument("--opp-belief-moves-weight", "--opp_belief_moves_weight",
+                        dest="opp_belief_moves_weight", type=float, default=1.0,
+                        help="Relative weight of the moves multi-label BCE vs the species CE inside the "
+                             "belief aux term (aux = species_CE + w·moves_BCE; both on a per-believed-slot "
+                             "scale). Default 1.0 — species dominates; raise to up-weight move prediction. "
+                             "TRAINING-only, like --opp-belief-aux-coef. Ignored when the coef is 0.")
     parser.add_argument("--value-active-readout", "--value_active_readout", dest="value_active_readout",
-                        action=BoolFlag, default=False,
+                        action=BoolFlag, default=None,
                         help="Route the active mon's refined token (our_active_refined) into the VALUE "
                              "head's projection. The dual-head value readout pools the whole board but "
                              "DROPS the active-mon view the policy head keeps — a probe found the critic "
@@ -722,12 +773,44 @@ async def main():
                              "Only active under --self-play.")
 
     args = parser.parse_args()
+
+    # --- Resolve resumable structural toggles (None sentinel = "not passed on the CLI") ---
+    # Each version-checked structural toggle defaults to None so a FLAGLESS resume can INHERIT the
+    # saved value (the documented `--model … --steps …` command), instead of falling back to OFF and
+    # FATALing at check_compatible (saved-ON vs current-default-OFF). An EXPLICIT flag that flips a
+    # toggle still FATALs at load (desirable). A fresh run (no --model) → the toggle's OFF default.
+    _saved_ver = _load_saved_version(args.model) if args.model else None
+    if args.model and _saved_ver is None:
+        print("[Resume] WARNING: saved model_config.json unreadable — structural toggles fall back to "
+              "their OFF defaults and may FATAL at the version check; pass them explicitly if needed.")
+    _popart_explicit = args.use_popart is not None
+    _coef_explicit = args.opp_belief_aux_coef is not None
+
+    def _resolve(name, default):
+        if getattr(args, name) is None:
+            setattr(args, name, getattr(_saved_ver, name, default) if _saved_ver is not None else default)
+    _resolve("use_popart", False)
+    _resolve("value_active_readout", False)
+    _resolve("attend_unrevealed_opponents", False)
+    _resolve("opp_belief_cls_k", 0)
+    _resolve("opp_belief_aux_coef", 0.0)
+    # PopArt INHERITED on a flagless resume → adopt its required `--clip-range-vf none` (the saved
+    # popart run necessarily used it), so the explicit-config check below doesn't block the resume.
+    if args.use_popart and not _popart_explicit and _saved_ver is not None and args.clip_range_vf is not None:
+        args.clip_range_vf = None
+    # Friendly belief-resume notes (inheriting vs an explicit flip).
+    if args.model and _saved_ver is not None:
+        _sc = getattr(_saved_ver, "opp_belief_aux_coef", 0.0) or 0.0
+        if not _coef_explicit and _sc > 0.0:
+            print(f"[Belief] resume: inheriting saved --opp-belief-aux-coef {_sc:g} (pass it explicitly to override).")
+        elif _coef_explicit and (_sc > 0.0) != (args.opp_belief_aux_coef > 0.0):
+            print(f"[Belief] WARNING: --opp-belief-aux-coef {args.opp_belief_aux_coef:g} flips the belief head "
+                  f"vs the saved checkpoint (coef {_sc:g}); a weight-shape change → will FATAL on load.")
+
     if args.use_popart and args.clip_range_vf is not None:
-        # Require value clipping to be EXPLICITLY off with PopArt — a self-documenting config (the
-        # command shows '--clip-range-vf none') beats a silent override. PopArt normalizes the
-        # value targets, so clipping is unnecessary; and because the value head returns
-        # de-normalized values an active clip would clip in UN-normalized units (clip_range_vf vs
-        # sigma) and cripple the critic.
+        # Require value clipping to be EXPLICITLY off with PopArt — a self-documenting config beats a
+        # silent override. PopArt normalizes the value targets so clipping is unnecessary; and because
+        # the value head returns de-normalized values an active clip would clip in UN-normalized units.
         parser.error(
             "--use-popart requires an explicit '--clip-range-vf none' (it defaults to 0.5). PopArt "
             "normalizes the value targets so value clipping is unnecessary — and an active clip "
@@ -738,14 +821,18 @@ async def main():
     if args.opp_belief_cls_k < 0:
         parser.error("--opp-belief-cls-k must be >= 0 (0 = off)")
     if args.opp_belief_cls_k > 0 and not args.attend_unrevealed_opponents:
-        # The belief queries read the (now-attendable) unrevealed opp slots; with the unmask flag off
-        # those slots are key-masked, so the belief would summarise a board with the hidden mons
-        # deleted. Fail fast with a self-documenting command rather than building an incoherent model.
         parser.error(
             "--opp-belief-cls-k > 0 requires --attend-unrevealed-opponents — the hidden-opponent belief "
             "queries read the unrevealed opp slots, which are key-masked unless the unmask flag is on. "
             "Add --attend-unrevealed-opponents (or set --opp-belief-cls-k 0)."
         )
+    if args.opp_belief_aux_coef < 0.0:
+        parser.error("--opp-belief-aux-coef must be >= 0 (0 = off)")
+    if args.opp_belief_aux_coef > 0.0:
+        # coef>0 turns on the in-place BeliefHead (a weight-shape change) which REQUIRES the unmask
+        # flag (the believed slots must be attendable to be refined). Auto-enable it so a single flag
+        # suffices; the model side hard-gates opp_belief_slots on attend_unrevealed_opponents.
+        args.attend_unrevealed_opponents = True
     log_level = LogLevel[args.log_level.upper()]
 
     # One server config, built from --showdown-port and threaded to every Showdown client
@@ -845,7 +932,7 @@ async def main():
         from agents.training.fixed_opponent_pool import resolve_stable_opponents
         from agents.model.snapshot import (
             current_model_version as _current_model_version, load_foreign_opponent)
-        _cv_stable = _current_model_version(mappings)
+        _cv_stable = _current_model_version(mappings, **_run_arch_toggles(args))
         try:
             _fixed_opponents = resolve_stable_opponents(
                 args.stable_opponents, _cv_stable, default_temperature=args.stable_opponent_temp,
@@ -914,6 +1001,10 @@ async def main():
                     account_configuration1=AccountConfiguration(env_username, "password"),
                     # Bridge mode: don't open websockets — the in-process sim is the transport.
                     start_listening=not args.use_showdown_bridge,
+                    # TRAINING-only privileged belief labels (only the trainee env; the model side
+                    # gates the BeliefHead on the same coef>0 signal). Eval/self-play opponents play
+                    # via RLPlayer, not Gen3Env, so they never emit them.
+                    emit_belief_labels=(args.opp_belief_aux_coef > 0.0),
                 )
                 if args.use_showdown_bridge:
                     # Swap the two _EnvPlayer agents' websocket transport for a local
@@ -1053,7 +1144,7 @@ async def main():
         from agents.model.snapshot import current_model_version as _current_model_version
 
         _snapshot_dir = _Path(args.snapshot_dir) if args.snapshot_dir else _Path(model_dir) / "snapshots"
-        _cv = _current_model_version(mappings)
+        _cv = _current_model_version(mappings, **_run_arch_toggles(args))
         _opp_version = _cv
         _pool = SnapshotPool(pool_dir=_snapshot_dir, current_version=_cv, device=args.device)
         if getattr(args, "distill_opponents", False):
@@ -1361,6 +1452,9 @@ async def main():
         # resume with a different value FATALs rather than silently ignoring the flag.
         _load_extractor_kwargs["attend_unrevealed_opponents"] = args.attend_unrevealed_opponents
         _load_extractor_kwargs["opp_belief_cls_k"] = args.opp_belief_cls_k
+        # Belief-slots arch toggle — version-checked vs the saved config (a resume that flips the
+        # belief head on/off FATALs, same machinery as opp_belief_cls_k). coef>0 is the enable signal.
+        _load_extractor_kwargs["opp_belief_slots"] = (args.opp_belief_aux_coef > 0.0)
         _load_extractor_kwargs["value_active_readout"] = args.value_active_readout
         _load_policy_kwargs = {
             "features_extractor_class": Gen3FeaturesExtractor,
@@ -1371,6 +1465,7 @@ async def main():
         current_version = ModelVersion.from_layout_and_policy_kwargs(
             _load_extractor_kwargs["layout"], _load_policy_kwargs, vf_coef=args.vf_coef,
             reward_config=reward_config, value_tail_weight=args.value_tail_weight,
+            opp_belief_aux_coef=args.opp_belief_aux_coef,
         )
 
         print(f"Loading existing model from {model_path}")
@@ -1393,6 +1488,8 @@ async def main():
             os._exit(int(TrainExitCode.FATAL_CONFIG))
         model.ent_coef = args.ent_coef
         model.value_tail_weight = args.value_tail_weight  # == saved (enforced above); set for the loop
+        model.opp_belief_aux_coef = args.opp_belief_aux_coef  # training hparam (not version-locked; resume-mutable)
+        model.opp_belief_moves_weight = args.opp_belief_moves_weight
         model.vf_coef = args.vf_coef  # == the saved value (enforced above); set explicitly for parity
         model.gae_lambda = 0.80
         # Resume-path LR setup. Phase determines whether we read from the
@@ -1536,6 +1633,10 @@ async def main():
         # Hidden-opponent belief (k=0 = off; k>0 requires the unmask flag, validated above). SB3 forwards
         # this to Gen3FeaturesExtractor; from_layout_and_policy_kwargs records it in model_config.json.
         extractor_kwargs["opp_belief_cls_k"] = args.opp_belief_cls_k
+        # In-place hidden-opponent BELIEF AUX (weight-shape): coef>0 builds the BeliefHead + learned
+        # unknown-mon slot tokens (auto-forces attend_unrevealed_opponents above). The coef itself is a
+        # TRAINING hparam set on the model below; this bool is the version-checked arch toggle.
+        extractor_kwargs["opp_belief_slots"] = (args.opp_belief_aux_coef > 0.0)
         # Value-head active readout (default off): routes our_active_refined into the value projection.
         extractor_kwargs["value_active_readout"] = args.value_active_readout
 
@@ -1574,9 +1675,12 @@ async def main():
         )
 
         model.value_tail_weight = args.value_tail_weight   # tail-weighted value loss (0.0 = plain MSE)
+        model.opp_belief_aux_coef = args.opp_belief_aux_coef  # hidden-opp belief aux loss (0.0 = off)
+        model.opp_belief_moves_weight = args.opp_belief_moves_weight  # species_CE + w·moves_BCE
         version = ModelVersion.from_layout_and_policy_kwargs(
             extractor_kwargs["layout"], policy_kwargs, vf_coef=args.vf_coef,
             reward_config=reward_config, value_tail_weight=args.value_tail_weight,
+            opp_belief_aux_coef=args.opp_belief_aux_coef,
         )
         # PBRS_GAMMA must equal the PPO gamma for both potentials to be policy-invariant (design §7.1).
         # The reward manager is built before the model (in the env factory), so assert here where both

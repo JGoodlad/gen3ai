@@ -22,9 +22,15 @@ Embedding dims (`species_embedding_dim`, `move_embedding_dim`, etc.) live in `st
 
 `forward_internal` is decomposed into phase `nn.Module`s, chained by a thin orchestrator:
 
-`ObsUnpack` → `PokemonEncoder` → `TeamTransformer` → `CLSPool` → `ProjectionAssembler`,
-then **two** root heads (`pre_proj_norm`/`projection` for policy, `value_pre_norm`/`value_projection`
-for value), each → `ReLU`.
+`ObsUnpack` → `PokemonEncoder` → `[BeliefSlots?]` → `TeamTransformer` → `CLSPool` → `[BeliefHead?]` →
+`ProjectionAssembler`, then **two** root heads (`pre_proj_norm`/`projection` for policy,
+`value_pre_norm`/`value_projection` for value), each → `ReLU`.
+
+`BeliefSlots`/`BeliefHead` are built only when `opp_belief_slots` (`--opp-belief-aux-coef>0`); off,
+the chain is the baseline `ObsUnpack → PokemonEncoder → TeamTransformer → CLSPool → ProjectionAssembler`
+byte-for-byte. `BeliefSlots` swaps the un-revealed opp role-tokens for learned unknown-mon tokens
+*before* the transformer (so the belief is refined in-lineup); `BeliefHead` reads the refined opp
+tokens *after* the transformer and stashes the species/moves aux logits — see the v16 versioning note.
 
 **Dual-head value readout (H4 / Option C).** The transformer body is shared, but the actor and
 critic read it through independent paths. `CLSPool` holds a third query `value_cls` that attends
@@ -154,7 +160,7 @@ because it is Φ_progress's weight. All are recorded on
 `ModelVersion` and enforced on resume by **`check_reward_config`** (FATAL on drift, since they silently
 shift the reward/objective), excluded from `check_compatible`. They are reward-VALUE changes — **no
 `ARCH_SIGNATURE` bump** (the network/obs are unchanged) — so a fresh run is needed to measure them but
-old checkpoints don't fail an arch check. Current `MODEL_CONFIG_VERSION` = **15**.
+old checkpoints don't fail an arch check. Current `MODEL_CONFIG_VERSION` = **16**.
 
 **Two probe-driven V-tail levers (v10 structural, v11 resume-immutable).** A representation probe on a
 real checkpoint found the **value head is partly blind to incoming KOs the policy head sees**
@@ -216,6 +222,29 @@ distinct per-slot queries that coordinate (decoder self-attention) and specialis
 design):** without a dedicated objective (B3 — species-ID / BYOL aux head) the RL gradient only weakly
 shapes these queries; this is the *structure* those objectives later attach to. Full rationale:
 `designs/ai_v5/design_offense_and_opponent_belief.md` §B2.
+
+**In-place belief slots + the B3 aux objective (`opp_belief_slots` / `--opp-belief-aux-coef`, v16).**
+The live evolution of the belief idea — supersedes the `opp_belief_cls_k` side-pool. Instead of
+summarising the hidden party into K side query tokens (a readout), **`BeliefSlots` fills the
+un-revealed opp team slots in-place** with `TEAM_SIZE` distinct learned "unknown-mon" tokens (the
+believed mask is `ctx.opp_believed_mask = species_known<0.5`, single-sourced in `ObsUnpack`), BEFORE
+the transformer — so the imagined mons sit *in the lineup*, are refined by the same 12-token
+`TeamTransformer`, and are attended over by every readout (`their_cls`/`value_cls`/policy) as party
+members. Distinct per-slot init breaks the permutation-collapse the same way the side-pool's queries
+did, in-place. **`BeliefHead`** then aux-supervises the refined opp tokens — per believed slot it
+predicts the hidden mon's **species (CE) + moves (multi-label BCE)** (role implicit via the predicted
+species' own embeddings); the head returns a logits **dict** so a later BYOL/latent-matching target
+swaps in cleanly. Logits are stashed at `features_extractor.last_belief_logits` each forward (None
+when off) and consumed ONLY by the aux loss (`InstrumentedMaskablePPO._belief_aux_loss`, folded at
+`opp_belief_aux_coef`) — privileged labels never enter the forward. Two version fields:
+`opp_belief_slots` (bool) is the **state_dict-changing arch toggle** — gated in `check_compatible`
+like `opp_belief_cls_k`, OFF = baseline byte-for-byte (NO `ARCH_SIGNATURE` bump), hard-requires
+`attend_unrevealed_opponents`; `opp_belief_aux_coef` (float) is a **training-only** loss weight (like
+`ent_coef`) — recorded for provenance, NOT version-locked. `--opp-belief-aux-coef>0` is the single
+enable signal (auto-sets `opp_belief_slots` + forces `--attend-unrevealed-opponents`). The privileged
+labels (`belief_species`/`belief_moves`) are TRAINING-ONLY Dict-obs keys emitted by `Gen3Env`
+(`emit_belief_labels`, sourced from `battle2.team`; builder in `agents.observation.belief_labels`).
+Current `MODEL_CONFIG_VERSION` = **16**.
 
 A startup smoke test (`_run_roundtrip_test` in `train_rl_agent.py`) saves to a temp dir and reloads before every `model.learn()` call — catches serialization issues immediately.
 

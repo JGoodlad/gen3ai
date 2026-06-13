@@ -114,7 +114,8 @@ def _build_parser() -> argparse.ArgumentParser:
         "probe", help="linear-probe the model's activations for a derived quantity (is it already in the rep?)")
     pp.add_argument("root", help="run dir / eval_traces dir")
     pp.add_argument("target", choices=["is_faster", "damage_taken", "faint_soon",
-                                       "faint_healthy", "big_hit_incoming", "opp_switches"])
+                                       "faint_healthy", "big_hit_incoming", "opp_switches",
+                                       "opp_status_move"])
     pp.add_argument("--step", type=int, help="step to probe (default: latest with traces)")
     pp.add_argument("--opponent", help="restrict to one opponent")
     pp.add_argument("--which", default="vf", choices=["vf", "pi"],
@@ -127,6 +128,15 @@ def _build_parser() -> argparse.ArgumentParser:
     ph.add_argument("--step", type=int, help="step to measure (default: latest with traces)")
     ph.add_argument("--opponent", help="restrict to one opponent")
     ph.add_argument("--max-decisions", type=int, default=400, help="cap decisions sampled (default 400)")
+
+    svi = sub.add_parser(
+        "switch-vs-info",
+        help="MODEL-FREE: does our policy switch more when it knows LESS about the opponent?")
+    svi.add_argument("root", help="run dir / eval_traces dir")
+    svi.add_argument("--step", type=int, help="step (default: latest with traces)")
+    svi.add_argument("--opponent", help="restrict to one opponent")
+    svi.add_argument("--outcome", choices=["win", "loss"], help="restrict to win/loss battles")
+    svi.add_argument("--max-battles", type=int, default=400, help="cap battles scanned (default 400)")
 
     for name, helptext in (("overview", "model-free per-decision digest"),
                            ("find", "rank/list invocations matching a criterion"),
@@ -230,6 +240,10 @@ def _run(args) -> object:
     if args.cmd == "history-saliency":
         return ProbeSession(args.root).history_saliency(
             step=args.step, opponent=args.opponent, max_decisions=args.max_decisions)
+    if args.cmd == "switch-vs-info":
+        return ProbeSession(args.root).switch_vs_info(
+            step=args.step, opponent=args.opponent, outcome=args.outcome,
+            max_battles=args.max_battles)
     if args.cmd == "falsify":
         return ProbeSession(args.battle).falsify(
             args.battle, invs=args.inv, worst=args.worst,
