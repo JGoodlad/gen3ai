@@ -38,6 +38,21 @@ verify a confirming measurement** (overturned 3-for-3 this session).
 | K7 | **Switch pathologies** | ❌ | UNDER-represented among crater mistakes (24% vs 28%); ~2 confirmed voluntary switch mistakes in 350 losses (254/291 craters were FORCED replacements). | `falsify-scan <run>` (switch crater base-rate) |
 | K8 | **No-op status-spam** (Spikes-at-cap loops) | ❌ | Real+learned, but no-progress clock already punishes it, critic prices the state as lost; ~74 dead turns in already-lost games. | `decision-table <run> --cat status` |
 
+## GO-TO-BUILD queue (the next FRESH run stacks these)
+
+Posture shift (owner, 2026-06-12): stop the kill-treadmill, start **committing**. No single big lever
+remains → stack the independent, cheap, amortizable levers into one fresh run and measure the aggregate
+(ELO + bot-wr). The build bar (README → Decision posture) is LOWER than "Known": positive EV +
+falsifiable-after-build is enough. Every entry must clear the **amortizability gate** (L1–L4; no search
+on the model). Candidate stack (pending the amortizability pass + owner confirm):
+
+| Lever | Bucket | State | Falsify-after-build (the metric that must move) |
+|---|---|---|---|
+| H1 self-KO HP penalty | reward (L2) | SHIPPED (`--self-ko-hp-penalty`) | healthy-mon self-KO rate falls; selfko dV no longer +; wr non-regress |
+| H3 surprise-OHKO coverage + under-switching | obs (L1) + reward (L3-ish) | GO (gated) | death-turn pko rises AND switch-to-wall rate rises (BOTH) |
+| H2 attack type-mismatch obs feature | obs (L1) | confirmed-small, cheap | resisted/immune-into-available-SE picks fall |
+| _amortizability-pass output_ | TBD | pending | the grind/upstream decomposition's greenlit lever(s) |
+
 ## Active runs / context
 
 - **ai_v5_11_tail2_53m_0611** — done at 53M. Rebalanced (vf_coef 0.5→0.25); `value_share` landed ~0.6

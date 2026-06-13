@@ -31,6 +31,50 @@ After **any** investigation that changes our belief, update this folder in the s
    outcome-conditioning? falsifier-myopia? legitimate-in-context? exploration vs learned? Always
    adversarially verify a *confirming* measurement (we were overturned 3-for-3 by careful rechecks).
 
+## The amortizability gate — route every oracle finding through L1–L4
+
+The falsifier is an **ORACLE** (hindsight + re-rolls), so *"a better action existed"* is its DEFAULT
+output and *"needs search/MCTS"* is the degenerate conclusion it is **built to reach** — concluding it
+proves only that the oracle is an oracle. A finding is a **lever** only if the improvement is
+**AMORTIZABLE** into the single-forward-pass network. Route every oracle-found improvement through:
+
+- **L1 obs-info** — the deciding info was ABSENT from the obs but is known/addable → **obs feature** (cheap).
+- **L2 representation** — info WAS in the obs; the net mis-used / mis-valued it → **arch / training /
+  value-target**. *Test:* linear-probe the trunk (`probe`); recoverable ⇒ L2 (head fault), not ⇒ L1.
+- **L3 anticipation** — needed the opponent's TYPICAL reply → **opponent-action / forward-model aux
+  head** (amortized anticipation, NOT runtime search). *Test:* was the opp move predictable from
+  history/priors, or idiosyncratic/hidden?
+- **L4 deliberation** — genuinely needs per-state multi-ply AND the opp move is not anticipatable → the
+  ONLY "search" bucket, and it ships as an **OFFLINE TEACHER distilled into the net** (AlphaZero /
+  Expert Iteration), never as runtime compute.
+
+**HARD CONSTRAINT (owner):** no lever may put search/MCTS **on the model** (inference or the training
+loop). Search is a *teacher / offline diagnostic* only. *"Cheap vein mined out → MCTS"* is not a default
+— it is a falsifiable claim about the SIZE of L4 that must beat the measured L1+L2+L3 mass.
+
+## Decision posture — the build bar (say YES)
+
+Falsification is a **means** (don't waste a retrain on a dud), not the goal (a better model). The
+**honesty gates govern what we CLAIM TO KNOW; they are NOT the bar for what we BUILD.** The census says
+there is no single remaining big lever (confirmed blunders explain a few points; the rest is diffuse
+grind) → the EV-optimal strategy SHIFTS from *explore* (hunt an elephant) to **EXPLOIT** (build the
+portfolio of moderate, amortizable gains and measure the aggregate). Progress here is a long tail of
+small, compounding, stacked wins — not one breakthrough.
+
+A lever is **GO-TO-BUILD** when ALL hold (this bar is deliberately LOWER than "Known"):
+1. **Amortizable** — passes the L1–L4 gate (a feedforward change, or an offline teacher, can capture it).
+2. **Positive EV** — a plausible mechanism + non-trivial headroom (≥~1% wr or a clear behavioural fix);
+   it need NOT be proven dominant.
+3. **Falsifiable-after-build** — we name the metric that must move in the retrain, so a no-op is cheap
+   to detect and abandon.
+4. **Bounded cost** — obs feature / reward term / aux head, not a moonshot.
+
+**Portfolio rule:** because no single lever fixes the gap, **STACK** the GO-TO-BUILD levers into the
+next FRESH run (the resume-immutable boundary several already require) and measure the aggregate, rather
+than A/B-ing each forever. *Honest tradeoff:* stacking **confounds attribution**. Mitigate by stacking
+only mechanistically-INDEPENDENT, cheap levers, each with its own offline pre-retrain proxy; isolate a
+lever only when it is expensive or risky. The live GO-TO-BUILD queue is in [ledger.md](ledger.md).
+
 ## The frontier — what else might be there
 
 Ranked by where the *unexplained loss mass* most plausibly lives, with the honest status. The census
