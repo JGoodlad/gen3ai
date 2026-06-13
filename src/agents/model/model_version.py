@@ -72,7 +72,29 @@ from typing import Any, Dict, List
 #   restores a negative signal (scaled by HP, so legitimate low-HP sac-for-KO is spared). 0.0 = OFF.
 #   Enforced via check_reward_config, EXCLUDED from check_compatible. No ARCH_SIGNATURE bump. Old
 #   configs migrate to 0.0.
-MODEL_CONFIG_VERSION = 12
+#
+# v13: added `drop_redundant_bias` + `drop_switch_bias` (--drop-redundant-bias / --drop-switch-bias).
+#   Two resume-immutable VALUE-meaning bools (like the v4-v7 reward hparams): the de-bias cleanup that
+#   ZEROES audit-flagged distorting BIAS terms. `drop_redundant_bias` removes stall_tax + matchup_penalty
+#   (redundant with the no-progress clock + --draw-penalty / pbrs_belief); `drop_switch_bias` removes the
+#   hand-coded switch-strategy subsidy (switch_base / switch_bouncing_tax / escape_threat_switch / se_switch
+#   / pivot_* / sleep_in / sleep_out). Folded into check_reward_config, EXCLUDED from check_compatible. No
+#   ARCH_SIGNATURE bump (reward-value only). Old configs migrate to False (== the prior behavior).
+#
+# v14: added `all_shaping_pbrs` (--all-shaping-pbrs, "everything but stall": folds Φ_hazard/Φ_boost/
+#   Φ_opp_boosts + Φ_status and ZEROES every BIAS term EXCEPT the anti-stall tilt `no_progress_tax`, so
+#   all non-stall shaping is policy-invariant; the bad turn-ramp `stall_tax` is zeroed) and made
+#   `no_progress_penalty` resume-immutable (it is now Φ_progress's weight). Resume-immutable VALUE-meaning
+#   (check_reward_config), EXCLUDED from check_compatible, NO ARCH_SIGNATURE bump. Old configs migrate to
+#   all_shaping_pbrs=False / no_progress_penalty=0.15 (== the prior behavior).
+#
+# v15: added `stall_pbrs` (--stall-pbrs, the "stall" companion switch: folds Φ_progress and zeroes
+#   `no_progress_tax`+`stall_tax`, so the anti-stall signal is policy-invariant too). Run --all-shaping-pbrs
+#   WITH --stall-pbrs for a fully-PBRS reward (whole BIAS class zero); without it, keep the no_progress
+#   stall tilt as the single acknowledged BIAS. Same resume-immutable VALUE-meaning treatment
+#   (check_reward_config), EXCLUDED from check_compatible, NO ARCH_SIGNATURE bump. Old configs migrate to
+#   stall_pbrs=False (== the prior behavior).
+MODEL_CONFIG_VERSION = 15
 
 # Change this when the neural architecture changes structurally in a way that makes
 # weights from a different signature incompatible (e.g. adding LSTM, replacing attention).
@@ -340,6 +362,16 @@ class ModelVersion:
     # v7: terminal reward for a DRAW / 250-turn timeout. -30.0 = the prior behavior (tie == decisive
     # loss). Resume-immutable VALUE-meaning (check_reward_config), excluded from the weight-shape check.
     draw_penalty: float = -30.0
+    # v12: de-bias cleanup — zero audit-flagged distorting BIAS terms. Resume-immutable VALUE-meaning
+    # (check_reward_config), excluded from the weight-shape check. False = the prior behavior.
+    drop_redundant_bias: bool = False   # drop stall_tax + matchup_penalty (redundant w/ clock+draw / pbrs_belief)
+    drop_switch_bias: bool = False      # drop the hand-coded switch-strategy subsidy family
+
+    # v13/v14: end-state PBRS switches + the now-immutable no-progress penalty (Φ_progress's weight).
+    # all_shaping_pbrs = "everything but stall"; stall_pbrs (v14) = the "stall" switch (Φ_progress).
+    all_shaping_pbrs: bool = False
+    stall_pbrs: bool = False
+    no_progress_penalty: float = 0.15
 
     # v6 feature toggle (value-checked, not weight-shape): PopArt value-target normalization. The
     # value head's parameterization + buffers differ when on, so it cannot be toggled on a resume.
@@ -429,6 +461,11 @@ class ModelVersion:
             switch_bias_weight=float(getattr(reward_config, "switch_bias_weight", 0.0)),
             draw_penalty=float(getattr(reward_config, "draw_penalty", -30.0)),
             self_ko_hp_penalty=float(getattr(reward_config, "self_ko_hp_penalty", 0.0)),
+            drop_redundant_bias=bool(getattr(reward_config, "drop_redundant_bias", False)),
+            drop_switch_bias=bool(getattr(reward_config, "drop_switch_bias", False)),
+            all_shaping_pbrs=bool(getattr(reward_config, "all_shaping_pbrs", False)),
+            stall_pbrs=bool(getattr(reward_config, "stall_pbrs", False)),
+            no_progress_penalty=float(getattr(reward_config, "no_progress_penalty", 0.15)),
             use_popart=bool(policy_kwargs.get("use_popart", False)),
             attend_unrevealed_opponents=bool(
                 policy_kwargs.get("features_extractor_kwargs", {}).get(
@@ -632,6 +669,11 @@ class ModelVersion:
         req_sbw = float(getattr(reward_config, "switch_bias_weight", 0.0))
         req_dp = float(getattr(reward_config, "draw_penalty", -30.0))
         req_skp = float(getattr(reward_config, "self_ko_hp_penalty", 0.0))
+        req_drb = bool(getattr(reward_config, "drop_redundant_bias", False))
+        req_dsb = bool(getattr(reward_config, "drop_switch_bias", False))
+        req_asp = bool(getattr(reward_config, "all_shaping_pbrs", False))
+        req_sp = bool(getattr(reward_config, "stall_pbrs", False))
+        req_npp = float(getattr(reward_config, "no_progress_penalty", 0.15))
         problems = []
         if not math.isclose(self.bias_additivity, req_ba, rel_tol=1e-9, abs_tol=1e-12):
             problems.append(f"  bias_additivity: saved={self.bias_additivity!r}, requested={req_ba!r}")
@@ -645,6 +687,16 @@ class ModelVersion:
             problems.append(f"  draw_penalty: saved={self.draw_penalty!r}, requested={req_dp!r}")
         if not math.isclose(self.self_ko_hp_penalty, req_skp, rel_tol=1e-9, abs_tol=1e-12):
             problems.append(f"  self_ko_hp_penalty: saved={self.self_ko_hp_penalty!r}, requested={req_skp!r}")
+        if self.drop_redundant_bias != req_drb:
+            problems.append(f"  drop_redundant_bias: saved={self.drop_redundant_bias!r}, requested={req_drb!r}")
+        if self.drop_switch_bias != req_dsb:
+            problems.append(f"  drop_switch_bias: saved={self.drop_switch_bias!r}, requested={req_dsb!r}")
+        if self.all_shaping_pbrs != req_asp:
+            problems.append(f"  all_shaping_pbrs: saved={self.all_shaping_pbrs!r}, requested={req_asp!r}")
+        if self.stall_pbrs != req_sp:
+            problems.append(f"  stall_pbrs: saved={self.stall_pbrs!r}, requested={req_sp!r}")
+        if not math.isclose(self.no_progress_penalty, req_npp, rel_tol=1e-9, abs_tol=1e-12):
+            problems.append(f"  no_progress_penalty: saved={self.no_progress_penalty!r}, requested={req_npp!r}")
         if problems:
             raise ModelVersionError(
                 "Reward-config mismatch on resume — these hparams are fixed for a run's lifetime "
@@ -704,4 +756,18 @@ def _migrate_config(data: dict) -> dict:
         # priced a healthy Explosion/Self-Destruct trade at ~0).
         data.setdefault("self_ko_hp_penalty", 0.0)
         data["config_version"] = 12
+    if version < 13:
+        # v13: added the de-bias cleanup flags. Old runs kept every BIAS term (== False).
+        data.setdefault("drop_redundant_bias", False)
+        data.setdefault("drop_switch_bias", False)
+        data["config_version"] = 13
+    if version < 14:
+        # v14: end-state PBRS switch (off) + no_progress_penalty now recorded (default 0.15 = prior).
+        data.setdefault("all_shaping_pbrs", False)
+        data.setdefault("no_progress_penalty", 0.15)
+        data["config_version"] = 14
+    if version < 15:
+        # v15: added the `stall_pbrs` companion switch (off = prior behavior).
+        data.setdefault("stall_pbrs", False)
+        data["config_version"] = 15
     return data

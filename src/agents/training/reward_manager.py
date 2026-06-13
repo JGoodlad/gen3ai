@@ -89,6 +89,32 @@ class RewardConfig:
     # spares the legitimate low-HP "explode a dying mon to secure a KO" play. Per-run constant,
     # resume-immutable (recorded in model_config.json, value-checked via check_reward_config).
     self_ko_hp_penalty: float = 0.0
+    # De-bias cleanup (audit TIER-1 distorter removal). Both default OFF = byte-identical no-op (the
+    # registry-coverage / no-op tests pin it); each ZEROES its BIAS terms BEFORE the bias-refund fold,
+    # so they leave the accumulator too. Per-run constants, resume-immutable (check_reward_config).
+    #   `drop_redundant_bias` — terms REDUNDANT with an existing PBRS/terminal term:
+    #       stall_tax       ↔ no_progress clock + --draw-penalty (it also taxed winning long games on raw turn count)
+    #       matchup_penalty ↔ pbrs_belief (the same incoming-KO threat signal, but additive not telescoping)
+    #   `drop_switch_bias` — the HAND-CODED switch-strategy subsidy (switch_base / switch_bouncing_tax /
+    #       escape_threat_switch / se_switch / pivot_* / sleep_in / sleep_out). Switching value is LEARNABLE
+    #       from Φ_mat + pbrs_belief + win/loss, so hand-rewarding it distorts the objective.
+    drop_redundant_bias: bool = False
+    drop_switch_bias: bool = False
+    # End-state PBRS rollout, split into TWO independent switches (design §2.6/§2.7 + boost/opp-boost
+    # /progress potentials). Both OFF (default) = byte-identical to v12. Resume-immutable, value-checked
+    # (check_reward_config). NOT weight-shape (no ARCH_SIGNATURE bump).
+    #
+    # `all_shaping_pbrs` = "everything but stall". ON: (1) fold Φ_hazard/Φ_boost/Φ_opp_boosts + Φ_status
+    #   (PBRS class), (2) ZERO every BIAS term EXCEPT the anti-stall tilt `no_progress_tax` — so all
+    #   NON-stall shaping becomes policy-invariant. (The bad turn-ramp `stall_tax`, which taxed winning
+    #   long games, IS zeroed; the progress-aware `no_progress_tax`, which protects winning stalls, is the
+    #   one BIAS term kept — and it is itself activated here so the stall tilt works without --bias-redesign.)
+    all_shaping_pbrs: bool = False
+    # `stall_pbrs` = "stall". ON: fold Φ_progress (PBRS) and ZERO `no_progress_tax` + `stall_tax`, so the
+    #   anti-stall signal is policy-invariant too. Run --all-shaping-pbrs WITH --stall-pbrs for a FULLY-PBRS
+    #   reward (TERMINAL + PBRS only, zero bias); run --all-shaping-pbrs WITHOUT it to keep the no_progress
+    #   stall tilt as the single acknowledged BIAS (insurance against stall-regression — watch stall-rate).
+    stall_pbrs: bool = False
 
     # --- single source of truth: build once, flow everywhere (training + eval + version record) ---
     # Adding a reward flag = add the field above + a matching `--field-name` CLI arg. `from_args`
@@ -192,6 +218,13 @@ class RewardBreakdown:
     # status BIAS already carries the standing value; folding it there would double-count).
     pbrs_status: float = 0.0
 
+    # End-state PBRS potentials (gated on all_shaping_pbrs; 0.0 in the default run). Each holds
+    # γ·Φ(s′)−Φ(s), Φ(terminal)=0 → telescopes to net-zero (policy-invariant).
+    pbrs_progress: float = 0.0    # Φ_progress = −no_progress_penalty·progress_clock.value() (anti-stall)
+    pbrs_hazard: float = 0.0      # Φ_hazard = HAZARD_WEIGHT·(opp_spikes − our_spikes) (design §2.6)
+    pbrs_boost: float = 0.0       # Φ_boost = BOOST_WEIGHT·Σmax(0,our_active_boost)·hp_frac (stored offense)
+    pbrs_opp_boosts: float = 0.0  # Φ_opp_boosts = −OPP_BOOST_WEIGHT·Σmax(0,opp_active_boost) (phaze value)
+
     # BIAS-class accumulate-refund (design §1.2): the −(1−λ)·Δacc per-turn refund that dials the
     # BIAS class from fully additive (λ=1, refund≡0, byte-identical to today) toward fully
     # telescoping (λ=0). NOT a reward term — the fold's output; excluded from the registry.
@@ -206,6 +239,8 @@ class RewardBreakdown:
         "pbrs_material": RewardClass.PBRS,
         "pbrs_belief": RewardClass.PBRS,
         "pbrs_status": RewardClass.PBRS,
+        "pbrs_progress": RewardClass.PBRS, "pbrs_hazard": RewardClass.PBRS,
+        "pbrs_boost": RewardClass.PBRS, "pbrs_opp_boosts": RewardClass.PBRS,
         # everything else is BIAS:
         "explosion": RewardClass.BIAS, "explosion_block": RewardClass.BIAS,
         "finishing_blow": RewardClass.BIAS, "self_ko_penalty": RewardClass.BIAS,
@@ -236,7 +271,8 @@ class RewardBreakdown:
                     "pivot_damage", "se_switch", "sleep_out", "sleep_in")),
         ("field",  ("spikes", "futile_spikes", "matchup_penalty", "dead_matchup_tax",
                     "stay_risk_tax", "status", "stall_tax", "no_progress_tax")),
-        ("shaping", ("pbrs_belief", "pbrs_status", "bias_refund")),
+        ("shaping", ("pbrs_belief", "pbrs_status", "pbrs_progress", "pbrs_hazard",
+                     "pbrs_boost", "pbrs_opp_boosts", "bias_refund")),
     )
 
     @classmethod
@@ -324,9 +360,11 @@ STATUS_TEMPO_WEIGHT = 0.3      # per non-damaging-statused mon (par/slp/frz); th
 _TEMPO_STATUSES = frozenset({"par", "slp", "frz"})  # non-damaging tempo statuses Φ_mat can't price
 
 ROAR_BONUS = 0.2               # reward for Roar when spikes on opp side or opp had positive boosts
+OPP_BOOST_WEIGHT = 0.15        # Φ_opp_boosts per opp positive boost stage (phaze-disruption potential)
 SE_SWITCH_BONUS = 0.2          # reward for switching in a mon with a SE damaging move vs opp active
 SLEEP_SWAP_BONUS = 0.25        # reward for rotating a sleeping mon out; penalty for rotating one in
 SPIKES_LAYER_BONUS = 0.5       # per layer added to opponent's side (credit assignment bridge)
+HAZARD_WEIGHT = SPIKES_LAYER_BONUS  # 0.5 — Φ_hazard per-layer weight == the additive spikes BIAS it converts
 SPIKES_WASTE_PENALTY = -0.2    # wasted turn using Spikes when 3 layers already up
 FAILED_ROAR_PENALTY = -0.2     # Roar used but opponent didn't switch
 FUTILE_ATTACK_PENALTY = -0.05  # attacking move used but opponent net gained HP (Leftovers > damage)
@@ -379,6 +417,7 @@ SETUP_LOW_HP_MAX_PENALTY = -0.10   # penalty at 0% HP; scales linearly to 0 at t
 STATUS_WASTED_PENALTY = -0.3
 BOOST_UTILIZED_SCALE = 0.03        # reward = boost_stage * scale * damage_dealt
 EXPLOSION_BLOCK_BONUS = 1.0        # Ghost immune or Protect blocks opponent Explosion
+BOOST_WEIGHT = 0.03                # Φ_boost per our-active positive boost stage, scaled by hp_fraction
 
 # Repetition tax escalation — LINEAR and UNCAPPED (clamped only by the floor).
 # A 12-30 turn spam must be catastrophic, not a rounding error, so the cost grows
@@ -480,6 +519,10 @@ class Gen3RewardManager:
         self._prev_phi_belief: Optional[float] = None   # incoming-KO belief PBRS (was _prev_phi)
         self._prev_phi_mat: Optional[float] = None       # material PBRS Φ_mat (design §2)
         self._prev_phi_status: Optional[float] = None    # non-damaging-tempo status PBRS (design §2.7)
+        self._prev_phi_progress: Optional[float] = None   # anti-stall PBRS Φ_progress
+        self._prev_phi_hazard: Optional[float] = None      # hazard/spikes PBRS Φ_hazard (design §2.6)
+        self._prev_phi_boost: Optional[float] = None       # stored-boost PBRS Φ_boost
+        self._prev_phi_opp_boosts: Optional[float] = None  # opp-boost-disruption PBRS Φ_opp_boosts
         self._prev_active_ko_risk: float = 0.0
         self._prev_safe_pivot: bool = False              # did a safe bench pivot exist at decision time
         self._cur_can_switch: bool = True                # was a switch LEGAL at this decision (mask) —
@@ -514,6 +557,10 @@ class Gen3RewardManager:
         self._prev_phi_belief = None
         self._prev_phi_mat = None
         self._prev_phi_status = None
+        self._prev_phi_progress = None
+        self._prev_phi_hazard = None
+        self._prev_phi_boost = None
+        self._prev_phi_opp_boosts = None
         self._prev_active_ko_risk = 0.0
         self._prev_safe_pivot = False
         self._cur_can_switch = True
@@ -1112,6 +1159,57 @@ class Gen3RewardManager:
                         if not m.fainted and m.status in _TEMPO_STATUSES)
         return STATUS_TEMPO_WEIGHT * (opp_tempo - our_tempo)
 
+    def _compute_phi_progress(self, live) -> float:
+        """Anti-stall potential Φ_progress(s) = −no_progress_penalty·progress_clock.value().
+        value()∈[0,1] is the log-saturated turns_since_progress already in obs vec[14]; Φ(s_0)≈0
+        (n=0 at start), Φ(terminal)=0 via _pbrs_step. 0.0 when the clock is absent (inference)."""
+        if self.progress_clock is None:
+            return 0.0
+        return -abs(self.config.no_progress_penalty) * float(self.progress_clock.value())
+
+    def _compute_phi_hazard(self, live) -> float:
+        """Hazard (spikes) potential Φ_hazard = HAZARD_WEIGHT·(opp_spike_layers − our_spike_layers)
+        (design §2.6). Setting an opp layer raises Φ (+shaping); clearing one (Rapid Spin) lowers it;
+        a Spikes at the 3-layer cap is ΔΦ=0 (dissolves futile_spikes). Pure side-condition function."""
+        opp_layers = self._opp_spikes(live)
+        our_sc = getattr(live.ours, "side_conditions", None) or {}
+        our_layers = our_sc.get("spikes", 0)
+        phi = HAZARD_WEIGHT * (opp_layers - our_layers)
+        bound = HAZARD_WEIGHT * 6
+        return max(-bound, min(phi, bound))
+
+    def _compute_phi_boost(self, live) -> float:
+        """Stored-boost potential Φ_boost = BOOST_WEIGHT·Σmax(0,boost_i)·active_hp_fraction over our
+        active mon (LivePokemon.boosts holds only nonzero stages; negatives are excluded by max(0,·)).
+        High HP → full value; low HP suppressed; setting at the ±6 cap → ΔΦ=0 (dissolves futile_setup);
+        a faint drops Φ. The realized damage is already in Φ_mat; this prices the stored advantage."""
+        our = live.ours
+        if not our.mons:
+            return 0.0
+        active = our.active
+        if active is None or active.fainted:
+            return 0.0
+        hp_frac = float(active.hp_fraction)
+        if hp_frac <= 0.0:
+            return 0.0
+        boosts = active.boosts or {}
+        positive = sum(max(0, int(b)) for b in boosts.values())
+        phi = BOOST_WEIGHT * positive * hp_frac
+        return max(0.0, min(phi, BOOST_WEIGHT * 6 * 7))
+
+    def _compute_phi_opp_boosts(self, live) -> float:
+        """Opponent-boost-disruption potential Φ_opp_boosts = −OPP_BOOST_WEIGHT·Σmax(0,b) over the opp
+        active's positive boost stages. A successful Roar resets them → next window Φ rises (positive
+        shaping scaled by the boosts cleared); a failed Roar leaves them → ΔΦ=0 (failed_roar dissolves).
+        The forced-in mon's hazard chip is priced by Φ_mat, not here. Pure board function."""
+        if not live.opp.active:
+            return 0.0
+        boosts = live.opp.active.boosts or {}
+        positive = sum(max(0, int(v)) for v in boosts.values())
+        phi = -OPP_BOOST_WEIGHT * positive
+        bound = OPP_BOOST_WEIGHT * 7
+        return max(-bound, min(phi, bound))
+
     def _compute_spikes_bonus(self, delta: TurnDelta, live) -> tuple[float, float]:
         """Return (layer_bonus, futile_waste). The layer-added credit is the BIAS term `spikes`
         (its telescoping form is Φ_hazard, reached at bias_additivity→0 — design §2.6); the
@@ -1289,11 +1387,45 @@ class Gen3RewardManager:
         Gated on ``bias_redesign``: in the default run the count-diff status BIAS already pays the
         standing value, so folding Φ_status there would double-count (and ``pbrs_status`` stays 0,
         ``_prev_phi_status`` stays None → byte-identical default). Under the event-form redesign the
-        standing value was dropped — this restores it as a telescoping, policy-invariant potential."""
-        if not self.config.bias_redesign:
+        standing value was dropped — this restores it as a telescoping, policy-invariant potential.
+        Also active under --all-shaping-pbrs (which suppresses the count-diff status BIAS, so Φ_status is
+        the only remaining carrier of the tempo-status standing value — no double-count)."""
+        if not (self.config.bias_redesign or self.config.all_shaping_pbrs):
             return
         bd.pbrs_status, self._prev_phi_status = self._pbrs_step(
             self._prev_phi_status, self._compute_phi_status(live), is_terminal)
+
+    def _fold_progress_pbrs(self, bd: "RewardBreakdown", is_terminal: bool) -> None:
+        """Anti-stall PBRS Φ_progress → bd.pbrs_progress. Gated on --stall-pbrs (the "stall" switch; the
+        no_progress_tax BIAS otherwise carries the charge). Telescopes via _pbrs_step, Φ(terminal)=0."""
+        if not self.config.stall_pbrs:
+            return
+        bd.pbrs_progress, self._prev_phi_progress = self._pbrs_step(
+            self._prev_phi_progress, self._compute_phi_progress(None), is_terminal)
+
+    def _fold_hazard_pbrs(self, bd: "RewardBreakdown", live, is_terminal: bool) -> None:
+        """Hazard PBRS Φ_hazard (design §2.6) → bd.pbrs_hazard. Gated on all_shaping_pbrs (the
+        spikes/futile_spikes BIAS terms are suppressed there). Telescopes, Φ(terminal)=0."""
+        if not self.config.all_shaping_pbrs:
+            return
+        bd.pbrs_hazard, self._prev_phi_hazard = self._pbrs_step(
+            self._prev_phi_hazard, self._compute_phi_hazard(live), is_terminal)
+
+    def _fold_boost_pbrs(self, bd: "RewardBreakdown", live, is_terminal: bool) -> None:
+        """Stored-boost PBRS Φ_boost → bd.pbrs_boost. Gated on all_shaping_pbrs (boost_utilized/
+        futile_setup/setup_low_hp suppressed there). Telescopes, Φ(terminal)=0."""
+        if not self.config.all_shaping_pbrs:
+            return
+        bd.pbrs_boost, self._prev_phi_boost = self._pbrs_step(
+            self._prev_phi_boost, self._compute_phi_boost(live), is_terminal)
+
+    def _fold_opp_boosts_pbrs(self, bd: "RewardBreakdown", live, is_terminal: bool) -> None:
+        """Opp-boost-disruption PBRS Φ_opp_boosts → bd.pbrs_opp_boosts. Gated on all_shaping_pbrs (the
+        roar/failed_roar BIAS is suppressed there). Telescopes, Φ(terminal)=0."""
+        if not self.config.all_shaping_pbrs:
+            return
+        bd.pbrs_opp_boosts, self._prev_phi_opp_boosts = self._pbrs_step(
+            self._prev_phi_opp_boosts, self._compute_phi_opp_boosts(live), is_terminal)
 
     def _apply_progress_clock(self, bd: "RewardBreakdown") -> None:
         """Read the shared ProgressClock's stashed penalty into ``bd.no_progress_tax`` and suppress
@@ -1304,10 +1436,54 @@ class Gen3RewardManager:
         no-progress charge (−0.15) does not out-weigh the per-switch reframes, so the escalating
         2-cycle bounce tax is kept as a real negative brake alongside the spam-gate in
         `_apply_switch_outcome`. The clock still subsumes repetition / struggle / dead-matchup."""
-        if not (self.config.bias_redesign and self.progress_clock is not None):
+        # Active under --bias-redesign OR --all-shaping-pbrs (the latter keeps no_progress_tax as the
+        # anti-stall tilt; --stall-pbrs later zeros it and folds Φ_progress instead).
+        if not ((self.config.bias_redesign or self.config.all_shaping_pbrs)
+                and self.progress_clock is not None):
             return
         bd.no_progress_tax = float(getattr(self.progress_clock, "last_penalty", 0.0))
         bd.repetition_tax = bd.struggle_tax = bd.dead_matchup_tax = 0.0
+
+    def _apply_bias_drops(self, bd: "RewardBreakdown") -> None:
+        """De-bias cleanup (audit TIER-1 distorter removal): zero dropped BIAS terms BEFORE the refund
+        fold (so they leave the bias accumulator too). Both flags default OFF → byte-identical no-op.
+        `drop_redundant_bias` removes terms redundant with an existing PBRS/terminal term; `drop_switch_bias`
+        removes the hand-coded (learnable) switch-strategy subsidy. See `RewardConfig` for the rationale."""
+        if self.config.drop_redundant_bias:
+            bd.stall_tax = 0.0
+            bd.matchup_penalty = 0.0
+        if self.config.drop_switch_bias:
+            bd.switch_base = 0.0
+            bd.switch_bouncing_tax = 0.0
+            bd.escape_threat_switch = 0.0
+            bd.se_switch = 0.0
+            bd.pivot_protect = 0.0
+            bd.pivot_status = 0.0
+            bd.pivot_damage = 0.0
+            bd.sleep_out = 0.0
+            bd.sleep_in = 0.0
+
+    def _apply_pbrs_suppression(self, bd: "RewardBreakdown") -> None:
+        """End-state PBRS cleanup — two independent switches. Called BEFORE _apply_bias_drops /
+        _fold_bias_refund so the zeroed terms leave the bias accumulator too. Both OFF → no-op (the
+        no-op-equivalence test pins it). Mirrors how _apply_progress_clock suppresses the anti-spam family.
+
+        --all-shaping-pbrs ("everything but stall"): ZERO every BIAS term EXCEPT the anti-stall tilt
+          `no_progress_tax`, so ALL non-stall shaping is policy-invariant. The converts ride the new
+          potentials (Φ_hazard/Φ_boost/Φ_opp_boosts/Φ_status); the futility taxes dissolve (ΔΦ=0); the
+          good-outcome bonuses (finishing_blow/explosion_block/status_wasted) are redundant with Φ_mat.
+          The bad turn-ramp `stall_tax` is among the zeroed terms (it taxed winning long games).
+        --stall-pbrs ("stall"): ZERO `no_progress_tax` + `stall_tax` (Φ_progress, folded above, carries
+          the anti-stall signal policy-invariantly). Both flags on ⇒ the WHOLE BIAS class is zero."""
+        if self.config.all_shaping_pbrs:
+            # Everything-but-stall → PBRS: zero all BIAS except the kept anti-stall tilt.
+            for name in bd.registry_fields(RewardClass.BIAS):
+                if name != "no_progress_tax":
+                    setattr(bd, name, 0.0)
+        if self.config.stall_pbrs:
+            # Stall → PBRS: the no_progress tilt is replaced by Φ_progress; the turn-ramp goes too.
+            bd.no_progress_tax = 0.0
+            bd.stall_tax = 0.0
 
     def _fold_bias_refund(self, bd: "RewardBreakdown") -> None:
         """BIAS-additivity accumulate-and-refund (design §1.2): emit −(1−λ)·Δacc into
@@ -1441,6 +1617,12 @@ class Gen3RewardManager:
         # --- Non-damaging-tempo status PBRS Φ_status (design §2.7) → pbrs_status (bias_redesign only) ---
         self._fold_status_pbrs(bd, live, is_terminal)
 
+        # --- End-state PBRS potentials (design §2.6/§2.7 + boost/opp-boost/progress) → gated on all_shaping_pbrs ---
+        self._fold_progress_pbrs(bd, is_terminal)
+        self._fold_hazard_pbrs(bd, live, is_terminal)
+        self._fold_boost_pbrs(bd, live, is_terminal)
+        self._fold_opp_boosts_pbrs(bd, live, is_terminal)
+
         # Track whether our last move did anything PRODUCTIVE this turn, for the
         # escalating repetition tax. A move counts as effective if it dealt damage,
         # gained us a stat boost, landed a status, or added a hazard layer. Capped
@@ -1453,6 +1635,14 @@ class Gen3RewardManager:
             or _d_opp_statused > 0
             or bd.spikes > 0
         )
+
+        # --- End-state PBRS suppression: zero the subsumed BIAS terms + redundant drops (gated on
+        # all_shaping_pbrs). Runs AFTER all PBRS folds + the _last_attack_had_effect read (which reads
+        # the raw bd.spikes), BEFORE the v12 drops, so the suppressed terms leave the bias accumulator. ---
+        self._apply_pbrs_suppression(bd)
+
+        # --- De-bias cleanup: zero dropped BIAS terms before the refund fold (both default OFF = no-op) ---
+        self._apply_bias_drops(bd)
 
         # --- BIAS-additivity accumulate-and-refund (design §1.2) — LAST, after every BIAS field ---
         self._fold_bias_refund(bd)

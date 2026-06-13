@@ -134,16 +134,27 @@ an arch error. To add another such hparam, follow the optional-feature playbook 
 
 The **reward-config** hparams are the same kind, bundled into one check: `bias_additivity`
 (`--bias-additivity`), `mat_alive_weight` (`--mat-alive-weight`), `bias_redesign` (`--bias-redesign`),
-`switch_bias_weight` (`--switch-bias-weight`, the belief-risk stay-into-KO BIAS lever, v5), and
+`switch_bias_weight` (`--switch-bias-weight`, the belief-risk stay-into-KO BIAS lever, v5),
 `draw_penalty` (`--draw-penalty`, the DRAW/250-turn-timeout terminal, v7 — default −30.0 = a tie scores
-as a decisive loss; set lower to make a stall-to-cap strictly worse), and `self_ko_hp_penalty`
+as a decisive loss; set lower to make a stall-to-cap strictly worse), `self_ko_hp_penalty`
 (`--self-ko-hp-penalty`, the HP-scaled self-KO penalty, v12 — default 0.0 = OFF; >0 charges −w·hp when
 our mon self-KOs via Explosion/Self-Destruct, since the symmetric material PBRS prices a healthy 1-for-1
-trade at ~0 and the critic then over-values it) are all recorded on `ModelVersion`
-and enforced on resume by **`check_reward_config`** (FATAL on drift, since they silently shift the
-reward/objective), excluded from `check_compatible`. They are reward-VALUE changes — **no
+trade at ~0 and the critic then over-values it), the de-bias cleanup pair `drop_redundant_bias` +
+`drop_switch_bias` (`--drop-redundant-bias` / `--drop-switch-bias`, v13 — zero the audit-flagged
+distorting BIAS terms: stall_tax + matchup_penalty redundant with the no-progress clock/`--draw-penalty`
+and `pbrs_belief`; the hand-coded switch subsidy), and the **two end-state PBRS switches**
+`all_shaping_pbrs` + `stall_pbrs` plus `no_progress_penalty` (`--all-shaping-pbrs` / `--stall-pbrs` /
+`--no-progress-penalty`, v14/v15): `all_shaping_pbrs` = "everything but stall" — folds
+Φ_hazard/Φ_boost/Φ_opp_boosts + Φ_status and **zeros every BIAS term except the anti-stall tilt
+`no_progress_tax`** (so all non-stall shaping is policy-invariant; the bad turn-ramp `stall_tax` is
+zeroed); `stall_pbrs` = "stall" — folds Φ_progress and zeros `no_progress_tax`+`stall_tax`. Run BOTH ⇒
+the whole BIAS class is zero (TERMINAL + PBRS only); run only `all_shaping_pbrs` ⇒ keep the
+`no_progress` stall tilt as the single acknowledged BIAS. `no_progress_penalty` is recorded+checked
+because it is Φ_progress's weight. All are recorded on
+`ModelVersion` and enforced on resume by **`check_reward_config`** (FATAL on drift, since they silently
+shift the reward/objective), excluded from `check_compatible`. They are reward-VALUE changes — **no
 `ARCH_SIGNATURE` bump** (the network/obs are unchanged) — so a fresh run is needed to measure them but
-old checkpoints don't fail an arch check. Current `MODEL_CONFIG_VERSION` = **12**.
+old checkpoints don't fail an arch check. Current `MODEL_CONFIG_VERSION` = **15**.
 
 **Two probe-driven V-tail levers (v10 structural, v11 resume-immutable).** A representation probe on a
 real checkpoint found the **value head is partly blind to incoming KOs the policy head sees**

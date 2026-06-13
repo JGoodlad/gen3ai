@@ -13,15 +13,23 @@ The reward (`Gen3RewardManager`) is organised as a **registry of class-tagged te
 (design `designs/ai_v5/design_markovian_reward_and_features.md`). Every `RewardBreakdown` field is one
 entry in `RewardBreakdown._REGISTRY` mapping name → `RewardClass`. The **BIAS class is folded
 generically** off the registry (`_fold_bias_refund` sums `registry_fields(BIAS)`); TERMINAL and the
-three PBRS terms are **explicit named folds** (`_fold_material_pbrs` / `_fold_belief_pbrs` /
-`_fold_status_pbrs`) because each PBRS term carries its own `_prev_phi_*` telescoping state a generic
+PBRS terms are **explicit named folds** (`_fold_material_pbrs` / `_fold_belief_pbrs` /
+`_fold_status_pbrs` + the v13 `_fold_{progress,hazard,boost,opp_boosts}_pbrs`) because each PBRS term
+carries its own `_prev_phi_*` telescoping state a generic
 loop can't hold — `process_turn_reward` reads as a short phase sequence over these helpers:
 
 - **TERMINAL** (`win_loss`, the ±30) — emitted as-is; never shaped/flag-affected. Out of scope.
 - **PBRS** (always telescoping, objective-neutral; `Φ(terminal)=0`): `pbrs_material` (the material
   potential **Φ_mat**, design §2), `pbrs_belief` (the shipped incoming-KO belief PBRS — RENAMED from
-  the mis-named `pbrs_material`), and `pbrs_status` (the non-damaging-tempo status potential **Φ_status**,
-  design §2.7 — `bias_redesign`-gated, see below). The field holds `γ·Φ(s′)−Φ(s)`; `PBRS_GAMMA` MUST ==
+  the mis-named `pbrs_material`), `pbrs_status` (the non-damaging-tempo status potential **Φ_status**,
+  design §2.7 — `bias_redesign`- OR `all_shaping_pbrs`-gated, see below), and the **four v13/v14 end-state
+  potentials** (see **End-state PBRS** below): `pbrs_progress` (**Φ_progress** =
+  −`no_progress_penalty`·`progress_clock.value()`, the anti-stall clock as a telescoping potential —
+  **`--stall-pbrs`-gated**; the other three are **`--all-shaping-pbrs`-gated**),
+  `pbrs_hazard` (**Φ_hazard** = `HAZARD_WEIGHT`·(opp − our spike layers), design §2.6), `pbrs_boost`
+  (**Φ_boost** = `BOOST_WEIGHT`·Σmax(0,our-active-boost)·hp_frac, the stored offense), and
+  `pbrs_opp_boosts` (**Φ_opp_boosts** = −`OPP_BOOST_WEIGHT`·Σmax(0,opp-active-boost), the phaze value).
+  The field holds `γ·Φ(s′)−Φ(s)`; `PBRS_GAMMA` MUST ==
   the PPO gamma (asserted in `train_rl_agent.py` after the model is built — the manager is built first,
   in the env factory, so it can't assert in `__init__`).
 - **BIAS** (everything else) — additive shaping whose additive↔telescoping mix is set by
@@ -123,6 +131,60 @@ resume-immutable (`check_reward_config`). **Validate by watching `win_rate_vs_bo
 and the healthy-explosion rate fall.** Tests: `reward_redesign_test.py::TestSelfKoPenalty` (unit) +
 `self_ko_penalty_fuzz_test.py` (bridge — real Explosion turns net exactly `−w·hp`, 0 elsewhere, OFF
 byte-unchanged).
+
+**De-bias cleanup (`--drop-redundant-bias` / `--drop-switch-bias`, default OFF).** A distortion audit
+(ranking the BIAS terms by their ability to move the converged optimum away from win-maximization)
+flagged three TIER-1 distorters; these two flags ZERO them in `_apply_bias_drops`, called **right
+before** `_fold_bias_refund` so the dropped terms leave the bias accumulator too. Both default OFF =
+byte-identical (the no-op tests pin it); each is resume-immutable + value-checked
+(`MODEL_CONFIG_VERSION` v13, `check_reward_config`), no `ARCH_SIGNATURE` bump (reward-value only).
+- **`--drop-redundant-bias`** drops `stall_tax` (a raw-turn-count ramp that also taxes a *winning*
+  long game — the progress-aware `no_progress_tax` clock + the `--draw-penalty` terminal already cover
+  stalling) and `matchup_penalty` (the same incoming-KO threat signal as the telescoping `pbrs_belief`
+  PBRS term, but BIAS-class/additive → it distorts where `pbrs_belief` is policy-invariant).
+- **`--drop-switch-bias`** drops the HAND-CODED switch-strategy subsidy (`switch_base`,
+  `switch_bouncing_tax`, `escape_threat_switch`, `se_switch`, `pivot_protect/status/damage`,
+  `sleep_out/in`) — switching value is LEARNABLE from `Φ_mat` + `pbrs_belief` + win/loss, so
+  hand-rewarding it is a `provide-vs-learn` violation that biases the objective.
+
+Two flags (not one) so the low-risk redundant removes can be attributed separately from the
+behaviorally-uncertain switch family (which may have been doing real exploration-acceleration work).
+The historical worst distorter — `finishing_blow` rewarding a self-KO Explosion — is already fixed
+(guarded + the `+2.0` literal deleted), so it is not in scope. Tests:
+`reward_redesign_test.py::TestBiasDrops` + `snapshot_test.py` (resume-immutability + v12→v13 migration).
+
+**End-state PBRS — TWO switches (`--all-shaping-pbrs` + `--stall-pbrs`, both default OFF; v14/v15).** The
+FINAL stage of the staged PBRS rollout: convert the last BIAS shaping to policy-invariant telescoping
+potentials. Deliberately TWO switches so the stall tilt (which carries a documented regression risk) can
+be A/B'd separately from everything else.
+- **`--all-shaping-pbrs` ("everything but stall")** — (1) **folds** `Φ_hazard` =
+  `HAZARD_WEIGHT`·(opp − our spike layers, design §2.6), `Φ_boost` = `BOOST_WEIGHT`·Σmax(0,our-active
+  boost)·hp_frac, `Φ_opp_boosts` = −`OPP_BOOST_WEIGHT`·Σmax(0,opp-active boost), **and `Φ_status`**
+  (its gate is now `bias_redesign OR all_shaping_pbrs`, so the tempo-status standing value is carried
+  even without `--bias-redesign`); (2) **zeros EVERY BIAS term EXCEPT the anti-stall tilt
+  `no_progress_tax`** — so `status`, `stall_tax`, `matchup_penalty`, the switch family, the anti-spam
+  family, `spikes`/`futile_*`/`boost_utilized`/`roar`, and the redundant good-outcome bonuses
+  (`finishing_blow`/`explosion_block`/`status_wasted`) all go. It also **activates the clock charge**
+  (gate `bias_redesign OR all_shaping_pbrs`) so `no_progress_tax` is live as the kept tilt.
+- **`--stall-pbrs` ("stall")** — **folds `Φ_progress`** = −`no_progress_penalty`·`progress_clock.value()`
+  (the anti-stall clock as a telescoping potential) and **zeros `no_progress_tax` + `stall_tax`**, so the
+  anti-stall signal is policy-invariant too.
+
+Run **both** ⇒ the WHOLE BIAS class is zero → TERMINAL + PBRS only (fully policy-invariant). Run **only
+`--all-shaping-pbrs`** ⇒ everything-else is PBRS but the progress-aware `no_progress_tax` survives as the
+single acknowledged BIAS tilt (insurance against stall-regression — watch the stall-rate canary; the
+terminal `--draw-penalty` remains the objective anchor either way). The zeroing lives in
+`_apply_pbrs_suppression(bd)` (loops `registry_fields(BIAS)`, skipping `no_progress_tax` under
+`all_shaping_pbrs`; zeroing the two stall terms under `stall_pbrs`), called **after** all PBRS folds +
+the `_last_attack_had_effect` read and **before** `_apply_bias_drops` → `_fold_bias_refund`, so zeroed
+terms leave the bias accumulator. Each new fold early-returns unless its switch is set, so with both OFF
+the `_prev_phi_*` slots stay None and the four `pbrs_*` fields stay 0.0 → **byte-identical default**
+(pinned by the no-op-equivalence + registry-coverage tests). Composes with the v13 drops (orthogonal,
+run after). Resume-immutable + value-checked alongside the **now-recorded `no_progress_penalty`**
+(Φ_progress's weight) — `MODEL_CONFIG_VERSION` v14/v15, `check_reward_config`, no `ARCH_SIGNATURE` bump.
+Tests: `reward_redesign_test.py::{TestProgressPBRS, TestHazardPBRS, TestBoostPBRS, TestOppBoostsPBRS,
+TestEndStateDrops, TestAllShapingPbrsNoOpDefault}` + `snapshot_test.py` (resume-immutability + v13→v14 +
+v14→v15 migration).
 
 ## Bot evaluation (subprocess, non-blocking)
 

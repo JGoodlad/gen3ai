@@ -252,6 +252,135 @@ def test_check_compatible_ignores_draw_penalty(version):
     version.check_compatible(differing)  # must not raise
 
 
+@pytest.mark.parametrize("field", ["drop_redundant_bias", "drop_switch_bias"])
+def test_check_reward_config_debias_flag_mismatch_raises(version, field):
+    """The de-bias cleanup flags are resume-immutable (they change the reward) — a drift must FATAL."""
+    saved = dataclasses.replace(version, **{field: True})
+    with pytest.raises(ModelVersionError) as exc_info:
+        saved.check_reward_config(_reward_cfg(**{field: False}))
+    assert field in str(exc_info.value)
+
+
+def test_check_reward_config_debias_default_off_matches(version):
+    """A fresh default run (both flags OFF) matches a default-OFF saved config (no raise)."""
+    dataclasses.replace(version, drop_redundant_bias=False,
+                        drop_switch_bias=False).check_reward_config(_reward_cfg())
+
+
+@pytest.mark.parametrize("field", ["drop_redundant_bias", "drop_switch_bias"])
+def test_check_compatible_ignores_debias_flags(version, field):
+    """The de-bias flags are value-meaning, NOT weight-shape — frozen eval / pool / distill loads
+    (which go through check_compatible) must accept any value."""
+    differing = dataclasses.replace(version, **{field: not getattr(version, field)})
+    version.check_compatible(differing)  # must not raise
+
+
+def test_migrate_v11_adds_debias_flags_default(version):
+    """Pre-v12 configs lack the de-bias flags — migration injects False (prior behavior) and bumps."""
+    data = json.loads(version.to_json())
+    data.pop("drop_redundant_bias", None)
+    data.pop("drop_switch_bias", None)
+    data["config_version"] = 11
+    result = _migrate_config(data)
+    assert result["config_version"] == MODEL_CONFIG_VERSION
+    assert result["drop_redundant_bias"] is False and result["drop_switch_bias"] is False
+    ModelVersion(**result)
+
+
+# ---------------------------------------------------------------------------
+# v13 — all_shaping_pbrs (end-state PBRS switch) + no_progress_penalty (now recorded)
+# ---------------------------------------------------------------------------
+@pytest.mark.parametrize("field", ["all_shaping_pbrs", "no_progress_penalty"])
+def test_check_reward_config_v13_field_mismatch_raises(version, field):
+    """all_shaping_pbrs + no_progress_penalty are resume-immutable (they change the reward) — drift FATAL."""
+    diff = {"all_shaping_pbrs": True, "no_progress_penalty": 0.30}[field]
+    saved = dataclasses.replace(version, **{field: diff})
+    with pytest.raises(ModelVersionError) as exc_info:
+        saved.check_reward_config(_reward_cfg(**{field: {"all_shaping_pbrs": False,
+                                                         "no_progress_penalty": 0.15}[field]}))
+    assert field in str(exc_info.value)
+
+
+def test_check_reward_config_v13_default_matches(version):
+    """A fresh default run (flag OFF, penalty 0.15) matches a default-OFF saved config (no raise)."""
+    dataclasses.replace(version, all_shaping_pbrs=False,
+                        no_progress_penalty=0.15).check_reward_config(_reward_cfg())
+
+
+@pytest.mark.parametrize("field", ["all_shaping_pbrs", "no_progress_penalty"])
+def test_check_compatible_ignores_v13_fields(version, field):
+    """all_shaping_pbrs + no_progress_penalty are value-meaning, NOT weight-shape — frozen eval / pool /
+    distill loads (which go through check_compatible) must accept any value."""
+    diff = {"all_shaping_pbrs": not version.all_shaping_pbrs,
+            "no_progress_penalty": version.no_progress_penalty + 0.1}[field]
+    version.check_compatible(dataclasses.replace(version, **{field: diff}))  # must not raise
+
+
+def test_all_shaping_pbrs_recorded_and_config_version(layout):
+    """from_layout_and_policy_kwargs records all_shaping_pbrs + no_progress_penalty from reward_config."""
+    rc = _reward_cfg(all_shaping_pbrs=True, no_progress_penalty=0.25)
+    v = ModelVersion.from_layout_and_policy_kwargs(layout, {"net_arch": [512, 512]}, reward_config=rc)
+    assert v.all_shaping_pbrs is True and v.no_progress_penalty == 0.25
+    assert v.config_version == MODEL_CONFIG_VERSION
+    v0 = ModelVersion.from_layout_and_policy_kwargs(layout, {"net_arch": [512, 512]})
+    assert v0.all_shaping_pbrs is False and v0.no_progress_penalty == 0.15
+
+
+def test_migrate_v12_adds_v13_fields_default(version):
+    """Pre-v13 configs lack all_shaping_pbrs + no_progress_penalty — migration injects the prior
+    defaults (False / 0.15) and bumps the version."""
+    data = json.loads(version.to_json())
+    data.pop("all_shaping_pbrs", None)
+    data.pop("no_progress_penalty", None)
+    data["config_version"] = 12
+    result = _migrate_config(data)
+    assert result["config_version"] == MODEL_CONFIG_VERSION
+    assert result["all_shaping_pbrs"] is False
+    assert result["no_progress_penalty"] == 0.15
+    ModelVersion(**result)
+
+
+# ---------------------------------------------------------------------------
+# v14 — stall_pbrs (the "stall" end-state switch, split out of all_shaping_pbrs)
+# ---------------------------------------------------------------------------
+def test_check_reward_config_v14_stall_pbrs_mismatch_raises(version):
+    """stall_pbrs is resume-immutable (it changes the anti-stall reward) — a drift must FATAL."""
+    saved = dataclasses.replace(version, stall_pbrs=True)
+    with pytest.raises(ModelVersionError) as exc_info:
+        saved.check_reward_config(_reward_cfg(stall_pbrs=False))
+    assert "stall_pbrs" in str(exc_info.value)
+
+
+def test_check_reward_config_v14_default_matches(version):
+    """A fresh default run (stall_pbrs OFF) matches a default-OFF saved config (no raise)."""
+    dataclasses.replace(version, stall_pbrs=False).check_reward_config(_reward_cfg())
+
+
+def test_check_compatible_ignores_stall_pbrs(version):
+    """stall_pbrs is value-meaning, NOT weight-shape — frozen eval / pool / distill loads must accept it."""
+    version.check_compatible(dataclasses.replace(version, stall_pbrs=not version.stall_pbrs))
+
+
+def test_stall_pbrs_recorded_and_config_version(layout):
+    """from_layout_and_policy_kwargs records stall_pbrs from reward_config; absent → False."""
+    rc = _reward_cfg(all_shaping_pbrs=True, stall_pbrs=True)
+    v = ModelVersion.from_layout_and_policy_kwargs(layout, {"net_arch": [512, 512]}, reward_config=rc)
+    assert v.stall_pbrs is True and v.config_version == MODEL_CONFIG_VERSION
+    v0 = ModelVersion.from_layout_and_policy_kwargs(layout, {"net_arch": [512, 512]})
+    assert v0.stall_pbrs is False
+
+
+def test_migrate_v13_adds_stall_pbrs_default(version):
+    """Pre-v14 configs lack stall_pbrs — migration injects False (prior behavior) and bumps the version."""
+    data = json.loads(version.to_json())
+    data.pop("stall_pbrs", None)
+    data["config_version"] = 13
+    result = _migrate_config(data)
+    assert result["config_version"] == MODEL_CONFIG_VERSION
+    assert result["stall_pbrs"] is False
+    ModelVersion(**result)
+
+
 # ---------------------------------------------------------------------------
 # check_opponent_compatible — the stable-opponent gate (obs-family only)
 # ---------------------------------------------------------------------------

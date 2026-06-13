@@ -531,6 +531,34 @@ async def main():
                         "(measured: ~38%% of explosions are on >=80%%-HP mons). >0 (e.g. 2.5) charges "
                         "the squandered HP, sparing legitimate low-HP sac-for-KO. Resume-immutable "
                         "(recorded + value-checked in model_config.json).")
+    parser.add_argument("--drop-redundant-bias", "--drop_redundant_bias", dest="drop_redundant_bias",
+                        action=BoolFlag, default=False, help="De-bias cleanup: zero BIAS terms REDUNDANT "
+                        "with an existing PBRS/terminal term — stall_tax (covered by the no-progress clock "
+                        "+ --draw-penalty; it also taxed winning long games on raw turn count) and "
+                        "matchup_penalty (the same incoming-KO threat signal as pbrs_belief, but additive "
+                        "not telescoping). Default OFF = byte-identical. Resume-immutable, value-checked.")
+    parser.add_argument("--drop-switch-bias", "--drop_switch_bias", dest="drop_switch_bias",
+                        action=BoolFlag, default=False, help="De-bias cleanup: zero the HAND-CODED "
+                        "switch-strategy subsidy (switch_base, switch_bouncing_tax, escape_threat_switch, "
+                        "se_switch, pivot_*, sleep_in/out) — switching value is LEARNABLE from Φ_mat + "
+                        "pbrs_belief + win/loss, so hand-rewarding it distorts the objective. Default OFF "
+                        "= byte-identical. Resume-immutable, value-checked.")
+    parser.add_argument("--all-shaping-pbrs", "--all_shaping_pbrs", dest="all_shaping_pbrs",
+                        action=BoolFlag, default=False, help="END-STATE PBRS, 'everything but stall': "
+                        "fold Φ_hazard/Φ_boost/Φ_opp_boosts + Φ_status (telescoping, policy-invariant) "
+                        "and ZERO every BIAS term EXCEPT the anti-stall tilt no_progress_tax — so all "
+                        "non-stall shaping is policy-invariant (the bad turn-ramp stall_tax is zeroed). "
+                        "Default OFF = byte-identical. Pair with --stall-pbrs for a FULLY-PBRS reward, or "
+                        "use alone to keep the no_progress stall tilt as the one acknowledged BIAS. "
+                        "Resume-immutable, value-checked.")
+    parser.add_argument("--stall-pbrs", "--stall_pbrs", dest="stall_pbrs",
+                        action=BoolFlag, default=False, help="END-STATE PBRS, 'stall': fold Φ_progress "
+                        "(telescoping anti-stall over the turns_since_progress clock) and ZERO "
+                        "no_progress_tax + stall_tax, so the anti-stall signal is policy-invariant too. "
+                        "Default OFF. Run --all-shaping-pbrs WITH --stall-pbrs ⇒ the whole BIAS class is "
+                        "zero (TERMINAL + PBRS only); WITHOUT it ⇒ keep the no_progress stall tilt as "
+                        "insurance against stall-regression (watch the stall-rate canary). Resume-"
+                        "immutable, value-checked.")
     parser.add_argument("--clip-range", type=float, default=CLIP_RANGE_DEFAULT, help="PPO policy clip range (default 0.15)")
     parser.add_argument("--clip-range-vf", type=optional_float, default=0.5, help="Value function clip range; pass 'none' to disable clipping (thesis used 0.0184)")
     parser.add_argument("--use-popart", "--use_popart", dest="use_popart", action=BoolFlag, default=False,

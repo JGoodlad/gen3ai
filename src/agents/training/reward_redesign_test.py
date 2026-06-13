@@ -12,6 +12,8 @@ from agents.training.reward_manager import (
     Gen3RewardManager, RewardConfig, RewardClass, RewardBreakdown,
     MAT_HP_WEIGHT, MAT_ALIVE_WEIGHT, STATUS_TEMPO_WEIGHT, PBRS_GAMMA, VICTORY_VALUE,
     SWITCH_RISK_THRESHOLD, SAFE_PIVOT_PKO_MAX, STAY_RISK_TAX_FLOOR, ESCAPE_RISK_FRACTION,
+    HAZARD_WEIGHT, BOOST_WEIGHT, OPP_BOOST_WEIGHT, FINISHING_BLOW_BONUS, EXPLOSION_BLOCK_BONUS,
+    SPIKES_WASTE_PENALTY,
     _TIMEOUT_TURN_CAP,
 )
 from agents.training.progress_clock import (
@@ -81,6 +83,7 @@ def _delta(**kw):
         we_fainted=False, opp_fainted=False, our_move_id=None, our_switch_to=None,
         opp_switch_to=None, opp_damaging_event=None, our_damaging_event=None,
         opp_target_hp_delta=None, our_move_outcome=None, our_failed_to_move=False,
+        our_effectiveness=1.0,
         our_cant_reason=None, opp_status_applied=None, opp_resolved_move_id=None,
         phase_is_forced_switch=False, our_status_applied=None,
         our_status_cured=None, opp_status_cured=None,
@@ -128,7 +131,8 @@ class TestRewardRegistry(unittest.TestCase):
         bd = RewardBreakdown()
         self.assertEqual(set(bd.registry_fields(RewardClass.TERMINAL)), {"win_loss"})
         self.assertEqual(set(bd.registry_fields(RewardClass.PBRS)),
-                         {"pbrs_material", "pbrs_belief", "pbrs_status"})
+                         {"pbrs_material", "pbrs_belief", "pbrs_status",
+                          "pbrs_progress", "pbrs_hazard", "pbrs_boost", "pbrs_opp_boosts"})
         # Everything else is BIAS.
         self.assertIn("no_progress_tax", bd.registry_fields(RewardClass.BIAS))
         self.assertIn("roar", bd.registry_fields(RewardClass.BIAS))
@@ -350,6 +354,532 @@ class TestBiasAdditivity(unittest.TestCase):
         resid = abs(PBRS_GAMMA - 1.0) * abs(b1) * 3 + 1e-9
         self.assertAlmostEqual(b0 + r0, 0.0, delta=resid)          # contribution λ·acc = 0
         self.assertAlmostEqual(bh + rh, 0.5 * b1, delta=resid)     # contribution 0.5·acc
+
+
+# --------------------------------------------------------------------------- #
+class TestBiasDrops(unittest.TestCase):
+    """De-bias cleanup (audit TIER-1 distorter removal): --drop-redundant-bias / --drop-switch-bias
+    ZERO their BIAS terms before the refund fold (so they also leave the accumulator). Both default
+    OFF = byte-identical no-op."""
+
+    _REDUNDANT = ("stall_tax", "matchup_penalty")
+    _SWITCH = ("switch_base", "switch_bouncing_tax", "escape_threat_switch", "se_switch",
+               "pivot_protect", "pivot_status", "pivot_damage", "sleep_out", "sleep_in")
+
+    def _bd_all_bias_nonzero(self):
+        bd = RewardBreakdown()
+        for f in bd.registry_fields(RewardClass.BIAS):
+            setattr(bd, f, 1.0)
+        return bd
+
+    def test_dropped_terms_are_registered_bias(self):
+        """Every dropped field must be a BIAS-class registry member, else the drop is a typo no-op."""
+        bias = set(RewardBreakdown().registry_fields(RewardClass.BIAS))
+        for f in self._REDUNDANT + self._SWITCH:
+            self.assertIn(f, bias, f"{f} is not a BIAS field")
+
+    def test_default_is_noop(self):
+        m = Gen3RewardManager()   # both flags default False
+        bd = self._bd_all_bias_nonzero()
+        m._apply_bias_drops(bd)
+        for f in bd.registry_fields(RewardClass.BIAS):
+            self.assertEqual(getattr(bd, f), 1.0, f"{f} must be untouched by default")
+
+    def test_drop_redundant_bias_zeros_only_those(self):
+        m = Gen3RewardManager(config=RewardConfig(drop_redundant_bias=True))
+        bd = self._bd_all_bias_nonzero()
+        m._apply_bias_drops(bd)
+        for f in self._REDUNDANT:
+            self.assertEqual(getattr(bd, f), 0.0, f"{f} should be dropped")
+        for f in self._SWITCH:
+            self.assertEqual(getattr(bd, f), 1.0, f"{f} should be untouched")
+
+    def test_drop_switch_bias_zeros_only_those(self):
+        m = Gen3RewardManager(config=RewardConfig(drop_switch_bias=True))
+        bd = self._bd_all_bias_nonzero()
+        m._apply_bias_drops(bd)
+        for f in self._SWITCH:
+            self.assertEqual(getattr(bd, f), 0.0, f"{f} should be dropped")
+        for f in self._REDUNDANT:
+            self.assertEqual(getattr(bd, f), 1.0, f"{f} should be untouched")
+
+    def test_both_flags_drop_union(self):
+        m = Gen3RewardManager(config=RewardConfig(drop_redundant_bias=True, drop_switch_bias=True))
+        bd = self._bd_all_bias_nonzero()
+        m._apply_bias_drops(bd)
+        for f in self._REDUNDANT + self._SWITCH:
+            self.assertEqual(getattr(bd, f), 0.0)
+
+    def test_drop_redundant_zeros_stall_tax_end_to_end(self):
+        """A real turn past STALL_TAX_START_TURN charges stall_tax; the flag zeros it in the breakdown."""
+        m_off = Gen3RewardManager()
+        m_off.process_turn_reward(_Battle(_full_team_live(), turn=120), _delta())
+        self.assertLess(m_off._last_breakdown.stall_tax, 0.0)   # charged when off
+        m_on = Gen3RewardManager(config=RewardConfig(drop_redundant_bias=True))
+        m_on.process_turn_reward(_Battle(_full_team_live(), turn=120), _delta())
+        self.assertEqual(m_on._last_breakdown.stall_tax, 0.0)   # dropped when on
+
+    def test_config_flows_through_from_args_and_from_dict(self):
+        from types import SimpleNamespace
+        from dataclasses import asdict
+        rc = RewardConfig.from_args(SimpleNamespace(drop_redundant_bias=True, drop_switch_bias=True))
+        self.assertTrue(rc.drop_redundant_bias and rc.drop_switch_bias)
+        self.assertEqual(RewardConfig.from_dict(asdict(rc)), rc)   # round-trips for eval/resume
+
+
+# --------------------------------------------------------------------------- #
+def _mgr_pbrs(**cfg):
+    """A FULLY-PBRS manager (both end-state switches ON) + a real ProgressClock, so every new
+    potential is live — incl. Φ_progress, which gates on stall_pbrs (the 'stall' switch)."""
+    return Gen3RewardManager(config=RewardConfig(all_shaping_pbrs=True, stall_pbrs=True, **cfg),
+                             progress_clock=ProgressClock())
+
+
+# --------------------------------------------------------------------------- #
+class TestProgressPBRS(unittest.TestCase):
+    """Φ_progress (design §5): the anti-stall PBRS potential. Φ = −W·clock.value(); telescoping,
+    terminal-zeroing; gated on --stall-pbrs (OFF = byte-identical default; --all-shaping-pbrs alone
+    keeps the no_progress_tax tilt instead). The _mgr_pbrs helper turns BOTH switches on."""
+
+    def test_phi_progress_zero_at_start(self):
+        """n=0 at episode start → Φ_progress ≈ 0."""
+        m = _mgr_pbrs()
+        self.assertAlmostEqual(m._compute_phi_progress(None), 0.0, places=6)
+
+    def test_phi_progress_negative_when_stalling(self):
+        """n>0 → Φ_progress < 0 (FIRST guard against a sign flip rewarding stalling)."""
+        m = _mgr_pbrs()
+        m.progress_clock.n = 5
+        self.assertLess(m._compute_phi_progress(None), 0.0)
+
+    def test_phi_progress_none_clock_returns_zero(self):
+        """Inference / standalone (no clock) → Φ_progress = 0 (no NoneType deref)."""
+        m = Gen3RewardManager(config=RewardConfig(all_shaping_pbrs=True))  # no clock
+        self.assertEqual(m._compute_phi_progress(None), 0.0)
+
+    def test_phi_progress_scales_with_no_progress_penalty(self):
+        """Doubling no_progress_penalty doubles |Φ_progress| (it is the weight)."""
+        m1 = Gen3RewardManager(config=RewardConfig(all_shaping_pbrs=True, no_progress_penalty=0.15),
+                               progress_clock=ProgressClock())
+        m2 = Gen3RewardManager(config=RewardConfig(all_shaping_pbrs=True, no_progress_penalty=0.30),
+                               progress_clock=ProgressClock())
+        m1.progress_clock.n = m2.progress_clock.n = 4
+        self.assertAlmostEqual(m2._compute_phi_progress(None), 2.0 * m1._compute_phi_progress(None),
+                               places=6)
+
+    def test_fold_gated_off_by_default(self):
+        """Default run (all_shaping_pbrs OFF): pbrs_progress ≡ 0, _prev_phi_progress stays None even
+        with the clock charged."""
+        m = Gen3RewardManager(progress_clock=ProgressClock())   # default: all_shaping_pbrs False
+        m.progress_clock.n = 5
+        m.process_turn_reward(_Battle(_full_team_live(), turn=1), _delta())
+        m.progress_clock.n = 6
+        m.process_turn_reward(_Battle(_full_team_live(), turn=2), _delta())
+        self.assertEqual(m._last_breakdown.pbrs_progress, 0.0)
+        self.assertIsNone(m._prev_phi_progress)
+
+    def test_fold_active_on_stall(self):
+        """Under the flag, an increasing clock yields a negative pbrs_progress (Φ falls further)."""
+        m = _mgr_pbrs()
+        m.process_turn_reward(_Battle(_full_team_live(), turn=1), _delta())   # prev = Φ(n=0) = 0
+        m.progress_clock.n = 4                                                # stalled
+        m.process_turn_reward(_Battle(_full_team_live(), turn=2), _delta())
+        self.assertLess(m._last_breakdown.pbrs_progress, 0.0)
+
+    def test_terminal_zeroes_phi(self):
+        """A terminal window zeroes Φ → shaped = −prev (small), NOT a stall bonus."""
+        m = _mgr_pbrs()
+        m.process_turn_reward(_Battle(_full_team_live(), turn=1), _delta())
+        m.progress_clock.n = 5
+        m.process_turn_reward(_Battle(_full_team_live(), turn=2), _delta())   # set prev<0
+        prev = m._prev_phi_progress
+        self.assertLess(prev, 0.0)
+        win_live = _Live([1.0] * 6, [0.0] * 6, won=True, finished=True)
+        m.process_turn_reward(_Battle(win_live, turn=3), _delta(opp_fainted=True))
+        self.assertAlmostEqual(m._last_breakdown.pbrs_progress, -prev, places=6)  # γ·0 − prev
+
+    def test_telescopes_to_zero_net(self):
+        """Clock up then reset to 0 then terminal → Σ pbrs_progress ≈ 0 (Φ(s_0)=0, policy-invariant)."""
+        m = _mgr_pbrs()
+        ns = [0, 3, 6, 0, 0]   # the clock trajectory; last window terminal
+        total = 0.0
+        for i, n in enumerate(ns):
+            m.progress_clock.n = n
+            term = (i == len(ns) - 1)
+            live = _Live([1.0] * 6, [0.0] * 6, won=True, finished=True) if term else _full_team_live()
+            m.process_turn_reward(_Battle(live, turn=i + 1), _delta())
+            total += m._last_breakdown.pbrs_progress
+        resid = abs(PBRS_GAMMA - 1.0) * len(ns) * abs(RewardConfig().no_progress_penalty) + 1e-6
+        self.assertAlmostEqual(total, 0.0, delta=resid)
+
+
+# --------------------------------------------------------------------------- #
+class TestHazardPBRS(unittest.TestCase):
+    """Φ_hazard (design §2.6): the spikes/hazard potential. Telescoping, terminal zeroing,
+    futile-waste dissolution."""
+
+    def test_phi_hazard_zero_at_start(self):
+        m = Gen3RewardManager()
+        self.assertAlmostEqual(m._compute_phi_hazard(_full_team_live()), 0.0, places=6)
+
+    def test_phi_opp_layer_raises(self):
+        """Opp gains a spikes layer (0→1) → Φ_hazard increases by HAZARD_WEIGHT."""
+        m = Gen3RewardManager()
+        live1 = _full_team_live(); live1.opp.side_conditions = {"spikes": 1}
+        self.assertAlmostEqual(m._compute_phi_hazard(live1) - m._compute_phi_hazard(_full_team_live()),
+                               HAZARD_WEIGHT, places=6)
+
+    def test_phi_our_layer_lowers(self):
+        """We gain a spikes layer (our side) → Φ_hazard decreases by HAZARD_WEIGHT (symmetric)."""
+        m = Gen3RewardManager()
+        live1 = _full_team_live(); live1.ours.side_conditions = {"spikes": 1}
+        self.assertAlmostEqual(m._compute_phi_hazard(_full_team_live()) - m._compute_phi_hazard(live1),
+                               HAZARD_WEIGHT, places=6)
+
+    def test_phi_symmetry(self):
+        """opp 3, us 1 → Φ_hazard = HAZARD_WEIGHT·(3−1) = +1.0."""
+        m = Gen3RewardManager()
+        live = _full_team_live()
+        live.opp.side_conditions = {"spikes": 3}
+        live.ours.side_conditions = {"spikes": 1}
+        self.assertAlmostEqual(m._compute_phi_hazard(live), HAZARD_WEIGHT * (3 - 1), places=6)
+
+    def test_fold_gated_off_by_default(self):
+        """Default run (all_shaping_pbrs OFF): pbrs_hazard ≡ 0, _prev_phi_hazard stays None."""
+        m = Gen3RewardManager()
+        m.process_turn_reward(_Battle(_full_team_live(), turn=1), _delta())
+        live2 = _full_team_live(); live2.opp.side_conditions = {"spikes": 1}
+        m.process_turn_reward(_Battle(live2, turn=2), _delta(our_move_id="spikes"))
+        self.assertEqual(m._last_breakdown.pbrs_hazard, 0.0)
+        self.assertIsNone(m._prev_phi_hazard)
+
+    def test_fold_layer_added_then_cleared(self):
+        """Under the flag: opp gaining a layer RAISES Φ (+pbrs_hazard); a held layer ≈0; clearing
+        (Rapid Spin) DROPS Φ (−pbrs_hazard)."""
+        m = _mgr_pbrs()
+        m.process_turn_reward(_Battle(_full_team_live(), turn=1), _delta())   # prev = 0
+        layer = _full_team_live(); layer.opp.side_conditions = {"spikes": 1}
+        m.process_turn_reward(_Battle(layer, turn=2), _delta(our_move_id="spikes"))
+        self.assertAlmostEqual(m._last_breakdown.pbrs_hazard, PBRS_GAMMA * HAZARD_WEIGHT, places=6)
+        held = _full_team_live(); held.opp.side_conditions = {"spikes": 1}
+        m.process_turn_reward(_Battle(held, turn=3), _delta())
+        self.assertLess(abs(m._last_breakdown.pbrs_hazard), 1e-3)              # ≈0 (γ−1)·w
+        m.process_turn_reward(_Battle(_full_team_live(), turn=4), _delta())    # cleared
+        self.assertLess(m._last_breakdown.pbrs_hazard, 0.0)
+
+    def test_futile_spikes_dissolves(self):
+        """Spikes at the 3-layer cap → ΔΦ_hazard ≈ 0 AND bd.futile_spikes == 0 under suppression."""
+        m = _mgr_pbrs()
+        capped = _full_team_live(); capped.opp.side_conditions = {"spikes": 3}
+        m._prev_opp_spikes = 3   # already at cap before this window
+        m.process_turn_reward(_Battle(capped, turn=1), _delta())   # prev φ set
+        m.process_turn_reward(_Battle(capped, turn=2), _delta(our_move_id="spikes"))
+        self.assertLess(abs(m._last_breakdown.pbrs_hazard), 1e-3)
+        self.assertEqual(m._last_breakdown.futile_spikes, 0.0)     # dissolved under suppression
+
+    def test_telescopes_to_zero_net(self):
+        """Hazard up then cleared then terminal → Σ pbrs_hazard ≈ 0 (Φ(s_0)=0, policy-invariant)."""
+        m = _mgr_pbrs()
+        s1 = _full_team_live()
+        s2 = _full_team_live(); s2.opp.side_conditions = {"spikes": 1}
+        s3 = _full_team_live(); s3.opp.side_conditions = {"spikes": 2}
+        s4 = _full_team_live(); s4.opp.side_conditions = {"spikes": 3}
+        s5 = _full_team_live()   # cleared
+        s6 = _Live([1.0] * 6, [0.0] * 6, won=True, finished=True)
+        total = 0.0
+        for i, live in enumerate((s1, s2, s3, s4, s5, s6)):
+            m.process_turn_reward(_Battle(live, turn=i + 1), _delta())
+            total += m._last_breakdown.pbrs_hazard
+        resid = abs(PBRS_GAMMA - 1.0) * 6 * HAZARD_WEIGHT + 1e-6
+        self.assertAlmostEqual(total, 0.0, delta=resid)
+
+
+# --------------------------------------------------------------------------- #
+class TestBoostPBRS(unittest.TestCase):
+    """Φ_boost (design): stored-boost offensive potential; positive-only, HP-scaled, telescoping."""
+
+    def test_phi_zero_no_boosts(self):
+        m = _mgr_pbrs()
+        self.assertAlmostEqual(m._compute_phi_boost(_full_team_live()), 0.0, places=6)
+
+    def test_phi_counts_positive_only(self):
+        """atk +2, spa +1, spe −1 → Σ max(0,·) = 3; full HP → Φ = BOOST_WEIGHT·3."""
+        m = _mgr_pbrs()
+        live = _full_team_live()
+        live.ours.active.boosts = {"atk": 2, "spa": 1, "spe": -1}
+        self.assertAlmostEqual(m._compute_phi_boost(live), BOOST_WEIGHT * 3 * 1.0, places=6)
+
+    def test_phi_scales_with_hp(self):
+        """Half-HP active → half the Φ_boost of full HP."""
+        m = _mgr_pbrs()
+        full = _full_team_live(); full.ours.active.boosts = {"atk": 2}
+        half = _full_team_live(our_hp=0.5); half.ours.active.boosts = {"atk": 2}
+        self.assertAlmostEqual(m._compute_phi_boost(half), m._compute_phi_boost(full) * 0.5, places=6)
+
+    def test_phi_zero_at_cap_no_bonus(self):
+        """Setting a boost already at +6 (capped) → Φ unchanged → ΔΦ ≈ 0."""
+        m = _mgr_pbrs()
+        capped = _full_team_live(); capped.ours.active.boosts = {"atk": 6}
+        m.process_turn_reward(_Battle(capped, turn=1), _delta())   # prev φ at cap
+        capped2 = _full_team_live(); capped2.ours.active.boosts = {"atk": 6}
+        m.process_turn_reward(_Battle(capped2, turn=2), _delta(our_move_id="swordsdance"))
+        self.assertAlmostEqual(m._last_breakdown.pbrs_boost, 0.0, places=3)
+
+    def test_phi_faint_drops_potential(self):
+        """A boosted active fainting (new active has no boosts) → Φ drops → −pbrs_boost."""
+        m = _mgr_pbrs()
+        boosted = _full_team_live(); boosted.ours.active.boosts = {"atk": 3, "spa": 2}
+        m.process_turn_reward(_Battle(boosted, turn=1), _delta())
+        self.assertGreater(m._prev_phi_boost, 0.0)
+        fainted = _full_team_live(our_alive=5)   # mon fainted, new active boostless
+        m.process_turn_reward(_Battle(fainted, turn=2), _delta(we_fainted=True))
+        self.assertLess(m._last_breakdown.pbrs_boost, 0.0)
+
+    def test_fold_gated_off_by_default(self):
+        m = Gen3RewardManager()
+        live = _full_team_live(); live.ours.active.boosts = {"atk": 3}
+        m.process_turn_reward(_Battle(live, turn=1), _delta())
+        self.assertEqual(m._last_breakdown.pbrs_boost, 0.0)
+        self.assertIsNone(m._prev_phi_boost)
+
+    def test_telescopes_to_zero_net(self):
+        """Setup → held → faint → terminal: Σ pbrs_boost ≈ 0 (policy-invariant)."""
+        m = _mgr_pbrs()
+        s1 = _full_team_live()
+        s2 = _full_team_live(); s2.ours.active.boosts = {"atk": 2, "spa": 1}
+        s3 = _full_team_live(); s3.ours.active.boosts = {"atk": 2, "spa": 1}
+        s4 = _full_team_live(our_alive=5)   # boosted mon fainted, new active boostless
+        s5 = _Live([1.0] * 6, [0.0] * 6, won=True, finished=True)
+        total = 0.0
+        for i, live in enumerate((s1, s2, s3, s4, s5)):
+            m.process_turn_reward(_Battle(live, turn=i + 1), _delta())
+            total += m._last_breakdown.pbrs_boost
+        resid = abs(PBRS_GAMMA - 1.0) * 5 * BOOST_WEIGHT * 6 * 1.0 + 1e-6
+        self.assertAlmostEqual(total, 0.0, delta=resid)
+
+    def test_boost_bias_terms_suppressed_under_flag(self):
+        """Under the flag, boost_utilized / futile_setup / setup_low_hp all leave the breakdown == 0."""
+        m = _mgr_pbrs()
+        # A capped setup at low HP would normally charge futile_setup + setup_low_hp.
+        m._our_active_hp_before = 0.2
+        live = _full_team_live(our_hp=0.2); live.ours.active.boosts = {"atk": 6}
+        m.process_turn_reward(_Battle(live, turn=1),
+                              _delta(our_move_id="swordsdance",
+                                     our_boost_delta=np.zeros(7, dtype=np.int8)))
+        bd = m._last_breakdown
+        self.assertEqual(bd.boost_utilized, 0.0)
+        self.assertEqual(bd.futile_setup, 0.0)
+        self.assertEqual(bd.setup_low_hp, 0.0)
+
+
+# --------------------------------------------------------------------------- #
+class TestOppBoostsPBRS(unittest.TestCase):
+    """Φ_opp_boosts (design): phaze-boost-disruption potential. Negative with opp boosts; a forced
+    switch clearing boosts raises Φ; a failed Roar leaves them → ΔΦ=0. Telescoping, terminal zero."""
+
+    def test_phi_zero_at_start(self):
+        m = _mgr_pbrs()
+        self.assertAlmostEqual(m._compute_phi_opp_boosts(_full_team_live()), 0.0, places=6)
+
+    def test_phi_negative_with_boosts(self):
+        """opp atk +3 → Φ = −OPP_BOOST_WEIGHT·3 = −0.45."""
+        m = _mgr_pbrs()
+        live = _full_team_live(); live.opp.active.boosts = {"atk": 3}
+        self.assertAlmostEqual(m._compute_phi_opp_boosts(live), -OPP_BOOST_WEIGHT * 3, places=6)
+
+    def test_phi_sums_positive(self):
+        """All positive stages sum: atk+2, spe+1, spa+3 → −OPP_BOOST_WEIGHT·6."""
+        m = _mgr_pbrs()
+        live = _full_team_live(); live.opp.active.boosts = {"atk": 2, "spe": 1, "spa": 3}
+        self.assertAlmostEqual(m._compute_phi_opp_boosts(live), -OPP_BOOST_WEIGHT * 6, places=6)
+
+    def test_phi_ignores_negative(self):
+        """A negative opp boost (def −2) does not contribute."""
+        m = _mgr_pbrs()
+        live = _full_team_live(); live.opp.active.boosts = {"atk": 2, "def": -2}
+        self.assertAlmostEqual(m._compute_phi_opp_boosts(live), -OPP_BOOST_WEIGHT * 2, places=6)
+
+    def test_fold_disabled_by_default(self):
+        m = Gen3RewardManager()
+        live = _full_team_live(); live.opp.active.boosts = {"atk": 3}
+        m.process_turn_reward(_Battle(live, turn=1), _delta())
+        self.assertEqual(m._last_breakdown.pbrs_opp_boosts, 0.0)
+        self.assertIsNone(m._prev_phi_opp_boosts)
+
+    def test_roar_forces_switch_clears_boosts(self):
+        """opp +3, then Roar forces a switch (new active boostless) → Φ rises → +pbrs_opp_boosts."""
+        m = _mgr_pbrs()
+        boosted = _full_team_live(); boosted.opp.active.boosts = {"atk": 3}
+        m.process_turn_reward(_Battle(boosted, turn=1), _delta())
+        prev = m._prev_phi_opp_boosts
+        self.assertAlmostEqual(prev, -OPP_BOOST_WEIGHT * 3, places=6)
+        cleared = _full_team_live()   # forced-in mon, no boosts
+        m.process_turn_reward(_Battle(cleared, turn=2),
+                              _delta(our_move_id="roar", opp_switch_to="new"))
+        self.assertAlmostEqual(m._last_breakdown.pbrs_opp_boosts, PBRS_GAMMA * 0.0 - prev, places=6)
+        self.assertGreater(m._last_breakdown.pbrs_opp_boosts, 0.0)
+
+    def test_failed_roar_no_shaping(self):
+        """Roar fails (opp stays, boosts unchanged) → ΔΦ ≈ 0 (failed_roar dissolves); only the
+        bounded (γ−1)·Φ telescoping residual remains, exactly like a held status."""
+        m = _mgr_pbrs()
+        b1 = _full_team_live(); b1.opp.active.boosts = {"spa": 2}
+        m.process_turn_reward(_Battle(b1, turn=1), _delta())
+        b2 = _full_team_live(); b2.opp.active.boosts = {"spa": 2}
+        m.process_turn_reward(_Battle(b2, turn=2), _delta(our_move_id="roar", opp_switch_to=None))
+        self.assertLess(abs(m._last_breakdown.pbrs_opp_boosts), 1e-3)   # ≈0 (γ−1)·w
+
+    def test_terminal_zeroes_phi(self):
+        """A terminal zeroes Φ → shaped = −prev (small)."""
+        m = _mgr_pbrs()
+        b1 = _full_team_live(); b1.opp.active.boosts = {"atk": 2}
+        m.process_turn_reward(_Battle(b1, turn=1), _delta())
+        prev = m._prev_phi_opp_boosts
+        win = _Live([1.0] * 6, [0.0] * 6, won=True, finished=True)
+        m.process_turn_reward(_Battle(win, turn=2), _delta(opp_fainted=True))
+        self.assertAlmostEqual(m._last_breakdown.pbrs_opp_boosts, -prev, places=6)
+
+
+# --------------------------------------------------------------------------- #
+class TestEndStateDrops(unittest.TestCase):
+    """The two end-state switches (mirrors TestBiasDrops):
+      --all-shaping-pbrs ("everything but stall") zeroes EVERY BIAS term EXCEPT the anti-stall tilt
+        `no_progress_tax`.
+      --stall-pbrs ("stall") zeroes `no_progress_tax` + `stall_tax`.
+    Both OFF = byte-identical no-op; both ON ⇒ the WHOLE BIAS class is zero (fully-PBRS reward)."""
+
+    _KEPT_BY_ALL = "no_progress_tax"            # the one BIAS term --all-shaping-pbrs keeps (the tilt)
+    _STALL = ("no_progress_tax", "stall_tax")   # what --stall-pbrs zeroes
+
+    def _bd_all_bias_nonzero(self):
+        bd = RewardBreakdown()
+        for f in bd.registry_fields(RewardClass.BIAS):
+            setattr(bd, f, 1.0)
+        return bd
+
+    def test_default_is_noop(self):
+        m = Gen3RewardManager()   # both flags default False
+        bd = self._bd_all_bias_nonzero()
+        m._apply_pbrs_suppression(bd)
+        for f in bd.registry_fields(RewardClass.BIAS):
+            self.assertEqual(getattr(bd, f), 1.0, f"{f} must be untouched by default")
+
+    def test_all_shaping_zeros_everything_but_stall_tilt(self):
+        """--all-shaping-pbrs zeros every BIAS term EXCEPT no_progress_tax (the kept anti-stall tilt) —
+        so status, stall_tax, matchup_penalty, the switch family, etc. all go."""
+        m = Gen3RewardManager(config=RewardConfig(all_shaping_pbrs=True))
+        bd = self._bd_all_bias_nonzero()
+        m._apply_pbrs_suppression(bd)
+        for f in bd.registry_fields(RewardClass.BIAS):
+            if f == self._KEPT_BY_ALL:
+                self.assertEqual(getattr(bd, f), 1.0, "no_progress_tax (stall tilt) must be KEPT")
+            else:
+                self.assertEqual(getattr(bd, f), 0.0, f"{f} should be zeroed by --all-shaping-pbrs")
+
+    def test_stall_pbrs_zeros_only_the_stall_terms(self):
+        """--stall-pbrs alone zeros no_progress_tax + stall_tax; non-stall BIAS is untouched."""
+        m = Gen3RewardManager(config=RewardConfig(stall_pbrs=True))
+        bd = self._bd_all_bias_nonzero()
+        m._apply_pbrs_suppression(bd)
+        for f in self._STALL:
+            self.assertEqual(getattr(bd, f), 0.0, f"{f} should be zeroed by --stall-pbrs")
+        self.assertEqual(bd.spikes, 1.0)   # a non-stall term is untouched by --stall-pbrs alone
+
+    def test_both_flags_zero_entire_bias_class(self):
+        """--all-shaping-pbrs + --stall-pbrs ⇒ EVERY BIAS term is 0 → TERMINAL + PBRS only."""
+        m = Gen3RewardManager(config=RewardConfig(all_shaping_pbrs=True, stall_pbrs=True))
+        bd = self._bd_all_bias_nonzero()
+        m._apply_pbrs_suppression(bd)
+        for f in bd.registry_fields(RewardClass.BIAS):
+            self.assertEqual(getattr(bd, f), 0.0, f"{f} must be zeroed when both flags on")
+
+    def test_finishing_blow_default_emits_then_dropped(self):
+        """A clean opp-KO with a damaging move: OFF → +0.5; ON → 0."""
+        live = _full_team_live(our_alive=6, opp_alive=1, opp_hp=0.5)
+        live.ours.active.move_ids = ("tackle",)
+        delta = _delta(opp_fainted=True, our_move_id="tackle",
+                       opp_hp_delta=np.array([-0.5, 0, 0, 0, 0, 0], dtype=np.float32))
+        m_off = Gen3RewardManager()
+        m_off.process_turn_reward(_Battle(live, turn=1), delta)
+        self.assertAlmostEqual(m_off._last_breakdown.finishing_blow, FINISHING_BLOW_BONUS, places=6)
+        m_on = Gen3RewardManager(config=RewardConfig(all_shaping_pbrs=True))
+        m_on.process_turn_reward(_Battle(live, turn=1), delta)
+        self.assertEqual(m_on._last_breakdown.finishing_blow, 0.0)
+
+    def test_explosion_block_default_then_dropped(self):
+        """Surviving an opp Explosion (0 damage): OFF → +1.0; ON → 0."""
+        from types import SimpleNamespace
+        opp_event = SimpleNamespace(move_id="explosion", effectiveness=0.0, target_species=None)
+        delta = _delta(opp_damaging_event=opp_event, we_fainted=False,
+                       our_hp_delta=np.zeros(6, dtype=np.float32))
+        m_off = Gen3RewardManager()
+        m_off.process_turn_reward(_Battle(_full_team_live(), turn=1), delta)
+        self.assertAlmostEqual(m_off._last_breakdown.explosion_block, EXPLOSION_BLOCK_BONUS, places=6)
+        m_on = Gen3RewardManager(config=RewardConfig(all_shaping_pbrs=True))
+        m_on.process_turn_reward(_Battle(_full_team_live(), turn=1), delta)
+        self.assertEqual(m_on._last_breakdown.explosion_block, 0.0)
+
+    def test_all_shaping_keeps_no_progress_tilt(self):
+        """--all-shaping-pbrs WITHOUT --stall-pbrs + a charged no-op: no_progress_tax SURVIVES as the
+        anti-stall tilt (and is activated even without --bias-redesign), and pbrs_progress stays 0
+        (Φ_progress gates on --stall-pbrs)."""
+        m = Gen3RewardManager(config=RewardConfig(all_shaping_pbrs=True),
+                              progress_clock=ProgressClock())
+        m.process_turn_reward(_Battle(_full_team_live(), turn=1), _delta())
+        m.progress_clock.last_penalty = -m.config.no_progress_penalty
+        m.progress_clock.n = 3
+        m.process_turn_reward(_Battle(_full_team_live(), turn=2), _delta())
+        bd = m._last_breakdown
+        self.assertLess(bd.no_progress_tax, 0.0)         # KEPT as the tilt
+        self.assertEqual(bd.pbrs_progress, 0.0)          # Φ_progress off (needs --stall-pbrs)
+
+    def test_stall_pbrs_converts_tilt_to_phi_progress(self):
+        """Both switches on + a charged no-op: no_progress_tax == 0 (suppressed, after
+        _apply_progress_clock) and pbrs_progress < 0 (Φ_progress carries the anti-stall telescoping)."""
+        m = Gen3RewardManager(config=RewardConfig(all_shaping_pbrs=True, stall_pbrs=True),
+                              progress_clock=ProgressClock())
+        m.process_turn_reward(_Battle(_full_team_live(), turn=1), _delta())   # prev φ = 0
+        m.progress_clock.last_penalty = -m.config.no_progress_penalty
+        m.progress_clock.n = 3
+        m.process_turn_reward(_Battle(_full_team_live(), turn=2), _delta())
+        bd = m._last_breakdown
+        self.assertEqual(bd.no_progress_tax, 0.0)        # suppressed by --stall-pbrs
+        self.assertLess(bd.pbrs_progress, 0.0)           # Φ_progress carries it telescoping
+
+    def test_config_round_trips(self):
+        from types import SimpleNamespace
+        from dataclasses import asdict
+        rc = RewardConfig.from_args(SimpleNamespace(all_shaping_pbrs=True, stall_pbrs=True,
+                                                    no_progress_penalty=0.25))
+        self.assertTrue(rc.all_shaping_pbrs and rc.stall_pbrs)
+        self.assertEqual(rc.no_progress_penalty, 0.25)
+        self.assertEqual(RewardConfig.from_dict(asdict(rc)), rc)   # round-trips for eval/resume
+
+
+# --------------------------------------------------------------------------- #
+class TestAllShapingPbrsNoOpDefault(unittest.TestCase):
+    """Global no-op-equivalence: with all_shaping_pbrs=False the four pbrs_* fields stay 0 and the
+    four _prev_phi_* slots stay None across a multi-window episode (byte-identical default)."""
+
+    def test_default_leaves_new_pbrs_inert(self):
+        m = Gen3RewardManager(progress_clock=ProgressClock())   # default: flag OFF
+        livesteps = [
+            _full_team_live(),
+            (lambda l: (setattr(l.opp, "side_conditions", {"spikes": 1}), l)[1])(_full_team_live()),
+            (lambda l: (setattr(l.ours.active, "boosts", {"atk": 2}), l)[1])(_full_team_live()),
+            (lambda l: (setattr(l.opp.active, "boosts", {"spa": 3}), l)[1])(_full_team_live()),
+            _Live([1.0] * 6, [0.0] * 6, won=True, finished=True),
+        ]
+        for i, live in enumerate(livesteps):
+            m.progress_clock.n = i   # would charge Φ_progress if the flag were on
+            m.process_turn_reward(_Battle(live, turn=i + 1), _delta())
+            bd = m._last_breakdown
+            self.assertEqual((bd.pbrs_progress, bd.pbrs_hazard, bd.pbrs_boost, bd.pbrs_opp_boosts),
+                             (0.0, 0.0, 0.0, 0.0))
+        self.assertIsNone(m._prev_phi_progress)
+        self.assertIsNone(m._prev_phi_hazard)
+        self.assertIsNone(m._prev_phi_boost)
+        self.assertIsNone(m._prev_phi_opp_boosts)
 
 
 # --------------------------------------------------------------------------- #
