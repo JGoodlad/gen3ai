@@ -89,12 +89,23 @@ payoff-matrix runner + Nash/RPP/diversity metrics). Progress is measured by `win
 plan.
 
 ### ai_v6
-MCTS at inference + the world model that feeds it. Replay collection (**landed** — daemon
-running), behavioural cloning from human replays, the **team-completion model** (masked-slot
-prediction = the PIMC world-sampling step), the Node.js sim bridge, and MCTS itself
-(inference-time policy-improvement operator). Wang (2024) found MCTS gave 78.6% → 90.8% vs
-Heuristic — the biggest single untapped lever. Also: surgical checkpoint transfer and PPO
-embedding improvements.
+Two routes to an **anticipatory** agent — the original MCTS plan, now superseded as the
+anticipation route by a search-free alternative:
+
+- **Original (Step 5, superseded):** MCTS at inference + the world model that feeds it. Replay
+  collection (**landed** — daemon running), behavioural cloning from human replays, the
+  **team-completion model** (masked-slot prediction = the PIMC world-sampling step), the Node.js
+  sim bridge, and MCTS itself (inference-time policy-improvement operator). Wang (2024) found MCTS
+  gave 78.6% → 90.8% vs Heuristic. Now confined to the **L4 offline-teacher** bucket by the owner's
+  no-search-on-the-model constraint (`designs/research_state/`).
+- **Favored (Step 6, "Meaning B"):** **latent predictive representation** — a feedforward L3
+  auxiliary objective that shapes the shared trunk so the single forward pass *anticipates* one
+  ply, with **no runtime simulator or tree** (the sim is a supervision oracle only). Culminates in
+  per-action **outcome-token injection** (a learned `g(trunk, action)` → one predicted-outcome
+  latent token per legal action, attended by the policy). Incremental ladder with FREE offline
+  kill-gates → `design_latent_predictive_representation.md` + `todo.md` Step 6.
+
+Also: surgical checkpoint transfer and PPO embedding improvements.
 
 ### ai_v7
 Specialisation and ladder play. Evaluate the v6 MCTS generalist across the 32 sample teams,

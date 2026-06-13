@@ -58,6 +58,12 @@ Ladder data sources and opponent-sampling rationale are in
 
 ## Step 5 — MCTS
 
+> **Superseded as the "anticipation" route by Step 6.** The owner's standing constraint
+> (`designs/research_state/README.md`) is **no search/MCTS on the model** (inference OR training
+> loop) — search is an offline teacher / diagnostic only. Step 6 delivers the same goal (an
+> anticipatory policy/value) as a feedforward L3 lever. MCTS below is retained as the L4
+> ceiling-setter (an offline, distilled teacher), not a runtime tree.
+
 MCTS used at **inference time only** as a policy improvement operator on top of the
 trained PPO network. The neural network is never used to generate MCTS training data —
 environment stepping is the rollout bottleneck (~10ms per step), making MCTS-based data
@@ -115,3 +121,53 @@ is validated end-to-end.
 
 **Rust sim (v8)** — replaces `sim_bridge.js` with a PyO3 Rust sim (~50× faster). The
 `SimClient` interface is unchanged; only the bridge implementation swaps out.
+
+---
+
+## Step 6 — Latent Predictive Representation (Meaning B)
+
+The **search-free** route to an anticipatory agent: a latent predictive auxiliary objective that
+shapes the shared trunk so the single forward pass acts as if it had looked one ply ahead — **no
+runtime simulator, no tree**. The simulator is used only as a *supervision oracle* (the env
+already folds the realized `TurnDelta` for the reward; we reuse it as a free, on-policy target).
+Culminates in the **per-action outcome-token injection** idea: a learned `g(trunk, action)`
+produces one predicted-outcome latent token per legal action, injected so policy (and, via the
+shared trunk, value) can attend over the imagined consequence of each option.
+
+Full design + grounded attach points + the L1–L4 / leakage / collapse analysis:
+**`designs/ai_v6/design_latent_predictive_representation.md`**.
+
+**Incremental ladder (cheapest/safest first; the injection is the *payoff*, Stage 4 — not Stage 1):**
+
+- **Stage 0 — FREE offline kill-gates** (zero training): prober probes on the existing checkpoint
+  — is the next-turn outcome anticipatable, and is there headroom below the ~0.79 incoming-belief
+  ceiling? `falsify-scan` whether loss-craters are anticipatable-but-unacted (a credit problem) vs
+  genuinely surprising. **GO/STOP before spending a retrain.**
+- **Stage 1 — plumbing, no learning** (`aux_coef=0`): the `outcome_target` Dict obs key +
+  gated-construction `OutcomePredictor` reproducing the baseline byte-for-byte (no `ARCH_SIGNATURE`
+  bump). Gate: `no_op_equivalence` + obs-build benchmark + bridge fuzz of the target pairing.
+- **Stage 2 — aux loss ON, no injection** (`aux_coef~0.1`, 7-field collapse-proof discrete
+  target): does a predictive objective shape the trunk? Gate: `next_ko_auc > 0.70`,
+  `grad/aux_share < 0.4`.
+- **Stage 3 — behavioural A/B** of the shaped trunk (anchored ELO + prober). The
+  decorate-the-trunk gate: a NAMED behavioural metric (surprise-OHKO read-rate / under-switching)
+  must move, else escalate to injection.
+- **Stage 4 — inject per-action outcome tokens** (the centerpiece): concat-read → CLSPool
+  cross-attention → sequence injection, in escalating risk; per-class generators +
+  inverse-propensity weighting; **policy-pool-only to avoid the value-path leak.** `ARCH_SIGNATURE`
+  bump. Gate: beats the loss-only arm beyond ELO CI + non-trivial token attention mass + clean
+  leak ablation.
+- **Stage 5 — opt-in richer targets** (never required for v1): 5a SPR/BYOL latent target (full
+  collapse stack); 5b offline counterfactual reroll (the principled fix if switch behaviour
+  doesn't move).
+
+**Design questions to resolve:**
+- **Stage-0 outcome:** does the trunk *already* anticipate as well as the incoming-damage belief
+  (AUC ~0.79)? If so, kill the lever and spend the cycle on the reward/credit levers
+  (`--switch-bias-weight`, `--self-ko-hp-penalty`).
+- **The honest null:** the incoming-belief precedent shaped the trunk yet the policy still
+  under-switched (a credit-assignment gap, not representation). Stage 4 (injection) is the bet
+  that *attending over imagined consequences* is what converts anticipation into action — is it?
+- **Re-home `team_completion_model.py`:** the orphaned masked-slot predictor shares the decode-head
+  pattern; restructuring it onto the shared trunk is the natural second aux head (predict the
+  opponent's hidden party). ai_v7.
