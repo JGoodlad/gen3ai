@@ -6,17 +6,24 @@ import os
 import re
 
 
+# The subdir resumable training checkpoints live in (current layout): <run>/checkpoints/.
+# Legacy runs kept them directly in <run>/; both are discovered.
+CHECKPOINTS_DIRNAME = "checkpoints"
+
+
 # Directories that hold *.zip files which are NOT resumable training checkpoints:
 #   <run>/snapshots/snapshot_*.zip        self-play pool (the step-0 seed is written
 #                                         at startup, before any rollout)
 #   <run>/best_model/best_model.zip       best-by-eval export
 #   <run>/eval_traces/step_*/snapshot.zip retained eval snapshots
-# Resumable checkpoints live directly in the run dir (<run>/*_steps.zip, forced_*).
-# Returning a nested artifact would mis-derive run_dir — the caller takes
-# dirname(checkpoint), so run_dir would become e.g. <run>/snapshots, and the relaunched
-# child would then nest its own snapshots/ and write checkpoints into the pool. It would
-# also let a crash *before* the first real checkpoint silently "resume" from the step-0
-# seed instead of surfacing as the fatal no-checkpoint case it is.
+# Resumable checkpoints live in <run>/checkpoints/ (current) or <run>/ (legacy) — note
+# that ``checkpoints`` is deliberately NOT in this set, so those zips ARE resumable; the
+# caller derives run_dir via ``run_dir_for_checkpoint`` (which strips a trailing
+# checkpoints/). Returning one of the nested ARTIFACT dirs would mis-derive run_dir — a
+# naive dirname(checkpoint) would become e.g. <run>/snapshots, and the relaunched child
+# would then nest its own snapshots/ and write checkpoints into the pool. It would also
+# let a crash *before* the first real checkpoint silently "resume" from the step-0 seed
+# instead of surfacing as the fatal no-checkpoint case it is.
 _ARTIFACT_DIRS = {"snapshots", "best_model", "eval_traces"}
 
 
@@ -25,6 +32,22 @@ def _is_resumable_checkpoint(path: str, models_root: str) -> bool:
     rel = os.path.relpath(path, models_root)
     dir_parts = rel.split(os.sep)[:-1]  # directories between models_root and the file
     return _ARTIFACT_DIRS.isdisjoint(dir_parts)
+
+
+def run_dir_for_checkpoint(checkpoint_path: str) -> str:
+    """Return the RUN dir that owns a checkpoint .zip.
+
+    A checkpoint lives at ``<run>/checkpoints/<name>.zip`` (current layout) or
+    ``<run>/<name>.zip`` (legacy / the final-model singletons). The run dir is the
+    checkpoint's parent — UNLESS that parent is the ``checkpoints/`` subdir, in which
+    case the run dir is one level up. Use this everywhere run_dir is derived from a
+    checkpoint path, so the TUI 🗂 badge / run-dir arg / metadata.json lookup stay at
+    the run root instead of pointing inside ``checkpoints/``.
+    """
+    d = os.path.dirname(os.path.abspath(checkpoint_path))
+    if os.path.basename(d) == CHECKPOINTS_DIRNAME:
+        d = os.path.dirname(d)
+    return d
 
 
 def find_latest_checkpoint(
@@ -37,6 +60,9 @@ def find_latest_checkpoint(
         if os.path.exists(latest_txt):
             with open(latest_txt) as f:
                 name = f.read().strip()
+            # ``name`` is run-relative: a current-layout checkpoint is
+            # "checkpoints/checkpoint_<N>_steps.zip", a legacy one or a final-model
+            # singleton is a bare basename. os.path.join handles both.
             candidate = os.path.join(run_dir, name)
             if os.path.exists(candidate):
                 return candidate

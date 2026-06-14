@@ -25,6 +25,7 @@ from dataclasses import dataclass
 from main.exit_codes import TrainExitCode
 from main.launcher.checkpoint import (
     find_latest_checkpoint,
+    run_dir_for_checkpoint,
     _apply_default_showdown_port,
     _find_model_arg,
     _insert_or_replace_model_arg,
@@ -243,7 +244,9 @@ def _prepare_session(
         os.makedirs(run_dir, exist_ok=True)
         child_args = _insert_or_replace_run_dir_arg(child_args, run_dir)
     else:
-        run_dir = os.path.dirname(os.path.abspath(existing_model))
+        # A resumed --model may be <run>/checkpoints/checkpoint_*.zip → the run dir is
+        # the parent of checkpoints/, not checkpoints/ itself.
+        run_dir = run_dir_for_checkpoint(existing_model)
         child_args = _insert_or_replace_run_dir_arg(child_args, run_dir)
 
     state.run_dir = run_dir
@@ -516,7 +519,9 @@ def _supervise(
                 return rc
             return 1
 
-        run_dir = os.path.dirname(os.path.abspath(checkpoint))
+        # checkpoint may be <run>/checkpoints/checkpoint_*.zip → strip checkpoints/ so
+        # run_dir is the run root (not the subdir) for the TUI badge + child --run-dir.
+        run_dir = run_dir_for_checkpoint(checkpoint)
         run_dir_box[0] = run_dir
         state.run_dir = run_dir
         if crashed:

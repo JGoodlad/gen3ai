@@ -150,6 +150,38 @@ def test_resolve_config_in_parent_of_zip(version):
     assert entries[0].arch_signature == version.arch_signature
 
 
+def _write_run_with_step_checkpoint(tmpdir, version, *, name, step):
+    """A run whose @step checkpoint lives in <run>/checkpoints/ (current layout)."""
+    run_dir = os.path.join(tmpdir, name)
+    os.makedirs(os.path.join(run_dir, "checkpoints"))
+    open(os.path.join(run_dir, "checkpoints", f"checkpoint_{step}_steps.zip"), "w").close()
+    with open(os.path.join(run_dir, "model_config.json"), "w") as f:
+        f.write(version.to_json())
+    return run_dir
+
+
+def test_resolve_at_step_label_is_run_name_not_checkpoints(version):
+    """@step now resolves under <run>/checkpoints/ — the DEFAULT label must still be the run
+    NAME (ext_<run>@<step>), not the literal subfolder ext_checkpoints@<step>."""
+    with tempfile.TemporaryDirectory() as tmp:
+        run = _write_run_with_step_checkpoint(tmp, version, name="run_at_step", step=3200000)
+        entries = resolve_stable_opponents(f"{run}@3200000", version)
+    assert len(entries) == 1
+    assert entries[0].label == "ext_run_at_step@3200000"
+    assert entries[0].zip_path.endswith("checkpoints/checkpoint_3200000_steps.zip")
+
+
+def test_resolve_two_runs_same_step_do_not_collide(version):
+    """Two DIFFERENT runs at the same @step must keep distinct labels (run names) — the old
+    mis-derived ext_checkpoints@<step> would collide and trip the duplicate-label FATAL."""
+    with tempfile.TemporaryDirectory() as tmp:
+        run_a = _write_run_with_step_checkpoint(tmp, version, name="run_a", step=50000)
+        run_b = _write_run_with_step_checkpoint(tmp, version, name="run_b", step=50000)
+        entries = resolve_stable_opponents(f"{run_a}@50000,{run_b}@50000", version)
+    labels = sorted(e.label for e in entries)
+    assert labels == ["ext_run_a@50000", "ext_run_b@50000"]
+
+
 def test_resolve_label_is_run_name_not_best_model(version):
     """A direct best_model/best_model.zip path is labelled by the RUN name, NOT 'best_model'
     (the namespace folder the zip lives in)."""

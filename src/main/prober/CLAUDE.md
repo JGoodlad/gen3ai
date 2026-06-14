@@ -69,7 +69,9 @@ and loads the model **per selected battle**, not once at startup
 1. **exact** — the retained `eval_traces/step_<N>/snapshot.zip` (written when
    training ran with `--keep-eval-snapshots`); bit-exact, faithfulness ≈ 100%.
 2. **nearest** — the persisted `checkpoint_<N>_steps.zip` with the smallest
-   `|Δstep|` (exact weights at a nearby step).
+   `|Δstep|` (exact weights at a nearby step). `discovery.list_checkpoints` searches BOTH the
+   current `<run>/checkpoints/` and the legacy `<run>/` root (deduping a copy-backported step to
+   the `checkpoints/` path), so the ladder finds checkpoints under either layout.
 3. **most recent** — `best_model` / latest.
 
 `--ckpt` forces an override. The badge shows the active tier + the trace's

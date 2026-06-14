@@ -213,15 +213,22 @@ def read_eval_manifest(run_dir: "str | None", step: int) -> "dict | None":
 
 
 def list_checkpoints(run_dir: "str | None") -> "list[tuple[int, str]]":
-    """Step-bearing persisted checkpoints `(step, path)` under run_dir, ascending."""
+    """Step-bearing persisted checkpoints `(step, path)` under run_dir, ascending.
+
+    Searches the current layout (``<run>/checkpoints/``) AND the legacy root
+    (``<run>/``). When a step exists in BOTH — e.g. a copy-backported run — the
+    ``checkpoints/`` path wins so the same step isn't listed twice.
+    """
     if not run_dir:
         return []
-    out = []
-    for p in glob.glob(os.path.join(run_dir, "*.zip")):
-        m = _CKPT_STEP_RE.search(os.path.basename(p))
-        if m:
-            out.append((int(m.group(1)), p))
-    return sorted(out)
+    by_step: "dict[int, str]" = {}
+    # Legacy root first, then checkpoints/ so the subdir path overrides on collision.
+    for base in (run_dir, os.path.join(run_dir, "checkpoints")):
+        for p in glob.glob(os.path.join(base, "*.zip")):
+            m = _CKPT_STEP_RE.search(os.path.basename(p))
+            if m:
+                by_step[int(m.group(1))] = p
+    return sorted(by_step.items())
 
 
 def load_model_config(run_dir: "str | None") -> "dict | None":

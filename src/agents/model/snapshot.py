@@ -396,7 +396,14 @@ def load_model_snapshot(
     """
     zip_path, config_dir = _resolve_paths(model_path)
 
+    # model_config.json is run-LEVEL — it sits at the run root, but a checkpoint .zip may
+    # live one level down in <run>/checkpoints/. Search the zip's dir then its parent
+    # (mirroring load_foreign_opponent) so the arch check survives the relocation.
     config_path = os.path.join(config_dir, "model_config.json")
+    if not os.path.exists(config_path):
+        parent_config = os.path.join(os.path.dirname(config_dir), "model_config.json")
+        if os.path.exists(parent_config):
+            config_path = parent_config
     if os.path.exists(config_path):
         saved_version = ModelVersion.from_json_file(config_path)
         current_version.check_compatible(saved_version)

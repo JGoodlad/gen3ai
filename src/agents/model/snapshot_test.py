@@ -984,6 +984,60 @@ def test_load_model_snapshot_enforce_vf_coef(layout, mappings):
         load_model_snapshot(zip_path + ".zip", env=vec_env, current_version=saved_version)
 
 
+def test_load_model_snapshot_finds_config_in_parent_when_zip_in_checkpoints(layout, mappings, version):
+    """A checkpoint .zip now lives in <run>/checkpoints/ while model_config.json stays at the
+    run ROOT. load_model_snapshot must still find + enforce the arch check via the parent-dir
+    fallback — proven by a mismatched current_version FATALing instead of silently loading."""
+    from agents.model.features_extractor import Gen3FeaturesExtractor
+    from agents.model.policy import Gen3DualHeadMaskablePolicy
+    from sb3_contrib import MaskablePPO
+
+    total_dim = layout["total_dim"]
+    vec_env = _make_vec_env(total_dim)
+    full_policy_kwargs = {
+        "features_extractor_class": Gen3FeaturesExtractor,
+        "features_extractor_kwargs": {"layout": layout, "mappings": mappings},
+        "net_arch": [512, 512],
+    }
+    model = MaskablePPO(Gen3DualHeadMaskablePolicy, vec_env, policy_kwargs=full_policy_kwargs, verbose=0)
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        save_model_snapshot(tmpdir, version, git_hash="test")  # model_config.json at run root
+        ckpt_dir = os.path.join(tmpdir, "checkpoints")
+        os.makedirs(ckpt_dir)
+        zip_path = os.path.join(ckpt_dir, "checkpoint_1000_steps")
+        model.save(zip_path)
+        assert not os.path.exists(os.path.join(ckpt_dir, "model_config.json"))  # config only at root
+
+        # A mismatched arch must FATAL → proves the run-root config was found + checked
+        # (if it weren't found, load would print the "legacy model" warning and succeed).
+        bad = dataclasses.replace(version, arch_signature="some_other_arch")
+        with pytest.raises(ModelVersionError):
+            load_model_snapshot(zip_path + ".zip", env=vec_env, current_version=bad)
+
+        # The matching version loads cleanly through that same parent-fallback path.
+        assert load_model_snapshot(zip_path + ".zip", env=vec_env, current_version=version) is not None
+
+
+def test_load_saved_version_finds_config_in_parent_when_zip_in_checkpoints(version):
+    """A flagless resume reads the saved ModelVersion via train_rl_agent._load_saved_version. With
+    the checkpoint now in <run>/checkpoints/ and model_config.json at the run ROOT, it must search
+    the parent dir — else a toggle-ON resume reads no saved version, falls back to OFF defaults, and
+    FATALs at the arch check. Regression guard for that resume path."""
+    from main.train_rl_agent import _load_saved_version
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        save_model_snapshot(tmpdir, version, git_hash="test")  # model_config.json at run root
+        ckpt_dir = os.path.join(tmpdir, "checkpoints")
+        os.makedirs(ckpt_dir)
+        zip_path = os.path.join(ckpt_dir, "checkpoint_1000_steps.zip")
+        open(zip_path, "w").close()  # _resolve_paths only needs the zip to EXIST, not be valid
+
+        loaded = _load_saved_version(zip_path)
+        assert loaded is not None, "flagless resume could not read the run-root model_config.json"
+        assert loaded.arch_signature == version.arch_signature
+
+
 # ---------------------------------------------------------------------------
 # Checkpoint metadata
 # ---------------------------------------------------------------------------

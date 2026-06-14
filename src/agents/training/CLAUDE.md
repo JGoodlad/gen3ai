@@ -260,7 +260,7 @@ three sit alongside a per-cycle
 — `num_timesteps`, `git_hash` + `arch_signature` (read from the run's `metadata.json` /
 `model_config.json`), and a `snapshot` pointer. The eval snapshot is normally ephemeral
 (`model.save` → workers load → deleted in `_cleanup`) and the eval `step` rarely lines up with
-a persisted `checkpoint_<N>_steps.zip`, so the prober can't reload the *exact* weights unless
+a persisted `<run>/checkpoints/checkpoint_<N>_steps.zip`, so the prober can't reload the *exact* weights unless
 they're retained: `--keep-eval-snapshots N` copies the snapshot into
 `eval_traces/step_<N>/snapshot.zip` (keeping the N most-recent) and points the manifest at it.
 The prober consumes the manifest to load the exact model, falling back to the nearest

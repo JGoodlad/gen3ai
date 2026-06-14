@@ -58,7 +58,10 @@ def resolve_checkpoint(run_dir: str, override: Optional[str]) -> str:
     cand = os.path.join(run_dir, "best_model.zip")
     if os.path.exists(cand):
         return cand
-    ckpts = glob.glob(os.path.join(run_dir, "checkpoint_*_steps.zip"))
+    # Current layout: <run>/checkpoints/; legacy: <run>/ root. Search both.
+    ckpts = glob.glob(os.path.join(run_dir, "checkpoint_*_steps.zip")) + glob.glob(
+        os.path.join(run_dir, "checkpoints", "checkpoint_*_steps.zip")
+    )
     if ckpts:
         def _steps(p: str) -> int:
             m = re.search(r"checkpoint_(\d+)_steps", p)

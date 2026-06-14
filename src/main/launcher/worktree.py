@@ -5,6 +5,7 @@ import os
 import subprocess
 import tempfile
 
+from main.launcher.checkpoint import run_dir_for_checkpoint
 from utils.git import get_git_hash, get_repo_root
 
 _WORKTREE_PREFIX = "launcher-"
@@ -52,7 +53,9 @@ def _read_checkpoint_field(model_path: str, *, key: str, toplevel_key: str):
         return side[key]
 
     # 2./3. metadata.json: this checkpoint's history entry, then the top-level value.
-    meta = _load_json_dict(os.path.join(os.path.dirname(abs_path), "metadata.json"))
+    # metadata.json is run-LEVEL (at the run root), but the checkpoint may sit one level
+    # down in checkpoints/ — derive the run dir so the lookup doesn't miss it.
+    meta = _load_json_dict(os.path.join(run_dir_for_checkpoint(abs_path), "metadata.json"))
     if meta is None:
         return None
     name = os.path.basename(abs_path)

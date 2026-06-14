@@ -229,12 +229,14 @@ export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable
 ```bash
 export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 -m main.launcher \
   --restart-interval-hours 3 \
-  --model models/<run>/checkpoint_NNNN_steps.zip \
+  --model models/<run>/checkpoints/checkpoint_NNNN_steps.zip \
   --steps 15000000 \
   --device cuda
 ```
 
-The checkpoint must carry a `metadata.json` with a `git_hash`; the launcher pins the isolated
+Periodic + forced checkpoints live in `models/<run>/checkpoints/` (each `.zip` beside its
+`.json` sidecar); legacy runs kept them at the run root and still resume. The checkpoint must
+carry a `metadata.json` with a `git_hash`; the launcher pins the isolated
 worktree to that commit so the resumed run uses the original code (override with
 `--sync-to-main`). All non-launcher flags are forwarded verbatim to `train_rl_agent.py`.
 `python -m main.launcher.tui …` is an alias for the same command.
@@ -261,7 +263,9 @@ export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable
 
 Omit `--model` to start a fresh run. Use `--debug` for a single env (DummyVecEnv). Use `--device cpu` on machines without a GPU.
 
-Checkpoints are saved automatically. Models land in `models/run_<timestamp>/`.
+Checkpoints are saved automatically into `models/run_<timestamp>/checkpoints/` (each `.zip`
+beside its per-checkpoint `.json` sidecar); the run-level `model_config.json` / `metadata.json`
+/ `latest.txt` and the `final_model*.zip` / `best_model/` stay at the run root.
 
 ### In-process bridge transport (`--use-showdown-bridge`, opt-in)
 
@@ -514,6 +518,10 @@ data/                # Source of truth — derived by tools/, read via agents.ge
   teams/             # Downloaded sample teams (gen3ou pool)
   gen3_bot_elo_anchors.json  # Fixed bot ELO anchors (bot_elo_calibration.py round-robin); optional
 models/              # Saved PPO checkpoints (run_<timestamp>/ subdirs)
+                     #   <run>/checkpoints/  — periodic + forced checkpoints (.zip + .json sidecars)
+                     #   <run>/best_model/   — best-by-eval export; <run>/snapshots/ — self-play pool
+                     #   <run>/model_config.json, metadata.json, latest.txt, final_model*.zip — run root
+                     #   latest.txt holds a run-RELATIVE path (e.g. checkpoints/checkpoint_123_steps.zip)
 deps/
   pokemon-showdown/  # Git submodule — local Showdown server
 tools/               # Acquisition layer (knows the 3 upstreams) — has CLAUDE.md
@@ -594,14 +602,17 @@ and won't work. Both projection input dims are auto-discovered via a dummy forwa
 
 ## Model Versioning
 
-Every model save writes two files alongside the `.zip`:
+Every model save writes two **run-level** files at the run root:
 
 - `model_config.json` — all weight-shape-relevant architecture params (embedding dims, layer sizes, obs dim, etc.)
-- `metadata.json` — git hash, timestamp, SB3/Python versions
+- `metadata.json` — git hash, timestamp, SB3/Python versions (+ `snapshot_history`, `latest_eval`)
 
-`load_model_snapshot()` in `src/agents/model/snapshot.py` checks these before calling
-`MaskablePPO.load()`. A mismatch causes a hard `[ModelVersion] FATAL` error at startup, not a
-silent wrong-output bug later. `model_config.json` additionally records `vf_coef` (`--vf-coef`,
+These are run-level (one per run), NOT per-checkpoint: a periodic checkpoint `.zip` lives one
+level down in `checkpoints/` beside its own per-checkpoint `.json` sidecar, so
+`load_model_snapshot()` searches the zip's dir **and its parent** (the run root) for
+`model_config.json`. `load_model_snapshot()` in `src/agents/model/snapshot.py` checks it before
+calling `MaskablePPO.load()`. A mismatch causes a hard `[ModelVersion] FATAL` error at startup,
+not a silent wrong-output bug later. `model_config.json` additionally records `vf_coef` (`--vf-coef`,
 the PPO value-loss coefficient): it is **fixed for a run's lifetime**, so resuming with a
 different value is a FATAL error — enforced resume-only (frozen eval/pool/distill opponents are
 exempt, since vf_coef doesn't affect a forward pass). See `src/agents/model/CLAUDE.md` →

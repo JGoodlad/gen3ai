@@ -93,6 +93,7 @@ def _resolve_zip_and_config(path: str, step: int | None) -> tuple[str, str, str]
 
     Accepts: a direct ``.zip``; a run directory (→ ``best_model/best_model.zip``, then
     ``final_model.zip``, then ``best_model.zip``); or ``@step`` (→
+    ``<run>/checkpoints/checkpoint_<step>_steps.zip``, falling back to the legacy
     ``<run>/checkpoint_<step>_steps.zip``). ``model_config.json`` is searched next to the zip,
     then the run dir, then the zip's parent — so a ``best_model/best_model.zip`` still finds the
     run-level config. Raises ``FileNotFoundError`` if no zip or no config resolves.
@@ -101,7 +102,12 @@ def _resolve_zip_and_config(path: str, step: int | None) -> tuple[str, str, str]
     zip_path: str | None = None
     run_dir: str
     if step is not None:
-        zip_path = os.path.join(apath, f"checkpoint_{step}_steps.zip")
+        # Current layout puts checkpoints in <run>/checkpoints/; fall back to the legacy
+        # root for older runs. run_dir is the run root either way (config search below
+        # already covers checkpoints/ via zip_dir + run_dir + parent).
+        ckpt_name = f"checkpoint_{step}_steps.zip"
+        in_subdir = os.path.join(apath, "checkpoints", ckpt_name)
+        zip_path = in_subdir if os.path.isfile(in_subdir) else os.path.join(apath, ckpt_name)
         run_dir = apath
     elif apath.endswith(".zip") and os.path.isfile(apath):
         zip_path = apath
@@ -141,8 +147,9 @@ def _resolve_zip_and_config(path: str, step: int | None) -> tuple[str, str, str]
             "model_config.json was found (a stable opponent must carry its arch provenance)."
         )
     # The run NAME is the default label — the dir the user thinks of as "the run"
-    # (ai_v5_5_popart_N_0607), NOT a "best_model"/"snapshots" subfolder the zip happens to live in.
-    name_dir = os.path.dirname(zip_dir) if os.path.basename(zip_dir) in ("best_model", "snapshots") \
+    # (ai_v5_5_popart_N_0607), NOT a "best_model"/"snapshots"/"checkpoints" subfolder the zip
+    # happens to live in (an @step checkpoint now resolves under <run>/checkpoints/).
+    name_dir = os.path.dirname(zip_dir) if os.path.basename(zip_dir) in ("best_model", "snapshots", "checkpoints") \
         else zip_dir
     return zip_path, config_path, os.path.basename(os.path.normpath(name_dir))
 

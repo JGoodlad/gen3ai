@@ -149,6 +149,14 @@ def _load_saved_version(model_path: str):
         from agents.model.model_version import ModelVersion
         _, cfg_dir = _resolve_paths(model_path)
         cfg = os.path.join(cfg_dir, "model_config.json")
+        if not os.path.exists(cfg):
+            # The checkpoint may live in <run>/checkpoints/ while the run-level
+            # model_config.json stays at the run root — search the parent too (mirroring
+            # load_model_snapshot). Without this, a flagless resume of a toggle-ON run reads
+            # no saved version, falls back to OFF defaults, and FATALs at the arch check.
+            parent_cfg = os.path.join(os.path.dirname(cfg_dir), "model_config.json")
+            if os.path.exists(parent_cfg):
+                cfg = parent_cfg
         if os.path.exists(cfg):
             return ModelVersion.from_json_file(cfg)
     except Exception as e:
@@ -194,12 +202,19 @@ def _model_hparams(model) -> dict:
     }
 
 
-def _write_latest_txt(model_dir: str, basename: str) -> None:
-    """Atomically record the most-recent checkpoint in <model_dir>/latest.txt."""
+def _write_latest_txt(model_dir: str, name: str) -> None:
+    """Atomically record the most-recent checkpoint in <model_dir>/latest.txt.
+
+    ``name`` is resolved RELATIVE to ``model_dir`` (the run root): periodic + forced
+    checkpoints live under ``checkpoints/`` so their name is run-relative
+    (``checkpoints/checkpoint_123_steps.zip``); the final-model singletons stay at the
+    run root so their name is a bare basename (``final_model.zip``). Every reader joins
+    it back with the run dir (``os.path.join(run_dir, name)``), so both forms resolve.
+    """
     latest = os.path.join(model_dir, "latest.txt")
     tmp = latest + ".tmp"
     with open(tmp, "w") as f:
-        f.write(basename + "\n")
+        f.write(name + "\n")
     os.replace(tmp, latest)
 
 
@@ -250,19 +265,28 @@ class _TrackingCheckpointCallback(CheckpointCallback):
         self._current_epochs_fn = None
         # Optional: returns the current TwoPhaseLR handoff_lr (or None).
         self._handoff_lr_fn = None
+        # SB3 writes the .zip into self.save_path, which we point at <run>/checkpoints/.
+        # latest.txt + metadata.json are run-LEVEL, so derive the run root (the parent
+        # of the checkpoints/ subdir; == save_path if it isn't one, e.g. legacy/tests).
+        self._run_dir = (
+            os.path.dirname(self.save_path)
+            if os.path.basename(os.path.normpath(self.save_path)) == "checkpoints"
+            else self.save_path
+        )
 
     def _on_step(self) -> bool:
         result = super()._on_step()
         if self.n_calls % self.save_freq == 0:
-            _write_latest_txt(
-                self.save_path,
-                f"{self.name_prefix}_{self.num_timesteps}_steps.zip",
-            )
+            # SB3 just wrote the .zip into self.save_path (<run>/checkpoints/). latest.txt
+            # records the run-RELATIVE path (checkpoints/checkpoint_<N>_steps.zip) and the
+            # per-checkpoint sidecar lands next to the .zip; metadata.json (snapshot_history)
+            # stays at the run root (self._run_dir).
+            ckpt_path = os.path.join(self.save_path, f"{self.name_prefix}_{self.num_timesteps}_steps.zip")
+            _write_latest_txt(self._run_dir, os.path.relpath(ckpt_path, self._run_dir))
             if self._current_lr_fn is not None and self._current_epochs_fn is not None:
-                ckpt_path = os.path.join(self.save_path, f"{self.name_prefix}_{self.num_timesteps}_steps.zip")
                 handoff_lr = self._handoff_lr_fn() if self._handoff_lr_fn is not None else None
                 record_checkpoint(
-                    self.save_path,
+                    self._run_dir,
                     ckpt_path,
                     self._current_lr_fn(),
                     self._current_epochs_fn(),
@@ -404,12 +428,16 @@ def _setup_signal_handlers(model, model_dir, shutdown_event, version, current_lr
     def _forced_checkpoint(sig, frame):
         step = model.num_timesteps
         name = f"checkpoint_forced_{step:010d}_{datetime.now().strftime('%H%M%S')}"
-        ckpt = os.path.join(model_dir, name)
+        # Forced checkpoints are resumable checkpoints → they live under checkpoints/
+        # alongside the periodic ones; latest.txt records the run-relative path.
+        ckpt_dir = os.path.join(model_dir, "checkpoints")
+        os.makedirs(ckpt_dir, exist_ok=True)
+        ckpt = os.path.join(ckpt_dir, name)
         model.save(ckpt)
-        _write_latest_txt(model_dir, name + ".zip")
+        _write_latest_txt(model_dir, os.path.join("checkpoints", name + ".zip"))
         record_checkpoint(
             model_dir,
-            os.path.join(model_dir, name + ".zip"),
+            ckpt + ".zip",
             current_lr_fn(),
             current_epochs_fn(),
             hparams=_model_hparams(model),
@@ -1411,9 +1439,11 @@ async def main():
         print(f"\nFinal aggregate win rate: {aggregate * 100:.1f}%")
 
     # --- Callback Setup (Shared) ---
+    # Periodic checkpoints land in <run>/checkpoints/ (SB3 makedirs it); the callback
+    # keeps latest.txt + metadata.json at the run root (derived from save_path).
     checkpoint_callback = _TrackingCheckpointCallback(
         save_freq=50000,
-        save_path=model_dir,
+        save_path=os.path.join(model_dir, "checkpoints"),
         name_prefix="checkpoint",
     )
 
@@ -1474,6 +1504,10 @@ async def main():
     _resume_meta = None
     if args.model:
         _ckpt_dir = args.model if os.path.isdir(args.model) else os.path.dirname(args.model)
+        # metadata.json is run-LEVEL (at the run root); a relocated checkpoint lives in
+        # <run>/checkpoints/, so strip a trailing checkpoints/ to find it.
+        if _ckpt_dir and os.path.basename(os.path.normpath(_ckpt_dir)) == "checkpoints":
+            _ckpt_dir = os.path.dirname(_ckpt_dir)
         if _ckpt_dir:
             _resume_meta = os.path.join(_ckpt_dir, "metadata.json")
 

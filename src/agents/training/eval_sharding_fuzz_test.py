@@ -27,7 +27,8 @@ import tempfile
 
 def _find_checkpoint() -> str | None:
     roots = ["/home/goodlad/dev/gen3ai/models", os.path.join(os.getcwd(), "models")]
-    pats = ["*/best_model/best_model.zip", "*/checkpoint_*_steps.zip", "*/final_model.zip"]
+    pats = ["*/best_model/best_model.zip", "*/checkpoints/checkpoint_*_steps.zip",
+            "*/checkpoint_*_steps.zip", "*/final_model.zip"]
     for root in roots:
         for pat in pats:
             hits = sorted(glob.glob(os.path.join(root, pat)), key=os.path.getmtime, reverse=True)

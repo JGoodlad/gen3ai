@@ -24,6 +24,7 @@ from main.launcher import (
     _read_metrics_pipe,
     _strip_launcher_args,
     find_latest_checkpoint,
+    run_dir_for_checkpoint,
 )
 from main.launcher import LauncherState
 from main.launcher.worktree import _read_checkpoint_lr
@@ -145,6 +146,44 @@ class TestFindLatestCheckpoint:
         snap.parent.mkdir()
         snap.write_text("x")  # newer mtime than the real checkpoint
         assert find_latest_checkpoint(str(tmp_path)) == str(ckpt)
+
+    def test_resolves_checkpoints_subdir_via_latest_txt(self, tmp_path):
+        # Current layout: checkpoint in <run>/checkpoints/, latest.txt records the
+        # run-relative path. os.path.join(run_dir, content) must resolve it.
+        run = tmp_path / "run_a"
+        (run / "checkpoints").mkdir(parents=True)
+        ckpt = run / "checkpoints" / "checkpoint_2000_steps.zip"
+        ckpt.write_text("x")
+        (run / "latest.txt").write_text("checkpoints/checkpoint_2000_steps.zip\n")
+        assert find_latest_checkpoint(str(tmp_path), run_dir=str(run)) == str(ckpt)
+
+    def test_finds_checkpoints_subdir_via_glob(self, tmp_path):
+        # No latest.txt → the recursive glob fallback must still find a checkpoint that
+        # only exists under checkpoints/ (which is NOT a non-resumable artifact dir).
+        run = tmp_path / "run_a"
+        (run / "checkpoints").mkdir(parents=True)
+        ckpt = run / "checkpoints" / "checkpoint_3000_steps.zip"
+        ckpt.write_text("x")
+        assert find_latest_checkpoint(str(tmp_path)) == str(ckpt)
+
+
+# ── run_dir_for_checkpoint ────────────────────────────────────────────────────
+
+class TestRunDirForCheckpoint:
+    def test_strips_checkpoints_subdir(self, tmp_path):
+        run = tmp_path / "run_a"
+        ckpt = run / "checkpoints" / "checkpoint_2000_steps.zip"
+        assert run_dir_for_checkpoint(str(ckpt)) == str(run.resolve())
+
+    def test_legacy_root_checkpoint_unchanged(self, tmp_path):
+        run = tmp_path / "run_a"
+        ckpt = run / "checkpoint_2000_steps.zip"
+        assert run_dir_for_checkpoint(str(ckpt)) == str(run.resolve())
+
+    def test_final_model_at_root_unchanged(self, tmp_path):
+        run = tmp_path / "run_a"
+        final = run / "final_model.zip"
+        assert run_dir_for_checkpoint(str(final)) == str(run.resolve())
 
 
 # ── _insert_or_replace_model_arg ─────────────────────────────────────────────

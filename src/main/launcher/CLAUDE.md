@@ -83,14 +83,17 @@ deterministic `_supervise` exit-code/crash-restart/`_reap` suite), plus `launche
   counter. The window is deliberately well past the 3+ min it takes to bring up the SubprocVecEnv
   workers + Showdown connections, so a startup-time crash is still counted as "rapid" rather than
   misread as progress. If a crash has no checkpoint to resume from, it's fatal — the launcher
-  propagates the child's exit code rather than masking it. "Checkpoint" here means a *real*
-  top-level run checkpoint (`<run>/*_steps.zip`, `forced_*`): `find_latest_checkpoint`
+  propagates the child's exit code rather than masking it. "Checkpoint" here means a *real* run
+  checkpoint at `<run>/checkpoints/checkpoint_*_steps.zip` / `…/checkpoint_forced_*` (current
+  layout) or `<run>/*_steps.zip` / `forced_*` (legacy, at the root): `find_latest_checkpoint`
   deliberately skips `*.zip` artifacts nested under `snapshots/` (the self-play pool — whose
-  step-0 seed is written at startup, *before* any rollout), `best_model/`, and `eval_traces/`.
-  Counting one would mis-derive `run_dir` to the artifact subdir (the caller takes
-  `dirname(checkpoint)` → `…/snapshots`, the wrong dir shown in the TUI 🗂 badge) and let a
-  startup crash silently "resume" from the freshly-initialised seed instead of failing loudly.
-  The dashboard shows a
+  step-0 seed is written at startup, *before* any rollout), `best_model/`, and `eval_traces/` —
+  but NOT `checkpoints/`, which IS resumable. The caller derives `run_dir` via
+  **`run_dir_for_checkpoint`** (a plain `dirname`, then strip a trailing `checkpoints/`), so a
+  checkpoint in the subdir still resolves to the run root for the `--run-dir` arg + the TUI 🗂
+  badge. Counting one of the ARTIFACT dirs instead would mis-derive `run_dir` to the artifact
+  subdir (`…/snapshots`, the wrong dir shown in the badge) and let a startup crash silently
+  "resume" from the freshly-initialised seed instead of failing loudly. The dashboard shows a
   `↻ N restarts (M crash)` badge and the exit summary reports the crash count.
 - **Non-recoverable config errors don't loop** — a checkpoint arch-family mismatch (or a resume
   `vf_coef`/reward-config drift) fails the *same* way on every retry, so auto-restarting just burns

@@ -149,6 +149,33 @@ def test_manifest_and_checkpoint_listing(tmp_path):
     ]
 
 
+def test_list_checkpoints_finds_new_subdir_and_dedupes(tmp_path):
+    run = tmp_path / "r"
+    # Current layout: checkpoints/ subdir.
+    _touch(str(run / "checkpoints" / "checkpoint_3200000_steps.zip"), "")
+    # Legacy root checkpoint at a different step.
+    _touch(str(run / "checkpoint_1000000_steps.zip"), "")
+    # A copy-backported step present in BOTH locations → checkpoints/ wins, listed once.
+    _touch(str(run / "checkpoint_6400000_steps.zip"), "")
+    _touch(str(run / "checkpoints" / "checkpoint_6400000_steps.zip"), "")
+    assert list_checkpoints(str(run)) == [
+        (1000000, str(run / "checkpoint_1000000_steps.zip")),
+        (3200000, str(run / "checkpoints" / "checkpoint_3200000_steps.zip")),
+        (6400000, str(run / "checkpoints" / "checkpoint_6400000_steps.zip")),
+    ]
+
+
+def test_ladder_nearest_resolves_checkpoint_in_subdir(tmp_path):
+    # The nearest-checkpoint ladder must work when checkpoints live under checkpoints/.
+    run = tmp_path / "r"
+    _trace_at(run, 2000000)
+    _manifest(run, 2000000)  # no snapshot retained → falls to nearest
+    _touch(str(run / "checkpoints" / "checkpoint_3200000_steps.zip"), "")
+    tree = build_trace_tree(str(run))
+    c = resolve_model_for_step(tree, 2000000)
+    assert c.tier == "nearest" and c.path.endswith("checkpoints/checkpoint_3200000_steps.zip")
+
+
 def test_ladder_exact_when_snapshot_retained(tmp_path):
     run = tmp_path / "r"
     _trace_at(run, 2000000)
