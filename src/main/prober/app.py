@@ -34,13 +34,14 @@ from textual.widgets import (
 # Keys are 1-indexed in DISPLAY order (no 0 — awkward on a laptop) and shown in each title.
 _SECTIONS = [
     ("sec-summary", "Summary", "1"),
-    ("sec-review", "Review", "2"),
-    ("sec-board", "Board", "3"),
-    ("sec-faith", "Faithfulness", "4"),
-    ("sec-matchups", "Matchups", "5"),
-    ("sec-sweep", "Intervention", "6"),
-    ("sec-saliency", "Saliency", "7"),
-    ("sec-outcome", "Outcome", "8"),
+    ("sec-team", "Team", "2"),
+    ("sec-review", "Review", "3"),
+    ("sec-board", "Board", "4"),
+    ("sec-faith", "Faithfulness", "5"),
+    ("sec-matchups", "Matchups", "6"),
+    ("sec-sweep", "Intervention", "7"),
+    ("sec-saliency", "Saliency", "8"),
+    ("sec-outcome", "Outcome", "9"),
 ]
 # Title shown on each Collapsible — "1  Summary" — so the hotkey is always visible.
 _SEC_TITLE = {sid: f"{key}  {title}" for sid, title, key in _SECTIONS}
@@ -238,10 +239,17 @@ class ProberApp(Gen3App):
                                 yield DataTable(id="summary-moves")
                             with Vertical(classes="summary-col"):
                                 yield Static("SWITCHES", classes="summary-col-label")
-                                yield DataTable(id="summary-switches")
+                                yield Static("", id="summary-switches")
                             with Vertical(classes="summary-col"):
                                 yield Static("OPP TEAM (revealed)", classes="summary-col-label")
-                                yield DataTable(id="summary-opp")
+                                yield Static("", id="summary-opp")
+                    # Team details: every mon's moveset (ours full; opp's revealed-only) + hp/
+                    # status/item — decoded from the obs, so it needs captured state.
+                    with Collapsible(title=_SEC_TITLE["sec-team"], collapsed=True, id="sec-team"):
+                        yield Static("our team", classes="board-label")
+                        yield Static("", id="team-our")
+                        yield Static("opp team (revealed)", classes="board-label")
+                        yield Static("", id="team-opp")
                     # Manual-review card: what the model EXPECTED vs what HAPPENED, plus the
                     # human's funky-flag + note (space=flag, e=note, [ ]=jump, E=export).
                     with Collapsible(title=_SEC_TITLE["sec-review"], collapsed=False, id="sec-review"):
@@ -272,9 +280,8 @@ class ProberApp(Gen3App):
 
     def on_mount(self) -> None:
         self.query_one("#summary-moves", DataTable).add_columns("move", "eff", "prob")
-        self.query_one("#summary-switches", DataTable).add_columns(
-            "target", "prob", "hp", "status", "item", "risk-in")
-        self.query_one("#summary-opp", DataTable).add_columns("pokémon", "hp", "status", "item")
+        # summary-switches / summary-opp / team-our / team-opp are custom-rendered Static panels
+        # (not DataTables) so the moveset sub-row can span the full width under each mon.
         self.query_one("#faith-table", DataTable).add_columns("action", "valid", "recorded", "re-run")
         self.query_one("#matchups-table", DataTable).add_columns("move", "×mult")
         self.query_one("#sweep-table", DataTable).add_columns("×mult", "P(chosen)", "P(switches)")
@@ -594,6 +601,7 @@ class ProberApp(Gen3App):
                 f"turn {a.turn} · inv {a.inv_index}/{meta.n_invocations}"
             )
         self._render_summary(a)
+        self._render_team(a)
         self._render_review(a)
         self._render_board(a)
         self._render_faithfulness(a)
@@ -631,47 +639,60 @@ class ProberApp(Gen3App):
         SWITCHES (prob · hp · status · item · incoming KO-risk) — so a turn is judgeable
         in one glance."""
         head = Text()
-        # Line 1 — matchup: each active's species + status/volatiles ("TOX(5)|SUB") + held item
-        # (the opp's once revealed — decoded from the obs) + outcome.
+        # SITUATION group — line 1 matchup: each active's species + HP bar + status/volatiles
+        # ("TOX(5)|SUB") + boosts ({atk:-1 spa:+6}) + held item (opp's once revealed); then FIELD,
+        # THREAT. A blank line separates this from the DECISION group, then the OUTCOME group —
+        # the three-way chunking keeps the dense header scannable.
         bd = a.board
         _append_summary_active(head, a.our_species, bd.ours.active_hp if bd else "",
-                               bd.ours.status if bd else "", bd.ours.item if bd else "")
+                               bd.ours.status if bd else "", bd.ours.boosts if bd else "",
+                               bd.ours.item if bd else "")
         head.append(" vs ", style="dim")
         _append_summary_active(head, a.opp_species, bd.opp.active_hp if bd else "",
-                               bd.opp.status if bd else "", bd.opp.item if bd else "")
+                               bd.opp.status if bd else "", bd.opp.boosts if bd else "",
+                               bd.opp.item if bd else "")
         head.append(f"   ·   turn {a.turn}", style="dim")
         result = (a.meta.result if a.meta is not None else None) or "?"
         head.append("   ·   ", style="dim")
         head.append(str(result).upper(),
                     style={"win": "bold green", "loss": "bold red"}.get(str(result).lower(), "dim"))
-        # Header line order (per request): FIELD · THREAT · CHOSE · RESULT · REWARD · CRITIC —
-        # board context first, then the decision + its outcome, with the critic surprise last.
         # FIELD — weather / hazards / screens / turn (the highlighted Board line).
         head.append("\nFIELD   ", style="dim")
         head.append(_field_text(a.field))
-        # THREAT — the danger it faced: incoming KO belief + speed (the switch-or-not signal).
+        # THREAT — the danger it faced, STACKED so the Summary is self-sufficient: line 1 the
+        # incoming-damage KO belief + speed; line 2 the incoming type-effectiveness (folded in
+        # from Matchups). (P(KO) reds with danger, matching Matchups.)
         inc = a.incoming
-        if inc is not None and inc.active_pko is not None:
+        th = a.threats
+        if (inc is not None and inc.active_pko is not None) or th is not None:
             head.append("\nTHREAT  ", style="dim")
-            head.append(f"incoming P(KO) {inc.active_pko * 100:.0f}%",
-                        style=gradient_color(1.0 - inc.active_pko))
-            if inc.active_outspeed is not None:
-                head.append(f"   ·   we outspeed {inc.active_outspeed * 100:.0f}%", style="dim")
-            head.append(f"   ·   worst-on-team {inc.max_pko * 100:.0f}%", style="dim")
-            if inc.recovery_known or inc.recovery_rate > 0:
-                head.append(f"   ·   opp recovery {inc.recovery_rate * 100:.0f}%"
-                            + ("✓" if inc.recovery_known else "?"), style="dim")
-        # CHOSE — what it chose + confidence (+ a disagree flag if the model now prefers else).
+            if inc is not None and inc.active_pko is not None:
+                head.append(f"incoming P(KO) {inc.active_pko * 100:.0f}%",
+                            style=gradient_color(1.0 - inc.active_pko))
+                if inc.active_outspeed is not None:
+                    head.append(f"   ·   we outspeed {inc.active_outspeed * 100:.0f}%", style="dim")
+                head.append(f"   ·   worst-on-team {inc.max_pko * 100:.0f}%", style="dim")
+                if inc.recovery_known or inc.recovery_rate > 0:
+                    head.append(f"   ·   opp recovery {inc.recovery_rate * 100:.0f}%"
+                                + ("✓" if inc.recovery_known else "?"), style="dim")
+            if th is not None:
+                head.append("\n        incoming eff (opp→us): ", style="dim")
+                if not th.present:
+                    head.append("BLANK — opp coverage unrevealed (priors only)", style="bold yellow")
+                else:
+                    head.append(f"worst {th.max_incoming:.2f}×", style=_mult_color(th.max_incoming))
+                    head.append(f"   ·   revealed {th.revealed_frac * 100:.0f}%", style="dim")
+        # DECISION group (blank line above) — what it chose + confidence (+ a disagree flag).
         chosen_p = _chosen_prob(a)
-        head.append("\nCHOSE   ", style="dim")
+        head.append("\n\nCHOSE   ", style="dim")
         head.append("▶ " + (a.chosen or "?"), style="bold")
         if chosen_p is not None:
             head.append(f"  {chosen_p * 100:.1f}%", style=gradient_color(chosen_p))
         if a.rerun_argmax is not None and not a.agrees:
             head.append("   ⚠ now prefers ", style="yellow")
             head.append(str(a.rerun_argmax), style="bold yellow")
-        # RESULT — what HAPPENED: the actual result + events, to judge whether the choice was OK.
-        _append_happened(head, a, "\nRESULT  ")
+        # OUTCOME group (blank line above) — RESULT (what happened + events), REWARD, CRITIC.
+        _append_happened(head, a, "\n\nRESULT  ")
         # REWARD — the reward the env actually assigned (total + per-component breakdown).
         reward = (a.outcome or {}).get("reward")
         if isinstance(reward, dict):
@@ -716,56 +737,59 @@ class ProberApp(Gen3App):
             mt.add_row(Text(label, style=lstyle), eff,
                        Text(f"{r.recorded * 100:5.1f}%", style=prob_style))
 
-        # SWITCHES — prob next to the incoming KO-risk on the switch-in (per_slot_pko, the
-        # single most switch-relevant fact). The i-th switch action == team slot i ==
-        # per_slot_pko[i] (fixed obs action layout: 6 switches in team order, then moves),
-        # so pair BEFORE sorting by prob.
-        st = self.query_one("#summary-switches", DataTable)
-        st.clear()
+        # SWITCHES — a custom panel (not a DataTable) so each pivot's moveset can span the FULL
+        # width below it: prob · hp · status · risk-in (item inlined into the name as "(item)").
+        # The i-th switch action == team slot i == per_slot_pko[i] (fixed obs action layout), so
+        # pair BEFORE sorting by prob.
         per_slot = list(inc.per_slot_pko) if (inc is not None and inc.per_slot_pko) else []
         switch_rows = [r for r in (a.actions or []) if r.label.startswith("switch")]
         paired = [(r, per_slot[i] if i < len(per_slot) else None)
                   for i, r in enumerate(switch_rows)]
-        # Each pivot's hp · status/volatiles · held item — "how healthy / how crippled / what
-        # does it hold" next to its risk-in. Looked up by species from our board (active + bench).
         attrs = _side_attr_map(a.board.ours) if a.board is not None else {}
+        sw = Text()
+        sw.append(f"{'target':<{_PANEL_NAME_W}}{'prob':<8}{'hp':<{_PANEL_HP_W}}"
+                  f"{'status':<{_PANEL_STAT_W}}risk-in", style="bold")
         if not switch_rows:
-            st.add_row(Text("no switch available", style="dim"), "", "", "", "", "")
+            sw.append("\nno switch available", style="dim")
         for r, pko in sorted(paired, key=lambda rp: rp[0].recorded, reverse=True):
             target = r.label.split(":", 1)[-1]
-            label = ("▶ " if r.is_chosen else "  ") + target
-            # An illegal switch (fainted mon / the active mon) reads grey, not the red of a 0% prob.
-            disabled = not r.valid
-            lstyle = "bold" if r.is_chosen else (_DISABLED_GREY if disabled else "")
+            disabled = not r.valid   # illegal switch (fainted / the active mon) → grey, not red
+            hp, status, item, moves = attrs.get(target.lower(), (None, "", "", ()))
             prob_style = (_DISABLED_GREY if disabled
                           else "bold" if r.is_chosen else gradient_color(r.recorded))
-            hp, status, item = attrs.get(target.lower(), (None, "", ""))
             hp_cell = _hp_bar(hp, disabled=disabled) if hp is not None else Text("?", style="dim")
             if disabled:
-                risk = Text("—", style="dim")          # fainted / the active mon: can't switch in
+                risk = Text("—", style="dim")
             elif pko is None:
                 risk = Text("?", style="dim")
             else:
                 risk = Text(f"{pko * 100:.0f}%", style=gradient_color(1.0 - pko))
-            st.add_row(Text(label, style=lstyle),
-                       Text(f"{r.recorded * 100:5.1f}%", style=prob_style),
-                       hp_cell, _status_cell(status), _item_cell(item), risk)
+            row = Text()
+            row.append_text(_col(_mon_label(target, item, chosen=r.is_chosen, disabled=disabled),
+                                 _PANEL_NAME_W))
+            row.append_text(_col(Text(f"{r.recorded * 100:.1f}%", style=prob_style), 8))
+            row.append_text(_col(hp_cell, _PANEL_HP_W))
+            row.append_text(_col(_status_cell(status), _PANEL_STAT_W))
+            row.append_text(risk)
+            sw.append("\n")
+            sw.append_text(row)
+            ml = _moves_line(moves)
+            if ml:
+                sw.append("\n")
+                sw.append_text(ml)
+        self.query_one("#summary-switches", Static).update(sw)
 
-        # OPP TEAM — the opponent's revealed mons (active ▶ then revealed bench): hp · status ·
-        # item (items decoded from the obs as they're revealed). Gen3 has no team preview, so only
-        # revealed mons appear; fainted ones read grey. The mirror of our SWITCHES, opponent-side.
-        ot = self.query_one("#summary-opp", DataTable)
-        ot.clear()
-        if a.board is None:
-            ot.add_row(Text("—", style="dim"), "", "", "")
-        else:
-            opp = a.board.opp
-            ot.add_row(Text("▶ " + opp.active_species, style="bold"),
-                       _hp_bar(opp.active_hp), _status_cell(opp.status), _item_cell(opp.item))
-            for m in opp.bench:
-                ot.add_row(Text(m.species, style=(_DISABLED_GREY if m.fainted else "")),
-                           _hp_bar(m.hp, disabled=m.fainted),
-                           _status_cell(m.status), _item_cell(m.item))
+        # OPP TEAM — the opponent's revealed mons (the mirror of our switches), shared team panel.
+        self.query_one("#summary-opp", Static).update(
+            _team_panel_text(a.board.opp if a.board is not None else None))
+
+    def _render_team(self, a: InvocationAnalysis) -> None:
+        """Full team detail: every mon's moveset (ours complete; opp's revealed-only) + hp ·
+        status · item, decoded from the obs. The one place to read 'what does each mon do'."""
+        self.query_one("#team-our", Static).update(
+            _team_panel_text(a.board.ours if a.board is not None else None))
+        self.query_one("#team-opp", Static).update(
+            _team_panel_text(a.board.opp if a.board is not None else None))
 
     def _render_board(self, a: InvocationAnalysis) -> None:
         summ = self.query_one("#board-summary", Static)
@@ -853,7 +877,8 @@ class ProberApp(Gen3App):
             if inc.active_pko is None:
                 lines.append("n/a", style="dim")
             else:
-                lines.append(f"active {inc.active_pko * 100:.0f}%", style=gradient_color(inc.active_pko))
+                # red = high incoming-KO danger (1 − pko), matching the Summary THREAT colour.
+                lines.append(f"active {inc.active_pko * 100:.0f}%", style=gradient_color(1.0 - inc.active_pko))
                 lines.append(f"  ·  outspd {inc.active_outspeed * 100:.0f}%", style="dim")
                 lines.append(f"  ·  worst-on-team {inc.max_pko * 100:.0f}%", style="dim")
             if inc.recovery_known or inc.recovery_rate > 0:
@@ -1161,38 +1186,128 @@ def _hp_bar(hp: str, width: int = 6, disabled: bool = False) -> Text:
     return t
 
 
-def _append_summary_active(line: Text, species: str, hp: str, status: str, item: str) -> None:
-    """Append 'species <hp-bar> [status] @item' for one active mon to the Summary header line
-    (status/volatiles and item shown only when present)."""
+def _append_summary_active(line: Text, species: str, hp: str, status: str,
+                           boosts: str, item: str) -> None:
+    """Append 'species <hp-bar> [status] {boosts} @item' for one active mon to the Summary header
+    line — status (yellow), boosts (magenta, distinct), item shown only when present."""
     line.append(species, style="bold")
     if hp:
         line.append(" ")
         line.append_text(_hp_bar(hp))
     if status:
         line.append(f" [{status}]", style="yellow")
+    if boosts:
+        line.append(f" {{{boosts}}}", style="magenta")   # e.g. {atk:-1 spa:+6} — boost stages
     if item and item.lower() != "none":
         line.append(f" @{item}", style=_item_style(item))
 
 
 def _side_attr_map(side) -> "dict[str, tuple]":
-    """species(lower) → (hp, status, item) for a side's active + bench — the per-mon facts the
-    SWITCHES table shows. Keyed lower-case (board species are id-form, matching switch labels)."""
-    out = {side.active_species.lower(): (side.active_hp, side.status, side.item)}
+    """species(lower) → (hp, status, item, moves) for a side's active + bench — the per-mon facts
+    the SWITCHES table shows. Keyed lower-case (board species are id-form, matching switch labels)."""
+    out = {side.active_species.lower(): (side.active_hp, side.status, side.item, tuple(side.moves))}
     for m in side.bench:
-        out[m.species.lower()] = (m.hp, m.status, m.item)
+        out[m.species.lower()] = (m.hp, m.status, m.item, tuple(m.moves))
     return out
 
 
+_MON_COLOR = "deep_sky_blue1"   # mon names pop in blue
+
+
+def _col(cell, width: int) -> Text:
+    """A `Text` padded to `width` visual cells (left-aligned) for manual column layout."""
+    t = cell if isinstance(cell, Text) else Text(str(cell))
+    gap = width - t.cell_len
+    if gap > 0:
+        t.append(" " * gap)
+    return t
+
+
+def _mon_label(species: str, item: str = "", *, chosen: bool = False, disabled: bool = False) -> Text:
+    """'▶ donphan (leftovers)' — name blue (grey if disabled / bold if chosen), item inline in
+    dim lowercase parens."""
+    t = Text("▶ " if chosen else "  ")
+    t.append(species, style=(_DISABLED_GREY if disabled
+                             else f"bold {_MON_COLOR}" if chosen else _MON_COLOR))
+    if item and item.lower() != "none":
+        t.append(f" ({item.lower()})", style="dim")
+    return t
+
+
+def _moves_line(moves) -> "Text | None":
+    """The full-width moveset sub-line under a mon — '⮡ m1 · m2 · …', spanning all columns."""
+    return Text("     ⮡ " + " · ".join(moves), style=_DISABLED_GREY) if moves else None
+
+
+_PANEL_NAME_W, _PANEL_HP_W, _PANEL_STAT_W = 30, 14, 10   # shared column widths for the mon panels
+
+
+def _team_panel_text(side, *, name_w: int = _PANEL_NAME_W, hp_w: int = _PANEL_HP_W) -> Text:
+    """A whole team panel (active ▶ then revealed bench) as `pokémon (item) | hp | status`, with a
+    full-width moveset sub-line under each mon. Used by the Summary OPP TEAM + both Team-tab tables."""
+    out = Text()
+    out.append(f"{'pokémon':<{name_w}}{'hp':<{hp_w}}status", style="bold")
+    if side is None:
+        out.append("\n—", style="dim")
+        return out
+    mons = [(side.active_species, side.active_hp, side.status, side.item, side.moves, False, True)]
+    mons += [(m.species, m.hp, m.status, m.item, m.moves, m.fainted, False) for m in side.bench]
+    for sp, hp, status, item, moves, fainted, active in mons:
+        row = Text()
+        row.append_text(_col(_mon_label(sp, item, chosen=active, disabled=fainted), name_w))
+        row.append_text(_col(_hp_bar(hp, disabled=fainted), hp_w))
+        row.append_text(_status_cell(status))
+        out.append("\n")
+        out.append_text(row)
+        ml = _moves_line(moves)
+        if ml:
+            out.append("\n")
+            out.append_text(ml)
+    return out
+
+
+# Plain-language for a "couldn't move" (cant) reason decoded from the TurnDelta.
+_CANT_PHRASE = {"slp": "asleep", "frz": "frozen", "par": "fully paralyzed", "flinch": "flinched",
+                "recharge": "recharging", "nopp": "no PP", "truant": "loafing", "attract": "immobilized",
+                "taunt": "taunted", "disable": "disabled", "flinched": "flinched"}
+
+
+def _cant_phrase(cant: str) -> str:
+    return _CANT_PHRASE.get(str(cant).lower(), str(cant))
+
+
+def _append_action_outcome(line: Text, prefix: str, side: dict, crit: bool, cant: "str | None",
+                           boost: str = "", first: bool = False) -> None:
+    """'we <action> [«1st»] [⚡CRIT] [→ atk+1] (<hpΔ>) [— couldn't move (asleep)]' for one side of
+    the result — '«1st»' marks who moved first; '→ atk+1' the stat-stage change (e.g. Meteor Mash)."""
+    line.append(prefix, style="dim")
+    line.append(str(side.get("action", "?")))
+    if first:
+        line.append(" «1st»", style="bold cyan")
+    if crit:
+        line.append(" ⚡CRIT", style="bold yellow")
+    if boost:
+        line.append(f" → {boost}", style="magenta")
+    line.append(f" ({side.get('hp_delta', '?')})")
+    if cant:
+        line.append(f" — couldn't move ({_cant_phrase(cant)})", style="bold yellow")
+
+
 def _append_happened(line: Text, a: InvocationAnalysis, label: str) -> None:
-    """Append what ACTUALLY happened after this decision — 'we <action>(<hpΔ>) · opp
-    <action>(<hpΔ>) [events]' — so the choice can be judged against the result. ``label`` carries
-    its own leading newline (e.g. '\\nHAPPENED '). No-op when the outcome isn't recorded yet."""
+    """Append what ACTUALLY happened after this decision — each side's action, a ⚡CRIT tag, the
+    hpΔ, and a 'couldn't move (asleep)' note when the mon was prevented — so the choice can be
+    judged against the real result. ``label`` carries its own leading newline. No-op when the
+    outcome isn't recorded yet."""
     out = a.outcome or {}
     our, opp = out.get("our") or {}, out.get("opp") or {}
     if our or opp:
         line.append(label, style="dim")
-        line.append(f"we {our.get('action', '?')} ({our.get('hp_delta', '?')}) · "
-                    f"opp {opp.get('action', '?')} ({opp.get('hp_delta', '?')})")
+        order = out.get("move_order")
+        _append_action_outcome(line, "we ", our, out.get("our_crit"), out.get("our_cant"),
+                               out.get("our_boost", ""), first=(order == "we_first"))
+        line.append(" · ", style="dim")
+        _append_action_outcome(line, "opp ", opp, out.get("opp_crit"), out.get("opp_cant"),
+                               out.get("opp_boost", ""), first=(order == "opp_first"))
         if out.get("events"):
             line.append("  [" + ", ".join(map(str, out["events"])) + "]", style="yellow")
 

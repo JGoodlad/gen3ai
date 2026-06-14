@@ -52,9 +52,13 @@ class _FakeModel:
                 "our_spikes": 2, "opp_spikes": 0, "turn": 5,
                 "our_reflect": True, "opp_reflect": False}
 
-    def describe_team_items(self, obs):
-        # our active (zapdos) + opp active (jynx) revealed items, decoded from the obs.
-        return {"zapdos": "choiceband", "jynx": "leftovers"}
+    def describe_team(self, obs):
+        # our active (zapdos) + opp active (jynx) revealed items + movesets, decoded from the obs.
+        return {"zapdos": {"item": "choiceband", "moves": ("thunderbolt", "hiddenpower")},
+                "jynx": {"item": "leftovers", "moves": ("icebeam",)}}
+
+    def describe_turn_outcome(self, obs):
+        return {"our_crit": False, "opp_crit": False, "our_cant": None, "opp_cant": None}
 
 
 def _write_trace(tmp_path, chosen="thunderbolt", has_state=1):
@@ -230,11 +234,18 @@ async def test_select_battle_populates_panels(tmp_path):
         # chosen is a move → 4-point sweep
         assert app.query_one("#sweep-table", DataTable).row_count == 4
         assert app.query_one("#saliency-table", DataTable).row_count == 5  # +their_matchups block
-        # Summary splits the 11 actions: 5 moves (4 + struggle) | 6 switches.
+        # MOVES is still a DataTable: 5 moves (4 + struggle).
         assert app.query_one("#summary-moves", DataTable).row_count == 5
-        assert app.query_one("#summary-switches", DataTable).row_count == 6
-        # opp-team column: the revealed opponent (jynx active, no revealed bench)
-        assert app.query_one("#summary-opp", DataTable).row_count == 1
+        # SWITCHES / OPP / Team are now custom-rendered Static panels (so movesets can span).
+        switches = str(app.query_one("#summary-switches", Static).render())
+        assert "m0" in switches and "m5" in switches and "risk-in" in switches  # 6 switch mons listed
+        opp = str(app.query_one("#summary-opp", Static).render())
+        assert "jynx (leftovers)" in opp and "icebeam" in opp  # inline (item) + revealed moveset
+        # Team tab: our active (zapdos) moveset + opp (jynx) revealed moveset
+        team_our = str(app.query_one("#team-our", Static).render())
+        assert "thunderbolt" in team_our and "earthquake" in team_our
+        team_opp = str(app.query_one("#team-opp", Static).render())
+        assert "icebeam" in team_opp
         head = str(app.query_one("#summary-head", Static).render())
         assert "zapdos" in head and "jynx" in head and "thunderbolt" in head  # context header
         assert "FIELD" in head and "SUN" in head  # field line (weather/hazards/screens) present
@@ -242,9 +253,10 @@ async def test_select_battle_populates_panels(tmp_path):
         assert "RESULT" in head and "switch:gengar" in head  # what-happened line on the summary
         assert "REWARD" in head and "hp_ours=-1.2" in head    # reward breakdown on the summary
         assert "█" in head                                    # colour-graded HP bar (80% our active)
-        # section titles carry their 1-indexed hotkey
+        # section titles carry their 1-indexed hotkey (Team inserted at 2)
         assert app.query_one("#sec-summary", Collapsible).title == "1  Summary"
-        assert app.query_one("#sec-outcome", Collapsible).title == "8  Outcome"
+        assert app.query_one("#sec-team", Collapsible).title == "2  Team"
+        assert app.query_one("#sec-outcome", Collapsible).title == "9  Outcome"
         # header line order: FIELD · CHOSE · RESULT · REWARD · CRITIC (critic moved to last)
         assert (head.index("FIELD") < head.index("CHOSE") < head.index("RESULT")
                 < head.index("REWARD") < head.index("CRITIC"))

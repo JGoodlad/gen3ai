@@ -49,9 +49,14 @@ class FakeProbeModel:
     def describe_global(self, obs):
         return {"weather": "RAIN", "our_spikes": 1, "opp_spikes": 0, "turn": 8.0}
 
-    def describe_team_items(self, obs):
-        # Simulate the per-mon obs item decode (both sides; display-name keys, leniently matched).
-        return {"Zapdos": "leftovers", "Steelix": "choiceband"}
+    def describe_team(self, obs):
+        # Simulate the per-mon obs decode (item + moves, both sides; display-name keys, lenient).
+        return {"Zapdos": {"item": "leftovers", "moves": ("thunderbolt", "hiddenpower")},
+                "Steelix": {"item": "choiceband", "moves": ("earthquake",)}}
+
+    def describe_turn_outcome(self, obs):
+        # Simulate the next-turn TurnDelta decode: opp crit us, our move was fine.
+        return {"our_crit": False, "opp_crit": True, "our_cant": None, "opp_cant": None}
 
 
 def _summary(chosen="thunderbolt", events=None):
@@ -82,12 +87,12 @@ def _summary(chosen="thunderbolt", events=None):
     }
 
 
-def _npz(has_state=1, value=1.5):
-    obs = np.zeros((1, _OBS_LEN), dtype=np.float32)
+def _npz(has_state=1, value=1.5, n=1):
+    obs = np.zeros((n, _OBS_LEN), dtype=np.float32)
     # stored /4-normalised → *4 gives [2.0, 1.0, 0.0, 0.5]
     obs[0, _OFF.mm_off:_OFF.mm_off + 4] = [0.5, 0.25, 0.0, 0.125]
-    return {"obs": obs, "has_state": np.array([has_state], dtype=np.int8),
-            "values": np.array([value], dtype=np.float32)}
+    return {"obs": obs, "has_state": np.full(n, has_state, dtype=np.int8),
+            "values": np.full(n, value, dtype=np.float32)}
 
 
 def test_meta_and_faithfulness():
@@ -205,10 +210,14 @@ def test_build_board_parses_sides():
     assert b.opp.active_species == "zapdos" and b.opp.moves == ()
     assert b.opp.bench[0].fainted is True
 
-    # items annotate BOTH sides and match leniently (display-name key vs board id).
-    b2 = build_board(inv, {"Milotic": "choiceband", "celebi": "leftovers", "Zapdos": "salacberry"})
+    # item + moves annotate BOTH sides and match leniently (display-name key vs board id).
+    team = {"Milotic": {"item": "choiceband", "moves": ("surf", "icebeam")},
+            "celebi": {"item": "leftovers", "moves": ("psychic",)},
+            "Zapdos": {"item": "salacberry", "moves": ()}}
+    b2 = build_board(inv, team)
     assert b2.ours.item == "choiceband"                       # "Milotic" → "milotic"
     assert b2.ours.bench[1].item == "leftovers"               # celebi
+    assert b2.ours.bench[1].moves == ("psychic",)             # moves threaded to the bench mon
     assert b2.ours.bench[0].item == ""                        # metagross: no entry
     assert b2.opp.item == "salacberry"                        # opp side annotated too
 
@@ -220,12 +229,22 @@ def test_analysis_carries_board():
 
 
 def test_analysis_decodes_items_from_obs():
-    """With captured state, the board picks up items from the model's obs decode — incl. the
-    OPPONENT's revealed item (the summary teams block only carries our side)."""
+    """With captured state, the board picks up items + movesets from the model's obs decode —
+    incl. the OPPONENT's revealed item/moves (the summary teams block only carries our side)."""
     model = FakeProbeModel(_OFF)
     a = analyze_invocation(model, _summary(), _npz(), 0)
     assert a.board.opp.item == "choiceband"      # opp item surfaced from the obs decode
     assert a.board.ours.item == "leftovers"
+    assert a.board.opp.moves == ("earthquake",)             # opp revealed moveset from the obs
+    assert a.board.ours.moves == ("thunderbolt", "earthquake")  # trace move labels (our side)
+
+
+def test_analysis_carries_crit_from_next_turn():
+    """The realized crit/cant is read from the NEXT decision's TurnDelta and attached to outcome
+    (inv 0 has a following captured state; the fake reports opp crit)."""
+    model = FakeProbeModel(_OFF)
+    a = analyze_invocation(model, _summary(events=["our:zapdos:fainted"]), _npz(n=2), 0)
+    assert a.outcome.get("opp_crit") is True and a.outcome.get("our_crit") is False
 
 
 def test_analysis_carries_field_when_model_decodes():

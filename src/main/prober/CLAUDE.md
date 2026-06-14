@@ -29,12 +29,19 @@ the single source of truth — change the analysis once, both surfaces follow.
   `logit_grad` are the only forward/backward passes. **On load it silences the
   policy's `ObservationDebugger`** (a `--log-level periodic` checkpoint prints a
   "DEEP TRACE" banner on every forward — pure noise that would corrupt the
-  Textual screen). Two **non-torch decode helpers** also live here (they need the encoder,
-  so the model is the natural home): `describe_global` (weather/spikes/screens) and
-  `describe_team_items` — decodes each mon block's held item via `pokemon_encoder.describe_vector`
-  over BOTH team blocks (`OFFSET_OUR_TEAM`/`OFFSET_OPP_TEAM`), so it surfaces the **opponent's
-  item the moment it's revealed** (unrevealed → `ITM-UNKN`, skipped); the engine overlays this on
-  the summary's our-only teams block.
+  Textual screen). Three **non-torch decode helpers** also live here (they need the encoder,
+  so the model is the natural home): `describe_global` (weather/spikes/screens); `describe_team` —
+  decodes each mon block's **held item + moveset** via `pokemon_encoder.describe_vector` over BOTH
+  team blocks (`OFFSET_OUR_TEAM`/`OFFSET_OPP_TEAM`), surfacing the **opponent's item + revealed
+  moves the moment they appear** (unrevealed item → `ITM-UNKN`, skipped); and `describe_turn_outcome`
+  — decodes the **most-recent TurnDelta** (the history block's LAST slot) for each side's **crit**
+  (`OFFSET_*_CRIT`), **couldn't-move reason** (`*_cant`), **boost change** (`*_boost_delta` →
+  `atk+1`), and **move order** (`move_order` → who went first), via
+  `turn_delta_encoder.describe_vector`. The engine overlays `describe_team` on the summary's
+  our-only teams block, and reads `describe_turn_outcome` from the NEXT decision's obs (turn T's
+  events land in decision T+1). (Hidden Power's specific TYPE — all 16 share move-num 237 — is
+  recovered in `observation/moves.py::describe_vector` from the move's type channel, so a decoded
+  moveset shows `hiddenpower(fire)` for our own / a revealed HP; an opp's un-revealed HP stays bare.)
 - **`discovery.py`** — pure filesystem. `build_trace_tree(path)` accepts a run
   dir, an `eval_traces` dir, or a single `*_summary.json`, and groups
   step → opponent → battle by **parsing path strings only** (never opens the
@@ -52,7 +59,7 @@ the single source of truth — change the analysis once, both surfaces follow.
   replay/re-roll record (`utils/bridge/reconstruction.py`) — which the prober
   also ignores today (a future counterfactual probe consumes it).
 - **`app.py`** — `ProberApp(Gen3App)`: trace `Tree` | invocation `ListView` |
-  a `VerticalScroll` of `Collapsible` analysis sections (Summary · Review · Board ·
+  a `VerticalScroll` of `Collapsible` analysis sections (Summary · Team · Review · Board ·
   Faithfulness · Matchups · Intervention · Saliency · Outcome).
 - **`review.py`** — `ReviewStore`: persistent manual-review annotations (a *funky* flag +
   a **timestamped note append-log** per decision) at `<run_dir>/review_notes.json`; pure
@@ -87,28 +94,40 @@ better than always using `best_model`.
 Analysis sections (collapsible — **multiple open at once**, in a scroll; toggle
 by clicking a title or pressing its number key) render purely from one
 `InvocationAnalysis`. Keys are **1-indexed in display order** (no `0` — awkward on a laptop)
-and **shown in each title** (`1  Summary`, `2  Review`, … `8  Outcome`); `_SECTIONS` is the
+and **shown in each title** (`1  Summary`, `2  Team`, … `9  Outcome`); `_SECTIONS` is the
 single source — `_SEC_TITLE` builds the titles and the `BINDINGS` are generated from it, so
 key/label/binding never drift. The top one is **Summary** (`1`, open by default) — the
-decision dashboard for walking "funky turns". A context header — line 1 the matchup, each
-active as **species + colour-graded HP bar** (`_hp_bar`) + bundled **status/volatiles** in
-`[...]` (e.g. `[TOX(5)|SUB]`) + held **item** as `@item` (incl. the **opponent's once
-revealed** — Choice items highlighted) + outcome; then, in order, **FIELD**
-(weather/hazards/screens/turn, the same `_field_text` the Board shows) · **THREAT** incoming
-P(KO)·outspeed·worst-on-team·opp-recovery · **CHOSE** chosen+confidence [+ a `⚠ now prefers X`
-on disagree] · **RESULT** what actually happened (our/opp action + hpΔ + events) · **REWARD**
-the env's reward (total + per-component breakdown) · **CRITIC** (last) V·ΔV·**TD-surprise**
-(always paired with a plain-language gloss — "worse than the critic expected" — via
-`_append_surprise`/`_surprise_phrase`, so the ML term is self-explaining). Below sit **three**
-side-by-side **content-width** tables (packed at the left, not split): **MOVES** (each move's
-type-effectiveness `×mult` fused with its policy prob, ranked by prob), **SWITCHES** (each
-target's prob · **hp** (a colour bar) · **status/volatiles** · held **item** · **risk-in** =
-`incoming.per_slot_pko`, the P(KO) on the switch-in if it comes in), and **OPP TEAM** (the
-opponent's REVEALED mons — active ▶ then revealed bench — species · hp · status · item, the
-mirror of our switches; Gen3 has no team preview so only revealed mons appear). **Disabled
-slots** (a fainted mon / an illegal switch / a no-PP move) render **grey** (`_DISABLED_GREY`),
-NOT the red of a low value — so "dead/unavailable" reads differently from "alive but low HP
-= real danger". It composes
+decision dashboard for walking "funky turns". The context header is chunked into **three blank-line
+groups** for scannability — SITUATION (matchup + FIELD + THREAT), DECISION (CHOSE), OUTCOME
+(RESULT + REWARD + CRITIC): line 1 the matchup, each active as **species + colour-graded HP bar**
+(`_hp_bar`) + bundled **status/volatiles** in `[...]` (e.g. `[TOX(5)|SUB]`) + **boosts** in
+`{...}` magenta (e.g. `{atk:-1 spa:+6}`) + held **item** as `@item` (incl. the **opponent's once
+revealed** — Choice items highlighted) + outcome; then **FIELD** (weather/hazards/screens/turn,
+the same `_field_text` the Board shows) · **THREAT** (STACKED, so the Summary is self-sufficient —
+line 1 incoming P(KO)·outspeed·worst-on-team·opp-recovery, line 2 the incoming type-**effectiveness**
+`worst N× · revealed X%` folded in from Matchups; P(KO) reds with danger in BOTH places —
+`gradient_color(1 − pko)`) · **CHOSE** chosen+confidence [+ a `⚠ now prefers X` on disagree] ·
+**RESULT** what actually happened — each side's action with a **`«1st»`** move-order tag, a
+**`⚡CRIT`** tag, a **`→ atk+1`** stat-change (e.g. Meteor Mash / Intimidate), hpΔ, and a
+**"couldn't move (asleep/fully paralyzed/…)"** note (move-order + crit + boost + cant all decoded
+from the NEXT decision's TurnDelta via `describe_turn_outcome`) + events · **REWARD** the env's
+reward (total + per-component breakdown) · **CRITIC** (last) V·ΔV·**TD-surprise** (always paired
+with a plain-language gloss — "worse than the critic expected" — via `_append_surprise`/
+`_surprise_phrase`, so the ML term is self-explaining).
+Below sit **three** side-by-side panels (packed at the left): **MOVES** (a DataTable — each move's
+type-effectiveness `×mult` fused with its policy prob, ranked) and two **custom-rendered Static
+panels** (NOT DataTables, so a mon's **moveset spans the full width** below it as `⮡ m1 · m2 · …`):
+**SWITCHES** (each target's prob · **hp** colour-bar · **status/volatiles** · **risk-in** =
+`incoming.per_slot_pko`, with the held **item inlined into the name** as `(leftovers)` lowercase)
+and **OPP TEAM** (the opponent's REVEALED mons — active ▶ then bench — name · hp · status · item,
+the mirror of our switches; Gen3 has no team preview so only revealed mons appear). **Mon names are
+blue** (`_MON_COLOR`); **disabled slots** (a fainted mon / an illegal switch / a no-PP move) render
+**grey** (`_DISABLED_GREY`), NOT the red of a low value — so "dead/unavailable" reads differently
+from "alive but low HP = real danger". Hidden Power shows its **type** (`hiddenpower(fire)`). Helpers
+`_col` / `_mon_label` / `_moves_line` / `_team_panel_text` build the panels (the last shared by OPP
+TEAM + both Team tables). The **Team** section (`2`, collapsed) is the full per-mon detail — every
+mon's **moveset** (ours complete; opp's revealed-only, from `describe_team`) + hp · status · item.
+It composes
 existing `InvocationAnalysis` fields only (no new obs/engine analysis): `actions` (probs),
 `matchups` (effectiveness), `incoming` (the P(KO) belief + `per_slot_pko`), `value`
 (critic), `board` (hp/status/item — status+volatiles bundled by the recorder's

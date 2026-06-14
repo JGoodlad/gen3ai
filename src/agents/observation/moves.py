@@ -166,8 +166,16 @@ class MovesEncoder(ObservationEncoder):
     def describe_vector(self, vector: np.ndarray) -> Dict[str, Any]:
         move_names = []
         for i in range(4):
-            if vector[i * MOVE_SLOT_DIM + 6] > 0.5:
-                mid = int(vector[i * MOVE_SLOT_DIM])
+            base = i * MOVE_SLOT_DIM
+            if vector[base + 6] > 0.5:
+                mid = int(vector[base])
                 name = self.reverse_mapping.get(mid, f"Move({mid})")
+                # All 16 typed Hidden Powers share num 237, so the bare reverse-map name loses the
+                # type. Recover it from the move's TYPE channel — set for our own / a revealed HP,
+                # UNKNOWN for an opponent's un-revealed HP (which correctly stays bare).
+                if mid == HIDDEN_POWER_MOVE_NUM:
+                    t = TypeEncoder.IDX_TO_TYPE.get(int(vector[base + 4]), "UNKNOWN")
+                    if t not in ("UNKNOWN", "NORMAL"):
+                        name = f"hiddenpower({t.lower()})"
                 move_names.append(name)
         return {"moves": move_names}

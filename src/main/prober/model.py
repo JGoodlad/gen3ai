@@ -81,22 +81,40 @@ class ObsOffsets:
         return cls.from_encoder(Gen3ObservationEncoder(load_mappings()))
 
 
+_BOOST_STATS = ("atk", "def", "spa", "spd", "spe", "acc", "eva")   # TurnDelta boost-delta order
+
+
+def _boost_delta_str(arr) -> str:
+    """A boost-stage change array (7, raw stages) → 'atk+1 spe+2' (only the non-zero stats)."""
+    if arr is None:
+        return ""
+    out = []
+    for name, v in zip(_BOOST_STATS, arr):
+        iv = int(round(float(v)))
+        if iv:
+            out.append(f"{name}{iv:+d}")
+    return " ".join(out)
+
+
 class ProbeModel:
     """Loaded policy + resolved offsets; the engine's torch boundary."""
 
     def __init__(self, policy, offsets: ObsOffsets,
                  global_encoder=None, global_off: int = 0, global_dim: int = 0,
-                 pokemon_encoder=None, our_team_off: int = 0, opp_team_off: int = 0) -> None:
+                 pokemon_encoder=None, our_team_off: int = 0, opp_team_off: int = 0,
+                 turn_delta_encoder=None) -> None:
         self._policy = policy
         self.offsets = offsets
         # For decoding the field state (weather/spikes/screens) out of the obs.
         self._global_encoder = global_encoder
         self._global_off = global_off
         self._global_dim = global_dim
-        # For decoding per-mon items (incl. the opponent's REVEALED items) from the team blocks.
+        # For decoding per-mon items + movesets (incl. the opponent's REVEALED ones) from the team blocks.
         self._pokemon_encoder = pokemon_encoder
         self._our_team_off = our_team_off
         self._opp_team_off = opp_team_off
+        # For decoding the most-recent TurnDelta (crit + couldn't-move reason) from the history block.
+        self._turn_delta_encoder = turn_delta_encoder
 
     @classmethod
     def load(cls, ckpt_path: str, device: str = "cpu") -> "ProbeModel":
@@ -124,7 +142,8 @@ class ProbeModel:
                    global_encoder=enc.global_env_encoder,
                    global_off=gp["start"], global_dim=gp["dim"],
                    pokemon_encoder=enc.pokemon_encoder,
-                   our_team_off=C.OFFSET_OUR_TEAM, opp_team_off=C.OFFSET_OPP_TEAM)
+                   our_team_off=C.OFFSET_OUR_TEAM, opp_team_off=C.OFFSET_OPP_TEAM,
+                   turn_delta_encoder=enc.turn_delta_encoder)
 
     def describe_global(self, obs: np.ndarray) -> "dict | None":
         """Decode the field state (weather, spikes, screens, turn) from the obs."""
@@ -133,16 +152,17 @@ class ProbeModel:
         g = np.asarray(obs)[self._global_off:self._global_off + self._global_dim]
         return self._global_encoder.describe_vector(g)
 
-    def describe_team_items(self, obs: np.ndarray) -> "dict[str, str]":
-        """species → held item for every REVEALED mon on both sides, decoded from the team
-        blocks. Unlike the summary's teams block (our side only, end-of-battle), this reads the
-        per-turn obs, so it surfaces the OPPONENT's item the moment it's revealed. Unrevealed
-        items decode to ``ITM-UNKN`` and are skipped; species keys are matched leniently downstream."""
+    def describe_team(self, obs: np.ndarray) -> "dict[str, dict]":
+        """species → {item, moves} for every mon on both sides, decoded from the team blocks.
+        Unlike the summary's teams block (our side only, end-of-battle), this reads the per-turn
+        obs, so it surfaces the OPPONENT's item + moves the moment they're revealed (unrevealed
+        items decode to ``ITM-UNKN`` → dropped; an opp mon's unrevealed moves simply aren't listed).
+        Species keys are matched leniently downstream. One decode pass per call (12 mons)."""
         if self._pokemon_encoder is None:
             return {}
         arr = np.asarray(obs)
         stride = self.offsets.pokemon_full_dim
-        out: "dict[str, str]" = {}
+        out: "dict[str, dict]" = {}
         for base in (self._our_team_off, self._opp_team_off):
             for i in range(6):
                 s = base + i * stride
@@ -150,9 +170,42 @@ class ProbeModel:
                 if block.shape[0] < stride:
                     continue
                 d = self._pokemon_encoder.describe_vector(block)
-                species, item = d.get("species") or "", d.get("item") or ""
-                if species and item and item != "ITM-UNKN":
-                    out[species] = item
+                species = d.get("species") or ""
+                if not species:
+                    continue
+                item = d.get("item") or ""
+                moves = tuple(m for m in (d.get("moves") or []) if m and m != "none")
+                out[species] = {
+                    "item": item if item and item != "ITM-UNKN" else "",
+                    "moves": moves,
+                }
+        return out
+
+    def describe_turn_outcome(self, obs: np.ndarray) -> "dict":
+        """Decode what actually happened on the most-recent TurnDelta in an obs: each side's
+        **crit** (critical hit) and **cant** reason (couldn't move — slp/par/flinch/recharge/…).
+        The history block's LAST slot is the newest turn (see observation CLAUDE), so for decision
+        T's outcome the engine reads decision T+1's obs. Empty dict when no slot / no decoder."""
+        from agents.observation.turn_delta_encoder import OFFSET_OPP_CRIT, OFFSET_OUR_CRIT
+
+        off = self.offsets
+        td = off.turn_delta_dim
+        if td <= 0 or off.turn_history_dim < td:
+            return {}
+        arr = np.asarray(obs)
+        newest = off.turn_history_offset + (off.turn_history_dim // td - 1) * td   # last slot = newest
+        slot = arr[newest:newest + td]
+        if slot.shape[0] < td:
+            return {}
+        out = {"our_crit": bool(slot[OFFSET_OUR_CRIT] > 0.5),
+               "opp_crit": bool(slot[OFFSET_OPP_CRIT] > 0.5)}
+        if self._turn_delta_encoder is not None:
+            d = self._turn_delta_encoder.describe_vector(slot)
+            out["our_cant"] = d.get("our_cant")   # e.g. 'slp'/'par'/'flinch'/'recharge' or None
+            out["opp_cant"] = d.get("opp_cant")
+            out["our_boost"] = _boost_delta_str(d.get("our_boost_delta"))   # e.g. "atk+1" (this turn)
+            out["opp_boost"] = _boost_delta_str(d.get("opp_boost_delta"))
+            out["move_order"] = d.get("move_order")   # "we_first" / "opp_first" / None — who moved first
         return out
 
     def action_dist(self, obs: np.ndarray, mask: np.ndarray):
