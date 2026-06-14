@@ -834,6 +834,12 @@ while `train/explained_variance` races ahead. `InstrumentedMaskablePPO.train()` 
   - `grad/policy_value_cosine` — scale-invariant (hence `vf_coef`-independent) structural-conflict
     signal: <0 ⟹ the heads pull the trunk in opposing directions.
   - `grad/policy_norm_shared` / `grad/value_norm_shared` — the weighted norms, for absolute context.
+  - `grad/belief_*` (only when a belief aux is on, `aux_term`) — the COMBINED belief-aux pull (species
+    CE + move BCE + latent) on the same trunk: `belief_share` = ‖g_aux‖/(‖g_pi‖+‖g_vf‖+‖g_aux‖),
+    `belief_norm_shared`, `belief_policy_cosine` (<0 = the aux fights the policy). `grad/latent_*` (only
+    when `--opp-belief-latent-coef>0`, `latent_term`) breaks the SimSiam latent predictor out on its own
+    (same formula vs the latent norm) so its pull is attributable separately from the species CE when
+    tuning the latent coef. Both share-targets sit ~5–15%; a spike with a degrading policy → lower the coef.
 - **Value scale — PopArt prep.** From the full rollout buffer: `train/return_mean` / `train/return_std`
   / `train/return_abs_max` (exactly the `(μ, σ)` + tail an adaptive return normalizer / PopArt's ART
   half tracks) and `train/value_pred_std` (the value head's actual output spread). Watch these to SEE
@@ -841,8 +847,9 @@ while `train/explained_variance` races ahead. `InstrumentedMaskablePPO.train()` 
   cannot follow. Plus `train/grad_norm` (pre-clip total grad norm, mean over minibatches → grad-clip
   activity).
 
-Cost: **2 extra partial backward passes on ONE minibatch per `train()` call** (negligible vs the
-`n_epochs × n_minibatches` the loop already runs) + trivial NumPy stats. The probe is a **no-op**
+Cost: **2 extra partial backward passes on ONE minibatch per `train()` call** (3–4 when a belief aux /
+the latent predictor add their own probes; negligible vs the `n_epochs × n_minibatches` the loop
+already runs) + trivial NumPy stats. The probe is a **no-op**
 (records nothing) when `shared_trunk_parameters` finds no matching modules (a non-Gen3 policy). **Why
 it exists:** to prepare for **reducing `vf_coef`** and **adding return normalization (PopArt)** — both
 target the value→trunk pressure, which can now be tuned to a number instead of inferred. (The
@@ -980,9 +987,20 @@ it in **role-token space** — graded supervision the CE can't give. REQUIRES `-
   EMA/collapse). On the **same species-CE Hungarian assignment**, the latent loss is the mean cosine
   distance over matched pairs + a **VICReg variance floor** on the predictions (collapse guard). Returned
   as the 3rd element of `_belief_aux_loss` and folded at `opp_belief_latent_coef`; its trunk gradient
-  joins the combined `grad/belief_share` probe.
+  joins the combined `grad/belief_share` probe AND is broken out separately as `grad/latent_share`
+  (passed to `grad_balance_metrics(latent_term=…)` so the latent pull is attributable on its own).
 - **Metrics (`train/belief_latent_*`).** `cosine` (similarity, higher = better identity match), `std`
-  (the collapse monitor — **NO-GO if it →0 while `cosine`→1**), `vicreg`, `loss`.
+  (the collapse monitor — **NO-GO if it →0 while `cosine`→1**), `vicreg`, `loss`, plus the
+  **interpretability anchor** `cosine_baseline` (the cosine each prediction scores against a MISMATCHED
+  true target — the non-zero null of the task-anchored, non-orthogonal role-token manifold) and
+  `cosine_above_chance` = `cosine − cosine_baseline` (the *discriminative* signal, the latent analog of
+  `species_acc_above_chance`). A small-but-positive `above_chance` with a healthy `std` is the
+  "predicts the SET's mean role, not the per-mon identity" failure that `std` alone can miss.
+  **Balance:** the latent term's trunk pull is in the COMBINED `grad/belief_share` AND broken out on its
+  own as **`grad/latent_share`** (+ `grad/latent_norm_shared` / `grad/latent_policy_cosine`) — so when
+  tuning `--opp-belief-latent-coef` you can see whether the LATENT term specifically (not the species
+  CE) is the one swamping / fighting the policy. Watch it sit ~5–15%; a spike with a degrading policy =
+  lower the coef.
 - **Versioning.** `opp_belief_latent` (bool) is the version-checked structural toggle (the predictor MLP;
   fresh-only; hard-requires `opp_belief_slots`); `opp_belief_latent_coef` is training-only, **read back on
   a flagless resume**. Threaded into `current_model_version` / `arch_toggles_from_model` so a latent-ON

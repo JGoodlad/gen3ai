@@ -297,7 +297,8 @@ class InstrumentedMaskablePPO(MaskablePPO):
         if do_latent:
             latent_target = latent_target.to(device)
         ce_terms, bce_terms = [], []
-        cos_terms, lat_pred_terms = [], []  # latent: per-slot cosine distance + matched preds (VICReg)
+        # latent: per-slot cosine distance + matched preds (VICReg) + matched targets (above-chance anchor)
+        cos_terms, lat_pred_terms, lat_tgt_terms = [], [], []
         n_correct = th.zeros((), device=device)
         n_slots = 0
         mv_tp = mv_pred_pos = mv_true_pos = 0  # moves precision/recall accumulators (diagnostic)
@@ -332,6 +333,7 @@ class InstrumentedMaskablePPO(MaskablePPO):
                 cos = (F.normalize(pred_l, dim=-1) * F.normalize(tgt_l, dim=-1)).sum(-1)  # [n, k]
                 cos_terms.append((1.0 - cos).reshape(-1))
                 lat_pred_terms.append(pred_l.reshape(-1, pred_l.shape[-1]))        # [n*k, D]
+                lat_tgt_terms.append(tgt_l.reshape(-1, tgt_l.shape[-1]))           # [n*k, D] matched targets
             if do_moves:
                 mv_pred = mv_logits[rows, slot_idx]                                # [n, k, M] predictions
                 mv_ids = mv_labels[rows, matched_label_slot]                      # [n, k, 4] matched move ids
@@ -379,10 +381,24 @@ class InstrumentedMaskablePPO(MaskablePPO):
             lat_std = th.sqrt(lat_pred.var(dim=0, unbiased=False) + 1e-4)          # [D] per-dim std
             vicreg = th.relu(_LATENT_STD_TARGET - lat_std).mean()
             latent_loss = cos_dist + _LATENT_VICREG_WEIGHT * vicreg
-            metrics["latent_cosine"] = float(1.0 - cos_dist.item())               # similarity (higher better)
+            similarity = float(1.0 - cos_dist.item())
+            metrics["latent_cosine"] = similarity                                 # similarity (higher better)
             metrics["latent_loss"] = float(latent_loss.item())
             metrics["latent_std"] = float(lat_std.mean().item())                  # collapse monitor (→0 = NO-GO)
             metrics["latent_vicreg"] = float(vicreg.item())
+            # Interpretability anchor (the latent analog of `species_acc_above_chance`): role-tokens are
+            # task-anchored, NOT orthogonal, so the raw cosine has a non-zero null. The baseline is the
+            # cosine each prediction scores against a MISMATCHED true target (the within-batch roll-by-1
+            # "background" a predictor would get by regressing to a typical role-token). `above_chance` =
+            # matched − mismatched is the discriminative signal — small-but-positive with a healthy
+            # `latent_std` means the head predicts the SET's mean role, not the per-mon identity.
+            with th.no_grad():
+                lat_tgt = th.cat(lat_tgt_terms, dim=0)                            # [N, D] matched targets
+                pn = F.normalize(lat_pred, dim=-1)
+                tn = F.normalize(lat_tgt, dim=-1)
+                baseline = float((pn * th.roll(tn, 1, 0)).sum(-1).mean().item())  # cos to a non-matched target
+            metrics["latent_cosine_baseline"] = baseline
+            metrics["latent_cosine_above_chance"] = similarity - baseline
         return aux, metrics, latent_loss
 
     def _value_loss_from_se(self, se: "th.Tensor") -> "th.Tensor":
@@ -602,7 +618,8 @@ class InstrumentedMaskablePPO(MaskablePPO):
                         policy_loss + self.ent_coef * entropy_loss,
                         self.vf_coef * value_loss,
                         shared_trunk,
-                        aux_term=aux_probe_term,  # species+move belief grad-share on the trunk (None = off)
+                        aux_term=aux_probe_term,  # species+move+latent belief grad-share on the trunk (None = off)
+                        latent_term=latent_belief_term,  # latent role-token predictor broken out (None = off/empty mb)
                     )
 
                 # Calculate approximate form of reverse KL Divergence for early stopping

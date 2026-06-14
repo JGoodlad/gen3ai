@@ -65,6 +65,14 @@ _METRIC_LABELS = {
     "grad/policy_value_cosine": "policy-value cos",
     "grad/policy_norm_shared": "policy grad-norm",
     "grad/value_norm_shared": "value grad-norm",
+    # Belief-aux pull on the shared trunk (--opp-belief-aux-coef / --move-belief-mode /
+    # --opp-belief-latent-coef): belief = the COMBINED aux pull, latent = the role-token predictor alone.
+    "grad/belief_share": "belief share",
+    "grad/belief_norm_shared": "belief grad-norm",
+    "grad/belief_policy_cosine": "belief-policy cos",
+    "grad/latent_share": "latent share",
+    "grad/latent_norm_shared": "latent grad-norm",
+    "grad/latent_policy_cosine": "latent-policy cos",
     # PopArt value-target normalizer (--use-popart).
     "popart/mu": "value mu",
     "popart/sigma": "value sigma",
@@ -148,6 +156,16 @@ _METRIC_ORDER = [
     "grad/policy_value_cosine",
     "grad/policy_norm_shared",
     "grad/value_norm_shared",
+    # Belief-aux pull on the shared trunk (only present when a belief aux is on): the COMBINED
+    # belief_share (species CE + move BCE + latent) and the latent role-token predictor broken out on
+    # its own (latent_share) — watch each sit ~5-15%; a spike with a degrading policy = the aux is
+    # fighting the actor → lower its coef.
+    "grad/belief_share",
+    "grad/belief_norm_shared",
+    "grad/belief_policy_cosine",
+    "grad/latent_share",
+    "grad/latent_norm_shared",
+    "grad/latent_policy_cosine",
     # PopArt (only present under --use-popart): running value-target (mu, sigma) — should track
     # train/return_mean & return_std — and the POP-rescaled value-head weight norm (stays bounded).
     "popart/mu",

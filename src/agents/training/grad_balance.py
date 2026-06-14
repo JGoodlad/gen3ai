@@ -85,6 +85,7 @@ def grad_balance_metrics(
     value_term: th.Tensor,
     shared_params: Sequence[nn.Parameter],
     aux_term: "th.Tensor | None" = None,
+    latent_term: "th.Tensor | None" = None,
 ) -> Dict[str, float]:
     """Value-vs-policy gradient competition on the shared trunk.
 
@@ -100,7 +101,9 @@ def grad_balance_metrics(
     opposing directions).
 
     Returns ``{grad/value_share, grad/value_policy_logratio, grad/policy_value_cosine,
-    grad/policy_norm_shared, grad/value_norm_shared}``. **Must be called while the graph is alive**
+    grad/policy_norm_shared, grad/value_norm_shared}`` — plus ``grad/belief_*`` when ``aux_term`` is
+    given (the COMBINED belief-aux pull) and ``grad/latent_*`` when ``latent_term`` is given (the
+    latent role-token predictor broken out on its own). **Must be called while the graph is alive**
     (before ``loss.backward()``).
     """
     g_pi = _flat_grads(policy_term, shared_params)
@@ -140,6 +143,22 @@ def grad_balance_metrics(
         out["grad/belief_share"] = (n_aux / total3) if total3 > 0.0 else 0.0
         out["grad/belief_policy_cosine"] = (
             float((g_aux @ g_pi).item() / (n_aux * n_pi)) if n_aux > 0.0 and n_pi > 0.0 else 0.0
+        )
+    # Latent-belief term broken out SEPARATELY (the SimSiam role-token predictor, --opp-belief-latent-coef).
+    # It is also a component of ``aux_term`` above (so ``belief_share`` stays "total aux pull"), but the
+    # combined number can't say whether the LATENT term specifically is the one swamping / fighting the
+    # trunk — which is exactly what you need to tune ``opp_belief_latent_coef`` independently of the
+    # species CE. ``latent_share`` mirrors ``belief_share``'s formula against the latent norm so the two
+    # are directly comparable; ``latent_policy_cosine`` <0 ⟹ the latent head drags the trunk against the
+    # policy. ``latent_term`` is the WEIGHTED contribution (opp_belief_latent_coef·latent_loss).
+    if latent_term is not None:
+        g_lat = _flat_grads(latent_term, shared_params)
+        n_lat = float(g_lat.norm())
+        total_l = n_pi + n_vf + n_lat
+        out["grad/latent_norm_shared"] = n_lat
+        out["grad/latent_share"] = (n_lat / total_l) if total_l > 0.0 else 0.0
+        out["grad/latent_policy_cosine"] = (
+            float((g_lat @ g_pi).item() / (n_lat * n_pi)) if n_lat > 0.0 and n_pi > 0.0 else 0.0
         )
     return out
 

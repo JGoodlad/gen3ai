@@ -165,6 +165,35 @@ def test_latent_cosine_and_metrics():
     assert torch.isfinite(lat) and lat.item() >= 0.0
     assert m["latent_cosine"] == pytest.approx(1.0, abs=1e-4)    # parallel ⇒ similarity ~1
     assert "latent_std" in m and "latent_vicreg" in m and "latent_loss" in m
+    # Interpretability anchor (analog of species_acc_above_chance): a baseline (cosine to a mismatched
+    # target) and above_chance = matched − baseline must both be present and consistent.
+    assert "latent_cosine_baseline" in m
+    assert m["latent_cosine_above_chance"] == pytest.approx(
+        m["latent_cosine"] - m["latent_cosine_baseline"], abs=1e-6
+    )
+
+
+def test_latent_above_chance_discriminates_identity_vs_mean():
+    """The above-chance anchor separates "predicts the right mon" from "regresses to a typical role
+    token". When each prediction matches its OWN target but the two targets are near-orthogonal, the
+    matched cosine is ~1 while the mismatched baseline is ~0 → above_chance ≈ 1 (discriminative). When
+    every prediction equals one shared target, matched ≈ baseline → above_chance ≈ 0 (non-discriminative,
+    the failure latent_std alone can miss)."""
+    bl = _logits(2, latent=True)
+    sp = torch.full((2, 6), -1); sp[0, 4] = 10; sp[1, 5] = 7
+    mv = torch.full((2, 6, 4), -1)
+    # Discriminative: pred ∥ its own (distinct, orthogonal) target.
+    e0 = torch.zeros(D); e0[0] = 1.0
+    e1 = torch.zeros(D); e1[1] = 1.0
+    bl["latent"][0, 4] = e0; bl["latent"][1, 5] = e1
+    tgt = torch.zeros(2, 6, D); tgt[0, 4] = e0; tgt[1, 5] = e1
+    _, m_disc, _ = _loss(bl, sp, mv, latent_target=tgt)
+    assert m_disc["latent_cosine_above_chance"] > 0.7
+    # Non-discriminative: both predictions and both targets are the SAME vector → matched == baseline.
+    bl["latent"][0, 4] = e0; bl["latent"][1, 5] = e0
+    tgt_same = torch.zeros(2, 6, D); tgt_same[0, 4] = e0; tgt_same[1, 5] = e0
+    _, m_mean, _ = _loss(bl, sp, mv, latent_target=tgt_same)
+    assert abs(m_mean["latent_cosine_above_chance"]) < 1e-4
 
 
 def test_latent_grad_flows_to_predictions():

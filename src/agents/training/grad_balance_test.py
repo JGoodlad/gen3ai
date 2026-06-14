@@ -93,6 +93,43 @@ def test_grad_balance_identical_terms_are_aligned_and_balanced():
     assert abs(m["grad/value_policy_logratio"] - 0.0) < 1e-5  # ratio 1 → log10 = 0
 
 
+def test_grad_balance_aux_and_latent_terms_break_out():
+    """An ``aux_term`` adds the COMBINED ``grad/belief_*`` block; a ``latent_term`` adds the
+    latent-only ``grad/latent_*`` block. Both ride the same shared-trunk pull and stay in [0,1]."""
+    trunk, pi_head, vf_head, h = _trunk_and_heads()
+    aux_head = nn.Linear(4, 3)
+    latent_head = nn.Linear(4, 5)
+    policy_term = pi_head(h).pow(2).mean()
+    value_term = vf_head(h).pow(2).mean()
+    aux_term = aux_head(h).pow(2).mean()
+    latent_term = latent_head(h).pow(2).mean()
+    m = grad_balance_metrics(
+        policy_term, value_term, list(trunk.parameters()),
+        aux_term=aux_term, latent_term=latent_term,
+    )
+    for prefix in ("belief", "latent"):
+        assert 0.0 <= m[f"grad/{prefix}_share"] <= 1.0
+        assert m[f"grad/{prefix}_norm_shared"] > 0.0
+        assert -1.0 <= m[f"grad/{prefix}_policy_cosine"] <= 1.0
+    # Latent omitted → no latent keys, but the combined belief block stays.
+    m2 = grad_balance_metrics(policy_term, value_term, list(trunk.parameters()), aux_term=aux_term)
+    assert "grad/belief_share" in m2
+    assert not any(k.startswith("grad/latent") for k in m2)
+
+
+def test_grad_balance_latent_detached_has_zero_share():
+    trunk, pi_head, vf_head, h = _trunk_and_heads()
+    policy_term = pi_head(h).pow(2).mean()
+    value_term = vf_head(h).pow(2).mean()
+    latent_term = nn.Linear(4, 5)(h.detach()).pow(2).mean()  # cut off from the trunk
+    m = grad_balance_metrics(
+        policy_term, value_term, list(trunk.parameters()), latent_term=latent_term,
+    )
+    assert m["grad/latent_norm_shared"] == 0.0
+    assert m["grad/latent_share"] == 0.0
+    assert m["grad/latent_policy_cosine"] == 0.0  # guarded zero-norm cosine
+
+
 def test_grad_balance_value_detached_has_zero_share():
     trunk, pi_head, vf_head, h = _trunk_and_heads()
     policy_term = pi_head(h).pow(2).mean()
