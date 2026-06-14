@@ -171,3 +171,26 @@ Full design + grounded attach points + the L1–L4 / leakage / collapse analysis
 - **Re-home `team_completion_model.py`:** the orphaned masked-slot predictor shares the decode-head
   pattern; restructuring it onto the shared trunk is the natural second aux head (predict the
   opponent's hidden party). ai_v7.
+
+---
+
+## Step 7 — In-place opponent belief, move reinjection ✓ SHIPPED (A/B pending)
+
+The in-trunk realization of the "predict the opponent's hidden party" aux head above — built on the
+shared PPO trunk, not the offline team-completion model. Two halves shipped:
+
+- **Species** (`opp_belief_slots` / `--opp-belief-aux-coef`, v16): `BeliefSlots` fills the un-revealed
+  opp slots with learned unknown-mon tokens (refined in-lineup, attended by both heads); a `BeliefHead`
+  aux-supervises species + moves (Hungarian). A readout — predicts but doesn't feed back.
+  Record: `designs/ai_v5/belief_aux_as_built.md`.
+- **Move reinjection** (`--move-belief-mode` / `--move-belief-coef`, v17): `MoveBelief` predicts each opp
+  slot's moveset, soft-embeds it, and REINJECTS it into the token before the CLS pools — so the belief
+  flows to both heads (not a dead-end readout). `--move-belief-mode {off,revealed,unrevealed,both}`;
+  `revealed` (seen mons' unrevealed moves — defensible, surprise-OHKO) vs `unrevealed` (hidden mons,
+  Hungarian; requires the species head) is the defensible-vs-omniscient A/B.
+  Design + as-built: **`designs/ai_v6/impl_step7_move_belief_reinjection.md`**.
+
+**Open gate:** UNMEASURED whether it helps the policy — fresh-run A/B (revealed vs unrevealed at matched
+coef + a coef=0 control) where a NAMED behavioural metric (surprise-OHKO read-rate / crater share) moves
+and win-rate is non-regressing. Same honesty discipline as Step 6 Stage 3; risk = "learnable but
+inconsequential" (the credit-assignment gap the incoming-belief precedent showed).
