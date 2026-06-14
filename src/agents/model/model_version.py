@@ -116,7 +116,17 @@ from typing import Any, Dict, List
 #   → NO ARCH_SIGNATURE bump. move_belief_coef is a TRAINING-ONLY coefficient (like opp_belief_aux_coef):
 #   it scales the move-belief supervised loss, affects no forward pass, so it is recorded for provenance but
 #   NOT version-locked. Old configs migrate to move_belief_mode="off" / move_belief_coef=0.0.
-MODEL_CONFIG_VERSION = 17
+# v18: added `opp_belief_latent` (the LATENT-belief arch toggle) + `opp_belief_latent_coef` (its training-only
+#   loss weight). opp_belief_latent is STRUCTURAL like opp_belief_slots: ON adds an asymmetric SimSiam
+#   predictor to BeliefHead that maps each believed slot's refined token into the pokemon_encoder role-token
+#   space, where a cosine loss regresses it toward the STOP-GRAD encoder role-token of the TRUE hidden mon
+#   (graded identity supervision the hard species CE can't give). It changes the state_dict (the predictor
+#   MLP), so it is gated in check_compatible() with a bool compare. Requires opp_belief_slots (the believed
+#   slots + BeliefHead it attaches to). OFF reproduces the baseline arch byte-for-byte → NO ARCH_SIGNATURE
+#   bump. opp_belief_latent_coef is a TRAINING-ONLY coefficient (like opp_belief_aux_coef): it scales the
+#   latent cosine+VICReg loss, affects no forward pass, recorded for provenance but NOT version-locked. Old
+#   configs migrate to opp_belief_latent=False / opp_belief_latent_coef=0.0.
+MODEL_CONFIG_VERSION = 18
 
 # Change this when the neural architecture changes structurally in a way that makes
 # weights from a different signature incompatible (e.g. adding LSTM, replacing attention).
@@ -455,6 +465,14 @@ class ModelVersion:
     move_belief_mode: str = "off"
     # v17 TRAINING-ONLY loss coefficient for the move belief (like opp_belief_aux_coef). 0.0 = no aux.
     move_belief_coef: float = 0.0
+    # v18 STRUCTURAL toggle (weight-shape via the BeliefHead latent predictor MLP): the LATENT belief.
+    # ON adds an asymmetric SimSiam predictor that regresses each believed slot's refined token toward
+    # the stop-grad pokemon_encoder role-token of the true hidden mon (graded identity supervision).
+    # A state_dict change, gated in check_compatible like opp_belief_slots; OFF = baseline byte-for-byte
+    # (NO ARCH_SIGNATURE bump). Requires opp_belief_slots (the BeliefHead it attaches to).
+    opp_belief_latent: bool = False
+    # v18 TRAINING-ONLY loss coefficient for the latent belief (like opp_belief_aux_coef). 0.0 = no aux.
+    opp_belief_latent_coef: float = 0.0
 
     @classmethod
     def from_layout_and_policy_kwargs(
@@ -466,6 +484,7 @@ class ModelVersion:
         value_tail_weight: float = 0.0,
         opp_belief_aux_coef: float = 0.0,
         move_belief_coef: float = 0.0,
+        opp_belief_latent_coef: float = 0.0,
     ) -> ModelVersion:
         from agents.model.features_extractor import (
             ROLE_TOKEN_SIZE,
@@ -527,9 +546,13 @@ class ModelVersion:
             move_belief_mode=str(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("move_belief_mode", "off")
             ),
+            opp_belief_latent=bool(
+                policy_kwargs.get("features_extractor_kwargs", {}).get("opp_belief_latent", False)
+            ),
             value_tail_weight=float(value_tail_weight),
             opp_belief_aux_coef=float(opp_belief_aux_coef),
             move_belief_coef=float(move_belief_coef),
+            opp_belief_latent_coef=float(opp_belief_latent_coef),
         )
 
     def to_json(self) -> str:
@@ -651,6 +674,17 @@ class ModelVersion:
                 "The move-belief module (predict+reinject the opp moveset) changes the state_dict and the "
                 "forward, so the mode cannot change on an existing model.\n"
                 "Resume with the matching --move-belief-mode setting, or start a fresh training run."
+            )
+
+        # Structural toggle — ON adds the BeliefHead latent predictor MLP to the state_dict (the
+        # latent-belief escalation). Like opp_belief_slots it gates EVERY load; the training-only
+        # opp_belief_latent_coef is deliberately NOT checked (it touches no forward pass).
+        if self.opp_belief_latent != saved.opp_belief_latent:
+            raise ModelVersionError(
+                f"opp_belief_latent mismatch: saved={saved.opp_belief_latent}, current={self.opp_belief_latent}.\n"
+                "The latent-belief predictor (the SimSiam head on the BeliefHead) changes the state_dict, "
+                "so it cannot be toggled on an existing model.\n"
+                "Resume with the matching --opp-belief-latent-coef setting, or start a fresh training run."
             )
 
     def check_opponent_compatible(self, foreign: "ModelVersion") -> None:
@@ -856,4 +890,10 @@ def _migrate_config(data: dict) -> dict:
         data.setdefault("move_belief_mode", "off")
         data.setdefault("move_belief_coef", 0.0)
         data["config_version"] = 17
+    if version < 18:
+        # v18: added the latent-belief toggle (off) + its training-only loss coefficient (0.0).
+        # Old models had no BeliefHead latent predictor and no latent loss.
+        data.setdefault("opp_belief_latent", False)
+        data.setdefault("opp_belief_latent_coef", 0.0)
+        data["config_version"] = 18
     return data

@@ -29,6 +29,65 @@ BELIEF_MOVE_SLOTS = 4  # moves labelled per hidden mon (Gen 3 mons have <= 4 mov
 PAD = -1
 
 
+def assign_hidden_to_slots(
+    team_species: Sequence[str],
+    revealed_species: Sequence[str],
+    species_known: Sequence[float],
+    species_to_num: Dict[str, int],
+    normalize: Callable[[str], str],
+) -> List[Tuple[int, int]]:
+    """The CANONICAL believed-slot → hidden-mon assignment, the SINGLE source of truth shared by
+    `build_belief_labels` (species/moves int labels) and `build_belief_target_index` (the latent
+    target's fresh per-mon encode). Returning one assignment guarantees the species-CE label and the
+    encoder-role-token latent target can NEVER name a different mon for the same believed slot.
+
+    Returns a list of (encoder_opp_slot, team_index) pairs in believed-slot order — `team_index` is
+    the index into `team_species` (and the caller's parallel team/mon lists) of the hidden mon
+    assigned to that slot. Mirrors the prior in-line logic exactly: hidden = full team minus revealed
+    (skipping species not in the num map), sorted by species num ascending; believed slots = the
+    trailing un-revealed opp slots (species_known < 0.5) in encoder order; the j-th sorted hidden mon
+    fills the j-th believed slot. Slots beyond a clean 1-1 assignment are dropped (left to the caller
+    to PAD)."""
+    revealed = {normalize(s) for s in revealed_species}
+    hidden: List[Tuple[int, int]] = []   # (species_num, team_index)
+    for idx, sp in enumerate(team_species):
+        sp_norm = normalize(sp)
+        if sp_norm in revealed:
+            continue
+        num = species_to_num.get(sp_norm)
+        if num is None:
+            continue
+        hidden.append((num, idx))
+    hidden.sort(key=lambda t: t[0])
+
+    believed_slots = [i for i in range(TEAM_SIZE) if i < len(species_known) and species_known[i] < 0.5]
+    assignment: List[Tuple[int, int]] = []
+    for j, slot in enumerate(believed_slots):
+        if j >= len(hidden):
+            break  # fewer hidden mons than believed slots (parse mismatch) — leave the rest PAD
+        assignment.append((slot, hidden[j][1]))
+    return assignment
+
+
+def build_belief_target_index(
+    team_species: Sequence[str],
+    revealed_species: Sequence[str],
+    species_known: Sequence[float],
+    species_to_num: Dict[str, int],
+    normalize: Callable[[str], str],
+) -> np.ndarray:
+    """Per opp-slot index (int64[TEAM_SIZE]) into the FULL team of the hidden mon assigned to that
+    believed slot; PAD (-1) for revealed / non-target slots. Same assignment as `build_belief_labels`
+    (both call `assign_hidden_to_slots`), so the latent-belief target encode and the species-CE label
+    reference the identical mon per slot. The caller encodes `team[idx]` fresh for the latent target."""
+    target_idx = np.full(TEAM_SIZE, PAD, dtype=np.int64)
+    for slot, team_idx in assign_hidden_to_slots(
+        team_species, revealed_species, species_known, species_to_num, normalize
+    ):
+        target_idx[slot] = team_idx
+    return target_idx
+
+
 def build_belief_labels(
     team_species: Sequence[str],
     team_moves: Sequence[Sequence[str]],
@@ -51,30 +110,15 @@ def build_belief_labels(
     belief_species = np.full(TEAM_SIZE, PAD, dtype=np.int64)
     belief_moves = np.full((TEAM_SIZE, BELIEF_MOVE_SLOTS), PAD, dtype=np.int64)
 
-    revealed = {normalize(s) for s in revealed_species}
-
-    # Hidden mons = full team minus revealed, paired with their movesets, sorted by species num.
-    hidden: List[Tuple[int, List[str]]] = []
-    for sp, moves in zip(team_species, team_moves):
-        sp_norm = normalize(sp)
-        if sp_norm in revealed:
-            continue
-        num = species_to_num.get(sp_norm)
-        if num is None:
-            continue
-        hidden.append((num, list(moves)))
-    hidden.sort(key=lambda t: t[0])
-
-    # Believed slots = trailing un-revealed opp slots, in encoder slot order.
-    believed_slots = [i for i in range(TEAM_SIZE) if i < len(species_known) and species_known[i] < 0.5]
-
-    for j, slot in enumerate(believed_slots):
-        if j >= len(hidden):
-            break  # fewer hidden mons than believed slots (parse mismatch) — leave PAD
-        num, moves = hidden[j]
-        belief_species[slot] = num
+    # Single source of truth for which hidden mon fills which believed slot (shared with the latent
+    # target via `assign_hidden_to_slots`). The species num + moveset are then derived from the
+    # assigned team index — byte-identical to the prior inline build.
+    for slot, team_idx in assign_hidden_to_slots(
+        team_species, revealed_species, species_known, species_to_num, normalize
+    ):
+        belief_species[slot] = species_to_num[normalize(team_species[team_idx])]
         m = 0
-        for mv in moves:
+        for mv in team_moves[team_idx]:
             if m >= BELIEF_MOVE_SLOTS:
                 break
             mv_num = move_to_num.get(normalize(mv))

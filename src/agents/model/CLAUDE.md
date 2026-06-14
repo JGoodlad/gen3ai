@@ -33,7 +33,10 @@ un-revealed opp role-tokens for learned unknown-mon tokens *before* the transfor
 refined in-lineup); `BeliefHead` reads the refined opp tokens *after* the transformer and stashes the
 species/moves aux logits (a side readout — does NOT feed forward); `MoveBelief` predicts + **reinjects**
 the moveset into `their_team_out` *before* the CLS pools (so it DOES flow to the heads) — see the v16 / v17
-versioning notes.
+versioning notes. Under `--opp-belief-latent-coef>0` (v18) `BeliefHead` ALSO carries an asymmetric
+SimSiam latent predictor (the `latent` logits key) and `forward_internal` stashes a stop-grad
+`last_belief_target_latent` (the `pokemon_encoder` role-tokens of the true hidden mons, from the
+training-only `belief_target_slots` obs key) — also a side readout, never fed forward (leak-safe).
 
 **Dual-head value readout (H4 / Option C).** The transformer body is shared, but the actor and
 critic read it through independent paths. `CLSPool` holds a third query `value_cls` that attends
@@ -163,7 +166,8 @@ because it is Φ_progress's weight. All are recorded on
 `ModelVersion` and enforced on resume by **`check_reward_config`** (FATAL on drift, since they silently
 shift the reward/objective), excluded from `check_compatible`. They are reward-VALUE changes — **no
 `ARCH_SIGNATURE` bump** (the network/obs are unchanged) — so a fresh run is needed to measure them but
-old checkpoints don't fail an arch check. Current `MODEL_CONFIG_VERSION` = **16**.
+old checkpoints don't fail an arch check. Current `MODEL_CONFIG_VERSION` = **18** (see the belief notes
+below for v16–v18).
 
 **Two probe-driven V-tail levers (v10 structural, v11 resume-immutable).** A representation probe on a
 real checkpoint found the **value head is partly blind to incoming KOs the policy head sees**
@@ -265,7 +269,29 @@ slots are empty placeholders), `both`. The revealed-vs-unrevealed axis is the de
 hard-requires `attend_unrevealed_opponents`; `move_belief_coef` (float) is a **training-only** loss
 weight, recorded but NOT version-locked. Labels: `known_moves` (revealed mons' FULL privileged movesets,
 direct BCE) + the shared `belief_moves` (hidden slots, Hungarian) — TRAINING-ONLY Dict-obs keys from
-`Gen3Env` (builder in `agents.observation.belief_labels`). Current `MODEL_CONFIG_VERSION` = **17**.
+`Gen3Env` (builder in `agents.observation.belief_labels`).
+
+**LATENT belief — predict identity in role-token space (`opp_belief_latent` / `--opp-belief-latent-coef`,
+v18).** The BYOL/SimSiam escalation of the species head: instead of (only) a hard species CE, regress
+each believed slot's refined token toward the **stop-grad `pokemon_encoder` role-token of the TRUE
+hidden mon** — graded identity supervision (a "similar wall" is less wrong) in the role geometry a
+representation probe found the encoder amplifies ~7.5×. ON adds an **asymmetric predictor MLP** to
+`BeliefHead` (the `latent` logits key); `forward_internal` runs the model's OWN `pokemon_encoder` over a
+privileged 12-slot block `[live our-team, true hidden-opp-team]` (the believed opp slots' live matchups
+are already neutral → a clean identity encode) under `no_grad` and stashes the opp-half role-tokens as
+`last_belief_target_latent` (detached). The TARGET rides a **training-only `belief_target_slots` [6,107]
+Dict-obs key** (`Gen3Env._build_belief_target_slots`: the fresh per-mon obs encode of each hidden mon at
+its believed slot, the SAME `assign_hidden_to_slots` assignment as `belief_species`, per-battle cached) —
+read ONLY by the loss, NEVER concatenated into pi/vf (leak-safe; pinned by
+`belief_slots_test.test_latent_target_is_no_leak`). The loss (`_belief_aux_loss`, the latent term) is the
+mean cosine distance over the **same species-CE Hungarian assignment** + a **VICReg variance floor** on
+the predictions (collapse guard); `aux/belief_latent_std` is the NO-GO monitor (std→0 while cosine→1 =
+collapse). The discrete species head stays as the **banked fallback**. `opp_belief_latent` (bool) is the
+**state_dict-changing arch toggle** — gated in `check_compatible` (bool compare), OFF = byte-for-byte (NO
+`ARCH_SIGNATURE` bump), hard-requires `opp_belief_slots`; `opp_belief_latent_coef` (float) is a
+**training-only** loss weight (read back on a flagless resume, like `opp_belief_aux_coef`). The id-slicing
+ObsUnpack shares with the privileged encode is the value-neutral module-level `slice_pokemon_categoricals`.
+Current `MODEL_CONFIG_VERSION` = **18**.
 
 A startup smoke test (`_run_roundtrip_test` in `train_rl_agent.py`) saves to a temp dir and reloads before every `model.learn()` call — catches serialization issues immediately.
 

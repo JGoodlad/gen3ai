@@ -1,7 +1,7 @@
 import torch
 from torch.utils.checkpoint import checkpoint
 import numpy as np
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from gymnasium import spaces
 from typing import Dict, Any, Optional, Tuple
 from agents.observation.constants import (
@@ -79,6 +79,64 @@ def turn_delta_embed_dim(layout: Dict[str, Any]) -> int:
     }
     embedded = sum(dim_by_kind[kind] for _, kind in TURN_DELTA_EMBEDDED_IDS)
     return embedded + len(TURN_DELTA_SCALAR_OFFSETS)
+
+
+def slice_pokemon_categoricals(pokemon_part: torch.Tensor, layout: Dict[str, Any]) -> Dict[str, torch.Tensor]:
+    """Slice the per-Pokémon categorical IDs + HP blocks from a [B, N, POKEMON_FULL_DIM] block.
+
+    Pure, layout-driven — the SINGLE source of truth for which slot positions carry which embedding
+    ID. Shared by `ObsUnpack` (the live obs block) and the latent-belief privileged-target encode (a
+    fresh true-opp-team block), so a fresh block is sliced byte-identically to the live one. Returns
+    exactly the `ExtractorContext` fields `PokemonEncoder` consumes from the per-mon block."""
+    pk_layout = layout['pokemon']
+    moves_info = pk_layout['moves']
+    moves_layout = moves_info['layout']
+    m_slot_layout = moves_layout['slot_layout']
+    num_moves = len(moves_layout['slots'])
+
+    species_info = pk_layout['species']
+    species_idx = species_info['offset'] + species_info['layout']['species_id']['offset']
+    species_ids = pokemon_part[:, :, species_idx].long()
+
+    moves_offset = moves_info['offset']
+    _type_off = m_slot_layout['type']['offset']
+    move_id_tensors = []
+    move_type_id_tensors = []
+    for i in range(num_moves):
+        slot_idx = moves_offset + moves_layout['slots'][i]['offset']
+        move_id_tensors.append(pokemon_part[:, :, slot_idx].long().unsqueeze(2))
+        move_type_id_tensors.append(pokemon_part[:, :, slot_idx + _type_off].long().unsqueeze(2))
+    all_move_ids = torch.cat(move_id_tensors, dim=2)
+    all_move_type_ids = torch.cat(move_type_id_tensors, dim=2)
+
+    items_info = pk_layout['items']
+    items_layout = items_info['layout']
+    item_idx = items_info['offset'] + items_layout['id']['offset']
+    item_ids = pokemon_part[:, :, item_idx].long()
+
+    abilities_info = pk_layout['abilities']
+    abilities_layout = abilities_info['layout']
+    ability1_idx = abilities_info['offset'] + abilities_layout['id1']['offset']
+    ability2_idx = abilities_info['offset'] + abilities_layout['id2']['offset']
+    ability1_ids = pokemon_part[:, :, ability1_idx].long()
+    ability2_ids = pokemon_part[:, :, ability2_idx].long()
+
+    types_info = pk_layout['types']
+    types_layout = types_info['layout']
+    type1_ids = pokemon_part[:, :, types_info['offset'] + types_layout['type1']['offset']].long()
+    type2_ids = pokemon_part[:, :, types_info['offset'] + types_layout['type2']['offset']].long()
+
+    hp_probs = pokemon_part[:, :, POKEMON_HP_PROBS_OFFSET : POKEMON_HP_PROBS_OFFSET + 16]  # [B, N, 16]
+    hp_offset = pk_layout['hp']['offset']
+    hp_and_active = pokemon_part[:, :, hp_offset:]                                          # [B, N, _]
+
+    return {
+        "species_ids": species_ids, "all_move_ids": all_move_ids,
+        "all_move_type_ids": all_move_type_ids, "item_ids": item_ids,
+        "ability1_ids": ability1_ids, "ability2_ids": ability2_ids,
+        "type1_ids": type1_ids, "type2_ids": type2_ids,
+        "hp_probs": hp_probs, "hp_and_active": hp_and_active,
+    }
 
 
 @dataclass(eq=False)
@@ -221,10 +279,9 @@ class ObsUnpack(torch.nn.Module):
 
         reactive_layout = layout['reactive_layout']
         global_layout   = layout['global_layout']
-        moves_info      = layout['pokemon']['moves']
-        moves_layout    = moves_info['layout']
-        m_slot_layout   = moves_layout['slot_layout']
-        num_moves       = len(moves_layout['slots'])
+        # num_moves drives the prev-mask + matchup slices below; the per-mon move-slot slicing moved to
+        # slice_pokemon_categoricals (so moves_info/moves_layout/m_slot_layout are no longer needed here).
+        num_moves       = len(layout['pokemon']['moves']['layout']['slots'])
 
         # prev_mask (ACTION_SPACE_SIZE) + turn-history block (N * TURN_DELTA_DIM) from obs tail.
         prev_mask = x[:, base_dim : base_dim + ACTION_SPACE_SIZE]
@@ -273,43 +330,19 @@ class ObsUnpack(torch.nn.Module):
 
         pokemon_part = torch.cat([our_team_raw, opp_team_raw], dim=1)
 
-        # Categorical IDs for embedding.
-        pk_layout = layout['pokemon']
-        species_info = pk_layout['species']
-        species_idx = species_info['offset'] + species_info['layout']['species_id']['offset']
-        species_ids = pokemon_part[:, :, species_idx].long()
-
-        moves_offset = moves_info['offset']
-        _type_off = m_slot_layout['type']['offset']
-        move_id_tensors = []
-        move_type_id_tensors = []
-        for i in range(num_moves):
-            slot_idx = moves_offset + moves_layout['slots'][i]['offset']
-            move_id_tensors.append(pokemon_part[:, :, slot_idx].long().unsqueeze(2))
-            move_type_id_tensors.append(pokemon_part[:, :, slot_idx + _type_off].long().unsqueeze(2))
-        all_move_ids = torch.cat(move_id_tensors, dim=2)
-        all_move_type_ids = torch.cat(move_type_id_tensors, dim=2)
-
-        items_info = pk_layout['items']
-        items_layout = items_info['layout']
-        item_idx = items_info['offset'] + items_layout['id']['offset']
-        item_ids = pokemon_part[:, :, item_idx].long()
-
-        abilities_info = pk_layout['abilities']
-        abilities_layout = abilities_info['layout']
-        ability1_idx = abilities_info['offset'] + abilities_layout['id1']['offset']
-        ability2_idx = abilities_info['offset'] + abilities_layout['id2']['offset']
-        ability1_ids = pokemon_part[:, :, ability1_idx].long()
-        ability2_ids = pokemon_part[:, :, ability2_idx].long()
-
-        types_info = pk_layout['types']
-        types_layout = types_info['layout']
-        type1_ids = pokemon_part[:, :, types_info['offset'] + types_layout['type1']['offset']].long()
-        type2_ids = pokemon_part[:, :, types_info['offset'] + types_layout['type2']['offset']].long()
-
-        hp_probs = pokemon_part[:, :, POKEMON_HP_PROBS_OFFSET : POKEMON_HP_PROBS_OFFSET + 16]  # [B, 12, 16]
-        hp_offset = pk_layout['hp']['offset']
-        hp_and_active = pokemon_part[:, :, hp_offset:]                                          # [B, 12, _]
+        # Categorical IDs + HP blocks for embedding (shared, layout-driven slicer — the same one the
+        # latent-belief privileged-target encode uses, so a fresh block slices identically).
+        _ids = slice_pokemon_categoricals(pokemon_part, layout)
+        species_ids = _ids["species_ids"]
+        all_move_ids = _ids["all_move_ids"]
+        all_move_type_ids = _ids["all_move_type_ids"]
+        item_ids = _ids["item_ids"]
+        ability1_ids = _ids["ability1_ids"]
+        ability2_ids = _ids["ability2_ids"]
+        type1_ids = _ids["type1_ids"]
+        type2_ids = _ids["type2_ids"]
+        hp_probs = _ids["hp_probs"]
+        hp_and_active = _ids["hp_and_active"]
 
         # Active-slot indices + fainted masks (used by move-validity, transformer, and pool).
         active_flags = hp_and_active[:, :, -1]
@@ -867,18 +900,40 @@ class BeliefHead(torch.nn.Module):
 
     Returns a dict of logits so a later BYOL/latent-matching target (regress the real hidden mon's
     encoded token) can be added as another key without touching the call sites — the agreed clean
-    escalation path off the species+moves v1."""
+    escalation path off the species+moves v1.
 
-    def __init__(self, n_species: int, n_moves: int):
+    **Latent escalation (`latent_dim` set, `--opp-belief-latent-coef>0`).** Adds an asymmetric
+    SimSiam-style predictor MLP that maps the refined believed-slot token into the `pokemon_encoder`
+    role-token space. A cosine loss (`instrumented_ppo`) regresses it toward the STOP-GRAD encoder
+    role-token of the TRUE hidden mon — GRADED identity supervision (a "similar wall" is less wrong)
+    the hard species CE can't give, in the role geometry a representation probe found the encoder
+    amplifies ~7.5×. The discrete species head stays as the banked fallback; the predictor's asymmetry
+    + the target encoder being TASK-ANCHORED (shared `pokemon_encoder`, stop-grad) defuses collapse
+    without an EMA (a VICReg variance floor + a `latent_std` monitor are the belt-and-braces)."""
+
+    def __init__(self, n_species: int, n_moves: int, latent_dim: "Optional[int]" = None):
         super().__init__()
         self.norm = torch.nn.LayerNorm(D_MODEL)
         self.species_head = torch.nn.Linear(D_MODEL, n_species)
         self.moves_head = torch.nn.Linear(D_MODEL, n_moves)
+        self.latent_head = None
+        if latent_dim is not None:
+            # Asymmetric predictor (own LayerNorm → bottleneck MLP) onto the role-token space.
+            self.latent_head = torch.nn.Sequential(
+                torch.nn.LayerNorm(D_MODEL),
+                torch.nn.Linear(D_MODEL, D_MODEL),
+                torch.nn.ReLU(),
+                torch.nn.Linear(D_MODEL, latent_dim),
+            )
 
     def forward(self, their_team_out: torch.Tensor) -> Dict[str, torch.Tensor]:
-        """their_team_out [B, 6, D] → {"species": [B, 6, n_species], "moves": [B, 6, n_moves]}."""
+        """their_team_out [B, 6, D] → {"species": [B,6,n_species], "moves": [B,6,n_moves],
+        ["latent": [B,6,latent_dim]]}. The latent key is present only when the predictor is built."""
         h = self.norm(their_team_out)
-        return {"species": self.species_head(h), "moves": self.moves_head(h)}
+        out = {"species": self.species_head(h), "moves": self.moves_head(h)}
+        if self.latent_head is not None:
+            out["latent"] = self.latent_head(their_team_out)
+        return out
 
 
 class MoveBelief(torch.nn.Module):
@@ -978,7 +1033,7 @@ class Gen3FeaturesExtractor(torch.nn.Module):
                  mappings: Optional[Dict[str, Any]] = None, log_level: LogLevel = LogLevel.QUIET,
                  attend_unrevealed_opponents: bool = False, opp_belief_cls_k: int = 0,
                  value_active_readout: bool = False, opp_belief_slots: bool = False,
-                 move_belief_mode: str = "off"):
+                 move_belief_mode: str = "off", opp_belief_latent: bool = False):
         super().__init__()
         self.layout = layout
         self.mappings = mappings
@@ -1020,14 +1075,32 @@ class Gen3FeaturesExtractor(torch.nn.Module):
                 "belief tokens fill the un-revealed opp slots, which are key-masked out of the "
                 "transformer unless the unmask flag is on. Enable --attend-unrevealed-opponents."
             )
+        # Latent-belief escalation (the BYOL/SimSiam target): adds an asymmetric predictor to
+        # BeliefHead that regresses each believed slot's refined token toward the STOP-GRAD
+        # pokemon_encoder role-token of the TRUE hidden mon (computed in forward_internal from the
+        # training-only `belief_target_slots` obs key). A state_dict change (extra predictor params),
+        # gated in check_compatible like opp_belief_slots; OFF = byte-for-byte baseline. Requires
+        # opp_belief_slots (the believed slots + BeliefHead must exist to attach the predictor).
+        self.opp_belief_latent = opp_belief_latent
+        if opp_belief_latent and not opp_belief_slots:
+            raise ValueError(
+                "opp_belief_latent=True requires opp_belief_slots=True — the latent predictor attaches "
+                "to the BeliefHead over the in-place believed slots. Enable --opp-belief-aux-coef>0 "
+                "(which turns on opp_belief_slots), or set --opp-belief-latent-coef 0."
+            )
         self.belief_slots = BeliefSlots() if opp_belief_slots else None
         self.belief_head = (
-            BeliefHead(layout['max_species'], layout['max_moves']) if opp_belief_slots else None
+            BeliefHead(layout['max_species'], layout['max_moves'],
+                       latent_dim=(D_MODEL if opp_belief_latent else None)) if opp_belief_slots else None
         )
-        # Stashed each forward when belief is on (the species/moves logits dict, or None); read by
-        # the vendored PPO train loop to add the aux loss. Carries grad — read+used in the same
+        # Stashed each forward when belief is on (the species/moves[/latent] logits dict, or None);
+        # read by the vendored PPO train loop to add the aux loss. Carries grad — read+used in the same
         # backward graph as the forward that produced it (per minibatch). See instrumented_ppo.
         self.last_belief_logits: Optional[Dict[str, torch.Tensor]] = None
+        # Stashed STOP-GRAD latent target [B,6,D] (encoder role-tokens of the true hidden mons) when
+        # opp_belief_latent is on AND the privileged `belief_target_slots` key is present (training
+        # only). None otherwise. Read ONLY by the latent aux loss — NEVER fed into pi/vf (no leak).
+        self.last_belief_target_latent: Optional[torch.Tensor] = None
         # Move belief (flag-guarded): predict + REINJECT the opp moveset into the slot tokens so the
         # believed moves flow into the policy/value readout. mode ∈ {off, revealed, unrevealed, both}
         # selects which opp slots are enriched + scored. OFF reproduces the baseline arch byte-for-byte.
@@ -1098,6 +1171,26 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         """Back-compat shim — delegates to the module-level `locate_active_slot`."""
         return locate_active_slot(active_flags)
 
+    def _belief_target_role_tokens(self, ctx: ExtractorContext, target_slots: torch.Tensor) -> torch.Tensor:
+        """The latent head's regression TARGET: run the model's OWN `pokemon_encoder` over a privileged
+        12-slot block = [live our-team, true hidden-opp-team] and return the opp-half role tokens
+        [B, 6, D], DETACHED.
+
+        SimSiam stop-grad: the target encoder IS the shared, task-anchored `pokemon_encoder` (no EMA,
+        no collapse — the main losses keep Aero≠Blissey distinct). `target_slots` [B,6,POKEMON_FULL_DIM]
+        are the env's fresh per-mon identity encodes (PAD slots zeros). The live ctx supplies the
+        context (global / matchups / masks); a believed opp slot's live matchups are already neutral
+        (it is hidden), so its target role-token is a clean identity encode. The result is read ONLY by
+        the latent aux loss — it is never concatenated into pi/vf, so the privileged future cannot
+        reach the policy/value output (leak-safe)."""
+        our_part = ctx.pokemon_part[:, :TEAM_SIZE, :]                      # [B, 6, FULL] live our team
+        priv_part = torch.cat([our_part, target_slots.to(our_part.dtype)], dim=1)   # [B, 12, FULL]
+        ids = slice_pokemon_categoricals(priv_part, self.layout)
+        priv_ctx = replace(ctx, pokemon_part=priv_part, **ids)
+        with torch.no_grad():
+            priv_role = self.pokemon_encoder(priv_ctx, self.embeddings)   # [B, 12, D]
+        return priv_role[:, TEAM_SIZE:, :].detach()                       # [B, 6, D] opp half (targets)
+
     def forward_internal(self, obs):
         """Build the (pi_combined, vf_combined) pre-projection pair by chaining the phases."""
         ctx = self.unpack(obs)
@@ -1113,6 +1206,20 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         self.last_belief_logits = (
             self.belief_head(their_team_out) if self.belief_head is not None else None
         )
+        # Latent-belief target: the STOP-GRAD pokemon_encoder role-tokens of the TRUE hidden mons,
+        # computed only when the latent head is on AND the privileged `belief_target_slots` key is in
+        # the obs (training only; absent in the __init__ dummy forward + eval/inference). A side branch
+        # — its result is stashed for the loss and NEVER concatenated into pi/vf, so the future cannot
+        # reach the policy/value output.
+        # Gated on torch.is_grad_enabled() so the second pokemon_encoder pass runs ONLY in the
+        # backward-needing path (train()'s evaluate_actions), where the latent loss consumes it — not
+        # during no-grad rollout/eval/inference action selection (a free per-step saving; the same
+        # is_grad_enabled gate the grad-checkpointing path uses).
+        self.last_belief_target_latent = None
+        if self.opp_belief_latent and self.belief_head is not None and torch.is_grad_enabled():
+            target_slots = obs.get("belief_target_slots")
+            if target_slots is not None:
+                self.last_belief_target_latent = self._belief_target_role_tokens(ctx, target_slots)
         # Move belief: predict each opp slot's moveset and REINJECT it into the slot token (flow-through)
         # so the believed moves reach the CLS pools → both heads. Mode selects which slots: revealed
         # mons, unrevealed (hidden) mons, or both. The move logits are stashed for the aux loss.

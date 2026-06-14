@@ -167,6 +167,7 @@ def _run_arch_toggles(args) -> dict:
         value_active_readout=args.value_active_readout,
         use_popart=args.use_popart,
         move_belief_mode=args.move_belief_mode,
+        opp_belief_latent=(args.opp_belief_latent_coef > 0.0),
     )
 
 
@@ -180,6 +181,7 @@ def _model_hparams(model) -> dict:
         "vf_coef": float(model.vf_coef),
         "opp_belief_aux_coef": float(getattr(model, "opp_belief_aux_coef", 0.0)),
         "move_belief_coef": float(getattr(model, "move_belief_coef", 0.0)),
+        "opp_belief_latent_coef": float(getattr(model, "opp_belief_latent_coef", 0.0)),
         "batch_size": model.batch_size,
         "n_steps": model.n_steps,
         "clip_range": float(model.clip_range(1.0)),
@@ -304,6 +306,7 @@ def _run_roundtrip_test(model, layout: dict, policy_kwargs: dict, debug: bool = 
         value_tail_weight=float(getattr(model, "value_tail_weight", 0.0)),
         opp_belief_aux_coef=float(getattr(model, "opp_belief_aux_coef", 0.0)),
         move_belief_coef=float(getattr(model, "move_belief_coef", 0.0)),
+        opp_belief_latent_coef=float(getattr(model, "opp_belief_latent_coef", 0.0)),
     )
     total_dim = layout["total_dim"]
     tmpdir = tempfile.mkdtemp(prefix="roundtrip_")
@@ -658,6 +661,17 @@ async def main():
                              "opp slots), like --opp-belief-aux-coef. 0.0 = no supervised pull (the module "
                              "still reinjects, but only RL gradient shapes it). TRAINING-only (not version-"
                              "locked). Ignored when --move-belief-mode off.")
+    parser.add_argument("--opp-belief-latent-coef", "--opp_belief_latent_coef",
+                        dest="opp_belief_latent_coef", type=float, default=None,
+                        help="LATENT-belief escalation. 0.0 = OFF (default). >0 turns ON opp_belief_latent "
+                             "(adds an asymmetric SimSiam predictor to the BeliefHead) and adds "
+                             "coef*(cosine-to-encoder-role-token + VICReg) over the believed slots: each "
+                             "slot's refined token is regressed toward the STOP-GRAD pokemon_encoder "
+                             "role-token of the TRUE hidden mon — graded identity supervision the hard "
+                             "species CE can't give. REQUIRES --opp-belief-aux-coef>0 (the believed slots + "
+                             "species head + Hungarian assignment it rides). The predictor is weight-shape "
+                             "(version-checked, fresh-only); the coef is TRAINING-only like --opp-belief-aux-"
+                             "coef. The privileged belief_target_slots obs key exists only when >0.")
     parser.add_argument("--value-active-readout", "--value_active_readout", dest="value_active_readout",
                         action=BoolFlag, default=None,
                         help="Route the active mon's refined token (our_active_refined) into the VALUE "
@@ -819,6 +833,7 @@ async def main():
     _resolve("opp_belief_aux_coef", 0.0)
     _resolve("move_belief_mode", "off")        # v17 structural (version-checked, fresh-only)
     _resolve("move_belief_coef", 0.0)          # training-only (inherited like opp_belief_aux_coef)
+    _resolve("opp_belief_latent_coef", 0.0)    # training-only (inherited like opp_belief_aux_coef)
     # PopArt INHERITED on a flagless resume → adopt its required `--clip-range-vf none` (the saved
     # popart run necessarily used it), so the explicit-config check below doesn't block the resume.
     if args.use_popart and not _popart_explicit and _saved_ver is not None and args.clip_range_vf is not None:
@@ -875,6 +890,17 @@ async def main():
             f"--move-belief-mode {args.move_belief_mode} scores the opponent's HIDDEN slots, which are "
             "only filled with learned unknown-mon tokens when the species-belief head is on. Add "
             "--opp-belief-aux-coef <coef> (>0), or use --move-belief-mode revealed (seen mons only)."
+        )
+    if args.opp_belief_latent_coef is not None and args.opp_belief_latent_coef < 0.0:
+        parser.error("--opp-belief-latent-coef must be >= 0 (0 = off)")
+    if args.opp_belief_latent_coef > 0.0 and not (args.opp_belief_aux_coef > 0.0):
+        # The latent head attaches to the BeliefHead over the believed slots AND rides the species-CE
+        # Hungarian assignment (computed only when --opp-belief-aux-coef>0). Without it there is no
+        # species head, no believed-slot fill, and no per-minibatch assignment to match the latent on.
+        parser.error(
+            "--opp-belief-latent-coef > 0 requires --opp-belief-aux-coef > 0 — the latent predictor "
+            "attaches to the BeliefHead and reuses its Hungarian slot↔mon assignment. Enable "
+            "--opp-belief-aux-coef <coef> (>0), or set --opp-belief-latent-coef 0."
         )
     log_level = LogLevel[args.log_level.upper()]
 
@@ -1049,6 +1075,7 @@ async def main():
                     # via RLPlayer, not Gen3Env, so they never emit them.
                     emit_belief_labels=(args.opp_belief_aux_coef > 0.0),
                     move_belief_mode=args.move_belief_mode,
+                    emit_belief_target=(args.opp_belief_latent_coef > 0.0),
                 )
                 if args.use_showdown_bridge:
                     # Swap the two _EnvPlayer agents' websocket transport for a local
@@ -1503,6 +1530,8 @@ async def main():
         # Move-belief mode — version-checked vs the saved config (fresh-only; a resume that changes it
         # FATALs, same machinery as opp_belief_slots).
         _load_extractor_kwargs["move_belief_mode"] = args.move_belief_mode
+        # Latent-belief arch toggle — version-checked vs the saved config (fresh-only). coef>0 enables.
+        _load_extractor_kwargs["opp_belief_latent"] = (args.opp_belief_latent_coef > 0.0)
         _load_policy_kwargs = {
             "features_extractor_class": Gen3FeaturesExtractor,
             "features_extractor_kwargs": _load_extractor_kwargs,
@@ -1514,6 +1543,7 @@ async def main():
             reward_config=reward_config, value_tail_weight=args.value_tail_weight,
             opp_belief_aux_coef=args.opp_belief_aux_coef,
             move_belief_coef=args.move_belief_coef,
+            opp_belief_latent_coef=args.opp_belief_latent_coef,
         )
 
         print(f"Loading existing model from {model_path}")
@@ -1539,6 +1569,7 @@ async def main():
         model.opp_belief_aux_coef = args.opp_belief_aux_coef  # training hparam (not version-locked; resume-mutable)
         model.opp_belief_moves_weight = args.opp_belief_moves_weight
         model.move_belief_coef = args.move_belief_coef  # move-belief loss weight (training-only; resume-mutable)
+        model.opp_belief_latent_coef = args.opp_belief_latent_coef  # latent-belief loss weight (training-only)
         model.vf_coef = args.vf_coef  # == the saved value (enforced above); set explicitly for parity
         model.gae_lambda = 0.80
         # Resume-path LR setup. Phase determines whether we read from the
@@ -1692,6 +1723,9 @@ async def main():
         # head + auto-forces attend_unrevealed_opponents above. The coef is a TRAINING hparam set below;
         # the MODE is the version-checked arch toggle.
         extractor_kwargs["move_belief_mode"] = args.move_belief_mode
+        # Latent-belief escalation (weight-shape): coef>0 builds the BeliefHead latent predictor. The
+        # coef is a TRAINING hparam set below; this bool is the version-checked arch toggle.
+        extractor_kwargs["opp_belief_latent"] = (args.opp_belief_latent_coef > 0.0)
 
         policy_kwargs = {
             "features_extractor_class": Gen3FeaturesExtractor,
@@ -1731,11 +1765,13 @@ async def main():
         model.opp_belief_aux_coef = args.opp_belief_aux_coef  # hidden-opp belief aux loss (0.0 = off)
         model.opp_belief_moves_weight = args.opp_belief_moves_weight  # species_CE + w·moves_BCE
         model.move_belief_coef = args.move_belief_coef  # move-belief reinjection loss (0.0 = off)
+        model.opp_belief_latent_coef = args.opp_belief_latent_coef  # latent-belief loss (0.0 = off)
         version = ModelVersion.from_layout_and_policy_kwargs(
             extractor_kwargs["layout"], policy_kwargs, vf_coef=args.vf_coef,
             reward_config=reward_config, value_tail_weight=args.value_tail_weight,
             opp_belief_aux_coef=args.opp_belief_aux_coef,
             move_belief_coef=args.move_belief_coef,
+            opp_belief_latent_coef=args.opp_belief_latent_coef,
         )
         # PBRS_GAMMA must equal the PPO gamma for both potentials to be policy-invariant (design §7.1).
         # The reward manager is built before the model (in the env factory), so assert here where both

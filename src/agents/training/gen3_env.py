@@ -13,8 +13,8 @@ from agents.observation.constants import (
     TEAM_SIZE, OFFSET_OPP_TEAM, POKEMON_FULL_DIM, POKEMON_SPECIES_KNOWN_OFFSET,
 )
 from agents.observation.belief_labels import (
-    build_belief_labels, build_known_move_labels, zero_belief_labels, zero_known_moves,
-    BELIEF_MOVE_SLOTS,
+    build_belief_labels, build_known_move_labels, build_belief_target_index,
+    zero_belief_labels, zero_known_moves, BELIEF_MOVE_SLOTS,
 )
 from agents.observation.turn_delta_encoder import TurnDeltaEncoder
 from agents.model.features_extractor import N_HISTORY_TURNS
@@ -34,7 +34,7 @@ class Gen3Env(SinglesEnv):
     def __init__(self, mappings, reward_fn: Optional[RewardFunction] = None,
                  log_level=LogLevel.QUIET, stall_config: Optional[StallConfig] = None,
                  *args, battle_class=Gen3Battle, emit_belief_labels: bool = False,
-                 move_belief_mode: str = "off", **kwargs):
+                 move_belief_mode: str = "off", emit_belief_target: bool = False, **kwargs):
         self.log_level = log_level
         self._stall_logger = StallLogger(stall_config)
         super().__init__(*args, **kwargs)
@@ -61,6 +61,17 @@ class Gen3Env(SinglesEnv):
         self._move_belief_mode = move_belief_mode
         self._emit_known_moves = move_belief_mode in ("revealed", "both")
         self._emit_belief_labels = emit_belief_labels or move_belief_mode != "off"
+        # Latent-belief target (TRAINING-ONLY): when on, the obs Dict also carries `belief_target_slots`
+        # [6,107] — the FRESH per-mon obs encode of each hidden mon at its believed slot (same canonical
+        # assignment as belief_species). The extractor runs the model's own pokemon_encoder over it
+        # (stop-grad) to get the encoder-role-token the latent head regresses toward. Enabled by
+        # --opp-belief-latent-coef>0 (which requires --opp-belief-aux-coef>0, so _emit_belief_labels is
+        # already True). Read ONLY by the latent aux loss — never enters the policy/value forward.
+        self._emit_belief_target = emit_belief_target
+        # Per-battle cache of the fresh per-mon identity encodes (keyed by species id). A hidden mon is
+        # untouched (full HP, no status) until revealed, at which point it leaves the believed set, so a
+        # mon's fresh encode is stable while it is a target — caching is exact. Cleared on reset().
+        self._target_encode_cache = {}
         # Precompute id -> embedding-NUM maps once (keyed by gen3_data species/move id) for the labeller.
         self._species_num = {sid: rec["num"] for sid, rec in mappings.get("species", {}).items() if "num" in rec}
         self._move_num = {mid: rec["num"] for mid, rec in mappings.get("moves", {}).items() if "num" in rec}
@@ -79,6 +90,12 @@ class Gen3Env(SinglesEnv):
                 # slots (so the move head learns each seen mon's still-UNREVEALED moves). Only declared
                 # when 'known'/'both' so an 'unknown'-only run keeps the buffer minimal.
                 base_obs["known_moves"] = spaces.Box(low=-1, high=_imax, shape=(TEAM_SIZE, BELIEF_MOVE_SLOTS), dtype=np.int64)
+            if self._emit_belief_target:
+                # LATENT-belief target: the fresh per-mon obs encode (107-d, the same per-Pokémon slot
+                # width as obs["observation"]) of each hidden mon at its believed slot; PAD slots zeros.
+                # float32 (real obs features); only declared when --opp-belief-latent-coef>0.
+                base_obs["belief_target_slots"] = spaces.Box(
+                    low=-np.inf, high=np.inf, shape=(TEAM_SIZE, POKEMON_FULL_DIM), dtype=np.float32)
         # SB3 reads the SINGULAR observation_space (threaded as the VecEnv space); the PLURAL
         # observation_spaces is intercepted + rewrapped by PokeEnv.__setattr__ (it would drop the
         # belief keys) and is not the SB3-facing space, so it can stay minimal.
@@ -173,6 +190,8 @@ class Gen3Env(SinglesEnv):
             out = {"belief_species": bs, "belief_moves": bm}
             if self._emit_known_moves:
                 out["known_moves"] = zero_known_moves()
+            if self._emit_belief_target:
+                out["belief_target_slots"] = np.zeros((TEAM_SIZE, POKEMON_FULL_DIM), dtype=np.float32)
             return out
         # Per-opp-slot species_known straight from the obs the model reads (NOT re-derived from a count).
         species_known = [
@@ -208,7 +227,42 @@ class Gen3Env(SinglesEnv):
                 revealed_species, team_species, team_moves, species_known,
                 self._move_num, to_id_str,
             )
+        if self._emit_belief_target:
+            out["belief_target_slots"] = self._build_belief_target_slots(
+                b2, full, team_species, revealed_species, species_known)
         return out
+
+    def _build_belief_target_slots(self, b2, full, team_species, revealed_species, species_known):
+        """Fresh per-mon obs encode [TEAM_SIZE, POKEMON_FULL_DIM] of each hidden mon at its believed
+        slot — the SAME canonical assignment as belief_species (both via `assign_hidden_to_slots`), so
+        the latent target and the species-CE label can never name a different mon for a slot. Each mon
+        is encoded as agent2's OWN mon (full spread + full moveset), untouched (full HP / no status,
+        since a still-hidden mon never entered battle) → a clean fresh-identity 107-d slot the model's
+        pokemon_encoder turns into the role-token the latent head regresses toward. Cached per species
+        (cleared each reset). PAD / non-target slots stay zeros."""
+        target = np.zeros((TEAM_SIZE, POKEMON_FULL_DIM), dtype=np.float32)
+        idx = build_belief_target_index(
+            team_species, revealed_species, species_known, self._species_num, to_id_str)
+        for slot in range(TEAM_SIZE):
+            team_idx = int(idx[slot])
+            if team_idx < 0:
+                continue
+            target[slot] = self._encode_fresh_mon(full[team_idx], b2)
+        return target
+
+    def _encode_fresh_mon(self, mon, b2):
+        """One 107-d fresh-identity slot for a hidden mon (is_own=True → spread populated), cached by
+        species id. Mirrors `state_encoder`'s per-slot pack: the 106-d per-mon encode + a trailing
+        active flag (0.0 — a bench/identity encode)."""
+        sp = mon.species
+        cached = self._target_encode_cache.get(sp)
+        if cached is not None:
+            return cached
+        enc = self.observation_encoder.pokemon_encoder.encode(mon, b2, is_own=True)
+        slot = np.zeros(POKEMON_FULL_DIM, dtype=np.float32)
+        slot[: len(enc)] = enc   # active flag (last dim) left 0.0
+        self._target_encode_cache[sp] = slot
+        return slot
 
     def action_to_order(self, action, battle, **kwargs):
         if isinstance(action, BattleOrder):
@@ -257,6 +311,7 @@ class Gen3Env(SinglesEnv):
     def reset(self, *args, **kwargs):
         self.reward_manager.report_episode(getattr(self, "battle1", None))
         self._tracker.reset()
+        self._target_encode_cache = {}   # new battle → new opponent team → drop the fresh-encode cache
         try:
             if hasattr(self, "agent1"):
                 self.agent1.save_replays = None

@@ -961,6 +961,40 @@ v17). The predicted moveset is REINJECTED into the opp token (it flows to both h
   per-mode wiring + off byte-identical), `belief_labels_test.py` (`build_known_move_labels`),
   `snapshot_test.py` (version gate + threading).
 
+## Latent-belief loss (`--opp-belief-latent-coef`)
+
+The training half of the latent-belief escalation (model side: `src/agents/model/CLAUDE.md` → LATENT
+belief, v18). The species head predicts a hidden mon's IDENTITY discretely (CE); the latent head predicts
+it in **role-token space** — graded supervision the CE can't give. REQUIRES `--opp-belief-aux-coef>0`
+(it rides the species head's believed slots + Hungarian assignment).
+- **Target (`gen3_env.py`).** When `--opp-belief-latent-coef>0` (threaded as `emit_belief_target`),
+  `Gen3Env` emits a THIRD privileged training-only Dict-obs key `belief_target_slots` [6,107]: the FRESH
+  per-mon obs encode (`pokemon_encoder.encode(mon, battle2, is_own=True)` + active=0) of each hidden mon
+  at its believed slot, the SAME `assign_hidden_to_slots` assignment as `belief_species` (one mon per
+  slot across both heads — no conflicting pulls), per-battle cached by species (a hidden mon is untouched
+  → its fresh encode is stable while it is a target). Read ONLY by the loss; the model forward reads only
+  `obs["observation"]`, so it can't leak.
+- **Loss (`instrumented_ppo.py` `_belief_aux_loss`, the latent term).** The extractor stashed the
+  prediction (`last_belief_logits["latent"]`) + the stop-grad target (`last_belief_target_latent`, the
+  `pokemon_encoder` role-tokens of the true mons — a SimSiam stop-grad, the encoder is task-anchored so no
+  EMA/collapse). On the **same species-CE Hungarian assignment**, the latent loss is the mean cosine
+  distance over matched pairs + a **VICReg variance floor** on the predictions (collapse guard). Returned
+  as the 3rd element of `_belief_aux_loss` and folded at `opp_belief_latent_coef`; its trunk gradient
+  joins the combined `grad/belief_share` probe.
+- **Metrics (`train/belief_latent_*`).** `cosine` (similarity, higher = better identity match), `std`
+  (the collapse monitor — **NO-GO if it →0 while `cosine`→1**), `vicreg`, `loss`.
+- **Versioning.** `opp_belief_latent` (bool) is the version-checked structural toggle (the predictor MLP;
+  fresh-only; hard-requires `opp_belief_slots`); `opp_belief_latent_coef` is training-only, **read back on
+  a flagless resume**. Threaded into `current_model_version` / `arch_toggles_from_model` so a latent-ON
+  self-play run doesn't FATAL on its own sentinels (the 4 opp-load sites).
+- **Tests.** Unit: `belief_aux_loss_test.py` (latent cosine + VICReg + grad + rides-species-matching
+  order-invariance), `agents/model/belief_slots_test.py` (latent head shape, target-only-with-key,
+  stop-grad, the **no-leak gate** `test_latent_target_is_no_leak`, off byte-identical projections).
+  **Fuzz** (real bridge battles, no server): `poke_env_gaps/belief_target_fuzz_test.py` validates
+  `belief_target_slots == an INDEPENDENT fresh encode` of the actual hidden mon the species label names,
+  PAD slots zero, and the no-leak obs width, over thousands of live decisions:
+  `python src/agents/training/poke_env_gaps/belief_target_fuzz_test.py [n_battles]`.
+
 ## Process liveness guards (`watchdog.py`)
 
 Two daemon-thread watchdogs keep a hung/abandoned run from lingering:
