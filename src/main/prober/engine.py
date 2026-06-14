@@ -159,6 +159,8 @@ class MonState:
     species: str
     hp: str           # "100%" / "75%" / "faint"
     fainted: bool
+    status: str = ""  # bundled status+volatiles, e.g. "TOX(5)", "PAR|SUB" ("" when none)
+    item: str = ""    # held item (our side only — e.g. "choiceband"; "" when unknown/none)
 
 
 @dataclass(frozen=True)
@@ -169,6 +171,7 @@ class SideBoard:
     boosts: str                      # "" when none
     moves: "tuple[str, ...]"         # active mon's moves (our side only; opp unknown)
     bench: "tuple[MonState, ...]"    # the rest of the (revealed) team
+    item: str = ""                   # active mon's held item (our side only; "" when unknown/none)
 
 
 @dataclass(frozen=True)
@@ -249,11 +252,20 @@ def summary_flags(inv: dict, uncertain_threshold: float = UNCERTAIN_THRESHOLD) -
     return tuple(flags)
 
 
+# Recorder bench format: "species(hp%)" / "species(hp%,STATUS)" / "species(faint)"
+# where STATUS bundles status+volatiles (e.g. "TOX(5)", "PAR|SUB") — see battle_recorder.
 _BENCH_RE = re.compile(r"^(.+?)\((.+)\)$")          # "metagross(100%)" / "tyranitar(faint)"
 _MOVE_PLACEHOLDER_RE = re.compile(r"move\d$")        # "move0".."move3" filler labels
 
 
-def _parse_bench(s: str) -> "tuple[MonState, ...]":
+def _norm_species(s: str) -> str:
+    """Lenient species key — lowercase, alnum only — so an item map keyed by an obs-decoded
+    display name ('Tyranitar') matches a board id ('tyranitar') regardless of source form."""
+    return re.sub(r"[^a-z0-9]", "", str(s).lower())
+
+
+def _parse_bench(s: str, items: "dict | None" = None) -> "tuple[MonState, ...]":
+    items = items or {}
     out = []
     for chunk in (s or "").split(", "):
         chunk = chunk.strip()
@@ -262,30 +274,53 @@ def _parse_bench(s: str) -> "tuple[MonState, ...]":
         m = _BENCH_RE.match(chunk)
         if m:
             species, inside = m.group(1), m.group(2)
-            fainted = "faint" in inside.lower()
-            out.append(MonState(species, "faint" if fainted else inside, fainted))
+            item = items.get(_norm_species(species), "")
+            if "faint" in inside.lower():
+                out.append(MonState(species, "faint", True, "", item))
+            else:
+                # "hp%[,STATUS]" — the status tail (incl. any volatiles) is comma-separated.
+                hp, _, status = inside.partition(",")
+                out.append(MonState(species, hp.strip(), False, status.strip(), item))
         else:
-            out.append(MonState(chunk, "?", False))
+            out.append(MonState(chunk, "?", False, "", items.get(_norm_species(chunk), "")))
     return tuple(out)
 
 
-def _side_board(side: dict, moves: "tuple[str, ...]") -> SideBoard:
+def _side_board(side: dict, moves: "tuple[str, ...]", items: "dict | None" = None) -> SideBoard:
+    items = items or {}
     return SideBoard(
         active_species=side.get("species", ""),
         active_hp=side.get("hp", "?"),
         status=side.get("status", "") or "",
         boosts=side.get("boosts", "") or "",
         moves=moves,
-        bench=_parse_bench(side.get("bench", "")),
+        bench=_parse_bench(side.get("bench", ""), items),
+        item=items.get(_norm_species(side.get("species", "")), ""),
     )
 
 
-def build_board(inv: dict) -> BoardView:
-    """Board state at a decision — model-free, parsed from the summary invocation."""
+def _our_items(summary: dict) -> "dict[str, str]":
+    """species → held item, from the summary's top-level teams block (our side only; opp items
+    aren't in it). Items recorded at battle end — held items (Choice Band / Leftovers) are exact;
+    a consumed berry reads 'none'. 'none' is dropped to ''. The obs decode (`describe_team_items`)
+    supersedes this per-turn when a captured state is available — this is the no-state fallback."""
+    out = {}
+    for m in (summary.get("teams", {}) or {}).get("ours", []) or []:
+        item = str(m.get("item", "") or "")
+        if item and item.lower() != "none":
+            out[str(m.get("species", ""))] = item
+    return out
+
+
+def build_board(inv: dict, items: "dict | None" = None) -> BoardView:
+    """Board state at a decision — model-free, parsed from the summary invocation.
+    ``items`` (species→held item) annotates BOTH sides; keys are matched leniently
+    (:func:`_norm_species`) so an obs-decoded name resolves against a board id."""
+    norm = {_norm_species(k): v for k, v in (items or {}).items()}
     labels = list(inv.get("actions", {}).keys())
     moves = tuple(k for k in labels[MOVE_START:MOVE_END] if not _MOVE_PLACEHOLDER_RE.fullmatch(k))
-    return BoardView(ours=_side_board(inv.get("our", {}), moves),
-                     opp=_side_board(inv.get("opp", {}), ()))
+    return BoardView(ours=_side_board(inv.get("our", {}), moves, norm),
+                     opp=_side_board(inv.get("opp", {}), (), norm))
 
 
 def build_meta(summary: dict, summary_path: str = "", npz_path: "str | None" = None) -> TraceMeta:
@@ -508,7 +543,10 @@ def analyze_invocation(model, summary: dict, npz, inv_index: int,
     )
 
     outcome = inv.get("outcome", {}) or {}
-    board = build_board(inv)   # model-free; available even without captured state
+    # Items: our team (exact, end-of-battle) from the summary; superseded/extended per-turn by the
+    # obs decode below once a captured state is available (which also surfaces the OPP's revealed items).
+    items = _our_items(summary)
+    board = build_board(inv, items)   # model-free; available even without captured state
     if not _has_state(npz, inv_index):
         return InvocationAnalysis(
             **common, has_state=False, actions=(), matchups=None, sweep=None,
@@ -518,6 +556,11 @@ def analyze_invocation(model, summary: dict, npz, inv_index: int,
         )
 
     obs = npz["obs"][inv_index].astype(np.float32)
+    decode_items = getattr(model, "describe_team_items", None)
+    if decode_items is not None:
+        obs_items = decode_items(obs)
+        if obs_items:
+            board = build_board(inv, {**items, **obs_items})   # both sides, per-turn revealed
     acts = inv["actions"]
     labels = list(acts.keys())
     mask = np.array([1 if acts[k]["valid"] else 0 for k in labels], dtype=np.int8)

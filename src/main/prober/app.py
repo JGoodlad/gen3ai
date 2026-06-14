@@ -269,7 +269,8 @@ class ProberApp(Gen3App):
 
     def on_mount(self) -> None:
         self.query_one("#summary-moves", DataTable).add_columns("move", "eff", "prob")
-        self.query_one("#summary-switches", DataTable).add_columns("target", "prob", "hp", "risk-in")
+        self.query_one("#summary-switches", DataTable).add_columns(
+            "target", "prob", "hp", "status", "item", "risk-in")
         self.query_one("#faith-table", DataTable).add_columns("action", "valid", "recorded", "re-run")
         self.query_one("#matchups-table", DataTable).add_columns("move", "×mult")
         self.query_one("#sweep-table", DataTable).add_columns("×mult", "P(chosen)", "P(switches)")
@@ -620,19 +621,29 @@ class ProberApp(Gen3App):
         return float(rtotal) + self._gamma * a.value.next_recorded - a.value.recorded
 
     def _render_summary(self, a: InvocationAnalysis) -> None:
-        """The decision dashboard: a 4-line context header (matchup · chose · critic ·
-        threat) over two side-by-side tables — MOVES (effectiveness + prob) and SWITCHES
-        (prob + incoming KO-risk to the switch-in) — so a turn is judgeable in one glance."""
+        """The decision dashboard: a context header (matchup+status+item · field · chose ·
+        critic · threat) over two side-by-side tables — MOVES (effectiveness + prob) and
+        SWITCHES (prob · hp · status · item · incoming KO-risk) — so a turn is judgeable
+        in one glance."""
         head = Text()
-        # Line 1 — matchup + outcome.
-        head.append(f"{a.our_species} vs {a.opp_species}", style="bold")
+        # Line 1 — matchup: each active's species + status/volatiles ("TOX(5)|SUB") + held item
+        # (the opp's once revealed — decoded from the obs) + outcome.
+        bd = a.board
+        _append_summary_active(head, a.our_species,
+                               bd.ours.status if bd else "", bd.ours.item if bd else "")
+        head.append(" vs ", style="dim")
+        _append_summary_active(head, a.opp_species,
+                               bd.opp.status if bd else "", bd.opp.item if bd else "")
         head.append(f"   ·   turn {a.turn}", style="dim")
         result = (a.meta.result if a.meta is not None else None) or "?"
         head.append("   ·   ", style="dim")
         head.append(str(result).upper(),
                     style={"win": "bold green", "loss": "bold red"}.get(str(result).lower(), "dim"))
-        # Line 2 — what it chose + confidence (+ a disagree flag if the model now prefers else).
-        chosen_p = next((r.recorded for r in (a.actions or []) if r.is_chosen), None)
+        # Line 2 — field: weather / hazards / screens / turn (the highlighted Board line).
+        head.append("\nFIELD   ", style="dim")
+        head.append(_field_text(a.field))
+        # Line 3 — what it chose + confidence (+ a disagree flag if the model now prefers else).
+        chosen_p = _chosen_prob(a)
         head.append("\nCHOSE   ", style="dim")
         head.append("▶ " + (a.chosen or "?"), style="bold")
         if chosen_p is not None:
@@ -694,21 +705,18 @@ class ProberApp(Gen3App):
         switch_rows = [r for r in (a.actions or []) if r.label.startswith("switch")]
         paired = [(r, per_slot[i] if i < len(per_slot) else None)
                   for i, r in enumerate(switch_rows)]
-        # The pivot's current HP — read "how healthy is this switch-in" next to its risk-in.
-        hp_by_species = {}
-        if a.board is not None:
-            hp_by_species[a.board.ours.active_species.lower()] = a.board.ours.active_hp
-            for m in a.board.ours.bench:
-                hp_by_species[m.species.lower()] = m.hp
+        # Each pivot's hp · status/volatiles · held item — "how healthy / how crippled / what
+        # does it hold" next to its risk-in. Looked up by species from our board (active + bench).
+        attrs = _side_attr_map(a.board.ours) if a.board is not None else {}
         if not switch_rows:
-            st.add_row(Text("no switch available", style="dim"), "", "", "")
+            st.add_row(Text("no switch available", style="dim"), "", "", "", "", "")
         for r, pko in sorted(paired, key=lambda rp: rp[0].recorded, reverse=True):
             target = r.label.split(":", 1)[-1]
             label = ("▶ " if r.is_chosen else "  ") + target
             lstyle = "bold" if r.is_chosen else ("" if r.valid else "dim")
             prob_style = "bold" if r.is_chosen else gradient_color(r.recorded)
-            hp_str = hp_by_species.get(target.lower())
-            hp_cell = _hp_text(hp_str) if hp_str is not None else Text("?", style="dim")
+            hp, status, item = attrs.get(target.lower(), (None, "", ""))
+            hp_cell = _hp_text(hp) if hp is not None else Text("?", style="dim")
             if not r.valid:
                 risk = Text("—", style="dim")          # fainted / the active mon: can't switch in
             elif pko is None:
@@ -716,7 +724,8 @@ class ProberApp(Gen3App):
             else:
                 risk = Text(f"{pko * 100:.0f}%", style=gradient_color(1.0 - pko))
             st.add_row(Text(label, style=lstyle),
-                       Text(f"{r.recorded * 100:5.1f}%", style=prob_style), hp_cell, risk)
+                       Text(f"{r.recorded * 100:5.1f}%", style=prob_style),
+                       hp_cell, _status_cell(status), _item_cell(item), risk)
 
     def _render_board(self, a: InvocationAnalysis) -> None:
         summ = self.query_one("#board-summary", Static)
@@ -747,11 +756,11 @@ class ProberApp(Gen3App):
     @staticmethod
     def _fill_team(table: DataTable, side) -> None:
         table.add_row(Text("▶ " + side.active_species, style="bold"),
-                      _hp_text(side.active_hp), side.status or "—")
+                      _hp_text(side.active_hp), _status_cell(side.status))
         for m in side.bench:
             sp_style = "dim" if m.fainted else ""
             hp = Text("faint", style="dim red") if m.fainted else _hp_text(m.hp)
-            table.add_row(Text(m.species, style=sp_style), hp, "—")
+            table.add_row(Text(m.species, style=sp_style), hp, _status_cell(m.status))
 
     def _render_faithfulness(self, a: InvocationAnalysis) -> None:
         t = self.query_one("#faith-table", DataTable)
@@ -867,10 +876,8 @@ class ProberApp(Gen3App):
                 summary.append(f" → {v.next_recorded:+.2f}", style="dim")
                 # TD residual δ = r + γV(s') − V(s): how surprised the critic was. Parity with
                 # the CLI's overview/analyze td_residual (the decisive metric in loss forensics).
-                reward = (a.outcome or {}).get("reward")
-                rtotal = reward.get("total") if isinstance(reward, dict) else None
-                if rtotal is not None and v.next_recorded is not None:
-                    td = float(rtotal) + self._gamma * v.next_recorded - v.recorded
+                td = self._td_residual(a)
+                if td is not None:
                     summary.append("  ·  TD δ ", style="dim")
                     summary.append(f"{td:+.2f}", style=("green" if td >= 0 else "red"))
             summary.append("\n")
@@ -916,7 +923,7 @@ class ProberApp(Gen3App):
         """One-glance 'what the model EXPECTED → what it DID → what HAPPENED → how surprised'
         card, then sync the flag/note widgets to this decision."""
         card = Text()
-        chosen_p = next((r.recorded for r in (a.actions or []) if r.is_chosen), None)
+        chosen_p = _chosen_prob(a)
         card.append("chose ", style="dim")
         card.append(a.chosen or "?", style="bold")
         if chosen_p is not None:
@@ -934,10 +941,8 @@ class ProberApp(Gen3App):
                 card.append("  ΔV ", style="dim")
                 card.append(f"{a.value.delta:+.2f}",
                             style=("green" if a.value.delta >= 0 else "red"))
-                reward = (a.outcome or {}).get("reward")
-                rt = reward.get("total") if isinstance(reward, dict) else None
-                if rt is not None and a.value.next_recorded is not None:
-                    td = float(rt) + self._gamma * a.value.next_recorded - a.value.recorded
+                td = self._td_residual(a)
+                if td is not None:
                     card.append("  surprise(TDδ) ", style="dim")
                     card.append(f"{td:+.2f}", style=("green" if td >= 0 else "red"))
         if a.rerun_argmax is not None and not a.agrees:
@@ -1050,6 +1055,48 @@ def _warn_cell(a: InvocationAnalysis):
 def _mult_color(mult: float) -> str:
     # 0× bad (red) … 4× great (green), centered on 1× neutral.
     return gradient_color(min(1.0, mult / 4.0))
+
+
+# ---- shared cell/decode helpers (one source for Summary / Board / Review) ----
+
+def _chosen_prob(a: InvocationAnalysis) -> "float | None":
+    """The recorded policy probability of the action the model actually took."""
+    return next((r.recorded for r in (a.actions or []) if r.is_chosen), None)
+
+
+def _item_style(item: str) -> str:
+    # Choice items lock the moveset / boost a stat — high decision impact, so highlight them.
+    return "bold magenta" if "choice" in (item or "").lower() else "cyan"
+
+
+def _item_cell(item: str) -> Text:
+    """A held-item table cell — '—' when unknown/none, Choice items highlighted."""
+    return (Text(item, style=_item_style(item))
+            if item and item.lower() != "none" else Text("—", style="dim"))
+
+
+def _status_cell(status: str) -> Text:
+    """A status/volatiles table cell (e.g. 'TOX(5)|SUB') — '—' when none."""
+    return Text(status, style="yellow") if status else Text("—", style="dim")
+
+
+def _append_summary_active(line: Text, species: str, status: str, item: str) -> None:
+    """Append 'species [status] @item' for one active mon to the Summary header line
+    (status/volatiles and item shown only when present)."""
+    line.append(species, style="bold")
+    if status:
+        line.append(f" [{status}]", style="yellow")
+    if item and item.lower() != "none":
+        line.append(f" @{item}", style=_item_style(item))
+
+
+def _side_attr_map(side) -> "dict[str, tuple]":
+    """species(lower) → (hp, status, item) for a side's active + bench — the per-mon facts the
+    SWITCHES table shows. Keyed lower-case (board species are id-form, matching switch labels)."""
+    out = {side.active_species.lower(): (side.active_hp, side.status, side.item)}
+    for m in side.bench:
+        out[m.species.lower()] = (m.hp, m.status, m.item)
+    return out
 
 
 def _hp_frac(hp: str) -> "float | None":

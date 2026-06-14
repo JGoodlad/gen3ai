@@ -29,7 +29,12 @@ the single source of truth — change the analysis once, both surfaces follow.
   `logit_grad` are the only forward/backward passes. **On load it silences the
   policy's `ObservationDebugger`** (a `--log-level periodic` checkpoint prints a
   "DEEP TRACE" banner on every forward — pure noise that would corrupt the
-  Textual screen).
+  Textual screen). Two **non-torch decode helpers** also live here (they need the encoder,
+  so the model is the natural home): `describe_global` (weather/spikes/screens) and
+  `describe_team_items` — decodes each mon block's held item via `pokemon_encoder.describe_vector`
+  over BOTH team blocks (`OFFSET_OUR_TEAM`/`OFFSET_OPP_TEAM`), so it surfaces the **opponent's
+  item the moment it's revealed** (unrevealed → `ITM-UNKN`, skipped); the engine overlays this on
+  the summary's our-only teams block.
 - **`discovery.py`** — pure filesystem. `build_trace_tree(path)` accepts a run
   dir, an `eval_traces` dir, or a single `*_summary.json`, and groups
   step → opponent → battle by **parsing path strings only** (never opens the
@@ -78,20 +83,30 @@ better than always using `best_model`.
 Analysis sections (collapsible — **multiple open at once**, in a scroll; toggle
 by clicking a title or pressing its number key `1`–`8`) render purely from one
 `InvocationAnalysis`. The top one is **Summary** (`8`, open by default) — the
-decision dashboard for walking "funky turns": a 4-line context header
-(matchup+outcome · **CHOSE** chosen+confidence [+ a `⚠ now prefers X` on disagree] ·
-**CRITIC** V·ΔV·TDδ surprise · **THREAT** incoming P(KO)·outspeed·worst-on-team·opp-recovery)
+decision dashboard for walking "funky turns": a context header — line 1 the matchup
+(each active's bundled **status/volatiles** in `[...]`, e.g. `[TOX(5)|SUB]`, + held **item**
+as `@item`, incl. the **opponent's once revealed** — Choice items highlighted) + outcome,
+line 2 the **FIELD** line (weather/hazards/screens/turn, the same `_field_text` the Board
+shows), then **CHOSE** chosen+confidence [+ a `⚠ now prefers X` on disagree] ·
+**CRITIC** V·ΔV·TDδ surprise · **THREAT** incoming P(KO)·outspeed·worst-on-team·opp-recovery —
 over two side-by-side tables: **MOVES** (each move's type-effectiveness `×mult` fused
-with its policy prob, ranked by prob) and **SWITCHES** (each target's prob, its current
-**hp** (from the board, colour-graded), and its **risk-in** = `incoming.per_slot_pko` for
-that mon, the P(KO) on the switch-in if it comes in — `—` for the active/fainted slots
+with its policy prob, ranked by prob) and **SWITCHES** (each target's prob · **hp**
+(colour-graded) · **status/volatiles** · held **item** · **risk-in** = `incoming.per_slot_pko`
+for that mon, the P(KO) on the switch-in if it comes in — `—` for the active/fainted slots
 that can't switch in). It composes
-existing `InvocationAnalysis` fields only (no engine change): `actions` (probs),
+existing `InvocationAnalysis` fields only (no new obs/engine analysis): `actions` (probs),
 `matchups` (effectiveness), `incoming` (the P(KO) belief + `per_slot_pko`), `value`
-(critic). The pairing relies on the fixed obs action layout — the *i*-th `switch:` action
-is team slot *i* is `per_slot_pko[i]` (verified: `active_pko` == `per_slot_pko[active_slot]`) —
-so it pairs BEFORE sorting by prob. The remaining sections render the same data
-unfused: **Board** (each side's active species/hp/status/boosts +
+(critic), `board` (hp/status/item — status+volatiles bundled by the recorder's
+`_mon_display_status`; **items** from the summary teams block for our side, overlaid per-turn
+by `ProbeModel.describe_team_items` which adds the opp's revealed items + reflects consumption),
+`field`. The pairing relies on the fixed obs action layout — the
+*i*-th `switch:` action is team slot *i* is `per_slot_pko[i]` (verified: `active_pko` ==
+`per_slot_pko[active_slot]`) — so it pairs BEFORE sorting by prob. Shared render helpers keep it
+DRY — `_chosen_prob` / `self._td_residual` (also used by Review + Outcome), `_status_cell` /
+`_item_cell` / `_side_attr_map` / `_append_summary_active`. The remaining sections
+render the same data unfused: **Board** (each side's active species/hp/status/boosts +
+benched **status** now shown too — `_parse_bench` splits the `species(hp%,STATUS)`
+recorder format so the status no longer mangles the hp cell +
 revealed bench + our moveset from `engine.build_board`, model-free; plus a **field**
 line — weather/spikes/screens/turn decoded from the obs global block via
 `ProbeModel.describe_global`, so it needs captured state), **Faithfulness**

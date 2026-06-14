@@ -49,6 +49,10 @@ class FakeProbeModel:
     def describe_global(self, obs):
         return {"weather": "RAIN", "our_spikes": 1, "opp_spikes": 0, "turn": 8.0}
 
+    def describe_team_items(self, obs):
+        # Simulate the per-mon obs item decode (both sides; display-name keys, leniently matched).
+        return {"Zapdos": "leftovers", "Steelix": "choiceband"}
+
 
 def _summary(chosen="thunderbolt", events=None):
     actions = {
@@ -181,7 +185,7 @@ def test_build_board_parses_sides():
     inv = {
         "chosen": "surf",
         "our": {"species": "milotic", "hp": "100%", "status": "PAR",
-                "bench": "metagross(100%), celebi(50%), snorlax(faint)"},
+                "bench": "metagross(100%), celebi(50%,TOX(3)|SUB), snorlax(faint)"},
         "opp": {"species": "zapdos", "hp": "80%", "bench": "tyranitar(faint)"},
         "actions": {**{f"switch:m{i}": {"prob": "0%", "valid": True} for i in range(6)},
                     "hypnosis": {"prob": "0%", "valid": True},
@@ -196,14 +200,32 @@ def test_build_board_parses_sides():
     assert b.ours.moves == ("hypnosis", "surf", "icebeam")        # move3 placeholder dropped
     assert [(m.species, m.hp, m.fainted) for m in b.ours.bench] == [
         ("metagross", "100%", False), ("celebi", "50%", False), ("snorlax", "faint", True)]
+    # benched status+volatiles split out of the hp tail (not crammed into hp)
+    assert [m.status for m in b.ours.bench] == ["", "TOX(3)|SUB", ""]
     assert b.opp.active_species == "zapdos" and b.opp.moves == ()
     assert b.opp.bench[0].fainted is True
+
+    # items annotate BOTH sides and match leniently (display-name key vs board id).
+    b2 = build_board(inv, {"Milotic": "choiceband", "celebi": "leftovers", "Zapdos": "salacberry"})
+    assert b2.ours.item == "choiceband"                       # "Milotic" → "milotic"
+    assert b2.ours.bench[1].item == "leftovers"               # celebi
+    assert b2.ours.bench[0].item == ""                        # metagross: no entry
+    assert b2.opp.item == "salacberry"                        # opp side annotated too
 
 
 def test_analysis_carries_board():
     model = FakeProbeModel(_OFF)
     a = analyze_invocation(model, _summary(), _npz(), 0)
     assert a.board is not None and a.board.ours.active_species == "Zapdos"
+
+
+def test_analysis_decodes_items_from_obs():
+    """With captured state, the board picks up items from the model's obs decode — incl. the
+    OPPONENT's revealed item (the summary teams block only carries our side)."""
+    model = FakeProbeModel(_OFF)
+    a = analyze_invocation(model, _summary(), _npz(), 0)
+    assert a.board.opp.item == "choiceband"      # opp item surfaced from the obs decode
+    assert a.board.ours.item == "leftovers"
 
 
 def test_analysis_carries_field_when_model_decodes():

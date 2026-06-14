@@ -85,13 +85,18 @@ class ProbeModel:
     """Loaded policy + resolved offsets; the engine's torch boundary."""
 
     def __init__(self, policy, offsets: ObsOffsets,
-                 global_encoder=None, global_off: int = 0, global_dim: int = 0) -> None:
+                 global_encoder=None, global_off: int = 0, global_dim: int = 0,
+                 pokemon_encoder=None, our_team_off: int = 0, opp_team_off: int = 0) -> None:
         self._policy = policy
         self.offsets = offsets
         # For decoding the field state (weather/spikes/screens) out of the obs.
         self._global_encoder = global_encoder
         self._global_off = global_off
         self._global_dim = global_dim
+        # For decoding per-mon items (incl. the opponent's REVEALED items) from the team blocks.
+        self._pokemon_encoder = pokemon_encoder
+        self._our_team_off = our_team_off
+        self._opp_team_off = opp_team_off
 
     @classmethod
     def load(cls, ckpt_path: str, device: str = "cpu") -> "ProbeModel":
@@ -100,6 +105,8 @@ class ProbeModel:
             Gen3ObservationEncoder,
             load_mappings,
         )
+
+        import agents.observation.constants as C
 
         model = MaskablePPO.load(ckpt_path, device=device)
         policy = model.policy
@@ -115,7 +122,9 @@ class ProbeModel:
         gp = enc.get_layout()["parts"]["global"]
         return cls(policy=policy, offsets=ObsOffsets.from_encoder(enc),
                    global_encoder=enc.global_env_encoder,
-                   global_off=gp["start"], global_dim=gp["dim"])
+                   global_off=gp["start"], global_dim=gp["dim"],
+                   pokemon_encoder=enc.pokemon_encoder,
+                   our_team_off=C.OFFSET_OUR_TEAM, opp_team_off=C.OFFSET_OPP_TEAM)
 
     def describe_global(self, obs: np.ndarray) -> "dict | None":
         """Decode the field state (weather, spikes, screens, turn) from the obs."""
@@ -123,6 +132,28 @@ class ProbeModel:
             return None
         g = np.asarray(obs)[self._global_off:self._global_off + self._global_dim]
         return self._global_encoder.describe_vector(g)
+
+    def describe_team_items(self, obs: np.ndarray) -> "dict[str, str]":
+        """species → held item for every REVEALED mon on both sides, decoded from the team
+        blocks. Unlike the summary's teams block (our side only, end-of-battle), this reads the
+        per-turn obs, so it surfaces the OPPONENT's item the moment it's revealed. Unrevealed
+        items decode to ``ITM-UNKN`` and are skipped; species keys are matched leniently downstream."""
+        if self._pokemon_encoder is None:
+            return {}
+        arr = np.asarray(obs)
+        stride = self.offsets.pokemon_full_dim
+        out: "dict[str, str]" = {}
+        for base in (self._our_team_off, self._opp_team_off):
+            for i in range(6):
+                s = base + i * stride
+                block = arr[s:s + stride]
+                if block.shape[0] < stride:
+                    continue
+                d = self._pokemon_encoder.describe_vector(block)
+                species, item = d.get("species") or "", d.get("item") or ""
+                if species and item and item != "ITM-UNKN":
+                    out[species] = item
+        return out
 
     def action_dist(self, obs: np.ndarray, mask: np.ndarray):
         """Return (masked-softmax probs, raw logits) for a single obs/mask."""

@@ -44,6 +44,10 @@ class _FakeModel:
                 "our_spikes": 2, "opp_spikes": 0, "turn": 5,
                 "our_reflect": True, "opp_reflect": False}
 
+    def describe_team_items(self, obs):
+        # our active (zapdos) + opp active (jynx) revealed items, decoded from the obs.
+        return {"zapdos": "choiceband", "jynx": "leftovers"}
+
 
 def _write_trace(tmp_path, chosen="thunderbolt", has_state=1):
     actions = {f"switch:m{i}": {"prob": "1.0%", "valid": True} for i in range(6)}
@@ -216,7 +220,9 @@ async def test_select_battle_populates_panels(tmp_path):
         assert app.query_one("#summary-moves", DataTable).row_count == 5
         assert app.query_one("#summary-switches", DataTable).row_count == 6
         head = str(app.query_one("#summary-head", Static).render())
-        assert "zapdos vs jynx" in head and "thunderbolt" in head  # context header populated
+        assert "zapdos" in head and "jynx" in head and "thunderbolt" in head  # context header
+        assert "FIELD" in head and "SUN" in head  # field line (weather/hazards/screens) present
+        assert "@choiceband" in head and "@leftovers" in head  # our + opp revealed items in header
 
 
 async def test_switch_decision_has_no_sweep(tmp_path):
