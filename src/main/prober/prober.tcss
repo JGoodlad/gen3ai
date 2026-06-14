@@ -80,3 +80,29 @@ DataTable {
 #board-our, #board-opp {
     height: auto;
 }
+
+/* Summary section: a context header over two side-by-side tables (moves | switches). */
+#summary-head {
+    height: auto;
+    padding: 1 1;
+}
+
+#summary-tables {
+    height: auto;
+}
+
+.summary-col {
+    width: 1fr;
+    height: auto;
+}
+
+.summary-col-label {
+    height: auto;
+    padding: 0 1;
+    color: $text-muted;
+    text-style: bold;
+}
+
+#summary-moves, #summary-switches {
+    height: auto;
+}

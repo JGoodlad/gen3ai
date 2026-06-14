@@ -22,6 +22,7 @@ from textual.containers import Horizontal, Vertical, VerticalScroll
 from textual.widgets import (
     Collapsible,
     DataTable,
+    Input,
     Label,
     ListItem,
     ListView,
@@ -31,6 +32,8 @@ from textual.widgets import (
 
 # Analysis sections (Collapsible id, title, toggle key) — multiple can be open at once.
 _SECTIONS = [
+    ("sec-summary", "Summary", "8"),
+    ("sec-review", "Review", "7"),
     ("sec-board", "Board", "1"),
     ("sec-faith", "Faithfulness", "2"),
     ("sec-matchups", "Matchups", "3"),
@@ -38,7 +41,7 @@ _SECTIONS = [
     ("sec-saliency", "Saliency", "5"),
     ("sec-outcome", "Outcome", "6"),
 ]
-_OPEN_BY_DEFAULT = {"sec-board", "sec-faith", "sec-outcome"}
+_OPEN_BY_DEFAULT = {"sec-summary", "sec-board", "sec-faith", "sec-outcome"}
 
 
 class NavTree(Tree):
@@ -117,6 +120,7 @@ from main.prober.discovery import (
     resolve_model_for_step,
 )
 from main.prober.engine import InvocationAnalysis, analyze_invocation, summary_flags
+from main.prober.review import ReviewStore
 from main.tui import THEME_PATH, Gen3App, gradient_color
 
 _DEFAULT_GAMMA = 0.99   # used to compute the Outcome panel's TD residual when metadata.json is absent
@@ -127,6 +131,9 @@ _DEFAULT_GAMMA = 0.99   # used to compute the Outcome panel's TD residual when m
 # low-confidence policy it's the norm, not a needle worth jumping to.
 _FLAG_GLYPH = {"uncertain": "?", "faint": "✗", "disagree": "≠"}
 _JUMP_FLAGS = ("faint", "switch")
+# User manual-review annotations (distinct from the auto summary_flags above).
+_REVIEW_FLAG_GLYPH = "⚑"
+_REVIEW_NOTE_GLYPH = "✎"
 
 
 class ProberApp(Gen3App):
@@ -144,12 +151,20 @@ class ProberApp(Gen3App):
         ("r", "reanalyze", "Re-analyze"),
         ("m", "cycle_model", "Model tier"),
         ("R", "reload_model", "Reload ckpt"),
+        # Manual review (model's own games): mark a decision funky + jot why.
+        ("space", "toggle_review_flag", "⚑ Flag"),
+        ("e", "edit_note", "Note"),
+        ("right_square_bracket", "next_annotated", "Next note"),
+        ("left_square_bracket", "prev_annotated", "Prev note"),
+        ("E", "export_notes", "Export notes"),
         Binding("1", "toggle_section('sec-board')", "Board", show=False),
         Binding("2", "toggle_section('sec-faith')", "Faith", show=False),
         Binding("3", "toggle_section('sec-matchups')", "Matchups", show=False),
         Binding("4", "toggle_section('sec-sweep')", "Interv", show=False),
         Binding("5", "toggle_section('sec-saliency')", "Saliency", show=False),
         Binding("6", "toggle_section('sec-outcome')", "Outcome", show=False),
+        Binding("7", "toggle_section('sec-review')", "Review", show=False),
+        Binding("8", "toggle_section('sec-summary')", "Summary", show=False),
     ]
 
     def __init__(
@@ -171,8 +186,10 @@ class ProberApp(Gen3App):
         self._current_summary: "dict | None" = None
         self._analyze_token = 0
         self._pending_inv: "int | None" = None
-        self._flagged: "list[int]" = []          # invocation indices with a flag
+        self._flagged: "list[int]" = []          # invocation indices with an auto summary-flag
         self._battle_filter = "all"              # cycled by `f`: all/loss/win
+        self._review_store: "ReviewStore | None" = None   # manual flags/notes (per run dir)
+        self._current_inv: "int | None" = None   # the highlighted invocation index
 
         # Per-battle model resolution. The model that re-runs a trace depends on the
         # trace's eval step (exact snapshot → nearest checkpoint → most recent), so we
@@ -209,6 +226,26 @@ class ProberApp(Gen3App):
                 # Collapsible sections (not exclusive tabs) so several can be open at
                 # once; toggle by clicking a title or pressing its number key (1–6).
                 with VerticalScroll(id="analysis-scroll"):
+                    # Decision dashboard: the one-glance "funky turn" view — what it
+                    # chose, the move/switch probabilities WITH their effectiveness +
+                    # incoming KO-risk, and the threat/critic context, all grouped so a
+                    # turn can be judged without scanning Board+Faith+Matchups+Outcome.
+                    with Collapsible(title="Summary", collapsed=False, id="sec-summary"):
+                        yield Static("", id="summary-head")
+                        with Horizontal(id="summary-tables"):
+                            with Vertical(classes="summary-col"):
+                                yield Static("MOVES", classes="summary-col-label")
+                                yield DataTable(id="summary-moves")
+                            with Vertical(classes="summary-col"):
+                                yield Static("SWITCHES", classes="summary-col-label")
+                                yield DataTable(id="summary-switches")
+                    # Manual-review card: what the model EXPECTED vs what HAPPENED, plus the
+                    # human's funky-flag + note (space=flag, e=note, [ ]=jump, E=export).
+                    with Collapsible(title="Review", collapsed=False, id="sec-review"):
+                        yield Static("", id="review-card")
+                        yield Static("", id="review-status")
+                        yield Input(placeholder="note — Enter to save (e to focus)…",
+                                    id="review-note")
                     with Collapsible(title="Board", collapsed=False, id="sec-board"):
                         yield Static("", id="board-summary")
                         yield Static("", id="board-field")
@@ -231,6 +268,8 @@ class ProberApp(Gen3App):
                         yield Static("", id="outcome-events")
 
     def on_mount(self) -> None:
+        self.query_one("#summary-moves", DataTable).add_columns("move", "eff", "prob")
+        self.query_one("#summary-switches", DataTable).add_columns("target", "prob", "hp", "risk-in")
         self.query_one("#faith-table", DataTable).add_columns("action", "valid", "recorded", "re-run")
         self.query_one("#matchups-table", DataTable).add_columns("move", "×mult")
         self.query_one("#sweep-table", DataTable).add_columns("×mult", "P(chosen)", "P(switches)")
@@ -256,6 +295,7 @@ class ProberApp(Gen3App):
             return
         self._tree_model = build_trace_tree(self._root)
         self._gamma = self._read_run_gamma(self._tree_model.run_dir)
+        self._review_store = ReviewStore(self._tree_model.run_dir)
         if self._tree_model.is_empty:
             tree.root.label = "no traces found"
             return
@@ -307,8 +347,8 @@ class ProberApp(Gen3App):
         )
         lv = self.query_one("#invocation-list", ListView)
         lv.clear()
-        for inv in invs:
-            lv.append(ListItem(Label(self._inv_label(inv))))
+        for i, inv in enumerate(invs):
+            lv.append(ListItem(Label(self._inv_label(inv, i))))
         self._flagged = [i for i, inv in enumerate(invs)
                          if set(summary_flags(inv)) & set(_JUMP_FLAGS)]
         # Resolve + ensure the right model for THIS trace's step before selecting an
@@ -324,15 +364,33 @@ class ProberApp(Gen3App):
             # clear()), which drives _analyze — so we don't call it here too.
             lv.index = target
 
-    @staticmethod
-    def _inv_label(inv: dict) -> str:
+    def _inv_label(self, inv: dict, index: int) -> str:
         phase = str(inv.get("phase", "")).replace("_selection", "")
         glyphs = "".join(_FLAG_GLYPH.get(f, "") for f in summary_flags(inv))
+        # User review annotations take a leading column so flagged decisions stand out.
+        bid = self._battle_id()
+        mark = ""
+        if bid is not None and self._review_store is not None:
+            if self._review_store.flag(bid, index):
+                mark = _REVIEW_FLAG_GLYPH
+            elif self._review_store.note(bid, index):
+                mark = _REVIEW_NOTE_GLYPH
+        head = f"{mark or ' '} "
         tail = f"  {glyphs}" if glyphs else ""
-        return f"t{inv.get('turn', '?'):>3} {phase:<6} {inv.get('chosen', '')}{tail}"
+        return f"{head}t{inv.get('turn', '?'):>3} {phase:<6} {inv.get('chosen', '')}{tail}"
+
+    def _battle_id(self) -> "str | None":
+        """Stable per-trace key for the review store: the trace path relative to the run dir."""
+        if self._current_battle is None or self._tree_model is None:
+            return None
+        try:
+            return os.path.relpath(self._current_battle.summary_path, self._tree_model.run_dir)
+        except ValueError:
+            return self._current_battle.summary_path
 
     def on_list_view_highlighted(self, event: ListView.Highlighted) -> None:
         if event.list_view.id == "invocation-list" and event.list_view.index is not None:
+            self._current_inv = event.list_view.index
             self._analyze(event.list_view.index)
 
     def action_next_inv(self) -> None:
@@ -529,6 +587,8 @@ class ProberApp(Gen3App):
                 f"{a.our_species} vs {a.opp_species} · {meta.result} · "
                 f"turn {a.turn} · inv {a.inv_index}/{meta.n_invocations}"
             )
+        self._render_summary(a)
+        self._render_review(a)
         self._render_board(a)
         self._render_faithfulness(a)
         self._render_matchups(a)
@@ -547,6 +607,116 @@ class ProberApp(Gen3App):
             self.query_one("#battle-header", Static).update(Text(msg, style="yellow"))
 
     # ---- per-panel renderers ----
+
+    def _td_residual(self, a: InvocationAnalysis) -> "float | None":
+        """γ-discounted TD residual δ = r + γV(s′) − V(s) — the critic-surprise that
+        flags a funky turn. None when value / next-value / reward aren't all captured."""
+        if a.value is None or a.value.next_recorded is None:
+            return None
+        reward = (a.outcome or {}).get("reward")
+        rtotal = reward.get("total") if isinstance(reward, dict) else None
+        if rtotal is None:
+            return None
+        return float(rtotal) + self._gamma * a.value.next_recorded - a.value.recorded
+
+    def _render_summary(self, a: InvocationAnalysis) -> None:
+        """The decision dashboard: a 4-line context header (matchup · chose · critic ·
+        threat) over two side-by-side tables — MOVES (effectiveness + prob) and SWITCHES
+        (prob + incoming KO-risk to the switch-in) — so a turn is judgeable in one glance."""
+        head = Text()
+        # Line 1 — matchup + outcome.
+        head.append(f"{a.our_species} vs {a.opp_species}", style="bold")
+        head.append(f"   ·   turn {a.turn}", style="dim")
+        result = (a.meta.result if a.meta is not None else None) or "?"
+        head.append("   ·   ", style="dim")
+        head.append(str(result).upper(),
+                    style={"win": "bold green", "loss": "bold red"}.get(str(result).lower(), "dim"))
+        # Line 2 — what it chose + confidence (+ a disagree flag if the model now prefers else).
+        chosen_p = next((r.recorded for r in (a.actions or []) if r.is_chosen), None)
+        head.append("\nCHOSE   ", style="dim")
+        head.append("▶ " + (a.chosen or "?"), style="bold")
+        if chosen_p is not None:
+            head.append(f"  {chosen_p * 100:.1f}%", style=gradient_color(chosen_p))
+        if a.rerun_argmax is not None and not a.agrees:
+            head.append("   ⚠ now prefers ", style="yellow")
+            head.append(str(a.rerun_argmax), style="bold yellow")
+        # Line 3 — critic context: WHY this turn is worth a look (ΔV / TD-surprise spikes).
+        if a.value is not None:
+            head.append("\nCRITIC  ", style="dim")
+            head.append(f"V {a.value.recorded:+.2f}", style="bold")
+            if a.value.delta is not None:
+                head.append("   ΔV ", style="dim")
+                head.append(f"{a.value.delta:+.2f}", style=("green" if a.value.delta >= 0 else "red"))
+                td = self._td_residual(a)
+                if td is not None:
+                    head.append("   surprise(TDδ) ", style="dim")
+                    head.append(f"{td:+.2f}", style=("green" if td >= 0 else "red"))
+        # Line 4 — the danger it faced: incoming KO belief + speed (the switch-or-not signal).
+        inc = a.incoming
+        if inc is not None and inc.active_pko is not None:
+            head.append("\nTHREAT  ", style="dim")
+            head.append(f"incoming P(KO) {inc.active_pko * 100:.0f}%",
+                        style=gradient_color(1.0 - inc.active_pko))
+            if inc.active_outspeed is not None:
+                head.append(f"   ·   we outspeed {inc.active_outspeed * 100:.0f}%", style="dim")
+            head.append(f"   ·   worst-on-team {inc.max_pko * 100:.0f}%", style="dim")
+            if inc.recovery_known or inc.recovery_rate > 0:
+                head.append(f"   ·   opp recovery {inc.recovery_rate * 100:.0f}%"
+                            + ("✓" if inc.recovery_known else "?"), style="dim")
+        self.query_one("#summary-head", Static).update(head)
+
+        # MOVES — fuse type-effectiveness (Matchups) with the policy prob (Faithfulness),
+        # ranked by prob so the policy's preference order reads top-down.
+        mt = self.query_one("#summary-moves", DataTable)
+        mt.clear()
+        mult_by_label = (dict(zip(a.matchups.move_labels, a.matchups.multipliers))
+                         if a.matchups is not None else {})
+        move_rows = [r for r in (a.actions or []) if not r.label.startswith("switch")]
+        if not move_rows:
+            mt.add_row(_warn_cell(a), "", "")
+        for r in sorted(move_rows, key=lambda r: r.recorded, reverse=True):
+            mult = mult_by_label.get(r.label)
+            eff = (Text(f"{mult:4.2f}×", style=_mult_color(mult)) if mult is not None
+                   else Text("—", style="dim"))
+            label = ("▶ " if r.is_chosen else "  ") + r.label
+            lstyle = "bold" if r.is_chosen else ("" if r.valid else "dim")
+            prob_style = "bold" if r.is_chosen else gradient_color(r.recorded)
+            mt.add_row(Text(label, style=lstyle), eff,
+                       Text(f"{r.recorded * 100:5.1f}%", style=prob_style))
+
+        # SWITCHES — prob next to the incoming KO-risk on the switch-in (per_slot_pko, the
+        # single most switch-relevant fact). The i-th switch action == team slot i ==
+        # per_slot_pko[i] (fixed obs action layout: 6 switches in team order, then moves),
+        # so pair BEFORE sorting by prob.
+        st = self.query_one("#summary-switches", DataTable)
+        st.clear()
+        per_slot = list(inc.per_slot_pko) if (inc is not None and inc.per_slot_pko) else []
+        switch_rows = [r for r in (a.actions or []) if r.label.startswith("switch")]
+        paired = [(r, per_slot[i] if i < len(per_slot) else None)
+                  for i, r in enumerate(switch_rows)]
+        # The pivot's current HP — read "how healthy is this switch-in" next to its risk-in.
+        hp_by_species = {}
+        if a.board is not None:
+            hp_by_species[a.board.ours.active_species.lower()] = a.board.ours.active_hp
+            for m in a.board.ours.bench:
+                hp_by_species[m.species.lower()] = m.hp
+        if not switch_rows:
+            st.add_row(Text("no switch available", style="dim"), "", "", "")
+        for r, pko in sorted(paired, key=lambda rp: rp[0].recorded, reverse=True):
+            target = r.label.split(":", 1)[-1]
+            label = ("▶ " if r.is_chosen else "  ") + target
+            lstyle = "bold" if r.is_chosen else ("" if r.valid else "dim")
+            prob_style = "bold" if r.is_chosen else gradient_color(r.recorded)
+            hp_str = hp_by_species.get(target.lower())
+            hp_cell = _hp_text(hp_str) if hp_str is not None else Text("?", style="dim")
+            if not r.valid:
+                risk = Text("—", style="dim")          # fainted / the active mon: can't switch in
+            elif pko is None:
+                risk = Text("?", style="dim")
+            else:
+                risk = Text(f"{pko * 100:.0f}%", style=gradient_color(1.0 - pko))
+            st.add_row(Text(label, style=lstyle),
+                       Text(f"{r.recorded * 100:5.1f}%", style=prob_style), hp_cell, risk)
 
     def _render_board(self, a: InvocationAnalysis) -> None:
         summ = self.query_one("#board-summary", Static)
@@ -737,6 +907,139 @@ class ProberApp(Gen3App):
         ev = self.query_one("#outcome-events", Static)
         ev.update(Text("events: " + (", ".join(map(str, events)) if events else "—"),
                        style="yellow" if events else "dim"))
+
+    # ------------------------------------------------------------------
+    # Manual review (model's own games): expectation card + flag/note
+    # ------------------------------------------------------------------
+
+    def _render_review(self, a: InvocationAnalysis) -> None:
+        """One-glance 'what the model EXPECTED → what it DID → what HAPPENED → how surprised'
+        card, then sync the flag/note widgets to this decision."""
+        card = Text()
+        chosen_p = next((r.recorded for r in (a.actions or []) if r.is_chosen), None)
+        card.append("chose ", style="dim")
+        card.append(a.chosen or "?", style="bold")
+        if chosen_p is not None:
+            card.append(f" ({chosen_p * 100:.0f}%)", style="dim")
+        inc = a.incoming
+        if inc is not None and inc.active_pko is not None:
+            card.append("   expected ", style="dim")
+            card.append(f"P(KO on us) {inc.active_pko * 100:.0f}%",
+                        style=gradient_color(1.0 - inc.active_pko))
+            card.append(f" · outspd {inc.active_outspeed * 100:.0f}%", style="dim")
+        if a.value is not None:
+            card.append("\nV(s) ", style="dim")
+            card.append(f"{a.value.recorded:+.2f}", style="bold")
+            if a.value.delta is not None:
+                card.append("  ΔV ", style="dim")
+                card.append(f"{a.value.delta:+.2f}",
+                            style=("green" if a.value.delta >= 0 else "red"))
+                reward = (a.outcome or {}).get("reward")
+                rt = reward.get("total") if isinstance(reward, dict) else None
+                if rt is not None and a.value.next_recorded is not None:
+                    td = float(rt) + self._gamma * a.value.next_recorded - a.value.recorded
+                    card.append("  surprise(TDδ) ", style="dim")
+                    card.append(f"{td:+.2f}", style=("green" if td >= 0 else "red"))
+        if a.rerun_argmax is not None and not a.agrees:
+            card.append("\n⚠ model now prefers ", style="yellow")
+            card.append(str(a.rerun_argmax), style="bold yellow")
+        out = a.outcome or {}
+        our, opp = out.get("our") or {}, out.get("opp") or {}
+        if our or opp:
+            card.append("\nhappened ", style="dim")
+            card.append(f"we {our.get('action', '?')} ({our.get('hp_delta', '?')}) · "
+                        f"opp {opp.get('action', '?')} ({opp.get('hp_delta', '?')})")
+        if out.get("events"):
+            card.append("  [" + ", ".join(map(str, out["events"])) + "]", style="yellow")
+        self.query_one("#review-card", Static).update(card)
+
+        # Store keys on the LIST POSITION (self._current_inv, set on highlight) so the glyph,
+        # flag, and note all align — NOT a.inv_index (the trace's "i", which can differ).
+        self._render_review_status()
+        bid = self._battle_id()
+        idx = self._current_inv
+        note = (self._review_store.note(bid, idx)
+                if (bid and self._review_store and idx is not None) else "")
+        note_w = self.query_one("#review-note", Input)
+        if note_w.value != note:
+            note_w.value = note
+
+    def _render_review_status(self) -> None:
+        st = self.query_one("#review-status", Static)
+        bid = self._battle_id()
+        if bid is None or self._review_store is None or self._current_inv is None:
+            st.update("")
+            return
+        flagged = self._review_store.flag(bid, self._current_inv)
+        n_ann = len(self._review_store.annotated_invs(bid))
+        line = Text()
+        line.append(f"{_REVIEW_FLAG_GLYPH} FLAGGED" if flagged else "unflagged",
+                    style="bold red" if flagged else "dim")
+        line.append(f"   ·   {n_ann} annotated here", style="dim")
+        line.append("   (space=flag · e=note · [ ]=jump · E=export)", style="dim")
+        st.update(line)
+
+    def action_toggle_review_flag(self) -> None:
+        bid = self._battle_id()
+        if bid is None or self._review_store is None or self._current_inv is None:
+            return
+        self._review_store.toggle_flag(bid, self._current_inv)
+        self._render_review_status()
+        self._refresh_list_item(self._current_inv)
+
+    def action_edit_note(self) -> None:
+        try:
+            self.query_one("#review-note", Input).focus()
+        except Exception:  # noqa: BLE001 — no input mounted yet
+            pass
+
+    def on_input_submitted(self, event: Input.Submitted) -> None:
+        if event.input.id != "review-note":
+            return
+        bid = self._battle_id()
+        if bid is None or self._review_store is None or self._current_inv is None:
+            return
+        self._review_store.set(bid, self._current_inv, note=event.value.strip())
+        self._render_review_status()
+        self._refresh_list_item(self._current_inv)
+        self.query_one("#invocation-list", ListView).focus()
+
+    def _refresh_list_item(self, index: int) -> None:
+        invs = (self._current_summary or {}).get("invocations", [])
+        if not (0 <= index < len(invs)):
+            return
+        try:
+            item = self.query_one("#invocation-list", ListView).children[index]
+            item.query_one(Label).update(self._inv_label(invs[index], index))
+        except Exception:  # noqa: BLE001
+            pass
+
+    def action_next_annotated(self) -> None:
+        self._jump_annotated(+1)
+
+    def action_prev_annotated(self) -> None:
+        self._jump_annotated(-1)
+
+    def _jump_annotated(self, direction: int) -> None:
+        bid = self._battle_id()
+        if bid is None or self._review_store is None:
+            return
+        ann = self._review_store.annotated_invs(bid)
+        if not ann:
+            return
+        lv = self.query_one("#invocation-list", ListView)
+        cur = lv.index if lv.index is not None else 0
+        if direction > 0:
+            nxt = next((i for i in ann if i > cur), ann[0])
+        else:
+            nxt = next((i for i in reversed(ann) if i < cur), ann[-1])
+        lv.index = nxt
+
+    def action_export_notes(self) -> None:
+        if self._review_store is None:
+            return
+        path = self._review_store.export_markdown()
+        self.notify(f"exported → {os.path.basename(path)}" if path else "nothing to export")
 
 
 def _warn_cell(a: InvocationAnalysis):

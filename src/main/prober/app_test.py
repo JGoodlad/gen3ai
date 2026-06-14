@@ -212,6 +212,11 @@ async def test_select_battle_populates_panels(tmp_path):
         # chosen is a move → 4-point sweep
         assert app.query_one("#sweep-table", DataTable).row_count == 4
         assert app.query_one("#saliency-table", DataTable).row_count == 5  # +their_matchups block
+        # Summary splits the 11 actions: 5 moves (4 + struggle) | 6 switches.
+        assert app.query_one("#summary-moves", DataTable).row_count == 5
+        assert app.query_one("#summary-switches", DataTable).row_count == 6
+        head = str(app.query_one("#summary-head", Static).render())
+        assert "zapdos vs jynx" in head and "thunderbolt" in head  # context header populated
 
 
 async def test_switch_decision_has_no_sweep(tmp_path):
@@ -488,3 +493,41 @@ async def test_tier_cycle_walks_exact_nearest_recent(tmp_path):
         app.action_cycle_model()                        # → back to auto/exact
         await pilot.pause()
         assert app._tier == "auto" and app._current_choice.tier == "exact"
+
+
+async def test_review_flag_persists_and_shows_glyph(tmp_path):
+    from textual.widgets import Input, Label
+    from main.prober.review import ReviewStore
+    run = _write_trace(tmp_path, chosen="thunderbolt")
+    app = ProberApp(root=run, injected_model=_FakeModel())
+    async with app.run_test() as pilot:
+        await pilot.pause()
+        app._select_battle(app._tree_model.all_battles()[0])
+        await pilot.pause()
+        await app.workers.wait_for_complete()
+        await pilot.pause()
+        # the "what the model expected" card populated
+        assert str(app.query_one("#review-card", Static).render()).strip() != ""
+        # flag the current decision → store + glyph + status update
+        app.action_toggle_review_flag()
+        await pilot.pause()
+        bid = app._battle_id()
+        assert app._review_store.flag(bid, 0) is True
+        item = app.query_one("#invocation-list", ListView).children[0]
+        assert "⚑" in str(item.query_one(Label).render())
+        assert "FLAGGED" in str(app.query_one("#review-status", Static).render())
+        # note via the input-submitted handler → persists to disk
+        note_in = app.query_one("#review-note", Input)
+        note_in.value = "explosion at full HP"
+        app.on_input_submitted(Input.Submitted(note_in, "explosion at full HP"))
+        await pilot.pause()
+        assert app._review_store.note(bid, 0) == "explosion at full HP"
+        assert ReviewStore(run).flag(bid, 0) is True            # a fresh store reads the file
+        # toggling the flag off keeps the note (still annotated → glyph stays)
+        app.action_toggle_review_flag()
+        await pilot.pause()
+        assert app._review_store.flag(bid, 0) is False
+        assert 0 in app._review_store.annotated_invs(bid)       # note still annotates it
+        # export writes markdown
+        path = app._review_store.export_markdown()
+        assert path and "explosion at full HP" in open(path).read()

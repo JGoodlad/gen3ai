@@ -47,7 +47,11 @@ the single source of truth — change the analysis once, both surfaces follow.
   replay/re-roll record (`utils/bridge/reconstruction.py`) — which the prober
   also ignores today (a future counterfactual probe consumes it).
 - **`app.py`** — `ProberApp(Gen3App)`: trace `Tree` | invocation `ListView` |
-  four analysis `DataTable`s in a `TabbedContent`.
+  a `VerticalScroll` of `Collapsible` analysis sections (Summary · Review · Board ·
+  Faithfulness · Matchups · Intervention · Saliency · Outcome).
+- **`review.py`** — `ReviewStore`: persistent manual-review annotations (a *funky* flag +
+  a free-text note per decision) at `<run_dir>/review_notes.json`; pure (no Textual),
+  unit-tested, exports to `<run_dir>/review_notes.md`.
 
 ## Per-battle model resolution (exact → nearest → most recent)
 
@@ -71,9 +75,23 @@ better than always using `best_model`.
 
 ## Panels & navigation
 
-Six analysis sections (collapsible — **multiple open at once**, in a scroll; toggle
-by clicking a title or pressing its number key `1`–`6`) render purely from one
-`InvocationAnalysis`: **Board** (each side's active species/hp/status/boosts +
+Analysis sections (collapsible — **multiple open at once**, in a scroll; toggle
+by clicking a title or pressing its number key `1`–`8`) render purely from one
+`InvocationAnalysis`. The top one is **Summary** (`8`, open by default) — the
+decision dashboard for walking "funky turns": a 4-line context header
+(matchup+outcome · **CHOSE** chosen+confidence [+ a `⚠ now prefers X` on disagree] ·
+**CRITIC** V·ΔV·TDδ surprise · **THREAT** incoming P(KO)·outspeed·worst-on-team·opp-recovery)
+over two side-by-side tables: **MOVES** (each move's type-effectiveness `×mult` fused
+with its policy prob, ranked by prob) and **SWITCHES** (each target's prob, its current
+**hp** (from the board, colour-graded), and its **risk-in** = `incoming.per_slot_pko` for
+that mon, the P(KO) on the switch-in if it comes in — `—` for the active/fainted slots
+that can't switch in). It composes
+existing `InvocationAnalysis` fields only (no engine change): `actions` (probs),
+`matchups` (effectiveness), `incoming` (the P(KO) belief + `per_slot_pko`), `value`
+(critic). The pairing relies on the fixed obs action layout — the *i*-th `switch:` action
+is team slot *i* is `per_slot_pko[i]` (verified: `active_pko` == `per_slot_pko[active_slot]`) —
+so it pairs BEFORE sorting by prob. The remaining sections render the same data
+unfused: **Board** (each side's active species/hp/status/boosts +
 revealed bench + our moveset from `engine.build_board`, model-free; plus a **field**
 line — weather/spikes/screens/turn decoded from the obs global block via
 `ProbeModel.describe_global`, so it needs captured state), **Faithfulness**
@@ -100,6 +118,17 @@ the loaded model's argmax ≠ chosen). The list shows `?`/`✗` glyphs; `n`/`N` 
 to the **discrete** flags (faint/switch — `uncertain` is the norm for a
 low-confidence policy, so it's a glyph, not a jump target). `f` cycles a
 battle-outcome filter (all → loss → win), rebuilding the tree.
+
+**Manual review mode (model's own games).** The top **Review** section is the
+human-walkthrough surface: a one-glance card of *what the model EXPECTED → what it
+DID → what HAPPENED → how surprised* (chosen + prob · incoming-P(KO) belief · V(s) ·
+ΔV · TD δ surprise · a `⚠ now prefers X` when the re-run argmax disagrees · the actual
+outcome+events), so you can judge each choice. While stepping turn-by-turn (`j`/`k`)
+you annotate: **`space`** toggles a *funky* flag, **`e`** focuses the note input
+(Enter saves), **`[`/`]`** jump to the prev/next annotated decision, **`E`** exports
+all notes to `<run>/review_notes.md`. Annotations persist in `<run>/review_notes.json`
+(`review.ReviewStore`, keyed by run-relative trace path + invocation index) and show
+a `⚑`/`✎` glyph in the invocation list — distinct from the auto `summary_flags`.
 
 Layout: the trace `Tree` (`NavTree`) uses file-explorer `←`/`→` to collapse/
 expand; the three panes are separated by draggable `PaneSplitter` bars — drag with
@@ -149,7 +178,14 @@ loading uses the same exact→nearest→recent ladder (cached per process). A
   inference matters), **`damage_taken`** (HP fraction lost this turn vs `active_exp`;
   contested = the `active_pko` 0.1–0.9 coinflip band where a p50/p90 spread would
   help), **`faint_soon`** (imminent faint vs `active_pko`; grouped by whether the
-  belief flagged it). Every result splits **overall vs by-group** (the easy-vs-hard
+  belief flagged it), and the **opponent-anticipation family** — **`opp_switches`**
+  (will the opp voluntarily switch this turn) + **`opp_status_move`** (if the opp uses a
+  move, status vs attacking — its INTENT) + **`big_hit_incoming`** — the pre-registered
+  Gate-0 falsifier for an opponent-action / world-model head: rep AUC ≫0.5 ⇒ the trunk
+  already models the opponent ⇒ such a head is REDUNDANT. (Measured @53M: opp_switches
+  0.89/0.90, opp_status_move 0.82/0.87, big_hit 0.75/0.78, faint_soon 0.86 — opponent
+  modelling comprehensively present; the head was FALSIFIED before building.) Every
+  result splits **overall vs by-group** (the easy-vs-hard
   contrast is the signal) and reports the representation probe AND the provided-feature
   baseline. The probe stats (`engine.fit_probe`) are pure numpy — standardized
   ridge/logistic, k-fold OUT-OF-FOLD predictions, **auto-tuned l2** over a grid
@@ -176,6 +212,13 @@ loading uses the same exact→nearest→recent ladder (cached per process). A
   policy/critic usage); a low one where our active then faints means the belief is
   mis-calibrated (an encoder gap). The one-call form of "list losses → overview each
   → rank by the biggest drop" — the usual first move of a loss sweep. No model loaded.
+- `switch_vs_info(step=, opponent=, outcome=, max_battles=)` — **model-free behavioural
+  probe** of OUR policy: voluntary switch-rate bucketed by how many opponent mons we'd
+  revealed (the information level), a correlation, and the double-switch rate (switch the
+  turn AFTER the opp switched; consecutive own switches). Tests "do we switch more when we
+  know less" (negative correlation ⇒ information-sensitive). Measured @53M: corr −0.025
+  (information-BLIND), 57% reactive switch-after-opp-switch. Caveat: revealed-count
+  correlates with game progress — a confound to control for.
 - `battle_overview(battle_id)` — **model-free digest**: per-decision rows
   (chosen, top prob, `our_active`/`opp_active` board summary, recorded V(s), **ΔV**,
   **TD residual** = critic surprise, reward total, events, flags) + a `notable`
@@ -299,7 +342,8 @@ CLI mirror — prints JSON to stdout (and `{"error": …}` + exit 1 on failure, 
 agent always gets parseable output). `--help` carries a worked example sequence:
 ```bash
 python -m main.prober.query triage   <run_dir> [--step N] [--opponent X]
-python -m main.prober.query probe    <run_dir> <is_faster|damage_taken|faint_soon> [--which vf|pi] [--step N] [--max-decisions K]
+python -m main.prober.query probe    <run_dir> <is_faster|damage_taken|faint_soon|faint_healthy|big_hit_incoming|opp_switches|opp_status_move> [--which vf|pi] [--step N] [--max-decisions K]
+python -m main.prober.query switch-vs-info <run_dir> [--step N] [--opponent X] [--outcome win|loss] [--max-battles K]   # MODEL-FREE: do we switch more when we know less?
 python -m main.prober.query summary  <run_dir>
 python -m main.prober.query list     <run_dir> --outcome loss --step 8000000
 python -m main.prober.query scan     <run_dir> --outcome loss --opponent X [--metric td_residual] [--limit K]
@@ -417,9 +461,10 @@ hand-written tmp trace via a fake session — no torch, no bridge),
 matrix, seed determinism, δ-anchor selection incl. the forced-switch remap, and
 the `anchor_deltas` δ-map) + `falsifier_integration_test.py` (`@integration`,
 real bridge battle → full falsify pipeline, determinism re-run, and the run-level
-`falsify_scan` over a recorded discoverable tree), `app_test.py`
+`falsify_scan` over a recorded discoverable tree), `review_test.py` (pure
+`ReviewStore` — flag/note roundtrip, persistence, prune, export), `app_test.py`
 (Textual `run_test` Pilot with an injected fake model — never loads a real checkpoint,
-so it stays fast):
+so it stays fast; incl. the review flag/note/glyph flow):
 
 ```bash
 export PYTHONPATH=$PYTHONPATH:src && python3 -m pytest src/main/prober -q
