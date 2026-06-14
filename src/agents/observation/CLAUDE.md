@@ -257,7 +257,11 @@ sourced from Showdown's actual representation, never guessed from the move name 
 
 **Incoming-damage / OHKO belief block (51 dims, `gen3_incoming_crit_split_v1`, at reactive offset 51,
 before the matchups → routed to both heads via `non_matchup_rest`):** the opponent active's threat to
-*us* as a calibrated belief, not a calc. Per our 6 team mons (slot-aligned): `[phys_expdmg_frac,
+*us* as a calibrated belief, not a calc. (This block is the fixed *usage-prior* collapse; the model-side
+`DamageOperator` (`--damage-op`) computes the SAME kind of belief from the model's LEARNED move belief
+instead, and `--mask-incoming-damage-obs` can zero this block out of the MODEL's view to A/B that
+replacement — the block stays in the obs at its fixed dim, and the REWARD PBRS still reads it from
+`live_view`. See `src/agents/model/CLAUDE.md` → the damage-operator / unified-belief notes.) Per our 6 team mons (slot-aligned): `[phys_expdmg_frac,
 spec_expdmg_frac, phys_pko_nocrit, spec_pko_nocrit, phys_crit_delta, spec_crit_delta, p_outspeed,
 threat_revealed]` (8 × 6 = 48), then 3 opp-active recovery scalars
 `[recovery_rate, cures_status(P rest), recovery_known]`. **`gen3_incoming_crit_split_v1` (PER_MON 5→8,

@@ -564,6 +564,77 @@ def test_migrate_pre_v18_adds_damage_op_default(version):
     ModelVersion(**result)
 
 
+# --- move_prior_fusion: a forward-behavior bool toggle (the unified two-part move belief, v20) -------
+
+
+def test_check_compatible_rejects_move_prior_fusion_mismatch(version):
+    """Fusing the move prior changes the forward the policy trained under (no weight-shape change), so
+    check_compatible must reject a flip — like attend_unrevealed_opponents."""
+    on = dataclasses.replace(version, move_prior_fusion=True)
+    with pytest.raises(ModelVersionError) as exc_info:
+        version.check_compatible(on)        # version has move_prior_fusion=False (default)
+    assert "move_prior_fusion" in str(exc_info.value)
+
+
+def test_check_compatible_accepts_matching_move_prior_fusion(version):
+    version.check_compatible(dataclasses.replace(version))               # off vs off
+    on = dataclasses.replace(version, move_prior_fusion=True)
+    on.check_compatible(dataclasses.replace(on))                         # on vs on
+
+
+def test_move_prior_fusion_read_from_features_extractor_kwargs(layout):
+    pk = {"net_arch": [512, 512], "features_extractor_kwargs": {"move_prior_fusion": True}}
+    v = ModelVersion.from_layout_and_policy_kwargs(layout, pk)
+    assert v.move_prior_fusion is True and v.config_version == MODEL_CONFIG_VERSION
+    v_default = ModelVersion.from_layout_and_policy_kwargs(layout, {"net_arch": [512, 512]})
+    assert v_default.move_prior_fusion is False
+
+
+def test_migrate_pre_v20_adds_move_prior_fusion_default(version):
+    """Pre-v20 configs lack move_prior_fusion — migration injects False and bumps to the current version."""
+    data = json.loads(version.to_json())
+    data.pop("move_prior_fusion", None)
+    data["config_version"] = 19
+    result = _migrate_config(data)
+    assert result["config_version"] == MODEL_CONFIG_VERSION
+    assert result["move_prior_fusion"] is False
+    ModelVersion(**result)
+
+
+# --- mask_incoming_damage_obs: a forward-behavior bool toggle (the unified ablation, v21) -----------
+
+
+def test_check_compatible_rejects_mask_incoming_damage_obs_mismatch(version):
+    on = dataclasses.replace(version, mask_incoming_damage_obs=True)
+    with pytest.raises(ModelVersionError) as exc_info:
+        version.check_compatible(on)
+    assert "mask_incoming_damage_obs" in str(exc_info.value)
+
+
+def test_check_compatible_accepts_matching_mask_incoming_damage_obs(version):
+    version.check_compatible(dataclasses.replace(version))
+    on = dataclasses.replace(version, mask_incoming_damage_obs=True)
+    on.check_compatible(dataclasses.replace(on))
+
+
+def test_mask_incoming_damage_obs_read_from_features_extractor_kwargs(layout):
+    pk = {"net_arch": [512, 512], "features_extractor_kwargs": {"mask_incoming_damage_obs": True}}
+    v = ModelVersion.from_layout_and_policy_kwargs(layout, pk)
+    assert v.mask_incoming_damage_obs is True and v.config_version == MODEL_CONFIG_VERSION
+    v_default = ModelVersion.from_layout_and_policy_kwargs(layout, {"net_arch": [512, 512]})
+    assert v_default.mask_incoming_damage_obs is False
+
+
+def test_migrate_pre_v21_adds_mask_incoming_damage_obs_default(version):
+    data = json.loads(version.to_json())
+    data.pop("mask_incoming_damage_obs", None)
+    data["config_version"] = 20
+    result = _migrate_config(data)
+    assert result["config_version"] == MODEL_CONFIG_VERSION
+    assert result["mask_incoming_damage_obs"] is False
+    ModelVersion(**result)
+
+
 def test_check_compatible_rejects_value_active_readout_mismatch(version):
     """① value_active_readout widens the value projection → a weight-shape change check_compatible
     must reject (like use_popart)."""

@@ -137,7 +137,26 @@ from typing import Any, Dict, List
 #   move_belief_mode in {revealed, both} (the op reads the opp-active's predicted logits, only
 #   supervised for a revealed mon) — enforced at extractor build + the CLI. It is forward-only (no new
 #   labels / no loss term), so there is no training-only coefficient. Old configs migrate to False.
-MODEL_CONFIG_VERSION = 19
+#
+# v20: added `move_prior_fusion` (the unified two-part move belief). FORWARD-BEHAVIOR toggle like
+#   `attend_unrevealed_opponents` (NOT weight-shape): the MoveBelief head's output becomes a learned
+#   log-odds DELTA fused with the Smogon move-frequency prior — `posterior = prior_logit(species) +
+#   head_delta`, revealed moves pinned certain — so the stashed move-belief logits (read by the damage
+#   op + the BCE loss) carry a proper POSTERIOR (priors ⊕ prediction unified). The prior buffer is a
+#   non-persistent lookup, no new params → state_dict byte-identical either way, but the forward differs
+#   when ON, so (like attend_unrevealed_opponents / damage_op) it is gated in check_compatible — a resume
+#   that flips it would feed a different belief. Requires move_belief_mode != off (enforced at extractor
+#   build + CLI). OFF reproduces the from-scratch head byte-for-byte → NO ARCH_SIGNATURE bump. Old configs
+#   migrate to False.
+#
+# v21: added `mask_incoming_damage_obs` (the unified-architecture ABLATION toggle). FORWARD-BEHAVIOR
+#   toggle like attend_unrevealed_opponents (NOT weight-shape): ON zeros the 51-dim incoming-damage /
+#   OHKO obs block out of the model's view (the block STAYS in the obs at a fixed dim; the reward PBRS
+#   still reads the belief from live_view). Lets the unified DamageOperator's learned belief->damage
+#   REPLACE the CPU usage-prior collapse for the MODEL, A/B-ably, without deleting any code. State_dict
+#   byte-identical (just zeros an obs slice), but the forward differs, so it is gated in check_compatible.
+#   OFF = baseline byte-for-byte (NO ARCH_SIGNATURE bump). Old configs migrate to False.
+MODEL_CONFIG_VERSION = 21
 
 # Change this when the neural architecture changes structurally in a way that makes
 # weights from a different signature incompatible (e.g. adding LSTM, replacing attention).
@@ -491,6 +510,18 @@ class ModelVersion:
     # baseline byte-for-byte (NO ARCH_SIGNATURE bump). Forward-only → no training-only coefficient.
     # Requires move_belief_mode in {revealed, both} (enforced at extractor build + CLI).
     damage_op: bool = False
+    # v20 FORWARD-BEHAVIOR toggle (NOT weight-shape, like attend_unrevealed_opponents): the unified
+    # two-part move belief. ON fuses the Smogon move-frequency prior into the MoveBelief head as a
+    # log-odds residual (+ pins revealed moves certain), so the stashed move-belief logits carry a
+    # posterior (priors ⊕ prediction). The prior buffer is non-persistent (no new params → state_dict
+    # identical), but the forward differs, so it is gated in check_compatible. Requires move_belief_mode
+    # != off. OFF = the from-scratch head byte-for-byte (NO ARCH_SIGNATURE bump).
+    move_prior_fusion: bool = False
+    # v21 FORWARD-BEHAVIOR toggle (NOT weight-shape, like attend_unrevealed_opponents): the
+    # unified-architecture ablation. ON zeros the incoming-damage / OHKO obs block out of the model's
+    # view (the block stays in the obs; the reward still reads it). State_dict identical; the forward
+    # differs (a zeroed obs slice), so it is gated in check_compatible. OFF = baseline byte-for-byte.
+    mask_incoming_damage_obs: bool = False
 
     @classmethod
     def from_layout_and_policy_kwargs(
@@ -569,6 +600,12 @@ class ModelVersion:
             ),
             damage_op=bool(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("damage_op", False)
+            ),
+            move_prior_fusion=bool(
+                policy_kwargs.get("features_extractor_kwargs", {}).get("move_prior_fusion", False)
+            ),
+            mask_incoming_damage_obs=bool(
+                policy_kwargs.get("features_extractor_kwargs", {}).get("mask_incoming_damage_obs", False)
             ),
             value_tail_weight=float(value_tail_weight),
             opp_belief_aux_coef=float(opp_belief_aux_coef),
@@ -717,6 +754,29 @@ class ModelVersion:
                 "The differentiable damage operator widens both projection heads, so it changes the "
                 "state_dict and cannot be toggled on an existing model.\n"
                 "Resume with the matching --damage-op setting, or start a fresh training run."
+            )
+
+        # Forward-behavior toggle (no weight-shape change, like attend_unrevealed_opponents): fusing the
+        # move prior changes the belief the policy/value/damage-op trained under, so a resume that flips
+        # it would feed a different forward. The state_dict is identical either way (the prior buffer is
+        # non-persistent), so this is a train/eval-consistency gate, not a loadability one.
+        if self.move_prior_fusion != saved.move_prior_fusion:
+            raise ModelVersionError(
+                f"move_prior_fusion mismatch: saved={saved.move_prior_fusion}, current={self.move_prior_fusion}.\n"
+                "Fusing the Smogon move prior into the belief changes the forward the policy trained "
+                "under, so it cannot be toggled on a resumed model.\n"
+                "Resume with the matching --move-prior-fusion setting, or start a fresh training run."
+            )
+
+        # Forward-behavior toggle (no weight-shape change): ablating the incoming-damage obs block
+        # changes the input the policy/value trained on, so a resume flip would feed a different forward.
+        if self.mask_incoming_damage_obs != saved.mask_incoming_damage_obs:
+            raise ModelVersionError(
+                f"mask_incoming_damage_obs mismatch: saved={saved.mask_incoming_damage_obs}, "
+                f"current={self.mask_incoming_damage_obs}.\n"
+                "Zeroing the incoming-damage obs block out of the model's view changes the forward the "
+                "policy trained under, so it cannot be toggled on a resumed model.\n"
+                "Resume with the matching --mask-incoming-damage-obs setting, or start a fresh training run."
             )
 
     def check_opponent_compatible(self, foreign: "ModelVersion") -> None:
@@ -932,4 +992,12 @@ def _migrate_config(data: dict) -> dict:
         # v19: added the differentiable damage-operator toggle (off). Old models had no DamageOperator.
         data.setdefault("damage_op", False)
         data["config_version"] = 19
+    if version < 20:
+        # v20: added the unified-move-belief prior-fusion toggle (off). Old models had no prior fusion.
+        data.setdefault("move_prior_fusion", False)
+        data["config_version"] = 20
+    if version < 21:
+        # v21: added the incoming-damage-obs ablation toggle (off). Old models always saw the obs block.
+        data.setdefault("mask_incoming_damage_obs", False)
+        data["config_version"] = 21
     return data

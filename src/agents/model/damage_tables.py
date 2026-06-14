@@ -45,10 +45,26 @@ _PHYSICAL_TYPE_NAMES = (
     "NORMAL", "FIGHTING", "POISON", "GROUND", "FLYING", "BUG", "ROCK", "GHOST", "STEEL",
 )
 
+# Defender ABILITY damage multipliers vs an attacking move TYPE (the gen3 immunity/resist abilities a
+# DEFENDER carries — our mons' abilities are revealed, so this is known, not believed). A multiplier
+# folded into the type-effectiveness product, same class as the chart. Wonder Guard (a piecewise
+# only-super-effective gate, Shedinja-only) is deferred. Sourced by ability id so a num remap is safe.
+_ABILITY_TYPE_MULTS = {
+    "levitate": [("GROUND", 0.0)],
+    "flashfire": [("FIRE", 0.0)],
+    "waterabsorb": [("WATER", 0.0)],
+    "voltabsorb": [("ELECTRIC", 0.0)],
+    "thickfat": [("FIRE", 0.5), ("ICE", 0.5)],
+}
+
 # Hidden Power: all variants share this num; gen3's max HP base power is 70 ("assume max damage").
 HIDDEN_POWER_NUM = 237
 HIDDEN_POWER_BP = 70.0
 N_HP_TYPES = len(HIDDEN_POWER_TYPE_ORDER)   # 16
+
+# Columns of MOVE_EFFECT_FLAGS (the believed-move status/utility threat axes). Order is the contract
+# the DamageOperator's effect-scalar block relies on — do not reorder without updating the op.
+MOVE_EFFECT_COLS = ("recovery", "status", "phaze", "boost", "hazard", "protect")
 
 
 def _move_type_idx(md) -> int:
@@ -59,7 +75,7 @@ def _move_type_idx(md) -> int:
     return _T2I.get(md.type.name, 0)
 
 
-def build_damage_buffers(n_moves: int, n_species: int) -> Dict[str, torch.Tensor]:
+def build_damage_buffers(n_moves: int, n_species: int, n_abilities: int) -> Dict[str, torch.Tensor]:
     """Build the fixed lookup tensors, indexed 0..n-1 by national-dex ``num``.
 
     Returns a dict of float32 / long tensors for `DamageOperator` to register as buffers:
@@ -71,6 +87,8 @@ def build_damage_buffers(n_moves: int, n_species: int) -> Dict[str, torch.Tensor
       TYPE_IS_PHYS[19]          1.0 for the 9 gen3-physical type indices
       HP_TYPE_IDX[16]           TypeEncoder index of each Hidden Power type slot
       HP_IS_PHYS[16]            1.0 if that HP type is physical
+      MOVE_EFFECT_FLAGS[n_moves, 6]   per-move status/utility flags (MOVE_EFFECT_COLS)
+      ABILITY_DAMAGE_MULT[n_abilities, 19]  defender-ability ×type multiplier (Levitate/Flash Fire/…)
     """
     move_bp = torch.zeros(n_moves, dtype=torch.float32)
     move_type_idx = torch.zeros(n_moves, dtype=torch.long)
@@ -110,9 +128,38 @@ def build_damage_buffers(n_moves: int, n_species: int) -> Dict[str, torch.Tensor
                 continue
             chart[di, _T2I[att_name]] = float(mult)
 
+    # Per-move EFFECT flags (num axis), for the believed-move STATUS/UTILITY threat (noisy-OR over the
+    # move belief): the unified op surfaces "P(opp active has a recovery / status / phaze / setup /
+    # hazard / protect move)" — the strictly-more-capable axis the damage-only CPU block never had.
+    # Sourced from MoveData (Showdown-derived flags; status_inflicted = the major status its PURPOSE is
+    # to inflict). HP num-237 stays all-zero (it is a damaging move, no effect). Column order ==
+    # MOVE_EFFECT_COLS.
+    move_effect_flags = torch.zeros(n_moves, len(MOVE_EFFECT_COLS), dtype=torch.float32)
+    for mid in gen3_data.moves.raw():
+        md = gen3_data.moves.get(mid)
+        num = md.num
+        if num == HIDDEN_POWER_NUM or not (0 <= num < n_moves):
+            continue
+        flags = (md.is_heal, md.status_inflicted is not None, md.is_phaze,
+                 md.is_boost, md.is_hazard, md.is_protect)
+        for j, f in enumerate(flags):
+            if f:
+                move_effect_flags[num, j] = 1.0
+
     type_is_phys = torch.zeros(N_TYPE_IDX, dtype=torch.float32)
     for tname in _PHYSICAL_TYPE_NAMES:
         type_is_phys[_T2I[tname]] = 1.0
+
+    # Defender-ability × move-type multiplier (1.0 = no effect). Gathered by the defender's revealed
+    # ability num and multiplied into the type-effectiveness product — so Levitate reads 0× Ground,
+    # Flash Fire 0× Fire, Thick Fat 0.5× Fire/Ice, etc., instead of a phantom super-effective KO.
+    ability_damage_mult = torch.ones(n_abilities, N_TYPE_IDX, dtype=torch.float32)
+    for aid, type_mults in _ABILITY_TYPE_MULTS.items():
+        ad = gen3_data.abilities.get(aid)
+        if ad is None or not (0 <= ad.num < n_abilities):
+            continue
+        for tname, m in type_mults:
+            ability_damage_mult[ad.num, _T2I[tname]] = m
 
     hp_type_idx = torch.tensor(
         [_T2I[t.name] for t in HIDDEN_POWER_TYPE_ORDER], dtype=torch.long
@@ -128,4 +175,42 @@ def build_damage_buffers(n_moves: int, n_species: int) -> Dict[str, torch.Tensor
         "TYPE_IS_PHYS": type_is_phys,
         "HP_TYPE_IDX": hp_type_idx,
         "HP_IS_PHYS": hp_is_phys,
+        "MOVE_EFFECT_FLAGS": move_effect_flags,
+        "ABILITY_DAMAGE_MULT": ability_damage_mult,
     }
+
+
+# Floor probability for a move a species is ~never seen to run (keeps an unseen move POSSIBLE — never
+# logit(-inf) — so in-battle evidence can still lift it). Also the value for an unknown species (num 0).
+_PRIOR_FLOOR = 0.02
+
+
+def build_move_prior_logits(n_species: int, n_moves: int, floor: float = _PRIOR_FLOOR) -> torch.Tensor:
+    """``[n_species, n_moves]`` LOG-ODDS of the Smogon move-frequency prior, indexed by national-dex
+    ``num`` on BOTH axes — the base rate ``P(move in set)`` for a species, ready to fuse additively into
+    the move-belief logits (``posterior_logit = head_delta + prior_logit``).
+
+    Sources `gen3_data.priors.moves(species)` -> ``{move_id: P(in set)}`` (un-normalized; a set runs
+    ~4 moves). Probabilities for move_ids that collapse to one ``num`` are SUMMED (Hidden Power: all
+    typed variants share num 237, and a mon runs at most one HP type, so ``P(has HP) = Σ typed usage``),
+    clamped to ``[floor, 1-eps]``, then ``logit``. A species with no prior entry (or num 0 = unknown)
+    gets ``logit(floor)`` everywhere — a low, non-zero base that the learned delta can still move.
+
+    Returned as a plain float32 tensor for `MoveBelief` to register as a NON-persistent buffer (pure
+    data-derived physics, recomputable — never a saved weight)."""
+    eps = 1e-6
+    prob = torch.zeros(n_species, n_moves, dtype=torch.float64)   # accumulate in f64, cast at the end
+    for sid in gen3_data.species.raw():
+        sd = gen3_data.species.get(sid)
+        snum = sd.num
+        if not (0 <= snum < n_species):
+            continue
+        for move_id, p in gen3_data.priors.moves(sid).items():
+            md = gen3_data.moves.get(move_id)
+            if md is None:
+                continue
+            num = md.num
+            if 0 <= num < n_moves:
+                prob[snum, num] += float(p)            # sum collisions (e.g. typed Hidden Power -> 237)
+    prob = prob.clamp(floor, 1.0 - eps)
+    return torch.logit(prob).to(torch.float32)         # log(p/(1-p)), the additive log-odds base rate

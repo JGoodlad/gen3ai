@@ -16,7 +16,7 @@ import torch
 import pytest
 
 from agents.model.features_extractor import (
-    Gen3FeaturesExtractor, DamageOperator, _DMG_FEATS, TEAM_SIZE,
+    Gen3FeaturesExtractor, DamageOperator, _DMG_PER_MON, _DMG_EFFECT, TEAM_SIZE,
 )
 from agents.model import damage_tables as dt
 from agents.observation.constants import POKEMON_SPREAD_OFFSET, POKEMON_FULL_DIM
@@ -82,6 +82,8 @@ def _fake_ctx(op, *, attacker_num, attacker_t1, attacker_t2,
         batch_size=B, device=torch.device("cpu"),
         opp_active_local=torch.full((B,), opp_active_local, dtype=torch.long),
         species_ids=species, type1_ids=t1, type2_ids=t2,
+        ability1_ids=torch.zeros(B, n, dtype=torch.long),       # no ability (mult 1.0) by default
+        screen_feature=torch.zeros(B, 8),                       # no screens by default
         hp_and_active=hp_and_active, pokemon_part=pokemon_part, hp_probs=hp_probs,
     )
 
@@ -96,7 +98,7 @@ def _logits_hp_only(n_moves, B=1):
 
 # --------------------------------------------------------------------------- lookup buffers
 def test_buffers_axis_and_immunity():
-    b = dt.build_damage_buffers(400, 400)
+    b = dt.build_damage_buffers(400, 400, 100)
     C = b["CHART"]
     # Immunities are EXACT 0 (fall out of the effectiveness product, no branch).
     assert C[_T2I["FLYING"], _T2I["GROUND"]].item() == 0.0     # Ground vs Flying
@@ -109,7 +111,7 @@ def test_buffers_axis_and_immunity():
 
 
 def test_buffers_hp_collision_and_type_split():
-    b = dt.build_damage_buffers(400, 400)
+    b = dt.build_damage_buffers(400, 400, 100)
     assert b["MOVE_BP"][dt.HIDDEN_POWER_NUM].item() == 0.0     # HP collision: bare slot left 0
     # gen3 type-split: Ground physical, Water special.
     assert b["TYPE_IS_PHYS"][_T2I["GROUND"]].item() == 1.0
@@ -123,7 +125,7 @@ def test_buffers_hp_collision_and_type_split():
 
 
 def test_move_buffers_known_values():
-    b = dt.build_damage_buffers(400, 400)
+    b = dt.build_damage_buffers(400, 400, 100)
     from agents import gen3_data
     eq = gen3_data.moves.get("earthquake")
     assert b["MOVE_BP"][eq.num].item() == 100.0
@@ -146,8 +148,8 @@ def test_typed_hp_distinct_effectiveness():
     ice = [0.0] * 16; ice[_hp_slot("ICE")] = 1.0
     lg = _logits_hp_only(layout["max_moves"])
 
-    g = op(_fake_ctx(op, defenders=defenders, hp_probs_active=grass, **attacker), lg).reshape(1, TEAM_SIZE, _DMG_FEATS)
-    i = op(_fake_ctx(op, defenders=defenders, hp_probs_active=ice, **attacker), lg).reshape(1, TEAM_SIZE, _DMG_FEATS)
+    g = op(_fake_ctx(op, defenders=defenders, hp_probs_active=grass, **attacker), lg)[:, :TEAM_SIZE * _DMG_PER_MON].reshape(1, TEAM_SIZE, _DMG_PER_MON)
+    i = op(_fake_ctx(op, defenders=defenders, hp_probs_active=ice, **attacker), lg)[:, :TEAM_SIZE * _DMG_PER_MON].reshape(1, TEAM_SIZE, _DMG_PER_MON)
     # feature order: [phys_chip, spec_chip, phys_pko, spec_pko]; HP Grass/Ice are SPECIAL.
     grass_spec_chip = g[0, 0, 1].item()
     ice_spec_chip = i[0, 0, 1].item()
@@ -168,7 +170,7 @@ def test_typed_hp_channel_and_effectiveness_ranking():
     lg = _logits_hp_only(layout["max_moves"])
     out = op(_fake_ctx(op, defenders=defenders, hp_probs_active=grass,
                        attacker_num=248, attacker_t1=_T2I["NORMAL"], attacker_t2=0),
-             lg).reshape(1, TEAM_SIZE, _DMG_FEATS)
+             lg)[:, :TEAM_SIZE * _DMG_PER_MON].reshape(1, TEAM_SIZE, _DMG_PER_MON)
     assert out[0, 0, 1].item() > out[0, 1, 1].item() > 0.0   # spec_chip: Water/Ground > Fire
     assert out[0, 0, 0].item() < 1e-3 and out[0, 1, 0].item() < 1e-3   # phys_chip ~0 (HP is special)
 
@@ -188,7 +190,7 @@ def test_immune_defender_reads_zero():
     lg[:, :, eq_num] = 20.0                                                # believe ONLY Earthquake
     out = op(_fake_ctx(op, defenders=defenders, hp_probs_active=[0.0] * 16,
                        attacker_num=248, attacker_t1=_T2I["GROUND"], attacker_t2=0),
-             lg).reshape(1, TEAM_SIZE, _DMG_FEATS)
+             lg)[:, :TEAM_SIZE * _DMG_PER_MON].reshape(1, TEAM_SIZE, _DMG_PER_MON)
     assert out[0, 0, 0].item() < 1e-6                # immune: only the −20 belief tail remains
     assert out[0, 1, 0].item() > 0.1                 # Ground-weak: a real physical threat
     assert out[0, 1, 0].item() > 1e6 * out[0, 0, 0].item()
@@ -199,7 +201,7 @@ def test_off_path_projection_dims_unchanged_by_damage_op():
     base, _ = _make_model(attend_unrevealed_opponents=True, move_belief_mode="revealed")
     on, _ = _make_model(attend_unrevealed_opponents=True, move_belief_mode="revealed", damage_op=True)
     assert base.damage_op is None and on.damage_op is not None
-    grow = TEAM_SIZE * _DMG_FEATS
+    grow = TEAM_SIZE * _DMG_PER_MON + _DMG_EFFECT
     assert on.projection_input_dim - base.projection_input_dim == grow
     assert on.value_projection_input_dim - base.value_projection_input_dim == grow
 
@@ -222,7 +224,7 @@ def test_finite_on_zero_obs_and_block_is_zero():
         assert torch.isfinite(pi).all() and torch.isfinite(vf).all()
         ctx = model.unpack({"observation": torch.zeros(3, layout["total_dim"])})
         block = model.damage_op(ctx, model.last_move_belief_logits)
-    assert block.shape == (3, TEAM_SIZE * _DMG_FEATS)
+    assert block.shape == (3, TEAM_SIZE * _DMG_PER_MON + _DMG_EFFECT)
     assert (block == 0).all()
 
 

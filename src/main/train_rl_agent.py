@@ -169,6 +169,8 @@ def _run_arch_toggles(args) -> dict:
         move_belief_mode=args.move_belief_mode,
         opp_belief_latent=(args.opp_belief_latent_coef > 0.0),
         damage_op=args.damage_op,
+        move_prior_fusion=args.move_prior_fusion,
+        mask_incoming_damage_obs=args.mask_incoming_damage_obs,
     )
 
 
@@ -281,10 +283,10 @@ def _apply_grad_checkpointing(model, enabled: bool) -> None:
     """
     if not enabled:
         return
-    from agents.model.features_extractor import TeamTransformer
+    from agents.model.features_extractor import TeamTransformer, DamageOperator
     n = 0
     for module in model.policy.modules():
-        if isinstance(module, TeamTransformer):
+        if isinstance(module, (TeamTransformer, DamageOperator)):
             module.grad_checkpointing = True
             n += 1
     print(f"[GradCheckpoint] enabled on {n} transformer block(s) "
@@ -691,6 +693,22 @@ async def main():
                              "belief. STRUCTURAL (widens both projections; version-checked, fresh-only). "
                              "REQUIRES --move-belief-mode revealed|both (it reads the opp active's "
                              "predicted logits, supervised only for a revealed mon). Off by default.")
+    parser.add_argument("--move-prior-fusion", "--move_prior_fusion", dest="move_prior_fusion",
+                        action=BoolFlag, default=None,
+                        help="Unified two-part move belief: fuse the Smogon move-frequency PRIOR into the "
+                             "move-belief head as a log-odds residual (posterior = prior + learned delta) "
+                             "and PIN revealed moves certain — so the belief the damage op + BCE loss read "
+                             "is one coherent posterior (priors ⊕ prediction unified), anchored at the "
+                             "prior at cold-start. Forward-behavior toggle (no weight-shape change; "
+                             "version-checked, fresh-only). REQUIRES --move-belief-mode != off. Off by default.")
+    parser.add_argument("--mask-incoming-damage-obs", "--mask_incoming_damage_obs",
+                        dest="mask_incoming_damage_obs", action=BoolFlag, default=None,
+                        help="Unified-architecture ABLATION: zero the 51-dim incoming-damage / OHKO obs "
+                             "block out of the MODEL's view (the block stays in the obs at a fixed dim; "
+                             "the reward PBRS still reads the belief from live_view). Use WITH --damage-op "
+                             "to A/B whether the learned belief→damage op replaces the CPU usage-prior "
+                             "collapse — no code deleted, fully reversible. Forward-behavior toggle "
+                             "(no weight-shape change; version-checked, fresh-only). Off by default.")
     parser.add_argument("--n-steps", type=int, default=2048, help="Steps per environment per rollout")
     parser.add_argument("--grad-checkpointing", "--grad_checkpointing", dest="grad_checkpointing",
                         action=BoolFlag, default=False,
@@ -846,6 +864,8 @@ async def main():
     _resolve("move_belief_coef", 0.0)          # training-only (inherited like opp_belief_aux_coef)
     _resolve("opp_belief_latent_coef", 0.0)    # training-only (inherited like opp_belief_aux_coef)
     _resolve("damage_op", False)               # v19 structural (version-checked, fresh-only)
+    _resolve("move_prior_fusion", False)       # v20 forward-behavior (version-checked, fresh-only)
+    _resolve("mask_incoming_damage_obs", False)  # v21 forward-behavior (version-checked, fresh-only)
     # PopArt INHERITED on a flagless resume → adopt its required `--clip-range-vf none` (the saved
     # popart run necessarily used it), so the explicit-config check below doesn't block the resume.
     if args.use_popart and not _popart_explicit and _saved_ver is not None and args.clip_range_vf is not None:
@@ -922,6 +942,14 @@ async def main():
             "--damage-op requires --move-belief-mode revealed (or both): the operator is fed the opp "
             "active's predicted moves, which are only supervised for a revealed mon. Set "
             "--move-belief-mode revealed, or drop --damage-op."
+        )
+    if args.move_prior_fusion and args.move_belief_mode == "off":
+        # FAIL LOUD: prior fusion folds the Smogon prior INTO the move-belief head's logits; with no
+        # head (--move-belief-mode off) there is nothing to fuse.
+        parser.error(
+            "--move-prior-fusion requires --move-belief-mode != off (revealed|unrevealed|both): the prior "
+            "fuses into the move-belief head's logits. Set --move-belief-mode revealed, or drop "
+            "--move-prior-fusion."
         )
     log_level = LogLevel[args.log_level.upper()]
 
@@ -1555,6 +1583,10 @@ async def main():
         _load_extractor_kwargs["opp_belief_latent"] = (args.opp_belief_latent_coef > 0.0)
         # Damage-operator toggle — version-checked vs the saved config (fresh-only).
         _load_extractor_kwargs["damage_op"] = args.damage_op
+        # Move-prior fusion — version-checked vs the saved config (fresh-only).
+        _load_extractor_kwargs["move_prior_fusion"] = args.move_prior_fusion
+        # Incoming-damage-obs ablation — version-checked vs the saved config (fresh-only).
+        _load_extractor_kwargs["mask_incoming_damage_obs"] = args.mask_incoming_damage_obs
         _load_policy_kwargs = {
             "features_extractor_class": Gen3FeaturesExtractor,
             "features_extractor_kwargs": _load_extractor_kwargs,
@@ -1752,6 +1784,12 @@ async def main():
         # Differentiable damage operator (weight-shape): widens both projection heads with the
         # believed-move incoming-damage block. Requires move_belief_mode revealed|both (validated above).
         extractor_kwargs["damage_op"] = args.damage_op
+        # Unified move belief (forward-behavior): fuse the Smogon move prior into the belief head. Requires
+        # move_belief_mode != off (validated above). No weight-shape change (non-persistent prior buffer).
+        extractor_kwargs["move_prior_fusion"] = args.move_prior_fusion
+        # Unified-architecture ablation (forward-behavior): zero the incoming-damage obs block from the
+        # model's view. No weight-shape change. Independent A/B knob (typically paired with --damage-op).
+        extractor_kwargs["mask_incoming_damage_obs"] = args.mask_incoming_damage_obs
 
         policy_kwargs = {
             "features_extractor_class": Gen3FeaturesExtractor,

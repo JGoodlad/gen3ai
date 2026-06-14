@@ -23,7 +23,7 @@ Embedding dims (`species_embedding_dim`, `move_embedding_dim`, etc.) live in `st
 `forward_internal` is decomposed into phase `nn.Module`s, chained by a thin orchestrator:
 
 `ObsUnpack` → `PokemonEncoder` → `[BeliefSlots?]` → `TeamTransformer` → `[BeliefHead?]` →
-`[MoveBelief?]` → `[DamageOperator?]` → `CLSPool` → `ProjectionAssembler`, then **two** root heads
+`[MoveBelief?]` → `CLSPool` → `[DamageOperator?]` → `ProjectionAssembler`, then **two** root heads
 (`pre_proj_norm`/`projection` for policy, `value_pre_norm`/`value_projection` for value), each → `ReLU`.
 
 `BeliefSlots`/`BeliefHead` are built only when `opp_belief_slots` (`--opp-belief-aux-coef>0`),
@@ -169,8 +169,8 @@ because it is Φ_progress's weight. All are recorded on
 `ModelVersion` and enforced on resume by **`check_reward_config`** (FATAL on drift, since they silently
 shift the reward/objective), excluded from `check_compatible`. They are reward-VALUE changes — **no
 `ARCH_SIGNATURE` bump** (the network/obs are unchanged) — so a fresh run is needed to measure them but
-old checkpoints don't fail an arch check. Current `MODEL_CONFIG_VERSION` = **19** (see the belief notes
-below for v16–v19).
+old checkpoints don't fail an arch check. Current `MODEL_CONFIG_VERSION` = **21** (see the belief notes
+below for v16–v21).
 
 **Two probe-driven V-tail levers (v10 structural, v11 resume-immutable).** A representation probe on a
 real checkpoint found the **value head is partly blind to incoming KOs the policy head sees**
@@ -300,27 +300,71 @@ This is config v18.
 belief" (`designs/ai_v6/design_differentiable_damage_op.md`): a fixed, **differentiable** gen3 damage
 calculator run in the GPU forward, fed by the move belief's PREDICTED moves. `DamageOperator`
 (`features_extractor.py`) runs AFTER `MoveBelief` and reads `last_move_belief_logits` for the opp ACTIVE
-slot (`w = sigmoid`), computing the believed-move incoming damage to each of our 6 mons → per (defender,
-gen3-type-channel) features `[phys_chip, spec_chip, phys_pko, spec_pko]` (a temperature **soft-max over
-candidates** of `w·dmg_frac` / `w·P(KO)` — the differentiable stand-in for `incoming_damage`'s
-max-over-candidates), a `[B, 6·4]` block **appended to BOTH projection inputs** (like
-`hidden_opp_belief`). Because it is differentiable in `w`, the gradient sharpens the move-belief head
-toward the moves that actually threaten KOs — and it replaces the CPU `incoming_damage` block's FIXED
-usage-prior with the model's LEARNED belief (the belief doesn't exist at obs-build time). **Hidden Power**
-(all 17 variants collide on num=237 → unrepresentable on the num axis) is expanded into **16 typed
-candidates** (BP 70 = gen3 max), weighted `P(present)·P(type)` — presence from the belief (`w[237]`), type
-from the per-mon `hp_probs` obs block — so HP Grass vs HP Ice get distinct effectiveness. Our defenders
-use their REAL spread (reconstructed from the obs spread block); the hidden-spread attacker uses a fixed
-de-timid offense (252 EV/31 IV/×1.1). Lookup tables (`damage_tables.py`, built from `gen3_data`, on the
-`TypeEncoder` type axis) are **non-persistent float32 buffers** (fixed physics, recomputable). The block
-is zeroed (incl. gradient) when no opp is active + per fainted defender; no `/0` (soft-max + clamped
-denoms). **Leak-safe** (reads the PREDICTED belief + public obs only) — **forward-only, no new
-labels/loss** (the existing `_move_belief_loss` already supervises the belief), so `Gen3Env` is untouched.
+slot (`w = sigmoid`), computing the believed-move incoming damage to each of our 6 mons. Output (Stage B,
+`out_dim = 6·_DMG_PER_MON + _DMG_EFFECT = 54`): per defender **8** features `[phys_chip, spec_chip,
+phys_pko, spec_pko, phys_crit_delta, spec_crit_delta, p_outspeed, provenance]` — the SAME 8 feature
+CHANNELS as `incoming_damage.py`'s PER_MON block (NOT modifier-for-modifier parity: the op applies
+type/STAB/ability-immunity/screens/crit but **not yet** weather, burn, defender boost stages, or
+fixed-damage/OHKO/HP-relative moves — those are documented v2 follow-ups; the learned-belief gradient
+story holds without them) + **6** opp-active believed-EFFECT scalars `[recovery, status,
+phaze, boost, hazard, protect]` — the status/utility-threat axis the damage-only CPU block never had,
+computed as a belief-weighted **MAX** over the belief × per-move effect flags (`MOVE_EFFECT_FLAGS`; a
+full-axis noisy-OR over ~400 moves saturated to ~1 from the floor alone). The chip/pko
+aggregation is the same **HARD max** over the channel's believed candidates (= `incoming_damage`'s
+max-over-candidates; differentiable via the argmax subgradient — NOT a low-temperature soft-max, which
+diluted the true max ~17× over the ~400-candidate axis). `p_outspeed` is our mon's real speed vs the opp's
+fast-tail speed (a per-mon point estimate; para/boosts deferred to v2). `provenance` = the belief weight of the
+dominant believed move (1≈revealed, <1=guess). The `[B,54]` block is **appended to BOTH projection
+inputs**. Differentiable in `w` → the gradient sharpens the move-belief head; replaces the CPU
+`incoming_damage` block's FIXED usage-prior with the LEARNED belief. **Gradient honesty:** revealed
+moves are pinned to a constant `_REVEAL_LOGIT` (under prior fusion) — that `torch.where` branch carries
+NO gradient, and a pinned move already contributes its (certain) damage to the channel max. So the op's
+gradient sharpens the belief **only on the opp active's still-UNREVEALED candidate moves** — i.e. it
+teaches the head to predict the *unseen* move that would threaten a KO, exactly the surprise-OHKO lever
+the move belief exists to capture (revealed moves are already certain, nothing to learn there). **Hidden Power** (all 17 variants
+collide on num=237) is expanded into **16 typed candidates** (BP 70), weighted `P(present)·P(type)` —
+presence from `w[237]`, type from the obs `hp_probs` — so HP Grass vs HP Ice get distinct effectiveness.
+Our defenders use their REAL spread; the hidden-spread attacker uses a fixed de-timid offense (252/31/×1.1).
+Lookup tables (`damage_tables.py`, on the `TypeEncoder` axis) are **non-persistent float32 buffers**. The
+block is zeroed (incl. gradient) when no opp is active + per fainted defender; no `/0`. **Leak-safe**
+(reads the PREDICTED belief + public obs only) — **forward-only, no new labels/loss** (the existing
+`_move_belief_loss` already supervises the belief), so `Gen3Env` is untouched.
 `damage_op` (bool) is the **state_dict-changing arch toggle** — gated in `check_compatible` (bool compare,
 widens both projections), OFF = baseline byte-for-byte (NO `ARCH_SIGNATURE` bump). Hard-requires
 `move_belief_mode` revealed|both (enforced at extractor build + the CLI). Threaded through
-`current_model_version` / `arch_toggles_from_model` (the 4 opponent-load sites). Current
-`MODEL_CONFIG_VERSION` = **19**.
+`current_model_version` / `arch_toggles_from_model` (the 4 opponent-load sites). This is config v19.
+
+**Unified two-part move belief — prior fusion (`move_prior_fusion` / `--move-prior-fusion`, v20).** Unifies
+the three overlapping opponent-move systems (the Smogon move-frequency **prior**, the learned move-belief
+**prediction**, and the **damage** op) into ONE posterior. When on, `MoveBelief` treats its head output as
+a learned **log-odds DELTA** fused with the prior: `posterior_logit = prior_logit(species) + head_delta`,
+and **pins revealed moves** (opp move-id > 0, seen this battle) to a near-certain logit (`_REVEAL_LOGIT`).
+So the stashed `last_move_belief_logits` (read by BOTH the damage op AND the `_move_belief_loss` BCE) is a
+true **two-part belief** — *known moves certain, unknown moves prior⊕learned* — anchored at the Smogon
+base rate at cold-start, with the head learning the in-battle correction (the BCE needs no change; gradient
+implicitly targets `delta ≈ logit(truth) − logit(prior)`). The prior is a `[max_species, max_moves]`
+log-odds buffer (`damage_tables.build_move_prior_logits`: `logit(clamp(Σ usage over move_ids→num, floor,
+1−eps))`, HP num-237 sums typed usage), registered **non-persistent** on `MoveBelief` (no new params → the
+state_dict is byte-identical on/off). So `move_prior_fusion` is a **FORWARD-BEHAVIOR toggle** like
+`attend_unrevealed_opponents` (NOT weight-shape): gated in `check_compatible` (a resume flip feeds a
+different belief), NO `ARCH_SIGNATURE` bump, OFF = the from-scratch head byte-for-byte. Requires
+`move_belief_mode != off` (enforced at extractor build + CLI); threaded through `current_model_version` /
+`arch_toggles_from_model`. Note the prior is keyed on the (revealed) species — hidden slots gather the
+unknown-species floor (marginalizing the prior over the species belief is a later extension). This is config v20.
+
+**Unified-architecture ablation (`mask_incoming_damage_obs` / `--mask-incoming-damage-obs`, v21).** Lets
+the unified DamageOperator **replace the model's** view of the CPU `incoming_damage` obs block, A/B-ably,
+**without deleting any code**. When on, `ObsUnpack` zeros the 51-dim incoming-damage / OHKO block out of
+`non_matchup_rest` (a clone — never mutates the shared obs) so the policy/value/global-token stop seeing
+it; the block STAYS in the obs vector at its fixed dim, and the **reward PBRS still reads the belief from
+`live_view`** (unchanged — a PBRS potential must stay a fixed, model-independent function of state). This
+is the "remove the functionality from the model when using the unified arch" knob: pair it with
+`--damage-op --move-prior-fusion` and A/B vs the same run without the mask to test whether the learned
+belief→damage op truly subsumes the usage-prior collapse. FORWARD-BEHAVIOR toggle like
+`attend_unrevealed_opponents` (no weight-shape change — just zeros an obs slice; gated in
+`check_compatible`, NO `ARCH_SIGNATURE` bump, OFF byte-identical); independent of `--damage-op` (a pure
+A/B knob) and threaded through `current_model_version` / `arch_toggles_from_model`. Current
+`MODEL_CONFIG_VERSION` = **21**.
 
 A startup smoke test (`_run_roundtrip_test` in `train_rl_agent.py`) saves to a temp dir and reloads before every `model.learn()` call — catches serialization issues immediately.
 

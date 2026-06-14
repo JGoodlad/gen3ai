@@ -492,6 +492,8 @@ def current_model_version(
     opp_belief_latent: bool = False,
     opp_belief_latent_coef: float = 0.0,
     damage_op: bool = False,
+    move_prior_fusion: bool = False,
+    mask_incoming_damage_obs: bool = False,
     vf_coef: float = 0.5,
     reward_config=None,
     value_tail_weight: float = 0.0,
@@ -526,6 +528,8 @@ def current_model_version(
     ext_kwargs["move_belief_mode"] = move_belief_mode
     ext_kwargs["opp_belief_latent"] = opp_belief_latent
     ext_kwargs["damage_op"] = damage_op
+    ext_kwargs["move_prior_fusion"] = move_prior_fusion
+    ext_kwargs["mask_incoming_damage_obs"] = mask_incoming_damage_obs
     policy_kwargs = {
         "features_extractor_class": Gen3FeaturesExtractor,
         "features_extractor_kwargs": ext_kwargs,
@@ -554,6 +558,8 @@ def arch_toggles_from_model(model) -> dict:
         "move_belief_mode": str(getattr(fe, "move_belief_mode", "off")),
         "opp_belief_latent": bool(getattr(fe, "opp_belief_latent", False)),
         "damage_op": bool(getattr(fe, "damage_op_enabled", False)),
+        "move_prior_fusion": bool(getattr(fe, "move_prior_fusion", False)),
+        "mask_incoming_damage_obs": bool(getattr(fe, "mask_incoming_damage_obs", False)),
         "use_popart": getattr(model.policy, "popart", None) is not None,
     }
 
