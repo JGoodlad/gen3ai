@@ -239,6 +239,9 @@ class ProberApp(Gen3App):
                             with Vertical(classes="summary-col"):
                                 yield Static("SWITCHES", classes="summary-col-label")
                                 yield DataTable(id="summary-switches")
+                            with Vertical(classes="summary-col"):
+                                yield Static("OPP TEAM (revealed)", classes="summary-col-label")
+                                yield DataTable(id="summary-opp")
                     # Manual-review card: what the model EXPECTED vs what HAPPENED, plus the
                     # human's funky-flag + note (space=flag, e=note, [ ]=jump, E=export).
                     with Collapsible(title=_SEC_TITLE["sec-review"], collapsed=False, id="sec-review"):
@@ -271,6 +274,7 @@ class ProberApp(Gen3App):
         self.query_one("#summary-moves", DataTable).add_columns("move", "eff", "prob")
         self.query_one("#summary-switches", DataTable).add_columns(
             "target", "prob", "hp", "status", "item", "risk-in")
+        self.query_one("#summary-opp", DataTable).add_columns("pokémon", "hp", "status", "item")
         self.query_one("#faith-table", DataTable).add_columns("action", "valid", "recorded", "re-run")
         self.query_one("#matchups-table", DataTable).add_columns("move", "×mult")
         self.query_one("#sweep-table", DataTable).add_columns("×mult", "P(chosen)", "P(switches)")
@@ -640,27 +644,12 @@ class ProberApp(Gen3App):
         head.append("   ·   ", style="dim")
         head.append(str(result).upper(),
                     style={"win": "bold green", "loss": "bold red"}.get(str(result).lower(), "dim"))
-        # Line 2 — field: weather / hazards / screens / turn (the highlighted Board line).
+        # Header line order (per request): FIELD · THREAT · CHOSE · RESULT · REWARD · CRITIC —
+        # board context first, then the decision + its outcome, with the critic surprise last.
+        # FIELD — weather / hazards / screens / turn (the highlighted Board line).
         head.append("\nFIELD   ", style="dim")
         head.append(_field_text(a.field))
-        # Line 3 — what it chose + confidence (+ a disagree flag if the model now prefers else).
-        chosen_p = _chosen_prob(a)
-        head.append("\nCHOSE   ", style="dim")
-        head.append("▶ " + (a.chosen or "?"), style="bold")
-        if chosen_p is not None:
-            head.append(f"  {chosen_p * 100:.1f}%", style=gradient_color(chosen_p))
-        if a.rerun_argmax is not None and not a.agrees:
-            head.append("   ⚠ now prefers ", style="yellow")
-            head.append(str(a.rerun_argmax), style="bold yellow")
-        # Line 3 — critic context: WHY this turn is worth a look (ΔV / TD-surprise spikes).
-        if a.value is not None:
-            head.append("\nCRITIC  ", style="dim")
-            head.append(f"V {a.value.recorded:+.2f}", style="bold")
-            if a.value.delta is not None:
-                head.append("   ΔV ", style="dim")
-                head.append(f"{a.value.delta:+.2f}", style=("green" if a.value.delta >= 0 else "red"))
-                _append_surprise(head, self._td_residual(a))
-        # Line 4 — the danger it faced: incoming KO belief + speed (the switch-or-not signal).
+        # THREAT — the danger it faced: incoming KO belief + speed (the switch-or-not signal).
         inc = a.incoming
         if inc is not None and inc.active_pko is not None:
             head.append("\nTHREAT  ", style="dim")
@@ -672,9 +661,18 @@ class ProberApp(Gen3App):
             if inc.recovery_known or inc.recovery_rate > 0:
                 head.append(f"   ·   opp recovery {inc.recovery_rate * 100:.0f}%"
                             + ("✓" if inc.recovery_known else "?"), style="dim")
-        # Line 6 — what HAPPENED: the actual result + events, to judge whether the choice was OK.
+        # CHOSE — what it chose + confidence (+ a disagree flag if the model now prefers else).
+        chosen_p = _chosen_prob(a)
+        head.append("\nCHOSE   ", style="dim")
+        head.append("▶ " + (a.chosen or "?"), style="bold")
+        if chosen_p is not None:
+            head.append(f"  {chosen_p * 100:.1f}%", style=gradient_color(chosen_p))
+        if a.rerun_argmax is not None and not a.agrees:
+            head.append("   ⚠ now prefers ", style="yellow")
+            head.append(str(a.rerun_argmax), style="bold yellow")
+        # RESULT — what HAPPENED: the actual result + events, to judge whether the choice was OK.
         _append_happened(head, a, "\nRESULT  ")
-        # Line 7 — the reward the env actually assigned (total + per-component breakdown).
+        # REWARD — the reward the env actually assigned (total + per-component breakdown).
         reward = (a.outcome or {}).get("reward")
         if isinstance(reward, dict):
             head.append("\nREWARD  ", style="dim")
@@ -687,6 +685,14 @@ class ProberApp(Gen3App):
                     head.append(f"   ·   {k}: {val}", style="dim")
         elif reward is not None:
             head.append(f"\nREWARD  {reward}", style="dim")
+        # CRITIC — last: WHY this turn is worth a look (ΔV / TD-surprise spikes).
+        if a.value is not None:
+            head.append("\nCRITIC  ", style="dim")
+            head.append(f"V {a.value.recorded:+.2f}", style="bold")
+            if a.value.delta is not None:
+                head.append("   ΔV ", style="dim")
+                head.append(f"{a.value.delta:+.2f}", style=("green" if a.value.delta >= 0 else "red"))
+                _append_surprise(head, self._td_residual(a))
         self.query_one("#summary-head", Static).update(head)
 
         # MOVES — fuse type-effectiveness (Matchups) with the policy prob (Faithfulness),
@@ -704,7 +710,9 @@ class ProberApp(Gen3App):
                    else Text("—", style="dim"))
             label = ("▶ " if r.is_chosen else "  ") + r.label
             lstyle = "bold" if r.is_chosen else ("" if r.valid else "dim")
-            prob_style = "bold" if r.is_chosen else gradient_color(r.recorded)
+            # Disabled (no-PP / locked) moves render grey, not the red of a low prob.
+            prob_style = (_DISABLED_GREY if not r.valid
+                          else "bold" if r.is_chosen else gradient_color(r.recorded))
             mt.add_row(Text(label, style=lstyle), eff,
                        Text(f"{r.recorded * 100:5.1f}%", style=prob_style))
 
@@ -726,11 +734,14 @@ class ProberApp(Gen3App):
         for r, pko in sorted(paired, key=lambda rp: rp[0].recorded, reverse=True):
             target = r.label.split(":", 1)[-1]
             label = ("▶ " if r.is_chosen else "  ") + target
-            lstyle = "bold" if r.is_chosen else ("" if r.valid else "dim")
-            prob_style = "bold" if r.is_chosen else gradient_color(r.recorded)
+            # An illegal switch (fainted mon / the active mon) reads grey, not the red of a 0% prob.
+            disabled = not r.valid
+            lstyle = "bold" if r.is_chosen else (_DISABLED_GREY if disabled else "")
+            prob_style = (_DISABLED_GREY if disabled
+                          else "bold" if r.is_chosen else gradient_color(r.recorded))
             hp, status, item = attrs.get(target.lower(), (None, "", ""))
-            hp_cell = _hp_bar(hp) if hp is not None else Text("?", style="dim")
-            if not r.valid:
+            hp_cell = _hp_bar(hp, disabled=disabled) if hp is not None else Text("?", style="dim")
+            if disabled:
                 risk = Text("—", style="dim")          # fainted / the active mon: can't switch in
             elif pko is None:
                 risk = Text("?", style="dim")
@@ -739,6 +750,22 @@ class ProberApp(Gen3App):
             st.add_row(Text(label, style=lstyle),
                        Text(f"{r.recorded * 100:5.1f}%", style=prob_style),
                        hp_cell, _status_cell(status), _item_cell(item), risk)
+
+        # OPP TEAM — the opponent's revealed mons (active ▶ then revealed bench): hp · status ·
+        # item (items decoded from the obs as they're revealed). Gen3 has no team preview, so only
+        # revealed mons appear; fainted ones read grey. The mirror of our SWITCHES, opponent-side.
+        ot = self.query_one("#summary-opp", DataTable)
+        ot.clear()
+        if a.board is None:
+            ot.add_row(Text("—", style="dim"), "", "", "")
+        else:
+            opp = a.board.opp
+            ot.add_row(Text("▶ " + opp.active_species, style="bold"),
+                       _hp_bar(opp.active_hp), _status_cell(opp.status), _item_cell(opp.item))
+            for m in opp.bench:
+                ot.add_row(Text(m.species, style=(_DISABLED_GREY if m.fainted else "")),
+                           _hp_bar(m.hp, disabled=m.fainted),
+                           _status_cell(m.status), _item_cell(m.item))
 
     def _render_board(self, a: InvocationAnalysis) -> None:
         summ = self.query_one("#board-summary", Static)
@@ -1116,14 +1143,18 @@ def _status_cell(status: str) -> Text:
     return Text(status, style="yellow") if status else Text("—", style="dim")
 
 
-def _hp_bar(hp: str, width: int = 6) -> Text:
-    """A compact colour-graded health bar + percentage, e.g. green '████▌░ 76%'. Faint shows an
-    empty red bar; an unparseable value falls back to dim text."""
+_DISABLED_GREY = "grey50"   # disabled/fainted slots → neutral grey (NOT red — red means "low HP, real danger")
+
+
+def _hp_bar(hp: str, width: int = 6, disabled: bool = False) -> Text:
+    """A compact colour-graded health bar + percentage, e.g. green '████▌░ 76%'. ``disabled``
+    (a fainted mon / an illegal switch) renders grey rather than the HP gradient, so 'dead/
+    unavailable' reads differently from 'alive but low' (which stays red). Unparseable → dim."""
     f = _hp_frac(hp)
     if f is None:
         return Text(str(hp), style="dim")
     filled = int(round(f * width))
-    col = gradient_color(f)
+    col = _DISABLED_GREY if disabled else gradient_color(f)
     t = Text()
     t.append("█" * filled + "░" * (width - filled), style=col)
     t.append(f" {hp}", style=col)

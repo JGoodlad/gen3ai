@@ -107,7 +107,7 @@ DataTable {
     text-style: bold;
 }
 
-#summary-moves, #summary-switches {
+#summary-moves, #summary-switches, #summary-opp {
     width: auto;
     height: auto;
 }

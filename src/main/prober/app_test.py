@@ -13,8 +13,16 @@ import numpy as np
 from textual.widgets import Collapsible, DataTable, ListView, Static, Tree
 
 from agents.action.constants import MOVE_START
-from main.prober.app import PaneSplitter, ProberApp
+from main.prober.app import _DISABLED_GREY, PaneSplitter, ProberApp, _hp_bar
 from main.prober.model import ObsOffsets
+
+
+def test_hp_bar_disabled_is_grey_not_red():
+    """A fainted / illegal slot renders grey; an alive low-HP mon keeps its (red) HP gradient."""
+    dead = _hp_bar("faint", disabled=True)
+    assert all(sp.style == _DISABLED_GREY for sp in dead.spans)
+    alive_low = _hp_bar("8%")                       # alive but low → red-ish, NOT the disabled grey
+    assert all(sp.style != _DISABLED_GREY for sp in alive_low.spans)
 
 # Small synthetic obs layout (mirrors engine_test).
 _OFF = ObsOffsets(mm_off=10, om_off=20, tm_off=164, active_block_dim=5,
@@ -77,6 +85,7 @@ def _write_trace(tmp_path, chosen="thunderbolt", has_state=1):
     obs = np.zeros((1, _OBS_LEN), dtype=np.float32)
     obs[0, _OFF.mm_off:_OFF.mm_off + 4] = [0.5, 0.25, 0.0, 0.125]
     np.savez(d / "win_001_states.npz", obs=obs,
+             values=np.array([1.5], dtype=np.float32),   # → a.value so the CRITIC line renders
              has_state=np.array([has_state], dtype=np.int8))
     return str(tmp_path / "run")
 
@@ -224,6 +233,8 @@ async def test_select_battle_populates_panels(tmp_path):
         # Summary splits the 11 actions: 5 moves (4 + struggle) | 6 switches.
         assert app.query_one("#summary-moves", DataTable).row_count == 5
         assert app.query_one("#summary-switches", DataTable).row_count == 6
+        # opp-team column: the revealed opponent (jynx active, no revealed bench)
+        assert app.query_one("#summary-opp", DataTable).row_count == 1
         head = str(app.query_one("#summary-head", Static).render())
         assert "zapdos" in head and "jynx" in head and "thunderbolt" in head  # context header
         assert "FIELD" in head and "SUN" in head  # field line (weather/hazards/screens) present
@@ -234,6 +245,9 @@ async def test_select_battle_populates_panels(tmp_path):
         # section titles carry their 1-indexed hotkey
         assert app.query_one("#sec-summary", Collapsible).title == "1  Summary"
         assert app.query_one("#sec-outcome", Collapsible).title == "8  Outcome"
+        # header line order: FIELD · CHOSE · RESULT · REWARD · CRITIC (critic moved to last)
+        assert (head.index("FIELD") < head.index("CHOSE") < head.index("RESULT")
+                < head.index("REWARD") < head.index("CRITIC"))
 
 
 async def test_switch_decision_has_no_sweep(tmp_path):

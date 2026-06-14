@@ -91,19 +91,22 @@ key/label/binding never drift. The top one is **Summary** (`1`, open by default)
 decision dashboard for walking "funky turns". A context header — line 1 the matchup, each
 active as **species + colour-graded HP bar** (`_hp_bar`) + bundled **status/volatiles** in
 `[...]` (e.g. `[TOX(5)|SUB]`) + held **item** as `@item` (incl. the **opponent's once
-revealed** — Choice items highlighted) + outcome; line 2 the **FIELD** line
-(weather/hazards/screens/turn, the same `_field_text` the Board shows); then **CHOSE**
-chosen+confidence [+ a `⚠ now prefers X` on disagree] · **CRITIC** V·ΔV·**TD-surprise** (always
-paired with a plain-language gloss — "worse than the critic expected" — via `_append_surprise`/
-`_surprise_phrase`, so the ML term is self-explaining) · **THREAT** incoming
-P(KO)·outspeed·worst-on-team·opp-recovery · **RESULT** what actually happened (our/opp action +
-hpΔ + events) · **REWARD** the env's reward (total + per-component breakdown) — over two
-side-by-side **content-width** tables (packed at the left, not split 50/50):
-**MOVES** (each move's type-effectiveness `×mult` fused
-with its policy prob, ranked by prob) and **SWITCHES** (each target's prob · **hp** (a colour
-bar) · **status/volatiles** · held **item** · **risk-in** = `incoming.per_slot_pko`
-for that mon, the P(KO) on the switch-in if it comes in — `—` for the active/fainted slots
-that can't switch in). It composes
+revealed** — Choice items highlighted) + outcome; then, in order, **FIELD**
+(weather/hazards/screens/turn, the same `_field_text` the Board shows) · **THREAT** incoming
+P(KO)·outspeed·worst-on-team·opp-recovery · **CHOSE** chosen+confidence [+ a `⚠ now prefers X`
+on disagree] · **RESULT** what actually happened (our/opp action + hpΔ + events) · **REWARD**
+the env's reward (total + per-component breakdown) · **CRITIC** (last) V·ΔV·**TD-surprise**
+(always paired with a plain-language gloss — "worse than the critic expected" — via
+`_append_surprise`/`_surprise_phrase`, so the ML term is self-explaining). Below sit **three**
+side-by-side **content-width** tables (packed at the left, not split): **MOVES** (each move's
+type-effectiveness `×mult` fused with its policy prob, ranked by prob), **SWITCHES** (each
+target's prob · **hp** (a colour bar) · **status/volatiles** · held **item** · **risk-in** =
+`incoming.per_slot_pko`, the P(KO) on the switch-in if it comes in), and **OPP TEAM** (the
+opponent's REVEALED mons — active ▶ then revealed bench — species · hp · status · item, the
+mirror of our switches; Gen3 has no team preview so only revealed mons appear). **Disabled
+slots** (a fainted mon / an illegal switch / a no-PP move) render **grey** (`_DISABLED_GREY`),
+NOT the red of a low value — so "dead/unavailable" reads differently from "alive but low HP
+= real danger". It composes
 existing `InvocationAnalysis` fields only (no new obs/engine analysis): `actions` (probs),
 `matchups` (effectiveness), `incoming` (the P(KO) belief + `per_slot_pko`), `value`
 (critic), `board` (hp/status/item — status+volatiles bundled by the recorder's
