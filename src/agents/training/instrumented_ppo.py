@@ -110,6 +110,118 @@ class InstrumentedMaskablePPO(MaskablePPO):
     # up-weight move prediction. Training-only, like the coef.
     opp_belief_moves_weight: float = 1.0
 
+    # Set by train_rl_agent (like opp_belief_aux_coef). The MOVE-belief reinjection-head loss weight:
+    # move_belief_coef * (BCE over the scored opp slots) is added to each minibatch. 0.0 = OFF
+    # (byte-identical). Training-only (scales the loss, never a forward pass) → NOT version-locked. The
+    # MODE (which slots) lives on the extractor (move_belief_mode) — read from there, single source.
+    move_belief_coef: float = 0.0
+
+    @staticmethod
+    def _move_belief_loss(ml, known_moves, belief_moves, mode: str):
+        """Supervised loss for the MoveBelief REINJECTION head (``last_move_belief_logits`` [B,6,M]).
+
+        Two DISJOINT slot populations, selected by ``mode``:
+        - REVEALED slots (mode revealed|both): seen mons. ``known_moves`` [B,6,4] holds each revealed
+          slot's FULL privileged moveset; those slots are supervised DIRECTLY (slot==species, no
+          matching) by a multi-label BCE — the head learns the mon's as-yet-UNREVEALED moves
+          (the surprise-OHKO new-move gap).
+        - UNREVEALED slots (mode unrevealed|both): hidden mons. ``belief_moves`` [B,6,4] holds the hidden
+          movesets at the believed (anonymous) slots; the k believed-slot predictions are
+          order-invariantly matched to the k hidden movesets (per-sample min-cost assignment — the
+          slots are interchangeable, so a fixed slot↔mon target would chase a reveal-shifting
+          assignment, the same defect the species aux fixed). The matching cost is the
+          assignment-relevant part of BCE, ``-(pred·target)`` (the per-slot constant terms drop out of
+          the argmin), so it is a cheap einsum, not a full pairwise BCE.
+
+        The two label tensors PAD each other's slots (known_moves PADs believed slots; belief_moves
+        PADs revealed slots), so 'both' simply scores each population with its own rule. A slot whose
+        moveset is all-PAD (unknown moves) is NOT supervised. Returns (loss, metrics) or None
+        (off / labels absent / nothing scorable). FAILS LOUD on an out-of-vocab move id. Pure + static
+        (unit-tests without a full PPO)."""
+        if ml is None:
+            return None
+        device = ml.device
+        n_moves = ml.shape[-1]
+        terms = []
+        mv_tp = mv_pred_pos = mv_true_pos = 0
+        n_revealed = n_unrevealed = 0
+
+        def _vocab_check(ids):
+            if ids.numel() and bool((ids >= n_moves).any()):
+                raise ValueError(
+                    f"move-belief label out of vocab: max {int(ids.max())} (n_moves {n_moves}) — "
+                    "the embedding-num pipeline is corrupt (real Gen-3 move nums are all < 400)."
+                )
+
+        # ---- REVEALED: direct multi-label BCE (slot identity == revealed species) ----
+        if mode in ("revealed", "both") and known_moves is not None:
+            km = known_moves.long().to(device)                                     # [B, 6, 4]
+            valid = km >= 0
+            _vocab_check(km[valid])
+            slot_has = valid.any(-1)                                               # [B, 6]
+            if bool(slot_has.any()):
+                multi_hot = th.zeros_like(ml)                                      # [B, 6, M]
+                bb, ss, _ = valid.nonzero(as_tuple=True)
+                multi_hot[bb, ss, km[valid]] = 1.0
+                per_slot = F.binary_cross_entropy_with_logits(
+                    ml, multi_hot, reduction="none").mean(-1)                      # [B, 6]
+                terms.append(per_slot[slot_has].reshape(-1))
+                with th.no_grad():
+                    sel = slot_has.unsqueeze(-1)
+                    pp = (ml > 0.0) & sel
+                    mh = multi_hot.bool() & sel
+                    mv_tp += int((pp & mh).sum()); mv_pred_pos += int(pp.sum()); mv_true_pos += int(mh.sum())
+                n_revealed += int(slot_has.sum())
+
+        # ---- UNREVEALED: order-invariant (Hungarian) multi-label BCE over the believed slots ----
+        if mode in ("unrevealed", "both") and belief_moves is not None:
+            bm = belief_moves.long().to(device)                                    # [B, 6, 4]
+            valid = bm >= 0
+            _vocab_check(bm[valid])
+            slot_has = valid.any(-1)                                               # [B, 6] believed slots w/ a moveset
+            counts = slot_has.sum(1)                                               # [B] k per sample
+            for k in range(1, ml.shape[1] + 1):
+                sel = (counts == k).nonzero(as_tuple=True)[0]
+                if sel.numel() == 0:
+                    continue
+                n = sel.numel()
+                slot_idx = slot_has[sel].nonzero(as_tuple=False)[:, 1].view(n, k)  # [n, k] believed positions
+                rows = sel.view(n, 1).expand(n, k)
+                preds = ml[rows, slot_idx]                                         # [n, k, M] logits
+                tgt = th.zeros((n, k, n_moves), device=device)                     # [n, k, M] target multi-hots
+                ids = bm[rows, slot_idx]                                           # [n, k, 4]
+                vmask = ids >= 0
+                if bool(vmask.any()):
+                    aa, kk, _ = vmask.nonzero(as_tuple=True)
+                    tgt[aa, kk, ids[vmask]] = 1.0
+                # cost[a,i,j] = assignment-relevant part of BCE(pred_i, tgt_j) = -(pred_i · tgt_j). The
+                # per-slot constant BCE terms are independent of the assignment → drop from the argmin.
+                cost = -th.einsum('akm,ajm->akj', preds, tgt)                      # [n, k, k]
+                perms = th.tensor(list(itertools.permutations(range(k))), dtype=th.long, device=device)
+                ii = th.arange(k, device=device).view(1, k).expand(perms.shape[0], k)
+                best_perm = perms[cost[:, ii, perms].sum(-1).argmin(1)]            # [n, k] min-cost assignment
+                matched = th.gather(tgt, 1, best_perm[:, :, None].expand(n, k, n_moves))  # [n, k, M]
+                per_slot = F.binary_cross_entropy_with_logits(
+                    preds, matched, reduction="none").mean(-1)                     # [n, k]
+                terms.append(per_slot.reshape(-1))
+                with th.no_grad():
+                    pp = preds > 0.0
+                    mh = matched.bool()
+                    mv_tp += int((pp & mh).sum()); mv_pred_pos += int(pp.sum()); mv_true_pos += int(mh.sum())
+                n_unrevealed += n * k
+
+        if not terms:
+            return None
+        loss = th.cat(terms).mean()
+        metrics = {
+            "bce": float(loss.item()),
+            "precision": (mv_tp / mv_pred_pos) if mv_pred_pos else 0.0,
+            "recall": (mv_tp / mv_true_pos) if mv_true_pos else 0.0,
+            "revealed_slots": float(n_revealed),
+            "unrevealed_slots": float(n_unrevealed),
+        }
+        return loss, metrics
+
     @staticmethod
     def _belief_aux_loss(bl, sp_labels, mv_labels, moves_weight: float = 1.0):
         """Order-invariant (Hungarian / DETR-style) hidden-opponent belief aux loss.
@@ -275,6 +387,7 @@ class InstrumentedMaskablePPO(MaskablePPO):
         belief_metrics: dict[str, list[float]] = {}  # +BELIEF: per-minibatch aux diagnostics (dict of lists)
         # Compute once: the aux path is fully skipped when off → loss stays byte-identical to upstream.
         belief_aux_on = self.opp_belief_aux_coef > 0.0
+        move_belief_on = self.move_belief_coef > 0.0  # +MOVE-BELIEF reinjection-head supervised loss
 
         continue_training = True
 
@@ -387,19 +500,49 @@ class InstrumentedMaskablePPO(MaskablePPO):
                         for _bk, _bv in belief_m.items():
                             belief_metrics.setdefault(_bk, []).append(float(_bv))
 
+                # +MOVE-BELIEF: predict+reinject the opp moveset. The extractor forward (run by
+                # evaluate_actions above) stashed last_move_belief_logits; known_moves/belief_moves ride
+                # the same training-only obs dict. Folded at move_belief_coef; mode read off the extractor
+                # (single source). OFF → skipped (byte-identical). Its gradient ALSO flows into the trunk
+                # via the reinjection, so it joins the aux pull on the grad-balance probe.
+                move_belief_term = None
+                if move_belief_on:
+                    mb_out = self._move_belief_loss(
+                        self.policy.features_extractor.last_move_belief_logits,
+                        rollout_data.observations.get("known_moves"),
+                        rollout_data.observations.get("belief_moves"),
+                        self.policy.features_extractor.move_belief_mode,
+                    )
+                    if mb_out is not None:
+                        mb_loss, mb_m = mb_out
+                        move_belief_term = self.move_belief_coef * mb_loss
+                        loss = loss + move_belief_term
+                        mb_m["loss"] = float(mb_loss.item())
+                        for _mk, _mv in mb_m.items():
+                            belief_metrics.setdefault("move_" + _mk, []).append(float(_mv))
+
+                # Combined auxiliary pull on the shared trunk (species belief + move belief), for the
+                # grad-balance probe — both compete with policy/value there.
+                aux_probe_term = belief_aux_term
+                if move_belief_term is not None:
+                    aux_probe_term = (
+                        move_belief_term if aux_probe_term is None else aux_probe_term + move_belief_term
+                    )
+                aux_on = belief_aux_on or move_belief_on
+
                 # +INSTRUMENTATION: sample the shared-trunk gradient balance on the first
                 # minibatch (graph alive here; the probe uses read-only autograd.grad with
                 # retain_graph, so loss.backward() below is unaffected). Skipped when the
                 # extractor exposes no shared-trunk params (non-Gen3 policy).
-                # Sample once per train(). When belief is ON, wait for a minibatch that actually HAS
-                # believed slots (belief_aux_term set) so grad/belief_share isn't silently dropped for
-                # the call; when belief is OFF, sample on the first minibatch as before.
-                if shared_trunk and not grad_balance and (not belief_aux_on or belief_aux_term is not None):
+                # Sample once per train(). When an aux is ON, wait for a minibatch that actually HAS
+                # scored slots (aux_probe_term set) so grad/belief_share isn't silently dropped for
+                # the call; when both are OFF, sample on the first minibatch as before.
+                if shared_trunk and not grad_balance and (not aux_on or aux_probe_term is not None):
                     grad_balance = grad_balance_metrics(
                         policy_loss + self.ent_coef * entropy_loss,
                         self.vf_coef * value_loss,
                         shared_trunk,
-                        aux_term=belief_aux_term,  # belief grad-share on the shared trunk (None = off)
+                        aux_term=aux_probe_term,  # species+move belief grad-share on the trunk (None = off)
                     )
 
                 # Calculate approximate form of reverse KL Divergence for early stopping

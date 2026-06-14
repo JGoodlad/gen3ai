@@ -13,8 +13,9 @@ have **different** gates:
 
 > **Off-hot-path exception — `belief_labels.py`.** This module (the pure builder of the
 > hidden-opponent belief-aux labels) lives here for cohesion with the obs layer but is **NOT called
-> by `encode`** — `Gen3Env.step/reset` invoke it only when `--opp-belief-aux-coef>0`, to emit the
-> privileged training-only `belief_species`/`belief_moves` Dict keys (see
+> by `encode`** — `Gen3Env.step/reset` invoke it only when `--opp-belief-aux-coef>0` or
+> `--move-belief-mode != off`, to emit the privileged training-only `belief_species`/`belief_moves`
+> (and, for move-belief known/both, `known_moves`) Dict keys (see
 > `src/agents/training/CLAUDE.md`). So it adds **zero** cost to the default obs build (benchmark
 > confirmed: `state_encoder.encode` unchanged, `belief_labels` absent from the profile). Changes to
 > `encode` itself still trip the gate below.

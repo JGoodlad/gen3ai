@@ -22,15 +22,18 @@ Embedding dims (`species_embedding_dim`, `move_embedding_dim`, etc.) live in `st
 
 `forward_internal` is decomposed into phase `nn.Module`s, chained by a thin orchestrator:
 
-`ObsUnpack` → `PokemonEncoder` → `[BeliefSlots?]` → `TeamTransformer` → `CLSPool` → `[BeliefHead?]` →
-`ProjectionAssembler`, then **two** root heads (`pre_proj_norm`/`projection` for policy,
-`value_pre_norm`/`value_projection` for value), each → `ReLU`.
+`ObsUnpack` → `PokemonEncoder` → `[BeliefSlots?]` → `TeamTransformer` → `[BeliefHead?]` →
+`[MoveBelief?]` → `CLSPool` → `ProjectionAssembler`, then **two** root heads (`pre_proj_norm`/
+`projection` for policy, `value_pre_norm`/`value_projection` for value), each → `ReLU`.
 
-`BeliefSlots`/`BeliefHead` are built only when `opp_belief_slots` (`--opp-belief-aux-coef>0`); off,
-the chain is the baseline `ObsUnpack → PokemonEncoder → TeamTransformer → CLSPool → ProjectionAssembler`
-byte-for-byte. `BeliefSlots` swaps the un-revealed opp role-tokens for learned unknown-mon tokens
-*before* the transformer (so the belief is refined in-lineup); `BeliefHead` reads the refined opp
-tokens *after* the transformer and stashes the species/moves aux logits — see the v16 versioning note.
+`BeliefSlots`/`BeliefHead` are built only when `opp_belief_slots` (`--opp-belief-aux-coef>0`),
+`MoveBelief` only when `move_belief_mode != off`; with all off the chain is the baseline `ObsUnpack →
+PokemonEncoder → TeamTransformer → CLSPool → ProjectionAssembler` byte-for-byte. `BeliefSlots` swaps the
+un-revealed opp role-tokens for learned unknown-mon tokens *before* the transformer (so the belief is
+refined in-lineup); `BeliefHead` reads the refined opp tokens *after* the transformer and stashes the
+species/moves aux logits (a side readout — does NOT feed forward); `MoveBelief` predicts + **reinjects**
+the moveset into `their_team_out` *before* the CLS pools (so it DOES flow to the heads) — see the v16 / v17
+versioning notes.
 
 **Dual-head value readout (H4 / Option C).** The transformer body is shared, but the actor and
 critic read it through independent paths. `CLSPool` holds a third query `value_cls` that attends
@@ -244,7 +247,25 @@ like `opp_belief_cls_k`, OFF = baseline byte-for-byte (NO `ARCH_SIGNATURE` bump)
 enable signal (auto-sets `opp_belief_slots` + forces `--attend-unrevealed-opponents`). The privileged
 labels (`belief_species`/`belief_moves`) are TRAINING-ONLY Dict-obs keys emitted by `Gen3Env`
 (`emit_belief_labels`, sourced from `battle2.team`; builder in `agents.observation.belief_labels`).
-Current `MODEL_CONFIG_VERSION` = **16**.
+
+**Move-belief REINJECTION (`move_belief_mode` / `--move-belief-mode`, v17).** Makes the predicted
+moveset *flow into* the representation instead of being a dead-end readout (the "make it meaningful"
+mechanism). When `move_belief_mode != "off"`, **`MoveBelief`** runs AFTER `BeliefHead` and BEFORE the
+CLS pools: per opp slot it predicts the moveset (`move_head: D_MODEL→n_moves`), **soft-embeds** it
+(`sigmoid(logits) @ move_embedding` — the expected-moveset embedding), projects it back to token space
+(`reinject`, small-init so the enrichment starts ≈0), ADDs it as a residual to the slot token (gated to
+the slots the mode selects), and LayerNorms. The enriched `their_team_out` then feeds the CLS pools, so
+**both heads reason about the believed moves**. `mode` picks which slots are enriched + scored:
+`revealed` = seen mons (predict their still-UNREVEALED moves — the defensible, surprise-OHKO lever),
+`unrevealed` = hidden/believed slots (omniscient; REQUIRES `--opp-belief-aux-coef>0`, else the hidden
+slots are empty placeholders), `both`. The revealed-vs-unrevealed axis is the defensible-vs-omniscient A/B. Logits stash at `features_extractor.last_move_belief_logits`
+(None when off), consumed ONLY by `InstrumentedMaskablePPO._move_belief_loss` (folded at
+`move_belief_coef`). `move_belief_mode` (str) is the **state_dict-changing arch toggle** — gated in
+`check_compatible` (string compare), OFF = baseline byte-for-byte (NO `ARCH_SIGNATURE` bump),
+hard-requires `attend_unrevealed_opponents`; `move_belief_coef` (float) is a **training-only** loss
+weight, recorded but NOT version-locked. Labels: `known_moves` (revealed mons' FULL privileged movesets,
+direct BCE) + the shared `belief_moves` (hidden slots, Hungarian) — TRAINING-ONLY Dict-obs keys from
+`Gen3Env` (builder in `agents.observation.belief_labels`). Current `MODEL_CONFIG_VERSION` = **17**.
 
 A startup smoke test (`_run_roundtrip_test` in `train_rl_agent.py`) saves to a temp dir and reloads before every `model.learn()` call — catches serialization issues immediately.
 

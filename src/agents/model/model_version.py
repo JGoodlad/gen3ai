@@ -104,7 +104,19 @@ from typing import Any, Dict, List
 #   opp_belief_aux_coef is a TRAINING-ONLY coefficient (like ent_coef): it scales the aux loss, affects no
 #   forward pass, so it is recorded for provenance but NOT version-locked (NOT in check_compatible / any
 #   check_*; a resume may change it freely). Old configs migrate to opp_belief_slots=False / coef=0.0.
-MODEL_CONFIG_VERSION = 16
+#
+# v17: added `move_belief_mode` (the move-prediction REINJECTION arch toggle: off|revealed|unrevealed|both) +
+#   `move_belief_coef` (its training-only loss weight). move_belief_mode is STRUCTURAL like opp_belief_slots:
+#   any value != "off" builds a MoveBelief module that predicts each opp mon's moveset, soft-embeds it
+#   (sigmoid(logits) @ move_embedding) and ADDS the projection back onto the opp token BEFORE the CLS pools
+#   — so the predicted moves flow through to both heads. The mode selects which slots get enriched
+#   (revealed = seen mons, unrevealed = believed slots, both). It changes the state_dict (a new Linear head +
+#   reinjection projection + LayerNorm), so it is gated in check_compatible() with a string compare. Requires
+#   attend_unrevealed_opponents (enforced at extractor build). OFF reproduces the baseline arch byte-for-byte
+#   → NO ARCH_SIGNATURE bump. move_belief_coef is a TRAINING-ONLY coefficient (like opp_belief_aux_coef):
+#   it scales the move-belief supervised loss, affects no forward pass, so it is recorded for provenance but
+#   NOT version-locked. Old configs migrate to move_belief_mode="off" / move_belief_coef=0.0.
+MODEL_CONFIG_VERSION = 17
 
 # Change this when the neural architecture changes structurally in a way that makes
 # weights from a different signature incompatible (e.g. adding LSTM, replacing attention).
@@ -434,6 +446,15 @@ class ModelVersion:
     # aux-loss weight on the belief CE+BCE. Affects only the loss magnitude, not the forward, so it is
     # recorded for provenance but EXCLUDED from check_compatible AND has no dedicated check_*. 0.0 = off.
     opp_belief_aux_coef: float = 0.0
+    # v17 STRUCTURAL toggle (weight-shape via the MoveBelief module: a move head + a reinject Linear).
+    # Predicts each opp slot's moveset and REINJECTS it into the token (flow-through). 'off' = no module
+    # (baseline byte-for-byte); 'revealed'|'unrevealed'|'both' build it + change the forward (which slots are
+    # enriched). Like attend_unrevealed_opponents the mode also changes the trained forward, so the
+    # STRING is gated in check_compatible; OFF reproduces baseline (NO ARCH_SIGNATURE bump). Requires
+    # attend_unrevealed_opponents.
+    move_belief_mode: str = "off"
+    # v17 TRAINING-ONLY loss coefficient for the move belief (like opp_belief_aux_coef). 0.0 = no aux.
+    move_belief_coef: float = 0.0
 
     @classmethod
     def from_layout_and_policy_kwargs(
@@ -444,6 +465,7 @@ class ModelVersion:
         reward_config=None,
         value_tail_weight: float = 0.0,
         opp_belief_aux_coef: float = 0.0,
+        move_belief_coef: float = 0.0,
     ) -> ModelVersion:
         from agents.model.features_extractor import (
             ROLE_TOKEN_SIZE,
@@ -502,8 +524,12 @@ class ModelVersion:
             opp_belief_slots=bool(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("opp_belief_slots", False)
             ),
+            move_belief_mode=str(
+                policy_kwargs.get("features_extractor_kwargs", {}).get("move_belief_mode", "off")
+            ),
             value_tail_weight=float(value_tail_weight),
             opp_belief_aux_coef=float(opp_belief_aux_coef),
+            move_belief_coef=float(move_belief_coef),
         )
 
     def to_json(self) -> str:
@@ -614,6 +640,17 @@ class ModelVersion:
                 "The hidden-opponent belief-aux module (learned unknown-mon slot tokens + BeliefHead) "
                 "changes the state_dict, so it cannot be toggled on an existing model.\n"
                 "Resume with the matching --opp-belief-aux-coef setting, or start a fresh training run."
+            )
+
+        # Structural toggle — the MoveBelief module (move head + reinject Linear) is in the state_dict
+        # AND its mode changes the trained forward (which slots are enriched). Gated as a STRING, every
+        # load; the training-only move_belief_coef is NOT checked.
+        if self.move_belief_mode != saved.move_belief_mode:
+            raise ModelVersionError(
+                f"move_belief_mode mismatch: saved={saved.move_belief_mode!r}, current={self.move_belief_mode!r}.\n"
+                "The move-belief module (predict+reinject the opp moveset) changes the state_dict and the "
+                "forward, so the mode cannot change on an existing model.\n"
+                "Resume with the matching --move-belief-mode setting, or start a fresh training run."
             )
 
     def check_opponent_compatible(self, foreign: "ModelVersion") -> None:
@@ -813,4 +850,10 @@ def _migrate_config(data: dict) -> dict:
         data.setdefault("opp_belief_slots", False)
         data.setdefault("opp_belief_aux_coef", 0.0)
         data["config_version"] = 16
+    if version < 17:
+        # v17: added the move-belief reinjection toggle (off) + its training-only loss coefficient (0.0).
+        # Old models had no MoveBelief module and no move-belief loss.
+        data.setdefault("move_belief_mode", "off")
+        data.setdefault("move_belief_coef", 0.0)
+        data["config_version"] = 17
     return data

@@ -933,6 +933,34 @@ The training half of the in-place belief feature (model side in `src/agents/mode
   over thousands of live decisions:
   `python src/agents/training/poke_env_gaps/belief_labels_fuzz_test.py [n_battles]`.
 
+## Move-belief reinjection loss (`--move-belief-mode` / `--move-belief-coef`)
+
+The training half of the move-belief feature (model side: `src/agents/model/CLAUDE.md` → MoveBelief,
+v17). The predicted moveset is REINJECTED into the opp token (it flows to both heads), AND supervised:
+- **Labels (`gen3_env.py`).** When `move_belief_mode != "off"` (or species-belief on), the trainee obs
+  carries `belief_moves[6,4]` (hidden slots, shared with the species aux) and — when mode ∈
+  {revealed, both} — `known_moves[6,4]`: each REVEALED slot's FULL privileged moveset (so the head learns
+  the as-yet-unrevealed moves). Both are training-only, sourced from `battle2.team`; builder
+  `agents.observation.belief_labels.build_known_move_labels`. (`known_moves` keeps its name — it holds the
+  privileged-*known* moveset of a revealed mon; the `revealed`/`unrevealed` mode names refer to the MON.)
+- **Loss (`instrumented_ppo.py` `_move_belief_loss`).** Reads `last_move_belief_logits` + the move
+  labels, folds `move_belief_coef · BCE` over two DISJOINT slot populations: **revealed** slots (direct
+  multi-label BCE on `known_moves` — slot==species, no matching) and **unrevealed** slots (order-invariant
+  Hungarian BCE on `belief_moves` — the believed slots are anonymous; cost is the assignment-relevant
+  `-(pred·target)`, a cheap einsum). `mode` selects which population(s) are scored. Mode is read off the
+  extractor (single source); coef is a model attr (training-only).
+- **Metrics (`train/belief_move_*`).** `bce`, `precision`, `recall`, `revealed_slots`, `unrevealed_slots`,
+  `loss`. The move-loss gradient ALSO reaches the trunk via the reinjection, so it joins the species aux
+  in the combined `grad/belief_share` probe.
+- **Versioning.** `move_belief_mode` (str) is the version-checked structural toggle (fresh-only;
+  auto-forces `--attend-unrevealed-opponents`; `unrevealed`/`both` additionally REQUIRE `--opp-belief-aux-coef>0`
+  so the hidden slots carry learned tokens); `move_belief_coef` is training-only, **read back on a
+  flagless resume**. The revealed-vs-unrevealed axis is the defensible-vs-omniscient A/B.
+- **Tests.** Unit: `move_belief_loss_test.py` (direct-BCE, Hungarian order-invariance + min-cost match,
+  mode gating, grad, fail-loud), `agents/model/move_belief_test.py` (module mask-gating + grad +
+  per-mode wiring + off byte-identical), `belief_labels_test.py` (`build_known_move_labels`),
+  `snapshot_test.py` (version gate + threading).
+
 ## Process liveness guards (`watchdog.py`)
 
 Two daemon-thread watchdogs keep a hung/abandoned run from lingering:

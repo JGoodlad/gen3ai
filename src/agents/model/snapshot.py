@@ -487,6 +487,8 @@ def current_model_version(
     value_active_readout: bool = False,
     use_popart: bool = False,
     opp_belief_aux_coef: float = 0.0,
+    move_belief_mode: str = "off",
+    move_belief_coef: float = 0.0,
     vf_coef: float = 0.5,
     reward_config=None,
     value_tail_weight: float = 0.0,
@@ -518,6 +520,7 @@ def current_model_version(
     ext_kwargs["opp_belief_cls_k"] = opp_belief_cls_k
     ext_kwargs["opp_belief_slots"] = opp_belief_slots
     ext_kwargs["value_active_readout"] = value_active_readout
+    ext_kwargs["move_belief_mode"] = move_belief_mode
     policy_kwargs = {
         "features_extractor_class": Gen3FeaturesExtractor,
         "features_extractor_kwargs": ext_kwargs,
@@ -527,6 +530,7 @@ def current_model_version(
     return ModelVersion.from_layout_and_policy_kwargs(
         ext_kwargs["layout"], policy_kwargs, vf_coef=vf_coef, reward_config=reward_config,
         value_tail_weight=value_tail_weight, opp_belief_aux_coef=opp_belief_aux_coef,
+        move_belief_coef=move_belief_coef,
     )
 
 
@@ -542,6 +546,7 @@ def arch_toggles_from_model(model) -> dict:
         "opp_belief_cls_k": int(getattr(fe, "opp_belief_cls_k", 0)),
         "opp_belief_slots": bool(getattr(fe, "opp_belief_slots", False)),
         "value_active_readout": bool(getattr(fe, "value_active_readout", False)),
+        "move_belief_mode": str(getattr(fe, "move_belief_mode", "off")),
         "use_popart": getattr(model.policy, "popart", None) is not None,
     }
 

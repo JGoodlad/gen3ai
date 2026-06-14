@@ -13,7 +13,8 @@ from agents.observation.constants import (
     TEAM_SIZE, OFFSET_OPP_TEAM, POKEMON_FULL_DIM, POKEMON_SPECIES_KNOWN_OFFSET,
 )
 from agents.observation.belief_labels import (
-    build_belief_labels, zero_belief_labels, BELIEF_MOVE_SLOTS,
+    build_belief_labels, build_known_move_labels, zero_belief_labels, zero_known_moves,
+    BELIEF_MOVE_SLOTS,
 )
 from agents.observation.turn_delta_encoder import TurnDeltaEncoder
 from agents.model.features_extractor import N_HISTORY_TURNS
@@ -32,7 +33,8 @@ from utils.logging.levels import LogLevel
 class Gen3Env(SinglesEnv):
     def __init__(self, mappings, reward_fn: Optional[RewardFunction] = None,
                  log_level=LogLevel.QUIET, stall_config: Optional[StallConfig] = None,
-                 *args, battle_class=Gen3Battle, emit_belief_labels: bool = False, **kwargs):
+                 *args, battle_class=Gen3Battle, emit_belief_labels: bool = False,
+                 move_belief_mode: str = "off", **kwargs):
         self.log_level = log_level
         self._stall_logger = StallLogger(stall_config)
         super().__init__(*args, **kwargs)
@@ -53,7 +55,12 @@ class Gen3Env(SinglesEnv):
         # The model forward reads only obs["observation"], so they never leak into the acting path;
         # eval/self-play/inference run with this off and never declare/need them. Single source of the
         # enable flag is --opp-belief-aux-coef>0 (threaded as emit_belief_labels from train_rl_agent).
-        self._emit_belief_labels = emit_belief_labels
+        # The MOVE belief (--move-belief-mode) also needs labels: belief_moves (its 'unknown' slots, via
+        # the same Hungarian) + known_moves (its 'known' slots — revealed mons' FULL privileged moveset).
+        # Either feature ON ⇒ emit the label keys; known_moves is only consumed by the move loss.
+        self._move_belief_mode = move_belief_mode
+        self._emit_known_moves = move_belief_mode in ("revealed", "both")
+        self._emit_belief_labels = emit_belief_labels or move_belief_mode != "off"
         # Precompute id -> embedding-NUM maps once (keyed by gen3_data species/move id) for the labeller.
         self._species_num = {sid: rec["num"] for sid, rec in mappings.get("species", {}).items() if "num" in rec}
         self._move_num = {mid: rec["num"] for mid, rec in mappings.get("moves", {}).items() if "num" in rec}
@@ -67,6 +74,11 @@ class Gen3Env(SinglesEnv):
             # rejects -1 and the rollout buffer special-cases it).
             base_obs["belief_species"] = spaces.Box(low=-1, high=_imax, shape=(TEAM_SIZE,), dtype=np.int64)
             base_obs["belief_moves"] = spaces.Box(low=-1, high=_imax, shape=(TEAM_SIZE, BELIEF_MOVE_SLOTS), dtype=np.int64)
+            if self._emit_known_moves:
+                # KNOWN-mode move belief: the revealed mons' FULL privileged movesets, at the revealed
+                # slots (so the move head learns each seen mon's still-UNREVEALED moves). Only declared
+                # when 'known'/'both' so an 'unknown'-only run keeps the buffer minimal.
+                base_obs["known_moves"] = spaces.Box(low=-1, high=_imax, shape=(TEAM_SIZE, BELIEF_MOVE_SLOTS), dtype=np.int64)
         # SB3 reads the SINGULAR observation_space (threaded as the VecEnv space); the PLURAL
         # observation_spaces is intercepted + rewrapped by PokeEnv.__setattr__ (it would drop the
         # belief keys) and is not the SB3-facing space, so it can stay minimal.
@@ -158,7 +170,10 @@ class Gen3Env(SinglesEnv):
         b2 = getattr(self, "battle2", None)
         if b1 is None or b2 is None:
             bs, bm = zero_belief_labels()
-            return {"belief_species": bs, "belief_moves": bm}
+            out = {"belief_species": bs, "belief_moves": bm}
+            if self._emit_known_moves:
+                out["known_moves"] = zero_known_moves()
+            return out
         # Per-opp-slot species_known straight from the obs the model reads (NOT re-derived from a count).
         species_known = [
             float(obs_vec[OFFSET_OPP_TEAM + i * POKEMON_FULL_DIM + POKEMON_SPECIES_KNOWN_OFFSET])
@@ -185,7 +200,15 @@ class Gen3Env(SinglesEnv):
             team_species, team_moves, revealed_species, species_known,
             self._species_num, self._move_num, to_id_str,
         )
-        return {"belief_species": bs, "belief_moves": bm}
+        out = {"belief_species": bs, "belief_moves": bm}
+        if self._emit_known_moves:
+            # Revealed slots are the leading-contiguous block (guarded above); `revealed` is in encoder
+            # slot order, so it aligns 1-1 with that block. Each gets its species' FULL privileged moveset.
+            out["known_moves"] = build_known_move_labels(
+                revealed_species, team_species, team_moves, species_known,
+                self._move_num, to_id_str,
+            )
+        return out
 
     def action_to_order(self, action, battle, **kwargs):
         if isinstance(action, BattleOrder):

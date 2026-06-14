@@ -86,6 +86,58 @@ def build_belief_labels(
     return belief_species, belief_moves
 
 
+def build_known_move_labels(
+    revealed_species_in_slot_order: Sequence[str],
+    team_species: Sequence[str],
+    team_moves: Sequence[Sequence[str]],
+    species_known: Sequence[float],
+    move_to_num: Dict[str, int],
+    normalize: Callable[[str], str],
+) -> np.ndarray:
+    """Build known_moves[TEAM_SIZE, BELIEF_MOVE_SLOTS] int64 — the privileged label for the MOVE
+    belief's 'known' slots.
+
+    Each REVEALED opp slot (species_known==1, the leading-contiguous block, in encoder order) gets the
+    FULL privileged moveset of the species revealed there. The move head then learns to predict that
+    mon's still-UNREVEALED moves (the surprise-OHKO "it had a move we hadn't seen" gap) — defensible
+    supervision (we have SEEN this species; we're guessing its remaining moves). Believed / pad slots
+    stay PAD (scored only by the 'unknown'-slot path).
+
+    revealed_species_in_slot_order : species names at each revealed slot, encoder order (parallel to
+                                     the revealed block of species_known).
+    team_species / team_moves      : the opponent's FULL privileged team (parallel) — the source of
+                                     each revealed species' complete moveset.
+    species_known                  : per encoder opp-slot 0/1 (1 revealed, 0 believed).
+    move_to_num / normalize        : name(normalised) -> embedding-num map + id-normaliser.
+
+    Unknown names are skipped/padded (never raises — hot path)."""
+    known_moves = np.full((TEAM_SIZE, BELIEF_MOVE_SLOTS), PAD, dtype=np.int64)
+    # privileged species_norm -> full moveset (first occurrence; Gen-3 OU species-clause ⇒ unique).
+    full_by_species: Dict[str, List[str]] = {}
+    for sp, moves in zip(team_species, team_moves):
+        full_by_species.setdefault(normalize(sp), list(moves))
+    revealed_slots = [i for i in range(TEAM_SIZE) if i < len(species_known) and species_known[i] >= 0.5]
+    for slot, sp in zip(revealed_slots, revealed_species_in_slot_order):
+        moves = full_by_species.get(normalize(sp))
+        if moves is None:
+            continue
+        m = 0
+        for mv in moves:
+            if m >= BELIEF_MOVE_SLOTS:
+                break
+            mv_num = move_to_num.get(normalize(mv))
+            if mv_num is None:
+                continue
+            known_moves[slot, m] = mv_num
+            m += 1
+    return known_moves
+
+
+def zero_known_moves() -> np.ndarray:
+    """All-PAD known_moves — off / pre-battle / parse-failure path."""
+    return np.full((TEAM_SIZE, BELIEF_MOVE_SLOTS), PAD, dtype=np.int64)
+
+
 def zero_belief_labels() -> Tuple[np.ndarray, np.ndarray]:
     """All-PAD labels — used for the off / pre-battle / parse-failure path so the Dict key always
     has a consistent shape (every slot PAD ⇒ nothing scored)."""

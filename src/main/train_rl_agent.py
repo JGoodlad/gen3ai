@@ -166,6 +166,7 @@ def _run_arch_toggles(args) -> dict:
         opp_belief_slots=(args.opp_belief_aux_coef > 0.0),
         value_active_readout=args.value_active_readout,
         use_popart=args.use_popart,
+        move_belief_mode=args.move_belief_mode,
     )
 
 
@@ -178,6 +179,7 @@ def _model_hparams(model) -> dict:
         "ent_coef": float(model.ent_coef),
         "vf_coef": float(model.vf_coef),
         "opp_belief_aux_coef": float(getattr(model, "opp_belief_aux_coef", 0.0)),
+        "move_belief_coef": float(getattr(model, "move_belief_coef", 0.0)),
         "batch_size": model.batch_size,
         "n_steps": model.n_steps,
         "clip_range": float(model.clip_range(1.0)),
@@ -301,6 +303,7 @@ def _run_roundtrip_test(model, layout: dict, policy_kwargs: dict, debug: bool = 
         layout, policy_kwargs, vf_coef=float(model.vf_coef),
         value_tail_weight=float(getattr(model, "value_tail_weight", 0.0)),
         opp_belief_aux_coef=float(getattr(model, "opp_belief_aux_coef", 0.0)),
+        move_belief_coef=float(getattr(model, "move_belief_coef", 0.0)),
     )
     total_dim = layout["total_dim"]
     tmpdir = tempfile.mkdtemp(prefix="roundtrip_")
@@ -635,6 +638,26 @@ async def main():
                              "belief aux term (aux = species_CE + w·moves_BCE; both on a per-believed-slot "
                              "scale). Default 1.0 — species dominates; raise to up-weight move prediction. "
                              "TRAINING-only, like --opp-belief-aux-coef. Ignored when the coef is 0.")
+    parser.add_argument("--move-belief-mode", "--move_belief_mode", dest="move_belief_mode",
+                        choices=("off", "revealed", "unrevealed", "both"), default=None,
+                        help="MOVE-belief REINJECTION: predict each opp mon's moveset and FLOW it back into "
+                             "the slot token (soft move-embedding added before the CLS pools), so the policy/"
+                             "value heads reason about the believed moves — not a dead-end readout. 'off' "
+                             "(default) = no module (baseline byte-for-byte). 'revealed' = seen mons only "
+                             "(predict their still-UNREVEALED moves — the defensible, surprise-OHKO lever). "
+                             "'unrevealed' = hidden mons (Hungarian-matched, omniscient — REQUIRES "
+                             "--opp-belief-aux-coef>0, else the hidden slots are empty placeholders). 'both' "
+                             "= all slots (also requires it). STRUCTURAL (a new head; version-"
+                             "checked, fresh-only — cannot change on a resume) and AUTO-FORCES "
+                             "--attend-unrevealed-opponents. Supervised by privileged labels (the model's own "
+                             "full team), training-only. The known-vs-unknown axis is the defensible-vs-"
+                             "omniscient A/B.")
+    parser.add_argument("--move-belief-coef", "--move_belief_coef", dest="move_belief_coef",
+                        type=float, default=None,
+                        help="Loss weight for the move-belief head (move_belief_coef * BCE over the scored "
+                             "opp slots), like --opp-belief-aux-coef. 0.0 = no supervised pull (the module "
+                             "still reinjects, but only RL gradient shapes it). TRAINING-only (not version-"
+                             "locked). Ignored when --move-belief-mode off.")
     parser.add_argument("--value-active-readout", "--value_active_readout", dest="value_active_readout",
                         action=BoolFlag, default=None,
                         help="Route the active mon's refined token (our_active_refined) into the VALUE "
@@ -794,6 +817,8 @@ async def main():
     _resolve("attend_unrevealed_opponents", False)
     _resolve("opp_belief_cls_k", 0)
     _resolve("opp_belief_aux_coef", 0.0)
+    _resolve("move_belief_mode", "off")        # v17 structural (version-checked, fresh-only)
+    _resolve("move_belief_coef", 0.0)          # training-only (inherited like opp_belief_aux_coef)
     # PopArt INHERITED on a flagless resume → adopt its required `--clip-range-vf none` (the saved
     # popart run necessarily used it), so the explicit-config check below doesn't block the resume.
     if args.use_popart and not _popart_explicit and _saved_ver is not None and args.clip_range_vf is not None:
@@ -833,6 +858,24 @@ async def main():
         # flag (the believed slots must be attendable to be refined). Auto-enable it so a single flag
         # suffices; the model side hard-gates opp_belief_slots on attend_unrevealed_opponents.
         args.attend_unrevealed_opponents = True
+    if args.move_belief_coef is not None and args.move_belief_coef < 0.0:
+        parser.error("--move-belief-coef must be >= 0 (0 = off)")
+    if args.move_belief_mode != "off":
+        # The MoveBelief module reads/refines the opp slots, so (like the BeliefHead) it requires the
+        # unrevealed slots to be attendable — auto-enable the unmask flag (the model side hard-gates
+        # move_belief_mode!=off on attend_unrevealed_opponents).
+        args.attend_unrevealed_opponents = True
+    if args.move_belief_mode in ("unrevealed", "both") and not (args.opp_belief_aux_coef > 0.0):
+        # FAIL LOUD on a nonsensical config: 'unrevealed'/'both' score the HIDDEN opp slots, but without
+        # the species-belief head (--opp-belief-aux-coef>0) those slots are never filled with learned
+        # unknown-mon tokens — they stay encoder placeholders (~zeros). Predicting a hidden mon's moveset
+        # from an empty token (with no representation of WHICH mon it is) is meaningless. 'revealed' mode is
+        # exempt: it scores REVEALED slots, which carry real role-tokens regardless of the belief head.
+        parser.error(
+            f"--move-belief-mode {args.move_belief_mode} scores the opponent's HIDDEN slots, which are "
+            "only filled with learned unknown-mon tokens when the species-belief head is on. Add "
+            "--opp-belief-aux-coef <coef> (>0), or use --move-belief-mode revealed (seen mons only)."
+        )
     log_level = LogLevel[args.log_level.upper()]
 
     # One server config, built from --showdown-port and threaded to every Showdown client
@@ -1005,6 +1048,7 @@ async def main():
                     # gates the BeliefHead on the same coef>0 signal). Eval/self-play opponents play
                     # via RLPlayer, not Gen3Env, so they never emit them.
                     emit_belief_labels=(args.opp_belief_aux_coef > 0.0),
+                    move_belief_mode=args.move_belief_mode,
                 )
                 if args.use_showdown_bridge:
                     # Swap the two _EnvPlayer agents' websocket transport for a local
@@ -1456,6 +1500,9 @@ async def main():
         # belief head on/off FATALs, same machinery as opp_belief_cls_k). coef>0 is the enable signal.
         _load_extractor_kwargs["opp_belief_slots"] = (args.opp_belief_aux_coef > 0.0)
         _load_extractor_kwargs["value_active_readout"] = args.value_active_readout
+        # Move-belief mode — version-checked vs the saved config (fresh-only; a resume that changes it
+        # FATALs, same machinery as opp_belief_slots).
+        _load_extractor_kwargs["move_belief_mode"] = args.move_belief_mode
         _load_policy_kwargs = {
             "features_extractor_class": Gen3FeaturesExtractor,
             "features_extractor_kwargs": _load_extractor_kwargs,
@@ -1466,6 +1513,7 @@ async def main():
             _load_extractor_kwargs["layout"], _load_policy_kwargs, vf_coef=args.vf_coef,
             reward_config=reward_config, value_tail_weight=args.value_tail_weight,
             opp_belief_aux_coef=args.opp_belief_aux_coef,
+            move_belief_coef=args.move_belief_coef,
         )
 
         print(f"Loading existing model from {model_path}")
@@ -1490,6 +1538,7 @@ async def main():
         model.value_tail_weight = args.value_tail_weight  # == saved (enforced above); set for the loop
         model.opp_belief_aux_coef = args.opp_belief_aux_coef  # training hparam (not version-locked; resume-mutable)
         model.opp_belief_moves_weight = args.opp_belief_moves_weight
+        model.move_belief_coef = args.move_belief_coef  # move-belief loss weight (training-only; resume-mutable)
         model.vf_coef = args.vf_coef  # == the saved value (enforced above); set explicitly for parity
         model.gae_lambda = 0.80
         # Resume-path LR setup. Phase determines whether we read from the
@@ -1639,6 +1688,10 @@ async def main():
         extractor_kwargs["opp_belief_slots"] = (args.opp_belief_aux_coef > 0.0)
         # Value-head active readout (default off): routes our_active_refined into the value projection.
         extractor_kwargs["value_active_readout"] = args.value_active_readout
+        # Move-belief reinjection (off|revealed|unrevealed|both; weight-shape). != off builds the MoveBelief
+        # head + auto-forces attend_unrevealed_opponents above. The coef is a TRAINING hparam set below;
+        # the MODE is the version-checked arch toggle.
+        extractor_kwargs["move_belief_mode"] = args.move_belief_mode
 
         policy_kwargs = {
             "features_extractor_class": Gen3FeaturesExtractor,
@@ -1677,10 +1730,12 @@ async def main():
         model.value_tail_weight = args.value_tail_weight   # tail-weighted value loss (0.0 = plain MSE)
         model.opp_belief_aux_coef = args.opp_belief_aux_coef  # hidden-opp belief aux loss (0.0 = off)
         model.opp_belief_moves_weight = args.opp_belief_moves_weight  # species_CE + w·moves_BCE
+        model.move_belief_coef = args.move_belief_coef  # move-belief reinjection loss (0.0 = off)
         version = ModelVersion.from_layout_and_policy_kwargs(
             extractor_kwargs["layout"], policy_kwargs, vf_coef=args.vf_coef,
             reward_config=reward_config, value_tail_weight=args.value_tail_weight,
             opp_belief_aux_coef=args.opp_belief_aux_coef,
+            move_belief_coef=args.move_belief_coef,
         )
         # PBRS_GAMMA must equal the PPO gamma for both potentials to be policy-invariant (design §7.1).
         # The reward manager is built before the model (in the env factory), so assert here where both

@@ -881,6 +881,40 @@ class BeliefHead(torch.nn.Module):
         return {"species": self.species_head(h), "moves": self.moves_head(h)}
 
 
+class MoveBelief(torch.nn.Module):
+    """Predicts each opponent slot's full MOVESET and REINJECTS that prediction back into the slot
+    token, so the believed moves actually FLOW into the representation the policy/value heads read —
+    not a dead-end aux readout. This is the "make it meaningful" mechanism.
+
+    Per opp slot: a multi-label move head predicts the moveset; the predicted distribution is
+    soft-embedded (`sigmoid(logits) @ move_embedding` — the expected moveset embedding), projected
+    back to token space, and ADDED to the slot token (a residual, gated to the slots the mode selects).
+    The enriched tokens then feed the CLS pools, so the policy reasons about the believed moves. The
+    reinject projection is small-init so the enrichment starts ≈0 (no harm before the prediction
+    sharpens). The move head's logits are stashed for the aux loss, which supervises against the real
+    moveset (revealed slots → direct; hidden slots → Hungarian). `mode` selects which slots are
+    enriched + scored: 'revealed' (seen species — predict its UNREVEALED moves, the surprise-OHKO
+    new-move gap), 'unrevealed' (hidden species), or 'both'."""
+
+    def __init__(self, n_moves: int, move_emb_dim: int):
+        super().__init__()
+        self.move_head = torch.nn.Linear(D_MODEL, n_moves)
+        self.reinject = torch.nn.Linear(move_emb_dim, D_MODEL)
+        torch.nn.init.normal_(self.reinject.weight, std=0.02)   # start the enrichment ≈0
+        torch.nn.init.zeros_(self.reinject.bias)
+        self.norm = torch.nn.LayerNorm(D_MODEL)
+
+    def forward(self, opp_tokens: torch.Tensor, apply_mask: torch.Tensor,
+                move_embedding: torch.nn.Embedding) -> Tuple[torch.Tensor, torch.Tensor]:
+        """opp_tokens [B,6,D], apply_mask [B,6] bool (which slots get the belief), move_embedding table
+        → (enriched_tokens [B,6,D], move_logits [B,6,M]). The enrichment is residual + gated to the
+        selected slots, so unselected slots pass through unchanged."""
+        move_logits = self.move_head(opp_tokens)                                 # [B, 6, M]
+        soft_emb = torch.sigmoid(move_logits) @ move_embedding.weight             # [B, 6, move_emb]
+        enriched = opp_tokens + apply_mask.unsqueeze(-1) * self.reinject(soft_emb)
+        return self.norm(enriched), move_logits
+
+
 class ProjectionAssembler(torch.nn.Module):
     """Assembles the pre-projection inputs for BOTH heads.
 
@@ -943,7 +977,8 @@ class Gen3FeaturesExtractor(torch.nn.Module):
     def __init__(self, observation_space: spaces.Dict, layout: Optional[Dict[str, Any]] = None,
                  mappings: Optional[Dict[str, Any]] = None, log_level: LogLevel = LogLevel.QUIET,
                  attend_unrevealed_opponents: bool = False, opp_belief_cls_k: int = 0,
-                 value_active_readout: bool = False, opp_belief_slots: bool = False):
+                 value_active_readout: bool = False, opp_belief_slots: bool = False,
+                 move_belief_mode: str = "off"):
         super().__init__()
         self.layout = layout
         self.mappings = mappings
@@ -993,6 +1028,22 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         # the vendored PPO train loop to add the aux loss. Carries grad — read+used in the same
         # backward graph as the forward that produced it (per minibatch). See instrumented_ppo.
         self.last_belief_logits: Optional[Dict[str, torch.Tensor]] = None
+        # Move belief (flag-guarded): predict + REINJECT the opp moveset into the slot tokens so the
+        # believed moves flow into the policy/value readout. mode ∈ {off, revealed, unrevealed, both}
+        # selects which opp slots are enriched + scored. OFF reproduces the baseline arch byte-for-byte.
+        if move_belief_mode not in ("off", "revealed", "unrevealed", "both"):
+            raise ValueError(f"move_belief_mode must be off|revealed|unrevealed|both, got {move_belief_mode!r}")
+        self.move_belief_mode = move_belief_mode
+        if move_belief_mode != "off" and not attend_unrevealed_opponents:
+            raise ValueError(
+                "move_belief_mode != off requires attend_unrevealed_opponents=True — the move belief "
+                "reads/enriches the opp slots (incl. hidden ones), which are key-masked unless the "
+                "unmask flag is on. Enable --attend-unrevealed-opponents."
+            )
+        self.move_belief = (
+            MoveBelief(layout['max_moves'], layout['move_embedding_dim']) if move_belief_mode != "off" else None
+        )
+        self.last_move_belief_logits: Optional[torch.Tensor] = None
         # Value-head active readout (weight-shape via flag): adds our_active_refined (D_MODEL) to the
         # value projection. OFF reproduces the baseline value head byte-for-byte (no ARCH_SIGNATURE bump).
         self.value_active_readout = value_active_readout
@@ -1062,6 +1113,20 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         self.last_belief_logits = (
             self.belief_head(their_team_out) if self.belief_head is not None else None
         )
+        # Move belief: predict each opp slot's moveset and REINJECT it into the slot token (flow-through)
+        # so the believed moves reach the CLS pools → both heads. Mode selects which slots: revealed
+        # mons, unrevealed (hidden) mons, or both. The move logits are stashed for the aux loss.
+        if self.move_belief is not None:
+            if self.move_belief_mode == "revealed":
+                mb_mask = ~ctx.opp_believed_mask                 # revealed-species slots
+            elif self.move_belief_mode == "unrevealed":
+                mb_mask = ctx.opp_believed_mask                  # hidden-species slots
+            else:                                                # "both"
+                mb_mask = torch.ones_like(ctx.opp_believed_mask)
+            their_team_out, self.last_move_belief_logits = self.move_belief(
+                their_team_out, mb_mask, self.embeddings.move_embedding)
+        else:
+            self.last_move_belief_logits = None
         our_team_pooled, their_team_pooled, our_active_refined, value_pooled = self.cls_pool(
             our_team_out, their_team_out, ctx
         )

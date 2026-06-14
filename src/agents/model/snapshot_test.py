@@ -468,6 +468,63 @@ def test_opp_belief_cls_k_read_from_features_extractor_kwargs(layout):
     assert v_default.opp_belief_cls_k == 0
 
 
+# --- move_belief_mode: a structural string toggle (the MoveBelief reinjection head, v17) -----------
+
+
+def test_check_compatible_rejects_move_belief_mode_on_off_mismatch(version):
+    """off↔non-off adds/removes the MoveBelief head (move_head + reinject + norm) — a state_dict change,
+    so check_compatible must reject it (string compare, like opp_belief_slots)."""
+    on = dataclasses.replace(version, move_belief_mode="revealed")
+    with pytest.raises(ModelVersionError) as exc_info:
+        version.check_compatible(on)   # version has "off" (default)
+    assert "move_belief_mode" in str(exc_info.value)
+
+
+def test_check_compatible_rejects_move_belief_mode_value_mismatch(version):
+    """revealed vs both is a different trained forward (which slots are enriched) → FATAL (both on)."""
+    revealed = dataclasses.replace(version, move_belief_mode="revealed")
+    both = dataclasses.replace(version, move_belief_mode="both")
+    with pytest.raises(ModelVersionError) as exc_info:
+        revealed.check_compatible(both)
+    assert "move_belief_mode" in str(exc_info.value)
+
+
+def test_check_compatible_accepts_matching_move_belief_mode(version):
+    """Same mode (incl. the 'off' baseline) must load — no false rejection."""
+    version.check_compatible(dataclasses.replace(version))                 # off vs off
+    both = dataclasses.replace(version, move_belief_mode="both")
+    both.check_compatible(dataclasses.replace(both))                       # both vs both
+
+
+def test_move_belief_mode_read_from_features_extractor_kwargs(layout):
+    """move_belief_mode sources from features_extractor_kwargs; absent → 'off' (baseline)."""
+    pk = {"net_arch": [512, 512], "features_extractor_kwargs": {"move_belief_mode": "unrevealed"}}
+    v = ModelVersion.from_layout_and_policy_kwargs(layout, pk)
+    assert v.move_belief_mode == "unrevealed"
+    v_default = ModelVersion.from_layout_and_policy_kwargs(layout, {"net_arch": [512, 512]})
+    assert v_default.move_belief_mode == "off"
+
+
+def test_check_compatible_ignores_move_belief_coef(version):
+    """move_belief_coef is a training-only loss weight (not weight-shape) → check_compatible must not
+    gate it (a frozen eval/pool/distill opponent never runs the loss)."""
+    differing = dataclasses.replace(version, move_belief_coef=0.3)
+    version.check_compatible(differing)   # must NOT raise
+
+
+def test_migrate_pre_v17_adds_move_belief_defaults(version):
+    """Pre-v17 configs lack the move-belief fields — migration injects mode='off' / coef=0.0 and bumps
+    to the current version. The migrated dict must build a valid ModelVersion."""
+    data = json.loads(version.to_json())
+    data.pop("move_belief_mode", None)
+    data.pop("move_belief_coef", None)
+    data["config_version"] = 16
+    result = _migrate_config(data)
+    assert result["config_version"] == MODEL_CONFIG_VERSION
+    assert result["move_belief_mode"] == "off" and result["move_belief_coef"] == 0.0
+    ModelVersion(**result)
+
+
 def test_check_compatible_rejects_value_active_readout_mismatch(version):
     """① value_active_readout widens the value projection → a weight-shape change check_compatible
     must reject (like use_popart)."""
@@ -1415,11 +1472,27 @@ def test_arch_toggles_from_model_extracts_flags():
     from agents.model.snapshot import arch_toggles_from_model
     import types
     fe = types.SimpleNamespace(attend_unrevealed_opponents=True, opp_belief_cls_k=0,
-                               opp_belief_slots=True, value_active_readout=False)
+                               opp_belief_slots=True, value_active_readout=False,
+                               move_belief_mode="revealed")
     model = types.SimpleNamespace(policy=types.SimpleNamespace(features_extractor=fe, popart=object()))
     t = arch_toggles_from_model(model)
     assert t["opp_belief_slots"] is True and t["attend_unrevealed_opponents"] is True
     assert t["use_popart"] is True and t["value_active_readout"] is False
+    assert t["move_belief_mode"] == "revealed"
+
+
+def test_current_model_version_threads_move_belief_mode(mappings):
+    """A move-belief-ON self-play run must build its 'current' version with the SAME mode, or it FATALs
+    on its own (move-belief-ON) sentinels. The mode round-trips and a mode-OFF current version is NOT
+    compatible with a mode-ON saved one."""
+    from agents.model.snapshot import current_model_version
+    assert current_model_version(mappings).move_belief_mode == "off"          # default
+    on = current_model_version(mappings, move_belief_mode="revealed", attend_unrevealed_opponents=True)
+    assert on.move_belief_mode == "revealed"
+    on.check_compatible(on)                                                   # ON vs ON: fine
+    off = current_model_version(mappings)
+    with pytest.raises(ModelVersionError):
+        off.check_compatible(on)                                             # OFF current vs ON saved → FATAL
 
 
 def test_belief_works_for_selfplay_and_stable_play(mappings):
