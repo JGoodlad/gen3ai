@@ -13,6 +13,45 @@ from agents.gen3_mechanics import effective_multiplier_by_types, status_land_est
 from agents.observation.incoming_damage_encoder import encode_block as encode_incoming_block
 from typing import Any, Dict, List, Optional
 
+# Neutral fill for an UNWRITTEN active-move multiplier slot (a mon with <4 moves, or no opp active).
+# Multipliers are stored as effectiveness/4, so 1× → 0.25; the old np.ones(4) default stored raw 1.0,
+# which decodes to a phantom 4× super-effective KO threat on a non-existent move (the move slot that
+# the model + prober then read as the scariest possible matchup). 0.25 is the "no modifier" point.
+_NEUTRAL_MULT = 0.25
+
+
+def _request_slot_moves(battle, legal):
+    """Per-request-slot ``Move`` objects in ACTION order — slot i ↔ action logit ``6+i`` — with
+    DISABLED moves KEPT, so the per-move obs features (base power, type multiplier, effect flags)
+    align with the action mask / mapper, which both index ``legal.move_slots[i] → action 6+i``.
+
+    poke-env's ``battle.available_moves`` DROPS disabled moves (``available_moves_from_request``
+    filters ``disabled``: Disable / Taunt-on-status / Imprison / 0-PP), which LEFT-SHIFTS every later
+    slot relative to the request order and leaves the trailing slot unwritten — the misalignment this
+    replaces. A disabled move is still a real, identity-bearing option the model should see at its
+    true logit position (legality is the mask's job, not the feature's).
+
+    Our own Hidden Power arrives in the request as the bare ``hiddenpower``; the TYPED ``Move``
+    (``hiddenpowerfire`` …, carrying the correct effectiveness) lives on the active mon's moveset, so
+    resolve it the same way poke-env's ``available_moves_from_request`` does (single ``hiddenpower*``).
+
+    Falls back to ``battle.available_moves`` order ONLY when ``legal is None`` (unit-test / plain-
+    ``Battle`` callers) — never the trainee obs path, where ``state_encoder`` always threads a real
+    ``legal`` built from the strict view. Byte-identical to the old behaviour on that fallback path.
+    """
+    active = battle.active_pokemon
+    if legal is None or active is None:
+        return list(battle.available_moves)[:4]
+    moveset = active.moves
+    slot_moves = []
+    for lm in legal.move_slots[:4]:
+        mv = moveset.get(lm.id)
+        if mv is None and lm.id == "hiddenpower":
+            hps = [v for mid, v in moveset.items() if mid.startswith("hiddenpower")]
+            mv = hps[0] if len(hps) == 1 else None
+        slot_moves.append(mv)
+    return slot_moves
+
 
 def _resolve_ability_distribution(opp, ability_priors):
     """Return a list of (ability_name, probability) pairs describing the
@@ -185,16 +224,21 @@ class ReactiveEncoder(ObservationEncoder):
         ``trapped`` / ``maybe_trapped`` flags become two obs bits (vec[12], vec[13]). ``None``
         (unit-test / plain-Battle path, or a caller that hasn't threaded it) leaves both at 0.
 
-        **Why the effectiveness core stays on the raw battle.** The active-move loop and the
-        two 6×4×6 matchup matrices read moves off the raw poke-env ``Move`` objects
-        (``battle.available_moves`` / ``get_sorted_moves``) and the defender's
-        ``type_1``/``type_2``/``ability``/``status``. They are *not* migrated to the read-model
-        on purpose, for three independent reasons:
+        **Active-move slot order + why the effectiveness core stays on the raw battle.** The
+        active-move loop iterates the per-decision **request slots** (``legal.move_slots``, action
+        order: slot i ↔ action logit ``6+i``, disabled moves KEPT) via ``_request_slot_moves``, and
+        resolves each slot to its raw poke-env ``Move`` off the active mon's moveset — NOT
+        ``battle.available_moves``, which drops disabled moves and would shift every later feature
+        out of action alignment (gen3_move_slot_align_v1). The two 6×4×6 matchup matrices still read
+        moves off the raw ``Move`` objects (``get_sorted_moves``) and the defender's
+        ``type_1``/``type_2``/``ability``/``status``. The effectiveness core is *not* migrated to the
+        read-model on purpose, for three independent reasons:
           1. *Typed Hidden Power id.* Our own HP move keeps its typed id (``hiddenpowerfire``)
              only on the raw ``Move`` object; the live request — and therefore ``LiveView`` /
-             ``LegalActions`` — re-keys it to bare ``hiddenpower``. Reading the move list off the
-             read-model would silently collapse own HP to Normal/tracker, changing the emitted
-             effectiveness. (See the matching note in ``pokemon.py``.)
+             ``LegalActions`` — re-keys it to bare ``hiddenpower``. The slot resolver re-derives the
+             typed ``Move`` from the moveset (single ``hiddenpower*``), preserving the emitted
+             effectiveness; reading the read-model's id directly would collapse own HP to
+             Normal/tracker. (See the matching note in ``pokemon.py``.)
           2. *Hot path needs enums.* ``effective_multiplier_by_types`` is keyed on
              ``PokemonType`` enums; ``LiveView`` exposes lowercased *strings*, so feeding it
              would add a per-cell string→enum conversion to the #1 obs hot loop (288 cells).
@@ -220,7 +264,7 @@ class ReactiveEncoder(ObservationEncoder):
         # 1. Active Moves (Power and Multiplier) — see the docstring: kept on the raw battle
         # so own Hidden Power retains its typed id and the hot loop stays enum-keyed.
         moves_base_power = np.zeros(4)
-        moves_dmg_multiplier = np.ones(4)
+        moves_dmg_multiplier = np.full(4, _NEUTRAL_MULT)
         # gen3_move_effects_v1: per-move EFFECT flags, request-order (slot i ↔ action 6+i),
         # so the policy head can tell a setup move from a heal from a wasted status. Static
         # flags come from the data facade (MoveData); status_will_land and Curse's
@@ -230,10 +274,16 @@ class ReactiveEncoder(ObservationEncoder):
         # Skip Struggle — it has a dedicated action (10) and a dedicated flag (vec[11]).
         # Filling the move slots with Struggle's stats would create a confusing alias
         # between slot 0 (action 6) and the Struggle action (10).
-        is_forced_struggle = (
-            len(battle.available_moves) == 1
-            and battle.available_moves[0].id == "struggle"
-        )
+        # Forced Struggle (all PP gone). Prefer the server-authoritative `legal.struggle` when the
+        # snapshot is threaded (avoids a `battle.available_moves` property rebuild on the hot path);
+        # the plain-Battle / unit-test fallback reproduces the original check byte-identically.
+        if legal is not None:
+            is_forced_struggle = legal.struggle
+        else:
+            is_forced_struggle = (
+                len(battle.available_moves) == 1
+                and battle.available_moves[0].id == "struggle"
+            )
 
         active = battle.active_pokemon
         opp = battle.opponent_active_pokemon
@@ -243,9 +293,14 @@ class ReactiveEncoder(ObservationEncoder):
         user_is_ghost = active is not None and PokemonType.GHOST in (active.type_1, active.type_2)
 
         if not is_forced_struggle:
-            for i, move in enumerate(battle.available_moves):
+            # REQUEST-slot order (action 6+i ↔ slot i), disabled moves KEPT — so each per-move
+            # feature lands at its true action-logit position instead of being shifted by a
+            # disabled non-last slot (see `_request_slot_moves`). gen3_move_slot_align_v1.
+            for i, move in enumerate(_request_slot_moves(battle, legal)):
                 if i >= 4:
                     break
+                if move is None:
+                    continue  # empty / unresolved request slot → neutral defaults (masked anyway)
                 moves_base_power[i] = move.base_power / 200.0
                 if opp is not None:
                     mult = _expected_multiplier(

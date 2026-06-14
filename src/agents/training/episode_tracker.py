@@ -9,6 +9,7 @@ from poke_env.battle.abstract_battle import DamagingMoveEvent
 
 from agents.enums import PokemonType
 
+from agents.action.constants import MOVE_START, MOVE_END
 from agents.action.ordering_integrity import (
     reorder_move_bits_to_sorted,
     assert_sorted_validity_correct,
@@ -136,7 +137,16 @@ class EpisodeTracker:
         extractor (which reads moves via ``get_sorted_moves``). Without this the
         validity bit for one move lands on a different move's embedding — silent
         when all moves are legal, wrong on disabled/zero-PP turns. All-ones if no
-        previous turn recorded yet."""
+        previous turn recorded yet.
+
+        If our active mon CHANGED since the previous decision (a switch / forced
+        replacement), the previous mask's MOVE bits describe the PREVIOUS mon's moves
+        (sorted by that mon's ids), so they don't correspond to THIS mon's sorted move
+        slots — the validity bit lands on an unrelated move. In that case the move bits
+        are reset to the no-prior-info default (all-ones, like the first-turn case); the
+        SWITCH bits stay (team-ordered, mon-independent). ``active_move_ids`` is a safe
+        discriminator: it differs whenever the moveset differs, and is equal only when
+        the sorted order already aligns. (gen3_move_slot_align_v1 — same alignment class.)"""
         if len(self._history) >= 2:
             prev_ctx = self._history[-2]
             reordered = reorder_move_bits_to_sorted(
@@ -145,6 +155,9 @@ class EpisodeTracker:
             assert_sorted_validity_correct(
                 reordered, prev_ctx.mask, prev_ctx.active_move_ids
             )
+            cur_ctx = self._history[-1]
+            if cur_ctx.active_move_ids != prev_ctx.active_move_ids:
+                reordered[MOVE_START:MOVE_END] = 1.0
             return reordered
         return np.ones(11, dtype=np.float32)
 

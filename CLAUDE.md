@@ -112,6 +112,7 @@ export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable
 export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 src/agents/training/poke_env_gaps/transition_fuzz_test.py [n_battles]
 export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 src/agents/battle/event_log_fuzz_test.py [n_battles]
 # also bridge-backed (no server): poke_env_gaps/{abilities,item_consumption,move_outcome,snatch,incoming_damage}_fuzz_test.py,
+#                                  poke_env_gaps/move_alignment_fuzz_test.py (per-move obs features ↔ legal.move_slots[k] ↔ action 6+k, forces Choice-lock/Disable),
 #                                  poke_env_gaps/belief_labels_fuzz_test.py (hidden-opp belief labels == actual opp team + no-leak),
 #                                  training/hidden_power_tracker_fuzz_test.py,
 #                                  utils/bridge/reconstruction_fuzz_test.py (battle replay/re-roll invariants),
@@ -612,7 +613,13 @@ The architecture-constant single source of truth is the module-level constants
 (`ROLE_TOKEN_SIZE`, `PROJECTION_DIM`, `MOVE_NET_HIDDEN`, `ROLE_ENCODER_HIDDEN`,
 `ACTIVE_CTX_HIDDEN`) at the top of `features_extractor.py`; `ARCH_SIGNATURE` /
 `MODEL_CONFIG_VERSION` live in `model_version.py` (current `ARCH_SIGNATURE`:
-`gen3_incoming_crit_split_v1`; current `MODEL_CONFIG_VERSION`: **21** — v16 added the in-place
+`gen3_move_slot_align_v1` — fixed a per-move obs GIGO: `reactive.py` filled the active-move features
+(base power, type multiplier, the move-effect block) by iterating `battle.available_moves`, which
+poke-env builds with DISABLED moves dropped, so under a Choice-lock / Disable / Taunt / 0-PP every
+later per-move feature shifted off its action logit and the trailing slot read a phantom 4×; now
+request-slot-ordered via `legal.move_slots` (disabled kept, typed-HP preserved) with a neutral
+default — retrain-class, byte-identical on the common all-moves-available decision; current
+`MODEL_CONFIG_VERSION`: **21** — v16 added the in-place
 hidden-opponent belief-aux toggle `opp_belief_slots` + its coef `opp_belief_aux_coef`, v17 the
 move-belief reinjection toggle `move_belief_mode` + `move_belief_coef`, v18 the latent-belief toggle
 `opp_belief_latent` + `opp_belief_latent_coef`, v19 the differentiable damage-operator toggle

@@ -370,7 +370,19 @@ MODEL_CONFIG_VERSION = 21
 #   372 → 390, obs dim 3391 → 3409. Crit was ALREADY computed (folded into P(KO) since v2); this unblends
 #   it as a delta + adds provenance, so the underlying numbers are unchanged — but the block layout/width
 #   differ, so it is not weight-compatible with gen3_markovian_progress_v1.
-ARCH_SIGNATURE = "gen3_incoming_crit_split_v1"
+# gen3_move_slot_align_v1: FIXES a per-move obs misalignment (GIGO). The active-move features in
+#   reactive.py (base power vec[0:4], type multiplier vec[4:8], the 36-dim move-effect block) were
+#   filled by iterating `battle.available_moves`, which poke-env builds with DISABLED moves dropped
+#   (`available_moves_from_request`). The action mask / mapper index `legal.move_slots` (request-slot
+#   order, disabled KEPT) → so under a disabled non-last slot (Disable / Taunt / Imprison / 0-PP) every
+#   per-move feature shifted out of alignment with its action logit (feature slot k described a
+#   DIFFERENT move than action 6+k), and the trailing slot kept the np.ones(4)/4 default — which decodes
+#   to a phantom 4× super-effective KO threat on a legal action. Now the loop iterates request-slot
+#   order via `_request_slot_moves` (disabled kept, typed-HP preserved) and the unwritten-slot default
+#   is the neutral 0.25 (1×). Same dims (obs 3409 unchanged), VALUES only on the disabled-slot /
+#   <4-move / no-opp-active cases — so it is retrain-class (not weight-shape), not byte-compatible with
+#   gen3_incoming_crit_split_v1. The common all-moves-available decision is byte-identical.
+ARCH_SIGNATURE = "gen3_move_slot_align_v1"
 
 
 class ModelVersionError(Exception):

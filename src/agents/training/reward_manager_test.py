@@ -2152,5 +2152,49 @@ class TestPbrsSwitchShaping(unittest.TestCase):
         self.assertEqual(rm._compute_matchup_penalty(delta), 0.0)
 
 
+class TestBeliefRiskOutspeedIndex(unittest.TestCase):
+    """Regression for the incoming-damage block index drift (the obs==reward-key violation): the
+    PBRS belief risk must take p_outspeed from the NAMED IDX_OUTSPEED, not the crit-delta field a
+    stale hardcoded ``block[base + 4]`` read after the crit-split inserted two fields. A fast
+    (P(outspeed)=1) active mon facing a certain KO (P(KO)=1) has risk 0 — the buggy +4 read
+    (crit_delta) silently neutralised that outspeed discount on every non-force-switch turn."""
+
+    def setUp(self):
+        self.manager = Gen3RewardManager(log_level=LogLevel.QUIET)
+
+    @staticmethod
+    def _live_one_active():
+        active = SimpleNamespace(fainted=False, hp_fraction=1.0, active=True)
+        bench = [SimpleNamespace(fainted=True, hp_fraction=0.0, active=False) for _ in range(5)]
+        return SimpleNamespace(ours=SimpleNamespace(mons=tuple([active] + bench)))
+
+    @staticmethod
+    def _block(outspeed, crit_delta=0.7, pko=1.0):
+        from agents.observation.constants import TEAM_SIZE as _TS
+        from agents.observation.incoming_damage import (
+            IDX_PHYS_PKO, IDX_OUTSPEED, IDX_PHYS_CRIT_DELTA)
+        blk = np.zeros(_TS * INCOMING_PER_MON + 3, dtype=np.float32)   # active is team slot 0
+        blk[IDX_PHYS_PKO] = pko
+        blk[IDX_PHYS_CRIT_DELTA] = crit_delta   # the OLD buggy index (4) — must NOT be read as outspeed
+        blk[IDX_OUTSPEED] = outspeed             # the CORRECT index (6)
+        return blk
+
+    def test_fast_active_against_certain_ko_has_zero_risk(self):
+        live = self._live_one_active()
+        with patch("agents.training.reward_manager._encode_incoming_block",
+                   return_value=self._block(outspeed=1.0, crit_delta=0.7, pko=1.0)):
+            _phi, active_risk, _min_bench = self.manager._belief_potential_and_risk(live)
+        # outspeed read at idx 6 → risk = pko·(1−1) = 0. The stale +4 read crit_delta=0.7 →
+        # risk = 1·(1−0.7) = 0.3 ≠ 0, which this would catch.
+        self.assertAlmostEqual(active_risk, 0.0, places=6)
+
+    def test_slow_active_against_certain_ko_has_full_risk(self):
+        live = self._live_one_active()
+        with patch("agents.training.reward_manager._encode_incoming_block",
+                   return_value=self._block(outspeed=0.0, crit_delta=0.0, pko=1.0)):
+            _phi, active_risk, _min_bench = self.manager._belief_potential_and_risk(live)
+        self.assertAlmostEqual(active_risk, 1.0, places=6)
+
+
 if __name__ == "__main__":
     unittest.main()

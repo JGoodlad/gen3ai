@@ -212,6 +212,11 @@ Light Screen / Safeguard / Mist × both sides).
 block** (`gen3_incoming_crit_split_v1`, at offset 51 — see below), then the two 144-dim matchup matrices
 (`our_matchups` now at offset 102, `their_matchups` at 246). Scalars: active-move power ×4 (/200)
 + active-move multiplier ×4 (/4), fainted counts ×2, active-status flag (1), `forced_struggle` (1),
+**(`gen3_move_slot_align_v1`: these per-move scalars — and the move-effect block below — are filled
+in REQUEST-slot order via `legal.move_slots` (action 6+i ↔ slot i, disabled moves KEPT, typed-HP
+resolved off the moveset) by `reactive._request_slot_moves`, NOT `battle.available_moves`, which
+drops disabled moves and used to shift every later feature off its action logit; an unwritten slot
+reads the neutral 0.25 (1×) default, never the old np.ones → phantom 4×.)**
 the two **gen3_trapping_signals_v1** bits — `trapped` (1) and `maybe_trapped` (1) — and the
 **gen3_markovian_progress_v1** scalar `turns_since_progress` (1, `vec[14]`). All are sourced
 server-authoritatively: trapped/maybe_trapped from the per-decision `LegalActions` snapshot
@@ -225,7 +230,8 @@ high-value trap-risk bit; `turns_since_progress` lets the model state-condition 
 penalty it's about to be charged.
 
 **Move-effect block (36 dims, `gen3_move_effects_v1`):** 4 move slots in **REQUEST order** (so
-feature slot *k* lines up with action logit 6+*k*) × 9 features each — `is_boost`, `is_heal`,
+feature slot *k* lines up with action logit 6+*k* — enforced via `legal.move_slots` since
+`gen3_move_slot_align_v1`; pinned by `move_alignment_fuzz_test.py`) × 9 features each — `is_boost`, `is_heal`,
 `is_protect`, `is_phaze`, `is_hazard`, `inflicts_status`, `status_will_land`, `pp_fraction`,
 `status_will_land_known`. The
 only per-move signals that previously reached the policy head in action order were base power and
@@ -264,7 +270,14 @@ replacement — the block stays in the obs at its fixed dim, and the REWARD PBRS
 `live_view`. See `src/agents/model/CLAUDE.md` → the damage-operator / unified-belief notes.) Per our 6 team mons (slot-aligned): `[phys_expdmg_frac,
 spec_expdmg_frac, phys_pko_nocrit, spec_pko_nocrit, phys_crit_delta, spec_crit_delta, p_outspeed,
 threat_revealed]` (8 × 6 = 48), then 3 opp-active recovery scalars
-`[recovery_rate, cures_status(P rest), recovery_known]`. **`gen3_incoming_crit_split_v1` (PER_MON 5→8,
+`[recovery_rate, cures_status(P rest), recovery_known]`. **The per-mon field offsets are NAMED
+constants (`IDX_PHYS_EXP … IDX_THREAT_REVEALED`, `IDX_RECOVERY_*`) in `incoming_damage.py` — the
+single source of truth for this layout.** The producer assembles each slot FROM those names (with a
+`_PER_MON_FIELDS == PER_MON` import-time assert) and every single-field consumer reads by name
+(the reward PBRS `block[base + IDX_OUTSPEED]`, the fuzz test), so a future field insert can't
+silently desync a read — the failure mode that once made the reward PBRS read `phys_crit_delta` as
+`p_outspeed` (the crit-split pushed outspeed 4 → 6 but a hardcoded `block[base + 4]` stayed). Whole-
+slot reads (the prober decode) full-tuple-unpack, which fails loudly on a width change instead. **`gen3_incoming_crit_split_v1` (PER_MON 5→8,
 block 33→51, obs 3391→3409):** P(KO) is the modal `*_pko_nocrit` (the roll integration with NO crit —
 the outcome you plan around); the crit risk is exposed as the **DELTA** `*_crit_delta`
 (crit-inclusive − no-crit ∈ [0, `_CRIT_P`]) rather than the near-redundant absolute crit-inclusive line

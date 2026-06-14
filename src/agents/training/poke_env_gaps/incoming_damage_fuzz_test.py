@@ -10,9 +10,11 @@ Per-decision invariants asserted against the live battle (a violation raises imm
   1. ``encode_block`` never raises on a real state (catches missing dex/prior entries, attr gaps).
   2. The block has the right width and every value is finite.
   3. Ranges: P(KO)/P(outspeed) ∈ [0,1]; expected-damage-fraction ∈ [0,1.5]; recovery scalars ∈ [0,1].
+     Fields are read by NAMED index (incoming_damage.IDX_*), pinning p_outspeed at IDX_OUTSPEED — the
+     exact slot the reward PBRS reads — so a layout drift fails here, not silently in the reward.
   4. No opponent active (forced switch / battle start) ⟹ the whole block is zero.
   5. Our active behind a Substitute ⟹ its P(KO) rows are zero (the hit eats the Sub).
-  6. A fainted / absent team slot ⟹ its 5-tuple is zero (no belief about a dead mon).
+  6. A fainted / absent team slot ⟹ its per-mon slot is zero (no belief about a dead mon).
 
 Scenario invariant (over a whole run):
   7. With an opponent active present, the block is non-zero for the large majority of decisions —
@@ -47,6 +49,7 @@ from agents.observation.constants import (
     INCOMING_DMG_DIM, INCOMING_PER_MON, INCOMING_RECOVERY_DIM, TEAM_SIZE,
 )
 from agents.observation.incoming_damage_encoder import encode_block
+from agents.observation.incoming_damage import IDX_OUTSPEED, IDX_PHYS_PKO, IDX_SPEC_PKO
 from agents.battle.live_view import LiveView
 from utils.team_loader import TeamLoader
 from utils.teambuilder import Gen3Teambuilder
@@ -121,15 +124,23 @@ class IncomingDmgFuzzPlayer(Player):
             s.record({"check": "non_finite", "turn": battle.turn, "block": block.tolist()})
             return
 
-        # invariant 3 — per-mon + recovery ranges
+        # invariant 3 — per-mon + recovery ranges. Read fields by NAMED index (the single source of
+        # truth in incoming_damage.py) — and pin p_outspeed at IDX_OUTSPEED specifically, since the
+        # reward PBRS reads `block[base+IDX_OUTSPEED]`: a future field insert that shifts outspeed
+        # would fail here loudly instead of silently mis-shaping the reward (the gen3_incoming_crit_
+        # split layout drift that read phys_crit_delta as outspeed).
         for i in range(TEAM_SIZE):
             b = i * INCOMING_PER_MON
-            phys_exp, spec_exp, phys_pko, spec_pko, outspeed = block[b:b + INCOMING_PER_MON]
+            slot = block[b:b + INCOMING_PER_MON]
+            phys_pko = slot[IDX_PHYS_PKO]
+            spec_pko = slot[IDX_SPEC_PKO]
+            outspeed = slot[IDX_OUTSPEED]
+            phys_exp, spec_exp = slot[0], slot[1]
             ok = (0.0 <= phys_pko <= 1.0 and 0.0 <= spec_pko <= 1.0 and 0.0 <= outspeed <= 1.0
                   and 0.0 <= phys_exp <= _EXP_MAX and 0.0 <= spec_exp <= _EXP_MAX)
             if not ok:
                 s.range_fail += 1
-                s.record({"check": "out_of_range", "slot": i, "vals": block[b:b + INCOMING_PER_MON].tolist()})
+                s.record({"check": "out_of_range", "slot": i, "vals": slot.tolist()})
         rec = block[TEAM_SIZE * INCOMING_PER_MON:]
         if not np.all((rec >= 0.0) & (rec <= 1.0)):
             s.range_fail += 1
@@ -157,12 +168,12 @@ class IncomingDmgFuzzPlayer(Player):
                 active_idx = None
         if active_idx is not None and _has_sub(active):
             b = active_idx * INCOMING_PER_MON
-            if block[b + 2] != 0.0 or block[b + 3] != 0.0:
+            if block[b + IDX_PHYS_PKO] != 0.0 or block[b + IDX_SPEC_PKO] != 0.0:
                 s.sub_fail += 1
                 s.record({"check": "sub_not_zeroed", "slot": active_idx,
                           "vals": block[b:b + INCOMING_PER_MON].tolist()})
 
-        # invariant 6 — fainted / absent slot → all-zero 5-tuple (no belief about a dead mon)
+        # invariant 6 — fainted / absent slot → all-zero per-mon slot (no belief about a dead mon)
         for i in range(TEAM_SIZE):
             mon = our_team[i] if i < len(our_team) else None
             if mon is None or getattr(mon, "fainted", False):

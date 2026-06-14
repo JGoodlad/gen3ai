@@ -2,6 +2,7 @@ import numpy as np
 from .base import ObservationEncoder
 from .constants import ITEM_ID_DIM, ITEM_KNOWN_DIM, ITEM_CONSUMED_DIM
 from poke_env.battle.abstract_battle import AbstractBattle
+from poke_env import to_id_str  # canonical id normalizer (accepted poke-env string-util touch)
 from typing import Any
 
 class ItemsEncoder(ObservationEncoder):
@@ -41,12 +42,17 @@ class ItemsEncoder(ObservationEncoder):
             vec[ITEM_ID_DIM] = 1.0  # known
             # consumed stays 0 — item is still held
         elif consumed:
-            consumed_key = consumed.lower().replace(" ", "").replace("_", "")
-            if consumed_key in self.item_to_id:
-                entry = self.item_to_id[consumed_key]
+            # `consumed_item` can arrive name-form (e.g. "King's Rock"); `to_id_str` gives the
+            # canonical id ("kingsrock") that matches the id-form mapping keys. The old manual
+            # space/underscore strip missed apostrophes/hyphens (King's Rock / Never-Melt Ice /
+            # Up-Grade) → those fell through, yet known/consumed were still set → a phantom
+            # "[id=0, known=1, consumed=1]" (consumed the NONE item). Gate the bits on a successful
+            # map so a genuinely unmappable consumed item reads clean all-zeros (unknown).
+            entry = self.item_to_id.get(to_id_str(consumed))
+            if entry is not None:
                 vec[0] = float(entry.get("num", 0))
-            vec[ITEM_ID_DIM] = 1.0                    # we observed what it was
-            vec[ITEM_ID_DIM + ITEM_KNOWN_DIM] = 1.0   # consumed
+                vec[ITEM_ID_DIM] = 1.0                    # we observed what it was
+                vec[ITEM_ID_DIM + ITEM_KNOWN_DIM] = 1.0   # consumed
 
         return vec
 

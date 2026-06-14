@@ -39,8 +39,29 @@ _PHYSICAL_TYPES = frozenset({
 # ``threat_revealed`` is the provenance of the dominant KO threat (1.0 = a revealed move, <1.0 = a
 # usage-prior guess; 0.0 when no candidate can KO — read it jointly with the pko channels).
 PER_MON = 8
+# Named field offsets WITHIN a per-mon slot — the single source of truth for the block layout.
+# ANY code that reads one field of the block (reward shaping, prober, fuzz tests) MUST index via
+# these names, never a hardcoded literal: a stale magic offset is exactly how the reward PBRS came
+# to read `phys_crit_delta` as `p_outspeed` when the crit-split inserted the two delta fields and
+# pushed outspeed from 4 → 6. The producer below assembles the slot FROM these names, and
+# `_PER_MON_FIELDS == PER_MON` is asserted at import, so inserting a field forces every index to
+# move in lockstep (or fail loudly) instead of silently desyncing a consumer.
+IDX_PHYS_EXP = 0          # physical expected-damage fraction
+IDX_SPEC_EXP = 1          # special  expected-damage fraction
+IDX_PHYS_PKO = 2          # physical modal (no-crit) P(KO)
+IDX_SPEC_PKO = 3          # special  modal (no-crit) P(KO)
+IDX_PHYS_CRIT_DELTA = 4   # physical crit-risk delta (crit-inclusive − no-crit ∈ [0, _CRIT_P])
+IDX_SPEC_CRIT_DELTA = 5   # special  crit-risk delta
+IDX_OUTSPEED = 6          # P(our mon outspeeds the opp active)
+IDX_THREAT_REVEALED = 7   # provenance of the dominant KO threat (1.0 revealed … 0.0 none)
+_PER_MON_FIELDS = 8
+assert _PER_MON_FIELDS == PER_MON, "named per-mon field count must equal PER_MON"
+
 # Trailing opp-active scalars: [recovery_rate, cures_status(P rest), recovery_known]
 RECOVERY = 3
+IDX_RECOVERY_RATE = 0
+IDX_RECOVERY_CURES = 1
+IDX_RECOVERY_KNOWN = 2
 _MEAN_ROLL = 0.925   # mean of the 16 damage rolls (85..100)/100
 
 # Gen-3 single-hit damage at level 100, max roll (R=100), before the random roll:
@@ -331,8 +352,20 @@ def compute_team_block(defenders: List[Defender], attacker: Optional[AttackerThr
         # "crit tax" feature, not the near-redundant absolute crit-inclusive line.
         phys_crit_delta = max(0.0, phys_cr - phys_nc)
         spec_crit_delta = max(0.0, spec_cr - spec_nc)
+        # Write each field by NAME (not a positional tuple) so the producer and every consumer
+        # share one layout contract — inserting a field is a one-line add here, and a stale
+        # consumer offset can't silently read the wrong channel.
         base = i * PER_MON
-        out[base:base + PER_MON] = (phys_exp, spec_exp, phys_nc, spec_nc,
-                                    phys_crit_delta, spec_crit_delta, outspeed, revealed)
-    out[n_slots * PER_MON:] = (attacker.recovery_rate, attacker.cures_status, attacker.recovery_known)
+        out[base + IDX_PHYS_EXP] = phys_exp
+        out[base + IDX_SPEC_EXP] = spec_exp
+        out[base + IDX_PHYS_PKO] = phys_nc
+        out[base + IDX_SPEC_PKO] = spec_nc
+        out[base + IDX_PHYS_CRIT_DELTA] = phys_crit_delta
+        out[base + IDX_SPEC_CRIT_DELTA] = spec_crit_delta
+        out[base + IDX_OUTSPEED] = outspeed
+        out[base + IDX_THREAT_REVEALED] = revealed
+    rec = n_slots * PER_MON
+    out[rec + IDX_RECOVERY_RATE] = attacker.recovery_rate
+    out[rec + IDX_RECOVERY_CURES] = attacker.cures_status
+    out[rec + IDX_RECOVERY_KNOWN] = attacker.recovery_known
     return out

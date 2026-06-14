@@ -51,11 +51,23 @@ def test_consumed_known_item():
     assert vec[KNOWN] == 1.0
     assert vec[CONSUMED] == 1.0
 
-def test_consumed_unknown_item():
-    # Item consumed but ID not in our mapping (edge case: unknown gen3 item)
+def test_consumed_unmappable_item_is_clean_unknown():
+    # Item consumed but its id isn't in our mapping → encode clean all-zeros (unknown), NOT the old
+    # phantom "[id=0, known=1, consumed=1]" mislabel (a "consumed the NONE item" GIGO). Gating the
+    # known/consumed bits on a successful map is what removes it.
     enc = make_encoder()
     vec = enc.encode(make_mon(None, consumed_item="mysteryberry"), None)
-    assert vec[ID] == 0.0   # ID unknown → 0
+    assert vec[ID] == 0.0
+    assert vec[KNOWN] == 0.0
+    assert vec[CONSUMED] == 0.0
+
+def test_consumed_name_form_normalizes_via_to_id_str():
+    # consumed_item can arrive name-form (apostrophes/hyphens: King's Rock, Never-Melt Ice); to_id_str
+    # canonicalises to the id-form mapping key, so it is captured — the old manual space/underscore
+    # strip left the apostrophe in ("king's rock" ∉ mapping) and silently mislabeled it.
+    enc = ItemsEncoder({"kingsrock": {"num": 109}})
+    vec = enc.encode(make_mon(None, consumed_item="King's Rock"), None)
+    assert vec[ID] == 109.0
     assert vec[KNOWN] == 1.0
     assert vec[CONSUMED] == 1.0
 
@@ -206,9 +218,10 @@ def test_fuzz_item_id_zero_for_unrecognized_consumed(enc):
     mon = FuzzMon()
     mon.consume("oddberry_not_in_mapping")
     vec = enc.encode(mon, None)
+    # Unmappable consumed item → clean all-zeros (unknown), not a phantom "known NONE consumed".
     assert vec[ID] == 0.0
-    assert vec[KNOWN] == 1.0
-    assert vec[CONSUMED] == 1.0
+    assert vec[KNOWN] == 0.0
+    assert vec[CONSUMED] == 0.0
 
 
 @pytest.mark.parametrize("item_name,expected_id", [

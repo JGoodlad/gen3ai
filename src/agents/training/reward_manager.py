@@ -21,6 +21,14 @@ from agents.observation.constants import (
     TEAM_SIZE as _TEAM_SIZE,
     INCOMING_PER_MON as _INCOMING_PER_MON,
 )
+# Named per-mon field offsets — the single source of truth for the incoming-damage block layout
+# (incoming_damage.py). Read fields by NAME so a future field insert can't silently desync this
+# PBRS read the way a hardcoded `block[base + 4]` once read phys_crit_delta as p_outspeed.
+from agents.observation.incoming_damage import (
+    IDX_PHYS_PKO as _IDX_PHYS_PKO,
+    IDX_SPEC_PKO as _IDX_SPEC_PKO,
+    IDX_OUTSPEED as _IDX_OUTSPEED,
+)
 
 
 def _ptype(name) -> "Optional[_PokemonType]":
@@ -1096,9 +1104,9 @@ class Gen3RewardManager:
             hp = float(lm.hp_fraction)
             total_hp += hp
             base = i * _INCOMING_PER_MON
-            pko = max(float(block[base + 2]), float(block[base + 3]))
+            pko = max(float(block[base + _IDX_PHYS_PKO]), float(block[base + _IDX_SPEC_PKO]))
             if lm.active:
-                outspeed = float(block[base + 4])
+                outspeed = float(block[base + _IDX_OUTSPEED])
                 active_risk = pko * (1.0 - outspeed)
                 active_imminent = hp * active_risk
             elif hp > 0.0:   # a real, switchable bench mon (guard a 0-HP-not-yet-fainted false "safe")

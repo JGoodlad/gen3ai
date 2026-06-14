@@ -180,6 +180,29 @@ def test_prev_mask_struggle_turn_has_no_move_bits():
     assert prev[10] == 1.0
 
 
+def test_prev_mask_move_bits_reset_when_active_mon_changed():
+    """If our active mon CHANGED since last decision (a switch → different active_move_ids), the
+    previous mask's MOVE bits describe the OLD mon's moves and don't correspond to THIS mon's sorted
+    slots — they reset to the no-prior-info default (all-ones). Without it a stale legality bit
+    (here the disabled willowisp's 0) would land on an unrelated move of the just-switched-in mon."""
+    prev_legal = _legal([
+        _lm("thunderbolt"), _lm("willowisp", disabled=True), _lm("icepunch"), _lm("taunt"),
+    ])
+    prev_mask = Gen3ActionMasker.mask_from_legal(prev_legal)
+    assert prev_mask[6:10].tolist() == [1, 0, 1, 1]      # a cleared move bit to (not) carry over
+    cur_legal = _legal([   # a DIFFERENT mon — different moveset
+        _lm("earthquake"), _lm("rockslide"), _lm("substitute"), _lm("dragondance"),
+    ])
+    cur_mask = Gen3ActionMasker.mask_from_legal(cur_legal)
+
+    tracker = EpisodeTracker()
+    tracker.record(_mock_battle(1), prev_mask, legal=prev_legal)   # _history[-2]
+    tracker.record(_mock_battle(2), cur_mask, legal=cur_legal)     # _history[-1] (the switch)
+
+    prev = tracker.prev_mask
+    assert prev[6:10].tolist() == [1.0, 1.0, 1.0, 1.0], "move bits reset on a switch — no stale 0"
+
+
 # ---------------------------------------------------------------------------
 # _actions list synchronisation
 # ---------------------------------------------------------------------------
