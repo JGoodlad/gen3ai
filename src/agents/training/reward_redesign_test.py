@@ -964,6 +964,50 @@ class TestProgressClock(unittest.TestCase):
         c.update(_delta(our_move_id="spikes"), live, _Legal(switches=[1]))
         self.assertEqual(c.n, 0)
 
+    def test_filler_rapidspin_no_hazards_charges(self):
+        """RapidSpin with NO spikes on our side is a filler attack: its trivial chip must NOT count as
+        progress (clause (i)) — it falls through to a charged NO_OP."""
+        c = self._clock(); c.n = 2; c._prev_our_spikes = 0
+        c.update(_delta(our_move_id="rapidspin", our_damaging_event=object(),
+                        opp_target_hp_delta=-0.05, our_move_outcome="hit"),
+                 _full_team_live(), _Legal(switches=[1]))
+        self.assertEqual(c.n, 3)
+        self.assertAlmostEqual(c.last_penalty, -0.15, places=6)
+
+    def test_filler_rapidspin_not_rescued_by_opp_switch(self):
+        """An incidental opp switch (clause (iv)) must not launder a filler RapidSpin into progress."""
+        c = self._clock(); c.n = 2; c._prev_our_spikes = 0
+        c.update(_delta(our_move_id="rapidspin", opp_switch_to="gengar", our_move_outcome="hit"),
+                 _full_team_live(), _Legal(switches=[1]))
+        self.assertEqual(c.n, 3)
+        self.assertAlmostEqual(c.last_penalty, -0.15, places=6)
+
+    def test_rapidspin_clearing_our_hazards_is_progress(self):
+        """A RapidSpin that actually clears our spikes (our side HAD layers) is real utility — the
+        filler gate must NOT fire, so its chip still counts as progress and resets."""
+        c = self._clock(); c.n = 4; c._prev_our_spikes = 2
+        live = _Live([1.0] * 6, [1.0] * 6)            # our spikes cleared this window → now 0
+        c.update(_delta(our_move_id="rapidspin", our_damaging_event=object(),
+                        opp_target_hp_delta=-0.05, our_move_outcome="hit"),
+                 live, _Legal(switches=[1]))
+        self.assertEqual(c.n, 0)
+
+    def test_filler_rapidspin_ko_is_progress(self):
+        """A RapidSpin that lands a KO is real progress even with no hazards to clear — not penalised."""
+        c = self._clock(); c.n = 3; c._prev_our_spikes = 0
+        c.update(_delta(our_move_id="rapidspin", opp_fainted=True, our_damaging_event=object(),
+                        opp_target_hp_delta=-0.30, our_move_outcome="hit"),
+                 _full_team_live(opp_alive=5), _Legal(switches=[1]))
+        self.assertEqual(c.n, 0)
+
+    def test_filler_rapidspin_denied_freezes(self):
+        """A filler RapidSpin prevented by RNG (flinch/cant) is exogenous → frozen, not charged."""
+        c = self._clock(); c.n = 2; c._prev_our_spikes = 0
+        c.update(_delta(our_move_id="rapidspin", our_failed_to_move=True, our_cant_reason="flinch"),
+                 _full_team_live(), _Legal(switches=[1]))
+        self.assertEqual(c.n, 2)
+        self.assertEqual(c.last_penalty, 0.0)
+
     def test_forced_commit_resets(self):
         c = self._clock(); c.n = 4
         c.update(_delta(our_move_id="roar", opp_switch_to="snorlax"),

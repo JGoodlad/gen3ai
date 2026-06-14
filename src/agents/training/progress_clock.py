@@ -24,6 +24,11 @@ suppressed when no switch is legal (trapped-vs-wall helplessness must not be pun
 the progress/denial classification — it can never add a layer, and must not be rescued by clause (iv)
 (an opp switch, incl. a VOLUNTARY pivot into our hazards, counting as our progress). Without this, a
 wasted Spikes that banks switch-in material escapes the tax on exactly the turns it is rewarded.
+
+**Filler-RapidSpin gate.** RapidSpin used with NO hazards on our side to clear is a 20-BP filler
+pseudo-attack — its trivial chip (and any incidental opp switch) is barred from counting as progress,
+so it falls through to the NO_OP charge. A spin that genuinely clears our hazards (our side had spikes)
+or lands a KO IS real progress; a spin denied by RNG is still frozen by `_denial_kind`.
 """
 from __future__ import annotations
 
@@ -58,13 +63,15 @@ class ProgressClock:
         # which is inert there (only the reward reads last_penalty). Keeping it on the clock means
         # update() stays an obs-side call that needs no reward param.
         self.no_progress_penalty: float = no_progress_penalty
-        self._prev_spikes: int = 0
+        self._prev_spikes: int = 0        # opp-side spike layers after last window (hazard-add check)
+        self._prev_our_spikes: int = 0    # our-side spike layers after last window (filler-spin check)
         self._heal_streak: int = 0   # consecutive productive-heal windows (for HEAL_FREEZE_GRACE)
 
     def reset(self) -> None:
         self.n = 0
         self.last_penalty = 0.0
         self._prev_spikes = 0
+        self._prev_our_spikes = 0
         self._heal_streak = 0
 
     def value(self) -> float:
@@ -78,6 +85,10 @@ class ProgressClock:
         opp_spikes_now = self._opp_spikes(live)
         prev_spikes = self._prev_spikes
         self._prev_spikes = opp_spikes_now
+
+        our_spikes_now = self._our_spikes(live)
+        prev_our_spikes = self._prev_our_spikes
+        self._prev_our_spikes = our_spikes_now
 
         # Forced-switch / post-faint replacement: only switches were legal → the clock sits out.
         if getattr(delta, "phase_is_forced_switch", False):
@@ -99,7 +110,17 @@ class ProgressClock:
             self._heal_streak = 0
             return
 
-        if self._is_progress(delta, live, prev_spikes, opp_spikes_now):
+        # RapidSpin with NO hazards on our side to clear is a filler 20-BP pseudo-attack — not real
+        # offense, not utility. Its trivial chip (and any incidental opp switch) must NOT launder into
+        # "progress" that resets the stall clock, so we disable the progress reset for it and let it
+        # fall through to the NO_OP charge below. A spin that genuinely clears our hazards
+        # (prev_our_spikes > 0) or lands a KO (opp_fainted) IS real progress and reaches _is_progress;
+        # a spin denied by RNG (flinch / cant) is still frozen by _denial_kind.
+        filler_spin = (getattr(delta, "our_move_id", None) == "rapidspin"
+                       and prev_our_spikes == 0
+                       and not getattr(delta, "opp_fainted", False))
+
+        if not filler_spin and self._is_progress(delta, live, prev_spikes, opp_spikes_now):
             self.n = 0
             self.last_penalty = 0.0
             self._heal_streak = 0
@@ -136,6 +157,12 @@ class ProgressClock:
         if live is None:
             return 0
         return int((live.opp.side_conditions or {}).get("spikes", 0))
+
+    @staticmethod
+    def _our_spikes(live) -> int:
+        if live is None:
+            return 0
+        return int((live.ours.side_conditions or {}).get("spikes", 0))
 
     @staticmethod
     def _is_progress(delta, live, prev_spikes: int, opp_spikes_now: int) -> bool:

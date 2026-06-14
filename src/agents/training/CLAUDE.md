@@ -77,6 +77,22 @@ battles: a winning-residual window is never charged). The env (`gen3_env.py`) fo
 embed time, updates the clock, caches it for `calc_reward` (no double fold), and wires
 `reward_manager.progress_clock = tracker.progress_clock`.
 
+**Two futile-move short-circuits** (BEFORE the PROGRESS check, so an incidental opp switch can't launder
+them via clause (iv)): **(1) capped Spikes** — Spikes used at the 3-layer cap can never add a layer, so
+it is charged as a NO_OP directly (a layer-ADDING Spikes still resets via the hazard clause); **(2)
+filler RapidSpin** — RapidSpin with NO spikes on our side to clear is a 20-BP filler pseudo-attack, so
+its trivial chip is barred from counting as progress and it falls through to the NO_OP charge (a spin
+that genuinely clears our hazards, lands a KO, or is RNG-denied is handled normally). Both target the
+self-play wheel-spin loops (a mutual Spikes/RapidSpin stall) the flat anti-spam taxes missed.
+
+**Server-free reward parity (`reward_tracker.py`).** The offline reward path (`RewardTracker`, used by
+`BattleRecorder` + the eval `RewardTrackingMixin`) has no `Gen3Env` to own the clock, so it OWNS a
+per-battle `ProgressClock` itself and advances it before each `process_turn_reward` — mirroring the
+env's embed-time timing. Without this, eval traces scored `no_progress_tax`=0 (clock absent) and the
+prober **understated the training penalty on every stall/no-op turn**; now the recorded reward matches
+training (the gate is still `all_shaping_pbrs`/`bias_redesign` in the run's `RewardConfig`, so a
+default-config run stays byte-identical).
+
 **Anti-stall terminal (`--draw-penalty`, default −30.0 = byte-unchanged).** The trainee FORFEITS a
 stalled battle at the turn cap (`gen3_env` `ForfeitBattleOrder` at turn ≥ `StallConfig.threshold`), so
 a 250-turn stall ends as a forfeit-**loss** (`lost=True`), NOT a tie. The terminal therefore detects a
