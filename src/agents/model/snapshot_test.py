@@ -525,6 +525,45 @@ def test_migrate_pre_v17_adds_move_belief_defaults(version):
     ModelVersion(**result)
 
 
+# --- damage_op: a structural bool toggle (the differentiable damage operator, v18) -----------------
+
+
+def test_check_compatible_rejects_damage_op_mismatch(version):
+    """damage_op widens BOTH projection heads → a weight-shape change check_compatible must reject
+    (like value_active_readout / opp_belief_slots)."""
+    on = dataclasses.replace(version, damage_op=True)
+    with pytest.raises(ModelVersionError) as exc_info:
+        version.check_compatible(on)        # version has damage_op=False (default)
+    assert "damage_op" in str(exc_info.value)
+
+
+def test_check_compatible_accepts_matching_damage_op(version):
+    """Same value (incl. the off baseline) must load — no false rejection."""
+    version.check_compatible(dataclasses.replace(version))            # off vs off
+    on = dataclasses.replace(version, damage_op=True)
+    on.check_compatible(dataclasses.replace(on))                      # on vs on
+
+
+def test_damage_op_read_from_features_extractor_kwargs(layout):
+    """damage_op sources from features_extractor_kwargs; absent → False (baseline)."""
+    pk = {"net_arch": [512, 512], "features_extractor_kwargs": {"damage_op": True}}
+    v = ModelVersion.from_layout_and_policy_kwargs(layout, pk)
+    assert v.damage_op is True and v.config_version == MODEL_CONFIG_VERSION
+    v_default = ModelVersion.from_layout_and_policy_kwargs(layout, {"net_arch": [512, 512]})
+    assert v_default.damage_op is False
+
+
+def test_migrate_pre_v18_adds_damage_op_default(version):
+    """Pre-v18 configs lack damage_op — migration injects False and bumps to the current version."""
+    data = json.loads(version.to_json())
+    data.pop("damage_op", None)
+    data["config_version"] = 17
+    result = _migrate_config(data)
+    assert result["config_version"] == MODEL_CONFIG_VERSION
+    assert result["damage_op"] is False
+    ModelVersion(**result)
+
+
 def test_check_compatible_rejects_value_active_readout_mismatch(version):
     """① value_active_readout widens the value projection → a weight-shape change check_compatible
     must reject (like use_popart)."""

@@ -449,3 +449,25 @@ def test_projection_assembler_width_and_passthrough():
     # The non-matchup tail is concatenated verbatim into both heads.
     assert torch.allclose(pi_combined[:, -K:], non_matchup)
     assert torch.allclose(vf_combined[:, -K:], non_matchup)
+
+
+def test_projection_assembler_appends_damage_block_to_both_heads():
+    """The optional damage block (DamageOperator output) widens BOTH heads by its width and is
+    concatenated verbatim (last). None → no change (the off-by-default baseline)."""
+    model, layout = _make_model()
+    active_ctx_dim = layout["active_context_dim"]
+    B, K, Dg = 2, 7, 24
+    args = (torch.randn(B, D_MODEL), torch.randn(B, D_MODEL),
+            torch.randn(B, D_MODEL), torch.randn(B, D_MODEL))
+    ctx = _dummy_ctx(
+        our_ctx_raw=torch.randn(B, active_ctx_dim),
+        opp_ctx_raw=torch.randn(B, active_ctx_dim),
+        non_matchup_rest=torch.randn(B, K),
+    )
+    pi0, vf0 = model.assembler(*args, ctx)
+    block = torch.randn(B, Dg)
+    pi1, vf1 = model.assembler(*args, ctx, damage_block=block)
+    assert pi1.shape[1] - pi0.shape[1] == Dg
+    assert vf1.shape[1] - vf0.shape[1] == Dg
+    assert torch.allclose(pi1[:, -Dg:], block)        # appended verbatim, last
+    assert torch.allclose(vf1[:, -Dg:], block)

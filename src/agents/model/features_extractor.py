@@ -11,6 +11,8 @@ from agents.observation.constants import (
     POKEMON_FULL_DIM,
     POKEMON_HP_PROBS_OFFSET,
     POKEMON_SPECIES_KNOWN_OFFSET,
+    POKEMON_SPREAD_OFFSET,
+    POKEMON_SPREAD_DIM,
 )
 from agents.observation.moves import HIDDEN_POWER_MOVE_NUM
 from agents.observation.turn_delta_encoder import (
@@ -970,6 +972,146 @@ class MoveBelief(torch.nn.Module):
         return self.norm(enriched), move_logits
 
 
+# Differentiable damage operator (`DamageOperator`) constants.
+_DMG_BETA = 8.0            # soft-max-over-candidates temperature (→ hard max as β→∞)
+_DMG_FEATS = 4            # per-defender features: [phys_chip, spec_chip, phys_pko, spec_pko]
+
+
+class DamageOperator(torch.nn.Module):
+    """Fixed, differentiable gen3 damage calculator run in the GPU forward pass, fed by the
+    move-belief head's PREDICTED moves — the "compute the physics, learn the belief" op
+    (`designs/ai_v6/design_differentiable_damage_op.md`).
+
+    For the opponent ACTIVE mon (always a revealed mon under move-belief mode revealed/both), it
+    computes the incoming damage its *believed* moveset would deal to each of our 6 mons, then
+    aggregates per (defender, gen3-type-channel) into the believed-move threat. The damage is a
+    differentiable function of the move-belief weights `w_m = sigmoid(last_move_belief_logits[active])`,
+    so the gradient sharpens the belief toward the moves that actually threaten KOs. This replaces
+    the FIXED usage-prior the CPU `incoming_damage.py` block must use (the belief doesn't exist at
+    obs-build time) with the model's LEARNED belief.
+
+    Per defender d, per channel (physical / special — the gen3 TYPE split), two features:
+      chip = soft-max over that channel's believed candidates of `w·dmg_frac` (the damage fraction of
+             the most-threatening believed move — mirrors `incoming_damage`'s max-over-candidates, made
+             differentiable via a temperature soft-max instead of a hard max);
+      pko  = soft-max of `w·P(KO|move)` (P(KO) = a clamped roll-band ramp, the continuous limit of the
+             16-roll integration).
+    Hidden Power (all 17 variants collide on num=237 → unrepresentable on the num axis) is expanded
+    into 16 TYPED candidates (BP 70 = gen3 max), weighted `P(HP present)·P(type)` — presence from the
+    move belief (`w[237]`), type from the per-mon `hp_probs` obs block (the HP tracker's narrowed
+    distribution) — so HP Grass vs HP Ice get distinct type effectiveness.
+
+    Stats: our defenders use their REAL spread (IVs/EVs/nature reconstructed from the obs spread block —
+    they are revealed); the hidden-spread attacker uses a fixed de-timid offensive assumption (252 EV,
+    31 IV, +nature ×1.1), mirroring `incoming_damage`'s offensive-stat tail. The smooth (un-floored)
+    L100 stat + damage formula keeps everything differentiable (the byte-exact floored kernel is the
+    proof's; the forward only needs the gradient).
+
+    Leak-safe: reads only the PREDICTED belief + public obs (our HP/types, the opp active's revealed
+    species/types) — never a privileged label. Output `[B, 6*_DMG_FEATS]` is appended to BOTH
+    projection heads. Zeroed (incl. gradient) when there is no opponent active and per fainted defender.
+    Lookup tables are registered as non-persistent float32 buffers (pure physics, recomputable from
+    `data/`)."""
+
+    n_feats = _DMG_FEATS
+
+    def __init__(self, layout: Dict[str, Any]):
+        super().__init__()
+        from agents.model.damage_tables import (
+            build_damage_buffers, HIDDEN_POWER_NUM, HIDDEN_POWER_BP,
+        )
+        bufs = build_damage_buffers(layout['max_moves'], layout['max_species'])
+        for name, tensor in bufs.items():
+            # Non-persistent: deterministic physics from data/, not learned weights → keep them out of
+            # every checkpoint (and out of the state_dict, so a load never demands them).
+            self.register_buffer(name, tensor, persistent=False)
+        self.hp_num = HIDDEN_POWER_NUM
+        self.hp_bp = float(HIDDEN_POWER_BP)
+
+    def _softmax_max(self, score: torch.Tensor, channel_mask: torch.Tensor) -> torch.Tensor:
+        """Soft (differentiable) max over a channel's candidates: `Σ_c softmax(β·score)·score` with
+        off-channel candidates masked out of BOTH the softmax and the value. `score` [B,6,C],
+        `channel_mask` [1,1,C] (1=on-channel). Returns [B,6]. Bounded by max(score); no /0; the
+        off-channel −1e9 underflows the softmax to exactly 0 (softmax subtracts its max → stable)."""
+        masked = _DMG_BETA * score + (1.0 - channel_mask) * (-1e9)
+        weights = torch.softmax(masked, dim=-1)
+        return (weights * score * channel_mask).sum(dim=-1)
+
+    def forward(self, ctx: 'ExtractorContext', move_belief_logits: torch.Tensor) -> torch.Tensor:
+        B = ctx.batch_size
+        device = ctx.device
+        eps = 1e-6
+        ar = torch.arange(B, device=device)
+        opp_act = TEAM_SIZE + ctx.opp_active_local                         # [B] global opp-active slot
+
+        # No-opp-active gate (forced switch / battle start / dummy zero-obs): zero the whole block.
+        has_opp = ctx.hp_and_active[:, TEAM_SIZE:2 * TEAM_SIZE, -1].any(dim=1).float()  # [B]
+
+        # --- Attacker = opp active (revealed species; hidden spread → fixed 252 EV / 31 IV / ×1.1) ---
+        a_base = self.BASE_STATS[ctx.species_ids[ar, opp_act]]            # [B,6] [hp,atk,def,spa,spd,spe]
+        off_const = 31.0 + 252.0 / 4.0 + 5.0                              # IV + EV/4 + 5
+        atk = (2.0 * a_base[:, 1] + off_const) * 1.1                      # [B]
+        spa = (2.0 * a_base[:, 3] + off_const) * 1.1                      # [B]
+        at1 = ctx.type1_ids[ar, opp_act]                                 # [B] TypeEncoder axis
+        at2 = ctx.type2_ids[ar, opp_act]
+
+        # --- Defenders = our 6 mons (revealed → REAL spread reconstructed from the obs) ---
+        d_base = self.BASE_STATS[ctx.species_ids[:, :TEAM_SIZE]]          # [B,6,6]
+        spread = ctx.pokemon_part[:, :TEAM_SIZE,
+                                  POKEMON_SPREAD_OFFSET:POKEMON_SPREAD_OFFSET + POKEMON_SPREAD_DIM]
+        iv = spread[..., 0:6] * 31.0                                      # [B,6,6] [hp,atk,def,spa,spd,spe]
+        ev = spread[..., 6:12] * 252.0
+        nat = spread[..., 13:18]                                          # [B,6,5] [atk,def,spa,spd,spe]
+        def_stat = (2.0 * d_base[..., 2] + iv[..., 2] + ev[..., 2] / 4.0 + 5.0) * nat[..., 1]   # [B,6]
+        spd_stat = (2.0 * d_base[..., 4] + iv[..., 4] + ev[..., 4] / 4.0 + 5.0) * nat[..., 3]   # [B,6]
+        maxhp = 2.0 * d_base[..., 0] + iv[..., 0] + ev[..., 0] / 4.0 + 110.0                    # [B,6]
+        hp_frac = ctx.hp_and_active[:, :TEAM_SIZE, 0]                     # [B,6]
+        cur_hp = hp_frac * maxhp                                          # [B,6]
+        defender_alive = (hp_frac > 0).float()                           # [B,6]
+        t1d = ctx.type1_ids[:, :TEAM_SIZE]                               # [B,6]
+        t2d = ctx.type2_ids[:, :TEAM_SIZE]
+
+        # --- Belief weights at the opp-active slot + the typed-HP candidate weights ---
+        w = torch.sigmoid(move_belief_logits[ar, ctx.opp_active_local])   # [B, n_moves]
+        w_hp = torch.sigmoid(move_belief_logits[ar, ctx.opp_active_local, self.hp_num])  # [B] P(HP present)
+        hp_type_belief = ctx.hp_probs[ar, opp_act]                       # [B,16] P(HP type | present)
+
+        # --- Candidate set: the num-indexed moves + 16 typed Hidden Powers ---
+        n_hp = self.HP_TYPE_IDX.shape[0]
+        bp_all = torch.cat([self.MOVE_BP, torch.full((n_hp,), self.hp_bp, device=device)])      # [C]
+        mty_all = torch.cat([self.MOVE_TYPE_IDX, self.HP_TYPE_IDX])                             # [C]
+        phys_all = torch.cat([self.MOVE_PHYS, self.HP_IS_PHYS])                                 # [C]
+        w_all = torch.cat([w, w_hp.unsqueeze(-1) * hp_type_belief], dim=1)                      # [B,C]
+
+        # --- gen3 damage per (defender, candidate), all differentiable in w ---
+        eff = self.CHART[t1d][..., mty_all] * self.CHART[t2d][..., mty_all]                     # [B,6,C]
+        A = phys_all * atk[:, None] + (1.0 - phys_all) * spa[:, None]                           # [B,C]
+        D = phys_all[None, None, :] * def_stat[:, :, None] \
+            + (1.0 - phys_all)[None, None, :] * spd_stat[:, :, None]                            # [B,6,C]
+        is_stab = ((mty_all[None, :] == at1[:, None]) | (mty_all[None, :] == at2[:, None])).float()  # [B,C]
+        stab = 1.0 + 0.5 * is_stab                                                              # [B,C]
+        core = 42.0 * bp_all[None, None, :] * A[:, None, :] / (D + eps) / 50.0 + 2.0            # [B,6,C]
+        dmg = core * stab[:, None, :] * eff * 0.925                                             # [B,6,C]
+        dmg = dmg * (bp_all > 0).float()[None, None, :]                  # kill the +2 floor on BP-0 moves
+        frac = dmg / (maxhp[:, :, None] + eps)                                                  # [B,6,C]
+        # P(KO|move): clamped roll-band ramp — the continuous limit of the 16-roll integration.
+        ko_ramp = torch.clamp((dmg - cur_hp[:, :, None]) / (0.15 * dmg + eps), 0.0, 1.0)        # [B,6,C]
+
+        # --- aggregate per (defender, channel): soft-max of belief-weighted damage / KO ---
+        wf = w_all[:, None, :] * frac                                    # [B,6,C] (broadcast w over defenders)
+        wk = w_all[:, None, :] * ko_ramp
+        phys_mask = phys_all[None, None, :]
+        spec_mask = 1.0 - phys_mask
+        phys_chip = self._softmax_max(wf, phys_mask)                     # [B,6]
+        spec_chip = self._softmax_max(wf, spec_mask)
+        phys_pko = self._softmax_max(wk, phys_mask)
+        spec_pko = self._softmax_max(wk, spec_mask)
+
+        feats = torch.stack([phys_chip, spec_chip, phys_pko, spec_pko], dim=-1)                 # [B,6,4]
+        feats = feats * defender_alive[:, :, None] * has_opp[:, None, None]                     # gates
+        return feats.reshape(B, TEAM_SIZE * self.n_feats)               # [B, 6*_DMG_FEATS]
+
+
 class ProjectionAssembler(torch.nn.Module):
     """Assembles the pre-projection inputs for BOTH heads.
 
@@ -1000,7 +1142,8 @@ class ProjectionAssembler(torch.nn.Module):
     def forward(self, our_team_pooled: torch.Tensor, their_team_pooled: torch.Tensor,
                 our_active_refined: torch.Tensor, value_pooled: torch.Tensor,
                 ctx: ExtractorContext,
-                hidden_opp_belief: Optional[torch.Tensor] = None) -> Tuple[torch.Tensor, torch.Tensor]:
+                hidden_opp_belief: Optional[torch.Tensor] = None,
+                damage_block: Optional[torch.Tensor] = None) -> Tuple[torch.Tensor, torch.Tensor]:
         our_ctx_enc = self.active_ctx_encoder(ctx.our_ctx_raw)                      # [B, 32]
         opp_ctx_enc = self.active_ctx_encoder(ctx.opp_ctx_raw)                      # [B, 32]
         pi_parts = [our_team_pooled, their_team_pooled, our_active_refined,
@@ -1016,6 +1159,12 @@ class ProjectionAssembler(torch.nn.Module):
         if hidden_opp_belief is not None:
             pi_parts.append(hidden_opp_belief)
             vf_parts.append(hidden_opp_belief)
+        # Differentiable damage operator (flag-guarded; None when off): the believed-move incoming
+        # damage to each of our mons, fed to BOTH heads (policy: which threat to dodge; value: price the
+        # KO tail). Appended last, after the belief, so off-by-default block layouts are unchanged.
+        if damage_block is not None:
+            pi_parts.append(damage_block)
+            vf_parts.append(damage_block)
         pi_combined = torch.cat(pi_parts, dim=1)
         vf_combined = torch.cat(vf_parts, dim=1)
         return pi_combined, vf_combined
@@ -1033,7 +1182,8 @@ class Gen3FeaturesExtractor(torch.nn.Module):
                  mappings: Optional[Dict[str, Any]] = None, log_level: LogLevel = LogLevel.QUIET,
                  attend_unrevealed_opponents: bool = False, opp_belief_cls_k: int = 0,
                  value_active_readout: bool = False, opp_belief_slots: bool = False,
-                 move_belief_mode: str = "off", opp_belief_latent: bool = False):
+                 move_belief_mode: str = "off", opp_belief_latent: bool = False,
+                 damage_op: bool = False):
         super().__init__()
         self.layout = layout
         self.mappings = mappings
@@ -1117,6 +1267,19 @@ class Gen3FeaturesExtractor(torch.nn.Module):
             MoveBelief(layout['max_moves'], layout['move_embedding_dim']) if move_belief_mode != "off" else None
         )
         self.last_move_belief_logits: Optional[torch.Tensor] = None
+        # Differentiable damage operator (flag-guarded): consumes the move belief's PREDICTED moves for
+        # the opp active and computes the believed-move incoming damage to each of our mons, fed to BOTH
+        # heads. OFF reproduces the baseline arch byte-for-byte (no module, projection widths unchanged).
+        # Requires a move-belief mode that SCORES the opp active (a revealed mon): revealed|both. Under
+        # off/unrevealed the active-slot logits are unsupervised, so the belief gradient story breaks.
+        self.damage_op_enabled = damage_op
+        if damage_op and move_belief_mode not in ("revealed", "both"):
+            raise ValueError(
+                "damage_op=True requires move_belief_mode in {revealed, both} — the operator reads the "
+                "opp ACTIVE slot's predicted move logits, which are only supervised/reinjected for a "
+                "revealed mon. Set --move-belief-mode revealed (or both), or disable --damage-op."
+            )
+        self.damage_op = DamageOperator(layout) if damage_op else None
         # Value-head active readout (weight-shape via flag): adds our_active_refined (D_MODEL) to the
         # value projection. OFF reproduces the baseline value head byte-for-byte (no ARCH_SIGNATURE bump).
         self.value_active_readout = value_active_readout
@@ -1244,8 +1407,14 @@ class Gen3FeaturesExtractor(torch.nn.Module):
             # NaN-safety invariant and is single-sourced on the context).
             all_team_out = torch.cat([our_team_out, their_team_out], dim=1)                 # [B, 12, D]
             belief = self.hidden_opp_belief(all_team_out, ctx.all_fainted, ctx.batch_size)
+        # Differentiable damage op (flag-guarded; None when off): fed the move belief's PREDICTED moves
+        # for the opp active (set just above). Forward-only — leak-free (reads the prediction + public
+        # obs); its gradient flows back into the move-belief head via last_move_belief_logits.
+        damage_block = None
+        if self.damage_op is not None:
+            damage_block = self.damage_op(ctx, self.last_move_belief_logits)
         return self.assembler(our_team_pooled, their_team_pooled, our_active_refined, value_pooled,
-                              ctx, belief)
+                              ctx, belief, damage_block)
 
     def forward(self, obs):
         """Returns a (pi_features, vf_features) tuple — both [B, PROJECTION_DIM].

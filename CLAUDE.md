@@ -560,18 +560,22 @@ from named constants; never hardcode indices.
 `Gen3FeaturesExtractor` in `src/agents/model/features_extractor.py` is decomposed into named
 phase `nn.Module`s chained by a thin orchestrator:
 
-**`ObsUnpack` → `PokemonEncoder` → `[BeliefSlots?]` → `TeamTransformer` → `CLSPool` → `[BeliefHead?]` →
-`ProjectionAssembler`**, then **two** root projection heads (policy + value), each
-`pre_proj_norm` → `projection` → `ReLU`. The two bracketed phases exist only under the
-hidden-opponent **belief aux** (`--opp-belief-aux-coef>0`): `BeliefSlots` fills the un-revealed
+**`ObsUnpack` → `PokemonEncoder` → `[BeliefSlots?]` → `TeamTransformer` → `[BeliefHead?]` →
+`[MoveBelief?]` → `[DamageOperator?]` → `CLSPool` → `ProjectionAssembler`**, then **two** root projection
+heads (policy + value), each `pre_proj_norm` → `projection` → `ReLU`. The bracketed phases are
+flag-gated (with all off the chain is the byte-for-byte baseline): `BeliefSlots`/`BeliefHead` under the
+hidden-opponent **belief aux** (`--opp-belief-aux-coef>0`) — `BeliefSlots` fills the un-revealed
 opponent team slots with distinct learned unknown-mon tokens (refined in-lineup by the transformer so
 both heads attend over the imagined mons), and `BeliefHead` aux-supervises those refined tokens to
 predict each hidden mon's species + moves (privileged labels, training-only, never in the forward).
-Under `--opp-belief-latent-coef>0` (v18) `BeliefHead` also carries an asymmetric SimSiam **latent**
-predictor: each believed slot's refined token is regressed (cosine) toward the stop-grad
-`pokemon_encoder` role-token of the TRUE hidden mon — graded identity supervision the hard species CE
-can't give. The target is computed from a training-only `belief_target_slots` obs key and stashed for
-the loss only, never concatenated into pi/vf (leak-safe).
+Under `--opp-belief-latent-coef>0` `BeliefHead` also carries an asymmetric SimSiam **latent** predictor:
+each believed slot's refined token is regressed (cosine) toward the stop-grad `pokemon_encoder` role-token
+of the TRUE hidden mon — graded identity supervision the hard species CE can't give (target from a
+training-only `belief_target_slots` obs key, stashed for the loss only, never in pi/vf — leak-safe).
+`MoveBelief` (`--move-belief-mode`) predicts + reinjects each opp slot's moveset into its token; and
+`DamageOperator` (`--damage-op`) consumes that move belief's predicted moves to compute the believed-move
+incoming damage to each of our mons (a differentiable gen3 calc), appended to **both** projection heads —
+so the gradient sharpens the move belief toward real KO threats (`designs/ai_v6/design_differentiable_damage_op.md`).
 `forward` returns a `(pi_features, vf_features)` tuple — the transformer body is shared, but the
 actor and critic read it through independent CLS pools and projection heads (the
 **value-dedicated CLS readout**, H4 / Option C). It must be paired with
@@ -606,10 +610,11 @@ The architecture-constant single source of truth is the module-level constants
 (`ROLE_TOKEN_SIZE`, `PROJECTION_DIM`, `MOVE_NET_HIDDEN`, `ROLE_ENCODER_HIDDEN`,
 `ACTIVE_CTX_HIDDEN`) at the top of `features_extractor.py`; `ARCH_SIGNATURE` /
 `MODEL_CONFIG_VERSION` live in `model_version.py` (current `ARCH_SIGNATURE`:
-`gen3_incoming_crit_split_v1`; current `MODEL_CONFIG_VERSION`: **18** — v16 added the in-place
-hidden-opponent belief-aux toggle `opp_belief_slots`, v17 the move-belief reinjection toggle
-`move_belief_mode`, v18 the latent-belief toggle `opp_belief_latent` + its training-only coefficient
-`opp_belief_latent_coef`; none bump `ARCH_SIGNATURE` since each OFF is byte-identical).
+`gen3_incoming_crit_split_v1`; current `MODEL_CONFIG_VERSION`: **19** — v16 added the in-place
+hidden-opponent belief-aux toggle `opp_belief_slots` + its coef `opp_belief_aux_coef`, v17 the
+move-belief reinjection toggle `move_belief_mode` + `move_belief_coef`, v18 the latent-belief toggle
+`opp_belief_latent` + `opp_belief_latent_coef`, v19 the differentiable damage-operator toggle
+`damage_op`; none bump `ARCH_SIGNATURE` since each OFF is byte-identical).
 **The full versioning playbook — what to do when you change a dim vs add an optional feature vs
 make a structural change — is in `src/agents/model/CLAUDE.md`.**
 

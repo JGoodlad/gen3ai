@@ -126,7 +126,18 @@ from typing import Any, Dict, List
 #   bump. opp_belief_latent_coef is a TRAINING-ONLY coefficient (like opp_belief_aux_coef): it scales the
 #   latent cosine+VICReg loss, affects no forward pass, recorded for provenance but NOT version-locked. Old
 #   configs migrate to opp_belief_latent=False / opp_belief_latent_coef=0.0.
-MODEL_CONFIG_VERSION = 18
+#
+# v19: added `damage_op` (the differentiable GPU damage operator arch toggle). STRUCTURAL like
+#   value_active_readout / opp_belief_slots: ON builds a `DamageOperator` that consumes the move
+#   belief's PREDICTED moves for the opp active and emits a per-our-mon believed-move incoming-damage
+#   block appended to BOTH projection heads, so it WIDENS both projection inputs (a state_dict change)
+#   — gated in check_compatible() with a dedicated bool compare. The operator's lookup tables are
+#   non-persistent buffers (fixed physics from data/), so the only state_dict deltas are the wider
+#   projections. OFF reproduces the baseline arch byte-for-byte → NO ARCH_SIGNATURE bump. Hard-requires
+#   move_belief_mode in {revealed, both} (the op reads the opp-active's predicted logits, only
+#   supervised for a revealed mon) — enforced at extractor build + the CLI. It is forward-only (no new
+#   labels / no loss term), so there is no training-only coefficient. Old configs migrate to False.
+MODEL_CONFIG_VERSION = 19
 
 # Change this when the neural architecture changes structurally in a way that makes
 # weights from a different signature incompatible (e.g. adding LSTM, replacing attention).
@@ -473,6 +484,13 @@ class ModelVersion:
     opp_belief_latent: bool = False
     # v18 TRAINING-ONLY loss coefficient for the latent belief (like opp_belief_aux_coef). 0.0 = no aux.
     opp_belief_latent_coef: float = 0.0
+    # v19 STRUCTURAL toggle (weight-shape via the DamageOperator's wider projections): the
+    # differentiable GPU damage operator. ON consumes the move belief's predicted moves for the opp
+    # active and appends a per-our-mon believed-damage block to BOTH heads (widening both projection
+    # Linears), so like value_active_readout / opp_belief_slots it is gated in check_compatible. OFF =
+    # baseline byte-for-byte (NO ARCH_SIGNATURE bump). Forward-only → no training-only coefficient.
+    # Requires move_belief_mode in {revealed, both} (enforced at extractor build + CLI).
+    damage_op: bool = False
 
     @classmethod
     def from_layout_and_policy_kwargs(
@@ -548,6 +566,9 @@ class ModelVersion:
             ),
             opp_belief_latent=bool(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("opp_belief_latent", False)
+            ),
+            damage_op=bool(
+                policy_kwargs.get("features_extractor_kwargs", {}).get("damage_op", False)
             ),
             value_tail_weight=float(value_tail_weight),
             opp_belief_aux_coef=float(opp_belief_aux_coef),
@@ -685,6 +706,17 @@ class ModelVersion:
                 "The latent-belief predictor (the SimSiam head on the BeliefHead) changes the state_dict, "
                 "so it cannot be toggled on an existing model.\n"
                 "Resume with the matching --opp-belief-latent-coef setting, or start a fresh training run."
+            )
+
+        # Structural toggle — the DamageOperator appends a believed-damage block to BOTH projection
+        # inputs, so toggling it changes both projection Linears' shapes. Like value_active_readout it
+        # gates EVERY load with a dedicated bool compare; OFF = baseline byte-for-byte.
+        if self.damage_op != saved.damage_op:
+            raise ModelVersionError(
+                f"damage_op mismatch: saved={saved.damage_op}, current={self.damage_op}.\n"
+                "The differentiable damage operator widens both projection heads, so it changes the "
+                "state_dict and cannot be toggled on an existing model.\n"
+                "Resume with the matching --damage-op setting, or start a fresh training run."
             )
 
     def check_opponent_compatible(self, foreign: "ModelVersion") -> None:
@@ -896,4 +928,8 @@ def _migrate_config(data: dict) -> dict:
         data.setdefault("opp_belief_latent", False)
         data.setdefault("opp_belief_latent_coef", 0.0)
         data["config_version"] = 18
+    if version < 19:
+        # v19: added the differentiable damage-operator toggle (off). Old models had no DamageOperator.
+        data.setdefault("damage_op", False)
+        data["config_version"] = 19
     return data

@@ -23,20 +23,23 @@ Embedding dims (`species_embedding_dim`, `move_embedding_dim`, etc.) live in `st
 `forward_internal` is decomposed into phase `nn.Module`s, chained by a thin orchestrator:
 
 `ObsUnpack` → `PokemonEncoder` → `[BeliefSlots?]` → `TeamTransformer` → `[BeliefHead?]` →
-`[MoveBelief?]` → `CLSPool` → `ProjectionAssembler`, then **two** root heads (`pre_proj_norm`/
-`projection` for policy, `value_pre_norm`/`value_projection` for value), each → `ReLU`.
+`[MoveBelief?]` → `[DamageOperator?]` → `CLSPool` → `ProjectionAssembler`, then **two** root heads
+(`pre_proj_norm`/`projection` for policy, `value_pre_norm`/`value_projection` for value), each → `ReLU`.
 
 `BeliefSlots`/`BeliefHead` are built only when `opp_belief_slots` (`--opp-belief-aux-coef>0`),
-`MoveBelief` only when `move_belief_mode != off`; with all off the chain is the baseline `ObsUnpack →
+`MoveBelief` only when `move_belief_mode != off`, `DamageOperator` only when `damage_op` (which requires
+`move_belief_mode` revealed/both); with all off the chain is the baseline `ObsUnpack →
 PokemonEncoder → TeamTransformer → CLSPool → ProjectionAssembler` byte-for-byte. `BeliefSlots` swaps the
 un-revealed opp role-tokens for learned unknown-mon tokens *before* the transformer (so the belief is
 refined in-lineup); `BeliefHead` reads the refined opp tokens *after* the transformer and stashes the
 species/moves aux logits (a side readout — does NOT feed forward); `MoveBelief` predicts + **reinjects**
-the moveset into `their_team_out` *before* the CLS pools (so it DOES flow to the heads) — see the v16 / v17
-versioning notes. Under `--opp-belief-latent-coef>0` (v18) `BeliefHead` ALSO carries an asymmetric
-SimSiam latent predictor (the `latent` logits key) and `forward_internal` stashes a stop-grad
-`last_belief_target_latent` (the `pokemon_encoder` role-tokens of the true hidden mons, from the
-training-only `belief_target_slots` obs key) — also a side readout, never fed forward (leak-safe).
+the moveset into `their_team_out` *before* the CLS pools (so it DOES flow to the heads); `DamageOperator`
+runs *after* `MoveBelief` and consumes its predicted-move logits to compute the believed-move incoming
+damage to each of our mons, **appended to both projection inputs** (it doesn't enter the token stream).
+Under `--opp-belief-latent-coef>0` (v18) `BeliefHead` ALSO carries an asymmetric SimSiam latent predictor
+(the `latent` logits key) and `forward_internal` stashes a stop-grad `last_belief_target_latent` (the
+`pokemon_encoder` role-tokens of the true hidden mons, from the training-only `belief_target_slots` obs
+key) — also a side readout, never fed forward (leak-safe). See the v16 / v17 / v18 / v19 versioning notes.
 
 **Dual-head value readout (H4 / Option C).** The transformer body is shared, but the actor and
 critic read it through independent paths. `CLSPool` holds a third query `value_cls` that attends
@@ -166,8 +169,8 @@ because it is Φ_progress's weight. All are recorded on
 `ModelVersion` and enforced on resume by **`check_reward_config`** (FATAL on drift, since they silently
 shift the reward/objective), excluded from `check_compatible`. They are reward-VALUE changes — **no
 `ARCH_SIGNATURE` bump** (the network/obs are unchanged) — so a fresh run is needed to measure them but
-old checkpoints don't fail an arch check. Current `MODEL_CONFIG_VERSION` = **18** (see the belief notes
-below for v16–v18).
+old checkpoints don't fail an arch check. Current `MODEL_CONFIG_VERSION` = **19** (see the belief notes
+below for v16–v19).
 
 **Two probe-driven V-tail levers (v10 structural, v11 resume-immutable).** A representation probe on a
 real checkpoint found the **value head is partly blind to incoming KOs the policy head sees**
@@ -291,7 +294,33 @@ collapse). The discrete species head stays as the **banked fallback**. `opp_beli
 `ARCH_SIGNATURE` bump), hard-requires `opp_belief_slots`; `opp_belief_latent_coef` (float) is a
 **training-only** loss weight (read back on a flagless resume, like `opp_belief_aux_coef`). The id-slicing
 ObsUnpack shares with the privileged encode is the value-neutral module-level `slice_pokemon_categoricals`.
-Current `MODEL_CONFIG_VERSION` = **18**.
+This is config v18.
+
+**Differentiable damage operator (`damage_op` / `--damage-op`, v19).** "Compute the physics, learn the
+belief" (`designs/ai_v6/design_differentiable_damage_op.md`): a fixed, **differentiable** gen3 damage
+calculator run in the GPU forward, fed by the move belief's PREDICTED moves. `DamageOperator`
+(`features_extractor.py`) runs AFTER `MoveBelief` and reads `last_move_belief_logits` for the opp ACTIVE
+slot (`w = sigmoid`), computing the believed-move incoming damage to each of our 6 mons → per (defender,
+gen3-type-channel) features `[phys_chip, spec_chip, phys_pko, spec_pko]` (a temperature **soft-max over
+candidates** of `w·dmg_frac` / `w·P(KO)` — the differentiable stand-in for `incoming_damage`'s
+max-over-candidates), a `[B, 6·4]` block **appended to BOTH projection inputs** (like
+`hidden_opp_belief`). Because it is differentiable in `w`, the gradient sharpens the move-belief head
+toward the moves that actually threaten KOs — and it replaces the CPU `incoming_damage` block's FIXED
+usage-prior with the model's LEARNED belief (the belief doesn't exist at obs-build time). **Hidden Power**
+(all 17 variants collide on num=237 → unrepresentable on the num axis) is expanded into **16 typed
+candidates** (BP 70 = gen3 max), weighted `P(present)·P(type)` — presence from the belief (`w[237]`), type
+from the per-mon `hp_probs` obs block — so HP Grass vs HP Ice get distinct effectiveness. Our defenders
+use their REAL spread (reconstructed from the obs spread block); the hidden-spread attacker uses a fixed
+de-timid offense (252 EV/31 IV/×1.1). Lookup tables (`damage_tables.py`, built from `gen3_data`, on the
+`TypeEncoder` type axis) are **non-persistent float32 buffers** (fixed physics, recomputable). The block
+is zeroed (incl. gradient) when no opp is active + per fainted defender; no `/0` (soft-max + clamped
+denoms). **Leak-safe** (reads the PREDICTED belief + public obs only) — **forward-only, no new
+labels/loss** (the existing `_move_belief_loss` already supervises the belief), so `Gen3Env` is untouched.
+`damage_op` (bool) is the **state_dict-changing arch toggle** — gated in `check_compatible` (bool compare,
+widens both projections), OFF = baseline byte-for-byte (NO `ARCH_SIGNATURE` bump). Hard-requires
+`move_belief_mode` revealed|both (enforced at extractor build + the CLI). Threaded through
+`current_model_version` / `arch_toggles_from_model` (the 4 opponent-load sites). Current
+`MODEL_CONFIG_VERSION` = **19**.
 
 A startup smoke test (`_run_roundtrip_test` in `train_rl_agent.py`) saves to a temp dir and reloads before every `model.learn()` call — catches serialization issues immediately.
 

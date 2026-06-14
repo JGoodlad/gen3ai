@@ -168,6 +168,7 @@ def _run_arch_toggles(args) -> dict:
         use_popart=args.use_popart,
         move_belief_mode=args.move_belief_mode,
         opp_belief_latent=(args.opp_belief_latent_coef > 0.0),
+        damage_op=args.damage_op,
     )
 
 
@@ -680,6 +681,16 @@ async def main():
                              "predicts an incoming self-KO at AUC 0.79 vs the policy's 0.90, under-pricing "
                              "the V-tail. Widens the value projection by D_MODEL (weight-shape, version-"
                              "checked, cannot change on a resume). Off by default (clean A/B baseline).")
+    parser.add_argument("--damage-op", "--damage_op", dest="damage_op",
+                        action=BoolFlag, default=None,
+                        help="Differentiable GPU damage operator: compute the believed-move incoming "
+                             "damage the opp ACTIVE would deal to each of our mons, fed by the MOVE "
+                             "belief's predicted moves (sigmoid logits), and append it to BOTH heads. "
+                             "Differentiable, so gradients sharpen the move belief toward real KO "
+                             "threats; replaces the CPU obs block's fixed usage-prior with the LEARNED "
+                             "belief. STRUCTURAL (widens both projections; version-checked, fresh-only). "
+                             "REQUIRES --move-belief-mode revealed|both (it reads the opp active's "
+                             "predicted logits, supervised only for a revealed mon). Off by default.")
     parser.add_argument("--n-steps", type=int, default=2048, help="Steps per environment per rollout")
     parser.add_argument("--grad-checkpointing", "--grad_checkpointing", dest="grad_checkpointing",
                         action=BoolFlag, default=False,
@@ -834,6 +845,7 @@ async def main():
     _resolve("move_belief_mode", "off")        # v17 structural (version-checked, fresh-only)
     _resolve("move_belief_coef", 0.0)          # training-only (inherited like opp_belief_aux_coef)
     _resolve("opp_belief_latent_coef", 0.0)    # training-only (inherited like opp_belief_aux_coef)
+    _resolve("damage_op", False)               # v19 structural (version-checked, fresh-only)
     # PopArt INHERITED on a flagless resume → adopt its required `--clip-range-vf none` (the saved
     # popart run necessarily used it), so the explicit-config check below doesn't block the resume.
     if args.use_popart and not _popart_explicit and _saved_ver is not None and args.clip_range_vf is not None:
@@ -901,6 +913,15 @@ async def main():
             "--opp-belief-latent-coef > 0 requires --opp-belief-aux-coef > 0 — the latent predictor "
             "attaches to the BeliefHead and reuses its Hungarian slot↔mon assignment. Enable "
             "--opp-belief-aux-coef <coef> (>0), or set --opp-belief-latent-coef 0."
+        )
+    if args.damage_op and args.move_belief_mode not in ("revealed", "both"):
+        # FAIL LOUD: the damage operator reads the opp ACTIVE slot's PREDICTED move logits, which are
+        # only supervised/reinjected for a REVEALED mon (revealed|both). Under off/unrevealed the
+        # active-slot logits are an unsupervised readout and the belief-gradient story breaks.
+        parser.error(
+            "--damage-op requires --move-belief-mode revealed (or both): the operator is fed the opp "
+            "active's predicted moves, which are only supervised for a revealed mon. Set "
+            "--move-belief-mode revealed, or drop --damage-op."
         )
     log_level = LogLevel[args.log_level.upper()]
 
@@ -1532,6 +1553,8 @@ async def main():
         _load_extractor_kwargs["move_belief_mode"] = args.move_belief_mode
         # Latent-belief arch toggle — version-checked vs the saved config (fresh-only). coef>0 enables.
         _load_extractor_kwargs["opp_belief_latent"] = (args.opp_belief_latent_coef > 0.0)
+        # Damage-operator toggle — version-checked vs the saved config (fresh-only).
+        _load_extractor_kwargs["damage_op"] = args.damage_op
         _load_policy_kwargs = {
             "features_extractor_class": Gen3FeaturesExtractor,
             "features_extractor_kwargs": _load_extractor_kwargs,
@@ -1726,6 +1749,9 @@ async def main():
         # Latent-belief escalation (weight-shape): coef>0 builds the BeliefHead latent predictor. The
         # coef is a TRAINING hparam set below; this bool is the version-checked arch toggle.
         extractor_kwargs["opp_belief_latent"] = (args.opp_belief_latent_coef > 0.0)
+        # Differentiable damage operator (weight-shape): widens both projection heads with the
+        # believed-move incoming-damage block. Requires move_belief_mode revealed|both (validated above).
+        extractor_kwargs["damage_op"] = args.damage_op
 
         policy_kwargs = {
             "features_extractor_class": Gen3FeaturesExtractor,
