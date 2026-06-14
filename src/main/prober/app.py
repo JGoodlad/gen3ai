@@ -31,16 +31,19 @@ from textual.widgets import (
 )
 
 # Analysis sections (Collapsible id, title, toggle key) — multiple can be open at once.
+# Keys are 1-indexed in DISPLAY order (no 0 — awkward on a laptop) and shown in each title.
 _SECTIONS = [
-    ("sec-summary", "Summary", "8"),
-    ("sec-review", "Review", "7"),
-    ("sec-board", "Board", "1"),
-    ("sec-faith", "Faithfulness", "2"),
-    ("sec-matchups", "Matchups", "3"),
-    ("sec-sweep", "Intervention", "4"),
-    ("sec-saliency", "Saliency", "5"),
-    ("sec-outcome", "Outcome", "6"),
+    ("sec-summary", "Summary", "1"),
+    ("sec-review", "Review", "2"),
+    ("sec-board", "Board", "3"),
+    ("sec-faith", "Faithfulness", "4"),
+    ("sec-matchups", "Matchups", "5"),
+    ("sec-sweep", "Intervention", "6"),
+    ("sec-saliency", "Saliency", "7"),
+    ("sec-outcome", "Outcome", "8"),
 ]
+# Title shown on each Collapsible — "1  Summary" — so the hotkey is always visible.
+_SEC_TITLE = {sid: f"{key}  {title}" for sid, title, key in _SECTIONS}
 _OPEN_BY_DEFAULT = {"sec-summary", "sec-board", "sec-faith", "sec-outcome"}
 
 
@@ -157,14 +160,9 @@ class ProberApp(Gen3App):
         ("right_square_bracket", "next_annotated", "Next note"),
         ("left_square_bracket", "prev_annotated", "Prev note"),
         ("E", "export_notes", "Export notes"),
-        Binding("1", "toggle_section('sec-board')", "Board", show=False),
-        Binding("2", "toggle_section('sec-faith')", "Faith", show=False),
-        Binding("3", "toggle_section('sec-matchups')", "Matchups", show=False),
-        Binding("4", "toggle_section('sec-sweep')", "Interv", show=False),
-        Binding("5", "toggle_section('sec-saliency')", "Saliency", show=False),
-        Binding("6", "toggle_section('sec-outcome')", "Outcome", show=False),
-        Binding("7", "toggle_section('sec-review')", "Review", show=False),
-        Binding("8", "toggle_section('sec-summary')", "Summary", show=False),
+        # Section toggles — generated from _SECTIONS so the key/title/binding never drift.
+        *[Binding(key, f"toggle_section('{sid}')", title, show=False)
+          for sid, title, key in _SECTIONS],
     ]
 
     def __init__(
@@ -190,6 +188,7 @@ class ProberApp(Gen3App):
         self._battle_filter = "all"              # cycled by `f`: all/loss/win
         self._review_store: "ReviewStore | None" = None   # manual flags/notes (per run dir)
         self._current_inv: "int | None" = None   # the highlighted invocation index
+        self._last_analysis: "InvocationAnalysis | None" = None  # for cheap review-card re-render on note add
 
         # Per-battle model resolution. The model that re-runs a trace depends on the
         # trace's eval step (exact snapshot → nearest checkpoint → most recent), so we
@@ -224,13 +223,14 @@ class ProberApp(Gen3App):
             yield PaneSplitter("#middle", id="split-middle")
             with Vertical(id="analysis"):
                 # Collapsible sections (not exclusive tabs) so several can be open at
-                # once; toggle by clicking a title or pressing its number key (1–6).
+                # once; toggle by clicking a title or pressing its number key (1–8, shown
+                # in each title). Titles come from _SEC_TITLE so key+label never drift.
                 with VerticalScroll(id="analysis-scroll"):
                     # Decision dashboard: the one-glance "funky turn" view — what it
                     # chose, the move/switch probabilities WITH their effectiveness +
                     # incoming KO-risk, and the threat/critic context, all grouped so a
                     # turn can be judged without scanning Board+Faith+Matchups+Outcome.
-                    with Collapsible(title="Summary", collapsed=False, id="sec-summary"):
+                    with Collapsible(title=_SEC_TITLE["sec-summary"], collapsed=False, id="sec-summary"):
                         yield Static("", id="summary-head")
                         with Horizontal(id="summary-tables"):
                             with Vertical(classes="summary-col"):
@@ -241,28 +241,28 @@ class ProberApp(Gen3App):
                                 yield DataTable(id="summary-switches")
                     # Manual-review card: what the model EXPECTED vs what HAPPENED, plus the
                     # human's funky-flag + note (space=flag, e=note, [ ]=jump, E=export).
-                    with Collapsible(title="Review", collapsed=False, id="sec-review"):
+                    with Collapsible(title=_SEC_TITLE["sec-review"], collapsed=False, id="sec-review"):
                         yield Static("", id="review-card")
                         yield Static("", id="review-status")
-                        yield Input(placeholder="note — Enter to save (e to focus)…",
+                        yield Input(placeholder="add note — Enter to append, timestamped (e to focus)…",
                                     id="review-note")
-                    with Collapsible(title="Board", collapsed=False, id="sec-board"):
+                    with Collapsible(title=_SEC_TITLE["sec-board"], collapsed=False, id="sec-board"):
                         yield Static("", id="board-summary")
                         yield Static("", id="board-field")
                         yield Static("our team", classes="board-label")
                         yield DataTable(id="board-our")
                         yield Static("opp team (revealed)", classes="board-label")
                         yield DataTable(id="board-opp")
-                    with Collapsible(title="Faithfulness", collapsed=False, id="sec-faith"):
+                    with Collapsible(title=_SEC_TITLE["sec-faith"], collapsed=False, id="sec-faith"):
                         yield DataTable(id="faith-table")
-                    with Collapsible(title="Matchups", collapsed=True, id="sec-matchups"):
+                    with Collapsible(title=_SEC_TITLE["sec-matchups"], collapsed=True, id="sec-matchups"):
                         yield DataTable(id="matchups-table")
                         yield Static("", id="matchups-threat")
-                    with Collapsible(title="Intervention", collapsed=True, id="sec-sweep"):
+                    with Collapsible(title=_SEC_TITLE["sec-sweep"], collapsed=True, id="sec-sweep"):
                         yield DataTable(id="sweep-table")
-                    with Collapsible(title="Saliency", collapsed=True, id="sec-saliency"):
+                    with Collapsible(title=_SEC_TITLE["sec-saliency"], collapsed=True, id="sec-saliency"):
                         yield DataTable(id="saliency-table")
-                    with Collapsible(title="Outcome", collapsed=False, id="sec-outcome"):
+                    with Collapsible(title=_SEC_TITLE["sec-outcome"], collapsed=False, id="sec-outcome"):
                         yield Static("", id="outcome-summary")
                         yield DataTable(id="reward-table")
                         yield Static("", id="outcome-events")
@@ -582,6 +582,7 @@ class ProberApp(Gen3App):
         if token != self._analyze_token:
             return  # a newer selection superseded this result
         self._set_analysis_status("")
+        self._last_analysis = a   # cached so a note-add can cheaply re-render the review card
         if self._current_battle is not None:
             meta = a.meta
             self.query_one("#battle-header", Static).update(
@@ -629,10 +630,10 @@ class ProberApp(Gen3App):
         # Line 1 — matchup: each active's species + status/volatiles ("TOX(5)|SUB") + held item
         # (the opp's once revealed — decoded from the obs) + outcome.
         bd = a.board
-        _append_summary_active(head, a.our_species,
+        _append_summary_active(head, a.our_species, bd.ours.active_hp if bd else "",
                                bd.ours.status if bd else "", bd.ours.item if bd else "")
         head.append(" vs ", style="dim")
-        _append_summary_active(head, a.opp_species,
+        _append_summary_active(head, a.opp_species, bd.opp.active_hp if bd else "",
                                bd.opp.status if bd else "", bd.opp.item if bd else "")
         head.append(f"   ·   turn {a.turn}", style="dim")
         result = (a.meta.result if a.meta is not None else None) or "?"
@@ -658,10 +659,7 @@ class ProberApp(Gen3App):
             if a.value.delta is not None:
                 head.append("   ΔV ", style="dim")
                 head.append(f"{a.value.delta:+.2f}", style=("green" if a.value.delta >= 0 else "red"))
-                td = self._td_residual(a)
-                if td is not None:
-                    head.append("   surprise(TDδ) ", style="dim")
-                    head.append(f"{td:+.2f}", style=("green" if td >= 0 else "red"))
+                _append_surprise(head, self._td_residual(a))
         # Line 4 — the danger it faced: incoming KO belief + speed (the switch-or-not signal).
         inc = a.incoming
         if inc is not None and inc.active_pko is not None:
@@ -674,6 +672,21 @@ class ProberApp(Gen3App):
             if inc.recovery_known or inc.recovery_rate > 0:
                 head.append(f"   ·   opp recovery {inc.recovery_rate * 100:.0f}%"
                             + ("✓" if inc.recovery_known else "?"), style="dim")
+        # Line 6 — what HAPPENED: the actual result + events, to judge whether the choice was OK.
+        _append_happened(head, a, "\nRESULT  ")
+        # Line 7 — the reward the env actually assigned (total + per-component breakdown).
+        reward = (a.outcome or {}).get("reward")
+        if isinstance(reward, dict):
+            head.append("\nREWARD  ", style="dim")
+            total = reward.get("total")
+            if total is not None:
+                head.append(f"{float(total):+.4f}",
+                            style=gradient_color(max(0.0, min(1.0, (float(total) + 3) / 6))))
+            for k, val in reward.items():
+                if k != "total":
+                    head.append(f"   ·   {k}: {val}", style="dim")
+        elif reward is not None:
+            head.append(f"\nREWARD  {reward}", style="dim")
         self.query_one("#summary-head", Static).update(head)
 
         # MOVES — fuse type-effectiveness (Matchups) with the policy prob (Faithfulness),
@@ -716,7 +729,7 @@ class ProberApp(Gen3App):
             lstyle = "bold" if r.is_chosen else ("" if r.valid else "dim")
             prob_style = "bold" if r.is_chosen else gradient_color(r.recorded)
             hp, status, item = attrs.get(target.lower(), (None, "", ""))
-            hp_cell = _hp_text(hp) if hp is not None else Text("?", style="dim")
+            hp_cell = _hp_bar(hp) if hp is not None else Text("?", style="dim")
             if not r.valid:
                 risk = Text("—", style="dim")          # fainted / the active mon: can't switch in
             elif pko is None:
@@ -878,8 +891,8 @@ class ProberApp(Gen3App):
                 # the CLI's overview/analyze td_residual (the decisive metric in loss forensics).
                 td = self._td_residual(a)
                 if td is not None:
-                    summary.append("  ·  TD δ ", style="dim")
-                    summary.append(f"{td:+.2f}", style=("green" if td >= 0 else "red"))
+                    summary.append("  · ", style="dim")
+                    _append_surprise(summary, td, term="TD δ")
             summary.append("\n")
         agree_style = "green" if a.agrees else "bold red"
         summary.append("model: ", style="dim")
@@ -941,33 +954,30 @@ class ProberApp(Gen3App):
                 card.append("  ΔV ", style="dim")
                 card.append(f"{a.value.delta:+.2f}",
                             style=("green" if a.value.delta >= 0 else "red"))
-                td = self._td_residual(a)
-                if td is not None:
-                    card.append("  surprise(TDδ) ", style="dim")
-                    card.append(f"{td:+.2f}", style=("green" if td >= 0 else "red"))
+                _append_surprise(card, self._td_residual(a))
         if a.rerun_argmax is not None and not a.agrees:
             card.append("\n⚠ model now prefers ", style="yellow")
             card.append(str(a.rerun_argmax), style="bold yellow")
-        out = a.outcome or {}
-        our, opp = out.get("our") or {}, out.get("opp") or {}
-        if our or opp:
-            card.append("\nhappened ", style="dim")
-            card.append(f"we {our.get('action', '?')} ({our.get('hp_delta', '?')}) · "
-                        f"opp {opp.get('action', '?')} ({opp.get('hp_delta', '?')})")
-        if out.get("events"):
-            card.append("  [" + ", ".join(map(str, out["events"])) + "]", style="yellow")
-        self.query_one("#review-card", Static).update(card)
+        _append_happened(card, a, "\nhappened ")
 
-        # Store keys on the LIST POSITION (self._current_inv, set on highlight) so the glyph,
-        # flag, and note all align — NOT a.inv_index (the trace's "i", which can differ).
-        self._render_review_status()
+        # The timestamped note log for this decision (append-only — keys on the LIST POSITION
+        # self._current_inv, set on highlight, NOT a.inv_index which can differ).
         bid = self._battle_id()
         idx = self._current_inv
-        note = (self._review_store.note(bid, idx)
-                if (bid and self._review_store and idx is not None) else "")
+        log = (self._review_store.notes(bid, idx)
+               if (bid and self._review_store and idx is not None) else [])
+        for ts, text in log:
+            card.append("\n  • ", style="dim")
+            if ts:
+                card.append(f"{ts}  ", style="cyan")
+            card.append(text)
+        self.query_one("#review-card", Static).update(card)
+
+        self._render_review_status()
+        # The input adds a NEW log entry (append, not overwrite) — keep it empty.
         note_w = self.query_one("#review-note", Input)
-        if note_w.value != note:
-            note_w.value = note
+        if note_w.value:
+            note_w.value = ""
 
     def _render_review_status(self) -> None:
         st = self.query_one("#review-status", Static)
@@ -1004,8 +1014,13 @@ class ProberApp(Gen3App):
         bid = self._battle_id()
         if bid is None or self._review_store is None or self._current_inv is None:
             return
-        self._review_store.set(bid, self._current_inv, note=event.value.strip())
-        self._render_review_status()
+        self._review_store.add_note(bid, self._current_inv, event.value)   # APPEND a timestamped entry
+        event.input.value = ""
+        # Re-render the card so the new (timestamped) entry shows in the log immediately.
+        if self._last_analysis is not None:
+            self._render_review(self._last_analysis)
+        else:
+            self._render_review_status()
         self._refresh_list_item(self._current_inv)
         self.query_one("#invocation-list", ListView).focus()
 
@@ -1064,6 +1079,27 @@ def _chosen_prob(a: InvocationAnalysis) -> "float | None":
     return next((r.recorded for r in (a.actions or []) if r.is_chosen), None)
 
 
+def _surprise_phrase(td: float) -> str:
+    """Plain-language reading of the TD-surprise (the critic's prediction error, δ = r + γV(s′) −
+    V(s)), so the ML term is self-explaining when reviewing: negative δ = the turn turned out worse
+    than the critic predicted. Magnitude → 'much' for the big craters."""
+    mag = abs(td)
+    if mag < 0.5:
+        return "about what the critic expected"
+    much = "much " if mag >= 3.0 else ""
+    return f"{much}{'better' if td > 0 else 'worse'} than the critic expected"
+
+
+def _append_surprise(line: Text, td: "float | None", term: str = "surprise(TDδ)") -> None:
+    """Append the TD-surprise value + its plain-language gloss (always paired, per the
+    'keep ML terms human-friendly' rule). No-op when δ isn't computable."""
+    if td is None:
+        return
+    line.append(f"   {term} ", style="dim")
+    line.append(f"{td:+.2f}", style=("green" if td >= 0 else "red"))
+    line.append(f" — {_surprise_phrase(td)}", style="dim")
+
+
 def _item_style(item: str) -> str:
     # Choice items lock the moveset / boost a stat — high decision impact, so highlight them.
     return "bold magenta" if "choice" in (item or "").lower() else "cyan"
@@ -1080,10 +1116,27 @@ def _status_cell(status: str) -> Text:
     return Text(status, style="yellow") if status else Text("—", style="dim")
 
 
-def _append_summary_active(line: Text, species: str, status: str, item: str) -> None:
-    """Append 'species [status] @item' for one active mon to the Summary header line
+def _hp_bar(hp: str, width: int = 6) -> Text:
+    """A compact colour-graded health bar + percentage, e.g. green '████▌░ 76%'. Faint shows an
+    empty red bar; an unparseable value falls back to dim text."""
+    f = _hp_frac(hp)
+    if f is None:
+        return Text(str(hp), style="dim")
+    filled = int(round(f * width))
+    col = gradient_color(f)
+    t = Text()
+    t.append("█" * filled + "░" * (width - filled), style=col)
+    t.append(f" {hp}", style=col)
+    return t
+
+
+def _append_summary_active(line: Text, species: str, hp: str, status: str, item: str) -> None:
+    """Append 'species <hp-bar> [status] @item' for one active mon to the Summary header line
     (status/volatiles and item shown only when present)."""
     line.append(species, style="bold")
+    if hp:
+        line.append(" ")
+        line.append_text(_hp_bar(hp))
     if status:
         line.append(f" [{status}]", style="yellow")
     if item and item.lower() != "none":
@@ -1097,6 +1150,20 @@ def _side_attr_map(side) -> "dict[str, tuple]":
     for m in side.bench:
         out[m.species.lower()] = (m.hp, m.status, m.item)
     return out
+
+
+def _append_happened(line: Text, a: InvocationAnalysis, label: str) -> None:
+    """Append what ACTUALLY happened after this decision — 'we <action>(<hpΔ>) · opp
+    <action>(<hpΔ>) [events]' — so the choice can be judged against the result. ``label`` carries
+    its own leading newline (e.g. '\\nHAPPENED '). No-op when the outcome isn't recorded yet."""
+    out = a.outcome or {}
+    our, opp = out.get("our") or {}, out.get("opp") or {}
+    if our or opp:
+        line.append(label, style="dim")
+        line.append(f"we {our.get('action', '?')} ({our.get('hp_delta', '?')}) · "
+                    f"opp {opp.get('action', '?')} ({opp.get('hp_delta', '?')})")
+        if out.get("events"):
+            line.append("  [" + ", ".join(map(str, out["events"])) + "]", style="yellow")
 
 
 def _hp_frac(hp: str) -> "float | None":

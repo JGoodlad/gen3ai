@@ -55,8 +55,10 @@ the single source of truth — change the analysis once, both surfaces follow.
   a `VerticalScroll` of `Collapsible` analysis sections (Summary · Review · Board ·
   Faithfulness · Matchups · Intervention · Saliency · Outcome).
 - **`review.py`** — `ReviewStore`: persistent manual-review annotations (a *funky* flag +
-  a free-text note per decision) at `<run_dir>/review_notes.json`; pure (no Textual),
-  unit-tested, exports to `<run_dir>/review_notes.md`.
+  a **timestamped note append-log** per decision) at `<run_dir>/review_notes.json`; pure
+  (no Textual), unit-tested, exports to `<run_dir>/review_notes.md`. Each saved comment is a
+  `{ts, text}` entry appended (not overwritten), so the history + *when* each was added is kept;
+  the clock is injectable for tests; legacy single-string `note` entries read transparently.
 
 ## Per-battle model resolution (exact → nearest → most recent)
 
@@ -81,17 +83,25 @@ better than always using `best_model`.
 ## Panels & navigation
 
 Analysis sections (collapsible — **multiple open at once**, in a scroll; toggle
-by clicking a title or pressing its number key `1`–`8`) render purely from one
-`InvocationAnalysis`. The top one is **Summary** (`8`, open by default) — the
-decision dashboard for walking "funky turns": a context header — line 1 the matchup
-(each active's bundled **status/volatiles** in `[...]`, e.g. `[TOX(5)|SUB]`, + held **item**
-as `@item`, incl. the **opponent's once revealed** — Choice items highlighted) + outcome,
-line 2 the **FIELD** line (weather/hazards/screens/turn, the same `_field_text` the Board
-shows), then **CHOSE** chosen+confidence [+ a `⚠ now prefers X` on disagree] ·
-**CRITIC** V·ΔV·TDδ surprise · **THREAT** incoming P(KO)·outspeed·worst-on-team·opp-recovery —
-over two side-by-side tables: **MOVES** (each move's type-effectiveness `×mult` fused
-with its policy prob, ranked by prob) and **SWITCHES** (each target's prob · **hp**
-(colour-graded) · **status/volatiles** · held **item** · **risk-in** = `incoming.per_slot_pko`
+by clicking a title or pressing its number key) render purely from one
+`InvocationAnalysis`. Keys are **1-indexed in display order** (no `0` — awkward on a laptop)
+and **shown in each title** (`1  Summary`, `2  Review`, … `8  Outcome`); `_SECTIONS` is the
+single source — `_SEC_TITLE` builds the titles and the `BINDINGS` are generated from it, so
+key/label/binding never drift. The top one is **Summary** (`1`, open by default) — the
+decision dashboard for walking "funky turns". A context header — line 1 the matchup, each
+active as **species + colour-graded HP bar** (`_hp_bar`) + bundled **status/volatiles** in
+`[...]` (e.g. `[TOX(5)|SUB]`) + held **item** as `@item` (incl. the **opponent's once
+revealed** — Choice items highlighted) + outcome; line 2 the **FIELD** line
+(weather/hazards/screens/turn, the same `_field_text` the Board shows); then **CHOSE**
+chosen+confidence [+ a `⚠ now prefers X` on disagree] · **CRITIC** V·ΔV·**TD-surprise** (always
+paired with a plain-language gloss — "worse than the critic expected" — via `_append_surprise`/
+`_surprise_phrase`, so the ML term is self-explaining) · **THREAT** incoming
+P(KO)·outspeed·worst-on-team·opp-recovery · **RESULT** what actually happened (our/opp action +
+hpΔ + events) · **REWARD** the env's reward (total + per-component breakdown) — over two
+side-by-side **content-width** tables (packed at the left, not split 50/50):
+**MOVES** (each move's type-effectiveness `×mult` fused
+with its policy prob, ranked by prob) and **SWITCHES** (each target's prob · **hp** (a colour
+bar) · **status/volatiles** · held **item** · **risk-in** = `incoming.per_slot_pko`
 for that mon, the P(KO) on the switch-in if it comes in — `—` for the active/fainted slots
 that can't switch in). It composes
 existing `InvocationAnalysis` fields only (no new obs/engine analysis): `actions` (probs),
@@ -99,10 +109,11 @@ existing `InvocationAnalysis` fields only (no new obs/engine analysis): `actions
 (critic), `board` (hp/status/item — status+volatiles bundled by the recorder's
 `_mon_display_status`; **items** from the summary teams block for our side, overlaid per-turn
 by `ProbeModel.describe_team_items` which adds the opp's revealed items + reflects consumption),
-`field`. The pairing relies on the fixed obs action layout — the
-*i*-th `switch:` action is team slot *i* is `per_slot_pko[i]` (verified: `active_pko` ==
+`outcome` (result + events + reward), `field`. The pairing relies on the fixed obs action layout —
+the *i*-th `switch:` action is team slot *i* is `per_slot_pko[i]` (verified: `active_pko` ==
 `per_slot_pko[active_slot]`) — so it pairs BEFORE sorting by prob. Shared render helpers keep it
-DRY — `_chosen_prob` / `self._td_residual` (also used by Review + Outcome), `_status_cell` /
+DRY — `_chosen_prob` / `self._td_residual` + `_append_surprise` (also used by Review + Outcome),
+`_append_happened` (the what-happened line, shared with the Review card), `_hp_bar` / `_status_cell` /
 `_item_cell` / `_side_attr_map` / `_append_summary_active`. The remaining sections
 render the same data unfused: **Board** (each side's active species/hp/status/boosts +
 benched **status** now shown too — `_parse_bench` splits the `species(hp%,STATUS)`
@@ -138,12 +149,15 @@ battle-outcome filter (all → loss → win), rebuilding the tree.
 human-walkthrough surface: a one-glance card of *what the model EXPECTED → what it
 DID → what HAPPENED → how surprised* (chosen + prob · incoming-P(KO) belief · V(s) ·
 ΔV · TD δ surprise · a `⚠ now prefers X` when the re-run argmax disagrees · the actual
-outcome+events), so you can judge each choice. While stepping turn-by-turn (`j`/`k`)
-you annotate: **`space`** toggles a *funky* flag, **`e`** focuses the note input
-(Enter saves), **`[`/`]`** jump to the prev/next annotated decision, **`E`** exports
-all notes to `<run>/review_notes.md`. Annotations persist in `<run>/review_notes.json`
-(`review.ReviewStore`, keyed by run-relative trace path + invocation index) and show
-a `⚑`/`✎` glyph in the invocation list — distinct from the auto `summary_flags`.
+outcome+events), so you can judge each choice. Notes are a **timestamped append log** — the
+card lists every comment with the date/time it was added (newest last); the Summary mirrors the
+same EXPECTED→DID→HAPPENED story. While stepping turn-by-turn (`j`/`k`) you annotate:
+**`space`** toggles a *funky* flag, **`e`** focuses the note input (Enter **appends** a new
+timestamped entry — it does NOT overwrite the prior one), **`[`/`]`** jump to the prev/next
+annotated decision, **`E`** exports all notes (with timestamps) to `<run>/review_notes.md`.
+Annotations persist in `<run>/review_notes.json` (`review.ReviewStore`, keyed by run-relative
+trace path + invocation index) and show a `⚑`/`✎` glyph in the invocation list — distinct from
+the auto `summary_flags`.
 
 Layout: the trace `Tree` (`NavTree`) uses file-explorer `←`/`→` to collapse/
 expand; the three panes are separated by draggable `PaneSplitter` bars — drag with

@@ -62,7 +62,12 @@ def _write_trace(tmp_path, chosen="thunderbolt", has_state=1):
         "meta": {"step": 1000, "battle_id": "b", "result": "WIN", "turns": 5, "invocations": 1},
         "invocations": [{
             "i": 1, "turn": 3, "phase": "move_selection", "chosen": chosen,
-            "our": {"species": "zapdos"}, "opp": {"species": "jynx"}, "actions": actions,
+            "our": {"species": "zapdos", "hp": "80%"},
+            "opp": {"species": "jynx", "hp": "55%"}, "actions": actions,
+            "outcome": {"our": {"action": chosen, "hp_delta": "-10%"},
+                        "opp": {"action": "switch:gengar", "hp_delta": "+0%"},
+                        "reward": {"total": -1.4, "base": "hp_ours=-1.2"},
+                        "events": []},
         }],
     }
     d = tmp_path / "run" / "eval_traces" / "step_1000" / "Test"
@@ -223,6 +228,12 @@ async def test_select_battle_populates_panels(tmp_path):
         assert "zapdos" in head and "jynx" in head and "thunderbolt" in head  # context header
         assert "FIELD" in head and "SUN" in head  # field line (weather/hazards/screens) present
         assert "@choiceband" in head and "@leftovers" in head  # our + opp revealed items in header
+        assert "RESULT" in head and "switch:gengar" in head  # what-happened line on the summary
+        assert "REWARD" in head and "hp_ours=-1.2" in head    # reward breakdown on the summary
+        assert "█" in head                                    # colour-graded HP bar (80% our active)
+        # section titles carry their 1-indexed hotkey
+        assert app.query_one("#sec-summary", Collapsible).title == "1  Summary"
+        assert app.query_one("#sec-outcome", Collapsible).title == "8  Outcome"
 
 
 async def test_switch_decision_has_no_sweep(tmp_path):

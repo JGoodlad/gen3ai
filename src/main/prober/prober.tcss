@@ -91,9 +91,13 @@ DataTable {
     height: auto;
 }
 
+/* Content-width columns (not 1fr) so MOVES + SWITCHES sit together at the left
+ * instead of splitting the pane 50/50 and pushing SWITCHES to the far right.
+ * A small right margin is the only gap between them; slack collects on the right. */
 .summary-col {
-    width: 1fr;
+    width: auto;
     height: auto;
+    margin-right: 3;
 }
 
 .summary-col-label {
@@ -104,5 +108,6 @@ DataTable {
 }
 
 #summary-moves, #summary-switches {
+    width: auto;
     height: auto;
 }
