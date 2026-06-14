@@ -4,6 +4,7 @@ from agents.training.battle_snapshot import BattleContext
 from agents.training.turn_delta import TurnDelta
 from agents.training.reward_function import RewardFunction
 from agents.training.reward_manager import Gen3RewardManager
+from agents.training.progress_clock import ProgressClock
 from agents.training.slot_registry import SlotRegistry
 
 
@@ -30,6 +31,19 @@ class RewardTracker:
         self._pending_action: int = -1
         self._pending_cursor: int = 0   # event_cursor when the pending turn was latched
         self._total_reward: float = 0.0
+        # Server-free reward path (BattleRecorder / RewardTrackingMixin) has no Gen3Env to own the
+        # EpisodeTracker's ProgressClock, so the reward manager's no_progress_tax would be silently 0
+        # (progress_clock=None gates _apply_progress_clock off) — eval traces then understated the
+        # training penalty on every stall/no-op turn. Own a per-battle clock here and advance it before
+        # each reward, mirroring Gen3Env's embed-time timing (update for the just-completed window →
+        # reward reads last_penalty). Only the gate (all_shaping_pbrs / bias_redesign in the reward
+        # config) decides whether the tax actually fires, so a default-config run stays a no-op.
+        self._progress_clock: ProgressClock | None = None
+        if hasattr(self._reward_fn, "progress_clock"):
+            cfg = getattr(self._reward_fn, "config", None)
+            penalty = getattr(cfg, "no_progress_penalty", 0.15)
+            self._progress_clock = ProgressClock(no_progress_penalty=penalty)
+            self._reward_fn.progress_clock = self._progress_clock
 
     @property
     def has_pending(self) -> bool:
@@ -58,6 +72,16 @@ class RewardTracker:
         fn = getattr(battle, "events_since", None)
         return fn(self._pending_cursor) if fn is not None else []
 
+    def _advance_clock(self, delta: TurnDelta, battle) -> None:
+        """Fold the just-completed window into the ProgressClock BEFORE the reward reads its
+        ``last_penalty`` — same window, same order as Gen3Env (embed-time update → calc_reward read).
+        Reads the current board / legality through the StrictBattleView, like the env does. No-op when
+        no clock is owned (non-Gen3RewardManager reward fn)."""
+        if self._progress_clock is None:
+            return
+        view = battle.strict_view()
+        self._progress_clock.update(delta, view.live, view.legal)
+
     def complete_pending(self, curr_ctx: BattleContext, battle) -> tuple[TurnDelta, float]:
         """
         Settle the previous turn now that the next choose_move() has fired and curr_ctx
@@ -69,6 +93,7 @@ class RewardTracker:
             self._pending_ctx, curr_ctx, self._pending_action, self._window(battle)
         )
         self._reward_fn.record_action(self._pending_ctx, self._pending_action)
+        self._advance_clock(delta, battle)
         reward = self._reward_fn.process_turn_reward(battle, delta)
         self._total_reward += reward
         self._pending_ctx = None

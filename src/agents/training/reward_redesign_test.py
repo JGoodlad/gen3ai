@@ -931,6 +931,39 @@ class TestProgressClock(unittest.TestCase):
         c.update(_delta(our_move_id="spikes"), live, _Legal(switches=[1]))
         self.assertEqual(c.n, 0)
 
+    def test_capped_spike_charges_as_noop(self):
+        """Spikes at the 3-layer cap (no layer added) is a NO_OP: increment + charge."""
+        c = self._clock(); c.n = 2; c._prev_spikes = 3
+        live = _Live([1.0] * 6, [1.0] * 6); live.opp.side_conditions = {"spikes": 3}
+        c.update(_delta(our_move_id="spikes"), live, _Legal(switches=[1]))
+        self.assertEqual(c.n, 3)
+        self.assertAlmostEqual(c.last_penalty, -0.15, places=6)
+
+    def test_capped_spike_not_rescued_by_opp_switch(self):
+        """The leak: an opp switch (clause (iv)) must NOT reset the clock when our move was a capped
+        Spikes — otherwise the wasted Spikes that banks switch-in material escapes the no-progress tax."""
+        c = self._clock(); c.n = 2; c._prev_spikes = 3
+        live = _Live([1.0] * 6, [1.0] * 6); live.opp.side_conditions = {"spikes": 3}
+        c.update(_delta(our_move_id="spikes", opp_switch_to="swampert"),
+                 live, _Legal(switches=[1]))
+        self.assertEqual(c.n, 3)                          # charged, NOT reset
+        self.assertAlmostEqual(c.last_penalty, -0.15, places=6)
+
+    def test_capped_spike_no_switch_not_charged(self):
+        """Trapped-vs-wall helplessness exemption still applies to a capped Spikes."""
+        c = self._clock(); c.n = 2; c._prev_spikes = 3
+        live = _Live([1.0] * 6, [1.0] * 6); live.opp.side_conditions = {"spikes": 3}
+        c.update(_delta(our_move_id="spikes"), live, _Legal(switches=[]))
+        self.assertEqual(c.n, 3)                          # obs counter still ticks
+        self.assertEqual(c.last_penalty, 0.0)             # but not charged
+
+    def test_layer_adding_spike_still_resets(self):
+        """A Spikes that strictly adds a layer (2→3) is real progress and still resets (regression)."""
+        c = self._clock(); c.n = 4; c._prev_spikes = 2
+        live = _Live([1.0] * 6, [1.0] * 6); live.opp.side_conditions = {"spikes": 3}
+        c.update(_delta(our_move_id="spikes"), live, _Legal(switches=[1]))
+        self.assertEqual(c.n, 0)
+
     def test_forced_commit_resets(self):
         c = self._clock(); c.n = 4
         c.update(_delta(our_move_id="roar", opp_switch_to="snorlax"),

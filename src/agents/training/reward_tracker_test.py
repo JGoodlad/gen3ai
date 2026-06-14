@@ -73,6 +73,42 @@ def test_has_pending_false_after_finalize():
 
 
 # ---------------------------------------------------------------------------
+# RewardTracker — ProgressClock wiring (eval/training reward parity)
+# ---------------------------------------------------------------------------
+
+def test_progress_clock_wired_to_reward_fn():
+    """The server-free reward path must OWN a ProgressClock and hand the SAME instance to the reward
+    manager — else no_progress_tax is silently 0 in eval traces (the eval/training reward gap)."""
+    import functools
+    from agents.training.reward_manager import Gen3RewardManager, RewardConfig
+
+    factory = functools.partial(Gen3RewardManager, config=RewardConfig(all_shaping_pbrs=True))
+    tracker = RewardTracker(factory, SlotRegistry(), SlotRegistry())
+    assert tracker._progress_clock is not None
+    assert tracker._reward_fn.progress_clock is tracker._progress_clock
+    assert tracker._progress_clock.no_progress_penalty == pytest.approx(0.15)
+
+
+def test_advance_clock_charges_a_noop():
+    """Advancing the clock on a futile no-op window (RapidSpin into a full-HP wall — no damage event,
+    no hazard, no opp switch) charges the no-progress tax, exactly as training does. Before this wiring
+    the same eval window scored 0 (clock absent)."""
+    import functools
+    from agents.training.reward_manager import Gen3RewardManager, RewardConfig
+    from agents.training.reward_redesign_test import _delta, _Legal, _full_team_live
+
+    factory = functools.partial(Gen3RewardManager, config=RewardConfig(all_shaping_pbrs=True))
+    tracker = RewardTracker(factory, SlotRegistry(), SlotRegistry())
+
+    battle = MagicMock()
+    view = MagicMock(); view.live = _full_team_live(); view.legal = _Legal(switches=[1])
+    battle.strict_view.return_value = view
+
+    tracker._advance_clock(_delta(our_move_id="rapidspin", our_move_outcome="hit"), battle)
+    assert tracker._progress_clock.last_penalty == pytest.approx(-0.15)
+
+
+# ---------------------------------------------------------------------------
 # RewardTracker — reward accumulation
 # ---------------------------------------------------------------------------
 

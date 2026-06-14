@@ -19,6 +19,11 @@ it. Result: the obs the model saw and the value the penalty keys on are the same
   * NO_OP    — a deliberate, obs-knowable wheel-spin → increment ``n`` + charge ``p(n)``.
 Forced-switch windows are no-ops of the clock entirely (no increment, no charge); the charge is
 suppressed when no switch is legal (trapped-vs-wall helplessness must not be punished).
+
+**Capped-Spikes short-circuit.** Spikes used at the 3-layer cap is forced to a charged NO_OP BEFORE
+the progress/denial classification — it can never add a layer, and must not be rescued by clause (iv)
+(an opp switch, incl. a VOLUNTARY pivot into our hazards, counting as our progress). Without this, a
+wasted Spikes that banks switch-in material escapes the tax on exactly the turns it is rewarded.
 """
 from __future__ import annotations
 
@@ -77,6 +82,21 @@ class ProgressClock:
         # Forced-switch / post-faint replacement: only switches were legal → the clock sits out.
         if getattr(delta, "phase_is_forced_switch", False):
             self.last_penalty = 0.0
+            return
+
+        # Spikes AT THE 3-LAYER CAP is a deliberate, obs-knowable wheel-spin: the move can NEVER add a
+        # layer (the obs carries opp_spikes==3), so it is a NO_OP by definition. It must NOT be rescued
+        # by an incidental opp switch (clause (iv) of _is_progress credits ANY opp commit as progress —
+        # including a VOLUNTARY pivot into our hazards — which would reset the clock on exactly the turns
+        # the wasted Spikes also banks switch-in material), nor frozen as an "exogenous fail". So charge
+        # it as a NO_OP directly, BEFORE the progress / denial classification. (A layer-adding Spikes —
+        # opp_spikes strictly rose — still resets via _is_progress clause (iii) below.)
+        if (getattr(delta, "our_move_id", None) == "spikes"
+                and opp_spikes_now >= 3 and opp_spikes_now - prev_spikes <= 0):
+            self.n = min(self.n + 1, PROGRESS_CLOCK_CAP)
+            switch_legal = legal is not None and len(getattr(legal, "switches", ()) or ()) > 0
+            self.last_penalty = (-abs(self.no_progress_penalty)) if switch_legal else 0.0
+            self._heal_streak = 0
             return
 
         if self._is_progress(delta, live, prev_spikes, opp_spikes_now):
