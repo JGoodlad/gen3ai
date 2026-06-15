@@ -173,8 +173,8 @@ because it is Φ_progress's weight. All are recorded on
 `ModelVersion` and enforced on resume by **`check_reward_config`** (FATAL on drift, since they silently
 shift the reward/objective), excluded from `check_compatible`. They are reward-VALUE changes — **no
 `ARCH_SIGNATURE` bump** (the network/obs are unchanged) — so a fresh run is needed to measure them but
-old checkpoints don't fail an arch check. Current `MODEL_CONFIG_VERSION` = **22** (see the belief notes
-below for v16–v22).
+old checkpoints don't fail an arch check. Current `MODEL_CONFIG_VERSION` = **23** (see the belief +
+unified-damage notes below for v16–v23).
 
 **Two probe-driven V-tail levers (v10 structural, v11 resume-immutable).** A representation probe on a
 real checkpoint found the **value head is partly blind to incoming KOs the policy head sees**
@@ -312,9 +312,17 @@ belief" (`designs/ai_v6/design_differentiable_damage_op.md`): a fixed, **differe
 calculator run in the GPU forward, fed by the move belief's PREDICTED moves. `DamageOperator`
 (`features_extractor.py`) runs AFTER `MoveBelief` and reads `last_move_belief_logits` for the opp ACTIVE
 slot (`w = sigmoid`), computing the believed-move incoming damage to each of our 6 mons. Output (Stage B,
-`out_dim = 6·_DMG_PER_MON + _DMG_EFFECT = 54`): per defender **8** features `[phys_chip, spec_chip,
-phys_pko, spec_pko, phys_crit_delta, spec_crit_delta, p_outspeed, provenance]` — the SAME 8 feature
-CHANNELS as `incoming_damage.py`'s PER_MON block (NOT modifier-for-modifier parity: the op applies
+`out_dim = 6·_DMG_PER_MON + _DMG_EFFECT = 78`): per defender **12** features (the **3-roll + P(KO) +
+accuracy** representation, `unified-damage`) `[phys_low, phys_high, phys_crit, phys_pko, phys_acc,
+spec_low, spec_high, spec_crit, spec_pko, spec_acc, p_outspeed, provenance]` — per gen3 type channel, the
+0.85-roll / max-roll / ×2-crit damage as a fraction of the defender's MAX HP (damage IF it lands), the
+**accuracy-discounted** P(KO this turn) vs CURRENT HP (`pko = acc·P(KO|hit)`, the exact realized KO
+probability — accuracy and the damage roll are independent events), and the dominant threat's `accuracy`.
+`{pko, accuracy}` together parameterize the full miss/survive/KO outcome distribution with every product
+PRE-COMPUTED in the operator — so the ReLU head reasons additively and never has to learn a multiplication
+(the design rationale for the whole differentiable op). The roll physics is the shared role-parameterized
+kernel `DamageOperator._damage_rolls` (reused by the outgoing / safe-switch directions; named offsets
+`_DMG_IDX_*`). NOT modifier-for-modifier parity: the op applies
 type/STAB/ability-immunity/screens/crit but **not yet** weather, burn, defender boost stages, or
 fixed-damage/OHKO/HP-relative moves — those are documented v2 follow-ups; the learned-belief gradient
 story holds without them) + **6** opp-active believed-EFFECT scalars `[recovery, status,
@@ -395,7 +403,32 @@ version-locked, inherited on a flagless resume). Threaded through `current_model
 `arch_toggles_from_model` (the opp-load sites) so a win-prob-ON self-play run doesn't FATAL on its own
 sentinels. The label is FUTURE (only known at episode end) so — unlike the per-step belief labels — it
 cannot ride as a real obs key; the training side is in `src/agents/training/CLAUDE.md` → win-probability
-head. Current `MODEL_CONFIG_VERSION` = **22**.
+head.
+
+**Unified damage system — outgoing direction + learnset gate + the 3-roll representation (`damage_outgoing`
+/ `move_candidate_floor`, v23).** Collapses the three opp-move/damage systems into one and adds the
+owner-requested directions/representation (`designs/ai_v6/design_unified_damage_system.md`). Three parts:
+(1) **`DamageOperator._rolls`** is now the single DRY physics core — the incoming kernel `_damage_rolls`
+(opp active → our 6, incl. the bench rows = the **safe-switch** read, no separate block) AND the new
+**`_outgoing_block`** (our active → opp active, PER MOVE in REQUEST-slot order = action logits 6+k, so the
+policy head compares move A vs B — the equal-effectiveness tie-break; our moves one-hot/legality-masked via
+`ctx.move_mask`, opp defender at a NEUTRAL 0-EV bulk estimate, OPP-side screens) both call it. Per-mon
+incoming feature is now **12** `[low,high,crit,pko,acc]×{phys,spec} + p_outspeed + provenance`
+(`_DMG_IDX_*`); outgoing is **17** = 4 moves × `[low,high,crit,pko]` + `p_outspeed`. `damage_outgoing` is a
+STRUCTURAL toggle like `damage_op` (widens both projections; `check_compatible` bool; OFF byte-for-byte; NO
+`ARCH_SIGNATURE` bump; requires `damage_op`). (2) **`move_candidate_floor`** (float, FORWARD-BEHAVIOR like
+`move_prior_fusion`): 0.0 = legacy flat 0.02-floor prior; >0 drives `build_move_prior_logits(learnset_gate=
+True, floor=…)` — a **LEGALITY-only** gate: a move a species can't learn (per `gen3_data.learnset`) → ~
+`logit(eps)` (impossible), a legal move keeps its **true** Smogon usage (rare-but-liftable, NOT pruned — so
+surprise-move anticipation survives), a legal-unobserved move gets the small `floor` base. (3)
+**`--unified-damage {off,incoming,both}`** is the one CLI knob — it desugars into
+`move_belief_mode`/`damage_op`/`move_prior_fusion`/`damage_outgoing` at parse time. Both v23 fields are
+threaded through `current_model_version`/`_run_arch_toggles` (the 4 opp-load sites). **Accuracy is folded
+into `pko` (`acc·P(KO|hit)`) AND exposed as a per-channel scalar** — the operator does every multiplication
+so the ReLU head reasons additively. Leak-safe (public obs + the predicted belief only; pinned by
+`damage_op_test.test_op_is_leak_free_of_privileged_keys`). The unified directions are GPU-operator outputs
+(NOT CPU obs blocks) → obs dim unchanged (3457), obs-build perf gate untouched. Current
+`MODEL_CONFIG_VERSION` = **23**.
 
 A startup smoke test (`_run_roundtrip_test` in `train_rl_agent.py`) saves to a temp dir and reloads before every `model.learn()` call — catches serialization issues immediately.
 

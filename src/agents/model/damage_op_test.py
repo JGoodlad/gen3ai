@@ -150,12 +150,13 @@ def test_typed_hp_distinct_effectiveness():
 
     g = op(_fake_ctx(op, defenders=defenders, hp_probs_active=grass, **attacker), lg)[:, :TEAM_SIZE * _DMG_PER_MON].reshape(1, TEAM_SIZE, _DMG_PER_MON)
     i = op(_fake_ctx(op, defenders=defenders, hp_probs_active=ice, **attacker), lg)[:, :TEAM_SIZE * _DMG_PER_MON].reshape(1, TEAM_SIZE, _DMG_PER_MON)
-    # feature order: [phys_chip, spec_chip, phys_pko, spec_pko]; HP Grass/Ice are SPECIAL.
-    grass_spec_chip = g[0, 0, 1].item()
-    ice_spec_chip = i[0, 0, 1].item()
-    assert grass_spec_chip > 2.5 * ice_spec_chip > 0.0, (grass_spec_chip, ice_spec_chip)
+    # feature order per mon: [phys_low,high,crit,pko,acc, spec_low,high,crit,pko,acc, outspeed, prov].
+    # HP Grass/Ice are SPECIAL → read the spec high-roll (index 6).
+    grass_spec = g[0, 0, 6].item()
+    ice_spec = i[0, 0, 6].item()
+    assert grass_spec > 2.5 * ice_spec > 0.0, (grass_spec, ice_spec)
     # HP is special → the physical channel stays ~0 (no believed physical candidate).
-    assert g[0, 0, 0].item() < 1e-3
+    assert g[0, 0, 1].item() < 1e-3
 
 
 def test_typed_hp_channel_and_effectiveness_ranking():
@@ -171,8 +172,8 @@ def test_typed_hp_channel_and_effectiveness_ranking():
     out = op(_fake_ctx(op, defenders=defenders, hp_probs_active=grass,
                        attacker_num=248, attacker_t1=_T2I["NORMAL"], attacker_t2=0),
              lg)[:, :TEAM_SIZE * _DMG_PER_MON].reshape(1, TEAM_SIZE, _DMG_PER_MON)
-    assert out[0, 0, 1].item() > out[0, 1, 1].item() > 0.0   # spec_chip: Water/Ground > Fire
-    assert out[0, 0, 0].item() < 1e-3 and out[0, 1, 0].item() < 1e-3   # phys_chip ~0 (HP is special)
+    assert out[0, 0, 6].item() > out[0, 1, 6].item() > 0.0   # spec high-roll: Water/Ground > Fire
+    assert out[0, 0, 1].item() < 1e-3 and out[0, 1, 1].item() < 1e-3   # phys high-roll ~0 (HP is special)
 
 
 def test_immune_defender_reads_zero():
@@ -191,9 +192,9 @@ def test_immune_defender_reads_zero():
     out = op(_fake_ctx(op, defenders=defenders, hp_probs_active=[0.0] * 16,
                        attacker_num=248, attacker_t1=_T2I["GROUND"], attacker_t2=0),
              lg)[:, :TEAM_SIZE * _DMG_PER_MON].reshape(1, TEAM_SIZE, _DMG_PER_MON)
-    assert out[0, 0, 0].item() < 1e-6                # immune: only the −20 belief tail remains
-    assert out[0, 1, 0].item() > 0.1                 # Ground-weak: a real physical threat
-    assert out[0, 1, 0].item() > 1e6 * out[0, 0, 0].item()
+    assert out[0, 0, 1].item() < 1e-6                # immune: only the −20 belief tail remains (phys high-roll)
+    assert out[0, 1, 1].item() > 0.1                 # Ground-weak: a real physical threat
+    assert out[0, 1, 1].item() > 1e6 * out[0, 0, 1].item()
 
 
 # --------------------------------------------------------------------------- extractor wiring
@@ -264,6 +265,182 @@ def test_no_opp_active_gates_block_to_zero():
     ctx.hp_and_active[:, TEAM_SIZE:, -1] = 0.0      # clear ALL opp active flags
     out = op(ctx, _logits_hp_only(layout["max_moves"]))
     assert (out == 0).all()
+
+
+def test_accuracy_scalar_and_pko_fold():
+    """The per-channel accuracy scalar reports the dominant believed move's base hit rate, and pko folds
+    it (pko = acc·P(KO|hit) ≤ acc — the exact realized KO probability). Fire Blast (85%, special) →
+    spec_acc≈0.85; a 100%-accurate move → ≈1.0; and pko never exceeds acc."""
+    from agents import gen3_data
+    op, layout = _op_and_layout()
+    defenders = [(0, _T2I["GRASS"], 0)] + [(0, 0, 0)] * 5     # a frail Grass mon Fire Blast OHKOs on hit
+    atk = dict(attacker_num=146, attacker_t1=_T2I["FIRE"], attacker_t2=0)   # Moltres (Fire) → STAB
+
+    def _believe(move):
+        lg = torch.full((1, TEAM_SIZE, layout["max_moves"]), -20.0)
+        lg[:, :, gen3_data.moves.get(move).num] = 20.0
+        return lg
+
+    def _run(move):
+        return op(_fake_ctx(op, defenders=defenders, hp_probs_active=[0.0] * 16, **atk),
+                  _believe(move))[:, :TEAM_SIZE * _DMG_PER_MON].reshape(1, TEAM_SIZE, _DMG_PER_MON)
+
+    fb, surf = _run("fireblast"), _run("surf")
+    SPEC_ACC, SPEC_PKO = 9, 8                                # the new spec-channel slots
+    assert fb[0, 0, SPEC_ACC].item() == pytest.approx(0.85, abs=0.01)    # Fire Blast 85%
+    assert surf[0, 0, SPEC_ACC].item() == pytest.approx(1.0, abs=0.01)   # Surf 100%
+    assert fb[0, 0, SPEC_PKO].item() <= fb[0, 0, SPEC_ACC].item() + 1e-6  # pko = acc·ko_hit ≤ acc
+    # an 85%-accurate sure-KO reads pko ≈ 0.85 (not 1.0 — accuracy folded); the 100% move reads higher.
+    assert surf[0, 0, SPEC_PKO].item() > fb[0, 0, SPEC_PKO].item()
+
+
+def test_three_roll_relationship():
+    """The shared kernel's three rolls are the gen3 roll band: low = 0.85·high, and crit = ×2·high
+    (gen3 crit ignores screens → 2× the pre-screen damage; with no screen that is exactly 2× high)."""
+    op, _ = _op_and_layout()
+    B, n = 1, 1
+    atk, spa = torch.tensor([300.0]), torch.tensor([200.0])
+    at1 = at2 = torch.zeros(B, dtype=torch.long)
+    def_stat, spd_stat = torch.tensor([[200.0]]), torch.tensor([[200.0]])
+    maxhp, cur_hp = torch.tensor([[300.0]]), torch.tensor([[300.0]])
+    t1d = t2d = torch.zeros(B, n, dtype=torch.long)
+    ability1 = torch.zeros(B, n, dtype=torch.long)
+    reflect = light = torch.zeros(B, 1)
+    bp, mty, phys = torch.tensor([100.0]), torch.tensor([5], dtype=torch.long), torch.tensor([1.0])
+    acc = torch.tensor([1.0])                                    # 100%-accurate → pko undiscounted
+    high, low, crit, pko = op._damage_rolls(atk, spa, at1, at2, def_stat, spd_stat, maxhp, cur_hp,
+                                            t1d, t2d, ability1, reflect, light, bp, mty, phys, acc)
+    h = high[0, 0, 0].item()
+    assert 0.0 < h < 1.5                                          # unclamped (relationship is clean)
+    assert low[0, 0, 0].item() == pytest.approx(0.85 * h, rel=1e-5)
+    assert crit[0, 0, 0].item() == pytest.approx(2.0 * h, rel=1e-5)
+    assert pko[0, 0, 0].item() == 0.0                             # 118 dmg vs 300 HP → no KO
+
+
+def _fake_ctx_out(*, our_species, our_t1, our_t2, our_moves, our_move_types,
+                  opp_species, opp_t1, opp_t2, move_mask, opp_ability=0, B=1):
+    """Hand-built ctx for the OUTGOING block: our active in slot 0 (4 moves in request order), opp active
+    at slot TEAM_SIZE. Spread = IV31/EV0/neutral; full HP both sides."""
+    n = 2 * TEAM_SIZE
+    species = torch.zeros(B, n, dtype=torch.long)
+    t1 = torch.zeros(B, n, dtype=torch.long); t2 = torch.zeros(B, n, dtype=torch.long)
+    ability = torch.zeros(B, n, dtype=torch.long)
+    species[:, 0] = our_species; t1[:, 0] = our_t1; t2[:, 0] = our_t2
+    species[:, TEAM_SIZE] = opp_species; t1[:, TEAM_SIZE] = opp_t1; t2[:, TEAM_SIZE] = opp_t2
+    ability[:, TEAM_SIZE] = opp_ability
+    hp_and_active = torch.zeros(B, n, POKEMON_FULL_DIM)
+    hp_and_active[:, 0, 0] = 1.0                       # our active full HP
+    hp_and_active[:, TEAM_SIZE, 0] = 1.0               # opp active full HP
+    hp_and_active[:, TEAM_SIZE, -1] = 1.0              # opp active flag
+    pokemon_part = torch.zeros(B, n, POKEMON_FULL_DIM)
+    sp = pokemon_part[:, :, POKEMON_SPREAD_OFFSET:POKEMON_SPREAD_OFFSET + 18]
+    sp[..., 0:6] = 1.0      # IV 31
+    sp[..., 13:18] = 1.0    # neutral nature
+    all_move_ids = torch.zeros(B, n, 4, dtype=torch.long)
+    all_move_type_ids = torch.zeros(B, n, 4, dtype=torch.long)
+    for k, (mid, mty) in enumerate(zip(our_moves, our_move_types)):
+        all_move_ids[:, 0, k] = mid
+        all_move_type_ids[:, 0, k] = mty
+    return types.SimpleNamespace(
+        batch_size=B, device=torch.device("cpu"),
+        our_active_idx=torch.zeros(B, dtype=torch.long),
+        opp_active_local=torch.zeros(B, dtype=torch.long),
+        species_ids=species, type1_ids=t1, type2_ids=t2, ability1_ids=ability,
+        hp_and_active=hp_and_active, pokemon_part=pokemon_part,
+        all_move_ids=all_move_ids, all_move_type_ids=all_move_type_ids,
+        move_mask=torch.tensor([list(move_mask)] * B, dtype=torch.float32),
+        screen_feature=torch.zeros(B, 8),
+    )
+
+
+def test_outgoing_per_move_discriminates_equal_effectiveness():
+    """The EQ-vs-equal-effectiveness fix: Earthquake (Ground, 100 BP) and Brick Break (Fighting, 75 BP)
+    are BOTH 2× super-effective vs a Rock defender — the obs type-multiplier can't break the tie, but the
+    per-move OUTGOING damage must (EQ > Brick Break by base power). Attacker is Normal → no STAB for either,
+    isolating BP. Move slot k occupies [k*4 : k*4+4] = [low, high, crit, pko] (request order = action 6+k)."""
+    from agents import gen3_data
+    mappings = load_mappings(); layout = Gen3ObservationEncoder(mappings).get_layout()
+    op = DamageOperator(layout, outgoing=True)
+    eq, bb = gen3_data.moves.get("earthquake"), gen3_data.moves.get("brickbreak")
+    ctx = _fake_ctx_out(our_species=143, our_t1=_T2I["NORMAL"], our_t2=0,           # Snorlax (Normal)
+                        our_moves=[eq.num, bb.num, 0, 0],
+                        our_move_types=[_T2I["GROUND"], _T2I["FIGHTING"], 0, 0],
+                        opp_species=248, opp_t1=_T2I["ROCK"], opp_t2=0,             # mono-Rock (both 2×)
+                        move_mask=[1, 1, 0, 0])
+    out = op._outgoing_block(ctx)                                                    # [1, 17]
+    eq_high, bb_high = out[0, 1].item(), out[0, 5].item()       # move 0 high, move 1 high
+    assert eq_high > bb_high > 0.0, (eq_high, bb_high)           # same 2× eff, EQ wins on base power
+    assert out[0, 8:12].abs().sum().item() == 0.0               # empty move slots 2/3 → zero
+
+
+def test_outgoing_legality_mask_and_immunity():
+    """A move the action mask forbids (Choice-lock / Disable / no-PP) is zeroed; a Ground move into a
+    Flying (immune) defender is zeroed."""
+    from agents import gen3_data
+    mappings = load_mappings(); layout = Gen3ObservationEncoder(mappings).get_layout()
+    op = DamageOperator(layout, outgoing=True)
+    eq, bb = gen3_data.moves.get("earthquake"), gen3_data.moves.get("brickbreak")
+    # Brick Break (slot 1) made ILLEGAL by the action mask → its block is zero, EQ (slot 0) still computes.
+    ctx = _fake_ctx_out(our_species=143, our_t1=_T2I["NORMAL"], our_t2=0,
+                        our_moves=[eq.num, bb.num, 0, 0],
+                        our_move_types=[_T2I["GROUND"], _T2I["FIGHTING"], 0, 0],
+                        opp_species=248, opp_t1=_T2I["ROCK"], opp_t2=0, move_mask=[1, 0, 0, 0])
+    out = op._outgoing_block(ctx)
+    assert out[0, 0:4].abs().sum().item() > 0.0                  # EQ legal → computed
+    assert out[0, 4:8].abs().sum().item() == 0.0                # Brick Break illegal → zeroed
+    # Earthquake (Ground) into Skarmory (Steel/Flying) → immune → zero.
+    imm = _fake_ctx_out(our_species=143, our_t1=_T2I["NORMAL"], our_t2=0,
+                        our_moves=[eq.num, 0, 0, 0], our_move_types=[_T2I["GROUND"], 0, 0, 0],
+                        opp_species=227, opp_t1=_T2I["STEEL"], opp_t2=_T2I["FLYING"], move_mask=[1, 0, 0, 0])
+    assert op._outgoing_block(imm)[0, 0:4].abs().sum().item() == 0.0
+
+
+def test_op_is_leak_free_of_privileged_keys():
+    """No-leak gate: the unified op (incoming + outgoing) reads ONLY public obs (via ctx) + the model's own
+    predicted belief — never a training-only privileged label. Its output is bit-identical whether or not
+    belief_species / belief_moves / known_moves / belief_target_slots are present in the obs dict."""
+    model, layout = _make_model(attend_unrevealed_opponents=True, move_belief_mode="revealed",
+                                move_prior_fusion=True, damage_op=True, damage_outgoing=True)
+    model.eval()
+    torch.manual_seed(0)
+    obs_t = torch.rand(4, layout["total_dim"])
+    with torch.no_grad():
+        ctx = model.unpack({"observation": obs_t}); model.forward({"observation": obs_t})
+        clean = model.damage_op(ctx, model.last_move_belief_logits).clone()
+        poisoned = {"observation": obs_t,
+                    "belief_species": torch.rand(4, TEAM_SIZE, layout["max_species"]),
+                    "belief_moves": torch.rand(4, TEAM_SIZE, layout["max_moves"]),
+                    "known_moves": torch.rand(4, TEAM_SIZE, layout["max_moves"]),
+                    "belief_target_slots": torch.rand(4, TEAM_SIZE, 107)}
+        ctx2 = model.unpack(poisoned); model.forward(poisoned)
+        poisoned_out = model.damage_op(ctx2, model.last_move_belief_logits)
+    assert torch.equal(clean, poisoned_out)
+
+
+def test_decode_damage_block_for_prober():
+    """The prober decode exposes the full operator output from the PRE-gain stash: per-mon incoming
+    (slot 0 = our active, 1-5 = the safe-switch bench reads), the opp effect scalars, and the outgoing
+    per-move block. The single source of truth the TUI mirrors."""
+    from agents.model.features_extractor import decode_damage_block
+    model, layout = _make_model(attend_unrevealed_opponents=True, move_belief_mode="revealed",
+                                move_prior_fusion=True, damage_op=True, damage_outgoing=True)
+    model.eval()
+    with torch.no_grad():
+        model.forward({"observation": torch.rand(2, layout["total_dim"])})
+    view = decode_damage_block(model.damage_op.last_raw_block[0], outgoing=True)
+    assert len(view["incoming"]) == TEAM_SIZE                       # active + 5 safe-switch bench rows
+    assert set(view["incoming"][0]["phys"]) == {"low", "high", "crit", "pko", "acc"}
+    assert set(view["effect"]) == {"recovery", "status", "phaze", "boost", "hazard", "protect"}
+    assert view["outgoing"] is not None and len(view["outgoing"]["moves"]) == 4
+    assert set(view["outgoing"]["moves"][0]) == {"low", "high", "crit", "pko"}
+    # an incoming-only model decodes outgoing → None.
+    m2, l2 = _make_model(attend_unrevealed_opponents=True, move_belief_mode="revealed",
+                         move_prior_fusion=True, damage_op=True)
+    m2.eval()
+    with torch.no_grad():
+        m2.forward({"observation": torch.rand(1, l2["total_dim"])})
+    v2 = decode_damage_block(m2.damage_op.last_raw_block[0], outgoing=False)
+    assert v2["outgoing"] is None and len(v2["incoming"]) == TEAM_SIZE
 
 
 def test_gen3_formula_matches_incoming_damage_kernel():

@@ -168,7 +168,15 @@ from typing import Any, Dict, List
 #   (like opp_belief_aux_coef): it scales the BCE aux loss, affects no forward pass, so it is recorded for
 #   provenance but NOT version-locked (a resume may change it freely, and a flagless resume inherits it).
 #   Old configs migrate to win_prob_mode="none" / win_prob_coef=1.0.
-MODEL_CONFIG_VERSION = 22
+# v23: added `damage_outgoing` (the OUTGOING per-move damage direction of the unified DamageOperator) +
+#   `move_candidate_floor` (the learnset + rarity-cap move-prior gate). damage_outgoing is STRUCTURAL like
+#   damage_op (the per-move outgoing block widens BOTH projection heads), gated in check_compatible with a
+#   bool compare; OFF = baseline byte-for-byte (NO ARCH_SIGNATURE bump), requires damage_op. move_candidate_floor
+#   is a FORWARD-BEHAVIOR float like move_prior_fusion: 0.0 = OFF (legacy 0.02-floor prior, byte-identical),
+#   >0 enables the learnset-legality + <floor rarity prune on the move prior (a different belief → gated in
+#   check_compatible; the prior buffer is non-persistent so the state_dict is identical either way). Old
+#   configs migrate to damage_outgoing=False / move_candidate_floor=0.0.
+MODEL_CONFIG_VERSION = 23
 
 # Change this when the neural architecture changes structurally in a way that makes
 # weights from a different signature incompatible (e.g. adding LSTM, replacing attention).
@@ -614,6 +622,17 @@ class ModelVersion:
     # aux loss, affects no forward pass → recorded for provenance but NOT version-locked (resume-mutable,
     # inherited on a flagless resume). Default 1.0 (full weight when the mode is on; ignored when none).
     win_prob_coef: float = 1.0
+    # v23 STRUCTURAL toggle (weight-shape, like damage_op): the OUTGOING per-move damage direction. ON makes
+    # the DamageOperator ALSO emit the our-active→opp-active per-move block (request-slot aligned), widening
+    # both projection Linears. Gated in check_compatible (bool); OFF = baseline byte-for-byte (NO
+    # ARCH_SIGNATURE bump). Requires damage_op (the op must exist).
+    damage_outgoing: bool = False
+    # v23 FORWARD-BEHAVIOR float (NOT weight-shape, like move_prior_fusion): the LEGALITY-only move-prior
+    # gate. 0.0 = OFF (legacy flat 0.02-floor prior, byte-identical); >0 drives moves a species CANNOT learn
+    # to ~0 (impossible) while legal moves keep their true usage (rare-but-liftable, never pruned) and a
+    # legal-unobserved move gets this small floor base — a different belief, gated in check_compatible. The
+    # prior buffer is non-persistent so the state_dict is identical either way.
+    move_candidate_floor: float = 0.0
 
     @classmethod
     def from_layout_and_policy_kwargs(
@@ -693,6 +712,12 @@ class ModelVersion:
             ),
             damage_op=bool(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("damage_op", False)
+            ),
+            damage_outgoing=bool(
+                policy_kwargs.get("features_extractor_kwargs", {}).get("damage_outgoing", False)
+            ),
+            move_candidate_floor=float(
+                policy_kwargs.get("features_extractor_kwargs", {}).get("move_candidate_floor", 0.0)
             ),
             move_prior_fusion=bool(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("move_prior_fusion", False)
@@ -851,6 +876,27 @@ class ModelVersion:
                 "The differentiable damage operator widens both projection heads, so it changes the "
                 "state_dict and cannot be toggled on an existing model.\n"
                 "Resume with the matching --damage-op setting, or start a fresh training run."
+            )
+
+        # Structural toggle (weight-shape, like damage_op): the OUTGOING per-move block widens both
+        # projection Linears, so toggling it changes the state_dict.
+        if self.damage_outgoing != saved.damage_outgoing:
+            raise ModelVersionError(
+                f"damage_outgoing mismatch: saved={saved.damage_outgoing}, current={self.damage_outgoing}.\n"
+                "The outgoing per-move damage block widens both projection heads, so it changes the "
+                "state_dict and cannot be toggled on an existing model.\n"
+                "Resume with the matching --unified-damage setting, or start a fresh training run."
+            )
+
+        # Forward-behavior toggle (no weight-shape change, like move_prior_fusion): the learnset + rarity
+        # gate produces a different move prior → a different belief the policy/value/op trained under.
+        if self.move_candidate_floor != saved.move_candidate_floor:
+            raise ModelVersionError(
+                f"move_candidate_floor mismatch: saved={saved.move_candidate_floor}, "
+                f"current={self.move_candidate_floor}.\n"
+                "The learnset + rarity-cap move-prior gate changes the belief the policy trained under, so "
+                "it cannot be changed on a resumed model.\n"
+                "Resume with the matching --move-candidate-floor, or start a fresh training run."
             )
 
         # Forward-behavior toggle (no weight-shape change, like attend_unrevealed_opponents): fusing the
@@ -1117,4 +1163,10 @@ def _migrate_config(data: dict) -> dict:
         data.setdefault("win_prob_mode", "none")
         data.setdefault("win_prob_coef", 1.0)
         data["config_version"] = 22
+    if version < 23:
+        # v23: added the outgoing per-move damage direction (off) + the learnset/rarity move-prior gate
+        # (0.0 = legacy floor). Old models had incoming-only and the un-gated 0.02-floor prior.
+        data.setdefault("damage_outgoing", False)
+        data.setdefault("move_candidate_floor", 0.0)
+        data["config_version"] = 23
     return data

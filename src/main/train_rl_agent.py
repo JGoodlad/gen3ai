@@ -177,6 +177,8 @@ def _run_arch_toggles(args) -> dict:
         move_belief_mode=args.move_belief_mode,
         opp_belief_latent=(args.opp_belief_latent_coef > 0.0),
         damage_op=args.damage_op,
+        damage_outgoing=args.damage_outgoing,
+        move_candidate_floor=args.move_candidate_floor,
         move_prior_fusion=args.move_prior_fusion,
         mask_incoming_damage_obs=args.mask_incoming_damage_obs,
         win_prob_mode=args.win_prob_mode,
@@ -730,6 +732,32 @@ async def main():
                              "belief. STRUCTURAL (widens both projections; version-checked, fresh-only). "
                              "REQUIRES --move-belief-mode revealed|both (it reads the opp active's "
                              "predicted logits, supervised only for a revealed mon). Off by default.")
+    parser.add_argument("--unified-damage", "--unified_damage", dest="unified_damage",
+                        choices=["off", "incoming", "both"], default="off",
+                        help="ONE knob for the unified damage system (desugars into the component flags at "
+                             "parse time): 'off' = baseline; 'incoming' = move belief (revealed) + prior "
+                             "fusion + the GPU damage op (opp active → our 6 mons, incl. the safe-switch "
+                             "bench rows); 'both' = also the OUTGOING per-move block (our active → opp "
+                             "active, action-aligned — the equal-effectiveness tie-break). Overrides "
+                             "--move-belief-mode / --damage-op / --move-prior-fusion / --damage-outgoing "
+                             "when not 'off'. Pair with --move-candidate-floor (the learnset/rarity gate) "
+                             "and --move-belief-mode both (to also guess unrevealed mons' moves).")
+    parser.add_argument("--damage-outgoing", "--damage_outgoing", dest="damage_outgoing",
+                        action=BoolFlag, default=None,
+                        help="OUTGOING per-move damage direction (our active → opp active), in REQUEST-slot "
+                             "order so the policy head can compare move A vs B directly (the "
+                             "equal-effectiveness tie-break: Earthquake vs Brick Break into a Rock). "
+                             "STRUCTURAL (widens both projections; version-checked, fresh-only). REQUIRES "
+                             "--damage-op. Off by default. (Usually set via --unified-damage both.)")
+    parser.add_argument("--move-candidate-floor", "--move_candidate_floor", dest="move_candidate_floor",
+                        type=float, default=None,
+                        help="LEGALITY-only move-prior gate. 0.0 = OFF (legacy flat 0.02-floor prior). >0 "
+                             "drives moves a species CANNOT learn to ~0 (removes the phantom-threat noise the "
+                             "flat floor invented), while a legal move keeps its TRUE Smogon usage (rare techs "
+                             "stay rare-but-liftable, never pruned — so surprise-move anticipation survives) "
+                             "and a legal-unobserved move gets this small floor as a liftable base (try 0.02 "
+                             "or smaller). Forward-behavior toggle (version-checked, fresh-only). REQUIRES "
+                             "--move-prior-fusion (it gates the fused prior). Off by default.")
     parser.add_argument("--move-prior-fusion", "--move_prior_fusion", dest="move_prior_fusion",
                         action=BoolFlag, default=None,
                         help="Unified two-part move belief: fuse the Smogon move-frequency PRIOR into the "
@@ -907,6 +935,17 @@ async def main():
     _popart_explicit = args.use_popart is not None
     _coef_explicit = args.opp_belief_aux_coef is not None
 
+    # --unified-damage desugars into the component flags BEFORE _resolve (so they aren't None-filled from a
+    # saved version). When not 'off' it forces damage_op + prior fusion + (for 'both') the outgoing block,
+    # and defaults the move-belief mode to 'revealed' unless the user set it explicitly (so
+    # `--unified-damage both --move-belief-mode both` still guesses unrevealed mons' moves).
+    if getattr(args, "unified_damage", "off") != "off":
+        if args.move_belief_mode is None:
+            args.move_belief_mode = "revealed"
+        args.damage_op = True
+        args.move_prior_fusion = True
+        args.damage_outgoing = (args.unified_damage == "both")
+
     def _resolve(name, default):
         if getattr(args, name) is None:
             setattr(args, name, getattr(_saved_ver, name, default) if _saved_ver is not None else default)
@@ -919,6 +958,8 @@ async def main():
     _resolve("move_belief_coef", 0.0)          # training-only (inherited like opp_belief_aux_coef)
     _resolve("opp_belief_latent_coef", 0.0)    # training-only (inherited like opp_belief_aux_coef)
     _resolve("damage_op", False)               # v19 structural (version-checked, fresh-only)
+    _resolve("damage_outgoing", False)         # v23 structural (version-checked, fresh-only)
+    _resolve("move_candidate_floor", 0.0)      # v23 forward-behavior (version-checked, fresh-only)
     _resolve("move_prior_fusion", False)       # v20 forward-behavior (version-checked, fresh-only)
     _resolve("mask_incoming_damage_obs", False)  # v21 forward-behavior (version-checked, fresh-only)
     _resolve("win_prob_mode", "none")          # v22 structural + resume-immutable (version-checked)
@@ -1011,6 +1052,18 @@ async def main():
             "--move-prior-fusion requires --move-belief-mode != off (revealed|unrevealed|both): the prior "
             "fuses into the move-belief head's logits. Set --move-belief-mode revealed, or drop "
             "--move-prior-fusion."
+        )
+    if args.damage_outgoing and not args.damage_op:
+        # The outgoing per-move block is emitted by the DamageOperator → the op must exist.
+        parser.error(
+            "--damage-outgoing requires --damage-op (the outgoing block is part of the damage operator). "
+            "Use --unified-damage both, or add --damage-op."
+        )
+    if args.move_candidate_floor and not args.move_prior_fusion:
+        # The learnset/rarity gate prunes the FUSED prior; with no prior fusion there is no prior to gate.
+        parser.error(
+            "--move-candidate-floor requires --move-prior-fusion (it gates the fused move prior). "
+            "Enable --move-prior-fusion (or --unified-damage), or drop --move-candidate-floor."
         )
     log_level = LogLevel[args.log_level.upper()]
 
@@ -1666,6 +1719,8 @@ async def main():
         _load_extractor_kwargs["opp_belief_latent"] = (args.opp_belief_latent_coef > 0.0)
         # Damage-operator toggle — version-checked vs the saved config (fresh-only).
         _load_extractor_kwargs["damage_op"] = args.damage_op
+        _load_extractor_kwargs["damage_outgoing"] = args.damage_outgoing       # v23 (version-checked)
+        _load_extractor_kwargs["move_candidate_floor"] = args.move_candidate_floor  # v23 (version-checked)
         # Move-prior fusion — version-checked vs the saved config (fresh-only).
         _load_extractor_kwargs["move_prior_fusion"] = args.move_prior_fusion
         # Incoming-damage-obs ablation — version-checked vs the saved config (fresh-only).
@@ -1873,6 +1928,12 @@ async def main():
         # Differentiable damage operator (weight-shape): widens both projection heads with the
         # believed-move incoming-damage block. Requires move_belief_mode revealed|both (validated above).
         extractor_kwargs["damage_op"] = args.damage_op
+        # Outgoing per-move direction (weight-shape): our active → opp active, action-aligned. Requires
+        # damage_op (validated above). v23.
+        extractor_kwargs["damage_outgoing"] = args.damage_outgoing
+        # Learnset + rarity-cap move-prior gate (forward-behavior): 0.0 = legacy floor; >0 prunes illegal /
+        # sub-floor moves. Requires move_prior_fusion (validated above). No weight-shape change. v23.
+        extractor_kwargs["move_candidate_floor"] = args.move_candidate_floor
         # Unified move belief (forward-behavior): fuse the Smogon move prior into the belief head. Requires
         # move_belief_mode != off (validated above). No weight-shape change (non-persistent prior buffer).
         extractor_kwargs["move_prior_fusion"] = args.move_prior_fusion

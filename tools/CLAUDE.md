@@ -11,7 +11,7 @@ split.
 
 | Tool | Upstream | Output |
 |---|---|---|
-| `pokemon_data_extractor/sync.py` | poke-env pokedex + static moves/natures + `GenData` type chart; Showdown `abilities.ts` / `items.ts` | `data/pokemon/gen3_{species,moves,abilities,items,type_chart,natures}.json` |
+| `pokemon_data_extractor/sync.py` | poke-env pokedex + static moves/natures/`learnset.json` + `GenData` type chart; Showdown `abilities.ts` / `items.ts` | `data/pokemon/gen3_{species,moves,abilities,items,type_chart,natures,learnset}.json` |
 | `smogon_stats_downloader/sync.py` | Smogon monthly chaos JSON (12-month window) | `data/pokemon/gen3_smogon_stats.json` |
 | `smogon_stats_downloader/compute_priors.py` | the aggregated stats + pokedex | `data/pokemon/gen3_{ability,hidden_power}_priors.json` |
 | `sample_team_downloader/sync.py` | Smogon forum sample-team thread | `data/teams/sample/` |

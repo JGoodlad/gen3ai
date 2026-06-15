@@ -52,6 +52,12 @@ def test_moves_builder_reproduces_committed():
     assert _load_sync().build_moves(3) == _committed("gen3_moves.json")
 
 
+def test_learnset_builder_reproduces_committed():
+    # build_learnset reads only poke-env static data (learnset.json + the species/moves builders),
+    # so it is unit-safe (no Showdown submodule needed).
+    assert _load_sync().build_learnset(3) == _committed("gen3_learnset.json")
+
+
 @pytest.mark.integration
 def test_abilities_builder_reproduces_committed():
     # build_abilities reads the Showdown submodule (deps/pokemon-showdown/data/abilities.ts).

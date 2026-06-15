@@ -283,6 +283,7 @@ class InvocationAnalysis:
     field: "dict | None" = None                    # weather/spikes/screens (decoded from obs)
     belief: "BeliefView | None" = None             # hidden-opp species belief (anonymous slots)
     belief_truth: "BeliefTruthView | None" = None  # privileged truth + slot-matched guess (None unless recon+belief)
+    damage_op: "dict | None" = None                # unified DamageOperator view (incoming + outgoing); None unless --damage-op
 
 
 # ---------------------------------------------------------------------------
@@ -1124,12 +1125,23 @@ def analyze_invocation(model, summary: dict, npz, inv_index: int,
         except Exception:  # noqa: BLE001 — field decode is best-effort
             field = None
 
+    # Unified DamageOperator view (per-mon incoming + outgoing per-move), re-computed from the loaded
+    # model — None when the checkpoint has no damage op or the model can't expose it (a fake/stub model).
+    damage_op = None
+    dop = getattr(model, "damage_op_view", None)
+    if dop is not None:
+        try:
+            damage_op = dop(obs, mask)
+        except Exception:  # noqa: BLE001 — best-effort, never break the analysis
+            damage_op = None
+
     return InvocationAnalysis(
         **common, has_state=True, actions=actions, matchups=matchups, sweep=sweep,
         saliency=saliency, value_saliency=value_saliency, threats=threats, incoming=incoming,
         warnings=(), outcome=outcome, value=value, win_prob=win_prob,
         rerun_argmax=rerun_argmax, agrees=agrees, flags=flags, board=board, next_board=next_board,
         obs_mismatch=obs_mismatch, field=field, belief=belief, belief_truth=belief_truth,
+        damage_op=damage_op,
     )
 
 

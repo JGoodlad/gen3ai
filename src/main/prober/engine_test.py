@@ -107,6 +107,24 @@ def test_meta_and_faithfulness():
     assert not next(r for r in a.actions if r.label == "switch:slot2").valid
 
 
+def test_damage_op_view_attached_when_model_exposes_it():
+    from dataclasses import asdict
+    model = FakeProbeModel(_OFF)
+    # the default fake has no damage_op_view → the field stays None (back-compat, op-off run).
+    assert analyze_invocation(model, _summary(), _npz(), 0).damage_op is None
+    # a model that exposes the op view → the engine attaches it (and it stays JSON-serializable).
+    chan = {"low": 0.1, "high": 0.12, "crit": 0.24, "pko": 0.0, "acc": 1.0}
+    view = {"incoming": [{"phys": chan, "spec": chan, "p_outspeed": 0.5, "provenance": 1.0}] * 6,
+            "effect": {k: 0.0 for k in ("recovery", "status", "phaze", "boost", "hazard", "protect")},
+            "outgoing": {"moves": [{"low": 0.0, "high": 0.0, "crit": 0.0, "pko": 0.0}] * 4,
+                         "p_outspeed": 0.5}}
+    model.damage_op_view = lambda obs, mask: view
+    a = analyze_invocation(model, _summary(), _npz(), 0)
+    assert a.damage_op is not None and len(a.damage_op["incoming"]) == 6        # active + 5 safe-switch
+    assert set(a.damage_op["outgoing"]["moves"][0]) == {"low", "high", "crit", "pko"}
+    asdict(a)   # rides the `analyze` CLI JSON output
+
+
 def test_matchups_read_correct_dims():
     model = FakeProbeModel(_OFF)
     a = analyze_invocation(model, _summary(), _npz(), 0)

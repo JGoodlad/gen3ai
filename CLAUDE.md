@@ -669,14 +669,22 @@ and `gen3_sleep_wake_belief_v1` — a 3-dim per-mon SLEEP WAKE belief block [`sl
 Early Bird halves; opp Early-Bird prior marginalised; Rest source from the event log's `[from]` clause;
 fuzz-calibrated vs the real sim RNG), `sleep_counter_reliable`], `POKEMON_VECTOR_DIM` 106 → 109
 (3419 → 3455). All four are retrain-class; current
-`MODEL_CONFIG_VERSION`: **22** — v16 added the in-place
+`MODEL_CONFIG_VERSION`: **23** — v16 added the in-place
 hidden-opponent belief-aux toggle `opp_belief_slots` + its coef `opp_belief_aux_coef`, v17 the
 move-belief reinjection toggle `move_belief_mode` + `move_belief_coef`, v18 the latent-belief toggle
 `opp_belief_latent` + `opp_belief_latent_coef`, v19 the differentiable damage-operator toggle
 `damage_op`, v20 the unified-move-belief prior-fusion toggle `move_prior_fusion`, v21 the
 unified-architecture ablation toggle `mask_incoming_damage_obs`, v22 the tri-state win-probability head
-`win_prob_mode` (none/read_only/shaping) + its coef `win_prob_coef`; none bump `ARCH_SIGNATURE` since each
-OFF is byte-identical).
+`win_prob_mode` (none/read_only/shaping) + its coef `win_prob_coef`, v23 the **unified damage system** —
+the OUTGOING per-move direction `damage_outgoing` (our active → opp active, action-aligned — the
+equal-effectiveness move tie-break) + the LEGALITY-only move-prior gate `move_candidate_floor` (>0 drives
+moves a species can't learn to ~0 while legal moves keep their true usage — rare-but-liftable, never pruned,
+so surprise-move anticipation survives), both reachable via the one `--unified-damage {off,incoming,both}` knob (which
+desugars into `move_belief_mode`/`damage_op`/`move_prior_fusion`/`damage_outgoing`); the op's per-mon
+feature is now the **3-roll + P(KO) + accuracy** representation `[low,high,crit,pko,accuracy]×{phys,spec}`
+(`pko=acc·P(KO|hit)` — the operator does the multiplicative physics so the ReLU head stays additive); none
+bump `ARCH_SIGNATURE` since each OFF is byte-identical and the directions are GPU-operator outputs (obs dim
+unchanged at 3457). Full design: `designs/ai_v6/design_unified_damage_system.md`.
 **The full versioning playbook — what to do when you change a dim vs add an optional feature vs
 make a structural change — is in `src/agents/model/CLAUDE.md`.**
 
@@ -698,6 +706,8 @@ Reference data (deterministic) under `data/pokemon/`, all regenerable via
 - `gen3_abilities.json` — ability id → `{num, name}`
 - `gen3_type_chart.json` — `{DEF: {ATT: multiplier}}` effectiveness chart (was live `GenData`)
 - `gen3_natures.json` — nature → `{num, stat multipliers}` (was live `poke_env/.../natures.json`)
+- `gen3_learnset.json` — species id → `[move_id, ...]` gen3 legal movepool (the hard legality gate the
+  move-belief prior uses to prune impossible candidate moves; via `gen3_data.learnset`)
 
 Smogon-derived priors (probabilistic), via `tools/smogon_stats_downloader/`:
 - `gen3_smogon_stats.json` (raw aggregated stats) → `gen3_ability_priors.json`, `gen3_hidden_power_priors.json`

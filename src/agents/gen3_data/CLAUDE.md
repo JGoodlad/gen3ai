@@ -26,7 +26,15 @@ gen3_data.natures.get(nature_name)      # NatureData(multipliers); .multipliers(
 gen3_data.type_chart.chart()            # {DEF: {ATT: multiplier}}; .multiplier(def, att)
 gen3_data.priors.ability(species)       # {ability_id: probability}     (Smogon)
 gen3_data.priors.hidden_power(species)  # {hp_type: probability}         (Smogon)
+gen3_data.learnset.is_legal(species, move_id)      # gen3 legal-movepool gate (hard legality)
+gen3_data.learnset.get_legal_moves(species)        # frozenset|None (None = unknown → no constraint)
 ```
+
+`learnset` is the **legality** primitive (which moves a species can LEGALLY learn in gen3) — distinct
+from `priors.moves` (how OFTEN a legal move is run). The move-belief prior uses it to PRUNE impossible
+candidate moves (`damage_tables.build_move_prior_logits(..., learnset_gate=True)`); its tolerance
+contract is that an unknown species yields `None`/`True` ("no constraint", never "no moves"), so the
+gate can never wrongly prune.
 
 ## Concept-module discipline (per submodule)
 

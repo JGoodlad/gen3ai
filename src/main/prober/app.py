@@ -970,6 +970,19 @@ class ProberApp(Gen3App):
             if inc.recovery_known or inc.recovery_rate > 0:
                 lines.append(f"  ·  opp-recovery {inc.recovery_rate * 100:.0f}%"
                              + ("✓" if inc.recovery_known else "?"), style="dim")
+        # Unified DamageOperator (--unified-damage both): the model's OUTGOING per-move damage (our active
+        # → opp active, action-aligned), so you can see how it ranks moves of EQUAL type-effectiveness —
+        # the Earthquake-vs-Brick-Break tie-break. Each move's max-roll %HP + P(KO) (the realized,
+        # accuracy-folded KO this turn). Only present on a --damage-op-with-outgoing checkpoint.
+        dop = a.damage_op
+        if dop is not None and dop.get("outgoing"):
+            moves = dop["outgoing"]["moves"]
+            labels = (list(a.matchups.move_labels) if a.matchups is not None
+                      else [f"m{k}" for k in range(len(moves))])
+            shown = [f"{lab} {mv['high'] * 100:.0f}%" + (f"→KO{mv['pko'] * 100:.0f}%" if mv["pko"] > 0.05 else "")
+                     for lab, mv in zip(labels, moves) if mv["high"] > 0]
+            lines.append("\nour damage (op): ", style="dim")
+            lines.append("  ·  ".join(shown) if shown else "n/a", style="cyan")
         threat.update(lines)
 
     def _render_sweep(self, a: InvocationAnalysis) -> None:

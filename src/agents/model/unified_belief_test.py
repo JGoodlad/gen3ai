@@ -94,12 +94,22 @@ def test_enriched_output_shape_and_bounds():
     assert out.shape == (2, _OUT) and op.out_dim == _OUT
     permon = out[:, :TEAM_SIZE * _DMG_PER_MON].reshape(2, TEAM_SIZE, _DMG_PER_MON)
     eff = out[:, TEAM_SIZE * _DMG_PER_MON:]
-    crit_delta = permon[..., 4:6]; outspeed = permon[..., 6]; prov = permon[..., 7]
-    assert (crit_delta >= 0).all()                         # crit delta is a non-negative tax
+    # [phys_low,high,crit,pko,acc, spec_low,high,crit,pko,acc, outspeed, prov]
+    rolls = permon[..., [0, 1, 5, 6]]      # low/high rolls — fraction of max HP, clamped to 1.5
+    crit = permon[..., [2, 7]]             # crit roll — clamped to 3.0
+    pko = permon[..., [3, 8]]
+    acc = permon[..., [4, 9]]              # per-channel dominant-threat accuracy
+    outspeed = permon[..., 10]; prov = permon[..., 11]
+    assert (rolls >= 0).all() and (rolls <= 1.5001).all()
+    assert (crit >= 0).all() and (crit <= 3.0001).all()
+    assert (0 <= pko).all() and (pko <= 1.0001).all()
+    assert (0 <= acc).all() and (acc <= 1.0001).all()
     assert (0 <= outspeed).all() and (outspeed <= 1).all()
     assert (0 <= prov).all() and (prov <= 1.0001).all()
     assert (0 <= eff).all() and (eff <= 1.0001).all()
     assert torch.isfinite(out).all()
+    # rolls are ordered within a channel: low <= high (low = 0.85·high, both clamped).
+    assert (permon[..., 0] <= permon[..., 1] + 1e-6).all() and (permon[..., 5] <= permon[..., 6] + 1e-6).all()
 
 
 # --------------------------------------------------------------------------- believed-status threat
@@ -140,8 +150,8 @@ def test_provenance_revealed_vs_guess():
     permon_hi = op(ctx, _belief_logits(("earthquake",)))[:, :TEAM_SIZE * _DMG_PER_MON].reshape(1, TEAM_SIZE, _DMG_PER_MON)
     # all-floor belief (no high logit) → the dominant threat is a guess → low provenance.
     permon_lo = op(ctx, _belief_logits(()))[:, :TEAM_SIZE * _DMG_PER_MON].reshape(1, TEAM_SIZE, _DMG_PER_MON)
-    assert permon_hi[0, 0, 7].item() > 0.9
-    assert permon_lo[0, 0, 7].item() < 0.2
+    assert permon_hi[0, 0, 11].item() > 0.9               # provenance is now slot 11
+    assert permon_lo[0, 0, 11].item() < 0.2
 
 
 # --------------------------------------------------------------------------- ALL known/unknown combos
@@ -192,8 +202,8 @@ def test_revealed_no_moves_uses_species_prior():
                defenders=[(214, _T2I["BUG"], _T2I["FIGHTING"])] + [(0, 0, 0)] * 5)
     out = _fused_then_op(op, mb, ctx, revealed_moves_active=())   # ZERO revealed moves
     permon = out[:, :TEAM_SIZE * _DMG_PER_MON].reshape(1, TEAM_SIZE, _DMG_PER_MON)
-    phys_chip = permon[0, 0, 0].item()                            # Drill Peck is physical
-    assert phys_chip > 0.05, f"species prior gave no threat with zero revealed moves: {phys_chip}"
+    phys_high = permon[0, 0, 1].item()                            # Drill Peck is physical (high-roll magnitude)
+    assert phys_high > 0.05, f"species prior gave no threat with zero revealed moves: {phys_high}"
 
 
 # --------------------------------------------------------------------------- ablation toggle
@@ -227,9 +237,9 @@ def test_defender_ability_immunity():
     # Levitate nullifies the believed Earthquake (eff=0). The residual ~sigmoid(-10)≈4.5e-5 is the
     # belief-floor weight on the ~399 OTHER physical candidates (this test's base=-10), not an immunity
     # leak — the >0.1 on the non-Levitate slot below proves the channel works.
-    assert permon[0, 0, 0].item() < 1e-4                  # Levitate → ~0 incoming Ground (phys chip)
-    assert permon[0, 1, 0].item() > 0.1                   # no Levitate → real Ground threat
-    assert permon[0, 0, 2].item() < 1e-4                  # and ~0 phys P(KO)
+    assert permon[0, 0, 1].item() < 1e-4                  # Levitate → ~0 incoming Ground (phys high-roll)
+    assert permon[0, 1, 1].item() > 0.1                   # no Levitate → real Ground threat
+    assert permon[0, 0, 3].item() < 1e-4                  # and ~0 phys P(KO) (slot 3)
 
 
 def test_thick_fat_halves_fire():
@@ -239,8 +249,8 @@ def test_thick_fat_halves_fire():
     ctx = _ctx(defenders=[dfn, dfn] + [(0, 0, 0)] * 4, def_abilities=[tf, 0],
                opp_species=146, opp_t1=_T2I["FIRE"], opp_t2=0)   # a Fire attacker
     permon = op(ctx, _belief_logits(("flamethrower",)))[:, :TEAM_SIZE * _DMG_PER_MON].reshape(1, TEAM_SIZE, _DMG_PER_MON)
-    # Thick Fat halves Fire → spec chip is ~half the no-ability defender's (both < clamp).
-    assert permon[0, 0, 1].item() == pytest.approx(0.5 * permon[0, 1, 1].item(), rel=0.03)
+    # Thick Fat halves Fire → spec high-roll is ~half the no-ability defender's (both < clamp).
+    assert permon[0, 0, 6].item() == pytest.approx(0.5 * permon[0, 1, 6].item(), rel=0.03)
 
 
 # --------------------------------------------------------------------------- our-side screens
@@ -252,5 +262,5 @@ def test_our_reflect_halves_physical_chip():
     refl = op(_ctx(defenders=dfn, our_reflect=True, **atk), _belief_logits(("earthquake",)))
     b = base[:, :TEAM_SIZE * _DMG_PER_MON].reshape(1, TEAM_SIZE, _DMG_PER_MON)
     r = refl[:, :TEAM_SIZE * _DMG_PER_MON].reshape(1, TEAM_SIZE, _DMG_PER_MON)
-    assert b[0, 0, 0].item() > 0.0
-    assert r[0, 0, 0].item() == pytest.approx(0.5 * b[0, 0, 0].item(), rel=0.02)   # Reflect halves physical
+    assert b[0, 0, 1].item() > 0.0
+    assert r[0, 0, 1].item() == pytest.approx(0.5 * b[0, 0, 1].item(), rel=0.02)   # Reflect halves physical (high-roll)

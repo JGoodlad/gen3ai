@@ -82,6 +82,7 @@ def build_damage_buffers(n_moves: int, n_species: int, n_abilities: int) -> Dict
       MOVE_BP[n_moves]          base power (HP num 237 left 0 — expanded as typed candidates)
       MOVE_TYPE_IDX[n_moves]    TypeEncoder type index of each move
       MOVE_PHYS[n_moves]        1.0 physical / 0.0 special|status (from MoveData.category)
+      MOVE_ACCURACY[n_moves]    base hit probability (1.0 never-miss, else accuracy/100) — folds into P(KO)
       BASE_STATS[n_species, 6]  [hp, atk, def, spa, spd, spe]
       CHART[19, 19]             effectiveness [def_idx, att_idx] on the TypeEncoder axis
       TYPE_IS_PHYS[19]          1.0 for the 9 gen3-physical type indices
@@ -93,6 +94,11 @@ def build_damage_buffers(n_moves: int, n_species: int, n_abilities: int) -> Dict
     move_bp = torch.zeros(n_moves, dtype=torch.float32)
     move_type_idx = torch.zeros(n_moves, dtype=torch.long)
     move_phys = torch.zeros(n_moves, dtype=torch.float32)
+    # Per-move hit probability (base accuracy): 1.0 for never-miss moves (Swift/Aerial Ace/all
+    # status), else accuracy/100. Folded into the op's P(KO) so an 85%-accurate Fire Blast reads a
+    # lower KO-this-turn risk than a 100% move (the 3 damage rolls stay "damage IF it lands"). Dynamic
+    # accuracy mods (evasion/Sand-Attack/Compound Eyes) are not modelled — base accuracy only.
+    move_accuracy = torch.ones(n_moves, dtype=torch.float32)
     for mid in gen3_data.moves.raw():
         md = gen3_data.moves.get(mid)
         num = md.num
@@ -103,6 +109,7 @@ def build_damage_buffers(n_moves: int, n_species: int, n_abilities: int) -> Dict
         move_bp[num] = float(md.base_power)
         move_type_idx[num] = _move_type_idx(md)
         move_phys[num] = 1.0 if md.category == MoveCategory.PHYSICAL else 0.0
+        move_accuracy[num] = 1.0 if md.never_miss else float(md.accuracy) / 100.0
 
     # Base stats by species num. SpeciesData.base_stats is keyed atk/def/hp/spa/spd/spe — index by
     # KEY, not positional order, into our [hp, atk, def, spa, spd, spe] layout.
@@ -170,6 +177,7 @@ def build_damage_buffers(n_moves: int, n_species: int, n_abilities: int) -> Dict
         "MOVE_BP": move_bp,
         "MOVE_TYPE_IDX": move_type_idx,
         "MOVE_PHYS": move_phys,
+        "MOVE_ACCURACY": move_accuracy,
         "BASE_STATS": base_stats,
         "CHART": chart,
         "TYPE_IS_PHYS": type_is_phys,
@@ -185,32 +193,77 @@ def build_damage_buffers(n_moves: int, n_species: int, n_abilities: int) -> Dict
 _PRIOR_FLOOR = 0.02
 
 
-def build_move_prior_logits(n_species: int, n_moves: int, floor: float = _PRIOR_FLOOR) -> torch.Tensor:
+def build_move_prior_logits(n_species: int, n_moves: int, floor: float = _PRIOR_FLOOR,
+                            learnset_gate: bool = False) -> torch.Tensor:
     """``[n_species, n_moves]`` LOG-ODDS of the Smogon move-frequency prior, indexed by national-dex
     ``num`` on BOTH axes — the base rate ``P(move in set)`` for a species, ready to fuse additively into
     the move-belief logits (``posterior_logit = head_delta + prior_logit``).
 
     Sources `gen3_data.priors.moves(species)` -> ``{move_id: P(in set)}`` (un-normalized; a set runs
     ~4 moves). Probabilities for move_ids that collapse to one ``num`` are SUMMED (Hidden Power: all
-    typed variants share num 237, and a mon runs at most one HP type, so ``P(has HP) = Σ typed usage``),
-    clamped to ``[floor, 1-eps]``, then ``logit``. A species with no prior entry (or num 0 = unknown)
-    gets ``logit(floor)`` everywhere — a low, non-zero base that the learned delta can still move.
+    typed variants share num 237, and a mon runs at most one HP type, so ``P(has HP) = Σ typed usage``).
+
+    Two modes (`learnset_gate` selects; the gate is a VERSION-CHECKED forward-behavior change, never a
+    silent default flip — OFF reproduces the original buffer byte-for-byte):
+
+    - **OFF (default, legacy):** clamp every ``(species, move)`` to ``[floor, 1-eps]`` then ``logit``.
+      A species with no prior entry (or num 0 = unknown) gets ``logit(floor)`` everywhere — a low,
+      non-zero base the learned delta can still move (keeps an unseen move POSSIBLE).
+    - **ON (LEGALITY-ONLY gate):** the only thing pruned is the IMPOSSIBLE. A move a species **cannot
+      learn** is driven to ``logit(eps)`` (≈ 0 — it removes the phantom "a special attacker might have
+      Explosion" the flat floor invented). A move it CAN learn keeps its **true Smogon usage** — a rare
+      tech stays rare-but-present (naturally negligible in the op's hard-max, yet liftable by the learned
+      head, and pinned certain the moment it's revealed), NOT floored up to ``floor`` and NOT pruned. A
+      legal move ABSENT from the usage data gets the small ``floor`` base (so in-battle evidence can still
+      surface it). **No rarity cap** — a surprise move a mon legitimately runs is never zeroed out of the
+      belief (the earlier ``<2%`` prune did that and crippled surprise-move anticipation). Because every
+      move with recorded usage is necessarily legal, the legality mask only ever bites the ABSENT cells;
+      Hidden Power's typed usages sum into ``num`` 237 (legal iff the bare ``'hiddenpower'`` is in the
+      learnset). A hidden / unknown species (no learnset) keeps the legacy flat floor (no movepool known →
+      nothing to prune; marginalising the learnset over a species belief is a later extension).
 
     Returned as a plain float32 tensor for `MoveBelief` to register as a NON-persistent buffer (pure
     data-derived physics, recomputable — never a saved weight)."""
     eps = 1e-6
-    prob = torch.zeros(n_species, n_moves, dtype=torch.float64)   # accumulate in f64, cast at the end
+    if not learnset_gate:
+        # LEGACY (default): flat `floor` everywhere + accumulate usage. Byte-identical to the original.
+        prob = torch.zeros(n_species, n_moves, dtype=torch.float64)
+        for sid in gen3_data.species.raw():
+            sd = gen3_data.species.get(sid)
+            snum = sd.num
+            if not (0 <= snum < n_species):
+                continue
+            for move_id, p in gen3_data.priors.moves(sid).items():
+                md = gen3_data.moves.get(move_id)
+                if md is not None and 0 <= md.num < n_moves:
+                    prob[snum, md.num] += float(p)       # sum collisions (e.g. typed Hidden Power → 237)
+        prob = prob.clamp(floor, 1.0 - eps)
+        return torch.logit(prob).to(torch.float32)
+
+    # LEGALITY-ONLY gate: illegal → eps (impossible); legal-observed → TRUE usage; legal-unobserved → floor.
+    prob = torch.full((n_species, n_moves), eps, dtype=torch.float64)   # default = impossible
     for sid in gen3_data.species.raw():
         sd = gen3_data.species.get(sid)
         snum = sd.num
         if not (0 <= snum < n_species):
             continue
+        legal = gen3_data.learnset.get_legal_moves(sid)
+        if legal is None:
+            prob[snum, :] = floor                        # unknown movepool → legacy flat floor (can't prune)
+        else:
+            for move_id in legal:                        # every LEGAL move → a small liftable base
+                md = gen3_data.moves.get(move_id)
+                if md is not None and 0 <= md.num < n_moves:
+                    prob[snum, md.num] = floor
+        # TRUE usage overrides the floor (an observed move is necessarily legal); HP variants sum into 237.
+        usage: Dict[int, float] = {}
         for move_id, p in gen3_data.priors.moves(sid).items():
             md = gen3_data.moves.get(move_id)
-            if md is None:
+            if md is None or not (0 <= md.num < n_moves):
                 continue
-            num = md.num
-            if 0 <= num < n_moves:
-                prob[snum, num] += float(p)            # sum collisions (e.g. typed Hidden Power -> 237)
-    prob = prob.clamp(floor, 1.0 - eps)
-    return torch.logit(prob).to(torch.float32)         # log(p/(1-p)), the additive log-odds base rate
+            usage[md.num] = usage.get(md.num, 0.0) + float(p)
+        for num, u in usage.items():
+            if u > float(prob[snum, num]):
+                prob[snum, num] = u                      # rare moves keep their real (small) rate
+    prob = prob.clamp(eps, 1.0 - eps)
+    return torch.logit(prob).to(torch.float32)           # log(p/(1-p)), the additive log-odds base rate

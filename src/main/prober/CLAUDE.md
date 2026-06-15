@@ -358,6 +358,13 @@ loading uses the same exact→nearest→recent ladder (cached per process). A
     its per-mon active flag), `per_slot_pko`, and the opp recovery scalars
     (`recovery_rate` / `cures_status` / `recovery_known`). This is the direct lens on
     "did the critic-tail-blindness obs gap get filled."
+  - `damage_op` (model, re-computed via `ProbeModel.damage_op_view` → `decode_damage_block`): the unified
+    **DamageOperator**'s LEARNED-belief view (v23), `None` unless the checkpoint trained `--damage-op`. Per
+    our mon the incoming threat `[low,high,crit,pko,acc]×{phys,spec} + p_outspeed + provenance` (slot 0 =
+    active, 1-5 = the **safe-switch** bench reads), the opp-active effect scalars, and (on `--unified-damage
+    both`) our 4 moves' **outgoing** damage `[low,high,crit,pko]` (request-slot/action order — the
+    equal-effectiveness move tie-break). The app's **Matchups** panel renders the outgoing line ("our damage
+    (op): move N% →KO M%"); the field rides the `analyze` CLI JSON.
   Plus `value_saliency` — the **critic** lens: `|d V(s)/d obs|` aggregated into the
   SAME named blocks as the policy `saliency`, so you can see whether the VALUE head
   (where OHKO tail-blindness lives) actually reads `incoming_damage(33)` vs the rest.

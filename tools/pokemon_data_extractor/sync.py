@@ -410,6 +410,48 @@ def build_natures(gen):
 
 
 # --------------------------------------------------------------------------- #
+# Learnset  (legal movepool)
+# --------------------------------------------------------------------------- #
+
+def build_learnset(gen):
+    """Build the gen-N legal-movepool map ``{species_id: [move_id, ...]}`` (sorted).
+
+    Derived from poke-env's static ``learnset.json``, whose per-move value is a list of
+    ``<gen><method>`` source codes (e.g. ``3L`` level-up, ``3M`` TM/HM, ``3T`` tutor, ``3E`` egg,
+    ``3S`` event). A move is gen-N-legal for a species iff ANY of its codes starts with the target
+    generation's digit. We keep only species in the gen-N pokedex and only moves in the gen-N
+    movedex (so a later-gen move id / species form can't leak in), then sort for a stable file.
+
+    This is the *legality* primitive the move-belief prior uses to PRUNE impossible candidate moves
+    — a species can't run a move it can't learn — distinct from the Smogon usage prior
+    (``gen3_data.priors.moves``, how OFTEN a legal move is run). Deliberately OVER-inclusive: any
+    ``"<gen>*"`` code counts (incl. ``3S`` events), so the legality gate never wrongly prunes a
+    legal coverage move (the exact failure the candidate-bounding exists to avoid); the ``<2%``
+    usage floor handles rarity separately."""
+    learnset_path = _static("learnset.json")
+    if not os.path.exists(learnset_path):
+        raise FileNotFoundError(f"Learnset source not found: {learnset_path}")
+    with open(learnset_path, "r") as f:
+        raw = json.load(f)
+
+    gen_prefix = str(gen)
+    legal_species = set(build_species(gen))   # gen-N pokedex ids (base forms only)
+    legal_moves = set(build_moves(gen))       # gen-N movedex ids (no later-gen leak)
+    out = {}
+    for species_id, entry in raw.items():
+        if species_id not in legal_species:
+            continue
+        learnset = entry.get("learnset") or {}
+        moves = sorted(
+            mid for mid, codes in learnset.items()
+            if mid in legal_moves and any(str(c).startswith(gen_prefix) for c in codes)
+        )
+        if moves:
+            out[species_id] = moves
+    return {sid: out[sid] for sid in sorted(out)}
+
+
+# --------------------------------------------------------------------------- #
 # CLI
 # --------------------------------------------------------------------------- #
 
@@ -420,6 +462,7 @@ _BUILDERS = {
     "items": ("gen{gen}_items.json", build_items),
     "type_chart": ("gen{gen}_type_chart.json", build_type_chart),
     "natures": ("gen{gen}_natures.json", build_natures),
+    "learnset": ("gen{gen}_learnset.json", build_learnset),
 }
 
 

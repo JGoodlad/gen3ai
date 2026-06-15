@@ -516,6 +516,8 @@ def current_model_version(
     opp_belief_latent: bool = False,
     opp_belief_latent_coef: float = 0.0,
     damage_op: bool = False,
+    damage_outgoing: bool = False,
+    move_candidate_floor: float = 0.0,
     move_prior_fusion: bool = False,
     mask_incoming_damage_obs: bool = False,
     win_prob_mode: str = "none",
@@ -554,6 +556,8 @@ def current_model_version(
     ext_kwargs["move_belief_mode"] = move_belief_mode
     ext_kwargs["opp_belief_latent"] = opp_belief_latent
     ext_kwargs["damage_op"] = damage_op
+    ext_kwargs["damage_outgoing"] = damage_outgoing
+    ext_kwargs["move_candidate_floor"] = move_candidate_floor
     ext_kwargs["move_prior_fusion"] = move_prior_fusion
     ext_kwargs["mask_incoming_damage_obs"] = mask_incoming_damage_obs
     ext_kwargs["win_prob_mode"] = win_prob_mode

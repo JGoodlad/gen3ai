@@ -311,6 +311,28 @@ class ProbeModel:
         return (logits["species"][0].detach().cpu().numpy(),
                 bmask[0].detach().cpu().numpy().astype(bool))
 
+    def damage_op_view(self, obs: np.ndarray, mask: np.ndarray):
+        """The unified DamageOperator's view for THIS obs: per-our-mon incoming threat
+        ``[low,high,crit,pko,acc]×{phys,spec} + p_outspeed + provenance`` (slot 0 = active, 1-5 = the
+        SAFE-SWITCH bench reads), the opp-active effect scalars, and (on a ``--unified-damage both`` run)
+        our 4 moves' OUTGOING damage. Runs ONE clean forward and decodes the operator's PRE-gain physics
+        stash (`last_raw_block`); ``None`` when the checkpoint has no damage operator (``--damage-op`` off)."""
+        import torch
+        from agents.model.features_extractor import decode_damage_block
+
+        extractor = getattr(self._policy, "features_extractor", None)
+        op = getattr(extractor, "damage_op", None) if extractor is not None else None
+        if op is None:
+            return None
+        ot = torch.as_tensor(obs).unsqueeze(0)
+        mt = torch.as_tensor(mask).unsqueeze(0)
+        with torch.no_grad():
+            self._policy.extract_features({"observation": ot, "action_mask": mt})
+        raw = getattr(extractor, "last_raw_block", None)
+        if raw is None:
+            return None
+        return decode_damage_block(raw[0].detach().cpu().numpy(), outgoing=bool(op.outgoing))
+
     def value_grad(self, obs: np.ndarray, mask: np.ndarray) -> np.ndarray:
         """Return |d V(s) / d obs| as a per-dim array — the CRITIC's input sensitivity.
 

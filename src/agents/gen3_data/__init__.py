@@ -23,11 +23,12 @@ encoder mappings from a single parse).
 """
 from __future__ import annotations
 
-from . import abilities, items, moves, natures, priors, species, type_chart
+from . import abilities, items, learnset, moves, natures, priors, species, type_chart
 
 __all__ = [
     "abilities",
     "items",
+    "learnset",
     "moves",
     "natures",
     "priors",
