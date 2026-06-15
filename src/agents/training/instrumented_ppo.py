@@ -130,6 +130,51 @@ class InstrumentedMaskablePPO(MaskablePPO):
     # change) is gated by the version-checked opp_belief_latent arch toggle, not this coef.
     opp_belief_latent_coef: float = 0.0
 
+    # Set by train_rl_agent (like opp_belief_aux_coef). The WIN-PROBABILITY head's BCE loss weight:
+    # win_prob_coef * BCE(win_logit, MC outcome) over the transitions whose episode finished in-buffer.
+    # Training-only (scales the loss, never a forward pass) → NOT version-locked. The MODE (none /
+    # read_only / shaping — which also controls whether the grad reaches the trunk) lives on the
+    # extractor (win_prob_mode); the loss is added whenever the mode is on AND this coef != 0.
+    win_prob_coef: float = 1.0
+
+    @staticmethod
+    def _win_prob_loss(logits, target, mask):
+        """Supervised BCE loss for the auxiliary WIN-PROBABILITY head (``last_win_prob_logits`` [B,1]).
+
+        ``target`` [B,1] = the Monte-Carlo episode OUTCOME (win=1 / loss=0) propagated to every step of
+        the episode by the ``WinProbLabelCallback`` (it overwrites the obs-dict placeholder post-collection);
+        ``mask`` [B,1] = 1 where that label is KNOWN (the step's episode finished within the rollout buffer)
+        and 0 for the trailing in-progress episode (no outcome yet) — those transitions are excluded so the
+        head is never trained toward a fabricated label. BCE-with-logits, masked-mean. Returns
+        ``(loss, metrics)`` or ``None`` when nothing is scorable (head off / labels absent / a minibatch
+        with zero known labels — the None guard keeps an empty minibatch from NaN-poisoning the loss). Pure
+        + static so it unit-tests without a full PPO."""
+        if logits is None or target is None or mask is None:
+            return None
+        logits = logits.reshape(-1)
+        target = target.to(logits.device).reshape(-1)
+        mask = mask.to(logits.device).reshape(-1)
+        n_known = mask.sum()
+        if float(n_known) == 0.0:
+            return None
+        per = F.binary_cross_entropy_with_logits(logits, target, reduction="none")
+        loss = (per * mask).sum() / n_known
+        with th.no_grad():
+            p = th.sigmoid(logits)
+            acc = (((p > 0.5).float() == target).float() * mask).sum() / n_known
+            brier = (((p - target) ** 2) * mask).sum() / n_known            # calibration (lower better)
+            pred_mean = (p * mask).sum() / n_known                          # mean predicted P(win)
+            label_mean = (target * mask).sum() / n_known                    # actual win base rate
+        metrics = {
+            "loss": float(loss.item()),
+            "acc": float(acc.item()),
+            "brier": float(brier.item()),
+            "pred_mean": float(pred_mean.item()),
+            "label_mean": float(label_mean.item()),
+            "coverage": float((n_known / mask.numel()).item()),             # fraction of minibatch labeled
+        }
+        return loss, metrics
+
     @staticmethod
     def _move_belief_loss(ml, known_moves, belief_moves, mode: str):
         """Supervised loss for the MoveBelief REINJECTION head (``last_move_belief_logits`` [B,6,M]).
@@ -448,10 +493,18 @@ class InstrumentedMaskablePPO(MaskablePPO):
         clip_fractions = []
         vf_clip_fractions: list[float] = []  # +INSTRUMENTATION
         belief_metrics: dict[str, list[float]] = {}  # +BELIEF: per-minibatch aux diagnostics (dict of lists)
+        win_prob_metrics: dict[str, list[float]] = {}  # +WIN-PROB: per-minibatch diagnostics (dict of lists)
         # Compute once: the aux path is fully skipped when off → loss stays byte-identical to upstream.
         belief_aux_on = self.opp_belief_aux_coef > 0.0
         move_belief_on = self.move_belief_coef > 0.0  # +MOVE-BELIEF reinjection-head supervised loss
         latent_belief_on = self.opp_belief_latent_coef > 0.0  # +LATENT belief (rides the species aux call)
+        # +WIN-PROB: the head's MODE (none/read_only/shaping) lives on the extractor; the loss is added
+        # whenever the mode is on AND the coef is non-zero. read_only vs shaping differ only in whether the
+        # extractor stop-grads the head's input (the trunk gradient) — the loss term itself is identical.
+        win_prob_on = (
+            getattr(self.policy.features_extractor, "win_prob_mode", "none") != "none"
+            and self.win_prob_coef != 0.0
+        )
 
         continue_training = True
 
@@ -593,6 +646,26 @@ class InstrumentedMaskablePPO(MaskablePPO):
                         for _mk, _mv in mb_m.items():
                             belief_metrics.setdefault("move_" + _mk, []).append(float(_mv))
 
+                # +WIN-PROB: auxiliary win-probability BCE. evaluate_actions ran the extractor forward
+                # above, stashing last_win_prob_logits for THIS minibatch; the MC outcome label + its
+                # known-mask ride the same obs dict (the WinProbLabelCallback overwrote the placeholders
+                # post-collection). Folded at win_prob_coef. Under read_only the head's input was
+                # stop-grad'd in the extractor, so this term trains only the head's own params (no trunk
+                # gradient); under shaping it also pulls the trunk. OFF → skipped (loss byte-identical).
+                win_prob_term = None
+                if win_prob_on:
+                    wp_out = self._win_prob_loss(
+                        self.policy.features_extractor.last_win_prob_logits,
+                        rollout_data.observations.get("win_target"),
+                        rollout_data.observations.get("win_mask"),
+                    )
+                    if wp_out is not None:
+                        wp_loss, wp_m = wp_out
+                        win_prob_term = self.win_prob_coef * wp_loss
+                        loss = loss + win_prob_term
+                        for _wk, _wv in wp_m.items():
+                            win_prob_metrics.setdefault(_wk, []).append(float(_wv))
+
                 # Combined auxiliary pull on the shared trunk (species belief + move belief + latent
                 # belief), for the grad-balance probe — all compete with policy/value there.
                 aux_probe_term = belief_aux_term
@@ -613,13 +686,16 @@ class InstrumentedMaskablePPO(MaskablePPO):
                 # Sample once per train(). When an aux is ON, wait for a minibatch that actually HAS
                 # scored slots (aux_probe_term set) so grad/belief_share isn't silently dropped for
                 # the call; when both are OFF, sample on the first minibatch as before.
-                if shared_trunk and not grad_balance and (not aux_on or aux_probe_term is not None):
+                if (shared_trunk and not grad_balance
+                        and (not aux_on or aux_probe_term is not None)
+                        and (not win_prob_on or win_prob_term is not None)):  # don't drop grad/win_prob_share
                     grad_balance = grad_balance_metrics(
                         policy_loss + self.ent_coef * entropy_loss,
                         self.vf_coef * value_loss,
                         shared_trunk,
                         aux_term=aux_probe_term,  # species+move+latent belief grad-share on the trunk (None = off)
                         latent_term=latent_belief_term,  # latent role-token predictor broken out (None = off/empty mb)
+                        win_prob_term=win_prob_term,  # win-prob head pull (≈0 under read_only; real under shaping)
                     )
 
                 # Calculate approximate form of reverse KL Divergence for early stopping
@@ -685,6 +761,16 @@ class InstrumentedMaskablePPO(MaskablePPO):
         if belief_metrics:
             for _bk, _bvals in belief_metrics.items():
                 self.logger.record(f"train/belief_{_bk}", float(np.mean(_bvals)))
+
+        # +WIN-PROB: auxiliary win-probability diagnostics (only when the head is on AND some minibatch
+        # had a known label). Headline: `win_prob_acc` (top-1 win/loss prediction) + `win_prob_brier`
+        # (calibration — lower = the predicted P(win) tracks the actual win rate). `win_prob_pred_mean`
+        # vs `win_prob_label_mean` watches for a base-rate-only collapse; `win_prob_coverage` is the
+        # fraction of transitions with a known (episode-finished-in-buffer) label. The shared-trunk pull
+        # rides `grad/win_prob_share` (≈0 under read_only; real under shaping).
+        if win_prob_metrics:
+            for _wk, _wvals in win_prob_metrics.items():
+                self.logger.record(f"train/win_prob_{_wk}", float(np.mean(_wvals)))
 
         # +PopArt diagnostics: mu/sigma should TRACK train/return_mean/return_std (the running
         # normalizer estimate); value_weight_norm watches the POP rescale stay bounded (an explosion

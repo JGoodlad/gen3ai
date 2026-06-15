@@ -147,6 +147,7 @@ def _write_trace(tmp_path, chosen="thunderbolt", has_state=1):
     obs[0, _OFF.mm_off:_OFF.mm_off + 4] = [0.5, 0.25, 0.0, 0.125]
     np.savez(d / "win_001_states.npz", obs=obs,
              values=np.array([1.5], dtype=np.float32),   # → a.value so the CRITIC line renders
+             win_probs=np.array([0.62], dtype=np.float32),  # → a.win_prob so the WIN-PROB line renders
              has_state=np.array([has_state], dtype=np.int8))
     return str(tmp_path / "run")
 
@@ -317,6 +318,22 @@ async def test_select_battle_populates_panels(tmp_path):
         # header line order: FIELD · CHOSE · RESULT · REWARD · CRITIC (critic moved to last)
         assert (head.index("FIELD") < head.index("CHOSE") < head.index("RESULT")
                 < head.index("REWARD") < head.index("CRITIC"))
+
+
+async def test_summary_renders_win_prob(tmp_path):
+    """The WIN-PROB line (calibrated P(win) from the head) renders in the Summary when the trace has
+    a win_probs array, placed after CRITIC (the same critic lens, in [0,1] units)."""
+    run = _write_trace(tmp_path, chosen="thunderbolt")
+    app = ProberApp(root=run, injected_model=_FakeModel())
+    async with app.run_test() as pilot:
+        await pilot.pause()
+        app._select_battle(app._tree_model.all_battles()[0])
+        await pilot.pause()
+        await app.workers.wait_for_complete()
+        await pilot.pause()
+        head = str(app.query_one("#summary-head", Static).render())
+        assert "WIN-PROB" in head and "P(win)" in head and "62%" in head
+        assert head.index("CRITIC") < head.index("WIN-PROB")   # appended after the critic line
 
 
 async def test_switch_decision_has_no_sweep(tmp_path):

@@ -954,6 +954,40 @@ class BeliefHead(torch.nn.Module):
         return out
 
 
+class WinProbHead(torch.nn.Module):
+    """Auxiliary WIN-PROBABILITY readout — a calibrated P(win | state) the shaped critic can't give.
+
+    The dual-head value (`value_pooled`) estimates expected *shaped* return (material Φ + PBRS terms +
+    terminal, PopArt-normalised) — NOT a probability and not interpretable as win odds. This head reads
+    the same whole-board `value_pooled` summary and emits ONE logit; sigmoid(logit) = P(win). It is
+    supervised (in `instrumented_ppo`) by the Monte-Carlo episode OUTCOME (win=1 / loss=0) propagated to
+    every step of the episode, so it learns the actual probability the current state leads to a win — and
+    ΔP(win) across a decision is a directly legible "how much did this move change my win odds".
+
+    SIDE readout, leak-safe: the logit is stashed at `features_extractor.last_win_prob_logits` and read
+    ONLY by the aux loss + the offline prober/eval — NEVER concatenated into pi/vf, so the privileged
+    future OUTCOME label can never reach the acting path. The tri-state `win_prob_mode` controls the
+    GRADIENT at the call site (`read_only` feeds a STOP-GRAD `value_pooled` — the head trains its OWN
+    params as a pure, risk-free diagnostic that can't perturb the policy; `shaping` feeds it live so the
+    win-prediction objective also shapes the shared trunk). `none` = this module is not built (the chain
+    is byte-for-byte the baseline)."""
+
+    def __init__(self):
+        super().__init__()
+        # Small MLP off the value pool: LayerNorm → Linear → ReLU → Linear(→1). A bottleneck (not a bare
+        # linear) so `read_only` reports "decodable by a small head" — fairer to the nonlinear trunk.
+        self.net = torch.nn.Sequential(
+            torch.nn.LayerNorm(D_MODEL),
+            torch.nn.Linear(D_MODEL, D_MODEL),
+            torch.nn.ReLU(),
+            torch.nn.Linear(D_MODEL, 1),
+        )
+
+    def forward(self, value_pooled: torch.Tensor) -> torch.Tensor:
+        """value_pooled [B, D_MODEL] → win-probability logit [B, 1] (sigmoid ⇒ P(win))."""
+        return self.net(value_pooled)
+
+
 # Logit at which a REVEALED (certain) move is pinned under prior fusion: sigmoid(10) ≈ 0.99995 ≈ P 1.
 _REVEAL_LOGIT = 10.0
 
@@ -1316,7 +1350,9 @@ class Gen3FeaturesExtractor(torch.nn.Module):
     then a final pre-projection LayerNorm + Linear + ReLU head per side. `MoveBelief` reinjects the
     believed moveset into the opp tokens BEFORE the pools (so it flows to the heads via cross-attention);
     `DamageOperator` runs AFTER the pools and consumes the move-belief logits, appending its features to
-    both projection inputs (it does not enter the token stream). The embedding tables live in
+    both projection inputs (it does not enter the token stream). The optional `WinProbHead`
+    (`win_prob_mode`) reads `value_pooled` AFTER the pools and stashes a P(win) logit as a SIDE readout
+    (never in pi/vf — leak-safe). The embedding tables live in
     `self.embeddings` (shared) and are passed into the phases that need them. See
     `src/agents/model/CLAUDE.md` for the phase-module contract."""
 
@@ -1326,7 +1362,7 @@ class Gen3FeaturesExtractor(torch.nn.Module):
                  value_active_readout: bool = False, opp_belief_slots: bool = False,
                  move_belief_mode: str = "off", opp_belief_latent: bool = False,
                  damage_op: bool = False, move_prior_fusion: bool = False,
-                 mask_incoming_damage_obs: bool = False):
+                 mask_incoming_damage_obs: bool = False, win_prob_mode: str = "none"):
         super().__init__()
         self.layout = layout
         self.mappings = mappings
@@ -1449,6 +1485,21 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         # value projection. OFF reproduces the baseline value head byte-for-byte (no ARCH_SIGNATURE bump).
         self.value_active_readout = value_active_readout
         self.assembler = ProjectionAssembler(layout, value_active_readout=value_active_readout)
+
+        # Auxiliary WIN-PROBABILITY head (tri-state `win_prob_mode`): a calibrated P(win|state) readout
+        # off `value_pooled`. 'none' = no module (baseline byte-for-byte, NOT in pi/vf so projection dims
+        # are unchanged either way). 'read_only' = the head trains its OWN params on a STOP-GRAD
+        # value_pooled (a pure, risk-free diagnostic — zero gradient to the trunk). 'shaping' = gradient
+        # flows into the shared trunk (the win objective shapes the representation). It is a SIDE readout
+        # (stashed for the aux loss + prober, never concatenated into pi/vf — leak-safe). The
+        # state_dict-changing toggle is 'none'↔head; the mode itself is resume-immutable (version-checked).
+        if win_prob_mode not in ("none", "read_only", "shaping"):
+            raise ValueError(f"win_prob_mode must be none|read_only|shaping, got {win_prob_mode!r}")
+        self.win_prob_mode = win_prob_mode
+        self.win_head = WinProbHead() if win_prob_mode != "none" else None
+        # Stashed each forward when the head is on (the [B,1] win logit, or None). Read by the PPO aux
+        # loss + the offline prober/eval; NEVER fed into pi/vf (the OUTCOME label can't leak).
+        self.last_win_prob_logits: Optional[torch.Tensor] = None
 
         self.role_token_size = ROLE_TOKEN_SIZE
 
@@ -1574,6 +1625,17 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         our_team_pooled, their_team_pooled, our_active_refined, value_pooled = self.cls_pool(
             our_team_out, their_team_out, ctx
         )
+        # Auxiliary win-probability readout (flag-guarded; None when off). Reads the whole-board
+        # value_pooled and stashes a [B,1] logit for the aux loss + the prober/eval. NOT fed into the
+        # assembler (a side readout — the future OUTCOME label can't leak into pi/vf). `read_only` feeds
+        # a STOP-GRAD value_pooled (head-only training, no trunk gradient); `shaping` feeds it live.
+        # Computed on EVERY forward (one small MLP) so eval/inference can read P(win) too — its cost is
+        # negligible and it is never gated off, since the prober reads it under no_grad.
+        if self.win_head is not None:
+            wp_in = value_pooled if self.win_prob_mode == "shaping" else value_pooled.detach()
+            self.last_win_prob_logits = self.win_head(wp_in)
+        else:
+            self.last_win_prob_logits = None
         belief = None
         if self.hidden_opp_belief is not None:
             # Same 12-token memory + the single-sourced ctx.all_fainted key-mask the value CLS pools

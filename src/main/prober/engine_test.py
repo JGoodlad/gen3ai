@@ -253,6 +253,38 @@ def test_analysis_carries_field_when_model_decodes():
     assert a.field == {"weather": "RAIN", "our_spikes": 1, "opp_spikes": 0, "turn": 8.0}
 
 
+def test_win_prob_recorded_and_delta():
+    """win_probs in the npz → WinProbView: recorded P(win) here + ΔP(win) to the next decision."""
+    model = FakeProbeModel(_OFF)
+    summ = _summary()
+    summ["invocations"].append(dict(summ["invocations"][0], i=2, turn=9))   # a 2nd captured decision
+    npz = {"obs": np.zeros((2, _OBS_LEN), dtype=np.float32),
+           "has_state": np.array([1, 1], dtype=np.int8),
+           "values": np.array([1.0, 1.0], dtype=np.float32),
+           "win_probs": np.array([0.62, 0.71], dtype=np.float32)}
+    a = analyze_invocation(model, summ, npz, 0)
+    assert a.win_prob is not None
+    assert abs(a.win_prob.recorded - 0.62) < 1e-6
+    assert abs(a.win_prob.next_recorded - 0.71) < 1e-6
+    assert abs(a.win_prob.delta - 0.09) < 1e-6
+
+
+def test_win_prob_absent_is_none():
+    """Old trace / no win-prob head → no win_probs array → win_prob is None (not a fake 0)."""
+    model = FakeProbeModel(_OFF)
+    assert analyze_invocation(model, _summary(), _npz(), 0).win_prob is None
+
+
+def test_win_prob_nan_is_none():
+    """A NaN recorded P(win) (head off for this decision) → None, distinguished from a real 0.0."""
+    model = FakeProbeModel(_OFF)
+    npz = {"obs": np.zeros((1, _OBS_LEN), dtype=np.float32),
+           "has_state": np.array([1], dtype=np.int8),
+           "values": np.array([1.0], dtype=np.float32),
+           "win_probs": np.array([np.nan], dtype=np.float32)}
+    assert analyze_invocation(model, _summary(), npz, 0).win_prob is None
+
+
 def test_threats_decode_incoming():
     """`their_matchups` → ThreatView: present / revealed_frac / max / per-our-slot."""
     model = FakeProbeModel(_OFF)

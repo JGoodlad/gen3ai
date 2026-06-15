@@ -601,6 +601,10 @@ training-only `belief_target_slots` obs key, stashed for the loss only, never in
 and `DamageOperator` (`--damage-op`) consumes that move belief's predicted moves to compute the believed-move
 incoming damage to each of our mons (a differentiable gen3 calc), appended to **both** projection heads —
 so the gradient sharpens the move belief toward real KO threats (`designs/ai_v6/design_differentiable_damage_op.md`).
+A separate optional `WinProbHead` (`--win-prob-mode none|read_only|shaping`) reads `value_pooled` and emits a
+calibrated **P(win)** logit — a SIDE readout (stashed for the aux loss + the prober, **never** in pi/vf, so
+projection dims are unchanged), supervised by the Monte-Carlo episode outcome (win=1/loss=0); `read_only`
+stop-grads its input (a risk-free diagnostic), `shaping` lets the win objective shape the trunk.
 `forward` returns a `(pi_features, vf_features)` tuple — the transformer body is shared, but the
 actor and critic read it through independent CLS pools and projection heads (the
 **value-dedicated CLS readout**, H4 / Option C). It must be paired with
@@ -644,12 +648,13 @@ poke-env builds with DISABLED moves dropped, so under a Choice-lock / Disable / 
 later per-move feature shifted off its action logit and the trailing slot read a phantom 4×; now
 request-slot-ordered via `legal.move_slots` (disabled kept, typed-HP preserved) with a neutral
 default — retrain-class, byte-identical on the common all-moves-available decision; current
-`MODEL_CONFIG_VERSION`: **21** — v16 added the in-place
+`MODEL_CONFIG_VERSION`: **22** — v16 added the in-place
 hidden-opponent belief-aux toggle `opp_belief_slots` + its coef `opp_belief_aux_coef`, v17 the
 move-belief reinjection toggle `move_belief_mode` + `move_belief_coef`, v18 the latent-belief toggle
 `opp_belief_latent` + `opp_belief_latent_coef`, v19 the differentiable damage-operator toggle
 `damage_op`, v20 the unified-move-belief prior-fusion toggle `move_prior_fusion`, v21 the
-unified-architecture ablation toggle `mask_incoming_damage_obs`; none bump `ARCH_SIGNATURE` since each
+unified-architecture ablation toggle `mask_incoming_damage_obs`, v22 the tri-state win-probability head
+`win_prob_mode` (none/read_only/shaping) + its coef `win_prob_coef`; none bump `ARCH_SIGNATURE` since each
 OFF is byte-identical).
 **The full versioning playbook — what to do when you change a dim vs add an optional feature vs
 make a structural change — is in `src/agents/model/CLAUDE.md`.**

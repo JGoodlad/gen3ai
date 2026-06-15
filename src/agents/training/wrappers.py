@@ -214,6 +214,13 @@ class MaskableAgentWrapper(SingleAgentWrapper):
         while not self.env.agent1_to_move and not term and not trunc:
             obs, r, term, trunc, info = super().step(0)
             reward += r
+        if term or trunc:
+            # Expose the battle OUTCOME for the win-probability label plumbing (win=1 / loss-or-tie=0).
+            # The trainee's battle is finished here (before the VecEnv auto-resets), so battle1.won is
+            # set. Consumed ONLY when the win-prob head is on (WinProbLabelCallback / the async
+            # collector); harmless otherwise. A tie (won is None) counts as not-a-win → 0.0.
+            b = getattr(self.env, "battle1", None)
+            info["win_outcome"] = 1.0 if (b is not None and b.won is True) else 0.0
         return obs, reward, term, trunc, info
 
     def action_masks(self):

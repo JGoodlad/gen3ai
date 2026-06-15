@@ -153,6 +153,9 @@ class BattleRecorder:
         obs = np.zeros((T, obs_dim), dtype=np.float32)
         logits = np.zeros((T, n_act), dtype=np.float32)
         values = np.zeros(T, dtype=np.float32)
+        # P(win) from the win-probability head, parallel to `values`. NaN = no head (--win-prob-mode
+        # none) / not captured, so the prober can distinguish "unavailable" from a real P(win)=0.0.
+        win_probs = np.full(T, np.nan, dtype=np.float32)
         has_state = np.zeros(T, dtype=np.int8)
         for i, s in enumerate(self._states):
             if not s:
@@ -160,10 +163,13 @@ class BattleRecorder:
             obs[i] = s["obs"]
             logits[i] = s["logits"]
             values[i] = s.get("value", 0.0)
+            wp = s.get("win_prob")
+            if wp is not None:
+                win_probs[i] = float(wp)
             has_state[i] = 1
         actions = np.asarray(self._actions_taken, dtype=np.int16)
-        return {"obs": obs, "logits": logits, "values": values, "has_state": has_state,
-                "actions": actions}
+        return {"obs": obs, "logits": logits, "values": values, "win_probs": win_probs,
+                "has_state": has_state, "actions": actions}
 
     def finalize(self, battle) -> None:
         """Complete the last pending invocation at battle end."""

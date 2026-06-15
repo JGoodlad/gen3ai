@@ -322,6 +322,20 @@ def test_td_residuals_empty_without_captured_values():
     assert rec.td_residuals() == []
 
 
+def test_states_arrays_captures_win_prob():
+    """states_arrays() carries P(win) parallel to `values`; NaN where a decision had no win_prob
+    (no head / mixed capture) so the prober distinguishes 'unavailable' from a real P(win)=0.0."""
+    rec = BattleRecorder("battle-gen3ou-test", reward_fn_factory=_ZeroReward, gamma=0.9)
+    wps = [0.6, None, 0.4]
+    for t in range(3):
+        st = {"value": 1.0, "obs": np.zeros(4, np.float32), "logits": np.zeros(11, np.float32)}
+        if wps[t] is not None:
+            st["win_prob"] = wps[t]
+        rec.record(_move_battle(t + 1), 6, _probs(), _mask(6), state=st)
+    arr = rec.states_arrays()["win_probs"]
+    assert arr[0] == pytest.approx(0.6) and arr[2] == pytest.approx(0.4) and np.isnan(arr[1])
+
+
 # ── write_battle_record (shared forensic writer) ──────────────────────────────
 
 class _StubRecorder:

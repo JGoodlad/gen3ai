@@ -156,6 +156,17 @@ class ValueView:
 
 
 @dataclass(frozen=True)
+class WinProbView:
+    """The win-probability head's read: recorded P(win|s) and ΔP(win) to the next captured decision —
+    "how much this turn moved the win odds". The calibrated [0,1] analog of `ValueView`'s recorded V /
+    ΔV (the shaped critic's V is expected RETURN, not win odds). None unless the run trained with
+    ``--win-prob-mode != none`` (the trace's recorded P(win) is NaN otherwise)."""
+    recorded: float
+    next_recorded: "float | None"
+    delta: "float | None"
+
+
+@dataclass(frozen=True)
 class MonState:
     species: str
     hp: str           # "100%" / "75%" / "faint"
@@ -248,6 +259,7 @@ class InvocationAnalysis:
     # Outcome / value / disagreement (added for the Outcome panel + agent API).
     outcome: dict = field(default_factory=dict)   # raw {our, opp, reward, events}
     value: "ValueView | None" = None
+    win_prob: "WinProbView | None" = None          # P(win|s) + ΔP(win) (None unless --win-prob-mode != none)
     rerun_argmax: "str | None" = None              # the loaded model's top valid action
     agrees: bool = True                            # rerun_argmax == chosen
     flags: "tuple[str, ...]" = ()                  # switch/uncertain/faint/disagree
@@ -280,6 +292,19 @@ def _npz_value(npz, i: int) -> "float | None":
     except KeyError:
         return None
     return float(vals[i]) if 0 <= i < len(vals) else None
+
+
+def _npz_win_prob(npz, i: int) -> "float | None":
+    """Recorded P(win) at decision i. None when the array is absent (old trace) or NaN (the run had
+    no win-prob head / this decision wasn't captured) — so the prober shows P(win) only when real."""
+    try:
+        vals = npz["win_probs"]
+    except KeyError:
+        return None
+    if not (0 <= i < len(vals)):
+        return None
+    v = float(vals[i])
+    return None if np.isnan(v) else v
 
 
 def summary_flags(inv: dict, uncertain_threshold: float = UNCERTAIN_THRESHOLD) -> "tuple[str, ...]":
@@ -805,6 +830,19 @@ def analyze_invocation(model, summary: dict, npz, inv_index: int,
             delta=(next_v - recorded_v) if next_v is not None else None,
         )
 
+    # Win probability (--win-prob-mode): recorded P(win|s) + ΔP(win) to the next captured decision —
+    # the calibrated analog of the value/ΔV above. None on a run without the head (win_probs NaN/absent).
+    recorded_wp = _npz_win_prob(npz, inv_index)
+    win_prob = None
+    if recorded_wp is not None:
+        n = len(summary["invocations"])
+        nxt = inv_index + 1
+        next_wp = _npz_win_prob(npz, nxt) if (nxt < n and _has_state(npz, nxt)) else None
+        win_prob = WinProbView(
+            recorded=recorded_wp, next_recorded=next_wp,
+            delta=(next_wp - recorded_wp) if next_wp is not None else None,
+        )
+
     # Does the loaded model still pick what was recorded? (Exact tier ≈ always; on
     # nearest/recent a disagreement is the interesting case.)
     rerun_argmax = labels[int(np.argmax(probs))]
@@ -824,7 +862,7 @@ def analyze_invocation(model, summary: dict, npz, inv_index: int,
     return InvocationAnalysis(
         **common, has_state=True, actions=actions, matchups=matchups, sweep=sweep,
         saliency=saliency, value_saliency=value_saliency, threats=threats, incoming=incoming,
-        warnings=(), outcome=outcome, value=value,
+        warnings=(), outcome=outcome, value=value, win_prob=win_prob,
         rerun_argmax=rerun_argmax, agrees=agrees, flags=flags, board=board, field=field,
         belief=belief, belief_truth=belief_truth,
     )

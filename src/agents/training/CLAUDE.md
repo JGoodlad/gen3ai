@@ -1034,6 +1034,55 @@ it in **role-token space** — graded supervision the CE can't give. REQUIRES `-
   PAD slots zero, and the no-leak obs width, over thousands of live decisions:
   `python src/agents/training/poke_env_gaps/belief_target_fuzz_test.py [n_battles]`.
 
+## Win-probability head (`--win-prob-mode` / `--win-prob-coef`)
+
+The training half of the tri-state win-probability head (model side: `src/agents/model/CLAUDE.md` →
+win-probability head, v22). A calibrated **P(win|state)** the shaped critic can't give — supervised by the
+Monte-Carlo episode OUTCOME. Off by default (`--win-prob-mode none`). Three pieces live here:
+
+- **The label is a FUTURE quantity** — the outcome is only known when the battle ends, so (unlike the
+  per-step belief labels, which are privileged info known *each* step) it CANNOT ride as a real per-step
+  obs key. The plumbing reuses the obs-dict-label STORAGE path with post-hoc population:
+  - **`gen3_env.py`** declares two TRAINING-ONLY obs keys when `emit_win_target` (`--win-prob-mode != none`):
+    `win_target` [1] + `win_mask` [1] (float32), and emits PLACEHOLDER zeros each step (`_merge_training_keys`).
+    The rollout buffer therefore stores + shuffles them automatically (the belief-label path). Read ONLY by
+    the loss; the model forward reads only `obs["observation"]`, so the OUTCOME can't leak.
+  - **`MaskableAgentWrapper.step` (`wrappers.py`)** sets `info["win_outcome"]` (1.0 win / 0.0 loss-or-tie,
+    from `battle1.won`) at the done step (before the VecEnv auto-resets).
+  - **`WinProbLabelCallback` (`win_prob_callback.py`)** captures each terminal outcome during collection
+    (SYNC: in `_on_step` at `rollout_buffer.pos`; ASYNC: the `collect_rollouts_async` collector records it
+    inline at the env's just-written `(t, i)` buffer row — it owns the row, the wave-batched `on_step`
+    can't recover it), into a shared `model._win_terminal_scratch` [n_steps, n_envs]. At `_on_rollout_end`
+    (before `train()`) it propagates each episode's outcome BACKWARD to all its steps (γ_win = 1, undiscounted
+    → P(win|s) = "probability this state leads to a win") and OVERWRITES the buffer's `win_target`/`win_mask`
+    placeholders. The trailing IN-PROGRESS episode (no terminal yet in-buffer) gets `win_mask=0` and is
+    excluded — never trained toward a fabricated label. Only added to the callback list when the head is on.
+- **Loss (`instrumented_ppo.py` `_win_prob_loss`).** `train()` reads `last_win_prob_logits` (stashed by the
+  `evaluate_actions` forward) + `rollout_data.observations["win_target"]`/`["win_mask"]`, folds
+  `win_prob_coef · masked-BCE`. read_only vs shaping differ ONLY in whether the extractor stop-grads the
+  head's input (the trunk gradient) — the loss term itself is identical. Folded whenever the extractor's
+  `win_prob_mode != none` AND `win_prob_coef != 0`.
+- **Metrics (`train/win_prob_*`).** Headline `acc` (top-1 win/loss) + `brier` (calibration — lower = the
+  predicted P(win) tracks the actual win rate); `pred_mean` vs `label_mean` (base-rate-collapse watch);
+  `coverage` (fraction of transitions with a known label); `loss`. The shared-trunk pull rides
+  `grad/win_prob_share` (via `grad_balance_metrics(win_prob_term=…)`) — **≈0 under read_only** (stop-grad,
+  the live confirmation the diagnostic isn't perturbing the policy), real under shaping (watch it sit small;
+  a spike with a degrading policy → lower `--win-prob-coef`).
+- **Versioning.** `win_prob_mode` (str) is the structural + resume-IMMUTABLE toggle (any change FATALs;
+  threaded into `current_model_version` / `arch_toggles_from_model` so a win-prob-ON self-play run doesn't
+  FATAL on its own sentinels); `win_prob_coef` is training-only, **read back on a flagless resume**.
+- **Forensic trace + prober.** `RLPlayer._win_prob` (`inference/player.py`) reads the stashed
+  `last_win_prob_logits` at trace-capture time (sigmoid ⇒ P(win)) into the per-decision `state`, which
+  `BattleRecorder.states_arrays` writes as a `win_probs` npz array (NaN = no head / not captured, parallel
+  to `values`). The prober renders **P(win) + ΔP(win)** in the Summary + Outcome panels beside CRITIC's
+  V/ΔV — "how a move moved the win odds" — model-free from that array (`engine.WinProbView`); `None`/absent
+  on a non-win-prob run. See `src/main/prober/CLAUDE.md`.
+- **Tests.** Unit: `agents/training/win_prob_test.py` (loss masking + None guards + the callback MC-fill
+  backward-propagation + in-progress masking + sync-capture-at-pos + async-skip), `agents/model/
+  win_prob_head_test.py` (module build, off byte-identical projection dims, the read_only-stop-grad /
+  shaping-flows gradient gating, the v22 version gate). End-to-end `--debug --use-showdown-bridge
+  --win-prob-mode read_only` smoke confirms the roundtrip + `train/win_prob_*` metrics + `win_prob_share`=0.
+
 ## Process liveness guards (`watchdog.py`)
 
 Two daemon-thread watchdogs keep a hung/abandoned run from lingering:

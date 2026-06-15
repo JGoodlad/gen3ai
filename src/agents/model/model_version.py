@@ -156,7 +156,19 @@ from typing import Any, Dict, List
 #   REPLACE the CPU usage-prior collapse for the MODEL, A/B-ably, without deleting any code. State_dict
 #   byte-identical (just zeros an obs slice), but the forward differs, so it is gated in check_compatible.
 #   OFF = baseline byte-for-byte (NO ARCH_SIGNATURE bump). Old configs migrate to False.
-MODEL_CONFIG_VERSION = 21
+#
+# v22: added `win_prob_mode` (the tri-state auxiliary WIN-PROBABILITY head: none|read_only|shaping) +
+#   `win_prob_coef` (its training-only loss weight). win_prob_mode is the STRUCTURAL toggle: 'none' = no
+#   module (baseline byte-for-byte); 'read_only'/'shaping' build a `WinProbHead` (a side readout off
+#   value_pooled, NOT in pi/vf so projection dims are unchanged — the only state_dict delta is the head's
+#   own params). It is gated in check_compatible with a STRING compare so that BOTH 'none'↔head (a
+#   state_dict change) AND read_only↔shaping (same params, but the user-chosen resume-IMMUTABLE mode — a
+#   mid-run grad-flow flip is a silent training change) are FATAL on a resume mismatch. OFF reproduces the
+#   baseline arch byte-for-byte → NO ARCH_SIGNATURE bump. win_prob_coef is a TRAINING-ONLY coefficient
+#   (like opp_belief_aux_coef): it scales the BCE aux loss, affects no forward pass, so it is recorded for
+#   provenance but NOT version-locked (a resume may change it freely, and a flagless resume inherits it).
+#   Old configs migrate to win_prob_mode="none" / win_prob_coef=1.0.
+MODEL_CONFIG_VERSION = 22
 
 # Change this when the neural architecture changes structurally in a way that makes
 # weights from a different signature incompatible (e.g. adding LSTM, replacing attention).
@@ -547,6 +559,18 @@ class ModelVersion:
     # view (the block stays in the obs; the reward still reads it). State_dict identical; the forward
     # differs (a zeroed obs slice), so it is gated in check_compatible. OFF = baseline byte-for-byte.
     mask_incoming_damage_obs: bool = False
+    # v22 STRUCTURAL toggle (weight-shape via the WinProbHead params): the tri-state auxiliary
+    # win-probability head. 'none' = no module (baseline byte-for-byte). 'read_only'/'shaping' build a
+    # WinProbHead (a side readout off value_pooled — NOT in pi/vf, so projection dims are unchanged; the
+    # only state_dict delta is the head's params). Gated in check_compatible with a STRING compare:
+    # 'none'↔head changes the state_dict AND read_only↔shaping is the user-chosen resume-IMMUTABLE mode
+    # (flipping grad-flow mid-run is a silent training change), so ANY mismatch is FATAL. OFF reproduces
+    # baseline byte-for-byte (NO ARCH_SIGNATURE bump).
+    win_prob_mode: str = "none"
+    # v22 TRAINING-ONLY loss coefficient for the win-prob head (like opp_belief_aux_coef). Scales the BCE
+    # aux loss, affects no forward pass → recorded for provenance but NOT version-locked (resume-mutable,
+    # inherited on a flagless resume). Default 1.0 (full weight when the mode is on; ignored when none).
+    win_prob_coef: float = 1.0
 
     @classmethod
     def from_layout_and_policy_kwargs(
@@ -559,6 +583,7 @@ class ModelVersion:
         opp_belief_aux_coef: float = 0.0,
         move_belief_coef: float = 0.0,
         opp_belief_latent_coef: float = 0.0,
+        win_prob_coef: float = 1.0,
     ) -> ModelVersion:
         from agents.model.features_extractor import (
             ROLE_TOKEN_SIZE,
@@ -632,10 +657,14 @@ class ModelVersion:
             mask_incoming_damage_obs=bool(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("mask_incoming_damage_obs", False)
             ),
+            win_prob_mode=str(
+                policy_kwargs.get("features_extractor_kwargs", {}).get("win_prob_mode", "none")
+            ),
             value_tail_weight=float(value_tail_weight),
             opp_belief_aux_coef=float(opp_belief_aux_coef),
             move_belief_coef=float(move_belief_coef),
             opp_belief_latent_coef=float(opp_belief_latent_coef),
+            win_prob_coef=float(win_prob_coef),
         )
 
     def to_json(self) -> str:
@@ -802,6 +831,20 @@ class ModelVersion:
                 "Zeroing the incoming-damage obs block out of the model's view changes the forward the "
                 "policy trained under, so it cannot be toggled on a resumed model.\n"
                 "Resume with the matching --mask-incoming-damage-obs setting, or start a fresh training run."
+            )
+
+        # Structural + resume-IMMUTABLE toggle — gated as a STRING so BOTH 'none'↔head (a state_dict
+        # change: the WinProbHead params) AND read_only↔shaping (same params, but flipping the trunk
+        # gradient flow mid-run is a silent training change the user chose to forbid) FATAL on a
+        # mismatch. Like move_belief_mode it gates EVERY load; same-run pool/sentinel snapshots carry the
+        # identical mode so they pass trivially. The training-only win_prob_coef is NOT checked.
+        if self.win_prob_mode != saved.win_prob_mode:
+            raise ModelVersionError(
+                f"win_prob_mode mismatch: saved={saved.win_prob_mode!r}, current={self.win_prob_mode!r}.\n"
+                "The win-probability head is fixed for a run's lifetime: adding/removing it changes the "
+                "state_dict, and switching read_only↔shaping flips whether its loss shapes the shared "
+                "trunk (a silent mid-run training change).\n"
+                "Resume with the matching --win-prob-mode setting, or start a fresh training run."
             )
 
     def check_opponent_compatible(self, foreign: "ModelVersion") -> None:
@@ -1025,4 +1068,10 @@ def _migrate_config(data: dict) -> dict:
         # v21: added the incoming-damage-obs ablation toggle (off). Old models always saw the obs block.
         data.setdefault("mask_incoming_damage_obs", False)
         data["config_version"] = 21
+    if version < 22:
+        # v22: added the tri-state win-probability head (off) + its training-only loss coef (1.0).
+        # Old models had no WinProbHead and no win-prob loss.
+        data.setdefault("win_prob_mode", "none")
+        data.setdefault("win_prob_coef", 1.0)
+        data["config_version"] = 22
     return data

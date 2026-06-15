@@ -292,8 +292,21 @@ class RLPlayer(Gen3Player):
                 # The model's top-k species guess for each still-HIDDEN opp slot (None unless the
                 # hidden-opponent belief is enabled) — "what does it think the unrevealed mons are?".
                 "belief": self._decode_belief(),
+                # Calibrated P(win) from the win-probability head (None unless --win-prob-mode != none).
+                # The prober shows it + ΔP(win) beside the CRITIC line — "how a move moved the win odds".
+                "win_prob": self._win_prob(),
             }
         return idx, probs, mask
+
+    def _win_prob(self) -> Optional[float]:
+        """P(win) from the win-probability head (forensic trace only). Reads the logit the extractor
+        stashed on this same forward (``last_win_prob_logits``); None when the head is off
+        (``--win-prob-mode none``). sigmoid(logit) ⇒ probability the current state leads to a win."""
+        extractor = getattr(self.model.policy, "features_extractor", None)
+        logits = getattr(extractor, "last_win_prob_logits", None)
+        if logits is None:
+            return None
+        return float(torch.sigmoid(logits[0, 0]).item())
 
     def _decode_belief(self) -> Optional[list]:
         """Decode the belief head's per-slot species prediction for the still-hidden opponent slots

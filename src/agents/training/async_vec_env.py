@@ -233,6 +233,15 @@ def collect_rollouts_async(
             filled[i] += 1
             collected += 1
 
+            # +WIN-PROB: capture the terminal OUTCOME at this env's just-written buffer row (t, i). The
+            # async collector owns the per-env row, so it records it inline; the WinProbLabelCallback's
+            # wave-batched on_step can't recover (env→row). No-op unless the win-prob head is on (the
+            # scratch is allocated only then by the callback's on_rollout_start, run just above).
+            if done:
+                _win_scr = getattr(model, "_win_terminal_scratch", None)
+                if _win_scr is not None and "win_outcome" in info:
+                    _win_scr[t, i] = float(info["win_outcome"])
+
             # Advance this env's current obs/episode-start for its NEXT action. On a done step the
             # worker auto-reset, so new_obs is already the fresh episode's first obs (mask included).
             for key in obs_keys:

@@ -34,7 +34,8 @@ class Gen3Env(SinglesEnv):
     def __init__(self, mappings, reward_fn: Optional[RewardFunction] = None,
                  log_level=LogLevel.QUIET, stall_config: Optional[StallConfig] = None,
                  *args, battle_class=Gen3Battle, emit_belief_labels: bool = False,
-                 move_belief_mode: str = "off", emit_belief_target: bool = False, **kwargs):
+                 move_belief_mode: str = "off", emit_belief_target: bool = False,
+                 emit_win_target: bool = False, **kwargs):
         self.log_level = log_level
         self._stall_logger = StallLogger(stall_config)
         super().__init__(*args, **kwargs)
@@ -68,6 +69,13 @@ class Gen3Env(SinglesEnv):
         # --opp-belief-latent-coef>0 (which requires --opp-belief-aux-coef>0, so _emit_belief_labels is
         # already True). Read ONLY by the latent aux loss — never enters the policy/value forward.
         self._emit_belief_target = emit_belief_target
+        # WIN-PROBABILITY label keys (TRAINING-ONLY): when on, the obs Dict carries `win_target` [1] and
+        # `win_mask` [1] (float32). The env emits PLACEHOLDER zeros each step; the WinProbLabelCallback
+        # OVERWRITES them post-collection with the Monte-Carlo episode outcome (win=1/loss=0) + a known
+        # mask (the outcome is a FUTURE quantity, so it can't be a real per-step obs like the belief
+        # labels). Read ONLY by the win-prob aux loss; the model forward reads only obs["observation"].
+        # Enabled by --win-prob-mode != none (threaded as emit_win_target from train_rl_agent).
+        self._emit_win_target = emit_win_target
         # Per-battle cache of the fresh per-mon identity encodes (keyed by species id). A hidden mon is
         # untouched (full HP, no status) until revealed, at which point it leaves the believed set, so a
         # mon's fresh encode is stable while it is a target — caching is exact. Cleared on reset().
@@ -96,6 +104,10 @@ class Gen3Env(SinglesEnv):
                 # float32 (real obs features); only declared when --opp-belief-latent-coef>0.
                 base_obs["belief_target_slots"] = spaces.Box(
                     low=-np.inf, high=np.inf, shape=(TEAM_SIZE, POKEMON_FULL_DIM), dtype=np.float32)
+        if self._emit_win_target:
+            # Win-probability MC label + known-mask (placeholders here; back-filled post-collection).
+            base_obs["win_target"] = spaces.Box(low=0.0, high=1.0, shape=(1,), dtype=np.float32)
+            base_obs["win_mask"] = spaces.Box(low=0.0, high=1.0, shape=(1,), dtype=np.float32)
         # SB3 reads the SINGULAR observation_space (threaded as the VecEnv space); the PLURAL
         # observation_spaces is intercepted + rewrapped by PokeEnv.__setattr__ (it would drop the
         # belief keys) and is not the SB3-facing space, so it can stay minimal.
@@ -289,6 +301,17 @@ class Gen3Env(SinglesEnv):
             battle, fainted_value=2.0, hp_value=1.0, victory_value=30.0
         )
 
+    def _merge_training_keys(self, agent_obs):
+        """Merge TRAINING-ONLY label keys into the trainee obs. Belief labels are real per-step
+        privileged info; `win_target`/`win_mask` are PLACEHOLDERS (zeros) the WinProbLabelCallback
+        overwrites post-collection with the Monte-Carlo episode outcome (the outcome is a FUTURE
+        quantity, so it can't be a real per-step value like the belief labels)."""
+        if self._emit_belief_labels:
+            agent_obs.update(self._belief_labels(agent_obs["observation"]))
+        if self._emit_win_target:
+            agent_obs["win_target"] = np.zeros(1, dtype=np.float32)
+            agent_obs["win_mask"] = np.zeros(1, dtype=np.float32)
+
     def step(self, action):
         try:
             battle = getattr(self, "_battle", None) or self.battle1
@@ -297,10 +320,10 @@ class Gen3Env(SinglesEnv):
                 self._tracker.advance(trainee_idx)
                 self.reward_manager.record_action(self._tracker.last_ctx, trainee_idx)
             out = super().step(action)
-            if self._emit_belief_labels:
+            if self._emit_belief_labels or self._emit_win_target:
                 agent_obs = out[0].get(self.agent1.username)
                 if agent_obs is not None:
-                    agent_obs.update(self._belief_labels(agent_obs["observation"]))
+                    self._merge_training_keys(agent_obs)
             return out
         except Exception as e:
             import traceback
@@ -318,11 +341,11 @@ class Gen3Env(SinglesEnv):
             self.reward_manager.reset()
             self._stall_logger.reset()
             out = super().reset(*args, **kwargs)
-            if self._emit_belief_labels:
+            if self._emit_belief_labels or self._emit_win_target:
                 obs, info = out
                 agent_obs = obs.get(self.agent1.username)
                 if agent_obs is not None:
-                    agent_obs.update(self._belief_labels(agent_obs["observation"]))
+                    self._merge_training_keys(agent_obs)
                 return obs, info
             return out
         except Exception as e:

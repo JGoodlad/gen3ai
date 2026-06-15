@@ -140,6 +140,60 @@ def test_async_collect_handles_uneven_episode_lengths():
         env.close()
 
 
+class _WinCounterDictEnv(_CounterDictEnv):
+    """`_CounterDictEnv` that emits ``info["win_outcome"]`` on the terminal step — so the async
+    collector's INLINE win-prob capture (`async_vec_env.py`, the production --async-rollout path)
+    can be exercised. `MaskableAgentWrapper.step` sets this key live; here we stub it directly."""
+
+    def __init__(self, ep_len=3, outcome=1.0):
+        super().__init__(ep_len)
+        self._outcome = outcome
+
+    def step(self, action):
+        obs, r, term, trunc, _ = super().step(action)
+        return obs, r, term, trunc, ({"win_outcome": float(self._outcome)} if term else {})
+
+
+def test_async_inline_captures_win_outcome_at_correct_row():
+    """The async collector records each terminal's win_outcome into model._win_terminal_scratch at the
+    env's JUST-WRITTEN (t, i) buffer row (the SYNC callback can't recover that row, so the collector
+    owns it). Distinct per-env outcomes (1.0 vs 0.0) confirm no cross-env mixup; 0.0-vs-NaN confirms a
+    captured LOSS is distinguished from an un-captured (in-progress) row."""
+    n_envs, n_steps, ep_len = 2, 5, 3
+    outcomes = [1.0, 0.0]
+    env = AsyncSubprocVecEnv(
+        [(lambda o=outcomes[k], el=ep_len: _WinCounterDictEnv(el, o)) for k in range(n_envs)])
+    last_obs = env.reset()
+    try:
+        model = _FakeModel(env, last_obs)
+        model._async_rollout = True
+        model._win_terminal_scratch = np.full((n_steps, n_envs), np.nan, dtype=np.float32)
+        buf = _buf(env, n_steps)
+        assert collect_rollouts_async(model, env, _NullCallback(), buf, n_steps, use_masking=True)
+        scr = model._win_terminal_scratch
+        # ep_len=3, n_steps=5 → the done lands at buffer row 2 (episode_starts == [1,0,0,1,0]); the 2nd
+        # episode (rows 3,4) is in progress → no terminal captured there.
+        for i in range(n_envs):
+            np.testing.assert_array_equal(buf.episode_starts[:, i], [1, 0, 0, 1, 0])
+            assert scr[2, i] == outcomes[i], f"env{i} outcome must land at its done row"
+            assert np.isnan(scr[[0, 1, 3, 4], i]).all(), f"env{i} non-terminal rows must stay NaN"
+    finally:
+        env.close()
+
+
+def test_async_inline_capture_noop_when_winprob_off():
+    """No _win_terminal_scratch on the model (win-prob off) → the inline capture is a clean no-op."""
+    env = AsyncSubprocVecEnv([(lambda: _WinCounterDictEnv(3, 1.0))])
+    last_obs = env.reset()
+    try:
+        model = _FakeModel(env, last_obs)  # no _win_terminal_scratch attr
+        buf = _buf(env, 5)
+        assert collect_rollouts_async(model, env, _NullCallback(), buf, 5, use_masking=True)
+        assert not hasattr(model, "_win_terminal_scratch")
+    finally:
+        env.close()
+
+
 def test_env_method_is_drain_safe_with_inflight_steps():
     """env_method mid-collection (eval callback's set_self_play_target etc.) must not desync against
     un-recv'd step results: AsyncSubprocVecEnv drains+stashes in-flight steps first."""

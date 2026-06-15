@@ -740,6 +740,17 @@ class ProberApp(Gen3App):
                 head.append("   ΔV ", style="dim")
                 head.append(f"{a.value.delta:+.2f}", style=("green" if a.value.delta >= 0 else "red"))
                 _append_surprise(head, self._td_residual(a))
+        # WIN-PROB — the calibrated P(win) the head reads + ΔP(win), how much this move moved the win
+        # odds (the interpretable [0,1] complement to CRITIC's shaped-return V). Only on a
+        # --win-prob-mode run (None otherwise). Greener = better odds (red at low P(win), like THREAT).
+        if a.win_prob is not None:
+            head.append("\nWIN-PROB  ", style="dim")
+            head.append(f"P(win) {a.win_prob.recorded * 100:.0f}%",
+                        style=gradient_color(max(0.0, min(1.0, a.win_prob.recorded))))
+            if a.win_prob.delta is not None:
+                head.append("   ΔP ", style="dim")
+                head.append(f"{a.win_prob.delta * 100:+.0f}%",
+                            style=("green" if a.win_prob.delta >= 0 else "red"))
         self.query_one("#summary-head", Static).update(head)
 
         # MOVES — fuse type-effectiveness (Matchups) with the policy prob (Faithfulness),
@@ -977,6 +988,17 @@ class ProberApp(Gen3App):
                 if td is not None:
                     summary.append("  · ", style="dim")
                     _append_surprise(summary, td, term="TD δ")
+            summary.append("\n")
+        # Win-probability head's read (calibrated P(win) + ΔP to the next decision) — the [0,1]
+        # complement to V above; only on a --win-prob-mode run.
+        if a.win_prob is not None:
+            wp = a.win_prob
+            summary.append(f"P(win) {wp.recorded * 100:.0f}%", style="bold")
+            if wp.delta is not None:
+                summary.append("  ·  ΔP ", style="dim")
+                summary.append(f"{wp.delta * 100:+.0f}%", style=("green" if wp.delta >= 0 else "red"))
+                if wp.next_recorded is not None:
+                    summary.append(f" → {wp.next_recorded * 100:.0f}%", style="dim")
             summary.append("\n")
         agree_style = "green" if a.agrees else "bold red"
         summary.append("model: ", style="dim")

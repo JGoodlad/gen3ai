@@ -40,6 +40,10 @@ Under `--opp-belief-latent-coef>0` (v18) `BeliefHead` ALSO carries an asymmetric
 (the `latent` logits key) and `forward_internal` stashes a stop-grad `last_belief_target_latent` (the
 `pokemon_encoder` role-tokens of the true hidden mons, from the training-only `belief_target_slots` obs
 key) — also a side readout, never fed forward (leak-safe). See the v16 / v17 / v18 / v19 versioning notes.
+A separate `WinProbHead` (v22, `win_prob_mode != none`) reads `value_pooled` *after* the pools and stashes
+a `last_win_prob_logits` [B,1] — another side readout (never in pi/vf, so projection dims are unchanged),
+read by the win-prob aux loss + the prober. `read_only` feeds it a STOP-GRAD `value_pooled` (head trains
+its own params only); `shaping` feeds it live (the win objective also shapes the trunk). See the v22 note.
 
 **Dual-head value readout (H4 / Option C).** The transformer body is shared, but the actor and
 critic read it through independent paths. `CLSPool` holds a third query `value_cls` that attends
@@ -169,8 +173,8 @@ because it is Φ_progress's weight. All are recorded on
 `ModelVersion` and enforced on resume by **`check_reward_config`** (FATAL on drift, since they silently
 shift the reward/objective), excluded from `check_compatible`. They are reward-VALUE changes — **no
 `ARCH_SIGNATURE` bump** (the network/obs are unchanged) — so a fresh run is needed to measure them but
-old checkpoints don't fail an arch check. Current `MODEL_CONFIG_VERSION` = **21** (see the belief notes
-below for v16–v21).
+old checkpoints don't fail an arch check. Current `MODEL_CONFIG_VERSION` = **22** (see the belief notes
+below for v16–v22).
 
 **Two probe-driven V-tail levers (v10 structural, v11 resume-immutable).** A representation probe on a
 real checkpoint found the **value head is partly blind to incoming KOs the policy head sees**
@@ -370,8 +374,28 @@ is the "remove the functionality from the model when using the unified arch" kno
 belief→damage op truly subsumes the usage-prior collapse. FORWARD-BEHAVIOR toggle like
 `attend_unrevealed_opponents` (no weight-shape change — just zeros an obs slice; gated in
 `check_compatible`, NO `ARCH_SIGNATURE` bump, OFF byte-identical); independent of `--damage-op` (a pure
-A/B knob) and threaded through `current_model_version` / `arch_toggles_from_model`. Current
-`MODEL_CONFIG_VERSION` = **21**.
+A/B knob) and threaded through `current_model_version` / `arch_toggles_from_model`. This is config v21.
+
+**Tri-state win-probability head (`win_prob_mode` / `--win-prob-mode`, v22).** A calibrated **P(win|state)**
+readout the shaped critic can't give (V is expected *shaped* return — material Φ + PBRS + terminal,
+PopArt-normalised — not win odds). `WinProbHead` (`features_extractor.py`) reads the whole-board
+`value_pooled` *after* the CLS pools and emits ONE logit (sigmoid ⇒ P(win)); it is supervised by the
+Monte-Carlo episode OUTCOME (win=1/loss=0) propagated to every step (`instrumented_ppo._win_prob_loss`,
+folded at `win_prob_coef`). The tri-state controls BOTH module + gradient: **`none`** = no module (baseline
+byte-for-byte; it is a SIDE readout — stashed at `last_win_prob_logits`, NEVER concatenated into pi/vf, so
+projection dims are identical on/off and the future OUTCOME label can't leak); **`read_only`** = the head
+trains its OWN params on a STOP-GRAD `value_pooled` (a pure, risk-free diagnostic — zero gradient to the
+trunk, verified: `grad/win_prob_share` is 0); **`shaping`** = it reads a LIVE `value_pooled` so the win
+objective also shapes the shared trunk (A/B vs read_only). `win_prob_mode` is the **structural +
+resume-IMMUTABLE** toggle — gated in `check_compatible` with a STRING compare so BOTH `none`↔head (a
+state_dict change) AND `read_only`↔`shaping` (same params, but flipping grad-flow mid-run is a silent
+training change the user chose to forbid) FATAL on a resume mismatch. OFF reproduces baseline byte-for-byte
+(NO `ARCH_SIGNATURE` bump). `win_prob_coef` is **training-only** (recorded for provenance, NOT
+version-locked, inherited on a flagless resume). Threaded through `current_model_version` /
+`arch_toggles_from_model` (the opp-load sites) so a win-prob-ON self-play run doesn't FATAL on its own
+sentinels. The label is FUTURE (only known at episode end) so — unlike the per-step belief labels — it
+cannot ride as a real obs key; the training side is in `src/agents/training/CLAUDE.md` → win-probability
+head. Current `MODEL_CONFIG_VERSION` = **22**.
 
 A startup smoke test (`_run_roundtrip_test` in `train_rl_agent.py`) saves to a temp dir and reloads before every `model.learn()` call — catches serialization issues immediately.
 

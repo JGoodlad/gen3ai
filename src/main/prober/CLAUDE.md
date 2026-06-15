@@ -116,9 +116,12 @@ line 1 incoming P(KO)·outspeed·worst-on-team·opp-recovery, line 2 the incomin
 **`⚡CRIT`** tag, a **`→ atk+1`** stat-change (e.g. Meteor Mash / Intimidate), hpΔ, and a
 **"couldn't move (asleep/fully paralyzed/…)"** note (move-order + crit + boost + cant all decoded
 from the NEXT decision's TurnDelta via `describe_turn_outcome`) + events · **REWARD** the env's
-reward (total + per-component breakdown) · **CRITIC** (last) V·ΔV·**TD-surprise** (always paired
+reward (total + per-component breakdown) · **CRITIC** V·ΔV·**TD-surprise** (always paired
 with a plain-language gloss — "worse than the critic expected" — via `_append_surprise`/
-`_surprise_phrase`, so the ML term is self-explaining).
+`_surprise_phrase`, so the ML term is self-explaining) · **WIN-PROB** (last, only on a
+`--win-prob-mode != none` run) the win-prob head's calibrated **P(win)** + **ΔP(win)** to the next
+decision — the interpretable [0,1] complement to CRITIC's shaped-return V ("how much this move moved
+the win odds"); greener = better odds, red at low P(win) (it is `None`/absent on a non-win-prob run).
 Below sit **three** side-by-side panels (packed at the left): **MOVES** (a DataTable — each move's
 type-effectiveness `×mult` fused with its policy prob, ranked) and two **custom-rendered Static
 panels** (NOT DataTables, so a mon's **moveset spans the full width** below it as `⮡ m1 · m2 · …`):
@@ -184,7 +187,8 @@ you can see whether the **value** head — where OHKO tail-blindness lives — a
 reads the belief block vs the rest), and
 **Outcome** — the last surfaces the critic's `V(s)` (recorded · re-run · ΔV → next ·
 **TD δ** = `r + γV(s′) − V(s)`, the critic-surprise residual, in parity with the CLI's
-overview/analyze `td_residual`; γ from the run's `metadata.json`),
+overview/analyze `td_residual`; γ from the run's `metadata.json`) + the win-prob head's
+**P(win)** + ΔP (when present),
 whether the loaded model still picks the recorded action (agrees / DISAGREES → X),
 the per-step **reward breakdown** (`total` + components) and **events**.
 
@@ -310,7 +314,10 @@ loading uses the same exact→nearest→recent ladder (cached per process). A
   `high_value` (ranked by recorded V, model-free), or `disagree` (loads the
   model; chosen ≠ the model's argmax).
 - `analyze(battle_id, inv)` — full `InvocationAnalysis` as a dict (loads the
-  model); the value block gains a γ-discounted `td_residual`. Carries two
+  model); the value block gains a γ-discounted `td_residual`. Also carries a `win_prob`
+  block (`WinProbView`: recorded `P(win|s)` + `delta` ΔP to the next decision) — model-free, read
+  from the trace's `win_probs` npz array (NaN/absent → `None` on a non-`--win-prob-mode` run; recorded
+  at trace-capture by `RLPlayer._win_prob` → `BattleRecorder.states_arrays`). Carries two
   incoming-threat decodes — **distinguish them**:
   - `threats` (model-free, from `their_matchups`): raw type-*effectiveness* —
     `present`, `revealed_frac` (how much opp coverage is revealed), `max_incoming`

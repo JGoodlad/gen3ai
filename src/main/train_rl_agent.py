@@ -179,6 +179,7 @@ def _run_arch_toggles(args) -> dict:
         damage_op=args.damage_op,
         move_prior_fusion=args.move_prior_fusion,
         mask_incoming_damage_obs=args.mask_incoming_damage_obs,
+        win_prob_mode=args.win_prob_mode,
     )
 
 
@@ -193,6 +194,7 @@ def _model_hparams(model) -> dict:
         "opp_belief_aux_coef": float(getattr(model, "opp_belief_aux_coef", 0.0)),
         "move_belief_coef": float(getattr(model, "move_belief_coef", 0.0)),
         "opp_belief_latent_coef": float(getattr(model, "opp_belief_latent_coef", 0.0)),
+        "win_prob_coef": float(getattr(model, "win_prob_coef", 1.0)),
         "batch_size": model.batch_size,
         "n_steps": model.n_steps,
         "clip_range": float(model.clip_range(1.0)),
@@ -334,6 +336,7 @@ def _run_roundtrip_test(model, layout: dict, policy_kwargs: dict, debug: bool = 
         opp_belief_aux_coef=float(getattr(model, "opp_belief_aux_coef", 0.0)),
         move_belief_coef=float(getattr(model, "move_belief_coef", 0.0)),
         opp_belief_latent_coef=float(getattr(model, "opp_belief_latent_coef", 0.0)),
+        win_prob_coef=float(getattr(model, "win_prob_coef", 1.0)),
     )
     total_dim = layout["total_dim"]
     tmpdir = tempfile.mkdtemp(prefix="roundtrip_")
@@ -743,6 +746,24 @@ async def main():
                              "to A/B whether the learned belief→damage op replaces the CPU usage-prior "
                              "collapse — no code deleted, fully reversible. Forward-behavior toggle "
                              "(no weight-shape change; version-checked, fresh-only). Off by default.")
+    parser.add_argument("--win-prob-mode", "--win_prob_mode", dest="win_prob_mode",
+                        choices=("none", "read_only", "shaping"), default=None,
+                        help="Auxiliary WIN-PROBABILITY head: a calibrated P(win|state) readout off the "
+                             "value pool, supervised by the Monte-Carlo episode outcome (win=1/loss=0) — "
+                             "the shaped critic's V is expected RETURN, not win odds, so this gives an "
+                             "interpretable P(win) (and ΔP(win) per move). 'none' (default) = no module "
+                             "(baseline byte-for-byte). 'read_only' = the head trains on a STOP-GRAD value "
+                             "pool — a pure, risk-free diagnostic that CANNOT perturb the policy. 'shaping' "
+                             "= its gradient also shapes the shared trunk (the win objective improves the "
+                             "representation; A/B it vs read_only). STRUCTURAL + resume-IMMUTABLE "
+                             "(version-checked: any change FATALs on resume). The head is a SIDE readout "
+                             "(never in pi/vf — leak-safe).")
+    parser.add_argument("--win-prob-coef", "--win_prob_coef", dest="win_prob_coef",
+                        type=float, default=None,
+                        help="Loss weight for the win-prob head's BCE (win_prob_coef * BCE), like "
+                             "--opp-belief-aux-coef. Default 1.0. TRAINING-only (not version-locked; "
+                             "inherited on a flagless resume). Ignored when --win-prob-mode none. Lower it "
+                             "if 'shaping' fights the policy (watch grad/win_prob_share).")
     parser.add_argument("--n-steps", type=int, default=2048, help="Steps per environment per rollout")
     parser.add_argument("--grad-checkpointing", "--grad_checkpointing", dest="grad_checkpointing",
                         action=BoolFlag, default=False,
@@ -900,6 +921,8 @@ async def main():
     _resolve("damage_op", False)               # v19 structural (version-checked, fresh-only)
     _resolve("move_prior_fusion", False)       # v20 forward-behavior (version-checked, fresh-only)
     _resolve("mask_incoming_damage_obs", False)  # v21 forward-behavior (version-checked, fresh-only)
+    _resolve("win_prob_mode", "none")          # v22 structural + resume-immutable (version-checked)
+    _resolve("win_prob_coef", 1.0)             # training-only (inherited like opp_belief_aux_coef)
     # PopArt INHERITED on a flagless resume → adopt its required `--clip-range-vf none` (the saved
     # popart run necessarily used it), so the explicit-config check below doesn't block the resume.
     if args.use_popart and not _popart_explicit and _saved_ver is not None and args.clip_range_vf is not None:
@@ -941,6 +964,10 @@ async def main():
         args.attend_unrevealed_opponents = True
     if args.move_belief_coef is not None and args.move_belief_coef < 0.0:
         parser.error("--move-belief-coef must be >= 0 (0 = off)")
+    if args.win_prob_coef is not None and args.win_prob_coef < 0.0:
+        # A negative coef would INVERT the BCE gradient (train the head/trunk to MAXIMISE error).
+        # win_prob_coef is training-only (not version-locked), so guard it here — the only gate.
+        parser.error("--win-prob-coef must be >= 0 (0 = off; the mode controls on/off)")
     if args.move_belief_mode != "off":
         # The MoveBelief module reads/refines the opp slots, so (like the BeliefHead) it requires the
         # unrevealed slots to be attendable — auto-enable the unmask flag (the model side hard-gates
@@ -1164,6 +1191,7 @@ async def main():
                     emit_belief_labels=(args.opp_belief_aux_coef > 0.0),
                     move_belief_mode=args.move_belief_mode,
                     emit_belief_target=(args.opp_belief_latent_coef > 0.0),
+                    emit_win_target=(args.win_prob_mode != "none"),
                 )
                 if args.use_showdown_bridge:
                     # Swap the two _EnvPlayer agents' websocket transport for a local
@@ -1507,6 +1535,11 @@ async def main():
     )
     graceful_restart_callback = GracefulRestartCallback()
     callbacks = [checkpoint_callback, lr_callback, MetricsExporterCallback(), _HparamLogCallback(args.ent_coef), graceful_restart_callback]
+    # Win-probability head: captures each episode's win/loss outcome during collection + back-fills the
+    # rollout buffer's MC label before train() (only when the head is on → a default run pays nothing).
+    if args.win_prob_mode != "none":
+        from agents.training.win_prob_callback import WinProbLabelCallback
+        callbacks.append(WinProbLabelCallback())
     eval_callback = None
     # A --debug smoke run skips ALL eval by default — the periodic eval callback below AND the
     # final win-rate eval — so it needs no eval opponents / Showdown eval connection and stays
@@ -1637,6 +1670,9 @@ async def main():
         _load_extractor_kwargs["move_prior_fusion"] = args.move_prior_fusion
         # Incoming-damage-obs ablation — version-checked vs the saved config (fresh-only).
         _load_extractor_kwargs["mask_incoming_damage_obs"] = args.mask_incoming_damage_obs
+        # Win-probability head mode — version-checked vs the saved config (resume-IMMUTABLE; any change
+        # FATALs, same machinery as move_belief_mode).
+        _load_extractor_kwargs["win_prob_mode"] = args.win_prob_mode
         _load_policy_kwargs = {
             "features_extractor_class": Gen3FeaturesExtractor,
             "features_extractor_kwargs": _load_extractor_kwargs,
@@ -1649,6 +1685,7 @@ async def main():
             opp_belief_aux_coef=args.opp_belief_aux_coef,
             move_belief_coef=args.move_belief_coef,
             opp_belief_latent_coef=args.opp_belief_latent_coef,
+            win_prob_coef=args.win_prob_coef,
         )
 
         print(f"Loading existing model from {model_path}")
@@ -1675,6 +1712,7 @@ async def main():
         model.opp_belief_moves_weight = args.opp_belief_moves_weight
         model.move_belief_coef = args.move_belief_coef  # move-belief loss weight (training-only; resume-mutable)
         model.opp_belief_latent_coef = args.opp_belief_latent_coef  # latent-belief loss weight (training-only)
+        model.win_prob_coef = args.win_prob_coef  # win-prob loss weight (training-only; resume-mutable)
         model.vf_coef = args.vf_coef  # == the saved value (enforced above); set explicitly for parity
         model.gae_lambda = 0.80
         # Resume-path LR setup. Phase determines whether we read from the
@@ -1841,6 +1879,10 @@ async def main():
         # Unified-architecture ablation (forward-behavior): zero the incoming-damage obs block from the
         # model's view. No weight-shape change. Independent A/B knob (typically paired with --damage-op).
         extractor_kwargs["mask_incoming_damage_obs"] = args.mask_incoming_damage_obs
+        # Win-probability head (none|read_only|shaping; structural + resume-immutable). 'none' = no module
+        # (baseline byte-for-byte). The coef is a TRAINING hparam set on the model below; the MODE is the
+        # version-checked arch toggle.
+        extractor_kwargs["win_prob_mode"] = args.win_prob_mode
 
         policy_kwargs = {
             "features_extractor_class": Gen3FeaturesExtractor,
@@ -1881,12 +1923,14 @@ async def main():
         model.opp_belief_moves_weight = args.opp_belief_moves_weight  # species_CE + w·moves_BCE
         model.move_belief_coef = args.move_belief_coef  # move-belief reinjection loss (0.0 = off)
         model.opp_belief_latent_coef = args.opp_belief_latent_coef  # latent-belief loss (0.0 = off)
+        model.win_prob_coef = args.win_prob_coef  # win-prob head BCE loss (mode none = off)
         version = ModelVersion.from_layout_and_policy_kwargs(
             extractor_kwargs["layout"], policy_kwargs, vf_coef=args.vf_coef,
             reward_config=reward_config, value_tail_weight=args.value_tail_weight,
             opp_belief_aux_coef=args.opp_belief_aux_coef,
             move_belief_coef=args.move_belief_coef,
             opp_belief_latent_coef=args.opp_belief_latent_coef,
+            win_prob_coef=args.win_prob_coef,
         )
         # PBRS_GAMMA must equal the PPO gamma for both potentials to be policy-invariant (design §7.1).
         # The reward manager is built before the model (in the env factory), so assert here where both

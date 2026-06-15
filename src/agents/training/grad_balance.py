@@ -86,6 +86,7 @@ def grad_balance_metrics(
     shared_params: Sequence[nn.Parameter],
     aux_term: "th.Tensor | None" = None,
     latent_term: "th.Tensor | None" = None,
+    win_prob_term: "th.Tensor | None" = None,
 ) -> Dict[str, float]:
     """Value-vs-policy gradient competition on the shared trunk.
 
@@ -159,6 +160,20 @@ def grad_balance_metrics(
         out["grad/latent_share"] = (n_lat / total_l) if total_l > 0.0 else 0.0
         out["grad/latent_policy_cosine"] = (
             float((g_lat @ g_pi).item() / (n_lat * n_pi)) if n_lat > 0.0 and n_pi > 0.0 else 0.0
+        )
+    # Win-probability head pull on the shared trunk — ONLY meaningful (non-zero) under win_prob_mode
+    # 'shaping' (where the head reads a live value_pooled → its gradient reaches the trunk); under
+    # 'read_only' the head's input is stop-grad'd so g_win ≈ 0 (the probe then confirms the diagnostic
+    # truly isn't perturbing the trunk). ``win_prob_share`` = ‖g_win‖/(‖g_pi‖+‖g_vf‖+‖g_win‖) — watch it
+    # sit small under shaping; a spike with a degrading policy = lower ``--win-prob-coef``.
+    if win_prob_term is not None:
+        g_win = _flat_grads(win_prob_term, shared_params)
+        n_win = float(g_win.norm())
+        total_w = n_pi + n_vf + n_win
+        out["grad/win_prob_norm_shared"] = n_win
+        out["grad/win_prob_share"] = (n_win / total_w) if total_w > 0.0 else 0.0
+        out["grad/win_prob_policy_cosine"] = (
+            float((g_win @ g_pi).item() / (n_win * n_pi)) if n_win > 0.0 and n_pi > 0.0 else 0.0
         )
     return out
 
