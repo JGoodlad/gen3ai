@@ -20,8 +20,10 @@ from dataclasses import dataclass, field
 
 import numpy as np
 
+from agents import gen3_data
 from agents.action.constants import MOVE_END, MOVE_START
 from agents.inference.belief_decode import BELIEF_TOPK
+from agents.observation import incoming_damage as _inc
 
 # Sweep points for the intervention (×-multipliers); stored /4 into the obs.
 _SWEEP_MULTIPLIERS = (0.0, 1.0, 2.0, 4.0)
@@ -54,6 +56,17 @@ class ActionRow:
 class MatchupView:
     multipliers: "tuple[float, ...]"   # 4 values, ×4-denormalised (obs[mm:mm+4]*4)
     move_labels: "tuple[str, ...]"     # request-slot order (the 4 move actions)
+    # The obs computes a type multiplier for EVERY request slot — including non-damaging moves
+    # (Spikes/Toxic/Protect/Recover), where it is meaningless: base_power 0 routes through no
+    # damage calc, so a "2.00×" on Spikes is a misleading artefact, not a signal. `applicable[i]`
+    # is False for those slots so a UI can render "n/a" instead of the phantom multiplier; an
+    # unknown/empty slot label is False too. Applicability is the BROAD "does the type chart matter"
+    # sense (`_multiplier_meaningful`): a positive-BP move, a fixed-damage move (Seismic Toss/Night
+    # Shade — base_power 0 in the dex but type IMMUNITY still applies), a variable-power move
+    # (Return/Frustration), or Hidden Power (poke-env reveals it as the bare id but it's a typed
+    # ~70-BP attack) — NOT the bare `gen3_data.moves.is_damaging` (= base_power>0), which would
+    # wrongly hide our own Hidden Power and the fixed/variable-power attacks.
+    applicable: "tuple[bool, ...]"     # per-slot: does the type multiplier mean anything?
 
 
 @dataclass(frozen=True)
@@ -563,10 +576,31 @@ def _faithfulness(probs: np.ndarray, labels: list, acts: dict, chosen: str,
     return tuple(rows)
 
 
+# Moves that read base_power 0 in the dex but whose type multiplier is still real (fixed/variable
+# power — type IMMUNITY applies even when the amount is constant). Reuses the canonical sets the
+# incoming-damage belief prices from, so this stays in sync with the rest of the codebase.
+_BP0_DAMAGING = set(_inc.FIXED_DAMAGE) | {"return", "frustration"}
+
+
+def _multiplier_meaningful(move_id: str) -> bool:
+    """Does the active-move type multiplier carry signal for ``move_id``? True for any damaging move
+    — positive-BP, fixed-/variable-power, or Hidden Power (revealed as the bare id but a typed
+    attack). False for a genuine status/self/field move (Spikes/Recover/Protect), where the obs
+    still computes a phantom multiplier the UI should render as n/a. See MatchupView.applicable."""
+    if not move_id:
+        return False
+    if gen3_data.moves.is_damaging(move_id) or move_id.startswith("hiddenpower"):
+        return True
+    return move_id in _BP0_DAMAGING
+
+
 def _matchups(obs: np.ndarray, labels: list, off) -> MatchupView:
     mults = tuple(float(x) * 4.0 for x in obs[off.mm_off:off.mm_off + 4])
     move_labels = tuple(labels[MOVE_START:MOVE_END])  # the 4 move actions, request order
-    return MatchupView(multipliers=mults, move_labels=move_labels)
+    # Flag which slots' multipliers are meaningful vs a phantom artefact on a status/self move —
+    # see MatchupView.applicable. _multiplier_meaningful tolerates unknown/empty ids → False.
+    applicable = tuple(_multiplier_meaningful(lbl) for lbl in move_labels)
+    return MatchupView(multipliers=mults, move_labels=move_labels, applicable=applicable)
 
 
 def _switch_prob_sum(p: np.ndarray, labels: list) -> float:

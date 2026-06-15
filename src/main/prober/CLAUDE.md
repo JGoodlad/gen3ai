@@ -123,7 +123,11 @@ with a plain-language gloss — "worse than the critic expected" — via `_appen
 decision — the interpretable [0,1] complement to CRITIC's shaped-return V ("how much this move moved
 the win odds"); greener = better odds, red at low P(win) (it is `None`/absent on a non-win-prob run).
 Below sit **three** side-by-side panels (packed at the left): **MOVES** (a DataTable — each move's
-type-effectiveness `×mult` fused with its policy prob, ranked) and two **custom-rendered Static
+type-effectiveness `×mult` fused with its policy prob, ranked; a **non-damaging move** (Spikes/Toxic/
+Protect — `not gen3_data.moves.is_damaging`) renders **`—`** instead of its multiplier, because the
+obs computes a phantom `×mult` for every request slot and a "2.00×" on Spikes is a misleading artefact,
+not a signal — the applicability rides `MatchupView.applicable`, so the `analyze` JSON CLI carries it
+too) and two **custom-rendered Static
 panels** (NOT DataTables, so a mon's **moveset spans the full width** below it as `⮡ m1 · m2 · …`):
 **SWITCHES** (each target's prob · **hp** colour-bar · **status/volatiles** · **risk-in** =
 `incoming.per_slot_pko`, with the held **item inlined into the name** as `(leftovers)` lowercase)
@@ -175,7 +179,8 @@ recorder format so the status no longer mangles the hp cell +
 revealed bench + our moveset from `engine.build_board`, model-free; plus a **field**
 line — weather/spikes/screens/turn decoded from the obs global block via
 `ProbeModel.describe_global`, so it needs captured state), **Faithfulness**
-(recorded vs re-run probs), **Matchups** (our active move type-multipliers + two incoming lines: an
+(recorded vs re-run probs), **Matchups** (our active move type-multipliers — a non-damaging move shows
+`—  n/a (non-damaging)` per `MatchupView.applicable`, see MOVES above — + two incoming lines: an
 **incoming eff** line decoded from `their_matchups` — `worst N×` / `revealed XX%`, or
 `BLANK` when the opponent's coverage is unrevealed; and an **incoming P(KO)** line
 decoded from the `incoming_damage` belief block — `active NN%` (our on-field mon's KO

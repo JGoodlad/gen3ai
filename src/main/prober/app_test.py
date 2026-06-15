@@ -320,6 +320,69 @@ async def test_select_battle_populates_panels(tmp_path):
                 < head.index("REWARD") < head.index("CRITIC"))
 
 
+def _write_status_move_trace(tmp_path):
+    """A trace whose move slots mix a non-damaging move (spikes, slot 0) with a damaging one
+    (thunderbolt, slot 1) — both carry a 2.0× type multiplier in the obs, but only thunderbolt's
+    is meaningful. Lets us assert the 'n/a' rendering for the phantom multiplier."""
+    actions = {f"switch:m{i}": {"prob": "1.0%", "valid": True} for i in range(6)}
+    actions.update({
+        "spikes": {"prob": "42.9%", "valid": True},       # non-damaging → eff n/a
+        "thunderbolt": {"prob": "40.0%", "valid": True},   # damaging → real ×mult
+        "toxic": {"prob": "5.0%", "valid": True},          # non-damaging
+        "roar": {"prob": "2.0%", "valid": True},           # non-damaging (phazing)
+        "struggle": {"prob": "0.0%", "valid": False},
+    })
+    summary = {
+        "meta": {"step": 1000, "result": "LOSS", "turns": 3, "invocations": 1},
+        "invocations": [{
+            "i": 1, "turn": 3, "phase": "move_selection", "chosen": "spikes",
+            "our": {"species": "skarmory", "hp": "75%"},
+            "opp": {"species": "metagross", "hp": "100%"}, "actions": actions,
+            "outcome": {"our": {"action": "spikes", "hp_delta": "+0%"},
+                        "opp": {"action": "meteormash", "hp_delta": "+0%"}, "events": []},
+        }],
+    }
+    d = tmp_path / "run" / "eval_traces" / "step_1000" / "Test"
+    os.makedirs(d, exist_ok=True)
+    with open(d / "loss_001_summary.json", "w") as f:
+        json.dump(summary, f)
+    obs = np.zeros((1, _OBS_LEN), dtype=np.float32)
+    # spikes 2.0×, thunderbolt 2.0×, toxic 0.0×, roar 0.5× (all stored /4 in the obs)
+    obs[0, _OFF.mm_off:_OFF.mm_off + 4] = [0.5, 0.5, 0.0, 0.125]
+    np.savez(d / "loss_001_states.npz", obs=obs,
+             values=np.array([1.5], dtype=np.float32),
+             has_state=np.array([1], dtype=np.int8))
+    return str(tmp_path / "run")
+
+
+async def test_non_damaging_move_eff_is_na(tmp_path):
+    """The phantom type multiplier on a non-damaging move renders 'n/a' / '—', while a damaging
+    move in the same panel keeps its real ×mult — the GIGO-display fix."""
+    run = _write_status_move_trace(tmp_path)
+    app = ProberApp(root=run, injected_model=_FakeModel())
+    async with app.run_test() as pilot:
+        await pilot.pause()
+        app._select_battle(app._tree_model.all_battles()[0])
+        await pilot.pause()
+        await app.workers.wait_for_complete()
+        await pilot.pause()
+
+        # Matchups table: spikes/toxic/roar → 'n/a'; thunderbolt → a real '×' multiplier.
+        mt = app.query_one("#matchups-table", DataTable)
+        eff_by_move = {str(mt.get_row_at(r)[0]): str(mt.get_row_at(r)[1])
+                       for r in range(mt.row_count)}
+        assert "n/a" in eff_by_move["spikes"] and "×" not in eff_by_move["spikes"]
+        assert "n/a" in eff_by_move["toxic"] and "n/a" in eff_by_move["roar"]
+        assert "×" in eff_by_move["thunderbolt"] and "n/a" not in eff_by_move["thunderbolt"]
+
+        # MOVES summary panel: spikes' eff cell is the '—' placeholder, thunderbolt keeps '×'.
+        moves = app.query_one("#summary-moves", DataTable)
+        move_eff = {str(moves.get_row_at(r)[0]).lstrip("▶ ").strip(): str(moves.get_row_at(r)[1])
+                    for r in range(moves.row_count)}
+        assert move_eff["spikes"] == "—"
+        assert "×" in move_eff["thunderbolt"]
+
+
 async def test_summary_renders_win_prob(tmp_path):
     """The WIN-PROB line (calibrated P(win) from the head) renders in the Summary when the trace has
     a win_probs array, placed after CRITIC (the same critic lens, in [0,1] units)."""

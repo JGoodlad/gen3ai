@@ -757,7 +757,11 @@ class ProberApp(Gen3App):
         # ranked by prob so the policy's preference order reads top-down.
         mt = self.query_one("#summary-moves", DataTable)
         mt.clear()
-        mult_by_label = (dict(zip(a.matchups.move_labels, a.matchups.multipliers))
+        # A non-damaging move (Spikes/Toxic/Protect) carries a phantom type multiplier in the
+        # obs — meaningless, so map those slots to None → an "—" eff cell, not a misleading ×mult.
+        mult_by_label = ({l: (m if ap else None)
+                          for l, m, ap in zip(a.matchups.move_labels, a.matchups.multipliers,
+                                              a.matchups.applicable)}
                          if a.matchups is not None else {})
         move_rows = [r for r in (a.actions or []) if not r.label.startswith("switch")]
         if not move_rows:
@@ -891,7 +895,11 @@ class ProberApp(Gen3App):
         t = self.query_one("#matchups-table", DataTable)
         t.clear()
         if a.matchups is not None:
-            for label, mult in zip(a.matchups.move_labels, a.matchups.multipliers):
+            for label, mult, ap in zip(a.matchups.move_labels, a.matchups.multipliers,
+                                       a.matchups.applicable):
+                if not ap:  # non-damaging move → the obs multiplier is a phantom, show n/a
+                    t.add_row(label, Text("—  n/a (non-damaging)", style="dim"))
+                    continue
                 bar = "█" * int(round(mult / 4.0 * 12))
                 t.add_row(label, Text(f"{mult:4.2f}× {bar}", style=_mult_color(mult)))
         # Incoming threat (opp → us), decoded from their_matchups. The key tell is

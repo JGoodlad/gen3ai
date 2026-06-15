@@ -112,6 +112,24 @@ def test_matchups_read_correct_dims():
     a = analyze_invocation(model, _summary(), _npz(), 0)
     assert a.matchups.multipliers == (2.0, 1.0, 0.0, 0.5)
     assert a.matchups.move_labels == ("thunderbolt", "earthquake", "move2", "move3")
+    # applicable flags which slots' multipliers mean anything: real damaging moves yes,
+    # unknown placeholder ids no (is_damaging tolerates them → False).
+    assert a.matchups.applicable == (True, True, False, False)
+
+
+def test_multiplier_meaningful_predicate():
+    """The display predicate: damaging moves (incl. Hidden Power + fixed/variable-power, which read
+    base_power 0 in the dex) keep their multiplier; genuine status/self/field moves are phantom."""
+    from main.prober.engine import _multiplier_meaningful
+    # damaging → multiplier is real
+    assert _multiplier_meaningful("thunderbolt")
+    assert _multiplier_meaningful("hiddenpower")        # bare id, but a typed ~70-BP attack
+    assert _multiplier_meaningful("hiddenpowerice")
+    assert _multiplier_meaningful("seismictoss")        # fixed-damage: immunity still applies
+    assert _multiplier_meaningful("return")             # variable-power
+    # status / self / field → phantom multiplier → n/a
+    for mv in ("spikes", "toxic", "recover", "calmmind", "protect", "roar", "", "move2"):
+        assert not _multiplier_meaningful(mv)
 
 
 def test_intervention_sweep_for_a_move():
