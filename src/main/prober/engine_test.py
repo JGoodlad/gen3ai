@@ -512,3 +512,163 @@ def test_history_slot_saliency_splits_block():
     off0 = ObsOffsets(mm_off=0, om_off=0, tm_off=0, active_block_dim=5,
                       turn_history_offset=10, turn_history_dim=12)
     assert history_slot_saliency(g, off0) == []
+
+
+# ---------------------------------------------------------------------------
+# Hidden-opponent species belief (build_belief + analyze wiring) — model-free
+# ---------------------------------------------------------------------------
+
+def test_build_belief_parses_hidden_slots():
+    from main.prober.engine import build_belief, BeliefView, BeliefSlotView
+    inv = {"belief": [
+        {"slot": 2, "top": [{"species": "tyranitar", "prob": "41.2%"},
+                            {"species": "skarmory", "prob": "18.7%"}]},
+        {"slot": 3, "top": [{"species": "metagross", "prob": "33.0%"}]},
+    ]}
+    bv = build_belief(inv)
+    assert isinstance(bv, BeliefView)
+    assert [s.slot for s in bv.slots] == [2, 3]
+    assert isinstance(bv.slots[0], BeliefSlotView)
+    assert bv.slots[0].top[0][0] == "tyranitar" and abs(bv.slots[0].top[0][1] - 0.412) < 1e-6
+    assert bv.slots[0].top[1][0] == "skarmory" and abs(bv.slots[0].top[1][1] - 0.187) < 1e-6
+    assert bv.slots[1].top == (("metagross", bv.slots[1].top[0][1]),) and abs(bv.slots[1].top[0][1] - 0.33) < 1e-6
+
+
+def test_build_belief_absent_or_empty_is_none():
+    from main.prober.engine import build_belief
+    assert build_belief({}) is None                                   # belief off (no block)
+    assert build_belief({"belief": []}) is None                       # on, but nothing hidden this turn
+    assert build_belief({"belief": [{"slot": 2, "top": []}]}) is None  # empty top → slot dropped → None
+
+
+def test_analyze_includes_belief_when_present():
+    model = FakeProbeModel(_OFF)
+    summary = _summary()
+    summary["invocations"][0]["belief"] = [
+        {"slot": 4, "top": [{"species": "gengar", "prob": "55.0%"}]}]
+    a = analyze_invocation(model, summary, _npz(), 0)
+    assert a.belief is not None
+    assert a.belief.slots[0].slot == 4
+    assert a.belief.slots[0].top[0][0] == "gengar"
+
+
+def test_analyze_belief_none_when_off():
+    model = FakeProbeModel(_OFF)
+    a = analyze_invocation(model, _summary(), _npz(), 0)   # default summary has no belief block
+    assert a.belief is None
+
+
+def test_analyze_belief_present_without_captured_state():
+    """Belief is model-free (from the summary), so it's available even on a no-state invocation."""
+    model = FakeProbeModel(_OFF)
+    summary = _summary()
+    summary["invocations"][0]["belief"] = [
+        {"slot": 5, "top": [{"species": "snorlax", "prob": "60.0%"}]}]
+    a = analyze_invocation(model, summary, _npz(has_state=0), 0)
+    assert a.has_state is False
+    assert a.belief is not None and a.belief.slots[0].top[0][0] == "snorlax"
+
+
+# ---------------------------------------------------------------------------
+# Privileged belief-vs-truth (build_belief_truth + slot-matching + analyze wiring)
+# ---------------------------------------------------------------------------
+
+def _maps10():
+    """A synthetic 10-species vocab ({num->id}, {id->num}) so the matching unit-tests need no data."""
+    return ({i: f"sp{i}" for i in range(10)}, {f"sp{i}": i for i in range(10)})
+
+
+def test_build_belief_truth_matches_and_marks_correct():
+    from main.prober.engine import build_belief_truth
+    logits = np.full((6, 10), -5.0)
+    logits[4, 7] = 8.0       # believed slot 4 strongly predicts sp7
+    logits[5, 3] = 8.0       # believed slot 5 strongly predicts sp3
+    mask = np.array([False, False, False, False, True, True])
+    true_team = ["sp1", "sp2", "sp7", "sp3"]      # sp1/sp2 revealed; sp7/sp3 hidden
+    v = build_belief_truth(logits, mask, ["sp1", "sp2"], true_team, top_k=3, maps=_maps10())
+    assert v is not None
+    by = {m.species: m for m in v.mons}
+    assert by["sp1"].revealed and by["sp2"].revealed
+    assert not by["sp7"].revealed and not by["sp3"].revealed
+    # Each hidden mon is matched to the slot that predicts it, and is the top-1 → ✓.
+    assert by["sp7"].guessed_right and by["sp7"].guess[0][0] == "sp7"
+    assert by["sp3"].guessed_right and by["sp3"].guess[0][0] == "sp3"
+    assert v.n_hidden == 2 and v.n_correct == 2
+
+
+def test_build_belief_truth_wrong_guess_marks_x_and_rank():
+    from main.prober.engine import build_belief_truth
+    logits = np.full((6, 10), -5.0)
+    logits[5, 8] = 5.0       # model's top guess is sp8 (wrong)
+    logits[5, 2] = 4.0       # the true sp2 is the model's 2nd choice
+    mask = np.array([False, False, False, False, False, True])
+    v = build_belief_truth(logits, mask, ["sp1"], ["sp1", "sp2"], top_k=3, maps=_maps10())
+    by = {m.species: m for m in v.mons}
+    assert not by["sp2"].guessed_right
+    assert by["sp2"].true_rank == 2           # sp2 was the model's 2nd choice
+    assert by["sp2"].guess[0][0] == "sp8"     # top guess was the wrong sp8
+    assert v.n_correct == 0 and v.n_hidden == 1
+
+
+def test_build_belief_truth_none_without_privileged_team():
+    from main.prober.engine import build_belief_truth
+    assert build_belief_truth(np.zeros((6, 10)), np.ones(6, bool), [], None, maps=_maps10()) is None
+    assert build_belief_truth(np.zeros((6, 10)), np.ones(6, bool), [], [], maps=_maps10()) is None
+
+
+def test_belief_view_from_logits_decodes_only_believed_slots():
+    from main.prober.engine import belief_view_from_logits
+    logits = np.full((6, 10), -5.0)
+    logits[2, 7] = 6.0; logits[2, 3] = 3.0
+    logits[0, 1] = 9.0                        # slot 0 NOT believed → must be skipped
+    mask = np.array([False, False, True, False, False, False])
+    v = belief_view_from_logits(logits, mask, top_k=2, num_to_id=_maps10()[0])
+    assert [s.slot for s in v.slots] == [2]
+    assert v.slots[0].top[0][0] == "sp7"
+    assert v.slots[0].top[0][1] > v.slots[0].top[1][1]
+
+
+def test_revealed_opp_species_from_board():
+    from main.prober.engine import revealed_opp_species, BoardView, SideBoard, MonState
+    opp = SideBoard(active_species="metagross", active_hp="100%", status="", boosts="", moves=(),
+                    bench=(MonState(species="salamence", hp="faint", fainted=True),
+                           MonState(species="jirachi", hp="80%", fainted=False)))
+    ours = SideBoard(active_species="zapdos", active_hp="100%", status="", boosts="", moves=(), bench=())
+    assert set(revealed_opp_species(BoardView(ours=ours, opp=opp))) == {"metagross", "salamence", "jirachi"}
+    assert revealed_opp_species(None) == ()
+
+
+class _BeliefFakeModel(FakeProbeModel):
+    """FakeProbeModel that also exposes a (synthetic) hidden-opp belief, so the analyze→belief_truth
+    wiring is exercised without loading a real checkpoint."""
+    def __init__(self, offsets, species_logits, believed_mask):
+        super().__init__(offsets)
+        self._sp, self._bm = species_logits, believed_mask
+
+    def belief(self, obs, mask):
+        return (self._sp, self._bm)
+
+
+def test_analyze_belief_truth_end_to_end_with_model_belief():
+    # slot 5 strongly predicts tyranitar (national-dex num 248); uses the REAL species vocab.
+    logits = np.full((6, 400), -8.0)
+    logits[5, 248] = 9.0
+    bmask = np.array([False, False, False, False, False, True])
+    model = _BeliefFakeModel(_OFF, logits, bmask)
+    a = analyze_invocation(model, _summary(), _npz(), 0, opp_team=("steelix", "tyranitar"))
+    # Anonymous belief is re-computed from the model (the summary has no belief block here).
+    assert a.belief is not None and a.belief.slots[0].top[0][0] == "tyranitar"
+    # Privileged truth: steelix revealed (it's the opp active), tyranitar hidden + correctly guessed.
+    assert a.belief_truth is not None
+    by = {m.species: m for m in a.belief_truth.mons}
+    assert by["steelix"].revealed and not by["tyranitar"].revealed
+    assert by["tyranitar"].guessed_right and by["tyranitar"].guess[0][0] == "tyranitar"
+    assert a.belief_truth.n_hidden == 1 and a.belief_truth.n_correct == 1
+
+
+def test_analyze_belief_truth_none_without_opp_team():
+    logits = np.full((6, 400), -8.0); logits[5, 248] = 9.0
+    bmask = np.array([False, False, False, False, False, True])
+    model = _BeliefFakeModel(_OFF, logits, bmask)
+    a = analyze_invocation(model, _summary(), _npz(), 0)   # no privileged team
+    assert a.belief is not None and a.belief_truth is None

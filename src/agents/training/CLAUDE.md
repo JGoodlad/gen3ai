@@ -232,7 +232,10 @@ unit count, not opponent count). The whole mechanism lives in the **`eval_shardi
 (below); when all workers finish the parent merges → TensorBoard + TUI + best-model (the winning
 snapshot is promoted by copy, not re-saved). Forensic traces land under
 `<run_dir>/eval_traces/step_<N>/<opponent>/` as a per-captured-battle triple (`write_battle_record`,
-`battle_recorder.py`): `<outcome>_s<shard>_NNN_summary.json` (the human-readable per-decision dump) +
+`battle_recorder.py`): `<outcome>_s<shard>_NNN_summary.json` (the human-readable per-decision dump —
+each invocation also carries a **`belief`** block, the model's top-`BELIEF_TOPK` (3) most-likely species
+per still-HIDDEN opp slot, present ONLY when the hidden-opponent belief is on and a slot is un-revealed;
+`RLPlayer._decode_belief` → `inference/belief_decode`, see `src/agents/model/CLAUDE.md`) +
 `<outcome>_s<shard>_NNN_states.npz` (raw obs/logits/values **+ the chosen `actions`** for the prober
 and offline obs replay) +
 **`<outcome>_s<shard>_NNN_replay.html`** — a self-contained, **browser-watchable** Showdown replay of

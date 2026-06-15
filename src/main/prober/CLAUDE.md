@@ -26,7 +26,12 @@ the single source of truth — change the analysis once, both surfaces follow.
 - **`model.py`** — `ProbeModel`: the torch boundary. `ProbeModel.load(ckpt)` does
   raw `MaskablePPO.load` (no env, no `ModelVersion` check — matching the legacy
   CLI) and resolves `ObsOffsets` once from `enc.get_layout()`. `action_dist` /
-  `logit_grad` are the only forward/backward passes. **On load it silences the
+  `logit_grad` are the only forward/backward passes (`belief` adds one when a
+  belief-on checkpoint is loaded — see below). **`ProbeModel.belief(obs, mask)`**
+  runs one clean forward and reads the belief head's stash
+  (`features_extractor.last_belief_logits["species"]` + `last_opp_believed_mask`) →
+  `(species_logits[6,n_species], believed_mask[6])`, or `None` when the checkpoint
+  has no belief head; the engine decodes/matches it (the OPP-TEAM belief, below). **On load it silences the
   policy's `ObservationDebugger`** (a `--log-level periodic` checkpoint prints a
   "DEEP TRACE" banner on every forward — pure noise that would corrupt the
   Textual screen). Three **non-torch decode helpers** also live here (they need the encoder,
@@ -120,7 +125,29 @@ panels** (NOT DataTables, so a mon's **moveset spans the full width** below it a
 **SWITCHES** (each target's prob · **hp** colour-bar · **status/volatiles** · **risk-in** =
 `incoming.per_slot_pko`, with the held **item inlined into the name** as `(leftovers)` lowercase)
 and **OPP TEAM** (the opponent's REVEALED mons — active ▶ then bench — name · hp · status · item,
-the mirror of our switches; Gen3 has no team preview so only revealed mons appear). **Mon names are
+the mirror of our switches; Gen3 has no team preview so only revealed mons appear) — and, when the
+**hidden-opponent belief** was enabled for the run (`--opp-belief-aux-coef>0`), the model's guess for
+the still-hidden mons below it. Two forms, best-available wins:
+- **Privileged truth + matched guess** (`a.belief_truth`, `engine.build_belief_truth` → `BeliefTruthView`,
+  `app._append_belief_truth`) when the trace has a **`reconstruction.json`** sibling (bridge-eval referee
+  data): shows the opponent's **FULL** team — revealed mons listed, then each STILL-HIDDEN mon with the
+  model's species guess **slot-matched** to it (a `✓`/`✗` for top-1, the true species highlighted in the
+  guess list, its rank `(#k)` when not top-1) + a `n_correct/n_hidden` header. The believed slots are
+  anonymous, so they're **Hungarian-assigned** to the true hidden mons by min `-log P(true species | slot)`
+  — **the SAME species-CE cost the training aux loss matches on** (`instrumented_ppo._belief_aux_loss`), so
+  the correspondence is how the model itself aligns the slots (`scipy.optimize.linear_sum_assignment`). The
+  privileged team is loaded by `app._load_opp_team` (the `reconstruction.json` sibling → `team_details`, file
+  IO kept OUT of the pure engine) and threaded into `analyze_invocation(opp_team=…)`.
+- **Anonymous belief** (`a.belief`, `BeliefView`, `app._append_belief`) as the fallback (no reconstruction
+  record / websocket trace): the per-unrevealed-slot top-k `species NN%` guesses without a true-mon match.
+
+The belief itself is **re-computed from the loaded model** each analysis (`ProbeModel.belief` → the belief
+head's per-slot species logits + believed mask → `engine.belief_view_from_logits`; one clean forward, since
+the intervention-sweep/saliency passes clobber the extractor's stash), so it works for **any belief-on
+checkpoint** — including runs whose recorder predates the summary's per-decision `belief` block. `engine.build_belief`
+reads that summary block as a **model-free fallback** (available even without a captured `.npz`). Both
+`belief` and `belief_truth` ride the `analyze` JSON output (`asdict`). `None`/absent on a belief-off run (then
+only the revealed mons show). **Mon names are
 blue** (`_MON_COLOR`); **disabled slots** (a fainted mon / an illegal switch / a no-PP move) render
 **grey** (`_DISABLED_GREY`), NOT the red of a low value — so "dead/unavailable" reads differently
 from "alive but low HP = real danger". Hidden Power shows its **type** (`hiddenpower(fire)`). Helpers

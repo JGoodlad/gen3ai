@@ -109,6 +109,10 @@ class BattleRecorder:
             opp_section["boosts"] = opp_boosts
         opp_section["bench"] = self._opp_bench_summary(live)
 
+        # The model's top-k species guess for each still-hidden opp slot (only when the hidden-opponent
+        # belief is on AND a slot is unrevealed; see RLPlayer._decode_belief). Sits right after `opp`
+        # — "the board, then what we believe is still hidden" — and is omitted entirely otherwise.
+        belief = (state or {}).get("belief")
         entry = {
             "i": len(self._invocations) + 1,
             "turn": curr_ctx.turn,
@@ -116,6 +120,7 @@ class BattleRecorder:
             "chosen": chosen,
             "our": our_section,
             "opp": opp_section,
+            **({"belief": belief} if belief else {}),
             "outcome": None,
             "actions": self._all_action_labels(live, probs, mask, legal),
         }
@@ -489,6 +494,11 @@ def write_battle_record(out_prefix: str, recorder: "BattleRecorder", battle, ste
         text = re.sub(
             r'\{\s*"action":\s*"([^"]+)",\s*"hp_delta":\s*"([^"]+)"\s*\}',
             r'{"action": "\1", "hp_delta": "\2"}', text,
+        )
+        # Belief leaves: one species-guess per line ({"species": "tyranitar", "prob": "41.2%"}).
+        text = re.sub(
+            r'\{\s*"species":\s*"([^"]+)",\s*"prob":\s*"([^"]+)"\s*\}',
+            r'{"species": "\1", "prob": "\2"}', text,
         )
         f.write(text)
 

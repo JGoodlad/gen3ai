@@ -273,6 +273,29 @@ class ProbeModel:
             pi, vf = self._policy.extract_features({"observation": ot, "action_mask": mt})
         return {"pi": pi[0].detach().numpy(), "vf": vf[0].detach().numpy()}
 
+    def belief(self, obs: np.ndarray, mask: np.ndarray):
+        """The hidden-opponent SPECIES belief the loaded model computes for THIS obs — the belief
+        head's per-slot species logits + which opp slots are believed (un-revealed). Runs ONE clean
+        forward (the intervention-sweep / saliency passes overwrite the extractor's stash, so reading
+        a leftover would be wrong) and returns ``(species_logits[6, n_species], believed_mask[6] bool)``
+        as numpy, or ``None`` when the checkpoint has no belief head (the run trained belief-off). The
+        decode → top-k species + the Hungarian truth-match live in the pure engine."""
+        import torch
+
+        extractor = getattr(self._policy, "features_extractor", None)
+        if extractor is None:
+            return None
+        ot = torch.as_tensor(obs).unsqueeze(0)
+        mt = torch.as_tensor(mask).unsqueeze(0)
+        with torch.no_grad():
+            self._policy.extract_features({"observation": ot, "action_mask": mt})
+        logits = getattr(extractor, "last_belief_logits", None)
+        bmask = getattr(extractor, "last_opp_believed_mask", None)
+        if logits is None or bmask is None or "species" not in logits:
+            return None
+        return (logits["species"][0].detach().cpu().numpy(),
+                bmask[0].detach().cpu().numpy().astype(bool))
+
     def value_grad(self, obs: np.ndarray, mask: np.ndarray) -> np.ndarray:
         """Return |d V(s) / d obs| as a per-dim array — the CRITIC's input sensitivity.
 

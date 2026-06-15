@@ -246,7 +246,14 @@ predicts the hidden mon's **species (CE) + moves (multi-label BCE)** (role impli
 species' own embeddings); the head returns a logits **dict** so a later BYOL/latent-matching target
 swaps in cleanly. Logits are stashed at `features_extractor.last_belief_logits` each forward (None
 when off) and consumed ONLY by the aux loss (`InstrumentedMaskablePPO._belief_aux_loss`, folded at
-`opp_belief_aux_coef`) — privileged labels never enter the forward. Two version fields:
+`opp_belief_aux_coef`) — privileged labels never enter the forward. The forward ALSO stashes
+`features_extractor.last_opp_believed_mask` (`ctx.opp_believed_mask`, `[B,6]` bool — which opp slots
+are un-revealed): a read-only side stash (no effect on the forward output → off-path stays
+byte-identical) so eval/forensic tooling can decode the species head's per-slot prediction for exactly
+the hidden slots. `RLPlayer._decode_belief` (`inference/player.py`) reads both at trace-capture time and
+`inference/belief_decode.decode_species_belief` (the inverse of `observation/belief_labels` — logit
+index == national-dex num) turns them into the per-hidden-slot top-k species the eval `summary.json`'s
+per-decision `belief` block shows ("what does the policy think the unrevealed mons are?"). Two version fields:
 `opp_belief_slots` (bool) is the **state_dict-changing arch toggle** — gated in `check_compatible`
 like `opp_belief_cls_k`, OFF = baseline byte-for-byte (NO `ARCH_SIGNATURE` bump), hard-requires
 `attend_unrevealed_opponents`; `opp_belief_aux_coef` (float) is a **training-only** loss weight (like

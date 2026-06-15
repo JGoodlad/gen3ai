@@ -23,6 +23,7 @@ from agents.action.mask_generator import Gen3ActionMasker
 from agents.observation.turn_delta_encoder import TurnDeltaEncoder
 from agents.training.episode_tracker import EpisodeTracker
 from agents.training.stall import StallConfig, StallLogger
+from agents.inference.belief_decode import decode_species_belief
 from utils import race_trace  # debug ring buffer (GEN3_RACE_TRACE); no-op when off
 
 # Self-play opponent re-decide budget. When the live battle advances under the opponent's
@@ -288,8 +289,26 @@ class RLPlayer(Gen3Player):
                 "obs": np.asarray(obs, dtype=np.float32),
                 "logits": logits[0].cpu().numpy(),
                 "value": value,
+                # The model's top-k species guess for each still-HIDDEN opp slot (None unless the
+                # hidden-opponent belief is enabled) — "what does it think the unrevealed mons are?".
+                "belief": self._decode_belief(),
             }
         return idx, probs, mask
+
+    def _decode_belief(self) -> Optional[list]:
+        """Decode the belief head's per-slot species prediction for the still-hidden opponent slots
+        (forensic trace only). Reads the logits the extractor stashed on this same forward
+        (``last_belief_logits["species"]``) + the believed-slot mask (``last_opp_believed_mask``);
+        returns None when the hidden-opponent belief is off / no slot is hidden. See belief_decode.py.
+        """
+        extractor = getattr(self.model.policy, "features_extractor", None)
+        logits = getattr(extractor, "last_belief_logits", None)
+        mask = getattr(extractor, "last_opp_believed_mask", None)
+        if logits is None or mask is None or "species" not in logits:
+            return None
+        species_logits = logits["species"][0].detach().cpu().numpy()   # [n_slots, n_species]
+        believed = mask[0].detach().cpu().numpy()                      # [n_slots] bool
+        return decode_species_belief(species_logits, believed) or None
 
     def choose_move(self, battle):
         forfeit = self._handle_stall(battle, "INFERENCE_STALL")

@@ -414,3 +414,56 @@ def test_write_battle_record_replay_failure_keeps_forensic_trace(tmp_path):
     assert os.path.exists(prefix + "_summary.json")
     assert os.path.exists(prefix + "_states.npz")
     assert not os.path.exists(prefix + "_replay.html")
+
+
+# ---------------------------------------------------------------------------
+# Hidden-opponent belief field (decoded by RLPlayer, passed through via `state`)
+# ---------------------------------------------------------------------------
+
+def test_record_includes_belief_when_state_carries_it():
+    """A `state` carrying the decoded hidden-opp belief surfaces as the entry's `belief` field,
+    placed right after `opp` ('the board, then what we think is still hidden')."""
+    zapdos = _FakeMon("zapdos", 1.0)
+    opp = _FakeMon("tyranitar", 1.0)
+    b1 = _battle([zapdos], [opp], "zapdos", "tyranitar", turn=1, move_ids=["thunderbolt"])
+    belief = [{"slot": 3, "top": [{"species": "skarmory", "prob": "40.0%"},
+                                  {"species": "metagross", "prob": "20.0%"}]}]
+
+    rec = _rec()
+    rec.record(b1, 6, _probs(), _mask(6), state={"belief": belief})
+    entry = rec._pending_entry
+
+    assert entry["belief"] == belief
+    keys = list(entry.keys())
+    assert keys.index("belief") == keys.index("opp") + 1
+    assert keys.index("belief") < keys.index("actions")
+
+
+def test_record_omits_belief_when_absent_or_empty():
+    """No `belief` key when the belief is off (no state / None) or no slot is hidden ([])."""
+    zapdos = _FakeMon("zapdos", 1.0)
+    opp = _FakeMon("tyranitar", 1.0)
+    b1 = _battle([zapdos], [opp], "zapdos", "tyranitar", turn=1, move_ids=["thunderbolt"])
+
+    for state in (None, {"belief": None}, {"belief": []}):
+        rec = _rec()
+        rec.record(b1, 6, _probs(), _mask(6), state=state)
+        assert "belief" not in rec._pending_entry
+
+
+def test_write_battle_record_collapses_belief_leaves(tmp_path):
+    """Each species-guess leaf is collapsed onto one line, like the action/prob leaves."""
+    import json
+    from agents.training.battle_recorder import write_battle_record
+
+    summary = {"meta": {"result": "LOSS"},
+               "invocations": [{"belief": [
+                   {"slot": 3, "top": [{"species": "skarmory", "prob": "40.0%"}]}]}]}
+    prefix = str(tmp_path / "loss_003")
+    write_battle_record(prefix, _StubRecorder(summary, {}), _ReplayBattle(), step=5)
+
+    with open(prefix + "_summary.json") as f:
+        text = f.read()
+    data = json.loads(text)
+    assert data["invocations"][0]["belief"][0]["top"][0]["species"] == "skarmory"
+    assert '{"species": "skarmory", "prob": "40.0%"}' in text

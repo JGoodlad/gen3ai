@@ -13,8 +13,10 @@ import numpy as np
 from textual.widgets import Collapsible, DataTable, ListView, Static, Tree
 
 from agents.action.constants import MOVE_START
-from main.prober.app import _DISABLED_GREY, PaneSplitter, ProberApp, _hp_bar
+from main.prober.app import _DISABLED_GREY, PaneSplitter, ProberApp, _append_belief, _hp_bar
+from main.prober.engine import BeliefSlotView, BeliefView
 from main.prober.model import ObsOffsets
+from rich.text import Text
 
 
 def test_hp_bar_disabled_is_grey_not_red():
@@ -23,6 +25,61 @@ def test_hp_bar_disabled_is_grey_not_red():
     assert all(sp.style == _DISABLED_GREY for sp in dead.spans)
     alive_low = _hp_bar("8%")                       # alive but low → red-ish, NOT the disabled grey
     assert all(sp.style != _DISABLED_GREY for sp in alive_low.spans)
+
+
+def test_append_belief_renders_hidden_slot_guesses():
+    """The believed-hidden section lists each hidden slot's top species + confidence."""
+    out = Text("OPP TEAM\nmetagross 46%")
+    belief = BeliefView(slots=(
+        BeliefSlotView(slot=2, top=(("tyranitar", 0.41), ("skarmory", 0.19))),
+        BeliefSlotView(slot=3, top=(("celebi", 0.33),)),
+    ))
+    _append_belief(out, belief)
+    s = out.plain
+    assert "believed hidden" in s
+    assert "tyranitar 41%" in s and "skarmory 19%" in s and "celebi 33%" in s
+
+
+def test_append_belief_noop_when_off_or_empty():
+    """No believed section when the belief is off (None) or carries no hidden slots — off-runs are
+    unchanged."""
+    for belief in (None, BeliefView(slots=())):
+        out = Text("OPP TEAM")
+        _append_belief(out, belief)
+        assert out.plain == "OPP TEAM"
+
+
+def test_append_belief_truth_renders_truth_and_matched_guess():
+    """The privileged view lists revealed mons, then each hidden mon with ✓/✗ + its matched guess and
+    (when wrong) the rank the model gave the true species."""
+    from main.prober.app import _append_belief_truth
+    from main.prober.engine import BeliefTruthView, OppMonTruth
+
+    out = Text("OPP")
+    view = BeliefTruthView(mons=(
+        OppMonTruth(species="metagross", revealed=True),
+        OppMonTruth(species="tyranitar", revealed=False,
+                    guess=(("tyranitar", 0.55), ("skarmory", 0.20)), guessed_right=True, true_rank=1),
+        OppMonTruth(species="celebi", revealed=False,
+                    guess=(("blissey", 0.40), ("celebi", 0.25)), guessed_right=False, true_rank=2),
+    ), n_hidden=2, n_correct=1)
+    _append_belief_truth(out, view)
+    s = out.plain
+    assert "truth + belief" in s and "1/2 top-1" in s
+    assert "metagross" in s                       # revealed mon under 'seen'
+    assert "✓" in s and "✗" in s
+    assert "tyranitar 55%" in s and "celebi 25%" in s
+    assert "(#2)" in s                            # celebi's true-species rank, since it wasn't top-1
+
+
+def test_append_belief_truth_noop_when_empty():
+    from main.prober.app import _append_belief_truth
+    from main.prober.engine import BeliefTruthView
+
+    out = Text("OPP")
+    _append_belief_truth(out, None)
+    _append_belief_truth(out, BeliefTruthView(mons=()))
+    assert out.plain == "OPP"
 
 # Small synthetic obs layout (mirrors engine_test).
 _OFF = ObsOffsets(mm_off=10, om_off=20, tm_off=164, active_block_dim=5,

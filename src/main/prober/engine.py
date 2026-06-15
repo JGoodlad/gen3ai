@@ -21,6 +21,7 @@ from dataclasses import dataclass, field
 import numpy as np
 
 from agents.action.constants import MOVE_END, MOVE_START
+from agents.inference.belief_decode import BELIEF_TOPK
 
 # Sweep points for the intervention (×-multipliers); stored /4 into the obs.
 _SWEEP_MULTIPLIERS = (0.0, 1.0, 2.0, 4.0)
@@ -184,6 +185,49 @@ class BoardView:
 
 
 @dataclass(frozen=True)
+class BeliefSlotView:
+    """One still-HIDDEN opponent slot's species belief: the model's top-k guesses,
+    `(species, prob)` descending. `slot` is the encoder opp-slot index it filled."""
+    slot: int
+    top: "tuple[tuple[str, float], ...]"
+
+
+@dataclass(frozen=True)
+class BeliefView:
+    """The hidden-opponent species belief at this decision — what the model thinks each STILL-HIDDEN
+    opponent mon is (decoded from the belief head's per-slot species logits, either re-computed from
+    the loaded model or read from the summary's `belief` block). The slots are ANONYMOUS (a set
+    prediction); `BeliefTruthView` is the privileged, slot-MATCHED version. Present ONLY when the
+    hidden-opponent belief was enabled (`--opp-belief-aux-coef>0`); `None` otherwise."""
+    slots: "tuple[BeliefSlotView, ...]"
+
+
+@dataclass(frozen=True)
+class OppMonTruth:
+    """One opponent mon's PRIVILEGED truth + the model's matched guess. `revealed` = seen by this
+    decision (we already know it). For a still-HIDDEN mon, `guess` is the top-k species of the
+    Hungarian-matched believed slot, `guessed_right` = our top-1 == this true mon, and `true_rank` is
+    the 1-based rank the model gave the TRUE species (−1 if revealed / unmatched)."""
+    species: str
+    revealed: bool
+    guess: "tuple[tuple[str, float], ...]" = ()
+    guessed_right: bool = False
+    true_rank: int = -1
+
+
+@dataclass(frozen=True)
+class BeliefTruthView:
+    """PRIVILEGED belief-vs-truth: the opponent's FULL team (from the trace's `reconstruction.json`
+    referee record), each mon tagged revealed/hidden, and for each HIDDEN mon the model's species
+    guess — its believed slot Hungarian-matched to the true hidden mons by the SAME species-CE cost
+    the training aux loss assigns on. Built only when BOTH the privileged team AND a belief-on
+    checkpoint are available; `None` otherwise (then the anonymous `BeliefView` is shown instead)."""
+    mons: "tuple[OppMonTruth, ...]"
+    n_hidden: int = 0
+    n_correct: int = 0     # hidden mons whose true species was the model's top-1 guess
+
+
+@dataclass(frozen=True)
 class InvocationAnalysis:
     meta: TraceMeta
     inv_index: int
@@ -209,6 +253,8 @@ class InvocationAnalysis:
     flags: "tuple[str, ...]" = ()                  # switch/uncertain/faint/disagree
     board: "BoardView | None" = None               # board state at this decision
     field: "dict | None" = None                    # weather/spikes/screens (decoded from obs)
+    belief: "BeliefView | None" = None             # hidden-opp species belief (anonymous slots)
+    belief_truth: "BeliefTruthView | None" = None  # privileged truth + slot-matched guess (None unless recon+belief)
 
 
 # ---------------------------------------------------------------------------
@@ -333,6 +379,132 @@ def build_board(inv: dict, team: "dict | None" = None) -> BoardView:
     moves = tuple(k for k in labels[MOVE_START:MOVE_END] if not _MOVE_PLACEHOLDER_RE.fullmatch(k))
     return BoardView(ours=_side_board(inv.get("our", {}), moves, norm),
                      opp=_side_board(inv.get("opp", {}), (), norm))
+
+
+def build_belief(inv: dict) -> "BeliefView | None":
+    """The hidden-opponent species belief at a decision — model-free, parsed from the summary
+    invocation's ``belief`` block (the recorder writes it only when the belief was enabled). Each
+    entry is ``{"slot": int, "top": [{"species": str, "prob": "NN.N%"}, ...]}``. Returns ``None`` when
+    the block is absent (belief off) or empty (no hidden slot this turn) so off-runs show nothing."""
+    raw = inv.get("belief")
+    if not raw:
+        return None
+    slots = []
+    for entry in raw:
+        top = tuple((str(t.get("species", "?")), parse_pct(t.get("prob", "0%")))
+                    for t in entry.get("top", []))
+        if top:
+            slots.append(BeliefSlotView(slot=int(entry.get("slot", -1)), top=top))
+    return BeliefView(slots=tuple(slots)) if slots else None
+
+
+_SPECIES_MAPS = None
+
+
+def _species_maps():
+    """Cached ``({num->id}, {id->num})`` over the gen3 species vocab — the inverse of the belief
+    labels' species_to_num, used to decode the species head (index == national-dex num) and to look
+    up a true mon's num for the match cost."""
+    global _SPECIES_MAPS
+    if _SPECIES_MAPS is None:
+        from agents.gen3_data import species as _sp
+        raw = _sp.raw()
+        num_to_id = {int(v["num"]): sid for sid, v in raw.items() if v.get("num")}
+        id_to_num = {sid: int(v["num"]) for sid, v in raw.items() if v.get("num")}
+        _SPECIES_MAPS = (num_to_id, id_to_num)
+    return _SPECIES_MAPS
+
+
+def _softmax(row) -> np.ndarray:
+    r = np.asarray(row, dtype=np.float64)
+    e = np.exp(r - r.max())
+    return e / e.sum()
+
+
+def belief_view_from_logits(species_logits, believed_mask, top_k: int = BELIEF_TOPK,
+                            num_to_id=None) -> "BeliefView | None":
+    """A `BeliefView` (anonymous per-slot top-k) decoded straight from the model's stashed species
+    logits — the re-computed counterpart of `build_belief` (which parses the summary). `[6,n_species]`
+    logits indexed by national-dex num; only believed slots (mask True) are decoded."""
+    num_to_id = num_to_id or _species_maps()[0]
+    logits = np.asarray(species_logits, dtype=np.float64)
+    mask = np.asarray(believed_mask, dtype=bool)
+    k = max(0, min(top_k, logits.shape[1]))
+    slots = []
+    for i in range(logits.shape[0]):
+        if i >= mask.shape[0] or not bool(mask[i]):
+            continue
+        p = _softmax(logits[i])
+        order = np.argsort(p)[::-1][:k]
+        top = tuple((num_to_id.get(int(n), f"num_{int(n)}"), float(p[n])) for n in order)
+        if top:
+            slots.append(BeliefSlotView(slot=i, top=top))
+    return BeliefView(slots=tuple(slots)) if slots else None
+
+
+def revealed_opp_species(board: "BoardView | None") -> "tuple[str, ...]":
+    """The opponent species REVEALED by this decision (active + revealed bench), from the board."""
+    if board is None:
+        return ()
+    seen = [board.opp.active_species] + [m.species for m in board.opp.bench]
+    return tuple(s for s in seen if s and s != "NONE")
+
+
+def build_belief_truth(species_logits, believed_mask, revealed_species, true_team,
+                       top_k: int = BELIEF_TOPK, maps=None) -> "BeliefTruthView | None":
+    """Match the model's per-slot species belief to the opponent's TRUE hidden mons (privileged, from
+    `reconstruction.json`) and tag every true mon revealed/hidden.
+
+    The believed slots are anonymous, so they are **Hungarian-assigned** to the still-hidden true mons
+    by minimum total ``-log P(true species | slot)`` — the SAME species-CE cost the training aux loss
+    matches on (`instrumented_ppo._belief_aux_loss`), so the displayed correspondence is how the model
+    itself aligns the slots. Returns `None` when there's no privileged team."""
+    if true_team is None or len(true_team) == 0:
+        return None
+    from scipy.optimize import linear_sum_assignment
+    num_to_id, id_to_num = maps or _species_maps()
+    logits = np.asarray(species_logits, dtype=np.float64)
+    mask = np.asarray(believed_mask, dtype=bool)
+    revealed = {_norm_species(s) for s in (revealed_species or ())}
+    true_ids = [_norm_species(s) for s in true_team]
+    hidden_true = [s for s in true_ids if s not in revealed]
+    believed_slots = [i for i in range(logits.shape[0]) if i < mask.shape[0] and bool(mask[i])]
+    probs = {i: _softmax(logits[i]) for i in believed_slots}
+
+    slot_for_hidden: "dict[int, int]" = {}     # hidden_true index -> believed slot index
+    if believed_slots and hidden_true:
+        cost = np.full((len(believed_slots), len(hidden_true)), 50.0)   # large finite default
+        for a, i in enumerate(believed_slots):
+            for b, sp in enumerate(hidden_true):
+                num = id_to_num.get(sp)
+                if num is not None and num < logits.shape[1]:
+                    cost[a, b] = -np.log(max(float(probs[i][num]), 1e-12))
+        rows, cols = linear_sum_assignment(cost)
+        for a, b in zip(rows, cols):
+            slot_for_hidden[int(b)] = believed_slots[int(a)]
+
+    hidden_idx_of = {sp: b for b, sp in enumerate(hidden_true)}   # species unique under the species clause
+    k = max(0, min(top_k, logits.shape[1]))
+    mons, n_correct = [], 0
+    for sp in true_ids:
+        if sp in revealed:
+            mons.append(OppMonTruth(species=sp, revealed=True))
+            continue
+        slot = slot_for_hidden.get(hidden_idx_of.get(sp))
+        if slot is None:
+            mons.append(OppMonTruth(species=sp, revealed=False))
+            continue
+        p = probs[slot]
+        order = np.argsort(p)[::-1]
+        top = tuple((num_to_id.get(int(n), f"num_{int(n)}"), float(p[n])) for n in order[:k])
+        num = id_to_num.get(sp)
+        right = num is not None and int(order[0]) == num
+        rank = (int(np.where(order == num)[0][0]) + 1) if num is not None else -1
+        n_correct += int(right)
+        mons.append(OppMonTruth(species=sp, revealed=False, guess=top,
+                                guessed_right=right, true_rank=rank))
+    n_hidden = sum(1 for m in mons if not m.revealed)
+    return BeliefTruthView(mons=tuple(mons), n_hidden=n_hidden, n_correct=n_correct)
 
 
 def build_meta(summary: dict, summary_path: str = "", npz_path: "str | None" = None) -> TraceMeta:
@@ -544,8 +716,13 @@ def decode_incoming_belief(obs: np.ndarray, off) -> "IncomingBeliefView | None":
 # ---------------------------------------------------------------------------
 
 def analyze_invocation(model, summary: dict, npz, inv_index: int,
-                       summary_path: str = "", npz_path: "str | None" = None) -> InvocationAnalysis:
-    """Analyze a single decision point. Pure given ``model`` (the torch boundary)."""
+                       summary_path: str = "", npz_path: "str | None" = None,
+                       opp_team: "tuple[str, ...] | None" = None) -> InvocationAnalysis:
+    """Analyze a single decision point. Pure given ``model`` (the torch boundary).
+
+    ``opp_team`` is the opponent's PRIVILEGED full team (species ids from the trace's
+    `reconstruction.json` sibling, loaded by the caller — kept out of this pure engine); when given
+    AND the model exposes the belief, the result carries the slot-MATCHED `belief_truth`."""
     meta = build_meta(summary, summary_path, npz_path)
     inv = summary["invocations"][inv_index]
     chosen = inv["chosen"]
@@ -560,12 +737,14 @@ def analyze_invocation(model, summary: dict, npz, inv_index: int,
     # OPP's revealed items + both sides' revealed movesets.
     team = _our_items(summary)
     board = build_board(inv, team)   # model-free; available even without captured state
+    belief = build_belief(inv)       # model-free summary fallback (re-computed below when a model + state exist)
+    belief_truth = None
     if not _has_state(npz, inv_index):
         return InvocationAnalysis(
             **common, has_state=False, actions=(), matchups=None, sweep=None,
             saliency=None, value_saliency=None, threats=None, incoming=None,
             warnings=(f"invocation {inv_index} has no captured state",),
-            outcome=outcome, flags=summary_flags(inv), board=board,
+            outcome=outcome, flags=summary_flags(inv), board=board, belief=belief,
         )
 
     obs = npz["obs"][inv_index].astype(np.float32)
@@ -589,6 +768,20 @@ def analyze_invocation(model, summary: dict, npz, inv_index: int,
     acts = inv["actions"]
     labels = list(acts.keys())
     mask = np.array([1 if acts[k]["valid"] else 0 for k in labels], dtype=np.int8)
+
+    # Hidden-opp belief: prefer the loaded model's RE-COMPUTED belief (works for ANY belief-on
+    # checkpoint, incl. runs whose recorder predates the summary `belief` block) over the summary
+    # fallback; with the privileged opponent team, also build the slot-MATCHED truth view.
+    belief_fn = getattr(model, "belief", None)
+    if belief_fn is not None:
+        raw = belief_fn(obs, mask)
+        if raw is not None:
+            sp_logits, bmask = raw
+            mb = belief_view_from_logits(sp_logits, bmask)
+            if mb is not None:
+                belief = mb
+            if opp_team:
+                belief_truth = build_belief_truth(sp_logits, bmask, revealed_opp_species(board), opp_team)
 
     probs, _ = model.action_dist(obs, mask)
     actions = _faithfulness(probs, labels, acts, chosen, mask)
@@ -633,6 +826,7 @@ def analyze_invocation(model, summary: dict, npz, inv_index: int,
         saliency=saliency, value_saliency=value_saliency, threats=threats, incoming=incoming,
         warnings=(), outcome=outcome, value=value,
         rerun_argmax=rerun_argmax, agrees=agrees, flags=flags, board=board, field=field,
+        belief=belief, belief_truth=belief_truth,
     )
 
 

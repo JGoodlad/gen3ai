@@ -181,6 +181,7 @@ class ProberApp(Gen3App):
 
         self._tree_model: "TraceTree | None" = None
         self._summary_cache: "dict[str, dict]" = {}
+        self._opp_team_cache: "dict[str, tuple | None]" = {}   # privileged opp team per trace (reconstruction.json)
         self._current_battle: "BattleTrace | None" = None
         self._current_summary: "dict | None" = None
         self._analyze_token = 0
@@ -347,6 +348,30 @@ class ProberApp(Gen3App):
                 summ = json.load(f)
             self._summary_cache[battle.summary_path] = summ
         return summ
+
+    def _load_opp_team(self, battle: BattleTrace) -> "tuple | None":
+        """The opponent's FULL team (species ids) from the trace's `reconstruction.json` sibling —
+        PRIVILEGED referee data (bridge-eval traces only). `None` when the sibling is absent or
+        unparseable (websocket/older traces) — the Summary then shows only the revealed mons + the
+        anonymous belief. Cached per battle (file IO kept out of the pure engine)."""
+        key = battle.summary_path
+        if key in self._opp_team_cache:
+            return self._opp_team_cache[key]
+        team = None
+        recon = (key[: -len("_summary.json")] + "_reconstruction.json"
+                 if key.endswith("_summary.json") else None)
+        if recon and os.path.exists(recon):
+            try:
+                from utils.bridge.reconstruction import ReconstructionRecord
+                rec = ReconstructionRecord.load(recon)
+                side = rec.side_of(rec.trainee_username) if rec.trainee_username else None
+                if side:
+                    opp = "p2" if side == "p1" else "p1"
+                    team = tuple(m["species"] for m in rec.team_details(opp))
+            except Exception:  # noqa: BLE001 — privileged team is best-effort; degrade to no truth
+                team = None
+        self._opp_team_cache[key] = team
+        return team
 
     def _select_battle(self, battle: BattleTrace) -> None:
         self._current_battle = battle
@@ -575,6 +600,7 @@ class ProberApp(Gen3App):
             analysis = analyze_invocation(
                 self._model, self._load_summary(battle), npz, inv_index,
                 summary_path=battle.summary_path, npz_path=battle.npz_path,
+                opp_team=self._load_opp_team(battle),
             )
         except Exception as e:  # noqa: BLE001 — render analysis errors, don't crash
             self.call_from_thread(self._on_analysis_error, str(e), token)
@@ -779,9 +805,15 @@ class ProberApp(Gen3App):
                 sw.append_text(ml)
         self.query_one("#summary-switches", Static).update(sw)
 
-        # OPP TEAM — the opponent's revealed mons (the mirror of our switches), shared team panel.
-        self.query_one("#summary-opp", Static).update(
-            _team_panel_text(a.board.opp if a.board is not None else None))
+        # OPP TEAM — the opponent's revealed mons (the mirror of our switches), shared team panel;
+        # plus the model's belief about the hidden mons. With the PRIVILEGED truth (reconstruction.json)
+        # show the slot-MATCHED truth-vs-guess (✓/✗ per hidden mon); otherwise the anonymous belief.
+        opp_panel = _team_panel_text(a.board.opp if a.board is not None else None)
+        if a.belief_truth is not None:
+            _append_belief_truth(opp_panel, a.belief_truth)
+        else:
+            _append_belief(opp_panel, a.belief)
+        self.query_one("#summary-opp", Static).update(opp_panel)
 
     def _render_team(self, a: InvocationAnalysis) -> None:
         """Full team detail: every mon's moveset (ours complete; opp's revealed-only) + hp ·
@@ -1264,6 +1296,60 @@ def _team_panel_text(side, *, name_w: int = _PANEL_NAME_W, hp_w: int = _PANEL_HP
             out.append("\n")
             out.append_text(ml)
     return out
+
+
+def _append_belief(out: Text, belief) -> None:
+    """Append the model's species guess for each still-HIDDEN opp slot below the revealed OPP TEAM —
+    the believed complement of the revealed mons (Gen3 has no team preview, so the rest of the
+    opponent's team is unseen). Each hidden slot is one line of `species NN%` guesses (blue species +
+    confidence-graded prob, most-likely first). A no-op unless the hidden-opponent belief was enabled
+    for the run (the trace carries a `belief` block) — so off-runs show only the revealed mons."""
+    if belief is None or not belief.slots:
+        return
+    out.append("\n\nbelieved hidden", style="bold")
+    out.append("  (model's guess)", style="dim")
+    for i, slot in enumerate(belief.slots, 1):
+        out.append(f"\n{i:>2}  ", style="dim")
+        for j, (species, prob) in enumerate(slot.top):
+            if j:
+                out.append(" · ", style="dim")
+            out.append(species, style=_MON_COLOR)
+            out.append(f" {prob * 100:.0f}%", style=gradient_color(prob))
+
+
+def _append_belief_truth(out: Text, view) -> None:
+    """Append the PRIVILEGED belief-vs-truth (from the reconstruction.json referee record + a belief-on
+    checkpoint): the opponent's FULL team — revealed mons listed, then each STILL-HIDDEN mon with the
+    model's species guess for it, the believed slot Hungarian-matched to the true mon (the same
+    matching training uses). A `✓`/`✗` marks whether the model's TOP guess was the true mon; the true
+    species is highlighted within the guess list, with its rank `(#k)` when it wasn't the top pick."""
+    if view is None or not view.mons:
+        return
+    seen = [m.species for m in view.mons if m.revealed]
+    hidden = [m for m in view.mons if not m.revealed]
+    out.append("\n\ntruth + belief", style="bold")
+    out.append(f"  ({view.n_correct}/{view.n_hidden} top-1)", style="dim")
+    if seen:
+        out.append("\nseen   ", style="dim")
+        for j, sp in enumerate(seen):
+            if j:
+                out.append(" · ", style="dim")
+            out.append(sp, style=_MON_COLOR)
+    for m in hidden:
+        out.append("\n")
+        out.append("✓ " if m.guessed_right else "✗ ", style=("green" if m.guessed_right else "red"))
+        out.append_text(_col(Text(m.species, style="bold " + _MON_COLOR), 14))
+        if not m.guess:
+            out.append("(no guess)", style="dim")
+            continue
+        for j, (sp, prob) in enumerate(m.guess):
+            if j:
+                out.append(" · ", style="dim")
+            hit = sp == m.species
+            out.append(sp, style=("bold green" if hit else _MON_COLOR))
+            out.append(f" {prob * 100:.0f}%", style=gradient_color(prob))
+        if not m.guessed_right and m.true_rank > 0:
+            out.append(f"   (#{m.true_rank})", style="dim")
 
 
 # Plain-language for a "couldn't move" (cant) reason decoded from the TurnDelta.

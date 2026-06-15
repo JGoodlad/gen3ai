@@ -1398,6 +1398,11 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         # opp_belief_latent is on AND the privileged `belief_target_slots` key is present (training
         # only). None otherwise. Read ONLY by the latent aux loss — NEVER fed into pi/vf (no leak).
         self.last_belief_target_latent: Optional[torch.Tensor] = None
+        # Stashed each forward [B,6] bool: which opponent team slots are un-revealed (believed) — the
+        # single-sourced `ctx.opp_believed_mask`. A read-only side stash (does NOT change the forward
+        # output, so the off/baseline path stays byte-identical) so eval/forensic tooling can decode
+        # `last_belief_logits["species"]` for exactly the hidden slots (see inference/belief_decode.py).
+        self.last_opp_believed_mask: Optional[torch.Tensor] = None
         # Move belief (flag-guarded): predict + REINJECT the opp moveset into the slot tokens so the
         # believed moves flow into the policy/value readout. mode ∈ {off, revealed, unrevealed, both}
         # selects which opp slots are enriched + scored. OFF reproduces the baseline arch byte-for-byte.
@@ -1517,6 +1522,10 @@ class Gen3FeaturesExtractor(torch.nn.Module):
     def forward_internal(self, obs):
         """Build the (pi_combined, vf_combined) pre-projection pair by chaining the phases."""
         ctx = self.unpack(obs)
+        # Expose which opp slots are believed (hidden) so eval/forensic tooling can decode the belief
+        # head's per-slot species prediction for exactly those slots. Read-only stash — never read by
+        # the forward itself, so the off/baseline output is unchanged.
+        self.last_opp_believed_mask = ctx.opp_believed_mask
         role_tokens = self.pokemon_encoder(ctx, self.embeddings)
         # In-place hidden-opponent belief: replace the un-revealed opp slots with distinct learned
         # unknown-mon tokens BEFORE the transformer, so the body refines them and every readout

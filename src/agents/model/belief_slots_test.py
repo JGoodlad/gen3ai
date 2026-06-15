@@ -90,10 +90,34 @@ def test_extractor_on_emits_belief_logits():
     assert bl["moves"].shape == (2, TEAM_SIZE, layout["max_moves"])
 
 
+def test_extractor_stashes_believed_mask_for_belief_decode():
+    """The forward stashes which opp slots are believed (hidden), so eval/forensic tooling can decode
+    the belief head's per-slot species prediction for exactly those slots (inference/belief_decode)."""
+    from agents.inference.belief_decode import decode_species_belief
+
+    model, layout = _make_model(attend_unrevealed_opponents=True, opp_belief_slots=True)
+    model.forward_internal(_obs(layout))                       # all-zero obs ⇒ every opp slot hidden
+    mask = model.last_opp_believed_mask
+    assert mask is not None
+    assert mask.shape == (2, TEAM_SIZE) and mask.dtype == torch.bool
+    assert bool(mask.all())                                    # species_known=0 everywhere ⇒ all believed
+
+    species_logits = model.last_belief_logits["species"][0].detach().cpu().numpy()
+    decoded = decode_species_belief(species_logits, mask[0].cpu().numpy(), top_k=3)
+    assert [e["slot"] for e in decoded] == list(range(TEAM_SIZE))   # all hidden slots decoded
+    assert all(len(e["top"]) == 3 for e in decoded)
+    assert all(t["prob"].endswith("%") for e in decoded for t in e["top"])
+
+
 def test_extractor_off_stashes_none():
     model, layout = _make_model()
     model.forward_internal(_obs(layout))
     assert model.last_belief_logits is None
+    # The believed mask is single-sourced from ctx (computed every forward), so it's present even
+    # with belief OFF — but belief decode is gated on last_belief_logits (None here), so the player
+    # emits no belief field on an off run.
+    assert model.last_opp_believed_mask is not None
+    assert model.last_opp_believed_mask.shape == (2, TEAM_SIZE)
 
 
 def test_off_path_projection_dims_unchanged_by_belief():
