@@ -505,6 +505,12 @@ async def main():
     parser.add_argument("--eval-only", action=BoolFlag, default=False, help="Skip training and only evaluate")
     parser.add_argument("--steps", type=int, default=100000, help="Total training timesteps")
     parser.add_argument("--debug", action=BoolFlag, default=False, help="Use DummyVecEnv (1 env) for debugging")
+    parser.add_argument("--debug-eval", "--debug_eval", dest="debug_eval", action=BoolFlag, default=False,
+                        help="Run evaluation under --debug. By default a --debug smoke run skips ALL eval "
+                             "(both the periodic eval callback AND the final win-rate eval) so it needs no "
+                             "eval opponents / Showdown eval connection and stays light on CPU. Pass "
+                             "--debug-eval to exercise the eval pipeline in a smoke run. No effect on real "
+                             "(non-debug) runs, which always eval.")
     parser.add_argument("--n-envs", type=int, default=32, help="Number of parallel environments")
     parser.add_argument("--async-rollout", "--async_rollout", dest="async_rollout",
                         action=BoolFlag, default=False,
@@ -1007,6 +1013,11 @@ async def main():
     # Automatically enable deep traces if --debug is set
     if args.debug:
         log_level = LogLevel.DEBUG
+        # Default a smoke run to CPU so it never contends with a live GPU training run.
+        # Only the "auto" default is overridden — an explicit --device cpu|cuda still wins.
+        # Set before any args.device consumer (pool/opponent/model build are all downstream).
+        if args.device == "auto":
+            args.device = "cpu"
         # A --debug smoke run is a short-lived child of the launching shell/agent and
         # uses DummyVecEnv (no SubprocVecEnv worker watchdog). If its parent dies it gets
         # orphaned, and a hung smoke (e.g. a vanished 9XXX server) then lingers for days as
@@ -1497,6 +1508,10 @@ async def main():
     graceful_restart_callback = GracefulRestartCallback()
     callbacks = [checkpoint_callback, lr_callback, MetricsExporterCallback(), _HparamLogCallback(args.ent_coef), graceful_restart_callback]
     eval_callback = None
+    # A --debug smoke run skips ALL eval by default — the periodic eval callback below AND the
+    # final win-rate eval — so it needs no eval opponents / Showdown eval connection and stays
+    # light on CPU. --debug-eval opts back in. Real (non-debug) runs are unaffected (always True).
+    _run_eval = (not args.debug) or args.debug_eval
 
     # On resume, the last eval lives in the resumed checkpoint's metadata.json (a different
     # dir from this fresh run) — point the eval callback at it so the TUI shows the most
@@ -1511,13 +1526,14 @@ async def main():
         if _ckpt_dir:
             _resume_meta = os.path.join(_ckpt_dir, "metadata.json")
 
-    if args.self_play and _pool is not None:
+    if args.self_play and _pool is not None and _run_eval:
         # Self-play eval mirrors the bot-eval frozen-snapshot SUBPROCESS pattern
         # (non-blocking): the workers work-steal the bot roster AND up to 5 pool sentinels,
         # play a frozen snapshot, and the parent collects + promotes on a later poll. The
         # worker rebuilds opponents / teambuilders / mappings itself from the data dir, so
-        # nothing live is constructed here. It runs even under --debug (fast eval cadence)
-        # so a short CPU smoke against a 9XXX server exercises seed → pool eval → promotion.
+        # nothing live is constructed here. Under --debug it runs only with --debug-eval
+        # (fast eval cadence), so `--self-play --debug --debug-eval` against a 9XXX server
+        # exercises seed → pool eval → promotion; a plain --debug smoke skips it.
         eval_callback = SelfPlayCallback(
             pool=_pool,
             model_dir=model_dir,
@@ -1562,7 +1578,7 @@ async def main():
             debug=args.debug,
         )
         callbacks.append(eval_callback)
-    elif not args.debug:
+    elif _run_eval:
         # Bot eval runs in a frozen-snapshot subprocess (non-blocking, CPU). The
         # worker rebuilds opponents/teambuilders/mappings itself from the data
         # dir, so nothing live is constructed here.
@@ -1787,7 +1803,8 @@ async def main():
             best_model_dir = os.path.join(model_dir, "best_model")
             if os.path.isdir(best_model_dir):
                 save_model_snapshot(best_model_dir, current_version, hparams=_model_hparams(model), cli_args=cli_args)
-            await evaluate_model_random(model)
+            if _run_eval:
+                await evaluate_model_random(model)
     else:
         print(f"Starting NEW Training (Parallel x{n_envs}, Batch: {args.batch_size}, Epochs: {args.n_epochs})")
         # model_dir and unique_id are now pre-defined earlier in main()
@@ -1929,7 +1946,8 @@ async def main():
         best_model_dir = os.path.join(model_dir, "best_model")
         if os.path.isdir(best_model_dir):
             save_model_snapshot(best_model_dir, version, hparams=_model_hparams(model), cli_args=cli_args)
-        await evaluate_model_random(model)
+        if _run_eval:
+            await evaluate_model_random(model)
 
 if __name__ == "__main__":
     asyncio.run(main())

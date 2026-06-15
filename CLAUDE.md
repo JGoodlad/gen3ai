@@ -168,17 +168,27 @@ This catches poke-env parsing bugs and encoder gaps that unit tests with mocks c
 
 ## Smoke Test
 
-Before a full training run, verify the full pipeline (env, reward, replay callback, stall detection, evaluation) with a quick debug run (~1 min):
+Before a full training run, verify the core pipeline (env, reward, replay callback, stall
+detection) with a quick debug run (~1 min):
 
 ```bash
 export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 src/main/train_rl_agent.py --debug --steps 10000
 ```
 
+`--debug` defaults to **CPU** (so a smoke never contends with a live GPU training run — an
+explicit `--device cuda` still wins) and **skips all eval** by default — both the periodic eval
+callback and the final win-rate eval. So the plain smoke above needs **no eval opponents / eval
+server connection**; add `--use-showdown-bridge` to make it fully serverless (the in-process
+sim runs the training battles too, no Showdown server at all). To also exercise the eval
+pipeline (final win-rate eval, and the self-play seed → pool eval → promotion path under
+`--self-play`), add `--debug-eval` — that path needs a server (default `:8000`) or
+`--use-showdown-bridge`.
+
 What to look for:
 - `[ModelVersion] Round-trip smoke test PASSED` — serialization and reload are healthy (printed early, before training begins)
 - `🏁 Episode Finished` lines appearing throughout — episodes completing and resetting
 - `[STALL LOGGED]` may appear if a 250-turn game occurs — should be followed by another `🏁 Episode Finished`, not a hang
-- `Win rate vs Random` and `Win rate vs Heuristic` printed at the end — evaluation ran
+- `Win rate vs Random` / `Win rate vs Heuristic` at the end — **only with `--debug-eval`**; the default smoke ends at `Training complete` with no eval
 
 A hang after `[STALL LOGGED]` or a crash before "Training complete" indicates a regression in the env/stall/forfeit pipeline. A `[ModelVersion] FATAL` error at startup means the checkpoint was saved with a different architecture than the current code.
 

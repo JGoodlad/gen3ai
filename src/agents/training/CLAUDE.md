@@ -450,8 +450,9 @@ restart — no manifest). Design lives in `designs/ai_v5/`. Key behaviors:
   graceful-shutdown `drain()`, and resume-republish all behave exactly as the bot path above. The
   launch→poll→collect→drain mechanics are the **shared** `eval_callback.spawn_eval_workers` /
   `merge_eval_results` / `persist_eval_snapshot` / `prune_eval_*` / `replay_last_eval_to_tui`
-  helpers, so the two non-blocking paths can't drift. `--debug --self-play` uses a fast eval
-  cadence (every 4k steps, 3 games) so a short CPU smoke exercises seed → pool eval → promotion.
+  helpers, so the two non-blocking paths can't drift. `--debug --self-play --debug-eval` uses a
+  fast eval cadence (every 4k steps, 3 games) so a short CPU smoke exercises seed → pool eval →
+  promotion (a plain `--debug` smoke skips all eval by default — see `--debug-eval`).
 - **Curriculum: thresholded ramp + LIVE per-episode fraction.** `heuristic_fraction`
   (`snapshot_pool.py`) is **0% self-play below `SELF_PLAY_START` (0.55)** — a weak model trains
   100% vs bots, no cycles wasted on a useless self-opponent — then smoothsteps `0.55→0.80` up to
@@ -610,9 +611,10 @@ restart — no manifest). Design lives in `designs/ai_v5/`. Key behaviors:
   `_maybe_engage_self_play` seeds the pool from the loaded weights and rebuilds the env with
   pool opponents (then `set_env`). The worker watchdog is started *after* this, just before
   `learn()`. Later restarts find the pool already populated and skip the rebuild.
-- **`--debug --self-play` exercises the real path** (seed → pool eval → promotion) on a fast
-  eval cadence, so a CPU smoke against a `9XXX` server validates the wiring without disrupting
-  the `:8001` training server. `selfplay_opponent_fuzz_test.py` covers the opponent load + legal
+- **`--debug --self-play --debug-eval` exercises the real path** (seed → pool eval → promotion)
+  on a fast eval cadence, so a CPU smoke against a `9XXX` server validates the wiring without
+  disrupting the `:8001` training server (`--debug` skips all eval by default — `--debug-eval`
+  opts in). `selfplay_opponent_fuzz_test.py` covers the opponent load + legal
   play (both modes) + version check in-process via the local bridge (no server).
 
 ## Stable (cross-run) opponents (`--stable-opponents`, `fixed_opponent_pool.py`)

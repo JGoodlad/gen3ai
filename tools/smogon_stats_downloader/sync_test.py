@@ -3,7 +3,7 @@
 Network paths (fetch_month, sync_stats) are exercised by the integration
 sanity run in the CLI; this file pins the pure-Python logic.
 """
-from sync import (
+from tools.smogon_stats_downloader.sync import (
     iter_months_backward,
     merge_chaos,
     _merge_species,

@@ -12,12 +12,13 @@ poke-env static data shipped in src/, so its tests are plain unit tests.
 
 import json
 import os
-import sys
 
 import pytest
 
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-import sync  # noqa: E402
+# Fully-qualified import (tools is a PEP 420 namespace package; repo root is on sys.path under
+# `python -m pytest`) so the module is `tools.pokemon_data_extractor.sync` and never collides
+# with the other tools' identically-named `sync.py` during a combined collection.
+import tools.pokemon_data_extractor.sync as sync
 
 DATA_DIR = os.path.join(sync.REPO_ROOT, "data", "pokemon")
 

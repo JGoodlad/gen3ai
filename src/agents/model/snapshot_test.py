@@ -748,7 +748,7 @@ def _build_and_save_model(tmpdir, layout, mappings, version, *, name="opp_model"
         "features_extractor_kwargs": {"layout": layout, "mappings": mappings},
         "net_arch": [512, 512],
     }
-    model = MaskablePPO(Gen3DualHeadMaskablePolicy, vec_env, policy_kwargs=full_policy_kwargs, verbose=0)
+    model = MaskablePPO(Gen3DualHeadMaskablePolicy, vec_env, policy_kwargs=full_policy_kwargs, verbose=0, device="cpu")
     zip_path = os.path.join(tmpdir, name)
     model.save(zip_path)
     save_model_snapshot(tmpdir, version, git_hash="opp")
@@ -833,7 +833,7 @@ def test_load_foreign_opponent_missing_config_raises(layout, version, mappings):
     with tempfile.TemporaryDirectory() as tmpdir:
         vec_env = _make_vec_env(layout["total_dim"])
         model = MaskablePPO(
-            Gen3DualHeadMaskablePolicy, vec_env, verbose=0,
+            Gen3DualHeadMaskablePolicy, vec_env, verbose=0, device="cpu",
             policy_kwargs={
                 "features_extractor_class": Gen3FeaturesExtractor,
                 "features_extractor_kwargs": {"layout": layout, "mappings": mappings},
@@ -908,7 +908,7 @@ def test_snapshot_save_load_roundtrip(layout, version, mappings):
         "features_extractor_kwargs": {"layout": layout, "mappings": mappings},
         "net_arch": [512, 512],
     }
-    model = MaskablePPO(Gen3DualHeadMaskablePolicy, vec_env, policy_kwargs=full_policy_kwargs, verbose=0)
+    model = MaskablePPO(Gen3DualHeadMaskablePolicy, vec_env, policy_kwargs=full_policy_kwargs, verbose=0, device="cpu")
 
     def _dummy_obs(m):
         dev = next(m.parameters()).device
@@ -929,6 +929,7 @@ def test_snapshot_save_load_roundtrip(layout, version, mappings):
             zip_path + ".zip",
             env=vec_env,
             current_version=version,
+            device="cpu",
         )
 
     with torch.no_grad():
@@ -960,7 +961,7 @@ def test_load_model_snapshot_enforce_vf_coef(layout, mappings):
         "features_extractor_kwargs": {"layout": layout, "mappings": mappings},
         "net_arch": [512, 512],
     }
-    model = MaskablePPO(Gen3DualHeadMaskablePolicy, vec_env, policy_kwargs=full_policy_kwargs, verbose=0)
+    model = MaskablePPO(Gen3DualHeadMaskablePolicy, vec_env, policy_kwargs=full_policy_kwargs, verbose=0, device="cpu")
 
     # The run was started with vf_coef=0.3 → that is what model_config.json records.
     saved_version = ModelVersion.from_layout_and_policy_kwargs(layout, {"net_arch": [512, 512]}, vf_coef=0.3)
@@ -973,15 +974,15 @@ def test_load_model_snapshot_enforce_vf_coef(layout, mappings):
         # Resuming with a different vf_coef is a hard error (before the model even loads).
         with pytest.raises(ModelVersionError) as exc_info:
             load_model_snapshot(zip_path + ".zip", env=vec_env, current_version=saved_version,
-                                enforce_vf_coef=0.5)
+                                enforce_vf_coef=0.5, device="cpu")
         assert "vf_coef" in str(exc_info.value)
 
         # Matching value loads fine.
         load_model_snapshot(zip_path + ".zip", env=vec_env, current_version=saved_version,
-                            enforce_vf_coef=0.3)
+                            enforce_vf_coef=0.3, device="cpu")
 
         # Frozen-snapshot load (no enforcement) ignores vf_coef even when it would differ.
-        load_model_snapshot(zip_path + ".zip", env=vec_env, current_version=saved_version)
+        load_model_snapshot(zip_path + ".zip", env=vec_env, current_version=saved_version, device="cpu")
 
 
 def test_load_model_snapshot_finds_config_in_parent_when_zip_in_checkpoints(layout, mappings, version):
@@ -999,7 +1000,7 @@ def test_load_model_snapshot_finds_config_in_parent_when_zip_in_checkpoints(layo
         "features_extractor_kwargs": {"layout": layout, "mappings": mappings},
         "net_arch": [512, 512],
     }
-    model = MaskablePPO(Gen3DualHeadMaskablePolicy, vec_env, policy_kwargs=full_policy_kwargs, verbose=0)
+    model = MaskablePPO(Gen3DualHeadMaskablePolicy, vec_env, policy_kwargs=full_policy_kwargs, verbose=0, device="cpu")
 
     with tempfile.TemporaryDirectory() as tmpdir:
         save_model_snapshot(tmpdir, version, git_hash="test")  # model_config.json at run root
@@ -1013,10 +1014,10 @@ def test_load_model_snapshot_finds_config_in_parent_when_zip_in_checkpoints(layo
         # (if it weren't found, load would print the "legacy model" warning and succeed).
         bad = dataclasses.replace(version, arch_signature="some_other_arch")
         with pytest.raises(ModelVersionError):
-            load_model_snapshot(zip_path + ".zip", env=vec_env, current_version=bad)
+            load_model_snapshot(zip_path + ".zip", env=vec_env, current_version=bad, device="cpu")
 
         # The matching version loads cleanly through that same parent-fallback path.
-        assert load_model_snapshot(zip_path + ".zip", env=vec_env, current_version=version) is not None
+        assert load_model_snapshot(zip_path + ".zip", env=vec_env, current_version=version, device="cpu") is not None
 
 
 def test_load_saved_version_finds_config_in_parent_when_zip_in_checkpoints(version):
