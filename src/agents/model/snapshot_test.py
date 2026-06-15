@@ -895,6 +895,54 @@ def _make_vec_env(total_dim: int) -> DummyVecEnv:
     return DummyVecEnv([_TrivialEnv])
 
 
+def _make_vec_env_extra_key(total_dim: int) -> DummyVecEnv:
+    """Like `_make_vec_env` but with an EXTRA training-only obs key (`win_margin`) the saved policy
+    predates — mimics resuming a win-prob run after that key was added to the env."""
+    _obs = gym.spaces.Dict({
+        "observation": gym.spaces.Box(-np.inf, np.inf, (total_dim,), np.float32),
+        "action_mask": gym.spaces.MultiBinary(11),
+        "win_margin": gym.spaces.Box(-1.0, 1.0, (1,), np.float32),
+    })
+
+    class _E(gym.Env):
+        observation_space = _obs
+        action_space = gym.spaces.Discrete(11)
+
+        def reset(self, **kwargs):
+            return {"observation": np.zeros(total_dim, np.float32),
+                    "action_mask": np.ones(11, np.int8), "win_margin": np.zeros(1, np.float32)}, {}
+
+        def step(self, action):
+            return self.reset()[0], 0.0, False, False, {}
+
+    return DummyVecEnv([_E])
+
+
+def test_load_tolerates_extra_training_only_obs_key(layout, version, mappings):
+    """Resume regression: when the live env declares a TRAINING-ONLY obs key the saved policy predates
+    (e.g. `win_margin`, added mid-run), the load must NOT FATAL on SB3's strict `check_for_correct_spaces`
+    — the model forward reads only obs['observation'] (which `check_compatible` already pinned via
+    total_dim). Reproduces the `ai_v6_03_win_pred` crash where adding win_margin broke resume."""
+    from agents.model.features_extractor import Gen3FeaturesExtractor
+    from agents.model.policy import Gen3DualHeadMaskablePolicy
+    from sb3_contrib import MaskablePPO
+
+    total_dim = layout["total_dim"]
+    pk = {"features_extractor_class": Gen3FeaturesExtractor,
+          "features_extractor_kwargs": {"layout": layout, "mappings": mappings}, "net_arch": [512, 512]}
+    model = MaskablePPO(Gen3DualHeadMaskablePolicy, _make_vec_env(total_dim),  # saved WITHOUT win_margin
+                        policy_kwargs=pk, verbose=0, device="cpu")
+    with tempfile.TemporaryDirectory() as tmpdir:
+        zip_path = os.path.join(tmpdir, "m")
+        model.save(zip_path)
+        save_model_snapshot(tmpdir, version, git_hash="test")
+        # The resume env now HAS win_margin — would raise ValueError("Observation spaces do not match")
+        # without the tolerance in load_model_snapshot.
+        loaded = load_model_snapshot(zip_path + ".zip", env=_make_vec_env_extra_key(total_dim),
+                                     current_version=version, device="cpu")
+    assert "win_margin" in loaded.observation_space.spaces  # tolerated + loaded
+
+
 def test_snapshot_save_load_roundtrip(layout, version, mappings):
     from agents.model.features_extractor import Gen3FeaturesExtractor, PROJECTION_DIM
     from agents.model.policy import Gen3DualHeadMaskablePolicy

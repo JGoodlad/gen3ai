@@ -404,6 +404,7 @@ def load_model_snapshot(
         parent_config = os.path.join(os.path.dirname(config_dir), "model_config.json")
         if os.path.exists(parent_config):
             config_path = parent_config
+    arch_validated = False
     if os.path.exists(config_path):
         saved_version = ModelVersion.from_json_file(config_path)
         current_version.check_compatible(saved_version)
@@ -413,6 +414,7 @@ def load_model_snapshot(
             saved_version.check_reward_config(enforce_reward_config)
         if enforce_value_tail_weight is not None:
             saved_version.check_value_tail_weight(enforce_value_tail_weight)
+        arch_validated = True
     else:
         print(
             f"[ModelVersion] WARNING: No model_config.json found at {config_dir!r}. "
@@ -422,6 +424,21 @@ def load_model_snapshot(
     kwargs: dict = {"env": env, "device": device}
     if tensorboard_log:
         kwargs["tensorboard_log"] = tensorboard_log
+
+    # Tolerate a benign TRAINING-ONLY obs-key difference between the saved policy and the live env.
+    # The model forward reads ONLY obs["observation"] (everything else — belief_*, win_target/win_mask,
+    # win_margin — is a privileged label consumed by the aux loss, never by the network), so an env that
+    # declares a training-only key the saved policy predates (e.g. `win_margin`, added mid-run) is safe
+    # to resume. But SB3's `check_for_correct_spaces` compares the FULL Dict obs space and FATALs on the
+    # extra key. We override the saved spaces with the env's so that check passes — SAFE because
+    # `check_compatible` above already pinned the REAL obs (`total_dim`/`arch_signature`) + action space.
+    # Gated on `arch_validated` (skip the legacy no-config path, where the strict check is the only guard)
+    # and on `env` being attached (frozen-opponent loads pass env=None and want the strict check).
+    if env is not None and arch_validated:
+        kwargs["custom_objects"] = {
+            "observation_space": env.observation_space,
+            "action_space": env.action_space,
+        }
 
     return InstrumentedMaskablePPO.load(zip_path, **kwargs)
 
