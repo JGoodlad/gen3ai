@@ -151,6 +151,32 @@ def test_effect_flags_status_inflicted():
     assert movedex.move_data("icebeam").status_inflicted is None
 
 
+def test_effect_flags_status_cure():
+    # gen3_status_cure_moves_v1: curated onHit cures. Refresh = self; Heal Bell / Aromatherapy = team.
+    assert movedex.move_data("refresh").cures_self_status is True
+    assert movedex.move_data("refresh").cures_team_status is False
+    for mid in ("healbell", "aromatherapy"):
+        assert movedex.move_data(mid).cures_team_status is True, mid
+        assert movedex.move_data(mid).cures_self_status is False, mid
+    # Rest is a heal+sleep, NOT a status-clear (it replaces the status with sleep) → neither bit.
+    assert movedex.move_data("rest").cures_self_status is False
+    assert movedex.move_data("rest").cures_team_status is False
+    # A plain heal / attack carries neither cure bit.
+    for mid in ("recover", "surf", "calmmind"):
+        md = movedex.move_data(mid)
+        assert md.cures_self_status is False and md.cures_team_status is False, mid
+
+
+def test_status_cure_sets_are_exactly_the_curated_moves():
+    """Pin the curated cure sets so a builder regression (a wrong add/drop) fails CI. The cure is
+    an onHit callback with no declarative field, so these are the only gen3 moves that clear status
+    without inflicting one (Refresh self; Heal Bell / Aromatherapy whole-party)."""
+    assert _flagged(lambda md: md.cures_self_status) == {"refresh"}
+    assert _flagged(lambda md: md.cures_team_status) == {"healbell", "aromatherapy"}
+    # mutually exclusive scopes — no move is both
+    assert _flagged(lambda md: md.cures_self_status and md.cures_team_status) == set()
+
+
 # ----------------------------------------------------------------------------
 # Data-QUALITY guards (not just wiring): the effect flags must agree with the
 # project's INDEPENDENTLY-curated, gen-aware move sets, and no damaging move may
@@ -174,6 +200,7 @@ def test_no_damaging_move_carries_a_utility_flag():
         if md.base_power > 0 and (
             md.is_boost or md.is_heal or md.is_protect or md.is_phaze
             or md.is_hazard or md.status_inflicted is not None
+            or md.cures_self_status or md.cures_team_status
         )
     }
     assert bad == {}, f"damaging moves wrongly flagged as utility: {bad}"

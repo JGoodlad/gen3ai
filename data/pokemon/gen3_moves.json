@@ -14,7 +14,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "acid": {
         "name": "Acid",
@@ -31,7 +33,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "acidarmor": {
         "name": "Acid Armor",
@@ -48,7 +52,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "aerialace": {
         "name": "Aerial Ace",
@@ -65,7 +71,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "aeroblast": {
         "name": "Aeroblast",
@@ -82,7 +90,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "agility": {
         "name": "Agility",
@@ -99,7 +109,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "aircutter": {
         "name": "Air Cutter",
@@ -116,7 +128,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "amnesia": {
         "name": "Amnesia",
@@ -133,7 +147,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "ancientpower": {
         "name": "Ancient Power",
@@ -150,7 +166,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "armthrust": {
         "name": "Arm Thrust",
@@ -167,7 +185,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "aromatherapy": {
         "name": "Aromatherapy",
@@ -184,7 +204,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": true
     },
     "assist": {
         "name": "Assist",
@@ -201,7 +223,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "astonish": {
         "name": "Astonish",
@@ -218,7 +242,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "attract": {
         "name": "Attract",
@@ -235,7 +261,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "aurorabeam": {
         "name": "Aurora Beam",
@@ -252,7 +280,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "barrage": {
         "name": "Barrage",
@@ -269,7 +299,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "barrier": {
         "name": "Barrier",
@@ -286,7 +318,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "batonpass": {
         "name": "Baton Pass",
@@ -303,7 +337,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "beatup": {
         "name": "Beat Up",
@@ -320,7 +356,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "bellydrum": {
         "name": "Belly Drum",
@@ -337,7 +375,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "bide": {
         "name": "Bide",
@@ -354,7 +394,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "bind": {
         "name": "Bind",
@@ -371,7 +413,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "bite": {
         "name": "Bite",
@@ -388,7 +432,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "blastburn": {
         "name": "Blast Burn",
@@ -405,7 +451,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "blazekick": {
         "name": "Blaze Kick",
@@ -422,7 +470,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "blizzard": {
         "name": "Blizzard",
@@ -439,7 +489,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "block": {
         "name": "Block",
@@ -456,7 +508,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "bodyslam": {
         "name": "Body Slam",
@@ -473,7 +527,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "boneclub": {
         "name": "Bone Club",
@@ -490,7 +546,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "bonemerang": {
         "name": "Bonemerang",
@@ -507,7 +565,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "bonerush": {
         "name": "Bone Rush",
@@ -524,7 +584,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "bounce": {
         "name": "Bounce",
@@ -541,7 +603,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "brickbreak": {
         "name": "Brick Break",
@@ -558,7 +622,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "bubble": {
         "name": "Bubble",
@@ -575,7 +641,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "bubblebeam": {
         "name": "Bubble Beam",
@@ -592,7 +660,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "bulkup": {
         "name": "Bulk Up",
@@ -609,7 +679,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "bulletseed": {
         "name": "Bullet Seed",
@@ -626,7 +698,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "calmmind": {
         "name": "Calm Mind",
@@ -643,7 +717,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "camouflage": {
         "name": "Camouflage",
@@ -660,7 +736,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "charge": {
         "name": "Charge",
@@ -677,7 +755,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "charm": {
         "name": "Charm",
@@ -694,7 +774,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "clamp": {
         "name": "Clamp",
@@ -711,7 +793,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "cometpunch": {
         "name": "Comet Punch",
@@ -728,7 +812,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "confuseray": {
         "name": "Confuse Ray",
@@ -745,7 +831,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "confusion": {
         "name": "Confusion",
@@ -762,7 +850,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "constrict": {
         "name": "Constrict",
@@ -779,7 +869,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "conversion": {
         "name": "Conversion",
@@ -796,7 +888,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "conversion2": {
         "name": "Conversion 2",
@@ -813,7 +907,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "cosmicpower": {
         "name": "Cosmic Power",
@@ -830,7 +926,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "cottonspore": {
         "name": "Cotton Spore",
@@ -847,7 +945,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "counter": {
         "name": "Counter",
@@ -864,7 +964,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "covet": {
         "name": "Covet",
@@ -881,7 +983,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "crabhammer": {
         "name": "Crabhammer",
@@ -898,7 +1002,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "crosschop": {
         "name": "Cross Chop",
@@ -915,7 +1021,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "crunch": {
         "name": "Crunch",
@@ -932,7 +1040,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "crushclaw": {
         "name": "Crush Claw",
@@ -949,7 +1059,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "curse": {
         "name": "Curse",
@@ -966,7 +1078,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "cut": {
         "name": "Cut",
@@ -983,7 +1097,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "defensecurl": {
         "name": "Defense Curl",
@@ -1000,7 +1116,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "destinybond": {
         "name": "Destiny Bond",
@@ -1017,7 +1135,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "detect": {
         "name": "Detect",
@@ -1034,7 +1154,9 @@
         "isProtect": true,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "dig": {
         "name": "Dig",
@@ -1051,7 +1173,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "disable": {
         "name": "Disable",
@@ -1068,7 +1192,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "dive": {
         "name": "Dive",
@@ -1085,7 +1211,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "dizzypunch": {
         "name": "Dizzy Punch",
@@ -1102,7 +1230,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "doomdesire": {
         "name": "Doom Desire",
@@ -1119,7 +1249,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "doubleedge": {
         "name": "Double-Edge",
@@ -1136,7 +1268,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "doublekick": {
         "name": "Double Kick",
@@ -1153,7 +1287,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "doubleslap": {
         "name": "Double Slap",
@@ -1170,7 +1306,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "doubleteam": {
         "name": "Double Team",
@@ -1187,7 +1325,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "dragonbreath": {
         "name": "Dragon Breath",
@@ -1204,7 +1344,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "dragonclaw": {
         "name": "Dragon Claw",
@@ -1221,7 +1363,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "dragondance": {
         "name": "Dragon Dance",
@@ -1238,7 +1382,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "dragonrage": {
         "name": "Dragon Rage",
@@ -1255,7 +1401,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "dreameater": {
         "name": "Dream Eater",
@@ -1272,7 +1420,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "drillpeck": {
         "name": "Drill Peck",
@@ -1289,7 +1439,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "dynamicpunch": {
         "name": "Dynamic Punch",
@@ -1306,7 +1458,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "earthquake": {
         "name": "Earthquake",
@@ -1323,7 +1477,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "eggbomb": {
         "name": "Egg Bomb",
@@ -1340,7 +1496,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "ember": {
         "name": "Ember",
@@ -1357,7 +1515,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "encore": {
         "name": "Encore",
@@ -1374,7 +1534,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "endeavor": {
         "name": "Endeavor",
@@ -1391,7 +1553,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "endure": {
         "name": "Endure",
@@ -1408,7 +1572,9 @@
         "isProtect": true,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "eruption": {
         "name": "Eruption",
@@ -1425,7 +1591,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "explosion": {
         "name": "Explosion",
@@ -1442,7 +1610,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "extrasensory": {
         "name": "Extrasensory",
@@ -1459,7 +1629,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "extremespeed": {
         "name": "Extreme Speed",
@@ -1476,7 +1648,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "facade": {
         "name": "Facade",
@@ -1493,7 +1667,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "fakeout": {
         "name": "Fake Out",
@@ -1510,7 +1686,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "faketears": {
         "name": "Fake Tears",
@@ -1527,7 +1705,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "falseswipe": {
         "name": "False Swipe",
@@ -1544,7 +1724,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "featherdance": {
         "name": "Feather Dance",
@@ -1561,7 +1743,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "feintattack": {
         "name": "Feint Attack",
@@ -1578,7 +1762,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "fireblast": {
         "name": "Fire Blast",
@@ -1595,7 +1781,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "firepunch": {
         "name": "Fire Punch",
@@ -1612,7 +1800,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "firespin": {
         "name": "Fire Spin",
@@ -1629,7 +1819,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "fissure": {
         "name": "Fissure",
@@ -1646,7 +1838,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "flail": {
         "name": "Flail",
@@ -1663,7 +1857,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "flamethrower": {
         "name": "Flamethrower",
@@ -1680,7 +1876,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "flamewheel": {
         "name": "Flame Wheel",
@@ -1697,7 +1895,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "flash": {
         "name": "Flash",
@@ -1714,7 +1914,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "flatter": {
         "name": "Flatter",
@@ -1731,7 +1933,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "fly": {
         "name": "Fly",
@@ -1748,7 +1952,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "focusenergy": {
         "name": "Focus Energy",
@@ -1765,7 +1971,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "focuspunch": {
         "name": "Focus Punch",
@@ -1782,7 +1990,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "followme": {
         "name": "Follow Me",
@@ -1799,7 +2009,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "foresight": {
         "name": "Foresight",
@@ -1816,7 +2028,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "frenzyplant": {
         "name": "Frenzy Plant",
@@ -1833,7 +2047,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "frustration": {
         "name": "Frustration",
@@ -1850,7 +2066,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "furyattack": {
         "name": "Fury Attack",
@@ -1867,7 +2085,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "furycutter": {
         "name": "Fury Cutter",
@@ -1884,7 +2104,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "furyswipes": {
         "name": "Fury Swipes",
@@ -1901,7 +2123,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "futuresight": {
         "name": "Future Sight",
@@ -1918,7 +2142,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "gigadrain": {
         "name": "Giga Drain",
@@ -1935,7 +2161,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "glare": {
         "name": "Glare",
@@ -1952,7 +2180,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": "par"
+        "status": "par",
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "grasswhistle": {
         "name": "Grass Whistle",
@@ -1969,7 +2199,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": "slp"
+        "status": "slp",
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "growl": {
         "name": "Growl",
@@ -1986,7 +2218,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "growth": {
         "name": "Growth",
@@ -2003,7 +2237,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "grudge": {
         "name": "Grudge",
@@ -2020,7 +2256,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "guillotine": {
         "name": "Guillotine",
@@ -2037,7 +2275,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "gust": {
         "name": "Gust",
@@ -2054,7 +2294,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "hail": {
         "name": "Hail",
@@ -2071,7 +2313,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "harden": {
         "name": "Harden",
@@ -2088,7 +2332,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "haze": {
         "name": "Haze",
@@ -2105,7 +2351,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "headbutt": {
         "name": "Headbutt",
@@ -2122,7 +2370,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "healbell": {
         "name": "Heal Bell",
@@ -2139,7 +2389,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": true
     },
     "heatwave": {
         "name": "Heat Wave",
@@ -2156,7 +2408,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "helpinghand": {
         "name": "Helping Hand",
@@ -2173,7 +2427,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "hiddenpower": {
         "name": "Hidden Power",
@@ -2190,7 +2446,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "hiddenpowerbug": {
         "name": "Hidden Power Bug",
@@ -2207,7 +2465,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "hiddenpowerdark": {
         "name": "Hidden Power Dark",
@@ -2224,7 +2484,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "hiddenpowerdragon": {
         "name": "Hidden Power Dragon",
@@ -2241,7 +2503,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "hiddenpowerelectric": {
         "name": "Hidden Power Electric",
@@ -2258,7 +2522,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "hiddenpowerfighting": {
         "name": "Hidden Power Fighting",
@@ -2275,7 +2541,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "hiddenpowerfire": {
         "name": "Hidden Power Fire",
@@ -2292,7 +2560,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "hiddenpowerflying": {
         "name": "Hidden Power Flying",
@@ -2309,7 +2579,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "hiddenpowerghost": {
         "name": "Hidden Power Ghost",
@@ -2326,7 +2598,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "hiddenpowergrass": {
         "name": "Hidden Power Grass",
@@ -2343,7 +2617,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "hiddenpowerground": {
         "name": "Hidden Power Ground",
@@ -2360,7 +2636,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "hiddenpowerice": {
         "name": "Hidden Power Ice",
@@ -2377,7 +2655,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "hiddenpowerpoison": {
         "name": "Hidden Power Poison",
@@ -2394,7 +2674,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "hiddenpowerpsychic": {
         "name": "Hidden Power Psychic",
@@ -2411,7 +2693,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "hiddenpowerrock": {
         "name": "Hidden Power Rock",
@@ -2428,7 +2712,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "hiddenpowersteel": {
         "name": "Hidden Power Steel",
@@ -2445,7 +2731,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "hiddenpowerwater": {
         "name": "Hidden Power Water",
@@ -2462,7 +2750,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "highjumpkick": {
         "name": "High Jump Kick",
@@ -2479,7 +2769,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "hornattack": {
         "name": "Horn Attack",
@@ -2496,7 +2788,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "horndrill": {
         "name": "Horn Drill",
@@ -2513,7 +2807,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "howl": {
         "name": "Howl",
@@ -2530,7 +2826,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "hydrocannon": {
         "name": "Hydro Cannon",
@@ -2547,7 +2845,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "hydropump": {
         "name": "Hydro Pump",
@@ -2564,7 +2864,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "hyperbeam": {
         "name": "Hyper Beam",
@@ -2581,7 +2883,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "hyperfang": {
         "name": "Hyper Fang",
@@ -2598,7 +2902,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "hypervoice": {
         "name": "Hyper Voice",
@@ -2615,7 +2921,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "hypnosis": {
         "name": "Hypnosis",
@@ -2632,7 +2940,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": "slp"
+        "status": "slp",
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "iceball": {
         "name": "Ice Ball",
@@ -2649,7 +2959,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "icebeam": {
         "name": "Ice Beam",
@@ -2666,7 +2978,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "icepunch": {
         "name": "Ice Punch",
@@ -2683,7 +2997,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "iciclespear": {
         "name": "Icicle Spear",
@@ -2700,7 +3016,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "icywind": {
         "name": "Icy Wind",
@@ -2717,7 +3035,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "imprison": {
         "name": "Imprison",
@@ -2734,7 +3054,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "ingrain": {
         "name": "Ingrain",
@@ -2751,7 +3073,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "irondefense": {
         "name": "Iron Defense",
@@ -2768,7 +3092,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "irontail": {
         "name": "Iron Tail",
@@ -2785,7 +3111,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "jumpkick": {
         "name": "Jump Kick",
@@ -2802,7 +3130,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "karatechop": {
         "name": "Karate Chop",
@@ -2819,7 +3149,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "kinesis": {
         "name": "Kinesis",
@@ -2836,7 +3168,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "knockoff": {
         "name": "Knock Off",
@@ -2853,7 +3187,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "leafblade": {
         "name": "Leaf Blade",
@@ -2870,7 +3206,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "leechlife": {
         "name": "Leech Life",
@@ -2887,7 +3225,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "leechseed": {
         "name": "Leech Seed",
@@ -2904,7 +3244,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "leer": {
         "name": "Leer",
@@ -2921,7 +3263,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "lick": {
         "name": "Lick",
@@ -2938,7 +3282,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "lightscreen": {
         "name": "Light Screen",
@@ -2955,7 +3301,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "lockon": {
         "name": "Lock-On",
@@ -2972,7 +3320,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "lovelykiss": {
         "name": "Lovely Kiss",
@@ -2989,7 +3339,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": "slp"
+        "status": "slp",
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "lowkick": {
         "name": "Low Kick",
@@ -3006,7 +3358,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "lusterpurge": {
         "name": "Luster Purge",
@@ -3023,7 +3377,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "machpunch": {
         "name": "Mach Punch",
@@ -3040,7 +3396,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "magicalleaf": {
         "name": "Magical Leaf",
@@ -3057,7 +3415,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "magiccoat": {
         "name": "Magic Coat",
@@ -3074,7 +3434,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "magnitude": {
         "name": "Magnitude",
@@ -3091,7 +3453,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "meanlook": {
         "name": "Mean Look",
@@ -3108,7 +3472,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "meditate": {
         "name": "Meditate",
@@ -3125,7 +3491,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "megadrain": {
         "name": "Mega Drain",
@@ -3142,7 +3510,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "megahorn": {
         "name": "Megahorn",
@@ -3159,7 +3529,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "megakick": {
         "name": "Mega Kick",
@@ -3176,7 +3548,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "megapunch": {
         "name": "Mega Punch",
@@ -3193,7 +3567,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "memento": {
         "name": "Memento",
@@ -3210,7 +3586,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "metalclaw": {
         "name": "Metal Claw",
@@ -3227,7 +3605,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "metalsound": {
         "name": "Metal Sound",
@@ -3244,7 +3624,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "meteormash": {
         "name": "Meteor Mash",
@@ -3261,7 +3643,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "metronome": {
         "name": "Metronome",
@@ -3278,7 +3662,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "milkdrink": {
         "name": "Milk Drink",
@@ -3295,7 +3681,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "mimic": {
         "name": "Mimic",
@@ -3312,7 +3700,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "mindreader": {
         "name": "Mind Reader",
@@ -3329,7 +3719,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "minimize": {
         "name": "Minimize",
@@ -3346,7 +3738,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "mirrorcoat": {
         "name": "Mirror Coat",
@@ -3363,7 +3757,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "mirrormove": {
         "name": "Mirror Move",
@@ -3380,7 +3776,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "mist": {
         "name": "Mist",
@@ -3397,7 +3795,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "mistball": {
         "name": "Mist Ball",
@@ -3414,7 +3814,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "moonlight": {
         "name": "Moonlight",
@@ -3431,7 +3833,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "morningsun": {
         "name": "Morning Sun",
@@ -3448,7 +3852,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "muddywater": {
         "name": "Muddy Water",
@@ -3465,7 +3871,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "mudshot": {
         "name": "Mud Shot",
@@ -3482,7 +3890,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "mudslap": {
         "name": "Mud-Slap",
@@ -3499,7 +3909,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "mudsport": {
         "name": "Mud Sport",
@@ -3516,7 +3928,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "naturepower": {
         "name": "Nature Power",
@@ -3533,7 +3947,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "needlearm": {
         "name": "Needle Arm",
@@ -3550,7 +3966,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "nightmare": {
         "name": "Nightmare",
@@ -3567,7 +3985,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "nightshade": {
         "name": "Night Shade",
@@ -3584,7 +4004,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "octazooka": {
         "name": "Octazooka",
@@ -3601,7 +4023,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "odorsleuth": {
         "name": "Odor Sleuth",
@@ -3618,7 +4042,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "outrage": {
         "name": "Outrage",
@@ -3635,7 +4061,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "overheat": {
         "name": "Overheat",
@@ -3652,7 +4080,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "painsplit": {
         "name": "Pain Split",
@@ -3669,7 +4099,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "payday": {
         "name": "Pay Day",
@@ -3686,7 +4118,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "peck": {
         "name": "Peck",
@@ -3703,7 +4137,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "perishsong": {
         "name": "Perish Song",
@@ -3720,7 +4156,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "petaldance": {
         "name": "Petal Dance",
@@ -3737,7 +4175,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "pinmissile": {
         "name": "Pin Missile",
@@ -3754,7 +4194,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "poisonfang": {
         "name": "Poison Fang",
@@ -3771,7 +4213,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "poisongas": {
         "name": "Poison Gas",
@@ -3788,7 +4232,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": "psn"
+        "status": "psn",
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "poisonpowder": {
         "name": "Poison Powder",
@@ -3805,7 +4251,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": "psn"
+        "status": "psn",
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "poisonsting": {
         "name": "Poison Sting",
@@ -3822,7 +4270,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "poisontail": {
         "name": "Poison Tail",
@@ -3839,7 +4289,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "pound": {
         "name": "Pound",
@@ -3856,7 +4308,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "powdersnow": {
         "name": "Powder Snow",
@@ -3873,7 +4327,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "present": {
         "name": "Present",
@@ -3890,7 +4346,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "protect": {
         "name": "Protect",
@@ -3907,7 +4365,9 @@
         "isProtect": true,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "psybeam": {
         "name": "Psybeam",
@@ -3924,7 +4384,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "psychic": {
         "name": "Psychic",
@@ -3941,7 +4403,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "psychoboost": {
         "name": "Psycho Boost",
@@ -3958,7 +4422,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "psychup": {
         "name": "Psych Up",
@@ -3975,7 +4441,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "psywave": {
         "name": "Psywave",
@@ -3992,7 +4460,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "pursuit": {
         "name": "Pursuit",
@@ -4009,7 +4479,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "quickattack": {
         "name": "Quick Attack",
@@ -4026,7 +4498,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "rage": {
         "name": "Rage",
@@ -4043,7 +4517,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "raindance": {
         "name": "Rain Dance",
@@ -4060,7 +4536,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "rapidspin": {
         "name": "Rapid Spin",
@@ -4077,7 +4555,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "razorleaf": {
         "name": "Razor Leaf",
@@ -4094,7 +4574,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "razorwind": {
         "name": "Razor Wind",
@@ -4111,7 +4593,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "recover": {
         "name": "Recover",
@@ -4128,7 +4612,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "recycle": {
         "name": "Recycle",
@@ -4145,7 +4631,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "reflect": {
         "name": "Reflect",
@@ -4162,7 +4650,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "refresh": {
         "name": "Refresh",
@@ -4179,7 +4669,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": true,
+        "curesTeamStatus": false
     },
     "rest": {
         "name": "Rest",
@@ -4196,7 +4688,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "return": {
         "name": "Return",
@@ -4213,7 +4707,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "revenge": {
         "name": "Revenge",
@@ -4230,7 +4726,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "reversal": {
         "name": "Reversal",
@@ -4247,7 +4745,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "roar": {
         "name": "Roar",
@@ -4264,7 +4764,9 @@
         "isProtect": false,
         "isPhaze": true,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "rockblast": {
         "name": "Rock Blast",
@@ -4281,7 +4783,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "rockslide": {
         "name": "Rock Slide",
@@ -4298,7 +4802,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "rocksmash": {
         "name": "Rock Smash",
@@ -4315,7 +4821,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "rockthrow": {
         "name": "Rock Throw",
@@ -4332,7 +4840,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "rocktomb": {
         "name": "Rock Tomb",
@@ -4349,7 +4859,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "roleplay": {
         "name": "Role Play",
@@ -4366,7 +4878,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "rollingkick": {
         "name": "Rolling Kick",
@@ -4383,7 +4897,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "rollout": {
         "name": "Rollout",
@@ -4400,7 +4916,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "sacredfire": {
         "name": "Sacred Fire",
@@ -4417,7 +4935,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "safeguard": {
         "name": "Safeguard",
@@ -4434,7 +4954,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "sandattack": {
         "name": "Sand Attack",
@@ -4451,7 +4973,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "sandstorm": {
         "name": "Sandstorm",
@@ -4468,7 +4992,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "sandtomb": {
         "name": "Sand Tomb",
@@ -4485,7 +5011,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "scaryface": {
         "name": "Scary Face",
@@ -4502,7 +5030,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "scratch": {
         "name": "Scratch",
@@ -4519,7 +5049,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "screech": {
         "name": "Screech",
@@ -4536,7 +5068,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "secretpower": {
         "name": "Secret Power",
@@ -4553,7 +5087,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "seismictoss": {
         "name": "Seismic Toss",
@@ -4570,7 +5106,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "selfdestruct": {
         "name": "Self-Destruct",
@@ -4587,7 +5125,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "shadowball": {
         "name": "Shadow Ball",
@@ -4604,7 +5144,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "shadowpunch": {
         "name": "Shadow Punch",
@@ -4621,7 +5163,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "sharpen": {
         "name": "Sharpen",
@@ -4638,7 +5182,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "sheercold": {
         "name": "Sheer Cold",
@@ -4655,7 +5201,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "shockwave": {
         "name": "Shock Wave",
@@ -4672,7 +5220,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "signalbeam": {
         "name": "Signal Beam",
@@ -4689,7 +5239,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "silverwind": {
         "name": "Silver Wind",
@@ -4706,7 +5258,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "sing": {
         "name": "Sing",
@@ -4723,7 +5277,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": "slp"
+        "status": "slp",
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "sketch": {
         "name": "Sketch",
@@ -4740,7 +5296,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "skillswap": {
         "name": "Skill Swap",
@@ -4757,7 +5315,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "skullbash": {
         "name": "Skull Bash",
@@ -4774,7 +5334,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "skyattack": {
         "name": "Sky Attack",
@@ -4791,7 +5353,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "skyuppercut": {
         "name": "Sky Uppercut",
@@ -4808,7 +5372,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "slackoff": {
         "name": "Slack Off",
@@ -4825,7 +5391,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "slam": {
         "name": "Slam",
@@ -4842,7 +5410,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "slash": {
         "name": "Slash",
@@ -4859,7 +5429,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "sleeppowder": {
         "name": "Sleep Powder",
@@ -4876,7 +5448,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": "slp"
+        "status": "slp",
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "sleeptalk": {
         "name": "Sleep Talk",
@@ -4893,7 +5467,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "sludge": {
         "name": "Sludge",
@@ -4910,7 +5486,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "sludgebomb": {
         "name": "Sludge Bomb",
@@ -4927,7 +5505,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "smellingsalts": {
         "name": "Smelling Salts",
@@ -4944,7 +5524,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "smog": {
         "name": "Smog",
@@ -4961,7 +5543,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "smokescreen": {
         "name": "Smokescreen",
@@ -4978,7 +5562,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "snatch": {
         "name": "Snatch",
@@ -4995,7 +5581,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "snore": {
         "name": "Snore",
@@ -5012,7 +5600,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "softboiled": {
         "name": "Soft-Boiled",
@@ -5029,7 +5619,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "solarbeam": {
         "name": "Solar Beam",
@@ -5046,7 +5638,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "sonicboom": {
         "name": "Sonic Boom",
@@ -5063,7 +5657,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "spark": {
         "name": "Spark",
@@ -5080,7 +5676,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "spiderweb": {
         "name": "Spider Web",
@@ -5097,7 +5695,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "spikecannon": {
         "name": "Spike Cannon",
@@ -5114,7 +5714,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "spikes": {
         "name": "Spikes",
@@ -5131,7 +5733,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": true,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "spite": {
         "name": "Spite",
@@ -5148,7 +5752,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "spitup": {
         "name": "Spit Up",
@@ -5165,7 +5771,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "splash": {
         "name": "Splash",
@@ -5182,7 +5790,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "spore": {
         "name": "Spore",
@@ -5199,7 +5809,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": "slp"
+        "status": "slp",
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "steelwing": {
         "name": "Steel Wing",
@@ -5216,7 +5828,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "stockpile": {
         "name": "Stockpile",
@@ -5233,7 +5847,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "stomp": {
         "name": "Stomp",
@@ -5250,7 +5866,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "strength": {
         "name": "Strength",
@@ -5267,7 +5885,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "stringshot": {
         "name": "String Shot",
@@ -5284,7 +5904,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "struggle": {
         "name": "Struggle",
@@ -5301,7 +5923,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "stunspore": {
         "name": "Stun Spore",
@@ -5318,7 +5942,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": "par"
+        "status": "par",
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "submission": {
         "name": "Submission",
@@ -5335,7 +5961,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "substitute": {
         "name": "Substitute",
@@ -5352,7 +5980,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "sunnyday": {
         "name": "Sunny Day",
@@ -5369,7 +5999,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "superfang": {
         "name": "Super Fang",
@@ -5386,7 +6018,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "superpower": {
         "name": "Superpower",
@@ -5403,7 +6037,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "supersonic": {
         "name": "Supersonic",
@@ -5420,7 +6056,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "surf": {
         "name": "Surf",
@@ -5437,7 +6075,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "swagger": {
         "name": "Swagger",
@@ -5454,7 +6094,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "swallow": {
         "name": "Swallow",
@@ -5471,7 +6113,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "sweetkiss": {
         "name": "Sweet Kiss",
@@ -5488,7 +6132,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "sweetscent": {
         "name": "Sweet Scent",
@@ -5505,7 +6151,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "swift": {
         "name": "Swift",
@@ -5522,7 +6170,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "swordsdance": {
         "name": "Swords Dance",
@@ -5539,7 +6189,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "synthesis": {
         "name": "Synthesis",
@@ -5556,7 +6208,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "tackle": {
         "name": "Tackle",
@@ -5573,7 +6227,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "tailglow": {
         "name": "Tail Glow",
@@ -5590,7 +6246,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "tailwhip": {
         "name": "Tail Whip",
@@ -5607,7 +6265,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "takedown": {
         "name": "Take Down",
@@ -5624,7 +6284,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "taunt": {
         "name": "Taunt",
@@ -5641,7 +6303,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "teeterdance": {
         "name": "Teeter Dance",
@@ -5658,7 +6322,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "teleport": {
         "name": "Teleport",
@@ -5675,7 +6341,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "thief": {
         "name": "Thief",
@@ -5692,7 +6360,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "thrash": {
         "name": "Thrash",
@@ -5709,7 +6379,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "thunder": {
         "name": "Thunder",
@@ -5726,7 +6398,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "thunderbolt": {
         "name": "Thunderbolt",
@@ -5743,7 +6417,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "thunderpunch": {
         "name": "Thunder Punch",
@@ -5760,7 +6436,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "thundershock": {
         "name": "Thunder Shock",
@@ -5777,7 +6455,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "thunderwave": {
         "name": "Thunder Wave",
@@ -5794,7 +6474,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": "par"
+        "status": "par",
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "tickle": {
         "name": "Tickle",
@@ -5811,7 +6493,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "torment": {
         "name": "Torment",
@@ -5828,7 +6512,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "toxic": {
         "name": "Toxic",
@@ -5845,7 +6531,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": "tox"
+        "status": "tox",
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "transform": {
         "name": "Transform",
@@ -5862,7 +6550,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "triattack": {
         "name": "Tri Attack",
@@ -5879,7 +6569,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "trick": {
         "name": "Trick",
@@ -5896,7 +6588,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "triplekick": {
         "name": "Triple Kick",
@@ -5913,7 +6607,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "twineedle": {
         "name": "Twineedle",
@@ -5930,7 +6626,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "twister": {
         "name": "Twister",
@@ -5947,7 +6645,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "uproar": {
         "name": "Uproar",
@@ -5964,7 +6664,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "vinewhip": {
         "name": "Vine Whip",
@@ -5981,7 +6683,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "visegrip": {
         "name": "Vise Grip",
@@ -5998,7 +6702,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "vitalthrow": {
         "name": "Vital Throw",
@@ -6015,7 +6721,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "volttackle": {
         "name": "Volt Tackle",
@@ -6032,7 +6740,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "waterfall": {
         "name": "Waterfall",
@@ -6049,7 +6759,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "watergun": {
         "name": "Water Gun",
@@ -6066,7 +6778,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "waterpulse": {
         "name": "Water Pulse",
@@ -6083,7 +6797,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "watersport": {
         "name": "Water Sport",
@@ -6100,7 +6816,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "waterspout": {
         "name": "Water Spout",
@@ -6117,7 +6835,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "weatherball": {
         "name": "Weather Ball",
@@ -6134,7 +6854,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "whirlpool": {
         "name": "Whirlpool",
@@ -6151,7 +6873,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "whirlwind": {
         "name": "Whirlwind",
@@ -6168,7 +6892,9 @@
         "isProtect": false,
         "isPhaze": true,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "willowisp": {
         "name": "Will-O-Wisp",
@@ -6185,7 +6911,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": "brn"
+        "status": "brn",
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "wingattack": {
         "name": "Wing Attack",
@@ -6202,7 +6930,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "wish": {
         "name": "Wish",
@@ -6219,7 +6949,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "withdraw": {
         "name": "Withdraw",
@@ -6236,7 +6968,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "wrap": {
         "name": "Wrap",
@@ -6253,7 +6987,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "yawn": {
         "name": "Yawn",
@@ -6270,7 +7006,9 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     },
     "zapcannon": {
         "name": "Zap Cannon",
@@ -6287,6 +7025,8 @@
         "isProtect": false,
         "isPhaze": false,
         "isHazard": false,
-        "status": null
+        "status": null,
+        "curesSelfStatus": false,
+        "curesTeamStatus": false
     }
 }

@@ -77,6 +77,13 @@ class MoveData:
     is_phaze: bool = False        # forces the foe to switch (Roar / Whirlwind)
     is_hazard: bool = False       # sets an entry hazard (gen3: Spikes)
     status_inflicted: Optional[str] = None  # major status this move's PURPOSE is to inflict, else None
+    # gen3_status_cure_moves_v1: the move CLEARS a major status (onHit cure, curated in the
+    # acquisition tool — invisible declaratively). Self-scope (Refresh) vs whole-party scope
+    # (Heal Bell / Aromatherapy). Paired with the per-mon status one-hots, these let the policy
+    # head connect the cure to the status it would remove (the head previously routed its own
+    # status onto Recover/switch but never onto the cure move — see designs/research_state).
+    cures_self_status: bool = False   # cures the USER'S own status, leaving it statusless (Refresh)
+    cures_team_status: bool = False   # cures the WHOLE party's status (Heal Bell, Aromatherapy)
 
     @property
     def is_damaging(self) -> bool:
@@ -107,6 +114,8 @@ def _build(raw: Dict[str, dict]) -> Dict[str, MoveData]:
             is_phaze=bool(v.get("isPhaze", False)),
             is_hazard=bool(v.get("isHazard", False)),
             status_inflicted=v.get("status") or None,
+            cures_self_status=bool(v.get("curesSelfStatus", False)),
+            cures_team_status=bool(v.get("curesTeamStatus", False)),
         )
     return dex
 

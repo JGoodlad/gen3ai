@@ -340,6 +340,12 @@ class ReactiveEncoder(ObservationEncoder):
                                 move.id, md.status_inflicted, opp, ability_dist
                             )
                             eff[8] = 1.0 if known else 0.0
+                    # gen3_status_cure_moves_v1: static curated cure facts — Refresh clears the
+                    # user's status; Heal Bell / Aromatherapy clear the whole party's. The head
+                    # reads these against the per-mon status one-hots to value the cure (the head
+                    # previously routed its own status onto Recover/switch, never the cure move).
+                    eff[9] = 1.0 if md.cures_self_status else 0.0
+                    eff[10] = 1.0 if md.cures_team_status else 0.0
                 # pp_fraction: this move's own remaining PP (depletion → Struggle awareness).
                 max_pp = getattr(move, "max_pp", 0) or 0
                 eff[7] = (move.current_pp / max_pp) if max_pp else 0.0
@@ -476,9 +482,10 @@ class ReactiveEncoder(ObservationEncoder):
             # gen3_protect_odds_v1: P(Protect/Detect/Endure succeeds NOW), our active then opp active.
             "protect_odds_our": {"offset": 15, "dim": 1},
             "protect_odds_opp": {"offset": 16, "dim": 1},
-            # gen3_move_effects_v1: 4 move slots × MOVE_EFFECT_FEATURES (9), slot-major,
-            # request order. Per slot: [is_boost, is_heal, is_protect, is_phaze, is_hazard,
-            # inflicts_status, status_will_land, pp_fraction, status_will_land_known].
+            # gen3_move_effects_v1 / gen3_status_cure_moves_v1: 4 move slots ×
+            # MOVE_EFFECT_FEATURES (11), slot-major, request order. Per slot: [is_boost, is_heal,
+            # is_protect, is_phaze, is_hazard, inflicts_status, status_will_land, pp_fraction,
+            # status_will_land_known, cures_self_status, cures_team_status].
             "move_effects": {"offset": REACTIVE_SCALAR_DIM, "dim": MOVE_EFFECTS_DIM,
                              "per_slot": MOVE_EFFECT_FEATURES},
             # incoming_damage (gen3_incoming_crit_split): per-mon [phys_expdmg, spec_expdmg,
@@ -496,10 +503,11 @@ class ReactiveEncoder(ObservationEncoder):
         our_m = vector[mo:mo + 144].reshape(TEAM_SIZE, 4, TEAM_SIZE) * 4.0
         their_m = vector[mo + 144:mo + 288].reshape(TEAM_SIZE, 4, TEAM_SIZE) * 4.0
 
-        # gen3_move_effects_v1: decode the 4×8 per-move effect block (slot-major).
+        # gen3_move_effects_v1 / gen3_status_cure_moves_v1: decode the 4×11 per-move effect
+        # block (slot-major).
         eff = vector[REACTIVE_SCALAR_DIM:REACTIVE_SCALAR_DIM + MOVE_EFFECTS_DIM].reshape(4, MOVE_EFFECT_FEATURES)
         eff_names = ["boost", "heal", "protect", "phaze", "hazard", "status",
-                     "status_lands", "pp", "status_known"]
+                     "status_lands", "pp", "status_known", "cures_self", "cures_team"]
         # status_lands (6) and pp (7) are continuous in [0,1]; the rest are bits.
         move_effects = [
             {eff_names[f]: (round(float(eff[s, f]), 2) if f in (6, 7) else bool(eff[s, f]))

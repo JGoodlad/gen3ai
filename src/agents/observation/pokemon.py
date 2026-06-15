@@ -16,7 +16,9 @@ from .constants import (
     POKEMON_HP_REVEALED_OFFSET,
     POKEMON_HP_PROBS_OFFSET,
     POKEMON_HP_BLOCK_DIM,
+    POKEMON_SLEEP_BELIEF_OFFSET,
 )
+from .sleep_belief import sleep_belief_features
 from .species import SpeciesEncoder
 from .items import ItemsEncoder
 from .types import TypeEncoder
@@ -80,6 +82,7 @@ class PokemonEncoder(ObservationEncoder):
         hp_probs: "np.ndarray | None" = None,
         hp_known: bool = False,
         live_mon=None,
+        sleep_sources=None,
     ) -> np.ndarray:
         """Encode a single Pokémon slot.
 
@@ -159,6 +162,15 @@ class PokemonEncoder(ObservationEncoder):
             ctr = getattr(mon, "status_counter", 0) or 0
         vec[POKEMON_COUNTER_OFFSET]     = min(ctr, 4) / 4.0 if is_slp else 0.0
         vec[POKEMON_COUNTER_OFFSET + 1] = min(ctr, 8) / 8.0 if is_tox else 0.0
+
+        # 9b. Sleep WAKE belief (gen3_sleep_wake_belief_v1): the raw counter forces the model to
+        # learn the gen3 sleep RNG, and poke-env hides the Rest source + duration — so COMPUTE the
+        # wake odds. Only when asleep; otherwise the 3 dims stay 0 (zeroed by np.zeros init).
+        if is_slp:
+            det, p_wake, reliable = sleep_belief_features(ctr, mon, is_own, sleep_sources)
+            vec[POKEMON_SLEEP_BELIEF_OFFSET]     = det
+            vec[POKEMON_SLEEP_BELIEF_OFFSET + 1] = p_wake
+            vec[POKEMON_SLEEP_BELIEF_OFFSET + 2] = reliable
 
         # 10. Spread block (18 dims): IVs (6) + EVs (6) + spread_known (1) + nature (5)
         # Own team: actual values from the teambuilder. Opponent: all zeros + spread_known=0

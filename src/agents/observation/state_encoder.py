@@ -9,6 +9,7 @@ from .types import TypeEncoder
 from .abilities import AbilitiesEncoder
 from .moves import MovesEncoder
 from .reactive import ReactiveEncoder
+from .sleep_belief import build_sleep_sources
 from .constants import (
     POKEMON_VECTOR_DIM,
     POKEMON_FULL_DIM,
@@ -166,12 +167,22 @@ class Gen3ObservationEncoder(ObservationEncoder):
         else:
             live = battle.live_view() if hasattr(battle, "live_view") else None
 
+        # Sleep WAKE belief sources (gen3_sleep_wake_belief_v1): fold the event log ONCE per encode
+        # for the Rest-source + Sleep-Talk-reliability of each asleep mon — but only when someone is
+        # actually asleep, so the common no-sleep decision pays nothing.
+        any_asleep = live is not None and any(
+            m.status == "slp" for m in (*live.ours.mons, *live.opp.mons)
+        )
+        sleep_sources = build_sleep_sources(battle) if any_asleep else None
+
         # 1. Our Team — current-board per-mon facts read through the LiveView slot.
         our_team_list = self.get_team_list(battle, is_opponent=False)
         for i in range(TEAM_SIZE):
             mon = our_team_list[i] if i < len(our_team_list) else None
             live_mon = live.ours.get(mon.species) if (live is not None and mon is not None) else None
-            mon_vec = self.pokemon_encoder.encode(mon, battle, is_own=True, live_mon=live_mon)
+            mon_vec = self.pokemon_encoder.encode(
+                mon, battle, is_own=True, live_mon=live_mon, sleep_sources=sleep_sources
+            )
             is_active = 1.0 if (mon and mon.active) else 0.0
 
             start = OFFSET_OUR_TEAM + (i * POKEMON_FULL_DIM)
@@ -191,7 +202,8 @@ class Gen3ObservationEncoder(ObservationEncoder):
                 hp_probs = None
                 hp_known = False
             mon_vec = self.pokemon_encoder.encode(
-                mon, battle, is_own=False, hp_probs=hp_probs, hp_known=hp_known, live_mon=live_mon
+                mon, battle, is_own=False, hp_probs=hp_probs, hp_known=hp_known,
+                live_mon=live_mon, sleep_sources=sleep_sources,
             )
             # Active flag through the LiveView slot (LivePokemon.active is set at fold time
             # from poke-env's opponent_active_pokemon accessor, so this is byte-identical to

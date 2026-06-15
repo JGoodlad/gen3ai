@@ -15,6 +15,7 @@ import torch
 import torch.nn as nn
 
 from agents.model.features_extractor import Embeddings, ObsUnpack, ROLE_TOKEN_SIZE
+from agents.observation.constants import POKEMON_FULL_DIM
 
 TEAM = 6  # our / opp team size
 
@@ -32,7 +33,7 @@ class CheapEncoder(nn.Module):
         td = emb.type_embedding.embedding_dim
         md = emb.move_embedding.embedding_dim
         self.match_dim = 8  # per-move (4) mean + per-move (4) max over opp slots
-        slot_in = 107 + sd + idim + 2 * ad + 2 * td + 4 * md + 4 * md + self.match_dim
+        slot_in = POKEMON_FULL_DIM + sd + idim + 2 * ad + 2 * td + 4 * md + 4 * md + self.match_dim
         self.net = nn.Sequential(
             nn.LayerNorm(slot_in),
             nn.Linear(slot_in, hidden), nn.ReLU(),
@@ -59,7 +60,7 @@ class CheapEncoder(nn.Module):
 
 
 class DistilledStudent(nn.Module):
-    """A self-contained cheap opponent policy: forward({"observation": [B,3357]}) -> raw [B,11]
+    """A self-contained cheap opponent policy: forward({"observation": [B,3453]}) -> raw [B,11]
     logits (the caller applies the action mask, exactly as for the full model). Owns its own
     ObsUnpack (stateless) and Embeddings (weights copied from the teacher at distill time, then
     frozen) so it needs no teacher at inference."""

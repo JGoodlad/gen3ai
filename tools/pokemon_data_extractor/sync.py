@@ -157,6 +157,23 @@ _PROTECT_VOLATILES = frozenset({"protect", "endure"})
 # gate below. See tools/CLAUDE.md.
 _CALLBACK_SELF_BOOST = frozenset({"bellydrum"})
 
+# Status-CURE moves (gen3_status_cure_moves_v1). Like the self-boost above, the cure
+# lives ENTIRELY in a JavaScript `onHit` callback (`pokemon.cureStatus()` /
+# `side.pokemon.forEach(... cureStatus)`), so it is INVISIBLE in the declarative fields
+# the poke-env static JSON carries — hence a curated override, not a derived flag.
+# Two scopes, mirroring the two new per-move obs bits:
+#   - _CURES_SELF_STATUS: cures the USER'S OWN major status and leaves it statusless —
+#     Refresh (par/psn/brn). Rest is deliberately EXCLUDED: it is already `is_heal`, and
+#     it does not leave you statusless (it REPLACES the status with sleep), so flagging it
+#     here would muddy the "this move clears my status" signal.
+#   - _CURES_TEAM_STATUS: cures the WHOLE party's status — Heal Bell, Aromatherapy
+#     (both `target: allyTeam` in gen3). Lets the model learn to value the move off the
+#     BENCH status one-hots, not just the active's.
+# Ability-based cures (Natural Cure / Shed Skin) are NOT moves and are out of scope here
+# (surfaced via the per-mon ability block + the `ability_activated` volatile). See tools/CLAUDE.md.
+_CURES_SELF_STATUS = frozenset({"refresh"})
+_CURES_TEAM_STATUS = frozenset({"healbell", "aromatherapy"})
+
 
 def _has_self_positive_boost(entry):
     """True iff the move declaratively raises one of the USER'S OWN stats (a setup
@@ -213,6 +230,15 @@ def build_moves(gen):
                         Drum, whose +6 Atk lives in an `onHit` callback). Curse is
                         resolved LIVE in the encoder (its boost depends on the user's
                         type), so it is NOT flagged here.
+      - `curesSelfStatus` / `curesTeamStatus` (gen3_status_cure_moves_v1) ← curated
+                        callback overrides (`_CURES_SELF_STATUS` = Refresh;
+                        `_CURES_TEAM_STATUS` = Heal Bell / Aromatherapy). The cure lives in
+                        an `onHit` callback (invisible declaratively), so these mirror the
+                        Belly Drum treatment. They give the policy head a per-move signal it
+                        previously lacked — that a move CLEARS status — so it can connect
+                        Refresh/Heal Bell to the status one-hots it already sees (verified
+                        gap: the head conditioned its own status onto Recover/switch but
+                        never onto the cure move).
     """
     moves_path = _static("moves", f"gen{gen}moves.json")
     if not os.path.exists(moves_path):
@@ -252,6 +278,11 @@ def build_moves(gen):
             "isPhaze": bool(entry.get("forceSwitch")),
             "isHazard": side_condition in _HAZARD_SIDE_CONDITIONS,
             "status": primary_status,  # major status this move INFLICTS, else null
+            # gen3_status_cure_moves_v1: curated callback overrides (onHit cure → no
+            # declarative field). curesSelfStatus = Refresh; curesTeamStatus = Heal Bell /
+            # Aromatherapy. Let the policy head connect the cure to the status one-hots.
+            "curesSelfStatus": move_id in _CURES_SELF_STATUS,
+            "curesTeamStatus": move_id in _CURES_TEAM_STATUS,
         }
 
     return moves_map

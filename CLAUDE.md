@@ -544,28 +544,31 @@ tools/               # Acquisition layer (knows the 3 upstreams) — has CLAUDE.
 
 ## Observation Vector
 
-The full observation is a **3411-dim float32 vector** (`Gen3ObservationEncoder.dimension`):
+The full observation is a **3455-dim float32 vector** (`Gen3ObservationEncoder.dimension`):
 
 | Block | Dims | Offset |
 |---|---|---|
-| Our team (6 × 107) | 642 | 0 |
-| Opp team (6 × 107) | 642 | 642 |
-| Active context ×2 (boosts + full volatiles, `VOLATILE_DIM`=44) | 116 | 1284 |
-| Global env | 18 | 1400 |
-| Reactive + move-effects + **incoming-damage** + **turns_since_progress** + **protect-odds** + matchups | 392 | 1418 |
-| Prev-turn action mask | 11 | 1810 |
-| Turn history (`N_HISTORY_TURNS` × 159) | 1590 | 1821 |
-| **Total** | **3411** | |
+| Our team (6 × 110) | 660 | 0 |
+| Opp team (6 × 110) | 660 | 660 |
+| Active context ×2 (boosts + full volatiles, `VOLATILE_DIM`=44) | 116 | 1320 |
+| Global env | 18 | 1436 |
+| Reactive + move-effects + **incoming-damage** + **turns_since_progress** + **protect-odds** + matchups | 400 | 1454 |
+| Prev-turn action mask | 11 | 1854 |
+| Turn history (`N_HISTORY_TURNS` × 159) | 1590 | 1865 |
+| **Total** | **3455** | |
 
-**The full per-block layout** — the 107-dim per-Pokémon slot, the 11-dim move slot, the 18-dim
-spread block, global env, the 392-dim reactive block (**17 scalars** — the 14 prior + the
+**The full per-block layout** — the 110-dim per-Pokémon slot (incl. a 3-dim
+`gen3_sleep_wake_belief_v1` block: `sleep_is_deterministic` [Rest], computed `p_wake`, and
+`sleep_counter_reliable` — zeros unless the mon is asleep), the 11-dim move slot, the 18-dim
+spread block, global env, the 400-dim reactive block (**17 scalars** — the 14 prior + the
 log-saturated **`turns_since_progress`** no-progress clock at `vec[14]`, `gen3_markovian_progress_v1`
 (the no-progress reward keys on the SAME EpisodeTracker-owned counter) + the **2 protect-odds scalars**
 at `vec[15]`/`vec[16]`, `gen3_protect_odds_v1` — P(a Protect/Detect/Endure succeeds NOW) for our /
 the opp active mon, the gen3 floored-doubling stall odds (100/50/25/12.5, floor 1/8) from each mon's
 `LivePokemon.protect_counter` (the only obs view of the stall counter; public both sides, no leak) — +
-the 36-dim action-aligned
-move-effect block, 4 slots × 9 feats + the **51-dim incoming-damage / OHKO belief block**
+the 44-dim action-aligned
+move-effect block, 4 slots × 11 feats (incl. the `gen3_status_cure_moves_v1` **cures_self_status** /
+**cures_team_status** bits — Refresh self-cure, Heal Bell / Aromatherapy team-cure) + the **51-dim incoming-damage / OHKO belief block**
 [`gen3_incoming_crit_split_v1`: per our mon, phys/spec expected-damage + the modal **no-crit** P(KO) +
 the **crit-risk DELTA** per channel (crit-inclusive − no-crit ∈ [0, _CRIT_P] — a decorrelated "crit
 tax" feature, so the model prices the modal line without over-weighting the coinflip) + P(outspeed) +
@@ -642,12 +645,18 @@ The architecture-constant single source of truth is the module-level constants
 (`ROLE_TOKEN_SIZE`, `PROJECTION_DIM`, `MOVE_NET_HIDDEN`, `ROLE_ENCODER_HIDDEN`,
 `ACTIVE_CTX_HIDDEN`) at the top of `features_extractor.py`; `ARCH_SIGNATURE` /
 `MODEL_CONFIG_VERSION` live in `model_version.py` (current `ARCH_SIGNATURE`:
-`gen3_move_slot_align_v1` — fixed a per-move obs GIGO: `reactive.py` filled the active-move features
-(base power, type multiplier, the move-effect block) by iterating `battle.available_moves`, which
-poke-env builds with DISABLED moves dropped, so under a Choice-lock / Disable / Taunt / 0-PP every
-later per-move feature shifted off its action logit and the trailing slot read a phantom 4×; now
-request-slot-ordered via `legal.move_slots` (disabled kept, typed-HP preserved) with a neutral
-default — retrain-class, byte-identical on the common all-moves-available decision; current
+`gen3_sleep_wake_belief_v1` — adds a 3-dim per-mon SLEEP WAKE belief block [`sleep_is_deterministic`
+(Rest), a COMPUTED `p_wake`, `sleep_counter_reliable`]: poke-env exposes only Status.SLP + a noisy
+counter, not the rolled duration / Rest source, so a policy would have to LEARN the gen3 sleep RNG —
+we COMPUTE the wake odds (verified tables: opp time∈{2,3,4,5}, Rest time=3, Early Bird halves;
+marginalised over the opp Early-Bird prior) and read the Rest source from our event log's `[from]`
+clause; fuzz-calibrated against the real sim RNG. It stacks on two prior unshipped obs changes:
+`gen3_protect_odds_v1` (2 reactive protect-success scalars, obs 3409 → 3411) and
+`gen3_status_cure_moves_v1` — two static per-move bits **cures_self_status** (Refresh) +
+**cures_team_status** (Heal Bell / Aromatherapy), so the head connects a status-cure move to the
+per-mon status one-hots (prober-verified gap: the head routed its own status onto Recover/switch but
+never the cure move), `MOVE_EFFECT_FEATURES` 9 → 11 (3411 → 3419). The sleep block then takes
+`POKEMON_VECTOR_DIM` 106 → 109 (3419 → 3455) — all retrain-class; current
 `MODEL_CONFIG_VERSION`: **22** — v16 added the in-place
 hidden-opponent belief-aux toggle `opp_belief_slots` + its coef `opp_belief_aux_coef`, v17 the
 move-belief reinjection toggle `move_belief_mode` + `move_belief_coef`, v18 the latent-belief toggle

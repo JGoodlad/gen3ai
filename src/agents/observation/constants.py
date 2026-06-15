@@ -58,8 +58,16 @@ POKEMON_HP_BLOCK_OFFSET = 89   # 71 + 18 (spread end)
 POKEMON_HP_REVEALED_OFFSET = 89
 POKEMON_HP_PROBS_OFFSET = 90
 POKEMON_HP_BLOCK_DIM = 17      # 1 hp_revealed flag + 16 candidate-type probs
-POKEMON_VECTOR_DIM = 106       # 71 + 18 (spread) + 17 (HP block)
-POKEMON_FULL_DIM = 107         # 106 + 1 (active flag appended by state_encoder)
+# Sleep WAKE belief (gen3_sleep_wake_belief_v1): 3 dims for an asleep mon, else all zeros —
+# [sleep_is_deterministic (1.0 = Rest fixed-duration), p_wake (computed P(wake next move attempt)
+# over the verified gen3 sleep tables, marginalising the opp Early-Bird prior), sleep_counter_reliable
+# (0.0 once a Sleep Talk / Snore turn has corrupted the poke-env counter)]. poke-env exposes only the
+# noisy counter + Status.SLP; this hands the model the COMPUTED wake odds + the Rest source it can't
+# otherwise see (the [from] move clause, read from our event log). See observation/sleep_belief.py.
+POKEMON_SLEEP_BELIEF_OFFSET = 106  # 89 + 17 (HP block end)
+POKEMON_SLEEP_BELIEF_DIM = 3
+POKEMON_VECTOR_DIM = 109       # 71 + 18 (spread) + 17 (HP block) + 3 (sleep belief)
+POKEMON_FULL_DIM = 110         # 109 + 1 (active flag appended by state_encoder)
 
 # Active context: boosts(14) + volatiles(VOLATILES_DIM)
 ACTIVE_CONTEXT_DIM = BOOSTS_DIM + VOLATILES_DIM
@@ -86,18 +94,22 @@ MATCHUP_DIM = 288 # (6*4*6) for Our vs Their + (6*4*6) for Their vs Our
 # both sides (the opp's counter derives entirely from their revealed move stream → no leak).
 REACTIVE_SCALAR_DIM = 17
 
-# gen3_move_effects_v1: action-aligned per-move EFFECT flags. For each of the 4
-# request-order move slots (so feature slot k lines up with action logit 6+k), 9
+# gen3_move_effects_v1 / gen3_status_cure_moves_v1: action-aligned per-move EFFECT flags. For
+# each of the 4 request-order move slots (so feature slot k lines up with action logit 6+k), 11
 # features: is_boost, is_heal, is_protect, is_phaze, is_hazard, inflicts_status,
-# status_will_land, pp_fraction, status_will_land_known. Status / utility moves are otherwise
-# indistinguishable at the policy head (base power 0 + neutral type multiplier for all of them),
-# so the model could not tell a setup move from a heal from a wasted Toxic. status_will_land is
-# a prior-weighted probability; status_will_land_known is the prior-vs-confirmed flag (routed
-# with the SAME predicate as the per-mon ability block's `known` bit — see reactive.py). These
-# sit AFTER the 14 scalars and BEFORE the matchups, so the extractor picks them up in
-# `non_matchup_rest` automatically (the matchup offset is read from the layout, never hardcoded).
-MOVE_EFFECT_FEATURES = 9
-MOVE_EFFECTS_DIM = 4 * MOVE_EFFECT_FEATURES                       # 36 (N_MOVE_SLOTS=4 × 9)
+# status_will_land, pp_fraction, status_will_land_known, cures_self_status, cures_team_status.
+# Status / utility moves are otherwise indistinguishable at the policy head (base power 0 + neutral
+# type multiplier for all of them), so the model could not tell a setup move from a heal from a
+# wasted Toxic — nor that a move CLEARS status. status_will_land is a prior-weighted probability;
+# status_will_land_known is the prior-vs-confirmed flag (routed with the SAME predicate as the
+# per-mon ability block's `known` bit — see reactive.py). cures_self_status (Refresh) /
+# cures_team_status (Heal Bell, Aromatherapy) are static curated facts (gen3_status_cure_moves_v1)
+# the head reads alongside the per-mon status one-hots to value a cure (a verified gap: the head
+# routed its own status onto Recover/switch but never onto the cure move). These sit AFTER the 15
+# scalars and BEFORE the matchups, so the extractor picks them up in `non_matchup_rest`
+# automatically (the matchup offset is read from the layout, never hardcoded).
+MOVE_EFFECT_FEATURES = 11
+MOVE_EFFECTS_DIM = 4 * MOVE_EFFECT_FEATURES                       # 44 (N_MOVE_SLOTS=4 × 11)
 
 NUM_POKEMON = 12
 TEAM_SIZE = 6

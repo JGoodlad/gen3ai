@@ -249,8 +249,8 @@ class Gen3Env(SinglesEnv):
         slot — the SAME canonical assignment as belief_species (both via `assign_hidden_to_slots`), so
         the latent target and the species-CE label can never name a different mon for a slot. Each mon
         is encoded as agent2's OWN mon (full spread + full moveset), untouched (full HP / no status,
-        since a still-hidden mon never entered battle) → a clean fresh-identity 107-d slot the model's
-        pokemon_encoder turns into the role-token the latent head regresses toward. Cached per species
+        since a still-hidden mon never entered battle) → a clean fresh-identity POKEMON_FULL_DIM slot the
+        model's pokemon_encoder turns into the role-token the latent head regresses toward. Cached per species
         (cleared each reset). PAD / non-target slots stay zeros."""
         target = np.zeros((TEAM_SIZE, POKEMON_FULL_DIM), dtype=np.float32)
         idx = build_belief_target_index(
@@ -263,9 +263,9 @@ class Gen3Env(SinglesEnv):
         return target
 
     def _encode_fresh_mon(self, mon, b2):
-        """One 107-d fresh-identity slot for a hidden mon (is_own=True → spread populated), cached by
-        species id. Mirrors `state_encoder`'s per-slot pack: the 106-d per-mon encode + a trailing
-        active flag (0.0 — a bench/identity encode)."""
+        """One POKEMON_FULL_DIM fresh-identity slot for a hidden mon (is_own=True → spread populated),
+        cached by species id. Mirrors `state_encoder`'s per-slot pack: the POKEMON_VECTOR_DIM per-mon
+        encode + a trailing active flag (0.0 — a bench/identity encode)."""
         sp = mon.species
         cached = self._target_encode_cache.get(sp)
         if cached is not None:

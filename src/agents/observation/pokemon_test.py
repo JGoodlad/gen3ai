@@ -65,13 +65,13 @@ def _make_mon(nature="hardy", ivs=None, evs=None, status=None, status_counter=0,
 
 
 def test_pokemon_encoder_dimension():
-    assert _make_encoder().dimension == 106
+    assert _make_encoder().dimension == 109  # gen3_sleep_wake_belief_v1: 106 + 3 sleep belief
 
 
 def test_pokemon_encoder_empty():
     encoder = _make_encoder()
     vec = encoder.encode(None, None)
-    assert len(vec) == 106
+    assert len(vec) == 109
     assert np.all(vec == 0)
 
 

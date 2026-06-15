@@ -44,7 +44,7 @@ class ObsOffsets:
     incoming_dim: int = 0
     incoming_per_mon: int = 5
     incoming_recovery: int = 3
-    pokemon_full_dim: int = 107   # per-our-mon obs block width (active flag = its last dim)
+    pokemon_full_dim: int = 110   # per-our-mon obs block width (active flag = its last dim)
     total_dim: int = 0            # the current encoder's full obs dim — a guard so a wrong-length
     #                               (e.g. archived old-arch) trace is REFUSED, not silently mis-sliced
 

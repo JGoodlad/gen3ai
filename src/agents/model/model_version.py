@@ -407,7 +407,32 @@ MODEL_CONFIG_VERSION = 22
 #   REACTIVE_DIM 390 → 392, obs dim 3409 → 3411. Verified: protect_success_prob_fuzz_test.py (encoded
 #   scalar == the gen3-correct prob for the live protect_counter, + the empirical % match). Not
 #   weight-compatible with gen3_move_slot_align_v1 (obs dim +2).
-ARCH_SIGNATURE = "gen3_protect_odds_v1"
+# gen3_status_cure_moves_v1: ADDS two static per-move EFFECT bits to the action-aligned move-effect
+#   block — cures_self_status (Refresh clears the user's own status) and cures_team_status (Heal Bell /
+#   Aromatherapy clear the whole party's). Motivation (prober-verified on ai_v6_01): the policy head
+#   had NO per-move signal that a move CLEARS status — Refresh read as an inert move (base power 0, all
+#   effect flags 0), so the head routed its own status onto Recover/switch (intervention: removing a
+#   Toxic moved P(recover)/switch by ~11pp each but P(refresh) by ~1.5pp) and under-used the cure
+#   (~1.4% when badly poisoned). The cure lives in an onHit callback (invisible declaratively), so the
+#   bits are a curated override in the acquisition tool (like Belly Drum) and read against the per-mon
+#   status one-hots the head already sees — provide the fact, let it learn. MOVE_EFFECT_FEATURES 9 → 11
+#   → MOVE_EFFECTS_DIM 36 → 44 → REACTIVE_DIM 392 → 400, obs dim 3411 → 3419 (stacks on gen3_protect_odds_v1).
+#   Not weight-compatible (move-effect block widened); the non-cure obs values are otherwise unchanged.
+# gen3_sleep_wake_belief_v1: ADDS a 3-dim per-mon SLEEP WAKE belief block to each team slot (after the
+#   HP block) — [sleep_is_deterministic (1.0 = Rest fixed-duration source), p_wake (COMPUTED P(wake on the
+#   next move attempt) over the verified gen3 sleep tables: opp time=random(2,6)∈{2,3,4,5}, Rest time=3,
+#   Early Bird halves; marginalised over the opp's Smogon Early-Bird prior, collapsing to exact 0/1 for our
+#   own mon or a revealed opp), sleep_counter_reliable (0.0 once a Sleep Talk / Snore turn has corrupted
+#   poke-env's +3-noisy counter)]. Motivation: poke-env exposes only Status.SLP + a noisy turn counter — NOT
+#   the rolled duration, remaining time, or the source move — so a policy reading the raw counter must LEARN
+#   the gen3 sleep RNG and cannot tell deterministic Rest from a random opp-sleep at the same counter. We
+#   COMPUTE the wake odds (provide-the-fact) and read the Rest source from our event log's [from] clause
+#   (poke-env discards it). Mechanics research + adversarial re-simulation: the four P(wake) tables were
+#   re-derived bit-for-bit; Sleep Talk +3 counter-noise empirically confirmed → the reliability bit instead
+#   of reconstructing Showdown's skippedTime switch refund. Fuzz-calibrated vs the real sim RNG. POKEMON_VECTOR_DIM
+#   106 → 109 → POKEMON_FULL_DIM 107 → 110 (+3 per slot × 12), obs dim 3419 → 3455. Stacks on the same
+#   unshipped change as the status-cure bits; not weight-compatible (per-mon slot widened).
+ARCH_SIGNATURE = "gen3_sleep_wake_belief_v1"
 
 
 class ModelVersionError(Exception):

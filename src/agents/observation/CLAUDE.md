@@ -173,16 +173,32 @@ The root `CLAUDE.md` carries the summary block table (block → dims → offset,
 This is the detailed per-block layout. All offsets are computed from named constants — never
 hardcode indices.
 
-**Per-Pokémon slot (107 dims):** species ID + 6 base stats, item ID + known + consumed, 2 type
+**Per-Pokémon slot (110 dims):** species ID + 6 base stats, item ID + known + consumed, 2 type
 IDs, ability ID + known, 7-dim condition (status one-hot), 4 × 11-dim move slots, HP fraction,
 species_known flag, sleep_counter_norm, toxic_counter_norm, **spread block (18 dims)**,
-**HP-candidate block (17 dims)**, active flag. The item block is 3 dims:
+**HP-candidate block (17 dims)**, **sleep-wake belief (3 dims)**, active flag. The item block is 3 dims:
 `[item_id, known, consumed]` — `consumed=1` when the item was spent this battle (Berry
 activated, Knock Off, Trick, etc.) and `item_id` retains the identity of the consumed item so
 the model knows what was lost. `species_known = 1.0` for all populated slots (own team and
 revealed opponent mons), `0.0` for unseen opponent slots. Sleep counter:
 `min(turns_slept, 4) / 4` (Gen 3 max 4 turns); toxic counter: `min(turns_poisoned, 8) / 8`
 (practical max before fainting with Leftovers).
+
+**Sleep-wake belief (3 dims, `gen3_sleep_wake_belief_v1`, layout in `sleep_belief.py`):** zeros
+unless the mon is asleep, else `[sleep_is_deterministic, p_wake, sleep_counter_reliable]`. poke-env
+exposes only `Status.SLP` + a noisy `status_counter`, NOT the rolled duration / remaining time / source
+move, so a policy reading the raw counter would have to LEARN the gen3 sleep RNG and can't tell a
+deterministic Rest from a random opp-sleep at the same counter. We **compute** the wake odds from the
+adversarially-verified gen3 tables — opp `time = random(2,6)` ∈ {2,3,4,5} (the gen3 mod overrides the
+modern `random(2,5)`), Rest `time = 3` fixed, Early Bird halves — `p_wake` = P(wake on the next move
+attempt | observed counter K, source, Early Bird), **marginalising the opponent's Smogon Early-Bird
+prior** (collapsing to exact 0/1 for our own mon or a revealed opp). `sleep_is_deterministic` (1.0 =
+Rest) selects which table; it's read from our **event log's `[from]` clause** (poke-env discards it).
+`sleep_counter_reliable` drops to 0.0 once a Sleep Talk / Snore turn has corrupted the counter (+3 per
+turn, empirically verified) — instead of reconstructing Showdown's `skippedTime` switch refund. The
+counter→p_wake mapping and the source/reliability bits are **fuzz-calibrated against the real sim RNG**
+(`poke_env_gaps/sleep_wake_fuzz_test.py`: per-decision obs wiring exact + empirical wake-frequency ==
+the computed table across well-sampled (K, source) buckets).
 
 **Move slot (11 dims, layout in `moves.py`):** move ID, base power (/200), has_secondary,
 has_recoil, type ID, category (0=status, 1=physical, 2=special), known flag, current PP
@@ -207,10 +223,10 @@ emitted a constant fallback (all-31 IVs, 0 EVs, neutral nature) for every own mo
 permanence + turns-remaining), spikes ×2 (2), log-turn (1), per-side screens (8: Reflect /
 Light Screen / Safeguard / Mist × both sides).
 
-**Reactive block (392 dims, layout in `reactive.py`):** 17 scalar dims, then the 36-dim
-**move-effect block** (`gen3_move_effects_v1`), then the **51-dim incoming-damage / OHKO belief
-block** (`gen3_incoming_crit_split_v1`, at offset 53 — see below), then the two 144-dim matchup matrices
-(`our_matchups` now at offset 104, `their_matchups` at 248). Scalars: active-move power ×4 (/200)
+**Reactive block (400 dims, layout in `reactive.py`):** 17 scalar dims, then the 44-dim
+**move-effect block** (`gen3_move_effects_v1` + `gen3_status_cure_moves_v1`), then the **51-dim incoming-damage / OHKO belief
+block** (`gen3_incoming_crit_split_v1`, at offset 61 — see below), then the two 144-dim matchup matrices
+(`our_matchups` now at offset 112, `their_matchups` at 256). Scalars: active-move power ×4 (/200)
 + active-move multiplier ×4 (/4), fainted counts ×2, active-status flag (1), `forced_struggle` (1),
 **(`gen3_move_slot_align_v1`: these per-move scalars — and the move-effect block below — are filled
 in REQUEST-slot order via `legal.move_slots` (action 6+i ↔ slot i, disabled moves KEPT, typed-HP
@@ -239,14 +255,23 @@ high-value trap-risk bit; `turns_since_progress` lets the model state-condition 
 penalty it's about to be charged; `protect_odds` lets it price the declining success of a repeated
 Protect (it failing the more often it's used in a row).
 
-**Move-effect block (36 dims, `gen3_move_effects_v1`):** 4 move slots in **REQUEST order** (so
+**Move-effect block (44 dims, `gen3_move_effects_v1` + `gen3_status_cure_moves_v1`):** 4 move slots in **REQUEST order** (so
 feature slot *k* lines up with action logit 6+*k* — enforced via `legal.move_slots` since
-`gen3_move_slot_align_v1`; pinned by `move_alignment_fuzz_test.py`) × 9 features each — `is_boost`, `is_heal`,
+`gen3_move_slot_align_v1`; pinned by `move_alignment_fuzz_test.py`) × 11 features each — `is_boost`, `is_heal`,
 `is_protect`, `is_phaze`, `is_hazard`, `inflicts_status`, `status_will_land`, `pp_fraction`,
-`status_will_land_known`. The
+`status_will_land_known`, **`cures_self_status`**, **`cures_team_status`**. The
 only per-move signals that previously reached the policy head in action order were base power and
 the type multiplier, so for status/utility moves (power 0, neutral multiplier) every option looked
-identical at the head — the model could not tell a setup move from a heal from a wasted Toxic. The
+identical at the head — the model could not tell a setup move from a heal from a wasted Toxic, nor
+that a move CLEARS status. **`gen3_status_cure_moves_v1`** added the last two bits: `cures_self_status`
+(Refresh — clears the user's own status) and `cures_team_status` (Heal Bell / Aromatherapy — clear
+the whole party's). They are **static curated facts** (the cure lives in an onHit callback, invisible
+declaratively → a curated override in the acquisition tool, like Belly Drum), read by the head against
+the per-mon status one-hots it already sees — a **prober-verified gap**: with no cure bit, the head
+conditioned its own status onto Recover/switch (intervention: removing a Toxic moved P(recover)/switch
+~11pp each) but onto Refresh only ~1.5pp, so it under-used the cure (~1.4% when badly poisoned) and let
+Toxic stack. `cures_team_status` is party-scoped on purpose so the model can value Heal Bell off the
+BENCH statuses, not just the active's. The
 static flags come from the `gen3_data.moves` facade (`MoveData.is_boost/is_heal/...`), derived in
 the acquisition tool from the field **Showdown** keys each mechanic on (`flags.heal`,
 `volatileStatus`, `forceSwitch`, `sideCondition`, primary `status`, declarative self-positive
@@ -271,7 +296,7 @@ the policy and value projection heads via
 sourced from Showdown's actual representation, never guessed from the move name — see
 `tools/pokemon_data_extractor/sync.py:build_moves`.
 
-**Incoming-damage / OHKO belief block (51 dims, `gen3_incoming_crit_split_v1`, at reactive offset 51,
+**Incoming-damage / OHKO belief block (51 dims, `gen3_incoming_crit_split_v1`, at reactive offset 61,
 before the matchups → routed to both heads via `non_matchup_rest`):** the opponent active's threat to
 *us* as a calibrated belief, not a calc. (This block is the fixed *usage-prior* collapse; the model-side
 `DamageOperator` (`--damage-op`) computes the SAME kind of belief from the model's LEARNED move belief

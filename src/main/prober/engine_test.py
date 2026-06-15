@@ -334,17 +334,19 @@ def test_threats_none_when_block_absent():
 def test_offsets_resolve_matches_layout():
     """Regression guard: pin the obs offsets the engine depends on."""
     off = ObsOffsets.resolve()
-    # OFFSET_REACTIVE resolves to 1418 at runtime (root CLAUDE.md obs table;
-    # the inline "# 1247" comments in observation/constants.py are stale).
-    assert off.mm_off == 1422   # OFFSET_REACTIVE(1418) + move_multiplier(4) — unchanged (before vec[14])
-    assert off.om_off == 1522   # OFFSET_REACTIVE(1418) + matchup_offset(104 = scalar 17 + move_eff 36 + incoming 51)
-    assert off.tm_off == 1666   # om_off + our_matchups(144)
+    # OFFSET_REACTIVE resolves to 1454 at runtime: gen3_sleep_wake_belief_v1 grew the per-mon slot
+    # 107→110, shifting the two team blocks + active/global prefix (1418→1454); within the reactive
+    # block, gen3_protect_odds_v1 (17 scalars) + gen3_status_cure_moves_v1 (move-eff 36→44) move the
+    # matchup/incoming offsets.
+    assert off.mm_off == 1458   # OFFSET_REACTIVE(1454) + move_multiplier(4) — unchanged (before vec[14])
+    assert off.om_off == 1566   # OFFSET_REACTIVE(1454) + matchup_offset(112 = scalar 17 + move_eff 44 + incoming 51)
+    assert off.tm_off == 1710   # om_off + our_matchups(144)
     assert off.active_block_dim == 99
-    # incoming-damage / OHKO belief block: reactive offset 53 (post protect_odds vec[15]/vec[16]) → 1471.
-    assert off.incoming_off == 1471   # OFFSET_REACTIVE(1418) + incoming_damage offset(53 = scalar 17 + move_eff 36)
+    # incoming-damage / OHKO belief block: reactive offset 61 (post scalars 17 + move-effects 44) → 1515.
+    assert off.incoming_off == 1515   # OFFSET_REACTIVE(1454) + incoming_damage offset(61 = scalar 17 + move_eff 44)
     assert off.incoming_dim == 51     # gen3_incoming_crit_split: 6*8 per-mon + 3 recovery
     assert off.incoming_per_mon == 8 and off.incoming_recovery == 3
-    assert off.pokemon_full_dim == 107
+    assert off.pokemon_full_dim == 110  # gen3_sleep_wake_belief_v1: 106 per-mon + 3 sleep belief + 1 active
 
     from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings
     lay = Gen3ObservationEncoder(load_mappings()).get_layout()

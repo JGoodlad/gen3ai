@@ -471,10 +471,10 @@ cross-battle generalization of a single battle's `notable.biggest_value_drops`.)
 ## Obs-offset dependence (regression-guarded)
 
 The engine reads five semantic obs regions by offset: the active-move type
-multipliers (`OFFSET_REACTIVE + move_multiplier`, currently dim 1422), the
-`our_matchups` block (`+ our_matchups`, currently 1501), the **`their_matchups`**
-block (`+ their_matchups`, currently 1645 — the raw-effectiveness decode + saliency),
-the **`incoming_damage`** block (`+ incoming_damage`, currently 1468, dim 33 — the
+multipliers (`OFFSET_REACTIVE + move_multiplier`, currently dim 1458), the
+`our_matchups` block (`+ our_matchups`, currently 1564), the **`their_matchups`**
+block (`+ their_matchups`, currently 1708 — the raw-effectiveness decode + saliency),
+the **`incoming_damage`** block (`+ incoming_damage`, currently 1513, dim 51 — the
 P(KO)/chip belief decode + critic/policy saliency; per-mon active flag read via
 `pokemon_full_dim`), and the turn-history span — all resolved at runtime from
 `Gen3ObservationEncoder.get_layout()`. **If the obs layout changes, these move
