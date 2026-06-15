@@ -223,10 +223,12 @@ emitted a constant fallback (all-31 IVs, 0 EVs, neutral nature) for every own mo
 permanence + turns-remaining), spikes ×2 (2), log-turn (1), per-side screens (8: Reflect /
 Light Screen / Safeguard / Mist × both sides).
 
-**Reactive block (400 dims, layout in `reactive.py`):** 17 scalar dims, then the 44-dim
-**move-effect block** (`gen3_move_effects_v1` + `gen3_status_cure_moves_v1`), then the **51-dim incoming-damage / OHKO belief
-block** (`gen3_incoming_crit_split_v1`, at offset 61 — see below), then the two 144-dim matchup matrices
-(`our_matchups` now at offset 112, `their_matchups` at 256). Scalars: active-move power ×4 (/200)
+**Reactive block (402 dims, layout in `reactive.py`):** 19 scalar dims (incl. 2 RESERVED
+`gen3_wish_reserve_v1` `wish_floating` scalars at `vec[17]`/`vec[18]`, our/opp side — unwired, always
+0), then the 44-dim **move-effect block** (`gen3_move_effects_v1` + `gen3_status_cure_moves_v1`), then
+the **51-dim incoming-damage / OHKO belief block** (`gen3_incoming_crit_split_v1`, at offset 63 — see
+below), then the two 144-dim matchup matrices (`our_matchups` now at offset 114, `their_matchups` at
+258). Scalars: active-move power ×4 (/200)
 + active-move multiplier ×4 (/4), fainted counts ×2, active-status flag (1), `forced_struggle` (1),
 **(`gen3_move_slot_align_v1`: these per-move scalars — and the move-effect block below — are filled
 in REQUEST-slot order via `legal.move_slots` (action 6+i ↔ slot i, disabled moves KEPT, typed-HP
@@ -296,7 +298,7 @@ the policy and value projection heads via
 sourced from Showdown's actual representation, never guessed from the move name — see
 `tools/pokemon_data_extractor/sync.py:build_moves`.
 
-**Incoming-damage / OHKO belief block (51 dims, `gen3_incoming_crit_split_v1`, at reactive offset 61,
+**Incoming-damage / OHKO belief block (51 dims, `gen3_incoming_crit_split_v1`, at reactive offset 63,
 before the matchups → routed to both heads via `non_matchup_rest`):** the opponent active's threat to
 *us* as a calibrated belief, not a calc. (This block is the fixed *usage-prior* collapse; the model-side
 `DamageOperator` (`--damage-op`) computes the SAME kind of belief from the model's LEARNED move belief

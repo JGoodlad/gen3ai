@@ -81,18 +81,22 @@ WEATHER_ONEHOT_DIM = 5
 GLOBAL_ENV_DIM = WEATHER_ONEHOT_DIM + 2 + 2 + 1 + 8  # = 18
 
 MATCHUP_DIM = 288 # (6*4*6) for Our vs Their + (6*4*6) for Their vs Our
-# 17 scalar reactive dims lead the block: move power(4) + multiplier(4) +
+# 19 scalar reactive dims lead the block: move power(4) + multiplier(4) +
 # fainted(2) + active_status(1) + forced_struggle(1) + trapped(1) + maybe_trapped(1) +
-# turns_since_progress(1) + protect_odds ×2 (our active, opp active). trapped/maybe_trapped are the
-# gen3_trapping_signals_v1 additions; turns_since_progress (vec[14], gen3_markovian_progress_v1) is the
-# log-saturated no-progress clock (design §5.1) — an EpisodeTracker-owned cross-turn counter (NOT
-# LiveView), threaded into encode() like the HP tracker, so obs and the no-progress reward key on ONE
-# value. protect_odds (vec[15]/vec[16], gen3_protect_odds_v1) is P(a Protect/Detect/Endure succeeds NOW)
-# for each active mon — the gen3 floored-doubling odds (100/50/25/12.5, floor 1/8) the model can't
-# otherwise see (the 'stall' counter isn't enumerated by poke-env's volatiles, and history saliency
-# decays before a chain can be counted). Sourced from the LiveView's per-mon protect_counter; public for
-# both sides (the opp's counter derives entirely from their revealed move stream → no leak).
-REACTIVE_SCALAR_DIM = 17
+# turns_since_progress(1) + protect_odds ×2 (our active, opp active) + wish_floating ×2 (our, opp).
+# trapped/maybe_trapped are the gen3_trapping_signals_v1 additions; turns_since_progress (vec[14],
+# gen3_markovian_progress_v1) is the log-saturated no-progress clock (design §5.1) — an
+# EpisodeTracker-owned cross-turn counter (NOT LiveView), threaded into encode() like the HP tracker, so
+# obs and the no-progress reward key on ONE value. protect_odds (vec[15]/vec[16], gen3_protect_odds_v1)
+# is P(a Protect/Detect/Endure succeeds NOW) for each active mon — the gen3 floored-doubling odds
+# (100/50/25/12.5, floor 1/8) the model can't otherwise see (the 'stall' counter isn't enumerated by
+# poke-env's volatiles, and history saliency decays before a chain can be counted). Sourced from the
+# LiveView's per-mon protect_counter; public for both sides (the opp's counter derives entirely from
+# their revealed move stream → no leak). **wish_floating (vec[17] our side, vec[18] opp side,
+# gen3_wish_reserve_v1) is a RESERVED placeholder for a pending-Wish "floating heal" signal — two dims
+# (one per side) the encoder leaves at 0.0 today; reserved now so wiring Wish later is a VALUES-only
+# change (no obs-dim / ARCH bump). NOT yet wired.**
+REACTIVE_SCALAR_DIM = 19
 
 # gen3_move_effects_v1 / gen3_status_cure_moves_v1: action-aligned per-move EFFECT flags. For
 # each of the 4 request-order move slots (so feature slot k lines up with action logit 6+k), 11

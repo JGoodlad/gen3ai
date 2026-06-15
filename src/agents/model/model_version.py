@@ -432,7 +432,14 @@ MODEL_CONFIG_VERSION = 22
 #   of reconstructing Showdown's skippedTime switch refund. Fuzz-calibrated vs the real sim RNG. POKEMON_VECTOR_DIM
 #   106 → 109 → POKEMON_FULL_DIM 107 → 110 (+3 per slot × 12), obs dim 3419 → 3455. Stacks on the same
 #   unshipped change as the status-cure bits; not weight-compatible (per-mon slot widened).
-ARCH_SIGNATURE = "gen3_sleep_wake_belief_v1"
+# gen3_wish_reserve_v1: RESERVES two reactive scalars (vec[17] our side, vec[18] opp side) for a future
+#   pending-Wish "floating heal" signal — NOT wired (the encoder leaves both 0.0). Reserved now so wiring
+#   Wish later (a Wish queued for a side heals the mon switched in at the end of the next turn) is a
+#   VALUES-only change with NO obs-dim / ARCH bump. REACTIVE_SCALAR_DIM 17 → 19 → REACTIVE_DIM 400 → 402,
+#   obs dim 3455 → 3457. Pure placeholder: with the dims at 0 the obs is byte-identical to
+#   gen3_sleep_wake_belief_v1 EXCEPT for the two reserved zeros + the shifted move-effect/incoming/matchup
+#   offsets, so it is retrain-class (weight-shape) but carries no new information until Wish is wired.
+ARCH_SIGNATURE = "gen3_wish_reserve_v1"
 
 
 class ModelVersionError(Exception):
