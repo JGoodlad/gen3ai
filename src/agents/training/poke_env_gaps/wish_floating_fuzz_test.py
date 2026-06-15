@@ -117,9 +117,11 @@ class _Stats:
     decisions: int = 0
     wish_uses: int = 0
     wish_resolves: int = 0
+    wish_fails: int = 0          # a |move|Wish that |-fail|ed (didn't set the slot — gen3: only double-Wish)
     completeness_fail: int = 0   # (A) a resolve at D but obs at D didn't flag pending
     soundness_fail: int = 0      # (B) obs flagged pending but no use the prior turn
     timing_fail: int = 0         # (C) a resolve not one turn after a use
+    false_pending_fail: int = 0  # (D) a FAILED Wish use that the obs still flagged pending next turn
     examples: List[str] = field(default_factory=list)
 
     def note(self, m: str) -> None:
@@ -135,7 +137,8 @@ class _WishFuzzPlayer(Player):
         self.stats = _Stats()
         # per battle tag: ground-truth from RAW protocol + the obs-encoded pending we recorded
         self._cur_turn: Dict[str, int] = defaultdict(int)
-        self._uses: Dict[str, Set[Tuple[int, str]]] = defaultdict(set)        # (turn, side)
+        self._uses: Dict[str, Set[Tuple[int, str]]] = defaultdict(set)        # (turn, side) — SUCCESSFUL uses
+        self._failed_uses: Dict[str, Set[Tuple[int, str]]] = defaultdict(set)  # (turn, side) — |-fail|ed uses
         self._resolves: Dict[str, Set[Tuple[int, str]]] = defaultdict(set)    # (turn, side)
         self._encoded: Dict[str, Dict[Tuple[int, str], float]] = defaultdict(dict)  # (turn, side) -> vec val
 
@@ -144,7 +147,7 @@ class _WishFuzzPlayer(Player):
         tag = split_messages[0][0].lstrip(">") if split_messages and split_messages[0] else ""
         battle = self._battles.get(tag) if hasattr(self, "_battles") else None
         role = getattr(battle, "player_role", None) if battle is not None else None
-        for msg in split_messages:
+        for idx, msg in enumerate(split_messages):
             if len(msg) < 2:
                 continue
             kind = msg[1]
@@ -153,8 +156,16 @@ class _WishFuzzPlayer(Player):
             elif kind == "move" and len(msg) > 3 and msg[3].strip().lower().replace(" ", "") == "wish":
                 side = self._side_of(msg[2], role)
                 if side:
-                    self._uses[tag].add((self._cur_turn[tag], side))
                     self.stats.wish_uses += 1
+                    # a Wish that |-fail|s (next lines, same actor) did NOT set the slot — gen3's only
+                    # fail cause is double-Wish (slot occupied); it must NOT be flagged pending next turn.
+                    failed = any(len(m2) >= 3 and m2[1] == "-fail" and m2[2] == msg[2]
+                                 for m2 in split_messages[idx + 1: idx + 4])
+                    if failed:
+                        self._failed_uses[tag].add((self._cur_turn[tag], side))
+                        self.stats.wish_fails += 1
+                    else:
+                        self._uses[tag].add((self._cur_turn[tag], side))
             elif kind == "-heal" and any("move: Wish" in str(t) or "[wisher]" in str(t) for t in msg[3:]):
                 side = self._side_of(msg[2], role)
                 if side:
@@ -207,27 +218,38 @@ class _WishFuzzPlayer(Player):
                 if abs(v - WISH_HEAL_FRACTION) <= _TOL and (d - 1, side) not in uses:
                     s.soundness_fail += 1
                     s.note(f"SOUNDNESS {tag} t{d} {side}: obs pending but no Wish use at t{d-1}")
+            # (D) no-false-pending-from-a-FAILED-use: a Wish that |-fail|ed (didn't set the slot — gen3's
+            # only fail is double-Wish) must NOT be flagged pending the next turn. This is the case a
+            # plain soundness check (B) misses, since a failed use IS still a "use". (User-requested.)
+            for (d, side) in self._failed_uses[tag]:
+                v = enc.get((d + 1, side))
+                if v is not None and abs(v - WISH_HEAL_FRACTION) <= _TOL and (d, side) not in uses:
+                    s.false_pending_fail += 1
+                    s.note(f"FALSE-PENDING {tag} t{d+1} {side}: a FAILED Wish at t{d} was flagged pending")
 
 
 def _report_and_assert(s: _Stats) -> None:
     print("=" * 70)
     print(f"decisions validated   : {s.decisions}")
-    print(f"wish USES seen        : {s.wish_uses}")
+    print(f"wish USES seen        : {s.wish_uses}  ({s.wish_fails} of them |-fail|ed = double-Wish, didn't set)")
     print(f"wish RESOLVES seen    : {s.wish_resolves}  (the non-circular ground truth)")
     print(f"completeness failures : {s.completeness_fail}  (resolve at D but obs didn't flag pending)")
     print(f"soundness failures    : {s.soundness_fail}  (obs flagged pending w/o a prior use)")
     print(f"timing failures       : {s.timing_fail}  (resolve not 1 turn after a use)")
+    print(f"false-pending failures: {s.false_pending_fail}  (a FAILED Wish use flagged pending next turn)")
     for ex in s.examples:
         print("   ·", ex)
     print("=" * 70)
-    if s.completeness_fail or s.soundness_fail or s.timing_fail:
-        print(f"\n❌ FAIL — {s.completeness_fail + s.soundness_fail + s.timing_fail} wish-floating violation(s)")
+    total_fail = s.completeness_fail + s.soundness_fail + s.timing_fail + s.false_pending_fail
+    if total_fail:
+        print(f"\n❌ FAIL — {total_fail} wish-floating violation(s)")
         os._exit(1)
     if s.wish_resolves == 0:
         print("⚠️  PASS but NO wish resolve was observed — INCONCLUSIVE. Re-run with more battles.")
     else:
         print(f"✅ PASS — every one of {s.wish_resolves} actual Wish resolves was correctly flagged pending "
-              f"the turn before (completeness), with no spurious pending (soundness) across {s.decisions} decisions.")
+              f"the turn before (completeness); no spurious pending (soundness); and none of the {s.wish_fails} "
+              f"FAILED (double-Wish) uses was falsely flagged pending — across {s.decisions} decisions.")
 
 
 async def run(n_battles: int) -> None:
