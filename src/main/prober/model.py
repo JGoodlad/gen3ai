@@ -45,6 +45,10 @@ class ObsOffsets:
     incoming_per_mon: int = 5
     incoming_recovery: int = 3
     pokemon_full_dim: int = 110   # per-our-mon obs block width (active flag = its last dim)
+    # gen3_wish_wired_v1: the two pending-Wish "floating heal" reactive scalars (our / opp side).
+    # 0 when not present in the layout (synthetic-test / old-arch traces) → the decoder no-ops.
+    wish_our_off: int = 0
+    wish_opp_off: int = 0
     total_dim: int = 0            # the current encoder's full obs dim — a guard so a wrong-length
     #                               (e.g. archived old-arch) trace is REFUSED, not silently mis-sliced
 
@@ -68,6 +72,8 @@ class ObsOffsets:
             incoming_per_mon=inc.get("per_mon", 5),
             incoming_recovery=inc.get("recovery", 3),
             pokemon_full_dim=C.POKEMON_FULL_DIM,
+            wish_our_off=(C.OFFSET_REACTIVE + rl["wish_floating_our"]["offset"]) if "wish_floating_our" in rl else 0,
+            wish_opp_off=(C.OFFSET_REACTIVE + rl["wish_floating_opp"]["offset"]) if "wish_floating_opp" in rl else 0,
             total_dim=lay.get("total_dim", 0),
         )
 
@@ -146,11 +152,20 @@ class ProbeModel:
                    turn_delta_encoder=enc.turn_delta_encoder)
 
     def describe_global(self, obs: np.ndarray) -> "dict | None":
-        """Decode the field state (weather, spikes, screens, turn) from the obs."""
+        """Decode the field state (weather, spikes, screens, turn, pending Wish) from the obs."""
         if self._global_encoder is None:
             return None
-        g = np.asarray(obs)[self._global_off:self._global_off + self._global_dim]
-        return self._global_encoder.describe_vector(g)
+        arr = np.asarray(obs)
+        g = arr[self._global_off:self._global_off + self._global_dim]
+        out = self._global_encoder.describe_vector(g)
+        # gen3_wish_wired_v1: a pending Wish (heals the slot mon ~50% at end of THIS turn) reads as a
+        # non-zero reactive scalar per side — surface it so the human/agent sees the floating heal.
+        o = self.offsets
+        if o.wish_our_off and o.wish_our_off < arr.shape[0]:
+            out["wish_our"] = bool(arr[o.wish_our_off] > 1e-4)
+        if o.wish_opp_off and o.wish_opp_off < arr.shape[0]:
+            out["wish_opp"] = bool(arr[o.wish_opp_off] > 1e-4)
+        return out
 
     def describe_team(self, obs: np.ndarray) -> "dict[str, dict]":
         """species → {item, moves} for every mon on both sides, decoded from the team blocks.

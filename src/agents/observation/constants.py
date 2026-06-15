@@ -93,9 +93,10 @@ MATCHUP_DIM = 288 # (6*4*6) for Our vs Their + (6*4*6) for Their vs Our
 # poke-env's volatiles, and history saliency decays before a chain can be counted). Sourced from the
 # LiveView's per-mon protect_counter; public for both sides (the opp's counter derives entirely from
 # their revealed move stream → no leak). **wish_floating (vec[17] our side, vec[18] opp side,
-# gen3_wish_reserve_v1) is a RESERVED placeholder for a pending-Wish "floating heal" signal — two dims
-# (one per side) the encoder leaves at 0.0 today; reserved now so wiring Wish later is a VALUES-only
-# change (no obs-dim / ARCH bump). NOT yet wired.**
+# gen3_wish_wired_v1) is the pending-Wish "floating heal" signal — WISH_HEAL_FRACTION (≈0.5, the gen3
+# recipient-maxhp/2 heal) when a Wish cast last turn will heal the slot mon at the END of this turn
+# (slot-keyed, reconstructed from the event log since poke-env doesn't track it), else 0.0. See
+# observation/wish_belief.py.**
 REACTIVE_SCALAR_DIM = 19
 
 # gen3_move_effects_v1 / gen3_status_cure_moves_v1: action-aligned per-move EFFECT flags. For

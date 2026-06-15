@@ -1585,6 +1585,11 @@ def _field_text(field: "dict | None") -> Text:
     t.append(f"our {field.get('our_spikes', 0)} / opp {field.get('opp_spikes', 0)}")
     t.append("   screens: ", style="dim")
     t.append(f"our {_screens_str(field, 'our')} | opp {_screens_str(field, 'opp')}")
+    # gen3_wish_wired_v1: a pending Wish heals the slot mon ~50% at the END of this turn (floating heal).
+    wish_sides = [s for s, k in (("our", "wish_our"), ("opp", "wish_opp")) if field.get(k)]
+    if wish_sides:
+        t.append("   💧wish: ", style="dim")
+        t.append(" & ".join(wish_sides) + " (~50% end-of-turn)", style="green")
     if field.get("turn") is not None:
         t.append(f"   turn {field['turn']:g}", style="dim")
     return t

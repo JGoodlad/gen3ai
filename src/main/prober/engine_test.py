@@ -384,6 +384,9 @@ def test_offsets_resolve_matches_layout():
     assert off.incoming_dim == 51     # gen3_incoming_crit_split: 6*8 per-mon + 3 recovery
     assert off.incoming_per_mon == 8 and off.incoming_recovery == 3
     assert off.pokemon_full_dim == 110  # gen3_sleep_wake_belief_v1: 106 per-mon + 3 sleep belief + 1 active
+    # gen3_wish_wired_v1: the two pending-Wish "floating heal" reactive scalars (our/opp side).
+    assert off.wish_our_off == 1471   # OFFSET_REACTIVE(1454) + wish_floating_our offset(17)
+    assert off.wish_opp_off == 1472   # OFFSET_REACTIVE(1454) + wish_floating_opp offset(18)
 
     from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings
     lay = Gen3ObservationEncoder(load_mappings()).get_layout()

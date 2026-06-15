@@ -13,6 +13,8 @@ from agents.gen3_mechanics import (
     effective_multiplier_by_types, status_land_estimate, protect_success_probability,
 )
 from agents.observation.incoming_damage_encoder import encode_block as encode_incoming_block
+from agents.observation.wish_belief import build_wish_pending, wish_floating_value
+from agents.battle.battle_event import OURS, OPP
 from typing import Any, Dict, List, Optional
 
 # Neutral fill for an UNWRITTEN active-move multiplier slot (a mon with <4 moves, or no opp active).
@@ -410,10 +412,15 @@ class ReactiveEncoder(ObservationEncoder):
             if opp_active is not None:
                 vec[16] = protect_success_probability(opp_active.protect_counter)
 
-        # 4f. Wish "floating heal" — RESERVED (gen3_wish_reserve_v1, vec[17] our side / vec[18] opp).
-        # NOT wired yet: both stay 0.0 (the np.zeros init). The dims are reserved so wiring the pending-
-        # Wish signal later (a Wish queued for a side heals the mon in at end of next turn) is a
-        # values-only change — no obs-dim / ARCH bump. To wire: write vec[17]/vec[18] here.
+        # 4f. Wish "floating heal" (gen3_wish_wired_v1, vec[17] our side / vec[18] opp). P(KO)-style
+        # belief reconstructed from OUR event log (poke-env doesn't track pending Wish): a gen3 Wish cast
+        # last turn heals the slot mon ~50% of its max HP at the END of this turn (slot-keyed, so it
+        # survives faint/phaze/switch). The value is the flat WISH_HEAL_FRACTION (≈recipient maxhp/2 — no
+        # max-HP read, GIGO-proof) when pending, else 0.0. Folded from `battle` (a Gen3Battle); on the
+        # mock / non-Gen3Battle path `battle.events` is absent → both stay 0.0.
+        wish_pending = build_wish_pending(battle)
+        vec[17] = wish_floating_value(wish_pending[OURS])
+        vec[18] = wish_floating_value(wish_pending[OPP])
 
         # --- Matchup Matrices (raw battle — see the docstring's three reasons) ---
         our_team = self.get_team_list(battle, is_opponent=False)
@@ -487,9 +494,9 @@ class ReactiveEncoder(ObservationEncoder):
             # gen3_protect_odds_v1: P(Protect/Detect/Endure succeeds NOW), our active then opp active.
             "protect_odds_our": {"offset": 15, "dim": 1},
             "protect_odds_opp": {"offset": 16, "dim": 1},
-            # gen3_wish_reserve_v1: RESERVED placeholder for a pending-Wish "floating heal" signal —
-            # one dim per side. The encoder leaves both at 0.0 (NOT wired); reserved so wiring Wish
-            # later is a values-only change (no obs-dim / ARCH bump). See the constants.py note.
+            # gen3_wish_wired_v1: pending-Wish "floating heal" — one dim per side. WISH_HEAL_FRACTION
+            # (≈0.5, the gen3 recipient maxhp/2 heal) when a wish cast last turn resolves end of THIS
+            # turn (slot-keyed, reconstructed from the event log), else 0.0. See wish_belief.py.
             "wish_floating_our": {"offset": 17, "dim": 1},
             "wish_floating_opp": {"offset": 18, "dim": 1},
             # gen3_move_effects_v1 / gen3_status_cure_moves_v1: 4 move slots ×

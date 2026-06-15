@@ -35,7 +35,9 @@ the single source of truth — change the analysis once, both surfaces follow.
   policy's `ObservationDebugger`** (a `--log-level periodic` checkpoint prints a
   "DEEP TRACE" banner on every forward — pure noise that would corrupt the
   Textual screen). Three **non-torch decode helpers** also live here (they need the encoder,
-  so the model is the natural home): `describe_global` (weather/spikes/screens); `describe_team` —
+  so the model is the natural home): `describe_global` (weather/spikes/screens + a **pending-Wish**
+  `wish_our`/`wish_opp` flag decoded from the `gen3_wish_wired_v1` reactive scalars — the floating heal,
+  surfaced on the FIELD line as `💧wish: our/opp`); `describe_team` —
   decodes each mon block's **held item + moveset** via `pokemon_encoder.describe_vector` over BOTH
   team blocks (`OFFSET_OUR_TEAM`/`OFFSET_OPP_TEAM`), surfacing the **opponent's item + revealed
   moves the moment they appear** (unrevealed item → `ITM-UNKN`, skipped); and `describe_turn_outcome`
@@ -107,7 +109,8 @@ groups** for scannability — SITUATION (matchup + FIELD + THREAT), DECISION (CH
 (RESULT + REWARD + CRITIC): line 1 the matchup, each active as **species + colour-graded HP bar**
 (`_hp_bar`) + bundled **status/volatiles** in `[...]` (e.g. `[TOX(5)|SUB]`) + **boosts** in
 `{...}` magenta (e.g. `{atk:-1 spa:+6}`) + held **item** as `@item` (incl. the **opponent's once
-revealed** — Choice items highlighted) + outcome; then **FIELD** (weather/hazards/screens/turn,
+revealed** — Choice items highlighted) + outcome; then **FIELD** (weather/hazards/screens/turn +
+a `💧wish: our/opp` tag when a Wish is floating — `gen3_wish_wired_v1`, the ~50% end-of-turn heal —
 the same `_field_text` the Board shows) · **THREAT** (STACKED, so the Summary is self-sufficient —
 line 1 incoming P(KO)·outspeed·worst-on-team·opp-recovery, line 2 the incoming type-**effectiveness**
 `worst N× · revealed X%` folded in from Matchups; P(KO) reds with danger in BOTH places —

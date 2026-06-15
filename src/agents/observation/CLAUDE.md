@@ -223,9 +223,10 @@ emitted a constant fallback (all-31 IVs, 0 EVs, neutral nature) for every own mo
 permanence + turns-remaining), spikes ×2 (2), log-turn (1), per-side screens (8: Reflect /
 Light Screen / Safeguard / Mist × both sides).
 
-**Reactive block (402 dims, layout in `reactive.py`):** 19 scalar dims (incl. 2 RESERVED
-`gen3_wish_reserve_v1` `wish_floating` scalars at `vec[17]`/`vec[18]`, our/opp side — unwired, always
-0), then the 44-dim **move-effect block** (`gen3_move_effects_v1` + `gen3_status_cure_moves_v1`), then
+**Reactive block (402 dims, layout in `reactive.py`):** 19 scalar dims (incl. 2 `gen3_wish_wired_v1`
+`wish_floating` scalars at `vec[17]`/`vec[18]`, our/opp side — the pending-Wish heal, `WISH_HEAL_FRACTION`
+≈0.5 when a wish cast last turn resolves this turn, else 0; see `sleep_belief.py`-style `wish_belief.py`),
+then the 44-dim **move-effect block** (`gen3_move_effects_v1` + `gen3_status_cure_moves_v1`), then
 the **51-dim incoming-damage / OHKO belief block** (`gen3_incoming_crit_split_v1`, at offset 63 — see
 below), then the two 144-dim matchup matrices (`our_matchups` now at offset 114, `their_matchups` at
 258). Scalars: active-move power ×4 (/200)

@@ -13,7 +13,7 @@ import numpy as np
 from textual.widgets import Collapsible, DataTable, ListView, Static, Tree
 
 from agents.action.constants import MOVE_START
-from main.prober.app import _DISABLED_GREY, PaneSplitter, ProberApp, _append_belief, _hp_bar
+from main.prober.app import _DISABLED_GREY, PaneSplitter, ProberApp, _append_belief, _field_text, _hp_bar
 from main.prober.engine import BeliefSlotView, BeliefView
 from main.prober.model import ObsOffsets
 from rich.text import Text
@@ -25,6 +25,17 @@ def test_hp_bar_disabled_is_grey_not_red():
     assert all(sp.style == _DISABLED_GREY for sp in dead.spans)
     alive_low = _hp_bar("8%")                       # alive but low → red-ish, NOT the disabled grey
     assert all(sp.style != _DISABLED_GREY for sp in alive_low.spans)
+
+
+def test_field_text_shows_pending_wish():
+    """gen3_wish_wired_v1: the FIELD line surfaces a pending Wish (per side) when decoded, and omits
+    it otherwise — so a human walking the prober sees the floating heal coming."""
+    base = {"weather": "NONE", "our_spikes": 0, "opp_spikes": 0, "turn": 7}
+    assert "wish" not in _field_text(base).plain.lower()
+    ours = _field_text({**base, "wish_our": True}).plain
+    assert "wish" in ours.lower() and "our" in ours
+    both = _field_text({**base, "wish_our": True, "wish_opp": True}).plain
+    assert "our & opp" in both
 
 
 def test_append_belief_renders_hidden_slot_guesses():

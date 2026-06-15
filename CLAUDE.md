@@ -566,9 +566,11 @@ log-saturated **`turns_since_progress`** no-progress clock at `vec[14]`, `gen3_m
 at `vec[15]`/`vec[16]`, `gen3_protect_odds_v1` — P(a Protect/Detect/Endure succeeds NOW) for our /
 the opp active mon, the gen3 floored-doubling stall odds (100/50/25/12.5, floor 1/8) from each mon's
 `LivePokemon.protect_counter` (the only obs view of the stall counter; public both sides, no leak) +
-the **2 RESERVED `gen3_wish_reserve_v1` `wish_floating` scalars** at `vec[17]`/`vec[18]` (our/opp side
-— a pending-Wish heal placeholder, unwired/always 0, reserved so wiring Wish is later a values-only
-change) — +
+the **2 `gen3_wish_wired_v1` `wish_floating` scalars** at `vec[17]`/`vec[18]` (our/opp side — the
+pending-Wish "floating heal": `WISH_HEAL_FRACTION` ≈0.5 of the slot mon's max HP when a Wish cast last
+turn resolves at the end of this turn, else 0; gen3 Wish heals the RECIPIENT's maxhp/2 so the fraction
+is a constant ≈0.5 — GIGO-proof — slot-keyed so it survives faint/Roar-phaze/switch; reconstructed from
+the event log since poke-env doesn't track it; fuzz-validated vs the real sim's resolve heals) — +
 the 44-dim action-aligned
 move-effect block, 4 slots × 11 feats (incl. the `gen3_status_cure_moves_v1` **cures_self_status** /
 **cures_team_status** bits — Refresh self-cure, Heal Bell / Aromatherapy team-cure) + the **51-dim incoming-damage / OHKO belief block**
@@ -648,10 +650,16 @@ The architecture-constant single source of truth is the module-level constants
 (`ROLE_TOKEN_SIZE`, `PROJECTION_DIM`, `MOVE_NET_HIDDEN`, `ROLE_ENCODER_HIDDEN`,
 `ACTIVE_CTX_HIDDEN`) at the top of `features_extractor.py`; `ARCH_SIGNATURE` /
 `MODEL_CONFIG_VERSION` live in `model_version.py` (current `ARCH_SIGNATURE`:
-`gen3_wish_reserve_v1` — RESERVES two reactive scalars (`vec[17]` our side, `vec[18]` opp side) for a
-future pending-Wish "floating heal" signal, **NOT wired** (the encoder leaves both 0.0); reserved so
-wiring Wish later is a values-only change with no obs-dim / ARCH bump. `REACTIVE_SCALAR_DIM` 17 → 19,
-obs dim 3455 → 3457. It stacks on three prior unshipped obs changes: `gen3_protect_odds_v1` (2 reactive
+`gen3_wish_wired_v1` — WIRES two reactive scalars (`vec[17]` our side, `vec[18]` opp side) with the
+pending-Wish "floating heal" signal. gen3 Wish (gen4-inherited) heals the RECIPIENT's `maxhp/2` at the
+END of the turn after cast, slot-keyed (survives faint / Roar-phaze / switch / self-KO), duration 2,
+double-Wish fails. Because the heal is the recipient's own maxhp/2, the heal fraction is ALWAYS ≈0.5, so
+each scalar is a flat `WISH_HEAL_FRACTION` (0.5) when a wish cast last turn resolves this turn, else 0 —
+no max-HP read, GIGO-proof. poke-env tracks none of it → reconstructed from our event log
+(`wish_belief.py`); fuzz-validated vs the real sim (every actual resolve was flagged pending the turn
+before). It first reserved the dims (`gen3_wish_reserve_v1`, `REACTIVE_SCALAR_DIM` 17 → 19,
+obs dim 3455 → 3457) — wiring them is a VALUES-only change (same dim). It stacks on three prior obs
+changes: `gen3_protect_odds_v1` (2 reactive
 protect-success scalars, obs 3409 → 3411); `gen3_status_cure_moves_v1` — two static per-move bits
 **cures_self_status** (Refresh) + **cures_team_status** (Heal Bell / Aromatherapy), so the head
 connects a status-cure move to the per-mon status one-hots (prober-verified gap: the head routed its

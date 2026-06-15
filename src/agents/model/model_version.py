@@ -439,7 +439,18 @@ MODEL_CONFIG_VERSION = 22
 #   obs dim 3455 → 3457. Pure placeholder: with the dims at 0 the obs is byte-identical to
 #   gen3_sleep_wake_belief_v1 EXCEPT for the two reserved zeros + the shifted move-effect/incoming/matchup
 #   offsets, so it is retrain-class (weight-shape) but carries no new information until Wish is wired.
-ARCH_SIGNATURE = "gen3_wish_reserve_v1"
+# gen3_wish_wired_v1: WIRES the reserved wish_floating scalars (vec[17] our side, vec[18] opp side) with
+#   the pending-Wish "floating heal" signal — a VALUES-only change (same obs dim 3457, no shape change), so
+#   a gen3_wish_reserve_v1 checkpoint is retrain-class-incompatible only in the two dims' values. gen3 Wish
+#   (INHERITS the gen4 condition, NOT base): heals the RECIPIENT's floor(maxhp/2) at the END of the turn
+#   AFTER cast, SLOT-keyed (survives faint / Roar-phaze / switch / self-KO — the slot's occupant at resolve
+#   is healed; gen3 sends replacements in mid-turn before residuals), duration 2, double-Wish on an occupied
+#   slot FAILS, full-HP resolve is silent. poke-env tracks NONE of this → reconstructed from our event log
+#   (observation/wish_belief.py): pending for a side iff it successfully cast Wish last turn (double-Wish-
+#   aware). Because the heal is the RECIPIENT's maxhp/2, the heal fraction is ALWAYS ≈0.5 — so the encoded
+#   value is a flat WISH_HEAL_FRACTION (0.5) when pending, 0.0 else: no max-HP read, no GIGO. Fuzz-calibrated
+#   vs the real sim (the |-heal|[from] move: Wish resolve confirms the pending signal fired the turn before).
+ARCH_SIGNATURE = "gen3_wish_wired_v1"
 
 
 class ModelVersionError(Exception):
