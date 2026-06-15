@@ -123,7 +123,9 @@ from main.prober.discovery import (
     build_trace_tree,
     resolve_model_for_step,
 )
-from main.prober.engine import InvocationAnalysis, analyze_invocation, summary_flags
+from main.prober.engine import (
+    InvocationAnalysis, analyze_invocation, build_result_timeline, summary_flags,
+)
 from main.prober.review import ReviewStore
 from main.tui import THEME_PATH, Gen3App, gradient_color
 
@@ -1453,40 +1455,83 @@ def _cant_phrase(cant: str) -> str:
     return _CANT_PHRASE.get(str(cant).lower(), str(cant))
 
 
-def _append_action_outcome(line: Text, prefix: str, side: dict, crit: bool, cant: "str | None",
-                           boost: str = "", first: bool = False) -> None:
-    """'we <action> [«1st»] [⚡CRIT] [→ atk+1] (<hpΔ>) [— couldn't move (asleep)]' for one side of
-    the result — '«1st»' marks who moved first; '→ atk+1' the stat-stage change (e.g. Meteor Mash)."""
-    line.append(prefix, style="dim")
-    line.append(str(side.get("action", "?")))
-    if first:
-        line.append(" «1st»", style="bold cyan")
-    if crit:
-        line.append(" ⚡CRIT", style="bold yellow")
-    if boost:
-        line.append(f" → {boost}", style="magenta")
-    line.append(f" ({side.get('hp_delta', '?')})")
-    if cant:
-        line.append(f" — couldn't move ({_cant_phrase(cant)})", style="bold yellow")
+_SIDE_STYLE = {"we": "bold green", "opp": "bold red"}
+
+
+def _append_timeline_entry(line: Text, e: dict) -> None:
+    """Render one RESULT timeline entry (engine ``build_result_timeline``) as a battle-log line:
+    ``we thunderbolt did 31% (suicune 31% → faint)`` · ``opp rockslide did 73% (salamence 100% →
+    27%)`` · ``we switch tyranitar → skarmory`` · ``opp sends in metagross`` · a couldn't-move note."""
+    side = e.get("side", "")
+    line.append(f"{side} ", style=_SIDE_STYLE.get(side, "dim"))
+    kind = e.get("kind")
+    if kind == "switch":
+        line.append("switch ", style="dim")
+        line.append(str(e.get("actor", "")), style=_MON_COLOR)
+        line.append(" → ", style="dim")
+        line.append(str(e.get("switch_to", "")), style="bold")
+        return
+    if kind == "send_in":
+        line.append("send in " if side == "we" else "sends in ", style="dim")
+        line.append(str(e.get("sent_in", "")), style="bold")
+        return
+    if kind == "faint":
+        line.append(str(e.get("actor", "")), style=_MON_COLOR)
+        line.append(" fainted", style="bold red")
+        return
+    # kind == "move"
+    line.append(str(e.get("move") or "?"), style="bold")
+    if e.get("cant"):
+        line.append(f" — couldn't move ({_cant_phrase(e['cant'])})", style="bold yellow")
+    elif e.get("damage"):
+        line.append(f" did {e['damage']}", style="bold")
+        line.append("  (", style="dim")
+        line.append(str(e.get("target", "")), style=_MON_COLOR)
+        line.append(f" {e.get('hp_before', '')} → ", style="dim")
+        aft = str(e.get("hp_after", ""))
+        line.append("faint" if aft == "faint" else aft, style=("bold red" if aft == "faint" else "dim"))
+        line.append(")", style="dim")
+    elif e.get("status"):
+        line.append(" → ", style="dim")
+        line.append(str(e.get("target", "")), style=_MON_COLOR)
+        line.append(f" {e['status']}", style="bold yellow")
+    if e.get("boost"):
+        line.append(f"  ·  {e['boost']}", style="magenta")
+    if e.get("crit"):
+        line.append("  ⚡CRIT", style="bold yellow")
 
 
 def _append_happened(line: Text, a: InvocationAnalysis, label: str) -> None:
-    """Append what ACTUALLY happened after this decision — each side's action, a ⚡CRIT tag, the
-    hpΔ, and a 'couldn't move (asleep)' note when the mon was prevented — so the choice can be
-    judged against the real result. ``label`` carries its own leading newline. No-op when the
-    outcome isn't recorded yet."""
+    """Append what ACTUALLY happened after this decision as an ORDERED, one-line-per-action battle
+    log — each mon's HP loss attributed to the OPPONENT's move that dealt it (``opp rockslide did 73%
+    (salamence 100% → 27%)``), in execution order so move-order reads top-to-bottom (no '«1st»' tag).
+    ``label`` carries its own leading newline + the panel name; continuations align under it. No-op
+    when the outcome isn't recorded yet."""
     out = a.outcome or {}
-    our, opp = out.get("our") or {}, out.get("opp") or {}
-    if our or opp:
-        line.append(label, style="dim")
-        order = out.get("move_order")
-        _append_action_outcome(line, "we ", our, out.get("our_crit"), out.get("our_cant"),
-                               out.get("our_boost", ""), first=(order == "we_first"))
-        line.append(" · ", style="dim")
-        _append_action_outcome(line, "opp ", opp, out.get("opp_crit"), out.get("opp_cant"),
-                               out.get("opp_boost", ""), first=(order == "opp_first"))
-        if out.get("events"):
-            line.append("  [" + ", ".join(map(str, out["events"])) + "]", style="yellow")
+    timeline = out.get("timeline")
+    if timeline is None:   # defensive: an analysis built before the engine attached it
+        timeline = build_result_timeline(
+            out, a.our_species, a.opp_species, a.phase,
+            our_hp_after=(a.next_board.ours.active_hp if a.next_board else None),
+            opp_hp_after=(a.next_board.opp.active_hp if a.next_board else None),
+        )
+    if not timeline:
+        return
+    line.append(label, style="dim")
+    indent = "\n" + " " * len(label.lstrip("\n"))
+    # When both sides moved but move_order wasn't recorded (a no-state / model-free decision), the
+    # engine flags the move entries order_certain=False: render an UNORDERED set (neutral bullets + a
+    # note) rather than implying a top-to-bottom sequence we can't actually ground in the log.
+    uncertain = any(e.get("kind") == "move" and not e.get("order_certain", True) for e in timeline)
+    for i, e in enumerate(timeline):
+        if i:
+            line.append(indent)
+        if uncertain:
+            line.append("· ", style="dim")
+        _append_timeline_entry(line, e)
+    if uncertain:
+        line.append(indent)
+        line.append("(move order not recorded)", style="dim italic")
 
 
 def _hp_frac(hp: str) -> "float | None":

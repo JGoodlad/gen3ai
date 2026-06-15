@@ -112,10 +112,25 @@ the same `_field_text` the Board shows) · **THREAT** (STACKED, so the Summary i
 line 1 incoming P(KO)·outspeed·worst-on-team·opp-recovery, line 2 the incoming type-**effectiveness**
 `worst N× · revealed X%` folded in from Matchups; P(KO) reds with danger in BOTH places —
 `gradient_color(1 − pko)`) · **CHOSE** chosen+confidence [+ a `⚠ now prefers X` on disagree] ·
-**RESULT** what actually happened — each side's action with a **`«1st»`** move-order tag, a
-**`⚡CRIT`** tag, a **`→ atk+1`** stat-change (e.g. Meteor Mash / Intimidate), hpΔ, and a
-**"couldn't move (asleep/fully paralyzed/…)"** note (move-order + crit + boost + cant all decoded
-from the NEXT decision's TurnDelta via `describe_turn_outcome`) + events · **AFTER** the RESOLVED
+**RESULT** what actually happened — an **ordered, one-line-per-action battle log**
+(`engine.build_result_timeline`, a pure list-of-dicts attached to `outcome["timeline"]`, so the CLI
+`analyze` JSON carries it too). The recorder stores each side's action + that mon's OWN net HP change,
+which renders as nonsense ("we icebeam (−72%)") because a mon's HP loss is dealt by the OPPONENT's
+move; the timeline **RE-ATTRIBUTES** each loss to the move that caused it and pairs it with the
+target's before→after HP (`before = after + damage`, `after` from `next_board`): `opp hiddenpower did
+72% (tyranitar 100% → 28%) ⚡CRIT` / `we icebeam did 100% (salamence 100% → faint)` / `opp sends in
+metagross`. Lines read **top-to-bottom in execution order** (a voluntary switch resolves first, else
+the TurnDelta `move_order`, which folds from the **real event-log sequence** — `TurnView._compute_move_order`
+reads the order of `|move|` events, not a speed heuristic — so **no `«1st»` tag**). When BOTH sides moved
+but `move_order` wasn't recorded (a no-state / model-free decision), the engine flags the entries
+`order_certain=False` and the renderer drops the implied sequence (neutral `·` bullets + a *(move order
+not recorded)* note) instead of guessing. One line per move / switch / forced replacement /
+standalone faint, each carrying a **`⚡CRIT`** tag, a **`→ atk+1`** boost (Meteor Mash / Intimidate),
+an applied **status** (`opp thunderwave → milotic PAR`), or a **"couldn't move (asleep/…)"** note
+(crit + boost + cant + move_order decoded from the NEXT decision's TurnDelta via
+`describe_turn_outcome`; Hidden Power's BP-0 placeholder is special-cased so its hits aren't dropped).
+The shared renderer is `app._append_timeline_entry` / `_append_happened` (Summary + Review card) ·
+**AFTER** the RESOLVED
 board at the start of the next decision (both actives + HP bars, from `a.next_board` = `build_board`
 of inv+1) so before (matchup line) → after reads at a glance — a switch/faint shows the new mon ·
 **REWARD** the env's reward (total + per-component breakdown) · **CRITIC** V·ΔV·**TD-surprise** (always paired

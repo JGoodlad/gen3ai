@@ -761,3 +761,137 @@ def test_analyze_belief_truth_none_without_opp_team():
     model = _BeliefFakeModel(_OFF, logits, bmask)
     a = analyze_invocation(model, _summary(), _npz(), 0)   # no privileged team
     assert a.belief is not None and a.belief_truth is None
+
+
+# ── build_result_timeline (the RESULT panel data model) ──────────────────────────────────────────
+from main.prober.engine import build_result_timeline   # noqa: E402
+
+
+def _tl(our_action, our_delta, opp_action, opp_delta, *, ours="salamence", opps="tyranitar",
+        events=None, phase="move_selection", our_before="100%", opp_before="100%",
+        our_after=None, opp_after=None, **extra):
+    out = {"our": {"action": our_action, "hp_delta": our_delta},
+           "opp": {"action": opp_action, "hp_delta": opp_delta}, "events": events or [], **extra}
+    return build_result_timeline(out, ours, opps, phase, our_hp_before=our_before,
+                                 opp_hp_before=opp_before, our_hp_after=our_after, opp_hp_after=opp_after)
+
+
+def test_timeline_attributes_loss_to_the_opponents_move():
+    # The core bug: a mon's HP loss must show on the OPPONENT's move, not its own. salamence(we)
+    # brickbreak hits tyranitar for 85%; tyranitar's rockslide hits salamence for 73%.
+    tl = _tl("brickbreak", "-73%", "rockslide", "-85%", our_after="27%", opp_after="15%",
+             move_order="we_first")
+    assert [e["side"] for e in tl] == ["we", "opp"]                 # we_first → we on top
+    we, opp = tl
+    assert we["move"] == "brickbreak" and we["target"] == "tyranitar"
+    assert (we["damage"], we["hp_before"], we["hp_after"]) == ("85%", "100%", "15%")  # before=after+dmg
+    assert opp["move"] == "rockslide" and opp["target"] == "salamence"
+    assert (opp["damage"], opp["hp_before"], opp["hp_after"]) == ("73%", "100%", "27%")
+
+
+def test_timeline_order_follows_move_order():
+    we_first = _tl("icebeam", "-72%", "hiddenpower", "-100%", move_order="we_first")
+    opp_first = _tl("icebeam", "-72%", "hiddenpower", "-100%", move_order="opp_first",
+                    events=["opp:salamence:fainted"])
+    assert [e["side"] for e in we_first][:2] == ["we", "opp"]
+    assert [e["side"] for e in opp_first][:2] == ["opp", "we"]      # opp_first → opp on top
+
+
+def test_timeline_faint_and_forced_replacement():
+    # our icebeam KO's salamence(opp); opp's hiddenpower hit us; opp sends in metagross.
+    tl = _tl("icebeam", "-72%", "hiddenpower → metagross_sent_in", "-100%",
+             ours="tyranitar", opps="salamence", events=["opp:salamence:fainted"],
+             our_after="28%", opp_after="100%", move_order="opp_first", opp_crit=True)
+    kinds = [(e["side"], e["kind"]) for e in tl]
+    assert kinds == [("opp", "move"), ("we", "move"), ("opp", "send_in")]
+    opp_move, we_move, send = tl
+    assert opp_move["crit"] is True and opp_move["damage"] == "72%"   # crit on the attacker
+    assert we_move["target"] == "salamence" and we_move["hp_after"] == "faint"
+    assert send["sent_in"] == "metagross"
+
+
+def test_timeline_our_attack_visible_on_bare_sent_in():
+    # jolteon thunderbolts, KO's suicune before it acts (bare 'claydol_sent_in', no opp move).
+    # Regression: our KO must be a line, not hidden behind the opponent's replacement.
+    tl = _tl("thunderbolt", "+0%", "claydol_sent_in", "-31%", ours="jolteon", opps="suicune",
+             events=["opp:suicune:fainted"], opp_before="31%", move_order="we_first")
+    assert [(e["side"], e["kind"]) for e in tl] == [("we", "move"), ("opp", "send_in")]
+    assert tl[0]["move"] == "thunderbolt" and tl[0]["target"] == "suicune"
+    assert tl[0]["damage"] == "31%" and tl[0]["hp_after"] == "faint"
+    assert tl[1]["sent_in"] == "claydol"
+
+
+def test_timeline_switch_resolves_first_and_redirects_target():
+    # We switch tyranitar→skarmory; the switch resolves first, so opp's meteormash hits skarmory.
+    tl = _tl("switched_to:skarmory", "-25%", "meteormash", "+0%", ours="tyranitar",
+             opps="metagross", our_after="75%", move_order="opp_first")
+    assert [(e["side"], e["kind"]) for e in tl] == [("we", "switch"), ("opp", "move")]
+    assert tl[0]["switch_to"] == "skarmory"
+    assert tl[1]["target"] == "skarmory" and tl[1]["damage"] == "25%"   # redirected to the switch-in
+
+
+def test_timeline_couldnt_move_deals_no_damage():
+    tl = _tl("earthquake", "+0%", "focuspunch", "-55%", ours="swampert", opps="tyranitar",
+             opp_after="45%", move_order="we_first", opp_cant="focuspunch")
+    we, opp = tl
+    assert we["move"] == "earthquake" and we["damage"] == "55%"
+    assert opp["cant"] == "focuspunch" and opp["damage"] == "" and opp["target"] == ""
+
+
+def test_timeline_status_move_not_credited_with_damage():
+    # our toxic applies TOX (status) — never a damage number; opp earthquake KO's our magneton.
+    tl = _tl("toxic", "-79%", "earthquake", "+0%", ours="magneton", opps="swampert",
+             events=["our:magneton:fainted", "opp:swampert:TOX"], move_order="opp_first")
+    by_move = {e["move"]: e for e in tl if e["kind"] == "move"}
+    assert by_move["toxic"]["damage"] == "" and by_move["toxic"]["status"] == "TOX"
+    assert by_move["earthquake"]["target"] == "magneton" and by_move["earthquake"]["hp_after"] == "faint"
+
+
+def test_timeline_hidden_power_is_attributed_despite_bp0_quirk():
+    # 'hiddenpower' has static base power 0 (is_damaging False) but really hits — must be attributed.
+    # opp's Hidden Power hits our celebi for 58% (our side's loss); our surf did nothing back.
+    tl = _tl("surf", "-58%", "hiddenpower", "+0%", ours="celebi", opps="metagross",
+             our_after="42%", move_order="opp_first")
+    opp = next(e for e in tl if e["move"] == "hiddenpower")
+    assert opp["damage"] == "58%" and opp["target"] == "celebi"
+
+
+def test_timeline_non_damaging_move_does_not_steal_residual_loss():
+    # We Spikes while the opp loses 12% to sandstorm — Spikes must NOT be credited with that loss.
+    tl = _tl("spikes", "+0%", "meteormash", "+0%", ours="skarmory", opps="tyranitar",
+             opp_after="88%")
+    we = next(e for e in tl if e["move"] == "spikes")
+    assert we["damage"] == "" and we["target"] == ""
+
+
+def test_timeline_forced_switch_phase_is_just_the_send_in():
+    tl = _tl("switched_to:celebi", "+0%", "none", "+0%", ours="skarmory", opps="metagross",
+             phase="forced_switch")
+    assert tl == [{"side": "we", "kind": "send_in", "sent_in": "celebi"}]
+
+
+def test_timeline_standalone_faint_when_attacker_unknown():
+    tl = _tl("hiddenpower", "-10%", "unknown", "+0%", ours="donphan", opps="skarmory",
+             events=["our:donphan:fainted", "result:loss"])
+    faint = [e for e in tl if e["kind"] == "faint"]
+    assert faint == [{"side": "we", "kind": "faint", "actor": "donphan"}]
+
+
+def test_timeline_order_certainty():
+    # Both sides moved, move_order recorded → certain.
+    certain = _tl("surf", "-18%", "earthquake", "-12%", ours="milotic", opps="swampert",
+                  our_after="82%", opp_after="88%", move_order="opp_first")
+    assert all(e["order_certain"] for e in certain if e["kind"] == "move")
+    # Both moved, NO move_order (no-state / model-free) → uncertain.
+    unknown = _tl("surf", "-18%", "earthquake", "-12%", ours="milotic", opps="swampert",
+                  our_after="82%", opp_after="88%")
+    moves = [e for e in unknown if e["kind"] == "move"]
+    assert len(moves) == 2 and not any(e["order_certain"] for e in moves)
+    # A couldn't-move turn: only one side truly moved → order is certain even without move_order.
+    canted = _tl("earthquake", "+0%", "focuspunch", "-55%", ours="swampert", opps="tyranitar",
+                 opp_after="45%", opp_cant="focuspunch")
+    assert all(e["order_certain"] for e in canted if e["kind"] == "move")
+    # A switch fixes order (resolves first) → certain without move_order.
+    switched = _tl("switched_to:skarmory", "-25%", "meteormash", "+0%", ours="tyranitar",
+                   opps="metagross", our_after="75%")
+    assert all(e["order_certain"] for e in switched if e["kind"] == "move")

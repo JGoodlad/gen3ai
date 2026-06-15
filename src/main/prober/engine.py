@@ -439,6 +439,202 @@ def build_board(inv: dict, team: "dict | None" = None) -> BoardView:
                      opp=_side_board(inv.get("opp", {}), (), norm))
 
 
+# ── Result timeline (the RESULT panel's data model) ──────────────────────────────────────────────
+# The recorder stores each side's action + that mon's OWN net HP change ("hp_delta"). Rendered
+# naively ("we icebeam (-72%)") it misreads: a mon's HP loss is dealt by the OPPONENT's move, not its
+# own, so the damage shows on the wrong line and move order needs a confusing "«1st»" tag. This builds
+# an ordered, one-line-per-action timeline that RE-ATTRIBUTES each mon's HP loss to the opponent's
+# move that caused it, Showdown-battle-log style — "opp rockslide did 73% (salamence 100% → 27%)" —
+# so the lines read top-to-bottom in execution order.
+
+_SENT_IN = "_sent_in"
+_SEP = " → "                       # the " → " the recorder uses to pack a forced replacement
+_FAINT_EVENT_RE = re.compile(r"^(our|opp):(.+):fainted$")
+_STATUS_EVENT_RE = re.compile(r"^(our|opp):(.+):([A-Z]{3})$")   # our:milotic:PAR, opp:swampert:TOX
+
+
+def _move_deals_damage(move_id: "str | None") -> bool:
+    """Whether a recorded move id can deal HP damage. Hidden Power is stored under the bare id
+    ``hiddenpower`` whose static base power is 0 (its real power is IV-derived), so ``is_damaging``
+    reports it non-damaging — special-case it (and any other variable-power placeholder) so a real
+    hit is never dropped from the attribution."""
+    mid = (move_id or "").lower()
+    if not mid:
+        return False
+    if mid.startswith("hiddenpower"):
+        return True
+    try:
+        return bool(gen3_data.moves.is_damaging(mid))
+    except Exception:  # noqa: BLE001 — unknown move: don't HIDE a possible hit
+        return True
+
+
+def _parse_outcome_action(action: "str | None") -> dict:
+    """Structure a recorded action string: a bare move (``icebeam``), a voluntary switch
+    (``switched_to:skarmory``), a move that ended in a forced replacement
+    (``hiddenpower → metagross_sent_in``), a bare post-faint replacement with no move
+    (``claydol_sent_in`` — the mon fainted before acting), or a no-op (``none``/``unknown``)."""
+    a = (action or "").strip()
+    if a in ("", "none", "unknown", "-"):
+        return {"kind": "none"}
+    if a.startswith("switched_to:"):
+        return {"kind": "switch", "switch_to": a.split(":", 1)[1]}
+    if a.endswith(_SENT_IN):
+        head, sep, tail = a.partition(_SEP)
+        if sep:                                   # "<move> → <X>_sent_in"
+            return {"kind": "move", "move": head, "sent_in": tail[:-len(_SENT_IN)]}
+        return {"kind": "send_in", "sent_in": a[:-len(_SENT_IN)]}   # bare "<X>_sent_in"
+    return {"kind": "move", "move": a}
+
+
+def _pct(hp: "str | float | None") -> "float | None":
+    """Parse a recorded HP string (``'28%'`` → 28.0, ``'faint'`` → 0.0) to a percent, else None."""
+    if isinstance(hp, (int, float)):
+        return float(hp)
+    s = str(hp or "").strip().lower()
+    if not s:
+        return None
+    if "faint" in s:
+        return 0.0
+    try:
+        return float(s.rstrip("%"))
+    except ValueError:
+        return None
+
+
+def _loss_pct(hp_delta: "str | None") -> "float | None":
+    """Magnitude of a NEGATIVE recorded ``hp_delta`` (``'-72%'`` → 72.0); None for a gain/zero."""
+    v = _pct(str(hp_delta or "").lstrip("+"))
+    return -v if (v is not None and v < 0) else None
+
+
+def build_result_timeline(outcome: dict, our_species: str, opp_species: str, phase: str = "",
+                          our_hp_before=None, opp_hp_before=None,
+                          our_hp_after=None, opp_hp_after=None) -> "list[dict]":
+    """Ordered, one-line-per-action model of what HAPPENED after a decision (the RESULT panel). Pure.
+
+    Re-attributes each side's HP loss to the OPPONENT's move that dealt it, and pairs it with the
+    target's before→after HP (``before = after + damage``), so each line reads like a battle log:
+    ``{side, kind, move, damage, target, hp_before, hp_after, crit, boost, cant, status,
+    switch_to, sent_in}``. Ordered by execution: a voluntary switch resolves before a move; otherwise
+    the TurnDelta ``move_order`` (folded from the real event-log sequence). When BOTH sides moved but
+    ``move_order`` is absent (a no-state / model-free decision) the order is unknown — the move entries
+    carry ``order_certain=False`` so the renderer drops the implied sequence rather than guessing."""
+    out = outcome or {}
+    our, opp = out.get("our") or {}, out.get("opp") or {}
+    if not (our or opp):
+        return []
+
+    events = [str(e) for e in (out.get("events") or [])]
+    faints = {(m.group(1), _norm_species(m.group(2)))
+              for m in (_FAINT_EVENT_RE.match(e) for e in events) if m}
+    statuses = {(m.group(1), _norm_species(m.group(2))): m.group(3)
+                for m in (_STATUS_EVENT_RE.match(e) for e in events) if m}
+    consumed: set = set()
+
+    pa_our, pa_opp = _parse_outcome_action(our.get("action")), _parse_outcome_action(opp.get("action"))
+    # A move lands on the opponent's active — redirected to its switch-IN when the opponent
+    # VOLUNTARILY switched (that resolves first); a forced "_sent_in" does NOT redirect (the fainting
+    # mon ate the hit, the replacement is a separate line).
+    our_target = pa_opp.get("switch_to") if pa_opp["kind"] == "switch" else opp_species
+    opp_target = pa_our.get("switch_to") if pa_our["kind"] == "switch" else our_species
+
+    def _move_entry(side, pa, crit, boost, cant, target, delta, before, after):
+        e = {"side": side, "kind": "move", "move": pa.get("move", ""), "crit": bool(crit),
+             "boost": boost or "", "cant": cant, "target": "", "damage": "", "hp_before": "",
+             "hp_after": "", "status": "", "switch_to": "", "sent_in": ""}
+        if cant:
+            return e
+        recip_side = "opp" if side == "we" else "our"
+        key = (recip_side, _norm_species(target))
+        fainted = key in faints or str(delta).strip() == "-100%"
+        dmg = _loss_pct(delta)
+        if _move_deals_damage(pa.get("move")) and (fainted or dmg is not None):
+            e["target"] = target
+            if fainted:
+                consumed.add(key)
+                b = dmg if dmg is not None else before
+                e["damage"] = f"{dmg:.0f}%" if dmg is not None else ""
+                e["hp_before"] = f"{b:.0f}%" if isinstance(b, (int, float)) else ""
+                e["hp_after"] = "faint"
+            else:
+                aft = after if after is not None else max(0.0, (before or 0.0) - dmg)
+                e["damage"], e["hp_after"] = f"{dmg:.0f}%", f"{aft:.0f}%"
+                e["hp_before"] = f"{min(100.0, aft + dmg):.0f}%"
+            if key in statuses:                      # a damaging move that also inflicted status
+                e["status"] = statuses[key]
+        elif key in statuses:                        # a pure status move (Thunder Wave / Toxic)
+            e["target"], e["status"] = target, statuses[key]
+        return e
+
+    def _entry_for(side):
+        if side == "we":
+            pa, crit, boost, cant = pa_our, out.get("our_crit"), out.get("our_boost", ""), out.get("our_cant")
+            actor, target, delta = our_species, our_target, opp.get("hp_delta")
+            before, after = _pct(opp_hp_before), _pct(opp_hp_after)
+        else:
+            pa, crit, boost, cant = pa_opp, out.get("opp_crit"), out.get("opp_boost", ""), out.get("opp_cant")
+            actor, target, delta = opp_species, opp_target, our.get("hp_delta")
+            before, after = _pct(our_hp_before), _pct(our_hp_after)
+        if pa["kind"] == "none":
+            return None
+        if pa["kind"] == "switch":
+            return {"side": side, "kind": "switch", "actor": actor, "switch_to": pa.get("switch_to", "")}
+        if pa["kind"] == "send_in":
+            return {"side": side, "kind": "send_in", "sent_in": pa.get("sent_in", "")}
+        e = _move_entry(side, pa, crit, boost, cant, target, delta, before, after)
+        e["actor"] = actor
+        return e
+
+    entries: "list[dict]" = []
+    if phase == "forced_switch":
+        # Our post-faint replacement choice; the opponent doesn't act → just the send-in.
+        if pa_our["kind"] == "switch":
+            entries.append({"side": "we", "kind": "send_in", "sent_in": pa_our.get("switch_to", "")})
+    else:
+        we_e, opp_e = _entry_for("we"), _entry_for("opp")
+        # Execution order: a voluntary switch precedes a move; else the TurnDelta move_order; else ours.
+        we_first = True
+        if pa_opp["kind"] == "switch" and pa_our["kind"] == "move":
+            we_first = False
+        elif pa_our["kind"] != "switch" and out.get("move_order") == "opp_first":
+            we_first = False
+        entries = [e for e in ([we_e, opp_e] if we_first else [opp_e, we_e]) if e is not None]
+        # Order certainty: top-to-bottom is REAL only when a voluntary switch fixes it (switches
+        # resolve first) or the TurnDelta recorded move_order. If BOTH sides actually moved (a canted
+        # side didn't) and move_order is absent — a no-state / model-free decision — we don't know who
+        # went first, so flag it and let the renderer drop the implied sequence instead of guessing.
+        def _moved(e):
+            return bool(e and e.get("kind") == "move" and not e.get("cant"))
+        order_certain = (out.get("move_order") in ("we_first", "opp_first")) or not (
+            _moved(we_e) and _moved(opp_e))
+        for e in entries:
+            if e.get("kind") == "move":
+                e["order_certain"] = order_certain
+        # A move that ended in a forced replacement → surface the send-in as its own trailing line.
+        for pa, sd in ((pa_our, "we"), (pa_opp, "opp")):
+            if pa["kind"] == "move" and pa.get("sent_in"):
+                entries.append({"side": sd, "kind": "send_in", "sent_in": pa["sent_in"]})
+
+    # Any faint NOT already shown as a move's target (self-KO, residual, opp action unknown).
+    for sd, sp in faints:
+        if (sd, sp) not in consumed:
+            entries.append({"side": ("we" if sd == "our" else "opp"), "kind": "faint", "actor": sp})
+    return entries
+
+
+def _timeline_for(inv: dict, next_board: "BoardView | None", outcome: dict) -> "list[dict]":
+    """`build_result_timeline` wired to a decision: the actives' HP this turn (before) + the resolved
+    HP at the next decision (after, from ``next_board``)."""
+    return build_result_timeline(
+        outcome, inv.get("our", {}).get("species", ""), inv.get("opp", {}).get("species", ""),
+        inv.get("phase", ""),
+        our_hp_before=inv.get("our", {}).get("hp"), opp_hp_before=inv.get("opp", {}).get("hp"),
+        our_hp_after=(next_board.ours.active_hp if next_board else None),
+        opp_hp_after=(next_board.opp.active_hp if next_board else None),
+    )
+
+
 def build_belief(inv: dict) -> "BeliefView | None":
     """The hidden-opponent species belief at a decision — model-free, parsed from the summary
     invocation's ``belief`` block (the recorder writes it only when the belief was enabled). Each
@@ -823,6 +1019,7 @@ def analyze_invocation(model, summary: dict, npz, inv_index: int,
                   if inv_index + 1 < len(invs) else None)
     belief = build_belief(inv)       # model-free summary fallback (re-computed below when a model + state exist)
     belief_truth = None
+    outcome = {**outcome, "timeline": _timeline_for(inv, next_board, outcome)}   # model-free RESULT lines
     if not _has_state(npz, inv_index):
         return InvocationAnalysis(
             **common, has_state=False, actions=(), matchups=None, sweep=None,
@@ -855,6 +1052,9 @@ def analyze_invocation(model, summary: dict, npz, inv_index: int,
             to = decode_turn(obs_all[nxt].astype(np.float32))
             if to:
                 outcome = {**outcome, **to}
+    # Rebuild the RESULT timeline now that crit / move_order / cant are merged in (the no-state path
+    # above already built a model-free one without them).
+    outcome = {**outcome, "timeline": _timeline_for(inv, next_board, outcome)}
     acts = inv["actions"]
     labels = list(acts.keys())
     mask = np.array([1 if acts[k]["valid"] else 0 for k in labels], dtype=np.int8)

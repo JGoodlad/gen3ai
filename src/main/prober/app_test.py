@@ -745,3 +745,59 @@ async def test_review_flag_persists_and_shows_glyph(tmp_path):
         # export writes markdown
         path = app._review_store.export_markdown()
         assert path and "explosion at full HP" in open(path).read()
+
+
+# ── RESULT timeline rendering (battle-log, one line per action, no «1st» tag) ─────────────────────
+from types import SimpleNamespace                         # noqa: E402
+from main.prober.app import _append_happened              # noqa: E402
+
+
+def _outcome_with_timeline():
+    from main.prober.engine import build_result_timeline
+    out = {"our": {"action": "icebeam", "hp_delta": "-72%"},
+           "opp": {"action": "hiddenpower → metagross_sent_in", "hp_delta": "-100%"},
+           "events": ["opp:salamence:fainted"], "opp_crit": True, "move_order": "opp_first"}
+    out["timeline"] = build_result_timeline(
+        out, "tyranitar", "salamence", "move_selection",
+        our_hp_before="100%", opp_hp_before="100%", our_hp_after="28%", opp_hp_after="100%")
+    return out
+
+
+def test_append_happened_renders_ordered_battle_log():
+    a = SimpleNamespace(outcome=_outcome_with_timeline(), our_species="tyranitar",
+                        opp_species="salamence", phase="move_selection", next_board=None)
+    t = Text()
+    _append_happened(t, a, "\nRESULT  ")
+    txt = t.plain
+    assert "«1st»" not in txt                                     # the confusing order tag is gone
+    # The damage we took is on the OPPONENT's move, with before→after HP.
+    assert "opp hiddenpower did 72%" in txt and "(tyranitar 100% → 28%)" in txt
+    assert "⚡CRIT" in txt
+    # Our KO is visible on its own line; the forced replacement on another.
+    assert "we icebeam did 100%" in txt and "salamence 100% → faint" in txt
+    assert "opp sends in metagross" in txt
+    # One line per action (3 actions: opp move, our move, opp send-in), opp first.
+    lines = [ln for ln in txt.split("\n") if ln.strip()]
+    assert len(lines) == 3
+    assert lines[0].startswith("RESULT  opp hiddenpower")          # opp moved first → on top
+
+
+def test_append_happened_noop_without_outcome():
+    a = SimpleNamespace(outcome={}, our_species="a", opp_species="b", phase="", next_board=None)
+    t = Text()
+    _append_happened(t, a, "\nRESULT  ")
+    assert t.plain == ""                                           # nothing recorded → nothing drawn
+
+
+def test_append_happened_flags_unknown_order():
+    from main.prober.engine import build_result_timeline
+    out = {"our": {"action": "surf", "hp_delta": "-18%"},
+           "opp": {"action": "earthquake", "hp_delta": "-12%"}, "events": []}   # no move_order
+    out["timeline"] = build_result_timeline(out, "milotic", "swampert", "move_selection",
+                                            our_hp_after="82%", opp_hp_after="88%")
+    a = SimpleNamespace(outcome=out, our_species="milotic", opp_species="swampert",
+                        phase="", next_board=None)
+    t = Text()
+    _append_happened(t, a, "\nRESULT  ")
+    assert "(move order not recorded)" in t.plain      # honest about the unknown
+    assert "· " in t.plain                             # neutral bullets, not an implied 1st/2nd
