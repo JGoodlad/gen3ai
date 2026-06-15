@@ -33,12 +33,22 @@
     margin-bottom: 1;   /* a little breathing room before the Events section */
 }
 
-/* Two side-by-side tables echoing the Rich 11:10 split; sized to their rows so the events
- * panel below gets the slack. The dashboard is a read-only, view-whole panel, so the tables
- * size to their full content and NEVER scroll — `overflow-y: hidden` kills the scrollbar (and
- * the wheel-trapping it causes) that used to appear once a roster reached the old max-height. */
+/* Three side-by-side tables: a misc metrics column (rollout/time + grad/popart/distill), a
+ * dedicated train/* column, and the eval column. The two narrow metric columns hug their
+ * content (`width: auto`) so the wider eval column (`width: 1fr`) gets the horizontal slack;
+ * all size to their rows so the events panel below gets the vertical slack. The dashboard is a
+ * read-only, view-whole panel, so the tables size to their full content and NEVER scroll —
+ * `overflow-y: hidden` kills the scrollbar (and the wheel-trapping it causes) that used to
+ * appear once a roster reached the old max-height. */
 #metrics-left {
-    width: 1fr;
+    width: auto;
+    height: auto;
+    margin: 0 2 0 0;
+    overflow-y: hidden;
+}
+
+#metrics-train {
+    width: auto;
     height: auto;
     margin: 0 2 0 0;
     overflow-y: hidden;
@@ -53,18 +63,18 @@
 /* Flatten the metrics tables so they read as plain text on the dashboard (like Rich),
  * not boxed widgets: kill the DataTable's $panel header bar, even-row striping, and the
  * focus tint (the tables are also made non-focusable in on_mount). */
-#metrics-left, #metrics-eval {
+#metrics-left, #metrics-train, #metrics-eval {
     background: transparent;
 }
-#metrics-left:focus, #metrics-eval:focus {
+#metrics-left:focus, #metrics-train:focus, #metrics-eval:focus {
     background-tint: $surface 0%;
 }
-#metrics-left > .datatable--header, #metrics-eval > .datatable--header {
+#metrics-left > .datatable--header, #metrics-train > .datatable--header, #metrics-eval > .datatable--header {
     background: transparent;
     color: $text-muted;
     text-style: none;
 }
-#metrics-left > .datatable--even-row, #metrics-eval > .datatable--even-row {
+#metrics-left > .datatable--even-row, #metrics-train > .datatable--even-row, #metrics-eval > .datatable--even-row {
     background: transparent;
 }
 

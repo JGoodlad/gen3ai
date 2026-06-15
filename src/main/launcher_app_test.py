@@ -124,6 +124,7 @@ async def test_skeleton_mounts_all_views():
         for vid in ("dashboard", "logs", "events", "confirm_quit", "confirm_force_eval"):
             assert app.query_one(f"#{vid}") is not None
         assert app.query_one("#metrics-left", DataTable) is not None
+        assert app.query_one("#metrics-train", DataTable) is not None
         assert app.query_one("#metrics-eval", DataTable) is not None
         assert app.query_one("#views", ContentSwitcher).current == "dashboard"
 
@@ -153,9 +154,13 @@ async def test_dashboard_metrics_tables_populated():
         app._refresh()
         await pilot.pause()
         left = _table_text(app.query_one("#metrics-left", DataTable))
-        assert "rollout" in left and "time" in left and "train" in left
+        assert "rollout" in left and "time" in left
         assert "ep_rew_mean" in left and "-27.26" in left
         assert "1,121" in left                    # fps formatted with thousands sep
+        assert "train" not in left                # train pulled into its own column
+        # train/* is its own dedicated column now (the biggest section).
+        train = _table_text(app.query_one("#metrics-train", DataTable))
+        assert "train" in train and "value_loss" in train and "95.61" in train
         ev = _table_text(app.query_one("#metrics-eval", DataTable))
         assert "all" in ev and "vs Bots" in ev
         assert "vs random" in ev                  # snake_case opponent name
@@ -237,12 +242,13 @@ async def test_distill_metrics_block_renders_legibly():
 
 async def test_metrics_tables_never_show_a_scrollbar():
     """The dashboard tables size to content and never scroll — even a full self-play +
-    --distill-opponents roster (22-row left table, eval with 5 sentinels) must not trap the
-    wheel with a scrollbar."""
+    --distill-opponents roster (left misc + a dedicated train column + eval with 5 sentinels)
+    must not trap the wheel with a scrollbar."""
     state = LauncherState(interval_hours=3.0)
     state.pid = 1
     metrics = {"_step": 76_888_064}
-    # left column: rollout/time/train (12 train keys) + distill → 22 rows
+    # non-eval metrics: rollout/time + distill in the left column, the 12 train keys in their
+    # own column → 22 rows across the two, the roster that used to overflow a single column
     metrics.update({"rollout/ep_len_mean": 34.3, "rollout/ep_rew_mean": 3.1,
                     "time/fps": 416.0, "time/total_timesteps": 76_888_064.0})
     for k in ("approx_kl", "clip_fraction", "clip_range", "entropy_loss", "explained_variance",
@@ -270,9 +276,12 @@ async def test_metrics_tables_never_show_a_scrollbar():
         app._refresh()
         await pilot.pause()
         left = app.query_one("#metrics-left", DataTable)
+        train = app.query_one("#metrics-train", DataTable)
         ev = app.query_one("#metrics-eval", DataTable)
-        assert left.row_count >= 22                      # the roster that used to overflow
+        assert train.row_count >= 13                     # 12 train keys + the section header
+        assert left.row_count + train.row_count >= 22    # the roster that used to overflow
         assert left.show_vertical_scrollbar is False     # no scrollbar to fight
+        assert train.show_vertical_scrollbar is False
         assert ev.show_vertical_scrollbar is False
 
 

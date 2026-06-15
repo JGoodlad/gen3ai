@@ -146,6 +146,7 @@ class LauncherApp(Gen3App):
                 yield Static("Metrics", classes="section-label")
                 with Horizontal(id="metrics-row"):
                     yield DataTable(id="metrics-left")
+                    yield DataTable(id="metrics-train")
                     yield DataTable(id="metrics-eval")
                 yield Static("Events", classes="section-label")
                 yield Static(id="events-dash")
@@ -164,6 +165,12 @@ class LauncherApp(Gen3App):
         left.cursor_type = "none"
         left.can_focus = False   # read-only — no focus tint, keys bubble to the app
         left.add_columns("metric", "value")
+        # train/* gets its OWN column (the biggest section) — same plain 2-col shape as left.
+        train = self.query_one("#metrics-train", DataTable)
+        train.show_header = False
+        train.cursor_type = "none"
+        train.can_focus = False
+        train.add_columns("metric", "value")
         ev = self.query_one("#metrics-eval", DataTable)
         ev.cursor_type = "none"
         ev.can_focus = False
@@ -435,8 +442,10 @@ class LauncherApp(Gen3App):
     def _render_metrics(self, snap, now: float) -> None:
         metrics = snap.metrics
         left = self.query_one("#metrics-left", DataTable)
+        train_tbl = self.query_one("#metrics-train", DataTable)
         right = self.query_one("#metrics-eval", DataTable)
         left.clear()
+        train_tbl.clear()
         right.clear()
 
         if not metrics:
@@ -473,26 +482,17 @@ class LauncherApp(Gen3App):
         if snap.metrics_ts is not None and (now - snap.metrics_ts) > 60:
             stale_badge = f" ({_secs_str(now - snap.metrics_ts)} ago)"
 
-        # ── left column: rollout / time / train (+ any other non-eval sections) ──
-        fixed = {"rollout", "eval", "train", "time"}
-        sections = ["rollout", "time", "train"] + [s for s in by_section if s not in fixed]
-        first = True
-        any_left = False
-        for sec in sections:
-            keys = by_section.get(sec)
-            if not keys:
-                continue
-            any_left = True
-            badge = stale_badge if first else ""
-            left.add_row(Text(f"{sec}{badge}", style="dim italic"), "")
-            first = False
-            for key in keys:
-                name = _metric_label(key)
-                left.add_row(
-                    Text(f"  {name}", style="dim"),
-                    Text(_fmt_metric(key, display[key]), style="bold", justify="right"),
-                )
-        if not any_left:
+        # Non-eval metrics span TWO columns, never splitting a top-level section: train/* (by
+        # far the biggest section) gets its OWN column, and everything else (rollout, time, grad,
+        # popart, distill, …) stays in the left column. The stale badge annotates the first
+        # section header of each column.
+        left_sections = ["rollout", "time"] + [
+            s for s in by_section if s not in {"rollout", "time", "train"}
+        ]
+        left_any = self._fill_metric_sections(left, left_sections, by_section, display, stale_badge)
+        train_any = self._fill_metric_sections(
+            train_tbl, ["train"], by_section, display, stale_badge)
+        if not left_any and not train_any:
             left.add_row(Text("⏳  waiting for first rollout…", style="dim italic"), "")
 
         # ── right column: eval aggregates + per-opponent ──
@@ -500,6 +500,30 @@ class LauncherApp(Gen3App):
         if snap.eval_metrics_ts is not None and (now - snap.eval_metrics_ts) > 60:
             eval_stale = f" ({_secs_str(now - snap.eval_metrics_ts)} ago)"
         self._fill_eval(right, per_opponent, display, eval_summary, eval_stale)
+
+    def _fill_metric_sections(self, table: DataTable, sections: list, by_section: dict,
+                              display: dict, stale_badge: str) -> bool:
+        """Render whole top-level sections (a ``dim italic`` header row + its metric rows) into a
+        metrics table. A section is never split across columns. ``stale_badge`` annotates the
+        FIRST rendered section header. Empty/absent sections are skipped; returns True if any
+        section produced rows."""
+        first = True
+        any_rendered = False
+        for sec in sections:
+            keys = by_section.get(sec)
+            if not keys:
+                continue
+            any_rendered = True
+            badge = stale_badge if first else ""
+            table.add_row(Text(f"{sec}{badge}", style="dim italic"), "")
+            first = False
+            for key in keys:
+                name = _metric_label(key)
+                table.add_row(
+                    Text(f"  {name}", style="dim"),
+                    Text(_fmt_metric(key, display[key]), style="bold", justify="right"),
+                )
+        return any_rendered
 
     def _fill_eval(self, table: DataTable, keys: list, metrics: dict,
                    eval_summary: dict, stale_badge: str) -> None:

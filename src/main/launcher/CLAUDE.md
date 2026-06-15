@@ -134,15 +134,26 @@ deterministic `_supervise` exit-code/crash-restart/`_reap` suite), plus `launche
   and each backfill spawn (`selfplay_callback._reconcile_distill` → `send_event`). The metrics ride
   the normal `distill/*` logger scalars through `MetricsExporterCallback`; the events are emitted
   straight to the IPC pipe.
-  **Gradient-balance + value-scale diagnostics** (always on) show up in the left metrics column as a
-  `grad/*` block (`value share`, `log val/pol grad` = the non-saturating `log10(‖g_v‖/‖g_p‖)` ratio,
+  **Metrics layout** — the dashboard's metrics row is **three side-by-side tables** so a metric-rich
+  run stays readable instead of one over-long column: a **left misc column** (rollout / time, then the
+  `grad/*` / `popart/*` / `distill/*` diagnostics), a **dedicated `train/*` column** (by far the
+  biggest section — all the PPO losses, `return_*`, `value_pred_std`, `grad_norm`, the opponent-mix
+  `*_fraction` telemetry), and the **eval column**. Non-eval metrics are split across the first two
+  **by whole top-level section — a section is never split across columns**
+  (`app.py::_fill_metric_sections`); the two narrow metric columns hug their content (`width: auto`)
+  so the wider eval column (`width: 1fr`) gets the horizontal slack.
+  **Gradient-balance + value-scale diagnostics** (always on) ride that layout: the `grad/*` block
+  (`value share`, `log val/pol grad` = the non-saturating `log10(‖g_v‖/‖g_p‖)` ratio,
   `policy-value cos`, policy/value grad-norms; plus, when a belief aux is on, `belief share` /
-  `latent share` — the combined and latent-only aux pull on the trunk) plus `train/return_*`,
-  `train/value_pred_std`, and `train/grad_norm` — the direct value-vs-policy shared-trunk pressure
-  gauge for tuning `vf_coef` / preparing PopArt (computed in `agents/training/grad_balance.py`; see
-  `src/agents/training/CLAUDE.md`). They need no new launcher wiring: they ride the same generic
-  `MetricsExporterCallback` scalar path and auto-route by their `grad/` / `train/` section prefix;
-  only their display order + short labels are declared in `format.py`. Under **`--use-popart`** a `popart/*` block also appears (`value mu`, `value sigma`, `value head |W|` — the value-target normalizer state; same generic path), and `grad/value_share` should be seen falling toward ~0.4.
+  `latent share` — the combined and latent-only aux pull on the trunk) sits in the left column, while
+  `train/return_*`, `train/value_pred_std`, and `train/grad_norm` join the train column — together the
+  direct value-vs-policy shared-trunk pressure gauge for tuning `vf_coef` / preparing PopArt (computed
+  in `agents/training/grad_balance.py`; see `src/agents/training/CLAUDE.md`). They need no new launcher
+  wiring: they ride the same generic `MetricsExporterCallback` scalar path and auto-route by their
+  `grad/` / `train/` section prefix; only their display order + short labels are declared in
+  `format.py`. Under **`--use-popart`** a `popart/*` block also appears (`value mu`, `value sigma`,
+  `value head |W|` — the value-target normalizer state; same generic path), and `grad/value_share`
+  should be seen falling toward ~0.4.
 - **Crash reporting** — child stdout/stderr is streamed live to `<run_dir>/launcher_child.log`
   (complete even if the child hard-`os._exit`s, bypassing Python cleanup) and held in a
   5000-line in-memory scrollback. The on-disk log is a **disk ring buffer**
