@@ -129,8 +129,11 @@ def test_opponent_moves_are_only_revealed_ones():
 
 
 # ───────────────────────────── NO history (the boundary) ────────────────────
+# NOTE: protect_counter is deliberately NOT here — it is surfaced as a CURRENT-board field
+# (the present consecutive-stall counter value that sets the next Protect's odds), exactly like
+# status_counter, NOT a past-turn event. See test_livepokemon_fields_are_exactly_the_minimal_set.
 _FORBIDDEN_HISTORY_FIELDS = [
-    "last_move", "last_cant_reason", "first_turn", "protect_counter",
+    "last_move", "last_cant_reason", "first_turn",
     "must_recharge", "preparing", "preparing_move", "active_turns",
 ]
 
@@ -152,16 +155,18 @@ def test_livepokemon_has_no_history_fields(attr):
 def test_livepokemon_fields_are_exactly_the_minimal_set():
     """Pin the field set so nobody silently grows LivePokemon into a state grab-bag.
     The spread / consumed-item / status-counter fields are deliberate current-board
-    additions (Phase 1 of the strict-API plan), and stats / current_hp / max_hp are the
+    additions (Phase 1 of the strict-API plan), stats / current_hp / max_hp are the
     incoming-damage belief's current-board inputs (EV-computed stats + integer HP, so the
-    obs+reward belief reads the read-model instead of the raw Pokemon) — still NO past-turn fields."""
+    obs+reward belief reads the read-model instead of the raw Pokemon), and protect_counter is the
+    current consecutive-stall counter (gen3_protect_odds_v1, the obs protect-success-odds source) —
+    still NO past-turn fields."""
     names = {f.name for f in dataclasses.fields(LivePokemon)}
     assert names == {
         "species", "active", "fainted", "revealed", "hp_fraction", "status",
         "types", "moves", "item", "ability", "boosts", "volatiles",
-        # spread block (own-side gated) + revealed consumed item + status counter
+        # spread block (own-side gated) + revealed consumed item + status/protect counters
         "base_stats", "ivs", "evs", "nature", "spread_known",
-        "consumed_item", "status_counter",
+        "consumed_item", "status_counter", "protect_counter",
         # incoming-damage belief inputs: EV-computed stats + integer HP (current-board facts)
         "stats", "current_hp", "max_hp",
     }

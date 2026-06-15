@@ -208,7 +208,8 @@ class ProgressClock:
     def _denial_kind(delta) -> "Optional[str]":
         """Classify a non-progress window:
           * ``"exogenous"`` — a genuine attempt denied by RNG / the opponent (cant: para/sleep/freeze/
-            flinch/focuspunch; accuracy miss; Protect/Detect block). NEVER a stall → always frozen.
+            flinch/focuspunch; accuracy miss; our ATTACK blocked by the opp's Protect/Detect — NOT our
+            OWN failed Protect, which is a charged no-op). NEVER a stall → always frozen.
           * ``"heal"`` — a productive defensive heal move that restored real HP (Φ_mat prices the first
             few; a SUSTAINED run is a heal-war → charged past HEAL_FREEZE_GRACE).
           * ``None`` — a deliberate, obs-knowable wheel-spin → NO_OP (increment + charge)."""
@@ -219,11 +220,18 @@ class ProgressClock:
         # Accuracy MISS — the agent made a good attempt; RNG denied it.
         if outcome == "miss":
             return "exogenous"
-        # BLOCKED by the opponent's Protect/Detect/Endure (their choice denied our attempt). An
-        # immune attack (|-immune|, our_effectiveness==0) is NOT denied — it's a deterministic NO_OP.
+        # Our ATTACK BLOCKED by the opponent's Protect/Detect/Endure (their choice denied our attempt)
+        # is exogenous denial. An immune attack (|-immune|, our_effectiveness==0) is NOT denied — it's a
+        # deterministic NO_OP. But a FAILED OWN STALL MOVE — our Protect/Detect/Endure lost its
+        # escalating success roll — is NOT denial: it is a deliberate, obs-knowable no-progress
+        # wheel-spin (a failed Protect IS a no-progress turn; the model should almost never go back-to-
+        # back unless an our-owned residual makes it worth it, which the _is_progress chip clause above
+        # already credits). So only freeze when OUR move was a non-stall attack that got blocked — never
+        # on our own failed Protect, even on the rare turn the opponent ALSO stalled.
         if outcome == "fail":
             opp_mv = getattr(delta, "opp_resolved_move_id", None)
-            if opp_mv in _INVULNERABLE_MOVES:
+            our_mv = getattr(delta, "our_move_id", None)
+            if opp_mv in _INVULNERABLE_MOVES and our_mv not in _INVULNERABLE_MOVES:
                 return "exogenous"
         # Productive DEFENSIVE heal: a heal move that restored real HP (design §4.1.2).
         mid = getattr(delta, "our_move_id", None)

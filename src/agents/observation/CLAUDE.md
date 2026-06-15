@@ -207,27 +207,37 @@ emitted a constant fallback (all-31 IVs, 0 EVs, neutral nature) for every own mo
 permanence + turns-remaining), spikes ×2 (2), log-turn (1), per-side screens (8: Reflect /
 Light Screen / Safeguard / Mist × both sides).
 
-**Reactive block (390 dims, layout in `reactive.py`):** 15 scalar dims, then the 36-dim
+**Reactive block (392 dims, layout in `reactive.py`):** 17 scalar dims, then the 36-dim
 **move-effect block** (`gen3_move_effects_v1`), then the **51-dim incoming-damage / OHKO belief
-block** (`gen3_incoming_crit_split_v1`, at offset 51 — see below), then the two 144-dim matchup matrices
-(`our_matchups` now at offset 102, `their_matchups` at 246). Scalars: active-move power ×4 (/200)
+block** (`gen3_incoming_crit_split_v1`, at offset 53 — see below), then the two 144-dim matchup matrices
+(`our_matchups` now at offset 104, `their_matchups` at 248). Scalars: active-move power ×4 (/200)
 + active-move multiplier ×4 (/4), fainted counts ×2, active-status flag (1), `forced_struggle` (1),
 **(`gen3_move_slot_align_v1`: these per-move scalars — and the move-effect block below — are filled
 in REQUEST-slot order via `legal.move_slots` (action 6+i ↔ slot i, disabled moves KEPT, typed-HP
 resolved off the moveset) by `reactive._request_slot_moves`, NOT `battle.available_moves`, which
 drops disabled moves and used to shift every later feature off its action logit; an unwritten slot
 reads the neutral 0.25 (1×) default, never the old np.ones → phantom 4×.)**
-the two **gen3_trapping_signals_v1** bits — `trapped` (1) and `maybe_trapped` (1) — and the
-**gen3_markovian_progress_v1** scalar `turns_since_progress` (1, `vec[14]`). All are sourced
-server-authoritatively: trapped/maybe_trapped from the per-decision `LegalActions` snapshot
-(`legal.trapped` / `legal.maybe_trapped`); `turns_since_progress` is the log-saturated no-progress
-clock (`log(1+min(n,10))/log(11)`), sourced from the **EpisodeTracker-owned `ProgressClock`** (NOT
-LiveView — it is cross-turn state), threaded into `encode()` like the HP tracker. The reward's
-`no_progress_tax` keys on the SAME clock instance (one value, obs==reward-key). They sit BEFORE the
+the two **gen3_trapping_signals_v1** bits — `trapped` (1) and `maybe_trapped` (1) — the
+**gen3_markovian_progress_v1** scalar `turns_since_progress` (1, `vec[14]`), and the **two
+gen3_protect_odds_v1 scalars** `protect_odds` (our active `vec[15]`, opp active `vec[16]`). All are
+sourced server-authoritatively / from the read-model: trapped/maybe_trapped from the per-decision
+`LegalActions` snapshot (`legal.trapped` / `legal.maybe_trapped`); `turns_since_progress` is the
+log-saturated no-progress clock (`log(1+min(n,10))/log(11)`), sourced from the **EpisodeTracker-owned
+`ProgressClock`** (NOT LiveView — it is cross-turn state), threaded into `encode()` like the HP
+tracker (the reward's `no_progress_tax` keys on the SAME clock instance — one value, obs==reward-key);
+`protect_odds` = `gen3_mechanics.protect_success_probability(mon.protect_counter)` read off each active
+mon's **`LivePokemon.protect_counter`** (the consecutive-successful-stall counter the LiveView surfaces)
+— P(a Protect/Detect/Endure succeeds NOW) under the gen3 floored-doubling stall rule (100/50/25/12.5,
+floor 1/8; Showdown gen3 inherits gen4→gen5, NOT the base `*3`). It is the model's ONLY view of the
+stall counter (poke-env doesn't enumerate the `stall` volatile, and turn-history saliency decays
+before a chain can be counted); public both sides (the opp's counter derives entirely from their
+revealed move stream → no leak); pinned by `protect_success_prob_fuzz_test.py` (encoded scalar ==
+the formula per the live counter, + the empirical % match). They sit BEFORE the
 matchups so the extractor picks them up in `non_matchup_rest` automatically (it reads the matchup
 offset from the layout). `trapped` is redundant with the mask but explicit; `maybe_trapped` is the
 high-value trap-risk bit; `turns_since_progress` lets the model state-condition on the anti-stall
-penalty it's about to be charged.
+penalty it's about to be charged; `protect_odds` lets it price the declining success of a repeated
+Protect (it failing the more often it's used in a row).
 
 **Move-effect block (36 dims, `gen3_move_effects_v1`):** 4 move slots in **REQUEST order** (so
 feature slot *k* lines up with action logit 6+*k* — enforced via `legal.move_slots` since

@@ -299,6 +299,27 @@ PHAZING_MOVES: frozenset[str] = frozenset({"roar", "whirlwind"})
 
 INVULNERABLE_MOVES: frozenset[str] = frozenset({"protect", "detect", "endure"})
 
+# Gen3 Protect/Detect/Endure consecutive-use success probability (gen3_protect_odds_v1).
+# Showdown's gen3 format inherits the stall condition through gen4 → gen5 (NOT the base
+# `data/conditions.ts` *3 rule): gen5 starts the counter at 2 and DOUBLES it each consecutive
+# successful stall move, and gen4 caps it (`counterMax: 8`, "the chance does not fall below
+# 1/8"). So the per-attempt success odds are 100% / 50% / 25% / 12.5% (then a 12.5% floor) —
+# NOT the cartridge's unbounded halving and NOT the base *3. poke-env tracks the live counter
+# as `Pokemon.protect_counter` (consecutive successful stall moves; reset to 0 on a switch,
+# faint, non-stall move, or a failed roll), so k=0 is the fresh 100% case. Verified against the
+# compiled sim + a 14.8k-attempt bridge measurement (protect_success_prob_fuzz_test.py).
+_PROTECT_COUNTER_MAX = 8  # gen4 counterMax → the 1/8 (12.5%) floor
+
+
+def protect_success_probability(protect_counter: int) -> float:
+    """P(the next Protect/Detect/Endure succeeds) given a mon's current consecutive-stall
+    counter ``k`` (poke-env ``protect_counter``). ``k<=0`` → 1.0 (fresh, post-reset); else
+    ``1 / min(2**k, 8)`` — floored doubling (1.0 / 0.5 / 0.25 / 0.125 / 0.125 / …)."""
+    k = int(protect_counter)
+    if k <= 0:
+        return 1.0
+    return 1.0 / min(2 ** k, _PROTECT_COUNTER_MAX)
+
 STATUS_MOVES: frozenset[str] = frozenset({
     "toxic", "willowisp", "thunderwave", "stunspore",
     "sleeppowder", "spore", "glare", "poisonpowder",

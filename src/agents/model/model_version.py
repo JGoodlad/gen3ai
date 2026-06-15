@@ -382,7 +382,20 @@ MODEL_CONFIG_VERSION = 21
 #   is the neutral 0.25 (1×). Same dims (obs 3409 unchanged), VALUES only on the disabled-slot /
 #   <4-move / no-opp-active cases — so it is retrain-class (not weight-shape), not byte-compatible with
 #   gen3_incoming_crit_split_v1. The common all-moves-available decision is byte-identical.
-ARCH_SIGNATURE = "gen3_move_slot_align_v1"
+# gen3_protect_odds_v1: adds TWO reactive scalars (vec[15] our active, vec[16] opp active) — P(a
+#   Protect/Detect/Endure succeeds NOW) under the gen3 floored-doubling stall rule. Showdown's gen3
+#   format inherits the stall condition through gen4 → gen5 (NOT the base data/conditions.ts *3): the
+#   counter starts at 2 and DOUBLES each consecutive successful stall move (gen5), capped at 8 (gen4
+#   counterMax → "the chance does not fall below 1/8") → 100/50/25/12.5 then a 12.5% floor. Sourced from
+#   each active mon's `LivePokemon.protect_counter` (poke-env's consecutive-successful-stall counter,
+#   reset on switch/faint/non-stall move/failed roll) via the LiveView read-model — never raw poke-env.
+#   The model had no other view of the stall counter (poke-env doesn't enumerate the 'stall' volatile,
+#   and turn-history saliency decays before a chain can be counted). Public for both sides (the opp's
+#   counter derives entirely from their revealed move stream → no leak). REACTIVE_SCALAR_DIM 15 → 17 →
+#   REACTIVE_DIM 390 → 392, obs dim 3409 → 3411. Verified: protect_success_prob_fuzz_test.py (encoded
+#   scalar == the gen3-correct prob for the live protect_counter, + the empirical % match). Not
+#   weight-compatible with gen3_move_slot_align_v1 (obs dim +2).
+ARCH_SIGNATURE = "gen3_protect_odds_v1"
 
 
 class ModelVersionError(Exception):

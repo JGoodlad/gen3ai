@@ -534,7 +534,7 @@ tools/               # Acquisition layer (knows the 3 upstreams) — has CLAUDE.
 
 ## Observation Vector
 
-The full observation is a **3409-dim float32 vector** (`Gen3ObservationEncoder.dimension`):
+The full observation is a **3411-dim float32 vector** (`Gen3ObservationEncoder.dimension`):
 
 | Block | Dims | Offset |
 |---|---|---|
@@ -542,15 +542,19 @@ The full observation is a **3409-dim float32 vector** (`Gen3ObservationEncoder.d
 | Opp team (6 × 107) | 642 | 642 |
 | Active context ×2 (boosts + full volatiles, `VOLATILE_DIM`=44) | 116 | 1284 |
 | Global env | 18 | 1400 |
-| Reactive + move-effects + **incoming-damage** + **turns_since_progress** + matchups | 390 | 1418 |
-| Prev-turn action mask | 11 | 1808 |
-| Turn history (`N_HISTORY_TURNS` × 159) | 1590 | 1819 |
-| **Total** | **3409** | |
+| Reactive + move-effects + **incoming-damage** + **turns_since_progress** + **protect-odds** + matchups | 392 | 1418 |
+| Prev-turn action mask | 11 | 1810 |
+| Turn history (`N_HISTORY_TURNS` × 159) | 1590 | 1821 |
+| **Total** | **3411** | |
 
 **The full per-block layout** — the 107-dim per-Pokémon slot, the 11-dim move slot, the 18-dim
-spread block, global env, the 390-dim reactive block (**15 scalars** — the 14 prior + the new
-log-saturated **`turns_since_progress`** no-progress clock at `vec[14]`, `gen3_markovian_progress_v1`;
-the no-progress reward keys on the SAME EpisodeTracker-owned counter — + the 36-dim action-aligned
+spread block, global env, the 392-dim reactive block (**17 scalars** — the 14 prior + the
+log-saturated **`turns_since_progress`** no-progress clock at `vec[14]`, `gen3_markovian_progress_v1`
+(the no-progress reward keys on the SAME EpisodeTracker-owned counter) + the **2 protect-odds scalars**
+at `vec[15]`/`vec[16]`, `gen3_protect_odds_v1` — P(a Protect/Detect/Endure succeeds NOW) for our /
+the opp active mon, the gen3 floored-doubling stall odds (100/50/25/12.5, floor 1/8) from each mon's
+`LivePokemon.protect_counter` (the only obs view of the stall counter; public both sides, no leak) — +
+the 36-dim action-aligned
 move-effect block, 4 slots × 9 feats + the **51-dim incoming-damage / OHKO belief block**
 [`gen3_incoming_crit_split_v1`: per our mon, phys/spec expected-damage + the modal **no-crit** P(KO) +
 the **crit-risk DELTA** per channel (crit-inclusive − no-crit ∈ [0, _CRIT_P] — a decorrelated "crit

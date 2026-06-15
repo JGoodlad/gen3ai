@@ -287,11 +287,11 @@ def test_offsets_resolve_matches_layout():
     # OFFSET_REACTIVE resolves to 1418 at runtime (root CLAUDE.md obs table;
     # the inline "# 1247" comments in observation/constants.py are stale).
     assert off.mm_off == 1422   # OFFSET_REACTIVE(1418) + move_multiplier(4) — unchanged (before vec[14])
-    assert off.om_off == 1520   # OFFSET_REACTIVE(1418) + matchup_offset(102 = scalar 15 + move_eff 36 + incoming 51)
-    assert off.tm_off == 1664   # om_off + our_matchups(144)
+    assert off.om_off == 1522   # OFFSET_REACTIVE(1418) + matchup_offset(104 = scalar 17 + move_eff 36 + incoming 51)
+    assert off.tm_off == 1666   # om_off + our_matchups(144)
     assert off.active_block_dim == 99
-    # incoming-damage / OHKO belief block: reactive offset 51 (post turns_since_progress vec[14]) → 1469.
-    assert off.incoming_off == 1469   # OFFSET_REACTIVE(1418) + incoming_damage offset(51 = scalar 15 + move_eff 36)
+    # incoming-damage / OHKO belief block: reactive offset 53 (post protect_odds vec[15]/vec[16]) → 1471.
+    assert off.incoming_off == 1471   # OFFSET_REACTIVE(1418) + incoming_damage offset(53 = scalar 17 + move_eff 36)
     assert off.incoming_dim == 51     # gen3_incoming_crit_split: 6*8 per-mon + 3 recovery
     assert off.incoming_per_mon == 8 and off.incoming_recovery == 3
     assert off.pokemon_full_dim == 107

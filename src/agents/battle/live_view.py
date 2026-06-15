@@ -5,9 +5,13 @@ Why this exists
 ---------------
 poke-env's ``Pokemon`` is a rich state tracker that mixes *current* facts (HP, status,
 boosts, revealed moves) with *temporal* ones (``last_move``, ``last_cant_reason``,
-``first_turn``, ``protect_counter`` …). For RL that mixing is a hazard: a consumer can
+``first_turn`` …). For RL that mixing is a hazard: a consumer can
 accidentally read a past-turn field as if it were current, and "what happened last
 turn" ends up sourced from two places that can disagree.
+
+(``protect_counter`` is the one borderline field we DO surface — like ``status_counter`` it is
+the *current value* of an in-battle counter, not a past-turn event: it governs the next
+Protect's success odds right now. See :attr:`LivePokemon.protect_counter`.)
 
 We split the two concerns into two clean, separately-fuzzed surfaces:
 
@@ -117,6 +121,14 @@ class LivePokemon:
     # turns-in-status counter (sleep turns / toxic severity) — a current counter, not history.
     consumed_item: Optional[str] = None
     status_counter: int = 0
+    # poke-env's ``protect_counter`` — how many Protect/Detect/Endure moves this mon has landed
+    # in a row. A CURRENT-board fact (the present counter value that sets the NEXT Protect's
+    # success odds), NOT history: poke-env resets it to 0 on a switch, faint, non-stall move, or
+    # a failed roll. Exposed exactly like ``status_counter`` (a current in-battle counter); the
+    # obs encoder turns it into the gen3 floored-doubling success probability
+    # (``gen3_mechanics.protect_success_probability``) — keeping the gen3 mechanic in the encoder,
+    # the same split as ``stats`` feeding the incoming-damage belief.
+    protect_counter: int = 0
 
     # ---- computed stats + integer HP (current-board facts) ----
     # ``stats`` is poke-env's EV/IV/nature-applied stat dict ({atk,def,spa,spd,spe}) — the REAL
@@ -189,6 +201,7 @@ class LivePokemon:
             spread_known=bool(is_own),
             consumed_item=consumed_item,
             status_counter=int(getattr(mon, "status_counter", 0) or 0),
+            protect_counter=int(getattr(mon, "protect_counter", 0) or 0),
             stats=dict(mon.stats) if getattr(mon, "stats", None) else {},
             current_hp=(int(mon.current_hp) if getattr(mon, "current_hp", None) is not None else None),
             max_hp=(int(mon.max_hp) if getattr(mon, "max_hp", None) is not None else None),

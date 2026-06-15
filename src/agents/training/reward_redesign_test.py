@@ -918,6 +918,56 @@ class TestProgressClock(unittest.TestCase):
         self.assertEqual(c.n, 4)            # incremented (a no-op)
         self.assertEqual(c.last_penalty, -0.15)
 
+    def test_failed_protect_charges_as_noop(self):
+        """A FAILED Protect (lost its escalating success roll, opp then attacked) is a no-progress
+        turn → increment + charge. The user's rule: 'it should be a no-progress turn when protect
+        fails' (one should almost never go back-to-back unless it's worth it)."""
+        c = self._clock(); c.n = 1
+        c.update(_delta(our_move_id="protect", our_move_outcome="fail", opp_resolved_move_id="rockslide"),
+                 _full_team_live(), _Legal(switches=[1]))
+        self.assertEqual(c.n, 2)
+        self.assertAlmostEqual(c.last_penalty, -0.15, places=6)
+
+    def test_failed_protect_into_opp_protect_also_charges(self):
+        """The edge: even on the rare turn the OPPONENT also stalled, our OWN failed Protect is a
+        no-op (NOT exogenous denial — that's only for our ATTACK being blocked)."""
+        c = self._clock(); c.n = 1
+        c.update(_delta(our_move_id="protect", our_move_outcome="fail", opp_resolved_move_id="protect"),
+                 _full_team_live(), _Legal(switches=[1]))
+        self.assertEqual(c.n, 2)
+        self.assertAlmostEqual(c.last_penalty, -0.15, places=6)
+
+    def test_our_attack_blocked_by_opp_protect_is_frozen(self):
+        """Regression: our ATTACK denied by the opp's Protect IS exogenous (their choice denied us) —
+        the fix must not charge this; only our own failed stall move."""
+        c = self._clock(); c.n = 1
+        c.update(_delta(our_move_id="earthquake", our_move_outcome="fail", opp_resolved_move_id="protect"),
+                 _full_team_live(), _Legal(switches=[1]))
+        self.assertEqual(c.n, 1)            # frozen — neither incremented
+        self.assertEqual(c.last_penalty, 0.0)
+
+    def test_protect_with_toxic_residual_not_charged(self):
+        """'If it's worth it' — a Protect (even a failed one) while an our-owned Toxic chips the opp
+        NET-down is PROGRESS (the points come back), so it is NOT charged."""
+        c = self._clock(); c.n = 3
+        live = _full_team_live()
+        live.opp.active.status = "tox"
+        opp_hp = np.zeros(6, dtype=np.float32); opp_hp[0] = -0.0625   # toxic tick
+        c.update(_delta(our_move_id="protect", our_move_outcome="fail",
+                        opp_resolved_move_id="rockslide", opp_hp_delta=opp_hp),
+                 live, _Legal(switches=[1]))
+        self.assertEqual(c.n, 0)            # progress → reset
+        self.assertEqual(c.last_penalty, 0.0)
+
+    def test_failed_protect_no_switch_not_charged(self):
+        """Helplessness exemption still applies: a failed Protect with no legal switch ticks the obs
+        counter but is not charged (trapped-vs-wall must not be punished)."""
+        c = self._clock(); c.n = 1
+        c.update(_delta(our_move_id="protect", our_move_outcome="fail", opp_resolved_move_id="rockslide"),
+                 _full_team_live(), _Legal(switches=[]))
+        self.assertEqual(c.n, 2)            # obs counter still ticks
+        self.assertEqual(c.last_penalty, 0.0)
+
     def test_status_landed_resets(self):
         c = self._clock(); c.n = 2
         from agents.enums import Status

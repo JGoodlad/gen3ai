@@ -9,7 +9,9 @@ from .constants import (
 )
 from agents.enums import PokemonType
 from agents import gen3_data
-from agents.gen3_mechanics import effective_multiplier_by_types, status_land_estimate
+from agents.gen3_mechanics import (
+    effective_multiplier_by_types, status_land_estimate, protect_success_probability,
+)
 from agents.observation.incoming_damage_encoder import encode_block as encode_incoming_block
 from typing import Any, Dict, List, Optional
 
@@ -175,15 +177,20 @@ class ReactiveEncoder(ObservationEncoder):
     - Forced Struggle flag (1)
     - Trapped flag (1)        — server-authoritative `legal.trapped` (cannot switch)
     - Maybe-trapped flag (1)  — server-authoritative `legal.maybe_trapped` (opponent MIGHT trap)
+    - turns_since_progress (1) — gen3_markovian_progress_v1: the log-saturated no-progress clock (vec[14])
+    - Protect-success odds (2) — gen3_protect_odds_v1: P(Protect/Detect/Endure succeeds NOW) for our
+      active (vec[15]) and the opp active (vec[16]) — gen3 floored doubling (100/50/25/12.5, 1/8 floor)
+      from each mon's LiveView protect_counter; the only obs signal for the stall counter.
     - Move-effect flags (36)  — gen3_move_effects_v1: 4 request-order move slots × 9 flags
       [is_boost, is_heal, is_protect, is_phaze, is_hazard, inflicts_status,
       status_will_land, pp_fraction, status_will_land_known] so the policy head can tell a
       setup move from a heal from a wasted status (otherwise indistinguishable: base power 0 +
       neutral multiplier). status_will_land is a prior-weighted probability; the trailing
       *_known bit flags confirmed-vs-prior, mirroring the ability block's `known` flag.
+    - Incoming-damage / OHKO belief (51) — gen3_incoming_crit_split_v1 (offsets via INCOMING_DMG_OFFSET)
     - Matchup Matrix: Our moves vs Their mons (144)
     - Matchup Matrix: Their moves vs Our mons (144)
-    Total: 338 dims
+    Total: REACTIVE_DIM (17 scalars + 36 move-effects + 51 incoming-damage + 288 matchup = 392).
     (HP and Spikes removed — duplicated in per-Pokémon vector and global env respectively)
 
     The trapped / maybe_trapped bits (gen3_trapping_signals_v1) are sourced from the
@@ -381,6 +388,22 @@ class ReactiveEncoder(ObservationEncoder):
         if progress_clock is not None:
             vec[14] = float(progress_clock.value())
 
+        # 4e. Protect-success odds (gen3_protect_odds_v1, vec[15] our active / vec[16] opp active).
+        # P(a Protect/Detect/Endure succeeds NOW) from each active mon's consecutive-stall counter,
+        # read through the LiveView read-model (NOT raw poke-env). Showdown gen3 = floored doubling
+        # (100/50/25/12.5, 1/8 floor); the gen3 mechanic lives in protect_success_probability(). This
+        # is the only obs signal for the stall counter — poke-env doesn't enumerate the 'stall'
+        # volatile, and history saliency decays before the model can count a chain. Public both sides
+        # (the opp's counter derives entirely from their revealed move stream → no leak). 0.0 on the
+        # None / no-active-mon paths (unit-test only — a real decision always has an active mon).
+        if live is not None:
+            our_active = live.ours.active
+            opp_active = live.opp.active
+            if our_active is not None:
+                vec[15] = protect_success_probability(our_active.protect_counter)
+            if opp_active is not None:
+                vec[16] = protect_success_probability(opp_active.protect_counter)
+
         # --- Matchup Matrices (raw battle — see the docstring's three reasons) ---
         our_team = self.get_team_list(battle, is_opponent=False)
         their_team = self.get_team_list(battle, is_opponent=True)
@@ -406,7 +429,7 @@ class ReactiveEncoder(ObservationEncoder):
             encode_incoming_block(live, hp_tracker=hp_tracker)
 
         # 5. Our moves vs Their mons (144 dims), starting at REACTIVE_MATCHUP_OFFSET (after the
-        # 14 scalars + 36 move-effects + the incoming-damage block).
+        # 17 scalars + 36 move-effects + the 51-dim incoming-damage block).
         cursor = REACTIVE_MATCHUP_OFFSET
         for i in range(TEAM_SIZE):
             our_mon = our_team[i] if i < len(our_team) else None
@@ -440,7 +463,7 @@ class ReactiveEncoder(ObservationEncoder):
         return vec
 
     def get_layout(self) -> Dict[str, Any]:
-        mo = REACTIVE_MATCHUP_OFFSET  # 102 = 15 scalars + 36 move-effects + 51 incoming-damage
+        mo = REACTIVE_MATCHUP_OFFSET  # 104 = 17 scalars + 36 move-effects + 51 incoming-damage
         return {
             "move_power": {"offset": 0, "dim": 4},
             "move_multiplier": {"offset": 4, "dim": 4},
@@ -450,6 +473,9 @@ class ReactiveEncoder(ObservationEncoder):
             "trapped": {"offset": 12, "dim": 1},
             "maybe_trapped": {"offset": 13, "dim": 1},
             "turns_since_progress": {"offset": 14, "dim": 1},  # gen3_markovian_progress_v1
+            # gen3_protect_odds_v1: P(Protect/Detect/Endure succeeds NOW), our active then opp active.
+            "protect_odds_our": {"offset": 15, "dim": 1},
+            "protect_odds_opp": {"offset": 16, "dim": 1},
             # gen3_move_effects_v1: 4 move slots × MOVE_EFFECT_FEATURES (9), slot-major,
             # request order. Per slot: [is_boost, is_heal, is_protect, is_phaze, is_hazard,
             # inflicts_status, status_will_land, pp_fraction, status_will_land_known].
@@ -488,6 +514,9 @@ class ReactiveEncoder(ObservationEncoder):
             "struggle": bool(vector[11]),
             "trapped": bool(vector[12]),
             "maybe_trapped": bool(vector[13]),
+            "turns_since_progress": round(float(vector[14]), 3),
+            "protect_odds_our": round(float(vector[15]), 3),
+            "protect_odds_opp": round(float(vector[16]), 3),
             "move_effects": move_effects,
             "our_vs_their": our_m, # Full matrix for deeper trace
             "their_vs_our": their_m

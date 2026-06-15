@@ -63,7 +63,7 @@ class TestBuildDecisionTable(unittest.TestCase):
         logits[0, 3] = 5.0   # peak at the chosen explosion action index
         logits[1, 0] = 5.0
         npz = dict(
-            obs=np.zeros((2, 3409), dtype=np.float32),
+            obs=np.zeros((2, 3411), dtype=np.float32),
             logits=logits,
             values=np.array([-5.0, -3.0], dtype=np.float32),  # dV[0] = -3-(-5) = +2.0
             has_state=np.array([1, 1], dtype=np.int8),
