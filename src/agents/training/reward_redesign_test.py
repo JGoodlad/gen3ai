@@ -171,6 +171,19 @@ class TestMaterialPBRS(unittest.TestCase):
         # Drop ≈ 2·1.0 (HP) + MAT_ALIVE_WEIGHT (alive bit).
         self.assertAlmostEqual(before - after, MAT_HP_WEIGHT * 1.0 + MAT_ALIVE_WEIGHT, places=5)
 
+    def test_phi_mat_stashes_normalized_margin(self):
+        """_compute_phi_mat stashes the normalized material margin ∈ [−1,1] (clamped Φ_mat / bound) as a
+        pure by-product for the win-prob obs key: even board → ~0, our full wipe-lead → +1, reset → 0."""
+        m = self._mgr()
+        bound = MAT_HP_WEIGHT * 6 + MAT_ALIVE_WEIGHT * 6
+        phi0 = m._compute_phi_mat(_full_team_live())                    # even
+        self.assertAlmostEqual(m._last_material_margin, 0.0, places=6)
+        self.assertAlmostEqual(m._last_material_margin, phi0 / bound, places=6)
+        m._compute_phi_mat(_full_team_live(opp_alive=0))               # we have everything, they nothing
+        self.assertAlmostEqual(m._last_material_margin, 1.0, places=6)
+        m.reset()
+        self.assertEqual(m._last_material_margin, 0.0)
+
     def test_telescopes_to_minus_phi0(self):
         """Drive the manager over a controlled-HP trajectory ending terminal; the UNDISCOUNTED sum
         of pbrs_material ≈ −Φ_mat(s_0) + the bounded (γ−1) residual (coarse telescoping check)."""

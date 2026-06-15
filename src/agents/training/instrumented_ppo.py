@@ -53,6 +53,11 @@ _EXPECTED_UPSTREAM_TRAIN_HASH = (
 # 10%; loosely tracks the eval/td_resid_tail CVaR@5% diagnostic the loss is meant to pull down.
 _VALUE_TAIL_FRAC = 0.1
 
+# Win-prob closeness threshold: a decision is "contested" (the band where the head's value lives — a
+# blowout's P(win) is trivially recoverable from material) when |normalized material margin| < this.
+# margin ∈ [−1,1] = Φ_mat/bound; bound ≈ 19.5, so 0.25 ≈ a material lead of up to ~1.5 mons.
+_WIN_CONTESTED_TAU = 0.25
+
 # Latent-belief VICReg variance floor: a hinge `relu(_LATENT_STD_TARGET - std)` per latent dim pushes
 # the predicted latents to stay spread (≈unit std), the belt-and-braces collapse guard on top of the
 # stop-grad + task-anchored target. Weighted by _LATENT_VICREG_WEIGHT inside the latent loss. The
@@ -138,7 +143,7 @@ class InstrumentedMaskablePPO(MaskablePPO):
     win_prob_coef: float = 1.0
 
     @staticmethod
-    def _win_prob_loss(logits, target, mask):
+    def _win_prob_loss(logits, target, mask, margin=None):
         """Supervised BCE loss for the auxiliary WIN-PROBABILITY head (``last_win_prob_logits`` [B,1]).
 
         ``target`` [B,1] = the Monte-Carlo episode OUTCOME (win=1 / loss=0) propagated to every step of
@@ -148,7 +153,13 @@ class InstrumentedMaskablePPO(MaskablePPO):
         head is never trained toward a fabricated label. BCE-with-logits, masked-mean. Returns
         ``(loss, metrics)`` or ``None`` when nothing is scorable (head off / labels absent / a minibatch
         with zero known labels — the None guard keeps an empty minibatch from NaN-poisoning the loss). Pure
-        + static so it unit-tests without a full PPO."""
+        + static so it unit-tests without a full PPO.
+
+        When ``margin`` [B,1] (the normalized material margin ∈ [−1,1], from gen3_env's ``win_margin`` obs
+        key) is given, ALSO reports the INFORMATION VALUE the aggregate Brier hides: the head's skill on
+        CLOSE games (``|margin| < _WIN_CONTESTED_TAU`` — a blowout's P(win) is trivially recoverable from
+        material), and a Brier SKILL SCORE vs a material-only baseline (``P_mat = clip(0.5 + 0.5·margin)``):
+        ``skill_vs_material`` > 0 ⇒ the head beats 'just count the mons'."""
         if logits is None or target is None or mask is None:
             return None
         logits = logits.reshape(-1)
@@ -161,8 +172,10 @@ class InstrumentedMaskablePPO(MaskablePPO):
         loss = (per * mask).sum() / n_known
         with th.no_grad():
             p = th.sigmoid(logits)
-            acc = (((p > 0.5).float() == target).float() * mask).sum() / n_known
-            brier = (((p - target) ** 2) * mask).sum() / n_known            # calibration (lower better)
+            sq = (p - target) ** 2
+            correct = ((p > 0.5).float() == target).float()
+            brier = (sq * mask).sum() / n_known                             # calibration (lower better)
+            acc = (correct * mask).sum() / n_known
             pred_mean = (p * mask).sum() / n_known                          # mean predicted P(win)
             label_mean = (target * mask).sum() / n_known                    # actual win base rate
         metrics = {
@@ -173,6 +186,29 @@ class InstrumentedMaskablePPO(MaskablePPO):
             "label_mean": float(label_mean.item()),
             "coverage": float((n_known / mask.numel()).item()),             # fraction of minibatch labeled
         }
+        # Information value the aggregate Brier hides (only when the material margin is available): the
+        # head's skill on CLOSE games + a skill score beyond a material-only baseline.
+        if margin is not None:
+            with th.no_grad():
+                margin = margin.to(logits.device).reshape(-1)
+                close = (margin.abs() < _WIN_CONTESTED_TAU).float() * mask
+                n_close = close.sum()
+                metrics["contested_frac"] = float((n_close / n_known).item())
+                if float(n_close) > 0.0:
+                    # Brier/acc restricted to material-EVEN decisions — where a good P(win) is non-trivial
+                    # (the aggregate is inflated by blowouts). Judge brier_contested vs a 50/50 game's
+                    # ~0.25 no-skill floor; contested_label_mean ≈ 0.5 confirms these are genuinely even.
+                    metrics["brier_contested"] = float((sq * close).sum() / n_close)
+                    metrics["acc_contested"] = float((correct * close).sum() / n_close)
+                    metrics["contested_label_mean"] = float((target * close).sum() / n_close)
+                # Brier SKILL SCORE vs a material-only baseline P_mat = clip(0.5 + 0.5·margin) — the trivial
+                # "predict win from the material lead" forecaster. >0 ⇒ the head adds info BEYOND material;
+                # ≤0 ⇒ it's no better than counting mons. The headline "information value" number.
+                p_mat = (0.5 + 0.5 * margin).clamp(1e-6, 1.0 - 1e-6)
+                brier_mat = (((p_mat - target) ** 2) * mask).sum() / n_known
+                metrics["brier_material"] = float(brier_mat.item())
+                metrics["skill_vs_material"] = (
+                    float((1.0 - brier / brier_mat).item()) if float(brier_mat) > 0.0 else 0.0)
         return loss, metrics
 
     @staticmethod
@@ -658,6 +694,7 @@ class InstrumentedMaskablePPO(MaskablePPO):
                         self.policy.features_extractor.last_win_prob_logits,
                         rollout_data.observations.get("win_target"),
                         rollout_data.observations.get("win_mask"),
+                        rollout_data.observations.get("win_margin"),
                     )
                     if wp_out is not None:
                         wp_loss, wp_m = wp_out
@@ -762,15 +799,18 @@ class InstrumentedMaskablePPO(MaskablePPO):
             for _bk, _bvals in belief_metrics.items():
                 self.logger.record(f"train/belief_{_bk}", float(np.mean(_bvals)))
 
-        # +WIN-PROB: auxiliary win-probability diagnostics (only when the head is on AND some minibatch
-        # had a known label). Headline: `win_prob_acc` (top-1 win/loss prediction) + `win_prob_brier`
-        # (calibration — lower = the predicted P(win) tracks the actual win rate). `win_prob_pred_mean`
-        # vs `win_prob_label_mean` watches for a base-rate-only collapse; `win_prob_coverage` is the
-        # fraction of transitions with a known (episode-finished-in-buffer) label. The shared-trunk pull
-        # rides `grad/win_prob_share` (≈0 under read_only; real under shaping).
+        # +WIN-PROB: auxiliary win-probability diagnostics under their OWN `win_prob/` TB prefix (NOT
+        # `train/`, which is crowded — matches the dedicated `grad/`/`popart/`/`eval/` groups). Only when
+        # the head is on AND some minibatch had a known label. Calibration: `acc` (top-1 win/loss) +
+        # `brier` (lower = P(win) tracks the win rate); `pred_mean` vs `label_mean` watches a base-rate
+        # collapse; `coverage` = fraction with a known label. INFORMATION VALUE (the aggregate hides it —
+        # blowouts are trivial): `brier_contested`/`acc_contested` on CLOSE games (|margin|<τ; judge vs the
+        # ~0.25 no-skill floor of a 50/50 game), `contested_frac`/`contested_label_mean`, and
+        # `skill_vs_material` (Brier skill vs a material-only baseline — >0 ⇒ beats counting mons). The
+        # shared-trunk pull rides `grad/win_prob_share` (≈0 under read_only; real under shaping).
         if win_prob_metrics:
             for _wk, _wvals in win_prob_metrics.items():
-                self.logger.record(f"train/win_prob_{_wk}", float(np.mean(_wvals)))
+                self.logger.record(f"win_prob/{_wk}", float(np.mean(_wvals)))
 
         # +PopArt diagnostics: mu/sigma should TRACK train/return_mean/return_std (the running
         # normalizer estimate); value_weight_norm watches the POP rescale stay bounded (an explosion

@@ -1062,12 +1062,19 @@ Monte-Carlo episode OUTCOME. Off by default (`--win-prob-mode none`). Three piec
   `win_prob_coef · masked-BCE`. read_only vs shaping differ ONLY in whether the extractor stop-grads the
   head's input (the trunk gradient) — the loss term itself is identical. Folded whenever the extractor's
   `win_prob_mode != none` AND `win_prob_coef != 0`.
-- **Metrics (`train/win_prob_*`).** Headline `acc` (top-1 win/loss) + `brier` (calibration — lower = the
-  predicted P(win) tracks the actual win rate); `pred_mean` vs `label_mean` (base-rate-collapse watch);
-  `coverage` (fraction of transitions with a known label); `loss`. The shared-trunk pull rides
-  `grad/win_prob_share` (via `grad_balance_metrics(win_prob_term=…)`) — **≈0 under read_only** (stop-grad,
-  the live confirmation the diagnostic isn't perturbing the policy), real under shaping (watch it sit small;
-  a spike with a degrading policy → lower `--win-prob-coef`).
+- **Metrics (`win_prob/*` — its OWN TB prefix, not `train/`, matching the `grad/`/`popart/`/`eval/`
+  groups).** Calibration: `acc` (top-1 win/loss) + `brier` (lower = predicted P(win) tracks the win
+  rate); `pred_mean` vs `label_mean` (base-rate-collapse watch); `coverage` (fraction with a known label);
+  `loss`. **Information value (the aggregate Brier hides it — a blowout's P(win) is trivially recoverable
+  from material):** `brier_contested`/`acc_contested` restrict to CLOSE games (`|win_margin| <
+  _WIN_CONTESTED_TAU`=0.25, the normalized material margin from `_compute_phi_mat`, emitted as the
+  `win_margin` obs key) — judge `brier_contested` vs a 50/50 game's ~0.25 no-skill floor;
+  `contested_frac`/`contested_label_mean` (≈0.5 confirms even); and **`skill_vs_material`** = the Brier
+  skill score vs a material-only baseline (`P_mat = clip(0.5+0.5·margin)`) — **>0 ⇒ the head adds info
+  beyond counting mons** (the headline value number; `brier_material` is the baseline for context). The
+  shared-trunk pull rides `grad/win_prob_share` (via `grad_balance_metrics(win_prob_term=…)`) — **≈0 under
+  read_only** (stop-grad, the live confirmation the diagnostic isn't perturbing the policy), real under
+  shaping (watch it sit small; a spike with a degrading policy → lower `--win-prob-coef`).
 - **Versioning.** `win_prob_mode` (str) is the structural + resume-IMMUTABLE toggle (any change FATALs;
   threaded into `current_model_version` / `arch_toggles_from_model` so a win-prob-ON self-play run doesn't
   FATAL on its own sentinels); `win_prob_coef` is training-only, **read back on a flagless resume**.

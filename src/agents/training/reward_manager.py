@@ -536,6 +536,10 @@ class Gen3RewardManager:
         self._cur_can_switch: bool = True                # was a switch LEGAL at this decision (mask) —
                                                          # gates the stay-tax so a trapped stay isn't taxed
         self._bias_acc: float = 0.0                      # Σ BIAS-class contributions this episode
+        # Normalized material margin ∈ [−1,1] (clamped Φ_mat / bound), stashed by _compute_phi_mat each
+        # turn as a cheap by-product. Read by gen3_env's win_margin obs key for the win-prob head's
+        # closeness-stratified training metrics (value lives in close games, |margin|≈0). Reward-neutral.
+        self._last_material_margin: float = 0.0
 
     def reset(self):
         self.switch_count = 0
@@ -562,6 +566,7 @@ class Gen3RewardManager:
         self._opp_active_hp_before = 1.0
         self._our_boosts_before = np.zeros(7, dtype=np.int8)
         self._last_opp_seen_by = {}
+        self._last_material_margin = 0.0
         self._prev_phi_belief = None
         self._prev_phi_mat = None
         self._prev_phi_status = None
@@ -1130,6 +1135,7 @@ class Gen3RewardManager:
         # No known mons → neutral (production always has all 6 from turn 1; this guards mock/standalone
         # paths where the team list is empty, so Φ_mat doesn't read a degenerate 0-vs-6 state).
         if not our.mons:
+            self._last_material_margin = 0.0
             return 0.0
         # Our team is fully known: sum HP over the (≤6) known mons, alive = non-fainted.
         our_hp = sum(float(m.hp_fraction) for m in our.mons[:_TEAM_SIZE] if not m.fainted)
@@ -1146,7 +1152,11 @@ class Gen3RewardManager:
         alive_w = self.config.mat_alive_weight
         phi = MAT_HP_WEIGHT * (our_hp - opp_hp) + alive_w * (our_alive - opp_alive)
         bound = MAT_HP_WEIGHT * _TEAM_SIZE + alive_w * _TEAM_SIZE
-        return max(-bound, min(phi, bound))
+        clamped = max(-bound, min(phi, bound))
+        # Pure by-product (does NOT affect the returned Φ_mat / the reward): the normalized material
+        # margin ∈ [−1,1] the win-prob head's training metrics read via gen3_env's win_margin obs key.
+        self._last_material_margin = clamped / bound if bound > 0 else 0.0
+        return clamped
 
     def _compute_phi_status(self, live) -> float:
         """The non-damaging-tempo status potential Φ_status(s) (design §2.7), from the LiveView.

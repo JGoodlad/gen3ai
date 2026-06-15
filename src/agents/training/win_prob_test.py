@@ -27,6 +27,30 @@ def test_loss_masks_unknown_transitions():
     assert abs(float(loss) - float(expect)) < 1e-6
 
 
+def test_loss_margin_stratifies_and_scores_skill():
+    """With the material margin, the loss adds closeness-stratified Brier/acc + a skill-vs-material
+    score — the 'value on close games, beyond counting mons' signal the aggregate Brier hides."""
+    # 2 blowouts (|margin| 0.9, head trivially right) + 2 close (|margin| 0.05, head still right).
+    logits = torch.tensor([[4.0], [-4.0], [1.0], [-1.0]])   # P ≈ .98, .02, .73, .27
+    target = torch.tensor([[1.0], [0.0], [1.0], [0.0]])
+    mask = torch.ones(4, 1)
+    margin = torch.tensor([[0.9], [-0.9], [0.05], [-0.05]])
+    _, m = InstrumentedMaskablePPO._win_prob_loss(logits, target, mask, margin)
+    assert "brier_contested" in m and "skill_vs_material" in m
+    assert abs(m["contested_frac"] - 0.5) < 1e-6          # 2 of 4 are |margin|<0.25
+    assert abs(m["acc_contested"] - 1.0) < 1e-6           # both close calls predicted correctly
+    assert m["brier_contested"] < 0.25                    # below a 50/50 game's no-skill floor → real skill
+    assert m["skill_vs_material"] > 0.0                   # beats the material-only baseline
+    assert abs(m["contested_label_mean"] - 0.5) < 1e-6    # the close band is genuinely even
+
+
+def test_loss_no_margin_omits_stratified():
+    """Without the margin (old config / margin absent), only the aggregate metrics are reported."""
+    logits = torch.zeros(2, 1)
+    _, m = InstrumentedMaskablePPO._win_prob_loss(logits, torch.tensor([[1.0], [0.0]]), torch.ones(2, 1), None)
+    assert "brier" in m and "brier_contested" not in m and "skill_vs_material" not in m
+
+
 def test_loss_none_guards():
     z = torch.zeros(3, 1)
     assert InstrumentedMaskablePPO._win_prob_loss(None, z, z) is None

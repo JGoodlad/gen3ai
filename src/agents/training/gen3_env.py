@@ -108,6 +108,10 @@ class Gen3Env(SinglesEnv):
             # Win-probability MC label + known-mask (placeholders here; back-filled post-collection).
             base_obs["win_target"] = spaces.Box(low=0.0, high=1.0, shape=(1,), dtype=np.float32)
             base_obs["win_mask"] = spaces.Box(low=0.0, high=1.0, shape=(1,), dtype=np.float32)
+            # Normalized material margin ∈ [−1,1] (Φ_mat-derived) — a REAL per-step value (not a
+            # placeholder), used by the win-prob loss to stratify P(win) skill by how decided the game
+            # is (value lives in close games, |margin|≈0) + a material-baseline skill score.
+            base_obs["win_margin"] = spaces.Box(low=-1.0, high=1.0, shape=(1,), dtype=np.float32)
         # SB3 reads the SINGULAR observation_space (threaded as the VecEnv space); the PLURAL
         # observation_spaces is intercepted + rewrapped by PokeEnv.__setattr__ (it would drop the
         # belief keys) and is not the SB3-facing space, so it can stay minimal.
@@ -311,6 +315,10 @@ class Gen3Env(SinglesEnv):
         if self._emit_win_target:
             agent_obs["win_target"] = np.zeros(1, dtype=np.float32)
             agent_obs["win_mask"] = np.zeros(1, dtype=np.float32)
+            # The material margin _compute_phi_mat stashed this turn (calc_reward runs before this in
+            # step(); 0.0 at reset). A REAL value (present-state), unlike the back-filled win_target.
+            agent_obs["win_margin"] = np.array(
+                [float(getattr(self.reward_manager, "_last_material_margin", 0.0))], dtype=np.float32)
 
     def step(self, action):
         try:
