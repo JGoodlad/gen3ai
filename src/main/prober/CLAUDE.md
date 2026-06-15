@@ -115,8 +115,10 @@ line 1 incoming P(KO)·outspeed·worst-on-team·opp-recovery, line 2 the incomin
 **RESULT** what actually happened — each side's action with a **`«1st»`** move-order tag, a
 **`⚡CRIT`** tag, a **`→ atk+1`** stat-change (e.g. Meteor Mash / Intimidate), hpΔ, and a
 **"couldn't move (asleep/fully paralyzed/…)"** note (move-order + crit + boost + cant all decoded
-from the NEXT decision's TurnDelta via `describe_turn_outcome`) + events · **REWARD** the env's
-reward (total + per-component breakdown) · **CRITIC** V·ΔV·**TD-surprise** (always paired
+from the NEXT decision's TurnDelta via `describe_turn_outcome`) + events · **AFTER** the RESOLVED
+board at the start of the next decision (both actives + HP bars, from `a.next_board` = `build_board`
+of inv+1) so before (matchup line) → after reads at a glance — a switch/faint shows the new mon ·
+**REWARD** the env's reward (total + per-component breakdown) · **CRITIC** V·ΔV·**TD-surprise** (always paired
 with a plain-language gloss — "worse than the critic expected" — via `_append_surprise`/
 `_surprise_phrase`, so the ML term is self-explaining) · **WIN-PROB** (last, only on a
 `--win-prob-mode != none` run) the win-prob head's calibrated **P(win)** + **ΔP(win)** to the next
@@ -138,8 +140,10 @@ the still-hidden mons below it. Two forms, best-available wins:
 - **Privileged truth + matched guess** (`a.belief_truth`, `engine.build_belief_truth` → `BeliefTruthView`,
   `app._append_belief_truth`) when the trace has a **`reconstruction.json`** sibling (bridge-eval referee
   data): shows the opponent's **FULL** team — revealed mons listed, then each STILL-HIDDEN mon with the
-  model's species guess **slot-matched** to it (a `✓`/`✗` for top-1, the true species highlighted in the
-  guess list, its rank `(#k)` when not top-1) + a `n_correct/n_hidden` header. The believed slots are
+  model's species guess **slot-matched** to it, sorted **best-match-first** (by the true species' rank).
+  A 3-way marker scores each: `✓` top-1 right · `≈` the true mon IS in the belief but not top-1 (a
+  near-miss) · `✗` not in the top-k at all; the true species is highlighted in the guess list, with its
+  rank `(#k)` when not top-1 + a `n_correct/n_hidden` header. The believed slots are
   anonymous, so they're **Hungarian-assigned** to the true hidden mons by min `-log P(true species | slot)`
   — **the SAME species-CE cost the training aux loss matches on** (`instrumented_ppo._belief_aux_loss`), so
   the correspondence is how the model itself aligns the slots (`scipy.optimize.linear_sum_assignment`). The
@@ -159,8 +163,9 @@ blue** (`_MON_COLOR`); **disabled slots** (a fainted mon / an illegal switch / a
 **grey** (`_DISABLED_GREY`), NOT the red of a low value — so "dead/unavailable" reads differently
 from "alive but low HP = real danger". Hidden Power shows its **type** (`hiddenpower(fire)`). Helpers
 `_col` / `_mon_label` / `_moves_line` / `_team_panel_text` build the panels (the last shared by OPP
-TEAM + both Team tables). The **Team** section (`2`, collapsed) is the full per-mon detail — every
-mon's **moveset** (ours complete; opp's revealed-only, from `describe_team`) + hp · status · item.
+TEAM + both Team tables). The **Team** section (`2`, collapsed) is the full per-mon detail — our team
+and the opp team **side-by-side (2-column)** — every mon's **moveset** (ours complete; opp's
+revealed-only, from `describe_team`) + hp · status · item.
 It composes
 existing `InvocationAnalysis` fields only (no new obs/engine analysis): `actions` (probs),
 `matchups` (effectiveness), `incoming` (the P(KO) belief + `per_slot_pko`), `value`
@@ -510,6 +515,19 @@ blocking. So:
 - `models/` is gitignored and lives only in the **main checkout**, not in a
   worktree — point the prober at an absolute `models/...` path when running from
   a worktree.
+- **Obs-version mismatch** (`a.obs_mismatch`): when the trace's obs length ≠ the CURRENT encoder's
+  `total_dim` (an obs change — e.g. `gen3_protect_odds_v1`'s +2 scalars — landed AFTER the probed
+  model was trained), every obs-OFFSET decode past the divergence (incoming P(KO)/outspeed, THREAT
+  incoming-eff, RESULT crit/boost/move-order, Matchups, Saliency) is misaligned. The Summary shows a
+  red **⚠ OBS MISMATCH** banner; the board / items / movesets (front-of-obs + summary-sourced) stay
+  correct. The model itself can't be re-run on the new obs (its policy expects the old dim), so the
+  fix is to probe a model trained on the current obs. `engine_test.py::test_obs_version_mismatch_is_flagged`
+  guards the detection.
+- The obs decode (`describe_team`) only OVERLAYS info onto the summary teams block via `_merge_team` —
+  an empty obs item never erases a known item (the bug where an own bench mon showed no item);
+  `test_obs_item_overlay_does_not_erase_a_known_item` guards it.
+- **`y`** yanks the current battle's `*_replay.html` path (browser-watchable Showdown replay) to the
+  clipboard + notifies it (warns if the file is missing).
 
 ## Retention / grooming (`groom.py`)
 

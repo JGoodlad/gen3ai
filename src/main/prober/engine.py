@@ -277,6 +277,9 @@ class InvocationAnalysis:
     agrees: bool = True                            # rerun_argmax == chosen
     flags: "tuple[str, ...]" = ()                  # switch/uncertain/faint/disagree
     board: "BoardView | None" = None               # board state at this decision
+    next_board: "BoardView | None" = None          # board at the NEXT decision = the resolved "after" state
+    obs_mismatch: "tuple[int, int] | None" = None  # (trace_obs_dim, encoder_dim) when they differ → obs-offset
+    #                                                 panels (incoming/threat/crit/saliency) are UNRELIABLE
     field: "dict | None" = None                    # weather/spikes/screens (decoded from obs)
     belief: "BeliefView | None" = None             # hidden-opp species belief (anonymous slots)
     belief_truth: "BeliefTruthView | None" = None  # privileged truth + slot-matched guess (None unless recon+belief)
@@ -405,6 +408,23 @@ def _our_items(summary: dict) -> "dict[str, dict]":
         item = str(m.get("item", "") or "")
         if item and item.lower() != "none":
             out[str(m.get("species", ""))] = {"item": item, "moves": ()}
+    return out
+
+
+def _merge_team(base: dict, obs_team: dict) -> "dict[str, dict]":
+    """Overlay the per-turn obs decode onto the summary-derived team, keyed leniently by species.
+    The obs only OVERRIDES a field when it carries info — an empty obs item must NOT erase a known
+    item from the summary teams block (the bug where our own bench mon showed no item because its
+    obs slot decoded blank). Returns ``{norm_species: {item, moves}}``."""
+    out: "dict[str, dict]" = {}
+    for sp, e in (base or {}).items():
+        out[_norm_species(sp)] = {"item": e.get("item", ""), "moves": tuple(e.get("moves", ()))}
+    for sp, e in (obs_team or {}).items():
+        cur = out.setdefault(_norm_species(sp), {"item": "", "moves": ()})
+        if e.get("item"):
+            cur["item"] = e["item"]
+        if e.get("moves"):
+            cur["moves"] = tuple(e["moves"])
     return out
 
 
@@ -796,6 +816,11 @@ def analyze_invocation(model, summary: dict, npz, inv_index: int,
     # OPP's revealed items + both sides' revealed movesets.
     team = _our_items(summary)
     board = build_board(inv, team)   # model-free; available even without captured state
+    # The NEXT decision's board is the RESOLVED "after" state — read it (model-free) so the UI can
+    # show before→after HP. None on the last decision (no following invocation).
+    invs = summary["invocations"]
+    next_board = (build_board(invs[inv_index + 1], team)
+                  if inv_index + 1 < len(invs) else None)
     belief = build_belief(inv)       # model-free summary fallback (re-computed below when a model + state exist)
     belief_truth = None
     if not _has_state(npz, inv_index):
@@ -803,15 +828,21 @@ def analyze_invocation(model, summary: dict, npz, inv_index: int,
             **common, has_state=False, actions=(), matchups=None, sweep=None,
             saliency=None, value_saliency=None, threats=None, incoming=None,
             warnings=(f"invocation {inv_index} has no captured state",),
-            outcome=outcome, flags=summary_flags(inv), board=board, belief=belief,
+            outcome=outcome, flags=summary_flags(inv), board=board, next_board=next_board, belief=belief,
         )
 
     obs = npz["obs"][inv_index].astype(np.float32)
+    # Obs-version guard: if the trace's obs is a different length than the CURRENT encoder, every
+    # obs-OFFSET decode past the divergence point (incoming/threat/matchups/turn-history crit etc.)
+    # is misaligned. Flag it so the UI warns instead of showing garbage. (Team blocks + global are
+    # at the front and still decode; the model forward still runs on the trace's native obs.)
+    enc_dim = getattr(model.offsets, "total_dim", 0)
+    obs_mismatch = (int(obs.shape[0]), int(enc_dim)) if enc_dim and obs.shape[0] != enc_dim else None
     decode_team = getattr(model, "describe_team", None)
     if decode_team is not None:
         obs_team = decode_team(obs)
         if obs_team:
-            board = build_board(inv, {**team, **obs_team})   # both sides, per-turn revealed
+            board = build_board(inv, _merge_team(team, obs_team))   # both sides, per-turn revealed
     # What actually happened on THIS turn (crit + couldn't-move reason): the realized events are
     # recorded in the NEXT decision's most-recent TurnDelta (turn T's events land in decision T+1's
     # obs). Adds our_crit/opp_crit + our_cant/opp_cant to the outcome so the RESULT/happened line can
@@ -897,8 +928,8 @@ def analyze_invocation(model, summary: dict, npz, inv_index: int,
         **common, has_state=True, actions=actions, matchups=matchups, sweep=sweep,
         saliency=saliency, value_saliency=value_saliency, threats=threats, incoming=incoming,
         warnings=(), outcome=outcome, value=value, win_prob=win_prob,
-        rerun_argmax=rerun_argmax, agrees=agrees, flags=flags, board=board, field=field,
-        belief=belief, belief_truth=belief_truth,
+        rerun_argmax=rerun_argmax, agrees=agrees, flags=flags, board=board, next_board=next_board,
+        obs_mismatch=obs_mismatch, field=field, belief=belief, belief_truth=belief_truth,
     )
 
 

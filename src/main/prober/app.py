@@ -161,6 +161,7 @@ class ProberApp(Gen3App):
         ("right_square_bracket", "next_annotated", "Next note"),
         ("left_square_bracket", "prev_annotated", "Prev note"),
         ("E", "export_notes", "Export notes"),
+        ("y", "copy_replay_path", "Replay path"),
         # Section toggles — generated from _SECTIONS so the key/title/binding never drift.
         *[Binding(key, f"toggle_section('{sid}')", title, show=False)
           for sid, title, key in _SECTIONS],
@@ -247,10 +248,13 @@ class ProberApp(Gen3App):
                     # Team details: every mon's moveset (ours full; opp's revealed-only) + hp/
                     # status/item — decoded from the obs, so it needs captured state.
                     with Collapsible(title=_SEC_TITLE["sec-team"], collapsed=True, id="sec-team"):
-                        yield Static("our team", classes="board-label")
-                        yield Static("", id="team-our")
-                        yield Static("opp team (revealed)", classes="board-label")
-                        yield Static("", id="team-opp")
+                        with Horizontal(id="team-tables"):
+                            with Vertical(classes="summary-col"):
+                                yield Static("our team", classes="board-label")
+                                yield Static("", id="team-our")
+                            with Vertical(classes="summary-col"):
+                                yield Static("opp team (revealed)", classes="board-label")
+                                yield Static("", id="team-opp")
                     # Manual-review card: what the model EXPECTED vs what HAPPENED, plus the
                     # human's funky-flag + note (space=flag, e=note, [ ]=jump, E=export).
                     with Collapsible(title=_SEC_TITLE["sec-review"], collapsed=False, id="sec-review"):
@@ -622,10 +626,15 @@ class ProberApp(Gen3App):
         self._last_analysis = a   # cached so a note-add can cheaply re-render the review card
         if self._current_battle is not None:
             meta = a.meta
-            self.query_one("#battle-header", Static).update(
-                f"{a.our_species} vs {a.opp_species} · {meta.result} · "
-                f"turn {a.turn} · inv {a.inv_index}/{meta.n_invocations}"
-            )
+            hdr = Text()
+            # Always-visible obs-mismatch flag (above the invocation list) — so it's clear no matter
+            # which analysis section is on screen, not just the Summary banner.
+            if a.obs_mismatch is not None:
+                hdr.append(f"⚠ OBS MISMATCH {a.obs_mismatch[0]}≠{a.obs_mismatch[1]}  ",
+                           style="bold white on red")
+            hdr.append(f"{a.our_species} vs {a.opp_species} · {meta.result} · "
+                       f"turn {a.turn} · inv {a.inv_index}/{meta.n_invocations}")
+            self.query_one("#battle-header", Static).update(hdr)
         self._render_summary(a)
         self._render_team(a)
         self._render_review(a)
@@ -665,6 +674,15 @@ class ProberApp(Gen3App):
         SWITCHES (prob · hp · status · item · incoming KO-risk) — so a turn is judgeable
         in one glance."""
         head = Text()
+        # Obs-version mismatch banner — the trace's obs predates a later obs change, so every
+        # obs-OFFSET panel (THREAT incoming-eff/P(KO)/outspeed, RESULT crit/boost/move-order,
+        # Matchups incoming, Saliency) is misaligned and UNRELIABLE. Board / items / movesets still hold.
+        if a.obs_mismatch is not None:
+            tdim, edim = a.obs_mismatch
+            head.append("⚠ OBS MISMATCH ", style="bold white on red")
+            head.append(f" trace obs {tdim} ≠ code {edim} — incoming/threat/crit/boost/saliency "
+                        "panels are UNRELIABLE (this model predates a later obs change). "
+                        "Board · items · movesets still hold.\n", style="bold red")
         # SITUATION group — line 1 matchup: each active's species + HP bar + status/volatiles
         # ("TOX(5)|SUB") + boosts ({atk:-1 spa:+6}) + held item (opp's once revealed); then FIELD,
         # THREAT. A blank line separates this from the DECISION group, then the OUTCOME group —
@@ -717,8 +735,20 @@ class ProberApp(Gen3App):
         if a.rerun_argmax is not None and not a.agrees:
             head.append("   ⚠ now prefers ", style="yellow")
             head.append(str(a.rerun_argmax), style="bold yellow")
-        # OUTCOME group (blank line above) — RESULT (what happened + events), REWARD, CRITIC.
+        # OUTCOME group (blank line above) — RESULT (what happened + events), AFTER, REWARD, CRITIC.
         _append_happened(head, a, "\n\nRESULT  ")
+        # AFTER — the RESOLVED board at the start of the next decision, so before (matchup line) →
+        # after reads at a glance via the HP bars (a switch/faint shows the new mon on the field).
+        nb = a.next_board
+        if nb is not None:
+            head.append("\nAFTER   ", style="dim")
+            head.append(nb.ours.active_species, style="bold")
+            head.append(" ")
+            head.append_text(_hp_bar(nb.ours.active_hp))
+            head.append("   vs   ", style="dim")
+            head.append(nb.opp.active_species, style="bold")
+            head.append(" ")
+            head.append_text(_hp_bar(nb.opp.active_hp))
         # REWARD — the reward the env actually assigned (total + per-component breakdown).
         reward = (a.outcome or {}).get("reward")
         if isinstance(reward, dict):
@@ -908,6 +938,9 @@ class ProberApp(Gen3App):
         threat = self.query_one("#matchups-threat", Static)
         th = a.threats
         lines = Text()
+        if a.obs_mismatch is not None:   # the incoming/their_matchups offsets are misaligned here
+            lines.append(f"⚠ OBS MISMATCH {a.obs_mismatch[0]}≠{a.obs_mismatch[1]} — the incoming "
+                         "lines below are UNRELIABLE\n", style="bold red")
         if th is None:
             lines.append("incoming eff (opp→us): ", style="dim")
             lines.append("n/a", style="dim")
@@ -953,6 +986,9 @@ class ProberApp(Gen3App):
     def _render_saliency(self, a: InvocationAnalysis) -> None:
         t = self.query_one("#saliency-table", DataTable)
         t.clear()
+        if a.obs_mismatch is not None:   # obs-offset blocks are misaligned → saliency is on wrong dims
+            t.add_row(Text(f"⚠ OBS MISMATCH {a.obs_mismatch[0]}≠{a.obs_mismatch[1]} — UNRELIABLE",
+                           style="bold red"), "", "")
         # Two heads: π = policy logit saliency (what the ACTOR reads), V = critic value
         # saliency (what the VALUE head reads — the lens for OHKO tail-blindness). Each group is
         # normalized to its OWN peak so the bars compare blocks within a head. Watch the
@@ -1175,6 +1211,21 @@ class ProberApp(Gen3App):
         path = self._review_store.export_markdown()
         self.notify(f"exported → {os.path.basename(path)}" if path else "nothing to export")
 
+    def action_copy_replay_path(self) -> None:
+        """Yank the current battle's browser-watchable Showdown replay path (the `*_replay.html`
+        sibling) to the clipboard + notify it, so it's one keystroke to open in a browser."""
+        if self._current_battle is None:
+            self.notify("no battle selected")
+            return
+        path = self._current_battle.summary_path.replace("_summary.json", "_replay.html")
+        exists = os.path.exists(path)
+        try:
+            self.copy_to_clipboard(path)
+        except Exception:  # noqa: BLE001 — clipboard may be unavailable over ssh
+            pass
+        self.notify(f"replay path copied{'' if exists else ' (file missing!)'}:\n{path}",
+                    severity="information" if exists else "warning", timeout=8)
+
 
 def _warn_cell(a: InvocationAnalysis):
     msg = a.warnings[0] if a.warnings else "no analysis"
@@ -1351,12 +1402,15 @@ def _append_belief_truth(out: Text, view) -> None:
     """Append the PRIVILEGED belief-vs-truth (from the reconstruction.json referee record + a belief-on
     checkpoint): the opponent's FULL team — revealed mons listed, then each STILL-HIDDEN mon with the
     model's species guess for it, the believed slot Hungarian-matched to the true mon (the same
-    matching training uses). A `✓`/`✗` marks whether the model's TOP guess was the true mon; the true
-    species is highlighted within the guess list, with its rank `(#k)` when it wasn't the top pick."""
+    matching training uses). A marker scores each: `✓` top-1 right · `≈` the true mon IS in the belief
+    but not top-1 (a near-miss) · `✗` not in the top-k at all; the true species is highlighted within
+    the guess list, with its rank `(#k)` when it wasn't the top pick."""
     if view is None or not view.mons:
         return
     seen = [m.species for m in view.mons if m.revealed]
-    hidden = [m for m in view.mons if not m.revealed]
+    # Best match first: ✓ top-1 (rank 1) → ≈ by ascending rank → ✗ not-in-belief (rank -1 → last).
+    hidden = sorted((m for m in view.mons if not m.revealed),
+                    key=lambda m: m.true_rank if m.true_rank > 0 else float("inf"))
     out.append("\n\ntruth + belief", style="bold")
     out.append(f"  ({view.n_correct}/{view.n_hidden} top-1)", style="dim")
     if seen:
@@ -1367,7 +1421,14 @@ def _append_belief_truth(out: Text, view) -> None:
             out.append(sp, style=_MON_COLOR)
     for m in hidden:
         out.append("\n")
-        out.append("✓ " if m.guessed_right else "✗ ", style=("green" if m.guessed_right else "red"))
+        # ✓ top-1 right · ≈ true mon IS in the belief but not top-1 (a near-miss) · ✗ not in top-k.
+        if m.guessed_right:
+            marker, mstyle = "✓ ", "green"
+        elif m.true_rank > 0:
+            marker, mstyle = "≈ ", "yellow"
+        else:
+            marker, mstyle = "✗ ", "red"
+        out.append(marker, style=mstyle)
         out.append_text(_col(Text(m.species, style="bold " + _MON_COLOR), 14))
         if not m.guess:
             out.append("(no guess)", style="dim")

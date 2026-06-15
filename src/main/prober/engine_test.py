@@ -246,6 +246,43 @@ def test_analysis_carries_board():
     assert a.board is not None and a.board.ours.active_species == "Zapdos"
 
 
+def test_obs_item_overlay_does_not_erase_a_known_item():
+    """REGRESSION: an EMPTY obs item must not override a known summary item (our own bench mon
+    showed no item because its obs slot decoded blank). The obs only OVERLAYS info, never erases."""
+    from main.prober.engine import _merge_team
+    base = {"tyranitar": {"item": "leftovers", "moves": ()}}
+    obs_team = {"Tyranitar": {"item": "", "moves": ("crunch", "roar")}}   # blank item, has moves
+    merged = _merge_team(base, obs_team)
+    assert merged["tyranitar"]["item"] == "leftovers"          # NOT erased
+    assert merged["tyranitar"]["moves"] == ("crunch", "roar")  # obs moves still overlaid
+    # a non-empty obs item DOES win (per-turn truth, e.g. opp's revealed item)
+    assert _merge_team(base, {"tyranitar": {"item": "choiceband"}})["tyranitar"]["item"] == "choiceband"
+
+
+def test_obs_version_mismatch_is_flagged():
+    """REGRESSION: when the trace's obs length differs from the current encoder (an obs change
+    landed after the model was trained), flag it so the UI warns the obs panels are unreliable."""
+    import dataclasses
+    bigger = FakeProbeModel(dataclasses.replace(_OFF, total_dim=_OBS_LEN + 2))   # encoder grew by 2
+    a = analyze_invocation(bigger, _summary(), _npz(), 0)                        # trace obs = _OBS_LEN
+    assert a.obs_mismatch == (_OBS_LEN, _OBS_LEN + 2)
+    matched = FakeProbeModel(dataclasses.replace(_OFF, total_dim=_OBS_LEN))      # same length → fine
+    assert analyze_invocation(matched, _summary(), _npz(), 0).obs_mismatch is None
+
+
+def test_next_board_is_the_resolved_after_state():
+    """`next_board` = the board at inv+1 (the RESOLVED 'after' state); None on the last decision."""
+    model = FakeProbeModel(_OFF)
+    summ = _summary()
+    nxt = dict(summ["invocations"][0])
+    nxt["our"] = {"species": "Snorlax", "hp": "60%"}   # after a switch/hit: a different mon at 60%
+    summ = {**summ, "invocations": [summ["invocations"][0], nxt]}
+    a = analyze_invocation(model, summ, _npz(n=2), 0)
+    assert a.next_board.ours.active_species == "Snorlax" and a.next_board.ours.active_hp == "60%"
+    # the LAST decision has no following invocation → next_board is None
+    assert analyze_invocation(model, summ, _npz(n=2), 1).next_board is None
+
+
 def test_analysis_decodes_items_from_obs():
     """With captured state, the board picks up items + movesets from the model's obs decode —
     incl. the OPPONENT's revealed item/moves (the summary teams block only carries our side)."""

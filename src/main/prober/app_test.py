@@ -58,16 +58,19 @@ def test_append_belief_truth_renders_truth_and_matched_guess():
     out = Text("OPP")
     view = BeliefTruthView(mons=(
         OppMonTruth(species="metagross", revealed=True),
-        OppMonTruth(species="tyranitar", revealed=False,
+        OppMonTruth(species="tyranitar", revealed=False,                       # ✓ top-1 right
                     guess=(("tyranitar", 0.55), ("skarmory", 0.20)), guessed_right=True, true_rank=1),
-        OppMonTruth(species="celebi", revealed=False,
+        OppMonTruth(species="celebi", revealed=False,                          # ≈ in belief, not top-1
                     guess=(("blissey", 0.40), ("celebi", 0.25)), guessed_right=False, true_rank=2),
-    ), n_hidden=2, n_correct=1)
+        OppMonTruth(species="jirachi", revealed=False,                         # ✗ not in the top-k
+                    guess=(("snorlax", 0.30), ("blissey", 0.20)), guessed_right=False, true_rank=-1),
+    ), n_hidden=3, n_correct=1)
     _append_belief_truth(out, view)
     s = out.plain
-    assert "truth + belief" in s and "1/2 top-1" in s
+    assert "truth + belief" in s and "1/3 top-1" in s
     assert "metagross" in s                       # revealed mon under 'seen'
-    assert "✓" in s and "✗" in s
+    # three distinct markers: ✓ top-1, ≈ matched-but-not-top-1, ✗ not found
+    assert "✓" in s and "≈" in s and "✗" in s
     assert "tyranitar 55%" in s and "celebi 25%" in s
     assert "(#2)" in s                            # celebi's true-species rank, since it wasn't top-1
 
@@ -215,6 +218,37 @@ async def test_sections_toggle_multiple_open(tmp_path):
         open_now = [s for s in ("sec-board", "sec-faith", "sec-matchups", "sec-outcome")
                     if not app.query_one(f"#{s}", Collapsible).collapsed]
         assert len(open_now) >= 3
+
+
+async def test_obs_mismatch_warns_across_panels(tmp_path):
+    """The engine's obs_mismatch flag must surface in the TUI everywhere (the 'stays in sync' guard):
+    the Summary banner, the always-visible battle header, and the affected Matchups/Saliency panels."""
+    import dataclasses
+    run = _write_trace(tmp_path)
+    fake = _FakeModel()
+    fake.offsets = dataclasses.replace(_OFF, total_dim=_OBS_LEN + 2)   # encoder grew → trace is 'old obs'
+    app = ProberApp(root=run, injected_model=fake)
+    async with app.run_test() as pilot:
+        await pilot.pause()
+        app._select_battle(app._tree_model.all_battles()[0])
+        await pilot.pause()
+        await app.workers.wait_for_complete()
+        await pilot.pause()
+        assert "OBS MISMATCH" in str(app.query_one("#summary-head", Static).render())
+        assert "OBS MISMATCH" in str(app.query_one("#battle-header", Static).render())
+        assert "OBS MISMATCH" in str(app.query_one("#matchups-threat", Static).render())
+        assert app.query_one("#saliency-table", DataTable).get_row_at(0)[0].plain.startswith("⚠ OBS")
+    # and NO banner when the lengths match
+    fake2 = _FakeModel()
+    fake2.offsets = dataclasses.replace(_OFF, total_dim=_OBS_LEN)
+    app2 = ProberApp(root=_write_trace(tmp_path), injected_model=fake2)
+    async with app2.run_test() as pilot:
+        await pilot.pause()
+        app2._select_battle(app2._tree_model.all_battles()[0])
+        await pilot.pause()
+        await app2.workers.wait_for_complete()
+        await pilot.pause()
+        assert "OBS MISMATCH" not in str(app2.query_one("#battle-header", Static).render())
 
 
 async def test_quit_binding():
