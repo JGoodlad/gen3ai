@@ -105,8 +105,11 @@ _METRIC_LABELS = {
 
 
 def _metric_label(key: str) -> str:
-    """Display label for a metric row — a short override if known, else the part after '/'."""
-    return _METRIC_LABELS.get(key, key.partition("/")[2])
+    """Display label for a metric row — a short override if known, else the part after '/'.
+    Word-separator spaces are rendered as underscores so the curated short labels (``value share``)
+    match the underscore house style of the raw TensorBoard keys (``ep_len_mean``); other notation
+    in a label (``-``, ``/``, ``>``, ``|W|``) is intentional and left as-is."""
+    return _METRIC_LABELS.get(key, key.partition("/")[2]).replace(" ", "_")
 
 
 # Preferred display order; any unlisted keys are appended alphabetically.
