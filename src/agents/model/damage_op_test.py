@@ -849,3 +849,42 @@ def test_choice_band_prior_buffer_values():
     aero = gen3_data.species.get("aerodactyl").num
     assert op.SPECIES_CB_PRIOR[aero].item() == pytest.approx(0.761, abs=0.02)
     assert "SPECIES_CB_PRIOR" not in dict(op.state_dict())          # non-persistent buffer
+
+
+def test_choice_band_incoming_fixed_damage_invariant():
+    """A fixed-damage move (Seismic Toss = 100) is CB-INVARIANT: the CB-conditional physical high equals the
+    modal physical high (CB scales Atk, fixed damage ignores Atk). Pins the override-vs-CB-scale ordering."""
+    from agents import gen3_data
+    from agents.model.features_extractor import decode_damage_block
+    layout = Gen3ObservationEncoder(load_mappings()).get_layout()
+    op = DamageOperator(layout, outgoing=False)
+    st = gen3_data.moves.get("seismictoss")                                       # Fighting (phys), fixed 100
+    defenders = [(143, _T2I["NORMAL"], 0)] + [(0, 0, 0)] * 5                       # our Snorlax (not Ghost → hit)
+    lg = torch.full((1, TEAM_SIZE, layout["max_moves"]), -10.0); lg[:, :, st.num] = 10.0
+    ctx = _fake_ctx(op, attacker_num=68, attacker_t1=_T2I["FIGHTING"], attacker_t2=0,  # Machamp
+                    defenders=defenders, hp_probs_active=[0.0] * 16)
+    op(ctx, lg)
+    dec = decode_damage_block(op.last_raw_block[0], outgoing=False)
+    assert dec["incoming"][0]["phys"]["high"] > 0.0                               # Seismic Toss lands
+    assert dec["choice_band"]["phys_high_cb"][0] == pytest.approx(dec["incoming"][0]["phys"]["high"], rel=1e-5)
+
+
+def test_choice_band_incoming_special_channel_excluded():
+    """The CB-conditional tail is PHYSICAL-only — a special believed move (Surf) contributes ~0 to phys_high_cb
+    (CB boosts Atk, not SpA), even though it has a large special modal threat."""
+    from agents import gen3_data
+    from agents.model.features_extractor import decode_damage_block
+    layout = Gen3ObservationEncoder(load_mappings()).get_layout()
+    op = DamageOperator(layout, outgoing=False)
+    surf = gen3_data.moves.get("surf")                                            # Water → special
+    defenders = [(143, _T2I["NORMAL"], 0)] + [(0, 0, 0)] * 5
+    lg = torch.full((1, TEAM_SIZE, layout["max_moves"]), -10.0); lg[:, :, surf.num] = 10.0
+    ctx = _fake_ctx(op, attacker_num=130, attacker_t1=_T2I["WATER"], attacker_t2=_T2I["FLYING"],  # Gyarados
+                    defenders=defenders, hp_probs_active=[0.0] * 16)
+    op(ctx, lg)
+    dec = decode_damage_block(op.last_raw_block[0], outgoing=False)
+    assert dec["incoming"][0]["spec"]["high"] > 0.1                               # Surf IS a real special threat
+    # the CB physical tail is negligible — only the ~sigmoid(-10) belief floor on other physical moves, far
+    # below the special threat (CB boosts Atk, not the believed Surf).
+    assert dec["choice_band"]["phys_high_cb"][0] < 0.01
+    assert dec["choice_band"]["phys_high_cb"][0] < dec["incoming"][0]["spec"]["high"]

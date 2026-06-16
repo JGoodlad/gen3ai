@@ -1510,11 +1510,17 @@ class DamageOperator(torch.nn.Module):
         # / `ko_cb` are used (the op aggregates the PHYSICAL channel); the fixed-damage override below is
         # applied to them too (fixed damage is CB-independent → reads identically).
         A_cb = A + 0.5 * phys_all * atk[:, None]                                        # [B,C] physical Atk ×1.5
-        core_cb = 42.0 * bp_all[None, None, :] * A_cb[:, None, :] / (D + eps) / 50.0 + 2.0      # [B,n,C]
-        dmg_ns_cb = core_cb * stab[:, None, :] * eff * 0.925 \
-            * (bp_all > 0).float()[None, None, :] * weather_mult[:, None, :]
-        high_cb, _, _, ko_cb = self._rolls(dmg_ns_cb, screen[:, None, :], maxhp[:, :, None],
-                                           cur_hp[:, :, None], acc_all[None, None, :], eps)
+        # Only `high_cb` + `ko_cb` are aggregated (the special channel is CB-invariant), so compute them
+        # INLINE rather than via _rolls — skips the unused low/crit rolls (~2×[B,n,C] of activations the
+        # grad-checkpoint backward recompute would otherwise double; matters at batch 16384). `dmg_cb` folds
+        # the defender screen in (post-screen), matching _rolls' high/ko exactly.
+        dmg_cb = (42.0 * bp_all[None, None, :] * A_cb[:, None, :] / (D + eps) / 50.0 + 2.0) \
+            * stab[:, None, :] * eff * 0.925 * (bp_all > 0).float()[None, None, :] \
+            * weather_mult[:, None, :] * screen[:, None, :]                             # [B,n,C] post-screen
+        inv_cb = 1.0 / (maxhp[:, :, None] + eps)
+        high_cb = (dmg_cb * inv_cb).clamp(max=_DMG_CHIP_CAP)
+        ko_cb = acc_all[None, None, :] * torch.clamp(
+            (dmg_cb - cur_hp[:, :, None]) / (0.15 * dmg_cb + eps), 0.0, 1.0)
         is_fixed = (fixed_all > 0)[None, None, :]                                      # [1,1,C]
         not_immune = (eff > 0).float()                                                # [B,n,C] type+ability gate
         fixed_frac = (fixed_all[None, None, :] / (maxhp[:, :, None] + eps)) * not_immune
