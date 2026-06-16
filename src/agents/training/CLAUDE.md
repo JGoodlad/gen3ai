@@ -938,7 +938,9 @@ The training half of the in-place belief feature (model side in `src/agents/mode
   BCE skipped when `moves_weight==0`; accuracy/P-R diagnostics under `no_grad`. **Fail-loud:** an
   out-of-vocab label id (impossible on real Gen-3 nums) RAISES — corrupt num pipeline, not a silent
   drop. Returns `None` on an empty (zero-believed) minibatch to avoid NaN-poisoning.
-- **Metrics (`train/belief_*`).** Headline `species_acc` + `species_acc_above_chance` (anchored to
+- **Metrics (`belief/*` — its OWN TB prefix, not `train/`, matching the `grad/`/`popart/`/`win_prob/`
+  groups; rendered in the launcher TUI directly BELOW the `train/` block in the train column).** Headline
+  `species_acc` + `species_acc_above_chance` (anchored to
   `1/n_species`); `moves_precision`/`moves_recall` (the opaque BCE alone can't tell if the ~4 true
   moves rank high); `coverage` (fraction of decisions with ≥1 believed slot) + `k_mean` (so acc is
   interpretable — k=1 vs k=5 differ); `species_ce`, `moves_bce`, `aux_loss`. **Balance:** the
@@ -977,7 +979,7 @@ v17). The predicted moveset is REINJECTED into the opp token (it flows to both h
   Hungarian BCE on `belief_moves` — the believed slots are anonymous; cost is the assignment-relevant
   `-(pred·target)`, a cheap einsum). `mode` selects which population(s) are scored. Mode is read off the
   extractor (single source); coef is a model attr (training-only).
-- **Metrics (`train/belief_move_*`).** `bce`, `precision`, `recall`, `revealed_slots`, `unrevealed_slots`,
+- **Metrics (`belief/move_*`).** `bce`, `precision`, `recall`, `revealed_slots`, `unrevealed_slots`,
   `loss`. The move-loss gradient ALSO reaches the trunk via the reinjection, so it joins the species aux
   in the combined `grad/belief_share` probe.
 - **Versioning.** `move_belief_mode` (str) is the version-checked structural toggle (fresh-only;
@@ -1010,7 +1012,7 @@ it in **role-token space** — graded supervision the CE can't give. REQUIRES `-
   as the 3rd element of `_belief_aux_loss` and folded at `opp_belief_latent_coef`; its trunk gradient
   joins the combined `grad/belief_share` probe AND is broken out separately as `grad/latent_share`
   (passed to `grad_balance_metrics(latent_term=…)` so the latent pull is attributable on its own).
-- **Metrics (`train/belief_latent_*`).** `cosine` (similarity, higher = better identity match), `std`
+- **Metrics (`belief/latent_*`).** `cosine` (similarity, higher = better identity match), `std`
   (the collapse monitor — **NO-GO if it →0 while `cosine`→1**), `vicreg`, `loss`, plus the
   **interpretability anchor** `cosine_baseline` (the cosine each prediction scores against a MISMATCHED
   true target — the non-zero null of the task-anchored, non-orthogonal role-token manifold) and

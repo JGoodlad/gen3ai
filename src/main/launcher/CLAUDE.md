@@ -138,7 +138,8 @@ deterministic `_supervise` exit-code/crash-restart/`_reap` suite), plus `launche
   run stays readable instead of one over-long column: a **left misc column** (rollout / time, then the
   `grad/*` / `popart/*` / `distill/*` diagnostics), a **dedicated `train/*` column** (by far the
   biggest section — all the PPO losses, `return_*`, `value_pred_std`, `grad_norm`, the opponent-mix
-  `*_fraction` telemetry), and the **eval column**. Non-eval metrics are split across the first two
+  `*_fraction` telemetry, then the `belief/*` aux diagnostics rendered directly **below** train when a
+  belief aux is on), and the **eval column**. Non-eval metrics are split across the first two
   **by whole top-level section — a section is never split across columns**
   (`app.py::_fill_metric_sections`); the two narrow metric columns hug their content (`width: auto`)
   so the wider eval column (`width: 1fr`) gets the horizontal slack.

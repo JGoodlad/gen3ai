@@ -483,15 +483,15 @@ class LauncherApp(Gen3App):
             stale_badge = f" ({_secs_str(now - snap.metrics_ts)} ago)"
 
         # Non-eval metrics span TWO columns, never splitting a top-level section: train/* (by
-        # far the biggest section) gets its OWN column, and everything else (rollout, time, grad,
-        # popart, distill, …) stays in the left column. The stale badge annotates the first
-        # section header of each column.
+        # far the biggest section) gets its OWN column, with belief/* rendered directly BELOW it
+        # in that same column; everything else (rollout, time, grad, popart, distill, …) stays in
+        # the left column. The stale badge annotates the first section header of each column.
         left_sections = ["rollout", "time"] + [
-            s for s in by_section if s not in {"rollout", "time", "train"}
+            s for s in by_section if s not in {"rollout", "time", "train", "belief"}
         ]
         left_any = self._fill_metric_sections(left, left_sections, by_section, display, stale_badge)
         train_any = self._fill_metric_sections(
-            train_tbl, ["train"], by_section, display, stale_badge)
+            train_tbl, ["train", "belief"], by_section, display, stale_badge)
         if not left_any and not train_any:
             left.add_row(Text("⏳  waiting for first rollout…", style="dim italic"), "")
 

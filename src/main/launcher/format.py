@@ -77,6 +77,30 @@ _METRIC_LABELS = {
     "popart/mu": "value mu",
     "popart/sigma": "value sigma",
     "popart/value_weight_norm": "value head |W|",
+    # Hidden-opponent belief-aux diagnostics (--opp-belief-aux-coef / --move-belief-mode /
+    # --opp-belief-latent-coef). species_acc is the headline; move_* = the move-belief head;
+    # latent_* = the role-token latent predictor (std→0 while cosine→1 is the collapse NO-GO).
+    "belief/species_acc": "species acc",
+    "belief/species_acc_above_chance": "species acc>chance",
+    "belief/moves_precision": "moves prec",
+    "belief/moves_recall": "moves recall",
+    "belief/coverage": "coverage",
+    "belief/k_mean": "k mean",
+    "belief/species_ce": "species CE",
+    "belief/moves_bce": "moves BCE",
+    "belief/aux_loss": "aux loss",
+    "belief/move_bce": "move BCE",
+    "belief/move_precision": "move prec",
+    "belief/move_recall": "move recall",
+    "belief/move_revealed_slots": "move revealed",
+    "belief/move_unrevealed_slots": "move unrevealed",
+    "belief/move_loss": "move loss",
+    "belief/latent_cosine": "latent cos",
+    "belief/latent_cosine_above_chance": "latent cos>chance",
+    "belief/latent_cosine_baseline": "latent cos base",
+    "belief/latent_std": "latent std",
+    "belief/latent_vicreg": "latent vicreg",
+    "belief/latent_loss": "latent loss",
 }
 
 
@@ -146,6 +170,32 @@ _METRIC_ORDER = [
     "train/nonbot_fraction",
     "train/selfplay_fraction",
     "train/stable_fraction",
+    # Belief-aux diagnostics (only present when a belief aux is on) — rendered in their own
+    # `belief/` section directly BELOW train/ (same column). species_acc is the headline; the
+    # move_* block is the move-belief head; the latent_* block is the role-token latent predictor
+    # (watch latent_std — →0 while latent_cosine→1 is the collapse NO-GO). The shared-trunk PULL of
+    # this aux lives separately under grad/belief_* / grad/latent_*.
+    "belief/species_acc",
+    "belief/species_acc_above_chance",
+    "belief/moves_precision",
+    "belief/moves_recall",
+    "belief/coverage",
+    "belief/k_mean",
+    "belief/species_ce",
+    "belief/moves_bce",
+    "belief/aux_loss",
+    "belief/move_bce",
+    "belief/move_precision",
+    "belief/move_recall",
+    "belief/move_revealed_slots",
+    "belief/move_unrevealed_slots",
+    "belief/move_loss",
+    "belief/latent_cosine",
+    "belief/latent_cosine_above_chance",
+    "belief/latent_cosine_baseline",
+    "belief/latent_std",
+    "belief/latent_vicreg",
+    "belief/latent_loss",
     # Gradient balance: value-vs-policy pull on the SHARED trunk. value_share ~0.5 = balanced,
     # →1 = value swamps the trunk; value_policy_logratio = log10(‖g_v‖/‖g_p‖) is the same imbalance
     # on a linear non-saturating scale (0 = balanced, >0 = value dominates) — the legible gauge for

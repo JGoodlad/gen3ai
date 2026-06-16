@@ -792,12 +792,14 @@ class InstrumentedMaskablePPO(MaskablePPO):
         if grad_norms:
             self.logger.record("train/grad_norm", float(np.mean(grad_norms)))
 
-        # +BELIEF: hidden-opponent belief-aux diagnostics (only when the aux is on AND some minibatch
-        # had believed slots). belief_species_acc is the headline: top-1 accuracy of predicting a
-        # hidden mon's species — rises as the model learns to anticipate the un-revealed party.
+        # +BELIEF: hidden-opponent belief-aux diagnostics under their OWN `belief/` TB prefix (NOT
+        # `train/`, which is crowded — matches the dedicated `grad/`/`popart/`/`win_prob/`/`eval/`
+        # groups). Only when the aux is on AND some minibatch had believed slots. `species_acc` is the
+        # headline: top-1 accuracy of predicting a hidden mon's species — rises as the model learns to
+        # anticipate the un-revealed party.
         if belief_metrics:
             for _bk, _bvals in belief_metrics.items():
-                self.logger.record(f"train/belief_{_bk}", float(np.mean(_bvals)))
+                self.logger.record(f"belief/{_bk}", float(np.mean(_bvals)))
 
         # +WIN-PROB: auxiliary win-probability diagnostics under their OWN `win_prob/` TB prefix (NOT
         # `train/`, which is crowded — matches the dedicated `grad/`/`popart/`/`eval/` groups). Only when

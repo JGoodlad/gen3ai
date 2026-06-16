@@ -58,7 +58,7 @@ OHKO me" query is a hidden-team belief query).
 
 ## Next-test (falsify-after-build — the metric that MUST move)
 A fresh `--opp-belief-aux-coef` retrain vs a coef-0 baseline:
-1. `train/belief_species_acc_above_chance` climbs through training (the head learns). [necessary]
+1. `belief/species_acc_above_chance` climbs through training (the head learns). [necessary]
 2. The **surprise-OHKO / hidden-mon `critic_blindspot` crater share falls** (prober `triage`/`scan`) AND
    win-rate is non-regressing — the decisive test that the belief HELPS. [sufficient]
 3. A held-out belief-accuracy probe (build once traces exist) shows generalization, not pool memorization.
