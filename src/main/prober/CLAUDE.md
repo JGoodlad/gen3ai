@@ -130,12 +130,25 @@ but `move_order` wasn't recorded (a no-state / model-free decision), the engine 
 not recorded)* note) instead of guessing. One line per move / switch / forced replacement /
 standalone faint, each carrying a **`⚡CRIT`** tag, a **`→ atk+1`** boost (Meteor Mash / Intimidate),
 an applied **status** (`opp thunderwave → milotic PAR`), or a **"couldn't move (asleep/…)"** note
-(crit + boost + cant + move_order decoded from the NEXT decision's TurnDelta via
+(crit + boost + cant + move_order + **effectiveness** decoded from the NEXT decision's TurnDelta via
 `describe_turn_outcome`; Hidden Power's BP-0 placeholder is special-cased so its hits aren't dropped).
-The shared renderer is `app._append_timeline_entry` / `_append_happened` (Summary + Review card) ·
+**A move that did NOTHING visible is explained, never left blank** (`engine._no_effect_reason`): an
+attack/status move blocked by a type immunity reads `— no effect (immune)` (Seismic Toss vs Ghost), a
+move that **missed** reads `— missed` (Hypnosis), a connected-but-fizzled move `— no effect`; a hazard /
+heal / boost move (whose effect is legitimately invisible in the outcome) is left bare. **miss/fail is
+a RECORDED fact** — the `gen3_move_outcome_v1` TurnDelta block encodes each side's `[hit, miss, fail]`,
+decoded by `describe_turn_outcome` as `our_move_outcome`/`opp_move_outcome` (so it distinguishes a true
+miss from a hit-that-did-nothing); only on a model-free / pre-`v1` trace does it fall back to inferring
+a miss from the move's accuracy. When the OPPONENT
+voluntarily switched, the recorded hp_delta can't price the hit on the switch-IN (it compares the mon
+that left), so the attack shows the **resulting HP** instead (`we rockslide → celebi (now 11%)`) — the
+attack is never dropped. The shared renderer is `app._append_timeline_entry` / `_append_happened`
+(Summary + Review card) ·
 **AFTER** the RESOLVED
-board at the start of the next decision (both actives + HP bars, from `a.next_board` = `build_board`
-of inv+1) so before (matchup line) → after reads at a glance — a switch/faint shows the new mon ·
+board at the start of the next decision — mirrors the matchup line via `_append_summary_active`, so it
+carries the same **species + HP bar + `[status]` + `{boosts}` + `@item`** (a freshly applied PAR/SLP or
+a boost shows here, from `a.next_board` = `build_board` of inv+1) so before (matchup line) → after
+reads at a glance — a switch/faint shows the new mon ·
 **REWARD** the env's reward (total + per-component breakdown) · **CRITIC** V·ΔV·**TD-surprise** (always paired
 with a plain-language gloss — "worse than the critic expected" — via `_append_surprise`/
 `_surprise_phrase`, so the ML term is self-explaining) · **WIN-PROB** (last, only on a
@@ -179,7 +192,13 @@ reads that summary block as a **model-free fallback** (available even without a 
 only the revealed mons show). **Mon names are
 blue** (`_MON_COLOR`); **disabled slots** (a fainted mon / an illegal switch / a no-PP move) render
 **grey** (`_DISABLED_GREY`), NOT the red of a low value — so "dead/unavailable" reads differently
-from "alive but low HP = real danger". Hidden Power shows its **type** (`hiddenpower(fire)`). Helpers
+from "alive but low HP = real danger". Hidden Power shows its **type** (`hiddenpower(fire)`) — for a
+revealed HP from the obs type channel, and **for OUR OWN un-revealed HP from the reconstruction
+record** (`engine.build_our_hp_types` → `_retype_hp`, threaded as `analyze_invocation(our_hp_types=…)`,
+loaded by `app._load_our_hp_types` / `session._our_hp_types`): Showdown's request carries only the bare
+`hiddenpower` id (the type is IV-derived), so without this our own mons showed an untyped HP until they
+used it. **OUR side only** — an opponent's un-revealed HP MUST stay bare (no leak), and the retype is a
+no-op on websocket/older traces with no `reconstruction.json`. Helpers
 `_col` / `_mon_label` / `_moves_line` / `_team_panel_text` build the panels (the last shared by OPP
 TEAM + both Team tables). The **Team** section (`2`, collapsed) is the full per-mon detail — our team
 and the opp team **side-by-side (2-column)** — every mon's **moveset** (ours complete; opp's
@@ -218,7 +237,13 @@ reads the belief block vs the rest), and
 overview/analyze `td_residual`; γ from the run's `metadata.json`) + the win-prob head's
 **P(win)** + ΔP (when present),
 whether the loaded model still picks the recorded action (agrees / DISAGREES → X),
-the per-step **reward breakdown** (`total` + components) and **events**.
+the per-step **reward breakdown** (`total` + components), **events**, and the **raw Showdown
+protocol log for this decision's turn** — the `|move|`/`|-damage|`/`|-crit|`/`|-miss|`/`|-immune|`
+lines parsed from the `*_replay.html` sibling (`engine.parse_protocol_log` + `protocol_for_turn`,
+file IO in `app._load_protocol` / `session._protocol_for`, lightly tinted by event kind), so the
+exact mechanics the summary collapses (a miss, the per-hit damage, a switch-in) are visible
+in-prober without opening the browser replay. Empty when the trace has no `replay.html`. The `analyze`
+JSON CLI carries the same slice as a `protocol` list.
 
 Per-invocation **flags** (`engine.summary_flags`, model-free): `switch`,
 `uncertain` (top recorded prob < `UNCERTAIN_THRESHOLD`=0.34 — a genuine tossup),

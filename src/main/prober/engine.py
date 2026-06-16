@@ -358,7 +358,65 @@ def _team_entry(team: dict, species: str) -> dict:
     return team.get(_norm_species(species), {}) if team else {}
 
 
-def _parse_bench(s: str, team: "dict | None" = None) -> "tuple[MonState, ...]":
+_LOG_BLOCK_RE = re.compile(r'class="battle-log-data"[^>]*>(.*?)</script>', re.DOTALL)
+
+
+def parse_protocol_log(html: str) -> "tuple[str, ...]":
+    """Extract the raw Showdown protocol lines (``|move|…`` / ``|-damage|…`` / ``|turn|N``) from a
+    ``replay.html``'s ``battle-log-data`` script block — the same browser-watchable log, surfaced in
+    the prober so each decision's raw events are visible. Returns the ``|``-lines in order (the whole
+    body if the expected block isn't found, so a format tweak degrades rather than blanks)."""
+    m = _LOG_BLOCK_RE.search(html or "")
+    body = m.group(1) if m else (html or "")
+    return tuple(ln.rstrip("\r\n") for ln in body.splitlines() if ln.startswith("|"))
+
+
+def protocol_for_turn(lines: "tuple[str, ...]", turn: int) -> "tuple[str, ...]":
+    """The protocol slice for one decision's turn: every line from ``|turn|N`` up to (not incl.)
+    ``|turn|N+1``. Pure — pairs `parse_protocol_log` (the caller does the file IO) with a decision's
+    ``turn`` so the raw events between this decision and the next are shown in order."""
+    out, cur = [], 0
+    for ln in lines or ():
+        if ln.startswith("|turn|"):
+            try:
+                n = int(ln.split("|")[2])
+            except (IndexError, ValueError):
+                n = cur
+            if n > turn:
+                break
+            cur = n
+        if cur == turn:
+            out.append(ln)
+    return tuple(out)
+
+
+def build_our_hp_types(team_details: "list[dict] | None") -> "dict[str, str]":
+    """`{norm_species: 'hiddenpower(bug)'}` from a reconstruction `team_details` list — the typed
+    Hidden Power display id for each own mon, so a bare own HP (all the request carries before reveal)
+    can be typed. Pure; the caller does the reconstruction-file IO (mirrors the opp-team load)."""
+    out: "dict[str, str]" = {}
+    for m in team_details or []:
+        for mv in m.get("moves", ()) or ():
+            s = str(mv)
+            if s.startswith("hiddenpower") and s != "hiddenpower":
+                out[_norm_species(m.get("species", ""))] = f"hiddenpower({s[len('hiddenpower'):]})"
+    return out
+
+
+def _retype_hp(moves: "tuple[str, ...]", species: str, hp_map: "dict | None") -> "tuple[str, ...]":
+    """Replace a bare ``hiddenpower`` in a KNOWN-OWN moveset with its true typed display form
+    (``hiddenpower(bug)``) from ``hp_map`` (norm-species → formatted id, built from the reconstruction
+    record). Showdown's request carries only the bare id for an UNREVEALED own Hidden Power (the type
+    is IV-derived, not in the request), so without this our own mons show an untyped HP until they use
+    it. ``hp_map`` is None for the OPPONENT side and for non-reconstruction traces — an opponent's
+    un-revealed HP MUST stay bare (no leak), so the retype only ever runs on our own team."""
+    typed = (hp_map or {}).get(_norm_species(species))
+    if not typed:
+        return tuple(moves)
+    return tuple(typed if str(m) == "hiddenpower" else m for m in moves)
+
+
+def _parse_bench(s: str, team: "dict | None" = None, hp_map: "dict | None" = None) -> "tuple[MonState, ...]":
     team = team or {}
     out = []
     for chunk in (s or "").split(", "):
@@ -369,7 +427,7 @@ def _parse_bench(s: str, team: "dict | None" = None) -> "tuple[MonState, ...]":
         if m:
             species, inside = m.group(1), m.group(2)
             e = _team_entry(team, species)
-            item, moves = e.get("item", ""), tuple(e.get("moves", ()))
+            item, moves = e.get("item", ""), _retype_hp(tuple(e.get("moves", ())), species, hp_map)
             if "faint" in inside.lower():
                 out.append(MonState(species, "faint", True, "", item, moves))
             else:
@@ -378,11 +436,13 @@ def _parse_bench(s: str, team: "dict | None" = None) -> "tuple[MonState, ...]":
                 out.append(MonState(species, hp.strip(), False, status.strip(), item, moves))
         else:
             e = _team_entry(team, chunk)
-            out.append(MonState(chunk, "?", False, "", e.get("item", ""), tuple(e.get("moves", ()))))
+            out.append(MonState(chunk, "?", False, "", e.get("item", ""),
+                                _retype_hp(tuple(e.get("moves", ())), chunk, hp_map)))
     return tuple(out)
 
 
-def _side_board(side: dict, moves: "tuple[str, ...]", team: "dict | None" = None) -> SideBoard:
+def _side_board(side: dict, moves: "tuple[str, ...]", team: "dict | None" = None,
+                hp_map: "dict | None" = None) -> SideBoard:
     team = team or {}
     species = side.get("species", "")
     e = _team_entry(team, species)
@@ -392,9 +452,10 @@ def _side_board(side: dict, moves: "tuple[str, ...]", team: "dict | None" = None
         status=side.get("status", "") or "",
         boosts=side.get("boosts", "") or "",
         # our active's moves come from the trace actions; the opp active's (and any side with no
-        # trace moves) fall back to the obs-decoded revealed moveset.
-        moves=moves or tuple(e.get("moves", ())),
-        bench=_parse_bench(side.get("bench", ""), team),
+        # trace moves) fall back to the obs-decoded revealed moveset. `hp_map` (our side only) types
+        # a bare own Hidden Power the request couldn't.
+        moves=_retype_hp(moves or tuple(e.get("moves", ())), species, hp_map),
+        bench=_parse_bench(side.get("bench", ""), team, hp_map),
         item=e.get("item", ""),
     )
 
@@ -429,14 +490,16 @@ def _merge_team(base: dict, obs_team: dict) -> "dict[str, dict]":
     return out
 
 
-def build_board(inv: dict, team: "dict | None" = None) -> BoardView:
+def build_board(inv: dict, team: "dict | None" = None,
+                our_hp_types: "dict | None" = None) -> BoardView:
     """Board state at a decision — model-free, parsed from the summary invocation. ``team``
     (species → {item, moves}) annotates BOTH sides; keys are matched leniently (:func:`_norm_species`)
-    so an obs-decoded name resolves against a board id."""
+    so an obs-decoded name resolves against a board id. ``our_hp_types`` (norm-species → typed HP
+    display id, from the reconstruction record) types a bare own Hidden Power — OUR side only."""
     norm = {_norm_species(k): v for k, v in (team or {}).items()}
     labels = list(inv.get("actions", {}).keys())
     moves = tuple(k for k in labels[MOVE_START:MOVE_END] if not _MOVE_PLACEHOLDER_RE.fullmatch(k))
-    return BoardView(ours=_side_board(inv.get("our", {}), moves, norm),
+    return BoardView(ours=_side_board(inv.get("our", {}), moves, norm, our_hp_types),
                      opp=_side_board(inv.get("opp", {}), (), norm))
 
 
@@ -452,22 +515,41 @@ _SENT_IN = "_sent_in"
 _SEP = " → "                       # the " → " the recorder uses to pack a forced replacement
 _FAINT_EVENT_RE = re.compile(r"^(our|opp):(.+):fainted$")
 _STATUS_EVENT_RE = re.compile(r"^(our|opp):(.+):([A-Z]{3})$")   # our:milotic:PAR, opp:swampert:TOX
+_SWITCH_IN_HIT_MAX_HP = 90.0       # a switched-in mon below this clearly took our hit (vs a sand tick)
 
 
-def _move_deals_damage(move_id: "str | None") -> bool:
-    """Whether a recorded move id can deal HP damage. Hidden Power is stored under the bare id
-    ``hiddenpower`` whose static base power is 0 (its real power is IV-derived), so ``is_damaging``
-    reports it non-damaging — special-case it (and any other variable-power placeholder) so a real
-    hit is never dropped from the attribution."""
+def _is_attack(move_id: "str | None") -> bool:
+    """Whether a recorded move id is a damaging ATTACK — positive-BP, fixed-damage (Seismic Toss /
+    Night Shade), variable-power (Return), or Hidden Power (the bare id reads BP 0 but is a real
+    attack). Uses the same ``_multiplier_meaningful`` predicate the matchup panel does, so a real hit
+    is never dropped from the attribution and a whiffed attack can be flagged 'missed'/'no effect'."""
+    return _multiplier_meaningful((move_id or "").lower())
+
+
+def _no_effect_reason(move_id: "str | None", effectiveness: "str | None",
+                      outcome: "str | None" = None) -> "str | None":
+    """Why a move that produced NO visible effect did nothing — 'immune' / 'missed' / 'failed' — or
+    None for a move whose effect is legitimately invisible here (hazards / heal / boost / Protect),
+    which must NOT be flagged. Only an ATTACK (should deal damage) or a status-inflicting move (should
+    apply a status) is annotated. ``outcome`` is the RECORDED move fate (gen3_move_outcome_v1:
+    'hit'/'miss'/'fail') — preferred when present, so 'missed'/'failed' is a fact; a type immunity
+    (a hit that did nothing) reads 'immune' first; only when the outcome wasn't decoded (model-free /
+    older trace) do we fall back to inferring a miss from the move's accuracy."""
     mid = (move_id or "").lower()
-    if not mid:
-        return False
-    if mid.startswith("hiddenpower"):
-        return True
-    try:
-        return bool(gen3_data.moves.is_damaging(mid))
-    except Exception:  # noqa: BLE001 — unknown move: don't HIDE a possible hit
-        return True
+    md = gen3_data.moves.get(mid)
+    if not (_is_attack(mid) or (md and md.status_inflicted)):
+        return None
+    if effectiveness == "immune":
+        return "immune"
+    if outcome == "miss":
+        return "missed"
+    if outcome == "fail":
+        return "failed"
+    if outcome == "hit":                 # connected but no damage/status landed — not a miss
+        return "failed"
+    if md and md.accuracy and md.accuracy < 100 and not md.never_miss:   # fallback: no recorded fate
+        return "missed"
+    return "failed"
 
 
 def _parse_outcome_action(action: "str | None") -> dict:
@@ -516,8 +598,11 @@ def build_result_timeline(outcome: dict, our_species: str, opp_species: str, pha
 
     Re-attributes each side's HP loss to the OPPONENT's move that dealt it, and pairs it with the
     target's before→after HP (``before = after + damage``), so each line reads like a battle log:
-    ``{side, kind, move, damage, target, hp_before, hp_after, crit, boost, cant, status,
-    switch_to, sent_in}``. Ordered by execution: a voluntary switch resolves before a move; otherwise
+    ``{side, kind, move, damage, target, hp_before, hp_after, crit, boost, cant, status, resulting,
+    no_effect, switch_to, sent_in}``. ``resulting`` marks a hit on a switch-IN where only the after-HP
+    is known (the recorded delta can't price it across the switch); ``no_effect`` (``immune`` /
+    ``missed`` / ``failed``) explains a move that did NOTHING visible. Ordered by execution: a voluntary
+    switch resolves before a move; otherwise
     the TurnDelta ``move_order`` (folded from the real event-log sequence). When BOTH sides moved but
     ``move_order`` is absent (a no-state / model-free decision) the order is unknown — the move entries
     carry ``order_certain=False`` so the renderer drops the implied sequence rather than guessing."""
@@ -540,17 +625,18 @@ def build_result_timeline(outcome: dict, our_species: str, opp_species: str, pha
     our_target = pa_opp.get("switch_to") if pa_opp["kind"] == "switch" else opp_species
     opp_target = pa_our.get("switch_to") if pa_our["kind"] == "switch" else our_species
 
-    def _move_entry(side, pa, crit, boost, cant, target, delta, before, after):
+    def _move_entry(side, pa, crit, boost, cant, target, delta, before, after, switched_in, eff, fate):
         e = {"side": side, "kind": "move", "move": pa.get("move", ""), "crit": bool(crit),
              "boost": boost or "", "cant": cant, "target": "", "damage": "", "hp_before": "",
-             "hp_after": "", "status": "", "switch_to": "", "sent_in": ""}
+             "hp_after": "", "status": "", "resulting": False, "no_effect": "",
+             "switch_to": "", "sent_in": ""}
         if cant:
             return e
         recip_side = "opp" if side == "we" else "our"
         key = (recip_side, _norm_species(target))
         fainted = key in faints or str(delta).strip() == "-100%"
         dmg = _loss_pct(delta)
-        if _move_deals_damage(pa.get("move")) and (fainted or dmg is not None):
+        if _is_attack(pa.get("move")) and (fainted or dmg is not None):
             e["target"] = target
             if fainted:
                 consumed.add(key)
@@ -562,28 +648,37 @@ def build_result_timeline(outcome: dict, our_species: str, opp_species: str, pha
                 aft = after if after is not None else max(0.0, (before or 0.0) - dmg)
                 e["damage"], e["hp_after"] = f"{dmg:.0f}%", f"{aft:.0f}%"
                 e["hp_before"] = f"{min(100.0, aft + dmg):.0f}%"
-            if key in statuses:                      # a damaging move that also inflicted status
-                e["status"] = statuses[key]
-        elif key in statuses:                        # a pure status move (Thunder Wave / Toxic)
+        elif _is_attack(pa.get("move")) and switched_in and after is not None and after < _SWITCH_IN_HIT_MAX_HP:
+            # The opponent VOLUNTARILY switched, so the recorded hp_delta (≈0, it compares the mon
+            # that LEFT) can't price the hit on the switch-IN. The next board's HP is still truth —
+            # show the RESULTING hp ("→ celebi (now 11%)") rather than dropping the attack entirely.
+            e["target"], e["hp_after"], e["resulting"] = target, f"{after:.0f}%", True
+        if key in statuses:                          # a status this move applied (own line or alongside dmg)
             e["target"], e["status"] = target, statuses[key]
+        # A move that produced NOTHING visible: say WHY (missed / no effect / immune) so a blank line
+        # never reads as "data missing". Silent for utility moves (hazards/heal/boost — reason None).
+        if not (e["damage"] or e["status"] or e["hp_after"]):
+            e["no_effect"] = _no_effect_reason(pa.get("move"), eff, fate) or ""
         return e
 
     def _entry_for(side):
         if side == "we":
             pa, crit, boost, cant = pa_our, out.get("our_crit"), out.get("our_boost", ""), out.get("our_cant")
             actor, target, delta = our_species, our_target, opp.get("hp_delta")
-            before, after = _pct(opp_hp_before), _pct(opp_hp_after)
+            before, after, eff = _pct(opp_hp_before), _pct(opp_hp_after), out.get("our_effectiveness")
+            switched_in, fate = pa_opp["kind"] == "switch", out.get("our_move_outcome")  # our move lands on the opp's switch-IN
         else:
             pa, crit, boost, cant = pa_opp, out.get("opp_crit"), out.get("opp_boost", ""), out.get("opp_cant")
             actor, target, delta = opp_species, opp_target, our.get("hp_delta")
-            before, after = _pct(our_hp_before), _pct(our_hp_after)
+            before, after, eff = _pct(our_hp_before), _pct(our_hp_after), out.get("opp_effectiveness")
+            switched_in, fate = pa_our["kind"] == "switch", out.get("opp_move_outcome")
         if pa["kind"] == "none":
             return None
         if pa["kind"] == "switch":
             return {"side": side, "kind": "switch", "actor": actor, "switch_to": pa.get("switch_to", "")}
         if pa["kind"] == "send_in":
             return {"side": side, "kind": "send_in", "sent_in": pa.get("sent_in", "")}
-        e = _move_entry(side, pa, crit, boost, cant, target, delta, before, after)
+        e = _move_entry(side, pa, crit, boost, cant, target, delta, before, after, switched_in, eff, fate)
         e["actor"] = actor
         return e
 
@@ -993,7 +1088,8 @@ def decode_incoming_belief(obs: np.ndarray, off) -> "IncomingBeliefView | None":
 
 def analyze_invocation(model, summary: dict, npz, inv_index: int,
                        summary_path: str = "", npz_path: "str | None" = None,
-                       opp_team: "tuple[str, ...] | None" = None) -> InvocationAnalysis:
+                       opp_team: "tuple[str, ...] | None" = None,
+                       our_hp_types: "dict | None" = None) -> InvocationAnalysis:
     """Analyze a single decision point. Pure given ``model`` (the torch boundary).
 
     ``opp_team`` is the opponent's PRIVILEGED full team (species ids from the trace's
@@ -1012,11 +1108,11 @@ def analyze_invocation(model, summary: dict, npz, inv_index: int,
     # /extended per-turn by the obs decode below once a state is captured — which also surfaces the
     # OPP's revealed items + both sides' revealed movesets.
     team = _our_items(summary)
-    board = build_board(inv, team)   # model-free; available even without captured state
+    board = build_board(inv, team, our_hp_types)   # model-free; available even without captured state
     # The NEXT decision's board is the RESOLVED "after" state — read it (model-free) so the UI can
     # show before→after HP. None on the last decision (no following invocation).
     invs = summary["invocations"]
-    next_board = (build_board(invs[inv_index + 1], team)
+    next_board = (build_board(invs[inv_index + 1], team, our_hp_types)
                   if inv_index + 1 < len(invs) else None)
     belief = build_belief(inv)       # model-free summary fallback (re-computed below when a model + state exist)
     belief_truth = None
@@ -1040,7 +1136,7 @@ def analyze_invocation(model, summary: dict, npz, inv_index: int,
     if decode_team is not None:
         obs_team = decode_team(obs)
         if obs_team:
-            board = build_board(inv, _merge_team(team, obs_team))   # both sides, per-turn revealed
+            board = build_board(inv, _merge_team(team, obs_team), our_hp_types)   # both sides, per-turn revealed
     # What actually happened on THIS turn (crit + couldn't-move reason): the realized events are
     # recorded in the NEXT decision's most-recent TurnDelta (turn T's events land in decision T+1's
     # obs). Adds our_crit/opp_crit + our_cant/opp_cant to the outcome so the RESULT/happened line can

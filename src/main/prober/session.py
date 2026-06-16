@@ -35,8 +35,9 @@ from main.prober.discovery import (
     resolve_model_for_step,
 )
 from main.prober.engine import (
-    analyze_invocation, attribute_turning_point, build_board, decode_incoming_belief,
-    fit_probe, history_slot_saliency, parse_pct, summary_flags, SETUP_MOVES,
+    analyze_invocation, attribute_turning_point, build_board, build_our_hp_types,
+    decode_incoming_belief, fit_probe, history_slot_saliency, parse_pct, parse_protocol_log,
+    protocol_for_turn, summary_flags, SETUP_MOVES,
 )
 
 
@@ -485,6 +486,34 @@ class ProbeSession:
 
     # -- deep analysis (loads the resolved model) ---------------------------
 
+    def _protocol_for(self, b, turn) -> list:
+        """Raw Showdown protocol lines for a decision's turn, from the trace's `*_replay.html` sibling
+        (the browser-watchable log) — so the JSON `analyze` carries the exact events the summary
+        collapses. Empty when the replay file is absent/unreadable."""
+        replay = b.summary_path[: -len("_summary.json")] + "_replay.html"
+        if not os.path.exists(replay):
+            return []
+        try:
+            with open(replay, encoding="utf-8") as f:
+                return list(protocol_for_turn(parse_protocol_log(f.read()), int(turn or 0)))
+        except Exception:  # noqa: BLE001 — best-effort
+            return []
+
+    def _our_hp_types(self, b) -> "dict | None":
+        """OUR team's typed Hidden Power per species from the trace's `reconstruction.json` sibling
+        (`{norm_species: 'hiddenpower(bug)'}`), so a bare own HP types in the board — None for
+        websocket/older traces. Best-effort; mirrors the TUI's `_load_our_hp_types`."""
+        recon = b.summary_path[: -len("_summary.json")] + "_reconstruction.json"
+        if not os.path.exists(recon):
+            return None
+        try:
+            from utils.bridge.reconstruction import ReconstructionRecord
+            rec = ReconstructionRecord.load(recon)
+            side = rec.side_of(rec.trainee_username) if rec.trainee_username else None
+            return build_our_hp_types(rec.team_details(side)) if side else None
+        except Exception:  # noqa: BLE001 — privileged team is best-effort; degrade to bare HP
+            return None
+
     def analyze(self, battle_id: str, inv_index: int) -> dict:
         """Full forensic analysis of one decision as a JSON-serializable dict
         (faithfulness, matchups, intervention, saliency, value+TD, outcome, model
@@ -492,9 +521,11 @@ class ProbeSession:
         b = self._battle(battle_id)
         model, choice = self._model_for(b)
         a = analyze_invocation(model, self._summary(b), self._npz(b), inv_index,
-                               summary_path=b.summary_path, npz_path=b.npz_path)
+                               summary_path=b.summary_path, npz_path=b.npz_path,
+                               our_hp_types=self._our_hp_types(b))
         d = asdict(a)
         d["model_resolution"] = _choice_dict(choice)
+        d["protocol"] = self._protocol_for(b, d.get("turn", 0))   # raw Showdown log for this turn
         if d.get("value"):  # add the TD residual the engine (γ-agnostic) can't
             reward = (d.get("outcome") or {}).get("reward")
             rtotal = reward.get("total") if isinstance(reward, dict) else reward

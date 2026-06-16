@@ -812,3 +812,27 @@ def test_append_happened_flags_unknown_order():
     _append_happened(t, a, "\nRESULT  ")
     assert "(move order not recorded)" in t.plain      # honest about the unknown
     assert "· " in t.plain                             # neutral bullets, not an implied 1st/2nd
+
+
+def test_timeline_renders_resulting_and_no_effect():
+    from main.prober.app import _append_timeline_entry
+    t = Text()
+    _append_timeline_entry(t, {"side": "we", "kind": "move", "move": "rockslide", "crit": True,
+                               "target": "celebi", "resulting": True, "hp_after": "11%"})
+    assert "rockslide → celebi (now 11%)" in t.plain and "⚡CRIT" in t.plain
+    t2 = Text()
+    _append_timeline_entry(t2, {"side": "opp", "kind": "move", "move": "seismictoss",
+                                "no_effect": "immune"})
+    assert "seismictoss — no effect (immune)" in t2.plain
+    t3 = Text()
+    _append_timeline_entry(t3, {"side": "we", "kind": "move", "move": "hypnosis",
+                                "no_effect": "missed"})
+    assert "hypnosis — missed" in t3.plain
+
+
+def test_protocol_text_renders_lines_and_empty():
+    from main.prober.app import _protocol_text
+    t = _protocol_text(("|turn|4", "|move|p1a: Aerodactyl|Rock Slide|p2a: Celebi",
+                        "|-crit|p2a: Celebi", "|-damage|p2a: Celebi|11/100"), 4)
+    assert "raw log · turn 4" in t.plain and "Rock Slide" in t.plain and "11/100" in t.plain
+    assert "no replay.html" in _protocol_text((), 4).plain

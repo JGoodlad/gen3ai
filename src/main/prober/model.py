@@ -221,6 +221,14 @@ class ProbeModel:
             out["our_boost"] = _boost_delta_str(d.get("our_boost_delta"))   # e.g. "atk+1" (this turn)
             out["opp_boost"] = _boost_delta_str(d.get("opp_boost_delta"))
             out["move_order"] = d.get("move_order")   # "we_first" / "opp_first" / None — who moved first
+            # Move type-effectiveness ('immune'/'resisted'/'normal'/'super-effective' or None) — lets
+            # the RESULT line explain a 0-damage attack (e.g. 'no effect (immune)' for Normal vs Ghost).
+            out["our_effectiveness"] = d.get("our_effectiveness")
+            out["opp_effectiveness"] = d.get("opp_effectiveness")
+            # Resolved move outcome ('hit'/'miss'/'fail' or None) from gen3_move_outcome_v1 — the
+            # RECORDED fate of each side's move, so 'missed' is a fact, not an accuracy guess.
+            out["our_move_outcome"] = d.get("our_move_outcome")
+            out["opp_move_outcome"] = d.get("opp_move_outcome")
         return out
 
     def action_dist(self, obs: np.ndarray, mask: np.ndarray):

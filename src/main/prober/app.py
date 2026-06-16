@@ -124,7 +124,8 @@ from main.prober.discovery import (
     resolve_model_for_step,
 )
 from main.prober.engine import (
-    InvocationAnalysis, analyze_invocation, build_result_timeline, summary_flags,
+    InvocationAnalysis, analyze_invocation, build_result_timeline,
+    parse_protocol_log, protocol_for_turn, summary_flags,
 )
 from main.prober.review import ReviewStore
 from main.tui import THEME_PATH, Gen3App, gradient_color
@@ -185,6 +186,8 @@ class ProberApp(Gen3App):
         self._tree_model: "TraceTree | None" = None
         self._summary_cache: "dict[str, dict]" = {}
         self._opp_team_cache: "dict[str, tuple | None]" = {}   # privileged opp team per trace (reconstruction.json)
+        self._our_hp_cache: "dict[str, dict | None]" = {}      # our typed Hidden Power per trace (reconstruction.json)
+        self._protocol_cache: "dict[str, tuple]" = {}          # raw Showdown protocol lines per trace (replay.html)
         self._current_battle: "BattleTrace | None" = None
         self._current_summary: "dict | None" = None
         self._analyze_token = 0
@@ -284,6 +287,7 @@ class ProberApp(Gen3App):
                         yield Static("", id="outcome-summary")
                         yield DataTable(id="reward-table")
                         yield Static("", id="outcome-events")
+                        yield Static("", id="outcome-log")
 
     def on_mount(self) -> None:
         self.query_one("#summary-moves", DataTable).add_columns("move", "eff", "prob")
@@ -378,6 +382,50 @@ class ProberApp(Gen3App):
                 team = None
         self._opp_team_cache[key] = team
         return team
+
+    def _load_our_hp_types(self, battle: BattleTrace) -> "dict | None":
+        """OUR team's typed Hidden Power per species (`{norm_species: 'hiddenpower(bug)'}`) from the
+        trace's `reconstruction.json` sibling — so our own mons show their HP TYPE even before they've
+        revealed it (Showdown's request carries only the bare id, the type being IV-derived; an
+        OPPONENT's un-revealed HP stays bare, no leak). `None` for websocket/older traces. Cached per
+        battle (file IO kept out of the pure engine, mirroring `_load_opp_team`)."""
+        key = battle.summary_path
+        if key in self._our_hp_cache:
+            return self._our_hp_cache[key]
+        hp_map = None
+        recon = (key[: -len("_summary.json")] + "_reconstruction.json"
+                 if key.endswith("_summary.json") else None)
+        if recon and os.path.exists(recon):
+            try:
+                from utils.bridge.reconstruction import ReconstructionRecord
+                from main.prober.engine import build_our_hp_types
+                rec = ReconstructionRecord.load(recon)
+                side = rec.side_of(rec.trainee_username) if rec.trainee_username else None
+                if side:
+                    hp_map = build_our_hp_types(rec.team_details(side))
+            except Exception:  # noqa: BLE001 — privileged team is best-effort; degrade to bare HP
+                hp_map = None
+        self._our_hp_cache[key] = hp_map
+        return hp_map
+
+    def _load_protocol(self, battle: BattleTrace) -> tuple:
+        """The battle's raw Showdown protocol lines from its `*_replay.html` sibling (the same log a
+        browser replay shows), parsed once and cached per trace. Empty tuple when the file is absent
+        or unreadable — the Outcome panel then shows no raw log."""
+        key = battle.summary_path
+        if key in self._protocol_cache:
+            return self._protocol_cache[key]
+        lines: tuple = ()
+        replay = (key[: -len("_summary.json")] + "_replay.html"
+                  if key.endswith("_summary.json") else None)
+        if replay and os.path.exists(replay):
+            try:
+                with open(replay, encoding="utf-8") as f:
+                    lines = parse_protocol_log(f.read())
+            except Exception:  # noqa: BLE001 — best-effort; degrade to no raw log
+                lines = ()
+        self._protocol_cache[key] = lines
+        return lines
 
     def _select_battle(self, battle: BattleTrace) -> None:
         self._current_battle = battle
@@ -607,6 +655,7 @@ class ProberApp(Gen3App):
                 self._model, self._load_summary(battle), npz, inv_index,
                 summary_path=battle.summary_path, npz_path=battle.npz_path,
                 opp_team=self._load_opp_team(battle),
+                our_hp_types=self._load_our_hp_types(battle),
             )
         except Exception as e:  # noqa: BLE001 — render analysis errors, don't crash
             self.call_from_thread(self._on_analysis_error, str(e), token)
@@ -740,17 +789,17 @@ class ProberApp(Gen3App):
         # OUTCOME group (blank line above) — RESULT (what happened + events), AFTER, REWARD, CRITIC.
         _append_happened(head, a, "\n\nRESULT  ")
         # AFTER — the RESOLVED board at the start of the next decision, so before (matchup line) →
-        # after reads at a glance via the HP bars (a switch/faint shows the new mon on the field).
+        # after reads at a glance. Mirror the matchup line via _append_summary_active so it carries
+        # the SAME species + HP bar + [status] + {boosts} + @item (a freshly applied PAR/SLP/boost
+        # shows here, not just on the before line) — a switch/faint shows the new mon on the field.
         nb = a.next_board
         if nb is not None:
             head.append("\nAFTER   ", style="dim")
-            head.append(nb.ours.active_species, style="bold")
-            head.append(" ")
-            head.append_text(_hp_bar(nb.ours.active_hp))
+            _append_summary_active(head, nb.ours.active_species, nb.ours.active_hp,
+                                   nb.ours.status, nb.ours.boosts, nb.ours.item)
             head.append("   vs   ", style="dim")
-            head.append(nb.opp.active_species, style="bold")
-            head.append(" ")
-            head.append_text(_hp_bar(nb.opp.active_hp))
+            _append_summary_active(head, nb.opp.active_species, nb.opp.active_hp,
+                                   nb.opp.status, nb.opp.boosts, nb.opp.item)
         # REWARD — the reward the env actually assigned (total + per-component breakdown).
         reward = (a.outcome or {}).get("reward")
         if isinstance(reward, dict):
@@ -1092,6 +1141,13 @@ class ProberApp(Gen3App):
         ev = self.query_one("#outcome-events", Static)
         ev.update(Text("events: " + (", ".join(map(str, events)) if events else "—"),
                        style="yellow" if events else "dim"))
+
+        # Raw Showdown protocol for this decision's turn (parsed from the replay.html log) — so the
+        # exact events the summary collapses (a |-miss|, the per-hit |-damage|, a switch-in) are
+        # visible in-prober without opening the browser replay.
+        lines = (protocol_for_turn(self._load_protocol(self._current_battle), a.turn)
+                 if self._current_battle is not None else ())
+        self.query_one("#outcome-log", Static).update(_protocol_text(lines, a.turn))
 
     # ------------------------------------------------------------------
     # Manual review (model's own games): expectation card + flag/note
@@ -1468,7 +1524,32 @@ def _cant_phrase(cant: str) -> str:
     return _CANT_PHRASE.get(str(cant).lower(), str(cant))
 
 
+# Per-line tint for the raw protocol log (first matching prefix wins; default dim).
+_PROTO_STYLE = (
+    ("|faint|", "bold red"), ("|-crit|", "bold yellow"), ("|-miss|", "yellow"),
+    ("|-immune|", "yellow"), ("|-supereffective|", "bold green"), ("|-resisted|", "dim"),
+    ("|-damage|", "red"), ("|-heal|", "green"), ("|move|", "bold"), ("|cant|", "yellow"),
+    ("|switch|", "cyan"), ("|drag|", "cyan"), ("|-status|", "magenta"),
+    ("|-boost|", "magenta"), ("|-unboost|", "magenta"), ("|turn|", "bold dim"),
+)
+
+
+def _protocol_text(lines: "tuple[str, ...]", turn: int) -> Text:
+    """Render a turn's raw Showdown protocol lines, lightly tinted by event kind."""
+    out = Text()
+    out.append(f"raw log · turn {turn}\n", style="dim italic")
+    if not lines:
+        out.append("  (no replay.html log for this trace)", style="dim")
+        return out
+    for ln in lines:
+        style = next((st for pre, st in _PROTO_STYLE if ln.startswith(pre)), "dim")
+        out.append("  " + ln + "\n", style=style)
+    return out
+
+
 _SIDE_STYLE = {"we": "bold green", "opp": "bold red"}
+# Why a move did nothing visible (engine `no_effect`) — so a blank line never reads as missing data.
+_NO_EFFECT_TEXT = {"immune": "no effect (immune)", "missed": "missed", "failed": "no effect"}
 
 
 def _append_timeline_entry(line: Text, e: dict) -> None:
@@ -1504,10 +1585,16 @@ def _append_timeline_entry(line: Text, e: dict) -> None:
         aft = str(e.get("hp_after", ""))
         line.append("faint" if aft == "faint" else aft, style=("bold red" if aft == "faint" else "dim"))
         line.append(")", style="dim")
+    elif e.get("resulting"):                     # hit a switch-IN; only the resulting HP is known
+        line.append(" → ", style="dim")
+        line.append(str(e.get("target", "")), style=_MON_COLOR)
+        line.append(f" (now {e.get('hp_after', '')})", style="dim")
     elif e.get("status"):
         line.append(" → ", style="dim")
         line.append(str(e.get("target", "")), style=_MON_COLOR)
         line.append(f" {e['status']}", style="bold yellow")
+    elif e.get("no_effect"):                     # nothing happened — say why (missed / immune / failed)
+        line.append(f" — {_NO_EFFECT_TEXT.get(e['no_effect'], 'no effect')}", style="yellow")
     if e.get("boost"):
         line.append(f"  ·  {e['boost']}", style="magenta")
     if e.get("crit"):

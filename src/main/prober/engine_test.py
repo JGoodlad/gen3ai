@@ -916,3 +916,114 @@ def test_timeline_order_certainty():
     switched = _tl("switched_to:skarmory", "-25%", "meteormash", "+0%", ours="tyranitar",
                    opps="metagross", our_after="75%")
     assert all(e["order_certain"] for e in switched if e["kind"] == "move")
+
+
+def test_timeline_switch_in_hit_shows_resulting_hp():
+    # opp voluntarily switches to celebi; our rockslide hits the switch-IN. The recorded delta is 0
+    # across the switch, but the next board's HP is truth → show the resulting HP, not a blank line.
+    tl = _tl("rockslide", "+0%", "switched_to:celebi", "+0%", ours="aerodactyl", opps="salamence",
+             opp_after="11%", our_crit=True)
+    we = next(e for e in tl if e["kind"] == "move")
+    assert we["resulting"] is True and we["target"] == "celebi" and we["hp_after"] == "11%"
+    assert we["damage"] == "" and we["no_effect"] == ""
+
+
+def test_timeline_no_effect_immune():
+    # Seismic Toss (Normal, fixed-damage) vs a Ghost → immune; our gengar took nothing.
+    tl = _tl("hypnosis", "+0%", "seismictoss", "+3%", ours="gengar", opps="registeel",
+             opp_effectiveness="immune", move_order="opp_first")
+    opp = next(e for e in tl if e["move"] == "seismictoss")
+    assert opp["no_effect"] == "immune"
+
+
+def test_timeline_no_effect_missed_status_move():
+    # Hypnosis (60% acc) applied no SLP (no status event) → flagged 'missed', not a blank line.
+    tl = _tl("hypnosis", "+0%", "seismictoss", "+3%", ours="gengar", opps="registeel",
+             move_order="opp_first")
+    we = next(e for e in tl if e["move"] == "hypnosis")
+    assert we["no_effect"] == "missed"
+
+
+def test_timeline_utility_move_not_flagged_no_effect():
+    # Spikes sets a hazard (invisible in the outcome) — must NOT read "no effect"/"missed".
+    tl = _tl("spikes", "+0%", "earthquake", "-20%", ours="skarmory", opps="tyranitar",
+             our_after="80%", move_order="opp_first")
+    we = next(e for e in tl if e["move"] == "spikes")
+    assert we["no_effect"] == "" and we["damage"] == ""
+
+
+# ── our-side Hidden Power typing (from the reconstruction record) ─────────────────────────────────
+from main.prober.engine import build_our_hp_types, build_board   # noqa: E402
+
+
+def test_build_our_hp_types_extracts_typed_hp():
+    td = [{"species": "Forretress", "moves": ["spikes", "hiddenpowerbug", "counter"]},
+          {"species": "Moltres", "moves": ["flamethrower", "hiddenpowergrass"]},
+          {"species": "Jirachi", "moves": ["wish", "bodyslam"]}]           # no HP → absent
+    assert build_our_hp_types(td) == {"forretress": "hiddenpower(bug)", "moltres": "hiddenpower(grass)"}
+    assert build_our_hp_types(None) == {}
+
+
+def _board_inv(moves, bench=""):
+    actions = {f"switch:{i}": {"valid": True} for i in range(6)}
+    for mv in moves:
+        actions[mv] = {"valid": True}
+    actions["struggle"] = {"valid": False}
+    return {"actions": actions, "our": {"species": "forretress", "hp": "100%", "bench": bench},
+            "opp": {"species": "tyranitar", "hp": "100%", "bench": ""}}
+
+
+def test_build_board_types_our_active_hidden_power():
+    inv = _board_inv(["hiddenpower", "spikes", "rapidspin", "counter"])
+    b = build_board(inv, our_hp_types={"forretress": "hiddenpower(bug)"})
+    assert "hiddenpower(bug)" in b.ours.moves and "hiddenpower" not in b.ours.moves
+
+
+def test_build_board_types_our_bench_hidden_power():
+    inv = _board_inv(["icebeam", "surf", "spikes", "rapidspin"], bench="moltres(50%)")
+    team = {"moltres": {"item": "leftovers", "moves": ("hiddenpower", "flamethrower")}}
+    b = build_board(inv, team=team, our_hp_types={"moltres": "hiddenpower(grass)"})
+    moltres = next(m for m in b.ours.bench if m.species == "moltres")
+    assert "hiddenpower(grass)" in moltres.moves and "hiddenpower" not in moltres.moves
+
+
+def test_build_board_no_hp_map_leaves_bare():
+    inv = _board_inv(["hiddenpower", "spikes", "rapidspin", "counter"])
+    assert "hiddenpower" in build_board(inv).ours.moves        # no reconstruction → unchanged
+
+
+def test_timeline_no_effect_uses_recorded_move_outcome():
+    # gen3_move_outcome_v1 records each move's fate — prefer it over the accuracy guess.
+    tl = _tl("hypnosis", "+0%", "seismictoss", "+3%", ours="gengar", opps="registeel",
+             our_move_outcome="miss", opp_move_outcome="hit", opp_effectiveness="immune",
+             move_order="opp_first")
+    assert next(e for e in tl if e["move"] == "hypnosis")["no_effect"] == "missed"   # recorded miss
+    assert next(e for e in tl if e["move"] == "seismictoss")["no_effect"] == "immune"  # hit-but-immune
+    # a recorded 'fail' (e.g. a status move that fizzled) reads 'no effect', not 'missed'
+    failed = _tl("toxic", "+0%", "spikes", "+0%", ours="a", opps="b",
+                 our_move_outcome="fail", move_order="we_first")
+    assert next(e for e in failed if e["move"] == "toxic")["no_effect"] == "failed"
+
+
+# ── raw Showdown protocol (replay.html → per-turn slice) ──────────────────────────────────────────
+from main.prober.engine import parse_protocol_log, protocol_for_turn   # noqa: E402
+
+
+def test_parse_protocol_log_extracts_block():
+    html = ('<html><body><script type="text/plain" class="battle-log-data">\n'
+            '|teamsize|p1|6\n|start\n|switch|p1a: A|A|100/100\n|turn|1\n'
+            '|move|p1a: A|Tackle|p2a: B\n|-damage|p2a: B|80/100\n|turn|2\n'
+            '|move|p2a: B|Surf|p1a: A\n|-miss|p2a: B\n|turn|3\n|win|x\n</script></body></html>')
+    lines = parse_protocol_log(html)
+    assert "<html>" not in "".join(lines)                    # only the |-protocol, no HTML chrome
+    assert "|turn|1" in lines and "|-miss|p2a: B" in lines
+
+
+def test_protocol_for_turn_slices_by_turn_marker():
+    lines = ("|start", "|switch|p1a: A|A|100/100", "|turn|1", "|move|p1a: A|Tackle|p2a: B",
+             "|-damage|p2a: B|80/100", "|turn|2", "|move|p2a: B|Surf|p1a: A", "|-miss|p2a: B",
+             "|turn|3", "|win|x")
+    assert protocol_for_turn(lines, 1) == ("|turn|1", "|move|p1a: A|Tackle|p2a: B", "|-damage|p2a: B|80/100")
+    t2 = protocol_for_turn(lines, 2)
+    assert "|-miss|p2a: B" in t2 and "|turn|3" not in t2     # stops at the next turn marker
+    assert protocol_for_turn((), 1) == ()
