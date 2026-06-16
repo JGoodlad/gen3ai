@@ -648,35 +648,60 @@ async def test_matchups_and_saliency_show_incoming_belief(tmp_path):
         assert any("incoming_damage" in l and l.startswith("V ") for l in labels)
 
 
-async def test_flow_tree_shows_both_heads_sorted(tmp_path):
-    """The Flow section renders the SAME per-head saliency as a visual Tree: two head branches
-    (π policy + V value), each obs block a leaf sorted most-read-first (shares non-increasing),
-    with incoming_damage present under the value head."""
+def _flow_text(app) -> str:
+    """The Flow Static's rendered plain text (the diagram is one Text built by _render_flow)."""
+    return str(app.query_one("#flow-flow", Static).render())
+
+
+async def test_flow_shows_both_heads(tmp_path):
+    """The Flow section renders both head lanes (π POLICY / V VALUE) with their attribution blocks
+    (incl. incoming_damage + a 100% dominant block) — layout-agnostic content check."""
     run = _write_belief_trace(tmp_path)
     app = ProberApp(root=run, injected_model=_FakeModelInc())
-    async with app.run_test() as pilot:
+    async with app.run_test(size=(200, 50)) as pilot:
         await pilot.pause()
         app._select_battle(app._tree_model.all_battles()[0])
         await pilot.pause()
         await app.workers.wait_for_complete()
         await pilot.pause()
-        tree = app.query_one("#flow-tree", Tree)
-        # default-open section so a human sees it without toggling
-        assert app.query_one("#sec-flow", Collapsible).collapsed is False
-        heads = tree.root.children
-        head_labels = [str(h.label) for h in heads]
-        assert any(l.startswith("π") for l in head_labels), head_labels
-        assert any(l.startswith("V") for l in head_labels), head_labels
-        v_head = next(h for h in heads if str(h.label).startswith("V"))
-        leaves = [str(c.label) for c in v_head.children]
-        assert any("incoming_damage" in t for t in leaves), leaves
-        # sorted most-read-first → the trailing "NNN%" share is non-increasing down the branch
-        shares = [int(t.rsplit(" ", 1)[-1].rstrip("%")) for t in leaves]
-        assert shares == sorted(shares, reverse=True), shares
+        assert app.query_one("#sec-flow", Collapsible).collapsed is False   # default-open
+        text = _flow_text(app)
+        assert "π POLICY" in text and "V VALUE" in text, text
+        assert "incoming_damage" in text and "100%" in text, text
 
 
-async def test_flow_tree_handles_model_free_trace(tmp_path):
-    """No captured state / no gradients → the Flow tree shows a graceful hint, never crashes."""
+def test_flow_head_lane_sorted():
+    """_flow_head_lane sorts the attribution blocks most-read-first (shares non-increasing)."""
+    import re
+
+    from main.prober.engine import Saliency, SaliencyBlock
+    sal = Saliency(overall_mean_abs=1.0, blocks=(
+        SaliencyBlock(name="small", mean_abs=0.1, total_abs=10.0),
+        SaliencyBlock(name="big", mean_abs=0.9, total_abs=90.0),
+        SaliencyBlock(name="mid", mean_abs=0.5, total_abs=50.0),
+    ))
+    app = ProberApp(root="/tmp/prober-nonexistent")
+    lane = app._flow_head_lane("V VALUE", "value", sal, "bold magenta", "", {})
+    pcts = [int(m.group(1)) for ln in lane
+            for m in [re.search(r"(\d+)%\s*$", ln.plain)] if m]
+    assert pcts == sorted(pcts, reverse=True) and pcts[0] == 100, pcts
+
+
+def test_flow_combine_lanes_side_by_side():
+    """_flow_combine_lanes zips two lanes with the gutter, left line padded to LANE_W so the
+    divider lands at the same column (the read-across alignment)."""
+    from main.prober.app import GUTTER, LANE_W
+    app = ProberApp(root="/tmp/prober-nonexistent")
+    combined = app._flow_combine_lanes([Text("L1"), Text("L2")], [Text("R1")])
+    assert len(combined) == 2
+    line0 = combined[0].plain
+    assert line0.startswith("L1") and "R1" in line0          # both lanes on one line
+    assert line0[LANE_W:LANE_W + len(GUTTER)] == GUTTER       # divider at the fixed column
+    assert combined[1].plain.startswith("L2") and combined[1].plain.rstrip().endswith("│")  # right lane empty
+
+
+async def test_flow_handles_model_free_trace(tmp_path):
+    """No captured state / no gradients → the Flow diagram shows a graceful hint, never crashes."""
     run = _write_trace(tmp_path, has_state=0)
     app = ProberApp(root=run, injected_model=_FakeModel())
     async with app.run_test() as pilot:
@@ -685,14 +710,12 @@ async def test_flow_tree_handles_model_free_trace(tmp_path):
         await pilot.pause()
         await app.workers.wait_for_complete()
         await pilot.pause()
-        tree = app.query_one("#flow-tree", Tree)
-        leaves = [str(c.label) for c in tree.root.children]
-        assert any("no per-decision attribution" in t for t in leaves), leaves
+        assert "no per-decision attribution" in _flow_text(app)
 
 
 class _FakeModelPopArt(_FakeModel):
     """A model exposing PopArt stats + a value gradient, so the normalized V companion + the
-    Flow V-head branch render (the recorded V=1.5 from _write_trace → norm (1.5-0.5)/2 = +0.50)."""
+    Flow V-head lane render (the recorded V=1.5 from _write_trace → norm (1.5-0.5)/2 = +0.50)."""
 
     def popart_stats(self):
         return (0.5, 2.0)
@@ -706,7 +729,7 @@ async def test_popart_normalized_value_in_outcome_and_flow(tmp_path):
     Outcome panel and the Flow V-head caption surface it alongside the real-return V."""
     run = _write_trace(tmp_path)                       # recorded V = 1.5
     app = ProberApp(root=run, injected_model=_FakeModelPopArt())
-    async with app.run_test() as pilot:
+    async with app.run_test(size=(200, 50)) as pilot:
         await pilot.pause()
         app._select_battle(app._tree_model.all_battles()[0])
         await pilot.pause()
@@ -717,9 +740,7 @@ async def test_popart_normalized_value_in_outcome_and_flow(tmp_path):
         assert abs(a.value.normalized_recorded - 0.5) < 1e-6       # (1.5 - 0.5) / 2.0
         out = str(app.query_one("#outcome-summary", Static).render())
         assert "norm +0.50" in out
-        tree = app.query_one("#flow-tree", Tree)
-        v_head = next(h for h in tree.root.children if str(h.label).startswith("V"))
-        assert "norm" in str(v_head.label)
+        assert "norm" in _flow_text(app)                           # V-lane caption shows it too
 
 
 async def test_flow_no_popart_omits_normalized(tmp_path):
@@ -768,33 +789,28 @@ class _FakeModelArch(_FakeModelInc):
 
 
 async def test_flow_renders_architecture_pipeline(tmp_path):
-    """The Flow section draws the live model's forward pipeline: a numbered chain (active trunk +
-    fork + shared phases) + greyed '(off)' optionals + '↦' side readouts, the π/V heads NOT in the
-    pipeline, and each head branch tied back to the arch via a '↳ reads …' line."""
+    """The Flow diagram draws the live model's forward DATAFLOW: stage bands (ENCODE/BELIEF/⑂ FORK)
+    off a spine, active phases + greyed '⌀off' optionals + '┄▷ … ✗→heads' side readouts, the π/V
+    heads as LANES (not pipeline rows), and each head's '↳ reads …' tied back to the arch."""
     run = _write_belief_trace(tmp_path)
     app = ProberApp(root=run, injected_model=_FakeModelArch())
-    async with app.run_test() as pilot:
+    async with app.run_test(size=(200, 50)) as pilot:
         await pilot.pause()
         app._select_battle(app._tree_model.all_battles()[0])
         await pilot.pause()
         await app.workers.wait_for_complete()
         await pilot.pause()
-        tree = app.query_one("#flow-tree", Tree)
-        children = tree.root.children
-        assert any("forward pipeline" in str(c.label) for c in children), [str(c.label) for c in children]
-        pipe = next(c for c in children if "forward pipeline" in str(c.label))
-        steps = [str(s.label) for s in pipe.children]
-        assert any("TeamTransformer" in s for s in steps), steps          # active trunk phase
-        assert any("BeliefSlots (off)" in s for s in steps), steps        # inactive optional, greyed
-        assert any("SpreadBelief (off)" in s for s in steps), steps       # v25 phase, off here
-        assert any("WinProbHead" in s for s in steps), steps              # side readout shown in pipeline
-        assert any("ProjectionAssembler" in s for s in steps), steps      # post-fork 'shared' phase, numbered
-        assert not any(("policy head" in s or "value head" in s) for s in steps), steps  # π/V NOT in pipeline
-        v_head = next(c for c in children if str(c.label).startswith("V"))
-        v_lines = [str(x.label) for x in v_head.children]
-        # the V head's 'reads' must be the VALUE head's inputs, NOT the WinProbHead role (stage collision guard)
-        assert any("reads vf_combined" in r for r in v_lines), v_lines
-        assert not any("P(win) readout" in r for r in v_lines), v_lines
+        text = _flow_text(app)
+        assert "ENCODE" in text and "FORK" in text, text                  # stage band headers
+        assert "TeamTransformer" in text, text                            # active trunk phase
+        assert "SpreadBelief" in text and "⌀off" in text, text            # off optional → greyed glyph
+        assert "✗→heads" in text, text                                    # side-readout annotation
+        assert "ProjectionAssembler" in text, text                        # post-fork shared phase
+        assert "π POLICY" in text and "V VALUE" in text, text             # the two head lanes
+        # the heads render as LANES, not as pipeline rows (their arch names are excluded)
+        assert "policy head" not in text and "value head" not in text, text
+        # the V lane's reads must be the VALUE inputs, NOT the WinProbHead role (stage-collision guard)
+        assert "vf_combined" in text and "↳ P(win)" not in text, text
 
 
 async def test_board_tab_populates(tmp_path):

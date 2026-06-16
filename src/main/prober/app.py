@@ -286,7 +286,7 @@ class ProberApp(Gen3App):
                         yield DataTable(id="saliency-table")
                     with Collapsible(title=_SEC_TITLE["sec-flow"], collapsed=False, id="sec-flow"):
                         yield Static("", id="flow-legend")
-                        yield Tree("flow", id="flow-tree")
+                        yield Static("", id="flow-flow")
                     with Collapsible(title=_SEC_TITLE["sec-outcome"], collapsed=False, id="sec-outcome"):
                         yield Static("", id="outcome-summary")
                         yield DataTable(id="reward-table")
@@ -304,13 +304,9 @@ class ProberApp(Gen3App):
         self.query_one("#saliency-table", DataTable).add_columns("obs block", "|grad|/dim", "sum")
         for tid in ("#board-our", "#board-opp"):
             self.query_one(tid, DataTable).add_columns("pokémon", "hp", "status")
-        # Flow tree: a hierarchy of what each head (π policy / V value) reads from the obs.
-        # Hide the synthetic root so the two head branches sit at the top level.
-        flow = self.query_one("#flow-tree", Tree)
-        flow.show_root = False
-        flow.guide_depth = 3
+        # Flow: a Static box-art dataflow diagram (obs → trunk bus → ⑂ fork → two π/V lanes).
         self.query_one("#flow-legend", Static).update(Text(
-            "the model's forward pipeline (obs → shared trunk → π/V fork), then what each head "
+            "the model's forward DATAFLOW (obs → shared trunk → ⑂ fork → π/V), then what each head "
             "reads — bar = |∂output/∂obs| per obs block, normalized within head; green = high "
             "use, dim = barely read. SENSITIVITY, not proof of use.",
             style="dim italic"))
@@ -1101,20 +1097,17 @@ class ProberApp(Gen3App):
                           Text(f"{b.total_abs:6.2f} {bar}", style=style))
 
     def _render_flow(self, a: InvocationAnalysis) -> None:
-        """Visual hierarchy of HOW the model turns this obs into π/V — so the architecture is
-        SHOWN, not imagined. Three parts: the model's forward PIPELINE (introspected live from
-        the loaded extractor, so flag-gated phases reflect THIS checkpoint), then the two head
-        branches (π policy / V value) — each with the inputs it reads (→ projection) and the obs
-        blocks it actually leans on (saliency, sorted most-read-first, smooth bar + share %,
-        dominant bold, sub-8% greyed). SENSITIVITY, not proof of causal use."""
-        tree = self.query_one("#flow-tree", Tree)
-        tree.clear()
-        root = tree.root
+        """Draw the model as a DATAFLOW diagram in the Static `#flow-flow` (not a list): a single
+        left rail is the forward spine; phases tee off it in stage BANDS (ENCODE / BELIEF / ⑂ FORK)
+        — active numbered, optional-off dim `⌀`, side readouts as `┄▷ … ✗→heads`; the CLSPool fork
+        SPLITS the rail into two SIDE-BY-SIDE π/V lanes (so their attribution bars sit at the same
+        row for read-across). Below ~88 cols the lanes stack. SENSITIVITY, not proof of causal use."""
+        static = self.query_one("#flow-flow", Static)
         if a.obs_mismatch is not None:   # offsets misaligned → the per-block split is on wrong dims
-            root.add_leaf(Text(f"⚠ OBS MISMATCH {a.obs_mismatch[0]}≠{a.obs_mismatch[1]} — "
+            static.update(Text(f"⚠ OBS MISMATCH {a.obs_mismatch[0]}≠{a.obs_mismatch[1]} — "
                                "attribution UNRELIABLE", style="bold red"))
             return
-        # The forward pipeline, drawn from the live model (empty for a stub/fake → heads only).
+        # Forward pipeline, introspected live (empty for a stub/fake model → heads only, no spine).
         arch = []
         model = getattr(self, "_model", None)
         if model is not None and hasattr(model, "architecture"):
@@ -1122,63 +1115,143 @@ class ProberApp(Gen3App):
                 arch = model.architecture() or []
             except Exception:  # noqa: BLE001 — introspection is best-effort; never break the panel
                 arch = []
-        if arch:
-            self._render_arch_pipeline(root, arch)
         reads = {ph["stage"]: ph["role"] for ph in arch if ph["stage"] in ("policy", "value")}
-        heads = (("π  policy", "policy", a.saliency, "cyan", self._flow_policy_caption(a)),
-                 ("V  value", "value", a.value_saliency, "magenta", self._flow_value_caption(a)))
-        rendered = False
-        for tag, stage, sal, color, caption in heads:
-            if sal is None:
-                continue
-            rendered = True
-            head_label = Text(tag, style=f"bold {color}")
-            if caption:
-                head_label.append(f"    {caption}", style="dim")
-            head = root.add(head_label, expand=True)
-            if reads.get(stage):                 # tie the head back to the architecture: what it consumes
-                head.add_leaf(Text(f"↳ reads {reads[stage]}", style="dim italic"))
-            # Normalize within the head so bars compare BLOCKS for that head (same convention
-            # as the Saliency table). Sort most-read-first so 'used vs not' reads top-to-bottom;
-            # pad the name column so the share % aligns, bold the dominant block, grey the rest.
-            blocks = sorted(sal.blocks, key=lambda b: b.total_abs, reverse=True)
-            peak = max((b.total_abs for b in blocks), default=1.0) or 1.0
-            namew = max((len(b.name) for b in blocks), default=0)
-            for i, b in enumerate(blocks):
-                share = b.total_abs / peak
-                faint = share < 0.08        # barely read → grey it so it visibly recedes
-                leaf = Text()
-                leaf.append(f"{_flow_bar(share):<16} ", style=("dim" if faint else gradient_color(share)))
-                leaf.append(b.name.ljust(namew), style=("bold" if i == 0 else "dim" if faint else ""))
-                leaf.append(f"  {share * 100:3.0f}%", style="dim")
-                head.add_leaf(leaf)
-        if not rendered:                # model-free trace / no state → no per-decision gradients
-            root.add_leaf(Text("(no per-decision attribution — model-free trace / no captured state)",
-                               style="dim"))
+        lines = list(self._flow_pipeline_lines(arch)) if arch else []
+        pol = self._flow_head_lane("π POLICY", "policy", a.saliency, "bold cyan",
+                                   self._flow_policy_caption(a), reads)
+        val = self._flow_head_lane("V VALUE", "value", a.value_saliency, "bold magenta",
+                                   self._flow_value_caption(a), reads)
+        if pol is None and val is None:          # model-free trace / no state → no per-decision grads
+            lines.append(Text("(no per-decision attribution — model-free trace / no captured state)",
+                              style="dim"))
+        else:
+            if arch:
+                lines += self._flow_fork_lines()
+            if pol is not None and val is not None and self._flow_width() >= MIN_TWO_LANE:
+                lines += self._flow_combine_lanes(pol, val)     # side-by-side, read-across
+            else:                                                # narrow / one head → stack vertically
+                for lane in (pol, val):
+                    if lane:
+                        lines += lane
+                        lines.append(Text(""))
+        lines.append(Text(""))
+        lines.append(self._flow_legend())
+        static.update(Text("\n").join(lines))
 
-    def _render_arch_pipeline(self, root, arch: "list[dict]") -> None:
-        """Draw the shared-trunk forward pipeline (everything up to + incl. the CLSPool fork) as a
-        numbered chain; active optional phases get a number, inactive ones a greyed '· (off)' so
-        you see which machinery THIS checkpoint runs. The π/V heads render below as their own
-        branches (with attribution), so the fork reads trunk → CLSPool → π · V."""
-        node = root.add(Text("model · forward pipeline   obs → π/V", style="bold yellow"), expand=True)
-        n = 0
+    def _flow_width(self) -> int:
+        """Available width for the Flow Static (→ two-lane vs stacked). Big default when unknown."""
+        try:
+            w = self.query_one("#flow-flow", Static).container_size.width
+        except Exception:  # noqa: BLE001
+            return 999
+        return w if w and w > 0 else 999
+
+    def _flow_pipeline_lines(self, arch: "list[dict]") -> "list[Text]":
+        """The forward spine: `obs` source, then each non-head phase under a stage band, tee'd off a
+        single left rail. Numbering runs across active non-side phases; CLSPool=⑂, assembler=◆."""
+        out = [Text("obs vec(3457)", style="bold")]
+        n = [0]
+        bands = {b: [] for b in _FLOW_BAND_ORDER}
         for ph in arch:
             if ph["stage"] in ("policy", "value"):
-                continue                         # the π/V heads are their own branches below
-            line = Text()
-            if not ph["active"]:
-                line.append("  ·  ", style="dim")
-                line.append(f"{ph['name']} (off)", style="dim")
-            elif ph["stage"] == "side":          # a side readout (e.g. WinProbHead) — not a trunk step
-                line.append("  ↦  ", style="bold magenta")
-                line.append(ph["name"], style="bold magenta")
-            else:
-                n += 1
-                line.append(f" {_circled(n)} ", style="bold")
-                line.append(ph["name"], style="bold cyan" if ph["stage"] == "fork" else "bold")
-            line.append(f"   {ph['role']}", style="dim")
-            node.add_leaf(line)
+                continue                         # the π/V heads render as the two lanes below
+            bands[_flow_band(ph)].append(ph)
+        for band in _FLOW_BAND_ORDER:
+            phs = bands[band]
+            if not phs:
+                continue
+            out.append(Text("│", style=_RAIL))
+            hdr = Text("├─ ", style=_RAIL)
+            hdr.append("⑂ FORK" if band == "FORK" else band, style="bold cyan")
+            hdr.append(" ", style=_RAIL)
+            hdr.append("─" * max(4, 60 - hdr.cell_len), style=_RAIL)
+            out.append(hdr)
+            for ph in phs:
+                out.append(self._flow_phase_row(ph, n))
+        return out
+
+    def _flow_phase_row(self, ph: dict, n: "list[int]") -> Text:
+        """One phase row, tee'd off the rail, glyph+color by category, role + tier tag aligned."""
+        name, active, stage = ph["name"], ph["active"], ph["stage"]
+        line = Text("│  ", style=_RAIL)
+        if not active:
+            line.append("·  ", style="dim"); line.append(name, style="dim"); tag, ts = "⌀off", "dim"
+        elif stage == "side":               # branches OFF the trunk, never feeds the heads
+            line.append("└┄▷ ", style="yellow"); line.append(name, style="yellow")
+            tag, ts = "side ✗→heads", "dim italic yellow"
+        elif stage == "fork":               # the CLSPool split
+            line.append("⑂ ", style="bold cyan"); line.append(name, style="bold cyan"); tag, ts = "fork", "dim"
+        elif name == "ProjectionAssembler":
+            line.append("◆ ", style="bold"); line.append(name, style="bold"); tag, ts = "req", "dim"
+        else:
+            n[0] += 1
+            line.append(f"{_circled(n[0])} ", style="bold")
+            line.append(name, style="bold green" if ph["optional"] else "bold")
+            tag, ts = ("●on", "green") if ph["optional"] else ("req", "dim")
+        line = _pad(line, 30)               # align the role column across glyph/name widths
+        line.append(_trunc(ph["role"], 44), style="dim")
+        line = _pad(line, 78)               # right-flush the tier tag to a fixed column
+        line.append(tag, style=ts)
+        return line
+
+    def _flow_fork_lines(self) -> "list[Text]":
+        """The split: the rail tees into the two lane starts (col 0 and col LANE_W+gutter)."""
+        rcol = LANE_W + len(GUTTER)         # column where the right lane begins
+        return [
+            Text("│", style=_RAIL),
+            Text("├" + "─" * (rcol - 1) + "┐", style=_RAIL),
+            Text("▼" + " " * (rcol - 1) + "▼", style=_RAIL),
+        ]
+
+    def _flow_head_lane(self, tag: str, stage: str, sal, style: str, caption: str,
+                        reads: dict) -> "list[Text] | None":
+        """One head's lane (list of lines): caption · `↳ reads …` · the attribution bars (sorted
+        most-read-first, smooth bar + abbreviated block + share %, dominant bold, <8% greyed).
+        None when the head has no saliency (model-free / no state)."""
+        if sal is None:
+            return None
+        head = Text(tag, style=style)
+        if caption:
+            head.append(f"  {caption}", style="dim")
+        out = [head]
+        if reads.get(stage):
+            out.append(Text(f"↳ {_trunc(reads[stage], LANE_W - 2)}", style="dim italic"))
+        blocks = sorted(sal.blocks, key=lambda b: b.total_abs, reverse=True)
+        peak = max((b.total_abs for b in blocks), default=1.0) or 1.0
+        for i, b in enumerate(blocks):
+            share = b.total_abs / peak
+            faint = share < 0.08
+            row = Text()
+            row.append(f"{_flow_bar(share, LANE_BAR):<{LANE_BAR}} ",
+                       style="dim" if faint else gradient_color(share))
+            row.append(_trunc(_abbr_block(b.name), 16).ljust(16),
+                       style="bold" if i == 0 else "dim" if faint else "")
+            row.append(f"{share * 100:3.0f}%", style="dim")
+            out.append(row)
+        return out
+
+    def _flow_combine_lanes(self, left: "list[Text]", right: "list[Text]") -> "list[Text]":
+        """Zip the two lanes side-by-side with a full-height gutter, padding each left line to
+        LANE_W so the π/V bars sit at the same column for read-across comparison."""
+        out = []
+        for i in range(max(len(left), len(right))):
+            lhs = left[i] if i < len(left) else Text("")
+            rhs = right[i] if i < len(right) else Text("")
+            line = _pad(lhs, LANE_W)
+            line.append(GUTTER, style="dim")
+            line.append_text(rhs)
+            out.append(line)
+        return out
+
+    @staticmethod
+    def _flow_legend() -> Text:
+        t = Text("legend  ", style="dim")
+        t.append("① req  ", style="cyan")
+        t.append("●on  ", style="green")
+        t.append("⌀off  ", style="dim")
+        t.append("┄▷ side ✗→heads  ", style="yellow")
+        t.append("⑂ fork  ◆ assembler", style="cyan")
+        return t
 
     def _flow_policy_caption(self, a: InvocationAnalysis) -> str:
         p = _chosen_prob(a)
@@ -1472,6 +1545,56 @@ def _flow_bar(frac: float, width: int = 16) -> str:
         if rem:
             s += _FLOW_BAR_PARTS[rem]
     return s
+
+
+# ── Flow dataflow-diagram layout (a Static box-art panel, not a Tree) ──────────────────────────
+# A single left rail (│) is the forward spine; phases group into stage BANDS that tee off it; the
+# CLSPool fork SPLITS the rail into two SIDE-BY-SIDE π/V lanes so the attribution bars sit at the
+# same vertical level (read-across) and stay flush-left. Below MIN_TWO_LANE cols the lanes stack.
+LANE_W = 38                          # cell width of each π/V head lane
+LANE_BAR = 12                        # attribution bar width inside a lane (narrower than the table's 16)
+GUTTER = " │ "                       # full-height divider drawn between the two lanes (dim)
+MIN_TWO_LANE = 2 * LANE_W + len(GUTTER) + 1   # below this available width, stack the heads vertically
+_RAIL = "dim cyan"                   # the flow spine / connectors / stage rules
+
+# Which stage BAND each phase renders under (display grouping; forward order preserved within a band).
+_FLOW_BAND = {
+    "Embeddings": "ENCODE", "ObsUnpack": "ENCODE", "PokemonEncoder": "ENCODE",
+    "MoveLatentEncoder": "ENCODE", "BeliefSlots": "ENCODE", "TeamTransformer": "ENCODE",
+    "BeliefHead": "BELIEF", "MoveBelief": "BELIEF", "SpreadBelief": "BELIEF",
+    "CLSPool": "FORK", "WinProbHead": "FORK", "HiddenOppBeliefPool": "FORK",
+    "DamageOperator": "FORK", "ProjectionAssembler": "FORK",
+}
+_FLOW_BAND_ORDER = ("ENCODE", "BELIEF", "FORK")
+
+
+def _flow_band(ph: dict) -> str:
+    """Band for a phase — by name, else by stage (so a future phase still lands sensibly)."""
+    b = _FLOW_BAND.get(ph["name"])
+    if b:
+        return b
+    s = ph["stage"]
+    return "FORK" if s in ("fork", "shared") else "BELIEF" if s == "side" else "ENCODE"
+
+
+def _trunc(s: str, n: int) -> str:
+    return s if len(s) <= n else s[: n - 1] + "…"
+
+
+def _abbr_block(name: str) -> str:
+    """Shorten the long obs-block names so a row fits a half-width lane (full names live in Saliency)."""
+    return (name.replace("our active pokemon block", "our active")
+                .replace("active move_multipliers", "move_mults"))
+
+
+def _pad(t: Text, width: int) -> Text:
+    """Right-pad a Text to a fixed CELL width (so two lanes / a role column align). Box/bar glyphs
+    are single-cell, so cell_len is the true column count."""
+    gap = width - t.cell_len
+    if gap > 0:
+        t = t.copy()
+        t.append(" " * gap)
+    return t
 
 
 def _surprise_phrase(td: float) -> str:

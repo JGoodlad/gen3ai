@@ -231,28 +231,28 @@ DAMAGE belief, not raw effectiveness),
 **Intervention**, **Saliency** (two heads: `π` policy-logit blocks AND `V` critic
 value-gradient blocks, each incl. `their_matchups(144)` and `incoming_damage(33)`, so
 you can see whether the **value** head — where OHKO tail-blindness lives — actually
-reads the belief block vs the rest), **Flow** (`_render_flow`, default-open) — a **`Tree`** that
-SHOWS the model instead of asking the reader to imagine it: first the **forward PIPELINE**
-(`_render_arch_pipeline` over `ProbeModel.architecture()` — introspected LIVE from the loaded
-extractor in TRUE forward order, so flag-gated phases + dims reflect THIS checkpoint, currently
-config v28): the numbered chain runs
-`① Embeddings → ② ObsUnpack → ③ PokemonEncoder[+MoveLatent] → [BeliefSlots] → TeamTransformer →
-[MoveBelief] → [SpreadBelief] → CLSPool (forks → π · V) → [HiddenOppBeliefPool] → [DamageOperator]
-→ ProjectionAssembler`, where each phase carries a `stage`: **trunk** (pre-fork) · **fork**
-(`CLSPool`, cyan) · **shared** (post-fork, feeds BOTH heads — `HiddenOppBeliefPool`/`DamageOperator`/
-`ProjectionAssembler`) · **side** (a stashed readout that does NOT feed pi/vf — `BeliefHead`,
-`WinProbHead` — rendered `↦` magenta, NOT numbered) · `policy`/`value` (the head branches below).
-Inactive optionals show greyed `· <name> (off)`; roles are live-interpolated (so `DamageOperator`
-gains `+ outgoing` under `damage_outgoing`, `MoveBelief` gains `+ prior-fusion`, `BeliefHead` gains
-`+ latent`). Then the two head branches
-(`π policy`, captioned `chose <move> (<prob>%)` · `V value`, captioned `V(s) <real> · norm <z>`),
-each opening with a `↳ reads <pi_combined|vf_combined> → proj(<dim>)` line (tying the head back to
-the architecture) then its obs blocks as leaves **sorted most-read-first** with a smooth eighth-block
-`gradient_color` magnitude bar + a padded-aligned within-head share %, the **dominant block bold**
-and blocks <8% greyed so "read vs barely touched" reads top-to-bottom at a glance — the quick visual
-"what fed each head" hierarchy
-(a human-facing companion to the precise table; SENSITIVITY, not proof of causal use — same
-caveat as Saliency. `None`-head / model-free / no-state → a graceful hint leaf, never a crash).
+reads the belief block vs the rest), **Flow** (`_render_flow`, default-open) — a **`Static`
+box-art DATAFLOW diagram** (not a Tree — a Tree can only nest down-and-right, so it can't DRAW a
+fork or sit the two heads side-by-side) that SHOWS the model instead of asking the reader to imagine
+it. A single left **rail** (`│`, dim cyan) is the forward spine; the non-head phases tee off it in
+three stage **bands** — `ENCODE` · `BELIEF` · `⑂ FORK` (`_flow_pipeline_lines` buckets via `_FLOW_BAND`,
+forward order preserved within a band) — drawn from `ProbeModel.architecture()` (introspected LIVE, so
+flag-gated phases + dims reflect THIS checkpoint, currently config v28). Per-phase glyph/colour encodes
+the category: active required `① …` numbered bold (CLSPool `⑂` cyan = the fork, `ProjectionAssembler`
+`◆`), active optional `●on` bold green, inactive optional dim `· …  ⌀off`, **side readout** (`BeliefHead`/
+`WinProbHead` — stashed, does NOT feed pi/vf) `└┄▷ …  side ✗→heads` yellow; roles are live-interpolated
+(`DamageOperator` gains `+ outgoing` under `damage_outgoing`, `MoveBelief` `+ prior-fusion`, `BeliefHead`
+`+ latent`) and the tier tag is right-flushed to a fixed column. The **CLSPool fork** then SPLITS the rail
+(`├──┐` + two `▼`) into two **side-by-side lanes** (`_flow_combine_lanes` zips them with a full-height
+gutter, `_pad`-ing each left line to `LANE_W`): `π POLICY` (cyan, `chose <move> (<prob>%)`) and `V VALUE`
+(magenta, `V(s) <real> · norm <z>`), each opening with `↳ <pi_combined|vf_combined> → proj(<dim>)`
+(tying the head to the architecture) then its obs blocks **sorted most-read-first** with a smooth
+eighth-block `gradient_color` bar (`LANE_BAR`-wide) + abbreviated block + within-head share %, **dominant
+bold**, <8% greyed. Putting the lanes side-by-side sits π's and V's bars on the SAME row for read-across
+("`move_mults` 100% for π vs 18% for V"). Below `MIN_TWO_LANE` cols (`_flow_width`) the lanes STACK
+vertically instead of clipping. A category legend closes the panel.
+(A human-facing companion to the precise Saliency table; SENSITIVITY, not proof of causal use — same
+caveat. `None`-head / model-free / no-state → a graceful hint line, never a crash.)
 `ProbeModel.architecture()` is the torch-boundary single source (a future `query` subcommand can
 call it too); the per-head attribution composes existing
 `InvocationAnalysis.saliency`/`value_saliency` only — no new engine work, and
