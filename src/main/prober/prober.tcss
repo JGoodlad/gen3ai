@@ -32,16 +32,32 @@
     text-style: bold;
 }
 
+/* `scrollbar-gutter: stable` reserves the 1-cell scrollbar column even when no bar is shown, so
+ * content doesn't shift left by a cell the moment a scrollbar appears (the "off by a pixel on scroll"
+ * jump) — applied to every scrollable region. */
 #trace-tree {
     height: 1fr;
+    scrollbar-gutter: stable;
+}
+
+/* `y` reveals the current battle's replay path on its own line (selectable under `v` copy mode);
+ * hidden until used, shown via `.display = True` in the handler. */
+#replay-path-bar {
+    height: auto;
+    width: 1fr;
+    padding: 0 1;
+    background: $surface;
+    display: none;
 }
 
 #invocation-list {
     height: 1fr;
+    scrollbar-gutter: stable;
 }
 
 #analysis-scroll {
     height: 1fr;
+    scrollbar-gutter: stable;
 }
 
 /* Sections stack in the scroll, so tables size to their rows rather than 1fr. */

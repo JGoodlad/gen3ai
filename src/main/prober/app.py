@@ -292,6 +292,10 @@ class ProberApp(Gen3App):
                         yield DataTable(id="reward-table")
                         yield Static("", id="outcome-events")
                         yield Static("", id="outcome-log")
+        # `y` reveals the current battle's replay path here — a full-width bar so the path sits on its
+        # OWN line (not wrapped inside a toast), trivially selectable under `v` copy mode. Hidden until
+        # used.
+        yield Static("", id="replay-path-bar")
 
     def on_mount(self) -> None:
         self.query_one("#summary-moves", DataTable).add_columns("move", "eff", "prob")
@@ -439,6 +443,7 @@ class ProberApp(Gen3App):
 
     def _select_battle(self, battle: BattleTrace) -> None:
         self._current_battle = battle
+        self.query_one("#replay-path-bar", Static).display = False   # drop any stale yanked path
         self._current_summary = self._load_summary(battle)
         invs = self._current_summary["invocations"]
         meta = self._current_summary.get("meta", {})
@@ -1490,19 +1495,27 @@ class ProberApp(Gen3App):
         self.notify(f"exported → {os.path.basename(path)}" if path else "nothing to export")
 
     def action_copy_replay_path(self) -> None:
-        """Yank the current battle's browser-watchable Showdown replay path (the `*_replay.html`
-        sibling) to the clipboard + notify it, so it's one keystroke to open in a browser."""
+        """Reveal the current battle's browser-watchable Showdown replay path (`*_replay.html`) on a
+        dedicated full-width bar — the path on its OWN line, so it's cleanly selectable under `v` copy
+        mode (the portable path that works on Terminal.app). Also best-effort copies it to the
+        clipboard for terminals that honour OSC-52 (kitty / iTerm2 / WezTerm)."""
         if self._current_battle is None:
             self.notify("no battle selected")
             return
         path = self._current_battle.summary_path.replace("_summary.json", "_replay.html")
         exists = os.path.exists(path)
         try:
-            self.copy_to_clipboard(path)
-        except Exception:  # noqa: BLE001 — clipboard may be unavailable over ssh
+            self.copy_to_clipboard(path)   # bonus on OSC-52 terminals; the bar is the portable path
+        except Exception:  # noqa: BLE001 — clipboard may be unavailable / unsupported over ssh
             pass
-        self.notify(f"replay path copied{'' if exists else ' (file missing!)'}:\n{path}",
-                    severity="information" if exists else "warning", timeout=8)
+        bar = self.query_one("#replay-path-bar", Static)
+        hint = Text("replay path — press v, then select the line below to copy"
+                    + ("" if exists else "   ⚠ file missing") + "\n", style="dim italic")
+        hint.append(path, style="bold")
+        bar.update(hint)
+        bar.display = True
+        self.notify("replay path shown below — v to copy" + ("" if exists else " (file missing!)"),
+                    severity="information" if exists else "warning", timeout=4)
 
 
 def _warn_cell(a: InvocationAnalysis):

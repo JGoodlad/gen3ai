@@ -1002,3 +1002,26 @@ def test_protocol_text_renders_lines_and_empty():
                         "|-crit|p2a: Celebi", "|-damage|p2a: Celebi|11/100"), 4)
     assert "raw log · turn 4" in t.plain and "Rock Slide" in t.plain and "11/100" in t.plain
     assert "no replay.html" in _protocol_text((), 4).plain
+
+
+async def test_replay_path_bar_reveals_path_on_own_line(tmp_path):
+    """`y` reveals the replay path on a dedicated full-width bar (its own line, selectable under
+    `v`), not crammed/wrapped into a toast — and a new battle drops the stale bar."""
+    run = _write_trace(tmp_path)
+    app = ProberApp(root=run, injected_model=_FakeModel())
+    async with app.run_test() as pilot:
+        await pilot.pause()
+        bar = app.query_one("#replay-path-bar", Static)
+        assert bar.display is False                              # hidden until used
+        app._select_battle(app._tree_model.all_battles()[0])
+        await pilot.pause()
+        app.action_copy_replay_path()                           # the `y` action
+        await pilot.pause()
+        assert bar.display is True
+        lines = str(bar.render()).split("\n")
+        assert "replay path" in lines[0]                        # the hint
+        assert lines[-1].endswith("_replay.html")               # the path ALONE on its own line
+        # selecting another battle clears the stale path
+        app._select_battle(app._tree_model.all_battles()[0])
+        await pilot.pause()
+        assert bar.display is False
