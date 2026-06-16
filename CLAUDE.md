@@ -114,6 +114,10 @@ export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable
 # also bridge-backed (no server): poke_env_gaps/{abilities,item_consumption,move_outcome,snatch,incoming_damage}_fuzz_test.py,
 #                                  poke_env_gaps/move_alignment_fuzz_test.py (per-move obs features ↔ legal.move_slots[k] ↔ action 6+k, forces Choice-lock/Disable),
 #                                  poke_env_gaps/belief_labels_fuzz_test.py (hidden-opp belief labels == actual opp team + no-leak),
+#                                  poke_env_gaps/damage_op_probe_fuzz_test.py (AUTHORITATIVE DamageOperator physics gate — CONSTRUCTED single-turn
+#                                      scenarios via the OMNISCIENT BattleStream `utils/bridge/damage_probe.js`: exact both-side HP + the sim's OWN
+#                                      stats, zero measurement confounds; one modifier per scenario [type/STAB/SE/resist/4×/immunity/Thick Fat/
+#                                      Choice Band/item/boosts/burn/screens/weather]) + poke_env_gaps/damage_op_fuzz_test.py (looser random-game net),
 #                                  training/hidden_power_tracker_fuzz_test.py,
 #                                  utils/bridge/reconstruction_fuzz_test.py (battle replay/re-roll invariants),
 #                                  and training/obs_roundtrip_fuzz_test.py (offline obs == live obs, bit-for-bit)
@@ -608,7 +612,12 @@ training-only `belief_target_slots` obs key, stashed for the loss only, never in
 + pins revealed moves certain, so the belief is a unified posterior — *known certain, unknown prior⊕learned*);
 and `DamageOperator` (`--damage-op`) consumes that move belief's predicted moves to compute the believed-move
 incoming damage to each of our mons (a differentiable gen3 calc), appended to **both** projection heads —
-so the gradient sharpens the move belief toward real KO threats (`designs/ai_v6/design_differentiable_damage_op.md`).
+so the gradient sharpens the move belief toward real KO threats (`designs/ai_v6/design_differentiable_damage_op.md`);
+its effect block carries per-status SECONDARY probabilities (incoming opp threat + per-OUR-move outgoing,
+accuracy-folded, ×Serene Grace / Shield Dust — `gen3_unified_move_system_v1`). Inside `PokemonEncoder`, the
+flag-gated `MoveLatentEncoder` (`--move-latent`) concatenates a context-free mechanics-grounded per-move
+latent into the move network; its latent table is the Stage-3 similarity-grading target
+(`--move-belief-latent-coef`, so Rock Slide ≈ Hidden Power Rock — `designs/ai_v6/design_unified_move_system.md`).
 A separate optional `WinProbHead` (`--win-prob-mode none|read_only|shaping`) reads `value_pooled` and emits a
 calibrated **P(win)** logit — a SIDE readout (stashed for the aux loss + the prober, **never** in pi/vf, so
 projection dims are unchanged), supervised by the Monte-Carlo episode outcome (win=1/loss=0); `read_only`
@@ -669,7 +678,7 @@ and `gen3_sleep_wake_belief_v1` — a 3-dim per-mon SLEEP WAKE belief block [`sl
 Early Bird halves; opp Early-Bird prior marginalised; Rest source from the event log's `[from]` clause;
 fuzz-calibrated vs the real sim RNG), `sleep_counter_reliable`], `POKEMON_VECTOR_DIM` 106 → 109
 (3419 → 3455). All four are retrain-class; current
-`MODEL_CONFIG_VERSION`: **23** — v16 added the in-place
+`MODEL_CONFIG_VERSION`: **27** — v16 added the in-place
 hidden-opponent belief-aux toggle `opp_belief_slots` + its coef `opp_belief_aux_coef`, v17 the
 move-belief reinjection toggle `move_belief_mode` + `move_belief_coef`, v18 the latent-belief toggle
 `opp_belief_latent` + `opp_belief_latent_coef`, v19 the differentiable damage-operator toggle
@@ -684,7 +693,41 @@ desugars into `move_belief_mode`/`damage_op`/`move_prior_fusion`/`damage_outgoin
 feature is now the **3-roll + P(KO) + accuracy** representation `[low,high,crit,pko,accuracy]×{phys,spec}`
 (`pko=acc·P(KO|hit)` — the operator does the multiplicative physics so the ReLU head stays additive); none
 bump `ARCH_SIGNATURE` since each OFF is byte-identical and the directions are GPU-operator outputs (obs dim
-unchanged at 3457). Full design: `designs/ai_v6/design_unified_damage_system.md`.
+unchanged at 3457). **v24 the unified MOVE system** (`gen3_unified_move_system_v1`) — the structural
+`move_latent` toggle (a context-free `MoveLatentEncoder`: a mechanics-grounded per-move latent —
+move/type embeddings ⊕ a structured `MOVE_ATTR` of BP/category/accuracy/priority/drain/per-status
+secondary chances — concatenated into the move network, **and** the similarity-grading target so Rock
+Slide ≈ Hidden Power Rock) + its training-only grading coef `move_belief_latent_coef` (cosine of the
+predicted move distribution's expected latent → the true moveset's mean latent + VICReg). v24 ALSO
+enriches the `DamageOperator`'s effect block with per-status SECONDARY probabilities — incoming (the opp
+active's damaging-move para/flinch/freeze, accuracy-folded, ×Serene Grace) + per-OUR-move outgoing ("what
+status can this move cause, with what probability", ×our Serene Grace, ×opp Shield Dust) — **intrinsic to
+`--damage-op`** (no separate flag; the secondary data is newly extracted into `gen3_moves.json`). The one
+umbrella knob is `--unified-moves {off,incoming,both}` (sets `--unified-damage` + `--move-latent` +
+`--move-belief-latent-coef 0.05`). `move_latent` OFF stays byte-identical (NO `ARCH_SIGNATURE` bump); a v23
+`--damage-op` checkpoint won't load into v24 (the op's output dim grew). **v25 the SPREAD belief +
+disable-redundant master flag** (`gen3_unified_spread_belief_v1`) — `--spread-belief` (the THIRD belief
+leg: predicts the opp's hidden SPREAD = 5 derived stats per slot from a usage prior ⊕ a learned head,
+reinjected into the opp token, so the `DamageOperator` consumes BELIEVED opp stats instead of its
+hand-coded de-timid/neutral constants) + its training-only `--spread-belief-coef` (speed supervision from
+observed move order — flag wired, loss staged); and `--unified-obs`, ONE master switch that zeros the
+now-GPU-subsumed CPU obs regions from the model's view (incoming-damage + active-move scalars + move-effect
+block; granular `--mask-*-obs` underneath, reward/PBRS untouched). Pure-unified run = `--unified-moves both
+--spread-belief --unified-obs`. OFF byte-identical. **v26 op-physics parity** (`gen3_unified_op_physics_v1`,
+intrinsic to `--damage-op`, values-only) — the op now folds stat-stage boosts/burn/weather/paralysis +
+fixed-damage moves (validated by the constructed Showdown probe `damage_op_probe_fuzz_test.py`, 19/19).
+**v27 op status-landing** (`gen3_unified_status_landing_v1`, intrinsic to `--damage-outgoing`) — the op's
+OUTGOING direction gains a per-OUR-move STATUS-LANDING block (8 dims: P(a dedicated status move lands vs THIS
+opponent — Toxic/Will-O-Wisp/Thunder Wave/Spore/**Leech Seed**) + a `known` bit), the GPU home for the masked
+move-effect `status_will_land`. Folds accuracy × per-MOVE type immunity (incl. the v26-deferred **Leech Seed
+→Grass**) × ability immunity (revealed→exact, else the Smogon prior) × already-statused × **Sleep Clause** (a
+2nd inflicted sleep fails; a Rest self-sleep does NOT consume our cap, reusing `sleep_is_deterministic`) ×
+**Substitute** (a Sub blocks every status move incl. Leech Seed, read from the public volatile). gen3 rules
+imported from `gen3_mechanics` (one source); Shield Dust is N/A (it only scales SECONDARY effects). A v26
+`--damage-outgoing` checkpoint won't load (SB3 `load_state_dict` projection in_features mismatch — the dim is
+runtime-discovered, not a `check_compatible` field). `--mask-move-effects-obs` now requires `--move-latent`
+AND `--damage-outgoing`. Current `MODEL_CONFIG_VERSION` = **27**. Full design:
+`designs/ai_v6/design_unified_move_system.md` (and `design_unified_damage_system.md` for v23).
 **The full versioning playbook — what to do when you change a dim vs add an optional feature vs
 make a structural change — is in `src/agents/model/CLAUDE.md`.**
 
@@ -701,7 +744,9 @@ normalizes each file into `data/pokemon/`; the runtime reaches all of it through
 Reference data (deterministic) under `data/pokemon/`, all regenerable via
 `tools/pokemon_data_extractor/sync.py`:
 - `gen3_species.json` — species id → `{num, baseStats, name}`
-- `gen3_moves.json` — move id → `{num, basePower, type, accuracy, never_miss, hasSecondary, hasRecoil, …}`
+- `gen3_moves.json` — move id → `{num, basePower, type, accuracy, never_miss, hasSecondary, hasRecoil,
+  priority, secondaryEffects {col: percent}, drainFraction, recoilFraction, …}` (the structured
+  secondary/priority/drain fields are `gen3_unified_move_system_v1` — GPU-side only, NOT in the obs vector)
 - `gen3_items.json` — item id → `{num, name}` (`num` is the item-dex number; cross-gen aliases share one num)
 - `gen3_abilities.json` — ability id → `{num, name}`
 - `gen3_type_chart.json` — `{DEF: {ATT: multiplier}}` effectiveness chart (was live `GenData`)

@@ -16,10 +16,14 @@ import torch
 import pytest
 
 from agents.model.features_extractor import (
-    Gen3FeaturesExtractor, DamageOperator, _DMG_PER_MON, _DMG_EFFECT, TEAM_SIZE,
+    Gen3FeaturesExtractor, DamageOperator, _DMG_PER_MON, _DMG_EFFECT, _DMG_INCOMING_SEC,
+    _DMG_OUT_N_MOVES, _DMG_OUT_PER_MOVE, _DMG_STATUS, _DMG_STATUS_N_MOVES, _COND_SLP_IDX,
+    _SUBSTITUTE_CTX_IDX, TEAM_SIZE,
 )
 from agents.model import damage_tables as dt
-from agents.observation.constants import POKEMON_SPREAD_OFFSET, POKEMON_FULL_DIM
+from agents.observation.constants import (
+    POKEMON_SPREAD_OFFSET, POKEMON_FULL_DIM, POKEMON_CONDITION_OFFSET, POKEMON_SLEEP_BELIEF_OFFSET,
+    ACTIVE_CONTEXT_DIM)
 from agents.observation.types import TypeEncoder
 from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings
 
@@ -39,6 +43,10 @@ def _op_and_layout():
     mappings = load_mappings()
     layout = Gen3ObservationEncoder(mappings).get_layout()
     return DamageOperator(layout), layout
+
+
+def _make_layout():
+    return Gen3ObservationEncoder(load_mappings()).get_layout()
 
 
 def _hp_slot(type_name: str) -> int:
@@ -84,6 +92,8 @@ def _fake_ctx(op, *, attacker_num, attacker_t1, attacker_t2,
         species_ids=species, type1_ids=t1, type2_ids=t2,
         ability1_ids=torch.zeros(B, n, dtype=torch.long),       # no ability (mult 1.0) by default
         screen_feature=torch.zeros(B, 8),                       # no screens by default
+        our_ctx_raw=torch.zeros(B, ACTIVE_CONTEXT_DIM), opp_ctx_raw=torch.zeros(B, ACTIVE_CONTEXT_DIM),  # boosts++volatiles
+        our_active_idx=torch.zeros(B, dtype=torch.long), weather_feature=torch.zeros(B, 7),  # no weather
         hp_and_active=hp_and_active, pokemon_part=pokemon_part, hp_probs=hp_probs,
     )
 
@@ -202,7 +212,7 @@ def test_off_path_projection_dims_unchanged_by_damage_op():
     base, _ = _make_model(attend_unrevealed_opponents=True, move_belief_mode="revealed")
     on, _ = _make_model(attend_unrevealed_opponents=True, move_belief_mode="revealed", damage_op=True)
     assert base.damage_op is None and on.damage_op is not None
-    grow = TEAM_SIZE * _DMG_PER_MON + _DMG_EFFECT
+    grow = TEAM_SIZE * _DMG_PER_MON + _DMG_EFFECT + _DMG_INCOMING_SEC
     assert on.projection_input_dim - base.projection_input_dim == grow
     assert on.value_projection_input_dim - base.value_projection_input_dim == grow
 
@@ -225,7 +235,7 @@ def test_finite_on_zero_obs_and_block_is_zero():
         assert torch.isfinite(pi).all() and torch.isfinite(vf).all()
         ctx = model.unpack({"observation": torch.zeros(3, layout["total_dim"])})
         block = model.damage_op(ctx, model.last_move_belief_logits)
-    assert block.shape == (3, TEAM_SIZE * _DMG_PER_MON + _DMG_EFFECT)
+    assert block.shape == (3, TEAM_SIZE * _DMG_PER_MON + _DMG_EFFECT + _DMG_INCOMING_SEC)
     assert (block == 0).all()
 
 
@@ -308,8 +318,10 @@ def test_three_roll_relationship():
     reflect = light = torch.zeros(B, 1)
     bp, mty, phys = torch.tensor([100.0]), torch.tensor([5], dtype=torch.long), torch.tensor([1.0])
     acc = torch.tensor([1.0])                                    # 100%-accurate → pko undiscounted
+    fixed = torch.zeros(1)                                       # not a fixed-damage move
+    weather = torch.ones(B, 1)                                   # no weather
     high, low, crit, pko = op._damage_rolls(atk, spa, at1, at2, def_stat, spd_stat, maxhp, cur_hp,
-                                            t1d, t2d, ability1, reflect, light, bp, mty, phys, acc)
+                                            t1d, t2d, ability1, reflect, light, bp, mty, phys, acc, fixed, weather)
     h = high[0, 0, 0].item()
     assert 0.0 < h < 1.5                                          # unclamped (relationship is clean)
     assert low[0, 0, 0].item() == pytest.approx(0.85 * h, rel=1e-5)
@@ -350,6 +362,8 @@ def _fake_ctx_out(*, our_species, our_t1, our_t2, our_moves, our_move_types,
         all_move_ids=all_move_ids, all_move_type_ids=all_move_type_ids,
         move_mask=torch.tensor([list(move_mask)] * B, dtype=torch.float32),
         screen_feature=torch.zeros(B, 8),
+        our_ctx_raw=torch.zeros(B, ACTIVE_CONTEXT_DIM), opp_ctx_raw=torch.zeros(B, ACTIVE_CONTEXT_DIM),  # boosts++volatiles
+        weather_feature=torch.zeros(B, 7),                              # no weather
     )
 
 
@@ -399,8 +413,11 @@ def test_op_is_leak_free_of_privileged_keys():
     """No-leak gate: the unified op (incoming + outgoing) reads ONLY public obs (via ctx) + the model's own
     predicted belief — never a training-only privileged label. Its output is bit-identical whether or not
     belief_species / belief_moves / known_moves / belief_target_slots are present in the obs dict."""
+    # spread_belief=True so the SpreadBelief leg (its reinjection + the op's consumption of last_spread_belief)
+    # is exercised by the clean-vs-poisoned bit-identity check too (v25).
     model, layout = _make_model(attend_unrevealed_opponents=True, move_belief_mode="revealed",
-                                move_prior_fusion=True, damage_op=True, damage_outgoing=True)
+                                move_prior_fusion=True, damage_op=True, damage_outgoing=True,
+                                spread_belief=True)
     model.eval()
     torch.manual_seed(0)
     obs_t = torch.rand(4, layout["total_dim"])
@@ -443,6 +460,81 @@ def test_decode_damage_block_for_prober():
     assert v2["outgoing"] is None and len(v2["incoming"]) == TEAM_SIZE
 
 
+# ---------------------------------------------------- gen3_unified_move_system_v1: secondary effects
+_SEC_IDX = {c: i for i, c in enumerate(dt.SECONDARY_COLS)}
+_INC_SEC_BASE = TEAM_SIZE * _DMG_PER_MON + _DMG_EFFECT          # incoming per-status secondary sub-block
+_OUT_SEC_BASE = _DMG_OUT_N_MOVES * _DMG_OUT_PER_MOVE + 1        # outgoing per-move secondary (after p_outspeed)
+
+
+def _believe_active(op, *names):
+    """Belief logits putting ~all mass on `names` (move ids) at the opp active slot."""
+    from agents import gen3_data
+    lg = torch.full((1, TEAM_SIZE, op.MOVE_BP.shape[0]), -12.0)
+    for nm in names:
+        lg[:, :, gen3_data.moves.get(nm).num] = 12.0
+    return lg
+
+
+def test_incoming_secondary_status_serene_grace_and_accuracy_fold():
+    """The opp active's DAMAGING-move secondaries surface per-status: Body Slam → 30% para; Serene Grace
+    DOUBLES it to 60%; Zap Cannon's 100% para × 50% accuracy folds to 50% (accuracy-in-the-op, like pko)."""
+    from agents import gen3_data
+    op = DamageOperator(_make_layout())
+    ctx = _fake_ctx(op, attacker_num=242, attacker_t1=_T2I["NORMAL"], attacker_t2=0,
+                    defenders=[(260, _T2I["WATER"], _T2I["GROUND"])] + [(0, 0, 0)] * 5,
+                    hp_probs_active=[0.0] * 16)
+    par = _INC_SEC_BASE + _SEC_IDX["par"]
+    out = op(ctx, _believe_active(op, "bodyslam"))
+    assert abs(out[0, par].item() - 0.30) < 1e-4
+    ctx.ability1_ids[:, TEAM_SIZE] = gen3_data.abilities.get("serenegrace").num
+    out_sg = op(ctx, _believe_active(op, "bodyslam"))
+    assert abs(out_sg[0, par].item() - 0.60) < 1e-4                # Serene Grace ×2
+    ctx.ability1_ids[:, TEAM_SIZE] = 0
+    out_zc = op(ctx, _believe_active(op, "zapcannon"))
+    assert abs(out_zc[0, par].item() - 0.50) < 1e-4               # 100% × 50% acc folded
+    # flinch is exposed RAW (no speed coupling): Rock Slide 30% × 90% acc = 0.27, regardless of speed.
+    out_rs = op(ctx, _believe_active(op, "rockslide"))
+    assert abs(out_rs[0, _INC_SEC_BASE + _SEC_IDX["flinch"]].item() - 0.27) < 1e-4
+
+
+def test_outgoing_secondary_serene_grace_and_shield_dust():
+    """Per OUR move: Thunderbolt → 10% para; OUR Serene Grace doubles to 20%; the OPP's Shield Dust
+    negates it to 0. Move 0's secondary lives at [_OUT_SEC_BASE : +N_SECONDARY]."""
+    from agents import gen3_data
+    layout = _make_layout()
+    op = DamageOperator(layout, outgoing=True)
+    tb = gen3_data.moves.get("thunderbolt").num
+    par = _OUT_SEC_BASE + _SEC_IDX["par"]
+
+    def _out(our_ab=0, opp_ab=0):
+        ctx = _fake_ctx_out(our_species=135, our_t1=_T2I["ELECTRIC"], our_t2=0,
+                            our_moves=[tb, 0, 0, 0], our_move_types=[_T2I["ELECTRIC"], 0, 0, 0],
+                            opp_species=260, opp_t1=_T2I["WATER"], opp_t2=_T2I["GROUND"], move_mask=[1, 0, 0, 0])
+        ctx.ability1_ids[:, 0] = our_ab
+        ctx.ability1_ids[:, TEAM_SIZE] = opp_ab
+        return op._outgoing_block(ctx)[0, par].item()
+
+    sg, sd = gen3_data.abilities.get("serenegrace").num, gen3_data.abilities.get("shielddust").num
+    assert abs(_out() - 0.10) < 1e-4
+    assert abs(_out(our_ab=sg) - 0.20) < 1e-4                     # our Serene Grace ×2
+    assert abs(_out(opp_ab=sd) - 0.0) < 1e-4                      # opp Shield Dust negates
+
+
+def test_decode_includes_secondary_blocks():
+    """The prober decode exposes both new sub-blocks: per-status `incoming_secondary` + per-move
+    `outgoing.secondary` (keyed by SECONDARY_COLS)."""
+    from agents.model.features_extractor import decode_damage_block
+    model, layout = _make_model(attend_unrevealed_opponents=True, move_belief_mode="revealed",
+                                move_prior_fusion=True, damage_op=True, damage_outgoing=True)
+    model.eval()
+    with torch.no_grad():
+        model.forward({"observation": torch.rand(2, layout["total_dim"])})
+    view = decode_damage_block(model.damage_op.last_raw_block[0], outgoing=True)
+    assert set(view["incoming_secondary"]) == set(dt.SECONDARY_COLS)
+    assert len(view["outgoing"]["secondary"]) == _DMG_OUT_N_MOVES
+    assert set(view["outgoing"]["secondary"][0]) == set(dt.SECONDARY_COLS)
+
+
 def test_gen3_formula_matches_incoming_damage_kernel():
     """The op's SMOOTH (un-floored) gen3 core matches the live floored `incoming_damage.gen3_damage_max`
     within the floor rounding (validates the 42/50/+2/STAB/eff constants are the gen3 formula)."""
@@ -452,3 +544,246 @@ def test_gen3_formula_matches_incoming_damage_kernel():
         floored = gen3_damage_max(bp, atk, dfn, stab=stab, type_eff=eff)
         smooth = (42.0 * bp * atk / dfn / 50.0 + 2.0) * (1.5 if stab else 1.0) * eff
         assert abs(smooth - floored) / max(1.0, floored) < 0.05, (bp, atk, dfn, smooth, floored)
+
+
+# ---------------------------------------------------- gen3_unified_op_physics_v1: fixed-damage
+def _believe_op(op, name):
+    from agents import gen3_data
+    lg = torch.full((1, TEAM_SIZE, op.MOVE_BP.shape[0]), -12.0)
+    lg[:, :, gen3_data.moves.get(name).num] = 12.0
+    return lg
+
+
+def test_fixed_damage_constant_and_ghost_immune():
+    """Seismic Toss (Fighting, fixed 100) reads ~100/maxHP on the PHYSICAL channel vs a Normal defender,
+    and EXACTLY 0 vs a Ghost (Fighting is immune) — your named Seismic-Toss-into-Ghosts edge. The BP-0
+    formula would otherwise read ~0."""
+    op = DamageOperator(_make_layout())
+    from agents.model.features_extractor import _DMG_IDX_PHYS_HIGH
+    # defender slot 0 = Snorlax (Normal); the op reads our team's defenders.
+    ctx_normal = _fake_ctx(op, attacker_num=248, attacker_t1=_T2I["ROCK"], attacker_t2=0,
+                           defenders=[(143, _T2I["NORMAL"], 0)] + [(0, 0, 0)] * 5, hp_probs_active=[0.0] * 16)
+    ctx_ghost = _fake_ctx(op, attacker_num=248, attacker_t1=_T2I["ROCK"], attacker_t2=0,
+                          defenders=[(94, _T2I["GHOST"], _T2I["POISON"])] + [(0, 0, 0)] * 5, hp_probs_active=[0.0] * 16)
+    lg = _believe_op(op, "seismictoss")
+    pm_n = op(ctx_normal, lg)[:, :TEAM_SIZE * _DMG_PER_MON].reshape(1, TEAM_SIZE, _DMG_PER_MON)
+    pm_g = op(ctx_ghost, lg)[:, :TEAM_SIZE * _DMG_PER_MON].reshape(1, TEAM_SIZE, _DMG_PER_MON)
+    assert pm_n[0, 0, _DMG_IDX_PHYS_HIGH].item() > 0.1          # ~100/maxHP, on the physical channel
+    # Ghost is immune to Fighting Seismic Toss → its contribution is 0; the ~1e-5 residual is the belief
+    # floor mass on OTHER physical moves, far below the Normal-defender reading.
+    assert pm_g[0, 0, _DMG_IDX_PHYS_HIGH].item() < 0.01
+
+
+def test_op_physics_boosts_burn_weather_para():
+    """gen3_unified_op_physics_v1 parity: a +2 opp Atk doubles incoming physical damage; burn halves it;
+    rain ×1.5 a Water move and sun ×0.5; opp paralysis raises p_outspeed (we now outspeed)."""
+    from agents.model.features_extractor import (
+        _DMG_IDX_PHYS_HIGH, _DMG_IDX_SPEC_HIGH, _DMG_IDX_OUTSPEED, _COND_BRN_IDX, _COND_PAR_IDX)
+    from agents.observation.constants import POKEMON_CONDITION_OFFSET
+    from agents import gen3_data
+    op = DamageOperator(_make_layout())
+    cond = POKEMON_CONDITION_OFFSET
+
+    def inc(move, idx, **flags):
+        ctx = _fake_ctx(op, attacker_num=248, attacker_t1=_T2I["ROCK"], attacker_t2=_T2I["GROUND"],
+                        defenders=[(143, _T2I["NORMAL"], 0)] + [(0, 0, 0)] * 5, hp_probs_active=[0.0] * 16)
+        if flags.get("atk2"):    ctx.opp_ctx_raw[:, 0] = 2.0 / 6.0                             # opp +2 atk
+        if flags.get("burn"):    ctx.pokemon_part[:, TEAM_SIZE, cond + _COND_BRN_IDX] = 1.0    # opp burned
+        if flags.get("rain"):    ctx.weather_feature[:, 2] = 1.0
+        if flags.get("sun"):     ctx.weather_feature[:, 1] = 1.0
+        if flags.get("opp_par"): ctx.pokemon_part[:, TEAM_SIZE, cond + _COND_PAR_IDX] = 1.0
+        lg = torch.full((1, TEAM_SIZE, op.MOVE_BP.shape[0]), -10.0)
+        lg[:, :, gen3_data.moves.get(move).num] = 10.0
+        return op(ctx, lg)[:, :TEAM_SIZE * _DMG_PER_MON].reshape(1, TEAM_SIZE, _DMG_PER_MON)[0, 0, idx].item()
+
+    eq0 = inc("earthquake", _DMG_IDX_PHYS_HIGH)
+    assert inc("earthquake", _DMG_IDX_PHYS_HIGH, atk2=True) == pytest.approx(2.0 * eq0, rel=0.02)   # +2 doubles
+    assert inc("earthquake", _DMG_IDX_PHYS_HIGH, burn=True) == pytest.approx(0.5 * eq0, rel=0.02)   # burn halves
+    s0 = inc("surf", _DMG_IDX_SPEC_HIGH)
+    assert inc("surf", _DMG_IDX_SPEC_HIGH, rain=True) == pytest.approx(1.5 * s0, rel=0.02)          # rain ×1.5
+    assert inc("surf", _DMG_IDX_SPEC_HIGH, sun=True) == pytest.approx(0.5 * s0, rel=0.02)           # sun ×0.5
+    assert inc("earthquake", _DMG_IDX_OUTSPEED, opp_par=True) > inc("earthquake", _DMG_IDX_OUTSPEED) + 0.3
+
+
+def test_op_modifiers_match_cpu_reference_which_is_showdown_fuzz_validated():
+    """gen3_unified_op_physics_v1 VALIDATION: the op's modifier physics (boost / weather / burn /
+    paralysis / fixed-damage) MATCHES the CPU `incoming_damage` reference — which is itself bridge-fuzz-
+    validated against the REAL Showdown sim (incoming_damage_fuzz_test). So tying the op to it transitively
+    validates the op's new physics against Showdown, deterministically + fast."""
+    from agents.observation import incoming_damage as cpu
+    from agents.model.features_extractor import DamageOperator, _DMG_PARA_SPEED
+    from agents.enums import PokemonType
+    from agents import gen3_data
+    # 1. boost multiplier: op == CPU for EVERY gen3 stage.
+    for stage in range(-6, 7):
+        assert DamageOperator._boost_mult(torch.tensor([float(stage)])).item() == pytest.approx(
+            cpu.boost_mult(stage), rel=1e-6), stage
+    # 2. paralysis speed factor identical.
+    assert _DMG_PARA_SPEED == cpu._PARA_SPEED
+    # 3. fixed-damage buffer == the CPU FIXED_DAMAGE dict (Seismic Toss/Night Shade/Dragon Rage/Sonic Boom).
+    fd = dt.build_move_fixed_damage(400)
+    for mid, dmg in cpu.FIXED_DAMAGE.items():
+        assert fd[gen3_data.moves.get(mid).num].item() == float(dmg), mid
+    # 4. burn halves PHYSICAL: CPU gen3_damage_max(burned=True) == ×0.5 of unburned.
+    base = cpu.gen3_damage_max(100, 300, 200, stab=False, type_eff=1.0, burned=False)
+    burned = cpu.gen3_damage_max(100, 300, 200, stab=False, type_eff=1.0, burned=True)
+    assert burned == pytest.approx(0.5 * base, rel=0.02)
+    # 5. weather: op _weather_mult == CPU weather_damage_mult for Water/Fire in rain/sun.
+    one = torch.ones(1, 1)
+    def op_w(weather_idx, is_water, is_fire):
+        wf = torch.zeros(1, 7); wf[0, weather_idx] = 1.0
+        return DamageOperator._weather_mult(wf, torch.tensor([[float(is_water)]]),
+                                            torch.tensor([[float(is_fire)]]))[0, 0].item()
+    # weather idx: 1=sun, 2=rain (global_env one-hot).
+    assert op_w(2, 1, 0) == pytest.approx(cpu.weather_damage_mult(PokemonType.WATER, "raindance"))   # rain Water 1.5
+    assert op_w(2, 0, 1) == pytest.approx(cpu.weather_damage_mult(PokemonType.FIRE, "raindance"))    # rain Fire 0.5
+    assert op_w(1, 0, 1) == pytest.approx(cpu.weather_damage_mult(PokemonType.FIRE, "sunnyday"))     # sun Fire 1.5
+    assert op_w(1, 1, 0) == pytest.approx(cpu.weather_damage_mult(PokemonType.WATER, "sunnyday"))    # sun Water 0.5
+
+
+# --------------------------------------------------------------------------- status-landing block
+def _status_land(op, *, our_moves, opp_t1, opp_t2, opp_species=248, opp_ability=0,
+                 move_mask=(1, 1, 1, 1), opp_active_status_idx=None,
+                 bench_sleep=None, bench_sleep_is_rest=False, opp_substitute=False):
+    """Run op._status_landing for our 4 status moves vs the opp active. Returns (p_land[4], known[4]).
+    Default opp_species 248 = Tyranitar (Sand Stream → NO status-blocking ability prior → a clean
+    "no-ability-immunity" baseline; pass opp_species=143 Snorlax to exercise the Immunity prior).
+    opp_active_status_idx: set the opp ACTIVE's condition bit (1=BRN..6=TOX) → already-statused.
+    bench_sleep: put a BENCH opp mon (slot TEAM_SIZE+1) to sleep; bench_sleep_is_rest flags its source.
+    opp_substitute: set the opp active's Substitute volatile (blocks ALL status moves incl. Leech Seed)."""
+    from agents import gen3_data
+    ctx = _fake_ctx_out(our_species=143, our_t1=_T2I["NORMAL"], our_t2=0,
+                        our_moves=[gen3_data.moves.get(m).num for m in our_moves],
+                        our_move_types=[0, 0, 0, 0],
+                        opp_species=opp_species, opp_t1=opp_t1, opp_t2=opp_t2,
+                        move_mask=list(move_mask), opp_ability=opp_ability)
+    if opp_active_status_idx is not None:
+        ctx.pokemon_part[:, TEAM_SIZE, POKEMON_CONDITION_OFFSET + opp_active_status_idx] = 1.0
+    if bench_sleep:
+        ctx.pokemon_part[:, TEAM_SIZE + 1, POKEMON_CONDITION_OFFSET + _COND_SLP_IDX] = 1.0
+        ctx.pokemon_part[:, TEAM_SIZE + 1, POKEMON_SLEEP_BELIEF_OFFSET] = 1.0 if bench_sleep_is_rest else 0.0
+    if opp_substitute:
+        ctx.opp_ctx_raw[:, _SUBSTITUTE_CTX_IDX] = 1.0
+    out = op._status_landing(ctx)[0]
+    assert out.numel() == _DMG_STATUS
+    return out[:_DMG_STATUS_N_MOVES], out[_DMG_STATUS_N_MOVES:]
+
+
+def test_status_landing_type_and_ability_immunity():
+    """Toxic/Will-O-Wisp/Thunder Wave/Leech Seed land per the gen3 rules, incl. the NEW Leech Seed Grass
+    immunity. Mirrors gen3_mechanics (the single source). Snorlax (unrevealed) reads the Immunity prior."""
+    layout = Gen3ObservationEncoder(load_mappings()).get_layout()
+    op = DamageOperator(layout, outgoing=True)
+    # Toxic(85% acc) / Will-O-Wisp(75%) / Thunder Wave(100%) / Leech Seed(90%) vs a NORMAL mon (no immunity).
+    p, known = _status_land(op, our_moves=["toxic", "willowisp", "thunderwave", "leechseed"],
+                            opp_t1=_T2I["NORMAL"], opp_t2=0)
+    assert p[0].item() == pytest.approx(0.85, abs=1e-4)    # Toxic
+    assert p[1].item() == pytest.approx(0.75, abs=1e-4)    # Will-O-Wisp
+    assert p[2].item() == pytest.approx(1.00, abs=1e-4)    # Thunder Wave
+    assert p[3].item() == pytest.approx(0.90, abs=1e-4)    # Leech Seed
+    assert known.sum().item() == 0.0                       # unrevealed ability, no block → all prior-estimates
+
+    # Type immunity: Toxic vs Steel = 0, Will-O-Wisp vs Fire = 0, Thunder Wave vs Ground = 0, LEECH SEED vs GRASS = 0.
+    p, known = _status_land(op, our_moves=["toxic", "willowisp", "thunderwave", "leechseed"],
+                            opp_t1=_T2I["STEEL"], opp_t2=_T2I["GROUND"])  # Steel+Ground blocks Toxic & T-Wave
+    assert p[0].item() == 0.0 and p[2].item() == 0.0       # Toxic vs Steel, T-Wave vs Ground
+    assert known[0].item() == 1.0 and known[2].item() == 1.0  # type-certain blocks are KNOWN
+    p, _ = _status_land(op, our_moves=["willowisp", "leechseed", "toxic", "toxic"],
+                        opp_t1=_T2I["FIRE"], opp_t2=_T2I["GRASS"])
+    assert p[0].item() == 0.0                              # Will-O-Wisp vs Fire
+    assert p[1].item() == 0.0                              # LEECH SEED vs GRASS (the new rule)
+
+    # Ability immunity: Toxic vs an UNREVEALED Snorlax (Immunity 0.86) → 0.85·(1−0.86) ≈ 0.119, then REVEALED.
+    p, known = _status_land(op, our_moves=["toxic", "toxic", "toxic", "toxic"],
+                            opp_t1=_T2I["NORMAL"], opp_t2=0, opp_species=143)  # Snorlax
+    assert p[0].item() == pytest.approx(0.85 * (1 - 0.86), abs=0.01)
+    assert known[0].item() == 0.0                          # a prior estimate → not known
+    imm_num = __import__("agents", fromlist=["gen3_data"]).gen3_data.abilities.get("immunity").num
+    p, known = _status_land(op, our_moves=["toxic", "toxic", "toxic", "toxic"],
+                            opp_t1=_T2I["NORMAL"], opp_t2=0, opp_species=143, opp_ability=imm_num)
+    assert p[0].item() == 0.0 and known[0].item() == 1.0   # revealed Immunity → certain 0
+
+
+def test_status_landing_already_statused_and_sleep_clause():
+    """A major status can't double-apply; Sleep Clause blocks a 2nd inflicted sleep — but a Rest self-sleep
+    does NOT consume our cap (the user's rule)."""
+    layout = Gen3ObservationEncoder(load_mappings()).get_layout()
+    op = DamageOperator(layout, outgoing=True)
+    # Opp active already BURNED → Toxic (major) blocked, but Leech Seed (not a major status) still lands.
+    p, known = _status_land(op, our_moves=["toxic", "leechseed", "toxic", "toxic"],
+                            opp_t1=_T2I["NORMAL"], opp_t2=0, opp_active_status_idx=1)  # 1 = BRN
+    assert p[0].item() == 0.0 and known[0].item() == 1.0   # Toxic blocked (already statused), certain
+    assert p[1].item() == pytest.approx(0.90, abs=1e-4)    # Leech Seed unaffected by status
+
+    # Sleep Clause: a BENCH opp mon asleep by OUR move (non-Rest) → Spore can't land a 2nd sleep.
+    p, known = _status_land(op, our_moves=["spore", "toxic", "spore", "spore"],
+                            opp_t1=_T2I["NORMAL"], opp_t2=0, bench_sleep=True, bench_sleep_is_rest=False)
+    assert p[0].item() == 0.0 and known[0].item() == 1.0   # Spore blocked by Sleep Clause
+    assert p[1].item() == pytest.approx(0.85, abs=1e-4)    # Toxic (non-sleep) unaffected by Sleep Clause
+
+    # Rest self-sleep does NOT consume our cap → Spore still lands.
+    p, _ = _status_land(op, our_moves=["spore", "spore", "spore", "spore"],
+                        opp_t1=_T2I["NORMAL"], opp_t2=0, bench_sleep=True, bench_sleep_is_rest=True)
+    assert p[0].item() == pytest.approx(1.00, abs=1e-4)    # Rest sleep doesn't trigger Sleep Clause
+
+
+def test_status_landing_matches_gen3_mechanics_reference():
+    """The op's status-landing rules MIRROR the Showdown-fuzz-validated gen3_mechanics (single source):
+    spot-check the type-immunity + ability-block tables agree for the OU-relevant cases."""
+    from agents import gen3_mechanics as gm
+    from agents import gen3_data
+    layout = Gen3ObservationEncoder(load_mappings()).get_layout()
+    op = DamageOperator(layout, outgoing=True)
+    # every move in STATUS_MOVE_IMMUNITY → the op's per-move type-immune row matches the rule
+    for mid, immune_types in gm.STATUS_MOVE_IMMUNITY.items():
+        num = gen3_data.moves.get(mid).num
+        for pt in immune_types:
+            assert op.MOVE_STATUS_TYPE_IMMUNE[num, _T2I[pt.name]].item() == 1.0, (mid, pt)
+    # every ability in ABILITY_STATUS_IMMUNITY → the op's revealed-block table marks its category
+    for aid, statuses in gm.ABILITY_STATUS_IMMUNITY.items():
+        anum = gen3_data.abilities.get(aid).num
+        for s in statuses:
+            c = dt._STATUS_CAT[s]
+            assert op.ABILITY_STATUS_BLOCK[anum, c].item() == 1.0, (aid, s)
+
+
+def test_status_landing_substitute_blocks_all_status():
+    """A Substitute blocks EVERY status move in gen3 — major status AND Leech Seed — and the block is
+    CERTAIN (the Sub is a public volatile → known=1)."""
+    layout = Gen3ObservationEncoder(load_mappings()).get_layout()
+    op = DamageOperator(layout, outgoing=True)
+    p, known = _status_land(op, our_moves=["toxic", "spore", "leechseed", "thunderwave"],
+                            opp_t1=_T2I["NORMAL"], opp_t2=0, opp_substitute=True)
+    assert p.abs().sum().item() == 0.0                    # all four status moves blocked by the Sub
+    assert known.tolist() == [1.0, 1.0, 1.0, 1.0]         # a Sub is public → every block is certain
+    # Sanity: WITHOUT the Sub the same moves DO land (so the Sub is what zeroed them).
+    p2, _ = _status_land(op, our_moves=["toxic", "spore", "leechseed", "thunderwave"],
+                         opp_t1=_T2I["NORMAL"], opp_t2=0, opp_substitute=False)
+    assert p2.abs().sum().item() > 0.0
+
+
+def test_status_landing_not_gated_by_legality():
+    """Parity with the masked CPU `status_will_land` (reactive.py request-slot fill): the per-move value is
+    the move's INTRINSIC landing probability — the action mask handles legality separately — so a
+    Disabled/Choice-locked/no-PP status move still reports p_land>0 (NOT zeroed like the outgoing DAMAGE
+    block). The policy never picks the masked action; the feature stays action-aligned and value-stable."""
+    layout = Gen3ObservationEncoder(load_mappings()).get_layout()
+    op = DamageOperator(layout, outgoing=True)
+    p, _ = _status_land(op, our_moves=["toxic", "spore", "thunderwave", "willowisp"],
+                        opp_t1=_T2I["NORMAL"], opp_t2=0, move_mask=(0, 0, 0, 0))  # all "illegal"
+    assert p.abs().sum().item() > 0.0                     # still computed (intrinsic landing prob)
+    assert p[1].item() == pytest.approx(1.0, abs=1e-4)    # Spore 100% acc, Tyranitar — lands regardless of mask
+
+
+def test_status_landing_known_bit_on_revealed_nonblocking_ability():
+    """`known`=1 once the opp ability is REVEALED even if it does NOT block the status (the value rests on
+    confirmed info — a future reveal can't move it), matching the gen3_mechanics status_will_land_known
+    routing. Tyranitar's Sand Stream is revealed but blocks no status → Toxic lands at full accuracy, known."""
+    from agents import gen3_data
+    layout = Gen3ObservationEncoder(load_mappings()).get_layout()
+    op = DamageOperator(layout, outgoing=True)
+    sand = gen3_data.abilities.get("sandstream").num
+    p, known = _status_land(op, our_moves=["toxic", "thunderwave", "spore", "willowisp"],
+                            opp_t1=_T2I["NORMAL"], opp_t2=0, opp_species=248, opp_ability=sand)
+    assert p[0].item() == pytest.approx(0.85, abs=1e-4)   # Toxic lands (Sand Stream blocks nothing)
+    assert known.tolist() == [1.0, 1.0, 1.0, 1.0]         # ability revealed → all four certain

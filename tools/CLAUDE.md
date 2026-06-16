@@ -39,6 +39,13 @@ Notes that bite:
   data once used spritenum; switching to the true num was the `gen3_item_num_fix_v1` retrain.)
 - Gen filtering uses per-gen `num` ceilings (`_GEN_MAX_*`) so post-gen-3 abilities/species/items
   are excluded.
+- **`build_moves`** (gen3_unified_move_system_v1) extracts the structured SECONDARY effects — reversing
+  the old "secondary status is incidental" decision. `_secondary_effects` normalizes a move's
+  `secondary`/`secondaries` into `secondaryEffects = {col: percent}` over the 10 `_SECONDARY_COLS`
+  (`secondary.status`→its column, `volatileStatus`→flinch/confusion, foe `boosts`→`foe_statdrop`,
+  `self.boosts`→`self_boost`; Tri Attack's `onHit` is a curated `_SECONDARY_ONHIT` split like Belly Drum),
+  plus `priority`, `drainFraction`, `recoilFraction`. These are **GPU-side only** (the DamageOperator +
+  MoveLatentEncoder read them) — they do NOT enter the obs vector, so the obs golden is unchanged.
 
 ## Team downloaders — one manifest entry per team
 

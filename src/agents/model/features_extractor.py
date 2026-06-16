@@ -13,10 +13,13 @@ from agents.observation.constants import (
     POKEMON_SPECIES_KNOWN_OFFSET,
     POKEMON_SPREAD_OFFSET,
     POKEMON_SPREAD_DIM,
+    POKEMON_CONDITION_OFFSET,
+    POKEMON_SLEEP_BELIEF_OFFSET,
     INCOMING_DMG_OFFSET,
     INCOMING_DMG_DIM,
 )
 from agents.observation.moves import HIDDEN_POWER_MOVE_NUM
+from agents.model.damage_tables import N_SECONDARY as _N_SECONDARY, SECONDARY_COLS as _SECONDARY_COLS
 from agents.observation.turn_delta_encoder import (
     TURN_DELTA_DIM,
     EFF_DIM,
@@ -38,6 +41,12 @@ TD_STRATEGIC_OFFSET = TURN_DELTA_DIM - TD_STRATEGIC_DIM  # 29
 ROLE_TOKEN_SIZE = 128
 PROJECTION_DIM = 512
 MOVE_NET_HIDDEN = [96, 32]        # [hidden, output] of shared move processor
+# gen3_unified_move_system_v1: context-free per-move LATENT (MoveLatentEncoder) — a mechanics-grounded
+# move identity (move/type embeddings ⊕ MOVE_ATTR), routed into the move network AND used as the
+# similarity-grading target so Rock Slide ≈ Hidden Power Rock. Flag-gated (`move_latent`); OFF leaves the
+# move network byte-identical.
+MOVE_LATENT_HIDDEN = 64           # hidden width of the MoveLatentEncoder MLP
+MOVE_LATENT_DIM = 32              # output dim of the per-move latent (grading is cosine in this space)
 ROLE_ENCODER_HIDDEN = [256, 128]  # [hidden, output] of per-Pokémon role encoder
 ACTIVE_CTX_HIDDEN = [64, 32]      # [hidden, output] of active context encoder
 NET_ARCH = [512, 512]             # MLP policy layers (SB3 policy_kwargs["net_arch"])
@@ -267,7 +276,8 @@ class ObsUnpack(torch.nn.Module):
     makes the rest of the pipeline read at the tensor level."""
 
     def __init__(self, layout: Dict[str, Any], attend_unrevealed_opponents: bool = False,
-                 mask_incoming_damage_obs: bool = False):
+                 mask_incoming_damage_obs: bool = False,
+                 mask_active_move_scalars_obs: bool = False, mask_move_effects_obs: bool = False):
         super().__init__()
         self.layout = layout
         # When True, UNREVEALED opp slots (species_known==0, hp filled as 0 — Gen 3 has no
@@ -280,6 +290,13 @@ class ObsUnpack(torch.nn.Module):
         # still reads it from `live_view`). Use with the unified DamageOperator to A/B whether the
         # learned belief→damage op replaces the CPU usage-prior collapse — without deleting any code.
         self.mask_incoming_damage_obs = mask_incoming_damage_obs
+        # gen3_unified_spread_belief_v1 (the --unified-obs disable-redundant flag): two more obs regions the
+        # unified GPU path now subsumes, zeroed from the MODEL's view (block stays in the obs; reward PBRS
+        # untouched). mask_active_move_scalars_obs zeros the active-move power+multiplier scalars (8 dims,
+        # subsumed by the op's OUTGOING per-move damage — so it requires damage_outgoing); mask_move_effects
+        # zeros the 44-dim move-effect block (subsumed by MOVE_ATTR/the move latent + the op effect axes).
+        self.mask_active_move_scalars_obs = mask_active_move_scalars_obs
+        self.mask_move_effects_obs = mask_move_effects_obs
 
     def forward(self, obs: Dict[str, torch.Tensor]) -> ExtractorContext:
         layout = self.layout
@@ -381,14 +398,24 @@ class ObsUnpack(torch.nn.Module):
         our_ctx_raw = remaining_part[:, 0 : active_ctx_dim]
         opp_ctx_raw = remaining_part[:, active_ctx_dim : 2 * active_ctx_dim]
         non_matchup_rest = remaining_part[:, 2 * active_ctx_dim : reactive_start + matchup_offset]
-        if self.mask_incoming_damage_obs:
-            # Ablate the incoming-damage belief block from the MODEL's view (it is the last sub-block of
-            # non_matchup_rest, right before the matchups). Clone first — non_matchup_rest is a view of
-            # the obs; we must not mutate the shared input tensor. The reward path reads the belief from
-            # live_view, not this slice, so it is unaffected.
-            s = reactive_start + INCOMING_DMG_OFFSET - 2 * active_ctx_dim
+        # --unified-obs disable-redundant masks: zero each now-GPU-subsumed obs region from the MODEL's view.
+        # Clone ONCE if any mask is set (non_matchup_rest is a view of the obs — never mutate the shared
+        # input). Offsets are derived from named reactive_layout entries (never hardcoded). The reward PBRS
+        # reads these from live_view, so it is unaffected.
+        if self.mask_incoming_damage_obs or self.mask_active_move_scalars_obs or self.mask_move_effects_obs:
             non_matchup_rest = non_matchup_rest.clone()
-            non_matchup_rest[:, s:s + INCOMING_DMG_DIM] = 0.0
+
+            def _zero_region(off: int, dim: int) -> None:
+                s = reactive_start + off - 2 * active_ctx_dim
+                non_matchup_rest[:, s:s + dim] = 0.0
+            if self.mask_incoming_damage_obs:                  # 51-dim incoming-damage belief → DamageOperator
+                _zero_region(INCOMING_DMG_OFFSET, INCOMING_DMG_DIM)
+            if self.mask_active_move_scalars_obs:              # active-move power(4)+multiplier(4) → op outgoing
+                _mp = reactive_layout['move_power']; _mm = reactive_layout['move_multiplier']
+                _zero_region(_mp['offset'], _mp['dim'] + _mm['dim'])
+            if self.mask_move_effects_obs:                     # 44-dim move-effect block → MOVE_ATTR/move latent
+                _me = reactive_layout['move_effects']
+                _zero_region(_me['offset'], _me['dim'])
 
         return ExtractorContext(
             batch_size=batch_size, device=x.device,
@@ -409,11 +436,55 @@ class ObsUnpack(torch.nn.Module):
         )
 
 
-class PokemonEncoder(torch.nn.Module):
-    """Per-Pokémon encoding: embed + stitch the enriched vector, run the shared move
-    processor + within-mon move self-attention, then the role encoder → 12×128 role tokens."""
+class MoveLatentEncoder(torch.nn.Module):
+    """Context-free per-move LATENT (gen3_unified_move_system_v1) — a mechanics-grounded move identity:
+    ``MLP(concat(move_embedding(id), type_embedding(type), MOVE_ATTR[id])) → MOVE_LATENT_DIM``. Because the
+    structured MOVE_ATTR (BP / category / accuracy / priority / drain / per-status secondary chances /
+    utility flags) dominates, mechanically-similar moves land near each other — so Rock Slide ≈ Hidden
+    Power Rock. Two uses, ONE MLP:
+      - ``forward(...)``: per-move-SLOT latent (resolved type incl. the live HP type), concatenated into
+        the move network so policy + value read a richer move representation.
+      - ``latent_table(...)``: the ``[n_moves, MOVE_LATENT_DIM]`` table over canonical types — the
+        stop-grad similarity-grading TARGET for the move-belief latent aux (Stage 3).
+    MOVE_ATTR + canonical MOVE_TYPE_IDX are non-persistent buffers (pure data-derived, recomputable)."""
 
     def __init__(self, layout: Dict[str, Any]):
+        super().__init__()
+        from agents.model.damage_tables import build_move_attr, build_move_type_idx
+        n_moves = layout['max_moves']
+        self.register_buffer("MOVE_ATTR", build_move_attr(n_moves), persistent=False)
+        self.register_buffer("MOVE_TYPE_IDX", build_move_type_idx(n_moves), persistent=False)
+        in_dim = layout['move_embedding_dim'] + layout['type_embedding_dim'] + self.MOVE_ATTR.shape[1]
+        self.mlp = torch.nn.Sequential(
+            torch.nn.Linear(in_dim, MOVE_LATENT_HIDDEN),
+            torch.nn.ReLU(),
+            torch.nn.Linear(MOVE_LATENT_HIDDEN, MOVE_LATENT_DIM),
+        )
+
+    def forward(self, move_emb: torch.Tensor, type_emb: torch.Tensor,
+                move_ids: torch.Tensor) -> torch.Tensor:
+        """Per-slot latent. ``move_emb``/``type_emb`` are the ALREADY-embedded move + (HP-resolved) type
+        ``[..., emb]``; ``move_ids`` ``[...]`` gathers MOVE_ATTR. Returns ``[..., MOVE_LATENT_DIM]``."""
+        attr = self.MOVE_ATTR[move_ids]                                    # [..., N_MOVE_ATTR]
+        return self.mlp(torch.cat([move_emb, type_emb, attr], dim=-1))
+
+    def latent_table(self, embeddings: 'Embeddings') -> torch.Tensor:
+        """``[n_moves, MOVE_LATENT_DIM]`` context-free latent over canonical types — the grading target."""
+        ids = torch.arange(self.MOVE_ATTR.shape[0], device=self.MOVE_ATTR.device)
+        move_emb = embeddings.move_embedding(ids)                          # [n_moves, move_emb]
+        type_emb = embeddings.type_embedding(self.MOVE_TYPE_IDX)           # [n_moves, type_emb]
+        return self.mlp(torch.cat([move_emb, type_emb, self.MOVE_ATTR], dim=-1))
+
+
+class PokemonEncoder(torch.nn.Module):
+    """Per-Pokémon encoding: embed + stitch the enriched vector, run the shared move
+    processor + within-mon move self-attention, then the role encoder → 12×128 role tokens.
+
+    When ``move_latent`` is on (gen3_unified_move_system_v1), a context-free `MoveLatentEncoder` latent
+    is concatenated into the move-network input — a mechanics-grounded move identity (widens
+    move_input_dim by MOVE_LATENT_DIM; OFF leaves the move network byte-identical)."""
+
+    def __init__(self, layout: Dict[str, Any], move_latent: bool = False):
         super().__init__()
         self.layout = layout
         _msl = layout['pokemon']['moves']['layout']['slot_layout']
@@ -436,6 +507,12 @@ class PokemonEncoder(torch.nn.Module):
                           + TEAM_SIZE                                # matchup validity (per opponent)
                           + HP_PROBS_DIM                             # hp candidate-type distribution
                           + 1)                                       # move validity
+        # gen3_unified_move_system_v1: the mechanics-grounded move latent, concatenated into the move
+        # network when on (widens move_input_dim by MOVE_LATENT_DIM; OFF = byte-identical move network).
+        self.move_latent = move_latent
+        if move_latent:
+            self.move_latent_encoder = MoveLatentEncoder(layout)
+            move_input_dim += MOVE_LATENT_DIM
         self.move_network = torch.nn.Sequential(
             torch.nn.Linear(move_input_dim, MOVE_NET_HIDDEN[0]),
             torch.nn.ReLU(),
@@ -597,7 +674,7 @@ class PokemonEncoder(torch.nn.Module):
         )
         matchup_validity = torch.cat([our_match_validity, their_match_validity], dim=1)  # [B, 12, 4, 6]
 
-        move_features = torch.cat([
+        move_feature_blocks = [
             embedded_moves,
             embedded_move_types,
             move_remnants_reshaped,
@@ -607,7 +684,14 @@ class PokemonEncoder(torch.nn.Module):
             matchup_validity,
             hp_probs_per_slot,
             move_validity,
-        ], dim=3)
+        ]
+        # gen3_unified_move_system_v1: append the context-free move latent (resolved type incl. live HP
+        # type) so the move network reads a mechanics-grounded move identity. The same encoder's
+        # latent_table feeds the Stage-3 similarity grading; OFF skips this entirely (byte-identical).
+        if self.move_latent:
+            move_feature_blocks.append(
+                self.move_latent_encoder(embedded_moves, embedded_move_types, ctx.all_move_ids))
+        move_features = torch.cat(move_feature_blocks, dim=3)
 
         processed_moves = self.move_network(move_features.reshape(-1, move_features.shape[-1]))
         processed_moves = processed_moves.reshape(batch_size, n_poke, num_moves, MOVE_NET_HIDDEN[1])
@@ -1074,6 +1158,53 @@ class MoveBelief(torch.nn.Module):
         return self.norm(enriched), move_logits
 
 
+class SpreadBelief(torch.nn.Module):
+    """Predicts the opponent's hidden SPREAD — the 5 battle-relevant DERIVED stats {atk,def,spa,spd,spe} at
+    L100 — per opp slot, and REINJECTS it into the slot token. The THIRD belief leg (moves ✓, species ✓,
+    STATS) — `gen3_unified_spread_belief_v1`, mirroring MoveBelief 1:1.
+
+    Per opp slot: a usage-weighted PRIOR (mean, std per stat, from the Smogon spreads) ⊕ a learned head
+    DELTA (in std units, so the prediction is `mean + delta·std` — the op consumes the stat VALUE directly,
+    keeping the "op does the multiplicative physics, the head reasons additively" contract; predicting EVs
+    +nature would force the op to re-run the nonlinear stat formula). The DELTA is reinjected as a small
+    residual so the enriched token carries the believed spread to both heads. The `DamageOperator` reads
+    the believed stats at the opp ACTIVE slot to REPLACE its hand-coded de-timid (offense) / neutral-0-EV
+    (bulk) opp-spread constants — so the op's opponent stats are a learned belief, not a fixed guess. The
+    offense/defense stats get gradient from the op's damage rolls; the SPEED component's explicit
+    supervision (a masked BCE toward observed MOVE ORDER — a public, leak-safe label) is STAGED, not yet
+    wired (`spread_belief_coef` is recorded-only until the loss lands). HP is
+    skipped (the op uses the obs HP fraction × a neutral maxhp estimate). Zero-init head → cold-start ==
+    the prior; the prior buffer is non-persistent (data-derived) → OFF reproduces nothing (the module isn't
+    built when off)."""
+
+    def __init__(self, n_species: int):
+        super().__init__()
+        from agents.model.damage_tables import build_opp_spread_prior, N_SPREAD_STATS
+        self.n_stats = N_SPREAD_STATS
+        self.stat_head = torch.nn.Linear(D_MODEL, N_SPREAD_STATS)   # learned delta in std-units
+        torch.nn.init.zeros_(self.stat_head.weight)                 # cold-start delta == 0 → believed == prior
+        torch.nn.init.zeros_(self.stat_head.bias)
+        self.reinject = torch.nn.Linear(N_SPREAD_STATS, D_MODEL)
+        torch.nn.init.normal_(self.reinject.weight, std=0.02)       # start the enrichment ≈0
+        torch.nn.init.zeros_(self.reinject.bias)
+        self.norm = torch.nn.LayerNorm(D_MODEL)
+        # [n_species, 5, 2] (mean, std) usage prior — non-persistent (recomputable from data/).
+        self.register_buffer("spread_prior", build_opp_spread_prior(n_species), persistent=False)
+
+    def forward(self, opp_tokens: torch.Tensor, apply_mask: torch.Tensor,
+                opp_species_ids: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
+        """opp_tokens [B,6,D], apply_mask [B,6] bool (which slots get the belief), opp_species_ids [B,6]
+        (national-dex nums) → (enriched_tokens [B,6,D], believed_stats [B,6,5]). believed = prior_mean +
+        delta·prior_std (clamped ≥1); the residual carries the learned delta into the token (gated to the
+        selected slots; unselected pass through). Cold-start (delta 0) ⇒ believed == the usage prior."""
+        prior = self.spread_prior[opp_species_ids]                  # [B,6,5,2]
+        mean, std = prior[..., 0], prior[..., 1]                    # [B,6,5]
+        delta = self.stat_head(opp_tokens)                          # [B,6,5] (std units; cold == 0)
+        believed = (mean + delta * std).clamp(min=1.0)              # [B,6,5] the stat VALUE the op consumes
+        enriched = opp_tokens + apply_mask.unsqueeze(-1) * self.reinject(delta)
+        return self.norm(enriched), believed
+
+
 # Differentiable damage operator (`DamageOperator`) constants — the unified 3-roll + P(KO) damage
 # representation (owner-chosen: "the raw rolls the model can read, PLUS the P(KO) the policy uses").
 # Per defender, two gen3 type CHANNELS (physical / special) each carry [low_roll, high_roll, crit, pko,
@@ -1106,17 +1237,61 @@ _DMG_CRIT_CAP = 3.0            # crit can ×2 a capped high roll → a wider cap
 # order == damage_tables MOVE_EFFECT_COLS: [recovery, status, phaze, boost, hazard, protect]. The
 # status/utility axis the damage-only CPU block never had.
 _DMG_EFFECT = 6
+# gen3_unified_move_system_v1: per-status SECONDARY-effect threat the opp active poses (its damaging
+# moves' secondaries — Body Slam para, Rock Slide flinch, Ice Beam freeze), belief-weighted + accuracy-
+# folded + ×Serene Grace. 10 scalars, order == damage_tables.SECONDARY_COLS. Appended AFTER the 6 effect
+# scalars (the existing per-mon/effect layout is untouched). NO speed coupling — flinch's move-first
+# dependence is left to attention (owner decision).
+_DMG_INCOMING_SEC = _N_SECONDARY            # 10
 _DMG_CRIT_P = 1.0 / 16.0   # gen3 base crit rate (×2 damage) — the crit roll is exposed as crit_frac
 _DMG_SPEED_SCALE = 15.0    # logistic scale for P(outspeed) over the speed-stat difference (~one stage)
+# gen3_unified_spread_belief_v1: indices into the SpreadBelief's [atk,def,spa,spd,spe] output (== the
+# damage_tables SPREAD_STAT_COLS order). When a spread belief is passed, the op consumes these believed opp
+# stat VALUES in place of its hand-coded de-timid/neutral-0-EV constants.
+_SB_ATK, _SB_DEF, _SB_SPA, _SB_SPD, _SB_SPE = 0, 1, 2, 3, 4
+# gen3_unified_op_physics_v1: the active mons' stat-STAGE boosts (DD/CM/Intimidate…) are the worst
+# damage-calc edge case (a +2 sweeper's Atk is doubled). The boost stage is read from the active-context
+# block (boosts(14) = 7 stats × 2 [pos/6, neg/6]: atk,def,spa,spd,spe,acc,eva), and the gen3 multiplier
+# applied to offense/defense/speed. Mirrors incoming_damage.boost_mult. _PARA_SPEED quarters Speed.
+_DMG_PARA_SPEED = 0.25
+# Burn (½ physical Atk) + paralysis (×0.25 Speed) read the per-mon condition one-hot (None,BRN,PAR,SLP,…)
+# at POKEMON_CONDITION_OFFSET; weather (rain ×1.5 Water/×0.5 Fire; sun the reverse) reads the Water/Fire
+# type indices on the TypeEncoder axis (the same axis MOVE_TYPE_IDX rides) + ctx.weather_feature.
+_COND_BRN_IDX, _COND_PAR_IDX = 1, 2
+from agents.observation.types import TypeEncoder as _TypeEncoder
+_WATER_TIDX, _FIRE_TIDX = _TypeEncoder.TYPE_TO_IDX["WATER"], _TypeEncoder.TYPE_TO_IDX["FIRE"]
 
 # OUTGOING direction (our active → opp active): per OUR move, in REQUEST-slot order (== action logits
 # 6+k) so the policy head can compare move A vs B directly — the equal-effectiveness tie-break (Earthquake
 # vs Meteor Mash into a Rock: same 2× multiplier, different resolved damage). Per move [low, high, crit,
 # pko] (accuracy is NOT repeated — our moves' accuracy already rides the action-aligned obs move-block;
-# pko still folds it), then one p_outspeed (our active vs opp active).
+# pko still folds it), then one p_outspeed (our active vs opp active), then (gen3_unified_move_system_v1)
+# the per-move SECONDARY-effect probabilities — "what status can OUR move cause, with what probability"
+# (Thunderbolt 10%/20% para under Serene Grace, ×opp Shield Dust), 4 moves × 10 cols appended LAST.
 _DMG_OUT_PER_MOVE = 4
 _DMG_OUT_N_MOVES = 4
-_DMG_OUTGOING = _DMG_OUT_N_MOVES * _DMG_OUT_PER_MOVE + 1   # 4×4 + p_outspeed = 17
+_DMG_OUT_SEC = _DMG_OUT_N_MOVES * _N_SECONDARY            # 4 moves × 10 secondary probs = 40
+_DMG_OUTGOING = _DMG_OUT_N_MOVES * _DMG_OUT_PER_MOVE + 1 + _DMG_OUT_SEC   # 16 + p_outspeed + 40 = 57
+
+# gen3_unified_status_landing_v1: the OUTGOING per-OUR-move "will my STATUS move land vs THIS opponent"
+# block — the GPU replacement for the masked move-effect block's `status_will_land`. Per move (request-slot
+# order == action 6+k): P(the status applies) + a `known` bit (the value rests on a CERTAIN block — type
+# immunity / already-statused / Sleep-Clause / Substitute / a revealed ability — vs a Smogon-prior estimate).
+# Folds accuracy × type immunity × ability immunity (revealed-or-prior) × already-statused × Sleep Clause ×
+# Substitute; adds Leech Seed (Grass-immune). NOTE the delta vs the masked CPU block it replaces: it now FOLDS
+# base accuracy (Toxic 0.85 / WoW 0.75 — the CPU returned 1−P(ability blocks), accuracy-free), so the value is
+# more correct but value-meaning-different on the A/B. UNCOVERED residual: Yawn (delayed sleep — no
+# status_inflicted) and a Leech-Seed-already-seeded target (no leechseed volatile read). Shield Dust is NOT
+# relevant here (it only scales SECONDARY effects, never a primary status move — see the incoming-secondary
+# block). Appended to the outgoing direction (gated on `damage_outgoing`).
+_DMG_STATUS_N_MOVES = _DMG_OUT_N_MOVES
+_DMG_STATUS = 2 * _DMG_STATUS_N_MOVES                     # 4 P(lands) + 4 known = 8
+_COND_SLP_IDX = 3                                         # condition one-hot [None,BRN,PAR,SLP,FRZ,PSN,TOX]
+# Substitute's index into the active-context block (our_ctx_raw / opp_ctx_raw = boosts ++ volatiles), DERIVED
+# from the obs layout (never hardcoded). A Substitute blocks EVERY status move (incl. Leech Seed) in gen3.
+from agents.observation.gen3_effects import VOLATILE_SLOTS as _VOLATILE_SLOTS
+from agents.observation.constants import BOOSTS_DIM as _BOOSTS_DIM
+_SUBSTITUTE_CTX_IDX = _BOOSTS_DIM + list(_VOLATILE_SLOTS).index("substitute")
 
 
 class DamageOperator(torch.nn.Module):
@@ -1132,14 +1307,20 @@ class DamageOperator(torch.nn.Module):
     the FIXED usage-prior the CPU `incoming_damage.py` block must use (the belief doesn't exist at
     obs-build time) with the model's LEARNED belief.
 
-    Per defender d, 8 features: per channel (physical / special — the gen3 TYPE split) the belief-weighted
-    chip (`max_c w·dmg_frac`), P(KO) (`max_c w·P(KO|move)`, ramp = the continuous 16-roll limit), and
-    crit-risk delta; plus P(outspeed) and the threat provenance. Aggregation is a HARD max over the
+    Per defender d, `_DMG_PER_MON` (12) features: per channel (physical / special — the gen3 TYPE split) the
+    3-roll `[low, high, crit]` + accuracy-folded `pko` + `acc` (10 = 5×2), plus P(outspeed) and the threat
+    provenance. Aggregation is a HARD max over the
     channel's believed candidates (= `incoming_damage`'s max-over-candidates; differentiable via the
     argmax subgradient — the dominant move's belief weight gets gradient — without the candidate-count
     dilution a low-temperature soft-max would suffer over ~400 moves). Plus `_DMG_EFFECT` opp-active
     believed-EFFECT scalars (belief-weighted MAX of the belief × per-move status/utility flags: recovery,
     status, phaze, boost, hazard, protect) — the status-threat axis the damage-only CPU block never had.
+    Plus (gen3_unified_move_system_v1) `_DMG_INCOMING_SEC` per-STATUS secondary scalars — the opp active's
+    DAMAGING-move secondaries (Body Slam para, Rock Slide flinch, Ice Beam freeze): realized
+    `max_m(w_m·chance·acc) × Serene Grace(opp)`, accuracy folded, NO speed coupling (flinch's move-first
+    dependence is left to attention). When `outgoing`, each of OUR 4 moves ALSO carries its secondary
+    probabilities (`chance·acc × Serene Grace(us) × Shield Dust(opp)`) — "what status can this move cause,
+    with what probability". Order == damage_tables.SECONDARY_COLS.
     Hidden Power (all 17 variants collide on num=237 → unrepresentable on the num axis) is expanded
     into 16 TYPED candidates (BP 70 = gen3 max), weighted `P(HP present)·P(type)` — presence from the
     move belief (`w[237]`), type from the per-mon `hp_probs` obs block (the HP tracker's narrowed
@@ -1151,15 +1332,22 @@ class DamageOperator(torch.nn.Module):
     L100 stat + damage formula keeps everything differentiable (the byte-exact floored kernel is the
     proof's; the forward only needs the gradient).
 
+    When `outgoing`, the op ALSO appends the per-OUR-move outgoing damage block AND the
+    gen3_unified_status_landing_v1 STATUS-LANDING block (per move: P(a dedicated status move lands vs the opp
+    active — type/ability/already-statused/Sleep-Clause/Substitute folded, Leech Seed Grass-immune) + a
+    `known` bit) — the GPU home for the masked move-effect `status_will_land`.
+
     Leak-safe: reads only the PREDICTED belief + public obs (our HP/types, the opp active's revealed
-    species/types) — never a privileged label. Output `[B, 6*_DMG_FEATS]` is appended to BOTH
-    projection heads. Zeroed (incl. gradient) when there is no opponent active and per fainted defender.
+    species/types/condition/sub) — never a privileged label. Output `[B, self.out_dim]` (= incoming +,
+    when outgoing, the damage + status-landing blocks) is appended to BOTH projection heads. Zeroed (incl.
+    gradient) when there is no opponent active and per fainted defender.
     Lookup tables are registered as non-persistent float32 buffers (pure physics, recomputable from
     `data/`)."""
 
     per_mon = _DMG_PER_MON
     n_effect = _DMG_EFFECT
-    incoming_dim = TEAM_SIZE * _DMG_PER_MON + _DMG_EFFECT
+    n_incoming_sec = _DMG_INCOMING_SEC
+    incoming_dim = TEAM_SIZE * _DMG_PER_MON + _DMG_EFFECT + _DMG_INCOMING_SEC
 
     def __init__(self, layout: Dict[str, Any], outgoing: bool = False):
         super().__init__()
@@ -1176,7 +1364,9 @@ class DamageOperator(torch.nn.Module):
         # OUTGOING direction (our active → opp active, per-move action-aligned): off by default. When on,
         # the op ALSO emits the _DMG_OUTGOING block (widens out_dim → both projections auto-size).
         self.outgoing = outgoing
-        self.out_dim = self.incoming_dim + (_DMG_OUTGOING if outgoing else 0)
+        # The OUTGOING direction carries the per-move damage block + the gen3_unified_status_landing_v1
+        # status-landing block (both action-aligned, our active → opp). Off ⇒ neither → baseline byte-identical.
+        self.out_dim = self.incoming_dim + (_DMG_OUTGOING + _DMG_STATUS if outgoing else 0)
         # Runtime grad-checkpointing flag (set per run by --grad-checkpointing via
         # _apply_grad_checkpointing) — recompute the op in backward, trading idle-GPU compute for the
         # ~GBs of [B,6,C]-over-~416-candidate activations this op materialises at batch 16384. No-op
@@ -1199,7 +1389,8 @@ class DamageOperator(torch.nn.Module):
             out_move_init = torch.tensor([1.0 / 1.5, 1.0 / 1.5, 1.0 / 3.0, 1.0])
             gain[self.incoming_dim:self.incoming_dim + _DMG_OUT_N_MOVES * _DMG_OUT_PER_MOVE] = \
                 out_move_init.repeat(_DMG_OUT_N_MOVES)
-            # the trailing p_outspeed stays 1.0
+            # the trailing p_outspeed, the per-move secondary block, and the gen3_unified_status_landing_v1
+            # status block (p_land/known) all stay at gain 1.0 — they are already probabilities in [0,1].
         self.out_gain = torch.nn.Parameter(gain)
 
     def _chan_max(self, value: torch.Tensor, channel_mask: torch.Tensor) -> torch.Tensor:
@@ -1210,6 +1401,33 @@ class DamageOperator(torch.nn.Module):
         the dominant move's belief weight gets gradient — and crucially NOT diluted by the ~400 zero-score
         candidates the way a low-temperature soft-max would be."""
         return (value * channel_mask).amax(dim=-1)
+
+    @staticmethod
+    def _boost_mult(stage: torch.Tensor) -> torch.Tensor:
+        """gen3_unified_op_physics_v1: gen3 stat-stage multiplier (atk/def/spa/spd/spe). stage≥0 →
+        (2+stage)/2, stage<0 → 2/(2−stage), clamped to [−6,6]. Mirrors incoming_damage.boost_mult."""
+        s = stage.clamp(-6.0, 6.0)
+        return torch.where(s >= 0, (2.0 + s) / 2.0, 2.0 / (2.0 - s))
+
+    @staticmethod
+    def _boost_stages(ctx_raw: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor,
+                                                       torch.Tensor, torch.Tensor]:
+        """Read the active mon's [atk,def,spa,spd,spe] boost STAGES ([B] each) from its active-context
+        block (boosts = 7 stats × 2 dims [max(0,stage)/6, max(0,−stage)/6]); stage = (pos − neg)·6."""
+        b = ctx_raw
+        return ((b[:, 0] - b[:, 1]) * 6.0, (b[:, 2] - b[:, 3]) * 6.0, (b[:, 4] - b[:, 5]) * 6.0,
+                (b[:, 6] - b[:, 7]) * 6.0, (b[:, 8] - b[:, 9]) * 6.0)
+
+    @staticmethod
+    def _weather_mult(weather_feature: torch.Tensor, is_water: torch.Tensor,
+                      is_fire: torch.Tensor) -> torch.Tensor:
+        """gen3_unified_op_physics_v1: gen3 weather BP modifier — rain (weather idx 2) ×1.5 Water / ×0.5
+        Fire; sun (idx 1) ×1.5 Fire / ×0.5 Water; else 1.0. `is_water`/`is_fire` are broadcast-compatible
+        per-candidate type-match flags. Sandstorm/Hail have no BP effect (gen3). Mirrors
+        incoming_damage.weather_damage_mult."""
+        sun = weather_feature[:, 1:2]                                                # [B,1]
+        rain = weather_feature[:, 2:3]                                               # [B,1]
+        return 1.0 + rain * (0.5 * is_water - 0.5 * is_fire) + sun * (0.5 * is_fire - 0.5 * is_water)
 
     def _rolls(self, dmg_ns, screen, maxhp, cur_hp, acc, eps: float = 1e-6):
         """The single source of the 3-roll + accuracy-folded-P(KO) physics — BOTH the incoming kernel
@@ -1232,7 +1450,8 @@ class DamageOperator(torch.nn.Module):
                       cur_hp: torch.Tensor, t1d: torch.Tensor, t2d: torch.Tensor, ability1: torch.Tensor,
                       reflect: torch.Tensor, light_screen: torch.Tensor,
                       bp_all: torch.Tensor, mty_all: torch.Tensor, phys_all: torch.Tensor,
-                      acc_all: torch.Tensor, eps: float = 1e-6):
+                      acc_all: torch.Tensor, fixed_all: torch.Tensor, weather_mult: torch.Tensor,
+                      eps: float = 1e-6):
         """Role-parameterized gen3 single-hit damage per ``(defender, candidate)`` — the shared
         physics kernel every DIRECTION reuses (incoming opp→our-6, outgoing our→opp, safe-switch).
         Roles are passed in rather than hardcoded so the SAME math serves attacker/defender swaps.
@@ -1259,14 +1478,29 @@ class DamageOperator(torch.nn.Module):
         core = 42.0 * bp_all[None, None, :] * A[:, None, :] / (D + eps) / 50.0 + 2.0            # [B,n,C]
         dmg_ns = core * stab[:, None, :] * eff * 0.925                                          # [B,n,C] pre-screen
         dmg_ns = dmg_ns * (bp_all > 0).float()[None, None, :]            # kill the +2 floor on BP-0 moves
+        dmg_ns = dmg_ns * weather_mult[:, None, :]      # gen3_unified_op_physics_v1: rain/sun BP modifier [B,1,C]
         # DEFENDER-side screens: Reflect halves physical incoming, Light Screen halves special.
         # gen3 CRIT IGNORES screens, so the crit roll below uses the pre-screen damage (dmg_ns).
         screen = 1.0 - 0.5 * (reflect * phys_all[None, :] + light_screen * (1.0 - phys_all[None, :]))
         # Final 3 rolls + accuracy-folded P(KO) via the shared formula (DRY — same as the outgoing block).
-        return self._rolls(dmg_ns, screen[:, None, :], maxhp[:, :, None], cur_hp[:, :, None],
-                           acc_all[None, None, :], eps)
+        high, low, crit, ko = self._rolls(dmg_ns, screen[:, None, :], maxhp[:, :, None], cur_hp[:, :, None],
+                                          acc_all[None, None, :], eps)
+        # gen3_unified_op_physics_v1: FIXED-damage moves (Seismic Toss / Night Shade = 100, Dragon Rage 40,
+        # Sonic Boom 20) ignore Atk/Def/roll/crit but RESPECT type/ability immunity. Override the rolls with
+        # the constant fraction (all three rolls equal — no variance), gated to 0 where `eff<=0` (Fighting
+        # Seismic Toss → 0 vs Ghost; Ghost Night Shade → 0 vs Normal). Otherwise the BP-0 formula reads ~0.
+        is_fixed = (fixed_all > 0)[None, None, :]                                      # [1,1,C]
+        not_immune = (eff > 0).float()                                                # [B,n,C] type+ability gate
+        fixed_frac = (fixed_all[None, None, :] / (maxhp[:, :, None] + eps)) * not_immune
+        fixed_ko = acc_all[None, None, :] * (fixed_all[None, None, :] >= cur_hp[:, :, None]).float() * not_immune
+        high = torch.where(is_fixed, fixed_frac, high)
+        low = torch.where(is_fixed, fixed_frac, low)
+        crit = torch.where(is_fixed, fixed_frac, crit)
+        ko = torch.where(is_fixed, fixed_ko, ko)
+        return high, low, crit, ko
 
-    def _outgoing_block(self, ctx: 'ExtractorContext') -> torch.Tensor:
+    def _outgoing_block(self, ctx: 'ExtractorContext',
+                        spread_belief: Optional[torch.Tensor] = None) -> torch.Tensor:
         """OUR active → opp active, PER MOVE in REQUEST-slot order (== action logits 6+k), so the policy
         head can compare move A vs B directly — the equal-effectiveness tie-break (Earthquake vs Meteor
         Mash into a Rock: same 2× multiplier, different resolved damage). Our moves are KNOWN (no belief —
@@ -1306,15 +1540,37 @@ class DamageOperator(torch.nn.Module):
         our_atk = (2.0 * a_base[:, 1] + iv[:, 1] + ev[:, 1] / 4.0 + 5.0) * nat[:, 0]   # [B]
         our_spa = (2.0 * a_base[:, 3] + iv[:, 3] + ev[:, 3] / 4.0 + 5.0) * nat[:, 2]   # [B]
         our_spe = (2.0 * a_base[:, 5] + iv[:, 5] + ev[:, 5] / 4.0 + 5.0) * nat[:, 4]   # [B]
+        # gen3_unified_op_physics_v1: OUR active's offensive + speed stat-stage boosts (we attack here) +
+        # BURN (½ phys atk) + PARALYSIS (×0.25 speed).
+        o_b_atk, o_b_def, o_b_spa, o_b_spd, o_b_spe = self._boost_stages(ctx.our_ctx_raw)
+        our_burn = ctx.pokemon_part[ar, our_act, POKEMON_CONDITION_OFFSET + _COND_BRN_IDX]   # [B]
+        our_para = ctx.pokemon_part[ar, our_act, POKEMON_CONDITION_OFFSET + _COND_PAR_IDX]   # [B]
+        our_atk = our_atk * self._boost_mult(o_b_atk) * torch.where(
+            our_burn > 0.5, our_atk.new_tensor(0.5), our_atk.new_tensor(1.0))
+        our_spa = our_spa * self._boost_mult(o_b_spa)
+        our_spe = our_spe * self._boost_mult(o_b_spe) * torch.where(
+            our_para > 0.5, our_spe.new_tensor(_DMG_PARA_SPEED), our_spe.new_tensor(1.0))
         at1 = ctx.type1_ids[ar, our_act]                          # [B] our types (STAB)
         at2 = ctx.type2_ids[ar, our_act]
 
-        # --- opp active defender (revealed species/types; hidden bulk → NEUTRAL 0-EV; ability revealed-or-none) ---
+        # --- opp active defender (revealed species/types; ability revealed-or-none) ---
+        # Bulk: the SpreadBelief's learned def/spd if provided (gen3_unified_spread_belief_v1), else the
+        # legacy NEUTRAL 0-EV estimate (not max-bulk, which would under-price our KOs). maxhp stays the
+        # neutral estimate either way (HP EVs vary little + the obs HP fraction carries relative HP).
         d_base = self.BASE_STATS[ctx.species_ids[ar, opp_act]]     # [B,6]
-        opp_def = 2.0 * d_base[:, 2] + 31.0 + 5.0                  # neutral 0-EV / neutral nature [B]
-        opp_spd = 2.0 * d_base[:, 4] + 31.0 + 5.0
+        bs = spread_belief[ar, ctx.opp_active_local] if spread_belief is not None else None  # [B,5] or None
+        opp_def = bs[:, _SB_DEF] if bs is not None else (2.0 * d_base[:, 2] + 31.0 + 5.0)    # [B]
+        opp_spd = bs[:, _SB_SPD] if bs is not None else (2.0 * d_base[:, 4] + 31.0 + 5.0)
         opp_maxhp = 2.0 * d_base[:, 0] + 31.0 + 110.0
-        opp_spe = 2.0 * d_base[:, 5] + 31.0 + 5.0
+        opp_spe = bs[:, _SB_SPE] if bs is not None else (2.0 * d_base[:, 5] + 31.0 + 5.0)   # believed / neutral
+        # gen3_unified_op_physics_v1: OPP active's DEFENSIVE + speed boosts (it's the defender here) + its
+        # paralysis (×0.25 speed, for p_outspeed).
+        p_b_atk, p_b_def, p_b_spa, p_b_spd, p_b_spe = self._boost_stages(ctx.opp_ctx_raw)
+        opp_para = ctx.pokemon_part[ar, opp_act, POKEMON_CONDITION_OFFSET + _COND_PAR_IDX]   # [B]
+        opp_def = opp_def * self._boost_mult(p_b_def)
+        opp_spd = opp_spd * self._boost_mult(p_b_spd)
+        opp_spe = opp_spe * self._boost_mult(p_b_spe) * torch.where(
+            opp_para > 0.5, opp_spe.new_tensor(_DMG_PARA_SPEED), opp_spe.new_tensor(1.0))
         opp_cur_hp = ctx.hp_and_active[ar, opp_act, 0] * opp_maxhp  # [B] obs HP frac × est. max HP
         t1d = ctx.type1_ids[ar, opp_act]                          # [B]
         t2d = ctx.type2_ids[ar, opp_act]
@@ -1328,32 +1584,144 @@ class DamageOperator(torch.nn.Module):
         is_stab = ((move_ty == at1[:, None]) | (move_ty == at2[:, None])).float()
         stab = 1.0 + 0.5 * is_stab
         core = 42.0 * bp * A / (D + eps) / 50.0 + 2.0
-        dmg_ns = core * stab * eff * 0.925 * usable                                   # [B,4] (non-usable → 0)
+        weather_mult = self._weather_mult(ctx.weather_feature, (move_ty == _WATER_TIDX).float(),
+                                          (move_ty == _FIRE_TIDX).float())             # [B,4] rain/sun
+        dmg_ns = core * stab * eff * 0.925 * usable * weather_mult                    # [B,4] (non-usable → 0)
         opp_reflect = ctx.screen_feature[:, 1:2]                                      # OPP-side screens
         opp_ls = ctx.screen_feature[:, 3:4]
         screen = 1.0 - 0.5 * (opp_reflect * phys + opp_ls * (1.0 - phys))             # [B,4]
         high, low, crit, ko = self._rolls(dmg_ns, screen, opp_maxhp[:, None], opp_cur_hp[:, None], acc, eps)
+        # gen3_unified_op_physics_v1: OUR fixed-damage moves (Seismic Toss into the opp), immunity-gated +
+        # legality-gated (usable). Mirrors the incoming kernel's override.
+        fixed = self.MOVE_FIXED_DAMAGE[move_ids] * usable                            # [B,4] (0 if illegal)
+        is_fixed = fixed > 0
+        not_immune = (eff > 0).float()                                               # [B,4] type+ability gate
+        fixed_frac = (fixed / (opp_maxhp[:, None] + eps)) * not_immune
+        fixed_ko = acc * (fixed >= opp_cur_hp[:, None]).float() * not_immune
+        high = torch.where(is_fixed, fixed_frac, high)
+        low = torch.where(is_fixed, fixed_frac, low)
+        crit = torch.where(is_fixed, fixed_frac, crit)
+        ko = torch.where(is_fixed, fixed_ko, ko)
         p_outspeed = torch.sigmoid((our_spe - opp_spe) / _DMG_SPEED_SCALE)            # [B]
 
+        # gen3_unified_move_system_v1: per OUR move, "what status can it cause + with what probability".
+        # realized P(effect k | move) = chance_mk × acc_m × Serene Grace(our active) × Shield Dust(opp
+        # active), gated to legal moves (status moves carry 0 secondary → naturally zeroed). Order ==
+        # SECONDARY_COLS. [B,4,10].
+        our_serene = self.ABILITY_SECONDARY_MULT[ctx.ability1_ids[ar, our_act]]        # [B] our active
+        opp_block = self.ABILITY_SECONDARY_BLOCK[opp_ability]                          # [B] opp Shield Dust
+        sec = self.MOVE_SECONDARY[move_ids]                                            # [B,4,10] base chance
+        sec = sec * (acc * legal)[:, :, None] * (our_serene * opp_block)[:, None, None]
+        sec = sec.clamp(max=1.0)                                                        # [B,4,10]
+
         per_move = torch.stack([low, high, crit, ko], dim=-1)                          # [B,4,4]
-        block = torch.cat([per_move.reshape(B, -1), p_outspeed[:, None]], dim=1)       # [B, _DMG_OUTGOING]
+        block = torch.cat([per_move.reshape(B, -1), p_outspeed[:, None], sec.reshape(B, -1)], dim=1)  # [B, _DMG_OUTGOING]
         return block * gate
 
-    def forward(self, ctx: 'ExtractorContext', move_belief_logits: torch.Tensor) -> torch.Tensor:
+    def _status_landing(self, ctx: 'ExtractorContext') -> torch.Tensor:
+        """gen3_unified_status_landing_v1: per OUR move (REQUEST-slot order == action 6+k), P(a dedicated
+        STATUS move applies to the opp active) + a `known` bit — the GPU home for the masked move-effect
+        block's `status_will_land`. The status MOVES the outgoing DAMAGE block can't price (BP 0 → usable 0).
+
+        P(lands) = is_status_move · accuracy · (1−type_immune) · (1−ability_block) · (1−already_block)
+                   · (1−sleep_clause_block), gated to 0 with no opp active / our active dead. Where:
+          • type_immune  — per-MOVE gen3 rule (Thunder Wave→Ground, Toxic/Poison→Steel/Poison, Will-O-Wisp
+            →Fire, **Leech Seed→Grass**), max over the opp active's two types.
+          • ability_block — REVEALED opp ability → exact `ABILITY_STATUS_BLOCK`; UNREVEALED → the species
+            Smogon-prior marginal `SPECIES_STATUS_BLOCK_PRIOR` (Snorlax Toxic ≈0.14 Immunity-dominated).
+          • already_block — the opp active already carries a major status (can't double-apply); NOT Leech Seed.
+          • sleep_clause_block — a SLEEP move fails if ANY opp mon is already asleep via a NON-Rest source
+            (`sleep_is_deterministic==0`). Rest self-sleep does NOT consume our cap (the user's rule). The
+            per-mon Rest flag is the existing gen3_sleep_wake_belief_v1 `sleep_is_deterministic` (reused).
+          • has_sub — the opp active behind a Substitute blocks EVERY status move (incl. Leech Seed); read
+            from the public Substitute volatile in `ctx.opp_ctx_raw` at `_SUBSTITUTE_CTX_IDX`.
+        `known` = the value rests on CERTAIN (public) info — a type/already-statused/Sleep-Clause/Substitute
+        hard block OR a revealed ability — vs a Smogon-prior estimate. No move-belief gradient (OUR moves are
+        certain). UNCOVERED residual: Yawn (delayed sleep, no status_inflicted), Leech-Seed-already-seeded."""
+        B, device = ctx.batch_size, ctx.device
+        ar = torch.arange(B, device=device)
+        our_act = ctx.our_active_idx                                  # [B]
+        opp_act = TEAM_SIZE + ctx.opp_active_local                    # [B] opp-active global slot
+        has_opp = ctx.hp_and_active[:, TEAM_SIZE:2 * TEAM_SIZE, -1].any(dim=1).float()  # [B]
+        our_alive = (ctx.hp_and_active[ar, our_act, 0] > 0).float()   # [B]
+        gate = (has_opp * our_alive)[:, None]                         # [B,1]
+
+        move_ids = ctx.all_move_ids[ar, our_act, :]                   # [B,4] request-slot order
+        inflicts = self.MOVE_INFLICTS_STATUS[move_ids]               # [B,4]
+        acc = self.MOVE_ACCURACY[move_ids]                          # [B,4] (Toxic .85, WoW .75, T-Wave 1, …)
+        sidx = self.MOVE_STATUS_CAT[move_ids]                       # [B,4] long (0 = not a status move)
+        is_sleep = self.MOVE_IS_SLEEP[move_ids]                     # [B,4]
+        blocked_if_statused = self.MOVE_BLOCKED_IF_STATUSED[move_ids]  # [B,4] (0 for Leech Seed)
+
+        # type immunity (per move) — max over the opp active's two types.
+        t1 = ctx.type1_ids[ar, opp_act]                            # [B]
+        t2 = ctx.type2_ids[ar, opp_act]
+        ti = self.MOVE_STATUS_TYPE_IMMUNE[move_ids]                 # [B,4,N_TYPE_IDX]
+        type_immune = torch.maximum(ti.gather(2, t1[:, None, None].expand(B, 4, 1)).squeeze(2),
+                                    ti.gather(2, t2[:, None, None].expand(B, 4, 1)).squeeze(2))  # [B,4]
+
+        # ability immunity — revealed → exact; unrevealed (id 0) → the species Smogon-prior marginal.
+        opp_ability = ctx.ability1_ids[ar, opp_act]                # [B] (0 if unrevealed)
+        opp_species = ctx.species_ids[ar, opp_act]                 # [B]
+        abl_rev = self.ABILITY_STATUS_BLOCK[opp_ability].gather(1, sidx)           # [B,4]
+        abl_prior = self.SPECIES_STATUS_BLOCK_PRIOR[opp_species].gather(1, sidx)   # [B,4]
+        revealed = (opp_ability > 0).float()[:, None]              # [B,1]
+        ability_block = revealed * abl_rev + (1.0 - revealed) * abl_prior          # [B,4]
+
+        # already-statused (opp active) — any non-None status bit → blocks a MAJOR status (not Leech Seed).
+        opp_cond = ctx.pokemon_part[ar, opp_act,
+                                    POKEMON_CONDITION_OFFSET + 1:POKEMON_CONDITION_OFFSET + 7]  # [B,6]
+        already_statused = (opp_cond.sum(dim=1) > 0.5).float()[:, None]            # [B,1]
+        already_block = already_statused * blocked_if_statused                     # [B,4]
+
+        # Sleep Clause — ANY opp mon asleep via a NON-Rest source consumes our one-sleep cap.
+        opp_slp = ctx.pokemon_part[:, TEAM_SIZE:2 * TEAM_SIZE, POKEMON_CONDITION_OFFSET + _COND_SLP_IDX]  # [B,6]
+        opp_rest = ctx.pokemon_part[:, TEAM_SIZE:2 * TEAM_SIZE, POKEMON_SLEEP_BELIEF_OFFSET]  # [B,6] is_rest
+        nonrest_sleep = opp_slp * (1.0 - opp_rest)                                 # [B,6]
+        sleep_clause = (nonrest_sleep.sum(dim=1) > 0.5).float()[:, None]           # [B,1]
+        sleep_block = sleep_clause * is_sleep                                      # [B,4]
+
+        # Substitute — the opp active behind a Sub blocks EVERY status move (incl. Leech Seed) in gen3. Read
+        # the public Substitute volatile from the opp active context (boosts ++ volatiles). Applies to ALL
+        # inflicting moves (not just majors), so it folds in as a flat per-channel factor below.
+        has_sub = (ctx.opp_ctx_raw[:, _SUBSTITUTE_CTX_IDX] > 0.5).float()[:, None]  # [B,1]
+
+        p_land = (inflicts * acc * (1.0 - type_immune) * (1.0 - ability_block)
+                  * (1.0 - already_block) * (1.0 - sleep_block) * (1.0 - has_sub))  # [B,4]
+        # `known` = the value rests on CERTAIN info (a hard block — type/already-statused/Sleep-Clause/
+        # Substitute, all PUBLIC — or a revealed ability) vs a Smogon-prior estimate.
+        certain = torch.clamp(type_immune + already_block + sleep_block + has_sub + revealed, max=1.0)  # [B,4]
+        known = inflicts * certain                                                 # [B,4]
+        return torch.cat([p_land, known], dim=1) * gate                            # [B, _DMG_STATUS]
+
+    def forward(self, ctx: 'ExtractorContext', move_belief_logits: torch.Tensor,
+                spread_belief: Optional[torch.Tensor] = None) -> torch.Tensor:
         B = ctx.batch_size
         device = ctx.device
         eps = 1e-6
         ar = torch.arange(B, device=device)
         opp_act = TEAM_SIZE + ctx.opp_active_local                         # [B] global opp-active slot
+        # gen3_unified_spread_belief_v1: the believed opp-active stats [B,5] (atk,def,spa,spd,spe), or None
+        # (→ the legacy hand-coded de-timid offense / neutral bulk constants below).
+        sb = spread_belief[ar, ctx.opp_active_local] if spread_belief is not None else None
 
         # No-opp-active gate (forced switch / battle start / dummy zero-obs): zero the whole block.
         has_opp = ctx.hp_and_active[:, TEAM_SIZE:2 * TEAM_SIZE, -1].any(dim=1).float()  # [B]
 
         # --- Attacker = opp active (revealed species; hidden spread → fixed 252 EV / 31 IV / ×1.1) ---
         a_base = self.BASE_STATS[ctx.species_ids[ar, opp_act]]            # [B,6] [hp,atk,def,spa,spd,spe]
-        off_const = 31.0 + 252.0 / 4.0 + 5.0                              # IV + EV/4 + 5
-        atk = (2.0 * a_base[:, 1] + off_const) * 1.1                      # [B]
-        spa = (2.0 * a_base[:, 3] + off_const) * 1.1                      # [B]
+        off_const = 31.0 + 252.0 / 4.0 + 5.0                              # IV + EV/4 + 5 (legacy de-timid)
+        atk = sb[:, _SB_ATK] if sb is not None else (2.0 * a_base[:, 1] + off_const) * 1.1   # [B] believed/legacy
+        spa = sb[:, _SB_SPA] if sb is not None else (2.0 * a_base[:, 3] + off_const) * 1.1   # [B]
+        # gen3_unified_op_physics_v1: fold the OPP active's OFFENSIVE stat-stage boosts (Dragon Dance /
+        # Calm Mind / Swords Dance) into its offense — a +2 sweeper's Atk is doubled (the worst
+        # damage-calc edge case). Stages read from the opp active-context; our-side read below for defence.
+        opp_b_atk, opp_b_def, opp_b_spa, opp_b_spd, opp_b_spe = self._boost_stages(ctx.opp_ctx_raw)
+        atk = atk * self._boost_mult(opp_b_atk)
+        spa = spa * self._boost_mult(opp_b_spa)
+        # gen3_unified_op_physics_v1: BURN halves the opp attacker's PHYSICAL attack (atk only; spa unhurt).
+        opp_burn = ctx.pokemon_part[ar, opp_act, POKEMON_CONDITION_OFFSET + _COND_BRN_IDX]   # [B]
+        atk = atk * torch.where(opp_burn > 0.5, atk.new_tensor(0.5), atk.new_tensor(1.0))
         at1 = ctx.type1_ids[ar, opp_act]                                 # [B] TypeEncoder axis
         at2 = ctx.type2_ids[ar, opp_act]
 
@@ -1366,6 +1734,12 @@ class DamageOperator(torch.nn.Module):
         nat = spread[..., 13:18]                                          # [B,6,5] [atk,def,spa,spd,spe]
         def_stat = (2.0 * d_base[..., 2] + iv[..., 2] + ev[..., 2] / 4.0 + 5.0) * nat[..., 1]   # [B,6]
         spd_stat = (2.0 * d_base[..., 4] + iv[..., 4] + ev[..., 4] / 4.0 + 5.0) * nat[..., 3]   # [B,6]
+        # OUR ACTIVE defender's DEFENSIVE boosts (only the active mon carries boosts in gen3 — bench reset).
+        our_b_atk, our_b_def, our_b_spa, our_b_spd, our_b_spe = self._boost_stages(ctx.our_ctx_raw)
+        def_boost = torch.ones_like(def_stat); def_boost[ar, ctx.our_active_idx] = self._boost_mult(our_b_def)
+        spd_boost = torch.ones_like(spd_stat); spd_boost[ar, ctx.our_active_idx] = self._boost_mult(our_b_spd)
+        def_stat = def_stat * def_boost
+        spd_stat = spd_stat * spd_boost
         maxhp = 2.0 * d_base[..., 0] + iv[..., 0] + ev[..., 0] / 4.0 + 110.0                    # [B,6]
         hp_frac = ctx.hp_and_active[:, :TEAM_SIZE, 0]                     # [B,6]
         cur_hp = hp_frac * maxhp                                          # [B,6]
@@ -1384,6 +1758,13 @@ class DamageOperator(torch.nn.Module):
         mty_all = torch.cat([self.MOVE_TYPE_IDX, self.HP_TYPE_IDX])                             # [C]
         phys_all = torch.cat([self.MOVE_PHYS, self.HP_IS_PHYS])                                 # [C]
         acc_all = torch.cat([self.MOVE_ACCURACY, torch.ones(n_hp, device=device)])             # [C] HP is 100%
+        fixed_all = torch.cat([self.MOVE_FIXED_DAMAGE, torch.zeros(n_hp, device=device)])       # [C] HP not fixed
+        # Fixed-damage moves read BP 0 → derived category STATUS → MOVE_PHYS 0; route them onto their TYPE's
+        # channel instead (Seismic Toss=Fighting=phys, Night Shade=Ghost=phys), matching the outgoing block.
+        phys_all = torch.where(fixed_all > 0, self.TYPE_IS_PHYS[mty_all], phys_all)             # [C]
+        # gen3_unified_op_physics_v1: per-candidate WEATHER BP modifier (rain/sun × Water/Fire), [B,C].
+        weather_mult = self._weather_mult(ctx.weather_feature, (mty_all == _WATER_TIDX).float()[None, :],
+                                          (mty_all == _FIRE_TIDX).float()[None, :])             # [B,C]
         w_all = torch.cat([w, w_hp.unsqueeze(-1) * hp_type_belief], dim=1)                      # [B,C]
 
         # --- gen3 damage per (defender, candidate), all differentiable in w (the shared physics
@@ -1393,7 +1774,7 @@ class DamageOperator(torch.nn.Module):
         high_frac, low_frac, crit_frac, ko_ramp = self._damage_rolls(
             atk, spa, at1, at2, def_stat, spd_stat, maxhp, cur_hp, t1d, t2d,
             ctx.ability1_ids[:, :TEAM_SIZE], our_reflect, our_light_screen,
-            bp_all, mty_all, phys_all, acc_all, eps)
+            bp_all, mty_all, phys_all, acc_all, fixed_all, weather_mult, eps)
 
         # --- per (defender, channel): HARD max of the belief-weighted roll/KO over the candidates ---
         # The dominant believed move owns each channel (the candidate-count-robust max, NOT a diluting
@@ -1428,7 +1809,17 @@ class DamageOperator(torch.nn.Module):
         # P(outspeed): our mon's REAL speed vs the opp active's fast-tail speed (252/+nat) — a per-mon
         # point estimate (paralysis/boosts not modelled in v1). Logistic over the stat difference.
         our_spe = (2.0 * d_base[..., 5] + iv[..., 5] + ev[..., 5] / 4.0 + 5.0) * nat[..., 4]     # [B,6]
-        opp_spe = (2.0 * a_base[:, 5] + off_const) * 1.1                                         # [B]
+        opp_spe = sb[:, _SB_SPE] if sb is not None else (2.0 * a_base[:, 5] + off_const) * 1.1   # [B] believed/legacy
+        # gen3_unified_op_physics_v1: SPEED boosts (Agility / DD) + PARALYSIS (×0.25) on the active mons fold
+        # into p_outspeed — so "I set up DD → I outspeed" / "I paralyze them → I outspeed" are both priced.
+        opp_para = ctx.pokemon_part[ar, opp_act, POKEMON_CONDITION_OFFSET + _COND_PAR_IDX]       # [B]
+        opp_spe = opp_spe * self._boost_mult(opp_b_spe) * torch.where(
+            opp_para > 0.5, opp_spe.new_tensor(_DMG_PARA_SPEED), opp_spe.new_tensor(1.0))
+        our_para = ctx.pokemon_part[ar, ctx.our_active_idx, POKEMON_CONDITION_OFFSET + _COND_PAR_IDX]  # [B]
+        our_spe_mult = torch.ones_like(our_spe)                                                  # [B,6]
+        our_spe_mult[ar, ctx.our_active_idx] = self._boost_mult(our_b_spe) * torch.where(
+            our_para > 0.5, our_para.new_tensor(_DMG_PARA_SPEED), our_para.new_tensor(1.0))
+        our_spe = our_spe * our_spe_mult
         p_outspeed = torch.sigmoid((our_spe - opp_spe[:, None]) / _DMG_SPEED_SCALE)              # [B,6]
 
         # Slot order == the named _DMG_IDX_* offsets: [phys_low, phys_high, phys_crit, phys_pko, phys_acc,
@@ -1446,11 +1837,25 @@ class DamageOperator(torch.nn.Module):
         w_eff = w[:, :, None] * self.MOVE_EFFECT_FLAGS[None, :, :]       # [B, M, K]
         p_effect = w_eff.amax(dim=1) * has_opp[:, None]                 # [B, K], gated
 
-        block = torch.cat([feats.reshape(B, TEAM_SIZE * self.per_mon), p_effect], dim=1)  # [B, incoming_dim]
+        # gen3_unified_move_system_v1: per-STATUS secondary threat from the opp active's DAMAGING moves
+        # (Body Slam para, Rock Slide flinch, Ice Beam freeze — the axis the binary `status` flag missed).
+        # realized P(effect k) = max_m (w_m · chance_mk · acc_m) × Serene Grace(opp active). Accuracy is
+        # folded (a secondary only fires on a hit — the same physics-in-the-op principle as pko: e.g. Zap
+        # Cannon's 100% para × 50% acc → 0.5). NO speed coupling — flinch's move-first dependence is left
+        # to attention (owner decision). Order == damage_tables.SECONDARY_COLS. (Defender Shield Dust is a
+        # rare v2 follow-up — the effect block is opp-active-level, not per-defender.)
+        w_sec = (w * self.MOVE_ACCURACY[None, :])[:, :, None] * self.MOVE_SECONDARY[None, :, :]  # [B,M,10]
+        opp_serene = self.ABILITY_SECONDARY_MULT[ctx.ability1_ids[ar, opp_act]]                  # [B]
+        p_sec = (w_sec.amax(dim=1) * opp_serene[:, None]).clamp(max=1.0) * has_opp[:, None]      # [B,10]
+
+        block = torch.cat([feats.reshape(B, TEAM_SIZE * self.per_mon), p_effect, p_sec], dim=1)  # [B, incoming_dim]
         # OUTGOING (our active → opp active, per-move action-aligned): appended after the incoming block
         # when enabled (widens out_dim; both projections auto-size). Reuses the shared `_rolls` physics.
+        # gen3_unified_status_landing_v1: the per-OUR-move status-landing block rides the SAME outgoing
+        # direction (status moves the damage block can't price), so it's appended right after it.
         if self.outgoing:
-            block = torch.cat([block, self._outgoing_block(ctx)], dim=1)                 # [B, out_dim]
+            block = torch.cat([block, self._outgoing_block(ctx, spread_belief),
+                               self._status_landing(ctx)], dim=1)  # [B, out_dim]
         # Read-only stash of the PRE-gain physics (the interpretable damage fractions / P(KO) / accuracy),
         # for the prober/forensic decode — the learned out_gain only rescales for the projection.
         self.last_raw_block = block.detach()
@@ -1467,7 +1872,9 @@ def decode_damage_block(row, *, outgoing: bool, team_size: int = TEAM_SIZE):
     by the TUI. Uses the named `_DMG_IDX_*` offsets: per our mon the incoming threat
     `[low,high,crit,pko,acc]×{phys,spec} + p_outspeed + provenance` (slot 0 = our active, slots 1..5 = the
     **safe-switch** bench reads), then the 6 opp-active believed-EFFECT scalars, then (if `outgoing`) our 4
-    moves' outgoing damage `[low,high,crit,pko]` + p_outspeed (request-slot order = action logits 6+k)."""
+    moves' outgoing damage `[low,high,crit,pko]` + p_outspeed + per-move secondary, then the
+    gen3_unified_status_landing_v1 `status_landing` block — per move `{p_land, known}` (request-slot order =
+    action logits 6+k)."""
     r = [float(x) for x in row]
 
     def _chan(b):
@@ -1481,17 +1888,26 @@ def decode_damage_block(row, *, outgoing: bool, team_size: int = TEAM_SIZE):
             "p_outspeed": r[b + _DMG_IDX_OUTSPEED], "provenance": r[b + _DMG_IDX_PROVENANCE],
         })
     eb = team_size * _DMG_PER_MON
+    sb = eb + _DMG_EFFECT                              # incoming per-status secondary base
     out = {"incoming": incoming,
            "effect": {c: r[eb + j] for j, c in enumerate(_DMG_EFFECT_COLS)},
+           "incoming_secondary": {c: r[sb + j] for j, c in enumerate(_SECONDARY_COLS)},
            "outgoing": None}
     if outgoing:
-        ob = eb + _DMG_EFFECT
+        ob = sb + _DMG_INCOMING_SEC                    # outgoing damage base
+        osb = ob + _DMG_OUT_N_MOVES * _DMG_OUT_PER_MOVE + 1   # outgoing per-move secondary base (after p_outspeed)
+        slb = ob + _DMG_OUTGOING                        # status-landing base (after the whole outgoing block)
         out["outgoing"] = {
             "moves": [{"low": r[ob + k * _DMG_OUT_PER_MOVE], "high": r[ob + k * _DMG_OUT_PER_MOVE + 1],
                        "crit": r[ob + k * _DMG_OUT_PER_MOVE + 2], "pko": r[ob + k * _DMG_OUT_PER_MOVE + 3]}
                       for k in range(_DMG_OUT_N_MOVES)],
             "p_outspeed": r[ob + _DMG_OUT_N_MOVES * _DMG_OUT_PER_MOVE],
+            "secondary": [{c: r[osb + k * _N_SECONDARY + j] for j, c in enumerate(_SECONDARY_COLS)}
+                          for k in range(_DMG_OUT_N_MOVES)],
         }
+        # gen3_unified_status_landing_v1: per-OUR-move P(status lands) + a `known` bit (request-slot order).
+        out["status_landing"] = [{"p_land": r[slb + k], "known": r[slb + _DMG_STATUS_N_MOVES + k]}
+                                 for k in range(_DMG_STATUS_N_MOVES)]
     return out
 
 
@@ -1574,7 +1990,9 @@ class Gen3FeaturesExtractor(torch.nn.Module):
                  move_belief_mode: str = "off", opp_belief_latent: bool = False,
                  damage_op: bool = False, move_prior_fusion: bool = False,
                  mask_incoming_damage_obs: bool = False, win_prob_mode: str = "none",
-                 damage_outgoing: bool = False, move_candidate_floor: float = 0.0):
+                 damage_outgoing: bool = False, move_candidate_floor: float = 0.0,
+                 move_latent: bool = False, spread_belief: bool = False,
+                 mask_active_move_scalars_obs: bool = False, mask_move_effects_obs: bool = False):
         super().__init__()
         self.layout = layout
         self.mappings = mappings
@@ -1585,6 +2003,10 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         # Ablation toggle (no weight-shape change): zero the incoming-damage obs block out of the model's
         # view (the unified DamageOperator replaces it; the reward still uses it). Version-checked.
         self.mask_incoming_damage_obs = mask_incoming_damage_obs
+        # gen3_unified_spread_belief_v1: the other two --unified-obs disable-redundant masks (stored on the
+        # root for arch_toggles_from_model threading; passed to ObsUnpack below).
+        self.mask_active_move_scalars_obs = mask_active_move_scalars_obs
+        self.mask_move_effects_obs = mask_move_effects_obs
         # Hidden-opponent belief: opp_belief_cls_k = number of learned belief query tokens.
         # 0 = OFF (no module, baseline arch — reproduces it byte-for-byte, so no ARCH_SIGNATURE bump);
         # k>0 builds HiddenOppBeliefPool(k) and widens both projection inputs by k*D_MODEL (a
@@ -1600,11 +2022,18 @@ class Gen3FeaturesExtractor(torch.nn.Module):
                 "unmask flag is on. Enable --attend-unrevealed-opponents, or set --opp-belief-cls-k 0."
             )
 
+        # gen3_unified_move_system_v1: the mechanics-grounded move latent (structural toggle — widens the
+        # move-network input → state_dict-changing; OFF byte-identical). Required by the Stage-3 latent
+        # grading aux (the loss reads its latent_table).
+        self.move_latent = move_latent
+
         # Phase modules (constructed before the dummy forward below).
         self.embeddings = Embeddings(layout)
         self.unpack = ObsUnpack(layout, attend_unrevealed_opponents=attend_unrevealed_opponents,
-                                mask_incoming_damage_obs=mask_incoming_damage_obs)
-        self.pokemon_encoder = PokemonEncoder(layout)
+                                mask_incoming_damage_obs=mask_incoming_damage_obs,
+                                mask_active_move_scalars_obs=mask_active_move_scalars_obs,
+                                mask_move_effects_obs=mask_move_effects_obs)
+        self.pokemon_encoder = PokemonEncoder(layout, move_latent=move_latent)
         self.team_transformer = TeamTransformer(layout)
         self.cls_pool = CLSPool(layout)
         self.hidden_opp_belief = HiddenOppBeliefPool(opp_belief_cls_k) if opp_belief_cls_k > 0 else None
@@ -1681,6 +2110,18 @@ class Gen3FeaturesExtractor(torch.nn.Module):
             if move_belief_mode != "off" else None
         )
         self.last_move_belief_logits: Optional[torch.Tensor] = None
+        # gen3_unified_move_system_v1: the [n_moves, MOVE_LATENT_DIM] context-free move-latent table,
+        # stashed each forward (training only) for the Stage-3 latent grading aux — a side stash, never
+        # fed forward (the per-slot latent is what flows; the table is the grading TARGET).
+        self.last_move_latent_table: Optional[torch.Tensor] = None
+        # gen3_unified_spread_belief_v1: the THIRD belief leg — predicts the opp's hidden SPREAD (5 derived
+        # stats) per slot, reinjected into the opp token, consumed by the DamageOperator (replacing its
+        # hand-coded opp-spread constants). STRUCTURAL toggle (widens nothing in the projection — it enriches
+        # the opp token like MoveBelief). Requires move_belief_mode != off only if damage_op is on (the op is
+        # the consumer); built whenever the flag is set. Stash for the supervision loss + the op.
+        self.spread_belief_enabled = spread_belief
+        self.spread_belief = SpreadBelief(layout['max_species']) if spread_belief else None
+        self.last_spread_belief: Optional[torch.Tensor] = None
         # Differentiable damage operator (flag-guarded): consumes the move belief's PREDICTED moves for
         # the opp active and computes the believed-move incoming damage to each of our mons, fed to BOTH
         # heads. OFF reproduces the baseline arch byte-for-byte (no module, projection widths unchanged).
@@ -1701,6 +2142,9 @@ class Gen3FeaturesExtractor(torch.nn.Module):
                 "the DamageOperator. Enable --damage-op (--unified-damage both), or drop the outgoing flag."
             )
         self.damage_op = DamageOperator(layout, outgoing=damage_outgoing) if damage_op else None
+        # Stored on the root so arch_toggles_from_model can thread it to the eval/self-play workers
+        # (the move-prior gate is a version-checked forward-behavior toggle).
+        self.move_candidate_floor = move_candidate_floor
         # Value-head active readout (weight-shape via flag): adds our_active_refined (D_MODEL) to the
         # value projection. OFF reproduces the baseline value head byte-for-byte (no ARCH_SIGNATURE bump).
         self.value_active_readout = value_active_readout
@@ -1842,6 +2286,22 @@ class Gen3FeaturesExtractor(torch.nn.Module):
                 opp_species_ids=opp_species_ids, opp_move_ids=opp_move_ids)
         else:
             self.last_move_belief_logits = None
+        # gen3_unified_spread_belief_v1: predict + reinject the opp's hidden SPREAD (revealed slots), and
+        # stash the believed stats [B,6,5] for the DamageOperator (consumed at the opp active slot, replacing
+        # its hand-coded spread constants) + the speed-supervision loss. Enriches the opp tokens before the
+        # CLS pools, like MoveBelief. Hidden slots aren't enriched (their species num 0 → flat prior) and the
+        # op only reads the (revealed) active slot.
+        if self.spread_belief is not None:
+            their_team_out, self.last_spread_belief = self.spread_belief(
+                their_team_out, ~ctx.opp_believed_mask, ctx.species_ids[:, TEAM_SIZE:])
+        else:
+            self.last_spread_belief = None
+        # gen3_unified_move_system_v1: stash the context-free move-latent table for the Stage-3 latent
+        # grading aux (training only — a side stash, never fed forward). Gated on is_grad_enabled so
+        # rollout / eval / inference pay nothing.
+        self.last_move_latent_table = None
+        if self.move_latent and torch.is_grad_enabled():
+            self.last_move_latent_table = self.pokemon_encoder.move_latent_encoder.latent_table(self.embeddings)
         our_team_pooled, their_team_pooled, our_active_refined, value_pooled = self.cls_pool(
             our_team_out, their_team_out, ctx
         )
@@ -1874,9 +2334,9 @@ class Gen3FeaturesExtractor(torch.nn.Module):
             # (passed through by use_reentrant=False); last_move_belief_logits carries the grad.
             if self.damage_op.grad_checkpointing and torch.is_grad_enabled():
                 damage_block = checkpoint(self.damage_op, ctx, self.last_move_belief_logits,
-                                          use_reentrant=False)
+                                          self.last_spread_belief, use_reentrant=False)
             else:
-                damage_block = self.damage_op(ctx, self.last_move_belief_logits)
+                damage_block = self.damage_op(ctx, self.last_move_belief_logits, self.last_spread_belief)
         # Read-only stash for the prober/forensic decode (the operator's per-mon incoming + outgoing
         # damage features) — never read by the forward itself, so the off/baseline output is unchanged.
         self.last_damage_block = damage_block

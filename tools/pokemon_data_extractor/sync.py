@@ -174,6 +174,63 @@ _CALLBACK_SELF_BOOST = frozenset({"bellydrum"})
 _CURES_SELF_STATUS = frozenset({"refresh"})
 _CURES_TEAM_STATUS = frozenset({"healbell", "aromatherapy"})
 
+# --- gen3_unified_move_system_v1: structured secondary-effect extraction ---------------- #
+# The 10 secondary-effect columns the model prices (single source of truth, mirrored by
+# damage_tables.MOVE_SECONDARY). A damaging move's secondary is normalized into {column: percent}
+# from the field Showdown keys it on: `secondary.status` (major status), `secondary.volatileStatus`
+# (flinch/confusion), foe-targeting `secondary.boosts` (stat DROP), and `secondary.self.boosts`
+# (self stat-RAISE). This REVERSES the old "secondary status is incidental" decision (the model now
+# prices Body Slam's 30% para etc.) — see designs/ai_v6/design_unified_move_system.md.
+_SECONDARY_COLS = (
+    "par", "brn", "frz", "slp", "psn", "tox", "confusion", "flinch", "foe_statdrop", "self_boost",
+)
+_SECONDARY_STATUS_COLS = frozenset({"par", "brn", "frz", "slp", "psn", "tox"})
+
+# Callback-only secondaries (invisible declaratively, like Belly Drum / Refresh). Tri Attack's
+# 20% picks one of par/brn/frz at onHit time; we split the 20% across the three columns.
+_SECONDARY_ONHIT = {"triattack": {"par": 7, "brn": 7, "frz": 6}}
+
+
+def _accumulate_secondary(block, out):
+    """Fold one Showdown `secondary`/`secondaries[i]` block into the column→percent dict `out`.
+    A block has ONE trigger chance; it can carry a status, a flinch/confusion volatile, a foe
+    stat-drop (`boosts`), and/or a self stat-raise (`self.boosts`)."""
+    if not isinstance(block, dict):
+        return
+    chance = block.get("chance")
+    chance = 100 if chance is None else int(chance)
+    status = block.get("status")
+    if status in _SECONDARY_STATUS_COLS:
+        out[status] = out.get(status, 0) + chance
+    vol = block.get("volatileStatus")
+    if vol in ("flinch", "confusion"):
+        out[vol] = out.get(vol, 0) + chance
+    if isinstance(block.get("boosts"), dict):  # foe-targeting stat drop (Crunch -spd, Psychic -spd)
+        out["foe_statdrop"] = out.get("foe_statdrop", 0) + chance
+    self_block = block.get("self")
+    if isinstance(self_block, dict) and isinstance(self_block.get("boosts"), dict):
+        out["self_boost"] = out.get("self_boost", 0) + chance
+
+
+def _secondary_effects(move_id, entry):
+    """Normalize a move's secondary effect(s) into {column: percent} over `_SECONDARY_COLS`.
+    Curated `onHit` override wins (Tri Attack); otherwise fold `secondary` + every `secondaries[i]`.
+    Percent is capped at 100; empty dict when the move has no secondary."""
+    if move_id in _SECONDARY_ONHIT:
+        return dict(_SECONDARY_ONHIT[move_id])
+    out = {}
+    _accumulate_secondary(entry.get("secondary"), out)
+    for block in (entry.get("secondaries") or []):
+        _accumulate_secondary(block, out)
+    return {k: min(100, v) for k, v in out.items() if v > 0}
+
+
+def _fraction(pair):
+    """Showdown `drain`/`recoil` are `[num, den]` fractions of damage dealt → a float in [0,1]."""
+    if isinstance(pair, (list, tuple)) and len(pair) == 2 and pair[1]:
+        return pair[0] / pair[1]
+    return 0.0
+
 
 def _has_self_positive_boost(entry):
     """True iff the move declaratively raises one of the USER'S OWN stats (a setup
@@ -222,9 +279,17 @@ def build_moves(gen):
       - `is_phaze`    ← `forceSwitch` (Roar/Whirlwind).
       - `is_hazard`   ← `sideCondition` is an entry hazard (gen3: Spikes).
       - `inflicts_status` / `status` ← the move's PRIMARY `status` field, when it is a
-                        major status (par/brn/psn/tox/slp/frz). Secondary-chance status
-                        on damaging moves is intentionally ignored (the model sees those
-                        as damage; the status is incidental).
+                        major status (par/brn/psn/tox/slp/frz). This is the move whose
+                        *purpose* is the status (Thunder Wave, Toxic).
+      - `priority` / `secondaryEffects` / `drainFraction` / `recoilFraction`
+                        (gen3_unified_move_system_v1) ← the structured secondary-effect
+                        extraction. This REVERSES the old "secondary status is incidental"
+                        decision: a damaging move's `secondary` is normalized into a
+                        {column: percent} dict over `_SECONDARY_COLS` (Body Slam → {par:30},
+                        Rock Slide → {flinch:30}, Crunch → {foe_statdrop:20}, Meteor Mash →
+                        {self_boost:20}), so the model prices the secondary. These fields are
+                        GPU-side only (DamageOperator + MoveLatentEncoder) — they do NOT enter
+                        the obs vector, so the obs golden is unchanged.
       - `is_boost`    ← declarative self-positive boost (`_has_self_positive_boost`)
                         OR a curated callback override (`_CALLBACK_SELF_BOOST` = Belly
                         Drum, whose +6 Atk lives in an `onHit` callback). Curse is
@@ -283,6 +348,13 @@ def build_moves(gen):
             # Aromatherapy. Let the policy head connect the cure to the status one-hots.
             "curesSelfStatus": move_id in _CURES_SELF_STATUS,
             "curesTeamStatus": move_id in _CURES_TEAM_STATUS,
+            # --- gen3_unified_move_system_v1: structured secondary / priority / drain / recoil ---
+            # GPU-side only (the DamageOperator + MoveLatentEncoder read these); they do NOT enter
+            # the obs vector, so the obs golden is unchanged. secondaryEffects is {column: percent}.
+            "priority": int(entry.get("priority", 0) or 0),
+            "secondaryEffects": _secondary_effects(move_id, entry),
+            "drainFraction": _fraction(entry.get("drain")),
+            "recoilFraction": _fraction(entry.get("recoil")),
         }
 
     return moves_map

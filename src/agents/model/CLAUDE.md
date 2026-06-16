@@ -8,6 +8,8 @@ All network dims are defined as module-level constants at the top of `features_e
 ROLE_TOKEN_SIZE = 128
 PROJECTION_DIM = 512
 MOVE_NET_HIDDEN = [96, 32]
+MOVE_LATENT_HIDDEN = 64      # MoveLatentEncoder MLP hidden (v24, gen3_unified_move_system_v1)
+MOVE_LATENT_DIM = 32         # per-move latent dim (the similarity-grading space)
 ROLE_ENCODER_HIDDEN = [256, 128]
 ACTIVE_CTX_HIDDEN = [64, 32]
 ```
@@ -173,8 +175,8 @@ because it is Φ_progress's weight. All are recorded on
 `ModelVersion` and enforced on resume by **`check_reward_config`** (FATAL on drift, since they silently
 shift the reward/objective), excluded from `check_compatible`. They are reward-VALUE changes — **no
 `ARCH_SIGNATURE` bump** (the network/obs are unchanged) — so a fresh run is needed to measure them but
-old checkpoints don't fail an arch check. Current `MODEL_CONFIG_VERSION` = **23** (see the belief +
-unified-damage notes below for v16–v23).
+old checkpoints don't fail an arch check. Current `MODEL_CONFIG_VERSION` = **27** (see the belief +
+unified-damage + unified-move + spread-belief + op-physics + status-landing notes below for v16–v27).
 
 **Two probe-driven V-tail levers (v10 structural, v11 resume-immutable).** A representation probe on a
 real checkpoint found the **value head is partly blind to incoming KOs the policy head sees**
@@ -427,8 +429,83 @@ threaded through `current_model_version`/`_run_arch_toggles` (the 4 opp-load sit
 into `pko` (`acc·P(KO|hit)`) AND exposed as a per-channel scalar** — the operator does every multiplication
 so the ReLU head reasons additively. Leak-safe (public obs + the predicted belief only; pinned by
 `damage_op_test.test_op_is_leak_free_of_privileged_keys`). The unified directions are GPU-operator outputs
-(NOT CPU obs blocks) → obs dim unchanged (3457), obs-build perf gate untouched. Current
-`MODEL_CONFIG_VERSION` = **23**.
+(NOT CPU obs blocks) → obs dim unchanged (3457), obs-build perf gate untouched. This is config v23.
+
+**Unified MOVE system — the move latent + per-status secondary effects (`move_latent` /
+`move_belief_latent_coef`, v24, `gen3_unified_move_system_v1`).** Three pieces (design:
+`designs/ai_v6/design_unified_move_system.md`). (1) **`MoveLatentEncoder`** (a child of `PokemonEncoder`,
+built when `move_latent`): a context-free per-move latent `MLP(move_emb ⊕ type_emb ⊕ MOVE_ATTR[id]) →
+MOVE_LATENT_DIM` where `MOVE_ATTR` (`damage_tables.build_move_attr`, a non-persistent buffer) is the
+structured "what a move does" vector (BP / category / accuracy / priority / drain / per-status secondary
+chances / utility flags). It's concatenated into the move-network input (widens it → STRUCTURAL, gated in
+`check_compatible` like `damage_op`; OFF byte-identical) AND its `latent_table()` is the grading target.
+(2) **The latent grading** (`instrumented_ppo._move_belief_latent_loss`, weight `move_belief_latent_coef`,
+training-only): the predicted move distribution's expected latent `softmax(ml) @ latent_table` is regressed
+by COSINE toward the true moveset's mean latent (stop-grad) + a VICReg floor — so near-moves grade as near
+(Rock Slide ≈ Hidden Power Rock), the soft complement to the per-ID BCE. Leak-safe: `last_move_latent_table`
+is a side stash (never in pi/vf, `is_grad_enabled`-gated so rollout skips it); the loss reads `known_moves`
+only. (3) **The DamageOperator effect block** gains per-status SECONDARY probabilities — incoming
+(`_DMG_INCOMING_SEC`=10, the opp active's damaging-move secondaries, `max_m(w·chance·acc)×Serene Grace(opp)`,
+NO speed coupling — flinch's move-first dependence is left to attention) + per-OUR-move outgoing
+(`_DMG_OUT_SEC`=40, `chance·acc × Serene Grace(us) × Shield Dust(opp)`). These are **intrinsic to `damage_op`**
+(no separate flag) → incoming_dim 78→88, outgoing 17→57; a v23 `damage_op` checkpoint won't load into v24.
+New buffers: `MOVE_SECONDARY[n,10]`, `MOVE_PRIORITY`, `MOVE_DRAIN/RECOIL`, `ABILITY_SECONDARY_MULT`
+(attacker Serene Grace 2×), `ABILITY_SECONDARY_BLOCK` (defender Shield Dust 0×). `move_latent` +
+`move_belief_latent_coef` are threaded through `current_model_version` / `_run_arch_toggles` /
+`arch_toggles_from_model` (which v24 ALSO completed for the v23 `damage_outgoing` / `move_candidate_floor`
+gap — `move_candidate_floor` is now stored on the root extractor). One umbrella knob: `--unified-moves
+{off,incoming,both}`. This is config v24.
+
+**Spread/speed belief + the disable-redundant master flag (`spread_belief` / `spread_belief_coef` /
+`mask_active_move_scalars_obs` / `mask_move_effects_obs`, v25, `gen3_unified_spread_belief_v1`).** The THIRD
+belief leg (moves ✓, species ✓, STATS). `SpreadBelief` (a phase like `MoveBelief`, built when
+`spread_belief`) predicts the opp's hidden spread — the 5 derived stats {atk,def,spa,spd,spe} — per slot:
+`believed = prior_mean + delta·prior_std` from `damage_tables.build_opp_spread_prior` (`[n_species,5,2]`
+usage `(mean,std)` from the Smogon spreads, non-persistent buffer) ⊕ a **zero-init** learned head (cold-start
+== prior), reinjected into revealed opp tokens (small-init residual), stashed at `last_spread_belief [B,6,5]`.
+The `DamageOperator` `forward` + `_outgoing_block` take a `spread_belief` arg and consume the believed opp
+atk/spa/def/spd/spe (gathered at `ctx.opp_active_local`, indices `_SB_ATK.._SB_SPE`) **in place of** the
+hand-coded de-timid `252/×1.1` / neutral-0-EV constants — so the op's opponent stats are a learned belief,
+not a fixed guess (None → the legacy constants, byte-identical). Predicts DERIVED stats (not EVs+nature) so
+the op consumes the value directly (the head stays additive). `spread_belief` is STRUCTURAL (check_compatible);
+`spread_belief_coef` is training-only (the speed supervision from observed move order — flag wired, the loss
+is the one staged piece). The **`--unified-obs`** master flag flips three `ObsUnpack` forward-behavior masks
+(`mask_incoming_damage_obs` + `mask_active_move_scalars_obs` [move_power+multiplier, requires
+`damage_outgoing`] + `mask_move_effects_obs` [the 44-dim block]) that zero a now-GPU-subsumed obs region from
+the model's view (clone-once, offsets from named `reactive_layout` entries, reward/PBRS untouched). All
+threaded through `current_model_version`/`_run_arch_toggles`/`arch_toggles_from_model` (the 4 opp-load sites);
+OFF byte-identical (no `ARCH_SIGNATURE` bump).
+
+**Op physics parity (v26, `gen3_unified_op_physics_v1`).** INTRINSIC to `damage_op` (no new field): the op
+now folds stat-stage **boosts** (offense/defence/speed, both directions — a +2 sweeper's Atk doubles),
+**burn** (½ phys Atk), **weather** (rain ×1.5 Water/×0.5 Fire; sun the reverse), **paralysis** (×0.25 speed),
+and **fixed-damage** moves (Seismic Toss/Night Shade = level HP, type-immunity-gated). Values-only (no new
+`check_compatible` field); the version bump marks it; validated by the constructed Showdown probe
+(`damage_op_probe_fuzz_test.py`, 19/19) + the random-game net.
+
+**Op status-landing block (v27, `gen3_unified_status_landing_v1`).** The op's OUTGOING direction gains a
+per-OUR-move **status-landing** block (`_DMG_STATUS`=8: P(a dedicated status move lands vs THIS opponent) +
+a `known` bit per move, request-slot order == action 6+k) — the GPU home for the masked move-effect block's
+`status_will_land`, so `--mask-move-effects-obs` no longer drops that signal. `DamageOperator._status_landing`
+computes `inflicts·accuracy·(1−type_immune)·(1−ability_block)·(1−already_block)·(1−sleep_block)`, where:
+per-MOVE **type immunity** (Thunder Wave→Ground, Toxic/Poison Gas/Poison Powder→Steel/Poison, Will-O-Wisp
+→Fire, **+ Leech Seed→Grass** — the v26-deferred item; Stun Spore/Glare para + sleep powders have NONE);
+**ability immunity** (revealed opp ability → exact `ABILITY_STATUS_BLOCK`, else the Smogon-prior marginal
+`SPECIES_STATUS_BLOCK_PRIOR` — Snorlax Toxic ≈0.85·(1−0.86)); **already-statused** (a major status can't
+double-apply; Leech Seed can); and **Sleep Clause** — a 2nd inflicted sleep fails if ANY opp mon is asleep
+via a **non-Rest** source (the per-mon `sleep_is_deterministic` from `gen3_sleep_wake_belief_v1`, reused — a
+Rest self-sleep does NOT consume our cap); and **Substitute** — a Sub on the opp active blocks EVERY status
+move (incl. Leech Seed), read from the public Substitute volatile in `ctx.opp_ctx_raw` (`_SUBSTITUTE_CTX_IDX`,
+derived from the obs layout). The gen3 rules are imported from `gen3_mechanics`
+(`STATUS_MOVE_IMMUNITY`/`ABILITY_STATUS_IMMUNITY` — one source); the tables are built by
+`damage_tables.build_status_landing` (non-persistent buffers, zero new params). **Shield Dust is N/A here**
+(it only scales SECONDARY effects, never a primary status move); the uncovered residual is **Yawn** + a
+**Leech-Seed-already-seeded** target. INTRINSIC to `damage_outgoing` (no new field) — it grows the outgoing
+output dim, so a v26 `damage_outgoing` checkpoint won't load (the SB3 `load_state_dict` shape mismatch on the
+projection Linear's `in_features` — the runtime-discovered projection dim is NOT a `ModelVersion` field, so
+`check_compatible` passes); OFF (no `damage_outgoing`) byte-identical (no `ARCH_SIGNATURE` bump).
+`--mask-move-effects-obs` now requires **both** `--move-latent` (structural identity) AND `--damage-outgoing`
+(this block). Current `MODEL_CONFIG_VERSION` = **27**.
 
 A startup smoke test (`_run_roundtrip_test` in `train_rl_agent.py`) saves to a temp dir and reloads before every `model.learn()` call — catches serialization issues immediately.
 

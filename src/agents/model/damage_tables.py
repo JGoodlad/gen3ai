@@ -28,6 +28,7 @@ import torch
 
 from agents import gen3_data
 from agents.enums import MoveCategory, PokemonType
+from agents.gen3_mechanics import ABILITY_STATUS_IMMUNITY, STATUS_MOVE_IMMUNITY
 from agents.observation.types import TypeEncoder
 from agents.training.hidden_power_tracker import HIDDEN_POWER_TYPE_ORDER
 
@@ -66,6 +67,37 @@ N_HP_TYPES = len(HIDDEN_POWER_TYPE_ORDER)   # 16
 # the DamageOperator's effect-scalar block relies on — do not reorder without updating the op.
 MOVE_EFFECT_COLS = ("recovery", "status", "phaze", "boost", "hazard", "protect")
 
+# --- gen3_unified_move_system_v1: structured secondary effects + the move-attribute table ----------- #
+# The 10 secondary-effect columns of MOVE_SECONDARY (the per-effect TRIGGER chance, 0..1, the op prices).
+# Order is the contract; mirrors tools/…/sync._SECONDARY_COLS + the facade's secondary_chance() keys.
+SECONDARY_COLS = (
+    "par", "brn", "frz", "slp", "psn", "tox", "confusion", "flinch", "foe_statdrop", "self_boost",
+)
+N_SECONDARY = len(SECONDARY_COLS)            # 10
+SECONDARY_FLINCH_IDX = SECONDARY_COLS.index("flinch")
+
+# Abilities that scale a move's SECONDARY-effect chance. Two ROLES (an attacker mult vs a defender
+# negation — Serene-on-attacker and Shield-Dust-on-defender are NOT interchangeable, so two buffers):
+#   ABILITY_SECONDARY_MULT  — the ATTACKER's own-secondary multiplier: Serene Grace DOUBLES every
+#       secondary (gen3 Jirachi ≈ 25% OU usage — a real lever, not a footnote). Default 1.0.
+#   ABILITY_SECONDARY_BLOCK — the DEFENDER's negation: Shield Dust NEGATES all incoming secondaries.
+#       Default 1.0. (Rare in gen3 OU — completeness, not a lever.)
+# Sourced by ability id (num-remap-safe).
+_ABILITY_SECONDARY_MULTS = {"serenegrace": 2.0}
+_ABILITY_SECONDARY_BLOCKS = {"shielddust": 0.0}
+
+# The structured per-move ATTRIBUTE vector for the MoveLatentEncoder — the context-free "what does this
+# move do" features (TYPE rides the shared type embedding, added by the encoder, so it is NOT duplicated
+# here). Single source for the latent's structured input; order is a contract pinned by move_latent_test.
+MOVE_ATTR_COLS = (
+    "bp_norm", "is_phys", "is_spec", "is_status", "accuracy", "never_miss",
+    "priority_norm", "drain", "recoil",
+    *SECONDARY_COLS,                          # the 10 secondary-effect chances
+    "is_heal", "is_boost", "is_protect", "is_phaze", "is_hazard", "cures_self", "cures_team",
+)
+N_MOVE_ATTR = len(MOVE_ATTR_COLS)            # 9 + 10 + 7 = 26
+_PRIORITY_NORM = 6.0                          # gen3 priority spans ~ -6..+5 → normalize into ~[-1, 1]
+
 
 def _move_type_idx(md) -> int:
     """TypeEncoder index of a MoveData's type. Curse/typeless carry PokemonType.THREE_QUESTION_MARKS
@@ -90,6 +122,10 @@ def build_damage_buffers(n_moves: int, n_species: int, n_abilities: int) -> Dict
       HP_IS_PHYS[16]            1.0 if that HP type is physical
       MOVE_EFFECT_FLAGS[n_moves, 6]   per-move status/utility flags (MOVE_EFFECT_COLS)
       ABILITY_DAMAGE_MULT[n_abilities, 19]  defender-ability ×type multiplier (Levitate/Flash Fire/…)
+      MOVE_SECONDARY[n_moves, 10]     per-effect secondary chance 0..1 (SECONDARY_COLS) — gen3_unified_move_system_v1
+      MOVE_PRIORITY[n_moves]          raw move priority (-6..+5); MOVE_DRAIN/MOVE_RECOIL[n_moves]  damage fractions
+      ABILITY_SECONDARY_MULT[n_abilities]   attacker ×secondary-chance (Serene Grace 2×)
+      ABILITY_SECONDARY_BLOCK[n_abilities]  defender ×secondary-negation (Shield Dust 0×)
     """
     move_bp = torch.zeros(n_moves, dtype=torch.float32)
     move_type_idx = torch.zeros(n_moves, dtype=torch.long)
@@ -173,6 +209,39 @@ def build_damage_buffers(n_moves: int, n_species: int, n_abilities: int) -> Dict
     )
     hp_is_phys = type_is_phys[hp_type_idx].clone()
 
+    # gen3_unified_move_system_v1: structured secondary / priority / drain / recoil (num axis). The op
+    # prices the per-effect chance (× the active's ABILITY_SECONDARY_MULT), the outgoing-priority feature,
+    # and the recovery magnitude (drain). HP num-237 stays all-zero (no secondary). Same skip-rule as the
+    # damage buffers above.
+    move_secondary = torch.zeros(n_moves, N_SECONDARY, dtype=torch.float32)
+    move_priority = torch.zeros(n_moves, dtype=torch.float32)
+    move_drain = torch.zeros(n_moves, dtype=torch.float32)
+    move_recoil = torch.zeros(n_moves, dtype=torch.float32)
+    move_fixed_damage = build_move_fixed_damage(n_moves)        # gen3_unified_op_physics_v1
+    for mid in gen3_data.moves.raw():
+        md = gen3_data.moves.get(mid)
+        num = md.num
+        if num == HIDDEN_POWER_NUM or not (0 <= num < n_moves):
+            continue
+        for j, col in enumerate(SECONDARY_COLS):
+            move_secondary[num, j] = md.secondary_chance(col)
+        move_priority[num] = float(md.priority)
+        move_drain[num] = float(md.drain_fraction)
+        move_recoil[num] = float(md.recoil_fraction)
+
+    # Attacker secondary-chance multiplier (Serene Grace 2×) + defender negation (Shield Dust 0×),
+    # 1.0 = no effect. Indexed by ability num, mirrors ability_damage_mult's gather.
+    ability_secondary_mult = torch.ones(n_abilities, dtype=torch.float32)
+    for aid, m in _ABILITY_SECONDARY_MULTS.items():
+        ad = gen3_data.abilities.get(aid)
+        if ad is not None and 0 <= ad.num < n_abilities:
+            ability_secondary_mult[ad.num] = float(m)
+    ability_secondary_block = torch.ones(n_abilities, dtype=torch.float32)
+    for aid, m in _ABILITY_SECONDARY_BLOCKS.items():
+        ad = gen3_data.abilities.get(aid)
+        if ad is not None and 0 <= ad.num < n_abilities:
+            ability_secondary_block[ad.num] = float(m)
+
     return {
         "MOVE_BP": move_bp,
         "MOVE_TYPE_IDX": move_type_idx,
@@ -185,7 +254,233 @@ def build_damage_buffers(n_moves: int, n_species: int, n_abilities: int) -> Dict
         "HP_IS_PHYS": hp_is_phys,
         "MOVE_EFFECT_FLAGS": move_effect_flags,
         "ABILITY_DAMAGE_MULT": ability_damage_mult,
+        "MOVE_SECONDARY": move_secondary,
+        "MOVE_PRIORITY": move_priority,
+        "MOVE_DRAIN": move_drain,
+        "MOVE_RECOIL": move_recoil,
+        "MOVE_FIXED_DAMAGE": move_fixed_damage,
+        "ABILITY_SECONDARY_MULT": ability_secondary_mult,
+        "ABILITY_SECONDARY_BLOCK": ability_secondary_block,
+        # gen3_unified_status_landing_v1: the status-MOVE landing tables (merged in so the op registers them
+        # through the same single buffer loop). All non-persistent, recomputable-from-data.
+        **build_status_landing(n_moves, n_species, n_abilities),
     }
+
+
+# gen3_unified_spread_belief_v1: the 5 battle-relevant DERIVED stats the SpreadBelief predicts for the
+# hidden opponent (HP is skipped — the op uses the obs HP fraction × a neutral maxhp estimate). Order is
+# the contract the op + the belief head index by. Index into BASE_STATS' [hp,atk,def,spa,spd,spe] layout.
+SPREAD_STAT_COLS = ("atk", "def", "spa", "spd", "spe")
+N_SPREAD_STATS = len(SPREAD_STAT_COLS)                       # 5
+_SPREAD_BASE_IDX = {"atk": 1, "def": 2, "spa": 3, "spd": 4, "spe": 5}
+
+
+def build_opp_spread_prior(n_species: int) -> torch.Tensor:
+    """``[n_species, 5, 2]`` usage-weighted ``(mean, std)`` of each species' realized L100/IV31 stat VALUE
+    for {atk,def,spa,spd,spe}, derived from the Smogon spread priors (`gen3_data.priors.spreads`). This is
+    the data-informed PRIOR the `SpreadBelief` head corrects — it REPLACES the DamageOperator's hand-coded
+    de-timid (252/×1.1) / neutral-0-EV opp-spread constants with the real usage distribution per species
+    (high for an invested sweeper, low for a wall — far better than one flat assumption). A species with no
+    spread data falls back to the neutral-EV stat (mean) + a wide std spanning up to max investment.
+    Registered as a NON-persistent buffer (pure data-derived, recomputable). Mirrors `priors.gen3_stat`
+    (the same L100/IV31 formula the op uses for our revealed mons)."""
+    prior = torch.zeros(n_species, N_SPREAD_STATS, 2, dtype=torch.float32)
+    for sid in gen3_data.species.raw():
+        sd = gen3_data.species.get(sid)
+        snum = sd.num
+        if not (0 <= snum < n_species):
+            continue
+        spr = gen3_data.priors.spreads(sid)
+        for j, stat in enumerate(SPREAD_STAT_COLS):
+            base = int(sd.base_stats.get(stat, 0))
+            evi = _SPREAD_BASE_IDX[stat]                      # index into the 6-EV list [hp,atk,def,spa,spd,spe]
+            m1 = m2 = wsum = 0.0
+            for nature, evs, w in spr:
+                nd = gen3_data.natures.get(str(nature).lower())
+                mult = nd.multipliers.get(stat, 1.0) if nd is not None else 1.0
+                val = float(gen3_data.priors.gen3_stat(base, int(evs[evi]), mult))
+                m1 += w * val
+                m2 += w * val * val
+                wsum += float(w)
+            if wsum <= 0.0:                                   # no usage data → neutral mean + wide std
+                neutral = float(gen3_data.priors.gen3_stat(base, 0, 1.0))
+                maxed = float(gen3_data.priors.gen3_stat(base, 252, 1.1))
+                prior[snum, j, 0] = neutral
+                prior[snum, j, 1] = max(1.0, (maxed - neutral) / 2.0)
+            else:
+                mean = m1 / wsum
+                var = max(0.0, m2 / wsum - mean * mean)
+                prior[snum, j, 0] = mean
+                prior[snum, j, 1] = max(1.0, var ** 0.5)
+    return prior
+
+
+# gen3_unified_op_physics_v1: FIXED-damage moves (constant damage at L100, ignoring Atk/Def/roll/crit but
+# RESPECTING type immunity). They read BP 0 in the dex so the formula gives ~0 — the op overrides with this
+# constant. Mirrors incoming_damage.FIXED_DAMAGE (the CPU block the GPU op must reach parity with so
+# --unified-obs / --mask-incoming-damage-obs doesn't regress the model's damage understanding).
+_FIXED_DAMAGE = {"seismictoss": 100, "nightshade": 100, "dragonrage": 40, "sonicboom": 20}
+
+
+def build_move_fixed_damage(n_moves: int) -> torch.Tensor:
+    """``[n_moves]`` L100 FIXED damage per move (Seismic Toss / Night Shade 100, Dragon Rage 40, Sonic
+    Boom 20), 0 for every other move. Non-persistent buffer. The op multiplies by the type-immunity gate so
+    Fighting Seismic Toss reads 0 vs Ghost (your named edge) and Ghost Night Shade 0 vs Normal."""
+    fd = torch.zeros(n_moves, dtype=torch.float32)
+    for mid, dmg in _FIXED_DAMAGE.items():
+        md = gen3_data.moves.get(mid)
+        if md is not None and 0 <= md.num < n_moves:
+            fd[md.num] = float(dmg)
+    return fd
+
+
+# --- gen3_unified_status_landing_v1: "will my STATUS move land vs THIS opponent" tables ------------- #
+# The op's GPU replacement for the masked move-effect block's `status_will_land`. The gen3 immunity RULES
+# are imported from `gen3_mechanics` (STATUS_MOVE_IMMUNITY / ABILITY_STATUS_IMMUNITY) — the SINGLE,
+# Showdown-fuzz-validated source — and lifted onto the op's num/type/ability axes here. We ADD Leech Seed
+# (a volatile the CPU `status_will_land` never modeled): Grass-immune, not a major status (it can be applied
+# to an already-statused mon), no ability blocks it. Sleep Clause + already-statused are computed live in
+# the op from the obs (not data) since they depend on board state.
+_STATUS_CAT = {"par": 1, "brn": 2, "frz": 3, "slp": 4, "psn": 5, "tox": 5}  # tox→psn (same Steel/Poison block)
+_SLP_CAT = 4
+LEECH_SEED_CAT = 6
+N_STATUS_CAT = 7                              # index 0 = "not a status move"; 1..5 majors; 6 = Leech Seed
+_LEECH_SEED_ID = "leechseed"
+# SSOT guard: every status id the gen3_mechanics ability-immunity rules name MUST map to a known category,
+# so a future gen3_mechanics edit (e.g. a new blocked status) fails LOUDLY at import here rather than
+# silently dropping that ability's block from SPECIES_STATUS_BLOCK_PRIOR / ABILITY_STATUS_BLOCK.
+assert {s for ss in ABILITY_STATUS_IMMUNITY.values() for s in ss} <= set(_STATUS_CAT), \
+    "gen3_mechanics.ABILITY_STATUS_IMMUNITY names a status not in damage_tables._STATUS_CAT — add it."
+
+
+def build_status_landing(n_moves: int, n_species: int, n_abilities: int) -> Dict[str, torch.Tensor]:
+    """The per-move / per-ability / per-species status-landing tables (all on the gen3-data num axes):
+
+      MOVE_STATUS_CAT[n_moves]                 long — 0 (not a status move) else the _STATUS_CAT / LEECH_SEED_CAT it inflicts
+      MOVE_INFLICTS_STATUS[n_moves]            1.0 if it is a dedicated status move (incl. Leech Seed)
+      MOVE_IS_SLEEP[n_moves]                   1.0 if it inflicts sleep (the Sleep-Clause gate)
+      MOVE_BLOCKED_IF_STATUSED[n_moves]        1.0 for a MAJOR status (can't double-apply); 0 for Leech Seed
+      MOVE_STATUS_TYPE_IMMUNE[n_moves, N_TYPE_IDX]   1.0 where a DEFENDER type is immune to THIS move's status
+      ABILITY_STATUS_BLOCK[n_abilities, N_STATUS_CAT]   1.0 if the (revealed) ability hard-blocks that category
+      SPECIES_STATUS_BLOCK_PRIOR[n_species, N_STATUS_CAT]   P(species' ability blocks) — Smogon-prior marginal
+
+    Type immunity is keyed by MOVE id (the gen3 rule): Thunder Wave→Ground, Toxic/Poison Gas/Poison Powder
+    →Steel/Poison, Will-O-Wisp→Fire (Stun Spore/Glare paralysis has NO type immunity), + Leech Seed→Grass."""
+    cat = torch.zeros(n_moves, dtype=torch.long)
+    inflicts = torch.zeros(n_moves, dtype=torch.float32)
+    is_sleep = torch.zeros(n_moves, dtype=torch.float32)
+    blocked_if_statused = torch.zeros(n_moves, dtype=torch.float32)
+    type_immune = torch.zeros(n_moves, N_TYPE_IDX, dtype=torch.float32)
+    for mid in gen3_data.moves.raw():
+        md = gen3_data.moves.get(mid)
+        num = md.num
+        if not (0 <= num < n_moves) or num == HIDDEN_POWER_NUM:
+            continue
+        if mid == _LEECH_SEED_ID:
+            c = LEECH_SEED_CAT
+        elif md.status_inflicted is not None:
+            c = _STATUS_CAT.get(md.status_inflicted, 0)
+        else:
+            c = 0
+        if c == 0:
+            continue
+        cat[num] = c
+        inflicts[num] = 1.0
+        is_sleep[num] = 1.0 if c == _SLP_CAT else 0.0
+        blocked_if_statused[num] = 0.0 if c == LEECH_SEED_CAT else 1.0
+        immune_types = ({PokemonType.GRASS} if c == LEECH_SEED_CAT
+                        else set(STATUS_MOVE_IMMUNITY.get(mid, frozenset())))
+        for pt in immune_types:
+            ti = _T2I.get(pt.name)
+            if ti is not None:
+                type_immune[num, ti] = 1.0
+
+    ability_block = torch.zeros(n_abilities, N_STATUS_CAT, dtype=torch.float32)
+    for aid, statuses in ABILITY_STATUS_IMMUNITY.items():
+        ad = gen3_data.abilities.get(aid)
+        if ad is None or not (0 <= ad.num < n_abilities):
+            continue
+        for s in statuses:
+            c = _STATUS_CAT.get(s)
+            if c is not None:
+                ability_block[ad.num, c] = 1.0
+
+    # Marginalize the per-species Smogon ability prior over the same ABILITY_STATUS_IMMUNITY rule → the
+    # P(this species' ability blocks status c) used when the opp ability is UNREVEALED (priors-then-confirm).
+    species_block = torch.zeros(n_species, N_STATUS_CAT, dtype=torch.float32)
+    for sid in gen3_data.species.raw():
+        sd = gen3_data.species.get(sid)
+        snum = sd.num
+        if not (0 <= snum < n_species):
+            continue
+        for aid, p in (gen3_data.priors.ability(sid) or {}).items():
+            # DEDUPE categories per ability: Immunity blocks both psn & tox which fold to ONE category (5),
+            # so add the prior mass ONCE per distinct category (else a 0.86 Immunity prior double-counts → 1.0).
+            cats = {_STATUS_CAT[s] for s in ABILITY_STATUS_IMMUNITY.get(aid, ()) if s in _STATUS_CAT}
+            for c in cats:
+                species_block[snum, c] += float(p)
+    species_block = species_block.clamp(max=1.0)
+
+    return {
+        "MOVE_STATUS_CAT": cat,
+        "MOVE_INFLICTS_STATUS": inflicts,
+        "MOVE_IS_SLEEP": is_sleep,
+        "MOVE_BLOCKED_IF_STATUSED": blocked_if_statused,
+        "MOVE_STATUS_TYPE_IMMUNE": type_immune,
+        "ABILITY_STATUS_BLOCK": ability_block,
+        "SPECIES_STATUS_BLOCK_PRIOR": species_block,
+    }
+
+
+def build_move_type_idx(n_moves: int) -> torch.Tensor:
+    """``[n_moves]`` TypeEncoder index of each move's canonical type (the `MoveLatentEncoder`'s type
+    lookup for its context-free latent table). HP (num 237) stays idx 0 (unknown) — HP's type is
+    per-candidate, resolved live elsewhere; the latent treats HP as one class. Mirrors the MOVE_TYPE_IDX
+    built in build_damage_buffers (kept standalone so the encoder doesn't build the whole damage table)."""
+    idx = torch.zeros(n_moves, dtype=torch.long)
+    for mid in gen3_data.moves.raw():
+        md = gen3_data.moves.get(mid)
+        if 0 <= md.num < n_moves and md.num != HIDDEN_POWER_NUM:
+            idx[md.num] = _move_type_idx(md)
+    return idx
+
+
+def build_move_attr(n_moves: int) -> torch.Tensor:
+    """``[n_moves, N_MOVE_ATTR]`` structured per-move attribute table for the `MoveLatentEncoder` —
+    the context-free "what does this move do" features (column order == `MOVE_ATTR_COLS`). TYPE is NOT
+    here (it rides the shared type embedding the encoder concatenates). Registered as a NON-persistent
+    buffer (pure data-derived, recomputable). HP (num 237) is SKIPPED → its row is left ALL-ZERO (same as
+    build_move_type_idx leaving idx 0): 17 move-ids collide on num 237, so populating it would bake in
+    whichever typed variant iterated last (order-dependent). The latent still distinguishes HP types via
+    the slot's RESOLVED type embedding; the op's typed-candidate path handles HP's damage."""
+    attr = torch.zeros(n_moves, N_MOVE_ATTR, dtype=torch.float32)
+    idx = {c: i for i, c in enumerate(MOVE_ATTR_COLS)}
+    for mid in gen3_data.moves.raw():
+        md = gen3_data.moves.get(mid)
+        num = md.num
+        if num == HIDDEN_POWER_NUM or not (0 <= num < n_moves):
+            continue
+        is_status = md.base_power <= 0
+        is_phys = md.category == MoveCategory.PHYSICAL
+        attr[num, idx["bp_norm"]] = min(md.base_power / 200.0, 1.0)
+        attr[num, idx["is_phys"]] = 1.0 if is_phys else 0.0
+        attr[num, idx["is_spec"]] = 1.0 if (not is_status and not is_phys) else 0.0
+        attr[num, idx["is_status"]] = 1.0 if is_status else 0.0
+        attr[num, idx["accuracy"]] = 1.0 if md.never_miss else float(md.accuracy) / 100.0
+        attr[num, idx["never_miss"]] = 1.0 if md.never_miss else 0.0
+        attr[num, idx["priority_norm"]] = float(md.priority) / _PRIORITY_NORM
+        attr[num, idx["drain"]] = float(md.drain_fraction)
+        attr[num, idx["recoil"]] = float(md.recoil_fraction)
+        for col in SECONDARY_COLS:
+            attr[num, idx[col]] = md.secondary_chance(col)
+        attr[num, idx["is_heal"]] = 1.0 if md.is_heal else 0.0
+        attr[num, idx["is_boost"]] = 1.0 if md.is_boost else 0.0
+        attr[num, idx["is_protect"]] = 1.0 if md.is_protect else 0.0
+        attr[num, idx["is_phaze"]] = 1.0 if md.is_phaze else 0.0
+        attr[num, idx["is_hazard"]] = 1.0 if md.is_hazard else 0.0
+        attr[num, idx["cures_self"]] = 1.0 if md.cures_self_status else 0.0
+        attr[num, idx["cures_team"]] = 1.0 if md.cures_team_status else 0.0
+    return attr
 
 
 # Floor probability for a move a species is ~never seen to run (keeps an unseen move POSSIBLE — never

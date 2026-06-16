@@ -1024,12 +1024,31 @@ class ProberApp(Gen3App):
         # the Earthquake-vs-Brick-Break tie-break. Each move's max-roll %HP + P(KO) (the realized,
         # accuracy-folded KO this turn). Only present on a --damage-op-with-outgoing checkpoint.
         dop = a.damage_op
+        if dop is not None:
+            # gen3_unified_move_system_v1: the opp active's per-status SECONDARY threat (its damaging
+            # moves' para/flinch/freeze/burn — the axis the binary status flag missed), accuracy-folded +
+            # ×Serene Grace. Show only the non-trivial ones.
+            isec = dop.get("incoming_secondary") or {}
+            inc_shown = [f"{c} {p * 100:.0f}%" for c, p in isec.items() if p > 0.05]
+            if inc_shown:
+                lines.append("\nopp 2ndary: ", style="dim")
+                lines.append("  ·  ".join(inc_shown), style="yellow")
         if dop is not None and dop.get("outgoing"):
             moves = dop["outgoing"]["moves"]
+            osec = dop["outgoing"].get("secondary") or [{} for _ in moves]
             labels = (list(a.matchups.move_labels) if a.matchups is not None
                       else [f"m{k}" for k in range(len(moves))])
+
+            def _top_secondary(sc: dict) -> str:
+                """The single most-likely secondary effect our move causes (what status + probability)."""
+                items = [(c, p) for c, p in sc.items() if p > 0.05]
+                if not items:
+                    return ""
+                c, p = max(items, key=lambda cp: cp[1])
+                return f" ({c} {p * 100:.0f}%)"
             shown = [f"{lab} {mv['high'] * 100:.0f}%" + (f"→KO{mv['pko'] * 100:.0f}%" if mv["pko"] > 0.05 else "")
-                     for lab, mv in zip(labels, moves) if mv["high"] > 0]
+                     + _top_secondary(sc)
+                     for lab, mv, sc in zip(labels, moves, osec) if mv["high"] > 0]
             lines.append("\nour damage (op): ", style="dim")
             lines.append("  ·  ".join(shown) if shown else "n/a", style="cyan")
         threat.update(lines)

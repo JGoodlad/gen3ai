@@ -128,6 +128,15 @@ class InstrumentedMaskablePPO(MaskablePPO):
     # MODE (which slots) lives on the extractor (move_belief_mode) — read from there, single source.
     move_belief_coef: float = 0.0
 
+    # Set by train_rl_agent (gen3_unified_move_system_v1). The MOVE-belief LATENT-grading weight:
+    # move_belief_latent_coef * (cosine of the predicted move distribution's expected move-latent toward
+    # the true moveset's mean latent + VICReg floor) over the revealed scored slots. 0.0 = OFF
+    # (byte-identical loss). Soft complement to the per-ID BCE so near-moves (Rock Slide ≈ HP Rock) grade
+    # as near. Training-only (scales the loss, never a forward pass) → NOT version-locked; it READS the
+    # extractor's last_move_latent_table, whose state_dict-changing module is gated by the version-checked
+    # move_latent arch toggle.
+    move_belief_latent_coef: float = 0.0
+
     # Set by train_rl_agent (like opp_belief_aux_coef). The LATENT-belief loss weight: opp_belief_latent_coef
     # * (cosine-to-encoder-role-token + VICReg variance floor) over the believed opp slots, matched on the
     # SAME Hungarian assignment as the species CE. 0.0 = OFF (no term; byte-identical loss). Training-only
@@ -314,6 +323,59 @@ class InstrumentedMaskablePPO(MaskablePPO):
             "recall": (mv_tp / mv_true_pos) if mv_true_pos else 0.0,
             "revealed_slots": float(n_revealed),
             "unrevealed_slots": float(n_unrevealed),
+        }
+        return loss, metrics
+
+    @staticmethod
+    def _move_belief_latent_loss(ml, latent_table, known_moves):
+        """LATENT-space grading of the move belief (gen3_unified_move_system_v1) — the soft complement to
+        the per-ID BCE so near-moves (Rock Slide ≈ Hidden Power Rock) grade as near.
+
+        For each REVEALED scored slot (slot==species, like the BCE's revealed branch): the predicted
+        distribution's EXPECTED move-latent ``softmax(ml) @ latent_table`` (softmax over the move axis →
+        floor-robust, concentrates on the believed moves) is regressed by COSINE toward the slot's true
+        moveset MEAN latent (stop-grad — the grading TARGET), plus a VICReg variance floor on the
+        predictions. ``latent_table`` ``[M, D]`` is the context-free `MoveLatentEncoder.latent_table`;
+        ``ml`` ``[B,6,M]``; ``known_moves``
+        ``[B,6,4]`` (move nums, -1 PAD). Returns (loss, metrics) or None (off / labels absent / nothing
+        scorable). Pure + static (unit-testable without a full PPO).
+
+        COLLAPSE NOTE (differs from the species latent head): unlike `_belief_aux_loss`, whose target is an
+        EXTERNAL stop-grad (the pokemon_encoder role-token), here the target is derived from the SAME
+        `latent_table` whose params the prediction gradient updates (the `.detach()` only severs the
+        per-step path, not the shared table). So the cosine could in principle be gamed by collapsing the
+        table rows to one DIRECTION. The VICReg term below is NOT the guard against that — it floors per-dim
+        MAGNITUDE variance, which an angular collapse can satisfy by scaling magnitudes. The REAL
+        anti-collapse pressure is the RL TASK-ANCHORING: the same per-move latent feeds the move network
+        (`PokemonEncoder.forward`), so the table can't freely collapse without hurting the policy/value
+        objective. (Empirically full direction-collapse is not a reachable attractor of this loss; the
+        `movelatent_std` metric monitors magnitude, not angle — a future change that weakens the move-net
+        anchoring would remove the only real guard, so add a row-decorrelation term then.)"""
+        if ml is None or latent_table is None or known_moves is None:
+            return None
+        device = ml.device
+        km = known_moves.long().to(device)                                # [B,6,4]
+        valid = km >= 0
+        slot_has = valid.any(-1)                                          # [B,6]
+        if not bool(slot_has.any()):
+            return None
+        # predicted distribution's expected latent (softmax kills the ~0.02 prior floor → the latent is
+        # the believed moves', not the global mean), [B,6,D].
+        pred_latent = F.softmax(ml, dim=-1) @ latent_table               # [B,6,D]
+        # target = mean of the slot's TRUE moves' latents (stop-grad). gather + zero pads + mean.
+        move_lat = latent_table[km.clamp(min=0)] * valid.unsqueeze(-1).float()   # [B,6,4,D] (pads → 0)
+        tgt = (move_lat.sum(2) / valid.sum(-1, keepdim=True).clamp(min=1).float()).detach()  # [B,6,D]
+        pl = pred_latent[slot_has]                                        # [N,D]
+        tl = tgt[slot_has]                                                # [N,D]
+        cos = F.cosine_similarity(pl, tl, dim=-1)                         # [N]
+        cos_loss = (1.0 - cos).mean()
+        std = th.sqrt(pl.var(dim=0, unbiased=False) + 1e-4)              # [D] per-dim MAGNITUDE floor (see COLLAPSE NOTE)
+        vicreg = F.relu(_LATENT_STD_TARGET - std).mean()
+        loss = cos_loss + _LATENT_VICREG_WEIGHT * vicreg
+        metrics = {
+            "cosine": float(cos.mean().item()),
+            "std": float(std.mean().item()),
+            "slots": float(int(slot_has.sum())),
         }
         return loss, metrics
 
@@ -534,6 +596,7 @@ class InstrumentedMaskablePPO(MaskablePPO):
         belief_aux_on = self.opp_belief_aux_coef > 0.0
         move_belief_on = self.move_belief_coef > 0.0  # +MOVE-BELIEF reinjection-head supervised loss
         latent_belief_on = self.opp_belief_latent_coef > 0.0  # +LATENT belief (rides the species aux call)
+        move_latent_on = self.move_belief_latent_coef > 0.0  # +MOVE-LATENT grading (gen3_unified_move_system_v1)
         # +WIN-PROB: the head's MODE (none/read_only/shaping) lives on the extractor; the loss is added
         # whenever the mode is on AND the coef is non-zero. read_only vs shaping differ only in whether the
         # extractor stop-grads the head's input (the trunk gradient) — the loss term itself is identical.
@@ -682,6 +745,26 @@ class InstrumentedMaskablePPO(MaskablePPO):
                         for _mk, _mv in mb_m.items():
                             belief_metrics.setdefault("move_" + _mk, []).append(float(_mv))
 
+                # +MOVE-LATENT (gen3_unified_move_system_v1): grade the move belief in latent space so
+                # near-moves (Rock Slide ≈ HP Rock) grade as near — the soft complement to the per-ID BCE.
+                # Reads the extractor's context-free move-latent table (stashed this minibatch) + the same
+                # known_moves labels. Its gradient flows into the move-belief head AND the MoveLatentEncoder
+                # (the table) → it joins the aux pull on the trunk. OFF → skipped (byte-identical).
+                move_latent_term = None
+                if move_latent_on:
+                    ml_out = self._move_belief_latent_loss(
+                        self.policy.features_extractor.last_move_belief_logits,
+                        self.policy.features_extractor.last_move_latent_table,
+                        rollout_data.observations.get("known_moves"),
+                    )
+                    if ml_out is not None:
+                        ml_loss, ml_m = ml_out
+                        move_latent_term = self.move_belief_latent_coef * ml_loss
+                        loss = loss + move_latent_term
+                        ml_m["loss"] = float(ml_loss.item())
+                        for _lk, _lv in ml_m.items():
+                            belief_metrics.setdefault("movelatent_" + _lk, []).append(float(_lv))
+
                 # +WIN-PROB: auxiliary win-probability BCE. evaluate_actions ran the extractor forward
                 # above, stashing last_win_prob_logits for THIS minibatch; the MC outcome label + its
                 # known-mask ride the same obs dict (the WinProbLabelCallback overwrote the placeholders
@@ -714,7 +797,11 @@ class InstrumentedMaskablePPO(MaskablePPO):
                     aux_probe_term = (
                         latent_belief_term if aux_probe_term is None else aux_probe_term + latent_belief_term
                     )
-                aux_on = belief_aux_on or move_belief_on or latent_belief_on
+                if move_latent_term is not None:
+                    aux_probe_term = (
+                        move_latent_term if aux_probe_term is None else aux_probe_term + move_latent_term
+                    )
+                aux_on = belief_aux_on or move_belief_on or latent_belief_on or move_latent_on
 
                 # +INSTRUMENTATION: sample the shared-trunk gradient balance on the first
                 # minibatch (graph alive here; the probe uses read-only autograd.grad with

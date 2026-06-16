@@ -518,8 +518,14 @@ def current_model_version(
     damage_op: bool = False,
     damage_outgoing: bool = False,
     move_candidate_floor: float = 0.0,
+    move_latent: bool = False,
+    move_belief_latent_coef: float = 0.0,
+    spread_belief: bool = False,
+    spread_belief_coef: float = 0.0,
     move_prior_fusion: bool = False,
     mask_incoming_damage_obs: bool = False,
+    mask_active_move_scalars_obs: bool = False,
+    mask_move_effects_obs: bool = False,
     win_prob_mode: str = "none",
     win_prob_coef: float = 1.0,
     vf_coef: float = 0.5,
@@ -558,8 +564,12 @@ def current_model_version(
     ext_kwargs["damage_op"] = damage_op
     ext_kwargs["damage_outgoing"] = damage_outgoing
     ext_kwargs["move_candidate_floor"] = move_candidate_floor
+    ext_kwargs["move_latent"] = move_latent
+    ext_kwargs["spread_belief"] = spread_belief
     ext_kwargs["move_prior_fusion"] = move_prior_fusion
     ext_kwargs["mask_incoming_damage_obs"] = mask_incoming_damage_obs
+    ext_kwargs["mask_active_move_scalars_obs"] = mask_active_move_scalars_obs
+    ext_kwargs["mask_move_effects_obs"] = mask_move_effects_obs
     ext_kwargs["win_prob_mode"] = win_prob_mode
     policy_kwargs = {
         "features_extractor_class": Gen3FeaturesExtractor,
@@ -571,7 +581,8 @@ def current_model_version(
         ext_kwargs["layout"], policy_kwargs, vf_coef=vf_coef, reward_config=reward_config,
         value_tail_weight=value_tail_weight, opp_belief_aux_coef=opp_belief_aux_coef,
         move_belief_coef=move_belief_coef, opp_belief_latent_coef=opp_belief_latent_coef,
-        win_prob_coef=win_prob_coef,
+        win_prob_coef=win_prob_coef, move_belief_latent_coef=move_belief_latent_coef,
+        spread_belief_coef=spread_belief_coef,
     )
 
 
@@ -590,8 +601,14 @@ def arch_toggles_from_model(model) -> dict:
         "move_belief_mode": str(getattr(fe, "move_belief_mode", "off")),
         "opp_belief_latent": bool(getattr(fe, "opp_belief_latent", False)),
         "damage_op": bool(getattr(fe, "damage_op_enabled", False)),
+        "damage_outgoing": bool(getattr(fe, "damage_outgoing", False)),
+        "move_candidate_floor": float(getattr(fe, "move_candidate_floor", 0.0)),
+        "move_latent": bool(getattr(fe, "move_latent", False)),
+        "spread_belief": bool(getattr(fe, "spread_belief_enabled", False)),
         "move_prior_fusion": bool(getattr(fe, "move_prior_fusion", False)),
         "mask_incoming_damage_obs": bool(getattr(fe, "mask_incoming_damage_obs", False)),
+        "mask_active_move_scalars_obs": bool(getattr(fe, "mask_active_move_scalars_obs", False)),
+        "mask_move_effects_obs": bool(getattr(fe, "mask_move_effects_obs", False)),
         "win_prob_mode": str(getattr(fe, "win_prob_mode", "none")),
         "use_popart": getattr(model.policy, "popart", None) is not None,
     }

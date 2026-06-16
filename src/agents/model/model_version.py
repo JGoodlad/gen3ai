@@ -176,7 +176,47 @@ from typing import Any, Dict, List
 #   >0 enables the learnset-legality + <floor rarity prune on the move prior (a different belief → gated in
 #   check_compatible; the prior buffer is non-persistent so the state_dict is identical either way). Old
 #   configs migrate to damage_outgoing=False / move_candidate_floor=0.0.
-MODEL_CONFIG_VERSION = 23
+# v24: gen3_unified_move_system_v1. Added `move_latent` (the context-free MoveLatentEncoder arch toggle:
+#   a mechanics-grounded per-move latent concatenated into the move network — STRUCTURAL like damage_op,
+#   it WIDENS the move-network input → state_dict change, gated in check_compatible; OFF = baseline
+#   byte-for-byte, NO ARCH_SIGNATURE bump) + `move_belief_latent_coef` (its training-only latent-grading
+#   loss weight: cosine of the predicted move distribution's expected latent toward the true moveset's mean
+#   latent so Rock Slide ≈ Hidden Power Rock — NOT version-locked, like move_belief_coef). ALSO in v24 the
+#   DamageOperator's effect block is enriched with per-status SECONDARY probabilities (incoming + per-move
+#   outgoing, Serene Grace / Shield Dust) — intrinsic to `damage_op` (no separate flag), so a v23
+#   damage_op checkpoint won't load into v24 (the op's output dim grew); damage_op OFF stays byte-identical.
+#   Old configs migrate to move_latent=False / move_belief_latent_coef=0.0.
+# v25: gen3_unified_spread_belief_v1 + the disable-redundant-obs master flag. (1) `spread_belief` (the THIRD
+#   belief leg — predicts the opp's hidden SPREAD = 5 derived stats per slot, reinjected into the opp token,
+#   consumed by the DamageOperator to REPLACE its hand-coded de-timid/neutral opp-spread constants; STRUCTURAL
+#   like opp_belief_slots — adds the SpreadBelief module, gated in check_compatible, OFF byte-identical, NO
+#   ARCH_SIGNATURE bump) + `spread_belief_coef` (its training-only speed-supervision loss weight, NOT
+#   version-locked). (2) the disable-redundant obs masks `mask_active_move_scalars_obs` +
+#   `mask_move_effects_obs` (FORWARD-BEHAVIOR like mask_incoming_damage_obs — zero a now-GPU-subsumed obs
+#   region from the model's view; the master --unified-obs flips all three). (3) the DamageOperator op effects
+#   are further unified (MOVE_EFFECT_FLAGS folded into MOVE_ATTR; fixed-damage moves type-gated) — intrinsic to
+#   damage_op. Old configs migrate every new field to False/0.0.
+# v26: gen3_unified_op_physics_v1 — the DamageOperator reaches PARITY with the CPU incoming_damage block it
+#   (optionally) masks, so --unified-obs no longer regresses the model's damage understanding. INTRINSIC to
+#   damage_op (no new field): the op now applies stat-stage BOOSTS (offense/defence/speed, both directions —
+#   a +2 sweeper's Atk doubles), BURN (½ physical Atk), WEATHER (rain ×1.5 Water/×0.5 Fire; sun the reverse),
+#   PARALYSIS (×0.25 speed), and FIXED-DAMAGE moves (Seismic Toss/Night Shade = level HP, type-immunity-gated
+#   — 0 vs Ghost). Values-only (no dims/state_dict change → no new check_compatible field); the version bump
+#   marks it. Counter/Mirror Coat (return-damage) is deferred.
+# v27: gen3_unified_status_landing_v1 — the op's OUTGOING direction gains a per-OUR-move STATUS-LANDING block
+#   (8 dims: P(a dedicated status move lands vs THIS opponent) + a `known` bit per move) — the GPU home for
+#   the masked move-effect block's `status_will_land`, so --mask-move-effects-obs no longer drops that signal.
+#   It folds accuracy × per-MOVE type immunity (Thunder Wave→Ground, Toxic/Poison→Steel/Poison, Will-O-Wisp
+#   →Fire, **+ Leech Seed→Grass**, the v26-deferred item) × ability immunity (revealed→exact, else the Smogon
+#   ability-prior marginal) × already-statused (majors) × **Sleep Clause** (a 2nd inflicted sleep fails; a
+#   Rest self-sleep does NOT consume the cap) × **Substitute** (a Sub blocks every status move incl. Leech
+#   Seed). The gen3 rules are imported from gen3_mechanics (one source); Shield Dust is N/A here (it only
+#   scales SECONDARY effects, never a primary status move). INTRINSIC to damage_outgoing (no new field) — it
+#   grows the outgoing output dim, so a v26 damage_outgoing checkpoint won't load (the SB3 load_state_dict
+#   shape mismatch on the projection Linear in_features — the runtime-discovered projection dim is NOT a
+#   ModelVersion field, so check_compatible passes). OFF (no damage_outgoing) byte-identical; no
+#   ARCH_SIGNATURE bump. Bare version marker.
+MODEL_CONFIG_VERSION = 27
 
 # Change this when the neural architecture changes structurally in a way that makes
 # weights from a different signature incompatible (e.g. adding LSTM, replacing attention).
@@ -633,6 +673,24 @@ class ModelVersion:
     # legal-unobserved move gets this small floor base — a different belief, gated in check_compatible. The
     # prior buffer is non-persistent so the state_dict is identical either way.
     move_candidate_floor: float = 0.0
+    # v24 STRUCTURAL toggle (weight-shape, like damage_op): the context-free MoveLatentEncoder — a
+    # mechanics-grounded per-move latent concatenated into the move-network input (widens it → state_dict
+    # change). Gated in check_compatible (bool); OFF = baseline byte-for-byte (NO ARCH_SIGNATURE bump).
+    move_latent: bool = False
+    # v24 TRAINING-ONLY coefficient (like move_belief_coef, NOT version-locked): the move-belief LATENT
+    # grading weight (cosine of the predicted move distribution's expected latent → true moveset mean
+    # latent + VICReg). Recorded for provenance + flagless-resume read-back; reads the move_latent table.
+    move_belief_latent_coef: float = 0.0
+    # v25 STRUCTURAL toggle (like opp_belief_slots): the SpreadBelief module (predict+reinject the opp's
+    # hidden spread). Gated in check_compatible; OFF byte-for-byte (no module, NO ARCH_SIGNATURE bump).
+    spread_belief: bool = False
+    # v25 TRAINING-ONLY coefficient (NOT version-locked): the speed-supervision weight (masked BCE of the
+    # believed P(outspeed) toward observed move order). Recorded for provenance + flagless-resume read-back.
+    spread_belief_coef: float = 0.0
+    # v25 FORWARD-BEHAVIOR toggles (like mask_incoming_damage_obs): zero a now-GPU-subsumed obs region from
+    # the model's view (reward/PBRS untouched). The master --unified-obs flips all three masks on.
+    mask_active_move_scalars_obs: bool = False
+    mask_move_effects_obs: bool = False
 
     @classmethod
     def from_layout_and_policy_kwargs(
@@ -646,6 +704,8 @@ class ModelVersion:
         move_belief_coef: float = 0.0,
         opp_belief_latent_coef: float = 0.0,
         win_prob_coef: float = 1.0,
+        move_belief_latent_coef: float = 0.0,
+        spread_belief_coef: float = 0.0,
     ) -> ModelVersion:
         from agents.model.features_extractor import (
             ROLE_TOKEN_SIZE,
@@ -719,6 +779,18 @@ class ModelVersion:
             move_candidate_floor=float(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("move_candidate_floor", 0.0)
             ),
+            move_latent=bool(
+                policy_kwargs.get("features_extractor_kwargs", {}).get("move_latent", False)
+            ),
+            spread_belief=bool(
+                policy_kwargs.get("features_extractor_kwargs", {}).get("spread_belief", False)
+            ),
+            mask_active_move_scalars_obs=bool(
+                policy_kwargs.get("features_extractor_kwargs", {}).get("mask_active_move_scalars_obs", False)
+            ),
+            mask_move_effects_obs=bool(
+                policy_kwargs.get("features_extractor_kwargs", {}).get("mask_move_effects_obs", False)
+            ),
             move_prior_fusion=bool(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("move_prior_fusion", False)
             ),
@@ -733,6 +805,8 @@ class ModelVersion:
             move_belief_coef=float(move_belief_coef),
             opp_belief_latent_coef=float(opp_belief_latent_coef),
             win_prob_coef=float(win_prob_coef),
+            move_belief_latent_coef=float(move_belief_latent_coef),
+            spread_belief_coef=float(spread_belief_coef),
         )
 
     def to_json(self) -> str:
@@ -887,6 +961,37 @@ class ModelVersion:
                 "state_dict and cannot be toggled on an existing model.\n"
                 "Resume with the matching --unified-damage setting, or start a fresh training run."
             )
+
+        # v24 STRUCTURAL toggle (weight-shape, like damage_op): the MoveLatentEncoder widens the
+        # move-network input, so toggling it changes the state_dict.
+        if self.move_latent != saved.move_latent:
+            raise ModelVersionError(
+                f"move_latent mismatch: saved={saved.move_latent}, current={self.move_latent}.\n"
+                "The MoveLatentEncoder concatenates a per-move latent into the move network, so it changes "
+                "the state_dict and cannot be toggled on an existing model.\n"
+                "Resume with the matching --move-latent setting, or start a fresh training run."
+            )
+
+        # v25 STRUCTURAL toggle (like opp_belief_slots): the SpreadBelief module adds params, so toggling
+        # it changes the state_dict.
+        if self.spread_belief != saved.spread_belief:
+            raise ModelVersionError(
+                f"spread_belief mismatch: saved={saved.spread_belief}, current={self.spread_belief}.\n"
+                "The SpreadBelief module (the hidden-spread belief head) changes the state_dict and cannot "
+                "be toggled on an existing model.\n"
+                "Resume with the matching --spread-belief setting, or start a fresh training run."
+            )
+
+        # v25 FORWARD-BEHAVIOR toggles (like mask_incoming_damage_obs): each zeros a now-subsumed obs region
+        # from the model's view → a different forward the policy/value trained under (state_dict identical).
+        for _name in ("mask_active_move_scalars_obs", "mask_move_effects_obs"):
+            if getattr(self, _name) != getattr(saved, _name):
+                raise ModelVersionError(
+                    f"{_name} mismatch: saved={getattr(saved, _name)}, current={getattr(self, _name)}.\n"
+                    "This obs-ablation flag (part of --unified-obs) changes the forward the model trained "
+                    "under, so it cannot be flipped on a resume.\n"
+                    "Resume with the matching --unified-obs setting, or start a fresh training run."
+                )
 
         # Forward-behavior toggle (no weight-shape change, like move_prior_fusion): the learnset + rarity
         # gate produces a different move prior → a different belief the policy/value/op trained under.
@@ -1169,4 +1274,32 @@ def _migrate_config(data: dict) -> dict:
         data.setdefault("damage_outgoing", False)
         data.setdefault("move_candidate_floor", 0.0)
         data["config_version"] = 23
+    if version < 24:
+        # v24: added the MoveLatentEncoder toggle (off) + its training-only latent-grading coef (0.0).
+        # Old models had no per-move latent and no latent-grading loss.
+        data.setdefault("move_latent", False)
+        data.setdefault("move_belief_latent_coef", 0.0)
+        data["config_version"] = 24
+    if version < 25:
+        # v25: the spread belief (off) + its training-only speed-supervision coef (0.0), and the two
+        # disable-redundant obs masks (off). Old models had no spread belief and saw every obs region.
+        data.setdefault("spread_belief", False)
+        data.setdefault("spread_belief_coef", 0.0)
+        data.setdefault("mask_active_move_scalars_obs", False)
+        data.setdefault("mask_move_effects_obs", False)
+        data["config_version"] = 25
+    if version < 26:
+        # v26: gen3_unified_op_physics_v1 — op physics parity (boosts/burn/weather/para/fixed-damage),
+        # intrinsic to damage_op. Values-only, no new field — a bare version marker.
+        data["config_version"] = 26
+    if version < 27:
+        # v27: gen3_unified_status_landing_v1 — the op's OUTGOING direction gains the per-OUR-move
+        # status-landing block (the GPU home for the masked move-effect `status_will_land`), Leech Seed's
+        # Grass immunity (the v26-deferred item), Sleep Clause, and Substitute-blocks-status. INTRINSIC to
+        # damage_outgoing (no new field); it grows the op's outgoing output dim → a v26 damage_outgoing
+        # checkpoint won't load. The catch is the SB3 MaskablePPO.load / load_state_dict shape mismatch on the
+        # projection Linear's in_features (the projection input dim is RUNTIME-discovered, NOT a ModelVersion
+        # field, so check_compatible passes — the safety is the weight-shape load failure). OFF (no
+        # damage_outgoing) byte-identical. Bare marker.
+        data["config_version"] = 27
     return data

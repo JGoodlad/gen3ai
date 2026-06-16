@@ -35,6 +35,31 @@ pipeline runs byte-for-byte the same; only the transport changes (poke-env issue
 This powers the `*_fuzz_test.py` suite. (A few timing-sensitive checks stay on the live
 server as `*_fuzz_e2e_test.py` — e.g. `effectiveness_fuzz_e2e_test`.)
 
+### Single-turn damage oracle (`damage_probe.js`) — exact ground truth, no poke-env
+
+A third bridge mode drives the **OMNISCIENT** (referee) BattleStream directly — *not* the
+per-side protocol poke-env consumes. The omniscient stream reports **EXACT both-side HP**
+(`|-damage|p2a: X|389/461`, not the percent a player sees), and the live `battle` object exposes
+the sim's **OWN computed stats** (`storedStats`), boosts, status, item, ability, types, weather, and
+side conditions. So we can construct a battle with fully-specified teams, force a move sequence, and
+read the **exact** damage a hit dealt — the clean ground truth for validating the differentiable
+`DamageOperator`'s gen3 physics with **zero measurement confounds** (no percent-rounding, no
+stale-HP, no overkill caps that plague scraping damage from random games).
+
+- **`damage_probe.js`**: batch request/response over stdio (like `validate_team.js`). `stdin` = one
+  JSON `{scenarios:[{id, formatid, seed?, p1:[sets], p2:[sets], choices:[["p1","move 1"],…]}]}`; it
+  packs each team (`Teams.pack`), runs a fresh `BattleStream` per scenario, writes the choices to the
+  omniscient stream, and emits one JSON line per scenario: `{id, weather, log:[omniscient lines],
+  p1:<snap>, p2:<snap>}` where each snap carries `{species, maxhp, hp, stats, boosts, status, item,
+  ability, types, sideConditions}`.
+- Consumer: **`agents/training/poke_env_gaps/damage_op_probe_fuzz_test.py`** — the **authoritative**
+  damage-op physics gate. It stages one modifier per scenario (type/STAB/super-effective/resisted/4×/
+  type+ability immunity/Thick Fat/Choice Band/type-boost item/+Atk/+SpA boosts/burn/Reflect/Light
+  Screen/rain/sun/defender +Def), measures p1's final hit on p2 with exact HP, and asserts the sim's
+  damage lands inside the op's band (computed from the SIM's exact stats). The random-game
+  `damage_op_fuzz_test.py` is a looser broad-coverage net by comparison (its per-side percent HP is
+  inherently confounded — adjudicate any real physics question in the probe).
+
 ### RL-training transport (`BridgeSession`) — the bridge as a gym env transport
 
 `run_local_battles` is a *synchronous driver*: it owns the battle loop and pulls each decision

@@ -16,7 +16,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.5,
+        "recoilFraction": 0.0
     },
     "acid": {
         "name": "Acid",
@@ -35,7 +39,13 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {
+            "foe_statdrop": 10
+        },
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "acidarmor": {
         "name": "Acid Armor",
@@ -54,7 +64,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "aerialace": {
         "name": "Aerial Ace",
@@ -73,7 +87,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "aeroblast": {
         "name": "Aeroblast",
@@ -92,7 +110,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "agility": {
         "name": "Agility",
@@ -111,7 +133,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "aircutter": {
         "name": "Air Cutter",
@@ -130,7 +156,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "amnesia": {
         "name": "Amnesia",
@@ -149,7 +179,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "ancientpower": {
         "name": "Ancient Power",
@@ -168,7 +202,13 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {
+            "self_boost": 10
+        },
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "armthrust": {
         "name": "Arm Thrust",
@@ -187,7 +227,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "aromatherapy": {
         "name": "Aromatherapy",
@@ -206,7 +250,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": true
+        "curesTeamStatus": true,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "assist": {
         "name": "Assist",
@@ -225,7 +273,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "astonish": {
         "name": "Astonish",
@@ -244,7 +296,13 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {
+            "flinch": 30
+        },
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "attract": {
         "name": "Attract",
@@ -263,7 +321,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "aurorabeam": {
         "name": "Aurora Beam",
@@ -282,7 +344,13 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {
+            "foe_statdrop": 10
+        },
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "barrage": {
         "name": "Barrage",
@@ -301,7 +369,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "barrier": {
         "name": "Barrier",
@@ -320,7 +392,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "batonpass": {
         "name": "Baton Pass",
@@ -339,7 +415,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "beatup": {
         "name": "Beat Up",
@@ -358,7 +438,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "bellydrum": {
         "name": "Belly Drum",
@@ -377,7 +461,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "bide": {
         "name": "Bide",
@@ -396,7 +484,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "bind": {
         "name": "Bind",
@@ -415,7 +507,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "bite": {
         "name": "Bite",
@@ -434,7 +530,13 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {
+            "flinch": 30
+        },
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "blastburn": {
         "name": "Blast Burn",
@@ -453,7 +555,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "blazekick": {
         "name": "Blaze Kick",
@@ -472,7 +578,13 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {
+            "brn": 10
+        },
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "blizzard": {
         "name": "Blizzard",
@@ -491,7 +603,13 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {
+            "frz": 10
+        },
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "block": {
         "name": "Block",
@@ -510,7 +628,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "bodyslam": {
         "name": "Body Slam",
@@ -529,7 +651,13 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {
+            "par": 30
+        },
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "boneclub": {
         "name": "Bone Club",
@@ -548,7 +676,13 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {
+            "flinch": 10
+        },
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "bonemerang": {
         "name": "Bonemerang",
@@ -567,7 +701,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "bonerush": {
         "name": "Bone Rush",
@@ -586,7 +724,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "bounce": {
         "name": "Bounce",
@@ -605,7 +747,13 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {
+            "par": 30
+        },
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "brickbreak": {
         "name": "Brick Break",
@@ -624,7 +772,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "bubble": {
         "name": "Bubble",
@@ -643,7 +795,13 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {
+            "foe_statdrop": 10
+        },
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "bubblebeam": {
         "name": "Bubble Beam",
@@ -662,7 +820,13 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {
+            "foe_statdrop": 10
+        },
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "bulkup": {
         "name": "Bulk Up",
@@ -681,7 +845,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "bulletseed": {
         "name": "Bullet Seed",
@@ -700,7 +868,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "calmmind": {
         "name": "Calm Mind",
@@ -719,7 +891,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "camouflage": {
         "name": "Camouflage",
@@ -738,7 +914,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "charge": {
         "name": "Charge",
@@ -757,7 +937,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "charm": {
         "name": "Charm",
@@ -776,7 +960,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "clamp": {
         "name": "Clamp",
@@ -795,7 +983,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "cometpunch": {
         "name": "Comet Punch",
@@ -814,7 +1006,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "confuseray": {
         "name": "Confuse Ray",
@@ -833,7 +1029,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "confusion": {
         "name": "Confusion",
@@ -852,7 +1052,13 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {
+            "confusion": 10
+        },
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "constrict": {
         "name": "Constrict",
@@ -871,7 +1077,13 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {
+            "foe_statdrop": 10
+        },
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "conversion": {
         "name": "Conversion",
@@ -890,7 +1102,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "conversion2": {
         "name": "Conversion 2",
@@ -909,7 +1125,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "cosmicpower": {
         "name": "Cosmic Power",
@@ -928,7 +1148,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "cottonspore": {
         "name": "Cotton Spore",
@@ -947,7 +1171,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "counter": {
         "name": "Counter",
@@ -966,7 +1194,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": -5,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "covet": {
         "name": "Covet",
@@ -985,7 +1217,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "crabhammer": {
         "name": "Crabhammer",
@@ -1004,7 +1240,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "crosschop": {
         "name": "Cross Chop",
@@ -1023,7 +1263,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "crunch": {
         "name": "Crunch",
@@ -1042,7 +1286,13 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {
+            "foe_statdrop": 20
+        },
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "crushclaw": {
         "name": "Crush Claw",
@@ -1061,7 +1311,13 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {
+            "foe_statdrop": 50
+        },
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "curse": {
         "name": "Curse",
@@ -1080,7 +1336,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "cut": {
         "name": "Cut",
@@ -1099,7 +1359,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "defensecurl": {
         "name": "Defense Curl",
@@ -1118,7 +1382,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "destinybond": {
         "name": "Destiny Bond",
@@ -1137,7 +1405,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "detect": {
         "name": "Detect",
@@ -1156,7 +1428,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 3,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "dig": {
         "name": "Dig",
@@ -1175,7 +1451,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "disable": {
         "name": "Disable",
@@ -1194,7 +1474,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "dive": {
         "name": "Dive",
@@ -1213,7 +1497,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "dizzypunch": {
         "name": "Dizzy Punch",
@@ -1232,7 +1520,13 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {
+            "confusion": 20
+        },
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "doomdesire": {
         "name": "Doom Desire",
@@ -1251,7 +1545,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "doubleedge": {
         "name": "Double-Edge",
@@ -1270,7 +1568,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.3333333333333333
     },
     "doublekick": {
         "name": "Double Kick",
@@ -1289,7 +1591,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "doubleslap": {
         "name": "Double Slap",
@@ -1308,7 +1614,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "doubleteam": {
         "name": "Double Team",
@@ -1327,7 +1637,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "dragonbreath": {
         "name": "Dragon Breath",
@@ -1346,7 +1660,13 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {
+            "par": 30
+        },
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "dragonclaw": {
         "name": "Dragon Claw",
@@ -1365,7 +1685,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "dragondance": {
         "name": "Dragon Dance",
@@ -1384,7 +1708,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "dragonrage": {
         "name": "Dragon Rage",
@@ -1403,7 +1731,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "dreameater": {
         "name": "Dream Eater",
@@ -1422,7 +1754,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.5,
+        "recoilFraction": 0.0
     },
     "drillpeck": {
         "name": "Drill Peck",
@@ -1441,7 +1777,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "dynamicpunch": {
         "name": "Dynamic Punch",
@@ -1460,7 +1800,13 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {
+            "confusion": 100
+        },
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "earthquake": {
         "name": "Earthquake",
@@ -1479,7 +1825,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "eggbomb": {
         "name": "Egg Bomb",
@@ -1498,7 +1848,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "ember": {
         "name": "Ember",
@@ -1517,7 +1871,13 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {
+            "brn": 10
+        },
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "encore": {
         "name": "Encore",
@@ -1536,7 +1896,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "endeavor": {
         "name": "Endeavor",
@@ -1555,7 +1919,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "endure": {
         "name": "Endure",
@@ -1574,7 +1942,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 4,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "eruption": {
         "name": "Eruption",
@@ -1593,7 +1965,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "explosion": {
         "name": "Explosion",
@@ -1612,7 +1988,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "extrasensory": {
         "name": "Extrasensory",
@@ -1631,7 +2011,13 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {
+            "flinch": 10
+        },
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "extremespeed": {
         "name": "Extreme Speed",
@@ -1650,7 +2036,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 1,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "facade": {
         "name": "Facade",
@@ -1669,7 +2059,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "fakeout": {
         "name": "Fake Out",
@@ -1688,7 +2082,13 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 1,
+        "secondaryEffects": {
+            "flinch": 100
+        },
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "faketears": {
         "name": "Fake Tears",
@@ -1707,7 +2107,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "falseswipe": {
         "name": "False Swipe",
@@ -1726,7 +2130,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "featherdance": {
         "name": "Feather Dance",
@@ -1745,7 +2153,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "feintattack": {
         "name": "Feint Attack",
@@ -1764,7 +2176,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "fireblast": {
         "name": "Fire Blast",
@@ -1783,7 +2199,13 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {
+            "brn": 10
+        },
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "firepunch": {
         "name": "Fire Punch",
@@ -1802,7 +2224,13 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {
+            "brn": 10
+        },
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "firespin": {
         "name": "Fire Spin",
@@ -1821,7 +2249,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "fissure": {
         "name": "Fissure",
@@ -1840,7 +2272,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "flail": {
         "name": "Flail",
@@ -1859,7 +2295,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "flamethrower": {
         "name": "Flamethrower",
@@ -1878,7 +2318,13 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {
+            "brn": 10
+        },
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "flamewheel": {
         "name": "Flame Wheel",
@@ -1897,7 +2343,13 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {
+            "brn": 10
+        },
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "flash": {
         "name": "Flash",
@@ -1916,7 +2368,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "flatter": {
         "name": "Flatter",
@@ -1935,7 +2391,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "fly": {
         "name": "Fly",
@@ -1954,7 +2414,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "focusenergy": {
         "name": "Focus Energy",
@@ -1973,7 +2437,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "focuspunch": {
         "name": "Focus Punch",
@@ -1992,7 +2460,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": -3,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "followme": {
         "name": "Follow Me",
@@ -2011,7 +2483,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 3,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "foresight": {
         "name": "Foresight",
@@ -2030,7 +2506,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "frenzyplant": {
         "name": "Frenzy Plant",
@@ -2049,7 +2529,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "frustration": {
         "name": "Frustration",
@@ -2068,7 +2552,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "furyattack": {
         "name": "Fury Attack",
@@ -2087,7 +2575,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "furycutter": {
         "name": "Fury Cutter",
@@ -2106,7 +2598,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "furyswipes": {
         "name": "Fury Swipes",
@@ -2125,7 +2621,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "futuresight": {
         "name": "Future Sight",
@@ -2144,7 +2644,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "gigadrain": {
         "name": "Giga Drain",
@@ -2163,7 +2667,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.5,
+        "recoilFraction": 0.0
     },
     "glare": {
         "name": "Glare",
@@ -2182,7 +2690,11 @@
         "isHazard": false,
         "status": "par",
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "grasswhistle": {
         "name": "Grass Whistle",
@@ -2201,7 +2713,11 @@
         "isHazard": false,
         "status": "slp",
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "growl": {
         "name": "Growl",
@@ -2220,7 +2736,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "growth": {
         "name": "Growth",
@@ -2239,7 +2759,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "grudge": {
         "name": "Grudge",
@@ -2258,7 +2782,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "guillotine": {
         "name": "Guillotine",
@@ -2277,7 +2805,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "gust": {
         "name": "Gust",
@@ -2296,7 +2828,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "hail": {
         "name": "Hail",
@@ -2315,7 +2851,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "harden": {
         "name": "Harden",
@@ -2334,7 +2874,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "haze": {
         "name": "Haze",
@@ -2353,7 +2897,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "headbutt": {
         "name": "Headbutt",
@@ -2372,7 +2920,13 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {
+            "flinch": 30
+        },
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "healbell": {
         "name": "Heal Bell",
@@ -2391,7 +2945,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": true
+        "curesTeamStatus": true,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "heatwave": {
         "name": "Heat Wave",
@@ -2410,7 +2968,13 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {
+            "brn": 10
+        },
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "helpinghand": {
         "name": "Helping Hand",
@@ -2429,7 +2993,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 5,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "hiddenpower": {
         "name": "Hidden Power",
@@ -2448,7 +3016,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "hiddenpowerbug": {
         "name": "Hidden Power Bug",
@@ -2467,7 +3039,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "hiddenpowerdark": {
         "name": "Hidden Power Dark",
@@ -2486,7 +3062,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "hiddenpowerdragon": {
         "name": "Hidden Power Dragon",
@@ -2505,7 +3085,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "hiddenpowerelectric": {
         "name": "Hidden Power Electric",
@@ -2524,7 +3108,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "hiddenpowerfighting": {
         "name": "Hidden Power Fighting",
@@ -2543,7 +3131,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "hiddenpowerfire": {
         "name": "Hidden Power Fire",
@@ -2562,7 +3154,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "hiddenpowerflying": {
         "name": "Hidden Power Flying",
@@ -2581,7 +3177,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "hiddenpowerghost": {
         "name": "Hidden Power Ghost",
@@ -2600,7 +3200,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "hiddenpowergrass": {
         "name": "Hidden Power Grass",
@@ -2619,7 +3223,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "hiddenpowerground": {
         "name": "Hidden Power Ground",
@@ -2638,7 +3246,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "hiddenpowerice": {
         "name": "Hidden Power Ice",
@@ -2657,7 +3269,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "hiddenpowerpoison": {
         "name": "Hidden Power Poison",
@@ -2676,7 +3292,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "hiddenpowerpsychic": {
         "name": "Hidden Power Psychic",
@@ -2695,7 +3315,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "hiddenpowerrock": {
         "name": "Hidden Power Rock",
@@ -2714,7 +3338,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "hiddenpowersteel": {
         "name": "Hidden Power Steel",
@@ -2733,7 +3361,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "hiddenpowerwater": {
         "name": "Hidden Power Water",
@@ -2752,7 +3384,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "highjumpkick": {
         "name": "High Jump Kick",
@@ -2771,7 +3407,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "hornattack": {
         "name": "Horn Attack",
@@ -2790,7 +3430,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "horndrill": {
         "name": "Horn Drill",
@@ -2809,7 +3453,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "howl": {
         "name": "Howl",
@@ -2828,7 +3476,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "hydrocannon": {
         "name": "Hydro Cannon",
@@ -2847,7 +3499,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "hydropump": {
         "name": "Hydro Pump",
@@ -2866,7 +3522,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "hyperbeam": {
         "name": "Hyper Beam",
@@ -2885,7 +3545,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "hyperfang": {
         "name": "Hyper Fang",
@@ -2904,7 +3568,13 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {
+            "flinch": 10
+        },
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "hypervoice": {
         "name": "Hyper Voice",
@@ -2923,7 +3593,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "hypnosis": {
         "name": "Hypnosis",
@@ -2942,7 +3616,11 @@
         "isHazard": false,
         "status": "slp",
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "iceball": {
         "name": "Ice Ball",
@@ -2961,7 +3639,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "icebeam": {
         "name": "Ice Beam",
@@ -2980,7 +3662,13 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {
+            "frz": 10
+        },
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "icepunch": {
         "name": "Ice Punch",
@@ -2999,7 +3687,13 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {
+            "frz": 10
+        },
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "iciclespear": {
         "name": "Icicle Spear",
@@ -3018,7 +3712,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "icywind": {
         "name": "Icy Wind",
@@ -3037,7 +3735,13 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {
+            "foe_statdrop": 100
+        },
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "imprison": {
         "name": "Imprison",
@@ -3056,7 +3760,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "ingrain": {
         "name": "Ingrain",
@@ -3075,7 +3783,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "irondefense": {
         "name": "Iron Defense",
@@ -3094,7 +3806,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "irontail": {
         "name": "Iron Tail",
@@ -3113,7 +3829,13 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {
+            "foe_statdrop": 30
+        },
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "jumpkick": {
         "name": "Jump Kick",
@@ -3132,7 +3854,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "karatechop": {
         "name": "Karate Chop",
@@ -3151,7 +3877,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "kinesis": {
         "name": "Kinesis",
@@ -3170,7 +3900,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "knockoff": {
         "name": "Knock Off",
@@ -3189,7 +3923,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "leafblade": {
         "name": "Leaf Blade",
@@ -3208,7 +3946,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "leechlife": {
         "name": "Leech Life",
@@ -3227,7 +3969,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.5,
+        "recoilFraction": 0.0
     },
     "leechseed": {
         "name": "Leech Seed",
@@ -3246,7 +3992,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "leer": {
         "name": "Leer",
@@ -3265,7 +4015,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "lick": {
         "name": "Lick",
@@ -3284,7 +4038,13 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {
+            "par": 30
+        },
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "lightscreen": {
         "name": "Light Screen",
@@ -3303,7 +4063,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "lockon": {
         "name": "Lock-On",
@@ -3322,7 +4086,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "lovelykiss": {
         "name": "Lovely Kiss",
@@ -3341,7 +4109,11 @@
         "isHazard": false,
         "status": "slp",
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "lowkick": {
         "name": "Low Kick",
@@ -3360,7 +4132,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "lusterpurge": {
         "name": "Luster Purge",
@@ -3379,7 +4155,13 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {
+            "foe_statdrop": 50
+        },
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "machpunch": {
         "name": "Mach Punch",
@@ -3398,7 +4180,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 1,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "magicalleaf": {
         "name": "Magical Leaf",
@@ -3417,7 +4203,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "magiccoat": {
         "name": "Magic Coat",
@@ -3436,7 +4226,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 4,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "magnitude": {
         "name": "Magnitude",
@@ -3455,7 +4249,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "meanlook": {
         "name": "Mean Look",
@@ -3474,7 +4272,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "meditate": {
         "name": "Meditate",
@@ -3493,7 +4295,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "megadrain": {
         "name": "Mega Drain",
@@ -3512,7 +4318,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.5,
+        "recoilFraction": 0.0
     },
     "megahorn": {
         "name": "Megahorn",
@@ -3531,7 +4341,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "megakick": {
         "name": "Mega Kick",
@@ -3550,7 +4364,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "megapunch": {
         "name": "Mega Punch",
@@ -3569,7 +4387,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "memento": {
         "name": "Memento",
@@ -3588,7 +4410,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "metalclaw": {
         "name": "Metal Claw",
@@ -3607,7 +4433,13 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {
+            "self_boost": 10
+        },
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "metalsound": {
         "name": "Metal Sound",
@@ -3626,7 +4458,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "meteormash": {
         "name": "Meteor Mash",
@@ -3645,7 +4481,13 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {
+            "self_boost": 20
+        },
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "metronome": {
         "name": "Metronome",
@@ -3664,7 +4506,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "milkdrink": {
         "name": "Milk Drink",
@@ -3683,7 +4529,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "mimic": {
         "name": "Mimic",
@@ -3702,7 +4552,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "mindreader": {
         "name": "Mind Reader",
@@ -3721,7 +4575,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "minimize": {
         "name": "Minimize",
@@ -3740,7 +4598,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "mirrorcoat": {
         "name": "Mirror Coat",
@@ -3759,7 +4621,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": -5,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "mirrormove": {
         "name": "Mirror Move",
@@ -3778,7 +4644,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "mist": {
         "name": "Mist",
@@ -3797,7 +4667,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "mistball": {
         "name": "Mist Ball",
@@ -3816,7 +4690,13 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {
+            "foe_statdrop": 50
+        },
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "moonlight": {
         "name": "Moonlight",
@@ -3835,7 +4715,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "morningsun": {
         "name": "Morning Sun",
@@ -3854,7 +4738,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "muddywater": {
         "name": "Muddy Water",
@@ -3873,7 +4761,13 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {
+            "foe_statdrop": 30
+        },
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "mudshot": {
         "name": "Mud Shot",
@@ -3892,7 +4786,13 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {
+            "foe_statdrop": 100
+        },
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "mudslap": {
         "name": "Mud-Slap",
@@ -3911,7 +4811,13 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {
+            "foe_statdrop": 100
+        },
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "mudsport": {
         "name": "Mud Sport",
@@ -3930,7 +4836,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "naturepower": {
         "name": "Nature Power",
@@ -3949,7 +4859,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "needlearm": {
         "name": "Needle Arm",
@@ -3968,7 +4882,13 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {
+            "flinch": 30
+        },
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "nightmare": {
         "name": "Nightmare",
@@ -3987,7 +4907,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "nightshade": {
         "name": "Night Shade",
@@ -4006,7 +4930,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "octazooka": {
         "name": "Octazooka",
@@ -4025,7 +4953,13 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {
+            "foe_statdrop": 50
+        },
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "odorsleuth": {
         "name": "Odor Sleuth",
@@ -4044,7 +4978,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "outrage": {
         "name": "Outrage",
@@ -4063,7 +5001,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "overheat": {
         "name": "Overheat",
@@ -4082,7 +5024,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "painsplit": {
         "name": "Pain Split",
@@ -4101,7 +5047,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "payday": {
         "name": "Pay Day",
@@ -4120,7 +5070,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "peck": {
         "name": "Peck",
@@ -4139,7 +5093,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "perishsong": {
         "name": "Perish Song",
@@ -4158,7 +5116,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "petaldance": {
         "name": "Petal Dance",
@@ -4177,7 +5139,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "pinmissile": {
         "name": "Pin Missile",
@@ -4196,7 +5162,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "poisonfang": {
         "name": "Poison Fang",
@@ -4215,7 +5185,13 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {
+            "tox": 30
+        },
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "poisongas": {
         "name": "Poison Gas",
@@ -4234,7 +5210,11 @@
         "isHazard": false,
         "status": "psn",
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "poisonpowder": {
         "name": "Poison Powder",
@@ -4253,7 +5233,11 @@
         "isHazard": false,
         "status": "psn",
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "poisonsting": {
         "name": "Poison Sting",
@@ -4272,7 +5256,13 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {
+            "psn": 30
+        },
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "poisontail": {
         "name": "Poison Tail",
@@ -4291,7 +5281,13 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {
+            "psn": 10
+        },
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "pound": {
         "name": "Pound",
@@ -4310,7 +5306,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "powdersnow": {
         "name": "Powder Snow",
@@ -4329,7 +5329,13 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {
+            "frz": 10
+        },
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "present": {
         "name": "Present",
@@ -4348,7 +5354,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "protect": {
         "name": "Protect",
@@ -4367,7 +5377,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 3,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "psybeam": {
         "name": "Psybeam",
@@ -4386,7 +5400,13 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {
+            "confusion": 10
+        },
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "psychic": {
         "name": "Psychic",
@@ -4405,7 +5425,13 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {
+            "foe_statdrop": 10
+        },
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "psychoboost": {
         "name": "Psycho Boost",
@@ -4424,7 +5450,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "psychup": {
         "name": "Psych Up",
@@ -4443,7 +5473,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "psywave": {
         "name": "Psywave",
@@ -4462,7 +5496,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "pursuit": {
         "name": "Pursuit",
@@ -4481,7 +5519,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "quickattack": {
         "name": "Quick Attack",
@@ -4500,7 +5542,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 1,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "rage": {
         "name": "Rage",
@@ -4519,7 +5565,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "raindance": {
         "name": "Rain Dance",
@@ -4538,7 +5588,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "rapidspin": {
         "name": "Rapid Spin",
@@ -4557,7 +5611,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "razorleaf": {
         "name": "Razor Leaf",
@@ -4576,7 +5634,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "razorwind": {
         "name": "Razor Wind",
@@ -4595,7 +5657,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "recover": {
         "name": "Recover",
@@ -4614,7 +5680,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "recycle": {
         "name": "Recycle",
@@ -4633,7 +5703,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "reflect": {
         "name": "Reflect",
@@ -4652,7 +5726,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "refresh": {
         "name": "Refresh",
@@ -4671,7 +5749,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": true,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "rest": {
         "name": "Rest",
@@ -4690,7 +5772,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "return": {
         "name": "Return",
@@ -4709,7 +5795,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "revenge": {
         "name": "Revenge",
@@ -4728,7 +5818,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": -4,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "reversal": {
         "name": "Reversal",
@@ -4747,7 +5841,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "roar": {
         "name": "Roar",
@@ -4766,7 +5864,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": -6,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "rockblast": {
         "name": "Rock Blast",
@@ -4785,7 +5887,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "rockslide": {
         "name": "Rock Slide",
@@ -4804,7 +5910,13 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {
+            "flinch": 30
+        },
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "rocksmash": {
         "name": "Rock Smash",
@@ -4823,7 +5935,13 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {
+            "foe_statdrop": 50
+        },
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "rockthrow": {
         "name": "Rock Throw",
@@ -4842,7 +5960,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "rocktomb": {
         "name": "Rock Tomb",
@@ -4861,7 +5983,13 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {
+            "foe_statdrop": 100
+        },
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "roleplay": {
         "name": "Role Play",
@@ -4880,7 +6008,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "rollingkick": {
         "name": "Rolling Kick",
@@ -4899,7 +6031,13 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {
+            "flinch": 30
+        },
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "rollout": {
         "name": "Rollout",
@@ -4918,7 +6056,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "sacredfire": {
         "name": "Sacred Fire",
@@ -4937,7 +6079,13 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {
+            "brn": 50
+        },
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "safeguard": {
         "name": "Safeguard",
@@ -4956,7 +6104,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "sandattack": {
         "name": "Sand Attack",
@@ -4975,7 +6127,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "sandstorm": {
         "name": "Sandstorm",
@@ -4994,7 +6150,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "sandtomb": {
         "name": "Sand Tomb",
@@ -5013,7 +6173,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "scaryface": {
         "name": "Scary Face",
@@ -5032,7 +6196,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "scratch": {
         "name": "Scratch",
@@ -5051,7 +6219,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "screech": {
         "name": "Screech",
@@ -5070,7 +6242,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "secretpower": {
         "name": "Secret Power",
@@ -5089,7 +6265,13 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {
+            "par": 30
+        },
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "seismictoss": {
         "name": "Seismic Toss",
@@ -5108,7 +6290,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "selfdestruct": {
         "name": "Self-Destruct",
@@ -5127,7 +6313,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "shadowball": {
         "name": "Shadow Ball",
@@ -5146,7 +6336,13 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {
+            "foe_statdrop": 20
+        },
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "shadowpunch": {
         "name": "Shadow Punch",
@@ -5165,7 +6361,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "sharpen": {
         "name": "Sharpen",
@@ -5184,7 +6384,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "sheercold": {
         "name": "Sheer Cold",
@@ -5203,7 +6407,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "shockwave": {
         "name": "Shock Wave",
@@ -5222,7 +6430,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "signalbeam": {
         "name": "Signal Beam",
@@ -5241,7 +6453,13 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {
+            "confusion": 10
+        },
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "silverwind": {
         "name": "Silver Wind",
@@ -5260,7 +6478,13 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {
+            "self_boost": 10
+        },
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "sing": {
         "name": "Sing",
@@ -5279,7 +6503,11 @@
         "isHazard": false,
         "status": "slp",
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "sketch": {
         "name": "Sketch",
@@ -5298,7 +6526,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "skillswap": {
         "name": "Skill Swap",
@@ -5317,7 +6549,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "skullbash": {
         "name": "Skull Bash",
@@ -5336,7 +6572,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "skyattack": {
         "name": "Sky Attack",
@@ -5355,7 +6595,13 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {
+            "flinch": 30
+        },
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "skyuppercut": {
         "name": "Sky Uppercut",
@@ -5374,7 +6620,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "slackoff": {
         "name": "Slack Off",
@@ -5393,7 +6643,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "slam": {
         "name": "Slam",
@@ -5412,7 +6666,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "slash": {
         "name": "Slash",
@@ -5431,7 +6689,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "sleeppowder": {
         "name": "Sleep Powder",
@@ -5450,7 +6712,11 @@
         "isHazard": false,
         "status": "slp",
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "sleeptalk": {
         "name": "Sleep Talk",
@@ -5469,7 +6735,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "sludge": {
         "name": "Sludge",
@@ -5488,7 +6758,13 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {
+            "psn": 30
+        },
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "sludgebomb": {
         "name": "Sludge Bomb",
@@ -5507,7 +6783,13 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {
+            "psn": 30
+        },
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "smellingsalts": {
         "name": "Smelling Salts",
@@ -5526,7 +6808,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "smog": {
         "name": "Smog",
@@ -5545,7 +6831,13 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {
+            "psn": 40
+        },
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "smokescreen": {
         "name": "Smokescreen",
@@ -5564,7 +6856,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "snatch": {
         "name": "Snatch",
@@ -5583,7 +6879,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 4,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "snore": {
         "name": "Snore",
@@ -5602,7 +6902,13 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {
+            "flinch": 30
+        },
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "softboiled": {
         "name": "Soft-Boiled",
@@ -5621,7 +6927,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "solarbeam": {
         "name": "Solar Beam",
@@ -5640,7 +6950,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "sonicboom": {
         "name": "Sonic Boom",
@@ -5659,7 +6973,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "spark": {
         "name": "Spark",
@@ -5678,7 +6996,13 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {
+            "par": 30
+        },
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "spiderweb": {
         "name": "Spider Web",
@@ -5697,7 +7021,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "spikecannon": {
         "name": "Spike Cannon",
@@ -5716,7 +7044,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "spikes": {
         "name": "Spikes",
@@ -5735,7 +7067,11 @@
         "isHazard": true,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "spite": {
         "name": "Spite",
@@ -5754,7 +7090,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "spitup": {
         "name": "Spit Up",
@@ -5773,7 +7113,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "splash": {
         "name": "Splash",
@@ -5792,7 +7136,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "spore": {
         "name": "Spore",
@@ -5811,7 +7159,11 @@
         "isHazard": false,
         "status": "slp",
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "steelwing": {
         "name": "Steel Wing",
@@ -5830,7 +7182,13 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {
+            "self_boost": 10
+        },
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "stockpile": {
         "name": "Stockpile",
@@ -5849,7 +7207,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "stomp": {
         "name": "Stomp",
@@ -5868,7 +7230,13 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {
+            "flinch": 30
+        },
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "strength": {
         "name": "Strength",
@@ -5887,7 +7255,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "stringshot": {
         "name": "String Shot",
@@ -5906,7 +7278,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "struggle": {
         "name": "Struggle",
@@ -5925,7 +7301,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.25
     },
     "stunspore": {
         "name": "Stun Spore",
@@ -5944,7 +7324,11 @@
         "isHazard": false,
         "status": "par",
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "submission": {
         "name": "Submission",
@@ -5963,7 +7347,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.25
     },
     "substitute": {
         "name": "Substitute",
@@ -5982,7 +7370,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "sunnyday": {
         "name": "Sunny Day",
@@ -6001,7 +7393,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "superfang": {
         "name": "Super Fang",
@@ -6020,7 +7416,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "superpower": {
         "name": "Superpower",
@@ -6039,7 +7439,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "supersonic": {
         "name": "Supersonic",
@@ -6058,7 +7462,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "surf": {
         "name": "Surf",
@@ -6077,7 +7485,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "swagger": {
         "name": "Swagger",
@@ -6096,7 +7508,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "swallow": {
         "name": "Swallow",
@@ -6115,7 +7531,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "sweetkiss": {
         "name": "Sweet Kiss",
@@ -6134,7 +7554,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "sweetscent": {
         "name": "Sweet Scent",
@@ -6153,7 +7577,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "swift": {
         "name": "Swift",
@@ -6172,7 +7600,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "swordsdance": {
         "name": "Swords Dance",
@@ -6191,7 +7623,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "synthesis": {
         "name": "Synthesis",
@@ -6210,7 +7646,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "tackle": {
         "name": "Tackle",
@@ -6229,7 +7669,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "tailglow": {
         "name": "Tail Glow",
@@ -6248,7 +7692,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "tailwhip": {
         "name": "Tail Whip",
@@ -6267,7 +7715,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "takedown": {
         "name": "Take Down",
@@ -6286,7 +7738,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.25
     },
     "taunt": {
         "name": "Taunt",
@@ -6305,7 +7761,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "teeterdance": {
         "name": "Teeter Dance",
@@ -6324,7 +7784,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "teleport": {
         "name": "Teleport",
@@ -6343,7 +7807,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "thief": {
         "name": "Thief",
@@ -6362,7 +7830,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "thrash": {
         "name": "Thrash",
@@ -6381,7 +7853,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "thunder": {
         "name": "Thunder",
@@ -6400,7 +7876,13 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {
+            "par": 30
+        },
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "thunderbolt": {
         "name": "Thunderbolt",
@@ -6419,7 +7901,13 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {
+            "par": 10
+        },
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "thunderpunch": {
         "name": "Thunder Punch",
@@ -6438,7 +7926,13 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {
+            "par": 10
+        },
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "thundershock": {
         "name": "Thunder Shock",
@@ -6457,7 +7951,13 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {
+            "par": 10
+        },
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "thunderwave": {
         "name": "Thunder Wave",
@@ -6476,7 +7976,11 @@
         "isHazard": false,
         "status": "par",
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "tickle": {
         "name": "Tickle",
@@ -6495,7 +7999,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "torment": {
         "name": "Torment",
@@ -6514,7 +8022,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "toxic": {
         "name": "Toxic",
@@ -6533,7 +8045,11 @@
         "isHazard": false,
         "status": "tox",
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "transform": {
         "name": "Transform",
@@ -6552,7 +8068,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "triattack": {
         "name": "Tri Attack",
@@ -6571,7 +8091,15 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {
+            "par": 7,
+            "brn": 7,
+            "frz": 6
+        },
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "trick": {
         "name": "Trick",
@@ -6590,7 +8118,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "triplekick": {
         "name": "Triple Kick",
@@ -6609,7 +8141,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "twineedle": {
         "name": "Twineedle",
@@ -6628,7 +8164,13 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {
+            "psn": 20
+        },
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "twister": {
         "name": "Twister",
@@ -6647,7 +8189,13 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {
+            "flinch": 20
+        },
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "uproar": {
         "name": "Uproar",
@@ -6666,7 +8214,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "vinewhip": {
         "name": "Vine Whip",
@@ -6685,7 +8237,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "visegrip": {
         "name": "Vise Grip",
@@ -6704,7 +8260,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "vitalthrow": {
         "name": "Vital Throw",
@@ -6723,7 +8283,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": -1,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "volttackle": {
         "name": "Volt Tackle",
@@ -6742,7 +8306,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.3333333333333333
     },
     "waterfall": {
         "name": "Waterfall",
@@ -6761,7 +8329,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "watergun": {
         "name": "Water Gun",
@@ -6780,7 +8352,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "waterpulse": {
         "name": "Water Pulse",
@@ -6799,7 +8375,13 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {
+            "confusion": 20
+        },
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "watersport": {
         "name": "Water Sport",
@@ -6818,7 +8400,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "waterspout": {
         "name": "Water Spout",
@@ -6837,7 +8423,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "weatherball": {
         "name": "Weather Ball",
@@ -6856,7 +8446,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "whirlpool": {
         "name": "Whirlpool",
@@ -6875,7 +8469,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "whirlwind": {
         "name": "Whirlwind",
@@ -6894,7 +8492,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": -6,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "willowisp": {
         "name": "Will-O-Wisp",
@@ -6913,7 +8515,11 @@
         "isHazard": false,
         "status": "brn",
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "wingattack": {
         "name": "Wing Attack",
@@ -6932,7 +8538,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "wish": {
         "name": "Wish",
@@ -6951,7 +8561,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "withdraw": {
         "name": "Withdraw",
@@ -6970,7 +8584,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "wrap": {
         "name": "Wrap",
@@ -6989,7 +8607,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "yawn": {
         "name": "Yawn",
@@ -7008,7 +8630,11 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {},
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     },
     "zapcannon": {
         "name": "Zap Cannon",
@@ -7027,6 +8653,12 @@
         "isHazard": false,
         "status": null,
         "curesSelfStatus": false,
-        "curesTeamStatus": false
+        "curesTeamStatus": false,
+        "priority": 0,
+        "secondaryEffects": {
+            "par": 100
+        },
+        "drainFraction": 0.0,
+        "recoilFraction": 0.0
     }
 }

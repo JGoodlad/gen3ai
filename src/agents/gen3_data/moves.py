@@ -16,7 +16,7 @@ carry data. The data is ours; the enums are just the keys it's filed under.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Dict, Optional
+from typing import Dict, Optional, Tuple
 
 from agents.enums import MoveCategory, PokemonType
 
@@ -85,6 +85,24 @@ class MoveData:
     cures_self_status: bool = False   # cures the USER'S own status, leaving it statusless (Refresh)
     cures_team_status: bool = False   # cures the WHOLE party's status (Heal Bell, Aromatherapy)
 
+    # --- gen3_unified_move_system_v1: structured secondary / priority / drain / recoil ---
+    # GPU-side facts (DamageOperator + MoveLatentEncoder consume these), NOT in the obs vector.
+    # secondary_effects is a hashable (column, percent) tuple over the 10 `_SECONDARY_COLS`
+    # (par/brn/frz/slp/psn/tox/confusion/flinch/foe_statdrop/self_boost). Use secondary_chance()
+    # for the per-column probability. drain/recoil are fractions of damage dealt (0..1).
+    priority: int = 0
+    drain_fraction: float = 0.0
+    recoil_fraction: float = 0.0
+    secondary_effects: Tuple[Tuple[str, int], ...] = ()
+
+    def secondary_chance(self, col: str) -> float:
+        """Trigger probability (0..1) of secondary effect `col` (e.g. ``"par"``, ``"flinch"``),
+        BEFORE any ability multiplier (Serene Grace / Shield Dust live in the op). 0 if absent."""
+        for k, c in self.secondary_effects:
+            if k == col:
+                return c / 100.0
+        return 0.0
+
     @property
     def is_damaging(self) -> bool:
         """A move deals direct damage iff it has base power. Mirrors the reward/obs convention
@@ -116,6 +134,12 @@ def _build(raw: Dict[str, dict]) -> Dict[str, MoveData]:
             status_inflicted=v.get("status") or None,
             cures_self_status=bool(v.get("curesSelfStatus", False)),
             cures_team_status=bool(v.get("curesTeamStatus", False)),
+            priority=int(v.get("priority", 0) or 0),
+            drain_fraction=float(v.get("drainFraction", 0.0) or 0.0),
+            recoil_fraction=float(v.get("recoilFraction", 0.0) or 0.0),
+            secondary_effects=tuple(
+                sorted((str(k), int(c)) for k, c in (v.get("secondaryEffects") or {}).items())
+            ),
         )
     return dex
 

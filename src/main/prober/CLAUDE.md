@@ -388,8 +388,11 @@ loading uses the same exact→nearest→recent ladder (cached per process). A
     our mon the incoming threat `[low,high,crit,pko,acc]×{phys,spec} + p_outspeed + provenance` (slot 0 =
     active, 1-5 = the **safe-switch** bench reads), the opp-active effect scalars, and (on `--unified-damage
     both`) our 4 moves' **outgoing** damage `[low,high,crit,pko]` (request-slot/action order — the
-    equal-effectiveness move tie-break). The app's **Matchups** panel renders the outgoing line ("our damage
-    (op): move N% →KO M%"); the field rides the `analyze` CLI JSON.
+    equal-effectiveness move tie-break). v24 (gen3_unified_move_system_v1) ADDS per-status SECONDARY
+    probabilities: `incoming_secondary` (the opp active's damaging-move para/flinch/freeze threat,
+    accuracy-folded + ×Serene Grace) and `outgoing.secondary` (per OUR move — "what status can it cause").
+    The app's **Matchups** panel renders the outgoing line ("our damage (op): move N% →KO M% (par X%)") plus
+    an `opp 2ndary:` line for the incoming threat; the fields ride the `analyze` CLI JSON.
   Plus `value_saliency` — the **critic** lens: `|d V(s)/d obs|` aggregated into the
   SAME named blocks as the policy `saliency`, so you can see whether the VALUE head
   (where OHKO tail-blindness lives) actually reads `incoming_damage(33)` vs the rest.

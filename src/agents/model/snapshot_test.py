@@ -1681,17 +1681,32 @@ def test_current_model_version_threads_belief_toggle(mappings):
 
 
 def test_arch_toggles_from_model_extracts_flags():
-    """arch_toggles_from_model reads the live model's toggles for the worker cfg."""
-    from agents.model.snapshot import arch_toggles_from_model
+    """arch_toggles_from_model reads the live model's toggles for the worker cfg. EVERY toggle must be
+    pinned here: a missing key → the worker rebuilds current_model_version toggle-OFF → a feature-ON
+    self-play run FATALs on its own sentinels (exactly the bug the v23 damage_outgoing omission caused)."""
+    from agents.model.snapshot import arch_toggles_from_model, current_model_version
+    import inspect
     import types
+    # Note: the fe attribute for the damage op is `damage_op_enabled`, the emitted key is `damage_op`.
     fe = types.SimpleNamespace(attend_unrevealed_opponents=True, opp_belief_cls_k=0,
                                opp_belief_slots=True, value_active_readout=False,
-                               move_belief_mode="revealed")
+                               move_belief_mode="revealed", opp_belief_latent=True,
+                               damage_op_enabled=True, damage_outgoing=True, move_candidate_floor=0.3,
+                               move_latent=True, move_prior_fusion=True,
+                               mask_incoming_damage_obs=True, win_prob_mode="read_only")
     model = types.SimpleNamespace(policy=types.SimpleNamespace(features_extractor=fe, popart=object()))
     t = arch_toggles_from_model(model)
     assert t["opp_belief_slots"] is True and t["attend_unrevealed_opponents"] is True
     assert t["use_popart"] is True and t["value_active_readout"] is False
     assert t["move_belief_mode"] == "revealed"
+    # v23/v24 keys (these were the threading gaps): every one must round-trip.
+    assert t["damage_op"] is True and t["damage_outgoing"] is True
+    assert t["move_candidate_floor"] == 0.3 and t["move_latent"] is True
+    assert t["move_prior_fusion"] is True and t["mask_incoming_damage_obs"] is True
+    assert t["win_prob_mode"] == "read_only"
+    # Every emitted toggle MUST be an accepted current_model_version kwarg — else a future toggle that
+    # isn't threaded fails here in a unit test, not only at a self-play load (TypeError).
+    assert set(t) <= set(inspect.signature(current_model_version).parameters)
 
 
 def test_current_model_version_threads_move_belief_mode(mappings):

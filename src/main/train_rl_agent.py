@@ -179,8 +179,12 @@ def _run_arch_toggles(args) -> dict:
         damage_op=args.damage_op,
         damage_outgoing=args.damage_outgoing,
         move_candidate_floor=args.move_candidate_floor,
+        move_latent=args.move_latent,
+        spread_belief=args.spread_belief,
         move_prior_fusion=args.move_prior_fusion,
         mask_incoming_damage_obs=args.mask_incoming_damage_obs,
+        mask_active_move_scalars_obs=args.mask_active_move_scalars_obs,
+        mask_move_effects_obs=args.mask_move_effects_obs,
         win_prob_mode=args.win_prob_mode,
     )
 
@@ -195,6 +199,8 @@ def _model_hparams(model) -> dict:
         "vf_coef": float(model.vf_coef),
         "opp_belief_aux_coef": float(getattr(model, "opp_belief_aux_coef", 0.0)),
         "move_belief_coef": float(getattr(model, "move_belief_coef", 0.0)),
+        "move_belief_latent_coef": float(getattr(model, "move_belief_latent_coef", 0.0)),
+        "spread_belief_coef": float(getattr(model, "spread_belief_coef", 0.0)),
         "opp_belief_latent_coef": float(getattr(model, "opp_belief_latent_coef", 0.0)),
         "win_prob_coef": float(getattr(model, "win_prob_coef", 1.0)),
         "batch_size": model.batch_size,
@@ -339,6 +345,8 @@ def _run_roundtrip_test(model, layout: dict, policy_kwargs: dict, debug: bool = 
         move_belief_coef=float(getattr(model, "move_belief_coef", 0.0)),
         opp_belief_latent_coef=float(getattr(model, "opp_belief_latent_coef", 0.0)),
         win_prob_coef=float(getattr(model, "win_prob_coef", 1.0)),
+        move_belief_latent_coef=float(getattr(model, "move_belief_latent_coef", 0.0)),
+        spread_belief_coef=float(getattr(model, "spread_belief_coef", 0.0)),
     )
     total_dim = layout["total_dim"]
     tmpdir = tempfile.mkdtemp(prefix="roundtrip_")
@@ -792,6 +800,65 @@ async def main():
                              "--opp-belief-aux-coef. Default 1.0. TRAINING-only (not version-locked; "
                              "inherited on a flagless resume). Ignored when --win-prob-mode none. Lower it "
                              "if 'shaping' fights the policy (watch grad/win_prob_share).")
+    parser.add_argument("--move-latent", "--move_latent", dest="move_latent",
+                        action=BoolFlag, default=None,
+                        help="MoveLatentEncoder (gen3_unified_move_system_v1): a context-free, "
+                             "mechanics-grounded per-move latent (move/type embeddings + structured "
+                             "MOVE_ATTR — BP / category / accuracy / priority / drain / per-status secondary "
+                             "chances) concatenated into the move network, so the model reads a richer move "
+                             "identity AND the SAME latent is the similarity-grading target (Rock Slide ~= "
+                             "Hidden Power Rock). STRUCTURAL (widens the move-network input; version-checked, "
+                             "fresh-only). Off by default.")
+    parser.add_argument("--move-belief-latent-coef", "--move_belief_latent_coef",
+                        dest="move_belief_latent_coef", type=float, default=None,
+                        help="Latent-space grading weight for the move belief: coef * (cosine of the "
+                             "predicted move distribution's expected move-latent toward the true moveset's "
+                             "mean latent + VICReg floor) on revealed slots — the soft complement to the "
+                             "per-ID BCE so near-moves grade as near. REQUIRES --move-latent (reads its "
+                             "latent table) and a move-belief mode that scores revealed slots. TRAINING-only "
+                             "(not version-locked; inherited on a flagless resume). 0.0 = OFF.")
+    parser.add_argument("--unified-moves", "--unified_moves", dest="unified_moves",
+                        choices=["off", "incoming", "both"], default="off",
+                        help="ONE knob for the WHOLE unified move system: sets --unified-damage to the same "
+                             "level (move belief + prior fusion + the GPU damage op, incl. its per-status "
+                             "secondary/Serene-Grace effects; 'both' adds the outgoing direction) AND turns "
+                             "on --move-latent + a default --move-belief-latent-coef 0.05. Compose the pieces "
+                             "by hand for finer control.")
+    parser.add_argument("--spread-belief", "--spread_belief", dest="spread_belief",
+                        action=BoolFlag, default=None,
+                        help="SpreadBelief (gen3_unified_spread_belief_v1): the THIRD belief leg — predict "
+                             "the opponent's hidden SPREAD (the 5 derived stats atk/def/spa/spd/spe) per "
+                             "slot from a usage PRIOR + a learned head, reinject into the opp token, and "
+                             "feed the DamageOperator so it consumes BELIEVED opp stats instead of its "
+                             "hand-coded de-timid/neutral constants (offense, bulk, speed). STRUCTURAL "
+                             "(version-checked, fresh-only). Off by default.")
+    parser.add_argument("--spread-belief-coef", "--spread_belief_coef", dest="spread_belief_coef",
+                        type=float, default=None,
+                        help="[STAGED — NOT YET ACTIVE] the intended speed-supervision weight for the spread "
+                             "belief (coef * masked BCE of the believed P(outspeed) toward observed move "
+                             "order). The loss is NOT YET WIRED — this value is recorded-only for now and a "
+                             ">0 setting WARNS. (The op's damage gradient already shapes the offensive/"
+                             "defensive stats; speed gets the supervision once the loss lands.) REQUIRES "
+                             "--spread-belief. TRAINING-only (not version-locked).")
+    parser.add_argument("--unified-obs", "--unified_obs", dest="unified_obs",
+                        action=BoolFlag, default=False,
+                        help="DISABLE the redundant CPU obs blocks the unified GPU path now subsumes (ONE "
+                             "master switch): zeros the incoming-damage block (→ --damage-op), the "
+                             "active-move power/multiplier scalars (→ the op's outgoing block, so requires "
+                             "--unified-damage both), and the 44-dim move-effect block (→ MOVE_ATTR/the move "
+                             "latent + the op effect axes). Each region stays in the obs vector (dim "
+                             "unchanged); the reward PBRS still reads them. Pair with --unified-moves both + "
+                             "--spread-belief to run pure-unified. Granular --mask-*-obs flags underneath.")
+    parser.add_argument("--mask-active-move-scalars-obs", "--mask_active_move_scalars_obs",
+                        dest="mask_active_move_scalars_obs", action=BoolFlag, default=None,
+                        help="Granular: zero the active-move power+multiplier scalars from the model's view "
+                             "(subsumed by the op's outgoing block; requires --damage-outgoing). Part of "
+                             "--unified-obs.")
+    parser.add_argument("--mask-move-effects-obs", "--mask_move_effects_obs",
+                        dest="mask_move_effects_obs", action=BoolFlag, default=None,
+                        help="Granular: zero the 44-dim move-effect block from the model's view (subsumed "
+                             "by MOVE_ATTR/the move latent + the op effect axes; pair with --move-latent + "
+                             "--damage-op). Part of --unified-obs.")
     parser.add_argument("--n-steps", type=int, default=2048, help="Steps per environment per rollout")
     parser.add_argument("--grad-checkpointing", "--grad_checkpointing", dest="grad_checkpointing",
                         action=BoolFlag, default=False,
@@ -935,6 +1002,27 @@ async def main():
     _popart_explicit = args.use_popart is not None
     _coef_explicit = args.opp_belief_aux_coef is not None
 
+    # --unified-moves is the umbrella over the WHOLE move system: it sets --unified-damage to the same
+    # level (so the op/belief/outgoing desugar below runs) AND turns on the move latent + its grading.
+    # Applied BEFORE the --unified-damage desugar so the level flows through. v24.
+    if getattr(args, "unified_moves", "off") != "off":
+        if getattr(args, "unified_damage", "off") == "off":
+            args.unified_damage = args.unified_moves
+        if args.move_latent is None:
+            args.move_latent = True
+        if args.move_belief_latent_coef is None:
+            args.move_belief_latent_coef = 0.05
+
+    # --unified-obs is the master DISABLE-redundant switch: flip on the three obs-ablation masks (each only
+    # where the GPU path subsumes it — active-move scalars need the outgoing op). v25.
+    if getattr(args, "unified_obs", False):
+        if args.mask_incoming_damage_obs is None:
+            args.mask_incoming_damage_obs = True
+        if args.mask_active_move_scalars_obs is None:
+            args.mask_active_move_scalars_obs = True
+        if args.mask_move_effects_obs is None:
+            args.mask_move_effects_obs = True
+
     # --unified-damage desugars into the component flags BEFORE _resolve (so they aren't None-filled from a
     # saved version). When not 'off' it forces damage_op + prior fusion + (for 'both') the outgoing block,
     # and defaults the move-belief mode to 'revealed' unless the user set it explicitly (so
@@ -960,6 +1048,12 @@ async def main():
     _resolve("damage_op", False)               # v19 structural (version-checked, fresh-only)
     _resolve("damage_outgoing", False)         # v23 structural (version-checked, fresh-only)
     _resolve("move_candidate_floor", 0.0)      # v23 forward-behavior (version-checked, fresh-only)
+    _resolve("move_latent", False)             # v24 structural (version-checked, fresh-only)
+    _resolve("move_belief_latent_coef", 0.0)   # training-only (inherited like move_belief_coef)
+    _resolve("spread_belief", False)           # v25 structural (version-checked, fresh-only)
+    _resolve("spread_belief_coef", 0.0)        # training-only (inherited like move_belief_coef)
+    _resolve("mask_active_move_scalars_obs", False)  # v25 forward-behavior (version-checked, fresh-only)
+    _resolve("mask_move_effects_obs", False)         # v25 forward-behavior (version-checked, fresh-only)
     _resolve("move_prior_fusion", False)       # v20 forward-behavior (version-checked, fresh-only)
     _resolve("mask_incoming_damage_obs", False)  # v21 forward-behavior (version-checked, fresh-only)
     _resolve("win_prob_mode", "none")          # v22 structural + resume-immutable (version-checked)
@@ -1065,6 +1159,73 @@ async def main():
             "--move-candidate-floor requires --move-prior-fusion (it gates the fused move prior). "
             "Enable --move-prior-fusion (or --unified-damage), or drop --move-candidate-floor."
         )
+    if args.move_belief_latent_coef and not args.move_latent:
+        # The latent grading reads the MoveLatentEncoder's latent table → the encoder must exist.
+        parser.error(
+            "--move-belief-latent-coef requires --move-latent (the grading reads its per-move latent "
+            "table). Enable --move-latent (or --unified-moves), or set --move-belief-latent-coef 0."
+        )
+    if args.move_belief_latent_coef and args.move_belief_mode not in ("revealed", "both"):
+        # The grading scores the move belief on REVEALED slots (slot==species), like the move-belief BCE.
+        parser.error(
+            "--move-belief-latent-coef requires --move-belief-mode revealed (or both): it grades the "
+            "move belief on revealed slots. Set --move-belief-mode revealed (or --unified-moves), or set "
+            "--move-belief-latent-coef 0."
+        )
+    if args.spread_belief_coef and not args.spread_belief:
+        # The speed supervision reads the spread belief's believed-speed output → the module must exist.
+        parser.error(
+            "--spread-belief-coef requires --spread-belief (it supervises the spread belief's speed). "
+            "Enable --spread-belief, or set --spread-belief-coef 0."
+        )
+    if args.spread_belief_coef:
+        # HONESTY GUARD: the speed-supervision loss is STAGED (not yet wired into InstrumentedMaskablePPO).
+        # A >0 value is recorded into model_config but trains NOTHING for speed — warn loudly so an A/B
+        # isn't silently varying nothing. (The op's damage gradient still shapes atk/def/spa/spd.)
+        print(f"[WARNING] --spread-belief-coef {args.spread_belief_coef:g} is RECORDED-ONLY: the "
+              "speed-supervision loss is not yet implemented, so this trains nothing for speed this run.")
+    if args.mask_active_move_scalars_obs and not args.damage_outgoing:
+        # Zeroing the active-move power/multiplier scalars only makes sense once the op's OUTGOING block
+        # replaces them; without it the model loses the per-move signal with no substitute.
+        parser.error(
+            "--mask-active-move-scalars-obs requires --damage-outgoing (--unified-damage both): the op's "
+            "outgoing per-move damage is what replaces the zeroed obs scalars. Add --unified-damage both, "
+            "or drop --mask-active-move-scalars-obs / --unified-obs."
+        )
+    if args.mask_incoming_damage_obs and not args.damage_op:
+        # The 51-dim incoming-damage/OHKO block is subsumed by the differentiable DamageOperator's incoming
+        # rolls; masking it without the op leaves the model with NO incoming-damage signal at all.
+        parser.error(
+            "--mask-incoming-damage-obs requires --damage-op (--unified-damage): the op's incoming damage "
+            "block is what replaces the zeroed obs block. Add --unified-damage, or drop "
+            "--mask-incoming-damage-obs / --unified-obs."
+        )
+    if args.mask_move_effects_obs and not args.move_latent:
+        # The 44-dim per-OUR-move effect block's STRUCTURAL identity (is_boost/heal/protect/phaze/hazard,
+        # cures_self/team, per-status secondary chances) is carried into the model only via the move
+        # latent's MOVE_ATTR; masking it without --move-latent erases that signal with no substitute.
+        parser.error(
+            "--mask-move-effects-obs requires --move-latent (--unified-moves): the move latent's MOVE_ATTR "
+            "is what carries the per-move effect identity once the obs block is zeroed. Add --unified-moves, "
+            "or drop --mask-move-effects-obs / --unified-obs."
+        )
+    if args.mask_move_effects_obs and not args.damage_outgoing:
+        # The block also carried `status_will_land`; its GPU replacement is the op's OUTGOING status-landing
+        # block (gen3_unified_status_landing_v1), which only exists with the outgoing direction. Without it
+        # the model would lose the "will my Toxic/WoW/Spore/Leech Seed land" signal entirely.
+        parser.error(
+            "--mask-move-effects-obs requires --damage-outgoing (--unified-damage both / --unified-moves "
+            "both): the op's outgoing status-landing block is what replaces the zeroed `status_will_land`. "
+            "Add --unified-damage both, or drop --mask-move-effects-obs / --unified-obs."
+        )
+    if args.mask_move_effects_obs:
+        # With --move-latent + --damage-outgoing the structural identity (MOVE_ATTR) AND status_will_land
+        # (the op status-landing block, incl. Sleep Clause + Leech Seed + Substitute) are GPU-replaced. The
+        # remaining UNCOVERED residual: the recovery MAGNITUDE / Rest-cure detail (the op effect block carries
+        # a single recovery scalar), Yawn (delayed sleep), and a Leech-Seed-already-seeded target. Note it.
+        print("[NOTE] --mask-move-effects-obs: status_will_land is now GPU-replaced (op status-landing block, "
+              "incl. Sleep Clause + Leech Seed + Substitute). Residual uncovered: recovery magnitude/Rest-cure, "
+              "Yawn, Leech-Seed-already-seeded.")
     log_level = LogLevel[args.log_level.upper()]
 
     # One server config, built from --showdown-port and threaded to every Showdown client
@@ -1721,10 +1882,14 @@ async def main():
         _load_extractor_kwargs["damage_op"] = args.damage_op
         _load_extractor_kwargs["damage_outgoing"] = args.damage_outgoing       # v23 (version-checked)
         _load_extractor_kwargs["move_candidate_floor"] = args.move_candidate_floor  # v23 (version-checked)
+        _load_extractor_kwargs["move_latent"] = args.move_latent               # v24 (version-checked)
+        _load_extractor_kwargs["spread_belief"] = args.spread_belief           # v25 (version-checked)
         # Move-prior fusion — version-checked vs the saved config (fresh-only).
         _load_extractor_kwargs["move_prior_fusion"] = args.move_prior_fusion
         # Incoming-damage-obs ablation — version-checked vs the saved config (fresh-only).
         _load_extractor_kwargs["mask_incoming_damage_obs"] = args.mask_incoming_damage_obs
+        _load_extractor_kwargs["mask_active_move_scalars_obs"] = args.mask_active_move_scalars_obs  # v25
+        _load_extractor_kwargs["mask_move_effects_obs"] = args.mask_move_effects_obs                # v25
         # Win-probability head mode — version-checked vs the saved config (resume-IMMUTABLE; any change
         # FATALs, same machinery as move_belief_mode).
         _load_extractor_kwargs["win_prob_mode"] = args.win_prob_mode
@@ -1741,6 +1906,8 @@ async def main():
             move_belief_coef=args.move_belief_coef,
             opp_belief_latent_coef=args.opp_belief_latent_coef,
             win_prob_coef=args.win_prob_coef,
+            move_belief_latent_coef=args.move_belief_latent_coef,
+            spread_belief_coef=args.spread_belief_coef,
         )
 
         print(f"Loading existing model from {model_path}")
@@ -1766,6 +1933,8 @@ async def main():
         model.opp_belief_aux_coef = args.opp_belief_aux_coef  # training hparam (not version-locked; resume-mutable)
         model.opp_belief_moves_weight = args.opp_belief_moves_weight
         model.move_belief_coef = args.move_belief_coef  # move-belief loss weight (training-only; resume-mutable)
+        model.move_belief_latent_coef = args.move_belief_latent_coef  # move-latent grading weight (training-only)
+        model.spread_belief_coef = args.spread_belief_coef  # spread-belief speed-supervision weight (training-only)
         model.opp_belief_latent_coef = args.opp_belief_latent_coef  # latent-belief loss weight (training-only)
         model.win_prob_coef = args.win_prob_coef  # win-prob loss weight (training-only; resume-mutable)
         model.vf_coef = args.vf_coef  # == the saved value (enforced above); set explicitly for parity
@@ -1934,6 +2103,16 @@ async def main():
         # Learnset + rarity-cap move-prior gate (forward-behavior): 0.0 = legacy floor; >0 prunes illegal /
         # sub-floor moves. Requires move_prior_fusion (validated above). No weight-shape change. v23.
         extractor_kwargs["move_candidate_floor"] = args.move_candidate_floor
+        # MoveLatentEncoder (weight-shape): the context-free mechanics-grounded move latent concatenated
+        # into the move network. The latent-grading coef is a TRAINING hparam set below; this bool is the
+        # version-checked arch toggle. v24 (gen3_unified_move_system_v1).
+        extractor_kwargs["move_latent"] = args.move_latent
+        # SpreadBelief (weight-shape): predict+reinject the opp's hidden spread; the op consumes it. The coef
+        # is a TRAINING hparam set below; this bool is the version-checked arch toggle. v25.
+        extractor_kwargs["spread_belief"] = args.spread_belief
+        # --unified-obs disable-redundant masks (forward-behavior): zero a now-subsumed obs region. v25.
+        extractor_kwargs["mask_active_move_scalars_obs"] = args.mask_active_move_scalars_obs
+        extractor_kwargs["mask_move_effects_obs"] = args.mask_move_effects_obs
         # Unified move belief (forward-behavior): fuse the Smogon move prior into the belief head. Requires
         # move_belief_mode != off (validated above). No weight-shape change (non-persistent prior buffer).
         extractor_kwargs["move_prior_fusion"] = args.move_prior_fusion
@@ -1983,6 +2162,8 @@ async def main():
         model.opp_belief_aux_coef = args.opp_belief_aux_coef  # hidden-opp belief aux loss (0.0 = off)
         model.opp_belief_moves_weight = args.opp_belief_moves_weight  # species_CE + w·moves_BCE
         model.move_belief_coef = args.move_belief_coef  # move-belief reinjection loss (0.0 = off)
+        model.move_belief_latent_coef = args.move_belief_latent_coef  # move-latent grading loss (0.0 = off)
+        model.spread_belief_coef = args.spread_belief_coef  # spread-belief speed-supervision loss (0.0 = off)
         model.opp_belief_latent_coef = args.opp_belief_latent_coef  # latent-belief loss (0.0 = off)
         model.win_prob_coef = args.win_prob_coef  # win-prob head BCE loss (mode none = off)
         version = ModelVersion.from_layout_and_policy_kwargs(
@@ -1992,6 +2173,8 @@ async def main():
             move_belief_coef=args.move_belief_coef,
             opp_belief_latent_coef=args.opp_belief_latent_coef,
             win_prob_coef=args.win_prob_coef,
+            move_belief_latent_coef=args.move_belief_latent_coef,
+            spread_belief_coef=args.spread_belief_coef,
         )
         # PBRS_GAMMA must equal the PPO gamma for both potentials to be policy-invariant (design §7.1).
         # The reward manager is built before the model (in the env factory), so assert here where both

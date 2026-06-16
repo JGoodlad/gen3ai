@@ -143,3 +143,64 @@ def test_varied_k_across_batch_unrevealed():
     loss, m = _loss(ml, None, bm, "unrevealed")
     assert torch.isfinite(loss)
     assert m["unrevealed_slots"] == 1 + 3 + 2
+
+
+# ------------------------------------------------ gen3_unified_move_system_v1: latent-space grading
+_latent_loss = InstrumentedMaskablePPO._move_belief_latent_loss
+
+
+def _table(M, D=4):
+    """Synthetic context-free latent table: move 0 = [1,0,0,0] (the 'truth'); move 1 = a NEAR move
+    (cosine ≈ 1 to move 0); move 2 = a FAR/orthogonal move; the rest random-ish."""
+    t = torch.zeros(M, D)
+    t[0] = torch.tensor([1.0, 0.0, 0.0, 0.0])     # e.g. Rock Slide
+    t[1] = torch.tensor([0.96, 0.28, 0.0, 0.0])   # e.g. Hidden Power Rock (near)
+    t[2] = torch.tensor([0.0, 1.0, 0.0, 0.0])     # e.g. Surf (far)
+    for m in range(3, M):
+        t[m, m % D] = 0.5
+    return t
+
+
+def _belief_on(M, move, hi=12.0, lo=-12.0):
+    """ml [1,6,M] putting ~all softmax mass on `move` at slot 0 (else low)."""
+    ml = torch.full((1, 6, M), lo)
+    ml[0, 0, move] = hi
+    return ml
+
+
+def test_latent_loss_none_guards():
+    assert _latent_loss(None, _table(8), torch.zeros(1, 6, 4)) is None
+    assert _latent_loss(_belief_on(8, 0), None, torch.zeros(1, 6, 4)) is None
+    assert _latent_loss(_belief_on(8, 0), _table(8), None) is None
+    # all-PAD known_moves → nothing scorable
+    assert _latent_loss(_belief_on(8, 0), _table(8), torch.full((1, 6, 4), -1)) is None
+
+
+def test_latent_true_belief_high_cosine():
+    """Believing the TRUE move (0) → the predicted expected latent matches the target → cosine ≈ 1."""
+    km = torch.full((1, 6, 4), -1); km[0, 0, 0] = 0     # slot 0's true move is move 0
+    _, m = _latent_loss(_belief_on(8, 0), _table(8), km)
+    assert m["cosine"] > 0.99 and m["slots"] == 1.0
+
+
+def test_latent_near_move_grades_better_than_far():
+    """THE point (Rock Slide ≈ HP Rock): when the truth is move 0, a belief on the NEAR move (1) grades
+    MUCH closer than a belief on the FAR move (2) — the soft credit the per-ID BCE can't give."""
+    km = torch.full((1, 6, 4), -1); km[0, 0, 0] = 0
+    _, near = _latent_loss(_belief_on(8, 1), _table(8), km)
+    _, far = _latent_loss(_belief_on(8, 2), _table(8), km)
+    assert near["cosine"] > 0.9          # near move ≈ the truth
+    assert far["cosine"] < 0.2           # far move ≈ orthogonal
+    assert near["cosine"] - far["cosine"] > 0.6
+
+
+def test_latent_grad_flows_to_logits_and_table():
+    """The loss is differentiable in BOTH the belief logits (sharpens the head) and the latent table
+    (shapes the MoveLatentEncoder)."""
+    km = torch.full((1, 6, 4), -1); km[0, 0, 0] = 0
+    ml = _belief_on(8, 2).requires_grad_(True)    # believe the FAR move → non-zero gradient pressure
+    table = _table(8).requires_grad_(True)
+    loss, _ = _latent_loss(ml, table, km)
+    loss.backward()
+    assert ml.grad is not None and ml.grad.abs().sum() > 0
+    assert table.grad is not None and table.grad.abs().sum() > 0
