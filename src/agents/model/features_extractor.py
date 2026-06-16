@@ -1243,6 +1243,14 @@ _DMG_EFFECT = 6
 # scalars (the existing per-mon/effect layout is untouched). NO speed coupling — flinch's move-first
 # dependence is left to attention (owner decision).
 _DMG_INCOMING_SEC = _N_SECONDARY            # 10
+# gen3_unified_choice_band_v1: the CB-CONDITIONAL physical tail of the INCOMING threat — per our 6 mons, the
+# opp's PHYSICAL [high-roll, P(OHKO)] computed WITH the ×1.5 Choice-Band Atk, then ONE shared `p_cb` scalar
+# (P(opp active holds CB)). DECORRELATED from the modal (no-CB) line + p_cb so the head weights them itself
+# (OHKO is a nonlinear threshold a mean-field blend would blur — same rationale as the crit-split). The op's
+# OUTGOING block separately applies the ×1.5 deterministically (our own item is known). Order:
+# [phys_high_cb × 6, phys_pko_cb × 6, p_cb].
+_DMG_CB_PER_MON = 2                          # phys_high_cb, phys_pko_cb (physical channel only — CB is phys)
+_DMG_CB = _DMG_CB_PER_MON * TEAM_SIZE + 1    # + the shared p_cb scalar = 13
 _DMG_CRIT_P = 1.0 / 16.0   # gen3 base crit rate (×2 damage) — the crit roll is exposed as crit_frac
 _DMG_SPEED_SCALE = 15.0    # logistic scale for P(outspeed) over the speed-stat difference (~one stage)
 # gen3_unified_spread_belief_v1: indices into the SpreadBelief's [atk,def,spa,spd,spe] output (== the
@@ -1347,12 +1355,13 @@ class DamageOperator(torch.nn.Module):
     per_mon = _DMG_PER_MON
     n_effect = _DMG_EFFECT
     n_incoming_sec = _DMG_INCOMING_SEC
-    incoming_dim = TEAM_SIZE * _DMG_PER_MON + _DMG_EFFECT + _DMG_INCOMING_SEC
+    incoming_dim = TEAM_SIZE * _DMG_PER_MON + _DMG_EFFECT + _DMG_INCOMING_SEC + _DMG_CB
 
     def __init__(self, layout: Dict[str, Any], outgoing: bool = False):
         super().__init__()
         from agents.model.damage_tables import (
             build_damage_buffers, HIDDEN_POWER_NUM, HIDDEN_POWER_BP,
+            CHOICE_BAND_ITEM_NUM, CHOICE_BAND_PHYS_MULT,
         )
         bufs = build_damage_buffers(layout['max_moves'], layout['max_species'], layout['max_abilities'])
         for name, tensor in bufs.items():
@@ -1361,6 +1370,8 @@ class DamageOperator(torch.nn.Module):
             self.register_buffer(name, tensor, persistent=False)
         self.hp_num = HIDDEN_POWER_NUM
         self.hp_bp = float(HIDDEN_POWER_BP)
+        self.cb_item_num = CHOICE_BAND_ITEM_NUM            # gen3_unified_choice_band_v1: Choice Band item num
+        self.cb_phys_mult = float(CHOICE_BAND_PHYS_MULT)   # ×1.5 physical Atk
         # OUTGOING direction (our active → opp active, per-move action-aligned): off by default. When on,
         # the op ALSO emits the _DMG_OUTGOING block (widens out_dim → both projections auto-size).
         self.outgoing = outgoing
@@ -1384,6 +1395,10 @@ class DamageOperator(torch.nn.Module):
         per_mon_init = torch.tensor([1.0 / 1.5, 1.0 / 1.5, 1.0 / 3.0, 1.0, 1.0,
                                      1.0 / 1.5, 1.0 / 1.5, 1.0 / 3.0, 1.0, 1.0, 1.0, 1.0])
         gain[:TEAM_SIZE * self.per_mon] = per_mon_init.repeat(TEAM_SIZE)
+        # gen3_unified_choice_band_v1: the CB block tail [phys_high_cb×6, phys_pko_cb×6, p_cb] — scale the
+        # CB high-roll like the other high rolls (cap 1.5 → ÷1.5); pko/p_cb already in [0,1] (stay 1.0).
+        _cb0 = TEAM_SIZE * self.per_mon + _DMG_EFFECT + _DMG_INCOMING_SEC
+        gain[_cb0:_cb0 + TEAM_SIZE] = 1.0 / 1.5                       # the phys_high_cb sub-block
         if outgoing:
             # outgoing block: per move [low, high, crit, pko] (same roll scaling), then p_outspeed.
             out_move_init = torch.tensor([1.0 / 1.5, 1.0 / 1.5, 1.0 / 3.0, 1.0])
@@ -1489,6 +1504,17 @@ class DamageOperator(torch.nn.Module):
         # Sonic Boom 20) ignore Atk/Def/roll/crit but RESPECT type/ability immunity. Override the rolls with
         # the constant fraction (all three rolls equal — no variance), gated to 0 where `eff<=0` (Fighting
         # Seismic Toss → 0 vs Ghost; Ghost Night Shade → 0 vs Normal). Otherwise the BP-0 formula reads ~0.
+        # gen3_unified_choice_band_v1: the CB-CONDITIONAL physical rolls — recompute with the physical Atk
+        # ×1.5 at the STAT level (A_cb), so `core = k·A+2`'s +2 floor isn't itself ×1.5'd (the exact physics,
+        # consistent with the outgoing block which scales our_atk). Special candidates unchanged. Only `high_cb`
+        # / `ko_cb` are used (the op aggregates the PHYSICAL channel); the fixed-damage override below is
+        # applied to them too (fixed damage is CB-independent → reads identically).
+        A_cb = A + 0.5 * phys_all * atk[:, None]                                        # [B,C] physical Atk ×1.5
+        core_cb = 42.0 * bp_all[None, None, :] * A_cb[:, None, :] / (D + eps) / 50.0 + 2.0      # [B,n,C]
+        dmg_ns_cb = core_cb * stab[:, None, :] * eff * 0.925 \
+            * (bp_all > 0).float()[None, None, :] * weather_mult[:, None, :]
+        high_cb, _, _, ko_cb = self._rolls(dmg_ns_cb, screen[:, None, :], maxhp[:, :, None],
+                                           cur_hp[:, :, None], acc_all[None, None, :], eps)
         is_fixed = (fixed_all > 0)[None, None, :]                                      # [1,1,C]
         not_immune = (eff > 0).float()                                                # [B,n,C] type+ability gate
         fixed_frac = (fixed_all[None, None, :] / (maxhp[:, :, None] + eps)) * not_immune
@@ -1497,7 +1523,9 @@ class DamageOperator(torch.nn.Module):
         low = torch.where(is_fixed, fixed_frac, low)
         crit = torch.where(is_fixed, fixed_frac, crit)
         ko = torch.where(is_fixed, fixed_ko, ko)
-        return high, low, crit, ko
+        high_cb = torch.where(is_fixed, fixed_frac, high_cb)
+        ko_cb = torch.where(is_fixed, fixed_ko, ko_cb)
+        return high, low, crit, ko, high_cb, ko_cb
 
     def _outgoing_block(self, ctx: 'ExtractorContext',
                         spread_belief: Optional[torch.Tensor] = None) -> torch.Tensor:
@@ -1545,6 +1573,11 @@ class DamageOperator(torch.nn.Module):
         o_b_atk, o_b_def, o_b_spa, o_b_spd, o_b_spe = self._boost_stages(ctx.our_ctx_raw)
         our_burn = ctx.pokemon_part[ar, our_act, POKEMON_CONDITION_OFFSET + _COND_BRN_IDX]   # [B]
         our_para = ctx.pokemon_part[ar, our_act, POKEMON_CONDITION_OFFSET + _COND_PAR_IDX]   # [B]
+        # gen3_unified_choice_band_v1: OUR Choice Band ×1.5 physical Atk (our item is KNOWN → deterministic,
+        # not a belief). Composes multiplicatively with boosts/burn below; physical only (CB doesn't touch SpA).
+        our_cb = (ctx.item_ids[ar, our_act] == self.cb_item_num).float()                     # [B]
+        our_atk = our_atk * torch.where(our_cb > 0.5, our_atk.new_tensor(self.cb_phys_mult),
+                                        our_atk.new_tensor(1.0))
         our_atk = our_atk * self._boost_mult(o_b_atk) * torch.where(
             our_burn > 0.5, our_atk.new_tensor(0.5), our_atk.new_tensor(1.0))
         our_spa = our_spa * self._boost_mult(o_b_spa)
@@ -1771,7 +1804,7 @@ class DamageOperator(torch.nn.Module):
         # kernel — incoming roles: attacker = opp active, defenders = our 6, OUR-side screens) ---
         our_reflect = ctx.screen_feature[:, 0:1]                                                # [B,1]
         our_light_screen = ctx.screen_feature[:, 2:3]                                           # [B,1]
-        high_frac, low_frac, crit_frac, ko_ramp = self._damage_rolls(
+        high_frac, low_frac, crit_frac, ko_ramp, high_cb, ko_cb = self._damage_rolls(
             atk, spa, at1, at2, def_stat, spd_stat, maxhp, cur_hp, t1d, t2d,
             ctx.ability1_ids[:, :TEAM_SIZE], our_reflect, our_light_screen,
             bp_all, mty_all, phys_all, acc_all, fixed_all, weather_mult, eps)
@@ -1787,6 +1820,11 @@ class DamageOperator(torch.nn.Module):
         phys_high, spec_high = self._chan_max(wb * high_frac, phys_mask), self._chan_max(wb * high_frac, spec_mask)
         phys_crit, spec_crit = self._chan_max(wb * crit_frac, phys_mask), self._chan_max(wb * crit_frac, spec_mask)
         phys_pko, spec_pko = self._chan_max(wb * ko_ramp, phys_mask), self._chan_max(wb * ko_ramp, spec_mask)
+        # gen3_unified_choice_band_v1: the CB-CONDITIONAL physical tail — the PHYSICAL-channel high-roll +
+        # P(OHKO) computed with the opp Atk ×1.5. Same hard-max aggregation over the believed candidates;
+        # special channel is CB-invariant so only the physical max is exposed (paired with p_cb below).
+        phys_high_cb = self._chan_max(wb * high_cb, phys_mask)                                   # [B,6]
+        phys_pko_cb = self._chan_max(wb * ko_cb, phys_mask)                                      # [B,6]
         # PER-CHANNEL accuracy + PROVENANCE of the dominant (max belief-weighted high-roll) believed move.
         # accuracy is gathered COHERENTLY at the channel's dominant-damage move (the one the rolls describe),
         # so {pko, accuracy} parameterize that threat's full outcome distribution. provenance is the dominant
@@ -1848,7 +1886,19 @@ class DamageOperator(torch.nn.Module):
         opp_serene = self.ABILITY_SECONDARY_MULT[ctx.ability1_ids[ar, opp_act]]                  # [B]
         p_sec = (w_sec.amax(dim=1) * opp_serene[:, None]).clamp(max=1.0) * has_opp[:, None]      # [B,10]
 
-        block = torch.cat([feats.reshape(B, TEAM_SIZE * self.per_mon), p_effect, p_sec], dim=1)  # [B, incoming_dim]
+        # gen3_unified_choice_band_v1: P(opp active holds Choice Band), collapsed to 0/1 once its item is
+        # revealed (item_id==CB → 1; any OTHER revealed item → 0; unrevealed id==0 → the species usage prior).
+        # The op's outgoing block applies CB ×1.5 deterministically for OUR known item; here it's a belief.
+        opp_item = ctx.item_ids[ar, opp_act]                                                     # [B]
+        cb_prior = self.SPECIES_CB_PRIOR[ctx.species_ids[ar, opp_act]]                           # [B]
+        revealed_cb = (opp_item == self.cb_item_num).float()                                     # [B]
+        unrevealed = (opp_item == 0).float()                                                     # [B] all-zero id
+        p_cb = (revealed_cb + (1.0 - revealed_cb) * unrevealed * cb_prior) * has_opp             # [B]
+        # CB-conditional physical tail, gated like the modal per-mon feats (alive defender + opp present).
+        cb_gate = defender_alive * has_opp[:, None]                                              # [B,6]
+        cb_block = torch.cat([phys_high_cb * cb_gate, phys_pko_cb * cb_gate, p_cb[:, None]], dim=1)  # [B, _DMG_CB]
+
+        block = torch.cat([feats.reshape(B, TEAM_SIZE * self.per_mon), p_effect, p_sec, cb_block], dim=1)  # [B, incoming_dim]
         # OUTGOING (our active → opp active, per-move action-aligned): appended after the incoming block
         # when enabled (widens out_dim; both projections auto-size). Reuses the shared `_rolls` physics.
         # gen3_unified_status_landing_v1: the per-OUR-move status-landing block rides the SAME outgoing
@@ -1889,12 +1939,17 @@ def decode_damage_block(row, *, outgoing: bool, team_size: int = TEAM_SIZE):
         })
     eb = team_size * _DMG_PER_MON
     sb = eb + _DMG_EFFECT                              # incoming per-status secondary base
+    cbb = sb + _DMG_INCOMING_SEC                       # gen3_unified_choice_band_v1: CB block base
     out = {"incoming": incoming,
            "effect": {c: r[eb + j] for j, c in enumerate(_DMG_EFFECT_COLS)},
            "incoming_secondary": {c: r[sb + j] for j, c in enumerate(_SECONDARY_COLS)},
+           # CB-conditional physical tail (per our mon) + the shared P(opp holds Choice Band).
+           "choice_band": {"phys_high_cb": [r[cbb + i] for i in range(team_size)],
+                           "phys_pko_cb": [r[cbb + team_size + i] for i in range(team_size)],
+                           "p_cb": r[cbb + 2 * team_size]},
            "outgoing": None}
     if outgoing:
-        ob = sb + _DMG_INCOMING_SEC                    # outgoing damage base
+        ob = cbb + _DMG_CB                              # outgoing damage base (after the CB block)
         osb = ob + _DMG_OUT_N_MOVES * _DMG_OUT_PER_MOVE + 1   # outgoing per-move secondary base (after p_outspeed)
         slb = ob + _DMG_OUTGOING                        # status-landing base (after the whole outgoing block)
         out["outgoing"] = {

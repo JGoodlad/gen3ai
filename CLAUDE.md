@@ -678,7 +678,7 @@ and `gen3_sleep_wake_belief_v1` — a 3-dim per-mon SLEEP WAKE belief block [`sl
 Early Bird halves; opp Early-Bird prior marginalised; Rest source from the event log's `[from]` clause;
 fuzz-calibrated vs the real sim RNG), `sleep_counter_reliable`], `POKEMON_VECTOR_DIM` 106 → 109
 (3419 → 3455). All four are retrain-class; current
-`MODEL_CONFIG_VERSION`: **27** — v16 added the in-place
+`MODEL_CONFIG_VERSION`: **28** — v16 added the in-place
 hidden-opponent belief-aux toggle `opp_belief_slots` + its coef `opp_belief_aux_coef`, v17 the
 move-belief reinjection toggle `move_belief_mode` + `move_belief_coef`, v18 the latent-belief toggle
 `opp_belief_latent` + `opp_belief_latent_coef`, v19 the differentiable damage-operator toggle
@@ -726,7 +726,12 @@ move-effect `status_will_land`. Folds accuracy × per-MOVE type immunity (incl. 
 imported from `gen3_mechanics` (one source); Shield Dust is N/A (it only scales SECONDARY effects). A v26
 `--damage-outgoing` checkpoint won't load (SB3 `load_state_dict` projection in_features mismatch — the dim is
 runtime-discovered, not a `check_compatible` field). `--mask-move-effects-obs` now requires `--move-latent`
-AND `--damage-outgoing`. Current `MODEL_CONFIG_VERSION` = **27**. Full design:
+AND `--damage-outgoing`. **v28 op Choice Band** (`gen3_unified_choice_band_v1`, intrinsic to `--damage-op`) —
+the op prices CB (×1.5 physical Atk): OUTGOING applies our own (known) CB ×1.5 deterministically; INCOMING
+exposes a per-our-mon CB-CONDITIONAL physical tail (`phys_high_cb` + `P(OHKO|CB)`) + a shared `p_cb`
+(P(opp holds CB) — a species usage prior collapsing to 0/1 on item reveal), **decorrelated** so the head
+weights them (OHKO is a nonlinear threshold a mean-field blend would blur). Move-lock + the ChoiceBandTracker
+disproof are a follow-up. Current `MODEL_CONFIG_VERSION` = **28**. Full design:
 `designs/ai_v6/design_unified_move_system.md` (and `design_unified_damage_system.md` for v23).
 **The full versioning playbook — what to do when you change a dim vs add an optional feature vs
 make a structural change — is in `src/agents/model/CLAUDE.md`.**

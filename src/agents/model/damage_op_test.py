@@ -17,7 +17,7 @@ import pytest
 
 from agents.model.features_extractor import (
     Gen3FeaturesExtractor, DamageOperator, _DMG_PER_MON, _DMG_EFFECT, _DMG_INCOMING_SEC,
-    _DMG_OUT_N_MOVES, _DMG_OUT_PER_MOVE, _DMG_STATUS, _DMG_STATUS_N_MOVES, _COND_SLP_IDX,
+    _DMG_OUT_N_MOVES, _DMG_OUT_PER_MOVE, _DMG_STATUS, _DMG_STATUS_N_MOVES, _DMG_CB, _COND_SLP_IDX,
     _SUBSTITUTE_CTX_IDX, TEAM_SIZE,
 )
 from agents.model import damage_tables as dt
@@ -91,6 +91,7 @@ def _fake_ctx(op, *, attacker_num, attacker_t1, attacker_t2,
         opp_active_local=torch.full((B,), opp_active_local, dtype=torch.long),
         species_ids=species, type1_ids=t1, type2_ids=t2,
         ability1_ids=torch.zeros(B, n, dtype=torch.long),       # no ability (mult 1.0) by default
+        item_ids=torch.zeros(B, n, dtype=torch.long),           # no item (no Choice Band) by default
         screen_feature=torch.zeros(B, 8),                       # no screens by default
         our_ctx_raw=torch.zeros(B, ACTIVE_CONTEXT_DIM), opp_ctx_raw=torch.zeros(B, ACTIVE_CONTEXT_DIM),  # boosts++volatiles
         our_active_idx=torch.zeros(B, dtype=torch.long), weather_feature=torch.zeros(B, 7),  # no weather
@@ -212,7 +213,7 @@ def test_off_path_projection_dims_unchanged_by_damage_op():
     base, _ = _make_model(attend_unrevealed_opponents=True, move_belief_mode="revealed")
     on, _ = _make_model(attend_unrevealed_opponents=True, move_belief_mode="revealed", damage_op=True)
     assert base.damage_op is None and on.damage_op is not None
-    grow = TEAM_SIZE * _DMG_PER_MON + _DMG_EFFECT + _DMG_INCOMING_SEC
+    grow = TEAM_SIZE * _DMG_PER_MON + _DMG_EFFECT + _DMG_INCOMING_SEC + _DMG_CB
     assert on.projection_input_dim - base.projection_input_dim == grow
     assert on.value_projection_input_dim - base.value_projection_input_dim == grow
 
@@ -235,7 +236,7 @@ def test_finite_on_zero_obs_and_block_is_zero():
         assert torch.isfinite(pi).all() and torch.isfinite(vf).all()
         ctx = model.unpack({"observation": torch.zeros(3, layout["total_dim"])})
         block = model.damage_op(ctx, model.last_move_belief_logits)
-    assert block.shape == (3, TEAM_SIZE * _DMG_PER_MON + _DMG_EFFECT + _DMG_INCOMING_SEC)
+    assert block.shape == (3, TEAM_SIZE * _DMG_PER_MON + _DMG_EFFECT + _DMG_INCOMING_SEC + _DMG_CB)
     assert (block == 0).all()
 
 
@@ -320,7 +321,7 @@ def test_three_roll_relationship():
     acc = torch.tensor([1.0])                                    # 100%-accurate → pko undiscounted
     fixed = torch.zeros(1)                                       # not a fixed-damage move
     weather = torch.ones(B, 1)                                   # no weather
-    high, low, crit, pko = op._damage_rolls(atk, spa, at1, at2, def_stat, spd_stat, maxhp, cur_hp,
+    high, low, crit, pko, _hcb, _kcb = op._damage_rolls(atk, spa, at1, at2, def_stat, spd_stat, maxhp, cur_hp,
                                             t1d, t2d, ability1, reflect, light, bp, mty, phys, acc, fixed, weather)
     h = high[0, 0, 0].item()
     assert 0.0 < h < 1.5                                          # unclamped (relationship is clean)
@@ -358,6 +359,7 @@ def _fake_ctx_out(*, our_species, our_t1, our_t2, our_moves, our_move_types,
         our_active_idx=torch.zeros(B, dtype=torch.long),
         opp_active_local=torch.zeros(B, dtype=torch.long),
         species_ids=species, type1_ids=t1, type2_ids=t2, ability1_ids=ability,
+        item_ids=torch.zeros(B, n, dtype=torch.long),           # no item (no Choice Band) by default
         hp_and_active=hp_and_active, pokemon_part=pokemon_part,
         all_move_ids=all_move_ids, all_move_type_ids=all_move_type_ids,
         move_mask=torch.tensor([list(move_mask)] * B, dtype=torch.float32),
@@ -787,3 +789,63 @@ def test_status_landing_known_bit_on_revealed_nonblocking_ability():
                             opp_t1=_T2I["NORMAL"], opp_t2=0, opp_species=248, opp_ability=sand)
     assert p[0].item() == pytest.approx(0.85, abs=1e-4)   # Toxic lands (Sand Stream blocks nothing)
     assert known.tolist() == [1.0, 1.0, 1.0, 1.0]         # ability revealed → all four certain
+
+
+# --------------------------------------------------------------------------- Choice Band (gen3_unified_choice_band_v1)
+def test_choice_band_outgoing_x15_physical_only():
+    """Our OWN Choice Band (item known) ×1.5 the PHYSICAL outgoing damage, deterministically; a special move
+    is unaffected (CB boosts Atk, not SpA). Move k's high roll sits at outgoing index k*4+1."""
+    from agents import gen3_data
+    layout = Gen3ObservationEncoder(load_mappings()).get_layout()
+    op = DamageOperator(layout, outgoing=True)
+    eq, surf = gen3_data.moves.get("earthquake"), gen3_data.moves.get("surf")     # physical / special
+    base = dict(our_species=143, our_t1=_T2I["NORMAL"], our_t2=0,                 # Snorlax (no STAB on either)
+                our_moves=[eq.num, surf.num, 0, 0],
+                our_move_types=[_T2I["GROUND"], _T2I["WATER"], 0, 0],
+                opp_species=143, opp_t1=_T2I["NORMAL"], opp_t2=0, move_mask=[1, 1, 0, 0])  # bulky neutral → no clamp
+    ctx, ctx_cb = _fake_ctx_out(**base), _fake_ctx_out(**base)
+    ctx_cb.item_ids[:, 0] = dt.CHOICE_BAND_ITEM_NUM                               # our active holds Choice Band
+    out, out_cb = op._outgoing_block(ctx), op._outgoing_block(ctx_cb)
+    assert out[0, 1].item() > 0.0
+    # ×1.5 at the STAT level → slightly under 1.5× the damage (the +2 floor in core=k*A+2 isn't boosted).
+    assert out[0, 1].item() < out_cb[0, 1].item() == pytest.approx(1.5 * out[0, 1].item(), rel=2e-2)
+    assert out_cb[0, 5].item() == pytest.approx(out[0, 5].item(), rel=1e-5)         # Surf (spec) unchanged
+
+
+def test_choice_band_incoming_conditional_tail_and_pcb():
+    """Incoming: the op exposes the CB-CONDITIONAL physical tail (phys_high_cb ≈ 1.5× modal phys_high, P(OHKO|CB)
+    ≥ modal pko) + a shared p_cb, DECORRELATED so the head weights them. p_cb = the species usage prior for an
+    unrevealed item, collapsing to 1.0 (revealed CB) / 0.0 (revealed other)."""
+    from agents import gen3_data
+    from agents.model.features_extractor import decode_damage_block
+    layout = Gen3ObservationEncoder(load_mappings()).get_layout()
+    op = DamageOperator(layout, outgoing=False)
+    de = gen3_data.moves.get("doubleedge")                                        # a physical threat
+    defenders = [(143, _T2I["NORMAL"], 0)] + [(0, 0, 0)] * 5                       # our Snorlax active (bulky)
+    lg = torch.full((1, TEAM_SIZE, layout["max_moves"]), -10.0); lg[:, :, de.num] = 10.0
+
+    ctx = _fake_ctx(op, attacker_num=142, attacker_t1=_T2I["ROCK"], attacker_t2=_T2I["FLYING"],  # Aerodactyl
+                    defenders=defenders, hp_probs_active=[0.0] * 16)
+    op(ctx, lg)
+    dec = decode_damage_block(op.last_raw_block[0], outgoing=False)
+    cb, modal = dec["choice_band"], dec["incoming"][0]["phys"]
+    assert modal["high"] < cb["phys_high_cb"][0] == pytest.approx(1.5 * modal["high"], rel=2e-2)  # CB-cond high ≈1.5×
+    assert cb["phys_pko_cb"][0] >= modal["pko"]                                    # CB only raises KO odds
+    assert cb["p_cb"] == pytest.approx(0.761, abs=0.03)                            # Aerodactyl prior (unrevealed)
+
+    # revealed Choice Band → p_cb collapses to 1.0; revealed Leftovers → 0.0.
+    ctx.item_ids[:, TEAM_SIZE] = dt.CHOICE_BAND_ITEM_NUM
+    op(ctx, lg)
+    assert decode_damage_block(op.last_raw_block[0], outgoing=False)["choice_band"]["p_cb"] == pytest.approx(1.0)
+    ctx.item_ids[:, TEAM_SIZE] = 234   # leftovers
+    op(ctx, lg)
+    assert decode_damage_block(op.last_raw_block[0], outgoing=False)["choice_band"]["p_cb"] == pytest.approx(0.0)
+
+
+def test_choice_band_prior_buffer_values():
+    """The SPECIES_CB_PRIOR buffer matches the Smogon item usage prior (non-persistent, zero new params)."""
+    from agents import gen3_data
+    op = DamageOperator(Gen3ObservationEncoder(load_mappings()).get_layout())
+    aero = gen3_data.species.get("aerodactyl").num
+    assert op.SPECIES_CB_PRIOR[aero].item() == pytest.approx(0.761, abs=0.02)
+    assert "SPECIES_CB_PRIOR" not in dict(op.state_dict())          # non-persistent buffer

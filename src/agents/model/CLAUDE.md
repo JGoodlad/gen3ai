@@ -175,8 +175,8 @@ because it is Φ_progress's weight. All are recorded on
 `ModelVersion` and enforced on resume by **`check_reward_config`** (FATAL on drift, since they silently
 shift the reward/objective), excluded from `check_compatible`. They are reward-VALUE changes — **no
 `ARCH_SIGNATURE` bump** (the network/obs are unchanged) — so a fresh run is needed to measure them but
-old checkpoints don't fail an arch check. Current `MODEL_CONFIG_VERSION` = **27** (see the belief +
-unified-damage + unified-move + spread-belief + op-physics + status-landing notes below for v16–v27).
+old checkpoints don't fail an arch check. Current `MODEL_CONFIG_VERSION` = **28** (see the belief +
+unified-damage + unified-move + spread-belief + op-physics + status-landing + choice-band notes below for v16–v28).
 
 **Two probe-driven V-tail levers (v10 structural, v11 resume-immutable).** A representation probe on a
 real checkpoint found the **value head is partly blind to incoming KOs the policy head sees**
@@ -505,7 +505,24 @@ output dim, so a v26 `damage_outgoing` checkpoint won't load (the SB3 `load_stat
 projection Linear's `in_features` — the runtime-discovered projection dim is NOT a `ModelVersion` field, so
 `check_compatible` passes); OFF (no `damage_outgoing`) byte-identical (no `ARCH_SIGNATURE` bump).
 `--mask-move-effects-obs` now requires **both** `--move-latent` (structural identity) AND `--damage-outgoing`
-(this block). Current `MODEL_CONFIG_VERSION` = **27**.
+(this block).
+
+**Op Choice Band (v28, `gen3_unified_choice_band_v1`).** The op prices **Choice Band** (×1.5 physical Atk —
+the dominant damage-relevant gen3 item). **OUTGOING:** our own CB (item KNOWN → `ctx.item_ids[our_active] ==
+cb_num`) ×1.5 our physical Atk **deterministically** (values-only, applied at the Atk-STAT level so the
+`core = k·A+2` floor isn't boosted, composing with boosts/burn). **INCOMING:** a **CB-CONDITIONAL physical
+tail** (`_DMG_CB`=13 dims appended to the incoming block) — per our 6 mons `phys_high_cb` (max-roll with the
+×1.5) + `pko_cb` (P(OHKO | CB)), then a shared `p_cb` scalar (P(opp active holds CB)). `p_cb` =
+`SPECIES_CB_PRIOR[species]` (the Smogon item usage prior, `damage_tables.build_species_cb_prior`, non-persistent
+buffer) collapsed to **1.0** (item revealed == CB) / **0.0** (any other revealed item) / the prior (unrevealed
+`item_id==0`). The CB tail is **DECORRELATED** from the modal (no-CB) line so the head weights `pko_cb·p_cb`
+itself — OHKO is a nonlinear threshold a mean-field ×(1+0.5·p_cb) would blur (same provide-the-fact rationale
+as the crit-split). The CB-conditional rolls reuse `_damage_rolls` (it now returns `(high, low, crit, ko,
+high_cb, ko_cb)`); fixed-damage moves are CB-invariant (the override replaces them). **NOT yet modelled:** the
+move-LOCK (the predictability lever) + the `ChoiceBandTracker`'s move-lock DISPROOF (a documented follow-up;
+the orphaned tracker would refine `p_cb`). INTRINSIC to `damage_op` (the incoming CB block grows the incoming
+output dim → a v27 `damage_op` checkpoint won't load, SB3 `load_state_dict` in_features mismatch); OFF (no
+`damage_op`) byte-identical (no `ARCH_SIGNATURE` bump). Current `MODEL_CONFIG_VERSION` = **28**.
 
 A startup smoke test (`_run_roundtrip_test` in `train_rl_agent.py`) saves to a temp dir and reloads before every `model.learn()` call — catches serialization issues immediately.
 

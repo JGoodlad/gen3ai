@@ -16,7 +16,7 @@ import pytest
 
 from agents.model.features_extractor import (
     Gen3FeaturesExtractor, DamageOperator, MoveBelief,
-    _DMG_PER_MON, _DMG_EFFECT, _DMG_INCOMING_SEC, TEAM_SIZE,
+    _DMG_PER_MON, _DMG_EFFECT, _DMG_INCOMING_SEC, _DMG_CB, TEAM_SIZE,
 )
 from agents.model import damage_tables as dt
 from agents.observation.constants import (
@@ -32,7 +32,7 @@ _layout = Gen3ObservationEncoder(_mappings).get_layout()
 _M = _layout["max_moves"]
 _S = _layout["max_species"]
 _EMB = _layout["move_embedding_dim"]
-_OUT = TEAM_SIZE * _DMG_PER_MON + _DMG_EFFECT + _DMG_INCOMING_SEC
+_OUT = TEAM_SIZE * _DMG_PER_MON + _DMG_EFFECT + _DMG_INCOMING_SEC + _DMG_CB
 # Effect-scalar column order (== damage_tables.MOVE_EFFECT_COLS): recovery, status, phaze, boost, hazard, protect
 _EFF = {name: i for i, name in enumerate(dt.MOVE_EFFECT_COLS)}
 
@@ -70,6 +70,7 @@ def _ctx(*, opp_species=0, opp_t1=0, opp_t2=0, defenders=None, opp_active=True,
         opp_active_local=torch.zeros(B, dtype=torch.long),
         our_active_idx=torch.zeros(B, dtype=torch.long),
         species_ids=species, type1_ids=t1, type2_ids=t2, ability1_ids=ability1,
+        item_ids=torch.zeros(B, 2 * TEAM_SIZE, dtype=torch.long),   # no Choice Band by default (gen3_unified_choice_band_v1)
         all_move_ids=torch.zeros(B, n, 4, dtype=torch.long), screen_feature=screen,
         our_ctx_raw=torch.zeros(B, 14), opp_ctx_raw=torch.zeros(B, 14),  # no boosts
         weather_feature=torch.zeros(B, 7),                              # no weather

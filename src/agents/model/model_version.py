@@ -216,7 +216,18 @@ from typing import Any, Dict, List
 #   shape mismatch on the projection Linear in_features — the runtime-discovered projection dim is NOT a
 #   ModelVersion field, so check_compatible passes). OFF (no damage_outgoing) byte-identical; no
 #   ARCH_SIGNATURE bump. Bare version marker.
-MODEL_CONFIG_VERSION = 27
+# v28: gen3_unified_choice_band_v1 — the op prices CHOICE BAND (×1.5 physical Atk + move-lock; the dominant
+#   damage-relevant gen3 item). OUTGOING: our own CB (item known) ×1.5 our physical Atk DETERMINISTICALLY
+#   (values-only). INCOMING: a CB-CONDITIONAL physical tail per our 6 mons — `phys_high_cb` (max-roll with
+#   the ×1.5) + `pko_cb` (P(OHKO | CB)) — plus a shared `p_cb` scalar (P(opp active holds CB) from
+#   `SPECIES_CB_PRIOR`, the Smogon item usage prior, collapsed to 1.0/0.0 once the held/consumed item is
+#   revealed). DECORRELATED from the modal (no-CB) line so the head weights them — OHKO is a nonlinear
+#   threshold a mean-field ×(1+0.5·p_cb) would blur (same provide-the-fact rationale as the crit-split). The
+#   ×1.5 is applied at the Atk-STAT level (so core=k·A+2's +2 floor isn't boosted) in BOTH directions. The
+#   move-lock + the ChoiceBandTracker's move-lock DISPROOF are a documented follow-up. INTRINSIC to damage_op
+#   (the incoming CB block grows the incoming output dim → a v27 damage_op checkpoint won't load, SB3
+#   load_state_dict in_features mismatch); OFF (no damage_op) byte-identical; no ARCH_SIGNATURE bump. Marker.
+MODEL_CONFIG_VERSION = 28
 
 # Change this when the neural architecture changes structurally in a way that makes
 # weights from a different signature incompatible (e.g. adding LSTM, replacing attention).
@@ -1302,4 +1313,13 @@ def _migrate_config(data: dict) -> dict:
         # field, so check_compatible passes — the safety is the weight-shape load failure). OFF (no
         # damage_outgoing) byte-identical. Bare marker.
         data["config_version"] = 27
+    if version < 28:
+        # v28: gen3_unified_choice_band_v1 — the op prices Choice Band (×1.5 physical Atk). OUTGOING: our own
+        # CB (known item) ×1.5 our physical Atk deterministically (values-only). INCOMING: a CB-CONDITIONAL
+        # physical tail (per our 6 mons: phys_high_cb + P(OHKO|CB)) + a shared p_cb (P(opp holds CB), a species
+        # usage prior collapsed to 0/1 on item reveal), DECORRELATED so the head weights them — OHKO is a
+        # nonlinear threshold a mean-field ×(1+0.5·p_cb) would blur. INTRINSIC to damage_op (the incoming CB
+        # block grows the incoming output dim → a v27 damage_op checkpoint won't load via the SB3 load_state_dict
+        # projection in_features mismatch); OFF (no damage_op) byte-identical. Bare marker.
+        data["config_version"] = 28
     return data

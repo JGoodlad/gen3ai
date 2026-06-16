@@ -264,6 +264,8 @@ def build_damage_buffers(n_moves: int, n_species: int, n_abilities: int) -> Dict
         # gen3_unified_status_landing_v1: the status-MOVE landing tables (merged in so the op registers them
         # through the same single buffer loop). All non-persistent, recomputable-from-data.
         **build_status_landing(n_moves, n_species, n_abilities),
+        # gen3_unified_choice_band_v1: P(CB | species) usage prior — the op's CB belief for an unrevealed opp.
+        "SPECIES_CB_PRIOR": build_species_cb_prior(n_species),
     }
 
 
@@ -312,6 +314,28 @@ def build_opp_spread_prior(n_species: int) -> torch.Tensor:
                 var = max(0.0, m2 / wsum - mean * mean)
                 prior[snum, j, 0] = mean
                 prior[snum, j, 1] = max(1.0, var ** 0.5)
+    return prior
+
+
+# gen3_unified_choice_band_v1: Choice Band is the dominant damage-relevant gen3 item — it ×1.5 the holder's
+# PHYSICAL Attack (and move-locks it). The op prices it as a per-species BELIEF, not a baked multiplier: a
+# usage prior P(CB | species) the op collapses to 0/1 once the item is revealed, then exposes the
+# CB-CONDITIONAL physical damage tail + P(CB) decorrelated (the head weights them — the same provide-the-fact
+# philosophy as the crit-split, since OHKO is a nonlinear threshold a mean-field ×(1+0.5·p_cb) would blur).
+CHOICE_BAND_ITEM_NUM = int(gen3_data.items.get("choiceband").num)   # 220
+CHOICE_BAND_PHYS_MULT = 1.5
+
+
+def build_species_cb_prior(n_species: int) -> torch.Tensor:
+    """``[n_species]`` P(holds Choice Band | species) from the Smogon item usage prior
+    (`gen3_data.priors.items`) — Aerodactyl ≈0.76, Metagross ≈0.31, Snorlax ≈0.03. The op's PRIOR for an
+    unrevealed opponent's CB belief (collapsed to 0/1 once the held/consumed item is revealed). Non-persistent
+    buffer (recomputable from data/, zero params). A species with no usage data reads 0.0."""
+    prior = torch.zeros(n_species, dtype=torch.float32)
+    for sid in gen3_data.species.raw():
+        snum = gen3_data.species.get(sid).num
+        if 0 <= snum < n_species:
+            prior[snum] = float((gen3_data.priors.items(sid) or {}).get("choiceband", 0.0))
     return prior
 
 
