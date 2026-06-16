@@ -913,6 +913,92 @@ loss), and **not weight-shape** (no `ARCH_SIGNATURE` bump). Pairs with the v10 `
 value-head fix (`src/agents/model/CLAUDE.md`); validate both by watching `eval/td_resid_tail` fall.
 Tests: `instrumented_ppo_test.py` (β=0 == MSE, β>0 == the exact blend).
 
+## Gradient accumulation (`--grad-accum-steps`)
+
+A **GPU-memory lever** for keeping a large effective batch when the full minibatch OOMs. Stock
+`MaskablePPO.train()` does one `forward → backward → optimizer.step()` **per minibatch**, so
+`batch_size` couples the effective-batch size to the activation-memory peak — there is no
+`accumulation_steps` knob upstream. `InstrumentedMaskablePPO.train()` adds one: with
+`--grad-accum-steps K` it runs K `batch_size`-sized **micro-batches**, summing their gradients, and
+calls `optimizer.step()` only **once per group of K**. Because gradients are additive and each
+micro-loss is scaled by `1/K`, the accumulated gradient is the **exact** gradient of one
+`(batch_size·K)` batch — but the backward graph only ever holds **one micro-batch's** activations.
+So `--batch-size 4096 --grad-accum-steps 4` trains with the dynamics of `--batch-size 16384` at ~¼
+the activation peak (the `DamageOperator`'s `[B,6,~416]` tensors + the grad-balance probe's retained
+graph scale with the micro-batch, not the effective batch). `K=1` (default) is **byte-identical to
+upstream** (one step per minibatch).
+
+- **The step is gated on a full group** (`micro_in_group == accum`); a **trailing partial group**
+  (#minibatches not divisible by accum) is flushed at epoch end with its accumulated grad rescaled
+  `accum/micro_in_group` so the short group's step has the right magnitude. Grad-norm clipping
+  (`max_grad_norm`) is applied **once per optimizer step** (per group) — i.e. to the full
+  effective-batch gradient, exactly as the big batch would clip it.
+- **Bit-exact when the rollout divides cleanly.** The accumulation math reproduces a literal
+  `batch_size·K` batch to the float32 noise floor (~3e-8, empirically) **when `batch_size` divides the
+  rollout (`n_steps·n_envs`) AND `K` divides the minibatch count** — then every group is `K` equal-size
+  micro-batches. Production power-of-2 configs satisfy this (e.g. rollout 131072, `--batch-size 4096
+  --grad-accum-steps 4` → 32 micro-batches, 8 groups, exact). For a NON-divisible rollout the single
+  smaller remainder minibatch in the **final group of each epoch** is weighted as if full-size — a
+  bounded mis-weighting of one remainder per epoch (≈8e-5 on params in a toy probe; negligible vs a
+  100k-sample rollout, and no worse than stock SB3, which gives that remainder minibatch its own
+  full-weight optimizer step).
+- **KL early-stop** (`target_kl`, `None` by default so this path is dormant) discards the partial
+  group (`zero_grad`, no step) on a trip — a true `(batch_size·K)` batch checks KL over the whole
+  effective batch and would discard it as one unit.
+- **The other (always-present) non-identity is per-micro-batch advantage normalization**
+  (`normalize_advantage`, default on): stock SB3 already normalizes advantages *per-minibatch*, so
+  here the normalization sample is the micro-batch (e.g. 4096) rather than the effective batch
+  (16384). The difference is the normalization sample size — statistically negligible for batches of
+  thousands (and it is this term, not the accumulation math, that the bit-exact check above isolates
+  by running with `normalize_advantage=False`). (The grad-balance probe also samples on the first
+  **micro**-batch instead of the first minibatch — a smaller, cheaper, still-representative sample; its
+  `retain_graph` memory shrinks with the micro-batch.)
+- **Not version-locked / not in `model_config.json`.** It is a pure train-loop knob (no forward
+  change, no weight-shape effect, no `ARCH_SIGNATURE`/`MODEL_CONFIG_VERSION` bump) — like `batch_size`
+  / `n_epochs`, **forwarded as a CLI flag on every launcher resume** (set on the model in both the
+  fresh-build and resume paths of `train_rl_agent.py`; surfaced in `_model_hparams` for the sidecar).
+  Change it freely on resume; only the *effective* batch (`batch_size·K`) matters for dynamics, so
+  `--batch-size 16384` (K=1) and `--batch-size 4096 --grad-accum-steps 4` continue a run identically.
+- **The upstream-drift hash check is unaffected** (it hashes only `sb3_contrib.MaskablePPO.train`).
+
+Tests: `instrumented_ppo_test.py` — `test_grad_accum_matches_full_batch` runs the REAL `train()` on a
+minimal `MaskablePPO` and asserts `K=accum` over `batch/K` micro-batches reproduces the parameter
+update of `K=1` over the full batch to `rtol=1e-4` (parametrized over a divisible 16=4×4 **and** a
+non-divisible 15=5×3 case that exercises the partial-group rescale), plus default-is-1 + source-marker
+guards.
+
+### Gradient noise scale (`train/noise_scale`) — "is the batch big enough?"
+
+A **free byproduct of accumulation** (only emitted under `--grad-accum-steps >= 2`) that answers *how
+big a batch is enough* with a number instead of intuition: the McCandlish et al. 2018 **simple
+gradient noise scale** `B_simple = tr(Σ)/|G|²` — the critical batch size where gradient noise stops
+dominating. Below it, a bigger batch buys ~linear per-step progress; above it, diminishing returns
+(you're averaging out noise that was already small, and could shrink the batch for more update steps).
+
+The estimator needs the squared gradient norm at **two batch sizes** — and accumulation produces
+exactly that for free each `train()`: ‖g‖² of one micro-batch (`B=batch_size`, read from `.grad`
+right after the first micro-batch's backward, un-scaled by `accum²`) and of the accumulated first
+group (`B=batch_size·accum`, the pre-clip norm `clip_grad_norm_` already returns). From the model
+`E‖Ĝ_B‖² = |G|² + tr(Σ)/B`, two `(B, ‖Ĝ_B‖²)` points pin both `|G|²` and `tr(Σ)` (`_noise_scale_estimate`,
+pure/unit-tested). Both single-call estimates are noisy (either can go negative), so the **numerator and
+denominator are EMA'd separately** (`_NOISE_SCALE_EMA_DECAY`=0.99 ≈ a few-hundred-call window) and only
+then divided — and the scalar is emitted only once both EMAs are positive (so a warmup transient never
+logs a garbage value). Cost: one extra global grad-norm read per `train()` (the group norm is reused
+from clipping); no extra backward. EMA state is **process-local** (resets on a launcher restart →
+re-converges in a few hundred calls; not saved).
+
+Two scalars ride the standard logger → TensorBoard + launcher TUI (`format.py` labels `noise scale` /
+`noise/batch`, in the train column by `train/grad_norm`):
+- **`train/noise_scale`** = `B_simple` (compare directly to your effective batch `batch_size·accum`).
+- **`train/noise_scale_ratio`** = `B_simple / (batch_size·accum)` — the actionable read: **≫1 ⇒
+  noise-limited** (enlarge the effective batch), **≪1 ⇒ diminishing returns** (you have more than
+  enough; could shrink for more/cheaper update steps), **~1 ⇒ the sweet spot**.
+
+Tests: `instrumented_ppo_test.py` — `test_noise_scale_estimate_recovers_known_values` (the two-point
+math recovers a planted `|G|²`/`tr(Σ)` exactly), `_smaller_batch_is_noisier_sign`, `_global_grad_sq`
+matches a manual sum, and `_logged_only_when_accumulating` (real `train()`: skipped at accum=1, EMA
+updated + scalar emitted at accum=2).
+
 ## Hidden-opponent belief aux loss (`--opp-belief-aux-coef`)
 
 The training half of the in-place belief feature (model side in `src/agents/model/CLAUDE.md` →

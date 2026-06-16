@@ -204,6 +204,7 @@ def _model_hparams(model) -> dict:
         "opp_belief_latent_coef": float(getattr(model, "opp_belief_latent_coef", 0.0)),
         "win_prob_coef": float(getattr(model, "win_prob_coef", 1.0)),
         "batch_size": model.batch_size,
+        "grad_accum_steps": int(getattr(model, "grad_accum_steps", 1)),
         "n_steps": model.n_steps,
         "clip_range": float(model.clip_range(1.0)),
         "clip_range_vf": clip_range_vf,
@@ -561,6 +562,16 @@ async def main():
 
     # --- Hyperparameter Flags (Optimized for GPU) ---
     parser.add_argument("--batch-size", type=int, default=4096, help="PPO mini-batch size")
+    parser.add_argument("--grad-accum-steps", "--grad_accum_steps", dest="grad_accum_steps",
+                        type=int, default=1,
+                        help="Gradient accumulation: sum the gradients of K --batch-size MICRO-batches "
+                             "and step the optimizer ONCE per group of K, giving the EXACT gradient of a "
+                             "(batch_size·K) batch at the GPU-memory cost of batch_size (only one "
+                             "micro-batch's activations are ever held). 1 = OFF (one step per minibatch, "
+                             "byte-identical to stock). Use it to keep a large effective batch when the "
+                             "full minibatch OOMs: e.g. --batch-size 4096 --grad-accum-steps 4 ≈ "
+                             "--batch-size 16384 at ¼ the activation peak. A train-loop knob (not "
+                             "version-locked); pass it on every resume like --batch-size.")
     parser.add_argument("--n-epochs", type=int, default=5, help="PPO optimization epochs")
     parser.add_argument("--lr", type=float, default=3e-4, help="Initial learning rate (AdaptiveLRCallback adjusts from here)")
     parser.add_argument("--min-lr", type=float, default=1e-5, help="Hard lower bound on adaptive LR")
@@ -2006,6 +2017,7 @@ async def main():
             lr_detail = f"saved={saved_lr:.2e} (arg --lr={args.lr:.2e} ignored on resume)"
             send_event(f"▶️ Resuming at LR {resume_lr:.2e}, epochs {args.n_epochs} (checkpoint LR={saved_lr:.2e})")
         model.n_epochs = args.n_epochs
+        model.grad_accum_steps = args.grad_accum_steps   # grad accumulation (1 = off); a train-loop knob, re-applied each resume
         model.clip_range = lambda _: args.clip_range
         # None must stay a bare None (disabled), not `lambda _: None` — SB3 / the
         # instrumented update branch on `clip_range_vf is None`, and a callable is not None.
@@ -2159,6 +2171,7 @@ async def main():
         )
 
         model.value_tail_weight = args.value_tail_weight   # tail-weighted value loss (0.0 = plain MSE)
+        model.grad_accum_steps = args.grad_accum_steps     # grad accumulation (1 = off; effective batch = batch_size·K)
         model.opp_belief_aux_coef = args.opp_belief_aux_coef  # hidden-opp belief aux loss (0.0 = off)
         model.opp_belief_moves_weight = args.opp_belief_moves_weight  # species_CE + w·moves_BCE
         model.move_belief_coef = args.move_belief_coef  # move-belief reinjection loss (0.0 = off)

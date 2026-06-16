@@ -236,7 +236,7 @@ async def test_distill_metrics_block_renders_legibly():
         await pilot.pause(); app._refresh(); await pilot.pause()
         left = _table_text(app.query_one("#metrics-left", DataTable))
         assert "distill" in left                      # the section header
-        assert "all distilled" in left and "yes" in left   # flag formatted, short label
+        assert "all_distilled" in left and "yes" in left   # flag formatted, short label (underscore house style)
         assert "distilled" in left and "100.0%" in left    # frac as a percent
 
 

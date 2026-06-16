@@ -277,6 +277,17 @@ export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable
 
 Omit `--model` to start a fresh run. Use `--debug` for a single env (DummyVecEnv). Use `--device cpu` on machines without a GPU.
 
+**GPU OOM lever — `--grad-accum-steps K`:** keep a large effective batch when the full minibatch
+won't fit. It runs K `--batch-size` micro-batches and steps the optimizer once per group of K,
+giving the **exact** gradient of a `batch_size·K` batch at the activation-memory cost of one
+micro-batch (stock SB3 steps per-minibatch, so `--batch-size` alone couples effective batch to the
+memory peak). E.g. `--batch-size 4096 --grad-accum-steps 4` trains like `--batch-size 16384` at ~¼
+the peak. `K=1` (default) is byte-identical to stock; it's a train-loop knob (not version-locked) —
+forward it on every resume like `--batch-size`. With `K>=2` it also emits a **`train/noise_scale`**
+diagnostic (McCandlish critical batch size) that tells you, as a number, whether your effective batch
+is too small / about right / bigger than needed. Details: `src/agents/training/CLAUDE.md` → Gradient
+accumulation.
+
 Checkpoints are saved automatically into `models/run_<timestamp>/checkpoints/` (each `.zip`
 beside its per-checkpoint `.json` sidecar); the run-level `model_config.json` / `metadata.json`
 / `latest.txt` and the `final_model*.zip` / `best_model/` stay at the run root.

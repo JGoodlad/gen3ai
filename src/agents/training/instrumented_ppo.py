@@ -65,6 +65,13 @@ _WIN_CONTESTED_TAU = 0.25
 _LATENT_STD_TARGET = 1.0
 _LATENT_VICREG_WEIGHT = 1.0
 
+# Gradient-noise-scale EMA decay (McCandlish et al. 2018, "An Empirical Model of Large-Batch
+# Training"). The single-step estimates of |G|² (true-gradient squared norm) and tr(Σ) (per-example
+# gradient-variance trace) are noisy; their RATIO B_simple = tr(Σ)/|G|² is unstable per step, so we
+# EMA the numerator and denominator SEPARATELY (this constant) and divide the smoothed values. 0.99
+# ≈ a few-hundred-train()-call window — long enough to denoise, short enough to track drift.
+_NOISE_SCALE_EMA_DECAY = 0.99
+
 
 def _verify_upstream_unchanged() -> None:
     """Fail-loud at import time if the upstream `MaskablePPO.train()` source
@@ -103,6 +110,59 @@ class InstrumentedMaskablePPO(MaskablePPO):
 
     # Set by train_rl_agent after construction; opt-in (default off → stock sync collection).
     _async_rollout: bool = False
+
+    # Set by train_rl_agent after construction (like _async_rollout). GRADIENT ACCUMULATION: do K
+    # forward/backward passes over `batch_size`-sized MICRO-batches, summing their gradients, and
+    # call optimizer.step() only ONCE per group of K. The accumulated gradient is the EXACT gradient
+    # of one (batch_size·K) batch (gradients are additive + each micro-loss is scaled by 1/K), but the
+    # backward graph only ever holds ONE micro-batch's activations → an effective batch of batch_size·K
+    # at the GPU-memory cost of batch_size. The memory lever stock MaskablePPO can't give: it steps once
+    # per minibatch, so `batch_size` alone couples the effective-batch size to the activation peak. 1 =
+    # OFF (one step per minibatch, byte-identical to upstream — `loss / 1` is exact). A pure train-loop
+    # knob (no forward change) → NOT version-locked / NOT in model_config.json (forwarded as a CLI flag
+    # each resume, like batch_size / n_epochs).
+    #   EXACTNESS: the accumulation math is BIT-EXACT to a literal batch_size·K batch when batch_size
+    #   divides the rollout (n_steps·n_envs) AND accum divides the minibatch count — every group is then
+    #   `accum` equal-size micro-batches (verified to ~3e-8 in instrumented_ppo_test). Two bounded,
+    #   negligible deviations otherwise: (1) per-MICRO-batch advantage normalization — stock normalizes
+    #   per-minibatch too, so the only change is the normalization sample size (batch_size vs batch_size·K),
+    #   immaterial for batches of thousands; (2) a NON-divisible rollout slightly mis-weights the single
+    #   remainder minibatch in the final group of each epoch (no worse than stock's full-weight step on it).
+    #   For a bit-exact effective batch, pick batch_size | rollout and accum | minibatch-count.
+    grad_accum_steps: int = 1
+
+    # +NOISE-SCALE: running (EMA) estimates of the McCandlish gradient-noise-scale numerator/denominator
+    # — tr(Σ) and |G|² — accumulated across train() calls (one sample per call). None until the first
+    # measurable call. Only updated when grad_accum_steps >= 2 (the diagnostic needs gradients at TWO
+    # batch sizes: one micro-batch = batch_size, and the accumulated group = batch_size·accum). Process-
+    # local (reset to None on a launcher restart → re-converges in a few hundred calls); not saved.
+    _noise_ema_s: float = None    # EMA of tr(Σ)  (per-example gradient-variance trace)
+    _noise_ema_g2: float = None   # EMA of |G|²   (true-gradient squared norm)
+
+    @staticmethod
+    def _global_grad_sq(params) -> float:
+        """Squared global L2 norm ‖g‖² of the CURRENT .grad over all params (one device→host sync).
+        Mirrors what clip_grad_norm_ computes, but read-only (no clipping)."""
+        sq = None
+        for p in params:
+            g = p.grad
+            if g is not None:
+                s = g.detach().pow(2).sum()
+                sq = s if sq is None else sq + s
+        return float(sq) if sq is not None else 0.0
+
+    @staticmethod
+    def _noise_scale_estimate(g_small_sq, g_big_sq, b_small, b_big):
+        """McCandlish et al. 2018 'simple' gradient-noise-scale building blocks from squared gradient
+        norms at TWO batch sizes. Since E‖Ĝ_B‖² = ‖G‖² + tr(Σ)/B, two (B, ‖Ĝ_B‖²) points pin both
+        unknowns:
+            |G|²   = (b_big·g_big_sq − b_small·g_small_sq) / (b_big − b_small)        # true-grad norm²
+            tr(Σ)  = (g_small_sq − g_big_sq) / (1/b_small − 1/b_big)                   # per-example noise
+        Returns ``(tr_sigma, g2)`` (single-sample, pre-EMA; either can be negative under noise — the
+        caller EMAs them separately before the B_simple = tr(Σ)/|G|² ratio). Pure → unit-testable."""
+        g2 = (b_big * g_big_sq - b_small * g_small_sq) / (b_big - b_small)
+        tr_sigma = (g_small_sq - g_big_sq) / (1.0 / b_small - 1.0 / b_big)
+        return tr_sigma, g2
 
     # Set by train_rl_agent after construction (like _async_rollout); resume-immutable (recorded +
     # version-checked). 0.0 = plain MSE value loss (byte-identical to upstream). >0 blends in the CVaR
@@ -624,9 +684,23 @@ class InstrumentedMaskablePPO(MaskablePPO):
                 th.as_tensor(self.rollout_buffer.returns, device=self.device), self.policy.value_net
             )
 
+        # +GRAD-ACCUM: number of `batch_size` micro-batches whose gradients are summed before one
+        # optimizer.step() (1 = OFF, stock one-step-per-minibatch). See the class attr docstring.
+        accum = max(1, int(getattr(self, "grad_accum_steps", 1)))
+
+        # +NOISE-SCALE: when accumulating (accum>=2) we get gradient norms at two batch sizes for free —
+        # one micro-batch (batch_size) and the full first group (batch_size·accum) — which is exactly
+        # what the McCandlish gradient-noise-scale estimator needs. Captured once per train() (group 0 of
+        # epoch 0) so |G_small|² and |G_big|² come from the SAME data; folded into the EMAs after the epochs.
+        noise_g_small_sq = None   # ‖single micro-batch gradient‖²  (B = batch_size)
+        noise_g_big_sq = None     # ‖accumulated group gradient‖²   (B = batch_size·accum)
+
         # train for n_epochs epochs
         for epoch in range(self.n_epochs):
             approx_kl_divs = []
+            # +GRAD-ACCUM: start each accumulation group with a clean grad buffer; count micro-batches.
+            self.policy.optimizer.zero_grad()
+            micro_in_group = 0
             # Do a complete pass on the rollout buffer
             for rollout_data in self.rollout_buffer.get(self.batch_size):
                 actions = rollout_data.actions
@@ -835,16 +909,58 @@ class InstrumentedMaskablePPO(MaskablePPO):
                     continue_training = False
                     if self.verbose >= 1:
                         print(f"Early stopping at step {epoch} due to reaching max kl: {approx_kl_div:.2f}")
+                    # +GRAD-ACCUM: discard the partial accumulation group — a true (batch_size·accum)
+                    # batch checks KL over the whole effective batch and would discard it as one unit,
+                    # mirroring stock's discard-the-current-minibatch on a KL trip.
+                    self.policy.optimizer.zero_grad()
+                    micro_in_group = 0
                     break
 
-                # Optimization step
-                self.policy.optimizer.zero_grad()
-                loss.backward()
-                # Clip grad norm
-                grad_norms.append(float(  # +INSTRUMENTATION: pre-clip total grad norm
+                # Optimization step. +GRAD-ACCUM: accumulate the 1/accum-scaled gradient (accum
+                # micro-batches of size batch_size sum to the exact (batch_size·accum) gradient) and
+                # step only when the group is full. accum==1 ⇒ one step per minibatch (upstream).
+                (loss / accum).backward()
+                micro_in_group += 1
+                # +NOISE-SCALE: after the FIRST micro-batch of group 0 (epoch 0), .grad holds exactly
+                # g_1/accum (this micro's gradient, scaled) → ‖g_1‖² = accum²·‖.grad‖². The single
+                # micro-batch (B=batch_size) sample for the noise-scale estimate.
+                if accum >= 2 and epoch == 0 and micro_in_group == 1 and noise_g_small_sq is None:
+                    noise_g_small_sq = (accum ** 2) * self._global_grad_sq(self.policy.parameters())
+                if micro_in_group == accum:
+                    grad_norm = float(  # +INSTRUMENTATION: pre-clip total grad norm (per step)
+                        th.nn.utils.clip_grad_norm_(self.policy.parameters(), self.max_grad_norm)
+                    )
+                    grad_norms.append(grad_norm)
+                    # +NOISE-SCALE: the accumulated group gradient (B=batch_size·accum) — pre-clip norm
+                    # from clip_grad_norm_. Captured on group 0 (same data as the micro-batch above).
+                    if accum >= 2 and epoch == 0 and noise_g_big_sq is None:
+                        noise_g_big_sq = grad_norm * grad_norm
+                    self.policy.optimizer.step()
+                    self.policy.optimizer.zero_grad()
+                    micro_in_group = 0
+
+            # +GRAD-ACCUM: flush a trailing partial group (#minibatches not divisible by accum).
+            # Rescale its accumulated grad from 1/accum to 1/micro_in_group so the short group's step
+            # has the right magnitude. EXACT when its micro-batches are equal-size (the common case —
+            # only the buffer's final minibatch can be smaller than batch_size); if that smaller
+            # remainder lands in a group with full-size micro-batches it is weighted as if full-size,
+            # a tiny bounded mis-weighting of one remainder per epoch (≈8e-5 on params in a toy probe,
+            # negligible vs a 100k-sample rollout, and no worse than stock SB3's full-weight step on the
+            # same remainder minibatch). ZERO when batch_size divides the rollout AND accum divides the
+            # minibatch count → every group is `accum` equal-size micro-batches and the gradient is
+            # bit-exact (verified: instrumented_ppo_test.test_grad_accum_matches_full_batch).
+            if micro_in_group > 0:
+                if micro_in_group < accum:
+                    _rescale = accum / micro_in_group
+                    for _p in self.policy.parameters():
+                        if _p.grad is not None:
+                            _p.grad.mul_(_rescale)
+                grad_norms.append(float(
                     th.nn.utils.clip_grad_norm_(self.policy.parameters(), self.max_grad_norm)
                 ))
                 self.policy.optimizer.step()
+                self.policy.optimizer.zero_grad()
+                micro_in_group = 0
 
             self._n_updates += 1
             if not continue_training:
@@ -878,6 +994,24 @@ class InstrumentedMaskablePPO(MaskablePPO):
             self.logger.record(_key, _val)
         if grad_norms:
             self.logger.record("train/grad_norm", float(np.mean(grad_norms)))
+
+        # +NOISE-SCALE: fold this call's two-batch-size sample into the EMAs and log the smoothed
+        # McCandlish 'simple' gradient noise scale B_simple = tr(Σ)/|G|² — the critical batch size.
+        # Read it against your EFFECTIVE batch (batch_size·accum): `train/noise_scale_ratio` = B_simple /
+        # effective; ≫1 ⇒ noise-limited (a bigger batch buys ~linear per-step progress), ≪1 ⇒
+        # diminishing returns (could shrink for more update steps). Only when accumulating (needs two
+        # batch sizes) AND both norms were captured (a full first group formed).
+        if accum >= 2 and noise_g_small_sq is not None and noise_g_big_sq is not None:
+            b_small = float(self.batch_size)
+            b_big = b_small * accum
+            tr_sigma, g2 = self._noise_scale_estimate(noise_g_small_sq, noise_g_big_sq, b_small, b_big)
+            d = _NOISE_SCALE_EMA_DECAY
+            self._noise_ema_s = tr_sigma if self._noise_ema_s is None else d * self._noise_ema_s + (1 - d) * tr_sigma
+            self._noise_ema_g2 = g2 if self._noise_ema_g2 is None else d * self._noise_ema_g2 + (1 - d) * g2
+            if self._noise_ema_g2 > 1e-12 and self._noise_ema_s > 0.0:
+                b_simple = self._noise_ema_s / self._noise_ema_g2
+                self.logger.record("train/noise_scale", float(b_simple))
+                self.logger.record("train/noise_scale_ratio", float(b_simple / b_big))
 
         # +BELIEF: hidden-opponent belief-aux diagnostics under their OWN `belief/` TB prefix (NOT
         # `train/`, which is crowded — matches the dedicated `grad/`/`popart/`/`win_prob/`/`eval/`

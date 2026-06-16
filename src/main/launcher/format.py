@@ -54,6 +54,10 @@ _METRIC_LABELS = {
     "train/selfplay_fraction": "pool frac",
     "train/stable_fraction": "stable frac",
     "train/nonbot_fraction": "nonbot frac",
+    # Gradient noise scale (B_simple, McCandlish) — only under --grad-accum-steps>=2. noise_ratio =
+    # B_simple / effective-batch: ≫1 noise-limited (bigger batch helps), ≪1 diminishing returns.
+    "train/noise_scale": "noise scale",
+    "train/noise_scale_ratio": "noise/batch",
     "distill/all_distilled": "all distilled",
     "distill/frac_active_opponents_distilled": "distilled",
     "distill/n_ready": "ready",
@@ -161,6 +165,10 @@ _METRIC_ORDER = [
     "train/policy_gradient_loss",
     "train/value_loss",
     "train/grad_norm",
+    # Gradient noise scale (only emitted under --grad-accum-steps>=2): B_simple = the critical batch
+    # size, and its ratio to the effective batch (≫1 = noise-limited, ≪1 = diminishing returns).
+    "train/noise_scale",
+    "train/noise_scale_ratio",
     # Value-scale (PopArt prep): the (μ, σ) + tail an adaptive return normalizer would track,
     # and the value head's actual output spread. Watch for non-stationary scale drift.
     "train/return_mean",
