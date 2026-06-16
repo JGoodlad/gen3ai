@@ -67,7 +67,7 @@ the single source of truth — change the analysis once, both surfaces follow.
   also ignores today (a future counterfactual probe consumes it).
 - **`app.py`** — `ProberApp(Gen3App)`: trace `Tree` | invocation `ListView` |
   a `VerticalScroll` of `Collapsible` analysis sections (Summary · Team · Review · Board ·
-  Faithfulness · Matchups · Intervention · Saliency · Outcome).
+  Faithfulness · Matchups · Intervention · Saliency · Flow · Outcome).
 - **`review.py`** — `ReviewStore`: persistent manual-review annotations (a *funky* flag +
   a **timestamped note append-log** per decision) at `<run_dir>/review_notes.json`; pure
   (no Textual), unit-tested, exports to `<run_dir>/review_notes.md`. Each saved comment is a
@@ -100,8 +100,8 @@ better than always using `best_model`.
 
 Analysis sections (collapsible — **multiple open at once**, in a scroll; toggle
 by clicking a title or pressing its number key) render purely from one
-`InvocationAnalysis`. Keys are **1-indexed in display order** (no `0` — awkward on a laptop)
-and **shown in each title** (`1  Summary`, `2  Team`, … `9  Outcome`); `_SECTIONS` is the
+`InvocationAnalysis`. Keys are **in display order** — `1`–`9` then `0` for the 10th
+(`Outcome`) — and **shown in each title** (`1  Summary`, `2  Team`, … `9  Flow`, `0  Outcome`); `_SECTIONS` is the
 single source — `_SEC_TITLE` builds the titles and the `BINDINGS` are generated from it, so
 key/label/binding never drift. The top one is **Summary** (`1`, open by default) — the
 decision dashboard for walking "funky turns". The context header is chunked into **three blank-line
@@ -231,8 +231,21 @@ DAMAGE belief, not raw effectiveness),
 **Intervention**, **Saliency** (two heads: `π` policy-logit blocks AND `V` critic
 value-gradient blocks, each incl. `their_matchups(144)` and `incoming_damage(33)`, so
 you can see whether the **value** head — where OHKO tail-blindness lives — actually
-reads the belief block vs the rest), and
-**Outcome** — the last surfaces the critic's `V(s)` (recorded · re-run · ΔV → next ·
+reads the belief block vs the rest), **Flow** (`_render_flow`, default-open) — the SAME
+per-head saliency as the Saliency table, but rendered as a **`Tree`**: two branches
+(`π policy`, captioned `chose <move> (<prob>%)` · `V value`, captioned `V(s) <real> · norm <z>`),
+each obs block a leaf **sorted most-read-first** with a smooth eighth-block `gradient_color`
+magnitude bar + a padded-aligned within-head share %, the **dominant block bold** and blocks
+<8% greyed so "read vs barely touched" reads top-to-bottom at a glance — the quick visual
+"what fed each head" hierarchy
+(a human-facing companion to the precise table; SENSITIVITY, not proof of causal use — same
+caveat as Saliency. `None`-head / model-free / no-state → a graceful hint leaf, never a crash).
+Composes existing `InvocationAnalysis.saliency`/`value_saliency` only — no new engine work, and
+it inherits the Saliency obs-mismatch guard, and
+**Outcome** — the last surfaces the critic's `V(s)` (recorded — with its **PopArt-normalized**
+companion `(norm …)` when the run used `--use-popart`: the critic's own [-1,1]-ish learning
+scale, `(V − μ)/σ` from the loaded model's `PopArtNormalizer`, vs the de-normalized real-return
+V — · re-run · ΔV → next ·
 **TD δ** = `r + γV(s′) − V(s)`, the critic-surprise residual, in parity with the CLI's
 overview/analyze `td_residual`; γ from the run's `metadata.json`) + the win-prob head's
 **P(win)** + ΔP (when present),
@@ -367,7 +380,9 @@ loading uses the same exact→nearest→recent ladder (cached per process). A
   `high_value` (ranked by recorded V, model-free), or `disagree` (loads the
   model; chosen ≠ the model's argmax).
 - `analyze(battle_id, inv)` — full `InvocationAnalysis` as a dict (loads the
-  model); the value block gains a γ-discounted `td_residual`. Also carries a `win_prob`
+  model); the value block gains a γ-discounted `td_residual` and, on a `--use-popart` model,
+  the PopArt `popart_mu`/`popart_sigma` + `normalized_recorded`/`normalized_rerun`
+  (`(V − μ)/σ`, the critic's normalized learning scale; all `None` without PopArt). Also carries a `win_prob`
   block (`WinProbView`: recorded `P(win|s)` + `delta` ΔP to the next decision) — model-free, read
   from the trace's `win_probs` npz array (NaN/absent → `None` on a non-`--win-prob-mode` run; recorded
   at trace-capture by `RLPlayer._win_prob` → `BattleRecorder.states_arrays`). Carries two

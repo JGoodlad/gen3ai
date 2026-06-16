@@ -41,11 +41,12 @@ _SECTIONS = [
     ("sec-matchups", "Matchups", "6"),
     ("sec-sweep", "Intervention", "7"),
     ("sec-saliency", "Saliency", "8"),
-    ("sec-outcome", "Outcome", "9"),
+    ("sec-flow", "Flow", "9"),
+    ("sec-outcome", "Outcome", "0"),
 ]
 # Title shown on each Collapsible — "1  Summary" — so the hotkey is always visible.
 _SEC_TITLE = {sid: f"{key}  {title}" for sid, title, key in _SECTIONS}
-_OPEN_BY_DEFAULT = {"sec-summary", "sec-board", "sec-faith", "sec-outcome"}
+_OPEN_BY_DEFAULT = {"sec-summary", "sec-board", "sec-faith", "sec-flow", "sec-outcome"}
 
 
 class NavTree(Tree):
@@ -283,6 +284,9 @@ class ProberApp(Gen3App):
                         yield DataTable(id="sweep-table")
                     with Collapsible(title=_SEC_TITLE["sec-saliency"], collapsed=True, id="sec-saliency"):
                         yield DataTable(id="saliency-table")
+                    with Collapsible(title=_SEC_TITLE["sec-flow"], collapsed=False, id="sec-flow"):
+                        yield Static("", id="flow-legend")
+                        yield Tree("flow", id="flow-tree")
                     with Collapsible(title=_SEC_TITLE["sec-outcome"], collapsed=False, id="sec-outcome"):
                         yield Static("", id="outcome-summary")
                         yield DataTable(id="reward-table")
@@ -300,6 +304,15 @@ class ProberApp(Gen3App):
         self.query_one("#saliency-table", DataTable).add_columns("obs block", "|grad|/dim", "sum")
         for tid in ("#board-our", "#board-opp"):
             self.query_one(tid, DataTable).add_columns("pokémon", "hp", "status")
+        # Flow tree: a hierarchy of what each head (π policy / V value) reads from the obs.
+        # Hide the synthetic root so the two head branches sit at the top level.
+        flow = self.query_one("#flow-tree", Tree)
+        flow.show_root = False
+        flow.guide_depth = 3
+        self.query_one("#flow-legend", Static).update(Text(
+            "what each head reads — bar = |∂output/∂obs| per obs block, normalized within "
+            "head; green = high use, dim = barely read. SENSITIVITY, not proof of use.",
+            style="dim italic"))
 
         self._build_tree()
         if self._injected_model is None:
@@ -694,6 +707,7 @@ class ProberApp(Gen3App):
         self._render_matchups(a)
         self._render_sweep(a)
         self._render_saliency(a)
+        self._render_flow(a)
         self._render_outcome(a)
 
     def _on_analysis_error(self, msg: str, token: int) -> None:
@@ -1085,6 +1099,62 @@ class ProberApp(Gen3App):
                 t.add_row(f"{tag} {b.name}", f"{b.mean_abs:.4f}",
                           Text(f"{b.total_abs:6.2f} {bar}", style=style))
 
+    def _render_flow(self, a: InvocationAnalysis) -> None:
+        """Tree view of the SAME per-head saliency the Saliency table shows, as a visual
+        hierarchy: two branches (π policy / V value), each obs block a leaf, sorted
+        most-read-first with a smooth magnitude bar + within-head share %. The quick 'what fed
+        each head' read — green = high attribution, dim = barely touched, top block bold.
+        SENSITIVITY, not proof of causal use."""
+        tree = self.query_one("#flow-tree", Tree)
+        tree.clear()
+        root = tree.root
+        if a.obs_mismatch is not None:   # offsets misaligned → the per-block split is on wrong dims
+            root.add_leaf(Text(f"⚠ OBS MISMATCH {a.obs_mismatch[0]}≠{a.obs_mismatch[1]} — "
+                               "attribution UNRELIABLE", style="bold red"))
+            return
+        heads = (("π  policy", a.saliency, "cyan", self._flow_policy_caption(a)),
+                 ("V  value", a.value_saliency, "magenta", self._flow_value_caption(a)))
+        rendered = False
+        for tag, sal, color, caption in heads:
+            if sal is None:
+                continue
+            rendered = True
+            head_label = Text(tag, style=f"bold {color}")
+            if caption:
+                head_label.append(f"    {caption}", style="dim")
+            head = root.add(head_label, expand=True)
+            # Normalize within the head so bars compare BLOCKS for that head (same convention
+            # as the Saliency table). Sort most-read-first so 'used vs not' reads top-to-bottom;
+            # pad the name column so the share % aligns, bold the dominant block, grey the rest.
+            blocks = sorted(sal.blocks, key=lambda b: b.total_abs, reverse=True)
+            peak = max((b.total_abs for b in blocks), default=1.0) or 1.0
+            namew = max((len(b.name) for b in blocks), default=0)
+            for i, b in enumerate(blocks):
+                share = b.total_abs / peak
+                faint = share < 0.08        # barely read → grey it so it visibly recedes
+                leaf = Text()
+                leaf.append(f"{_flow_bar(share):<16} ", style=("dim" if faint else gradient_color(share)))
+                leaf.append(b.name.ljust(namew), style=("bold" if i == 0 else "dim" if faint else ""))
+                leaf.append(f"  {share * 100:3.0f}%", style="dim")
+                head.add_leaf(leaf)
+        if not rendered:                # model-free trace / no state → no gradients to show
+            root.add_leaf(Text("no attribution (no captured state / model-free trace)", style="dim"))
+
+    def _flow_policy_caption(self, a: InvocationAnalysis) -> str:
+        p = _chosen_prob(a)
+        return f"chose {a.chosen} ({p * 100:.0f}%)" if p is not None else f"chose {a.chosen}"
+
+    @staticmethod
+    def _flow_value_caption(a: InvocationAnalysis) -> str:
+        if a.value is None:
+            return ""
+        v = a.value
+        # Show both: the de-normalized real-return V and (on a PopArt run) the normalized V —
+        # the critic's own learning scale, comparable across the run's return-scale drift.
+        if v.normalized_recorded is not None:
+            return f"V(s) {v.recorded:+.2f}  ·  norm {v.normalized_recorded:+.2f}"
+        return f"V(s) {v.recorded:+.2f}"
+
     @staticmethod
     def _read_run_gamma(run_dir: "str | None") -> float:
         """γ from the run's metadata.json (same source as ProbeSession), for the TD residual."""
@@ -1102,8 +1172,13 @@ class ProberApp(Gen3App):
         if a.value is not None:
             v = a.value
             summary.append(f"V(s) recorded {v.recorded:+.2f}", style="bold")
+            # PopArt-normalized companion (the critic's own learning scale) when available.
+            if v.normalized_recorded is not None:
+                summary.append(f" (norm {v.normalized_recorded:+.2f})", style="dim")
             if v.rerun is not None:
                 summary.append(f"  ·  re-run {v.rerun:+.2f}", style="dim")
+                if v.normalized_rerun is not None:
+                    summary.append(f" (norm {v.normalized_rerun:+.2f})", style="dim")
             if v.delta is not None:
                 d_style = "green" if v.delta >= 0 else "red"
                 summary.append("  ·  ΔV ", style="dim")
@@ -1332,6 +1407,23 @@ def _mult_color(mult: float) -> str:
 def _chosen_prob(a: InvocationAnalysis) -> "float | None":
     """The recorded policy probability of the action the model actually took."""
     return next((r.recorded for r in (a.actions or []) if r.is_chosen), None)
+
+
+_FLOW_BAR_PARTS = " ▏▎▍▌▋▊▉"   # 8 sub-cell levels (index 0..7) for a smooth bar end
+
+
+def _flow_bar(frac: float, width: int = 16) -> str:
+    """A smooth (eighth-block) horizontal bar of ``width`` cells for a fraction in [0, 1] —
+    full `█` cells plus a partial end cell, so small differences in attribution stay visible."""
+    frac = max(0.0, min(1.0, frac))
+    units = frac * width
+    full = int(units)
+    s = "█" * full
+    if full < width:
+        rem = int((units - full) * 8)   # 0..7 → never indexes past the 8-char parts string
+        if rem:
+            s += _FLOW_BAR_PARTS[rem]
+    return s
 
 
 def _surprise_phrase(td: float) -> str:

@@ -166,6 +166,13 @@ class ValueView:
     rerun: "float | None"
     next_recorded: "float | None"
     delta: "float | None"
+    # PopArt: the V's above are DE-normalized (real return units). On a `--use-popart` run these
+    # carry the running (mu, sigma) and the normalized V = (V - mu)/sigma — the critic's own
+    # learning scale (~[-1,1], comparable across return-scale drift). All None on a no-PopArt run.
+    popart_mu: "float | None" = None
+    popart_sigma: "float | None" = None
+    normalized_recorded: "float | None" = None
+    normalized_rerun: "float | None" = None
 
 
 @dataclass(frozen=True)
@@ -1187,9 +1194,19 @@ def analyze_invocation(model, summary: dict, npz, inv_index: int,
         n = len(summary["invocations"])
         nxt = inv_index + 1
         next_v = _npz_value(npz, nxt) if (nxt < n and _has_state(npz, nxt)) else None
+        rerun_v = model.value(obs, mask)
+        # PopArt-normalized companions (the critic's learning scale), when the model exposes stats.
+        mu = sigma = norm_rec = norm_rerun = None
+        pa = getattr(model, "popart_stats", lambda: None)()
+        if pa is not None and pa[1]:
+            mu, sigma = pa
+            norm_rec = (recorded_v - mu) / sigma
+            norm_rerun = (rerun_v - mu) / sigma if rerun_v is not None else None
         value = ValueView(
-            recorded=recorded_v, rerun=model.value(obs, mask), next_recorded=next_v,
+            recorded=recorded_v, rerun=rerun_v, next_recorded=next_v,
             delta=(next_v - recorded_v) if next_v is not None else None,
+            popart_mu=mu, popart_sigma=sigma,
+            normalized_recorded=norm_rec, normalized_rerun=norm_rerun,
         )
 
     # Win probability (--win-prob-mode): recorded P(win|s) + ΔP(win) to the next captured decision —

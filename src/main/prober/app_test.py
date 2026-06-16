@@ -359,7 +359,8 @@ async def test_select_battle_populates_panels(tmp_path):
         # section titles carry their 1-indexed hotkey (Team inserted at 2)
         assert app.query_one("#sec-summary", Collapsible).title == "1  Summary"
         assert app.query_one("#sec-team", Collapsible).title == "2  Team"
-        assert app.query_one("#sec-outcome", Collapsible).title == "9  Outcome"
+        assert app.query_one("#sec-flow", Collapsible).title == "9  Flow"
+        assert app.query_one("#sec-outcome", Collapsible).title == "0  Outcome"
         # header line order: FIELD · CHOSE · RESULT · REWARD · CRITIC (critic moved to last)
         assert (head.index("FIELD") < head.index("CHOSE") < head.index("RESULT")
                 < head.index("REWARD") < head.index("CRITIC"))
@@ -645,6 +646,96 @@ async def test_matchups_and_saliency_show_incoming_belief(tmp_path):
         labels = [str(sal.get_row_at(r)[0]) for r in range(sal.row_count)]
         assert any(l.startswith("π ") for l in labels) and any(l.startswith("V ") for l in labels)
         assert any("incoming_damage" in l and l.startswith("V ") for l in labels)
+
+
+async def test_flow_tree_shows_both_heads_sorted(tmp_path):
+    """The Flow section renders the SAME per-head saliency as a visual Tree: two head branches
+    (π policy + V value), each obs block a leaf sorted most-read-first (shares non-increasing),
+    with incoming_damage present under the value head."""
+    run = _write_belief_trace(tmp_path)
+    app = ProberApp(root=run, injected_model=_FakeModelInc())
+    async with app.run_test() as pilot:
+        await pilot.pause()
+        app._select_battle(app._tree_model.all_battles()[0])
+        await pilot.pause()
+        await app.workers.wait_for_complete()
+        await pilot.pause()
+        tree = app.query_one("#flow-tree", Tree)
+        # default-open section so a human sees it without toggling
+        assert app.query_one("#sec-flow", Collapsible).collapsed is False
+        heads = tree.root.children
+        head_labels = [str(h.label) for h in heads]
+        assert any(l.startswith("π") for l in head_labels), head_labels
+        assert any(l.startswith("V") for l in head_labels), head_labels
+        v_head = next(h for h in heads if str(h.label).startswith("V"))
+        leaves = [str(c.label) for c in v_head.children]
+        assert any("incoming_damage" in t for t in leaves), leaves
+        # sorted most-read-first → the trailing "NNN%" share is non-increasing down the branch
+        shares = [int(t.rsplit(" ", 1)[-1].rstrip("%")) for t in leaves]
+        assert shares == sorted(shares, reverse=True), shares
+
+
+async def test_flow_tree_handles_model_free_trace(tmp_path):
+    """No captured state / no gradients → the Flow tree shows a graceful hint, never crashes."""
+    run = _write_trace(tmp_path, has_state=0)
+    app = ProberApp(root=run, injected_model=_FakeModel())
+    async with app.run_test() as pilot:
+        await pilot.pause()
+        app._select_battle(app._tree_model.all_battles()[0])
+        await pilot.pause()
+        await app.workers.wait_for_complete()
+        await pilot.pause()
+        tree = app.query_one("#flow-tree", Tree)
+        leaves = [str(c.label) for c in tree.root.children]
+        assert any("no attribution" in t for t in leaves), leaves
+
+
+class _FakeModelPopArt(_FakeModel):
+    """A model exposing PopArt stats + a value gradient, so the normalized V companion + the
+    Flow V-head branch render (the recorded V=1.5 from _write_trace → norm (1.5-0.5)/2 = +0.50)."""
+
+    def popart_stats(self):
+        return (0.5, 2.0)
+
+    def value_grad(self, obs, mask):
+        return np.ones(len(obs), dtype=np.float64)
+
+
+async def test_popart_normalized_value_in_outcome_and_flow(tmp_path):
+    """A --use-popart model: the engine attaches the normalized V to ValueView, and BOTH the
+    Outcome panel and the Flow V-head caption surface it alongside the real-return V."""
+    run = _write_trace(tmp_path)                       # recorded V = 1.5
+    app = ProberApp(root=run, injected_model=_FakeModelPopArt())
+    async with app.run_test() as pilot:
+        await pilot.pause()
+        app._select_battle(app._tree_model.all_battles()[0])
+        await pilot.pause()
+        await app.workers.wait_for_complete()
+        await pilot.pause()
+        a = app._last_analysis
+        assert a.value is not None and a.value.popart_sigma == 2.0
+        assert abs(a.value.normalized_recorded - 0.5) < 1e-6       # (1.5 - 0.5) / 2.0
+        out = str(app.query_one("#outcome-summary", Static).render())
+        assert "norm +0.50" in out
+        tree = app.query_one("#flow-tree", Tree)
+        v_head = next(h for h in tree.root.children if str(h.label).startswith("V"))
+        assert "norm" in str(v_head.label)
+
+
+async def test_flow_no_popart_omits_normalized(tmp_path):
+    """A model WITHOUT PopArt → normalized fields stay None and the captions show only the real V
+    (no 'norm') — the no-PopArt path is unchanged."""
+    run = _write_trace(tmp_path)
+    app = ProberApp(root=run, injected_model=_FakeModel())
+    async with app.run_test() as pilot:
+        await pilot.pause()
+        app._select_battle(app._tree_model.all_battles()[0])
+        await pilot.pause()
+        await app.workers.wait_for_complete()
+        await pilot.pause()
+        a = app._last_analysis
+        assert a.value is not None and a.value.normalized_recorded is None
+        assert "norm" not in str(app.query_one("#outcome-summary", Static).render())
 
 
 async def test_board_tab_populates(tmp_path):

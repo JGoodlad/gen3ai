@@ -270,6 +270,20 @@ class ProbeModel:
             v = self._policy.predict_values({"observation": ot, "action_mask": mt})
         return float(v.reshape(-1)[0])
 
+    def popart_stats(self) -> "tuple[float, float] | None":
+        """The PopArt running ``(mu, sigma)`` of the value targets, or ``None`` when the run
+        trains without PopArt. ``value()`` returns the DE-normalized real-return value; the
+        PopArt-normalized value ``(V - mu) / sigma`` is the critic's OWN learning scale (the
+        ~[-1, 1] space the value loss optimizes, comparable across the run's return-scale drift).
+        ``sigma`` is floored well above 0 by the normalizer, so callers can divide safely."""
+        pa = getattr(self._policy, "popart", None)
+        if pa is None:
+            return None
+        try:
+            return float(pa.mu), float(pa.sigma)
+        except (AttributeError, TypeError, ValueError):
+            return None
+
     def logit_grad(self, obs: np.ndarray, mask: np.ndarray, action_idx: int) -> np.ndarray:
         """Return |d logit(action_idx) / d obs| as a per-dim array."""
         import torch
