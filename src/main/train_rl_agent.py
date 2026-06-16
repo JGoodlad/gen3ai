@@ -186,6 +186,10 @@ def _run_arch_toggles(args) -> dict:
         mask_active_move_scalars_obs=args.mask_active_move_scalars_obs,
         mask_move_effects_obs=args.mask_move_effects_obs,
         win_prob_mode=args.win_prob_mode,
+        value_dist_mode=args.value_dist_mode,
+        value_dist_bins=args.value_dist_bins,
+        value_dist_vmin=args.value_dist_vmin,
+        value_dist_vmax=args.value_dist_vmax,
     )
 
 
@@ -203,6 +207,7 @@ def _model_hparams(model) -> dict:
         "spread_belief_coef": float(getattr(model, "spread_belief_coef", 0.0)),
         "opp_belief_latent_coef": float(getattr(model, "opp_belief_latent_coef", 0.0)),
         "win_prob_coef": float(getattr(model, "win_prob_coef", 1.0)),
+        "value_dist_coef": float(getattr(model, "value_dist_coef", 1.0)),
         "batch_size": model.batch_size,
         "grad_accum_steps": int(getattr(model, "grad_accum_steps", 1)),
         "n_steps": model.n_steps,
@@ -348,6 +353,7 @@ def _run_roundtrip_test(model, layout: dict, policy_kwargs: dict, debug: bool = 
         win_prob_coef=float(getattr(model, "win_prob_coef", 1.0)),
         move_belief_latent_coef=float(getattr(model, "move_belief_latent_coef", 0.0)),
         spread_belief_coef=float(getattr(model, "spread_belief_coef", 0.0)),
+        value_dist_coef=float(getattr(model, "value_dist_coef", 1.0)),
     )
     total_dim = layout["total_dim"]
     tmpdir = tempfile.mkdtemp(prefix="roundtrip_")
@@ -811,6 +817,37 @@ async def main():
                              "--opp-belief-aux-coef. Default 1.0. TRAINING-only (not version-locked; "
                              "inherited on a flagless resume). Ignored when --win-prob-mode none. Lower it "
                              "if 'shaping' fights the policy (watch grad/win_prob_share).")
+    parser.add_argument("--value-dist-mode", "--value_dist_mode", dest="value_dist_mode",
+                        choices=("none", "read_only", "shaping"), default=None,
+                        help="Distributional VALUE head (v29): an interpretability readout off the value "
+                             "pool emitting --value-dist-bins logits over [--value-dist-vmin, "
+                             "--value-dist-vmax] — softmax = the critic's predicted RETURN DISTRIBUTION "
+                             "(sharp=confident, wide=uncertain, bimodal=coinflip), reviewable per-decision "
+                             "in the prober. 'none' (default) = no module (baseline byte-for-byte). "
+                             "'read_only' = the head trains on a STOP-GRAD value pool (a risk-free "
+                             "diagnostic that CANNOT perturb the policy). 'shaping' = its gradient also "
+                             "shapes the shared trunk. STRUCTURAL + resume-IMMUTABLE (version-checked). A "
+                             "SIDE readout (never in pi/vf — leak-safe). "
+                             "Design: designs/ai_v6/design_distributional_value_critic.md.")
+    parser.add_argument("--value-dist-bins", "--value_dist_bins", dest="value_dist_bins",
+                        type=int, default=None,
+                        help="Atom count for --value-dist-mode (the head's output width; weight-shape, "
+                             "version-checked). Recommended 32 (readable). Required > 0 when the mode is "
+                             "on; ignored (must be 0) when none.")
+    parser.add_argument("--value-dist-vmin", "--value_dist_vmin", dest="value_dist_vmin",
+                        type=float, default=None,
+                        help="Lower edge of the value-dist atom support (the return range the atoms span). "
+                             "Resume-immutable (version-checked). Required when --value-dist-mode is on.")
+    parser.add_argument("--value-dist-vmax", "--value_dist_vmax", dest="value_dist_vmax",
+                        type=float, default=None,
+                        help="Upper edge of the value-dist atom support. Resume-immutable "
+                             "(version-checked). Required when --value-dist-mode is on (must be > vmin).")
+    parser.add_argument("--value-dist-coef", "--value_dist_coef", dest="value_dist_coef",
+                        type=float, default=None,
+                        help="Loss weight for the value-dist head's HL-Gauss CE (value_dist_coef * CE), "
+                             "like --win-prob-coef. Default 1.0. TRAINING-only (not version-locked; "
+                             "inherited on a flagless resume). Ignored when --value-dist-mode none. Lower "
+                             "it if 'shaping' fights the policy (watch grad/value_share).")
     parser.add_argument("--move-latent", "--move_latent", dest="move_latent",
                         action=BoolFlag, default=None,
                         help="MoveLatentEncoder (gen3_unified_move_system_v1): a context-free, "
@@ -1069,6 +1106,11 @@ async def main():
     _resolve("mask_incoming_damage_obs", False)  # v21 forward-behavior (version-checked, fresh-only)
     _resolve("win_prob_mode", "none")          # v22 structural + resume-immutable (version-checked)
     _resolve("win_prob_coef", 1.0)             # training-only (inherited like opp_belief_aux_coef)
+    _resolve("value_dist_mode", "none")        # v29 structural + resume-immutable (version-checked)
+    _resolve("value_dist_bins", 0)             # v29 structural (atom count; version-checked)
+    _resolve("value_dist_vmin", 0.0)           # v29 resume-immutable support (version-checked)
+    _resolve("value_dist_vmax", 0.0)           # v29 resume-immutable support (version-checked)
+    _resolve("value_dist_coef", 1.0)           # training-only (inherited like win_prob_coef)
     # PopArt INHERITED on a flagless resume → adopt its required `--clip-range-vf none` (the saved
     # popart run necessarily used it), so the explicit-config check below doesn't block the resume.
     if args.use_popart and not _popart_explicit and _saved_ver is not None and args.clip_range_vf is not None:
@@ -1114,6 +1156,19 @@ async def main():
         # A negative coef would INVERT the BCE gradient (train the head/trunk to MAXIMISE error).
         # win_prob_coef is training-only (not version-locked), so guard it here — the only gate.
         parser.error("--win-prob-coef must be >= 0 (0 = off; the mode controls on/off)")
+    if args.value_dist_mode != "none":
+        # The atom count is the head's output width; the support must be a real interval. Self-documenting
+        # config: require both explicitly when the head is on (no magic defaults for a versioned param).
+        if not args.value_dist_bins or args.value_dist_bins <= 0:
+            parser.error("--value-dist-mode requires --value-dist-bins > 0 (the atom count; recommended 32)")
+        if not (args.value_dist_vmax > args.value_dist_vmin):
+            parser.error("--value-dist-mode requires --value-dist-vmax > --value-dist-vmin (the atom support)")
+    elif args.value_dist_bins:
+        parser.error("--value-dist-bins is set but --value-dist-mode is none — pass a mode, or drop the bins")
+    if args.value_dist_coef is not None and args.value_dist_coef < 0.0:
+        # A negative coef would INVERT the CE gradient. value_dist_coef is training-only (not
+        # version-locked), so guard it here — the only gate.
+        parser.error("--value-dist-coef must be >= 0 (0 = off; the mode controls on/off)")
     if args.move_belief_mode != "off":
         # The MoveBelief module reads/refines the opp slots, so (like the BeliefHead) it requires the
         # unrevealed slots to be attendable — auto-enable the unmask flag (the model side hard-gates
@@ -1904,6 +1959,12 @@ async def main():
         # Win-probability head mode — version-checked vs the saved config (resume-IMMUTABLE; any change
         # FATALs, same machinery as move_belief_mode).
         _load_extractor_kwargs["win_prob_mode"] = args.win_prob_mode
+        # Distributional value head (v29) — mode + atom count version-checked in check_compatible; the
+        # support (vmin/vmax) is resume-immutable, enforced below via enforce_value_dist.
+        _load_extractor_kwargs["value_dist_mode"] = args.value_dist_mode
+        _load_extractor_kwargs["value_dist_bins"] = args.value_dist_bins
+        _load_extractor_kwargs["value_dist_vmin"] = args.value_dist_vmin
+        _load_extractor_kwargs["value_dist_vmax"] = args.value_dist_vmax
         _load_policy_kwargs = {
             "features_extractor_class": Gen3FeaturesExtractor,
             "features_extractor_kwargs": _load_extractor_kwargs,
@@ -1919,6 +1980,7 @@ async def main():
             win_prob_coef=args.win_prob_coef,
             move_belief_latent_coef=args.move_belief_latent_coef,
             spread_belief_coef=args.spread_belief_coef,
+            value_dist_coef=args.value_dist_coef,
         )
 
         print(f"Loading existing model from {model_path}")
@@ -1931,6 +1993,7 @@ async def main():
                 enforce_vf_coef=args.vf_coef,  # FATAL if the run was started with a different vf_coef
                 enforce_reward_config=reward_config,  # FATAL if bias_additivity/mat_alive_weight/redesign drift
                 enforce_value_tail_weight=args.value_tail_weight,  # FATAL if the value-loss tail weight drifts
+                enforce_value_dist=(args.value_dist_vmin, args.value_dist_vmax),  # FATAL if the dist support drifts
             )
         except ModelVersionError as e:
             print(f"\n[ModelVersion] FATAL: {e}")
@@ -1948,6 +2011,7 @@ async def main():
         model.spread_belief_coef = args.spread_belief_coef  # spread-belief speed-supervision weight (training-only)
         model.opp_belief_latent_coef = args.opp_belief_latent_coef  # latent-belief loss weight (training-only)
         model.win_prob_coef = args.win_prob_coef  # win-prob loss weight (training-only; resume-mutable)
+        model.value_dist_coef = args.value_dist_coef  # value-dist HL-Gauss loss weight (training-only; resume-mutable)
         model.vf_coef = args.vf_coef  # == the saved value (enforced above); set explicitly for parity
         model.gae_lambda = 0.80
         # Resume-path LR setup. Phase determines whether we read from the
@@ -2135,6 +2199,13 @@ async def main():
         # (baseline byte-for-byte). The coef is a TRAINING hparam set on the model below; the MODE is the
         # version-checked arch toggle.
         extractor_kwargs["win_prob_mode"] = args.win_prob_mode
+        # Distributional VALUE head (v29; none|read_only|shaping + atom count + support). Interpretability
+        # side readout off value_pooled — never in pi/vf. 'none' = no module (baseline byte-for-byte). Mode
+        # + bins are version-checked (check_compatible); the support is resume-immutable (check_value_dist).
+        extractor_kwargs["value_dist_mode"] = args.value_dist_mode
+        extractor_kwargs["value_dist_bins"] = args.value_dist_bins
+        extractor_kwargs["value_dist_vmin"] = args.value_dist_vmin
+        extractor_kwargs["value_dist_vmax"] = args.value_dist_vmax
 
         policy_kwargs = {
             "features_extractor_class": Gen3FeaturesExtractor,
@@ -2179,6 +2250,7 @@ async def main():
         model.spread_belief_coef = args.spread_belief_coef  # spread-belief speed-supervision loss (0.0 = off)
         model.opp_belief_latent_coef = args.opp_belief_latent_coef  # latent-belief loss (0.0 = off)
         model.win_prob_coef = args.win_prob_coef  # win-prob head BCE loss (mode none = off)
+        model.value_dist_coef = args.value_dist_coef  # value-dist HL-Gauss loss (mode none = off)
         version = ModelVersion.from_layout_and_policy_kwargs(
             extractor_kwargs["layout"], policy_kwargs, vf_coef=args.vf_coef,
             reward_config=reward_config, value_tail_weight=args.value_tail_weight,
@@ -2188,6 +2260,7 @@ async def main():
             win_prob_coef=args.win_prob_coef,
             move_belief_latent_coef=args.move_belief_latent_coef,
             spread_belief_coef=args.spread_belief_coef,
+            value_dist_coef=args.value_dist_coef,
         )
         # PBRS_GAMMA must equal the PPO gamma for both potentials to be policy-invariant (design §7.1).
         # The reward manager is built before the model (in the env factory), so assert here where both

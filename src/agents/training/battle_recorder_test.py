@@ -336,6 +336,31 @@ def test_states_arrays_captures_win_prob():
     assert arr[0] == pytest.approx(0.6) and arr[2] == pytest.approx(0.4) and np.isnan(arr[1])
 
 
+def test_states_arrays_captures_value_dist():
+    """states_arrays() carries the value-dist head's per-atom distribution [T, bins] parallel to
+    `values`; a row with no distribution stays all-NaN, and the key is OMITTED entirely when no
+    decision carried one (so the prober's KeyError 'unavailable' path fires on a headless run)."""
+    bins = 8
+    rec = BattleRecorder("battle-gen3ou-test", reward_fn_factory=_ZeroReward, gamma=0.9)
+    dists = [list(np.full(bins, 1.0 / bins)), None, list(np.eye(bins)[3])]  # uniform, absent, one-hot@3
+    for t in range(3):
+        st = {"value": 1.0, "obs": np.zeros(4, np.float32), "logits": np.zeros(11, np.float32)}
+        if dists[t] is not None:
+            st["value_dist"] = dists[t]
+        rec.record(_move_battle(t + 1), 6, _probs(), _mask(6), state=st)
+    out = rec.states_arrays()
+    vd = out["value_dist"]
+    assert vd.shape == (3, bins)
+    assert vd[0] == pytest.approx(1.0 / bins) and np.isnan(vd[1]).all() and vd[2][3] == pytest.approx(1.0)
+
+    # Headless run: no state carries a distribution → the key is absent entirely.
+    rec2 = BattleRecorder("battle-gen3ou-test", reward_fn_factory=_ZeroReward, gamma=0.9)
+    for t in range(2):
+        rec2.record(_move_battle(t + 1), 6, _probs(), _mask(6),
+                    state={"value": 1.0, "obs": np.zeros(4, np.float32), "logits": np.zeros(11, np.float32)})
+    assert "value_dist" not in rec2.states_arrays()
+
+
 # ── write_battle_record (shared forensic writer) ──────────────────────────────
 
 class _StubRecorder:

@@ -742,8 +742,16 @@ the op prices CB (×1.5 physical Atk): OUTGOING applies our own (known) CB ×1.5
 exposes a per-our-mon CB-CONDITIONAL physical tail (`phys_high_cb` + `P(OHKO|CB)`) + a shared `p_cb`
 (P(opp holds CB) — a species usage prior collapsing to 0/1 on item reveal), **decorrelated** so the head
 weights them (OHKO is a nonlinear threshold a mean-field blend would blur). Move-lock + the ChoiceBandTracker
-disproof are a follow-up. Current `MODEL_CONFIG_VERSION` = **28**. Full design:
-`designs/ai_v6/design_unified_move_system.md` (and `design_unified_damage_system.md` for v23).
+disproof are a follow-up. **v29 the distributional VALUE head** (`gen3` interpretability side readout,
+`value_dist_mode` none/read_only/shaping + `value_dist_bins`) — `ValueDistHead` reads `value_pooled` and
+emits per-atom return-distribution logits (softmax = the critic's predicted return distribution; sharp =
+confident, wide = uncertain, bimodal = coinflip), a SIDE readout stashed for the prober + a future aux
+loss, **never in pi/vf** (projection dims unchanged → OFF byte-identical, no `ARCH_SIGNATURE` bump); mode +
+bins gated in `check_compatible`, the support (vmin/vmax) resume-only. Phase-A foundation (head +
+versioning); the distributional aux loss + capture/prober/launcher are follow-ons. Current
+`MODEL_CONFIG_VERSION` = **29**. Full design:
+`designs/ai_v6/design_distributional_value_critic.md` (and `design_unified_move_system.md` for v24,
+`design_unified_damage_system.md` for v23).
 **The full versioning playbook — what to do when you change a dim vs add an optional feature vs
 make a structural change — is in `src/agents/model/CLAUDE.md`.**
 

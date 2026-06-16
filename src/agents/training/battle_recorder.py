@@ -156,6 +156,12 @@ class BattleRecorder:
         # P(win) from the win-probability head, parallel to `values`. NaN = no head (--win-prob-mode
         # none) / not captured, so the prober can distinguish "unavailable" from a real P(win)=0.0.
         win_probs = np.full(T, np.nan, dtype=np.float32)
+        # Distributional value head's per-atom return distribution [T, bins], parallel to `values`. The
+        # key is OMITTED entirely when the head is off (no state carried a distribution) so the prober's
+        # KeyError guard reads "unavailable"; a captured-but-headless row stays all-NaN.
+        vd_bins = next((len(s["value_dist"]) for s in self._states
+                        if s and s.get("value_dist") is not None), 0)
+        value_dist = np.full((T, vd_bins), np.nan, dtype=np.float32) if vd_bins else None
         has_state = np.zeros(T, dtype=np.int8)
         for i, s in enumerate(self._states):
             if not s:
@@ -166,10 +172,17 @@ class BattleRecorder:
             wp = s.get("win_prob")
             if wp is not None:
                 win_probs[i] = float(wp)
+            if value_dist is not None:
+                vd = s.get("value_dist")
+                if vd is not None:
+                    value_dist[i] = np.asarray(vd, dtype=np.float32)
             has_state[i] = 1
         actions = np.asarray(self._actions_taken, dtype=np.int16)
-        return {"obs": obs, "logits": logits, "values": values, "win_probs": win_probs,
-                "has_state": has_state, "actions": actions}
+        out = {"obs": obs, "logits": logits, "values": values, "win_probs": win_probs,
+               "has_state": has_state, "actions": actions}
+        if value_dist is not None:
+            out["value_dist"] = value_dist
+        return out
 
     def finalize(self, battle) -> None:
         """Complete the last pending invocation at battle end."""

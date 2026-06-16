@@ -848,6 +848,21 @@ class ProberApp(Gen3App):
                 head.append("   ΔP ", style="dim")
                 head.append(f"{a.win_prob.delta * 100:+.0f}%",
                             style=("green" if a.win_prob.delta >= 0 else "red"))
+        # VALUE-DIST — the distributional critic's predicted RETURN DISTRIBUTION (v29): a one-line
+        # histogram + its shape, the interpretability read the scalar V collapses (sharp = confident,
+        # wide = uncertain, bimodal = the critic sees a coinflip). Only on a --value-dist-mode run.
+        if a.value_dist is not None:
+            vd = a.value_dist
+            head.append("\nVALUE-DIST  ", style="dim")
+            head.append(f"E[Z] {vd.mean:+.2f}", style="bold")
+            if vd.mean_real is not None:
+                head.append(f" (real {vd.mean_real:+.1f})", style="dim")
+            head.append(f"   σ {vd.std:.2f}   P10–90 [{vd.p10:+.1f}, {vd.p90:+.1f}]   H {vd.entropy:.2f}",
+                        style="dim")
+            if vd.bimodality > 0.35:
+                head.append("   ⑂ bimodal", style="bold yellow")
+            head.append("\n  ", style="dim")
+            _append_dist_hist(head, vd)
         self.query_one("#summary-head", Static).update(head)
 
         # MOVES — fuse type-effectiveness (Matchups) with the policy prob (Faithfulness),
@@ -1608,6 +1623,24 @@ def _pad(t: Text, width: int) -> Text:
         t = t.copy()
         t.append(" " * gap)
     return t
+
+
+_DIST_BLOCKS = " ▁▂▃▄▅▆▇█"   # 0..8 eighths (index 0 = empty) — the value-dist histogram bars
+
+
+def _append_dist_hist(line: Text, vd) -> None:
+    """Append the value-dist head's per-atom return distribution as an inline eighth-block histogram
+    (one bar per atom, height ∝ prob/peak, heat-coloured by magnitude so the mass reads at a glance;
+    the modal bin bold-magenta). The shape IS the interpretability read — a single tall spike =
+    confident, a broad hump = uncertain, two humps = a coinflip. No-op on an empty distribution."""
+    probs = vd.probs
+    if not probs:
+        return
+    pmax = max(probs) or 1.0
+    peak = max(range(len(probs)), key=lambda k: probs[k])
+    for k, p in enumerate(probs):
+        ch = _DIST_BLOCKS[int(round((p / pmax) * (len(_DIST_BLOCKS) - 1)))]
+        line.append(ch, style="bold magenta" if k == peak else gradient_color(p / pmax))
 
 
 def _surprise_phrase(td: float) -> str:

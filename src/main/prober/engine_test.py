@@ -1027,3 +1027,56 @@ def test_protocol_for_turn_slices_by_turn_marker():
     t2 = protocol_for_turn(lines, 2)
     assert "|-miss|p2a: B" in t2 and "|turn|3" not in t2     # stops at the next turn marker
     assert protocol_for_turn((), 1) == ()
+
+
+# ---------------------------------------------------------------------------
+# build_value_dist — the distributional value head's per-decision distribution
+# (v29). Pure: a synthetic npz dict + a (vmin, vmax, bins) support, no torch.
+# ---------------------------------------------------------------------------
+
+from main.prober.engine import build_value_dist  # noqa: E402
+
+
+def test_build_value_dist_peaked_recovers_mean_and_low_entropy():
+    bins = 8
+    probs = np.zeros((2, bins), dtype=np.float32)
+    probs[:, 5] = 1.0                                   # all mass on atom 5
+    vd = build_value_dist({"value_dist": probs}, 0, (-4.0, 4.0, bins))
+    assert vd is not None
+    z = np.linspace(-4.0, 4.0, bins)
+    assert abs(vd.mean - float(z[5])) < 1e-5
+    assert vd.entropy < 0.1 and vd.std < 0.1            # near-one-hot ⇒ confident
+    assert len(vd.probs) == bins and len(vd.support) == bins
+
+
+def test_build_value_dist_absent_or_nan_is_none():
+    # No array (old trace / head off) → the KeyError "unavailable" path.
+    assert build_value_dist({}, 0, (-4.0, 4.0, 8)) is None
+    # A captured-but-headless row is all-NaN → None (so the prober shows it only when real).
+    nan = np.full((1, 8), np.nan, dtype=np.float32)
+    assert build_value_dist({"value_dist": nan}, 0, (-4.0, 4.0, 8)) is None
+
+
+def test_build_value_dist_bin_mismatch_is_none():
+    """Support/trace bin counts disagree (config drift) → bail safely, don't mis-render."""
+    probs = np.ones((1, 8), dtype=np.float32) / 8.0
+    assert build_value_dist({"value_dist": probs}, 0, (-4.0, 4.0, 16)) is None
+
+
+def test_build_value_dist_popart_denormalizes_mean():
+    probs = np.zeros((1, 8), dtype=np.float32)
+    probs[:, 4] = 1.0
+    vd = build_value_dist({"value_dist": probs}, 0, (-4.0, 4.0, 8), popart=(10.0, 2.0))
+    z = np.linspace(-4.0, 4.0, 8)
+    assert vd.mean_real is not None
+    assert abs(vd.mean_real - (float(z[4]) * 2.0 + 10.0)) < 1e-4
+
+
+def test_build_value_dist_bimodal_flagged():
+    """Two separated humps ⇒ high bimodality (mass outside the dominant peak's neighborhood)."""
+    bins = 16
+    probs = np.zeros((1, bins), dtype=np.float32)
+    probs[0, 1] = 0.5
+    probs[0, 14] = 0.5
+    vd = build_value_dist({"value_dist": probs}, 0, (-4.0, 4.0, bins))
+    assert vd.bimodality > 0.35

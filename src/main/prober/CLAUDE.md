@@ -400,8 +400,16 @@ loading uses the same exact→nearest→recent ladder (cached per process). A
   (`(V − μ)/σ`, the critic's normalized learning scale; all `None` without PopArt). Also carries a `win_prob`
   block (`WinProbView`: recorded `P(win|s)` + `delta` ΔP to the next decision) — model-free, read
   from the trace's `win_probs` npz array (NaN/absent → `None` on a non-`--win-prob-mode` run; recorded
-  at trace-capture by `RLPlayer._win_prob` → `BattleRecorder.states_arrays`). Carries two
-  incoming-threat decodes — **distinguish them**:
+  at trace-capture by `RLPlayer._win_prob` → `BattleRecorder.states_arrays`). Also a **`value_dist`**
+  block (`ValueDistView`, v29 — `None` unless the run trained `--value-dist-mode`): the distributional
+  value head's predicted **return DISTRIBUTION** — `probs`/`support` (the histogram) + `mean` (E[Z]) /
+  `std` / `p10`/`p50`/`p90` / `entropy` / `bimodality` (+ `mean_real` = de-normalized E[Z] under PopArt).
+  Model-free from the trace's `value_dist` npz array (key absent / NaN → `None`); the atom support comes
+  from the loaded model (`ProbeModel.value_dist_support` → `value_dist_vmin`/`vmax`/`bins`). The Summary
+  panel renders it as a one-line **eighth-block histogram** + the shape stats (`_append_dist_hist`;
+  sharp = confident, wide = uncertain, `⑂ bimodal` = the critic sees a coinflip) below the CRITIC /
+  WIN-PROB lines — the interpretability read the scalar V collapses. Engine: `engine.build_value_dist`.
+  Carries two incoming-threat decodes — **distinguish them**:
   - `threats` (model-free, from `their_matchups`): raw type-*effectiveness* —
     `present`, `revealed_frac` (how much opp coverage is revealed), `max_incoming`
     (worst eff ×4 on the board), `per_our_slot_max`. Effectiveness only — no

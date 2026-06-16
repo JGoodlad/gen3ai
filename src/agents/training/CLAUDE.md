@@ -1178,6 +1178,45 @@ Monte-Carlo episode OUTCOME. Off by default (`--win-prob-mode none`). Three piec
   shaping-flows gradient gating, the v22 version gate). End-to-end `--debug --use-showdown-bridge
   --win-prob-mode read_only` smoke confirms the roundtrip + `train/win_prob_*` metrics + `win_prob_share`=0.
 
+## Distributional value head (`--value-dist-mode` / `--value-dist-coef`)
+
+The training half of the v29 interpretability side head (model side: `src/agents/model/CLAUDE.md` →
+distributional value head). A categorical readout off `value_pooled` whose softmax is the critic's
+predicted **return DISTRIBUTION** — the shape the scalar V collapses (sharp = confident, wide =
+uncertain, bimodal = coinflip). **Phase A** (interpretability-only): it does NOT replace the scalar
+critic, so the GAE/advantage/value-loss path is untouched — this loss is an ADD-ON, like the win-prob
+aux. Design + the K1 honesty frame: `designs/ai_v6/design_distributional_value_critic.md`.
+
+- **Loss (`instrumented_ppo._value_dist_loss`).** **HL-Gauss** (Farebrother et al. 2024): build a
+  Gaussian-smoothed soft target by integrating `N(target, σ_g²)` (σ_g = 0.75·Δ) over each atom's bin,
+  with the two EDGE bins absorbing the outer tails (graceful out-of-support handling), then cross-entropy
+  against the head's `log_softmax`. `train()` reads the stashed `last_value_dist_logits` + the rollout
+  return as the target, **PopArt-normalized when the scalar critic is** (so the target lands in the head's
+  support space — set `--value-dist-vmin/vmax` to a normalized range like ±5 under `--use-popart`). Folded
+  at `value_dist_coef`. Pure + static → unit-tested in `value_dist_loss_test.py`.
+- **Metrics (`value_dist/*`).** Aggregate interpretability health under its own TB prefix (the
+  `grad/`/`popart/`/`win_prob/` group convention): `ce`, `entropy` + `std` (fall as the critic sharpens),
+  `pit_mean` (≈ 0.5 ⟺ **calibrated** — the PIT anchor), `mean_abs_err` (`|E[Z] − return|` in support
+  units). Ride the generic logger → TensorBoard + launcher TUI (`value_dist/*` labels in `format.py`).
+- **Versioning.** `value_dist_mode` (str) + `value_dist_bins` (int) are version-checked structural toggles
+  (fresh-only); the support `vmin`/`vmax` is resume-immutable (`check_value_dist`); `value_dist_coef` is
+  **training-only**, read back on a flagless resume (like `win_prob_coef`). Threaded into
+  `current_model_version` / `arch_toggles_from_model` / `_run_arch_toggles`.
+- **Forensic trace + prober.** `RLPlayer._value_dist` reads the stashed logits at capture (softmax ⇒ the
+  per-atom distribution) → `BattleRecorder.states_arrays` writes a `value_dist [T, bins]` npz array (key
+  OMITTED when the head is off → the prober's KeyError "unavailable" path; NaN rows = uncaptured). The
+  prober renders the per-decision **histogram** + mean/std/P10–P90/entropy/bimodality
+  (`engine.build_value_dist` → `ValueDistView`, model-free; in the Summary panel + the `analyze` CLI). See
+  `src/main/prober/CLAUDE.md`.
+- **Honesty gate.** Ledger **K1 already killed the distributional critic as a WIN-RATE lever** (sub-Gaussian
+  residuals — no tail). This is justified on INTERPRETABILITY only; its strongest use is upgrading the
+  prober calibration/`falsify-scan` luck-vs-mistake split (predicted spread vs realized return = a
+  within-model PIT). "Learns ≠ helps" — validate calibration (PIT ≈ uniform), not win-rate.
+- **Tests.** Unit: `value_dist_loss_test.py` (HL-Gauss math + diagnostics), `agents/model/
+  value_dist_head_test.py` (module build, off byte-identical, grad gating, the v29 version gate),
+  `main/prober/engine_test.py` (`build_value_dist`). End-to-end `--debug --debug-eval --use-showdown-bridge
+  --value-dist-mode read_only` smoke captures a trace whose npz carries `value_dist`.
+
 ## Process liveness guards (`watchdog.py`)
 
 Two daemon-thread watchdogs keep a hung/abandoned run from lingering:

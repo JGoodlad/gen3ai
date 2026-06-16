@@ -105,6 +105,13 @@ _METRIC_LABELS = {
     "belief/latent_std": "latent std",
     "belief/latent_vicreg": "latent vicreg",
     "belief/latent_loss": "latent loss",
+    # Distributional value head (--value-dist-mode, v29): the interpretability critic's aggregate
+    # health. entropy/std fall as it sharpens; PIT → 0.5 ⟺ calibrated; |E[Z]−G| in support units.
+    "value_dist/ce": "dist CE",
+    "value_dist/entropy": "dist entropy",
+    "value_dist/std": "dist std",
+    "value_dist/pit_mean": "dist PIT>.5",
+    "value_dist/mean_abs_err": "dist E[Z]-G",
 }
 
 

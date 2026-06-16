@@ -175,8 +175,9 @@ because it is Φ_progress's weight. All are recorded on
 `ModelVersion` and enforced on resume by **`check_reward_config`** (FATAL on drift, since they silently
 shift the reward/objective), excluded from `check_compatible`. They are reward-VALUE changes — **no
 `ARCH_SIGNATURE` bump** (the network/obs are unchanged) — so a fresh run is needed to measure them but
-old checkpoints don't fail an arch check. Current `MODEL_CONFIG_VERSION` = **28** (see the belief +
-unified-damage + unified-move + spread-belief + op-physics + status-landing + choice-band notes below for v16–v28).
+old checkpoints don't fail an arch check. Current `MODEL_CONFIG_VERSION` = **29** (see the belief +
+unified-damage + unified-move + spread-belief + op-physics + status-landing + choice-band + value-dist
+notes below for v16–v29).
 
 **Two probe-driven V-tail levers (v10 structural, v11 resume-immutable).** A representation probe on a
 real checkpoint found the **value head is partly blind to incoming KOs the policy head sees**
@@ -522,7 +523,33 @@ high_cb, ko_cb)`); fixed-damage moves are CB-invariant (the override replaces th
 move-LOCK (the predictability lever) + the `ChoiceBandTracker`'s move-lock DISPROOF (a documented follow-up;
 the orphaned tracker would refine `p_cb`). INTRINSIC to `damage_op` (the incoming CB block grows the incoming
 output dim → a v27 `damage_op` checkpoint won't load, SB3 `load_state_dict` in_features mismatch); OFF (no
-`damage_op`) byte-identical (no `ARCH_SIGNATURE` bump). Current `MODEL_CONFIG_VERSION` = **28**.
+`damage_op`) byte-identical (no `ARCH_SIGNATURE` bump).
+
+**Distributional value head (v29, `value_dist_mode` / `--value-dist-mode`).** The `WinProbHead` pattern
+applied to the VALUE target — an **interpretability** side readout (design:
+`designs/ai_v6/design_distributional_value_critic.md`). `ValueDistHead` reads the whole-board
+`value_pooled` *after* the pools and emits `value_dist_bins` logits over a fixed atom support
+`linspace(vmin, vmax, bins)`; `softmax` is the critic's predicted **return DISTRIBUTION** (sharp =
+confident, wide = uncertain, bimodal = coinflip — all invisible in the scalar V), stashed at
+`last_value_dist_logits` and read ONLY by the (future) aux loss + the prober — **never** in pi/vf, so
+projection dims are unchanged either way (a SIDE readout, leak-safe). Tri-state like `win_prob_mode`:
+`none` = no module (baseline byte-for-byte); `read_only` = the head trains its OWN params on a STOP-GRAD
+`value_pooled` (risk-free diagnostic, zero trunk gradient); `shaping` = its gradient also shapes the
+trunk. The `atoms` buffer is **non-persistent** (deterministic from bins+range → out of the state_dict).
+Versioning: `value_dist_mode` (str) + `value_dist_bins` (int, the head's output width) are
+state_dict/forward toggles gated in `check_compatible`; the support `value_dist_vmin`/`value_dist_vmax`
+is value-meaning → resume-only `check_value_dist` (like `value_tail_weight`); `value_dist_coef` (float)
+is the **training-only** HL-Gauss loss weight (recorded for provenance + flagless-resume read-back, NOT
+version-locked, like `win_prob_coef`). OFF reproduces baseline byte-for-byte (NO `ARCH_SIGNATURE` bump);
+threaded through `current_model_version` / `arch_toggles_from_model` (mode + bins) / `_run_arch_toggles`
+(the 4 opp-load sites). **Phase A is complete (interpretability-only side head):** the head + versioning,
+the **HL-Gauss aux loss** (`instrumented_ppo._value_dist_loss` — a Gaussian-CDF-projected soft target,
+edge-tail-absorbed, CE; folded at `value_dist_coef`; the target is PopArt-normalized when the scalar
+critic is, so the support lives in normalized space — see `src/agents/training/CLAUDE.md`), **trace
+capture** (`RLPlayer._value_dist` → a `value_dist` npz array), the **prober** histogram + spread/PIT
+(`engine.build_value_dist` / `ValueDistView`, rendered in the Summary + the `analyze` CLI), and the
+**launcher** `value_dist/*` aggregate metrics. NOT YET (Phase B, a separate fresh-run A/B): making the
+scalar critic ITSELF distributional (replace `value_net`). Current `MODEL_CONFIG_VERSION` = **29**.
 
 A startup smoke test (`_run_roundtrip_test` in `train_rl_agent.py`) saves to a temp dir and reloads before every `model.learn()` call — catches serialization issues immediately.
 

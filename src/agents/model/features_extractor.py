@@ -1072,6 +1072,59 @@ class WinProbHead(torch.nn.Module):
         return self.net(value_pooled)
 
 
+class ValueDistHead(torch.nn.Module):
+    """Distributional VALUE readout — an INTERPRETABILITY side head over the return distribution.
+
+    The scalar critic emits one number, E[Z] (expected shaped return). This head reads the same
+    whole-board `value_pooled` summary and emits `bins` logits over a FIXED atom support
+    `linspace(vmin, vmax, bins)`: `softmax(logits)` is the critic's predicted return DISTRIBUTION,
+    not just its mean. That distribution is what makes "how is the model predicting" legible — a
+    sharp spike = confident, a wide spread = uncertain, a bimodal shape = the critic sees a coinflip
+    (e.g. "I win if this move hits, else I lose") — all invisible in the scalar V that collapses
+    every shape to one mean. The categorical HL-Gauss parameterization (Phase A side head) is the
+    `WinProbHead` pattern applied to the value target. Design:
+    `designs/ai_v6/design_distributional_value_critic.md`.
+
+    SIDE readout, leak-safe: the logits are stashed at `features_extractor.last_value_dist_logits`
+    and read ONLY by the (future) aux loss + the offline prober/eval — NEVER concatenated into pi/vf,
+    so the projection dims are unchanged either way (off byte-for-byte). The tri-state
+    `value_dist_mode` controls the GRADIENT at the call site (`read_only` feeds a STOP-GRAD
+    `value_pooled` — a pure, risk-free diagnostic that can't perturb the policy; `shaping` feeds it
+    live so the distributional objective also shapes the shared trunk). `none` = this module is not
+    built (the chain is byte-for-byte the baseline). The `atoms` buffer is non-persistent
+    (deterministic from `bins`/`vmin`/`vmax`) so it stays out of the state_dict — only the head's
+    params (whose final Linear is `bins`-wide) define the loadable shape."""
+
+    def __init__(self, bins: int, vmin: float, vmax: float):
+        super().__init__()
+        if bins <= 0:
+            raise ValueError(f"ValueDistHead bins must be > 0, got {bins}")
+        if not vmax > vmin:
+            raise ValueError(f"ValueDistHead requires vmax > vmin, got vmin={vmin}, vmax={vmax}")
+        self.bins = bins
+        # Small MLP off the value pool: LayerNorm → Linear → ReLU → Linear(→bins) — the WinProbHead
+        # bottleneck, widened from 1 logit to `bins` (a categorical head over the return support).
+        self.net = torch.nn.Sequential(
+            torch.nn.LayerNorm(D_MODEL),
+            torch.nn.Linear(D_MODEL, D_MODEL),
+            torch.nn.ReLU(),
+            torch.nn.Linear(D_MODEL, bins),
+        )
+        # Fixed atom support, non-persistent (deterministic from bins+range → out of the state_dict,
+        # like the damage_tables buffers). Read by the loss (target projection) + the prober (atoms →
+        # return units) + `mean()` below; the head's forward only needs the net.
+        self.register_buffer("atoms", torch.linspace(vmin, vmax, bins), persistent=False)
+
+    def forward(self, value_pooled: torch.Tensor) -> torch.Tensor:
+        """value_pooled [B, D_MODEL] → per-atom logits [B, bins] (softmax ⇒ return distribution)."""
+        return self.net(value_pooled)
+
+    def mean(self, logits: torch.Tensor) -> torch.Tensor:
+        """E[Z] = Σ atomsᵢ·softmax(logits)ᵢ — the scalar the distribution implies, [B, 1]. (Used by
+        the prober / diagnostics; the Phase-A side head does NOT feed this into the scalar critic.)"""
+        return (torch.softmax(logits, dim=-1) * self.atoms).sum(-1, keepdim=True)
+
+
 # Logit at which a REVEALED (certain) move is pinned under prior fusion: sigmoid(10) ≈ 0.99995 ≈ P 1.
 _REVEAL_LOGIT = 10.0
 
@@ -2053,7 +2106,9 @@ class Gen3FeaturesExtractor(torch.nn.Module):
                  mask_incoming_damage_obs: bool = False, win_prob_mode: str = "none",
                  damage_outgoing: bool = False, move_candidate_floor: float = 0.0,
                  move_latent: bool = False, spread_belief: bool = False,
-                 mask_active_move_scalars_obs: bool = False, mask_move_effects_obs: bool = False):
+                 mask_active_move_scalars_obs: bool = False, mask_move_effects_obs: bool = False,
+                 value_dist_mode: str = "none", value_dist_bins: int = 0,
+                 value_dist_vmin: float = 0.0, value_dist_vmax: float = 0.0):
         super().__init__()
         self.layout = layout
         self.mappings = mappings
@@ -2226,6 +2281,37 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         # loss + the offline prober/eval; NEVER fed into pi/vf (the OUTCOME label can't leak).
         self.last_win_prob_logits: Optional[torch.Tensor] = None
 
+        # Distributional VALUE head (tri-state `value_dist_mode`, v29): an interpretability readout off
+        # `value_pooled` emitting `value_dist_bins` logits over the support [vmin, vmax]. 'none' = no
+        # module (baseline byte-for-byte, NOT in pi/vf so projection dims are unchanged). 'read_only' =
+        # trains its OWN params on a STOP-GRAD value_pooled (a risk-free diagnostic — zero trunk
+        # gradient). 'shaping' = its gradient also shapes the shared trunk. SIDE readout (stashed for the
+        # aux loss + prober, never in pi/vf — and the value target can't leak). The state_dict-changing
+        # toggles are 'none'↔head (the head params) AND the atom count `bins` (the head's output width);
+        # both + the mode are resume-immutable (version-checked). See ValueDistHead.
+        if value_dist_mode not in ("none", "read_only", "shaping"):
+            raise ValueError(f"value_dist_mode must be none|read_only|shaping, got {value_dist_mode!r}")
+        if value_dist_mode != "none" and value_dist_bins <= 0:
+            raise ValueError(
+                f"value_dist_mode={value_dist_mode!r} requires value_dist_bins > 0 (the atom count), "
+                f"got {value_dist_bins}"
+            )
+        if value_dist_mode == "none" and value_dist_bins != 0:
+            raise ValueError(
+                f"value_dist_bins must be 0 when value_dist_mode == 'none', got {value_dist_bins}"
+            )
+        self.value_dist_mode = value_dist_mode
+        self.value_dist_bins = value_dist_bins
+        self.value_dist_vmin = value_dist_vmin
+        self.value_dist_vmax = value_dist_vmax
+        self.value_dist_head = (
+            ValueDistHead(value_dist_bins, value_dist_vmin, value_dist_vmax)
+            if value_dist_mode != "none" else None
+        )
+        # Stashed each forward when on (the [B, bins] per-atom logits, or None). Read by the (future)
+        # distributional aux loss + the offline prober/eval; NEVER fed into pi/vf (leak-safe side head).
+        self.last_value_dist_logits: Optional[torch.Tensor] = None
+
         self.role_token_size = ROLE_TOKEN_SIZE
 
         # Discover the policy/value projection-input dims via a dummy forward through the
@@ -2377,6 +2463,16 @@ class Gen3FeaturesExtractor(torch.nn.Module):
             self.last_win_prob_logits = self.win_head(wp_in)
         else:
             self.last_win_prob_logits = None
+        # Distributional VALUE readout (flag-guarded; None when off). Same value_pooled the win head
+        # reads → per-atom return-distribution logits, stashed for the aux loss + prober/eval. NOT fed
+        # into the assembler (a side readout — the value target can't leak into pi/vf). `read_only`
+        # feeds a STOP-GRAD value_pooled (head-only training); `shaping` feeds it live. Computed on
+        # every forward (one small MLP) so eval/inference can read the distribution too.
+        if self.value_dist_head is not None:
+            vd_in = value_pooled if self.value_dist_mode == "shaping" else value_pooled.detach()
+            self.last_value_dist_logits = self.value_dist_head(vd_in)
+        else:
+            self.last_value_dist_logits = None
         belief = None
         if self.hidden_opp_belief is not None:
             # Same 12-token memory + the single-sourced ctx.all_fainted key-mask the value CLS pools

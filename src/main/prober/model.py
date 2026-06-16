@@ -284,6 +284,20 @@ class ProbeModel:
         except (AttributeError, TypeError, ValueError):
             return None
 
+    def value_dist_support(self) -> "tuple[float, float, int] | None":
+        """The distributional value head's atom support ``(vmin, vmax, bins)``, or ``None`` when the run
+        trained no value-dist head (``--value-dist-mode none``). The trace stores the per-atom probs; the
+        prober maps atoms → return units via ``linspace(vmin, vmax, bins)`` to render the histogram + the
+        E[Z]/std/percentile reads. On a ``--use-popart`` run the support is in the critic's normalized
+        space (the loss normalizes the return target), so ``ValueDistView`` denormalizes E[Z] for display."""
+        ex = getattr(self._policy, "features_extractor", None)
+        if ex is None or getattr(ex, "value_dist_mode", "none") == "none":
+            return None
+        try:
+            return float(ex.value_dist_vmin), float(ex.value_dist_vmax), int(ex.value_dist_bins)
+        except (AttributeError, TypeError, ValueError):
+            return None
+
     def architecture(self) -> "list[dict]":
         """Describe the loaded extractor's FORWARD PIPELINE as ordered plain-dict phases — so the
         prober can DRAW the model instead of asking the reader to imagine it. Reflects the CURRENT

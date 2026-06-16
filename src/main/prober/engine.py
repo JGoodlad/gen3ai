@@ -187,6 +187,69 @@ class WinProbView:
 
 
 @dataclass(frozen=True)
+class ValueDistView:
+    """The distributional value head's predicted RETURN DISTRIBUTION at this state (v29) — the per-atom
+    softmax + its shape stats. The interpretability read the scalar V collapses: a sharp spike =
+    confident, a wide spread = uncertain, a bimodal shape = the critic sees a coinflip (e.g. "I win if
+    this move hits, else I lose"). Stats are in the head's SUPPORT space (PopArt-normalized on a
+    ``--use-popart`` run — the critic's own learning scale); ``mean_real`` de-normalizes E[Z] to real
+    return units when PopArt stats are available. None unless the run trained ``--value-dist-mode``."""
+    probs: "tuple[float, ...]"             # the per-atom distribution (the histogram bars)
+    support: "tuple[float, ...]"           # atom centers (the x-axis), in support space
+    mean: float                            # E[Z] = Σ atomsᵢ·probsᵢ (support space)
+    std: float                             # spread = the critic's own uncertainty
+    p10: float
+    p50: float
+    p90: float
+    entropy: float                         # nats — sharpening over training = the critic committing
+    bimodality: float                      # mass OUTSIDE the dominant peak's ±2-bin neighborhood (coinflip ⇒ high)
+    mean_real: "float | None" = None       # de-normalized E[Z] (real return) when PopArt present
+
+
+def _dist_quantile(support, cdf, t: float) -> float:
+    idx = int(np.searchsorted(cdf, t))
+    return float(support[min(idx, len(support) - 1)])
+
+
+def build_value_dist(npz, i: int, support, popart=None) -> "ValueDistView | None":
+    """The distributional value head's per-decision return distribution at decision ``i``. None when the
+    array is absent (old trace / the run had no value-dist head → the KeyError "unavailable" path), this
+    row wasn't captured (all-NaN), or the support/trace bin counts disagree (config drift). ``support`` =
+    ``(vmin, vmax, bins)`` from the loaded model; ``popart`` = optional ``(mu, sigma)`` to denormalize
+    E[Z]. Pure (numpy only) — the single source the app histogram + the ``analyze`` CLI both render."""
+    try:
+        arr = npz["value_dist"]
+    except KeyError:
+        return None
+    if not (0 <= i < len(arr)):
+        return None
+    probs = np.asarray(arr[i], dtype=np.float64)
+    if probs.size == 0 or np.isnan(probs).any():
+        return None
+    vmin, vmax, bins = support
+    if int(bins) != probs.size:
+        return None
+    z = np.linspace(float(vmin), float(vmax), int(bins))
+    p = probs / max(float(probs.sum()), 1e-8)
+    mean = float((p * z).sum())
+    std = float(np.sqrt(max(float((p * (z - mean) ** 2).sum()), 0.0)))
+    cdf = np.cumsum(p)
+    peak = int(np.argmax(p))
+    lo, hi = max(0, peak - 2), min(len(p), peak + 3)
+    bimodality = float(max(0.0, 1.0 - float(p[lo:hi].sum())))
+    mean_real = None
+    if popart is not None and popart[1]:
+        mean_real = mean * float(popart[1]) + float(popart[0])
+    return ValueDistView(
+        probs=tuple(float(x) for x in p), support=tuple(float(x) for x in z),
+        mean=mean, std=std,
+        p10=_dist_quantile(z, cdf, 0.10), p50=_dist_quantile(z, cdf, 0.50),
+        p90=_dist_quantile(z, cdf, 0.90),
+        entropy=float(-(p * np.log(p + 1e-12)).sum()), bimodality=bimodality, mean_real=mean_real,
+    )
+
+
+@dataclass(frozen=True)
 class MonState:
     species: str
     hp: str           # "100%" / "75%" / "faint"
@@ -280,6 +343,7 @@ class InvocationAnalysis:
     outcome: dict = field(default_factory=dict)   # raw {our, opp, reward, events}
     value: "ValueView | None" = None
     win_prob: "WinProbView | None" = None          # P(win|s) + ΔP(win) (None unless --win-prob-mode != none)
+    value_dist: "ValueDistView | None" = None       # predicted return DISTRIBUTION (None unless --value-dist-mode)
     rerun_argmax: "str | None" = None              # the loaded model's top valid action
     agrees: bool = True                            # rerun_argmax == chosen
     flags: "tuple[str, ...]" = ()                  # switch/uncertain/faint/disagree
@@ -1222,6 +1286,16 @@ def analyze_invocation(model, summary: dict, npz, inv_index: int,
             delta=(next_wp - recorded_wp) if next_wp is not None else None,
         )
 
+    # Distributional value head (--value-dist-mode): the predicted RETURN DISTRIBUTION at this state —
+    # the interpretability read the scalar V collapses (sharp=confident, wide=uncertain, bimodal=coinflip).
+    # Model-free from the trace's per-atom `value_dist` array; the support (atoms) + PopArt denorm come
+    # from the loaded model. None on a run without the head (array absent / NaN).
+    value_dist = None
+    _vds = getattr(model, "value_dist_support", lambda: None)()
+    if _vds is not None:
+        value_dist = build_value_dist(
+            npz, inv_index, _vds, getattr(model, "popart_stats", lambda: None)())
+
     # Does the loaded model still pick what was recorded? (Exact tier ≈ always; on
     # nearest/recent a disagreement is the interesting case.)
     rerun_argmax = labels[int(np.argmax(probs))]
@@ -1251,7 +1325,7 @@ def analyze_invocation(model, summary: dict, npz, inv_index: int,
     return InvocationAnalysis(
         **common, has_state=True, actions=actions, matchups=matchups, sweep=sweep,
         saliency=saliency, value_saliency=value_saliency, threats=threats, incoming=incoming,
-        warnings=(), outcome=outcome, value=value, win_prob=win_prob,
+        warnings=(), outcome=outcome, value=value, win_prob=win_prob, value_dist=value_dist,
         rerun_argmax=rerun_argmax, agrees=agrees, flags=flags, board=board, next_board=next_board,
         obs_mismatch=obs_mismatch, field=field, belief=belief, belief_truth=belief_truth,
         damage_op=damage_op,

@@ -504,3 +504,24 @@ class TestStaleDecisionRedecide:
         assert p._n_redecides == 0
         p.action_to_order.assert_not_called()       # idx None → never serializes a stale ctx
         p._tracker.restore.assert_called_once()
+
+
+# ── RLPlayer._value_dist (v29 distributional value head capture) ──────────────
+# _value_dist only reads self.model.policy.features_extractor.last_value_dist_logits, so a mock
+# `self` exercises it directly (no model/battle needed). The same trace-capture path as _win_prob.
+
+def test_value_dist_reads_stash_into_distribution():
+    import torch
+    from types import SimpleNamespace
+    logits = torch.tensor([[0.0, 10.0, 0.0]])   # peaked on atom 1
+    fake = SimpleNamespace(model=SimpleNamespace(policy=SimpleNamespace(
+        features_extractor=SimpleNamespace(last_value_dist_logits=logits))))
+    out = RLPlayer._value_dist(fake)
+    assert len(out) == 3 and out[1] > 0.99 and abs(sum(out) - 1.0) < 1e-6
+
+
+def test_value_dist_none_when_head_off():
+    from types import SimpleNamespace
+    fake = SimpleNamespace(model=SimpleNamespace(policy=SimpleNamespace(
+        features_extractor=SimpleNamespace(last_value_dist_logits=None))))
+    assert RLPlayer._value_dist(fake) is None

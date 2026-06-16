@@ -4,7 +4,7 @@ import json
 import os
 import sys
 from datetime import datetime, timezone
-from typing import Optional
+from typing import Optional, Tuple
 
 import stable_baselines3
 from sb3_contrib import MaskablePPO
@@ -373,6 +373,7 @@ def load_model_snapshot(
     enforce_vf_coef: Optional[float] = None,
     enforce_reward_config=None,
     enforce_value_tail_weight: Optional[float] = None,
+    enforce_value_dist: Optional[Tuple[float, float]] = None,
 ) -> MaskablePPO:
     """Load a model with a compatibility check against the current architecture.
 
@@ -414,6 +415,8 @@ def load_model_snapshot(
             saved_version.check_reward_config(enforce_reward_config)
         if enforce_value_tail_weight is not None:
             saved_version.check_value_tail_weight(enforce_value_tail_weight)
+        if enforce_value_dist is not None:
+            saved_version.check_value_dist(*enforce_value_dist)
         arch_validated = True
     else:
         print(
@@ -528,6 +531,11 @@ def current_model_version(
     mask_move_effects_obs: bool = False,
     win_prob_mode: str = "none",
     win_prob_coef: float = 1.0,
+    value_dist_mode: str = "none",
+    value_dist_bins: int = 0,
+    value_dist_vmin: float = 0.0,
+    value_dist_vmax: float = 0.0,
+    value_dist_coef: float = 1.0,
     vf_coef: float = 0.5,
     reward_config=None,
     value_tail_weight: float = 0.0,
@@ -571,6 +579,10 @@ def current_model_version(
     ext_kwargs["mask_active_move_scalars_obs"] = mask_active_move_scalars_obs
     ext_kwargs["mask_move_effects_obs"] = mask_move_effects_obs
     ext_kwargs["win_prob_mode"] = win_prob_mode
+    ext_kwargs["value_dist_mode"] = value_dist_mode
+    ext_kwargs["value_dist_bins"] = value_dist_bins
+    ext_kwargs["value_dist_vmin"] = value_dist_vmin
+    ext_kwargs["value_dist_vmax"] = value_dist_vmax
     policy_kwargs = {
         "features_extractor_class": Gen3FeaturesExtractor,
         "features_extractor_kwargs": ext_kwargs,
@@ -582,7 +594,7 @@ def current_model_version(
         value_tail_weight=value_tail_weight, opp_belief_aux_coef=opp_belief_aux_coef,
         move_belief_coef=move_belief_coef, opp_belief_latent_coef=opp_belief_latent_coef,
         win_prob_coef=win_prob_coef, move_belief_latent_coef=move_belief_latent_coef,
-        spread_belief_coef=spread_belief_coef,
+        spread_belief_coef=spread_belief_coef, value_dist_coef=value_dist_coef,
     )
 
 
@@ -610,6 +622,10 @@ def arch_toggles_from_model(model) -> dict:
         "mask_active_move_scalars_obs": bool(getattr(fe, "mask_active_move_scalars_obs", False)),
         "mask_move_effects_obs": bool(getattr(fe, "mask_move_effects_obs", False)),
         "win_prob_mode": str(getattr(fe, "win_prob_mode", "none")),
+        # v29 value-dist head: only the check_compatible-gated structural toggles (mode + atom count) —
+        # the support (vmin/vmax) is resume-only-checked on the trainer, never by a worker's load gate.
+        "value_dist_mode": str(getattr(fe, "value_dist_mode", "none")),
+        "value_dist_bins": int(getattr(fe, "value_dist_bins", 0)),
         "use_popart": getattr(model.policy, "popart", None) is not None,
     }
 

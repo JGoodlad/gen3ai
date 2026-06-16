@@ -211,6 +211,13 @@ class InstrumentedMaskablePPO(MaskablePPO):
     # extractor (win_prob_mode); the loss is added whenever the mode is on AND this coef != 0.
     win_prob_coef: float = 1.0
 
+    # Set by train_rl_agent (like win_prob_coef). The DISTRIBUTIONAL value head's HL-Gauss cross-entropy
+    # loss weight: value_dist_coef * CE(value_dist_logits, return) over the rollout. Training-only (scales
+    # the loss, never a forward pass) → NOT version-locked (recorded for provenance + flagless-resume
+    # read-back). The MODE (none/read_only/shaping — which controls whether the grad reaches the trunk)
+    # lives on the extractor (value_dist_mode); the loss is added whenever the mode is on AND coef != 0.
+    value_dist_coef: float = 1.0
+
     @staticmethod
     def _win_prob_loss(logits, target, mask, margin=None):
         """Supervised BCE loss for the auxiliary WIN-PROBABILITY head (``last_win_prob_logits`` [B,1]).
@@ -278,6 +285,57 @@ class InstrumentedMaskablePPO(MaskablePPO):
                 metrics["brier_material"] = float(brier_mat.item())
                 metrics["skill_vs_material"] = (
                     float((1.0 - brier / brier_mat).item()) if float(brier_mat) > 0.0 else 0.0)
+        return loss, metrics
+
+    @staticmethod
+    def _value_dist_loss(logits, target, atoms):
+        """HL-Gauss cross-entropy for the distributional VALUE head (Farebrother et al. 2024) + the
+        interpretability diagnostics (v29; designs/ai_v6/design_distributional_value_critic.md).
+
+        ``logits`` [B, N] are the head's per-atom logits; ``target`` [B] (or [B,1]) is the return in the
+        SAME space as ``atoms`` [N] (the fixed support — the caller PopArt-normalizes the return when the
+        scalar critic does, so the support lives in normalized units). Builds a Gaussian-smoothed soft
+        target by integrating N(target, σ_g²) over each bin (σ_g = 0.75·Δ), with the two EDGE bins
+        absorbing the outer tails (graceful out-of-support handling — an out-of-range return reads as
+        "near the edge", not lost), then cross-entropy against ``log_softmax(logits)``. Returns
+        (loss, metrics): ``entropy``/``std``/``pit_mean``/``mean_abs_err`` are the per-decision reads the
+        prober renders, aggregated here for the launcher (``pit_mean`` ≈ 0.5 ⟺ calibrated). Pure + static
+        → unit-testable without a full PPO. Returns None when nothing is scorable."""
+        if logits is None or target is None or atoms is None:
+            return None
+        z = atoms.to(logits.device).reshape(-1)                      # [N] fixed support
+        n = z.numel()
+        if n < 2:
+            return None
+        t = target.to(logits.device).reshape(-1, 1)                  # [B, 1] return (already in z-space)
+        delta = (z[-1] - z[0]) / (n - 1)                             # bin width (z is a linspace)
+        sigma_g = 0.75 * delta                                       # HL-Gauss smoothing (σ/ς = 0.75)
+        inv = 1.0 / (sigma_g * (2.0 ** 0.5))                        # 1/(σ_g·√2) for the erf-CDF
+        # Standard-normal CDF Φ(u) = ½(1+erf(u/√2)), evaluated at each bin's upper / lower edge.
+        cdf_hi = 0.5 * (1.0 + th.erf((z + 0.5 * delta - t) * inv))   # [B, N]
+        cdf_lo = 0.5 * (1.0 + th.erf((z - 0.5 * delta - t) * inv))   # [B, N]
+        p = cdf_hi - cdf_lo                                          # [B, N] interior bin masses
+        # Edge-bin tail absorption: bin 0 = all mass below its upper edge; bin N-1 = all mass above its
+        # lower edge. (Concatenation, not in-place, so it stays autograd-clean — p carries no grad anyway.)
+        p = th.cat([cdf_hi[:, :1], p[:, 1:-1], 1.0 - cdf_lo[:, -1:]], dim=1)
+        p = p / p.sum(-1, keepdim=True).clamp_min(1e-8)             # renormalize (numerical safety)
+        logp = th.log_softmax(logits, dim=-1)                       # [B, N]
+        loss = -(p * logp).sum(-1).mean()                           # masked-mean CE
+        with th.no_grad():
+            probs = th.softmax(logits, dim=-1)                      # [B, N]
+            mean = (probs * z).sum(-1)                              # [B] E[Z]
+            std = th.sqrt((probs * (z - mean.unsqueeze(-1)) ** 2).sum(-1).clamp_min(0.0))
+            entropy = -(probs * logp).sum(-1)                      # [B] nats
+            tt = t.reshape(-1)
+            pit = (probs * (z.unsqueeze(0) <= tt.unsqueeze(-1)).float()).sum(-1)  # F_pred(target) ≈ PIT
+            mean_abs_err = (mean - tt).abs()
+        metrics = {
+            "ce": float(loss.item()),
+            "entropy": float(entropy.mean().item()),
+            "std": float(std.mean().item()),
+            "pit_mean": float(pit.mean().item()),                  # ≈0.5 ⟺ calibrated
+            "mean_abs_err": float(mean_abs_err.mean().item()),
+        }
         return loss, metrics
 
     @staticmethod
@@ -652,6 +710,7 @@ class InstrumentedMaskablePPO(MaskablePPO):
         vf_clip_fractions: list[float] = []  # +INSTRUMENTATION
         belief_metrics: dict[str, list[float]] = {}  # +BELIEF: per-minibatch aux diagnostics (dict of lists)
         win_prob_metrics: dict[str, list[float]] = {}  # +WIN-PROB: per-minibatch diagnostics (dict of lists)
+        value_dist_metrics: dict[str, list[float]] = {}  # +VALUE-DIST: per-minibatch HL-Gauss diagnostics
         # Compute once: the aux path is fully skipped when off → loss stays byte-identical to upstream.
         belief_aux_on = self.opp_belief_aux_coef > 0.0
         move_belief_on = self.move_belief_coef > 0.0  # +MOVE-BELIEF reinjection-head supervised loss
@@ -663,6 +722,13 @@ class InstrumentedMaskablePPO(MaskablePPO):
         win_prob_on = (
             getattr(self.policy.features_extractor, "win_prob_mode", "none") != "none"
             and self.win_prob_coef != 0.0
+        )
+        # +VALUE-DIST: the distributional value head's HL-Gauss CE aux loss. On when the mode is set AND
+        # the coef is non-zero. read_only vs shaping differ only in the extractor's stop-grad of the head's
+        # input — the loss term is identical. OFF → skipped (loss byte-identical to upstream).
+        value_dist_on = (
+            getattr(self.policy.features_extractor, "value_dist_mode", "none") != "none"
+            and self.value_dist_coef != 0.0
         )
 
         continue_training = True
@@ -860,6 +926,29 @@ class InstrumentedMaskablePPO(MaskablePPO):
                         for _wk, _wv in wp_m.items():
                             win_prob_metrics.setdefault(_wk, []).append(float(_wv))
 
+                # +VALUE-DIST: distributional value head HL-Gauss CE. evaluate_actions ran the extractor
+                # forward above, stashing last_value_dist_logits for THIS minibatch; the target is the
+                # rollout return, PopArt-normalized when the scalar critic is (so it lands in the head's
+                # support space). Folded at value_dist_coef. Under read_only the head's input was
+                # stop-grad'd in the extractor (head-only training, no trunk gradient); under shaping it
+                # also pulls the trunk. OFF → skipped (loss byte-identical).
+                value_dist_term = None
+                if value_dist_on:
+                    _vd_head = self.policy.features_extractor.value_dist_head
+                    _vd_logits = self.policy.features_extractor.last_value_dist_logits
+                    if _vd_head is not None and _vd_logits is not None:
+                        _vd_target = (
+                            popart.normalize(rollout_data.returns) if popart is not None
+                            else rollout_data.returns
+                        )
+                        vd_out = self._value_dist_loss(_vd_logits, _vd_target, _vd_head.atoms)
+                        if vd_out is not None:
+                            vd_loss, vd_m = vd_out
+                            value_dist_term = self.value_dist_coef * vd_loss
+                            loss = loss + value_dist_term
+                            for _vk, _vv in vd_m.items():
+                                value_dist_metrics.setdefault(_vk, []).append(float(_vv))
+
                 # Combined auxiliary pull on the shared trunk (species belief + move belief + latent
                 # belief), for the grad-balance probe — all compete with policy/value there.
                 aux_probe_term = belief_aux_term
@@ -1034,6 +1123,14 @@ class InstrumentedMaskablePPO(MaskablePPO):
         if win_prob_metrics:
             for _wk, _wvals in win_prob_metrics.items():
                 self.logger.record(f"win_prob/{_wk}", float(np.mean(_wvals)))
+
+        # +VALUE-DIST: distributional value head diagnostics under their OWN `value_dist/` TB prefix (the
+        # interpretability head's aggregate health, complementing the prober's per-decision histogram).
+        # `entropy`/`std` fall as the critic sharpens; `pit_mean` ≈ 0.5 ⟺ calibrated; `mean_abs_err` =
+        # |E[Z] − return| in support units. Ride the generic logger → TensorBoard + launcher TUI.
+        if value_dist_metrics:
+            for _vk, _vvals in value_dist_metrics.items():
+                self.logger.record(f"value_dist/{_vk}", float(np.mean(_vvals)))
 
         # +PopArt diagnostics: mu/sigma should TRACK train/return_mean/return_std (the running
         # normalizer estimate); value_weight_norm watches the POP rescale stay bounded (an explosion

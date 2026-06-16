@@ -227,7 +227,14 @@ from typing import Any, Dict, List
 #   move-lock + the ChoiceBandTracker's move-lock DISPROOF are a documented follow-up. INTRINSIC to damage_op
 #   (the incoming CB block grows the incoming output dim → a v27 damage_op checkpoint won't load, SB3
 #   load_state_dict in_features mismatch); OFF (no damage_op) byte-identical; no ARCH_SIGNATURE bump. Marker.
-MODEL_CONFIG_VERSION = 28
+# v29: added the distributional VALUE head (Phase A interpretability side readout) — `value_dist_mode`
+#   (none|read_only|shaping STRUCTURAL toggle, like win_prob_mode) + `value_dist_bins` (the atom count =
+#   the head's output Linear width, weight-shape like opp_belief_cls_k), both gated in check_compatible;
+#   and the value-meaning support `value_dist_vmin`/`value_dist_vmax` (resume-only check_value_dist, like
+#   value_tail_weight). A SIDE readout off value_pooled (NOT in pi/vf → projection dims unchanged), so
+#   OFF (mode none) is baseline byte-for-byte — NO ARCH_SIGNATURE bump. Old configs migrate to
+#   value_dist_mode="none" / bins=0 / vmin=vmax=0.0. Design: designs/ai_v6/design_distributional_value_critic.md.
+MODEL_CONFIG_VERSION = 29
 
 # Change this when the neural architecture changes structurally in a way that makes
 # weights from a different signature incompatible (e.g. adding LSTM, replacing attention).
@@ -702,6 +709,27 @@ class ModelVersion:
     # the model's view (reward/PBRS untouched). The master --unified-obs flips all three masks on.
     mask_active_move_scalars_obs: bool = False
     mask_move_effects_obs: bool = False
+    # v29 STRUCTURAL toggle (weight-shape via the ValueDistHead params, like win_prob_mode): the
+    # distributional VALUE readout — an interpretability side head off value_pooled emitting per-atom
+    # return-distribution logits. 'none' = no module (baseline byte-for-byte, NOT in pi/vf so projection
+    # dims are unchanged). Gated in check_compatible with a STRING compare (none↔head AND
+    # read_only↔shaping — flipping grad-flow mid-run is a silent training change). OFF reproduces baseline
+    # byte-for-byte (NO ARCH_SIGNATURE bump).
+    value_dist_mode: str = "none"
+    # v29 STRUCTURAL: the atom count — the head's output Linear width, so a mismatch is a weight-shape
+    # change (gated in check_compatible with an unconditional int compare, like opp_belief_cls_k). 0 = off
+    # (forced when mode == none).
+    value_dist_bins: int = 0
+    # v29 VALUE-MEANING support [vmin, vmax] (the return range the atoms span) — NOT weight-shape (the
+    # atoms buffer is non-persistent), but the head's target/interpretation, so resume-IMMUTABLE and
+    # enforced ONLY on the training-resume path via check_value_dist (like value_tail_weight), EXCLUDED
+    # from check_compatible (a frozen opponent never reads the value-dist head).
+    value_dist_vmin: float = 0.0
+    value_dist_vmax: float = 0.0
+    # v29 TRAINING-ONLY coefficient for the value-dist head's HL-Gauss CE (like win_prob_coef). Scales the
+    # aux loss, affects no forward pass → recorded for provenance + flagless-resume read-back, NOT
+    # version-locked. Default 1.0 (full weight when the mode is on; ignored when none).
+    value_dist_coef: float = 1.0
 
     @classmethod
     def from_layout_and_policy_kwargs(
@@ -717,6 +745,7 @@ class ModelVersion:
         win_prob_coef: float = 1.0,
         move_belief_latent_coef: float = 0.0,
         spread_belief_coef: float = 0.0,
+        value_dist_coef: float = 1.0,
     ) -> ModelVersion:
         from agents.model.features_extractor import (
             ROLE_TOKEN_SIZE,
@@ -811,6 +840,18 @@ class ModelVersion:
             win_prob_mode=str(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("win_prob_mode", "none")
             ),
+            value_dist_mode=str(
+                policy_kwargs.get("features_extractor_kwargs", {}).get("value_dist_mode", "none")
+            ),
+            value_dist_bins=int(
+                policy_kwargs.get("features_extractor_kwargs", {}).get("value_dist_bins", 0)
+            ),
+            value_dist_vmin=float(
+                policy_kwargs.get("features_extractor_kwargs", {}).get("value_dist_vmin", 0.0)
+            ),
+            value_dist_vmax=float(
+                policy_kwargs.get("features_extractor_kwargs", {}).get("value_dist_vmax", 0.0)
+            ),
             value_tail_weight=float(value_tail_weight),
             opp_belief_aux_coef=float(opp_belief_aux_coef),
             move_belief_coef=float(move_belief_coef),
@@ -818,6 +859,7 @@ class ModelVersion:
             win_prob_coef=float(win_prob_coef),
             move_belief_latent_coef=float(move_belief_latent_coef),
             spread_belief_coef=float(spread_belief_coef),
+            value_dist_coef=float(value_dist_coef),
         )
 
     def to_json(self) -> str:
@@ -1052,6 +1094,26 @@ class ModelVersion:
                 "Resume with the matching --win-prob-mode setting, or start a fresh training run."
             )
 
+        # v29 distributional VALUE head (like win_prob_mode): the MODE gates none↔head (the
+        # ValueDistHead params) AND read_only↔shaping (grad-flow); the BIN COUNT is the head's output
+        # Linear width. Both are weight-shape/forward changes → FATAL on a resume mismatch. The support
+        # (vmin/vmax) is value-meaning → resume-only check_value_dist, not here.
+        if self.value_dist_mode != saved.value_dist_mode:
+            raise ModelVersionError(
+                f"value_dist_mode mismatch: saved={saved.value_dist_mode!r}, current={self.value_dist_mode!r}.\n"
+                "The distributional value head is fixed for a run's lifetime: adding/removing it changes "
+                "the state_dict, and switching read_only↔shaping flips whether its loss shapes the shared "
+                "trunk (a silent mid-run training change).\n"
+                "Resume with the matching --value-dist-mode setting, or start a fresh training run."
+            )
+        if self.value_dist_bins != saved.value_dist_bins:
+            raise ModelVersionError(
+                f"value_dist_bins mismatch: saved={saved.value_dist_bins}, current={self.value_dist_bins}.\n"
+                "The atom count is the value-dist head's output width — a different N is a weight-shape "
+                "change.\n"
+                "Resume with the matching --value-dist-bins setting, or start a fresh training run."
+            )
+
     def check_opponent_compatible(self, foreign: "ModelVersion") -> None:
         """Gate for loading a frozen model from ANOTHER run as an inference-only OPPONENT
         (a "stable opponent"). Call as: ``current_version.check_opponent_compatible(foreign)``.
@@ -1128,6 +1190,29 @@ class ModelVersion:
                 "The tail-weighted value-loss β is fixed for a run's lifetime — changing it on resume "
                 "silently reshapes the value objective.\n"
                 f"Fix: resume with --value-tail-weight {self.value_tail_weight!r}, or start a fresh run."
+            )
+
+    def check_value_dist(self, vmin: float, vmax: float) -> None:
+        """Raise ModelVersionError if the resume `--value-dist-vmin/--value-dist-vmax` differ from this
+        saved config's support. Call as: saved_version.check_value_dist(args.value_dist_vmin, ...).
+
+        Same treatment as check_value_tail_weight: the atom support is VALUE-meaning (it is what the
+        head's logits are read against — the loss target and the prober's atoms→return mapping), not
+        weight-shape (the atoms buffer is non-persistent), so it is EXCLUDED from check_compatible
+        (frozen eval/pool/distill opponents never read the value-dist head) and enforced ONLY on the
+        training-resume path. Shifting the support mid-run silently re-targets the head."""
+        problems = []
+        if not math.isclose(self.value_dist_vmin, vmin, rel_tol=1e-9, abs_tol=1e-12):
+            problems.append(f"vmin saved={self.value_dist_vmin!r} requested={vmin!r}")
+        if not math.isclose(self.value_dist_vmax, vmax, rel_tol=1e-9, abs_tol=1e-12):
+            problems.append(f"vmax saved={self.value_dist_vmax!r} requested={vmax!r}")
+        if problems:
+            raise ModelVersionError(
+                "value_dist support mismatch: " + "; ".join(problems) + ".\n"
+                "The distributional value head's atom support is fixed for a run's lifetime — changing "
+                "it on resume silently re-targets the head.\n"
+                f"Fix: resume with --value-dist-vmin {self.value_dist_vmin!r} --value-dist-vmax "
+                f"{self.value_dist_vmax!r}, or start a fresh run."
             )
 
     def check_reward_config(self, reward_config) -> None:
@@ -1322,4 +1407,14 @@ def _migrate_config(data: dict) -> dict:
         # block grows the incoming output dim → a v27 damage_op checkpoint won't load via the SB3 load_state_dict
         # projection in_features mismatch); OFF (no damage_op) byte-identical. Bare marker.
         data["config_version"] = 28
+    if version < 29:
+        # v29: the distributional VALUE head (Phase A interpretability side readout off value_pooled) —
+        # the tri-state mode (off), the atom count (0 = off), and the support [vmin, vmax] (0/0 = unset).
+        # Old models had no value-dist head. OFF = baseline byte-for-byte (NO ARCH_SIGNATURE bump).
+        data.setdefault("value_dist_mode", "none")
+        data.setdefault("value_dist_bins", 0)
+        data.setdefault("value_dist_vmin", 0.0)
+        data.setdefault("value_dist_vmax", 0.0)
+        data.setdefault("value_dist_coef", 1.0)
+        data["config_version"] = 29
     return data

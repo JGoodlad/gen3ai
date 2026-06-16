@@ -295,6 +295,9 @@ class RLPlayer(Gen3Player):
                 # Calibrated P(win) from the win-probability head (None unless --win-prob-mode != none).
                 # The prober shows it + ΔP(win) beside the CRITIC line — "how a move moved the win odds".
                 "win_prob": self._win_prob(),
+                # The distributional value head's predicted RETURN DISTRIBUTION (per-atom probs; None
+                # unless --value-dist-mode != none) — the prober renders the histogram + spread/PIT.
+                "value_dist": self._value_dist(),
             }
         return idx, probs, mask
 
@@ -307,6 +310,17 @@ class RLPlayer(Gen3Player):
         if logits is None:
             return None
         return float(torch.sigmoid(logits[0, 0]).item())
+
+    def _value_dist(self) -> Optional[list]:
+        """The distributional value head's predicted return distribution (forensic trace only) — the
+        per-atom softmax over ``last_value_dist_logits`` stashed on this same forward; None when the head
+        is off (``--value-dist-mode none``). The prober reconstructs the atom support from
+        model_config.json's value_dist_vmin/vmax/bins to render the histogram + mean/std/entropy/PIT."""
+        extractor = getattr(self.model.policy, "features_extractor", None)
+        logits = getattr(extractor, "last_value_dist_logits", None)
+        if logits is None:
+            return None
+        return torch.softmax(logits[0], dim=-1).cpu().numpy().tolist()
 
     def _decode_belief(self) -> Optional[list]:
         """Decode the belief head's per-slot species prediction for the still-hidden opponent slots
