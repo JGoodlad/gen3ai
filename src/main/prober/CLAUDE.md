@@ -231,16 +231,31 @@ DAMAGE belief, not raw effectiveness),
 **Intervention**, **Saliency** (two heads: `π` policy-logit blocks AND `V` critic
 value-gradient blocks, each incl. `their_matchups(144)` and `incoming_damage(33)`, so
 you can see whether the **value** head — where OHKO tail-blindness lives — actually
-reads the belief block vs the rest), **Flow** (`_render_flow`, default-open) — the SAME
-per-head saliency as the Saliency table, but rendered as a **`Tree`**: two branches
+reads the belief block vs the rest), **Flow** (`_render_flow`, default-open) — a **`Tree`** that
+SHOWS the model instead of asking the reader to imagine it: first the **forward PIPELINE**
+(`_render_arch_pipeline` over `ProbeModel.architecture()` — introspected LIVE from the loaded
+extractor in TRUE forward order, so flag-gated phases + dims reflect THIS checkpoint, currently
+config v28): the numbered chain runs
+`① Embeddings → ② ObsUnpack → ③ PokemonEncoder[+MoveLatent] → [BeliefSlots] → TeamTransformer →
+[MoveBelief] → [SpreadBelief] → CLSPool (forks → π · V) → [HiddenOppBeliefPool] → [DamageOperator]
+→ ProjectionAssembler`, where each phase carries a `stage`: **trunk** (pre-fork) · **fork**
+(`CLSPool`, cyan) · **shared** (post-fork, feeds BOTH heads — `HiddenOppBeliefPool`/`DamageOperator`/
+`ProjectionAssembler`) · **side** (a stashed readout that does NOT feed pi/vf — `BeliefHead`,
+`WinProbHead` — rendered `↦` magenta, NOT numbered) · `policy`/`value` (the head branches below).
+Inactive optionals show greyed `· <name> (off)`; roles are live-interpolated (so `DamageOperator`
+gains `+ outgoing` under `damage_outgoing`, `MoveBelief` gains `+ prior-fusion`, `BeliefHead` gains
+`+ latent`). Then the two head branches
 (`π policy`, captioned `chose <move> (<prob>%)` · `V value`, captioned `V(s) <real> · norm <z>`),
-each obs block a leaf **sorted most-read-first** with a smooth eighth-block `gradient_color`
-magnitude bar + a padded-aligned within-head share %, the **dominant block bold** and blocks
-<8% greyed so "read vs barely touched" reads top-to-bottom at a glance — the quick visual
+each opening with a `↳ reads <pi_combined|vf_combined> → proj(<dim>)` line (tying the head back to
+the architecture) then its obs blocks as leaves **sorted most-read-first** with a smooth eighth-block
+`gradient_color` magnitude bar + a padded-aligned within-head share %, the **dominant block bold**
+and blocks <8% greyed so "read vs barely touched" reads top-to-bottom at a glance — the quick visual
 "what fed each head" hierarchy
 (a human-facing companion to the precise table; SENSITIVITY, not proof of causal use — same
 caveat as Saliency. `None`-head / model-free / no-state → a graceful hint leaf, never a crash).
-Composes existing `InvocationAnalysis.saliency`/`value_saliency` only — no new engine work, and
+`ProbeModel.architecture()` is the torch-boundary single source (a future `query` subcommand can
+call it too); the per-head attribution composes existing
+`InvocationAnalysis.saliency`/`value_saliency` only — no new engine work, and
 it inherits the Saliency obs-mismatch guard, and
 **Outcome** — the last surfaces the critic's `V(s)` (recorded — with its **PopArt-normalized**
 companion `(norm …)` when the run used `--use-popart`: the critic's own [-1,1]-ish learning

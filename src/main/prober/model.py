@@ -284,6 +284,69 @@ class ProbeModel:
         except (AttributeError, TypeError, ValueError):
             return None
 
+    def architecture(self) -> "list[dict]":
+        """Describe the loaded extractor's FORWARD PIPELINE as ordered plain-dict phases — so the
+        prober can DRAW the model instead of asking the reader to imagine it. Reflects the CURRENT
+        (config v27) extractor, in true forward order. Each phase carries ``name`` · ``active``
+        (optional phases are flag-gated, so this reflects THIS checkpoint) · ``optional`` ·
+        ``stage`` (``trunk`` shared body / ``fork`` = the CLSPool split / ``shared`` = post-fork,
+        feeds BOTH heads / ``side`` = a stashed readout that does NOT feed pi/vf / ``policy`` /
+        ``value`` heads) · ``role`` (what-it-does + key dims, live-interpolated). Empty when the
+        extractor can't be introspected (a stub/fake model). Pure data out (torch lives in model.py)."""
+        ex = getattr(self._policy, "features_extractor", None)
+        if ex is None:
+            return []
+        from agents.model import features_extractor as F
+
+        def on(attr: str) -> bool:          # an optional sub-module is built (≠ None) ⇒ that phase is active
+            return getattr(ex, attr, None) is not None
+
+        d = getattr(F, "D_MODEL", "?")
+        layers = getattr(F, "TRANSFORMER_N_LAYERS", "?")
+        hist = getattr(F, "N_HISTORY_TURNS", "?")
+        tokens = 12 + (hist if isinstance(hist, int) else 0) + 1
+        proj = getattr(ex, "projection_dim", getattr(F, "PROJECTION_DIM", "?"))
+        pin = getattr(ex, "projection_input_dim", "?")
+        vin = getattr(ex, "value_projection_input_dim", "?")
+        mb = getattr(ex, "move_belief_mode", "off")
+        wp = getattr(ex, "win_prob_mode", "none")
+        # move_latent_encoder is ABSENT (not None) when off → its own getattr guard, not on().
+        has_latent = getattr(getattr(ex, "pokemon_encoder", None), "move_latent_encoder", None) is not None
+        latent_belief = bool(getattr(ex, "opp_belief_latent", False))   # belief SimSiam latent sub-head
+        prior_fusion = bool(getattr(ex, "move_prior_fusion", False))    # MoveBelief Smogon-prior posterior
+        dmg_out = bool(getattr(ex, "damage_outgoing", False))           # DamageOperator outgoing direction
+        # (name, active, optional, stage, role) — TRUE forward order (forward_internal):
+        #   Embeddings → ObsUnpack → PokemonEncoder[+MoveLatent] → [BeliefSlots] → TeamTransformer
+        #   → [BeliefHead·side] → [MoveBelief] → [SpreadBelief] → CLSPool(fork) → [WinProbHead·side]
+        #   → [HiddenOppBeliefPool] → [DamageOperator] → ProjectionAssembler → π / V heads.
+        rows = [
+            ("Embeddings", True, False, "trunk",
+             "shared tables: species/move/item/ability/type emb + HP soft-type + TurnDelta embedder"),
+            ("ObsUnpack", True, False, "trunk", "flat obs → per-mon tensors + global/reactive scalars + masks"),
+            ("PokemonEncoder", True, False, "trunk",
+             f"6+6 mons → role tokens ({d}d)" + ("  + MoveLatent(v24)" if has_latent else "")),
+            ("BeliefSlots", on("belief_slots"), True, "trunk", "fill hidden-opp slots with learned tokens (in-lineup)"),
+            ("TeamTransformer", True, False, "trunk",
+             f"{tokens} tokens (12 mon + {hist} hist + 1 global) · {layers} layers ({d}d)"),
+            ("BeliefHead", on("belief_head"), True, "side",
+             "aux: predict hidden species/moves" + (" + latent" if latent_belief else "") + " (side readout)"),
+            ("MoveBelief", on("move_belief"), True, "trunk",
+             f"predict + reinject opp moves ({mb})" + (" + prior-fusion" if prior_fusion else "")),
+            ("SpreadBelief", on("spread_belief"), True, "trunk",
+             "predict + reinject opp hidden stat-spread → DamageOperator (v25)"),
+            ("CLSPool", True, False, "fork", "our / their / value pools — trunk FORKS here → π · V"),
+            ("WinProbHead", wp != "none", True, "side", f"P(win) readout off value_pooled ({wp})"),
+            ("HiddenOppBeliefPool", on("hidden_opp_belief"), True, "shared", "k hidden-opp belief queries → both heads"),
+            ("DamageOperator", on("damage_op"), True, "shared",
+             "differentiable gen3 damage: incoming P(KO)" + (" + outgoing per-move" if dmg_out else "") + " → both heads"),
+            ("ProjectionAssembler", True, False, "shared",
+             "→ (pi_combined, vf_combined): pools + ctx + belief + damage"),
+            ("π policy head", True, False, "policy", f"pi_combined → norm → proj({proj})  [in {pin}]"),
+            ("V value head", True, False, "value", f"vf_combined → norm → proj({proj})  [in {vin}]"),
+        ]
+        return [{"name": n, "active": bool(a), "optional": o, "stage": s, "role": r}
+                for (n, a, o, s, r) in rows]
+
     def logit_grad(self, obs: np.ndarray, mask: np.ndarray, action_idx: int) -> np.ndarray:
         """Return |d logit(action_idx) / d obs| as a per-dim array."""
         import torch

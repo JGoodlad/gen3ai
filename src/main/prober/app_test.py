@@ -687,7 +687,7 @@ async def test_flow_tree_handles_model_free_trace(tmp_path):
         await pilot.pause()
         tree = app.query_one("#flow-tree", Tree)
         leaves = [str(c.label) for c in tree.root.children]
-        assert any("no attribution" in t for t in leaves), leaves
+        assert any("no per-decision attribution" in t for t in leaves), leaves
 
 
 class _FakeModelPopArt(_FakeModel):
@@ -736,6 +736,65 @@ async def test_flow_no_popart_omits_normalized(tmp_path):
         a = app._last_analysis
         assert a.value is not None and a.value.normalized_recorded is None
         assert "norm" not in str(app.query_one("#outcome-summary", Static).render())
+
+
+class _FakeModelArch(_FakeModelInc):
+    """Exposes a model architecture() so the Flow pipeline branch renders (one active optional
+    phase + one OFF optional, to exercise both the numbered + greyed rows)."""
+
+    def architecture(self):
+        # Mirrors the real v27 taxonomy: trunk · side (BeliefHead/WinProbHead) · fork (CLSPool) ·
+        # shared (post-fork, feeds both heads) · policy/value heads. Mixes active + off optionals.
+        return [
+            {"name": "Embeddings", "active": True, "optional": False, "stage": "trunk", "role": "shared tables"},
+            {"name": "ObsUnpack", "active": True, "optional": False, "stage": "trunk", "role": "flat obs"},
+            {"name": "PokemonEncoder", "active": True, "optional": False, "stage": "trunk", "role": "role tokens"},
+            {"name": "BeliefSlots", "active": False, "optional": True, "stage": "trunk", "role": "hidden slots"},
+            {"name": "TeamTransformer", "active": True, "optional": False, "stage": "trunk", "role": "23 tokens"},
+            {"name": "BeliefHead", "active": True, "optional": True, "stage": "side", "role": "aux species/moves"},
+            {"name": "MoveBelief", "active": True, "optional": True, "stage": "trunk", "role": "reinject moves"},
+            {"name": "SpreadBelief", "active": False, "optional": True, "stage": "trunk", "role": "reinject spread"},
+            {"name": "CLSPool", "active": True, "optional": False, "stage": "fork", "role": "forks → π · V"},
+            {"name": "WinProbHead", "active": True, "optional": True, "stage": "side",
+             "role": "P(win) readout off value_pooled (read_only)"},
+            {"name": "DamageOperator", "active": False, "optional": True, "stage": "shared", "role": "KO calc"},
+            {"name": "ProjectionAssembler", "active": True, "optional": False, "stage": "shared",
+             "role": "→ (pi_combined, vf_combined)"},
+            {"name": "π policy head", "active": True, "optional": False, "stage": "policy",
+             "role": "pi_combined → norm → proj(512)"},
+            {"name": "V value head", "active": True, "optional": False, "stage": "value",
+             "role": "vf_combined → norm → proj(512)"},
+        ]
+
+
+async def test_flow_renders_architecture_pipeline(tmp_path):
+    """The Flow section draws the live model's forward pipeline: a numbered chain (active trunk +
+    fork + shared phases) + greyed '(off)' optionals + '↦' side readouts, the π/V heads NOT in the
+    pipeline, and each head branch tied back to the arch via a '↳ reads …' line."""
+    run = _write_belief_trace(tmp_path)
+    app = ProberApp(root=run, injected_model=_FakeModelArch())
+    async with app.run_test() as pilot:
+        await pilot.pause()
+        app._select_battle(app._tree_model.all_battles()[0])
+        await pilot.pause()
+        await app.workers.wait_for_complete()
+        await pilot.pause()
+        tree = app.query_one("#flow-tree", Tree)
+        children = tree.root.children
+        assert any("forward pipeline" in str(c.label) for c in children), [str(c.label) for c in children]
+        pipe = next(c for c in children if "forward pipeline" in str(c.label))
+        steps = [str(s.label) for s in pipe.children]
+        assert any("TeamTransformer" in s for s in steps), steps          # active trunk phase
+        assert any("BeliefSlots (off)" in s for s in steps), steps        # inactive optional, greyed
+        assert any("SpreadBelief (off)" in s for s in steps), steps       # v25 phase, off here
+        assert any("WinProbHead" in s for s in steps), steps              # side readout shown in pipeline
+        assert any("ProjectionAssembler" in s for s in steps), steps      # post-fork 'shared' phase, numbered
+        assert not any(("policy head" in s or "value head" in s) for s in steps), steps  # π/V NOT in pipeline
+        v_head = next(c for c in children if str(c.label).startswith("V"))
+        v_lines = [str(x.label) for x in v_head.children]
+        # the V head's 'reads' must be the VALUE head's inputs, NOT the WinProbHead role (stage collision guard)
+        assert any("reads vf_combined" in r for r in v_lines), v_lines
+        assert not any("P(win) readout" in r for r in v_lines), v_lines
 
 
 async def test_board_tab_populates(tmp_path):

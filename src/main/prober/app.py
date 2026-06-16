@@ -310,8 +310,9 @@ class ProberApp(Gen3App):
         flow.show_root = False
         flow.guide_depth = 3
         self.query_one("#flow-legend", Static).update(Text(
-            "what each head reads — bar = |∂output/∂obs| per obs block, normalized within "
-            "head; green = high use, dim = barely read. SENSITIVITY, not proof of use.",
+            "the model's forward pipeline (obs → shared trunk → π/V fork), then what each head "
+            "reads — bar = |∂output/∂obs| per obs block, normalized within head; green = high "
+            "use, dim = barely read. SENSITIVITY, not proof of use.",
             style="dim italic"))
 
         self._build_tree()
@@ -1100,11 +1101,12 @@ class ProberApp(Gen3App):
                           Text(f"{b.total_abs:6.2f} {bar}", style=style))
 
     def _render_flow(self, a: InvocationAnalysis) -> None:
-        """Tree view of the SAME per-head saliency the Saliency table shows, as a visual
-        hierarchy: two branches (π policy / V value), each obs block a leaf, sorted
-        most-read-first with a smooth magnitude bar + within-head share %. The quick 'what fed
-        each head' read — green = high attribution, dim = barely touched, top block bold.
-        SENSITIVITY, not proof of causal use."""
+        """Visual hierarchy of HOW the model turns this obs into π/V — so the architecture is
+        SHOWN, not imagined. Three parts: the model's forward PIPELINE (introspected live from
+        the loaded extractor, so flag-gated phases reflect THIS checkpoint), then the two head
+        branches (π policy / V value) — each with the inputs it reads (→ projection) and the obs
+        blocks it actually leans on (saliency, sorted most-read-first, smooth bar + share %,
+        dominant bold, sub-8% greyed). SENSITIVITY, not proof of causal use."""
         tree = self.query_one("#flow-tree", Tree)
         tree.clear()
         root = tree.root
@@ -1112,10 +1114,21 @@ class ProberApp(Gen3App):
             root.add_leaf(Text(f"⚠ OBS MISMATCH {a.obs_mismatch[0]}≠{a.obs_mismatch[1]} — "
                                "attribution UNRELIABLE", style="bold red"))
             return
-        heads = (("π  policy", a.saliency, "cyan", self._flow_policy_caption(a)),
-                 ("V  value", a.value_saliency, "magenta", self._flow_value_caption(a)))
+        # The forward pipeline, drawn from the live model (empty for a stub/fake → heads only).
+        arch = []
+        model = getattr(self, "_model", None)
+        if model is not None and hasattr(model, "architecture"):
+            try:
+                arch = model.architecture() or []
+            except Exception:  # noqa: BLE001 — introspection is best-effort; never break the panel
+                arch = []
+        if arch:
+            self._render_arch_pipeline(root, arch)
+        reads = {ph["stage"]: ph["role"] for ph in arch if ph["stage"] in ("policy", "value")}
+        heads = (("π  policy", "policy", a.saliency, "cyan", self._flow_policy_caption(a)),
+                 ("V  value", "value", a.value_saliency, "magenta", self._flow_value_caption(a)))
         rendered = False
-        for tag, sal, color, caption in heads:
+        for tag, stage, sal, color, caption in heads:
             if sal is None:
                 continue
             rendered = True
@@ -1123,6 +1136,8 @@ class ProberApp(Gen3App):
             if caption:
                 head_label.append(f"    {caption}", style="dim")
             head = root.add(head_label, expand=True)
+            if reads.get(stage):                 # tie the head back to the architecture: what it consumes
+                head.add_leaf(Text(f"↳ reads {reads[stage]}", style="dim italic"))
             # Normalize within the head so bars compare BLOCKS for that head (same convention
             # as the Saliency table). Sort most-read-first so 'used vs not' reads top-to-bottom;
             # pad the name column so the share % aligns, bold the dominant block, grey the rest.
@@ -1137,8 +1152,33 @@ class ProberApp(Gen3App):
                 leaf.append(b.name.ljust(namew), style=("bold" if i == 0 else "dim" if faint else ""))
                 leaf.append(f"  {share * 100:3.0f}%", style="dim")
                 head.add_leaf(leaf)
-        if not rendered:                # model-free trace / no state → no gradients to show
-            root.add_leaf(Text("no attribution (no captured state / model-free trace)", style="dim"))
+        if not rendered:                # model-free trace / no state → no per-decision gradients
+            root.add_leaf(Text("(no per-decision attribution — model-free trace / no captured state)",
+                               style="dim"))
+
+    def _render_arch_pipeline(self, root, arch: "list[dict]") -> None:
+        """Draw the shared-trunk forward pipeline (everything up to + incl. the CLSPool fork) as a
+        numbered chain; active optional phases get a number, inactive ones a greyed '· (off)' so
+        you see which machinery THIS checkpoint runs. The π/V heads render below as their own
+        branches (with attribution), so the fork reads trunk → CLSPool → π · V."""
+        node = root.add(Text("model · forward pipeline   obs → π/V", style="bold yellow"), expand=True)
+        n = 0
+        for ph in arch:
+            if ph["stage"] in ("policy", "value"):
+                continue                         # the π/V heads are their own branches below
+            line = Text()
+            if not ph["active"]:
+                line.append("  ·  ", style="dim")
+                line.append(f"{ph['name']} (off)", style="dim")
+            elif ph["stage"] == "side":          # a side readout (e.g. WinProbHead) — not a trunk step
+                line.append("  ↦  ", style="bold magenta")
+                line.append(ph["name"], style="bold magenta")
+            else:
+                n += 1
+                line.append(f" {_circled(n)} ", style="bold")
+                line.append(ph["name"], style="bold cyan" if ph["stage"] == "fork" else "bold")
+            line.append(f"   {ph['role']}", style="dim")
+            node.add_leaf(line)
 
     def _flow_policy_caption(self, a: InvocationAnalysis) -> str:
         p = _chosen_prob(a)
@@ -1407,6 +1447,14 @@ def _mult_color(mult: float) -> str:
 def _chosen_prob(a: InvocationAnalysis) -> "float | None":
     """The recorded policy probability of the action the model actually took."""
     return next((r.recorded for r in (a.actions or []) if r.is_chosen), None)
+
+
+_CIRCLED = "①②③④⑤⑥⑦⑧⑨⑩⑪⑫"   # step numbers for the forward-pipeline chain
+
+
+def _circled(n: int) -> str:
+    """A circled step number (①..⑫) for the pipeline chain; falls back to '(n)' past the table."""
+    return _CIRCLED[n - 1] if 1 <= n <= len(_CIRCLED) else f"({n})"
 
 
 _FLOW_BAR_PARTS = " ▏▎▍▌▋▊▉"   # 8 sub-cell levels (index 0..7) for a smooth bar end
