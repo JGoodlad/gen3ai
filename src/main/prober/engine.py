@@ -297,6 +297,28 @@ class BeliefView:
 
 
 @dataclass(frozen=True)
+class OppMoveBelief:
+    """One REVEALED opponent mon's MOVE belief: the moves it has already shown (`revealed`) plus the
+    model's top guesses at its still-UNSEEN moves (`believed`, `(move, P(in set))` descending — the
+    multi-label move-belief posterior, with the already-revealed moves filtered out). `slot` is the
+    encoder opp-slot index."""
+    slot: int
+    species: str
+    revealed: "tuple[str, ...]"
+    believed: "tuple[tuple[str, float], ...]"
+
+
+@dataclass(frozen=True)
+class MoveBeliefView:
+    """The model's MOVE belief at this decision (`--move-belief-mode != off`): per REVEALED opponent mon,
+    what it thinks the still-UNSEEN moves are (`opp`). Paired in the TUI with the DamageOperator's
+    per-our-mon incoming damage; `our_labels` = `(team_slot, species, is_active)` in TEAM-SLOT order so
+    those op rows (also team-slot order) can be labeled by species. `None` on a move-belief-off run."""
+    opp: "tuple[OppMoveBelief, ...]"
+    our_labels: "tuple[tuple[int, str, bool], ...]" = ()
+
+
+@dataclass(frozen=True)
 class OppMonTruth:
     """One opponent mon's PRIVILEGED truth + the model's matched guess. `revealed` = seen by this
     decision (we already know it). For a still-HIDDEN mon, `guess` is the top-k species of the
@@ -355,6 +377,7 @@ class InvocationAnalysis:
     belief: "BeliefView | None" = None             # hidden-opp species belief (anonymous slots)
     belief_truth: "BeliefTruthView | None" = None  # privileged truth + slot-matched guess (None unless recon+belief)
     damage_op: "dict | None" = None                # unified DamageOperator view (incoming + outgoing); None unless --damage-op
+    move_belief: "MoveBeliefView | None" = None     # what the model thinks the revealed opp's UNSEEN moves are; None unless --move-belief-mode
 
 
 # ---------------------------------------------------------------------------
@@ -820,6 +843,7 @@ def build_belief(inv: dict) -> "BeliefView | None":
 
 
 _SPECIES_MAPS = None
+_MOVE_NUM_TO_ID = None
 
 
 def _species_maps():
@@ -840,6 +864,62 @@ def _softmax(row) -> np.ndarray:
     r = np.asarray(row, dtype=np.float64)
     e = np.exp(r - r.max())
     return e / e.sum()
+
+
+def _move_maps():
+    """Cached ``{move_num -> move_id}`` over the gen3 move vocab — the inverse of the move-belief head's
+    axis (index == gen3 move num). All 16 Hidden Powers share ONE num and the belief axis is
+    type-collapsed there, so that num maps to the bare canonical ``hiddenpower`` (the op prices HP typing
+    separately) — which then normalises to match a revealed ``hiddenpower(grass)``."""
+    global _MOVE_NUM_TO_ID
+    if _MOVE_NUM_TO_ID is None:
+        raw = gen3_data.moves.raw()
+        m = {int(v["num"]): mid for mid, v in raw.items() if v.get("num")}
+        for mid, v in raw.items():               # collapse every Hidden Power num → bare "hiddenpower"
+            if mid.startswith("hiddenpower") and v.get("num"):
+                m[int(v["num"])] = "hiddenpower"
+        _MOVE_NUM_TO_ID = m
+    return _MOVE_NUM_TO_ID
+
+
+def _norm_move(m: str) -> str:
+    """Normalise a move name for revealed-vs-believed comparison: lowercase, drop a trailing
+    ``(type)`` (so a revealed ``hiddenpower(fire)`` matches the believed bare ``hiddenpower``)."""
+    return (m or "").split("(")[0].strip().lower()
+
+
+def move_belief_view(raw, top_k: int = 4, prob_floor: float = 0.10) -> "MoveBeliefView | None":
+    """Decode `ProbeModel.move_belief`'s raw output into a `MoveBeliefView`: per REVEALED opponent mon,
+    its top-`top_k` believed STILL-UNSEEN moves (multi-label sigmoid posterior, already-revealed moves
+    filtered out, kept only if `P ≥ prob_floor`), plus the team-slot→species labels for the op's
+    per-our-mon damage rows. Pure (no torch). `None` when the model has no move-belief head."""
+    if not raw:
+        return None
+    probs = np.asarray(raw.get("opp_probs"), dtype=np.float64)        # [6, n_moves]
+    num_to_id = _move_maps()
+    opp = []
+    for i, slot in enumerate(raw.get("opp_slots", ()) or ()):
+        if not slot.get("known") or i >= probs.shape[0]:
+            continue
+        revealed_names = tuple(slot.get("revealed_moves", ()) or ())
+        revealed_norm = {_norm_move(m) for m in revealed_names}
+        p = probs[i]
+        believed = []
+        for n in np.argsort(p)[::-1]:
+            pv = float(p[n])
+            if pv < prob_floor:
+                break
+            name = num_to_id.get(int(n))
+            if not name or _norm_move(name) in revealed_norm:
+                continue
+            believed.append((name, pv))
+            if len(believed) >= top_k:
+                break
+        opp.append(OppMoveBelief(slot=i, species=slot.get("species", ""),
+                                 revealed=revealed_names, believed=tuple(believed)))
+    our_labels = tuple((i, s.get("species", ""), bool(s.get("active")))
+                       for i, s in enumerate(raw.get("our_slots", ()) or ()))
+    return MoveBeliefView(opp=tuple(opp), our_labels=our_labels) if (opp or our_labels) else None
 
 
 def belief_view_from_logits(species_logits, believed_mask, top_k: int = BELIEF_TOPK,
@@ -1322,13 +1402,23 @@ def analyze_invocation(model, summary: dict, npz, inv_index: int,
         except Exception:  # noqa: BLE001 — best-effort, never break the analysis
             damage_op = None
 
+    # Move belief: what the model thinks the REVEALED opponent's still-UNSEEN moves are (+ the per-our-mon
+    # labels for the op damage rows). Best-effort, like damage_op; None on a move-belief-off checkpoint.
+    move_belief = None
+    mbfn = getattr(model, "move_belief", None)
+    if mbfn is not None:
+        try:
+            move_belief = move_belief_view(mbfn(obs, mask))
+        except Exception:  # noqa: BLE001 — never break the analysis
+            move_belief = None
+
     return InvocationAnalysis(
         **common, has_state=True, actions=actions, matchups=matchups, sweep=sweep,
         saliency=saliency, value_saliency=value_saliency, threats=threats, incoming=incoming,
         warnings=(), outcome=outcome, value=value, win_prob=win_prob, value_dist=value_dist,
         rerun_argmax=rerun_argmax, agrees=agrees, flags=flags, board=board, next_board=next_board,
         obs_mismatch=obs_mismatch, field=field, belief=belief, belief_truth=belief_truth,
-        damage_op=damage_op,
+        damage_op=damage_op, move_belief=move_belief,
     )
 
 

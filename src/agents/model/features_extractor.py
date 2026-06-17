@@ -1979,8 +1979,10 @@ def decode_damage_block(row, *, outgoing: bool, team_size: int = TEAM_SIZE):
     """Decode ONE `DamageOperator.last_raw_block[i]` row (the PRE-gain physics) into a human-readable dict
     for the prober / forensic tooling — the single source of truth for the operator's output layout, mirrored
     by the TUI. Uses the named `_DMG_IDX_*` offsets: per our mon the incoming threat
-    `[low,high,crit,pko,acc]×{phys,spec} + p_outspeed + provenance` (slot 0 = our active, slots 1..5 = the
-    **safe-switch** bench reads), then the 6 opp-active believed-EFFECT scalars, then (if `outgoing`) our 4
+    `[low,high,crit,pko,acc]×{phys,spec} + p_outspeed + provenance` in **TEAM-SLOT order** (`incoming[i]` =
+    our team slot i — the op reads our defenders as `ctx.species_ids[:, :TEAM_SIZE]`; the active mon is
+    whichever slot carries the active flag, NOT necessarily slot 0 — the bench slots are the safe-switch
+    reads), then the 6 opp-active believed-EFFECT scalars, then (if `outgoing`) our 4
     moves' outgoing damage `[low,high,crit,pko]` + p_outspeed + per-move secondary, then the
     gen3_unified_status_landing_v1 `status_landing` block — per move `{p_land, known}` (request-slot order =
     action logits 6+k)."""

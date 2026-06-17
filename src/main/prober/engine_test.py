@@ -120,9 +120,74 @@ def test_damage_op_view_attached_when_model_exposes_it():
                          "p_outspeed": 0.5}}
     model.damage_op_view = lambda obs, mask: view
     a = analyze_invocation(model, _summary(), _npz(), 0)
-    assert a.damage_op is not None and len(a.damage_op["incoming"]) == 6        # active + 5 safe-switch
+    assert a.damage_op is not None and len(a.damage_op["incoming"]) == 6        # incoming = our 6 team slots
     assert set(a.damage_op["outgoing"]["moves"][0]) == {"low", "high", "crit", "pko"}
     asdict(a)   # rides the `analyze` CLI JSON output
+
+
+def _move_belief_raw(*, ib, tb, tox, surf, nmoves):
+    """A synthetic ProbeModel.move_belief output: opp slot 0 = revealed blissey (icebeam shown), and
+    the model believes thunderbolt 0.80 / toxic 0.30 unseen (surf 0.04 below the floor)."""
+    import numpy as np
+    probs = np.zeros((6, nmoves), dtype=np.float64)
+    probs[0, ib] = 0.95     # already revealed → must be filtered out of the belief
+    probs[0, tb] = 0.80
+    probs[0, tox] = 0.30
+    probs[0, surf] = 0.04   # below the prob_floor → excluded
+    empty = {"species": "", "revealed_moves": (), "known": False, "active": False}
+    return {"opp_probs": probs,
+            "opp_slots": [{"species": "blissey", "revealed_moves": ("icebeam",), "known": True, "active": True}]
+                         + [dict(empty) for _ in range(5)],
+            "our_slots": [{"species": "magneton", "active": True}, {"species": "skarmory", "active": False}]
+                         + [{"species": "", "active": False} for _ in range(4)]}
+
+
+def test_move_belief_view_filters_revealed_and_ranks_unseen():
+    from agents import gen3_data
+    from main.prober.engine import move_belief_view
+    g = gen3_data.moves
+    nmoves = max(g.get(m).num for m in g.raw()) + 1
+    raw = _move_belief_raw(ib=g.get("icebeam").num, tb=g.get("thunderbolt").num,
+                           tox=g.get("toxic").num, surf=g.get("surf").num, nmoves=nmoves)
+    mb = move_belief_view(raw, top_k=4, prob_floor=0.10)
+    assert mb is not None and len(mb.opp) == 1           # only the REVEALED opp slot is decoded
+    ob = mb.opp[0]
+    assert ob.species == "blissey"
+    names = [n for n, _ in ob.believed]
+    assert "icebeam" not in names                        # revealed move filtered out of the belief
+    assert names[0] == "thunderbolt"                      # highest believed-UNSEEN ranked first
+    assert "toxic" in names and "surf" not in names       # surf below the 0.10 floor
+    assert mb.our_labels[0] == (0, "magneton", True)      # TEAM-SLOT order + active flag (op-incoming labels)
+    assert mb.our_labels[1] == (1, "skarmory", False)
+
+
+def test_move_belief_view_none_when_absent_or_empty():
+    import numpy as np
+    from main.prober.engine import move_belief_view
+    assert move_belief_view(None) is None
+    # no known opp slot AND no our labels → nothing to show
+    assert move_belief_view({"opp_probs": np.zeros((6, 4)), "opp_slots": [], "our_slots": []}) is None
+
+
+def test_move_belief_view_hidden_power_normalizes():
+    """A revealed hiddenpower(grass) filters the believed bare hiddenpower (the type-collapsed HP num)."""
+    import numpy as np
+    from agents import gen3_data
+    from main.prober.engine import move_belief_view, _move_maps
+    g = gen3_data.moves
+    nmoves = max(g.get(m).num for m in g.raw()) + 1
+    hp_num = next(int(g.get(m).num) for m in g.raw() if m.startswith("hiddenpower"))
+    assert _move_maps()[hp_num] == "hiddenpower"          # type-collapsed to the bare canonical name
+    probs = np.zeros((6, nmoves), dtype=np.float64)
+    probs[0, hp_num] = 0.9
+    raw = {"opp_probs": probs,
+           "opp_slots": [{"species": "zapdos", "revealed_moves": ("hiddenpower(grass)",),
+                          "known": True, "active": True}]
+                        + [{"species": "", "revealed_moves": (), "known": False, "active": False}
+                           for _ in range(5)],
+           "our_slots": []}
+    mb = move_belief_view(raw)
+    assert mb is not None and "hiddenpower" not in [n for n, _ in mb.opp[0].believed]   # revealed → filtered
 
 
 def test_matchups_read_correct_dims():

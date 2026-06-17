@@ -438,7 +438,8 @@ def test_op_is_leak_free_of_privileged_keys():
 
 def test_decode_damage_block_for_prober():
     """The prober decode exposes the full operator output from the PRE-gain stash: per-mon incoming
-    (slot 0 = our active, 1-5 = the safe-switch bench reads), the opp effect scalars, and the outgoing
+    in TEAM-SLOT order (incoming[i] = our team slot i; the active is whichever slot holds the active
+    flag, the bench slots are the safe-switch reads), the opp effect scalars, and the outgoing
     per-move block. The single source of truth the TUI mirrors."""
     from agents.model.features_extractor import decode_damage_block
     model, layout = _make_model(attend_unrevealed_opponents=True, move_belief_mode="revealed",
@@ -447,7 +448,7 @@ def test_decode_damage_block_for_prober():
     with torch.no_grad():
         model.forward({"observation": torch.rand(2, layout["total_dim"])})
     view = decode_damage_block(model.damage_op.last_raw_block[0], outgoing=True)
-    assert len(view["incoming"]) == TEAM_SIZE                       # active + 5 safe-switch bench rows
+    assert len(view["incoming"]) == TEAM_SIZE                       # our 6 team slots (team-slot order)
     assert set(view["incoming"][0]["phys"]) == {"low", "high", "crit", "pko", "acc"}
     assert set(view["effect"]) == {"recovery", "status", "phaze", "boost", "hazard", "protect"}
     assert view["outgoing"] is not None and len(view["outgoing"]["moves"]) == 4

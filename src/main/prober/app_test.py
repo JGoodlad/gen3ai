@@ -648,6 +648,54 @@ async def test_matchups_and_saliency_show_incoming_belief(tmp_path):
         assert any("incoming_damage" in l and l.startswith("V ") for l in labels)
 
 
+class _FakeModelMB(_FakeModel):
+    """Exposes the move-belief + damage-op views so the DAMAGE OP belief block renders in Matchups."""
+
+    def damage_op_view(self, obs, mask):
+        hot = {"low": 0.4, "high": 0.8, "crit": 1.0, "pko": 0.9, "acc": 1.0}
+        cold = {"low": 0.05, "high": 0.1, "crit": 0.2, "pko": 0.0, "acc": 1.0}
+        inc = [{"phys": cold, "spec": hot, "p_outspeed": 0.5, "provenance": 0.6}]   # team slot 0 = our active
+        inc += [{"phys": cold, "spec": cold, "p_outspeed": 0.4, "provenance": 0.3}]  # slot 1
+        inc += [{"phys": cold, "spec": cold, "p_outspeed": 0.0, "provenance": 0.0} for _ in range(4)]
+        return {"incoming": inc, "effect": {}, "incoming_secondary": {},
+                "choice_band": {"phys_high_cb": [0.0] * 6, "phys_pko_cb": [0.0] * 6, "p_cb": 0.0},
+                "outgoing": None}
+
+    def move_belief(self, obs, mask):
+        from agents import gen3_data
+        g = gen3_data.moves
+        nmoves = max(g.get(m).num for m in g.raw()) + 1
+        probs = np.zeros((6, nmoves), dtype=np.float64)
+        probs[2, g.get("thunderbolt").num] = 0.85    # opp active = slot 2; believes T-bolt unseen
+        probs[2, g.get("toxic").num] = 0.40
+        probs[2, g.get("icebeam").num] = 0.95        # already revealed → filtered out of the belief
+        empty = {"species": "", "revealed_moves": (), "known": False, "active": False}
+        opp = [dict(empty), dict(empty),
+               {"species": "blissey", "revealed_moves": ("icebeam",), "known": True, "active": True},
+               dict(empty), dict(empty), dict(empty)]
+        our = [{"species": "magneton", "active": True}, {"species": "skarmory", "active": False}]
+        our += [{"species": "", "active": False} for _ in range(4)]
+        return {"opp_probs": probs, "opp_slots": opp, "our_slots": our}
+
+
+async def test_matchups_shows_move_belief_and_op_incoming(tmp_path):
+    """The DAMAGE OP belief block renders the model's guess at the revealed opp's UNSEEN moves
+    (already-revealed moves filtered out) + the per-OUR-mon op incoming damage labeled by species."""
+    run = _write_trace(tmp_path)
+    app = ProberApp(root=run, injected_model=_FakeModelMB())
+    async with app.run_test() as pilot:
+        await pilot.pause()
+        app._select_battle(app._tree_model.all_battles()[0])
+        await pilot.pause()
+        await app.workers.wait_for_complete()
+        await pilot.pause()
+        threat = str(app.query_one("#matchups-threat", Static).render())
+        assert "damage op belief" in threat                       # the new block header
+        assert "blissey" in threat and "thunderbolt" in threat     # believed UNSEEN move
+        assert "toxic" in threat
+        assert "incoming (op)" in threat and "magneton" in threat  # per-our-mon op damage, labeled
+
+
 def _flow_text(app) -> str:
     """The Flow Static's rendered plain text (the diagram is one Text built by _render_flow)."""
     return str(app.query_one("#flow-flow", Static).render())

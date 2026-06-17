@@ -429,14 +429,27 @@ loading uses the same exact→nearest→recent ladder (cached per process). A
     "did the critic-tail-blindness obs gap get filled."
   - `damage_op` (model, re-computed via `ProbeModel.damage_op_view` → `decode_damage_block`): the unified
     **DamageOperator**'s LEARNED-belief view (v23), `None` unless the checkpoint trained `--damage-op`. Per
-    our mon the incoming threat `[low,high,crit,pko,acc]×{phys,spec} + p_outspeed + provenance` (slot 0 =
-    active, 1-5 = the **safe-switch** bench reads), the opp-active effect scalars, and (on `--unified-damage
+    our mon the incoming threat `[low,high,crit,pko,acc]×{phys,spec} + p_outspeed + provenance` in
+    **TEAM-SLOT order** (`incoming[i]` = our team slot i; the op reads `ctx.species_ids[:, :TEAM_SIZE]`, so
+    the active is whichever slot holds the active flag — NOT necessarily slot 0 — and the bench slots are
+    the safe-switch reads), the opp-active effect scalars, and (on `--unified-damage
     both`) our 4 moves' **outgoing** damage `[low,high,crit,pko]` (request-slot/action order — the
     equal-effectiveness move tie-break). v24 (gen3_unified_move_system_v1) ADDS per-status SECONDARY
     probabilities: `incoming_secondary` (the opp active's damaging-move para/flinch/freeze threat,
     accuracy-folded + ×Serene Grace) and `outgoing.secondary` (per OUR move — "what status can it cause").
-    The app's **Matchups** panel renders the outgoing line ("our damage (op): move N% →KO M% (par X%)") plus
-    an `opp 2ndary:` line for the incoming threat; the fields ride the `analyze` CLI JSON.
+  - `move_belief` (model, via `ProbeModel.move_belief` → `engine.move_belief_view`, `MoveBeliefView`):
+    what the model thinks the **REVEALED opponent's still-UNSEEN moves are** — `None` unless the checkpoint
+    trained `--move-belief-mode != off`. Per revealed opp mon (gated on the `species_known` obs bit, so
+    un-revealed bench slots are excluded — the run predicts hidden mons' SPECIES not their moves): its
+    already-`revealed` moves + the top `believed` `(move, P(in set))` from the multi-label move-belief
+    posterior (already-revealed moves filtered, kept if `P ≥ 0.10`; the type-collapsed Hidden-Power num →
+    bare `hiddenpower`). Also carries `our_labels` `(team_slot, species, is_active)` so the op's team-slot
+    incoming rows can be labeled. Pure decode is unit-tested (`engine_test::test_move_belief_view_*`).
+    The app's **Matchups** panel renders a **DAMAGE OP belief** block: the outgoing line ("our damage (op):
+    move N% →KO M% (par X%)"), the `opp 2ndary:` incoming-status line, the per-revealed-opp **believed unseen
+    moves** ("salamence ≈ brickbreak 87% · dragondance 52% · …"), and the per-OUR-mon op **incoming** damage
+    (worst-channel %HP →KO%, species-labeled, active ▶, red-graded by P(KO)). All fields ride the `analyze`
+    CLI JSON.
   Plus `value_saliency` — the **critic** lens: `|d V(s)/d obs|` aggregated into the
   SAME named blocks as the policy `saliency`, so you can see whether the VALUE head
   (where OHKO tail-blindness lives) actually reads `incoming_damage(33)` vs the rest.

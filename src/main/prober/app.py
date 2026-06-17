@@ -1082,6 +1082,38 @@ class ProberApp(Gen3App):
                      for lab, mv, sc in zip(labels, moves, osec) if mv["high"] > 0]
             lines.append("\nour damage (op): ", style="dim")
             lines.append("  ·  ".join(shown) if shown else "n/a", style="cyan")
+        # gen3 has no team preview: the model BELIEVES the revealed opp's still-UNSEEN moves (--move-belief).
+        # Show what it thinks (per revealed opp mon) + the op's per-OUR-mon incoming damage from that belief —
+        # "what it thinks the damage is", including the moves it's only guessing.
+        mb = a.move_belief
+        if mb is not None and mb.opp:
+            lines.append("\n\n— damage op belief (unseen moves) —", style="bold cyan")
+            for ob in mb.opp:
+                lines.append(f"\n{ob.species} ", style=_MON_COLOR)
+                if ob.believed:
+                    lines.append("≈ ", style="dim")
+                    lines.append("  ·  ".join(f"{n} {p * 100:.0f}%" for n, p in ob.believed), style="magenta")
+                else:
+                    lines.append("(moveset fully revealed)", style="dim")
+        # Per-OUR-mon believed incoming damage from the op (TEAM-SLOT order, labeled by species; the
+        # active mon marked ▶). Worst channel's high-roll %HP + P(KO) — what it thinks the opp does to us.
+        if dop is not None and mb is not None and dop.get("incoming"):
+            parts = []
+            for (slot, sp, act), row in zip(mb.our_labels, dop["incoming"]):
+                if not sp:
+                    continue
+                high = max(row["phys"]["high"], row["spec"]["high"])
+                pko = max(row["phys"]["pko"], row["spec"]["pko"])
+                if high <= 0:
+                    continue
+                seg = f"{'▶' if act else ''}{sp} {high * 100:.0f}%" + (f"→KO{pko * 100:.0f}%" if pko > 0.05 else "")
+                parts.append((seg, pko, act))
+            if parts:
+                lines.append("\nincoming (op): ", style="dim")
+                for k, (seg, pko, act) in enumerate(parts):
+                    if k:
+                        lines.append("  ·  ", style="dim")
+                    lines.append(seg, style=gradient_color(1.0 - pko) if (act or pko > 0.05) else "dim")
         threat.update(lines)
 
     def _render_sweep(self, a: InvocationAnalysis) -> None:

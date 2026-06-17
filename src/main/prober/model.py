@@ -441,6 +441,53 @@ class ProbeModel:
             return None
         return decode_damage_block(raw[0].detach().cpu().numpy(), outgoing=bool(op.outgoing))
 
+    def move_belief(self, obs: np.ndarray, mask: np.ndarray):
+        """The model's MOVE belief for THIS obs — per opp slot the multi-label move-prediction posterior
+        ``sigmoid(last_move_belief_logits)`` (a --move-prior-fusion run's logits are already prior⊕learned),
+        PLUS each side's per-slot species/revealed-moves/active decoded from the obs team blocks. Lets the
+        engine show 'what the model thinks the REVEALED opponent's still-UNSEEN moves are' and label the
+        per-our-mon damage-op rows (team-slot order). Runs ONE clean forward (the sweep/saliency passes
+        clobber the stash). Returns ``None`` when the checkpoint has no move-belief head
+        (``--move-belief-mode off``). The decode → top-k believed moves lives in the pure engine."""
+        import torch
+        import agents.observation.constants as C
+
+        extractor = getattr(self._policy, "features_extractor", None)
+        if extractor is None or self._pokemon_encoder is None:
+            return None
+        ot = torch.as_tensor(obs).unsqueeze(0)
+        mt = torch.as_tensor(mask).unsqueeze(0)
+        with torch.no_grad():
+            self._policy.extract_features({"observation": ot, "action_mask": mt})
+        logits = getattr(extractor, "last_move_belief_logits", None)
+        if logits is None:
+            return None
+        probs = torch.sigmoid(logits)[0].detach().cpu().numpy()        # [6, n_moves] P(move in slot's set)
+        arr = np.asarray(obs)
+        stride = self.offsets.pokemon_full_dim
+
+        def _slots(base: int) -> list:
+            out = []
+            for i in range(6):
+                block = arr[base + i * stride: base + (i + 1) * stride]
+                if block.shape[0] < stride:
+                    out.append({"species": "", "revealed_moves": (), "known": False, "active": False})
+                    continue
+                # The AUTHORITATIVE revealed flag is the species_known obs bit — NOT the decoded species
+                # string (an UN-revealed opp slot decodes to a placeholder like "Unknown(0)", which must
+                # NOT count as revealed). Our team is always known; an opp slot is known iff revealed.
+                known = bool(block[C.POKEMON_SPECIES_KNOWN_OFFSET] > 0.5)
+                d = self._pokemon_encoder.describe_vector(block) if known else {}
+                species = (d.get("species") or "").strip() if known else ""
+                moves = tuple(m for m in (d.get("moves") or []) if m and m != "none")
+                active = bool(block[stride - 1] > 0.5)
+                out.append({"species": species, "revealed_moves": moves, "known": known, "active": active})
+            return out
+
+        return {"opp_probs": probs,
+                "opp_slots": _slots(self._opp_team_off),
+                "our_slots": _slots(self._our_team_off)}
+
     def value_grad(self, obs: np.ndarray, mask: np.ndarray) -> np.ndarray:
         """Return |d V(s) / d obs| as a per-dim array — the CRITIC's input sensitivity.
 
