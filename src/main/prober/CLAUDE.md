@@ -443,18 +443,25 @@ loading uses the same exact→nearest→recent ladder (cached per process). A
     probabilities: `incoming_secondary` (the opp active's damaging-move para/flinch/freeze threat,
     accuracy-folded + ×Serene Grace) and `outgoing.secondary` (per OUR move — "what status can it cause").
   - `move_belief` (model, via `ProbeModel.move_belief` → `engine.move_belief_view`, `MoveBeliefView`):
-    what the model thinks the **REVEALED opponent's still-UNSEEN moves are** — `None` unless the checkpoint
-    trained `--move-belief-mode != off`. Per revealed opp mon (gated on the `species_known` obs bit, so
-    un-revealed bench slots are excluded — the run predicts hidden mons' SPECIES not their moves): its
-    already-`revealed` moves + the top `believed` `(move, P(in set))` from the multi-label move-belief
-    posterior (already-revealed moves filtered, kept if `P ≥ 0.10`; the type-collapsed Hidden-Power num →
-    bare `hiddenpower`). Also carries `our_labels` `(team_slot, species, is_active)` so the op's team-slot
-    incoming rows can be labeled. Pure decode is unit-tested (`engine_test::test_move_belief_view_*`).
-    The app's **Matchups** panel renders a **DAMAGE OP belief** block: the outgoing line ("our damage (op):
-    move N% →KO M% (par X%)"), the `opp 2ndary:` incoming-status line, the per-revealed-opp **believed unseen
-    moves** ("salamence ≈ brickbreak 87% · dragondance 52% · …"), and the per-OUR-mon op **incoming** damage
-    (worst-channel %HP →KO%, species-labeled, active ▶, red-graded by P(KO)). All fields ride the `analyze`
-    CLI JSON.
+    the model's MOVE belief for each **REVEALED opponent mon** — `None` unless the checkpoint trained
+    `--move-belief-mode != off`. Per revealed opp mon (gated on the `species_known` obs bit, so un-revealed
+    bench slots are excluded — the run predicts hidden mons' SPECIES not their moves): each `revealed` move
+    WITH its belief (pinned ≈100% under `--move-prior-fusion`, so it CONFIRMS the belief tracks the known
+    moveset) **plus** the `believed` still-UNSEEN moves `(move, P(in set))` from the multi-label posterior
+    (already-revealed filtered, kept if `P ≥ 0.10`; type-collapsed Hidden-Power num → bare `hiddenpower`).
+    The unseen list is **CAPPED at the open move slots** `min(top_k, 4 − n_revealed)` — a mon with k known
+    moves has ≤`4−k` more, and the multi-label head doesn't enforce that 4-move constraint, so its raw
+    top-K over-shows (2 known ⇒ at most 2 unseen, not 4). Also carries `our_labels`
+    `(team_slot, species, is_active)` so the op's team-slot incoming rows can be labeled. Pure decode is
+    unit-tested (`engine_test::test_move_belief_view_*`). The app's **Matchups** panel renders a
+    **move belief (✓ revealed · ≈ unseen)** block — `metagross ✓ meteormash 100%  ≈ explosion 32% · …`
+    (green ✓ revealed, magenta ≈ unseen) — plus the op's outgoing line, the `opp 2ndary:` incoming-status
+    line, and the per-OUR-mon op **incoming** damage (worst-channel %HP →KO%, species-labeled, active ▶,
+    red-graded by P(KO)). All fields ride the `analyze` CLI JSON.
+    **NB:** the op view (`damage_op`) stashes on the **DamageOperator submodule** (`op.last_raw_block`),
+    not the extractor — `damage_op_view` reads it there (a prior read of `extractor.last_raw_block`
+    silently returned None, hiding the entire incoming/outgoing op view; regression-guarded by
+    `model_test.py`).
   Plus `value_saliency` — the **critic** lens: `|d V(s)/d obs|` aggregated into the
   SAME named blocks as the policy `saliency`, so you can see whether the VALUE head
   (where OHKO tail-blindness lives) actually reads `incoming_damage(33)` vs the rest.
@@ -619,6 +626,18 @@ blocking. So:
 
 ## Gotchas
 
+- **Move-action labels are realigned to request-slot order (`engine._reorder_move_labels`).** The
+  recorded `summary.actions` dict orders the 4 move actions by poke-env **`available_moves`**, which can
+  DIFFER from the obs **request-slot** order that the action mask, the `DamageOperator`, and the policy
+  logits (action 6+k) all use (`gen3_move_slot_align_v1`) — e.g. after a Disable / server reorder. Left
+  unaligned, EVERY action-6+k-indexed consumer (the mask, the matchup ×mult, the op outgoing damage, the
+  re-run argmax) pairs with the WRONG move (the bug that made Hypnosis — a 0-BP status move — display
+  Thunderbolt's 27% / `par 10%`). `analyze_invocation` calls `ProbeModel.our_active_move_slots(obs)`
+  (decodes our active mon's move block = request order) and reorders `labels[MOVE_START:MOVE_END]` to it
+  BEFORE building the mask, matching by normalized name (HP type stripped), with a safe fallback (unmatched
+  → unchanged, never a wrong reorder). The op itself was always correct (`usable = legal·(bp>0)` zeroes
+  status moves). Guarded by `engine_test::test_reorder_move_labels_realigns_to_request_slot_order`. The
+  outgoing-damage panel now also renders a non-damaging move EXPLICITLY as `— (non-damaging)`.
 - **Faithfulness is exact only on the `exact` tier.** On `nearest`/`recent` the
   model differs from the one that generated the trace, so recorded ≠ re-run (the
   re-run cell is colored by the drift) — expected, and the badge says which tier.

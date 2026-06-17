@@ -157,6 +157,8 @@ def test_move_belief_view_filters_revealed_and_ranks_unseen():
     assert "icebeam" not in names                        # revealed move filtered out of the belief
     assert names[0] == "thunderbolt"                      # highest believed-UNSEEN ranked first
     assert "toxic" in names and "surf" not in names       # surf below the 0.10 floor
+    # revealed moves carry their (pinned) belief — the icebeam we PUT at 0.95 comes back with its prob
+    assert abs(dict(ob.revealed).get("icebeam", 0.0) - 0.95) < 1e-6
     assert mb.our_labels[0] == (0, "magneton", True)      # TEAM-SLOT order + active flag (op-incoming labels)
     assert mb.our_labels[1] == (1, "skarmory", False)
 
@@ -188,6 +190,50 @@ def test_move_belief_view_hidden_power_normalizes():
            "our_slots": []}
     mb = move_belief_view(raw)
     assert mb is not None and "hiddenpower" not in [n for n, _ in mb.opp[0].believed]   # revealed → filtered
+
+
+def test_move_belief_view_caps_unseen_at_open_move_slots():
+    """A mon with k revealed moves has at most 4−k slots left, so the believed-UNSEEN list is capped
+    there (the multi-label head over-shows otherwise — 2 known moves shouldn't list 4 guesses)."""
+    import numpy as np
+    from agents import gen3_data
+    from main.prober.engine import move_belief_view
+    g = gen3_data.moves
+    nmoves = max(g.get(m).num for m in g.raw()) + 1
+    cand = ["icebeam", "thunderbolt", "toxic", "surf", "psychic", "calmmind"]   # 6 high-prob candidates
+    probs = np.zeros((6, nmoves), dtype=np.float64)
+    for mv in cand:
+        probs[0, g.get(mv).num] = 0.9
+    slot = {"species": "blissey", "known": True, "active": True, "revealed_moves": ("icebeam", "thunderbolt", "toxic")}
+    raw = {"opp_probs": probs, "our_slots": [],
+           "opp_slots": [slot] + [{"species": "", "revealed_moves": (), "known": False, "active": False}
+                                  for _ in range(5)]}
+    mb = move_belief_view(raw)
+    assert len(mb.opp[0].revealed) == 3 and len(mb.opp[0].believed) == 1   # 3 known → only 1 open slot
+    slot["revealed_moves"] = ("icebeam", "thunderbolt", "toxic", "surf")    # fully known → no open slots
+    assert len(move_belief_view(raw).opp[0].believed) == 0
+
+
+def test_reorder_move_labels_realigns_to_request_slot_order():
+    """REGRESSION (move-slot-misalignment class): the recorded `actions` dict orders moves by poke-env
+    available_moves, which can DIFFER from the obs request-slot order the mask / DamageOperator / policy
+    logits use. `_reorder_move_labels` realigns the 4 move labels to the obs order, leaves switches/struggle
+    untouched, normalizes Hidden-Power type, and falls back safely (never a WRONG reorder)."""
+    from agents.action.constants import MOVE_END, MOVE_START
+    from main.prober.engine import _reorder_move_labels
+    labels = [f"switch:m{i}" for i in range(6)] + ["explosion", "thunderbolt", "icepunch", "hypnosis", "struggle"]
+    # obs request order swaps thunderbolt<->hypnosis vs the recorded order → realign to it
+    out = _reorder_move_labels(labels, ("explosion", "hypnosis", "icepunch", "thunderbolt"))
+    assert out[MOVE_START:MOVE_END] == ["explosion", "hypnosis", "icepunch", "thunderbolt"]
+    assert out[:MOVE_START] == labels[:MOVE_START] and out[MOVE_END:] == labels[MOVE_END:]   # switches/struggle kept
+    # Hidden Power: a request "hiddenpower(fire)" matches the recorded bare "hiddenpower"
+    hp = [f"switch:m{i}" for i in range(6)] + ["explosion", "hiddenpower", "icepunch", "thunderbolt", "struggle"]
+    out2 = _reorder_move_labels(hp, ("hiddenpower(fire)", "explosion", "thunderbolt", "icepunch"))
+    assert out2[MOVE_START:MOVE_END] == ["hiddenpower", "explosion", "thunderbolt", "icepunch"]
+    # Fallbacks → unchanged (never risk a wrong reorder): length mismatch / unmatched move / None
+    assert _reorder_move_labels(labels, ("explosion", "hypnosis")) == labels
+    assert _reorder_move_labels(labels, ("explosion", "surf", "icepunch", "thunderbolt")) == labels
+    assert _reorder_move_labels(labels, None) == labels
 
 
 def test_matchups_read_correct_dims():

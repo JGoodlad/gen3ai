@@ -196,6 +196,24 @@ class ProbeModel:
                 }
         return out
 
+    def our_active_move_slots(self, obs: np.ndarray) -> "tuple[str, ...] | None":
+        """OUR active mon's move ids in **REQUEST-SLOT order** — the obs move-block order, which is the order
+        the action mask, the DamageOperator's outgoing block, and the policy logits (action 6+k) all use
+        (`gen3_move_slot_align_v1`). The recorded `actions` dict is in poke-env `available_moves` order, which
+        can DIFFER (after a disable / server reorder), so the engine must realign action-6+k-indexed outputs
+        (matchup ×mult, op outgoing, re-run argmax) to THIS order — not the dict order. `None` (no encoder /
+        no active slot found)."""
+        if self._pokemon_encoder is None:
+            return None
+        arr = np.asarray(obs)
+        stride = self.offsets.pokemon_full_dim
+        for i in range(6):
+            b = self._our_team_off + i * stride
+            blk = arr[b:b + stride]
+            if blk.shape[0] >= stride and blk[stride - 1] > 0.5:          # active flag = the slot's last dim
+                return tuple(self._pokemon_encoder.describe_vector(blk).get("moves") or [])
+        return None
+
     def describe_turn_outcome(self, obs: np.ndarray) -> "dict":
         """Decode what actually happened on the most-recent TurnDelta in an obs: each side's
         **crit** (critical hit) and **cant** reason (couldn't move — slp/par/flinch/recharge/…).
@@ -421,10 +439,15 @@ class ProbeModel:
 
     def damage_op_view(self, obs: np.ndarray, mask: np.ndarray):
         """The unified DamageOperator's view for THIS obs: per-our-mon incoming threat
-        ``[low,high,crit,pko,acc]×{phys,spec} + p_outspeed + provenance`` (slot 0 = active, 1-5 = the
-        SAFE-SWITCH bench reads), the opp-active effect scalars, and (on a ``--unified-damage both`` run)
-        our 4 moves' OUTGOING damage. Runs ONE clean forward and decodes the operator's PRE-gain physics
-        stash (`last_raw_block`); ``None`` when the checkpoint has no damage operator (``--damage-op`` off)."""
+        ``[low,high,crit,pko,acc]×{phys,spec} + p_outspeed + provenance`` in TEAM-SLOT order (the active is
+        whichever slot holds the active flag; the bench slots are the SAFE-SWITCH reads), the opp-active
+        effect scalars, and (on a ``--unified-damage both`` run) our 4 moves' OUTGOING damage. Runs ONE
+        clean forward and decodes the operator's PRE-gain physics stash; ``None`` when the checkpoint has no
+        damage operator (``--damage-op`` off).
+
+        NOTE: the stash lives on the **DamageOperator submodule** (`op.last_raw_block`, set inside its
+        forward), NOT on the extractor — reading `extractor.last_raw_block` always returned None, silently
+        hiding the whole op view in the prober (regression-guarded by `model_test.py`)."""
         import torch
         from agents.model.features_extractor import decode_damage_block
 
@@ -436,7 +459,7 @@ class ProbeModel:
         mt = torch.as_tensor(mask).unsqueeze(0)
         with torch.no_grad():
             self._policy.extract_features({"observation": ot, "action_mask": mt})
-        raw = getattr(extractor, "last_raw_block", None)
+        raw = getattr(op, "last_raw_block", None)            # the op stashes on ITSELF, not the extractor
         if raw is None:
             return None
         return decode_damage_block(raw[0].detach().cpu().numpy(), outgoing=bool(op.outgoing))

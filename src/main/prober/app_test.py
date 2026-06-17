@@ -690,9 +690,10 @@ async def test_matchups_shows_move_belief_and_op_incoming(tmp_path):
         await app.workers.wait_for_complete()
         await pilot.pause()
         threat = str(app.query_one("#matchups-threat", Static).render())
-        assert "damage op belief" in threat                       # the new block header
+        assert "move belief" in threat                            # the new block header
         assert "blissey" in threat and "thunderbolt" in threat     # believed UNSEEN move
         assert "toxic" in threat
+        assert "icebeam" in threat                                 # REVEALED move shown with its pinned belief
         assert "incoming (op)" in threat and "magneton" in threat  # per-our-mon op damage, labeled
 
 

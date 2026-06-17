@@ -1066,6 +1066,7 @@ class ProberApp(Gen3App):
                 lines.append("\nopp 2ndary: ", style="dim")
                 lines.append("  ·  ".join(inc_shown), style="yellow")
         if dop is not None and dop.get("outgoing"):
+            from agents import gen3_data
             moves = dop["outgoing"]["moves"]
             osec = dop["outgoing"].get("secondary") or [{} for _ in moves]
             labels = (list(a.matchups.move_labels) if a.matchups is not None
@@ -1077,44 +1078,75 @@ class ProberApp(Gen3App):
                 if not items:
                     return ""
                 c, p = max(items, key=lambda cp: cp[1])
-                return f" ({c} {p * 100:.0f}%)"
-            shown = [f"{lab} {mv['high'] * 100:.0f}%" + (f"→KO{mv['pko'] * 100:.0f}%" if mv["pko"] > 0.05 else "")
-                     + _top_secondary(sc)
-                     for lab, mv, sc in zip(labels, moves, osec) if mv["high"] > 0]
-            lines.append("\nour damage (op): ", style="dim")
-            lines.append("  ·  ".join(shown) if shown else "n/a", style="cyan")
+                return f"  ({c} {p * 100:.0f}%)"
+
+            def _acc(mid: str) -> str:
+                """Our move's accuracy (a KNOWN fact, not in the op output): from move data; '—' = never-miss."""
+                try:
+                    md = gen3_data.moves.get(mid.split("(")[0].strip())
+                except Exception:  # noqa: BLE001
+                    return "  ?"
+                if getattr(md, "never_miss", False):
+                    return "  —"
+                a_ = getattr(md, "accuracy", None)
+                return f"{int(a_):3d}%" if a_ is not None else "  ?"
+
+            # FULL per-move roll detail (low–high · crit · acc · →KO) for ALL 4 request slots — a
+            # non-damaging move (Hypnosis etc.) is shown EXPLICITLY as "— (non-damaging)", never dropped or
+            # given a phantom roll. `applicable` is per request-slot (aligned with the op + labels).
+            applic = (list(a.matchups.applicable) if a.matchups is not None else [True] * len(moves))
+            lines.append("\nour damage (op):  ", style="dim")
+            lines.append("low–high · crit · acc · →KO", style="dim")
+            for k, (lab, mv, sc) in enumerate(zip(labels, moves, osec)):
+                damaging = (k >= len(applic) or applic[k]) and mv["high"] > 0
+                lines.append(f"\n  {lab:<13}", style="cyan")
+                if not damaging:
+                    lines.append("— (non-damaging)", style="dim")
+                    continue
+                lines.append(f"{mv['low'] * 100:3.0f}–{mv['high'] * 100:3.0f}%  crit {mv['crit'] * 100:3.0f}%  "
+                             f"acc {_acc(lab)}  →KO {mv['pko'] * 100:2.0f}%", style="cyan")
+                lines.append(_top_secondary(sc), style="yellow")
         # gen3 has no team preview: the model BELIEVES the revealed opp's still-UNSEEN moves (--move-belief).
         # Show what it thinks (per revealed opp mon) + the op's per-OUR-mon incoming damage from that belief —
         # "what it thinks the damage is", including the moves it's only guessing.
         mb = a.move_belief
         if mb is not None and mb.opp:
-            lines.append("\n\n— damage op belief (unseen moves) —", style="bold cyan")
+            lines.append("\n\n— move belief (✓ revealed · ≈ unseen) —", style="bold cyan")
             for ob in mb.opp:
                 lines.append(f"\n{ob.species} ", style=_MON_COLOR)
-                if ob.believed:
+                if ob.revealed:                                  # already shown — belief pinned ≈100%
+                    lines.append("✓ ", style="green")
+                    lines.append(" · ".join(f"{n} {p * 100:.0f}%" for n, p in ob.revealed), style="green")
+                if ob.believed:                                  # the model's guess at the UNSEEN moves
+                    if ob.revealed:
+                        lines.append("   ", style="dim")
                     lines.append("≈ ", style="dim")
-                    lines.append("  ·  ".join(f"{n} {p * 100:.0f}%" for n, p in ob.believed), style="magenta")
-                else:
-                    lines.append("(moveset fully revealed)", style="dim")
-        # Per-OUR-mon believed incoming damage from the op (TEAM-SLOT order, labeled by species; the
-        # active mon marked ▶). Worst channel's high-roll %HP + P(KO) — what it thinks the opp does to us.
+                    lines.append(" · ".join(f"{n} {p * 100:.0f}%" for n, p in ob.believed), style="magenta")
+                if not ob.revealed and not ob.believed:
+                    lines.append("(no move belief)", style="dim")
+        # Per-OUR-mon believed incoming damage from the op (TEAM-SLOT order, labeled by species; the active
+        # mon marked ▶). The op feeds per defender the worst PHYSICAL + worst SPECIAL believed hit (each a
+        # belief-weighted MAX over candidate moves — NOT per-move), so BOTH channels are shown (worst first):
+        # chan · low–high · crit · acc · →KO. This is the literal switch-safety signal the model reads.
         if dop is not None and mb is not None and dop.get("incoming"):
-            parts = []
+            lines.append("\nincoming (op):  ", style="dim")
+            lines.append("worst PHYS + worst SPEC hit per defender · low–high · crit · acc · →KO", style="dim")
+            any_inc = False
             for (slot, sp, act), row in zip(mb.our_labels, dop["incoming"]):
                 if not sp:
                     continue
-                high = max(row["phys"]["high"], row["spec"]["high"])
-                pko = max(row["phys"]["pko"], row["spec"]["pko"])
-                if high <= 0:
+                chans = [(ch, row[ch]) for ch in ("phys", "spec") if row[ch]["high"] > 0.0]
+                if not chans:
                     continue
-                seg = f"{'▶' if act else ''}{sp} {high * 100:.0f}%" + (f"→KO{pko * 100:.0f}%" if pko > 0.05 else "")
-                parts.append((seg, pko, act))
-            if parts:
-                lines.append("\nincoming (op): ", style="dim")
-                for k, (seg, pko, act) in enumerate(parts):
-                    if k:
-                        lines.append("  ·  ", style="dim")
-                    lines.append(seg, style=gradient_color(1.0 - pko) if (act or pko > 0.05) else "dim")
+                chans.sort(key=lambda kc: kc[1]["high"], reverse=True)     # worst channel first
+                any_inc = True
+                lines.append(f"\n  {'▶' if act else ' '}{sp}", style=_MON_COLOR)
+                for ch, c in chans:
+                    lines.append(f"\n      {ch} {c['low'] * 100:3.0f}–{c['high'] * 100:3.0f}%  crit {c['crit'] * 100:3.0f}%  "
+                                 f"acc {c['acc'] * 100:3.0f}%  →KO {c['pko'] * 100:2.0f}%",
+                                 style=gradient_color(1.0 - c["pko"]) if (act or c["pko"] > 0.05) else "dim")
+            if not any_inc:
+                lines.append("\n  n/a", style="dim")
         threat.update(lines)
 
     def _render_sweep(self, a: InvocationAnalysis) -> None:

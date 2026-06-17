@@ -298,13 +298,14 @@ class BeliefView:
 
 @dataclass(frozen=True)
 class OppMoveBelief:
-    """One REVEALED opponent mon's MOVE belief: the moves it has already shown (`revealed`) plus the
-    model's top guesses at its still-UNSEEN moves (`believed`, `(move, P(in set))` descending — the
-    multi-label move-belief posterior, with the already-revealed moves filtered out). `slot` is the
-    encoder opp-slot index."""
+    """One REVEALED opponent mon's MOVE belief, each entry `(move, P(in set))` from the multi-label
+    move-belief posterior: `revealed` = the moves it has already shown (their belief should be pinned
+    ≈100% under `--move-prior-fusion`, so showing it CONFIRMS the belief is pinning known moves), and
+    `believed` = the model's top guesses at its still-UNSEEN moves (the revealed ones filtered out).
+    `slot` is the encoder opp-slot index."""
     slot: int
     species: str
-    revealed: "tuple[str, ...]"
+    revealed: "tuple[tuple[str, float], ...]"
     believed: "tuple[tuple[str, float], ...]"
 
 
@@ -844,6 +845,7 @@ def build_belief(inv: dict) -> "BeliefView | None":
 
 _SPECIES_MAPS = None
 _MOVE_NUM_TO_ID = None
+_MOVE_ID_TO_NUM = None
 
 
 def _species_maps():
@@ -882,21 +884,43 @@ def _move_maps():
     return _MOVE_NUM_TO_ID
 
 
+def _move_id_to_num():
+    """Cached ``{normalised_move_id -> move_num}`` — the forward map, so a REVEALED move name (from
+    `describe_vector`, e.g. ``hiddenpower(fire)``) can be looked up on the move-belief axis to read its
+    pinned belief. Every Hidden-Power variant + the bare ``hiddenpower`` resolve to the shared HP num."""
+    global _MOVE_ID_TO_NUM
+    if _MOVE_ID_TO_NUM is None:
+        raw = gen3_data.moves.raw()
+        d = {_norm_move(mid): int(v["num"]) for mid, v in raw.items() if v.get("num")}
+        for mid, v in raw.items():
+            if mid.startswith("hiddenpower") and v.get("num"):
+                d["hiddenpower"] = int(v["num"])
+        _MOVE_ID_TO_NUM = d
+    return _MOVE_ID_TO_NUM
+
+
 def _norm_move(m: str) -> str:
     """Normalise a move name for revealed-vs-believed comparison: lowercase, drop a trailing
     ``(type)`` (so a revealed ``hiddenpower(fire)`` matches the believed bare ``hiddenpower``)."""
     return (m or "").split("(")[0].strip().lower()
 
 
+_MAX_MOVES = 4   # a gen3 mon carries at most 4 moves → only (4 − revealed) slots can still be unseen
+
+
 def move_belief_view(raw, top_k: int = 4, prob_floor: float = 0.10) -> "MoveBeliefView | None":
     """Decode `ProbeModel.move_belief`'s raw output into a `MoveBeliefView`: per REVEALED opponent mon,
-    its top-`top_k` believed STILL-UNSEEN moves (multi-label sigmoid posterior, already-revealed moves
-    filtered out, kept only if `P ≥ prob_floor`), plus the team-slot→species labels for the op's
+    each already-`revealed` move WITH its (pinned ≈100%) belief, plus the believed STILL-UNSEEN moves
+    (multi-label sigmoid posterior, already-revealed filtered out, kept if `P ≥ prob_floor`). The unseen
+    list is CAPPED at the number of OPEN move slots — `min(top_k, 4 − n_revealed)` — since a mon with k
+    known moves can have at most `4 − k` more (the multi-label head itself doesn't enforce that 4-move
+    constraint, so its raw top-K over-shows). Also carries the team-slot→species labels for the op's
     per-our-mon damage rows. Pure (no torch). `None` when the model has no move-belief head."""
     if not raw:
         return None
     probs = np.asarray(raw.get("opp_probs"), dtype=np.float64)        # [6, n_moves]
     num_to_id = _move_maps()
+    id_to_num = _move_id_to_num()
     opp = []
     for i, slot in enumerate(raw.get("opp_slots", ()) or ()):
         if not slot.get("known") or i >= probs.shape[0]:
@@ -904,8 +928,15 @@ def move_belief_view(raw, top_k: int = 4, prob_floor: float = 0.10) -> "MoveBeli
         revealed_names = tuple(slot.get("revealed_moves", ()) or ())
         revealed_norm = {_norm_move(m) for m in revealed_names}
         p = probs[i]
+        # Revealed moves WITH their belief — look up each name's num on the belief axis (the model PINS
+        # these ≈1.0 under prior fusion, so this confirms the belief tracks the known moveset).
+        revealed = []
+        for m in revealed_names:
+            num = id_to_num.get(_norm_move(m))
+            revealed.append((m, float(p[num]) if (num is not None and num < p.shape[0]) else 0.0))
+        n_unseen = min(top_k, max(0, _MAX_MOVES - len(revealed_norm)))   # only the OPEN move slots
         believed = []
-        for n in np.argsort(p)[::-1]:
+        for n in (np.argsort(p)[::-1] if n_unseen else ()):
             pv = float(p[n])
             if pv < prob_floor:
                 break
@@ -913,10 +944,10 @@ def move_belief_view(raw, top_k: int = 4, prob_floor: float = 0.10) -> "MoveBeli
             if not name or _norm_move(name) in revealed_norm:
                 continue
             believed.append((name, pv))
-            if len(believed) >= top_k:
+            if len(believed) >= n_unseen:
                 break
         opp.append(OppMoveBelief(slot=i, species=slot.get("species", ""),
-                                 revealed=revealed_names, believed=tuple(believed)))
+                                 revealed=tuple(revealed), believed=tuple(believed)))
     our_labels = tuple((i, s.get("species", ""), bool(s.get("active")))
                        for i, s in enumerate(raw.get("our_slots", ()) or ()))
     return MoveBeliefView(opp=tuple(opp), our_labels=our_labels) if (opp or our_labels) else None
@@ -1233,6 +1264,34 @@ def decode_incoming_belief(obs: np.ndarray, off) -> "IncomingBeliefView | None":
     )
 
 
+def _reorder_move_labels(labels: list, req_moves) -> list:
+    """Realign the 4 move-action labels (positions ``MOVE_START:MOVE_END``) to the obs **REQUEST-SLOT order**
+    ``req_moves`` (from ``ProbeModel.our_active_move_slots``), matching by normalized name (Hidden-Power type
+    stripped). The recorded ``actions`` dict orders moves by poke-env ``available_moves``, which can DIFFER
+    from the request-slot order the **action mask**, the **DamageOperator**, and the **policy logits**
+    (action 6+k) all use — so without this realign, every action-6+k-indexed consumer (the mask, the matchup
+    ×mult, the op outgoing damage, the re-run argmax) gets paired with the WRONG move whenever the two orders
+    differ (e.g. after a Disable / server reorder). Keeps the recorded names (so ``acts[label]`` prob lookups
+    still resolve), only reorders; falls back to the recorded order if it can't 1:1-match every move (so it
+    can NEVER produce a wrong reorder). This closes the move-slot-misalignment class of prober bug."""
+    moves = list(labels[MOVE_START:MOVE_END])
+    rq = [m for m in (req_moves or []) if m and m != "none"]
+    if len(rq) != len(moves):
+        return labels
+
+    def _n(s):
+        return (s or "").split("(")[0].strip().lower()
+
+    pool, out = list(moves), []
+    for rm in rq:
+        match = next((x for x in pool if _n(x) == _n(rm)), None)
+        if match is None:
+            return labels                                    # unmatched → don't risk a wrong reorder
+        pool.remove(match)
+        out.append(match)
+    return list(labels[:MOVE_START]) + out + list(labels[MOVE_END:])
+
+
 # ---------------------------------------------------------------------------
 # Top-level entry
 # ---------------------------------------------------------------------------
@@ -1305,6 +1364,16 @@ def analyze_invocation(model, summary: dict, npz, inv_index: int,
     outcome = {**outcome, "timeline": _timeline_for(inv, next_board, outcome)}
     acts = inv["actions"]
     labels = list(acts.keys())
+    # The recorded `actions` dict orders moves by poke-env available_moves, NOT request-slot order — realign
+    # the 4 move labels to the obs request-slot order (what the mask / op / policy logits use) so every
+    # action-6+k-indexed consumer below (the mask itself, matchups, op outgoing, re-run argmax) is correctly
+    # paired. Closes the move-slot-misalignment class. No-op when the model can't decode the request slots.
+    rms = getattr(model, "our_active_move_slots", None)
+    if rms is not None:
+        try:
+            labels = _reorder_move_labels(labels, rms(obs))
+        except Exception:  # noqa: BLE001 — never break the analysis on a decode hiccup
+            pass
     mask = np.array([1 if acts[k]["valid"] else 0 for k in labels], dtype=np.int8)
 
     # Hidden-opp belief: prefer the loaded model's RE-COMPUTED belief (works for ANY belief-on
