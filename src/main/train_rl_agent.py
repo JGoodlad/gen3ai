@@ -190,6 +190,7 @@ def _run_arch_toggles(args) -> dict:
         value_dist_bins=args.value_dist_bins,
         value_dist_vmin=args.value_dist_vmin,
         value_dist_vmax=args.value_dist_vmax,
+        damage_topk_k=args.damage_topk_k,
     )
 
 
@@ -870,8 +871,24 @@ async def main():
                         help="ONE knob for the WHOLE unified move system: sets --unified-damage to the same "
                              "level (move belief + prior fusion + the GPU damage op, incl. its per-status "
                              "secondary/Serene-Grace effects; 'both' adds the outgoing direction) AND turns "
-                             "on --move-latent + a default --move-belief-latent-coef 0.05. Compose the pieces "
-                             "by hand for finer control.")
+                             "on --move-latent + a default --move-belief-latent-coef 0.05 + the DISCRETE "
+                             "top-K incoming block (--damage-topk, default K=5). Compose the pieces by hand "
+                             "for finer control (e.g. --damage-topk 0 to A/B it off under --unified-moves).")
+    parser.add_argument("--damage-topk", "--damage_topk", dest="damage_topk_k",
+                        type=int, default=None,
+                        help="DISCRETE top-K incoming move-space block (gen3_unified_topk_incoming_v1): K = "
+                             "the number of the opp ACTIVE's most-believed CANDIDATE moves surfaced "
+                             "INDIVIDUALLY (vs the worst-case max collapse that loses WHICH move it is). Per "
+                             "move: its move LATENT identity (gathered from the MoveLatentEncoder — "
+                             "differentiable → sharpens the latent) + belief weight (→ sharpens the move "
+                             "belief) + accuracy + is_phys, then per OUR mon [high-roll, P(KO), "
+                             "status_lands] — the discrete-move + per-pivot read (incl. damage-immunity AND "
+                             "status-immunity = 0, e.g. Thunder-Wave→Ground) that makes 'anticipate the move "
+                             "/ pick the safe switch' decidable. 0 = off. STRUCTURAL int (scales both "
+                             "projections; version-checked, fresh-only). REQUIRES --damage-op + --move-latent. "
+                             "AUTO-set to 5 by --unified-moves (the moveset is 4, so the 5th slot is the "
+                             "surprise/uncertain candidate); the 5th is zeroed once all 4 opp moves are "
+                             "revealed. Default off (set by --unified-moves, or pass explicitly).")
     parser.add_argument("--spread-belief", "--spread_belief", dest="spread_belief",
                         action=BoolFlag, default=None,
                         help="SpreadBelief (gen3_unified_spread_belief_v1): the THIRD belief leg — predict "
@@ -1060,6 +1077,12 @@ async def main():
             args.move_latent = True
         if args.move_belief_latent_coef is None:
             args.move_belief_latent_coef = 0.05
+        # gen3_unified_topk_incoming_v1: the umbrella also turns on the DISCRETE top-K incoming block at the
+        # default K (the deps — damage_op + move_latent — are satisfied above/below). An explicit
+        # --damage-topk wins (incl. --damage-topk 0 to A/B it off under --unified-moves).
+        if args.damage_topk_k is None:
+            from agents.model.features_extractor import _DMG_TOPK_DEFAULT_K
+            args.damage_topk_k = _DMG_TOPK_DEFAULT_K
 
     # --unified-obs is the master DISABLE-redundant switch: flip on the three obs-ablation masks (each only
     # where the GPU path subsumes it — active-move scalars need the outgoing op). v25.
@@ -1111,6 +1134,7 @@ async def main():
     _resolve("value_dist_vmin", 0.0)           # v29 resume-immutable support (version-checked)
     _resolve("value_dist_vmax", 0.0)           # v29 resume-immutable support (version-checked)
     _resolve("value_dist_coef", 1.0)           # training-only (inherited like win_prob_coef)
+    _resolve("damage_topk_k", 0)               # v30 structural int (top-K incoming; version-checked, fresh-only)
     # PopArt INHERITED on a flagless resume → adopt its required `--clip-range-vf none` (the saved
     # popart run necessarily used it), so the explicit-config check below doesn't block the resume.
     if args.use_popart and not _popart_explicit and _saved_ver is not None and args.clip_range_vf is not None:
@@ -1224,6 +1248,18 @@ async def main():
         parser.error(
             "--move-candidate-floor requires --move-prior-fusion (it gates the fused move prior). "
             "Enable --move-prior-fusion (or --unified-damage), or drop --move-candidate-floor."
+        )
+    if args.damage_topk_k and args.damage_topk_k > 0 and not args.damage_op:
+        # gen3_unified_topk_incoming_v1: the top-K incoming block extends the DamageOperator.
+        parser.error(
+            "--damage-topk requires --damage-op (the top-K incoming block extends the damage operator). "
+            "Use --unified-damage / --unified-moves, or add --damage-op, or set --damage-topk 0."
+        )
+    if args.damage_topk_k and args.damage_topk_k > 0 and not args.move_latent:
+        # The block gathers each top-K move's identity LATENT from the MoveLatentEncoder.
+        parser.error(
+            "--damage-topk requires --move-latent (the top-K block gathers each move's identity latent "
+            "from the MoveLatentEncoder). Use --unified-moves, or add --move-latent, or set --damage-topk 0."
         )
     if args.move_belief_latent_coef and not args.move_latent:
         # The latent grading reads the MoveLatentEncoder's latent table → the encoder must exist.
@@ -1965,6 +2001,8 @@ async def main():
         _load_extractor_kwargs["value_dist_bins"] = args.value_dist_bins
         _load_extractor_kwargs["value_dist_vmin"] = args.value_dist_vmin
         _load_extractor_kwargs["value_dist_vmax"] = args.value_dist_vmax
+        # Discrete top-K incoming block (v30) — K version-checked in check_compatible (scales projections).
+        _load_extractor_kwargs["damage_topk_k"] = args.damage_topk_k
         _load_policy_kwargs = {
             "features_extractor_class": Gen3FeaturesExtractor,
             "features_extractor_kwargs": _load_extractor_kwargs,
@@ -2206,6 +2244,9 @@ async def main():
         extractor_kwargs["value_dist_bins"] = args.value_dist_bins
         extractor_kwargs["value_dist_vmin"] = args.value_dist_vmin
         extractor_kwargs["value_dist_vmax"] = args.value_dist_vmax
+        # gen3_unified_topk_incoming_v1 (v30): the DISCRETE top-K incoming block's K (0 = off). STRUCTURAL
+        # (scales both projections; version-checked). Requires --damage-op + --move-latent (validated above).
+        extractor_kwargs["damage_topk_k"] = args.damage_topk_k
 
         policy_kwargs = {
             "features_extractor_class": Gen3FeaturesExtractor,

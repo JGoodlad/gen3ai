@@ -536,6 +536,7 @@ def current_model_version(
     value_dist_vmin: float = 0.0,
     value_dist_vmax: float = 0.0,
     value_dist_coef: float = 1.0,
+    damage_topk_k: int = 0,
     vf_coef: float = 0.5,
     reward_config=None,
     value_tail_weight: float = 0.0,
@@ -583,6 +584,7 @@ def current_model_version(
     ext_kwargs["value_dist_bins"] = value_dist_bins
     ext_kwargs["value_dist_vmin"] = value_dist_vmin
     ext_kwargs["value_dist_vmax"] = value_dist_vmax
+    ext_kwargs["damage_topk_k"] = damage_topk_k
     policy_kwargs = {
         "features_extractor_class": Gen3FeaturesExtractor,
         "features_extractor_kwargs": ext_kwargs,
@@ -626,6 +628,9 @@ def arch_toggles_from_model(model) -> dict:
         # the support (vmin/vmax) is resume-only-checked on the trainer, never by a worker's load gate.
         "value_dist_mode": str(getattr(fe, "value_dist_mode", "none")),
         "value_dist_bins": int(getattr(fe, "value_dist_bins", 0)),
+        # gen3_unified_topk_incoming_v1 (v30): the top-K incoming block's K (0 = off) — STRUCTURAL int,
+        # gated in check_compatible (it scales the projection widths), so it must reach the worker's gate.
+        "damage_topk_k": int(getattr(fe, "damage_topk_k", 0)),
         "use_popart": getattr(model.policy, "popart", None) is not None,
     }
 

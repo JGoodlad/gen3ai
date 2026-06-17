@@ -16,9 +16,10 @@ import torch
 import pytest
 
 from agents.model.features_extractor import (
-    Gen3FeaturesExtractor, DamageOperator, _DMG_PER_MON, _DMG_EFFECT, _DMG_INCOMING_SEC,
-    _DMG_OUT_N_MOVES, _DMG_OUT_PER_MOVE, _DMG_STATUS, _DMG_STATUS_N_MOVES, _DMG_CB, _COND_SLP_IDX,
-    _SUBSTITUTE_CTX_IDX, TEAM_SIZE,
+    Gen3FeaturesExtractor, DamageOperator, decode_damage_block, _DMG_PER_MON, _DMG_EFFECT,
+    _DMG_INCOMING_SEC, _DMG_OUT_N_MOVES, _DMG_OUT_PER_MOVE, _DMG_STATUS, _DMG_STATUS_N_MOVES,
+    _DMG_CB, _COND_SLP_IDX, _SUBSTITUTE_CTX_IDX, TEAM_SIZE,
+    _dmg_topk_dim, _DMG_TOPK_MOVE, _DMG_TOPK_DMG_PER, _DMG_TOPK_DEFAULT_K, MOVE_LATENT_DIM,
 )
 from agents.model import damage_tables as dt
 from agents.observation.constants import (
@@ -461,6 +462,229 @@ def test_decode_damage_block_for_prober():
         m2.forward({"observation": torch.rand(1, l2["total_dim"])})
     v2 = decode_damage_block(m2.damage_op.last_raw_block[0], outgoing=False)
     assert v2["outgoing"] is None and len(v2["incoming"]) == TEAM_SIZE
+
+
+# --------------------------------------------------------------------------- discrete top-K incoming block
+# gen3_unified_topk_incoming_v1: the op surfaces the opp active's K most-believed CANDIDATE moves
+# individually (move LATENT + belief + per-pivot damage/status), so the policy can anticipate the discrete
+# move AND pick the immune/safe pivot — vs the worst-case `_chan_max` collapse that hides WHICH move it is.
+def _move_num(name: str) -> int:
+    from agents import gen3_data
+    return int(gen3_data.moves.get(name).num)
+
+
+def _logits_moves(n_moves, nums, B=1):
+    """Belief logits putting ~all mass on the given move nums (sigmoid(+10)≈1) and ~none elsewhere."""
+    lg = torch.full((B, TEAM_SIZE, n_moves), -10.0)
+    for num in nums:
+        lg[:, :, num] = 10.0
+    return lg
+
+
+def _synth_latent(layout, B=None):
+    """A synthetic candidate latent table `[C, MOVE_LATENT_DIM]` (C = n_moves + 16 typed HP) where row c
+    is the constant c — so a gathered top-K latent is verifiably its candidate index (tests the gather/
+    alignment without the full MoveLatentEncoder; the typed-HP identity is tested separately)."""
+    C = layout["max_moves"] + 16
+    return torch.arange(C, dtype=torch.float32)[:, None].repeat(1, MOVE_LATENT_DIM)
+
+
+def _topk_ctx(op, *, defenders, attacker_num=0, attacker_t1=0, attacker_t2=0,
+              hp_probs_active=None, opp_revealed_nums=None, B=1):
+    """`_fake_ctx` + the `all_move_ids` the top-K meaningful-K gate reads. `opp_revealed_nums` (a list)
+    sets the opp active's revealed move slots; default = none revealed (all K slots live)."""
+    if hp_probs_active is None:
+        hp_probs_active = [0.0] * 16
+    ctx = _fake_ctx(op, attacker_num=attacker_num, attacker_t1=attacker_t1, attacker_t2=attacker_t2,
+                    defenders=defenders, hp_probs_active=hp_probs_active, B=B)
+    n = 2 * TEAM_SIZE
+    amid = torch.zeros(B, n, 4, dtype=torch.long)
+    if opp_revealed_nums:
+        for k, num in enumerate(opp_revealed_nums[:4]):
+            amid[:, TEAM_SIZE, k] = num
+    ctx.all_move_ids = amid
+    ctx.all_move_type_ids = torch.zeros(B, n, 4, dtype=torch.long)
+    ctx.move_mask = torch.zeros(B, 4)
+    return ctx
+
+
+def test_topk_off_path_projection_dims_unchanged():
+    """damage_topk_k=0 == the baseline op; K>0 adds EXACTLY `_dmg_topk_dim(K)` to BOTH projection heads
+    (the structural-int byte-identity gate)."""
+    common = dict(attend_unrevealed_opponents=True, move_belief_mode="revealed", damage_op=True,
+                  move_latent=True)
+    base, _ = _make_model(**common)
+    on, _ = _make_model(**common, damage_topk_k=_DMG_TOPK_DEFAULT_K)
+    assert base.damage_op.topk_k == 0 and on.damage_op.topk_k == _DMG_TOPK_DEFAULT_K
+    grow = _dmg_topk_dim(_DMG_TOPK_DEFAULT_K)
+    assert on.projection_input_dim - base.projection_input_dim == grow
+    assert on.value_projection_input_dim - base.value_projection_input_dim == grow
+
+
+def test_topk_dependency_guard():
+    """damage_topk_k>0 hard-requires damage_op (it extends it) AND move_latent (it gathers the move latent)."""
+    with pytest.raises(ValueError, match="damage_op"):
+        _make_model(attend_unrevealed_opponents=True, move_belief_mode="revealed", move_latent=True,
+                    damage_topk_k=4)                                       # no damage_op
+    with pytest.raises(ValueError, match="move_latent"):
+        _make_model(attend_unrevealed_opponents=True, move_belief_mode="revealed", damage_op=True,
+                    damage_topk_k=4)                                       # no move_latent
+
+
+def test_topk_surfaces_distinct_special_threats():
+    """Two distinct special moves (Ice Beam, Thunderbolt) believed → the top-K block surfaces BOTH as
+    DISTINCT slots (distinct indices, distinct latents, distinct per-defender damage), NOT a single max."""
+    K = 5
+    op, layout = _op_and_layout_topk(K)
+    ib, tb = _move_num("icebeam"), _move_num("thunderbolt")
+    # Defender = a pure WATER mon: Ice Beam reads ½× but Thunderbolt 2× → the two threats DIFFER per pivot.
+    ctx = _topk_ctx(op, defenders=[(0, _T2I["WATER"], 0)] + [(0, 0, 0)] * 5)
+    out = op(ctx, _logits_moves(layout["max_moves"], [ib, tb]), None, _synth_latent(layout))
+    dec = decode_damage_block(out[0].detach().numpy(), outgoing=False, topk_k=K)
+    idx = op.last_topk_idx[0].tolist()
+    assert ib in idx[:2] and tb in idx[:2]                                 # both believed moves selected
+    # distinct identities (the synthetic latent row == its candidate index).
+    lat0 = dec["incoming_topk"]["moves"][0]["latent"][0]
+    lat1 = dec["incoming_topk"]["moves"][1]["latent"][0]
+    assert lat0 != lat1 and {int(round(lat0)), int(round(lat1))} == {ib, tb}
+    # distinct per-defender damage on the WATER mon — Thunderbolt's slot reads higher than Ice Beam's
+    # (2× vs ½×). Find each move's slot, compare the WATER defender (slot 0) high-rolls.
+    s_ib, s_tb = idx.index(ib), idx.index(tb)
+    high_ib = dec["incoming_topk"]["per_defender"][0][s_ib]["high"]
+    high_tb = dec["incoming_topk"]["per_defender"][0][s_tb]["high"]
+    assert high_tb > high_ib > 0.0, (high_ib, high_tb)                     # NOT a single collapsed max
+
+
+def test_topk_pivot_safety_damage_immunity():
+    """A move that hits the active hard but is type-IMMUNE on a bench pivot is shown as such IN THE SAME
+    move slot: Earthquake (Ground) → big damage to an Electric active, EXACTLY 0 to a Flying bench mon
+    (the owner's Gengar/Flying/Normal class of the most valuable switches)."""
+    K = 5
+    op, layout = _op_and_layout_topk(K)
+    eq = _move_num("earthquake")
+    # slot 0 = active (Electric, Ground-weak), slot 1 = a Flying pivot (immune to Ground).
+    ctx = _topk_ctx(op, defenders=[(0, _T2I["ELECTRIC"], 0), (0, _T2I["FLYING"], 0)] + [(0, 0, 0)] * 4)
+    out = op(ctx, _logits_moves(layout["max_moves"], [eq]), None, _synth_latent(layout))
+    dec = decode_damage_block(out[0].detach().numpy(), outgoing=False, topk_k=K)
+    s = op.last_topk_idx[0].tolist().index(eq)                             # Earthquake's top-K slot
+    active = dec["incoming_topk"]["per_defender"][0][s]                    # slot-0 defender (active)
+    flying = dec["incoming_topk"]["per_defender"][1][s]                    # slot-1 defender (Flying pivot)
+    assert active["high"] > 0.3 and active["pko"] > 0.0                    # threatens the active
+    assert flying["high"] == 0.0 and flying["pko"] == 0.0                  # the pivot is SAFE (immune)
+
+
+def test_topk_pivot_safety_status_immunity():
+    """A dedicated STATUS move (Thunder Wave) — non-damaging, so the damage scalars can't show it — is
+    surfaced via the per-pivot status_lands, immunity-folded: it paralyses a Normal pivot (status_lands>0)
+    but is 0 on a GROUND pivot (the owner's Thunder-Wave→Ground safe switch). Damage 0 everywhere."""
+    K = 5
+    op, layout = _op_and_layout_topk(K)
+    tw = _move_num("thunderwave")
+    ctx = _topk_ctx(op, defenders=[(0, _T2I["NORMAL"], 0), (0, _T2I["GROUND"], 0)] + [(0, 0, 0)] * 4)
+    out = op(ctx, _logits_moves(layout["max_moves"], [tw]), None, _synth_latent(layout))
+    dec = decode_damage_block(out[0].detach().numpy(), outgoing=False, topk_k=K)
+    s = op.last_topk_idx[0].tolist().index(tw)
+    normal = dec["incoming_topk"]["per_defender"][0][s]
+    ground = dec["incoming_topk"]["per_defender"][1][s]
+    assert normal["status_lands"] > 0.5                                    # Thunder Wave paras the Normal mon
+    assert ground["status_lands"] == 0.0                                   # Ground is IMMUNE (Electric status move)
+    assert normal["high"] == 0.0 and ground["high"] == 0.0                 # it's a status move — no damage
+
+
+def test_topk_meaningful_k_gate():
+    """A gen3 mon has exactly 4 moves: once all 4 opp-active moves are REVEALED the moveset is closed →
+    the 5th top-K slot (opp-property + per-defender) is zeroed; with ≤3 revealed it stays live."""
+    K = 5
+    op, layout = _op_and_layout_topk(K)
+    nums = [_move_num(n) for n in ("earthquake", "icebeam", "thunderbolt", "surf")]
+    defenders = [(0, _T2I["NORMAL"], 0)] + [(0, 0, 0)] * 5
+    lg = _logits_moves(layout["max_moves"], nums)                          # believe 4 distinct moves
+    lat = _synth_latent(layout)
+    # all 4 revealed → the moveset is pinned → the 5th slot is dead.
+    ctx_full = _topk_ctx(op, defenders=defenders, opp_revealed_nums=nums)
+    dec_full = decode_damage_block(op(ctx_full, lg, None, lat)[0].detach().numpy(), outgoing=False, topk_k=K)
+    m5 = dec_full["incoming_topk"]["moves"][4]
+    assert m5["belief"] == 0.0 and all(v == 0.0 for v in m5["latent"])     # opp-property 5th slot zeroed
+    assert all(dec_full["incoming_topk"]["per_defender"][d][4]["high"] == 0.0 for d in range(TEAM_SIZE))
+    # only 3 revealed → still guessing the 4th slot → the 5th candidate stays live.
+    ctx_part = _topk_ctx(op, defenders=defenders, opp_revealed_nums=nums[:3])
+    dec_part = decode_damage_block(op(ctx_part, lg, None, lat)[0].detach().numpy(), outgoing=False, topk_k=K)
+    assert dec_part["incoming_topk"]["moves"][4]["belief"] > 0.0           # 5th slot live
+
+
+def test_topk_typed_hp_latent_distinct():
+    """The candidate latent table's TYPED Hidden-Power latents (the op's HP-expansion axis) carry DISTINCT
+    identities per type (HP-Rock ≠ HP-Ice) — built the same way the move network builds its per-slot HP
+    latent (shared move emb ⊕ per-type type emb). The whole point of the typed expansion."""
+    model, layout = _make_model(attend_unrevealed_opponents=True, move_belief_mode="revealed",
+                                damage_op=True, move_latent=True, damage_topk_k=_DMG_TOPK_DEFAULT_K)
+    enc = model.pokemon_encoder.move_latent_encoder
+    hp = enc.hp_latent_block(model.embeddings, model.damage_op.HP_TYPE_IDX, model.damage_op.hp_num)
+    assert hp.shape == (16, MOVE_LATENT_DIM)
+    rock, ice = hp[_hp_slot("ROCK")], hp[_hp_slot("ICE")]
+    assert not torch.allclose(rock, ice)                                   # distinct typed identities
+
+
+def test_topk_grad_flows_to_belief_and_latent():
+    """The top-K block sharpens BOTH the move belief (via the differentiable `w_topk` feature → the
+    belief logits) AND the move latent (via the differentiable `latent_topk` gather → the latent table).
+    Isolated: backprop ONLY the top-K slice → gradient must reach both the belief logits and the latent
+    table (damage/status are w-independent physics — decorrelated)."""
+    K = 5
+    op, layout = _op_and_layout_topk(K)
+    eq = _move_num("earthquake")
+    ctx = _topk_ctx(op, defenders=[(0, _T2I["ELECTRIC"], 0)] + [(0, 0, 0)] * 5)
+    logits = _logits_moves(layout["max_moves"], [eq]).requires_grad_(True)
+    latent = _synth_latent(layout).requires_grad_(True)
+    out = op(ctx, logits, None, latent)
+    topk_slice = out[:, op.incoming_dim:]                                  # the top-K block (outgoing off)
+    topk_slice.sum().backward()
+    assert logits.grad is not None and logits.grad.abs().sum() > 0         # belief sharpened (via w_topk)
+    assert latent.grad is not None and latent.grad.abs().sum() > 0         # latent sharpened (via latent_topk)
+
+
+def test_topk_leak_free():
+    """No-leak gate (topk ON): the discrete top-K block reads only public obs + the predicted belief — the
+    full model output is bit-identical whether or not the privileged label keys are in the obs dict."""
+    model, layout = _make_model(attend_unrevealed_opponents=True, move_belief_mode="revealed",
+                                move_prior_fusion=True, damage_op=True, damage_outgoing=True,
+                                move_latent=True, damage_topk_k=_DMG_TOPK_DEFAULT_K)
+    model.eval()
+    torch.manual_seed(0)
+    obs_t = torch.rand(4, layout["total_dim"])
+    poisoned = {"observation": obs_t,
+                "belief_species": torch.rand(4, TEAM_SIZE, layout["max_species"]),
+                "belief_moves": torch.rand(4, TEAM_SIZE, layout["max_moves"]),
+                "known_moves": torch.rand(4, TEAM_SIZE, layout["max_moves"]),
+                "belief_target_slots": torch.rand(4, TEAM_SIZE, 107)}
+    with torch.no_grad():
+        clean_pi, clean_vf = model.forward({"observation": obs_t})
+        clean_pi, clean_vf = clean_pi.clone(), clean_vf.clone()
+        pois_pi, pois_vf = model.forward(poisoned)
+    assert torch.equal(clean_pi, pois_pi) and torch.equal(clean_vf, pois_vf)
+
+
+def test_topk_block_is_purely_additive():
+    """OFF-path byte-identity: turning topk ON appends a block at the END, so EVERY existing block
+    (incoming / outgoing / effect / CB / status) is byte-identical on/off — the on-op's leading
+    `op_off.out_dim` slice equals the off-op's full output (the out_gain prefix init is topk-independent)."""
+    K = 5
+    layout = _make_layout()
+    op_off = DamageOperator(layout, outgoing=True, topk_k=0)
+    op_on = DamageOperator(layout, outgoing=True, topk_k=K)
+    ib = _move_num("icebeam")
+    ctx = _topk_ctx(op_on, defenders=[(0, _T2I["WATER"], 0)] + [(0, 0, 0)] * 5)
+    lg = _logits_moves(layout["max_moves"], [ib])
+    out_off = op_off(ctx, lg, None, None)                       # topk off → no latent table needed
+    out_on = op_on(ctx, lg, None, _synth_latent(layout))
+    assert out_on.shape[1] - out_off.shape[1] == _dmg_topk_dim(K)
+    assert torch.allclose(out_off, out_on[:, :op_off.out_dim], atol=1e-6)
+
+
+def _op_and_layout_topk(k):
+    """A bare DamageOperator (incoming-only) with the top-K block on — for the synthetic-ctx tests."""
+    layout = _make_layout()
+    return DamageOperator(layout, topk_k=k), layout
 
 
 # ---------------------------------------------------- gen3_unified_move_system_v1: secondary effects

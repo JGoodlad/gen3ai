@@ -442,6 +442,14 @@ loading uses the same exact→nearest→recent ladder (cached per process). A
     equal-effectiveness move tie-break). v24 (gen3_unified_move_system_v1) ADDS per-status SECONDARY
     probabilities: `incoming_secondary` (the opp active's damaging-move para/flinch/freeze threat,
     accuracy-folded + ×Serene Grace) and `outgoing.secondary` (per OUR move — "what status can it cause").
+    v30 (gen3_unified_topk_incoming_v1) ADDS `incoming_topk` (`None` unless the run trained `--damage-topk`):
+    the opp active's K most-believed CANDIDATE moves INDIVIDUALLY — `moves` (each with its exact decoded
+    `move` NAME — resolved from the op's stashed candidate indices, typed HP → `hiddenpower(type)` — plus
+    `belief`/`accuracy`/`is_phys`/`latent`) and `per_defender` (6 × K of `[high, pko, status_lands]`, the
+    discrete-move + per-pivot safe-switch read incl. damage-immunity AND status-immunity = 0). The app's
+    Matchups panel renders an **"opp likely (op):"** block — per move: name + belief, the read on OUR active
+    (▶), and the SAFEST bench pivot (min combined damage/status threat) — the literal "anticipate the move
+    → which mon switches in safe (immune)" read.
   - `move_belief` (model, via `ProbeModel.move_belief` → `engine.move_belief_view`, `MoveBeliefView`):
     the model's MOVE belief for each **REVEALED opponent mon** — `None` unless the checkpoint trained
     `--move-belief-mode != off`. Per revealed opp mon (gated on the `species_known` obs bit, so un-revealed

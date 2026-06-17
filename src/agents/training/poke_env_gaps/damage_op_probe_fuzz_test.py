@@ -283,6 +283,61 @@ def _band_for(res: dict, move_id: str, tag: str) -> Optional[tuple]:
     return (low * amul, high * amul, crit * amul)
 
 
+def _topk_constructed_check() -> tuple:
+    """gen3_unified_topk_incoming_v1: validate the DISCRETE top-K incoming block end-to-end through a real
+    op FORWARD (the only path that exercises belief SELECTION + the per-defender GATHER + status_lands) —
+    the per-PIVOT reads the random-game probe can't make (it measures one attacker→one defender per turn,
+    while top-K surfaces one move vs ALL 6 of our mons in one forward). Each assertion rests on the
+    omniscient-validated physics: (a) the per-defender damage GATHERS from the SAME `_damage_rolls` the 19
+    Showdown scenarios validate — pinned here by `topk[active] ≈ the op's worst-case phys_high` (belief≈1);
+    (b) a Ground-move IMMUNITY on a Flying pivot = exactly 0 (the type chart, validated by
+    `type_immune_electric_ground`/`levitate_immune`); (c) Thunder-Wave→Ground status immunity (gen3
+    `STATUS_MOVE_IMMUNITY`). Returns (ok, fail)."""
+    import torch  # noqa: F401
+    from agents.model.damage_op_test import (
+        _op_and_layout_topk, _topk_ctx, _logits_moves, _synth_latent, _move_num, _T2I)
+    from agents.model.features_extractor import decode_damage_block
+    ok = fail = 0
+
+    def _emit(name, passed, detail):
+        nonlocal ok, fail
+        print(f"  {'OK' if passed else 'FAIL':7s} {name:26s} {detail}")
+        ok += int(passed); fail += int(not passed)
+
+    K = 5
+    op, layout = _op_and_layout_topk(K)
+    n_moves = layout["max_moves"]
+
+    # (1) PIVOT — Earthquake (Ground) hits an Electric active (2×), EXACTLY 0 on a Flying bench (immune);
+    #     and the top-K slot's active damage matches the op's OWN worst-case phys_high (gather == the
+    #     Showdown-validated physics, since one move is believed at w≈1).
+    eq = _move_num("earthquake")
+    ctx = _topk_ctx(op, defenders=[(0, _T2I["ELECTRIC"], 0), (0, _T2I["FLYING"], 0)] + [(0, 0, 0)] * 4)
+    dec = decode_damage_block(op(ctx, _logits_moves(n_moves, [eq]), None, _synth_latent(layout))[0]
+                              .detach().numpy(), outgoing=False, topk_k=K)
+    s = op.last_topk_idx[0].tolist().index(eq)
+    active = dec["incoming_topk"]["per_defender"][0][s]
+    flying = dec["incoming_topk"]["per_defender"][1][s]
+    _emit("topk_pivot_immunity", active["high"] > 0.3 and flying["high"] == 0.0 and flying["pko"] == 0.0,
+          f"active_high={active['high']:.2f} flying_high={flying['high']:.2f} flying_pko={flying['pko']:.2f}")
+    wc_high = dec["incoming"][0]["phys"]["high"]                         # the omniscient-validated worst-case
+    _emit("topk_gather_eq_worstcase", abs(active["high"] - wc_high) < 0.02,
+          f"topk={active['high']:.3f} worstcase={wc_high:.3f}")
+
+    # (2) STATUS PIVOT — Thunder Wave lands on a Normal pivot but is type-IMMUNE on a Ground pivot (the
+    #     owner's canonical safe switch); damage 0 everywhere (it's a status move).
+    tw = _move_num("thunderwave")
+    ctx2 = _topk_ctx(op, defenders=[(0, _T2I["NORMAL"], 0), (0, _T2I["GROUND"], 0)] + [(0, 0, 0)] * 4)
+    dec2 = decode_damage_block(op(ctx2, _logits_moves(n_moves, [tw]), None, _synth_latent(layout))[0]
+                               .detach().numpy(), outgoing=False, topk_k=K)
+    s2 = op.last_topk_idx[0].tolist().index(tw)
+    normal = dec2["incoming_topk"]["per_defender"][0][s2]
+    ground = dec2["incoming_topk"]["per_defender"][1][s2]
+    _emit("topk_status_immunity", normal["status_lands"] > 0.5 and ground["status_lands"] == 0.0
+          and normal["high"] == 0.0, f"normal_st={normal['status_lands']:.2f} ground_st={ground['status_lands']:.2f}")
+    return ok, fail
+
+
 def main() -> int:
     scenarios = _scenarios()
     print(f"=== DamageOperator PROBE oracle: {len(scenarios)} constructed single-turn scenarios ===")
@@ -329,6 +384,12 @@ def main() -> int:
             n_ok += 1
         else:
             n_fail += 1
+    # gen3_unified_topk_incoming_v1: the DISCRETE top-K block's per-pivot reads (a forward-only path the
+    # random-game probe can't measure), tied to the same omniscient-validated physics.
+    print("--- discrete top-K incoming block (per-pivot, forward) ---")
+    tk_ok, tk_fail = _topk_constructed_check()
+    n_ok += tk_ok
+    n_fail += tk_fail
     print(f"\nPASS {n_ok} | FAIL {n_fail} | SKIP {n_skip}")
     ok = n_fail == 0 and n_ok >= 15
     print("RESULT:", "PASS" if ok else "FAIL")

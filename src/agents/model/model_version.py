@@ -234,7 +234,18 @@ from typing import Any, Dict, List
 #   value_tail_weight). A SIDE readout off value_pooled (NOT in pi/vf → projection dims unchanged), so
 #   OFF (mode none) is baseline byte-for-byte — NO ARCH_SIGNATURE bump. Old configs migrate to
 #   value_dist_mode="none" / bins=0 / vmin=vmax=0.0. Design: designs/ai_v6/design_distributional_value_critic.md.
-MODEL_CONFIG_VERSION = 29
+# v30: gen3_unified_topk_incoming_v1 — the DamageOperator's DISCRETE top-K incoming move-space block.
+#   `damage_topk_k` (int, 0 = off) = the number of the opp ACTIVE's most-believed CANDIDATE moves surfaced
+#   INDIVIDUALLY (vs the worst-case `_chan_max` collapse that loses WHICH move it is). Per top-K move: its
+#   move LATENT identity (gathered from the MoveLatentEncoder — DIFFERENTIABLE → sharpens the latent) +
+#   belief weight (DIFFERENTIABLE → sharpens the move belief) + accuracy + is_phys, then per OUR mon
+#   [high-roll, P(KO), status_lands] — the discrete-move + per-pivot (incl. damage-immunity 0 AND
+#   status-immunity 0, e.g. Thunder-Wave→Ground) read that makes "anticipate the move / pick the safe
+#   switch" decidable. Added ALONGSIDE the worst-case summary. K scales out_dim (hence both projection
+#   in_features) → STRUCTURAL int gated in check_compatible (like opp_belief_cls_k); OFF (0) byte-for-byte
+#   (NO ARCH_SIGNATURE bump). Requires damage_op + move_latent. A v29 damage_op checkpoint won't load into a
+#   topk-ON op (projection in_features mismatch). Design: designs/ai_v6/design_topk_incoming_moves.md.
+MODEL_CONFIG_VERSION = 30
 
 # Change this when the neural architecture changes structurally in a way that makes
 # weights from a different signature incompatible (e.g. adding LSTM, replacing attention).
@@ -730,6 +741,13 @@ class ModelVersion:
     # aux loss, affects no forward pass → recorded for provenance + flagless-resume read-back, NOT
     # version-locked. Default 1.0 (full weight when the mode is on; ignored when none).
     value_dist_coef: float = 1.0
+    # v30 STRUCTURAL (gen3_unified_topk_incoming_v1): the DamageOperator's DISCRETE top-K incoming block —
+    # K = the number of the opp active's most-believed candidate moves surfaced individually (each with its
+    # move LATENT + per-pivot damage/status). 0 = off. out_dim (hence both projection in_features) scales
+    # with K, so EVERY distinct value (incl. 0↔N) is a weight-shape change → gated in check_compatible with
+    # an unconditional int compare (like opp_belief_cls_k / value_dist_bins). OFF (0) reproduces baseline
+    # byte-for-byte (NO ARCH_SIGNATURE bump). Requires damage_op + move_latent (enforced at the extractor).
+    damage_topk_k: int = 0
 
     @classmethod
     def from_layout_and_policy_kwargs(
@@ -851,6 +869,9 @@ class ModelVersion:
             ),
             value_dist_vmax=float(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("value_dist_vmax", 0.0)
+            ),
+            damage_topk_k=int(
+                policy_kwargs.get("features_extractor_kwargs", {}).get("damage_topk_k", 0)
             ),
             value_tail_weight=float(value_tail_weight),
             opp_belief_aux_coef=float(opp_belief_aux_coef),
@@ -1112,6 +1133,18 @@ class ModelVersion:
                 "The atom count is the value-dist head's output width — a different N is a weight-shape "
                 "change.\n"
                 "Resume with the matching --value-dist-bins setting, or start a fresh training run."
+            )
+        # gen3_unified_topk_incoming_v1 (v30): the discrete top-K incoming block's K scales the
+        # DamageOperator out_dim → both projection in_features. Every distinct K (incl. 0↔N = adding/
+        # removing the block) is a weight-shape change → a single unconditional int compare gates it
+        # (like opp_belief_cls_k / value_dist_bins).
+        if self.damage_topk_k != saved.damage_topk_k:
+            raise ModelVersionError(
+                f"damage_topk_k mismatch: saved={saved.damage_topk_k}, current={self.damage_topk_k}.\n"
+                "The top-K incoming block's K is the number of opp moves surfaced — it scales the damage "
+                "operator's output (hence both projection widths), so any change is a weight-shape "
+                "mismatch.\n"
+                "Resume with the matching --damage-topk setting, or start a fresh training run."
             )
 
     def check_opponent_compatible(self, foreign: "ModelVersion") -> None:
@@ -1417,4 +1450,13 @@ def _migrate_config(data: dict) -> dict:
         data.setdefault("value_dist_vmax", 0.0)
         data.setdefault("value_dist_coef", 1.0)
         data["config_version"] = 29
+    if version < 30:
+        # v30: gen3_unified_topk_incoming_v1 — the DamageOperator's DISCRETE top-K incoming block. K =
+        # `damage_topk_k` (0 = off) is the number of the opp active's most-believed candidate moves surfaced
+        # individually (each with its move LATENT identity + per-OUR-mon damage + immunity-folded
+        # status-landing — the discrete-move / safe-switch read the worst-case `_chan_max` collapse can't
+        # give). out_dim scales with K → STRUCTURAL int (gated in check_compatible, like opp_belief_cls_k);
+        # OFF (0) byte-for-byte (NO ARCH_SIGNATURE bump). Requires damage_op + move_latent.
+        data.setdefault("damage_topk_k", 0)
+        data["config_version"] = 30
     return data

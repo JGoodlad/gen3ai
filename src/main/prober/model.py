@@ -441,9 +441,12 @@ class ProbeModel:
         """The unified DamageOperator's view for THIS obs: per-our-mon incoming threat
         ``[low,high,crit,pko,acc]×{phys,spec} + p_outspeed + provenance`` in TEAM-SLOT order (the active is
         whichever slot holds the active flag; the bench slots are the SAFE-SWITCH reads), the opp-active
-        effect scalars, and (on a ``--unified-damage both`` run) our 4 moves' OUTGOING damage. Runs ONE
-        clean forward and decodes the operator's PRE-gain physics stash; ``None`` when the checkpoint has no
-        damage operator (``--damage-op`` off).
+        effect scalars, and (on a ``--unified-damage both`` run) our 4 moves' OUTGOING damage. On a
+        ``--damage-topk`` run it ALSO carries `incoming_topk` — the opp active's K most-believed CANDIDATE
+        moves, each with its decoded move NAME (exact, from the op's stashed candidate indices — typed HP
+        rendered as ``hiddenpower(type)``), belief, and per-OUR-mon ``[high, pko, status_lands]`` (the
+        discrete-move + per-pivot safe-switch read). Runs ONE clean forward and decodes the operator's
+        PRE-gain physics stash; ``None`` when the checkpoint has no damage operator (``--damage-op`` off).
 
         NOTE: the stash lives on the **DamageOperator submodule** (`op.last_raw_block`, set inside its
         forward), NOT on the extractor — reading `extractor.last_raw_block` always returned None, silently
@@ -462,7 +465,43 @@ class ProbeModel:
         raw = getattr(op, "last_raw_block", None)            # the op stashes on ITSELF, not the extractor
         if raw is None:
             return None
-        return decode_damage_block(raw[0].detach().cpu().numpy(), outgoing=bool(op.outgoing))
+        topk_k = int(getattr(op, "topk_k", 0))
+        view = decode_damage_block(raw[0].detach().cpu().numpy(), outgoing=bool(op.outgoing), topk_k=topk_k)
+        # gen3_unified_topk_incoming_v1: resolve each top-K candidate to its EXACT move name from the op's
+        # stashed indices (better than a nearest-latent decode — the op knows which candidate it picked).
+        if topk_k > 0 and view.get("incoming_topk") is not None:
+            idx = getattr(op, "last_topk_idx", None)
+            if idx is not None:
+                names = self._topk_move_names(op, [int(c) for c in idx[0].detach().cpu().tolist()])
+                for k, mv in enumerate(view["incoming_topk"]["moves"]):
+                    mv["move"] = names[k] if k < len(names) else None
+        return view
+
+    def _topk_move_names(self, op, cand_indices):
+        """Resolve the DamageOperator's top-K CANDIDATE indices → move-id strings. A candidate < n_moves is
+        a national-move-num (→ its id; Hidden Power's shared num 237 → bare ``hiddenpower``); a candidate
+        ≥ n_moves is a TYPED Hidden Power (slot j = idx − n_moves → ``hiddenpower(type)`` via HP_TYPE_IDX)."""
+        from agents import gen3_data
+        from agents.observation.types import TypeEncoder
+        n_moves = int(op.MOVE_BP.shape[0])
+        if getattr(self, "_topk_num_to_id", None) is None:
+            raw = gen3_data.moves.raw()
+            m = {int(v["num"]): mid for mid, v in raw.items() if v.get("num")}
+            for mid, v in raw.items():            # collapse every Hidden Power num → the bare id
+                if mid.startswith("hiddenpower") and v.get("num"):
+                    m[int(v["num"])] = "hiddenpower"
+            self._topk_num_to_id = m
+        i2t = {i: t.lower() for t, i in TypeEncoder.TYPE_TO_IDX.items()}
+        hp_types = [int(x) for x in op.HP_TYPE_IDX.detach().cpu().tolist()]
+        out = []
+        for c in cand_indices:
+            if c < n_moves:
+                out.append(self._topk_num_to_id.get(c, f"#{c}"))
+            else:
+                j = c - n_moves
+                t = i2t.get(hp_types[j], "?") if 0 <= j < len(hp_types) else "?"
+                out.append(f"hiddenpower({t})")
+        return out
 
     def move_belief(self, obs: np.ndarray, mask: np.ndarray):
         """The model's MOVE belief for THIS obs — per opp slot the multi-label move-prediction posterior

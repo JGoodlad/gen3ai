@@ -175,9 +175,9 @@ because it is Φ_progress's weight. All are recorded on
 `ModelVersion` and enforced on resume by **`check_reward_config`** (FATAL on drift, since they silently
 shift the reward/objective), excluded from `check_compatible`. They are reward-VALUE changes — **no
 `ARCH_SIGNATURE` bump** (the network/obs are unchanged) — so a fresh run is needed to measure them but
-old checkpoints don't fail an arch check. Current `MODEL_CONFIG_VERSION` = **29** (see the belief +
+old checkpoints don't fail an arch check. Current `MODEL_CONFIG_VERSION` = **30** (see the belief +
 unified-damage + unified-move + spread-belief + op-physics + status-landing + choice-band + value-dist
-notes below for v16–v29).
++ topk-incoming notes below for v16–v30).
 
 **Two probe-driven V-tail levers (v10 structural, v11 resume-immutable).** A representation probe on a
 real checkpoint found the **value head is partly blind to incoming KOs the policy head sees**
@@ -549,7 +549,42 @@ critic is, so the support lives in normalized space — see `src/agents/training
 capture** (`RLPlayer._value_dist` → a `value_dist` npz array), the **prober** histogram + spread/PIT
 (`engine.build_value_dist` / `ValueDistView`, rendered in the Summary + the `analyze` CLI), and the
 **launcher** `value_dist/*` aggregate metrics. NOT YET (Phase B, a separate fresh-run A/B): making the
-scalar critic ITSELF distributional (replace `value_net`). Current `MODEL_CONFIG_VERSION` = **29**.
+scalar critic ITSELF distributional (replace `value_net`).
+
+**Discrete top-K incoming move-space (v30, `damage_topk_k` / `--damage-topk`, `gen3_unified_topk_incoming_v1`).**
+The `DamageOperator`'s incoming block collapses the opp active's whole moveset into the worst phys/spec
+hit per defender (`_chan_max`) — losing WHICH move it is + the per-pivot consequences, so the policy
+can't anticipate the discrete move or pick the immune/safe pivot. This adds a **discrete top-K block**
+(behind `damage_topk_k`, an int; 0 = off; **default 5 when `--unified-moves`** auto-enables it — a gen3
+mon runs 4 moves, so the 5th is the surprise/uncertain candidate; "reason about the 4th/5th move").
+For the opp active's **K most-believed CANDIDATE moves** (`torch.topk` over `w_all` — real move-nums +
+16 typed HP — indices DETACHED), per move it emits: the move **LATENT** identity (gathered from the
+`MoveLatentEncoder`'s candidate latent table — real ⊕ **typed-HP** rows built by
+`hp_latent_block`; DIFFERENTIABLE → sharpens the latent), the belief weight `w` (DIFFERENTIABLE →
+sharpens the move belief), accuracy, is_phys (`_DMG_TOPK_MOVE` = 35, an opp-property shared across
+defenders), then **per OUR mon** `[high, pko, status_lands]` (`_DMG_TOPK_DMG_PER` = 3) — the
+discrete-move + per-pivot read. The `high`/`pko` GATHER from the SAME raw `_damage_rolls` `[B,6,C]`
+tensors the worst-case block validates (so a damage-IMMUNE pivot reads exactly 0); `status_lands`
+(`_incoming_status_lands`) is the immunity-folded incoming status threat — a DEDICATED status move's
+landing (type/ability/already-statused immunity at OUR defender — **Thunder Wave → a Ground pivot = 0**,
+Toxic→Steel/Poison, WoW→Fire, Leech Seed→Grass) OR a damaging move's major-status SECONDARY gated by
+the damage landing. **Decorrelated** (damage/status are w-independent physics; the belief gradient
+rides the `w` feature + the retained `_chan_max`; the latent gradient rides the gathered latent) — the
+Jensen / "provide facts, let the head weight" principle. **Meaningful-K gate:** once all 4 opp-active
+moves are revealed the moveset is closed → the 5th+ slot is zeroed (nothing left to reason about).
+Added ALONGSIDE the worst-case `_chan_max` summary (the differentiable-op design §4.3 hybrid — the
+clean switch-SAFETY anchor + the discrete-identity detail). `out_dim` grows by `_dmg_topk_dim(K) = K·53`
+→ both projections; the candidate latent table is built in `forward_internal` (UNCONDITIONALLY when
+topk on, NOT `is_grad_enabled`-gated, since the op output feeds both heads in rollout) and passed to
+the op as `move_latent_all`. `damage_topk_k` is a **STRUCTURAL int** toggle (gated in `check_compatible`
+with an unconditional int compare, like `opp_belief_cls_k`/`value_dist_bins`; OFF = 0 byte-for-byte, NO
+`ARCH_SIGNATURE` bump). Hard-requires `damage_op` + `move_latent` (enforced at the extractor + CLI).
+The op stashes `last_topk_idx`/`last_topk_w` (detached side reads, never fed forward) so the prober
+decodes EXACT move names. Threaded through `current_model_version` / `arch_toggles_from_model` /
+`_run_arch_toggles` (the 4 opp-load sites). `decode_damage_block(..., topk_k=K)` is the SoT mirror
+(`incoming_topk` = the K moves + 6×K per-defender). Leak-safe (public obs + the predicted belief only;
+pinned by `damage_op_test.test_topk_leak_free`). Design:
+`designs/ai_v6/design_topk_incoming_moves.md`. Current `MODEL_CONFIG_VERSION` = **30**.
 
 A startup smoke test (`_run_roundtrip_test` in `train_rl_agent.py`) saves to a temp dir and reloads before every `model.learn()` call — catches serialization issues immediately.
 

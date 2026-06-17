@@ -625,7 +625,12 @@ and `DamageOperator` (`--damage-op`) consumes that move belief's predicted moves
 incoming damage to each of our mons (a differentiable gen3 calc), appended to **both** projection heads —
 so the gradient sharpens the move belief toward real KO threats (`designs/ai_v6/design_differentiable_damage_op.md`);
 its effect block carries per-status SECONDARY probabilities (incoming opp threat + per-OUR-move outgoing,
-accuracy-folded, ×Serene Grace / Shield Dust — `gen3_unified_move_system_v1`). Inside `PokemonEncoder`, the
+accuracy-folded, ×Serene Grace / Shield Dust — `gen3_unified_move_system_v1`). Under `--damage-topk K` it
+ALSO emits a **DISCRETE top-K incoming block** (`gen3_unified_topk_incoming_v1`): the opp active's K
+most-believed moves INDIVIDUALLY, each with its move LATENT identity (gathered from `MoveLatentEncoder`,
+typed-HP-aware) + belief + per-OUR-mon `[high, pko, status_lands]` — so the policy reasons in the discrete
+move space (anticipate the move, pick the damage-/status-immune safe pivot, e.g. Thunder-Wave→Ground=0)
+instead of only the collapsed worst-case. Inside `PokemonEncoder`, the
 flag-gated `MoveLatentEncoder` (`--move-latent`) concatenates a context-free mechanics-grounded per-move
 latent into the move network; its latent table is the Stage-3 similarity-grading target
 (`--move-belief-latent-coef`, so Rock Slide ≈ Hidden Power Rock — `designs/ai_v6/design_unified_move_system.md`).
@@ -748,10 +753,25 @@ emits per-atom return-distribution logits (softmax = the critic's predicted retu
 confident, wide = uncertain, bimodal = coinflip), a SIDE readout stashed for the prober + a future aux
 loss, **never in pi/vf** (projection dims unchanged → OFF byte-identical, no `ARCH_SIGNATURE` bump); mode +
 bins gated in `check_compatible`, the support (vmin/vmax) resume-only. Phase-A foundation (head +
-versioning); the distributional aux loss + capture/prober/launcher are follow-ons. Current
-`MODEL_CONFIG_VERSION` = **29**. Full design:
-`designs/ai_v6/design_distributional_value_critic.md` (and `design_unified_move_system.md` for v24,
-`design_unified_damage_system.md` for v23).
+versioning); the distributional aux loss + capture/prober/launcher are follow-ons.
+**v30 the DISCRETE top-K incoming move-space** (`gen3_unified_topk_incoming_v1`, `damage_topk_k` /
+`--damage-topk`) — the `DamageOperator`'s incoming block collapses the opp active's whole moveset into the
+worst phys/spec hit per defender (`_chan_max`), hiding WHICH move it is + the per-pivot consequences. This
+adds a discrete block: for the opp active's **K most-believed CANDIDATE moves** (default K=5, auto-on under
+`--unified-moves`; a mon runs 4 moves so the 5th is the surprise candidate) it surfaces — per move — its
+move **LATENT** identity (gathered from the `MoveLatentEncoder`, incl. **typed-HP** rows so HP-Rock ≠
+HP-Ice; differentiable → sharpens the latent) + belief weight (differentiable → sharpens the move belief)
++ accuracy + is_phys, then **per OUR mon** `[high, pko, status_lands]` — so the policy can anticipate the
+discrete move AND pick the immune/safe pivot (damage-immune pivot = 0 from the chart; status-immune pivot,
+e.g. **Thunder Wave → a Ground mon**, = 0 via `_incoming_status_lands`). Decorrelated physics (the belief
+gradient rides the `w` feature, not the damage); the 5th slot is zeroed once all 4 opp moves are revealed;
+added ALONGSIDE the worst-case `_chan_max` summary (the §4.3 hybrid). STRUCTURAL int (scales `out_dim` by
+`K·53` → both projections; gated in `check_compatible` like `opp_belief_cls_k`; OFF=0 byte-identical, no
+`ARCH_SIGNATURE` bump); requires `--damage-op` + `--move-latent`; threaded through `arch_toggles`; the
+prober decodes exact move names from the stashed `last_topk_idx`. Current
+`MODEL_CONFIG_VERSION` = **30**. Full design:
+`designs/ai_v6/design_topk_incoming_moves.md` (and `design_distributional_value_critic.md` for v29,
+`design_unified_move_system.md` for v24, `design_unified_damage_system.md` for v23).
 **The full versioning playbook — what to do when you change a dim vs add an optional feature vs
 make a structural change — is in `src/agents/model/CLAUDE.md`.**
 

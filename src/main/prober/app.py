@@ -1147,6 +1147,41 @@ class ProberApp(Gen3App):
                                  style=gradient_color(1.0 - c["pko"]) if (act or c["pko"] > 0.05) else "dim")
             if not any_inc:
                 lines.append("\n  n/a", style="dim")
+        # gen3_unified_topk_incoming_v1: the DISCRETE top-K incoming move-space — the opp active's K
+        # most-believed moves INDIVIDUALLY (vs the worst-case collapse above), each with its decoded NAME +
+        # belief, the read on OUR active, and the SAFEST bench pivot (min combined damage/status threat) —
+        # the literal "anticipate the move → which mon switches in safe" read (incl. immunity = 0).
+        itk = dop.get("incoming_topk") if dop is not None else None
+        if itk is not None and mb is not None and itk.get("moves"):
+            labels = list(mb.our_labels)                       # (team_slot, species, is_active), team-slot order
+            pdef = itk["per_defender"]                         # [6][K] {high, pko, status_lands}
+            act_i = next((i for i, (_s, _sp, act) in enumerate(labels) if act), None)
+            bench = [i for i, (_s, sp, act) in enumerate(labels) if (not act) and sp]
+
+            def _pivot_tag(pd):                                # how a pivot reads vs a move (immune/dmg/status)
+                if pd["high"] == 0.0 and pd["status_lands"] == 0.0:
+                    return "immune", 0.0
+                t = f"{pd['high'] * 100:.0f}%" + (f"→KO{pd['pko'] * 100:.0f}%" if pd["pko"] > 0.05 else "")
+                if pd["status_lands"] > 0.05:
+                    t += (f" st{pd['status_lands'] * 100:.0f}%" if t != "0%" else f"st{pd['status_lands'] * 100:.0f}%")
+                return t, max(pd["pko"], pd["status_lands"], pd["high"])
+            shown = []
+            for k, mv in enumerate(itk["moves"]):
+                if mv.get("belief", 0.0) <= 0.05:              # skip the dead padding slots
+                    continue
+                seg = f"{mv.get('move') or '?'} {mv['belief'] * 100:.0f}%"
+                if act_i is not None and act_i < len(pdef):
+                    atag, _ = _pivot_tag(pdef[act_i][k])
+                    seg += f"  ▶{labels[act_i][1]} {atag}"
+                if bench:                                      # the safest switch-in for THIS move
+                    bi = min(bench, key=lambda i: _pivot_tag(pdef[i][k])[1])
+                    btag, _ = _pivot_tag(pdef[bi][k])
+                    seg += f"  safe→{labels[bi][1]} {btag}"
+                shown.append(seg)
+            if shown:
+                lines.append("\nopp likely (op):", style="dim")
+                for seg in shown:
+                    lines.append(f"\n  {seg}", style="yellow")
         threat.update(lines)
 
     def _render_sweep(self, a: InvocationAnalysis) -> None:

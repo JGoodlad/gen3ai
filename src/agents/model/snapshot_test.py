@@ -564,6 +564,48 @@ def test_migrate_pre_v18_adds_damage_op_default(version):
     ModelVersion(**result)
 
 
+# --- damage_topk_k: a structural INT toggle (the discrete top-K incoming block, v30) ----------------
+
+
+def test_check_compatible_rejects_damage_topk_k_mismatch(version):
+    """damage_topk_k scales the DamageOperator out_dim → both projection in_features. EVERY distinct K
+    (incl. 0↔N) is a weight-shape change check_compatible must reject (like opp_belief_cls_k)."""
+    on = dataclasses.replace(version, damage_topk_k=5)
+    with pytest.raises(ModelVersionError) as exc_info:
+        version.check_compatible(on)        # version has damage_topk_k=0 (default off)
+    assert "damage_topk_k" in str(exc_info.value)
+    # a different nonzero K is also a mismatch
+    with pytest.raises(ModelVersionError):
+        dataclasses.replace(version, damage_topk_k=4).check_compatible(on)
+
+
+def test_check_compatible_accepts_matching_damage_topk_k(version):
+    """Same K (incl. the off baseline) must load — no false rejection."""
+    version.check_compatible(dataclasses.replace(version))            # 0 vs 0
+    on = dataclasses.replace(version, damage_topk_k=5)
+    on.check_compatible(dataclasses.replace(on))                      # 5 vs 5
+
+
+def test_damage_topk_k_read_from_features_extractor_kwargs(layout):
+    """damage_topk_k sources from features_extractor_kwargs; absent → 0 (baseline off)."""
+    pk = {"net_arch": [512, 512], "features_extractor_kwargs": {"damage_topk_k": 5}}
+    v = ModelVersion.from_layout_and_policy_kwargs(layout, pk)
+    assert v.damage_topk_k == 5 and v.config_version == MODEL_CONFIG_VERSION
+    v_default = ModelVersion.from_layout_and_policy_kwargs(layout, {"net_arch": [512, 512]})
+    assert v_default.damage_topk_k == 0
+
+
+def test_migrate_pre_v30_adds_damage_topk_k_default(version):
+    """Pre-v30 configs lack damage_topk_k — migration injects 0 (off) and bumps to the current version."""
+    data = json.loads(version.to_json())
+    data.pop("damage_topk_k", None)
+    data["config_version"] = 29
+    result = _migrate_config(data)
+    assert result["config_version"] == MODEL_CONFIG_VERSION
+    assert result["damage_topk_k"] == 0
+    ModelVersion(**result)
+
+
 # --- move_prior_fusion: a forward-behavior bool toggle (the unified two-part move belief, v20) -------
 
 
@@ -1693,7 +1735,8 @@ def test_arch_toggles_from_model_extracts_flags():
                                move_belief_mode="revealed", opp_belief_latent=True,
                                damage_op_enabled=True, damage_outgoing=True, move_candidate_floor=0.3,
                                move_latent=True, move_prior_fusion=True,
-                               mask_incoming_damage_obs=True, win_prob_mode="read_only")
+                               mask_incoming_damage_obs=True, win_prob_mode="read_only",
+                               damage_topk_k=5)
     model = types.SimpleNamespace(policy=types.SimpleNamespace(features_extractor=fe, popart=object()))
     t = arch_toggles_from_model(model)
     assert t["opp_belief_slots"] is True and t["attend_unrevealed_opponents"] is True
@@ -1704,6 +1747,8 @@ def test_arch_toggles_from_model_extracts_flags():
     assert t["move_candidate_floor"] == 0.3 and t["move_latent"] is True
     assert t["move_prior_fusion"] is True and t["mask_incoming_damage_obs"] is True
     assert t["win_prob_mode"] == "read_only"
+    # v30: the discrete top-K incoming block's K (a topk-ON self-play run must gate its sentinels with it).
+    assert t["damage_topk_k"] == 5
     # Every emitted toggle MUST be an accepted current_model_version kwarg — else a future toggle that
     # isn't threaded fails here in a unit test, not only at a self-play load (TypeError).
     assert set(t) <= set(inspect.signature(current_model_version).parameters)
