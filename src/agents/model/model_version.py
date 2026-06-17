@@ -256,7 +256,31 @@ from typing import Any, Dict, List
 #   through the 2 attention layers instead of being grafted on afterwards. FORWARD-BEHAVIOR toggle like
 #   move_prior_fusion (same MoveBelief params → state_dict identical; only the call timing differs), gated
 #   in check_compatible (bool); OFF byte-for-byte (NO ARCH_SIGNATURE bump). Requires move_belief_mode != off.
-MODEL_CONFIG_VERSION = 32
+# v33: gen3_iterative_damage_v1 — ITERATIVE damage refinement. `damage_refine_rounds` (int, 0 = off) is the
+#   number of transformer layers (capped by TRANSFORMER_N_LAYERS in effect) before which the DamageOperator's
+#   LEAN discrete incoming threat is recomputed from the CURRENT (being-enriched) opp tokens and injected back
+#   onto our-mon tokens via a `refine_proj` Linear (zero-init → identity-at-init) — so each layer attends over
+#   physics derived from the freshest move belief (physics-in-the-loop), and the per-round read sharpens the
+#   move-belief head. STRUCTURAL: 0 builds no module (baseline forward byte-for-byte, NO ARCH_SIGNATURE bump);
+#   N>0 builds refine_proj (its SHAPE is N-independent — weight-tied across rounds) and changes the forward, so
+#   EVERY distinct value (0↔N a state_dict change; N↔M a forward-behavior change) is gated in check_compatible
+#   with an unconditional int compare (like opp_belief_cls_k). Requires damage_op (→ the op physics + a
+#   move_belief to re-read). Old configs migrate to 0. Design: designs/ai_v6/design_iterative_damage_refinement.md.
+# v34: gen3_per_move_matrices_v1 — the OUTGOING per-move DAMAGE MATRIX. `damage_matrices_outgoing` (bool, off)
+#   makes the DamageOperator ALSO emit our 4 moves × the opp's 6 mons (active + REVEALED bench) — per (move,
+#   opp mon) [low,high,crit,pko,type_mult] + a per-opp-mon revealed bit — the bench extension of the single-
+#   active outgoing block (price a KO on a switch-in). Unrevealed opp slots zeroed (belief-driven = TODO).
+#   STRUCTURAL toggle like damage_op (widens both projection in_features); gated in check_compatible (bool);
+#   OFF byte-for-byte (NO ARCH_SIGNATURE bump). Requires damage_op. Design: designs/ai_v6/design_per_move_damage_matrices.md.
+# v35: gen3_per_move_matrices_v1 — the INCOMING per-move DAMAGE MATRIX. `damage_matrices_incoming` (bool, off)
+#   makes the DamageOperator emit the ENRICHED top-K block: per opp-active move a header [latent, belief, acc,
+#   is_phys, EXPLICIT effect bits(6), secondary chances(10)] + per (OUR mon, move) cell [low,high,crit,pko,
+#   type_mult,status_lands] — the un-collapsed evolution of the v30 top-K + the deleted p_effect/p_sec maxes.
+#   REUSES damage_topk_k as its K (one knob, try 4/5/6) and REPLACES the lean top-K block at that K (never
+#   coexist); requires damage_op + move_latent.
+#   STRUCTURAL toggle like damage_op (widens both projections via the op out_dim); gated in check_compatible
+#   (bool); OFF byte-for-byte (NO ARCH_SIGNATURE bump). Design: designs/ai_v6/design_per_move_damage_matrices.md.
+MODEL_CONFIG_VERSION = 35
 
 # Change this when the neural architecture changes structurally in a way that makes
 # weights from a different signature incompatible (e.g. adding LSTM, replacing attention).
@@ -772,6 +796,23 @@ class ModelVersion:
     # an unconditional int compare (like opp_belief_cls_k / value_dist_bins). OFF (0) reproduces baseline
     # byte-for-byte (NO ARCH_SIGNATURE bump). Requires damage_op + move_latent (enforced at the extractor).
     damage_topk_k: int = 0
+    # v31 STRUCTURAL (gen3_iterative_damage_v1): the number of transformer layers before which the
+    # DamageOperator's LEAN discrete incoming damage is recomputed (from the being-enriched opp tokens) and
+    # injected back onto our-mon tokens. 0 = off (no refine_proj module — baseline forward byte-for-byte).
+    # The module's SHAPE is N-independent (refine_proj is weight-tied across rounds), but every distinct N is
+    # a state_dict (0↔N) or forward-behavior (N↔M) change → gated in check_compatible with an unconditional
+    # int compare (like opp_belief_cls_k). Requires damage_op (the op physics + a move_belief to re-read).
+    damage_refine_rounds: int = 0
+    # v32 STRUCTURAL (gen3_per_move_matrices_v1): the OUTGOING per-move DAMAGE MATRIX (our 4 moves × opp
+    # active + REVEALED bench). Widens both projections via the op out_dim. OFF byte-for-byte (no module
+    # output). Gated in check_compatible (bool, like damage_op). Requires damage_op.
+    damage_matrices_outgoing: bool = False
+    # v33 STRUCTURAL (gen3_per_move_matrices_v1): the INCOMING per-move DAMAGE MATRIX (enriched top-K —
+    # per-move header + per-(our-mon, move) cell). Widens both projections via the op out_dim. OFF
+    # byte-for-byte. Gated in check_compatible (bool, like damage_op). Requires damage_op + move_latent. It
+    # REUSES damage_topk_k as its K (the matrix's width is gated by the existing damage_topk_k int) and
+    # REPLACES the lean top-K block at that K (so they never coexist — one knob, lean vs rich).
+    damage_matrices_incoming: bool = False
 
     @classmethod
     def from_layout_and_policy_kwargs(
@@ -902,6 +943,15 @@ class ModelVersion:
             ),
             damage_topk_k=int(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("damage_topk_k", 0)
+            ),
+            damage_refine_rounds=int(
+                policy_kwargs.get("features_extractor_kwargs", {}).get("damage_refine_rounds", 0)
+            ),
+            damage_matrices_outgoing=bool(
+                policy_kwargs.get("features_extractor_kwargs", {}).get("damage_matrices_outgoing", False)
+            ),
+            damage_matrices_incoming=bool(
+                policy_kwargs.get("features_extractor_kwargs", {}).get("damage_matrices_incoming", False)
             ),
             value_tail_weight=float(value_tail_weight),
             opp_belief_aux_coef=float(opp_belief_aux_coef),
@@ -1198,6 +1248,38 @@ class ModelVersion:
                 "operator's output (hence both projection widths), so any change is a weight-shape "
                 "mismatch.\n"
                 "Resume with the matching --damage-topk setting, or start a fresh training run."
+            )
+        # gen3_iterative_damage_v1 (v31): the iterative refinement's round count. 0↔N adds/removes the
+        # refine_proj module (a state_dict change); N↔M keeps the same params but changes how many times the
+        # damage is recomputed between layers (a forward-behavior change). Either way a mid-run flip is
+        # unsafe → a single unconditional int compare gates it (like opp_belief_cls_k).
+        if self.damage_refine_rounds != saved.damage_refine_rounds:
+            raise ModelVersionError(
+                f"damage_refine_rounds mismatch: saved={saved.damage_refine_rounds}, "
+                f"current={self.damage_refine_rounds}.\n"
+                "The iterative-refinement round count adds/removes the refine_proj module (0↔N) or changes "
+                "the forward (N↔M), so any change is incompatible with a saved checkpoint.\n"
+                "Resume with the matching --damage-refine-rounds setting, or start a fresh training run."
+            )
+        # gen3_per_move_matrices_v1 (v32): the outgoing per-move damage matrix widens the op out_dim → both
+        # projection in_features. Toggling it is a weight-shape change (like damage_op).
+        if self.damage_matrices_outgoing != saved.damage_matrices_outgoing:
+            raise ModelVersionError(
+                f"damage_matrices_outgoing mismatch: saved={saved.damage_matrices_outgoing}, "
+                f"current={self.damage_matrices_outgoing}.\n"
+                "The outgoing per-move damage matrix widens the damage operator's output (hence both "
+                "projection widths), so toggling it is incompatible with a saved checkpoint.\n"
+                "Resume with the matching --damage-matrices setting, or start a fresh training run."
+            )
+        # gen3_per_move_matrices_v1 (v33): the incoming per-move matrix widens the op out_dim → both
+        # projection in_features (and supersedes topk). Toggling it is a weight-shape change (like damage_op).
+        if self.damage_matrices_incoming != saved.damage_matrices_incoming:
+            raise ModelVersionError(
+                f"damage_matrices_incoming mismatch: saved={saved.damage_matrices_incoming}, "
+                f"current={self.damage_matrices_incoming}.\n"
+                "The incoming per-move damage matrix widens the damage operator's output (hence both "
+                "projection widths), so toggling it is incompatible with a saved checkpoint.\n"
+                "Resume with the matching --damage-matrices setting, or start a fresh training run."
             )
 
     def check_opponent_compatible(self, foreign: "ModelVersion") -> None:
@@ -1523,4 +1605,26 @@ def _migrate_config(data: dict) -> dict:
         # OFF = baseline byte-for-byte.
         data.setdefault("move_belief_prefuse", False)
         data["config_version"] = 32
+    if version < 33:
+        # v33: gen3_iterative_damage_v1 — ITERATIVE damage refinement. `damage_refine_rounds` (0 = off) is
+        # the number of transformer layers before which the DamageOperator's lean discrete incoming damage is
+        # recomputed from the being-enriched opp tokens and injected back onto our-mon tokens (refine_proj,
+        # zero-init). 0 = no module → baseline forward byte-for-byte (NO ARCH_SIGNATURE bump). Requires
+        # damage_op. Gated in check_compatible with an unconditional int compare (0↔N a state_dict change,
+        # N↔M a forward change).
+        data.setdefault("damage_refine_rounds", 0)
+        data["config_version"] = 33
+    if version < 34:
+        # v34: gen3_per_move_matrices_v1 — the OUTGOING per-move DAMAGE MATRIX (our 4 moves × opp active +
+        # REVEALED bench). `damage_matrices_outgoing` (bool) is a STRUCTURAL toggle like damage_op (it widens
+        # both projections via the op's out_dim). OFF byte-for-byte (NO ARCH_SIGNATURE bump). Requires
+        # damage_op. Gated in check_compatible (bool compare).
+        data.setdefault("damage_matrices_outgoing", False)
+        data["config_version"] = 34
+    if version < 35:
+        # v35: gen3_per_move_matrices_v1 — the INCOMING per-move DAMAGE MATRIX (enriched top-K). Bool toggle
+        # like damage_matrices_outgoing; OFF byte-for-byte. Requires damage_op + move_latent; reuses
+        # damage_topk_k as its K and replaces the lean top-K block.
+        data.setdefault("damage_matrices_incoming", False)
+        data["config_version"] = 35
     return data

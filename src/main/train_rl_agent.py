@@ -193,6 +193,9 @@ def _run_arch_toggles(args) -> dict:
         value_dist_vmin=args.value_dist_vmin,
         value_dist_vmax=args.value_dist_vmax,
         damage_topk_k=args.damage_topk_k,
+        damage_refine_rounds=args.damage_refine_rounds,
+        damage_matrices_outgoing=args.damage_matrices_outgoing,
+        damage_matrices_incoming=args.damage_matrices_incoming,
     )
 
 
@@ -912,6 +915,31 @@ async def main():
                              "AUTO-set to 5 by --unified-moves (the moveset is 4, so the 5th slot is the "
                              "surprise/uncertain candidate); the 5th is zeroed once all 4 opp moves are "
                              "revealed. Default off (set by --unified-moves, or pass explicitly).")
+    parser.add_argument("--damage-refine-rounds", "--damage_refine_rounds", dest="damage_refine_rounds",
+                        type=int, default=None,
+                        help="ITERATIVE damage refinement (gen3_iterative_damage_v1): N = the number of "
+                             "transformer layers (capped by the layer count) before which the DamageOperator's "
+                             "LEAN discrete incoming damage is RECOMPUTED from the CURRENT (being-enriched) opp "
+                             "tokens — re-reading the move belief — and injected back onto our-mon tokens via a "
+                             "zero-init refine_proj (identity at init). So each attention layer reasons over "
+                             "physics derived from the FRESHEST belief (physics-in-the-loop), and the per-round "
+                             "read sharpens the move-belief head — instead of the one-shot post-transformer op. "
+                             "0 = off (baseline forward byte-for-byte). STRUCTURAL int (version-checked, "
+                             "fresh-only). REQUIRES --damage-op (the op physics + the move belief). NOT auto-set "
+                             "by --unified-moves — an explicit A/B lever. Default off.")
+    parser.add_argument("--damage-matrices", "--damage_matrices", dest="damage_matrices",
+                        choices=["off", "incoming", "outgoing", "both"], default=None,
+                        help="Per-move DAMAGE MATRICES (gen3_per_move_matrices_v1). 'outgoing': OUR 4 moves × "
+                             "the opp's 6 mons (active + REVEALED bench) — per (move, opp mon) "
+                             "[low,high,crit,pko,type_mult] + a revealed bit (price a KO on a SWITCH-IN). "
+                             "'incoming': the ENRICHED top-K — per opp move a header [latent, belief, acc, "
+                             "is_phys, EXPLICIT effect bits(6), secondary chances(10)] + per (OUR mon, move) "
+                             "cell [low,high,crit,pko,type_mult,status_lands] (the un-collapsed evolution of "
+                             "--damage-topk; it REUSES --damage-topk K as its K — one knob, try 4/5/6, default "
+                             "5 — and REPLACES the lean top-K block at that K; requires --move-latent). "
+                             "'both' = incoming + outgoing. Unrevealed opp slots zeroed (belief-driven = TODO). "
+                             "STRUCTURAL (version-checked, fresh-only). REQUIRES --damage-op. 'off' (default) = "
+                             "baseline byte-identical.")
     parser.add_argument("--spread-belief", "--spread_belief", dest="spread_belief",
                         action=BoolFlag, default=None,
                         help="SpreadBelief (gen3_unified_spread_belief_v1): the THIRD belief leg — predict "
@@ -1128,6 +1156,23 @@ async def main():
         args.move_prior_fusion = True
         args.damage_outgoing = (args.unified_damage == "both")
 
+    # gen3_per_move_matrices_v1: --damage-matrices desugars to the two bool toggles BEFORE _resolve (so a
+    # resume inherits them). None ⇒ let _resolve inherit/default; an explicit value wins. The INCOMING matrix
+    # is the ENRICHED top-K — it REUSES --damage-topk K as its K (the one "how many opp moves" knob) and
+    # REPLACES the lean top-K block at that K. Default the K to _DMG_TOPK_DEFAULT_K if unset (so it works
+    # standalone); an explicit --damage-topk (or --unified-moves' default) wins.
+    if getattr(args, "damage_matrices", None) is not None:
+        args.damage_matrices_outgoing = args.damage_matrices in ("outgoing", "both")
+        args.damage_matrices_incoming = args.damage_matrices in ("incoming", "both")
+        if args.damage_matrices_incoming and not args.damage_topk_k:
+            from agents.model.features_extractor import _DMG_TOPK_DEFAULT_K   # local: needed without --unified-moves
+            args.damage_topk_k = _DMG_TOPK_DEFAULT_K     # the matrix's K = --damage-topk (default 5)
+    else:
+        if not hasattr(args, "damage_matrices_outgoing"):
+            args.damage_matrices_outgoing = None
+        if not hasattr(args, "damage_matrices_incoming"):
+            args.damage_matrices_incoming = None
+
     def _resolve(name, default):
         if getattr(args, name) is None:
             setattr(args, name, getattr(_saved_ver, name, default) if _saved_ver is not None else default)
@@ -1160,6 +1205,9 @@ async def main():
     _resolve("value_dist_vmax", 0.0)           # v29 resume-immutable support (version-checked)
     _resolve("value_dist_coef", 1.0)           # training-only (inherited like win_prob_coef)
     _resolve("damage_topk_k", 0)               # v30 structural int (top-K incoming; version-checked, fresh-only)
+    _resolve("damage_refine_rounds", 0)        # v31 structural int (iterative refine; version-checked, fresh-only)
+    _resolve("damage_matrices_outgoing", False)  # v32 structural (outgoing damage matrix; version-checked, fresh-only)
+    _resolve("damage_matrices_incoming", False)  # v33 structural (incoming damage matrix; version-checked, fresh-only)
     # PopArt INHERITED on a flagless resume → adopt its required `--clip-range-vf none` (the saved
     # popart run necessarily used it), so the explicit-config check below doesn't block the resume.
     if args.use_popart and not _popart_explicit and _saved_ver is not None and args.clip_range_vf is not None:
@@ -1307,6 +1355,32 @@ async def main():
             "--damage-topk requires --move-latent (the top-K block gathers each move's identity latent "
             "from the MoveLatentEncoder). Use --unified-moves, or add --move-latent, or set --damage-topk 0."
         )
+    if args.damage_refine_rounds and args.damage_refine_rounds > 0 and not args.damage_op:
+        # gen3_iterative_damage_v1: the refinement recomputes the DamageOperator's lean incoming damage
+        # between transformer layers (and re-reads the move belief, which --damage-op requires).
+        parser.error(
+            "--damage-refine-rounds requires --damage-op (the iterative refinement recomputes the damage "
+            "operator's lean incoming threat between transformer layers). Use --unified-damage / "
+            "--unified-moves, or add --damage-op, or set --damage-refine-rounds 0."
+        )
+    if getattr(args, "damage_matrices_outgoing", False) and not args.damage_op:
+        # gen3_per_move_matrices_v1: the outgoing damage matrix is emitted by the DamageOperator.
+        parser.error(
+            "--damage-matrices outgoing requires --damage-op (the matrix is emitted by the damage operator). "
+            "Use --unified-damage / --unified-moves, or add --damage-op, or set --damage-matrices off."
+        )
+    if getattr(args, "damage_matrices_incoming", False):
+        # gen3_per_move_matrices_v1: the incoming matrix needs the op + the move latent, and SUPERSEDES top-K.
+        if not args.damage_op:
+            parser.error(
+                "--damage-matrices incoming requires --damage-op (the matrix is emitted by the damage "
+                "operator). Use --unified-damage / --unified-moves, or add --damage-op."
+            )
+        if not args.move_latent:
+            parser.error(
+                "--damage-matrices incoming requires --move-latent (the matrix header gathers each move's "
+                "identity latent). Use --unified-moves, or add --move-latent."
+            )
     if args.move_belief_latent_coef and not args.move_latent:
         # The latent grading reads the MoveLatentEncoder's latent table → the encoder must exist.
         parser.error(
@@ -2052,6 +2126,9 @@ async def main():
         _load_extractor_kwargs["value_dist_vmax"] = args.value_dist_vmax
         # Discrete top-K incoming block (v30) — K version-checked in check_compatible (scales projections).
         _load_extractor_kwargs["damage_topk_k"] = args.damage_topk_k
+        _load_extractor_kwargs["damage_refine_rounds"] = args.damage_refine_rounds   # v31 (version-checked)
+        _load_extractor_kwargs["damage_matrices_outgoing"] = args.damage_matrices_outgoing  # v32 (version-checked)
+        _load_extractor_kwargs["damage_matrices_incoming"] = args.damage_matrices_incoming  # v33 (version-checked)
         _load_policy_kwargs = {
             "features_extractor_class": Gen3FeaturesExtractor,
             "features_extractor_kwargs": _load_extractor_kwargs,
@@ -2303,6 +2380,9 @@ async def main():
         # gen3_unified_topk_incoming_v1 (v30): the DISCRETE top-K incoming block's K (0 = off). STRUCTURAL
         # (scales both projections; version-checked). Requires --damage-op + --move-latent (validated above).
         extractor_kwargs["damage_topk_k"] = args.damage_topk_k
+        extractor_kwargs["damage_refine_rounds"] = args.damage_refine_rounds
+        extractor_kwargs["damage_matrices_outgoing"] = args.damage_matrices_outgoing
+        extractor_kwargs["damage_matrices_incoming"] = args.damage_matrices_incoming
 
         policy_kwargs = {
             "features_extractor_class": Gen3FeaturesExtractor,

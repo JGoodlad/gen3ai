@@ -539,6 +539,9 @@ def current_model_version(
     value_dist_vmax: float = 0.0,
     value_dist_coef: float = 1.0,
     damage_topk_k: int = 0,
+    damage_refine_rounds: int = 0,
+    damage_matrices_outgoing: bool = False,
+    damage_matrices_incoming: bool = False,
     vf_coef: float = 0.5,
     reward_config=None,
     value_tail_weight: float = 0.0,
@@ -589,6 +592,9 @@ def current_model_version(
     ext_kwargs["value_dist_vmin"] = value_dist_vmin
     ext_kwargs["value_dist_vmax"] = value_dist_vmax
     ext_kwargs["damage_topk_k"] = damage_topk_k
+    ext_kwargs["damage_refine_rounds"] = damage_refine_rounds
+    ext_kwargs["damage_matrices_outgoing"] = damage_matrices_outgoing
+    ext_kwargs["damage_matrices_incoming"] = damage_matrices_incoming
     policy_kwargs = {
         "features_extractor_class": Gen3FeaturesExtractor,
         "features_extractor_kwargs": ext_kwargs,
@@ -637,6 +643,14 @@ def arch_toggles_from_model(model) -> dict:
         # gen3_unified_topk_incoming_v1 (v30): the top-K incoming block's K (0 = off) — STRUCTURAL int,
         # gated in check_compatible (it scales the projection widths), so it must reach the worker's gate.
         "damage_topk_k": int(getattr(fe, "damage_topk_k", 0)),
+        # gen3_iterative_damage_v1 (v31): the iterative-refinement round count (0 = off) — STRUCTURAL int,
+        # gated in check_compatible (0↔N a state_dict change, N↔M a forward change), so it must reach the gate.
+        "damage_refine_rounds": int(getattr(fe, "damage_refine_rounds", 0)),
+        # gen3_per_move_matrices_v1 (v32): the outgoing per-move damage matrix — STRUCTURAL bool (widens the
+        # op out_dim), gated in check_compatible, so it must reach the worker's gate.
+        "damage_matrices_outgoing": bool(getattr(fe, "damage_matrices_outgoing", False)),
+        # gen3_per_move_matrices_v1 (v33): the incoming per-move damage matrix — STRUCTURAL bool, gated.
+        "damage_matrices_incoming": bool(getattr(fe, "damage_matrices_incoming", False)),
         "use_popart": getattr(model.policy, "popart", None) is not None,
     }
 

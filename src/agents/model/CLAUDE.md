@@ -92,7 +92,12 @@ so they stay correct when the architecture changes with no manual update.
    use_reentrant=False)` during the backward-needing pass — **bit-exact** (dropout=0.0), trading
    one extra forward on the otherwise-idle GPU for the layers' ~5 GB of activation VRAM at
    batch 16384. A no-op under inference (gated on `torch.is_grad_enabled()`), so eval / the
-   self-play opponent forward pay nothing.
+   self-play opponent forward pay nothing. **Optional iterative damage refinement** (v31,
+   `--damage-refine-rounds N`): a `between_layers(tokens, i)` callback runs BEFORE each of the first N
+   encoder layers to recompute the DamageOperator's lean discrete incoming damage from the being-enriched
+   opp tokens and inject it (via the extractor's zero-init `refine_proj`) onto our-mon token positions — so
+   each layer attends over physics from the freshest belief. `None` (off) ⇒ the loop is byte-identical.
+   (Built by the extractor; see the v31 versioning note.)
 5. **`CLSPool`** — one learned CLS query per side cross-attends over its 6 post-transformer team
    tokens (fainted slots key-masked) → a 128-dim pooled team token per side (+ LayerNorm). Also
    extracts `our_active_refined` = the transformer output of our active slot. A **third learned
@@ -176,9 +181,10 @@ because it is Φ_progress's weight. All are recorded on
 `ModelVersion` and enforced on resume by **`check_reward_config`** (FATAL on drift, since they silently
 shift the reward/objective), excluded from `check_compatible`. They are reward-VALUE changes — **no
 `ARCH_SIGNATURE` bump** (the network/obs are unchanged) — so a fresh run is needed to measure them but
-old checkpoints don't fail an arch check. Current `MODEL_CONFIG_VERSION` = **32** (see the belief +
+old checkpoints don't fail an arch check. Current `MODEL_CONFIG_VERSION` = **35** (see the belief +
 unified-damage + unified-move + spread-belief + op-physics + status-landing + choice-band + value-dist
-+ topk-incoming + damage-reattend + move-prefuse notes below for v16–v32).
++ topk-incoming + damage-reattend + move-prefuse + iterative-refinement + per-move-matrices
+(outgoing v34 / incoming v35) notes below for v16–v35).
 
 **Two probe-driven V-tail levers (v10 structural, v11 resume-immutable).** A representation probe on a
 real checkpoint found the **value head is partly blind to incoming KOs the policy head sees**
@@ -585,7 +591,70 @@ decodes EXACT move names. Threaded through `current_model_version` / `arch_toggl
 `_run_arch_toggles` (the 4 opp-load sites). `decode_damage_block(..., topk_k=K)` is the SoT mirror
 (`incoming_topk` = the K moves + 6×K per-defender). Leak-safe (public obs + the predicted belief only;
 pinned by `damage_op_test.test_topk_leak_free`). Design:
-`designs/ai_v6/design_topk_incoming_moves.md`. Current `MODEL_CONFIG_VERSION` = **30**.
+`designs/ai_v6/design_topk_incoming_moves.md`.
+
+**Iterative damage refinement (v31, `damage_refine_rounds` / `--damage-refine-rounds`,
+`gen3_iterative_damage_v1`).** The DamageOperator runs ONCE post-transformer (a one-shot read of the FINAL
+belief). This recomputes a LEAN per-our-mon incoming-damage summary BETWEEN transformer layers — as the opp
+token (hence the move belief read from it) is enriched by attention — and injects it back onto our-mon
+tokens, so each layer attends over physics derived from the CURRENT belief (physics-in-the-loop, not
+one-shot post-hoc), and the per-round read sharpens the move-belief head. `TeamTransformer.forward` gains a
+`between_layers(tokens, i)` callback (called before each layer); the extractor builds the callback when
+`damage_refine_rounds > 0`. Per round it: (1) re-reads the belief via **`MoveBelief.move_logits`** (the
+posterior, factored out of `forward` — no reinjection), (2) computes **`DamageOperator.discrete_incoming(ctx,
+logits)` → `[B, 6, _DMG_REFINE_FEATS=4]`** = `[phys_high, spec_high, phys_pko, spec_pko]` (the lean top-K
+mirror of `_damage_rolls`: select the opp active's top-`_DMG_REFINE_K`=8 most-believed candidates, reuse the
+shared `_rolls` formula — ~50× cheaper than the full `[B,6,~416]` sweep, so the per-round recompute is cheap;
+v1 uses the LEGACY de-timid attacker offense, NO spread/boost/burn/weather/fixed-damage — the coarse
+refinement signal), (3) injects via **`refine_proj`** (`Linear(_DMG_REFINE_FEATS, D_MODEL)`, **zero-init** →
+the residual is EXACTLY 0 at init = true identity-at-init, gradient still flows; NO LayerNorm on the residual
+branch). `refine_proj` is weight-tied across rounds (its SHAPE is N-independent). Decorrelated: the damage
+physics is w-independent, the belief gradient rides the candidate's belief weight. The full post-transformer
+op is unchanged + authoritative. `damage_refine_rounds` is a **STRUCTURAL int** toggle — gated in
+`check_compatible` with an unconditional int compare (like `opp_belief_cls_k`): 0↔N adds/removes `refine_proj`
+(state_dict change), N↔M is a forward-behavior change; OFF (0) byte-for-byte (NO `ARCH_SIGNATURE` bump).
+Hard-requires `damage_op` (which pulls in `move_belief_mode revealed|both`); NOT `move_latent`; NOT
+auto-enabled by `--unified-moves` (an explicit A/B lever). Threaded through `current_model_version` /
+`arch_toggles_from_model` / `_run_arch_toggles` (the 4 opp-load sites) + both `extractor_kwargs` sites.
+Design: `designs/ai_v6/design_iterative_damage_refinement.md`.
+
+**Outgoing per-move damage matrix (v34, `damage_matrices_outgoing` / `--damage-matrices outgoing`,
+`gen3_per_move_matrices_v1`).** The legacy `_outgoing_block` prices our active's 4 moves vs the opp
+**ACTIVE only**; this adds **`DamageOperator._outgoing_matrix`** — our 4 moves × the opp's **6 mons**
+(active + REVEALED bench), per (move, opp mon) `[low, high, crit, pko, type_mult]` + a per-opp-mon
+`revealed` bit (`_DMG_OMX` = 4·6·5 + 6 = 126) — so the policy prices a KO on a **switch-in** (the
+equal-effectiveness tie-break extended to bench targets). **REVEALED-gated**: an unrevealed opp slot
+(`ctx.opp_believed_mask`) or fainted mon is zeroed (Gen3 has no team preview; belief-driven outgoing-vs-
+unrevealed is a TODO). Reuses the validated `_outgoing_block` physics (attacker CB/boost/burn; OPP-side
+screens; per-defender bulk = SpreadBelief or neutral 0-EV; boosts ONLY on the opp active slot, bench reset;
+fixed-damage override) broadcast over the 6 defenders — the **active column is byte-for-byte the single-
+active block** (adversarially verified). Appended LAST (existing incoming/outgoing/topk offsets untouched);
+STRUCTURAL bool toggle gated in `check_compatible` like `damage_op` (widens both projections via the op
+out_dim); OFF byte-for-byte (no `ARCH_SIGNATURE` bump); requires `damage_op`. `decode_damage_block(...,
+matrices_outgoing=True)` mirrors the layout (`outgoing_matrix`). Threaded through `current_model_version` /
+`arch_toggles_from_model` / `_run_arch_toggles` (the 4 opp-load sites) + both `extractor_kwargs` sites. The
+INCOMING-matrix enrichment is the v35 sibling below.
+
+**Incoming per-move damage matrix (v35, `damage_matrices_incoming` / `--damage-matrices incoming`,
+`gen3_per_move_matrices_v1`).** The ENRICHED evolution of the v30 top-K block (`DamageOperator._incoming_matrix`,
+extending `_topk_block`) — it **REUSES `damage_topk_k` as its K** (one knob — `--damage-topk K`, try 4/5/6,
+default 5 — tunes both the lean top-K and the rich matrix) and **replaces the lean top-K block** at that K
+(the op suppresses the lean block when `matrices_incoming`, so they never coexist; the matrix's width is
+gated by the existing `damage_topk_k` int + the `damage_matrices_incoming` bool). Per opp-active top-K move:
+a richer **header** `[latent(32), belief, accuracy,
+is_phys, EXPLICIT effect bits(6: recovery/status/phaze/boost/hazard/protect), EXPLICIT secondary chances(10)]`
++ a richer per-(OUR mon, move) **cell** `[low, high, crit, pko, type_mult, status_lands]` (`_DMG_IMX_HEADER`=51,
+`_DMG_IMX_CELL`=6). The effect/secondary bits are **gathered PER MOVE** (`MOVE_EFFECT_FLAGS`/`MOVE_SECONDARY`
+at `topk_idx`, HP rows zero-extended) — un-collapsed, the GPU home for the mid-ladder "this move phazes / this
+move flinches" nuance the worst-case `p_effect`/`p_sec` maxes collapsed (those are kept-but-superseded;
+physical deletion is a deferred A/B). Reuses the validated `_damage_rolls` tensors (low/high/crit/ko gathered)
++ the candidate latent table (built in rollout when matrices_incoming, like topk); `type_mult` is the
+effectiveness at OUR defender's types; decorrelated (belief rides `w`, latent rides the gather). STRUCTURAL
+bool toggle gated in `check_compatible` like `damage_op`; OFF byte-for-byte (no `ARCH_SIGNATURE` bump);
+requires `damage_op` + `move_latent`. `decode_damage_block(..., matrices_incoming_k=K)` mirrors the layout
+(`incoming_matrix`). Threaded through `current_model_version` / `arch_toggles_from_model` / `_run_arch_toggles`
++ both `extractor_kwargs` sites. The two matrices compose under `--damage-matrices both`. Design:
+`designs/ai_v6/design_per_move_damage_matrices.md`. Current `MODEL_CONFIG_VERSION` = **35**.
 
 **Damage re-attend (v31, `damage_reattend` / `--damage-reattend`, `gen3_damage_reattend_v1`).** Lets
 attention reason OVER the computed physics — today the `DamageOperator` block is concatenated POST-pool

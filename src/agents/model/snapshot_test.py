@@ -645,6 +645,120 @@ def test_migrate_pre_v30_adds_damage_topk_k_default(version):
     ModelVersion(**result)
 
 
+# --- damage_refine_rounds: a structural INT toggle (iterative damage refinement, v31) ----------------
+
+
+def test_check_compatible_rejects_damage_refine_rounds_mismatch(version):
+    """damage_refine_rounds adds/removes refine_proj (0↔N a state_dict change) or changes the forward
+    (N↔M), so EVERY distinct value must be rejected by check_compatible (like opp_belief_cls_k)."""
+    on = dataclasses.replace(version, damage_refine_rounds=2)
+    with pytest.raises(ModelVersionError) as exc_info:
+        version.check_compatible(on)        # version has damage_refine_rounds=0 (default off)
+    assert "damage_refine_rounds" in str(exc_info.value)
+    # a different nonzero N is also a mismatch (forward-behavior change, same params)
+    with pytest.raises(ModelVersionError):
+        dataclasses.replace(version, damage_refine_rounds=1).check_compatible(on)
+
+
+def test_check_compatible_accepts_matching_damage_refine_rounds(version):
+    """Same N (incl. the off baseline) must load — no false rejection."""
+    version.check_compatible(dataclasses.replace(version))            # 0 vs 0
+    on = dataclasses.replace(version, damage_refine_rounds=2)
+    on.check_compatible(dataclasses.replace(on))                      # 2 vs 2
+
+
+def test_damage_refine_rounds_read_from_features_extractor_kwargs(layout):
+    """damage_refine_rounds sources from features_extractor_kwargs; absent → 0 (baseline off)."""
+    pk = {"net_arch": [512, 512], "features_extractor_kwargs": {"damage_refine_rounds": 2}}
+    v = ModelVersion.from_layout_and_policy_kwargs(layout, pk)
+    assert v.damage_refine_rounds == 2 and v.config_version == MODEL_CONFIG_VERSION
+    v_default = ModelVersion.from_layout_and_policy_kwargs(layout, {"net_arch": [512, 512]})
+    assert v_default.damage_refine_rounds == 0
+
+
+def test_migrate_pre_v31_adds_damage_refine_rounds_default(version):
+    """Pre-v31 configs lack damage_refine_rounds — migration injects 0 (off) and bumps to current."""
+    data = json.loads(version.to_json())
+    data.pop("damage_refine_rounds", None)
+    data["config_version"] = 30
+    result = _migrate_config(data)
+    assert result["config_version"] == MODEL_CONFIG_VERSION
+    assert result["damage_refine_rounds"] == 0
+    ModelVersion(**result)
+
+
+# --- damage_matrices_outgoing: a structural BOOL toggle (the outgoing per-move damage matrix, v32) --------
+
+
+def test_check_compatible_rejects_damage_matrices_outgoing_mismatch(version):
+    """The outgoing matrix widens the op out_dim → both projection in_features; toggling it is a weight-shape
+    change check_compatible must reject (like damage_op)."""
+    on = dataclasses.replace(version, damage_matrices_outgoing=True)
+    with pytest.raises(ModelVersionError) as exc_info:
+        version.check_compatible(on)        # version has it off (default)
+    assert "damage_matrices_outgoing" in str(exc_info.value)
+
+
+def test_check_compatible_accepts_matching_damage_matrices_outgoing(version):
+    version.check_compatible(dataclasses.replace(version))            # off vs off
+    on = dataclasses.replace(version, damage_matrices_outgoing=True)
+    on.check_compatible(dataclasses.replace(on))                      # on vs on
+
+
+def test_damage_matrices_outgoing_read_from_features_extractor_kwargs(layout):
+    pk = {"net_arch": [512, 512], "features_extractor_kwargs": {"damage_matrices_outgoing": True}}
+    v = ModelVersion.from_layout_and_policy_kwargs(layout, pk)
+    assert v.damage_matrices_outgoing is True and v.config_version == MODEL_CONFIG_VERSION
+    v_default = ModelVersion.from_layout_and_policy_kwargs(layout, {"net_arch": [512, 512]})
+    assert v_default.damage_matrices_outgoing is False
+
+
+def test_migrate_pre_v32_adds_damage_matrices_outgoing_default(version):
+    """Pre-v32 configs lack damage_matrices_outgoing — migration injects False and bumps to current."""
+    data = json.loads(version.to_json())
+    data.pop("damage_matrices_outgoing", None)
+    data["config_version"] = 31
+    result = _migrate_config(data)
+    assert result["config_version"] == MODEL_CONFIG_VERSION
+    assert result["damage_matrices_outgoing"] is False
+    ModelVersion(**result)
+
+
+# --- damage_matrices_incoming: a structural BOOL toggle (the incoming per-move damage matrix, v33) --------
+
+
+def test_check_compatible_rejects_damage_matrices_incoming_mismatch(version):
+    on = dataclasses.replace(version, damage_matrices_incoming=True)
+    with pytest.raises(ModelVersionError) as exc_info:
+        version.check_compatible(on)
+    assert "damage_matrices_incoming" in str(exc_info.value)
+
+
+def test_check_compatible_accepts_matching_damage_matrices_incoming(version):
+    version.check_compatible(dataclasses.replace(version))
+    on = dataclasses.replace(version, damage_matrices_incoming=True)
+    on.check_compatible(dataclasses.replace(on))
+
+
+def test_damage_matrices_incoming_read_from_features_extractor_kwargs(layout):
+    pk = {"net_arch": [512, 512], "features_extractor_kwargs": {"damage_matrices_incoming": True}}
+    v = ModelVersion.from_layout_and_policy_kwargs(layout, pk)
+    assert v.damage_matrices_incoming is True and v.config_version == MODEL_CONFIG_VERSION
+    v_default = ModelVersion.from_layout_and_policy_kwargs(layout, {"net_arch": [512, 512]})
+    assert v_default.damage_matrices_incoming is False
+
+
+def test_migrate_pre_v33_adds_damage_matrices_incoming_default(version):
+    """Pre-v33 configs lack damage_matrices_incoming — migration injects False and bumps to current."""
+    data = json.loads(version.to_json())
+    data.pop("damage_matrices_incoming", None)
+    data["config_version"] = 32
+    result = _migrate_config(data)
+    assert result["config_version"] == MODEL_CONFIG_VERSION
+    assert result["damage_matrices_incoming"] is False
+    ModelVersion(**result)
+
+
 # --- move_prior_fusion: a forward-behavior bool toggle (the unified two-part move belief, v20) -------
 
 
@@ -1813,7 +1927,8 @@ def test_arch_toggles_from_model_extracts_flags():
                                move_latent=True, move_prior_fusion=True,
                                move_belief_prefuse=True,
                                mask_incoming_damage_obs=True, win_prob_mode="read_only",
-                               damage_topk_k=5)
+                               damage_topk_k=5, damage_refine_rounds=2, damage_matrices_outgoing=True,
+                               damage_matrices_incoming=True)
     model = types.SimpleNamespace(policy=types.SimpleNamespace(features_extractor=fe, popart=object()))
     t = arch_toggles_from_model(model)
     assert t["opp_belief_slots"] is True and t["attend_unrevealed_opponents"] is True
@@ -1828,6 +1943,12 @@ def test_arch_toggles_from_model_extracts_flags():
     assert t["win_prob_mode"] == "read_only"
     # v30: the discrete top-K incoming block's K (a topk-ON self-play run must gate its sentinels with it).
     assert t["damage_topk_k"] == 5
+    # v31: the iterative-refinement round count (a refine-ON self-play run must gate its sentinels with it).
+    assert t["damage_refine_rounds"] == 2
+    # v32: the outgoing per-move damage matrix (a matrix-ON self-play run must gate its sentinels with it).
+    assert t["damage_matrices_outgoing"] is True
+    # v33: the incoming per-move damage matrix.
+    assert t["damage_matrices_incoming"] is True
     # Every emitted toggle MUST be an accepted current_model_version kwarg — else a future toggle that
     # isn't threaded fails here in a unit test, not only at a self-play load (TypeError).
     assert set(t) <= set(inspect.signature(current_model_version).parameters)

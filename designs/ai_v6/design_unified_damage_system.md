@@ -178,3 +178,30 @@ Wired + differentiable + clean ≠ helps the policy. The fresh-run A/B must show
 AND surprise-OHKO crater share↓ (`falsify-scan`) AND wr/ELO non-regress. Outgoing carries no belief
 gradient (our moves are certain) but is justified by the same-effectiveness-tie evidence; its gate is
 the move-selection mix on those ties, not belief precision.
+
+## Deferred op-coverage gaps (per-move outcome) — BACKLOG, to remember
+
+The differentiable op is NOT yet gen3-complete on a few per-(move, defender) outcomes that are damage/
+decision-relevant. Captured here so they aren't lost (surfaced by the 2026-06-17 per-move-spec panel).
+None are in v1; revisit when enriching the per-move top-K row or before deleting the CPU obs:
+
+- **Absorb abilities = HEAL, not 0.** Water Absorb / Volt Absorb / (Flash Fire's boost) make the move read
+  a *negative* outcome for the attacker = a **great-switch** signal for us. The op currently folds these to
+  damage 0 (immune), losing the "this pivot HEALS off their move" read. Highest-value gap.
+- **Substitute-break flag.** Per (move, defender): does the hit's damage ≥ the defender's Sub HP (breaks it)
+  vs chip it. Changes whether a Sub pivot is safe.
+- **Multi-hit moves** (Rock Blast / Bullet Seed / Double Kick etc.): n-hit damage + Sub-break interaction.
+- **OHKO moves** (Fissure / Horn Drill / Sheer Cold / Guillotine): fixed-KO-if-hit, accuracy-gated,
+  level/ability (Sturdy) immunity — currently mispriced by the roll formula.
+- **Leech Seed vs Substitute (gen3 nuance):** the v27 status-landing blocks ALL status moves on a Sub, but
+  gen3 Leech Seed's interaction needs a dedicated rule; also Leech-Seed-already-seeded + **Yawn** (sleep
+  next turn) are uncovered.
+
+## Accuracy is a STANDALONE per-move signal (decision, 2026-06-17)
+
+Keep `accuracy` exposed per move **in addition to** folding it into `pko` (`acc·P(KO|hit)`) — they answer
+different questions. `pko` is the miss-OR-survive collapsed KO odds (matters when the move WOULD kill);
+raw `accuracy` is the distinct miss signal for **chip and status moves that never KO but can still whiff**
+(Hypnosis / Will-O-Wisp / Focus Blast risk). NOT a redundant double-expose — it is the provide-the-fact-
+once principle applied to two genuinely different downstream uses. (Overrides the per-move-spec critic's
+"don't double-expose accuracy" note.)

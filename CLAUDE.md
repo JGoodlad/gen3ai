@@ -790,9 +790,45 @@ module/params (one shared `_apply_move_belief` helper, only the input tensor + t
 `last_move_belief_logits` is identical, so the damage op + BCE aux still read it) → state_dict identical,
 projection widths unchanged. FORWARD-BEHAVIOR toggle like `move_prior_fusion` (gated in `check_compatible`,
 OFF byte-identical, NO `ARCH_SIGNATURE` bump); requires `--move-belief-mode != off`; threaded through
-`arch_toggles`. Current
-`MODEL_CONFIG_VERSION` = **32**. Full design:
-`designs/ai_v6/design_topk_incoming_moves.md` (and `design_distributional_value_critic.md` for v29,
+`arch_toggles`.
+**v33 ITERATIVE damage refinement** (`gen3_iterative_damage_v1`, `damage_refine_rounds` /
+`--damage-refine-rounds N`) — the `DamageOperator` runs ONCE post-transformer (a one-shot read of the FINAL
+belief). This recomputes a LEAN per-our-mon incoming-damage summary BETWEEN transformer layers — as the opp
+token (hence the move belief) is enriched by attention — and injects it back onto our-mon tokens, so each
+layer attends over physics from the FRESHEST belief (physics-in-the-loop), and the per-round read sharpens
+the move-belief head. `TeamTransformer.forward` gains a `between_layers` callback (before each of the first
+N layers); per round it re-reads the belief (`MoveBelief.move_logits`, the posterior — factored out of
+`forward`), computes a LEAN `DamageOperator.discrete_incoming → [B,6,4]` `[phys_high, spec_high, phys_pko,
+spec_pko]` (top-`_DMG_REFINE_K`=8 candidates, reusing the validated `_rolls` physics — ~50× cheaper than the
+full ~416 sweep, so the per-round recompute is cheap), and injects via a **zero-init `refine_proj`** Linear
+(true identity-at-init, gradient still flows; weight-tied across rounds → N-independent shape). STRUCTURAL int
+gated in `check_compatible` (0↔N a state_dict change, N↔M a forward change; OFF=0 byte-identical, no
+`ARCH_SIGNATURE` bump); requires `--damage-op` only (NOT `--move-latent`); NOT auto-set by `--unified-moves`
+(an explicit A/B lever); threaded through `arch_toggles` + both extractor-kwargs sites.
+**v34 the OUTGOING per-move DAMAGE MATRIX** (`gen3_per_move_matrices_v1`, `damage_matrices_outgoing` /
+`--damage-matrices outgoing`) — the legacy outgoing block prices our active's 4 moves vs the opp ACTIVE
+only; this adds `DamageOperator._outgoing_matrix`: our 4 moves × the opp's **6 mons** (active + REVEALED
+bench), per (move, opp mon) `[low,high,crit,pko,type_mult]` + a per-opp-mon `revealed` bit — so the policy
+prices a KO on a **switch-in** (the equal-effectiveness tie-break extended to bench targets). REVEALED-gated
+(unrevealed opp slots zeroed — Gen3 has no team preview; belief-driven outgoing-vs-unrevealed is a TODO);
+reuses the validated `_outgoing_block` physics broadcast over 6 defenders (the active column is byte-for-byte
+the single-active block). STRUCTURAL bool toggle gated in `check_compatible` like `damage_op`; OFF
+byte-identical (no `ARCH_SIGNATURE` bump); requires `--damage-op`; threaded through `arch_toggles` + both
+extractor-kwargs sites.
+**v35 the INCOMING per-move DAMAGE MATRIX** (`gen3_per_move_matrices_v1`, `damage_matrices_incoming` /
+`--damage-matrices incoming`) — the ENRICHED evolution of the v30 top-K block (`_incoming_matrix`,
+REUSES `--damage-topk K` as its K — one knob, try 4/5/6 — and replaces the lean top-K block at that K).
+Per opp-active top-K move: a richer header `[latent, belief, acc,
+is_phys, EXPLICIT effect bits(6: recovery/status/phaze/boost/hazard/protect), EXPLICIT secondary chances(10)]`
++ a richer per-(OUR mon, move) cell `[low,high,crit,pko,type_mult,status_lands]`. The effect/secondary bits
+are **gathered PER MOVE** (un-collapsed — the mid-ladder "this move phazes / flinches" nuance the worst-case
+`p_effect`/`p_sec` maxes collapsed; those are kept-but-superseded, deletion deferred to an A/B). Reuses the
+validated `_damage_rolls` tensors + the candidate latent table; STRUCTURAL bool gated in `check_compatible`
+like `damage_op`; OFF byte-identical; requires `--damage-op` + `--move-latent`. The two matrices compose
+under `--damage-matrices {off,incoming,outgoing,both}`. Current
+`MODEL_CONFIG_VERSION` = **35**. Full design:
+`designs/ai_v6/design_per_move_damage_matrices.md` (and `design_iterative_damage_refinement.md` for v33,
+`design_topk_incoming_moves.md` for v30, `design_distributional_value_critic.md` for v29,
 `design_unified_move_system.md` for v24, `design_unified_damage_system.md` for v23).
 **The full versioning playbook — what to do when you change a dim vs add an optional feature vs
 make a structural change — is in `src/agents/model/CLAUDE.md`.**

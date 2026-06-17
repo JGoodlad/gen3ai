@@ -20,6 +20,8 @@ from agents.model.features_extractor import (
     _DMG_INCOMING_SEC, _DMG_OUT_N_MOVES, _DMG_OUT_PER_MOVE, _DMG_STATUS, _DMG_STATUS_N_MOVES,
     _DMG_CB, _COND_SLP_IDX, _SUBSTITUTE_CTX_IDX, TEAM_SIZE,
     _dmg_topk_dim, _DMG_TOPK_MOVE, _DMG_TOPK_DMG_PER, _DMG_TOPK_DEFAULT_K, MOVE_LATENT_DIM,
+    _DMG_REFINE_FEATS, _DMG_OMX, _DMG_OMX_CELL, _DMG_OUT_N_MOVES,
+    _dmg_imx_dim, _DMG_IMX_CELL,
 )
 from agents.model import damage_tables as dt
 from agents.observation.constants import (
@@ -747,6 +749,338 @@ def _op_and_layout_topk(k):
     """A bare DamageOperator (incoming-only) with the top-K block on — for the synthetic-ctx tests."""
     layout = _make_layout()
     return DamageOperator(layout, topk_k=k), layout
+
+
+# ------------------------------------------------- gen3_iterative_damage_v1: iterative damage refinement
+def test_refine_off_byte_identical_dims():
+    """damage_refine_rounds=0 builds NO refine_proj and the PROJECTION dims are UNCHANGED by refine ON
+    (refine_proj injects onto the token stream, NOT the projection input) — the structural-toggle invariant."""
+    common = dict(attend_unrevealed_opponents=True, move_belief_mode="revealed", damage_op=True)
+    base, _ = _make_model(**common)
+    on, _ = _make_model(**common, damage_refine_rounds=2)
+    assert base.refine_proj is None and base.damage_refine_rounds == 0
+    assert on.refine_proj is not None and on.damage_refine_rounds == 2
+    # The op output (hence both projection inputs) is identical on/off — refine widens nothing in the proj.
+    assert on.projection_input_dim == base.projection_input_dim
+    assert on.value_projection_input_dim == base.value_projection_input_dim
+
+
+def test_refine_requires_damage_op():
+    """damage_refine_rounds>0 hard-requires damage_op (the op physics + a move_belief to re-read)."""
+    with pytest.raises(ValueError, match="damage_op"):
+        _make_model(attend_unrevealed_opponents=True, move_belief_mode="revealed", damage_refine_rounds=2)
+    # With the op it builds fine.
+    m, _ = _make_model(attend_unrevealed_opponents=True, move_belief_mode="revealed", damage_op=True,
+                       damage_refine_rounds=2)
+    assert m.refine_proj is not None
+
+
+def test_refine_proj_zero_init_is_identity_at_init():
+    """refine_proj is ZERO-init → the injected residual is EXACTLY 0 at init, so the ON forward is
+    byte-identical to the same model with the refinement callback disabled (identity-at-init)."""
+    model, layout = _make_model(attend_unrevealed_opponents=True, move_belief_mode="revealed",
+                                damage_op=True, damage_refine_rounds=2)
+    model.eval()
+    assert float(model.refine_proj.weight.abs().sum()) == 0.0
+    assert float(model.refine_proj.bias.abs().sum()) == 0.0
+    torch.manual_seed(0)
+    obs = {"observation": torch.rand(4, layout["total_dim"])}
+    with torch.no_grad():
+        on_pi, on_vf = model.forward(obs)
+        model.damage_refine_rounds = 0           # disable the callback (gate always trips → no-op)
+        off_pi, off_vf = model.forward(obs)
+    assert torch.equal(on_pi, off_pi) and torch.equal(on_vf, off_vf)
+
+
+def test_refine_kernel_shape_and_gates():
+    """discrete_incoming returns [B, TEAM_SIZE, _DMG_REFINE_FEATS], finite, and is gated to 0 with no opp
+    active / per fainted defender."""
+    op, layout = _op_and_layout()
+    ctx = _fake_ctx(op, attacker_num=384, attacker_t1=_T2I["DRAGON"], attacker_t2=_T2I["FLYING"],
+                    defenders=[(0, _T2I["WATER"], 0)] + [(0, 0, 0)] * 5, hp_probs_active=[0.0] * 16)
+    feats = op.discrete_incoming(ctx, _believe_active(op, "earthquake"))
+    assert feats.shape == (1, TEAM_SIZE, _DMG_REFINE_FEATS)
+    assert torch.isfinite(feats).all()
+    # No opp active → whole summary zero.
+    ctx.hp_and_active[:, TEAM_SIZE:, -1] = 0.0
+    assert float(op.discrete_incoming(ctx, _believe_active(op, "earthquake")).abs().sum()) == 0.0
+
+
+def test_refine_kernel_matches_full_op_worst_case():
+    """The lean refine kernel reads the SAME believed worst-case incoming damage the full op exposes — on a
+    clean ctx (no weather/burn/boosts/CB), discrete_incoming's [phys_high, phys_pko] match the full op's
+    decoded per-mon channel max for a concentrated belief (the kernel reuses the validated `_rolls` physics)."""
+    op, layout = _op_and_layout()
+    # Tyranitar (Rock/Dark) believed to run Earthquake (Ground, physical) into our Electric active.
+    ctx = _fake_ctx(op, attacker_num=248, attacker_t1=_T2I["ROCK"], attacker_t2=_T2I["DARK"],
+                    defenders=[(0, _T2I["ELECTRIC"], 0)] + [(0, 0, 0)] * 5, hp_probs_active=[0.0] * 16)
+    logits = _believe_active(op, "earthquake")
+    feats = op.discrete_incoming(ctx, logits)                                   # [1,6,4]
+    op(ctx, logits)                                                             # populates last_raw_block (pre-gain)
+    full = decode_damage_block(op.last_raw_block[0].detach().numpy(), outgoing=False)
+    # Active (slot 0): the kernel's phys_high / phys_pko equal the full op's modal physical channel.
+    assert abs(float(feats[0, 0, 0]) - full["incoming"][0]["phys"]["high"]) < 1e-4
+    assert abs(float(feats[0, 0, 2]) - full["incoming"][0]["phys"]["pko"]) < 1e-4
+    assert float(feats[0, 0, 0]) > 0.0                                          # a real threat
+
+
+def test_refine_kernel_grad_sharpens_belief():
+    """The lean kernel is differentiable in the move belief (the per-round read that sharpens move_head):
+    backprop the summary → gradient reaches the belief logits. Decorrelated — the physics is w-independent,
+    the gradient rides the belief weight on the dominant candidate."""
+    op, layout = _op_and_layout()
+    ctx = _fake_ctx(op, attacker_num=248, attacker_t1=_T2I["ROCK"], attacker_t2=_T2I["DARK"],
+                    defenders=[(0, _T2I["ELECTRIC"], 0)] + [(0, 0, 0)] * 5, hp_probs_active=[0.0] * 16)
+    logits = _believe_active(op, "earthquake").requires_grad_(True)
+    op.discrete_incoming(ctx, logits).sum().backward()
+    assert logits.grad is not None and float(logits.grad.abs().sum()) > 0.0
+
+
+def test_refine_proj_receives_gradient_in_extractor():
+    """End-to-end: a forward+backward through the extractor reaches refine_proj (the injection participates
+    in the graph even at init, since ∂out/∂refine_proj.weight = the damage feats, which are non-zero)."""
+    model, layout = _make_model(attend_unrevealed_opponents=True, move_belief_mode="revealed",
+                                damage_op=True, damage_refine_rounds=2)
+    model.train()
+    torch.manual_seed(0)
+    pi, vf = model.forward({"observation": torch.rand(4, layout["total_dim"])})
+    (pi.sum() + vf.sum()).backward()
+    assert model.refine_proj.weight.grad is not None
+    assert float(model.refine_proj.weight.grad.abs().sum()) > 0.0
+
+
+# ----------------------------------------- gen3_per_move_matrices_v1: OUTGOING per-move damage matrix
+def _ctx_mtx(*, our_species, our_t1, our_t2, our_moves, our_move_types,
+             opp_active, bench_revealed=None, move_mask, B=1):
+    """Outgoing-MATRIX ctx: our active (4 moves, slot 0) + opp active (REVEALED, slot TEAM_SIZE) + an OPTIONAL
+    revealed bench mon (slot TEAM_SIZE+1); the remaining opp slots are hidden + fainted. Sets opp_believed_mask
+    (revealed = ~believed)."""
+    ctx = _fake_ctx_out(our_species=our_species, our_t1=our_t1, our_t2=our_t2,
+                        our_moves=our_moves, our_move_types=our_move_types,
+                        opp_species=opp_active[0], opp_t1=opp_active[1], opp_t2=opp_active[2],
+                        move_mask=move_mask, B=B)
+    believed = torch.ones(B, TEAM_SIZE, dtype=torch.bool)   # all hidden by default
+    believed[:, 0] = False                                  # opp active = revealed
+    if bench_revealed is not None:
+        s, a, b = bench_revealed
+        ctx.species_ids[:, TEAM_SIZE + 1] = s
+        ctx.type1_ids[:, TEAM_SIZE + 1] = a; ctx.type2_ids[:, TEAM_SIZE + 1] = b
+        ctx.hp_and_active[:, TEAM_SIZE + 1, 0] = 1.0         # alive
+        believed[:, 1] = False                              # revealed bench
+    ctx.opp_believed_mask = believed
+    return ctx
+
+
+def _omx_cell(row, k, d):
+    """[low, high, crit, pko, type_mult] for our move k vs opp slot d (grouped-by-move layout)."""
+    o = (k * TEAM_SIZE + d) * _DMG_OMX_CELL
+    return [float(x) for x in row[o:o + _DMG_OMX_CELL]]
+
+
+def _omx_revealed(row):
+    base = _DMG_OUT_N_MOVES * TEAM_SIZE * _DMG_OMX_CELL
+    return [float(x) for x in row[base:base + TEAM_SIZE]]
+
+
+def test_matrices_outgoing_off_path_dims_unchanged():
+    """damage_matrices_outgoing OFF == baseline op; ON adds EXACTLY _DMG_OMX to BOTH projection heads."""
+    common = dict(attend_unrevealed_opponents=True, move_belief_mode="revealed", damage_op=True)
+    base, _ = _make_model(**common)
+    on, _ = _make_model(**common, damage_matrices_outgoing=True)
+    assert base.damage_op.matrices_outgoing is False and on.damage_op.matrices_outgoing is True
+    assert on.projection_input_dim - base.projection_input_dim == _DMG_OMX
+    assert on.value_projection_input_dim - base.value_projection_input_dim == _DMG_OMX
+
+
+def test_matrices_outgoing_requires_damage_op():
+    with pytest.raises(ValueError, match="damage_op"):
+        _make_model(attend_unrevealed_opponents=True, move_belief_mode="revealed",
+                    damage_matrices_outgoing=True)                       # no damage_op
+
+
+def test_outgoing_matrix_active_col_matches_single_active_and_gates_bench():
+    """The matrix's opp-ACTIVE column == the validated single-active `_outgoing_block` (same physics); a
+    REVEALED but immune bench reads 0 damage with revealed=1; an UNREVEALED bench is fully zeroed + revealed=0."""
+    layout = _make_layout()
+    op = DamageOperator(layout, outgoing=True, matrices_outgoing=True)
+    eq = _move_num("earthquake")
+    ctx = _ctx_mtx(our_species=376, our_t1=_T2I["STEEL"], our_t2=_T2I["PSYCHIC"],     # Metagross
+                   our_moves=[eq, 0, 0, 0], our_move_types=[_T2I["GROUND"], 0, 0, 0],
+                   opp_active=(0, _T2I["ELECTRIC"], 0),                 # EQ 2× vs Electric
+                   bench_revealed=(0, _T2I["FLYING"], 0),               # EQ immune vs a Flying pivot
+                   move_mask=[1, 0, 0, 0])
+    single = op._outgoing_block(ctx)[0]                                  # [_DMG_OUTGOING] (pre-gain)
+    mtx = op._outgoing_matrix(ctx)[0]                                    # [_DMG_OMX] (pre-gain)
+    # active column (opp slot 0), move 0 == the single-active block's move 0 [low,high,crit,pko]
+    active = _omx_cell(mtx, 0, 0)
+    assert abs(active[1] - float(single[1])) < 1e-5                      # high
+    assert abs(active[3] - float(single[3])) < 1e-5                      # pko
+    assert active[1] > 0.0 and active[4] > 1.5                           # SE: real dmg, type_mult ~2×
+    revealed = _omx_revealed(mtx)
+    # revealed Flying bench (slot 1): immune → 0 damage, but revealed bit = 1
+    assert _omx_cell(mtx, 0, 1)[1] == 0.0 and revealed[1] == 1.0
+    # unrevealed bench (slot 2): zeroed + revealed bit 0
+    assert _omx_cell(mtx, 0, 2)[1] == 0.0 and revealed[2] == 0.0
+
+
+def test_outgoing_matrix_shape_finite_and_leak_free():
+    """End-to-end: the matrix rides the op output (+_DMG_OMX), is finite, decodes, and reads only public obs
+    (poisoning the privileged label keys leaves the forward bit-identical)."""
+    model, layout = _make_model(attend_unrevealed_opponents=True, move_belief_mode="revealed",
+                                move_prior_fusion=True, damage_op=True, damage_matrices_outgoing=True)
+    model.eval()
+    torch.manual_seed(0)
+    obs_t = torch.rand(4, layout["total_dim"])
+    with torch.no_grad():
+        pi, vf = model.forward({"observation": obs_t})
+        dec = decode_damage_block(model.damage_op.last_raw_block[0].numpy(), outgoing=False,
+                                  matrices_outgoing=True)
+    assert torch.isfinite(pi).all() and torch.isfinite(vf).all()
+    assert dec["outgoing_matrix"] is not None
+    assert len(dec["outgoing_matrix"]["moves"]) == _DMG_OUT_N_MOVES
+    assert len(dec["outgoing_matrix"]["moves"][0]) == TEAM_SIZE
+    assert len(dec["outgoing_matrix"]["revealed"]) == TEAM_SIZE
+    poisoned = {"observation": obs_t,
+                "belief_species": torch.rand(4, TEAM_SIZE, layout["max_species"]),
+                "belief_moves": torch.rand(4, TEAM_SIZE, layout["max_moves"]),
+                "known_moves": torch.rand(4, TEAM_SIZE, layout["max_moves"])}
+    with torch.no_grad():
+        clean_pi, clean_vf = model.forward({"observation": obs_t})
+        pois_pi, pois_vf = model.forward(poisoned)
+    assert torch.equal(clean_pi, pois_pi) and torch.equal(clean_vf, pois_vf)
+
+
+def test_both_matrices_combined_offsets_decode():
+    """The most complex layout — incoming matrix + outgoing single-block + outgoing matrix ALL on. Confirms
+    the decode offsets stay consistent (the incoming matrix is decoded correctly AFTER the outgoing blocks):
+    every block decodes to finite values and the incoming matrix block is the expected shape."""
+    model, layout = _make_model(attend_unrevealed_opponents=True, move_belief_mode="revealed",
+                                move_prior_fusion=True, damage_op=True, move_latent=True,
+                                damage_outgoing=True, damage_matrices_outgoing=True,
+                                damage_matrices_incoming=True, damage_topk_k=5)
+    model.eval()
+    torch.manual_seed(0)
+    with torch.no_grad():
+        model.forward({"observation": torch.rand(3, layout["total_dim"])})
+    raw = model.damage_op.last_raw_block[0].numpy()
+    assert len(raw) == model.damage_op.out_dim                          # the block fills out_dim exactly
+    dec = decode_damage_block(raw, outgoing=True, matrices_outgoing=True,
+                              matrices_incoming_k=model.damage_op.matrices_incoming_k)
+    # all three matrix/blocks decoded (not None) + the incoming matrix has the right shape past the outgoing blocks
+    assert dec["outgoing"] is not None and dec["outgoing_matrix"] is not None and dec["incoming_matrix"] is not None
+    assert len(dec["incoming_matrix"]["moves"]) == 5
+    assert len(dec["incoming_matrix"]["per_defender"]) == TEAM_SIZE
+    import math
+    assert all(math.isfinite(c["high"]) for row in dec["incoming_matrix"]["per_defender"] for c in row)
+
+
+# ------------------------------------ gen3_per_move_matrices_v1: INCOMING per-move damage matrix (enriched top-K)
+def _imx_common():
+    return dict(attend_unrevealed_opponents=True, move_belief_mode="revealed", damage_op=True, move_latent=True)
+
+
+def test_matrices_incoming_off_path_dims_unchanged():
+    """damage_matrices_incoming OFF == baseline; ON adds EXACTLY _dmg_imx_dim(5) to BOTH projection heads."""
+    base, _ = _make_model(**_imx_common())
+    on, _ = _make_model(**_imx_common(), damage_matrices_incoming=True)
+    assert base.damage_op.matrices_incoming is False and on.damage_op.matrices_incoming is True
+    grow = _dmg_imx_dim(on.damage_op.matrices_incoming_k)
+    assert on.projection_input_dim - base.projection_input_dim == grow
+    assert on.value_projection_input_dim - base.value_projection_input_dim == grow
+
+
+def test_matrices_incoming_dependency_guards():
+    """incoming requires damage_op + move_latent. It REUSES damage_topk_k as its K (no conflict) and
+    replaces the lean top-K block at that K."""
+    with pytest.raises(ValueError, match="damage_op"):
+        _make_model(attend_unrevealed_opponents=True, move_belief_mode="revealed", move_latent=True,
+                    damage_matrices_incoming=True)                       # no damage_op
+    with pytest.raises(ValueError, match="move_latent"):
+        _make_model(attend_unrevealed_opponents=True, move_belief_mode="revealed", damage_op=True,
+                    damage_matrices_incoming=True)                       # no move_latent
+    # incoming + an explicit --damage-topk K is NOT a conflict — the matrix uses K and suppresses the lean block.
+    m, _ = _make_model(**_imx_common(), damage_matrices_incoming=True, damage_topk_k=5)
+    assert m.damage_op.matrices_incoming_k == 5
+
+
+def test_matrices_incoming_k_is_tunable_via_topk():
+    """The matrix's K = --damage-topk (one knob, try 4/5/6): a higher K widens the block by _dmg_imx_dim's
+    delta, and the lean top-K block is SUPPRESSED (the matrix replaces it — no double-count)."""
+    on4, _ = _make_model(**_imx_common(), damage_matrices_incoming=True, damage_topk_k=4)
+    on6, _ = _make_model(**_imx_common(), damage_matrices_incoming=True, damage_topk_k=6)
+    assert on4.damage_op.matrices_incoming_k == 4 and on6.damage_op.matrices_incoming_k == 6
+    delta = _dmg_imx_dim(6) - _dmg_imx_dim(4)
+    assert on6.projection_input_dim - on4.projection_input_dim == delta
+    # the lean top-K block is NOT also emitted (the matrix replaces it): on6's growth over a no-matrix model
+    # at the SAME topk_k=6 is the matrix MINUS the lean block it replaced.
+    lean6, _ = _make_model(**_imx_common(), damage_topk_k=6)             # lean top-K at K=6
+    assert (on6.projection_input_dim - lean6.projection_input_dim
+            == _dmg_imx_dim(6) - _dmg_topk_dim(6))
+
+
+def test_incoming_matrix_cell_physics_and_immunity():
+    """The matrix cell gathers the validated rolls: a believed SE move reads real damage + type_mult>1 on a
+    weak mon and EXACTLY 0 (damage + type_mult) on an immune pivot."""
+    layout = _make_layout()
+    op = DamageOperator(layout, matrices_incoming=True)
+    K = op.matrices_incoming_k
+    eq = _move_num("earthquake")
+    # slot 0 = Electric active (EQ 2× SE), slot 1 = a Flying pivot (Ground-immune).
+    ctx = _topk_ctx(op, attacker_num=248, attacker_t1=_T2I["ROCK"], attacker_t2=_T2I["DARK"],
+                    defenders=[(0, _T2I["ELECTRIC"], 0), (0, _T2I["FLYING"], 0)] + [(0, 0, 0)] * 4)
+    out = op(ctx, _logits_moves(layout["max_moves"], [eq]), None, _synth_latent(layout))
+    dec = decode_damage_block(op.last_raw_block[0].detach().numpy(), outgoing=False, matrices_incoming_k=K)
+    s = op.last_topk_idx[0].tolist().index(eq)                          # EQ's top-K slot
+    active = dec["incoming_matrix"]["per_defender"][0][s]               # Electric active
+    flying = dec["incoming_matrix"]["per_defender"][1][s]               # Flying pivot
+    assert active["high"] > 0.0 and active["type_mult"] > 1.5           # SE: real dmg, 2× mult
+    assert active["low"] > 0.0 and active["crit"] >= active["high"]     # the richer cell rolls
+    assert flying["high"] == 0.0 and flying["pko"] == 0.0 and flying["type_mult"] == 0.0   # immune pivot
+
+
+def test_incoming_matrix_header_effect_and_secondary():
+    """The per-move HEADER carries EXPLICIT effect/secondary bits (un-collapsed): a believed Roar lights the
+    phaze effect bit; a believed Body Slam carries its para secondary chance."""
+    layout = _make_layout()
+    op = DamageOperator(layout, matrices_incoming=True)
+    K = op.matrices_incoming_k
+    roar, bodyslam = _move_num("roar"), _move_num("bodyslam")
+    ctx = _topk_ctx(op, attacker_num=248, attacker_t1=_T2I["NORMAL"], attacker_t2=0,
+                    defenders=[(0, _T2I["NORMAL"], 0)] + [(0, 0, 0)] * 5)
+    out = op(ctx, _logits_moves(layout["max_moves"], [roar, bodyslam]), None, _synth_latent(layout))
+    dec = decode_damage_block(op.last_raw_block[0].detach().numpy(), outgoing=False, matrices_incoming_k=K)
+    idx = op.last_topk_idx[0].tolist()
+    h_roar = dec["incoming_matrix"]["moves"][idx.index(roar)]
+    h_bs = dec["incoming_matrix"]["moves"][idx.index(bodyslam)]
+    assert h_roar["effect"][2] == 1.0                                   # phaze bit (recovery,status,PHAZE,...)
+    assert h_bs["secondary"][_SEC_IDX["par"]] > 0.0                     # Body Slam para secondary
+
+
+def test_incoming_matrix_shape_decode_leak_free():
+    """End-to-end: the incoming matrix rides the op output, decodes (K moves × 6 defenders), and reads only
+    public obs + the predicted belief (poisoning privileged keys leaves the forward bit-identical)."""
+    model, layout = _make_model(**_imx_common(), move_prior_fusion=True, damage_matrices_incoming=True)
+    model.eval()
+    torch.manual_seed(0)
+    obs_t = torch.rand(4, layout["total_dim"])
+    K = model.damage_op.matrices_incoming_k
+    with torch.no_grad():
+        pi, vf = model.forward({"observation": obs_t})
+        dec = decode_damage_block(model.damage_op.last_raw_block[0].numpy(), outgoing=False,
+                                  matrices_incoming_k=K)
+    assert torch.isfinite(pi).all() and torch.isfinite(vf).all()
+    assert dec["incoming_matrix"] is not None
+    assert len(dec["incoming_matrix"]["moves"]) == K
+    assert len(dec["incoming_matrix"]["per_defender"]) == TEAM_SIZE
+    assert len(dec["incoming_matrix"]["per_defender"][0]) == K
+    poisoned = {"observation": obs_t,
+                "belief_species": torch.rand(4, TEAM_SIZE, layout["max_species"]),
+                "belief_moves": torch.rand(4, TEAM_SIZE, layout["max_moves"]),
+                "known_moves": torch.rand(4, TEAM_SIZE, layout["max_moves"])}
+    with torch.no_grad():
+        clean_pi, clean_vf = model.forward({"observation": obs_t})
+        pois_pi, pois_vf = model.forward(poisoned)
+    assert torch.equal(clean_pi, pois_pi) and torch.equal(clean_vf, pois_vf)
 
 
 # ---------------------------------------------------- gen3_unified_move_system_v1: secondary effects
