@@ -1074,3 +1074,21 @@ async def test_replay_path_bar_reveals_path_on_own_line(tmp_path):
         app._select_battle(app._tree_model.all_battles()[0])
         await pilot.pause()
         assert bar.display is False
+
+
+async def test_team_columns_get_real_width_not_collapsed(tmp_path):
+    """The Team tab's two panels split the analysis pane (~1fr each). Regression for the auto-width
+    collapse that squished each column to ~2 cells, wrapping every word ('po/ké/mo/n') vertically."""
+    run = _write_trace(tmp_path)
+    app = ProberApp(root=run, injected_model=_FakeModel())
+    async with app.run_test(size=(200, 50)) as pilot:
+        await pilot.pause()
+        app._select_battle(app._tree_model.all_battles()[0])
+        await pilot.pause()
+        await app.workers.wait_for_complete()
+        await pilot.pause()
+        app.action_toggle_section("sec-team")          # open Team (collapsed by default)
+        await pilot.pause()
+        our = app.query_one("#team-our", Static)
+        opp = app.query_one("#team-opp", Static)
+        assert our.size.width > 20 and opp.size.width > 20   # not collapsed to ~2 cells

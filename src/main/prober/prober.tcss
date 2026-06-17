@@ -127,3 +127,15 @@ DataTable {
     width: auto;
     height: auto;
 }
+
+/* Team tab: two full-detail panels that SPLIT the analysis pane 50/50. Unlike the Summary's
+ * MOVES+SWITCHES (auto-width, packed left and anchored by the MOVES DataTable), both Team columns
+ * are all-Static, so `width: auto` has nothing to anchor the Horizontal and collapses each column to
+ * ~2 cells (every word then wraps vertically). Give the columns + their Statics a definite 1fr. */
+#team-tables > .summary-col {
+    width: 1fr;
+}
+#team-our, #team-opp {
+    width: 1fr;
+    height: auto;
+}
