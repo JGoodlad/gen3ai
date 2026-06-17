@@ -24,8 +24,9 @@ Embedding dims (`species_embedding_dim`, `move_embedding_dim`, etc.) live in `st
 
 `forward_internal` is decomposed into phase `nn.Module`s, chained by a thin orchestrator:
 
-`ObsUnpack` → `PokemonEncoder` → `[BeliefSlots?]` → `TeamTransformer` → `[BeliefHead?]` →
-`[MoveBelief?]` → `CLSPool` → `[DamageOperator?]` → `ProjectionAssembler`, then **two** root heads
+`ObsUnpack` → `PokemonEncoder` → `[BeliefSlots?]` → `[MoveBelief? (prefuse)]` → `TeamTransformer` →
+`[BeliefHead?]` → `[MoveBelief? (default, post)]` → `CLSPool` → `[DamageOperator?]` →
+`[damage_reattend? → re-attend + RE-POOL]` → `ProjectionAssembler`, then **two** root heads
 (`pre_proj_norm`/`projection` for policy, `value_pre_norm`/`value_projection` for value), each → `ReLU`.
 
 `BeliefSlots`/`BeliefHead` are built only when `opp_belief_slots` (`--opp-belief-aux-coef>0`),
@@ -175,9 +176,9 @@ because it is Φ_progress's weight. All are recorded on
 `ModelVersion` and enforced on resume by **`check_reward_config`** (FATAL on drift, since they silently
 shift the reward/objective), excluded from `check_compatible`. They are reward-VALUE changes — **no
 `ARCH_SIGNATURE` bump** (the network/obs are unchanged) — so a fresh run is needed to measure them but
-old checkpoints don't fail an arch check. Current `MODEL_CONFIG_VERSION` = **30** (see the belief +
+old checkpoints don't fail an arch check. Current `MODEL_CONFIG_VERSION` = **32** (see the belief +
 unified-damage + unified-move + spread-belief + op-physics + status-landing + choice-band + value-dist
-+ topk-incoming notes below for v16–v30).
++ topk-incoming + damage-reattend + move-prefuse notes below for v16–v32).
 
 **Two probe-driven V-tail levers (v10 structural, v11 resume-immutable).** A representation probe on a
 real checkpoint found the **value head is partly blind to incoming KOs the policy head sees**
@@ -585,6 +586,44 @@ decodes EXACT move names. Threaded through `current_model_version` / `arch_toggl
 (`incoming_topk` = the K moves + 6×K per-defender). Leak-safe (public obs + the predicted belief only;
 pinned by `damage_op_test.test_topk_leak_free`). Design:
 `designs/ai_v6/design_topk_incoming_moves.md`. Current `MODEL_CONFIG_VERSION` = **30**.
+
+**Damage re-attend (v31, `damage_reattend` / `--damage-reattend`, `gen3_damage_reattend_v1`).** Lets
+attention reason OVER the computed physics — today the `DamageOperator` block is concatenated POST-pool
+into pi/vf, so NO attention ever sees it (and per-candidate switch reasoning is pooled away). When on,
+`forward_internal` — AFTER the op computes `damage_block` — projects the op's per-OUR-mon INCOMING rows
+(`damage_block[:, :TEAM_SIZE·_DMG_PER_MON]` → `[B,6,_DMG_PER_MON]`) onto the 6 our-team tokens via a
+**small-init** `reattend_proj` (std=0.02) + `reattend_norm` LayerNorm residual, runs ONE more
+`TransformerEncoderLayer` (`reattend_layer`, same d_model/heads/ffn as the trunk) over the 12 team tokens
+(`ctx.all_fainted` key-mask → our↔opp re-attention), then the **CLS pools are derived ONCE on the
+re-attended tokens** (`our_team_pooled`/`their_team_pooled`/`our_active_refined`/`value_pooled`) — so the
+pi/vf pools are **damage-AWARE board summaries** instead of damage-blind ones. **Scope (be accurate):** this
+is a BOARD-level enrichment of the shared representation — it is **NOT** first-class per-candidate switch
+SCORING. The re-attended bench tokens are pooled back into one `our_pool`, and the stock action head reads a
+single pooled vector, so the per-bench signal to the switch logits is still the concatenated per-slot damage
+block; true per-candidate scoring would need a per-bench **pointer head** (a separate follow-up). The op
+runs BEFORE the pools and the pools/side-readouts/hidden-opp/assembler all read the SAME (re-attended) state
+(one consistent re-pool, no stale-`value_pooled` split). **Identity-at-init**: the `reattend_layer`'s output
+paths (attention out-proj + FFN second linear) are zero-init'd, so at step 0 it ≈ identity and ON starts ≈
+the `damage_op` baseline (clean A/B). Re-pooling preserves the pooled shapes ⇒ **projection widths
+UNCHANGED**; the only state_dict change is the 3 modules, so it's a STRUCTURAL toggle like `opp_belief_slots`
+(gated in `check_compatible` with a bool compare; OFF byte-for-byte; **NO `ARCH_SIGNATURE` bump**). Requires
+`damage_op` (the incoming block is the source). PopArt strongly recommended (the extra shared-trunk layer
+worsens value-grad contention — a soft warning fires without `--use-popart`; watch `grad/value_share`).
+Current `MODEL_CONFIG_VERSION` = **31**.
+
+**Move-belief pre-fuse (v32, `move_belief_prefuse` / `--move-belief-prefuse`, `gen3_move_prefuse_v1`).**
+Moves the `MoveBelief` reinjection from POST-transformer to PRE-transformer. By default the move belief is
+predicted + reinjected into `their_team_out` AFTER the `TeamTransformer` (the believed moves are grafted
+onto the already-refined opp tokens). When on, `forward_internal` instead reinjects into the opp ROLE
+tokens BEFORE the transformer (`role_tokens[:, TEAM_SIZE:]`, after `belief_slots`), so the believed moves
+**co-refine** with the species/team belief through the 2 attention layers — one mon's predicted moveset can
+inform (and be informed by) the rest of the board. Both call sites share one `_apply_move_belief(opp_tokens,
+ctx)` helper (mask per `move_belief_mode`, prior-fusion inputs from `ctx`), so the only difference is the
+input tensor + timing; `last_move_belief_logits` is stashed identically (the damage op + BCE aux still read
+it). This is the **SAME `MoveBelief` module/params** → state_dict identical, projection widths unchanged,
+so it's a **FORWARD-BEHAVIOR toggle** like `move_prior_fusion` (gated in `check_compatible` with a bool
+compare; OFF byte-for-byte; **NO `ARCH_SIGNATURE` bump**). Requires `move_belief_mode != off` (there must be
+a head to reinject). Current `MODEL_CONFIG_VERSION` = **32**.
 
 A startup smoke test (`_run_roundtrip_test` in `train_rl_agent.py`) saves to a temp dir and reloads before every `model.learn()` call — catches serialization issues immediately.
 

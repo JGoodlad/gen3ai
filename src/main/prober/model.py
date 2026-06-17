@@ -347,6 +347,7 @@ class ProbeModel:
         has_latent = getattr(getattr(ex, "pokemon_encoder", None), "move_latent_encoder", None) is not None
         latent_belief = bool(getattr(ex, "opp_belief_latent", False))   # belief SimSiam latent sub-head
         prior_fusion = bool(getattr(ex, "move_prior_fusion", False))    # MoveBelief Smogon-prior posterior
+        move_prefuse = bool(getattr(ex, "move_belief_prefuse", False))  # MoveBelief reinjected PRE-transformer
         dmg_out = bool(getattr(ex, "damage_outgoing", False))           # DamageOperator outgoing direction
         # (name, active, optional, stage, role, attn) — TRUE forward order (forward_internal). `attn`
         # flags the ATTENTION layers (self-/cross-attention) so the prober can mark where the network
@@ -367,7 +368,8 @@ class ProbeModel:
             ("BeliefHead", on("belief_head"), True, "side",
              "aux: predict hidden species/moves" + (" + latent" if latent_belief else "") + " (side readout)", False),
             ("MoveBelief", on("move_belief"), True, "trunk",
-             f"predict + reinject opp moves ({mb})" + (" + prior-fusion" if prior_fusion else ""), False),
+             f"predict + reinject opp moves ({mb})" + (" + prior-fusion" if prior_fusion else "")
+             + (" · PRE-transformer" if move_prefuse else ""), False),
             ("SpreadBelief", on("spread_belief"), True, "trunk",
              "predict + reinject opp hidden stat-spread → DamageOperator (v25)", False),
             ("CLSPool", True, False, "fork",

@@ -564,6 +564,45 @@ def test_migrate_pre_v18_adds_damage_op_default(version):
     ModelVersion(**result)
 
 
+# --- damage_reattend: a structural bool toggle (re-attend the team tokens to the damage, v31) --------
+
+
+def test_check_compatible_rejects_damage_reattend_mismatch(version):
+    """damage_reattend adds a damage→token projection + encoder layer → a state_dict change
+    check_compatible must reject (like opp_belief_slots), even though projection WIDTHS are unchanged."""
+    on = dataclasses.replace(version, damage_reattend=True)
+    with pytest.raises(ModelVersionError) as exc_info:
+        version.check_compatible(on)        # version has damage_reattend=False (default)
+    assert "damage_reattend" in str(exc_info.value)
+
+
+def test_check_compatible_accepts_matching_damage_reattend(version):
+    """Same value (incl. the off baseline) must load — no false rejection."""
+    version.check_compatible(dataclasses.replace(version))            # off vs off
+    on = dataclasses.replace(version, damage_reattend=True)
+    on.check_compatible(dataclasses.replace(on))                      # on vs on
+
+
+def test_damage_reattend_read_from_features_extractor_kwargs(layout):
+    """damage_reattend sources from features_extractor_kwargs; absent → False (baseline)."""
+    pk = {"net_arch": [512, 512], "features_extractor_kwargs": {"damage_reattend": True}}
+    v = ModelVersion.from_layout_and_policy_kwargs(layout, pk)
+    assert v.damage_reattend is True and v.config_version == MODEL_CONFIG_VERSION
+    v_default = ModelVersion.from_layout_and_policy_kwargs(layout, {"net_arch": [512, 512]})
+    assert v_default.damage_reattend is False
+
+
+def test_migrate_pre_v31_adds_damage_reattend_default(version):
+    """Pre-v31 configs lack damage_reattend — migration injects False and bumps to the current version."""
+    data = json.loads(version.to_json())
+    data.pop("damage_reattend", None)
+    data["config_version"] = 30
+    result = _migrate_config(data)
+    assert result["config_version"] == MODEL_CONFIG_VERSION
+    assert result["damage_reattend"] is False
+    ModelVersion(**result)
+
+
 # --- damage_topk_k: a structural INT toggle (the discrete top-K incoming block, v30) ----------------
 
 
@@ -640,6 +679,43 @@ def test_migrate_pre_v20_adds_move_prior_fusion_default(version):
     result = _migrate_config(data)
     assert result["config_version"] == MODEL_CONFIG_VERSION
     assert result["move_prior_fusion"] is False
+    ModelVersion(**result)
+
+
+# --- move_belief_prefuse: a forward-behavior bool toggle (PRE-transformer reinjection, v32) ----------
+
+
+def test_check_compatible_rejects_move_belief_prefuse_mismatch(version):
+    """Moving the move-belief reinjection before the transformer changes the forward the policy trained
+    under (no weight-shape change), so check_compatible must reject a flip — like move_prior_fusion."""
+    on = dataclasses.replace(version, move_belief_prefuse=True)
+    with pytest.raises(ModelVersionError) as exc_info:
+        version.check_compatible(on)        # version has move_belief_prefuse=False (default)
+    assert "move_belief_prefuse" in str(exc_info.value)
+
+
+def test_check_compatible_accepts_matching_move_belief_prefuse(version):
+    version.check_compatible(dataclasses.replace(version))               # off vs off
+    on = dataclasses.replace(version, move_belief_prefuse=True)
+    on.check_compatible(dataclasses.replace(on))                         # on vs on
+
+
+def test_move_belief_prefuse_read_from_features_extractor_kwargs(layout):
+    pk = {"net_arch": [512, 512], "features_extractor_kwargs": {"move_belief_prefuse": True}}
+    v = ModelVersion.from_layout_and_policy_kwargs(layout, pk)
+    assert v.move_belief_prefuse is True and v.config_version == MODEL_CONFIG_VERSION
+    v_default = ModelVersion.from_layout_and_policy_kwargs(layout, {"net_arch": [512, 512]})
+    assert v_default.move_belief_prefuse is False
+
+
+def test_migrate_pre_v32_adds_move_belief_prefuse_default(version):
+    """Pre-v32 configs lack move_belief_prefuse — migration injects False and bumps to the current version."""
+    data = json.loads(version.to_json())
+    data.pop("move_belief_prefuse", None)
+    data["config_version"] = 31
+    result = _migrate_config(data)
+    assert result["config_version"] == MODEL_CONFIG_VERSION
+    assert result["move_belief_prefuse"] is False
     ModelVersion(**result)
 
 
@@ -1735,6 +1811,7 @@ def test_arch_toggles_from_model_extracts_flags():
                                move_belief_mode="revealed", opp_belief_latent=True,
                                damage_op_enabled=True, damage_outgoing=True, move_candidate_floor=0.3,
                                move_latent=True, move_prior_fusion=True,
+                               move_belief_prefuse=True,
                                mask_incoming_damage_obs=True, win_prob_mode="read_only",
                                damage_topk_k=5)
     model = types.SimpleNamespace(policy=types.SimpleNamespace(features_extractor=fe, popart=object()))
@@ -1746,6 +1823,8 @@ def test_arch_toggles_from_model_extracts_flags():
     assert t["damage_op"] is True and t["damage_outgoing"] is True
     assert t["move_candidate_floor"] == 0.3 and t["move_latent"] is True
     assert t["move_prior_fusion"] is True and t["mask_incoming_damage_obs"] is True
+    # v32: the PRE-transformer move-belief reinjection toggle (a prefuse-ON run must gate its sentinels).
+    assert t["move_belief_prefuse"] is True
     assert t["win_prob_mode"] == "read_only"
     # v30: the discrete top-K incoming block's K (a topk-ON self-play run must gate its sentinels with it).
     assert t["damage_topk_k"] == 5

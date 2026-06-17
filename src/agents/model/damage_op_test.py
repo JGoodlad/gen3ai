@@ -227,6 +227,68 @@ def test_dependency_guard_requires_revealed_or_both():
     _make_model(attend_unrevealed_opponents=True, move_belief_mode="revealed", damage_op=True)
 
 
+# --------------------------------------------------------------------------- damage_reattend (v31)
+def test_reattend_off_builds_no_modules_and_dims_unchanged():
+    """damage_reattend adds modules but RE-POOLS to the same pooled shapes ⇒ projection widths are
+    UNCHANGED vs damage_op alone; OFF builds no re-attend modules (baseline byte-for-byte)."""
+    base, _ = _make_model(attend_unrevealed_opponents=True, move_belief_mode="revealed", damage_op=True)
+    on, _ = _make_model(attend_unrevealed_opponents=True, move_belief_mode="revealed", damage_op=True,
+                        damage_reattend=True)
+    assert base.reattend_layer is None and base.reattend_proj is None
+    assert on.reattend_layer is not None and on.reattend_proj is not None
+    # The key invariant: re-pooling preserves the pooled shapes → projection input dims UNCHANGED.
+    assert on.projection_input_dim == base.projection_input_dim
+    assert on.value_projection_input_dim == base.value_projection_input_dim
+
+
+def test_reattend_requires_damage_op():
+    with pytest.raises(ValueError, match="damage_reattend"):
+        _make_model(attend_unrevealed_opponents=True, move_belief_mode="revealed", damage_reattend=True)
+
+
+def test_reattend_forward_finite_and_grad_flows():
+    """ON: the forward is finite and gradients reach the re-attend projection — it is in the LIVE
+    decision path (incoming damage → our tokens → re-attention → re-pooled → both heads)."""
+    model, layout = _make_model(attend_unrevealed_opponents=True, move_belief_mode="revealed",
+                                damage_op=True, damage_reattend=True)
+    model.train()
+    pi, vf = model.forward({"observation": torch.rand(8, layout["total_dim"])})
+    assert torch.isfinite(pi).all() and torch.isfinite(vf).all()
+    model.zero_grad()
+    (pi.sum() + vf.sum()).backward()
+    g = model.reattend_proj.weight.grad
+    assert g is not None and g.abs().sum() > 0
+
+
+def test_reattend_identity_at_init_params():
+    """The re-attend layer's output paths are zero-init'd (≈ identity at step 0) and the injection is
+    small-init — so ON starts ≈ the damage_op baseline."""
+    model, _ = _make_model(attend_unrevealed_opponents=True, move_belief_mode="revealed",
+                           damage_op=True, damage_reattend=True)
+    assert float(model.reattend_layer.self_attn.out_proj.weight.abs().sum()) == 0.0
+    assert float(model.reattend_layer.self_attn.out_proj.bias.abs().sum()) == 0.0
+    assert float(model.reattend_layer.linear2.weight.abs().sum()) == 0.0
+    assert float(model.reattend_layer.linear2.bias.abs().sum()) == 0.0
+    assert float(model.reattend_proj.weight.std()) < 0.05            # small-init injection
+
+
+def test_reattend_is_near_noop_at_init():
+    """Identity-at-init ⇒ the re-attend block barely perturbs pi/vf at step 0 (clean A/B vs damage_op
+    alone). Compare the ON forward to the same model with the re-attend path disabled."""
+    model, layout = _make_model(attend_unrevealed_opponents=True, move_belief_mode="revealed",
+                                damage_op=True, damage_reattend=True)
+    model.eval()
+    obs = {"observation": torch.rand(4, layout["total_dim"])}
+    with torch.no_grad():
+        pi_on, vf_on = model.forward(obs)
+        saved, model.reattend_layer = model.reattend_layer, None     # disable the re-attend path
+        pi_off, vf_off = model.forward(obs)
+        model.reattend_layer = saved
+    rel_pi = (pi_on - pi_off).abs().max() / pi_off.abs().max().clamp(min=1e-6)
+    rel_vf = (vf_on - vf_off).abs().max() / vf_off.abs().max().clamp(min=1e-6)
+    assert rel_pi < 0.1 and rel_vf < 0.1, (float(rel_pi), float(rel_vf))
+
+
 def test_finite_on_zero_obs_and_block_is_zero():
     """Zero obs → no opp active → the damage block is deterministically ZERO (the dummy-forward path),
     and the full forward is finite."""

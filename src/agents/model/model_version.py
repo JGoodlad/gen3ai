@@ -245,7 +245,18 @@ from typing import Any, Dict, List
 #   in_features) → STRUCTURAL int gated in check_compatible (like opp_belief_cls_k); OFF (0) byte-for-byte
 #   (NO ARCH_SIGNATURE bump). Requires damage_op + move_latent. A v29 damage_op checkpoint won't load into a
 #   topk-ON op (projection in_features mismatch). Design: designs/ai_v6/design_topk_incoming_moves.md.
-MODEL_CONFIG_VERSION = 30
+# v31: added `damage_reattend` (gen3_damage_reattend_v1) — re-attend the team tokens to the computed
+#   DamageOperator physics, then re-derive the CLS pools, so the policy/value DECISION path (incl. the
+#   switch logits) reads damage-contextualised summaries (today the damage block is a post-pool concat that
+#   no attention sees). STRUCTURAL toggle like opp_belief_slots (adds a damage→token projection + LayerNorm
+#   + one TransformerEncoder layer; re-pooling preserves the pooled shapes ⇒ projection WIDTHS unchanged),
+#   gated in check_compatible (bool); OFF byte-for-byte (NO ARCH_SIGNATURE bump). Requires damage_op.
+# v32: added `move_belief_prefuse` (gen3_move_prefuse_v1) — move the MoveBelief reinjection from
+#   POST-transformer to PRE-transformer, so the predicted opp moves co-refine with the species/team belief
+#   through the 2 attention layers instead of being grafted on afterwards. FORWARD-BEHAVIOR toggle like
+#   move_prior_fusion (same MoveBelief params → state_dict identical; only the call timing differs), gated
+#   in check_compatible (bool); OFF byte-for-byte (NO ARCH_SIGNATURE bump). Requires move_belief_mode != off.
+MODEL_CONFIG_VERSION = 32
 
 # Change this when the neural architecture changes structurally in a way that makes
 # weights from a different signature incompatible (e.g. adding LSTM, replacing attention).
@@ -667,6 +678,12 @@ class ModelVersion:
     # baseline byte-for-byte (NO ARCH_SIGNATURE bump). Forward-only → no training-only coefficient.
     # Requires move_belief_mode in {revealed, both} (enforced at extractor build + CLI).
     damage_op: bool = False
+    # v31 STRUCTURAL toggle (like opp_belief_slots — adds modules, NOT weight-shape): re-attend the team
+    # tokens to the computed damage. ON adds a damage→token projection + LayerNorm + one TransformerEncoder
+    # layer; the CLS pools are re-derived from the re-attended tokens (same pooled shapes ⇒ projection widths
+    # UNCHANGED). State_dict change only via the 3 modules → gated in check_compatible (bool); OFF =
+    # byte-for-byte (NO ARCH_SIGNATURE bump). Requires damage_op (the incoming block is the source signal).
+    damage_reattend: bool = False
     # v20 FORWARD-BEHAVIOR toggle (NOT weight-shape, like attend_unrevealed_opponents): the unified
     # two-part move belief. ON fuses the Smogon move-frequency prior into the MoveBelief head as a
     # log-odds residual (+ pins revealed moves certain), so the stashed move-belief logits carry a
@@ -674,6 +691,13 @@ class ModelVersion:
     # identical), but the forward differs, so it is gated in check_compatible. Requires move_belief_mode
     # != off. OFF = the from-scratch head byte-for-byte (NO ARCH_SIGNATURE bump).
     move_prior_fusion: bool = False
+    # v32 FORWARD-BEHAVIOR toggle (NOT weight-shape, like move_prior_fusion): move the MoveBelief
+    # reinjection from POST-transformer to PRE-transformer. ON predicts + reinjects the opp moveset into
+    # the opp ROLE tokens BEFORE the team transformer, so the believed moves co-refine with the
+    # species/team belief through the 2 attention layers (instead of being grafted on afterwards). Same
+    # MoveBelief module, same params → state_dict identical; only the call timing differs, so it is gated
+    # in check_compatible. Requires move_belief_mode != off. OFF = byte-for-byte (NO ARCH_SIGNATURE bump).
+    move_belief_prefuse: bool = False
     # v21 FORWARD-BEHAVIOR toggle (NOT weight-shape, like attend_unrevealed_opponents): the
     # unified-architecture ablation. ON zeros the incoming-damage / OHKO obs block out of the model's
     # view (the block stays in the obs; the reward still reads it). State_dict identical; the forward
@@ -831,6 +855,9 @@ class ModelVersion:
             damage_op=bool(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("damage_op", False)
             ),
+            damage_reattend=bool(
+                policy_kwargs.get("features_extractor_kwargs", {}).get("damage_reattend", False)
+            ),
             damage_outgoing=bool(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("damage_outgoing", False)
             ),
@@ -851,6 +878,9 @@ class ModelVersion:
             ),
             move_prior_fusion=bool(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("move_prior_fusion", False)
+            ),
+            move_belief_prefuse=bool(
+                policy_kwargs.get("features_extractor_kwargs", {}).get("move_belief_prefuse", False)
             ),
             mask_incoming_damage_obs=bool(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("mask_incoming_damage_obs", False)
@@ -1026,6 +1056,17 @@ class ModelVersion:
                 "Resume with the matching --damage-op setting, or start a fresh training run."
             )
 
+        # v31 STRUCTURAL toggle (like opp_belief_slots): re-attending the team tokens to the damage adds a
+        # projection + LayerNorm + a TransformerEncoder layer, so toggling it changes the state_dict (even
+        # though the projection WIDTHS are unchanged — re-pooling preserves the pooled shapes).
+        if self.damage_reattend != saved.damage_reattend:
+            raise ModelVersionError(
+                f"damage_reattend mismatch: saved={saved.damage_reattend}, current={self.damage_reattend}.\n"
+                "The damage re-attend layer (damage→token projection + encoder layer) changes the state_dict "
+                "and cannot be toggled on an existing model.\n"
+                "Resume with the matching --damage-reattend setting, or start a fresh training run."
+            )
+
         # Structural toggle (weight-shape, like damage_op): the OUTGOING per-move block widens both
         # projection Linears, so toggling it changes the state_dict.
         if self.damage_outgoing != saved.damage_outgoing:
@@ -1088,6 +1129,18 @@ class ModelVersion:
                 "Fusing the Smogon move prior into the belief changes the forward the policy trained "
                 "under, so it cannot be toggled on a resumed model.\n"
                 "Resume with the matching --move-prior-fusion setting, or start a fresh training run."
+            )
+
+        # Forward-behavior toggle (no weight-shape change, like move_prior_fusion): moving the MoveBelief
+        # reinjection before the transformer changes the forward the policy/value/op trained under (the
+        # believed moves now co-refine through attention), so a resume flip would feed a different forward.
+        # Same MoveBelief params → state_dict identical, so this is a train/eval-consistency gate.
+        if self.move_belief_prefuse != saved.move_belief_prefuse:
+            raise ModelVersionError(
+                f"move_belief_prefuse mismatch: saved={saved.move_belief_prefuse}, current={self.move_belief_prefuse}.\n"
+                "Reinjecting the move belief before vs after the transformer changes the forward the policy "
+                "trained under, so it cannot be toggled on a resumed model.\n"
+                "Resume with the matching --move-belief-prefuse setting, or start a fresh training run."
             )
 
         # Forward-behavior toggle (no weight-shape change): ablating the incoming-damage obs block
@@ -1459,4 +1512,15 @@ def _migrate_config(data: dict) -> dict:
         # OFF (0) byte-for-byte (NO ARCH_SIGNATURE bump). Requires damage_op + move_latent.
         data.setdefault("damage_topk_k", 0)
         data["config_version"] = 30
+    if version < 31:
+        # v31: added `damage_reattend` (off). Old models had no damage→token re-attend layer.
+        # STRUCTURAL toggle (adds modules; gated in check_compatible). OFF = baseline byte-for-byte.
+        data.setdefault("damage_reattend", False)
+        data["config_version"] = 31
+    if version < 32:
+        # v32: added `move_belief_prefuse` (off). Old models reinjected the move belief AFTER the
+        # transformer. FORWARD-BEHAVIOR toggle (no weight-shape change; gated in check_compatible).
+        # OFF = baseline byte-for-byte.
+        data.setdefault("move_belief_prefuse", False)
+        data["config_version"] = 32
     return data

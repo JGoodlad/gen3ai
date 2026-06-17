@@ -177,11 +177,13 @@ def _run_arch_toggles(args) -> dict:
         move_belief_mode=args.move_belief_mode,
         opp_belief_latent=(args.opp_belief_latent_coef > 0.0),
         damage_op=args.damage_op,
+        damage_reattend=args.damage_reattend,
         damage_outgoing=args.damage_outgoing,
         move_candidate_floor=args.move_candidate_floor,
         move_latent=args.move_latent,
         spread_belief=args.spread_belief,
         move_prior_fusion=args.move_prior_fusion,
+        move_belief_prefuse=args.move_belief_prefuse,
         mask_incoming_damage_obs=args.mask_incoming_damage_obs,
         mask_active_move_scalars_obs=args.mask_active_move_scalars_obs,
         mask_move_effects_obs=args.mask_move_effects_obs,
@@ -758,6 +760,19 @@ async def main():
                              "belief. STRUCTURAL (widens both projections; version-checked, fresh-only). "
                              "REQUIRES --move-belief-mode revealed|both (it reads the opp active's "
                              "predicted logits, supervised only for a revealed mon). Off by default.")
+    parser.add_argument("--damage-reattend", "--damage_reattend", dest="damage_reattend",
+                        action=BoolFlag, default=None,
+                        help="Re-attend the team transformer to the computed damage: project the op's "
+                             "per-OUR-mon incoming-damage block onto the 6 our-team tokens, run ONE more "
+                             "encoder layer (our↔opp), then re-derive the CLS pools — so attention now reasons "
+                             "OVER the physics and the pi/vf pools are damage-AWARE board summaries instead of "
+                             "damage-blind ones (today the damage block is a post-pool concat no attention "
+                             "sees). NOTE: a BOARD-level enrichment, NOT first-class per-candidate switch "
+                             "scoring (the bench tokens are pooled back to one vector; that needs a per-bench "
+                             "pointer head, a follow-up). Identity-at-init ⇒ ON starts ≈ the --damage-op "
+                             "baseline. STRUCTURAL (adds modules; version-checked, fresh-only; projection "
+                             "widths unchanged). REQUIRES --damage-op. PopArt strongly recommended (the extra "
+                             "shared-trunk layer worsens value-grad contention). Off by default.")
     parser.add_argument("--unified-damage", "--unified_damage", dest="unified_damage",
                         choices=["off", "incoming", "both"], default="off",
                         help="ONE knob for the unified damage system (desugars into the component flags at "
@@ -791,6 +806,14 @@ async def main():
                              "and PIN revealed moves certain — so the belief the damage op + BCE loss read "
                              "is one coherent posterior (priors ⊕ prediction unified), anchored at the "
                              "prior at cold-start. Forward-behavior toggle (no weight-shape change; "
+                             "version-checked, fresh-only). REQUIRES --move-belief-mode != off. Off by default.")
+    parser.add_argument("--move-belief-prefuse", "--move_belief_prefuse", dest="move_belief_prefuse",
+                        action=BoolFlag, default=None,
+                        help="Reinject the move belief BEFORE the team transformer instead of after, so the "
+                             "predicted opp moves co-refine with the species/team belief through the 2 "
+                             "attention layers (the believed moveset participates in attention, rather than "
+                             "being grafted onto the already-refined tokens). Same MoveBelief module/params — "
+                             "only the call timing differs. Forward-behavior toggle (no weight-shape change; "
                              "version-checked, fresh-only). REQUIRES --move-belief-mode != off. Off by default.")
     parser.add_argument("--mask-incoming-damage-obs", "--mask_incoming_damage_obs",
                         dest="mask_incoming_damage_obs", action=BoolFlag, default=None,
@@ -1117,6 +1140,7 @@ async def main():
     _resolve("move_belief_coef", 0.0)          # training-only (inherited like opp_belief_aux_coef)
     _resolve("opp_belief_latent_coef", 0.0)    # training-only (inherited like opp_belief_aux_coef)
     _resolve("damage_op", False)               # v19 structural (version-checked, fresh-only)
+    _resolve("damage_reattend", False)         # v31 structural (version-checked, fresh-only)
     _resolve("damage_outgoing", False)         # v23 structural (version-checked, fresh-only)
     _resolve("move_candidate_floor", 0.0)      # v23 forward-behavior (version-checked, fresh-only)
     _resolve("move_latent", False)             # v24 structural (version-checked, fresh-only)
@@ -1126,6 +1150,7 @@ async def main():
     _resolve("mask_active_move_scalars_obs", False)  # v25 forward-behavior (version-checked, fresh-only)
     _resolve("mask_move_effects_obs", False)         # v25 forward-behavior (version-checked, fresh-only)
     _resolve("move_prior_fusion", False)       # v20 forward-behavior (version-checked, fresh-only)
+    _resolve("move_belief_prefuse", False)     # v32 forward-behavior (version-checked, fresh-only)
     _resolve("mask_incoming_damage_obs", False)  # v21 forward-behavior (version-checked, fresh-only)
     _resolve("win_prob_mode", "none")          # v22 structural + resume-immutable (version-checked)
     _resolve("win_prob_coef", 1.0)             # training-only (inherited like opp_belief_aux_coef)
@@ -1237,12 +1262,33 @@ async def main():
             "fuses into the move-belief head's logits. Set --move-belief-mode revealed, or drop "
             "--move-prior-fusion."
         )
+    if args.move_belief_prefuse and args.move_belief_mode == "off":
+        # FAIL LOUD: prefuse moves the move-belief REINJECTION before the transformer; with no head
+        # (--move-belief-mode off) there is no reinjection to move.
+        parser.error(
+            "--move-belief-prefuse requires --move-belief-mode != off (revealed|unrevealed|both): it "
+            "moves the move-belief reinjection before the transformer. Set --move-belief-mode revealed, "
+            "or drop --move-belief-prefuse."
+        )
     if args.damage_outgoing and not args.damage_op:
         # The outgoing per-move block is emitted by the DamageOperator → the op must exist.
         parser.error(
             "--damage-outgoing requires --damage-op (the outgoing block is part of the damage operator). "
             "Use --unified-damage both, or add --damage-op."
         )
+    if args.damage_reattend and not args.damage_op:
+        # The re-attend layer reads the operator's per-mon incoming-damage block → the op must exist.
+        parser.error(
+            "--damage-reattend requires --damage-op (the re-attend layer reads the operator's incoming "
+            "damage block). Use --unified-damage (with --damage-op), or add --damage-op, or drop "
+            "--damage-reattend."
+        )
+    if args.damage_reattend and not args.use_popart:
+        # SOFT warn (not a hard error — reattend runs without PopArt, just riskier): the extra shared-trunk
+        # layer routes the value gradient through more of the trunk, which the value loss already dominates.
+        print("⚠ --damage-reattend without --use-popart: the extra shared-trunk re-attend layer worsens the "
+              "value-gradient contention on the trunk (the value MSE already swamps it at γ≈0.9999). PopArt "
+              "is strongly recommended — add --use-popart and watch grad/value_share.", file=sys.stderr)
     if args.move_candidate_floor and not args.move_prior_fusion:
         # The learnset/rarity gate prunes the FUSED prior; with no prior fusion there is no prior to gate.
         parser.error(
@@ -1982,12 +2028,15 @@ async def main():
         _load_extractor_kwargs["opp_belief_latent"] = (args.opp_belief_latent_coef > 0.0)
         # Damage-operator toggle — version-checked vs the saved config (fresh-only).
         _load_extractor_kwargs["damage_op"] = args.damage_op
+        _load_extractor_kwargs["damage_reattend"] = args.damage_reattend       # v31 (version-checked)
         _load_extractor_kwargs["damage_outgoing"] = args.damage_outgoing       # v23 (version-checked)
         _load_extractor_kwargs["move_candidate_floor"] = args.move_candidate_floor  # v23 (version-checked)
         _load_extractor_kwargs["move_latent"] = args.move_latent               # v24 (version-checked)
         _load_extractor_kwargs["spread_belief"] = args.spread_belief           # v25 (version-checked)
         # Move-prior fusion — version-checked vs the saved config (fresh-only).
         _load_extractor_kwargs["move_prior_fusion"] = args.move_prior_fusion
+        # Move-belief pre-fuse (reinject before the transformer) — version-checked (fresh-only). v32.
+        _load_extractor_kwargs["move_belief_prefuse"] = args.move_belief_prefuse
         # Incoming-damage-obs ablation — version-checked vs the saved config (fresh-only).
         _load_extractor_kwargs["mask_incoming_damage_obs"] = args.mask_incoming_damage_obs
         _load_extractor_kwargs["mask_active_move_scalars_obs"] = args.mask_active_move_scalars_obs  # v25
@@ -2211,6 +2260,9 @@ async def main():
         # Differentiable damage operator (weight-shape): widens both projection heads with the
         # believed-move incoming-damage block. Requires move_belief_mode revealed|both (validated above).
         extractor_kwargs["damage_op"] = args.damage_op
+        # Damage re-attend (structural; adds a damage→token projection + encoder layer, re-derives the
+        # pools). Requires damage_op (validated above). Projection widths unchanged. v31.
+        extractor_kwargs["damage_reattend"] = args.damage_reattend
         # Outgoing per-move direction (weight-shape): our active → opp active, action-aligned. Requires
         # damage_op (validated above). v23.
         extractor_kwargs["damage_outgoing"] = args.damage_outgoing
@@ -2230,6 +2282,10 @@ async def main():
         # Unified move belief (forward-behavior): fuse the Smogon move prior into the belief head. Requires
         # move_belief_mode != off (validated above). No weight-shape change (non-persistent prior buffer).
         extractor_kwargs["move_prior_fusion"] = args.move_prior_fusion
+        # Move-belief pre-fuse (forward-behavior): reinject the move belief BEFORE the transformer so the
+        # believed moves co-refine through attention. Requires move_belief_mode != off (validated above).
+        # No weight-shape change (same MoveBelief module/params, different call timing). v32.
+        extractor_kwargs["move_belief_prefuse"] = args.move_belief_prefuse
         # Unified-architecture ablation (forward-behavior): zero the incoming-damage obs block from the
         # model's view. No weight-shape change. Independent A/B knob (typically paired with --damage-op).
         extractor_kwargs["mask_incoming_damage_obs"] = args.mask_incoming_damage_obs

@@ -238,7 +238,7 @@ it. A single left **rail** (`│`, dim cyan) is the forward spine; it flows DOWN
 via a `▼ BAND → <what it produces>` header (e.g. `▼ ENCODE → role tokens, self-attended`) — `ENCODE` ·
 `BELIEF` · `⑂ FORK` (`_flow_pipeline_lines` buckets via `_FLOW_BAND`, forward order preserved within a
 band) — drawn from `ProbeModel.architecture()` (introspected LIVE, so flag-gated phases + dims reflect
-THIS checkpoint, currently config v29). Per-phase glyph/colour encodes the category (no text tier-tag —
+THIS checkpoint, currently config v32). Per-phase glyph/colour encodes the category (no text tier-tag —
 the glyph/colour IS the tag, see the legend): active required `① …` numbered bold (CLSPool `⑂` cyan = the
 fork, `ProjectionAssembler` `◆`), active optional `① …` numbered bold GREEN, inactive optional dim `· …`,
 **side readout** (`BeliefHead`/`WinProbHead`/`ValueDistHead` — stashed, does NOT feed pi/vf) `└┄▷ …  ✗→heads` yellow. A
@@ -247,7 +247,9 @@ LIVE **attention** layer (`PokemonEncoder` move self-attn, `TeamTransformer`, `C
 its role (the `attn` flag rides each `architecture()` phase) — so the reader sees WHERE the network
 attends at a glance. Roles render **full width-aware** (`role_w` from the live panel width via
 `_flow_width`, so descriptions aren't needlessly cut) and are live-interpolated (`DamageOperator` gains
-`+ outgoing` under `damage_outgoing`, `MoveBelief` `+ prior-fusion`, `BeliefHead` `+ latent`). The
+`+ outgoing` under `damage_outgoing`, `MoveBelief` `+ prior-fusion` + `· PRE-transformer` under
+`move_belief_prefuse` (v32 — the reinjection ran BEFORE the transformer; the band still draws it in
+BELIEF, the label carries the timing), `BeliefHead` `+ latent`). The
 **CLSPool fork** then SPLITS the rail
 (`├──┐` + two `▼`) into two **side-by-side lanes** (`_flow_combine_lanes` zips them with a full-height
 gutter, `_pad`-ing each left line to `LANE_W`): `π POLICY` (cyan, `chose <move> (<prob>%)`) and `V VALUE`

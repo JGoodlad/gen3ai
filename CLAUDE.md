@@ -620,7 +620,9 @@ of the TRUE hidden mon — graded identity supervision the hard species CE can't
 training-only `belief_target_slots` obs key, stashed for the loss only, never in pi/vf — leak-safe).
 `MoveBelief` (`--move-belief-mode`) predicts + reinjects each opp slot's moveset into its token (and under
 `--move-prior-fusion` fuses the Smogon move-frequency **prior** into that prediction as a log-odds residual
-+ pins revealed moves certain, so the belief is a unified posterior — *known certain, unknown prior⊕learned*);
++ pins revealed moves certain, so the belief is a unified posterior — *known certain, unknown prior⊕learned*;
+`--move-belief-prefuse` moves this reinjection BEFORE the transformer so the believed moves co-refine through
+attention instead of being grafted on after);
 and `DamageOperator` (`--damage-op`) consumes that move belief's predicted moves to compute the believed-move
 incoming damage to each of our mons (a differentiable gen3 calc), appended to **both** projection heads —
 so the gradient sharpens the move belief toward real KO threats (`designs/ai_v6/design_differentiable_damage_op.md`);
@@ -694,7 +696,7 @@ and `gen3_sleep_wake_belief_v1` — a 3-dim per-mon SLEEP WAKE belief block [`sl
 Early Bird halves; opp Early-Bird prior marginalised; Rest source from the event log's `[from]` clause;
 fuzz-calibrated vs the real sim RNG), `sleep_counter_reliable`], `POKEMON_VECTOR_DIM` 106 → 109
 (3419 → 3455). All four are retrain-class; current
-`MODEL_CONFIG_VERSION`: **28** — v16 added the in-place
+`MODEL_CONFIG_VERSION`: **32** — v16 added the in-place
 hidden-opponent belief-aux toggle `opp_belief_slots` + its coef `opp_belief_aux_coef`, v17 the
 move-belief reinjection toggle `move_belief_mode` + `move_belief_coef`, v18 the latent-belief toggle
 `opp_belief_latent` + `opp_belief_latent_coef`, v19 the differentiable damage-operator toggle
@@ -768,8 +770,28 @@ gradient rides the `w` feature, not the damage); the 5th slot is zeroed once all
 added ALONGSIDE the worst-case `_chan_max` summary (the §4.3 hybrid). STRUCTURAL int (scales `out_dim` by
 `K·53` → both projections; gated in `check_compatible` like `opp_belief_cls_k`; OFF=0 byte-identical, no
 `ARCH_SIGNATURE` bump); requires `--damage-op` + `--move-latent`; threaded through `arch_toggles`; the
-prober decodes exact move names from the stashed `last_topk_idx`. Current
-`MODEL_CONFIG_VERSION` = **30**. Full design:
+prober decodes exact move names from the stashed `last_topk_idx`.
+**v31 the DAMAGE RE-ATTEND** (`gen3_damage_reattend_v1`, `damage_reattend` / `--damage-reattend`) — lets
+attention reason OVER the computed physics (today the `DamageOperator` block is a POST-pool concat no
+attention sees). When on, after the op computes the damage, its per-OUR-mon INCOMING rows are projected
+(small-init, identity-at-init) onto the 6 our-team tokens, ONE more `TransformerEncoderLayer` re-attends the
+12 team tokens (our↔opp), and the CLS pools are derived ONCE on the re-attended tokens — so the pi/vf pools
+are **damage-AWARE board summaries** instead of damage-blind ones. It is a BOARD-level enrichment, **not**
+first-class per-candidate switch scoring (the bench tokens are re-pooled to one vector; that needs a
+per-bench pointer head, a follow-up). STRUCTURAL like `opp_belief_slots` (adds 3 modules; re-pooling keeps
+the pooled shapes ⇒ projection widths UNCHANGED; gated in `check_compatible`, OFF byte-identical, NO
+`ARCH_SIGNATURE` bump); requires `--damage-op`; threaded through `arch_toggles`; PopArt strongly recommended
+(soft-warns without it).
+**v32 the MOVE-BELIEF PRE-FUSE** (`gen3_move_prefuse_v1`, `move_belief_prefuse` / `--move-belief-prefuse`) —
+moves the `MoveBelief` reinjection from POST-transformer (the default — believed moves grafted onto the
+already-refined opp tokens) to PRE-transformer (reinjected into the opp ROLE tokens before the body), so the
+predicted moves **co-refine** with the species/team belief through the 2 attention layers. Same `MoveBelief`
+module/params (one shared `_apply_move_belief` helper, only the input tensor + timing differ; the stashed
+`last_move_belief_logits` is identical, so the damage op + BCE aux still read it) → state_dict identical,
+projection widths unchanged. FORWARD-BEHAVIOR toggle like `move_prior_fusion` (gated in `check_compatible`,
+OFF byte-identical, NO `ARCH_SIGNATURE` bump); requires `--move-belief-mode != off`; threaded through
+`arch_toggles`. Current
+`MODEL_CONFIG_VERSION` = **32**. Full design:
 `designs/ai_v6/design_topk_incoming_moves.md` (and `design_distributional_value_critic.md` for v29,
 `design_unified_move_system.md` for v24, `design_unified_damage_system.md` for v23).
 **The full versioning playbook — what to do when you change a dim vs add an optional feature vs
