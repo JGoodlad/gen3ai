@@ -719,20 +719,28 @@ async def test_flow_shows_both_heads(tmp_path):
 
 
 def test_flow_head_lane_sorted():
-    """_flow_head_lane sorts the attribution blocks most-read-first (shares non-increasing)."""
+    """_flow_head_lane sorts AND sizes the attribution bars by mean_abs (|grad|/dim), NOT total_abs
+    (sum). The two metrics here order OPPOSITELY (the highest-mean_abs block has the lowest sum and
+    vice-versa) so the assertion would fail if the lane still read total_abs."""
     import re
 
     from main.prober.engine import Saliency, SaliencyBlock
+    # total_abs descending order: history > mid > small; mean_abs descending order: small > mid > history.
+    # The big-but-diluted "history" block (huge sum, tiny per-dim) must NOT win the lane.
     sal = Saliency(overall_mean_abs=1.0, blocks=(
-        SaliencyBlock(name="small", mean_abs=0.1, total_abs=10.0),
-        SaliencyBlock(name="big", mean_abs=0.9, total_abs=90.0),
+        SaliencyBlock(name="history", mean_abs=0.1, total_abs=1000.0),
+        SaliencyBlock(name="small", mean_abs=0.9, total_abs=9.0),
         SaliencyBlock(name="mid", mean_abs=0.5, total_abs=50.0),
     ))
     app = ProberApp(root="/tmp/prober-nonexistent")
     lane = app._flow_head_lane("V VALUE", "value", sal, "bold magenta", "", {})
+    # Bars sort by mean_abs descending → small (100%) → mid → history; the top row parses to 100%.
     pcts = [int(m.group(1)) for ln in lane
             for m in [re.search(r"(\d+)%\s*$", ln.plain)] if m]
     assert pcts == sorted(pcts, reverse=True) and pcts[0] == 100, pcts
+    # The top (100%) row must be the highest-mean_abs block ("small"), not the highest-sum ("history").
+    top_row = next(ln for ln in lane if re.search(r"100%\s*$", ln.plain))
+    assert "small" in top_row.plain and "history" not in top_row.plain, top_row.plain
 
 
 def test_flow_combine_lanes_side_by_side():

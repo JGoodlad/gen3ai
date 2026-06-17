@@ -254,8 +254,13 @@ gutter, `_pad`-ing each left line to `LANE_W`): `π POLICY` (cyan, `chose <move>
 (magenta, `V(s) <real> · norm <z>`), each opening with `↳ <pi_combined|vf_combined> → proj(<dim>)`
 (tying the head to the architecture) then its obs blocks **sorted most-read-first** with a smooth
 eighth-block `gradient_color` bar (`LANE_BAR`-wide) + abbreviated block + within-head share %, **dominant
-bold**, <8% greyed. Putting the lanes side-by-side sits π's and V's bars on the SAME row for read-across
-("`move_mults` 100% for π vs 18% for V"). Below `MIN_TWO_LANE` cols (`_flow_width`) the lanes STACK
+bold**, <8% greyed. **The bar sorts AND sizes by `SaliencyBlock.mean_abs` (|∂out/∂obs| PER OBS DIM,
+size-normalized), NOT `total_abs` (the block's summed gradient)** — so a big region can't dominate the
+lane by sheer dim-count (the ~1590-dim turn-history block summed to 100% in BOTH heads as a pure
+block-SIZE artifact; per dim its real reliance is far lower, the recent-turn signal concentrated in a
+few dims). The Saliency TABLE (§8) still shows BOTH `|grad|/dim` and the `sum`. Putting the lanes
+side-by-side sits π's and V's bars on the SAME row for read-across ("`move_mults` 100% for π vs 18% for
+V"). Below `MIN_TWO_LANE` cols (`_flow_width`) the lanes STACK
 vertically instead of clipping. A category legend closes the panel.
 (A human-facing companion to the precise Saliency table; SENSITIVITY, not proof of causal use — same
 caveat. `None`-head / model-free / no-state → a graceful hint line, never a crash.)

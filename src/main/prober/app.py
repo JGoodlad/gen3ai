@@ -311,8 +311,9 @@ class ProberApp(Gen3App):
         # Flow: a Static box-art dataflow diagram (obs → trunk bus → ⑂ fork → two π/V lanes).
         self.query_one("#flow-legend", Static).update(Text(
             "the model's forward DATAFLOW (obs → shared trunk → ⑂ fork → π/V), then what each head "
-            "reads — bar = |∂output/∂obs| per obs block, normalized within head; green = high "
-            "use, dim = barely read. SENSITIVITY, not proof of use.",
+            "reads — bar = |∂output/∂obs| per obs DIM (size-normalized, so a big block can't dominate "
+            "by sheer size), normalized within head; green = high use, dim = barely read. "
+            "SENSITIVITY, not proof of use.",
             style="dim italic"))
 
         self._build_tree()
@@ -1275,10 +1276,10 @@ class ProberApp(Gen3App):
         out = [head]
         if reads.get(stage):
             out.append(Text(f"↳ {_trunc(reads[stage], LANE_W - 2)}", style="dim italic"))
-        blocks = sorted(sal.blocks, key=lambda b: b.total_abs, reverse=True)
-        peak = max((b.total_abs for b in blocks), default=1.0) or 1.0
+        blocks = sorted(sal.blocks, key=lambda b: b.mean_abs, reverse=True)
+        peak = max((b.mean_abs for b in blocks), default=1.0) or 1.0
         for i, b in enumerate(blocks):
-            share = b.total_abs / peak
+            share = b.mean_abs / peak
             faint = share < 0.08
             row = Text()
             row.append(f"{_flow_bar(share, LANE_BAR):<{LANE_BAR}} ",
