@@ -771,7 +771,8 @@ class _FakeModelArch(_FakeModelInc):
             {"name": "ObsUnpack", "active": True, "optional": False, "stage": "trunk", "role": "flat obs"},
             {"name": "PokemonEncoder", "active": True, "optional": False, "stage": "trunk", "role": "role tokens"},
             {"name": "BeliefSlots", "active": False, "optional": True, "stage": "trunk", "role": "hidden slots"},
-            {"name": "TeamTransformer", "active": True, "optional": False, "stage": "trunk", "role": "23 tokens"},
+            {"name": "TeamTransformer", "active": True, "optional": False, "stage": "trunk",
+             "role": "SELF-ATTENTION over 23 tokens", "attn": True},
             {"name": "BeliefHead", "active": True, "optional": True, "stage": "side", "role": "aux species/moves"},
             {"name": "MoveBelief", "active": True, "optional": True, "stage": "trunk", "role": "reinject moves"},
             {"name": "SpreadBelief", "active": False, "optional": True, "stage": "trunk", "role": "reinject spread"},
@@ -801,9 +802,9 @@ async def test_flow_renders_architecture_pipeline(tmp_path):
         await app.workers.wait_for_complete()
         await pilot.pause()
         text = _flow_text(app)
-        assert "ENCODE" in text and "FORK" in text, text                  # stage band headers
-        assert "TeamTransformer" in text, text                            # active trunk phase
-        assert "SpreadBelief" in text and "⌀off" in text, text            # off optional → greyed glyph
+        assert "ENCODE" in text and "FORK" in text, text                  # stage band headers (▼ BAND)
+        assert "TeamTransformer" in text and "⊛" in text, text            # active phase + attention marker
+        assert "SpreadBelief" in text, text                               # off optional still listed (dim)
         assert "✗→heads" in text, text                                    # side-readout annotation
         assert "ProjectionAssembler" in text, text                        # post-fork shared phase
         assert "π POLICY" in text and "V VALUE" in text, text             # the two head lanes

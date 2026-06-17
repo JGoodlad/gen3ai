@@ -324,42 +324,51 @@ class ProbeModel:
         vin = getattr(ex, "value_projection_input_dim", "?")
         mb = getattr(ex, "move_belief_mode", "off")
         wp = getattr(ex, "win_prob_mode", "none")
+        vd = getattr(ex, "value_dist_mode", "none")     # v29 distributional value head (side readout)
         # move_latent_encoder is ABSENT (not None) when off → its own getattr guard, not on().
         has_latent = getattr(getattr(ex, "pokemon_encoder", None), "move_latent_encoder", None) is not None
         latent_belief = bool(getattr(ex, "opp_belief_latent", False))   # belief SimSiam latent sub-head
         prior_fusion = bool(getattr(ex, "move_prior_fusion", False))    # MoveBelief Smogon-prior posterior
         dmg_out = bool(getattr(ex, "damage_outgoing", False))           # DamageOperator outgoing direction
-        # (name, active, optional, stage, role) — TRUE forward order (forward_internal):
-        #   Embeddings → ObsUnpack → PokemonEncoder[+MoveLatent] → [BeliefSlots] → TeamTransformer
-        #   → [BeliefHead·side] → [MoveBelief] → [SpreadBelief] → CLSPool(fork) → [WinProbHead·side]
-        #   → [HiddenOppBeliefPool] → [DamageOperator] → ProjectionAssembler → π / V heads.
+        # (name, active, optional, stage, role, attn) — TRUE forward order (forward_internal). `attn`
+        # flags the ATTENTION layers (self-/cross-attention) so the prober can mark where the network
+        # attends. Order: Embeddings → ObsUnpack → PokemonEncoder[+MoveLatent] → [BeliefSlots] →
+        # TeamTransformer → [BeliefHead·side] → [MoveBelief] → [SpreadBelief] → CLSPool(fork) →
+        # [WinProbHead·side] → [HiddenOppBeliefPool] → [DamageOperator] → ProjectionAssembler → π / V.
         rows = [
             ("Embeddings", True, False, "trunk",
-             "shared tables: species/move/item/ability/type emb + HP soft-type + TurnDelta embedder"),
-            ("ObsUnpack", True, False, "trunk", "flat obs → per-mon tensors + global/reactive scalars + masks"),
+             "shared tables: species/move/item/ability/type emb + HP soft-type + TurnDelta embedder", False),
+            ("ObsUnpack", True, False, "trunk", "flat obs → per-mon tensors + global/reactive scalars + masks", False),
             ("PokemonEncoder", True, False, "trunk",
-             f"6+6 mons → role tokens ({d}d)" + ("  + MoveLatent(v24)" if has_latent else "")),
-            ("BeliefSlots", on("belief_slots"), True, "trunk", "fill hidden-opp slots with learned tokens (in-lineup)"),
+             f"6+6 mons → role tokens ({d}d) · within-mon move self-attn" + ("  + MoveLatent(v24)" if has_latent else ""),
+             True),
+            ("BeliefSlots", on("belief_slots"), True, "trunk",
+             "fill hidden-opp slots with learned tokens (in-lineup)", False),
             ("TeamTransformer", True, False, "trunk",
-             f"{tokens} tokens (12 mon + {hist} hist + 1 global) · {layers} layers ({d}d)"),
+             f"SELF-ATTENTION over {tokens} tokens (12 mon + {hist} hist + 1 global) · {layers} layers ({d}d)", True),
             ("BeliefHead", on("belief_head"), True, "side",
-             "aux: predict hidden species/moves" + (" + latent" if latent_belief else "") + " (side readout)"),
+             "aux: predict hidden species/moves" + (" + latent" if latent_belief else "") + " (side readout)", False),
             ("MoveBelief", on("move_belief"), True, "trunk",
-             f"predict + reinject opp moves ({mb})" + (" + prior-fusion" if prior_fusion else "")),
+             f"predict + reinject opp moves ({mb})" + (" + prior-fusion" if prior_fusion else ""), False),
             ("SpreadBelief", on("spread_belief"), True, "trunk",
-             "predict + reinject opp hidden stat-spread → DamageOperator (v25)"),
-            ("CLSPool", True, False, "fork", "our / their / value pools — trunk FORKS here → π · V"),
-            ("WinProbHead", wp != "none", True, "side", f"P(win) readout off value_pooled ({wp})"),
-            ("HiddenOppBeliefPool", on("hidden_opp_belief"), True, "shared", "k hidden-opp belief queries → both heads"),
+             "predict + reinject opp hidden stat-spread → DamageOperator (v25)", False),
+            ("CLSPool", True, False, "fork",
+             "CLS queries CROSS-ATTEND the team tokens → our/their/value pools — FORKS → π · V", True),
+            ("WinProbHead", wp != "none", True, "side", f"P(win) readout off value_pooled ({wp})", False),
+            ("ValueDistHead", on("value_dist_head"), True, "side",
+             f"return-distribution readout off value_pooled ({vd})", False),
+            ("HiddenOppBeliefPool", on("hidden_opp_belief"), True, "shared",
+             "k belief queries CROSS-ATTEND the 12 tokens → both heads", True),
             ("DamageOperator", on("damage_op"), True, "shared",
-             "differentiable gen3 damage: incoming P(KO)" + (" + outgoing per-move" if dmg_out else "") + " → both heads"),
+             "differentiable gen3 damage: incoming P(KO)" + (" + outgoing per-move" if dmg_out else "") + " → both heads",
+             False),
             ("ProjectionAssembler", True, False, "shared",
-             "→ (pi_combined, vf_combined): pools + ctx + belief + damage"),
-            ("π policy head", True, False, "policy", f"pi_combined → norm → proj({proj})  [in {pin}]"),
-            ("V value head", True, False, "value", f"vf_combined → norm → proj({proj})  [in {vin}]"),
+             "→ (pi_combined, vf_combined): pools + ctx + belief + damage", False),
+            ("π policy head", True, False, "policy", f"pi_combined → norm → proj({proj})  [in {pin}]", False),
+            ("V value head", True, False, "value", f"vf_combined → norm → proj({proj})  [in {vin}]", False),
         ]
-        return [{"name": n, "active": bool(a), "optional": o, "stage": s, "role": r}
-                for (n, a, o, s, r) in rows]
+        return [{"name": n, "active": bool(a), "optional": o, "stage": s, "role": r, "attn": at}
+                for (n, a, o, s, r, at) in rows]
 
     def logit_grad(self, obs: np.ndarray, mask: np.ndarray, action_idx: int) -> np.ndarray:
         """Return |d logit(action_idx) / d obs| as a per-dim array."""

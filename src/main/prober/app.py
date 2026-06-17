@@ -1136,7 +1136,9 @@ class ProberApp(Gen3App):
             except Exception:  # noqa: BLE001 — introspection is best-effort; never break the panel
                 arch = []
         reads = {ph["stage"]: ph["role"] for ph in arch if ph["stage"] in ("policy", "value")}
-        lines = list(self._flow_pipeline_lines(arch)) if arch else []
+        # Width-aware role budget — use the panel's real width so descriptions aren't needlessly cut.
+        role_w = max(40, min(96, self._flow_width() - 33))
+        lines = list(self._flow_pipeline_lines(arch, role_w)) if arch else []
         pol = self._flow_head_lane("π POLICY", "policy", a.saliency, "bold cyan",
                                    self._flow_policy_caption(a), reads)
         val = self._flow_head_lane("V VALUE", "value", a.value_saliency, "bold magenta",
@@ -1166,9 +1168,14 @@ class ProberApp(Gen3App):
             return 999
         return w if w and w > 0 else 999
 
-    def _flow_pipeline_lines(self, arch: "list[dict]") -> "list[Text]":
-        """The forward spine: `obs` source, then each non-head phase under a stage band, tee'd off a
-        single left rail. Numbering runs across active non-side phases; CLSPool=⑂, assembler=◆."""
+    def _flow_pipeline_lines(self, arch: "list[dict]", role_w: int) -> "list[Text]":
+        """The forward spine: `obs` source, then each non-head phase grouped under a stage band that
+        the rail flows DOWN into (`▼ BAND → <what it produces>`), so the dataflow reads top-to-bottom.
+        Numbering runs across active non-side phases; CLSPool=⑂, assembler=◆, attention layers get ⊛."""
+        # What each stage PRODUCES — a high-level edge label on the rail so you see the tensor move.
+        produces = {"ENCODE": "→ role tokens, self-attended",
+                    "BELIEF": "→ opp tokens enriched (moves / spread)",
+                    "FORK": "→ pooled, then SPLIT → π · V"}
         out = [Text("obs vec(3457)", style="bold")]
         n = [0]
         bands = {b: [] for b in _FLOW_BAND_ORDER}
@@ -1180,38 +1187,38 @@ class ProberApp(Gen3App):
             phs = bands[band]
             if not phs:
                 continue
-            out.append(Text("│", style=_RAIL))
-            hdr = Text("├─ ", style=_RAIL)
+            out.append(Text("│", style=_RAIL))                       # rail flows DOWN…
+            hdr = Text("▼ ", style="bold cyan")                      # …into the next stage
             hdr.append("⑂ FORK" if band == "FORK" else band, style="bold cyan")
-            hdr.append(" ", style=_RAIL)
-            hdr.append("─" * max(4, 60 - hdr.cell_len), style=_RAIL)
+            hdr.append(f"  {produces.get(band, '')}", style="dim")   # what the stage produces
             out.append(hdr)
             for ph in phs:
-                out.append(self._flow_phase_row(ph, n))
+                out.append(self._flow_phase_row(ph, n, role_w))
         return out
 
-    def _flow_phase_row(self, ph: dict, n: "list[int]") -> Text:
-        """One phase row, tee'd off the rail, glyph+color by category, role + tier tag aligned."""
+    def _flow_phase_row(self, ph: dict, n: "list[int]", role_w: int) -> Text:
+        """One phase row tee'd off the rail: category glyph+colour (① required · green optional-on ·
+        dim `·` off · `└┄▷` side), an ⊛ marker on a LIVE attention layer, then the (width-aware) role.
+        No text tier-tag — the glyph/colour already encodes it (see the legend)."""
         name, active, stage = ph["name"], ph["active"], ph["stage"]
         line = Text("│  ", style=_RAIL)
         if not active:
-            line.append("·  ", style="dim"); line.append(name, style="dim"); tag, ts = "⌀off", "dim"
+            line.append("·  ", style="dim"); line.append(name, style="dim")
         elif stage == "side":               # branches OFF the trunk, never feeds the heads
             line.append("└┄▷ ", style="yellow"); line.append(name, style="yellow")
-            tag, ts = "side ✗→heads", "dim italic yellow"
         elif stage == "fork":               # the CLSPool split
-            line.append("⑂ ", style="bold cyan"); line.append(name, style="bold cyan"); tag, ts = "fork", "dim"
+            line.append("⑂ ", style="bold cyan"); line.append(name, style="bold cyan")
         elif name == "ProjectionAssembler":
-            line.append("◆ ", style="bold"); line.append(name, style="bold"); tag, ts = "req", "dim"
+            line.append("◆ ", style="bold"); line.append(name, style="bold")
         else:
             n[0] += 1
             line.append(f"{_circled(n[0])} ", style="bold")
             line.append(name, style="bold green" if ph["optional"] else "bold")
-            tag, ts = ("●on", "green") if ph["optional"] else ("req", "dim")
-        line = _pad(line, 30)               # align the role column across glyph/name widths
-        line.append(_trunc(ph["role"], 44), style="dim")
-        line = _pad(line, 78)               # right-flush the tier tag to a fixed column
-        line.append(tag, style=ts)
+        line = _pad(line, 27)               # align the ⊛ attention column across glyph/name widths
+        line.append("⊛ " if (active and ph.get("attn")) else "  ", style="bold magenta")
+        line.append(_trunc(ph["role"], role_w), style="dim")
+        if stage == "side":
+            line.append("  ✗→heads", style="dim italic yellow")
         return line
 
     def _flow_fork_lines(self) -> "list[Text]":
@@ -1266,10 +1273,11 @@ class ProberApp(Gen3App):
     @staticmethod
     def _flow_legend() -> Text:
         t = Text("legend  ", style="dim")
-        t.append("① req  ", style="cyan")
-        t.append("●on  ", style="green")
-        t.append("⌀off  ", style="dim")
-        t.append("┄▷ side ✗→heads  ", style="yellow")
+        t.append("① required  ", style="cyan")
+        t.append("① optional-on  ", style="green")
+        t.append("· off  ", style="dim")
+        t.append("┄▷ side (✗→heads)  ", style="yellow")
+        t.append("⊛ attention  ", style="bold magenta")
         t.append("⑂ fork  ◆ assembler", style="cyan")
         return t
 
@@ -1590,7 +1598,7 @@ _FLOW_BAND = {
     "Embeddings": "ENCODE", "ObsUnpack": "ENCODE", "PokemonEncoder": "ENCODE",
     "MoveLatentEncoder": "ENCODE", "BeliefSlots": "ENCODE", "TeamTransformer": "ENCODE",
     "BeliefHead": "BELIEF", "MoveBelief": "BELIEF", "SpreadBelief": "BELIEF",
-    "CLSPool": "FORK", "WinProbHead": "FORK", "HiddenOppBeliefPool": "FORK",
+    "CLSPool": "FORK", "WinProbHead": "FORK", "ValueDistHead": "FORK", "HiddenOppBeliefPool": "FORK",
     "DamageOperator": "FORK", "ProjectionAssembler": "FORK",
 }
 _FLOW_BAND_ORDER = ("ENCODE", "BELIEF", "FORK")

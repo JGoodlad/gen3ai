@@ -234,15 +234,21 @@ you can see whether the **value** head — where OHKO tail-blindness lives — a
 reads the belief block vs the rest), **Flow** (`_render_flow`, default-open) — a **`Static`
 box-art DATAFLOW diagram** (not a Tree — a Tree can only nest down-and-right, so it can't DRAW a
 fork or sit the two heads side-by-side) that SHOWS the model instead of asking the reader to imagine
-it. A single left **rail** (`│`, dim cyan) is the forward spine; the non-head phases tee off it in
-three stage **bands** — `ENCODE` · `BELIEF` · `⑂ FORK` (`_flow_pipeline_lines` buckets via `_FLOW_BAND`,
-forward order preserved within a band) — drawn from `ProbeModel.architecture()` (introspected LIVE, so
-flag-gated phases + dims reflect THIS checkpoint, currently config v28). Per-phase glyph/colour encodes
-the category: active required `① …` numbered bold (CLSPool `⑂` cyan = the fork, `ProjectionAssembler`
-`◆`), active optional `●on` bold green, inactive optional dim `· …  ⌀off`, **side readout** (`BeliefHead`/
-`WinProbHead` — stashed, does NOT feed pi/vf) `└┄▷ …  side ✗→heads` yellow; roles are live-interpolated
-(`DamageOperator` gains `+ outgoing` under `damage_outgoing`, `MoveBelief` `+ prior-fusion`, `BeliefHead`
-`+ latent`) and the tier tag is right-flushed to a fixed column. The **CLSPool fork** then SPLITS the rail
+it. A single left **rail** (`│`, dim cyan) is the forward spine; it flows DOWN into three stage **bands**
+via a `▼ BAND → <what it produces>` header (e.g. `▼ ENCODE → role tokens, self-attended`) — `ENCODE` ·
+`BELIEF` · `⑂ FORK` (`_flow_pipeline_lines` buckets via `_FLOW_BAND`, forward order preserved within a
+band) — drawn from `ProbeModel.architecture()` (introspected LIVE, so flag-gated phases + dims reflect
+THIS checkpoint, currently config v29). Per-phase glyph/colour encodes the category (no text tier-tag —
+the glyph/colour IS the tag, see the legend): active required `① …` numbered bold (CLSPool `⑂` cyan = the
+fork, `ProjectionAssembler` `◆`), active optional `① …` numbered bold GREEN, inactive optional dim `· …`,
+**side readout** (`BeliefHead`/`WinProbHead`/`ValueDistHead` — stashed, does NOT feed pi/vf) `└┄▷ …  ✗→heads` yellow. A
+LIVE **attention** layer (`PokemonEncoder` move self-attn, `TeamTransformer`, `CLSPool` cross-attn pools,
+`HiddenOppBeliefPool`) gets a magenta **`⊛`** marker in a fixed column + `SELF-ATTENTION`/`CROSS-ATTEND` in
+its role (the `attn` flag rides each `architecture()` phase) — so the reader sees WHERE the network
+attends at a glance. Roles render **full width-aware** (`role_w` from the live panel width via
+`_flow_width`, so descriptions aren't needlessly cut) and are live-interpolated (`DamageOperator` gains
+`+ outgoing` under `damage_outgoing`, `MoveBelief` `+ prior-fusion`, `BeliefHead` `+ latent`). The
+**CLSPool fork** then SPLITS the rail
 (`├──┐` + two `▼`) into two **side-by-side lanes** (`_flow_combine_lanes` zips them with a full-height
 gutter, `_pad`-ing each left line to `LANE_W`): `π POLICY` (cyan, `chose <move> (<prob>%)`) and `V VALUE`
 (magenta, `V(s) <real> · norm <z>`), each opening with `↳ <pi_combined|vf_combined> → proj(<dim>)`
