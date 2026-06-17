@@ -1147,41 +1147,57 @@ class ProberApp(Gen3App):
                                  style=gradient_color(1.0 - c["pko"]) if (act or c["pko"] > 0.05) else "dim")
             if not any_inc:
                 lines.append("\n  n/a", style="dim")
-        # gen3_unified_topk_incoming_v1: the DISCRETE top-K incoming move-space — the opp active's K
-        # most-believed moves INDIVIDUALLY (vs the worst-case collapse above), each with its decoded NAME +
-        # belief, the read on OUR active, and the SAFEST bench pivot (min combined damage/status threat) —
-        # the literal "anticipate the move → which mon switches in safe" read (incl. immunity = 0).
+        # gen3_unified_topk_incoming_v1 (--damage-topk): the DISCRETE top-K incoming move-space — the opp
+        # active's K most-believed CANDIDATE moves surfaced INDIVIDUALLY (vs the worst-case `_chan_max`
+        # collapse above), each its decoded NAME + belief + channel + accuracy, and the FULL per-OUR-mon
+        # matrix: for EVERY of our mons, that move's [high%→KO / st = status-lands]. This is the debug view
+        # for "anticipate the move → which mon switches in SAFE": a pivot reads `safe` (green) iff the move
+        # does 0 damage AND can't land its status on it — damage-immunity from the type chart, status-
+        # immunity from `_incoming_status_lands` (e.g. Thunder Wave → a Ground pivot). The op zeros a fainted
+        # defender (so a dead mon reads `safe` everywhere) and zeros the 5th+ slot once all 4 opp moves are
+        # revealed (a closed moveset → that slot is DROPPED here), so the move count itself is a signal.
         itk = dop.get("incoming_topk") if dop is not None else None
-        if itk is not None and mb is not None and itk.get("moves"):
-            labels = list(mb.our_labels)                       # (team_slot, species, is_active), team-slot order
-            pdef = itk["per_defender"]                         # [6][K] {high, pko, status_lands}
-            act_i = next((i for i, (_s, _sp, act) in enumerate(labels) if act), None)
-            bench = [i for i, (_s, sp, act) in enumerate(labels) if (not act) and sp]
+        if itk is not None and itk.get("moves") and itk.get("per_defender"):
+            labels = list(mb.our_labels) if mb is not None else []   # (slot, species, is_active), team-slot order
+            pdef = itk["per_defender"]                               # [n_our][K] {high, pko, status_lands}
+            n_our = len(pdef)
+            our = [(labels[i][1] if i < len(labels) and labels[i][1] else (f"slot{i}" if not labels else None),
+                    labels[i][2] if i < len(labels) else False) for i in range(n_our)]
+            live = [i for i in range(n_our) if our[i][0]]            # slots carrying a real mon (our full team)
 
-            def _pivot_tag(pd):                                # how a pivot reads vs a move (immune/dmg/status)
-                if pd["high"] == 0.0 and pd["status_lands"] == 0.0:
-                    return "immune", 0.0
-                t = f"{pd['high'] * 100:.0f}%" + (f"→KO{pd['pko'] * 100:.0f}%" if pd["pko"] > 0.05 else "")
-                if pd["status_lands"] > 0.05:
-                    t += (f" st{pd['status_lands'] * 100:.0f}%" if t != "0%" else f"st{pd['status_lands'] * 100:.0f}%")
-                return t, max(pd["pko"], pd["status_lands"], pd["high"])
-            shown = []
+            def _chan(mv, k):                                       # the move's damage channel (or status / —)
+                if any(pdef[i][k]["high"] > 0.0 for i in range(n_our)):
+                    return "phys" if mv.get("is_phys", 0.0) > 0.5 else "spec"
+                if any(pdef[i][k]["status_lands"] > 0.05 for i in range(n_our)):
+                    return "status"
+                return "—"
+
+            def _pivot(pd):                                         # (text, style) for one mon vs one move
+                hi, pko, st = pd["high"], pd["pko"], pd["status_lands"]
+                if hi == 0.0 and st <= 0.05:
+                    return "safe", "green"                          # immune / no threat = the safe switch-in
+                seg = (f"{hi * 100:.0f}%" + (f"→KO{pko * 100:.0f}" if pko > 0.05 else "")) if hi > 0.0 else ""
+                if st > 0.05:
+                    seg = (seg + " " if seg else "") + f"st{st * 100:.0f}"
+                return seg, gradient_color(1.0 - max(pko, st, min(hi, 1.0)))
+            shown_any = False
             for k, mv in enumerate(itk["moves"]):
-                if mv.get("belief", 0.0) <= 0.05:              # skip the dead padding slots
+                if mv.get("belief", 0.0) <= 0.05:                   # a gated slot (fainted-only / closed-moveset 5th)
                     continue
-                seg = f"{mv.get('move') or '?'} {mv['belief'] * 100:.0f}%"
-                if act_i is not None and act_i < len(pdef):
-                    atag, _ = _pivot_tag(pdef[act_i][k])
-                    seg += f"  ▶{labels[act_i][1]} {atag}"
-                if bench:                                      # the safest switch-in for THIS move
-                    bi = min(bench, key=lambda i: _pivot_tag(pdef[i][k])[1])
-                    btag, _ = _pivot_tag(pdef[bi][k])
-                    seg += f"  safe→{labels[bi][1]} {btag}"
-                shown.append(seg)
-            if shown:
-                lines.append("\nopp likely (op):", style="dim")
-                for seg in shown:
-                    lines.append(f"\n  {seg}", style="yellow")
+                if not shown_any:                                   # header (only once, only if a move shows)
+                    lines.append("\nopp likely (op):  ", style="dim")
+                    lines.append("K likeliest opp moves · per-OUR-mon high%→KO / st=status  (▶=active · safe=immune)",
+                                 style="dim")
+                    shown_any = True
+                lines.append(f"\n  {mv.get('move') or '?'} {mv['belief'] * 100:.0f}%  ", style="bold yellow")
+                lines.append(f"{_chan(mv, k)} acc{mv.get('accuracy', 1.0) * 100:.0f}", style="dim")
+                lines.append("\n      ", style="dim")
+                for j, i in enumerate(live):
+                    if j:
+                        lines.append("  ·  ", style="dim")
+                    seg, col = _pivot(pdef[i][k])
+                    lines.append(f"{'▶' if our[i][1] else ''}{our[i][0]} ", style=_MON_COLOR)
+                    lines.append(seg, style=col)
         threat.update(lines)
 
     def _render_sweep(self, a: InvocationAnalysis) -> None:

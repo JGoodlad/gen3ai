@@ -657,9 +657,19 @@ class _FakeModelMB(_FakeModel):
         inc = [{"phys": cold, "spec": hot, "p_outspeed": 0.5, "provenance": 0.6}]   # team slot 0 = our active
         inc += [{"phys": cold, "spec": cold, "p_outspeed": 0.4, "provenance": 0.3}]  # slot 1
         inc += [{"phys": cold, "spec": cold, "p_outspeed": 0.0, "provenance": 0.0} for _ in range(4)]
+        # gen3_unified_topk_incoming_v1: the discrete top-K block (K=2 here). icebeam OHKOs our active
+        # (magneton) but is SAFE on the skarmory pivot; thunderwave paras magneton (st100) but can't touch
+        # skarmory (immune → safe). Slots 2-5 carry no mon (our_slots below) → dropped from the matrix.
+        z = {"high": 0.0, "pko": 0.0, "status_lands": 0.0}
+        topk = {
+            "moves": [{"latent": [0.0] * 4, "belief": 0.62, "accuracy": 1.0, "is_phys": 0.0, "move": "icebeam"},
+                      {"latent": [0.0] * 4, "belief": 0.40, "accuracy": 1.0, "is_phys": 0.0, "move": "thunderwave"}],
+            "per_defender": [[{"high": 0.8, "pko": 0.9, "status_lands": 0.0}, {**z, "status_lands": 1.0}],  # magneton (active)
+                             [dict(z), dict(z)]]                                                            # skarmory (safe)
+                            + [[dict(z), dict(z)] for _ in range(4)]}
         return {"incoming": inc, "effect": {}, "incoming_secondary": {},
                 "choice_band": {"phys_high_cb": [0.0] * 6, "phys_pko_cb": [0.0] * 6, "p_cb": 0.0},
-                "outgoing": None}
+                "outgoing": None, "incoming_topk": topk}
 
     def move_belief(self, obs, mask):
         from agents import gen3_data
@@ -695,6 +705,26 @@ async def test_matchups_shows_move_belief_and_op_incoming(tmp_path):
         assert "toxic" in threat
         assert "icebeam" in threat                                 # REVEALED move shown with its pinned belief
         assert "incoming (op)" in threat and "magneton" in threat  # per-our-mon op damage, labeled
+
+
+async def test_matchups_shows_topk_per_pivot(tmp_path):
+    """The DISCRETE top-K block (--damage-topk) renders the opp active's likeliest moves INDIVIDUALLY with
+    the FULL per-OUR-mon matrix: each move by its decoded NAME + belief, then every of our mons' high→KO /
+    status tag. An immune/no-threat pivot reads 'safe' (the switch-in signal); a status move shows 'st'."""
+    run = _write_trace(tmp_path)
+    app = ProberApp(root=run, injected_model=_FakeModelMB())
+    async with app.run_test() as pilot:
+        await pilot.pause()
+        app._select_battle(app._tree_model.all_battles()[0])
+        await pilot.pause()
+        await app.workers.wait_for_complete()
+        await pilot.pause()
+        threat = str(app.query_one("#matchups-threat", Static).render())
+        assert "opp likely (op)" in threat                         # the discrete top-K block header
+        assert "icebeam" in threat and "thunderwave" in threat      # the two top-K moves, by decoded name
+        assert "magneton" in threat and "skarmory" in threat        # the per-pivot matrix lists OUR mons
+        assert "safe" in threat                                     # skarmory is immune to both → safe pivot
+        assert "st100" in threat                                    # thunderwave's status-lands on magneton (active)
 
 
 def _flow_text(app) -> str:
