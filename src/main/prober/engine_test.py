@@ -1344,3 +1344,36 @@ def test_build_belief_trajectory_reads_npz_move_and_spread():
     # absent arrays → the move/spread fields stay None (older trace).
     tj_bare = build_belief_trajectory(summary, opp_team=("snorlax",), npz=None)
     assert tj_bare.points[0].move_entropy is None and tj_bare.points[0].believed_atk is None
+
+
+# ── opponent full-team view (privileged truth + revealed-or-not tags) ─────────────────────────────
+from main.prober.engine import build_opp_full_team, BoardView, SideBoard   # noqa: E402
+
+
+def test_build_opp_full_team_tags_revealed_item_and_moves():
+    details = [
+        {"species": "Registeel", "item": "leftovers",
+         "moves": ["seismictoss", "thunderwave", "toxic", "explosion"]},
+        {"species": "Swampert", "item": "salacberry",
+         "moves": ["surf", "earthquake", "icebeam", "protect"]},
+    ]
+    board = BoardView(                                  # registeel active, has shown thunderwave; no bench
+        ours=SideBoard("zapdos", "100%", "", "", (), (), ""),   # SideBoard: …, moves, bench, item
+        opp=SideBoard("registeel", "100%", "", "", ("thunderwave",), (), "leftovers"))
+    by = {m.species: m for m in build_opp_full_team(details, board).mons}
+    reg = by["Registeel"]
+    assert reg.revealed and reg.active and reg.item_revealed
+    assert dict(reg.moves)["thunderwave"] is True and dict(reg.moves)["seismictoss"] is False
+    sw = by["Swampert"]                                 # never seen → everything unrevealed
+    assert not (sw.revealed or sw.active or sw.item_revealed)
+    assert all(not seen for _, seen in sw.moves)
+    assert build_opp_full_team(None, board) is None     # no privileged team → revealed-only fallback
+
+
+def test_build_opp_full_team_matches_typed_hidden_power():
+    # the truth carries 'hiddenpowerfire'; a revealed bare 'hiddenpower' (or typed display) still matches
+    details = [{"species": "Magneton", "item": "magnet", "moves": ["thunderbolt", "hiddenpowerfire"]}]
+    board = BoardView(ours=SideBoard("a", "100%", "", "", (), ()),
+                      opp=SideBoard("magneton", "100%", "", "", ("hiddenpower(fire)",), ()))
+    mv = dict(build_opp_full_team(details, board).mons[0].moves)
+    assert mv["hiddenpowerfire"] is True                # the typed HP is recognised as revealed

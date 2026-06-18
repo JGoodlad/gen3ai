@@ -273,7 +273,7 @@ class ProberApp(Gen3App):
                                 yield Static("SWITCHES", classes="summary-col-label")
                                 yield Static("", id="summary-switches")
                             with Vertical(classes="summary-col"):
-                                yield Static("OPP TEAM (revealed)", classes="summary-col-label")
+                                yield Static("OPP TEAM", classes="summary-col-label")
                                 yield Static("", id="summary-opp")
                     # Team details: every mon's moveset (ours full; opp's revealed-only) + hp/
                     # status/item — decoded from the obs, so it needs captured state.
@@ -994,14 +994,14 @@ class ProberApp(Gen3App):
                 sw.append_text(ml)
         self.query_one("#summary-switches", Static).update(sw)
 
-        # OPP TEAM — the opponent's revealed mons (the mirror of our switches), shared team panel;
-        # plus the model's belief about the hidden mons. With the PRIVILEGED truth (reconstruction.json)
-        # show the slot-MATCHED truth-vs-guess (✓/✗ per hidden mon); otherwise the anonymous belief.
-        opp_panel = _team_panel_text(a.board.opp if a.board is not None else None)
-        if a.belief_truth is not None:
-            _append_belief_truth(opp_panel, a.belief_truth)
+        # OPP TEAM — the opponent's WHOLE team (privileged, from the reconstruction.json) with a
+        # revealed/unseen icon on each mon, item, and move; falls back to the revealed-only panel when
+        # there's no privileged team. The model's BELIEF about the hidden mons lives in the dedicated
+        # Beliefs section now (it used to be appended here too).
+        if a.opp_full_team is not None:
+            opp_panel = _opp_full_team_text(a.opp_full_team)
         else:
-            _append_belief(opp_panel, a.belief)
+            opp_panel = _team_panel_text(a.board.opp if a.board is not None else None)
         self.query_one("#summary-opp", Static).update(opp_panel)
 
     def _render_team(self, a: InvocationAnalysis) -> None:
@@ -2060,11 +2060,16 @@ _DISABLED_GREY = "grey50"   # disabled/fainted slots → neutral grey (NOT red �
 def _hp_bar(hp: str, width: int = 6, disabled: bool = False) -> Text:
     """A compact colour-graded health bar + percentage, e.g. green '████▌░ 76%'. ``disabled``
     (a fainted mon / an illegal switch) renders grey rather than the HP gradient, so 'dead/
-    unavailable' reads differently from 'alive but low' (which stays red). Unparseable → dim."""
+    unavailable' reads differently from 'alive but low' (which stays red). Unparseable → dim.
+
+    A non-zero HP always shows **at least one filled cell** — a mon on 6% rounds to 0 cells
+    otherwise and reads as fainted; only a true 0% / faint shows an empty bar."""
     f = _hp_frac(hp)
     if f is None:
         return Text(str(hp), style="dim")
     filled = int(round(f * width))
+    if f > 0.0 and filled == 0:
+        filled = 1            # alive-but-low must never render as an empty (dead-looking) bar
     col = _DISABLED_GREY if disabled else gradient_color(f)
     t = Text()
     t.append("█" * filled + "░" * (width - filled), style=col)
@@ -2149,6 +2154,55 @@ def _team_panel_text(side, *, name_w: int = _PANEL_NAME_W, hp_w: int = _PANEL_HP
         if ml:
             out.append("\n")
             out.append_text(ml)
+    return out
+
+
+_SEEN_ICON, _UNSEEN_ICON = "✓", "○"   # ✓ revealed on field · ○ known (privileged) but not yet seen
+
+
+def _rev_mark(revealed: bool) -> Text:
+    return (Text(_SEEN_ICON, style="bold green") if revealed
+            else Text(_UNSEEN_ICON, style="dim"))
+
+
+def _opp_full_team_text(view, *, name_w: int = _PANEL_NAME_W, hp_w: int = _PANEL_HP_W) -> Text:
+    """The opponent's WHOLE team (privileged `OppFullTeamView`) with a revealed/unseen icon on each
+    mon, held item, and move — ``✓`` seen on field this battle, ``○`` known from the team but not yet
+    revealed in-game. HP/status show only for revealed mons; the active mon keeps its ``▶``."""
+    out = Text()
+    out.append_text(_rev_mark(True)); out.append(" seen on field    ", style="dim")
+    out.append_text(_rev_mark(False)); out.append(" in team, unseen", style="dim")
+    out.append(f"\n{'pokémon':<{name_w}}{'hp':<{hp_w}}status", style="bold")
+    for m in view.mons:
+        out.append("\n")
+        row = Text()
+        if m.active:
+            row.append("▶ ", style="bold")
+        else:
+            row.append_text(_rev_mark(m.revealed))
+            row.append(" ")
+        row.append(m.species, style=(f"bold {_MON_COLOR}" if m.active
+                                     else _MON_COLOR if m.revealed else _DISABLED_GREY))
+        if m.item and m.item.lower() != "none":     # privileged item + its own seen/unseen icon
+            row.append(" (", style="dim")
+            row.append(m.item.lower(), style="dim")
+            row.append(" ")
+            row.append_text(_rev_mark(m.item_revealed))
+            row.append(")", style="dim")
+        out.append_text(_col(row, name_w))
+        if m.revealed:
+            out.append_text(_col(_hp_bar(m.hp), hp_w))
+            out.append_text(_status_cell(m.status))
+        else:
+            out.append_text(_col(Text("—", style="dim"), hp_w))
+            out.append("—", style="dim")
+        if m.moves:                                  # moveset sub-line, a seen/unseen icon per move
+            out.append("\n     ⮡ ")
+            for j, (mv, seen) in enumerate(m.moves):
+                if j:
+                    out.append(" · ", style="dim")
+                out.append_text(_rev_mark(seen))
+                out.append(mv, style=("green" if seen else _DISABLED_GREY))
     return out
 
 

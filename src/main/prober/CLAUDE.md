@@ -172,10 +172,15 @@ too) and two **custom-rendered Static
 panels** (NOT DataTables, so a mon's **moveset spans the full width** below it as `⮡ m1 · m2 · …`):
 **SWITCHES** (each target's prob · **hp** colour-bar · **status/volatiles** · **risk-in** =
 `incoming.per_slot_pko`, with the held **item inlined into the name** as `(leftovers)` lowercase)
-and **OPP TEAM** (the opponent's REVEALED mons — active ▶ then bench — name · hp · status · item,
-the mirror of our switches; Gen3 has no team preview so only revealed mons appear) — and, when the
-**hidden-opponent belief** was enabled for the run (`--opp-belief-aux-coef>0`), the model's guess for
-the still-hidden mons below it. Two forms, best-available wins:
+and **OPP TEAM** — the opponent's **WHOLE team** (privileged, from the `reconstruction.json`) with a
+**revealed/unseen icon** on every **mon**, **held item**, and **move**: `✓` (green) = seen on field this
+battle · `○` (dim) = known from the team but not yet revealed in-game (active mon keeps `▶`; HP bar +
+status show only for revealed mons). Built by `engine.build_opp_full_team` → `OppFullTeamView` (merging
+the truth `opp_team_details` with the board's revealed moves — typed-HP-aware via `_norm_move`), rendered
+by `app._opp_full_team_text`, and on the `analyze` JSON too. Falls back to the **revealed-only** panel
+(`_team_panel_text`) when there's no privileged team (websocket/older traces). The model's **belief**
+about the still-hidden mons used to be appended here — it now lives ONLY in the dedicated **Beliefs
+section** (key `b`, `_render_beliefs`). Two belief forms, best-available wins:
 - **Privileged truth + matched guess** (`a.belief_truth`, `engine.build_belief_truth` → `BeliefTruthView`,
   `app._append_belief_truth`) when the trace has a **`reconstruction.json`** sibling (bridge-eval referee
   data): shows the opponent's **FULL** team — revealed mons listed, then each STILL-HIDDEN mon with the

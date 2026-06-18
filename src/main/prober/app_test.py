@@ -27,6 +27,17 @@ def test_hp_bar_disabled_is_grey_not_red():
     assert all(sp.style != _DISABLED_GREY for sp in alive_low.spans)
 
 
+def test_hp_bar_nonzero_always_shows_at_least_one_filled_cell():
+    """A non-zero HP must never render as an empty bar (which reads as fainted): a mon on 6% rounds
+    to 0 cells naively, so it's floored to 1. A true 0% / faint stays empty."""
+    for low in ("1%", "6%", "9%"):
+        assert _hp_bar(low).plain.count("█") == 1   # alive-but-low → exactly one filled cell
+    assert _hp_bar("0%").plain.count("█") == 0      # genuinely empty
+    assert _hp_bar("faint").plain.count("█") == 0
+    assert _hp_bar("53%").plain.count("█") == 3     # mid/full unchanged
+    assert _hp_bar("100%").plain.count("█") == 6
+
+
 def test_field_text_shows_pending_wish():
     """gen3_wish_wired_v1: the FIELD line surfaces a pending Wish (per side) when decoded, and omits
     it otherwise — so a human walking the prober sees the floating heal coming."""
@@ -1203,3 +1214,18 @@ async def test_team_columns_get_real_width_not_collapsed(tmp_path):
         our = app.query_one("#team-our", Static)
         opp = app.query_one("#team-opp", Static)
         assert our.size.width > 20 and opp.size.width > 20   # not collapsed to ~2 cells
+
+
+def test_opp_full_team_text_marks_seen_and_unseen():
+    from main.prober.app import _opp_full_team_text
+    from main.prober.engine import OppFullTeamView, OppFullMon
+    view = OppFullTeamView(mons=(
+        OppFullMon("registeel", revealed=True, active=True, hp="100%", status="", item="leftovers",
+                   item_revealed=True, moves=(("thunderwave", True), ("toxic", False))),
+        OppFullMon("swampert", revealed=False, active=False, hp="", status="", item="salacberry",
+                   item_revealed=False, moves=(("surf", False),)),
+    ))
+    s = _opp_full_team_text(view).plain
+    assert "▶ registeel" in s and "○ swampert" in s          # active marker · unseen-mon marker
+    assert "✓thunderwave" in s and "○toxic" in s             # per-move seen / unseen icons
+    assert "seen on field" in s                              # the legend

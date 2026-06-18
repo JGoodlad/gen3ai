@@ -279,6 +279,28 @@ class BoardView:
 
 
 @dataclass(frozen=True)
+class OppFullMon:
+    """One opponent mon in the PRIVILEGED full-team view, each fact tagged seen-in-battle or not:
+    the team is known from the reconstruction record, but only some of it has been REVEALED on field."""
+    species: str
+    revealed: bool                                  # this mon has appeared on the field
+    active: bool                                    # it's the current opp active
+    hp: str                                         # live HP when revealed, else "" (unknown)
+    status: str
+    item: str                                       # the TRUE held item (privileged)
+    item_revealed: bool                             # the item has been shown in-battle
+    moves: "tuple[tuple[str, bool], ...]"           # every true move + whether it's been revealed
+
+
+@dataclass(frozen=True)
+class OppFullTeamView:
+    """The opponent's WHOLE team (all 6) from the reconstruction record, with each mon / item / move
+    tagged revealed-or-not — the Summary OPP TEAM panel. `None` (→ revealed-only panel) when there's
+    no privileged team (websocket/older traces without a `reconstruction.json`)."""
+    mons: "tuple[OppFullMon, ...]"
+
+
+@dataclass(frozen=True)
 class BeliefSlotView:
     """One still-HIDDEN opponent slot's species belief: the model's top-k guesses,
     `(species, prob)` descending. `slot` is the encoder opp-slot index it filled."""
@@ -466,6 +488,7 @@ class InvocationAnalysis:
     field: "dict | None" = None                    # weather/spikes/screens (decoded from obs)
     belief: "BeliefView | None" = None             # hidden-opp species belief (anonymous slots)
     belief_truth: "BeliefTruthView | None" = None  # privileged truth + slot-matched guess (None unless recon+belief)
+    opp_full_team: "OppFullTeamView | None" = None  # WHOLE opp team + revealed-or-not tags (None w/o reconstruction)
     damage_op: "dict | None" = None                # unified DamageOperator view (incoming + outgoing); None unless --damage-op
     move_belief: "MoveBeliefView | None" = None     # what the model thinks the revealed opp's UNSEEN moves are; None unless --move-belief-mode
     spread_belief: "SpreadBeliefView | None" = None  # believed vs true opp DERIVED stats; None unless --spread-belief
@@ -1084,6 +1107,43 @@ def revealed_opp_species(board: "BoardView | None") -> "tuple[str, ...]":
     return tuple(s for s in seen if s and s != "NONE")
 
 
+def _norm_move(move: str) -> str:
+    """Move id normalised for the revealed-vs-truth compare: lowercase, alnum-only, so the revealed
+    display form (`hiddenpower(bug)`) matches the truth id (`hiddenpowerbug`) — both collapse to the
+    bare `hiddenpower` (the opp's HP type stays unrevealed until it fires, so we compare the base)."""
+    s = re.sub(r"[^a-z0-9]", "", str(move).lower())
+    return "hiddenpower" if s.startswith("hiddenpower") else s
+
+
+def build_opp_full_team(opp_team_details: "list | None",
+                        board: "BoardView | None") -> "OppFullTeamView | None":
+    """Merge the opponent's PRIVILEGED full team (`opp_team_details` — all 6 mons + moves + item from the
+    `reconstruction.json`) with what's been REVEALED on field (`board.opp`), tagging each mon / item /
+    move seen-or-not. `None` when there's no privileged team (websocket/older traces)."""
+    if not opp_team_details:
+        return None
+    # Revealed lookup: norm-species → (hp, status, item, {norm-revealed-move}, active).
+    rev: dict = {}
+    if board is not None:
+        o = board.opp
+        if o.active_species and o.active_species != "NONE":
+            rev[_norm_species(o.active_species)] = (o.active_hp, o.status, o.item,
+                                                    {_norm_move(m) for m in o.moves}, True)
+        for m in o.bench:
+            rev.setdefault(_norm_species(m.species),
+                           (m.hp, m.status, m.item, {_norm_move(x) for x in m.moves}, False))
+    mons = []
+    for d in opp_team_details:
+        sp = str(d.get("species", ""))
+        r = rev.get(_norm_species(sp))
+        hp, status, ritem, rmoves, active = r if r else ("", "", "", set(), False)
+        moves = tuple((str(mv), _norm_move(mv) in rmoves) for mv in (d.get("moves", ()) or ()))
+        mons.append(OppFullMon(
+            species=sp, revealed=r is not None, active=active, hp=hp, status=status,
+            item=str(d.get("item", "") or ""), item_revealed=bool(r is not None and ritem), moves=moves))
+    return OppFullTeamView(mons=tuple(mons))
+
+
 def build_belief_truth(species_logits, believed_mask, revealed_species, true_team,
                        top_k: int = BELIEF_TOPK, maps=None) -> "BeliefTruthView | None":
     """Match the model's per-slot species belief to the opponent's TRUE hidden mons (privileged, from
@@ -1652,11 +1712,12 @@ def analyze_invocation(model, summary: dict, npz, inv_index: int,
     belief = build_belief(inv)       # model-free summary fallback (re-computed below when a model + state exist)
     belief_truth = None
     outcome = {**outcome, "timeline": _timeline_for(inv, next_board, outcome)}   # model-free RESULT lines
+    opp_full_team = build_opp_full_team(opp_team_details, board)   # model-free; available without state
     if not _has_state(npz, inv_index):
         return InvocationAnalysis(
             **common, has_state=False, actions=(), matchups=None, sweep=None,
             saliency=None, value_saliency=None, threats=None, incoming=None,
-            warnings=(f"invocation {inv_index} has no captured state",),
+            warnings=(f"invocation {inv_index} has no captured state",), opp_full_team=opp_full_team,
             outcome=outcome, flags=summary_flags(inv), board=board, next_board=next_board, belief=belief,
         )
 
@@ -1826,6 +1887,9 @@ def analyze_invocation(model, summary: dict, npz, inv_index: int,
         except Exception:  # noqa: BLE001 — never break the analysis
             refine_trajectory = None
 
+    # Rebuilt from the FINAL board (with the obs-decoded revealed moves), so a move shows revealed the
+    # moment it fires.
+    opp_full_team = build_opp_full_team(opp_team_details, board)
     return InvocationAnalysis(
         **common, has_state=True, actions=actions, matchups=matchups, sweep=sweep,
         saliency=saliency, value_saliency=value_saliency, threats=threats, incoming=incoming,
@@ -1833,7 +1897,7 @@ def analyze_invocation(model, summary: dict, npz, inv_index: int,
         rerun_argmax=rerun_argmax, agrees=agrees, flags=flags, board=board, next_board=next_board,
         obs_mismatch=obs_mismatch, field=field, belief=belief, belief_truth=belief_truth,
         damage_op=damage_op, move_belief=move_belief, spread_belief=spread_belief,
-        refine_trajectory=refine_trajectory,
+        refine_trajectory=refine_trajectory, opp_full_team=opp_full_team,
     )
 
 
