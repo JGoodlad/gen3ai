@@ -1,0 +1,37 @@
+// Threat dataflow — DELTA (v35 → v36): exactly what changes
+digraph threat_delta {
+  rankdir=LR;
+  graph [fontname="Helvetica", labelloc="t", fontsize=22,
+         label="What changes  v35 → v36  (fresh-only · OFF byte-identical)"];
+  node  [fontname="Helvetica", shape=box, style="rounded,filled", penwidth=1.6, fontsize=12];
+  edge  [fontname="Helvetica", fontsize=10, color="#5b6b7a"];
+
+  subgraph cluster_new {
+    label="NEW modules"; style="rounded"; color="#c79100"; fontsize=15; bgcolor="#fff8e6";
+    n_dout  [label="discrete_outgoing(ctx, …)\nlean per-opp-mon outgoing kernel\n(reuses validated _rolls physics)", fillcolor="#ffe9a8", color="#c79100"];
+    n_proj  [label="outgoing_proj\nLinear(_DMG_OUT_REFINE → D_MODEL)\nzero-init → identity-at-init", fillcolor="#ffe9a8", color="#c79100"];
+    n_types [label="SPECIES_TYPE1 / SPECIES_TYPE2\nnon-persistent buffers\n(species_id → type ids)", fillcolor="#ffe9a8", color="#c79100"];
+    n_marg  [label="marginalized effectiveness\nΣ_s P(species=s)·dmg(move vs types(s))\nfrom BeliefHead species logits", fillcolor="#ffe9a8", color="#c79100"];
+  }
+
+  subgraph cluster_changed {
+    label="CHANGED behavior (same params where possible)"; style="rounded"; color="#3f6db5"; fontsize=15; bgcolor="#eef3fb";
+    c_refine [label="refine_cb (between-layers)\nincoming-only  →  incoming + OUTGOING\ninjects onto OUR [0:6] AND OPP [6:12] tokens", fillcolor="#cfe0f7", color="#3f6db5"];
+    c_outmat [label="_outgoing_matrix\nUNREVEALED columns: hard-zero  →  belief-priced\n(believed types × believed bulk)", fillcolor="#cfe0f7", color="#3f6db5"];
+  }
+
+  subgraph cluster_ver {
+    label="Versioning"; style="rounded"; color="#888888"; fontsize=14; bgcolor="#f5f5f5";
+    v_ver [label="MODEL_CONFIG_VERSION 35 → 36\nARCH_SIGNATURE unchanged (OFF byte-identical)\ncheck_compatible: new structural toggle\n_migrate_config: setdefault off", fillcolor="#eeeeee", color="#888888"];
+    v_flag[label="CLI: --threat-refine-outgoing  (+ reuse --damage-refine-rounds N)\nrequires --damage-op; belief leg requires --opp-belief-aux-coef>0\nthreaded: current_model_version / arch_toggles / both extractor sites", fillcolor="#eeeeee", color="#888888"];
+  }
+
+  n_dout  -> c_refine [label="called per round\n(opp side)"];
+  n_proj  -> c_refine [label="injects residual"];
+  n_types -> n_marg;
+  n_marg  -> c_outmat [label="prices hidden defenders"];
+  n_marg  -> c_refine [label="lean variant\nfor in-trunk outgoing"];
+  c_refine -> v_ver [style=dotted, label="structural"];
+  c_outmat -> v_ver [style=dotted];
+  v_ver -> v_flag [style=invis];
+}

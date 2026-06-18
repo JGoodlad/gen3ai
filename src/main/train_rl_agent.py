@@ -196,6 +196,9 @@ def _run_arch_toggles(args) -> dict:
         damage_refine_rounds=args.damage_refine_rounds,
         damage_matrices_outgoing=args.damage_matrices_outgoing,
         damage_matrices_incoming=args.damage_matrices_incoming,
+        threat_refine_outgoing=args.threat_refine_outgoing,
+        threat_unrevealed_outgoing=args.threat_unrevealed_outgoing,
+        threat_prob_outspeed=args.threat_prob_outspeed,
     )
 
 
@@ -940,6 +943,29 @@ async def main():
                              "'both' = incoming + outgoing. Unrevealed opp slots zeroed (belief-driven = TODO). "
                              "STRUCTURAL (version-checked, fresh-only). REQUIRES --damage-op. 'off' (default) = "
                              "baseline byte-identical.")
+    # gen3_bidir_threat_trunk_v1 (v36): the bidirectional in-trunk threat field (#1/#2/#3).
+    parser.add_argument("--threat-refine-outgoing", "--threat_refine_outgoing", dest="threat_refine_outgoing",
+                        action=BoolFlag, default=None,
+                        help="#1 OUTGOING threat into the TRUNK (gen3_bidir_threat_trunk_v1): inject a per-opp-mon "
+                             "outgoing-threat residual (how hard OUR active hits each opp mon) onto the OPP tokens "
+                             "via a zero-init outgoing_proj, riding the SAME between-layers refine loop — so "
+                             "attention reasons over BOTH threat directions, not just incoming. STRUCTURAL "
+                             "(version-checked, fresh-only). REQUIRES --damage-op AND --damage-refine-rounds>0. "
+                             "Default off (byte-identical).")
+    parser.add_argument("--threat-unrevealed-outgoing", "--threat_unrevealed_outgoing",
+                        dest="threat_unrevealed_outgoing", action=BoolFlag, default=None,
+                        help="#2 EXPECTED-LATENT defender: price the outgoing residual's UNREVEALED opp columns by "
+                             "marginalizing the move-belief's P(species) through SPECIES_EXP_MULT (type chart × "
+                             "expected ability immunity — Levitate/Water&Volt Absorb/Flash Fire) + SPECIES_SPREAD_"
+                             "PRIOR (E[bulk]); P(KO) NULLED (a full-HP switch-in is ~never OHKO'd). FORWARD-behavior "
+                             "(version-checked, fresh-only). REQUIRES --threat-refine-outgoing (+ a belief head, "
+                             "--opp-belief-aux-coef>0, for P(species)). Default off.")
+    parser.add_argument("--threat-prob-outspeed", "--threat_prob_outspeed", dest="threat_prob_outspeed",
+                        action=BoolFlag, default=None,
+                        help="#3 UNCERTAINTY-AWARE P(outspeed): divide the speed gap by the believed speed STD "
+                             "(SPECIES_SPREAD_PRIOR; sigmoid≈normal-CDF) instead of a fixed scale — a high-variance "
+                             "opp speed reads ~0.5, a pinned one reads sharp. FORWARD-behavior (version-checked, "
+                             "fresh-only). REQUIRES --damage-op. Default off (byte-identical).")
     parser.add_argument("--spread-belief", "--spread_belief", dest="spread_belief",
                         action=BoolFlag, default=None,
                         help="SpreadBelief (gen3_unified_spread_belief_v1): the THIRD belief leg — predict "
@@ -1208,6 +1234,9 @@ async def main():
     _resolve("damage_refine_rounds", 0)        # v31 structural int (iterative refine; version-checked, fresh-only)
     _resolve("damage_matrices_outgoing", False)  # v32 structural (outgoing damage matrix; version-checked, fresh-only)
     _resolve("damage_matrices_incoming", False)  # v33 structural (incoming damage matrix; version-checked, fresh-only)
+    _resolve("threat_refine_outgoing", False)    # v36 structural (outgoing→trunk; version-checked, fresh-only)
+    _resolve("threat_unrevealed_outgoing", False)  # v36 forward-behavior (expected-latent; version-checked, fresh-only)
+    _resolve("threat_prob_outspeed", False)      # v36 forward-behavior (prob outspeed; version-checked, fresh-only)
     # PopArt INHERITED on a flagless resume → adopt its required `--clip-range-vf none` (the saved
     # popart run necessarily used it), so the explicit-config check below doesn't block the resume.
     if args.use_popart and not _popart_explicit and _saved_ver is not None and args.clip_range_vf is not None:
@@ -1381,6 +1410,33 @@ async def main():
                 "--damage-matrices incoming requires --move-latent (the matrix header gathers each move's "
                 "identity latent). Use --unified-moves, or add --move-latent."
             )
+    # gen3_bidir_threat_trunk_v1 (v36): the bidirectional in-trunk threat field.
+    if getattr(args, "threat_refine_outgoing", False):
+        if not args.damage_op:
+            parser.error(
+                "--threat-refine-outgoing requires --damage-op (the outgoing physics is the damage operator). "
+                "Use --unified-damage / --unified-moves, or add --damage-op."
+            )
+        if not (args.damage_refine_rounds and args.damage_refine_rounds > 0):
+            parser.error(
+                "--threat-refine-outgoing requires --damage-refine-rounds>0 — the outgoing residual rides the "
+                "SAME between-layers refine loop. Set --damage-refine-rounds N."
+            )
+    if getattr(args, "threat_unrevealed_outgoing", False):
+        if not getattr(args, "threat_refine_outgoing", False):
+            parser.error(
+                "--threat-unrevealed-outgoing requires --threat-refine-outgoing (it only enriches the outgoing "
+                "residual's UNREVEALED columns with the expected-latent defender)."
+            )
+        if not (args.opp_belief_aux_coef and args.opp_belief_aux_coef > 0):
+            parser.error(
+                "--threat-unrevealed-outgoing requires --opp-belief-aux-coef>0 — the expected-latent defender "
+                "reads P(species) from the hidden-opponent belief head (BeliefHead.species_logits)."
+            )
+    if getattr(args, "threat_prob_outspeed", False) and not args.damage_op:
+        parser.error(
+            "--threat-prob-outspeed requires --damage-op (the P(outspeed) feature lives in the damage operator)."
+        )
     if args.move_belief_latent_coef and not args.move_latent:
         # The latent grading reads the MoveLatentEncoder's latent table → the encoder must exist.
         parser.error(
@@ -2129,6 +2185,9 @@ async def main():
         _load_extractor_kwargs["damage_refine_rounds"] = args.damage_refine_rounds   # v31 (version-checked)
         _load_extractor_kwargs["damage_matrices_outgoing"] = args.damage_matrices_outgoing  # v32 (version-checked)
         _load_extractor_kwargs["damage_matrices_incoming"] = args.damage_matrices_incoming  # v33 (version-checked)
+        _load_extractor_kwargs["threat_refine_outgoing"] = args.threat_refine_outgoing      # v36 (version-checked)
+        _load_extractor_kwargs["threat_unrevealed_outgoing"] = args.threat_unrevealed_outgoing  # v36
+        _load_extractor_kwargs["threat_prob_outspeed"] = args.threat_prob_outspeed          # v36 (version-checked)
         _load_policy_kwargs = {
             "features_extractor_class": Gen3FeaturesExtractor,
             "features_extractor_kwargs": _load_extractor_kwargs,
@@ -2383,6 +2442,9 @@ async def main():
         extractor_kwargs["damage_refine_rounds"] = args.damage_refine_rounds
         extractor_kwargs["damage_matrices_outgoing"] = args.damage_matrices_outgoing
         extractor_kwargs["damage_matrices_incoming"] = args.damage_matrices_incoming
+        extractor_kwargs["threat_refine_outgoing"] = args.threat_refine_outgoing
+        extractor_kwargs["threat_unrevealed_outgoing"] = args.threat_unrevealed_outgoing
+        extractor_kwargs["threat_prob_outspeed"] = args.threat_prob_outspeed
 
         policy_kwargs = {
             "features_extractor_class": Gen3FeaturesExtractor,

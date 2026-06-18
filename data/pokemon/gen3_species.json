@@ -9,7 +9,10 @@
             "spe": 90
         },
         "name": "Abra",
-        "num": 63
+        "num": 63,
+        "types": [
+            "PSYCHIC"
+        ]
     },
     "absol": {
         "baseStats": {
@@ -21,7 +24,10 @@
             "spe": 75
         },
         "name": "Absol",
-        "num": 359
+        "num": 359,
+        "types": [
+            "DARK"
+        ]
     },
     "aerodactyl": {
         "baseStats": {
@@ -33,7 +39,11 @@
             "spe": 130
         },
         "name": "Aerodactyl",
-        "num": 142
+        "num": 142,
+        "types": [
+            "ROCK",
+            "FLYING"
+        ]
     },
     "aggron": {
         "baseStats": {
@@ -45,7 +55,11 @@
             "spe": 50
         },
         "name": "Aggron",
-        "num": 306
+        "num": 306,
+        "types": [
+            "STEEL",
+            "ROCK"
+        ]
     },
     "aipom": {
         "baseStats": {
@@ -57,7 +71,10 @@
             "spe": 85
         },
         "name": "Aipom",
-        "num": 190
+        "num": 190,
+        "types": [
+            "NORMAL"
+        ]
     },
     "alakazam": {
         "baseStats": {
@@ -69,7 +86,10 @@
             "spe": 120
         },
         "name": "Alakazam",
-        "num": 65
+        "num": 65,
+        "types": [
+            "PSYCHIC"
+        ]
     },
     "altaria": {
         "baseStats": {
@@ -81,7 +101,11 @@
             "spe": 80
         },
         "name": "Altaria",
-        "num": 334
+        "num": 334,
+        "types": [
+            "DRAGON",
+            "FLYING"
+        ]
     },
     "ampharos": {
         "baseStats": {
@@ -93,7 +117,10 @@
             "spe": 55
         },
         "name": "Ampharos",
-        "num": 181
+        "num": 181,
+        "types": [
+            "ELECTRIC"
+        ]
     },
     "anorith": {
         "baseStats": {
@@ -105,7 +132,11 @@
             "spe": 75
         },
         "name": "Anorith",
-        "num": 347
+        "num": 347,
+        "types": [
+            "ROCK",
+            "BUG"
+        ]
     },
     "arbok": {
         "baseStats": {
@@ -117,7 +148,10 @@
             "spe": 80
         },
         "name": "Arbok",
-        "num": 24
+        "num": 24,
+        "types": [
+            "POISON"
+        ]
     },
     "arcanine": {
         "baseStats": {
@@ -129,7 +163,10 @@
             "spe": 95
         },
         "name": "Arcanine",
-        "num": 59
+        "num": 59,
+        "types": [
+            "FIRE"
+        ]
     },
     "ariados": {
         "baseStats": {
@@ -141,7 +178,11 @@
             "spe": 40
         },
         "name": "Ariados",
-        "num": 168
+        "num": 168,
+        "types": [
+            "BUG",
+            "POISON"
+        ]
     },
     "armaldo": {
         "baseStats": {
@@ -153,7 +194,11 @@
             "spe": 45
         },
         "name": "Armaldo",
-        "num": 348
+        "num": 348,
+        "types": [
+            "ROCK",
+            "BUG"
+        ]
     },
     "aron": {
         "baseStats": {
@@ -165,7 +210,11 @@
             "spe": 30
         },
         "name": "Aron",
-        "num": 304
+        "num": 304,
+        "types": [
+            "STEEL",
+            "ROCK"
+        ]
     },
     "articuno": {
         "baseStats": {
@@ -177,7 +226,11 @@
             "spe": 85
         },
         "name": "Articuno",
-        "num": 144
+        "num": 144,
+        "types": [
+            "ICE",
+            "FLYING"
+        ]
     },
     "azumarill": {
         "baseStats": {
@@ -189,7 +242,10 @@
             "spe": 50
         },
         "name": "Azumarill",
-        "num": 184
+        "num": 184,
+        "types": [
+            "WATER"
+        ]
     },
     "azurill": {
         "baseStats": {
@@ -201,7 +257,10 @@
             "spe": 20
         },
         "name": "Azurill",
-        "num": 298
+        "num": 298,
+        "types": [
+            "NORMAL"
+        ]
     },
     "bagon": {
         "baseStats": {
@@ -213,7 +272,10 @@
             "spe": 50
         },
         "name": "Bagon",
-        "num": 371
+        "num": 371,
+        "types": [
+            "DRAGON"
+        ]
     },
     "baltoy": {
         "baseStats": {
@@ -225,7 +287,11 @@
             "spe": 55
         },
         "name": "Baltoy",
-        "num": 343
+        "num": 343,
+        "types": [
+            "GROUND",
+            "PSYCHIC"
+        ]
     },
     "banette": {
         "baseStats": {
@@ -237,7 +303,10 @@
             "spe": 65
         },
         "name": "Banette",
-        "num": 354
+        "num": 354,
+        "types": [
+            "GHOST"
+        ]
     },
     "barboach": {
         "baseStats": {
@@ -249,7 +318,11 @@
             "spe": 60
         },
         "name": "Barboach",
-        "num": 339
+        "num": 339,
+        "types": [
+            "WATER",
+            "GROUND"
+        ]
     },
     "bayleef": {
         "baseStats": {
@@ -261,7 +334,10 @@
             "spe": 60
         },
         "name": "Bayleef",
-        "num": 153
+        "num": 153,
+        "types": [
+            "GRASS"
+        ]
     },
     "beautifly": {
         "baseStats": {
@@ -273,7 +349,11 @@
             "spe": 65
         },
         "name": "Beautifly",
-        "num": 267
+        "num": 267,
+        "types": [
+            "BUG",
+            "FLYING"
+        ]
     },
     "beedrill": {
         "baseStats": {
@@ -285,7 +365,11 @@
             "spe": 75
         },
         "name": "Beedrill",
-        "num": 15
+        "num": 15,
+        "types": [
+            "BUG",
+            "POISON"
+        ]
     },
     "beldum": {
         "baseStats": {
@@ -297,7 +381,11 @@
             "spe": 30
         },
         "name": "Beldum",
-        "num": 374
+        "num": 374,
+        "types": [
+            "STEEL",
+            "PSYCHIC"
+        ]
     },
     "bellossom": {
         "baseStats": {
@@ -309,7 +397,10 @@
             "spe": 50
         },
         "name": "Bellossom",
-        "num": 182
+        "num": 182,
+        "types": [
+            "GRASS"
+        ]
     },
     "bellsprout": {
         "baseStats": {
@@ -321,7 +412,11 @@
             "spe": 40
         },
         "name": "Bellsprout",
-        "num": 69
+        "num": 69,
+        "types": [
+            "GRASS",
+            "POISON"
+        ]
     },
     "blastoise": {
         "baseStats": {
@@ -333,7 +428,10 @@
             "spe": 78
         },
         "name": "Blastoise",
-        "num": 9
+        "num": 9,
+        "types": [
+            "WATER"
+        ]
     },
     "blaziken": {
         "baseStats": {
@@ -345,7 +443,11 @@
             "spe": 80
         },
         "name": "Blaziken",
-        "num": 257
+        "num": 257,
+        "types": [
+            "FIRE",
+            "FIGHTING"
+        ]
     },
     "blissey": {
         "baseStats": {
@@ -357,7 +459,10 @@
             "spe": 55
         },
         "name": "Blissey",
-        "num": 242
+        "num": 242,
+        "types": [
+            "NORMAL"
+        ]
     },
     "breloom": {
         "baseStats": {
@@ -369,7 +474,11 @@
             "spe": 70
         },
         "name": "Breloom",
-        "num": 286
+        "num": 286,
+        "types": [
+            "GRASS",
+            "FIGHTING"
+        ]
     },
     "bulbasaur": {
         "baseStats": {
@@ -381,7 +490,11 @@
             "spe": 45
         },
         "name": "Bulbasaur",
-        "num": 1
+        "num": 1,
+        "types": [
+            "GRASS",
+            "POISON"
+        ]
     },
     "butterfree": {
         "baseStats": {
@@ -393,7 +506,11 @@
             "spe": 70
         },
         "name": "Butterfree",
-        "num": 12
+        "num": 12,
+        "types": [
+            "BUG",
+            "FLYING"
+        ]
     },
     "cacnea": {
         "baseStats": {
@@ -405,7 +522,10 @@
             "spe": 35
         },
         "name": "Cacnea",
-        "num": 331
+        "num": 331,
+        "types": [
+            "GRASS"
+        ]
     },
     "cacturne": {
         "baseStats": {
@@ -417,7 +537,11 @@
             "spe": 55
         },
         "name": "Cacturne",
-        "num": 332
+        "num": 332,
+        "types": [
+            "GRASS",
+            "DARK"
+        ]
     },
     "camerupt": {
         "baseStats": {
@@ -429,7 +553,11 @@
             "spe": 40
         },
         "name": "Camerupt",
-        "num": 323
+        "num": 323,
+        "types": [
+            "FIRE",
+            "GROUND"
+        ]
     },
     "carvanha": {
         "baseStats": {
@@ -441,7 +569,11 @@
             "spe": 65
         },
         "name": "Carvanha",
-        "num": 318
+        "num": 318,
+        "types": [
+            "WATER",
+            "DARK"
+        ]
     },
     "cascoon": {
         "baseStats": {
@@ -453,7 +585,10 @@
             "spe": 15
         },
         "name": "Cascoon",
-        "num": 268
+        "num": 268,
+        "types": [
+            "BUG"
+        ]
     },
     "castform": {
         "baseStats": {
@@ -465,7 +600,10 @@
             "spe": 70
         },
         "name": "Castform",
-        "num": 351
+        "num": 351,
+        "types": [
+            "NORMAL"
+        ]
     },
     "caterpie": {
         "baseStats": {
@@ -477,7 +615,10 @@
             "spe": 45
         },
         "name": "Caterpie",
-        "num": 10
+        "num": 10,
+        "types": [
+            "BUG"
+        ]
     },
     "celebi": {
         "baseStats": {
@@ -489,7 +630,11 @@
             "spe": 100
         },
         "name": "Celebi",
-        "num": 251
+        "num": 251,
+        "types": [
+            "PSYCHIC",
+            "GRASS"
+        ]
     },
     "chansey": {
         "baseStats": {
@@ -501,7 +646,10 @@
             "spe": 50
         },
         "name": "Chansey",
-        "num": 113
+        "num": 113,
+        "types": [
+            "NORMAL"
+        ]
     },
     "charizard": {
         "baseStats": {
@@ -513,7 +661,11 @@
             "spe": 100
         },
         "name": "Charizard",
-        "num": 6
+        "num": 6,
+        "types": [
+            "FIRE",
+            "FLYING"
+        ]
     },
     "charmander": {
         "baseStats": {
@@ -525,7 +677,10 @@
             "spe": 65
         },
         "name": "Charmander",
-        "num": 4
+        "num": 4,
+        "types": [
+            "FIRE"
+        ]
     },
     "charmeleon": {
         "baseStats": {
@@ -537,7 +692,10 @@
             "spe": 80
         },
         "name": "Charmeleon",
-        "num": 5
+        "num": 5,
+        "types": [
+            "FIRE"
+        ]
     },
     "chikorita": {
         "baseStats": {
@@ -549,7 +707,10 @@
             "spe": 45
         },
         "name": "Chikorita",
-        "num": 152
+        "num": 152,
+        "types": [
+            "GRASS"
+        ]
     },
     "chimecho": {
         "baseStats": {
@@ -561,7 +722,10 @@
             "spe": 65
         },
         "name": "Chimecho",
-        "num": 358
+        "num": 358,
+        "types": [
+            "PSYCHIC"
+        ]
     },
     "chinchou": {
         "baseStats": {
@@ -573,7 +737,11 @@
             "spe": 67
         },
         "name": "Chinchou",
-        "num": 170
+        "num": 170,
+        "types": [
+            "WATER",
+            "ELECTRIC"
+        ]
     },
     "clamperl": {
         "baseStats": {
@@ -585,7 +753,10 @@
             "spe": 32
         },
         "name": "Clamperl",
-        "num": 366
+        "num": 366,
+        "types": [
+            "WATER"
+        ]
     },
     "claydol": {
         "baseStats": {
@@ -597,7 +768,11 @@
             "spe": 75
         },
         "name": "Claydol",
-        "num": 344
+        "num": 344,
+        "types": [
+            "GROUND",
+            "PSYCHIC"
+        ]
     },
     "clefable": {
         "baseStats": {
@@ -609,7 +784,10 @@
             "spe": 60
         },
         "name": "Clefable",
-        "num": 36
+        "num": 36,
+        "types": [
+            "NORMAL"
+        ]
     },
     "clefairy": {
         "baseStats": {
@@ -621,7 +799,10 @@
             "spe": 35
         },
         "name": "Clefairy",
-        "num": 35
+        "num": 35,
+        "types": [
+            "NORMAL"
+        ]
     },
     "cleffa": {
         "baseStats": {
@@ -633,7 +814,10 @@
             "spe": 15
         },
         "name": "Cleffa",
-        "num": 173
+        "num": 173,
+        "types": [
+            "NORMAL"
+        ]
     },
     "cloyster": {
         "baseStats": {
@@ -645,7 +829,11 @@
             "spe": 70
         },
         "name": "Cloyster",
-        "num": 91
+        "num": 91,
+        "types": [
+            "WATER",
+            "ICE"
+        ]
     },
     "combusken": {
         "baseStats": {
@@ -657,7 +845,11 @@
             "spe": 55
         },
         "name": "Combusken",
-        "num": 256
+        "num": 256,
+        "types": [
+            "FIRE",
+            "FIGHTING"
+        ]
     },
     "corphish": {
         "baseStats": {
@@ -669,7 +861,10 @@
             "spe": 35
         },
         "name": "Corphish",
-        "num": 341
+        "num": 341,
+        "types": [
+            "WATER"
+        ]
     },
     "corsola": {
         "baseStats": {
@@ -681,7 +876,11 @@
             "spe": 35
         },
         "name": "Corsola",
-        "num": 222
+        "num": 222,
+        "types": [
+            "WATER",
+            "ROCK"
+        ]
     },
     "cradily": {
         "baseStats": {
@@ -693,7 +892,11 @@
             "spe": 43
         },
         "name": "Cradily",
-        "num": 346
+        "num": 346,
+        "types": [
+            "ROCK",
+            "GRASS"
+        ]
     },
     "crawdaunt": {
         "baseStats": {
@@ -705,7 +908,11 @@
             "spe": 55
         },
         "name": "Crawdaunt",
-        "num": 342
+        "num": 342,
+        "types": [
+            "WATER",
+            "DARK"
+        ]
     },
     "crobat": {
         "baseStats": {
@@ -717,7 +924,11 @@
             "spe": 130
         },
         "name": "Crobat",
-        "num": 169
+        "num": 169,
+        "types": [
+            "POISON",
+            "FLYING"
+        ]
     },
     "croconaw": {
         "baseStats": {
@@ -729,7 +940,10 @@
             "spe": 58
         },
         "name": "Croconaw",
-        "num": 159
+        "num": 159,
+        "types": [
+            "WATER"
+        ]
     },
     "cubone": {
         "baseStats": {
@@ -741,7 +955,10 @@
             "spe": 35
         },
         "name": "Cubone",
-        "num": 104
+        "num": 104,
+        "types": [
+            "GROUND"
+        ]
     },
     "cyndaquil": {
         "baseStats": {
@@ -753,7 +970,10 @@
             "spe": 65
         },
         "name": "Cyndaquil",
-        "num": 155
+        "num": 155,
+        "types": [
+            "FIRE"
+        ]
     },
     "delcatty": {
         "baseStats": {
@@ -765,7 +985,10 @@
             "spe": 70
         },
         "name": "Delcatty",
-        "num": 301
+        "num": 301,
+        "types": [
+            "NORMAL"
+        ]
     },
     "delibird": {
         "baseStats": {
@@ -777,7 +1000,11 @@
             "spe": 75
         },
         "name": "Delibird",
-        "num": 225
+        "num": 225,
+        "types": [
+            "ICE",
+            "FLYING"
+        ]
     },
     "deoxys": {
         "baseStats": {
@@ -789,7 +1016,10 @@
             "spe": 150
         },
         "name": "Deoxys",
-        "num": 386
+        "num": 386,
+        "types": [
+            "PSYCHIC"
+        ]
     },
     "dewgong": {
         "baseStats": {
@@ -801,7 +1031,11 @@
             "spe": 70
         },
         "name": "Dewgong",
-        "num": 87
+        "num": 87,
+        "types": [
+            "WATER",
+            "ICE"
+        ]
     },
     "diglett": {
         "baseStats": {
@@ -813,7 +1047,10 @@
             "spe": 95
         },
         "name": "Diglett",
-        "num": 50
+        "num": 50,
+        "types": [
+            "GROUND"
+        ]
     },
     "ditto": {
         "baseStats": {
@@ -825,7 +1062,10 @@
             "spe": 48
         },
         "name": "Ditto",
-        "num": 132
+        "num": 132,
+        "types": [
+            "NORMAL"
+        ]
     },
     "dodrio": {
         "baseStats": {
@@ -837,7 +1077,11 @@
             "spe": 100
         },
         "name": "Dodrio",
-        "num": 85
+        "num": 85,
+        "types": [
+            "NORMAL",
+            "FLYING"
+        ]
     },
     "doduo": {
         "baseStats": {
@@ -849,7 +1093,11 @@
             "spe": 75
         },
         "name": "Doduo",
-        "num": 84
+        "num": 84,
+        "types": [
+            "NORMAL",
+            "FLYING"
+        ]
     },
     "donphan": {
         "baseStats": {
@@ -861,7 +1109,10 @@
             "spe": 50
         },
         "name": "Donphan",
-        "num": 232
+        "num": 232,
+        "types": [
+            "GROUND"
+        ]
     },
     "dragonair": {
         "baseStats": {
@@ -873,7 +1124,10 @@
             "spe": 70
         },
         "name": "Dragonair",
-        "num": 148
+        "num": 148,
+        "types": [
+            "DRAGON"
+        ]
     },
     "dragonite": {
         "baseStats": {
@@ -885,7 +1139,11 @@
             "spe": 80
         },
         "name": "Dragonite",
-        "num": 149
+        "num": 149,
+        "types": [
+            "DRAGON",
+            "FLYING"
+        ]
     },
     "dratini": {
         "baseStats": {
@@ -897,7 +1155,10 @@
             "spe": 50
         },
         "name": "Dratini",
-        "num": 147
+        "num": 147,
+        "types": [
+            "DRAGON"
+        ]
     },
     "drowzee": {
         "baseStats": {
@@ -909,7 +1170,10 @@
             "spe": 42
         },
         "name": "Drowzee",
-        "num": 96
+        "num": 96,
+        "types": [
+            "PSYCHIC"
+        ]
     },
     "dugtrio": {
         "baseStats": {
@@ -921,7 +1185,10 @@
             "spe": 120
         },
         "name": "Dugtrio",
-        "num": 51
+        "num": 51,
+        "types": [
+            "GROUND"
+        ]
     },
     "dunsparce": {
         "baseStats": {
@@ -933,7 +1200,10 @@
             "spe": 45
         },
         "name": "Dunsparce",
-        "num": 206
+        "num": 206,
+        "types": [
+            "NORMAL"
+        ]
     },
     "dusclops": {
         "baseStats": {
@@ -945,7 +1215,10 @@
             "spe": 25
         },
         "name": "Dusclops",
-        "num": 356
+        "num": 356,
+        "types": [
+            "GHOST"
+        ]
     },
     "duskull": {
         "baseStats": {
@@ -957,7 +1230,10 @@
             "spe": 25
         },
         "name": "Duskull",
-        "num": 355
+        "num": 355,
+        "types": [
+            "GHOST"
+        ]
     },
     "dustox": {
         "baseStats": {
@@ -969,7 +1245,11 @@
             "spe": 65
         },
         "name": "Dustox",
-        "num": 269
+        "num": 269,
+        "types": [
+            "BUG",
+            "POISON"
+        ]
     },
     "eevee": {
         "baseStats": {
@@ -981,7 +1261,10 @@
             "spe": 55
         },
         "name": "Eevee",
-        "num": 133
+        "num": 133,
+        "types": [
+            "NORMAL"
+        ]
     },
     "ekans": {
         "baseStats": {
@@ -993,7 +1276,10 @@
             "spe": 55
         },
         "name": "Ekans",
-        "num": 23
+        "num": 23,
+        "types": [
+            "POISON"
+        ]
     },
     "electabuzz": {
         "baseStats": {
@@ -1005,7 +1291,10 @@
             "spe": 105
         },
         "name": "Electabuzz",
-        "num": 125
+        "num": 125,
+        "types": [
+            "ELECTRIC"
+        ]
     },
     "electrike": {
         "baseStats": {
@@ -1017,7 +1306,10 @@
             "spe": 65
         },
         "name": "Electrike",
-        "num": 309
+        "num": 309,
+        "types": [
+            "ELECTRIC"
+        ]
     },
     "electrode": {
         "baseStats": {
@@ -1029,7 +1321,10 @@
             "spe": 140
         },
         "name": "Electrode",
-        "num": 101
+        "num": 101,
+        "types": [
+            "ELECTRIC"
+        ]
     },
     "elekid": {
         "baseStats": {
@@ -1041,7 +1336,10 @@
             "spe": 95
         },
         "name": "Elekid",
-        "num": 239
+        "num": 239,
+        "types": [
+            "ELECTRIC"
+        ]
     },
     "entei": {
         "baseStats": {
@@ -1053,7 +1351,10 @@
             "spe": 100
         },
         "name": "Entei",
-        "num": 244
+        "num": 244,
+        "types": [
+            "FIRE"
+        ]
     },
     "espeon": {
         "baseStats": {
@@ -1065,7 +1366,10 @@
             "spe": 110
         },
         "name": "Espeon",
-        "num": 196
+        "num": 196,
+        "types": [
+            "PSYCHIC"
+        ]
     },
     "exeggcute": {
         "baseStats": {
@@ -1077,7 +1381,11 @@
             "spe": 40
         },
         "name": "Exeggcute",
-        "num": 102
+        "num": 102,
+        "types": [
+            "GRASS",
+            "PSYCHIC"
+        ]
     },
     "exeggutor": {
         "baseStats": {
@@ -1089,7 +1397,11 @@
             "spe": 55
         },
         "name": "Exeggutor",
-        "num": 103
+        "num": 103,
+        "types": [
+            "GRASS",
+            "PSYCHIC"
+        ]
     },
     "exploud": {
         "baseStats": {
@@ -1101,7 +1413,10 @@
             "spe": 68
         },
         "name": "Exploud",
-        "num": 295
+        "num": 295,
+        "types": [
+            "NORMAL"
+        ]
     },
     "farfetchd": {
         "baseStats": {
@@ -1113,7 +1428,11 @@
             "spe": 60
         },
         "name": "Farfetch\u2019d",
-        "num": 83
+        "num": 83,
+        "types": [
+            "NORMAL",
+            "FLYING"
+        ]
     },
     "fearow": {
         "baseStats": {
@@ -1125,7 +1444,11 @@
             "spe": 100
         },
         "name": "Fearow",
-        "num": 22
+        "num": 22,
+        "types": [
+            "NORMAL",
+            "FLYING"
+        ]
     },
     "feebas": {
         "baseStats": {
@@ -1137,7 +1460,10 @@
             "spe": 80
         },
         "name": "Feebas",
-        "num": 349
+        "num": 349,
+        "types": [
+            "WATER"
+        ]
     },
     "feraligatr": {
         "baseStats": {
@@ -1149,7 +1475,10 @@
             "spe": 78
         },
         "name": "Feraligatr",
-        "num": 160
+        "num": 160,
+        "types": [
+            "WATER"
+        ]
     },
     "flaaffy": {
         "baseStats": {
@@ -1161,7 +1490,10 @@
             "spe": 45
         },
         "name": "Flaaffy",
-        "num": 180
+        "num": 180,
+        "types": [
+            "ELECTRIC"
+        ]
     },
     "flareon": {
         "baseStats": {
@@ -1173,7 +1505,10 @@
             "spe": 65
         },
         "name": "Flareon",
-        "num": 136
+        "num": 136,
+        "types": [
+            "FIRE"
+        ]
     },
     "flygon": {
         "baseStats": {
@@ -1185,7 +1520,11 @@
             "spe": 100
         },
         "name": "Flygon",
-        "num": 330
+        "num": 330,
+        "types": [
+            "GROUND",
+            "DRAGON"
+        ]
     },
     "forretress": {
         "baseStats": {
@@ -1197,7 +1536,11 @@
             "spe": 40
         },
         "name": "Forretress",
-        "num": 205
+        "num": 205,
+        "types": [
+            "BUG",
+            "STEEL"
+        ]
     },
     "furret": {
         "baseStats": {
@@ -1209,7 +1552,10 @@
             "spe": 90
         },
         "name": "Furret",
-        "num": 162
+        "num": 162,
+        "types": [
+            "NORMAL"
+        ]
     },
     "gardevoir": {
         "baseStats": {
@@ -1221,7 +1567,10 @@
             "spe": 80
         },
         "name": "Gardevoir",
-        "num": 282
+        "num": 282,
+        "types": [
+            "PSYCHIC"
+        ]
     },
     "gastly": {
         "baseStats": {
@@ -1233,7 +1582,11 @@
             "spe": 80
         },
         "name": "Gastly",
-        "num": 92
+        "num": 92,
+        "types": [
+            "GHOST",
+            "POISON"
+        ]
     },
     "gengar": {
         "baseStats": {
@@ -1245,7 +1598,11 @@
             "spe": 110
         },
         "name": "Gengar",
-        "num": 94
+        "num": 94,
+        "types": [
+            "GHOST",
+            "POISON"
+        ]
     },
     "geodude": {
         "baseStats": {
@@ -1257,7 +1614,11 @@
             "spe": 20
         },
         "name": "Geodude",
-        "num": 74
+        "num": 74,
+        "types": [
+            "ROCK",
+            "GROUND"
+        ]
     },
     "girafarig": {
         "baseStats": {
@@ -1269,7 +1630,11 @@
             "spe": 85
         },
         "name": "Girafarig",
-        "num": 203
+        "num": 203,
+        "types": [
+            "NORMAL",
+            "PSYCHIC"
+        ]
     },
     "glalie": {
         "baseStats": {
@@ -1281,7 +1646,10 @@
             "spe": 80
         },
         "name": "Glalie",
-        "num": 362
+        "num": 362,
+        "types": [
+            "ICE"
+        ]
     },
     "gligar": {
         "baseStats": {
@@ -1293,7 +1661,11 @@
             "spe": 85
         },
         "name": "Gligar",
-        "num": 207
+        "num": 207,
+        "types": [
+            "GROUND",
+            "FLYING"
+        ]
     },
     "gloom": {
         "baseStats": {
@@ -1305,7 +1677,11 @@
             "spe": 40
         },
         "name": "Gloom",
-        "num": 44
+        "num": 44,
+        "types": [
+            "GRASS",
+            "POISON"
+        ]
     },
     "golbat": {
         "baseStats": {
@@ -1317,7 +1693,11 @@
             "spe": 90
         },
         "name": "Golbat",
-        "num": 42
+        "num": 42,
+        "types": [
+            "POISON",
+            "FLYING"
+        ]
     },
     "goldeen": {
         "baseStats": {
@@ -1329,7 +1709,10 @@
             "spe": 63
         },
         "name": "Goldeen",
-        "num": 118
+        "num": 118,
+        "types": [
+            "WATER"
+        ]
     },
     "golduck": {
         "baseStats": {
@@ -1341,7 +1724,10 @@
             "spe": 85
         },
         "name": "Golduck",
-        "num": 55
+        "num": 55,
+        "types": [
+            "WATER"
+        ]
     },
     "golem": {
         "baseStats": {
@@ -1353,7 +1739,11 @@
             "spe": 45
         },
         "name": "Golem",
-        "num": 76
+        "num": 76,
+        "types": [
+            "ROCK",
+            "GROUND"
+        ]
     },
     "gorebyss": {
         "baseStats": {
@@ -1365,7 +1755,10 @@
             "spe": 52
         },
         "name": "Gorebyss",
-        "num": 368
+        "num": 368,
+        "types": [
+            "WATER"
+        ]
     },
     "granbull": {
         "baseStats": {
@@ -1377,7 +1770,10 @@
             "spe": 45
         },
         "name": "Granbull",
-        "num": 210
+        "num": 210,
+        "types": [
+            "NORMAL"
+        ]
     },
     "graveler": {
         "baseStats": {
@@ -1389,7 +1785,11 @@
             "spe": 35
         },
         "name": "Graveler",
-        "num": 75
+        "num": 75,
+        "types": [
+            "ROCK",
+            "GROUND"
+        ]
     },
     "grimer": {
         "baseStats": {
@@ -1401,7 +1801,10 @@
             "spe": 25
         },
         "name": "Grimer",
-        "num": 88
+        "num": 88,
+        "types": [
+            "POISON"
+        ]
     },
     "groudon": {
         "baseStats": {
@@ -1413,7 +1816,10 @@
             "spe": 90
         },
         "name": "Groudon",
-        "num": 383
+        "num": 383,
+        "types": [
+            "GROUND"
+        ]
     },
     "grovyle": {
         "baseStats": {
@@ -1425,7 +1831,10 @@
             "spe": 95
         },
         "name": "Grovyle",
-        "num": 253
+        "num": 253,
+        "types": [
+            "GRASS"
+        ]
     },
     "growlithe": {
         "baseStats": {
@@ -1437,7 +1846,10 @@
             "spe": 60
         },
         "name": "Growlithe",
-        "num": 58
+        "num": 58,
+        "types": [
+            "FIRE"
+        ]
     },
     "grumpig": {
         "baseStats": {
@@ -1449,7 +1861,10 @@
             "spe": 80
         },
         "name": "Grumpig",
-        "num": 326
+        "num": 326,
+        "types": [
+            "PSYCHIC"
+        ]
     },
     "gulpin": {
         "baseStats": {
@@ -1461,7 +1876,10 @@
             "spe": 40
         },
         "name": "Gulpin",
-        "num": 316
+        "num": 316,
+        "types": [
+            "POISON"
+        ]
     },
     "gyarados": {
         "baseStats": {
@@ -1473,7 +1891,11 @@
             "spe": 81
         },
         "name": "Gyarados",
-        "num": 130
+        "num": 130,
+        "types": [
+            "WATER",
+            "FLYING"
+        ]
     },
     "hariyama": {
         "baseStats": {
@@ -1485,7 +1907,10 @@
             "spe": 50
         },
         "name": "Hariyama",
-        "num": 297
+        "num": 297,
+        "types": [
+            "FIGHTING"
+        ]
     },
     "haunter": {
         "baseStats": {
@@ -1497,7 +1922,11 @@
             "spe": 95
         },
         "name": "Haunter",
-        "num": 93
+        "num": 93,
+        "types": [
+            "GHOST",
+            "POISON"
+        ]
     },
     "heracross": {
         "baseStats": {
@@ -1509,7 +1938,11 @@
             "spe": 85
         },
         "name": "Heracross",
-        "num": 214
+        "num": 214,
+        "types": [
+            "BUG",
+            "FIGHTING"
+        ]
     },
     "hitmonchan": {
         "baseStats": {
@@ -1521,7 +1954,10 @@
             "spe": 76
         },
         "name": "Hitmonchan",
-        "num": 107
+        "num": 107,
+        "types": [
+            "FIGHTING"
+        ]
     },
     "hitmonlee": {
         "baseStats": {
@@ -1533,7 +1969,10 @@
             "spe": 87
         },
         "name": "Hitmonlee",
-        "num": 106
+        "num": 106,
+        "types": [
+            "FIGHTING"
+        ]
     },
     "hitmontop": {
         "baseStats": {
@@ -1545,7 +1984,10 @@
             "spe": 70
         },
         "name": "Hitmontop",
-        "num": 237
+        "num": 237,
+        "types": [
+            "FIGHTING"
+        ]
     },
     "hooh": {
         "baseStats": {
@@ -1557,7 +1999,11 @@
             "spe": 90
         },
         "name": "Ho-Oh",
-        "num": 250
+        "num": 250,
+        "types": [
+            "FIRE",
+            "FLYING"
+        ]
     },
     "hoothoot": {
         "baseStats": {
@@ -1569,7 +2015,11 @@
             "spe": 50
         },
         "name": "Hoothoot",
-        "num": 163
+        "num": 163,
+        "types": [
+            "NORMAL",
+            "FLYING"
+        ]
     },
     "hoppip": {
         "baseStats": {
@@ -1581,7 +2031,11 @@
             "spe": 50
         },
         "name": "Hoppip",
-        "num": 187
+        "num": 187,
+        "types": [
+            "GRASS",
+            "FLYING"
+        ]
     },
     "horsea": {
         "baseStats": {
@@ -1593,7 +2047,10 @@
             "spe": 60
         },
         "name": "Horsea",
-        "num": 116
+        "num": 116,
+        "types": [
+            "WATER"
+        ]
     },
     "houndoom": {
         "baseStats": {
@@ -1605,7 +2062,11 @@
             "spe": 95
         },
         "name": "Houndoom",
-        "num": 229
+        "num": 229,
+        "types": [
+            "DARK",
+            "FIRE"
+        ]
     },
     "houndour": {
         "baseStats": {
@@ -1617,7 +2078,11 @@
             "spe": 65
         },
         "name": "Houndour",
-        "num": 228
+        "num": 228,
+        "types": [
+            "DARK",
+            "FIRE"
+        ]
     },
     "huntail": {
         "baseStats": {
@@ -1629,7 +2094,10 @@
             "spe": 52
         },
         "name": "Huntail",
-        "num": 367
+        "num": 367,
+        "types": [
+            "WATER"
+        ]
     },
     "hypno": {
         "baseStats": {
@@ -1641,7 +2109,10 @@
             "spe": 67
         },
         "name": "Hypno",
-        "num": 97
+        "num": 97,
+        "types": [
+            "PSYCHIC"
+        ]
     },
     "igglybuff": {
         "baseStats": {
@@ -1653,7 +2124,10 @@
             "spe": 15
         },
         "name": "Igglybuff",
-        "num": 174
+        "num": 174,
+        "types": [
+            "NORMAL"
+        ]
     },
     "illumise": {
         "baseStats": {
@@ -1665,7 +2139,10 @@
             "spe": 85
         },
         "name": "Illumise",
-        "num": 314
+        "num": 314,
+        "types": [
+            "BUG"
+        ]
     },
     "ivysaur": {
         "baseStats": {
@@ -1677,7 +2154,11 @@
             "spe": 60
         },
         "name": "Ivysaur",
-        "num": 2
+        "num": 2,
+        "types": [
+            "GRASS",
+            "POISON"
+        ]
     },
     "jigglypuff": {
         "baseStats": {
@@ -1689,7 +2170,10 @@
             "spe": 20
         },
         "name": "Jigglypuff",
-        "num": 39
+        "num": 39,
+        "types": [
+            "NORMAL"
+        ]
     },
     "jirachi": {
         "baseStats": {
@@ -1701,7 +2185,11 @@
             "spe": 100
         },
         "name": "Jirachi",
-        "num": 385
+        "num": 385,
+        "types": [
+            "STEEL",
+            "PSYCHIC"
+        ]
     },
     "jolteon": {
         "baseStats": {
@@ -1713,7 +2201,10 @@
             "spe": 130
         },
         "name": "Jolteon",
-        "num": 135
+        "num": 135,
+        "types": [
+            "ELECTRIC"
+        ]
     },
     "jumpluff": {
         "baseStats": {
@@ -1725,7 +2216,11 @@
             "spe": 110
         },
         "name": "Jumpluff",
-        "num": 189
+        "num": 189,
+        "types": [
+            "GRASS",
+            "FLYING"
+        ]
     },
     "jynx": {
         "baseStats": {
@@ -1737,7 +2232,11 @@
             "spe": 95
         },
         "name": "Jynx",
-        "num": 124
+        "num": 124,
+        "types": [
+            "ICE",
+            "PSYCHIC"
+        ]
     },
     "kabuto": {
         "baseStats": {
@@ -1749,7 +2248,11 @@
             "spe": 55
         },
         "name": "Kabuto",
-        "num": 140
+        "num": 140,
+        "types": [
+            "ROCK",
+            "WATER"
+        ]
     },
     "kabutops": {
         "baseStats": {
@@ -1761,7 +2264,11 @@
             "spe": 80
         },
         "name": "Kabutops",
-        "num": 141
+        "num": 141,
+        "types": [
+            "ROCK",
+            "WATER"
+        ]
     },
     "kadabra": {
         "baseStats": {
@@ -1773,7 +2280,10 @@
             "spe": 105
         },
         "name": "Kadabra",
-        "num": 64
+        "num": 64,
+        "types": [
+            "PSYCHIC"
+        ]
     },
     "kakuna": {
         "baseStats": {
@@ -1785,7 +2295,11 @@
             "spe": 35
         },
         "name": "Kakuna",
-        "num": 14
+        "num": 14,
+        "types": [
+            "BUG",
+            "POISON"
+        ]
     },
     "kangaskhan": {
         "baseStats": {
@@ -1797,7 +2311,10 @@
             "spe": 90
         },
         "name": "Kangaskhan",
-        "num": 115
+        "num": 115,
+        "types": [
+            "NORMAL"
+        ]
     },
     "kecleon": {
         "baseStats": {
@@ -1809,7 +2326,10 @@
             "spe": 40
         },
         "name": "Kecleon",
-        "num": 352
+        "num": 352,
+        "types": [
+            "NORMAL"
+        ]
     },
     "kingdra": {
         "baseStats": {
@@ -1821,7 +2341,11 @@
             "spe": 85
         },
         "name": "Kingdra",
-        "num": 230
+        "num": 230,
+        "types": [
+            "WATER",
+            "DRAGON"
+        ]
     },
     "kingler": {
         "baseStats": {
@@ -1833,7 +2357,10 @@
             "spe": 75
         },
         "name": "Kingler",
-        "num": 99
+        "num": 99,
+        "types": [
+            "WATER"
+        ]
     },
     "kirlia": {
         "baseStats": {
@@ -1845,7 +2372,10 @@
             "spe": 50
         },
         "name": "Kirlia",
-        "num": 281
+        "num": 281,
+        "types": [
+            "PSYCHIC"
+        ]
     },
     "koffing": {
         "baseStats": {
@@ -1857,7 +2387,10 @@
             "spe": 35
         },
         "name": "Koffing",
-        "num": 109
+        "num": 109,
+        "types": [
+            "POISON"
+        ]
     },
     "krabby": {
         "baseStats": {
@@ -1869,7 +2402,10 @@
             "spe": 50
         },
         "name": "Krabby",
-        "num": 98
+        "num": 98,
+        "types": [
+            "WATER"
+        ]
     },
     "kyogre": {
         "baseStats": {
@@ -1881,7 +2417,10 @@
             "spe": 90
         },
         "name": "Kyogre",
-        "num": 382
+        "num": 382,
+        "types": [
+            "WATER"
+        ]
     },
     "lairon": {
         "baseStats": {
@@ -1893,7 +2432,11 @@
             "spe": 40
         },
         "name": "Lairon",
-        "num": 305
+        "num": 305,
+        "types": [
+            "STEEL",
+            "ROCK"
+        ]
     },
     "lanturn": {
         "baseStats": {
@@ -1905,7 +2448,11 @@
             "spe": 67
         },
         "name": "Lanturn",
-        "num": 171
+        "num": 171,
+        "types": [
+            "WATER",
+            "ELECTRIC"
+        ]
     },
     "lapras": {
         "baseStats": {
@@ -1917,7 +2464,11 @@
             "spe": 60
         },
         "name": "Lapras",
-        "num": 131
+        "num": 131,
+        "types": [
+            "WATER",
+            "ICE"
+        ]
     },
     "larvitar": {
         "baseStats": {
@@ -1929,7 +2480,11 @@
             "spe": 41
         },
         "name": "Larvitar",
-        "num": 246
+        "num": 246,
+        "types": [
+            "ROCK",
+            "GROUND"
+        ]
     },
     "latias": {
         "baseStats": {
@@ -1941,7 +2496,11 @@
             "spe": 110
         },
         "name": "Latias",
-        "num": 380
+        "num": 380,
+        "types": [
+            "DRAGON",
+            "PSYCHIC"
+        ]
     },
     "latios": {
         "baseStats": {
@@ -1953,7 +2512,11 @@
             "spe": 110
         },
         "name": "Latios",
-        "num": 381
+        "num": 381,
+        "types": [
+            "DRAGON",
+            "PSYCHIC"
+        ]
     },
     "ledian": {
         "baseStats": {
@@ -1965,7 +2528,11 @@
             "spe": 85
         },
         "name": "Ledian",
-        "num": 166
+        "num": 166,
+        "types": [
+            "BUG",
+            "FLYING"
+        ]
     },
     "ledyba": {
         "baseStats": {
@@ -1977,7 +2544,11 @@
             "spe": 55
         },
         "name": "Ledyba",
-        "num": 165
+        "num": 165,
+        "types": [
+            "BUG",
+            "FLYING"
+        ]
     },
     "lickitung": {
         "baseStats": {
@@ -1989,7 +2560,10 @@
             "spe": 30
         },
         "name": "Lickitung",
-        "num": 108
+        "num": 108,
+        "types": [
+            "NORMAL"
+        ]
     },
     "lileep": {
         "baseStats": {
@@ -2001,7 +2575,11 @@
             "spe": 23
         },
         "name": "Lileep",
-        "num": 345
+        "num": 345,
+        "types": [
+            "ROCK",
+            "GRASS"
+        ]
     },
     "linoone": {
         "baseStats": {
@@ -2013,7 +2591,10 @@
             "spe": 100
         },
         "name": "Linoone",
-        "num": 264
+        "num": 264,
+        "types": [
+            "NORMAL"
+        ]
     },
     "lombre": {
         "baseStats": {
@@ -2025,7 +2606,11 @@
             "spe": 50
         },
         "name": "Lombre",
-        "num": 271
+        "num": 271,
+        "types": [
+            "WATER",
+            "GRASS"
+        ]
     },
     "lotad": {
         "baseStats": {
@@ -2037,7 +2622,11 @@
             "spe": 30
         },
         "name": "Lotad",
-        "num": 270
+        "num": 270,
+        "types": [
+            "WATER",
+            "GRASS"
+        ]
     },
     "loudred": {
         "baseStats": {
@@ -2049,7 +2638,10 @@
             "spe": 48
         },
         "name": "Loudred",
-        "num": 294
+        "num": 294,
+        "types": [
+            "NORMAL"
+        ]
     },
     "ludicolo": {
         "baseStats": {
@@ -2061,7 +2653,11 @@
             "spe": 70
         },
         "name": "Ludicolo",
-        "num": 272
+        "num": 272,
+        "types": [
+            "WATER",
+            "GRASS"
+        ]
     },
     "lugia": {
         "baseStats": {
@@ -2073,7 +2669,11 @@
             "spe": 110
         },
         "name": "Lugia",
-        "num": 249
+        "num": 249,
+        "types": [
+            "PSYCHIC",
+            "FLYING"
+        ]
     },
     "lunatone": {
         "baseStats": {
@@ -2085,7 +2685,11 @@
             "spe": 70
         },
         "name": "Lunatone",
-        "num": 337
+        "num": 337,
+        "types": [
+            "ROCK",
+            "PSYCHIC"
+        ]
     },
     "luvdisc": {
         "baseStats": {
@@ -2097,7 +2701,10 @@
             "spe": 97
         },
         "name": "Luvdisc",
-        "num": 370
+        "num": 370,
+        "types": [
+            "WATER"
+        ]
     },
     "machamp": {
         "baseStats": {
@@ -2109,7 +2716,10 @@
             "spe": 55
         },
         "name": "Machamp",
-        "num": 68
+        "num": 68,
+        "types": [
+            "FIGHTING"
+        ]
     },
     "machoke": {
         "baseStats": {
@@ -2121,7 +2731,10 @@
             "spe": 45
         },
         "name": "Machoke",
-        "num": 67
+        "num": 67,
+        "types": [
+            "FIGHTING"
+        ]
     },
     "machop": {
         "baseStats": {
@@ -2133,7 +2746,10 @@
             "spe": 35
         },
         "name": "Machop",
-        "num": 66
+        "num": 66,
+        "types": [
+            "FIGHTING"
+        ]
     },
     "magby": {
         "baseStats": {
@@ -2145,7 +2761,10 @@
             "spe": 83
         },
         "name": "Magby",
-        "num": 240
+        "num": 240,
+        "types": [
+            "FIRE"
+        ]
     },
     "magcargo": {
         "baseStats": {
@@ -2157,7 +2776,11 @@
             "spe": 30
         },
         "name": "Magcargo",
-        "num": 219
+        "num": 219,
+        "types": [
+            "FIRE",
+            "ROCK"
+        ]
     },
     "magikarp": {
         "baseStats": {
@@ -2169,7 +2792,10 @@
             "spe": 80
         },
         "name": "Magikarp",
-        "num": 129
+        "num": 129,
+        "types": [
+            "WATER"
+        ]
     },
     "magmar": {
         "baseStats": {
@@ -2181,7 +2807,10 @@
             "spe": 93
         },
         "name": "Magmar",
-        "num": 126
+        "num": 126,
+        "types": [
+            "FIRE"
+        ]
     },
     "magnemite": {
         "baseStats": {
@@ -2193,7 +2822,11 @@
             "spe": 45
         },
         "name": "Magnemite",
-        "num": 81
+        "num": 81,
+        "types": [
+            "ELECTRIC",
+            "STEEL"
+        ]
     },
     "magneton": {
         "baseStats": {
@@ -2205,7 +2838,11 @@
             "spe": 70
         },
         "name": "Magneton",
-        "num": 82
+        "num": 82,
+        "types": [
+            "ELECTRIC",
+            "STEEL"
+        ]
     },
     "makuhita": {
         "baseStats": {
@@ -2217,7 +2854,10 @@
             "spe": 25
         },
         "name": "Makuhita",
-        "num": 296
+        "num": 296,
+        "types": [
+            "FIGHTING"
+        ]
     },
     "manectric": {
         "baseStats": {
@@ -2229,7 +2869,10 @@
             "spe": 105
         },
         "name": "Manectric",
-        "num": 310
+        "num": 310,
+        "types": [
+            "ELECTRIC"
+        ]
     },
     "mankey": {
         "baseStats": {
@@ -2241,7 +2884,10 @@
             "spe": 70
         },
         "name": "Mankey",
-        "num": 56
+        "num": 56,
+        "types": [
+            "FIGHTING"
+        ]
     },
     "mantine": {
         "baseStats": {
@@ -2253,7 +2899,11 @@
             "spe": 70
         },
         "name": "Mantine",
-        "num": 226
+        "num": 226,
+        "types": [
+            "WATER",
+            "FLYING"
+        ]
     },
     "mareep": {
         "baseStats": {
@@ -2265,7 +2915,10 @@
             "spe": 35
         },
         "name": "Mareep",
-        "num": 179
+        "num": 179,
+        "types": [
+            "ELECTRIC"
+        ]
     },
     "marill": {
         "baseStats": {
@@ -2277,7 +2930,10 @@
             "spe": 40
         },
         "name": "Marill",
-        "num": 183
+        "num": 183,
+        "types": [
+            "WATER"
+        ]
     },
     "marowak": {
         "baseStats": {
@@ -2289,7 +2945,10 @@
             "spe": 45
         },
         "name": "Marowak",
-        "num": 105
+        "num": 105,
+        "types": [
+            "GROUND"
+        ]
     },
     "marshtomp": {
         "baseStats": {
@@ -2301,7 +2960,11 @@
             "spe": 50
         },
         "name": "Marshtomp",
-        "num": 259
+        "num": 259,
+        "types": [
+            "WATER",
+            "GROUND"
+        ]
     },
     "masquerain": {
         "baseStats": {
@@ -2313,7 +2976,11 @@
             "spe": 60
         },
         "name": "Masquerain",
-        "num": 284
+        "num": 284,
+        "types": [
+            "BUG",
+            "FLYING"
+        ]
     },
     "mawile": {
         "baseStats": {
@@ -2325,7 +2992,10 @@
             "spe": 50
         },
         "name": "Mawile",
-        "num": 303
+        "num": 303,
+        "types": [
+            "STEEL"
+        ]
     },
     "medicham": {
         "baseStats": {
@@ -2337,7 +3007,11 @@
             "spe": 80
         },
         "name": "Medicham",
-        "num": 308
+        "num": 308,
+        "types": [
+            "FIGHTING",
+            "PSYCHIC"
+        ]
     },
     "meditite": {
         "baseStats": {
@@ -2349,7 +3023,11 @@
             "spe": 60
         },
         "name": "Meditite",
-        "num": 307
+        "num": 307,
+        "types": [
+            "FIGHTING",
+            "PSYCHIC"
+        ]
     },
     "meganium": {
         "baseStats": {
@@ -2361,7 +3039,10 @@
             "spe": 80
         },
         "name": "Meganium",
-        "num": 154
+        "num": 154,
+        "types": [
+            "GRASS"
+        ]
     },
     "meowth": {
         "baseStats": {
@@ -2373,7 +3054,10 @@
             "spe": 90
         },
         "name": "Meowth",
-        "num": 52
+        "num": 52,
+        "types": [
+            "NORMAL"
+        ]
     },
     "metagross": {
         "baseStats": {
@@ -2385,7 +3069,11 @@
             "spe": 70
         },
         "name": "Metagross",
-        "num": 376
+        "num": 376,
+        "types": [
+            "STEEL",
+            "PSYCHIC"
+        ]
     },
     "metang": {
         "baseStats": {
@@ -2397,7 +3085,11 @@
             "spe": 50
         },
         "name": "Metang",
-        "num": 375
+        "num": 375,
+        "types": [
+            "STEEL",
+            "PSYCHIC"
+        ]
     },
     "metapod": {
         "baseStats": {
@@ -2409,7 +3101,10 @@
             "spe": 30
         },
         "name": "Metapod",
-        "num": 11
+        "num": 11,
+        "types": [
+            "BUG"
+        ]
     },
     "mew": {
         "baseStats": {
@@ -2421,7 +3116,10 @@
             "spe": 100
         },
         "name": "Mew",
-        "num": 151
+        "num": 151,
+        "types": [
+            "PSYCHIC"
+        ]
     },
     "mewtwo": {
         "baseStats": {
@@ -2433,7 +3131,10 @@
             "spe": 130
         },
         "name": "Mewtwo",
-        "num": 150
+        "num": 150,
+        "types": [
+            "PSYCHIC"
+        ]
     },
     "mightyena": {
         "baseStats": {
@@ -2445,7 +3146,10 @@
             "spe": 70
         },
         "name": "Mightyena",
-        "num": 262
+        "num": 262,
+        "types": [
+            "DARK"
+        ]
     },
     "milotic": {
         "baseStats": {
@@ -2457,7 +3161,10 @@
             "spe": 81
         },
         "name": "Milotic",
-        "num": 350
+        "num": 350,
+        "types": [
+            "WATER"
+        ]
     },
     "miltank": {
         "baseStats": {
@@ -2469,7 +3176,10 @@
             "spe": 100
         },
         "name": "Miltank",
-        "num": 241
+        "num": 241,
+        "types": [
+            "NORMAL"
+        ]
     },
     "minun": {
         "baseStats": {
@@ -2481,7 +3191,10 @@
             "spe": 95
         },
         "name": "Minun",
-        "num": 312
+        "num": 312,
+        "types": [
+            "ELECTRIC"
+        ]
     },
     "misdreavus": {
         "baseStats": {
@@ -2493,7 +3206,10 @@
             "spe": 85
         },
         "name": "Misdreavus",
-        "num": 200
+        "num": 200,
+        "types": [
+            "GHOST"
+        ]
     },
     "moltres": {
         "baseStats": {
@@ -2505,7 +3221,11 @@
             "spe": 90
         },
         "name": "Moltres",
-        "num": 146
+        "num": 146,
+        "types": [
+            "FIRE",
+            "FLYING"
+        ]
     },
     "mrmime": {
         "baseStats": {
@@ -2517,7 +3237,10 @@
             "spe": 90
         },
         "name": "Mr. Mime",
-        "num": 122
+        "num": 122,
+        "types": [
+            "PSYCHIC"
+        ]
     },
     "mudkip": {
         "baseStats": {
@@ -2529,7 +3252,10 @@
             "spe": 40
         },
         "name": "Mudkip",
-        "num": 258
+        "num": 258,
+        "types": [
+            "WATER"
+        ]
     },
     "muk": {
         "baseStats": {
@@ -2541,7 +3267,10 @@
             "spe": 50
         },
         "name": "Muk",
-        "num": 89
+        "num": 89,
+        "types": [
+            "POISON"
+        ]
     },
     "murkrow": {
         "baseStats": {
@@ -2553,7 +3282,11 @@
             "spe": 91
         },
         "name": "Murkrow",
-        "num": 198
+        "num": 198,
+        "types": [
+            "DARK",
+            "FLYING"
+        ]
     },
     "natu": {
         "baseStats": {
@@ -2565,7 +3298,11 @@
             "spe": 70
         },
         "name": "Natu",
-        "num": 177
+        "num": 177,
+        "types": [
+            "PSYCHIC",
+            "FLYING"
+        ]
     },
     "nidoking": {
         "baseStats": {
@@ -2577,7 +3314,11 @@
             "spe": 85
         },
         "name": "Nidoking",
-        "num": 34
+        "num": 34,
+        "types": [
+            "POISON",
+            "GROUND"
+        ]
     },
     "nidoqueen": {
         "baseStats": {
@@ -2589,7 +3330,11 @@
             "spe": 76
         },
         "name": "Nidoqueen",
-        "num": 31
+        "num": 31,
+        "types": [
+            "POISON",
+            "GROUND"
+        ]
     },
     "nidoranf": {
         "baseStats": {
@@ -2601,7 +3346,10 @@
             "spe": 41
         },
         "name": "Nidoran-F",
-        "num": 29
+        "num": 29,
+        "types": [
+            "POISON"
+        ]
     },
     "nidoranm": {
         "baseStats": {
@@ -2613,7 +3361,10 @@
             "spe": 50
         },
         "name": "Nidoran-M",
-        "num": 32
+        "num": 32,
+        "types": [
+            "POISON"
+        ]
     },
     "nidorina": {
         "baseStats": {
@@ -2625,7 +3376,10 @@
             "spe": 56
         },
         "name": "Nidorina",
-        "num": 30
+        "num": 30,
+        "types": [
+            "POISON"
+        ]
     },
     "nidorino": {
         "baseStats": {
@@ -2637,7 +3391,10 @@
             "spe": 65
         },
         "name": "Nidorino",
-        "num": 33
+        "num": 33,
+        "types": [
+            "POISON"
+        ]
     },
     "nincada": {
         "baseStats": {
@@ -2649,7 +3406,11 @@
             "spe": 40
         },
         "name": "Nincada",
-        "num": 290
+        "num": 290,
+        "types": [
+            "BUG",
+            "GROUND"
+        ]
     },
     "ninetales": {
         "baseStats": {
@@ -2661,7 +3422,10 @@
             "spe": 100
         },
         "name": "Ninetales",
-        "num": 38
+        "num": 38,
+        "types": [
+            "FIRE"
+        ]
     },
     "ninjask": {
         "baseStats": {
@@ -2673,7 +3437,11 @@
             "spe": 160
         },
         "name": "Ninjask",
-        "num": 291
+        "num": 291,
+        "types": [
+            "BUG",
+            "FLYING"
+        ]
     },
     "noctowl": {
         "baseStats": {
@@ -2685,7 +3453,11 @@
             "spe": 70
         },
         "name": "Noctowl",
-        "num": 164
+        "num": 164,
+        "types": [
+            "NORMAL",
+            "FLYING"
+        ]
     },
     "nosepass": {
         "baseStats": {
@@ -2697,7 +3469,10 @@
             "spe": 30
         },
         "name": "Nosepass",
-        "num": 299
+        "num": 299,
+        "types": [
+            "ROCK"
+        ]
     },
     "numel": {
         "baseStats": {
@@ -2709,7 +3484,11 @@
             "spe": 35
         },
         "name": "Numel",
-        "num": 322
+        "num": 322,
+        "types": [
+            "FIRE",
+            "GROUND"
+        ]
     },
     "nuzleaf": {
         "baseStats": {
@@ -2721,7 +3500,11 @@
             "spe": 60
         },
         "name": "Nuzleaf",
-        "num": 274
+        "num": 274,
+        "types": [
+            "GRASS",
+            "DARK"
+        ]
     },
     "octillery": {
         "baseStats": {
@@ -2733,7 +3516,10 @@
             "spe": 45
         },
         "name": "Octillery",
-        "num": 224
+        "num": 224,
+        "types": [
+            "WATER"
+        ]
     },
     "oddish": {
         "baseStats": {
@@ -2745,7 +3531,11 @@
             "spe": 30
         },
         "name": "Oddish",
-        "num": 43
+        "num": 43,
+        "types": [
+            "GRASS",
+            "POISON"
+        ]
     },
     "omanyte": {
         "baseStats": {
@@ -2757,7 +3547,11 @@
             "spe": 35
         },
         "name": "Omanyte",
-        "num": 138
+        "num": 138,
+        "types": [
+            "ROCK",
+            "WATER"
+        ]
     },
     "omastar": {
         "baseStats": {
@@ -2769,7 +3563,11 @@
             "spe": 55
         },
         "name": "Omastar",
-        "num": 139
+        "num": 139,
+        "types": [
+            "ROCK",
+            "WATER"
+        ]
     },
     "onix": {
         "baseStats": {
@@ -2781,7 +3579,11 @@
             "spe": 70
         },
         "name": "Onix",
-        "num": 95
+        "num": 95,
+        "types": [
+            "ROCK",
+            "GROUND"
+        ]
     },
     "paras": {
         "baseStats": {
@@ -2793,7 +3595,11 @@
             "spe": 25
         },
         "name": "Paras",
-        "num": 46
+        "num": 46,
+        "types": [
+            "BUG",
+            "GRASS"
+        ]
     },
     "parasect": {
         "baseStats": {
@@ -2805,7 +3611,11 @@
             "spe": 30
         },
         "name": "Parasect",
-        "num": 47
+        "num": 47,
+        "types": [
+            "BUG",
+            "GRASS"
+        ]
     },
     "pelipper": {
         "baseStats": {
@@ -2817,7 +3627,11 @@
             "spe": 65
         },
         "name": "Pelipper",
-        "num": 279
+        "num": 279,
+        "types": [
+            "WATER",
+            "FLYING"
+        ]
     },
     "persian": {
         "baseStats": {
@@ -2829,7 +3643,10 @@
             "spe": 115
         },
         "name": "Persian",
-        "num": 53
+        "num": 53,
+        "types": [
+            "NORMAL"
+        ]
     },
     "phanpy": {
         "baseStats": {
@@ -2841,7 +3658,10 @@
             "spe": 40
         },
         "name": "Phanpy",
-        "num": 231
+        "num": 231,
+        "types": [
+            "GROUND"
+        ]
     },
     "pichu": {
         "baseStats": {
@@ -2853,7 +3673,10 @@
             "spe": 60
         },
         "name": "Pichu",
-        "num": 172
+        "num": 172,
+        "types": [
+            "ELECTRIC"
+        ]
     },
     "pidgeot": {
         "baseStats": {
@@ -2865,7 +3688,11 @@
             "spe": 91
         },
         "name": "Pidgeot",
-        "num": 18
+        "num": 18,
+        "types": [
+            "NORMAL",
+            "FLYING"
+        ]
     },
     "pidgeotto": {
         "baseStats": {
@@ -2877,7 +3704,11 @@
             "spe": 71
         },
         "name": "Pidgeotto",
-        "num": 17
+        "num": 17,
+        "types": [
+            "NORMAL",
+            "FLYING"
+        ]
     },
     "pidgey": {
         "baseStats": {
@@ -2889,7 +3720,11 @@
             "spe": 56
         },
         "name": "Pidgey",
-        "num": 16
+        "num": 16,
+        "types": [
+            "NORMAL",
+            "FLYING"
+        ]
     },
     "pikachu": {
         "baseStats": {
@@ -2901,7 +3736,10 @@
             "spe": 90
         },
         "name": "Pikachu",
-        "num": 25
+        "num": 25,
+        "types": [
+            "ELECTRIC"
+        ]
     },
     "piloswine": {
         "baseStats": {
@@ -2913,7 +3751,11 @@
             "spe": 50
         },
         "name": "Piloswine",
-        "num": 221
+        "num": 221,
+        "types": [
+            "ICE",
+            "GROUND"
+        ]
     },
     "pineco": {
         "baseStats": {
@@ -2925,7 +3767,10 @@
             "spe": 15
         },
         "name": "Pineco",
-        "num": 204
+        "num": 204,
+        "types": [
+            "BUG"
+        ]
     },
     "pinsir": {
         "baseStats": {
@@ -2937,7 +3782,10 @@
             "spe": 85
         },
         "name": "Pinsir",
-        "num": 127
+        "num": 127,
+        "types": [
+            "BUG"
+        ]
     },
     "plusle": {
         "baseStats": {
@@ -2949,7 +3797,10 @@
             "spe": 95
         },
         "name": "Plusle",
-        "num": 311
+        "num": 311,
+        "types": [
+            "ELECTRIC"
+        ]
     },
     "politoed": {
         "baseStats": {
@@ -2961,7 +3812,10 @@
             "spe": 70
         },
         "name": "Politoed",
-        "num": 186
+        "num": 186,
+        "types": [
+            "WATER"
+        ]
     },
     "poliwag": {
         "baseStats": {
@@ -2973,7 +3827,10 @@
             "spe": 90
         },
         "name": "Poliwag",
-        "num": 60
+        "num": 60,
+        "types": [
+            "WATER"
+        ]
     },
     "poliwhirl": {
         "baseStats": {
@@ -2985,7 +3842,10 @@
             "spe": 90
         },
         "name": "Poliwhirl",
-        "num": 61
+        "num": 61,
+        "types": [
+            "WATER"
+        ]
     },
     "poliwrath": {
         "baseStats": {
@@ -2997,7 +3857,11 @@
             "spe": 70
         },
         "name": "Poliwrath",
-        "num": 62
+        "num": 62,
+        "types": [
+            "WATER",
+            "FIGHTING"
+        ]
     },
     "ponyta": {
         "baseStats": {
@@ -3009,7 +3873,10 @@
             "spe": 90
         },
         "name": "Ponyta",
-        "num": 77
+        "num": 77,
+        "types": [
+            "FIRE"
+        ]
     },
     "poochyena": {
         "baseStats": {
@@ -3021,7 +3888,10 @@
             "spe": 35
         },
         "name": "Poochyena",
-        "num": 261
+        "num": 261,
+        "types": [
+            "DARK"
+        ]
     },
     "porygon": {
         "baseStats": {
@@ -3033,7 +3903,10 @@
             "spe": 40
         },
         "name": "Porygon",
-        "num": 137
+        "num": 137,
+        "types": [
+            "NORMAL"
+        ]
     },
     "porygon2": {
         "baseStats": {
@@ -3045,7 +3918,10 @@
             "spe": 60
         },
         "name": "Porygon2",
-        "num": 233
+        "num": 233,
+        "types": [
+            "NORMAL"
+        ]
     },
     "primeape": {
         "baseStats": {
@@ -3057,7 +3933,10 @@
             "spe": 95
         },
         "name": "Primeape",
-        "num": 57
+        "num": 57,
+        "types": [
+            "FIGHTING"
+        ]
     },
     "psyduck": {
         "baseStats": {
@@ -3069,7 +3948,10 @@
             "spe": 55
         },
         "name": "Psyduck",
-        "num": 54
+        "num": 54,
+        "types": [
+            "WATER"
+        ]
     },
     "pupitar": {
         "baseStats": {
@@ -3081,7 +3963,11 @@
             "spe": 51
         },
         "name": "Pupitar",
-        "num": 247
+        "num": 247,
+        "types": [
+            "ROCK",
+            "GROUND"
+        ]
     },
     "quagsire": {
         "baseStats": {
@@ -3093,7 +3979,11 @@
             "spe": 35
         },
         "name": "Quagsire",
-        "num": 195
+        "num": 195,
+        "types": [
+            "WATER",
+            "GROUND"
+        ]
     },
     "quilava": {
         "baseStats": {
@@ -3105,7 +3995,10 @@
             "spe": 80
         },
         "name": "Quilava",
-        "num": 156
+        "num": 156,
+        "types": [
+            "FIRE"
+        ]
     },
     "qwilfish": {
         "baseStats": {
@@ -3117,7 +4010,11 @@
             "spe": 85
         },
         "name": "Qwilfish",
-        "num": 211
+        "num": 211,
+        "types": [
+            "WATER",
+            "POISON"
+        ]
     },
     "raichu": {
         "baseStats": {
@@ -3129,7 +4026,10 @@
             "spe": 100
         },
         "name": "Raichu",
-        "num": 26
+        "num": 26,
+        "types": [
+            "ELECTRIC"
+        ]
     },
     "raikou": {
         "baseStats": {
@@ -3141,7 +4041,10 @@
             "spe": 115
         },
         "name": "Raikou",
-        "num": 243
+        "num": 243,
+        "types": [
+            "ELECTRIC"
+        ]
     },
     "ralts": {
         "baseStats": {
@@ -3153,7 +4056,10 @@
             "spe": 40
         },
         "name": "Ralts",
-        "num": 280
+        "num": 280,
+        "types": [
+            "PSYCHIC"
+        ]
     },
     "rapidash": {
         "baseStats": {
@@ -3165,7 +4071,10 @@
             "spe": 105
         },
         "name": "Rapidash",
-        "num": 78
+        "num": 78,
+        "types": [
+            "FIRE"
+        ]
     },
     "raticate": {
         "baseStats": {
@@ -3177,7 +4086,10 @@
             "spe": 97
         },
         "name": "Raticate",
-        "num": 20
+        "num": 20,
+        "types": [
+            "NORMAL"
+        ]
     },
     "rattata": {
         "baseStats": {
@@ -3189,7 +4101,10 @@
             "spe": 72
         },
         "name": "Rattata",
-        "num": 19
+        "num": 19,
+        "types": [
+            "NORMAL"
+        ]
     },
     "rayquaza": {
         "baseStats": {
@@ -3201,7 +4116,11 @@
             "spe": 95
         },
         "name": "Rayquaza",
-        "num": 384
+        "num": 384,
+        "types": [
+            "DRAGON",
+            "FLYING"
+        ]
     },
     "regice": {
         "baseStats": {
@@ -3213,7 +4132,10 @@
             "spe": 50
         },
         "name": "Regice",
-        "num": 378
+        "num": 378,
+        "types": [
+            "ICE"
+        ]
     },
     "regirock": {
         "baseStats": {
@@ -3225,7 +4147,10 @@
             "spe": 50
         },
         "name": "Regirock",
-        "num": 377
+        "num": 377,
+        "types": [
+            "ROCK"
+        ]
     },
     "registeel": {
         "baseStats": {
@@ -3237,7 +4162,10 @@
             "spe": 50
         },
         "name": "Registeel",
-        "num": 379
+        "num": 379,
+        "types": [
+            "STEEL"
+        ]
     },
     "relicanth": {
         "baseStats": {
@@ -3249,7 +4177,11 @@
             "spe": 55
         },
         "name": "Relicanth",
-        "num": 369
+        "num": 369,
+        "types": [
+            "WATER",
+            "ROCK"
+        ]
     },
     "remoraid": {
         "baseStats": {
@@ -3261,7 +4193,10 @@
             "spe": 65
         },
         "name": "Remoraid",
-        "num": 223
+        "num": 223,
+        "types": [
+            "WATER"
+        ]
     },
     "rhydon": {
         "baseStats": {
@@ -3273,7 +4208,11 @@
             "spe": 40
         },
         "name": "Rhydon",
-        "num": 112
+        "num": 112,
+        "types": [
+            "GROUND",
+            "ROCK"
+        ]
     },
     "rhyhorn": {
         "baseStats": {
@@ -3285,7 +4224,11 @@
             "spe": 25
         },
         "name": "Rhyhorn",
-        "num": 111
+        "num": 111,
+        "types": [
+            "GROUND",
+            "ROCK"
+        ]
     },
     "roselia": {
         "baseStats": {
@@ -3297,7 +4240,11 @@
             "spe": 65
         },
         "name": "Roselia",
-        "num": 315
+        "num": 315,
+        "types": [
+            "GRASS",
+            "POISON"
+        ]
     },
     "sableye": {
         "baseStats": {
@@ -3309,7 +4256,11 @@
             "spe": 50
         },
         "name": "Sableye",
-        "num": 302
+        "num": 302,
+        "types": [
+            "DARK",
+            "GHOST"
+        ]
     },
     "salamence": {
         "baseStats": {
@@ -3321,7 +4272,11 @@
             "spe": 100
         },
         "name": "Salamence",
-        "num": 373
+        "num": 373,
+        "types": [
+            "DRAGON",
+            "FLYING"
+        ]
     },
     "sandshrew": {
         "baseStats": {
@@ -3333,7 +4288,10 @@
             "spe": 40
         },
         "name": "Sandshrew",
-        "num": 27
+        "num": 27,
+        "types": [
+            "GROUND"
+        ]
     },
     "sandslash": {
         "baseStats": {
@@ -3345,7 +4303,10 @@
             "spe": 65
         },
         "name": "Sandslash",
-        "num": 28
+        "num": 28,
+        "types": [
+            "GROUND"
+        ]
     },
     "sceptile": {
         "baseStats": {
@@ -3357,7 +4318,10 @@
             "spe": 120
         },
         "name": "Sceptile",
-        "num": 254
+        "num": 254,
+        "types": [
+            "GRASS"
+        ]
     },
     "scizor": {
         "baseStats": {
@@ -3369,7 +4333,11 @@
             "spe": 65
         },
         "name": "Scizor",
-        "num": 212
+        "num": 212,
+        "types": [
+            "BUG",
+            "STEEL"
+        ]
     },
     "scyther": {
         "baseStats": {
@@ -3381,7 +4349,11 @@
             "spe": 105
         },
         "name": "Scyther",
-        "num": 123
+        "num": 123,
+        "types": [
+            "BUG",
+            "FLYING"
+        ]
     },
     "seadra": {
         "baseStats": {
@@ -3393,7 +4365,10 @@
             "spe": 85
         },
         "name": "Seadra",
-        "num": 117
+        "num": 117,
+        "types": [
+            "WATER"
+        ]
     },
     "seaking": {
         "baseStats": {
@@ -3405,7 +4380,10 @@
             "spe": 68
         },
         "name": "Seaking",
-        "num": 119
+        "num": 119,
+        "types": [
+            "WATER"
+        ]
     },
     "sealeo": {
         "baseStats": {
@@ -3417,7 +4395,11 @@
             "spe": 45
         },
         "name": "Sealeo",
-        "num": 364
+        "num": 364,
+        "types": [
+            "ICE",
+            "WATER"
+        ]
     },
     "seedot": {
         "baseStats": {
@@ -3429,7 +4411,10 @@
             "spe": 30
         },
         "name": "Seedot",
-        "num": 273
+        "num": 273,
+        "types": [
+            "GRASS"
+        ]
     },
     "seel": {
         "baseStats": {
@@ -3441,7 +4426,10 @@
             "spe": 45
         },
         "name": "Seel",
-        "num": 86
+        "num": 86,
+        "types": [
+            "WATER"
+        ]
     },
     "sentret": {
         "baseStats": {
@@ -3453,7 +4441,10 @@
             "spe": 20
         },
         "name": "Sentret",
-        "num": 161
+        "num": 161,
+        "types": [
+            "NORMAL"
+        ]
     },
     "seviper": {
         "baseStats": {
@@ -3465,7 +4456,10 @@
             "spe": 65
         },
         "name": "Seviper",
-        "num": 336
+        "num": 336,
+        "types": [
+            "POISON"
+        ]
     },
     "sharpedo": {
         "baseStats": {
@@ -3477,7 +4471,11 @@
             "spe": 95
         },
         "name": "Sharpedo",
-        "num": 319
+        "num": 319,
+        "types": [
+            "WATER",
+            "DARK"
+        ]
     },
     "shedinja": {
         "baseStats": {
@@ -3489,7 +4487,11 @@
             "spe": 40
         },
         "name": "Shedinja",
-        "num": 292
+        "num": 292,
+        "types": [
+            "BUG",
+            "GHOST"
+        ]
     },
     "shelgon": {
         "baseStats": {
@@ -3501,7 +4503,10 @@
             "spe": 50
         },
         "name": "Shelgon",
-        "num": 372
+        "num": 372,
+        "types": [
+            "DRAGON"
+        ]
     },
     "shellder": {
         "baseStats": {
@@ -3513,7 +4518,10 @@
             "spe": 40
         },
         "name": "Shellder",
-        "num": 90
+        "num": 90,
+        "types": [
+            "WATER"
+        ]
     },
     "shiftry": {
         "baseStats": {
@@ -3525,7 +4533,11 @@
             "spe": 80
         },
         "name": "Shiftry",
-        "num": 275
+        "num": 275,
+        "types": [
+            "GRASS",
+            "DARK"
+        ]
     },
     "shroomish": {
         "baseStats": {
@@ -3537,7 +4549,10 @@
             "spe": 35
         },
         "name": "Shroomish",
-        "num": 285
+        "num": 285,
+        "types": [
+            "GRASS"
+        ]
     },
     "shuckle": {
         "baseStats": {
@@ -3549,7 +4564,11 @@
             "spe": 5
         },
         "name": "Shuckle",
-        "num": 213
+        "num": 213,
+        "types": [
+            "BUG",
+            "ROCK"
+        ]
     },
     "shuppet": {
         "baseStats": {
@@ -3561,7 +4580,10 @@
             "spe": 45
         },
         "name": "Shuppet",
-        "num": 353
+        "num": 353,
+        "types": [
+            "GHOST"
+        ]
     },
     "silcoon": {
         "baseStats": {
@@ -3573,7 +4595,10 @@
             "spe": 15
         },
         "name": "Silcoon",
-        "num": 266
+        "num": 266,
+        "types": [
+            "BUG"
+        ]
     },
     "skarmory": {
         "baseStats": {
@@ -3585,7 +4610,11 @@
             "spe": 70
         },
         "name": "Skarmory",
-        "num": 227
+        "num": 227,
+        "types": [
+            "STEEL",
+            "FLYING"
+        ]
     },
     "skiploom": {
         "baseStats": {
@@ -3597,7 +4626,11 @@
             "spe": 80
         },
         "name": "Skiploom",
-        "num": 188
+        "num": 188,
+        "types": [
+            "GRASS",
+            "FLYING"
+        ]
     },
     "skitty": {
         "baseStats": {
@@ -3609,7 +4642,10 @@
             "spe": 50
         },
         "name": "Skitty",
-        "num": 300
+        "num": 300,
+        "types": [
+            "NORMAL"
+        ]
     },
     "slaking": {
         "baseStats": {
@@ -3621,7 +4657,10 @@
             "spe": 100
         },
         "name": "Slaking",
-        "num": 289
+        "num": 289,
+        "types": [
+            "NORMAL"
+        ]
     },
     "slakoth": {
         "baseStats": {
@@ -3633,7 +4672,10 @@
             "spe": 30
         },
         "name": "Slakoth",
-        "num": 287
+        "num": 287,
+        "types": [
+            "NORMAL"
+        ]
     },
     "slowbro": {
         "baseStats": {
@@ -3645,7 +4687,11 @@
             "spe": 30
         },
         "name": "Slowbro",
-        "num": 80
+        "num": 80,
+        "types": [
+            "WATER",
+            "PSYCHIC"
+        ]
     },
     "slowking": {
         "baseStats": {
@@ -3657,7 +4703,11 @@
             "spe": 30
         },
         "name": "Slowking",
-        "num": 199
+        "num": 199,
+        "types": [
+            "WATER",
+            "PSYCHIC"
+        ]
     },
     "slowpoke": {
         "baseStats": {
@@ -3669,7 +4719,11 @@
             "spe": 15
         },
         "name": "Slowpoke",
-        "num": 79
+        "num": 79,
+        "types": [
+            "WATER",
+            "PSYCHIC"
+        ]
     },
     "slugma": {
         "baseStats": {
@@ -3681,7 +4735,10 @@
             "spe": 20
         },
         "name": "Slugma",
-        "num": 218
+        "num": 218,
+        "types": [
+            "FIRE"
+        ]
     },
     "smeargle": {
         "baseStats": {
@@ -3693,7 +4750,10 @@
             "spe": 75
         },
         "name": "Smeargle",
-        "num": 235
+        "num": 235,
+        "types": [
+            "NORMAL"
+        ]
     },
     "smoochum": {
         "baseStats": {
@@ -3705,7 +4765,11 @@
             "spe": 65
         },
         "name": "Smoochum",
-        "num": 238
+        "num": 238,
+        "types": [
+            "ICE",
+            "PSYCHIC"
+        ]
     },
     "sneasel": {
         "baseStats": {
@@ -3717,7 +4781,11 @@
             "spe": 115
         },
         "name": "Sneasel",
-        "num": 215
+        "num": 215,
+        "types": [
+            "DARK",
+            "ICE"
+        ]
     },
     "snorlax": {
         "baseStats": {
@@ -3729,7 +4797,10 @@
             "spe": 30
         },
         "name": "Snorlax",
-        "num": 143
+        "num": 143,
+        "types": [
+            "NORMAL"
+        ]
     },
     "snorunt": {
         "baseStats": {
@@ -3741,7 +4812,10 @@
             "spe": 50
         },
         "name": "Snorunt",
-        "num": 361
+        "num": 361,
+        "types": [
+            "ICE"
+        ]
     },
     "snubbull": {
         "baseStats": {
@@ -3753,7 +4827,10 @@
             "spe": 30
         },
         "name": "Snubbull",
-        "num": 209
+        "num": 209,
+        "types": [
+            "NORMAL"
+        ]
     },
     "solrock": {
         "baseStats": {
@@ -3765,7 +4842,11 @@
             "spe": 70
         },
         "name": "Solrock",
-        "num": 338
+        "num": 338,
+        "types": [
+            "ROCK",
+            "PSYCHIC"
+        ]
     },
     "spearow": {
         "baseStats": {
@@ -3777,7 +4858,11 @@
             "spe": 70
         },
         "name": "Spearow",
-        "num": 21
+        "num": 21,
+        "types": [
+            "NORMAL",
+            "FLYING"
+        ]
     },
     "spheal": {
         "baseStats": {
@@ -3789,7 +4874,11 @@
             "spe": 25
         },
         "name": "Spheal",
-        "num": 363
+        "num": 363,
+        "types": [
+            "ICE",
+            "WATER"
+        ]
     },
     "spinarak": {
         "baseStats": {
@@ -3801,7 +4890,11 @@
             "spe": 30
         },
         "name": "Spinarak",
-        "num": 167
+        "num": 167,
+        "types": [
+            "BUG",
+            "POISON"
+        ]
     },
     "spinda": {
         "baseStats": {
@@ -3813,7 +4906,10 @@
             "spe": 60
         },
         "name": "Spinda",
-        "num": 327
+        "num": 327,
+        "types": [
+            "NORMAL"
+        ]
     },
     "spoink": {
         "baseStats": {
@@ -3825,7 +4921,10 @@
             "spe": 60
         },
         "name": "Spoink",
-        "num": 325
+        "num": 325,
+        "types": [
+            "PSYCHIC"
+        ]
     },
     "squirtle": {
         "baseStats": {
@@ -3837,7 +4936,10 @@
             "spe": 43
         },
         "name": "Squirtle",
-        "num": 7
+        "num": 7,
+        "types": [
+            "WATER"
+        ]
     },
     "stantler": {
         "baseStats": {
@@ -3849,7 +4951,10 @@
             "spe": 85
         },
         "name": "Stantler",
-        "num": 234
+        "num": 234,
+        "types": [
+            "NORMAL"
+        ]
     },
     "starmie": {
         "baseStats": {
@@ -3861,7 +4966,11 @@
             "spe": 115
         },
         "name": "Starmie",
-        "num": 121
+        "num": 121,
+        "types": [
+            "WATER",
+            "PSYCHIC"
+        ]
     },
     "staryu": {
         "baseStats": {
@@ -3873,7 +4982,10 @@
             "spe": 85
         },
         "name": "Staryu",
-        "num": 120
+        "num": 120,
+        "types": [
+            "WATER"
+        ]
     },
     "steelix": {
         "baseStats": {
@@ -3885,7 +4997,11 @@
             "spe": 30
         },
         "name": "Steelix",
-        "num": 208
+        "num": 208,
+        "types": [
+            "STEEL",
+            "GROUND"
+        ]
     },
     "sudowoodo": {
         "baseStats": {
@@ -3897,7 +5013,10 @@
             "spe": 30
         },
         "name": "Sudowoodo",
-        "num": 185
+        "num": 185,
+        "types": [
+            "ROCK"
+        ]
     },
     "suicune": {
         "baseStats": {
@@ -3909,7 +5028,10 @@
             "spe": 85
         },
         "name": "Suicune",
-        "num": 245
+        "num": 245,
+        "types": [
+            "WATER"
+        ]
     },
     "sunflora": {
         "baseStats": {
@@ -3921,7 +5043,10 @@
             "spe": 30
         },
         "name": "Sunflora",
-        "num": 192
+        "num": 192,
+        "types": [
+            "GRASS"
+        ]
     },
     "sunkern": {
         "baseStats": {
@@ -3933,7 +5058,10 @@
             "spe": 30
         },
         "name": "Sunkern",
-        "num": 191
+        "num": 191,
+        "types": [
+            "GRASS"
+        ]
     },
     "surskit": {
         "baseStats": {
@@ -3945,7 +5073,11 @@
             "spe": 65
         },
         "name": "Surskit",
-        "num": 283
+        "num": 283,
+        "types": [
+            "BUG",
+            "WATER"
+        ]
     },
     "swablu": {
         "baseStats": {
@@ -3957,7 +5089,11 @@
             "spe": 50
         },
         "name": "Swablu",
-        "num": 333
+        "num": 333,
+        "types": [
+            "NORMAL",
+            "FLYING"
+        ]
     },
     "swalot": {
         "baseStats": {
@@ -3969,7 +5105,10 @@
             "spe": 55
         },
         "name": "Swalot",
-        "num": 317
+        "num": 317,
+        "types": [
+            "POISON"
+        ]
     },
     "swampert": {
         "baseStats": {
@@ -3981,7 +5120,11 @@
             "spe": 60
         },
         "name": "Swampert",
-        "num": 260
+        "num": 260,
+        "types": [
+            "WATER",
+            "GROUND"
+        ]
     },
     "swellow": {
         "baseStats": {
@@ -3993,7 +5136,11 @@
             "spe": 125
         },
         "name": "Swellow",
-        "num": 277
+        "num": 277,
+        "types": [
+            "NORMAL",
+            "FLYING"
+        ]
     },
     "swinub": {
         "baseStats": {
@@ -4005,7 +5152,11 @@
             "spe": 50
         },
         "name": "Swinub",
-        "num": 220
+        "num": 220,
+        "types": [
+            "ICE",
+            "GROUND"
+        ]
     },
     "taillow": {
         "baseStats": {
@@ -4017,7 +5168,11 @@
             "spe": 85
         },
         "name": "Taillow",
-        "num": 276
+        "num": 276,
+        "types": [
+            "NORMAL",
+            "FLYING"
+        ]
     },
     "tangela": {
         "baseStats": {
@@ -4029,7 +5184,10 @@
             "spe": 60
         },
         "name": "Tangela",
-        "num": 114
+        "num": 114,
+        "types": [
+            "GRASS"
+        ]
     },
     "tauros": {
         "baseStats": {
@@ -4041,7 +5199,10 @@
             "spe": 110
         },
         "name": "Tauros",
-        "num": 128
+        "num": 128,
+        "types": [
+            "NORMAL"
+        ]
     },
     "teddiursa": {
         "baseStats": {
@@ -4053,7 +5214,10 @@
             "spe": 40
         },
         "name": "Teddiursa",
-        "num": 216
+        "num": 216,
+        "types": [
+            "NORMAL"
+        ]
     },
     "tentacool": {
         "baseStats": {
@@ -4065,7 +5229,11 @@
             "spe": 70
         },
         "name": "Tentacool",
-        "num": 72
+        "num": 72,
+        "types": [
+            "WATER",
+            "POISON"
+        ]
     },
     "tentacruel": {
         "baseStats": {
@@ -4077,7 +5245,11 @@
             "spe": 100
         },
         "name": "Tentacruel",
-        "num": 73
+        "num": 73,
+        "types": [
+            "WATER",
+            "POISON"
+        ]
     },
     "togepi": {
         "baseStats": {
@@ -4089,7 +5261,10 @@
             "spe": 20
         },
         "name": "Togepi",
-        "num": 175
+        "num": 175,
+        "types": [
+            "NORMAL"
+        ]
     },
     "togetic": {
         "baseStats": {
@@ -4101,7 +5276,11 @@
             "spe": 40
         },
         "name": "Togetic",
-        "num": 176
+        "num": 176,
+        "types": [
+            "NORMAL",
+            "FLYING"
+        ]
     },
     "torchic": {
         "baseStats": {
@@ -4113,7 +5292,10 @@
             "spe": 45
         },
         "name": "Torchic",
-        "num": 255
+        "num": 255,
+        "types": [
+            "FIRE"
+        ]
     },
     "torkoal": {
         "baseStats": {
@@ -4125,7 +5307,10 @@
             "spe": 20
         },
         "name": "Torkoal",
-        "num": 324
+        "num": 324,
+        "types": [
+            "FIRE"
+        ]
     },
     "totodile": {
         "baseStats": {
@@ -4137,7 +5322,10 @@
             "spe": 43
         },
         "name": "Totodile",
-        "num": 158
+        "num": 158,
+        "types": [
+            "WATER"
+        ]
     },
     "trapinch": {
         "baseStats": {
@@ -4149,7 +5337,10 @@
             "spe": 10
         },
         "name": "Trapinch",
-        "num": 328
+        "num": 328,
+        "types": [
+            "GROUND"
+        ]
     },
     "treecko": {
         "baseStats": {
@@ -4161,7 +5352,10 @@
             "spe": 70
         },
         "name": "Treecko",
-        "num": 252
+        "num": 252,
+        "types": [
+            "GRASS"
+        ]
     },
     "tropius": {
         "baseStats": {
@@ -4173,7 +5367,11 @@
             "spe": 51
         },
         "name": "Tropius",
-        "num": 357
+        "num": 357,
+        "types": [
+            "GRASS",
+            "FLYING"
+        ]
     },
     "typhlosion": {
         "baseStats": {
@@ -4185,7 +5383,10 @@
             "spe": 100
         },
         "name": "Typhlosion",
-        "num": 157
+        "num": 157,
+        "types": [
+            "FIRE"
+        ]
     },
     "tyranitar": {
         "baseStats": {
@@ -4197,7 +5398,11 @@
             "spe": 61
         },
         "name": "Tyranitar",
-        "num": 248
+        "num": 248,
+        "types": [
+            "ROCK",
+            "DARK"
+        ]
     },
     "tyrogue": {
         "baseStats": {
@@ -4209,7 +5414,10 @@
             "spe": 35
         },
         "name": "Tyrogue",
-        "num": 236
+        "num": 236,
+        "types": [
+            "FIGHTING"
+        ]
     },
     "umbreon": {
         "baseStats": {
@@ -4221,7 +5429,10 @@
             "spe": 65
         },
         "name": "Umbreon",
-        "num": 197
+        "num": 197,
+        "types": [
+            "DARK"
+        ]
     },
     "unown": {
         "baseStats": {
@@ -4233,7 +5444,10 @@
             "spe": 48
         },
         "name": "Unown",
-        "num": 201
+        "num": 201,
+        "types": [
+            "PSYCHIC"
+        ]
     },
     "ursaring": {
         "baseStats": {
@@ -4245,7 +5459,10 @@
             "spe": 55
         },
         "name": "Ursaring",
-        "num": 217
+        "num": 217,
+        "types": [
+            "NORMAL"
+        ]
     },
     "vaporeon": {
         "baseStats": {
@@ -4257,7 +5474,10 @@
             "spe": 65
         },
         "name": "Vaporeon",
-        "num": 134
+        "num": 134,
+        "types": [
+            "WATER"
+        ]
     },
     "venomoth": {
         "baseStats": {
@@ -4269,7 +5489,11 @@
             "spe": 90
         },
         "name": "Venomoth",
-        "num": 49
+        "num": 49,
+        "types": [
+            "BUG",
+            "POISON"
+        ]
     },
     "venonat": {
         "baseStats": {
@@ -4281,7 +5505,11 @@
             "spe": 45
         },
         "name": "Venonat",
-        "num": 48
+        "num": 48,
+        "types": [
+            "BUG",
+            "POISON"
+        ]
     },
     "venusaur": {
         "baseStats": {
@@ -4293,7 +5521,11 @@
             "spe": 80
         },
         "name": "Venusaur",
-        "num": 3
+        "num": 3,
+        "types": [
+            "GRASS",
+            "POISON"
+        ]
     },
     "vibrava": {
         "baseStats": {
@@ -4305,7 +5537,11 @@
             "spe": 70
         },
         "name": "Vibrava",
-        "num": 329
+        "num": 329,
+        "types": [
+            "GROUND",
+            "DRAGON"
+        ]
     },
     "victreebel": {
         "baseStats": {
@@ -4317,7 +5553,11 @@
             "spe": 70
         },
         "name": "Victreebel",
-        "num": 71
+        "num": 71,
+        "types": [
+            "GRASS",
+            "POISON"
+        ]
     },
     "vigoroth": {
         "baseStats": {
@@ -4329,7 +5569,10 @@
             "spe": 90
         },
         "name": "Vigoroth",
-        "num": 288
+        "num": 288,
+        "types": [
+            "NORMAL"
+        ]
     },
     "vileplume": {
         "baseStats": {
@@ -4341,7 +5584,11 @@
             "spe": 50
         },
         "name": "Vileplume",
-        "num": 45
+        "num": 45,
+        "types": [
+            "GRASS",
+            "POISON"
+        ]
     },
     "volbeat": {
         "baseStats": {
@@ -4353,7 +5600,10 @@
             "spe": 85
         },
         "name": "Volbeat",
-        "num": 313
+        "num": 313,
+        "types": [
+            "BUG"
+        ]
     },
     "voltorb": {
         "baseStats": {
@@ -4365,7 +5615,10 @@
             "spe": 100
         },
         "name": "Voltorb",
-        "num": 100
+        "num": 100,
+        "types": [
+            "ELECTRIC"
+        ]
     },
     "vulpix": {
         "baseStats": {
@@ -4377,7 +5630,10 @@
             "spe": 65
         },
         "name": "Vulpix",
-        "num": 37
+        "num": 37,
+        "types": [
+            "FIRE"
+        ]
     },
     "wailmer": {
         "baseStats": {
@@ -4389,7 +5645,10 @@
             "spe": 60
         },
         "name": "Wailmer",
-        "num": 320
+        "num": 320,
+        "types": [
+            "WATER"
+        ]
     },
     "wailord": {
         "baseStats": {
@@ -4401,7 +5660,10 @@
             "spe": 60
         },
         "name": "Wailord",
-        "num": 321
+        "num": 321,
+        "types": [
+            "WATER"
+        ]
     },
     "walrein": {
         "baseStats": {
@@ -4413,7 +5675,11 @@
             "spe": 65
         },
         "name": "Walrein",
-        "num": 365
+        "num": 365,
+        "types": [
+            "ICE",
+            "WATER"
+        ]
     },
     "wartortle": {
         "baseStats": {
@@ -4425,7 +5691,10 @@
             "spe": 58
         },
         "name": "Wartortle",
-        "num": 8
+        "num": 8,
+        "types": [
+            "WATER"
+        ]
     },
     "weedle": {
         "baseStats": {
@@ -4437,7 +5706,11 @@
             "spe": 50
         },
         "name": "Weedle",
-        "num": 13
+        "num": 13,
+        "types": [
+            "BUG",
+            "POISON"
+        ]
     },
     "weepinbell": {
         "baseStats": {
@@ -4449,7 +5722,11 @@
             "spe": 55
         },
         "name": "Weepinbell",
-        "num": 70
+        "num": 70,
+        "types": [
+            "GRASS",
+            "POISON"
+        ]
     },
     "weezing": {
         "baseStats": {
@@ -4461,7 +5738,10 @@
             "spe": 60
         },
         "name": "Weezing",
-        "num": 110
+        "num": 110,
+        "types": [
+            "POISON"
+        ]
     },
     "whiscash": {
         "baseStats": {
@@ -4473,7 +5753,11 @@
             "spe": 60
         },
         "name": "Whiscash",
-        "num": 340
+        "num": 340,
+        "types": [
+            "WATER",
+            "GROUND"
+        ]
     },
     "whismur": {
         "baseStats": {
@@ -4485,7 +5769,10 @@
             "spe": 28
         },
         "name": "Whismur",
-        "num": 293
+        "num": 293,
+        "types": [
+            "NORMAL"
+        ]
     },
     "wigglytuff": {
         "baseStats": {
@@ -4497,7 +5784,10 @@
             "spe": 45
         },
         "name": "Wigglytuff",
-        "num": 40
+        "num": 40,
+        "types": [
+            "NORMAL"
+        ]
     },
     "wingull": {
         "baseStats": {
@@ -4509,7 +5799,11 @@
             "spe": 85
         },
         "name": "Wingull",
-        "num": 278
+        "num": 278,
+        "types": [
+            "WATER",
+            "FLYING"
+        ]
     },
     "wobbuffet": {
         "baseStats": {
@@ -4521,7 +5815,10 @@
             "spe": 33
         },
         "name": "Wobbuffet",
-        "num": 202
+        "num": 202,
+        "types": [
+            "PSYCHIC"
+        ]
     },
     "wooper": {
         "baseStats": {
@@ -4533,7 +5830,11 @@
             "spe": 15
         },
         "name": "Wooper",
-        "num": 194
+        "num": 194,
+        "types": [
+            "WATER",
+            "GROUND"
+        ]
     },
     "wurmple": {
         "baseStats": {
@@ -4545,7 +5846,10 @@
             "spe": 20
         },
         "name": "Wurmple",
-        "num": 265
+        "num": 265,
+        "types": [
+            "BUG"
+        ]
     },
     "wynaut": {
         "baseStats": {
@@ -4557,7 +5861,10 @@
             "spe": 23
         },
         "name": "Wynaut",
-        "num": 360
+        "num": 360,
+        "types": [
+            "PSYCHIC"
+        ]
     },
     "xatu": {
         "baseStats": {
@@ -4569,7 +5876,11 @@
             "spe": 95
         },
         "name": "Xatu",
-        "num": 178
+        "num": 178,
+        "types": [
+            "PSYCHIC",
+            "FLYING"
+        ]
     },
     "yanma": {
         "baseStats": {
@@ -4581,7 +5892,11 @@
             "spe": 95
         },
         "name": "Yanma",
-        "num": 193
+        "num": 193,
+        "types": [
+            "BUG",
+            "FLYING"
+        ]
     },
     "zangoose": {
         "baseStats": {
@@ -4593,7 +5908,10 @@
             "spe": 90
         },
         "name": "Zangoose",
-        "num": 335
+        "num": 335,
+        "types": [
+            "NORMAL"
+        ]
     },
     "zapdos": {
         "baseStats": {
@@ -4605,7 +5923,11 @@
             "spe": 100
         },
         "name": "Zapdos",
-        "num": 145
+        "num": 145,
+        "types": [
+            "ELECTRIC",
+            "FLYING"
+        ]
     },
     "zigzagoon": {
         "baseStats": {
@@ -4617,7 +5939,10 @@
             "spe": 60
         },
         "name": "Zigzagoon",
-        "num": 263
+        "num": 263,
+        "types": [
+            "NORMAL"
+        ]
     },
     "zubat": {
         "baseStats": {
@@ -4629,6 +5954,10 @@
             "spe": 55
         },
         "name": "Zubat",
-        "num": 41
+        "num": 41,
+        "types": [
+            "POISON",
+            "FLYING"
+        ]
     }
 }

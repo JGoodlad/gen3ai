@@ -1,0 +1,70 @@
+// Threat dataflow — NOW (v35)
+// Incoming threat reaches the trunk (refine); outgoing threat is heads-only; unrevealed outgoing is zeroed.
+digraph threat_now {
+  rankdir=TB;
+  graph [fontname="Helvetica", labelloc="t", fontsize=22,
+         label="Threat dataflow — NOW (v35)\nincoming reaches the trunk via refine · outgoing is heads-only · unrevealed outgoing is ZEROED"];
+  node  [fontname="Helvetica", shape=box, style="rounded,filled", fillcolor="#e8eef7", color="#5b7aa5", penwidth=1.4];
+  edge  [fontname="Helvetica", fontsize=10, color="#5b6b7a"];
+
+  // ---- legend ----
+  subgraph cluster_legend {
+    label="legend"; style="rounded,dashed"; color="#aaaaaa"; fontsize=12;
+    Lt [label="in-TRUNK threat\n(attention reasons over it)", fillcolor="#cdebc5", color="#4a8c3f"];
+    Lh [label="heads-only / zeroed\n(NOT in trunk = gap)",       fillcolor="#f6c6c0", color="#b5453a"];
+    Lb [label="belief module",                                   fillcolor="#e6dcf3", color="#7d5bab"];
+    Lt -> Lh [style=invis]; Lh -> Lb [style=invis];
+  }
+
+  obs    [label="obs vector (3457-d)"];
+  unpack [label="ObsUnpack\l• pokemon_part (per-mon)\l• non_matchup_rest  (incl. CPU incoming-damage block, 51-d)\l"];
+  penc   [label="PokemonEncoder\n→ 12 role tokens (our 6 + opp 6)"];
+  bslots [label="BeliefSlots\nfill HIDDEN opp slots with\nlearned unknown-mon tokens", fillcolor="#e6dcf3", color="#7d5bab"];
+
+  // ---------- TRUNK ----------
+  subgraph cluster_trunk {
+    label="TRUNK  (TeamTransformer — attention)"; style="rounded"; color="#4a8c3f"; fontsize=15; bgcolor="#f3faf0";
+    tf     [label="TeamTransformer\n2 layers, our↔opp attention"];
+    refine [label="between-layers refine_cb  (--damage-refine-rounds N)\lMoveBelief.move_logits(opp tokens) → discrete_incoming\lINCOMING residual → OUR tokens [0:6]   (refine_proj, zero-init)\l\l✓ Leg 1+4 incoming — physics in the loop\l",
+            fillcolor="#cdebc5", color="#4a8c3f", penwidth=2.0];
+    tf -> refine [label="before each\nof first N layers", style=dashed, dir=both, color="#4a8c3f"];
+  }
+
+  spread  [label="SpreadBelief\nbelieved stats → ALL 6 opp tokens\n(covers hidden slots)", fillcolor="#e6dcf3", color="#7d5bab"];
+  mbelief [label="MoveBelief POST-fuse\nbelieved moves → opp tokens", fillcolor="#e6dcf3", color="#7d5bab"];
+
+  // ---------- DamageOperator (one-shot, post-transformer) ----------
+  subgraph cluster_op {
+    label="DamageOperator.forward  (one-shot, post-transformer)"; style="rounded"; color="#888888"; fontsize=14;
+    opin  [label="INCOMING block\nopp active believed moves → our 6 mons\n(_chan_max worst-case + top-K + rich matrix)"];
+    opout [label="OUTGOING matrix\nour KNOWN moves → opp 6 mons\nrevealed types + believed bulk\l\l✗ Leg 3: UNREVEALED columns ZEROED\l",
+           fillcolor="#f6c6c0", color="#b5453a", penwidth=2.0];
+    dblock [label="damage_block", shape=oval, fillcolor="#dfe7f0"];
+    opin -> dblock; opout -> dblock;
+  }
+
+  reattend [label="--damage-reattend (opt)\nincoming rows → our tokens, +1 attention\nlayer over 12 → damage-AWARE pools",
+            fillcolor="#cdebc5", color="#4a8c3f"];
+  pool     [label="CLSPool\nour / their / active / value pooled"];
+
+  // ---------- HEADS ----------
+  subgraph cluster_heads {
+    label="HEADS  (post-pool — NO attention)"; style="rounded"; color="#b5453a"; fontsize=15; bgcolor="#fdf3f1";
+    asm   [label="ProjectionAssembler\npools  ⊕  non_matchup_rest (CPU incoming)  ⊕  damage_block"];
+    heads [label="policy head   /   value head"];
+    asm -> heads;
+  }
+
+  // ---- flow ----
+  obs -> unpack;
+  unpack -> penc [label="pokemon_part"];
+  penc -> bslots -> tf [label="role tokens"];
+  unpack -> tf [label="non_matchup_rest →\n1 DILUTED global token", style=dotted, color="#b5453a"];
+  refine -> spread [label="refined tokens"];
+  spread -> mbelief -> opin;
+  spread -> opout;
+  dblock -> reattend -> pool;
+  pool -> asm;
+  dblock -> asm [label="OUTGOING is HEADS-ONLY ✗", color="#b5453a", penwidth=2.0, fontcolor="#b5453a"];
+  unpack -> asm [label="CPU incoming\n(flat concat, heads)", style=dotted, color="#b5453a"];
+}

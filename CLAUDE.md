@@ -696,7 +696,7 @@ and `gen3_sleep_wake_belief_v1` — a 3-dim per-mon SLEEP WAKE belief block [`sl
 Early Bird halves; opp Early-Bird prior marginalised; Rest source from the event log's `[from]` clause;
 fuzz-calibrated vs the real sim RNG), `sleep_counter_reliable`], `POKEMON_VECTOR_DIM` 106 → 109
 (3419 → 3455). All four are retrain-class; current
-`MODEL_CONFIG_VERSION`: **32** — v16 added the in-place
+`MODEL_CONFIG_VERSION`: **36** (the v33–v36 additions are the bolded entries below) — v16 added the in-place
 hidden-opponent belief-aux toggle `opp_belief_slots` + its coef `opp_belief_aux_coef`, v17 the
 move-belief reinjection toggle `move_belief_mode` + `move_belief_coef`, v18 the latent-belief toggle
 `opp_belief_latent` + `opp_belief_latent_coef`, v19 the differentiable damage-operator toggle
@@ -825,9 +825,28 @@ are **gathered PER MOVE** (un-collapsed — the mid-ladder "this move phazes / f
 `p_effect`/`p_sec` maxes collapsed; those are kept-but-superseded, deletion deferred to an A/B). Reuses the
 validated `_damage_rolls` tensors + the candidate latent table; STRUCTURAL bool gated in `check_compatible`
 like `damage_op`; OFF byte-identical; requires `--damage-op` + `--move-latent`. The two matrices compose
-under `--damage-matrices {off,incoming,outgoing,both}`. Current
-`MODEL_CONFIG_VERSION` = **35**. Full design:
-`designs/ai_v6/design_per_move_damage_matrices.md` (and `design_iterative_damage_refinement.md` for v33,
+under `--damage-matrices {off,incoming,outgoing,both}`.
+**v36 the BIDIRECTIONAL in-trunk THREAT field** (`gen3_bidir_threat_trunk_v1`) — makes the model's threat,
+BOTH directions, dynamic (known⊕believed) and INFUSED INTO THE TRUNK so attention reasons over it. Three
+toggles: **`--threat-refine-outgoing`** (#1) the SYMMETRIC mirror of the incoming refine — a new lean
+`DamageOperator.discrete_outgoing` (our active's 4 known moves → each opp mon → `[phys_high,spec_high,
+phys_pko,spec_pko]`) injected onto the OPP token slice via a **zero-init `outgoing_proj`** riding the SAME
+between-layers `--damage-refine-rounds` loop (STRUCTURAL — a saved weight; requires `--damage-op` +
+`--damage-refine-rounds>0`); **`--threat-unrevealed-outgoing`** (#2) the EXPECTED-LATENT defender — keep an
+UNREVEALED opp mon LATENT and marginalize the move-belief's `P(species)` (read per-round from the factored
+`BeliefHead.species_logits`) through `SPECIES_EXP_MULT[n_species,19]` (type chart × the per-species expected
+ability immunity — Levitate/Water&Volt Absorb/Flash Fire/Thick Fat, folded from `gen3_ability_priors`) +
+`SPECIES_SPREAD_PRIOR` (E[bulk]/E[maxhp]), with **P(KO) NULLED** (a full-HP switch-in is ~never OHKO'd —
+owner decision, drops the Jensen-threshold complexity; forward toggle, no new params; requires
+`--threat-refine-outgoing` + `--opp-belief-aux-coef>0`); **`--threat-prob-outspeed`** (#3) UNCERTAINTY-AWARE
+`P(outspeed)` — divide the speed gap by the believed speed STD (`SPECIES_SPREAD_PRIOR`; sigmoid≈normal-CDF)
+not a fixed scale (forward toggle, no new params). Needs a NEW data fact — **species→types** (added to the
+extractor → `gen3_species.json` → `SpeciesData.types`; the obs still reads revealed types live). All three
+OFF byte-identical (NO `ARCH_SIGNATURE` bump), version-gated, threaded through `arch_toggles` + both
+extractor sites. Current
+`MODEL_CONFIG_VERSION` = **36**. Full design:
+`designs/ai_v6/design_bidirectional_threat_trunk.md` (+ `gen3ai/tmp/model_v36_full.png` integrated diagram)
+(and `design_per_move_damage_matrices.md` for v34/v35, `design_iterative_damage_refinement.md` for v33,
 `design_topk_incoming_moves.md` for v30, `design_distributional_value_critic.md` for v29,
 `design_unified_move_system.md` for v24, `design_unified_damage_system.md` for v23).
 **The full versioning playbook — what to do when you change a dim vs add an optional feature vs
@@ -845,7 +864,8 @@ normalizes each file into `data/pokemon/`; the runtime reaches all of it through
 
 Reference data (deterministic) under `data/pokemon/`, all regenerable via
 `tools/pokemon_data_extractor/sync.py`:
-- `gen3_species.json` — species id → `{num, baseStats, name}`
+- `gen3_species.json` — species id → `{num, baseStats, name, types}` (`types` UPPERCASED to the TypeEncoder
+  axis — `gen3_bidir_threat_trunk_v1`, for the op's expected-latent read; the obs still reads revealed types live)
 - `gen3_moves.json` — move id → `{num, basePower, type, accuracy, never_miss, hasSecondary, hasRecoil,
   priority, secondaryEffects {col: percent}, drainFraction, recoilFraction, …}` (the structured
   secondary/priority/drain fields are `gen3_unified_move_system_v1` — GPU-side only, NOT in the obs vector)

@@ -21,7 +21,7 @@ from agents import gen3_data
 gen3_data.moves.get(move_id)            # MoveData(num, base_power, type, category, accuracy,
                                         #   priority, drain_fraction, recoil_fraction,
                                         #   secondary_effects + .secondary_chance(col), …)  # v24
-gen3_data.species.get(species_id)       # SpeciesData(num, base_stats)
+gen3_data.species.get(species_id)       # SpeciesData(num, base_stats, types)
 gen3_data.items.get(item_id)            # ItemData(num, name)
 gen3_data.abilities.get(ability_id)     # AbilityData(num, name)
 gen3_data.natures.get(nature_name)      # NatureData(multipliers); .multipliers() for the dict form

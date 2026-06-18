@@ -542,6 +542,9 @@ def current_model_version(
     damage_refine_rounds: int = 0,
     damage_matrices_outgoing: bool = False,
     damage_matrices_incoming: bool = False,
+    threat_refine_outgoing: bool = False,
+    threat_unrevealed_outgoing: bool = False,
+    threat_prob_outspeed: bool = False,
     vf_coef: float = 0.5,
     reward_config=None,
     value_tail_weight: float = 0.0,
@@ -595,6 +598,9 @@ def current_model_version(
     ext_kwargs["damage_refine_rounds"] = damage_refine_rounds
     ext_kwargs["damage_matrices_outgoing"] = damage_matrices_outgoing
     ext_kwargs["damage_matrices_incoming"] = damage_matrices_incoming
+    ext_kwargs["threat_refine_outgoing"] = threat_refine_outgoing
+    ext_kwargs["threat_unrevealed_outgoing"] = threat_unrevealed_outgoing
+    ext_kwargs["threat_prob_outspeed"] = threat_prob_outspeed
     policy_kwargs = {
         "features_extractor_class": Gen3FeaturesExtractor,
         "features_extractor_kwargs": ext_kwargs,
@@ -651,6 +657,12 @@ def arch_toggles_from_model(model) -> dict:
         "damage_matrices_outgoing": bool(getattr(fe, "damage_matrices_outgoing", False)),
         # gen3_per_move_matrices_v1 (v33): the incoming per-move damage matrix — STRUCTURAL bool, gated.
         "damage_matrices_incoming": bool(getattr(fe, "damage_matrices_incoming", False)),
+        # gen3_bidir_threat_trunk_v1 (v36): the bidirectional in-trunk threat field — threat_refine_outgoing
+        # is STRUCTURAL (adds outgoing_proj), the other two forward-behavior; all version-gated, so all must
+        # reach the worker's gate (else a threat-ON self-play snapshot FATALs the toggle-OFF "current").
+        "threat_refine_outgoing": bool(getattr(fe, "threat_refine_outgoing", False)),
+        "threat_unrevealed_outgoing": bool(getattr(fe, "threat_unrevealed_outgoing", False)),
+        "threat_prob_outspeed": bool(getattr(fe, "threat_prob_outspeed", False)),
         "use_popart": getattr(model.policy, "popart", None) is not None,
     }
 

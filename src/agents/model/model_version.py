@@ -280,7 +280,17 @@ from typing import Any, Dict, List
 #   coexist); requires damage_op + move_latent.
 #   STRUCTURAL toggle like damage_op (widens both projections via the op out_dim); gated in check_compatible
 #   (bool); OFF byte-for-byte (NO ARCH_SIGNATURE bump). Design: designs/ai_v6/design_per_move_damage_matrices.md.
-MODEL_CONFIG_VERSION = 35
+# v36: gen3_bidir_threat_trunk_v1 — the BIDIRECTIONAL in-trunk threat field. `threat_refine_outgoing` (bool)
+#   adds a zero-init `outgoing_proj` that injects a per-opp-mon OUTGOING-threat residual onto the OPP tokens
+#   via the SAME between-layers refine loop (symmetric to the incoming refine; STRUCTURAL — a saved weight).
+#   `threat_unrevealed_outgoing` (bool) prices that residual's UNREVEALED columns via the EXPECTED-LATENT
+#   defender — marginalize the move-belief's P(species) through SPECIES_EXP_MULT (type chart × expected
+#   ability immunity) + SPECIES_SPREAD_PRIOR (E[bulk]), with P(KO) NULLED (forward toggle, no new params).
+#   `threat_prob_outspeed` (bool) makes P(outspeed) UNCERTAINTY-AWARE (÷ believed speed std, not a fixed
+#   scale; forward toggle). All three OFF byte-for-byte (NO ARCH_SIGNATURE bump). threat_refine_outgoing
+#   requires damage_op + damage_refine_rounds>0; threat_unrevealed_outgoing requires threat_refine_outgoing
+#   (+ a belief head for P(species)). Design: designs/ai_v6/design_bidirectional_threat_trunk.md.
+MODEL_CONFIG_VERSION = 36
 
 # Change this when the neural architecture changes structurally in a way that makes
 # weights from a different signature incompatible (e.g. adding LSTM, replacing attention).
@@ -813,6 +823,19 @@ class ModelVersion:
     # REUSES damage_topk_k as its K (the matrix's width is gated by the existing damage_topk_k int) and
     # REPLACES the lean top-K block at that K (so they never coexist — one knob, lean vs rich).
     damage_matrices_incoming: bool = False
+    # v36 STRUCTURAL (gen3_bidir_threat_trunk_v1): the OUTGOING half of the in-trunk threat field — a
+    # zero-init `outgoing_proj` injects a per-opp-mon outgoing-threat residual onto the OPP tokens via the
+    # SAME between-layers refine loop (so it adds a Linear; OFF byte-for-byte, gated bool like damage_op).
+    # Requires damage_op + damage_refine_rounds>0.
+    threat_refine_outgoing: bool = False
+    # v36 FORWARD-behavior (gen3_bidir_threat_trunk_v1): the EXPECTED-LATENT defender — price the outgoing
+    # residual's UNREVEALED columns by marginalizing P(species) through SPECIES_EXP_MULT / SPECIES_SPREAD_PRIOR
+    # (P(KO) nulled). No new params (reuses BeliefHead.species_logits + non-persistent buffers), so a forward
+    # toggle; gated bool. Requires threat_refine_outgoing.
+    threat_unrevealed_outgoing: bool = False
+    # v36 FORWARD-behavior (gen3_bidir_threat_trunk_v1): the UNCERTAINTY-AWARE P(outspeed) — divide the speed
+    # gap by the believed speed std instead of a fixed scale. No new params (values only), gated bool.
+    threat_prob_outspeed: bool = False
 
     @classmethod
     def from_layout_and_policy_kwargs(
@@ -952,6 +975,15 @@ class ModelVersion:
             ),
             damage_matrices_incoming=bool(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("damage_matrices_incoming", False)
+            ),
+            threat_refine_outgoing=bool(
+                policy_kwargs.get("features_extractor_kwargs", {}).get("threat_refine_outgoing", False)
+            ),
+            threat_unrevealed_outgoing=bool(
+                policy_kwargs.get("features_extractor_kwargs", {}).get("threat_unrevealed_outgoing", False)
+            ),
+            threat_prob_outspeed=bool(
+                policy_kwargs.get("features_extractor_kwargs", {}).get("threat_prob_outspeed", False)
             ),
             value_tail_weight=float(value_tail_weight),
             opp_belief_aux_coef=float(opp_belief_aux_coef),
@@ -1280,6 +1312,30 @@ class ModelVersion:
                 "The incoming per-move damage matrix widens the damage operator's output (hence both "
                 "projection widths), so toggling it is incompatible with a saved checkpoint.\n"
                 "Resume with the matching --damage-matrices setting, or start a fresh training run."
+            )
+        # gen3_bidir_threat_trunk_v1 (v36): the outgoing in-trunk residual adds outgoing_proj (a weight) →
+        # state_dict change; the expected-latent + prob-outspeed are forward-behavior toggles. All three are
+        # version-gated (the first STRUCTURAL, the latter two value-changing) — fresh-only.
+        if self.threat_refine_outgoing != saved.threat_refine_outgoing:
+            raise ModelVersionError(
+                f"threat_refine_outgoing mismatch: saved={saved.threat_refine_outgoing}, "
+                f"current={self.threat_refine_outgoing}.\n"
+                "It adds a zero-init outgoing_proj (a saved weight), so toggling it is incompatible with a "
+                "saved checkpoint. Resume with the matching --threat-refine-outgoing, or start a fresh run."
+            )
+        if self.threat_unrevealed_outgoing != saved.threat_unrevealed_outgoing:
+            raise ModelVersionError(
+                f"threat_unrevealed_outgoing mismatch: saved={saved.threat_unrevealed_outgoing}, "
+                f"current={self.threat_unrevealed_outgoing}.\n"
+                "It changes the outgoing residual's forward (expected-latent unrevealed defenders), a "
+                "version-checked forward-behavior change. Resume with the matching flag, or start a fresh run."
+            )
+        if self.threat_prob_outspeed != saved.threat_prob_outspeed:
+            raise ModelVersionError(
+                f"threat_prob_outspeed mismatch: saved={saved.threat_prob_outspeed}, "
+                f"current={self.threat_prob_outspeed}.\n"
+                "It changes the P(outspeed) forward (uncertainty-aware scale), a version-checked "
+                "forward-behavior change. Resume with the matching flag, or start a fresh run."
             )
 
     def check_opponent_compatible(self, foreign: "ModelVersion") -> None:
@@ -1627,4 +1683,11 @@ def _migrate_config(data: dict) -> dict:
         # damage_topk_k as its K and replaces the lean top-K block.
         data.setdefault("damage_matrices_incoming", False)
         data["config_version"] = 35
+    if version < 36:
+        # v36: gen3_bidir_threat_trunk_v1 — the bidirectional in-trunk threat field. All three OFF
+        # reproduce the v35 forward byte-for-byte (no outgoing_proj, legacy outgoing-gating + p_outspeed).
+        data.setdefault("threat_refine_outgoing", False)
+        data.setdefault("threat_unrevealed_outgoing", False)
+        data.setdefault("threat_prob_outspeed", False)
+        data["config_version"] = 36
     return data

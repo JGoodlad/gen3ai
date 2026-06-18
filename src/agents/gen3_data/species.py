@@ -7,7 +7,7 @@ and committed under ``data/``). Reached via the facade as ``gen3_data.species``.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Dict, Optional
+from typing import Dict, Optional, Tuple
 
 from . import _base
 
@@ -22,6 +22,7 @@ class SpeciesData:
     num: int
     name: str
     base_stats: Dict[str, int]   # keyed by atk/def/hp/spa/spd/spe
+    types: Tuple[str, ...] = ()  # STAB/defensive types, UPPERCASED onto the TypeEncoder axis (1-2 entries)
 
 
 def _build(raw: Dict[str, dict]) -> Dict[str, SpeciesData]:
@@ -33,6 +34,7 @@ def _build(raw: Dict[str, dict]) -> Dict[str, SpeciesData]:
             num=int(v.get("num", 0)),
             name=v.get("name", sid),
             base_stats={k: int(bs[k]) for k in _STAT_KEYS if k in bs},
+            types=tuple(str(t).upper() for t in v.get("types", ())),
         )
     return dex
 

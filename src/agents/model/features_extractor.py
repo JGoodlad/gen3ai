@@ -1050,6 +1050,15 @@ class BeliefHead(torch.nn.Module):
                 torch.nn.Linear(D_MODEL, latent_dim),
             )
 
+    def species_logits(self, tokens: torch.Tensor) -> torch.Tensor:
+        """tokens [B,6,D] → species logits [B,6,n_species]. Factored out of `forward` (mirrors
+        `MoveBelief.move_logits`) so the bidirectional-threat refine can read P(species) over the
+        CURRENT opp tokens MID-transformer (per round) and the final op can read it post-transformer —
+        without also running the moves/latent heads. `forward` is left byte-identical (it computes its
+        own `norm` once and reuses it for both heads); this standalone path is only called by the
+        v36 expected-latent-defender (gated off by default), so the baseline forward is unchanged."""
+        return self.species_head(self.norm(tokens))
+
     def forward(self, their_team_out: torch.Tensor) -> Dict[str, torch.Tensor]:
         """their_team_out [B, 6, D] → {"species": [B,6,n_species], "moves": [B,6,n_moves],
         ["latent": [B,6,latent_dim]]}. The latent key is present only when the predictor is built."""
@@ -1338,6 +1347,8 @@ _DMG_CB_PER_MON = 2                          # phys_high_cb, phys_pko_cb (physic
 _DMG_CB = _DMG_CB_PER_MON * TEAM_SIZE + 1    # + the shared p_cb scalar = 13
 _DMG_CRIT_P = 1.0 / 16.0   # gen3 base crit rate (×2 damage) — the crit roll is exposed as crit_frac
 _DMG_SPEED_SCALE = 15.0    # logistic scale for P(outspeed) over the speed-stat difference (~one stage)
+_DMG_SPEED_STD_K = 1.702   # gen3_bidir_threat_trunk_v1 (#3): sigmoid≈normal-CDF, so the uncertainty-aware
+#                            P(outspeed) divides the speed gap by (believed speed std / 1.702)
 # gen3_unified_spread_belief_v1: indices into the SpreadBelief's [atk,def,spa,spd,spe] output (== the
 # damage_tables SPREAD_STAT_COLS order). When a spread belief is passed, the op consumes these believed opp
 # stat VALUES in place of its hand-coded de-timid/neutral-0-EV constants.
@@ -1470,6 +1481,16 @@ def _dmg_topk_dim(k: int) -> int:
 _DMG_REFINE_FEATS = 4
 _DMG_REFINE_K = 8
 
+# gen3_bidir_threat_trunk_v1: the OUTGOING half of the in-trunk threat refine — the SYMMETRIC mirror of the
+# incoming refine. `discrete_outgoing` computes how hard OUR active's 4 known moves hit each of the opp's 6
+# mons and injects the per-opp-mon summary onto the OPP token slice (so attention reasons over "how
+# threatened is each opp mon by us", not just "how threatened are we"). `_DMG_OUT_REFINE` = the same 4-feat
+# `[phys_high, spec_high, phys_pko, spec_pko]` per-opp-mon summary. REVEALED opp mons use real types/bulk +
+# full P(KO); UNREVEALED mons use the EXPECTED-LATENT read (E[mult] via SPECIES_EXP_MULT, E[bulk]/E[maxhp]
+# via SPECIES_SPREAD_PRIOR / E[base_hp], marginalized over the move-belief's P(species)) with P(KO) NULLED
+# (a full-HP switch-in is ~never OHKO'd — owner decision, drops the Jensen-threshold complexity).
+_DMG_OUT_REFINE = 4
+
 
 class DamageOperator(torch.nn.Module):
     """Fixed, differentiable gen3 damage calculator run in the GPU forward pass, fed by the
@@ -1527,8 +1548,13 @@ class DamageOperator(torch.nn.Module):
     incoming_dim = TEAM_SIZE * _DMG_PER_MON + _DMG_EFFECT + _DMG_INCOMING_SEC + _DMG_CB
 
     def __init__(self, layout: Dict[str, Any], outgoing: bool = False, topk_k: int = 0,
-                 matrices_outgoing: bool = False, matrices_incoming: bool = False):
+                 matrices_outgoing: bool = False, matrices_incoming: bool = False,
+                 prob_outspeed: bool = False):
         super().__init__()
+        # gen3_bidir_threat_trunk_v1 (#3): use a SOFT P(our_spe > opp_spe) over the believed speed mean±std
+        # (SPECIES_SPREAD_PRIOR) instead of the hard point-estimate comparison. Forward-behavior toggle (no
+        # new params; values only). Stored for the forward / _outgoing_block p_outspeed computation.
+        self.prob_outspeed = bool(prob_outspeed)
         from agents.model.damage_tables import (
             build_damage_buffers, HIDDEN_POWER_NUM, HIDDEN_POWER_BP,
             CHOICE_BAND_ITEM_NUM, CHOICE_BAND_PHYS_MULT,
@@ -1763,6 +1789,16 @@ class DamageOperator(torch.nn.Module):
         ko_cb = torch.where(is_fixed, fixed_ko, ko_cb)
         return high, low, crit, ko, high_cb, ko_cb
 
+    def _p_outspeed(self, our_spe: torch.Tensor, opp_spe: torch.Tensor,
+                    opp_spe_std: Optional[torch.Tensor] = None) -> torch.Tensor:
+        """P(our mon outspeeds the opp active). LEGACY: a logistic over the speed gap at a FIXED scale.
+        gen3_bidir_threat_trunk_v1 (#3, `prob_outspeed`): UNCERTAINTY-AWARE — divide the gap by the believed
+        speed STD (sigmoid ≈ normal CDF ⇒ divisor = std/1.702), so a high-variance opp speed reads closer to
+        0.5 and a well-pinned one reads sharp. All args broadcast together."""
+        if self.prob_outspeed and opp_spe_std is not None:
+            return torch.sigmoid((our_spe - opp_spe) / (opp_spe_std / _DMG_SPEED_STD_K + 1e-6))
+        return torch.sigmoid((our_spe - opp_spe) / _DMG_SPEED_SCALE)
+
     def _outgoing_block(self, ctx: 'ExtractorContext',
                         spread_belief: Optional[torch.Tensor] = None) -> torch.Tensor:
         """OUR active → opp active, PER MOVE in REQUEST-slot order (== action logits 6+k), so the policy
@@ -1871,7 +1907,8 @@ class DamageOperator(torch.nn.Module):
         low = torch.where(is_fixed, fixed_frac, low)
         crit = torch.where(is_fixed, fixed_frac, crit)
         ko = torch.where(is_fixed, fixed_ko, ko)
-        p_outspeed = torch.sigmoid((our_spe - opp_spe) / _DMG_SPEED_SCALE)            # [B]
+        opp_spe_std = self.SPECIES_SPREAD_PRIOR[ctx.species_ids[ar, opp_act], _SB_SPE, 1]   # [B] (#3)
+        p_outspeed = self._p_outspeed(our_spe, opp_spe, opp_spe_std)                  # [B]
 
         # gen3_unified_move_system_v1: per OUR move, "what status can it cause + with what probability".
         # realized P(effect k | move) = chance_mk × acc_m × Serene Grace(our active) × Shield Dust(opp
@@ -2322,6 +2359,115 @@ class DamageOperator(torch.nn.Module):
         feats = torch.stack([phys_high, spec_high, phys_pko, spec_pko], dim=-1)           # [B,6,_DMG_REFINE_FEATS]
         return feats * defender_alive[:, :, None] * has_opp[:, None, None]                # gates
 
+    def discrete_outgoing(self, ctx: 'ExtractorContext',
+                          species_probs: Optional[torch.Tensor] = None) -> torch.Tensor:
+        """gen3_bidir_threat_trunk_v1: the SYMMETRIC mirror of `discrete_incoming` for the OUTGOING direction.
+        Computes how hard OUR active's 4 KNOWN moves hit each of the opp's 6 mons and reduces to
+        `[B, TEAM_SIZE, _DMG_OUT_REFINE]` = `[phys_high, spec_high, phys_pko, spec_pko]` (per-channel
+        best-over-our-moves max-roll fraction + accuracy-folded P(KO)) — injected onto the OPP token slice so
+        attention reasons over "how threatened is each opp mon by us".
+
+        Two defender regimes, selected per slot by `ctx.opp_believed_mask`:
+          - REVEALED opp mon: real types (CHART) + revealed-ability immunity + a NEUTRAL bulk estimate (its
+            sentinel-free base stats), gated by its real HP; FULL P(KO).
+          - UNREVEALED opp mon (`species_probs` given): the EXPECTED-LATENT read — `E[mult]` via the
+            `SPECIES_EXP_MULT` matmul with `P(species)` (folds type chart × the expected ability immunity),
+            `E[def/spd]` via `SPECIES_SPREAD_PRIOR` means and `E[maxhp]` via `E[base_hp]` (the sentinel
+            species 0 has zero base stats, so EVERYTHING must come from the belief, not `d_base`), assumed
+            full-HP (a switch-in), with **P(KO) NULLED** (owner: ~never OHKO a full-HP switch-in). When
+            `species_probs` is None, unrevealed slots are zeroed (the legacy revealed-gating).
+
+        Coarse like `discrete_incoming` (our real base spread, no boosts/CB/screens/weather — the final
+        `_outgoing_matrix` carries the full physics). Decorrelated: the `E[mult]` gradient rides
+        `P(species)` (sharpening the species belief), the damage magnitude is belief-independent. Gated to 0
+        with no opp active / no/own-fainted our active."""
+        B, device, eps = ctx.batch_size, ctx.device, 1e-6
+        ar = torch.arange(B, device=device)
+        our_act = ctx.our_active_idx                                              # [B]
+        has_opp = ctx.hp_and_active[:, TEAM_SIZE:2 * TEAM_SIZE, -1].any(dim=1).float()  # [B]
+        our_alive = (ctx.hp_and_active[ar, our_act, 0] > 0).float()               # [B]
+        gate = has_opp * our_alive                                                # [B]
+        # --- our 4 KNOWN moves (coarse: real base spread, no boosts/CB) ---
+        move_ids = ctx.all_move_ids[ar, our_act, :]                               # [B,4]
+        move_ty = ctx.all_move_type_ids[ar, our_act, :]                           # [B,4] resolved (incl HP)
+        legal = ctx.move_mask.float()                                             # [B,4]
+        is_hp = (move_ids == self.hp_num)
+        bp = torch.where(is_hp, torch.full_like(move_ty, self.hp_bp, dtype=torch.float32),
+                         self.MOVE_BP[move_ids])                                  # [B,4]
+        phys = self.TYPE_IS_PHYS[move_ty]                                         # [B,4]
+        acc = self.MOVE_ACCURACY[move_ids]                                        # [B,4]
+        usable = legal * (bp > 0).float()                                         # [B,4] legal damaging moves
+        a_base = self.BASE_STATS[ctx.species_ids[ar, our_act]]                    # [B,6]
+        spread = ctx.pokemon_part[ar, our_act,
+                                  POKEMON_SPREAD_OFFSET:POKEMON_SPREAD_OFFSET + POKEMON_SPREAD_DIM]
+        iv = spread[:, 0:6] * 31.0
+        ev = spread[:, 6:12] * 252.0
+        nat = spread[:, 13:18]                                                    # [B,5]
+        our_atk = (2.0 * a_base[:, 1] + iv[:, 1] + ev[:, 1] / 4.0 + 5.0) * nat[:, 0]   # [B]
+        our_spa = (2.0 * a_base[:, 3] + iv[:, 3] + ev[:, 3] / 4.0 + 5.0) * nat[:, 2]   # [B]
+        A = phys * our_atk[:, None] + (1.0 - phys) * our_spa[:, None]             # [B,4]
+        at1 = ctx.type1_ids[ar, our_act]
+        at2 = ctx.type2_ids[ar, our_act]
+        is_stab = ((move_ty == at1[:, None]) | (move_ty == at2[:, None])).float()  # [B,4]
+        stab = 1.0 + 0.5 * is_stab                                                # [B,4]
+        # --- opp 6 defenders ---
+        opp_species = ctx.species_ids[:, TEAM_SIZE:2 * TEAM_SIZE]                 # [B,6]
+        d_base = self.BASE_STATS[opp_species]                                     # [B,6,6] (sentinel → 0s)
+        opp_hp_frac = ctx.hp_and_active[:, TEAM_SIZE:2 * TEAM_SIZE, 0]            # [B,6]
+        defender_alive = (opp_hp_frac > 0).float()                               # [B,6] (revealed slots)
+        believed = ctx.opp_believed_mask.float()                                  # [B,6] 1.0 = UNREVEALED
+        t1d = ctx.type1_ids[:, TEAM_SIZE:2 * TEAM_SIZE]                           # [B,6]
+        t2d = ctx.type2_ids[:, TEAM_SIZE:2 * TEAM_SIZE]
+        ability = ctx.ability1_ids[:, TEAM_SIZE:2 * TEAM_SIZE]                    # [B,6]
+        mt = move_ty[:, None, :].expand(B, TEAM_SIZE, 4)                          # [B,6,4] our move types
+        # --- type effectiveness eff[B,6,4]: REVEALED via CHART; UNREVEALED via expected mult ---
+        eff_rev = (torch.gather(self.CHART[t1d], 2, mt) * torch.gather(self.CHART[t2d], 2, mt)
+                   * torch.gather(self.ABILITY_DAMAGE_MULT[ability], 2, mt))      # [B,6,4]
+        # --- bulk + maxhp: REVEALED neutral 0-EV; UNREVEALED expected (sentinel base = 0 → all from belief) ---
+        neutral_def = 2.0 * d_base[..., 2] + 31.0 + 5.0                           # [B,6]
+        neutral_spd = 2.0 * d_base[..., 4] + 31.0 + 5.0
+        neutral_maxhp = 2.0 * d_base[..., 0] + 31.0 + 110.0
+        opp_def, opp_spd, opp_maxhp, eff, alive_gate = (neutral_def, neutral_spd, neutral_maxhp,
+                                                        eff_rev, defender_alive)
+        if species_probs is not None:
+            b = (believed > 0.5)
+            e_mult = species_probs @ self.SPECIES_EXP_MULT                        # [B,6,N_TYPE_IDX]
+            eff_unrev = torch.gather(e_mult, 2, mt)                               # [B,6,4]
+            eff = torch.where(b[:, :, None], eff_unrev, eff_rev)
+            means = self.SPECIES_SPREAD_PRIOR[..., 0]                             # [n_species,5] (atk,def,spa,spd,spe)
+            e_bulk = species_probs @ means                                        # [B,6,5]
+            e_base_hp = species_probs @ self.BASE_STATS[:, 0]                      # [B,6] expected base HP
+            opp_def = torch.where(b, e_bulk[..., _SB_DEF], neutral_def)
+            opp_spd = torch.where(b, e_bulk[..., _SB_SPD], neutral_spd)
+            opp_maxhp = torch.where(b, 2.0 * e_base_hp + 31.0 + 110.0, neutral_maxhp)
+            # an UNREVEALED mon is an assumed full-HP switch-in (its obs HP frac is 0/placeholder) → force alive
+            alive_gate = torch.where(b, torch.ones_like(defender_alive), defender_alive)
+        else:
+            eff = eff_rev * (1.0 - believed)[:, :, None]                          # legacy: zero unrevealed
+        D = (phys[:, None, :] * opp_def[:, :, None]
+             + (1.0 - phys)[:, None, :] * opp_spd[:, :, None])                    # [B,6,4]
+        opp_cur_hp = opp_hp_frac * opp_maxhp                                       # [B,6] (unrevealed: 0, pko nulled)
+        core = 42.0 * bp[:, None, :] * A[:, None, :] / (D + eps) / 50.0 + 2.0     # [B,6,4]
+        dmg_ns = core * stab[:, None, :] * eff * 0.925                            # [B,6,4]
+        dmg_ns = dmg_ns * (bp > 0).float()[:, None, :]                            # kill the +2 floor on BP-0
+        screen = torch.ones(B, 1, 4, device=device)                              # coarse: no screens
+        high, _low, _crit, ko = self._rolls(dmg_ns, screen, opp_maxhp[:, :, None],
+                                            opp_cur_hp[:, :, None], acc[:, None, :], eps)  # each [B,6,4]
+        # --- per (defender, channel) best-over-our-moves of the usable rolls ---
+        um = usable[:, None, :]                                                   # [B,1,4]
+        phys_m = phys[:, None, :]
+        spec_m = 1.0 - phys_m
+        phys_high = (high * phys_m * um).amax(dim=-1)                             # [B,6]
+        spec_high = (high * spec_m * um).amax(dim=-1)
+        phys_pko = (ko * phys_m * um).amax(dim=-1)
+        spec_pko = (ko * spec_m * um).amax(dim=-1)
+        # P(KO) NULLED for UNREVEALED defenders (full-HP switch-in is ~never OHKO'd)
+        revealed_slot = 1.0 - believed                                            # [B,6]
+        phys_pko = phys_pko * revealed_slot
+        spec_pko = spec_pko * revealed_slot
+        feats = torch.stack([phys_high, spec_high, phys_pko, spec_pko], dim=-1)   # [B,6,_DMG_OUT_REFINE]
+        return feats * alive_gate[:, :, None] * gate[:, None, None]               # gates
+
     def forward(self, ctx: 'ExtractorContext', move_belief_logits: torch.Tensor,
                 spread_belief: Optional[torch.Tensor] = None,
                 move_latent_all: Optional[torch.Tensor] = None) -> torch.Tensor:
@@ -2454,7 +2600,8 @@ class DamageOperator(torch.nn.Module):
         our_spe_mult[ar, ctx.our_active_idx] = self._boost_mult(our_b_spe) * torch.where(
             our_para > 0.5, our_para.new_tensor(_DMG_PARA_SPEED), our_para.new_tensor(1.0))
         our_spe = our_spe * our_spe_mult
-        p_outspeed = torch.sigmoid((our_spe - opp_spe[:, None]) / _DMG_SPEED_SCALE)              # [B,6]
+        opp_spe_std = self.SPECIES_SPREAD_PRIOR[ctx.species_ids[ar, opp_act], _SB_SPE, 1]        # [B] (#3)
+        p_outspeed = self._p_outspeed(our_spe, opp_spe[:, None], opp_spe_std[:, None])           # [B,6]
 
         # Slot order == the named _DMG_IDX_* offsets: [phys_low, phys_high, phys_crit, phys_pko, phys_acc,
         #               spec_low, spec_high, spec_crit, spec_pko, spec_acc, outspeed, prov]
@@ -2745,7 +2892,9 @@ class Gen3FeaturesExtractor(torch.nn.Module):
                  value_dist_vmin: float = 0.0, value_dist_vmax: float = 0.0,
                  damage_topk_k: int = 0, damage_reattend: bool = False,
                  move_belief_prefuse: bool = False, damage_refine_rounds: int = 0,
-                 damage_matrices_outgoing: bool = False, damage_matrices_incoming: bool = False):
+                 damage_matrices_outgoing: bool = False, damage_matrices_incoming: bool = False,
+                 threat_refine_outgoing: bool = False, threat_unrevealed_outgoing: bool = False,
+                 threat_prob_outspeed: bool = False):
         super().__init__()
         self.layout = layout
         self.mappings = mappings
@@ -2947,8 +3096,10 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         # lean top-K block — so they never coexist (the op suppresses the lean block when matrices_incoming).
         self.damage_op = (DamageOperator(layout, outgoing=damage_outgoing, topk_k=self.damage_topk_k,
                                          matrices_outgoing=self.damage_matrices_outgoing,
-                                         matrices_incoming=self.damage_matrices_incoming)
+                                         matrices_incoming=self.damage_matrices_incoming,
+                                         prob_outspeed=threat_prob_outspeed)
                           if damage_op else None)
+        self.threat_prob_outspeed = bool(threat_prob_outspeed)
         # damage_reattend (gen3_damage_reattend_v1): let attention reason OVER the computed physics. The op's
         # per-OUR-mon INCOMING damage block (incl. the bench = safe-switch reads) is projected onto the 6
         # our-team tokens as a small-init residual, then ONE more TransformerEncoderLayer lets the
@@ -3012,6 +3163,30 @@ class Gen3FeaturesExtractor(torch.nn.Module):
             # transformer layers already renormalize downstream).
             torch.nn.init.zeros_(self.refine_proj.weight)
             torch.nn.init.zeros_(self.refine_proj.bias)
+        # gen3_bidir_threat_trunk_v1: the OUTGOING half of the in-trunk threat field (#1). It reuses the SAME
+        # between-layers refine loop (damage_refine_rounds), injecting a per-OPP-mon outgoing-threat residual
+        # onto the OPP token slice via a zero-init `outgoing_proj` (symmetric to refine_proj). #2 (the
+        # expected-LATENT defender for unrevealed mons) is folded into the kernel when the belief is on and
+        # threat_unrevealed_outgoing is set. STRUCTURAL like refine_proj (adds a Linear; OFF byte-identical).
+        self.threat_refine_outgoing = bool(threat_refine_outgoing)
+        self.threat_unrevealed_outgoing = bool(threat_unrevealed_outgoing)
+        if self.threat_refine_outgoing and self.damage_refine_rounds <= 0:
+            raise ValueError(
+                "threat_refine_outgoing=True requires damage_refine_rounds>0 — the outgoing residual rides "
+                "the SAME between-layers refine loop. Set --damage-refine-rounds N (and --damage-op)."
+            )
+        if self.threat_refine_outgoing and not damage_op:
+            raise ValueError("threat_refine_outgoing=True requires damage_op=True (the outgoing physics).")
+        if self.threat_unrevealed_outgoing and not self.threat_refine_outgoing:
+            raise ValueError(
+                "threat_unrevealed_outgoing=True requires threat_refine_outgoing=True — it only enriches the "
+                "outgoing residual's UNREVEALED columns (expected-latent defender)."
+            )
+        self.outgoing_proj = (torch.nn.Linear(_DMG_OUT_REFINE, D_MODEL)
+                              if self.threat_refine_outgoing else None)
+        if self.outgoing_proj is not None:
+            torch.nn.init.zeros_(self.outgoing_proj.weight)   # identity-at-init, same rationale as refine_proj
+            torch.nn.init.zeros_(self.outgoing_proj.bias)
         # Stored on the root so arch_toggles_from_model can thread it to the eval/self-play workers
         # (the move-prior gate is a version-checked forward-behavior toggle).
         self.move_candidate_floor = move_candidate_floor
@@ -3195,6 +3370,18 @@ class Gen3FeaturesExtractor(torch.nn.Module):
                 logits = self.move_belief.move_logits(opp_tokens, _opp_species_ids, _opp_move_ids)  # [B,6,M]
                 feats = self.damage_op.discrete_incoming(ctx, logits)        # [B, 6, _DMG_REFINE_FEATS]
                 refined_our = tokens[:, 0:TEAM_SIZE, :] + self.refine_proj(feats)   # residual (0 at init)
+                # gen3_bidir_threat_trunk_v1 (#1/#2): SYMMETRIC outgoing residual onto the OPP tokens. When
+                # threat_unrevealed_outgoing + a belief head are on, read P(species) over the CURRENT opp
+                # tokens (the per-round gradient sharpens the species belief) so the kernel's UNREVEALED
+                # columns are priced by the expected-latent defender; else species_probs=None → revealed-gated.
+                if self.outgoing_proj is not None:
+                    species_probs = None
+                    if self.threat_unrevealed_outgoing and self.belief_head is not None:
+                        species_probs = torch.softmax(
+                            self.belief_head.species_logits(opp_tokens), dim=-1)        # [B,6,n_species]
+                    out_feats = self.damage_op.discrete_outgoing(ctx, species_probs)     # [B,6,_DMG_OUT_REFINE]
+                    refined_opp = opp_tokens + self.outgoing_proj(out_feats)            # residual (0 at init)
+                    return torch.cat([refined_our, refined_opp, tokens[:, 2 * TEAM_SIZE:, :]], dim=1)
                 return torch.cat([refined_our, tokens[:, TEAM_SIZE:, :]], dim=1)
         our_team_out, their_team_out = self.team_transformer(
             role_tokens, ctx, self.embeddings, between_layers=refine_cb)

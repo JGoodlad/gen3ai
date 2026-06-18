@@ -1,0 +1,78 @@
+// Threat dataflow — FUTURE (v36): bidirectional in-trunk threat
+// Outgoing residual injected onto OPP tokens (symmetric to incoming); unrevealed outgoing priced from belief.
+digraph threat_future {
+  rankdir=TB;
+  graph [fontname="Helvetica", labelloc="t", fontsize=22,
+         label="Threat dataflow — FUTURE (v36)\nBOTH directions in the trunk · outgoing residual on OPP tokens · unrevealed outgoing priced from species+spread belief"];
+  node  [fontname="Helvetica", shape=box, style="rounded,filled", fillcolor="#e8eef7", color="#5b7aa5", penwidth=1.4];
+  edge  [fontname="Helvetica", fontsize=10, color="#5b6b7a"];
+
+  // ---- legend ----
+  subgraph cluster_legend {
+    label="legend"; style="rounded,dashed"; color="#aaaaaa"; fontsize=12;
+    Lt [label="in-TRUNK threat\n(attention reasons over it)", fillcolor="#cdebc5", color="#4a8c3f"];
+    Ln [label="NEW in v36",                                   fillcolor="#ffe9a8", color="#c79100", penwidth=2.2];
+    Lb [label="belief module",                                fillcolor="#e6dcf3", color="#7d5bab"];
+    Lt -> Ln [style=invis]; Ln -> Lb [style=invis];
+  }
+
+  obs    [label="obs vector (3457-d)"];
+  unpack [label="ObsUnpack\l• pokemon_part (per-mon)\l• non_matchup_rest  (CPU incoming optionally masked once GPU carries it)\l"];
+  penc   [label="PokemonEncoder\n→ 12 role tokens (our 6 + opp 6)"];
+  bslots [label="BeliefSlots\nfill HIDDEN opp slots with\nlearned unknown-mon tokens", fillcolor="#e6dcf3", color="#7d5bab"];
+  bhead  [label="BeliefHead species logits\nP(species | hidden slot)", fillcolor="#e6dcf3", color="#7d5bab"];
+
+  // ---------- TRUNK ----------
+  subgraph cluster_trunk {
+    label="TRUNK  (TeamTransformer — attention reasons over BOTH threat directions)"; style="rounded"; color="#4a8c3f"; fontsize=15; bgcolor="#f3faf0";
+    tf      [label="TeamTransformer\n2 layers, our↔opp attention"];
+    refine_in  [label="discrete_incoming\nINCOMING residual → OUR tokens [0:6]\n(refine_proj, zero-init)\l✓ Leg 1+4 incoming\l",
+                fillcolor="#cdebc5", color="#4a8c3f", penwidth=2.0];
+    refine_out [label="discrete_outgoing  ★NEW\nour moves → opp 6 → OUTGOING residual\nonto OPP tokens [6:12]  (outgoing_proj, zero-init)\l★ Leg 2+4 outgoing — physics in the loop\l",
+                fillcolor="#ffe9a8", color="#c79100", penwidth=2.4];
+    tf -> refine_in  [label="before each\nof first N layers", style=dashed, dir=both, color="#4a8c3f"];
+    tf -> refine_out [label="same callback,\nopp slice", style=dashed, dir=both, color="#c79100"];
+  }
+
+  spread  [label="SpreadBelief\nbelieved stats → ALL 6 opp tokens\n(believed bulk, incl. hidden)", fillcolor="#e6dcf3", color="#7d5bab"];
+  sptypes [label="species → types buffer  ★NEW\nSPECIES_TYPE1 / SPECIES_TYPE2", fillcolor="#ffe9a8", color="#c79100", penwidth=2.2];
+  mbelief [label="MoveBelief POST-fuse\nbelieved moves → opp tokens", fillcolor="#e6dcf3", color="#7d5bab"];
+
+  // ---------- DamageOperator ----------
+  subgraph cluster_op {
+    label="DamageOperator.forward  (one-shot, post-transformer)"; style="rounded"; color="#888888"; fontsize=14;
+    opin  [label="INCOMING block\nopp active believed moves → our 6"];
+    opout [label="OUTGOING matrix\nour KNOWN moves → opp 6 mons\l★ UNREVEALED columns now PRICED:\l   Σ P(species)·effectiveness  (marginalized)\l   × SpreadBelief bulk\l",
+           fillcolor="#ffe9a8", color="#c79100", penwidth=2.4];
+    dblock [label="damage_block", shape=oval, fillcolor="#dfe7f0"];
+    opin -> dblock; opout -> dblock;
+  }
+
+  reattend [label="--damage-reattend (opt)\ndamage-AWARE pools", fillcolor="#cdebc5", color="#4a8c3f"];
+  pool     [label="CLSPool\nour / their / active / value pooled"];
+
+  subgraph cluster_heads {
+    label="HEADS  (post-pool)"; style="rounded"; color="#5b7aa5"; fontsize=15; bgcolor="#f1f5fb";
+    asm   [label="ProjectionAssembler\npools  ⊕  non_matchup_rest  ⊕  damage_block"];
+    heads [label="policy head   /   value head"];
+    asm -> heads;
+  }
+
+  // ---- flow ----
+  obs -> unpack;
+  unpack -> penc [label="pokemon_part"];
+  penc -> bslots -> tf [label="role tokens"];
+  bslots -> bhead [style=dotted];
+  bhead -> refine_out [label="P(species) for\nhidden defenders", color="#c79100", style=bold];
+  sptypes -> refine_out [label="believed types", color="#c79100", style=bold];
+  bhead -> opout [label="P(species)", color="#c79100"];
+  sptypes -> opout [label="types", color="#c79100"];
+  refine_in -> spread [label="refined tokens"];
+  refine_out -> spread;
+  spread -> refine_out [label="believed bulk\n(hidden defenders)", color="#c79100"];
+  spread -> mbelief -> opin;
+  spread -> opout;
+  dblock -> reattend -> pool;
+  pool -> asm;
+  dblock -> asm;
+}

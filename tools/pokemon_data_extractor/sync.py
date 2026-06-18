@@ -401,6 +401,11 @@ def build_species(gen):
             "baseStats": {k: bs[k] for k in ("atk", "def", "hp", "spa", "spd", "spe")},
             "name": mon.get("name"),
             "num": num,
+            # gen3_data.species.SpeciesData.types — the species' STAB/defensive types, UPPERCASED to the
+            # TypeEncoder.TYPE_TO_IDX axis (the same axis gen3_type_chart.json + the obs type ids ride). Used
+            # by the DamageOperator's expected-LATENT-defender read (marginalize a believed species' types
+            # through the chart for an UNREVEALED opp mon) — the obs still reads revealed types live.
+            "types": [t.upper() for t in mon.get("types", [])],
         }
 
     return {sid: species_map[sid] for sid in sorted(species_map)}

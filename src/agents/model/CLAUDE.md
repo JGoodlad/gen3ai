@@ -184,7 +184,7 @@ shift the reward/objective), excluded from `check_compatible`. They are reward-V
 old checkpoints don't fail an arch check. Current `MODEL_CONFIG_VERSION` = **35** (see the belief +
 unified-damage + unified-move + spread-belief + op-physics + status-landing + choice-band + value-dist
 + topk-incoming + damage-reattend + move-prefuse + iterative-refinement + per-move-matrices
-(outgoing v34 / incoming v35) notes below for v16–v35).
+(outgoing v34 / incoming v35; bidirectional in-trunk threat v36) notes below for v16–v36).
 
 **Two probe-driven V-tail levers (v10 structural, v11 resume-immutable).** A representation probe on a
 real checkpoint found the **value head is partly blind to incoming KOs the policy head sees**
@@ -654,7 +654,34 @@ bool toggle gated in `check_compatible` like `damage_op`; OFF byte-for-byte (no 
 requires `damage_op` + `move_latent`. `decode_damage_block(..., matrices_incoming_k=K)` mirrors the layout
 (`incoming_matrix`). Threaded through `current_model_version` / `arch_toggles_from_model` / `_run_arch_toggles`
 + both `extractor_kwargs` sites. The two matrices compose under `--damage-matrices both`. Design:
-`designs/ai_v6/design_per_move_damage_matrices.md`. Current `MODEL_CONFIG_VERSION` = **35**.
+`designs/ai_v6/design_per_move_damage_matrices.md`.
+
+**Bidirectional in-trunk threat (v36, `gen3_bidir_threat_trunk_v1`).** Makes the threat field bidirectional
+AND in-trunk (the incoming refine only injected onto OUR tokens; outgoing was heads-only). Three toggles:
+- **`--threat-refine-outgoing` (#1, STRUCTURAL).** A new lean **`DamageOperator.discrete_outgoing(ctx,
+  species_probs)`** → `[B,6,_DMG_OUT_REFINE=4]` (`[phys_high,spec_high,phys_pko,spec_pko]`, our active's 4
+  KNOWN moves → each opp mon), injected onto the OPP token slice `[TEAM_SIZE:2·TEAM_SIZE]` via a **zero-init
+  `outgoing_proj`** in the SAME `refine_cb` between-layers loop (symmetric to `refine_proj`; identity-at-init).
+  Requires `damage_op` + `damage_refine_rounds>0`.
+- **`--threat-unrevealed-outgoing` (#2, FORWARD-behavior).** Prices `discrete_outgoing`'s UNREVEALED opp
+  columns via the EXPECTED-LATENT read: keep the slot latent, marginalize `P(species)` (per-round from the
+  factored **`BeliefHead.species_logits`**, mirroring `MoveBelief.move_logits`) through `SPECIES_EXP_MULT`
+  (type chart × per-species expected ability immunity, folded from `gen3_ability_priors`) + `SPECIES_SPREAD_
+  PRIOR` (E[def/spd] and E[maxhp] via E[base_hp] — the sentinel species 0 has zero base stats, so EVERYTHING
+  comes from the belief), **P(KO) NULLED** (a full-HP switch-in is ~never OHKO'd). Decorrelated: the gradient
+  rides `P(species)` (sharpens the species belief). Requires `threat_refine_outgoing` + a belief head
+  (`--opp-belief-aux-coef>0`).
+- **`--threat-prob-outspeed` (#3, FORWARD-behavior).** `DamageOperator._p_outspeed` divides the speed gap by
+  the believed speed STD (`SPECIES_SPREAD_PRIOR`; sigmoid≈normal-CDF, ÷ std/1.702) instead of the fixed
+  `_DMG_SPEED_SCALE` — uncertainty-aware. No new params.
+
+New buffers (non-persistent, data-built): `SPECIES_TYPE`, `SPECIES_EXP_MULT`, `SPECIES_SPREAD_PRIOR`; needs a
+new data fact, **species→types** (added to the extractor → `gen3_species.json` → `SpeciesData.types`). All
+three OFF byte-identical (NO `ARCH_SIGNATURE` bump); gated in `check_compatible`; threaded through
+`current_model_version` / `arch_toggles_from_model` / `_run_arch_toggles` + both `extractor_kwargs` sites.
+Tests: `bidir_threat_test.py` (kernel + identity-at-init + grad-to-P(species)) + `bidir_threat_fuzz_test.py`
+(real bridge battles — finiteness + pko-null-for-unrevealed + the expected-latent prices unrevealed
+defenders). Design: `designs/ai_v6/design_bidirectional_threat_trunk.md`. Current `MODEL_CONFIG_VERSION` = **36**.
 
 **Damage re-attend (v31, `damage_reattend` / `--damage-reattend`, `gen3_damage_reattend_v1`).** Lets
 attention reason OVER the computed physics — today the `DamageOperator` block is concatenated POST-pool

@@ -242,6 +242,14 @@ def build_damage_buffers(n_moves: int, n_species: int, n_abilities: int) -> Dict
         if ad is not None and 0 <= ad.num < n_abilities:
             ability_secondary_block[ad.num] = float(m)
 
+    # gen3_bidir_threat_trunk_v1: the EXPECTED-LATENT-DEFENDER tables — for an UNREVEALED opp mon the op
+    # can't read real types/ability, so it marginalizes over the move-belief's P(species). species_types
+    # carries the (type1,type2) TypeEncoder ids; species_exp_mult folds the type chart × the per-species
+    # expected ability immunity into ONE [n_species, N_TYPE_IDX] expected-multiplier table (matmul with
+    # P(species)). Built here so they reuse the chart + ability_damage_mult already in scope.
+    species_types = build_species_types(n_species)
+    species_exp_mult = build_species_exp_mult(n_species, chart, ability_damage_mult, species_types)
+
     return {
         "MOVE_BP": move_bp,
         "MOVE_TYPE_IDX": move_type_idx,
@@ -254,6 +262,11 @@ def build_damage_buffers(n_moves: int, n_species: int, n_abilities: int) -> Dict
         "HP_IS_PHYS": hp_is_phys,
         "MOVE_EFFECT_FLAGS": move_effect_flags,
         "ABILITY_DAMAGE_MULT": ability_damage_mult,
+        "SPECIES_TYPE": species_types,
+        "SPECIES_EXP_MULT": species_exp_mult,
+        # full (mean,std) spread prior on the op too (SpreadBelief owns its own copy) — E[bulk] for an
+        # unrevealed defender = P(species) @ means; the speed (mean,std) feeds the probabilistic outspeed.
+        "SPECIES_SPREAD_PRIOR": build_opp_spread_prior(n_species),
         "MOVE_SECONDARY": move_secondary,
         "MOVE_PRIORITY": move_priority,
         "MOVE_DRAIN": move_drain,
@@ -315,6 +328,62 @@ def build_opp_spread_prior(n_species: int) -> torch.Tensor:
                 prior[snum, j, 0] = mean
                 prior[snum, j, 1] = max(1.0, var ** 0.5)
     return prior
+
+
+# gen3_bidir_threat_trunk_v1: the EXPECTED-LATENT-DEFENDER buffers. For an UNREVEALED opp mon (no team
+# preview in gen3) the op has no observed types/ability — so it marginalizes the move-belief's per-slot
+# P(species) through the type chart + the per-species Smogon ability prior, with P(KO) NULLED (owner
+# decision: a full-HP switch-in is ~never OHKO'd, so the threshold isn't a useful signal and the Jensen
+# marginalization isn't worth the complexity). Only the expected MAGNITUDE survives.
+def build_species_types(n_species: int) -> torch.Tensor:
+    """``[n_species, 2]`` long — the TypeEncoder ids of each species' (type1, type2) from
+    ``SpeciesData.types``; a mono-type species (and the unknown species num 0) gets idx 0 in slot 2,
+    matching the obs mono-type convention (idx 0 = neutral in the chart). Non-persistent buffer."""
+    types = torch.zeros(n_species, 2, dtype=torch.long)
+    for sid in gen3_data.species.raw():
+        sd = gen3_data.species.get(sid)
+        if not (0 <= sd.num < n_species):
+            continue
+        for j, tname in enumerate(sd.types[:2]):
+            types[sd.num, j] = _T2I.get(tname, 0)
+    return types
+
+
+def build_species_exp_mult(n_species: int, chart: torch.Tensor, ability_damage_mult: torch.Tensor,
+                           species_types: torch.Tensor) -> torch.Tensor:
+    """``[n_species, N_TYPE_IDX]`` the EXPECTED damage multiplier of each attacking type vs a species,
+    folding BOTH marginalizations into one table so the op needs only ``E[mult vs att] = Σ_s P(s)·table``
+    (a single matmul with the move-belief's P(species)):
+
+      type effectiveness:  ``CHART[t1(s), att] · CHART[t2(s), att]``  (the species' own defensive types)
+      expected ability:    ``1 - Σ_a P(a|s)·(1 - ABILITY_DAMAGE_MULT[a, att])``  — marginalize the
+                            Smogon per-species ability prior over the chart's immunity/resist abilities
+                            (Levitate→Ground 0×, Water/Volt Absorb→Water/Electric 0×, Flash Fire→Fire 0×,
+                            Thick Fat→Fire/Ice 0.5×). Residual prior mass (and every non-immunity ability)
+                            is neutral 1.0×, so the form is robust to an unnormalized prior — it can only
+                            REDUCE the multiplier below the raw type effectiveness.
+
+    Non-persistent buffer (pure data-derived, recomputable). The unknown species (num 0) stays NEUTRAL
+    (types (0,0) → chart row 0 is all 1.0; no ability prior → no reduction)."""
+    t1 = species_types[:, 0]
+    t2 = species_types[:, 1]
+    type_eff = chart[t1] * chart[t2]                       # [n_species, N_TYPE_IDX] (chart row = att axis)
+    reduction = 1.0 - ability_damage_mult                  # [n_abilities, N_TYPE_IDX]; 0 for neutral abilities
+    n_abilities = ability_damage_mult.shape[0]
+    exp_ability = torch.ones(n_species, N_TYPE_IDX, dtype=torch.float32)
+    for sid in gen3_data.species.raw():
+        sd = gen3_data.species.get(sid)
+        snum = sd.num
+        if not (0 <= snum < n_species):
+            continue
+        acc = torch.zeros(N_TYPE_IDX, dtype=torch.float32)
+        for aid, p in (gen3_data.priors.ability(sid) or {}).items():
+            ad = gen3_data.abilities.get(aid)
+            if ad is None or not (0 <= ad.num < n_abilities):
+                continue
+            acc = acc + float(p) * reduction[ad.num]
+        exp_ability[snum] = (1.0 - acc).clamp(min=0.0)
+    return type_eff * exp_ability
 
 
 # gen3_unified_choice_band_v1: Choice Band is the dominant damage-relevant gen3 item — it ×1.5 the holder's
