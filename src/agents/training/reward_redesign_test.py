@@ -988,6 +988,75 @@ class TestProgressClock(unittest.TestCase):
                  _full_team_live(), _Legal(switches=[1]))
         self.assertEqual(c.n, 0)
 
+    # --- Rest-LOOP (gen3_rest_loop_stall_v1): a wake-then-re-Rest is a NO_OP stall, Sleep-Talk-exempt ---
+    def _rest(self, species="suicune"):
+        """A SUCCESSFUL Rest by ``species``: it self-applies SLP and heals real HP → _denial_kind 'heal'."""
+        from agents.enums import Status
+        our_hp = np.zeros(6, dtype=np.float32); our_hp[0] = 0.6   # Rest healed a real chunk
+        return _delta(our_move_id="rest", our_prev_active=species,
+                      our_status_applied=Status.SLP, our_hp_delta=our_hp)
+
+    def _live_with_moves(self, moves):
+        live = _full_team_live()
+        live.ours.active.move_ids = tuple(moves)
+        return live
+
+    def test_first_rest_free_then_rest_loop_charges(self):
+        """The 1st Rest is a free defensive heal (HEAL_FREEZE_GRACE); a wake-then-re-Rest (no Sleep Talk)
+        is a NO_OP stalled turn — it advances the obs clock AND charges the no-progress penalty."""
+        c = self._clock()
+        moves = ["rest", "surf", "calmmind", "icebeam"]
+        c.update(self._rest(), self._live_with_moves(moves), _Legal(switches=[1]))
+        self.assertEqual(c.n, 0); self.assertEqual(c.last_penalty, 0.0)            # 1st rest: free heal
+        c.update(self._rest(), self._live_with_moves(moves), _Legal(switches=[1]))
+        self.assertEqual(c.n, 1)                                                   # re-rest: NO_OP
+        self.assertAlmostEqual(c.last_penalty, -0.15, places=6)
+
+    def test_sleep_talk_rest_loop_not_charged_by_the_loop(self):
+        """A Sleep-Talk mon acts while asleep → looping Rest is legitimate, so the rest-loop bypass NEVER
+        fires: the 2nd Rest stays within HEAL_FREEZE_GRACE (identical to the prior heal path)."""
+        c = self._clock()
+        moves = ["rest", "sleeptalk", "calmmind", "surf"]
+        c.update(self._rest(), self._live_with_moves(moves), _Legal(switches=[1]))
+        c.update(self._rest(), self._live_with_moves(moves), _Legal(switches=[1]))
+        self.assertEqual(c.n, 0); self.assertEqual(c.last_penalty, 0.0)           # frozen, not charged
+
+    def test_winning_residual_rest_stall_is_exempt(self):
+        """A Rest while our Toxic chips the opp NET-down is PROGRESS (caught by _is_progress first) → never
+        charged, even on the re-Rest (a winning rest-stall is good play, not a no-progress wheel-spin)."""
+        c = self._clock()
+        moves = ["rest", "surf", "calmmind", "icebeam"]
+        opp_hp = np.zeros(6, dtype=np.float32); opp_hp[0] = -0.0625               # toxic tick
+        for _ in range(3):
+            live = self._live_with_moves(moves); live.opp.active.status = "tox"
+            d = self._rest(); d.opp_hp_delta = opp_hp
+            c.update(d, live, _Legal(switches=[1]))
+        self.assertEqual(c.n, 0); self.assertEqual(c.last_penalty, 0.0)
+
+    def test_failed_full_hp_rest_not_counted_as_a_rest(self):
+        """A Rest at full HP FAILS (no sleep, no heal) → it neither flags a loop nor enters the rest
+        history, so the next REAL Rest is still the FIRST (free)."""
+        c = self._clock()
+        moves = ["rest", "surf", "calmmind", "icebeam"]
+        c.update(_delta(our_move_id="rest", our_prev_active="suicune"),   # no SLP applied, no heal
+                 self._live_with_moves(moves), _Legal(switches=[1]))
+        self.assertNotIn("suicune", c._rested_species)                    # not recorded
+        c.n = 0
+        c.update(self._rest(), self._live_with_moves(moves), _Legal(switches=[1]))
+        self.assertEqual(c.last_penalty, 0.0)                             # first REAL rest = free heal
+
+    def test_rest_loop_resets_on_episode_boundary(self):
+        """`reset()` clears the per-species rest history so a new episode starts the loop count fresh."""
+        c = self._clock()
+        moves = ["rest", "surf", "calmmind", "icebeam"]
+        c.update(self._rest(), self._live_with_moves(moves), _Legal(switches=[1]))
+        c.update(self._rest(), self._live_with_moves(moves), _Legal(switches=[1]))
+        self.assertAlmostEqual(c.last_penalty, -0.15, places=6)           # was a loop
+        c.reset()
+        self.assertEqual(c._rested_species, set())
+        c.update(self._rest(), self._live_with_moves(moves), _Legal(switches=[1]))
+        self.assertEqual(c.last_penalty, 0.0)                             # first rest of the new episode
+
     def test_hazard_layer_resets(self):
         c = self._clock(); c.n = 2; c._prev_spikes = 1
         live = _Live([1.0] * 6, [1.0] * 6); live.opp.side_conditions = {"spikes": 2}

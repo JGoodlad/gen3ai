@@ -70,9 +70,15 @@ wheel-spin → increment + charge, gated off on forced-switch windows and when n
 DENIED splits two ways (`_denial_kind`): **exogenous** (miss / Protect-block / cant) is ALWAYS frozen;
 a **productive heal** is frozen only for `HEAL_FREEZE_GRACE`=2 consecutive windows — a SUSTAINED heal
 with no progress (the self-play mirror heal-war) then falls through to NO_OP and CHARGES, so the
-250-turn stall finally registers. The residual-PROGRESS branch is what keeps a *winning* Toxic/Leech
+250-turn stall finally registers. **Rest-loop (`gen3_rest_loop_stall_v1`):** a REST that already happened
+this episode for the same species — i.e. our active woke and re-Rested — gets NO heal-grace at all
+(`_update_rest_loop` sets `_is_rest_loop`, read in the heal branch), so a wake-then-re-Rest is a NO_OP
+stalled turn the moment it repeats; a mon carrying **Sleep Talk** is exempt (looping Rest is a legitimate
+act-while-asleep strategy, and our own moveset is fully known so the check is exact). The residual-PROGRESS
+branch is what keeps a *winning* Toxic/Leech
 defensive stall from being taxed (the discriminator is the opp net-losing HP; a heal-war where they
-out-heal the tick still charges) — validated end-to-end by `progress_clock_fuzz_test.py` (bridge, real
+out-heal the tick still charges) — and because it runs FIRST, a winning *rest-stall* (Rest while Toxic
+chips the opp down) is exempt too — validated end-to-end by `progress_clock_fuzz_test.py` (bridge, real
 battles: a winning-residual window is never charged). The env (`gen3_env.py`) folds the delta once at
 embed time, updates the clock, caches it for `calc_reward` (no double fold), and wires
 `reward_manager.progress_clock = tracker.progress_clock`.

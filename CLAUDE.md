@@ -682,7 +682,15 @@ The architecture-constant single source of truth is the module-level constants
 (`ROLE_TOKEN_SIZE`, `PROJECTION_DIM`, `MOVE_NET_HIDDEN`, `ROLE_ENCODER_HIDDEN`,
 `ACTIVE_CTX_HIDDEN`) at the top of `features_extractor.py`; `ARCH_SIGNATURE` /
 `MODEL_CONFIG_VERSION` live in `model_version.py` (current `ARCH_SIGNATURE`:
-`gen3_wish_wired_v1` — WIRES two reactive scalars (`vec[17]` our side, `vec[18]` opp side) with the
+`gen3_rest_loop_stall_v1` — RE-MEANS the `turns_since_progress` no-progress-clock scalar (`vec[14]`): a
+REST-LOOP — our active Rested earlier this episode, woke, and re-Rested **without Sleep Talk** — is now a
+NO_OP stalled turn instead of a free defensive heal, so it ADVANCES the obs clock + charges `no_progress_tax`
+(when the clock charge is active — `--bias-redesign` / `--all-shaping-pbrs`) like any other wheel-spin. A
+Sleep-Talk mon (a legitimate act-while-asleep rest-loop) and a WINNING residual rest-stall (Toxic/Leech
+chipping the opp NET-down → caught by `_is_progress` first) stay exempt; the heal-grace bypass lives in
+`progress_clock.py`. A VALUES-only change (same obs dim 3457) but retrain-class (it re-means an obs feature).
+The prior signature was `gen3_wish_wired_v1`, which WIRED two reactive scalars (`vec[17]` our side,
+`vec[18]` opp side) with the
 pending-Wish "floating heal" signal. gen3 Wish (gen4-inherited) heals the RECIPIENT's `maxhp/2` at the
 END of the turn after cast, slot-keyed (survives faint / Roar-phaze / switch / self-KO), duration 2,
 double-Wish fails. Because the heal is the recipient's own maxhp/2, the heal fraction is ALWAYS ≈0.5, so

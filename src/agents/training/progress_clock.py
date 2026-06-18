@@ -50,6 +50,16 @@ _LOG_DENOM = math.log(1.0 + PROGRESS_CLOCK_CAP)
 # so it resets the streak and is never charged — only a true no-net-progress heal-war is.
 HEAL_FREEZE_GRACE = 2
 
+# A Rest-LOOP — our active Rests, wakes, then Rests AGAIN — is a deliberate no-progress wheel-spin, not a
+# free defensive heal. So it is denied the HEAL_FREEZE_GRACE and counted as a NO_OP (stalled) turn: it
+# advances the no-progress clock + charges no_progress_tax, exactly like any other wheel-spin. EXEMPT: a
+# mon carrying one of these moves can act while asleep, so looping Rest is a legitimate strategy (the
+# canonical Rest + Sleep Talk CroCune) and is never penalised. A WINNING residual stall (Toxic/Leech
+# chipping the opp down while we Rest) is caught by `_is_progress` first, so it is exempt too — only a
+# genuinely no-net-progress rest-loop is charged. (frozenset for easy extension, mirroring
+# sleep_belief._SLEEP_USABLE_MOVES.)
+_REST_LOOP_EXEMPT_MOVES = frozenset({"sleeptalk"})
+
 
 class ProgressClock:
     """Episode-scoped ``turns_since_progress`` counter. Owned by ``EpisodeTracker``; read by the obs
@@ -66,6 +76,11 @@ class ProgressClock:
         self._prev_spikes: int = 0        # opp-side spike layers after last window (hazard-add check)
         self._prev_our_spikes: int = 0    # our-side spike layers after last window (filler-spin check)
         self._heal_streak: int = 0   # consecutive productive-heal windows (for HEAL_FREEZE_GRACE)
+        # Rest-loop bookkeeping: the per-species set of mons that have already SUCCESSFULLY Rested this
+        # episode (so a 2nd Rest is a wake-then-re-Rest loop), and the flag for the just-folded window
+        # (a non-Sleep-Talk re-Rest) — read internally to deny the heal-grace and charge it as a NO_OP.
+        self._rested_species: set = set()
+        self._is_rest_loop: bool = False
 
     def reset(self) -> None:
         self.n = 0
@@ -73,6 +88,8 @@ class ProgressClock:
         self._prev_spikes = 0
         self._prev_our_spikes = 0
         self._heal_streak = 0
+        self._rested_species = set()
+        self._is_rest_loop = False
 
     def value(self) -> float:
         """The obs scalar: log-saturated ``turns_since_progress`` ∈ [0,1] (same form as the global
@@ -89,6 +106,11 @@ class ProgressClock:
         our_spikes_now = self._our_spikes(live)
         prev_our_spikes = self._prev_our_spikes
         self._prev_our_spikes = our_spikes_now
+
+        # Rest-loop detection drives the heal-grace bypass in the denial section below; fold it up front
+        # so the per-species rest history is recorded even on windows that early-return (e.g. a winning
+        # residual rest-stall hits the progress branch — exempt, but the Rest still counts as "rested").
+        self._update_rest_loop(delta, live)
 
         # Forced-switch / post-faint replacement: only switches were legal → the clock sits out.
         if getattr(delta, "phase_is_forced_switch", False):
@@ -137,9 +159,11 @@ class ProgressClock:
             # A productive defensive heal. Free for the first HEAL_FREEZE_GRACE consecutive windows
             # (answering pressure, priced by Φ_mat); a SUSTAINED heal with no offensive progress is a
             # heal-war → fall through to the NO_OP charge below (do NOT reset the streak, so it keeps
-            # charging every subsequent heal turn).
+            # charging every subsequent heal turn). A REST-LOOP (the mon already Rested this episode,
+            # woke, and re-Rested without Sleep Talk) gets NO grace — a wake-then-re-Rest is a stalled
+            # turn the moment it repeats, so it falls straight through to the NO_OP charge.
             self._heal_streak += 1
-            if self._heal_streak <= HEAL_FREEZE_GRACE:
+            if not self._is_rest_loop and self._heal_streak <= HEAL_FREEZE_GRACE:
                 self.last_penalty = 0.0
                 return
         else:
@@ -163,6 +187,43 @@ class ProgressClock:
         if live is None:
             return 0
         return int((live.ours.side_conditions or {}).get("spikes", 0))
+
+    def _update_rest_loop(self, delta, live) -> None:
+        """Detect a Rest-LOOP — our active Rested earlier this episode, woke, and Rests AGAIN — and stash
+        :attr:`_is_rest_loop` (read in the heal branch to deny the grace). A 2nd successful Rest necessarily
+        brackets a wake (a mon can't pick Rest while asleep, and Rest fails when already asleep), so a
+        per-species rest count ≥2 IS the wake-then-re-Rest loop. EXEMPT: a Sleep-Talk mon can act while
+        asleep, so looping Rest is a legitimate strategy → never flagged. Tracks the per-species rest
+        history (episode-scoped)."""
+        self._is_rest_loop = False
+        if getattr(delta, "our_move_id", None) != "rest" or getattr(delta, "our_failed_to_move", False):
+            return
+        # A Rest that actually EXECUTED self-applies sleep; a Rest at full HP fails (no sleep) and is not a
+        # rest — so it neither flags a loop nor counts toward the history. our_status_applied is the gained
+        # Status enum this window; on a Rest turn the only self-gained status is the Rest sleep.
+        st = getattr(delta, "our_status_applied", None)
+        if st is None or getattr(st, "name", "").upper() != "SLP":
+            return
+        species = getattr(delta, "our_prev_active", None)   # the mon that used Rest (it did not switch)
+        if not species:
+            return
+        if species in self._rested_species and not self._active_has_move(live, _REST_LOOP_EXEMPT_MOVES):
+            self._is_rest_loop = True
+        self._rested_species.add(species)
+
+    @staticmethod
+    def _active_has_move(live, move_ids) -> bool:
+        """True iff OUR active mon's moveset contains any of ``move_ids``. Our own side reveals the full
+        4-move set (LiveView), so the Sleep-Talk exemption is exact (no belief needed)."""
+        if live is None or getattr(live, "ours", None) is None:
+            return False
+        mon = live.ours.active
+        if mon is None:
+            return False
+        try:
+            return any(mid in move_ids for mid in mon.move_ids)
+        except (AttributeError, TypeError):
+            return False
 
     @staticmethod
     def _is_progress(delta, live, prev_spikes: int, opp_spikes_now: int) -> bool:

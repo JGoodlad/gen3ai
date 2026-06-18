@@ -582,7 +582,16 @@ MODEL_CONFIG_VERSION = 37
 #   aware). Because the heal is the RECIPIENT's maxhp/2, the heal fraction is ALWAYS ≈0.5 — so the encoded
 #   value is a flat WISH_HEAL_FRACTION (0.5) when pending, 0.0 else: no max-HP read, no GIGO. Fuzz-calibrated
 #   vs the real sim (the |-heal|[from] move: Wish resolve confirms the pending signal fired the turn before).
-ARCH_SIGNATURE = "gen3_wish_wired_v1"
+# gen3_rest_loop_stall_v1: RE-MEANS the turns_since_progress no-progress-clock scalar (vec[14],
+#   gen3_markovian_progress_v1) — a REST-LOOP (our active Rested earlier this episode, woke, and re-Rested
+#   without Sleep Talk) is now classified a NO_OP (stalled) instead of a free defensive heal, so it ADVANCES
+#   the clock (obs) and CHARGES no_progress_tax (reward, when the clock charge is active — bias_redesign /
+#   all_shaping_pbrs) like any other wheel-spin. A Sleep-Talk mon (legitimate act-while-asleep loop) and a
+#   WINNING residual rest-stall (Toxic/Leech chipping the opp down → caught by _is_progress first) stay
+#   exempt. VALUES-only on rest-loop turns (same obs dim 3457, no shape change) — but it re-means an obs
+#   feature, so it is retrain-class: an old checkpoint won't load (loud arch-family error), which is correct
+#   since it was trained with the prior clock semantics. (progress_clock.py: the heal-grace bypass.)
+ARCH_SIGNATURE = "gen3_rest_loop_stall_v1"
 
 
 class ModelVersionError(Exception):
