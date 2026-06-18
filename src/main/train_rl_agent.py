@@ -717,7 +717,18 @@ async def main():
                         help="Relative weight of the moves multi-label BCE vs the species CE inside the "
                              "belief aux term (aux = species_CE + w·moves_BCE; both on a per-believed-slot "
                              "scale). Default 1.0 — species dominates; raise to up-weight move prediction. "
-                             "TRAINING-only, like --opp-belief-aux-coef. Ignored when the coef is 0.")
+                             "TRAINING-only, like --opp-belief-aux-coef. Ignored when the coef is 0. The "
+                             "explicit --[no-]predict-unrevealed-mon-moves knob below is the clear on/off.")
+    parser.add_argument("--predict-unrevealed-mon-moves", "--predict_unrevealed_mon_moves",
+                        dest="predict_unrevealed_mon_moves", action=BoolFlag, default=None,
+                        help="EXPLICIT clarity knob: should the model predict the MOVES of opponent mons it "
+                             "has NOT even seen (the hidden bench)? Default (unset) = yes (current behavior). "
+                             "--no-predict-unrevealed-mon-moves turns it OFF — zeros BOTH hidden-mon "
+                             "move-prediction paths: the BeliefHead's hidden-slot moves-BCE "
+                             "(--opp-belief-moves-weight → 0) AND any MoveBelief unrevealed leg "
+                             "(--move-belief-mode 'unrevealed'/'both' → 'revealed'). The REVEALED-mon move "
+                             "belief (a SEEN mon's unseen slots) and the SPECIES belief on hidden mons are "
+                             "UNTOUCHED. A desugar into existing fields — no version field.")
     parser.add_argument("--move-belief-mode", "--move_belief_mode", dest="move_belief_mode",
                         choices=("off", "revealed", "unrevealed", "both"), default=None,
                         help="MOVE-belief REINJECTION: predict each opp mon's moveset and FLOW it back into "
@@ -1193,6 +1204,17 @@ async def main():
         args.damage_op = True
         args.move_prior_fusion = True
         args.damage_outgoing = (args.unified_damage == "both")
+
+    # Explicit CLARITY knob: "predict the moves of mons we haven't even SEEN". OFF
+    # (--no-predict-unrevealed-mon-moves) zeros BOTH hidden-mon move-prediction paths — the
+    # hidden-opponent BeliefHead's moves-BCE (`opp_belief_moves_weight` → 0) AND any MoveBelief
+    # unrevealed leg (`move_belief_mode` 'unrevealed'/'both' → 'revealed'). The REVEALED-mon move belief
+    # (predict a SEEN mon's unseen slots) and the SPECIES belief on hidden mons are UNTOUCHED. A desugar
+    # into existing fields (no new version field); unset/True preserves the current behavior.
+    if getattr(args, "predict_unrevealed_mon_moves", None) is False:
+        args.opp_belief_moves_weight = 0.0
+        if args.move_belief_mode in ("unrevealed", "both"):
+            args.move_belief_mode = "revealed"
 
     # gen3_per_move_matrices_v1: --damage-matrices desugars to the two bool toggles BEFORE _resolve (so a
     # resume inherits them). None ⇒ let _resolve inherit/default; an explicit value wins. The INCOMING matrix
