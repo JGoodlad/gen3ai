@@ -139,3 +139,17 @@ heading levels, table style, and level of detail vary between versions.
   effort (the ai_v4 tail) and the obs/reward fixes it motivates; currently records the
   `run_20260531_182804` findings, the `gen3_move_effects_v1` move-effect obs fix, and the open
   matchup-variance prior-vs-confirmed question.
+
+## `learning/` — concept explainers (version-agnostic)
+
+`designs/learning/` holds **durable teaching notes** — one markdown file per major concept,
+each a two-level explainer (intuitive → technical, no code) grounded in *our* architecture
+(flags, `ARCH_SIGNATURE`s, obs blocks, real file names). These are **always-current reference
+docs**, not version-keyed impl records: if the architecture changes such that a note is wrong,
+fix it in the same pass. The `/gen3ai-learning` skill creates and maintains them.
+
+- **`marginalization_and_uncertainty.md`** — marginalize vs mean-field, Jensen's inequality,
+  the threshold/tail problem (P(KO), P(outspeed)), and how a neural net actually represents and
+  reasons over uncertainty (distribution-param heads, distributional RL / `ValueDistHead`,
+  attention-as-marginalization, why MSE bakes in mean-field, factoring the marginalization into
+  the differentiable `DamageOperator`).
