@@ -290,7 +290,17 @@ from typing import Any, Dict, List
 #   scale; forward toggle). All three OFF byte-for-byte (NO ARCH_SIGNATURE bump). threat_refine_outgoing
 #   requires damage_op + damage_refine_rounds>0; threat_unrevealed_outgoing requires threat_refine_outgoing
 #   (+ a belief head for P(species)). Design: designs/ai_v6/design_bidirectional_threat_trunk.md.
-MODEL_CONFIG_VERSION = 36
+# v37: gen3_status_trunk_v1 — STATUS-LANDING into the trunk (the last CPU-obs deprecation gap).
+#   `threat_status_refine` (bool) adds two zero-init Linears riding the refine loop: status_in_proj (incoming
+#   "will I be statused" onto OUR tokens, from the opp active's believed status moves) + status_out_proj
+#   (outgoing "can I status this opp mon" onto OPP tokens, revealed-gated, from our active's status moves),
+#   each a per-defender [P(major), P(immobilize=para/frz/slp)] computed by reusing the v27 status-landing
+#   physics (type × ability × already-statused × Sleep-Clause × Substitute). Status immunity is a computed
+#   MECHANICS fact (the same class as type effectiveness) — handed over, not learned across non-local tokens.
+#   STRUCTURAL (saved weights); OFF byte-for-byte (NO ARCH_SIGNATURE bump). Requires damage_op +
+#   damage_refine_rounds>0. Completes the FULL --unified-obs deprecation (the A/B is the arbiter). Design:
+#   designs/ai_v6/design_bidirectional_threat_trunk.md.
+MODEL_CONFIG_VERSION = 37
 
 # Change this when the neural architecture changes structurally in a way that makes
 # weights from a different signature incompatible (e.g. adding LSTM, replacing attention).
@@ -836,6 +846,12 @@ class ModelVersion:
     # v36 FORWARD-behavior (gen3_bidir_threat_trunk_v1): the UNCERTAINTY-AWARE P(outspeed) — divide the speed
     # gap by the believed speed std instead of a fixed scale. No new params (values only), gated bool.
     threat_prob_outspeed: bool = False
+    # v37 STRUCTURAL (gen3_status_trunk_v1): STATUS-LANDING into the trunk (the last CPU-obs deprecation gap).
+    # Adds two zero-init Linears (status_in_proj onto OUR tokens = incoming "will I be statused"; status_out_proj
+    # onto OPP tokens = outgoing "can I status this opp mon", revealed-gated) riding the refine loop. Status
+    # immunity is a computed MECHANICS fact (like type effectiveness) — handed over, not learned. OFF
+    # byte-identical (gated bool like threat_refine_outgoing). Requires damage_op + damage_refine_rounds>0.
+    threat_status_refine: bool = False
 
     @classmethod
     def from_layout_and_policy_kwargs(
@@ -984,6 +1000,9 @@ class ModelVersion:
             ),
             threat_prob_outspeed=bool(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("threat_prob_outspeed", False)
+            ),
+            threat_status_refine=bool(
+                policy_kwargs.get("features_extractor_kwargs", {}).get("threat_status_refine", False)
             ),
             value_tail_weight=float(value_tail_weight),
             opp_belief_aux_coef=float(opp_belief_aux_coef),
@@ -1336,6 +1355,15 @@ class ModelVersion:
                 f"current={self.threat_prob_outspeed}.\n"
                 "It changes the P(outspeed) forward (uncertainty-aware scale), a version-checked "
                 "forward-behavior change. Resume with the matching flag, or start a fresh run."
+            )
+        # gen3_status_trunk_v1 (v37): adds status_in_proj + status_out_proj (saved weights) → state_dict change.
+        if self.threat_status_refine != saved.threat_status_refine:
+            raise ModelVersionError(
+                f"threat_status_refine mismatch: saved={saved.threat_status_refine}, "
+                f"current={self.threat_status_refine}.\n"
+                "It adds the two zero-init status-landing projections (saved weights), so toggling it is "
+                "incompatible with a saved checkpoint. Resume with the matching --threat-status-refine, or "
+                "start a fresh run."
             )
 
     def check_opponent_compatible(self, foreign: "ModelVersion") -> None:
@@ -1690,4 +1718,9 @@ def _migrate_config(data: dict) -> dict:
         data.setdefault("threat_unrevealed_outgoing", False)
         data.setdefault("threat_prob_outspeed", False)
         data["config_version"] = 36
+    if version < 37:
+        # v37: gen3_status_trunk_v1 — status-landing into the trunk. OFF reproduces the v36 forward
+        # byte-for-byte (no status_in_proj/status_out_proj, refine loop unchanged).
+        data.setdefault("threat_status_refine", False)
+        data["config_version"] = 37
     return data

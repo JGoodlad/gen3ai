@@ -20,9 +20,9 @@ doc set — update it when asked or when you bump a version.)
 |---|---|
 | `ARCH_SIGNATURE` | `gen3_wish_wired_v1` (obs layout/meaning; bumps only on an obs-vector change) |
 | obs vector | **3457-dim** float32 (`Gen3ObservationEncoder.dimension`) |
-| `MODEL_CONFIG_VERSION` | **36** on this worktree (HEAD/`main` is **35**; v36 = the bidirectional-threat work below, **built, not yet shipped**) |
+| `MODEL_CONFIG_VERSION` | **37** on this worktree (HEAD/`main` is **36** after the v36 ship `4ad37da`; v37 = the status-into-trunk work below) |
 | Live training run | `ai_v6_09_dmg_reattend_N_0617` — launched on `main`@`bbe321a` (**v35**): `--unified-moves both --spread-belief --damage-topk 5 --move-candidate-floor 0.02 --damage-refine-rounds 2 --damage-reattend --damage-matrices both`, self-play + PopArt + async-rollout, CPU damage obs **visible** (not masked) |
-| Frontier | the **bidirectional in-trunk threat field** (v36) + the **CPU-damage-obs deprecation** goal — see the open bets below |
+| Frontier | the in-trunk threat field is now **complete both directions + all signal classes** (damage v36, status v37); the next big run is **the full `--unified-obs` deprecation** A/B — see the open bets below |
 
 ### Architecture at a glance
 `Gen3FeaturesExtractor` (`src/agents/model/features_extractor.py`) — a phase pipeline feeding **two**
@@ -66,7 +66,8 @@ Each is OFF-byte-identical unless noted; only an obs-vector change bumps `ARCH_S
 | 33 | `damage_refine_rounds` | (the iterative-refine int; sequenced after the v31/v32 collision) |
 | 34 | `damage_matrices_outgoing` | OUTGOING per-move matrix (our 4 moves × opp 6, revealed-gated) |
 | 35 | `damage_matrices_incoming` | INCOMING per-move matrix (enriched top-K; reuses `--damage-topk` K) |
-| **36** | **`gen3_bidir_threat_trunk_v1`** | **bidirectional in-trunk threat** (see the top log entry) |
+| **36** | **`gen3_bidir_threat_trunk_v1`** | **bidirectional in-trunk threat** (outgoing→trunk, expected-latent defender, prob-outspeed) |
+| **37** | **`gen3_status_trunk_v1`** | **status-landing into the trunk** (both directions) — the last CPU-obs deprecation gap |
 
 (Older v1–v15: the ai_v3/ai_v4 obs-richness + reward + dual-head + strict-API era — see `designs/`
 version map.)
@@ -75,7 +76,37 @@ version map.)
 
 ## Log entries (newest first)
 
-### 2026-06-17 — v36 bidirectional in-trunk threat field (BUILT, not shipped/run)
+### 2026-06-17 — v37 status-landing into the trunk (`gen3_status_trunk_v1`, shipped)
+**The last CPU-obs deprecation gap.** The move-effect block's board-conditional `status_will_land` was
+heads-only; status immunity (type × ability × already-statused × Sleep-Clause × Substitute) is a computed
+MECHANICS fact (same class as type effectiveness), and *learning* it would force attention to correlate
+non-local info (the move's status intent on one token, the defender's types+ability on another). So we
+**compute it and hand it to the trunk**, both directions, via `--threat-status-refine` (one flag):
+
+- **INCOMING** (`discrete_incoming_status`): the opp active's top-K believed status moves → per OUR mon
+  `[P(major), P(immobilize=para/frz/slp)]`, injected onto OUR tokens (the "will I get statused" signal).
+- **OUTGOING** (`discrete_outgoing_status`): our active's status moves → per opp mon (revealed-gated),
+  injected onto OPP tokens (the in-trunk home for the masked `status_will_land`).
+
+Both reuse the v27 `_status_landing` immunity physics + buffers; two zero-init residuals on the refine
+loop. The **major-vs-immobilize split** makes the signal self-contained (the policy needn't cross-reference
+which move). STRUCTURAL (v37), OFF byte-identical, requires `--damage-op` + `--damage-refine-rounds>0`.
+
+**Verified:** 17 unit (T-Wave→Ground=0 both ways, immobilize⊆major, revealed-gating, identity-at-init,
+grad); full suite 2817 passed; v37 smoke (all flags) roundtrip + train PASSED; **extensive fuzz — 1783
+live bridge decisions, all invariants held, 687 priced a status-landing**; a 5-agent adversarial review
+with an **exhaustive CPU-obs deprecation-gap audit** → **0 real bugs, 0 blocking gaps** (all 16 flags
+dismissed: PP verified present in the per-mon move slot, the 7 effect/cure flags verified in `MOVE_ATTR`,
+the CLI hard-requires the GPU replacement before any `--mask-*-obs`).
+
+**Deprecation verdict — the full `--unified-obs` is now FAIR to A/B:** every CPU-obs signal has a GPU home
+(damage→trunk via refine; status→trunk via v37; effects→move latent; PP→per-mon slot; provenance/p_outspeed/
+crit→explicit op channels; per-move status_will_land + known→v27 heads block). **Honest residuals** (minor,
+documented, not blockers — watch them in the A/B): the opp-recovery scalars are heads-only (op effect column)
+and coarsen the Rest-specific self-status-CURE nuance into a generic "has recovery"; the crit-delta and
+threat-provenance become implicit/op-channel rather than explicit decorrelated scalars.
+
+### 2026-06-17 — v36 bidirectional in-trunk threat field (shipped `4ad37da`)
 **Goal (owner):** make the model's threat *both directions* dynamic (known ⊕ believed) and **infused into
 the trunk** so attention reasons over it — not just the projection heads. Three independent toggles:
 
@@ -127,9 +158,15 @@ refine 2 + reattend + matrices both, CPU damage obs still visible.
 - **Does v36 help?** Fresh-run A/B on `--threat-refine-outgoing` (± `--threat-unrevealed-outgoing` /
   `--threat-prob-outspeed`). Watch: belief precision↑, surprise-OHKO crater share↓, win-rate non-regress,
   `grad/value_share` (PopArt). Same gate as every prior belief/damage feature.
-- **Deprecate the CPU damage obs.** The endgame: `--mask-incoming-damage-obs` once the GPU op carries the
-  field into the trunk. Only fair *with* an in-trunk injector (refine and/or v36); masking alone regresses.
-  Possible warm-start lever if a ramp dip shows: init `refine_proj`/`outgoing_proj` small-normal vs zero.
+- **Deprecate the CPU obs — the next big run.** As of v37 the architecture is in place for the FULL
+  `--unified-obs` (all three CPU blocks): damage + status, both directions, are in the trunk; effects in
+  the move latent; PP in the per-mon slot. The A/B: a fresh run with `--unified-moves both
+  --damage-refine-rounds 2 --threat-refine-outgoing --threat-unrevealed-outgoing --threat-prob-outspeed
+  --threat-status-refine` (the GPU carries everything) — control = CPU obs visible, treatment =
+  `--unified-obs`. If treatment ≥ control → deprecate. Watch the documented residuals (opp-recovery
+  heads-only + Rest-cure coarsening; crit-delta/provenance now implicit). Warm-start lever if an early dip
+  shows: init the refine/outgoing/status projections small-normal vs zero (the belief heads already init at
+  the prior, so only the injector ramps).
 - **Broader frontier** (see `designs/research_state/` + memory): the ceiling is structural (offense/
   opponent-blind obs being closed by these belief/damage features; scalar PPO teacher; self-play
   treadmill), not capacity. Levers still open: PFSP-league/exploiter, offline teacher, tail-calibrated

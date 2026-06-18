@@ -681,7 +681,27 @@ three OFF byte-identical (NO `ARCH_SIGNATURE` bump); gated in `check_compatible`
 `current_model_version` / `arch_toggles_from_model` / `_run_arch_toggles` + both `extractor_kwargs` sites.
 Tests: `bidir_threat_test.py` (kernel + identity-at-init + grad-to-P(species)) + `bidir_threat_fuzz_test.py`
 (real bridge battles — finiteness + pko-null-for-unrevealed + the expected-latent prices unrevealed
-defenders). Design: `designs/ai_v6/design_bidirectional_threat_trunk.md`. Current `MODEL_CONFIG_VERSION` = **36**.
+defenders). Design: `designs/ai_v6/design_bidirectional_threat_trunk.md`.
+
+**Status-landing into the trunk (v37, `gen3_status_trunk_v1`, `--threat-status-refine`).** The LAST CPU-obs
+deprecation gap. `status_will_land` (board-conditional: type × ability × already-statused × Sleep-Clause ×
+Substitute) was heads-only (v27 `_status_landing`). It's a computed MECHANICS fact (the class of type
+effectiveness), and learning it would force attention to correlate non-local info — so we COMPUTE it and
+inject BOTH directions on the refine loop via two zero-init Linears:
+- **`DamageOperator.discrete_incoming_status(ctx, move_logits)`** → `[B,6,_DMG_STATUS_REFINE=2]` = the opp
+  active's top-K believed status moves → per OUR mon `[P(major), P(immobilize=para/frz/slp)]` (belief-weighted
+  max; gradient sharpens the move belief). Injected onto OUR tokens via `status_in_proj`.
+- **`DamageOperator.discrete_outgoing_status(ctx)`** → `[B,6,2]` = our active's status moves → per opp mon
+  (REVEALED-gated), the in-trunk home for `status_will_land`. Injected onto OPP tokens via `status_out_proj`.
+Reuses the v27 status-landing buffers (`MOVE_INFLICTS_STATUS`/`MOVE_STATUS_CAT`/`MOVE_STATUS_TYPE_IMMUNE`/
+`ABILITY_STATUS_BLOCK`/`SPECIES_STATUS_BLOCK_PRIOR`); the major-vs-immobilize split (`_IMMOBILIZE_STATUS_CATS`
+= par/frz/slp) keeps the trunk signal self-contained. STRUCTURAL bool (two Linears), OFF byte-identical (NO
+`ARCH_SIGNATURE` bump), gated in `check_compatible`, requires `damage_op` + `damage_refine_rounds>0`, threaded
+through `arch_toggles`/`current_model_version` + both `extractor_kwargs` sites. Completes the FULL
+`--unified-obs` deprecation (deprecation-gap audit: every CPU-obs signal has a GPU home; honest residuals =
+opp-recovery heads-only + Rest-cure coarsening). Tests: `bidir_threat_test.py` (+7 status: T-Wave→Ground=0
+both ways, immobilize⊆major, revealed-gating, identity-at-init, grad) + `bidir_threat_fuzz_test.py` (status
+invariants over real battles). Current `MODEL_CONFIG_VERSION` = **37**.
 
 **Damage re-attend (v31, `damage_reattend` / `--damage-reattend`, `gen3_damage_reattend_v1`).** Lets
 attention reason OVER the computed physics — today the `DamageOperator` block is concatenated POST-pool

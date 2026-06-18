@@ -170,3 +170,40 @@ unit suite + roundtrip smoke + serverless `--debug --use-showdown-bridge --unifi
 - **Choice-lock / item-reveal** sharpening of the believed defender profile.
 - The CPU **deprecation A/B** (`--mask-incoming-damage-obs`) — run *after* v36 proves the GPU field
   carries the trunk signal (see §8 and `design_unified_damage_system.md`).
+
+## 11. v37 follow-on — STATUS-LANDING into the trunk (the deprecation completer), `gen3_status_trunk_v1`
+**Status:** BUILT + shipped. The move-effect block's board-conditional `status_will_land` was the LAST
+CPU-obs signal not in the trunk (it was heads-only via v27 `_status_landing`). Status immunity (type ×
+ability × already-statused × Sleep-Clause × Substitute) is a computed MECHANICS fact (the class of type
+effectiveness) — and *learning* it would force attention to correlate non-local info (the move's status
+intent on one token, the defender's types+ability on another), brittle compositional logic for a fact every
+calc prints. So we COMPUTE it and inject BOTH directions, via `--threat-status-refine` (one flag, v37):
+
+- **INCOMING** `DamageOperator.discrete_incoming_status(ctx, move_logits)` → `[B,6,_DMG_STATUS_REFINE=2]`:
+  the opp active's top-`_DMG_REFINE_K` believed status moves → per OUR mon `[P(major), P(immobilize =
+  para/frz/slp)]` (belief-weighted hard-max; the per-round gradient sharpens the move belief). Injected onto
+  OUR tokens via a zero-init `status_in_proj` ("will I be statused").
+- **OUTGOING** `DamageOperator.discrete_outgoing_status(ctx)` → `[B,6,2]`: our active's status moves → per
+  opp mon (REVEALED-gated), the in-trunk home for `status_will_land`. Injected onto OPP tokens via a
+  zero-init `status_out_proj`. OUR moves are KNOWN → no belief gradient.
+
+Both reuse the v27 status-landing physics + buffers (no new physics); the **major-vs-immobilize split**
+(`_IMMOBILIZE_STATUS_CATS` = par/frz/slp) makes the trunk signal SELF-CONTAINED so the policy needn't
+cross-reference which move. STRUCTURAL bool (two Linears), OFF byte-identical, gated in `check_compatible`,
+requires `--damage-op` + `--damage-refine-rounds>0`, `MODEL_CONFIG_VERSION` 36→37. v1 residuals (deferred):
+incoming Sleep-Clause / our-Substitute (matching `_incoming_status_lands`); outgoing-status vs UNREVEALED
+opp mons (revealed-gated, the active is always revealed = the deprecation requirement).
+
+**Deprecation verdict (the goal).** With v37 the FULL `--unified-obs` is now FAIR to A/B — every CPU-obs
+signal has a GPU home: damage→trunk (refine, v31/v36), status→trunk (v37), move effects→move latent
+(`MOVE_ATTR`), PP→the per-mon move slot (never masked), provenance/p_outspeed/crit→explicit op channels,
+per-move `status_will_land`+`known`→the v27 heads block. A 5-agent adversarial deprecation-gap audit found
+**0 blocking gaps** (all 16 flags dismissed — PP + the 7 effect/cure flags verified present, the CLI
+hard-requires the GPU replacement before any `--mask-*-obs`). **Honest residuals** (minor, documented, watch
+in the A/B): the opp-recovery scalars are heads-only (op effect column) and coarsen the Rest-specific
+self-status-CURE nuance into a generic "has recovery"; the crit-delta decorrelation + threat-provenance
+become implicit/op-channel rather than explicit scalars. The A/B (the arbiter): a fresh run with all the
+threat flags + `--threat-status-refine`, control = CPU obs visible vs treatment = `--unified-obs`; if
+treatment ≥ control, deprecate. Tests: `bidir_threat_test.py` (+7 status — T-Wave→Ground=0 both directions,
+immobilize⊆major, revealed-gating, identity-at-init, grad) + `bidir_threat_fuzz_test.py` (status invariants
+over 1783 live bridge decisions).

@@ -562,6 +562,7 @@ def current_model_version(
     threat_refine_outgoing: bool = False,
     threat_unrevealed_outgoing: bool = False,
     threat_prob_outspeed: bool = False,
+    threat_status_refine: bool = False,
     vf_coef: float = 0.5,
     reward_config=None,
     value_tail_weight: float = 0.0,
@@ -618,6 +619,7 @@ def current_model_version(
     ext_kwargs["threat_refine_outgoing"] = threat_refine_outgoing
     ext_kwargs["threat_unrevealed_outgoing"] = threat_unrevealed_outgoing
     ext_kwargs["threat_prob_outspeed"] = threat_prob_outspeed
+    ext_kwargs["threat_status_refine"] = threat_status_refine
     policy_kwargs = {
         "features_extractor_class": Gen3FeaturesExtractor,
         "features_extractor_kwargs": ext_kwargs,
@@ -680,6 +682,8 @@ def arch_toggles_from_model(model) -> dict:
         "threat_refine_outgoing": bool(getattr(fe, "threat_refine_outgoing", False)),
         "threat_unrevealed_outgoing": bool(getattr(fe, "threat_unrevealed_outgoing", False)),
         "threat_prob_outspeed": bool(getattr(fe, "threat_prob_outspeed", False)),
+        # gen3_status_trunk_v1 (v37): STRUCTURAL bool (adds status projections), gated → must reach the gate.
+        "threat_status_refine": bool(getattr(fe, "threat_status_refine", False)),
         "use_popart": getattr(model.policy, "popart", None) is not None,
     }
 

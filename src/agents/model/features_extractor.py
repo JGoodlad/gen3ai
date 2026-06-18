@@ -1491,6 +1491,18 @@ _DMG_REFINE_K = 8
 # (a full-HP switch-in is ~never OHKO'd — owner decision, drops the Jensen-threshold complexity).
 _DMG_OUT_REFINE = 4
 
+# gen3_status_trunk_v1: STATUS-LANDING into the trunk (the last CPU-obs deprecation gap). Status immunity
+# (type × ability × already-statused × Sleep-Clause × Substitute) is a deterministic MECHANICS fact — the
+# same class as type effectiveness, which we COMPUTE — and learning it would force attention to correlate
+# non-local info (the move's status intent on one token, the defender's types+ability on another). So we
+# COMPUTE it and inject a per-defender summary into the trunk, both directions. `_DMG_STATUS_REFINE` = the
+# 2-scalar per-defender summary `[p_major, p_immobilize]`: p_major = P(any major status lands), p_immobilize
+# = P(an ACTION-DENYING status lands = paralysis/freeze/sleep). The major-vs-immobilize split makes the
+# trunk signal SELF-CONTAINED ("I'll be immobilized" vs "I'll be chipped") so the policy needn't cross-
+# reference which move. Dedicated-move path only (damaging-move secondaries ride the heads' secondary block).
+_DMG_STATUS_REFINE = 2
+_IMMOBILIZE_STATUS_CATS = (1, 3, 4)   # MOVE_STATUS_CAT values for paralysis / freeze / sleep (action-denying)
+
 
 class DamageOperator(torch.nn.Module):
     """Fixed, differentiable gen3 damage calculator run in the GPU forward pass, fed by the
@@ -2468,6 +2480,124 @@ class DamageOperator(torch.nn.Module):
         feats = torch.stack([phys_high, spec_high, phys_pko, spec_pko], dim=-1)   # [B,6,_DMG_OUT_REFINE]
         return feats * alive_gate[:, :, None] * gate[:, None, None]               # gates
 
+    def discrete_incoming_status(self, ctx: 'ExtractorContext',
+                                 move_belief_logits: torch.Tensor) -> torch.Tensor:
+        """gen3_status_trunk_v1 (INCOMING): per OUR mon, the belief-weighted `[P(major status lands),
+        P(immobilizing status lands = para/frz/slp)]` from the opp active's top-`_DMG_REFINE_K` believed
+        DEDICATED status moves (Thunder Wave / Toxic / Will-O-Wisp / Spore / Leech Seed). The "will I get
+        statused" anticipation signal — injected onto OUR-mon tokens (the incoming mirror of the damage
+        refine). Reuses the `_incoming_status_lands` DEDICATED-move immunity physics (type @ OUR def types,
+        ability block, already-statused); the damaging-move secondary-para path stays at the heads. The
+        major-vs-immobilize split is the decorrelation that matters for a SWITCH (a Ground pivot reads 0
+        T-Wave immobilize even if it eats Toxic). Belief-weighted hard-max over K → the per-round gradient
+        rides `w_topk` and sharpens the move belief toward status threats. `[B, TEAM_SIZE, _DMG_STATUS_REFINE]`."""
+        B, device = ctx.batch_size, ctx.device
+        ar = torch.arange(B, device=device)
+        opp_act = TEAM_SIZE + ctx.opp_active_local
+        has_opp = ctx.hp_and_active[:, TEAM_SIZE:2 * TEAM_SIZE, -1].any(dim=1).float()   # [B]
+        n_hp = self.HP_TYPE_IDX.shape[0]
+        n_type = self.MOVE_STATUS_TYPE_IMMUNE.shape[1]
+        # candidate selection — the SAME detached top-K over the move belief as discrete_incoming
+        w = torch.sigmoid(move_belief_logits[ar, ctx.opp_active_local])                  # [B, n_moves]
+        w_hp = torch.sigmoid(move_belief_logits[ar, ctx.opp_active_local, self.hp_num])   # [B]
+        hp_type_belief = ctx.hp_probs[ar, opp_act]                                        # [B,16]
+        w_all = torch.cat([w, w_hp.unsqueeze(-1) * hp_type_belief], dim=1)                # [B,C]
+        K = min(_DMG_REFINE_K, w_all.shape[1])
+        topk_idx = w_all.detach().topk(K, dim=-1).indices                                 # [B,K]
+        w_topk = w_all.gather(-1, topk_idx)                                               # [B,K] → belief grad
+        zc = torch.zeros(n_hp, device=device)
+        inflicts = torch.cat([self.MOVE_INFLICTS_STATUS, zc])[topk_idx]                   # [B,K]
+        acc = torch.cat([self.MOVE_ACCURACY, torch.ones(n_hp, device=device)])[topk_idx]  # [B,K]
+        sidx = torch.cat([self.MOVE_STATUS_CAT,
+                          torch.zeros(n_hp, dtype=torch.long, device=device)])[topk_idx]  # [B,K]
+        blocked = torch.cat([self.MOVE_BLOCKED_IF_STATUSED, zc])[topk_idx]                # [B,K]
+        ti = torch.cat([self.MOVE_STATUS_TYPE_IMMUNE,
+                        torch.zeros(n_hp, n_type, device=device)])[topk_idx]              # [B,K,n_type]
+        # our 6 defenders' KNOWN types / ability-block / already-statused / alive
+        t1d = ctx.type1_ids[:, :TEAM_SIZE]
+        t2d = ctx.type2_ids[:, :TEAM_SIZE]
+        abl = self.ABILITY_STATUS_BLOCK[ctx.ability1_ids[:, :TEAM_SIZE]]                   # [B,6,N_STATUS_CAT]
+        our_cond = ctx.pokemon_part[:, :TEAM_SIZE,
+                                    POKEMON_CONDITION_OFFSET + 1:POKEMON_CONDITION_OFFSET + 7]
+        already = (our_cond.sum(-1) > 0.5).float()                                        # [B,6]
+        defender_alive = (ctx.hp_and_active[:, :TEAM_SIZE, 0] > 0).float()                # [B,6]
+        ti_dk = ti[:, None, :, :].expand(B, TEAM_SIZE, K, n_type)
+        ti1 = torch.gather(ti_dk, 3, t1d[:, :, None, None].expand(B, TEAM_SIZE, K, 1)).squeeze(-1)
+        ti2 = torch.gather(ti_dk, 3, t2d[:, :, None, None].expand(B, TEAM_SIZE, K, 1)).squeeze(-1)
+        t_imm = torch.maximum(ti1, ti2)                                                   # [B,6,K]
+        abl_block = torch.gather(abl, 2, sidx[:, None, :].expand(B, TEAM_SIZE, K))         # [B,6,K]
+        already_block = already[:, :, None] * blocked[:, None, :]                         # [B,6,K]
+        land = (inflicts[:, None, :] * acc[:, None, :] * (1.0 - t_imm)
+                * (1.0 - abl_block) * (1.0 - already_block))                              # [B,6,K]
+        is_immob = sum((sidx == c) for c in _IMMOBILIZE_STATUS_CATS).float().clamp(max=1.0)              # [B,K]
+        w_b = w_topk[:, None, :]
+        p_major = (w_b * land).amax(dim=-1)                                               # [B,6]
+        p_immob = (w_b * land * is_immob[:, None, :]).amax(dim=-1)                         # [B,6]
+        feats = torch.stack([p_major, p_immob], dim=-1)                                   # [B,6,_DMG_STATUS_REFINE]
+        return feats * defender_alive[:, :, None] * has_opp[:, None, None]
+
+    def discrete_outgoing_status(self, ctx: 'ExtractorContext') -> torch.Tensor:
+        """gen3_status_trunk_v1 (OUTGOING): per OPP mon (REVEALED-gated), the `[P(major status from OUR
+        active's status moves lands), P(immobilizing status lands)]` — the in-trunk home for the masked
+        move-effect block's `status_will_land`, extended over the opp's 6 mons (the active is ALWAYS
+        revealed = the deprecation requirement; revealed bench = bonus; unrevealed zeroed in v1). Reuses the
+        `_status_landing` immunity physics (type @ opp types, ability revealed-exact else species prior,
+        already-statused, Sleep-Clause, Substitute @ the active slot) per OUR move, reduced by category over
+        our 4 moves. OUR moves are KNOWN → no belief gradient. `[B, TEAM_SIZE, _DMG_STATUS_REFINE]`."""
+        B, device = ctx.batch_size, ctx.device
+        ar = torch.arange(B, device=device)
+        our_act = ctx.our_active_idx
+        has_opp = ctx.hp_and_active[:, TEAM_SIZE:2 * TEAM_SIZE, -1].any(dim=1).float()
+        our_alive = (ctx.hp_and_active[ar, our_act, 0] > 0).float()
+        gate = has_opp * our_alive                                                        # [B]
+        n_type = self.MOVE_STATUS_TYPE_IMMUNE.shape[1]
+        # our 4 status moves (request order; KNOWN)
+        move_ids = ctx.all_move_ids[ar, our_act, :]                                       # [B,4]
+        inflicts = self.MOVE_INFLICTS_STATUS[move_ids]                                     # [B,4]
+        acc = self.MOVE_ACCURACY[move_ids]                                                # [B,4]
+        sidx = self.MOVE_STATUS_CAT[move_ids]                                             # [B,4]
+        is_sleep = self.MOVE_IS_SLEEP[move_ids]                                           # [B,4]
+        blocked = self.MOVE_BLOCKED_IF_STATUSED[move_ids]                                 # [B,4]
+        ti = self.MOVE_STATUS_TYPE_IMMUNE[move_ids]                                       # [B,4,n_type]
+        is_immob = sum((sidx == c) for c in _IMMOBILIZE_STATUS_CATS).float().clamp(max=1.0)              # [B,4]
+        # opp 6 defenders
+        opp_t1 = ctx.type1_ids[:, TEAM_SIZE:2 * TEAM_SIZE]
+        opp_t2 = ctx.type2_ids[:, TEAM_SIZE:2 * TEAM_SIZE]
+        opp_ability = ctx.ability1_ids[:, TEAM_SIZE:2 * TEAM_SIZE]                         # [B,6]
+        opp_species = ctx.species_ids[:, TEAM_SIZE:2 * TEAM_SIZE]                          # [B,6]
+        revealed_slot = (1.0 - ctx.opp_believed_mask.float())                             # [B,6] 1 = revealed
+        defender_alive = (ctx.hp_and_active[:, TEAM_SIZE:2 * TEAM_SIZE, 0] > 0).float()    # [B,6]
+        ti_dm = ti[:, None, :, :].expand(B, TEAM_SIZE, 4, n_type)                          # [B,6,4,n_type]
+        timm1 = torch.gather(ti_dm, 3, opp_t1[:, :, None, None].expand(B, TEAM_SIZE, 4, 1)).squeeze(-1)
+        timm2 = torch.gather(ti_dm, 3, opp_t2[:, :, None, None].expand(B, TEAM_SIZE, 4, 1)).squeeze(-1)
+        t_imm = torch.maximum(timm1, timm2)                                               # [B,6,4]
+        ab_rev = torch.gather(self.ABILITY_STATUS_BLOCK[opp_ability], 2,
+                              sidx[:, None, :].expand(B, TEAM_SIZE, 4))                    # [B,6,4]
+        ab_pri = torch.gather(self.SPECIES_STATUS_BLOCK_PRIOR[opp_species], 2,
+                              sidx[:, None, :].expand(B, TEAM_SIZE, 4))                    # [B,6,4]
+        is_rev = (opp_ability > 0).float()[:, :, None]                                     # [B,6,1]
+        ability_block = is_rev * ab_rev + (1.0 - is_rev) * ab_pri                          # [B,6,4]
+        opp_cond = ctx.pokemon_part[:, TEAM_SIZE:2 * TEAM_SIZE,
+                                    POKEMON_CONDITION_OFFSET + 1:POKEMON_CONDITION_OFFSET + 7]
+        already = (opp_cond.sum(-1) > 0.5).float()                                        # [B,6]
+        already_block = already[:, :, None] * blocked[:, None, :]                         # [B,6,4]
+        # Sleep-Clause (global): any opp asleep via a non-Rest source → our sleep moves fail
+        opp_slp = ctx.pokemon_part[:, TEAM_SIZE:2 * TEAM_SIZE, POKEMON_CONDITION_OFFSET + _COND_SLP_IDX]
+        opp_rest = ctx.pokemon_part[:, TEAM_SIZE:2 * TEAM_SIZE, POKEMON_SLEEP_BELIEF_OFFSET]
+        sleep_clause = ((opp_slp * (1.0 - opp_rest)).sum(-1) > 0.5).float()[:, None, None]  # [B,1,1]
+        sleep_block = sleep_clause * is_sleep[:, None, :]                                  # [B,6,4]
+        # Substitute — only the opp ACTIVE slot can hold a Sub (blocks every status move)
+        has_sub = (ctx.opp_ctx_raw[:, _SUBSTITUTE_CTX_IDX] > 0.5).float()                  # [B]
+        is_active = torch.zeros(B, TEAM_SIZE, device=device)
+        is_active[ar, ctx.opp_active_local] = 1.0
+        sub_block = (has_sub[:, None] * is_active)[:, :, None]                             # [B,6,1]
+        land = (inflicts[:, None, :] * acc[:, None, :] * (1.0 - t_imm) * (1.0 - ability_block)
+                * (1.0 - already_block) * (1.0 - sleep_block) * (1.0 - sub_block))         # [B,6,4]
+        p_major = land.amax(dim=-1)                                                        # [B,6]
+        p_immob = (land * is_immob[:, None, :]).amax(dim=-1)                               # [B,6]
+        feats = torch.stack([p_major, p_immob], dim=-1)                                    # [B,6,_DMG_STATUS_REFINE]
+        return feats * revealed_slot[:, :, None] * defender_alive[:, :, None] * gate[:, None, None]
+
     def forward(self, ctx: 'ExtractorContext', move_belief_logits: torch.Tensor,
                 spread_belief: Optional[torch.Tensor] = None,
                 move_latent_all: Optional[torch.Tensor] = None) -> torch.Tensor:
@@ -2894,7 +3024,7 @@ class Gen3FeaturesExtractor(torch.nn.Module):
                  move_belief_prefuse: bool = False, damage_refine_rounds: int = 0,
                  damage_matrices_outgoing: bool = False, damage_matrices_incoming: bool = False,
                  threat_refine_outgoing: bool = False, threat_unrevealed_outgoing: bool = False,
-                 threat_prob_outspeed: bool = False):
+                 threat_prob_outspeed: bool = False, threat_status_refine: bool = False):
         super().__init__()
         self.layout = layout
         self.mappings = mappings
@@ -3187,6 +3317,28 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         if self.outgoing_proj is not None:
             torch.nn.init.zeros_(self.outgoing_proj.weight)   # identity-at-init, same rationale as refine_proj
             torch.nn.init.zeros_(self.outgoing_proj.bias)
+        # gen3_status_trunk_v1 (v37): STATUS-LANDING into the trunk (the last CPU-obs deprecation gap). Two
+        # zero-init residuals riding the SAME between-layers refine loop: INCOMING status (opp active's
+        # believed status moves → our 6, onto OUR tokens) + OUTGOING status (our active's status moves → opp
+        # 6, revealed-gated, onto OPP tokens). Status immunity is a computed MECHANICS fact (not learnable
+        # strategy); we hand it over so the model spends capacity on HOW to value it, not on re-deriving the
+        # gen3 immunity rules across non-local tokens. STRUCTURAL (adds two Linears; OFF byte-identical).
+        self.threat_status_refine = bool(threat_status_refine)
+        if self.threat_status_refine and not damage_op:
+            raise ValueError("threat_status_refine=True requires damage_op=True (the status physics).")
+        if self.threat_status_refine and self.damage_refine_rounds <= 0:
+            raise ValueError(
+                "threat_status_refine=True requires damage_refine_rounds>0 — the status residuals ride the "
+                "SAME between-layers refine loop. Set --damage-refine-rounds N."
+            )
+        self.status_in_proj = (torch.nn.Linear(_DMG_STATUS_REFINE, D_MODEL)
+                               if self.threat_status_refine else None)   # incoming → OUR tokens
+        self.status_out_proj = (torch.nn.Linear(_DMG_STATUS_REFINE, D_MODEL)
+                                if self.threat_status_refine else None)  # outgoing → OPP tokens
+        for _p in (self.status_in_proj, self.status_out_proj):
+            if _p is not None:
+                torch.nn.init.zeros_(_p.weight)   # identity-at-init (same rationale as refine_proj/outgoing_proj)
+                torch.nn.init.zeros_(_p.bias)
         # Stored on the root so arch_toggles_from_model can thread it to the eval/self-play workers
         # (the move-prior gate is a version-checked forward-behavior toggle).
         self.move_candidate_floor = move_candidate_floor
@@ -3368,19 +3520,30 @@ class Gen3FeaturesExtractor(torch.nn.Module):
                     return tokens
                 opp_tokens = tokens[:, TEAM_SIZE:2 * TEAM_SIZE, :]            # current (mid-transformer) opp
                 logits = self.move_belief.move_logits(opp_tokens, _opp_species_ids, _opp_move_ids)  # [B,6,M]
-                feats = self.damage_op.discrete_incoming(ctx, logits)        # [B, 6, _DMG_REFINE_FEATS]
-                refined_our = tokens[:, 0:TEAM_SIZE, :] + self.refine_proj(feats)   # residual (0 at init)
-                # gen3_bidir_threat_trunk_v1 (#1/#2): SYMMETRIC outgoing residual onto the OPP tokens. When
-                # threat_unrevealed_outgoing + a belief head are on, read P(species) over the CURRENT opp
-                # tokens (the per-round gradient sharpens the species belief) so the kernel's UNREVEALED
-                # columns are priced by the expected-latent defender; else species_probs=None → revealed-gated.
+                # --- INCOMING residuals onto OUR tokens: damage (always) + status (v37, if on) ---
+                refined_our = tokens[:, 0:TEAM_SIZE, :] + self.refine_proj(
+                    self.damage_op.discrete_incoming(ctx, logits))           # residual (0 at init)
+                if self.status_in_proj is not None:
+                    # gen3_status_trunk_v1: "will I get statused" — one belief read feeds damage + status.
+                    refined_our = refined_our + self.status_in_proj(
+                        self.damage_op.discrete_incoming_status(ctx, logits))
+                # --- OUTGOING residuals onto OPP tokens: damage (#1/#2, if on) + status (v37, if on) ---
+                refined_opp = opp_tokens
                 if self.outgoing_proj is not None:
+                    # gen3_bidir_threat_trunk_v1: when threat_unrevealed_outgoing + a belief head are on, read
+                    # P(species) over the CURRENT opp tokens (gradient sharpens the species belief) so the
+                    # unrevealed columns are priced by the expected-latent defender; else revealed-gated.
                     species_probs = None
                     if self.threat_unrevealed_outgoing and self.belief_head is not None:
                         species_probs = torch.softmax(
                             self.belief_head.species_logits(opp_tokens), dim=-1)        # [B,6,n_species]
-                    out_feats = self.damage_op.discrete_outgoing(ctx, species_probs)     # [B,6,_DMG_OUT_REFINE]
-                    refined_opp = opp_tokens + self.outgoing_proj(out_feats)            # residual (0 at init)
+                    refined_opp = refined_opp + self.outgoing_proj(
+                        self.damage_op.discrete_outgoing(ctx, species_probs))           # residual (0 at init)
+                if self.status_out_proj is not None:
+                    # gen3_status_trunk_v1: "can I status this opp mon" (revealed-gated).
+                    refined_opp = refined_opp + self.status_out_proj(
+                        self.damage_op.discrete_outgoing_status(ctx))
+                if self.outgoing_proj is not None or self.status_out_proj is not None:
                     return torch.cat([refined_our, refined_opp, tokens[:, 2 * TEAM_SIZE:, :]], dim=1)
                 return torch.cat([refined_our, tokens[:, TEAM_SIZE:, :]], dim=1)
         our_team_out, their_team_out = self.team_transformer(

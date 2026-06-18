@@ -199,6 +199,7 @@ def _run_arch_toggles(args) -> dict:
         threat_refine_outgoing=args.threat_refine_outgoing,
         threat_unrevealed_outgoing=args.threat_unrevealed_outgoing,
         threat_prob_outspeed=args.threat_prob_outspeed,
+        threat_status_refine=args.threat_status_refine,
     )
 
 
@@ -966,6 +967,17 @@ async def main():
                              "(SPECIES_SPREAD_PRIOR; sigmoid≈normal-CDF) instead of a fixed scale — a high-variance "
                              "opp speed reads ~0.5, a pinned one reads sharp. FORWARD-behavior (version-checked, "
                              "fresh-only). REQUIRES --damage-op. Default off (byte-identical).")
+    parser.add_argument("--threat-status-refine", "--threat_status_refine", dest="threat_status_refine",
+                        action=BoolFlag, default=None,
+                        help="STATUS-LANDING into the TRUNK (gen3_status_trunk_v1, the last CPU-obs deprecation "
+                             "gap): two zero-init residuals riding the refine loop — INCOMING ('will I be "
+                             "statused' onto OUR tokens, from the opp active's believed status moves) + OUTGOING "
+                             "('can I status this opp mon' onto OPP tokens, revealed-gated, from our status moves), "
+                             "each [P(major), P(immobilize=para/frz/slp)] computed by reusing the v27 status-landing "
+                             "physics (type × ability × already × Sleep-Clause × Substitute). Status immunity is a "
+                             "computed MECHANICS fact handed over (not learned across non-local tokens) — completes "
+                             "the FULL --unified-obs deprecation. STRUCTURAL (version-checked, fresh-only). REQUIRES "
+                             "--damage-op AND --damage-refine-rounds>0. Default off (byte-identical).")
     parser.add_argument("--spread-belief", "--spread_belief", dest="spread_belief",
                         action=BoolFlag, default=None,
                         help="SpreadBelief (gen3_unified_spread_belief_v1): the THIRD belief leg — predict "
@@ -1237,6 +1249,7 @@ async def main():
     _resolve("threat_refine_outgoing", False)    # v36 structural (outgoing→trunk; version-checked, fresh-only)
     _resolve("threat_unrevealed_outgoing", False)  # v36 forward-behavior (expected-latent; version-checked, fresh-only)
     _resolve("threat_prob_outspeed", False)      # v36 forward-behavior (prob outspeed; version-checked, fresh-only)
+    _resolve("threat_status_refine", False)      # v37 structural (status→trunk; version-checked, fresh-only)
     # PopArt INHERITED on a flagless resume → adopt its required `--clip-range-vf none` (the saved
     # popart run necessarily used it), so the explicit-config check below doesn't block the resume.
     if args.use_popart and not _popart_explicit and _saved_ver is not None and args.clip_range_vf is not None:
@@ -1437,6 +1450,17 @@ async def main():
         parser.error(
             "--threat-prob-outspeed requires --damage-op (the P(outspeed) feature lives in the damage operator)."
         )
+    if getattr(args, "threat_status_refine", False):
+        if not args.damage_op:
+            parser.error(
+                "--threat-status-refine requires --damage-op (the status-landing physics is the damage operator). "
+                "Use --unified-damage / --unified-moves, or add --damage-op."
+            )
+        if not (args.damage_refine_rounds and args.damage_refine_rounds > 0):
+            parser.error(
+                "--threat-status-refine requires --damage-refine-rounds>0 — the status residuals ride the SAME "
+                "between-layers refine loop. Set --damage-refine-rounds N."
+            )
     if args.move_belief_latent_coef and not args.move_latent:
         # The latent grading reads the MoveLatentEncoder's latent table → the encoder must exist.
         parser.error(
@@ -2188,6 +2212,7 @@ async def main():
         _load_extractor_kwargs["threat_refine_outgoing"] = args.threat_refine_outgoing      # v36 (version-checked)
         _load_extractor_kwargs["threat_unrevealed_outgoing"] = args.threat_unrevealed_outgoing  # v36
         _load_extractor_kwargs["threat_prob_outspeed"] = args.threat_prob_outspeed          # v36 (version-checked)
+        _load_extractor_kwargs["threat_status_refine"] = args.threat_status_refine          # v37 (version-checked)
         _load_policy_kwargs = {
             "features_extractor_class": Gen3FeaturesExtractor,
             "features_extractor_kwargs": _load_extractor_kwargs,
@@ -2445,6 +2470,7 @@ async def main():
         extractor_kwargs["threat_refine_outgoing"] = args.threat_refine_outgoing
         extractor_kwargs["threat_unrevealed_outgoing"] = args.threat_unrevealed_outgoing
         extractor_kwargs["threat_prob_outspeed"] = args.threat_prob_outspeed
+        extractor_kwargs["threat_status_refine"] = args.threat_status_refine
 
         policy_kwargs = {
             "features_extractor_class": Gen3FeaturesExtractor,

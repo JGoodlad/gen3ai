@@ -41,6 +41,7 @@ _TOGGLES = dict(
     attend_unrevealed_opponents=True, opp_belief_slots=True, move_belief_mode="both",
     move_prior_fusion=True, damage_op=True, move_latent=True, damage_refine_rounds=2,
     threat_refine_outgoing=True, threat_unrevealed_outgoing=True, threat_prob_outspeed=True,
+    threat_status_refine=True,   # v37: status-landing into the trunk (both directions)
 )
 
 
@@ -58,6 +59,7 @@ class _ThreatFuzzPlayer(Gen3Player):
         self._fx.eval()
         self.n_decisions = 0
         self.n_unrevealed_priced = 0
+        self.n_status_priced = 0
 
     def choose_move(self, battle):
         forfeit = self._handle_stall(battle, "THREAT_FUZZ_STALL")
@@ -72,6 +74,7 @@ class _ThreatFuzzPlayer(Gen3Player):
                 f"non-finite forward at turn {battle.turn}"
             ctx = self._fx.unpack({"observation": obs_t})
             self._check_discrete_outgoing(ctx, battle)
+            self._check_status(ctx, battle)
         self.n_decisions += 1
         if int(mask.sum()) == 0:
             return self.choose_default_move()
@@ -102,6 +105,27 @@ class _ThreatFuzzPlayer(Gen3Player):
             if not torch.equal(out, base):
                 self.n_unrevealed_priced += 1
 
+    def _check_status(self, ctx, battle):
+        """v37 status-landing invariants on the LIVE ctx, both directions. The kernels' invariants hold for
+        ANY belief input, so incoming uses a synthetic per-move belief (a small random logit) — we're
+        validating finiteness / [0,1] bounds / immobilize⊆major / revealed-gating, not specific values."""
+        op = self._fx.damage_op
+        believed = ctx.opp_believed_mask.float()                        # [B,6] 1 = UNREVEALED
+        n_moves = op.MOVE_INFLICTS_STATUS.shape[0]
+        ml = torch.randn(ctx.batch_size, TEAM_SIZE, n_moves)            # synthetic move belief
+        inc = op.discrete_incoming_status(ctx, ml)                      # [B,6,2]  (opp active → our 6)
+        out = op.discrete_outgoing_status(ctx)                          # [B,6,2]  (our active → opp 6)
+        for name, t in (("incoming", inc), ("outgoing", out)):
+            assert torch.isfinite(t).all(), f"non-finite {name} status, turn {battle.turn}"
+            assert (t >= -1e-6).all() and (t <= 1.0 + 1e-6).all(), f"{name} status out of [0,1], turn {battle.turn}"
+            # immobilize ⊆ major  →  p_immobilize <= p_major everywhere
+            assert (t[..., 1] <= t[..., 0] + 1e-6).all(), f"{name} immobilize > major, turn {battle.turn}"
+        # outgoing status is revealed-gated: unrevealed opp slots must be exactly 0
+        unrevealed = believed.bool()[:, :, None].expand_as(out)
+        assert out[unrevealed].abs().sum().item() == 0.0, "unrevealed opp leaked into outgoing status"
+        if inc.abs().sum().item() > 0.0 or out.abs().sum().item() > 0.0:
+            self.n_status_priced += 1
+
 
 async def _run(n_battles: int, seed: int) -> int:
     pool = TeamLoader().get_all_teams()
@@ -119,11 +143,13 @@ async def _run(n_battles: int, seed: int) -> int:
     )
     print(f"bidir-threat fuzz — {n_battles} real bridge battles (v36 all-on)", flush=True)
     await run_local_battles(trainee, opp, n_battles, concurrency=1)
-    print(f"  decisions checked: {trainee.n_decisions}; "
-          f"decisions that PRICED an unrevealed defender: {trainee.n_unrevealed_priced}", flush=True)
+    print(f"  decisions checked: {trainee.n_decisions}; priced an unrevealed defender: "
+          f"{trainee.n_unrevealed_priced}; priced a status-landing: {trainee.n_status_priced}", flush=True)
     assert trainee.n_decisions > 0, "no decisions exercised"
     assert trainee.n_unrevealed_priced > 0, \
         "the expected-latent path never priced an unrevealed defender — feature not exercised"
+    assert trainee.n_status_priced > 0, \
+        "the status-landing path never fired — feature not exercised"
     return trainee.n_decisions
 
 

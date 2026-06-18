@@ -701,7 +701,7 @@ and `gen3_sleep_wake_belief_v1` — a 3-dim per-mon SLEEP WAKE belief block [`sl
 Early Bird halves; opp Early-Bird prior marginalised; Rest source from the event log's `[from]` clause;
 fuzz-calibrated vs the real sim RNG), `sleep_counter_reliable`], `POKEMON_VECTOR_DIM` 106 → 109
 (3419 → 3455). All four are retrain-class; current
-`MODEL_CONFIG_VERSION`: **36** (the v33–v36 additions are the bolded entries below) — v16 added the in-place
+`MODEL_CONFIG_VERSION`: **37** (the v33–v37 additions are the bolded entries below) — v16 added the in-place
 hidden-opponent belief-aux toggle `opp_belief_slots` + its coef `opp_belief_aux_coef`, v17 the
 move-belief reinjection toggle `move_belief_mode` + `move_belief_coef`, v18 the latent-belief toggle
 `opp_belief_latent` + `opp_belief_latent_coef`, v19 the differentiable damage-operator toggle
@@ -848,9 +848,26 @@ owner decision, drops the Jensen-threshold complexity; forward toggle, no new pa
 not a fixed scale (forward toggle, no new params). Needs a NEW data fact — **species→types** (added to the
 extractor → `gen3_species.json` → `SpeciesData.types`; the obs still reads revealed types live). All three
 OFF byte-identical (NO `ARCH_SIGNATURE` bump), version-gated, threaded through `arch_toggles` + both
-extractor sites. Current
-`MODEL_CONFIG_VERSION` = **36**. Full design:
-`designs/ai_v6/design_bidirectional_threat_trunk.md` (+ `gen3ai/tmp/model_v36_full.png` integrated diagram)
+extractor sites.
+**v37 STATUS-LANDING into the trunk** (`gen3_status_trunk_v1`, `threat_status_refine` /
+`--threat-status-refine`) — the LAST CPU-obs deprecation gap. The move-effect block's board-conditional
+`status_will_land` was heads-only (v27 `_status_landing`); status immunity (type × ability ×
+already-statused × Sleep-Clause × Substitute) is a computed MECHANICS fact (the class of type
+effectiveness), and LEARNING it would force attention to correlate non-local info (the move's status intent
+on one token, the defender's types+ability on another). So COMPUTE it and inject into the trunk, BOTH
+directions: **INCOMING** `discrete_incoming_status` (opp active's top-K believed status moves → per OUR mon,
+onto OUR tokens — "will I be statused") + **OUTGOING** `discrete_outgoing_status` (our active's status moves
+→ per opp mon, revealed-gated, onto OPP tokens — the in-trunk home for the masked `status_will_land`), each
+a per-defender `[P(major), P(immobilize=para/frz/slp)]` reusing the v27 status-landing physics + buffers via
+two zero-init residuals on the refine loop. The major-vs-immobilize split makes the trunk signal
+SELF-CONTAINED (no cross-move correlation). STRUCTURAL bool (adds two Linears); OFF byte-identical (NO
+`ARCH_SIGNATURE` bump); requires `--damage-op` + `--damage-refine-rounds>0`; threaded through `arch_toggles`
++ both extractor sites. **Completes the FULL `--unified-obs` deprecation** (verified by a deprecation-gap
+audit: every CPU-obs signal has a GPU home — damage→trunk/refine, status→trunk/v37, effects→move latent, PP
+→per-mon slot, provenance/p_outspeed/crit→explicit op channels, per-move status_will_land+known→v27 heads;
+honest residuals = opp-recovery heads-only + Rest-cure coarsening). Current
+`MODEL_CONFIG_VERSION` = **37**. Full design:
+`designs/ai_v6/design_bidirectional_threat_trunk.md` (+ `gen3ai/tmp/{model_v36_full,stacking_levels}.png`)
 (and `design_per_move_damage_matrices.md` for v34/v35, `design_iterative_damage_refinement.md` for v33,
 `design_topk_incoming_moves.md` for v30, `design_distributional_value_critic.md` for v29,
 `design_unified_move_system.md` for v24, `design_unified_damage_system.md` for v23).

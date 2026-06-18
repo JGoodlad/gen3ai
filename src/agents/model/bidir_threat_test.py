@@ -16,8 +16,11 @@ import torch
 from agents import gen3_data
 from agents.model.features_extractor import (
     Gen3FeaturesExtractor, DamageOperator, TEAM_SIZE, _DMG_OUT_REFINE, _DMG_SPEED_SCALE,
+    _DMG_STATUS_REFINE, _COND_SLP_IDX, _SUBSTITUTE_CTX_IDX,
 )
-from agents.observation.constants import POKEMON_SPREAD_OFFSET, POKEMON_FULL_DIM, ACTIVE_CONTEXT_DIM
+from agents.observation.constants import (
+    POKEMON_SPREAD_OFFSET, POKEMON_FULL_DIM, ACTIVE_CONTEXT_DIM,
+    POKEMON_CONDITION_OFFSET, POKEMON_SLEEP_BELIEF_OFFSET)
 from agents.observation.types import TypeEncoder
 from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings
 
@@ -269,3 +272,146 @@ def test_threat_requires_refine_rounds():
         _make_model(attend_unrevealed_opponents=True, damage_op=True, move_belief_mode="both",
                     move_prior_fusion=True, move_latent=True, damage_refine_rounds=0,
                     threat_refine_outgoing=True)
+
+
+# ===================================================================== v37 status-landing into the trunk
+def _ctx_status(*, our_defenders, opp_defenders, our_moves, our_move_types, move_mask,
+                opp_believed=None, B=1):
+    """ctx for the status kernels. our_defenders / opp_defenders = list of 6 (species,t1,t2). our active =
+    slot 0 (its 4 status moves); opp active = slot TEAM_SIZE. No conditions / no sub / hp_probs zero."""
+    n = 2 * TEAM_SIZE
+    species = torch.zeros(B, n, dtype=torch.long)
+    t1 = torch.zeros(B, n, dtype=torch.long); t2 = torch.zeros(B, n, dtype=torch.long)
+    for i, (num, a, b) in enumerate(our_defenders):
+        species[:, i] = num; t1[:, i] = a; t2[:, i] = b
+    for i, (num, a, b) in enumerate(opp_defenders):
+        species[:, TEAM_SIZE + i] = num; t1[:, TEAM_SIZE + i] = a; t2[:, TEAM_SIZE + i] = b
+    hp = torch.zeros(B, n, POKEMON_FULL_DIM)
+    hp[:, :TEAM_SIZE, 0] = 1.0                       # our mons alive
+    hp[:, TEAM_SIZE, -1] = 1.0                        # opp active flag (slot 0)
+    believed = opp_believed if opp_believed is not None else [False] * 6
+    for i, bel in enumerate(believed):
+        hp[:, TEAM_SIZE + i, 0] = 0.0 if bel else 1.0
+    sp = torch.zeros(B, n, POKEMON_FULL_DIM)
+    spv = sp[:, :, POKEMON_SPREAD_OFFSET:POKEMON_SPREAD_OFFSET + 18]; spv[..., 0:6] = 1.0; spv[..., 13:18] = 1.0
+    amid = torch.zeros(B, n, 4, dtype=torch.long); amty = torch.zeros(B, n, 4, dtype=torch.long)
+    for k, (mid, mty) in enumerate(zip(our_moves, our_move_types)):
+        amid[:, 0, k] = mid; amty[:, 0, k] = mty
+    return types.SimpleNamespace(
+        batch_size=B, device=torch.device("cpu"),
+        our_active_idx=torch.zeros(B, dtype=torch.long), opp_active_local=torch.zeros(B, dtype=torch.long),
+        species_ids=species, type1_ids=t1, type2_ids=t2, ability1_ids=torch.zeros(B, n, dtype=torch.long),
+        item_ids=torch.zeros(B, n, dtype=torch.long), hp_and_active=hp, pokemon_part=sp,
+        all_move_ids=amid, all_move_type_ids=amty,
+        move_mask=torch.tensor([list(move_mask)] * B, dtype=torch.float32),
+        hp_probs=torch.zeros(B, n, 16), opp_ctx_raw=torch.zeros(B, ACTIVE_CONTEXT_DIM),
+        opp_believed_mask=torch.tensor([[bool(x) for x in believed]] * B),
+    )
+
+
+def _belief_on(move_num, layout, B=1):
+    """move_belief_logits [B,6,n_moves] putting ~all mass on `move_num` at the opp active (slot 0)."""
+    lg = torch.full((B, TEAM_SIZE, layout["max_moves"]), -10.0)
+    lg[:, 0, move_num] = 10.0
+    return lg
+
+
+def test_incoming_status_type_immunity_and_split():
+    """#INCOMING: opp believed Thunder Wave (paralysis). Our GROUND mon reads 0 (Ground immune to T-Wave);
+    a Water mon reads major>0 AND immobilize>0 (paralysis is action-denying)."""
+    op, layout = _op()
+    twave = gen3_data.moves.get("thunderwave").num
+    ctx = _ctx_status(our_defenders=[(_num("flygon"), _T2I["GROUND"], _T2I["DRAGON"]),    # Ground → T-Wave immune
+                                     (_num("starmie"), _T2I["WATER"], _T2I["PSYCHIC"])] + [(0, 0, 0)] * 4,
+                      opp_defenders=[(_num("zapdos"), _T2I["ELECTRIC"], _T2I["FLYING"])] + [(0, 0, 0)] * 5,
+                      our_moves=[0, 0, 0, 0], our_move_types=[0, 0, 0, 0], move_mask=[0, 0, 0, 0])
+    out = op.discrete_incoming_status(ctx, _belief_on(twave, layout))     # [1,6,2]
+    assert out.shape == (1, TEAM_SIZE, _DMG_STATUS_REFINE)
+    assert out[0, 0, 0].item() == 0.0 and out[0, 0, 1].item() == 0.0      # Ground: immune (major & immob 0)
+    assert out[0, 1, 0].item() > 0.0 and out[0, 1, 1].item() > 0.0        # Water: para lands → major & immob >0
+
+
+def test_incoming_status_toxic_is_major_not_immobilize():
+    """Toxic on a non-immune mon: major>0 but immobilize==0 (poison chips, doesn't deny the action)."""
+    op, layout = _op()
+    toxic = gen3_data.moves.get("toxic").num
+    ctx = _ctx_status(our_defenders=[(_num("starmie"), _T2I["WATER"], _T2I["PSYCHIC"])] + [(0, 0, 0)] * 5,
+                      opp_defenders=[(_num("zapdos"), _T2I["ELECTRIC"], _T2I["FLYING"])] + [(0, 0, 0)] * 5,
+                      our_moves=[0, 0, 0, 0], our_move_types=[0, 0, 0, 0], move_mask=[0, 0, 0, 0])
+    out = op.discrete_incoming_status(ctx, _belief_on(toxic, layout))
+    assert out[0, 0, 0].item() > 0.0       # major (toxic lands on Water/Psychic)
+    assert out[0, 0, 1].item() == 0.0      # NOT immobilize
+
+
+def test_outgoing_status_type_immunity_and_revealed_gate():
+    """#OUTGOING: our Thunder Wave vs the opp active. A Ground opp reads 0 (immune); a Water opp reads >0.
+    An UNREVEALED opp slot is zeroed (revealed-gated)."""
+    op, layout = _op()
+    twave = gen3_data.moves.get("thunderwave").num
+    # opp active = Ground (immune); opp bench slot 1 = Water but UNREVEALED
+    ctx = _ctx_status(our_defenders=[(_num("zapdos"), _T2I["ELECTRIC"], _T2I["FLYING"])] + [(0, 0, 0)] * 5,
+                      opp_defenders=[(_num("flygon"), _T2I["GROUND"], _T2I["DRAGON"]),
+                                     (_num("starmie"), _T2I["WATER"], _T2I["PSYCHIC"])] + [(0, 0, 0)] * 4,
+                      our_moves=[twave, 0, 0, 0], our_move_types=[_T2I["ELECTRIC"], 0, 0, 0],
+                      move_mask=[1, 0, 0, 0], opp_believed=[False, True, False, False, False, False])
+    out = op.discrete_outgoing_status(ctx)         # [1,6,2]
+    assert out[0, 0, 0].item() == 0.0              # Ground opp active: T-Wave immune
+    assert out[0, 1, :].abs().sum().item() == 0.0  # Water bench but UNREVEALED → revealed-gated to 0
+    # now reveal the Water bench mon → it should read para landing
+    ctx2 = _ctx_status(our_defenders=[(_num("zapdos"), _T2I["ELECTRIC"], _T2I["FLYING"])] + [(0, 0, 0)] * 5,
+                       opp_defenders=[(_num("flygon"), _T2I["GROUND"], _T2I["DRAGON"]),
+                                      (_num("starmie"), _T2I["WATER"], _T2I["PSYCHIC"])] + [(0, 0, 0)] * 4,
+                       our_moves=[twave, 0, 0, 0], our_move_types=[_T2I["ELECTRIC"], 0, 0, 0],
+                       move_mask=[1, 0, 0, 0], opp_believed=[False, False, False, False, False, False])
+    out2 = op.discrete_outgoing_status(ctx2)
+    assert out2[0, 1, 0].item() > 0.0 and out2[0, 1, 1].item() > 0.0   # revealed Water: para lands
+
+
+_STATUS_BASE = dict(attend_unrevealed_opponents=True, opp_belief_slots=True, move_belief_mode="both",
+                    move_prior_fusion=True, damage_op=True, move_latent=True, damage_refine_rounds=2)
+
+
+def test_status_identity_at_init():
+    """Zero-init status projections ⇒ threat_status_refine ON == the same model with the status branch
+    bypassed, at init (the residuals are exactly 0)."""
+    m, layout = _make_model(**_STATUS_BASE, threat_status_refine=True)
+    m.eval()
+    obs = {"observation": torch.rand(4, layout["total_dim"])}
+    with torch.no_grad():
+        pi_on, vf_on = m(obs)
+        si, so = m.status_in_proj, m.status_out_proj
+        m.status_in_proj = None; m.status_out_proj = None
+        pi_off, vf_off = m(obs)
+        m.status_in_proj, m.status_out_proj = si, so
+    assert torch.equal(pi_on, pi_off) and torch.equal(vf_on, vf_off)
+
+
+def test_status_projections_zero_init():
+    m, _ = _make_model(**_STATUS_BASE, threat_status_refine=True)
+    for p in (m.status_in_proj, m.status_out_proj):
+        assert p is not None and p.weight.abs().sum().item() == 0.0 and p.bias.abs().sum().item() == 0.0
+
+
+def test_status_grad_flows():
+    """A backward through outgoing_status/incoming_status reaches both status projections (the trunk
+    learns to value the computed status fact)."""
+    op, layout = _op()
+    twave = gen3_data.moves.get("thunderwave").num
+    ctx = _ctx_status(our_defenders=[(_num("zapdos"), _T2I["ELECTRIC"], _T2I["FLYING"])] + [(0, 0, 0)] * 5,
+                      opp_defenders=[(_num("starmie"), _T2I["WATER"], _T2I["PSYCHIC"])] + [(0, 0, 0)] * 5,
+                      our_moves=[twave, 0, 0, 0], our_move_types=[_T2I["ELECTRIC"], 0, 0, 0], move_mask=[1, 0, 0, 0])
+    proj_in = torch.nn.Linear(_DMG_STATUS_REFINE, 128)
+    proj_out = torch.nn.Linear(_DMG_STATUS_REFINE, 128)
+    fi = op.discrete_incoming_status(ctx, _belief_on(twave, layout))
+    fo = op.discrete_outgoing_status(ctx)
+    (proj_in(fi).sum() + proj_out(fo).sum()).backward()
+    assert proj_in.weight.grad.abs().sum().item() > 0.0
+    assert proj_out.weight.grad.abs().sum().item() > 0.0
+
+
+def test_status_requires_refine_rounds():
+    import pytest
+    with pytest.raises(ValueError):
+        _make_model(attend_unrevealed_opponents=True, damage_op=True, move_belief_mode="both",
+                    move_prior_fusion=True, move_latent=True, damage_refine_rounds=0,
+                    threat_status_refine=True)
