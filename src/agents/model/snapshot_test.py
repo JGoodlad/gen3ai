@@ -16,6 +16,7 @@ from agents.model.model_version import (
     ModelVersionError,
     _migrate_config,
 )
+import agents.model.snapshot as snapshot
 from agents.model.snapshot import save_model_snapshot, load_model_snapshot, load_foreign_opponent, write_checkpoint_metadata, read_checkpoint_metadata, record_snapshot_in_history, record_checkpoint, record_eval_results, _checkpoint_metadata_path, _latest_checkpoint
 from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings
 
@@ -1099,6 +1100,55 @@ def test_save_snapshot_metadata_fields(version):
     assert "saved_at" in meta
     assert "python_version" in meta
     assert "sb3_version" in meta
+
+
+# ---------------------------------------------------------------------------
+# original_command — the immutable original invocation
+# ---------------------------------------------------------------------------
+
+def test_original_command_explicit_recorded(version):
+    with tempfile.TemporaryDirectory() as tmpdir:
+        save_model_snapshot(tmpdir, version, git_hash="abc", original_command="train.py --steps 5")
+        with open(os.path.join(tmpdir, "metadata.json")) as f:
+            meta = json.load(f)
+    assert meta["original_command"] == "train.py --steps 5"
+
+
+def test_original_command_derived_from_argv(version, monkeypatch):
+    monkeypatch.delenv("LAUNCHER_COMMAND", raising=False)
+    monkeypatch.setattr(snapshot.sys, "argv", ["train.py", "--steps", "10"])
+    with tempfile.TemporaryDirectory() as tmpdir:
+        save_model_snapshot(tmpdir, version, git_hash="abc")
+        with open(os.path.join(tmpdir, "metadata.json")) as f:
+            meta = json.load(f)
+    assert meta["original_command"] == "train.py --steps 10"
+
+
+def test_original_command_prefers_launcher_env(version, monkeypatch):
+    monkeypatch.setenv("LAUNCHER_COMMAND", "python -m main.launcher --steps 99")
+    monkeypatch.setattr(snapshot.sys, "argv", ["train.py", "--run-dir", "models/x"])
+    with tempfile.TemporaryDirectory() as tmpdir:
+        save_model_snapshot(tmpdir, version, git_hash="abc")
+        with open(os.path.join(tmpdir, "metadata.json")) as f:
+            meta = json.load(f)
+    assert meta["original_command"] == "python -m main.launcher --steps 99"
+
+
+def test_original_command_immutable_across_restarts(version, monkeypatch):
+    """The original invocation is set ONCE at creation and never overwritten on a resume —
+    even when the resuming process passes (or would derive) a different command."""
+    monkeypatch.delenv("LAUNCHER_COMMAND", raising=False)
+    with tempfile.TemporaryDirectory() as tmpdir:
+        # Creation
+        save_model_snapshot(tmpdir, version, git_hash="abc", original_command="train.py --fresh")
+        # Restart: a DIFFERENT command — must be ignored, the original wins.
+        save_model_snapshot(tmpdir, version, git_hash="def", original_command="train.py --resumed")
+        # Restart again, this time deriving (no explicit arg) — still preserved.
+        monkeypatch.setattr(snapshot.sys, "argv", ["train.py", "--also-resumed"])
+        save_model_snapshot(tmpdir, version, git_hash="ghi")
+        with open(os.path.join(tmpdir, "metadata.json")) as f:
+            meta = json.load(f)
+    assert meta["original_command"] == "train.py --fresh"
 
 
 # ---------------------------------------------------------------------------

@@ -658,7 +658,12 @@ and won't work. Both projection input dims are auto-discovered via a dummy forwa
 Every model save writes two **run-level** files at the run root:
 
 - `model_config.json` — all weight-shape-relevant architecture params (embedding dims, layer sizes, obs dim, etc.)
-- `metadata.json` — git hash, timestamp, SB3/Python versions (+ `snapshot_history`, `latest_eval`)
+- `metadata.json` — git hash, timestamp, SB3/Python versions (+ `snapshot_history`, `latest_eval`,
+  and run provenance: `cli_args` [the latest process's full argparse namespace], `launcher_command`,
+  and `original_command` — the **immutable** original invocation that created the model, written once
+  at creation and preserved verbatim across every restart/checkpoint, unlike `cli_args` which is
+  overwritten by the resuming process. Provenance lives ONLY here, never in `model_config.json`, which
+  is the weight-shape/arch record used for `check_compatible`)
 
 These are run-level (one per run), NOT per-checkpoint: a periodic checkpoint `.zip` lives one
 level down in `checkpoints/` beside its own per-checkpoint `.json` sidecar, so

@@ -22,6 +22,7 @@ def save_model_snapshot(
     current_epochs: Optional[int] = None,
     hparams: Optional[dict] = None,
     cli_args: Optional[dict] = None,
+    original_command: Optional[str] = None,
 ) -> None:
     """Write model_config.json and metadata.json into model_dir.
 
@@ -30,10 +31,16 @@ def save_model_snapshot(
     Preserves any existing snapshot_history and the top-level `latest_eval` block
     (so a checkpoint saved after an eval doesn't erase the eval results).
 
-    Run provenance — `cli_args` (the full argparse namespace) and `launcher_command`
-    (read from the `LAUNCHER_COMMAND` env the launcher sets) are recorded and carried
-    forward across the many overwriting saves, so the exact invocation survives on every
+    Run provenance — `cli_args` (the full argparse namespace, the LATEST process's) and
+    `launcher_command` (read from the `LAUNCHER_COMMAND` env the launcher sets) are recorded and
+    carried forward across the many overwriting saves, so the exact invocation survives on every
     run, including launcher-managed ones (which don't write a `command.txt`).
+
+    `original_command` is the **immutable** original invocation that CREATED the model — the
+    launcher command under a launcher, else this process's `sys.argv`. Unlike `cli_args` (which
+    is overwritten with the resuming process's args on every restart), it is written ONCE at model
+    creation and then preserved verbatim across all subsequent saves/restarts: the existing value
+    always wins. The caller may pass it explicitly; otherwise it is derived here.
     """
     os.makedirs(model_dir, exist_ok=True)
 
@@ -51,6 +58,7 @@ def save_model_snapshot(
     existing_latest_eval = None
     existing_cli_args = None
     existing_launcher_command = None
+    existing_original_command = None
     if os.path.exists(meta_path):
         with open(meta_path) as f:
             existing = json.load(f)
@@ -58,6 +66,7 @@ def save_model_snapshot(
             existing_latest_eval = existing.get("latest_eval")
             existing_cli_args = existing.get("cli_args")
             existing_launcher_command = existing.get("launcher_command")
+            existing_original_command = existing.get("original_command")
 
     metadata = {
         "saved_at": datetime.now(timezone.utc).isoformat(),
@@ -79,6 +88,14 @@ def save_model_snapshot(
     launcher_command = os.environ.get("LAUNCHER_COMMAND") or existing_launcher_command
     if launcher_command:
         metadata["launcher_command"] = launcher_command
+    # The original invocation that created the model — IMMUTABLE: existing value wins, so a resume
+    # never overwrites it. First write (model creation) derives it from the launcher command (if
+    # any) else this process's argv.
+    original = existing_original_command or original_command or (
+        os.environ.get("LAUNCHER_COMMAND") or " ".join(sys.argv)
+    )
+    if original:
+        metadata["original_command"] = original
     if existing_history:
         metadata["snapshot_history"] = existing_history
     if existing_latest_eval is not None:
