@@ -76,6 +76,38 @@ version map.)
 
 ## Log entries (newest first)
 
+### 2026-06-17 — Prober GPU-obs observability (tooling, NOT a model change; in worktree, not shipped)
+**A lens to SEE the model's world-model — not a new head.** As the architecture moved the belief/physics
+signals into the trunk (v30→v37) and we're about to A/B the full `--unified-obs` CPU deprecation, we built
+first-class observability into the **prober TUI** so the owner can watch what the model believes vs ground
+truth and how it refines. No forward change — the ONE model edit is a **prober-only** capture stash
+(`features_extractor.capture_refine_rounds`, default False → `last_refine_rounds` None → byte-identical, zero
+training cost). What landed (all in `src/main/prober/` + a small capture in `player.py`/`battle_recorder.py`):
+- **Beliefs section** (new, key `b`): species belief vs TRUE team (✓/≈/✗), move belief (✓ revealed · ≈
+  unseen), **believed SPREAD vs true DERIVED stats** (the DamageOperator's stat input — surfaces a wrong
+  spread as a damage root-cause, e.g. "believes Metagross Atk 385 vs true 305"), the **across-battle
+  refinement trajectory** (axis B — species-confidence sparkline + ✓/✗ as reveals accumulate, model-free),
+  the **within-forward refine rounds** (axis A — per-`--damage-refine-rounds` belief-entropy↓ + physics↑),
+  and a value-dist × belief cross-read.
+- **Threats section** (renamed from *Matchups*): reordered **GPU-first** — the `🔷` DamageOperator physics
+  primary, the `📋` CPU obs decodes dim/subsumed below (full-styled only when no op). Provenance tags
+  (`🔷 GPU` / `📋 CPU-obs`) everywhere + Flow `🔷 GPU-computed` callouts on the learned phases.
+- **Capture (axis B beyond species):** `move_logits` (opp-active posterior) + `spread_belief` `[6,5]` ride
+  the trace npz (OMITTED when off, NaN when headless) so move/spread trajectories decode without re-running.
+- Pure engine builders (`build_spread_belief` / `build_refine_trajectory` / `build_belief_trajectory`) +
+  `ProbeModel.spread_belief_view` / `refine_rounds_view`; new `analyze`-JSON fields. Tests: +10 engine
+  units, +2 app-render +1 recorder, the renamed/moved-content app tests updated; a bridge-backed **prober
+  fuzz** (`belief_obs_fuzz_test.py`, ~280 live decisions — stashes finite + engine decoders populate); a
+  real-run `ProbeSession.analyze` + headless-TUI smoke on `ai_v6_06_unified_all` (species belief 4/5 top-1 @
+  turn 1, spread MAE ≈53). **4-lens adversarial review** (engine-math / leak-byte-identity / app-render /
+  integration-contract → 1 adjudicator): byte-identity-when-off + no-leak + section-key + graceful-off all
+  held; 2 minor bugs FIXED — (a) `build_belief_trajectory` `n_correct` now consumes the still-hidden
+  multiset (was set-membership → could over-count a revealed/duplicate guess), (b) the captured
+  `move_logits`/`spread_belief` npz arrays (were written-but-unread) are now consumed by the trajectory's
+  `Hmv`/`bAtk` sparklines (capture switched to the opp-active row). Design:
+  `designs/ai_v6/design_gpu_obs_observability.md`; prober internals: `src/main/prober/CLAUDE.md` →
+  *Beliefs / Threats (GPU-first observability)*.
+
 ### 2026-06-17 — v37 status-landing into the trunk (`gen3_status_trunk_v1`, shipped)
 **The last CPU-obs deprecation gap.** The move-effect block's board-conditional `status_will_land` was
 heads-only; status immunity (type × ability × already-statused × Sleep-Clause × Substitute) is a computed

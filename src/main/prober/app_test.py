@@ -212,7 +212,7 @@ async def test_skeleton_mounts_three_regions():
             assert app.query_one(f"#{tid}", DataTable) is not None
         # default open set
         assert app.query_one("#sec-board", Collapsible).collapsed is False
-        assert app.query_one("#sec-matchups", Collapsible).collapsed is True
+        assert app.query_one("#sec-threats", Collapsible).collapsed is True
 
 
 async def test_sections_toggle_multiple_open(tmp_path):
@@ -220,13 +220,13 @@ async def test_sections_toggle_multiple_open(tmp_path):
     app = ProberApp(root=run, injected_model=_FakeModel())
     async with app.run_test() as pilot:
         await pilot.pause()
-        matchups = app.query_one("#sec-matchups", Collapsible)
-        assert matchups.collapsed is True
-        app.action_toggle_section("sec-matchups")     # open it (Board/Faith already open)
+        threats = app.query_one("#sec-threats", Collapsible)
+        assert threats.collapsed is True
+        app.action_toggle_section("sec-threats")     # open it (Board/Faith already open)
         await pilot.pause()
-        assert matchups.collapsed is False
+        assert threats.collapsed is False
         # several sections open simultaneously
-        open_now = [s for s in ("sec-board", "sec-faith", "sec-matchups", "sec-outcome")
+        open_now = [s for s in ("sec-board", "sec-faith", "sec-threats", "sec-outcome")
                     if not app.query_one(f"#{s}", Collapsible).collapsed]
         assert len(open_now) >= 3
 
@@ -689,8 +689,9 @@ class _FakeModelMB(_FakeModel):
 
 
 async def test_matchups_shows_move_belief_and_op_incoming(tmp_path):
-    """The DAMAGE OP belief block renders the model's guess at the revealed opp's UNSEEN moves
-    (already-revealed moves filtered out) + the per-OUR-mon op incoming damage labeled by species."""
+    """The move-belief block renders (now in the Beliefs section) the model's guess at the revealed opp's
+    UNSEEN moves (already-revealed moves filtered out); the per-OUR-mon op incoming damage labeled by
+    species renders in the GPU-first Threats panel (`#threats-gpu`)."""
     run = _write_trace(tmp_path)
     app = ProberApp(root=run, injected_model=_FakeModelMB())
     async with app.run_test() as pilot:
@@ -699,18 +700,22 @@ async def test_matchups_shows_move_belief_and_op_incoming(tmp_path):
         await pilot.pause()
         await app.workers.wait_for_complete()
         await pilot.pause()
-        threat = str(app.query_one("#matchups-threat", Static).render())
-        assert "move belief" in threat                            # the new block header
-        assert "blissey" in threat and "thunderbolt" in threat     # believed UNSEEN move
-        assert "toxic" in threat
-        assert "icebeam" in threat                                 # REVEALED move shown with its pinned belief
-        assert "incoming (op)" in threat and "magneton" in threat  # per-our-mon op damage, labeled
+        # move belief now lives in the Beliefs section (the model's world-model vs truth).
+        beliefs_moves = str(app.query_one("#beliefs-moves", Static).render())
+        assert "move belief" in beliefs_moves                       # the block header
+        assert "blissey" in beliefs_moves and "thunderbolt" in beliefs_moves   # believed UNSEEN move
+        assert "toxic" in beliefs_moves
+        assert "icebeam" in beliefs_moves                           # REVEALED move shown with its pinned belief
+        # the op's per-our-mon incoming damage is the GPU-first Threats primary panel.
+        gpu = str(app.query_one("#threats-gpu", Static).render())
+        assert "incoming worst (in)" in gpu and "magneton" in gpu   # per-our-mon op damage, labeled
 
 
 async def test_matchups_shows_topk_per_pivot(tmp_path):
-    """The DISCRETE top-K block (--damage-topk) renders the opp active's likeliest moves INDIVIDUALLY with
-    the FULL per-OUR-mon matrix: each move by its decoded NAME + belief, then every of our mons' high→KO /
-    status tag. An immune/no-threat pivot reads 'safe' (the switch-in signal); a status move shows 'st'."""
+    """The DISCRETE top-K block (--damage-topk) renders (in the GPU-first `#threats-gpu` panel) the opp
+    active's likeliest moves INDIVIDUALLY with the FULL per-OUR-mon matrix: each move by its decoded NAME +
+    belief, then every of our mons' high→KO / status tag. An immune/no-threat pivot reads 'safe' (the
+    switch-in signal); a status move shows 'st'."""
     run = _write_trace(tmp_path)
     app = ProberApp(root=run, injected_model=_FakeModelMB())
     async with app.run_test() as pilot:
@@ -719,12 +724,79 @@ async def test_matchups_shows_topk_per_pivot(tmp_path):
         await pilot.pause()
         await app.workers.wait_for_complete()
         await pilot.pause()
-        threat = str(app.query_one("#matchups-threat", Static).render())
-        assert "opp likely (op)" in threat                         # the discrete top-K block header
-        assert "icebeam" in threat and "thunderwave" in threat      # the two top-K moves, by decoded name
-        assert "magneton" in threat and "skarmory" in threat        # the per-pivot matrix lists OUR mons
-        assert "safe" in threat                                     # skarmory is immune to both → safe pivot
-        assert "st100" in threat                                    # thunderwave's status-lands on magneton (active)
+        gpu = str(app.query_one("#threats-gpu", Static).render())
+        assert "opp likely (top-K)" in gpu                          # the discrete top-K block header
+        assert "icebeam" in gpu and "thunderwave" in gpu            # the two top-K moves, by decoded name
+        assert "magneton" in gpu and "skarmory" in gpu              # the per-pivot matrix lists OUR mons
+        assert "safe" in gpu                                        # skarmory is immune to both → safe pivot
+        assert "st100" in gpu                                       # thunderwave's status-lands on magneton (active)
+
+
+async def test_beliefs_section_off_shows_not_enabled(tmp_path):
+    """With a checkpoint exposing NO belief heads, the Beliefs section shows a single 'not enabled' note
+    and every sub-panel is blank (graceful degradation, no crash)."""
+    run = _write_trace(tmp_path)
+    app = ProberApp(root=run, injected_model=_FakeModel())
+    async with app.run_test() as pilot:
+        await pilot.pause()
+        app._select_battle(app._tree_model.all_battles()[0])
+        await pilot.pause()
+        await app.workers.wait_for_complete()
+        await pilot.pause()
+        status = str(app.query_one("#beliefs-status", Static).render())
+        assert "belief heads not enabled" in status
+        for wid in ("beliefs-species", "beliefs-spread", "beliefs-trajectory", "beliefs-refine"):
+            assert str(app.query_one(f"#{wid}", Static).render()).strip() == ""
+
+
+class _FakeModelBeliefs(_FakeModelMB):
+    """Exposes the species belief + spread belief + within-forward refine rounds, so the Beliefs section's
+    species / spread / trajectory / refine sub-panels all render (believed-only, no ground-truth file)."""
+
+    def belief(self, obs, mask):
+        from agents import gen3_data
+        n = max(gen3_data.species.get(s).num for s in gen3_data.species.raw()) + 1
+        logits = np.full((6, n), -5.0, dtype=np.float64)
+        logits[3, gen3_data.species.get("snorlax").num] = 6.0   # slot 3 hidden → believes snorlax
+        believed = np.array([False, False, False, True, True, True])
+        return logits, believed
+
+    def spread_belief_view(self, obs, mask):
+        spread = np.zeros((6, 5), dtype=np.float64)
+        spread[2] = [299, 200, 150, 200, 250]                   # opp active (slot 2) believed derived stats
+        believed = np.array([False, False, False, True, True, True])   # slot 2 revealed
+        return {"spread": spread, "believed_mask": believed,
+                "opp_species": ["", "", "tauros", "", "", ""], "opp_active": 2}
+
+    def refine_rounds_view(self, obs, mask):
+        return [
+            {"round": 0, "move_logits": np.array([1.0, 1.0, -1.0, -1.0]), "damage": np.zeros((6, 4))},
+            {"round": 1, "move_logits": np.array([4.0, 4.0, -4.0, -4.0]),
+             "damage": np.array([[0.3, 0.1, 0.4, 0.0]] + [[0, 0, 0, 0]] * 5, dtype=float)},
+        ]
+
+
+async def test_beliefs_section_renders_species_spread_refine(tmp_path):
+    """The Beliefs section renders the species belief (anonymous — no ground truth), the believed spread
+    (believed-only column), and the within-forward refine-round sharpening (axis A)."""
+    run = _write_trace(tmp_path)
+    app = ProberApp(root=run, injected_model=_FakeModelBeliefs())
+    async with app.run_test() as pilot:
+        await pilot.pause()
+        app._select_battle(app._tree_model.all_battles()[0])
+        await pilot.pause()
+        await app.workers.wait_for_complete()
+        await pilot.pause()
+        status = str(app.query_one("#beliefs-status", Static).render())
+        assert "world-model" in status                                   # the 🔷 header
+        species = str(app.query_one("#beliefs-species", Static).render())
+        assert "snorlax" in species                                      # the believed hidden mon
+        spread = str(app.query_one("#beliefs-spread", Static).render())
+        assert "spread belief" in spread and "tauros" in spread          # believed-spread panel, by species
+        assert "atk" in spread and "299" in spread                       # the believed Atk value
+        refine = str(app.query_one("#beliefs-refine", Static).render())
+        assert "within-forward refine" in refine and "monotone" in refine  # axis A sharpening
+        assert "round 0" in refine and "round 1" in refine
 
 
 def _flow_text(app) -> str:

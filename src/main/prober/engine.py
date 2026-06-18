@@ -345,6 +345,95 @@ class BeliefTruthView:
 
 
 @dataclass(frozen=True)
+class SpreadStatRow:
+    """One derived stat for one opp slot: the model's BELIEVED value (the DamageOperator's input), the
+    TRUE value (L100, from `team_details()` base + IV + EV + nature), and the Smogon usage-prior mean.
+    `err` (believed − true) is the otherwise-invisible damage root-cause — a wrong Atk/SpA mis-prices
+    every incoming hit. `true`/`prior` are `None` when unavailable (no ground truth / no prior data)."""
+    stat: str                       # atk / def / spa / spd / spe
+    believed: float
+    true: "float | None" = None
+    prior: "float | None" = None
+
+    @property
+    def err(self) -> "float | None":
+        return (self.believed - self.true) if self.true is not None else None
+
+
+@dataclass(frozen=True)
+class SpreadSlotBelief:
+    """The model's believed spread for ONE REVEALED opp slot, matched to its TRUE mon by species (exact —
+    species is known for a revealed mon, unique under the species clause). `rows` = the 5 derived stats;
+    `nature`/`ev_note` annotate the true EV source (e.g. ``adamant · atk252/spe252/hp4``)."""
+    slot: int
+    species: str
+    rows: "tuple[SpreadStatRow, ...]" = ()
+    nature: str = ""
+    ev_note: str = ""
+    matched: bool = False           # True iff the true mon (EVs/nature) was found in team_details
+
+
+@dataclass(frozen=True)
+class SpreadBeliefView:
+    """PRIVILEGED spread-belief-vs-truth: per REVEALED opp mon the model's believed DERIVED stats (what the
+    `DamageOperator` actually consumes for that mon) next to the true derived stats + the Smogon prior. The
+    head predicts spreads for SEEN mons (known species, unknown EVs), so hidden mons are out of scope here.
+    `None` unless ``--spread-belief`` AND privileged truth (`reconstruction.json`) are both available;
+    without truth the believed column still renders (the `true`/`err`/`prior` cells are then `None`)."""
+    slots: "tuple[SpreadSlotBelief, ...]"
+    n_slots: int = 0
+    mean_abs_err: "float | None" = None   # mean |believed − true| over matched stats (the headline number)
+
+
+@dataclass(frozen=True)
+class RefineRoundView:
+    """One WITHIN-FORWARD iterative-refinement round (axis A): the opp-active move-belief entropy + the lean
+    per-OUR-mon incoming-damage `[phys_high, spec_high, phys_pko, spec_pko]` the round computed and injected.
+    `entropy` (nats over the believed move posterior) should DECAY round→round as attention sharpens the
+    belief; `max_pko` is the worst P(KO) across our mons that round (should track the physics tightening)."""
+    round: int
+    entropy: float
+    max_phys_high: float
+    max_spec_high: float
+    max_pko: float
+
+
+@dataclass(frozen=True)
+class RefineTrajectoryView:
+    """The `--damage-refine-rounds N` per-round sharpening for the selected decision (axis A). `rounds` is
+    ordered round 0..N−1; `entropy_monotone` is True iff the move-belief entropy is non-increasing across
+    rounds (the expected physics-in-the-loop signature). `None` unless the run trained refine rounds on."""
+    rounds: "tuple[RefineRoundView, ...]"
+    entropy_monotone: bool = False
+
+
+@dataclass(frozen=True)
+class BeliefTrajectoryPoint:
+    """One decision in a battle's belief REFINEMENT TRAJECTORY (axis B, across-battle turns): the per-hidden-
+    slot top-1 species confidence + whether the model's top-1 was the true species, at turn `turn`. Built
+    model-free from each decision's summary `belief` block matched to the privileged team.
+    `move_entropy` / `believed_atk` / `believed_spe` are populated ONLY when the trace npz carries the
+    captured `move_logits` / `spread_belief` arrays (future runs) — the opp-active move-belief Bernoulli
+    entropy (should DECAY) + the believed opp-active Atk/Spe — else `None` (species-only trajectory)."""
+    inv_index: int
+    turn: int
+    n_hidden: int
+    n_correct: int                  # hidden mons whose top-1 == a STILL-HIDDEN true mon (one-time consumption)
+    mean_top1_conf: float           # mean top-1 species confidence over hidden slots
+    move_entropy: "float | None" = None     # opp-active move-belief entropy (npz move_logits), axis B
+    believed_atk: "float | None" = None     # believed opp-active Atk (npz spread_belief active row)
+    believed_spe: "float | None" = None     # believed opp-active Spe (npz spread_belief active row)
+
+
+@dataclass(frozen=True)
+class BeliefTrajectoryView:
+    """A battle's belief sharpening over its decisions (axis B): as reveals accumulate the hidden count
+    falls and correctness/confidence should rise. `points` is decision-ordered. `None` without a belief-on
+    trace + privileged team."""
+    points: "tuple[BeliefTrajectoryPoint, ...]"
+
+
+@dataclass(frozen=True)
 class InvocationAnalysis:
     meta: TraceMeta
     inv_index: int
@@ -379,6 +468,8 @@ class InvocationAnalysis:
     belief_truth: "BeliefTruthView | None" = None  # privileged truth + slot-matched guess (None unless recon+belief)
     damage_op: "dict | None" = None                # unified DamageOperator view (incoming + outgoing); None unless --damage-op
     move_belief: "MoveBeliefView | None" = None     # what the model thinks the revealed opp's UNSEEN moves are; None unless --move-belief-mode
+    spread_belief: "SpreadBeliefView | None" = None  # believed vs true opp DERIVED stats; None unless --spread-belief
+    refine_trajectory: "RefineTrajectoryView | None" = None  # within-forward refine rounds (axis A); None unless --damage-refine-rounds
 
 
 # ---------------------------------------------------------------------------
@@ -404,6 +495,17 @@ def _npz_value(npz, i: int) -> "float | None":
     except KeyError:
         return None
     return float(vals[i]) if 0 <= i < len(vals) else None
+
+
+def _npz_array(npz, key: str):
+    """A captured per-decision array (e.g. `move_logits` / `spread_belief`) or None when the key is absent
+    (the head was off / an older trace). `npz` may be None (no captured state)."""
+    if npz is None:
+        return None
+    try:
+        return npz[key]
+    except (KeyError, TypeError, IndexError):
+        return None
 
 
 def _npz_win_prob(npz, i: int) -> "float | None":
@@ -1039,6 +1141,225 @@ def build_belief_truth(species_logits, believed_mask, revealed_species, true_tea
     return BeliefTruthView(mons=tuple(mons), n_hidden=n_hidden, n_correct=n_correct)
 
 
+# ---------------------------------------------------------------------------
+# Spread belief vs truth (the DamageOperator's stat input — gen3_unified_spread_belief_v1)
+# ---------------------------------------------------------------------------
+
+_SPREAD_COLS = ("atk", "def", "spa", "spd", "spe")   # the order of last_spread_belief's 5 columns
+_SPREAD_BASE_KEY = {"atk": "atk", "def": "def", "spa": "spa", "spd": "spd", "spe": "spe"}
+_SPREAD_PRIOR_CACHE: "dict[str, tuple[float, ...]] | None" = None
+
+
+def _derived_stat(base: int, iv: int, ev: int, mult: float) -> int:
+    """The gen3 non-HP derived stat at level 100 with the mon's ACTUAL IV (poke-env/team_details give the
+    real IV — e.g. a Hidden-Power mon isn't IV31 everywhere), EV, and nature multiplier. Exact integer
+    math, mirroring `gen3_data.priors.gen3_stat` but parameterized on IV (that helper hardcodes IV31)."""
+    pre = 2 * int(base) + int(iv) + int(ev) // 4 + 5
+    if mult > 1.0:
+        return pre * 11 // 10
+    if mult < 1.0:
+        return pre * 9 // 10
+    return pre
+
+
+def _spread_prior_means(species_id: str) -> "tuple[float, ...] | None":
+    """Usage-weighted mean DERIVED stat per {atk,def,spa,spd,spe} for ``species_id`` — the Smogon spread
+    PRIOR the SpreadBelief head corrects (the same quantity `damage_tables.build_opp_spread_prior`'s mean
+    column holds). `None` when the species has no spread data. Cached per species (cheap, data-only)."""
+    from agents import gen3_data
+    sp = gen3_data.species.get(species_id)
+    if sp is None:
+        return None
+    spreads = gen3_data.priors.spreads(species_id)
+    if not spreads:
+        return None
+    ev_idx = {"atk": 1, "def": 2, "spa": 3, "spd": 4, "spe": 5}   # index into [hp,atk,def,spa,spd,spe]
+    out = []
+    for stat in _SPREAD_COLS:
+        base = int(sp.base_stats.get(stat, 0))
+        m1 = wsum = 0.0
+        for nature, evs, w in spreads:
+            nd = gen3_data.natures.get(str(nature).lower())
+            mult = nd.multipliers.get(stat, 1.0) if nd is not None else 1.0
+            m1 += float(w) * float(gen3_data.priors.gen3_stat(base, int(evs[ev_idx[stat]]), mult))
+            wsum += float(w)
+        out.append(m1 / wsum if wsum > 0 else float(gen3_data.priors.gen3_stat(base, 0, 1.0)))
+    return tuple(out)
+
+
+def _true_derived_spread(detail: dict) -> "tuple[tuple[float, ...], str, str] | None":
+    """From one `team_details()` entry → (the 5 true DERIVED stats {atk,def,spa,spd,spe}, nature, ev_note).
+    Uses the mon's REAL base/IV/EV/nature (privileged). `None` if the species is unknown to the dex."""
+    from agents import gen3_data
+    sp = gen3_data.species.get(detail.get("species", ""))
+    if sp is None:
+        return None
+    evs = detail.get("evs") or {}
+    ivs = detail.get("ivs") or {}
+    nature = str(detail.get("nature", "") or "").lower()
+    nd = gen3_data.natures.get(nature)
+    vals = []
+    for stat in _SPREAD_COLS:
+        base = int(sp.base_stats.get(stat, 0))
+        iv = int(ivs.get(stat, 31))
+        ev = int(evs.get(stat, 0))
+        mult = nd.multipliers.get(stat, 1.0) if nd is not None else 1.0
+        vals.append(float(_derived_stat(base, iv, ev, mult)))
+    ev_note = "/".join(f"{s}{int(evs[s])}" for s in ("hp",) + _SPREAD_COLS
+                       if int(evs.get(s, 0)) > 0) or "0 EVs"
+    return tuple(vals), nature, ev_note
+
+
+def build_spread_belief(raw, opp_team_details, top_revealed_only: bool = True) -> "SpreadBeliefView | None":
+    """Match the model's believed opp spread (`ProbeModel.spread_belief_view` raw) to the TRUE mons from
+    `reconstruction.json`'s `team_details()` and compare the believed vs true DERIVED stats per REVEALED opp
+    slot (the head predicts spreads for seen mons — species known, EVs unknown — so revealed slots are the
+    meaningful ones; hidden mons have no spread prediction). Match is by SPECIES id (exact — a revealed mon's
+    species is known + unique). `opp_team_details` is the list of `{species, evs, ivs, nature, …}` dicts (or
+    `None`/`()` → believed-only, no truth columns). Returns `None` when the run trained `--spread-belief` off
+    (raw is `None`) or no revealed slot has a believed spread."""
+    if not raw:
+        return None
+    spread = np.asarray(raw.get("spread"), dtype=np.float64)          # [6, 5]
+    bmask = raw.get("believed_mask")                                  # [6] bool (True = HIDDEN) or None
+    opp_species = list(raw.get("opp_species") or [])
+    # Index the privileged truth by normalized species id (revealed species are unique under the clause).
+    truth_by_species: "dict[str, dict]" = {}
+    for d in (opp_team_details or ()):
+        sid = _norm_species(d.get("species", ""))
+        if sid:
+            truth_by_species[sid] = d
+
+    slots, abs_errs = [], []
+    for i in range(min(6, spread.shape[0])):
+        sid = (opp_species[i] if i < len(opp_species) else "").strip()
+        hidden = bool(bmask[i]) if (bmask is not None and i < len(bmask)) else (not sid)
+        if top_revealed_only and (hidden or not sid):
+            continue                                                  # hidden slot → no spread prediction
+        believed = spread[i]                                          # [5]
+        prior = _spread_prior_means(sid)
+        truth = truth_by_species.get(_norm_species(sid))
+        td = _true_derived_spread(truth) if truth is not None else None
+        true_vals, nature, ev_note = (td if td is not None else (None, "", ""))
+        rows = []
+        for j, stat in enumerate(_SPREAD_COLS):
+            tv = float(true_vals[j]) if true_vals is not None else None
+            pv = float(prior[j]) if prior is not None else None
+            rows.append(SpreadStatRow(stat=stat, believed=float(believed[j]), true=tv, prior=pv))
+            if tv is not None:
+                abs_errs.append(abs(float(believed[j]) - tv))
+        slots.append(SpreadSlotBelief(slot=i, species=sid, rows=tuple(rows),
+                                      nature=nature, ev_note=ev_note, matched=td is not None))
+    if not slots:
+        return None
+    mae = (sum(abs_errs) / len(abs_errs)) if abs_errs else None
+    return SpreadBeliefView(slots=tuple(slots), n_slots=len(slots), mean_abs_err=mae)
+
+
+# ---------------------------------------------------------------------------
+# Within-forward refine rounds (axis A — gen3_iterative_damage_v1)
+# ---------------------------------------------------------------------------
+
+def _entropy_bits(logits: np.ndarray) -> float:
+    """Bernoulli entropy (nats) summed over a multi-label move-belief logit row — the per-round uncertainty
+    of the believed moveset. Decays as attention sharpens the belief (the physics-in-the-loop signature)."""
+    p = 1.0 / (1.0 + np.exp(-np.asarray(logits, dtype=np.float64)))
+    p = np.clip(p, 1e-9, 1.0 - 1e-9)
+    return float(-(p * np.log(p) + (1.0 - p) * np.log(1.0 - p)).sum())
+
+
+def build_refine_trajectory(rounds) -> "RefineTrajectoryView | None":
+    """Decode `ProbeModel.refine_rounds_view`'s raw per-round list → a `RefineTrajectoryView`: per round the
+    opp-active move-belief entropy + the lean per-our-mon incoming-damage maxima. `None` when the run trained
+    `--damage-refine-rounds 0` (raw is `None`/empty). The per-round `damage` is `[6, 4]` =
+    `[phys_high, spec_high, phys_pko, spec_pko]` (the lean refine kernel's output)."""
+    if not rounds:
+        return None
+    out, prev_ent = [], None
+    monotone = True
+    for r in rounds:
+        ml = np.asarray(r.get("move_logits"), dtype=np.float64)
+        dmg = np.asarray(r.get("damage"), dtype=np.float64)          # [6, 4]
+        ent = _entropy_bits(ml)
+        ph = float(dmg[:, 0].max()) if dmg.size else 0.0
+        sh = float(dmg[:, 1].max()) if dmg.size else 0.0
+        pko = float(dmg[:, 2:4].max()) if dmg.size else 0.0
+        out.append(RefineRoundView(round=int(r.get("round", len(out))), entropy=ent,
+                                   max_phys_high=ph, max_spec_high=sh, max_pko=pko))
+        if prev_ent is not None and ent > prev_ent + 1e-6:
+            monotone = False
+        prev_ent = ent
+    return RefineTrajectoryView(rounds=tuple(out), entropy_monotone=monotone)
+
+
+# ---------------------------------------------------------------------------
+# Belief refinement trajectory (axis B — across-battle turns, model-free from the summary)
+# ---------------------------------------------------------------------------
+
+def build_belief_trajectory(summary: dict, opp_team: "tuple[str, ...] | None",
+                            npz=None) -> "BeliefTrajectoryView | None":
+    """A battle's belief sharpening across its decisions (axis B): for each decision with a summary `belief`
+    block, the per-hidden-slot top-1 species confidence + how many top-1 guesses correctly named a STILL-
+    HIDDEN true mon (needs the privileged `opp_team`). Model-free over the summary `belief` blocks
+    (`build_belief`), so it works on ANY belief-on trace without re-running the model.
+
+    Correctness scoring mirrors `build_belief_truth`'s precision: per decision the true HIDDEN set is
+    `opp_team` minus the species REVEALED by then (decoded model-free from the inv board), and each believed
+    slot's top-1 is matched against that set with **one-time consumption** — so guessing an already-revealed
+    species, or two slots guessing the same single hidden mon, can't double-count (the set-membership bug).
+    Scored only when `opp_team` is given (else `n_correct`=0, confidence-only — the websocket/no-truth case).
+
+    When `npz` carries the captured `move_logits` / `spread_belief` arrays (future runs), each point also gets
+    the opp-active move-belief Bernoulli `move_entropy` (should DECAY as reveals accumulate) + the believed
+    opp-active `believed_atk`/`believed_spe` — the move/spread analog of the species trajectory, decoded
+    WITHOUT re-running the model. Absent/NaN on older traces ⇒ those stay `None`. `None` when no decision
+    carries a belief block."""
+    invs = summary.get("invocations", []) or []
+    points = []
+    team = _our_items(summary)                                       # for the model-free opp-revealed board decode
+    move_logits = _npz_array(npz, "move_logits")                     # [T, n_moves] or None
+    spread_arr = _npz_array(npz, "spread_belief")                    # [T, 5] (opp-active row) or None
+    for idx, inv in enumerate(invs):
+        bv = build_belief(inv)                                       # BeliefView | None (summary fallback)
+        if bv is None or not bv.slots:
+            continue
+        # The still-HIDDEN true multiset = opp_team minus the species revealed by this decision (the believed
+        # slots ARE the hidden mons; species are unique under the clause). Match top-1 with consumption.
+        hidden_remaining = None
+        if opp_team:
+            revealed = set()
+            try:
+                revealed = {_norm_species(s) for s in revealed_opp_species(build_board(inv, team))}
+            except Exception:  # noqa: BLE001 — model-free board decode is best-effort; degrade to no-reveal
+                revealed = set()
+            from collections import Counter
+            hidden_remaining = Counter(_norm_species(s) for s in opp_team if _norm_species(s) not in revealed)
+        confs, n_correct = [], 0
+        for s in bv.slots:
+            if not s.top:
+                continue
+            top_sp, top_p = s.top[0]
+            confs.append(float(top_p))
+            key = _norm_species(top_sp)
+            if hidden_remaining is not None and hidden_remaining.get(key, 0) > 0:
+                n_correct += 1
+                hidden_remaining[key] -= 1
+        if not confs:
+            continue
+        m_ent = b_atk = b_spe = None
+        if move_logits is not None and 0 <= idx < len(move_logits) and np.isfinite(move_logits[idx]).any():
+            m_ent = _entropy_bits(move_logits[idx])
+        if spread_arr is not None and 0 <= idx < len(spread_arr) and np.isfinite(spread_arr[idx]).all():
+            row = np.asarray(spread_arr[idx], dtype=np.float64)      # opp-active believed [atk,def,spa,spd,spe]
+            if row.shape[0] >= 5:
+                b_atk, b_spe = float(row[0]), float(row[4])
+        points.append(BeliefTrajectoryPoint(
+            inv_index=idx, turn=int(inv.get("turn", 0)), n_hidden=len(confs),
+            n_correct=n_correct, mean_top1_conf=float(np.mean(confs)),
+            move_entropy=m_ent, believed_atk=b_atk, believed_spe=b_spe))
+    return BeliefTrajectoryView(points=tuple(points)) if points else None
+
+
 def build_meta(summary: dict, summary_path: str = "", npz_path: "str | None" = None) -> TraceMeta:
     m = summary.get("meta", {})
     return TraceMeta(
@@ -1299,12 +1620,16 @@ def _reorder_move_labels(labels: list, req_moves) -> list:
 def analyze_invocation(model, summary: dict, npz, inv_index: int,
                        summary_path: str = "", npz_path: "str | None" = None,
                        opp_team: "tuple[str, ...] | None" = None,
-                       our_hp_types: "dict | None" = None) -> InvocationAnalysis:
+                       our_hp_types: "dict | None" = None,
+                       opp_team_details: "list | None" = None) -> InvocationAnalysis:
     """Analyze a single decision point. Pure given ``model`` (the torch boundary).
 
     ``opp_team`` is the opponent's PRIVILEGED full team (species ids from the trace's
     `reconstruction.json` sibling, loaded by the caller — kept out of this pure engine); when given
-    AND the model exposes the belief, the result carries the slot-MATCHED `belief_truth`."""
+    AND the model exposes the belief, the result carries the slot-MATCHED `belief_truth`.
+    ``opp_team_details`` is the richer per-mon `team_details()` list ({species, evs, ivs, nature, …}) from
+    the same `reconstruction.json`; when given AND the model exposes the spread belief, the result carries
+    the believed-vs-true `spread_belief`."""
     meta = build_meta(summary, summary_path, npz_path)
     inv = summary["invocations"][inv_index]
     chosen = inv["chosen"]
@@ -1481,13 +1806,34 @@ def analyze_invocation(model, summary: dict, npz, inv_index: int,
         except Exception:  # noqa: BLE001 — never break the analysis
             move_belief = None
 
+    # Spread belief: the believed opp DERIVED stats (the op's stat input) vs the true derived stats from the
+    # privileged team_details. Best-effort; None on a --spread-belief-off checkpoint.
+    spread_belief = None
+    sbfn = getattr(model, "spread_belief_view", None)
+    if sbfn is not None:
+        try:
+            spread_belief = build_spread_belief(sbfn(obs, mask), opp_team_details)
+        except Exception:  # noqa: BLE001 — never break the analysis
+            spread_belief = None
+
+    # Within-forward refine rounds (axis A): the per-round belief/physics sharpening. Best-effort; None on a
+    # --damage-refine-rounds 0 checkpoint.
+    refine_trajectory = None
+    rrfn = getattr(model, "refine_rounds_view", None)
+    if rrfn is not None:
+        try:
+            refine_trajectory = build_refine_trajectory(rrfn(obs, mask))
+        except Exception:  # noqa: BLE001 — never break the analysis
+            refine_trajectory = None
+
     return InvocationAnalysis(
         **common, has_state=True, actions=actions, matchups=matchups, sweep=sweep,
         saliency=saliency, value_saliency=value_saliency, threats=threats, incoming=incoming,
         warnings=(), outcome=outcome, value=value, win_prob=win_prob, value_dist=value_dist,
         rerun_argmax=rerun_argmax, agrees=agrees, flags=flags, board=board, next_board=next_board,
         obs_mismatch=obs_mismatch, field=field, belief=belief, belief_truth=belief_truth,
-        damage_op=damage_op, move_belief=move_belief,
+        damage_op=damage_op, move_belief=move_belief, spread_belief=spread_belief,
+        refine_trajectory=refine_trajectory,
     )
 
 

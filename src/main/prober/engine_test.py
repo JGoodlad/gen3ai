@@ -1205,3 +1205,142 @@ def test_build_value_dist_bimodal_flagged():
     probs[0, 14] = 0.5
     vd = build_value_dist({"value_dist": probs}, 0, (-4.0, 4.0, bins))
     assert vd.bimodality > 0.35
+
+
+# ---------------------------------------------------------------------------
+# GPU-obs observability — spread belief, refine rounds, belief trajectory
+# (gen3_unified_spread_belief_v1 / gen3_iterative_damage_v1 / belief trajectory axis B)
+# ---------------------------------------------------------------------------
+
+def test_build_spread_belief_derived_stat_match():
+    """A revealed mon's believed spread is matched to its TRUE mon by species and the true DERIVED stats
+    are computed from team_details base+IV+EV+nature (the gen3 L100 formula). Tauros adamant 252 Atk."""
+    from main.prober.engine import build_spread_belief
+    raw = {
+        "spread": np.array([[300, 200, 150, 180, 250],   # slot 0 = tauros (believed)
+                            [1, 1, 1, 1, 1], [0] * 5, [0] * 5, [0] * 5, [0] * 5], dtype=float),
+        "believed_mask": np.array([False, True, True, True, True, True]),   # only slot 0 revealed
+        "opp_species": ["tauros", "", "", "", "", ""],
+        "opp_active": 0,
+    }
+    details = [{"species": "tauros",
+                "evs": {"hp": 0, "atk": 252, "def": 0, "spa": 0, "spd": 4, "spe": 252},
+                "ivs": {"hp": 31, "atk": 31, "def": 31, "spa": 31, "spd": 31, "spe": 31},
+                "nature": "adamant"}]
+    sv = build_spread_belief(raw, details)
+    assert sv is not None and sv.n_slots == 1
+    slot = sv.slots[0]
+    assert slot.species == "tauros" and slot.matched and slot.nature == "adamant"
+    atk = next(r for r in slot.rows if r.stat == "atk")
+    # Tauros base Atk 100, adamant (×1.1), 252 EVs: (2*100+31+63+5)*11//10 = 299*1.1 = 328.
+    assert atk.true == 328.0 and atk.believed == 300.0 and abs(atk.err + 28.0) < 1e-6
+    # Spe base 110 neutral 252: 2*110+31+63+5 = 319.
+    spe = next(r for r in slot.rows if r.stat == "spe")
+    assert spe.true == 319.0
+    assert atk.prior is not None   # Smogon prior column populated for a species with usage data
+
+
+def test_build_spread_belief_skips_hidden_and_handles_no_truth():
+    """Hidden slots (no species) are skipped; with no team_details the believed column still renders but
+    true/err/prior-from-truth are None (the websocket / no-ground-truth path)."""
+    from main.prober.engine import build_spread_belief
+    raw = {
+        "spread": np.array([[300, 200, 150, 180, 250]] + [[1, 1, 1, 1, 1]] * 5, dtype=float),
+        "believed_mask": np.array([False, True, True, True, True, True]),
+        "opp_species": ["snorlax", "", "", "", "", ""],
+        "opp_active": 0,
+    }
+    sv = build_spread_belief(raw, None)
+    assert sv is not None and sv.n_slots == 1          # the 5 hidden slots are skipped
+    assert sv.slots[0].rows[0].true is None and not sv.slots[0].matched
+    assert sv.mean_abs_err is None                     # no truth → no error stat
+
+
+def test_build_spread_belief_none_when_off():
+    from main.prober.engine import build_spread_belief
+    assert build_spread_belief(None, [{"species": "tauros"}]) is None
+
+
+def test_build_refine_trajectory_entropy_decays_monotone():
+    """Sharpening logits round→round ⇒ falling Bernoulli entropy, flagged monotone; physics maxima read."""
+    from main.prober.engine import build_refine_trajectory
+    rounds = [
+        {"round": 0, "move_logits": np.array([1.0, 1.0, -1.0, -1.0]), "damage": np.zeros((6, 4))},
+        {"round": 1, "move_logits": np.array([4.0, 4.0, -4.0, -4.0]),
+         "damage": np.array([[0.3, 0.1, 0.2, 0.0]] + [[0, 0, 0, 0]] * 5, dtype=float)},
+    ]
+    rt = build_refine_trajectory(rounds)
+    assert rt is not None and len(rt.rounds) == 2
+    assert rt.rounds[1].entropy < rt.rounds[0].entropy and rt.entropy_monotone
+    assert abs(rt.rounds[1].max_phys_high - 0.3) < 1e-6
+    assert abs(rt.rounds[1].max_pko - 0.2) < 1e-6     # max over the [phys_pko, spec_pko] columns
+
+
+def test_build_refine_trajectory_nonmonotone_flagged_and_none():
+    from main.prober.engine import build_refine_trajectory
+    rounds = [
+        {"round": 0, "move_logits": np.array([4.0, 4.0, -4.0, -4.0]), "damage": np.zeros((6, 4))},
+        {"round": 1, "move_logits": np.array([0.1, 0.1, 0.0, 0.0]), "damage": np.zeros((6, 4))},
+    ]
+    rt = build_refine_trajectory(rounds)
+    assert rt is not None and not rt.entropy_monotone   # entropy ROSE
+    assert build_refine_trajectory(None) is None and build_refine_trajectory([]) is None
+
+
+def test_build_belief_trajectory_scores_correctness_with_truth():
+    """Axis B: per-decision top-1 confidence + ✓ correctness vs the privileged team, model-free from the
+    summary belief blocks. With no opp_team correctness stays 0 but confidence is still populated."""
+    from main.prober.engine import build_belief_trajectory
+    summary = {"invocations": [
+        {"turn": 1, "belief": [{"slot": 2, "top": [{"species": "snorlax", "prob": "40.0%"},
+                                                    {"species": "tauros", "prob": "20.0%"}]},
+                               {"slot": 3, "top": [{"species": "zapdos", "prob": "10.0%"}]}]},
+        {"turn": 3, "belief": [{"slot": 2, "top": [{"species": "snorlax", "prob": "80.0%"}]}]},
+        {"turn": 5},   # no belief block this decision
+    ]}
+    tj = build_belief_trajectory(summary, opp_team=("snorlax", "suicune"))
+    assert tj is not None and len(tj.points) == 2
+    assert tj.points[0].n_hidden == 2 and tj.points[0].n_correct == 1   # snorlax top-1 right, zapdos wrong
+    assert tj.points[1].mean_top1_conf == 0.8
+    # no-truth path: correctness collapses to 0, confidence preserved.
+    tj2 = build_belief_trajectory(summary, opp_team=None)
+    assert [p.n_correct for p in tj2.points] == [0, 0]
+    assert build_belief_trajectory({"invocations": [{"turn": 1}]}, None) is None
+
+
+def test_build_belief_trajectory_consumes_hidden_multiset_no_double_count():
+    """The n_correct scoring must NOT double-count (the set-membership bug build_belief_truth avoids):
+    two believed slots both top-1'ing the SAME single true species score 1, not 2; a top-1 naming a
+    species NOT on the team scores 0. One-time consumption per still-hidden true mon."""
+    from main.prober.engine import build_belief_trajectory
+    summary = {"invocations": [
+        # both hidden slots guess 'snorlax' top-1, but the team has exactly ONE snorlax → score 1, not 2.
+        {"turn": 1, "belief": [{"slot": 2, "top": [{"species": "snorlax", "prob": "55.0%"}]},
+                               {"slot": 3, "top": [{"species": "snorlax", "prob": "30.0%"}]}]},
+        # a guess for a species not on the team → 0.
+        {"turn": 3, "belief": [{"slot": 2, "top": [{"species": "mewtwo", "prob": "60.0%"}]}]},
+    ]}
+    tj = build_belief_trajectory(summary, opp_team=("snorlax", "suicune"))
+    assert tj.points[0].n_hidden == 2 and tj.points[0].n_correct == 1   # consumed once, not double-counted
+    assert tj.points[1].n_correct == 0                                  # mewtwo not on the team
+
+
+def test_build_belief_trajectory_reads_npz_move_and_spread():
+    """When the trace npz carries the captured move_logits / spread_belief (active-row) arrays, each point
+    gets the opp-active move-belief entropy + believed Atk/Spe; absent/NaN rows leave them None."""
+    from main.prober.engine import build_belief_trajectory
+    summary = {"invocations": [
+        {"turn": 1, "belief": [{"slot": 2, "top": [{"species": "snorlax", "prob": "40.0%"}]}]},
+        {"turn": 3, "belief": [{"slot": 2, "top": [{"species": "snorlax", "prob": "80.0%"}]}]},
+    ]}
+    npz = {
+        "move_logits": np.array([[2.0, 2.0, -2.0, -2.0], [5.0, 5.0, -5.0, -5.0]], dtype=np.float32),
+        "spread_belief": np.array([[300, 200, 150, 180, 250], [310, 205, 150, 180, 255]], dtype=np.float32),
+    }
+    tj = build_belief_trajectory(summary, opp_team=("snorlax",), npz=npz)
+    assert tj.points[0].move_entropy is not None and tj.points[1].move_entropy is not None
+    assert tj.points[1].move_entropy < tj.points[0].move_entropy        # sharper logits → lower entropy
+    assert tj.points[0].believed_atk == 300.0 and tj.points[0].believed_spe == 250.0
+    # absent arrays → the move/spread fields stay None (older trace).
+    tj_bare = build_belief_trajectory(summary, opp_team=("snorlax",), npz=None)
+    assert tj_bare.points[0].move_entropy is None and tj_bare.points[0].believed_atk is None

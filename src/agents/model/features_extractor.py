@@ -3324,6 +3324,10 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         # strategy); we hand it over so the model spends capacity on HOW to value it, not on re-deriving the
         # gen3 immunity rules across non-local tokens. STRUCTURAL (adds two Linears; OFF byte-identical).
         self.threat_status_refine = bool(threat_status_refine)
+        # Prober-only: when True, the between-layers refine_cb stashes its per-round (move_logits, lean
+        # incoming-damage) into `last_refine_rounds` for the observability TUI. Default False → the
+        # training/rollout forward never captures (byte-for-byte unchanged); the prober flips it per re-run.
+        self.capture_refine_rounds = False
         if self.threat_status_refine and not damage_op:
             raise ValueError("threat_status_refine=True requires damage_op=True (the status physics).")
         if self.threat_status_refine and self.damage_refine_rounds <= 0:
@@ -3485,6 +3489,11 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         # head's per-slot species prediction for exactly those slots. Read-only stash — never read by
         # the forward itself, so the off/baseline output is unchanged.
         self.last_opp_believed_mask = ctx.opp_believed_mask
+        self.last_opp_active_local = ctx.opp_active_local   # for the prober's per-round belief-row decode
+        # gen3_status_trunk_v1 / observability: prober-only capture of the WITHIN-FORWARD refine trajectory.
+        # `capture_refine_rounds` defaults False (set ONLY by the prober before a re-run forward), so the
+        # rollout/training path never touches it → byte-for-byte unchanged. Reset the accumulator each forward.
+        self.last_refine_rounds = [] if getattr(self, "capture_refine_rounds", False) else None
         role_tokens = self.pokemon_encoder(ctx, self.embeddings)
         # In-place hidden-opponent belief: replace the un-revealed opp slots with distinct learned
         # unknown-mon tokens BEFORE the transformer, so the body refines them and every readout
@@ -3521,8 +3530,10 @@ class Gen3FeaturesExtractor(torch.nn.Module):
                 opp_tokens = tokens[:, TEAM_SIZE:2 * TEAM_SIZE, :]            # current (mid-transformer) opp
                 logits = self.move_belief.move_logits(opp_tokens, _opp_species_ids, _opp_move_ids)  # [B,6,M]
                 # --- INCOMING residuals onto OUR tokens: damage (always) + status (v37, if on) ---
-                refined_our = tokens[:, 0:TEAM_SIZE, :] + self.refine_proj(
-                    self.damage_op.discrete_incoming(ctx, logits))           # residual (0 at init)
+                inc = self.damage_op.discrete_incoming(ctx, logits)          # [B,6,4] lean per-our-mon threat
+                if self.last_refine_rounds is not None:                      # prober-only capture (axis A)
+                    self.last_refine_rounds.append((layer_idx, logits.detach(), inc.detach()))
+                refined_our = tokens[:, 0:TEAM_SIZE, :] + self.refine_proj(inc)   # residual (0 at init)
                 if self.status_in_proj is not None:
                     # gen3_status_trunk_v1: "will I get statused" — one belief read feeds damage + status.
                     refined_our = refined_our + self.status_in_proj(

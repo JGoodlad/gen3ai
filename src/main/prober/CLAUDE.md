@@ -67,7 +67,12 @@ the single source of truth — change the analysis once, both surfaces follow.
   also ignores today (a future counterfactual probe consumes it).
 - **`app.py`** — `ProberApp(Gen3App)`: trace `Tree` | invocation `ListView` |
   a `VerticalScroll` of `Collapsible` analysis sections (Summary · Team · Review · Board ·
-  Faithfulness · Matchups · Intervention · Saliency · Flow · Outcome).
+  Faithfulness · **Beliefs** · **Threats** · Intervention · Saliency · Flow · Outcome). The
+  TUI is **first-class for the GPU obs** — the learned belief/op signals tagged `🔷 GPU` render
+  PRIMARY, the decoded CPU obs regions they subsume tagged `📋 CPU-obs` render dim/secondary
+  (`_prov(text, gpu)` is the one tag helper). **Beliefs** is the model's world-model vs ground
+  truth; **Threats** (renamed from *Matchups*) leads with the DamageOperator physics. See
+  **Beliefs / Threats (GPU-first observability)** below.
 - **`review.py`** — `ReviewStore`: persistent manual-review annotations (a *funky* flag +
   a **timestamped note append-log** per decision) at `<run_dir>/review_notes.json`; pure
   (no Textual), unit-tested, exports to `<run_dir>/review_notes.md`. Each saved comment is a
@@ -99,11 +104,14 @@ better than always using `best_model`.
 ## Panels & navigation
 
 Analysis sections (collapsible — **multiple open at once**, in a scroll; toggle
-by clicking a title or pressing its number key) render purely from one
-`InvocationAnalysis`. Keys are **in display order** — `1`–`9` then `0` for the 10th
-(`Outcome`) — and **shown in each title** (`1  Summary`, `2  Team`, … `9  Flow`, `0  Outcome`); `_SECTIONS` is the
-single source — `_SEC_TITLE` builds the titles and the `BINDINGS` are generated from it, so
-key/label/binding never drift. The top one is **Summary** (`1`, open by default) — the
+by clicking a title or pressing its key) render purely from one
+`InvocationAnalysis`. There are now **11 sections vs 10 digit hotkeys** — `_SECTION_DEFS` is the
+display order and `_assign_section_keys` hands the 10 digit keys (`1`–`9` then `0`) to the
+digit-eligible sections **in order** while forcing the late addition `sec-beliefs` onto a **letter**
+(`b`) so the original ten keep their exact digits (no muscle-memory churn); if the digit pool ever
+runs out anyway, overflow also falls back to a letter (the 11th binding is never silently dropped).
+The resolved `(id, title, key)` triples are `_SECTIONS` — the single source `_SEC_TITLE` builds the
+titles and the `BINDINGS` are generated from, so key/label/binding never drift. The top one is **Summary** (`1`, open by default) — the
 decision dashboard for walking "funky turns". The context header is chunked into **three blank-line
 groups** for scannability — SITUATION (matchup + FIELD + THREAT), DECISION (CHOSE), OUTCOME
 (RESULT + REWARD + CRITIC): line 1 the matchup, each active as **species + colour-graded HP bar**
@@ -198,7 +206,66 @@ record** (`engine.build_our_hp_types` → `_retype_hp`, threaded as `analyze_inv
 loaded by `app._load_our_hp_types` / `session._our_hp_types`): Showdown's request carries only the bare
 `hiddenpower` id (the type is IV-derived), so without this our own mons showed an untyped HP until they
 used it. **OUR side only** — an opponent's un-revealed HP MUST stay bare (no leak), and the retype is a
-no-op on websocket/older traces with no `reconstruction.json`. Helpers
+no-op on websocket/older traces with no `reconstruction.json`.
+
+### Beliefs / Threats (GPU-first observability)
+
+The **Beliefs** section (`b`, open by default) is the model's **world-model vs ground truth** — built to
+be first-class for the learned GPU obs (every datum tagged `🔷 GPU`; `_render_beliefs` + the
+`_beliefs_*_text` helpers). Six self-hiding sub-panels (each blank when its belief leg is off; a fully-off
+checkpoint shows one "belief heads not enabled" note):
+- **species belief vs TRUE team** — reuses `_append_belief_truth` (privileged, Hungarian-matched, `✓/≈/✗`)
+  or the anonymous `_append_belief` fallback (no `reconstruction.json`).
+- **move belief** (✓ revealed · ≈ believed unseen) — the revealed opp's still-unseen moves (`a.move_belief`,
+  MOVED here from the old Matchups panel — it's a belief, not a threat).
+- **believed SPREAD vs true** (`a.spread_belief`, `engine.build_spread_belief` → `SpreadBeliefView`) — per
+  REVEALED opp mon the DamageOperator's believed DERIVED stats `[atk,def,spa,spd,spe]` (🔷) next to the
+  TRUE derived stats (📋, computed from `reconstruction.team_details()` base+IV+EV+nature via the gen3 L100
+  formula `_derived_stat`, which uses the mon's REAL IV — `gen3_data.priors.gen3_stat` hardcodes IV31) + the
+  Smogon usage prior. Match is by **species** (exact — a revealed mon's species is known + unique), NOT
+  Hungarian. A wrong spread is an otherwise-invisible damage root-cause (the op consumes these stats), so
+  this surfaces e.g. "believes Metagross Atk 385 vs true 305 → over-prices its hits". `mean_abs_err` is the
+  headline. Believed-only (no `true`/prior-from-truth) on a websocket trace.
+- **refinement TRAJECTORY (axis B, across-battle)** — `engine.build_belief_trajectory` (model-FREE, from the
+  on-disk per-decision `belief` blocks + the privileged team): a top-1 species-confidence sparkline + `✓/✗`
+  correctness dots across the battle's decisions (confidence still shown without truth; the `►` marks the
+  decision being viewed). Correctness mirrors `build_belief_truth`'s precision — per decision the true HIDDEN
+  set is `opp_team` minus the species revealed by then (decoded model-free from the inv board), matched with
+  **one-time consumption**, so guessing an already-revealed species or two slots naming the same hidden mon
+  can't double-count. When the trace npz carries the captured `move_logits` / `spread_belief` arrays (new
+  runs), it ALSO draws the opp-active **move-belief entropy** (`Hmv`, should decay) + believed opp-active
+  **Atk** (`bAtk`) sparklines — the move/spread analog, decoded WITHOUT re-running. The "watch the belief
+  sharpen as reveals accumulate" view.
+- **within-forward refine ROUNDS (axis A)** — `ProbeModel.refine_rounds_view` → `engine.build_refine_trajectory`
+  → `RefineTrajectoryView`: per `--damage-refine-rounds` round the move-belief Bernoulli **entropy** (should
+  DECAY, flagged `entropy_monotone`) + the lean per-our-mon incoming-damage maxima the round injected — the
+  physics-in-the-loop sharpening across the transformer layers. Driven by a **prober-only** capture
+  (`features_extractor.capture_refine_rounds`, default False → `last_refine_rounds` None → zero training cost;
+  `refine_rounds_view` sets it, runs one clean forward, RESTORES it in a `finally`). Bounded by
+  `TRANSFORMER_N_LAYERS` (the cb fires once per layer).
+- **value-dist × belief cross-read** — does critic bimodality co-occur with low belief confidence?
+
+The **Threats** section (`6`, was *Matchups*) is reordered **GPU-first** (`_render_matchups`, still the
+method name): the `🔷` DamageOperator physics (outgoing per-move · incoming worst-hit per defender · opp
+secondary · the discrete top-K move-space with per-pivot safe-switch) render PRIMARY into `#threats-gpu`;
+the `📋` CPU obs decodes (the per-move type-multiplier table + the `their_matchups` effectiveness + the
+usage-prior `incoming P(KO)`) render below into `#matchups-table`/`#matchups-threat`, **dim** when the op is
+present (it subsumes them) and **full-styled** when there's no op (the demote only applies when the op is
+present — the graceful-degradation contract). The **Flow** diagram flags the learned belief/physics phases
+(`BeliefSlots`/`BeliefHead`/`MoveBelief`/`SpreadBelief`/`DamageOperator`) with a `🔷 GPU-computed` callout
+(`_FLOW_GPU_PHASES`). New `analyze`-JSON fields (`asdict`): `spread_belief`, `refine_trajectory` (+ the
+existing `belief`/`belief_truth`/`move_belief`/`damage_op`); `None` when the head is off.
+
+**Capture (axis B beyond species).** `RLPlayer._move_belief_active_row` (the opp-active move posterior,
+`[n_moves]`) and `_spread_belief` (the opp-active believed-spread row `[5]`) stash into the trace, and
+`BattleRecorder.states_arrays` writes them as `move_logits`/`spread_belief` npz arrays — **OMITTED when the
+head is off**, NaN for a captured-but-headless row (parallel to `value_dist`). `build_belief_trajectory`
+READS them (the `Hmv`/`bAtk` sparklines above) so move/spread trajectories decode on future runs WITHOUT
+re-running the model; absent on older traces (then species-only). The capture is opp-active-row (not the
+full `[6,5]`) so the trajectory needs no separate active-index array — the per-decision spread PANEL still
+re-runs the model for the full `[6,5]`-vs-truth view.
+
+The remaining helpers
 `_col` / `_mon_label` / `_moves_line` / `_team_panel_text` build the panels (the last shared by OPP
 TEAM + both Team tables). The **Team** section (`2`, collapsed) is the full per-mon detail — our team
 and the opp team **side-by-side (2-column)** — every mon's **moveset** (ours complete; opp's
@@ -221,13 +288,11 @@ recorder format so the status no longer mangles the hp cell +
 revealed bench + our moveset from `engine.build_board`, model-free; plus a **field**
 line — weather/spikes/screens/turn decoded from the obs global block via
 `ProbeModel.describe_global`, so it needs captured state), **Faithfulness**
-(recorded vs re-run probs), **Matchups** (our active move type-multipliers — a non-damaging move shows
-`—  n/a (non-damaging)` per `MatchupView.applicable`, see MOVES above — + two incoming lines: an
-**incoming eff** line decoded from `their_matchups` — `worst N×` / `revealed XX%`, or
-`BLANK` when the opponent's coverage is unrevealed; and an **incoming P(KO)** line
-decoded from the `incoming_damage` belief block — `active NN%` (our on-field mon's KO
-belief) · `outspd NN%` · `worst-on-team NN%` · opp-recovery — the calibrated
-DAMAGE belief, not raw effectiveness),
+(recorded vs re-run probs), **Beliefs** + **Threats** (the GPU-first observability sections — see
+*Beliefs / Threats (GPU-first observability)* above; Threats keeps the `📋` CPU decodes — the per-move
+type-multiplier table, the `their_matchups` **incoming eff** `worst N×`/`revealed XX%`/`BLANK`, and the
+`incoming_damage` **incoming P(KO)** `active NN%`·`outspd NN%`·`worst-on-team NN%`·opp-recovery — DIM below
+the `🔷` DamageOperator physics when the op is present),
 **Intervention**, **Saliency** (two heads: `π` policy-logit blocks AND `V` critic
 value-gradient blocks, each incl. `their_matchups(144)` and `incoming_damage(33)`, so
 you can see whether the **value** head — where OHKO tail-blindness lives — actually
@@ -463,11 +528,12 @@ loading uses the same exact→nearest→recent ladder (cached per process). A
     moves has ≤`4−k` more, and the multi-label head doesn't enforce that 4-move constraint, so its raw
     top-K over-shows (2 known ⇒ at most 2 unseen, not 4). Also carries `our_labels`
     `(team_slot, species, is_active)` so the op's team-slot incoming rows can be labeled. Pure decode is
-    unit-tested (`engine_test::test_move_belief_view_*`). The app's **Matchups** panel renders a
-    **move belief (✓ revealed · ≈ unseen)** block — `metagross ✓ meteormash 100%  ≈ explosion 32% · …`
-    (green ✓ revealed, magenta ≈ unseen) — plus the op's outgoing line, the `opp 2ndary:` incoming-status
+    unit-tested (`engine_test::test_move_belief_view_*`). The **move belief (✓ revealed · ≈ unseen)** block —
+    `metagross ✓ meteormash 100%  ≈ explosion 32% · …` (green ✓ revealed, magenta ≈ unseen) — now renders in
+    the **Beliefs** section (`#beliefs-moves`); the op's outgoing line, the `opp 2ndary:` incoming-status
     line, and the per-OUR-mon op **incoming** damage (worst-channel %HP →KO%, species-labeled, active ▶,
-    red-graded by P(KO)). All fields ride the `analyze` CLI JSON.
+    red-graded by P(KO)) render `🔷`-primary in the **Threats** `#threats-gpu` panel. All fields ride the
+    `analyze` CLI JSON.
     **NB:** the op view (`damage_op`) stashes on the **DamageOperator submodule** (`op.last_raw_block`),
     not the extractor — `damage_op_view` reads it there (a prior read of `extractor.last_raw_block`
     silently returned None, hiding the entire incoming/outgoing op view; regression-guarded by

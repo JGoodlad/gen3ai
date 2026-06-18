@@ -514,15 +514,38 @@ class ProbeSession:
         except Exception:  # noqa: BLE001 — privileged team is best-effort; degrade to bare HP
             return None
 
+    def _opp_team_details(self, b) -> "tuple | None":
+        """The opponent's PRIVILEGED `team_details()` (species + evs/ivs/nature/…) from the trace's
+        `reconstruction.json` sibling — feeds both the slot-matched belief truth (species) and the
+        spread-belief truth (derived stats). Returns `(species_tuple, details_list)` or `None` for
+        websocket/older traces. Mirrors the TUI's `_load_opp_team` / `_load_opp_team_details`."""
+        recon = b.summary_path[: -len("_summary.json")] + "_reconstruction.json"
+        if not os.path.exists(recon):
+            return None
+        try:
+            from utils.bridge.reconstruction import ReconstructionRecord
+            rec = ReconstructionRecord.load(recon)
+            side = rec.side_of(rec.trainee_username) if rec.trainee_username else None
+            if not side:
+                return None
+            opp = "p2" if side == "p1" else "p1"
+            details = rec.team_details(opp)
+            return tuple(m["species"] for m in details), details
+        except Exception:  # noqa: BLE001 — privileged truth is best-effort; degrade to no truth
+            return None
+
     def analyze(self, battle_id: str, inv_index: int) -> dict:
         """Full forensic analysis of one decision as a JSON-serializable dict
         (faithfulness, matchups, intervention, saliency, value+TD, outcome, model
-        disagreement). Loads the exact→nearest→recent model."""
+        disagreement, belief/spread truth). Loads the exact→nearest→recent model."""
         b = self._battle(battle_id)
         model, choice = self._model_for(b)
+        opp = self._opp_team_details(b)
         a = analyze_invocation(model, self._summary(b), self._npz(b), inv_index,
                                summary_path=b.summary_path, npz_path=b.npz_path,
-                               our_hp_types=self._our_hp_types(b))
+                               our_hp_types=self._our_hp_types(b),
+                               opp_team=(opp[0] if opp else None),
+                               opp_team_details=(opp[1] if opp else None))
         d = asdict(a)
         d["model_resolution"] = _choice_dict(choice)
         d["protocol"] = self._protocol_for(b, d.get("turn", 0))   # raw Showdown log for this turn

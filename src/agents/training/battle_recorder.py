@@ -162,6 +162,16 @@ class BattleRecorder:
         vd_bins = next((len(s["value_dist"]) for s in self._states
                         if s and s.get("value_dist") is not None), 0)
         value_dist = np.full((T, vd_bins), np.nan, dtype=np.float32) if vd_bins else None
+        # Move-belief posterior (opp-active row, [T, n_moves]) + believed opp-active spread ([T, 5]), parallel
+        # to value_dist — for the prober's across-battle belief trajectory (axis B) WITHOUT re-running the
+        # model (move-belief entropy decay + believed opp-active Atk/Spe). Each key is OMITTED when its head
+        # is off (no state carried it); a captured-but-headless row = NaN.
+        mb_n = next((len(s["move_logits"]) for s in self._states
+                     if s and s.get("move_logits") is not None), 0)
+        move_logits = np.full((T, mb_n), np.nan, dtype=np.float32) if mb_n else None
+        sb_shape = next((np.asarray(s["spread_belief"]).shape for s in self._states
+                         if s and s.get("spread_belief") is not None), None)
+        spread_belief = np.full((T,) + tuple(sb_shape), np.nan, dtype=np.float32) if sb_shape else None
         has_state = np.zeros(T, dtype=np.int8)
         for i, s in enumerate(self._states):
             if not s:
@@ -176,12 +186,24 @@ class BattleRecorder:
                 vd = s.get("value_dist")
                 if vd is not None:
                     value_dist[i] = np.asarray(vd, dtype=np.float32)
+            if move_logits is not None:
+                ml = s.get("move_logits")
+                if ml is not None:
+                    move_logits[i] = np.asarray(ml, dtype=np.float32)
+            if spread_belief is not None:
+                sb = s.get("spread_belief")
+                if sb is not None:
+                    spread_belief[i] = np.asarray(sb, dtype=np.float32)
             has_state[i] = 1
         actions = np.asarray(self._actions_taken, dtype=np.int16)
         out = {"obs": obs, "logits": logits, "values": values, "win_probs": win_probs,
                "has_state": has_state, "actions": actions}
         if value_dist is not None:
             out["value_dist"] = value_dist
+        if move_logits is not None:
+            out["move_logits"] = move_logits
+        if spread_belief is not None:
+            out["spread_belief"] = spread_belief
         return out
 
     def finalize(self, battle) -> None:

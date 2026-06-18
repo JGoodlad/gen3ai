@@ -298,8 +298,43 @@ class RLPlayer(Gen3Player):
                 # The distributional value head's predicted RETURN DISTRIBUTION (per-atom probs; None
                 # unless --value-dist-mode != none) — the prober renders the histogram + spread/PIT.
                 "value_dist": self._value_dist(),
+                # The opp-ACTIVE move-belief posterior (sigmoid; None unless --move-belief-mode != off) +
+                # the believed opp DERIVED stats [6,5] (None unless --spread-belief) — so the prober's
+                # across-battle (axis B) belief trajectory decodes WITHOUT re-running the model on old runs.
+                "move_logits": self._move_belief_active_row(),
+                "spread_belief": self._spread_belief(),
             }
         return idx, probs, mask
+
+    def _move_belief_active_row(self) -> Optional[list]:
+        """The opp-ACTIVE slot's move-belief posterior (forensic trace only) — `sigmoid` over the
+        extractor's stashed `last_move_belief_logits` at `last_opp_active_local` (the active opp mon, whose
+        believed moveset the across-battle trajectory tracks). None when the move-belief head is off
+        (`--move-belief-mode none`). A lean per-decision row (n_moves floats), parallel to `value_dist`."""
+        extractor = getattr(self.model.policy, "features_extractor", None)
+        logits = getattr(extractor, "last_move_belief_logits", None)
+        if logits is None:
+            return None
+        active = getattr(extractor, "last_opp_active_local", None)
+        a = int(active[0].item()) if active is not None else 0
+        a = max(0, min(a, int(logits.shape[1]) - 1))
+        return torch.sigmoid(logits[0, a]).detach().cpu().numpy().tolist()
+
+    def _spread_belief(self) -> Optional[list]:
+        """The believed opp-ACTIVE DERIVED stats `[atk,def,spa,spd,spe]` (forensic trace only) — the
+        opp-active row of the extractor's stashed `last_spread_belief` (the DamageOperator's stat input).
+        Active-row (not the full [6,5]) so the across-battle trajectory can read the believed opp-active
+        Atk/Spe WITHOUT a separate active-index array — parallel to `_move_belief_active_row`. None when
+        `--spread-belief` is off. (The prober's per-decision spread PANEL re-runs the model for the full
+        [6,5] vs the privileged true spread; this lean capture is for the offline axis-B trajectory.)"""
+        extractor = getattr(self.model.policy, "features_extractor", None)
+        sb = getattr(extractor, "last_spread_belief", None)
+        if sb is None:
+            return None
+        active = getattr(extractor, "last_opp_active_local", None)
+        a = int(active[0].item()) if active is not None else 0
+        a = max(0, min(a, int(sb.shape[1]) - 1))
+        return sb[0, a].detach().cpu().numpy().tolist()
 
     def _win_prob(self) -> Optional[float]:
         """P(win) from the win-probability head (forensic trace only). Reads the logit the extractor

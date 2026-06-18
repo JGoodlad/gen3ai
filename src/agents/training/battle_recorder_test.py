@@ -361,6 +361,35 @@ def test_states_arrays_captures_value_dist():
     assert "value_dist" not in rec2.states_arrays()
 
 
+def test_states_arrays_captures_move_logits_and_spread():
+    """states_arrays() carries the captured move-belief posterior [T, n_moves] + the opp-active believed
+    spread [T, 5] (the prober's axis-B trajectory inputs), parallel to value_dist: NaN for an uncaptured
+    row, key OMITTED entirely when the head was off the whole run."""
+    rec = BattleRecorder("battle-gen3ou-test", reward_fn_factory=_ZeroReward, gamma=0.9)
+    mls = [[0.9, 0.1, 0.5, 0.2], None, [0.3, 0.7, 0.4, 0.6]]
+    sbs = [[299.0, 200.0, 150.0, 180.0, 250.0], None, [310.0, 205.0, 150.0, 180.0, 255.0]]
+    for t in range(3):
+        st = {"value": 1.0, "obs": np.zeros(4, np.float32), "logits": np.zeros(11, np.float32)}
+        if mls[t] is not None:
+            st["move_logits"] = mls[t]
+        if sbs[t] is not None:
+            st["spread_belief"] = sbs[t]
+        rec.record(_move_battle(t + 1), 6, _probs(), _mask(6), state=st)
+    out = rec.states_arrays()
+    assert out["move_logits"].shape == (3, 4) and out["spread_belief"].shape == (3, 5)
+    assert out["move_logits"][0] == pytest.approx([0.9, 0.1, 0.5, 0.2])
+    assert np.isnan(out["move_logits"][1]).all() and np.isnan(out["spread_belief"][1]).all()
+    assert out["spread_belief"][2] == pytest.approx([310.0, 205.0, 150.0, 180.0, 255.0])
+
+    # Heads-off run: neither key is captured → both omitted entirely.
+    rec2 = BattleRecorder("battle-gen3ou-test", reward_fn_factory=_ZeroReward, gamma=0.9)
+    for t in range(2):
+        rec2.record(_move_battle(t + 1), 6, _probs(), _mask(6),
+                    state={"value": 1.0, "obs": np.zeros(4, np.float32), "logits": np.zeros(11, np.float32)})
+    arr2 = rec2.states_arrays()
+    assert "move_logits" not in arr2 and "spread_belief" not in arr2
+
+
 # ── write_battle_record (shared forensic writer) ──────────────────────────────
 
 class _StubRecorder:

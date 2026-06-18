@@ -552,6 +552,93 @@ class ProbeModel:
                 "opp_slots": _slots(self._opp_team_off),
                 "our_slots": _slots(self._our_team_off)}
 
+    def spread_belief_view(self, obs: np.ndarray, mask: np.ndarray):
+        """The SpreadBelief's predicted opp DERIVED stats for THIS obs — per opp slot
+        ``[atk, def, spa, spd, spe]`` (the L100 stat VALUES the `DamageOperator` consumes instead of its
+        hand-coded de-timid constants, so a wrong spread is an otherwise-invisible damage root-cause). Runs
+        ONE clean forward (the sweep/saliency passes clobber the stash) and reads ``last_spread_belief``.
+
+        The head predicts spreads for the REVEALED opp mons (species known, EV spread unknown — the
+        believed mask is `~opp_believed_mask`), so the view keys off the per-slot revealed species (decoded
+        from the opp team obs block, obs-slot order — the SAME slot order as the spread tensor). Returns a
+        dict ``{spread[6,5], believed_mask[6] bool, opp_species[6] (id or ''), opp_active}`` or ``None`` when
+        the run trained ``--spread-belief`` off. The true-derived-stat join + the Smogon prior live in the
+        pure engine (which matches each revealed slot to its true mon by species)."""
+        import torch
+        import agents.observation.constants as C
+
+        extractor = getattr(self._policy, "features_extractor", None)
+        if extractor is None:
+            return None
+        ot = torch.as_tensor(obs).unsqueeze(0)
+        mt = torch.as_tensor(mask).unsqueeze(0)
+        with torch.no_grad():
+            self._policy.extract_features({"observation": ot, "action_mask": mt})
+        sb = getattr(extractor, "last_spread_belief", None)
+        if sb is None:
+            return None
+        bmask = getattr(extractor, "last_opp_believed_mask", None)
+        bm = bmask[0].detach().cpu().numpy().astype(bool) if bmask is not None else None
+        # Per opp slot: the REVEALED species id (obs-slot order; "" when hidden) so the engine can match the
+        # believed spread row → the true mon. Mirrors `move_belief`'s _slots decode (authoritative known bit).
+        opp_species, opp_active = [], -1
+        stride = self.offsets.pokemon_full_dim
+        arr = np.asarray(obs)
+        for i in range(6):
+            base = self._opp_team_off + i * stride
+            block = arr[base: base + stride]
+            if block.shape[0] < stride:
+                opp_species.append("")
+                continue
+            known = bool(block[C.POKEMON_SPECIES_KNOWN_OFFSET] > 0.5)
+            sid = ""
+            if known and self._pokemon_encoder is not None:
+                sid = (self._pokemon_encoder.describe_vector(block).get("species") or "").strip()
+            opp_species.append(sid)
+            if block[stride - 1] > 0.5:
+                opp_active = i
+        return {"spread": sb[0].detach().cpu().numpy(), "believed_mask": bm,
+                "opp_species": opp_species, "opp_active": opp_active}
+
+    def refine_rounds_view(self, obs: np.ndarray, mask: np.ndarray):
+        """The WITHIN-FORWARD iterative-refinement trajectory (axis A) for THIS obs: per
+        ``--damage-refine-rounds`` round, the move-belief logits the round re-read + the lean per-our-mon
+        incoming-damage block it injected — so you can SEE the belief/physics sharpen across the transformer
+        layers. Sets the PROBER-ONLY ``capture_refine_rounds`` flag (default False on the extractor → ZERO
+        training cost), runs ONE clean forward, reads ``last_refine_rounds``, then clears the flag. Returns
+        a list of ``{round, move_logits[n_moves], damage[6,4]}`` (the opp-active row of the per-round belief
+        + the lean ``[phys_high,spec_high,phys_pko,spec_pko]`` per our mon), or ``None`` when the run trained
+        ``--damage-refine-rounds 0`` (no refine loop). The decode (entropy decay etc.) lives in the engine."""
+        import torch
+
+        extractor = getattr(self._policy, "features_extractor", None)
+        if extractor is None or int(getattr(extractor, "damage_refine_rounds", 0)) <= 0:
+            return None
+        ot = torch.as_tensor(obs).unsqueeze(0)
+        mt = torch.as_tensor(mask).unsqueeze(0)
+        had = bool(getattr(extractor, "capture_refine_rounds", False))
+        try:
+            extractor.capture_refine_rounds = True
+            with torch.no_grad():
+                self._policy.extract_features({"observation": ot, "action_mask": mt})
+            rounds = getattr(extractor, "last_refine_rounds", None)
+        finally:
+            extractor.capture_refine_rounds = had
+        if not rounds:
+            return None
+        opp_local = None
+        ex_ctx = getattr(extractor, "last_opp_active_local", None)
+        if ex_ctx is not None:
+            opp_local = int(ex_ctx[0].item()) if hasattr(ex_ctx, "__len__") else int(ex_ctx)
+        out = []
+        for (layer_idx, move_logits, dmg) in rounds:
+            ml = move_logits[0].detach().cpu().numpy()              # [6, n_moves]
+            row = ml[opp_local] if (opp_local is not None and 0 <= opp_local < ml.shape[0]) else ml.max(axis=0)
+            out.append({"round": int(layer_idx),
+                        "move_logits": row,
+                        "damage": dmg[0].detach().cpu().numpy()})    # [6, 4]
+        return out
+
     def value_grad(self, obs: np.ndarray, mask: np.ndarray) -> np.ndarray:
         """Return |d V(s) / d obs| as a per-dim array — the CRITIC's input sensitivity.
 

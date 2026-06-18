@@ -30,23 +30,46 @@ from textual.widgets import (
     Tree,
 )
 
-# Analysis sections (Collapsible id, title, toggle key) — multiple can be open at once.
-# Keys are 1-indexed in DISPLAY order (no 0 — awkward on a laptop) and shown in each title.
-_SECTIONS = [
-    ("sec-summary", "Summary", "1"),
-    ("sec-team", "Team", "2"),
-    ("sec-review", "Review", "3"),
-    ("sec-board", "Board", "4"),
-    ("sec-faith", "Faithfulness", "5"),
-    ("sec-matchups", "Matchups", "6"),
-    ("sec-sweep", "Intervention", "7"),
-    ("sec-saliency", "Saliency", "8"),
-    ("sec-flow", "Flow", "9"),
-    ("sec-outcome", "Outcome", "0"),
+# Analysis sections in DISPLAY order (Collapsible id + title). Hotkeys are ASSIGNED below: the 10
+# digit keys (1-9,0) go to the first ten by display order, then letters take over (the 11th+ section —
+# `sec-beliefs` — binds a letter so no binding is silently dropped). `_SECTIONS` carries the resolved
+# (id, title, key) triples every consumer (titles + bindings + toggles) reads, so they never drift.
+_SECTION_DEFS = [
+    ("sec-summary", "Summary"),
+    ("sec-team", "Team"),
+    ("sec-review", "Review"),
+    ("sec-board", "Board"),
+    ("sec-faith", "Faithfulness"),
+    ("sec-beliefs", "Beliefs"),       # NEW (gpu-obs observability) — the model's world-model vs truth
+    ("sec-threats", "Threats"),       # RENAMED from "Matchups" — GPU DamageOperator primary, CPU decodes dim
+    ("sec-sweep", "Intervention"),
+    ("sec-saliency", "Saliency"),
+    ("sec-flow", "Flow"),
+    ("sec-outcome", "Outcome"),
 ]
+# Hotkey generator: 10 digit keys (1-9,0) go to the digit-eligible sections in display order; sections in
+# `_LETTER_SECTIONS` (the additions past the digit budget — `sec-beliefs`) are forced onto a letter so the
+# pre-existing 10 keep their ORIGINAL digit keys (no muscle-memory churn). If digits ever run out anyway,
+# overflow also falls back to a letter, so the 11th+ binding is never silently dropped. Letters skip those
+# already bound to actions (j/k/n/f/r/m/e/y/…) — `b` is the first free one, landing on Beliefs.
+_DIGIT_KEYS = "1234567890"
+_LETTER_SECTIONS = {"sec-beliefs"}              # always a letter (keeps the original 10 on their digits)
+_RESERVED_LETTERS = set("jknNfrmReEy")          # already-bound action keys (see BINDINGS)
+_LETTER_POOL = [c for c in "bdghilopuwxz" if c not in _RESERVED_LETTERS]
+
+
+def _assign_section_keys(defs):
+    out, digits, letters = [], iter(_DIGIT_KEYS), iter(_LETTER_POOL)
+    for sid, title in defs:
+        key = next(letters) if sid in _LETTER_SECTIONS else (next(digits, None) or next(letters))
+        out.append((sid, title, key))
+    return out
+
+
+_SECTIONS = _assign_section_keys(_SECTION_DEFS)
 # Title shown on each Collapsible — "1  Summary" — so the hotkey is always visible.
 _SEC_TITLE = {sid: f"{key}  {title}" for sid, title, key in _SECTIONS}
-_OPEN_BY_DEFAULT = {"sec-summary", "sec-board", "sec-faith", "sec-flow", "sec-outcome"}
+_OPEN_BY_DEFAULT = {"sec-summary", "sec-board", "sec-faith", "sec-beliefs", "sec-flow", "sec-outcome"}
 
 
 class NavTree(Tree):
@@ -125,7 +148,7 @@ from main.prober.discovery import (
     resolve_model_for_step,
 )
 from main.prober.engine import (
-    InvocationAnalysis, analyze_invocation, build_result_timeline,
+    InvocationAnalysis, analyze_invocation, build_belief_trajectory, build_result_timeline,
     parse_protocol_log, protocol_for_turn, summary_flags,
 )
 from main.prober.review import ReviewStore
@@ -187,6 +210,7 @@ class ProberApp(Gen3App):
         self._tree_model: "TraceTree | None" = None
         self._summary_cache: "dict[str, dict]" = {}
         self._opp_team_cache: "dict[str, tuple | None]" = {}   # privileged opp team per trace (reconstruction.json)
+        self._opp_details_cache: "dict[str, list | None]" = {} # privileged opp team_details (evs/ivs/nature) per trace
         self._our_hp_cache: "dict[str, dict | None]" = {}      # our typed Hidden Power per trace (reconstruction.json)
         self._protocol_cache: "dict[str, tuple]" = {}          # raw Showdown protocol lines per trace (replay.html)
         self._current_battle: "BattleTrace | None" = None
@@ -277,8 +301,19 @@ class ProberApp(Gen3App):
                         yield DataTable(id="board-opp")
                     with Collapsible(title=_SEC_TITLE["sec-faith"], collapsed=False, id="sec-faith"):
                         yield DataTable(id="faith-table")
-                    with Collapsible(title=_SEC_TITLE["sec-matchups"], collapsed=True, id="sec-matchups"):
-                        yield DataTable(id="matchups-table")
+                    # NEW Beliefs section — the model's 🔷 GPU world-model (species/moves/spread) vs the
+                    # 📋 privileged ground truth, + the over-time refinement views (axis B across-battle,
+                    # axis A within-forward). Each sub-panel hides itself when its belief leg is off.
+                    with Collapsible(title=_SEC_TITLE["sec-beliefs"], collapsed=False, id="sec-beliefs"):
+                        yield Static("", id="beliefs-status")
+                        yield Static("", id="beliefs-species")
+                        yield Static("", id="beliefs-moves")
+                        yield Static("", id="beliefs-spread")
+                        yield Static("", id="beliefs-trajectory")
+                        yield Static("", id="beliefs-refine")
+                    with Collapsible(title=_SEC_TITLE["sec-threats"], collapsed=True, id="sec-threats"):
+                        yield Static("", id="threats-gpu")          # 🔷 GPU DamageOperator physics (primary)
+                        yield DataTable(id="matchups-table")        # 📋 CPU obs matchup decode (dim fallback)
                         yield Static("", id="matchups-threat")
                     with Collapsible(title=_SEC_TITLE["sec-sweep"], collapsed=True, id="sec-sweep"):
                         yield DataTable(id="sweep-table")
@@ -397,6 +432,30 @@ class ProberApp(Gen3App):
                 team = None
         self._opp_team_cache[key] = team
         return team
+
+    def _load_opp_team_details(self, battle: BattleTrace) -> "list | None":
+        """The opponent's FULL `team_details()` (species + evs/ivs/nature/ability/item per mon) from the
+        trace's `reconstruction.json` sibling — the privileged truth the spread-belief view compares the
+        believed DERIVED stats against. `None` for websocket/older traces (then the spread view renders the
+        believed column only). Cached per battle (file IO kept out of the pure engine, like `_load_opp_team`)."""
+        key = battle.summary_path
+        if key in self._opp_details_cache:
+            return self._opp_details_cache[key]
+        details = None
+        recon = (key[: -len("_summary.json")] + "_reconstruction.json"
+                 if key.endswith("_summary.json") else None)
+        if recon and os.path.exists(recon):
+            try:
+                from utils.bridge.reconstruction import ReconstructionRecord
+                rec = ReconstructionRecord.load(recon)
+                side = rec.side_of(rec.trainee_username) if rec.trainee_username else None
+                if side:
+                    opp = "p2" if side == "p1" else "p1"
+                    details = rec.team_details(opp)
+            except Exception:  # noqa: BLE001 — privileged truth is best-effort; degrade to believed-only
+                details = None
+        self._opp_details_cache[key] = details
+        return details
 
     def _load_our_hp_types(self, battle: BattleTrace) -> "dict | None":
         """OUR team's typed Hidden Power per species (`{norm_species: 'hiddenpower(bug)'}`) from the
@@ -672,6 +731,7 @@ class ProberApp(Gen3App):
                 summary_path=battle.summary_path, npz_path=battle.npz_path,
                 opp_team=self._load_opp_team(battle),
                 our_hp_types=self._load_our_hp_types(battle),
+                opp_team_details=self._load_opp_team_details(battle),
             )
         except Exception as e:  # noqa: BLE001 — render analysis errors, don't crash
             self.call_from_thread(self._on_analysis_error, str(e), token)
@@ -707,6 +767,7 @@ class ProberApp(Gen3App):
         self._render_review(a)
         self._render_board(a)
         self._render_faithfulness(a)
+        self._render_beliefs(a)
         self._render_matchups(a)
         self._render_sweep(a)
         self._render_saliency(a)
@@ -1004,73 +1065,208 @@ class ProberApp(Gen3App):
                 Text(f"{row.rerun * 100:5.1f}%", style=rerun_col),
             )
 
+    def _render_beliefs(self, a: InvocationAnalysis) -> None:
+        """The BELIEFS section — the model's 🔷 GPU world-model vs 📋 privileged ground truth, plus the
+        over-time refinement (axis B across-battle turns + axis A within-forward refine rounds). Six
+        sub-panels, each self-hiding when its belief leg is off so an off-run shows a single clear note."""
+        status = self.query_one("#beliefs-status", Static)
+        species = self.query_one("#beliefs-species", Static)
+        moves = self.query_one("#beliefs-moves", Static)
+        spread = self.query_one("#beliefs-spread", Static)
+        traj = self.query_one("#beliefs-trajectory", Static)
+        refine = self.query_one("#beliefs-refine", Static)
+
+        any_belief = (a.belief is not None or a.belief_truth is not None
+                      or a.move_belief is not None or a.spread_belief is not None
+                      or a.refine_trajectory is not None)
+        if not any_belief:
+            status.update(Text("belief heads not enabled for this checkpoint "
+                               "(--opp-belief-aux-coef / --move-belief-mode / --spread-belief)", style="dim"))
+            for w in (species, moves, spread, traj, refine):
+                w.update("")
+            return
+        s = Text()
+        s.append_text(_prov("the model's world-model — believed identities/moves/stats vs ground truth", True))
+        if a.belief_truth is None and a.belief is not None:
+            s.append("\n📋 no ground truth (websocket trace) — showing the anonymous belief only", style="dim")
+        status.update(s)
+
+        # ① species belief-vs-truth (privileged match → ✓/≈/✗) or the anonymous belief fallback.
+        sp = Text()
+        if a.belief_truth is not None:
+            sp.append_text(_prov("species belief vs TRUE team", True))
+            _append_belief_truth(sp, a.belief_truth)
+        elif a.belief is not None:
+            sp.append_text(_prov("species belief (anonymous — no ground truth)", True))
+            _append_belief(sp, a.belief)
+        species.update(sp)
+
+        # ② believed MOVES vs true moveset (revealed mons' still-unseen moves — the surprise-OHKO lever).
+        mv = Text()
+        mb = a.move_belief
+        if mb is not None and mb.opp:
+            mv.append_text(_prov("move belief (✓ revealed · ≈ believed unseen)", True))
+            for ob in mb.opp:
+                mv.append(f"\n{ob.species} ", style=_MON_COLOR)
+                if ob.revealed:
+                    mv.append("✓ ", style="green")
+                    mv.append(" · ".join(f"{n} {p * 100:.0f}%" for n, p in ob.revealed), style="green")
+                if ob.believed:
+                    if ob.revealed:
+                        mv.append("   ", style="dim")
+                    mv.append("≈ ", style="dim")
+                    mv.append(" · ".join(f"{n} {p * 100:.0f}%" for n, p in ob.believed), style="magenta")
+                if not ob.revealed and not ob.believed:
+                    mv.append("(no move belief)", style="dim")
+        moves.update(mv)
+
+        # ③ believed SPREAD vs true DERIVED stats (the DamageOperator's stat input — a wrong spread is an
+        # otherwise-invisible damage root-cause). believed 🔷 | true 📋 | Smogon prior, per revealed opp mon.
+        spread.update(self._beliefs_spread_text(a.spread_belief))
+
+        # ④ refinement TRAJECTORY (axis B, across-battle): species top-1 confidence + ✓/✗ as reveals
+        # accumulate. Model-free from the on-disk per-decision belief blocks + the privileged team.
+        traj.update(self._beliefs_trajectory_text(a))
+
+        # ⑤ within-forward refine ROUNDS (axis A): the per-`--damage-refine-rounds` belief-entropy +
+        # incoming-physics sharpening across the transformer layers + ⑥ the value-dist × belief cross-read.
+        refine.update(self._beliefs_refine_text(a))
+
+    def _beliefs_spread_text(self, sv) -> Text:
+        """Render the believed-vs-true opp DERIVED-stat spread (③). Empty when --spread-belief is off."""
+        out = Text()
+        if sv is None or not sv.slots:
+            return out
+        out.append_text(_prov("spread belief (believed 🔷 | true 📋 | prior) — the op's stat input", True))
+        if sv.mean_abs_err is not None:
+            out.append(f"   mean |err| {sv.mean_abs_err:.0f}", style="dim")
+        for slot in sv.slots:
+            out.append(f"\n{slot.species}", style=_MON_COLOR)
+            if slot.matched and (slot.nature or slot.ev_note):
+                out.append(f"  ({slot.nature} · {slot.ev_note})", style="dim")
+            elif not slot.matched:
+                out.append("  (no ground truth)", style="dim")
+            for r in slot.rows:
+                out.append(f"\n   {r.stat:<3} ", style="dim")
+                out.append(f"{r.believed:5.0f}", style="cyan")
+                if r.true is not None:
+                    # colour the believed value by how close it is to truth (green = accurate).
+                    err = abs(r.believed - r.true)
+                    out.append(f"  vs {r.true:5.0f}", style="green")
+                    out.append(f"  Δ{r.believed - r.true:+5.0f}",
+                               style=gradient_color(max(0.0, 1.0 - err / 80.0)))
+                if r.prior is not None:
+                    out.append(f"   prior {r.prior:5.0f}", style="dim")
+        return out
+
+    def _beliefs_trajectory_text(self, a: InvocationAnalysis) -> Text:
+        """Render the across-battle belief sharpening (④, axis B): top-1 species confidence sparkline +
+        ✓/✗ correctness as reveals accumulate over the battle's decisions, plus — when the trace npz carries
+        the captured move/spread arrays (future runs) — the opp-active move-belief ENTROPY (should decay) +
+        believed opp-active Atk sparklines. Empty when no belief on disk."""
+        out = Text()
+        summ = self._current_summary
+        if summ is None or self._current_battle is None:
+            return out
+        opp = self._load_opp_team(self._current_battle)
+        npz = self._load_npz(self._current_battle)               # carries move_logits/spread_belief on new runs
+        tj = build_belief_trajectory(summ, opp, npz=npz)
+        if tj is None or not tj.points:
+            return out
+        out.append_text(_prov("refinement over the battle (axis B — confidence sparkline · ✓ top-1 right)", True))
+        spark = "▁▂▃▄▅▆▇█"
+
+        def _spark(val: float, lo: float, hi: float) -> str:    # value → sparkline glyph over [lo,hi]
+            t = 0.0 if hi <= lo else max(0.0, min(1.0, (val - lo) / (hi - lo)))
+            return spark[min(len(spark) - 1, int(t * (len(spark) - 1)))]
+
+        line, dots = Text("\n  conf ", style="dim"), Text("\n  hit  ", style="dim")
+        cur = a.inv_index
+        for p in tj.points:
+            ch = spark[min(len(spark) - 1, int(p.mean_top1_conf * (len(spark) - 1)))]
+            mark = "►" if p.inv_index == cur else " "         # highlight the decision being viewed
+            line.append(mark + ch, style=gradient_color(p.mean_top1_conf))
+            # ✓ all hidden mons' top-1 right · · partial · ✗ none (only meaningful with ground truth).
+            if p.n_hidden == 0:
+                dots.append(mark + "·", style="dim")
+            elif p.n_correct == p.n_hidden:
+                dots.append(mark + "✓", style="green")
+            elif p.n_correct > 0:
+                dots.append(mark + "≈", style="yellow")
+            else:
+                dots.append(mark + "✗", style="red")
+        out.append_text(line)
+        if opp:                                               # correctness dots only with privileged truth
+            out.append_text(dots)
+        # Move-belief entropy decay (npz move_logits, future runs) — sharpening as reveals accumulate.
+        ents = [p.move_entropy for p in tj.points if p.move_entropy is not None]
+        if ents:
+            lo, hi = min(ents), max(ents)
+            mrow = Text("\n  Hmv  ", style="dim")
+            for p in tj.points:
+                mark = "►" if p.inv_index == cur else " "
+                if p.move_entropy is None:
+                    mrow.append(mark + " ", style="dim")
+                else:                                          # lower entropy = sharper = greener
+                    norm = 0.0 if hi <= lo else (p.move_entropy - lo) / (hi - lo)
+                    mrow.append(mark + _spark(p.move_entropy, lo, hi), style=gradient_color(1.0 - norm))
+            out.append_text(mrow)
+        # Believed opp-active Atk (npz spread_belief, future runs) — the op's stat input over the battle.
+        atks = [p.believed_atk for p in tj.points if p.believed_atk is not None]
+        if atks:
+            lo, hi = min(atks), max(atks)
+            arow = Text("\n  bAtk ", style="dim")
+            for p in tj.points:
+                mark = "►" if p.inv_index == cur else " "
+                arow.append(mark + (_spark(p.believed_atk, lo, hi) if p.believed_atk is not None else " "),
+                            style="cyan")
+            out.append_text(arow)
+        return out
+
+    def _beliefs_refine_text(self, a: InvocationAnalysis) -> Text:
+        """Render the within-forward refine rounds (⑤, axis A) + the value-dist × belief cross-read (⑥)."""
+        out = Text()
+        rt = a.refine_trajectory
+        if rt is not None and rt.rounds:
+            out.append_text(_prov("within-forward refine (axis A — belief entropy ↓ · physics ↑ per round)", True))
+            mono = "✓ monotone" if rt.entropy_monotone else "⚠ non-monotone"
+            out.append(f"   {mono}", style="green" if rt.entropy_monotone else "yellow")
+            for r in rt.rounds:
+                out.append(f"\n  round {r.round}: ", style="dim")
+                out.append(f"H={r.entropy:6.2f}", style="cyan")
+                out.append(f"  worst→KO {r.max_pko * 100:3.0f}%", style=gradient_color(1.0 - r.max_pko))
+                out.append(f"  phys {r.max_phys_high * 100:3.0f}% spec {r.max_spec_high * 100:3.0f}%", style="dim")
+        # ⑥ value-dist × belief cross-read: does critic bimodality co-occur with low belief confidence?
+        vd = a.value_dist
+        if vd is not None:
+            if out.plain:
+                out.append("\n")
+            out.append_text(_prov("value-dist × belief", True))
+            out.append(f"\n  critic spread σ={vd.std:.2f}", style="cyan")
+            if getattr(vd, "bimodality", 0.0) > 0.35:    # mass outside the dominant peak ⇒ coinflip
+                out.append(f"  ⚠ BIMODAL (coinflip, {vd.bimodality:.2f})", style="bold yellow")
+            bt = a.belief_truth
+            if bt is not None and bt.n_hidden:
+                out.append(f"   ·  belief {bt.n_correct}/{bt.n_hidden} top-1", style="dim")
+        return out
+
     def _render_matchups(self, a: InvocationAnalysis) -> None:
-        t = self.query_one("#matchups-table", DataTable)
-        t.clear()
-        if a.matchups is not None:
-            for label, mult, ap in zip(a.matchups.move_labels, a.matchups.multipliers,
-                                       a.matchups.applicable):
-                if not ap:  # non-damaging move → the obs multiplier is a phantom, show n/a
-                    t.add_row(label, Text("—  n/a (non-damaging)", style="dim"))
-                    continue
-                bar = "█" * int(round(mult / 4.0 * 12))
-                t.add_row(label, Text(f"{mult:4.2f}× {bar}", style=_mult_color(mult)))
-        # Incoming threat (opp → us), decoded from their_matchups. The key tell is
-        # `present`: it's blank for an opponent whose moves aren't revealed yet (a
-        # just-switched-in mon), so the policy is pricing it from priors alone.
-        threat = self.query_one("#matchups-threat", Static)
-        th = a.threats
-        lines = Text()
-        if a.obs_mismatch is not None:   # the incoming/their_matchups offsets are misaligned here
-            lines.append(f"⚠ OBS MISMATCH {a.obs_mismatch[0]}≠{a.obs_mismatch[1]} — the incoming "
-                         "lines below are UNRELIABLE\n", style="bold red")
-        if th is None:
-            lines.append("incoming eff (opp→us): ", style="dim")
-            lines.append("n/a", style="dim")
-        else:
-            lines.append("incoming eff (opp→us): ", style="dim")
-            if not th.present:
-                lines.append("BLANK — opp coverage unrevealed (priors only)", style="bold yellow")
-            else:
-                lines.append(f"worst {th.max_incoming:.2f}×", style=_mult_color(th.max_incoming))
-                lines.append(f"  ·  revealed {th.revealed_frac * 100:.0f}%", style="dim")
-        # The calibrated P(KO) belief (incoming_damage_v1) — prices power×Atk·Def×HP×roll, unlike
-        # the raw-effectiveness line above. active_pko near 1.0 = obs says our on-field mon is
-        # likely KO'd this turn; pair it with outspeed (are we even slower) and max_pko (worst on
-        # the board) to read "should it switch?".
-        inc = a.incoming
-        if inc is not None:
-            lines.append("\nincoming P(KO): ", style="dim")
-            if inc.active_pko is None:
-                lines.append("n/a", style="dim")
-            else:
-                # red = high incoming-KO danger (1 − pko), matching the Summary THREAT colour.
-                lines.append(f"active {inc.active_pko * 100:.0f}%", style=gradient_color(1.0 - inc.active_pko))
-                lines.append(f"  ·  outspd {inc.active_outspeed * 100:.0f}%", style="dim")
-                lines.append(f"  ·  worst-on-team {inc.max_pko * 100:.0f}%", style="dim")
-            if inc.recovery_known or inc.recovery_rate > 0:
-                lines.append(f"  ·  opp-recovery {inc.recovery_rate * 100:.0f}%"
-                             + ("✓" if inc.recovery_known else "?"), style="dim")
-        # Unified DamageOperator (--unified-damage both): the model's OUTGOING per-move damage (our active
-        # → opp active, action-aligned), so you can see how it ranks moves of EQUAL type-effectiveness —
-        # the Earthquake-vs-Brick-Break tie-break. Each move's max-roll %HP + P(KO) (the realized,
-        # accuracy-folded KO this turn). Only present on a --damage-op-with-outgoing checkpoint.
+        """The THREATS section (was 'Matchups'), reordered GPU-FIRST: the learned 🔷 DamageOperator physics
+        render PRIMARY into `#threats-gpu`; the 📋 CPU obs decodes (the per-move type-multiplier table + the
+        their_matchups effectiveness + the usage-prior P(KO)) render below into `#matchups-table` /
+        `#matchups-threat`, DIM when the op is present (it subsumes them), FULL-styled when there's no op."""
         dop = a.damage_op
-        if dop is not None:
-            # gen3_unified_move_system_v1: the opp active's per-status SECONDARY threat (its damaging
-            # moves' para/flinch/freeze/burn — the axis the binary status flag missed), accuracy-folded +
-            # ×Serene Grace. Show only the non-trivial ones.
-            isec = dop.get("incoming_secondary") or {}
-            inc_shown = [f"{c} {p * 100:.0f}%" for c, p in isec.items() if p > 0.05]
-            if inc_shown:
-                lines.append("\nopp 2ndary: ", style="dim")
-                lines.append("  ·  ".join(inc_shown), style="yellow")
-        if dop is not None and dop.get("outgoing"):
+        mb = a.move_belief
+        op_present = dop is not None
+        # ---- 🔷 GPU DamageOperator physics (PRIMARY) → #threats-gpu ----
+        gpu = Text()
+        if not op_present:
+            gpu.append_text(_prov("DamageOperator off (--damage-op) — CPU obs decode below is the threat read",
+                                  False, base_style="dim"))
+        else:
             from agents import gen3_data
-            moves = dop["outgoing"]["moves"]
-            osec = dop["outgoing"].get("secondary") or [{} for _ in moves]
-            labels = (list(a.matchups.move_labels) if a.matchups is not None
-                      else [f"m{k}" for k in range(len(moves))])
+            gpu.append_text(_prov("DamageOperator — computed gen3 damage physics (the learned belief → KO read)",
+                                  True))
 
             def _top_secondary(sc: dict) -> str:
                 """The single most-likely secondary effect our move causes (what status + probability)."""
@@ -1091,113 +1287,146 @@ class ProberApp(Gen3App):
                 a_ = getattr(md, "accuracy", None)
                 return f"{int(a_):3d}%" if a_ is not None else "  ?"
 
-            # FULL per-move roll detail (low–high · crit · acc · →KO) for ALL 4 request slots — a
-            # non-damaging move (Hypnosis etc.) is shown EXPLICITLY as "— (non-damaging)", never dropped or
-            # given a phantom roll. `applicable` is per request-slot (aligned with the op + labels).
-            applic = (list(a.matchups.applicable) if a.matchups is not None else [True] * len(moves))
-            lines.append("\nour damage (op):  ", style="dim")
-            lines.append("low–high · crit · acc · →KO", style="dim")
-            for k, (lab, mv, sc) in enumerate(zip(labels, moves, osec)):
-                damaging = (k >= len(applic) or applic[k]) and mv["high"] > 0
-                lines.append(f"\n  {lab:<13}", style="cyan")
-                if not damaging:
-                    lines.append("— (non-damaging)", style="dim")
-                    continue
-                lines.append(f"{mv['low'] * 100:3.0f}–{mv['high'] * 100:3.0f}%  crit {mv['crit'] * 100:3.0f}%  "
-                             f"acc {_acc(lab)}  →KO {mv['pko'] * 100:2.0f}%", style="cyan")
-                lines.append(_top_secondary(sc), style="yellow")
-        # gen3 has no team preview: the model BELIEVES the revealed opp's still-UNSEEN moves (--move-belief).
-        # Show what it thinks (per revealed opp mon) + the op's per-OUR-mon incoming damage from that belief —
-        # "what it thinks the damage is", including the moves it's only guessing.
-        mb = a.move_belief
-        if mb is not None and mb.opp:
-            lines.append("\n\n— move belief (✓ revealed · ≈ unseen) —", style="bold cyan")
-            for ob in mb.opp:
-                lines.append(f"\n{ob.species} ", style=_MON_COLOR)
-                if ob.revealed:                                  # already shown — belief pinned ≈100%
-                    lines.append("✓ ", style="green")
-                    lines.append(" · ".join(f"{n} {p * 100:.0f}%" for n, p in ob.revealed), style="green")
-                if ob.believed:                                  # the model's guess at the UNSEEN moves
-                    if ob.revealed:
-                        lines.append("   ", style="dim")
-                    lines.append("≈ ", style="dim")
-                    lines.append(" · ".join(f"{n} {p * 100:.0f}%" for n, p in ob.believed), style="magenta")
-                if not ob.revealed and not ob.believed:
-                    lines.append("(no move belief)", style="dim")
-        # Per-OUR-mon believed incoming damage from the op (TEAM-SLOT order, labeled by species; the active
-        # mon marked ▶). The op feeds per defender the worst PHYSICAL + worst SPECIAL believed hit (each a
-        # belief-weighted MAX over candidate moves — NOT per-move), so BOTH channels are shown (worst first):
-        # chan · low–high · crit · acc · →KO. This is the literal switch-safety signal the model reads.
-        if dop is not None and mb is not None and dop.get("incoming"):
-            lines.append("\nincoming (op):  ", style="dim")
-            lines.append("worst PHYS + worst SPEC hit per defender · low–high · crit · acc · →KO", style="dim")
-            any_inc = False
-            for (slot, sp, act), row in zip(mb.our_labels, dop["incoming"]):
-                if not sp:
-                    continue
-                chans = [(ch, row[ch]) for ch in ("phys", "spec") if row[ch]["high"] > 0.0]
-                if not chans:
-                    continue
-                chans.sort(key=lambda kc: kc[1]["high"], reverse=True)     # worst channel first
-                any_inc = True
-                lines.append(f"\n  {'▶' if act else ' '}{sp}", style=_MON_COLOR)
-                for ch, c in chans:
-                    lines.append(f"\n      {ch} {c['low'] * 100:3.0f}–{c['high'] * 100:3.0f}%  crit {c['crit'] * 100:3.0f}%  "
-                                 f"acc {c['acc'] * 100:3.0f}%  →KO {c['pko'] * 100:2.0f}%",
-                                 style=gradient_color(1.0 - c["pko"]) if (act or c["pko"] > 0.05) else "dim")
-            if not any_inc:
-                lines.append("\n  n/a", style="dim")
-        # gen3_unified_topk_incoming_v1 (--damage-topk): the DISCRETE top-K incoming move-space — the opp
-        # active's K most-believed CANDIDATE moves surfaced INDIVIDUALLY (vs the worst-case `_chan_max`
-        # collapse above), each its decoded NAME + belief + channel + accuracy, and the FULL per-OUR-mon
-        # matrix: for EVERY of our mons, that move's [high%→KO / st = status-lands]. This is the debug view
-        # for "anticipate the move → which mon switches in SAFE": a pivot reads `safe` (green) iff the move
-        # does 0 damage AND can't land its status on it — damage-immunity from the type chart, status-
-        # immunity from `_incoming_status_lands` (e.g. Thunder Wave → a Ground pivot). The op zeros a fainted
-        # defender (so a dead mon reads `safe` everywhere) and zeros the 5th+ slot once all 4 opp moves are
-        # revealed (a closed moveset → that slot is DROPPED here), so the move count itself is a signal.
-        itk = dop.get("incoming_topk") if dop is not None else None
-        if itk is not None and itk.get("moves") and itk.get("per_defender"):
-            labels = list(mb.our_labels) if mb is not None else []   # (slot, species, is_active), team-slot order
-            pdef = itk["per_defender"]                               # [n_our][K] {high, pko, status_lands}
-            n_our = len(pdef)
-            our = [(labels[i][1] if i < len(labels) and labels[i][1] else (f"slot{i}" if not labels else None),
-                    labels[i][2] if i < len(labels) else False) for i in range(n_our)]
-            live = [i for i in range(n_our) if our[i][0]]            # slots carrying a real mon (our full team)
+            # OUTGOING per-move damage (our active → opp active, action-aligned) — the equal-effectiveness
+            # tie-break. Each request slot's low–high %HP · crit · acc · →KO (the realized, acc-folded KO).
+            if dop.get("outgoing"):
+                moves = dop["outgoing"]["moves"]
+                osec = dop["outgoing"].get("secondary") or [{} for _ in moves]
+                labels = (list(a.matchups.move_labels) if a.matchups is not None
+                          else [f"m{k}" for k in range(len(moves))])
+                applic = (list(a.matchups.applicable) if a.matchups is not None else [True] * len(moves))
+                gpu.append("\nour damage (out):  ", style="dim")
+                gpu.append("low–high · crit · acc · →KO", style="dim")
+                for k, (lab, mv, sc) in enumerate(zip(labels, moves, osec)):
+                    damaging = (k >= len(applic) or applic[k]) and mv["high"] > 0
+                    gpu.append(f"\n  {lab:<13}", style="cyan")
+                    if not damaging:
+                        gpu.append("— (non-damaging)", style="dim")
+                        continue
+                    gpu.append(f"{mv['low'] * 100:3.0f}–{mv['high'] * 100:3.0f}%  crit {mv['crit'] * 100:3.0f}%  "
+                               f"acc {_acc(lab)}  →KO {mv['pko'] * 100:2.0f}%", style="cyan")
+                    gpu.append(_top_secondary(sc), style="yellow")
+            # INCOMING per-OUR-mon believed damage (TEAM-SLOT order, active ▶) — worst PHYS + worst SPEC
+            # belief-weighted hit per defender. The literal switch-safety read.
+            if mb is not None and dop.get("incoming"):
+                gpu.append("\nincoming worst (in):  ", style="dim")
+                gpu.append("worst PHYS + SPEC per defender · low–high · crit · acc · →KO", style="dim")
+                any_inc = False
+                for (slot, sp, act), row in zip(mb.our_labels, dop["incoming"]):
+                    if not sp:
+                        continue
+                    chans = [(ch, row[ch]) for ch in ("phys", "spec") if row[ch]["high"] > 0.0]
+                    if not chans:
+                        continue
+                    chans.sort(key=lambda kc: kc[1]["high"], reverse=True)     # worst channel first
+                    any_inc = True
+                    gpu.append(f"\n  {'▶' if act else ' '}{sp}", style=_MON_COLOR)
+                    for ch, c in chans:
+                        gpu.append(f"\n      {ch} {c['low'] * 100:3.0f}–{c['high'] * 100:3.0f}%  "
+                                   f"crit {c['crit'] * 100:3.0f}%  acc {c['acc'] * 100:3.0f}%  "
+                                   f"→KO {c['pko'] * 100:2.0f}%",
+                                   style=gradient_color(1.0 - c["pko"]) if (act or c["pko"] > 0.05) else "dim")
+                if not any_inc:
+                    gpu.append("\n  n/a", style="dim")
+            # opp incoming SECONDARY threat (its damaging moves' para/flinch/freeze/burn, acc-folded × Serene Grace).
+            isec = dop.get("incoming_secondary") or {}
+            inc_shown = [f"{c} {p * 100:.0f}%" for c, p in isec.items() if p > 0.05]
+            if inc_shown:
+                gpu.append("\nopp 2ndary: ", style="dim")
+                gpu.append("  ·  ".join(inc_shown), style="yellow")
+            # DISCRETE top-K incoming move-space (--damage-topk): the opp active's K most-believed CANDIDATE
+            # moves INDIVIDUALLY (vs the worst-case collapse above) + per-OUR-mon high%→KO / st (anticipate
+            # the move → pick the immune/safe pivot; safe = damage-AND-status-immune).
+            itk = dop.get("incoming_topk")
+            if itk is not None and itk.get("moves") and itk.get("per_defender"):
+                labels = list(mb.our_labels) if mb is not None else []   # (slot, species, is_active)
+                pdef = itk["per_defender"]                               # [n_our][K] {high, pko, status_lands}
+                n_our = len(pdef)
+                our = [(labels[i][1] if i < len(labels) and labels[i][1] else (f"slot{i}" if not labels else None),
+                        labels[i][2] if i < len(labels) else False) for i in range(n_our)]
+                live = [i for i in range(n_our) if our[i][0]]
 
-            def _chan(mv, k):                                       # the move's damage channel (or status / —)
-                if any(pdef[i][k]["high"] > 0.0 for i in range(n_our)):
-                    return "phys" if mv.get("is_phys", 0.0) > 0.5 else "spec"
-                if any(pdef[i][k]["status_lands"] > 0.05 for i in range(n_our)):
-                    return "status"
-                return "—"
+                def _chan(mv, k):                                       # the move's damage channel (or status / —)
+                    if any(pdef[i][k]["high"] > 0.0 for i in range(n_our)):
+                        return "phys" if mv.get("is_phys", 0.0) > 0.5 else "spec"
+                    if any(pdef[i][k]["status_lands"] > 0.05 for i in range(n_our)):
+                        return "status"
+                    return "—"
 
-            def _pivot(pd):                                         # (text, style) for one mon vs one move
-                hi, pko, st = pd["high"], pd["pko"], pd["status_lands"]
-                if hi == 0.0 and st <= 0.05:
-                    return "safe", "green"                          # immune / no threat = the safe switch-in
-                seg = (f"{hi * 100:.0f}%" + (f"→KO{pko * 100:.0f}" if pko > 0.05 else "")) if hi > 0.0 else ""
-                if st > 0.05:
-                    seg = (seg + " " if seg else "") + f"st{st * 100:.0f}"
-                return seg, gradient_color(1.0 - max(pko, st, min(hi, 1.0)))
-            shown_any = False
-            for k, mv in enumerate(itk["moves"]):
-                if mv.get("belief", 0.0) <= 0.05:                   # a gated slot (fainted-only / closed-moveset 5th)
+                def _pivot(pd):                                         # (text, style) for one mon vs one move
+                    hi, pko, st = pd["high"], pd["pko"], pd["status_lands"]
+                    if hi == 0.0 and st <= 0.05:
+                        return "safe", "green"                          # immune / no threat = the safe switch-in
+                    seg = (f"{hi * 100:.0f}%" + (f"→KO{pko * 100:.0f}" if pko > 0.05 else "")) if hi > 0.0 else ""
+                    if st > 0.05:
+                        seg = (seg + " " if seg else "") + f"st{st * 100:.0f}"
+                    return seg, gradient_color(1.0 - max(pko, st, min(hi, 1.0)))
+                shown_any = False
+                for k, mv in enumerate(itk["moves"]):
+                    if mv.get("belief", 0.0) <= 0.05:                   # a gated slot (fainted-only / closed-moveset 5th)
+                        continue
+                    if not shown_any:
+                        gpu.append("\nopp likely (top-K):  ", style="dim")
+                        gpu.append("per-OUR-mon high%→KO / st=status  (▶=active · safe=immune)", style="dim")
+                        shown_any = True
+                    gpu.append(f"\n  {mv.get('move') or '?'} {mv['belief'] * 100:.0f}%  ", style="bold yellow")
+                    gpu.append(f"{_chan(mv, k)} acc{mv.get('accuracy', 1.0) * 100:.0f}", style="dim")
+                    gpu.append("\n      ", style="dim")
+                    for j, i in enumerate(live):
+                        if j:
+                            gpu.append("  ·  ", style="dim")
+                        seg, col = _pivot(pdef[i][k])
+                        gpu.append(f"{'▶' if our[i][1] else ''}{our[i][0]} ", style=_MON_COLOR)
+                        gpu.append(seg, style=col)
+        self.query_one("#threats-gpu", Static).update(gpu)
+
+        # ---- 📋 CPU obs decode (DIM when the op subsumes it; FULL-styled when there's no op) ----
+        # The per-move type-multiplier table (a quick reference). The op's outgoing block above prices it
+        # fully (power×stats×roll), so when present this is the secondary view.
+        dim = op_present
+        msty = "dim" if dim else ""
+        t = self.query_one("#matchups-table", DataTable)
+        t.clear()
+        if a.matchups is not None:
+            for label, mult, ap in zip(a.matchups.move_labels, a.matchups.multipliers,
+                                       a.matchups.applicable):
+                if not ap:  # non-damaging move → the obs multiplier is a phantom, show n/a
+                    t.add_row(Text(label, style=msty), Text("—  n/a (non-damaging)", style="dim"))
                     continue
-                if not shown_any:                                   # header (only once, only if a move shows)
-                    lines.append("\nopp likely (op):  ", style="dim")
-                    lines.append("K likeliest opp moves · per-OUR-mon high%→KO / st=status  (▶=active · safe=immune)",
-                                 style="dim")
-                    shown_any = True
-                lines.append(f"\n  {mv.get('move') or '?'} {mv['belief'] * 100:.0f}%  ", style="bold yellow")
-                lines.append(f"{_chan(mv, k)} acc{mv.get('accuracy', 1.0) * 100:.0f}", style="dim")
-                lines.append("\n      ", style="dim")
-                for j, i in enumerate(live):
-                    if j:
-                        lines.append("  ·  ", style="dim")
-                    seg, col = _pivot(pdef[i][k])
-                    lines.append(f"{'▶' if our[i][1] else ''}{our[i][0]} ", style=_MON_COLOR)
-                    lines.append(seg, style=col)
+                bar = "█" * int(round(mult / 4.0 * 12))
+                t.add_row(Text(label, style=msty),
+                          Text(f"{mult:4.2f}× {bar}", style="dim" if dim else _mult_color(mult)))
+        # Incoming threat (opp → us) from the CPU obs (their_matchups + the usage-prior incoming P(KO)).
+        threat = self.query_one("#matchups-threat", Static)
+        th = a.threats
+        lines = Text()
+        if op_present:
+            lines.append_text(_prov("obs-static threat decode (subsumed by 🔷 above)\n", False, base_style="dim"))
+        if a.obs_mismatch is not None:   # the incoming/their_matchups offsets are misaligned here
+            lines.append(f"⚠ OBS MISMATCH {a.obs_mismatch[0]}≠{a.obs_mismatch[1]} — the incoming "
+                         "lines below are UNRELIABLE\n", style="bold red")
+        lines.append("incoming eff (opp→us): ", style="dim")
+        if th is None:
+            lines.append("n/a", style="dim")
+        elif not th.present:
+            lines.append("BLANK — opp coverage unrevealed (priors only)",
+                         style="dim" if dim else "bold yellow")
+        else:
+            lines.append(f"worst {th.max_incoming:.2f}×", style="dim" if dim else _mult_color(th.max_incoming))
+            lines.append(f"  ·  revealed {th.revealed_frac * 100:.0f}%", style="dim")
+        inc = a.incoming
+        if inc is not None:
+            lines.append("\nincoming P(KO): ", style="dim")
+            if inc.active_pko is None:
+                lines.append("n/a", style="dim")
+            else:
+                lines.append(f"active {inc.active_pko * 100:.0f}%",
+                             style="dim" if dim else gradient_color(1.0 - inc.active_pko))
+                lines.append(f"  ·  outspd {inc.active_outspeed * 100:.0f}%", style="dim")
+                lines.append(f"  ·  worst-on-team {inc.max_pko * 100:.0f}%", style="dim")
+            if inc.recovery_known or inc.recovery_rate > 0:
+                lines.append(f"  ·  opp-recovery {inc.recovery_rate * 100:.0f}%"
+                             + ("✓" if inc.recovery_known else "?"), style="dim")
         threat.update(lines)
 
     def _render_sweep(self, a: InvocationAnalysis) -> None:
@@ -1332,7 +1561,11 @@ class ProberApp(Gen3App):
             line.append(name, style="bold green" if ph["optional"] else "bold")
         line = _pad(line, 27)               # align the ⊛ attention column across glyph/name widths
         line.append("⊛ " if (active and ph.get("attn")) else "  ", style="bold magenta")
-        line.append(_trunc(ph["role"], role_w), style="dim")
+        # 🔷 GPU-computed callout on the learned belief/physics phases (the first-class ops this TUI is built
+        # around) — so the Flow diagram flags which phases the Beliefs/Threats sections decode.
+        gpu_op = active and name in _FLOW_GPU_PHASES
+        line.append("🔷 " if gpu_op else "", style="cyan")
+        line.append(_trunc(ph["role"], role_w - (3 if gpu_op else 0)), style="dim")
         if stage == "side":
             line.append("  ✗→heads", style="dim italic yellow")
         return line
@@ -1667,6 +1900,20 @@ def _mult_color(mult: float) -> str:
     return gradient_color(min(1.0, mult / 4.0))
 
 
+# Provenance tags — make the TUI FIRST-CLASS for the learned GPU ops vs the CPU obs being deprecated.
+# 🔷 = a learned op / belief computed in the model forward; 📋 = a decoded CPU obs region the GPU op
+# subsumes (rendered dim/secondary). One helper so the tag + style are consistent everywhere.
+_GPU_TAG = "🔷"
+_CPU_TAG = "📋"
+
+
+def _prov(text: str, gpu: bool, base_style: str = "") -> Text:
+    """A provenance-tagged header: `🔷 …` (bold, GPU-computed) or `📋 …` (dim, CPU-obs subsumed)."""
+    tag = _GPU_TAG if gpu else _CPU_TAG
+    style = (base_style or ("bold cyan" if gpu else "dim"))
+    return Text(f"{tag} {text}", style=style)
+
+
 # ---- shared cell/decode helpers (one source for Summary / Board / Review) ----
 
 def _chosen_prob(a: InvocationAnalysis) -> "float | None":
@@ -1718,6 +1965,9 @@ _FLOW_BAND = {
     "DamageOperator": "FORK", "ProjectionAssembler": "FORK",
 }
 _FLOW_BAND_ORDER = ("ENCODE", "BELIEF", "FORK")
+# The learned belief/physics phases — flagged 🔷 GPU-computed in the Flow diagram (the ops the Beliefs +
+# Threats sections decode). Matched by phase name as introspected by `ProbeModel.architecture()`.
+_FLOW_GPU_PHASES = frozenset({"BeliefSlots", "BeliefHead", "MoveBelief", "SpreadBelief", "DamageOperator"})
 
 
 def _flow_band(ph: dict) -> str:
