@@ -358,11 +358,25 @@ JSON CLI carries the same slice as a `protocol` list.
 
 Per-invocation **flags** (`engine.summary_flags`, model-free): `switch`,
 `uncertain` (top recorded prob < `UNCERTAIN_THRESHOLD`=0.34 — a genuine tossup),
-`faint` (a faint in this turn's events); plus `disagree` (added per-analysis when
-the loaded model's argmax ≠ chosen). The list shows `?`/`✗` glyphs; `n`/`N` jump
-to the **discrete** flags (faint/switch — `uncertain` is the norm for a
-low-confidence policy, so it's a glyph, not a jump target). `f` cycles a
-battle-outcome filter (all → loss → win), rebuilding the tree.
+`faint` (a faint in this turn's events), **`opp-switch`** (the OPPONENT voluntarily
+pivoted this turn — `engine.opp_voluntary_switch`, glyph `⇄`); plus `disagree`
+(added per-analysis when the loaded model's argmax ≠ chosen). The list shows
+`?`/`✗`/`⇄` glyphs; `n`/`N` jump to the **discrete** flags (faint/switch/opp-switch —
+`uncertain` is the norm for a low-confidence policy, so it's a glyph, not a jump
+target). `f` cycles a battle-outcome filter (all → loss → win), rebuilding the tree.
+
+**The "computed-vs ≠ resolved-vs" guard (`opp-switch`).** When the opponent voluntarily switches, our
+move RESOLVES against the switch-IN, not the active we computed damage against — and the net result
+(e.g. Earthquake → immune) sits right next to a damage table computed vs the *pre-switch* active, which
+is easy to misread as "the model attacked the switch-in." So `analyze_invocation` carries
+`opp_switched_to` (the pivoted-in species), surfaced THREE ways: the `opp-switch` flag/glyph (markable +
+jumpable), a `⇄ opp→<species>` marker in the always-visible battle header, and a one-line callout at the
+top of the **Threats** panel (`⇄ opp pivoted <active>→<switch-in> — damage below is vs <active>
+(pre-switch); your move RESOLVED vs <switch-in>`). The battle header ALSO shows the opponent AGENT +
+its eval play **regime** for self-play sentinels — `opp: sentinel_0 [greedy]` vs `[stochastic@T]` (read
+from the run `metadata.json` `cli_args` `eval_sentinel_greedy`/`self_play_temp` by `_read_eval_opp_regime`)
+— so a self-play loss reads correctly: `greedy` = best-vs-best (the mirror genuinely out-decided us),
+`stochastic@T` = the opp was sampling its distribution (some "great play" is the temperature handout).
 
 **Manual review mode (model's own games).** The top **Review** section is the
 human-walkthrough surface: a one-glance card of *what the model EXPECTED → what it
@@ -707,18 +721,45 @@ blocking. So:
 
 ## Gotchas
 
-- **Move-action labels are realigned to request-slot order (`engine._reorder_move_labels`).** The
-  recorded `summary.actions` dict orders the 4 move actions by poke-env **`available_moves`**, which can
-  DIFFER from the obs **request-slot** order that the action mask, the `DamageOperator`, and the policy
-  logits (action 6+k) all use (`gen3_move_slot_align_v1`) — e.g. after a Disable / server reorder. Left
-  unaligned, EVERY action-6+k-indexed consumer (the mask, the matchup ×mult, the op outgoing damage, the
-  re-run argmax) pairs with the WRONG move (the bug that made Hypnosis — a 0-BP status move — display
-  Thunderbolt's 27% / `par 10%`). `analyze_invocation` calls `ProbeModel.our_active_move_slots(obs)`
-  (decodes our active mon's move block = request order) and reorders `labels[MOVE_START:MOVE_END]` to it
-  BEFORE building the mask, matching by normalized name (HP type stripped), with a safe fallback (unmatched
-  → unchanged, never a wrong reorder). The op itself was always correct (`usable = legal·(bp>0)` zeroes
-  status moves). Guarded by `engine_test::test_reorder_move_labels_realigns_to_request_slot_order`. The
-  outgoing-damage panel now also renders a non-damaging move EXPLICITLY as `— (non-damaging)`.
+- **Move-action labels are ALREADY in action-index order — do NOT re-sort them.** The recorded
+  `summary.actions` dict is built by `BattleRecorder._all_action_labels`, which iterates action index 0..10
+  and keys move slot *m* (action 6+*m*) on **`legal.move_ids[m]`** — the SAME request-slot order the action
+  mask, the `DamageOperator`'s per-move blocks, and the policy logits (action 6+k) all use. So
+  `list(acts.keys())[i]` ↔ action index *i* ↔ `model.action_dist(...)[i]` directly, and `analyze_invocation`
+  zips them with NO realign. A former `_reorder_move_labels` step (+ `ProbeModel.our_active_move_slots`)
+  *re-sorted* the move labels to the per-mon obs block's **moveset** order — which differs from request order
+  after a server reorder — and thereby SCRAMBLED the already-correct labels (transposing e.g.
+  hiddenpower↔thunderbolt), producing a spurious `disagree` flag, a wrong re-run argmax, and backwards
+  Matchups ×mults / op-outgoing labels on `exact`-tier replays. **Both were removed** (the recorded order is
+  authoritative). Invariant pinned by `engine_test::test_recorded_actions_are_action_index_aligned` (an
+  exact-reproducing model with a scrambling `our_active_move_slots` must still AGREE with the recorded
+  choice). The outgoing-damage panel renders a non-damaging move EXPLICITLY as `— (non-damaging)`.
+- **Per-move incoming threat = the `incoming_matrix` (`--damage-matrices incoming`).** `ProbeModel.damage_op_view`
+  threads `matrices_incoming_k` / `matrices_outgoing` into `decode_damage_block` and decodes with the correct
+  LEAN top-K (0 when the rich matrix is on — the matrix REPLACES it). The Threats panel renders the rich
+  `incoming_matrix`: per opp candidate move (decoded name + belief + acc + phys/spec + notable effect/secondary)
+  → per OUR mon the FULL cell `low–high · crit · →KO · ×type-mult · status` (immune ⇒ `safe`). This is the
+  "which opp move threatens which of my mons, by how much" read. (A prior bug omitted the matrices-decode flags,
+  so on a `--damage-matrices incoming` run the prober mis-read the absent lean top-K block — the garbage
+  `acc-580` render — and never decoded the matrix.)
+- **The rest of the decoded op fields now render too** (display-only): the OUTGOING **status-landing** (`our
+  status (land)` — per OUR move P(a dedicated status move lands on the opp) + ✓certain/?prior), the per-defender
+  **`incoming extras`** (the op's belief-aware `p_outspeed` + `provenance`), the **`opp Choice Band`** belief
+  (`p_cb` + per-our-mon CB-conditional physical →KO), and the OUTGOING **`our damage vs switch-ins`** matrix (our
+  moves × each REVEALED opp mon). Opp-mon columns are labeled by the obs-slot→species map (`mb.opp[*].slot`),
+  NOT the board active+bench order (the op reads `ctx.species_ids[:, TEAM_SIZE:]` raw, active at any slot).
+- **⚠ Op OUR-move blocks are in the op's per-mon order, NOT the action order — a MODEL concern, flagged in the
+  panel.** The op's OUTGOING per-move blocks (`our damage (out)` / `our status (land)` / `our damage vs
+  switch-ins`) are indexed by `ctx.all_move_ids[our_active]` — the **per-mon obs-block (moveset/≈alphabetical)
+  order** — which differs from the ACTION order (action 6+k = the recorded labels / `a.matchups.move_labels` /
+  the reactive move-effect block / the policy logits) in **~90% of decisions** (measured). The op even gates
+  move *k*'s damage with `ctx.move_mask[k]` (action order) while reading `move_ids[k]` (moveset) — internally
+  misaligned. So the prober labels these blocks by the op's OWN order via `dop["our_moves"]`
+  (`ProbeModel._our_active_moves`, the per-mon active-block decode), NOT the action labels — and prints a `⚠ op
+  move order ≠ action order` caveat when they differ. The matchups type-mult table + faithfulness STAY on the
+  action order (they're action-aligned). This op-vs-action misalignment looks like a real model bug (the v23
+  outgoing tie-break / v27 status-landing / v34 outgoing-matrix are positionally misaligned with the actions
+  they inform) — surfaced for debugging; the model-side fix (read our moves in request order) is retrain-class.
 - **Faithfulness is exact only on the `exact` tier.** On `nearest`/`recent` the
   model differs from the one that generated the trace, so recorded ≠ re-run (the
   re-run cell is colored by the drift) — expected, and the badge says which tier.

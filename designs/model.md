@@ -187,6 +187,21 @@ refine 2 + reattend + matrices both, CPU damage obs still visible.
 
 ## Open bets / honesty gates (the frontier)
 
+- **⚠ SUSPECTED BUG (found 2026-06-18 via the prober): the op's OUTGOING per-move blocks are NOT
+  action-aligned.** `DamageOperator._outgoing_block` / `_status_landing` / `_outgoing_matrix` read our moves
+  as `ctx.all_move_ids[our_active]` — the **per-mon obs-block order** (moveset/≈alphabetical) — while gating
+  with `ctx.move_mask` (ACTION order, action 6+k) and feeding the action-ordered policy head. Measured on
+  `ai_v6_09_dmg_reattend` traces: the per-mon order ≠ the action order in **~90% of decisions** (and the
+  per-decision permutation varies), so the v23 outgoing-damage move tie-break, v27 status-landing, and v34
+  outgoing-matrix are positionally misaligned with the actions they're meant to inform — the policy can't
+  learn a fixed op-slot→action-slot map. The reactive move-power/multiplier/effects ARE action-aligned
+  (`gen3_move_slot_align_v1` via `reactive._request_slot_moves`); the op was NOT given the same treatment
+  (it reads the raw per-mon block). **Likely fix (retrain-class):** align the op's our-move read to request
+  order (the same `legal.move_slots` order the reactive block uses), or carry a request-aligned move-id slice
+  on `ctx`. NOT yet fixed — flagged for confirmation (check `move_alignment_fuzz_test` coverage — it validates
+  the reactive block, not the op's per-mon read). The prober now SURFACES this (the `⇄`/`⚠ op move order ≠
+  action order` caveat in Threats; op blocks labeled by the op's true order). Suspect it depresses
+  move-selection quality on every `--damage-outgoing` run.
 - **Does v36 help?** Fresh-run A/B on `--threat-refine-outgoing` (± `--threat-unrevealed-outgoing` /
   `--threat-prob-outspeed`). Watch: belief precision↑, surprise-OHKO crater share↓, win-rate non-regress,
   `grad/value_share` (PopArt). Same gate as every prior belief/damage feature.

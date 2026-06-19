@@ -228,26 +228,52 @@ def test_move_belief_view_caps_unseen_at_open_move_slots():
     assert len(move_belief_view(raw).opp[0].believed) == 0
 
 
-def test_reorder_move_labels_realigns_to_request_slot_order():
-    """REGRESSION (move-slot-misalignment class): the recorded `actions` dict orders moves by poke-env
-    available_moves, which can DIFFER from the obs request-slot order the mask / DamageOperator / policy
-    logits use. `_reorder_move_labels` realigns the 4 move labels to the obs order, leaves switches/struggle
-    untouched, normalizes Hidden-Power type, and falls back safely (never a WRONG reorder)."""
-    from agents.action.constants import MOVE_END, MOVE_START
-    from main.prober.engine import _reorder_move_labels
-    labels = [f"switch:m{i}" for i in range(6)] + ["explosion", "thunderbolt", "icepunch", "hypnosis", "struggle"]
-    # obs request order swaps thunderbolt<->hypnosis vs the recorded order → realign to it
-    out = _reorder_move_labels(labels, ("explosion", "hypnosis", "icepunch", "thunderbolt"))
-    assert out[MOVE_START:MOVE_END] == ["explosion", "hypnosis", "icepunch", "thunderbolt"]
-    assert out[:MOVE_START] == labels[:MOVE_START] and out[MOVE_END:] == labels[MOVE_END:]   # switches/struggle kept
-    # Hidden Power: a request "hiddenpower(fire)" matches the recorded bare "hiddenpower"
-    hp = [f"switch:m{i}" for i in range(6)] + ["explosion", "hiddenpower", "icepunch", "thunderbolt", "struggle"]
-    out2 = _reorder_move_labels(hp, ("hiddenpower(fire)", "explosion", "thunderbolt", "icepunch"))
-    assert out2[MOVE_START:MOVE_END] == ["hiddenpower", "explosion", "thunderbolt", "icepunch"]
-    # Fallbacks → unchanged (never risk a wrong reorder): length mismatch / unmatched move / None
-    assert _reorder_move_labels(labels, ("explosion", "hypnosis")) == labels
-    assert _reorder_move_labels(labels, ("explosion", "surf", "icepunch", "thunderbolt")) == labels
-    assert _reorder_move_labels(labels, None) == labels
+def test_opp_voluntary_switch_flag():
+    """An opponent VOLUNTARY pivot is detected from the recorded opp action → `opp-switch` flag (so the
+    'our move resolved vs a switch-in, not the active we computed against' trap is markable/jumpable). A
+    forced post-faint replacement (`_sent_in`) or a plain move is NOT a voluntary pivot."""
+    from main.prober.engine import opp_voluntary_switch, summary_flags
+    sw = {"chosen": "earthquake", "actions": {"earthquake": {"prob": "53.2%", "valid": True}},
+          "outcome": {"opp": {"action": "switched_to:claydol"}, "our": {"action": "earthquake"}}}
+    assert opp_voluntary_switch(sw) == "claydol" and "opp-switch" in summary_flags(sw)
+    forced = {"chosen": "x", "actions": {}, "outcome": {"opp": {"action": "claydol_sent_in"}}}
+    assert opp_voluntary_switch(forced) is None and "opp-switch" not in summary_flags(forced)
+    move = {"chosen": "x", "actions": {}, "outcome": {"opp": {"action": "icebeam"}}}
+    assert opp_voluntary_switch(move) is None
+    assert opp_voluntary_switch({"outcome": {}}) is None      # no opp action → None (no crash)
+
+
+def test_recorded_actions_are_action_index_aligned():
+    """REGRESSION (move-slot-misalignment class, FIXED): the recorded `actions` dict is ALREADY in
+    action-index order (`BattleRecorder._all_action_labels` keys move slot m on `legal.move_ids[m]` at action
+    6+m), so `labels[i]` ↔ `probs[i]` directly — the engine must NOT re-sort the move labels. A model that
+    exposes a SCRAMBLING `our_active_move_slots` (the per-mon block's moveset order, which differs from the
+    request order after a server reorder) must be IGNORED; the old `_reorder_move_labels` used it and
+    transposed correct labels (hiddenpower↔thunderbolt), flipping the re-run argmax + faithfulness labels."""
+
+    class _IdxModel(FakeProbeModel):
+        """action_dist puts the mass on action INDEX 7 (the 2nd move slot); also exposes a scrambling
+        move-slot decode that the engine must NOT use."""
+        def action_dist(self, obs, mask):
+            p = np.full(len(mask), 0.01, dtype=np.float64)
+            p[7] = 0.9                                   # index 7 = the 2nd move slot
+            p = p * mask.astype(np.float64)
+            return p / p.sum(), np.arange(len(mask), dtype=np.float64)
+
+        def our_active_move_slots(self, obs):           # a SCRAMBLED order (the old bug's input)
+            return ("earthquake", "thunderbolt", "move3", "move2")
+
+    # The recorded chosen is the move at index 7 (earthquake) — what the policy actually picked.
+    a = analyze_invocation(_IdxModel(_OFF), _summary(chosen="earthquake"), _npz(), 0)
+    # The re-run argmax must be the label at index 7 (earthquake), NOT index 6 (thunderbolt) — i.e. the
+    # scrambling decode is ignored and the exact-reproducing model AGREES with the recorded choice.
+    assert a.rerun_argmax == "earthquake" and a.agrees is True
+    # Per-label alignment by index: index-7's label carries the re-run mass, index-6's does not.
+    eq = next(r for r in a.actions if r.label == "earthquake")
+    tb = next(r for r in a.actions if r.label == "thunderbolt")
+    assert eq.rerun > 0.8 and tb.rerun < 0.1
+    # The recorded probs stay attached to their own labels (thunderbolt 92.1%, earthquake 2.8%).
+    assert abs(tb.recorded - 0.921) < 1e-9 and abs(eq.recorded - 0.028) < 1e-9
 
 
 def test_matchups_read_correct_dims():

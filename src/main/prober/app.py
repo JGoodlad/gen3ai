@@ -160,8 +160,8 @@ _DEFAULT_GAMMA = 0.99   # used to compute the Outcome panel's TD residual when m
 # visible in the "switch:…" label). n/N jumps to the discrete, selective events
 # (faints, switches); "uncertain" is shown as a glyph but not jumped to — for a
 # low-confidence policy it's the norm, not a needle worth jumping to.
-_FLAG_GLYPH = {"uncertain": "?", "faint": "✗", "disagree": "≠"}
-_JUMP_FLAGS = ("faint", "switch")
+_FLAG_GLYPH = {"uncertain": "?", "faint": "✗", "disagree": "≠", "opp-switch": "⇄"}
+_JUMP_FLAGS = ("faint", "switch", "opp-switch")
 # User manual-review annotations (distinct from the auto summary_flags above).
 _REVIEW_FLAG_GLYPH = "⚑"
 _REVIEW_NOTE_GLYPH = "✎"
@@ -227,6 +227,7 @@ class ProberApp(Gen3App):
         # trace's eval step (exact snapshot → nearest checkpoint → most recent), so we
         # resolve + (lazily) load per selected battle, caching loaded models by path.
         self._gamma = _DEFAULT_GAMMA              # set from run metadata in on_mount; for TD residual
+        self._eval_regime = ""                    # self-play sentinel play regime (greedy / stochastic@T)
         self._tier = "auto"                       # cycled by `m` (auto/nearest/recent)
         self._injected_model = injected_model     # tests: stand in for every path
         self._model_cache: "dict[str, object]" = {}
@@ -368,6 +369,7 @@ class ProberApp(Gen3App):
             return
         self._tree_model = build_trace_tree(self._root)
         self._gamma = self._read_run_gamma(self._tree_model.run_dir)
+        self._eval_regime = self._read_eval_opp_regime(self._tree_model.run_dir)
         self._review_store = ReviewStore(self._tree_model.run_dir)
         if self._tree_model.is_empty:
             tree.root.label = "no traces found"
@@ -761,6 +763,19 @@ class ProberApp(Gen3App):
                            style="bold white on red")
             hdr.append(f"{a.our_species} vs {a.opp_species} · {meta.result} · "
                        f"turn {a.turn} · inv {a.inv_index}/{meta.n_invocations}")
+            # The OPPONENT AGENT (sentinel_N / a bot) + its eval play regime. For a self-play sentinel,
+            # `[greedy]` = best-vs-best (the mirror genuinely out-decided us) vs `[stochastic@T]` = the opp
+            # was sampling its distribution (some "great play" is the temperature handout). Surfaced so a
+            # self-play loss can be read correctly without digging into the run's CLI args.
+            opp_name = getattr(self._current_battle, "opponent", "") or ""
+            if opp_name:
+                hdr.append(f" · opp: {opp_name}", style="dim")
+                if opp_name.startswith("sentinel") and self._eval_regime:
+                    hdr.append(f" [{self._eval_regime}]", style="bold magenta")
+            # ⇄ a voluntary opp pivot this turn — flag it in the always-visible header so the
+            # "computed-vs ≠ resolved-vs" trap is obvious no matter which panel is open.
+            if a.opp_switched_to:
+                hdr.append(f"  ⇄ opp→{a.opp_switched_to}", style="bold yellow")
             self.query_one("#battle-header", Static).update(hdr)
         self._render_summary(a)
         self._render_team(a)
@@ -1260,6 +1275,19 @@ class ProberApp(Gen3App):
         op_present = dop is not None
         # ---- 🔷 GPU DamageOperator physics (PRIMARY) → #threats-gpu ----
         gpu = Text()
+        # ⇄ Opp pivoted this turn: the damage tables below were computed vs the active we SAW; our move
+        # RESOLVED against the switch-in. Surfaced prominently so the "computed-vs ≠ resolved-vs" trap
+        # (Earthquake vs Snorlax → a Levitate Claydol) can't be misread off the net result.
+        if a.opp_switched_to:
+            gpu.append("⇄ opp pivoted ", style="bold yellow")
+            gpu.append(a.opp_species, style="bold " + _MON_COLOR)
+            gpu.append(" → ", style="bold yellow")
+            gpu.append(a.opp_switched_to, style="bold " + _MON_COLOR)
+            gpu.append(" this turn — damage below is vs ", style="yellow")
+            gpu.append(a.opp_species, style=_MON_COLOR)
+            gpu.append(" (pre-switch); your move RESOLVED vs ", style="yellow")
+            gpu.append(a.opp_switched_to, style=_MON_COLOR)
+            gpu.append("\n", style="yellow")
         if not op_present:
             gpu.append_text(_prov("DamageOperator off (--damage-op) — CPU obs decode below is the threat read",
                                   False, base_style="dim"))
@@ -1267,6 +1295,26 @@ class ProberApp(Gen3App):
             from agents import gen3_data
             gpu.append_text(_prov("DamageOperator — computed gen3 damage physics (the learned belief → KO read)",
                                   True))
+            # The op's OUTGOING per-move blocks (out / status-land / switch-in matrix) are indexed by the
+            # per-mon obs-block move order (`ctx.all_move_ids[our_active]`), which DIFFERS from the ACTION
+            # order (action 6+k = a.matchups.move_labels / the policy logits / the reactive move-effect
+            # block) in ~90% of decisions (per-mon ≈ alphabetical/moveset; action = request). So label those
+            # blocks by the op's REAL move order (`dop["our_moves"]`), not the action labels — else the
+            # damage attaches to the wrong move name. `_op_lbl(k)` = the op's move at slot k.
+            op_moves = list(dop.get("our_moves") or [])
+
+            def _op_lbl(k: int) -> str:
+                m = op_moves[k] if (k < len(op_moves) and op_moves[k] and op_moves[k] != "none") else None
+                return m or f"m{k}"
+            _act_n = ([str(l).split("(")[0] for l in a.matchups.move_labels] if a.matchups is not None else [])
+            _op_n = [str(m).split("(")[0] for m in op_moves]
+            op_misaligned = bool(_op_n) and bool(_act_n) and _op_n[:len(_act_n)] != _act_n[:len(_op_n)]
+            if op_misaligned:
+                gpu.append("\n⚠ op move order ", style="bold yellow")
+                gpu.append("≠ action order", style="bold red")
+                gpu.append(f": op outgoing/status/switch-in blocks are in the op's per-mon order {_op_n}, "
+                           f"NOT action 6+k {_act_n} — labeled by the op's order below (the op is NOT "
+                           f"action-aligned — model concern).", style="yellow")
 
             def _top_secondary(sc: dict) -> str:
                 """The single most-likely secondary effect our move causes (what status + probability)."""
@@ -1292,13 +1340,11 @@ class ProberApp(Gen3App):
             if dop.get("outgoing"):
                 moves = dop["outgoing"]["moves"]
                 osec = dop["outgoing"].get("secondary") or [{} for _ in moves]
-                labels = (list(a.matchups.move_labels) if a.matchups is not None
-                          else [f"m{k}" for k in range(len(moves))])
-                applic = (list(a.matchups.applicable) if a.matchups is not None else [True] * len(moves))
                 gpu.append("\nour damage (out):  ", style="dim")
                 gpu.append("low–high · crit · acc · →KO", style="dim")
-                for k, (lab, mv, sc) in enumerate(zip(labels, moves, osec)):
-                    damaging = (k >= len(applic) or applic[k]) and mv["high"] > 0
+                for k, (mv, sc) in enumerate(zip(moves, osec)):
+                    lab = _op_lbl(k)                                  # op order (NOT action order)
+                    damaging = mv["high"] > 0                         # from the op's own data, not matchups
                     gpu.append(f"\n  {lab:<13}", style="cyan")
                     if not damaging:
                         gpu.append("— (non-damaging)", style="dim")
@@ -1334,10 +1380,57 @@ class ProberApp(Gen3App):
             if inc_shown:
                 gpu.append("\nopp 2ndary: ", style="dim")
                 gpu.append("  ·  ".join(inc_shown), style="yellow")
-            # DISCRETE top-K incoming move-space (--damage-topk): the opp active's K most-believed CANDIDATE
-            # moves INDIVIDUALLY (vs the worst-case collapse above) + per-OUR-mon high%→KO / st (anticipate
-            # the move → pick the immune/safe pivot; safe = damage-AND-status-immune).
-            itk = dop.get("incoming_topk")
+            # RICH incoming MATRIX (--damage-matrices incoming): the opp active's K most-believed CANDIDATE
+            # moves INDIVIDUALLY, each with the FULL per-OUR-mon expected-value cell — low–high roll · crit ·
+            # →KO · type-mult · status — so you can read WHICH move threatens what, not just the collapsed
+            # worst-case. The enriched evolution of the lean top-K (they never coexist; the matrix replaces it).
+            imx = dop.get("incoming_matrix")
+            if imx is not None and imx.get("moves") and imx.get("per_defender"):
+                from agents.model.damage_tables import SECONDARY_COLS as _SEC_COLS
+                _EFF_COLS = ("recovery", "status", "phaze", "boost", "hazard", "protect")
+                labels = list(mb.our_labels) if mb is not None else []   # (slot, species, is_active)
+                pdef = imx["per_defender"]            # [n_our][K] {low,high,crit,pko,type_mult,status_lands}
+                n_our = len(pdef)
+                our = [(labels[i][1] if i < len(labels) and labels[i][1] else (f"slot{i}" if not labels else None),
+                        labels[i][2] if i < len(labels) else False) for i in range(n_our)]
+                live = [i for i in range(n_our) if our[i][0]]
+                shown_mx = False
+                for k, mv in enumerate(imx["moves"]):
+                    if mv.get("belief", 0.0) <= 0.05:    # gated slot (fainted-only / closed-moveset 5th)
+                        continue
+                    if not shown_mx:
+                        gpu.append("\nopp moves (matrix):  ", style="dim")
+                        gpu.append("per move → per OUR mon: low–high · crit · →KO · ×mult · st  (▶=active · safe=immune)",
+                                   style="dim")
+                        shown_mx = True
+                    chan = "phys" if mv.get("is_phys", 0.0) > 0.5 else "spec"
+                    gpu.append(f"\n  {mv.get('move') or '?'} ", style="bold yellow")
+                    gpu.append(f"bel {mv['belief'] * 100:.0f}%  {chan}  acc {mv.get('accuracy', 1.0) * 100:.0f}%",
+                               style="dim")
+                    eff = mv.get("effect") or []
+                    sec = mv.get("secondary") or []
+                    tags = [_EFF_COLS[j] for j in range(min(len(eff), len(_EFF_COLS))) if eff[j] > 0.5]
+                    tags += [f"{_SEC_COLS[j]} {sec[j] * 100:.0f}%" for j in range(min(len(sec), len(_SEC_COLS)))
+                             if sec[j] > 0.05]
+                    if tags:
+                        gpu.append("  [" + " · ".join(tags) + "]", style="yellow")
+                    for i in live:
+                        c = pdef[i][k]
+                        lo, hi, cr, pko, mult, st = (c["low"], c["high"], c["crit"], c["pko"],
+                                                     c["type_mult"], c["status_lands"])
+                        gpu.append(f"\n      {'▶' if our[i][1] else ' '}{our[i][0]:<12} ", style=_MON_COLOR)
+                        if hi <= 0.0 and st <= 0.05:
+                            gpu.append("safe (immune)", style="green")
+                            continue
+                        if hi > 0.0:
+                            gpu.append(f"{lo * 100:3.0f}–{hi * 100:3.0f}%  crit {cr * 100:3.0f}%  "
+                                       f"→KO {pko * 100:3.0f}%  {mult:g}×",
+                                       style=gradient_color(1.0 - max(pko, min(hi, 1.0))))
+                        if st > 0.05:
+                            gpu.append(f"  st {st * 100:.0f}%", style="yellow")
+            # DISCRETE top-K incoming move-space (--damage-topk, lean — only when the rich matrix is OFF): the
+            # opp active's K most-believed moves + per-OUR-mon high%→KO / st (anticipate the move → safe pivot).
+            itk = None if imx is not None else dop.get("incoming_topk")
             if itk is not None and itk.get("moves") and itk.get("per_defender"):
                 labels = list(mb.our_labels) if mb is not None else []   # (slot, species, is_active)
                 pdef = itk["per_defender"]                               # [n_our][K] {high, pko, status_lands}
@@ -1378,6 +1471,104 @@ class ProberApp(Gen3App):
                         seg, col = _pivot(pdef[i][k])
                         gpu.append(f"{'▶' if our[i][1] else ''}{our[i][0]} ", style=_MON_COLOR)
                         gpu.append(seg, style=col)
+            # gen3_unified_status_landing_v1: per-OUR-move OUTGOING status-landing (request-slot order, == action 6+k):
+            # P(a dedicated status move lands on the opp active) + a known bit (type/ability/already-statused/Sleep-Clause
+            # immunity folded). The GPU home for the masked move-effect block's `status_will_land`.
+            sl = dop.get("status_landing")
+            if sl is not None and any(s.get("known", 0) > 0.5 or s.get("p_land", 0) > 0.02 for s in sl):
+                shown_sl = False
+                for k, sll in enumerate(sl):
+                    lab = _op_lbl(k)                                  # op order (NOT action order)
+                    p_l = sll.get("p_land", 0.0)
+                    known = sll.get("known", 0.0)
+                    # Gate: show only entries with known>0.5 (certain) or p_land>0.02 (meaningful threat).
+                    if known <= 0.5 and p_l <= 0.02:
+                        continue
+                    if not shown_sl:
+                        gpu.append("\nour status (land):  ", style="dim")
+                        gpu.append("per move: P(lands) on opp  (✓ certain / ? from prior)", style="dim")
+                        shown_sl = True
+                    cert = "✓" if known > 0.5 else "?"
+                    gpu.append(f"\n  {lab:<13}", style="cyan")
+                    gpu.append(f"{p_l * 100:3.0f}% {cert}", style="green" if known > 0.5 else "yellow")
+            # INCOMING per-mon EXTRAS: the DamageOperator's belief-aware speed + how-much-guessing (p_outspeed +
+            # provenance) — decoded per defender but never surfaced by the "incoming worst" block above.
+            if dop.get("incoming"):
+                any_extra = any(
+                    sp and (row.get("p_outspeed", 0.0) > 0.0 or row.get("provenance", 0.0) > 0.0)
+                    for (slot, sp, act), row in zip(mb.our_labels if mb is not None else [], dop["incoming"]))
+                if any_extra:
+                    gpu.append("\nincoming extras (in):  ", style="dim")
+                    gpu.append("P(outspeed) · provenance per defender", style="dim")
+                    for (slot, sp, act), row in zip(mb.our_labels if mb is not None else [], dop["incoming"]):
+                        if not sp:
+                            continue
+                        p_outspd = row.get("p_outspeed", 0.0)
+                        prov = row.get("provenance", 0.0)
+                        if p_outspd <= 0.0 and prov <= 0.0:
+                            continue
+                        gpu.append(f"\n  {'▶' if act else ' '}{sp}", style=_MON_COLOR)
+                        gpu.append(f"  outspd {p_outspd * 100:.0f}%", style="cyan")
+                        gpu.append(f"  ·  prov {prov:.2f}", style="dim")
+            # opp Choice Band belief (v28, gen3_unified_choice_band_v1): P(opp holds CB) + per-our-mon CB-conditional
+            # physical threat (high-roll %HP + P(OHKO|CB)). Only meaningful when p_cb > 0.02.
+            cb = dop.get("choice_band")
+            if cb is not None and cb.get("p_cb", 0.0) > 0.02:
+                gpu.append("\nopp Choice Band:  ", style="dim")
+                gpu.append(f"P(CB) {cb['p_cb'] * 100:.0f}%", style="yellow" if cb["p_cb"] > 0.3 else "dim")
+                phb = cb.get("phys_high_cb", [])
+                ppb = cb.get("phys_pko_cb", [])
+                for i, (slot, sp, act) in enumerate(mb.our_labels if mb is not None else []):
+                    if not sp or i >= len(phb):
+                        continue
+                    h_cb = phb[i]
+                    if h_cb <= 0.0:
+                        continue
+                    pko_cb = ppb[i] if i < len(ppb) else 0.0
+                    gpu.append("  ·  ", style="dim")
+                    gpu.append(f"{'▶' if act else ' '}{sp:<11}", style=_MON_COLOR)
+                    gpu.append(f"{h_cb * 100:.0f}%  →KO{pko_cb * 100:.0f}%",
+                               style=gradient_color(1.0 - pko_cb) if pko_cb > 0.05 else "dim")
+            # OUTGOING per-move damage MATRIX (--damage-matrices outgoing): our 4 moves × the opp's REVEALED mons,
+            # per cell low–high · crit · →KO · ×mult — the "KO a switch-IN" read. Skip unrevealed/zero columns.
+            omx = dop.get("outgoing_matrix")
+            if omx is not None and omx.get("moves") and omx.get("revealed"):
+                omx_labels = [_op_lbl(k) for k in range(len(omx["moves"]))]   # op order (NOT action order)
+                revealed_mask = omx["revealed"]                          # [6] per opp mon (1/0)
+                moves_by_def = omx["moves"]                              # [4][6] of {low,high,crit,pko,type_mult}
+                # Column d is the op's obs TEAM-SLOT d (the active is at whatever slot carries the active
+                # flag, NOT necessarily slot 0 — `DamageOperator._outgoing_matrix` reads
+                # `ctx.species_ids[:, TEAM_SIZE:]` raw). So label by the same obs-slot→species map the
+                # incoming / CB / p_outspeed blocks align to (`mb.opp[*].slot`), NOT the board's active+bench
+                # presentation order (which would mislabel every column once the opp active isn't slot 0).
+                opp_species = [None] * 6
+                if mb is not None:
+                    for ob in mb.opp:
+                        if 0 <= ob.slot < 6 and ob.species:
+                            opp_species[ob.slot] = ob.species
+                live_def = [d for d in range(6) if revealed_mask[d] > 0.5
+                            and any(moves_by_def[k][d]["high"] > 0.0 for k in range(len(moves_by_def)))]
+                if live_def:
+                    gpu.append("\nour damage vs switch-ins:  ", style="dim")
+                    gpu.append("per move → per OPP mon: low–high · crit · →KO · ×mult", style="dim")
+                    for k, lab in enumerate(omx_labels):
+                        if k >= len(moves_by_def):
+                            break
+                        defs = moves_by_def[k]
+                        if not any(defs[d]["high"] > 0.0 for d in live_def):
+                            continue
+                        gpu.append(f"\n  {lab:<13}", style="cyan")
+                        for d in live_def:
+                            c = defs[d]
+                            opp_label = opp_species[d] or f"opp[{d}]"
+                            gpu.append(f"\n      {opp_label:<12} ", style=_MON_COLOR)
+                            if c["high"] <= 0.0:
+                                gpu.append("—", style="dim")
+                            else:
+                                gpu.append(f"{c['low'] * 100:3.0f}–{c['high'] * 100:3.0f}%  "
+                                           f"crit {c['crit'] * 100:3.0f}%  →KO {c['pko'] * 100:2.0f}%  "
+                                           f"{c['type_mult']:g}×",
+                                           style=gradient_color(1.0 - c["pko"]) if c["pko"] > 0.05 else "cyan")
         self.query_one("#threats-gpu", Static).update(gpu)
 
         # ---- 📋 CPU obs decode (DIM when the op subsumes it; FULL-styled when there's no op) ----
@@ -1655,6 +1846,26 @@ class ProberApp(Gen3App):
                 return float(json.load(f).get("gamma", _DEFAULT_GAMMA))
         except (OSError, ValueError, TypeError):
             return _DEFAULT_GAMMA
+
+    @staticmethod
+    def _read_eval_opp_regime(run_dir: "str | None") -> str:
+        """How the run's self-play SENTINEL opponents played during eval — read from `metadata.json`'s
+        `cli_args` (`eval_sentinel_greedy` / `self_play_temp`). A self-play loss reads very differently
+        depending on this: `greedy` = best-vs-best (the mirror genuinely out-decided us), `stochastic@T` =
+        the opp was SAMPLING its distribution (some of its "great play" is the temperature handout, not
+        skill). Returns e.g. `"greedy"` / `"stochastic@1.0"`, or `""` when not a self-play run / unknown."""
+        if not run_dir:
+            return ""
+        try:
+            with open(os.path.join(run_dir, "metadata.json")) as f:
+                ca = (json.load(f).get("cli_args") or {})
+        except (OSError, ValueError, TypeError):
+            return ""
+        if not ca.get("self_play"):
+            return ""
+        if ca.get("eval_sentinel_greedy"):
+            return "greedy"
+        return f"stochastic@{float(ca.get('self_play_temp', 1.0)):g}"
 
     def _render_outcome(self, a: InvocationAnalysis) -> None:
         # Value + model-agreement summary line(s).

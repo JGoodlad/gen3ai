@@ -743,6 +743,200 @@ async def test_matchups_shows_topk_per_pivot(tmp_path):
         assert "st100" in gpu                                       # thunderwave's status-lands on magneton (active)
 
 
+class _FakeModelIMX(_FakeModelMB):
+    """Exposes the RICH incoming-damage MATRIX (--damage-matrices incoming) so the Threats panel renders the
+    per-opp-move × per-OUR-mon full cell (low–high · crit · →KO · ×mult · st), not the lean top-K."""
+
+    def damage_op_view(self, obs, mask):
+        v = super().damage_op_view(obs, mask)
+        v["incoming_topk"] = None                       # the matrix REPLACES the lean top-K (never both)
+        z = {"low": 0.0, "high": 0.0, "crit": 0.0, "pko": 0.0, "type_mult": 0.0, "status_lands": 0.0}
+        # icebeam OHKOs magneton (the active), is SAFE on skarmory (immune); thunderwave paras magneton, safe on skarm.
+        ice = {"low": 0.60, "high": 0.72, "crit": 1.4, "pko": 0.9, "type_mult": 2.0, "status_lands": 0.0}
+        twv = {"low": 0.0, "high": 0.0, "crit": 0.0, "pko": 0.0, "type_mult": 1.0, "status_lands": 1.0}
+        matrix = {
+            "moves": [{"latent": [0.0] * 4, "belief": 0.62, "accuracy": 1.0, "is_phys": 0.0, "move": "icebeam",
+                       "effect": [0.0] * 6, "secondary": [0.0] * 10},
+                      {"latent": [0.0] * 4, "belief": 0.40, "accuracy": 1.0, "is_phys": 0.0, "move": "thunderwave",
+                       "effect": [0.0] * 6, "secondary": [0.0] * 10}],
+            "per_defender": [[dict(ice), dict(twv)],     # magneton (active): OHKO'd by ice, para'd by twave
+                             [dict(z), dict(z)]]          # skarmory: safe vs both (immune)
+                            + [[dict(z), dict(z)] for _ in range(4)],
+        }
+        v["incoming_matrix"] = matrix
+        return v
+
+
+async def test_threats_renders_rich_incoming_matrix(tmp_path):
+    """The Threats panel renders the rich incoming MATRIX: each opp candidate move (by name) → per OUR mon
+    the FULL cell (low–high roll · →KO% · ×mult), with `safe (immune)` for a no-threat pivot."""
+    run = _write_trace(tmp_path)
+    app = ProberApp(root=run, injected_model=_FakeModelIMX())
+    async with app.run_test() as pilot:
+        await pilot.pause()
+        app._select_battle(app._tree_model.all_battles()[0])
+        await pilot.pause()
+        await app.workers.wait_for_complete()
+        await pilot.pause()
+        gpu = str(app.query_one("#threats-gpu", Static).render())
+        assert "opp moves (matrix)" in gpu                       # the rich-matrix header
+        assert "icebeam" in gpu and "thunderwave" in gpu         # candidate moves by decoded name
+        assert "magneton" in gpu and "skarmory" in gpu           # per-OUR-mon rows
+        assert "→KO" in gpu and "×" in gpu                       # the roll/KO/mult detail the user wanted
+        assert "safe (immune)" in gpu                            # skarmory immune to both
+        assert "opp likely (top-K)" not in gpu                   # the lean block is replaced by the matrix
+
+
+class _FakeModelDOP(_FakeModelMB):
+    """Exposes the DamageOperator fields that are DECODED but were not yet RENDERED: per-OUR-move OUTGOING
+    status-landing, per-mon p_outspeed/provenance EXTRAS, the Choice-Band belief, and the OUTGOING per-move
+    damage MATRIX — so the four new GPU blocks in the Threats panel render."""
+
+    def damage_op_view(self, obs, mask):
+        v = super().damage_op_view(obs, mask)
+        # OUTGOING status-landing (request-slot order == action 6+k): toxic CERTAIN-lands on jynx,
+        # thunderwave a prior guess at 15%, the other two gated out (no status move / 0%).
+        v["status_landing"] = [{"p_land": 0.85, "known": 1.0},     # certain → ✓
+                               {"p_land": 0.01, "known": 0.0},     # gated (p<0.02, known<0.5)
+                               {"p_land": 0.15, "known": 0.0},     # meaningful prior guess → ?
+                               {"p_land": 0.0, "known": 1.0}]       # known, but p=0 → shown with 0%
+        # opp Choice Band: P(CB)=35%, our active (magneton) takes a 22% CB-conditional physical hit → KO 8%.
+        v["choice_band"] = {"phys_high_cb": [0.22, 0.0, 0.0, 0.0, 0.0, 0.0],
+                            "phys_pko_cb": [0.08, 0.0, 0.0, 0.0, 0.0, 0.0], "p_cb": 0.35}
+        # OUTGOING matrix: our 4 moves × opp 6 mons. The matrix columns are obs TEAM-SLOT order, so the
+        # revealed column 0 == opp obs-slot 0 (jynx here — see move_belief below). The render labels columns
+        # by the obs-slot→species map (mb.opp), NOT the board's active+bench order, so column 0 reads jynx
+        # even though jynx is NOT the move-belief active (it sits at obs slot 0, the active is slot 2).
+        z = {"low": 0.0, "high": 0.0, "crit": 0.0, "pko": 0.0, "type_mult": 0.0}
+        ohko = {"low": 0.60, "high": 0.95, "crit": 1.4, "pko": 0.85, "type_mult": 2.0}
+        # move 0 (thunderbolt) OHKOs the slot-0 opp (jynx, revealed); the other columns are unrevealed → zeroed.
+        v["outgoing_matrix"] = {
+            "moves": [[dict(ohko)] + [dict(z) for _ in range(5)]]      # op move 0: vs jynx + 5 zeros
+                     + [[dict(z) for _ in range(6)] for _ in range(3)],  # 3 more moves, no damage
+            "revealed": [1.0, 0.0, 0.0, 0.0, 0.0, 0.0]}
+        # The op's OUTGOING per-move blocks are indexed by the per-mon obs-block (moveset) order, which
+        # differs from the ACTION order (a.matchups.move_labels). Use names DISTINCT from the recorded
+        # action labels so the test proves the op blocks are labeled by THIS order (+ the caveat fires).
+        v["our_moves"] = ("flamethrower", "icebeam", "psychic", "surf")
+        return v
+
+    def move_belief(self, obs, mask):
+        # Reveal the obs-slot-0 opp (jynx) the outgoing matrix prices, so the column label comes from the
+        # SAME obs-slot→species map the op aligns to (mb.opp[*].slot). The base fake's active blissey stays
+        # at slot 2 (the op's outgoing matrix column 0 is obs slot 0, NOT the active — that's the whole bug).
+        raw = super().move_belief(obs, mask)
+        raw["opp_slots"][0] = {"species": "jynx", "revealed_moves": ("icebeam",),
+                               "known": True, "active": False}
+        return raw
+
+
+async def test_threats_renders_decoded_but_unrendered_op_fields(tmp_path):
+    """The four DECODED-but-previously-UNRENDERED DamageOperator blocks now render in `#threats-gpu`:
+    OUTGOING status-landing (P(lands) on opp, ✓ certain / ? prior), the per-mon p_outspeed + provenance
+    EXTRAS, the opp Choice-Band belief (P(CB) + per-our-mon CB-conditional physical → KO), and the OUTGOING
+    per-move damage MATRIX (our move → each REVEALED opp mon, low–high · →KO · ×mult)."""
+    run = _write_trace(tmp_path)
+    app = ProberApp(root=run, injected_model=_FakeModelDOP())
+    async with app.run_test() as pilot:
+        await pilot.pause()
+        app._select_battle(app._tree_model.all_battles()[0])
+        await pilot.pause()
+        await app.workers.wait_for_complete()
+        await pilot.pause()
+        gpu = str(app.query_one("#threats-gpu", Static).render())
+        # 0) The op's per-move blocks are labeled by the op's (per-mon/moveset) order, NOT the action order —
+        # and that misalignment is flagged (the model concern). our_moves[0]="flamethrower" labels op slot 0.
+        assert "op move order" in gpu and "≠ action order" in gpu      # the misalignment caveat
+        assert "flamethrower" in gpu                                   # op-order label (distinct from actions)
+        # 1) OUTGOING status-landing — slot 0 (p_land 0.85, certain) is labeled flamethrower (op order).
+        assert "our status (land)" in gpu
+        assert "✓" in gpu and "?" in gpu                  # certain (slot 0) + prior-guess (slot 2) markers
+        assert "85%" in gpu                               # slot 0's certain P(lands)
+        # 2) incoming p_outspeed + provenance extras (base _FakeModelMB sets slot 0/1 outspeed/prov).
+        assert "incoming extras (in)" in gpu
+        assert "outspd" in gpu and "prov" in gpu
+        # 3) opp Choice Band.
+        assert "opp Choice Band" in gpu
+        assert "P(CB) 35%" in gpu
+        assert "magneton" in gpu and "→KO8%" in gpu       # our active's CB-conditional physical → KO
+        # 4) OUTGOING damage matrix vs switch-ins — op move 0 (labeled flamethrower) OHKOs the revealed jynx.
+        assert "our damage vs switch-ins" in gpu
+        assert "jynx" in gpu                              # the one revealed opp column (the active)
+        assert "→KO 85%" in gpu and "2×" in gpu           # op move 0 OHKOs jynx, type_mult formatted
+
+
+async def test_threats_op_fields_noop_when_absent(tmp_path):
+    """The four new blocks are graceful no-ops on a --damage-op-without-outgoing run (no status_landing /
+    outgoing_matrix) and a zero Choice Band — the headers are absent, no crash. _FakeModelMB gives exactly
+    that (status_landing/outgoing_matrix absent, p_cb=0)."""
+    run = _write_trace(tmp_path)
+    app = ProberApp(root=run, injected_model=_FakeModelMB())
+    async with app.run_test() as pilot:
+        await pilot.pause()
+        app._select_battle(app._tree_model.all_battles()[0])
+        await pilot.pause()
+        await app.workers.wait_for_complete()
+        await pilot.pause()
+        gpu = str(app.query_one("#threats-gpu", Static).render())
+        assert "our status (land)" not in gpu             # no status_landing key
+        assert "opp Choice Band" not in gpu               # p_cb = 0 → below threshold
+        assert "our damage vs switch-ins" not in gpu      # no outgoing_matrix key
+        # but the incoming p_outspeed/provenance extras DO render (the base sets them).
+        assert "incoming extras (in)" in gpu
+
+
+def _write_sentinel_switch_trace(tmp_path):
+    """A self-play `sentinel_0` trace where the opp VOLUNTARILY pivots (`switched_to:claydol`, the recorder's
+    real format) + a metadata.json marking `--eval-sentinel-greedy`, so the opp-switch flag/callout + the
+    eval-regime tag render."""
+    run = tmp_path / "run"
+    d = run / "eval_traces" / "step_1000" / "sentinel_0"
+    os.makedirs(d, exist_ok=True)
+    actions = {f"switch:m{i}": {"prob": "1.0%", "valid": True} for i in range(6)}
+    actions.update({"earthquake": {"prob": "53.2%", "valid": True},
+                    "rockslide": {"prob": "20.0%", "valid": True},
+                    "move2": {"prob": "0.0%", "valid": False},
+                    "move3": {"prob": "0.0%", "valid": False},
+                    "struggle": {"prob": "0.0%", "valid": False}})
+    summary = {"meta": {"step": 1000, "result": "LOSS", "turns": 6, "invocations": 1},
+               "invocations": [{"i": 1, "turn": 2, "phase": "move_selection", "chosen": "earthquake",
+                                "our": {"species": "salamence"}, "opp": {"species": "snorlax"},
+                                "actions": actions,
+                                "outcome": {"our": {"action": "earthquake"},
+                                            "opp": {"action": "switched_to:claydol"}, "events": []}}]}
+    with open(d / "loss_001_summary.json", "w") as f:
+        json.dump(summary, f)
+    obs = np.zeros((1, _OBS_LEN), dtype=np.float32)
+    np.savez(d / "loss_001_states.npz", obs=obs, has_state=np.array([1], dtype=np.int8))
+    with open(run / "metadata.json", "w") as f:
+        json.dump({"gamma": 0.99, "cli_args": {"self_play": True, "eval_sentinel_greedy": True,
+                                               "self_play_temp": 1.0}}, f)
+    return str(run)
+
+
+async def test_opp_switch_flag_callout_and_eval_regime(tmp_path):
+    """A voluntary opp pivot surfaces: the `⇄ opp→claydol` header marker + the Threats 'computed-vs ≠
+    resolved-vs' callout; and the self-play sentinel's `[greedy]` eval regime is shown in the header."""
+    run = _write_sentinel_switch_trace(tmp_path)
+    app = ProberApp(root=run, injected_model=_FakeModel())
+    async with app.run_test() as pilot:
+        await pilot.pause()
+        app._select_battle(app._tree_model.all_battles()[0])
+        await pilot.pause()
+        await app.workers.wait_for_complete()
+        for _ in range(10):
+            await pilot.pause()
+        hdr = str(app.query_one("#battle-header", Static).render())
+        assert "⇄ opp→claydol" in hdr                        # the voluntary-pivot marker
+        assert "sentinel_0" in hdr and "[greedy]" in hdr      # opponent agent + its eval play regime
+        gpu = str(app.query_one("#threats-gpu", Static).render())
+        assert "opp pivoted" in gpu and "claydol" in gpu and "RESOLVED vs" in gpu   # the Threats callout
+        # the opp-switch flag is in the model-free summary flags (markable/jumpable in the list)
+        from main.prober.engine import summary_flags
+        summ = app._load_summary(app._current_battle)
+        assert "opp-switch" in summary_flags(summ["invocations"][0])
+
+
 async def test_beliefs_section_off_shows_not_enabled(tmp_path):
     """With a checkpoint exposing NO belief heads, the Beliefs section shows a single 'not enabled' note
     and every sub-panel is blank (graceful degradation, no crash)."""

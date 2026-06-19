@@ -493,6 +493,7 @@ class InvocationAnalysis:
     move_belief: "MoveBeliefView | None" = None     # what the model thinks the revealed opp's UNSEEN moves are; None unless --move-belief-mode
     spread_belief: "SpreadBeliefView | None" = None  # believed vs true opp DERIVED stats; None unless --spread-belief
     refine_trajectory: "RefineTrajectoryView | None" = None  # within-forward refine rounds (axis A); None unless --damage-refine-rounds
+    opp_switched_to: "str | None" = None             # species the opp VOLUNTARILY pivoted in this turn (our move resolved vs it, not the active)
 
 
 # ---------------------------------------------------------------------------
@@ -558,6 +559,10 @@ def summary_flags(inv: dict, uncertain_threshold: float = UNCERTAIN_THRESHOLD) -
     events = (inv.get("outcome") or {}).get("events") or []
     if any("faint" in str(e).lower() for e in events):
         flags.append("faint")
+    # The OPPONENT voluntarily pivoted this turn → our move RESOLVED against a switch-IN, not the active we
+    # computed damage against (the "computed-vs ≠ resolved-vs" trap — see `opp_voluntary_switch`).
+    if opp_voluntary_switch(inv):
+        flags.append("opp-switch")
     return tuple(flags)
 
 
@@ -788,6 +793,17 @@ def _parse_outcome_action(action: "str | None") -> dict:
             return {"kind": "move", "move": head, "sent_in": tail[:-len(_SENT_IN)]}
         return {"kind": "send_in", "sent_in": a[:-len(_SENT_IN)]}   # bare "<X>_sent_in"
     return {"kind": "move", "move": a}
+
+
+def opp_voluntary_switch(inv: dict) -> "str | None":
+    """The species the OPPONENT VOLUNTARILY switched IN on this decision's turn (model-free, from the
+    recorded opp action), else `None`. A voluntary pivot means our move RESOLVED against this switch-in —
+    NOT the active mon we computed our damage against — the source of the "computed-vs ≠ resolved-vs"
+    confusion when reading a decision (e.g. Earthquake computed vs Snorlax, then resolved into a Levitate
+    Claydol the opp pivoted in). A forced post-faint replacement (`_sent_in`) is NOT a voluntary pivot."""
+    opp_action = ((inv.get("outcome") or {}).get("opp") or {}).get("action")
+    pa = _parse_outcome_action(opp_action)
+    return pa.get("switch_to") if pa.get("kind") == "switch" else None
 
 
 def _pct(hp: "str | float | None") -> "float | None":
@@ -1645,32 +1661,10 @@ def decode_incoming_belief(obs: np.ndarray, off) -> "IncomingBeliefView | None":
     )
 
 
-def _reorder_move_labels(labels: list, req_moves) -> list:
-    """Realign the 4 move-action labels (positions ``MOVE_START:MOVE_END``) to the obs **REQUEST-SLOT order**
-    ``req_moves`` (from ``ProbeModel.our_active_move_slots``), matching by normalized name (Hidden-Power type
-    stripped). The recorded ``actions`` dict orders moves by poke-env ``available_moves``, which can DIFFER
-    from the request-slot order the **action mask**, the **DamageOperator**, and the **policy logits**
-    (action 6+k) all use — so without this realign, every action-6+k-indexed consumer (the mask, the matchup
-    ×mult, the op outgoing damage, the re-run argmax) gets paired with the WRONG move whenever the two orders
-    differ (e.g. after a Disable / server reorder). Keeps the recorded names (so ``acts[label]`` prob lookups
-    still resolve), only reorders; falls back to the recorded order if it can't 1:1-match every move (so it
-    can NEVER produce a wrong reorder). This closes the move-slot-misalignment class of prober bug."""
-    moves = list(labels[MOVE_START:MOVE_END])
-    rq = [m for m in (req_moves or []) if m and m != "none"]
-    if len(rq) != len(moves):
-        return labels
-
-    def _n(s):
-        return (s or "").split("(")[0].strip().lower()
-
-    pool, out = list(moves), []
-    for rm in rq:
-        match = next((x for x in pool if _n(x) == _n(rm)), None)
-        if match is None:
-            return labels                                    # unmatched → don't risk a wrong reorder
-        pool.remove(match)
-        out.append(match)
-    return list(labels[:MOVE_START]) + out + list(labels[MOVE_END:])
+# NOTE: a former `_reorder_move_labels` helper re-sorted the recorded move labels to the per-mon block's
+# MOVESET order — it was REMOVED because the recorded `actions` dict is already in ACTION-INDEX / request-slot
+# order (see `analyze_invocation`); reordering it scrambled correct labels. The recorder↔prober alignment
+# invariant is pinned by `engine_test.test_recorded_actions_are_action_index_aligned`.
 
 
 # ---------------------------------------------------------------------------
@@ -1719,6 +1713,7 @@ def analyze_invocation(model, summary: dict, npz, inv_index: int,
             saliency=None, value_saliency=None, threats=None, incoming=None,
             warnings=(f"invocation {inv_index} has no captured state",), opp_full_team=opp_full_team,
             outcome=outcome, flags=summary_flags(inv), board=board, next_board=next_board, belief=belief,
+            opp_switched_to=opp_voluntary_switch(inv),
         )
 
     obs = npz["obs"][inv_index].astype(np.float32)
@@ -1749,17 +1744,15 @@ def analyze_invocation(model, summary: dict, npz, inv_index: int,
     # above already built a model-free one without them).
     outcome = {**outcome, "timeline": _timeline_for(inv, next_board, outcome)}
     acts = inv["actions"]
+    # The recorded `actions` dict is ALREADY in ACTION-INDEX order: `BattleRecorder._all_action_labels`
+    # iterates action index 0..10 and keys move slot m (action 6+m) on `legal.move_ids[m]` — the SAME
+    # request-slot order the action mask, the DamageOperator's per-move blocks, and the policy logits
+    # (action 6+k) use. So `labels[i]` ↔ action index i ↔ `probs[i]` directly; every action-6+k-indexed
+    # consumer below (matchups ×mult, op outgoing, the re-run argmax) is correctly paired with NO realign.
+    # (A prior `_reorder_move_labels` step re-sorted these to the per-mon block's MOVESET order via
+    # `our_active_move_slots`, which differs from request order after a server reorder — that SCRAMBLED the
+    # already-correct labels and produced spurious `disagree` flags + transposed matchup/op labels. Removed.)
     labels = list(acts.keys())
-    # The recorded `actions` dict orders moves by poke-env available_moves, NOT request-slot order — realign
-    # the 4 move labels to the obs request-slot order (what the mask / op / policy logits use) so every
-    # action-6+k-indexed consumer below (the mask itself, matchups, op outgoing, re-run argmax) is correctly
-    # paired. Closes the move-slot-misalignment class. No-op when the model can't decode the request slots.
-    rms = getattr(model, "our_active_move_slots", None)
-    if rms is not None:
-        try:
-            labels = _reorder_move_labels(labels, rms(obs))
-        except Exception:  # noqa: BLE001 — never break the analysis on a decode hiccup
-            pass
     mask = np.array([1 if acts[k]["valid"] else 0 for k in labels], dtype=np.int8)
 
     # Hidden-opp belief: prefer the loaded model's RE-COMPUTED belief (works for ANY belief-on
@@ -1898,6 +1891,7 @@ def analyze_invocation(model, summary: dict, npz, inv_index: int,
         obs_mismatch=obs_mismatch, field=field, belief=belief, belief_truth=belief_truth,
         damage_op=damage_op, move_belief=move_belief, spread_belief=spread_belief,
         refine_trajectory=refine_trajectory, opp_full_team=opp_full_team,
+        opp_switched_to=opp_voluntary_switch(inv),
     )
 
 
