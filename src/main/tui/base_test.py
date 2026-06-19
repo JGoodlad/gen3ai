@@ -50,3 +50,20 @@ async def test_copy_mode_toggles_and_calls_freeze_hooks():
         assert app.copy_mode is False
         assert resumed == [True]
         assert app.is_running
+
+
+async def test_escape_exits_copy_mode_and_is_noop_otherwise():
+    """Escape leaves copy mode (a one-key exit beside `v`), and is a harmless no-op when off."""
+    resumed = []
+    app = Gen3App()
+    app._resume_live_updates = lambda: resumed.append(True)  # type: ignore[method-assign]
+    async with app.run_test() as pilot:
+        await pilot.press("escape")          # off → no-op, never quits
+        await pilot.pause()
+        assert app.copy_mode is False and app.is_running and resumed == []
+        await pilot.press("v")               # enter copy mode
+        await pilot.pause()
+        assert app.copy_mode is True
+        await pilot.press("escape")          # Escape exits it
+        await pilot.pause()
+        assert app.copy_mode is False and resumed == [True] and app.is_running

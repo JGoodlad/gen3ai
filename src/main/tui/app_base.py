@@ -48,6 +48,9 @@ class Gen3App(App):
         # terminal's OWN selection + copy, no app/clipboard-escape support required. Same
         # key resumes. See src/main/tui/CLAUDE.md → Copy mode.
         Binding("v", "toggle_copy_mode", "Copy mode"),
+        # Escape is a one-key EXIT from copy mode (beside the `v` toggle). No-op when copy mode is
+        # off, so it never steals Escape from anything else (no current Gen3App uses it otherwise).
+        Binding("escape", "exit_copy_mode", "Exit copy mode", show=False),
     ]
 
     # Flipped by the `v` binding. Reactive so a subclass can `watch_copy_mode` too; init
@@ -67,6 +70,11 @@ class Gen3App(App):
     def action_toggle_copy_mode(self) -> None:
         self.copy_mode = not self.copy_mode
 
+    def action_exit_copy_mode(self) -> None:
+        """Escape leaves copy mode (no-op when it's already off)."""
+        if self.copy_mode:
+            self.copy_mode = False
+
     def watch_copy_mode(self, active: bool) -> None:
         """Enter/leave copy mode: hand the mouse to the terminal + freeze redraws."""
         driver = getattr(self, "_driver", None)
@@ -79,7 +87,7 @@ class Gen3App(App):
             if callable(toggle):
                 toggle()
             self.notify(
-                "Drag to select, ⌘C to copy, then press v to resume.",
+                "Drag to select, ⌘C to copy, then press v or Esc to resume.",
                 title="📋 Copy mode — live updates paused",
                 timeout=10,
             )

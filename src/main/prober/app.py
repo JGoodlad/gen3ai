@@ -2070,26 +2070,39 @@ class ProberApp(Gen3App):
         self.notify(f"exported → {os.path.basename(path)}" if path else "nothing to export")
 
     def action_copy_replay_path(self) -> None:
-        """Reveal the current battle's browser-watchable Showdown replay path (`*_replay.html`) on a
-        dedicated full-width bar — the path on its OWN line, so it's cleanly selectable under `v` copy
-        mode (the portable path that works on Terminal.app). Also best-effort copies it to the
-        clipboard for terminals that honour OSC-52 (kitty / iTerm2 / WezTerm)."""
+        """Yank a precise pointer to THIS decision — ``<replay.html path> inv<N>`` — to a dedicated
+        full-width bar (path+inv on its OWN line, cleanly selectable under `v` copy mode, the portable
+        path) AND best-effort to the clipboard (OSC-52 terminals). Also RECORDS the pointer in this
+        decision's review notes (deduped), so the exact issue is one paste away to hand the model."""
         if self._current_battle is None:
             self.notify("no battle selected")
             return
         path = self._current_battle.summary_path.replace("_summary.json", "_replay.html")
         exists = os.path.exists(path)
+        inv = self._current_inv
+        ref = f"{path} inv{inv}" if inv is not None else path   # the model-pointable reference
         try:
-            self.copy_to_clipboard(path)   # bonus on OSC-52 terminals; the bar is the portable path
+            self.copy_to_clipboard(ref)   # bonus on OSC-52 terminals; the bar is the portable path
         except Exception:  # noqa: BLE001 — clipboard may be unavailable / unsupported over ssh
             pass
         bar = self.query_one("#replay-path-bar", Static)
-        hint = Text("replay path — press v, then select the line below to copy"
+        hint = Text("replay ref — press v, then select the line below to copy"
                     + ("" if exists else "   ⚠ file missing") + "\n", style="dim italic")
-        hint.append(path, style="bold")
+        hint.append(ref, style="bold")
         bar.update(hint)
         bar.display = True
-        self.notify("replay path shown below — v to copy" + ("" if exists else " (file missing!)"),
+        # Persist the pointer in this decision's notes (deduped) so it survives + exports.
+        bid = self._battle_id()
+        noted = False
+        if bid is not None and self._review_store is not None and inv is not None:
+            if not any(text == ref for _, text in self._review_store.notes(bid, inv)):
+                self._review_store.add_note(bid, inv, ref)
+                noted = True
+                if self._last_analysis is not None:
+                    self._render_review(self._last_analysis)
+                self._refresh_list_item(inv)
+        self.notify("replay ref shown below — v to copy" + (" · noted" if noted else "")
+                    + ("" if exists else " (file missing!)"),
                     severity="information" if exists else "warning", timeout=4)
 
 

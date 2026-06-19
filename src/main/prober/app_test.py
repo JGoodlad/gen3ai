@@ -1368,9 +1368,10 @@ def test_protocol_text_renders_lines_and_empty():
     assert "no replay.html" in _protocol_text((), 4).plain
 
 
-async def test_replay_path_bar_reveals_path_on_own_line(tmp_path):
-    """`y` reveals the replay path on a dedicated full-width bar (its own line, selectable under
-    `v`), not crammed/wrapped into a toast — and a new battle drops the stale bar."""
+async def test_replay_ref_bar_includes_inv_and_records_note(tmp_path):
+    """`y` reveals `<replay.html> inv<N>` on its own line (selectable under `v`) AND records that exact
+    pointer in the decision's review notes (deduped) — so the precise issue is one paste away, and a
+    new battle drops the stale bar."""
     run = _write_trace(tmp_path)
     app = ProberApp(root=run, injected_model=_FakeModel())
     async with app.run_test() as pilot:
@@ -1378,14 +1379,23 @@ async def test_replay_path_bar_reveals_path_on_own_line(tmp_path):
         bar = app.query_one("#replay-path-bar", Static)
         assert bar.display is False                              # hidden until used
         app._select_battle(app._tree_model.all_battles()[0])
+        app._current_inv = 0                                    # a decision is highlighted
         await pilot.pause()
         app.action_copy_replay_path()                           # the `y` action
         await pilot.pause()
         assert bar.display is True
         lines = str(bar.render()).split("\n")
-        assert "replay path" in lines[0]                        # the hint
-        assert lines[-1].endswith("_replay.html")               # the path ALONE on its own line
-        # selecting another battle clears the stale path
+        assert "replay ref" in lines[0]                         # the hint
+        ref = lines[-1]
+        assert ref.endswith("_replay.html inv0")                # path + inv, alone on its own line
+        # the pointer is recorded in this decision's notes …
+        bid = app._battle_id()
+        assert [t for _, t in app._review_store.notes(bid, 0)] == [ref]
+        # … and a second yank does NOT duplicate it (deduped)
+        app.action_copy_replay_path()
+        await pilot.pause()
+        assert [t for _, t in app._review_store.notes(bid, 0)] == [ref]
+        # selecting another battle clears the stale bar
         app._select_battle(app._tree_model.all_battles()[0])
         await pilot.pause()
         assert bar.display is False

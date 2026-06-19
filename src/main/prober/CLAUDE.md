@@ -782,12 +782,14 @@ blocking. So:
 - The obs decode (`describe_team`) only OVERLAYS info onto the summary teams block via `_merge_team` —
   an empty obs item never erases a known item (the bug where an own bench mon showed no item);
   `test_obs_item_overlay_does_not_erase_a_known_item` guards it.
-- **`y`** reveals the current battle's `*_replay.html` path (browser-watchable Showdown replay) on a
-  dedicated full-width **`#replay-path-bar`** — the path on its OWN line so it's cleanly selectable
-  under **`v`** copy mode (the portable path; the old toast wrapped the path with its label). It also
-  best-effort `copy_to_clipboard`s it (OSC-52 terminals only — kitty/iTerm2/WezTerm; dead on
-  Terminal.app, hence the bar). The bar is hidden until used and cleared when a new battle is selected;
-  warns if the file is missing.
+- **`y`** yanks a precise pointer to the CURRENT decision — **`<replay.html path> inv<N>`** (N =
+  the highlighted invocation) — onto a dedicated full-width **`#replay-path-bar`**, the ref on its OWN
+  line so it's cleanly selectable under **`v`** copy mode (the portable path; the old toast wrapped it
+  with its label). It also best-effort `copy_to_clipboard`s the ref (OSC-52 terminals only —
+  kitty/iTerm2/WezTerm; dead on Terminal.app, hence the bar) **and RECORDS the ref in this decision's
+  review notes** (deduped — a re-yank doesn't pile up), so the exact issue is one paste away to hand a
+  model (`query analyze <battle> <N>`). The bar is hidden until used and cleared when a new battle is
+  selected; warns if the file is missing.
 - **Scroll stability:** the three scroll regions (`#trace-tree`, `#invocation-list`, `#analysis-scroll`)
   set **`scrollbar-gutter: stable`** so the 1-cell scrollbar column is always reserved — content no
   longer shifts a cell ("off by a pixel") the moment a scrollbar appears on scroll.

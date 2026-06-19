@@ -37,9 +37,10 @@ shared paths, both in `Gen3App` (inherited by the launcher + prober):
   terminal → native click-drag selection returns) and **freezes live updates** via the
   `_pause_live_updates()` / `_resume_live_updates()` hooks (so a 2 Hz repaint can't wipe
   the selection mid-drag). You then select + copy with the **terminal's own** mechanism
-  (e.g. ⌘C in Terminal.app); the same `v` resumes. The base hooks are no-ops (static
-  apps like the prober need no freeze); the launcher overrides them to pause/resume its
-  `set_interval(0.5, …)` refresh `Timer`.
+  (e.g. ⌘C in Terminal.app); the same `v` **or `Escape`** resumes (`action_exit_copy_mode`,
+  a no-op when copy mode is off so it never steals Escape from anything else). The base hooks
+  are no-ops (static apps like the prober need no freeze); the launcher overrides them to
+  pause/resume its `set_interval(0.5, …)` refresh `Timer`.
 
 ## What is intentionally NOT shared
 
