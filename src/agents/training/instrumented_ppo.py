@@ -202,6 +202,14 @@ class InstrumentedMaskablePPO(MaskablePPO):
     # version-locked; the SpreadBelief module is gated by the version-checked spread_belief arch toggle.
     spread_belief_coef: float = 0.0
 
+    # Set by train_rl_agent (gen3_opp_hp_type_belief_v1). The HP-TYPE-belief supervision weight:
+    # hp_type_belief_coef * cross_entropy(HPTypeBelief posterior logits, TRUE HP type) over the REVEALED
+    # opp slots whose species runs Hidden Power. 0.0 = OFF (byte-identical loss — the head then gets only
+    # the indirect op-damage gradient + sits at the Smogon HP-type prior). READS the extractor's
+    # last_hp_type_logits + the training-only hp_type_label/hp_type_mask keys. Training-only (NOT
+    # version-locked; the HPTypeBelief module is gated by the version-checked hp_type_belief_mode toggle).
+    hp_type_belief_coef: float = 0.0
+
     # Set by train_rl_agent (gen3_unified_move_system_v1). The MOVE-belief LATENT-grading weight:
     # move_belief_latent_coef * (cosine of the predicted move distribution's expected move-latent toward
     # the true moveset's mean latent + VICReg floor) over the revealed scored slots. 0.0 = OFF
@@ -495,6 +503,35 @@ class InstrumentedMaskablePPO(MaskablePPO):
                       "n_slots": int(mask.sum().item())}
 
     @staticmethod
+    def _hp_type_belief_loss(logits, hp_type_label, hp_type_mask):
+        """Supervised CROSS-ENTROPY for the HP-TYPE belief (gen3_opp_hp_type_belief_v1).
+
+        `logits` = the extractor's stashed `last_hp_type_logits` [B,6,16] — the HPTypeBelief head's
+        per-opp-slot HP-type posterior logits (Smogon prior ⊕ learned delta) the DamageOperator consumes as
+        its typed-HP candidate weights. Supervise the slots whose REVEALED species runs Hidden Power
+        (`hp_type_mask` [B,6]==1) toward the TRUE HP type index (`hp_type_label` [B,6] ∈ 0..15, a
+        training-only privileged label — Gen 3 never reveals the opp HP type, so it can't ride the obs
+        vector). The gradient flows posterior → hp_type_head → opp tokens → trunk, joining the aux pull on
+        the grad-balance probe.
+
+        Returns (loss, metrics) or None (off / labels absent / no scored slot). LEAK-SAFE: the posterior is
+        a MODEL OUTPUT (the op's own input), not a label; the true-type LABEL rides a training-only obs key
+        read ONLY here, never in pi/vf. Pure + static (unit-testable without a full PPO)."""
+        if logits is None or hp_type_label is None or hp_type_mask is None:
+            return None
+        device = logits.device
+        label = hp_type_label.to(device).long()                            # [B,6]
+        mask = hp_type_mask.to(device).float() > 0.5                       # [B,6]
+        if not bool(mask.any()):
+            return None
+        sel_logits = logits[mask]                                          # [N,16]
+        sel_label = label[mask].clamp(min=0)                               # [N] (PAD -1 is masked out already)
+        loss = F.cross_entropy(sel_logits, sel_label)
+        with th.no_grad():
+            acc = (sel_logits.argmax(dim=-1) == sel_label).float().mean()
+        return loss, {"acc": float(acc.item()), "n_slots": int(mask.sum().item())}
+
+    @staticmethod
     def _move_belief_latent_loss(ml, latent_table, known_moves):
         """LATENT-space grading of the move belief (gen3_unified_move_system_v1) — the soft complement to
         the per-ID BCE so near-moves (Rock Slide ≈ Hidden Power Rock) grade as near.
@@ -767,6 +804,7 @@ class InstrumentedMaskablePPO(MaskablePPO):
         latent_belief_on = self.opp_belief_latent_coef > 0.0  # +LATENT belief (rides the species aux call)
         move_latent_on = self.move_belief_latent_coef > 0.0  # +MOVE-LATENT grading (gen3_unified_move_system_v1)
         spread_belief_on = self.spread_belief_coef > 0.0  # +SPREAD-belief supervision (gen3_unified_spread_belief_v1)
+        hp_type_belief_on = self.hp_type_belief_coef > 0.0  # +HP-TYPE belief CE (gen3_opp_hp_type_belief_v1)
         # +WIN-PROB: the head's MODE (none/read_only/shaping) lives on the extractor; the loss is added
         # whenever the mode is on AND the coef is non-zero. read_only vs shaping differ only in whether the
         # extractor stop-grads the head's input (the trunk gradient) — the loss term itself is identical.
@@ -976,6 +1014,26 @@ class InstrumentedMaskablePPO(MaskablePPO):
                         for _sk, _sv in sb_m.items():
                             belief_metrics.setdefault("spread_" + _sk, []).append(float(_sv))
 
+                # +HP-TYPE BELIEF (gen3_opp_hp_type_belief_v1): supervise the HPTypeBelief posterior toward the
+                # TRUE opp HP type so the DamageOperator prices the right typed-HP threat (the "opp HP reads
+                # immune" fix). evaluate_actions stashed last_hp_type_logits; the hp_type_label/_mask labels
+                # ride the same training-only obs dict. Its gradient flows into the HPTypeBelief head → the
+                # trunk, joining the aux pull. OFF → skipped (loss byte-identical).
+                hp_type_term = None
+                if hp_type_belief_on:
+                    hp_out = self._hp_type_belief_loss(
+                        self.policy.features_extractor.last_hp_type_logits,
+                        rollout_data.observations.get("hp_type_label"),
+                        rollout_data.observations.get("hp_type_mask"),
+                    )
+                    if hp_out is not None:
+                        hp_loss, hp_m = hp_out
+                        hp_type_term = self.hp_type_belief_coef * hp_loss
+                        loss = loss + hp_type_term
+                        hp_m["loss"] = float(hp_loss.item())
+                        for _hk, _hv in hp_m.items():
+                            belief_metrics.setdefault("hptype_" + _hk, []).append(float(_hv))
+
                 # +WIN-PROB: auxiliary win-probability BCE. evaluate_actions ran the extractor forward
                 # above, stashing last_win_prob_logits for THIS minibatch; the MC outcome label + its
                 # known-mask ride the same obs dict (the WinProbLabelCallback overwrote the placeholders
@@ -1032,6 +1090,7 @@ class InstrumentedMaskablePPO(MaskablePPO):
                 if latent_belief_term is not None: aux_probe_terms["latent"] = latent_belief_term
                 if move_latent_term is not None:   aux_probe_terms["move_latent"] = move_latent_term
                 if spread_belief_term is not None: aux_probe_terms["spread_belief"] = spread_belief_term
+                if hp_type_term is not None:       aux_probe_terms["hp_type"] = hp_type_term
                 if win_prob_term is not None:      aux_probe_terms["win_prob"] = win_prob_term
                 if value_dist_term is not None:    aux_probe_terms["value_dist"] = value_dist_term
                 aux_on = belief_aux_on or move_belief_on or latent_belief_on or move_latent_on

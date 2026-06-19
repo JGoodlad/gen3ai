@@ -227,6 +227,39 @@ def build_damage_buffers(n_moves: int, n_species: int, n_abilities: int) -> Dict
     )
     hp_is_phys = type_is_phys[hp_type_idx].clone()
 
+    # gen3_opp_hp_typed_candidates_v1: the DISTINCT dex nums of the 16 TYPED Hidden Powers (355-370,
+    # gen3_typed_hidden_power_ids_v1) in HIDDEN_POWER_TYPE_ORDER order — so the DamageOperator can treat the
+    # opponent's HP as 16 ORDINARY typed-move candidates (real BP/type at these nums, populated above)
+    # instead of a synthetic appended block. The op scatters the opp HP-type BELIEF onto these nums. The
+    # bare typeless num 237 (BP 0) is the PRESENCE token, never a damage candidate. `hp_cand_mask` zeros
+    # BOTH 237 and the 16 typed nums out of the raw move belief (the op writes the belief back into the
+    # typed nums). Derived from the data (NOT hardcoded) so a num remap can't silently misalign.
+    hp_typed_nums = torch.tensor(
+        [gen3_data.moves.get("hiddenpower" + t.name.lower()).num for t in HIDDEN_POWER_TYPE_ORDER],
+        dtype=torch.long,
+    )
+    hp_cand_mask = torch.ones(n_moves, dtype=torch.float32)
+    hp_cand_mask[HIDDEN_POWER_NUM] = 0.0                 # bare typeless HP = the presence token (BP 0)
+    hp_cand_mask[hp_typed_nums] = 0.0                    # typed HP slots → the op writes the belief here
+    # GIGO GUARD — fail LOUD if the data drifts, rather than scatter the HP-type belief onto the wrong move
+    # or a 0-damage slot: each typed num MUST carry its HP_TYPE_ORDER type + BP 70, and the bare 237 BP 0.
+    for j, t in enumerate(HIDDEN_POWER_TYPE_ORDER):
+        n = int(hp_typed_nums[j])
+        if not (0 <= n < n_moves):
+            raise ValueError(
+                f"typed HP '{t.name}' num {n} out of range [0,{n_moves}) — typed-HP move data "
+                "(gen3_typed_hidden_power_ids_v1) missing from gen3_moves.json?")
+        if int(move_type_idx[n]) != int(hp_type_idx[j]):
+            raise ValueError(
+                f"typed-HP num {n} ('{t.name}') type idx {int(move_type_idx[n])} != HP_TYPE_ORDER[{j}] "
+                f"{int(hp_type_idx[j])} — the 355-370 ↔ HP_TYPE_ORDER alignment drifted (GIGO).")
+        if float(move_bp[n]) != float(HIDDEN_POWER_BP):
+            raise ValueError(f"typed-HP num {n} ('{t.name}') BP {float(move_bp[n])} != {HIDDEN_POWER_BP}")
+    if float(move_bp[HIDDEN_POWER_NUM]) != 0.0:
+        raise ValueError(
+            f"bare HP num {HIDDEN_POWER_NUM} BP {float(move_bp[HIDDEN_POWER_NUM])} != 0 — it must stay the "
+            "typeless PRESENCE token (BP 0), never a damage candidate.")
+
     # gen3_unified_move_system_v1: structured secondary / priority / drain / recoil (num axis). The op
     # prices the per-effect chance (× the active's ABILITY_SECONDARY_MULT), the outgoing-priority feature,
     # and the recovery magnitude (drain). HP num-237 stays all-zero (no secondary). Same skip-rule as the
@@ -278,6 +311,8 @@ def build_damage_buffers(n_moves: int, n_species: int, n_abilities: int) -> Dict
         "TYPE_IS_PHYS": type_is_phys,
         "HP_TYPE_IDX": hp_type_idx,
         "HP_IS_PHYS": hp_is_phys,
+        "HP_TYPED_NUMS": hp_typed_nums,          # gen3_opp_hp_typed_candidates_v1: the 16 typed-HP dex nums
+        "HP_CAND_MASK": hp_cand_mask,            #   + the mask zeroing 237 + the typed nums from raw `w`
         "MOVE_EFFECT_FLAGS": move_effect_flags,
         "ABILITY_DAMAGE_MULT": ability_damage_mult,
         "SPECIES_TYPE": species_types,
@@ -345,6 +380,34 @@ def build_opp_spread_prior(n_species: int) -> torch.Tensor:
                 var = max(0.0, m2 / wsum - mean * mean)
                 prior[snum, j, 0] = mean
                 prior[snum, j, 1] = max(1.0, var ** 0.5)
+    return prior
+
+
+# gen3_opp_hp_type_belief_v1: the per-species Smogon Hidden-Power-TYPE usage prior. The DamageOperator's
+# typed-HP candidate weight FLOOR (used when the obs `hp_probs` is still all-zero — it stays empty until
+# the opp FIRES HP, the "opp HP reads immune" GIGO) AND the HPTypeBelief head's prior-fusion base (the
+# learned head predicts a log-odds delta on top of this, mirroring MoveBelief's move-prior fusion).
+def build_hp_type_prior(n_species: int) -> torch.Tensor:
+    """``[n_species, 16]`` per-species P(Hidden Power type) over HIDDEN_POWER_TYPE_ORDER (the SAME 16-axis
+    order the op's ``HP_TYPE_IDX`` / the obs ``hp_probs`` / ``belief_labels.HP_TYPE_NAMES`` use), from the
+    Smogon HP-type usage prior (``gen3_data.priors.hidden_power_raw()``). Each row is normalized to sum 1; a
+    species with no usage entry (and the unknown species num 0) gets a flat 1/16. Indexed by national-dex
+    num (the move-belief / op / embedding axis). Non-persistent buffer (data-derived, recomputable)."""
+    n_hp = len(HIDDEN_POWER_TYPE_ORDER)
+    prior = torch.full((n_species, n_hp), 1.0 / n_hp, dtype=torch.float32)
+    raw = gen3_data.priors.hidden_power_raw()
+    names = [t.name.lower() for t in HIDDEN_POWER_TYPE_ORDER]
+    for sid in gen3_data.species.raw():
+        sd = gen3_data.species.get(sid)
+        if not (0 <= sd.num < n_species):
+            continue
+        entry = raw.get(sid)
+        if not entry:
+            continue
+        vec = torch.tensor([float(entry.get(name, 0.0)) for name in names], dtype=torch.float32)
+        s = float(vec.sum())
+        if s > 0.0:
+            prior[sd.num] = vec / s     # else keep the flat 1/16 fallback
     return prior
 
 

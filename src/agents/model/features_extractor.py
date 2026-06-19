@@ -1322,6 +1322,70 @@ class SpreadBelief(torch.nn.Module):
         return self.norm(enriched), believed
 
 
+class HPTypeBelief(torch.nn.Module):
+    """Predicts the opponent's hidden HIDDEN-POWER TYPE — per opp slot, a 16-way distribution over
+    HIDDEN_POWER_TYPE_ORDER (== the op's HP_TYPE_IDX axis) — FUSED with the Smogon HP-type prior in
+    log-odds (mirroring MoveBelief's prior fusion). The `DamageOperator` reads this posterior as its
+    typed-HP candidate weights, so an opponent's still-unrevealed Hidden Power is priced as a real ~70-BP
+    threat of its most-likely type(s) instead of the all-zero obs `hp_probs` (empty until the opp FIRES HP
+    — the "opp HP reads immune" GIGO) or a flat prior. gen3_opp_hp_type_belief_v1, the "force the model to
+    guess which Hidden Power it is" head.
+
+    The posterior is stashed at `features_extractor.last_hp_type_logits` and (a) fed to the op as the
+    per-slot typed-HP candidate weights — whose damage gradient sharpens this head — and (b) supervised by
+    the aux CE loss against the privileged true HP type (from agent2's team). ZERO-INIT so the cold-start
+    posterior == the Smogon prior (the clean A/B baseline). Leak-safe: the posterior is a model output; the
+    HP-type LABEL rides a training-only obs key read ONLY by the loss, never in pi/vf.
+
+    **gen3_opp_hp_type_belief_v2 (robust):** the belief is ALSO reinjected into the opp token (`reinject`,
+    a small-init residual like MoveBelief/SpreadBelief) as the PRESENCE-GATED expected typed-HP embedding —
+    so the believed HP type flows into the CLS pools + BOTH heads (attention reasons over "this mon is
+    probably an ice/grass HP user"), not only the op's damage block. The presence gate (the move belief's
+    P(HP present), ≈1 once `hiddenpower` is revealed — the "presence bit") zeroes the signal when HP is
+    unlikely. The posterior stays a full 16-way distribution (it does NOT argmax-collapse), so multiple
+    un-ruled-out types remain live candidates the op's top-K simulates distinctly + weights by confidence."""
+
+    def __init__(self, n_species: int, type_emb_dim: int, n_hp: int = 16):
+        super().__init__()
+        self.norm = torch.nn.LayerNorm(D_MODEL)
+        self.type_head = torch.nn.Linear(D_MODEL, n_hp)
+        torch.nn.init.zeros_(self.type_head.weight)        # cold-start delta = 0 → posterior == prior
+        torch.nn.init.zeros_(self.type_head.bias)
+        # gen3_opp_hp_type_belief_v2: the token reinjection of the presence-gated expected typed-HP embedding
+        # (the expected type emb = embeddings.hp_soft_type(posterior)). Small-init so the enrichment starts
+        # ≈0 (no harm before the belief sharpens), mirroring MoveBelief.reinject / SpreadBelief.reinject.
+        self.reinject_proj = torch.nn.Linear(type_emb_dim, D_MODEL)
+        torch.nn.init.normal_(self.reinject_proj.weight, std=0.02)
+        torch.nn.init.zeros_(self.reinject_proj.bias)
+        self.reinject_norm = torch.nn.LayerNorm(D_MODEL)
+        from agents.model.damage_tables import build_hp_type_prior
+        # [n_species, 16] prob prior (sums to 1) — the log-odds fusion base; non-persistent (data-derived).
+        self.register_buffer("hp_prior", build_hp_type_prior(n_species), persistent=False)
+
+    def forward(self, opp_tokens: torch.Tensor,
+                opp_species_ids: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
+        """opp_tokens [B,6,D], opp_species_ids [B,6] (national-dex nums) → (logits [B,6,16], posterior
+        [B,6,16]). logits = head_delta + log(prior[species]); posterior = softmax. Cold-start (delta 0) ⇒
+        posterior == the Smogon prior. The logits feed the CE loss; the posterior feeds the op + reinject."""
+        delta = self.type_head(self.norm(opp_tokens))                       # [B,6,16] (cold == 0)
+        prior = self.hp_prior[opp_species_ids].clamp_min(1e-6)              # [B,6,16]
+        logits = delta + torch.log(prior)                                  # posterior logit = prior ⊕ delta
+        return logits, torch.softmax(logits, dim=-1)
+
+    def reinject(self, opp_tokens: torch.Tensor, posterior: torch.Tensor, presence: torch.Tensor,
+                 apply_mask: torch.Tensor, embeddings: 'Embeddings') -> torch.Tensor:
+        """gen3_opp_hp_type_belief_v2: enrich the opp tokens [B,6,D] with the PRESENCE-GATED expected
+        typed-HP embedding, so the believed HP type flows into the CLS pools + both heads (not only the op's
+        damage block). `posterior` [B,6,16] (the type belief), `presence` [B,6] (P(HP present) — ≈1 on
+        reveal; gates the signal to ≈0 when HP is unlikely), `apply_mask` [B,6] float (which slots to
+        enrich — revealed). `embeddings.hp_soft_type(posterior)` = Σ_t P(t)·type_emb[t], the expected type
+        embedding. Small-init residual → starts ≈0; LayerNorm'd. Returns the enriched [B,6,D]."""
+        soft = embeddings.hp_soft_type(posterior)                          # [B,6,type_emb] expected type emb
+        gated = presence.unsqueeze(-1) * soft                              # ≈0 when HP unlikely (no spurious)
+        enriched = opp_tokens + apply_mask.unsqueeze(-1) * self.reinject_proj(gated)
+        return self.reinject_norm(enriched)
+
+
 # Differentiable damage operator (`DamageOperator`) constants — the unified 3-roll + P(KO) damage
 # representation (owner-chosen: "the raw rolls the model can read, PLUS the P(KO) the policy uses").
 # Per defender, two gen3 type CHANNELS (physical / special) each carry [low_roll, high_roll, crit, pko,
@@ -1584,7 +1648,7 @@ class DamageOperator(torch.nn.Module):
 
     def __init__(self, layout: Dict[str, Any], outgoing: bool = False, topk_k: int = 0,
                  matrices_outgoing: bool = False, matrices_incoming: bool = False,
-                 prob_outspeed: bool = False):
+                 prob_outspeed: bool = False, hp_type_fix: bool = False):
         super().__init__()
         # gen3_bidir_threat_trunk_v1 (#3): use a SOFT P(our_spe > opp_spe) over the believed speed mean±std
         # (SPECIES_SPREAD_PRIOR) instead of the hard point-estimate comparison. Forward-behavior toggle (no
@@ -1601,6 +1665,18 @@ class DamageOperator(torch.nn.Module):
             self.register_buffer(name, tensor, persistent=False)
         self.hp_num = HIDDEN_POWER_NUM
         self.hp_bp = float(HIDDEN_POWER_BP)
+        # gen3_opp_hp_typed_candidates_v1: HP is 16 ORDINARY typed-move candidates (nums HP_TYPED_NUMS =
+        # 355-370, real BP/type in the buffers); the bare typeless 237 (BP 0) is the masked presence token.
+        # `_opp_candidate_weights` ALWAYS masks 237 + the raw typed nums (HP_CAND_MASK, from the buffers) and
+        # scatters the per-type HP belief onto 355-370. `hp_type_fix` selects the type-belief SOURCE: off
+        # (mode 'off') = the obs `hp_probs` (effectiveness-narrowed, the baseline); on (mode 'prior'/'learned')
+        # = the learned posterior ⊕ the Smogon SPECIES_HP_PRIOR floor, narrowed. (HP_TYPED_NUMS / HP_CAND_MASK
+        # are non-persistent buffers from build_damage_buffers; SPECIES_HP_PRIOR only the prior/learned modes.)
+        self.hp_type_fix = bool(hp_type_fix)
+        if self.hp_type_fix:
+            from agents.model.damage_tables import build_hp_type_prior
+            self.register_buffer("SPECIES_HP_PRIOR", build_hp_type_prior(layout['max_species']),
+                                 persistent=False)
         self.cb_item_num = CHOICE_BAND_ITEM_NUM            # gen3_unified_choice_band_v1: Choice Band item num
         self.cb_phys_mult = float(CHOICE_BAND_PHYS_MULT)   # ×1.5 physical Atk
         # gen3_unified_topk_incoming_v1: secondary-col → status-category map for the per-pivot incoming
@@ -1698,6 +1774,49 @@ class DamageOperator(torch.nn.Module):
         # indices + their belief weights) → exact move-name decode. None when topk off / before a forward.
         self.last_topk_idx: Optional[torch.Tensor] = None
         self.last_topk_w: Optional[torch.Tensor] = None
+
+    def _opp_candidate_weights(self, ctx: 'ExtractorContext', move_belief_logits: torch.Tensor,
+                               hp_type_belief: Optional[torch.Tensor] = None) -> torch.Tensor:
+        """Build the opp-active candidate belief weights ``w`` [B, n_moves] — the SINGLE source for all op
+        candidate sites (``forward`` + the lean ``discrete_incoming`` / ``discrete_incoming_status`` refine
+        kernels), so the HP handling can never diverge between them (the GIGO class).
+
+        **gen3_opp_hp_typed_candidates_v1 — HP is 16 ORDINARY typed moves.** The opponent's Hidden Power is
+        the 16 distinct typed-move nums ``HP_TYPED_NUMS`` (355-370, real BP 70 + type in the damage buffers),
+        NOT a synthetic appended block. The bare typeless num 237 (BP 0) is the PRESENCE token — ALWAYS
+        masked out of the damage candidates (``HP_CAND_MASK`` zeros 237 + the raw 355-370). Onto the 16 typed
+        nums we scatter ``P(HP present)·P(HP type)``: P(HP present) = ``sigmoid(belief[237])`` (the
+        reveal-pinned presence — ≈1 once `hiddenpower` is revealed), P(HP type) per the source below. So the
+        op simulates HP-Ice / HP-Grass as distinct, real typed-move candidates the top-K can each surface +
+        weight by confidence; the obs keeps the opp HP typeless (237) → no leak.
+
+        The type-belief SOURCE: ``hp_type_fix`` off (mode 'off') → the obs ``hp_probs`` (the effectiveness-
+        narrowed observation, the A/B baseline — HP fires only once observed). On (mode 'prior'/'learned') →
+        the learned posterior ``hp_type_belief`` (if passed) ELSE the Smogon ``SPECIES_HP_PRIOR`` floor, then
+        NARROWED by the obs ``hp_probs`` (its hard zeros are CERTAIN physics) when the opp has fired HP.
+        Multiple un-ruled-out types stay live (a distribution, not argmax)."""
+        B, device = ctx.batch_size, ctx.device
+        ar = torch.arange(B, device=device)
+        opp_act = TEAM_SIZE + ctx.opp_active_local                                    # [B] global opp-active
+        w = torch.sigmoid(move_belief_logits[ar, ctx.opp_active_local])               # [B, n_moves]
+        w_hp = torch.sigmoid(move_belief_logits[ar, ctx.opp_active_local, self.hp_num])  # [B] P(HP present)
+        obs_hp = ctx.hp_probs[ar, opp_act]                                            # [B,16] effectiveness-narrowed
+        w = w * self.HP_CAND_MASK[None, :]                                            # zero bare-237 + raw typed-HP
+        if not self.hp_type_fix:
+            hp_type = obs_hp                                                          # obs-only baseline (mode off)
+        else:
+            base = (hp_type_belief[ar, ctx.opp_active_local] if hp_type_belief is not None
+                    else self.SPECIES_HP_PRIOR[ctx.species_ids[ar, opp_act]])         # learned ⊕ / prior floor
+            has_obs = obs_hp.sum(-1, keepdim=True) > 0                                 # HP fired ⇒ narrowed obs
+            surv = (obs_hp > 0).float()                                               # CERTAIN survivor mask
+            narrowed = base * surv                                                    # restrict the belief to survivors
+            # Off-meta fallback: if the belief puts ~no mass on the survivors, spread UNIFORM over them
+            # (never a ~0 vector — that would re-immune the HP). surv.sum() >= 1 whenever has_obs.
+            narrowed = torch.where(narrowed.sum(-1, keepdim=True) > 1e-6, narrowed, surv)
+            narrowed = narrowed / narrowed.sum(-1, keepdim=True).clamp_min(1e-6)
+            hp_type = torch.where(has_obs, narrowed, base)                            # [B,16]
+        typed = w_hp.unsqueeze(-1) * hp_type                                          # [B,16] presence × type
+        return w.index_add(1, self.HP_TYPED_NUMS, typed)                              # scatter onto the typed nums
 
     def _chan_max(self, value: torch.Tensor, channel_mask: torch.Tensor) -> torch.Tensor:
         """Max over a channel's candidates = the most-threatening believed move (exactly
@@ -2160,19 +2279,15 @@ class DamageOperator(torch.nn.Module):
         K = topk_idx.shape[1]
         ar = torch.arange(B, device=device)
         opp_act = TEAM_SIZE + ctx.opp_active_local
-        n_hp = self.HP_TYPE_IDX.shape[0]
         n_type = self.MOVE_STATUS_TYPE_IMMUNE.shape[1]
-        zc = torch.zeros(n_hp, device=device)
-        # --- candidate-axis (C = n_moves + n_hp) move-status attributes (HP carries none) → gather top-K ---
-        inflicts = torch.cat([self.MOVE_INFLICTS_STATUS, zc])[topk_idx]                       # [B,K]
-        acc = torch.cat([self.MOVE_ACCURACY, torch.ones(n_hp, device=device)])[topk_idx]      # [B,K]
-        sidx = torch.cat([self.MOVE_STATUS_CAT,
-                          torch.zeros(n_hp, dtype=torch.long, device=device)])[topk_idx]      # [B,K]
-        blocked = torch.cat([self.MOVE_BLOCKED_IF_STATUSED, zc])[topk_idx]                    # [B,K]
-        ti = torch.cat([self.MOVE_STATUS_TYPE_IMMUNE,
-                        torch.zeros(n_hp, n_type, device=device)])[topk_idx]                  # [B,K,n_type]
-        sec = torch.cat([self.MOVE_SECONDARY,
-                         torch.zeros(n_hp, _N_SECONDARY, device=device)])[topk_idx]           # [B,K,10]
+        # --- candidate-axis (C = n_moves; the typed HP nums 355-370 carry no status/secondary — all-zero
+        # in these buffers, verified) move-status attributes → gather top-K (gen3_opp_hp_typed_candidates_v1) ---
+        inflicts = self.MOVE_INFLICTS_STATUS[topk_idx]                                        # [B,K]
+        acc = self.MOVE_ACCURACY[topk_idx]                                                    # [B,K]
+        sidx = self.MOVE_STATUS_CAT[topk_idx]                                                 # [B,K]
+        blocked = self.MOVE_BLOCKED_IF_STATUSED[topk_idx]                                     # [B,K]
+        ti = self.MOVE_STATUS_TYPE_IMMUNE[topk_idx]                                           # [B,K,n_type]
+        sec = self.MOVE_SECONDARY[topk_idx]                                                   # [B,K,10]
 
         # --- our 6 defenders' (known) types / ability / already-statused ---
         t1d = ctx.type1_ids[:, :TEAM_SIZE]                                                    # [B,6]
@@ -2278,11 +2393,10 @@ class DamageOperator(torch.nn.Module):
         latent_topk = move_latent_all[topk_idx]                                    # [B,K,32] differentiable
         acc_topk = acc_all[topk_idx]                                               # [B,K]
         phys_topk = phys_all[topk_idx]                                             # [B,K]
-        n_hp = self.HP_TYPE_IDX.shape[0]
-        eff_flags = torch.cat([self.MOVE_EFFECT_FLAGS,
-                               torch.zeros(n_hp, _DMG_EFFECT, device=device)])[topk_idx]      # [B,K,6]
-        sec = torch.cat([self.MOVE_SECONDARY,
-                         torch.zeros(n_hp, _N_SECONDARY, device=device)])[topk_idx]           # [B,K,10]
+        # HP at the typed nums 355-370 carries no effect/secondary (all-zero in these buffers, verified);
+        # C = n_moves (gen3_opp_hp_typed_candidates_v1 — the typed HP are ordinary move-num candidates).
+        eff_flags = self.MOVE_EFFECT_FLAGS[topk_idx]                               # [B,K,6]
+        sec = self.MOVE_SECONDARY[topk_idx]                                        # [B,K,10]
         # --- per-(defender, move) cell: gather the RAW physics rolls (w-INDEPENDENT) + type_mult + status ---
         idxd = topk_idx[:, None, :].expand(B, TEAM_SIZE, K)                        # [B,6,K]
         low_topk = low_frac.gather(-1, idxd)                                       # [B,6,K]
@@ -2290,8 +2404,7 @@ class DamageOperator(torch.nn.Module):
         crit_topk = crit_frac.gather(-1, idxd)
         pko_topk = ko_ramp.gather(-1, idxd)
         # type_mult @ OUR defenders' types/ability for the top-K move types (the immune/resist pivot read)
-        mty_all = torch.cat([self.MOVE_TYPE_IDX, self.HP_TYPE_IDX])                 # [C]
-        mty_topk = mty_all[topk_idx]                                               # [B,K]
+        mty_topk = self.MOVE_TYPE_IDX[topk_idx]                                    # [B,K]
         idx2 = mty_topk[:, None, :].expand(B, TEAM_SIZE, K)                         # [B,6,K]
         t1d = ctx.type1_ids[:, :TEAM_SIZE]; t2d = ctx.type2_ids[:, :TEAM_SIZE]
         amul = self.ABILITY_DAMAGE_MULT[ctx.ability1_ids[:, :TEAM_SIZE]]            # [B,6,T]
@@ -2353,17 +2466,15 @@ class DamageOperator(torch.nn.Module):
         t1d = ctx.type1_ids[:, :TEAM_SIZE]                                               # [B,6]
         t2d = ctx.type2_ids[:, :TEAM_SIZE]
         ability = ctx.ability1_ids[:, :TEAM_SIZE]                                        # [B,6]
-        # --- Belief at the opp active + the typed-HP candidates → w_all [B,C] (same as forward) ---
-        w = torch.sigmoid(move_belief_logits[ar, ctx.opp_active_local])                  # [B, n_moves]
-        w_hp = torch.sigmoid(move_belief_logits[ar, ctx.opp_active_local, self.hp_num])  # [B] P(HP present)
-        hp_type_belief = ctx.hp_probs[ar, opp_act]                                        # [B,16]
-        w_all = torch.cat([w, w_hp.unsqueeze(-1) * hp_type_belief], dim=1)               # [B,C]
-        # --- Candidate axis attributes (no weather/fixed-damage for the coarse refinement) ---
-        n_hp = self.HP_TYPE_IDX.shape[0]
-        bp_all = torch.cat([self.MOVE_BP, torch.full((n_hp,), self.hp_bp, device=device)])    # [C]
-        mty_all = torch.cat([self.MOVE_TYPE_IDX, self.HP_TYPE_IDX])                       # [C]
-        phys_all = torch.cat([self.MOVE_PHYS, self.HP_IS_PHYS])                           # [C]
-        acc_all = torch.cat([self.MOVE_ACCURACY, torch.ones(n_hp, device=device)])       # [C]
+        # --- Belief at the opp active → w [B, n_moves] (same source as forward; the lean refine passes no
+        # learned posterior → the prior FLOOR resolves the typed-HP belief, scattered onto 355-370; the bare
+        # 237 is masked — gen3_opp_hp_typed_candidates_v1) ---
+        w_all = self._opp_candidate_weights(ctx, move_belief_logits)                     # [B, n_moves]
+        # --- Candidate axis attributes: C = n_moves (the typed HP 355-370 carry real BP/type; no append) ---
+        bp_all = self.MOVE_BP                                                            # [n_moves]
+        mty_all = self.MOVE_TYPE_IDX                                                     # [n_moves]
+        phys_all = self.MOVE_PHYS                                                        # [n_moves]
+        acc_all = self.MOVE_ACCURACY                                                     # [n_moves]
         # --- SELECT the top-K most-believed candidates (selection DETACHED; gathered values differentiable) ---
         K = min(_DMG_REFINE_K, w_all.shape[1])
         topk_idx = w_all.detach().topk(K, dim=-1).indices                                # [B,K]
@@ -2525,26 +2636,20 @@ class DamageOperator(torch.nn.Module):
         rides `w_topk` and sharpens the move belief toward status threats. `[B, TEAM_SIZE, _DMG_STATUS_REFINE]`."""
         B, device = ctx.batch_size, ctx.device
         ar = torch.arange(B, device=device)
-        opp_act = TEAM_SIZE + ctx.opp_active_local
         has_opp = ctx.hp_and_active[:, TEAM_SIZE:2 * TEAM_SIZE, -1].any(dim=1).float()   # [B]
-        n_hp = self.HP_TYPE_IDX.shape[0]
         n_type = self.MOVE_STATUS_TYPE_IMMUNE.shape[1]
-        # candidate selection — the SAME detached top-K over the move belief as discrete_incoming
-        w = torch.sigmoid(move_belief_logits[ar, ctx.opp_active_local])                  # [B, n_moves]
-        w_hp = torch.sigmoid(move_belief_logits[ar, ctx.opp_active_local, self.hp_num])   # [B]
-        hp_type_belief = ctx.hp_probs[ar, opp_act]                                        # [B,16]
-        w_all = torch.cat([w, w_hp.unsqueeze(-1) * hp_type_belief], dim=1)                # [B,C]
+        # candidate selection — the SAME detached top-K over the move belief as discrete_incoming. C =
+        # n_moves: the typed HP nums 355-370 are ordinary candidates (the belief scattered onto them, bare
+        # 237 masked) and carry NO status (all-zero in these buffers, verified) — gen3_opp_hp_typed_candidates_v1.
+        w_all = self._opp_candidate_weights(ctx, move_belief_logits)                      # [B, n_moves]
         K = min(_DMG_REFINE_K, w_all.shape[1])
         topk_idx = w_all.detach().topk(K, dim=-1).indices                                 # [B,K]
         w_topk = w_all.gather(-1, topk_idx)                                               # [B,K] → belief grad
-        zc = torch.zeros(n_hp, device=device)
-        inflicts = torch.cat([self.MOVE_INFLICTS_STATUS, zc])[topk_idx]                   # [B,K]
-        acc = torch.cat([self.MOVE_ACCURACY, torch.ones(n_hp, device=device)])[topk_idx]  # [B,K]
-        sidx = torch.cat([self.MOVE_STATUS_CAT,
-                          torch.zeros(n_hp, dtype=torch.long, device=device)])[topk_idx]  # [B,K]
-        blocked = torch.cat([self.MOVE_BLOCKED_IF_STATUSED, zc])[topk_idx]                # [B,K]
-        ti = torch.cat([self.MOVE_STATUS_TYPE_IMMUNE,
-                        torch.zeros(n_hp, n_type, device=device)])[topk_idx]              # [B,K,n_type]
+        inflicts = self.MOVE_INFLICTS_STATUS[topk_idx]                                    # [B,K]
+        acc = self.MOVE_ACCURACY[topk_idx]                                                # [B,K]
+        sidx = self.MOVE_STATUS_CAT[topk_idx]                                             # [B,K]
+        blocked = self.MOVE_BLOCKED_IF_STATUSED[topk_idx]                                 # [B,K]
+        ti = self.MOVE_STATUS_TYPE_IMMUNE[topk_idx]                                       # [B,K,n_type]
         # our 6 defenders' KNOWN types / ability-block / already-statused / alive
         t1d = ctx.type1_ids[:, :TEAM_SIZE]
         t2d = ctx.type2_ids[:, :TEAM_SIZE]
@@ -2635,7 +2740,8 @@ class DamageOperator(torch.nn.Module):
 
     def forward(self, ctx: 'ExtractorContext', move_belief_logits: torch.Tensor,
                 spread_belief: Optional[torch.Tensor] = None,
-                move_latent_all: Optional[torch.Tensor] = None) -> torch.Tensor:
+                move_latent_all: Optional[torch.Tensor] = None,
+                hp_type_belief: Optional[torch.Tensor] = None) -> torch.Tensor:
         B = ctx.batch_size
         device = ctx.device
         eps = 1e-6
@@ -2687,25 +2793,27 @@ class DamageOperator(torch.nn.Module):
         t1d = ctx.type1_ids[:, :TEAM_SIZE]                               # [B,6]
         t2d = ctx.type2_ids[:, :TEAM_SIZE]
 
-        # --- Belief weights at the opp-active slot + the typed-HP candidate weights ---
+        # Per-move belief over the real move-nums (UNMASKED — used by the believed-EFFECT block below; the
+        # bare num-237 carries no effect flags, so it's not masked here). The damage CANDIDATE weights (with
+        # the bare-237 mask + typed-HP belief) come from `_opp_candidate_weights` after the attribute build.
         w = torch.sigmoid(move_belief_logits[ar, ctx.opp_active_local])   # [B, n_moves]
-        w_hp = torch.sigmoid(move_belief_logits[ar, ctx.opp_active_local, self.hp_num])  # [B] P(HP present)
-        hp_type_belief = ctx.hp_probs[ar, opp_act]                       # [B,16] P(HP type | present)
-
-        # --- Candidate set: the num-indexed moves + 16 typed Hidden Powers ---
-        n_hp = self.HP_TYPE_IDX.shape[0]
-        bp_all = torch.cat([self.MOVE_BP, torch.full((n_hp,), self.hp_bp, device=device)])      # [C]
-        mty_all = torch.cat([self.MOVE_TYPE_IDX, self.HP_TYPE_IDX])                             # [C]
-        phys_all = torch.cat([self.MOVE_PHYS, self.HP_IS_PHYS])                                 # [C]
-        acc_all = torch.cat([self.MOVE_ACCURACY, torch.ones(n_hp, device=device)])             # [C] HP is 100%
-        fixed_all = torch.cat([self.MOVE_FIXED_DAMAGE, torch.zeros(n_hp, device=device)])       # [C] HP not fixed
+        # --- Candidate set: C = n_moves. The 16 typed Hidden Powers are ORDINARY move-num candidates
+        # (355-370, real BP 70 + type); the bare 237 (BP 0) is the masked presence token —
+        # gen3_opp_hp_typed_candidates_v1. ---
+        bp_all = self.MOVE_BP                                                                   # [n_moves]
+        mty_all = self.MOVE_TYPE_IDX                                                            # [n_moves]
+        phys_all = self.MOVE_PHYS                                                               # [n_moves]
+        acc_all = self.MOVE_ACCURACY                                                            # [n_moves]
+        fixed_all = self.MOVE_FIXED_DAMAGE                                                      # [n_moves]
         # Fixed-damage moves read BP 0 → derived category STATUS → MOVE_PHYS 0; route them onto their TYPE's
         # channel instead (Seismic Toss=Fighting=phys, Night Shade=Ghost=phys), matching the outgoing block.
-        phys_all = torch.where(fixed_all > 0, self.TYPE_IS_PHYS[mty_all], phys_all)             # [C]
-        # gen3_unified_op_physics_v1: per-candidate WEATHER BP modifier (rain/sun × Water/Fire), [B,C].
+        phys_all = torch.where(fixed_all > 0, self.TYPE_IS_PHYS[mty_all], phys_all)             # [n_moves]
+        # gen3_unified_op_physics_v1: per-candidate WEATHER BP modifier (rain/sun × Water/Fire), [B,n_moves].
         weather_mult = self._weather_mult(ctx.weather_feature, (mty_all == _WATER_TIDX).float()[None, :],
-                                          (mty_all == _FIRE_TIDX).float()[None, :])             # [B,C]
-        w_all = torch.cat([w, w_hp.unsqueeze(-1) * hp_type_belief], dim=1)                      # [B,C]
+                                          (mty_all == _FIRE_TIDX).float()[None, :])             # [B,n_moves]
+        # gen3_opp_hp_typed_candidates_v1: the candidate belief weights — bare 237 masked, the typed-HP belief
+        # (learned posterior ⊕ prior floor, narrowed) scattered onto the real typed nums 355-370.
+        w_all = self._opp_candidate_weights(ctx, move_belief_logits, hp_type_belief)            # [B, n_moves]
 
         # --- gen3 damage per (defender, candidate), all differentiable in w (the shared physics
         # kernel — incoming roles: attacker = opp active, defenders = our 6, OUR-side screens) ---
@@ -3059,7 +3167,8 @@ class Gen3FeaturesExtractor(torch.nn.Module):
                  move_belief_prefuse: bool = False, damage_refine_rounds: int = 0,
                  damage_matrices_outgoing: bool = False, damage_matrices_incoming: bool = False,
                  threat_refine_outgoing: bool = False, threat_unrevealed_outgoing: bool = False,
-                 threat_prob_outspeed: bool = False, threat_status_refine: bool = False):
+                 threat_prob_outspeed: bool = False, threat_status_refine: bool = False,
+                 hp_type_belief_mode: str = "off"):
         super().__init__()
         self.layout = layout
         self.mappings = mappings
@@ -3203,6 +3312,28 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         self.spread_belief_enabled = spread_belief
         self.spread_belief = SpreadBelief(layout['max_species']) if spread_belief else None
         self.last_spread_belief: Optional[torch.Tensor] = None
+        # gen3_opp_hp_type_belief_v1: the typed-HP fix + the learned opp-HP-TYPE head ("force the model to
+        # guess which Hidden Power it is"). Tri-state:
+        #   'off'     — legacy (bare-237 unmasked, op reads the obs hp_probs) — byte-for-byte baseline.
+        #   'prior'   — the op MASKS the bare-237 + floors the typed-HP belief on the Smogon prior (a
+        #               forward-behavior change, NO new params) → the opp HP stops reading "immune".
+        #   'learned' — ALSO build the HPTypeBelief head (prior ⊕ learned delta); the op consumes its
+        #               posterior + the aux CE supervises it (a state_dict change → the head's params).
+        # The op-side fix (mask + prior floor) is on whenever mode != off; the head exists only under
+        # 'learned'. Requires damage_op (the typed-HP candidates it fixes live in the op).
+        self.hp_type_belief_mode = str(hp_type_belief_mode)
+        if self.hp_type_belief_mode not in ("off", "prior", "learned"):
+            raise ValueError(
+                f"hp_type_belief_mode must be one of off|prior|learned, got {hp_type_belief_mode!r}")
+        if self.hp_type_belief_mode != "off" and not damage_op:
+            raise ValueError(
+                "hp_type_belief != off requires damage_op=True — the typed-HP candidates it fixes are the "
+                "DamageOperator's. Enable --damage-op (--unified-damage), or set --hp-type-belief off."
+            )
+        self.hp_type_belief_head = (
+            HPTypeBelief(layout['max_species'], layout['type_embedding_dim'])
+            if self.hp_type_belief_mode == "learned" else None)
+        self.last_hp_type_logits: Optional[torch.Tensor] = None
         # Differentiable damage operator (flag-guarded): consumes the move belief's PREDICTED moves for
         # the opp active and computes the believed-move incoming damage to each of our mons, fed to BOTH
         # heads. OFF reproduces the baseline arch byte-for-byte (no module, projection widths unchanged).
@@ -3262,7 +3393,8 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         self.damage_op = (DamageOperator(layout, outgoing=damage_outgoing, topk_k=self.damage_topk_k,
                                          matrices_outgoing=self.damage_matrices_outgoing,
                                          matrices_incoming=self.damage_matrices_incoming,
-                                         prob_outspeed=threat_prob_outspeed)
+                                         prob_outspeed=threat_prob_outspeed,
+                                         hp_type_fix=(self.hp_type_belief_mode != "off"))
                           if damage_op else None)
         self.threat_prob_outspeed = bool(threat_prob_outspeed)
         # damage_reattend (gen3_damage_reattend_v1): let attention reason OVER the computed physics. The op's
@@ -3630,6 +3762,25 @@ class Gen3FeaturesExtractor(torch.nn.Module):
                 their_team_out, ~ctx.opp_believed_mask, ctx.species_ids[:, TEAM_SIZE:])
         else:
             self.last_spread_belief = None
+        # gen3_opp_hp_type_belief_v1: the learned opp-HP-TYPE posterior (mode 'learned'). The HPTypeBelief
+        # head reads the refined opp tokens → per-slot 16-way HP-type distribution (Smogon prior ⊕ learned
+        # delta); the op consumes it at the active slot (its damage gradient sharpens the head) + the aux CE
+        # supervises last_hp_type_logits. 'prior'/'off' → no head → the op uses its own prior floor / the
+        # legacy obs hp_probs. Stashed for the loss + prober; never concatenated into pi/vf (leak-safe).
+        self.last_hp_type_logits = None
+        hp_type_post = None
+        if self.hp_type_belief_head is not None:
+            self.last_hp_type_logits, hp_type_post = self.hp_type_belief_head(
+                their_team_out, ctx.species_ids[:, TEAM_SIZE:])
+            # gen3_opp_hp_type_belief_v2: REINJECT the presence-gated believed HP type into the opp tokens so
+            # the CLS pools + both heads reason over it (not only the op's damage block). Presence = the move
+            # belief's P(HP present) per opp slot (the "presence bit", ≈1 once `hiddenpower` is revealed);
+            # gates the signal to ≈0 when HP is unlikely. Revealed slots only (~opp_believed_mask). The op
+            # still consumes the (un-reinjected) posterior below — multiple un-ruled-out types stay distinct.
+            _presence = torch.sigmoid(self.last_move_belief_logits[:, :, HIDDEN_POWER_MOVE_NUM])  # [B,6]
+            their_team_out = self.hp_type_belief_head.reinject(
+                their_team_out, hp_type_post, _presence,
+                (~ctx.opp_believed_mask).float(), self.embeddings)
         # gen3_unified_move_system_v1: the context-free move-latent table — the Stage-3 latent grading aux
         # TARGET (training only; is_grad_enabled-gated, rollout pays nothing) AND
         # (gen3_unified_topk_incoming_v1) the op's top-K candidate latents. The latter must be present in
@@ -3647,10 +3798,11 @@ class Gen3FeaturesExtractor(torch.nn.Module):
             if torch.is_grad_enabled():
                 self.last_move_latent_table = latent_table                       # grading aux target
             if need_topk_latent:
-                # The op's candidate axis is [n_moves ++ 16 typed HP]; append the per-type HP latents so a
-                # selected HP-Rock candidate carries Rock (not the type-collapsed bare-num latent).
-                typed_hp = enc.hp_latent_block(self.embeddings, self.damage_op.HP_TYPE_IDX, self.damage_op.hp_num)
-                move_latent_all = torch.cat([latent_table, typed_hp], dim=0)     # [C, MOVE_LATENT_DIM]
+                # gen3_opp_hp_typed_candidates_v1: the op's candidate axis is C = n_moves — the typed HPs are
+                # the real move-nums 355-370, whose latents already carry their type (move_emb[355-370] ⊕ the
+                # type emb ⊕ MOVE_ATTR), so a selected HP-Ice candidate gets the genuine typed-move latent. No
+                # synthetic append (the old `hp_latent_block` workaround for the 237 collision is obsolete).
+                move_latent_all = latent_table                                   # [n_moves, MOVE_LATENT_DIM]
         # Differentiable damage op (flag-guarded; None when off): fed the move belief's PREDICTED moves for
         # the opp active (set above). Forward-only, leak-free; its gradient flows back into the move/spread
         # belief heads via last_move_belief_logits / last_spread_belief. Run BEFORE the CLS pools so the
@@ -3665,10 +3817,11 @@ class Gen3FeaturesExtractor(torch.nn.Module):
             # the grad. move_latent_all (built above) is the op's top-K identity source (None unless topk on).
             if self.damage_op.grad_checkpointing and torch.is_grad_enabled():
                 damage_block = checkpoint(self.damage_op, ctx, self.last_move_belief_logits,
-                                          self.last_spread_belief, move_latent_all, use_reentrant=False)
+                                          self.last_spread_belief, move_latent_all, hp_type_post,
+                                          use_reentrant=False)
             else:
                 damage_block = self.damage_op(ctx, self.last_move_belief_logits, self.last_spread_belief,
-                                              move_latent_all)
+                                              move_latent_all, hp_type_post)
         # Read-only stash for the prober/forensic decode — never read by the forward, so off is unchanged.
         self.last_damage_block = damage_block
         # damage_reattend (gen3_damage_reattend_v1): let attention reason OVER the computed physics. The op's

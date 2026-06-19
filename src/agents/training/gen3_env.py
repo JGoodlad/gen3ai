@@ -16,6 +16,7 @@ from agents.observation.belief_labels import (
     build_belief_labels, build_known_move_labels, build_belief_target_index,
     zero_belief_labels, zero_known_moves, BELIEF_MOVE_SLOTS,
     build_known_spread_labels, zero_spread_labels, SPREAD_STAT_ORDER, N_SPREAD_STATS,
+    build_hp_type_labels, zero_hp_type_labels, hp_type_idx_from_move_id, N_HP_TYPES_LABEL,
 )
 from agents.observation.turn_delta_encoder import TurnDeltaEncoder
 from agents.model.features_extractor import N_HISTORY_TURNS
@@ -36,7 +37,8 @@ class Gen3Env(SinglesEnv):
                  log_level=LogLevel.QUIET, stall_config: Optional[StallConfig] = None,
                  *args, battle_class=Gen3Battle, emit_belief_labels: bool = False,
                  move_belief_mode: str = "off", emit_belief_target: bool = False,
-                 emit_win_target: bool = False, emit_spread_labels: bool = False, **kwargs):
+                 emit_win_target: bool = False, emit_spread_labels: bool = False,
+                 emit_hp_type_labels: bool = False, **kwargs):
         self.log_level = log_level
         self._stall_logger = StallLogger(stall_config)
         super().__init__(*args, **kwargs)
@@ -79,6 +81,14 @@ class Gen3Env(SinglesEnv):
         # Read ONLY by the loss — never enters the policy/value forward (the believed stats the op consumes
         # are the model's own prediction, not this label).
         self._emit_spread_labels = emit_spread_labels
+        # HP-TYPE-belief label key (TRAINING-ONLY, gen3_opp_hp_type_belief_v1): when on, the obs Dict carries
+        # `hp_type_label` [6] (the TRUE Hidden Power type index 0..15 of each REVEALED opp mon that runs HP,
+        # from agent2's own team's typed move id) + `hp_type_mask` [6]. Consumed ONLY by the HP-type CE loss
+        # (instrumented_ppo._hp_type_belief_loss); the HPTypeBelief head learns which HP the opponent has so
+        # the DamageOperator prices the right typed-HP threat (Gen 3 NEVER reveals the opp HP type, so this is
+        # a privileged label — never in the obs vector / pi-vf forward). Enabled by --hp-type-belief learned
+        # + --hp-type-belief-coef>0 (threaded as emit_hp_type_labels from train_rl_agent).
+        self._emit_hp_type_labels = emit_hp_type_labels
         # WIN-PROBABILITY label keys (TRAINING-ONLY): when on, the obs Dict carries `win_target` [1] and
         # `win_mask` [1] (float32). The env emits PLACEHOLDER zeros each step; the WinProbLabelCallback
         # OVERWRITES them post-collection with the Monte-Carlo episode outcome (win=1/loss=0) + a known
@@ -129,6 +139,15 @@ class Gen3Env(SinglesEnv):
             base_obs["belief_spread"] = spaces.Box(
                 low=0.0, high=np.inf, shape=(TEAM_SIZE, N_SPREAD_STATS), dtype=np.float32)
             base_obs["belief_spread_mask"] = spaces.Box(
+                low=0.0, high=1.0, shape=(TEAM_SIZE,), dtype=np.float32)
+        if self._emit_hp_type_labels:
+            # HP-TYPE-belief label (gen3_opp_hp_type_belief_v1): the TRUE HP type index (0..15) of each
+            # REVEALED opp mon that runs Hidden Power + a per-slot mask (1 = supervised). int64 (a class
+            # index for CE); low=-1 keeps the PAD / not-scored sentinel in-space. Only declared when
+            # --hp-type-belief learned + --hp-type-belief-coef>0.
+            base_obs["hp_type_label"] = spaces.Box(
+                low=-1, high=N_HP_TYPES_LABEL - 1, shape=(TEAM_SIZE,), dtype=np.int64)
+            base_obs["hp_type_mask"] = spaces.Box(
                 low=0.0, high=1.0, shape=(TEAM_SIZE,), dtype=np.float32)
         if self._emit_win_target:
             # Win-probability MC label + known-mask (placeholders here; back-filled post-collection).
@@ -303,6 +322,36 @@ class Gen3Env(SinglesEnv):
         sp, spm = build_known_spread_labels(revealed_species, species_to_spread, species_known, to_id_str)
         return {"belief_spread": sp, "belief_spread_mask": spm}
 
+    def _hp_type_labels(self, obs_vec) -> dict:
+        """HP-TYPE-belief label (gen3_opp_hp_type_belief_v1) — INDEPENDENT of the other belief legs. For each
+        REVEALED opp slot whose species runs a Hidden Power, the TRUE HP type index (0..15) from agent2's OWN
+        team's typed move id (Gen 3 NEVER reveals the opp HP type, so this is privileged) + a per-slot mask.
+        All-PAD (mask 0) until both battles exist. Read ONLY by the HP-type CE loss; never enters the forward."""
+        b1 = getattr(self, "battle1", None)
+        b2 = getattr(self, "battle2", None)
+        if b1 is None or b2 is None:
+            lab, msk = zero_hp_type_labels()
+            return {"hp_type_label": lab, "hp_type_mask": msk}
+        # Per-opp-slot species_known straight from the obs the model reads (same source as _spread_labels).
+        species_known = [
+            float(obs_vec[OFFSET_OPP_TEAM + i * POKEMON_FULL_DIM + POKEMON_SPECIES_KNOWN_OFFSET])
+            for i in range(TEAM_SIZE)
+        ]
+        revealed = [m for m in ObservationEncoder.get_team_list(b1, is_opponent=True) if m is not None]
+        revealed_species = [m.species for m in revealed]
+        # TRUE HP type per opp species, from agent2's OWN team's typed move id (e.g. 'hiddenpowerice' → ICE).
+        # poke-env keeps the type suffix on an own mon's Move._id, so the type is recoverable here. A species
+        # with no Hidden Power is simply absent → that slot stays mask 0.
+        species_to_hp_type = {}
+        for m in b2.team.values():
+            for mv in m.moves.values():
+                t = hp_type_idx_from_move_id(mv.id)
+                if t is not None:
+                    species_to_hp_type[to_id_str(m.species)] = t
+                    break
+        lab, msk = build_hp_type_labels(revealed_species, species_to_hp_type, species_known, to_id_str)
+        return {"hp_type_label": lab, "hp_type_mask": msk}
+
     def _build_belief_target_slots(self, b2, full, team_species, revealed_species, species_known):
         """Fresh per-mon obs encode [TEAM_SIZE, POKEMON_FULL_DIM] of each hidden mon at its believed
         slot — the SAME canonical assignment as belief_species (both via `assign_hidden_to_slots`), so
@@ -369,6 +418,8 @@ class Gen3Env(SinglesEnv):
             agent_obs.update(self._belief_labels(agent_obs["observation"]))
         if self._emit_spread_labels:
             agent_obs.update(self._spread_labels(agent_obs["observation"]))
+        if self._emit_hp_type_labels:
+            agent_obs.update(self._hp_type_labels(agent_obs["observation"]))
         if self._emit_win_target:
             agent_obs["win_target"] = np.zeros(1, dtype=np.float32)
             agent_obs["win_mask"] = np.zeros(1, dtype=np.float32)
@@ -385,7 +436,8 @@ class Gen3Env(SinglesEnv):
                 self._tracker.advance(trainee_idx)
                 self.reward_manager.record_action(self._tracker.last_ctx, trainee_idx)
             out = super().step(action)
-            if self._emit_belief_labels or self._emit_win_target or self._emit_spread_labels:
+            if (self._emit_belief_labels or self._emit_win_target or self._emit_spread_labels
+                    or self._emit_hp_type_labels):
                 agent_obs = out[0].get(self.agent1.username)
                 if agent_obs is not None:
                     self._merge_training_keys(agent_obs)
@@ -406,7 +458,8 @@ class Gen3Env(SinglesEnv):
             self.reward_manager.reset()
             self._stall_logger.reset()
             out = super().reset(*args, **kwargs)
-            if self._emit_belief_labels or self._emit_win_target or self._emit_spread_labels:
+            if (self._emit_belief_labels or self._emit_win_target or self._emit_spread_labels
+                    or self._emit_hp_type_labels):
                 obs, info = out
                 agent_obs = obs.get(self.agent1.username)
                 if agent_obs is not None:

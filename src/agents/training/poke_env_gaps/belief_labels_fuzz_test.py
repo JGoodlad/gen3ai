@@ -44,7 +44,9 @@ from agents.observation.state_encoder import load_mappings
 from agents.observation.constants import (
     OFFSET_OPP_TEAM, POKEMON_FULL_DIM, POKEMON_SPECIES_KNOWN_OFFSET, TEAM_SIZE,
 )
-from agents.observation.belief_labels import BELIEF_MOVE_SLOTS, N_SPREAD_STATS, SPREAD_STAT_ORDER
+from agents.observation.belief_labels import (
+    BELIEF_MOVE_SLOTS, N_SPREAD_STATS, SPREAD_STAT_ORDER, N_HP_TYPES_LABEL, hp_type_idx_from_move_id,
+)
 from agents.observation.moves import HIDDEN_POWER_MOVE_NUM
 from utils.bridge.bridge_session import attach_bridge_transport
 from utils.teambuilder import Gen3Teambuilder
@@ -58,6 +60,7 @@ def _build(teams, emit):
         load_mappings(), battle_format="gen3ou", team=Gen3Teambuilder(teams),
         account_configuration1=AccountConfiguration("BeliefFz", None),
         start_listening=False, emit_belief_labels=emit, emit_spread_labels=emit,
+        emit_hp_type_labels=emit,
     )
     attach_bridge_transport(env, battle_format="gen3ou", persistent=True, recycle_every=0)
     opp = RandomPlayer(
@@ -79,6 +82,7 @@ class Stats:
         self.decisions = 0
         self.fired = 0  # decisions with >=1 believed labeled slot
         self.spread_fired = 0  # revealed slots whose true derived-stat spread label was validated
+        self.hp_fired = 0  # revealed HP-mon slots whose true HP-type label was validated
 
 
 def _check(obs, env, sp_num, mv_num, enc_dim, stats):
@@ -144,6 +148,38 @@ def _check(obs, env, sp_num, mv_num, enc_dim, stats):
         if i not in revealed_slots:
             assert bspm[i] == 0.0 and np.allclose(bsp[i], 0.0), f"non-revealed slot {i} leaked a spread label"
 
+    # (7) HP-TYPE belief (gen3_opp_hp_type_belief_v1): each REVEALED slot whose agent2 species runs Hidden
+    # Power carries the TRUE HP type index (0..15) + mask 1; revealed-no-HP / believed / pad → mask 0. Gen 3
+    # never reveals the opp HP type, so this is a privileged label — and (leak) it is a SEPARATE Dict key,
+    # never inside obs["observation"] (the vec-width check above already pins that).
+    hpl = obs.get("hp_type_label")
+    hpm = obs.get("hp_type_mask")
+    assert hpl is not None and hpm is not None, "hp_type keys missing from stepped obs"
+    assert hpl.shape == (TEAM_SIZE,) and hpm.shape == (TEAM_SIZE,), (hpl.shape, hpm.shape)
+    # agent2's TRUE per-species HP type (the same source the env uses): first hiddenpower* move's suffix.
+    species_hp = {}
+    for sp, m in full.items():
+        for mv in m.moves.values():
+            t = hp_type_idx_from_move_id(to_id_str(mv.id))
+            if t is not None:
+                species_hp[sp] = t
+                break
+    for slot, m in zip(revealed_slots, revealed_mons):
+        true_t = species_hp.get(to_id_str(m.species))
+        if true_t is not None:
+            assert hpm[slot] == 1.0, f"revealed HP mon slot {slot} ({m.species}) should be supervised"
+            assert int(hpl[slot]) == true_t, f"HP-type label {int(hpl[slot])} != true {true_t} for {m.species}"
+            assert 0 <= int(hpl[slot]) < N_HP_TYPES_LABEL
+            stats.hp_fired += 1
+        else:
+            # a revealed mon with NO Hidden Power must not be scored (mask 0, PAD label).
+            assert hpm[slot] == 0.0 and int(hpl[slot]) == -1, \
+                f"revealed non-HP slot {slot} ({m.species}) leaked an HP-type label"
+    # believed / empty slots: never supervised.
+    for i in range(TEAM_SIZE):
+        if i not in revealed_slots:
+            assert hpm[i] == 0.0 and int(hpl[i]) == -1, f"non-revealed slot {i} leaked an HP-type label"
+
 
 def main(n_battles=40):
     mappings = load_mappings()
@@ -169,6 +205,7 @@ def main(n_battles=40):
     )
     assert "belief_species" not in off_env.observation_space.spaces, "OFF env must not declare belief keys"
     assert "belief_spread" not in off_env.observation_space.spaces, "OFF env must not declare spread keys"
+    assert "hp_type_label" not in off_env.observation_space.spaces, "OFF env must not declare HP-type keys"
 
     for ep in range(n_battles):
         obs, _ = w.reset()
@@ -197,8 +234,14 @@ def main(n_battles=40):
     assert stats.spread_fired > 0.5 * stats.decisions, (
         f"spread labels validated on only {stats.spread_fired} revealed slots over {stats.decisions} "
         "decisions — the belief_spread plumbing (mon.stats / species match) likely broke.")
+    # (7) HP-TYPE labels validate on revealed HP-mon slots — gen3ou's sample pool is HP-rich, so a
+    # clearly-above-zero floor catches a silent all-mask-0 regression (the move-id suffix / species match).
+    assert stats.hp_fired > 0, (
+        f"HP-type labels validated on {stats.hp_fired} revealed HP-mon slots over {stats.decisions} "
+        "decisions — the hp_type_label plumbing (typed move id / species match) likely broke.")
     print(f"✅ belief-labels fuzz PASSED: {stats.decisions} decisions across {n_battles} battles, "
-          f"fired {fire_rate:.0%}, spread-validated {stats.spread_fired} revealed slots, all invariants held.")
+          f"fired {fire_rate:.0%}, spread-validated {stats.spread_fired} revealed slots, "
+          f"HP-type-validated {stats.hp_fired} revealed HP-mon slots, all invariants held.")
 
 
 if __name__ == "__main__":

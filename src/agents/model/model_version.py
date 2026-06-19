@@ -300,7 +300,7 @@ from typing import Any, Dict, List
 #   STRUCTURAL (saved weights); OFF byte-for-byte (NO ARCH_SIGNATURE bump). Requires damage_op +
 #   damage_refine_rounds>0. Completes the FULL --unified-obs deprecation (the A/B is the arbiter). Design:
 #   designs/ai_v6/design_bidirectional_threat_trunk.md.
-MODEL_CONFIG_VERSION = 37
+MODEL_CONFIG_VERSION = 38
 
 # Change this when the neural architecture changes structurally in a way that makes
 # weights from a different signature incompatible (e.g. adding LSTM, replacing attention).
@@ -627,7 +627,15 @@ MODEL_CONFIG_VERSION = 37
 #     scattered to 355-370). This known/unknown boundary is the load-bearing invariant (fuzzed by
 #     move_id_decode_fuzz_test + hidden_power_typed_obs_fuzz_test). Design:
 #     designs/ai_v6/design_typed_hidden_power_ids.md.
-ARCH_SIGNATURE = "gen3_typed_hidden_power_ids_v1"
+#   gen3_opp_hp_typed_candidates_v1: the DamageOperator now treats the OPPONENT's Hidden Power as 16
+#     ORDINARY typed-move candidates at the distinct dex nums 355-370 (real BP/type from the typed-HP data
+#     above) instead of a synthetic appended-16 block; the bare typeless 237 (BP 0) is the masked presence
+#     token, and the per-type HP belief (mode off=obs / prior / learned) is scattered onto 355-370. A
+#     FORWARD-MATH change to the op (the obs is unchanged + the op out_dim/projection widths are unchanged,
+#     so it's not caught by shape checks) → bump ARCH_SIGNATURE so a pre-unification damage_op checkpoint
+#     fails loud rather than silently computing the old HP candidates. The HP-type belief + the (v2) token
+#     reinjection ride the existing `hp_type_belief_mode` (config v38).
+ARCH_SIGNATURE = "gen3_opp_hp_typed_candidates_v1"
 
 
 class ModelVersionError(Exception):
@@ -897,6 +905,19 @@ class ModelVersion:
     # immunity is a computed MECHANICS fact (like type effectiveness) — handed over, not learned. OFF
     # byte-identical (gated bool like threat_refine_outgoing). Requires damage_op + damage_refine_rounds>0.
     threat_status_refine: bool = False
+    # v38 STRUCTURAL + resume-IMMUTABLE tri-state (gen3_opp_hp_type_belief_v1, like win_prob_mode): the
+    # opponent HIDDEN-POWER-TYPE belief + the typed-HP candidate fix. 'off' = legacy (the bare typeless
+    # HP num-237 candidate out-ranked the 16 typed rows → the opp's Hidden Power read 0-damage/"immune").
+    # 'prior' = the op masks the bare-237 + floors the typed-HP belief on the Smogon HP-type prior (a
+    # FORWARD-behavior change, NO new params). 'learned' = ALSO build the HPTypeBelief head (prior ⊕ learned
+    # delta — a state_dict change), whose posterior the op consumes + the aux CE supervises. Gated in
+    # check_compatible with a STRING compare (off↔prior is a forward change; prior↔learned a state_dict
+    # change; both FATAL on a resume mismatch). OFF reproduces baseline byte-for-byte (NO ARCH_SIGNATURE
+    # bump; the op out_dim is unchanged either way). Requires damage_op.
+    hp_type_belief_mode: str = "off"
+    # v38 TRAINING-ONLY coefficient (like move_belief_coef, NOT version-locked): the HP-type CE aux weight.
+    # Recorded for provenance + flagless-resume read-back; only meaningful under mode 'learned'.
+    hp_type_belief_coef: float = 0.0
 
     @classmethod
     def from_layout_and_policy_kwargs(
@@ -913,6 +934,7 @@ class ModelVersion:
         move_belief_latent_coef: float = 0.0,
         spread_belief_coef: float = 0.0,
         value_dist_coef: float = 1.0,
+        hp_type_belief_coef: float = 0.0,
     ) -> ModelVersion:
         from agents.model.features_extractor import (
             ROLE_TOKEN_SIZE,
@@ -1049,6 +1071,10 @@ class ModelVersion:
             threat_status_refine=bool(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("threat_status_refine", False)
             ),
+            hp_type_belief_mode=str(
+                policy_kwargs.get("features_extractor_kwargs", {}).get("hp_type_belief_mode", "off")
+            ),
+            hp_type_belief_coef=float(hp_type_belief_coef),
             value_tail_weight=float(value_tail_weight),
             opp_belief_aux_coef=float(opp_belief_aux_coef),
             move_belief_coef=float(move_belief_coef),
@@ -1410,6 +1436,19 @@ class ModelVersion:
                 "incompatible with a saved checkpoint. Resume with the matching --threat-status-refine, or "
                 "start a fresh run."
             )
+        # gen3_opp_hp_type_belief_v1 (v38, like win_prob_mode): off↔prior is a FORWARD change (the op masks
+        # the bare-237 + reads the prior floor instead of obs hp_probs); prior↔learned is a STATE_DICT change
+        # (the HPTypeBelief head's params). A STRING compare gates all three transitions. The training-only
+        # hp_type_belief_coef is NOT checked.
+        if self.hp_type_belief_mode != saved.hp_type_belief_mode:
+            raise ModelVersionError(
+                f"hp_type_belief_mode mismatch: saved={saved.hp_type_belief_mode!r}, "
+                f"current={self.hp_type_belief_mode!r}.\n"
+                "The opp-HP-type belief is fixed for a run's lifetime: off↔prior changes the op's typed-HP "
+                "candidate build (a forward change), and prior↔learned adds/removes the HPTypeBelief head "
+                "(a state_dict change).\n"
+                "Resume with the matching --hp-type-belief setting, or start a fresh training run."
+            )
 
     def check_opponent_compatible(self, foreign: "ModelVersion") -> None:
         """Gate for loading a frozen model from ANOTHER run as an inference-only OPPONENT
@@ -1768,4 +1807,11 @@ def _migrate_config(data: dict) -> dict:
         # byte-for-byte (no status_in_proj/status_out_proj, refine loop unchanged).
         data.setdefault("threat_status_refine", False)
         data["config_version"] = 37
+    if version < 38:
+        # v38: gen3_opp_hp_type_belief_v1 — the opp HIDDEN-POWER-TYPE belief + the typed-HP candidate fix.
+        # The tri-state mode (off = legacy: bare-237 unmasked → opp HP reads "immune") + its training-only
+        # CE coef. OFF reproduces the v37 forward byte-for-byte (NO ARCH_SIGNATURE bump).
+        data.setdefault("hp_type_belief_mode", "off")
+        data.setdefault("hp_type_belief_coef", 0.0)
+        data["config_version"] = 38
     return data

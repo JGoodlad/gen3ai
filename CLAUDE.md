@@ -686,22 +686,23 @@ The architecture-constant single source of truth is the module-level constants
 (`ROLE_TOKEN_SIZE`, `PROJECTION_DIM`, `MOVE_NET_HIDDEN`, `ROLE_ENCODER_HIDDEN`,
 `ACTIVE_CTX_HIDDEN`) at the top of `features_extractor.py`; `ARCH_SIGNATURE` /
 `MODEL_CONFIG_VERSION` live in `model_version.py` (current `ARCH_SIGNATURE`:
-`gen3_typed_hidden_power_ids_v1` — gives each TYPED Hidden Power its OWN distinct move num so OUR
-side's HP is represented by the move embedding itself, not a soft-type-blend workaround (a VALUES-only
-obs change, same dim 3469, no weight-shape change — the typed nums 355-370 are previously-unused rows
-in the move embedding, `max_moves`=400). **KNOWN→DISTINCT, UNKNOWN→TYPELESS+BELIEF:** `data/pokemon/
-gen3_moves.json` keeps bare `hiddenpower`=237 and gives the 16 typed variants distinct nums 355-370
-(deterministic, in `tools/pokemon_data_extractor/sync.py::_HP_TYPE_NUMS`); OUR-side obs + the damage-op
-per-num tables (BP/type/attr/latent) now carry the distinct num & real type (so the extractor's
-`is_hp_slot == 237` no longer matches our HP → it skips the hp_probs blend, and our OUTGOING HP is
-priced correctly), and the turn-history `our_move` folds the distinct num (via
-`LegalActions.own_hp_typed_id`); the OPPONENT's HP (type never revealed) stays bare 237 with ALL its
-belief machinery on 237 — the HP tracker, the hp_probs soft-type blend, the op's 237→16-typed-candidate
-expansion, AND the move-belief PRIOR + LABELS (`damage_tables._belief_num` / `gen3_env._move_num` fold
-every typed-HP usage/label back to 237, so the opp-HP belief mass isn't scattered to 355-370 — the
-load-bearing boundary, fuzzed by `move_id_decode_fuzz_test`). Design:
-`designs/ai_v6/design_typed_hidden_power_ids.md`. It supersedes `gen3_own_hp_typed_history_v1` (the
-hp_probs one-hot workaround is reverted; own-HP hp_probs stays all-zero) and stacks on
+`gen3_opp_hp_typed_candidates_v1` — Hidden Power is now **16 ordinary typed moves end-to-end, BOTH sides**.
+It builds on `gen3_typed_hidden_power_ids_v1` (the prior signature, which gave each TYPED HP its OWN distinct
+move num 355-370 with real BP/type in `gen3_moves.json` + the buffers — bare `hiddenpower`=237; a VALUES-only
+obs change, the typed nums are previously-unused rows in the `max_moves`=400 embedding) and extends it to the
+**OPPONENT side in the DamageOperator**: the op now treats the opp's HP as the 16 real typed candidates
+355-370 (the synthetic appended-16 expansion — the old workaround for the 237 collision — is REMOVED, `C =
+n_moves`), masking the bare 237 (BP 0) as the typeless presence token and scattering the per-type HP belief
+(mode off=obs / prior / learned — see the model leaf's v38 note) onto 355-370. A forward-math change to the op
+(out_dim/projection widths UNCHANGED → not shape-caught) → the `ARCH_SIGNATURE` bump forces a clean reload. The
+obs still keeps the OPPONENT's revealed HP typeless 237 (`damage_tables._belief_num` / `gen3_env._move_num` fold
+the opp move-belief PRESENCE label to 237 — Gen 3 never reveals the opp HP type → no leak; the TYPE is the
+model's belief, supervised by a privileged training-only label); OUR-side HP carries its distinct num + real
+type in the obs/history (`gen3_typed_hidden_power_ids_v1`). A data-derived `HP_TYPED_NUMS` + a throwing GIGO
+guard pin the 355-370 ↔ `HP_TYPE_ORDER` alignment. The prober decodes the op's typed-HP candidates via the
+NORMAL move-name path (`hiddenpower(ice)`) — no HP-special collapse. Design:
+`designs/ai_v6/design_typed_hidden_power_ids.md` + the model leaf's v38 note. It supersedes
+`gen3_own_hp_typed_history_v1` (the hp_probs one-hot workaround is reverted) and stacks on
 `gen3_op_move_align_v1` (the request-ordered active-req-moves block — `REACTIVE_DIM` 402 → 414, obs dim
 3457 → 3469) and the prior `gen3_rest_loop_stall_v1` rest-loop clock re-meaning, back through
 `gen3_wish_wired_v1` — which WIRES two reactive scalars (`vec[17]` our side, `vec[18]` opp side) with the
@@ -723,7 +724,7 @@ and `gen3_sleep_wake_belief_v1` — a 3-dim per-mon SLEEP WAKE belief block [`sl
 Early Bird halves; opp Early-Bird prior marginalised; Rest source from the event log's `[from]` clause;
 fuzz-calibrated vs the real sim RNG), `sleep_counter_reliable`], `POKEMON_VECTOR_DIM` 106 → 109
 (3419 → 3455). All four are retrain-class; current
-`MODEL_CONFIG_VERSION`: **37** (the v33–v37 additions are the bolded entries below) — v16 added the in-place
+`MODEL_CONFIG_VERSION`: **38** (the v33–v38 additions are the bolded entries below) — v16 added the in-place
 hidden-opponent belief-aux toggle `opp_belief_slots` + its coef `opp_belief_aux_coef`, v17 the
 move-belief reinjection toggle `move_belief_mode` + `move_belief_coef`, v18 the latent-belief toggle
 `opp_belief_latent` + `opp_belief_latent_coef`, v19 the differentiable damage-operator toggle
@@ -893,6 +894,36 @@ honest residuals = opp-recovery heads-only + Rest-cure coarsening). Current
 (and `design_per_move_damage_matrices.md` for v34/v35, `design_iterative_damage_refinement.md` for v33,
 `design_topk_incoming_moves.md` for v30, `design_distributional_value_critic.md` for v29,
 `design_unified_move_system.md` for v24, `design_unified_damage_system.md` for v23).
+**v38 UNIFIED typed-HP candidates + the opponent HIDDEN-POWER-TYPE belief** (`ARCH_SIGNATURE`
+`gen3_opp_hp_typed_candidates_v1`; `hp_type_belief_mode` / `--hp-type-belief {off,prior,learned}`) — fixes the
+DamageOperator rendering the opponent's Hidden Power as 0-damage/**"immune"** (a prober-surfaced GIGO) by
+making HP **16 ordinary typed moves end-to-end**, eliminating the HP special-casing that bred the prober
+ambiguity. Builds on main's `gen3_typed_hidden_power_ids_v1` (typed move-nums **355-370** with real BP 70 +
+type; bare 237 = BP 0): the op now treats the opp's HP as those **real typed candidates** — the candidate axis
+is `C = n_moves` (the synthetic appended-16 expansion, the old 237-collision workaround, is REMOVED), the bare
+237 (BP 0) is the masked **presence token**, and the per-type HP belief is scattered onto 355-370. A shared
+`DamageOperator._opp_candidate_weights` (the single source for all 3 candidate sites) masks 237 + the raw
+355-370 (`HP_CAND_MASK`) and `index_add`s `P(HP present)·P(HP type)` onto `HP_TYPED_NUMS`. Type source —
+**`off`**: the obs `hp_probs` (effectiveness-narrowed, the A/B baseline); **`prior`**: the Smogon
+`SPECIES_HP_PRIOR` floor (`build_hp_type_prior`); **`learned`**: the `HPTypeBelief` head's posterior
+`softmax(head_delta + log prior[species])` (zero-init → cold-start == prior), which the op consumes (its damage
+gradient sharpens it) AND which **reinjects** the presence-gated expected typed-HP embedding into the opp token
+(attention reasons over the believed type), supervised by a training-only CE
+(`instrumented_ppo._hp_type_belief_loss`, `--hp-type-belief-coef`, metrics `belief/hptype_*`) against the
+privileged true HP type from agent2's typed move-id (`Gen3Env._hp_type_labels`; the obs keeps the opp HP
+typeless 237 → no leak). All on/off the belief NARROWS by the obs `hp_probs` (its effectiveness hard-zeros are
+CERTAIN; an off-meta-survivor fallback spreads uniform so it never re-immunes). Multiple un-ruled-out types
+stay live (a distribution, not argmax) → the top-K surfaces **hp-ice + hp-grass distinctly at their real nums
+(365/363)** with real per-mon damage — the "force the model to guess which HP, simulate each" read. A
+data-derived `HP_TYPED_NUMS` + a throwing GIGO guard pin the 355-370 ↔ `HP_TYPE_ORDER` alignment
+(`MOVE_TYPE_IDX[355+j]==HP_TYPE_IDX[j]`, `MOVE_BP[237]==0`). The prober decodes the op's typed-HP candidates via
+the NORMAL move-name path (`hiddenpower(ice)`) — no HP-special index→type collapse (the old ambiguity is gone).
+The op's forward-math changed (out_dim + projection widths UNCHANGED — C is internal — so NOT shape-caught) →
+the `ARCH_SIGNATURE` **bump** forces a clean reload of any pre-unification `damage_op` checkpoint;
+`hp_type_belief_mode` is STRING-gated in `check_compatible`, the obs VECTOR dim is unchanged (the label is a
+separate Dict key), `hp_type_belief_coef` is training-only. Requires `--damage-op`; threaded through
+`current_model_version` / `arch_toggles_from_model` / `_run_arch_toggles` + both `extractor_kwargs` sites.
+Current `MODEL_CONFIG_VERSION` = **38**, `ARCH_SIGNATURE` = **`gen3_opp_hp_typed_candidates_v1`**.
 **The full versioning playbook — what to do when you change a dim vs add an optional feature vs
 make a structural change — is in `src/agents/model/CLAUDE.md`.**
 

@@ -200,6 +200,7 @@ def _run_arch_toggles(args) -> dict:
         threat_unrevealed_outgoing=args.threat_unrevealed_outgoing,
         threat_prob_outspeed=args.threat_prob_outspeed,
         threat_status_refine=args.threat_status_refine,
+        hp_type_belief_mode=args.hp_type_belief_mode,
     )
 
 
@@ -215,6 +216,7 @@ def _model_hparams(model) -> dict:
         "move_belief_coef": float(getattr(model, "move_belief_coef", 0.0)),
         "move_belief_latent_coef": float(getattr(model, "move_belief_latent_coef", 0.0)),
         "spread_belief_coef": float(getattr(model, "spread_belief_coef", 0.0)),
+        "hp_type_belief_coef": float(getattr(model, "hp_type_belief_coef", 0.0)),
         "opp_belief_latent_coef": float(getattr(model, "opp_belief_latent_coef", 0.0)),
         "win_prob_coef": float(getattr(model, "win_prob_coef", 1.0)),
         "value_dist_coef": float(getattr(model, "value_dist_coef", 1.0)),
@@ -1011,6 +1013,27 @@ async def main():
                              "the head gets only the indirect op-damage gradient). REQUIRES --spread-belief. "
                              "TRAINING-only (not version-locked); metrics ride belief/spread_* "
                              "(mae, largest_bias→0, n_slots).")
+    parser.add_argument("--hp-type-belief", "--hp_type_belief", dest="hp_type_belief_mode",
+                        choices=["off", "prior", "learned"], default=None,
+                        help="Opponent HIDDEN-POWER-TYPE belief + the typed-HP candidate FIX "
+                             "(gen3_opp_hp_type_belief_v1) — fixes the DamageOperator showing the opp's "
+                             "Hidden Power as 0-damage/'immune' (the bare typeless num-237 candidate out-ranked "
+                             "the 16 typed rows + the obs hp_probs is empty until HP fires). 'off' = legacy "
+                             "(the bug). 'prior' = mask the bare-237 + floor the typed-HP belief on the Smogon "
+                             "HP-type prior (forward-behavior change, NO new params). 'learned' = ALSO add the "
+                             "HPTypeBelief head (prior ⊕ learned delta), whose posterior the op consumes + the "
+                             "aux CE supervises — the 'force the model to guess which Hidden Power it is' head, "
+                             "so the top-K surfaces the 2-3 most-likely typed HPs with real damage. STRUCTURAL "
+                             "(version-checked, fresh-only); REQUIRES --damage-op. Off by default.")
+    parser.add_argument("--hp-type-belief-coef", "--hp_type_belief_coef", dest="hp_type_belief_coef",
+                        type=float, default=None,
+                        help="HP-type-belief SUPERVISION weight (gen3_opp_hp_type_belief_v1): coef * "
+                             "cross_entropy(HPTypeBelief posterior, TRUE opp HP type) over the REVEALED opp "
+                             "slots that run Hidden Power (privileged training-only label from agent2's team — "
+                             "Gen 3 never reveals the opp HP type). 0.0 = OFF (the head gets only the indirect "
+                             "op-damage gradient + sits at the Smogon prior). Only meaningful with "
+                             "--hp-type-belief learned. TRAINING-only (not version-locked); metrics ride "
+                             "belief/hptype_* (acc, n_slots). Suggested 0.05.")
     parser.add_argument("--unified-obs", "--unified_obs", dest="unified_obs",
                         action=BoolFlag, default=False,
                         help="DISABLE the redundant CPU obs blocks the unified GPU path now subsumes (ONE "
@@ -1278,6 +1301,8 @@ async def main():
     _resolve("threat_unrevealed_outgoing", False)  # v36 forward-behavior (expected-latent; version-checked, fresh-only)
     _resolve("threat_prob_outspeed", False)      # v36 forward-behavior (prob outspeed; version-checked, fresh-only)
     _resolve("threat_status_refine", False)      # v37 structural (status→trunk; version-checked, fresh-only)
+    _resolve("hp_type_belief_mode", "off")     # v38 structural + resume-immutable (version-checked, fresh-only)
+    _resolve("hp_type_belief_coef", 0.0)       # training-only (inherited like spread_belief_coef)
     # PopArt INHERITED on a flagless resume → adopt its required `--clip-range-vf none` (the saved
     # popart run necessarily used it), so the explicit-config check below doesn't block the resume.
     if args.use_popart and not _popart_explicit and _saved_ver is not None and args.clip_range_vf is not None:
@@ -1508,6 +1533,19 @@ async def main():
             "--spread-belief-coef requires --spread-belief (it supervises the believed opp spread). "
             "Enable --spread-belief, or set --spread-belief-coef 0."
         )
+    if args.hp_type_belief_mode != "off" and not args.damage_op:
+        # The typed-HP candidates the fix masks/floors live in the DamageOperator (also enforced at the
+        # extractor build — this is the friendlier CLI message).
+        parser.error(
+            "--hp-type-belief != off requires --damage-op (the typed-HP candidates it fixes are the "
+            "DamageOperator's). Add --damage-op (--unified-damage), or set --hp-type-belief off."
+        )
+    if args.hp_type_belief_coef and args.hp_type_belief_mode != "learned":
+        # The CE supervises the HPTypeBelief head's posterior (last_hp_type_logits) → the head must exist.
+        parser.error(
+            "--hp-type-belief-coef requires --hp-type-belief learned (it supervises the learned HP-type "
+            "head). Set --hp-type-belief learned, or set --hp-type-belief-coef 0."
+        )
     if args.mask_active_move_scalars_obs and not args.damage_outgoing:
         # Zeroing the active-move power/multiplier scalars only makes sense once the op's OUTGOING block
         # replaces them; without it the model loses the per-move signal with no substitute.
@@ -1734,6 +1772,9 @@ async def main():
                     # true-spread label only when the loss will consume it (coef>0; the CLI guards that
                     # --spread-belief-coef requires --spread-belief, so the head is present to supervise).
                     emit_spread_labels=(args.spread_belief and args.spread_belief_coef > 0.0),
+                    # HP-TYPE-belief supervision (gen3_opp_hp_type_belief_v1): emit the privileged true-HP-
+                    # type label only under the learned head + a non-zero CE coef (the CLI guards both).
+                    emit_hp_type_labels=(args.hp_type_belief_mode == "learned" and args.hp_type_belief_coef > 0.0),
                 )
                 if args.use_showdown_bridge:
                     # Swap the two _EnvPlayer agents' websocket transport for a local
@@ -2239,6 +2280,7 @@ async def main():
         _load_extractor_kwargs["threat_unrevealed_outgoing"] = args.threat_unrevealed_outgoing  # v36
         _load_extractor_kwargs["threat_prob_outspeed"] = args.threat_prob_outspeed          # v36 (version-checked)
         _load_extractor_kwargs["threat_status_refine"] = args.threat_status_refine          # v37 (version-checked)
+        _load_extractor_kwargs["hp_type_belief_mode"] = args.hp_type_belief_mode            # v38 (version-checked)
         _load_policy_kwargs = {
             "features_extractor_class": Gen3FeaturesExtractor,
             "features_extractor_kwargs": _load_extractor_kwargs,
@@ -2255,6 +2297,7 @@ async def main():
             move_belief_latent_coef=args.move_belief_latent_coef,
             spread_belief_coef=args.spread_belief_coef,
             value_dist_coef=args.value_dist_coef,
+            hp_type_belief_coef=args.hp_type_belief_coef,
         )
 
         print(f"Loading existing model from {model_path}")
@@ -2283,6 +2326,7 @@ async def main():
         model.move_belief_coef = args.move_belief_coef  # move-belief loss weight (training-only; resume-mutable)
         model.move_belief_latent_coef = args.move_belief_latent_coef  # move-latent grading weight (training-only)
         model.spread_belief_coef = args.spread_belief_coef  # spread-belief speed-supervision weight (training-only)
+        model.hp_type_belief_coef = args.hp_type_belief_coef  # HP-type CE weight (training-only; mode none = off)
         model.opp_belief_latent_coef = args.opp_belief_latent_coef  # latent-belief loss weight (training-only)
         model.win_prob_coef = args.win_prob_coef  # win-prob loss weight (training-only; resume-mutable)
         model.value_dist_coef = args.value_dist_coef  # value-dist HL-Gauss loss weight (training-only; resume-mutable)
@@ -2497,6 +2541,7 @@ async def main():
         extractor_kwargs["threat_unrevealed_outgoing"] = args.threat_unrevealed_outgoing
         extractor_kwargs["threat_prob_outspeed"] = args.threat_prob_outspeed
         extractor_kwargs["threat_status_refine"] = args.threat_status_refine
+        extractor_kwargs["hp_type_belief_mode"] = args.hp_type_belief_mode
 
         policy_kwargs = {
             "features_extractor_class": Gen3FeaturesExtractor,
@@ -2539,6 +2584,7 @@ async def main():
         model.move_belief_coef = args.move_belief_coef  # move-belief reinjection loss (0.0 = off)
         model.move_belief_latent_coef = args.move_belief_latent_coef  # move-latent grading loss (0.0 = off)
         model.spread_belief_coef = args.spread_belief_coef  # spread-belief speed-supervision loss (0.0 = off)
+        model.hp_type_belief_coef = args.hp_type_belief_coef  # HP-type CE loss (0.0 = off; mode none = off)
         model.opp_belief_latent_coef = args.opp_belief_latent_coef  # latent-belief loss (0.0 = off)
         model.win_prob_coef = args.win_prob_coef  # win-prob head BCE loss (mode none = off)
         model.value_dist_coef = args.value_dist_coef  # value-dist HL-Gauss loss (mode none = off)
@@ -2552,6 +2598,7 @@ async def main():
             move_belief_latent_coef=args.move_belief_latent_coef,
             spread_belief_coef=args.spread_belief_coef,
             value_dist_coef=args.value_dist_coef,
+            hp_type_belief_coef=args.hp_type_belief_coef,
         )
         # PBRS_GAMMA must equal the PPO gamma for both potentials to be policy-invariant (design §7.1).
         # The reward manager is built before the model (in the env factory), so assert here where both

@@ -484,30 +484,26 @@ class ProbeModel:
         return view
 
     def _topk_move_names(self, op, cand_indices):
-        """Resolve the DamageOperator's top-K CANDIDATE indices → move-id strings. A candidate < n_moves is
-        a national-move-num (→ its id; Hidden Power's shared num 237 → bare ``hiddenpower``); a candidate
-        ≥ n_moves is a TYPED Hidden Power (slot j = idx − n_moves → ``hiddenpower(type)`` via HP_TYPE_IDX)."""
+        """Resolve the DamageOperator's top-K CANDIDATE indices → move-id strings. gen3_opp_hp_typed_candidates_v1:
+        the candidate axis is C = n_moves, and the opponent's Hidden Power is the 16 ORDINARY TYPED move-nums
+        355-370 — so each decodes via the normal num→id path with its TYPE preserved (``hiddenpower(ice)``); the
+        bare typeless 237 (the masked presence token, never selected) maps to bare ``hiddenpower``. No HP-special
+        index→type collapse (the source of the old prober HP ambiguity)."""
         from agents import gen3_data
-        from agents.observation.types import TypeEncoder
-        n_moves = int(op.MOVE_BP.shape[0])
         if getattr(self, "_topk_num_to_id", None) is None:
-            raw = gen3_data.moves.raw()
-            m = {int(v["num"]): mid for mid, v in raw.items() if v.get("num")}
-            for mid, v in raw.items():            # collapse every Hidden Power num → the bare id
-                if mid.startswith("hiddenpower") and v.get("num"):
-                    m[int(v["num"])] = "hiddenpower"
+            m = {}
+            for mid, v in gen3_data.moves.raw().items():
+                if not v.get("num"):
+                    continue
+                num = int(v["num"])
+                if mid == "hiddenpower":
+                    m.setdefault(num, "hiddenpower")                        # the bare typeless presence token
+                elif mid.startswith("hiddenpower"):
+                    m[num] = f"hiddenpower({mid[len('hiddenpower'):]})"     # typed 355-370 → typed display
+                else:
+                    m[num] = mid
             self._topk_num_to_id = m
-        i2t = {i: t.lower() for t, i in TypeEncoder.TYPE_TO_IDX.items()}
-        hp_types = [int(x) for x in op.HP_TYPE_IDX.detach().cpu().tolist()]
-        out = []
-        for c in cand_indices:
-            if c < n_moves:
-                out.append(self._topk_num_to_id.get(c, f"#{c}"))
-            else:
-                j = c - n_moves
-                t = i2t.get(hp_types[j], "?") if 0 <= j < len(hp_types) else "?"
-                out.append(f"hiddenpower({t})")
-        return out
+        return [self._topk_num_to_id.get(int(c), f"#{int(c)}") for c in cand_indices]
 
     def move_belief(self, obs: np.ndarray, mask: np.ndarray):
         """The model's MOVE belief for THIS obs — per opp slot the multi-label move-prediction posterior

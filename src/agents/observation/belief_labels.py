@@ -230,6 +230,63 @@ def zero_spread_labels() -> Tuple[np.ndarray, np.ndarray]:
             np.zeros(TEAM_SIZE, dtype=np.float32))
 
 
+# HP-TYPE belief (gen3_opp_hp_type_belief_v1) label support. The 16 Hidden Power types in the SAME
+# alphabetical order as `hidden_power_tracker.HIDDEN_POWER_TYPE_ORDER` (== the op's `HP_TYPE_IDX` row order
+# and the obs `hp_probs` block). Defined LOCALLY (belief_labels stays dependency-light — it's on the obs
+# hot-path module but called only off it) and PINNED by a test against the tracker's enum order, so this
+# index contract can never silently diverge from what the op consumes — the GIGO/order-mismatch class.
+HP_TYPE_NAMES = (
+    "bug", "dark", "dragon", "electric", "fighting", "fire", "flying", "ghost",
+    "grass", "ground", "ice", "poison", "psychic", "rock", "steel", "water",
+)
+N_HP_TYPES_LABEL = len(HP_TYPE_NAMES)
+_HP_TYPE_NAME_TO_IDX = {name: i for i, name in enumerate(HP_TYPE_NAMES)}
+
+
+def hp_type_idx_from_move_id(move_id: str) -> "int | None":
+    """The HP-type index (0..15 in HP_TYPE_NAMES) of a typed Hidden Power move id (e.g. 'hiddenpowerice'
+    → ICE), or None for a non-HP move OR the bare typeless 'hiddenpower' (no suffix). poke-env keeps the
+    type suffix on an OWN mon's move id (`Move._id`), so agent2's team carries the true HP type here."""
+    if not move_id.startswith("hiddenpower"):
+        return None
+    return _HP_TYPE_NAME_TO_IDX.get(move_id[len("hiddenpower"):])
+
+
+def build_hp_type_labels(
+    revealed_species_in_slot_order: Sequence[str],
+    species_to_hp_type: Dict[str, int],
+    species_known: Sequence[float],
+    normalize: Callable[[str], str],
+) -> Tuple[np.ndarray, np.ndarray]:
+    """Build (hp_type_label[TEAM_SIZE] int64, hp_type_mask[TEAM_SIZE] float32) — the privileged label for
+    the HP-TYPE belief, mirroring `build_known_spread_labels`.
+
+    Each REVEALED opp slot (species_known==1, the leading-contiguous block, encoder order) whose species
+    runs a Hidden Power gets the TRUE HP type index (0..15 in HP_TYPE_NAMES), matched BY SPECIES against
+    `species_to_hp_type` (Gen-3 OU species-clause ⇒ species is unique). Gen 3 NEVER reveals the opponent's
+    HP type even once it fires, so this is a hindsight-privileged (agent2-team) label — training-only, it
+    never enters the obs vector / the pi-vf forward, so it cannot leak. `mask`=1 only at a revealed slot
+    whose species maps to a valid HP type; revealed-no-HP / believed / pad slots stay mask=0 (NOT scored).
+    Never raises (hot path).
+
+    species_to_hp_type : {normalised species -> HP type idx 0..15} (absent ⇒ that species has no HP)."""
+    label = np.full(TEAM_SIZE, PAD, dtype=np.int64)
+    mask = np.zeros(TEAM_SIZE, dtype=np.float32)
+    revealed_slots = [i for i in range(TEAM_SIZE) if i < len(species_known) and species_known[i] >= 0.5]
+    for slot, sp in zip(revealed_slots, revealed_species_in_slot_order):
+        t = species_to_hp_type.get(normalize(sp))
+        if t is None or not (0 <= t < N_HP_TYPES_LABEL):
+            continue
+        label[slot] = int(t)
+        mask[slot] = 1.0
+    return label, mask
+
+
+def zero_hp_type_labels() -> Tuple[np.ndarray, np.ndarray]:
+    """All-PAD hp_type_label + all-zero mask — off / pre-battle / parse-failure path (nothing scored)."""
+    return (np.full(TEAM_SIZE, PAD, dtype=np.int64), np.zeros(TEAM_SIZE, dtype=np.float32))
+
+
 def zero_belief_labels() -> Tuple[np.ndarray, np.ndarray]:
     """All-PAD labels — used for the off / pre-battle / parse-failure path so the Dict key always
     has a consistent shape (every slot PAD ⇒ nothing scored)."""
