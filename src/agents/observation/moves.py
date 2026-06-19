@@ -170,12 +170,16 @@ class MovesEncoder(ObservationEncoder):
             if vector[base + 6] > 0.5:
                 mid = int(vector[base])
                 name = self.reverse_mapping.get(mid, f"Move({mid})")
-                # All 16 typed Hidden Powers share num 237, so the bare reverse-map name loses the
-                # type. Recover it from the move's TYPE channel — set for our own / a revealed HP,
-                # UNKNOWN for an opponent's un-revealed HP (which correctly stays bare).
+                # Hidden Power display (gen3_typed_hidden_power_ids_v1). OUR own HP carries its DISTINCT
+                # num (355-370) → the reverse map already gives the typed id (e.g. "hiddenpowergrass");
+                # render it in the readable paren form. The OPPONENT's bare HP shares num 237 (type
+                # unknowable) → recover the type from the move's TYPE channel only if it was revealed,
+                # else it correctly stays the bare "hiddenpower".
                 if mid == HIDDEN_POWER_MOVE_NUM:
                     t = TypeEncoder.IDX_TO_TYPE.get(int(vector[base + 4]), "UNKNOWN")
                     if t not in ("UNKNOWN", "NORMAL"):
                         name = f"hiddenpower({t.lower()})"
+                elif name.startswith("hiddenpower") and name != "hiddenpower":
+                    name = f"hiddenpower({name[len('hiddenpower'):]})"
                 move_names.append(name)
         return {"moves": move_names}

@@ -295,7 +295,11 @@ line — weather/spikes/screens/turn decoded from the obs global block via
 `ProbeModel.describe_global`, so it needs captured state), **Faithfulness**
 (recorded vs re-run probs), **Beliefs** + **Threats** (the GPU-first observability sections — see
 *Beliefs / Threats (GPU-first observability)* above; Threats keeps the `📋` CPU decodes — the per-move
-type-multiplier table, the `their_matchups` **incoming eff** `worst N×`/`revealed XX%`/`BLANK`, and the
+type-multiplier table (OUR Hidden Power renders TYPED as `hiddenpower(grass)` in the `×mult` table AND
+the "our damage (op)" line — `engine._matchups`→`_display_hp` normalizes the recorder's typed id
+[`hiddenpowergrass`; distinct-num traces, `gen3_typed_hidden_power_ids_v1`] OR a bare own `hiddenpower`
+via `our_hp_types` [legacy], while the opponent's bare HP stays untyped — no leak), the `their_matchups`
+**incoming eff** `worst N×`/`revealed XX%`/`BLANK`, and the
 `incoming_damage` **incoming P(KO)** `active NN%`·`outspd NN%`·`worst-on-team NN%`·opp-recovery — DIM below
 the `🔷` DamageOperator physics when the op is present),
 **Intervention**, **Saliency** (two heads: `π` policy-logit blocks AND `V` critic

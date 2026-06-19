@@ -61,7 +61,14 @@ lock) + the `src/agents/enums.py` re-export seam. The one remaining open item is
   seam (alongside Choice→BattleOrder serialization) a future fully-owned `Player` would
   re-derive. **Struggle is single-sourced:** `from_battle` filters the lone `struggle` entry
   OUT of `move_slots` and surfaces it only as the `struggle` flag — so it can never set both a
-  move slot and bit 10 (the historical "struggle double-enabling" class). **The action
+  move slot and bit 10 (the historical "struggle double-enabling" class). **Typed own Hidden
+  Power:** `from_battle` resolves `own_hp_typed_id` (our active mon's typed HP id off its moveset —
+  gen3 has no team preview, so the wire `active` block keys our HP bare while the `Move` object
+  keeps the IV-derived type, which we always know), and `display_move_ids` is `move_ids` with that
+  bare `hiddenpower` shown typed. **`move_slots`/`move_ids` stay wire-truth** (the mask/mapper/
+  serialization key on the bare id); `display_move_ids`/`own_hp_typed_id` are for human/forensic
+  LABELS only (the recorder's action labels) + the turn-history fold (which restores our HP type),
+  OUR side only (no opponent-HP leak). **The action
   masker/mapper read through this:** `Gen3ActionMasker.mask_from_legal(legal)` builds the
   mask, `Gen3ActionMapper.action_to_choice(action, legal)` is a pure decode to a poke-env-free
   `Choice`, and `serialize.choice_to_order(choice, battle)` is the lone serialization touch.

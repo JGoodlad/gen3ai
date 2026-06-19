@@ -46,6 +46,13 @@ Notes that bite:
   `self.boosts`→`self_boost`; Tri Attack's `onHit` is a curated `_SECONDARY_ONHIT` split like Belly Drum),
   plus `priority`, `drainFraction`, `recoilFraction`. These are **GPU-side only** (the DamageOperator +
   MoveLatentEncoder read them) — they do NOT enter the obs vector, so the obs golden is unchanged.
+  `build_moves` ALSO **overrides the Hidden Power `num`** (`gen3_typed_hidden_power_ids_v1`): Showdown
+  ships all 17 HP ids at `num=237`, but the bare `hiddenpower` keeps 237 while the 16 typed variants are
+  re-numbered to distinct **355-370** from the deterministic module-level `_HP_TYPE_NUMS` map (alphabetical
+  by type, so the extractor-parity test reproduces the file). This lets OUR known-HP be represented by the
+  move embedding itself (the opponent's unrevealed HP stays the typeless 237); it IS an obs-value change
+  (our HP move-id channel) → retrain-class, golden regenerated. See `src/agents/model/CLAUDE.md` →
+  `gen3_typed_hidden_power_ids_v1` and `designs/ai_v6/design_typed_hidden_power_ids.md`.
 
 ## Team downloaders — one manifest entry per team
 

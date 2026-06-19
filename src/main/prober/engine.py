@@ -1485,12 +1485,30 @@ def _multiplier_meaningful(move_id: str) -> bool:
     return move_id in _BP0_DAMAGING
 
 
-def _matchups(obs: np.ndarray, labels: list, off) -> MatchupView:
+def _display_hp(move_id: str, our_species: str, hp_map: "dict | None") -> str:
+    """Render OUR move label's Hidden Power with its TYPE (``hiddenpower(grass)``), since we always
+    know our own HP type. Handles BOTH trace vintages: the recorder's typed id ``hiddenpowergrass``
+    (recovered straight from the id) AND a bare own ``hiddenpower`` from an OLDER trace (recovered
+    from the reconstruction ``hp_map``, our side only — matches how the Board/move-belief retype).
+    A non-HP label, or a bare HP with no reconstruction record, is returned unchanged (no leak: an
+    opponent's un-revealed HP never reaches this — these are OUR action labels)."""
+    if not move_id.startswith("hiddenpower"):
+        return move_id
+    if move_id != "hiddenpower":                       # typed id (new traces) → from the id itself
+        return f"hiddenpower({move_id[len('hiddenpower'):]})"
+    return (hp_map or {}).get(_norm_species(our_species)) or move_id   # bare own HP → reconstruction
+
+
+def _matchups(obs: np.ndarray, labels: list, off, our_species: str = "",
+              hp_map: "dict | None" = None) -> MatchupView:
     mults = tuple(float(x) * 4.0 for x in obs[off.mm_off:off.mm_off + 4])
-    move_labels = tuple(labels[MOVE_START:MOVE_END])  # the 4 move actions, request order
-    # Flag which slots' multipliers are meaningful vs a phantom artefact on a status/self move —
-    # see MatchupView.applicable. _multiplier_meaningful tolerates unknown/empty ids → False.
-    applicable = tuple(_multiplier_meaningful(lbl) for lbl in move_labels)
+    raw = tuple(labels[MOVE_START:MOVE_END])  # the 4 move actions, request order
+    # Show OUR Hidden Power typed (hiddenpower(grass)); the multiplier IS already typed in the obs.
+    move_labels = tuple(_display_hp(lbl, our_species, hp_map) for lbl in raw)
+    # Flag which slots' multipliers are meaningful vs a phantom artefact on a status/self move (from
+    # the RAW move id, so is_damaging is exact) — see MatchupView.applicable. _multiplier_meaningful
+    # tolerates unknown/empty ids → False.
+    applicable = tuple(_multiplier_meaningful(lbl) for lbl in raw)
     return MatchupView(multipliers=mults, move_labels=move_labels, applicable=applicable)
 
 
@@ -1771,7 +1789,7 @@ def analyze_invocation(model, summary: dict, npz, inv_index: int,
 
     probs, _ = model.action_dist(obs, mask)
     actions = _faithfulness(probs, labels, acts, chosen, mask)
-    matchups = _matchups(obs, labels, model.offsets)
+    matchups = _matchups(obs, labels, model.offsets, inv["our"].get("species", ""), our_hp_types)
     sweep = _intervention_sweep(model, obs, mask, labels, chosen, model.offsets)
     saliency = _saliency(model, obs, mask, labels.index(chosen), model.offsets)
     value_saliency = _value_saliency(model, obs, mask, model.offsets)

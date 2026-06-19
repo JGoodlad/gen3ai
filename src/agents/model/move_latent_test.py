@@ -75,11 +75,12 @@ def test_forward_stashes_table_only_in_training():
 def test_per_slot_latent_resolves_hp_type():
     """The per-slot latent uses the RESOLVED type embedding, so Hidden Power with a Rock type-embedding
     gets a DIFFERENT latent than HP with a Water type-embedding (the type is wired in — the mechanism
-    behind 'HP Rock ≈ Rock Slide'). Same move id (237), same MOVE_ATTR — only the type differs."""
+    behind 'HP Rock ≈ Rock Slide'). Keep the move id + MOVE_ATTR fixed (our typed HP Rock's distinct num,
+    gen3_typed_hidden_power_ids_v1) — only the type embedding differs."""
     enc = MoveLatentEncoder(_layout)
     emb = torch.nn.Embedding(_layout["max_moves"], _layout["move_embedding_dim"])
     tyemb = torch.nn.Embedding(19, _layout["type_embedding_dim"])
-    hp_id = torch.tensor([237])
+    hp_id = torch.tensor([gen3_data.moves.get("hiddenpowerrock").num])   # 368 (distinct, our known HP)
     move_e = emb(hp_id)
     rock = tyemb(torch.tensor([_T2I["ROCK"]]))
     water = tyemb(torch.tensor([_T2I["WATER"]]))

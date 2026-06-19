@@ -3024,7 +3024,7 @@
     },
     "hiddenpowerbug": {
         "name": "Hidden Power Bug",
-        "num": 237,
+        "num": 355,
         "type": "Bug",
         "basePower": 70,
         "target": "normal",
@@ -3047,7 +3047,7 @@
     },
     "hiddenpowerdark": {
         "name": "Hidden Power Dark",
-        "num": 237,
+        "num": 356,
         "type": "Dark",
         "basePower": 70,
         "target": "normal",
@@ -3070,7 +3070,7 @@
     },
     "hiddenpowerdragon": {
         "name": "Hidden Power Dragon",
-        "num": 237,
+        "num": 357,
         "type": "Dragon",
         "basePower": 70,
         "target": "normal",
@@ -3093,7 +3093,7 @@
     },
     "hiddenpowerelectric": {
         "name": "Hidden Power Electric",
-        "num": 237,
+        "num": 358,
         "type": "Electric",
         "basePower": 70,
         "target": "normal",
@@ -3116,7 +3116,7 @@
     },
     "hiddenpowerfighting": {
         "name": "Hidden Power Fighting",
-        "num": 237,
+        "num": 359,
         "type": "Fighting",
         "basePower": 70,
         "target": "normal",
@@ -3139,7 +3139,7 @@
     },
     "hiddenpowerfire": {
         "name": "Hidden Power Fire",
-        "num": 237,
+        "num": 360,
         "type": "Fire",
         "basePower": 70,
         "target": "normal",
@@ -3162,7 +3162,7 @@
     },
     "hiddenpowerflying": {
         "name": "Hidden Power Flying",
-        "num": 237,
+        "num": 361,
         "type": "Flying",
         "basePower": 70,
         "target": "normal",
@@ -3185,7 +3185,7 @@
     },
     "hiddenpowerghost": {
         "name": "Hidden Power Ghost",
-        "num": 237,
+        "num": 362,
         "type": "Ghost",
         "basePower": 70,
         "target": "normal",
@@ -3208,7 +3208,7 @@
     },
     "hiddenpowergrass": {
         "name": "Hidden Power Grass",
-        "num": 237,
+        "num": 363,
         "type": "Grass",
         "basePower": 70,
         "target": "normal",
@@ -3231,7 +3231,7 @@
     },
     "hiddenpowerground": {
         "name": "Hidden Power Ground",
-        "num": 237,
+        "num": 364,
         "type": "Ground",
         "basePower": 70,
         "target": "normal",
@@ -3254,7 +3254,7 @@
     },
     "hiddenpowerice": {
         "name": "Hidden Power Ice",
-        "num": 237,
+        "num": 365,
         "type": "Ice",
         "basePower": 70,
         "target": "normal",
@@ -3277,7 +3277,7 @@
     },
     "hiddenpowerpoison": {
         "name": "Hidden Power Poison",
-        "num": 237,
+        "num": 366,
         "type": "Poison",
         "basePower": 70,
         "target": "normal",
@@ -3300,7 +3300,7 @@
     },
     "hiddenpowerpsychic": {
         "name": "Hidden Power Psychic",
-        "num": 237,
+        "num": 367,
         "type": "Psychic",
         "basePower": 70,
         "target": "normal",
@@ -3323,7 +3323,7 @@
     },
     "hiddenpowerrock": {
         "name": "Hidden Power Rock",
-        "num": 237,
+        "num": 368,
         "type": "Rock",
         "basePower": 70,
         "target": "normal",
@@ -3346,7 +3346,7 @@
     },
     "hiddenpowersteel": {
         "name": "Hidden Power Steel",
-        "num": 237,
+        "num": 369,
         "type": "Steel",
         "basePower": 70,
         "target": "normal",
@@ -3369,7 +3369,7 @@
     },
     "hiddenpowerwater": {
         "name": "Hidden Power Water",
-        "num": 237,
+        "num": 370,
         "type": "Water",
         "basePower": 70,
         "target": "normal",

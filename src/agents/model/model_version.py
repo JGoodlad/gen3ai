@@ -607,7 +607,27 @@ MODEL_CONFIG_VERSION = 37
 #   total_dim weight-shape check AND the arch-family signature), which is correct — they were trained with the
 #   misaligned op. Guarded so it can't silently recur: move_alignment_fuzz_test asserts the obs slice IS in
 #   legal.move_slots order, and damage_op_test asserts the op's outgoing slot k uses request-slot k.
-ARCH_SIGNATURE = "gen3_op_move_align_v1"
+# gen3_typed_hidden_power_ids_v1: gives each TYPED Hidden Power its OWN distinct move num so OUR side's
+#   HP is represented by the move embedding itself, not a soft-type-blend workaround — a VALUES-only obs
+#   change (same obs dim 3469 — it stacks on gen3_op_move_align_v1's reactive-block widening; NO
+#   weight-shape change: the typed nums 355-370 are previously-unused rows
+#   in the move embedding, max_moves=400). KNOWN→DISTINCT, UNKNOWN→TYPELESS+BELIEF:
+#   - data/pokemon/gen3_moves.json: bare `hiddenpower` stays num 237; the 16 typed variants get distinct
+#     nums 355-370 (deterministic, alphabetical — tools/pokemon_data_extractor/sync.py `_HP_TYPE_NUMS`).
+#   - OUR side (type known): the obs move-id channel + the damage-op per-num tables (BP/type/attr/latent)
+#     now carry the distinct num & real type, so our HP is a normal typed move (the feature extractor's
+#     `is_hp_slot == 237` no longer matches it → it skips the hp_probs soft-type blend) and our OUTGOING
+#     HP is priced correctly (was BP-0/type-0 before). The turn-history `our_move` also folds the distinct
+#     num (via LegalActions.own_hp_typed_id). This SUPERSEDES the gen3_own_hp_typed_history_v1 hp_probs
+#     one-hot workaround (reverted — own-HP hp_probs stays all-zero, correct since the blend is opp-only).
+#   - OPPONENT side (type unrevealed — Gen3 never reveals it): the protocol gives bare `hiddenpower` → 237;
+#     ALL opp-belief machinery stays on 237 — the HP tracker, the hp_probs soft-type blend, the damage-op
+#     237→16-typed-candidate expansion, AND the move-belief PRIOR + LABELS (damage_tables._belief_num and
+#     gen3_env._move_num fold every typed-HP usage/label back onto 237, so the opp-HP belief mass is NOT
+#     scattered to 355-370). This known/unknown boundary is the load-bearing invariant (fuzzed by
+#     move_id_decode_fuzz_test + hidden_power_typed_obs_fuzz_test). Design:
+#     designs/ai_v6/design_typed_hidden_power_ids.md.
+ARCH_SIGNATURE = "gen3_typed_hidden_power_ids_v1"
 
 
 class ModelVersionError(Exception):

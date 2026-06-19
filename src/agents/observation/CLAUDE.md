@@ -381,7 +381,11 @@ event log** (`Gen3Battle.events_since(cursor)` per decision window; see
 `src/agents/battle/CLAUDE.md`) rather than diff-heuristics.
 
 - **Base block (53 dims, indices 0–52)** — our/opp move features (5 each: raw move_id int,
-  power_norm, has_secondary, has_recoil, raw type_id int), switched/failed flags, cant onehots
+  power_norm, has_secondary, has_recoil, raw type_id int — **our OWN Hidden Power carries its DISTINCT
+  num + real type** here, `gen3_typed_hidden_power_ids_v1`: the fold restores the typed HP id from the
+  decision-time `LegalActions.own_hp_typed_id`, which maps to its distinct dex num (355-370) so
+  `_move_features` takes the typed-dex branch [real BP/type]; the **opponent's** HP stays bare num 237 /
+  type-0, correctly unknown), switched/failed flags, cant onehots
   (`CANT_DIM` = 12 ea, from `gen3_effects.CANT_REASONS`:
   slp/frz/par/flinch/recharge/attract/disable/taunt/imprison/focuspunch/nopp/truant —
   source-derived, crash-don't-drop enforced in the encoder), summed HP deltas, faint flags,

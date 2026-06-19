@@ -686,15 +686,25 @@ The architecture-constant single source of truth is the module-level constants
 (`ROLE_TOKEN_SIZE`, `PROJECTION_DIM`, `MOVE_NET_HIDDEN`, `ROLE_ENCODER_HIDDEN`,
 `ACTIVE_CTX_HIDDEN`) at the top of `features_extractor.py`; `ARCH_SIGNATURE` /
 `MODEL_CONFIG_VERSION` live in `model_version.py` (current `ARCH_SIGNATURE`:
-`gen3_rest_loop_stall_v1` — RE-MEANS the `turns_since_progress` no-progress-clock scalar (`vec[14]`): a
-REST-LOOP — our active Rested earlier this episode, woke, and re-Rested **without Sleep Talk** — is now a
-NO_OP stalled turn instead of a free defensive heal, so it ADVANCES the obs clock + charges `no_progress_tax`
-(when the clock charge is active — `--bias-redesign` / `--all-shaping-pbrs`) like any other wheel-spin. A
-Sleep-Talk mon (a legitimate act-while-asleep rest-loop) and a WINNING residual rest-stall (Toxic/Leech
-chipping the opp NET-down → caught by `_is_progress` first) stay exempt; the heal-grace bypass lives in
-`progress_clock.py`. A VALUES-only change (same obs dim 3457) but retrain-class (it re-means an obs feature).
-The prior signature was `gen3_wish_wired_v1`, which WIRED two reactive scalars (`vec[17]` our side,
-`vec[18]` opp side) with the
+`gen3_typed_hidden_power_ids_v1` — gives each TYPED Hidden Power its OWN distinct move num so OUR
+side's HP is represented by the move embedding itself, not a soft-type-blend workaround (a VALUES-only
+obs change, same dim 3469, no weight-shape change — the typed nums 355-370 are previously-unused rows
+in the move embedding, `max_moves`=400). **KNOWN→DISTINCT, UNKNOWN→TYPELESS+BELIEF:** `data/pokemon/
+gen3_moves.json` keeps bare `hiddenpower`=237 and gives the 16 typed variants distinct nums 355-370
+(deterministic, in `tools/pokemon_data_extractor/sync.py::_HP_TYPE_NUMS`); OUR-side obs + the damage-op
+per-num tables (BP/type/attr/latent) now carry the distinct num & real type (so the extractor's
+`is_hp_slot == 237` no longer matches our HP → it skips the hp_probs blend, and our OUTGOING HP is
+priced correctly), and the turn-history `our_move` folds the distinct num (via
+`LegalActions.own_hp_typed_id`); the OPPONENT's HP (type never revealed) stays bare 237 with ALL its
+belief machinery on 237 — the HP tracker, the hp_probs soft-type blend, the op's 237→16-typed-candidate
+expansion, AND the move-belief PRIOR + LABELS (`damage_tables._belief_num` / `gen3_env._move_num` fold
+every typed-HP usage/label back to 237, so the opp-HP belief mass isn't scattered to 355-370 — the
+load-bearing boundary, fuzzed by `move_id_decode_fuzz_test`). Design:
+`designs/ai_v6/design_typed_hidden_power_ids.md`. It supersedes `gen3_own_hp_typed_history_v1` (the
+hp_probs one-hot workaround is reverted; own-HP hp_probs stays all-zero) and stacks on
+`gen3_op_move_align_v1` (the request-ordered active-req-moves block — `REACTIVE_DIM` 402 → 414, obs dim
+3457 → 3469) and the prior `gen3_rest_loop_stall_v1` rest-loop clock re-meaning, back through
+`gen3_wish_wired_v1` — which WIRES two reactive scalars (`vec[17]` our side, `vec[18]` opp side) with the
 pending-Wish "floating heal" signal. gen3 Wish (gen4-inherited) heals the RECIPIENT's `maxhp/2` at the
 END of the turn after cast, slot-keyed (survives faint / Roar-phaze / switch / self-KO), duration 2,
 double-Wish fails. Because the heal is the recipient's own maxhp/2, the heal fraction is ALWAYS ≈0.5, so
@@ -902,7 +912,10 @@ Reference data (deterministic) under `data/pokemon/`, all regenerable via
   axis — `gen3_bidir_threat_trunk_v1`, for the op's expected-latent read; the obs still reads revealed types live)
 - `gen3_moves.json` — move id → `{num, basePower, type, accuracy, never_miss, hasSecondary, hasRecoil,
   priority, secondaryEffects {col: percent}, drainFraction, recoilFraction, …}` (the structured
-  secondary/priority/drain fields are `gen3_unified_move_system_v1` — GPU-side only, NOT in the obs vector)
+  secondary/priority/drain fields are `gen3_unified_move_system_v1` — GPU-side only, NOT in the obs vector).
+  **Typed Hidden Power has distinct nums** (`gen3_typed_hidden_power_ids_v1`): bare `hiddenpower`=237,
+  the 16 typed variants=355-370 (Showdown ships them all at 237; the extractor tool overrides — see
+  `tools/CLAUDE.md`). OUR known HP uses the distinct num; the opponent's unrevealed HP is the bare 237.
 - `gen3_items.json` — item id → `{num, name}` (`num` is the item-dex number; cross-gen aliases share one num)
 - `gen3_abilities.json` — ability id → `{num, name}`
 - `gen3_type_chart.json` — `{DEF: {ATT: multiplier}}` effectiveness chart (was live `GenData`)

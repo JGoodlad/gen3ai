@@ -99,14 +99,20 @@ def test_strict_view_never_returns_raw_battle():
 
 # ───────────────────────────── LegalActions ────────────────────────────────
 def _stub_battle(*, request, switches, moves, team_species,
-                 force_switch=False, trapped=False, maybe_trapped=False, wait=False):
+                 force_switch=False, trapped=False, maybe_trapped=False, wait=False,
+                 active_moves=None):
     """A minimal duck-typed battle exposing exactly the server-parsed fields
     LegalActions.from_battle reads. Pure-logic transform → a stub is the right tool
-    (the real server request is exercised by the e2e fuzz)."""
+    (the real server request is exercised by the e2e fuzz). ``active_moves`` (key → Move.id) sets
+    the active mon's live moveset so the own-Hidden-Power typed-id resolution can be exercised."""
     mons = {f"p1: {s}": SimpleNamespace(species=s) for s in team_species}
     mon_by_species = {m.species: m for m in mons.values()}
+    active = next(iter(mons.values()), None)  # only _own_hp_typed_id reads battle.active_pokemon
+    if active is not None:
+        active.moves = {k: SimpleNamespace(id=mid) for k, mid in (active_moves or {}).items()}
     return SimpleNamespace(
         last_request=request,
+        active_pokemon=active,
         available_switches=[mon_by_species[s] for s in switches],
         available_moves=[SimpleNamespace(id=mid) for mid in moves],
         team=mons,
@@ -151,6 +157,38 @@ def test_legal_actions_from_request():
     assert isinstance(legal.last_request, MappingProxyType)
     with pytest.raises(TypeError):
         legal.last_request["active"] = []  # type: ignore[index]
+
+
+def test_legal_actions_own_hidden_power_typed_for_display_only():
+    """gen3 has no team preview, so the wire request keys OUR Hidden Power BARE ("hiddenpower")
+    while the live Move object keeps the IV-derived typed id ("hiddenpowergrass"). move_slots /
+    move_ids stay wire-truth (bare) — the mask/mapper/serialization depend on it — while
+    display_move_ids surfaces the typed id for human/forensic LABELS (we always know our own HP
+    type). own_hp_typed_id carries the resolved id."""
+    req = {"active": [{"moves": [
+        {"id": "icebeam", "pp": 16, "maxpp": 16},
+        {"id": "hiddenpower", "pp": 24, "maxpp": 24},   # BARE on the wire
+    ]}]}
+    stub = _stub_battle(
+        request=req, switches=[], moves=["icebeam", "hiddenpower"],
+        team_species=["tyranitar"],
+        # live moveset keyed bare but each Move carries the typed id (poke-env's raw_id patch)
+        active_moves={"icebeam": "icebeam", "hiddenpower": "hiddenpowergrass"},
+    )
+    legal = LegalActions.from_battle(stub)
+    assert legal.move_ids == ("icebeam", "hiddenpower")          # WIRE-TRUTH stays bare
+    assert legal.own_hp_typed_id == "hiddenpowergrass"
+    assert legal.display_move_ids == ("icebeam", "hiddenpowergrass")  # typed for the label
+
+
+def test_legal_actions_no_hidden_power_display_equals_wire():
+    """No Hidden Power → own_hp_typed_id is None and display_move_ids is a no-op (== move_ids)."""
+    req = {"active": [{"moves": [{"id": "icebeam", "pp": 16, "maxpp": 16}]}]}
+    stub = _stub_battle(request=req, switches=[], moves=["icebeam"],
+                        team_species=["tyranitar"], active_moves={"icebeam": "icebeam"})
+    legal = LegalActions.from_battle(stub)
+    assert legal.own_hp_typed_id is None
+    assert legal.display_move_ids == legal.move_ids == ("icebeam",)
 
 
 def test_legal_actions_force_switch_has_no_active_block():

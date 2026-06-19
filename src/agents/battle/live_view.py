@@ -431,11 +431,31 @@ class LegalActions:
     wait: bool  # the server wants no action from us right now
     struggle: bool  # all PP gone → the server forces Struggle
     last_request: Optional[Mapping[str, Any]]  # read-only mirror of the raw request
+    # Our active mon's TYPED Hidden Power id ("hiddenpowergrass"), or None when it has no HP.
+    # gen3 has no team preview, so the wire request re-keys our HP to the bare "hiddenpower" in
+    # `move_slots` (kept wire-truth for the mask/mapper/serialization) — but the Move object keeps
+    # the IV-derived typed id, and we ALWAYS know our own HP type. Resolved off the active mon's
+    # moveset in `from_battle` and surfaced ONLY for human/forensic LABELS via `display_move_ids`.
+    # OUR side only (LegalActions IS the request, always ours) → no opponent-info leak.
+    own_hp_typed_id: Optional[str] = None
 
     @property
     def move_ids(self) -> Tuple[str, ...]:
-        """Move ids in request-slot order (slots 0–3)."""
+        """Move ids in request-slot order (slots 0–3). WIRE-TRUTH (bare ``hiddenpower``) — the
+        mask/mapper/serialization key on this; for a typed-HP display label use
+        :attr:`display_move_ids`."""
         return tuple(m.id for m in self.move_slots)
+
+    @property
+    def display_move_ids(self) -> Tuple[str, ...]:
+        """:attr:`move_ids` with OUR bare ``hiddenpower`` shown as its TYPED id
+        (``hiddenpowergrass``) — for human/forensic LABELS only (the recorder's action labels),
+        NEVER the mask/mapper/serialization, which stay on the wire-truth :attr:`move_ids`. A no-op
+        unless our active mon carries a Hidden Power (``own_hp_typed_id`` set). We always know our
+        own HP type, so a label should show it; an opponent's un-revealed HP stays bare (no leak)."""
+        if not self.own_hp_typed_id:
+            return self.move_ids
+        return tuple(self.own_hp_typed_id if m == "hiddenpower" else m for m in self.move_ids)
 
     @property
     def switch_species(self) -> Tuple[str, ...]:
@@ -487,4 +507,19 @@ class LegalActions:
             wait=bool(battle.wait),
             struggle=struggle,
             last_request=MappingProxyType(request) if request else None,
+            own_hp_typed_id=_own_hp_typed_id(battle),
         )
+
+
+def _own_hp_typed_id(battle) -> Optional[str]:
+    """The TYPED Hidden Power id of OUR active mon (``"hiddenpowergrass"``), or ``None`` if it has
+    none. The wire request re-keys our HP to bare ``"hiddenpower"`` (no team preview in gen3), but
+    the live ``Move`` object keeps the IV-derived typed id — and we ALWAYS know our own HP type.
+    Read off the active mon's moveset (a mon has at most one Hidden Power); robust to whether the
+    moveset is keyed bare or typed since it reads each ``Move.id``. OUR side only (``from_battle``
+    builds from our own request), so it can never surface the opponent's hidden HP type."""
+    active = getattr(battle, "active_pokemon", None)
+    if active is None:
+        return None
+    typed = [mv.id for mv in active.moves.values() if str(mv.id).startswith("hiddenpower")]
+    return typed[0] if len(typed) == 1 else None

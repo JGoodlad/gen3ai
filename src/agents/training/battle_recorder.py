@@ -302,7 +302,10 @@ class BattleRecorder:
 
     def _action_label(self, action_idx: int, live: LiveView, legal) -> str:
         team_list = live.ours.mons
-        move_ids = list(legal.move_ids)
+        # display_move_ids (not move_ids): shows OUR Hidden Power with its TYPED id
+        # ("hiddenpowergrass") instead of the wire-bare "hiddenpower" — we always know our own HP
+        # type, and these are human-/prober-facing labels (the mask/mapper use the wire-truth ids).
+        move_ids = list(legal.display_move_ids)
 
         if action_idx < 6:
             return f"switch:{team_list[action_idx].species}" if action_idx < len(team_list) else f"switch:slot{action_idx}"
@@ -313,7 +316,7 @@ class BattleRecorder:
 
     def _all_action_labels(self, live: LiveView, probs: np.ndarray, mask: np.ndarray, legal) -> dict:
         team_list = live.ours.mons
-        move_ids = list(legal.move_ids)
+        move_ids = list(legal.display_move_ids)  # typed own HP — see _action_label
 
         result = {}
         for i in range(11):

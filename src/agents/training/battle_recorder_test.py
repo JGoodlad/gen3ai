@@ -1,3 +1,5 @@
+from types import SimpleNamespace
+
 import numpy as np
 import pytest
 
@@ -505,6 +507,25 @@ def test_record_includes_belief_when_state_carries_it():
     keys = list(entry.keys())
     assert keys.index("belief") == keys.index("opp") + 1
     assert keys.index("belief") < keys.index("actions")
+
+
+def test_action_labels_use_typed_own_hidden_power():
+    """OUR Hidden Power is recorded with its TYPED id ("hiddenpowerice"), not the wire-bare
+    "hiddenpower" — we always know our own HP type and these labels are human/prober-facing. The
+    wire-truth ids the mask/mapper use stay bare; only the recorded LABEL is typed."""
+    sceptile = _FakeMon("sceptile", 1.0)
+    # live moveset keyed bare but each Move carries the typed id (poke-env's raw_id patch)
+    sceptile.moves = {"hiddenpower": SimpleNamespace(id="hiddenpowerice", current_pp=24, max_pp=24)}
+    opp = _FakeMon("gengar", 1.0)
+    b = _battle([sceptile], [opp], "sceptile", "gengar", turn=1, move_ids=["hiddenpower"])
+
+    rec = _rec()
+    rec.record(b, 6, _probs(), _mask(6), state=None)   # action 6 == move slot 0 == the HP
+    entry = rec._pending_entry
+
+    assert entry["chosen"] == "hiddenpowerice"
+    assert "hiddenpowerice" in entry["actions"]
+    assert "hiddenpower" not in entry["actions"]
 
 
 def test_record_omits_belief_when_absent_or_empty():

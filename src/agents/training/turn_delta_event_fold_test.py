@@ -13,6 +13,7 @@ import numpy as np
 import pytest
 
 from agents.battle.battle_event import OPP, OURS, BattleEvent, EventKind
+from agents.battle.live_view import LegalActions
 from agents.battle.turn_view import FAINT_CAUSE_DIM, FAINT_CAUSE_VOCAB
 from agents.gen3_mechanics import BOOST_DIM
 from agents.observation.turn_delta_encoder import (
@@ -127,6 +128,66 @@ def test_attempted_move_preserved_when_faint_before_act():
     # We pressed thunderbolt (action 6) but our mon fainted before it fired.
     assert d.our_attempted_move_id == "thunderbolt"
     assert d.our_move_id is None          # no MOVE event for our side
+
+
+def _legal_with_own_hp(typed_id="hiddenpowergrass"):
+    """A minimal LegalActions snapshot carrying the typed own-HP id (what from_battle resolves)."""
+    return LegalActions(move_slots=(), switches=(), force_switch=False, trapped=False,
+                        maybe_trapped=False, wait=False, struggle=False, last_request=None,
+                        own_hp_typed_id=typed_id)
+
+
+def test_our_hidden_power_folds_typed_from_legal_snapshot():
+    """Our OWN Hidden Power folds with its TYPED id. The wire `active` block (→ active_move_ids) and
+    the protocol |move| line both report it BARE, but the decision-time LegalActions snapshot carries
+    the typed id, so the history's move-TYPE channel encodes our real HP type (vs the type-0 'unknown'
+    sentinel that is correct only for the opponent)."""
+    events = [
+        ev(EventKind.MOVE, side=OURS, actor="zapdos", target="tyranitar", move_id="hiddenpower"),
+        ev(EventKind.DAMAGE, side=OPP, actor="tyranitar", amount=-0.3),
+    ]
+    prev = _zero_ctx(active_move_ids=["hiddenpower", "thunderbolt", "rest", "sleeptalk"],
+                     legal=_legal_with_own_hp("hiddenpowergrass"))
+    curr = _zero_ctx(turn=2)
+    d = TurnDelta.build_from_events(prev, curr, action=6, events=events)
+    assert d.our_move_id == "hiddenpowergrass"            # the move that fired
+    assert d.our_attempted_move_id == "hiddenpowergrass"  # the move we pressed (slot 0)
+
+
+def test_hidden_power_stays_bare_without_snapshot_and_opp_never_typed():
+    """No own-HP typed id (legal=None) → our HP stays bare; an opponent's HP is NEVER typed — the
+    fold only resolves OUR move id, from OUR own snapshot, so there is no opponent-info leak."""
+    events = [
+        ev(EventKind.MOVE, side=OURS, actor="zapdos", target="tyranitar", move_id="hiddenpower"),
+        ev(EventKind.MOVE, side=OPP, actor="tyranitar", target="zapdos", move_id="hiddenpower"),
+        ev(EventKind.DAMAGE, side=OURS, actor="zapdos", amount=-0.3),
+    ]
+    prev = _zero_ctx(active_move_ids=["hiddenpower", "thunderbolt", "rest", "sleeptalk"], legal=None)
+    curr = _zero_ctx(turn=2)
+    d = TurnDelta.build_from_events(prev, curr, action=6, events=events)
+    assert d.our_move_id == "hiddenpower"   # no typed id available → unchanged
+    assert d.opp_move_id == "hiddenpower"   # opponent HP always bare
+
+
+def test_typed_hidden_power_encodes_real_type_not_unknown():
+    """End-to-end: a typed own-HP fold ENCODES our HP with its DISTINCT num + real type
+    (gen3_typed_hidden_power_ids_v1: hiddenpowergrass → num 363, type GRASS), where the OPPONENT's
+    bare HP stays num 237 / type-0 unknown."""
+    from agents.gen3_data import moves as _g3moves
+    enc = TurnDeltaEncoder(dict(_g3moves.raw()), _SPECIES)
+    grass_num = _g3moves.get("hiddenpowergrass").num   # 363 (distinct, our known HP)
+    events = [
+        ev(EventKind.MOVE, side=OURS, actor="zapdos", target="tyranitar", move_id="hiddenpower"),
+        ev(EventKind.DAMAGE, side=OPP, actor="tyranitar", amount=-0.3),
+    ]
+    prev = _zero_ctx(active_move_ids=["hiddenpower", "thunderbolt", "rest", "sleeptalk"],
+                     legal=_legal_with_own_hp("hiddenpowergrass"))
+    curr = _zero_ctx(turn=2)
+    d = TurnDelta.build_from_events(prev, curr, action=6, events=events)
+    assert d.our_move_id == "hiddenpowergrass"
+    desc = enc.describe_vector(enc.encode(d))
+    assert desc["our_move"]["move_id"] == grass_num != 237   # OUR HP gets its distinct num (363)
+    assert desc["our_move"]["type_id"] == 4                  # GRASS — the real type, not 0 (unknown)
 
 
 def test_pressed_switch_has_no_attempted_move():

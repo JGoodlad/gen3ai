@@ -269,7 +269,9 @@ class TurnDeltaEncoder:
         self._species = gen3_species or {}
         nums = [v.get("num", 0) for v in gen3_moves.values()]
         self._max_num = float(max(nums, default=1))
-        # Build reverse map preferring "hiddenpower" base over typed variants for num=237
+        # Build reverse map (num → name). The opp's bare HP keeps num 237 → "hiddenpower"; OUR typed
+        # HP have distinct nums (355-370) → their typed names (gen3_typed_hidden_power_ids_v1). The
+        # base-name preference only ever affects 237 (no other id claims it now).
         self._num_to_name = {}
         for k, v in gen3_moves.items():
             if "num" not in v:
@@ -332,9 +334,11 @@ class TurnDeltaEncoder:
         vec[2] = float(bool(entry.get("hasSecondary")))
         vec[3] = float(bool(entry.get("hasRecoil")))
         if move_id == "hiddenpower":
-            # Gen 3 Showdown sends "Hidden Power" without type; type is unknowable from the
-            # battle log. Use 70bp (competitive assumption) and type_id=0 (unknown sentinel,
-            # distinct from Normal=1) so the model learns HP ≠ Normal-type move.
+            # Bare "hiddenpower" = the OPPONENT's Hidden Power, whose type Gen 3 Showdown never
+            # reveals — unknowable from the battle log. Use 70bp (competitive assumption) and
+            # type_id=0 (unknown sentinel, distinct from Normal=1) so the model learns HP ≠ Normal.
+            # OUR OWN HP arrives here as a TYPED variant ("hiddenpowergrass") — the TurnDelta fold
+            # restores its IV-derived type, so it takes the else branch and encodes the real type.
             vec[1] = 70.0 / 200.0
             # vec[4] stays 0 (unknown)
         else:

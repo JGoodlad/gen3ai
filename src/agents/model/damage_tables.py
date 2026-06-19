@@ -11,10 +11,16 @@ unknown sentinel**), the SAME axis the obs `type1_ids`/`type2_ids` ride — so t
 gathered for a believed move line up with the defender types read straight from the obs. There
 is no FAIRY in gen3 (the chart's dead FAIRY row/col is skipped).
 
-Hidden Power is a special case: 17 move ids (bare + 16 typed) all share ``num=237``, so the
-num-indexed move buffers cannot represent its type. The bare slot is left at BP 0; the operator
-instead expands HP into 16 **typed candidates** (one per type, BP 70 — gen3's max HP power),
-using `HP_TYPE_IDX` / `HP_IS_PHYS` here + the per-mon HP-type belief (`hp_probs`) from the obs.
+Hidden Power is handled bidirectionally (gen3_typed_hidden_power_ids_v1):
+  - OPPONENT side (type unrevealed): the protocol gives the bare ``hiddenpower`` → ``num=237``.
+    That slot is left at BP 0 / type-idx 0; the operator instead expands HP into 16 **typed
+    candidates** (one per type, BP 70 — gen3's max HP power), using `HP_TYPE_IDX` / `HP_IS_PHYS`
+    here + the per-mon HP-type belief (`hp_probs`) from the obs. The move-belief PRIOR likewise
+    folds all typed HP usage back onto 237 (see `_belief_num`).
+  - OUR side (type always known): each typed variant has its OWN distinct num (355-370), so the
+    num-indexed per-move buffers (BP/type/phys/accuracy/attr/secondary/latent) below populate those
+    rows with the real typed values — the loops here iterate ``gen3_data.moves`` and skip ONLY the
+    bare 237, so typed HP flow through naturally and our OUTGOING HP is priced with the right type.
 
 Reference: `designs/ai_v6/design_differentiable_damage_op.md` (§3 the gen3 formula, §7 the
 edge-case matrix). The math core mirrors `agents/observation/incoming_damage.py` (the live CPU
@@ -97,6 +103,18 @@ MOVE_ATTR_COLS = (
 )
 N_MOVE_ATTR = len(MOVE_ATTR_COLS)            # 9 + 10 + 7 = 26
 _PRIORITY_NORM = 6.0                          # gen3 priority spans ~ -6..+5 → normalize into ~[-1, 1]
+
+
+def _belief_num(move_id: str, md) -> int:
+    """The move num the OPPONENT's move-belief PRIOR keys on. Gen 3 never reveals the opponent's
+    Hidden Power TYPE, so every HP the opponent could run is observed BARE — they all aggregate to
+    the typeless num ``237`` here, regardless of a typed variant's own distinct data num (355-370,
+    which exist only for OUR known-HP per-move tables + obs). This keeps the opp-HP belief mass on
+    237 so the operator's 237→16-typed-candidate expansion (weighted by ``hp_probs``) can read it;
+    without it, the typed-HP Smogon usage would scatter to 355-370 and the opp-HP belief at 237 would
+    collapse to the floor (the model would never anticipate the opponent's Hidden Power). Non-HP
+    moves pass through unchanged. See designs/ai_v6/design_typed_hidden_power_ids.md."""
+    return HIDDEN_POWER_NUM if move_id.startswith("hiddenpower") else md.num
 
 
 def _move_type_idx(md) -> int:
@@ -623,8 +641,10 @@ def build_move_prior_logits(n_species: int, n_moves: int, floor: float = _PRIOR_
                 continue
             for move_id, p in gen3_data.priors.moves(sid).items():
                 md = gen3_data.moves.get(move_id)
-                if md is not None and 0 <= md.num < n_moves:
-                    prob[snum, md.num] += float(p)       # sum collisions (e.g. typed Hidden Power → 237)
+                if md is not None:
+                    bnum = _belief_num(move_id, md)      # typed Hidden Power → 237 (opp observed bare)
+                    if 0 <= bnum < n_moves:
+                        prob[snum, bnum] += float(p)     # sum collisions (e.g. typed Hidden Power → 237)
         prob = prob.clamp(floor, 1.0 - eps)
         return torch.logit(prob).to(torch.float32)
 
@@ -641,15 +661,21 @@ def build_move_prior_logits(n_species: int, n_moves: int, floor: float = _PRIOR_
         else:
             for move_id in legal:                        # every LEGAL move → a small liftable base
                 md = gen3_data.moves.get(move_id)
-                if md is not None and 0 <= md.num < n_moves:
-                    prob[snum, md.num] = floor
-        # TRUE usage overrides the floor (an observed move is necessarily legal); HP variants sum into 237.
+                if md is not None:
+                    bnum = _belief_num(move_id, md)      # any HP (learnset carries bare 'hiddenpower') → 237
+                    if 0 <= bnum < n_moves:
+                        prob[snum, bnum] = floor
+        # TRUE usage overrides the floor (an observed move is necessarily legal); HP variants sum into 237
+        # (the opp is observed bare — see _belief_num).
         usage: Dict[int, float] = {}
         for move_id, p in gen3_data.priors.moves(sid).items():
             md = gen3_data.moves.get(move_id)
-            if md is None or not (0 <= md.num < n_moves):
+            if md is None:
                 continue
-            usage[md.num] = usage.get(md.num, 0.0) + float(p)
+            bnum = _belief_num(move_id, md)
+            if not (0 <= bnum < n_moves):
+                continue
+            usage[bnum] = usage.get(bnum, 0.0) + float(p)
         for num, u in usage.items():
             if u > float(prob[snum, num]):
                 prob[snum, num] = u                      # rare moves keep their real (small) rate

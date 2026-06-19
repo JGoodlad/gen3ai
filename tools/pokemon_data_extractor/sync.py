@@ -174,6 +174,25 @@ _CALLBACK_SELF_BOOST = frozenset({"bellydrum"})
 _CURES_SELF_STATUS = frozenset({"refresh"})
 _CURES_TEAM_STATUS = frozenset({"healbell", "aromatherapy"})
 
+# --- gen3_typed_hidden_power_ids_v1: distinct nums for OUR-side typed Hidden Power ----------- #
+# Showdown ships all 17 Hidden Power ids (bare 'hiddenpower' + 16 typed) at num 237 — the protocol
+# never reveals the type, so the OPPONENT's HP is only ever observed bare. But WE always know our own
+# HP type (IV-derived, declared in our team), so we give each typed variant its OWN distinct num: the
+# move embedding row then IS the type, and our own-team obs / the damage-op per-move tables price it
+# correctly without the type-blend workaround. The bare 'hiddenpower' KEEPS num 237 — the typeless
+# form the opponent is observed as, AND the aggregation target for the opp move-belief prior/labels
+# (damage_tables._belief_num / gen3_env._move_num fold every HP back to 237 on the opponent side).
+# The 16 typed nums are assigned in FIXED alphabetical-by-type order (deterministic → the extractor
+# parity test reproduces the committed file), starting at 355 — free below the move-embedding width
+# (max real move num is 354; state_encoder max_moves=400). The order matches HIDDEN_POWER_TYPE_ORDER.
+# Design: designs/ai_v6/design_typed_hidden_power_ids.md.
+_HP_TYPE_ORDER = (
+    "bug", "dark", "dragon", "electric", "fighting", "fire", "flying", "ghost",
+    "grass", "ground", "ice", "poison", "psychic", "rock", "steel", "water",
+)
+_HP_FIRST_NUM = 355
+_HP_TYPE_NUMS = {f"hiddenpower{t}": _HP_FIRST_NUM + i for i, t in enumerate(_HP_TYPE_ORDER)}
+
 # --- gen3_unified_move_system_v1: structured secondary-effect extraction ---------------- #
 # The 10 secondary-effect columns the model prices (single source of truth, mirrored by
 # damage_tables.MOVE_SECONDARY). A damaging move's secondary is normalized into {column: percent}
@@ -328,7 +347,9 @@ def build_moves(gen):
 
         moves_map[move_id] = {
             "name": entry.get("name"),
-            "num": entry.get("num"),
+            # gen3_typed_hidden_power_ids_v1: OUR-side typed HP gets a distinct num (355-370); bare
+            # 'hiddenpower' (and every other move) keeps its Showdown num. See _HP_TYPE_NUMS above.
+            "num": _HP_TYPE_NUMS.get(move_id, entry.get("num")),
             "type": entry.get("type"),
             "basePower": entry.get("basePower"),
             "target": entry.get("target"),

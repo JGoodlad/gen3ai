@@ -327,6 +327,21 @@ class TurnDelta:
         from agents.enums import Status
         _cause_idx = {c: i for i, c in enumerate(FAINT_CAUSE_VOCAB)}
 
+        # Our OWN Hidden Power is typed — we always know our HP type — but the wire `active` block
+        # (→ prev_ctx.active_move_ids) and the protocol |move| line (→ our.move_id) both report it
+        # BARE. Restore the typed id from the decision-time LegalActions snapshot so the history's
+        # move-TYPE channel carries our real HP type: the encoder types `hiddenpowergrass` via the
+        # move dex, while a bare `hiddenpower` encodes type_id=0 (the "unknown" sentinel correct only
+        # for the OPPONENT's HP). prev_ctx is the mon that acted, and the snapshot is OUR own request,
+        # so an opponent's un-revealed HP can never be typed here (no leak). Reward/consistency
+        # consumers are unaffected: HP is in no special move-set, `_same_move` is HP-prefix-tolerant,
+        # and the bare-HP dex entry reads 0 BP so the `our_move_id in our_mon.move_ids` reward guards
+        # short-circuit identically (a typed id is simply not-in the bare LiveView moveset → md=None).
+        _own_hp_typed = prev_ctx.legal.own_hp_typed_id if prev_ctx.legal else None
+
+        def _typed_own_hp(mid: "str | None") -> "str | None":
+            return _own_hp_typed if (_own_hp_typed and mid == "hiddenpower") else mid
+
         # --- Attempted action (decoded before anything fires) ---
         # Both the attempted MOVE and the attempted SWITCH are captured as INTENT, so they
         # survive when the action never executes. A pressed move can fail to fire
@@ -344,7 +359,7 @@ class TurnDelta:
         elif action < 10:
             slot = action - 6
             ids = prev_ctx.active_move_ids
-            our_attempted_move_id = ids[slot] if slot < len(ids) else None
+            our_attempted_move_id = _typed_own_hp(ids[slot] if slot < len(ids) else None)
             our_attempted_switch_to = None
         else:
             our_attempted_move_id = "struggle"
@@ -404,7 +419,7 @@ class TurnDelta:
         opp = view.opp
 
         # --- Move / switch from event log (delegation-aware) ---
-        our_move_id = our.move_id
+        our_move_id = _typed_own_hp(our.move_id)  # our OWN HP → typed (see _typed_own_hp above)
         our_switch_to = our.switched_to if our.switched else None
         opp_move_id = opp.move_id
         opp_switch_to = opp.switched_to if opp.switched else None

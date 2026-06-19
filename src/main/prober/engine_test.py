@@ -286,6 +286,50 @@ def test_matchups_read_correct_dims():
     assert a.matchups.applicable == (True, True, False, False)
 
 
+def _summary_moves(move_labels, our_species="Zapdos"):
+    """A summary whose 4 move-action labels (request order, idx 6–9) are `move_labels`."""
+    actions = {f"switch:slot{i}": {"prob": "0.0%", "valid": False} for i in range(6)}
+    for lbl in move_labels:
+        actions[lbl] = {"prob": "10.0%", "valid": True}
+    actions["struggle"] = {"prob": "0.0%", "valid": False}
+    s = _summary()
+    s["invocations"][0]["actions"] = actions
+    s["invocations"][0]["chosen"] = move_labels[0]
+    s["invocations"][0]["our"]["species"] = our_species
+    return s
+
+
+def test_matchups_typed_own_hidden_power_shown_with_type():
+    """A NEW trace records OUR HP with its typed id ("hiddenpowerice"); the matchups label renders
+    the readable typed form, and the multiplier (already typed in the obs) is meaningful."""
+    model = FakeProbeModel(_OFF)
+    a = analyze_invocation(model, _summary_moves(["hiddenpowerice", "earthquake", "move2", "move3"]),
+                           _npz(), 0)
+    assert a.matchups.move_labels[0] == "hiddenpower(ice)"
+    assert a.matchups.applicable[0]   # Hidden Power is a damaging move → real multiplier
+
+
+def test_matchups_bare_own_hidden_power_typed_from_reconstruction():
+    """An OLDER trace recorded OUR HP bare ("hiddenpower"); the reconstruction `our_hp_types` map
+    recovers the type for display (our side only — same source the Board/move-belief retype use)."""
+    model = FakeProbeModel(_OFF)
+    a = analyze_invocation(model, _summary_moves(["hiddenpower", "earthquake", "move2", "move3"],
+                                                 our_species="Zapdos"),
+                           _npz(), 0, our_hp_types={"zapdos": "hiddenpower(grass)"})
+    assert a.matchups.move_labels[0] == "hiddenpower(grass)"
+    assert a.matchups.applicable[0]
+
+
+def test_matchups_bare_hidden_power_without_record_stays_bare():
+    """No reconstruction record (websocket/legacy trace) → a bare own HP can't be typed, so it is
+    left unchanged rather than guessed (and an opponent's HP would never be typed here anyway)."""
+    model = FakeProbeModel(_OFF)
+    a = analyze_invocation(model, _summary_moves(["hiddenpower", "earthquake", "move2", "move3"]),
+                           _npz(), 0)
+    assert a.matchups.move_labels[0] == "hiddenpower"
+    assert a.matchups.applicable[0]
+
+
 def test_multiplier_meaningful_predicate():
     """The display predicate: damaging moves (incl. Hidden Power + fixed/variable-power, which read
     base_power 0 in the dex) keep their multiplier; genuine status/self/field moves are phantom."""

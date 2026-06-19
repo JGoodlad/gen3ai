@@ -92,7 +92,15 @@ class Gen3Env(SinglesEnv):
         self._target_encode_cache = {}
         # Precompute id -> embedding-NUM maps once (keyed by gen3_data species/move id) for the labeller.
         self._species_num = {sid: rec["num"] for sid, rec in mappings.get("species", {}).items() if "num" in rec}
-        self._move_num = {mid: rec["num"] for mid, rec in mappings.get("moves", {}).items() if "num" in rec}
+        # The OPPONENT's move-belief labels: every Hidden Power maps to the typeless num 237. Gen 3 never
+        # reveals the opponent's HP type, so the belief predicts the OBSERVED (bare) form at 237 — NOT a
+        # typed variant's distinct data num (355-370, which exist only for OUR own-team obs where the type
+        # is known). Keeps belief LABEL ⊕ PRIOR ⊕ the op's 237-expansion all consistent on 237.
+        from agents.observation.moves import HIDDEN_POWER_MOVE_NUM as _HP_BELIEF_NUM
+        self._move_num = {
+            mid: (_HP_BELIEF_NUM if mid.startswith("hiddenpower") else rec["num"])
+            for mid, rec in mappings.get("moves", {}).items() if "num" in rec
+        }
         base_obs = {
             "observation": self.vector_space,
             "action_mask": spaces.Box(0, 1, shape=(11,), dtype=np.int8),

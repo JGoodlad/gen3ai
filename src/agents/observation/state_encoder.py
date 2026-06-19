@@ -57,8 +57,10 @@ def load_mappings():
         for name, data in mappings[category].items():
             if isinstance(data, dict) and "num" in data:
                 num = data["num"]
-                # For moves, prefer the base "hiddenpower" name over typed HP variants
-                # (all 17 HP variants share num=237; the base name is the honest display)
+                # Hidden Power (gen3_typed_hidden_power_ids_v1): the OPPONENT's bare HP keeps num 237 →
+                # decode it as the bare "hiddenpower" (its type is unknowable); OUR typed HP have
+                # DISTINCT nums (355-370), each mapping uniquely to its typed name. The `or name ==
+                # "hiddenpower"` only matters for 237 (it has no other claimant now), kept harmless.
                 if num not in rev or name == "hiddenpower":
                     rev[num] = name
             elif isinstance(data, (int, float)):

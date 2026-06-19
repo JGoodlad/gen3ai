@@ -185,3 +185,32 @@ def test_forward_runs_with_hp_probs_in_obs(extractor):
     assert torch.isfinite(vf_out).all()
     assert pi_out.shape == (1, 512)
     assert vf_out.shape == (1, 512)
+
+
+def test_distinct_typed_hp_takes_type_from_channel_not_blend(extractor):
+    """gen3_typed_hidden_power_ids_v1: OUR typed Hidden Power now carries a DISTINCT move num
+    (e.g. hiddenpowergrass=363), so it is NOT is_hp_slot (== HIDDEN_POWER_MOVE_NUM == 237) — its
+    move-type comes from the move-slot TYPE CHANNEL via the normal embedding path. Only the OPPONENT's
+    bare-237 HP has its type CHANNEL overwritten by the hp_probs soft-blend. Isolate the boundary by
+    varying the TYPE CHANNEL with hp_probs held FIXED: it changes the output for a distinct-num HP
+    (the channel IS the type), but not for a bare-237 HP (the channel is discarded for the blend)."""
+    from agents.gen3_data import moves as _g3moves
+    fe, enc = extractor
+    grass_num = _g3moves.get("hiddenpowergrass").num            # 363 (distinct, our known HP)
+    assert grass_num != HIDDEN_POWER_MOVE_NUM
+    fixed_probs = np.zeros(16, dtype=np.float32)
+    fixed_probs[HIDDEN_POWER_TYPE_ORDER.index(PokemonType.ICE)] = 1.0   # held constant (no role-enc confound)
+
+    def _out(move_num, type_idx):
+        obs = _make_zero_obs(enc)
+        _set_hp_slot(obs, OFFSET_OUR_TEAM, 0, move_num, type_idx=type_idx, hp_probs=fixed_probs)
+        x = {'observation': torch.tensor(obs)[None], 'action_mask': torch.ones(1, 11)}
+        with torch.no_grad():
+            out, _ = fe(x)
+        return out
+
+    G, I = TypeEncoder.TYPE_TO_IDX["GRASS"], TypeEncoder.TYPE_TO_IDX["ICE"]
+    # OUR distinct-num HP (363): the move-type embedding IS the type channel → varying it changes output.
+    assert not torch.allclose(_out(grass_num, G), _out(grass_num, I))
+    # OPP bare HP (237): the type channel is overwritten by the (fixed) hp_probs blend → channel ignored.
+    assert torch.allclose(_out(HIDDEN_POWER_MOVE_NUM, G), _out(HIDDEN_POWER_MOVE_NUM, I))
