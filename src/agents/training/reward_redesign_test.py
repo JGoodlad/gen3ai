@@ -12,7 +12,7 @@ from agents.training.reward_manager import (
     Gen3RewardManager, RewardConfig, RewardClass, RewardBreakdown,
     MAT_HP_WEIGHT, MAT_ALIVE_WEIGHT, STATUS_TEMPO_WEIGHT, PBRS_GAMMA, VICTORY_VALUE,
     SWITCH_RISK_THRESHOLD, SAFE_PIVOT_PKO_MAX, STAY_RISK_TAX_FLOOR, ESCAPE_RISK_FRACTION,
-    HAZARD_WEIGHT, BOOST_WEIGHT, OPP_BOOST_WEIGHT, FINISHING_BLOW_BONUS, EXPLOSION_BLOCK_BONUS,
+    HAZARD_WEIGHT, BOOST_WEIGHT, OPP_BOOST_WEIGHT, ROAR_BOOST_WEIGHT, FINISHING_BLOW_BONUS, EXPLOSION_BLOCK_BONUS,
     SPIKES_WASTE_PENALTY,
     _TIMEOUT_TURN_CAP,
 )
@@ -132,7 +132,7 @@ class TestRewardRegistry(unittest.TestCase):
         self.assertEqual(set(bd.registry_fields(RewardClass.TERMINAL)), {"win_loss"})
         self.assertEqual(set(bd.registry_fields(RewardClass.PBRS)),
                          {"pbrs_material", "pbrs_belief", "pbrs_status",
-                          "pbrs_progress", "pbrs_hazard", "pbrs_boost", "pbrs_opp_boosts"})
+                          "pbrs_progress", "pbrs_hazard", "pbrs_boost", "pbrs_opp_boosts", "pbrs_roar"})
         # Everything else is BIAS.
         self.assertIn("no_progress_tax", bd.registry_fields(RewardClass.BIAS))
         self.assertIn("roar", bd.registry_fields(RewardClass.BIAS))
@@ -754,6 +754,73 @@ class TestOppBoostsPBRS(unittest.TestCase):
 
 
 # --------------------------------------------------------------------------- #
+class TestRoarPBRS(unittest.TestCase):
+    """Φ_roar (folded into --all-shaping-pbrs): the DEDICATED phaze-out-boosts PBRS. Same state-potential
+    shape as Φ_opp_boosts but its own weight (ROAR_BOOST_WEIGHT); proportional to boosts roared out."""
+
+    def _mgr_roar(self, **cfg):
+        return Gen3RewardManager(config=RewardConfig(all_shaping_pbrs=True, **cfg))
+
+    def test_phi_zero_at_start(self):
+        self.assertAlmostEqual(self._mgr_roar()._compute_phi_roar(_full_team_live()), 0.0, places=6)
+
+    def test_phi_proportional_to_positive_boosts(self):
+        """opp atk+2, spe+1 → Φ_roar = −ROAR_BOOST_WEIGHT·3 (negatives ignored)."""
+        m = self._mgr_roar()
+        live = _full_team_live(); live.opp.active.boosts = {"atk": 2, "spe": 1, "def": -1}
+        self.assertAlmostEqual(m._compute_phi_roar(live), -ROAR_BOOST_WEIGHT * 3, places=6)
+
+    def test_fold_disabled_by_default(self):
+        """Default (no all_shaping_pbrs) → byte-identical: pbrs_roar stays 0, prev stays None."""
+        m = Gen3RewardManager()
+        live = _full_team_live(); live.opp.active.boosts = {"atk": 3}
+        m.process_turn_reward(_Battle(live, turn=1), _delta())
+        self.assertEqual(m._last_breakdown.pbrs_roar, 0.0)
+        self.assertIsNone(m._prev_phi_roar)
+
+    def test_roar_clears_boosts_pays_out_proportionally(self):
+        """opp +4 stages, then Roar forces a boostless switch-in → Φ rises → +pbrs_roar = ROAR_BOOST_WEIGHT·4."""
+        m = self._mgr_roar()
+        boosted = _full_team_live(); boosted.opp.active.boosts = {"atk": 2, "spe": 2}
+        m.process_turn_reward(_Battle(boosted, turn=1), _delta())
+        prev = m._prev_phi_roar
+        self.assertAlmostEqual(prev, -ROAR_BOOST_WEIGHT * 4, places=6)
+        cleared = _full_team_live()   # forced-in mon, no boosts
+        m.process_turn_reward(_Battle(cleared, turn=2), _delta(our_move_id="roar", opp_switch_to="new"))
+        self.assertAlmostEqual(m._last_breakdown.pbrs_roar, PBRS_GAMMA * 0.0 - prev, places=6)
+        self.assertGreater(m._last_breakdown.pbrs_roar, 0.0)
+
+    def test_failed_roar_no_payout(self):
+        """Roar fails (opp stays, boosts unchanged) → ΔΦ ≈ 0 (only the bounded (γ−1)·Φ residual)."""
+        m = self._mgr_roar()
+        b1 = _full_team_live(); b1.opp.active.boosts = {"spa": 2}
+        m.process_turn_reward(_Battle(b1, turn=1), _delta())
+        b2 = _full_team_live(); b2.opp.active.boosts = {"spa": 2}
+        m.process_turn_reward(_Battle(b2, turn=2), _delta(our_move_id="roar", opp_switch_to=None))
+        self.assertLess(abs(m._last_breakdown.pbrs_roar), 1e-3)
+
+    def test_stacks_with_opp_boosts_under_all_shaping(self):
+        """Under --all-shaping-pbrs BOTH potentials fire on the same roar — they stack (safe, both PBRS)."""
+        m = Gen3RewardManager(config=RewardConfig(all_shaping_pbrs=True))
+        boosted = _full_team_live(); boosted.opp.active.boosts = {"atk": 3}
+        m.process_turn_reward(_Battle(boosted, turn=1), _delta())
+        cleared = _full_team_live()
+        m.process_turn_reward(_Battle(cleared, turn=2), _delta(our_move_id="roar", opp_switch_to="new"))
+        bd = m._last_breakdown
+        self.assertAlmostEqual(bd.pbrs_opp_boosts, OPP_BOOST_WEIGHT * 3, places=6)
+        self.assertAlmostEqual(bd.pbrs_roar, ROAR_BOOST_WEIGHT * 3, places=6)
+
+    def test_terminal_zeroes_phi(self):
+        m = self._mgr_roar()
+        b1 = _full_team_live(); b1.opp.active.boosts = {"atk": 2}
+        m.process_turn_reward(_Battle(b1, turn=1), _delta())
+        prev = m._prev_phi_roar
+        win = _Live([1.0] * 6, [0.0] * 6, won=True, finished=True)
+        m.process_turn_reward(_Battle(win, turn=2), _delta(opp_fainted=True))
+        self.assertAlmostEqual(m._last_breakdown.pbrs_roar, -prev, places=6)
+
+
+# --------------------------------------------------------------------------- #
 class TestEndStateDrops(unittest.TestCase):
     """The two end-state switches (mirrors TestBiasDrops):
       --all-shaping-pbrs ("everything but stall") zeroes EVERY BIAS term EXCEPT the anti-stall tilt
@@ -1056,6 +1123,55 @@ class TestProgressClock(unittest.TestCase):
         self.assertEqual(c._rested_species, set())
         c.update(self._rest(), self._live_with_moves(moves), _Legal(switches=[1]))
         self.assertEqual(c.last_penalty, 0.0)                             # first rest of the new episode
+
+    # --- Wasted Refresh (folded into gen3_rest_loop_stall_v1): a self-cure with nothing to cure is a NO_OP ---
+    def test_wasted_refresh_charges_as_noop(self):
+        """A Refresh used with no status to cure (our_status_cured is None) is a wasted wheel-spin → charge."""
+        c = self._clock(); c.n = 1
+        c.update(_delta(our_move_id="refresh"), _full_team_live(), _Legal(switches=[1]))
+        self.assertEqual(c.n, 2)
+        self.assertAlmostEqual(c.last_penalty, -0.15, places=6)
+
+    def test_wasted_refresh_charged_even_during_winning_residual(self):
+        """The fix: a wasted Refresh is charged BEFORE the progress check, so a WINNING Leech/Toxic
+        residual (clause v) can't launder it into 'progress' (the observed Refresh-spam-while-seeded)."""
+        c = self._clock(); c.n = 2
+        live = _full_team_live(); live.opp.active.status = "tox"
+        opp_hp = np.zeros(6, dtype=np.float32); opp_hp[0] = -0.0625      # toxic chipping the opp DOWN
+        c.update(_delta(our_move_id="refresh", opp_hp_delta=opp_hp), live, _Legal(switches=[1]))
+        self.assertEqual(c.n, 3)                                         # charged, NOT reset by residual
+        self.assertAlmostEqual(c.last_penalty, -0.15, places=6)
+
+    def test_refresh_then_opp_statuses_us_still_wasted(self):
+        """We move first: a Refresh cast with no status cures nothing even if the opponent statuses us
+        AFTER (our_status_APPLIED set, our_status_CURED still None) — still a wasted NO_OP. (The turn-21
+        Milotic case: refresh first, then opp Toxic lands.)"""
+        from agents.enums import Status
+        c = self._clock(); c.n = 1
+        c.update(_delta(our_move_id="refresh", our_status_applied=Status.TOX),
+                 _full_team_live(), _Legal(switches=[1]))
+        self.assertEqual(c.n, 2)
+        self.assertAlmostEqual(c.last_penalty, -0.15, places=6)
+
+    def test_productive_refresh_not_a_wasted_cure(self):
+        """A Refresh that ACTUALLY cures a status (our_status_cured set) is NOT a wasted no-op — the
+        short-circuit doesn't fire, so a winning residual still exempts the legit defensive stall."""
+        from agents.enums import Status
+        c = self._clock(); c.n = 2
+        live = _full_team_live(); live.opp.active.status = "tox"
+        opp_hp = np.zeros(6, dtype=np.float32); opp_hp[0] = -0.0625
+        c.update(_delta(our_move_id="refresh", our_status_cured=Status.PAR, opp_hp_delta=opp_hp),
+                 live, _Legal(switches=[1]))
+        self.assertEqual(c.n, 0)                                         # winning-residual progress → reset
+        self.assertEqual(c.last_penalty, 0.0)
+
+    def test_wasted_refresh_no_switch_not_charged(self):
+        """Helplessness exemption: a wasted Refresh with no legal switch ticks the obs counter but is not
+        charged (trapped must not be punished — consistent with the other NO_OPs)."""
+        c = self._clock(); c.n = 1
+        c.update(_delta(our_move_id="refresh"), _full_team_live(), _Legal(switches=[]))
+        self.assertEqual(c.n, 2)
+        self.assertEqual(c.last_penalty, 0.0)
 
     def test_hazard_layer_resets(self):
         c = self._clock(); c.n = 2; c._prev_spikes = 1

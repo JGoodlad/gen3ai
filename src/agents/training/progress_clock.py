@@ -132,6 +132,20 @@ class ProgressClock:
             self._heal_streak = 0
             return
 
+        # A self-status-cure move (Refresh) used with NO status to cure is a deliberate wasted no-op: the
+        # mon is unstatused, so the move does nothing (it cured nothing this window). Charge it as a NO_OP
+        # directly, BEFORE the progress/denial classification — otherwise an incidental WINNING residual
+        # (our Leech Seed / Toxic chipping the opp net-down, clause (v)) would launder the wasted Refresh
+        # into "progress" and rescue it from the tax (the observed Refresh-spam-while-seeded stall). A
+        # Refresh that ACTUALLY cures a status sets `our_status_cured`, so it is NOT wasted and falls
+        # through to the normal path.
+        if self._is_wasted_self_cure(delta):
+            self.n = min(self.n + 1, PROGRESS_CLOCK_CAP)
+            switch_legal = legal is not None and len(getattr(legal, "switches", ()) or ()) > 0
+            self.last_penalty = (-abs(self.no_progress_penalty)) if switch_legal else 0.0
+            self._heal_streak = 0
+            return
+
         # RapidSpin with NO hazards on our side to clear is a filler 20-BP pseudo-attack — not real
         # offense, not utility. Its trivial chip (and any incidental opp switch) must NOT launder into
         # "progress" that resets the stall clock, so we disable the progress reset for it and let it
@@ -210,6 +224,22 @@ class ProgressClock:
         if species in self._rested_species and not self._active_has_move(live, _REST_LOOP_EXEMPT_MOVES):
             self._is_rest_loop = True
         self._rested_species.add(species)
+
+    @staticmethod
+    def _is_wasted_self_cure(delta) -> bool:
+        """A self-status-cure move (Refresh) used with NO status to cure — it cured nothing this window
+        (``our_status_cured`` is None) and was not prevented (a cant). Detected by the move's
+        ``cures_self_status`` data flag (Refresh), so it is data-driven, not a hardcoded id. A Refresh
+        that DOES cure a status sets ``our_status_cured`` → not wasted. (We move first, so a Refresh that
+        is immediately re-statused by the opponent still cured nothing AT cast time → ``our_status_cured``
+        stays None → correctly wasted.)"""
+        mid = getattr(delta, "our_move_id", None)
+        if mid is None or getattr(delta, "our_failed_to_move", False):
+            return False
+        if getattr(delta, "our_status_cured", None) is not None:
+            return False
+        md = _movedex.get(mid)
+        return md is not None and getattr(md, "cures_self_status", False)
 
     @staticmethod
     def _active_has_move(live, move_ids) -> bool:

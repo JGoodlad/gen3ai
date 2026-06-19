@@ -232,6 +232,9 @@ class RewardBreakdown:
     pbrs_hazard: float = 0.0      # Φ_hazard = HAZARD_WEIGHT·(opp_spikes − our_spikes) (design §2.6)
     pbrs_boost: float = 0.0       # Φ_boost = BOOST_WEIGHT·Σmax(0,our_active_boost)·hp_frac (stored offense)
     pbrs_opp_boosts: float = 0.0  # Φ_opp_boosts = −OPP_BOOST_WEIGHT·Σmax(0,opp_active_boost) (phaze value)
+    pbrs_roar: float = 0.0        # Φ_roar = −ROAR_BOOST_WEIGHT·Σmax(0,opp_active_boost) — DEDICATED
+                                  # phaze-out-boosts PBRS, folded INTO --all-shaping-pbrs; same potential
+                                  # shape as pbrs_opp_boosts but its own weight (stacks there)
 
     # BIAS-class accumulate-refund (design §1.2): the −(1−λ)·Δacc per-turn refund that dials the
     # BIAS class from fully additive (λ=1, refund≡0, byte-identical to today) toward fully
@@ -249,6 +252,7 @@ class RewardBreakdown:
         "pbrs_status": RewardClass.PBRS,
         "pbrs_progress": RewardClass.PBRS, "pbrs_hazard": RewardClass.PBRS,
         "pbrs_boost": RewardClass.PBRS, "pbrs_opp_boosts": RewardClass.PBRS,
+        "pbrs_roar": RewardClass.PBRS,
         # everything else is BIAS:
         "explosion": RewardClass.BIAS, "explosion_block": RewardClass.BIAS,
         "finishing_blow": RewardClass.BIAS, "self_ko_penalty": RewardClass.BIAS,
@@ -280,7 +284,7 @@ class RewardBreakdown:
         ("field",  ("spikes", "futile_spikes", "matchup_penalty", "dead_matchup_tax",
                     "stay_risk_tax", "status", "stall_tax", "no_progress_tax")),
         ("shaping", ("pbrs_belief", "pbrs_status", "pbrs_progress", "pbrs_hazard",
-                     "pbrs_boost", "pbrs_opp_boosts", "bias_refund")),
+                     "pbrs_boost", "pbrs_opp_boosts", "pbrs_roar", "bias_refund")),
     )
 
     @classmethod
@@ -369,6 +373,11 @@ _TEMPO_STATUSES = frozenset({"par", "slp", "frz"})  # non-damaging tempo statuse
 
 ROAR_BONUS = 0.2               # reward for Roar when spikes on opp side or opp had positive boosts
 OPP_BOOST_WEIGHT = 0.15        # Φ_opp_boosts per opp positive boost stage (phaze-disruption potential)
+ROAR_BOOST_WEIGHT = 0.25       # Φ_roar per opp positive boost stage — the DEDICATED phaze-out-boosts PBRS,
+                               # folded INTO --all-shaping-pbrs (no separate flag). A touch stronger than
+                               # OPP_BOOST_WEIGHT since the model under-roars; it STACKS with Φ_opp_boosts
+                               # under all_shaping_pbrs (both are policy-invariant PBRS, so stacking only
+                               # scales the proportional roar-out-boosts shaping — see _fold_roar_pbrs).
 SE_SWITCH_BONUS = 0.2          # reward for switching in a mon with a SE damaging move vs opp active
 SLEEP_SWAP_BONUS = 0.25        # reward for rotating a sleeping mon out; penalty for rotating one in
 SPIKES_LAYER_BONUS = 0.5       # per layer added to opponent's side (credit assignment bridge)
@@ -531,6 +540,7 @@ class Gen3RewardManager:
         self._prev_phi_hazard: Optional[float] = None      # hazard/spikes PBRS Φ_hazard (design §2.6)
         self._prev_phi_boost: Optional[float] = None       # stored-boost PBRS Φ_boost
         self._prev_phi_opp_boosts: Optional[float] = None  # opp-boost-disruption PBRS Φ_opp_boosts
+        self._prev_phi_roar: Optional[float] = None        # dedicated phaze-out-boosts PBRS Φ_roar
         self._prev_active_ko_risk: float = 0.0
         self._prev_safe_pivot: bool = False              # did a safe bench pivot exist at decision time
         self._cur_can_switch: bool = True                # was a switch LEGAL at this decision (mask) —
@@ -1228,6 +1238,17 @@ class Gen3RewardManager:
         bound = OPP_BOOST_WEIGHT * 7
         return max(-bound, min(phi, bound))
 
+    def _compute_phi_roar(self, live) -> float:
+        """DEDICATED phaze-out-boosts potential Φ_roar = −ROAR_BOOST_WEIGHT·Σmax(0,b) over the opp active's
+        positive boost stages (same state-potential shape as Φ_opp_boosts, its OWN weight). A successful
+        Roar resets the opp active's stages → next window Φ rises by ROAR_BOOST_WEIGHT·(stages cleared) =
+        the proportional roar-out-boosts payout; a failed roar leaves them → ΔΦ=0. Pure board function."""
+        if not live.opp.active:
+            return 0.0
+        positive = sum(max(0, int(v)) for v in (live.opp.active.boosts or {}).values())
+        bound = ROAR_BOOST_WEIGHT * 7
+        return max(-bound, min(-ROAR_BOOST_WEIGHT * positive, bound))
+
     def _compute_spikes_bonus(self, delta: TurnDelta, live) -> tuple[float, float]:
         """Return (layer_bonus, futile_waste). The layer-added credit is the BIAS term `spikes`
         (its telescoping form is Φ_hazard, reached at bias_additivity→0 — design §2.6); the
@@ -1445,6 +1466,16 @@ class Gen3RewardManager:
         bd.pbrs_opp_boosts, self._prev_phi_opp_boosts = self._pbrs_step(
             self._prev_phi_opp_boosts, self._compute_phi_opp_boosts(live), is_terminal)
 
+    def _fold_roar_pbrs(self, bd: "RewardBreakdown", live, is_terminal: bool) -> None:
+        """DEDICATED phaze-out-boosts PBRS Φ_roar → bd.pbrs_roar. Folded INTO --all-shaping-pbrs (its own
+        flag was removed per owner request), so it rides alongside Φ_opp_boosts there — the two STACK (safe,
+        both policy-invariant) for a stronger proportional roar-out-boosts shaping. Telescopes via
+        _pbrs_step, Φ(terminal)=0. OFF (no all_shaping_pbrs) → byte-identical (prev stays None, field 0.0)."""
+        if not self.config.all_shaping_pbrs:
+            return
+        bd.pbrs_roar, self._prev_phi_roar = self._pbrs_step(
+            self._prev_phi_roar, self._compute_phi_roar(live), is_terminal)
+
     def _apply_progress_clock(self, bd: "RewardBreakdown") -> None:
         """Read the shared ProgressClock's stashed penalty into ``bd.no_progress_tax`` and suppress
         the escalating anti-spam family it SUBSUMES (design §3.1) — gated on ``bias_redesign``. In the
@@ -1640,6 +1671,7 @@ class Gen3RewardManager:
         self._fold_hazard_pbrs(bd, live, is_terminal)
         self._fold_boost_pbrs(bd, live, is_terminal)
         self._fold_opp_boosts_pbrs(bd, live, is_terminal)
+        self._fold_roar_pbrs(bd, live, is_terminal)
 
         # Track whether our last move did anything PRODUCTIVE this turn, for the
         # escalating repetition tax. A move counts as effective if it dealt damage,

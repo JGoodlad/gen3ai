@@ -591,6 +591,13 @@ MODEL_CONFIG_VERSION = 38
 #   exempt. VALUES-only on rest-loop turns (same obs dim 3457, no shape change) — but it re-means an obs
 #   feature, so it is retrain-class: an old checkpoint won't load (loud arch-family error), which is correct
 #   since it was trained with the prior clock semantics. (progress_clock.py: the heal-grace bypass.)
+#   This rest-loop signature ALSO covers a SECOND no-progress-clock (vec[14]) refinement authored alongside
+#   it and folded in WITHOUT its own signature bump (owner decision — a values-only clock change; the live
+#   ARCH below has since moved on for unrelated reasons): a self-status-cure move (Refresh) used with NO
+#   status to cure (`cures_self_status` + `our_status_cured is None`) is a NO_OP charged BEFORE the progress
+#   check (a definitional-no-op short-circuit, like capped Spikes), so even a WINNING residual (our Leech
+#   Seed / Toxic chipping the opp net-down) can't launder it into "progress" — the Refresh-spam-while-seeded
+#   stall. (progress_clock.py: _is_wasted_self_cure short-circuit.)
 # gen3_op_move_align_v1: FIXES a DamageOperator OUTGOING move-order bug. The op's per-move OUTGOING blocks
 #   (_outgoing_block v23, _status_landing v27, _outgoing_matrix v34) emit one feature group per OUR move and
 #   the POLICY head reads group k as action 6+k (request order) — but they READ ctx.all_move_ids[our_active],

@@ -28,7 +28,13 @@ loop can't hold — `process_turn_reward` reads as a short phase sequence over t
   **`--stall-pbrs`-gated**; the other three are **`--all-shaping-pbrs`-gated**),
   `pbrs_hazard` (**Φ_hazard** = `HAZARD_WEIGHT`·(opp − our spike layers), design §2.6), `pbrs_boost`
   (**Φ_boost** = `BOOST_WEIGHT`·Σmax(0,our-active-boost)·hp_frac, the stored offense), and
-  `pbrs_opp_boosts` (**Φ_opp_boosts** = −`OPP_BOOST_WEIGHT`·Σmax(0,opp-active-boost), the phaze value).
+  `pbrs_opp_boosts` (**Φ_opp_boosts** = −`OPP_BOOST_WEIGHT`·Σmax(0,opp-active-boost), the phaze value),
+  and `pbrs_roar` (**Φ_roar** = −`ROAR_BOOST_WEIGHT`(0.25)·Σmax(0,opp-active-boost), the **DEDICATED**
+  phaze-out-boosts PBRS — **folded INTO `--all-shaping-pbrs`** (no separate flag/version, owner request);
+  same state-potential shape as `pbrs_opp_boosts` but its own weight, so a successful Roar pays out
+  `+ROAR_BOOST_WEIGHT·(stages cleared)`. A PBRS can't be action-keyed without becoming a BIAS, so it IS the
+  same potential — under `--all-shaping-pbrs` the two STACK; safe, both telescope to 0 → policy-invariant,
+  the effect is just stronger proportional roar shaping).
   The field holds `γ·Φ(s′)−Φ(s)`; `PBRS_GAMMA` MUST ==
   the PPO gamma (asserted in `train_rl_agent.py` after the model is built — the manager is built first,
   in the env factory, so it can't assert in `__init__`).
@@ -83,13 +89,19 @@ battles: a winning-residual window is never charged). The env (`gen3_env.py`) fo
 embed time, updates the clock, caches it for `calc_reward` (no double fold), and wires
 `reward_manager.progress_clock = tracker.progress_clock`.
 
-**Two futile-move short-circuits** (BEFORE the PROGRESS check, so an incidental opp switch can't launder
-them via clause (iv)): **(1) capped Spikes** — Spikes used at the 3-layer cap can never add a layer, so
-it is charged as a NO_OP directly (a layer-ADDING Spikes still resets via the hazard clause); **(2)
-filler RapidSpin** — RapidSpin with NO spikes on our side to clear is a 20-BP filler pseudo-attack, so
-its trivial chip is barred from counting as progress and it falls through to the NO_OP charge (a spin
-that genuinely clears our hazards, lands a KO, or is RNG-denied is handled normally). Both target the
-self-play wheel-spin loops (a mutual Spikes/RapidSpin stall) the flat anti-spam taxes missed.
+**Three futile-move short-circuits** (BEFORE the PROGRESS check, so an incidental opp switch — or, for
+(3), a winning residual via clause (v) — can't launder them): **(1) capped Spikes** — Spikes used at the
+3-layer cap can never add a layer, so it is charged as a NO_OP directly (a layer-ADDING Spikes still
+resets via the hazard clause); **(2) filler RapidSpin** — RapidSpin with NO spikes on our side to clear is
+a 20-BP filler pseudo-attack, so its trivial chip is barred from counting as progress and it falls through
+to the NO_OP charge (a spin that genuinely clears our hazards, lands a KO, or is RNG-denied is handled
+normally); **(3) wasted Refresh** (folded into `gen3_rest_loop_stall_v1`, `_is_wasted_self_cure`) — a self-status-cure
+move (`cures_self_status`, i.e. Refresh) used with no status to cure (`our_status_cured is None`, not a cant)
+does nothing, so it is charged as a NO_OP directly — crucially even when our Leech Seed / Toxic is chipping
+the opp NET-down (which clause (v) would otherwise credit as progress), killing the observed
+Refresh-spam-while-seeded stall (a Refresh that ACTUALLY cures a status sets `our_status_cured` → not wasted →
+normal path). The first two target the self-play Spikes/RapidSpin wheel-spin loops the flat anti-spam taxes
+missed; the third targets degenerate self-cure spam during a passive residual stall.
 
 **Server-free reward parity (`reward_tracker.py`).** The offline reward path (`RewardTracker`, used by
 `BattleRecorder` + the eval `RewardTrackingMixin`) has no `Gen3Env` to own the clock, so it OWNS a

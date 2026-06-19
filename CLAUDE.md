@@ -888,8 +888,9 @@ SELF-CONTAINED (no cross-move correlation). STRUCTURAL bool (adds two Linears); 
 + both extractor sites. **Completes the FULL `--unified-obs` deprecation** (verified by a deprecation-gap
 audit: every CPU-obs signal has a GPU home — damage→trunk/refine, status→trunk/v37, effects→move latent, PP
 →per-mon slot, provenance/p_outspeed/crit→explicit op channels, per-move status_will_land+known→v27 heads;
-honest residuals = opp-recovery heads-only + Rest-cure coarsening). Current
-`MODEL_CONFIG_VERSION` = **37**. Full design:
+honest residuals = opp-recovery heads-only + Rest-cure coarsening). The dedicated `pbrs_roar`
+phaze-out-boosts PBRS is folded INTO `--all-shaping-pbrs` (no new flag/version, no `ARCH_SIGNATURE` bump).
+Current `MODEL_CONFIG_VERSION` = **38**. Full design:
 `designs/ai_v6/design_bidirectional_threat_trunk.md` (+ `gen3ai/tmp/{model_v36_full,stacking_levels}.png`)
 (and `design_per_move_damage_matrices.md` for v34/v35, `design_iterative_damage_refinement.md` for v33,
 `design_topk_incoming_moves.md` for v30, `design_distributional_value_critic.md` for v29,
