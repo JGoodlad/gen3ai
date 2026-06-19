@@ -3,6 +3,7 @@ import numpy as np
 
 from agents.observation.belief_labels import (
     build_belief_labels, build_known_move_labels, zero_belief_labels, zero_known_moves,
+    build_known_spread_labels, zero_spread_labels, SPREAD_STAT_ORDER, N_SPREAD_STATS,
     PAD, BELIEF_MOVE_SLOTS,
 )
 from agents.observation.constants import TEAM_SIZE
@@ -113,3 +114,42 @@ def test_known_moves_revealed_species_absent_from_team_stays_pad():
 def test_zero_known_moves_shape():
     km = zero_known_moves()
     assert km.shape == (TEAM_SIZE, BELIEF_MOVE_SLOTS) and (km == PAD).all()
+
+
+# ---- SPREAD belief labels (gen3_unified_spread_belief_v1) ----
+_SPREAD = {  # normalised species -> TRUE derived stats {atk,def,spa,spd,spe}
+    "tyranitar": [367, 256, 203, 237, 159],
+    "skarmory": [259, 317, 104, 177, 179],
+    "blissey": [49, 75, 207, 437, 95],
+}
+
+
+def test_spread_labels_revealed_slots_only_matched_by_species():
+    # 2 revealed (Tyranitar, Skarmory), 4 believed → only the 2 revealed slots scored, by species.
+    species_known = [1, 1, 0, 0, 0, 0]
+    sp, mask = build_known_spread_labels(["Tyranitar", "Skarmory"], _SPREAD, species_known, _norm)
+    assert sp.shape == (TEAM_SIZE, N_SPREAD_STATS) and mask.shape == (TEAM_SIZE,)
+    assert mask.tolist() == [1, 1, 0, 0, 0, 0]
+    assert sp[0].tolist() == [367, 256, 203, 237, 159]   # slot 0 = Tyranitar (atk,def,spa,spd,spe order)
+    assert sp[1].tolist() == [259, 317, 104, 177, 179]   # slot 1 = Skarmory
+    assert (sp[2:] == 0).all()                           # believed slots untouched
+
+
+def test_spread_labels_unmappable_or_incomplete_species_left_unmasked():
+    # Tyranitar maps; "Ditto" absent from the map; a species with a None stat → both mask=0.
+    bad = dict(_SPREAD); bad["claydol"] = [120, None, 140, 130, 100]   # incomplete
+    sp, mask = build_known_spread_labels(["Tyranitar", "Ditto", "Claydol"], bad, [1, 1, 1, 0, 0, 0], _norm)
+    assert mask.tolist() == [1, 0, 0, 0, 0, 0]            # only Tyranitar supervised
+    assert sp[0].tolist() == [367, 256, 203, 237, 159]
+    assert (sp[1] == 0).all() and (sp[2] == 0).all()
+
+
+def test_spread_labels_all_believed_yields_empty_mask():
+    sp, mask = build_known_spread_labels([], _SPREAD, [0, 0, 0, 0, 0, 0], _norm)
+    assert (mask == 0).all() and (sp == 0).all()
+
+
+def test_zero_spread_labels_shape():
+    sp, mask = zero_spread_labels()
+    assert sp.shape == (TEAM_SIZE, N_SPREAD_STATS) and (sp == 0).all()
+    assert mask.shape == (TEAM_SIZE,) and (mask == 0).all()

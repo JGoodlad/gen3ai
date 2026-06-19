@@ -476,8 +476,14 @@ atk/spa/def/spd/spe (gathered at `ctx.opp_active_local`, indices `_SB_ATK.._SB_S
 hand-coded de-timid `252/×1.1` / neutral-0-EV constants — so the op's opponent stats are a learned belief,
 not a fixed guess (None → the legacy constants, byte-identical). Predicts DERIVED stats (not EVs+nature) so
 the op consumes the value directly (the head stays additive). `spread_belief` is STRUCTURAL (check_compatible);
-`spread_belief_coef` is training-only (the speed supervision from observed move order — flag wired, the loss
-is the one staged piece). The **`--unified-obs`** master flag flips three `ObsUnpack` forward-behavior masks
+`spread_belief_coef` is training-only — the **supervision loss is now WIRED** (`gen3_unified_spread_belief_v1`):
+`instrumented_ppo._spread_belief_loss` regresses the believed derived stats (`last_spread_belief`) toward the
+opponent's TRUE derived stats (a privileged training-only `belief_spread`/`belief_spread_mask` label from
+agent2's own team, REVEALED slots only) via a scale-normalised smooth-L1, so the head LEARNS the opponent's
+hidden EV spread instead of sitting at the usage-mean prior (which over-estimates the largest-EV stat → the
+op then mis-prices damage/outspeed). Metrics ride `belief/spread_*` (mae, `largest_bias`→0, n_slots); 0.0 =
+OFF (byte-identical, head gets only the indirect op-damage gradient). See `src/agents/training/CLAUDE.md` →
+spread-belief supervision loss. The **`--unified-obs`** master flag flips three `ObsUnpack` forward-behavior masks
 (`mask_incoming_damage_obs` + `mask_active_move_scalars_obs` [move_power+multiplier, requires
 `damage_outgoing`] + `mask_move_effects_obs` [the 44-dim block]) that zero a now-GPU-subsumed obs region from
 the model's view (clone-once, offsets from named `reactive_layout` entries, reward/PBRS untouched). All

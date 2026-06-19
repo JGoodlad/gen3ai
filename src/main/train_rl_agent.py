@@ -1001,12 +1001,16 @@ async def main():
                              "(version-checked, fresh-only). Off by default.")
     parser.add_argument("--spread-belief-coef", "--spread_belief_coef", dest="spread_belief_coef",
                         type=float, default=None,
-                        help="[STAGED — NOT YET ACTIVE] the intended speed-supervision weight for the spread "
-                             "belief (coef * masked BCE of the believed P(outspeed) toward observed move "
-                             "order). The loss is NOT YET WIRED — this value is recorded-only for now and a "
-                             ">0 setting WARNS. (The op's damage gradient already shapes the offensive/"
-                             "defensive stats; speed gets the supervision once the loss lands.) REQUIRES "
-                             "--spread-belief. TRAINING-only (not version-locked).")
+                        help="Spread-belief SUPERVISION weight (gen3_unified_spread_belief_v1): coef * "
+                             "smooth_l1(believed derived stats {atk,def,spa,spd,spe}, TRUE derived stats) "
+                             "over the REVEALED opp slots, so the SpreadBelief head LEARNS the opponent's "
+                             "hidden EV spread (privileged training-only label from agent2's own team) "
+                             "instead of sitting at the usage-mean prior (which over-estimates the largest-EV "
+                             "stat → mis-priced damage/outspeed). The DamageOperator then prices damage "
+                             "against the opponent's REAL bulk/offense/speed. 0.0 = OFF (byte-identical loss; "
+                             "the head gets only the indirect op-damage gradient). REQUIRES --spread-belief. "
+                             "TRAINING-only (not version-locked); metrics ride belief/spread_* "
+                             "(mae, largest_bias→0, n_slots).")
     parser.add_argument("--unified-obs", "--unified_obs", dest="unified_obs",
                         action=BoolFlag, default=False,
                         help="DISABLE the redundant CPU obs blocks the unified GPU path now subsumes (ONE "
@@ -1499,17 +1503,11 @@ async def main():
             "--move-belief-latent-coef 0."
         )
     if args.spread_belief_coef and not args.spread_belief:
-        # The speed supervision reads the spread belief's believed-speed output → the module must exist.
+        # The supervision reads the spread belief's believed stats (last_spread_belief) → the module must exist.
         parser.error(
-            "--spread-belief-coef requires --spread-belief (it supervises the spread belief's speed). "
+            "--spread-belief-coef requires --spread-belief (it supervises the believed opp spread). "
             "Enable --spread-belief, or set --spread-belief-coef 0."
         )
-    if args.spread_belief_coef:
-        # HONESTY GUARD: the speed-supervision loss is STAGED (not yet wired into InstrumentedMaskablePPO).
-        # A >0 value is recorded into model_config but trains NOTHING for speed — warn loudly so an A/B
-        # isn't silently varying nothing. (The op's damage gradient still shapes atk/def/spa/spd.)
-        print(f"[WARNING] --spread-belief-coef {args.spread_belief_coef:g} is RECORDED-ONLY: the "
-              "speed-supervision loss is not yet implemented, so this trains nothing for speed this run.")
     if args.mask_active_move_scalars_obs and not args.damage_outgoing:
         # Zeroing the active-move power/multiplier scalars only makes sense once the op's OUTGOING block
         # replaces them; without it the model loses the per-move signal with no substitute.
@@ -1732,6 +1730,10 @@ async def main():
                     move_belief_mode=args.move_belief_mode,
                     emit_belief_target=(args.opp_belief_latent_coef > 0.0),
                     emit_win_target=(args.win_prob_mode != "none"),
+                    # SPREAD-belief supervision (gen3_unified_spread_belief_v1): emit the privileged
+                    # true-spread label only when the loss will consume it (coef>0; the CLI guards that
+                    # --spread-belief-coef requires --spread-belief, so the head is present to supervise).
+                    emit_spread_labels=(args.spread_belief and args.spread_belief_coef > 0.0),
                 )
                 if args.use_showdown_bridge:
                     # Swap the two _EnvPlayer agents' websocket transport for a local

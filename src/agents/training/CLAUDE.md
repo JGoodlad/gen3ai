@@ -1142,6 +1142,46 @@ it in **role-token space** — graded supervision the CE can't give. REQUIRES `-
   PAD slots zero, and the no-leak obs width, over thousands of live decisions:
   `python src/agents/training/poke_env_gaps/belief_target_fuzz_test.py [n_battles]`.
 
+## Spread-belief supervision loss (`--spread-belief-coef`)
+
+The training half of the THIRD belief leg (model side: `src/agents/model/CLAUDE.md` → SpreadBelief, v25).
+The `SpreadBelief` head predicts the opponent's hidden SPREAD (the 5 derived stats {atk,def,spa,spd,spe}) and
+the `DamageOperator` consumes it for damage + outspeed. WITHOUT this loss the head is **unsupervised** — it
+gets only the weak/unaligned gradient leaking back through the op, so it sits at the usage-mean prior, which
+**over-estimates the largest-EV stat** (the modal Smogon set maxes it) → the op mis-prices damage/outspeed
+against the *modal* opponent, not the real one. Off by default (`--spread-belief-coef 0`). Two pieces:
+- **Label (`gen3_env.py` → `belief_labels.build_known_spread_labels`).** When `emit_spread_labels`
+  (= `--spread-belief` AND `--spread-belief-coef>0`), `_spread_labels` (INDEPENDENT of the species/move
+  belief path, so `--spread-belief` works standalone) merges two TRAINING-ONLY Dict keys: `belief_spread`
+  [6,5] (the TRUE derived stats of each REVEALED opp mon, matched BY SPECIES against agent2's own team's
+  computed `mon.stats` — the privileged ground truth Gen 3 hides from the trainee even once the species is
+  revealed) + `belief_spread_mask` [6] (1 = supervised). Believed/pad/incomplete-stat slots → mask 0. Read
+  ONLY by the loss; the model forward reads only `obs["observation"]`. SPREAD_STAT_ORDER == the op's
+  `_SB_ATK.._SB_SPE` consumption order (pinned by `spread_belief_loss_test` — the GIGO/order-mismatch guard).
+- **Loss (`instrumented_ppo._spread_belief_loss`).** Reads the extractor's stashed `last_spread_belief`
+  [6,5] (the believed stat VALUES the op consumes) + the label keys; folds `spread_belief_coef ·
+  smooth_l1((believed − true)/_SPREAD_LOSS_SCALE)` over the masked (revealed) slots. The gradient flows
+  believed → `stat_head` → opp tokens → trunk, so it is broken out as its OWN per-head share
+  `grad/spread_belief_share` on the common-denominator grad-balance probe (it does NOT gate the
+  probe-sample timing — it scores on near-always-present REVEALED slots). **Leak-safe:** the believed
+  stats are a MODEL OUTPUT (the op's input), not a label; the true-spread label is training-only, read
+  only here.
+- **Metrics (`belief/spread_*`).** `mae` (believed-vs-true error in RAW stat points — should fall),
+  `largest_bias` (signed error on each mon's LARGEST true stat — the "over-estimates the largest EV"
+  diagnostic, → 0 as the head learns), `n_slots` (supervised slots/minibatch), `loss`.
+- **Versioning.** `spread_belief` (the head) is the version-checked structural toggle (v25, fresh-only);
+  `spread_belief_coef` is **training-only** (inherited on a flagless resume, like `move_belief_coef`). The
+  loss adds NO forward/weight change → no `ARCH_SIGNATURE`/`MODEL_CONFIG_VERSION` bump (a checkpoint trained
+  at coef 0 can resume with coef>0 to start supervising — like enabling any aux).
+- **Tests.** Unit: `spread_belief_loss_test.py` (masking, scale-normalised smooth_l1, grad ONLY to
+  supervised slots, the `largest_bias` over-estimate detector, off→None, the stat-order GIGO pin),
+  `belief_labels_test.py` (`build_known_spread_labels` species-match + mask + incomplete-stat skip). **Fuzz**
+  (real bridge battles, no server): `poke_env_gaps/belief_labels_fuzz_test.py` validates `belief_spread` ==
+  the actual revealed opp mons' true derived stats (`mon.stats`), believed/pad slots zero (no leak), and the
+  OFF env declaring no spread keys, over thousands of live decisions. End-to-end smoke (`--debug
+  --unified-moves both --spread-belief --spread-belief-coef 0.1 --n-steps 64`) confirms the roundtrip + the
+  loss runs + `belief/spread_*` metrics.
+
 ## Win-probability head (`--win-prob-mode` / `--win-prob-coef`)
 
 The training half of the tri-state win-probability head (model side: `src/agents/model/CLAUDE.md` →

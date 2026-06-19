@@ -93,6 +93,9 @@ _METRIC_LABELS = {
     "grad/value_dist_share": "valdist share",
     "grad/value_dist_norm_shared": "valdist grad-norm",
     "grad/value_dist_policy_cosine": "valdist-pol cos",
+    "grad/spread_belief_share": "spread blf share",
+    "grad/spread_belief_norm_shared": "spread blf norm",
+    "grad/spread_belief_policy_cosine": "spread blf-pol cos",
     # PopArt value-target normalizer (--use-popart).
     "popart/mu": "value mu",
     "popart/sigma": "value sigma",
@@ -121,6 +124,13 @@ _METRIC_LABELS = {
     "belief/latent_std": "latent std",
     "belief/latent_vicreg": "latent vicreg",
     "belief/latent_loss": "latent loss",
+    # Spread belief (--spread-belief-coef, gen3_unified_spread_belief_v1): the op's believed opp stats vs
+    # truth. mae = stat-point error (falls); largest_bias = signed error on each mon's largest stat → 0
+    # (the "over-estimates the largest EV" diagnostic); n_slots = supervised (revealed) slots/minibatch.
+    "belief/spread_mae": "spread mae",
+    "belief/spread_largest_bias": "spread max-bias",
+    "belief/spread_n_slots": "spread slots",
+    "belief/spread_loss": "spread loss",
     # Distributional value head (--value-dist-mode, v29): the interpretability critic's aggregate
     # health. entropy/std fall as it sharpens; PIT → 0.5 ⟺ calibrated; |E[Z]−G| in support units.
     "value_dist/ce": "dist CE",

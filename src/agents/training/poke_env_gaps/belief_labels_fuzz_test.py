@@ -44,7 +44,7 @@ from agents.observation.state_encoder import load_mappings
 from agents.observation.constants import (
     OFFSET_OPP_TEAM, POKEMON_FULL_DIM, POKEMON_SPECIES_KNOWN_OFFSET, TEAM_SIZE,
 )
-from agents.observation.belief_labels import BELIEF_MOVE_SLOTS
+from agents.observation.belief_labels import BELIEF_MOVE_SLOTS, N_SPREAD_STATS, SPREAD_STAT_ORDER
 from utils.bridge.bridge_session import attach_bridge_transport
 from utils.teambuilder import Gen3Teambuilder
 from utils.team_loader.loader import TeamLoader
@@ -56,7 +56,7 @@ def _build(teams, emit):
     env = Gen3Env(
         load_mappings(), battle_format="gen3ou", team=Gen3Teambuilder(teams),
         account_configuration1=AccountConfiguration("BeliefFz", None),
-        start_listening=False, emit_belief_labels=emit,
+        start_listening=False, emit_belief_labels=emit, emit_spread_labels=emit,
     )
     attach_bridge_transport(env, battle_format="gen3ou", persistent=True, recycle_every=0)
     opp = RandomPlayer(
@@ -77,6 +77,7 @@ class Stats:
     def __init__(self):
         self.decisions = 0
         self.fired = 0  # decisions with >=1 believed labeled slot
+        self.spread_fired = 0  # revealed slots whose true derived-stat spread label was validated
 
 
 def _check(obs, env, sp_num, mv_num, enc_dim, stats):
@@ -120,6 +121,28 @@ def _check(obs, env, sp_num, mv_num, enc_dim, stats):
             if mid >= 0:
                 assert mid in real_move_nums, f"move {mid} not in {sp}'s moveset {real_move_nums}"
 
+    # (6) SPREAD belief (gen3_unified_spread_belief_v1): each REVEALED slot carries the TRUE derived
+    # stats {atk,def,spa,spd,spe} of that mon (agent2's OWN team's computed stats); believed/pad → mask 0.
+    bsp = obs.get("belief_spread")
+    bspm = obs.get("belief_spread_mask")
+    assert bsp is not None and bspm is not None, "belief_spread keys missing from stepped obs"
+    assert bsp.shape == (TEAM_SIZE, N_SPREAD_STATS) and bspm.shape == (TEAM_SIZE,), (bsp.shape, bspm.shape)
+    revealed_slots = [i for i in range(TEAM_SIZE) if _species_known(vec, i) >= 0.5]
+    revealed_mons = [m for m in ObservationEncoder.get_team_list(b1, is_opponent=True) if m]
+    for slot, m in zip(revealed_slots, revealed_mons):
+        tmon = full.get(to_id_str(m.species))
+        st = (getattr(tmon, "stats", None) or {}) if tmon is not None else {}
+        vals = [st.get(k) for k in SPREAD_STAT_ORDER]
+        if all(v is not None for v in vals):
+            assert bspm[slot] == 1.0, f"revealed slot {slot} ({m.species}) should be supervised"
+            assert np.allclose(bsp[slot], [float(v) for v in vals]), \
+                f"spread label {bsp[slot].tolist()} != true {vals} for {m.species}"
+            stats.spread_fired += 1
+    # believed / empty slots: never supervised, always zero
+    for i in range(TEAM_SIZE):
+        if i not in revealed_slots:
+            assert bspm[i] == 0.0 and np.allclose(bsp[i], 0.0), f"non-revealed slot {i} leaked a spread label"
+
 
 def main(n_battles=40):
     mappings = load_mappings()
@@ -139,6 +162,7 @@ def main(n_battles=40):
         start_listening=False, emit_belief_labels=False,
     )
     assert "belief_species" not in off_env.observation_space.spaces, "OFF env must not declare belief keys"
+    assert "belief_spread" not in off_env.observation_space.spaces, "OFF env must not declare spread keys"
 
     for ep in range(n_battles):
         obs, _ = w.reset()
@@ -161,8 +185,14 @@ def main(n_battles=40):
     # slots), so the fire rate is naturally modest — the floor only needs to be clearly above zero.
     fire_rate = stats.fired / max(1, stats.decisions)
     assert fire_rate > 0.10, f"belief labels fired on only {fire_rate:.0%} of decisions — silent all-PAD regression?"
+    # SPREAD labels supervise REVEALED slots (the opposite population from the species belief), so they
+    # fire whenever an opp mon is on the field — a clearly-above-zero floor catches a silent all-mask-0
+    # regression (e.g. mon.stats unavailable / a species-match break).
+    assert stats.spread_fired > 0.5 * stats.decisions, (
+        f"spread labels validated on only {stats.spread_fired} revealed slots over {stats.decisions} "
+        "decisions — the belief_spread plumbing (mon.stats / species match) likely broke.")
     print(f"✅ belief-labels fuzz PASSED: {stats.decisions} decisions across {n_battles} battles, "
-          f"fired {fire_rate:.0%}, all invariants held.")
+          f"fired {fire_rate:.0%}, spread-validated {stats.spread_fired} revealed slots, all invariants held.")
 
 
 if __name__ == "__main__":

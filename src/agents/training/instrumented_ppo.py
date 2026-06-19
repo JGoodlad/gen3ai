@@ -72,6 +72,11 @@ _LATENT_VICREG_WEIGHT = 1.0
 # ≈ a few-hundred-train()-call window — long enough to denoise, short enough to track drift.
 _NOISE_SCALE_EMA_DECAY = 0.99
 
+# Spread-belief loss (gen3_unified_spread_belief_v1): the believed/true DERIVED stat VALUES are ~80-450,
+# so normalise by this before smooth_l1 to keep the term O(1) (the coef then sets its true weight). The
+# MAE metric is reported in RAW stat points (not normalised) for interpretability.
+_SPREAD_LOSS_SCALE = 100.0
+
 
 def _verify_upstream_unchanged() -> None:
     """Fail-loud at import time if the upstream `MaskablePPO.train()` source
@@ -187,6 +192,15 @@ class InstrumentedMaskablePPO(MaskablePPO):
     # (byte-identical). Training-only (scales the loss, never a forward pass) → NOT version-locked. The
     # MODE (which slots) lives on the extractor (move_belief_mode) — read from there, single source.
     move_belief_coef: float = 0.0
+
+    # Set by train_rl_agent (gen3_unified_spread_belief_v1). The SPREAD-belief supervision weight:
+    # spread_belief_coef * smooth_l1(believed derived stats, TRUE derived stats) over the REVEALED opp
+    # slots. 0.0 = OFF (byte-identical loss — the SpreadBelief head then gets only the indirect op-damage
+    # gradient and sits at the usage-mean prior, the "over-estimates the largest EV" miscalibration). It
+    # READS the extractor's last_spread_belief (the believed stats the op consumes) + the training-only
+    # belief_spread/_mask label keys. Training-only (scales the loss, never a forward pass) → NOT
+    # version-locked; the SpreadBelief module is gated by the version-checked spread_belief arch toggle.
+    spread_belief_coef: float = 0.0
 
     # Set by train_rl_agent (gen3_unified_move_system_v1). The MOVE-belief LATENT-grading weight:
     # move_belief_latent_coef * (cosine of the predicted move distribution's expected move-latent toward
@@ -443,6 +457,42 @@ class InstrumentedMaskablePPO(MaskablePPO):
             "unrevealed_slots": float(n_unrevealed),
         }
         return loss, metrics
+
+    @staticmethod
+    def _spread_belief_loss(sb, belief_spread, belief_spread_mask):
+        """Supervised loss for the SPREAD belief (gen3_unified_spread_belief_v1).
+
+        `sb` = the extractor's stashed `last_spread_belief` [B,6,5] — the believed DERIVED stats
+        {atk,def,spa,spd,spe} the DamageOperator consumes. Supervise the REVEALED opp slots
+        (`belief_spread_mask` [B,6]==1) toward their TRUE derived stats (`belief_spread` [B,6,5], a
+        training-only privileged label) with a smooth-L1 in scale-normalised stat units, so the head
+        learns the opponent's HIDDEN EV spread instead of sitting at the usage-mean prior (the
+        "over-estimates the largest EV" miscalibration). The gradient flows believed → stat_head →
+        opp tokens → trunk, so it joins the aux pull on the grad-balance probe.
+
+        Returns (loss, metrics) or None (off / labels absent / no scored slot). LEAK-SAFE: the believed
+        stats are a MODEL OUTPUT (the op's own input), not a label; the true-spread LABEL rides a
+        training-only obs key read ONLY here, never in the pi/vf forward. Pure + static (unit-testable
+        without a full PPO)."""
+        if sb is None or belief_spread is None or belief_spread_mask is None:
+            return None
+        device = sb.device
+        target = belief_spread.to(device).float()                          # [B,6,5]
+        mask = belief_spread_mask.to(device).float() > 0.5                 # [B,6]
+        if not bool(mask.any()):
+            return None
+        sb_sel = sb[mask]                                                  # [N,5]
+        tgt_sel = target[mask]                                             # [N,5]
+        loss = F.smooth_l1_loss(sb_sel / _SPREAD_LOSS_SCALE, tgt_sel / _SPREAD_LOSS_SCALE)
+        with th.no_grad():
+            mae = (sb_sel - tgt_sel).abs().mean()
+            # The "over-estimate the largest EV" diagnostic: signed error on each mon's LARGEST true stat
+            # (>0 ⇒ over-estimating it). Should trend toward 0 as the head learns off the prior.
+            amax = tgt_sel.argmax(dim=1)
+            rows = th.arange(tgt_sel.shape[0], device=device)
+            largest_bias = (sb_sel[rows, amax] - tgt_sel[rows, amax]).mean()
+        return loss, {"mae": float(mae.item()), "largest_bias": float(largest_bias.item()),
+                      "n_slots": int(mask.sum().item())}
 
     @staticmethod
     def _move_belief_latent_loss(ml, latent_table, known_moves):
@@ -716,6 +766,7 @@ class InstrumentedMaskablePPO(MaskablePPO):
         move_belief_on = self.move_belief_coef > 0.0  # +MOVE-BELIEF reinjection-head supervised loss
         latent_belief_on = self.opp_belief_latent_coef > 0.0  # +LATENT belief (rides the species aux call)
         move_latent_on = self.move_belief_latent_coef > 0.0  # +MOVE-LATENT grading (gen3_unified_move_system_v1)
+        spread_belief_on = self.spread_belief_coef > 0.0  # +SPREAD-belief supervision (gen3_unified_spread_belief_v1)
         # +WIN-PROB: the head's MODE (none/read_only/shaping) lives on the extractor; the loss is added
         # whenever the mode is on AND the coef is non-zero. read_only vs shaping differ only in whether the
         # extractor stop-grads the head's input (the trunk gradient) — the loss term itself is identical.
@@ -905,6 +956,26 @@ class InstrumentedMaskablePPO(MaskablePPO):
                         for _lk, _lv in ml_m.items():
                             belief_metrics.setdefault("movelatent_" + _lk, []).append(float(_lv))
 
+                # +SPREAD-BELIEF (gen3_unified_spread_belief_v1): supervise the believed opp spread toward
+                # the TRUE derived stats so the DamageOperator prices damage against the real bulk/offense/
+                # speed instead of the usage-mean prior. evaluate_actions stashed last_spread_belief; the
+                # belief_spread/_mask labels ride the same training-only obs dict. Its gradient flows into
+                # the SpreadBelief head + reinjection → the trunk, so it joins the aux pull. OFF → skipped.
+                spread_belief_term = None
+                if spread_belief_on:
+                    sb_out = self._spread_belief_loss(
+                        self.policy.features_extractor.last_spread_belief,
+                        rollout_data.observations.get("belief_spread"),
+                        rollout_data.observations.get("belief_spread_mask"),
+                    )
+                    if sb_out is not None:
+                        sb_loss, sb_m = sb_out
+                        spread_belief_term = self.spread_belief_coef * sb_loss
+                        loss = loss + spread_belief_term
+                        sb_m["loss"] = float(sb_loss.item())
+                        for _sk, _sv in sb_m.items():
+                            belief_metrics.setdefault("spread_" + _sk, []).append(float(_sv))
+
                 # +WIN-PROB: auxiliary win-probability BCE. evaluate_actions ran the extractor forward
                 # above, stashing last_win_prob_logits for THIS minibatch; the MC outcome label + its
                 # known-mask ride the same obs dict (the WinProbLabelCallback overwrote the placeholders
@@ -960,11 +1031,14 @@ class InstrumentedMaskablePPO(MaskablePPO):
                 if move_belief_term is not None:   aux_probe_terms["move_belief"] = move_belief_term
                 if latent_belief_term is not None: aux_probe_terms["latent"] = latent_belief_term
                 if move_latent_term is not None:   aux_probe_terms["move_latent"] = move_latent_term
+                if spread_belief_term is not None: aux_probe_terms["spread_belief"] = spread_belief_term
                 if win_prob_term is not None:      aux_probe_terms["win_prob"] = win_prob_term
                 if value_dist_term is not None:    aux_probe_terms["value_dist"] = value_dist_term
                 aux_on = belief_aux_on or move_belief_on or latent_belief_on or move_latent_on
-                # The belief terms only materialize on a minibatch with scored (believed) slots; wait
-                # for one so their shares aren't silently dropped from the single per-train() sample.
+                # The belief terms only materialize on a minibatch with scored (believed = HIDDEN) slots;
+                # wait for one so their shares aren't silently dropped from the single per-train() sample.
+                # spread_belief scores on REVEALED slots (near-always present) so it does NOT gate this —
+                # it rides whichever minibatch the probe samples (incl. the first, for a spread-only run).
                 belief_present = any(
                     k in aux_probe_terms for k in ("species_belief", "move_belief", "latent", "move_latent")
                 )

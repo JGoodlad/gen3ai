@@ -182,6 +182,54 @@ def zero_known_moves() -> np.ndarray:
     return np.full((TEAM_SIZE, BELIEF_MOVE_SLOTS), PAD, dtype=np.int64)
 
 
+# SPREAD belief (gen3_unified_spread_belief_v1) label support. The 5 battle-relevant DERIVED stats, in the
+# SAME order the SpreadBelief head predicts + the DamageOperator consumes (damage_tables.SPREAD_STAT_COLS /
+# the op's _SB_ATK.._SB_SPE). Pinned by a test so it can never silently diverge from the op's index order —
+# the exact GIGO/order-mismatch class we guard against elsewhere.
+SPREAD_STAT_ORDER = ("atk", "def", "spa", "spd", "spe")
+N_SPREAD_STATS = len(SPREAD_STAT_ORDER)
+
+
+def build_known_spread_labels(
+    revealed_species_in_slot_order: Sequence[str],
+    species_to_spread: Dict[str, Sequence[float]],
+    species_known: Sequence[float],
+    normalize: Callable[[str], str],
+) -> Tuple[np.ndarray, np.ndarray]:
+    """Build (belief_spread[TEAM_SIZE, 5] float32, belief_spread_mask[TEAM_SIZE] float32) — the privileged
+    label for the SPREAD belief, mirroring `build_known_move_labels`.
+
+    Each REVEALED opp slot (species_known==1, the leading-contiguous block, encoder order) gets the TRUE
+    derived stats {atk,def,spa,spd,spe} of the species revealed there, matched BY SPECIES against the
+    opponent's full privileged team (Gen-3 OU species-clause ⇒ species is unique). The SpreadBelief head
+    is then supervised to predict that mon's hidden EV/nature spread (Gen 3 hides the opponent's EVs even
+    once the species is revealed) — so the DamageOperator computes damage against the opponent's REAL bulk/
+    offense/speed instead of sitting at the usage-mean prior. `mask`=1 only where a valid true spread is
+    present (revealed slot whose species maps to a complete 5-stat tuple); believed / pad / incomplete
+    slots stay mask=0 and are NOT scored. Never raises (hot path) — an unmappable/incomplete slot is
+    silently left mask=0.
+
+    species_to_spread : {normalised species -> (atk,def,spa,spd,spe)} (a complete tuple, or absent/None to
+                        skip). Caller computes the TRUE derived stats (e.g. from agent2's own team's
+                        `mon.stats`) in SPREAD_STAT_ORDER."""
+    spread = np.zeros((TEAM_SIZE, N_SPREAD_STATS), dtype=np.float32)
+    mask = np.zeros(TEAM_SIZE, dtype=np.float32)
+    revealed_slots = [i for i in range(TEAM_SIZE) if i < len(species_known) and species_known[i] >= 0.5]
+    for slot, sp in zip(revealed_slots, revealed_species_in_slot_order):
+        st = species_to_spread.get(normalize(sp))
+        if st is None or len(st) != N_SPREAD_STATS or any(v is None for v in st):
+            continue
+        spread[slot] = np.asarray(st, dtype=np.float32)
+        mask[slot] = 1.0
+    return spread, mask
+
+
+def zero_spread_labels() -> Tuple[np.ndarray, np.ndarray]:
+    """All-zero belief_spread + all-zero mask — off / pre-battle / parse-failure path (nothing scored)."""
+    return (np.zeros((TEAM_SIZE, N_SPREAD_STATS), dtype=np.float32),
+            np.zeros(TEAM_SIZE, dtype=np.float32))
+
+
 def zero_belief_labels() -> Tuple[np.ndarray, np.ndarray]:
     """All-PAD labels — used for the off / pre-battle / parse-failure path so the Dict key always
     has a consistent shape (every slot PAD ⇒ nothing scored)."""

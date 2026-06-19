@@ -15,6 +15,7 @@ from agents.observation.constants import (
 from agents.observation.belief_labels import (
     build_belief_labels, build_known_move_labels, build_belief_target_index,
     zero_belief_labels, zero_known_moves, BELIEF_MOVE_SLOTS,
+    build_known_spread_labels, zero_spread_labels, SPREAD_STAT_ORDER, N_SPREAD_STATS,
 )
 from agents.observation.turn_delta_encoder import TurnDeltaEncoder
 from agents.model.features_extractor import N_HISTORY_TURNS
@@ -35,7 +36,7 @@ class Gen3Env(SinglesEnv):
                  log_level=LogLevel.QUIET, stall_config: Optional[StallConfig] = None,
                  *args, battle_class=Gen3Battle, emit_belief_labels: bool = False,
                  move_belief_mode: str = "off", emit_belief_target: bool = False,
-                 emit_win_target: bool = False, **kwargs):
+                 emit_win_target: bool = False, emit_spread_labels: bool = False, **kwargs):
         self.log_level = log_level
         self._stall_logger = StallLogger(stall_config)
         super().__init__(*args, **kwargs)
@@ -69,6 +70,15 @@ class Gen3Env(SinglesEnv):
         # --opp-belief-latent-coef>0 (which requires --opp-belief-aux-coef>0, so _emit_belief_labels is
         # already True). Read ONLY by the latent aux loss — never enters the policy/value forward.
         self._emit_belief_target = emit_belief_target
+        # SPREAD-belief label key (TRAINING-ONLY, gen3_unified_spread_belief_v1): when on, the obs Dict
+        # carries `belief_spread` [6,5] (the TRUE derived stats {atk,def,spa,spd,spe} of each REVEALED opp
+        # mon, from agent2's own team) + `belief_spread_mask` [6]. Consumed ONLY by the spread-belief loss
+        # (instrumented_ppo._spread_belief_loss); the SpreadBelief head learns the opponent's hidden EV
+        # spread instead of sitting at the usage-mean prior, so the DamageOperator prices damage against the
+        # opponent's REAL bulk/offense/speed. Enabled by --spread-belief-coef>0 (requires --spread-belief).
+        # Read ONLY by the loss — never enters the policy/value forward (the believed stats the op consumes
+        # are the model's own prediction, not this label).
+        self._emit_spread_labels = emit_spread_labels
         # WIN-PROBABILITY label keys (TRAINING-ONLY): when on, the obs Dict carries `win_target` [1] and
         # `win_mask` [1] (float32). The env emits PLACEHOLDER zeros each step; the WinProbLabelCallback
         # OVERWRITES them post-collection with the Monte-Carlo episode outcome (win=1/loss=0) + a known
@@ -104,6 +114,14 @@ class Gen3Env(SinglesEnv):
                 # float32 (real obs features); only declared when --opp-belief-latent-coef>0.
                 base_obs["belief_target_slots"] = spaces.Box(
                     low=-np.inf, high=np.inf, shape=(TEAM_SIZE, POKEMON_FULL_DIM), dtype=np.float32)
+        if self._emit_spread_labels:
+            # SPREAD-belief label (gen3_unified_spread_belief_v1): the TRUE derived stats {atk,def,spa,spd,spe}
+            # of each REVEALED opp mon + a per-slot mask (1 = supervised). float32 (real stat VALUES, the same
+            # scale the SpreadBelief head outputs + the op consumes). Only declared when --spread-belief-coef>0.
+            base_obs["belief_spread"] = spaces.Box(
+                low=0.0, high=np.inf, shape=(TEAM_SIZE, N_SPREAD_STATS), dtype=np.float32)
+            base_obs["belief_spread_mask"] = spaces.Box(
+                low=0.0, high=1.0, shape=(TEAM_SIZE,), dtype=np.float32)
         if self._emit_win_target:
             # Win-probability MC label + known-mask (placeholders here; back-filled post-collection).
             base_obs["win_target"] = spaces.Box(low=0.0, high=1.0, shape=(1,), dtype=np.float32)
@@ -248,6 +266,35 @@ class Gen3Env(SinglesEnv):
                 b2, full, team_species, revealed_species, species_known)
         return out
 
+    def _spread_labels(self, obs_vec) -> dict:
+        """SPREAD-belief label (gen3_unified_spread_belief_v1) — INDEPENDENT of the species/move belief so
+        --spread-belief works standalone. For each REVEALED opp slot, the TRUE derived stats
+        {atk,def,spa,spd,spe} of that mon (agent2's OWN team's computed `mon.stats` — the privileged ground
+        truth Gen 3 hides from the trainee) + a per-slot mask. All-zero (mask 0) until both battles exist.
+        Read ONLY by the spread-belief loss; never enters the policy/value forward."""
+        b1 = getattr(self, "battle1", None)
+        b2 = getattr(self, "battle2", None)
+        if b1 is None or b2 is None:
+            sp, spm = zero_spread_labels()
+            return {"belief_spread": sp, "belief_spread_mask": spm}
+        # Per-opp-slot species_known straight from the obs the model reads (same source as _belief_labels).
+        species_known = [
+            float(obs_vec[OFFSET_OPP_TEAM + i * POKEMON_FULL_DIM + POKEMON_SPECIES_KNOWN_OFFSET])
+            for i in range(TEAM_SIZE)
+        ]
+        revealed = [m for m in ObservationEncoder.get_team_list(b1, is_opponent=True) if m is not None]
+        revealed_species = [m.species for m in revealed]
+        # TRUE derived stats per opp species, from agent2's OWN team's computed stats (Gen 3 hides the opp's
+        # EVs from the trainee even once the species is revealed). Incomplete stats → species omitted (mask 0).
+        species_to_spread = {}
+        for m in b2.team.values():
+            st = getattr(m, "stats", None) or {}
+            vals = [st.get(k) for k in SPREAD_STAT_ORDER]
+            if all(v is not None for v in vals):
+                species_to_spread[to_id_str(m.species)] = [float(v) for v in vals]
+        sp, spm = build_known_spread_labels(revealed_species, species_to_spread, species_known, to_id_str)
+        return {"belief_spread": sp, "belief_spread_mask": spm}
+
     def _build_belief_target_slots(self, b2, full, team_species, revealed_species, species_known):
         """Fresh per-mon obs encode [TEAM_SIZE, POKEMON_FULL_DIM] of each hidden mon at its believed
         slot — the SAME canonical assignment as belief_species (both via `assign_hidden_to_slots`), so
@@ -312,6 +359,8 @@ class Gen3Env(SinglesEnv):
         quantity, so it can't be a real per-step value like the belief labels)."""
         if self._emit_belief_labels:
             agent_obs.update(self._belief_labels(agent_obs["observation"]))
+        if self._emit_spread_labels:
+            agent_obs.update(self._spread_labels(agent_obs["observation"]))
         if self._emit_win_target:
             agent_obs["win_target"] = np.zeros(1, dtype=np.float32)
             agent_obs["win_mask"] = np.zeros(1, dtype=np.float32)
@@ -328,7 +377,7 @@ class Gen3Env(SinglesEnv):
                 self._tracker.advance(trainee_idx)
                 self.reward_manager.record_action(self._tracker.last_ctx, trainee_idx)
             out = super().step(action)
-            if self._emit_belief_labels or self._emit_win_target:
+            if self._emit_belief_labels or self._emit_win_target or self._emit_spread_labels:
                 agent_obs = out[0].get(self.agent1.username)
                 if agent_obs is not None:
                     self._merge_training_keys(agent_obs)
@@ -349,7 +398,7 @@ class Gen3Env(SinglesEnv):
             self.reward_manager.reset()
             self._stall_logger.reset()
             out = super().reset(*args, **kwargs)
-            if self._emit_belief_labels or self._emit_win_target:
+            if self._emit_belief_labels or self._emit_win_target or self._emit_spread_labels:
                 obs, info = out
                 agent_obs = obs.get(self.agent1.username)
                 if agent_obs is not None:
