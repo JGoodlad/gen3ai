@@ -842,31 +842,40 @@ while `train/explained_variance` races ahead. `InstrumentedMaskablePPO.train()` 
 **and** the launcher TUI (the new scalars ride the generic `MetricsExporterCallback` →
 `ipc.send_metrics` path with zero extra wiring; ordering/labels live in `launcher/format.py`).
 
-- **Gradient balance — the value-vs-policy *pull* on the shared trunk.** Sampled on the first
-  minibatch (graph alive) by two **read-only** `autograd.grad` probes (`retain_graph=True`, so the
-  real `loss.backward()` is unaffected) against the shared-trunk params. "Shared" =
+- **Gradient balance — every head's *pull* on the shared trunk, on ONE common denominator.** Sampled
+  on the first minibatch (graph alive) by **read-only** `autograd.grad` probes (`retain_graph=True`, so
+  the real `loss.backward()` is unaffected) against the shared-trunk params. "Shared" =
   `SHARED_TRUNK_PHASES = {embeddings, pokemon_encoder, team_transformer, assembler}` (the allow-list
   is the single source of truth), which **excludes** `cls_pool` (head-private `our_cls`/`their_cls`/
-  `value_cls` queries) and both projection heads — only *truly contested* params count.
-  - `grad/value_share` = `‖g_value‖ / (‖g_value‖+‖g_policy‖)` (~0.5 balanced, →1 value swamps).
-    Weighted by the live `vf_coef`/`ent_coef`, so it is the **tuning target**: dial `vf_coef`
-    (`--vf-coef`, default 0.5) so it sits near ~0.5. `vf_coef` is **fixed per run** — recorded in
-    `model_config.json` and FATAL to change on resume (it rescales this very gradient mid-run); tune
-    it on a fresh run. See `src/agents/model/CLAUDE.md` → resume-immutable training hparams.
-  - `grad/value_policy_logratio` = `log10(‖g_value‖/‖g_policy‖)` — the **same** imbalance as
-    `value_share` but on a *linear, non-saturating* scale (0 = balanced, >0 = value dominates, e.g.
-    ≈+1.8 at a 66:1 swamp). Prefer it for **watching a fix land**: `value_share` is pinned near 1 in
-    the swamped regime (0.985 / 0.99 / 0.995 are 66× / 99× / 199× but look alike), so PopArt /
-    a `vf_coef` change crawls there while the log-ratio moves linearly toward 0.
+  `value_cls` queries) and both projection heads — only *truly contested* params count. With the
+  belief / move / latent / move-latent / win-prob / value-dist auxiliaries there are now **many**
+  competitors, not just value-vs-policy, so **every `grad/*_share` is on the SAME total**
+  `T = ‖g_pi‖ + ‖g_vf‖ + Σ‖g_aux‖` — the shares are mutually comparable, **sum to ~1**, and any one
+  term crowding out the rest is read off directly. (L1-of-norms — an upper-bound proxy, not a variance
+  decomposition, since `‖a+b‖ ≠ ‖a‖+‖b‖` — but the same convention for every term.)
+  - `grad/policy_share` + `grad/value_share` — the two RL heads' slices of the **whole** pie (ALWAYS
+    present). Each is weighted by the live `ent_coef` / `vf_coef`, so `value_share` is a `vf_coef`
+    tuning read — but it now *moves with the aux count* (it is value's slice of the full pie), so prefer
+    the aux-independent `value_policy_logratio` below for the pure value/policy balance.
+  - `grad/aux_share` (only when ≥1 aux is on) — Σ of all the aux shares, the **total non-RL draw** on
+    the trunk: one curve for "are the scaffolds collectively crowding out policy/value".
+  - `grad/value_policy_logratio` = `log10(‖g_value‖/‖g_policy‖)` — the **AUX-INDEPENDENT** value-vs-policy
+    imbalance (a pure ratio of the two RL norms, unchanged by how many auxiliaries are on), *linear &
+    non-saturating* (0 = balanced, >0 = value dominates, <0 = policy dominates, e.g. ≈+1.8 at a 66:1
+    swamp). The legible gauge for **watching a PopArt / `vf_coef` fix land** — it moves linearly toward 0
+    where `value_share` would crawl. `vf_coef` is **fixed per run** (recorded in `model_config.json`,
+    FATAL to change on resume — it rescales this very gradient; tune on a fresh run; see
+    `src/agents/model/CLAUDE.md` → resume-immutable training hparams).
   - `grad/policy_value_cosine` — scale-invariant (hence `vf_coef`-independent) structural-conflict
-    signal: <0 ⟹ the heads pull the trunk in opposing directions.
+    signal: <0 ⟹ the two RL heads pull the trunk in opposing directions.
   - `grad/policy_norm_shared` / `grad/value_norm_shared` — the weighted norms, for absolute context.
-  - `grad/belief_*` (only when a belief aux is on, `aux_term`) — the COMBINED belief-aux pull (species
-    CE + move BCE + latent) on the same trunk: `belief_share` = ‖g_aux‖/(‖g_pi‖+‖g_vf‖+‖g_aux‖),
-    `belief_norm_shared`, `belief_policy_cosine` (<0 = the aux fights the policy). `grad/latent_*` (only
-    when `--opp-belief-latent-coef>0`, `latent_term`) breaks the SimSiam latent predictor out on its own
-    (same formula vs the latent norm) so its pull is attributable separately from the species CE when
-    tuning the latent coef. Both share-targets sit ~5–15%; a spike with a degrading policy → lower the coef.
+  - **Per-aux breakout** (each present only when ITS head is active this minibatch — passed as the
+    `aux_terms` dict): `grad/{species_belief, move_belief, latent, move_latent, win_prob, value_dist}_*`,
+    each with `_share` (on the common `T`), `_norm_shared`, and `_policy_cosine` (<0 = that aux fights
+    the policy). So the species CE, move BCE, SimSiam latent, move-latent grading, win-prob and value-dist
+    pulls are **attributable individually** (the old combined `belief_share` lump is gone) — watch each
+    sit small (~a few %); a spike with a degrading policy → lower THAT term's coef. `win_prob`/`value_dist`
+    are ≈0 under `read_only` (stop-grad), real under `shaping`.
 - **Value scale — PopArt prep.** From the full rollout buffer: `train/return_mean` / `train/return_std`
   / `train/return_abs_max` (exactly the `(μ, σ)` + tail an adaptive return normalizer / PopArt's ART
   half tracks) and `train/value_pred_std` (the value head's actual output spread). Watch these to SEE
@@ -874,9 +883,11 @@ while `train/explained_variance` races ahead. `InstrumentedMaskablePPO.train()` 
   cannot follow. Plus `train/grad_norm` (pre-clip total grad norm, mean over minibatches → grad-clip
   activity).
 
-Cost: **2 extra partial backward passes on ONE minibatch per `train()` call** (3–4 when a belief aux /
-the latent predictor add their own probes; negligible vs the `n_epochs × n_minibatches` the loop
-already runs) + trivial NumPy stats. The probe is a **no-op**
+Cost: **2 partial backward passes on ONE minibatch per `train()` call**, plus **one more per ACTIVE
+auxiliary** (species/move/latent/move-latent belief + win-prob + value-dist → up to ~8 total when every
+head is on; each is the `aux_terms` dict's per-term `autograd.grad`) — all on the single sampled
+minibatch, negligible vs the `n_epochs × n_minibatches` the loop already runs + trivial NumPy stats. The
+probe is a **no-op**
 (records nothing) when `shared_trunk_parameters` finds no matching modules (a non-Gen3 policy). **Why
 it exists:** to prepare for **reducing `vf_coef`** and **adding return normalization (PopArt)** — both
 target the value→trunk pressure, which can now be tuned to a number instead of inferred. (The
@@ -898,8 +909,9 @@ self-documenting config; clipping is unnecessary with value normalization, and w
 un-normalized units). New diagnostics ride the same generic metrics path:
 `popart/mu`, `popart/sigma` (watch them track `train/return_mean`/`return_std`),
 `popart/value_weight_norm` (POP keeps it bounded). Under PopArt `train/value_loss` is the normalized
-loss (≈O(1)) and `grad/value_share` should fall from ≈1.0 toward ~0.4 — the live confirmation it
-worked.
+loss (≈O(1)) and `grad/value_policy_logratio` should fall from a large positive value toward ~0 (the
+aux-independent value/policy balance — `grad/value_share` also drops but moves with the aux count, so the
+log-ratio is the cleaner confirmation it worked).
 
 ## Tail-weighted value loss (`--value-tail-weight`)
 
@@ -1036,12 +1048,13 @@ The training half of the in-place belief feature (model side in `src/agents/mode
   `1/n_species`); `moves_precision`/`moves_recall` (the opaque BCE alone can't tell if the ~4 true
   moves rank high); `coverage` (fraction of decisions with ≥1 believed slot) + `k_mean` (so acc is
   interpretable — k=1 vs k=5 differ); `species_ce`, `moves_bce`, `aux_loss`. **Balance:** the
-  shared-trunk grad-balance probe (`grad_balance.py`) reports `grad/belief_share` (‖g_aux‖ / total
-  trunk pull) + `grad/belief_policy_cosine` — the principled "is the aux DOMINATING / fighting the
-  policy" signal. **Tuning is empirical:** start `--opp-belief-aux-coef` small (0.1–0.3) so
-  `belief_share` lands ~5–15%; confirm `species_acc_above_chance` climbs in warmup; if the policy
-  degrades (`train/approx_kl` spikes, `entropy` collapses, `explained_variance` drops) while
-  `belief_share` is high, the aux is fighting the actor → lower the coef. `--opp-belief-moves-weight`
+  shared-trunk grad-balance probe (`grad_balance.py`) reports `grad/species_belief_share` (this CE's
+  share of the common trunk-pull total) + `grad/species_belief_policy_cosine` — the principled "is the
+  aux DOMINATING / fighting the policy" signal (and `grad/aux_share` for the COMBINED non-RL draw).
+  **Tuning is empirical:** start `--opp-belief-aux-coef` small (0.1–0.3) so
+  `species_belief_share` lands at a few %; confirm `species_acc_above_chance` climbs in warmup; if the
+  policy degrades (`train/approx_kl` spikes, `entropy` collapses, `explained_variance` drops) while
+  the share is high, the aux is fighting the actor → lower the coef. `--opp-belief-moves-weight`
   balances CE vs BCE (species dominates at 1.0). Both coefs are **training-only** (like `ent_coef`,
   NOT version-locked); the `opp_belief_slots` arch toggle they imply IS version-checked, and
   `--opp-belief-aux-coef` is **read back from the saved config on a flagless resume** (so a launcher
@@ -1072,8 +1085,8 @@ v17). The predicted moveset is REINJECTED into the opp token (it flows to both h
   `-(pred·target)`, a cheap einsum). `mode` selects which population(s) are scored. Mode is read off the
   extractor (single source); coef is a model attr (training-only).
 - **Metrics (`belief/move_*`).** `bce`, `precision`, `recall`, `revealed_slots`, `unrevealed_slots`,
-  `loss`. The move-loss gradient ALSO reaches the trunk via the reinjection, so it joins the species aux
-  in the combined `grad/belief_share` probe.
+  `loss`. The move-loss gradient ALSO reaches the trunk via the reinjection, so it is broken out on its
+  own as `grad/move_belief_share` (+ `_norm_shared`/`_policy_cosine`) on the common trunk-pull total.
 - **Versioning.** `move_belief_mode` (str) is the version-checked structural toggle (fresh-only;
   auto-forces `--attend-unrevealed-opponents`; `unrevealed`/`both` additionally REQUIRE `--opp-belief-aux-coef>0`
   so the hidden slots carry learned tokens); `move_belief_coef` is training-only, **read back on a
@@ -1102,8 +1115,8 @@ it in **role-token space** — graded supervision the CE can't give. REQUIRES `-
   EMA/collapse). On the **same species-CE Hungarian assignment**, the latent loss is the mean cosine
   distance over matched pairs + a **VICReg variance floor** on the predictions (collapse guard). Returned
   as the 3rd element of `_belief_aux_loss` and folded at `opp_belief_latent_coef`; its trunk gradient
-  joins the combined `grad/belief_share` probe AND is broken out separately as `grad/latent_share`
-  (passed to `grad_balance_metrics(latent_term=…)` so the latent pull is attributable on its own).
+  is broken out separately as `grad/latent_share` (passed in the `grad_balance_metrics(aux_terms=…)`
+  dict as `"latent"`, on the common trunk-pull total) so the latent pull is attributable on its own.
 - **Metrics (`belief/latent_*`).** `cosine` (similarity, higher = better identity match), `std`
   (the collapse monitor — **NO-GO if it →0 while `cosine`→1**), `vicreg`, `loss`, plus the
   **interpretability anchor** `cosine_baseline` (the cosine each prediction scores against a MISMATCHED
@@ -1111,11 +1124,12 @@ it in **role-token space** — graded supervision the CE can't give. REQUIRES `-
   `cosine_above_chance` = `cosine − cosine_baseline` (the *discriminative* signal, the latent analog of
   `species_acc_above_chance`). A small-but-positive `above_chance` with a healthy `std` is the
   "predicts the SET's mean role, not the per-mon identity" failure that `std` alone can miss.
-  **Balance:** the latent term's trunk pull is in the COMBINED `grad/belief_share` AND broken out on its
-  own as **`grad/latent_share`** (+ `grad/latent_norm_shared` / `grad/latent_policy_cosine`) — so when
-  tuning `--opp-belief-latent-coef` you can see whether the LATENT term specifically (not the species
-  CE) is the one swamping / fighting the policy. Watch it sit ~5–15%; a spike with a degrading policy =
-  lower the coef.
+  **Balance:** the latent term's trunk pull is broken out as **`grad/latent_share`** (+
+  `grad/latent_norm_shared` / `grad/latent_policy_cosine`), on the common trunk-pull total alongside
+  `grad/species_belief_share` / `grad/move_belief_share` (so the species CE, move BCE and latent are
+  each separately attributable) — when tuning `--opp-belief-latent-coef` you can see whether the LATENT
+  term specifically is the one swamping / fighting the policy. Watch it sit small (a few %); a spike with
+  a degrading policy = lower the coef.
 - **Versioning.** `opp_belief_latent` (bool) is the version-checked structural toggle (the predictor MLP;
   fresh-only; hard-requires `opp_belief_slots`); `opp_belief_latent_coef` is training-only, **read back on
   a flagless resume**. Threaded into `current_model_version` / `arch_toggles_from_model` so a latent-ON
@@ -1166,7 +1180,7 @@ Monte-Carlo episode OUTCOME. Off by default (`--win-prob-mode none`). Three piec
   `contested_frac`/`contested_label_mean` (≈0.5 confirms even); and **`skill_vs_material`** = the Brier
   skill score vs a material-only baseline (`P_mat = clip(0.5+0.5·margin)`) — **>0 ⇒ the head adds info
   beyond counting mons** (the headline value number; `brier_material` is the baseline for context). The
-  shared-trunk pull rides `grad/win_prob_share` (via `grad_balance_metrics(win_prob_term=…)`) — **≈0 under
+  shared-trunk pull rides `grad/win_prob_share` (the `grad_balance_metrics(aux_terms=…)` `"win_prob"` entry) — **≈0 under
   read_only** (stop-grad, the live confirmation the diagnostic isn't perturbing the policy), real under
   shaping (watch it sit small; a spike with a degrading policy → lower `--win-prob-coef`).
 - **Versioning.** `win_prob_mode` (str) is the structural + resume-IMMUTABLE toggle (any change FATALs;

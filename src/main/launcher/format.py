@@ -63,20 +63,36 @@ _METRIC_LABELS = {
     "distill/n_ready": "ready",
     "distill/n_running": "running",
     "distill/n_exhausted": "exhausted",
-    # Gradient balance (shared-trunk value-vs-policy pull) — tune vf_coef / PopArt to these.
+    # Gradient balance (shared-trunk pull, ONE common denominator → all shares comparable + sum to ~1).
+    # The two RL heads are ALWAYS present; tune vf_coef / PopArt to value_policy_logratio.
+    "grad/policy_share": "policy share",
     "grad/value_share": "value share",
+    "grad/aux_share": "aux share (all)",
     "grad/value_policy_logratio": "log val/pol grad",
     "grad/policy_value_cosine": "policy-value cos",
     "grad/policy_norm_shared": "policy grad-norm",
     "grad/value_norm_shared": "value grad-norm",
-    # Belief-aux pull on the shared trunk (--opp-belief-aux-coef / --move-belief-mode /
-    # --opp-belief-latent-coef): belief = the COMBINED aux pull, latent = the role-token predictor alone.
-    "grad/belief_share": "belief share",
-    "grad/belief_norm_shared": "belief grad-norm",
-    "grad/belief_policy_cosine": "belief-policy cos",
+    # Per-aux pull on the shared trunk (each present only when ITS head is on) — every scaffold broken
+    # out individually so any one crowding out the rest is visible (--opp-belief-aux-coef /
+    # --move-belief-* / --opp-belief-latent-coef / --win-prob-* / --value-dist-*).
+    "grad/species_belief_share": "species blf share",
+    "grad/species_belief_norm_shared": "species blf norm",
+    "grad/species_belief_policy_cosine": "species blf-pol cos",
+    "grad/move_belief_share": "move blf share",
+    "grad/move_belief_norm_shared": "move blf norm",
+    "grad/move_belief_policy_cosine": "move blf-pol cos",
     "grad/latent_share": "latent share",
     "grad/latent_norm_shared": "latent grad-norm",
     "grad/latent_policy_cosine": "latent-policy cos",
+    "grad/move_latent_share": "move-lat share",
+    "grad/move_latent_norm_shared": "move-lat norm",
+    "grad/move_latent_policy_cosine": "move-lat-pol cos",
+    "grad/win_prob_share": "winprob share",
+    "grad/win_prob_norm_shared": "winprob grad-norm",
+    "grad/win_prob_policy_cosine": "winprob-pol cos",
+    "grad/value_dist_share": "valdist share",
+    "grad/value_dist_norm_shared": "valdist grad-norm",
+    "grad/value_dist_policy_cosine": "valdist-pol cos",
     # PopArt value-target normalizer (--use-popart).
     "popart/mu": "value mu",
     "popart/sigma": "value sigma",
@@ -192,7 +208,8 @@ _METRIC_ORDER = [
     # `belief/` section directly BELOW train/ (same column). species_acc is the headline; the
     # move_* block is the move-belief head; the latent_* block is the role-token latent predictor
     # (watch latent_std — →0 while latent_cosine→1 is the collapse NO-GO). The shared-trunk PULL of
-    # this aux lives separately under grad/belief_* / grad/latent_*.
+    # each aux lives separately under grad/species_belief_* / grad/move_belief_* / grad/latent_*
+    # (+ grad/aux_share for the combined non-RL draw).
     "belief/species_acc",
     "belief/species_acc_above_chance",
     "belief/moves_precision",
@@ -214,26 +231,39 @@ _METRIC_ORDER = [
     "belief/latent_std",
     "belief/latent_vicreg",
     "belief/latent_loss",
-    # Gradient balance: value-vs-policy pull on the SHARED trunk. value_share ~0.5 = balanced,
-    # →1 = value swamps the trunk; value_policy_logratio = log10(‖g_v‖/‖g_p‖) is the same imbalance
-    # on a linear non-saturating scale (0 = balanced, >0 = value dominates) — the legible gauge for
-    # watching a PopArt / vf_coef fix land; policy_value_cosine <0 = the heads conflict.
-    # (See grad_balance.py.)
+    # Gradient balance: every head's pull on the SHARED trunk, on ONE common denominator so the
+    # shares are comparable + sum to ~1 (policy_share + value_share + aux_share). policy/value are
+    # always present; value_policy_logratio = log10(‖g_v‖/‖g_p‖) is the AUX-INDEPENDENT value-vs-policy
+    # imbalance (0 = balanced, >0 = value dominates) — the legible PopArt / vf_coef gauge;
+    # policy_value_cosine <0 = the two RL heads conflict. (See grad_balance.py.)
+    "grad/policy_share",
     "grad/value_share",
+    "grad/aux_share",
     "grad/value_policy_logratio",
     "grad/policy_value_cosine",
     "grad/policy_norm_shared",
     "grad/value_norm_shared",
-    # Belief-aux pull on the shared trunk (only present when a belief aux is on): the COMBINED
-    # belief_share (species CE + move BCE + latent) and the latent role-token predictor broken out on
-    # its own (latent_share) — watch each sit ~5-15%; a spike with a degrading policy = the aux is
-    # fighting the actor → lower its coef.
-    "grad/belief_share",
-    "grad/belief_norm_shared",
-    "grad/belief_policy_cosine",
+    # Per-aux pull on the shared trunk (each present only when ITS head is on) — species/move/latent/
+    # move-latent belief + win-prob + value-dist, each broken out so any single scaffold crowding out
+    # the rest is visible. Watch each sit small; a spike with a degrading policy = lower its coef.
+    "grad/species_belief_share",
+    "grad/species_belief_norm_shared",
+    "grad/species_belief_policy_cosine",
+    "grad/move_belief_share",
+    "grad/move_belief_norm_shared",
+    "grad/move_belief_policy_cosine",
     "grad/latent_share",
     "grad/latent_norm_shared",
     "grad/latent_policy_cosine",
+    "grad/move_latent_share",
+    "grad/move_latent_norm_shared",
+    "grad/move_latent_policy_cosine",
+    "grad/win_prob_share",
+    "grad/win_prob_norm_shared",
+    "grad/win_prob_policy_cosine",
+    "grad/value_dist_share",
+    "grad/value_dist_norm_shared",
+    "grad/value_dist_policy_cosine",
     # PopArt (only present under --use-popart): running value-target (mu, sigma) — should track
     # train/return_mean & return_std — and the POP-rescaled value-head weight norm (stays bounded).
     "popart/mu",

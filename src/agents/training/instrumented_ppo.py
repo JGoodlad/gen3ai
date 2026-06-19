@@ -949,40 +949,43 @@ class InstrumentedMaskablePPO(MaskablePPO):
                             for _vk, _vv in vd_m.items():
                                 value_dist_metrics.setdefault(_vk, []).append(float(_vv))
 
-                # Combined auxiliary pull on the shared trunk (species belief + move belief + latent
-                # belief), for the grad-balance probe — all compete with policy/value there.
-                aux_probe_term = belief_aux_term
-                if move_belief_term is not None:
-                    aux_probe_term = (
-                        move_belief_term if aux_probe_term is None else aux_probe_term + move_belief_term
-                    )
-                if latent_belief_term is not None:
-                    aux_probe_term = (
-                        latent_belief_term if aux_probe_term is None else aux_probe_term + latent_belief_term
-                    )
-                if move_latent_term is not None:
-                    aux_probe_term = (
-                        move_latent_term if aux_probe_term is None else aux_probe_term + move_latent_term
-                    )
+                # Per-term auxiliary pull on the shared trunk, for the grad-balance probe — EVERY
+                # active scaffold competes with policy/value there, so each is broken out INDIVIDUALLY
+                # (not lumped into one "belief" norm) and the probe puts them on one common denominator
+                # so policy/value/each-aux are mutually comparable + sum to ~1 (grad_balance.py). Only
+                # the terms set this minibatch are included (a belief term is None on a zero-believed
+                # minibatch; win_prob/value_dist None when their head is off).
+                aux_probe_terms: dict[str, th.Tensor] = {}
+                if belief_aux_term is not None:    aux_probe_terms["species_belief"] = belief_aux_term
+                if move_belief_term is not None:   aux_probe_terms["move_belief"] = move_belief_term
+                if latent_belief_term is not None: aux_probe_terms["latent"] = latent_belief_term
+                if move_latent_term is not None:   aux_probe_terms["move_latent"] = move_latent_term
+                if win_prob_term is not None:      aux_probe_terms["win_prob"] = win_prob_term
+                if value_dist_term is not None:    aux_probe_terms["value_dist"] = value_dist_term
                 aux_on = belief_aux_on or move_belief_on or latent_belief_on or move_latent_on
+                # The belief terms only materialize on a minibatch with scored (believed) slots; wait
+                # for one so their shares aren't silently dropped from the single per-train() sample.
+                belief_present = any(
+                    k in aux_probe_terms for k in ("species_belief", "move_belief", "latent", "move_latent")
+                )
 
                 # +INSTRUMENTATION: sample the shared-trunk gradient balance on the first
                 # minibatch (graph alive here; the probe uses read-only autograd.grad with
                 # retain_graph, so loss.backward() below is unaffected). Skipped when the
                 # extractor exposes no shared-trunk params (non-Gen3 policy).
                 # Sample once per train(). When an aux is ON, wait for a minibatch that actually HAS
-                # scored slots (aux_probe_term set) so grad/belief_share isn't silently dropped for
-                # the call; when both are OFF, sample on the first minibatch as before.
+                # scored slots (belief_present) so the per-aux shares aren't silently dropped for the
+                # call; when off, sample on the first minibatch as before.
                 if (shared_trunk and not grad_balance
-                        and (not aux_on or aux_probe_term is not None)
+                        and (not aux_on or belief_present)
                         and (not win_prob_on or win_prob_term is not None)):  # don't drop grad/win_prob_share
                     grad_balance = grad_balance_metrics(
                         policy_loss + self.ent_coef * entropy_loss,
                         self.vf_coef * value_loss,
                         shared_trunk,
-                        aux_term=aux_probe_term,  # species+move+latent belief grad-share on the trunk (None = off)
-                        latent_term=latent_belief_term,  # latent role-token predictor broken out (None = off/empty mb)
-                        win_prob_term=win_prob_term,  # win-prob head pull (≈0 under read_only; real under shaping)
+                        # Each ACTIVE scaffold broken out on the trunk: species/move/latent/move-latent
+                        # belief + win-prob (≈0 under read_only) + value-dist. Empty → RL-heads-only.
+                        aux_terms=aux_probe_terms or None,
                     )
 
                 # Calculate approximate form of reverse KL Divergence for early stopping
@@ -1135,7 +1138,8 @@ class InstrumentedMaskablePPO(MaskablePPO):
         # +PopArt diagnostics: mu/sigma should TRACK train/return_mean/return_std (the running
         # normalizer estimate); value_weight_norm watches the POP rescale stay bounded (an explosion
         # signals a degenerate sigma / broken preservation). With PopArt on, train/value_loss is the
-        # NORMALIZED loss (≈O(1)) and grad/value_share should fall toward ~0.4.
+        # NORMALIZED loss (≈O(1)) and grad/value_policy_logratio should fall toward ~0 (the
+        # aux-independent value/policy balance; grad/value_share also drops but moves with the aux count).
         if popart is not None:
             self.logger.record("popart/mu", float(self.policy.popart.mu))
             self.logger.record("popart/sigma", float(self.policy.popart.sigma))

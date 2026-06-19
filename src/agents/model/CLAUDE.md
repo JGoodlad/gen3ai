@@ -724,7 +724,7 @@ the `damage_op` baseline (clean A/B). Re-pooling preserves the pooled shapes ⇒
 UNCHANGED**; the only state_dict change is the 3 modules, so it's a STRUCTURAL toggle like `opp_belief_slots`
 (gated in `check_compatible` with a bool compare; OFF byte-for-byte; **NO `ARCH_SIGNATURE` bump**). Requires
 `damage_op` (the incoming block is the source). PopArt strongly recommended (the extra shared-trunk layer
-worsens value-grad contention — a soft warning fires without `--use-popart`; watch `grad/value_share`).
+worsens value-grad contention — a soft warning fires without `--use-popart`; watch `grad/value_policy_logratio`).
 Current `MODEL_CONFIG_VERSION` = **31**.
 
 **Move-belief pre-fuse (v32, `move_belief_prefuse` / `--move-belief-prefuse`, `gen3_move_prefuse_v1`).**
@@ -747,7 +747,7 @@ A startup smoke test (`_run_roundtrip_test` in `train_rl_agent.py`) saves to a t
 
 Opt-in (default off). The dual-head extractor shares one trunk; with γ≈0.9999 the returns run to
 ±hundreds, so the value MSE gradient **swamps** the shared trunk and the policy under-updates
-(diagnosed by `grad/value_share`≈1, see `src/agents/training/CLAUDE.md`). PopArt fixes the value
+(diagnosed by a large positive `grad/value_policy_logratio`, see `src/agents/training/CLAUDE.md`). PopArt fixes the value
 *scale* adaptively: `PopArtNormalizer` keeps running `(mu, sigma)` of the value targets, the value
 head outputs **normalized** values, and the PPO loss trains in normalized space — so the value
 gradient stays O(1). The **POP** half rescales `value_net`'s weight+bias on every stats update so the
@@ -773,7 +773,7 @@ running-std normalization). Pure/torch-only → unit-tested in `popart_test.py` 
   parameterization differs, so it can't be flipped mid-run.
 - **Diagnostics** (TB + TUI): `popart/mu` & `popart/sigma` (should track `train/return_mean` &
   `train/return_std`), `popart/value_weight_norm` (POP keeps it bounded). With PopArt on,
-  `train/value_loss` is the *normalized* loss (≈O(1)) and `grad/value_share` should fall toward ~0.4.
+  `train/value_loss` is the *normalized* loss (≈O(1)) and `grad/value_policy_logratio` should fall toward ~0.
 - `_DEFAULT_BETA` (EMA decay, 0.1) and `_SIGMA_FLOOR` (1e-2) are module constants in `popart.py`
   (the only flag is on/off). The POP rescale changes `value_net` outside the optimizer; momentum
   staleness is negligible because `σ_old/σ_new ≈ 1` each call (optimizer state intentionally not

@@ -2,18 +2,24 @@
 
 The dual-head feature extractor shares ONE transformer trunk between the policy and value
 heads (see ``src/agents/model/CLAUDE.md``). Both losses' gradients flow into that shared
-trunk and *compete*: if the value loss dominates (large / unclipped, big-return scale) it
-swamps the trunk and the policy barely updates. These pure helpers measure that competition
-**directly**, so reducing ``vf_coef`` or adding return normalization (PopArt) can be tuned to
-a number instead of inferred indirectly from ``approx_kl`` / ``clip_fraction``.
+trunk and *compete* — and so does EVERY auxiliary head whose gradient reaches the trunk
+(species/move/latent/move-latent belief, the win-prob head under ``shaping``, the
+distributional value head under ``shaping``). With more than two competitors the question is
+no longer "value vs policy" but "is ANY term crowding out the rest", so the probe measures
+each term's pull on **one common denominator** — a pie that sums to ~1 and is directly
+comparable across terms. These pure helpers measure that competition **directly**, so
+reducing ``vf_coef`` / an aux coef or adding return normalization (PopArt) can be tuned to a
+number instead of inferred indirectly from ``approx_kl`` / ``clip_fraction``.
 
 Two probes, both cheap and both run once per ``train()`` call:
 
-* :func:`grad_balance_metrics` — the value-vs-policy *pull* on the shared trunk (the pressure
-  gauge). ``value_share`` ~0.5 = balanced, →1 = value swamps the trunk; ``value_policy_logratio``
-  is the same imbalance on a linear, non-saturating log scale (0 = balanced, >0 = value dominates)
-  so a fix landing is *visible* where ``value_share`` sits pinned near 1; ``policy_value_cosine``
-  <0 = the heads drag the trunk in opposing directions (structural conflict, ``vf_coef``-free).
+* :func:`grad_balance_metrics` — the per-term *pull* on the shared trunk (the pressure gauge).
+  Every ``grad/<term>_share`` is that term's gradient norm over the SAME total
+  (``policy + value + Σ aux``), so ``grad/policy_share`` + ``grad/value_share`` +
+  ``grad/aux_share`` ≈ 1 and a term swamping the trunk is visible as its share climbing.
+  ``grad/value_policy_logratio`` is the *aux-independent* value-vs-policy imbalance (a pure
+  ratio of the two RL norms — the PopArt / ``vf_coef`` tuning gauge); ``grad/<term>_policy_cosine``
+  <0 = that term drags the trunk against the policy (structural conflict, coef-free).
 * :func:`value_scale_metrics` — the return / value-prediction *scale* (PopArt prep). These are
   exactly the ``(μ, σ)`` an adaptive return normalizer tracks; watch them to SEE the value scale
   drift (reward annealing / policy improvement) that a static ``vf_coef`` can't follow.
@@ -84,97 +90,92 @@ def grad_balance_metrics(
     policy_term: th.Tensor,
     value_term: th.Tensor,
     shared_params: Sequence[nn.Parameter],
-    aux_term: "th.Tensor | None" = None,
-    latent_term: "th.Tensor | None" = None,
-    win_prob_term: "th.Tensor | None" = None,
+    aux_terms: "Dict[str, th.Tensor] | None" = None,
 ) -> Dict[str, float]:
-    """Value-vs-policy gradient competition on the shared trunk.
+    """Per-term gradient competition on the shared trunk, on ONE common denominator.
 
     ``policy_term`` / ``value_term`` are the **weighted** loss contributions exactly as they
     enter the combined loss — ``policy_term = policy_loss + ent_coef*entropy_loss`` and
-    ``value_term = vf_coef*value_loss`` — so the reported norms are the *actual* pull each head
-    exerts on the trunk at the current coefficients. ``value_share`` therefore scales with
-    ``vf_coef`` (that is what makes it a tuning target: dial ``vf_coef`` so ``value_share`` sits
-    near ~0.5). ``value_policy_logratio`` = ``log10(‖g_value‖/‖g_policy‖)`` is the same imbalance
-    in a *linear*, non-saturating form (0.0 = balanced, >0 = value dominates) — the legible gauge
-    for watching a fix land where ``value_share`` is pinned near 1. Cosine is scale-invariant, so
-    it is the ``vf_coef``-independent structural-conflict signal (<0 ⟹ the heads pull the trunk in
-    opposing directions).
+    ``value_term = vf_coef*value_loss``. ``aux_terms`` maps a short name → that auxiliary's
+    **weighted** contribution (``coef * aux_loss``) exactly as it entered the loss, e.g.
+    ``{"species_belief": …, "move_belief": …, "latent": …, "move_latent": …, "win_prob": …,
+    "value_dist": …}`` — pass only the terms that are ACTIVE this minibatch (an empty / ``None``
+    dict means "RL heads only", the upstream-identical 2-way case).
 
-    Returns ``{grad/value_share, grad/value_policy_logratio, grad/policy_value_cosine,
-    grad/policy_norm_shared, grad/value_norm_shared}`` — plus ``grad/belief_*`` when ``aux_term`` is
-    given (the COMBINED belief-aux pull) and ``grad/latent_*`` when ``latent_term`` is given (the
-    latent role-token predictor broken out on its own). **Must be called while the graph is alive**
-    (before ``loss.backward()``).
+    Every ``grad/<term>_share`` is that term's shared-trunk gradient norm divided by the SAME
+    total ``T = ‖g_pi‖ + ‖g_vf‖ + Σ‖g_aux‖`` — so the shares are mutually comparable, sum to
+    ~1.0 (``policy_share + value_share + aux_share``), and a term crowding out the rest is read
+    off directly. (The shares are an **L1-of-norms** proxy — an upper bound, not a variance
+    decomposition, since ``‖a+b‖ ≠ ‖a‖+‖b‖`` — but the SAME convention for every term, which is
+    the comparability that matters.) The norms scale with their coefficients, which is what makes
+    each share a tuning target: dial a coef so its share sits where you want it.
+
+    Returns the always-present block
+    ``{grad/policy_share, grad/value_share, grad/policy_norm_shared, grad/value_norm_shared,
+    grad/value_policy_logratio, grad/policy_value_cosine}`` — where ``value_policy_logratio`` =
+    ``log10(‖g_value‖/‖g_policy‖)`` is the **aux-independent** value-vs-policy imbalance (0 =
+    balanced, >0 = value dominates, <0 = policy dominates: the legible PopArt / ``vf_coef`` knob,
+    unaffected by how many auxiliaries are on) and ``policy_value_cosine`` <0 = the two RL heads
+    drag the trunk in opposing directions. For each ``aux_terms`` entry it adds
+    ``grad/<name>_share``, ``grad/<name>_norm_shared`` and ``grad/<name>_policy_cosine`` (<0 = that
+    aux fights the policy), plus a single ``grad/aux_share`` = Σ aux shares (the total non-RL draw —
+    one number for "are the scaffolds collectively crowding the RL heads"). **Must be called while
+    the graph is alive** (before ``loss.backward()``).
     """
     g_pi = _flat_grads(policy_term, shared_params)
     g_vf = _flat_grads(value_term, shared_params)
     n_pi = float(g_pi.norm())
     n_vf = float(g_vf.norm())
-    cosine = float((g_pi @ g_vf).item() / (n_pi * n_vf)) if n_pi > 0.0 and n_vf > 0.0 else 0.0
-    total = n_pi + n_vf
-    # log10 of the value/policy pull ratio. ``value_share`` saturates near 1 when the value head
-    # dominates (0.985 vs 0.99 vs 0.995 all look alike but are 66× / 99× / 199×), so it barely
-    # moves while a fix lands; the log-ratio is *linear* in the imbalance (now ≈ +1.8 at ~66:1,
-    # 0.0 = balanced, <0 = policy dominates), making it the legible gauge for watching PopArt /
-    # a vf_coef change pull the trunk back toward balance. Guarded 0.0 when either norm is zero
-    # (a unit-test detached-graph artifact; in real training both are strictly positive) — same
-    # convention as ``cosine``; note 0.0 here doubles as the "balanced" value, which is fine since
-    # the no-signal case never occurs live.
-    logratio = float(np.log10(n_vf / n_pi)) if n_pi > 0.0 and n_vf > 0.0 else 0.0
-    out = {
+
+    # Per-aux gradient + norm — each is a separately-reported scaffold pulling the SAME trunk.
+    aux_g: Dict[str, th.Tensor] = {}
+    aux_n: Dict[str, float] = {}
+    for name, term in (aux_terms or {}).items():
+        g = _flat_grads(term, shared_params)
+        aux_g[name] = g
+        aux_n[name] = float(g.norm())
+
+    # ONE common denominator = the FULL trunk pull (policy + value + every reported scaffold), so
+    # every `*_share` is on the same scale, they sum to ~1, and any term crowding out the rest is
+    # directly visible. Guarded 0.0 when the total is zero (a unit-test all-detached artifact; in
+    # real training n_pi/n_vf are strictly positive).
+    total = n_pi + n_vf + sum(aux_n.values())
+
+    def _share(n: float) -> float:
+        return (n / total) if total > 0.0 else 0.0
+
+    def _cos_vs_policy(g: th.Tensor, n: float) -> float:
+        # Guarded 0.0 when either norm is zero (a detached-graph artifact; live both are >0).
+        return float((g @ g_pi).item() / (n * n_pi)) if n > 0.0 and n_pi > 0.0 else 0.0
+
+    out: Dict[str, float] = {
         "grad/policy_norm_shared": n_pi,
         "grad/value_norm_shared": n_vf,
-        "grad/value_share": (n_vf / total) if total > 0.0 else 0.0,
-        "grad/value_policy_logratio": logratio,
-        "grad/policy_value_cosine": cosine,
+        "grad/policy_share": _share(n_pi),
+        "grad/value_share": _share(n_vf),
+        # log10 of the value/policy pull RATIO — AUX-INDEPENDENT (a pure ratio of the two RL norms,
+        # unchanged by how many auxiliaries are reported), linear & non-saturating (0 = balanced,
+        # >0 = value dominates, <0 = policy dominates). The legible gauge for watching PopArt / a
+        # vf_coef change pull the value/policy balance back — `value_share` now moves with the aux
+        # count (it is value's slice of the WHOLE pie), so the ratio is the cleaner balance signal.
+        "grad/value_policy_logratio": (
+            float(np.log10(n_vf / n_pi)) if n_pi > 0.0 and n_vf > 0.0 else 0.0
+        ),
+        # Scale-invariant (hence vf_coef-independent) structural-conflict signal between the two RL
+        # heads (<0 ⟹ policy and value pull the trunk in opposing directions). Guarded 0.0 on a
+        # zero norm (unit-test detached artifact).
+        "grad/policy_value_cosine": (
+            float((g_pi @ g_vf).item() / (n_pi * n_vf)) if n_pi > 0.0 and n_vf > 0.0 else 0.0
+        ),
     }
-    # Belief-aux pull on the SAME shared trunk (the in-place belief tokens flow through the team
-    # transformer, so the aux writes the same params). ``belief_share`` = ‖g_aux‖ / (‖g_pi‖+‖g_vf‖+
-    # ‖g_aux‖) is the principled "is the aux DOMINATING the trunk" signal (watch it sit ~5-15%; a
-    # spike toward ~1 with a degrading policy = the aux is fighting the actor → lower
-    # ``opp_belief_aux_coef``). ``belief_policy_cosine`` <0 ⟹ the aux pulls the trunk against the
-    # policy. ``aux_term`` is the WEIGHTED contribution (opp_belief_aux_coef·aux) exactly as it enters
-    # the loss, so the share scales with the coef — that is what makes it the tuning target.
-    if aux_term is not None:
-        g_aux = _flat_grads(aux_term, shared_params)
-        n_aux = float(g_aux.norm())
-        total3 = n_pi + n_vf + n_aux
-        out["grad/belief_norm_shared"] = n_aux
-        out["grad/belief_share"] = (n_aux / total3) if total3 > 0.0 else 0.0
-        out["grad/belief_policy_cosine"] = (
-            float((g_aux @ g_pi).item() / (n_aux * n_pi)) if n_aux > 0.0 and n_pi > 0.0 else 0.0
-        )
-    # Latent-belief term broken out SEPARATELY (the SimSiam role-token predictor, --opp-belief-latent-coef).
-    # It is also a component of ``aux_term`` above (so ``belief_share`` stays "total aux pull"), but the
-    # combined number can't say whether the LATENT term specifically is the one swamping / fighting the
-    # trunk — which is exactly what you need to tune ``opp_belief_latent_coef`` independently of the
-    # species CE. ``latent_share`` mirrors ``belief_share``'s formula against the latent norm so the two
-    # are directly comparable; ``latent_policy_cosine`` <0 ⟹ the latent head drags the trunk against the
-    # policy. ``latent_term`` is the WEIGHTED contribution (opp_belief_latent_coef·latent_loss).
-    if latent_term is not None:
-        g_lat = _flat_grads(latent_term, shared_params)
-        n_lat = float(g_lat.norm())
-        total_l = n_pi + n_vf + n_lat
-        out["grad/latent_norm_shared"] = n_lat
-        out["grad/latent_share"] = (n_lat / total_l) if total_l > 0.0 else 0.0
-        out["grad/latent_policy_cosine"] = (
-            float((g_lat @ g_pi).item() / (n_lat * n_pi)) if n_lat > 0.0 and n_pi > 0.0 else 0.0
-        )
-    # Win-probability head pull on the shared trunk — ONLY meaningful (non-zero) under win_prob_mode
-    # 'shaping' (where the head reads a live value_pooled → its gradient reaches the trunk); under
-    # 'read_only' the head's input is stop-grad'd so g_win ≈ 0 (the probe then confirms the diagnostic
-    # truly isn't perturbing the trunk). ``win_prob_share`` = ‖g_win‖/(‖g_pi‖+‖g_vf‖+‖g_win‖) — watch it
-    # sit small under shaping; a spike with a degrading policy = lower ``--win-prob-coef``.
-    if win_prob_term is not None:
-        g_win = _flat_grads(win_prob_term, shared_params)
-        n_win = float(g_win.norm())
-        total_w = n_pi + n_vf + n_win
-        out["grad/win_prob_norm_shared"] = n_win
-        out["grad/win_prob_share"] = (n_win / total_w) if total_w > 0.0 else 0.0
-        out["grad/win_prob_policy_cosine"] = (
-            float((g_win @ g_pi).item() / (n_win * n_pi)) if n_win > 0.0 and n_pi > 0.0 else 0.0
-        )
+    for name, n in aux_n.items():
+        out[f"grad/{name}_norm_shared"] = n
+        out[f"grad/{name}_share"] = _share(n)
+        out[f"grad/{name}_policy_cosine"] = _cos_vs_policy(aux_g[name], n)
+    if aux_n:
+        # Total non-RL scaffold draw on the trunk (Σ aux shares) — the rollup of every aux term, so
+        # one curve answers "are the auxiliaries collectively crowding out policy/value".
+        out["grad/aux_share"] = _share(sum(aux_n.values()))
     return out
 
 

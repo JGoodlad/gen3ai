@@ -65,11 +65,14 @@ def test_grad_balance_ranges_and_keys():
     policy_term = pi_head(h).pow(2).mean()
     value_term = vf_head(h).pow(2).mean()
     m = grad_balance_metrics(policy_term, value_term, list(trunk.parameters()))
+    # No aux → RL-heads-only: policy_share + value_share == 1 (2-way), no aux_share key.
     assert set(m) == {
-        "grad/value_share", "grad/value_policy_logratio", "grad/policy_value_cosine",
-        "grad/policy_norm_shared", "grad/value_norm_shared",
+        "grad/policy_share", "grad/value_share", "grad/value_policy_logratio",
+        "grad/policy_value_cosine", "grad/policy_norm_shared", "grad/value_norm_shared",
     }
     assert 0.0 <= m["grad/value_share"] <= 1.0
+    assert 0.0 <= m["grad/policy_share"] <= 1.0
+    assert abs(m["grad/policy_share"] + m["grad/value_share"] - 1.0) < 1e-6
     assert -1.0 <= m["grad/policy_value_cosine"] <= 1.0
     assert m["grad/policy_norm_shared"] > 0.0
     assert m["grad/value_norm_shared"] > 0.0
@@ -90,44 +93,66 @@ def test_grad_balance_identical_terms_are_aligned_and_balanced():
     # Same gradient on both sides → perfectly aligned, exactly balanced.
     assert abs(m["grad/policy_value_cosine"] - 1.0) < 1e-5
     assert abs(m["grad/value_share"] - 0.5) < 1e-5
+    assert abs(m["grad/policy_share"] - 0.5) < 1e-5
     assert abs(m["grad/value_policy_logratio"] - 0.0) < 1e-5  # ratio 1 → log10 = 0
 
 
-def test_grad_balance_aux_and_latent_terms_break_out():
-    """An ``aux_term`` adds the COMBINED ``grad/belief_*`` block; a ``latent_term`` adds the
-    latent-only ``grad/latent_*`` block. Both ride the same shared-trunk pull and stay in [0,1]."""
+def test_grad_balance_aux_terms_break_out_each_individually():
+    """Each ``aux_terms`` entry adds its OWN ``grad/<name>_{share,norm_shared,policy_cosine}`` block;
+    only the names passed appear. All shares ride the shared-trunk pull and stay in [0,1]."""
     trunk, pi_head, vf_head, h = _trunk_and_heads()
-    aux_head = nn.Linear(4, 3)
+    species_head = nn.Linear(4, 3)
+    move_head = nn.Linear(4, 7)
     latent_head = nn.Linear(4, 5)
     policy_term = pi_head(h).pow(2).mean()
     value_term = vf_head(h).pow(2).mean()
-    aux_term = aux_head(h).pow(2).mean()
-    latent_term = latent_head(h).pow(2).mean()
-    m = grad_balance_metrics(
-        policy_term, value_term, list(trunk.parameters()),
-        aux_term=aux_term, latent_term=latent_term,
-    )
-    for prefix in ("belief", "latent"):
-        assert 0.0 <= m[f"grad/{prefix}_share"] <= 1.0
-        assert m[f"grad/{prefix}_norm_shared"] > 0.0
-        assert -1.0 <= m[f"grad/{prefix}_policy_cosine"] <= 1.0
-    # Latent omitted → no latent keys, but the combined belief block stays.
-    m2 = grad_balance_metrics(policy_term, value_term, list(trunk.parameters()), aux_term=aux_term)
-    assert "grad/belief_share" in m2
-    assert not any(k.startswith("grad/latent") for k in m2)
+    aux_terms = {
+        "species_belief": species_head(h).pow(2).mean(),
+        "move_belief": move_head(h).pow(2).mean(),
+        "latent": latent_head(h).pow(2).mean(),
+    }
+    m = grad_balance_metrics(policy_term, value_term, list(trunk.parameters()), aux_terms=aux_terms)
+    for name in ("species_belief", "move_belief", "latent"):
+        assert 0.0 <= m[f"grad/{name}_share"] <= 1.0
+        assert m[f"grad/{name}_norm_shared"] > 0.0
+        assert -1.0 <= m[f"grad/{name}_policy_cosine"] <= 1.0
+    assert "grad/aux_share" in m
+    # A name NOT passed gets no keys (e.g. win_prob / value_dist off this minibatch).
+    assert not any(k.startswith("grad/win_prob") for k in m)
+    assert not any(k.startswith("grad/value_dist") for k in m)
 
 
-def test_grad_balance_latent_detached_has_zero_share():
+def test_grad_balance_shares_sum_to_one_on_common_denominator():
+    """policy + value + every aux share are on ONE denominator → they sum to ~1, and aux_share is
+    exactly the sum of the per-aux shares (the comparability the common denominator buys)."""
+    trunk, pi_head, vf_head, h = _trunk_and_heads()
+    policy_term = pi_head(h).pow(2).mean()
+    value_term = vf_head(h).pow(2).mean()
+    aux_terms = {
+        "species_belief": nn.Linear(4, 3)(h).pow(2).mean(),
+        "move_belief": nn.Linear(4, 7)(h).pow(2).mean(),
+        "latent": nn.Linear(4, 5)(h).pow(2).mean(),
+        "win_prob": nn.Linear(4, 1)(h).pow(2).mean(),
+    }
+    m = grad_balance_metrics(policy_term, value_term, list(trunk.parameters()), aux_terms=aux_terms)
+    per_aux = sum(m[f"grad/{name}_share"] for name in aux_terms)
+    total = m["grad/policy_share"] + m["grad/value_share"] + per_aux
+    assert abs(total - 1.0) < 1e-6
+    assert abs(m["grad/aux_share"] - per_aux) < 1e-6
+
+
+def test_grad_balance_detached_aux_has_zero_share():
     trunk, pi_head, vf_head, h = _trunk_and_heads()
     policy_term = pi_head(h).pow(2).mean()
     value_term = vf_head(h).pow(2).mean()
     latent_term = nn.Linear(4, 5)(h.detach()).pow(2).mean()  # cut off from the trunk
     m = grad_balance_metrics(
-        policy_term, value_term, list(trunk.parameters()), latent_term=latent_term,
+        policy_term, value_term, list(trunk.parameters()), aux_terms={"latent": latent_term},
     )
     assert m["grad/latent_norm_shared"] == 0.0
     assert m["grad/latent_share"] == 0.0
     assert m["grad/latent_policy_cosine"] == 0.0  # guarded zero-norm cosine
+    assert m["grad/aux_share"] == 0.0  # the only aux is detached
 
 
 def test_grad_balance_value_detached_has_zero_share():

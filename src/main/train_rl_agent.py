@@ -603,7 +603,8 @@ async def main():
                         help="PPO value-loss coefficient (default 0.5, the SB3 default). Fixed for a "
                              "run's lifetime: it is recorded in model_config.json and resuming with a "
                              "different value is a FATAL error (it silently rescales the value head's "
-                             "gradient on the shared trunk — tune it on a fresh run). See grad/value_share.")
+                             "gradient on the shared trunk — tune it on a fresh run). Watch "
+                             "grad/value_policy_logratio (the aux-independent value-vs-policy balance).")
     parser.add_argument("--value-tail-weight", "--value_tail_weight", dest="value_tail_weight",
                         type=float, default=0.0,
                         help="Tail-weighted value loss β∈[0,1] (default 0.0 = plain MSE, byte-identical). "
@@ -889,7 +890,8 @@ async def main():
                         help="Loss weight for the value-dist head's HL-Gauss CE (value_dist_coef * CE), "
                              "like --win-prob-coef. Default 1.0. TRAINING-only (not version-locked; "
                              "inherited on a flagless resume). Ignored when --value-dist-mode none. Lower "
-                             "it if 'shaping' fights the policy (watch grad/value_share).")
+                             "it if 'shaping' fights the policy (watch grad/value_dist_share / "
+                             "grad/value_dist_policy_cosine — this head's own shared-trunk pull).")
     parser.add_argument("--move-latent", "--move_latent", dest="move_latent",
                         action=BoolFlag, default=None,
                         help="MoveLatentEncoder (gen3_unified_move_system_v1): a context-free, "
@@ -1400,7 +1402,7 @@ async def main():
         # layer routes the value gradient through more of the trunk, which the value loss already dominates.
         print("⚠ --damage-reattend without --use-popart: the extra shared-trunk re-attend layer worsens the "
               "value-gradient contention on the trunk (the value MSE already swamps it at γ≈0.9999). PopArt "
-              "is strongly recommended — add --use-popart and watch grad/value_share.", file=sys.stderr)
+              "is strongly recommended — add --use-popart and watch grad/value_policy_logratio.", file=sys.stderr)
     if args.move_candidate_floor and not args.move_prior_fusion:
         # The learnset/rarity gate prunes the FUSED prior; with no prior fusion there is no prior to gate.
         parser.error(

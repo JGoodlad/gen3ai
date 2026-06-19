@@ -144,17 +144,19 @@ deterministic `_supervise` exit-code/crash-restart/`_reap` suite), plus `launche
   (`app.py::_fill_metric_sections`); the two narrow metric columns hug their content (`width: auto`)
   so the wider eval column (`width: 1fr`) gets the horizontal slack.
   **Gradient-balance + value-scale diagnostics** (always on) ride that layout: the `grad/*` block
-  (`value share`, `log val/pol grad` = the non-saturating `log10(‖g_v‖/‖g_p‖)` ratio,
-  `policy-value cos`, policy/value grad-norms; plus, when a belief aux is on, `belief share` /
-  `latent share` — the combined and latent-only aux pull on the trunk) sits in the left column, while
+  (`policy share` + `value share` — the two RL heads' slices of ONE common-denominator pie; `aux share (all)`
+  = the total non-RL draw; `log val/pol grad` = the aux-independent non-saturating `log10(‖g_v‖/‖g_p‖)`
+  ratio; `policy-value cos`, policy/value grad-norms; plus, when an aux is on, its OWN share broken out —
+  `species blf` / `move blf` / `latent` / `move-lat` / `winprob` / `valdist` — so any single scaffold
+  crowding out the rest is visible) sits in the left column, while
   `train/return_*`, `train/value_pred_std`, and `train/grad_norm` join the train column — together the
-  direct value-vs-policy shared-trunk pressure gauge for tuning `vf_coef` / preparing PopArt (computed
+  direct shared-trunk pressure gauge for tuning `vf_coef` / preparing PopArt (computed
   in `agents/training/grad_balance.py`; see `src/agents/training/CLAUDE.md`). They need no new launcher
   wiring: they ride the same generic `MetricsExporterCallback` scalar path and auto-route by their
   `grad/` / `train/` section prefix; only their display order + short labels are declared in
   `format.py`. Under **`--use-popart`** a `popart/*` block also appears (`value mu`, `value sigma`,
-  `value head |W|` — the value-target normalizer state; same generic path), and `grad/value_share`
-  should be seen falling toward ~0.4.
+  `value head |W|` — the value-target normalizer state; same generic path), and `grad/value_policy_logratio`
+  should be seen falling toward ~0.
 - **Crash reporting** — child stdout/stderr is streamed live to `<run_dir>/launcher_child.log`
   (complete even if the child hard-`os._exit`s, bypassing Python cleanup) and held in a
   5000-line in-memory scrollback. The on-disk log is a **disk ring buffer**
