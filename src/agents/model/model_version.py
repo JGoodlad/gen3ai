@@ -591,7 +591,23 @@ MODEL_CONFIG_VERSION = 37
 #   exempt. VALUES-only on rest-loop turns (same obs dim 3457, no shape change) — but it re-means an obs
 #   feature, so it is retrain-class: an old checkpoint won't load (loud arch-family error), which is correct
 #   since it was trained with the prior clock semantics. (progress_clock.py: the heal-grace bypass.)
-ARCH_SIGNATURE = "gen3_rest_loop_stall_v1"
+# gen3_op_move_align_v1: FIXES a DamageOperator OUTGOING move-order bug. The op's per-move OUTGOING blocks
+#   (_outgoing_block v23, _status_landing v27, _outgoing_matrix v34) emit one feature group per OUR move and
+#   the POLICY head reads group k as action 6+k (request order) — but they READ ctx.all_move_ids[our_active],
+#   the per-mon obs block, which is SORTED-BY-ID (the role token concatenates the 4 move encodings, so its
+#   value is order-sensitive and the block can't be reordered). Sorted-by-id ≠ request order in ~96% of
+#   decisions, so the outgoing tie-break / status-landing / switch-in-KO matrix were positionally misaligned
+#   with the actions they inform (an under-`--unified-obs` correctness bug, since the CPU per-move blocks are
+#   masked there). The FIX adds a request-ordered OUR-ACTIVE obs slice (reactive.py `active_req_moves`:
+#   [move_num ×4, resolved_type_id ×4, legal_now ×4], from legal.move_slots, the same source the action mask +
+#   move-effect block use) → ctx.our_active_req_move_{ids,type_ids,legal}; the 3 op methods read THAT (request
+#   order) + gate with the current-decision legality (was the prev-turn, sorted-by-id move_mask). The v36/v37
+#   refine OUTGOING methods (discrete_outgoing*) max-pool over our moves → order-invariant, left unchanged.
+#   A STRUCTURAL/SHAPE change: REACTIVE_DIM 402 → 414, obs dim 3457 → 3469. Old checkpoints fail loudly (the
+#   total_dim weight-shape check AND the arch-family signature), which is correct — they were trained with the
+#   misaligned op. Guarded so it can't silently recur: move_alignment_fuzz_test asserts the obs slice IS in
+#   legal.move_slots order, and damage_op_test asserts the op's outgoing slot k uses request-slot k.
+ARCH_SIGNATURE = "gen3_op_move_align_v1"
 
 
 class ModelVersionError(Exception):

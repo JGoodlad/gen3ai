@@ -559,7 +559,7 @@ tools/               # Acquisition layer (knows the 3 upstreams) — has CLAUDE.
 
 ## Observation Vector
 
-The full observation is a **3457-dim float32 vector** (`Gen3ObservationEncoder.dimension`):
+The full observation is a **3469-dim float32 vector** (`Gen3ObservationEncoder.dimension`):
 
 | Block | Dims | Offset |
 |---|---|---|
@@ -567,15 +567,15 @@ The full observation is a **3457-dim float32 vector** (`Gen3ObservationEncoder.d
 | Opp team (6 × 110) | 660 | 660 |
 | Active context ×2 (boosts + full volatiles, `VOLATILE_DIM`=44) | 116 | 1320 |
 | Global env | 18 | 1436 |
-| Reactive + move-effects + **incoming-damage** + **turns_since_progress** + **protect-odds** + matchups | 402 | 1454 |
-| Prev-turn action mask | 11 | 1856 |
-| Turn history (`N_HISTORY_TURNS` × 159) | 1590 | 1867 |
-| **Total** | **3457** | |
+| Reactive + move-effects + **incoming-damage** + **turns_since_progress** + **protect-odds** + matchups + **active-req-moves** | 414 | 1454 |
+| Prev-turn action mask | 11 | 1868 |
+| Turn history (`N_HISTORY_TURNS` × 159) | 1590 | 1879 |
+| **Total** | **3469** | |
 
 **The full per-block layout** — the 110-dim per-Pokémon slot (incl. a 3-dim
 `gen3_sleep_wake_belief_v1` block: `sleep_is_deterministic` [Rest], computed `p_wake`, and
 `sleep_counter_reliable` — zeros unless the mon is asleep), the 11-dim move slot, the 18-dim
-spread block, global env, the 402-dim reactive block (**19 scalars** — the 14 prior + the
+spread block, global env, the 414-dim reactive block (**19 scalars** — the 14 prior + the
 log-saturated **`turns_since_progress`** no-progress clock at `vec[14]`, `gen3_markovian_progress_v1`
 (the no-progress reward keys on the SAME EpisodeTracker-owned counter) + the **2 protect-odds scalars**
 at `vec[15]`/`vec[16]`, `gen3_protect_odds_v1` — P(a Protect/Detect/Endure succeeds NOW) for our /
@@ -594,7 +594,11 @@ the **crit-risk DELTA** per channel (crit-inclusive − no-crit ∈ [0, _CRIT_P]
 tax" feature, so the model prices the modal line without over-weighting the coinflip) + P(outspeed) +
 a **threat-provenance** scalar (1.0 = a revealed move, <1 = a usage-prior guess; 0.0 = no KO threat —
 the "how much are we guessing" signal), then 3 opp recovery scalars] +
-288 matchup), and the 159-dim
+288 matchup + the **12-dim active-req-moves block** (`gen3_op_move_align_v1`: OUR active mon's 4 moves in
+**REQUEST order** — `[move_num ×4, resolved_type_id ×4, legal_now ×4]` — the DamageOperator's OUTGOING
+per-move blocks read THIS so their per-move output aligns with action logit 6+k, instead of the per-mon
+block's sorted-by-id order; sits after the matchups, consumed only by the op via ObsUnpack, never the
+raw-scalar path)), and the 159-dim
 TurnDelta slot (incl. the embedded-ID manifest) — lives in **`src/agents/observation/CLAUDE.md`**.
 Every offset is computed
 from named constants; never hardcode indices.

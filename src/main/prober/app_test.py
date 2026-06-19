@@ -814,10 +814,9 @@ class _FakeModelDOP(_FakeModelMB):
             "moves": [[dict(ohko)] + [dict(z) for _ in range(5)]]      # op move 0: vs jynx + 5 zeros
                      + [[dict(z) for _ in range(6)] for _ in range(3)],  # 3 more moves, no damage
             "revealed": [1.0, 0.0, 0.0, 0.0, 0.0, 0.0]}
-        # The op's OUTGOING per-move blocks are indexed by the per-mon obs-block (moveset) order, which
-        # differs from the ACTION order (a.matchups.move_labels). Use names DISTINCT from the recorded
-        # action labels so the test proves the op blocks are labeled by THIS order (+ the caveat fires).
-        v["our_moves"] = ("flamethrower", "icebeam", "psychic", "surf")
+        # gen3_op_move_align_v1: the op's OUTGOING per-move blocks are now ACTION-ordered, so the renderer
+        # labels them with a.matchups.move_labels (the recorded action labels) — no per-mon `our_moves`
+        # relabel and no "op move order ≠ action order" caveat anymore.
         return v
 
     def move_belief(self, obs, mask):
@@ -844,11 +843,11 @@ async def test_threats_renders_decoded_but_unrendered_op_fields(tmp_path):
         await app.workers.wait_for_complete()
         await pilot.pause()
         gpu = str(app.query_one("#threats-gpu", Static).render())
-        # 0) The op's per-move blocks are labeled by the op's (per-mon/moveset) order, NOT the action order —
-        # and that misalignment is flagged (the model concern). our_moves[0]="flamethrower" labels op slot 0.
-        assert "op move order" in gpu and "≠ action order" in gpu      # the misalignment caveat
-        assert "flamethrower" in gpu                                   # op-order label (distinct from actions)
-        # 1) OUTGOING status-landing — slot 0 (p_land 0.85, certain) is labeled flamethrower (op order).
+        # 0) gen3_op_move_align_v1: the op's per-move blocks are now ACTION-ordered, so they are labeled by
+        # the recorded action labels (move slot 0 = "thunderbolt") and there is NO misalignment caveat.
+        assert "op move order" not in gpu and "≠ action order" not in gpu   # the stale caveat is GONE
+        assert "thunderbolt" in gpu                       # op slot 0 labeled by the action label (action 6+0)
+        # 1) OUTGOING status-landing — slot 0 (p_land 0.85, certain) labeled by the action move (thunderbolt).
         assert "our status (land)" in gpu
         assert "✓" in gpu and "?" in gpu                  # certain (slot 0) + prior-guess (slot 2) markers
         assert "85%" in gpu                               # slot 0's certain P(lands)
@@ -859,7 +858,7 @@ async def test_threats_renders_decoded_but_unrendered_op_fields(tmp_path):
         assert "opp Choice Band" in gpu
         assert "P(CB) 35%" in gpu
         assert "magneton" in gpu and "→KO8%" in gpu       # our active's CB-conditional physical → KO
-        # 4) OUTGOING damage matrix vs switch-ins — op move 0 (labeled flamethrower) OHKOs the revealed jynx.
+        # 4) OUTGOING damage matrix vs switch-ins — op move 0 (labeled thunderbolt, action order) OHKOs jynx.
         assert "our damage vs switch-ins" in gpu
         assert "jynx" in gpu                              # the one revealed opp column (the active)
         assert "→KO 85%" in gpu and "2×" in gpu           # op move 0 OHKOs jynx, type_mult formatted

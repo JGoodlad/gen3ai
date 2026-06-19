@@ -81,6 +81,11 @@ def _ctx_out(*, our_species, our_t1, our_t2, our_moves, our_move_types, move_mas
         hp_and_active=hp, pokemon_part=sp,
         all_move_ids=amid, all_move_type_ids=amty,
         move_mask=torch.tensor([list(move_mask)] * B, dtype=torch.float32),
+        # gen3_op_move_align_v1: the op reads the request-ordered slice; the test writes the active's
+        # moves to slot 0 in request order, so these ARE slot 0's moves; legal == the request-order mask.
+        our_active_req_move_ids=amid[:, 0, :],
+        our_active_req_move_type_ids=amty[:, 0, :],
+        our_active_req_move_legal=torch.tensor([list(move_mask)] * B, dtype=torch.float32),
         screen_feature=torch.zeros(B, 8),
         our_ctx_raw=torch.zeros(B, ACTIVE_CONTEXT_DIM), opp_ctx_raw=torch.zeros(B, ACTIVE_CONTEXT_DIM),
         weather_feature=torch.zeros(B, 7),
@@ -304,6 +309,10 @@ def _ctx_status(*, our_defenders, opp_defenders, our_moves, our_move_types, move
         item_ids=torch.zeros(B, n, dtype=torch.long), hp_and_active=hp, pokemon_part=sp,
         all_move_ids=amid, all_move_type_ids=amty,
         move_mask=torch.tensor([list(move_mask)] * B, dtype=torch.float32),
+        # gen3_op_move_align_v1: request-ordered slice (== slot 0's moves, the test's request order).
+        our_active_req_move_ids=amid[:, 0, :],
+        our_active_req_move_type_ids=amty[:, 0, :],
+        our_active_req_move_legal=torch.tensor([list(move_mask)] * B, dtype=torch.float32),
         hp_probs=torch.zeros(B, n, 16), opp_ctx_raw=torch.zeros(B, ACTIVE_CONTEXT_DIM),
         opp_believed_mask=torch.tensor([[bool(x) for x in believed]] * B),
     )

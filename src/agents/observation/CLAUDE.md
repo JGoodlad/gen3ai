@@ -1,6 +1,6 @@
 # CLAUDE.md — Observation Encoder (`src/agents/observation/`)
 
-This directory builds the **3409-dim per-decision observation vector** (`Gen3ObservationEncoder.encode`).
+This directory builds the **3469-dim per-decision observation vector** (`Gen3ObservationEncoder.encode`).
 It runs once per agent decision across every training env, so it sits directly on the
 training-throughput (FPS) critical path. Two independent things can regress here, and they
 have **different** gates:
@@ -223,13 +223,20 @@ emitted a constant fallback (all-31 IVs, 0 EVs, neutral nature) for every own mo
 permanence + turns-remaining), spikes ×2 (2), log-turn (1), per-side screens (8: Reflect /
 Light Screen / Safeguard / Mist × both sides).
 
-**Reactive block (402 dims, layout in `reactive.py`):** 19 scalar dims (incl. 2 `gen3_wish_wired_v1`
+**Reactive block (414 dims, layout in `reactive.py`):** 19 scalar dims (incl. 2 `gen3_wish_wired_v1`
 `wish_floating` scalars at `vec[17]`/`vec[18]`, our/opp side — the pending-Wish heal, `WISH_HEAL_FRACTION`
 ≈0.5 when a wish cast last turn resolves this turn, else 0; see `sleep_belief.py`-style `wish_belief.py`),
 then the 44-dim **move-effect block** (`gen3_move_effects_v1` + `gen3_status_cure_moves_v1`), then
 the **51-dim incoming-damage / OHKO belief block** (`gen3_incoming_crit_split_v1`, at offset 63 — see
-below), then the two 144-dim matchup matrices (`our_matchups` now at offset 114, `their_matchups` at
-258). Scalars: active-move power ×4 (/200)
+below), then the two 144-dim matchup matrices (`our_matchups` at offset 114, `their_matchups` at 258),
+then the **12-dim active-req-moves block** (`gen3_op_move_align_v1`, at offset 402): OUR active mon's
+4 moves in **REQUEST order** (action 6+k) — `[move_num ×4, resolved_type_id ×4, legal_now ×4]`, sourced
+from `legal.move_slots` (same source as the action mask), so the model's DamageOperator OUTGOING per-move
+methods (`_outgoing_block`/`_status_landing`/`_outgoing_matrix`) read request order rather than the per-mon
+block's sorted-by-id order. These are embedding IDs (HP → num 237; typed-HP type resolved) consumed ONLY
+by the op via `ObsUnpack` (`ctx.our_active_req_move_{ids,type_ids,legal}`), so the block sits AFTER the
+matchups and is EXCLUDED from `non_matchup_rest` (the raw-scalar path that stops at the matchup offset).
+Scalars: active-move power ×4 (/200)
 + active-move multiplier ×4 (/4), fainted counts ×2, active-status flag (1), `forced_struggle` (1),
 **(`gen3_move_slot_align_v1`: these per-move scalars — and the move-effect block below — are filled
 in REQUEST-slot order via `legal.move_slots` (action 6+i ↔ slot i, disabled moves KEPT, typed-HP

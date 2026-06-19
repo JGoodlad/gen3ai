@@ -174,6 +174,17 @@ class ExtractorContext:
     # Reactive / global feature slices.
     matchups_all: torch.Tensor
     move_mask: torch.Tensor
+    # gen3_op_move_align_v1: OUR active mon's 4 moves in REQUEST-slot order (action 6+k) — the
+    # DamageOperator's OUTGOING per-move blocks read THESE (not all_move_ids[our_active], which is
+    # sorted-by-id) so their per-move output aligns with the action logits. [B,4] each:
+    #   our_active_req_move_ids       — dex num (HP → 237 regardless of type)
+    #   our_active_req_move_type_ids  — TypeEncoder index (our own Hidden Power is typed)
+    #   our_active_req_move_legal     — current-decision choosability (1=choosable now), request order
+    # (NB move_mask above is the PREV-turn, sorted-by-id mask used as a per-mon-block feature — a
+    # different order + freshness, deliberately NOT what the op outgoing should use.)
+    our_active_req_move_ids: torch.Tensor
+    our_active_req_move_type_ids: torch.Tensor
+    our_active_req_move_legal: torch.Tensor
     switch_mask: torch.Tensor
     struggle_mask: torch.Tensor
     turn_feature: torch.Tensor
@@ -351,6 +362,15 @@ class ObsUnpack(torch.nn.Module):
         _fs = reactive_layout['forced_struggle']; struggle_offset = _fs['offset']
         struggle_feature = remaining_part[:, reactive_start + struggle_offset : reactive_start + struggle_offset + 1]
 
+        # gen3_op_move_align_v1: OUR active's request-order move ids/types/legality (after the matchups,
+        # so non_matchup_rest — which stops at the matchup offset — never sees these embedding IDs).
+        # ids/type_ids → long for the op's table lookups; legal stays float (a 0/1 gate).
+        _arm = reactive_layout['active_req_moves']
+        _arm_base = reactive_start + _arm['offset']; _arm_per = _arm['per']
+        our_active_req_move_ids = remaining_part[:, _arm_base : _arm_base + _arm_per].long()
+        our_active_req_move_type_ids = remaining_part[:, _arm_base + _arm_per : _arm_base + 2 * _arm_per].long()
+        our_active_req_move_legal = remaining_part[:, _arm_base + 2 * _arm_per : _arm_base + 3 * _arm_per]
+
         our_matchups   = our_matchups_flat.reshape(batch_size, TEAM_SIZE, num_moves, TEAM_SIZE)
         their_matchups = their_matchups_flat.reshape(batch_size, TEAM_SIZE, num_moves, TEAM_SIZE)
         matchups_all = torch.cat([our_matchups, their_matchups], dim=1)
@@ -425,6 +445,9 @@ class ObsUnpack(torch.nn.Module):
             type1_ids=type1_ids, type2_ids=type2_ids,
             hp_probs=hp_probs, hp_and_active=hp_and_active,
             matchups_all=matchups_all, move_mask=move_mask, switch_mask=switch_mask, struggle_mask=struggle_mask,
+            our_active_req_move_ids=our_active_req_move_ids,
+            our_active_req_move_type_ids=our_active_req_move_type_ids,
+            our_active_req_move_legal=our_active_req_move_legal,
             turn_feature=turn_feature, weather_feature=weather_feature, fainted_feature=fainted_feature,
             spikes_feature=spikes_feature, struggle_feature=struggle_feature, screen_feature=screen_feature,
             our_active_idx=our_active_idx, opp_active_local=opp_active_local,
@@ -1831,10 +1854,13 @@ class DamageOperator(torch.nn.Module):
         our_alive = (ctx.hp_and_active[ar, our_act, 0] > 0).float()  # [B] our active must exist + be alive
         gate = (has_opp * our_alive)[:, None]                        # [B,1]
 
-        # --- our 4 moves (request-slot order == action logits 6+k), legality-masked ---
-        move_ids = ctx.all_move_ids[ar, our_act, :]                  # [B,4]
-        move_ty = ctx.all_move_type_ids[ar, our_act, :]             # [B,4] resolved type (incl our HP type)
-        legal = ctx.move_mask.float()                              # [B,4] currently-legal (Choice/Disable/PP)
+        # --- our 4 moves in REQUEST-slot order (action logits 6+k), legality-masked ---
+        # gen3_op_move_align_v1: read the request-ordered obs slice (NOT all_move_ids[our_act], which is
+        # sorted-by-id), so slot k's output ↔ action 6+k. `legal` is the CURRENT-decision choosability in
+        # request order (was ctx.move_mask = prev-turn, sorted-by-id — a stale + misordered gate).
+        move_ids = ctx.our_active_req_move_ids                       # [B,4] request order
+        move_ty = ctx.our_active_req_move_type_ids                   # [B,4] resolved type (incl our HP type)
+        legal = ctx.our_active_req_move_legal                        # [B,4] currently-legal (Choice/Disable/PP)
         is_hp = (move_ids == self.hp_num)
         bp = torch.where(is_hp, torch.full_like(move_ty, self.hp_bp, dtype=torch.float32),
                          self.MOVE_BP[move_ids])                     # [B,4] HP → 70 (else dex BP; status → 0)
@@ -1955,10 +1981,11 @@ class DamageOperator(torch.nn.Module):
         our_alive = (ctx.hp_and_active[ar, our_act, 0] > 0).float()                     # [B]
         gate = (has_opp * our_alive)[:, None]                                           # [B,1]
 
-        # --- our 4 moves (request-slot order == action logits 6+k), legality-masked (== _outgoing_block) ---
-        move_ids = ctx.all_move_ids[ar, our_act, :]                                     # [B,4]
-        move_ty = ctx.all_move_type_ids[ar, our_act, :]                                 # [B,4]
-        legal = ctx.move_mask.float()                                                   # [B,4]
+        # --- our 4 moves in REQUEST-slot order (action 6+k), legality-masked (== _outgoing_block) ---
+        # gen3_op_move_align_v1: request-ordered obs slice + current-decision legality (see _outgoing_block).
+        move_ids = ctx.our_active_req_move_ids                                          # [B,4] request order
+        move_ty = ctx.our_active_req_move_type_ids                                      # [B,4]
+        legal = ctx.our_active_req_move_legal                                           # [B,4]
         is_hp = (move_ids == self.hp_num)
         bp = torch.where(is_hp, torch.full_like(move_ty, self.hp_bp, dtype=torch.float32),
                          self.MOVE_BP[move_ids])                                        # [B,4]
@@ -2062,7 +2089,9 @@ class DamageOperator(torch.nn.Module):
         our_alive = (ctx.hp_and_active[ar, our_act, 0] > 0).float()   # [B]
         gate = (has_opp * our_alive)[:, None]                         # [B,1]
 
-        move_ids = ctx.all_move_ids[ar, our_act, :]                   # [B,4] request-slot order
+        # gen3_op_move_align_v1: request-ordered obs slice so p_land[k] ↔ action 6+k (was
+        # all_move_ids[our_act], sorted-by-id → the output was positionally misaligned with the actions).
+        move_ids = ctx.our_active_req_move_ids                        # [B,4] request order
         inflicts = self.MOVE_INFLICTS_STATUS[move_ids]               # [B,4]
         acc = self.MOVE_ACCURACY[move_ids]                          # [B,4] (Toxic .85, WoW .75, T-Wave 1, …)
         sidx = self.MOVE_STATUS_CAT[move_ids]                       # [B,4] long (0 = not a status move)
@@ -2400,9 +2429,12 @@ class DamageOperator(torch.nn.Module):
         our_alive = (ctx.hp_and_active[ar, our_act, 0] > 0).float()               # [B]
         gate = has_opp * our_alive                                                # [B]
         # --- our 4 KNOWN moves (coarse: real base spread, no boosts/CB) ---
-        move_ids = ctx.all_move_ids[ar, our_act, :]                               # [B,4]
-        move_ty = ctx.all_move_type_ids[ar, our_act, :]                           # [B,4] resolved (incl HP)
-        legal = ctx.move_mask.float()                                             # [B,4]
+        # gen3_op_move_align_v1: read the request-ordered obs slice + current-decision legality (consistent
+        # with the per-move-output methods). The output max-pools over our moves so the ORDER is invariant,
+        # but the legality GATE must be current (was ctx.move_mask = prev-turn, sorted-by-id — a stale gate).
+        move_ids = ctx.our_active_req_move_ids                                    # [B,4] request order
+        move_ty = ctx.our_active_req_move_type_ids                                # [B,4] resolved (incl HP)
+        legal = ctx.our_active_req_move_legal                                     # [B,4] current choosability
         is_hp = (move_ids == self.hp_num)
         bp = torch.where(is_hp, torch.full_like(move_ty, self.hp_bp, dtype=torch.float32),
                          self.MOVE_BP[move_ids])                                  # [B,4]
@@ -2551,8 +2583,11 @@ class DamageOperator(torch.nn.Module):
         our_alive = (ctx.hp_and_active[ar, our_act, 0] > 0).float()
         gate = has_opp * our_alive                                                        # [B]
         n_type = self.MOVE_STATUS_TYPE_IMMUNE.shape[1]
-        # our 4 status moves (request order; KNOWN)
-        move_ids = ctx.all_move_ids[ar, our_act, :]                                       # [B,4]
+        # our 4 status moves (gen3_op_move_align_v1: the request-ordered obs slice, NOT the sorted-by-id
+        # all_move_ids[our_act] — consistent with every other our-move op read). Output max-pools over the
+        # 4 moves so the ORDER is invariant here; no legality gate (parity with _status_landing + the CPU
+        # move-effect block, which both KEEP disabled moves — legality is the action mask's job).
+        move_ids = ctx.our_active_req_move_ids                                             # [B,4] request order
         inflicts = self.MOVE_INFLICTS_STATUS[move_ids]                                     # [B,4]
         acc = self.MOVE_ACCURACY[move_ids]                                                # [B,4]
         sidx = self.MOVE_STATUS_CAT[move_ids]                                             # [B,4]

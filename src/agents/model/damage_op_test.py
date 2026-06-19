@@ -99,6 +99,12 @@ def _fake_ctx(op, *, attacker_num, attacker_t1, attacker_t2,
         our_ctx_raw=torch.zeros(B, ACTIVE_CONTEXT_DIM), opp_ctx_raw=torch.zeros(B, ACTIVE_CONTEXT_DIM),  # boosts++volatiles
         our_active_idx=torch.zeros(B, dtype=torch.long), weather_feature=torch.zeros(B, 7),  # no weather
         hp_and_active=hp_and_active, pokemon_part=pokemon_part, hp_probs=hp_probs,
+        # gen3_op_move_align_v1: request-order outgoing-move slice. This incoming-focused ctx has no
+        # outgoing moves, so zeros (→ the op's outgoing methods gate off via bp=0); the OUTGOING tests
+        # use _fake_ctx_out, which sets these from slot 0.
+        our_active_req_move_ids=torch.zeros(B, 4, dtype=torch.long),
+        our_active_req_move_type_ids=torch.zeros(B, 4, dtype=torch.long),
+        our_active_req_move_legal=torch.zeros(B, 4),
     )
 
 
@@ -428,6 +434,12 @@ def _fake_ctx_out(*, our_species, our_t1, our_t2, our_moves, our_move_types,
         hp_and_active=hp_and_active, pokemon_part=pokemon_part,
         all_move_ids=all_move_ids, all_move_type_ids=all_move_type_ids,
         move_mask=torch.tensor([list(move_mask)] * B, dtype=torch.float32),
+        # gen3_op_move_align_v1: the op's OUTGOING methods read the request-order obs slice (NOT
+        # all_move_ids[our_active]). Our test writes the active's 4 moves in request order at slot 0,
+        # so the request-order fields ARE slot 0's moves; legal == the request-order move_mask.
+        our_active_req_move_ids=all_move_ids[:, 0, :],
+        our_active_req_move_type_ids=all_move_type_ids[:, 0, :],
+        our_active_req_move_legal=torch.tensor([list(move_mask)] * B, dtype=torch.float32),
         screen_feature=torch.zeros(B, 8),
         our_ctx_raw=torch.zeros(B, ACTIVE_CONTEXT_DIM), opp_ctx_raw=torch.zeros(B, ACTIVE_CONTEXT_DIM),  # boosts++volatiles
         weather_feature=torch.zeros(B, 7),                              # no weather
@@ -452,6 +464,30 @@ def test_outgoing_per_move_discriminates_equal_effectiveness():
     eq_high, bb_high = out[0, 1].item(), out[0, 5].item()       # move 0 high, move 1 high
     assert eq_high > bb_high > 0.0, (eq_high, bb_high)           # same 2× eff, EQ wins on base power
     assert out[0, 8:12].abs().sum().item() == 0.0               # empty move slots 2/3 → zero
+
+
+def test_outgoing_reads_request_order_not_per_mon_block():
+    """gen3_op_move_align_v1 REGRESSION GUARD (op CONSUMER side). The op's OUTGOING per-move block must
+    read ctx.our_active_req_move_ids (REQUEST order, = action 6+k), NOT all_move_ids[our_active] (the
+    per-mon obs block, SORTED-BY-ID). Here the two orders DIFFER: the per-mon block holds [EQ, BrickBreak]
+    but the request slice holds the REVERSE [BrickBreak, EQ]. The op output must follow the REQUEST slice
+    (EQ — the higher-BP move — at slot 1), so if anyone reverts the op to read the per-mon block this FAILS."""
+    from agents import gen3_data
+    mappings = load_mappings(); layout = Gen3ObservationEncoder(mappings).get_layout()
+    op = DamageOperator(layout, outgoing=True)
+    eq, bb = gen3_data.moves.get("earthquake"), gen3_data.moves.get("brickbreak")
+    ctx = _fake_ctx_out(our_species=143, our_t1=_T2I["NORMAL"], our_t2=0,             # Snorlax (Normal)
+                        our_moves=[eq.num, bb.num, 0, 0],                            # per-mon block order
+                        our_move_types=[_T2I["GROUND"], _T2I["FIGHTING"], 0, 0],
+                        opp_species=248, opp_t1=_T2I["ROCK"], opp_t2=0,             # mono-Rock (both 2×)
+                        move_mask=[1, 1, 0, 0])
+    # REVERSE the request-order slice so it disagrees with the per-mon block: request slot 0 = BrickBreak,
+    # slot 1 = Earthquake. A correct op (reading the request slice) puts EQ's bigger hit at slot 1.
+    ctx.our_active_req_move_ids = torch.tensor([[bb.num, eq.num, 0, 0]], dtype=torch.long)
+    ctx.our_active_req_move_type_ids = torch.tensor([[_T2I["FIGHTING"], _T2I["GROUND"], 0, 0]], dtype=torch.long)
+    out = op._outgoing_block(ctx)                                                    # [1, 17]
+    slot0_high, slot1_high = out[0, 1].item(), out[0, 5].item()
+    assert slot1_high > slot0_high > 0.0, (slot0_high, slot1_high)   # EQ now at request slot 1 → wins
 
 
 def test_outgoing_legality_mask_and_immunity():

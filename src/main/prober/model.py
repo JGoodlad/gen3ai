@@ -475,33 +475,13 @@ class ProbeModel:
                 if blk and blk.get("moves"):
                     for k, mv in enumerate(blk["moves"]):
                         mv["move"] = names[k] if k < len(names) else None
-        # The op's OUTGOING per-move blocks (outgoing / status_landing / outgoing_matrix) are indexed by
-        # `ctx.all_move_ids[our_active]` — the PER-MON obs-block move order — so the prober must label them by
-        # THAT order, NOT a.matchups.move_labels (the ACTION/request order, action 6+k). The two differ in
-        # ~90% of decisions (per-mon block ≈ alphabetical/moveset; action = request) — see the caveat the
-        # renderer prints. Attach the op's actual move order so each op slot is labeled with the move the op
-        # really computed for it.
-        view["our_moves"] = self._our_active_moves(obs)
+        # gen3_op_move_align_v1: the op's OUTGOING per-move blocks (outgoing / status_landing /
+        # outgoing_matrix) now read the request-ordered obs slice (`ctx.our_active_req_move_*`), so they are
+        # ACTION-ordered (action 6+k) — the prober labels them with `a.matchups.move_labels` (the recorded,
+        # action-index-ordered labels), the same axis as the matchups table + faithfulness. No per-mon
+        # (sorted-by-id) relabel is needed anymore; the old `our_moves` decode + the "op move order ≠ action
+        # order" caveat are gone with the fix.
         return view
-
-    def _our_active_moves(self, obs: np.ndarray) -> "tuple[str, ...]":
-        """OUR active mon's moves in the order the DamageOperator's OUTGOING blocks use them — the per-mon
-        obs-block slot order (== `ctx.all_move_ids[our_active]`, what `_outgoing_block`/`_status_landing`/
-        `_outgoing_matrix` index). Decoded from the active our-team block (typed-HP resolved). NOTE this is
-        the per-mon MOVESET order, which differs from the ACTION order (action 6+k = the recorded labels /
-        the reactive move-effect block / the policy logits) — so it must NOT be confused with
-        `a.matchups.move_labels`. `()` when undecodable."""
-        if self._pokemon_encoder is None:
-            return ()
-        import agents.observation.constants as C
-        arr = np.asarray(obs)
-        stride = self.offsets.pokemon_full_dim
-        for i in range(6):
-            b = self._our_team_off + i * stride
-            blk = arr[b:b + stride]
-            if blk.shape[0] >= stride and blk[stride - 1] > 0.5:        # active flag = the slot's last dim
-                return tuple(self._pokemon_encoder.describe_vector(blk).get("moves") or [])
-        return ()
 
     def _topk_move_names(self, op, cand_indices):
         """Resolve the DamageOperator's top-K CANDIDATE indices → move-id strings. A candidate < n_moves is

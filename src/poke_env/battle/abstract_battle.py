@@ -783,6 +783,29 @@ class AbstractBattle(ABC):
             while event[-1] == "[still]":
                 event = event[:-1]
 
+            # Final robust pass: strip ANY trailing cosmetic/failure suffix the earlier
+            # single-position checks can leave STRANDED when tags arrive interleaved. The early
+            # `[miss]`/`[notarget]` strip (above) only inspects event[-1] once, BEFORE `[anim]`/
+            # `[spread]` are removed, so a protocol line like
+            #   |move|p2a: Suicune|Hydro Pump|p1a: Skarmory|[miss]|[anim] Hydro Pump p1a: Skarmory
+            # strips `[anim]` and leaves `[miss]` dangling → the len(event) dispatch below would
+            # raise "Unhandled move message format". Loop over the cosmetic/failure tags in ANY
+            # order until none trail, mirroring the move OUTCOME for a stranded miss/notarget (the
+            # `not failed` guard makes it idempotent with the early pass; [from]/ability clauses are
+            # already consumed above, so only these cosmetic tags can remain here).
+            while event[-1] in {"[miss]", "[notarget]", "[still]"} or \
+                    event[-1].startswith(("[anim]", "[spread]")):
+                last = event[-1]
+                event = event[:-1]
+                if last == "[miss]":
+                    if not failed:
+                        self._mark_move_outcome("missed")
+                    failed = True
+                elif last == "[notarget]":
+                    if not failed:
+                        self._mark_move_outcome("failed")
+                    failed = True
+
             presumed_target = None
             if len(event) == 4:
                 pokemon, move = event[2:4]
@@ -1047,19 +1070,19 @@ class AbstractBattle(ABC):
             elif effect == "ability: Dancer":
                 self.get_pokemon(target)._dancing = True
             elif effect == "ability: Mummy":
-                target = (
-                    event[5].replace("[of] ", "") if "[of] " in event[5] else event[4]
-                )
-                self.get_pokemon(target).temporary_ability = "mummy"
+                # The `[of] <mon>` source's index varies with optional preceding tags, so SCAN for it
+                # (robust to reordering) instead of hardcoding event[5]/event[6] — the same fragility
+                # class as the move-suffix [miss]/[anim] stranding. Falls back to event[4] when absent.
+                of_src = next((t[len("[of] "):] for t in event[4:] if t.startswith("[of] ")), event[4])
+                self.get_pokemon(of_src).temporary_ability = "mummy"
             elif effect == "ability: Wandering Spirit":
                 actor = event[2]
-                target = event[6].replace("[of] ", "")
+                of_src = next((t[len("[of] "):] for t in event[4:] if t.startswith("[of] ")), actor)
                 self.get_pokemon(actor).temporary_ability = event[4]
-                self.get_pokemon(target).temporary_ability = "wanderingspirit"
+                self.get_pokemon(of_src).temporary_ability = "wanderingspirit"
             elif effect == "ability: Symbiosis":
-                self.get_pokemon(event[5].replace("[of] ", "")).item = event[4].replace(
-                    "[item] ", ""
-                )
+                of_src = next((t[len("[of] "):] for t in event[4:] if t.startswith("[of] ")), target)
+                self.get_pokemon(of_src).item = event[4].replace("[item] ", "")
                 self.get_pokemon(target).item = None
             elif effect == "item: Leppa Berry":
                 mon = self.get_pokemon(target)
@@ -1073,7 +1096,10 @@ class AbstractBattle(ABC):
                 )
             elif effect == "move: Trick":
                 mon = self.get_pokemon(target)
-                mon2 = self.get_pokemon(event[4].replace("[of] ", ""))
+                # SCAN for the `[of] <mon>` swap partner (robust to a preceding tag) rather than
+                # hardcoding event[4] — the same strand class as the [miss]/[anim] move-suffix bug.
+                of_src = next((t[len("[of] "):] for t in event[4:] if t.startswith("[of] ")), event[4])
+                mon2 = self.get_pokemon(of_src)
                 mon._item, mon2._item = mon2.item, mon.item
             elif target != "":  # ['', '-activate', '', 'move: Splash']
                 # An ability activating (e.g. |-activate|p1a: Snorlax|ability: Immunity)

@@ -8,6 +8,12 @@ import unittest
 import numpy as np
 
 from main.prober import forensics
+from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings
+
+# Fake-obs buffer width — the LIVE encoder dim, resolved dynamically so it tracks obs-layout changes
+# (was a hardcoded 3457 that silently drifted; `build_decision_table` decodes the incoming-belief block
+# at live offsets, so the buffer must be ≥ total_dim — pin it to the real value).
+_OBS_W = Gen3ObservationEncoder(load_mappings()).get_layout()["total_dim"]
 
 
 class TestMoveCategory(unittest.TestCase):
@@ -63,7 +69,7 @@ class TestBuildDecisionTable(unittest.TestCase):
         logits[0, 3] = 5.0   # peak at the chosen explosion action index
         logits[1, 0] = 5.0
         npz = dict(
-            obs=np.zeros((2, 3457), dtype=np.float32),
+            obs=np.zeros((2, _OBS_W), dtype=np.float32),
             logits=logits,
             values=np.array([-5.0, -3.0], dtype=np.float32),  # dV[0] = -3-(-5) = +2.0
             has_state=np.array([1, 1], dtype=np.int8),

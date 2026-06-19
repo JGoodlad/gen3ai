@@ -134,11 +134,29 @@ from agents.observation.incoming_damage import (
     PER_MON as INCOMING_PER_MON, RECOVERY as INCOMING_RECOVERY_DIM,
 )
 INCOMING_DMG_DIM = TEAM_SIZE * INCOMING_PER_MON + INCOMING_RECOVERY_DIM  # 51
-INCOMING_DMG_OFFSET = REACTIVE_SCALAR_DIM + MOVE_EFFECTS_DIM             # 51 (within the reactive block)
+INCOMING_DMG_OFFSET = REACTIVE_SCALAR_DIM + MOVE_EFFECTS_DIM             # 63 (within the reactive block)
 
-REACTIVE_MATCHUP_OFFSET = REACTIVE_SCALAR_DIM + MOVE_EFFECTS_DIM + INCOMING_DMG_DIM  # 102
+REACTIVE_MATCHUP_OFFSET = REACTIVE_SCALAR_DIM + MOVE_EFFECTS_DIM + INCOMING_DMG_DIM  # 114
 
-REACTIVE_DIM = REACTIVE_SCALAR_DIM + MOVE_EFFECTS_DIM + INCOMING_DMG_DIM + MATCHUP_DIM  # 390
+# gen3_op_move_align_v1: the OUR-ACTIVE mon's 4 moves in REQUEST-slot order (so slot k ↔ action
+# logit 6+k) — [move_num ×4, resolved_type_id ×4, legal_now ×4]. The DamageOperator's OUTGOING
+# per-move blocks (_outgoing_block / _status_landing / _outgoing_matrix) READ THIS so their per-move
+# output aligns with the action order, instead of the per-mon block's sorted-by-id order. The per-mon
+# move block (all_move_ids) stays sorted-by-id on purpose — it feeds the role token, whose value is
+# order-sensitive (the 4 move encodings are concatenated), so it can't be reordered without changing
+# the network. `move_num` is the dex num (HP → 237 regardless of type); `resolved_type_id` is the
+# TypeEncoder index (our own Hidden Power is typed); `legal_now` is the CURRENT-decision choosability
+# (`not legal.move_slots[k].disabled`, the exact action-mask move-bit), in request order — strictly
+# fresher than the prev-turn / sorted-by-id `prev_mask` the op used to gate with. These are embedding
+# IDs (not scalars), so the block sits AFTER the matchups: existing offsets (incl. the matchup offset
+# `non_matchup_rest` stops at) are UNDISTURBED, and ObsUnpack slices it explicitly into ctx (it never
+# enters the raw-scalar projection path). Retrain-class (obs dim grows; ARCH gen3_op_move_align_v1).
+ACTIVE_REQ_MOVES_PER = 4                                                 # request slots (== N_MOVE_SLOTS)
+ACTIVE_REQ_MOVES_DIM = 3 * ACTIVE_REQ_MOVES_PER                          # 12 = ids(4) + type_ids(4) + legal(4)
+ACTIVE_REQ_MOVES_OFFSET = REACTIVE_MATCHUP_OFFSET + MATCHUP_DIM          # 402 — after the two matchup matrices
+
+REACTIVE_DIM = (REACTIVE_SCALAR_DIM + MOVE_EFFECTS_DIM + INCOMING_DMG_DIM
+                + MATCHUP_DIM + ACTIVE_REQ_MOVES_DIM)                    # 414
 
 # Top-level Offsets — all derived from the named constants (only the constants are load-bearing;
 # these comments are the post-gen3_markovian_progress_v1 values: base dim = 1790, full obs = 3391).

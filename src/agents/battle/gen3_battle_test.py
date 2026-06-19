@@ -212,6 +212,39 @@ def test_synthetic_events_are_only_move_suffix_outcomes():
             )
 
 
+@pytest.mark.parametrize("trailing", [
+    [],                                                    # [miss] last — the common case
+    ["[anim] Hydro Pump p1a: Skarm"],                      # [miss] then [anim] — battle-3736 turn 7
+    ["[spread]"],                                          # [miss] then [spread]
+    ["[spread]", "[anim] Hydro Pump p1a: Skarm"],          # [miss] then [spread] then [anim]
+])
+def test_move_miss_suffix_stranded_after_trailing_tags_parses(trailing):
+    """REGRESSION (bridge [miss] parse crash, battle-3736 turn 7). A |move| line whose [miss] suffix is
+    FOLLOWED by a later cosmetic tag ([anim]/[spread]) must still parse. The early single-position [miss]
+    strip inspects event[-1] only ONCE — BEFORE [anim]/[spread] are removed — so the [miss] was left
+    stranded and the len(event) dispatch raised 'Unhandled move message format'. The robust final pass
+    strips any trailing failure/cosmetic suffix in ANY order; assert it parses AND still records the miss."""
+    for cls in (Battle, Gen3Battle):
+        b = make(cls)
+        feed(b, [
+            ["", "switch", "p1a: Skarm", "Skarmory, L100, F", "100/100"],
+            ["", "switch", "p2a: Cune", "Suicune, L100", "100/100"],
+            ["", "turn", "1"],
+        ])
+        # Must NOT raise regardless of where [miss] sits among the trailing tags.
+        b.parse_message(["", "move", "p2a: Cune", "Hydro Pump", "p1a: Skarm", "[miss]", *trailing])
+        assert b.opponent_active_pokemon.species == "suicune"      # state still advanced
+    # Gen3Battle records the miss as a synthetic MISS event regardless of the trailing-tag order.
+    g3 = make(Gen3Battle)
+    feed(g3, [
+        ["", "switch", "p1a: Skarm", "Skarmory, L100, F", "100/100"],
+        ["", "switch", "p2a: Cune", "Suicune, L100", "100/100"],
+        ["", "turn", "1"],
+    ])
+    g3.parse_message(["", "move", "p2a: Cune", "Hydro Pump", "p1a: Skarm", "[miss]", *trailing])
+    assert any(e.kind is EventKind.MISS for e in g3.events), "the miss outcome was lost"
+
+
 def test_every_event_kind_has_a_schema_entry():
     """No EventKind may ship without declaring its required payload keys (even if the
     set is empty) — forces a deliberate decision for each new kind."""

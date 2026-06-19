@@ -1295,26 +1295,16 @@ class ProberApp(Gen3App):
             from agents import gen3_data
             gpu.append_text(_prov("DamageOperator — computed gen3 damage physics (the learned belief → KO read)",
                                   True))
-            # The op's OUTGOING per-move blocks (out / status-land / switch-in matrix) are indexed by the
-            # per-mon obs-block move order (`ctx.all_move_ids[our_active]`), which DIFFERS from the ACTION
-            # order (action 6+k = a.matchups.move_labels / the policy logits / the reactive move-effect
-            # block) in ~90% of decisions (per-mon ≈ alphabetical/moveset; action = request). So label those
-            # blocks by the op's REAL move order (`dop["our_moves"]`), not the action labels — else the
-            # damage attaches to the wrong move name. `_op_lbl(k)` = the op's move at slot k.
-            op_moves = list(dop.get("our_moves") or [])
+            # gen3_op_move_align_v1: the op's OUTGOING per-move blocks (out / status-land / switch-in matrix)
+            # are now in ACTION order (action 6+k = the policy logits = a.matchups.move_labels, which are
+            # action-index ordered from the recorded `actions` dict), because the op reads the request-ordered
+            # obs slice (`ctx.our_active_req_move_*`) rather than the per-mon block's sorted-by-id order. So
+            # label these blocks with the ACTION labels — the same axis as the matchups table + faithfulness.
+            act_labels = list(a.matchups.move_labels) if a.matchups is not None else []
 
             def _op_lbl(k: int) -> str:
-                m = op_moves[k] if (k < len(op_moves) and op_moves[k] and op_moves[k] != "none") else None
-                return m or f"m{k}"
-            _act_n = ([str(l).split("(")[0] for l in a.matchups.move_labels] if a.matchups is not None else [])
-            _op_n = [str(m).split("(")[0] for m in op_moves]
-            op_misaligned = bool(_op_n) and bool(_act_n) and _op_n[:len(_act_n)] != _act_n[:len(_op_n)]
-            if op_misaligned:
-                gpu.append("\n⚠ op move order ", style="bold yellow")
-                gpu.append("≠ action order", style="bold red")
-                gpu.append(f": op outgoing/status/switch-in blocks are in the op's per-mon order {_op_n}, "
-                           f"NOT action 6+k {_act_n} — labeled by the op's order below (the op is NOT "
-                           f"action-aligned — model concern).", style="yellow")
+                lbl = act_labels[k] if (k < len(act_labels) and act_labels[k]) else None
+                return lbl or f"m{k}"
 
             def _top_secondary(sc: dict) -> str:
                 """The single most-likely secondary effect our move causes (what status + probability)."""
@@ -1343,7 +1333,7 @@ class ProberApp(Gen3App):
                 gpu.append("\nour damage (out):  ", style="dim")
                 gpu.append("low–high · crit · acc · →KO", style="dim")
                 for k, (mv, sc) in enumerate(zip(moves, osec)):
-                    lab = _op_lbl(k)                                  # op order (NOT action order)
+                    lab = _op_lbl(k)                                  # action order (gen3_op_move_align_v1)
                     damaging = mv["high"] > 0                         # from the op's own data, not matchups
                     gpu.append(f"\n  {lab:<13}", style="cyan")
                     if not damaging:
@@ -1478,7 +1468,7 @@ class ProberApp(Gen3App):
             if sl is not None and any(s.get("known", 0) > 0.5 or s.get("p_land", 0) > 0.02 for s in sl):
                 shown_sl = False
                 for k, sll in enumerate(sl):
-                    lab = _op_lbl(k)                                  # op order (NOT action order)
+                    lab = _op_lbl(k)                                  # action order (gen3_op_move_align_v1)
                     p_l = sll.get("p_land", 0.0)
                     known = sll.get("known", 0.0)
                     # Gate: show only entries with known>0.5 (certain) or p_land>0.02 (meaningful threat).
@@ -1533,7 +1523,7 @@ class ProberApp(Gen3App):
             # per cell low–high · crit · →KO · ×mult — the "KO a switch-IN" read. Skip unrevealed/zero columns.
             omx = dop.get("outgoing_matrix")
             if omx is not None and omx.get("moves") and omx.get("revealed"):
-                omx_labels = [_op_lbl(k) for k in range(len(omx["moves"]))]   # op order (NOT action order)
+                omx_labels = [_op_lbl(k) for k in range(len(omx["moves"]))]   # action order (gen3_op_move_align_v1)
                 revealed_mask = omx["revealed"]                          # [6] per opp mon (1/0)
                 moves_by_def = omx["moves"]                              # [4][6] of {low,high,crit,pko,type_mult}
                 # Column d is the op's obs TEAM-SLOT d (the active is at whatever slot carries the active
@@ -1674,7 +1664,8 @@ class ProberApp(Gen3App):
         reads = {ph["stage"]: ph["role"] for ph in arch if ph["stage"] in ("policy", "value")}
         # Width-aware role budget — use the panel's real width so descriptions aren't needlessly cut.
         role_w = max(40, min(96, self._flow_width() - 33))
-        lines = list(self._flow_pipeline_lines(arch, role_w)) if arch else []
+        _obs_dim = getattr(getattr(model, "offsets", None), "total_dim", 0)
+        lines = list(self._flow_pipeline_lines(arch, role_w, _obs_dim)) if arch else []
         pol = self._flow_head_lane("π POLICY", "policy", a.saliency, "bold cyan",
                                    self._flow_policy_caption(a), reads)
         val = self._flow_head_lane("V VALUE", "value", a.value_saliency, "bold magenta",
@@ -1704,7 +1695,7 @@ class ProberApp(Gen3App):
             return 999
         return w if w and w > 0 else 999
 
-    def _flow_pipeline_lines(self, arch: "list[dict]", role_w: int) -> "list[Text]":
+    def _flow_pipeline_lines(self, arch: "list[dict]", role_w: int, obs_dim: int = 0) -> "list[Text]":
         """The forward spine: `obs` source, then each non-head phase grouped under a stage band that
         the rail flows DOWN into (`▼ BAND → <what it produces>`), so the dataflow reads top-to-bottom.
         Numbering runs across active non-side phases; CLSPool=⑂, assembler=◆, attention layers get ⊛."""
@@ -1712,7 +1703,8 @@ class ProberApp(Gen3App):
         produces = {"ENCODE": "→ role tokens, self-attended",
                     "BELIEF": "→ opp tokens enriched (moves / spread)",
                     "FORK": "→ pooled, then SPLIT → π · V"}
-        out = [Text("obs vec(3457)", style="bold")]
+        # Live obs dim from the loaded model (NOT a hardcoded literal — it tracks obs-layout changes).
+        out = [Text(f"obs vec({obs_dim or '?'})", style="bold")]
         n = [0]
         bands = {b: [] for b in _FLOW_BAND_ORDER}
         for ph in arch:

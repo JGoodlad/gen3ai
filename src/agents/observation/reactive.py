@@ -6,7 +6,9 @@ from .constants import (
     REACTIVE_SCALAR_DIM, REACTIVE_MATCHUP_OFFSET,
     MOVE_EFFECTS_DIM, MOVE_EFFECT_FEATURES,
     INCOMING_DMG_DIM, INCOMING_DMG_OFFSET, INCOMING_PER_MON, INCOMING_RECOVERY_DIM,
+    ACTIVE_REQ_MOVES_OFFSET, ACTIVE_REQ_MOVES_PER, ACTIVE_REQ_MOVES_DIM,
 )
+from .types import TypeEncoder
 from agents.enums import PokemonType
 from agents import gen3_data
 from agents.gen3_mechanics import (
@@ -192,7 +194,11 @@ class ReactiveEncoder(ObservationEncoder):
     - Incoming-damage / OHKO belief (51) — gen3_incoming_crit_split_v1 (offsets via INCOMING_DMG_OFFSET)
     - Matchup Matrix: Our moves vs Their mons (144)
     - Matchup Matrix: Their moves vs Our mons (144)
-    Total: REACTIVE_DIM (17 scalars + 36 move-effects + 51 incoming-damage + 288 matchup = 392).
+    - Active request-move id/type/legality (12) — gen3_op_move_align_v1: OUR active's 4 moves in
+      REQUEST order (action 6+k), [move_num ×4, resolved_type_id ×4, legal_now ×4], consumed by the
+      DamageOperator's OUTGOING per-move blocks so their output aligns with the action logits.
+    Total: REACTIVE_DIM (19 scalars + 44 move-effects + 51 incoming-damage + 288 matchup
+    + 12 active-req-moves = 414).
     (HP and Spikes removed — duplicated in per-Pokémon vector and global env respectively)
 
     The trapped / maybe_trapped bits (gen3_trapping_signals_v1) are sourced from the
@@ -279,6 +285,14 @@ class ReactiveEncoder(ObservationEncoder):
         # flags come from the data facade (MoveData); status_will_land and Curse's
         # type-conditional setup are resolved LIVE here.
         move_effects = np.zeros((4, MOVE_EFFECT_FEATURES), dtype=np.float32)
+        # gen3_op_move_align_v1: per REQUEST slot (action 6+k) — move NUM + resolved TYPE-id + current
+        # choosability — for the DamageOperator's OUTGOING per-move blocks (so their output aligns with
+        # the action order, not the per-mon block's sorted-by-id order). Filled in the same request-order
+        # loop below; stays zeros (→ op gates the slot off via bp=0 / legal=0) on forced Struggle / empty
+        # / unresolved slots.
+        active_req_move_ids = np.zeros(ACTIVE_REQ_MOVES_PER, dtype=np.float32)
+        active_req_move_type_ids = np.zeros(ACTIVE_REQ_MOVES_PER, dtype=np.float32)
+        active_req_move_legal = np.zeros(ACTIVE_REQ_MOVES_PER, dtype=np.float32)
 
         # Skip Struggle — it has a dedicated action (10) and a dedicated flag (vec[11]).
         # Filling the move slots with Struggle's stats would create a confusing alias
@@ -352,9 +366,39 @@ class ReactiveEncoder(ObservationEncoder):
                 max_pp = getattr(move, "max_pp", 0) or 0
                 eff[7] = (move.current_pp / max_pp) if max_pp else 0.0
 
+                # gen3_op_move_align_v1: request-order move NUM + resolved TYPE-id for the op's OUTGOING
+                # blocks. NUM mirrors moves.py (HP → 237 regardless of type, so the op's HP branch fires);
+                # the resolved type drives STAB / effectiveness (our own Hidden Power arrives typed, via
+                # _request_slot_moves, so the else branch supplies the real type — a bare 'hiddenpower'
+                # would be type-unknown, which never happens for our own active).
+                if md is not None:
+                    active_req_move_ids[i] = float(md.num)
+                    if move.id == "hiddenpower":
+                        type_id = 0
+                    else:
+                        type_name = "???" if md.type.name == "THREE_QUESTION_MARKS" else md.type.name
+                        type_id = TypeEncoder.TYPE_TO_IDX.get(type_name, 0)
+                    active_req_move_type_ids[i] = float(type_id)
+                # legal_now: current-decision choosability in request order — the EXACT action-mask move
+                # bit (`not legal.move_slots[i].disabled`). The legal-is-None fallback path drew moves from
+                # battle.available_moves (already disabled-filtered) → every resolved move is choosable.
+                active_req_move_legal[i] = (
+                    1.0 if (legal is not None and i < len(legal.move_slots)
+                            and not legal.move_slots[i].disabled)
+                    else (1.0 if legal is None else 0.0)
+                )
+
         vec[0:4] = moves_base_power
         vec[4:8] = moves_dmg_multiplier
         vec[REACTIVE_SCALAR_DIM:REACTIVE_SCALAR_DIM + MOVE_EFFECTS_DIM] = move_effects.reshape(-1)
+        # gen3_op_move_align_v1: request-order active-move id/type/legality block (sits AFTER the
+        # matchups; consumed only by the DamageOperator's outgoing methods via ObsUnpack, never the
+        # raw-scalar path). Layout: [ids ×4, type_ids ×4, legal ×4].
+        _ar = ACTIVE_REQ_MOVES_OFFSET
+        _p = ACTIVE_REQ_MOVES_PER
+        vec[_ar:_ar + _p] = active_req_move_ids
+        vec[_ar + _p:_ar + 2 * _p] = active_req_move_type_ids
+        vec[_ar + 2 * _p:_ar + 3 * _p] = active_req_move_legal
 
         # 2. Fainted Counts — read through the LiveView (m.fainted) when available, else raw.
         if live is not None:
@@ -512,6 +556,10 @@ class ReactiveEncoder(ObservationEncoder):
                                 "per_mon": INCOMING_PER_MON, "recovery": INCOMING_RECOVERY_DIM},
             "our_matchups": {"offset": mo, "dim": 144},
             "their_matchups": {"offset": mo + 144, "dim": 144},
+            # gen3_op_move_align_v1: request-order active-move id/type/legality (after the matchups).
+            # Sub-blocks are contiguous: ids[0:4], type_ids[4:8], legal[8:12] within the block.
+            "active_req_moves": {"offset": ACTIVE_REQ_MOVES_OFFSET, "dim": ACTIVE_REQ_MOVES_DIM,
+                                 "per": ACTIVE_REQ_MOVES_PER},
         }
 
     def describe_vector(self, vector: np.ndarray) -> Dict[str, Any]:
