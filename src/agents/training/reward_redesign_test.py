@@ -1382,6 +1382,57 @@ class TestProgressClock(unittest.TestCase):
 
 
 # --------------------------------------------------------------------------- #
+class TestSetupProgress(unittest.TestCase):
+    """gen3_setup_progress_v1 (unconditional fix): a NON-redundant own setup turn is PROGRESS — our
+    active's Σ positive boost stages strictly rose (useful Calm Mind / DD / SD / Curse / Belly Drum), or
+    a Substitute was newly created. A REDUNDANT setup (+6 cap / failed re-Sub) is still a charged no-op,
+    and a pivot can't false-credit (gen3 resets boosts on switch)."""
+
+    def test_useful_boost_resets(self):
+        """Our positive boost-stage sum rose (0→2 via Calm Mind) → PROGRESS (reset, no charge)."""
+        c = ProgressClock(); c.n = 4
+        live = _full_team_live(); live.ours.active.boosts = {"spa": 1, "spd": 1}
+        c.update(_delta(our_move_id="calmmind"), live, _Legal(switches=[1]))
+        self.assertEqual(c.n, 0)
+        self.assertEqual(c.last_penalty, 0.0)
+
+    def test_redundant_boost_at_cap_still_taxed(self):
+        """Calm Mind at the +6 cap (sum unchanged at 12) is a true no-op → still charged."""
+        c = ProgressClock(); c.n = 2
+        c._prev_our_boost_sum = 12
+        live = _full_team_live(); live.ours.active.boosts = {"spa": 6, "spd": 6}
+        c.update(_delta(our_move_id="calmmind"), live, _Legal(switches=[1]))
+        self.assertEqual(c.n, 3)
+        self.assertAlmostEqual(c.last_penalty, -0.15, places=6)
+
+    def test_new_substitute_resets(self):
+        """A newly-created Substitute → PROGRESS (reset)."""
+        c = ProgressClock(); c.n = 3
+        live = _full_team_live(); live.ours.active.volatiles = {"substitute": 1}
+        c.update(_delta(our_move_id="substitute"), live, _Legal(switches=[1]))
+        self.assertEqual(c.n, 0)
+        self.assertEqual(c.last_penalty, 0.0)
+
+    def test_redundant_substitute_still_taxed(self):
+        """A re-Sub that FAILS because one is already up (has_sub unchanged) → still charged."""
+        c = ProgressClock(); c.n = 1
+        c._prev_our_has_sub = True
+        live = _full_team_live(); live.ours.active.volatiles = {"substitute": 1}
+        c.update(_delta(our_move_id="substitute", our_move_outcome="fail"), live, _Legal(switches=[1]))
+        self.assertEqual(c.n, 2)
+        self.assertAlmostEqual(c.last_penalty, -0.15, places=6)
+
+    def test_switch_in_boostless_not_credited(self):
+        """A pivot to a boostless mon DROPS the sum (4→0) — a switch is not setup-progress, so the
+        strict-rise clause must NOT falsely credit it."""
+        c = ProgressClock(); c.n = 2
+        c._prev_our_boost_sum = 4
+        live = _full_team_live(); live.ours.active.boosts = {}
+        c.update(_delta(our_move_id=None, our_switch_to="metagross"), live, _Legal(switches=[1]))
+        self.assertEqual(c.n, 3)
+        self.assertAlmostEqual(c.last_penalty, -0.15, places=6)
+
+
 class TestDrawPenalty(unittest.TestCase):
     """The DRAW / 250-turn-timeout terminal (draw_penalty). The trainee FORFEITS at the turn cap, so
     the timeout is detected by turn>=cap (not won/lost) and can be scored worse than a clean loss."""

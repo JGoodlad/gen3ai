@@ -13,7 +13,8 @@ penalty for that window in :attr:`last_penalty`; ``Gen3RewardManager.process_tur
 it. Result: the obs the model saw and the value the penalty keys on are the same number.
 
 **Three outcomes per window** (design §4.1 / §4.1.1 / §4.1.2):
-  * PROGRESS — our-attributed offense advanced the game → reset ``n`` to 0.
+  * PROGRESS — our-attributed offense advanced the game, OR a NON-redundant own setup advanced our
+               position (boost-stage sum rose / a new Substitute — ``gen3_setup_progress_v1``) → reset ``n`` to 0.
   * DENIED   — a progress attempt denied by exogenous RNG / opponent action, OR a productive
                defensive action whose value a Φ potential already prices → FREEZE ``n`` (no charge).
   * NO_OP    — a deliberate, obs-knowable wheel-spin → increment ``n`` + charge ``p(n)``.
@@ -75,6 +76,12 @@ class ProgressClock:
         self.no_progress_penalty: float = no_progress_penalty
         self._prev_spikes: int = 0        # opp-side spike layers after last window (hazard-add check)
         self._prev_our_spikes: int = 0    # our-side spike layers after last window (filler-spin check)
+        # gen3_setup_progress_v1 trackers: our active's Σ positive boost stages + whether it had a
+        # Substitute, after the last window — so a NON-redundant setup turn (boost rose / new Sub) reads
+        # as PROGRESS, not a charged no-op (the predicate had no own-boost / Substitute clause). See
+        # _is_progress clauses (vi)/(vii). Always-on correctness fix (not flag-gated).
+        self._prev_our_boost_sum: int = 0
+        self._prev_our_has_sub: bool = False
         self._heal_streak: int = 0   # consecutive productive-heal windows (for HEAL_FREEZE_GRACE)
         # Rest-loop bookkeeping: the per-species set of mons that have already SUCCESSFULLY Rested this
         # episode (so a 2nd Rest is a wake-then-re-Rest loop), and the flag for the just-folded window
@@ -87,6 +94,8 @@ class ProgressClock:
         self.last_penalty = 0.0
         self._prev_spikes = 0
         self._prev_our_spikes = 0
+        self._prev_our_boost_sum = 0
+        self._prev_our_has_sub = False
         self._heal_streak = 0
         self._rested_species = set()
         self._is_rest_loop = False
@@ -106,6 +115,15 @@ class ProgressClock:
         our_spikes_now = self._our_spikes(live)
         prev_our_spikes = self._prev_our_spikes
         self._prev_our_spikes = our_spikes_now
+
+        # gen3_setup_progress_v1: our active's Σ positive boost stages + Substitute presence, for the
+        # setup-progress clauses of _is_progress (a productive boost / new Sub is progress, not a no-op).
+        our_boost_sum_now = self._our_boost_sum(live)
+        prev_our_boost_sum = self._prev_our_boost_sum
+        self._prev_our_boost_sum = our_boost_sum_now
+        our_has_sub_now = self._our_has_sub(live)
+        prev_our_has_sub = self._prev_our_has_sub
+        self._prev_our_has_sub = our_has_sub_now
 
         # Rest-loop detection drives the heal-grace bypass in the denial section below; fold it up front
         # so the per-species rest history is recorded even on windows that early-return (e.g. a winning
@@ -156,7 +174,10 @@ class ProgressClock:
                        and prev_our_spikes == 0
                        and not getattr(delta, "opp_fainted", False))
 
-        if not filler_spin and self._is_progress(delta, live, prev_spikes, opp_spikes_now):
+        if not filler_spin and self._is_progress(
+                delta, live, prev_spikes, opp_spikes_now,
+                prev_our_boost_sum, our_boost_sum_now,
+                prev_our_has_sub, our_has_sub_now):
             self.n = 0
             self.last_penalty = 0.0
             self._heal_streak = 0
@@ -256,7 +277,9 @@ class ProgressClock:
             return False
 
     @staticmethod
-    def _is_progress(delta, live, prev_spikes: int, opp_spikes_now: int) -> bool:
+    def _is_progress(delta, live, prev_spikes: int, opp_spikes_now: int,
+                     prev_our_boost_sum: int = 0, our_boost_sum_now: int = 0,
+                     prev_our_has_sub: bool = False, our_has_sub_now: bool = False) -> bool:
         # (i) OUR move dealt net damage above the floor to a non-fainted opp (our-attributed — NOT
         #     net opp HP, which would let passive Sandstorm/Leech chip reset the clock for free).
         ev = getattr(delta, "our_damaging_event", None)
@@ -293,7 +316,46 @@ class ProgressClock:
                         opp_net = 0.0
                     if opp_net <= -PROGRESS_DMG_EPS:
                         return True
+        # (vi) a NON-redundant OWN boost: our active's Σ positive boost stages STRICTLY rose (a useful
+        #      Calm Mind / Dragon Dance / Swords Dance / Curse / Belly Drum) — a +6-capped repeat leaves
+        #      the sum unchanged → NOT credited (stays a no-op). In gen3 only our OWN move raises our
+        #      boosts and a switch-in is boostless (boosts reset on switch), so the sum can't falsely rise
+        #      on a pivot or an opp action; Baton Pass inherits ≈equal boosts (no strict rise). The +6 cap
+        #      bounds how long a boost sequence can keep resetting the clock.
+        if our_boost_sum_now > prev_our_boost_sum:
+            return True
+        # (vii) we NEWLY created a Substitute — a productive setup, not a stall. A failed re-Sub while one
+        #       is up leaves has_sub unchanged → NOT credited; Sub-can't-restack + its 25% HP cost bound it.
+        if our_has_sub_now and not prev_our_has_sub:
+            return True
         return False
+
+    @staticmethod
+    def _our_boost_sum(live) -> int:
+        """Σ of OUR active mon's POSITIVE stat-stage boosts (mirrors Φ_boost's Σmax(0,boost)); 0 if no
+        active. Used by the gen3_setup_progress_v1 clause to detect a productive own boost."""
+        if live is None or getattr(live, "ours", None) is None:
+            return 0
+        mon = live.ours.active
+        if mon is None:
+            return 0
+        try:
+            return sum(int(v) for v in mon.boosts.values() if v > 0)
+        except (AttributeError, TypeError):
+            return 0
+
+    @staticmethod
+    def _our_has_sub(live) -> bool:
+        """True iff OUR active mon currently has a Substitute up (gen3_setup_progress_v1 clause)."""
+        if live is None or getattr(live, "ours", None) is None:
+            return False
+        mon = live.ours.active
+        if mon is None:
+            return False
+        try:
+            return "substitute" in (mon.volatiles or ())
+        except (AttributeError, TypeError):
+            return False
 
     @staticmethod
     def _denial_kind(delta) -> "Optional[str]":

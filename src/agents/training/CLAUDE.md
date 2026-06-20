@@ -80,7 +80,20 @@ with no progress (the self-play mirror heal-war) then falls through to NO_OP and
 this episode for the same species — i.e. our active woke and re-Rested — gets NO heal-grace at all
 (`_update_rest_loop` sets `_is_rest_loop`, read in the heal branch), so a wake-then-re-Rest is a NO_OP
 stalled turn the moment it repeats; a mon carrying **Sleep Talk** is exempt (looping Rest is a legitimate
-act-while-asleep strategy, and our own moveset is fully known so the check is exact). The residual-PROGRESS
+act-while-asleep strategy, and our own moveset is fully known so the check is exact). **Setup-progress
+(`gen3_setup_progress_v1`, unconditional correctness fix — clauses (vi)/(vii) of `_is_progress`):** the
+predicate had NO clause for an own stat-boost rising or a Substitute being made, so a PRODUCTIVE setup turn
+(a first Calm Mind / Dragon Dance / Swords Dance / Curse / Belly Drum, or a fresh Sub) was charged
+identically to an idle wheel-spin — the one stall-break route the reward actively discouraged. Two clauses
+now count a **NON-redundant** setup as PROGRESS: our active's Σ positive boost stages STRICTLY rose (a
++6-capped repeat leaves the sum unchanged → still charged) OR a Substitute was NEWLY created (a failed
+re-Sub while one is up → still charged). Read from `live.ours.active.{boosts,volatiles}` with
+`_prev_our_boost_sum`/`_prev_our_has_sub` trackers mirroring the spikes-layer pattern; the +6 cap +
+Sub-can't-restack + its 25% HP cost bound how long it can keep resetting; in gen3 only our own move raises
+our boosts and a switch-in is boostless (boosts reset on switch), so a pivot/opp action can't false-credit.
+**Always-on** (not flag- or version-gated — a clock-predicate correctness fix like `gen3_rest_loop_stall_v1`,
+but with NO `ARCH_SIGNATURE`/`MODEL_CONFIG_VERSION` bump, so an in-flight run picks it up on resume). The
+residual-PROGRESS
 branch is what keeps a *winning* Toxic/Leech
 defensive stall from being taxed (the discriminator is the opp net-losing HP; a heal-war where they
 out-heal the tick still charges) — and because it runs FIRST, a winning *rest-stall* (Rest while Toxic
