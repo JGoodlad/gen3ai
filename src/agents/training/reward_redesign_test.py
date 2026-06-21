@@ -1432,6 +1432,20 @@ class TestSetupProgress(unittest.TestCase):
         self.assertEqual(c.n, 3)
         self.assertAlmostEqual(c.last_penalty, -0.15, places=6)
 
+    def test_successful_wish_resets(self):
+        """A successful Wish CAST (pending end-of-next-turn heal) is PROGRESS, not a no-op stall."""
+        c = ProgressClock(); c.n = 4
+        c.update(_delta(our_move_id="wish"), _full_team_live(), _Legal(switches=[1]))
+        self.assertEqual(c.n, 0)
+        self.assertEqual(c.last_penalty, 0.0)
+
+    def test_failed_double_wish_still_taxed(self):
+        """A 2nd Wish while one is already pending FAILS (outcome 'fail') → a true no-op → still charged."""
+        c = ProgressClock(); c.n = 1
+        c.update(_delta(our_move_id="wish", our_move_outcome="fail"), _full_team_live(), _Legal(switches=[1]))
+        self.assertEqual(c.n, 2)
+        self.assertAlmostEqual(c.last_penalty, -0.15, places=6)
+
 
 class TestDrawPenalty(unittest.TestCase):
     """The DRAW / 250-turn-timeout terminal (draw_penalty). The trainee FORFEITS at the turn cap, so

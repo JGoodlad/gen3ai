@@ -81,13 +81,15 @@ this episode for the same species — i.e. our active woke and re-Rested — get
 (`_update_rest_loop` sets `_is_rest_loop`, read in the heal branch), so a wake-then-re-Rest is a NO_OP
 stalled turn the moment it repeats; a mon carrying **Sleep Talk** is exempt (looping Rest is a legitimate
 act-while-asleep strategy, and our own moveset is fully known so the check is exact). **Setup-progress
-(`gen3_setup_progress_v1`, unconditional correctness fix — clauses (vi)/(vii) of `_is_progress`):** the
-predicate had NO clause for an own stat-boost rising or a Substitute being made, so a PRODUCTIVE setup turn
-(a first Calm Mind / Dragon Dance / Swords Dance / Curse / Belly Drum, or a fresh Sub) was charged
-identically to an idle wheel-spin — the one stall-break route the reward actively discouraged. Two clauses
-now count a **NON-redundant** setup as PROGRESS: our active's Σ positive boost stages STRICTLY rose (a
-+6-capped repeat leaves the sum unchanged → still charged) OR a Substitute was NEWLY created (a failed
-re-Sub while one is up → still charged). Read from `live.ours.active.{boosts,volatiles}` with
+(`gen3_setup_progress_v1`, unconditional correctness fix — clauses (vi)/(vii)/(viii) of `_is_progress`):** the
+predicate had NO clause for an own stat-boost rising, a Substitute being made, or a Wish being cast, so a
+PRODUCTIVE setup turn (a first Calm Mind / Dragon Dance / Swords Dance / Curse / Belly Drum, a fresh Sub, or a
+Wish cast) was charged identically to an idle wheel-spin — the one stall-break route the reward actively
+discouraged. Three clauses now count a **NON-redundant** setup as PROGRESS: our active's Σ positive boost
+stages STRICTLY rose (a +6-capped repeat leaves the sum unchanged → still charged) OR a Substitute was NEWLY
+created (a failed re-Sub while one is up → still charged) OR a **WISH was SUCCESSFULLY cast** (`gen3_wish_wired_v1`
+— a pending ~50%-maxhp heal; a double-Wish FAILS → outcome 'fail' → still charged, keyed on the move id like
+the Rest/Spikes clauses). Read from `live.ours.active.{boosts,volatiles}` + the delta's move id, with
 `_prev_our_boost_sum`/`_prev_our_has_sub` trackers mirroring the spikes-layer pattern; the +6 cap +
 Sub-can't-restack + its 25% HP cost bound how long it can keep resetting; in gen3 only our own move raises
 our boosts and a switch-in is boostless (boosts reset on switch), so a pivot/opp action can't false-credit.

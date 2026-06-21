@@ -14,7 +14,8 @@ it. Result: the obs the model saw and the value the penalty keys on are the same
 
 **Three outcomes per window** (design §4.1 / §4.1.1 / §4.1.2):
   * PROGRESS — our-attributed offense advanced the game, OR a NON-redundant own setup advanced our
-               position (boost-stage sum rose / a new Substitute — ``gen3_setup_progress_v1``) → reset ``n`` to 0.
+               position (boost-stage sum rose / a new Substitute / a successful Wish cast —
+               ``gen3_setup_progress_v1``) → reset ``n`` to 0.
   * DENIED   — a progress attempt denied by exogenous RNG / opponent action, OR a productive
                defensive action whose value a Φ potential already prices → FREEZE ``n`` (no charge).
   * NO_OP    — a deliberate, obs-knowable wheel-spin → increment ``n`` + charge ``p(n)``.
@@ -327,6 +328,15 @@ class ProgressClock:
         # (vii) we NEWLY created a Substitute — a productive setup, not a stall. A failed re-Sub while one
         #       is up leaves has_sub unchanged → NOT credited; Sub-can't-restack + its 25% HP cost bound it.
         if our_has_sub_now and not prev_our_has_sub:
+            return True
+        # (viii) a productive WISH cast (gen3_wish_wired_v1): sets a pending ~50%-maxhp heal that resolves at
+        #        the end of NEXT turn — real setup toward survival, not an idle wheel-spin. A double-Wish
+        #        FAILS (outcome 'fail') and a cant prevents the cast; both fall through to the charged no-op,
+        #        so only a SUCCESSFUL cast credits (one cast per resolve window — gen3 Wish duration 2, a 2nd
+        #        Wish fails). Keyed on the move id like the Rest/Spikes clauses.
+        if (getattr(delta, "our_move_id", None) == "wish"
+                and not getattr(delta, "our_failed_to_move", False)
+                and getattr(delta, "our_move_outcome", None) != "fail"):
             return True
         return False
 
