@@ -1447,3 +1447,40 @@ def test_build_opp_full_team_matches_typed_hidden_power():
                       opp=SideBoard("magneton", "100%", "", "", ("hiddenpower(fire)",), ()))
     mv = dict(build_opp_full_team(details, board).mons[0].moves)
     assert mv["hiddenpowerfire"] is True                # the typed HP is recognised as revealed
+
+
+from main.prober.engine import build_switch_in_outgoing, SwitchInOutgoingView   # noqa: E402
+
+
+def test_build_switch_in_outgoing_forced_switch():
+    """Each ALIVE bench candidate → its best BP move vs the opp active (type-eff + KO + outspeed).
+    Fainted + status-only candidates are excluded; the super-effective multiplier is faithful."""
+    from types import SimpleNamespace
+    board = SimpleNamespace(
+        ours=SimpleNamespace(bench=[
+            SimpleNamespace(species="celebi", hp="100%"),      # Grass/Psychic → Giga Drain 4× on Swampert
+            SimpleNamespace(species="magneton", hp="faint"),   # fainted → excluded
+        ]),
+        opp=SimpleNamespace(active_species="swampert", active_hp="40%"),
+    )
+    our = [{"species": "celebi", "moves": ["gigadrain", "recover"],
+            "evs": {"spa": 252}, "ivs": {}, "nature": "modest"}]
+    opp = [{"species": "swampert", "moves": ["earthquake"],
+            "evs": {"hp": 252, "def": 252}, "ivs": {}, "nature": "relaxed"}]
+    v = build_switch_in_outgoing(board, our, opp)
+    assert isinstance(v, SwitchInOutgoingView) and v.opp_species == "swampert"
+    species = [r.species for r in v.rows]
+    assert "celebi" in species and "magneton" not in species          # fainted excluded
+    c = next(r for r in v.rows if r.species == "celebi")
+    assert c.move == "gigadrain"             # recover (BP 0) excluded → Giga Drain is the only BP move
+    assert c.type_mult == 4.0                # Grass 4× vs Water/Ground
+    assert c.high > 0 and 0.0 <= c.pko <= 1.0 and 0.0 <= c.outspeed <= 1.0
+
+
+def test_build_switch_in_outgoing_none_without_details():
+    """No reconstruction (no team_details) or no opp active → None, never a crash."""
+    from types import SimpleNamespace
+    board = SimpleNamespace(ours=SimpleNamespace(bench=[]),
+                            opp=SimpleNamespace(active_species="swampert", active_hp="100%"))
+    assert build_switch_in_outgoing(board, None, None) is None
+    assert build_switch_in_outgoing(board, [{"species": "celebi"}], []) is None

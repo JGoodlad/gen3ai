@@ -459,6 +459,31 @@ class ProberApp(Gen3App):
         self._opp_details_cache[key] = details
         return details
 
+    def _load_our_team_details(self, battle: BattleTrace) -> "list | None":
+        """OUR (trainee's) FULL `team_details()` from the trace's `reconstruction.json` sibling — the
+        privileged true spreads + movesets the forced-switch switch-in-outgoing panel computes from.
+        `None` for websocket/older traces. Cached per battle (lazy cache, file IO out of the engine)."""
+        cache = getattr(self, "_our_details_cache", None)
+        if cache is None:
+            cache = self._our_details_cache = {}
+        key = battle.summary_path
+        if key in cache:
+            return cache[key]
+        details = None
+        recon = (key[: -len("_summary.json")] + "_reconstruction.json"
+                 if key.endswith("_summary.json") else None)
+        if recon and os.path.exists(recon):
+            try:
+                from utils.bridge.reconstruction import ReconstructionRecord
+                rec = ReconstructionRecord.load(recon)
+                side = rec.side_of(rec.trainee_username) if rec.trainee_username else None
+                if side:
+                    details = rec.team_details(side)
+            except Exception:  # noqa: BLE001 — privileged truth is best-effort
+                details = None
+        cache[key] = details
+        return details
+
     def _load_our_hp_types(self, battle: BattleTrace) -> "dict | None":
         """OUR team's typed Hidden Power per species (`{norm_species: 'hiddenpower(bug)'}`) from the
         trace's `reconstruction.json` sibling — so our own mons show their HP TYPE even before they've
@@ -734,6 +759,7 @@ class ProberApp(Gen3App):
                 opp_team=self._load_opp_team(battle),
                 our_hp_types=self._load_our_hp_types(battle),
                 opp_team_details=self._load_opp_team_details(battle),
+                our_team_details=self._load_our_team_details(battle),
             )
         except Exception as e:  # noqa: BLE001 — render analysis errors, don't crash
             self.call_from_thread(self._on_analysis_error, str(e), token)
@@ -1342,6 +1368,21 @@ class ProberApp(Gen3App):
                     gpu.append(f"{mv['low'] * 100:3.0f}–{mv['high'] * 100:3.0f}%  crit {mv['crit'] * 100:3.0f}%  "
                                f"acc {_acc(lab)}  →KO {mv['pko'] * 100:2.0f}%", style="cyan")
                     gpu.append(_top_secondary(sc), style="yellow")
+            # SWITCH-IN OUTGOING (forced switch only): each ALIVE candidate's best damaging move vs the
+            # opp active — CPU-computed (📋) from the privileged true spreads, since the op's outgoing
+            # above is all-zero on a forced switch (it prices the fainted active). Pair with the per-mon
+            # INCOMING below: "what hits me on the way in" vs "what I'd then do".
+            sio = a.switch_in_outgoing
+            if sio is not None and sio.rows:
+                gpu.append("\nswitch-in → ", style="dim")
+                gpu.append(str(sio.opp_species), style=_MON_COLOR)
+                gpu.append(f" ({sio.opp_hp}):  ", style="dim")
+                gpu.append("📋 best move · low–high · →KO · ×mult · outspeed", style="dim")
+                for r in sio.rows:
+                    gpu.append(f"\n  {r.species:<11}", style="green")
+                    gpu.append(f"{r.hp:>5}  {r.move:<16} {r.low:3.0f}–{r.high:3.0f}%  "
+                               f"→KO {r.pko * 100:3.0f}%  ×{r.type_mult:g}  "
+                               f"outspd {r.outspeed * 100:3.0f}%", style="green")
             # INCOMING per-OUR-mon believed damage (TEAM-SLOT order, active ▶) — worst PHYS + worst SPEC
             # belief-weighted hit per defender. The literal switch-safety read.
             if mb is not None and dop.get("incoming"):

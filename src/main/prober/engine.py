@@ -493,6 +493,7 @@ class InvocationAnalysis:
     move_belief: "MoveBeliefView | None" = None     # what the model thinks the revealed opp's UNSEEN moves are; None unless --move-belief-mode
     spread_belief: "SpreadBeliefView | None" = None  # believed vs true opp DERIVED stats; None unless --spread-belief
     refine_trajectory: "RefineTrajectoryView | None" = None  # within-forward refine rounds (axis A); None unless --damage-refine-rounds
+    switch_in_outgoing: "SwitchInOutgoingView | None" = None  # forced-switch: each alive candidate's best move vs the opp active (📋); None off a forced switch / w/o recon
     opp_switched_to: "str | None" = None             # species the opp VOLUNTARILY pivoted in this turn (our move resolved vs it, not the active)
 
 
@@ -1333,6 +1334,138 @@ def build_spread_belief(raw, opp_team_details, top_revealed_only: bool = True) -
 
 
 # ---------------------------------------------------------------------------
+# Switch-in outgoing damage (forced-switch panel — what each candidate would DO)
+# ---------------------------------------------------------------------------
+# On a forced switch the DamageOperator's OUTGOING block is all-zero (it prices the fainted
+# active only), so the model picks a switch-in from INCOMING threat alone, with no estimate of
+# what each candidate would then DO to the opp active. This CPU-side panel fills that view
+# (prober-only, no model change): each ALIVE bench candidate → its best damaging move vs the opp
+# active → [low–high %, →KO, ×mult, P(outspeed)], from the privileged true spreads (📋).
+
+@dataclass(frozen=True)
+class SwitchInOutgoingRow:
+    species: str
+    hp: str            # the candidate's live HP ("100%")
+    move: str          # its best (highest-P(KO), then highest-damage) BP-damaging move
+    low: float         # low-roll damage as a % of the opp active's MAX HP
+    high: float        # high-roll (R=100) damage %
+    pko: float         # P(KO) this hit, vs the opp active's REMAINING HP
+    type_mult: float   # the move's type effectiveness vs the opp active
+    outspeed: float    # P(this candidate outspeeds the opp active)
+
+
+@dataclass(frozen=True)
+class SwitchInOutgoingView:
+    """Per ALIVE switch-in candidate, its best damaging move's expected damage to the opp active —
+    the forced-switch counterpart to the op's all-zero OUTGOING block. CPU-computed from the
+    privileged true spreads (needs a `reconstruction.json` sibling); rows sorted best-KO first."""
+    opp_species: str
+    opp_hp: str
+    rows: "tuple[SwitchInOutgoingRow, ...]"
+
+
+def _derived_hp(base: int, iv: int, ev: int) -> int:
+    """Gen3 HP derived stat at level 100 (distinct from _derived_stat: +level+10, no nature)."""
+    return 2 * int(base) + int(iv) + int(ev) // 4 + 110
+
+
+def _hp_frac_from_str(hp: str) -> "float | None":
+    """Board HP string ('31%' / '100%' / 'faint') → fraction in [0,1]; None if fainted/unknown."""
+    s = (hp or "").strip().lower()
+    if not s or s == "faint" or s.startswith("0%"):
+        return None
+    try:
+        return max(0.0, min(1.0, float(s.rstrip("%")) / 100.0))
+    except ValueError:
+        return None
+
+
+def _as_ptype(name: str):
+    """A type string ('WATER') → poke-env PokemonType (species.types are UPPERCASE enum names)."""
+    try:
+        from poke_env.battle.pokemon_type import PokemonType
+        return PokemonType[str(name).upper()]
+    except (KeyError, AttributeError, ImportError):
+        return None
+
+
+def build_switch_in_outgoing(board, our_team_details, opp_team_details) -> "SwitchInOutgoingView | None":
+    """Each ALIVE bench candidate's best damaging move's expected damage to the opp ACTIVE — the
+    forced-switch panel. Model-free / privileged (true spreads). None when no reconstruction
+    (no team_details), no opp active, or no candidate has a BP move."""
+    if not our_team_details or not opp_team_details or board is None:
+        return None
+    from agents import gen3_data
+    from agents.observation.incoming_damage import (
+        gen3_damage_max, p_ko, p_outspeed, type_is_physical)
+    from agents.gen3_mechanics import effective_multiplier_by_types
+
+    opp_species = _norm_species(getattr(board.opp, "active_species", "") or "")
+    if not opp_species:
+        return None
+    opp_detail = next((d for d in opp_team_details
+                       if _norm_species(d.get("species", "")) == opp_species), None)
+    opp_sp = gen3_data.species.get(opp_species)
+    od = _true_derived_spread(opp_detail) if opp_detail is not None else None
+    if opp_sp is None or od is None:
+        return None
+    opp_stats, _, _ = od                                   # (atk,def,spa,spd,spe)
+    opp_def, opp_spd, opp_spe = opp_stats[1], opp_stats[3], opp_stats[4]
+    ivs, evs = (opp_detail.get("ivs") or {}), (opp_detail.get("evs") or {})
+    opp_max_hp = _derived_hp(opp_sp.base_stats.get("hp", 0), int(ivs.get("hp", 31)), int(evs.get("hp", 0)))
+    opp_hp_frac = _hp_frac_from_str(getattr(board.opp, "active_hp", ""))
+    if opp_max_hp <= 0 or opp_hp_frac is None:
+        return None
+    opp_remaining = max(1, int(round(opp_max_hp * opp_hp_frac)))
+    opp_t = [t for t in (_as_ptype(x) for x in opp_sp.types) if t is not None]
+    if not opp_t:
+        return None
+    opp_t1, opp_t2 = opp_t[0], (opp_t[1] if len(opp_t) > 1 else None)
+
+    by_species = {_norm_species(d.get("species", "")): d for d in our_team_details}
+    rows = []
+    for cand in getattr(board.ours, "bench", ()):          # the switch-in candidates the board lists
+        if _hp_frac_from_str(getattr(cand, "hp", "")) is None:
+            continue                                        # fainted / unavailable
+        sid = _norm_species(getattr(cand, "species", ""))
+        d, sp = by_species.get(sid), gen3_data.species.get(sid)
+        cd = _true_derived_spread(d) if d is not None else None
+        if sp is None or cd is None:
+            continue
+        c_stats, _, _ = cd
+        our_atk, our_spa, our_spe = c_stats[0], c_stats[2], c_stats[4]
+        our_types = {t for t in (_as_ptype(x) for x in sp.types) if t is not None}
+        best = None
+        for mid in (d.get("moves") or ()):
+            mv = gen3_data.moves.get(mid)
+            if mv is None or int(getattr(mv, "base_power", 0)) <= 0:
+                continue                                    # status / fixed-damage (v1: BP moves only)
+            if mid in ("explosion", "selfdestruct"):
+                continue                                    # KOs but self-KOs — not a switch-in's sustainable offense
+            phys = type_is_physical(mv.type)
+            eff = effective_multiplier_by_types(mv.type, opp_t1, opp_t2)
+            dmax = gen3_damage_max(int(mv.base_power), int(our_atk if phys else our_spa),
+                                   int(opp_def if phys else opp_spd),
+                                   stab=(mv.type in our_types), type_eff=eff)
+            high = 100.0 * dmax / opp_max_hp
+            pko = p_ko(dmax, opp_remaining)
+            if best is None or (pko, high) > (best[3], best[2]):
+                best = (mid, eff, high, pko)
+        if best is None:
+            continue
+        mid, eff, high, pko = best
+        rows.append(SwitchInOutgoingRow(
+            species=getattr(cand, "species", ""), hp=getattr(cand, "hp", ""), move=mid,
+            low=high * 0.85, high=high, pko=pko, type_mult=eff,
+            outspeed=p_outspeed(int(our_spe), [(int(opp_spe), 1.0)])))
+    if not rows:
+        return None
+    rows.sort(key=lambda r: (r.pko, r.high), reverse=True)
+    return SwitchInOutgoingView(opp_species=getattr(board.opp, "active_species", ""),
+                                opp_hp=getattr(board.opp, "active_hp", ""), rows=tuple(rows))
+
+
+# ---------------------------------------------------------------------------
 # Within-forward refine rounds (axis A — gen3_iterative_damage_v1)
 # ---------------------------------------------------------------------------
 
@@ -1693,7 +1826,8 @@ def analyze_invocation(model, summary: dict, npz, inv_index: int,
                        summary_path: str = "", npz_path: "str | None" = None,
                        opp_team: "tuple[str, ...] | None" = None,
                        our_hp_types: "dict | None" = None,
-                       opp_team_details: "list | None" = None) -> InvocationAnalysis:
+                       opp_team_details: "list | None" = None,
+                       our_team_details: "list | None" = None) -> InvocationAnalysis:
     """Analyze a single decision point. Pure given ``model`` (the torch boundary).
 
     ``opp_team`` is the opponent's PRIVILEGED full team (species ids from the trace's
@@ -1725,13 +1859,21 @@ def analyze_invocation(model, summary: dict, npz, inv_index: int,
     belief_truth = None
     outcome = {**outcome, "timeline": _timeline_for(inv, next_board, outcome)}   # model-free RESULT lines
     opp_full_team = build_opp_full_team(opp_team_details, board)   # model-free; available without state
+    # Forced-switch panel: what each ALIVE candidate would DO to the opp active (the op's outgoing is
+    # all-zero here). Model-free / privileged — available even without captured state.
+    switch_in_outgoing = None
+    if common["phase"] == "forced_switch":
+        try:
+            switch_in_outgoing = build_switch_in_outgoing(board, our_team_details, opp_team_details)
+        except Exception:  # noqa: BLE001 — never break the analysis
+            switch_in_outgoing = None
     if not _has_state(npz, inv_index):
         return InvocationAnalysis(
             **common, has_state=False, actions=(), matchups=None, sweep=None,
             saliency=None, value_saliency=None, threats=None, incoming=None,
             warnings=(f"invocation {inv_index} has no captured state",), opp_full_team=opp_full_team,
             outcome=outcome, flags=summary_flags(inv), board=board, next_board=next_board, belief=belief,
-            opp_switched_to=opp_voluntary_switch(inv),
+            switch_in_outgoing=switch_in_outgoing, opp_switched_to=opp_voluntary_switch(inv),
         )
 
     obs = npz["obs"][inv_index].astype(np.float32)
@@ -1909,7 +2051,7 @@ def analyze_invocation(model, summary: dict, npz, inv_index: int,
         obs_mismatch=obs_mismatch, field=field, belief=belief, belief_truth=belief_truth,
         damage_op=damage_op, move_belief=move_belief, spread_belief=spread_belief,
         refine_trajectory=refine_trajectory, opp_full_team=opp_full_team,
-        opp_switched_to=opp_voluntary_switch(inv),
+        switch_in_outgoing=switch_in_outgoing, opp_switched_to=opp_voluntary_switch(inv),
     )
 
 

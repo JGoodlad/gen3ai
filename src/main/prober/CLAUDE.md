@@ -261,6 +261,20 @@ present — the graceful-degradation contract). The **Flow** diagram flags the l
 (`_FLOW_GPU_PHASES`). New `analyze`-JSON fields (`asdict`): `spread_belief`, `refine_trajectory` (+ the
 existing `belief`/`belief_truth`/`move_belief`/`damage_op`); `None` when the head is off.
 
+**Switch-in OUTGOING panel (`a.switch_in_outgoing`, `engine.build_switch_in_outgoing` → `SwitchInOutgoingView`,
+rendered in `_render_matchups` right after the op's "our damage (out)").** On a FORCED SWITCH the op's outgoing
+block is all-zero (it prices the fainted active only), so the model picks a switch-in from INCOMING threat alone
+with no estimate of what each candidate would then DO to the opp active. This **prober-only, CPU-computed (📋)**
+panel fills that view: per ALIVE bench candidate → its best BP-damaging move (self-KO Explosion/Selfdestruct
+excluded) vs the opp active → `low–high %HP · →KO · ×mult · P(outspeed)`, from the **privileged true spreads**
+(`reconstruction.team_details(our_side)`, threaded as `analyze_invocation(our_team_details=…)` mirroring
+`opp_team_details`; `SessionBackend._our_team_details` / `app._load_our_team_details`). Reuses
+`observation.incoming_damage.{gen3_damage_max,p_ko,p_outspeed,type_is_physical}` + `gen3_mechanics.effective_multiplier_by_types`.
+Gated to `phase == "forced_switch"`; `None` off a forced switch or without a `reconstruction.json`. NO model change —
+the model still lacks switch-in outgoing damage (the op's outgoing is active-only; the symmetric "_outgoing_matrix
+transpose" is a separate, un-built arch follow-up). Pair it with the per-mon INCOMING block: "what hits me on the
+way in" vs "what I'd then do".
+
 **Capture (axis B beyond species).** `RLPlayer._move_belief_active_row` (the opp-active move posterior,
 `[n_moves]`) and `_spread_belief` (the opp-active believed-spread row `[5]`) stash into the trace, and
 `BattleRecorder.states_arrays` writes them as `move_logits`/`spread_belief` npz arrays — **OMITTED when the

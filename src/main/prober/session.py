@@ -534,6 +534,21 @@ class ProbeSession:
         except Exception:  # noqa: BLE001 — privileged truth is best-effort; degrade to no truth
             return None
 
+    def _our_team_details(self, b) -> "list | None":
+        """OUR (trainee's) PRIVILEGED `team_details()` from the trace's `reconstruction.json` sibling
+        — feeds the forced-switch switch-in-outgoing panel (true spreads + movesets). `None` for
+        websocket/older traces. Mirrors `_opp_team_details` on our own side."""
+        recon = b.summary_path[: -len("_summary.json")] + "_reconstruction.json"
+        if not os.path.exists(recon):
+            return None
+        try:
+            from utils.bridge.reconstruction import ReconstructionRecord
+            rec = ReconstructionRecord.load(recon)
+            side = rec.side_of(rec.trainee_username) if rec.trainee_username else None
+            return rec.team_details(side) if side else None
+        except Exception:  # noqa: BLE001 — privileged team is best-effort
+            return None
+
     def analyze(self, battle_id: str, inv_index: int) -> dict:
         """Full forensic analysis of one decision as a JSON-serializable dict
         (faithfulness, matchups, intervention, saliency, value+TD, outcome, model
@@ -545,7 +560,8 @@ class ProbeSession:
                                summary_path=b.summary_path, npz_path=b.npz_path,
                                our_hp_types=self._our_hp_types(b),
                                opp_team=(opp[0] if opp else None),
-                               opp_team_details=(opp[1] if opp else None))
+                               opp_team_details=(opp[1] if opp else None),
+                               our_team_details=self._our_team_details(b))
         d = asdict(a)
         d["model_resolution"] = _choice_dict(choice)
         d["protocol"] = self._protocol_for(b, d.get("turn", 0))   # raw Showdown log for this turn
