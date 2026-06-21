@@ -1275,51 +1275,85 @@ class MoveBelief(torch.nn.Module):
         return self.norm(enriched), move_logits
 
 
+# gen3_nature_ev_belief_v1: the EV-delta head output is scaled by this before adding to the EV prior, so a
+# unit logit moves the believed EV by ~_EV_DELTA_SCALE points (the head then learns within the clamped [0,252]).
+_EV_DELTA_SCALE = 64.0
+
+
 class SpreadBelief(torch.nn.Module):
     """Predicts the opponent's hidden SPREAD — the 5 battle-relevant DERIVED stats {atk,def,spa,spd,spe} at
     L100 — per opp slot, and REINJECTS it into the slot token. The THIRD belief leg (moves ✓, species ✓,
     STATS) — `gen3_unified_spread_belief_v1`, mirroring MoveBelief 1:1.
 
-    Per opp slot: a usage-weighted PRIOR (mean, std per stat, from the Smogon spreads) ⊕ a learned head
-    DELTA (in std units, so the prediction is `mean + delta·std` — the op consumes the stat VALUE directly,
-    keeping the "op does the multiplicative physics, the head reasons additively" contract; predicting EVs
-    +nature would force the op to re-run the nonlinear stat formula). The DELTA is reinjected as a small
-    residual so the enriched token carries the believed spread to both heads. The `DamageOperator` reads
-    the believed stats at the opp ACTIVE slot to REPLACE its hand-coded de-timid (offense) / neutral-0-EV
-    (bulk) opp-spread constants — so the op's opponent stats are a learned belief, not a fixed guess. The
-    offense/defense stats get gradient from the op's damage rolls; the SPEED component's explicit
-    supervision (a masked BCE toward observed MOVE ORDER — a public, leak-safe label) is STAGED, not yet
-    wired (`spread_belief_coef` is recorded-only until the loss lands). HP is
-    skipped (the op uses the obs HP fraction × a neutral maxhp estimate). Zero-init head → cold-start ==
-    the prior; the prior buffer is non-persistent (data-derived) → OFF reproduces nothing (the module isn't
-    built when off)."""
+    Two parameterisations (the `nature` flag):
+      - ADDITIVE (default): a usage-weighted PRIOR (mean, std per stat, Smogon spreads) ⊕ a learned head DELTA
+        in std units → `believed = mean + delta·std`. Simple, but the DERIVED stat is a point estimate that
+        sits BETWEEN the nature ×1.1/×0.9 modes → the "over-estimates the largest EV" order-statistic bias.
+      - NATURE/EV GENERATIVE (`gen3_nature_ev_belief_v1`, `--spread-belief-nature`): predict a NATURE
+        categorical ⊕ its Smogon log-prior + a per-stat EV ⊕ its Smogon prior (the prior-fusion pattern of the
+        move/HP-type beliefs), assume IV 31, and COMPUTE `believed = (2·base + 31 + E[EV]/4 + 5)·E[nature_mult]`.
+        The nature coupling (exactly one stat ×1.1, one ×0.9 — shared probability mass) + the EV budget are now
+        STRUCTURAL, so the head can't inflate every stat → the order-statistic bias is fixed at the source. The
+        nature distribution + EV are stashed so the supervised loss (nature CE + EV regression) trains the
+        decomposition AND the op (`--spread-belief-nature-marginalize`) can marginalise P(KO) over the natures.
 
-    def __init__(self, n_species: int):
+    Either way the output is the same `believed [B,6,5]` DERIVED stat the `DamageOperator` consumes at the opp
+    ACTIVE slot (replacing its hand-coded constants), reinjected as a small residual so both heads see it. HP is
+    skipped (the op uses the obs HP fraction × a neutral maxhp). Zero-init heads → cold-start == the prior; the
+    prior buffers are non-persistent (data-derived) → OFF builds no module (reproduces nothing)."""
+
+    def __init__(self, n_species: int, nature: bool = False):
         super().__init__()
         from agents.model.damage_tables import build_opp_spread_prior, N_SPREAD_STATS
         self.n_stats = N_SPREAD_STATS
-        self.stat_head = torch.nn.Linear(D_MODEL, N_SPREAD_STATS)   # learned delta in std-units
-        torch.nn.init.zeros_(self.stat_head.weight)                 # cold-start delta == 0 → believed == prior
-        torch.nn.init.zeros_(self.stat_head.bias)
+        self.nature = nature
         self.reinject = torch.nn.Linear(N_SPREAD_STATS, D_MODEL)
         torch.nn.init.normal_(self.reinject.weight, std=0.02)       # start the enrichment ≈0
         torch.nn.init.zeros_(self.reinject.bias)
         self.norm = torch.nn.LayerNorm(D_MODEL)
         # [n_species, 5, 2] (mean, std) usage prior — non-persistent (recomputable from data/).
         self.register_buffer("spread_prior", build_opp_spread_prior(n_species), persistent=False)
+        if not nature:
+            self.stat_head = torch.nn.Linear(D_MODEL, N_SPREAD_STATS)   # learned delta in std-units
+            torch.nn.init.zeros_(self.stat_head.weight)                 # cold-start delta == 0 → believed == prior
+            torch.nn.init.zeros_(self.stat_head.bias)
+        else:
+            from agents.model.damage_tables import (build_species_nature_prior, build_species_ev_prior,
+                                                    build_nature_mult, build_species_base_stats, N_NATURES)
+            self.n_natures = N_NATURES
+            self.nature_head = torch.nn.Linear(D_MODEL, N_NATURES)      # logit DELTA on the nature log-prior
+            torch.nn.init.zeros_(self.nature_head.weight)               # cold-start delta 0 → posterior == prior
+            torch.nn.init.zeros_(self.nature_head.bias)
+            self.ev_head = torch.nn.Linear(D_MODEL, N_SPREAD_STATS)     # EV DELTA on the EV prior (×_EV_DELTA_SCALE)
+            torch.nn.init.zeros_(self.ev_head.weight)
+            torch.nn.init.zeros_(self.ev_head.bias)
+            self.register_buffer("nature_logprior", build_species_nature_prior(n_species), persistent=False)  # [n,25]
+            self.register_buffer("ev_prior", build_species_ev_prior(n_species), persistent=False)             # [n,5]
+            self.register_buffer("nature_mult", build_nature_mult(), persistent=False)                        # [25,5]
+            self.register_buffer("base_nonhp", build_species_base_stats(n_species), persistent=False)         # [n,5]
 
-    def forward(self, opp_tokens: torch.Tensor, apply_mask: torch.Tensor,
-                opp_species_ids: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
-        """opp_tokens [B,6,D], apply_mask [B,6] bool (which slots get the belief), opp_species_ids [B,6]
-        (national-dex nums) → (enriched_tokens [B,6,D], believed_stats [B,6,5]). believed = prior_mean +
-        delta·prior_std (clamped ≥1); the residual carries the learned delta into the token (gated to the
-        selected slots; unselected pass through). Cold-start (delta 0) ⇒ believed == the usage prior."""
+    def forward(self, opp_tokens: torch.Tensor, apply_mask: torch.Tensor, opp_species_ids: torch.Tensor):
+        """opp_tokens [B,6,D], apply_mask [B,6] bool (which slots get the belief), opp_species_ids [B,6] (nums)
+        → (enriched_tokens [B,6,D], believed_stats [B,6,5], nature_logits [B,6,25]|None, ev [B,6,5]|None). The
+        residual carries the believed-vs-prior delta into the (selected) token; unselected slots pass through.
+        Cold-start (zero deltas) ⇒ believed == the usage prior in BOTH parameterisations."""
         prior = self.spread_prior[opp_species_ids]                  # [B,6,5,2]
         mean, std = prior[..., 0], prior[..., 1]                    # [B,6,5]
-        delta = self.stat_head(opp_tokens)                          # [B,6,5] (std units; cold == 0)
-        believed = (mean + delta * std).clamp(min=1.0)              # [B,6,5] the stat VALUE the op consumes
+        if not self.nature:
+            delta = self.stat_head(opp_tokens)                      # [B,6,5] (std units; cold == 0)
+            believed = (mean + delta * std).clamp(min=1.0)          # [B,6,5] the stat VALUE the op consumes
+            enriched = opp_tokens + apply_mask.unsqueeze(-1) * self.reinject(delta)
+            return self.norm(enriched), believed, None, None
+        # NATURE/EV generative path (gen3_nature_ev_belief_v1): posterior nature ⊕ EV → COMPUTE the derived stat.
+        nat_logits = self.nature_logprior[opp_species_ids] + self.nature_head(opp_tokens)   # [B,6,25] prior⊕delta
+        e_mult = torch.softmax(nat_logits, dim=-1) @ self.nature_mult                       # [B,6,5] E[mult]
+        ev = (self.ev_prior[opp_species_ids]
+              + self.ev_head(opp_tokens) * _EV_DELTA_SCALE).clamp(0.0, 252.0)               # [B,6,5]
+        base = self.base_nonhp[opp_species_ids]                                             # [B,6,5]
+        believed = ((2.0 * base + 31.0 + ev / 4.0 + 5.0) * e_mult).clamp(min=1.0)           # [B,6,5] DERIVED stat
+        delta = (believed - mean) / std.clamp(min=1.0)                                      # std-unit residual
         enriched = opp_tokens + apply_mask.unsqueeze(-1) * self.reinject(delta)
-        return self.norm(enriched), believed
+        return self.norm(enriched), believed, nat_logits, ev
 
 
 class HPTypeBelief(torch.nn.Module):
@@ -1907,6 +1941,53 @@ class DamageOperator(torch.nn.Module):
         crit = (2.0 * dmg_ns * inv).clamp(max=_DMG_CRIT_CAP)
         ko = acc * torch.clamp((dmg - cur_hp) / (0.15 * dmg + eps), 0.0, 1.0)
         return high, low, crit, ko
+
+    def _nature_marg_ko(self, ko_ramp, high_frac, maxhp, cur_hp, acc_all, phys_all, fixed_all, nat_probs,
+                        eps: float = 1e-6):
+        """gen3_nature_ev_belief_v1: MARGINALISE the incoming per-(defender, candidate) P(KO) `ko_ramp` over
+        the opp active's believed NATURE distribution (`--spread-belief-nature-marginalize`). The op consumes a
+        single believed offense (= base_neutral·E[nature_mult]); P(KO) is a nonlinear THRESHOLD, so the
+        mean-field read (`ko` at E[mult]) blurs the ×1.1/×0.9 asymmetry. Each candidate uses exactly ONE
+        offensive stat (atk for physical, spa for special), so a 3-point quadrature over THAT stat's nature
+        effect {reduce ×0.9, neither ×1.0, boost ×1.1} is EXACT (no cross-stat correlation to lose):
+
+            P(KO)_marg = Σ_case P(stat in case)·acc·clamp((dmg·case_mult/E[mult] − cur)/(0.15·dmg·case_mult/
+                         E[mult] + eps), 0, 1)
+
+        where `dmg = high_frac·maxhp` reconstructs the believed post-screen max-roll (the cap only bites on
+        overkill, which saturates P(KO)=1 either way). Differentiable in `nat_probs` → the op's KO gradient also
+        sharpens the nature head. Fixed-damage candidates are nature-INVARIANT → kept at `ko_ramp` untouched.
+
+        Shapes: `ko_ramp`/`high_frac` [B,n_def,C]; `maxhp`/`cur_hp` [B,n_def]; `acc_all`/`phys_all`/`fixed_all`
+        [C]; `nat_probs` [B,25] (softmax over natures at the opp active). Returns marginalised ko [B,n_def,C]."""
+        is_boost = (self.NATURE_MULT == 1.1).float()                          # [25,5]
+        is_reduce = (self.NATURE_MULT == 0.9).float()
+        pboost = nat_probs @ is_boost                                         # [B,5] P(stat boosted) per stat
+        preduce = nat_probs @ is_reduce                                       # [B,5] P(stat reduced)
+        e_mult = (1.0 + 0.1 * pboost - 0.1 * preduce).clamp(min=eps)          # [B,5] E[nature mult] (head's)
+        is_phys_c = phys_all[None, :]                                         # [1,C]
+
+        def _stat(t):                                                        # [B,5] → [B,C] atk if phys else spa
+            return t[:, _SB_ATK:_SB_ATK + 1] * is_phys_c + t[:, _SB_SPA:_SB_SPA + 1] * (1.0 - is_phys_c)
+        pb, pr, em = _stat(pboost), _stat(preduce), _stat(e_mult)            # [B,C] each
+        pn = (1.0 - pb - pr).clamp(min=0.0)                                   # P(neither)
+        dmg = (high_frac * maxhp[:, :, None]).clamp(min=eps)                  # [B,n,C] reconstructed believed dmg
+        cur = cur_hp[:, :, None]                                              # [B,n,1]
+        acc = acc_all[None, None, :]                                          # [1,1,C]
+
+        def _ramp(r):                                                        # r [B,C] offense ratio vs believed
+            d = dmg * r[:, None, :]
+            return acc * torch.clamp((d - cur) / (0.15 * d + eps), 0.0, 1.0)  # [B,n,C]
+        # `dmg` already folds the head's E[mult] (believed offense = base_neutral·E[mult] → high_frac ∝ it), and
+        # `em` here == that SAME E[mult]; so `dmg·case_mult/em = base_neutral·case_mult·(physics)` — the em
+        # CANCELS, leaving the per-case offense exactly. The nature-posterior gradient therefore flows ONLY
+        # through the case WEIGHTS (pr/pn/pb), a clean single path (NOT double-counted) — do NOT detach `em`
+        # (that would un-cancel it and bias the gradient). base_neutral depends on nat_probs only via the EV head.
+        ko_marg = (pr[:, None, :] * _ramp(0.9 / em)
+                   + pn[:, None, :] * _ramp(1.0 / em)
+                   + pb[:, None, :] * _ramp(1.1 / em))                        # [B,n,C]
+        keep = (fixed_all > 0).float()[None, None, :]                        # fixed-damage → nature-invariant
+        return keep * ko_ramp + (1.0 - keep) * ko_marg
 
     def _damage_rolls(self, atk: torch.Tensor, spa: torch.Tensor, at1: torch.Tensor, at2: torch.Tensor,
                       def_stat: torch.Tensor, spd_stat: torch.Tensor, maxhp: torch.Tensor,
@@ -2904,7 +2985,8 @@ class DamageOperator(torch.nn.Module):
     def forward(self, ctx: 'ExtractorContext', move_belief_logits: torch.Tensor,
                 spread_belief: Optional[torch.Tensor] = None,
                 move_latent_all: Optional[torch.Tensor] = None,
-                hp_type_belief: Optional[torch.Tensor] = None) -> torch.Tensor:
+                hp_type_belief: Optional[torch.Tensor] = None,
+                spread_nature_logits: Optional[torch.Tensor] = None) -> torch.Tensor:
         B = ctx.batch_size
         device = ctx.device
         eps = 1e-6
@@ -2986,6 +3068,17 @@ class DamageOperator(torch.nn.Module):
             atk, spa, at1, at2, def_stat, spd_stat, maxhp, cur_hp, t1d, t2d,
             ctx.ability1_ids[:, :TEAM_SIZE], our_reflect, our_light_screen,
             bp_all, mty_all, phys_all, acc_all, fixed_all, weather_mult, eps)
+
+        # gen3_nature_ev_belief_v1 (--spread-belief-nature-marginalize): the believed offense folds in a single
+        # E[nature_mult], so the nonlinear P(KO) THRESHOLD blurs the ×1.1/×0.9 asymmetry. Marginalise it over
+        # the believed nature distribution (3-point quadrature on the candidate's one offensive stat — exact).
+        # The magnitude rolls (high/low/crit) stay at the believed mean (linear → mean-field exact).
+        if spread_nature_logits is not None:
+            nat_probs = torch.softmax(spread_nature_logits[ar, ctx.opp_active_local], dim=-1)   # [B,25]
+            ko_ramp = self._nature_marg_ko(ko_ramp, high_frac, maxhp, cur_hp, acc_all, phys_all,
+                                           fixed_all, nat_probs, eps)
+            ko_cb = self._nature_marg_ko(ko_cb, high_cb, maxhp, cur_hp, acc_all, phys_all,
+                                         fixed_all, nat_probs, eps)
 
         # --- per (defender, channel): HARD max of the belief-weighted roll/KO over the candidates ---
         # The dominant believed move owns each channel (the candidate-count-robust max, NOT a diluting
@@ -3345,7 +3438,8 @@ class Gen3FeaturesExtractor(torch.nn.Module):
                  damage_op: bool = False, move_prior_fusion: bool = False,
                  mask_incoming_damage_obs: bool = False, win_prob_mode: str = "none",
                  damage_outgoing: bool = False, move_candidate_floor: float = 0.0,
-                 move_latent: bool = False, spread_belief: bool = False,
+                 move_latent: bool = False, spread_belief: bool = False, spread_belief_nature: bool = False,
+                 spread_belief_nature_marginalize: bool = False,
                  mask_active_move_scalars_obs: bool = False, mask_move_effects_obs: bool = False,
                  value_dist_mode: str = "none", value_dist_bins: int = 0,
                  value_dist_vmin: float = 0.0, value_dist_vmax: float = 0.0,
@@ -3496,9 +3590,23 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         # hand-coded opp-spread constants). STRUCTURAL toggle (widens nothing in the projection — it enriches
         # the opp token like MoveBelief). Requires move_belief_mode != off only if damage_op is on (the op is
         # the consumer); built whenever the flag is set. Stash for the supervision loss + the op.
+        # gen3_nature_ev_belief_v1: --spread-belief-nature swaps the additive point-estimate head for the
+        # NATURE/EV generative head (prior-fusion → compute the derived stat) to fix the largest-EV over-estimate.
+        # Requires --spread-belief (the head IS the SpreadBelief module). STRUCTURAL (different SpreadBelief params).
+        if spread_belief_nature and not spread_belief:
+            raise ValueError("spread_belief_nature requires spread_belief=True (it parameterises the "
+                             "SpreadBelief head). Enable --spread-belief, or drop --spread-belief-nature.")
+        # gen3_nature_ev_belief_v1: the op marginalises P(KO) over the head's nature distribution → requires it.
+        if spread_belief_nature_marginalize and not spread_belief_nature:
+            raise ValueError("spread_belief_nature_marginalize requires spread_belief_nature=True (the op "
+                             "marginalises over the generative head's nature distribution).")
         self.spread_belief_enabled = spread_belief
-        self.spread_belief = SpreadBelief(layout['max_species']) if spread_belief else None
+        self.spread_belief_nature = spread_belief_nature
+        self.spread_belief_nature_marginalize = spread_belief_nature_marginalize
+        self.spread_belief = SpreadBelief(layout['max_species'], nature=spread_belief_nature) if spread_belief else None
         self.last_spread_belief: Optional[torch.Tensor] = None
+        self.last_spread_nature_logits: Optional[torch.Tensor] = None   # [B,6,25] (gen3_nature_ev_belief_v1)
+        self.last_spread_ev: Optional[torch.Tensor] = None              # [B,6,5] believed EVs
         # gen3_opp_hp_type_belief_v1: the typed-HP fix + the learned opp-HP-TYPE head ("force the model to
         # guess which Hidden Power it is"). Tri-state:
         #   'off'     — legacy (bare-237 unmasked, op reads the obs hp_probs) — byte-for-byte baseline.
@@ -3955,10 +4063,13 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         # CLS pools, like MoveBelief. Hidden slots aren't enriched (their species num 0 → flat prior) and the
         # op only reads the (revealed) active slot.
         if self.spread_belief is not None:
-            their_team_out, self.last_spread_belief = self.spread_belief(
+            (their_team_out, self.last_spread_belief,
+             self.last_spread_nature_logits, self.last_spread_ev) = self.spread_belief(
                 their_team_out, ~ctx.opp_believed_mask, ctx.species_ids[:, TEAM_SIZE:])
         else:
             self.last_spread_belief = None
+            self.last_spread_nature_logits = None
+            self.last_spread_ev = None
         # gen3_opp_hp_type_belief_v1: the learned opp-HP-TYPE posterior (mode 'learned'). The HPTypeBelief
         # head reads the refined opp tokens → per-slot 16-way HP-type distribution (Smogon prior ⊕ learned
         # delta); the op consumes it at the active slot (its damage gradient sharpens the head) + the aux CE
@@ -4008,17 +4119,20 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         # hidden-opp belief, the assembler) on the same (possibly re-attended) state.
         damage_block = None
         if self.damage_op is not None:
+            # gen3_nature_ev_belief_v1: pass the nature posterior to the op ONLY when marginalization is on (the
+            # op then marginalises P(KO) over the nature distribution; None → mean-field, byte-identical).
+            spread_nat = self.last_spread_nature_logits if self.spread_belief_nature_marginalize else None
             # Optional gradient-checkpointing (same gate as the transformer): the op materialises several
             # [B,6,~416] activations → recompute in backward for ~GBs of VRAM. Bit-exact (no dropout/RNG);
             # a no-op under inference. ctx is a non-tensor arg (use_reentrant=False); the belief tensors carry
             # the grad. move_latent_all (built above) is the op's top-K identity source (None unless topk on).
             if self.damage_op.grad_checkpointing and torch.is_grad_enabled():
                 damage_block = checkpoint(self.damage_op, ctx, self.last_move_belief_logits,
-                                          self.last_spread_belief, move_latent_all, hp_type_post,
+                                          self.last_spread_belief, move_latent_all, hp_type_post, spread_nat,
                                           use_reentrant=False)
             else:
                 damage_block = self.damage_op(ctx, self.last_move_belief_logits, self.last_spread_belief,
-                                              move_latent_all, hp_type_post)
+                                              move_latent_all, hp_type_post, spread_nat)
         # Read-only stash for the prober/forensic decode — never read by the forward, so off is unchanged.
         self.last_damage_block = damage_block
         # damage_reattend (gen3_damage_reattend_v1): let attention reason OVER the computed physics. The op's

@@ -15,7 +15,9 @@ have **different** gates:
 > hidden-opponent belief-aux labels) lives here for cohesion with the obs layer but is **NOT called
 > by `encode`** — `Gen3Env.step/reset` invoke it only when `--opp-belief-aux-coef>0` or
 > `--move-belief-mode != off`, to emit the privileged training-only `belief_species`/`belief_moves`
-> (and, for move-belief known/both, `known_moves`; for `--spread-belief-coef>0`, `belief_spread`/`_mask`;
+> (and, for move-belief known/both, `known_moves`; for `--spread-belief-coef>0`, `belief_spread`/`_mask` —
+> and, under `--spread-belief-nature`, the inverted `belief_nature`/`belief_ev`(+masks) for the nature/EV
+> decomposition, `gen3_nature_ev_belief_v1`, deterministically inverted from agent2's `mon.stats` so no leak;
 > for `--hp-type-belief learned` + coef, `hp_type_label`/`hp_type_mask` — the opp Hidden-Power-type label,
 > `gen3_opp_hp_type_belief_v1`) Dict keys (see
 > `src/agents/training/CLAUDE.md`). So it adds **zero** cost to the default obs build (benchmark

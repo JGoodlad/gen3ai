@@ -77,6 +77,14 @@ _NOISE_SCALE_EMA_DECAY = 0.99
 # MAE metric is reported in RAW stat points (not normalised) for interpretability.
 _SPREAD_LOSS_SCALE = 100.0
 
+# Nature/EV-belief loss (gen3_nature_ev_belief_v1): the nature is a 25-way CE; the EV is a smooth_l1 over EV
+# VALUES (0..252) normalised by this so the term stays O(1) (the spread coef then sets its true weight). The
+# CE + EV sub-terms combine with these internal weights (the CE is the load-bearing decomposition signal; the
+# EV-MAE metric is reported in RAW EV points).
+_EV_LOSS_SCALE = 64.0
+_NATURE_CE_WEIGHT = 1.0
+_EV_LOSS_WEIGHT = 1.0
+
 
 def _verify_upstream_unchanged() -> None:
     """Fail-loud at import time if the upstream `MaskablePPO.train()` source
@@ -501,6 +509,44 @@ class InstrumentedMaskablePPO(MaskablePPO):
             largest_bias = (sb_sel[rows, amax] - tgt_sel[rows, amax]).mean()
         return loss, {"mae": float(mae.item()), "largest_bias": float(largest_bias.item()),
                       "n_slots": int(mask.sum().item())}
+
+    @staticmethod
+    def _nature_ev_belief_loss(nat_logits, ev_pred, belief_nature, belief_nature_mask, belief_ev, belief_ev_mask):
+        """Supervised loss for the NATURE/EV decomposition of the generative spread belief
+        (`gen3_nature_ev_belief_v1`). `nat_logits` [B,6,25] + `ev_pred` [B,6,5] are the extractor's stashed
+        `last_spread_nature_logits` / `last_spread_ev` (BOTH None when the additive head is used → returns None,
+        so the term is auto-skipped unless --spread-belief-nature is on). Supervise the REVEALED opp slots
+        toward the privileged INVERTED (nature, EVs) label: a 25-way CE on the nature + a scale-normalised
+        smooth_l1 on the EVs. This trains the decomposition DIRECTLY — the derived-stat smooth_l1 alone is
+        many-to-one (many (nature, EV) reproduce one derived stat) so it can't pin the nature/EV; this is what
+        actually fixes the "over-estimates the largest EV" order-statistic bias. The gradient flows
+        head → opp tokens → trunk. LEAK-SAFE: the labels are training-only, read ONLY here, never in pi/vf.
+        Returns (loss, metrics) or None (off / labels absent / no scored slot)."""
+        if nat_logits is None or ev_pred is None or belief_nature is None or belief_ev is None:
+            return None
+        device = nat_logits.device
+        if belief_nature_mask is None:
+            return None
+        nmask = belief_nature_mask.to(device).float() > 0.5                 # [B,6]
+        if not bool(nmask.any()):
+            return None
+        nat_true = belief_nature.to(device).long()                         # [B,6]
+        nl = nat_logits[nmask]                                              # [N,25]
+        nt = nat_true[nmask]                                               # [N]
+        nat_ce = F.cross_entropy(nl, nt)
+        ev_true = belief_ev.to(device).float()                             # [B,6,5]
+        evm = (belief_ev_mask.to(device).float() > 0.5) if belief_ev_mask is not None else nmask
+        if bool(evm.any()):
+            ev_loss = F.smooth_l1_loss(ev_pred[evm] / _EV_LOSS_SCALE, ev_true[evm] / _EV_LOSS_SCALE)
+            ev_mae = (ev_pred[evm] - ev_true[evm]).abs().mean().detach()
+        else:
+            ev_loss = nl.new_zeros(())
+            ev_mae = nl.new_zeros(())
+        loss = _NATURE_CE_WEIGHT * nat_ce + _EV_LOSS_WEIGHT * ev_loss
+        with th.no_grad():
+            acc = (nl.argmax(dim=-1) == nt).float().mean()
+        return loss, {"nature_acc": float(acc.item()), "nature_ce": float(nat_ce.item()),
+                      "ev_mae": float(ev_mae.item()), "n_slots": int(nmask.sum().item())}
 
     @staticmethod
     def _hp_type_belief_loss(logits, hp_type_label, hp_type_mask):
@@ -1014,6 +1060,29 @@ class InstrumentedMaskablePPO(MaskablePPO):
                         for _sk, _sv in sb_m.items():
                             belief_metrics.setdefault("spread_" + _sk, []).append(float(_sv))
 
+                # +NATURE/EV BELIEF (gen3_nature_ev_belief_v1): supervise the generative spread belief's NATURE
+                # categorical + EV decomposition toward the privileged inverted (nature, EVs) label, so the head
+                # learns the RIGHT decomposition (the derived loss above is many-to-one). The stashed
+                # last_spread_nature_logits/_ev are None unless --spread-belief-nature → the loss is None →
+                # skipped. Folded at the SAME spread_belief_coef (one knob supervises the whole spread belief).
+                nature_ev_term = None
+                if spread_belief_on:
+                    ne_out = self._nature_ev_belief_loss(
+                        self.policy.features_extractor.last_spread_nature_logits,
+                        self.policy.features_extractor.last_spread_ev,
+                        rollout_data.observations.get("belief_nature"),
+                        rollout_data.observations.get("belief_nature_mask"),
+                        rollout_data.observations.get("belief_ev"),
+                        rollout_data.observations.get("belief_ev_mask"),
+                    )
+                    if ne_out is not None:
+                        ne_loss, ne_m = ne_out
+                        nature_ev_term = self.spread_belief_coef * ne_loss
+                        loss = loss + nature_ev_term
+                        ne_m["loss"] = float(ne_loss.item())
+                        for _nk, _nv in ne_m.items():
+                            belief_metrics.setdefault("natureev_" + _nk, []).append(float(_nv))
+
                 # +HP-TYPE BELIEF (gen3_opp_hp_type_belief_v1): supervise the HPTypeBelief posterior toward the
                 # TRUE opp HP type so the DamageOperator prices the right typed-HP threat (the "opp HP reads
                 # immune" fix). evaluate_actions stashed last_hp_type_logits; the hp_type_label/_mask labels
@@ -1090,6 +1159,7 @@ class InstrumentedMaskablePPO(MaskablePPO):
                 if latent_belief_term is not None: aux_probe_terms["latent"] = latent_belief_term
                 if move_latent_term is not None:   aux_probe_terms["move_latent"] = move_latent_term
                 if spread_belief_term is not None: aux_probe_terms["spread_belief"] = spread_belief_term
+                if nature_ev_term is not None:     aux_probe_terms["nature_ev"] = nature_ev_term
                 if hp_type_term is not None:       aux_probe_terms["hp_type"] = hp_type_term
                 if win_prob_term is not None:      aux_probe_terms["win_prob"] = win_prob_term
                 if value_dist_term is not None:    aux_probe_terms["value_dist"] = value_dist_term

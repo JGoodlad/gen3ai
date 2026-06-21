@@ -1196,6 +1196,19 @@ against the *modal* opponent, not the real one. Off by default (`--spread-belief
 - **Metrics (`belief/spread_*`).** `mae` (believed-vs-true error in RAW stat points — should fall),
   `largest_bias` (signed error on each mon's LARGEST true stat — the "over-estimates the largest EV"
   diagnostic, → 0 as the head learns), `n_slots` (supervised slots/minibatch), `loss`.
+- **Nature/EV decomposition (`gen3_nature_ev_belief_v1`, v40, `--spread-belief-nature`).** The fix for the
+  stuck `largest_bias`: the additive head predicts the DERIVED stat directly (a point estimate BETWEEN the
+  nature ×1.1/×0.9 modes); the generative head predicts a NATURE categorical ⊕ Smogon prior + per-stat EVs ⊕
+  prior and COMPUTES the derived stat, so the asymmetry + EV budget are structural. A SECOND loss term
+  `_nature_ev_belief_loss` (nature CE + EV smooth_l1 over REVEALED slots, folded at the SAME
+  `spread_belief_coef`, metrics `belief/natureev_{nature_acc,nature_ce,ev_mae,n_slots}`) supervises the
+  decomposition DIRECTLY (the derived loss alone is many-to-one). Label: the TRUE (nature, EVs)
+  **deterministically INVERTED** from agent2's `mon.stats` (`damage_tables.invert_nature_evs`, GIGO-guarded —
+  gen3 hides them, so we invert the visible derived stats), emitted by `gen3_env._spread_labels` as
+  training-only `belief_nature`/`belief_ev`(+masks), cached per battle. `--spread-belief-nature-marginalize`
+  (op-side, forward-behavior) makes the DamageOperator marginalise the nonlinear P(KO) over the believed
+  nature distribution (an exact 3-point quadrature per candidate's offensive stat). Smoke: `nature_acc` rises
+  toward the true nature, `largest_bias` trends to 0.
 - **Versioning.** `spread_belief` (the head) is the version-checked structural toggle (v25, fresh-only);
   `spread_belief_coef` is **training-only** (inherited on a flagless resume, like `move_belief_coef`). The
   loss adds NO forward/weight change → no `ARCH_SIGNATURE`/`MODEL_CONFIG_VERSION` bump (a checkpoint trained

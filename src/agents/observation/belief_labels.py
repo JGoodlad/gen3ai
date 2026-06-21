@@ -230,6 +230,47 @@ def zero_spread_labels() -> Tuple[np.ndarray, np.ndarray]:
             np.zeros(TEAM_SIZE, dtype=np.float32))
 
 
+def build_known_nature_ev_labels(
+    revealed_species_in_slot_order: Sequence[str],
+    species_to_nature_ev: Dict[str, Tuple[int, Sequence[float]]],
+    species_known: Sequence[float],
+    normalize: Callable[[str], str],
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    """Build (belief_nature[TEAM_SIZE] int64, belief_nature_mask[TEAM_SIZE] float32,
+    belief_ev[TEAM_SIZE, 5] float32, belief_ev_mask[TEAM_SIZE] float32) — the privileged NATURE/EV label for
+    the generative spread belief (`gen3_nature_ev_belief_v1`), mirroring `build_known_spread_labels`.
+
+    Each REVEALED opp slot (species_known==1) whose species maps to a `(nature_num, [ev×5])` decomposition
+    (the caller INVERTS agent2's known `mon.stats` via `damage_tables.invert_nature_evs`) gets the true
+    nature index + EVs + mask 1; unmappable/believed/pad slots stay mask 0 (NOT scored). Never raises (hot
+    path). The labels ride a training-only Dict-obs key read ONLY by the nature/EV loss — never the forward.
+
+    species_to_nature_ev : {normalised species -> (nature_num, [atk,def,spa,spd,spe] EVs)} (absent → skip)."""
+    nature = np.zeros(TEAM_SIZE, dtype=np.int64)
+    nmask = np.zeros(TEAM_SIZE, dtype=np.float32)
+    ev = np.zeros((TEAM_SIZE, N_SPREAD_STATS), dtype=np.float32)
+    evmask = np.zeros(TEAM_SIZE, dtype=np.float32)
+    revealed_slots = [i for i in range(TEAM_SIZE) if i < len(species_known) and species_known[i] >= 0.5]
+    for slot, sp in zip(revealed_slots, revealed_species_in_slot_order):
+        ne = species_to_nature_ev.get(normalize(sp))
+        if ne is None:
+            continue
+        nnum, evs = ne
+        if nnum is None or evs is None or len(evs) != N_SPREAD_STATS:
+            continue
+        nature[slot] = int(nnum)
+        nmask[slot] = 1.0
+        ev[slot] = np.asarray(evs, dtype=np.float32)
+        evmask[slot] = 1.0
+    return nature, nmask, ev, evmask
+
+
+def zero_nature_ev_labels() -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    """All-zero nature/EV labels (mask 0) — off / pre-battle / parse-failure path (nothing scored)."""
+    return (np.zeros(TEAM_SIZE, dtype=np.int64), np.zeros(TEAM_SIZE, dtype=np.float32),
+            np.zeros((TEAM_SIZE, N_SPREAD_STATS), dtype=np.float32), np.zeros(TEAM_SIZE, dtype=np.float32))
+
+
 # HP-TYPE belief (gen3_opp_hp_type_belief_v1) label support. The 16 Hidden Power types in the SAME
 # alphabetical order as `hidden_power_tracker.HIDDEN_POWER_TYPE_ORDER` (== the op's `HP_TYPE_IDX` row order
 # and the obs `hp_probs` block). Defined LOCALLY (belief_labels stays dependency-light — it's on the obs

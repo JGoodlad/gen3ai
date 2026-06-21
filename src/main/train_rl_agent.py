@@ -182,6 +182,8 @@ def _run_arch_toggles(args) -> dict:
         move_candidate_floor=args.move_candidate_floor,
         move_latent=args.move_latent,
         spread_belief=args.spread_belief,
+        spread_belief_nature=args.spread_belief_nature,
+        spread_belief_nature_marginalize=args.spread_belief_nature_marginalize,
         move_prior_fusion=args.move_prior_fusion,
         move_belief_prefuse=args.move_belief_prefuse,
         mask_incoming_damage_obs=args.mask_incoming_damage_obs,
@@ -1026,6 +1028,24 @@ async def main():
                              "the head gets only the indirect op-damage gradient). REQUIRES --spread-belief. "
                              "TRAINING-only (not version-locked); metrics ride belief/spread_* "
                              "(mae, largest_bias→0, n_slots).")
+    parser.add_argument("--spread-belief-nature", "--spread_belief_nature", dest="spread_belief_nature",
+                        action=BoolFlag, default=None,
+                        help="NATURE/EV generative spread head (gen3_nature_ev_belief_v1): swap SpreadBelief's "
+                             "additive point-estimate for a head that predicts a NATURE categorical ⊕ its "
+                             "Smogon prior + per-stat EVs ⊕ their prior (prior-fusion), assumes IV 31, and "
+                             "COMPUTES the derived stat. The nature coupling (one stat ×1.1, one ×0.9) + the EV "
+                             "budget are STRUCTURAL → the head can't inflate every stat, fixing the "
+                             "'over-estimates the largest EV' order-statistic bias at the source. Supervised by "
+                             "nature CE + EV regression (privileged inverted label) folded at --spread-belief-coef; "
+                             "metrics ride belief/natureev_* (nature_acc, ev_mae). STRUCTURAL (version-checked, "
+                             "fresh-only). REQUIRES --spread-belief. Off by default.")
+    parser.add_argument("--spread-belief-nature-marginalize", "--spread_belief_nature_marginalize",
+                        dest="spread_belief_nature_marginalize", action=BoolFlag, default=None,
+                        help="Op-side NATURE MARGINALIZATION (gen3_nature_ev_belief_v1): the DamageOperator "
+                             "marginalises the nonlinear P(KO)/damage over the believed nature distribution "
+                             "(compute-then-blend over the top natures) instead of using E[nature_mult] — "
+                             "restores the ×1.1/×0.9 asymmetry in the KO threshold. FORWARD-BEHAVIOR "
+                             "(version-checked, fresh-only). REQUIRES --spread-belief-nature. Off by default.")
     parser.add_argument("--hp-type-belief", "--hp_type_belief", dest="hp_type_belief_mode",
                         choices=["off", "prior", "learned"], default=None,
                         help="Opponent HIDDEN-POWER-TYPE belief + the typed-HP candidate FIX "
@@ -1293,6 +1313,8 @@ async def main():
     _resolve("move_latent", False)             # v24 structural (version-checked, fresh-only)
     _resolve("move_belief_latent_coef", 0.0)   # training-only (inherited like move_belief_coef)
     _resolve("spread_belief", False)           # v25 structural (version-checked, fresh-only)
+    _resolve("spread_belief_nature", False)    # v40 structural (version-checked, fresh-only)
+    _resolve("spread_belief_nature_marginalize", False)  # v40 forward-behavior (version-checked, fresh-only)
     _resolve("spread_belief_coef", 0.0)        # training-only (inherited like move_belief_coef)
     _resolve("mask_active_move_scalars_obs", False)  # v25 forward-behavior (version-checked, fresh-only)
     _resolve("mask_move_effects_obs", False)         # v25 forward-behavior (version-checked, fresh-only)
@@ -1552,6 +1574,18 @@ async def main():
         parser.error(
             "--spread-belief-coef requires --spread-belief (it supervises the believed opp spread). "
             "Enable --spread-belief, or set --spread-belief-coef 0."
+        )
+    if args.spread_belief_nature and not args.spread_belief:
+        # gen3_nature_ev_belief_v1: --spread-belief-nature parameterises the SpreadBelief module → it must exist.
+        parser.error(
+            "--spread-belief-nature requires --spread-belief (it reparameterises the SpreadBelief head). "
+            "Enable --spread-belief, or drop --spread-belief-nature."
+        )
+    if args.spread_belief_nature_marginalize and not args.spread_belief_nature:
+        # The op marginalises over the NATURE distribution the generative head produces → that head must be on.
+        parser.error(
+            "--spread-belief-nature-marginalize requires --spread-belief-nature (the op marginalises over the "
+            "generative head's nature distribution). Enable --spread-belief-nature, or drop the flag."
         )
     if args.hp_type_belief_mode != "off" and not args.damage_op:
         # The typed-HP candidates the fix masks/floors live in the DamageOperator (also enforced at the
@@ -2274,6 +2308,8 @@ async def main():
         _load_extractor_kwargs["move_candidate_floor"] = args.move_candidate_floor  # v23 (version-checked)
         _load_extractor_kwargs["move_latent"] = args.move_latent               # v24 (version-checked)
         _load_extractor_kwargs["spread_belief"] = args.spread_belief           # v25 (version-checked)
+        _load_extractor_kwargs["spread_belief_nature"] = args.spread_belief_nature  # v40 (version-checked)
+        _load_extractor_kwargs["spread_belief_nature_marginalize"] = args.spread_belief_nature_marginalize  # v40
         # Move-prior fusion — version-checked vs the saved config (fresh-only).
         _load_extractor_kwargs["move_prior_fusion"] = args.move_prior_fusion
         # Move-belief pre-fuse (reinject before the transformer) — version-checked (fresh-only). v32.
@@ -2528,6 +2564,10 @@ async def main():
         # SpreadBelief (weight-shape): predict+reinject the opp's hidden spread; the op consumes it. The coef
         # is a TRAINING hparam set below; this bool is the version-checked arch toggle. v25.
         extractor_kwargs["spread_belief"] = args.spread_belief
+        # gen3_nature_ev_belief_v1 (v40): the NATURE/EV generative head (structural) + the op-side nature
+        # marginalization (forward-behavior). Both version-checked, fresh-only; OFF byte-identical.
+        extractor_kwargs["spread_belief_nature"] = args.spread_belief_nature
+        extractor_kwargs["spread_belief_nature_marginalize"] = args.spread_belief_nature_marginalize
         # --unified-obs disable-redundant masks (forward-behavior): zero a now-subsumed obs region. v25.
         extractor_kwargs["mask_active_move_scalars_obs"] = args.mask_active_move_scalars_obs
         extractor_kwargs["mask_move_effects_obs"] = args.mask_move_effects_obs

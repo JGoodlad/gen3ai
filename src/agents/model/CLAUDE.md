@@ -184,7 +184,7 @@ proportional roar-out-boosts shaping; safe since both telescope to 0.) All are r
 `ModelVersion` and enforced on resume by **`check_reward_config`** (FATAL on drift, since they silently
 shift the reward/objective), excluded from `check_compatible`. They are reward-VALUE changes — **no
 `ARCH_SIGNATURE` bump** (the network/obs are unchanged) — so a fresh run is needed to measure them but
-old checkpoints don't fail an arch check. Current `MODEL_CONFIG_VERSION` = **39** (the `pbrs_roar` PBRS
+old checkpoints don't fail an arch check. Current `MODEL_CONFIG_VERSION` = **40** (the `pbrs_roar` PBRS
 above added NO new version — it rides `all_shaping_pbrs`;
 see the belief +
 unified-damage + unified-move + spread-belief + op-physics + status-landing + choice-band + value-dist
@@ -783,8 +783,38 @@ move-nums 355-370 with real BP 70 + type in the damage buffers; bare 237 = BP 0)
 Tests: `hp_type_belief_test.py` (the immune-bug-and-fix, 237-always-masked + C=n_moves, narrowing + off-meta
 fallback, cold-start==prior, the two-distinct-typed-HPs top-K at real nums 363/365, grad flow, modes, CE, the
 GIGO/version gate, the v2 reinjection) + the extended `poke_env_gaps/belief_labels_fuzz_test.py` (HP-type label
-== agent2's real type + no-leak, live). `MODEL_CONFIG_VERSION` was **38** at v38; the current value is **39**
-(the v39 transposed-outgoing-matrix note above), `ARCH_SIGNATURE` = **`gen3_opp_hp_typed_candidates_v1`**.
+== agent2's real type + no-leak, live). `MODEL_CONFIG_VERSION` was **38** at v38; the current value is **40**
+(the v40 nature/EV note below), `ARCH_SIGNATURE` = **`gen3_opp_hp_typed_candidates_v1`**.
+
+**Nature/EV generative spread belief + op-side marginalization (v40, `gen3_nature_ev_belief_v1`,
+`spread_belief_nature` / `--spread-belief-nature` + `spread_belief_nature_marginalize` /
+`--spread-belief-nature-marginalize`).** Fixes the `SpreadBelief` head's "over-estimates the largest EV"
+order-statistic bias (`belief/spread_largest_bias` stuck ≈ −13–30): the ADDITIVE head predicts the DERIVED stat
+directly — a point estimate that sits BETWEEN the nature ×1.1/×0.9 modes. **`--spread-belief-nature`** swaps it
+for a GENERATIVE head: predict a NATURE categorical ⊕ its Smogon log-prior (`build_species_nature_prior`) + a
+per-stat EV ⊕ its prior (`build_species_ev_prior`) — the move/HP-type prior-fusion pattern — assume IV 31, and
+**COMPUTE** `believed = (2·base + 31 + E[EV]/4 + 5)·E[nature_mult]` (`build_species_base_stats` /
+`build_nature_mult`). The nature coupling (exactly one stat ×1.1, one ×0.9 — shared probability mass) + the EV
+budget are now STRUCTURAL, so the head can't inflate every stat → the bias is fixed at the source. The same
+`believed [B,6,5]` interface feeds the op (projection widths UNCHANGED — it enriches the opp token); the head
+ALSO stashes `last_spread_nature_logits [B,6,25]` + `last_spread_ev [B,6,5]` for the loss + the op. **Supervised**
+by `instrumented_ppo._nature_ev_belief_loss` (nature CE + EV smooth_l1 over REVEALED slots, folded at the SAME
+`spread_belief_coef`; metrics `belief/natureev_{nature_acc,nature_ce,ev_mae}`). The privileged label is the TRUE
+(nature, EVs) **deterministically INVERTED** from agent2's known `mon.stats` (`damage_tables.invert_nature_evs`,
+GIGO-guarded — gen3 hides the opp nature+EVs, so we invert the visible derived stats rather than need them in the
+obs), emitted by `gen3_env._spread_labels` as the training-only `belief_nature`/`belief_ev`(+masks) Dict keys
+(cached per battle). **`--spread-belief-nature-marginalize`** then makes the op MARGINALISE the nonlinear P(KO)
+over the believed nature distribution (`DamageOperator._nature_marg_ko`): each incoming candidate uses ONE
+offensive stat (atk physical / spa special), so a 3-point quadrature over {reduce ×0.9, neither, boost ×1.1} is
+EXACT — restoring the ×1.1/×0.9 asymmetry the mean-field `ko` at E[mult] blurs (a near-OHKO the believed read
+prices at 0 gets its true nonzero KO risk). Differentiable in the nature posterior → the op's KO gradient also
+sharpens the nature head. `spread_belief_nature` is a STRUCTURAL toggle (different SpreadBelief params; requires
+`spread_belief`); `spread_belief_nature_marginalize` is a FORWARD-BEHAVIOR toggle (no new params; requires
+`spread_belief_nature` + `damage_op`) — both gated in `check_compatible`, OFF byte-for-byte (NO `ARCH_SIGNATURE`
+bump), threaded through `current_model_version` / `arch_toggles_from_model` / `_run_arch_toggles` + both
+`extractor_kwargs` sites. Tests: `spread_belief_test.py` (buffers, inversion round-trip, OFF byte-identical params,
+cold-start==generative-prior, the nature/EV loss + skip, marg reproduces-at-neutral / shifts-under-uncertainty /
+fixed-damage-invariant / forward-pko-shift, marginalize-requires-nature gate). `MODEL_CONFIG_VERSION` = **40**.
 
 **Damage re-attend (v31, `damage_reattend` / `--damage-reattend`, `gen3_damage_reattend_v1`).** Lets
 attention reason OVER the computed physics — today the `DamageOperator` block is concatenated POST-pool

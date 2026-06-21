@@ -46,7 +46,7 @@ def test_spread_belief_cold_start_equals_prior():
     sb = SpreadBelief(_layout["max_species"])
     opp_tokens = torch.zeros(2, TEAM_SIZE, 128)
     species = torch.full((2, TEAM_SIZE), gen3_data.species.get("tyranitar").num, dtype=torch.long)
-    _, believed = sb(opp_tokens, torch.ones(2, TEAM_SIZE, dtype=torch.bool), species)
+    _, believed, _, _ = sb(opp_tokens, torch.ones(2, TEAM_SIZE, dtype=torch.bool), species)
     prior_mean = sb.spread_prior[species][..., 0]           # [2,6,5]
     assert torch.allclose(believed, prior_mean.clamp(min=1.0), atol=1e-4)
 
@@ -111,3 +111,153 @@ def test_masks_zero_only_their_region():
     assert not (inc_changed & eff_changed).any()
     # a masked region is all-zero in the masked view
     assert (eff[:, eff_changed] == 0).all()
+
+
+# ============================ gen3_nature_ev_belief_v1 (v40): nature/EV generative head ============================
+from agents.model.features_extractor import _EV_DELTA_SCALE, _DMG_IDX_PHYS_PKO
+from agents.training.instrumented_ppo import InstrumentedMaskablePPO as _PPO
+
+_COLS = dt.SPREAD_STAT_COLS
+
+
+def _derive(sid, nature_name, evs5):
+    sd = gen3_data.species.get(sid); v = gen3_data.natures.raw()[nature_name]
+    return [gen3_data.priors.gen3_stat(int(sd.base_stats[c]), evs5[j], float(v[c])) for j, c in enumerate(_COLS)]
+
+
+def _base5(sid):
+    sd = gen3_data.species.get(sid); return [int(sd.base_stats[c]) for c in _COLS]
+
+
+# ---- Step 1: data buffers + inversion ----
+def test_nature_buffers_sensible():
+    nm = dt.build_nature_mult()
+    assert nm.shape == (dt.N_NATURES, dt.N_SPREAD_STATS)
+    assert torch.allclose(nm[0], torch.tensor([1.1, 1.0, 0.9, 1.0, 1.0]))    # adamant: atk+ spa-
+    assert torch.allclose(nm[24], torch.tensor([0.9, 1.0, 1.0, 1.0, 1.1]))   # timid: spe+ atk-
+    npri = dt.build_species_nature_prior(600)
+    assert torch.allclose(npri[1].exp().sum(), torch.tensor(1.0), atol=1e-4)  # rows are a distribution
+    assert torch.isfinite(npri).all()                                        # the uniform floor → no log(0)
+    ev = dt.build_species_ev_prior(600)
+    assert ev.shape == (600, 5) and float(ev.min()) >= 0.0 and float(ev.max()) <= 252.5  # weighted mean ≤252 (+fp)
+
+
+def test_invert_nature_evs_round_trips_real_spreads():
+    """The inverter recovers a (nature, EVs) decomposition that EXACTLY reproduces the derived stats."""
+    cases = [("tyranitar", "adamant", [252, 0, 0, 0, 252]), ("salamence", "naive", [0, 0, 252, 0, 252]),
+             ("blissey", "calm", [0, 252, 0, 252, 0]), ("skarmory", "impish", [0, 252, 0, 0, 4]),
+             ("jolteon", "timid", [0, 0, 252, 4, 252])]
+    for sid, nat, evs in cases:
+        d = _derive(sid, nat, evs)
+        res = dt.invert_nature_evs(d, _base5(sid), species_id=sid)
+        assert res is not None
+        num, iev = res
+        inv_name = next(k for k, v in gen3_data.natures.raw().items() if int(v["num"]) == num)
+        assert _derive(sid, inv_name, iev) == d                              # reproduces the derived stats
+
+
+# ---- Step 2: the generative head ----
+def test_nature_head_off_byte_identical_state_dict():
+    """--spread-belief (additive) keeps the OLD SpreadBelief params; --spread-belief-nature swaps them."""
+    add = SpreadBelief(_layout["max_species"], nature=False)
+    nat = SpreadBelief(_layout["max_species"], nature=True)
+    assert "stat_head.weight" in dict(add.named_parameters())               # additive head (baseline)
+    assert "stat_head.weight" not in dict(nat.named_parameters())
+    assert {"nature_head.weight", "ev_head.weight"} <= set(dict(nat.named_parameters()))
+
+
+def test_nature_head_cold_start_equals_generative_prior():
+    """Zero-init heads ⇒ believed == the prior-derived stat ((2·base+31+E[ev]/4+5)·E[mult]) at cold start."""
+    sb = SpreadBelief(_layout["max_species"], nature=True)
+    sid = gen3_data.species.get("tyranitar").num
+    species = torch.full((2, TEAM_SIZE), sid, dtype=torch.long)
+    _, believed, nat_logits, ev = sb(torch.zeros(2, TEAM_SIZE, 128),
+                                     torch.ones(2, TEAM_SIZE, dtype=torch.bool), species)
+    e_mult = torch.softmax(sb.nature_logprior[species], -1) @ sb.nature_mult
+    expect = ((2.0 * sb.base_nonhp[species] + 31.0 + sb.ev_prior[species] / 4.0 + 5.0) * e_mult).clamp(min=1.0)
+    assert torch.allclose(believed, expect, atol=1e-3)
+    assert nat_logits.shape == (2, TEAM_SIZE, dt.N_NATURES) and ev.shape == (2, TEAM_SIZE, 5)
+
+
+def test_nature_ev_loss_supervises_and_skips_when_additive():
+    nat_logits = torch.randn(4, TEAM_SIZE, 25, requires_grad=True)
+    ev_pred = torch.rand(4, TEAM_SIZE, 5) * 252
+    nature = torch.randint(0, 25, (4, TEAM_SIZE)); mask = torch.zeros(4, TEAM_SIZE); mask[:, :3] = 1.0
+    ev = torch.rand(4, TEAM_SIZE, 5) * 252
+    out = _PPO._nature_ev_belief_loss(nat_logits, ev_pred, nature, mask, ev, mask)
+    assert out is not None
+    loss, m = out
+    assert {"nature_acc", "nature_ce", "ev_mae", "n_slots"} <= set(m) and m["n_slots"] == 12
+    loss.backward(); assert nat_logits.grad.abs().sum() > 0                  # gradient flows
+    assert _PPO._nature_ev_belief_loss(None, None, nature, mask, ev, mask) is None   # additive head → skip
+    assert _PPO._nature_ev_belief_loss(nat_logits, ev_pred, nature, torch.zeros(4, TEAM_SIZE),
+                                       ev, torch.zeros(4, TEAM_SIZE)) is None         # no scored slot → skip
+
+
+# ---- Step 3: op-side nature marginalization ----
+def _op_nat():
+    return DamageOperator(_DT._make_layout())
+
+
+def test_marg_ko_reproduces_at_certain_neutral_nature():
+    """A degenerate (certain-neutral) nature reconstructs ko_ramp EXACTLY (the cap saturates overkill)."""
+    op = _op_nat()
+    B, n, C, eps = 3, 6, 8, 1e-6
+    torch.manual_seed(0)
+    high = torch.rand(B, n, C) * 1.2
+    maxhp = torch.rand(B, n) * 300 + 200; cur = maxhp * torch.rand(B, n)
+    acc = torch.ones(C); phys = (torch.arange(C) % 2).float(); fixed = torch.zeros(C)
+    dmg = high * maxhp[:, :, None]
+    ko = acc[None, None, :] * torch.clamp((dmg - cur[:, :, None]) / (0.15 * dmg + eps), 0, 1)
+    nat = torch.zeros(B, 25); nat[:, 8] = 1.0                                # hardy = all-neutral
+    out = op._nature_marg_ko(ko, high, maxhp, cur, acc, phys, fixed, nat, eps)
+    assert torch.allclose(out, ko, atol=1e-5)
+
+
+def test_marg_ko_shifts_under_nature_uncertainty():
+    """At a near-OHKO threshold an UNCERTAIN nature (50/50 atk+/atk-) restores a nonzero KO risk the
+    mean-field point estimate read as 0 — the Jensen-gap fix."""
+    op = _op_nat()
+    eps = 1e-6
+    maxhp = torch.tensor([[300.]]); cur = torch.tensor([[150.]]); high = torch.tensor([[[0.5]]])  # dmg==cur
+    acc = torch.ones(1); phys = torch.ones(1); fixed = torch.zeros(1)
+    ko = acc[None, None, :] * torch.clamp((high * maxhp[:, :, None] - cur[:, :, None])
+                                          / (0.15 * high * maxhp[:, :, None] + eps), 0, 1)
+    assert float(ko) == 0.0                                                  # mean-field: exactly on the edge
+    nat = torch.zeros(1, 25); nat[:, 0] = 0.5; nat[:, 15] = 0.5              # adamant(atk+) / modest(atk-)
+    out = op._nature_marg_ko(ko, high, maxhp, cur, acc, phys, fixed, nat, eps)
+    assert float(out) > 0.25                                                 # ≈0.303 (0.5·KO(×1.1)+0.5·0)
+
+
+def test_marg_ko_fixed_damage_is_invariant():
+    op = _op_nat()
+    B, n, C, eps = 2, 6, 4, 1e-6
+    high = torch.rand(B, n, C) * 0.8 + 0.3
+    maxhp = torch.full((B, n), 300.); cur = torch.full((B, n), 150.)
+    acc = torch.ones(C); phys = torch.ones(C); fixed = torch.tensor([1., 0., 1., 0.])  # cols 0,2 fixed
+    dmg = high * maxhp[:, :, None]
+    ko = acc[None, None, :] * torch.clamp((dmg - cur[:, :, None]) / (0.15 * dmg + eps), 0, 1)
+    nat = torch.zeros(B, 25); nat[:, 0] = 0.5; nat[:, 15] = 0.5
+    out = op._nature_marg_ko(ko, high, maxhp, cur, acc, phys, fixed, nat, eps)
+    assert torch.equal(out[:, :, fixed.bool()], ko[:, :, fixed.bool()])     # fixed-damage cols untouched
+
+
+def test_op_forward_marginalize_shifts_pko():
+    """The op CALLS the marginalization when spread_nature_logits is passed: across a believed-attack sweep an
+    uncertain nature shifts the forward phys_pko channel vs the mean-field (None) read."""
+    op, ctx, lg = _op_and_ctx()
+    nat = torch.zeros(1, TEAM_SIZE, 25); nat[:, :, 0] = 0.5; nat[:, :, 15] = 0.5   # 50/50 atk+/atk-
+    shifted = False
+    for atk in (600., 900., 1100., 1200., 1300., 1400.):                     # the defender's OHKO threshold band
+        sb = torch.full((1, TEAM_SIZE, 5), 150.); sb[:, 0, _SB_ATK] = atk
+        none = op(ctx, lg, sb, None, None, None)[:, :TEAM_SIZE * op.per_mon].reshape(1, TEAM_SIZE, op.per_mon)
+        marg = op(ctx, lg, sb, None, None, nat)[:, :TEAM_SIZE * op.per_mon].reshape(1, TEAM_SIZE, op.per_mon)
+        if (none[0, 0, _DMG_IDX_PHYS_PKO] - marg[0, 0, _DMG_IDX_PHYS_PKO]).abs() > 1e-5:
+            shifted = True
+    assert shifted                                                          # the path is live + changes pko
+
+
+def test_marginalize_requires_nature_head():
+    import pytest
+    with pytest.raises(ValueError):
+        _model(spread_belief=True, spread_belief_nature_marginalize=True)   # marginalize without the nature head

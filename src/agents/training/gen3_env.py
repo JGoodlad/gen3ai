@@ -16,10 +16,13 @@ from agents.observation.belief_labels import (
     build_belief_labels, build_known_move_labels, build_belief_target_index,
     zero_belief_labels, zero_known_moves, BELIEF_MOVE_SLOTS,
     build_known_spread_labels, zero_spread_labels, SPREAD_STAT_ORDER, N_SPREAD_STATS,
+    build_known_nature_ev_labels, zero_nature_ev_labels,
     build_hp_type_labels, zero_hp_type_labels, hp_type_idx_from_move_id, N_HP_TYPES_LABEL,
 )
 from agents.observation.turn_delta_encoder import TurnDeltaEncoder
 from agents.model.features_extractor import N_HISTORY_TURNS
+from agents.model.damage_tables import invert_nature_evs
+from agents import gen3_data
 from agents.action.mask_generator import Gen3ActionMasker
 from agents.action.mapper import Gen3ActionMapper
 from agents.battle.live_view import LegalActions
@@ -81,6 +84,11 @@ class Gen3Env(SinglesEnv):
         # Read ONLY by the loss — never enters the policy/value forward (the believed stats the op consumes
         # are the model's own prediction, not this label).
         self._emit_spread_labels = emit_spread_labels
+        # gen3_nature_ev_belief_v1: the inverted (species -> nature_num, EVs) map is FIXED per battle (agent2's
+        # team doesn't change), but the inversion is ~expensive (25 natures × 64 EVs / mon), so cache it keyed
+        # by the team's species set and recompute only on a new battle. Read by _spread_labels.
+        self._nature_ev_cache_key = None
+        self._nature_ev_cache = {}
         # HP-TYPE-belief label key (TRAINING-ONLY, gen3_opp_hp_type_belief_v1): when on, the obs Dict carries
         # `hp_type_label` [6] (the TRUE Hidden Power type index 0..15 of each REVEALED opp mon that runs HP,
         # from agent2's own team's typed move id) + `hp_type_mask` [6]. Consumed ONLY by the HP-type CE loss
@@ -140,6 +148,14 @@ class Gen3Env(SinglesEnv):
                 low=0.0, high=np.inf, shape=(TEAM_SIZE, N_SPREAD_STATS), dtype=np.float32)
             base_obs["belief_spread_mask"] = spaces.Box(
                 low=0.0, high=1.0, shape=(TEAM_SIZE,), dtype=np.float32)
+            # NATURE/EV labels (gen3_nature_ev_belief_v1) — the generative spread belief's privileged targets,
+            # INVERTED from agent2's known derived stats. belief_nature [6] (nature num 0..24) + belief_ev [6,5]
+            # (EVs in {atk,def,spa,spd,spe} order) + per-slot masks. Ride the SAME _emit_spread_labels gate; read
+            # ONLY by the nature/EV loss (--spread-belief-nature). low=0 keeps the not-scored sentinel in-space.
+            base_obs["belief_nature"] = spaces.Box(low=0, high=24, shape=(TEAM_SIZE,), dtype=np.int64)
+            base_obs["belief_nature_mask"] = spaces.Box(low=0.0, high=1.0, shape=(TEAM_SIZE,), dtype=np.float32)
+            base_obs["belief_ev"] = spaces.Box(low=0.0, high=252.0, shape=(TEAM_SIZE, N_SPREAD_STATS), dtype=np.float32)
+            base_obs["belief_ev_mask"] = spaces.Box(low=0.0, high=1.0, shape=(TEAM_SIZE,), dtype=np.float32)
         if self._emit_hp_type_labels:
             # HP-TYPE-belief label (gen3_opp_hp_type_belief_v1): the TRUE HP type index (0..15) of each
             # REVEALED opp mon that runs Hidden Power + a per-slot mask (1 = supervised). int64 (a class
@@ -303,7 +319,9 @@ class Gen3Env(SinglesEnv):
         b2 = getattr(self, "battle2", None)
         if b1 is None or b2 is None:
             sp, spm = zero_spread_labels()
-            return {"belief_spread": sp, "belief_spread_mask": spm}
+            nat, nmask, ev, evmask = zero_nature_ev_labels()
+            return {"belief_spread": sp, "belief_spread_mask": spm, "belief_nature": nat,
+                    "belief_nature_mask": nmask, "belief_ev": ev, "belief_ev_mask": evmask}
         # Per-opp-slot species_known straight from the obs the model reads (same source as _belief_labels).
         species_known = [
             float(obs_vec[OFFSET_OPP_TEAM + i * POKEMON_FULL_DIM + POKEMON_SPECIES_KNOWN_OFFSET])
@@ -320,7 +338,37 @@ class Gen3Env(SinglesEnv):
             if all(v is not None for v in vals):
                 species_to_spread[to_id_str(m.species)] = [float(v) for v in vals]
         sp, spm = build_known_spread_labels(revealed_species, species_to_spread, species_known, to_id_str)
-        return {"belief_spread": sp, "belief_spread_mask": spm}
+        # gen3_nature_ev_belief_v1: the NATURE/EV decomposition (inverted from the same derived stats, cached).
+        nat, nmask, ev, evmask = build_known_nature_ev_labels(
+            revealed_species, self._nature_ev_map(b2), species_known, to_id_str)
+        return {"belief_spread": sp, "belief_spread_mask": spm, "belief_nature": nat,
+                "belief_nature_mask": nmask, "belief_ev": ev, "belief_ev_mask": evmask}
+
+    def _nature_ev_map(self, b2) -> dict:
+        """``{to_id_str(species) -> (nature_num, [ev×5])}`` for agent2's team, INVERTED from each mon's known
+        derived stats + base stats (`damage_tables.invert_nature_evs`, gen3_nature_ev_belief_v1). Cached per
+        battle keyed by the team's species set (the team is fixed; the inversion is ~expensive). A mon whose
+        stats don't invert to a valid nature/EV spread is omitted (its slot stays mask 0)."""
+        key = frozenset(to_id_str(m.species) for m in b2.team.values())
+        if key == self._nature_ev_cache_key:
+            return self._nature_ev_cache
+        out = {}
+        for m in b2.team.values():
+            st = getattr(m, "stats", None) or {}
+            derived = [st.get(k) for k in SPREAD_STAT_ORDER]
+            if any(v is None for v in derived):
+                continue
+            sid = to_id_str(m.species)
+            sd = gen3_data.species.get(sid)
+            if sd is None:
+                continue
+            base = [float(sd.base_stats.get(k, 0)) for k in SPREAD_STAT_ORDER]
+            res = invert_nature_evs([float(v) for v in derived], base, species_id=sid)
+            if res is not None:
+                out[sid] = res
+        self._nature_ev_cache_key = key
+        self._nature_ev_cache = out
+        return out
 
     def _hp_type_labels(self, obs_vec) -> dict:
         """HP-TYPE-belief label (gen3_opp_hp_type_belief_v1) — INDEPENDENT of the other belief legs. For each

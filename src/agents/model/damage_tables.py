@@ -332,6 +332,9 @@ def build_damage_buffers(n_moves: int, n_species: int, n_abilities: int) -> Dict
         **build_status_landing(n_moves, n_species, n_abilities),
         # gen3_unified_choice_band_v1: P(CB | species) usage prior — the op's CB belief for an unrevealed opp.
         "SPECIES_CB_PRIOR": build_species_cb_prior(n_species),
+        # gen3_nature_ev_belief_v1: the [25,5] nature multiplier table — the op marginalises the nonlinear
+        # P(KO) over the believed nature distribution (--spread-belief-nature-marginalize) using these.
+        "NATURE_MULT": build_nature_mult(),
     }
 
 
@@ -381,6 +384,133 @@ def build_opp_spread_prior(n_species: int) -> torch.Tensor:
                 prior[snum, j, 0] = mean
                 prior[snum, j, 1] = max(1.0, var ** 0.5)
     return prior
+
+
+# ─────────────────────────────────────────────────────────────────────────────────────────────────────
+# gen3_nature_ev_belief_v1 — the NATURE/EV-decomposed spread belief (data foundation).
+# `build_opp_spread_prior` above predicts the DERIVED stat directly — a point estimate that sits between the
+# nature ×1.1/×0.9 modes, hence the "over-estimates the largest EV" order-statistic bias. The generative head
+# instead predicts (nature categorical ⊕ per-stat EV) ⊕ their Smogon priors and COMPUTES the derived stat, so
+# the nature asymmetry + the EV budget are STRUCTURAL. These buffers are the prior-fusion bases (mirroring the
+# move-belief / HP-type prior fusion) + the multiplier/base tables the head & op need to compute the derived
+# stat. All non-persistent (data-derived, recomputable).
+N_NATURES = 25                                              # gen3 has exactly 25 natures (num 0..24)
+_NATURE_PRIOR_FLOOR = 0.02                                  # uniform mix so every nature stays liftable (no log 0)
+
+
+def build_nature_mult() -> torch.Tensor:
+    """``[N_NATURES, 5]`` the nature stat multiplier (0.9/1.0/1.1) for {atk,def,spa,spd,spe}, indexed by the
+    nature ``num`` (0..24). The head marginalises ``E[mult] = P(nature) @ NATURE_MULT``; the op marginalises
+    the nonlinear P(KO) over the top natures. GIGO-guarded: exactly 25 natures, each num in range."""
+    raw = gen3_data.natures.raw()
+    if len(raw) != N_NATURES:
+        raise ValueError(f"build_nature_mult: expected {N_NATURES} natures, got {len(raw)}")
+    mult = torch.ones(N_NATURES, N_SPREAD_STATS, dtype=torch.float32)
+    for name, v in raw.items():
+        num = int(v["num"])
+        if not (0 <= num < N_NATURES):
+            raise ValueError(f"build_nature_mult: nature {name} has out-of-range num {num}")
+        for j, stat in enumerate(SPREAD_STAT_COLS):
+            mult[num, j] = float(v.get(stat, 1.0))
+    return mult
+
+
+def build_species_nature_prior(n_species: int) -> torch.Tensor:
+    """``[n_species, N_NATURES]`` per-species LOG-prior over natures (the prior-fusion base: the head adds a
+    learned logit delta, softmax → posterior). From the Smogon usage spreads (`gen3_data.priors.spreads`):
+    P(nature|species) ∝ Σ usage-weight, mixed with a small uniform floor so every nature stays liftable, then
+    logged. A species with no usage data (and the unknown species 0) gets uniform log(1/25). Non-persistent."""
+    logprior = torch.full((n_species, N_NATURES), 1.0 / N_NATURES, dtype=torch.float32).log()
+    nat_raw = gen3_data.natures.raw()
+    for sid in gen3_data.species.raw():
+        snum = gen3_data.species.get(sid).num
+        if not (0 <= snum < n_species):
+            continue
+        counts = torch.zeros(N_NATURES, dtype=torch.float32)
+        for nature, _evs, w in gen3_data.priors.spreads(sid):
+            nd = nat_raw.get(str(nature).lower())
+            if nd is None:
+                continue
+            counts[int(nd["num"])] += float(w)
+        tot = float(counts.sum())
+        if tot <= 0.0:
+            continue
+        p = counts / tot
+        p = (1.0 - _NATURE_PRIOR_FLOOR) * p + _NATURE_PRIOR_FLOOR / N_NATURES    # keep every nature liftable
+        logprior[snum] = p.log()
+    return logprior
+
+
+def build_species_ev_prior(n_species: int) -> torch.Tensor:
+    """``[n_species, 5]`` per-species usage-MEAN EV investment for {atk,def,spa,spd,spe} (the EV prior-fusion
+    base; the head adds a learned delta). From the Smogon spreads' EV lists. No data → 0 EV (neutral). The
+    head clamps the posterior EV to [0,252]. Non-persistent (data-derived)."""
+    ev = torch.zeros(n_species, N_SPREAD_STATS, dtype=torch.float32)
+    for sid in gen3_data.species.raw():
+        snum = gen3_data.species.get(sid).num
+        if not (0 <= snum < n_species):
+            continue
+        acc = torch.zeros(N_SPREAD_STATS, dtype=torch.float32)
+        wsum = 0.0
+        for _nature, evs, w in gen3_data.priors.spreads(sid):
+            for j, stat in enumerate(SPREAD_STAT_COLS):
+                acc[j] += float(w) * float(evs[_SPREAD_BASE_IDX[stat]])
+            wsum += float(w)
+        if wsum > 0.0:
+            ev[snum] = acc / wsum
+    return ev
+
+
+def build_species_base_stats(n_species: int) -> torch.Tensor:
+    """``[n_species, 5]`` the per-species BASE stat for {atk,def,spa,spd,spe} (NOT HP) — the SpreadBelief head
+    needs it to compute the gen3 derived stat ``(2·base + 31 + EV/4 + 5)·mult``. Non-persistent."""
+    base = torch.zeros(n_species, N_SPREAD_STATS, dtype=torch.float32)
+    for sid in gen3_data.species.raw():
+        sd = gen3_data.species.get(sid)
+        if not (0 <= sd.num < n_species):
+            continue
+        for j, stat in enumerate(SPREAD_STAT_COLS):
+            base[sd.num, j] = float(sd.base_stats.get(stat, 0))
+    return base
+
+
+def invert_nature_evs(derived, base, species_id=None):
+    """Recover a ``(nature_num, [ev×5])`` generative decomposition that EXACTLY reproduces the gen3 DERIVED
+    stats ``derived`` {atk,def,spa,spd,spe} for a mon with base stats ``base`` (same order), assuming IV 31 /
+    L100. Used to build the privileged NATURE/EV supervision label from agent2's known ``mon.stats`` (gen3
+    hides the opp's nature+EVs, so we INVERT the visible derived stats rather than need them in the obs).
+
+    Returns ``None`` if no nature yields all-valid EVs (∈[0,252], multiple of 4, Σ≤510) — a GIGO guard (the
+    slot is left unscored). The map is occasionally many-to-one (the ``×11//10`` / ``×9//10`` floor loses a few
+    EV; the 5 all-neutral natures are degenerate), so among valid decompositions it prefers the one with the
+    highest Smogon nature prior for ``species_id`` (the most plausible TRUE nature), then smallest num —
+    deterministic and self-consistent (any returned pair reproduces ``derived`` by construction)."""
+    nat_raw = gen3_data.natures.raw()
+    weight = {}                                                          # nature usage hint for disambiguation
+    if species_id is not None:
+        for nature, _evs, w in gen3_data.priors.spreads(species_id):
+            nd = nat_raw.get(str(nature).lower())
+            if nd is not None:
+                weight[int(nd["num"])] = weight.get(int(nd["num"]), 0.0) + float(w)
+    candidates = []
+    for _name, v in nat_raw.items():
+        num = int(v["num"])
+        evs, ok = [], True
+        for j, stat in enumerate(SPREAD_STAT_COLS):
+            m = float(v.get(stat, 1.0))
+            D, b = int(round(float(derived[j]))), int(round(float(base[j])))
+            found = next((ev for ev in range(0, 253, 4) if gen3_data.priors.gen3_stat(b, ev, m) == D), None)
+            if found is None:
+                ok = False
+                break
+            evs.append(found)
+        if ok and sum(evs) <= 510:
+            candidates.append((weight.get(num, 0.0), -num, num, evs))    # highest prior, then smallest num
+    if not candidates:
+        return None
+    candidates.sort(reverse=True)
+    _, _, num, evs = candidates[0]
+    return num, evs
 
 
 # gen3_opp_hp_type_belief_v1: the per-species Smogon Hidden-Power-TYPE usage prior. The DamageOperator's

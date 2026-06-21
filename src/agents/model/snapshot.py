@@ -542,6 +542,8 @@ def current_model_version(
     move_latent: bool = False,
     move_belief_latent_coef: float = 0.0,
     spread_belief: bool = False,
+    spread_belief_nature: bool = False,
+    spread_belief_nature_marginalize: bool = False,
     spread_belief_coef: float = 0.0,
     move_prior_fusion: bool = False,
     move_belief_prefuse: bool = False,
@@ -605,6 +607,8 @@ def current_model_version(
     ext_kwargs["move_candidate_floor"] = move_candidate_floor
     ext_kwargs["move_latent"] = move_latent
     ext_kwargs["spread_belief"] = spread_belief
+    ext_kwargs["spread_belief_nature"] = spread_belief_nature
+    ext_kwargs["spread_belief_nature_marginalize"] = spread_belief_nature_marginalize
     ext_kwargs["move_prior_fusion"] = move_prior_fusion
     ext_kwargs["move_belief_prefuse"] = move_belief_prefuse
     ext_kwargs["mask_incoming_damage_obs"] = mask_incoming_damage_obs
@@ -661,6 +665,8 @@ def arch_toggles_from_model(model) -> dict:
         "move_candidate_floor": float(getattr(fe, "move_candidate_floor", 0.0)),
         "move_latent": bool(getattr(fe, "move_latent", False)),
         "spread_belief": bool(getattr(fe, "spread_belief_enabled", False)),
+        "spread_belief_nature": bool(getattr(fe, "spread_belief_nature", False)),
+        "spread_belief_nature_marginalize": bool(getattr(fe, "spread_belief_nature_marginalize", False)),
         "move_prior_fusion": bool(getattr(fe, "move_prior_fusion", False)),
         "move_belief_prefuse": bool(getattr(fe, "move_belief_prefuse", False)),
         "mask_incoming_damage_obs": bool(getattr(fe, "mask_incoming_damage_obs", False)),

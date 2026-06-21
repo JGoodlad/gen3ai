@@ -310,7 +310,7 @@ from typing import Any, Dict, List
 #   NEUTRAL boosts (gen3 resets on switch). STRUCTURAL toggle like damage_op (widens both projection
 #   in_features via the op out_dim); gated in check_compatible (bool); OFF byte-for-byte (NO ARCH_SIGNATURE
 #   bump). Requires damage_op. Design: designs/ai_v6/design_per_move_damage_matrices.md.
-MODEL_CONFIG_VERSION = 39
+MODEL_CONFIG_VERSION = 40
 
 # Change this when the neural architecture changes structurally in a way that makes
 # weights from a different signature incompatible (e.g. adding LSTM, replacing attention).
@@ -851,6 +851,17 @@ class ModelVersion:
     # v25 STRUCTURAL toggle (like opp_belief_slots): the SpreadBelief module (predict+reinject the opp's
     # hidden spread). Gated in check_compatible; OFF byte-for-byte (no module, NO ARCH_SIGNATURE bump).
     spread_belief: bool = False
+    # v40 STRUCTURAL toggle (gen3_nature_ev_belief_v1): swap the SpreadBelief's additive point-estimate head
+    # for the NATURE/EV generative head (prior-fusion → compute the derived stat) to fix the largest-EV
+    # over-estimate. Different SpreadBelief params → state_dict change → gated in check_compatible; requires
+    # spread_belief; OFF byte-for-byte (the additive head, NO ARCH_SIGNATURE bump).
+    spread_belief_nature: bool = False
+    # v40 FORWARD-BEHAVIOR toggle (gen3_nature_ev_belief_v1, like move_prior_fusion): the DamageOperator
+    # MARGINALISES the nonlinear P(KO)/damage over the believed nature distribution (compute-then-blend over the
+    # top natures) instead of using E[nature_mult] — restores the ×1.1/×0.9 asymmetry in the threshold. No new
+    # params (reads the head's nature posterior). Requires spread_belief_nature. Gated in check_compatible (a
+    # mid-run flip feeds a different forward); OFF byte-for-byte.
+    spread_belief_nature_marginalize: bool = False
     # v25 TRAINING-ONLY coefficient (NOT version-locked): the speed-supervision weight (masked BCE of the
     # believed P(outspeed) toward observed move order). Recorded for provenance + flagless-resume read-back.
     spread_belief_coef: float = 0.0
@@ -1038,6 +1049,12 @@ class ModelVersion:
             ),
             spread_belief=bool(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("spread_belief", False)
+            ),
+            spread_belief_nature=bool(
+                policy_kwargs.get("features_extractor_kwargs", {}).get("spread_belief_nature", False)
+            ),
+            spread_belief_nature_marginalize=bool(
+                policy_kwargs.get("features_extractor_kwargs", {}).get("spread_belief_nature_marginalize", False)
             ),
             mask_active_move_scalars_obs=bool(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("mask_active_move_scalars_obs", False)
@@ -1292,6 +1309,29 @@ class ModelVersion:
                 "The SpreadBelief module (the hidden-spread belief head) changes the state_dict and cannot "
                 "be toggled on an existing model.\n"
                 "Resume with the matching --spread-belief setting, or start a fresh training run."
+            )
+
+        # v40 STRUCTURAL toggle (gen3_nature_ev_belief_v1): the nature/EV generative head has DIFFERENT
+        # SpreadBelief params (nature_head + ev_head vs the additive stat_head), so toggling it changes the
+        # state_dict.
+        if self.spread_belief_nature != saved.spread_belief_nature:
+            raise ModelVersionError(
+                f"spread_belief_nature mismatch: saved={saved.spread_belief_nature}, "
+                f"current={self.spread_belief_nature}.\n"
+                "The nature/EV generative head reparameterises SpreadBelief (its params differ from the "
+                "additive head), so it changes the state_dict and cannot be toggled on an existing model.\n"
+                "Resume with the matching --spread-belief-nature setting, or start a fresh training run."
+            )
+
+        # v40 FORWARD-BEHAVIOR toggle (gen3_nature_ev_belief_v1, like move_prior_fusion): no new params, but a
+        # mid-run flip feeds the op a different (marginalised vs mean-field) forward.
+        if self.spread_belief_nature_marginalize != saved.spread_belief_nature_marginalize:
+            raise ModelVersionError(
+                f"spread_belief_nature_marginalize mismatch: saved={saved.spread_belief_nature_marginalize}, "
+                f"current={self.spread_belief_nature_marginalize}.\n"
+                "The op's nature marginalisation changes the forward (marginalised vs mean-field P(KO)) and "
+                "cannot be toggled mid-run.\n"
+                "Resume with the matching --spread-belief-nature-marginalize setting, or start a fresh run."
             )
 
         # v25 FORWARD-BEHAVIOR toggles (like mask_incoming_damage_obs): each zeros a now-subsumed obs region
@@ -1857,4 +1897,13 @@ def _migrate_config(data: dict) -> dict:
         # Gated in check_compatible (bool compare).
         data.setdefault("damage_matrices_outgoing_all", False)
         data["config_version"] = 39
+    if version < 40:
+        # v40: gen3_nature_ev_belief_v1 — the SpreadBelief's NATURE/EV generative head (prior-fusion → compute
+        # the derived stat). `spread_belief_nature` (bool) is a STRUCTURAL toggle (different SpreadBelief params
+        # than the additive head). OFF byte-for-byte (the additive head, NO ARCH_SIGNATURE bump). Requires
+        # spread_belief. Gated in check_compatible (bool compare). Marginalization (--spread-belief-nature-
+        # marginalize, op-side) is a forward-behavior toggle.
+        data.setdefault("spread_belief_nature", False)
+        data.setdefault("spread_belief_nature_marginalize", False)
+        data["config_version"] = 40
     return data
