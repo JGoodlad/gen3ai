@@ -1132,15 +1132,28 @@ class TestProgressClock(unittest.TestCase):
         self.assertEqual(c.n, 2)
         self.assertAlmostEqual(c.last_penalty, -0.15, places=6)
 
-    def test_wasted_refresh_charged_even_during_winning_residual(self):
-        """The fix: a wasted Refresh is charged BEFORE the progress check, so a WINNING Leech/Toxic
-        residual (clause v) can't launder it into 'progress' (the observed Refresh-spam-while-seeded)."""
+    def test_wasted_refresh_exempt_during_winning_residual(self):
+        """The winning-residual INVARIANT: a wasted Refresh while our Toxic/Leech chips the opp NET-down is
+        a WINNING play, not a wheel-spin — the wasted-cure short-circuit defers to `_winning_residual`, so
+        it is PROGRESS (reset), NEVER taxed by ANY path. (Corrects the earlier 'charge it anyway' behavior;
+        the tax still fires on a wasted Refresh with NO winning residual — `test_wasted_refresh_charges_as_noop`.)"""
         c = self._clock(); c.n = 2
         live = _full_team_live(); live.opp.active.status = "tox"
         opp_hp = np.zeros(6, dtype=np.float32); opp_hp[0] = -0.0625      # toxic chipping the opp DOWN
         c.update(_delta(our_move_id="refresh", opp_hp_delta=opp_hp), live, _Legal(switches=[1]))
-        self.assertEqual(c.n, 3)                                         # charged, NOT reset by residual
-        self.assertAlmostEqual(c.last_penalty, -0.15, places=6)
+        self.assertEqual(c.n, 0)                                         # winning residual → progress (reset)
+        self.assertEqual(c.last_penalty, 0.0)
+
+    def test_capped_spikes_exempt_during_winning_residual(self):
+        """Same invariant for the capped-Spikes short-circuit: a wasted Spikes-at-the-3-layer-cap while our
+        Toxic chips the opp net-down is a winning play → PROGRESS, not taxed."""
+        c = self._clock(); c.n = 2; c._prev_spikes = 3
+        live = _full_team_live(); live.opp.active.status = "tox"
+        live.opp.side_conditions = {"spikes": 3}                        # opp already at the 3-layer cap
+        opp_hp = np.zeros(6, dtype=np.float32); opp_hp[0] = -0.0625
+        c.update(_delta(our_move_id="spikes", opp_hp_delta=opp_hp), live, _Legal(switches=[1]))
+        self.assertEqual(c.n, 0)
+        self.assertEqual(c.last_penalty, 0.0)
 
     def test_refresh_then_opp_statuses_us_still_wasted(self):
         """We move first: a Refresh cast with no status cures nothing even if the opponent statuses us

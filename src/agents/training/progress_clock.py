@@ -63,6 +63,32 @@ HEAL_FREEZE_GRACE = 2
 _REST_LOOP_EXEMPT_MOVES = frozenset({"sleeptalk"})
 
 
+def _winning_residual(delta, live) -> bool:
+    """True iff an our-OWNED residual (Toxic/poison/burn, or Leech Seed / Curse / Nightmare on the opp) is
+    chipping the opp active NET-down this window — a slow-damage WIN condition. This is the SINGLE SOURCE of
+    the winning-residual exemption: clause (v) of :meth:`ProgressClock._is_progress` AND the
+    pre-classification charge short-circuits (capped-Spikes, wasted-self-cure) all gate on it, so a winning
+    residual stall is NEVER taxed by ANY path — the invariant ``progress_clock_fuzz_test`` pins. (Status/
+    volatiles on the OPP are our-applied in 1v1 — we never poison/seed ourselves onto them — so the residual
+    is unambiguously ours; weather is excluded, not per-mon. Gated on the opp NET-losing HP, so a heal-war
+    where recovery out-paces the chip is NOT credited and still charges via HEAL_FREEZE_GRACE.)"""
+    if live is None or getattr(live, "opp", None) is None:
+        return False
+    opp_mon = live.opp.active
+    if opp_mon is None:
+        return False
+    status = getattr(opp_mon, "status", None)
+    vols = getattr(opp_mon, "volatiles", None) or ()
+    if not (status in ("tox", "psn", "brn")
+            or "leechseed" in vols or "curse" in vols or "nightmare" in vols):
+        return False
+    try:
+        opp_net = float(delta.opp_hp_delta.sum())
+    except (AttributeError, TypeError):   # mock delta without a real hp array
+        opp_net = 0.0
+    return opp_net <= -PROGRESS_DMG_EPS
+
+
 class ProgressClock:
     """Episode-scoped ``turns_since_progress`` counter. Owned by ``EpisodeTracker``; read by the obs
     encoder (:meth:`value`) and the reward manager (:attr:`last_penalty`)."""
@@ -142,9 +168,12 @@ class ProgressClock:
         # including a VOLUNTARY pivot into our hazards — which would reset the clock on exactly the turns
         # the wasted Spikes also banks switch-in material), nor frozen as an "exogenous fail". So charge
         # it as a NO_OP directly, BEFORE the progress / denial classification. (A layer-adding Spikes —
-        # opp_spikes strictly rose — still resets via _is_progress clause (iii) below.)
+        # opp_spikes strictly rose — still resets via _is_progress clause (iii) below.) EXEMPT: a winning
+        # residual (clause (v)) means you're net-winning, not stalling — never tax it, so this short-circuit
+        # defers to `_is_progress` when `_winning_residual` holds (the winning-residual invariant).
         if (getattr(delta, "our_move_id", None) == "spikes"
-                and opp_spikes_now >= 3 and opp_spikes_now - prev_spikes <= 0):
+                and opp_spikes_now >= 3 and opp_spikes_now - prev_spikes <= 0
+                and not _winning_residual(delta, live)):
             self.n = min(self.n + 1, PROGRESS_CLOCK_CAP)
             switch_legal = legal is not None and len(getattr(legal, "switches", ()) or ()) > 0
             self.last_penalty = (-abs(self.no_progress_penalty)) if switch_legal else 0.0
@@ -153,12 +182,13 @@ class ProgressClock:
 
         # A self-status-cure move (Refresh) used with NO status to cure is a deliberate wasted no-op: the
         # mon is unstatused, so the move does nothing (it cured nothing this window). Charge it as a NO_OP
-        # directly, BEFORE the progress/denial classification — otherwise an incidental WINNING residual
-        # (our Leech Seed / Toxic chipping the opp net-down, clause (v)) would launder the wasted Refresh
-        # into "progress" and rescue it from the tax (the observed Refresh-spam-while-seeded stall). A
-        # Refresh that ACTUALLY cures a status sets `our_status_cured`, so it is NOT wasted and falls
-        # through to the normal path.
-        if self._is_wasted_self_cure(delta):
+        # directly, BEFORE the progress/denial classification (the observed Refresh-spam-while-idle stall).
+        # A Refresh that ACTUALLY cures a status sets `our_status_cured`, so it is NOT wasted and falls
+        # through to the normal path. EXEMPT: a WINNING residual (our Leech Seed / Toxic chipping the opp
+        # net-down, clause (v)) means you're net-winning, not stalling — never tax it, so this short-circuit
+        # defers to `_is_progress` when `_winning_residual` holds (the winning-residual invariant; a wasted
+        # Refresh while you net-out-chip the opp is a winning play, not a wheel-spin).
+        if self._is_wasted_self_cure(delta) and not _winning_residual(delta, live):
             self.n = min(self.n + 1, PROGRESS_CLOCK_CAP)
             switch_legal = legal is not None and len(getattr(legal, "switches", ()) or ()) > 0
             self.last_penalty = (-abs(self.no_progress_penalty)) if switch_legal else 0.0
@@ -297,26 +327,13 @@ class ProgressClock:
         if getattr(delta, "opp_switch_to", None) is not None:
             return True
         # (v) an our-OWNED residual (Toxic/poison/burn status, or Leech Seed / Curse / Nightmare) is
-        #     chipping the opp DOWN this window — a slow-damage win condition IS progress even when
-        #     our move dealt no direct damage, so a WINNING residual-stall (e.g. Recover-while-Toxic-
-        #     ticks) is never charged. Gated on the opp NET-losing HP, so a heal-war where recovery
-        #     out-paces the chip (opp HP flat/up) is NOT credited and still charges (HEAL_FREEZE_GRACE).
-        #     Status/volatiles on the OPP are our-applied in 1v1 (we never poison/seed ourselves onto
-        #     them), so the residual is unambiguously ours; weather is excluded (not per-mon, ambiguous).
-        if live is not None and getattr(live, "opp", None) is not None:
-            opp_mon = live.opp.active
-            if opp_mon is not None:
-                status = getattr(opp_mon, "status", None)
-                vols = getattr(opp_mon, "volatiles", None) or ()
-                owned_residual = (status in ("tox", "psn", "brn")
-                                  or "leechseed" in vols or "curse" in vols or "nightmare" in vols)
-                if owned_residual:
-                    try:
-                        opp_net = float(delta.opp_hp_delta.sum())
-                    except (AttributeError, TypeError):   # mock delta without a real hp array
-                        opp_net = 0.0
-                    if opp_net <= -PROGRESS_DMG_EPS:
-                        return True
+        #     chipping the opp DOWN this window — a slow-damage win condition IS progress even when our move
+        #     dealt no direct damage, so a WINNING residual-stall (Recover-while-Toxic-ticks) is never
+        #     charged. `_winning_residual` is the SINGLE SOURCE of this exemption — the capped-Spikes and
+        #     wasted-self-cure short-circuits above ALSO defer to it, so a winning residual is never taxed
+        #     by ANY path (the invariant the fuzz pins).
+        if _winning_residual(delta, live):
+            return True
         # (vi) a NON-redundant OWN boost: our active's Σ positive boost stages STRICTLY rose (a useful
         #      Calm Mind / Dragon Dance / Swords Dance / Curse / Belly Drum) — a +6-capped repeat leaves
         #      the sum unchanged → NOT credited (stays a no-op). In gen3 only our OWN move raises our
