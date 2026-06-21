@@ -568,12 +568,49 @@ restart — no manifest). Design lives in `designs/ai_v5/`. Key behaviors:
   `_select_episode_opponent` thousands of times and asserts the empirical pool/stable shares match
   the analytic fractions (the per-case `selfplay_callback_test.py::test_opponent_mix_*` pin the math
   itself). A future selection change that isn't mirrored fails that cross-check.
-- **Seeding is GATED on competence; the pool is a SLIDING WINDOW (nothing pinned).** The pool is
-  seeded only once win rate clears `SELF_PLAY_START` (at startup via `_maybe_seed_pool`, or the
+- **Seeding is GATED on competence; the pool is a SLIDING WINDOW (nothing pinned) by default.** The
+  pool is seeded only once win rate clears `SELF_PLAY_START` (at startup via `_maybe_seed_pool`, or the
   moment it crosses mid-run in `_collect_pending`), so the first self-play opponent is a
-  *competent* model — never the random/weak step-0 seed of old. Nothing is pinned: the oldest
-  snapshot (incl. the seed) ages out as the window slides past `max_snapshots`, so the floor
+  *competent* model — never the random/weak step-0 seed of old. By default nothing is pinned: the
+  oldest snapshot (incl. the seed) ages out as the window slides past `max_snapshots`, so the floor
   stays a recent self; anti-forgetting is the heuristic floor, not a pinned seed.
+- **PFSP / league-lite (`--pfsp-scale`, `--pool-spread`; both OFF → byte-identical).** A pure recency
+  window is a near-50% echo chamber (recent selves beat each other ~evenly), so it never up-weights the
+  *kind* of self the trainee is actually losing to. Two opt-in knobs turn it into a prioritised
+  curriculum:
+    - **`--pfsp-scale S` (default 0.0)** — `SnapshotPool.sample()` blends a per-snapshot HARDNESS factor
+      into the weight: `weight = recency × (1 + S·(1 − p))`, where `p` is the trainee's measured win-rate
+      vs that snapshot. A self it loses to (`p→0`) is sampled up to `1+S`× more; one it dominates (`p→1`)
+      keeps factor 1 — never starved, so coverage is preserved. An unmeasured snapshot uses the mean of the
+      known rates (average difficulty); with **no** rates yet (cold start) every factor is 1 ⇒ pure recency.
+      The per-snapshot win-rates are exactly the sentinel win-rates the eval already measures: each cycle
+      `SelfPlayCallback._update_pfsp_ema` EMA-smooths them (`_PFSP_WR_EMA_BETA`=0.5, to damp ~100-game eval
+      noise) and `_prune_and_push_pfsp` prunes the map to the live pool and pushes it to every env via
+      `env_method("set_opponent_win_rates", {step: p})` (mirrors the `set_self_play_target` push;
+      `MaskableAgentWrapper.set_opponent_win_rates` → `SnapshotPool.set_win_rates`). The map survives resume
+      in `summary.json` (`pfsp_win_rates`). Headline signals: `eval/pfsp_hardest_win_rate` (the most
+      up-weighted self) + `eval/pfsp_tracked_snapshots`. Try `1.0–2.0`.
+    - **`--pool-spread` (default off)** — replaces the oldest-evicted window with **spread retention**
+      (`SnapshotPool._evict_spread`): always keep the newest + the oldest (a weak early self = a forgetting
+      tripwire PFSP can up-weight) and thin the most-redundant interior snapshot (smallest neighbour
+      step-gap) to an even ladder. So PFSP weights over a genuinely diverse range of selves, not a
+      recent-selves cluster. Pairs with `--pfsp-scale`; alone it just diversifies the window.
+
+  Both are threaded into the `SnapshotPool` at **both** construction sites (the per-env-worker pool that
+  samples, and the trainer-side pool used for honest sentinel-weight telemetry); off → no extra IPC and the
+  legacy sampling/eviction byte-for-byte.
+
+  **Honest caveats (it's a partial-coverage curriculum, not a full PFSP league):** (1) only the **5 evenly-spaced
+  sentinels** the eval measures per cycle get a fresh win-rate — the other snapshots fall back to the cohort
+  mean (treated as average difficulty), so on a 20-deep pool PFSP actively re-prioritises ≈¼ of the pool per
+  cycle and an un-remeasured snapshot keeps its **last** EMA (a staleness bias toward selves you *used* to lose
+  to — watch `eval/pfsp_hardest_win_rate` is tracking a moving target, not a fossil). (2) The `1 +` floor in the
+  weight keeps coverage but makes the tilt mild: a self at `p=0.1` vs one at `p=0.5` differ only `(1+S·0.9)/(1+S·0.5)`
+  (≈1.4× at `S=2`), and in a healthy gate-pinned pool the sentinel win-rates cluster near 50% so the realised
+  prioritisation is modest — lean toward the high end of `S` (or beyond) if you want it to bite. PFSP touches
+  **only which frozen opponent is sampled** — never the rollout, GAE, value target, promotion gate, or the
+  `win_rate_vs_bots` curriculum ramp — so it cannot corrupt training; the worst case is "does little." A denser
+  sentinel count under PFSP + a decay-toward-neutral for stale entries are the obvious follow-ups (deferred).
 - **Full roster (v1 + v2 of every archetype).** Training (`OPPONENT_CLASSES`) and eval
   (`eval_opponent_names()` / `_EVAL_OPPONENT_SPECS`) both use all eight archetype bots —
   `{Heuristic, Heuristic2, Staller, StallerV2, Aggressive, AggressiveV2, SetupSweep,

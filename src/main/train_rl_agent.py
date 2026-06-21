@@ -1197,6 +1197,21 @@ async def main():
                         type=float, default=None,
                         help=f"win_rate_vs_bots at which self-play reaches the floor (default {SELF_PLAY_FULL:g}); "
                              "raise it to ramp slower / stay bot-heavier for longer.")
+    # ── PFSP / league-lite (prioritized fictitious self-play) — both OFF by default (byte-identical) ──
+    parser.add_argument("--pfsp-scale", "--pfsp_scale", dest="pfsp_scale", type=float, default=0.0,
+                        help="PFSP hardness weighting for self-play pool sampling (default 0.0 = off, "
+                             "pure recency). >0 oversamples the pool selves the trainee is LOSING to "
+                             "(weight ×(1 + pfsp_scale·(1−win_rate))) while never starving the ones it "
+                             "beats — turns the recency window into a prioritised curriculum. The live "
+                             "per-snapshot win-rates are measured at each self-play eval (EMA-smoothed) "
+                             "and pushed to the training envs. Try 1.0–2.0. Pairs with --pool-spread so "
+                             "PFSP has a diverse ladder of selves, not a recent-selves echo chamber.")
+    parser.add_argument("--pool-spread", "--pool_spread", dest="pool_spread",
+                        action=BoolFlag, default=False,
+                        help="Self-play pool retention: keep a temporally-DIVERSE ladder (newest + "
+                             "oldest + an even interior spread) instead of the oldest-evicted sliding "
+                             "window, so PFSP (--pfsp-scale) has a real range of past selves to "
+                             "up-weight. Default off = the legacy sliding window (byte-identical).")
     # ── Stable (cross-run) opponents: load a model from ANOTHER run as a fixed opponent ──
     parser.add_argument("--stable-opponents", "--stable_opponents", dest="stable_opponents",
                         type=str, default=None,
@@ -1874,6 +1889,8 @@ async def main():
                     pool = SnapshotPool(
                         pool_dir=snapshot_dir, current_version=opponent_version,
                         device=opponent_device,
+                        pfsp_scale=getattr(args, "pfsp_scale", 0.0),
+                        pool_spread=getattr(args, "pool_spread", False),
                     )
                     # Distilled opponents are rebuilt from the obs layout on load (env-side).
                     if getattr(args, "distill_opponents", False):
@@ -1988,7 +2005,8 @@ async def main():
         _snapshot_dir = _Path(args.snapshot_dir) if args.snapshot_dir else _Path(model_dir) / "snapshots"
         _cv = _current_model_version(mappings, **_run_arch_toggles(args))
         _opp_version = _cv
-        _pool = SnapshotPool(pool_dir=_snapshot_dir, current_version=_cv, device=args.device)
+        _pool = SnapshotPool(pool_dir=_snapshot_dir, current_version=_cv, device=args.device,
+                             pfsp_scale=args.pfsp_scale, pool_spread=args.pool_spread)
         if getattr(args, "distill_opponents", False):
             _pool.set_distill_layout(Gen3ObservationEncoder(mappings).get_layout())
         _persisted_wr = _pool.load_persisted_win_rate()
@@ -2263,6 +2281,9 @@ async def main():
             stable_challenge_share=args.stable_opponent_selfplay_share,
             bot_weight_vec=_bot_weight_vec,
             floor_roster_count=len(OPPONENT_CLASSES),
+            # PFSP: when >0 the callback EMA-smooths the per-sentinel win-rates each eval and pushes
+            # them to the env pools so sampling oversamples the selves we're losing to (0.0 = off).
+            pfsp_scale=args.pfsp_scale,
             debug=args.debug,
         )
         callbacks.append(eval_callback)

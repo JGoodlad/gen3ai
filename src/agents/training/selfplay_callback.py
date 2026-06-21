@@ -80,6 +80,11 @@ from main.launcher.ipc import emit, send_event, send_metrics
 # mastered — a 2-cycle confirm guards against that.
 _MASTERY_CONFIRM_CYCLES = 2
 
+# PFSP win-rate EMA: blend each cycle's measured sentinel win-rate with its running estimate
+# (new = β·old + (1−β)·measured) so a single ~100-game eval's noise doesn't whipsaw the sampling
+# weight. β=0.5 → a one-cycle half-life (responsive but de-noised).
+_PFSP_WR_EMA_BETA = 0.5
+
 # Regression guard: warn if a bot the agent was beating well drops below this.
 _REGRESSION_WARN_THRESHOLD = 0.60
 _REGRESSION_TRIGGER_THRESHOLD = 0.70  # must have reached this first
@@ -184,6 +189,7 @@ class SelfPlayCallback(_ForcedEvalMixin, BaseCallback):
         stable_challenge_share: float = STABLE_CHALLENGE_SHARE,
         bot_weight_vec: "list | None" = None,
         floor_roster_count: int = 0,
+        pfsp_scale: float = 0.0,
         debug: bool = False,
         verbose: int = 1,
     ):
@@ -259,6 +265,23 @@ class SelfPlayCallback(_ForcedEvalMixin, BaseCallback):
         # Pool generation — bumped whenever the pool changes (seed/promote); pushed to the env
         # workers via env_method so they re-scan the pool dir and pick up new snapshots live.
         self._pool_generation = 0
+
+        # ── PFSP (prioritized fictitious self-play) ──
+        # When pfsp_scale > 0, each cycle we EMA-smooth the trainee's win-rate vs every sentinel we
+        # measured and push the {step: P(win)} map to the env-worker pools, so sample() oversamples
+        # the selves we're losing to (see SnapshotPool / wrappers.set_opponent_win_rates). The EMA
+        # (one value per snapshot step) damps the ~100-game eval noise; it survives resume via
+        # summary.json. 0.0 → never pushed, byte-identical to a pure-recency pool.
+        self._pfsp_scale = max(0.0, float(pfsp_scale))
+        self._pfsp_winrate_ema: dict[int, float] = {}
+        if self._pfsp_scale > 0.0:
+            for k, v in (self._pool.load_summary().get("pfsp_win_rates") or {}).items():
+                try:
+                    self._pfsp_winrate_ema[int(k)] = float(v)
+                except (ValueError, TypeError):
+                    pass
+            # The trainer-side pool reports honest PFSP-weighted sentinel weights in metadata.
+            self._pool.set_win_rates(self._pfsp_winrate_ema)
 
         # ── Opponent distillation (all-or-nothing; distill_integration.md §8) ──
         # One idempotent reconcile loop keeps the on-disk distilled set == the pool's snapshots:
@@ -563,6 +586,11 @@ class SelfPlayCallback(_ForcedEvalMixin, BaseCallback):
             emit(f"⚠️  [SELFPLAY] Cycling signal: sentinel_monotonicity={monotonicity:.2f} "
                  f"at step {step:,} — consider increasing max_snapshots")
 
+        # ── PFSP: EMA-smooth this cycle's measured sentinel win-rates (the per-snapshot map sample()
+        #    weights toward). Updated here so the metrics ride this cycle's TUI dump; pruned+pushed to
+        #    the env pools at end-of-collect (after any promotion). No-op (off) when pfsp_scale=0. ──
+        self._update_pfsp_ema(kept_sentinels, tui)
+
         # ── Live curriculum: seed-if-crossing-threshold, then push the fraction to the envs ──
         # frac>0 ⇔ win rate ≥ SELF_PLAY_START. If we just crossed it with an empty pool, seed
         # NOW from the frozen (competent) eval snapshot — so the first self-play opponent is a
@@ -714,6 +742,10 @@ class SelfPlayCallback(_ForcedEvalMixin, BaseCallback):
         # ── Push the live curriculum target to every training env (after any seed/promote so
         #    the pool-generation bump reaches the workers this cycle) + persist resume state ──
         self._push_self_play_target(sf)
+        # PFSP: prune the win-rate EMA to the (post-promotion) live pool and push it to the env
+        # pools so the next generation's sample() oversamples the selves we're losing to. After the
+        # generation push above, so the workers re-scan + re-sample with the fresh weights. No-op off.
+        self._prune_and_push_pfsp()
         # (Stable-opponent mastery — the challenge→floor "becomes another bot" flip — was recomputed
         #  + pushed to every training env earlier, with the training-mix telemetry.)
         # Reconcile distilled opponents now that any seed/promote bumped the generation: distill
@@ -726,6 +758,9 @@ class SelfPlayCallback(_ForcedEvalMixin, BaseCallback):
                 last_eval_step=step,
                 seeded=not self._pool.is_empty(),
                 pool_generation=self._pool_generation,
+                **({"pfsp_win_rates": {str(s): round(r, 4)
+                                       for s, r in self._pfsp_winrate_ema.items()}}
+                   if self._pfsp_scale > 0.0 else {}),
             )
 
         # Retain the bit-exact snapshot for the prober, groom traces, then drop the scratch.
@@ -743,6 +778,43 @@ class SelfPlayCallback(_ForcedEvalMixin, BaseCallback):
             self.training_env.env_method("set_self_play_target", float(fraction), self._pool_generation)
         except Exception as e:  # noqa: BLE001 — telemetry/curriculum push must never break eval
             print(f"[SELFPLAY] set_self_play_target push failed (non-fatal): {e}")
+
+    def _update_pfsp_ema(self, kept_sentinels: list, tui: dict) -> None:
+        """EMA-blend this cycle's measured sentinel win-rates into the per-snapshot PFSP map (keyed
+        by training step). No-op when PFSP is off → byte-identical. Records the headline PFSP signals
+        (the hardest tracked self + how many snapshots have a rate) onto this cycle's TUI/TB dump."""
+        if self._pfsp_scale <= 0.0:
+            return
+        beta = _PFSP_WR_EMA_BETA
+        for entry, _label, v, _rw, _ep in kept_sentinels:
+            prev = self._pfsp_winrate_ema.get(entry.step)
+            self._pfsp_winrate_ema[entry.step] = v if prev is None else beta * prev + (1.0 - beta) * v
+        # Refresh the trainer-side pool NOW (this runs before _collect_pending builds the metadata
+        # pool block), so each sentinel's reported entry_weight reflects THIS cycle's measurement
+        # rather than lagging a cycle. The env-worker push happens later in _prune_and_push_pfsp.
+        self._pool.set_win_rates(self._pfsp_winrate_ema)
+        if self._pfsp_winrate_ema:
+            hardest = min(self._pfsp_winrate_ema.values())  # lowest win-rate = most up-weighted
+            self.logger.record("eval/pfsp_hardest_win_rate", hardest)
+            self.logger.record("eval/pfsp_tracked_snapshots", float(len(self._pfsp_winrate_ema)))
+            tui["eval/pfsp_hardest_win_rate"] = hardest
+            tui["eval/pfsp_tracked_snapshots"] = float(len(self._pfsp_winrate_ema))
+
+    def _prune_and_push_pfsp(self) -> None:
+        """Prune the PFSP win-rate EMA to the (post-promotion) live pool and push it to every
+        training env (mirrors ``_push_self_play_target``). Keeps the map — and its summary.json
+        persistence — bounded as snapshots slide out. No-op / no IPC when PFSP is off. Non-fatal:
+        a heuristic-only env (no ``set_opponent_win_rates``) or a transient failure must never break
+        eval."""
+        if self._pfsp_scale <= 0.0:
+            return
+        live_steps = set(self._pool.steps())
+        self._pfsp_winrate_ema = {s: r for s, r in self._pfsp_winrate_ema.items() if s in live_steps}
+        self._pool.set_win_rates(self._pfsp_winrate_ema)  # honest PFSP-weighted sentinel telemetry
+        try:
+            self.training_env.env_method("set_opponent_win_rates", dict(self._pfsp_winrate_ema))
+        except Exception as e:  # noqa: BLE001 — curriculum push must never break eval
+            print(f"[SELFPLAY] set_opponent_win_rates push failed (non-fatal): {e}")
 
     def _push_stable_mastered(self, ext_wr: dict) -> None:
         """Mark any stable opponent whose win_rate has cleared ``--stable-opponent-mastered-wr`` for

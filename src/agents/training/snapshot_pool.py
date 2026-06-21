@@ -77,12 +77,22 @@ class SnapshotPool:
     Filenames encode the training step: ``snapshot_<step:012d>.zip``.
     Sorted directory scan restores the pool on every startup — no JSON manifest.
 
-    Nothing is pinned: the pool is a **sliding window** of the ``max_snapshots`` most
-    recent snapshots (oldest evicted first), so an old/weak seed ages out instead of
+    By default nothing is pinned: the pool is a **sliding window** of the ``max_snapshots``
+    most recent snapshots (oldest evicted first), so an old/weak seed ages out instead of
     lingering as a trivially-easy floor. Anti-forgetting is handled by the heuristic floor
     in ``heuristic_fraction`` (the agent always trains a few % vs real bots), not a pinned
     seed. Seeding is gated on competence by the caller (only seed once win rate clears
     ``SELF_PLAY_START``), so the seed is captured from a competent model.
+
+    Two opt-in **PFSP / league-lite** modes layer on top (both OFF → byte-identical):
+
+    - ``pfsp_scale > 0`` — blend per-snapshot HARDNESS into ``sample()``: oversample the selves
+      the trainee is losing to (win-rates pushed via ``set_win_rates`` each eval), without
+      starving the ones it beats. Turns the pool from a uniform-ish recency window into a
+      prioritised curriculum.
+    - ``pool_spread`` — replace the oldest-evicted sliding window with **spread retention** (keep
+      newest + oldest + an even interior spread), so PFSP has a genuinely diverse ladder of selves
+      to up-weight instead of a recent-selves echo chamber.
     """
 
     _WIN_RATE_FILE = "win_rate_vs_bots.txt"
@@ -96,12 +106,25 @@ class SnapshotPool:
         max_snapshots: int = 20,
         recency_weight: float = 0.3,
         lru_cache_size: int = 3,
+        pfsp_scale: float = 0.0,
+        pool_spread: bool = False,
     ):
         self.pool_dir = Path(pool_dir)
         self._current_version = current_version
         self._device = device
         self.max_snapshots = max_snapshots
         self.recency_weight = recency_weight
+        # PFSP (prioritized fictitious self-play): when > 0, blend a per-entry HARDNESS factor
+        # into the sampling weight — oversample snapshots the trainee is LOSING to (low win-rate)
+        # while never starving the ones it beats. 0.0 → pure recency (byte-identical). The win-rates
+        # are pushed in each eval cycle via set_win_rates(); an entry with no measured rate uses the
+        # mean of the known rates (so a fresh/unmeasured snapshot is treated as average difficulty).
+        self.pfsp_scale = max(0.0, float(pfsp_scale))
+        self._win_rates: dict[int, float] = {}  # step → P(trainee beats this snapshot), EMA-smoothed
+        # Spread retention: keep a temporally-DIVERSE ladder (newest + oldest + an even interior
+        # spread) instead of the oldest-evicted sliding window, so PFSP has a real range of selves
+        # to up-weight (a recent-selves-only window is a near-50% echo chamber). Off → byte-identical.
+        self._pool_spread = bool(pool_spread)
         self._cache_size = lru_cache_size
         self._entries: list[SnapshotEntry] = []
         self._model_cache: OrderedDict[str, MaskablePPO] = OrderedDict()
@@ -167,28 +190,59 @@ class SnapshotPool:
 
     # ── Sampling ───────────────────────────────────────────────────────────
 
-    def sample(self) -> SnapshotEntry:
-        """Return one entry weighted toward recent snapshots.
+    def set_win_rates(self, rates: "dict | None") -> None:
+        """Store the trainee's per-snapshot win-rates (``{step: P(win)}``) for PFSP weighting.
 
-        ``recency_weight=0`` → uniform; ``recency_weight=1`` → strongly recent.
+        Pushed by the self-play eval callback each cycle (EMA-smoothed there). A no-op on the
+        sampling weight while ``pfsp_scale == 0``. Keys are coerced to int / values to float so
+        a JSON-round-tripped dict (string keys, on resume) is accepted transparently."""
+        self._win_rates = {int(k): float(v) for k, v in (rates or {}).items()}
+
+    def _pfsp_default_p(self, entries: list[SnapshotEntry]) -> float:
+        """Win-rate to assume for an entry with no measured rate: the mean of the known rates
+        over ``entries`` (so an unmeasured snapshot is treated as average difficulty), or 1.0 when
+        nothing is known (→ every PFSP factor collapses to 1 ⇒ pure recency at cold start)."""
+        known = [self._win_rates[e.step] for e in entries if e.step in self._win_rates]
+        return sum(known) / len(known) if known else 1.0
+
+    def _entry_weight_with(self, entry: SnapshotEntry, entries: list[SnapshotEntry],
+                           default_p: "float | None" = None) -> float:
+        """Sampling weight = recency × PFSP-hardness, computed over the ``entries`` cohort.
+
+        ``pfsp_scale == 0`` returns exactly the recency weight (byte-identical to the legacy
+        sliding-window formula). With PFSP on, ``factor = 1 + pfsp_scale·(1 − p)`` where ``p`` is
+        the trainee's win-rate vs this snapshot — so a snapshot it loses to (``p→0``) is sampled
+        up to ``1 + pfsp_scale``× more, while one it dominates (``p→1``) keeps factor 1 (never
+        starved → coverage preserved)."""
+        steps = [e.step for e in entries]
+        span = max(steps[-1] - steps[0], 1)
+        recency = 1.0 + self.recency_weight * (entry.step - steps[0]) / span
+        if self.pfsp_scale <= 0.0:
+            return recency
+        p = self._win_rates.get(entry.step)
+        if p is None:
+            p = self._pfsp_default_p(entries) if default_p is None else default_p
+        p = min(max(p, 0.0), 1.0)
+        return recency * (1.0 + self.pfsp_scale * (1.0 - p))
+
+    def sample(self) -> SnapshotEntry:
+        """Return one entry weighted toward recent snapshots (× PFSP hardness when enabled).
+
+        ``recency_weight=0`` → uniform; ``recency_weight=1`` → strongly recent. With
+        ``pfsp_scale > 0`` the weight is additionally scaled by per-snapshot hardness (see
+        ``_entry_weight_with``), oversampling the selves the trainee is losing to.
         """
         if not self._entries:
             raise RuntimeError("Pool is empty — call seed() first")
-        steps = [e.step for e in self._entries]
-        span = max(steps[-1] - steps[0], 1)
-        weights = [
-            1.0 + self.recency_weight * (e.step - steps[0]) / span
-            for e in self._entries
-        ]
+        default_p = self._pfsp_default_p(self._entries) if self.pfsp_scale > 0.0 else None
+        weights = [self._entry_weight_with(e, self._entries, default_p) for e in self._entries]
         return random.choices(self._entries, weights=weights, k=1)[0]
 
     def entry_weight(self, entry: SnapshotEntry) -> float:
         """Sampling weight for a specific entry (same formula used in sample())."""
         if not self._entries:
             return 1.0
-        steps = [e.step for e in self._entries]
-        span = max(steps[-1] - steps[0], 1)
-        return 1.0 + self.recency_weight * (entry.step - steps[0]) / span
+        return self._entry_weight_with(entry, self._entries)
 
     def sentinel_entries(self, n: int = 5) -> list[SnapshotEntry]:
         """Return up to ``n`` evenly spaced entries, newest first.
@@ -312,14 +366,13 @@ class SnapshotPool:
         return adapter
 
     def sample_from(self, steps) -> "SnapshotEntry | None":
-        """Recency-weighted sample restricted to ``steps`` (the distilled-deployable set). None if
-        none of those steps are in the pool."""
+        """Recency-weighted (× PFSP hardness when enabled) sample restricted to ``steps`` (the
+        distilled-deployable set). None if none of those steps are in the pool."""
         allowed = [e for e in self._entries if e.step in set(steps)]
         if not allowed:
             return None
-        ss = [e.step for e in allowed]
-        span = max(ss[-1] - ss[0], 1)
-        weights = [1.0 + self.recency_weight * (e.step - ss[0]) / span for e in allowed]
+        default_p = self._pfsp_default_p(allowed) if self.pfsp_scale > 0.0 else None
+        weights = [self._entry_weight_with(e, allowed, default_p) for e in allowed]
         return random.choices(allowed, weights=weights, k=1)[0]
 
     # ── Resume state persistence (summary.json) ────────────────────────────
@@ -383,6 +436,10 @@ class SnapshotPool:
     def is_empty(self) -> bool:
         return len(self._entries) == 0
 
+    def steps(self) -> list[int]:
+        """The training steps of the snapshots currently in the pool (sorted ascending)."""
+        return [e.step for e in self._entries]
+
     def __len__(self) -> int:
         return len(self._entries)
 
@@ -418,12 +475,37 @@ class SnapshotPool:
         return entry
 
     def _evict(self) -> None:
+        if self._pool_spread:
+            self._evict_spread()
+            return
         unpinned = [e for e in self._entries if not e.pinned]
         while len(self._entries) > self.max_snapshots and unpinned:
             oldest = unpinned.pop(0)
             self._entries.remove(oldest)
             oldest.path.unlink(missing_ok=True)
             self._model_cache.pop(str(oldest.path), None)
+
+    def _evict_spread(self) -> None:
+        """Spread-retention eviction: keep a temporally-DIVERSE ladder instead of the most-recent
+        ``max_snapshots``. Retains the newest (the freshest self) and the oldest (a weak early self —
+        a forgetting tripwire PFSP can up-weight if the trainee starts losing to it); thins the most
+        REDUNDANT interior snapshot (the one whose neighbours are closest together, i.e. the smallest
+        step-gap to its two neighbours) until at capacity. Parameter-free and deterministic. Pinned
+        entries are exempt; the two endpoints are scored ``+inf`` redundancy so they're evicted only
+        when they are literally the sole droppable entries (so a future pinning scheme can't strand
+        the ladder by forcing an endpoint out while a thinnable interior exists)."""
+        while len(self._entries) > self.max_snapshots:
+            n = len(self._entries)
+            droppable = [i for i, e in enumerate(self._entries) if not e.pinned]
+            if not droppable:
+                return  # everything pinned — cannot evict
+            def _redundancy(i: int) -> float:
+                if i == 0 or i == n - 1:
+                    return float("inf")  # structural anchors — never thinned while an interior remains
+                return float(self._entries[i + 1].step - self._entries[i - 1].step)
+            victim = self._entries.pop(min(droppable, key=_redundancy))
+            victim.path.unlink(missing_ok=True)
+            self._model_cache.pop(str(victim.path), None)
 
     def _find_step(self, step: int) -> SnapshotEntry | None:
         return next((e for e in self._entries if e.step == step), None)

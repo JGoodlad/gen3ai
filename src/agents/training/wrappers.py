@@ -98,6 +98,15 @@ class MaskableAgentWrapper(SingleAgentWrapper):
         self._self_play_fraction = float(fraction)
         self._target_generation = int(generation)
 
+    def set_opponent_win_rates(self, rates) -> None:
+        """Live PFSP update (pushed via ``VecEnv.env_method`` each eval): the trainee's per-snapshot
+        win-rates (``{step: P(win)}``, EMA-smoothed in the callback) that weight pool sampling toward
+        the selves we're losing to. Forwarded to the worker's ``SnapshotPool``; a no-op on sampling
+        unless the pool was built with ``pfsp_scale > 0``. Pushed only when PFSP is on, so an off run
+        never even makes this IPC call (byte-identical)."""
+        if self._pool is not None:
+            self._pool.set_win_rates(rates)
+
     def set_distill_active(self, active: bool, steps=None) -> None:
         """Pushed by the trainer's reconcile each eval (via ``env_method``): whether to use the
         cheap distilled opponents pool-wide, and which snapshot steps are deployable (gate-passed).
