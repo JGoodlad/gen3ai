@@ -184,12 +184,12 @@ proportional roar-out-boosts shaping; safe since both telescope to 0.) All are r
 `ModelVersion` and enforced on resume by **`check_reward_config`** (FATAL on drift, since they silently
 shift the reward/objective), excluded from `check_compatible`. They are reward-VALUE changes — **no
 `ARCH_SIGNATURE` bump** (the network/obs are unchanged) — so a fresh run is needed to measure them but
-old checkpoints don't fail an arch check. Current `MODEL_CONFIG_VERSION` = **38** (the `pbrs_roar` PBRS
+old checkpoints don't fail an arch check. Current `MODEL_CONFIG_VERSION` = **39** (the `pbrs_roar` PBRS
 above added NO new version — it rides `all_shaping_pbrs`;
 see the belief +
 unified-damage + unified-move + spread-belief + op-physics + status-landing + choice-band + value-dist
 + topk-incoming + damage-reattend + move-prefuse + iterative-refinement + per-move-matrices
-(outgoing v34 / incoming v35; bidirectional in-trunk threat v36) notes below for v16–v36).
+(outgoing v34 / incoming v35; bidirectional in-trunk threat v36; transposed outgoing v39) notes below for v16–v39).
 
 **Two probe-driven V-tail levers (v10 structural, v11 resume-immutable).** A representation probe on a
 real checkpoint found the **value head is partly blind to incoming KOs the policy head sees**
@@ -667,6 +667,31 @@ requires `damage_op` + `move_latent`. `decode_damage_block(..., matrices_incomin
 + both `extractor_kwargs` sites. The two matrices compose under `--damage-matrices both`. Design:
 `designs/ai_v6/design_per_move_damage_matrices.md`.
 
+**Transposed outgoing matrix — switch-in offense (v39, `damage_matrices_outgoing_all` /
+`--damage-matrices-outgoing-all`, `gen3_per_move_matrices_v1`).** The TRANSPOSE of v34's
+`_outgoing_matrix`. v34 broadens the DEFENDER axis (our active's 4 moves × the opp's 6 mons); this broadens
+the ATTACKER axis — **`DamageOperator._outgoing_attacker_matrix`** prices OUR **6 mons'** 4 moves → the opp
+**ACTIVE** only. The problem it fixes: `_outgoing_block` / `_outgoing_matrix` only price the CURRENT active as
+the attacker, so on a **FORCED SWITCH** (our active fainted → `_outgoing_block` zeroes) the policy picks
+switch-ins **BLIND to offense** (a confirmed high-impact loss source); this prices every candidate switch-in's
+offense vs the opp active. Per (attacker mon, move) cell `[low, high, crit, pko]`, then a per-attacker
+`p_outspeed` block + an `alive` gate bit (`_DMG_OAX` = 6·16 + p_outspeed[6] + alive[6] = **108**; layout = all
+cells, then the two trailing scalar blocks). **PARITY (the load-bearing requirement):** the OUR-ACTIVE mon's
+row reproduces `_outgoing_block` **byte-for-byte** (its boosts/CB/burn + the request-ordered moves + the same
+opp-active defender + the same shared `_rolls` kernel — pinned by
+`damage_op_test.test_outgoing_attacker_matrix_active_row_matches_single_active`, atol 1e-5). Bench rows reuse
+the **identical** physics with **NEUTRAL boosts** (gen3 resets boosts on switch — mirrors `_outgoing_matrix`'s
+defender-boost handling: a `[B,6]` 1.0 multiplier with the active slot's boost scattered on) + the per-mon
+**sorted-by-id** moves `all_move_ids[:, :TEAM_SIZE]` (bench mons have no current-decision request order; the
+active slot is OVERWRITTEN with the request slice so its row ties out). Burn/CB compose per-mon (each mon's own
+KNOWN condition/item); each attacker gated by its `alive` bit; the whole block zeroed with no opp active.
+STRUCTURAL bool toggle gated in `check_compatible` like `damage_op` (widens both projections via the op
+out_dim); OFF byte-for-byte (no `ARCH_SIGNATURE` bump); requires `damage_op`. Appended LAST (all existing
+incoming/outgoing/topk/omx/imx offsets untouched). `decode_damage_block(..., matrices_outgoing_all=True)`
+mirrors the layout (`outgoing_matrix_all` → per-attacker `{moves, p_outspeed, alive}`). Threaded through
+`current_model_version` / `arch_toggles_from_model` / `_run_arch_toggles` + both `extractor_kwargs` sites.
+Design: `designs/ai_v6/design_per_move_damage_matrices.md`.
+
 **Bidirectional in-trunk threat (v36, `gen3_bidir_threat_trunk_v1`).** Makes the threat field bidirectional
 AND in-trunk (the incoming refine only injected onto OUR tokens; outgoing was heads-only). Three toggles:
 - **`--threat-refine-outgoing` (#1, STRUCTURAL).** A new lean **`DamageOperator.discrete_outgoing(ctx,
@@ -758,8 +783,8 @@ move-nums 355-370 with real BP 70 + type in the damage buffers; bare 237 = BP 0)
 Tests: `hp_type_belief_test.py` (the immune-bug-and-fix, 237-always-masked + C=n_moves, narrowing + off-meta
 fallback, cold-start==prior, the two-distinct-typed-HPs top-K at real nums 363/365, grad flow, modes, CE, the
 GIGO/version gate, the v2 reinjection) + the extended `poke_env_gaps/belief_labels_fuzz_test.py` (HP-type label
-== agent2's real type + no-leak, live). Current `MODEL_CONFIG_VERSION` = **38**, `ARCH_SIGNATURE` =
-**`gen3_opp_hp_typed_candidates_v1`**.
+== agent2's real type + no-leak, live). `MODEL_CONFIG_VERSION` was **38** at v38; the current value is **39**
+(the v39 transposed-outgoing-matrix note above), `ARCH_SIGNATURE` = **`gen3_opp_hp_typed_candidates_v1`**.
 
 **Damage re-attend (v31, `damage_reattend` / `--damage-reattend`, `gen3_damage_reattend_v1`).** Lets
 attention reason OVER the computed physics — today the `DamageOperator` block is concatenated POST-pool

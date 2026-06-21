@@ -1497,6 +1497,25 @@ _DMG_OMX_CELL = 5                                  # [low, high, crit, pko, type
 _DMG_OMX_IDX_LOW, _DMG_OMX_IDX_HIGH, _DMG_OMX_IDX_CRIT, _DMG_OMX_IDX_PKO, _DMG_OMX_IDX_MULT = 0, 1, 2, 3, 4
 _DMG_OMX = _DMG_OUT_N_MOVES * TEAM_SIZE * _DMG_OMX_CELL + TEAM_SIZE   # 4×6×5 + 6 revealed bits = 126
 
+# gen3_per_move_matrices_v1 (v39): the TRANSPOSED outgoing matrix — our 6 MONS' 4 moves → the opp ACTIVE.
+# `_outgoing_block` (and its bench-defender extension `_outgoing_matrix`) price ONLY our CURRENT active as the
+# attacker, so on a FORCED SWITCH (our active fainted → `_outgoing_block` zeroes) the policy picks switch-ins
+# BLIND to offense. This is the TRANSPOSE of `_outgoing_matrix` (whose DEFENDER axis is the opp's 6 mons): here
+# the ATTACKER axis is OUR 6 mons (active + bench), each priced vs the opp ACTIVE only, so the policy knows
+# what every candidate switch-in would DO. Per (attacker mon, move) cell `[low, high, crit, pko]` (PARITY with
+# `_outgoing_block`'s per-move stack), then a per-attacker `p_outspeed` (speed is per-mon) + an `alive` bit (so
+# a fainted/absent attacker reads a distinguishable 0-column, mirroring `_outgoing_matrix`'s `revealed` bit).
+# The ACTIVE row reproduces `_outgoing_block` byte-for-byte (its boosts/CB/burn + request-ordered moves); bench
+# rows reuse the SAME `_rolls` physics with NEUTRAL boosts (gen3 resets boosts on switch) + the per-mon
+# sorted-by-id moves (bench mons have no request order). Layout = ALL cells, then the trailing scalar blocks
+# (`p_outspeed[6]` ++ `alive[6]`) — like `_outgoing_matrix`'s `cell.reshape || def_gate`.
+_DMG_OAX_PER_MOVE = _DMG_OUT_PER_MOVE              # 4: [low, high, crit, pko]
+_DMG_OAX_N_MOVES = _DMG_OUT_N_MOVES               # 4
+_DMG_OAX_IDX_LOW, _DMG_OAX_IDX_HIGH, _DMG_OAX_IDX_CRIT, _DMG_OAX_IDX_PKO = 0, 1, 2, 3
+# per attacker: 4 moves × [low,high,crit,pko] = 16; the trailing p_outspeed(6) + alive(6) are GLOBAL blocks.
+_DMG_OAX_PER_MON = _DMG_OAX_N_MOVES * _DMG_OAX_PER_MOVE                # 16 (the cell block per attacker)
+_DMG_OAX = TEAM_SIZE * _DMG_OAX_PER_MON + 2 * TEAM_SIZE               # 6×16 + p_outspeed[6] + alive[6] = 108
+
 # gen3_per_move_matrices_v1 (v33): the INCOMING per-move DAMAGE MATRIX — the ENRICHED evolution of the v30
 # top-K block (it SUPERSEDES it; the two don't coexist). For the opp active's top-K most-believed moves: a
 # richer per-move HEADER [latent(32), belief, accuracy, is_phys, EXPLICIT effect bits (6: recovery/status/
@@ -1648,6 +1667,7 @@ class DamageOperator(torch.nn.Module):
 
     def __init__(self, layout: Dict[str, Any], outgoing: bool = False, topk_k: int = 0,
                  matrices_outgoing: bool = False, matrices_incoming: bool = False,
+                 matrices_outgoing_all: bool = False,
                  prob_outspeed: bool = False, hp_type_fix: bool = False):
         super().__init__()
         # gen3_bidir_threat_trunk_v1 (#3): use a SOFT P(our_spe > opp_spe) over the believed speed mean±std
@@ -1702,6 +1722,11 @@ class DamageOperator(torch.nn.Module):
         # gather), enforced at the extractor.
         self.matrices_incoming = matrices_incoming
         self.matrices_incoming_k = (topk_k if topk_k > 0 else _DMG_TOPK_DEFAULT_K) if matrices_incoming else 0
+        # gen3_per_move_matrices_v1 (v39): the TRANSPOSED outgoing matrix — our 6 mons' moves → opp active (the
+        # switch-in offense read). Off by default; when on the op ALSO emits the `_DMG_OAX` block (widens
+        # out_dim → both projections auto-size). Appended LAST (after the v34 outgoing matrix). Requires the
+        # op's physics buffers (always present). The legacy single-active `_outgoing_block` is the ACTIVE row.
+        self.matrices_outgoing_all = matrices_outgoing_all
         # The lean top-K block is emitted ONLY when topk_k>0 AND the rich matrix is OFF (the matrix replaces it).
         _lean_topk = topk_k if (topk_k > 0 and not matrices_incoming) else 0
         # The OUTGOING direction carries the per-move damage block + the gen3_unified_status_landing_v1
@@ -1709,7 +1734,8 @@ class DamageOperator(torch.nn.Module):
         self.out_dim = (self.incoming_dim + (_DMG_OUTGOING + _DMG_STATUS if outgoing else 0)
                         + (_dmg_topk_dim(_lean_topk) if _lean_topk > 0 else 0)
                         + (_DMG_OMX if matrices_outgoing else 0)
-                        + (_dmg_imx_dim(self.matrices_incoming_k) if matrices_incoming else 0))
+                        + (_dmg_imx_dim(self.matrices_incoming_k) if matrices_incoming else 0)
+                        + (_DMG_OAX if matrices_outgoing_all else 0))
         # Runtime grad-checkpointing flag (set per run by --grad-checkpointing via
         # _apply_grad_checkpointing) — recompute the op in backward, trading idle-GPU compute for the
         # ~GBs of [B,6,C]-over-~416-candidate activations this op materialises at batch 16384. No-op
@@ -1769,6 +1795,18 @@ class DamageOperator(torch.nn.Module):
             _imx_cell = torch.tensor([1.0 / 1.5, 1.0 / 1.5, 1.0 / 3.0, 1.0, 1.0 / 4.0, 1.0])
             gain[_imx0:_imx0 + TEAM_SIZE * self.matrices_incoming_k * _DMG_IMX_CELL] = \
                 _imx_cell.repeat(TEAM_SIZE * self.matrices_incoming_k)
+        if matrices_outgoing_all:
+            # gen3_per_move_matrices_v1 (v39): the TRANSPOSED outgoing-matrix tail. Per (attacker mon, move)
+            # cell [low, high, crit, pko] — scale low/high (÷1.5), crit (÷3.0); pko already [0,1]. The trailing
+            # p_outspeed[6] + alive[6] blocks stay at gain 1.0 (already in [0,1]). Placed AFTER every prior
+            # block (incoming → outgoing → lean topk → omx → imx) — append LAST, all prior offsets untouched.
+            _oax0 = (self.incoming_dim + (_DMG_OUTGOING + _DMG_STATUS if outgoing else 0)
+                     + (_dmg_topk_dim(_lean_topk) if _lean_topk > 0 else 0)
+                     + (_DMG_OMX if matrices_outgoing else 0)
+                     + (_dmg_imx_dim(self.matrices_incoming_k) if matrices_incoming else 0))
+            _oax_move = torch.tensor([1.0 / 1.5, 1.0 / 1.5, 1.0 / 3.0, 1.0])   # low,high,crit,pko
+            gain[_oax0:_oax0 + TEAM_SIZE * _DMG_OAX_N_MOVES * _DMG_OAX_PER_MOVE] = \
+                _oax_move.repeat(TEAM_SIZE * _DMG_OAX_N_MOVES)
         self.out_gain = torch.nn.Parameter(gain)
         # gen3_unified_topk_incoming_v1: detached side stashes for the prober (the selected candidate
         # indices + their belief weights) → exact move-name decode. None when topk off / before a forward.
@@ -2179,6 +2217,131 @@ class DamageOperator(torch.nn.Module):
         cell = cell * (usable[:, :, None, None] * def_gate[:, None, :, None])             # gate move-legal × real target
         out = torch.cat([cell.reshape(B, _DMG_OUT_N_MOVES * TEAM_SIZE * _DMG_OMX_CELL), def_gate], dim=1)  # [B,_DMG_OMX]
         return out * gate
+
+    def _outgoing_attacker_matrix(self, ctx: 'ExtractorContext',
+                                  spread_belief: Optional[torch.Tensor] = None) -> torch.Tensor:
+        """gen3_per_move_matrices_v1 (v39): the TRANSPOSE of `_outgoing_matrix` — our 6 MONS' 4 moves → the opp
+        ACTIVE. On a FORCED SWITCH our active is fainted, so `_outgoing_block`/`_outgoing_matrix` (which only
+        price the current active attacker) ZERO and the policy picks switch-ins BLIND to offense; this prices
+        every candidate switch-in's offense vs the opp active. The ACTIVE row reproduces `_outgoing_block`
+        byte-for-byte (its boosts/CB/burn + request-ordered moves + the same opp-active defender + the same
+        `_rolls` kernel); bench rows reuse the SAME `_rolls` physics with NEUTRAL boosts (gen3 resets boosts on
+        switch) + the per-mon sorted-by-id moves (bench mons have no current-decision request order). Output
+        `[B, _DMG_OAX]` = all (attacker, move) cells `[low,high,crit,pko]` ++ a per-attacker `p_outspeed[6]` ++
+        an `alive[6]` gate. Gated to 0 with no opp active; each attacker gated by its alive bit. Leak-safe
+        (public obs + the believed opp spread only — same inputs as `_outgoing_block`)."""
+        B, device, eps = ctx.batch_size, ctx.device, 1e-6
+        ar = torch.arange(B, device=device)
+        our = slice(0, TEAM_SIZE)
+        opp_act = TEAM_SIZE + ctx.opp_active_local                     # [B] opp active global slot
+        has_opp = ctx.hp_and_active[:, TEAM_SIZE:2 * TEAM_SIZE, -1].any(dim=1).float()  # [B] (== _outgoing_block)
+
+        # --- our 6 attackers' moves: per-mon sorted-by-id block, ACTIVE row OVERWRITTEN with the request slice ---
+        # The active uses the SAME request-ordered slice _outgoing_block reads (==action 6+k) → byte-for-byte
+        # parity on the active row; bench mons (no request order) use all_move_ids[:, :TEAM_SIZE] (sorted-by-id).
+        move_ids = ctx.all_move_ids[:, our].clone()                    # [B,6,4] sorted-by-id
+        move_ty = ctx.all_move_type_ids[:, our].clone()                # [B,6,4]
+        legal = torch.ones(B, TEAM_SIZE, _DMG_OAX_N_MOVES, device=device)   # bench: all moves available
+        move_ids[ar, ctx.our_active_idx] = ctx.our_active_req_move_ids        # active → request order (parity)
+        move_ty[ar, ctx.our_active_idx] = ctx.our_active_req_move_type_ids
+        legal[ar, ctx.our_active_idx] = ctx.our_active_req_move_legal         # active → current-decision legality
+        is_hp = (move_ids == self.hp_num)
+        bp = torch.where(is_hp, torch.full_like(move_ty, self.hp_bp, dtype=torch.float32),
+                         self.MOVE_BP[move_ids])                       # [B,6,4]
+        phys = self.TYPE_IS_PHYS[move_ty]                              # [B,6,4]
+        acc = self.MOVE_ACCURACY[move_ids]                            # [B,6,4]
+        usable = legal * (bp > 0).float()                            # [B,6,4] legal damaging moves
+
+        # --- our 6 attackers (real spread; CB ×1.5 phys, burn; boosts only on the active slot, bench reset) ---
+        a_base = self.BASE_STATS[ctx.species_ids[:, our]]            # [B,6,6] [hp,atk,def,spa,spd,spe]
+        spread = ctx.pokemon_part[:, our,
+                                  POKEMON_SPREAD_OFFSET:POKEMON_SPREAD_OFFSET + POKEMON_SPREAD_DIM]   # [B,6,SPREAD]
+        iv = spread[..., 0:6] * 31.0
+        ev = spread[..., 6:12] * 252.0
+        nat = spread[..., 13:18]                                     # [B,6,5] [atk,def,spa,spd,spe]
+        our_atk = (2.0 * a_base[..., 1] + iv[..., 1] + ev[..., 1] / 4.0 + 5.0) * nat[..., 0]   # [B,6]
+        our_spa = (2.0 * a_base[..., 3] + iv[..., 3] + ev[..., 3] / 4.0 + 5.0) * nat[..., 2]   # [B,6]
+        our_spe = (2.0 * a_base[..., 5] + iv[..., 5] + ev[..., 5] / 4.0 + 5.0) * nat[..., 4]   # [B,6]
+        # Boosts: the ACTIVE row carries our_ctx_raw's stages; bench rows neutral (mult 1.0) — gen3 resets on
+        # switch (mirrors _outgoing_matrix's defender-boost handling exactly).
+        o_b_atk, _odf, o_b_spa, _osd, o_b_spe = self._boost_stages(ctx.our_ctx_raw)   # active only, [B]
+        atk_boost = torch.ones(B, TEAM_SIZE, device=device); atk_boost[ar, ctx.our_active_idx] = self._boost_mult(o_b_atk)
+        spa_boost = torch.ones(B, TEAM_SIZE, device=device); spa_boost[ar, ctx.our_active_idx] = self._boost_mult(o_b_spa)
+        spe_boost = torch.ones(B, TEAM_SIZE, device=device); spe_boost[ar, ctx.our_active_idx] = self._boost_mult(o_b_spe)
+        # Burn / Choice Band compose PER MON (each mon's own KNOWN condition/item).
+        our_burn = ctx.pokemon_part[:, our, POKEMON_CONDITION_OFFSET + _COND_BRN_IDX]   # [B,6]
+        our_para = ctx.pokemon_part[:, our, POKEMON_CONDITION_OFFSET + _COND_PAR_IDX]   # [B,6]
+        our_cb = (ctx.item_ids[:, our] == self.cb_item_num).float()                     # [B,6]
+        our_atk = our_atk * torch.where(our_cb > 0.5, our_atk.new_tensor(self.cb_phys_mult), our_atk.new_tensor(1.0))
+        our_atk = our_atk * atk_boost * torch.where(our_burn > 0.5, our_atk.new_tensor(0.5), our_atk.new_tensor(1.0))
+        our_spa = our_spa * spa_boost
+        our_spe = our_spe * spe_boost * torch.where(our_para > 0.5, our_spe.new_tensor(_DMG_PARA_SPEED),
+                                                    our_spe.new_tensor(1.0))
+        at1 = ctx.type1_ids[:, our]; at2 = ctx.type2_ids[:, our]                        # [B,6] (STAB)
+        A = phys * our_atk[:, :, None] + (1.0 - phys) * our_spa[:, :, None]             # [B,6,4]
+
+        # --- opp ACTIVE defender (identical to _outgoing_block: believed/neutral bulk, defensive boosts) ---
+        d_base = self.BASE_STATS[ctx.species_ids[ar, opp_act]]        # [B,6]
+        bs = spread_belief[ar, ctx.opp_active_local] if spread_belief is not None else None   # [B,5] or None
+        opp_def = bs[:, _SB_DEF] if bs is not None else (2.0 * d_base[:, 2] + 31.0 + 5.0)     # [B]
+        opp_spd = bs[:, _SB_SPD] if bs is not None else (2.0 * d_base[:, 4] + 31.0 + 5.0)
+        opp_maxhp = 2.0 * d_base[:, 0] + 31.0 + 110.0
+        opp_spe = bs[:, _SB_SPE] if bs is not None else (2.0 * d_base[:, 5] + 31.0 + 5.0)
+        _pa, p_b_def, _ps, p_b_spd, p_b_spe = self._boost_stages(ctx.opp_ctx_raw)
+        opp_para = ctx.pokemon_part[ar, opp_act, POKEMON_CONDITION_OFFSET + _COND_PAR_IDX]   # [B]
+        opp_def = opp_def * self._boost_mult(p_b_def)
+        opp_spd = opp_spd * self._boost_mult(p_b_spd)
+        opp_spe = opp_spe * self._boost_mult(p_b_spe) * torch.where(
+            opp_para > 0.5, opp_spe.new_tensor(_DMG_PARA_SPEED), opp_spe.new_tensor(1.0))
+        opp_cur_hp = ctx.hp_and_active[ar, opp_act, 0] * opp_maxhp    # [B]
+        t1d = ctx.type1_ids[ar, opp_act]; t2d = ctx.type2_ids[ar, opp_act]   # [B]
+        opp_ability = ctx.ability1_ids[ar, opp_act]                  # [B] (0 if unrevealed)
+
+        # --- type effectiveness eff[B,6,4] = CHART[t1d]·CHART[t2d]·ability_mult (single defender, gathered) ---
+        eff = (self.CHART[t1d][:, None, None, :].expand(B, TEAM_SIZE, _DMG_OAX_N_MOVES, self.CHART.shape[-1])
+               .gather(3, move_ty[..., None]).squeeze(-1))            # [B,6,4]
+        eff = eff * (self.CHART[t2d][:, None, None, :].expand(B, TEAM_SIZE, _DMG_OAX_N_MOVES, self.CHART.shape[-1])
+                     .gather(3, move_ty[..., None]).squeeze(-1))
+        eff = eff * (self.ABILITY_DAMAGE_MULT[opp_ability][:, None, None, :]
+                     .expand(B, TEAM_SIZE, _DMG_OAX_N_MOVES, self.ABILITY_DAMAGE_MULT.shape[-1])
+                     .gather(3, move_ty[..., None]).squeeze(-1))      # [B,6,4] defender immunity
+
+        # --- gen3 damage per (attacker, move) → [B,6,4] (the _outgoing_block physics, single opp defender) ---
+        D = phys * opp_def[:, None, None] + (1.0 - phys) * opp_spd[:, None, None]       # [B,6,4]
+        is_stab = ((move_ty == at1[:, :, None]) | (move_ty == at2[:, :, None])).float() # [B,6,4]
+        stab = 1.0 + 0.5 * is_stab
+        core = 42.0 * bp * A / (D + eps) / 50.0 + 2.0                                   # [B,6,4]
+        # gen3 weather BP modifier (== _weather_mult): sun/rain are [B,1] → broadcast as [B,1,1] over [B,6,4].
+        is_water = (move_ty == _WATER_TIDX).float(); is_fire = (move_ty == _FIRE_TIDX).float()   # [B,6,4]
+        sun = ctx.weather_feature[:, 1:2, None]; rain = ctx.weather_feature[:, 2:3, None]        # [B,1,1]
+        weather = 1.0 + rain * (0.5 * is_water - 0.5 * is_fire) + sun * (0.5 * is_fire - 0.5 * is_water)  # [B,6,4]
+        dmg_ns = core * stab * eff * 0.925 * usable * weather                           # [B,6,4]
+        opp_reflect = ctx.screen_feature[:, 1:2]; opp_ls = ctx.screen_feature[:, 3:4]   # OPP-side screens [B,1]
+        screen = 1.0 - 0.5 * (opp_reflect[:, :, None] * phys + opp_ls[:, :, None] * (1.0 - phys))  # [B,6,4]
+        high, low, crit, ko = self._rolls(dmg_ns, screen, opp_maxhp[:, None, None],
+                                          opp_cur_hp[:, None, None], acc, eps)           # each [B,6,4]
+        # fixed-damage moves (Seismic Toss into the opp active): immunity + legality gated, CB-invariant.
+        fixed = self.MOVE_FIXED_DAMAGE[move_ids] * usable                              # [B,6,4]
+        is_fixed = fixed > 0
+        not_immune = (eff > 0).float()                                                 # [B,6,4]
+        fixed_frac = (fixed / (opp_maxhp[:, None, None] + eps)) * not_immune
+        fixed_ko = acc * (fixed >= opp_cur_hp[:, None, None]).float() * not_immune
+        high = torch.where(is_fixed, fixed_frac, high); low = torch.where(is_fixed, fixed_frac, low)
+        crit = torch.where(is_fixed, fixed_frac, crit); ko = torch.where(is_fixed, fixed_ko, ko)
+
+        # --- p_outspeed per attacker (our_spe [B,6] vs the shared believed opp speed) ---
+        opp_spe_std = self.SPECIES_SPREAD_PRIOR[ctx.species_ids[ar, opp_act], _SB_SPE, 1]   # [B]
+        p_outspeed = self._p_outspeed(our_spe, opp_spe[:, None].expand(B, TEAM_SIZE),
+                                      opp_spe_std[:, None].expand(B, TEAM_SIZE))             # [B,6]
+
+        # --- assemble + gate ---
+        per_move = torch.stack([low, high, crit, ko], dim=-1)                           # [B,6,4,4]
+        alive = (ctx.hp_and_active[:, our, 0] > 0).float()                              # [B,6] attacker exists+alive
+        per_move = per_move * (usable[:, :, :, None] * alive[:, :, None, None])         # gate legal × alive attacker
+        p_outspeed = p_outspeed * alive
+        out = torch.cat([per_move.reshape(B, TEAM_SIZE * _DMG_OAX_N_MOVES * _DMG_OAX_PER_MOVE),
+                         p_outspeed, alive], dim=1)                                     # [B, _DMG_OAX]
+        return out * has_opp[:, None]                                                   # zeroed when no opp active
 
     def _status_landing(self, ctx: 'ExtractorContext') -> torch.Tensor:
         """gen3_unified_status_landing_v1: per OUR move (REQUEST-slot order == action 6+k), P(a dedicated
@@ -2949,6 +3112,10 @@ class DamageOperator(torch.nn.Module):
             block = torch.cat([block, self._incoming_matrix(
                 ctx, w_all, low_frac, high_frac, crit_frac, ko_ramp, acc_all, phys_all, move_latent_all,
                 has_opp, defender_alive, self.matrices_incoming_k)], dim=1)  # [B, out_dim]
+        # gen3_per_move_matrices_v1 (v39): the TRANSPOSED outgoing matrix (our 6 mons' moves → opp active — the
+        # switch-in offense read). Appended LAST so every existing offset is untouched.
+        if self.matrices_outgoing_all:
+            block = torch.cat([block, self._outgoing_attacker_matrix(ctx, spread_belief)], dim=1)  # [B, out_dim]
         # Read-only stash of the PRE-gain physics (the interpretable damage fractions / P(KO) / accuracy),
         # for the prober/forensic decode — the learned out_gain only rescales for the projection.
         self.last_raw_block = block.detach()
@@ -2960,7 +3127,8 @@ _DMG_EFFECT_COLS = ("recovery", "status", "phaze", "boost", "hazard", "protect")
 
 
 def decode_damage_block(row, *, outgoing: bool, topk_k: int = 0, team_size: int = TEAM_SIZE,
-                        matrices_outgoing: bool = False, matrices_incoming_k: int = 0):
+                        matrices_outgoing: bool = False, matrices_incoming_k: int = 0,
+                        matrices_outgoing_all: bool = False):
     """Decode ONE `DamageOperator.last_raw_block[i]` row (the PRE-gain physics) into a human-readable dict
     for the prober / forensic tooling — the single source of truth for the operator's output layout, mirrored
     by the TUI. Uses the named `_DMG_IDX_*` offsets: per our mon the incoming threat
@@ -3076,6 +3244,24 @@ def decode_damage_block(row, *, outgoing: bool, topk_k: int = 0, team_size: int 
                              "type_mult": r[o + _DMG_IMX_IDX_MULT], "status_lands": r[o + _DMG_IMX_IDX_STATUS]})
             per_def.append(rows)
         out["incoming_matrix"] = {"moves": moves, "per_defender": per_def}
+        base = cb2 + team_size * matrices_incoming_k * _DMG_IMX_CELL    # end of the incoming matrix
+    out["outgoing_matrix_all"] = None
+    if matrices_outgoing_all:
+        # gen3_per_move_matrices_v1 (v39): the TRANSPOSED outgoing matrix — our `team_size` mons × 4 moves
+        # → the opp ACTIVE: all (attacker, move) cells [low,high,crit,pko], then the trailing per-attacker
+        # `p_outspeed` block + the `alive` block.
+        ab = base                                          # attacker-cell base
+        pb = ab + team_size * _DMG_OAX_N_MOVES * _DMG_OAX_PER_MOVE   # p_outspeed base
+        lb = pb + team_size                                # alive base
+        attackers = []
+        for i in range(team_size):
+            mvs = []
+            for k in range(_DMG_OAX_N_MOVES):
+                o = ab + (i * _DMG_OAX_N_MOVES + k) * _DMG_OAX_PER_MOVE
+                mvs.append({"low": r[o + _DMG_OAX_IDX_LOW], "high": r[o + _DMG_OAX_IDX_HIGH],
+                            "crit": r[o + _DMG_OAX_IDX_CRIT], "pko": r[o + _DMG_OAX_IDX_PKO]})
+            attackers.append({"moves": mvs, "p_outspeed": r[pb + i], "alive": r[lb + i]})
+        out["outgoing_matrix_all"] = {"attackers": attackers}
     return out
 
 
@@ -3166,6 +3352,7 @@ class Gen3FeaturesExtractor(torch.nn.Module):
                  damage_topk_k: int = 0, damage_reattend: bool = False,
                  move_belief_prefuse: bool = False, damage_refine_rounds: int = 0,
                  damage_matrices_outgoing: bool = False, damage_matrices_incoming: bool = False,
+                 damage_matrices_outgoing_all: bool = False,
                  threat_refine_outgoing: bool = False, threat_unrevealed_outgoing: bool = False,
                  threat_prob_outspeed: bool = False, threat_status_refine: bool = False,
                  hp_type_belief_mode: str = "off"):
@@ -3388,11 +3575,21 @@ class Gen3FeaturesExtractor(torch.nn.Module):
                 "damage_matrices_incoming=True requires move_latent=True — the matrix header gathers each "
                 "move's identity LATENT. Enable --move-latent (--unified-moves), or drop the incoming matrix."
             )
+        # gen3_per_move_matrices_v1 (v39): the TRANSPOSED outgoing matrix (our 6 mons' moves → opp active — the
+        # switch-in offense read). Requires damage_op (the op physics). Off byte-identical.
+        self.damage_matrices_outgoing_all = bool(damage_matrices_outgoing_all)
+        if self.damage_matrices_outgoing_all and not damage_op:
+            raise ValueError(
+                "damage_matrices_outgoing_all=True requires damage_op=True — the transposed outgoing matrix "
+                "(our 6 mons' moves → opp active) is emitted by the DamageOperator. Enable --damage-op "
+                "(--unified-damage), or drop --damage-matrices-outgoing-all."
+            )
         # The incoming matrix REUSES damage_topk_k as its K (one knob tunes both lean & rich) and REPLACES the
         # lean top-K block — so they never coexist (the op suppresses the lean block when matrices_incoming).
         self.damage_op = (DamageOperator(layout, outgoing=damage_outgoing, topk_k=self.damage_topk_k,
                                          matrices_outgoing=self.damage_matrices_outgoing,
                                          matrices_incoming=self.damage_matrices_incoming,
+                                         matrices_outgoing_all=self.damage_matrices_outgoing_all,
                                          prob_outspeed=threat_prob_outspeed,
                                          hp_type_fix=(self.hp_type_belief_mode != "off"))
                           if damage_op else None)

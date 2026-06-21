@@ -300,7 +300,17 @@ from typing import Any, Dict, List
 #   STRUCTURAL (saved weights); OFF byte-for-byte (NO ARCH_SIGNATURE bump). Requires damage_op +
 #   damage_refine_rounds>0. Completes the FULL --unified-obs deprecation (the A/B is the arbiter). Design:
 #   designs/ai_v6/design_bidirectional_threat_trunk.md.
-MODEL_CONFIG_VERSION = 38
+# v39: gen3_per_move_matrices_v1 — the TRANSPOSED outgoing matrix. `damage_matrices_outgoing_all` (bool, off)
+#   makes the DamageOperator ALSO emit our 6 MONS' 4 moves → the opp ACTIVE — per (attacker mon, move)
+#   [low,high,crit,pko] + a per-attacker p_outspeed + an alive bit. The TRANSPOSE of v34's
+#   damage_matrices_outgoing (our active's 4 moves × the opp's 6 mons): here the ATTACKER axis is our 6 mons,
+#   the defender is the opp ACTIVE only. On a FORCED SWITCH our active is fainted → the single-active outgoing
+#   block zeroes, so the policy picks switch-ins BLIND to offense; this prices every candidate switch-in. The
+#   ACTIVE row reproduces _outgoing_block byte-for-byte (parity); bench rows reuse the SAME _rolls physics with
+#   NEUTRAL boosts (gen3 resets on switch). STRUCTURAL toggle like damage_op (widens both projection
+#   in_features via the op out_dim); gated in check_compatible (bool); OFF byte-for-byte (NO ARCH_SIGNATURE
+#   bump). Requires damage_op. Design: designs/ai_v6/design_per_move_damage_matrices.md.
+MODEL_CONFIG_VERSION = 39
 
 # Change this when the neural architecture changes structurally in a way that makes
 # weights from a different signature incompatible (e.g. adding LSTM, replacing attention).
@@ -893,6 +903,11 @@ class ModelVersion:
     # REUSES damage_topk_k as its K (the matrix's width is gated by the existing damage_topk_k int) and
     # REPLACES the lean top-K block at that K (so they never coexist — one knob, lean vs rich).
     damage_matrices_incoming: bool = False
+    # v39 STRUCTURAL (gen3_per_move_matrices_v1): the TRANSPOSED outgoing matrix — our 6 MONS' 4 moves → the
+    # opp ACTIVE (the switch-in offense read; the transpose of damage_matrices_outgoing). Widens both
+    # projections via the op out_dim. OFF byte-for-byte (no module output). Gated in check_compatible (bool,
+    # like damage_op). Requires damage_op.
+    damage_matrices_outgoing_all: bool = False
     # v36 STRUCTURAL (gen3_bidir_threat_trunk_v1): the OUTGOING half of the in-trunk threat field — a
     # zero-init `outgoing_proj` injects a per-opp-mon outgoing-threat residual onto the OPP tokens via the
     # SAME between-layers refine loop (so it adds a Linear; OFF byte-for-byte, gated bool like damage_op).
@@ -1065,6 +1080,9 @@ class ModelVersion:
             ),
             damage_matrices_incoming=bool(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("damage_matrices_incoming", False)
+            ),
+            damage_matrices_outgoing_all=bool(
+                policy_kwargs.get("features_extractor_kwargs", {}).get("damage_matrices_outgoing_all", False)
             ),
             threat_refine_outgoing=bool(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("threat_refine_outgoing", False)
@@ -1409,6 +1427,17 @@ class ModelVersion:
                 "The incoming per-move damage matrix widens the damage operator's output (hence both "
                 "projection widths), so toggling it is incompatible with a saved checkpoint.\n"
                 "Resume with the matching --damage-matrices setting, or start a fresh training run."
+            )
+        # gen3_per_move_matrices_v1 (v39): the TRANSPOSED outgoing matrix (our 6 mons' moves → opp active)
+        # widens the op out_dim → both projection in_features. Toggling it is a weight-shape change (like damage_op).
+        if self.damage_matrices_outgoing_all != saved.damage_matrices_outgoing_all:
+            raise ModelVersionError(
+                f"damage_matrices_outgoing_all mismatch: saved={saved.damage_matrices_outgoing_all}, "
+                f"current={self.damage_matrices_outgoing_all}.\n"
+                "The transposed outgoing per-move damage matrix (our 6 mons' moves → opp active) widens the "
+                "damage operator's output (hence both projection widths), so toggling it is incompatible with "
+                "a saved checkpoint.\n"
+                "Resume with the matching --damage-matrices-outgoing-all setting, or start a fresh training run."
             )
         # gen3_bidir_threat_trunk_v1 (v36): the outgoing in-trunk residual adds outgoing_proj (a weight) →
         # state_dict change; the expected-latent + prob-outspeed are forward-behavior toggles. All three are
@@ -1821,4 +1850,11 @@ def _migrate_config(data: dict) -> dict:
         data.setdefault("hp_type_belief_mode", "off")
         data.setdefault("hp_type_belief_coef", 0.0)
         data["config_version"] = 38
+    if version < 39:
+        # v39: gen3_per_move_matrices_v1 — the TRANSPOSED outgoing matrix (our 6 mons' moves → opp active).
+        # `damage_matrices_outgoing_all` (bool) is a STRUCTURAL toggle like damage_op (it widens both
+        # projections via the op's out_dim). OFF byte-for-byte (NO ARCH_SIGNATURE bump). Requires damage_op.
+        # Gated in check_compatible (bool compare).
+        data.setdefault("damage_matrices_outgoing_all", False)
+        data["config_version"] = 39
     return data

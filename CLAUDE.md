@@ -890,7 +890,7 @@ audit: every CPU-obs signal has a GPU home — damage→trunk/refine, status→t
 →per-mon slot, provenance/p_outspeed/crit→explicit op channels, per-move status_will_land+known→v27 heads;
 honest residuals = opp-recovery heads-only + Rest-cure coarsening). The dedicated `pbrs_roar`
 phaze-out-boosts PBRS is folded INTO `--all-shaping-pbrs` (no new flag/version, no `ARCH_SIGNATURE` bump).
-Current `MODEL_CONFIG_VERSION` = **38**. Full design:
+Current `MODEL_CONFIG_VERSION` = **39** (the v38/v39 additions are the bolded entries below). Full design:
 `designs/ai_v6/design_bidirectional_threat_trunk.md` (+ `gen3ai/tmp/{model_v36_full,stacking_levels}.png`)
 (and `design_per_move_damage_matrices.md` for v34/v35, `design_iterative_damage_refinement.md` for v33,
 `design_topk_incoming_moves.md` for v30, `design_distributional_value_critic.md` for v29,
@@ -924,7 +924,24 @@ the `ARCH_SIGNATURE` **bump** forces a clean reload of any pre-unification `dama
 `hp_type_belief_mode` is STRING-gated in `check_compatible`, the obs VECTOR dim is unchanged (the label is a
 separate Dict key), `hp_type_belief_coef` is training-only. Requires `--damage-op`; threaded through
 `current_model_version` / `arch_toggles_from_model` / `_run_arch_toggles` + both `extractor_kwargs` sites.
-Current `MODEL_CONFIG_VERSION` = **38**, `ARCH_SIGNATURE` = **`gen3_opp_hp_typed_candidates_v1`**.
+**v39 the TRANSPOSED outgoing DAMAGE MATRIX — switch-in offense** (`gen3_per_move_matrices_v1`;
+`damage_matrices_outgoing_all` / `--damage-matrices-outgoing-all`) — the TRANSPOSE of v34's
+`damage_matrices_outgoing`. v34 prices our ACTIVE's 4 moves × the opp's 6 mons (broadening the DEFENDER axis);
+v39 broadens the ATTACKER axis: `DamageOperator._outgoing_attacker_matrix` prices OUR **6 MONS'** 4 moves → the
+opp **ACTIVE** only. Fixes a confirmed high-impact error: today the op's outgoing block prices ONLY the current
+active attacker, so on a **forced switch** (active fainted → the single-active block zeroes) the policy picks
+switch-ins **BLIND to offense** — this surfaces what every candidate switch-in would DO to the opp active. Per
+(attacker mon, move) cell `[low,high,crit,pko]` + a per-attacker `p_outspeed` + an `alive` bit (`_DMG_OAX` =
+6·16 + 6 + 6 = **108**). **PARITY (the hard requirement):** the OUR-ACTIVE mon's row reproduces `_outgoing_block`
+**byte-for-byte** (its boosts/CB/burn + request-ordered moves + the same opp-active defender + the same `_rolls`
+kernel); bench rows reuse the SAME validated physics with **NEUTRAL boosts** (gen3 resets boosts on switch) +
+the per-mon sorted-by-id moves (the active slot is overwritten with the request slice so it ties out). STRUCTURAL
+bool toggle gated in `check_compatible` like `damage_op` (widens both projections via the op out_dim); OFF
+byte-identical (NO `ARCH_SIGNATURE` bump); requires `--damage-op`. Appended LAST (all prior op offsets
+untouched); `decode_damage_block(..., matrices_outgoing_all=True)` mirrors it (`outgoing_matrix_all`). Threaded
+through `current_model_version` / `arch_toggles_from_model` / `_run_arch_toggles` + both `extractor_kwargs`
+sites. Design: `designs/ai_v6/design_per_move_damage_matrices.md`.
+Current `MODEL_CONFIG_VERSION` = **39**, `ARCH_SIGNATURE` = **`gen3_opp_hp_typed_candidates_v1`**.
 **The full versioning playbook — what to do when you change a dim vs add an optional feature vs
 make a structural change — is in `src/agents/model/CLAUDE.md`.**
 

@@ -22,6 +22,7 @@ from agents.model.features_extractor import (
     _dmg_topk_dim, _DMG_TOPK_MOVE, _DMG_TOPK_DMG_PER, _DMG_TOPK_DEFAULT_K, MOVE_LATENT_DIM,
     _DMG_REFINE_FEATS, _DMG_OMX, _DMG_OMX_CELL, _DMG_OUT_N_MOVES,
     _dmg_imx_dim, _DMG_IMX_CELL,
+    _DMG_OAX, _DMG_OAX_N_MOVES, _DMG_OAX_PER_MOVE,
 )
 from agents.model import damage_tables as dt
 from agents.observation.constants import (
@@ -1008,6 +1009,135 @@ def test_both_matrices_combined_offsets_decode():
     assert len(dec["incoming_matrix"]["per_defender"]) == TEAM_SIZE
     import math
     assert all(math.isfinite(c["high"]) for row in dec["incoming_matrix"]["per_defender"] for c in row)
+
+
+# ---------------------- gen3_per_move_matrices_v1 (v39): the TRANSPOSED outgoing matrix (our 6 mons → opp active)
+def _oax_cell(row, att, mv):
+    """[low, high, crit, pko] for attacker mon `att`'s move `mv` (the per-attacker cell block, mon-major)."""
+    o = (att * _DMG_OAX_N_MOVES + mv) * _DMG_OAX_PER_MOVE
+    return [float(x) for x in row[o:o + _DMG_OAX_PER_MOVE]]
+
+
+def _oax_outspeed(row):
+    base = TEAM_SIZE * _DMG_OAX_N_MOVES * _DMG_OAX_PER_MOVE
+    return [float(x) for x in row[base:base + TEAM_SIZE]]
+
+
+def _oax_alive(row):
+    base = TEAM_SIZE * _DMG_OAX_N_MOVES * _DMG_OAX_PER_MOVE + TEAM_SIZE
+    return [float(x) for x in row[base:base + TEAM_SIZE]]
+
+
+def test_matrices_outgoing_all_off_path_dims_unchanged():
+    """damage_matrices_outgoing_all OFF == baseline op; ON adds EXACTLY _DMG_OAX to BOTH projection heads."""
+    common = dict(attend_unrevealed_opponents=True, move_belief_mode="revealed", damage_op=True)
+    base, _ = _make_model(**common)
+    on, _ = _make_model(**common, damage_matrices_outgoing_all=True)
+    assert base.damage_op.matrices_outgoing_all is False and on.damage_op.matrices_outgoing_all is True
+    assert on.projection_input_dim - base.projection_input_dim == _DMG_OAX
+    assert on.value_projection_input_dim - base.value_projection_input_dim == _DMG_OAX
+
+
+def test_matrices_outgoing_all_requires_damage_op():
+    with pytest.raises(ValueError, match="damage_op"):
+        _make_model(attend_unrevealed_opponents=True, move_belief_mode="revealed",
+                    damage_matrices_outgoing_all=True)                  # no damage_op
+
+
+def test_outgoing_attacker_matrix_active_row_matches_single_active():
+    """The user's HARD PARITY requirement: the OUR-ACTIVE mon's row of `_outgoing_attacker_matrix` reproduces
+    the validated `_outgoing_block` byte-for-byte (same boosts/CB/burn + request-ordered moves + same opp-active
+    defender + same `_rolls` kernel), and its p_outspeed matches too."""
+    op = DamageOperator(_make_layout(), outgoing=True, matrices_outgoing_all=True)
+    eq = _move_num("earthquake")
+    ctx = _ctx_mtx(our_species=376, our_t1=_T2I["STEEL"], our_t2=_T2I["PSYCHIC"],     # Metagross
+                   our_moves=[eq, 0, 0, 0], our_move_types=[_T2I["GROUND"], 0, 0, 0],
+                   opp_active=(0, _T2I["ELECTRIC"], 0),                 # EQ 2× vs Electric
+                   move_mask=[1, 0, 0, 0])
+    single = op._outgoing_block(ctx)[0]                                  # [_DMG_OUTGOING] (pre-gain)
+    oax = op._outgoing_attacker_matrix(ctx)[0]                           # [_DMG_OAX] (pre-gain)
+    # our active is slot 0 → attacker-row 0; every move cell == the single-active block's same move
+    for k in range(_DMG_OAX_N_MOVES):
+        cell = _oax_cell(oax, 0, k)
+        s = [float(single[k * _DMG_OUT_PER_MOVE + j]) for j in range(_DMG_OUT_PER_MOVE)]
+        assert all(abs(cell[j] - s[j]) < 1e-5 for j in range(4)), (k, cell, s)
+    assert _oax_cell(oax, 0, 0)[1] > 0.0                                 # a real SE hit on the active row
+    # p_outspeed: the active-slot scalar == the single block's p_outspeed
+    assert abs(_oax_outspeed(oax)[0] - float(single[_DMG_OUT_N_MOVES * _DMG_OUT_PER_MOVE])) < 1e-5
+    assert _oax_alive(oax)[0] == 1.0                                     # the active is alive
+
+
+def test_outgoing_attacker_matrix_active_row_parity_under_weather():
+    """Harden the active-row parity for the WEATHER-on path (flagged inspection-only): `_outgoing_attacker_matrix`
+    inlines the gen3 weather mult to broadcast over the [B,6,4] grid instead of calling `_weather_mult` (which
+    `_outgoing_block` uses). In RAIN with a STAB Water move the active row must STILL equal `_outgoing_block`
+    byte-for-byte — proving the inlined formula is identical, not a drift."""
+    op = DamageOperator(_make_layout(), outgoing=True, matrices_outgoing_all=True)
+    surf = _move_num("surf")
+    ctx = _ctx_mtx(our_species=245, our_t1=_T2I["WATER"], our_t2=0,        # Suicune (Water, STAB Surf)
+                   our_moves=[surf, 0, 0, 0], our_move_types=[_T2I["WATER"], 0, 0, 0],
+                   opp_active=(0, _T2I["FIRE"], 0),                        # Surf 2× vs Fire, rain-boosted ×1.5
+                   move_mask=[1, 0, 0, 0])
+    ctx.weather_feature[:, 2] = 1.0                                       # RAIN
+    single = op._outgoing_block(ctx)[0]
+    oax = op._outgoing_attacker_matrix(ctx)[0]
+    assert _oax_cell(oax, 0, 0)[1] > 0.0                                  # a real rain-boosted hit
+    for k in range(_DMG_OAX_N_MOVES):
+        cell = _oax_cell(oax, 0, k)
+        s = [float(single[k * _DMG_OUT_PER_MOVE + j]) for j in range(_DMG_OUT_PER_MOVE)]
+        assert all(abs(cell[j] - s[j]) < 1e-5 for j in range(4)), (k, cell, s)
+
+
+def test_outgoing_attacker_matrix_bench_priced_on_forced_switch():
+    """The WHOLE POINT: on a FORCED SWITCH the active is fainted → `_outgoing_block` zeroes, but the new block
+    must price the ALIVE BENCH attackers (their offense vs the opp active). Bench rows are NON-zero + finite;
+    the alive bits flag exactly the alive attackers."""
+    op = DamageOperator(_make_layout(), outgoing=True, matrices_outgoing_all=True)
+    eq = _move_num("earthquake")
+    ctx = _ctx_mtx(our_species=376, our_t1=_T2I["STEEL"], our_t2=_T2I["PSYCHIC"],
+                   our_moves=[eq, 0, 0, 0], our_move_types=[_T2I["GROUND"], 0, 0, 0],
+                   opp_active=(0, _T2I["ELECTRIC"], 0), move_mask=[1, 0, 0, 0])
+    ctx.hp_and_active[:, 0, 0] = 0.0                                     # FAINT our active (forced switch)
+    # bench slot 2 = an alive Ground attacker with EQ (real IV31/EV0 spread)
+    ctx.species_ids[:, 2] = 376
+    ctx.type1_ids[:, 2] = _T2I["GROUND"]; ctx.type2_ids[:, 2] = 0
+    ctx.hp_and_active[:, 2, 0] = 1.0
+    ctx.all_move_ids[:, 2, 0] = eq; ctx.all_move_type_ids[:, 2, 0] = _T2I["GROUND"]
+    sp = ctx.pokemon_part[:, 2, POKEMON_SPREAD_OFFSET:POKEMON_SPREAD_OFFSET + 18]
+    sp[:, 0:6] = 1.0; sp[:, 13:18] = 1.0
+    single = op._outgoing_block(ctx)[0]
+    oax = op._outgoing_attacker_matrix(ctx)[0]
+    assert float(single.abs().sum()) == 0.0                             # active fainted → single block zeroed
+    assert _oax_cell(oax, 2, 0)[1] > 0.0                                # bench slot 2 EQ deals real damage
+    alive = _oax_alive(oax)
+    assert alive[0] == 0.0 and alive[2] == 1.0                          # fainted active=0, alive bench=1
+    assert torch.isfinite(oax).all()
+
+
+def test_outgoing_attacker_matrix_shape_finite_and_leak_free():
+    """End-to-end: the transposed matrix rides the op output (+_DMG_OAX), is finite, decodes to a 6-attacker
+    block, and reads only public obs (poisoning the privileged label keys leaves the forward bit-identical)."""
+    model, layout = _make_model(attend_unrevealed_opponents=True, move_belief_mode="revealed",
+                                move_prior_fusion=True, damage_op=True, damage_matrices_outgoing_all=True)
+    model.eval()
+    torch.manual_seed(0)
+    obs_t = torch.rand(4, layout["total_dim"])
+    with torch.no_grad():
+        pi, vf = model.forward({"observation": obs_t})
+        dec = decode_damage_block(model.damage_op.last_raw_block[0].numpy(), outgoing=False,
+                                  matrices_outgoing_all=True)
+    assert torch.isfinite(pi).all() and torch.isfinite(vf).all()
+    assert dec["outgoing_matrix_all"] is not None
+    assert len(dec["outgoing_matrix_all"]["attackers"]) == TEAM_SIZE
+    assert len(dec["outgoing_matrix_all"]["attackers"][0]["moves"]) == _DMG_OAX_N_MOVES
+    poisoned = {"observation": obs_t,
+                "belief_species": torch.rand(4, TEAM_SIZE, layout["max_species"]),
+                "belief_moves": torch.rand(4, TEAM_SIZE, layout["max_moves"]),
+                "known_moves": torch.rand(4, TEAM_SIZE, layout["max_moves"])}
+    with torch.no_grad():
+        clean_pi, clean_vf = model.forward({"observation": obs_t})
+        pois_pi, pois_vf = model.forward(poisoned)
+    assert torch.equal(clean_pi, pois_pi) and torch.equal(clean_vf, pois_vf)
 
 
 # ------------------------------------ gen3_per_move_matrices_v1: INCOMING per-move damage matrix (enriched top-K)

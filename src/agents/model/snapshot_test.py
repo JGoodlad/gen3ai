@@ -725,6 +725,43 @@ def test_migrate_pre_v32_adds_damage_matrices_outgoing_default(version):
     ModelVersion(**result)
 
 
+# --- damage_matrices_outgoing_all: the TRANSPOSED outgoing matrix, a structural BOOL toggle (v39) ----------
+
+
+def test_check_compatible_rejects_damage_matrices_outgoing_all_mismatch(version):
+    """The transposed outgoing matrix widens the op out_dim → both projection in_features; toggling it is a
+    weight-shape change check_compatible must reject (like damage_op)."""
+    on = dataclasses.replace(version, damage_matrices_outgoing_all=True)
+    with pytest.raises(ModelVersionError) as exc_info:
+        version.check_compatible(on)        # version has it off (default)
+    assert "damage_matrices_outgoing_all" in str(exc_info.value)
+
+
+def test_check_compatible_accepts_matching_damage_matrices_outgoing_all(version):
+    version.check_compatible(dataclasses.replace(version))            # off vs off
+    on = dataclasses.replace(version, damage_matrices_outgoing_all=True)
+    on.check_compatible(dataclasses.replace(on))                      # on vs on
+
+
+def test_damage_matrices_outgoing_all_read_from_features_extractor_kwargs(layout):
+    pk = {"net_arch": [512, 512], "features_extractor_kwargs": {"damage_matrices_outgoing_all": True}}
+    v = ModelVersion.from_layout_and_policy_kwargs(layout, pk)
+    assert v.damage_matrices_outgoing_all is True and v.config_version == MODEL_CONFIG_VERSION
+    v_default = ModelVersion.from_layout_and_policy_kwargs(layout, {"net_arch": [512, 512]})
+    assert v_default.damage_matrices_outgoing_all is False
+
+
+def test_migrate_pre_v39_adds_damage_matrices_outgoing_all_default(version):
+    """Pre-v39 configs lack damage_matrices_outgoing_all — migration injects False and bumps to current."""
+    data = json.loads(version.to_json())
+    data.pop("damage_matrices_outgoing_all", None)
+    data["config_version"] = 38
+    result = _migrate_config(data)
+    assert result["config_version"] == MODEL_CONFIG_VERSION
+    assert result["damage_matrices_outgoing_all"] is False
+    ModelVersion(**result)
+
+
 # --- damage_matrices_incoming: a structural BOOL toggle (the incoming per-move damage matrix, v33) --------
 
 
@@ -1978,7 +2015,7 @@ def test_arch_toggles_from_model_extracts_flags():
                                move_belief_prefuse=True,
                                mask_incoming_damage_obs=True, win_prob_mode="read_only",
                                damage_topk_k=5, damage_refine_rounds=2, damage_matrices_outgoing=True,
-                               damage_matrices_incoming=True)
+                               damage_matrices_incoming=True, damage_matrices_outgoing_all=True)
     model = types.SimpleNamespace(policy=types.SimpleNamespace(features_extractor=fe, popart=object()))
     t = arch_toggles_from_model(model)
     assert t["opp_belief_slots"] is True and t["attend_unrevealed_opponents"] is True
@@ -1999,6 +2036,8 @@ def test_arch_toggles_from_model_extracts_flags():
     assert t["damage_matrices_outgoing"] is True
     # v33: the incoming per-move damage matrix.
     assert t["damage_matrices_incoming"] is True
+    # v39: the TRANSPOSED outgoing matrix (our 6 mons → opp active; a switch-in-offense-ON run must gate it).
+    assert t["damage_matrices_outgoing_all"] is True
     # Every emitted toggle MUST be an accepted current_model_version kwarg — else a future toggle that
     # isn't threaded fails here in a unit test, not only at a self-play load (TypeError).
     assert set(t) <= set(inspect.signature(current_model_version).parameters)

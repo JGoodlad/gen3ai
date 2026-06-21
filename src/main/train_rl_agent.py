@@ -196,6 +196,7 @@ def _run_arch_toggles(args) -> dict:
         damage_refine_rounds=args.damage_refine_rounds,
         damage_matrices_outgoing=args.damage_matrices_outgoing,
         damage_matrices_incoming=args.damage_matrices_incoming,
+        damage_matrices_outgoing_all=args.damage_matrices_outgoing_all,
         threat_refine_outgoing=args.threat_refine_outgoing,
         threat_unrevealed_outgoing=args.threat_unrevealed_outgoing,
         threat_prob_outspeed=args.threat_prob_outspeed,
@@ -959,6 +960,18 @@ async def main():
                              "'both' = incoming + outgoing. Unrevealed opp slots zeroed (belief-driven = TODO). "
                              "STRUCTURAL (version-checked, fresh-only). REQUIRES --damage-op. 'off' (default) = "
                              "baseline byte-identical.")
+    parser.add_argument("--damage-matrices-outgoing-all", "--damage_matrices_outgoing_all",
+                        dest="damage_matrices_outgoing_all", action=BoolFlag, default=None,
+                        help="The TRANSPOSED outgoing matrix (gen3_per_move_matrices_v1, v39): OUR 6 MONS' 4 "
+                             "moves → the opp ACTIVE — per (attacker mon, move) [low,high,crit,pko] + a "
+                             "per-attacker p_outspeed + an alive bit. The transpose of --damage-matrices "
+                             "outgoing (which prices our ACTIVE's moves vs the opp's 6 mons): on a FORCED SWITCH "
+                             "the active is fainted so the single-active outgoing block zeroes and the policy "
+                             "picks switch-ins BLIND to offense — this prices every candidate switch-in's "
+                             "offense. The ACTIVE row reproduces the single-active block byte-for-byte (parity); "
+                             "bench rows reuse the SAME physics with NEUTRAL boosts (gen3 resets on switch). "
+                             "STRUCTURAL (version-checked, fresh-only). REQUIRES --damage-op. Default off "
+                             "(byte-identical).")
     # gen3_bidir_threat_trunk_v1 (v36): the bidirectional in-trunk threat field (#1/#2/#3).
     parser.add_argument("--threat-refine-outgoing", "--threat_refine_outgoing", dest="threat_refine_outgoing",
                         action=BoolFlag, default=None,
@@ -1297,6 +1310,7 @@ async def main():
     _resolve("damage_refine_rounds", 0)        # v31 structural int (iterative refine; version-checked, fresh-only)
     _resolve("damage_matrices_outgoing", False)  # v32 structural (outgoing damage matrix; version-checked, fresh-only)
     _resolve("damage_matrices_incoming", False)  # v33 structural (incoming damage matrix; version-checked, fresh-only)
+    _resolve("damage_matrices_outgoing_all", False)  # v39 structural (transposed outgoing matrix; version-checked, fresh-only)
     _resolve("threat_refine_outgoing", False)    # v36 structural (outgoing→trunk; version-checked, fresh-only)
     _resolve("threat_unrevealed_outgoing", False)  # v36 forward-behavior (expected-latent; version-checked, fresh-only)
     _resolve("threat_prob_outspeed", False)      # v36 forward-behavior (prob outspeed; version-checked, fresh-only)
@@ -1463,6 +1477,12 @@ async def main():
         parser.error(
             "--damage-matrices outgoing requires --damage-op (the matrix is emitted by the damage operator). "
             "Use --unified-damage / --unified-moves, or add --damage-op, or set --damage-matrices off."
+        )
+    if getattr(args, "damage_matrices_outgoing_all", False) and not args.damage_op:
+        # gen3_per_move_matrices_v1 (v39): the TRANSPOSED outgoing matrix is emitted by the DamageOperator.
+        parser.error(
+            "--damage-matrices-outgoing-all requires --damage-op (the matrix is emitted by the damage operator). "
+            "Use --unified-damage / --unified-moves, or add --damage-op, or drop --damage-matrices-outgoing-all."
         )
     if getattr(args, "damage_matrices_incoming", False):
         # gen3_per_move_matrices_v1: the incoming matrix needs the op + the move latent, and SUPERSEDES top-K.
@@ -2276,6 +2296,7 @@ async def main():
         _load_extractor_kwargs["damage_refine_rounds"] = args.damage_refine_rounds   # v31 (version-checked)
         _load_extractor_kwargs["damage_matrices_outgoing"] = args.damage_matrices_outgoing  # v32 (version-checked)
         _load_extractor_kwargs["damage_matrices_incoming"] = args.damage_matrices_incoming  # v33 (version-checked)
+        _load_extractor_kwargs["damage_matrices_outgoing_all"] = args.damage_matrices_outgoing_all  # v39 (version-checked)
         _load_extractor_kwargs["threat_refine_outgoing"] = args.threat_refine_outgoing      # v36 (version-checked)
         _load_extractor_kwargs["threat_unrevealed_outgoing"] = args.threat_unrevealed_outgoing  # v36
         _load_extractor_kwargs["threat_prob_outspeed"] = args.threat_prob_outspeed          # v36 (version-checked)
@@ -2537,6 +2558,7 @@ async def main():
         extractor_kwargs["damage_refine_rounds"] = args.damage_refine_rounds
         extractor_kwargs["damage_matrices_outgoing"] = args.damage_matrices_outgoing
         extractor_kwargs["damage_matrices_incoming"] = args.damage_matrices_incoming
+        extractor_kwargs["damage_matrices_outgoing_all"] = args.damage_matrices_outgoing_all
         extractor_kwargs["threat_refine_outgoing"] = args.threat_refine_outgoing
         extractor_kwargs["threat_unrevealed_outgoing"] = args.threat_unrevealed_outgoing
         extractor_kwargs["threat_prob_outspeed"] = args.threat_prob_outspeed
